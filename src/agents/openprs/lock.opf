@@ -38,14 +38,14 @@
 		:context( 	(agent-name $agent-name)
 		            (lock ACCEPT $agent-name $resource $priority)
 		            (lock-in-use $resource $res-xpos $res-ypos)
-		            (agent-pose $agent-xpos $agent-ypos)
+		            (agent-pose $agent-name $agent-xpos $agent-ypos)
 		         )
 		:body (
 		       (! (CAL_SQUARE_DISTANCE $agent-xpos $agent-ypos $res-xpos $res-ypos $res))
-		       (! (printf (FORMAT "%s %s %d %d %d %d\n" $agent-name $resource $agent-xpos $agent-ypos $res-xpos $res-ypos)))
 		       
 		       (! (= $release-distance-sqr (* $release-distance $release-distance)))
 		       (if (? (> $res $release-distance-sqr))
+		       (! (printf (FORMAT "Releaseing Lock: %s %s %d %d %d %d\n" $agent-name $resource $agent-xpos $agent-ypos $res-xpos $res-ypos)))
 		       	(=> (lock RELEASE $agent-name $resource $priority))
 		       )
 		)
@@ -70,7 +70,9 @@
 			(! (= $agent (pb-field-value $msg "agent" )) )
 			(! (= $type (pb-field-value $msg "type")) )
 			(! (= $resource (pb-field-value $msg "resource")) )
-			(! (= $priority (pb-field-value $msg "priority")) )
+			(if (? (pb-has-field $msg "priority"))
+				(! (= $priority (pb-field-value $msg "priority")) )
+				)
 
 			(if (? (~ (BOUNDP $priority)))
 				(! (= $priority 0))
@@ -83,7 +85,8 @@
     (defop lock-process-requests-and-releases-and-send-LockMessage
     	:invocation ( timer "beacon" $last-sec $last-usec $seq )
     	:context( 	(master-of LOCKING $robot-name)
-    	 			(peer-id private $peer-id))
+    	 			(peer-id private $peer-id)
+    	 			)
     	:setting(setting "robot-name" $robot-name)
     	:body(
     		(! (= $lock-release-list (n-all-list (. $agent $resource .) (lock RELEASE $agent $resource $priority))))
@@ -134,10 +137,10 @@
 
 	    		(! (= @agent-list (car $lock-get-list)) )
 	    		(! (= @resource-list (cadr $lock-get-list)) )
-	    		(! (print @agent-list))
-	    		(! (print @resource-list))
+	    		;(! (print @agent-list))
+	    		;(! (print @resource-list))
 	    		(while (? (~ (null @agent-list)))
-	    			(! (print "i am in the loop"))
+	    			; (! (print "i am in the loop"))
 	    			(! (= @agent (car @agent-list)))
 	    			(! (= @agent-list (cdr @agent-list)))
 	    			(! (= @resource (car @resource-list)))
@@ -183,7 +186,7 @@
 						(! (pb-set-field @msg "type" @type))
 						(! (pb-set-field @msg "agent" @agent))
 						(! (pb-set-field @msg "resource" @resource))
-						(! (print @agent))
+						; (! (print @agent))
 						(! (pb-broadcast $peer-id @msg))
 						(! (pb-destroy @msg))
 
@@ -215,8 +218,9 @@
 
 				(! (= $type (pb-field-value $msg "type")) )
 				(! (= $resource (pb-field-value $msg "resource")) )
-				(! (= $priority (pb-field-value $msg "priority")) )
-
+				(if (? (pb-has-field $msg "priority"))
+					(! (= $priority (pb-field-value $msg "priority")) )
+					)
 				(if (? (~ (BOUNDP $priority)))
 					(! (= $priority 0))
 					)

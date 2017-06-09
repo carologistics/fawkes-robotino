@@ -9,42 +9,57 @@
 
 	(defop co--Master-Achieving-workpiece-Goal
 		:invocation (! (achieve-workpiece $agent $workpiece))
-		:context ( 	(~ 	(achieve-workpiece $agent @any-workpiece STARTED))
-					(master-of REASONING $me)
+		:context ( 	(master-of REASONING $me)
 					(agent-name $me)
 					)		
 		:body (	
 
 				;(^ (precond)
-				(! (= (workpiece $id $base $rings $cap $place)  $workpiece ))
+				 (! (= (workpiece $id $base $rings $cap $place)  $workpiece ))
 				; (if (? (~ (BOUNDP $id)))
 				; 	(! (= (workpiece 0 $base $rings $cap $place)  $workpiece-to-send))
 				; 	)
+				;Something very very wired was happening here. Sometimes the $agent 
+				;(even though it is bound Before) Gets rebound here SOMEtimes on wired
+				;times. I do not get why..but one time Even a SUCCEEDED Achieve-WP with 
+				;C-BS as an achiever cozed this op to Just succeeded (R-2) was the caller
+				;and a C-BS ended up being an IDLE agent since everything was considered 
+				;fine  
 
-				(! (printf (FORMAT "Achieveing Goal on %s REQUESTING ...\n" $agent)))
+				(^ (~ (achieve-workpiece (val $agent) @workpiece @status)))
+
+				(! (printf (FORMAT "Achievement Monitor of %s REQUESTING ...\n" $agent)))
 				(=> (achieve-workpiece $agent $workpiece REQUESTING))
 				
 
-				(^ ( ||	(achieve-workpiece $agent $workpiece STARTED)
-						(achieve-workpiece $agent $workpiece FAILED)
-						(achieve-workpiece $agent (workpiece @id $base $rings $cap $place)  SUCCEEDED)))
+				(^ ( ||	(achieve-workpiece (val $agent) $workpiece STARTED)
+						(achieve-workpiece (val $agent) $workpiece FAILED)
+						(achieve-workpiece (val $agent) (workpiece @id $base $rings $cap $place)  SUCCEEDED)))
 				;TODO: or timeout if no heartbeat for agent
 
-				(if (? (achieve-workpiece $agent $workpiece STARTED))
-					(! (printf (FORMAT "Achieveing Goal on %s STARTED ...\n" $agent)))
+				(if (? (achieve-workpiece (val $agent) $workpiece STARTED))
+					(! (printf (FORMAT "Achievement Monitor of %s STARTED ...\n" $agent)))
 					)
 
-				(^ ( ||	(achieve-workpiece $agent $workpiece FAILED)
-						(achieve-workpiece $agent (workpiece @id $base $rings $cap $place)  SUCCEEDED)))
+				(^ ( ||	(achieve-workpiece (val $agent) $workpiece FAILED)
+						(achieve-workpiece (val $agent) (workpiece @id $base $rings $cap $place)  SUCCEEDED)))
 
-				(~> (achieve-workpiece $agent $workpiece REQUESTING))
-				(~> (achieve-workpiece $agent $workpiece STARTED))
+				(if (? 	(achieve-workpiece (val $agent) (workpiece @id $base $rings $cap $place)  SUCCEEDED))	
+					(! (printf (FORMAT "Achievement Monitor of %s SUCCEEDED ...\n" $agent)))
+					GOTO fin
+					) 
 
-				(if (! 	(achieve-workpiece $agent $workpiece FAILED)) 
-					(! (printf  (FORMAT "Achieving Workpiece: FAILED Achieving WP %s %s %s %s %s \n" $id $base $rings $cap $place)))
+				(if (? 	(achieve-workpiece (val $agent) $workpiece FAILED))
+					(! (printf  (FORMAT "Achievement Monitor of %s : FAILED ... \n" $agent)))
+					(~> (achieve-workpiece (val $agent) $workpiece REQUESTING))
+					(~> (achieve-workpiece (val $agent) $workpiece STARTED))
 					(! (= 0 1));just fail the goal
 					)
+				LABEL fin
+				
 			)
+		:effects ( 
+					)
 		:documentation "Access point to the coordination by Master of reasoning Ops. Reacts on a posted ACHIEVE-WORKPIECE goal 
 						(agent and workpiece are paramters of the goal). Issues the Achieve-Workpiece request (by asserting the
 						corresponding fact). Waits till achieve-workpiece is either SUCCEEDED of FAILED. ie, blocks till the goal
@@ -53,24 +68,36 @@
 
 
 	(defop co--on-Achieving-workpiece-Started
-		:invocation (achieve-workpiece $agent (workpiece $id $base $rings $cap $place) STARTED) 
+		:invocation (achieve-workpiece $agent (workpiece $id $base $rings $cap (place $place $feature)) STARTED) 
 		:context (agent-name $agent)		
 		:body (
 				; (! (start-critical-section))
 				; (! (kill-other-intentions))
 				; (=> (achieve-workpiece $agent $workpiece STARTED))
 				; (! (end-critical-section))
-				(! (print "Achieving Goal Started..."))
+				(! (print "Local:: Achieving Started..."))
 				
 				(if (? (~ (= $id 0)))
 					(! (= $completed-id $id))
 					)
 
-				(if (! (workpiece $completed-id $base $rings $cap $place)) 
-					(=> (achieve-workpiece $agent (workpiece $completed-id $base $rings $cap $place) SUCCEEDED))
+				; Wait for the machine Achievement to be started to be sure both start together
+				(if (? (= $feature "input"))
+					(^ (||	(achieve-workpiece $place (workpiece $id $out-base $out-rings $out-cap (place $place "output")) STARTED)
+							(achieve-workpiece $place (workpiece (* -1 $id) $out-base $out-rings $out-cap (place $place "output")) STARTED)
+							))
+					)
+
+				(if (! (workpiece $completed-id $base $rings $cap (place $place $feature))) 
+					(~> (achieve-workpiece $agent (workpiece $id $base $rings $cap (place $place $feature)) STARTED))
+					(=> (achieve-workpiece $agent (workpiece $completed-id $base $rings $cap (place $place $feature)) SUCCEEDED))
+					;The machine achievement will succeed from the  ON_READY_AT_OUTPUT. It not my concern anymore
 					else
-					(=> (achieve-workpiece $agent (workpiece $id $base $rings $cap $place) FAILED))
-					(! (printf  (FORMAT "Achieving Workpiece: FAILED Achieving WP %s %s %s %s %s" $id $base $rings $cap $place)))
+					(=> (achieve-workpiece $agent (workpiece $id $base $rings $cap (place $place $feature)) FAILED))
+					
+					(if (? (achieve-workpiece $place (workpiece @id $out-base $out-rings $out-cap (place $place "output")) STARTED))
+						(=> (achieve-workpiece $place (workpiece (val @id) $out-base $out-rings $out-cap (place $place "output")) FAILED))
+						)
 					)
 			)
 		:documentation " On the worker agent (slave) specified for achieving a wp. When the achieve-workpiece is started. Invokes 
@@ -78,6 +105,23 @@
 						was started. updates the correct state transition for the achievement facts, depending if the workpiece goal 
 						Recfails of succeeds"
 		)
+
+	(defop Co--Start-MachineAchievement-Request
+		:invocation ( timer "beacon" $last-sec $last-usec $seq )
+		:context ( 	(Achieve-Workpiece $achiever-robot (workpiece $id $base-in $rings-in $cap-in (place $achiever-mps "input")) STARTED)
+					(Achieve-Workpiece $achiever-mps (workpiece $similar-id $base-out $rings-out $cap-out (place $achiever-mps "output")) REQUESTING)
+					(|| (= $similar-id $id)
+						(= $similar-id (* -1 $id)))
+					(machine $achiever-mps $mps-type $mps-status $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+					(agent-name $achiever-robot)
+					)
+		:body(
+			(! (start-critical-section))
+			(=> (Achieve-Workpiece $achiever-mps (workpiece $similar-id $base-out $rings-out $cap-out (place $achiever-mps "output")) STARTED))
+			(! (end-critical-section))
+			)	
+		)
+
 
 
 	;===========================================///////// AchieveMessage Handling \\\\\\\\\\======================================
@@ -96,11 +140,13 @@
 				(! (= $sender-role 			(pb-field-value $sender-info-msg	"reasoning_role")) )			
 				)
 			(! (= $wp-msg 					(pb-field-value $msg 		"workpiece")) )
-			(! (= $base-color 				(pb-field-value $wp-msg 	"base_color")) )
+			(if (? (pb-has-field 							$wp-msg 	"base_color"))
+				(! (= $base-color 			(pb-field-value $wp-msg 	"base_color")))
+				)
 			(! (= $place-msg 				(pb-field-value $wp-msg 	"place")) )
 			(! (= $name 					(pb-field-value $place-msg 	"name")) )
 			(! (= $feature		 			(pb-field-value $place-msg 	"feature")) )
-			(if (? 	( & (= $feature "gate")	(pb-has-field 	$place-msg 	"gate")))
+			(if (? 	(pb-has-field 	$place-msg 	"gate"))
 				(! (= $gate 				(pb-field-value $place-msg  "gate"))) 
 				)
 			(if (? (pb-has-field 							$wp-msg 	"id"))
@@ -123,6 +169,7 @@
 			(if (? (BOUNDP $second-ring-color) 	)	(! (= @rings (rings $first-ring-color $second-ring-color))) )
 			(if (? (BOUNDP $third-ring-color) 	)	(! (= @rings (rings $first-ring-color $second-ring-color $third-ring-color))) )
 			(if (? (~ (BOUNDP $first-ring-color)))	(! (= @rings (rings NONE))))
+			(if (? (~ (BOUNDP $base-color)) 	)	(! (= $base-color NONE)))
 			(if (? (~ (BOUNDP $cap-color)) 		)	(! (= $cap-color NONE)))
 			(if (? (~ (BOUNDP $gate))			)	
 				(! (= @feature $feature))
@@ -132,13 +179,14 @@
 			;matching step
 			(! (= (workpiece $wp-id (base $base-color) (val @rings) (cap $cap-color) (place $name (val @feature))) $workpiece)) 
 
-			(! (printf (FORMAT "RECEIVED achieve-workpace with status %s \n" $status )))
+			; (! (printf (FORMAT "RECEIVED achieve-workpiece with status %s \n" $status )))
 			
-			;Only Allow FINALIZE or SUCCEEDED of other achivers. (unless ur the master. allow All) 
+			;Only Allow FINALIZE or SUCCEEDED of other achievers. OR ALL for machine achievers (unless ur the master. allow All) 
 			(if  (? (& 	(~ (= $my-name $agent))
 						(~ (master-of REASONING $my-name))
 						(~ (= $status SUCCEEDED))
 						(~ (= $status FINALIZING))
+						(~ (machine $agent @mps-type @mps-status @mps-prepared @mps-zone @mps-pose @mps-loaded-with))
 						))
 
 				GOTO fin
@@ -166,24 +214,24 @@
 			;Ignore if SAME workpiece exists with a later status
 			(if (? (& 	(= $status STARTED) 
 						(|| (achieve-workpiece $agent $workpiece STARTED)
-							(achieve-workpiece $agent $workpiece SUCCEEDED)
 							(achieve-workpiece $agent $workpiece FAILED)
-							(achieve-workpiece $agent $workpiece FINALIZING)))) 
+							(achieve-workpiece $agent (workpiece @id (base $base-color) (val @rings) (cap $cap-color) (place $name (val @feature))) SUCCEEDED)
+							(achieve-workpiece $agent (workpiece @id (base $base-color) (val @rings) (cap $cap-color) (place $name (val @feature))) FINALIZING)))) 
 				GOTO fin
 				)
+
 			;Ignore if DIFFERENT workpiece is already started [this should not happen if slave ensures a sin gle workpiece achievement at all points in time]
-			(if (? (& 	(= $status STATRED)
-						(~ (= $workpiece 				@some-other-workpiece)) 
-							(achieve-workpiece $agent 	@some-other-workpiece STARTED)))
+			(if (? (& 	(= $status STARTED)
+						(~ (= $workpiece @some-other-workpiece)) 
+							(achieve-workpiece $agent @some-other-workpiece STARTED)))
 				(! (printf (FORMAT "Should not happen %s \n" $status )))
 				(fail) 
 				GOTO fin
 				)
 			;Ignore if SAME workpiece is already finalized
 			(if (? (& 	(= $status SUCCEEDED) 
-						(||	(achieve-workpiece $agent $workpiece SUCCEEDED)
 							(achieve-workpiece $agent $workpiece FINALIZING)
-							))) 
+							)) 
 				GOTO fin
 				)
 
@@ -256,9 +304,9 @@
 	    			;delete it if its still there
 	    			;(~> (achieve-workpiece (val @agent) (val @workpiece) (val @status)))
 	    			(!  (= (workpiece @potentially-unbound-id @base @rings @cap @place) (val @workpiece) ))
-
 	    			(~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) FAILED )) 
 	    			(~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) STARTED))
+	    			(~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) REQUESTING))
 	    			; (~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) SUCCEEDED))
 	    			)
     			)
@@ -286,7 +334,7 @@
 					(! (= @place-msg (pb-create "llsf_msgs.Place")))
 					(! (pb-set-field @place-msg "name" 		(val @name)))
 					;If it was DS . Assigne Gate number in the msg
-					(if (? (machine (val @name) "DS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)) 
+					(if (? (NUMBERP (val @feature)))
 						(! (pb-set-field @place-msg "feature" 	"gate" ))
 						(! (pb-set-field @place-msg "gate" 		(val @feature) ))
 						else
@@ -296,7 +344,9 @@
 					; (! (pb-broadcast $peer-id (val @place-msg)))
 					(! (= @wp-msg (pb-create "llsf_msgs.Workpiece")))
 					(! (pb-set-field @wp-msg "id" 			(val @id)))
-					(! (pb-set-field @wp-msg "base_color" 	(val @base-color)))
+					(if (? ( ~ (= (val @base-color) NONE)))
+						(! (pb-set-field @wp-msg "base_color" (val @base-color)))
+						)
 					(if (? (= (val @rings) (rings NONE)))
 					;Add Nothing
 					else
@@ -342,7 +392,7 @@
     		)
 		)
 
-	(defop co--Master--Finalize-achievement
+	(defop co--Master--Finalize-acknowledged-Succeeded-achievement
 		:invocation (timer "beacon" $last-sec $last-usec $seq)
 		:context ( 	(master-of REASONING $robot-name)
 					(achieve-workpiece $achiever-agent $workpiece SUCCEEDED)
@@ -356,76 +406,94 @@
 		:body (
 			(! (printf (FORMAT "COO:: Finalizing Achievement and updating world modle \n")))
 			(=> (achieve-workpiece $achiever-agent $workpiece FINALIZING))
-
-			;Matching step
-			(? (=  (workpiece $id $base $rings $cap (place $mps-name $feature)) $workpiece)) 
-			(if (? (~ (workpiece $id $base $rings $cap (place $mps-name @feature))))
-				(=> (workpiece $id $base $rings $cap (place $mps-name $feature)))
-				else
-				(if (? 	(& 	(= $feature "output") (~ (= (val @feature) "output"))))
-					(=> (workpiece $id $base $rings $cap (place $mps-name $feature)))
-					)
-				)
-
+			(! (Assert-WP-if-legal $workpiece))
+			; ;Matching step
+			; (? (=  (workpiece $id $base $rings $cap (place $mps-name $feature)) $workpiece)) 
+			
+			; (if (? (~ (workpiece $id $base $rings $cap (place $mps-name @feature))))
+			; 	(=> (workpiece $id $base $rings $cap (place $mps-name $feature)))
+			; 	else
+			; 	(if (? 	(& 	(= $feature "output") (~ (= (val @feature) "output"))))
+			; 		(=> (workpiece $id $base $rings $cap (place $mps-name $feature)))	; 
+			; 		)
+			; 	)
 			)
-		:documentation "Master Finalizes the Achieved workpiece and updates the master world modle.
+		:documentation "Master Finalizes the Achieved workpiece and updates the master world model.
 						Happens When each live Robot has echoed the success of the Achieve-workpiece 
-						(hence already updated thier world modles)"
+						(hence already updated their world models)"
 		)
 
    (defop co--Slave--On-Succeeded-achievement
-   		:invocation	( achieve-workpiece $some-agent (workpiece $id $base $rings $cap (place $new-name $new-feature)) SUCCEEDED)
+   		:invocation	( achieve-workpiece $some-agent $workpiece SUCCEEDED)
    		:context ( 	(agent-name $my-name)
    					(~ (master-of REASONING $my-name))
-   					(<= 0 $id)
    					)
    		:body 		(
-   			; Legal Transitions
+   			(! (Assert-WP-if-legal $workpiece))
+   			)
+  		 :documentation "On achieve-workpiece SUCCEEDED, If there is not such workpiece just assert it. 
+	  					if such a workpiece exists somewhere, Only assert if it is a legal transition"
+   	)
+
+	(defop Util--WP--Assert-Legal-Transition?
+		:invocation ( ! (Assert-WP-if-legal (workpiece $id $base $rings $cap (place $new-name $new-feature))) ) ;Could be better a BE maybe?
+		:context ()
+		:body (
+			; Legal Transitions
    			;	GRIPPER==> INPUT
    			; 	GRIPPER==> SILDE
    			; 	INPUT==> GRIPPER
    			; 	INPUT==> OUTPUT
    			; 	OUTPUT==>GRIPPER
    			; 	anywhere==> LOST
+   			;	input==> Gate
+   			;	Gripper==> Gate
+
+			(! (start-critical-section))
 
 			(if (? (workpiece $id $base $rings $cap (place $new-name $new-feature)))
 				GOTO SKIP
 				)
+			
    			(if (?  (workpiece $id @base @rings @cap (place $old-name $old-feature)))
    				(if (? (||
-   							(& (= $old-feature "gripper") (= $new-feature "input"))
-   							(& (= $old-feature "gripper") (= $new-feature "slide"))
    							(& (= $old-feature "input") (= $new-feature "output"))
    							(& (= $old-feature "input") (= $new-feature "gripper"))
    							(& (= $old-feature "output") (= $new-feature "gripper"))
+   							(= $old-feature "gripper")
+   							(= $new-feature "slide")
+   							(= $new-feature "consumed")
    							(= $new-feature "LOST")
+   							(NUMBERP $new-feature)
    							))
+   							; (& (= $old-feature "gripper") (= $new-feature "slide"))
+   							; (& (= $old-feature "gripper") (= $new-feature "input"))
    					GOTO LEGAL
    					)
+   				GOTO ILLEGAL
    				else
    				;Nothing with same id exists
    				GOTO LEGAL
    				)
 
-
    			LABEL ILLEGAL
-   			(! (printf (FORMAT "WRONG Workpiece Transitions from %s to %s" $old-feature $new-feature)))
+   			(! (printf (FORMAT "WRONG Workpiece Transitions from %s to %s \n" $old-feature $new-feature)))
    			(! (printf (FORMAT "FAILED ASSERTING WP  from %s to %s" $old-feature $new-feature)))
+   			GOTO SKIP
 
    			LABEL LEGAL
    			(=> (workpiece $id $base $rings $cap (place $new-name $new-feature)))
    			
    			LABEL SKIP
-   			)
-
-  		 :documentation "On achieve-workpiece SUCCEEDED, If there is not such workpiece just assert it. 
-	  					if such a workpiece exists somewhere, Only assert if it is a legal transition"
-   	)
+   			(! (end-critical-section))
+			
+			)
+		)
 	
 	;///////////////////////////////////////
 	;WORKER ROBOTS (Slaves or Achieving Bots) 
 	;///////////////////////////////////////
-	(defop co--Slave--proces-AchieveWorkpiece
+	(defop co--Slave--Process-My-Achievements
 		:invocation (timer "beacon" $last-sec $last-usec $seq )
 		:context	(& 	(agent-name $agent)
 						(peer-id private $peer-id)
@@ -456,7 +524,7 @@
 		    				;Ignore If the same wp is already started.
 		    				(if (? (~ (achieve-workpiece $agent (val @workpiece) STATRED)))
 		    					(if (? (val @workpiece))
-		    						(=> (achieve-workpiece $agent (val @workpiece) SUCCEEDED));
+		    						(=> (achieve-workpiece $agent (val @workpiece) SUCCEEDED))
 		    						else 
 			    					(=> (achieve-workpiece $agent (val @workpiece) STARTED))
 		    						; (! (= $Achieve-Goal (BUILD-GOAL 
@@ -475,6 +543,7 @@
     					(~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) FAILED )) 
     					(~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) STARTED))
     					(~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) SUCCEEDED))
+    					(~> (achieve-workpiece $agent (workpiece @any-matching-bound-id (val @base) (val @rings) (val @cap) (val @place)) REQUESTING))
     					)
 
 	    			(if (? (|| 	(= (val @status) SUCCEEDED) 
@@ -485,8 +554,8 @@
 							(! (= (workpiece @id (base @base-color) @rings (cap @cap-color) (place @name @feature)) (val @workpiece) )) 
 							(! (= @place-msg (pb-create "llsf_msgs.Place")))
 							(! (pb-set-field @place-msg "name" 		(val @name)))
-							;If it was DS . Assigne Gate number in the msg
-							(if (? (machine (val @name) "DS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)) 
+							;If it was DS . Assigne Gate number in the msg								
+							(if (? (NUMBERP (val @feature)))
 								(! (pb-set-field @place-msg "feature" 	"gate" ))
 								(! (pb-set-field @place-msg "gate" 		(val @feature) ))
 								else
@@ -495,7 +564,9 @@
 
 							(! (= @wp-msg (pb-create "llsf_msgs.Workpiece")))
 							(! (pb-set-field @wp-msg "id" 			(val @id)))
-							(! (pb-set-field @wp-msg "base_color" 	(val @base-color)))
+							(if (? ( ~ (= (val @base-color) NONE)))
+								(! (pb-set-field @wp-msg "base_color" (val @base-color)))
+								)
 							(if (? (= (val @rings) (rings NONE)))
 								;Add Nothing
 								else
@@ -534,21 +605,25 @@
 							(! (pb-set-field @msg "sender_info" (val @senderinfo-msg)))
 							(! (pb-broadcast $peer-id (val @msg)))
 							(! (pb-destroy @msg))
+
+							;Only send failed once
+							(if (? (= (val @status) FAILED) ) 
+								(~> (achieve-workpiece (val @agent) (val @workpiece) FAILED))
+								)    				
 			  				)
 	    				)
-
 					)
 				)
 			)
 		)
 
-	(defop co--Slave--process-others-achievements
+	(defop co--Slave--Process-Others-Achievements
 		:invocation (timer "beacon" $last-sec $last-usec $seq )
 		:context	(& 	(agent-name $my-name)
 						(peer-id private $peer-id)
 						)
 		:body(
-
+			;Select All Achievements that are not mine
 			(! (= $achievement-list (n-all-list (. $achieving-agent $workpiece $status .)
 							(& (achieve-workpiece $achieving-agent $workpiece $status)
 								(~ (= $my-name $achieving-agent)))
@@ -566,7 +641,16 @@
 					(! (= @status 			(car @status-list)))
 		    		(! (= @status-list 		(cdr @status-list)))
 		    		(! (= @achieving-agent 	(car @achieving-agent-list)))
-		    		(! (= @status-list 		(cdr @achieving-agent-list)))
+		    		(! (= @achieving-agent-list	(cdr @achieving-agent-list)))
+
+		    		;MACHINE AS AN ACHIEVER: handling for starting the Achievements With an mps name as an achiever
+		    		; (if (? (& 	(= (val @status) REQUESTING))
+		    		; 			(machine (val @achieving-agent) $mps-type $mps-status $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+		    		; 			))
+		    		; 	(if (achieve-workpiece $my-name (workpiece ) )
+
+		    			
+		    		; 	)
 
 	    			(if (? (= (val @status) FINALIZING))
 						;Matching step
@@ -576,17 +660,20 @@
 						(~> (achieve-workpiece (val @achieving-agent) (workpiece @id (val @base) (val @rings) (val @cap) (val @place)) FAILED ))
 						(~> (achieve-workpiece (val @achieving-agent) (workpiece @id (val @base) (val @rings) (val @cap) (val @place)) STARTED))
 						(~> (achieve-workpiece (val @achieving-agent) (workpiece @id (val @base) (val @rings) (val @cap) (val @place)) SUCCEEDED))
+						(~> (achieve-workpiece (val @achieving-agent) (workpiece @id (val @base) (val @rings) (val @cap) (val @place)) REQUESTING))
 						)
 
-	    			(if (? (= (val @status) SUCCEEDED))
+	    				(if (? (|| 	(= (val @status) SUCCEEDED) 
+	    							(= (val @status) FAILED) 
+	    							(= (val @status) STARTED)))
 
 		    				;Send it,if still in Database.
-		    				(if (?  (achieve-workpiece $agent (val @workpiece) (val @status) ))
+		    				(if (?  (achieve-workpiece (val @achieving-agent) (val @workpiece) (val @status) ))
 								(! (= (workpiece @id (base @base-color) @rings (cap @cap-color) (place @name @feature)) (val @workpiece) ))
 								(! (= @place-msg (pb-create "llsf_msgs.Place")))
 								(! (pb-set-field @place-msg "name" 		(val @name)))
 								;If it was DS . Assigne Gate number in the msg
-								(if (? (machine (val @name) "DS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with))
+								(if (? (NUMBERP (val @feature)))
 									(! (pb-set-field @place-msg "feature" 	"gate" ))
 									(! (pb-set-field @place-msg "gate" 		(val @feature) ))
 									else
@@ -595,7 +682,9 @@
 
 								(! (= @wp-msg (pb-create "llsf_msgs.Workpiece")))
 								(! (pb-set-field @wp-msg "id" 			(val @id)))
-								(! (pb-set-field @wp-msg "base_color" 	(val @base-color)))
+								(if (? ( ~ (= (val @base-color) NONE)))
+									(! (pb-set-field @wp-msg "base_color" (val @base-color)))
+									)
 								(if (? (= (val @rings) (rings NONE)))
 									;Add Nothing
 									else
@@ -630,7 +719,7 @@
 									)
 
 								(! (= @msg (pb-create "llsf_msgs.AchieveWorkpiece")))
-								(! (pb-set-field @msg "agent" 		$agent))
+								(! (pb-set-field @msg "agent" 		(val @achieving-agent)))
 								(! (pb-set-field @msg "status" 		(val @status)))
 								(! (pb-set-field @msg "workpiece" 	(val @wp-msg)))
 								(! (pb-set-field @msg "sender_info" (val @senderinfo-msg) ))

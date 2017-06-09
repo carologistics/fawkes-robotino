@@ -24,8 +24,8 @@
 			(! (printf (Format "STEP: Drive-To .. machine %s \n" $mps-name)))
 			(=> (agent-state STEP-RUNNING))
 			;Sides allowed
-			(? (MEMQ $side (. "input" "output" .)))
-			(if (? (= $side "input" ))
+			(? (MEMQ $side (. "input" "output"  "shelf".)))
+			(if (? (|| (= $side "shelf") (= $side "input" )))
 				(! (= $place (string-cat $mps-name "-I")))
 				else 
 				(! (= $place (string-cat $mps-name "-O")))
@@ -35,7 +35,7 @@
 			(? (lock ACCEPT $robot-name $place @priority)) ;to make sure if the lock was accepted 
 
 			(if (! (execute (skill "drive_to" "place" $place) ))
-				(? (agent-pose $xpos $ypos))
+				(? (agent-pose $robot-name $xpos $ypos))
 				(=> (lock-in-use $place $xpos $ypos));This is just a hack till i get the right navgraph info
 				else
 				(=> (step-failed (drive-to machine $mps-name side $side) )) 
@@ -60,7 +60,7 @@
 					(! (= $place (string-cat $mps-name "-O")))
 					)
 				
-				(=> (lock RELEASE $robot-name $place @priority))
+				(=> (lock RELEASE $robot-name $place 0))
 				)
 			:effects ( (=> (agent-state STEP-FAILD)) )
 			)
@@ -93,7 +93,7 @@
 
  	
 	(defop step-get-base
-		:invocation( !	(step (get-base machine $mps-name side $side)))
+		:invocation( !	(step (get-base machine $mps-name side $side assigned-id $piece-id)))
 		:context ( 		(machine $mps-name "BS" $m-state $m-prepared $m-zone $m-pose $m-loaded-with)
 				 		(MEMQ $m-state (. "PROCESSING" "READY-AT-OUTPUT" "DOWN" .)) ;The Mps Has to had been instructed or down
 				 		(holding NONE)
@@ -114,11 +114,13 @@
 			(=> (agent-state STEP-RUNNING))
 			(if (! (execute (skill "get_product_from" "place" $mps-name "side" $side)) ) 
 				(=> (agent-state STEP-FINISHD))
-				(! (= $peace-id (rand 1000)))
+				(if (? (~ (BOUNDP $piece-id)))
+					(! (= $piece-id (rand 1000)))
+					)
 				(=> (Achieve-workpiece $my-name
-		 					(workpiece $peace-id (base $base-color) (rings none) (cap none) (place "agent" "gripper"))
+		 					(workpiece $piece-id (base $base-color) (rings none) (cap none) (place $my-name "gripper"))
 							SUCCEEDED))
-				(=> (holding $peace-id));put the id
+				(=> (holding $piece-id));put the id
 				else
 				(? (machine $mps-name "BS" @m-state @m-prepared @m-zone @m-pose @m-loaded-with))
 				(if (? (~ (= (val @m-state) "READY-AT-OUTPUT")))
@@ -167,7 +169,7 @@
 			(if (! (execute (skill "get_product_from" "place" $mps-name "side" "output")))
 				(=> (agent-state STEP-FINISHD))
 				(=> (Achieve-workpiece $my-name 
-							(workpiece $ws-id  $base $rings $cap (place "agent" "gripper"))
+							(workpiece $ws-id  $base $rings $cap (place $my-name "gripper"))
 							SUCCEEDED))
 				(=> (holding $ws-id))  
 				else
@@ -189,7 +191,7 @@
 
 
 		(defop step-get-cap
-			:invocation( ! 	(step (get-cap machine $mps-name)))
+			:invocation( ! 	(step (get-cap machine $mps-name assigned-id $piece-id)))
 			:context ( 		(cap-station $mps-name $assigned-cap-color $cap-loaded-status $caps-on-shelf )
 							(holding NONE))
 			:setting 	(setting "robot-name" $my-name)
@@ -209,14 +211,16 @@
 
 				(if (! (execute (skill "get_product_from" "place" $mps-name "shelf" $slot)))
 					(=> (agent-state STEP-FINISHD))
-					(! (= $peace-id (rand 1000)))
+					(if (? (~ (BOUNDP $piece-id)))
+						(! (= $piece-id (rand 1000)))
+						)
 					(=> (Achieve-workpiece $my-name
-								(workpiece $peace-id (base UNKNOWN) (rings none) (cap $assigned-cap-color) (place "agent" "gripper"))
+								(workpiece $piece-id (base UNKNOWN) (rings none) (cap $assigned-cap-color) (place $my-name "gripper"))
 								SUCCEEDED))
-					(=> (holding $peace-id))
+					(=> (holding $piece-id))
 				else
 					(=> (agent-state STEP-FAILD)) 
-					(! (step (get-cap machine $mps-name)))
+					(! (step (get-cap machine $mps-name piece-info $piece-id)))
 					(! (FAILED))
 					)
 			
@@ -234,8 +238,9 @@
 							(machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with) 
 							(~ (= $mps-type "BS"))
 						 	(MEMQ $mps-state (. "PREPARED"  "READY-AT-OUTPUT" "DOWN" "IDLE" "WAIT-IDLE".))
-			 				(workpiece $ws-id  $base $rings $cap (place "agent" "gripper"));If the peace is not already at output this will fail. But what if it was processing still 
+			 				(workpiece $ws-id  $base $rings $cap (place $agent "gripper"));If the peace is not already at output this will fail. But what if it was processing still 
 						 	(~ (workpiece $ws-id $base $rings (cap $cap-color) (place  $mps-name "input")))
+						 	(agent-name $agent)
 						 	)
 							;Maybe check if side is empty OR handle it if not
 							;Maybe check if the holding peace is a base or product work-peace
@@ -284,7 +289,7 @@
 							(cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf)
 							(MEMQ $mps-state (. "PREPARED" "READY-AT-OUTPUT" "DOWN" "IDLE" "WAIT-IDLE".))
 							(~ (holding NONE))
-							(workpiece $ws-id $base $rings (cap $cap-color) (place "agent" "gripper"))
+							(workpiece $ws-id $base $rings (cap $cap-color) (place $agent "gripper"))
 							(~ (workpiece $ws-id $base $rings (cap $cap-color) (place  $mps-name "input")))
 							) 
 							;check the work peace more accurately..it should be what u just got from the shelf 
@@ -324,7 +329,7 @@
 			:invocation ( ! (step (insert-slide machine $mps-name)))
 			:context 	(  	(holding $ws-id) ;that should be a work-peace
 							(machine $mps-name "RS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with) 
-			 				(workpiece $ws-id  $base $rings $cap (place "agent" "gripper"));If the peace is not already at output this will fail. But what if it was processing still 
+			 				(workpiece $ws-id  $base $rings $cap (place $agent "gripper"));If the peace is not already at output this will fail. But what if it was processing still 
 							(ring-station $mps-name (avilible-colors $colors-list) $selected-color $bases-loaded)
 							(< $bases-loaded 3)
 						 	)
@@ -340,7 +345,7 @@
 					; (if (?  (cap-station $mps-name $cap-color $loaded-status $caps-on-shelf )) 
 					; 	(=> (cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf ))) 
 					(=> (ring-station $mps-name (avilible-colors $colors-list) $selected-color (+ $bases-loaded 1)))
-					(=> (Achieve-workpiece 
+					(=> (Achieve-workpiece $agent
 								(workpiece $ws-id $base $rings $cap (place $mps-name "slide"))
 								SUCCEEDED))
 					(=> (agent-state STEP-FINISHD))

@@ -34,12 +34,34 @@
 			
 			;convert delevary gate to a string 
 			;(! (= $delivery-gate-string (term-string-cat $delivery-gate)))
-
-			(=> (goal-inmind (workpiece 0 (base $base-color) @wp-rings (cap $cap-color) (place $ds-name $delivery-gate)) ))
+			(! (= $id_G (rand 1000)))
+			(=> (goal-inmind (workpiece $id_G (base $base-color) @wp-rings (cap $cap-color) (place $ds-name $delivery-gate)) ))
 		)
 		:effects ((~> (choosing-goal-inmind)))
 	)
 
+
+	(defop select-appropriate-agent 
+		:invocation (! (select-appropriate-agent $agent $task-name) )
+		:context ( 	(master-of REASONING $me)
+					(agent-name $me)
+					)
+		:body (
+			LABEL start_selecting
+			(^ (agent-achieving @agent IDLE))
+			(! (=  @critical-agent (val @agent)))
+			(! (start-critical-section))
+			(if (? (agent-achieving (val @critical-agent) IDLE))
+				(=> (agent-achieving (val @critical-agent) $task-name))
+				else
+				(! (printf (FORMAT "SELECTING AGENT %s  failed..It is not Idle \n" (val @critical-agent))))
+				(! (end-critical-section))
+				goto start_selecting
+				)
+			(! (end-critical-section))
+			(! (= $agent (val @critical-agent)))
+			)
+		)
 
 
 	; (defop break-goal-needs

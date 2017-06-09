@@ -18,8 +18,14 @@
 
 
 	(defop debug-achieveworkpiece
-		:invocation (Achieve-WorkPiece $agent (workpiece $id $base $rings $cap $place) $status)
-		:body ((! (printf (Format "Achieve-WorkPiece: %s %s %s %s %s %s %s \n" $agent $status $id $base $rings $cap $place))))
+		:invocation (Achieve-WorkPiece $agent (workpiece $id (base $base) $rings (cap $cap) (place $p-name $p-feature)) $status)
+		:body ((! (printf (Format "ACHIEVE-WORPIECE: %s %s %s %s %s %s (P:%s %s) \n" $agent $status $id $base $rings $cap $p-name $p-feature))))
+	  )
+
+
+	(defop debug-Agent-Achieving
+		:invocation (agent-achieving $agent $task)
+		:body ((! (printf (Format "AGENT-ACHIEVING: %s %s \n" $agent $task))))
 	  )
 
 	)

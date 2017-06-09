@@ -341,7 +341,7 @@
 		)
 	
 	(defop produce-c3-imperative
-		:invocation	(timer "beacon" $last-sec $last-usec $seq)
+		:invocation	(! (produce-c3-imperative) )
 		:context(	(order $id c3 $base-color $ring-colors $cap-color $quantity-requested $quantity-delivered $delivery-period-begin $delivery-period-end $delivery-gate)
 				 	(cap-station $cs-name $cap-color $cap-loaded-status $caps-on-shelf)
 				 	(machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with)

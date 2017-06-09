@@ -13,7 +13,6 @@
 					(last-attempted-instruction $mps-name $args $state);TODO:make sure state not failed
 					(||	(workpiece $peace-id $base $rings $cap (place $mps-name "input"));to make sure what was at the input
 						(= $mps-type "BS" ) ))
-	 				
 		:body(
 			(! (printf (FORMAT "ON_READY-AT-OUTPUT: last-attempted-instruction %s \n" $state)))
 
@@ -40,12 +39,19 @@
 						(?  (cap-station $mps-name $cap-color $loaded-status $caps-on-shelf )) 
 						(=> (cap-station $mps-name $cap-color CAP_LOADED 	 $caps-on-shelf ))
 						(=> (achieve-workpiece $mps-name
-									(workpiece $peace-id $base $rings (cap none) (place $mps-name "output"))
+									(workpiece $peace-id (base none) $rings (cap $cap-color) (place $mps-name "slide"))
+									SUCCEEDED))
+						(=> (achieve-workpiece $mps-name
+									(workpiece (* -1 $peace-id) $base $rings (cap none) (place $mps-name "output"))
 									SUCCEEDED))
 						)
 					(if (? (= $operation MOUNT_CAP))  
 						(? 	(cap-station $mps-name $cap-color $loaded-status $caps-on-shelf))
 						(=> (cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf )); To be removed
+						(? (workpiece @id (base none) (rings none) (cap $cap-color) (place $mps-name "slide")))
+						(=> (achieve-workpiece $mps-name
+									(workpiece (val @id) (base none) (rings none) (cap $cap-color) (place $mps-name "consumed"))
+									SUCCEEDED))
 						(=> (achieve-workpiece $mps-name
 									(workpiece $peace-id $base $rings (cap $cap-color) (place $mps-name "output"))
 									SUCCEEDED))
@@ -58,12 +64,28 @@
 					else (if (? (& (= $rings (rings $first-ring)) (~ (= $first-ring none)) )) 		(! (= $updated-rings (rings $first-ring $new-ring) ))	
 						else (if (? (= $rings (rings $first-ring $second-ring)))					(! (= $updated-rings (rings $first-ring $second-ring $new-ring) )) 
 						)))
+					; Moved functionality to an WM-sync-slide Op
+					; (? (ring-station $mps-name (avilible-colors $avilible-colors) $selected-color $bases-loaded))
+					; (! (= $updated-bases-loaded (- $bases-loaded $required-bases)))
+					;(=> (ring-station $mps-name (avilible-colors $avilible-colors) $selected-color $updated-bases-loaded))
 					
 					(? (ring $new-ring $required-bases))
-					(? (ring-station $mps-name (avilible-colors $avilible-colors) $selected-color $bases-loaded))
-					(! (= $updated-bases-loaded (- $bases-loaded $required-bases)))
+					(? (= @consumed-material $required-bases))
 					
-					(=> (ring-station $mps-name (avilible-colors $avilible-colors) $selected-color $updated-bases-loaded))
+					(! (= $at-slide-list (all $at-slide-id (workpiece $at-slide-id @base @rings @cap (place $mps-name "slide")))))
+					(! (= @sorted-at-slide-list (SORT-ALPHA $at-slide-list)))
+
+					(while (? (> (val @consumed-material) 0))
+						; (? (workpiece @consume-id @base @rings @cap (place $mps-name "slide")))
+						(! (= @consume-id (car @sorted-at-slide-list)))
+						(! (= @sorted-at-slide-list (cdr @sorted-at-slide-list)))
+						(=> (achieve-workpiece $mps-name
+									(workpiece @consume-id @base @rings @cap (place $mps-name "consumed"))
+									SUCCEEDED))
+						(! (= @consumed-material (- 1 (val @consumed-material)) ))
+						;Problem might arrise if this was done on more than on egent at the same time. Either only do it on one agent OR select the same pieces to consume
+						)
+					
 					(=> (achieve-workpiece $mps-name
 								(workpiece $peace-id $base $updated-rings (cap none) (place $mps-name "output"))
 								SUCCEEDED))
@@ -82,23 +104,34 @@
 		)
 
 	(defop worldmodel--On-CS-OUTPUT--cap-retrived
-		:invocation (workpiece $id (base UNKOWN) (rings none) (cap none) (place $cs-name "output"))
+		:invocation (workpiece $id (base UNKNOWN) (rings none) (cap none) (place $cs-name "output"))
 		:context ( 	(cap-station $cs-name $cap-color CAP_NOT_LOADED $caps-on-shelf )
-					(> $id 0)
+					(< $id 0)
 					)
 		:body(
-				(=> (cap-station $mps-name $cap-color CAP_LOADED $caps-on-shelf ))
+				(=> (cap-station $cs-name $cap-color CAP_LOADED $caps-on-shelf ))
 			)
 		)
 
 	(defop worldmodel--On-CS-OUTPUT--cap-mounted
 		:invocation (workpiece $id (base $base-color) @rings (cap $cap-color) (place $cs-name "output"))
 		:context ( 	(cap-station $cs-name $cap-color CAP_LOADED $caps-on-shelf )
-					(~ (= $base-color UNKOWN))
+					(~ (= $base-color UNKNOWN))
 					(> $id 0)
 					)
 		:body(
-				(=> (cap-station $mps-name $cap-color CAP_NOT_LOADED $caps-on-shelf ))
+				(=> (cap-station $cs-name $cap-color CAP_NOT_LOADED $caps-on-shelf ))
+			)
+		)
+
+	(defop worldmodel--Sync-RS-Slide-and-Bases-Loaded
+		:invocation ( timer "beacon" $last-sec $last-usec $seq )
+		:context ( 	(ring-station $rs-name $avilible-colors $selected-color $bases-loaded)
+					(= $at-slide-list (n-all-list (. $id .)	 (workpiece $id $base $rings $cap (place $rs-name "slide"))))
+			 		(~ (= (LENGTH (car $at-slide-list)) $bases-loaded))
+			 		)
+		:body(
+			(=> (ring-station $rs-name $avilible-colors $selected-color (LENGTH (car $at-slide-list))))
 			)
 		)
 	
@@ -119,11 +152,12 @@
 		)
 
 
-	(defop worldmodel--on-machine-ready-at-output---unkown-piece
+	(defop worldmodel--on-machine-ready-at-output---negative-piece
 		:invocation ( time $sec $usec ) 
 		:context(   (machine $mps-name $mps-type "READY-AT-OUTPUT" $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 					(~ (last-attempted-instruction $mps-name $args $state))
-					(~ (workpiece $any-id $any-base $any-rings $any-cap (place $mps-name $feature)))		
+					(~ (workpiece $any-id $any-base $any-rings $any-cap (place $mps-name $feature)))
+					(~ (achieve-workpiece @some-agent (workpiece @id @base @rings @cap (place $mps-name $feature)) SUCCEEDED))
 					(ready-at-output-since $mps-name $recoreded-mtime)
 					(> 10000 (- (mtime) $recoreded-mtime));;only fire if
 					)
@@ -172,7 +206,23 @@
 							about it "
 		)
 
-	(defop worldmodel--investigate-unknown-piece
+
+	(defop worldmodel--on-machine-Not-ready-at-output---retract-negative-piece
+		:invocation (machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)  
+		:context	( 	(~ (= $mps-state "READY-AT-OUTPUT"))
+						(workpiece $id $base $rings $cap (place $mps-name $side))
+						(< $id 0)
+						)
+		:body		 (
+			(! (printf (FORMAT "ON_Not-READY-AT-OUTPUT: negative piece seems to have been removed from %s %s\n" $mps-name $side )))
+			(~> (workpiece $id $base $rings $cap (place $mps-name $side)))
+			)
+
+
+		)
+
+
+	(defop worldmodel--investigate-negative-piece
 		:invocation( workpiece $id $base $rings $cap (place $mps-name $feature) )
 		:context( 	(< $id 0 )
 					(machine $mps-name $mps-type "READY-AT-OUTPUT" $mps-prepared $mps-zone $mps-pose $mps-loaded-with) 
@@ -190,23 +240,24 @@
 		:documentation "investigate an unknown piece trying to find out what it is and hanld it if still not known"
 		)
 
-	(defop worldmodel--give-unknown-base-negative-id
-		:invocation (workpiece $id (base UNKOWN) (rings none) (cap none) (place $cs-name "output"))
-		:context ( 	(machine $cs-name "CS" "READY-AT-OUTPUT" $mps-prepared $mps-zone $mps-pose $mps-loaded-with) 
-					(>= 0 $id)
-					)
-		:body( 
-			(~> (workpiece $id (base UNKOWN) (rings none) (cap none) (place $cs-name "output")))
-			(=> (workpiece (* -1 (rand 1000)) (base UNKOWN) (rings none) (cap none) (place $cs-name "output")))
-			)
-		)
+	; (defop worldmodel--give-unknown-base-negative-id
+	; 	:invocation ( timer "beacon" $last-sec $last-usec $seq )
+	; 	:context ( 	(workpiece $id (base UNKNOWN) (rings none) (cap none) (place $cs-name "output")) 	
+	; 				(machine $cs-name "CS" "READY-AT-OUTPUT" $mps-prepared $mps-zone $mps-pose $mps-loaded-with) 
+	; 				(<= 0 $id)
+	; 				)
+	; 	:body( 
+	; 		(~> (workpiece $id (base UNKNOWN) (rings none) (cap none) (place $cs-name "output")))
+	; 		(=> (workpiece (* -1 (rand 1000)) (base UNKNOWN) (rings none) (cap none) (place $cs-name "output")))
+	; 		)
+	; 	)
 
 
 	(defop worldmodel--fix-negative-id-if-another-wp-at-sameplace-Found
 		:invocation (workpiece $positive-id $base $rings $cap (place $place-name $feature))
 		:context ( 	(workpiece $negative-id $any-base $any-rings $any-cap (place $place-name $some-feature))
-					(< 0 $positive-id)
-					(>= 0 $negative-id))
+					(<= 0 $positive-id)
+					(> 0 $negative-id))
 		:body(
 			(if(? (|| 	(machine $place-name "BS" "READY-AT-OUTPUT" $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 						(= $some-feature $feature)))
@@ -215,12 +266,14 @@
 				)
 			)
 		)
+	;TAKE CARE:  Might fire if the Workpiece was delayed in assertion coz it has not been yet syncd to the world
 
 
 	;TODO: only update or fire when some passed or some
 	(defop worldmodel--agent-position
 	  :invocation (bb-data "type" "Position3DInterface" "id" "Pose" "time" $t_sec $t_usec $data)
-	  :context ();do the updates on a timeout later	
+	  :context ();do the updates on a timeout later
+	  :setting (setting "robot-name" $agent-name)	
 	  :body(
 		;Crashes..debug later
 		; (! (= @floatarray (bb-value $data "translation")))
@@ -229,7 +282,7 @@
 		; (! (print @translation-array))
 		(! (= $xpos (get-float-array @translation-array 0)))
 		(! (= $ypos (get-float-array @translation-array 1)))
-		(=> (agent-pose $xpos $ypos))
+		(=> (agent-pose $agent-name $xpos $ypos))
 	  	)
 	)
 
@@ -273,12 +326,30 @@
 			         	(timeout $sec $usec $last-sec $last-usec 10)))
 		  :setting ( setting "team-name" $team-name) 
 		  :body (
-
-		  	(! (printf (FORMAT "Agent %s is Dieeeeeed \n" $agent-name)))
+		  	
+		  	(! (printf (FORMAT "Agent %s is Dieeeeeed. Havn't heard from him. \n" $agent-name)))
 		  	(~> (heart-beat $agent-name @robot-number @team-name @team-color @sec @nsec))
+		  	(~> (agent-achieving $agent-name $task-name))
 		  )
 		  :documentation ""
 		  ;TODO: Set a differnt intervale value for the check coz it might take longer to say he is dead in real life
+		  ;TODO:: restrict the team-name and color parameters in the heart beat to not confous with potiential other robots
+		)
+
+
+	(defop worldmodel--Task
+		  :invocation (time $sec $usec)
+		  :context ( 	(heart-beat $agent-name @robot-number @team-name @team-color @sec @nsec) 
+		  				(~ (agent-achieving $agent-name $task-name))
+		  				(~ (= $agent-name "RefBox"))
+		  				)
+		  :setting ( setting "team-name" $team-name) 
+		  :body (		  	
+		  	(=> (agent-achieving $agent-name IDLE))
+		  )
+		  :documentation ""
+		  ;TODO: Set a differnt intervale value for the check coz it might take longer to say he is dead in real life
+		  ;TODO:: restrict the team-name and color parameters in the heart beat to not confous with potiential other robots
 		)
 
 

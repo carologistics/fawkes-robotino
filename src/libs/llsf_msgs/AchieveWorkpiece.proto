@@ -65,7 +65,7 @@ enum CompType {
       MSG_TYPE = 1333;
     }
     optional int32        id                = 1;
-    required BaseColor    base_color        = 2;
+    optional BaseColor    base_color        = 2;
     optional RingColor    first_ring_color  = 3;
     optional RingColor    second_ring_color = 4;
     optional RingColor    third_ring_color  = 5;

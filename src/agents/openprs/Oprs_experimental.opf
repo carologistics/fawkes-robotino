@@ -1,6 +1,118 @@
 (
 
 
+
+
+	(defop How-does-the-parallel-goals-work-
+		:invocation (! (para-goals $x))
+		:context ()
+		:body(
+
+				(// 
+					((! (GOAL1 $x)))
+					((! (GOAL2 $x)))
+					((! (GOAL3 $x)))
+					)
+
+				; (! (= @goal-list (. .) ))
+			 ; 	(! (= @goal-list (cons  (BUILD-GOAL (! (GOAL1 $x))) @goal-list )))
+
+				; (! (= @goal-list (cons  (BUILD-GOAL (! (GOAL2 $x))) @goal-list )))
+
+				; (! (= @goal-list (cons  (BUILD-GOAL (! (GOAL3 $x))) @goal-list )))
+				
+			 ; 	(! (INTENDED-ALL-GOALS-//-AS-ROOTS (val @goal-list)))
+				
+				(! (printf (Format "It worked and X is %s \n" $x)))
+			)
+
+		)
+
+(defop How-does-the-parallel-goals-work-GOAL1
+		:invocation (! (GOAL1 $X))
+		:context ()
+		:body(
+
+				(! (printf (Format "goal 1 INTEDETED %s \n" $x)))
+				(^ (GOAL1 $X))
+
+			)
+
+		)
+
+(defop How-does-the-parallel-goals-work-GOAL2
+		:invocation (! (GOAL2 $X))
+		:context ()
+		:body(
+
+				(! (printf (Format "goal 2 INTEDETED %s \n" $x)))
+				(^ (GOAL2 $X))
+
+			)
+
+		)
+
+(defop How-does-the-parallel-goals-work-GOAL3
+		:invocation (! (GOAL3 $X))
+		:context ()
+		:body(
+
+				(! (printf (Format "goal 3 INTEDETED %s \n" $x)))
+				(^ (GOAL3 $X))
+				(if (? (= 1 $x))
+					(! (FAIL))
+					)
+
+			)
+
+		)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+	(defop How-does-the-unification-work-while-waiting
+		:invocation (! (wait-test-start $x))
+		:context ()
+		:body(
+
+				(^ (cond $x))
+				(! (printf (Format "It worked and X is %s " $x)))
+			)
+
+		)
+
+
+
+
+
+
+	;;;===
+	(defop How-To-FAIL-A-BRANCH
+		:invocation ( !(test $x ))
+		:context ()
+		:body(
+
+			(! (TAG-CURRENT-INTENTION Blabla))
+
+			(if (? (= $x succeed) )
+			 (! (print "This is the succeed branch"))
+			 (!(SUCCEED))
+			 (! (print "This is after succeeding"))
+			else
+				(! (print "This is the fail branch"))
+				(! (FAILED))
+				(! (print "This is after failing"))
+			)
+
+				(! (print "AND THIS IS THE END"))
+
+
+
+		)
+	)
+
 ; ;-=============================================================
 (defop Experment-on-intending-main
 		:invocation( ! (achieve)  )

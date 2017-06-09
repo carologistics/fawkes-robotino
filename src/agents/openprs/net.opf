@@ -42,13 +42,15 @@
   :invocation (time $sec $usec)
   :context (? (& (peer-id private $peer-id)
  	         (team-color $team-color)
-	         (timer "beacon" $last-sec $last-usec $seq)
-	         (setting "beacon-interval" $beacon-interval)
-	         (timeout $sec $usec $last-sec $last-usec $beacon-interval)))
+           (timer "beacon" $last-sec $last-usec $seq)
+           (setting "beacon-interval" $beacon-interval)
+           (timeout $sec $usec $last-sec $last-usec $beacon-interval)
+           ))
   :setting (& (setting "team-name" $team-name)
   	      (setting "robot-name" $robot-name) (setting "robot-number" $robot-number))
   :body (
     (! (start-critical-section))
+    (=> (Op-Gaurd "net-send-BeaconSignal" on))
     (! (= @next-seq (+ $seq 1)))
     (=> (timer "beacon" $sec $usec @next-seq))
     (! (end-critical-section))
@@ -62,9 +64,25 @@
     (! (pb-set-field @beacon "peer_name" $robot-name))
     (! (pb-set-field @beacon "team_color" $team-color))
     (! (pb-set-field @beacon "number" $robot-number))
-    (! (pb-set-field @beacon "number" $robot-number))
+    ; (! (print "in BEACON"))
+    
+    (if (? (agent-pose $robot-name $x $y))
+      (! (= @pose (pb-field-value @beacon "pose")))
+      (! (= @pose-time (pb-field-value @pose "timestamp")))
+      (! (pb-set-field @pose-time "sec" $sec))
+      (! (pb-set-field @pose-time "nsec" (* $usec 1000)))
+      (! (pb-set-field @pose "timestamp" @pose-time))
+      (! (pb-set-field @pose "x" $x))
+      (! (pb-set-field @pose "y" $y))
+      (! (pb-set-field @pose "ori" 0.0)) ;TOOD:calculate the Rad
+      (! (pb-set-field @beacon "pose" @pose))
+    )
     (! (pb-broadcast $peer-id @beacon))
     (! (pb-destroy @beacon))
+
+    (! (start-critical-section))
+    (=> (Op-Gaurd "net-send-BeaconSignal" off))
+    (! (end-critical-section))
   )
   :documentation "Periodically send beacon signals.
     Beacon signals are required for the refbox to recognize a robot. After
@@ -86,9 +104,16 @@
     (! (= @robot-name (pb-field-value $msg "peer_name")))
     (! (= @robot-number (pb-field-value $msg "number")))
     (! (= @team-color (pb-field-value $msg "team_color")))
-    ; TODO: ADD LOCATION INFORMATION
-    (=> (heart-beat @robot-name @robot-number @team-name @team-color @sec @nsec))
+    (if (? (pb-has-field $msg "pose"))
+      (! (= $pose (pb-field-value $msg "pos")))
+      (! (= $x (pb-field-value $pose "x")))
+      (! (= $y (pb-field-value $pose "y")))
+      (! (= $ori (pb-field-value $pose "ori")))
+      (=> (agent-pose (val @robot-name) $x $y)) 
+    )
     
+    (=> (heart-beat @robot-name @robot-number @team-name @team-color @sec @nsec))
+   
     (? (time $sec $usec))
     (! (start-critical-section))
     (=> (timer (val @robot-name) $sec $usec 0))
@@ -224,19 +249,19 @@
           ;   )
 
           (if (? (= $team-color CYAN))
-            (! (= @quantity-delivered @quantity-delivered-cyan ))
+            (! (= @quantity-delivered (val @quantity-delivered-cyan) ))
             else
-            (! (= @quantity-delivered @quantity-delivered-magenta )) 
+            (! (= @quantity-delivered (val @quantity-delivered-magenta) )) 
           )            
 
-          (if (? (& (order (val @id) @t-complexity @t-base-color @t-ring-colors @t-cap-color @t-quantity-requested @t-quantity-delivered @t-delivery-period-begin @t-delivery-period-end @t-delivery-gate)
-                    (= (val @t-quantity-delivered) (val @quantity-delivered))
-                    ))
+          (if (? (order (val @id) @t-complexity @t-base-color @t-ring-colors @t-cap-color @t-quantity-requested (val @quantity-delivered) @t-delivery-period-begin @t-delivery-period-end @t-delivery-gate)
+                    )
               ;The Order already exists and delivered was not changed
               ;Quite the Op 
               else
-              (! (print "Adding Order"))
-              (=> (order (val @id) @complexity @base-color @ring-colors @cap-color @quantity-requested @quantity-delivered @delivery-period-begin @delivery-period-end @delivery-gate)) 
+              ; Here if u check that the old delivered and the new are not the same u can Admit the product delivered
+              (! (printf (format "Adding Order " )))
+              (=> (order (val @id) (val @complexity) (val @base-color) (val @ring-colors) (val @cap-color) (val @quantity-requested) (val @quantity-delivered) (val @delivery-period-begin) (val @delivery-period-end) (val @delivery-gate))) 
             )
           )
         )

@@ -63,7 +63,13 @@
 				)
 			)
 		)
-	
+	(defop execute-skill-args_0
+	  :invocation (!(execute_h (skill $skill-name)))
+	  :call 		(execute_h (skill $skill-name))
+	  :action 			(skill-call $skill-name)
+	  :documentation "Execute Skill With One Argument"
+	  ) 
+
 	(defop execute-skill-args_1
 	  :invocation (!(execute_h (skill $skill-name $arg_1-name $arg_1)))
 	  :call 		(execute_h (skill $skill-name $arg_1-name $arg_1))

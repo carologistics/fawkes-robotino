@@ -37,14 +37,16 @@
     (! (navgraph-load))
     (! (conf-load-rcll2017))
     (! (print "LLSF2016 agent successfully initialized"))
-    (=> (setting "release-distance" 0.5))
-
+    (=> (setting "release-distance" 1.5))
+    
   )
   :effects (  (~> (agent-init))
               (=> (peer-id public @peer-id))
               (=> (agent-state IDLE))
               (=> (agent-name $robot-name))
-              (=> (master-of REASONING "R-1")) )
+              (=> (master-of REASONING "R-1"))
+              (=> (agent-achieving "R-1" IDLE)) 
+              )
 )
 
 (defop say

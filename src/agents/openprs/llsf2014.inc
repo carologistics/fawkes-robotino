@@ -12,10 +12,16 @@ declare op_predicate  say
 declare op_predicate  ppgoto
 declare op_predicate  conf-load-rcll2017
 
+declare ff Op-Gaurd 1 	;This will be used to lock excuting of ops that only ever need to have one running instace at a time
+
+declare ff 	achieve-some-goal 1
+declare cwp 	decided
+
 declare op_predicate  	instruct-mps
 declare op_predicate 	send-instruction
 declare be  			instruction-sent-ack
 declare ff 				last-attempted-instruction 1
+
 
 declare cwp         peer-id
 
@@ -25,7 +31,8 @@ declare ff 			game-state 0
 declare ff			game-phase 0
 declare ff			agent-state 0
 declare ff 			agent-name 0
-declare ff 			agent-pose 0
+declare ff 			agent-pose 1
+declare ff			agent-achieving 1
 
 declare symbol public
 declare symbol private
@@ -52,6 +59,10 @@ declare ff 		ring-station 1
 ;//////
 declare ff 		goal-inmind 0
 declare ff 		open-orders 0
+declare cwp 	goal-tree-node 
+declare ff		achiving-goal-tree-node 1
+declare ff wp 1
+declare cwp		choosing-goal-inmind
 
 
 ;//////////////////
@@ -109,8 +120,10 @@ declare symbol SILVER
 declare symbol CAP_LOADED
 declare symbol CAP_NOT_LOADED
 
+declare predicate test
 declare predicate template
 declare cwp in-production
+
 
 add (master-of LOCKING "R-1")
 add (master-of REASONING "R-1")
@@ -139,3 +152,5 @@ load opf "utils.opf"
 load opf "meta-intended-goal.opf"
 load opf "coordination.opf"
 load opf "production_mutilagent.opf"
+load opf "production_experimental.opf"
+load opf "Oprs_experimental.opf"

@@ -25,138 +25,138 @@
 
 
 	
-	(defop wp--at-output
-		:invocation ( ! (workpiece $id $base $rings $cap (place $mps-name "output")))
-		:context	( 	(machine $mps-name $type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
-						(agent-name $agent) )
-		:body (
+	; (defop wp--at-output
+	; 	:invocation ( ! (workpiece $id $base $rings $cap (place $mps-name "output")))
+	; 	:context	( 	(machine $mps-name $type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+	; 					(agent-name $agent) )
+	; 	:body (
 
-			(! (printf (Format "--Achieving Workpiece OUTPUT  at %s \n" $mps-name )))
-			; Get a free agent and assume its called $selected-robot..maybe even one that has this thing booked somehow
-			; Or even at this level mayb already assume u know which agent u need to have working on this shit so just go for the flow of this
-			(=> (achieve-workpiece $agent (workpiece $id $base $rings $cap (place $mps-name "output")) STARTED))
-			;maybe wait a bit to allow sending
+	; 		(! (printf (Format "--Achieving Workpiece OUTPUT  at %s \n" $mps-name )))
+	; 		; Get a free agent and assume its called $selected-robot..maybe even one that has this thing booked somehow
+	; 		; Or even at this level mayb already assume u know which agent u need to have working on this shit so just go for the flow of this
+	; 		(=> (achieve-workpiece $agent (workpiece $id $base $rings $cap (place $mps-name "output")) STARTED))
+	; 		;maybe wait a bit to allow sending
 			
-			(if (? (= $type "BS"))
-				(? (= $base (base $base-color) ))
-				(if (! (step (instruct-mps machine $mps-name (args side OUTPUT color $base-color) )))
-					(^ (workpiece @id $base $rings $cap (place $mps-name "output")))
-					(=> (achieve-workpiece $agent (workpiece (val @id) $base $rings $cap (place $mps-name "output")) SUCCEEDED))
-					GOTO fin
-					))
+	; 		(if (? (= $type "BS"))
+	; 			(? (= $base (base $base-color) ))
+	; 			(if (! (step (instruct-mps machine $mps-name (args side OUTPUT color $base-color) )))
+	; 				(^ (workpiece @id $base $rings $cap (place $mps-name "output")))
+	; 				(=> (achieve-workpiece $agent (workpiece (val @id) $base $rings $cap (place $mps-name "output")) SUCCEEDED))
+	; 				GOTO fin
+	; 				))
 
-			(if (? (= $type "CS"))
-				; (! (= $precond_list (. workpiece .)))
-				;Find out what is the CAP operation and check the preconds
-				(if (? (& 	(cap-station $mps-name @cap-color CAP_NOT_LOADED @caps-on-shelf)
-							(= $cap 	(cap NONE))
-							(= $base 	(base UNKNOWN))
-							(= $rings 	(rings NONE))))
-					(! (= $current-cap (val @cap-color)))
-					(! (printf (Format "--Achieving Workpiece Retrieving Cap \n")))
-					GOTO  Achieve_CAP_STATION_Workpiece
-					)
+	; 		(if (? (= $type "CS"))
+	; 			; (! (= $precond_list (. workpiece .)))
+	; 			;Find out what is the CAP operation and check the preconds
+	; 			(if (? (& 	(cap-station $mps-name @cap-color CAP_NOT_LOADED @caps-on-shelf)
+	; 						(= $cap 	(cap NONE))
+	; 						(= $base 	(base UNKNOWN))
+	; 						(= $rings 	(rings NONE))))
+	; 				(! (= $current-cap (val @cap-color)))
+	; 				(! (printf (Format "--Achieving Workpiece Retrieving Cap \n")))
+	; 				GOTO  Achieve_CAP_STATION_Workpiece
+	; 				)
 
-				(if (? (& 	(cap-station $mps-name @cap-color CAP_LOADED @caps-on-shelf)
-							(= $cap 	(cap @cap-color))
-							(~ (= $cap 	(cap none)))
-							))
+	; 			(if (? (& 	(cap-station $mps-name @cap-color CAP_LOADED @caps-on-shelf)
+	; 						(= $cap 	(cap @cap-color))
+	; 						(~ (= $cap 	(cap none)))
+	; 						))
 
-					(! (printf (Format "--Achieving Workpiece MOunting Cap \n")))
-					(! (= $current-cap NONE))
-					GOTO  Achieve_CAP_STATION_Workpiece
-					)
-				)
+	; 				(! (printf (Format "--Achieving Workpiece MOunting Cap \n")))
+	; 				(! (= $current-cap NONE))
+	; 				GOTO  Achieve_CAP_STATION_Workpiece
+	; 				)
+	; 			)
 
-			(if (?  (= $type "RS"))
-				; (! (= $precond_list (. workpiece .)))
-				;Find out which Ring to mount and check the preconds	
-				(if (? (= $rings (rings NONE)))
-					; Do nothing. Wrong workpiece description
-					else 
-					(if (? (= $rings (rings @ring-to-mount)))
-						(! (= $current-rings (rings NONE)))
-						(! (= $ring-to-mount (val @ring-to-mount)))
-						else
-						(if (? (= $rings (rings @first-ring @ring-to-mount)))
-							(! (= $current-rings (rings (val @first-ring))))
-							(! (= $ring-to-mount (val @ring-to-mount)))
-							else
-							(if (? (= $rings (rings @first-ring @second-ring @ring-to-mount)))
-								(! (= $current-rings (rings (val @first-ring) (val @second-ring))))
-								(! (= $ring-to-mount (val @ring-to-mount)))
-								)
-							)
-						)
-					)
-				(if(? (~ (BOUNDP $ring-to-mount)))
-					(! (printf (FORMAT "Achieving-Output: There is no ring to mount in the goal \n"  )))
-					GOTO FAIL 
-					)
+	; 		(if (?  (= $type "RS"))
+	; 			; (! (= $precond_list (. workpiece .)))
+	; 			;Find out which Ring to mount and check the preconds	
+	; 			(if (? (= $rings (rings NONE)))
+	; 				; Do nothing. Wrong workpiece description
+	; 				else 
+	; 				(if (? (= $rings (rings @ring-to-mount)))
+	; 					(! (= $current-rings (rings NONE)))
+	; 					(! (= $ring-to-mount (val @ring-to-mount)))
+	; 					else
+	; 					(if (? (= $rings (rings @first-ring @ring-to-mount)))
+	; 						(! (= $current-rings (rings (val @first-ring))))
+	; 						(! (= $ring-to-mount (val @ring-to-mount)))
+	; 						else
+	; 						(if (? (= $rings (rings @first-ring @second-ring @ring-to-mount)))
+	; 							(! (= $current-rings (rings (val @first-ring) (val @second-ring))))
+	; 							(! (= $ring-to-mount (val @ring-to-mount)))
+	; 							)
+	; 						)
+	; 					)
+	; 				)
+	; 			(if(? (~ (BOUNDP $ring-to-mount)))
+	; 				(! (printf (FORMAT "Achieving-Output: There is no ring to mount in the goal \n"  )))
+	; 				GOTO FAIL 
+	; 				)
 
-				(if (? (& 	(ring-station $mps-name (avilible-colors $avilible-colors) $select-ring-color $bases-loaded)
-							(MEMQ $ring-to-mount $avilible-colors)
-							(ring $ring-to-mount $required-bases)
-							(>= $bases-loaded $required-bases)
-							(workpiece $id $base $curent-rings $cap (place $name $freature) 
-							)))
-					(! (printf (FORMAT "Achieving-Output: Will Start Achieving \n"  )))
-					GOTO  Achieve_RING_STATION_Workpiece
-					)
-				)
+	; 			(if (? (& 	(ring-station $mps-name (avilible-colors $avilible-colors) $select-ring-color $bases-loaded)
+	; 						(MEMQ $ring-to-mount $avilible-colors)
+	; 						(ring $ring-to-mount $required-bases)
+	; 						(>= $bases-loaded $required-bases)
+	; 						(workpiece $id $base $curent-rings $cap (place $name $freature) 
+	; 						)))
+	; 				(! (printf (FORMAT "Achieving-Output: Will Start Achieving \n"  )))
+	; 				GOTO  Achieve_RING_STATION_Workpiece
+	; 				)
+	; 			)
 
-			GOTO FAIL
+	; 		GOTO FAIL
 
-			LABEL Achieve_CAP_STATION_Workpiece
-			(if (! (workpiece $id $base $rings (cap $current-cap) (place "agent" "gripper")))
-				(? (workpiece @some-id $base $rings (cap $current-cap) (place "agent" "gripper")))
-				(=> (Achieve-workpiece $agent (workpiece (val @some-id) $base $rings (cap $current-cap) (place "agent" "gripper")) SUCCEEDED))
-				(! (print "I have it at the gripper"))
-				(if (! (workpiece (val @some-id) $base $rings (cap $current-cap) (place $mps-name "input")))
-					(! (print "I have it at the INPUT"))
-					(=> (Achieve-workpiece $agent (workpiece (val @some-id) $base $rings (cap $current-cap) (place $mps-name "input")) SUCCEEDED))
-					;wait for the output or timeout to fail
-					(^ (workpiece (val @some-id) $base $rings $cap (place $mps-name "output")))
-					(=> (Achieve-workpiece $agent (workpiece  $some-id $base $rings $cap (place $mps-name "output")) SUCCEEDED))
-					GOTO fin
-					)
-				)
+	; 		LABEL Achieve_CAP_STATION_Workpiece
+	; 		(if (! (workpiece $id $base $rings (cap $current-cap) (place "agent" "gripper")))
+	; 			(? (workpiece @some-id $base $rings (cap $current-cap) (place "agent" "gripper")))
+	; 			(=> (Achieve-workpiece $agent (workpiece (val @some-id) $base $rings (cap $current-cap) (place "agent" "gripper")) SUCCEEDED))
+	; 			(! (print "I have it at the gripper"))
+	; 			(if (! (workpiece (val @some-id) $base $rings (cap $current-cap) (place $mps-name "input")))
+	; 				(! (print "I have it at the INPUT"))
+	; 				(=> (Achieve-workpiece $agent (workpiece (val @some-id) $base $rings (cap $current-cap) (place $mps-name "input")) SUCCEEDED))
+	; 				;wait for the output or timeout to fail
+	; 				(^ (workpiece (val @some-id) $base $rings $cap (place $mps-name "output")))
+	; 				(=> (Achieve-workpiece $agent (workpiece  $some-id $base $rings $cap (place $mps-name "output")) SUCCEEDED))
+	; 				GOTO fin
+	; 				)
+	; 			)
 
-			GOTO FAIL
+	; 		GOTO FAIL
 
-			LABEL  Achieve_RING_STATION_Workpiece
-			(if (! (workpiece $id $base $current-rings $cap (place "agent" "gripper")))
-				(=> (Achieve-workpiece $agent (workpiece $id $base $current-rings $cap (place "agent" "gripper")) SUCCEEDED))
-				; (if (? (~ (master-of REASONING $agent)))
-				; 	(^ (Achieve-workpiece $agent (workpiece $id $base $current-rings $cap (place "agent" "gripper")) FINALIZING))
-				; 	)
-				(! (print "I have it at the gripper"))
-				(! (workpiece $id $base $current-rings $cap (place $mps-name "input")))
-					(! (print "I have it at the INPUT"))
-					; (=> (Achieve-workpiece $agent (workpiece $id $base $current-rings $cap (place $mps-name "input")) SUCCEEDED))
-					; (if (? (~ (master-of REASONING $agent)))
-					; 	(^ (Achieve-workpiece $agent (workpiece $id $base $current-rings $cap (place $mps-name "input")) FINALIZING))
-					; 	)
-					; ;wait for the output or timeout to fail
-					(^ (workpiece $id $base $rings $cap (place $mps-name "output")))
-					(=> (Achieve-workpiece $agent (workpiece $id $base $rings $cap (place $mps-name "output")) SUCCEEDED))
-					GOTO fin
+	; 		LABEL  Achieve_RING_STATION_Workpiece
+	; 		(if (! (workpiece $id $base $current-rings $cap (place "agent" "gripper")))
+	; 			(=> (Achieve-workpiece $agent (workpiece $id $base $current-rings $cap (place "agent" "gripper")) SUCCEEDED))
+	; 			; (if (? (~ (master-of REASONING $agent)))
+	; 			; 	(^ (Achieve-workpiece $agent (workpiece $id $base $current-rings $cap (place "agent" "gripper")) FINALIZING))
+	; 			; 	)
+	; 			(! (print "I have it at the gripper"))
+	; 			(! (workpiece $id $base $current-rings $cap (place $mps-name "input")))
+	; 				(! (print "I have it at the INPUT"))
+	; 				; (=> (Achieve-workpiece $agent (workpiece $id $base $current-rings $cap (place $mps-name "input")) SUCCEEDED))
+	; 				; (if (? (~ (master-of REASONING $agent)))
+	; 				; 	(^ (Achieve-workpiece $agent (workpiece $id $base $current-rings $cap (place $mps-name "input")) FINALIZING))
+	; 				; 	)
+	; 				; ;wait for the output or timeout to fail
+	; 				(^ (workpiece $id $base $rings $cap (place $mps-name "output")))
+	; 				(=> (Achieve-workpiece $agent (workpiece $id $base $rings $cap (place $mps-name "output")) SUCCEEDED))
+	; 				GOTO fin
 				
-				)
+	; 			)
 
-			LABEL FAIL
-			;Only arrives here if it was not successful
-			(=> (achieve-workpiece $agent (workpiece $id $base $rings $cap (place $mps-name "output")) FAILED))
-			GOTO fin
+	; 		LABEL FAIL
+	; 		;Only arrives here if it was not successful
+	; 		(=> (achieve-workpiece $agent (workpiece $id $base $rings $cap (place $mps-name "output")) FAILED))
+	; 		GOTO fin
 			
-			LABEL fin
-			)
-		)
+	; 		LABEL fin
+	; 		)
+	; 	)
 
 
 
 	(defop wp-somewhere-to-gripper
-		:invocation ( ! (workpiece $wp-id $base $rings $cap (place "agent" "gripper")) )
+		:invocation ( ! (workpiece $wp-id $base $rings $cap (place $agent "gripper")) )
 		:context ( (holding none) )
 		:body(
 			(! (printf (FORMAT "WP_Place-->Gripper: workpiece %s %s %s %s \n"  $wp-id $base $rings $cap)))
@@ -166,14 +166,28 @@
 			;or the machine is down and I will only know the new place when it is ready. ..So for the old place..There is a puck with the same id
 			;But not the same description..The condition will fail ..even thought driving there might actually be a good idea
 			(if (? (& (workpiece $wp-id $base $rings $cap (place $mps-name $side))
-						(~ (= $side "slide"))
+					(||	(= $side "output")
+						(& 	(machine $mps-name "BS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+							(= $side "input")))
 						))																				;WP exists in the world (i,e Database)
 				(! (printf (FORMAT "WP_Place --> Gripper: Found a peace at %s %s..Going to get it \n"  $mps-name $side)))
 				(if (? (machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with))
-
 					(! (step (drive-to machine $mps-name side $side))) 									;Common driving STEP
+
 					(if (? (= $mps-type "BS"))
-						(! (step (get-base 	machine $mps-name side $side))) 
+						(if (? 	(~ (machine $bs-name "BS" "READY-AT-OUTPUT" @bs-prepared @bs-zone @bs-pose @bs-loaded-with)))
+							(if (? (= $side "input"))
+								(! (= $side-as-symbol INPUT))
+								else
+								(! (= $side-as-symbol OUTPUT))
+								)
+							(? (= $base (base $base-color)))
+							(! (step (instruct-mps 	machine "C-BS" (args side $side-as-symbol color $base-color)) ))
+							(^ (workpiece 0 $base $rings $cap (place $bs-name $side)))
+							)
+						(! (step (get-base 	machine $mps-name side $side assigend-id $wp-id))) 
+						(^ (workpiece $wp-id $base $rings $cap (place $agent "gripper"))) 					;Match to return the created id
+
 						GOTO fin
  						)
 					(if (? (= $mps-type "RS"))
@@ -181,19 +195,20 @@
 						GOTO fin
  						)
 					(if (? (= $mps-type "CS"))
-						; (if (? (& 	(= $base (base UNKNOWN))
-						; 			(= $cap (cap $cap-color)) 
-						; 			(~ (= $cap-color none))
-						; 			))
-						; 	(! (step (get-cap machine $mps-name)))	
-						; 	else
+						(if (? (& 	(= $base (base UNKNOWN))
+									(= $cap (cap $cap-color)) 
+									(~ (= $cap-color none))
+									))
+							(! (step (get-cap machine $mps-name assigned-id $wp-id)))
+							GOTO fin
+							else
 							(! (step (get-output machine $mps-name)))
 							GOTO fin
-						;	)
+							)
 						)
 					(if (? (= $mps-type "DS"))
-						(! (step (get-output machine $mps-name)))
-						GOTO fin
+						; (! (step (get-output machine $mps-name)))
+						; GOTO fin
   						)
 					else
 					(! (printf (FORMAT "WP_Place --> Gripper: I think the peace is lost..will just fail \n" )))
@@ -209,16 +224,19 @@
 					(! (printf (FORMAT "WP_Place --> Gripper: ;Its a New Caped Shelf Base, Get one \n" )))
 					(? (cap-station $cs-name $cap-color $loaded-status $caps-on-shelf))
 					(! (step (drive-to 	machine $cs-name side "input")))
-					(! (step (get-cap 	machine $cs-name)))
+					(! (step (get-cap 	machine $cs-name assigned-id $wp-id)))
 					;Match to return the created id
-					(if (? (~ (BOUNDP $wp-id)))
-						(? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 					;Match to return the created id
-						else 
-						(? (workpiece $some-id $base $rings $cap (place "agent" "gripper"))) 				;The id was bound ..  but does not have to be true
-						)
+					; (if (? (~ (BOUNDP $wp-id)))
+					 	; (? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 					;Match to return the created id
+						(^ (workpiece $wp-id $base $rings $cap (place $agent "gripper"))) 					;Match to return the created id
+						; else 
+						; (^ (workpiece $some-id $base $rings $cap (place "agent" "gripper"))) 				;The id was bound ..  but does not have to be true
+					 	; (? (workpiece $some-id $base $rings $cap (place "agent" "gripper"))) 				;The id was bound ..  but does not have to be true
+						; )
+					
 					GOTO fin
  					)
-				(if (? (& 	(= $base (base $base-color)) (~ (= $base-color UNKNOWN))	
+				(if (? (&	(= $base (base $base-color)) (~ (= $base-color UNKNOWN))	
 							(= $rings (rings none))
 							(= $cap (cap none))
 							))
@@ -228,23 +246,25 @@
 					(! (= $active-side "input"))
 					(! (step (drive-to 		machine $bs-name side $active-side)))
 					;If there is a base already-at-output, no need to instruct 
-					(if (? 	 (~ (machine $bs-name "BS" "READY_AT_OUTPUT" $bs-prepared $bs-zone $bs-pose $bs-loaded-with)))
+					(if (? 	(~ (machine $bs-name "BS" "READY-AT-OUTPUT" @bs-prepared @bs-zone @bs-pose @bs-loaded-with)))
 							(! (step (instruct-mps 	machine "C-BS" (args side INPUT color $base-color)) ))
 							(^ (workpiece 0 $base $rings $cap (place $bs-name $active-side)));hazardous...find a better way
 						)
-					(! (step (get-base machine $bs-name side $active-side)))
+					(! (step (get-base machine $bs-name side $active-side assigned-id $wp-id)))
 					;Match to return the created id
-					(if (? (~ (BOUNDP $wp-id)))
-						(? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 					;Match to return the created id
-						else 
-						(? (workpiece $some-id $base $rings $cap (place "agent" "gripper"))) 					;Match to return the created id
-						)
+					; (if (? (~ (BOUNDP $wp-id)))
+						; (? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 					;Match to return the created id
+						(^ (workpiece $wp-id $base $rings $cap (place $agent "gripper"))) 					;Match to return the created id
+						; else 
+						; (^ (workpiece $some-id $base $rings $cap (place "agent" "gripper"))) 				;The id was bound ..  but does not have to be true
+					 	; (? (workpiece $some-id $base $rings $cap (place "agent" "gripper"))) 				;The id was bound ..  but does not have to be true
+						; )
 					GOTO fin
  					)
 				)
 
 				(! (printf (FORMAT "WP_Place --> Gripper: Could not handle this peace %s %s %s %s \n"  $wp-id $base $rings $cap )))
-				(? (workpiece $wp-id $base $rings $cap (place "agent" "gripper"))) 
+				(? (workpiece $wp-id $base $rings $cap (place $agent "gripper"))) 
 				(! (FAILED))
 
 				LABEL fin
@@ -262,7 +282,7 @@
 
 	(defop wp-gripper-to-input
 		:invocation ( ! (workpiece $wp-id $base $rings $cap (place $mps-name "input")) )
-		:context ( 		(workpiece $wp-id $base $rings $cap (place "agent" "gripper"))
+		:context ( 		(workpiece $wp-id $base $rings $cap (place $agent "gripper"))
 						(machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 						(holding $wp-id)
 						) 				;Maybe the input side has to be empty for that (or make a need for it)
@@ -391,7 +411,7 @@
 
 		(defop wp-gripper-to-slide
 			:invocation ( ! (workpiece $wp-id $base $rings $cap (place $mps-name "slide")) )
-			:context ( 		(workpiece $wp-id $base $rings $cap (place "agent" "gripper")); TODO:robot location is at the mps
+			:context ( 		(workpiece $wp-id $base $rings $cap (place $agent "gripper")); TODO:robot location is at the mps
 							(machine $mps-name "RS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 							(holding $wp-id)
 							) 				;Maybe the slide does not have enough rings
@@ -405,7 +425,7 @@
 		(defop wp-gripper-to-gate--DS_Delivery
 			:invocation ( ! (workpiece $wp-id $base $rings $cap (place $mps-name $gate) ) )
 			:context ( 		(machine $mps-name "DS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
-						 	(workpiece $wp-id $base $rings $cap (place "agent" "gripper"))
+						 	(workpiece $wp-id $base $rings $cap (place $agent "gripper"))
 						 	(~ (= $gate "input"))
 						 	(~ (= $gate "output"))
 						 	(~ (= $gate "slide"))
@@ -420,9 +440,7 @@
 				;in whatever case (even if it was no longer required).  
 					;Just let it pass to the insertion step 
 				(! (step (drive-to machine $mps-name side "input")))
-
 				(! (step (instruct-mps  machine $mps-name (args gate $gate))))
-				
 				(! (step (insert machine $mps-name)))
 				)
 			:documentation " "
@@ -433,10 +451,10 @@
 
 		(defop decide-what-to-instruct--RS
 			:invocation ( ! (decide-what-to-intstruct $mps-name $args))
-			:context ( 	(workpiece $wp-id $base $rings $cap (place "agent" "gripper"))
-						(|| (achieve-workpiece $agent (workpiece $id $goal-base (rings $first-ring) $goal-cap (place $goal-mps $feature)) STARTED)
-							(achieve-workpiece $agent (workpiece $id $goal-base (rings $first-ring $second-ring) $goal-cap (place $goal-mps $feature)) STARTED)
-							(achieve-workpiece $agent (workpiece $id $goal-base (rings $first-ring $second-ring $third-ring) $goal-cap (place $goal-mps $feature)) STARTED)
+			:context ( 	(workpiece $wp-id $base $rings $cap (place $agent "gripper"))
+						(|| (achieve-workpiece $mps-name (workpiece $id $goal-base (rings $first-ring) $goal-cap (place $mps-name $feature)) STARTED)
+							(achieve-workpiece $mps-name (workpiece $id $goal-base (rings $first-ring $second-ring) $goal-cap (place $mps-name $feature)) STARTED)
+							(achieve-workpiece $mps-name (workpiece $id $goal-base (rings $first-ring $second-ring $third-ring) $goal-cap (place $mps-name $feature)) STARTED)
 							) 	
 						(machine $mps-name "RS" $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 						(ring-station $mps-name (avilible-colors $avilible-colors) $selected-color $bases-loaded)

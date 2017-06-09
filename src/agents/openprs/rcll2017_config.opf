@@ -16,9 +16,9 @@
        (! (config-load "/openprs-agent/rcll2017/"))
 
        	(! (= $ccs1  (confval "/openprs-agent/rcll2017/cap-station/assigned-color/C-CS1" string $cap-color-ccs1) ) )
-  		(! (= $ccs2  (confval "/openprs-agent/rcll2017/cap-station/assigned-color/C-CS2" string $cap-color-ccs2) ) )
-  		(! (= $mcs1  (confval "/openprs-agent/rcll2017/cap-station/assigned-color/M-CS1" string $cap-color-mcs1) ) )
-  		(! (= $mcs2  (confval "/openprs-agent/rcll2017/cap-station/assigned-color/M-CS2" string $cap-color-mcs2) ) )
+    		(! (= $ccs2  (confval "/openprs-agent/rcll2017/cap-station/assigned-color/C-CS2" string $cap-color-ccs2) ) )
+  	   	(! (= $mcs1  (confval "/openprs-agent/rcll2017/cap-station/assigned-color/M-CS1" string $cap-color-mcs1) ) )
+  	 	  (! (= $mcs2  (confval "/openprs-agent/rcll2017/cap-station/assigned-color/M-CS2" string $cap-color-mcs2) ) )
 
        	(? (val $ccs1) )
        	(? (val $ccs2) )
@@ -30,10 +30,17 @@
        	(~> (val $mcs1) )
        	(~> (val $mcs2) )
 
-  		(=> (cap-station "C-CS1" (make-atom (string-cat "cap_" $cap-color-ccs1)) CAP_NOT_LOADED 3))
-  		(=> (cap-station "C-CS2" (make-atom (string-cat "cap_" $cap-color-ccs2)) CAP_NOT_LOADED 3))
-		  (=> (cap-station "M-CS1" (make-atom (string-cat "cap_" $cap-color-mcs1)) CAP_NOT_LOADED 3))
-      (=> (cap-station "M-CS2" (make-atom (string-cat "cap_" $cap-color-mcs2)) CAP_NOT_LOADED 3))
+        ;;TODO: for some reason the team color is not here..not sure whats wrong but handle later
+        ; (? (team-color $team-color))
+        ; (! (printf (FORMAT "WHAT THE HELL MAN...TEAM COLOR IS %s \n"  $team-color)))
+
+        ;(if (? (= $team-color cyan ))
+  		  (=> (cap-station "C-CS1" (make-atom (string-cat "cap_" $cap-color-ccs1)) CAP_NOT_LOADED 3))
+  		  (=> (cap-station "C-CS2" (make-atom (string-cat "cap_" $cap-color-ccs2)) CAP_NOT_LOADED 3))
+      ;   else
+		    ; (=> (cap-station "M-CS1" (make-atom (string-cat "cap_" $cap-color-mcs1)) CAP_NOT_LOADED 3))
+      ;   (=> (cap-station "M-CS2" (make-atom (string-cat "cap_" $cap-color-mcs2)) CAP_NOT_LOADED 3))
+      ;   )
       
      )
      :documentation "Load setting for agent."
