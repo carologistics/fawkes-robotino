@@ -76,9 +76,9 @@
 					(! (= @sorted-at-slide-list (SORT-ALPHA $at-slide-list)))
 
 					(while (? (> (val @consumed-material) 0))
-						; (? (workpiece @consume-id @base @rings @cap (place $mps-name "slide")))
 						(! (= @consume-id (car @sorted-at-slide-list)))
 						(! (= @sorted-at-slide-list (cdr @sorted-at-slide-list)))
+						(? (workpiece (val @consume-id) @base @rings @cap (place $mps-name "slide")))
 						(=> (achieve-workpiece $mps-name
 									(workpiece @consume-id @base @rings @cap (place $mps-name "consumed"))
 									SUCCEEDED))

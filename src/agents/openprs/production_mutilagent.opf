@@ -516,7 +516,7 @@
 
 			(? (~ (= $g-first-ring none)))
 
-			(if (? (workpeice $g-id $g-base $p-rings (cap none) (place $some-mps $some-feature)))
+			(if (? (workpiece $g-id $g-base $p-rings (cap none) (place $some-mps $some-feature)))
 			
 				(? (|| 	(= $p-rings (rings $p-first-ring))
 						(= $p-rings (rings $p-first-ring $p-second-ring))
