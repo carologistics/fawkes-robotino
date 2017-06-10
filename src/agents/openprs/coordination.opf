@@ -404,23 +404,22 @@
 					)
 		:setting (setting "robot-name" $robot-name)
 		:body (
-			(! (printf (FORMAT "COO:: Finalizing Achievement and updating world modle \n")))
 			(=> (achieve-workpiece $achiever-agent $workpiece FINALIZING))
 			(! (Assert-WP-if-legal $workpiece))
-			; ;Matching step
-			; (? (=  (workpiece $id $base $rings $cap (place $mps-name $feature)) $workpiece)) 
-			
-			; (if (? (~ (workpiece $id $base $rings $cap (place $mps-name @feature))))
-			; 	(=> (workpiece $id $base $rings $cap (place $mps-name $feature)))
-			; 	else
-			; 	(if (? 	(& 	(= $feature "output") (~ (= (val @feature) "output"))))
-			; 		(=> (workpiece $id $base $rings $cap (place $mps-name $feature)))	; 
-			; 		)
-			; 	)
 			)
 		:documentation "Master Finalizes the Achieved workpiece and updates the master world model.
 						Happens When each live Robot has echoed the success of the Achieve-workpiece 
 						(hence already updated their world models)"
+		)
+
+	(defop co--Master--Finalize-faild-achievement
+		:invocation ( achieve-workpiece $achiever-agent $workpiece FAILED)
+		:context 	( (master-of REASONING $robot-name) )
+		:setting 	(setting "robot-name" $robot-name)
+		:body 		(
+						(=> (achieve-workpiece $achiever-agent $workpiece FINALIZING))
+					)
+		:documentation "Master Finalizes the Achieved workpiece if faild recieved "
 		)
 
    (defop co--Slave--On-Succeeded-achievement
@@ -607,9 +606,9 @@
 							(! (pb-destroy @msg))
 
 							;Only send failed once
-							(if (? (= (val @status) FAILED) ) 
-								(~> (achieve-workpiece (val @agent) (val @workpiece) FAILED))
-								)    				
+							; (if (? (= (val @status) FAILED) ) 
+							; 	(~> (achieve-workpiece (val @agent) (val @workpiece) FAILED))
+							; 	)    				
 			  				)
 	    				)
 					)
