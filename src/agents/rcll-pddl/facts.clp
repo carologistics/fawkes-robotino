@@ -209,18 +209,24 @@
 ; Template for a planned task in form of an STN representation
 (deftemplate stn-action
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols move-to-position-empty move-to-position-holding pick-cc-from-shelf load-cs pick-wp-from-cs pick-wp-from-bs))
+  (slot name (type SYMBOL) (allowed-symbols move-to-position-empty move-to-position-holding pick-cc-from-shelf load-cs pick-wp-from-cs prod-at-cs pick-wp-from-bs pick-wp-from-rs add-base-to-slide-one add-base-to-slide-two add-base-to-slide-three reset-rs-slide add-ring-one add-ring-two add-ring-three lock-position unlock-position lock-change discard-wp deliver-c0 deliver-c1 deliver-c2 deliver-c3))
   (slot state (type SYMBOL) (allowed-symbols pending running finished))
   (slot duration (type INTEGER))
   (multislot cond-actions (type INTEGER))
   (multislot opts (type SYMBOL))
+  (slot active-robot (type SYMBOL) (allowed-symbols R-1 R-2 R-3 NONE) (default NONE))
+  (slot sync-id (type INTEGER) (default 0))
+)
+
+(deftemplate stn-sync
+  (slot state (type SYMBOL) (allowed-symbols generated))
   (slot sync-id (type INTEGER) (default 0))
 )
 
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols move-to-position-empty move-to-position-holding pick-cc-from-shelf load-cs pick-wp-from-cs pick-wp-from-bs fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
+  (slot name (type SYMBOL) (allowed-symbols move-to-position-empty move-to-position-holding pick-cc-from-shelf load-cs pick-wp-from-cs discard-wp pick-wp-from-bs prod-at-cs deliver-c0 fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
   (slot state (type SYMBOL) (allowed-symbols planned proposed asked rejected ordered running finished failed)
         (default proposed))
   (slot stn-action (type INTEGER))

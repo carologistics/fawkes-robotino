@@ -34,6 +34,7 @@
     slot4 slot5 slot6 - shelf-slot
 		cc7 cc8 cc9 cc10 cc11 cc12 - cap-carrier
     
+<<<<<<< HEAD
     C-RS2 - ring-station
     C-RS1 - ring-station
     C-CS2 - cap-station
@@ -42,6 +43,29 @@
     C-DS - delivery-station
     
     C-DS-I C-DS-O C-RS2-I C-RS2-O C-RS1-I C-RS1-O C-CS2-I C-CS2-O C-BS-I C-BS-O C-CS1-I C-CS1-O 
+=======
+    C-DS - delivery-station
+    C-RS2 - ring-station
+    C-RS1 - ring-station
+    C-CS2 - cap-station
+    C-CS1 - cap-station
+    C-BS - base-station
+    
+
+    
+    C-DS-I - input-pos
+    C-DS-O - output-pos
+    C-RS2-I - input-pos
+    C-RS2-O - output-pos
+    C-RS1-I - input-pos
+    C-RS1-O - output-pos
+    C-CS2-I - input-pos
+    C-CS2-O - output-pos
+    C-CS1-I - input-pos
+    C-CS1-O - output-pos
+    C-BS-I - input-pos
+    C-BS-O - output-pos
+>>>>>>> b2cc95a... agent-rcll-pddl: first working version with C0 delivery
     INS - pos
 	)
 	 
@@ -55,6 +79,7 @@
     (pos-free C-RS2-O)(has-pos C-RS1 C-RS1-I)
     (pos-free C-RS1-I)
     (has-pos C-RS1 C-RS1-O)
+<<<<<<< HEAD
     (pos-free C-RS1-O)(has-pos C-CS2 C-CS2-I)
     (pos-free C-CS2-I)
     (has-pos C-CS2 C-CS2-O)
@@ -65,11 +90,31 @@
     (pos-free C-CS1-I)
     (has-pos C-CS1 C-CS1-O)
     (pos-free C-CS1-O)
+=======
+    (pos-free C-RS1-O)
+    (not-locked C-RS1-O)(has-pos C-CS2 C-CS2-I)
+    (pos-free C-CS2-I)
+    (not-locked C-CS2-I)
+    (has-pos C-CS2 C-CS2-O)
+    (pos-free C-CS2-O)
+    (not-locked C-CS2-O)(has-pos C-CS1 C-CS1-I)
+    (pos-free C-CS1-I)
+    (not-locked C-CS1-I)
+    (has-pos C-CS1 C-CS1-O)
+    (pos-free C-CS1-O)
+    (not-locked C-CS1-O)(has-pos C-BS C-BS-I)
+    (pos-free C-BS-I)
+    (not-locked C-BS-I)
+    (has-pos C-BS C-BS-O)
+    (pos-free C-BS-O)
+    (not-locked C-BS-O)
+>>>>>>> b2cc95a... agent-rcll-pddl: first working version with C0 delivery
     
     (idle C-DS)
     (idle C-RS2)
     (idle C-RS1)
     (idle C-CS2)
+<<<<<<< HEAD
     (idle C-BS)
     (idle C-CS1)
 
@@ -78,6 +123,16 @@
     (has-color-two C-RS2 RING_YELLOW)
     
     (has-color-one C-RS1 RING_BLUE)
+=======
+    (idle C-CS1)
+    (idle C-BS)
+
+    
+    (has-color-one C-RS2 RING_BLUE)
+    (has-color-two C-RS2 RING_ORANGE)
+    
+    (has-color-one C-RS1 RING_YELLOW)
+>>>>>>> b2cc95a... agent-rcll-pddl: first working version with C0 delivery
     (has-color-two C-RS1 RING_GREEN)
     
 
@@ -155,19 +210,12 @@
     (wp-at-bs silver-base6)
 
     
-    (order-complexity o1 C0)
-    (order-base-color o1 BASE_RED)
-    (order-cap-color o1 CAP_GREY)
-    (order-ring-one o1 RING_NONE)
-    (order-ring-two o1 RING_NONE)
-    (order-ring-three o1 RING_NONE)
-    
-    (order-complexity o7 C3)
-    (order-base-color o7 BASE_SILVER)
-    (order-cap-color o7 CAP_BLACK)
-    (order-ring-one o7 RING_GREEN)
-    (order-ring-two o7 RING_YELLOW)
-    (order-ring-three o7 RING_BLUE)
+    (order-complexity O1 C0)
+    (order-base-color O1 BASE_SILVER)
+    (order-cap-color O1 CAP_GREY)
+    (order-ring-one O1 RING_NONE)
+    (order-ring-two O1 RING_NONE)
+    (order-ring-three O1 RING_NONE)
     
 
     (at-pos R-1 INS)

@@ -143,6 +143,36 @@
       (wp-in-slide ?m ONE)
       (not (holding ?r ?wp))
       (not-holding ?r)
+      (action-done ADD-BASE-SLIDE-THREE)
+    )
+  )
+  (:durative-action lock-position
+    :parameters (?r - robot ?a - action ?dest - pos)
+    :precondition (and
+      (not-locked ?dest)
+      (no-lock ?r)
+    )
+    :effect (and
+      (not (not-locked ?dest))
+      (not (no-lock ?r))
+      (locked ?r ?a ?dest)
+      (lock ?r)
+    )
+    :conditional-breakup (and (no-lock) (not-locked))
+  )
+  (:durative-action unlock-position
+    :parameters (?r - robot ?a - action ?orig - pos)
+    :precondition (and
+      (locked ?r ?a ?orig)
+      (lock ?r)
+      (action-done ?a)
+    )
+    :effect (and
+      (not (locked ?r ?a ?orig))
+      (not (lock ?r))
+      (not (action-done ?a))
+      (not-locked ?orig)
+      (no-lock ?r)
     )
   )
   (:durative-action move-to-position-empty

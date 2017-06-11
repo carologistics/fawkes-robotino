@@ -86,7 +86,21 @@
 		:precondition
 			(and (has-pos ?m ?pos)(at-pos ?r ?pos)(holding ?r ?wp)(not (and (wp-in-slide ?m ONE)(wp-in-slide ?m TWO)) ) (wp-in-slide ?m TWO)) 
 		:effect
-			(and (wp-in-slide ?m ONE)(not (holding ?r ?wp)) (not-holding ?r)) 
+			(and (wp-in-slide ?m ONE)(not (holding ?r ?wp)) (not-holding ?r)(action-done ADD-BASE-SLIDE-THREE)) 
+	)
+	(:action lock-position
+		:parameters ( ?r - robot ?a - action ?dest - pos)
+		:precondition
+			(and (not-locked ?dest)(no-lock ?r)) 
+		:effect
+			(and (not (not-locked ?dest)) (not (no-lock ?r)) (locked ?r ?a ?dest)(lock ?r)) 
+	)
+	(:action unlock-position
+		:parameters ( ?r - robot ?a - action ?orig - pos)
+		:precondition
+			(and (locked ?r ?a ?orig)(lock ?r)(action-done ?a)) 
+		:effect
+			(and (not (locked ?r ?a ?orig)) (not (lock ?r)) (not (action-done ?a)) (not-locked ?orig)(no-lock ?r)) 
 	)
 	(:action move-to-position-empty
 		:parameters ( ?r - robot ?orig - pos ?dest - pos)

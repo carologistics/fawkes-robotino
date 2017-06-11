@@ -66,8 +66,9 @@
 	  (lock (type ACCEPT) (agent ?rn&:(eq ?rn ?*ROBOT-NAME*)) (resource ?res))
   )
   ;there is only one asked task at a time
-  ?pt <- (task (name ?task) (state asked) (priority ?p))
+  ?pt <- (task (name ?task) (state asked) (priority ?p) (stn-action ?id))
   ?s <- (state TASK-PROPOSED-ASKED)
+  ?sa <- (stn-action (id ?id))
   =>
   ;order taks
   (modify ?pt (state ordered))
@@ -79,6 +80,7 @@
     (bind ?fact-ptr (synced-add-to-multifield ?fact-ptr incoming ?ntl:action))
     (synced-add-to-multifield ?fact-ptr incoming-agent (sym-cat ?*ROBOT-NAME*))
   )
+  (synced-modify ?sa state running)
 )
 
 (defrule coordination-reject-proposed-task

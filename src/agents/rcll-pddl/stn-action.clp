@@ -18,3 +18,11 @@
   =>
   (synced-remove-from-multifield ?sa cond-actions ?id)
 )
+
+(defrule stn-action-lock-wait-cleanup
+  (phase PRODUCTION)
+  (not (wait-for-lock (res ?to)))
+  ?lock <- (action-lock-wait ?id)
+  =>
+  (retract ?lock)
+)
