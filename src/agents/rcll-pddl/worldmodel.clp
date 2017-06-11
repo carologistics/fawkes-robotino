@@ -151,7 +151,7 @@
   (state SKILL-FINAL)
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
   (step (name insert) (state running))
-  (task (name produce-c0|produce-cx))
+  (task (name produce-c0|produce-cx|prod-at-cs))
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?csf <- (cap-station (name ?mps) (cap-loaded ?cap))
   ?hf <- (holding ?produced-id)

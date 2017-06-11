@@ -101,13 +101,6 @@
 		:effect
 			(and (not (not-locked ?dest)) (not (no-lock ?r)) (locked ?r ?a ?dest)(lock ?r)) 
 	)
-	(:action lock-change
-		:parameters ( ?r - robot ?old-a - action ?new-a - action ?pos - pos)
-		:precondition
-			(and (locked ?r ?old-a ?pos)) 
-		:effect
-			(and (not (locked ?r ?old-a ?pos)) (locked ?r ?new-a ?pos)) 
-	)
 	(:action unlock-position
 		:parameters ( ?r - robot ?a - action ?orig - pos)
 		:precondition

@@ -85,11 +85,11 @@
     (assert (mps-instruction (machine ?mps) (cs-operation RETRIEVE_CAP) (lock (sym-cat ?mps "-I"))))
   )
   (if (and (eq ?mtype CS)
-           (member$ ?task-name (create$ produce-c0 produce-cx deliver))) then
+           (member$ ?task-name (create$ produce-c0 produce-cx deliver prod-at-cs))) then
     (assert (mps-instruction (machine ?mps) (cs-operation MOUNT_CAP) (lock (sym-cat ?mps "-I"))))
   )
   (if (and (eq ?mtype DS)
-           (eq ?task-name deliver)) then
+           (member$ ?task-name (create$ deliver deliver-c0))) then
     (assert (mps-instruction (machine ?mps) (gate ?gate) (lock (sym-cat ?mps "-I"))))
   )
   (if (and (eq ?mtype RS)
@@ -622,11 +622,11 @@ the waiting state until we can use it again."
   ?state <- (state ?result&SKILL-FINAL|SKILL-FAILED)
   ?ste <- (skill-to-execute (skill get_product_from)
                             (args $?args) (state final|failed))
-  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource PREPARE-BS))  
+  ;?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource PREPARE-BS))  
   (machine (name ?mps) (team ?team-color))
   ?bsf <- (base-station (name ?mps))
   =>
-  (retract ?state ?ste ?l)
+  (retract ?state ?ste)
   ;release lock of instructing/using the BS. Can't be done in a later step because the task is aborted when the step fails.
   (if (eq ?result SKILL-FINAL)
     then
@@ -638,7 +638,7 @@ the waiting state until we can use it again."
     (modify ?step (state failed))
     (synced-modify ?bsf fail-side ?side)
   )
-  (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource PREPARE-BS)))
+  ;(assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource PREPARE-BS)))
 )
 
 (defrule step-drive-to-finish

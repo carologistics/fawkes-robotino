@@ -173,16 +173,6 @@
     )
     :conditional-breakup (and (no-lock) (not-locked))
   )
-  (:durative-action lock-change
-    :parameters (?r - robot ?old-a - action ?new-a - action ?pos - pos)
-    :precondition (and
-      (locked ?r ?old-a ?pos)
-    )
-    :effect (and
-      (not  (locked ?r ?old-a ?pos))
-      (locked ?r ?new-a ?pos)
-    )
-  )
   (:durative-action unlock-position
     :parameters (?r - robot ?a - action ?orig - pos)
     :precondition (and
