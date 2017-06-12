@@ -77,23 +77,24 @@ public:
   void clear_data();
   Probability recognize_current_pic(const std::string image);
   void recognize_mps();
-  void estimate_mps_type(const Probability &prob) const;
+  void estimate_mps_type(const Probability &prob);
   void readImage();	
   int checkProbability(Probability prob);
+  void setupCamera();
 
   fawkes::MPSRecognitionInterface *mps_rec_if_;
 
-  cv::Mat frame;
-  cv::CascadeClassifier mps_cascade;
+//  cv::Mat frame;
+ // cv::CascadeClassifier mps_cascade;
 
   // firevision camera
-  firevision::Camera *fv_cam;
+//  firevision::Camera *fv_cam;
 
   // firevision image buffer
-  firevision::SharedMemoryImageBuffer *shm_buffer;
+//  firevision::SharedMemoryImageBuffer *shm_buffer;
 
   // cv image
-  IplImage *ipl;
+//  IplImage *ipl;
 
   // Width of the image
   unsigned int img_width;
