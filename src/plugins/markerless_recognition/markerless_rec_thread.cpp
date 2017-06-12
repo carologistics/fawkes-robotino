@@ -1,16 +1,17 @@
-
-
-
 #include "markerless_rec_thread.h"
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 #include <tf/types.h>
 #include <interfaces/MPSRecognitionInterface.h>
-#include "/home/Sagre/tensorflow/tensorflow/c/c_api.h"
+//#include "/home/Sagre/tensorflow/tensorflow/c/c_api.h"
 #include <dlfcn.h>
 #include <pthread.h>
 #include <string>
+
+
+#define CFG_PREFIX "/plugins/conveyor_vision/"
+#define IMAGE_CHANNELS 3
 
 
 using namespace fawkes;
@@ -24,19 +25,22 @@ using namespace cv;
 /** Constructor. */
 MarkerlessRecognitionThread::MarkerlessRecognitionThread()
   : Thread("MarkerlessRecognitionThread", Thread::OPMODE_WAITFORWAKEUP),
-    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_WORLDSTATE)
+    VisionAspect(VisionAspect::CYCLIC),
+    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_WORLDSTATE), 
+    ConfigurationChangeHandler(CFG_PREFIX),
+    fawkes::TransformAspect(fawkes::TransformAspect::ONLY_PUBLISHER,"conveyor")
 {
-  /*  fv_cam = NULL;
+    fv_cam = NULL;
     shm_buffer = NULL;
     image_buffer = NULL;
     ipl = NULL;
-*/
-}
 
+}
+/*
 void MarkerlessRecognitionThread::clear_data()
 {
 }
-
+*/
 void
 MarkerlessRecognitionThread::finalize()
 {
@@ -179,16 +183,24 @@ void MarkerlessRecognitionThread::readImage(){
 void
 MarkerlessRecognitionThread::init()
 {
-  home.assign(getenv("HOME"),strlen(getenv("HOME")));
-	
-   recognize_current_pic("/TestData/BS/BS_9.jpg");
 
-  mps_rec_if_ = blackboard->open_for_writing<MPSRecognitionInterface>("/MarkerlessRecognition");
-  clear_data();
+      	home.assign(getenv("HOME"),strlen(getenv("HOME")));
+       	recognize_current_pic("/TestData/BS/BS_9.jpg");
+
+       	mps_rec_if_ = blackboard->open_for_writing<MPSRecognitionInterface>("/MarkerlessRecognition");
+       	clear_data();
+         
+
 }
 
 void MarkerlessRecognitionThread::setupCamera(){ 
-/*       
+
+
+   std::string prefix = CFG_PREFIX;
+   std::string mps_cascade_name = (string)config->get_string((prefix + "classifier_file"));
+   if( !mps_cascade.load( std::string(CONFDIR) + "/" + mps_cascade_name ) ){ printf("--(!)Error loading\n"); return; };
+
+	
     // init firevision camera
     // CAM swapping not working (??)
     if(fv_cam != NULL){
@@ -238,12 +250,7 @@ void MarkerlessRecognitionThread::setupCamera(){
                 IPL_DEPTH_8U,IMAGE_CHANNELS);
 
 
-    // set up marker
-    world_pos_z_average = 0.;
-    max_marker = 16;
-    // this->markers_ = new std::vector<alvar::MarkerData>(); 
-    // this->tag_interfaces = new TagPositionList(this->blackboard,this->max_marker,frame,this->name(),this->logger, this->clock, this->tf_publisher);
-*/
+
 }
 
 
