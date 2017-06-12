@@ -7,6 +7,11 @@
 #include <iostream>
 #include <tf/types.h>
 #include <interfaces/MPSRecognitionInterface.h>
+#include "/home/Sagre/tensorflow/tensorflow/c/c_api.h"
+#include <dlfcn.h>
+#include <pthread.h>
+#include <string>
+
 
 using namespace fawkes;
 using namespace std;
@@ -44,6 +49,13 @@ MarkerlessRecognitionThread::finalize()
   ipl = NULL;
 }
 
+int MarkerlessRecognitionThread::checkProbability(Probability prob){
+	for(int i = 0; i<5; ++i){
+		if(prob.p[i]<0) return -1;
+
+	}
+	return 0;
+}
 
 void MarkerlessRecognitionThread::estimate_mps_type(const Probability &prob) const {
 	float pmax = 0.;
@@ -71,10 +83,54 @@ void MarkerlessRecognitionThread::estimate_mps_type(const Probability &prob) con
 
 Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string image) {
 	Probability result;
+	my_function evaluate;
+	void *handle;
+  
+	//Open shared library
+	std::string lib = home + "/fawkes-robotino/lib/tensorflowWrapper.so";
+    	handle = dlopen(lib.c_str(),RTLD_NOW);
+	if(!handle){
+		fprintf(stderr, "%s\n", dlerror());
+		return result;
+	}
 
+	//set function pointer
+        *(void**)(&evaluate) = dlsym(handle,"evaluateImage");
+	char* error;
+	if((error=dlerror())!=NULL) {
+		fprintf(stderr, "%s\n", error);
+		return result;		
+	}
+	
+	//path to the image that have to be tested
+	std::string imPath = (home) + image;
+		
+	//path to the trained graph
+	std::string grPath = (home) + "/TrainedData/output_graph_600.pb";
+	
+	//path to the the trained labels
+	std::string laPath = (home) + "/TrainedData/output_labels_600.txt";
+
+	//evaluates the current image
+        result = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str());
+
+
+	if(checkProbability(result)==-1){
+		std::cout << "Classification failed\n";
+		return result;
+	}
+	else{
+		for(int i = 0; i < 5; ++i){
+			std::cout << "Result: " << result.p[i] << std::endl;
+		}
+		estimate_mps_type(result);
+	}
+	
+	//Still bugged. Seg fault if we try to call dlclose()
+	//dlclose(handle);
+   
 	// struct with 5 float values
 	// every time: bs, cs, ds, rs, ss
-
 	return result;
 }
 
@@ -119,9 +175,12 @@ void MarkerlessRecognitionThread::readImage(){
 void
 MarkerlessRecognitionThread::init()
 {
+  home.assign(getenv("HOME"),strlen(getenv("HOME")));
+	
+   recognize_current_pic("/TestData/BS/BS_9.jpg");
 
-      	mps_rec_if_ = blackboard->open_for_writing<MPSRecognitionInterface>("/MarkerlessRecognition");
-  	clear_data();
+  mps_rec_if_ = blackboard->open_for_writing<MPSRecognitionInterface>("/MarkerlessRecognition");
+  clear_data();
 }
 
 void MarkerlessRecognitionThread::setupCamera(){ 

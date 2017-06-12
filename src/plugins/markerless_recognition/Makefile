@@ -27,8 +27,8 @@ OBJS_markerless = markerless_rec_plugin.o markerless_rec_thread.o
 OBJS_all    = $(OBJS_markerless)
 
 ifeq ($(HAVE_TF),1)
-  CFLAGS  += $(CFLAGS_TF)
-  LDFLAGS += $(LDFLAGS_TF)
+  CFLAGS  += $(CFLAGS_TF)  -DIS_SLIM_BUILD -std=c++11
+  LDFLAGS += $(LDFLAGS_TF)  -L/home/Sagre/tensorflow/bazel-bin/tensorflow -ltensorflow -lstdc++ -lm -lz  -ldl
 
   PLUGINS_all = $(PLUGINDIR)/markerless.$(SOEXT)
 
