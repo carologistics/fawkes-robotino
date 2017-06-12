@@ -214,7 +214,7 @@
   (slot duration (type INTEGER))
   (multislot cond-actions (type INTEGER))
   (multislot opts (type SYMBOL))
-  (slot active-robot (type SYMBOL) (allowed-symbols R-1 R-2 R-3 NONE) (default NONE))
+  (slot active-robot (type SYMBOL) (allowed-symbols R-1 R-2 R-3 R-4 R-5 R-6 NONE) (default NONE))
   (slot sync-id (type INTEGER) (default 0))
 )
 
