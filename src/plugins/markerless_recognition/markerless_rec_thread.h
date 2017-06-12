@@ -45,6 +45,8 @@ struct Probability
 	float p[5];
 };
 
+typedef Probability (*my_function)(const char*, const char*, const char*);
+
 enum MPSType {
 	BS,
 	CS,
@@ -77,6 +79,7 @@ public:
   void recognize_mps();
   void estimate_mps_type(const Probability &prob) const;
   void readImage();	
+  int checkProbability(Probability prob);
 
   fawkes::MPSRecognitionInterface *mps_rec_if_;
 
@@ -99,6 +102,8 @@ public:
 
   std::string path_prefix_;
   std::vector<std::string> imageSet_;
+
+  std::string home;
 
   float th_first = 0.8;
   float th_sec = 0.5;
