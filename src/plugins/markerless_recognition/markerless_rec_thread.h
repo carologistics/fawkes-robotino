@@ -35,6 +35,11 @@ namespace fawkes {
   class MPSRecognitionInterface;
 }
 
+namespace firevision {
+    class Camera;
+    class SharedMemoryImageBuffer;
+}
+
 struct Probability
 {
 	float p[5];
@@ -74,6 +79,23 @@ public:
   void readImage();	
 
   fawkes::MPSRecognitionInterface *mps_rec_if_;
+
+  cv::Mat frame;
+  cv::CascadeClassifier mps_cascade;
+
+  // firevision camera
+  firevision::Camera *fv_cam;
+
+  // firevision image buffer
+  firevision::SharedMemoryImageBuffer *shm_buffer;
+
+  // cv image
+  IplImage *ipl;
+
+  // Width of the image
+  unsigned int img_width;
+  // Height of the image
+  unsigned int img_height;
 
   std::string path_prefix_;
   std::vector<std::string> imageSet_;

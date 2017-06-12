@@ -21,6 +21,11 @@ MarkerlessRecognitionThread::MarkerlessRecognitionThread()
   : Thread("MarkerlessRecognitionThread", Thread::OPMODE_WAITFORWAKEUP),
     BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_WORLDSTATE)
 {
+    fv_cam = NULL;
+    shm_buffer = NULL;
+    image_buffer = NULL;
+    ipl = NULL;
+
 }
 
 void MarkerlessRecognitionThread::clear_data()
@@ -31,6 +36,12 @@ void
 MarkerlessRecognitionThread::finalize()
 {
  blackboard->close(mps_rec_if_);
+  delete fv_cam;
+  fv_cam = NULL;
+  delete shm_buffer;
+  shm_buffer= NULL;
+  image_buffer = NULL;
+  ipl = NULL;
 }
 
 
@@ -113,11 +124,74 @@ MarkerlessRecognitionThread::init()
   	clear_data();
 }
 
+void MarkerlessRecognitionThread::setupCamera(){ 
+       
+    // init firevision camera
+    // CAM swapping not working (??)
+    if(fv_cam != NULL){
+        // free the camera
+        fv_cam->stop();
+        fv_cam->flush();
+        fv_cam->dispose_buffer();
+        fv_cam->close();
+        delete fv_cam;
+        fv_cam = NULL;
+    }
+    if(fv_cam == NULL){
+      std::string connection = this->config->get_string((prefix + "camera").c_str());
+        fv_cam = vision_master->register_for_camera(connection.c_str(), this);
+        fv_cam->start();
+        fv_cam->open();
+        this->img_width = fv_cam->pixel_width();
+        this->img_height = fv_cam->pixel_height();
+    }
+
+    // SHM image buffer
+    if(shm_buffer != NULL) {
+        delete shm_buffer;
+        shm_buffer = NULL;
+        image_buffer = NULL;
+    }
+
+    shm_buffer = new firevision::SharedMemoryImageBuffer(
+                shm_id.c_str(),
+                firevision::YUV422_PLANAR,
+                this->img_width,
+                this->img_height
+                );
+    if(!shm_buffer->is_valid()){
+        delete shm_buffer;
+        delete fv_cam;
+        shm_buffer = NULL;
+        fv_cam = NULL;
+        throw fawkes::Exception("Shared memory segment not valid");
+    }
+    std::string frame = this->config->get_string((prefix + "frame").c_str());
+    shm_buffer->set_frame_id(frame.c_str());
+
+    image_buffer = shm_buffer->buffer();
+    ipl =  cvCreateImage(
+                cvSize(this->img_width,this->img_height),
+                IPL_DEPTH_8U,IMAGE_CHANNELS);
+
+
+    // set up marker
+    world_pos_z_average = 0.;
+    max_marker = 16;
+    // this->markers_ = new std::vector<alvar::MarkerData>(); 
+    // this->tag_interfaces = new TagPositionList(this->blackboard,this->max_marker,frame,this->name(),this->logger, this->clock, this->tf_publisher);
+
+}
 
 
 void
-MarkerlessRecognitionThread::loop()
-{
+MarkerlessRecognitionThread::loop(){
+
+   if(fv_cam == NULL || !fv_cam->ready()){
+        logger->log_info(name(),"Camera not ready");
+	setupCamera();
+      return;
+   }
 
    recognize_mps(); 
    while ( ! mps_rec_if_->msgq_empty() ) {
