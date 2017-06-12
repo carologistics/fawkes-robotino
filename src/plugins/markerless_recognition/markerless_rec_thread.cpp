@@ -57,7 +57,7 @@ int MarkerlessRecognitionThread::checkProbability(Probability prob){
 	return 0;
 }
 
-void MarkerlessRecognitionThread::estimate_mps_type(const Probability &prob) const {
+void MarkerlessRecognitionThread::estimate_mps_type(const Probability &prob) {
 	float pmax = 0.;
 	float psec = 0.;
 	MPSType bestfit;
@@ -72,13 +72,17 @@ void MarkerlessRecognitionThread::estimate_mps_type(const Probability &prob) con
 	if(pmax < th_first || psec > th_sec){
 		bestfit = NoStationDetected;
 	}
+	std::cout << "MPS: " << bestfit << std::endl;
 
-	mps_rec_if_->set_final(true);
-	mps_rec_if_->set_mpstype(
-	        (fawkes::MPSRecognitionInterface::MPSType) bestfit);
-	mps_rec_if_->set_p_correct(pmax);
-	mps_rec_if_->set_ptot_mpstype(prob.p);
-	mps_rec_if_->write();
+	//segfault when trying to write to the blackboard
+	
+//	mps_rec_if_->set_final(true);
+//	mps_rec_if_->set_mpstype(
+//	        (fawkes::MPSRecognitionInterface::MPSType) bestfit);
+//	mps_rec_if_->set_p_correct(pmax);
+	//mps_rec_if_->set_ptot_mpstype(prob.p);
+	//mps_rec_if_->write();
+	
 }
 
 Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string image) {
