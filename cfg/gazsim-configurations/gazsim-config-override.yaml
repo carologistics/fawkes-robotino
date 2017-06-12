@@ -120,4 +120,4 @@ plugins/robot-memory:
   setup:
     mongo-client-connection-distributed: "robotmemory-synced-sim"
     replicated:
-      replica-set-members: "[{_id:1,host:'localhost:27021'}]"
+      replica-set-members: ['localhost:27021']
