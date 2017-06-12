@@ -46,7 +46,9 @@ asp-agent:
 clips-agent:
   rcll2016:
     #agent-role:
-    use-asp: false
+    use-asp: true
+    load-reasoner: false
+    move-into-field-waittime: 2
     
     exploration:      
       row: MID
