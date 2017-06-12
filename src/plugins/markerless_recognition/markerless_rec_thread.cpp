@@ -26,11 +26,11 @@ MarkerlessRecognitionThread::MarkerlessRecognitionThread()
   : Thread("MarkerlessRecognitionThread", Thread::OPMODE_WAITFORWAKEUP),
     BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_WORLDSTATE)
 {
-    fv_cam = NULL;
+  /*  fv_cam = NULL;
     shm_buffer = NULL;
     image_buffer = NULL;
     ipl = NULL;
-
+*/
 }
 
 void MarkerlessRecognitionThread::clear_data()
@@ -41,12 +41,12 @@ void
 MarkerlessRecognitionThread::finalize()
 {
  blackboard->close(mps_rec_if_);
-  delete fv_cam;
+/*  delete fv_cam;
   fv_cam = NULL;
   delete shm_buffer;
   shm_buffer= NULL;
   image_buffer = NULL;
-  ipl = NULL;
+  ipl = NULL;*/
 }
 
 int MarkerlessRecognitionThread::checkProbability(Probability prob){
@@ -188,7 +188,7 @@ MarkerlessRecognitionThread::init()
 }
 
 void MarkerlessRecognitionThread::setupCamera(){ 
-       
+/*       
     // init firevision camera
     // CAM swapping not working (??)
     if(fv_cam != NULL){
@@ -243,20 +243,20 @@ void MarkerlessRecognitionThread::setupCamera(){
     max_marker = 16;
     // this->markers_ = new std::vector<alvar::MarkerData>(); 
     // this->tag_interfaces = new TagPositionList(this->blackboard,this->max_marker,frame,this->name(),this->logger, this->clock, this->tf_publisher);
-
+*/
 }
 
 
 void
 MarkerlessRecognitionThread::loop(){
-
+/*
    if(fv_cam == NULL || !fv_cam->ready()){
         logger->log_info(name(),"Camera not ready");
 	setupCamera();
       return;
    }
-
-   recognize_mps(); 
+*/
+    
    while ( ! mps_rec_if_->msgq_empty() ) {
     if ( mps_rec_if_->msgq_first_is<MPSRecognitionInterface::ClearMessage>() ) {
      	std::cout << "Recieved Clear Message" << std::endl;

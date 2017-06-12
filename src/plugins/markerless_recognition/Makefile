@@ -28,7 +28,7 @@ OBJS_all    = $(OBJS_markerless)
 
 ifeq ($(HAVE_TF),1)
   CFLAGS  += $(CFLAGS_TF)  -DIS_SLIM_BUILD -std=c++11
-  LDFLAGS += $(LDFLAGS_TF)  -L/home/Sagre/tensorflow/bazel-bin/tensorflow -ltensorflow -lstdc++ -lm -lz  -ldl
+  LDFLAGS += $(LDFLAGS_TF)  -L$(HOME)/fawkes-robotino/lib -ltensorflow -lstdc++ -lm -lz  -ldl
 
   PLUGINS_all = $(PLUGINDIR)/markerless.$(SOEXT)
 
