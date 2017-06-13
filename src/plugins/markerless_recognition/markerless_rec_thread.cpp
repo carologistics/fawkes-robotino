@@ -103,20 +103,36 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	return result;
 }
 
-void  MarkerlessRecognitionThread::recognize_mps() {
+float  MarkerlessRecognitionThread::recognize_mps() {
 
-	cout << " Start of method recognize_mps() " << std::endl; 
-        mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) 5 ) ;
-	mps_rec_if_->write();
+
+	takePictureFromFVcamera(); 
+        Probability recognition_result = recognize_current_pic(frameToRecognize); 
 	
-	const char* recognizedMPS = mps_rec_if_->tostring_MPSType(mps_rec_if_->mpstype());
- 	cout << " Recognized MPS : " << recognizedMPS << std::endl; 	
+	float maximum = 0; 
+	for(int i = 0; i < 4; i++){ 
+	 	if(recognition_result.p[i] < recognition_result.p[i+1]){ 
+                     maximum = i+1; 
+	     	}
+	}
+
+	mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) maximum );
+		
+	return maximum;
+	//cout << " Start of method recognize_mps() " << std::endl; 
+        //mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) 5 ) ;
+	//mps_rec_if_->write();
+	
+	//const char* recognizedMPS = mps_rec_if_->tostring_MPSType(mps_rec_if_->mpstype());
+ 	//cout << " Recognized MPS : " << recognizedMPS << std::endl; 	
 	//iterates over all stored paths im imageSet_ and calls recognize_current_pic on it
 	//then decides which mps was seen in the set of images
 }
 
+
 void MarkerlessRecognitionThread::init(){
-      	home.assign(getenv("HOME"),strlen(getenv("HOME")));
+      	
+	home.assign(getenv("HOME"),strlen(getenv("HOME")));
        	recognize_current_pic("/TestData/BS/BS_9.jpg");
 
        	mps_rec_if_ = blackboard->open_for_writing<MPSRecognitionInterface>("/MarkerlessRecognition");
@@ -173,14 +189,34 @@ void MarkerlessRecognitionThread::setupCamera(){
         fv_cam = NULL;
         throw fawkes::Exception("Shared memory segment not valid");
     }
-    std::string frame = this->config->get_string((prefix + "frame").c_str());
-    shm_buffer->set_frame_id(frame.c_str());
+    frameToRecognize = this->config->get_string((prefix + "frame").c_str());
+    shm_buffer->set_frame_id(frameToRecognize.c_str());
 
     image_buffer = shm_buffer->buffer();
     ipl =  cvCreateImage(
                 cvSize(this->img_width,this->img_height),
                 IPL_DEPTH_8U,IMAGE_CHANNELS);
 
+
+
+}
+
+void MarkerlessRecognitionThread::takePictureFromFVcamera(){ 
+
+	//capture 
+	fv_cam->capture(); 
+	firevision::convert(fv_cam->colorspace(), 
+			    firevision::YUV422_PLANAR,
+			    fv_cam->buffer(),
+			    image_buffer,
+			    this->img_width,
+			    this->img_height);
+	fv_cam->dispose_buffer();
+
+	//convert 
+	
+	firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
+        frame  = cvarrToMat(ipl);
 
 
 }
@@ -212,7 +248,8 @@ void MarkerlessRecognitionThread::loop(){
 		} else if ( mps_rec_if_->msgq_first_is<MPSRecognitionInterface::TakeDataMessage>() ) {
     	
 	 		std::cout << "Recieved Take Data Message" << std::endl;
-   			readImage();
+   			takePictureFromFVcamera(); 
+			//readImage();
     		}	
    	 	else {
     			logger->log_warn(name(), "Unknown message received");
