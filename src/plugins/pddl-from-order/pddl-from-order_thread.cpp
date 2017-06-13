@@ -85,6 +85,12 @@ PddlFromOrderThread::finalize()
 void
 PddlFromOrderThread::retrieve_new_order(BSONObj doc)
 {
+  BSONObj o = doc.getField("o").Obj();
+  int order_id = o.getField("id").numberInt();
+  if ( order_id != 1 ) {
+    logger->log_warn(name(), "Order id not 1, skipping PDDL generation");
+    return;
+  }
   gen_if_->msgq_enqueue(new PddlGenInterface::GenerateMessage());
 
   orders_recv_++;
