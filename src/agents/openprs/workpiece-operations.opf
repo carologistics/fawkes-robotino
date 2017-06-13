@@ -182,7 +182,8 @@
 								(! (= $side-as-symbol OUTPUT))
 								)
 							(? (= $base (base $base-color)))
-							(! (step (instruct-mps 	machine "C-BS" (args side $side-as-symbol color $base-color)) ))
+							(?	(machine $bs-name "BS" @mps-state @mps-prepared @mps-zone @mps-pose @mps-loaded-with))
+							(! (step (instruct-mps 	machine $bs-name (args side $side-as-symbol color $base-color)) ))
 							(^ (workpiece 0 $base $rings $cap (place $bs-name $side)))
 							)
 						(! (step (get-base 	machine $mps-name side $side assigend-id $wp-id))) 
@@ -242,12 +243,13 @@
 							))
 					(! (printf (FORMAT "WP_Place --> Gripper: producing a new base \n" )))
 					;TODO: match on the base station color..For now just get it from the C-BS, CORRECT THIS SOON
-					(! (= $bs-name "C-BS"))
+					(? (machine $bs-name "BS" @status @bs-prepared @bs-zone @bs-pose @bs-loaded-with))
+					; (! (= $bs-name "C-BS"))
 					(! (= $active-side "input"))
 					(! (step (drive-to 		machine $bs-name side $active-side)))
 					;If there is a base already-at-output, no need to instruct 
 					(if (? 	(~ (machine $bs-name "BS" "READY-AT-OUTPUT" @bs-prepared @bs-zone @bs-pose @bs-loaded-with)))
-							(! (step (instruct-mps 	machine "C-BS" (args side INPUT color $base-color)) ))
+							(! (step (instruct-mps 	machine $bs-name (args side INPUT color $base-color)) ))
 							(^ (workpiece 0 $base $rings $cap (place $bs-name $active-side)));hazardous...find a better way
 						)
 					(! (step (get-base machine $bs-name side $active-side assigned-id $wp-id)))

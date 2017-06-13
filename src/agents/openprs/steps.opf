@@ -82,7 +82,10 @@
 				)
 
 			;TODO: Tempraty waiting point till i get that right
-			(if (! (execute (skill "ppgoto" "place" "C-DS-I" ) ))
+			(? (machine $ds-name "DS" @status @bs-prepared @bs-zone @bs-pose @bs-loaded-with))
+			(! (= $ds-input (string-cat $mps-name "-I")))
+
+			(if (! (execute (skill "ppgoto" "place" $ds-input ) ))
 				else
 				(=> (agent-state STEP-FAILD))
 				(! (FAILED))
