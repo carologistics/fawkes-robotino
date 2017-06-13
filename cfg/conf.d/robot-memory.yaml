@@ -34,7 +34,7 @@ plugins/robot-memory:
       port: 27021
       replica-set-name: "syncedrobmem"
       db-path: "~/.robot-memory/dbs/distributed"
-      replica-set-members: "[{_id:1,host:'stargazer:27021'}, {_id:2,host:'orinoco:27021'}, {_id:3, host:'agamemnon:27021'}]"
+      replica-set-members: ['stargazer:27021','orinoco:27021','agamemnon:27021']
       replica-id: 1 #this should be the robot number, override it in host.yaml
       # initiate automatically
       initiate: true
