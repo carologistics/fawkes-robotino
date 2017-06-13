@@ -26,36 +26,54 @@
 				;and a C-BS ended up being an IDLE agent since everything was considered 
 				;fine  
 
+				;Wait for the Agent to have No achievements. Sometimes a final state from
+				;a previous  request is received after this but that should be no problem 
+				;If the workpiece is different enough
 				(^ (~ (achieve-workpiece (val $agent) @workpiece @status)))
 
 				(! (printf (FORMAT "Achievement Monitor of %s REQUESTING ...\n" $agent)))
 				(=> (achieve-workpiece $agent $workpiece REQUESTING))
-				
 
-				(^ ( ||	(achieve-workpiece (val $agent) $workpiece STARTED)
-						(achieve-workpiece (val $agent) $workpiece FAILED)
-						(achieve-workpiece (val $agent) (workpiece @id $base $rings $cap $place)  SUCCEEDED)))
+
+				;PROBLEM With this: Sometimes the Achievment is finalized too quick and deleted
+				;at some point during the execution of this op. If that happend then 
+				;The state will not be tracked correctly resulting that either a wait
+				;condition to never be satisfied. Or A succeeding the Goal no matter 
+				;What happend. .To fix this u need to keep trak of the status a bit differntly
+				;Remmbering what cozed the thread to wake
+			
+
+				(^ ( &	(|| (achieve-workpiece (val $agent) $workpiece @status)
+							(achieve-workpiece (val $agent) (workpiece @id $base $rings $cap $place)  @status))
+						(MEMQ @status (. STARTED FAILED SUCCEEDED .))
+						))
 				;TODO: or timeout if no heartbeat for agent
 
-				(if (? (achieve-workpiece (val $agent) $workpiece STARTED))
+				(if (? (= (val @status) STARTED))
 					(! (printf (FORMAT "Achievement Monitor of %s STARTED ...\n" $agent)))
+					
+					(^ ( &	(|| (achieve-workpiece (val $agent) $workpiece @status)
+								(achieve-workpiece (val $agent) (workpiece @id $base $rings $cap $place)  @status))
+							(MEMQ @status (. FAILED SUCCEEDED .))
+							))
 					)
 
-				(^ ( ||	(achieve-workpiece (val $agent) $workpiece FAILED)
-						(achieve-workpiece (val $agent) (workpiece @id $base $rings $cap $place)  SUCCEEDED)))
-
-				(if (? 	(achieve-workpiece (val $agent) (workpiece @id $base $rings $cap $place)  SUCCEEDED))	
-					(! (printf (FORMAT "Achievement Monitor of %s SUCCEEDED ...\n" $agent)))
-					GOTO fin
-					) 
-
-				(if (? 	(achieve-workpiece (val $agent) $workpiece FAILED))
+				(if (? 	(= (val @status) FAILED))
 					(! (printf  (FORMAT "Achievement Monitor of %s : FAILED ... \n" $agent)))
 					(~> (achieve-workpiece (val $agent) $workpiece REQUESTING))
 					(~> (achieve-workpiece (val $agent) $workpiece STARTED))
 					(! (= 0 1));just fail the goal
 					)
+
+				(if (? 	(= (val @status)  SUCCEEDED))	
+					(! (printf (FORMAT "Achievement Monitor of %s SUCCEEDED ...\n" $agent)))
+					GOTO fin
+					) 
+
+				(! (printf (FORMAT "Achievement Monitor of %s WRONG status %s ...\n" $agent (val @status))))
+				(! (FAILED))
 				LABEL fin
+
 				
 			)
 		:effects ( 
@@ -105,6 +123,8 @@
 						was started. updates the correct state transition for the achievement facts, depending if the workpiece goal 
 						Recfails of succeeds"
 		)
+
+
 
 	(defop Co--Start-MachineAchievement-Request
 		:invocation ( timer "beacon" $last-sec $last-usec $seq )
@@ -477,7 +497,7 @@
 
    			LABEL ILLEGAL
    			(! (printf (FORMAT "WRONG Workpiece Transitions from %s to %s \n" $old-feature $new-feature)))
-   			(! (printf (FORMAT "FAILED ASSERTING WP  from %s to %s" $old-feature $new-feature)))
+   			(! (printf (FORMAT "FAILED ASSERTING WP  from %s to %s \n" $old-feature $new-feature)))
    			GOTO SKIP
 
    			LABEL LEGAL
