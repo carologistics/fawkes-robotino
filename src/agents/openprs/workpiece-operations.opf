@@ -499,4 +499,37 @@
 		)
 
 
+		(defop wp-Drive-Away
+			:invocation ( ! (workpiece 0 (base none) (rings none) (cap none) (place "none" "none")) )
+			:context ( )
+			:setting (setting "robot-name" $robot-name)
+			:body (
+				(! (printf (FORMAT "DRIVING AWAAAY \n"  )))
+				
+				;TODO find out which positions would make the most since to wait at
+				;Maybe Expected Products
+				;Mayve free areas
+				;the insertion zone
+				(if (? (= $robot-name "R-1"))
+					(! (= $y 1))
+					elseif (? (= $robot-name "R-2"))
+					(! (= $y 2))
+					else
+					(! (= $y 3))
+					)
+
+
+				(! (= $drive-Goal (BUILD-GOAL 
+		    			(! ( Execute (skill "drive_to" "x" 0.0 "y" $y )))
+		    			)))
+		    	(! (INTENDED-GOAL $drive-Goal))
+				
+				;Just Fail so that the Achieve-Workpiece Can Fail. Finalizing this Achieve-
+				(! (FAILED))
+				(! (printf (FORMAT "DRIVING AWAAAY \n"  )))
+
+				)
+			:documentation " "
+			)
+
 	)
