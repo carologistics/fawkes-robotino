@@ -4,6 +4,8 @@
 	(:objects
 		R-1 - robot
     O1 - order
+    O6 - order
+    O7 - order
     
 		red-base1 - base
 		red-base2 - base
@@ -95,11 +97,11 @@
     (idle C-BS)
 
     
-    (has-color-one C-RS2 RING_BLUE)
-    (has-color-two C-RS2 RING_ORANGE)
+    (has-color-one C-RS2 RING_GREEN)
+    (has-color-two C-RS2 RING_BLUE)
     
     (has-color-one C-RS1 RING_YELLOW)
-    (has-color-two C-RS1 RING_GREEN)
+    (has-color-two C-RS1 RING_ORANGE)
     
 
     ;TODO translate needed-bases
@@ -177,11 +179,25 @@
 
     
     (order-complexity O1 C0)
-    (order-base-color O1 BASE_SILVER)
-    (order-cap-color O1 CAP_GREY)
+    (order-base-color O1 BASE_BLACK)
+    (order-cap-color O1 CAP_BLACK)
     (order-ring-one O1 RING_NONE)
     (order-ring-two O1 RING_NONE)
     (order-ring-three O1 RING_NONE)
+    
+    (order-complexity O6 C2)
+    (order-base-color O6 BASE_BLACK)
+    (order-cap-color O6 CAP_BLACK)
+    (order-ring-one O6 RING_ORANGE)
+    (order-ring-two O6 RING_YELLOW)
+    (order-ring-three O6 RING_NONE)
+    
+    (order-complexity O7 C3)
+    (order-base-color O7 BASE_RED)
+    (order-cap-color O7 CAP_BLACK)
+    (order-ring-one O7 RING_YELLOW)
+    (order-ring-two O7 RING_ORANGE)
+    (order-ring-three O7 RING_GREEN)
     
 
     (at-pos R-1 INS)
