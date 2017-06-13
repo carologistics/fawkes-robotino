@@ -436,7 +436,7 @@
   (deliver CYAN deliver1 0 0)
   (deliver MAGENTA deliver2 0 0)
 
-  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag base-station exp-matching)))
+  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag base-station exp-matching stn-action)))
   ; zone-exploration, machine, cap-station, product, ring station
 
   (last-zoneinfo)
