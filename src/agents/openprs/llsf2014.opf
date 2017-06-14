@@ -35,7 +35,7 @@
     (! (bb-open "Position3DInterface" "Pose" BB-READ))
     (! (time-set-idle-looptime $ilt_sec $ilt_usec))
     (! (navgraph-load))
-    (! (conf-load-rcll2017))
+    ; (! (conf-load-rcll2017))
     (! (print "LLSF2016 agent successfully initialized"))
     (=> (setting "release-distance" 1.5))
     

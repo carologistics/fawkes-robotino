@@ -16,21 +16,33 @@
   	      (setting "peer-cyan-send-port" $cyan-sendp) (setting "peer-cyan-recv-port" $cyan-recvp)
   	      (setting "peer-magenta-send-port" $magenta-sendp) (setting "peer-magenta-recv-port" $magenta-recvp))
   :context (& (~ (peer-id private $private-id))
- 	      (setting "team-name" $team-name)
-              (|| (equal $team-name (pb-field-value $msg "team_cyan"))
-	          (equal $team-name (pb-field-value $msg "team_magenta"))))
+ 	                (setting "team-name" $team-name)
+                   (|| (equal $team-name (pb-field-value $msg "team_cyan"))
+	                 (equal $team-name (pb-field-value $msg "team_magenta"))
+                   (~ (Op-Gaurd "net-enable-team-private" on))
+                   ))
   :body (
-    (if (? (equal $team-name (pb-field-value $msg "team_cyan")))
-      (! (print "Setting up private channel as team CYAN"))
-      (! (pb-peer-create-local-crypto $peer-addr $cyan-sendp $cyan-recvp $crypto-key $crypto-cipher @peer-id))
-      (! (= @team-color CYAN))
-     else
-      (! (print "Setting up private channel as team MAGENTA"))
-      (! (pb-peer-create-local-crypto $peer-addr $magenta-sendp $magenta-recvp $crypto-key $crypto-cipher @peer-id))
-      (! (= @team-color MAGENTA))
-    )
+      (! (start-critical-section))
+      (if (? (Op-Gaurd "net-enable-team-private" on))
+        (! (end-critical-section))
+        (! (FAILED))
+        else
+        (=> (Op-Gaurd "net-enable-team-private" on))
+        (! (end-critical-section))
+        )
+
+      (if (? (equal $team-name (pb-field-value $msg "team_cyan")))
+              (! (print "Setting up private channel as team CYAN"))
+              (! (pb-peer-create-local-crypto $peer-addr $cyan-sendp $cyan-recvp $crypto-key $crypto-cipher @peer-id))
+              (! (= @team-color CYAN))
+             else
+              (! (print "Setting up private channel as team MAGENTA"))
+              (! (pb-peer-create-local-crypto $peer-addr $magenta-sendp $magenta-recvp $crypto-key $crypto-cipher @peer-id))
+              (! (= @team-color MAGENTA))
+              )
+  
   )
-  :effects ((=> (peer-id private @peer-id)) (=> (team-color @team-color)))
+  :effects ( (=> (team-color @team-color)) (=> (peer-id private @peer-id)) )
   :documentation "Setup private team channel.
     Once the (configured) team name has been set in the refbox and is announced
     we know which team color we have. Note this and setup the appropriate (encrypted)
@@ -67,7 +79,9 @@
     ; (! (print "in BEACON"))
     
     ; (if (? (agent-pose $robot-name $x $y))
+    ;   (! (= @pose (pb-create "llsf_msgs.Pose2D")))
     ;   (! (= @pose (pb-field-value @beacon "pose")))
+    ;   (! (= @pose-time (pb-create "llsf_msgs.time")))
     ;   (! (= @pose-time (pb-field-value @pose "timestamp")))
     ;   (! (pb-set-field @pose-time "sec" $sec))
     ;   (! (pb-set-field @pose-time "nsec" (* $usec 1000)))
