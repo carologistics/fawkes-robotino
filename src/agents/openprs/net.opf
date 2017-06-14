@@ -66,17 +66,17 @@
     (! (pb-set-field @beacon "number" $robot-number))
     ; (! (print "in BEACON"))
     
-    (if (? (agent-pose $robot-name $x $y))
-      (! (= @pose (pb-field-value @beacon "pose")))
-      (! (= @pose-time (pb-field-value @pose "timestamp")))
-      (! (pb-set-field @pose-time "sec" $sec))
-      (! (pb-set-field @pose-time "nsec" (* $usec 1000)))
-      (! (pb-set-field @pose "timestamp" @pose-time))
-      (! (pb-set-field @pose "x" $x))
-      (! (pb-set-field @pose "y" $y))
-      (! (pb-set-field @pose "ori" 0.0)) ;TOOD:calculate the Rad
-      (! (pb-set-field @beacon "pose" @pose))
-    )
+    ; (if (? (agent-pose $robot-name $x $y))
+    ;   (! (= @pose (pb-field-value @beacon "pose")))
+    ;   (! (= @pose-time (pb-field-value @pose "timestamp")))
+    ;   (! (pb-set-field @pose-time "sec" $sec))
+    ;   (! (pb-set-field @pose-time "nsec" (* $usec 1000)))
+    ;   (! (pb-set-field @pose "timestamp" @pose-time))
+    ;   (! (pb-set-field @pose "x" $x))
+    ;   (! (pb-set-field @pose "y" $y))
+    ;   (! (pb-set-field @pose "ori" 0.0)) ;TOOD:calculate the Rad
+    ;   (! (pb-set-field @beacon "pose" @pose))
+    ; )
     (! (pb-broadcast $peer-id @beacon))
     (! (pb-destroy @beacon))
 
