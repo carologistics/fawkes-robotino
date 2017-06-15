@@ -63,6 +63,27 @@
 			)
 		)
 
+	(defop allocat-agent 
+		:invocation (! (allocat-agent $agent $task-name) )
+		:context ( 	(master-of REASONING $me)
+					(agent-name $me)
+					)
+		:body (
+			(if (? (BOUNDP $agent))
+				(if (? (~ (agent-achieving $agent IDLE)))
+					(! (printf (FORMAT "WARNING>> %s Forcefully Allocating  to task from %s " (val @agent) $task-name)))
+					)
+					(! (start-critical-section))
+					(=> (agent-achieving (val @critical-agent) $task-name))
+					(! (end-critical-section))
+			
+				else
+				(! (select-appropriate-agent $agent $task-name) )
+				)
+				
+			)
+		)
+
 
 	; (defop break-goal-needs
 	; 	:invocation ( (goal-inmind (workpiece 0 $goal-base $goal-rings $goal-cap (place $ds-name $delivery-gate)))) )
