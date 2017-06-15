@@ -92,7 +92,7 @@ declare ff master-of 1
 ;/////////////
 declare ff heart-beat 1
 declare ff lock 3
-declare ff lock-in-use 0
+declare ff lock-in-use 1
 
 ;////////////
 ;COORDINATION
