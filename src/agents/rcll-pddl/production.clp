@@ -103,9 +103,9 @@
   (wait-for-lock (res ?to) (state use))
   ?alw <- (action-lock-wait ?id)
   =>
-  (printout t "PROD: Locking stn-action " ?id crlf)
-  (bind ?task-id (random-id))
-  (synced-modify ?sa state running active-robot (sym-cat ?*ROBOT-NAME*))
+  (bind ?rname (sym-cat ?*ROBOT-NAME*))
+  (printout t "PROD: Locking stn-action " ?id " for robot " ?rname crlf)
+  (synced-modify ?sa state running active-robot ?rname)
   (retract ?alw)
 )
 
@@ -120,10 +120,10 @@
               (cond-actions $?ca&:(and (eq 1 (length$ ?ca)) (member$ ?lock-id ?ca))) (opts ?r ?action ?to))
   ?wfl <- (wait-for-lock (res ?to) (state use))
   =>
+  (bind ?rname (sym-cat ?*ROBOT-NAME*))
   (printout t "PROD: Lock release " ?id " releasing lock " ?lock-id crlf)
-  (bind ?task-id (random-id))
   (synced-modify ?sa state finished)
-  (synced-modify ?sal state finished)
+  (synced-modify ?sal state finished active-robot ?rname)
   (modify ?wfl (state finished))
 )
 
