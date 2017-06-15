@@ -83,7 +83,7 @@
 
 			;TODO: Tempraty waiting point till i get that right
 			(? (machine $ds-name "DS" @status @bs-prepared @bs-zone @bs-pose @bs-loaded-with))
-			(! (= $ds-input (string-cat $mps-name "-I")))
+			(! (= $ds-input (string-cat $ds-name "-I")))
 
 			(if (! (execute (skill "ppgoto" "place" $ds-input ) ))
 				else
