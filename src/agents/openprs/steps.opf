@@ -315,7 +315,7 @@
 					(=> (agent-state STEP-FAILD))
 					;TODO: only lose the work peace after checking if still holding
 					(=> (Achieve-workpiece $agent 
-								(workpiece $ws-id $base $rings $cap (place "LOST" "LOST"))
+								(workpiece $ws-id $base $rings (cap $cap-color) (place "LOST" "LOST"))
 								SUCCEEDED))
 					(! (FAILED))
 					)
