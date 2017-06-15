@@ -74,13 +74,14 @@
   (modify ?pt (state ordered))
   (retract ?s)
   (assert (state TASK-ORDERED))
+  (bind ?rname (sym-cat ?*ROBOT-NAME*))
   ;update worldmodel
   (delayed-do-for-all-facts ((?ntl needed-task-lock)) TRUE
     (bind ?fact-ptr (coordination-get-fact-address-of-place ?ntl:place))
     (bind ?fact-ptr (synced-add-to-multifield ?fact-ptr incoming ?ntl:action))
-    (synced-add-to-multifield ?fact-ptr incoming-agent (sym-cat ?*ROBOT-NAME*))
+    (synced-add-to-multifield ?fact-ptr incoming-agent ?rname)
   )
-  (synced-modify ?sa state running)
+  (synced-modify ?sa state running active-robot ?rname)
 )
 
 (defrule coordination-reject-proposed-task
