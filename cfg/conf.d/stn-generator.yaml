@@ -16,4 +16,5 @@ plugins/stn-generator:
 
   output:
     publish-to-rm: true
+    draw-graph: false
     collection: "syncedrobmem.clipswm"
