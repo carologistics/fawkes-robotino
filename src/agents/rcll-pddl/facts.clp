@@ -226,7 +226,7 @@
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols move-to-position-empty move-to-position-holding pick-cc-from-shelf load-cs pick-wp-from-cs discard-wp pick-wp-from-bs prod-at-cs deliver-c0 fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
+  (slot name (type SYMBOL) (allowed-symbols move-to-position-empty move-to-position-holding pick-cc-from-shelf load-cs pick-wp-from-cs discard-wp pick-wp-from-bs prod-at-cs add-base-to-slide-one add-base-to-slide-two add-base-to-slide-three deliver-c0 fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
   (slot state (type SYMBOL) (allowed-symbols planned proposed asked rejected ordered running finished failed)
         (default proposed))
   (slot stn-action (type INTEGER))
