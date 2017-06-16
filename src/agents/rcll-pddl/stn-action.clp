@@ -11,14 +11,6 @@
 ; The steps themselves are executed/finished/aborted in steps.clp
 ;---------------------------------------------------------------------------
 
-(defrule stn-action-finished
-  (phase PRODUCTION)
-  (stn-action (id ?id) (state finished))
-  ?sa <- (stn-action (cond-actions $?cond&:(member$ ?id ?cond)))
-  =>
-  (synced-remove-from-multifield ?sa cond-actions ?id)
-)
-
 (defrule stn-action-lock-wait-cleanup
   (phase PRODUCTION)
   (not (wait-for-lock (res ?to)))

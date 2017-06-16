@@ -426,6 +426,8 @@
   (team-robot R-1)
   (team-robot R-2)
   (team-robot R-3)
+
+  (last-stn-action-unlocked 0)
   
   ; Input storage per team color
   (input-storage CYAN Ins1 0 0)
