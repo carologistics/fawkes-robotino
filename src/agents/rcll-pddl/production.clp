@@ -267,7 +267,7 @@
   ?sal <- (stn-action (id ?lock-id) (name lock-position) (state finished)
                       (active-robot ?ar&:(eq ?ar (sym-cat ?*ROBOT-NAME*))) (opts ?r LOAD-CS ?to))
   ?sa <- (stn-action (id ?id) (name load-cs) (state pending) 
-              (cond-actions $?ca&:(member$ ?lock-id ?ca)) (opts ?r ?mps ?to ?cap ?any1 ?cc))
+              (cond-actions $?ca&:(member$ ?lock-id ?ca)) (opts ?r ?mps ?to ?cap ?cc))
   (machine (mtype CS) (loaded-id 0) (name ?mps) (produced-id 0) (team ?team-color)
            (state ~DOWN&~BROKEN))
   (cap-station (name ?mps) (cap-loaded NONE))
@@ -297,7 +297,7 @@
   ?sal <- (stn-action (id ?lock-id) (name lock-position) (state finished)
                       (active-robot ?ar&:(eq ?ar (sym-cat ?*ROBOT-NAME*))) (opts ?r PICK-FROM-CS ?to))
   ?sa <- (stn-action (id ?id) (name pick-wp-from-cs) (state pending) 
-              (cond-actions $?ca&:(member$ ?lock-id ?ca)) (opts ?r ?mps ?to ?cc ?any1))
+              (cond-actions $?ca&:(member$ ?lock-id ?ca)) (opts ?r ?mps ?to ?cc))
   (machine (mtype CS) (loaded-id 0)
            (name ?mps) (produced-id ?produced-id&~0) (team ?team-color)
            (state READY-AT-OUTPUT))
@@ -340,6 +340,21 @@
   )
 )
 
+(defrule prod-reset-rs-slide
+  (declare (salience 96))
+  (phase PRODUCTION)
+  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
+  (team-color ?team-color&~nil)
+  ?sa <- (stn-action (id ?id) (name reset-rs-slide) (state pending))
+  (forall (stn-action (id ?id)
+                      (cond-actions $? ?other-id $?))
+          (stn-action (id ?other-id)
+                      (state finished)))
+  =>
+  (printout t "PROD: Reset RS slide dummy" crlf)
+  (synced-modify ?sa state finished)
+)
+
 (defrule prod-pick-wp-from-bs-for-prod
   (declare (salience ?*PRIORITY-CLEAR-CS*))
   (phase PRODUCTION)
@@ -360,7 +375,7 @@
   (wait-for-lock (res ?to) (state use))
   (at-pos ?to)
   =>
-  (printout t "PROD: Pick from BS at " ?mps crlf)
+  (printout t "PROD: Pick from BS at " ?mps " for production and action " ?id crlf)
   (synced-modify ?sa state running)
   (bind ?task-id (random-id))
   (bind ?base-col (sym-cat (sub-string 1 (- (str-index "-" ?base) 1) ?base)))
@@ -423,7 +438,7 @@
   ?sal <- (stn-action (id ?lock-id) (name lock-position) (state finished)
                       (active-robot ?ar&:(eq ?ar (sym-cat ?*ROBOT-NAME*))) (opts ?r PROD-AT-CS ?to))
   ?sa <- (stn-action (id ?id) (name prod-at-cs) (state pending) 
-              (cond-actions $?ca&:(member$ ?lock-id ?ca)) (opts ?r ?mps ?to ?product ?any1 ?cap ?any2 ?any3 ?order))
+              (cond-actions $?ca&:(member$ ?lock-id ?ca)) (opts ?r ?mps ?to ?product ?base-col ?cap ?order))
   (machine (mtype CS)
            (name ?mps) (team ?team-color) (produced-id 0)
            (state ~DOWN&~BROKEN))
