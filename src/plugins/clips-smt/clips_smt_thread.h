@@ -107,14 +107,11 @@ private:
 	bool _solver_done;
 
 	// Francescos formula encoding
-	bool add_constraint_closest_node;
-	bool use_encoder_bool;
-	bool use_speedup;
-	bool use_furthest;
 	z3::expr_vector clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m);
-	z3::expr_vector clips_smt_encoder_bool(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_p, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m);
 	void clips_smt_solve_formula(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m,z3::expr_vector formula);
+
 	void clips_smt_solve_formula_from_smt_file(std::string path);
+	void clips_smt_optimize_formula_from_smt_file(std::string path, std::string var);
 	void clips_smt_solve_formula_from_fg_smt_file(std::string path, FormulaGenerator fg);
 
 	std::map<int ,std::string> actions_robot_1;
@@ -127,7 +124,6 @@ private:
 	std::vector<int> actions_robot_fg_2;
 	std::vector<int> actions_robot_fg_3;
 
-	// TODO (Igor) Is shared_ptr instead of make_shared ok?
 	std::vector<std::shared_ptr<Robot>> gamedata_robots;
 	std::vector<std::shared_ptr<BaseStation>> gamedata_basestations;
 	std::vector<std::shared_ptr<RingStation>> gamedata_ringstations;
