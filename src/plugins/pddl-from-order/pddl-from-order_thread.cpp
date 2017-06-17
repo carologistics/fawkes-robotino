@@ -92,6 +92,8 @@ PddlFromOrderThread::retrieve_new_order(BSONObj doc)
   if ( order_id != 1 ) {
     logger->log_warn(name(), "Order id not 1, skipping PDDL generation");
     return;
+  } else if ( orders_recv_ >= cfg_order_plan_threshold_ ) {
+    logger->log_warn(name(), "Reiceived orders above planning threadshold, skipping PDDL generation");
   }
   gen_if_->msgq_enqueue(new PddlGenInterface::GenerateMessage());
 
