@@ -141,7 +141,7 @@
 			(and (action-done LOAD-CS)(not (holding ?r ?cc)) (not-holding ?r)(cap-in-slide ?m ?col)(not (no-cap-in-slide ?m)) (not (has-cap ?cc ?col)) (wp-in-production ?cc ?m)(not (idle ?m)) ) 
 	)
 	(:action add-ring-one
-		:parameters ( ?r - robot ?m - ring-station ?pos - input-pos ?wp - base ?base-col - base-color ?ring-col - ring-color ?o - order ?num-bases - ring-enum)
+		:parameters ( ?r - robot ?m - ring-station ?pos - input-pos ?wp - base ?ring-col - ring-color ?base-col - base-color ?o - order ?num-bases - ring-enum)
 		:precondition
 			(and (locked ?r ADD-RING-ONE ?pos)(idle ?m)(has-pos ?m ?pos)(at-pos ?r ?pos)(holding ?r ?wp)(has-ring-color ?m ?ring-col)(not (has-ring-one-mounted ?wp)) (not (has-ring-two-mounted ?wp)) (not (has-cap-mounted ?wp)) (has-color ?wp ?base-col)(wp-in-slide ?m ?num-bases)(order-base-color ?o ?base-col)(order-ring-one ?o ?ring-col)(needs-bases ?ring-col ?num-bases)) 
 		:effect
