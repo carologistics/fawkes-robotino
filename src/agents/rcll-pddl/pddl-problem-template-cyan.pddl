@@ -139,8 +139,7 @@
     (no-lock R-1)
   )
   (:goal (and
-    <<#GOALORDER|{relation:'order',id:7}>>
-    (order-fulfilled O<<id>>)<</GOALORDER>>
+    <<#GOALORDER|{relation:'order'}>>(order-fulfilled O<<id>>)<</GOALORDER>>
     )
   )
 )
