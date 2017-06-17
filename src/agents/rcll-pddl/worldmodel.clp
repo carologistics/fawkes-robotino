@@ -172,7 +172,7 @@
   (state SKILL-FINAL)
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
   (step (name insert) (state running))
-  (task (name deliver))
+  (task (name deliver-c0|deliver-c1|deliver-c2|deliver-c3))
   ?mf <- (machine (name ?mps) (mtype DS))
   ?hf <- (holding ?produced-id&~NONE)
   (product
