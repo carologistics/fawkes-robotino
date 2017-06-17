@@ -89,7 +89,7 @@
     (assert (mps-instruction (machine ?mps) (cs-operation MOUNT_CAP) (lock (sym-cat ?mps "-I"))))
   )
   (if (and (eq ?mtype DS)
-           (member$ ?task-name (create$ deliver deliver-c0))) then
+           (member$ ?task-name (create$ deliver deliver-c0 deliver-c1 deliver-c2 deliver-c3))) then
     (assert (mps-instruction (machine ?mps) (gate ?gate) (lock (sym-cat ?mps "-I"))))
   )
   (if (and (eq ?mtype RS)
