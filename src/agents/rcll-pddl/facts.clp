@@ -189,6 +189,7 @@
 (deftemplate ring
   (slot color (type SYMBOL) (allowed-values BLUE GREEN ORANGE YELLOW))
   (slot req-bases (type INTEGER) (default 0))
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 (deftemplate order
@@ -226,7 +227,7 @@
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
-  (slot name (type SYMBOL) (allowed-symbols move-to-position-empty move-to-position-holding pick-cc-from-shelf load-cs pick-wp-from-cs discard-wp pick-wp-from-bs prod-at-cs add-base-to-slide-one add-base-to-slide-two add-base-to-slide-three add-ring-one add-ring-two add-ring-three deliver-c0 deliver-c1 deliver-c2 deliver-c3 fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
+  (slot name (type SYMBOL) (allowed-symbols move-to-position-empty move-to-position-holding pick-cc-from-shelf load-cs pick-wp-from-cs pick-wp-from-rs discard-wp pick-wp-from-bs prod-at-cs add-base-to-slide-one add-base-to-slide-two add-base-to-slide-three add-ring-one add-ring-two add-ring-three deliver-c0 deliver-c1 deliver-c2 deliver-c3 fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
   (slot state (type SYMBOL) (allowed-symbols planned proposed asked rejected ordered running finished failed)
         (default proposed))
   (slot stn-action (type INTEGER))
@@ -438,7 +439,7 @@
   (deliver CYAN deliver1 0 0)
   (deliver MAGENTA deliver2 0 0)
 
-  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag base-station exp-matching stn-action)))
+  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station ring product order found-tag base-station exp-matching stn-action)))
   ; zone-exploration, machine, cap-station, product, ring station
 
   (last-zoneinfo)

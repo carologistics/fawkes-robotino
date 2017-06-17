@@ -365,7 +365,7 @@
                       (active-robot ?ar&:(eq ?ar (sym-cat ?*ROBOT-NAME*))) (opts ?r PICK-FROM-BS ?to))
   ?sa <- (stn-action (id ?id) (name pick-wp-from-bs) (state pending) 
               (cond-actions $?ca&:(member$ ?lock-id ?ca)) (opts ?r ?mps ?to ?base))
-  (stn-action (id ?prod-id) (name prod-at-cs|add-ring-one|add-ring-two|add-ring-three) (cond-actions $?pca&:(member$ ?id ?pca)))
+  (stn-action (id ?prod-id) (name prod-at-cs|add-ring-one) (cond-actions $?pca&:(member$ ?id ?pca)))
   (stn-action (id ?del-id) (name deliver-c0|deliver-c1|deliver-c2|deliver-c3) (cond-actions $?dca&:(member$ ?prod-id ?dca))
               (opts $? ?order))
   (order (id ?o-id&:(eq (str-cat ?o-id) (sub-string 2 2 ?order))) (product-id ?product-id))
