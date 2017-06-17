@@ -601,7 +601,10 @@
            (name ?mps) (team ?team-color)
            (state ~DOWN&~BROKEN))
   (wait-for-lock (res ?to) (state use))
-  (order (id ?o-id&:(eq (str-cat ?o-id) (sub-string 2 2 ?order))) (delivery-gate ?gate))
+  (game-time $?game-time)
+  (order (id ?o-id&:(eq (str-cat ?o-id) (sub-string 2 2 ?order)))
+         (delivery-gate ?gate)
+         (begin ?begin&:(< ?begin (nth$ 1 ?game-time))))
   (at-pos ?to)
   =>
   (printout t "PROD: Deliver at " ?mps crlf)
