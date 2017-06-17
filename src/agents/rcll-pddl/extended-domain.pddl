@@ -289,7 +289,7 @@
     )
   )
   (:durative-action add-ring-one
-    :parameters (?r - robot ?m - ring-station ?pos - input-pos ?wp - base ?base-col - base-color ?ring-col - ring-color ?o - order ?num-bases - ring-enum)
+    :parameters (?r - robot ?m - ring-station ?pos - input-pos ?wp - base ?ring-col - ring-color ?base-col - base-color ?o - order ?num-bases - ring-enum)
     :precondition (and
       (locked ?r ADD-RING-ONE ?pos)
       (idle ?m)
