@@ -37,8 +37,7 @@
 		ADD-BASE-SLIDE-ONE ADD-BASE-SLIDE-TWO ADD-BASE-SLIDE-THREE PICK-CC LOAD-CS ADD-RING-ONE ADD-RING-TWO ADD-RING-THREE RESET-SLIDE DISCARD-WP PICK-FROM-CS PICK-FROM-RS PICK-FROM-BS PROD-AT-CS DELIVER-C0 DELIVER-C1 DELIVER-C2 DELIVER-C3 - action
 	)
 	(:predicates
-		(has-color-one ?rs - ring-station ?r - ring-color)
-		(has-color-two ?rs - ring-station ?r - ring-color)
+		(has-ring-color ?rs - ring-station ?r - ring-color)
 		(wp-in-slide ?m - ring-station ?n - ring-enum)
 		(cap-in-slide ?cs - cap-station ?cap - cap-color)
 		(no-cap-in-slide ?cs - cap-station)
@@ -144,21 +143,21 @@
 	(:action add-ring-one
 		:parameters ( ?r - robot ?m - ring-station ?pos - input-pos ?wp - base ?base-col - base-color ?ring-col - ring-color ?o - order ?num-bases - ring-enum)
 		:precondition
-			(and (locked ?r ADD-RING-ONE ?pos)(idle ?m)(has-pos ?m ?pos)(at-pos ?r ?pos)(holding ?r ?wp)(not (has-ring-one-mounted ?wp)) (not (has-ring-two-mounted ?wp)) (not (has-cap-mounted ?wp)) (has-color ?wp ?base-col)(wp-in-slide ?m ?num-bases)(order-base-color ?o ?base-col)(order-ring-one ?o ?ring-col)(needs-bases ?ring-col ?num-bases)) 
+			(and (locked ?r ADD-RING-ONE ?pos)(idle ?m)(has-pos ?m ?pos)(at-pos ?r ?pos)(holding ?r ?wp)(has-ring-color ?m ?ring-col)(not (has-ring-one-mounted ?wp)) (not (has-ring-two-mounted ?wp)) (not (has-cap-mounted ?wp)) (has-color ?wp ?base-col)(wp-in-slide ?m ?num-bases)(order-base-color ?o ?base-col)(order-ring-one ?o ?ring-col)(needs-bases ?ring-col ?num-bases)) 
 		:effect
 			(and (action-done ADD-RING-ONE)(not (holding ?r ?wp)) (not-holding ?r)(wp-in-production ?wp ?m)(not (idle ?m)) (not (wp-in-slide ?m ?num-bases)) (has-ring-one ?wp ?ring-col)(has-ring-one-mounted ?wp)) 
 	)
 	(:action add-ring-two
 		:parameters ( ?r - robot ?m - ring-station ?pos - input-pos ?wp - base ?ring-col1 - ring-color ?ring-col2 - ring-color ?base-col - base-color ?o - order ?num-bases - ring-enum)
 		:precondition
-			(and (locked ?r ADD-RING-TWO ?pos)(idle ?m)(has-pos ?m ?pos)(at-pos ?r ?pos)(holding ?r ?wp)(has-ring-one ?wp ?ring-col1)(has-ring-one-mounted ?wp)(not (has-ring-two-mounted ?wp)) (not (has-ring-three-mounted ?wp)) (not (has-cap-mounted ?wp)) (has-color ?wp ?base-col)(wp-in-slide ?m ?num-bases)(order-base-color ?o ?base-col)(order-ring-one ?o ?ring-col1)(order-ring-two ?o ?ring-col2)(needs-bases ?ring-col2 ?num-bases)) 
+			(and (locked ?r ADD-RING-TWO ?pos)(idle ?m)(has-pos ?m ?pos)(at-pos ?r ?pos)(holding ?r ?wp)(has-ring-color ?m ?ring-col2)(has-ring-one ?wp ?ring-col1)(has-ring-one-mounted ?wp)(not (has-ring-two-mounted ?wp)) (not (has-ring-three-mounted ?wp)) (not (has-cap-mounted ?wp)) (has-color ?wp ?base-col)(wp-in-slide ?m ?num-bases)(order-base-color ?o ?base-col)(order-ring-one ?o ?ring-col1)(order-ring-two ?o ?ring-col2)(needs-bases ?ring-col2 ?num-bases)) 
 		:effect
 			(and (action-done ADD-RING-TWO)(not (holding ?r ?wp)) (not-holding ?r)(wp-in-production ?wp ?m)(not (idle ?m)) (not (wp-in-slide ?m ?num-bases)) (has-ring-two ?wp ?ring-col2)(has-ring-two-mounted ?wp)) 
 	)
 	(:action add-ring-three
 		:parameters ( ?r - robot ?m - ring-station ?pos - input-pos ?wp - base ?ring-col1 - ring-color ?ring-col2 - ring-color ?ring-col3 - ring-color ?base-col - base-color ?o - order ?num-bases - ring-enum)
 		:precondition
-			(and (locked ?r ADD-RING-THREE ?pos)(idle ?m)(has-pos ?m ?pos)(at-pos ?r ?pos)(holding ?r ?wp)(has-ring-one ?wp ?ring-col1)(has-ring-one-mounted ?wp)(has-ring-two ?wp ?ring-col2)(has-ring-two-mounted ?wp)(not (has-ring-three-mounted ?wp)) (not (has-cap-mounted ?wp)) (has-color ?wp ?base-col)(wp-in-slide ?m ?num-bases)(order-base-color ?o ?base-col)(order-ring-one ?o ?ring-col1)(order-ring-two ?o ?ring-col2)(order-ring-three ?o ?ring-col3)(needs-bases ?ring-col3 ?num-bases)) 
+			(and (locked ?r ADD-RING-THREE ?pos)(idle ?m)(has-pos ?m ?pos)(at-pos ?r ?pos)(holding ?r ?wp)(has-ring-color ?m ?ring-col3)(has-ring-one ?wp ?ring-col1)(has-ring-one-mounted ?wp)(has-ring-two ?wp ?ring-col2)(has-ring-two-mounted ?wp)(not (has-ring-three-mounted ?wp)) (not (has-cap-mounted ?wp)) (has-color ?wp ?base-col)(wp-in-slide ?m ?num-bases)(order-base-color ?o ?base-col)(order-ring-one ?o ?ring-col1)(order-ring-two ?o ?ring-col2)(order-ring-three ?o ?ring-col3)(needs-bases ?ring-col3 ?num-bases)) 
 		:effect
 			(and (action-done ADD-RING-THREE)(not (holding ?r ?wp)) (not-holding ?r)(wp-in-production ?wp ?m)(not (idle ?m)) (not (wp-in-slide ?m ?num-bases)) (has-ring-three ?wp ?ring-col3)(has-ring-three-mounted ?wp)) 
 	)

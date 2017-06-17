@@ -50,8 +50,8 @@
     (idle <<name>>)<</MACHINEIDLE>>
 
     <<#MACHINERINGCOLOR|{relation:'ring-station', name:/C/}>>
-    (has-color-one <<name>> RING_<<availablecolors_0>>)
-    (has-color-two <<name>> RING_<<availablecolors_1>>)
+    (has-ring-color <<name>> RING_<<availablecolors_0>>)
+    (has-ring-color <<name>> RING_<<availablecolors_1>>)
     (wp-in-slide <<name>> ZERO)
     <</MACHINERINGCOLOR>>
 
@@ -142,8 +142,7 @@
     (no-lock R-1)
   )
   (:goal (and
-    <<#GOALORDER|{relation:'order',id:7}>>
-    (order-fulfilled O<<id>>)<</GOALORDER>>
+    <<#GOALORDER|{relation:'order',id:7}>>(order-fulfilled O<<id>>)<</GOALORDER>>
     )
   )
 )
