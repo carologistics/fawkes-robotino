@@ -37,6 +37,11 @@
   (return (sym-cat (sub-string 1 (- (str-length ?place) 2) ?place)))
 )
 
+(deffunction get-ring-color-from-plan-action (?color)
+  "Return the correct ring color without prefix"
+  (return (sym-cat (sub-string 6 (str-length ?color) ?color)))
+)
+
 (deffunction get-side-from-place (?place)
   (bind ?side (sub-string (str-length ?place) (str-length ?place) ?place))
   (printout t "Getting side " ?side " from " ?place crlf)
@@ -49,6 +54,26 @@
     (return OUTPUT)
   )
   return FALSE
+)
+
+(deffunction get-int-from-ring-enum (?num)
+  "Returns an integer equivalent to the given ring-enum"
+  (if (eq ?num "ZERO")
+    then
+    (return 0)
+  )
+  (if (eq ?num "ONE")
+    then
+    (return 1)
+  )
+  (if (eq ?num "TWO")
+    then
+    (return 2)
+  )
+  (if (eq ?num "THREE")
+    then
+    (return 3)
+  )
 )
 
 (deffunction get-light-signal-side (?mps)
