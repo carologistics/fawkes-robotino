@@ -32,6 +32,7 @@
 #include <interfaces/PddlGenInterface.h>
 #include "computables/order_computable.h"
 #include "computables/machine_type_computable.h"
+#include "computables/requiredbases_computable.h"
 
 namespace fawkes {
   // add forward declarations here, e.g., interfaces
@@ -78,6 +79,7 @@ class PddlFromOrderThread
 
   OrderComputable* order_computable_;
   MachineTypeComputable* machine_type_computable_;
+  RequiredBasesComputable* requiredbases_computable_;
   
   bool pddl_gen_running_ = false;
   bool wait_for_wakeup_ = false;
