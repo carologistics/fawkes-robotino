@@ -93,7 +93,7 @@
     (assert (mps-instruction (machine ?mps) (gate ?gate) (lock (sym-cat ?mps "-I"))))
   )
   (if (and (eq ?mtype RS)
-           (member$ ?task-name (create$ add-first-ring add-additional-ring))) then
+           (member$ ?task-name (create$ add-first-ring add-additional-ring add-ring-one add-ring-two add-ring-three))) then
     (assert (mps-instruction (machine ?mps) (ring-color ?ring) (lock (sym-cat ?mps "-I"))))
   )
 )
