@@ -57,6 +57,7 @@ PddlFromOrderThread::init()
 
   order_computable_ = new OrderComputable(robot_memory, logger, config);
   machine_type_computable_ = new MachineTypeComputable(robot_memory, logger, config);
+  requiredbases_computable_ = new RequiredBasesComputable(robot_memory, logger, config);
 }
 
 void
@@ -80,6 +81,7 @@ PddlFromOrderThread::finalize()
   blackboard->close(gen_if_);
   delete order_computable_;
   delete machine_type_computable_;
+  delete requiredbases_computable_;
 }
 
 void

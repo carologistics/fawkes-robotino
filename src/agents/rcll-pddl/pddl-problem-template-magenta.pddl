@@ -55,11 +55,8 @@
     (wp-in-slide <<name>> ZERO)
     <</MACHINERINGCOLOR>>
 
-    ;TODO translate needed-bases
-    (needs-bases RING_GREEN ONE)
-    (needs-bases RING_YELLOW TWO)
-    (needs-bases RING_ORANGE ONE)
-    (needs-bases RING_BLUE ZERO)
+    <<#REQUIREDBASES|{relation:'requiredbases'}>>
+    (needs-bases <<color>> <<num>>)<</REQUIREDBASES>>
 
     (has-shelf-slot M-CS1 slot1)
     (has-shelf-slot M-CS1 slot2)
