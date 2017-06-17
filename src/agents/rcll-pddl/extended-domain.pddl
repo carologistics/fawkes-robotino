@@ -44,8 +44,7 @@
     DELIVER-C0 DELIVER-C1 DELIVER-C2 DELIVER-C3 - action
   )
   (:predicates
-    (has-color-one ?rs - ring-station ?r - ring-color)
-    (has-color-two ?rs - ring-station ?r - ring-color)
+    (has-ring-color ?rs - ring-station ?r - ring-color)
     (wp-in-slide ?m - ring-station ?n - ring-enum)
 
     (cap-in-slide ?cs - cap-station ?cap - cap-color)
@@ -297,6 +296,7 @@
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
       (holding ?r ?wp)
+      (has-ring-color ?m ?ring-col)
       (not (has-ring-one-mounted ?wp))
       (not (has-ring-two-mounted ?wp))
       (not (has-cap-mounted ?wp))
@@ -325,6 +325,7 @@
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
       (holding ?r ?wp)
+      (has-ring-color ?m ?ring-col2)
       (has-ring-one ?wp ?ring-col1)
       (has-ring-one-mounted ?wp)
       (not (has-ring-two-mounted ?wp))
@@ -356,6 +357,7 @@
       (has-pos ?m ?pos)
       (at-pos ?r ?pos)
       (holding ?r ?wp)
+      (has-ring-color ?m ?ring-col3)
       (has-ring-one ?wp ?ring-col1)
       (has-ring-one-mounted ?wp)
       (has-ring-two ?wp ?ring-col2)
