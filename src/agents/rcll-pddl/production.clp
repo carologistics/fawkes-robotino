@@ -78,7 +78,7 @@
             (not (locked-resource (resource ?other-to)))))
   (holding NONE)
   (not (wait-for-lock (state use)))
-  (stn-sync (state generated))
+  (stn-generation (state generated))
   =>
   (printout t "PROD: Locking " ?to " for action " ?action " with robot " ?*ROBOT-NAME* crlf)
   (bind ?task-id (random-id))
@@ -116,7 +116,7 @@
       (not (locked-resource (resource ?to))))
   (holding ?base&~NONE)
   (not (wait-for-lock (state use)))
-  (stn-sync (state generated))
+  (stn-generation (state generated))
   =>
   (printout t "PROD: Trying to lock" ?to " for action " ?action " with robot " ?*ROBOT-NAME* crlf)
   (bind ?task-id (random-id))

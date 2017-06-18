@@ -220,6 +220,12 @@
 )
 
 (deftemplate stn-sync
+  (slot state (type SYMBOL) (allowed-symbols synced))
+  (slot count (type INTEGER))
+  (slot sync-id (type INTEGER) (default 0))
+)
+
+(deftemplate stn-generation
   (slot state (type SYMBOL) (allowed-symbols generated))
   (slot sync-id (type INTEGER) (default 0))
 )
@@ -233,12 +239,6 @@
   (multislot opts (type SYMBOL))
   (slot sync-id (type INTEGER) (default 0))
 )
-
-(deftemplate stn-sync
-  (slot state (type SYMBOL) (allowed-symbols generated))
-  (slot sync-id (type INTEGER) (default 0))
-)
-
 
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
@@ -445,6 +445,7 @@
   (team-robot R-3)
 
   (last-stn-action-unlocked 0)
+  (stn-actions-generated 0)
   
   ; Input storage per team color
   (input-storage CYAN Ins1 0 0)

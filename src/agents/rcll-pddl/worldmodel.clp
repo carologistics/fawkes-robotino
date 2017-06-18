@@ -60,10 +60,20 @@
                                (duration ?duration)
                                (cond-actions $?cond-actions)
                                (opts $?opts))
+  ?sag <- (stn-actions-generated ?num-synced)
   (lock-role MASTER)
   =>
   (synced-assert (str-cat "(stn-action (id " ?id ") (name " ?name ") (duration " ?duration ") (cond-actions " (implode$ ?cond-actions) ") (opts " (implode$ ?opts) "))"))
   (synced-modify ?psa state generated)
+  (retract ?sag)
+  (assert (stn-actions-generated (+ ?num-synced 1)))
+)
+
+(defrule wm-set-stn-generated
+  (stn-actions-generated ?num-synced)
+  (stn-sync (state synced) (count ?num-synced))
+  =>
+  (synced-assert "(stn-generation (state generated))")
 )
 
 (defrule wm-drive-to-bs-started
