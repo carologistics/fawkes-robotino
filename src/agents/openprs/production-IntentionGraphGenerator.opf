@@ -58,20 +58,6 @@
 		(! (intend-node-after-before-tage 	(Process-Delivery-preinput-gate) 
 											(. .) 
 											(. .)))
-
-		(! (intend-node-after-before-tage 	(Precond-Delivery-preinput-gate) 
-											(. .) 
-											(find-intentions-id tage_Process-Delivery-preinput-gate)))
-
-		(! (intend-node-after-before-tage 	(Process-delivery-csout-gripper) 
-											(. .) 
-											(find-intentions-id tage_Precond-Delivery-preinput-gate)))
-
-
-		(! (intend-node-after-before-tage 	(Precond-delivery-csout-gripper) 
-											(. .) 
-											(find-intentions-id tage_Process-delivery-csout-gripper)))
-
 		
 
 		)	
@@ -84,8 +70,12 @@
 	:context 	()
 	:body 		(
 
-		; (! (= $my-tage-name ))
-		(! (tag-current-intention tage_Process-Delivery-preinput-gate))
+		(! (= $my-tage-name tage_Process-Delivery-preinput-gate))
+		(! (tag-current-intention $my-tage-name))
+
+		(! (intend-node-after-before-tage 	(Precond-Delivery-preinput-gate) 
+											(. .) 
+											(find-intentions-id $my-tage-name)))
 		; ;Wait for all graph nodes
 		(^ (in-production $goal-inmind ))
 
@@ -103,6 +93,11 @@
 
 		(! (= $my-tage-name tage_Precond-Delivery-preinput-gate))
 		(! (tag-current-intention $my-tage-name))
+
+		(! (intend-node-after-before-tage 	(Process-delivery-csout-gripper) 
+											(. .) 
+											(find-intentions-id $my-tage-name)))
+
 		; ;Wating for all graph nodes
 		(^ (in-production $goal-inmind ))		
 
@@ -122,6 +117,12 @@
 	:body		(
 		(! (= $my-tage-name tage_Process-delivery-csout-gripper))
 		(! (tag-current-intention $my-tage-name))
+
+
+		(! (intend-node-after-before-tage 	(Precond-delivery-csout-gripper) 
+											(. .) 
+											(find-intentions-id $my-tage-name)))
+
 
 		;Wating for all graph nodes
 		(^ (in-production $goal-inmind ))		
