@@ -94,6 +94,7 @@ PddlFromOrderThread::retrieve_new_order(BSONObj doc)
     return;
   } else if ( orders_recv_ >= cfg_order_plan_threshold_ ) {
     logger->log_warn(name(), "Reiceived orders above planning threadshold, skipping PDDL generation");
+    return;
   }
   gen_if_->msgq_enqueue(new PddlGenInterface::GenerateMessage());
 
