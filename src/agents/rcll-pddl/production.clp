@@ -329,7 +329,7 @@
   (machine (mtype RS)
            (name ?mps)
            (team ?team-color)
-           (state ~DOWN&~BROKEN)
+           (state READY-AT-OUTPUT)
            (produced-id ?produced-id))
   (wait-for-lock (res ?to) (state use))
   (at-pos ?to)
