@@ -72,6 +72,7 @@
 (defrule wm-set-stn-generated
   (stn-actions-generated ?num-synced)
   (stn-sync (state synced) (count ?num-synced))
+  (not (stn-generation (state generated)))
   =>
   (synced-assert "(stn-generation (state generated))")
 )
