@@ -211,7 +211,7 @@
 (deftemplate stn-action
   (slot id (type INTEGER))
   (slot name (type SYMBOL) (allowed-symbols move-to-position-empty move-to-position-holding pick-cc-from-shelf load-cs pick-wp-from-cs prod-at-cs pick-wp-from-bs pick-wp-from-rs add-base-to-slide-one add-base-to-slide-two add-base-to-slide-three reset-rs-slide add-ring-one add-ring-two add-ring-three lock-position unlock-position lock-change discard-wp deliver-c0 deliver-c1 deliver-c2 deliver-c3))
-  (slot state (type SYMBOL) (allowed-symbols pending running finished))
+  (slot state (type SYMBOL) (allowed-symbols pending running finished) (default pending))
   (slot duration (type INTEGER))
   (multislot cond-actions (type INTEGER))
   (multislot opts (type SYMBOL))
@@ -223,6 +223,22 @@
   (slot state (type SYMBOL) (allowed-symbols generated))
   (slot sync-id (type INTEGER) (default 0))
 )
+
+(deftemplate proposed-stn-action
+  (slot id (type INTEGER))
+  (slot name (type SYMBOL) (allowed-symbols move-to-position-empty move-to-position-holding pick-cc-from-shelf load-cs pick-wp-from-cs prod-at-cs pick-wp-from-bs pick-wp-from-rs add-base-to-slide-one add-base-to-slide-two add-base-to-slide-three reset-rs-slide add-ring-one add-ring-two add-ring-three lock-position unlock-position lock-change discard-wp deliver-c0 deliver-c1 deliver-c2 deliver-c3))
+  (slot state (type SYMBOL) (allowed-symbols proposed generated) (default proposed))
+  (slot duration (type INTEGER))
+  (multislot cond-actions (type INTEGER))
+  (multislot opts (type SYMBOL))
+  (slot sync-id (type INTEGER) (default 0))
+)
+
+(deftemplate stn-sync
+  (slot state (type SYMBOL) (allowed-symbols generated))
+  (slot sync-id (type INTEGER) (default 0))
+)
+
 
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task

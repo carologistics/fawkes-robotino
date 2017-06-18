@@ -52,6 +52,20 @@
   (retract ?pb-msg)
 )
 
+(defrule wm-recv-stn-action
+  (declare (salience ?*PRIORITY-WM*))
+  ?psa <- (proposed-stn-action (id ?id)
+                               (name ?name)
+                               (state proposed)
+                               (duration ?duration)
+                               (cond-actions $?cond-actions)
+                               (opts $?opts))
+  (lock-role MASTER)
+  =>
+  (synced-assert (str-cat "(stn-action (id " ?id ") (name " ?name ") (duration " ?duration ") (cond-actions " (implode$ ?cond-actions) ") (opts " (implode$ ?opts) "))"))
+  (synced-modify ?psa state generated)
+)
+
 (defrule wm-drive-to-bs-started
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-EXECUTION)
