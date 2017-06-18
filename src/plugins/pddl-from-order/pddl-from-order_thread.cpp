@@ -71,7 +71,12 @@ PddlFromOrderThread::loop()
   }
   logger->log_info(name(),"PDDL generation finished, starting planning.");
 
-  plan_if_->msgq_enqueue(new PddlPlannerInterface::PlanMessage());
+  if ( ! planned_once_ ) {
+    plan_if_->msgq_enqueue(new PddlPlannerInterface::PlanMessage());
+    planned_once_ = true;
+  } else {
+    logger->log_error(name(), "Already planned one, skipping next run");
+  }
 }
 
 void

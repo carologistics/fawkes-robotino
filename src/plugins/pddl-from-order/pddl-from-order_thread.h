@@ -83,6 +83,7 @@ class PddlFromOrderThread
   
   bool pddl_gen_running_ = false;
   bool wait_for_wakeup_ = false;
+  bool planned_once_ = false;
   void retrieve_new_order(mongo::BSONObj doc);
   uint8_t orders_recv_ = 0;
   void try_wakeup();
