@@ -5,5 +5,158 @@
 ;  Copyright  2017  Mostafa Gomaa [gomaa@kbsg.rwth-aachen.de]
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
+(
+
+(defop Graph-util--build-A-Node-After/Before-Tage
+	:invocation (! (intend-node-after-before-tage $goal-of-node $after-tage-list $before-tage-list))
+	:context 	()
+	:body 		(
+		(! (= @goal (BUILD-GOAL (! (val $goal-of-node)))))
+		(! (INTENDED-GOAL-AFTER-BEFORE (val @goal) $after-tage-list $before-tage-list))
+		)
+	)
+
+	; :invcation 	(! (GenerateGraphForGoal (goal-inmind (workpiece $g-id (base $g-base-color) 
+	; 																	(rings none) 
+	; 																	(cap $g-cap-color_g) 
+	; 																	(place $g-ds-name $ds-gate)))))
+(defop Generat---Graph-For-C0
+	:invocation 	(! (GenerateGraphForGoal))
+	:context 	( );machine DS 
+	:body 		(
+		;Generate Condition-Node Finalize-Production
+		;					Check if product was really delivered and perform any calculations to finalize
+		
+		;Generate precessing-Nodes of-Deliver  
+		;	(! (workpiece $product-id (base $g_base-color) (rings non) (cap $g-cap-color) (place $g-ds-name $ds-gate) ))
+		;			-double check if u have all pre-conditions
+		;				(?(workpiece $g-id (base $g-base-color) (rings none )(cap $cap-color) (place "R-1" "pre-input"))
+		;				(? (critical-delivery time passed))
+		;				(? (delivery-time-started))
+		;			-intend request the ahcievment
+		;				(! (Achieve-workpiece DS $*WP-atoutput*))
+
+
+
+		;Conditions shared by all all nodes:
+		;	Goal in-production
+		;	
+
+		;Conditions exist in all nodes with differnt vlaues
+		; 		what to do on faliure..repeat#, FailGraphProduct,
+		;		what time should not pass 
+		;		resources locked maybe (like lock in each process node the resources it needs to finish it)
+
+		; Delivery-Status crucial info
+
+		;RANDOM NOTES:
+		; 	==maybe later try to control the flow of which fires if all posible with priority
+		;	== To Get a Robot. U gotta ask the Agent-Scheduler..he will know when to give u an agent
+	
+		(! (tag-current-intention tage_Production-C0))
+
+		(! (intend-node-after-before-tage 	(Process-Delivery-preinput-gate) 
+											(. .) 
+											(. .)))
+
+		(! (intend-node-after-before-tage 	(Precond-Delivery-preinput-gate) 
+											(. .) 
+											(find-intentions-id tage_Process-Delivery-preinput-gate)))
+
+		(! (intend-node-after-before-tage 	(Process-delivery-csout-gripper) 
+											(. .) 
+											(find-intentions-id tage_Precond-Delivery-preinput-gate)))
+
+
+		(! (intend-node-after-before-tage 	(Precond-delivery-csout-gripper) 
+											(. .) 
+											(find-intentions-id tage_Process-delivery-csout-gripper)))
+
+		
+
+		)	
+	)
+
+
+;--------------------------------------------------------------Delivery Gate
+(defop Node-Delivery-PROCESS---pre-input==>ds-gate
+	:invocation ( ! (Process-Delivery-preinput-gate) )
+	:context 	()
+	:body 		(
+
+		; (! (= $my-tage-name ))
+		(! (tag-current-intention tage_Process-Delivery-preinput-gate))
+		; ;Wait for all graph nodes
+		(^ (in-production $goal-inmind ))
+
+		; ;Check-all-preconditions
+		; ;(? (agent-allocated))
+		; (? (workpiece $g-id (base $g-base-color) (rings none )(cap $g-cap-color) (place $agent "pre-input")))
+		; (! (Achieve-workpiece $ds-name (workpiece $g-id $g-base $g-rings $g-cap (place $ds-name $ds-gate))))
+		)
+	)
+
+(defop Node-Delivery---PRECOND---pre-input==>ds-gate 
+	:invocation ( ! (Precond-Delivery-preinput-gate) )
+	:context 	()
+	:body		(
+
+		(! (= $my-tage-name tage_Precond-Delivery-preinput-gate))
+		(! (tag-current-intention $my-tage-name))
+		; ;Wating for all graph nodes
+		(^ (in-production $goal-inmind ))		
+
+		; (^ (workpiece $g-id (base $g-base-color) (rings none )(cap $g-cap-color) (place $agent "pre-input")))
+		; ;(^ (Delvery-time-didint-pass-critlical))
+		; ;(^ (Delivary-time-startied ))
+		; ;(^ (agent-alocated))
+		; (! (allocat))
+		)
+	)
+
+;--------------------------------------------------------------Delivery Preinput
+(defop Node-Delivery---PROCESS---CS-output==>gripper
+	:invocation ( ! (Process-delivery-csout-gripper) )
+	:context	()
+
+	:body		(
+		(! (= $my-tage-name tage_Process-delivery-csout-gripper))
+		(! (tag-current-intention $my-tage-name))
+
+		;Wating for all graph nodes
+		(^ (in-production $goal-inmind ))		
+
+		; ;(^ (graph-built $goal-inmind))
+		; ;Check-all-preconditions
+		; (? (workpiece $g-id (base $g-base-color) (rings none )(cap $g-cap-color) (place $cs-name "output")))
+
+		; (! (Achieve-workpiece $ds-name (workpiece $g-id $g-base $g-rings $g-cap (place $ds-name $ds-gate))))
+		
+		)
+	)
+
+
+(defop Node-Delivery---PRECOND---CS-output==>gripper
+	:invocation ( ! (Precond-delivery-csout-gripper))
+	:context 	()
+	:body		(
+		
+		(! (= $my-tage-name tage_Precond-delivery-csout-gripper))
+		(! (tag-current-intention $my-tage-name))
+
+		;Wating for all graph nodes
+		(^ (in-production $goal-inmind ))		
+
+		; ;should have completed
+		; (? (workpiece $g-id (base $g-base-color) (rings none )(cap $g-cap-color) (place $cs-name "output")))
+	
+		; ;(^ (Delvery-time-didint-pass-critlical))
+		; ;(^ (Delivary-time-startied ))
+		; ;(^ (agent-alocated))
+		; (! (allocat))
+		)
+	)
+
+)
 
 
