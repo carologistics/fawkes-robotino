@@ -7,13 +7,28 @@
 ;---------------------------------------------------------------------------
 (
 
-(defop Graph-util--build-A-Node-After/Before-Tage
-	:invocation (! (intend-node-after-before-tage $goal-of-node $after-tage-list $before-tage-list))
+(defop Graph-util--build-A-Node-After/Before-tag
+	:invocation (! (intend-node-after-before-tag $goal-of-node $after-tag-list $before-tag-list))
 	:context 	()
 	:body 		(
-		(! (= @goal (BUILD-GOAL (! (val $goal-of-node)))))
-		(! (INTENDED-GOAL-AFTER-BEFORE (val @goal) $after-tage-list $before-tage-list))
+		; (! (= @goal (BUILD-GOAL (! (val $goal-of-node)))))
+		(! (INTENDED-GOAL-AFTER-BEFORE $goal-of-node $after-tag-list $before-tag-list))
 		)
+	:Documentation "This is to allow the intended-goal-after-before to be intended from an intention differnt than the tag-current-intention one.
+					 INTENDED-GOAL-AFTER-BEFORE intends the goal after the current intention. This creates an intention to allow the creation 
+					 Graph on the fly from the same op"
+	)
+
+(defop Graph-util--build-A-Node-After/Before-tag-with-priority
+	:invocation (! (intend-node-after-before-tag-with-priority $goal-of-node $after-tag-list $before-tag-list $p))
+	:context 	()
+	:body 		(
+		; (! (= @goal (BUILD-GOAL (! (val $goal-of-node)))))
+		(! (INTENDED-GOAL-WITH-PRIORITY-AFTER-BEFORE $goal-of-node $p $after-tag-list $before-tag-list))
+		)
+	:Documentation "This is to allow the intended-goal-after-before to be intended from an intention differnt than the tag-current-intention one.
+					 INTENDED-GOAL-AFTER-BEFORE intends the goal after the current intention. This creates an intention to allow the creation 
+					 Graph on the fly from the same op"
 	)
 
 	; :invcation 	(! (GenerateGraphForGoal (goal-inmind (workpiece $g-id (base $g-base-color) 
@@ -53,9 +68,9 @@
 		; 	==maybe later try to control the flow of which fires if all posible with priority
 		;	== To Get a Robot. U gotta ask the Agent-Scheduler..he will know when to give u an agent
 	
-		(! (tag-current-intention tage_Production-C0))
+		(! (tag-current-intention tag_Production-C0))
 
-		(! (intend-node-after-before-tage 	(Process-Delivery-preinput-gate) 
+		(! (intend-node-after-before-tag 	(Process-Delivery-preinput-gate) 
 											(. .) 
 											(. .)))
 		
@@ -70,12 +85,12 @@
 	:context 	()
 	:body 		(
 
-		(! (= $my-tage-name tage_Process-Delivery-preinput-gate))
-		(! (tag-current-intention $my-tage-name))
+		(! (= $my-tag-name tag_Process-Delivery-preinput-gate))
+		(! (tag-current-intention $my-tag-name))
 
-		(! (intend-node-after-before-tage 	(Precond-Delivery-preinput-gate) 
+		(! (intend-node-after-before-tag 	(Precond-Delivery-preinput-gate) 
 											(. .) 
-											(find-intentions-id $my-tage-name)))
+											(find-intentions-id $my-tag-name)))
 		; ;Wait for all graph nodes
 		(^ (in-production $goal-inmind ))
 
@@ -91,12 +106,16 @@
 	:context 	()
 	:body		(
 
-		(! (= $my-tage-name tage_Precond-Delivery-preinput-gate))
-		(! (tag-current-intention $my-tage-name))
+		(! (= $my-tag-name tag_Precond-Delivery-preinput-gate))
+		(! (tag-current-intention $my-tag-name))
+		(! (tag-current-intention lalksjdlja))
+		(! (tag-current-intention my-tag-name))
 
-		(! (intend-node-after-before-tage 	(Process-delivery-csout-gripper) 
+
+
+		(! (intend-node-after-before-tag 	(Process-delivery-csout-gripper) 
 											(. .) 
-											(find-intentions-id $my-tage-name)))
+											(find-intentions-id $my-tag-name)))
 
 		; ;Wating for all graph nodes
 		(^ (in-production $goal-inmind ))		
@@ -115,13 +134,13 @@
 	:context	()
 
 	:body		(
-		(! (= $my-tage-name tage_Process-delivery-csout-gripper))
-		(! (tag-current-intention $my-tage-name))
+		(! (= $my-tag-name tag_Process-delivery-csout-gripper))
+		(! (tag-current-intention $my-tag-name))
 
 
-		(! (intend-node-after-before-tage 	(Precond-delivery-csout-gripper) 
+		(! (intend-node-after-before-tag 	(Precond-delivery-csout-gripper) 
 											(. .) 
-											(find-intentions-id $my-tage-name)))
+											(find-intentions-id $my-tag-name)))
 
 
 		;Wating for all graph nodes
@@ -142,8 +161,8 @@
 	:context 	()
 	:body		(
 		
-		(! (= $my-tage-name tage_Precond-delivery-csout-gripper))
-		(! (tag-current-intention $my-tage-name))
+		(! (= $my-tag-name tag_Precond-delivery-csout-gripper))
+		(! (tag-current-intention $my-tag-name))
 
 		;Wating for all graph nodes
 		(^ (in-production $goal-inmind ))		

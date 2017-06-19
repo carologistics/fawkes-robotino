@@ -28,4 +28,9 @@
 		:body ((! (printf (Format "AGENT-ACHIEVING: %s %s \n" $agent $task))))
 	  )
 
+	(defop debug-Goal-Inmind
+		:invocation ( goal-inmind $workpiece )
+		:body ((! (printf (Format "Goal-Inmind: %s \n" $workpiece))))
+	  )
+
 	)

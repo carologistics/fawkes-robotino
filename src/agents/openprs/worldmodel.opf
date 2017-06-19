@@ -124,6 +124,28 @@
 			)
 		)
 
+	(defop worldmodel--On-CS-Shelf-Gripp--update-shelf
+		:invocation (workpiece $id (base UNKNOWN) (rings none) (cap $cap-color) (place $agent "gripper"))
+		:context ( 	(cap-station $cs-name $cap-color @status $caps-on-shelf)
+					)
+		:body(
+				;updated on-shelf
+				(if (? (= 3 $caps-on-shelf))  				(! (= $new-caps-on-shelf  2))
+				 	else (if (? (= 2 $caps-on-shelf)) 		(! (= $new-caps-on-shelf  1))
+						 else (if (? (= 1 $caps-on-shelf)) 	(! (= $new-caps-on-shelf  3)) )))
+				
+				(=> (cap-station $cs-name $cap-color @status $new-caps-on-shelf ))
+			)
+		)
+
+	(defop worldmodel--On-WP-LOST-Stop-holding
+		:invocation (workpiece $id $base $rings $cap (place "LOST" "LOST"))
+		:context ( 	(holding $id) )
+		:body(	
+				(=> (holding none))
+			)
+		)
+
 	(defop worldmodel--Sync-RS-Slide-and-Bases-Loaded
 		:invocation ( timer "beacon" $last-sec $last-usec $seq )
 		:context ( 	(ring-station $rs-name $avilible-colors $selected-color $bases-loaded)
@@ -211,6 +233,7 @@
 		:invocation (machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)  
 		:context	( 	(~ (= $mps-state "READY-AT-OUTPUT"))
 						(workpiece $id $base $rings $cap (place $mps-name $side))
+						(MEMQ $side (. "input" "output" .))
 						(< $id 0)
 						)
 		:body		 (
@@ -257,7 +280,9 @@
 		:invocation (workpiece $positive-id $base $rings $cap (place $place-name $feature))
 		:context ( 	(workpiece $negative-id $any-base $any-rings $any-cap (place $place-name $some-feature))
 					(<= 0 $positive-id)
-					(> 0 $negative-id))
+					(> 0 $negative-id)
+					(MEMQ $some-feature (. "input" "output" .))	
+					)
 		:body(
 			(if(? (|| 	(machine $place-name "BS" "READY-AT-OUTPUT" $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
 						(= $some-feature $feature)))
@@ -330,6 +355,19 @@
 		  	(! (printf (FORMAT "Agent %s is Dieeeeeed. Havn't heard from him. \n" $agent-name)))
 		  	(~> (heart-beat $agent-name @robot-number @team-name @team-color @sec @nsec))
 		  	(~> (agent-achieving $agent-name $task-name))
+		  	
+		  	(while (? (lock Accept $agent @resource @prioriy))
+		  		(=> (lock release $agent @resource @prioriy))
+		  		)
+		  	(while (? (& (achieve-workpiece (val $agent) @workpiece @status)
+		  					(MEMQ $status (. REQUESTING STARTED .))
+		  					))
+		  		(=>  (achieve-workpiece (val $agent) @workpiece FAILED))
+		  		)
+		  	
+
+		  	;Later send some intrupt signal or something that takes care of everything this agent had
+
 		  )
 		  :documentation ""
 		  ;TODO: Set a differnt intervale value for the check coz it might take longer to say he is dead in real life

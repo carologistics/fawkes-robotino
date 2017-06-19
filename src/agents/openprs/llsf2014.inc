@@ -57,7 +57,7 @@ declare ff 		ring-station 1
 ;///////////
 ;Goals selection
 ;//////
-declare ff 		goal-inmind 0
+declare ff 		goal-inmind 1
 declare ff 		open-orders 0
 declare cwp 	goal-tree-node 
 declare ff		achiving-goal-tree-node 1
@@ -123,6 +123,7 @@ declare symbol CAP_NOT_LOADED
 declare predicate test
 declare predicate template
 declare cwp in-production
+declare cwp production-ready-to-start
 
 
 add (master-of LOCKING "R-1")
@@ -154,3 +155,5 @@ load opf "coordination.opf"
 load opf "production_mutilagent.opf"
 load opf "production_experimental.opf"
 load opf "Oprs_experimental.opf"
+load opf "production-IntentionGraphGenerator.opf"
+load opf "production_multiagent-simple-production-graph-parallel-goals.opf"

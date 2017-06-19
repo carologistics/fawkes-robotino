@@ -8,9 +8,9 @@
 (
 	
 	(defop choose-goal-inmind
-		:invocation( ! (choose-goal-inmind $c-type) )
-		:context( 	(order $id $c-type $base-color $ring-colors $cap-color $quantity-requested $quantity-delivered $delivery-period-begin $delivery-period-end $delivery-gate)
-					(machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with)
+		:invocation( || (! (choose-goal-inmind $c-type $goal-inmind))
+						(! (choose-goal-inmind $c-type $id $goal-inmind)) )
+		:context( 	(machine $ds-name "DS" $ds-state $ds-prepared $ds-zone $ds-pose $ds-loaded-with)
 					(master-of REASONING $agent)
 					(agent-name $agent)
 					(~ (choosing-goal-inmind))
@@ -19,10 +19,16 @@
 
 			(! (start-critical-section))
 			(=> (choosing-goal-inmind))
- 			(! (kill-other-intentions))
+ 			; (! (kill-other-intentions))
  			(! (end-critical-section))
  			(! (print "Chooseing a Goal..."))
 
+ 			(? (game-time $gametime ))
+ 			(? (& 	(order $id $c-type $base-color $ring-colors $cap-color $quantity-requested $quantity-delivered $delivery-period-begin $delivery-period-end $delivery-gate)
+ 					(> $quantity-requested $quantity-delivered)
+ 					(> $delivery-period-end (+ (val $gametime) 240))
+ 					(~ (goal-inmind (workpiece @id @base @rings (cap $cap-color) @place)))
+ 					))
 
 			(! (= $wp-base (base $base-color)))
 			(! (= $wp-cap (cap $cap-color)))
@@ -35,6 +41,7 @@
 			;convert delevary gate to a string 
 			;(! (= $delivery-gate-string (term-string-cat $delivery-gate)))
 			(! (= $id_G (rand 1000)))
+			(! (= $goal-inmind (goal-inmind (workpiece $id_G (base $base-color) @wp-rings (cap $cap-color) (place $ds-name $delivery-gate)))))
 			(=> (goal-inmind (workpiece $id_G (base $base-color) @wp-rings (cap $cap-color) (place $ds-name $delivery-gate)) ))
 		)
 		:effects ((~> (choosing-goal-inmind)))
@@ -71,10 +78,10 @@
 		:body (
 			(if (? (BOUNDP $agent))
 				(if (? (~ (agent-achieving $agent IDLE)))
-					(! (printf (FORMAT "WARNING>> %s Forcefully Allocating  to task from %s " (val @agent) $task-name)))
+					(! (printf (FORMAT "WARNING>> Forcefully Allocating %s to task %s \n " (val $agent) $task-name)))
 					)
 					(! (start-critical-section))
-					(=> (agent-achieving (val @critical-agent) $task-name))
+					(=> (agent-achieving $agent $task-name))
 					(! (end-critical-section))
 			
 				else

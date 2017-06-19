@@ -1,0 +1,246 @@
+;---------------------------------------------------------------------------
+;  production_multiagent-parallel-orders--simple-production-graph-.opf - OpenPRS OP file for RCll2017 openprs-agent
+;
+;  Created: Tue Mar 19 15:43:00 2017
+;  Copyright  2017  Mostafa Gomaa [gomaa@kbsg.rwth-aachen.de]
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
+
+(
+	(defop Production---Ready-To-Start
+		:invocation ( timer "beacon" $last-sec $last-usec $seq  )
+		:context ( 	(game-phase production)
+					(master-of REASONING $me)
+					(agent-name $me)
+					(~ (production-ready-to-start))
+					(order $id $c-type $base-color $ring-colors $cap-color $quantity-requested $quantity-delivered $delivery-period-begin $delivery-period-end $delivery-gate)
+					(machine $mps-name $mps-type $mps-state $mps-prepared $mps-zone $mps-pose $mps-loaded-with)
+					(cap-station @cs-name @cap-color @loaded-status @some-on-shelf)
+					(game-time $game-time)
+					)
+		:body (
+			(! (start-critical-section))
+			(=> (production-ready-to-start))
+			; (! (kill-other-intentions))
+ 			(! (end-critical-section))
+			(! (print "Production is prepared to start.. "))
+			)
+		:effects()
+		)
+
+
+
+	(defop Production--Master-Strategy		
+		:invocation ( timer "beacon" $last-sec $last-usec $seq  )
+		:context ( 	(game-phase production)
+					(master-of REASONING $me)
+					(agent-name $me)
+					(~ (in-production))
+					(~ (in-production @some-goal))
+					(production-ready-to-start)
+					)
+		:body(
+			(! (start-critical-section))
+			(=> (in-production))
+			(! (kill-other-intentions))
+ 			(! (end-critical-section))
+
+ 			;Preparing for production by retriving caps and a pay goal 
+			; (? (& 	(cap-station $cs-name-1 $cap-color-1 @loaded-status-1 @some-on-shelf-1) 
+			; 			(cap-station $cs-name-2 $cap-color-2 @loaded-status-2 @some-on-shelf-2) 
+			; 			(~ (= $cap-color-1 $cap-color-2))))
+			; (! (Generate-graph pre-production))
+			; (=> (in-production pre-production))
+			; (=> (in-production (goal-inmind (workpiece 0 (base none) (rings none) (cap $cap-color-1) (place "none" "none") ))))
+			; (=> (in-production (goal-inmind (workpiece 0 (base none) (rings none) (cap $cap-color-2) (place "none" "none") ))))
+			; (^ (~ (in-production pre-production)))
+			
+			(if (! (choose-goal-inmind c0 $goal-inmind-c0)) 
+				(! (Generate-graph $goal-inmind-c0))
+				(=> (in-production $goal-inmind-c0))
+				)
+
+			(^ (& 	(order $o-id-2 $c-type-2 $base-color-2 $ring-colors-2 $cap-color-2 $quantity-requested-2 $quantity-delivered-2 $delivery-period-begin-2 $delivery-period-end-2 $delivery-gate-2)
+					(> $quantity-requested-2 $quantity-delivered-2)
+ 					(~ (goal-inmind (workpiece @id @base @rings (cap $cap-color-2) @place)))
+ 					(MEMQ $c-type-2 (. C0 C1 C2 .))
+					))
+
+			(! (printf  (format "---------Chose order %s for production \n" $o-id-2)))
+			(if (! (choose-goal-inmind $c-type-2 $o-id-2 $goal-inmind-2)) 
+				(! (Generate-graph $goal-inmind-2))
+				(=> (in-production $goal-inmind-2))
+				)
+
+			(^ (& 	(order $o-id-3 $c-type-3 $base-color-3 $ring-colors-3 $cap-color-3 $quantity-requested-3 $quantity-delivered-3 $delivery-period-begin-3 $delivery-period-end-3 $delivery-gate-3)
+					(> $quantity-requested-3 $quantity-delivered-3)
+ 					(~ (goal-inmind (workpiece @id @base @rings (cap $cap-color-3) @place)))
+					))
+
+			(! (printf  (format "---------Chose order %s for production \n" $o-id-3)))
+			(if (! (choose-goal-inmind $c-type-3 $o-id-3 $goal-inmind-3)) 
+				(! (Generate-graph $goal-inmind-3))
+				(=> (in-production $goal-inmind-3))
+				)
+			
+			)
+		:effects ((~> (in-production)))
+		)
+		
+	
+
+	(defop Production-Main-Node 
+		:invocation (! (Create-production-node $tag-name $goal-inmind))
+		:context()
+		:body(
+			; (if (? (~ (BOUNDP $tag-name)))
+			; 	(! (print "so it is not really bound at the"))
+			; 	)
+			(! (tag-current-intention $tag-name))
+			
+			(^ (in-production $goal-inmind))
+
+			(! (printf (Format "PRODUCTION COMPLETE\n" )))
+
+			
+			)
+		:effects ( 	(~> (in-production $goal-inmind))
+					(~> (val $goal-inmind)) )
+		:documentation "Main Production Node,  All production-Tasks intentions will be intented before this node"
+		)
+
+
+
+	(defop Generate-Pre-Production-Graph
+		:invocation (! (Generate-graph $goal-inmind))
+		:context ( 	(= $goal-inmind pre-production)
+					(master-of REASONING $me)
+					(game-phase production)
+					(agent-name $me)
+					)
+		:body (
+			
+ 			(! (printf (FORMAT "Pre-Production Graph Building ... \n" )))
+		 	;======================Intend the Achieve-task with the task name and parameters as from a Common Production node
+		 	(! (= $production-node-tag (make-atom (term-string-cat "production_" $goal-inmind ))))
+		 	(! (intend-node-after-before-tag  
+								(BUILD-GOAL  (! (Create-production-node $production-node-tag $goal-inmind)))
+								(. .)
+								(. .)))
+		 	;Workaround wait till the intention is taged
+			(! (= @tag-list (find-intentions-id $production-node-tag)))
+			(while (? (= 0 (LENGTH (val @tag-list)) ))
+				(! (printf (format  "WorkAround::Waiting for the tag to exist %s \n" (val @tag-list))))
+				(! (= @tag-list (find-intentions-id $production-node-tag)))
+				)
+
+			(? (& 	(cap-station $cs-name-1 $cap-color-1 @loaded-status-1 @some-on-shelf-1) 
+					(cap-station $cs-name-2 $cap-color-2 @loaded-status-2 @some-on-shelf-2) 
+					(~ (= $cap-color-1 $cap-color-2))))
+
+			(! (intend-node-after-before-tag  
+						 		(BUILD-GOAL (! (Achieve-Task Task-Cx--Retrive-Cap $agent-retrive-1 (precond TRUE) 
+						 			(goal-inmind (workpiece 0 (base none) (rings none) (cap $cap-color-1) (place "none" "none") ))))) 
+								(. .)
+								(val @tag-list)))
+			(! (intend-node-after-before-tag  
+						 		(BUILD-GOAL (! (Achieve-Task Task-Cx--Retrive-Cap $agent-retrive-2 (precond TRUE) 
+						 			(goal-inmind (workpiece 0 (base none) (rings none) (cap $cap-color-2) (place "none" "none") )))))  
+								(. .)
+								(val @tag-list)))
+			(! (intend-node-after-before-tag  
+								(BUILD-GOAL (! (Achieve-Task Task-Cx--Pay-Material $agent-pay-1 (precond TRUE) 
+									(workpiece 0 (base base_red) (rings none) (cap none) (place $agent-pay-1 "gripper")))))
+								(. .)
+								(. .)))
+
+		 	(! (printf (Format "Production Graph Building Complete!\n" )))
+		 	;=======================
+
+			)
+		:effects ()
+		)
+
+	
+
+	(defop Generate-Production-Graph
+		:invocation (! (Generate-graph (goal-inmind (workpiece $id (base $base-color) $g-rings (cap $cap-color) (place $ds-name $delivery-gate)))) )		
+		:context ( 	(= $goal-inmind 
+						(goal-inmind (workpiece $id (base $base-color) $g-rings (cap $cap-color) (place $ds-name $delivery-gate))))
+					(master-of REASONING $me)
+					(game-phase production)
+					(agent-name $me)
+					)
+					; (~ (in-production))
+		
+		:body (
+			
+ 			(! (printf (FORMAT "Production Cx Graph Building ... \n" )))
+		 	;======================Intend the Achieve-task with the task name and parameters as from a Common Production node
+
+		 	(! (= $production-node-tag (make-atom (term-string-cat "production_" $goal-inmind))))
+		 	(! (intend-node-after-before-tag  
+								(BUILD-GOAL  (! (Create-production-node $production-node-tag $goal-inmind)))
+								(. .)
+								(. .)))
+		 	
+
+		 	;Workaround wait till the intention is taged
+			(! (= @tag-list (find-intentions-id $production-node-tag)))
+			(while (? (= 0 (LENGTH (val @tag-list)) ))
+				(! (printf (format  "WorkAround::Waiting for the tag to exist %s \n" (val @tag-list))))
+				(! (= @tag-list (find-intentions-id $production-node-tag)))
+				)
+
+
+			(! (intend-node-after-before-tag
+								(BUILD-GOAL (! (Achieve-Task Task-Cx--Deliver $agent-deliver (precond TRUE) $goal-inmind )))
+								(. .)
+								(val @tag-list)
+								))
+			(! (intend-node-after-before-tag
+						 		(BUILD-GOAL (! (Achieve-Task Task-Cx--Retrive-Cap $agent-retrive (precond TRUE) $goal-inmind ))) 
+								(. .)
+								(val @tag-list)
+								))
+			(! (intend-node-after-before-tag
+								(BUILD-GOAL (! (Achieve-Task Task-Cx--Mount-A-Ring $agent-mount-ring (precond TRUE) $goal-inmind )))
+								(. .)
+								(val @tag-list)
+								))
+			(! (intend-node-after-before-tag
+								(BUILD-GOAL (! (Achieve-Task Task-Cx--Mount-Cap $agent-mount-cap (precond TRUE) $goal-inmind )))
+								(. .)
+								(val @tag-list)
+								))	
+
+			(! (intend-node-after-before-tag
+								(BUILD-GOAL (! (Achieve-Task Task-Cx--Pay-Material $agent-pay1 (precond TRUE) )))
+								(. .)
+								(. .)
+								))
+			(! (intend-node-after-before-tag
+									(BUILD-GOAL (! (Achieve-Task Task-Cx--Pay-Material $agent-pay2 (precond TRUE) ))) 
+									(. .)
+									(. .)
+									))
+			
+			; (! (intend-node-after-before-tag  
+			; 					(BUILD-GOAL (! (Achieve-Task Task-Cx--Pay-Material $agent-pay3 (precond TRUE) )))
+			; 					(. .)
+			; 					(. .)))
+
+			; (! (intend-node-after-before-tag  
+			;  					(BUILD-GOAL (! (Achieve-Task Task-Cx--Clear-Negative-WP-at-output $agent-clessar (precond TRUE))))
+			; 					(. .)
+			; 					(val @tag-list)))
+
+
+		 	(! (printf (Format "Production Graph Building Complete!\n" )))
+		 	;=======================
+
+			)
+		:effects ()
+		)
+
+	)

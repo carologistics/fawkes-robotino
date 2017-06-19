@@ -185,6 +185,8 @@
 							(?	(machine $bs-name "BS" @mps-state @mps-prepared @mps-zone @mps-pose @mps-loaded-with))
 							(! (step (instruct-mps 	machine $bs-name (args side $side-as-symbol color $base-color)) ))
 							(^ (workpiece 0 $base $rings $cap (place $bs-name $side)))
+							else
+							(? (workpiece 0 $base $rings $cap (place $bs-name $side)))
 							)
 						(! (step (get-base 	machine $mps-name side $side assigend-id $wp-id))) 
 						(^ (workpiece $wp-id $base $rings $cap (place $agent "gripper"))) 					;Match to return the created id
@@ -249,8 +251,15 @@
 					(! (step (drive-to 		machine $bs-name side $active-side)))
 					;If there is a base already-at-output, no need to instruct 
 					(if (? 	(~ (machine $bs-name "BS" "READY-AT-OUTPUT" @bs-prepared @bs-zone @bs-pose @bs-loaded-with)))
-							(! (step (instruct-mps 	machine $bs-name (args side INPUT color $base-color)) ))
+						(if (? (= $active-side "input"))
+								(! (= $side-as-symbol INPUT))
+								else
+								(! (= $side-as-symbol OUTPUT))
+								)
+							(! (step (instruct-mps 	machine $bs-name (args side $side-as-symbol color $base-color)) ))
 							(^ (workpiece 0 $base $rings $cap (place $bs-name $active-side)));hazardous...find a better way
+							else
+							(? (workpiece 0 $base $rings $cap (place $bs-name $active-side)))
 						)
 					(! (step (get-base machine $bs-name side $active-side assigned-id $wp-id)))
 					;Match to return the created id
@@ -528,6 +537,17 @@
 				(! (FAILED))
 				(! (printf (FORMAT "DRIVING AWAAAY \n"  )))
 
+				)
+			:documentation " "
+			)
+
+		(defop wp-Lose-Workpiece
+			:invocation ( ! (workpiece $id $base $ring $cap (place "LOST" "LOST")) )
+			:context ( )
+			:setting (setting "robot-name" $robot-name)
+			:body (
+				(! (printf (FORMAT "WP_LOSING the WP: workpiece %s %s %s %s \n"  $wp-id $base $rings $cap)))
+				;Just Succeed to allow the WPAchiever (the coordinator) to Sync it
 				)
 			:documentation " "
 			)

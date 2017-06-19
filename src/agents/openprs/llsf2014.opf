@@ -9,7 +9,7 @@
 
 (
 
-;(defop llsf2014-load-config
+; (defop llsf2014-load-config
 ;  :invocation (agent-init)
 ;  :context()
 ;  :body (
@@ -17,7 +17,7 @@
 ;    (! (config-load-to-settings "/openprs-agent/llsf2014/"))
 ;  )
 ;  :documentation "Load setting for agent."
-;)
+; )
 
 
 

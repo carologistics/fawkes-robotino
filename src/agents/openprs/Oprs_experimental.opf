@@ -2,17 +2,165 @@
 
 
 
+(defop Experments-on-intending-AND-WHEN
+	:invocation ( ! (intentions-before-each-other))
+	:context ()
+	:body(
+  
+		
+		(! (tag-current-intention main))
+
+		(!  (after-before-tag (goal1 1) nothing nothing ))
+
+		;THIS IS SO wierred..it workes with this but does not print in the loop nor even the first print in the goal itself
+		; 
+
+		(! (= $tag-name tag1))
+
+		(! (= @tag-list (find-intentions-id $tag-name)))
+		(while (? (= 0 (LENGTH (val @tag-list)) ))
+			(! (printf (format  "WorkAround::Waiting for the tag %s to exist.. tag list has: %s \n"  $tag-name (val @tag-list))))
+			(! (= @tag-list (find-intentions-id $tag-name)))
+			)
+
+		;This appearantly takes time to find the intention tagd. 
+		;No idea what triggers this behavior but it tricky..even whe i do it with a loop things look suspecious
+		(! (print (find-intention-id tag1))) 
+		
+
+		(!  (after-before-tag (goal2 1) tag1 nothing ))
+
+		(! (print "cond actually worked"))
+
+
+
+		)
+	:documentation "So appearantly after intenting the goal with INTENDED-GOAL-AFTER-BEFORE. the tag takes sometime to exist.
+					Wating with a regulare wait (^ (~ (nil (find-intention-id tag-name)))) Does not really work since the evaulation always
+					happens on the moment the goal is posted. Tried using QUOTE to delay the evaluation but did not really work for me"
+	)
+
+
+
+(defop Experments-on-intending-AND-WHEN
+	:invocation ( ! (pos-parallel $x))
+	:context ()
+	:body(
+
+		;This works in case u sent a goal in a lisp list. I think the point is to have a GTEX
+		; (^ (car $precond))
+		; (! (print "this actually worked"))
+
+		;This totally works btw
+		; (! (build-term-comp-from-atom-llist (val $task) (. $x .) ) )  
+		
+		(! (tag-current-intention main))
+
+		(! (= @goal-list (. .) ))
+		(! (= @goal-list (cons  (BUILD-GOAL (! (goal1 $X))) @goal-list )))
+		(! (= @goal-list (cons  (BUILD-GOAL (! (goal2 $X))) @goal-list )))
+		(! (INTENDED-ALL-GOALS-//-AS-ROOTS (val @goal-list)))
+
+		
+		(! (print "cond actually worked"))
+
+
+		;This Works to just pass the predicate name and decide dynamically on the Args
+
+		)
+	)
+
+(defop Experments-on-intendend-after-tag
+	:invocation ( ! (after-tag $x))
+	:context ()
+	:body(
+		
+		(! (= @goal-list (. .) ))
+		(! (= @goal-list (cons  (BUILD-GOAL (! (goal3 $X))) @goal-list )))
+		(! (INTENDED-ALL-GOALS-//-AFTER (val @goal-list) (find-intentions-id $x)))
+
+		
+		(! (print "cond actually worked"))
+
+
+		;This Works to just pass the predicate name and decide dynamically on the Args
+
+		)
+	)
+
+
+(defop Experments-on-intendend-after-roots
+	:invocation ( ! (after-tag $x))
+	:context ()
+	:body(
+		
+		(! (= @goal-list (. .) ))
+		(! (= @goal-list (cons  (BUILD-GOAL (! (goal3 $X))) @goal-list )))
+		(! (INTENDED-ALL-GOALS-//-AFTER-roots (val @goal-list) (find-intentions-id $x)))
+
+		
+		(! (print "cond actually worked"))
+
+
+		;This Works to just pass the predicate name and decide dynamically on the Args
+
+		)
+	)
+
+(defop Experments-on-intendend-after-before
+	:invocation ( ! (after-before-tag $goal-expression $after $before))
+	:context ()
+	:body(
+		(! (printf (format "1-after-before-tag %s %s %s \n" $goal-expression (find-intentions-id $after) (find-intentions-id $before))))
+
+ 		(! (= @goal (BUILD-GOAL (! (val $goal-expression)) ) ) ) 
+
+		(! (INTENDED-GOAL-AFTER-BEFORE (val @goal) (find-intentions-id $after) (find-intentions-id $before)))
+
+		(! (printf (format "2-after-before-tag %s %s %s \n" $goal-expression (find-intentions-id $after) (find-intentions-id $before))))
+
+		
+
+		;This Works to just pass the predicate name and decide dynamically on the Args
+
+		)
+	)
+; --------..............................................---
+; (defop Experments-on-intending-AND-WAITING
+; 	:invocation ( ! (start $task $precond))
+; 	:context ()
+; 	:body(
+
+; 		;This works in case u sent a goal in a lisp list. I think the point is to have a GTEX
+; 		; (^ (car $precond))
+; 		; (! (print "this actually worked"))
+
+; 		;This totally works btw
+; 		(^ (val $precond))
+; 		(! (print "cond actually worked"))
+
+
+; 		;This Works to just pass the predicate name and decide dynamically on the Args
+; 		(! (build-term-comp-from-atom-llist (val $task) (. $x .) ) )  
+
+
+; 		)
+; 	)
+
+;====================================================================
 
 	(defop How-does-the-parallel-goals-work-
 		:invocation (! (para-goals $x))
 		:context ()
 		:body(
 
+				;This totally works..they all intended in parallel and failing one of them fails the op
 				(// 
 					((! (GOAL1 $x)))
 					((! (GOAL2 $x)))
 					((! (GOAL3 $x)))
 					)
+
 
 				; (! (= @goal-list (. .) ))
 			 ; 	(! (= @goal-list (cons  (BUILD-GOAL (! (GOAL1 $x))) @goal-list )))
@@ -34,7 +182,11 @@
 		:body(
 
 				(! (printf (Format "goal 1 INTEDETED %s \n" $x)))
+				(! (tag-current-intention tag1))
+				
 				(^ (GOAL1 $X))
+				(! (printf (Format "goal 1 FINISHED %s \n" $x)))
+
 
 			)
 
@@ -46,22 +198,34 @@
 		:body(
 
 				(! (printf (Format "goal 2 INTEDETED %s \n" $x)))
+				(! (tag-current-intention tag2))
 				(^ (GOAL2 $X))
+				; (! (fail $x))
+				(! (printf (Format "goal 2 FINISHED %s \n" $x)))
+
 
 			)
 
 		)
 
 (defop How-does-the-parallel-goals-work-GOAL3
-		:invocation (! (GOAL3 $X))
+		:invocation (! (fail $X))
 		:context ()
 		:body(
 
 				(! (printf (Format "goal 3 INTEDETED %s \n" $x)))
 				(^ (GOAL3 $X))
-				(if (? (= 1 $x))
-					(! (FAIL))
-					)
+				; (=> (goal3 $x))
+				; (if (? (= 1 $x))
+					(! (printf (Format "failing goal 3 %s \n" $x)))
+					(! (= 0 1))
+					(! (printf (Format "failed goal 3 ..should not be here%s \n" $x)))
+
+					(^ (wating-after-fail))
+					; )
+				(^ (waiting-after-check))
+
+				(! (printf (Format "goal 3 FINISHED %s \n" $x)))
 
 			)
 
@@ -346,13 +510,13 @@
 
 
 	(defop co--wor-suc
-		:invocation (! (achieve-some-goal suck))
+		:invocation (! (achieve-some-goal sooo))
 		:context ()		
 		:body (
 			(! (= $succeed-goal (BUILD-GOAL (!  (achieve-some-goal SUCCEEDED)) )))
 				(! (INTENDED-GOAL-WITH-PRIORITY $succeed-goal 1))
 				
-				(! (print "will suck"))
+				(! (print "will sooo"))
 				(^ (W))
 			)
 
@@ -360,13 +524,13 @@
 	
 
 	(defop co--wor-fail
-		:invocation (! (achieve-some-goal fuck))
+		:invocation (! (achieve-some-goal fooo))
 		:context ()		
 		:body (
 			(! (= $succeed-goal (BUILD-GOAL (!  (achieve-some-goal SUCCEEDED)) )))
 				(! (INTENDED-GOAL-WITH-PRIORITY $succeed-goal 3))
 				
-				(! (print "will fuck"))
+				(! (print "will foooo"))
 				(^ (W))
 				(! (FAILED))
 

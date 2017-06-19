@@ -85,7 +85,7 @@
 			(? (machine $ds-name "DS" @status @bs-prepared @bs-zone @bs-pose @bs-loaded-with))
 			(! (= $ds-input (string-cat $ds-name "-I")))
 
-			(if (! (execute (skill "ppgoto" "place" $ds-input ) ))
+			(if (! (execute (skill "ppgoto" "place" $place ) ))
 				else
 				(=> (agent-state STEP-FAILD))
 				(! (FAILED))
@@ -204,13 +204,9 @@
 	
 				;TODO: dynamically determine which position. 
 			 	;Change the # on shelf even if the skill fails 
-				(if (? (= 3 $caps-on-shelf))  				(! (= $slot "RIGHT")) 	(! (= $new-caps-on-shelf  2))
-				 	else (if (? (= 2 $caps-on-shelf)) 		(! (= $slot "MIDDLE")) 	(! (= $new-caps-on-shelf  1))
-						 else (if (? (= 1 $caps-on-shelf)) 	(! (= $slot "LEFT")) 	(! (= $new-caps-on-shelf  3)) )))
-
-				;If u already here..What ever failed or suceeded consider this position done. 
-				;Problem will only happen if i could not get  base but it is still there 
-				(=> (cap-station $mps-name $assigned-cap-color $cap-loaded-status $new-caps-on-shelf))
+				(if (? (= 3 $caps-on-shelf))  				(! (= $slot "RIGHT"))	
+				 	else (if (? (= 2 $caps-on-shelf)) 		(! (= $slot "MIDDLE")) 	
+						 else (if (? (= 1 $caps-on-shelf)) 	(! (= $slot "LEFT")))))
 
 				(if (! (execute (skill "get_product_from" "place" $mps-name "shelf" $slot)))
 					(=> (agent-state STEP-FINISHD))
@@ -222,6 +218,10 @@
 								SUCCEEDED))
 					(=> (holding $piece-id))
 				else
+				(if (? (= 3 $caps-on-shelf))  				(! (= $new-caps-on-shelf  2))
+				 	else (if (? (= 2 $caps-on-shelf)) 		(! (= $new-caps-on-shelf  1))
+						 else (if (? (= 1 $caps-on-shelf)) 	(! (= $new-caps-on-shelf  3)) )))
+					(=> (cap-station $mps-name $assigned-cap-color $cap-loaded-status $new-caps-on-shelf))
 					(=> (agent-state STEP-FAILD)) 
 					(! (step (get-cap machine $mps-name piece-info $piece-id)))
 					(! (FAILED))
@@ -312,12 +312,13 @@
 								SUCCEEDED))
 					(=> (agent-state STEP-FINISHD))
 					else
-					(=> (agent-state STEP-FAILD))
+					(=> (agent-state STEP-FAILD)) 		
+					(! (step (insert machine $mps)))
 					;TODO: only lose the work peace after checking if still holding
-					(=> (Achieve-workpiece $agent 
-								(workpiece $ws-id $base $rings (cap $cap-color) (place "LOST" "LOST"))
-								SUCCEEDED))
-					(! (FAILED))
+					; (=> (Achieve-workpiece $agent 
+					; 			(workpiece $ws-id $base $rings (cap $cap-color) (place "LOST" "LOST"))
+					; 			SUCCEEDED))
+					; (! (FAILED))
 					)
 				)
 			:effects ((=> (holding NONE)))

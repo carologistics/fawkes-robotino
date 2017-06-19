@@ -35,12 +35,12 @@
 				(=> (achieve-workpiece $agent $workpiece REQUESTING))
 
 
-				;PROBLEM With this: Sometimes the Achievment is finalized too quick and deleted
-				;at some point during the execution of this op. If that happend then 
+				;PROBLEM With this: Sometimes the Achievement is finalized too quick and deleted
+				;at some point during the execution of this op. If that happens then 
 				;The state will not be tracked correctly resulting that either a wait
 				;condition to never be satisfied. Or A succeeding the Goal no matter 
-				;What happend. .To fix this u need to keep trak of the status a bit differntly
-				;Remmbering what cozed the thread to wake
+				;What happens. .To fix this u need to keep track of the status a bit differently
+				;Remembering what cozed the thread to wake
 			
 
 				(^ ( &	(|| (achieve-workpiece (val $agent) $workpiece @status)

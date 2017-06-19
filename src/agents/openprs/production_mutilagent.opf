@@ -136,22 +136,33 @@
 ;============================================================Tasks===============================================================
 
 
-	(defop master-main
-		:invocation ( game-phase production )
-		:context ( 	(master-of REASONING $me)
-					(agent-name $me)
-					(~ (in-production))
-					)
-		:body(
-			(if (! (choose-goal-inmind c0)))
-			(~> (in-production))
-			(if (! (Start-producing)))
-			(if (! (choose-goal-inmind c1)))
-			(~> (in-production))
-			(if (! (Start-producing)))
-			)
-		:effects ( (~> (in-production)) )
-		)
+	; (defop master-main
+	; 	:invocation ( timer "beacon" $last-sec $last-usec $seq  )
+	; 	:context ( 	(game-phase production)
+	; 				(master-of REASONING $me)
+	; 				(agent-name $me)
+	; 				(~ (in-production))
+	; 				)
+	; 	:body(
+
+	; 		(! (start-critical-section))
+	; 		(=> (in-production))
+	; 		; (! (kill-other-intentions))
+	; 		(! (end-critical-section))
+
+	; 		(if (! (choose-goal-inmind c0 $goal-inmind))
+	; 			(if (! (Start-producing $goal-inmind))
+	; 				(! (printf (FORMAT "Production of a goal is FINALIZED..Moving on")))
+	; 				)
+	; 			)
+
+	; 			(^ (~ (& 	(agent-achieving @agent @status)
+	; 						(~ (= @status IDLE))
+	; 					)))		
+	; 		)
+	; 	:effects ( (~> (in-production)) )
+	; 	)
+
 
 	(defop worker-main
 		:invocation ( game-phase production )
@@ -163,67 +174,157 @@
 		)
 
 
-	(defop Produce-Cx
-		:invocation ( ! (Start-producing) )		
-		:context ( 	(goal-inmind (workpiece $id (base $base-color) $g-rings (cap $cap-color) (place $ds-name $delivery-gate)))
-					(master-of REASONING $me)
-					(game-phase production)
-					(agent-name $me)
-					(~ (in-production))
-					)
+	; (defop Produce-Cx
+	; 	:invocation ( ! (Start-producing $goal-inmind) )		
+	; 	:context ( 	(goal-inmind (workpiece $id (base $base-color) $g-rings (cap $cap-color) (place $ds-name $delivery-gate)))
+	; 				(= $goal-inmind 
+	; 					(goal-inmind (workpiece $id (base $base-color) $g-rings (cap $cap-color) (place $ds-name $delivery-gate))))
+	; 				(master-of REASONING $me)
+	; 				(game-phase production)
+	; 				(agent-name $me)
+	; 				)
+	; 				; (~ (in-production))
 		
-		:body (
-			(! (start-critical-section))
-			(=> (in-production))
- 			(! (kill-other-intentions))
- 			(! (end-critical-section))
- 			(! (printf (FORMAT "Producing a Cx \n..." )))
+	; 	:body (
+	; 		; (! (start-critical-section))
+	; 		; (=> (in-production))
+	; 		; (! (kill-other-intentions))
+	; 		; (! (end-critical-section))
+	; 		(! (printf (FORMAT "Producing a Cx \n..." )))
 
-			; (! (choose-free-agent-for $agent))
-			; (? (cap-station $cs-name $cap-color CAP_NOT_LOADED @some-on-shelf))
-			; (=> (cap-station $cs-name $cap-color CAP_LOADED @some-on-shelf))	
+	; 		;======================This is the oldest intend goals..Directly intendting the task
+	; 		; (! (= @goal-list (. .) ))
+	; 		; (! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Retrive-Cap 		$agent))) @goal-list )))
+
+	; 		; (! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Clear-Negative-WP-at-output	$clearing-agent))) @goal-list )))
+
+	; 		; (! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Pay-Material	$pay1-agent $workpiece-1))) @goal-list )))
+	; 		; (! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Pay-Material	$pay2-agent $workpiece-2))) @goal-list )))
+	; 		; (! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Pay-Material	$pay3-agent $workpiece-3))) @goal-list )))
+							
+	; 		; (! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Mount-A-ring 		$ring-agent))) @goal-list )))
+	; 		; (! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Mount-Cap 			$cap-agent))) @goal-list )))
+	; 		; (! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Deliver 			$deli-agnet))) @goal-list )))
+	; 		; (! (INTENDED-ALL-GOALS-//-AS-ROOTS (val @goal-list)))
+	; 		;======================
+
+	; 		;======================Intend the Achieve-task with the task name and parameters as roots in parallel
+	; 		(! (= @goal-list (. .) ))
+	; 		(! (= @goal-list (cons  
+	; 							(BUILD-GOAL (! (Achieve-Task Task-Cx--Deliver $agent-deliver (precond TRUE) $goal-inmind )))
+	; 							@goal-list )))
+
+	; 		(! (= @goal-list (cons
+	; 							(BUILD-GOAL (! (Achieve-Task Task-Cx--Pay-Material $agent-pay1 (precond TRUE) )))
+	; 							@goal-list)))
 			
-			 ; (// (	
-			 ; 		(! (Task-Retrive-Cap "R-1"))
-				; 	(! (Task-Deliver "R-1"))
-				; 	(! (Task-Mount-Cap "R-2"))
-				; 	(! (Task-Clear-Cap-Station "R-1"))
-				; ))
+	; 		(! (= @goal-list (cons
+	; 							(BUILD-GOAL (! (Achieve-Task Task-Cx--Pay-Material $agent-pay2 (precond TRUE) ))) 
+	; 							@goal-list)))
+			
+	; 		(! (= @goal-list (cons
+	; 							(BUILD-GOAL (! (Achieve-Task Task-Cx--Pay-Material $agent-pay3 (precond TRUE) )))
+	; 							@goal-list )))
+			
+	; 		(! (= @goal-list (cons
+	; 							(BUILD-GOAL (! (Achieve-Task Task-Cx--Retrive-Cap $agent-retrive (precond TRUE) $goal-inmind ))) 
+	; 							@goal-list)))
 
-				(! (= @goal-list (. .) ))
-			 	(! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Retrive-Cap 		$agent))) @goal-list )))
+	; 		; (! (= @goal-list (cons
+	; 		; 					(BUILD-GOAL (! (Achieve-Task Task-Cx--Clear-Negative-WP-at-output $agent-clessar (precond TRUE))))
+	; 		; 					@goal-list)))
+			
+	; 		(! (= @goal-list (cons
+	; 							(BUILD-GOAL (! (Achieve-Task Task-Cx--Mount-A-Ring $agent-mount-ring (precond TRUE) $goal-inmind )))
+	; 							@goal-list)))
+			
+	; 		(! (= @goal-list (cons
+	; 							(BUILD-GOAL (! (Achieve-Task Task-Cx--Mount-Cap $agent-mount-cap (precond TRUE) $goal-inmind )))
+	; 							@goal-list )))
+			
+	; 		(! (INTENDED-ALL-GOALS-//-AS-ROOTS (val @goal-list)))
+	; 		(! (printf (Format "PRODUCTION COMPLETEEEEEEEEEEEEEEEEEEE\n" )))
+	; 		;======================
+	; 		)
+	; 	:effects ()
+	; 	)
 
-				(! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Clear-Negative-WP-at-output	$clearing-agent))) @goal-list )))
-
-				(! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Pay-Material	$pay1-agent $workpiece-1))) @goal-list )))
-				(! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Pay-Material	$pay2-agent $workpiece-2))) @goal-list )))
-			 	(! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Pay-Material	$pay3-agent $workpiece-3))) @goal-list )))
-			 				 	
-				(! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Mount-A-ring 		$ring-agent))) @goal-list )))
-				(! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Mount-Cap 			$cap-agent))) @goal-list )))
-				(! (= @goal-list (cons  (BUILD-GOAL (! (Task-Cx--Deliver 			$deli-agnet))) @goal-list )))
-
-			 	(! (INTENDED-ALL-GOALS-//-AS-ROOTS (val @goal-list)))
-			 	(! (printf (Format "PRODUCTION COMPLETEEEEEEEEEEEEEEEEEEE\n" )))
-
-			)
-		:effects ()
-		)
+	
 
 ;	Wait on and check the precond,
 ;	Find a free robot
 ; 	Excute the given procedure given the name of the goal
-;	If failed Release the Agent
+;	If failed Release the agent
 
-
-	(defop Task-Cx--Retrive-Cap
-		:invocation ( ! (Task-Cx--Retrive-Cap $agent) )
-		:context( 	(goal-inmind (workpiece $g-id (base $base-color) @wp-rings (cap $cap-color) (place $ds-name $delivery-gate) ))
-					(cap-station $cs-name $cap-color @loaded-status @some-on-shelf)
+	(defop Task-Achiever-and-monitor
+		:invocation (|| (! (Achieve-Task $task-name $agent (precond $precond)))
+						(! (Achieve-Task $task-name $agent (precond $precond) $goal-inmind))
+						)
+					; (goal-inmind (workpiece $g-id (base $base-color) @wp-rings (cap $cap-color) (place $ds-name $delivery-gate) ))
+		:context( 	(cap-station $cs-name $cap-color @loaded-status @some-on-shelf)
 					(master-of REASONING $me)
 					(agent-name $me)
 					)
 		:body(
+
+			;Sleep Wait for Preconditions
+			; (^ (val $precond))
+
+			;Select An Agent
+			; (if (? (~ (BOUNDP $agent)))
+			; 	(! (select-appropriate-agent $agent $task-name))
+			; 	)
+						
+			
+			(if (? (BOUNDP $goal-inmind))
+				(! (= $task-expression (build-term-comp-from-atom-llist (val $task-name) (. $agent $goal-inmind .)) ))
+				else
+				(! (= $task-expression (build-term-comp-from-atom-llist (val $task-name) (. $agent .)) ))
+				)
+
+			(if (! (val $task-expression))
+				(! (printf (FORMAT "TASK MONITOR:: %s %s SUCCEEDED \n " $task-name $agent)))
+				else
+				(! (printf (FORMAT "TASK MONITOR:: %s %s FAILD  \n" $task-name $agent)))
+				)
+
+			;Rlease the agent robot if it was selected
+			(if (? (BOUNDP $agent))
+			(=> (agent-achieving (val $agent) RELEASING_RESOURCES))
+			)
+			
+			)
+		)
+
+	(defop Agent--Release-When-Idle
+		:invocation ( agent-achieving $agent RELEASING_RESOURCES)
+		:context ()
+		:body(
+			; ;Release All locks
+			; (while (? (lock @some-type $agent (val @resource) @some-priority))
+			; 		(=> (lock RELEASE $agent (val @resource) @some-priority))
+			; 		)
+			;Drive Away
+			(if (! (achieve-workpiece (val $agent) (workpiece 0 (base none) (rings none) (cap none) (place "none" "none"))))
+				(! (printf (FORMAT "Send a dum WP to drive a way %s \n" (val $agent))))
+				)
+			(! (printf (FORMAT "GOING TO IDLE %s \n" (val $agent))))
+
+			(=> (agent-achieving (val $agent) IDLE))
+			)
+		)
+		
+	(defop Task-Cx--Retrive-Cap
+		:invocation ( ! (Task-Cx--Retrive-Cap $agent $goal-inmind))
+		:context( 	(= $goal-inmind
+						(goal-inmind (workpiece $g-id (base $base-color) @wp-rings (cap $cap-color) (place $ds-name $delivery-gate))))
+					(master-of REASONING $me)
+					(agent-name $me)
+					)
+					; (cap-station $cs-name $cap-color @loaded-status @some-on-shelf)
+		:body(
+
+			(^ (in-production $goal-inmind))
 
 			;Wait for preconditions
 			(^ (cap-station $cs-name $cap-color CAP_NOT_LOADED @some-on-shelf))
@@ -234,55 +335,66 @@
 				)
 			(! (printf (FORMAT "TASK ==> Task-Retrive-Cap Allocated to %s \n " $agent)))
 
-			(! (achieve-workpiece (val $agent) (workpiece 0 (base UNKNOWN) (rings none) (cap $cap-color) (place $agent "gripper"))))
+			(! (achieve-workpiece (val $agent) (workpiece 0 (base UNKNOWN) (rings none) (cap $cap-color) (place (val $agent) "gripper"))))
 
-			(^ (workpiece @piece-id (base UNKNOWN) (rings none) (cap $cap-color) (place $agent "gripper")))
+			(^ (workpiece @piece-id (base UNKNOWN) (rings none) (cap $cap-color) (place (val $agent) "gripper")))
 
 			(// 
-				((! (achieve-workpiece $cs-name (workpiece (* -1 (val @piece-id)) (base UNKNOWN) (rings none) (cap none) (place $cs-name "output")))))
 				((! (achieve-workpiece (val $agent) (workpiece (val @piece-id) (base UNKNOWN) (rings none) (cap $cap-color) (place $cs-name "input")))))
+				((! (achieve-workpiece $cs-name (workpiece (* -1 (val @piece-id)) (base UNKNOWN) (rings none) (cap none) (place $cs-name "output")))))
 				)
 
-			; (! (= @goal-list (. .) ))
-		 ; 	(! (= @goal-list (cons  (BUILD-GOAL 
-		 ; 		(! (achieve-workpiece (val $agent) (workpiece (val @piece-id) (base UNKNOWN) (rings none) (cap $cap-color) (place $cs-name "input")))) ) @goal-list )))
-			; (! (= @goal-list (cons  (BUILD-GOAL 
-			; 	(! (achieve-workpiece $cs-name (workpiece (* -1 (val @piece-id)) (base UNKNOWN) (rings none) (cap none) (place $cs-name "output")))) ) @goal-list )))
-		 ; 	(! (INTENDED-ALL-GOALS-//-AS-ROOTS (val @goal-list)))
+			(^ (& 	(workpiece $id-ve $base $rings $cap (place $cs-name "output"))
+					(> 0 $id-ve )
+					))
 
-			; (! (Task-Cx--Clear-Negative-WP-at-output $agent))
-
-			(=> (agent-achieving $agent IDLE))
+			; (=> (agent-achieving $agent IDLE))
+			; (if (? (~ (= $new-p-rings $g-rings)))
+				; (! (= $Goal (BUILD-GOAL 
+				
+				(if (! (Task-Cx--Clear-Negative-WP-at-output (val $agent) (workpiece $id-ve $base $rings $cap (place $cs-name "output")) ))
+					;Regadrless of what happens to the clearing..I have succeeded..This needs to change so that it reflects that faild the clear
+					(! (printf (FORMAT "Sub-Task Clearing SUCCEEDED %s" $agent)))
+					else 
+					(! (printf (FORMAT "Sub-Task Clearing FAILD %s" $agent)))
+					)
+				; (! (INTENDED-GOAL $Goal))
+				)
 
 			)
-		)
-
-
 
 	(defop Task-Cx--Clear-Negative-WP-at-output
-		:invocation ( ! (Task-Cx--Clear-Negative-WP-at-output $agent))
+		:invocation (|| (! (Task-Cx--Clear-Negative-WP-at-output $agent))
+						(! (Task-Cx--Clear-Negative-WP-at-output $agent $workpiece))
+						)
 		:context(	(master-of REASONING $me)
 					(agent-name $me)
 					)
 		:body(
 
-			(^ (& 	(workpiece $id-ve $base $rings $cap (place $any-mps "output"))
-					(> 0 $id-ve )
-					))
-
-			(if (? (~ (BOUNDP $agent)))
-				;select Agent
-				(! (select-appropriate-agent $agent Task-Clear-Negative-Wp))
+			(if (? (BOUNDP $workpiece))
+				(^ (val $workpiece))
+				(! (= (workpiece $id-ve $base $rings $cap (place $any-mps "output")) $workpiece ))
+				else
+				(^ (& 	(workpiece $id-ve $base $rings $cap (place $any-mps "output"))
+						(> 0 $id-ve )
+						))
+				(! (= $workpiece (workpiece $id-ve $base $rings $cap (place $any-mps "output")) ))
 				)
+
+			(! (allocat-agent $agent Task-Clear-Negative-Wp))
+
+			(? (workpiece $id-ve $base $rings $cap (place $any-mps "output")))
+
 			(! (printf (FORMAT "TASK ==> Task-Clear-Negative Allocated to %s \n " $agent)))
 
-			(! (achieve-workpiece (val $agent) (workpiece 0 $base $rings $cap (place $agent "gripper"))))
+			(! (achieve-workpiece (val $agent) (workpiece $id-ve $base $rings $cap (place $agent "gripper"))))
 
-			(^ (workpiece @id-ve $base $rings $cap (place $agent "gripper")))
+			(^ (workpiece $id-ve $base $rings $cap (place (val $agent) "gripper")))
 			
-			(! (= $workpiece (workpiece (val @id-ve) $base $rings $cap (place $agent "gripper"))))
+			(! (= $workpiece-gripped (workpiece $id-ve $base $rings $cap (place $agent "gripper"))))
 
-			(! (Task-Cx--Pay-Material (val $agent) $workpiece))
+			(! (Task-Cx--Pay-Material (val $agent) $workpiece-gripped))
 
 			)
 		)
@@ -301,13 +413,13 @@
 
 			(? (= $random (rand 3)))
 			(? (= $cs-list (n-all-list (. $cs-name $cap-color .) (cap-station $cs-name $cap-color @loaded-status @some-on-shelf))))
-	 		(? (machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with))
+			(? (machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with))
 			
 			(if (? (= $random 1))
-				(! (achieve-workpiece (val $agent) (workpiece 0 (base base_red) (rings none) (cap none) (place $agent "gripper"))))
-				(^ (workpiece $id (base base_red) (rings none) (cap none) (place $agent "gripper")))
+				(! (achieve-workpiece (val $agent) (workpiece 0 (base base_red) (rings none) (cap none) (place (val $agent) "gripper"))))
+				(^ (workpiece $id (base base_red) (rings none) (cap none) (place (val $agent) "gripper")))
 				;Matche to retrun
-				(! (= $workpiece (workpiece $id (base base_red) (rings none) (cap none) (place $agent "gripper"))))
+				(! (= $workpiece (workpiece $id (base base_red) (rings none) (cap none) (place (val $agent) "gripper"))))
 				else (if (? (= $random 2))
 						(! (= @cs-name (car (car $cs-list))))
 						(! (= @cap-color (car (cadr $cs-list))))
@@ -316,7 +428,7 @@
 						(! (= @cap-color (cadr (cadr $cs-list))))
 						)
 				
-				(! ( achieve-workpiece (val $agent) (workpiece 0 (base UNKNOWN) (rings none) (cap (val @cap-color)) (place $agent "gripper"))))
+				(! ( achieve-workpiece (val $agent) (workpiece 0 (base UNKNOWN) (rings none) (cap (val @cap-color)) (place (val $agent) "gripper"))))
 				(^ (workpiece $id (base UNKNOWN) (rings none) (cap (val @cap-color)) (place $agent "gripper")))
 				;Match to return
 				(! (= $workpiece (workpiece $id (base UNKNOWN) (rings none) (cap (val @cap-color)) (place $agent "gripper"))))
@@ -328,10 +440,13 @@
 
 
 	(defop Task-Cx--Pay-Material
-		:invocation( ! (Task-Cx--Pay-Material $agent $workpiece) )
+		:invocation(||	(! (Task-Cx--Pay-Material $agent $workpiece))
+							(! (Task-Cx--Pay-Material $agent))
+						)
 		:context()
 		:body(
 
+			(! (tag-current-intention task_pay-material))
 			(if (? (~ (BOUNDP $agent)))
 				;select Agent
 				(! (select-appropriate-agent $agent Task-Cx--Pay-Material))
@@ -339,10 +454,15 @@
 
 			(! (printf (FORMAT "TASK ==> Task-Pay-Material Allocated to %s \n " $agent)))
 			(if (? (~ (BOUNDP $workpiece)))
-				(! (Pick-Random-material $agent $workpiece))
+				(! (Pick-Random-material (val $agent) $workpiece))
+				else
+				(! (achieve-workpiece (val $agent) (val $workpiece))); Has to be at gripper
+				(^ (val $workpiece))
 				)
 			
-			(if (? (goal-inmind (workpiece $g-id (base $base-color) $g-rings (cap $cap-color) (place $ds-name $delivery-gate) )))
+			(if (? (& 	(goal-inmind (workpiece $g-id (base $base-color) $g-rings (cap $cap-color) (place $ds-name $delivery-gate) ))
+						(~ (= $g-rings (rings none)))
+						))
 			
 				(? (|| 	(= $g-rings (rings $g-first-ring))
 						(= $g-rings (rings $g-first-ring $g-second-ring))
@@ -354,7 +474,7 @@
 					)
 
 
-				(if (? (workpeice $g-id $g-base $p-rings (cap none) (place $some-mps $some-feature)))
+				(if (? (workpiece $g-id $g-base $p-rings (cap none) (place $some-mps $some-feature)))
 					(? (|| 	(= $p-rings (rings $p-first-ring))
 							(= $p-rings (rings $p-first-ring $p-second-ring))
 							(= $p-rings (rings $p-first-ring $p-second-ring $p-third-ring))
@@ -388,7 +508,7 @@
 								(MEMQ $g-first-ring @colors-list)
 								(ring $g-first-ring @raw-material)))
 
-							(! (printf (FORMAT  "Task-pay: Check Rings %s %s %s %s \n" $g-first-ring (val @rs-name) (val @raw-material) (val @bases-loaded))))
+							(! (printf (FORMAT  "Task-pay: Check 1st Ring %s at %s needed: %s loaded: %s \n" $g-first-ring (val @rs-name) (val @raw-material) (val @bases-loaded))))
 							(if (? (> (val @raw-material) (val @bases-loaded)))
 								(! (= $ring-to-pay $g-first-ring))
 								GOTO Insert_At_RS_Slide
@@ -401,10 +521,10 @@
 					(if (? (&	(BOUNDP $g-second-ring)
 								(~ (BOUNDP $second-ring-done))))
 						(?	(& 	(ring-station @rs-name (avilible-colors @colors-list) @selected-color @bases-loaded)
-								(MEMQ $g-first-ring @colors-list)
-								(ring $g-first-ring @raw-material)))
+								(MEMQ $g-second-ring @colors-list)
+								(ring $g-second-ring @raw-material)))
 
-								(! (printf (FORMAT  "Task-pay: check Rings %s %s %s %s   \n" $g-second-ring (val @rs-name) (val @raw-material) (val @bases-loaded))))
+								(! (printf (FORMAT  "Task-pay: Check 2nd Ring %s at %s needed: %s loaded: %s   \n" $g-second-ring (val @rs-name) (val @raw-material) (val @bases-loaded))))
 							(if (? (> (val @raw-material) (val @bases-loaded)))
 								(! (= $ring-to-pay $g-second-ring))
 								GOTO Insert_At_RS_Slide
@@ -418,11 +538,11 @@
 								(~ (BOUNDP $third-ring-done))
 								))
 						(?	(& 	(ring-station @rs-name (avilible-colors @colors-list) @selected-color @bases-loaded)
-								(MEMQ $g-first-ring @colors-list)
-								(ring $g-first-ring @raw-material)))
+								(MEMQ $g-third-ring @colors-list)
+								(ring $g-third-ring @raw-material)))
 
 
-							(! (printf (FORMAT  "Task-Pay: check Rings %s %s %s  %s \n" $g-third-ring (val @rs-name) (val @raw-material) (val @bases-loaded))))
+							(! (printf (FORMAT  "Task-Pay: Check 3rd Ring %s at %s needed: %s loaded: %s \n" $g-third-ring (val @rs-name) (val @raw-material) (val @bases-loaded))))
 							(if (? (> (val @raw-material) (val @bases-loaded)))
 							; (! (= @negative-id-list (n-all-list (. $id .) (workpiece $id $base $rings $cap (place (val @rs-name) "slide")))))
 							; (if (? (< (LENGTH (val @negative-id-list)) (val @raw-material)))
@@ -440,36 +560,56 @@
 				(? 	(& 	(ring-station $rs-name (avilible-colors $colors-list) $selected-color $bases-loaded)
 							(MEMQ $ring-to-pay $colors-list)
 							(ring $ring-to-pay $raw-material)
-							(<= $bases-loaded $raw-material)))
+							))
+							; (<= $bases-loaded $raw-material)
 				(! (printf (FORMAT "Task-Pay-Material: Found a recommended ring. %s at %s \n" $ring-to-pay $rs-name)))
 				else	
 				(! (printf (FORMAT "Task-Pay-Material: Nothing recommended. \n")))
 				)
 
 			
+			; Match to detect the new goal
+			(! (= (workpiece $m-id $m-base $m-rings $m-cap (place $agent "gripper")) (val $workpiece)))
+
 			(if (? (& 	(ring-station $rs-name (avilible-colors $colors-list) $selected-color $bases-loaded)
 						(< $bases-loaded 3)
 						))
-				(! (printf (FORMAT "Task-Pay-Material: Found a RS with less that 3 bases in slide %s \n " $rs-name)))
-				; (^ (workpiece $id-ve $base $rings $cap (place "agent" "gripper")))
-			 	(! (= (workpiece $m-id $m-base $m-rings $m-cap (place $agent "gripper")) $workpiece))
-				(! (achieve-workpiece (val $agent) (workpiece $m-id $m-base $m-rings $m-cap (place $rs-name "slide"))))
+				(! (printf (FORMAT "Task-Pay-Material: Found a RS with less than 3 bases in slide %s \n " $rs-name)))
+				(if (! (achieve-workpiece (val $agent) (workpiece $m-id $m-base $m-rings $m-cap (place $rs-name "slide"))))
+					(! (printf (FORMAT "Task-Pay-Material: %s Paid Material at %s \n " $agent $rs-name)))
+					else
+					(! (printf (FORMAT "Task-Pay-Material: %s Failed to pay..repost goal for revaluation %s \n " $agent $rs-name)))
+					(! (Task-Cx--Pay-Material (val $agent) (val $workpiece)))
+					)
+				
+				else
+				(if (? (& 	(ring-station @rs-name (avilible-colors @colors-list) @selected-color @bases-loaded)
+							(< @bases-loaded 3)
+							 ))
+					(! (printf (FORMAT "Task-Pay-Material: %s Failed to pay..repost goal for revaluation %s \n " $agent $rs-name)))
+					(! (Task-Cx--Pay-Material (val $agent) (val $workpiece)))
+					else
+					;All RS are fully loaded. Lose the workpiece
+					(! (achieve-workpiece (val $agent) (workpiece $m-id $m-base $m-rings $m-cap (place "LOST" "LOST"))))
+					)
+			; (=> (agent-achieving $agent IDLE))
 				)
-
-			(=> (agent-achieving $agent IDLE))
-
 			)
 		)
 
 
 	(defop Task-Cx--Mount-Cap
-		:invocation ( ! (Task-Cx--Mount-Cap $agent))
+		:invocation ( ! (Task-Cx--Mount-Cap $agent $goal-inmind))
 		:context(	(goal-inmind (workpiece $g-id $g-base $g-rings (cap $cap-color) (place $ds-name $delivery-gate) ))
+					(= $goal-inmind
+						(goal-inmind (workpiece $g-id $g-base $g-rings (cap $cap-color) (place $ds-name $delivery-gate))))
 					(cap-station $cs-name $cap-color @loaded-status @some-on-shelf)
 					(master-of REASONING $me)
 					(agent-name $me)
 					)
 		:body(
+
+			(^ (in-production $goal-inmind))
 
 			(^ (cap-station $cs-name $cap-color CAP_LOADED @some-on-shelf))
 			
@@ -484,7 +624,7 @@
 
 			(! (printf (FORMAT "TASK ==> Task-Mount-Cap Allocated to %s \n " $agent)))
 
-			(! (achieve-workpiece (val $agent) (workpiece $g-id $g-base $g-rings (cap none) (place $agent "gripper"))))
+			(! (achieve-workpiece (val $agent) (workpiece $g-id $g-base $g-rings (cap none) (place (val $agent) "gripper"))))
 
 			(^ (workpiece $g-id $g-base $g-rings (cap none) (place $agent "gripper")))
 			
@@ -494,19 +634,23 @@
 				)
 
 			
-			(=> (agent-achieving $agent IDLE))
+			; (=> (agent-achieving $agent IDLE))
 
 			)
 		)
 
 
 	(defop Task-Cx--Mount-A-Ring
-		:invocation ( ! (Task-Cx--Mount-A-Ring $agent))
+		:invocation ( ! (Task-Cx--Mount-A-Ring $agent $goal-inmind))
 		:context(	(goal-inmind (workpiece $g-id $g-base $g-rings (cap $cap-color) (place $ds-name $delivery-gate) ))
+					(= $goal-inmind
+						(goal-inmind (workpiece $g-id $g-base $g-rings (cap $cap-color) (place $ds-name $delivery-gate))))
 					(master-of REASONING $me)
 					(agent-name $me)
 					)
 		:body(
+
+			(^ (in-production $goal-inmind))
 
 			Label Check-Rings
 			(? (|| 	(= $g-rings (rings $g-first-ring))
@@ -596,7 +740,7 @@
 
 			(! (printf (FORMAT "TASK ==> Task-Mount-A-Ring Allocated to %s \n " $agent)))
 
-			(! (achieve-workpiece (val $agent) (workpiece $g-id $g-base $p-rings (cap none) (place $agent "gripper"))))
+			(! (achieve-workpiece (val $agent) (workpiece $g-id $g-base $p-rings (cap none) (place (val $agent) "gripper"))))
 
 			(^ (workpiece $g-id $g-base $p-rings (cap none) (place $agent "gripper")))
 			
@@ -608,27 +752,37 @@
 			;make sure WP is outputed
 			(^ (workpiece $g-id $g-base $new-p-rings (cap none) (place $rs-name "output")))
 		
-			(=> (agent-achieving $agent IDLE))
+			; (=> (agent-achieving $agent IDLE))
 
 			;Recall the mount ring if nothing found
 			(if (? (~ (= $new-p-rings $g-rings)))
-				(! (= $Goal (BUILD-GOAL 
-					(! (Task-Cx--Mount-A-Ring $some-agent))
-					)))
-		    	(! (INTENDED-GOAL $Goal))
+				; (! (= $Goal (BUILD-GOAL 
+				; 	(! (Task-Cx--Mount-A-Ring $some-agent))
+				; 	)))
+				; (! (INTENDED-GOAL $Goal))
+				(! (= $production-tag (make-atom (term-string-cat "production_" $goal-inmind))))
+				(! (= @tag-list (find-intentions-id $production-tag)))
+				(! (intend-node-after-before-tag  	
+								(BUILD-GOAL (! (Achieve-Task Task-Cx--Mount-A-Ring $agent-mount-ring (precond TRUE) $goal-inmind )))
+								(. .)
+								(val @tag-list)))
 				)
 		)
 	)
 
 
 	(defop Task-Cx--Deliver
-		:invocation ( ! (Task-Cx--Deliver $agent))
+		:invocation ( ! (Task-Cx--Deliver $agent $goal-inmind))
 		:context(	(goal-inmind (workpiece $g-id (base $base-color) $g-rings (cap $cap-color) (place $ds-name $delivery-gate) ))
+					(= $goal-inmind
+						(goal-inmind (workpiece $g-id (base $base-color) $g-rings (cap $cap-color) (place $ds-name $delivery-gate) )))
 					(cap-station $cs-name $cap-color @loaded-status @some-on-shelf)
 					(master-of REASONING $me)
 					(agent-name $me)
 					)
 		:body(
+
+			(^ (in-production $goal-inmind))
 
 			;Precond
 			(^ (workpiece $g-id (base $base-color) $g-rings (cap $cap-color) (place $cs-name "output")))
@@ -636,20 +790,51 @@
 			(! (= @rings-list (. .) ))
 			(if (? (= $g-rings (rings none)))
 				;Nothing.Just empty list
-				elseif (? (= $g-rings (rings $first-ring)))
-				(! (cons @rings-list $first-ring))
-				elseif (? (= $g-rings (rings $first-ring $second-ring)))
-				(! (cons-tail @rings-list $first-ring))
-				(! (cons-tail @rings-list $second-ring))
-				elseif (? (= $g-rings (rings $first-ring $second-ring $third-ring)))
-				(! (cons-tail @rings-list $first-ring))
-				(! (cons-tail @rings-list $second-ring))
-				(! (cons-tail @rings-list $third-ring))
+				else
+				(if (? (= $g-rings (rings $first-ring)))
+					(! (cons @rings-list $first-ring))
+					else
+					(if (? (= $g-rings (rings $first-ring $second-ring)))
+						(! (cons-tail @rings-list $first-ring))
+						(! (cons-tail @rings-list $second-ring))
+						
+						else
+						(if (? (= $g-rings (rings $first-ring $second-ring $third-ring)))
+							(! (cons-tail @rings-list $first-ring))
+							(! (cons-tail @rings-list $second-ring))
+							(! (cons-tail @rings-list $third-ring))
+							)
+						)
+					)
 				)
-
-			(? (order $o-id $o-type $base-color (val @rings-list) $cap-color $quantity-requested $quantity-delivered $delivery-period-begin $delivery-period-end $delivery-gate))
 			(? (game-time $game-time))
-			(^ (> $game-time $delivery-period-begin))
+			(if (? (&	(order @o-id @o-type $base-color (val @rings-list) $cap-color @quantity-requested @quantity-delivered @delivery-period-begin @delivery-period-end @delivery-gate)
+						(> $game-time @delivery-period-begin)
+						(< $game-time @delivery-period-end)
+						))
+						GOTO start_delivering
+			
+			else
+			(if (? (&	(order @o-id @o-type $base-color (val @rings-list) $cap-color @quantity-requested @quantity-delivered @delivery-period-begin @delivery-period-end @delivery-gate)
+						(< $game-time @delivery-period-begin)
+						))
+				(^ (& (> @game-time (val @delivery-period-begin))
+						(quote (game-time @game-time))))
+				GOTO start_delivering
+					
+				else
+				(if (! (Task-Cx--Clear-Negative-WP-at-output $agent (workpiece $g-id (base $base-color) $g-rings (cap $cap-color) (place $cs-name "output")) ))
+					;Regadrless of what happens to the clearing..I have succeeded..This needs to change so that it reflects that faild the clear
+					(! (printf (FORMAT "Sub-Task Clearing SUCCEEDED %s" $agent)))
+					else 
+					(! (printf (FORMAT "Sub-Task Clearing FAILD %s" $agent)))
+					)
+				LABEL fin
+				)
+			)
+									
+			
+			LABEL start_delivering
 			;Still there
 			(? (workpiece $g-id (base $base-color) $g-rings (cap $cap-color) (place $cs-name "output")))
 			
@@ -661,7 +846,7 @@
 			(! (printf (FORMAT "TASK ==> Task-Deliver Allocated to %s \n " $agent)))
 
 
-			(! (achieve-workpiece (val $agent) (workpiece $g-id (base $base-color) $g-rings (cap $cap-color) (place $agent "gripper"))))
+			(! (achieve-workpiece (val $agent) (workpiece $g-id (base $base-color) $g-rings (cap $cap-color) (place (val $agent) "gripper"))))
 
 			(^ (workpiece $g-id (base $base-color) $g-rings (cap $cap-color) (place $agent "gripper")))
 
@@ -670,7 +855,8 @@
 
 			(! (achieve-workpiece (val $agent) (workpiece $g-id (base $base-color) $g-rings (cap $cap-color) (place $ds-name $delivery-gate))))
 
-			(=> (agent-achieving $agent IDLE))
+			LABEL fin
+			; (=> (agent-achieving $agent IDLE))
 
 			)
 		)

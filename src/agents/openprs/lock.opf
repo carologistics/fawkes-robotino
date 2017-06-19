@@ -47,6 +47,7 @@
 		       (if (? (> $res $release-distance-sqr))
 		       (! (printf (FORMAT "Releaseing Lock: %s %s %d %d %d %d\n" $agent-name $resource $agent-xpos $agent-ypos $res-xpos $res-ypos)))
 		       	(=> (lock RELEASE $agent-name $resource $priority))
+		       	(~> (lock-in-use $resource $x $y))
 		       )
 		)
 		:documentation "Checks every certain amount of time if still needs the lock or not
