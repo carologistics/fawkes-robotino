@@ -56,6 +56,13 @@
 		:body (
 			LABEL start_selecting
 			(^ (agent-achieving @agent IDLE))
+			(if (? (= $task-name Task-Cx--Pay-Material))
+				(! (= @random (rand 4)))
+				(if (? (<= (val @random) 2))
+					(! (printf (FORMAT "RaNdAmIzaTIoN_Selecting-Agent:: %s lost the dice for %s \n" $task-name (val @agent))))
+					GOTO start_selecting
+					)
+				)
 			(! (=  @critical-agent (val @agent)))
 			(! (start-critical-section))
 			(if (? (agent-achieving (val @critical-agent) IDLE))

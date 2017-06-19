@@ -527,12 +527,13 @@
 					(! (= $y 3))
 					)
 
+				(! (intend-node-after-before-tag
+						(BUILD-GOAL (! ( Execute (skill "drive_to" "x" 0.0 "y" $y ))))
+						(. .)
+						(. .)
+						))
 
-				(! (= $drive-Goal (BUILD-GOAL 
-		    			(! ( Execute (skill "drive_to" "x" 0.0 "y" $y )))
-		    			)))
-		    	(! (INTENDED-GOAL $drive-Goal))
-				
+		    		
 				;Just Fail so that the Achieve-Workpiece Can Fail. Finalizing this Achieve-
 				(! (FAILED))
 				(! (printf (FORMAT "DRIVING AWAAAY \n"  )))

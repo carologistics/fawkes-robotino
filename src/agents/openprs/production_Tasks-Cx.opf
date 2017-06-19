@@ -170,28 +170,66 @@
 			(! (print "Pick a Random Workpiece-----"))
 
 
-			(? (= $random (rand 3)))
+			; (? (= $random (rand 3)))
 			(? (= $cs-list (n-all-list (. $cs-name $cap-color .) (cap-station $cs-name $cap-color @loaded-status @some-on-shelf))))
 			(? (machine $bs-name "BS" $bs-state $bs-prepared $bs-zone $bs-pose $bs-loaded-with))
 			
-			(if (? (= $random 1))
-				(! (achieve-workpiece (val $agent) (workpiece 0 (base base_red) (rings none) (cap none) (place (val $agent) "gripper"))))
-				(^ (workpiece $id (base base_red) (rings none) (cap none) (place (val $agent) "gripper")))
-				;Matche to retrun
-				(! (= $workpiece (workpiece $id (base base_red) (rings none) (cap none) (place (val $agent) "gripper"))))
-				else (if (? (= $random 2))
-						(! (= @cs-name (car (car $cs-list))))
-						(! (= @cap-color (car (cadr $cs-list))))
-						else
-						(! (= @cs-name (cadr (car $cs-list))))
-						(! (= @cap-color (cadr (cadr $cs-list))))
-						)
+			; (if (? (= $random 1))
+			; 	(! (achieve-workpiece (val $agent) (workpiece 0 (base base_red) (rings none) (cap none) (place (val $agent) "gripper"))))
+			; 	(^ (workpiece $id (base base_red) (rings none) (cap none) (place (val $agent) "gripper")))
+			; 	;Matche to retrun
+			; 	(! (= $workpiece (workpiece $id (base base_red) (rings none) (cap none) (place (val $agent) "gripper"))))
+			; 	else (if (? (= $random 2))
+			; 			(! (= @cs-name (car (car $cs-list))))
+			; 			(! (= @cap-color (car (cadr $cs-list))))
+			; 			else
+			; 			(! (= @cs-name (cadr (car $cs-list))))
+			; 			(! (= @cap-color (cadr (cadr $cs-list))))
+			; 			)
 				
-				(! ( achieve-workpiece (val $agent) (workpiece 0 (base UNKNOWN) (rings none) (cap (val @cap-color)) (place (val $agent) "gripper"))))
-				(^ (workpiece $id (base UNKNOWN) (rings none) (cap (val @cap-color)) (place $agent "gripper")))
-				;Match to return
-				(! (= $workpiece (workpiece $id (base UNKNOWN) (rings none) (cap (val @cap-color)) (place $agent "gripper"))))
+			; 	(! ( achieve-workpiece (val $agent) (workpiece 0 (base UNKNOWN) (rings none) (cap (val @cap-color)) (place (val $agent) "gripper"))))
+			; 	(^ (workpiece $id (base UNKNOWN) (rings none) (cap (val @cap-color)) (place $agent "gripper")))
+			; 	;Match to return
+			; 	(! (= $workpiece (workpiece $id (base UNKNOWN) (rings none) (cap (val @cap-color)) (place $agent "gripper"))))
+			; 	)
+			LABEL Select_Randomly
+			(! (= @random (rand 3)))
+			(if (? (= (val @random) 1))
+				(! (= @mps-name $bs-name))
+				(! (= @base-color base_red))
+				(! (= @base (base (val @base-color))))
+				(! (= @rings (rings none)))
+				(! (= @cap (cap none)))
+				else (if (? (= (val @random) 2))
+						(! (= @mps-name (car (car $cs-list))))
+						(! (= @cap-color (car (cadr $cs-list))))
+						(! (= @base (base UNKNOWN)))
+						(! (= @rings (rings none)))
+						(! (= @cap (cap (val @cap-color))))
+						else
+						(! (= @mps-name (cadr (car $cs-list))))
+						(! (= @cap-color (cadr (cadr $cs-list))))
+						(! (= @base (base UNKNOWN)))
+						(! (= @rings (rings none)))
+						(! (= @cap (cap (val @cap-color))))
+						)
 				)
+			
+			;This Check is to minimize (not prevent) the chance that you try to use an already used machine
+			(if (? (& 	(achieve-workpiece @agent (workpiece 0 (val @base) (val @rings) (val @cap) (place @agent "gripper")) @status)
+						(~ (= (val $agent) (val @agent)))
+						(MEMQ @status (. REQUESTING STARTED .))
+						))
+				(! (printf  (FORMAT "RaNdAmIzaTIoN_Picking Material: %s found that %s else is using %s \n" $agent (val @agent) (val @mps-name) )))
+				(! (printf  (FORMAT "RaNdAmIzaTIoN_Picking Material: %s Will try to find another one \n" $agent )))
+				GOTO Select_Randomly
+				)
+
+				(! (achieve-workpiece (val $agent) (workpiece 0 (val @base) (val @rings) (val @cap) (place (val $agent) "gripper"))))
+				(^ (workpiece @id (val @base) (val @rings) (val @cap) (place (val $agent) "gripper")))
+				
+				;Matche to retrun
+				(! (= $workpiece (workpiece (val @id) (val @base) (val @rings) (val @cap) (place (val $agent) "gripper"))))
 
 			)
 		:documentation " Assert a workpiece with a negative id in a random place. To be picked up later and payed as a ring"
@@ -204,11 +242,28 @@
 						)
 		:context()
 		:body(
-
 			(! (tag-current-intention task_pay-material))
+			
+
 			(if (? (~ (BOUNDP $agent)))
 				;select Agent
 				(! (select-appropriate-agent $agent Task-Cx--Pay-Material))
+				)
+
+			(if (? (& 	(ring-station @rs-name (avilible-colors @colors-list) @selected-color @bases-loaded)
+						(< @bases-loaded 3)
+						))
+				;Proceed, There is slide spot free at least 
+				(! (printf (FORMAT "Pay Material is possible. at least at %s has %s bases only \n" @rs-name @bases-loaded )))
+				else
+				;Nothing to do here. Release any $agents and lose whats in thier gripper and fail
+				(if (? (BOUNDP $agent))
+					(if (? (BOUNDP $workpiece))
+						(! (= (workpiece $m-id $m-base $m-rings $m-cap (place $agent "gripper")) (val $workpiece)))
+						(! (achieve-workpiece (val $agent) (workpiece $m-id $m-base $m-rings $m-cap (place "LOST" "LOST"))))
+						)
+					)
+				(! (FAILED))
 				)
 
 			(! (printf (FORMAT "TASK ==> Task-Pay-Material Allocated to %s \n " $agent)))
@@ -350,6 +405,7 @@
 					else
 					;All RS are fully loaded. Lose the workpiece
 					(! (achieve-workpiece (val $agent) (workpiece $m-id $m-base $m-rings $m-cap (place "LOST" "LOST"))))
+					(! (FAILED))
 					)
 			; (=> (agent-achieving $agent IDLE))
 				)
@@ -362,10 +418,10 @@
 		:context(	(goal-inmind (workpiece $g-id $g-base $g-rings (cap $cap-color) (place $ds-name $delivery-gate) ))
 					(= $goal-inmind
 						(goal-inmind (workpiece $g-id $g-base $g-rings (cap $cap-color) (place $ds-name $delivery-gate))))
-					(cap-station $cs-name $cap-color @loaded-status @some-on-shelf)
 					(master-of REASONING $me)
 					(agent-name $me)
 					)
+					; (cap-station $cs-name $cap-color @loaded-status @some-on-shelf)
 		:body(
 
 			(^ (in-production $goal-inmind))
@@ -535,13 +591,15 @@
 		:context(	(goal-inmind (workpiece $g-id (base $base-color) $g-rings (cap $cap-color) (place $ds-name $delivery-gate) ))
 					(= $goal-inmind
 						(goal-inmind (workpiece $g-id (base $base-color) $g-rings (cap $cap-color) (place $ds-name $delivery-gate) )))
-					(cap-station $cs-name $cap-color @loaded-status @some-on-shelf)
 					(master-of REASONING $me)
 					(agent-name $me)
 					)
+					; (cap-station $cs-name $cap-color @loaded-status @some-on-shelf)
 		:body(
 
 			(^ (in-production $goal-inmind))
+
+			(? (cap-station $cs-name $cap-color @loaded-status @some-on-shelf))
 
 			;Precond
 			(^ (workpiece $g-id (base $base-color) $g-rings (cap $cap-color) (place $cs-name "output")))
