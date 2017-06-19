@@ -40,6 +40,7 @@ OrderComputable::OrderComputable(RobotMemory* robot_memory, fawkes::Logger* logg
   std::vector<std::string>  collections = config->get_strings("plugins/robot-memory/computables/order/collections");
   int priority = config->get_int("plugins/robot-memory/computables/order/priority");
   float caching_time = config->get_float("plugins/robot-memory/computables/order/caching-time");
+  only_c3_order_ = config->get_bool("plugins/robot-memory/computables/order/only-c3-order");
   for( std::string col : collections )
   {
     computables.push_back(robot_memory_->register_computable(query, col, &OrderComputable::compute_order, this, caching_time, priority));
@@ -59,6 +60,9 @@ OrderComputable::~OrderComputable()
 std::list<BSONObj> OrderComputable::compute_order(BSONObj query, std::string collection)
 {
   Query clean_query = fromjson("{relation:\"order\"}");
+  if ( only_c3_order_ ) {
+    clean_query = fromjson("{relation:\"order\", id: 7}");
+  }
   QResCursor cur = robot_memory_->query(clean_query, collection);
 
   std::list<BSONObj> res;

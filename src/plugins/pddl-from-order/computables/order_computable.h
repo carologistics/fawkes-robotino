@@ -41,6 +41,7 @@ class OrderComputable
     const char* name_ = "PddlFromOrder: RM-OrderComputable";
     std::vector<Computable*>  computables;
     fawkes::Configuration* config_;
+    bool only_c3_order_;
 };
 
 #endif /* FAWKES_SRC_PLUGINS_ROBOT_MEMORY_COMPUTABLES_ORDER_COMPUTABLE_H_ */
