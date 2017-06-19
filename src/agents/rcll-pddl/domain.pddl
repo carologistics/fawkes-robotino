@@ -232,3 +232,5 @@
 			(and (action-done DELIVER-C3)(order-fulfilled ?o)(not (holding ?r ?wp)) (not-holding ?r)(not (has-cap ?wp ?cap-col)) (not (has-color ?wp ?base-col)) (not (has-ring-one ?wp ?ring-col1)) (not (has-ring-two ?wp ?ring-col2)) (not (has-ring-three ?wp ?ring-col3)) ) 
 	)
 )
+; MACRO lock-position-move-to-position-empty ACTIONS [lock-position,move-to-position-empty] PARAMETERS [[1,2,3],[1,2,4,3]]
+( :action lock-position-move-to-position-empty :parameters ( ?p1 - robot ?p2 - action ?p3 ?p4 - pos ) :precondition ( and ( not-locked ?p3 ) ( no-lock ?p1 ) ( at-pos ?p1 ?p4 ) ( pos-free ?p3 ) ( not-holding ?p1 ) ) :effect ( and ( at-pos ?p1 ?p3 ) ( not ( pos-free ?p3 ) ) ( not ( at-pos ?p1 ?p4 ) ) ( pos-free ?p4 ) ( not ( not-locked ?p3 ) ) ( not ( no-lock ?p1 ) ) ( locked ?p1 ?p2 ?p3 ) ( lock ?p1 ) ) )
