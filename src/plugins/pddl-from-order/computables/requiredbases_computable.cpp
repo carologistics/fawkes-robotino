@@ -82,7 +82,7 @@ std::list<BSONObj> RequiredBasesComputable::compute_requiredbases(BSONObj query,
     }
     reqbases_obj << "num" << base_num_string;
 
-    logger_->log_info(name_, "Computed ring %s with %s bases", color.c_str(), base_num_string.c_str());
+    //logger_->log_info(name_, "Computed ring %s with %s bases", color.c_str(), base_num_string.c_str());
 
     res.push_back(reqbases_obj.obj());
   }
