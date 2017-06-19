@@ -63,7 +63,7 @@
 			(^ (& 	(order $o-id-2 $c-type-2 $base-color-2 $ring-colors-2 $cap-color-2 $quantity-requested-2 $quantity-delivered-2 $delivery-period-begin-2 $delivery-period-end-2 $delivery-gate-2)
 					(> $quantity-requested-2 $quantity-delivered-2)
  					(~ (goal-inmind (workpiece @id @base @rings (cap $cap-color-2) @place)))
- 					(MEMQ $c-type-2 (. C0 C1 C2 .))
+ 					(MEMQ $c-type-2 (. C3 .))
 					))
 
 			(! (printf  (format "---------Chose order %s for production \n" $o-id-2)))
