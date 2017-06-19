@@ -37,6 +37,14 @@ MarkerlessRecognitionThread::MarkerlessRecognitionThread()
 
 }
 
+
+// config handling
+void MarkerlessRecognitionThread::config_value_erased(const char *path) {};
+void MarkerlessRecognitionThread::config_tag_changed(const char *new_tag) {};
+void MarkerlessRecognitionThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v) {};
+void MarkerlessRecognitionThread::config_value_changed(const fawkes::Configuration::ValueIterator *v){}; 
+
+
 void MarkerlessRecognitionThread::finalize() {
  	blackboard->close(mps_rec_if_);
         delete fv_cam;
@@ -51,6 +59,8 @@ void MarkerlessRecognitionThread::finalize() {
 
 Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string image) {
 	
+        std::cout << "recognize current pic" << std::endl;
+
 	Probability result;
 	my_function evaluate;
 	void *handle;
@@ -84,22 +94,24 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
         result = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str());
 
 
-	if(checkProbability(result)==-1){
-		std::cout << "Classification failed\n";
-		return result;
-	}
-	else{
-		for(int i = 0; i < 5; ++i){
-			std::cout << "Result: " << result.p[i] << std::endl;
-		}
-		estimate_mps_type(result);
-	}
+//	if(checkProbability(result)==-1){
+//		std::cout << "Classification failed\n";
+//		return result;
+//	}
+//	else{
+//		for(int i = 0; i < 5; ++i){
+//			std::cout << "Result: " << result.p[i] << std::endl;
+//		}	
+//			estimate_mps_type(result);
+//	}
 	
 	//Still bugged. Seg fault if we try to call dlclose()
 	//dlclose(handle);
    
 	// struct with 5 float values
-	// every time: bs, cs, ds, rs, ss
+	// every time: bs, cs, ds, rs, ss 
+        std::cout << "Result " <<  result.p[0] << std::endl;
+
 	return result;
 }
 
@@ -136,7 +148,7 @@ void MarkerlessRecognitionThread::init(){
        	recognize_current_pic("/TestData/BS/BS_9.jpg");
 
        	mps_rec_if_ = blackboard->open_for_writing<MPSRecognitionInterface>("/MarkerlessRecognition");
-       	clear_data();
+       	//clear_data();
          
 
 }
