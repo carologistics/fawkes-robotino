@@ -312,27 +312,27 @@ ClipsSmtThread::clips_smt_fill_node_names()
 	// C-ins-in is never in the list of machines, therefore add it here
 	node_names_[0] = "C-ins-in";
 
-	// Read names of machines automatically
-	for(int i=0; i<number_machines; ++i){
-		std::string machine_name = data.machines(i).name().c_str();
-		machine_name += "-I";
-		// logger->log_info(name(), "Add %s to node_names_", machine_name.c_str());
-		node_names_[i+1] = machine_name;
-	}
+	// // Read names of machines automatically
+	// for(int i=0; i<number_machines; ++i){
+	// 	std::string machine_name = data.machines(i).name().c_str();
+	// 	machine_name += "-I";
+	// 	// logger->log_info(name(), "Add %s to node_names_", machine_name.c_str());
+	// 	node_names_[i+1] = machine_name;
+	// }
 
-	// // Set names of machines fix
-	// node_names_[1] = "C-BS-I";
-	// node_names_[2] = "C-RS1-I";
-	// node_names_[3] = "C-RS2-I";
-	// node_names_[4] = "C-CS1-I";
-	// node_names_[5] = "C-CS2-I";
-	// node_names_[6] = "C-DS-I";
-	// node_names_[7] = "C-BS-O";
-	// node_names_[8] = "C-RS1-O";
-	// node_names_[9] = "C-RS2-O";
-	// node_names_[10] = "C-CS1-O";
-	// node_names_[11] = "C-CS2-O";
-	// node_names_[12] = "C-DS-O";
+	// Set names of machines fix
+	node_names_[1] = "C-BS-I";
+	node_names_[2] = "C-RS1-I";
+	node_names_[3] = "C-RS2-I";
+	node_names_[4] = "C-CS1-I";
+	node_names_[5] = "C-CS2-I";
+	node_names_[6] = "C-DS-I";
+	node_names_[7] = "C-BS-O";
+	node_names_[8] = "C-RS1-O";
+	node_names_[9] = "C-RS2-O";
+	node_names_[10] = "C-CS1-O";
+	node_names_[11] = "C-CS2-O";
+	node_names_[12] = "C-DS-O";
 }
 
 void
@@ -1092,11 +1092,11 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 	}
 
 	// Orders
-	for (int i = 0; i < data.orders().size(); i++)
+	for (int i = 0; i < data.orders().size()/2; i++)
 	{
 		//Color conversions
 		Workpiece::Color bc_temp = Workpiece::NONE;
-		switch(data.orders(i).base_color()){
+		switch(data.orders(i+data.orders().size()/2).base_color()){
 			case 1: bc_temp = static_cast<Workpiece::Color>(Workpiece::RED);
 					break;
 			case 2: bc_temp = static_cast<Workpiece::Color>(Workpiece::BLACK);
@@ -1107,8 +1107,8 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 		}
 
 		std::vector<Workpiece::Color> rc_temps;
-		for (int j = 0; j < data.orders(i).ring_colors().size(); j++){
-			switch(data.orders(i).ring_colors(j)){
+		for (int j = 0; j < data.orders(i+data.orders().size()/2).ring_colors().size(); j++){
+			switch(data.orders(i+data.orders().size()/2).ring_colors(j)){
 				case 1: rc_temps.push_back(static_cast<Workpiece::Color>(Workpiece::BLUE));
 						break;
 				case 2: rc_temps.push_back(static_cast<Workpiece::Color>(Workpiece::GREEN));
@@ -1123,7 +1123,7 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 		}
 
 		Workpiece::Color cc_temp = Workpiece::NONE;
-		switch(data.orders(i).cap_color()){
+		switch(data.orders(i+data.orders().size()/2).cap_color()){
 			case 1: cc_temp = static_cast<Workpiece::Color>(Workpiece::BLACK);
 					break;
 			case 2: cc_temp = static_cast<Workpiece::Color>(Workpiece::GREY);
@@ -1132,7 +1132,7 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 		}
 
 		Workpiece p_temp = Workpiece(bc_temp, rc_temps, cc_temp);
-		auto o_temp = std::make_shared<Order>(i, p_temp, 1); // TODO Fix third parameter
+		auto o_temp = std::make_shared<Order>(i, p_temp, data.orders(i).delivery_period_end()); // TODO Fix third parameter
 		gD.addOrder(o_temp);
 	}
 
