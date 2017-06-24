@@ -128,8 +128,10 @@ float  MarkerlessRecognitionThread::recognize_mps() {
 	     	}
 	}
 
+        mps_rec_if_->set_final(true);
 	mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) maximum );
-		
+	mps_rec_if_->write();	
+
 	return maximum;
 	//cout << " Start of method recognize_mps() " << std::endl; 
         //mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) 5 ) ;
@@ -249,11 +251,11 @@ void MarkerlessRecognitionThread::loop(){
 		if ( mps_rec_if_->msgq_first_is<MPSRecognitionInterface::ComputeMessage>() ) {
       			
 			std::cout << "Recieved Compute Message" << std::endl;
- 			//logger->log_info(name(), "Recognition started");
-			//MPSRecognitionInterface::TakeDataMessage *m = mps_rec_if_->msgq_first<MPSRecognitionInterface::TakeDataMessage>();
-			//mps_rec_if_->set_msgid(m->id());
-			//mps_rec_if_->set_final(false);
-			//mps_rec_if_->write();
+ 			logger->log_info(name(), "Recognition started");
+			MPSRecognitionInterface::TakeDataMessage *m = mps_rec_if_->msgq_first<MPSRecognitionInterface::TakeDataMessage>();
+			mps_rec_if_->set_msgid(m->id());
+			mps_rec_if_->set_final(false);
+			mps_rec_if_->write();
 			cout << " Start recognize " << std::endl; 
 			recognize_mps();
     		

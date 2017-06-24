@@ -47,6 +47,8 @@ MPS_TYPES = {
 'Delivery Station',
 'Ring Station',
 'Storage Station',
+'Not Clear', 
+'Ring or Cap',
 }
 
 
@@ -76,8 +78,8 @@ function data_evaluated(self)
    return true
 end
 
-function recognition_good()
-   string recognition_result =  recognition-interface:recognition_result();
+function recognition_result()
+   string recognition_result =  recognition-interface:mpstype();
    speak("The result is %s",recognition_result);
    return true;
 end
@@ -103,7 +105,7 @@ fsm:add_transitions{
    {"TAKEDATA", "WAIT", timeout=0.2},
    {"WAIT", "DECIDE", cond=data_evaluated},
    {"WAIT", "WAIT", timeout=1},
-   {"DECIDE", "FINAL", cond=recognition_good},
+   {"DECIDE", "FINAL", cond=recognition_result},
    {"DECIDE", "FAILED", cond=true},
 }
 
