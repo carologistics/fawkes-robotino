@@ -4,6 +4,8 @@
 .objs_*
 *_tolua.cpp
 *_tolua.pkg
+*.swp
+*.swo
 
 # Specific paths, _ variants for cross compilation environments
 /bin/
