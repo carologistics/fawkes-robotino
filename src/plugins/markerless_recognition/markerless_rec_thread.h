@@ -76,7 +76,8 @@ enum MPSType {
 	DS,
 	RS,
 	SS,
-	NoStationDetected
+	NoStationDetected,
+	CorR
 };
 
 class MarkerlessRecognitionThread
