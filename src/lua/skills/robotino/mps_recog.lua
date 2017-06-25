@@ -26,7 +26,9 @@ name               = "mps_recog"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {}
 depends_interfaces = {
-	{v = "recognition-interface", type = "MPSRecognitionInterface" ,id="/mps-recognition"},
+	{v = "mps_recognition_if", type = "MPSRecognitionInterface" ,id="/mps-recognition"},
+	{v = "speechsynth", type = "SpeechSynthInterface", id = "Flite"},
+
 }
 
 documentation      = [==[
@@ -60,15 +62,15 @@ end
 
 function send_takedata(self)
    local msg = mps_recognition_if.TakeDataMessage:new()
-   recognition-interface:msgq_enqueue_copy(msg)
+   mps_recognition_if:msgq_enqueue_copy(msg)
 end
 
 function send_cleardata()
-   recognition-interface:msgq_enqueue_copy(mps_recognition_if.ClearMessage:new())
+   mps_reocognition_if:msgq_enqueue_copy(mps_recognition_if.ClearMessage:new())
 end
 
 function mpsRecogPlugin_ready()
-   return recognition-interface:is_final()
+   return mps_recognition_if:is_final()
 end
 
 function data_evaluated(self)
@@ -79,7 +81,7 @@ function data_evaluated(self)
 end
 
 function recognition_result()
-   string recognition_result =  recognition-interface:mpstype();
+   recognition_result=mps_recognition_if:mpstype();
    speak("The result is %s",recognition_result);
    return true;
 end
