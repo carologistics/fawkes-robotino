@@ -10,8 +10,8 @@ fawkes/meta_plugins:
   m-fv: fvbase,fvfountain
   m-fv-vision: m-bare,m-fv,tag_vision,fvretriever
   m-clips: clips,clips-motor-switch,clips-protobuf,clips-webview,clips-navgraph,clips-tf,clips_robot_memory
-  m-clips-agent: m-clips,m-fv-vision,clips-agent,webtools-bridge
-  m-skiller: ros,m-fv-vision,ros-pcl,navgraph,navgraph-generator,navgraph-generator-mps,mps-laser-gen,skiller,m-robot-memory
+  m-clips-agent: m-clips,m-fv-vision,clips-agent
+  m-skiller: ros,m-fv-vision,ros-pcl,navgraph,navgraph-generator,navgraph-generator-mps,mps-laser-gen,skiller,m-robot-memory,markerless
   m-robot-memory: mongodb,robot-memory
   m-full: m-skiller,m-clips-agent
 
