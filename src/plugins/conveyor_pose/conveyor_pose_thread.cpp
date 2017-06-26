@@ -59,7 +59,7 @@
 using namespace fawkes;
 
 /** @class ConveyorPoseThread "conveyor_pose_thread.cpp"
- * Plugin to detect the conveyor beld in a pointcloud (captured from intel real sens)
+ * Plugin to detect the conveyor belt in a pointcloud (captured from Intel RealSense)
  * @author Tobias Neumann
  */
 
@@ -87,20 +87,8 @@ ConveyorPoseThread::init()
   cloud_out_result_name_      = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_result").c_str() );
   cfg_bb_conveyor_pose_name_  = if_prefix + config->get_string( (cfg_prefix + "if/pose_of_beld").c_str() );
   cfg_bb_switch_name_         = if_prefix + config->get_string( (cfg_prefix + "if/switch").c_str() );
-  cfg_bb_config_name_         = if_prefix + config->get_string( (cfg_prefix + "if/config").c_str() );
 
   laserlines_names_       = config->get_strings( (cfg_prefix + "if/laser_lines").c_str() );
-
-//  laserlines_names_.push_back("/laser-lines/1");
-//  laserlines_names_.push_back("/laser-lines/2");
-//  laserlines_names_.push_back("/laser-lines/3");
-//  laserlines_names_.push_back("/laser-lines/4");
-//  laserlines_names_.push_back("/laser-lines/5");
-//  laserlines_names_.push_back("/laser-lines/6");
-//  laserlines_names_.push_back("/laser-lines/7");
-//  laserlines_names_.push_back("/laser-lines/8");
-
-//  bb_tag_name_ = "/tag-vision/0";
 
   cfg_pose_close_if_no_new_pointclouds_  = config->get_bool( (cfg_prefix + "if/pose_close_if_new_pc").c_str() );
 
@@ -112,7 +100,6 @@ ConveyorPoseThread::init()
   cfg_allow_invalid_poses_    = config->get_uint( (cfg_prefix + "vis_hist/allow_invalid_poses").c_str() );
 
   cfg_enable_switch_          = config->get_bool( (cfg_prefix + "switch_default").c_str() );
-  cfg_enable_product_removal_ = config->get_bool( (cfg_prefix + "product_removal_default").c_str() );
   cfg_use_visualisation_      = config->get_bool( (cfg_prefix + "use_visualisation").c_str() );
 
   cfg_gripper_y_min_          = config->get_float( (cfg_prefix + "gripper/y_min").c_str() );
@@ -121,21 +108,20 @@ ConveyorPoseThread::init()
   cfg_gripper_slice_y_min_    = config->get_float( (cfg_prefix + "gripper/slice/y_min").c_str() );
   cfg_gripper_slice_y_max_    = config->get_float( (cfg_prefix + "gripper/slice/y_max").c_str() );
 
-  cfg_centroid_radius_        = config->get_float( (cfg_prefix + "centroid/radius").c_str() );
-
   cfg_front_space_            = config->get_float( (cfg_prefix + "front/space").c_str() );
   cfg_front_offset_           = config->get_float( (cfg_prefix + "front/offset").c_str() );
 
   cfg_bottom_offset_          = config->get_float( (cfg_prefix + "bottom/offset").c_str() );
 
-  cfg_product_normal_distance_weight_ = config->get_float( (cfg_prefix + "product/normal_distance_weight").c_str() );
-  cfg_product_dist_threshold_         = config->get_float( (cfg_prefix + "product/dist_threshold").c_str() );
-  cfg_product_radius_limit_min_       = config->get_float( (cfg_prefix + "product/radius_limit_min").c_str() );
-  cfg_product_radius_limit_max_       = config->get_float( (cfg_prefix + "product/radius_limit_max").c_str() );
+  cfg_left_cut_               = config->get_float( (cfg_prefix + "left_right/left_cut").c_str() );
+  cfg_right_cut_              = config->get_float( (cfg_prefix + "left_right/right_cut").c_str() );
+  cfg_left_cut_no_ll_         = config->get_float( (cfg_prefix + "left_right/left_cut_no_ll").c_str() );
+  cfg_right_cut_no_ll_        = config->get_float( (cfg_prefix + "left_right/right_cut_no_ll").c_str() );
 
   cfg_plane_dist_threshold_   = config->get_float( (cfg_prefix + "plane/dist_threshold").c_str() );
   cfg_normal_z_minimum_       = config->get_float( (cfg_prefix + "plane/normal_z_minimum").c_str() );
   cfg_plane_height_minimum_   = config->get_float( (cfg_prefix + "plane/height_minimum").c_str() );
+  cfg_plane_width_minimum_    = config->get_float( (cfg_prefix + "plane/width_minimum").c_str() );
 
   cfg_cluster_tolerance_      = config->get_float( (cfg_prefix + "cluster/tolerance").c_str() );
   cfg_cluster_size_min_       = config->get_float( (cfg_prefix + "cluster/size_min").c_str() );
@@ -154,19 +140,14 @@ ConveyorPoseThread::init()
     laserlines_.push_back( blackboard->open_for_reading<fawkes::LaserLineInterface>(ll.c_str()) );
   }
 
-//  bb_tag_ = blackboard->open_for_reading<fawkes::Position3DInterface>(bb_tag_name_.c_str());
-
   enable_pose_ = false;
   if ( ! cfg_pose_close_if_no_new_pointclouds_ ) {
     bb_pose_conditional_open();
   }
 
   bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>(cfg_bb_switch_name_.c_str());
-  bb_config_        = blackboard->open_for_writing<ConveyorConfigInterface>(cfg_bb_config_name_.c_str());
   bb_enable_switch_->set_enabled( cfg_debug_mode_ || cfg_enable_switch_); // ignore cfg_enable_switch_ and set to true if debug mode is used
   bb_enable_switch_->write();
-  bb_config_->set_product_removal( cfg_enable_product_removal_ );
-  bb_config_->write();
 
   visualisation_ = new Visualisation(rosnode);
 }
@@ -179,7 +160,6 @@ ConveyorPoseThread::finalize()
   delete visualisation_;
   blackboard->close(bb_enable_switch_);
   bb_pose_conditional_close();
-  blackboard->close(bb_config_);
 }
 
 void
@@ -262,12 +242,9 @@ ConveyorPoseThread::loop()
     cloud_front_side = cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
   
 // logger->log_debug(name(),"CONVEYOR-POSE 7: set cut off left and rigt");
- // Eigen::Vector4f center;
- // pcl::compute3DCentroid<Point, float>(*cloud_front, center);
- // CloudPtr cloud_center = cloud_remove_centroid_based(cloud_front, center);
   CloudPtr cloud_bottom_removed = cloud_remove_offset_to_bottom(cloud_front_side);
 
-//  logger->log_debug(name(),"CONVEYOR-POSE 8: removed products");
+//  logger->log_debug(name(),"CONVEYOR-POSE 8: removed bottom offset");
   cloud_publish(cloud_bottom_removed, cloud_out_inter_1_);
 
   // search for best plane
@@ -341,8 +318,8 @@ ConveyorPoseThread::loop()
       }
     
     float width = x_min - x_max;
-    if (width < 0.025) {
-      logger->log_info(name(), "Discard plane, because of width restriction. is: %f\tshould: %f", width, 0.025);      
+    if (width < cfg_plane_width_minimum_) {
+      logger->log_info(name(), "Discard plane, because of width restriction. is: %f\tshould: %f", width, cfg_plane_width_minimum_);      
       boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
       CloudPtr tmp(new Cloud);
       pcl::ExtractIndices<Point> extract;
@@ -428,28 +405,6 @@ ConveyorPoseThread::if_read()
   // laser lines
   for (fawkes::LaserLineInterface * ll : laserlines_) {
     ll->read();
-  }
-
-  // config
-  bb_config_->read();
-
-  rv = bb_config_->is_product_removal();
-  while ( ! bb_config_->msgq_empty() ) 
-    {
-    logger->log_info(name(),"RECIEVED CONFIG MESSAGE");
-    if (bb_config_->msgq_first_is<ConveyorConfigInterface::DisableProductRemovalMessage>()) {
-      rv = false;
-    } else if (bb_config_->msgq_first_is<ConveyorConfigInterface::EnableProductRemovalMessage>()) {
-      rv = true;
-    }
-
-    bb_config_->msgq_pop();
-  }
-
-  if ( rv != bb_config_->is_product_removal() ) {
-    logger->log_info(name(), "*** remove products from point cloud: %s", rv ? "yes" : "no");
-    bb_config_->set_product_removal( rv );
-    bb_config_->write();
   }
 }
 
@@ -679,7 +634,7 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
 
     z_min = lowest_z - (lowest_z / 2.);
   }
-  z_max = z_min + space - 0.075;
+  z_max = z_min + space;
 
   CloudPtr out(new Cloud);
   for (Point p : *in) {
@@ -695,11 +650,10 @@ CloudPtr
 ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
 {
   if (use_ll){
-    double space = 0.12;
     Eigen::Vector3f c = laserline_get_center_transformed(ll);
 
-    double x_min = c(0) - ( space / 2. ) - 0.02;
-    double x_max = c(0) + ( space / 2. );
+    double x_min = c(0) - cfg_left_cut_;
+    double x_max = c(0) + cfg_right_cut_;
 
     CloudPtr out(new Cloud);
       for (Point p : *in) {
@@ -712,7 +666,7 @@ ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::Laser
     logger->log_info(name(), "-------------STOPPED USING LASERLINE-----------");
     CloudPtr out(new Cloud);
     for (Point p : *in) {
-        if ( p.x >= -0.08 && p.x <= 0.08 ) {
+        if ( p.x >= -cfg_left_cut_no_ll_ && p.x <= cfg_right_cut_no_ll_ ) {
         out->push_back(p);
       }
     }
@@ -800,17 +754,17 @@ ConveyorPoseThread::cluster_split(CloudPtr in, boost::shared_ptr<std::vector<pcl
 CloudPtr
 ConveyorPoseThread::cluster_find_biggest(std::vector<CloudPtr> clouds_in, size_t & id)
 {
-  CloudPtr biggeset(new Cloud);
+  CloudPtr biggest(new Cloud);
   size_t i = 0;
   for (CloudPtr current : clouds_in) {
-    if ( biggeset->size() < current->size() ) {
-      biggeset = current;
+    if ( biggest->size() < current->size() ) {
+      biggest = current;
       id = i;
     }
     ++i;
   }
 
-  return biggeset;
+  return biggest;
 }
 
 CloudPtr

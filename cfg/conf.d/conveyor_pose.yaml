@@ -49,7 +49,7 @@ conveyor_pose:
   # the maximum allowed distance that the vis_hist is not resetet
   vis_hist:
     # distance in x, y, z
-    diff_pose: 0.003
+    diff_pose: 0.1
     # distance in angle in rad
     diff_angle: 0.2
     average:
@@ -65,28 +65,26 @@ conveyor_pose:
     y_max: -0.055
     z_max: 0.135
     slice:
-      y_min: -0.01
+      y_min: -0.02
       y_max: 0.035
-  centroid:
-    # the radius wich is not pruned around the centroid
-    radius: 0.04
   front:
     # the distance that is not pruned at the front of the MPS
-    space: 0.4
+    space: 0.6
     # this should be a tf, but I did not get it work :(
     offset: 0.005
   bottom:
     offset: 0.06
-  product:
-    normal_distance_weight: 0.1
-    dist_threshold: 0.025
-    radius_limit_min: 0.0185
-    radius_limit_max: 0.0225
+  left_right:
+    left_cut: 0.4
+    right_cut: 0.6
+    left_cut_no_ll: -0.8
+    right_cut_no_ll: 0.8    
   plane:
     # the allowed noise for a plane
     dist_threshold: 0.0025
     normal_z_minimum: 0.1
-    height_minimum: 0.015
+    height_minimum: 0.025
+    width_minimum: 0.025
   cluster:
     tolerance: 0.0015
     size_min: 100

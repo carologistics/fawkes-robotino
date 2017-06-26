@@ -34,7 +34,6 @@
 #include <plugins/ros/aspect/ros.h>
 
 #include <interfaces/SwitchInterface.h>
-#include <interfaces/ConveyorConfigInterface.h>
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/LaserLineInterface.h>
 
@@ -82,7 +81,6 @@ private:
   std::string cloud_out_result_name_;
   std::string cfg_bb_conveyor_pose_name_;
   std::string cfg_bb_switch_name_;
-  std::string cfg_bb_config_name_;
   std::string conveyor_frame_id_;
   std::vector<std::string> laserlines_names_;
 
@@ -97,21 +95,20 @@ private:
   float cfg_gripper_slice_y_min_;
   float cfg_gripper_slice_y_max_;
 
-  float cfg_centroid_radius_;
-
   float cfg_front_space_;
   float cfg_front_offset_;
 
   float cfg_bottom_offset_;
 
-  float cfg_product_normal_distance_weight_;
-  float cfg_product_dist_threshold_;
-  float cfg_product_radius_limit_min_;
-  float cfg_product_radius_limit_max_;
+  float cfg_left_cut_;
+  float cfg_right_cut_;
+  float cfg_left_cut_no_ll_;
+  float cfg_right_cut_no_ll_;
 
   float cfg_plane_dist_threshold_;
 
   float cfg_plane_height_minimum_;
+  float cfg_plane_width_minimum_;
   float cfg_normal_z_minimum_;
 
   float cfg_cluster_tolerance_;
@@ -145,7 +142,6 @@ private:
 
   // interfaces write
   fawkes::SwitchInterface * bb_enable_switch_;
-  fawkes::ConveyorConfigInterface * bb_config_;
   fawkes::Position3DInterface * bb_pose_;
 
   // interfaces read
@@ -169,11 +165,9 @@ private:
  bool is_inbetween(double a, double b, double val);
 
  CloudPtr cloud_remove_gripper(CloudPtr in);
- CloudPtr cloud_remove_centroid_based(CloudPtr in, Eigen::Vector4f centroid);
  CloudPtr cloud_remove_offset_to_bottom(CloudPtr in);
  CloudPtr cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll = NULL, bool use_ll = false);
  CloudPtr cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll);
- CloudPtr cloud_remove_products(CloudPtr in);
  CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);
  boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
  CloudPtr cloud_voxel_grid(CloudPtr in);
