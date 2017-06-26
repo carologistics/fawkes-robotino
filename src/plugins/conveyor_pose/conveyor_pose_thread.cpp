@@ -246,17 +246,17 @@ ConveyorPoseThread::loop()
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
   uint in_size = cloud_in->points.size();
-  logger->log_debug(name(), "Size before voxel grid: %u", in_size);
+ // logger->log_debug(name(), "Size before voxel grid: %u", in_size);
   CloudPtr cloud_vg = cloud_voxel_grid(cloud_in);
   uint out_size = cloud_vg->points.size();
-  logger->log_debug(name(), "Size of voxel grid: %u", out_size);
+ // logger->log_debug(name(), "Size of voxel grid: %u", out_size);
   if (in_size == out_size) {
     logger->log_error(name(), "Voxel Grid failed, skipping loop!");
     return;
   }
   CloudPtr cloud_gripper = cloud_remove_gripper(cloud_vg);
   CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_gripper, ll, use_laserline);
-  logger->log_debug(name(),"CONVEYOR-POSE 6: intially filtered pointcloud");
+ // logger->log_debug(name(),"CONVEYOR-POSE 6: intially filtered pointcloud");
 
   CloudPtr cloud_front_side(new Cloud);
     cloud_front_side = cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
@@ -325,12 +325,38 @@ ConveyorPoseThread::loop()
       extract.setIndices( extract_indicies );
       extract.setNegative (true);
       extract.filter (*tmp);
-      logger->log_debug(name(), "After extraction");
+      //logger->log_debug(name(), "After extraction");
       *cloud_bottom_removed = *tmp;
     } else {
       // height is ok
+      float x_min = -200;
+      float x_max = 200;
+      for (Point p : *cloud_choosen ) {
+        if (p.x > x_min) {
+          x_min = p.x;
+        }
+        if (p.x < x_max) {
+          x_max = p.x;
+        }
+      }
+    
+    float width = x_min - x_max;
+    if (width < 0.025) {
+      logger->log_info(name(), "Discard plane, because of width restriction. is: %f\tshould: %f", width, 0.025);      
+      boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
+      CloudPtr tmp(new Cloud);
+      pcl::ExtractIndices<Point> extract;
+      extract.setInputCloud (cloud_bottom_removed);
+      extract.setIndices( extract_indicies );
+      extract.setNegative (true);
+      extract.filter (*tmp);
+      *cloud_bottom_removed = *tmp;
+
+    } else {
+    //height and width ok
       break;
     }
+   }
   } while (true);
   
  // logger->log_debug(name(),"CONVEYOR-POSE 9: left while true");
@@ -653,7 +679,7 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
 
     z_min = lowest_z - (lowest_z / 2.);
   }
-  z_max = z_min + space - 0.15;
+  z_max = z_min + space - 0.075;
 
   CloudPtr out(new Cloud);
   for (Point p : *in) {
@@ -672,7 +698,7 @@ ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::Laser
     double space = 0.12;
     Eigen::Vector3f c = laserline_get_center_transformed(ll);
 
-    double x_min = c(0) - ( space / 2. );
+    double x_min = c(0) - ( space / 2. ) - 0.02;
     double x_max = c(0) + ( space / 2. );
 
     CloudPtr out(new Cloud);
@@ -794,7 +820,7 @@ ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
   pcl::ApproximateVoxelGrid<pcl::PointXYZ> vg;
   CloudPtr out (new Cloud);
   vg.setInputCloud (in);
-  logger->log_debug(name(), "voxel leaf size is %f", ls);
+ // logger->log_debug(name(), "voxel leaf size is %f", ls);
   vg.setLeafSize (ls, ls, ls);
   vg.filter (*out);
   return out;
