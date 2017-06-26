@@ -208,6 +208,8 @@ ConveyorPoseThread::loop()
     vis_hist_ = std::max(1, vis_hist_ + 1);
     pose_write(pose_average);
 
+    pose_publish_tf(pose_average);
+
 //    tf_send_from_pose_if(pose_current);
     if (cfg_use_visualisation_) {
       visualisation_->marker_draw(header_, pose_average.translation, pose_average.rotation);
@@ -851,6 +853,25 @@ ConveyorPoseThread::pose_write(pose pose)
   bb_pose_->write();
 }
 
+void
+ConveyorPoseThread::pose_publish_tf(pose pose)
+{
+  // transform data into gripper frame (this is better for later use)
+  tf::Stamped<tf::Pose> tf_pose_cam, tf_pose_gripper;
+  tf_pose_cam.stamp = fawkes::Time((long)header_.stamp / 1000);
+  tf_pose_cam.frame_id = header_.frame_id;
+  tf_pose_cam.setOrigin(tf::Vector3( pose.translation.x(), pose.translation.y(), pose.translation.z() ));
+  tf_pose_cam.setRotation(tf::Quaternion( pose.rotation.x(), pose.rotation.y(), pose.rotation.z(), pose.rotation.w() ));
+  tf_listener->transform_pose("gripper", tf_pose_cam, tf_pose_gripper);
+
+  // publish the transform from the gripper to the conveyor
+  tf::Transform transform(
+                  tf::create_quaternion_from_yaw(M_PI),
+                  tf_pose_gripper.getOrigin()
+                );
+  tf::StampedTransform stamped_transform(transform, tf_pose_gripper.stamp, tf_pose_gripper.frame_id, "conveyor");
+  tf_publisher->send_transform(stamped_transform);
+}
 
 
 

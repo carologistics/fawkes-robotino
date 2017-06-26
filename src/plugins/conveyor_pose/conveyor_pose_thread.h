@@ -183,6 +183,7 @@ private:
 
 protected:
   virtual void run() { Thread::run(); }
+  void pose_publish_tf(pose pose);
 
 public:
   ConveyorPoseThread();
