@@ -58,7 +58,7 @@ MPSRecognitionInterface::MPSRecognitionInterface() : Interface()
   enum_map_MPSType[(int)SS] = "SS";
   add_fieldinfo(IFT_UINT32, "msgid", 1, &data->msgid);
   add_fieldinfo(IFT_BOOL, "final", 1, &data->final);
-  add_fieldinfo(IFT_ENUM, "mpstype", 1, &data->mpstype, "MPSType", &enum_map_MPSType);
+  add_fieldinfo(IFT_ENUM, "mpstype", 2 , &data->mpstype, "MPSType", &enum_map_MPSType);
   add_fieldinfo(IFT_FLOAT, "p_correct", 1, &data->p_correct);
   add_fieldinfo(IFT_FLOAT, "ptot_mpstype", 5, &data->ptot_mpstype);
   add_messageinfo("ClearMessage");

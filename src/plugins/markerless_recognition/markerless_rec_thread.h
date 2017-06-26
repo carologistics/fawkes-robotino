@@ -194,6 +194,8 @@ public:
 
   float th_first = 0.8;
   float th_sec = 0.5;
+
+  float testStation = 1; 
 };
 
 #endif

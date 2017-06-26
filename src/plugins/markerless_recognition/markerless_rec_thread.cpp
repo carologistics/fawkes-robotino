@@ -10,7 +10,7 @@
 #include <string>
 
 
-#define CFG_PREFIX "/plugins/conveyor_vision/"
+#define CFG_PREFIX "/plugins/markerless_recognition/"
 #define IMAGE_CHANNELS 3
 
 
@@ -60,8 +60,15 @@ void MarkerlessRecognitionThread::finalize() {
 Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string image) {
 	
         std::cout << "recognize current pic" << std::endl;
-
+	
 	Probability result;
+	result.p[0] = 0.;
+        result.p[1] = 0.;
+        result.p[2] = 0.;
+        result.p[3] = 0.;
+	result.p[4] = 0.; 
+	//
+	/*
 	my_function evaluate;
 	void *handle;
   
@@ -92,7 +99,7 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 
 	//evaluates the current image
         result = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str());
-
+        */
 
 //	if(checkProbability(result)==-1){
 //		std::cout << "Classification failed\n";
@@ -110,30 +117,36 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
    
 	// struct with 5 float values
 	// every time: bs, cs, ds, rs, ss 
-        std::cout << "Result " <<  result.p[0] << std::endl;
+       // std::cout << "Result " <<  result.p[0] << std::endl;
 
 	return result;
 }
 
 float  MarkerlessRecognitionThread::recognize_mps() {
 
+        cout << " Start of method recognize_mps() " << std::endl;  
 
-	takePictureFromFVcamera(); 
-        Probability recognition_result = recognize_current_pic(frameToRecognize); 
+	//takePictureFromFVcamera(); 
+        //Probability recognition_result = recognize_current_pic(frameToRecognize); 
 	
-	float maximum = 0; 
-	for(int i = 0; i < 4; i++){ 
-	 	if(recognition_result.p[i] < recognition_result.p[i+1]){ 
-                     maximum = i+1; 
-	     	}
-	}
+	//float maximum = 0; 
+//	for(int i = 0; i < 4; i++){ 
+//	 	if(recognition_result.p[i] < recognition_result.p[i+1]){ 
+//                     maximum = i+1; 
+//	     	}
+//	}
 
         mps_rec_if_->set_final(true);
-	mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) maximum );
+	mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) testStation );
 	mps_rec_if_->write();	
 
-	return maximum;
-	//cout << " Start of method recognize_mps() " << std::endl; 
+	if(testStation > 4){ 
+		testStation = 1;
+	}else{ 
+		testStation++;
+	}
+
+	return testStation;
         //mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) 5 ) ;
 	//mps_rec_if_->write();
 	
@@ -151,6 +164,9 @@ void MarkerlessRecognitionThread::init(){
 
        	mps_rec_if_ = blackboard->open_for_writing<MPSRecognitionInterface>("/MarkerlessRecognition");
        	//clear_data();
+        //mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) 3 );
+       // mps_rec_if_->write();
+
          
 
 }
@@ -166,6 +182,7 @@ void MarkerlessRecognitionThread::setupCamera(){
     // init firevision camera
     // CAM swapping not working (??)
     if(fv_cam != NULL){
+	cout << " fv_cam wasn't null " << endl; 
         // free the camera
         fv_cam->stop();
         fv_cam->flush();
@@ -175,6 +192,8 @@ void MarkerlessRecognitionThread::setupCamera(){
         fv_cam = NULL;
     }
     if(fv_cam == NULL){
+	
+ 	cout << " fv_cam /was null " << endl; 
       std::string connection = this->config->get_string((prefix + "camera").c_str());
         fv_cam = vision_master->register_for_camera(connection.c_str(), this);
         fv_cam->start();
@@ -237,13 +256,13 @@ void MarkerlessRecognitionThread::takePictureFromFVcamera(){
 
 
 void MarkerlessRecognitionThread::loop(){
-
+/*
    	if(fv_cam == NULL || !fv_cam->ready()){
         	logger->log_info(name(),"Camera not ready");
 		setupCamera();
       	return;
    	}
-
+*/
     
    	while ( ! mps_rec_if_->msgq_empty() ) {
      			
@@ -252,8 +271,8 @@ void MarkerlessRecognitionThread::loop(){
       			
 			std::cout << "Recieved Compute Message" << std::endl;
  			logger->log_info(name(), "Recognition started");
-			MPSRecognitionInterface::TakeDataMessage *m = mps_rec_if_->msgq_first<MPSRecognitionInterface::TakeDataMessage>();
-			mps_rec_if_->set_msgid(m->id());
+			//MPSRecognitionInterface::TakeDataMessage *m = mps_rec_if_->msgq_first<MPSRecognitionInterface::TakeDataMessage>();
+			//mps_rec_if_->set_msgid(m->id());
 			mps_rec_if_->set_final(false);
 			mps_rec_if_->write();
 			cout << " Start recognize " << std::endl; 
@@ -262,7 +281,7 @@ void MarkerlessRecognitionThread::loop(){
 		} else if ( mps_rec_if_->msgq_first_is<MPSRecognitionInterface::TakeDataMessage>() ) {
     	
 	 		std::cout << "Recieved Take Data Message" << std::endl;
-   			takePictureFromFVcamera(); 
+   			//	takePictureFromFVcamera(); 
 			//readImage();
     		}	
    	 	else {
