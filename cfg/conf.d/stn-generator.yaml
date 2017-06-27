@@ -7,7 +7,7 @@ plugins/stn-generator:
 
   # extended domain with breakup and temporal information
   domain-file: "@BASEDIR@/src/agents/rcll-pddl/extended-domain.pddl"
-  generate-classic-domain: false
+  generate-classic-domain: true
   classic-domain-file: "@BASEDIR@/src/agents/rcll-pddl/domain.pddl"
   problem-file: "@BASEDIR@/src/agents/rcll-pddl/pddl-problem.pddl"
   plan:
