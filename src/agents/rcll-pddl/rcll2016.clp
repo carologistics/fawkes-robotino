@@ -142,7 +142,7 @@
   (path-load  rcll-pddl/stn-action.clp)
   (path-load  rcll-pddl/coordination.clp)
   (path-load  rcll-pddl/production.clp)
-  ;(path-load  rcll-pddl/exploration.clp)
+  (path-load  rcll-pddl/exploration.clp)
   (path-load  rcll-pddl/config.clp)
   (reset)
   ;(facts)
