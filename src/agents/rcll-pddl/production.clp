@@ -10,6 +10,22 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+(defrule no-action-drive-to-nearest-waiting-point
+  (declare (salience ?*PRIORITY-LOW*))
+  (phase PRODUCTION)
+  (not (wait-for-lock (state get|use)))
+  (not (stn-action (state running) (active-robot ?ar&:(eq ?ar (sym-cat ?*ROBOT-NAME*)))))
+  (at-pos ?place)
+  (place-waitpoint-assignment (place ?place) (waitpoint ?nearest-wp))
+  (not (driving-to-wait-point))
+  (added-waiting-positions)
+  =>
+  (printout t "Idle at " ?place " going to wait-point " ?nearest-wp crlf)
+  (skill-call ppgoto place (str-cat ?nearest-wp))
+  (assert (driving-to-wait-point))
+  (assert (state WAIT_AND_LOOK_FOR_ALTERATIVE))
+)
+
 (defrule prod-propose-task-idle
   "If we are idle change state to the proposed task."
   (declare (salience ?*PRIORITY-HIGH*))

@@ -7,7 +7,7 @@ plugins/pddl-planner:
 
   # PDDL planner to be used
   # Possible values: ff, fd
-  planner: ff
+  planner: dbmp
 
   # Domain and problem description and location
   # Folder path needs a trailing /
