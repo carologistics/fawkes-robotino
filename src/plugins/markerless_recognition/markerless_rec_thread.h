@@ -116,10 +116,8 @@ public:
 
   void clear_data();
   Probability recognize_current_pic(const std::string image);
-  float recognize_mps();
-  void estimate_mps_type(const Probability &prob);
+  int recognize_mps();
   void readImage();	
-  int  checkProbability(Probability prob);
   void setupCamera();
   void takePictureFromFVcamera();
 
@@ -188,14 +186,12 @@ public:
   unsigned int img_height;
 
   std::string path_prefix_;
-  std::vector<std::string> imageSet_;
 
   std::string home;
 
   float th_first = 0.8;
   float th_sec = 0.5;
 
-  float testStation = 1; 
 };
 
 #endif
