@@ -68,12 +68,12 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
         result.p[3] = 0.;
 	result.p[4] = 0.; 
 	//
-	/*
 	my_function evaluate;
 	void *handle;
   
 	//Open shared library
-	std::string lib = home + "/fawkes-robotino/lib/tensorflowWrapper.so";
+	std::string lib = home + "/tensorflow/bazel-bin/tensorflow/tf_wrapper/tensorflowWrapper.so";
+	std::cout << lib << std::endl;
     	handle = dlopen(lib.c_str(),RTLD_NOW);
 	if(!handle){
 		fprintf(stderr, "%s\n", dlerror());
@@ -92,66 +92,61 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	std::string imPath = (home) + image;
 		
 	//path to the trained graph
-	std::string grPath = (home) + "/TrainedData/output_graph_600.pb";
+	std::string grPath = (home) + "/fawkes-robotino/etc/tf_data/output_graph_600.pb";
 	
 	//path to the the trained labels
-	std::string laPath = (home) + "/TrainedData/output_labels_600.txt";
+	std::string laPath = (home) + "/fawkes-robotino/etc/tf_data/output_labels_600.txt";
 
 	//evaluates the current image
         result = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str());
-        */
+        
 
-//	if(checkProbability(result)==-1){
-//		std::cout << "Classification failed\n";
-//		return result;
-//	}
-//	else{
-//		for(int i = 0; i < 5; ++i){
-//			std::cout << "Result: " << result.p[i] << std::endl;
-//		}	
-//			estimate_mps_type(result);
-//	}
-	
+	for(int i = 0; i < 5; ++i){
+		std::cout << "Result: " << result.p[i] << std::endl;
+	}	
+
 	//Still bugged. Seg fault if we try to call dlclose()
 	//dlclose(handle);
    
 	// struct with 5 float values
 	// every time: bs, cs, ds, rs, ss 
-       // std::cout << "Result " <<  result.p[0] << std::endl;
 
 	return result;
 }
 
-float  MarkerlessRecognitionThread::recognize_mps() {
+int   MarkerlessRecognitionThread::recognize_mps() {
 
         cout << " Start of method recognize_mps() " << std::endl;  
 
-	//takePictureFromFVcamera(); 
-        //Probability recognition_result = recognize_current_pic(frameToRecognize); 
+      //  Probability recognition_result = recognize_current_pic(frameToRecognize); 
+	Probability recognition_result = recognize_current_pic("/TestData/BS/BS_9.jpg");
+	int station = 0;
+
+	int maximum = 0; 
+	int second = 0;
+	for(int i = 0; i < 4; i++){ 
+	 	if(recognition_result.p[i] > recognition_result.p[maximum]){ 
+                        second = maximum;
+			maximum = i;
+	     	}
+	}
 	
-	//float maximum = 0; 
-//	for(int i = 0; i < 4; i++){ 
-//	 	if(recognition_result.p[i] < recognition_result.p[i+1]){ 
-//                     maximum = i+1; 
-//	     	}
-//	}
+	if(recognition_result.p[maximum] < th_first || recognition_result.p[second] > th_sec)
+	{
+		station = 0;
+	}
+	else{
+		station = maximum + 1;
+	}	
 
         mps_rec_if_->set_final(true);
-	mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) testStation );
+	mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) station );
 	mps_rec_if_->write();	
-
-	if(testStation > 4){ 
-		testStation = 1;
-	}else{ 
-		testStation++;
-	}
-
-	return testStation;
-        //mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) 5 ) ;
-	//mps_rec_if_->write();
 	
-	//const char* recognizedMPS = mps_rec_if_->tostring_MPSType(mps_rec_if_->mpstype());
- 	//cout << " Recognized MPS : " << recognizedMPS << std::endl; 	
+	std::cout << "Finished recognizing: " << station << std::endl;
+
+	return station;
+
 	//iterates over all stored paths im imageSet_ and calls recognize_current_pic on it
 	//then decides which mps was seen in the set of images
 }
@@ -160,14 +155,9 @@ float  MarkerlessRecognitionThread::recognize_mps() {
 void MarkerlessRecognitionThread::init(){
       	
 	home.assign(getenv("HOME"),strlen(getenv("HOME")));
-       	recognize_current_pic("/TestData/BS/BS_9.jpg");
+       	//recognize_mps();
 
        	mps_rec_if_ = blackboard->open_for_writing<MPSRecognitionInterface>("/MarkerlessRecognition");
-       	//clear_data();
-        //mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) 3 );
-       // mps_rec_if_->write();
-
-         
 
 }
 
@@ -250,7 +240,7 @@ void MarkerlessRecognitionThread::takePictureFromFVcamera(){
 	
 	firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
         frame  = cvarrToMat(ipl);
-
+	
 
 }
 
@@ -281,7 +271,7 @@ void MarkerlessRecognitionThread::loop(){
 		} else if ( mps_rec_if_->msgq_first_is<MPSRecognitionInterface::TakeDataMessage>() ) {
     	
 	 		std::cout << "Recieved Take Data Message" << std::endl;
-   			//	takePictureFromFVcamera(); 
+   			//takePictureFromFVcamera(); 
 			//readImage();
     		}	
    	 	else {
