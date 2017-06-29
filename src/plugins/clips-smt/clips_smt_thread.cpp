@@ -266,22 +266,26 @@ ClipsSmtThread::loop()
 	clips_smt_compute_distances_robots();
 	clips_smt_compute_distances_machines();
 
-	// Test formulaEncoder
-	// Declare variable for encoding
-	std::map<std::string, z3::expr> variables_pos;
-	std::map<std::string, z3::expr> variables_p;
-	std::map<std::string, z3::expr> variables_d;
-	std::map<std::string, z3::expr> variables_m;
-
-	// Declare formulas for encoding
-	z3::expr_vector formula = clips_smt_encoder(variables_pos, variables_d, variables_m);
-
-	// Give it to z3 solver
-	clips_smt_solve_formula(variables_pos, variables_d, variables_m, formula);
+	// // Test formulaEncoder
+	// // Declare variable for encoding
+	// std::map<std::string, z3::expr> variables_pos;
+	// std::map<std::string, z3::expr> variables_p;
+	// std::map<std::string, z3::expr> variables_d;
+	// std::map<std::string, z3::expr> variables_m;
+	//
+	// // Declare formulas for encoding
+	// z3::expr_vector formula = clips_smt_encoder(variables_pos, variables_d, variables_m);
+	//
+	// // Give it to z3 solver
+	// clips_smt_solve_formula(variables_pos, variables_d, variables_m, formula);
 
 	// Test formulaGenerator
 	logger->log_info(name(), "Convert protobuf to gamedata");
 	clips_smt_convert_protobuf_to_gamedata();
+
+	// // Test precomputed .smt2 files
+	// logger->log_info(name(), "Call precomputed .smt2 file and optimize.");
+	// clips_smt_optimize_formula_from_smt_file("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/FormulaEncodings/benchmark_navgraph-costs-027_planner.smt2", "d_1");
 
 	logger->log_info(name(), "Thread reached end of loop");
 
@@ -327,12 +331,12 @@ ClipsSmtThread::clips_smt_fill_node_names()
 	node_names_[4] = "C-CS1-I";
 	node_names_[5] = "C-CS2-I";
 	node_names_[6] = "C-DS-I";
-	node_names_[7] = "C-BS-O";
-	node_names_[8] = "C-RS1-O";
-	node_names_[9] = "C-RS2-O";
-	node_names_[10] = "C-CS1-O";
-	node_names_[11] = "C-CS2-O";
-	node_names_[12] = "C-DS-O";
+	// node_names_[7] = "C-BS-O";
+	// node_names_[8] = "C-RS1-O";
+	// node_names_[9] = "C-RS2-O";
+	// node_names_[10] = "C-CS1-O";
+	// node_names_[11] = "C-CS2-O";
+	// node_names_[12] = "C-DS-O";
 }
 
 void
@@ -406,11 +410,11 @@ ClipsSmtThread::clips_smt_compute_distances_machines()
 		std::pair<std::string, std::string> nodes_pair(ins_node.name(), node_names_[i]);
 
 		NavGraphNode to = navgraph->node(node_names_[i]);
-		logger->log_info(name(), "Position of machine %s is (%f,%f)", to.name().c_str(), to.x(), to.y());
+		// logger->log_info(name(), "Position of machine %s is (%f,%f)", to.name().c_str(), to.x(), to.y());
 
 		NavGraphPath p = navgraph->search_path(from, to);
 
-		logger->log_info(name(), "Distance between node %s and node %s is %f", from.name().c_str(), node_names_[i].c_str(), p.cost());
+		// logger->log_info(name(), "Distance between node %s and node %s is %f", from.name().c_str(), node_names_[i].c_str(), p.cost());
 		myfile << "C-ins-in;" << node_names_[i].c_str() <<";" << p.cost()+navgraph->cost(from, ins_node) << "\n";
 		distances_[nodes_pair] = p.cost() + navgraph->cost(from, ins_node);
 	}
@@ -1026,7 +1030,7 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 	// Machine machine distance
 	for(int n=0; n<number_machines; ++n) {
 		for(int m=n+1; m<number_machines; ++m) {
-			float distance = distances_[std::make_pair(node_names_[n+1], node_names_[+1])];
+			float distance = distances_[std::make_pair(node_names_[n+1], node_names_[m+1])];
 			if(n<limit_basestation) {
 				// n is inside gamedata_basestations
 				if(m<limit_basestation) {
@@ -1138,7 +1142,7 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 
 
 	logger->log_info(name(), "Create fg with gD");
-	FormulaGenerator fg = FormulaGenerator(5, gD);
+	FormulaGenerator fg = FormulaGenerator(1, gD);
 	// logger->log_info(name(), "Display fg.createFormula()");
 	// cout << fg.createFormula() << std::endl << std::endl;
 	logger->log_info(name(), "Display gD.toString()");
@@ -1231,20 +1235,20 @@ void
 
 			for(int j=1; j<number_machines+1; ++j){
 				if(interp>0) {
-					std::string compare_with_1 = "pos_1_";
-					compare_with_1 += std::to_string(j);
-					std::string compare_with_2 = "pos_2_";
-					compare_with_2 += std::to_string(j);
-					std::string compare_with_3 = "pos_3_";
-					compare_with_3 += std::to_string(j);
+					std::string compare_with_pos_1 = "pos_1_";
+					compare_with_pos_1 += std::to_string(j);
+					std::string compare_with_pos_2 = "pos_2_";
+					compare_with_pos_2 += std::to_string(j);
+					std::string compare_with_pos_3 = "pos_3_";
+					compare_with_pos_3 += std::to_string(j);
 
-					if(function_name.compare(compare_with_1)==0) {
+					if(function_name.compare(compare_with_pos_1)==0) {
 						actions_robot_1[j] = node_names_[interp];
 					}
-					else if(function_name.compare(compare_with_2)==0) {
+					else if(function_name.compare(compare_with_pos_2)==0) {
 						actions_robot_2[j] = node_names_[interp];
 					}
-					else if(function_name.compare(compare_with_3)==0) {
+					else if(function_name.compare(compare_with_pos_3)==0) {
 						actions_robot_3[j] = node_names_[interp];
 					}
 				}
@@ -1338,6 +1342,10 @@ void ClipsSmtThread::clips_smt_optimize_formula_from_smt_file(std::string path, 
 		double diff_ms = (double) std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count()/1000;
 		double diff_m = (double) std::chrono::duration_cast<std::chrono::seconds> (end - begin).count()/60;
 
+		int actions_robot_1_discard=12;
+		int actions_robot_2_discard=12;
+		int actions_robot_3_discard=12;
+
 		logger->log_info(name(), "Test of import .smt file into z3 constraint did work (SAT) [%f ms, %f m]", diff_ms, diff_m);
 
 		z3::model model = o.get_model();
@@ -1345,7 +1353,84 @@ void ClipsSmtThread::clips_smt_optimize_formula_from_smt_file(std::string path, 
 		for(unsigned i=0; i<model.size(); ++i) {
 			z3::func_decl function = model[i];
 			std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
+
+			// Extract for move actions
+			std::string function_name = function.name().str();
+			z3::expr expr = model.get_const_interp(function);
+			int interp;
+			Z3_get_numeral_int(_z3_context, expr, &interp);
+
+			for(int j=1; j<number_machines+1; ++j){
+				if(interp>0) {
+					std::string compare_with_pos_1 = "pos_1_";
+					compare_with_pos_1 += std::to_string(j);
+					std::string compare_with_pos_2 = "pos_2_";
+					compare_with_pos_2 += std::to_string(j);
+					std::string compare_with_pos_3 = "pos_3_";
+					compare_with_pos_3 += std::to_string(j);
+
+					std::string compare_with_n_1_12 = "n_1_12";
+					std::string compare_with_n_2_12 = "n_2_12";
+					std::string compare_with_n_3_12 = "n_3_12";
+
+					if(function_name.compare(compare_with_pos_1)==0) {
+						actions_robot_1[j] = node_names_[interp];
+					}
+					else if(function_name.compare(compare_with_pos_2)==0) {
+						actions_robot_2[j] = node_names_[interp];
+					}
+					else if(function_name.compare(compare_with_pos_3)==0) {
+						actions_robot_3[j] = node_names_[interp];
+					}
+					else if(function_name.compare(compare_with_n_1_12)==0) {
+						actions_robot_1_discard = interp;
+					}
+					else if(function_name.compare(compare_with_n_2_12)==0) {
+						actions_robot_2_discard = interp;
+					}
+					else if(function_name.compare(compare_with_n_3_12)==0) {
+						actions_robot_3_discard = interp;
+					}
+				}
+			}
 		}
+
+		// Erase not needed information
+		for(int i=actions_robot_1_discard+1; i<13; ++i) {
+			actions_robot_1.erase(i);
+		}
+		for(int i=actions_robot_2_discard+1; i<13; ++i) {
+			actions_robot_2.erase(i);
+		}
+		for(int i=actions_robot_3_discard+1; i<13; ++i) {
+			actions_robot_3.erase(i);
+		}
+
+		// Export stats into clips_smt_thread_stats.txt
+		std::ofstream outputFile;
+		outputFile.open("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/clips_smt_thread_stats.txt", std::ofstream::out | std::ofstream::app);
+
+		time_t now = time(0);
+		char* dt = ctime(&now);
+		outputFile << std::endl << dt << std::endl;
+
+		// Add plan specified by the model to stats
+		outputFile << "Begin of plan" << std::endl << "R-1 goes to "<< actions_robot_1.size() << " machines:";
+		std::map<int, std::string>::iterator it_actions_1;
+		for(it_actions_1 = actions_robot_1.begin(); it_actions_1!=actions_robot_1.end(); ++it_actions_1) {
+			outputFile << " [" << it_actions_1->first << "] " << it_actions_1->second;
+		}
+		outputFile << std::endl << "R-2 goes to "<< actions_robot_2.size() << " machines:";
+		std::map<int, std::string>::iterator it_actions_2;
+		for(it_actions_2 = actions_robot_2.begin(); it_actions_2!=actions_robot_2.end(); ++it_actions_2) {
+			outputFile << " [" << it_actions_2->first << "] " << it_actions_2->second;
+		}
+		outputFile << std::endl << "R-3 goes to "<< actions_robot_3.size() << " machines:";
+		std::map<int, std::string>::iterator it_actions_3;
+		for(it_actions_3 = actions_robot_3.begin(); it_actions_3!=actions_robot_3.end(); ++it_actions_3) {
+			outputFile << " [" << it_actions_3->first << "] " << it_actions_3->second;
+		}
+		outputFile << std::endl << "End of plan"<< std::endl << "__________ __________ __________" << std::endl;
 	}
 	else logger->log_info(name(), "Test of import .smt file into z3 constraint did NOT work (UNSAT)");
 }
