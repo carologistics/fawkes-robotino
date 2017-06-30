@@ -21,6 +21,7 @@ plugins/robot-memory:
     mongo-client-connection-distributed: "robotmemory-synced"
     # distribute robot memory
     distributed: true
+    distributed-create: true
     # how lagre should the oplog be (minimum 50 mb)
     oplog-size: 1000
     # Where to store log files
@@ -42,6 +43,7 @@ plugins/robot-memory:
       replica-id: 1 #this should be the robot number, override it in host.yaml
       # initiate automatically
       initiate: true
+      max_setup_time_per_host_sec: 20
 
   computables:
     blackboard:
