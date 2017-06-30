@@ -57,7 +57,7 @@ ClipsSmtThread::~ClipsSmtThread()
 void
 ClipsSmtThread::init()
 {
-
+	clips_smt_test_formulaGenerator();
 }
 
 
@@ -1136,7 +1136,7 @@ ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
 		}
 
 		Workpiece p_temp = Workpiece(bc_temp, rc_temps, cc_temp);
-		auto o_temp = std::make_shared<Order>(i, p_temp, data.orders(i).delivery_period_end()); // TODO Fix third parameter
+		auto o_temp = std::make_shared<Order>(i, p_temp, data.orders(i).delivery_period_end()*100); // TODO Fix third parameter
 		gD.addOrder(o_temp);
 	}
 
