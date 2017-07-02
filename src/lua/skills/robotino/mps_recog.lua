@@ -44,21 +44,18 @@ skillenv.skill_module(_M)
 -- Constants
 MPS_TYPES = {
 'No Station',
-'Base Stationn',
+'Base Station',
 'Cap Station',
 'Delivery Station',
 'Ring Station',
 'Storage Station',
-'Not Clear', 
-'Ring or Cap',
 }
 
 
 
 function speak(...)
-  -- speechsynth:msgq_enqueue_copy(speechsynth.SayMessage:new(string.format(unpack(arg))))
-  -- printf(unpack(arg))
-     printf("Speak Test"); 
+   speechsynth:msgq_enqueue_copy(speechsynth.SayMessage:new(string.format(unpack(arg))))
+   printf(unpack(arg))
 end
 
 function send_takedata(self)
@@ -89,6 +86,8 @@ function recognition_result()
    --recognition_result=mps_recognition_if:toString_MPSType(mps_recognition_if:mpstype());
    --recognition_result="testStation"; 
    recognition_result = MPS_TYPES[mps_recognition_if:mpstype()+1];
+   speak("Recognition completed! Result: %s",MPS_TYPES[mps_recognition_if:mpstype()+1])
+
    printf("The result is %s",recognition_result);
   
    return true;

@@ -60,6 +60,10 @@ MPS_TYPES = {
 'Storage Station',
 }
 
+function speak(...)
+   speechsynth:msgq_enqueue_copy(speechsynth.SayMessage:new(string.format(unpack(arg))))
+   printf(unpack(arg))
+end
 
 function calc_final_result(self) 
 
@@ -77,7 +81,7 @@ function calc_final_result(self)
 
     for j=0,4 do 
         if result[j+1] > result[j] then
-	   max = result[j+1]
+	   max = j+1
  	end 
     end
     
@@ -86,9 +90,10 @@ function calc_final_result(self)
     printf("The result of resultSecond is %s",self.fsm.vars.resultSecond)
     printf("The result of resultThird is %s",self.fsm.vars.resultThird)
     printf("The result of resultFinal is %s",self.fsm.vars.resultFinal)
-    printf("The result of max is %s",max) 
+    printf("The result of max is %s",max)
+    printf("The result array entry 0 is %s", result[1]) 
     printf("The result of zone_recog is %s",recognition_result)
-    printf("The result of zone_recog is %s",recognition_result)
+
 
     return true
 
