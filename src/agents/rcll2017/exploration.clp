@@ -444,14 +444,15 @@
   ?ze2 <- (zone-exploration (name ?zn2&:(eq ?zn2 (mirror-name ?zn))))
   (machine (name ?machine) (mtype ?mtype))
 =>
-  (if (neq ?rot (mirror-rot ?mtype ?zn ?rot)) then
+  (bind ?m-rot (mirror-rot ?mtype ?zn ?rot))
+  (if (neq ?rot ?m-rot) then
+    (bind ?tag-yaw (tf-yaw-from-quat ?rot))
+    (bind ?c-trans (translate-tag-x ?tag-yaw -0.17 ?trans))
     (bind ?m-trans
-      (mirror-trans
-        (tag-offset
-          ?zn
-          (tf-yaw-from-quat (mirror-rot ?mtype ?zn ?rot))
-          0.34
-        )
+      (translate-tag-x
+        (tf-yaw-from-quat ?m-rot)
+        0.17
+        (mirror-trans ?c-trans)
       )
     )
   else
@@ -460,7 +461,7 @@
   (printout t crlf "========= " ?m-trans crlf crlf)
   (assert
     (found-tag (name ?machine2) (side ?side) (frame ?frame)
-      (trans ?m-trans) (rot (mirror-rot ?mtype ?zn ?rot))
+      (trans ?m-trans) (rot ?m-rot)
     )
   )
   (synced-modify ?ze2 machine ?machine2 times-searched ?times-searched)

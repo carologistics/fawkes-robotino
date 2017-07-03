@@ -465,16 +465,6 @@
 )
 
 
-(deffunction tag-offset (?zone ?yaw ?width)
-  (bind ?c (zone-center ?zone))
-  (bind ?x (nth$ 1 ?c))
-  (bind ?y (nth$ 2 ?c))
-  (bind ?x (+ ?x (* (cos ?yaw) ?width)))
-  (bind ?y (+ ?y (* (sin ?yaw) ?width)))
-  (return (create$ ?x ?y 0.48))
-)
-
-
 (deffunction deg-to-rad (?deg)
   (bind ?bigrad (* (/ ?deg 360) ?*2PI*))
   (if (> ?bigrad ?*PI*) then
@@ -531,6 +521,25 @@
   (bind ?xr (round-up ?x))
 
   (return (sym-cat ?rv ?xr ?yr))
+)
+
+
+(deffunction tag-offset (?zone ?yaw ?width)
+  (bind ?c (zone-center ?zone))
+  (bind ?x (nth$ 1 ?c))
+  (bind ?y (nth$ 2 ?c))
+  (bind ?x (+ ?x (* (cos ?yaw) ?width)))
+  (bind ?y (+ ?y (* (sin ?yaw) ?width)))
+  (return (create$ ?x ?y 0.48))
+)
+
+
+(deffunction translate-tag-x (?tag-yaw ?dx $?trans)
+  (return (create$
+    (+ (nth$ 1 ?trans) (* (cos ?tag-yaw) ?dx))
+    (+ (nth$ 2 ?trans) (* (sin ?tag-yaw) ?dx))
+    (nth$ 3 ?trans)
+  ))
 )
 
 
