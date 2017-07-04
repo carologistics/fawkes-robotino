@@ -25,8 +25,9 @@ module(..., skillenv.module_init)
 name               = "drive_into_field"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"goto_waypoints"}
-depends_interfaces =
+depends_interfaces = {
      {v = "pose",      type="Position3DInterface", id="Pose"}
+}
 
 documentation      = [==[Drives into field after given offset
 
