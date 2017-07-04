@@ -60,7 +60,8 @@ WebtoolsBridgeThread::init()
 
   if (in_simulation) { 
     std::string server_bash = "../src/plugins/webtools-bridge/./launch_server.bash -p "+std::to_string (rosbridge_port );
-    system(server_bash.c_str());
+    if (system(server_bash.c_str()))
+      logger->log_error("Error running %s: %s", server_bash.c_str(), ::strerror(errno));
     //Maybe wait a bit after starting the servers
   }
 
