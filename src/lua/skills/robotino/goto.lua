@@ -45,7 +45,7 @@ if place is set, this will be used and x, y and ori will be ignored
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local tf_mod = require 'tf_module'
+local tf_mod = require 'fawkes.tfutils'
 
 -- Tunables
 --local REGION_TRANS=0.2
@@ -92,13 +92,15 @@ fsm:add_transitions{
 }
 
 function CHECK_INPUT:init()
-      self.fsm.vars.x   = self.fsm.vars.x   or self.fsm.vars.rel_x or 0
-      self.fsm.vars.y   = self.fsm.vars.y   or self.fsm.vars.rel_y or 0
-      self.fsm.vars.ori = self.fsm.vars.ori or self.fsm.vars.rel_ori or math.nan
+      local cur_pose = tf_mod.transform({x=0, y=0, ori=0}, "base_link", "map")
+      self.fsm.vars.x   = self.fsm.vars.x   or self.fsm.vars.rel_x or cur_pose.x
+      self.fsm.vars.y   = self.fsm.vars.y   or self.fsm.vars.rel_y or cur_pose.y
+      self.fsm.vars.ori = self.fsm.vars.ori or self.fsm.vars.rel_ori or cur_pose.ori
 end
 
 function INIT:init()
   self.fsm.vars.target_valid = true
+
 
   if self.fsm.vars.place ~= nil then
     if string.match(self.fsm.vars.place, "[MC][-]Z[1-7][1-8]") then
@@ -117,8 +119,6 @@ function INIT:init()
         self.fsm.vars.y = node:y()
         if node:has_property("orientation") then
           self.fsm.vars.ori = node:property_as_float("orientation");
-        else
-          self.fsm.vars.ori = nil   -- if orientation is not set, we don't care
         end
       else
         self.fsm.vars.target_valid = false
@@ -131,6 +131,8 @@ end
 
 function MOVING:init()
    self.fsm.vars.msgid_timeout = os.time() + 1
+
+   print(self.fsm.vars.ori)
 
    local msg = navigator.CartesianGotoWithFrameMessage:new(
       self.fsm.vars.x,
