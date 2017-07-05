@@ -99,6 +99,7 @@ function MPS_ALIGN:init()
       self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
    end
    self.args["mps_align"].x = 0.43
+   self.args["mps_align"].y = -0.04
 end
 
 function RE_MPS_ALIGN:init()

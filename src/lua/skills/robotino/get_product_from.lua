@@ -86,6 +86,7 @@ function MPS_ALIGN:init()
    end
 
    self.args["mps_align"].x = 0.43
+   self.args["mps_align"].y = -0.04
 end
 
 function SKILL_PRODUCT_PICK:init()

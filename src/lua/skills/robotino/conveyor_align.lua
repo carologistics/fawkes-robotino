@@ -40,14 +40,14 @@ documentation      = [==[aligns the robot orthogonal to the conveyor by using th
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
-local TOLERANCE_Y = 0.003
-local TOLERANCE_Z = 0.003
-local MAX_TRIES = 10
+local TOLERANCE_Y = 0.002
+local TOLERANCE_Z = 0.001
+local MAX_TRIES = 20
 --local X_DEST_POS = 0.08
 local X_DEST_POS = 0.16
-local Y_DEST_POS = 0.0
-local Z_DEST_POS = 0.054
-local Z_DEST_POS_WITH_PUCK = 0.054
+local Y_DEST_POS = 0.01
+local Z_DEST_POS = 0.056
+local Z_DEST_POS_WITH_PUCK = 0.06
 local cfg_frame_ = "gripper"
 
 function no_writer()
@@ -93,7 +93,7 @@ function pose_offset(self)
    if math.abs(ori) > 0.7 then
       ori = 0
    end
-
+   print("z_pose intial: " .. cp.z)
    return { x = cp.x,
             y = cp.y,
             z = cp.z,
@@ -107,6 +107,13 @@ function pose_des(self)
    pose.y = pose.y - Y_DEST_POS
    pose.z = pose.z + Z_DEST_POS
    return pose
+end
+
+function round(x)
+  if x%2 ~= 0.5 then
+     return math.floor(x+0.5)
+  end
+  return x-0.5
 end
 
 fsm:define_states{ export_to=_M,
@@ -139,10 +146,9 @@ end
 
 function DRIVE:init()
    local pose = pose_des(self)
-
-   self.args["motor_move"] = {x = pose.x, y = pose.y, tolerance = { x=0.002, y=0.002, ori=0.01 }, vel_trans = 0.4} --TODO set tolerances as defined in the global variable
-   local z_position = pose.z * 1000
-   print("z_pose: " .. z_position)
+   self.args["motor_move"] = {x = pose.x, y = pose.y, tolerance = { x=0.002, y=0.002, ori=0.01 }, vel_trans = 0.2} --TODO set tolerances as defined in the global variable
+   local z_position = round(pose.z * 1000)
+   print("z_pose: " .. pose.z)
    self.args["ax12gripper"].command = "RELGOTOZ"
    if math.abs(pose.z) >= TOLERANCE_Z then
       self.args["ax12gripper"].z_position = z_position
