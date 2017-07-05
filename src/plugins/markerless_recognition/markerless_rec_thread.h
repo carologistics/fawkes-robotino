@@ -82,17 +82,14 @@ enum MPSType {
 
 class MarkerlessRecognitionThread
 : public fawkes::Thread,
-  public fawkes::ClockAspect,
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::BlackBoardAspect,
   public fawkes::VisionAspect,
-  public fawkes::BlockedTimingAspect,
   public fawkes::ConfigurationChangeHandler,
+  public fawkes::ClockAspect,
   public fawkes::TransformAspect
 {
-
-
 public:
   MarkerlessRecognitionThread();
 
@@ -102,17 +99,6 @@ public:
   
  private:
 
-  // load config from file
-  void load_config();
-  // function to get the markers from an image
-  void get_marker();
-  //  store the alvar markers, containing the poses
-  //  std::vector<alvar::MarkerData> *markers_;
-  /// maximum markers to detect, size for the markers array
-  size_t max_marker;
-
-  // mutex for config access
-  fawkes::Mutex cfg_mutex;
 
   void clear_data();
   Probability recognize_current_pic(const std::string image);
@@ -123,11 +109,7 @@ public:
 
   fawkes::MPSRecognitionInterface *mps_rec_if_;
 
-  cv::Mat frame;
-  cv::CascadeClassifier mps_cascade;
 
-  // Current Frame to Evaluate
-  std::string frameToRecognize;
   // firevision camera
   firevision::Camera *fv_cam;
 
@@ -135,40 +117,8 @@ public:
   firevision::SharedMemoryImageBuffer *shm_buffer;
   unsigned char *image_buffer;
 
-  // Things copied from Convery_vision maybe not needed
-  std::deque<float> world_pos_z_measurements;
-  std::deque<float> world_pos_y_measurements;
-  std::deque<float> world_pos_x_measurements;
-  std::deque<int> conveyor_average_horizontal_diff;
-  std::deque<int> conveyor_average_horizontal_start;
-  std::deque<int> conveyor_average_vertical_start;
-  float world_pos_z_average;
-  float world_pos_y_average;
-  float world_pos_x_average;
   /// Image Buffer Id
   std::string shm_id;
-  float obj_realworld_distance;
-  float obj_realworld_width;
-  float obj_realworld_pixels;
-  unsigned int num_frames_for_average;
-  float conveyor_distance_threshold;
-  bool visualization_enabled;
-  bool use_hough_lines_;
-  int hough_lines_averaging_count_;
-  int binary_threshold_min_;
-  int binary_threshold_max_;
-  int binary_threshold_average_min_;
-  int binary_threshold_average_max_;
-  int max_binary_value_;
-  int threshold_type_;
-  int morph_element_;
-  int morph_size_;
-  int morph_operator_;
-  int canny_threshold_;
-  unsigned int line_mean_;
-  float conveyor_realworld_distance;
-  float conveyor_realworld_pixels;
-  float conveyor_realworld_width;
 
 
     // config handling
@@ -185,9 +135,19 @@ public:
   // Height of the image
   unsigned int img_height;
 
-  std::string path_prefix_;
 
+  std::string path_prefix_;
   std::string home;
+  
+  //cv::Mat frame;
+  cv::Mat visionMat;
+  cv::Mat depthMat; 
+
+  std::string vframe; 
+  std::string dframe;  
+
+  std::string vpath; 
+  std::string dpath; 
 
   float th_first = 0.8;
   float th_sec = 0.5;
