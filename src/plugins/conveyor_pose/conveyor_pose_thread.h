@@ -180,6 +180,10 @@ private:
  pose calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal);
  void tf_send_from_pose_if(pose pose);
  void pose_write(pose pose);
+ Eigen::Quaternion<float> averageQuaternion(Eigen::Vector4f &cumulative, Eigen::Quaternion<float> newRotation, Eigen::Quaternion<float> firstRotation, float addDet);
+ Eigen::Quaternion<float> normalizeQuaternion(float x, float y, float z, float w);
+ Eigen::Quaternion<float> inverseSignQuaternion(Eigen::Quaternion<float> q);
+ bool areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quaternion<float> q2);
 
 protected:
   virtual void run() { Thread::run(); }

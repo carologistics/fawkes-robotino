@@ -483,20 +483,24 @@ ConveyorPoseThread::pose_get_avg(pose & out)
   }
 
   // calculate average
-  double roll = 0;
-  double pitch = 0;
-  double yaw = 0;
+  Eigen::Quaternion<float> avgRot;
+  Eigen::Vector4f cumulative;
+  Eigen::Quaternion<float> firstRotation(poses_used.front().rotation.x(), poses_used.front().rotation.y(), poses_used.front().rotation.z(), poses_used.front().rotation.w());
+  float addDet = 1.0 / (float)poses_used.size();
   for (pose p : poses_used) {
+    Eigen::Quaternion<float> newRotation(p.rotation.x(), p.rotation.y(), p.rotation.z(), p.rotation.w());
+
     out.translation.setX( out.translation.x() + p.translation.x() );
     out.translation.setY( out.translation.y() + p.translation.y() );
     out.translation.setZ( out.translation.z() + p.translation.z() );
 
-    fawkes::tf::Matrix3x3 m(p.rotation);
-    fawkes::tf::Scalar rc, pc, yc;
-    m.getEulerYPR(yc, pc, rc);
-    roll += fawkes::normalize_rad(rc);
-    pitch += fawkes::normalize_rad(pc);
-    yaw += fawkes::normalize_rad(yc);
+  //  fawkes::tf::Matrix3x3 m(p.rotation);
+  //  fawkes::tf::Scalar rc, pc, yc;
+  //  m.getEulerYPR(yc, pc, rc);
+  //  roll += fawkes::normalize_rad(rc);
+  //  pitch += fawkes::normalize_rad(pc);
+  //  yaw += fawkes::normalize_rad(yc);
+    avgRot = averageQuaternion(cumulative, newRotation, firstRotation, addDet);
   }
 
   // normalize
@@ -504,10 +508,10 @@ ConveyorPoseThread::pose_get_avg(pose & out)
   out.translation.setY( out.translation.y() / poses_used.size() );
   out.translation.setZ( out.translation.z() / poses_used.size() );
 
-  roll /= poses_used.size();
-  pitch /= poses_used.size();
-  yaw /= poses_used.size();
-  out.rotation.setEuler(yaw, pitch, roll);
+  //roll /= poses_used.size();
+  //pitch /= poses_used.size();
+  //yaw /= poses_used.size();
+  //out.rotation.setEuler(yaw, pitch, roll);
 
 //  logger->log_info(name(), "got %u for avg: (%f\t%f\t%f)\t(%f\t%f\t%f)", poses_used.size(),
 //      out.translation.x(), out.translation.y(), out.translation.z(),
@@ -792,19 +796,16 @@ ConveyorPoseThread::cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud
 ConveyorPoseThread::pose
 ConveyorPoseThread::calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal)
 {
-  Eigen::Vector3f tf_orign;
-  tf_orign(0) = 1;
-  tf_orign(1) = 0;
-  tf_orign(2) = 0;
-  Eigen::Quaternion<float> q;
-  q.setFromTwoVectors(tf_orign, normal);
-  Eigen::Quaternion<float> q_offset;
-  Eigen::AngleAxisf rollAngle(0, Eigen::Vector3f::UnitZ());
-  Eigen::AngleAxisf yawAngle(0, Eigen::Vector3f::UnitY());
-  Eigen::AngleAxisf pitchAngle(1.57, Eigen::Vector3f::UnitX());
-  q_offset = rollAngle * yawAngle * pitchAngle;
-  q = q * q_offset;
-
+  Eigen::Vector3f tangent0 = normal.cross(Eigen::Vector3f(1,0,0));
+  if (tangent0.dot(tangent0) < 0.0001){
+    tangent0 = normal.cross(Eigen::Vector3f(0,1,0));
+  }
+  tangent0.normalize();
+  Eigen::Vector3f tangent1 = normal.cross(tangent0);
+  tangent1.normalize();
+  Eigen::Matrix3f rotMatrix;
+  rotMatrix << tangent0, tangent1, normal;
+  Eigen::Quaternion<float> q(rotMatrix);
   fawkes::tf::Vector3 origin(centroid(0), centroid(1), centroid(2));
   fawkes::tf::Quaternion rot(q.x(), q.y(), q.z(), q.w());
 
@@ -873,7 +874,65 @@ ConveyorPoseThread::pose_publish_tf(pose pose)
   tf_publisher->send_transform(stamped_transform);
 }
 
+Eigen::Quaternion<float>
+ConveyorPoseThread::averageQuaternion(Eigen::Vector4f &cumulative, Eigen::Quaternion<float> newRotation, Eigen::Quaternion<float> firstRotation, float addDet){
+  
+  float w = 0.0;
+  float x = 0.0;
+  float y = 0.0;
+  float z = 0.0;	
 
+  if(!areQuaternionsClose(newRotation, firstRotation)){
+    newRotation = inverseSignQuaternion(newRotation);
+  }
+
+  cumulative.x() += newRotation.x();
+  x = cumulative.x() * addDet;
+  cumulative.y() += newRotation.y();
+  y = cumulative.y() * addDet;
+  cumulative.z() += newRotation.z();
+  z = cumulative.z() * addDet;
+  cumulative.w() += newRotation.w();
+  w = cumulative.w() * addDet;
+  
+  Eigen::Quaternion<float> result = normalizeQuaternion(x, y, z, w);
+  return result;
+}
+Eigen::Quaternion<float>
+ConveyorPoseThread::normalizeQuaternion(float x, float y, float z, float w){
+
+  float lengthD = 1.0 / (w*w + x*x + y*y + z*z);
+  w *= lengthD;
+  x *= lengthD;
+  y *= lengthD;
+  z *= lengthD;
+  
+  Eigen::Quaternion<float> result(x, y, z, w);
+  return result;
+}
+ 
+//Changes the sign of the quaternion components. This is not the same as the inverse.
+Eigen::Quaternion<float>
+ConveyorPoseThread::inverseSignQuaternion(Eigen::Quaternion<float> q){
+  Eigen::Quaternion<float> result(-q.x(), -q.y(), -q.z(), -q.w());
+  return result;
+}
+ 
+//Returns true if the two input quaternions are close to each other. This can
+//be used to check whether or not one of two quaternions which are supposed to
+//be very similar but has its component signs reversed (q has the same rotation as
+//-q)
+bool
+ConveyorPoseThread::areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quaternion<float> q2){
+  
+  float dot = q1.dot(q2);
+  if(dot < 0.0){ 
+    return false;					
+  } 
+  else{ 
+    return true;
+  }
+}
 
 
 
