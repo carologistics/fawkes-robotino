@@ -75,8 +75,8 @@ conveyor_pose:
   bottom:
     offset: 0.06
   left_right:
-    left_cut: 0.4
-    right_cut: 0.6
+    left_cut: 0.1
+    right_cut: 0.1
     left_cut_no_ll: -0.8
     right_cut_no_ll: 0.8    
   plane:
