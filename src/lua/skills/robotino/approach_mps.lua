@@ -30,11 +30,13 @@ depends_interfaces = {
   {v = "if_conveyor", type = "Position3DInterface", id="conveyor_pose/pose"},
   {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
   {v = "conveyor_config", type = "ConveyorConfigInterface", id="conveyor_pose/config"},
+  {v = "if_front_dist", type = "Position3DInterface", id="front_dist"}
 }
 
 documentation      = [==[
                         The robot just drives forward according to the current distance to the mps and the desired position
                         @param "x" int The x distance of the conveyor in the base_link frame when finished
+--                        @param "use_conveyor" default is true, set this to false when the conveyor is not visibly
                      ]==]
 
 
@@ -66,7 +68,11 @@ function transformed_pose(self)
          }
 end
 
-function mps_is_near(self)
+function conveyor_ready(self)
+--  if not self.fsm.vars.use_conveyor then
+--    return false
+--  end
+
   self.fsm.vars.pose = transformed_pose()
   if if_conveyor:visibility_history() > 5 and self.fsm.vars.pose.x < 0.5 then
     return true
@@ -76,25 +82,59 @@ function mps_is_near(self)
   end
 end
 
+function laser_lines_ready(self)
+--  if self.fsm.vars.use_conveyor then
+--    return false
+--  end
 
-fsm:define_states{ export_to=_M, closure={mps_is_near=mps_is_near},
+  if if_front_dist:visibility_history() > 0 and self.fsm.vars.ll_dist < 1.0 then
+    return true
+  else
+    printf("mps_approach failed: visibility history is %f, dist to object in front is %f. I don't drive with this visibility history or this far without collision avoidance", if_front_dist:visibility_history(), x_to_drive)
+  return false
+  end
+end
+
+fsm:define_states{ export_to=_M, closure={
+  conveyor_ready=conveyor_ready,
+  laser_lines_ready=laser_lines_ready},
    {"INIT", JumpState},
-   {"APPROACH", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
+   {"APPROACH_CONVEYOR", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="INIT_LASER_LINES"},
+   {"INIT_LASER_LINES", JumpState},
+   {"APPROACH_LASERLINE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
-   {"INIT", "APPROACH", cond=mps_is_near},
-   {"INIT", "FAILED", timeout=1.0}
+   {"INIT", "APPROACH_CONVEYOR", cond=conveyor_ready},
+--   {"INIT", "APPROACH_LASERLINE", cond=laser_lines_ready},
+   {"INIT", "INIT_LASER_LINES", timeout=2.0},
+   {"INIT_LASER_LINES", "APPROACH_LASERLINE", cond="laser_lines_ready(self)"},
+   {"INIT_LASER_LINES", "FAILED", timeout=1.0}
 }
 
 function INIT:init()
+  if self.fsm.vars.use_conveyor == nil then
+    self.fsm.vars.use_conveyor = true
+  end
+  
   conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
+  self.fsm.vars.ll_dist = if_front_dist:translation(0) - self.fsm.vars.x
 end
 
-function APPROACH:init()
+function INIT_LASER_LINES:init()
+
+end
+
+function APPROACH_CONVEYOR:init()
   local x_goal = self.fsm.vars.pose.x - self.fsm.vars.x
   printf("distance is: %f => drive to: %f", self.fsm.vars.pose.x, x_goal)
-  self.args["motor_move"] = {x = self.fsm.vars.x, vel_trans = 0.1, frame="conveyor"}
+  self.args["motor_move"] = {x = self.fsm.vars.x, vel_trans = 0.05, frame="conveyor"}
+end
+
+function APPROACH_LASERLINE:init()
+  local x_goal = if_front_dist:translation(0) - self.fsm.vars.x
+  printf("distance is: %f => drive to: %f", if_front_dist:translation(0), x_goal)
+  self.args["motor_move"] = {x = self.fsm.vars.x, vel_trans = 0.05, frame="front_dist"}
 end
 
 function cleanup()
