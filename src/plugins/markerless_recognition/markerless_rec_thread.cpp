@@ -1,6 +1,8 @@
 #include "markerless_rec_thread.h"
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include "opencv2/opencv.hpp"
+#include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
 #include <tf/types.h>
 #include <interfaces/MPSRecognitionInterface.h>
@@ -26,9 +28,8 @@ using namespace cv;
 MarkerlessRecognitionThread::MarkerlessRecognitionThread()
   : Thread("MarkerlessRecognitionThread", Thread::OPMODE_WAITFORWAKEUP),
     VisionAspect(VisionAspect::CYCLIC),
-    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_WORLDSTATE), 
     ConfigurationChangeHandler(CFG_PREFIX),
-    fawkes::TransformAspect(fawkes::TransformAspect::ONLY_PUBLISHER,"conveyor")
+    fawkes::TransformAspect(fawkes::TransformAspect::ONLY_PUBLISHER,"markerless_reocognition")
 {
     fv_cam = NULL;
     shm_buffer = NULL;
@@ -56,7 +57,6 @@ void MarkerlessRecognitionThread::finalize() {
 }
 
 	
-
 Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string image) {
 	
         std::cout << "recognize current pic" << std::endl;
@@ -89,8 +89,9 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	}
 	
 	//path to the image that have to be tested
-	std::string imPath = (home) + image;
-		
+	//std::string imPath = (home) + image;
+	std::string imPath = image;		
+	
 	//path to the trained graph
 	std::string grPath = (home) + "/fawkes-robotino/etc/tf_data/output_graph_600.pb";
 	
@@ -114,12 +115,13 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	return result;
 }
 
+
 int   MarkerlessRecognitionThread::recognize_mps() {
 
         cout << " Start of method recognize_mps() " << std::endl;  
 
-      //  Probability recognition_result = recognize_current_pic(frameToRecognize); 
-	Probability recognition_result = recognize_current_pic("/TestData/BS/BS_9.jpg");
+        Probability recognition_result = recognize_current_pic(vpath); 
+	//	Probability recognition_result = recognize_current_pic("/TestData/BS/BS_9.jpg");
 	int station = 0;
 
 	int maximum = 0; 
@@ -154,105 +156,101 @@ int   MarkerlessRecognitionThread::recognize_mps() {
 
 void MarkerlessRecognitionThread::init(){
       	
-	home.assign(getenv("HOME"),strlen(getenv("HOME")));
-       	//recognize_mps();
+	home.assign(getenv("HOME"),strlen(getenv("HOME")));   
+	mps_rec_if_ = blackboard->open_for_writing<MPSRecognitionInterface>("/MarkerlessRecognition");
 
-       	mps_rec_if_ = blackboard->open_for_writing<MPSRecognitionInterface>("/MarkerlessRecognition");
+	std::string prefix = CFG_PREFIX;
+	vpath = this->config->get_string((prefix + "vpath").c_str()); 
+	dpath = this->config->get_string((prefix + "dpath").c_str()); 	
 
-}
+	// init firevision camera
+    	// CAM swapping not working (??)
+    	if(fv_cam != NULL){
+       	 	// free the camera
+       	 	fv_cam->stop();
+        	fv_cam->flush();
+        	fv_cam->dispose_buffer();
+        	fv_cam->close();
+        	delete fv_cam;
+        	fv_cam = NULL;
+    	}
+    	if(fv_cam == NULL){
+      		std::string connection = this->config->get_string((prefix + "camera").c_str());
+        	fv_cam = vision_master->register_for_camera(connection.c_str(), this);
+        	fv_cam->start();
+        	fv_cam->open();
+        	this->img_width = fv_cam->pixel_width();
+        	this->img_height = fv_cam->pixel_height();
+    	}
 
-void MarkerlessRecognitionThread::setupCamera(){ 
 
+	    // SHM image buffer
+    	if(shm_buffer != NULL) {
+        	delete shm_buffer;
+        	shm_buffer = NULL;
+        	image_buffer = NULL;
+    	}
 
-   std::string prefix = CFG_PREFIX;
-   std::string mps_cascade_name = (string)config->get_string((prefix + "classifier_file"));
-   if( !mps_cascade.load( std::string(CONFDIR) + "/" + mps_cascade_name ) ){ printf("--(!)Error loading\n"); return; };
+    	shm_buffer = new firevision::SharedMemoryImageBuffer(
+        	        shm_id.c_str(),
+                	firevision::YUV422_PLANAR,
+                	this->img_width,
+                	this->img_height
+                	);
+    	if(!shm_buffer->is_valid()){
+       	 	delete shm_buffer;
+        	delete fv_cam;
+        	shm_buffer = NULL;
+        	fv_cam = NULL;
+        	throw fawkes::Exception("Shared memory segment not valid");
+   	}
 
-	
-    // init firevision camera
-    // CAM swapping not working (??)
-    if(fv_cam != NULL){
-	cout << " fv_cam wasn't null " << endl; 
-        // free the camera
-        fv_cam->stop();
-        fv_cam->flush();
-        fv_cam->dispose_buffer();
-        fv_cam->close();
-        delete fv_cam;
-        fv_cam = NULL;
-    }
-    if(fv_cam == NULL){
-	
- 	cout << " fv_cam /was null " << endl; 
-      std::string connection = this->config->get_string((prefix + "camera").c_str());
-        fv_cam = vision_master->register_for_camera(connection.c_str(), this);
-        fv_cam->start();
-        fv_cam->open();
-        this->img_width = fv_cam->pixel_width();
-        this->img_height = fv_cam->pixel_height();
-    }
+    	std::string vframe = this->config->get_string((prefix + "vframe").c_str());
+    	shm_buffer->set_frame_id(vframe.c_str());
 
-    // SHM image buffer
-    if(shm_buffer != NULL) {
-        delete shm_buffer;
-        shm_buffer = NULL;
-        image_buffer = NULL;
-    }
-
-    shm_buffer = new firevision::SharedMemoryImageBuffer(
-                shm_id.c_str(),
-                firevision::YUV422_PLANAR,
-                this->img_width,
-                this->img_height
-                );
-    if(!shm_buffer->is_valid()){
-        delete shm_buffer;
-        delete fv_cam;
-        shm_buffer = NULL;
-        fv_cam = NULL;
-        throw fawkes::Exception("Shared memory segment not valid");
-    }
-    frameToRecognize = this->config->get_string((prefix + "frame").c_str());
-    shm_buffer->set_frame_id(frameToRecognize.c_str());
-
-    image_buffer = shm_buffer->buffer();
-    ipl =  cvCreateImage(
-                cvSize(this->img_width,this->img_height),
-                IPL_DEPTH_8U,IMAGE_CHANNELS);
-
+    	image_buffer = shm_buffer->buffer();
+    	ipl =  cvCreateImage(
+        	        cvSize(this->img_width,this->img_height),
+                	IPL_DEPTH_8U,IMAGE_CHANNELS);
 
 
 }
+
+
 
 void MarkerlessRecognitionThread::takePictureFromFVcamera(){ 
 
-	//capture 
-	fv_cam->capture(); 
-	firevision::convert(fv_cam->colorspace(), 
-			    firevision::YUV422_PLANAR,
-			    fv_cam->buffer(),
-			    image_buffer,
-			    this->img_width,
-			    this->img_height);
-	fv_cam->dispose_buffer();
-
-	//convert 
+	cout << " Taking Picture " << endl;
 	
-	firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
-        frame  = cvarrToMat(ipl);
-	
+        //logger->log_info(name(),"entering loop");
+        //get img form fv
+        fv_cam->capture();
+        firevision::convert(fv_cam->colorspace(),
+                                 firevision::YUV422_PLANAR,
+                                 fv_cam->buffer(),
+                                 image_buffer,
+                                 this->img_width,
+                                 this->img_height);
+        fv_cam->dispose_buffer();
+        //convert img
+        firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
+        visionMat = cvarrToMat(ipl);
+        imwrite(vpath.c_str(), visionMat);
+		
 
 }
 
-
 void MarkerlessRecognitionThread::loop(){
-/*
-   	if(fv_cam == NULL || !fv_cam->ready()){
+   	
+	if(fv_cam == NULL || !fv_cam->ready()){
         	logger->log_info(name(),"Camera not ready");
-		setupCamera();
       	return;
    	}
-*/
+
+	takePictureFromFVcamera();
+	recognize_mps(); 	
+	
+	/*
     
    	while ( ! mps_rec_if_->msgq_empty() ) {
      			
@@ -279,32 +277,5 @@ void MarkerlessRecognitionThread::loop(){
     		}
     			mps_rec_if_->msgq_pop();
     
-  		}
+  		}*/
 }
-
-/*
-void MarkerlessRecognitionThread::readImage(){
-
-
-        Mat image = imread("/home/casto/Carologistics/OpenTC/Training/ExperimentalTrainingData/BS/BS_Depth_2682.jpg") ; //Read the file , dev/video_tag should be the path for the RealSense
-
-        if(! image.data )                              // Check for invalid input
-        {
-                cout <<  "Could not open or find the image" << std::endl ;
-        }
-        try{ // to show , doesn't work (black screen) 
-
-                double min;
-                double max;
-                cv::minMaxIdx(image, &min, &max);
-                cv::Mat adjMap;
-                cv::convertScaleAbs(image, adjMap, 255 / max);
-                //cv::imshow("Out", adjMap);
-        }
-        catch( cv::Exception& e )
-        {
-                const char* err_msg = e.what();
-                std::cout << "exception caught: " << err_msg << std::endl;
-        }
-}*/
-
