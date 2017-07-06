@@ -69,7 +69,25 @@ NavGraphGeneratorMPSThread::init()
 {
   cfg_global_frame_      = config->get_string("/frames/fixed");
   cfg_mps_width_         = config->get_float("/navgraph-generator-mps/mps-width");
+  cfg_mps_length_        = config->get_float("/navgraph-generator-mps/mps-length");
   cfg_mps_approach_dist_ = config->get_float("/navgraph-generator-mps/approach-distance");
+  cfg_mps_corner_obst_   = config->get_bool("/navgraph-generator-mps/add-corners-as-obstacles");
+
+  cfg_map_min_dist_      = config->get_float("/navgraph-generator-mps/map-cell-min-dist");
+  cfg_map_point_max_dist_= config->get_float("/navgraph-generator-mps/map-point-max-dist");
+
+  std::string algorithm  = config->get_string("/navgraph-generator-mps/algorithm");
+  if (algorithm == "voronoi") {
+	  cfg_algorithm_ = NavGraphGeneratorInterface::ALGORITHM_VORONOI;
+  } else if (algorithm == "grid") {
+	  cfg_algorithm_ = NavGraphGeneratorInterface::ALGORITHM_GRID;
+	  const std::string prefix("/navgraph-generator-mps/grid/");
+	  std::unique_ptr<Configuration::ValueIterator> i(config->search(prefix));
+	  while (i->next()) {
+		  const std::string path(i->path());
+		  cfg_algo_params_[path.substr(prefix.length())] = i->get_as_string();
+	  }
+  }
 
   std::string base_graph_file;
   try {
@@ -85,6 +103,13 @@ NavGraphGeneratorMPSThread::init()
   } else {
     logger->log_warn(name(), "No base graph configured");
   }
+
+  std::vector<float> p1 = config->get_floats("/navgraph-generator-mps/bounding-box/p1");
+  std::vector<float> p2 = config->get_floats("/navgraph-generator-mps/bounding-box/p2");
+  cfg_bounding_box_p1_[0] = p1[0];
+  cfg_bounding_box_p1_[1] = p1[1];
+  cfg_bounding_box_p2_[0] = p2[0];
+  cfg_bounding_box_p2_[1] = p2[1];
 
   exp_zones_.resize(24, true);
   wait_zones_.resize(24, false);
@@ -249,7 +274,24 @@ NavGraphGeneratorMPSThread::update_station(std::string id, bool input, std::stri
 		   (input_pos - proj_pos).norm(), (output_pos - proj_pos).norm());
   */
 
-  // **** 4. add to stations
+  // **** 4. (optional) calculate corner points
+  std::vector<Eigen::Vector2f> corners;
+  if (cfg_mps_corner_obst_) {
+	  corners.resize(4);
+
+	  const float mps_width_2  = cfg_mps_width_ / 2.;
+	  const float mps_length_2 = cfg_mps_length_ / 2.;
+
+	  Eigen::Rotation2Df rot(quat_yaw(pose_ori));
+	  Eigen::Vector2f center;
+	  center[0] = pose_pos[0]; center[1] = pose_pos[1];
+	  corners[0] = (rot * Eigen::Vector2f(  mps_width_2, - mps_length_2)) + center;
+	  corners[1] = (rot * Eigen::Vector2f(- mps_width_2, - mps_length_2)) + center;
+	  corners[2] = (rot * Eigen::Vector2f(- mps_width_2,   mps_length_2)) + center;
+	  corners[3] = (rot * Eigen::Vector2f(  mps_width_2,   mps_length_2)) + center;
+  }
+
+  // **** 5. add to stations
   MPSStation s;
   s.tag_frame    = frame;
   s.tag_pose_pos = pose_pos;
@@ -263,6 +305,7 @@ NavGraphGeneratorMPSThread::update_station(std::string id, bool input, std::stri
   s.output_pos   = output_pos;
   s.output_ori   = output_ori;
   s.output_yaw   = quat_yaw(output_ori);
+  s.corners      = corners;
   stations_[id]  = s;
 }
 
@@ -291,8 +334,16 @@ void
 NavGraphGeneratorMPSThread::generate_navgraph()
 {
   navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::ClearMessage());
+
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::SetAlgorithmMessage(cfg_algorithm_));
+  for (const auto &p : cfg_algo_params_) {
+	  navgen_if_->msgq_enqueue(
+		  new NavGraphGeneratorInterface::SetAlgorithmParameterMessage(p.first.c_str(), p.second.c_str()));
+  }
+
   navgen_if_->msgq_enqueue(
-    new NavGraphGeneratorInterface::SetBoundingBoxMessage(-6, 0, 6, 6));
+    new NavGraphGeneratorInterface::SetBoundingBoxMessage(cfg_bounding_box_p1_[0], cfg_bounding_box_p1_[1],
+                                                          cfg_bounding_box_p2_[0], cfg_bounding_box_p2_[1]));
 
   navgen_if_->msgq_enqueue
     (new NavGraphGeneratorInterface::SetFilterMessage
@@ -308,9 +359,9 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 
   navgen_if_->msgq_enqueue
     (new NavGraphGeneratorInterface::SetFilterParamFloatMessage
-     (NavGraphGeneratorInterface::FILTER_EDGES_BY_MAP, "distance", 0.4));
+     (NavGraphGeneratorInterface::FILTER_EDGES_BY_MAP, "distance", cfg_map_min_dist_));
 
-  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddMapObstaclesMessage(0.5));
+  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddMapObstaclesMessage(cfg_map_point_max_dist_));
 
   navgen_if_->msgq_enqueue
     (new NavGraphGeneratorInterface::SetCopyGraphDefaultPropertiesMessage(true));
@@ -337,6 +388,14 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 	    (new NavGraphGeneratorInterface::SetPointOfInterestPropertyMessage
 	     (s.first.c_str(), "mps", "true"));
 
+    if (cfg_mps_corner_obst_) {
+	    for (size_t i = 0; i < s.second.corners.size(); ++i) {
+      const Eigen::Vector2f &c = s.second.corners[i];
+		    navgen_if_->msgq_enqueue
+			    (new NavGraphGeneratorInterface::AddObstacleMessage
+			     ((s.first + "-C" + std::to_string(i)).c_str(), c[0], c[1]));
+	    }
+    }
     navgen_if_->msgq_enqueue
       (new NavGraphGeneratorInterface::AddObstacleMessage
        ((s.first + "-C").c_str(), s.second.pose_pos[0], s.second.pose_pos[1]));

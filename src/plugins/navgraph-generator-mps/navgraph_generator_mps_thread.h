@@ -72,10 +72,18 @@ class NavGraphGeneratorMPSThread
   virtual void bb_interface_data_changed(fawkes::Interface *interface) throw();
 
  private:
-  std::string  cfg_global_frame_;
-  float        cfg_mps_width_;
-  float        cfg_mps_approach_dist_;
-
+  std::string                                cfg_global_frame_;
+  float                                      cfg_mps_width_;
+  float                                      cfg_mps_length_;
+  float                                      cfg_mps_approach_dist_;
+  bool                                       cfg_mps_corner_obst_;
+  float                                      cfg_map_min_dist_;
+  float                                      cfg_map_point_max_dist_;
+  fawkes::NavGraphGeneratorInterface::Algorithm cfg_algorithm_;
+  std::map<std::string, std::string>         cfg_algo_params_;
+  Eigen::Vector2f                            cfg_bounding_box_p1_;
+  Eigen::Vector2f                            cfg_bounding_box_p2_;
+  
   unsigned int                               last_id_;
   fawkes::NavGraphGeneratorInterface        *navgen_if_;
   fawkes::NavGraphWithMPSGeneratorInterface *navgen_mps_if_;
@@ -110,6 +118,8 @@ class NavGraphGeneratorMPSThread
     Eigen::Vector3f    output_pos;
     Eigen::Quaternionf output_ori;
     float              output_yaw;
+
+	  std::vector<Eigen::Vector2f> corners;
 
   } MPSStation;
   std::map<std::string, MPSStation> stations_;
