@@ -57,9 +57,9 @@ end
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_if},
    {"INIT", JumpState},
    {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
-   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
-   {"RE_MPS_ALIGN", SkillJumpState, skills={{motor_move}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="DECIDE_ENDSKILL"}, --TODO proper handling
+   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
+   {"RE_MPS_ALIGN", SkillJumpState, skills={{motor_move}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_SHELF_PUT", SkillJumpState, skills={{shelf_put}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_SLIDE_PUT", SkillJumpState, skills={{slide_put}}, final_to="FINAL", fail_to="FAILED"},
@@ -75,7 +75,6 @@ fsm:add_transitions{
    {"DRIVE_TO", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
    {"MPS_ALIGN", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
    {"RE_MPS_ALIGN", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
-   {"DECIDE_ENDSKILL", "MPS_ALIGN", cond="vars.counter <= 1", desc="Put on shelf"},
    {"DECIDE_ENDSKILL", "SKILL_SHELF_PUT", cond="vars.shelf", desc="Put on shelf"},
    {"DECIDE_ENDSKILL", "SKILL_SLIDE_PUT", cond="vars.slide", desc="Put on slide"},
    {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PUT", cond=true, desc="Put on conveyor"}
@@ -83,7 +82,6 @@ fsm:add_transitions{
 
 function INIT:init()
    self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
-   self.fsm.vars.counter = 0
 end
 
 function DRIVE_TO:init()
@@ -95,29 +93,16 @@ function DRIVE_TO:init()
 end
 
 function MPS_ALIGN:init()
-   self.fsm.vars.counter = self.fsm.vars.counter + 1
-   -- align in front of the conveyor belt
-   self.args["mps_align"] = {x = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")}
    if self.fsm.vars.side == "output" then
-      if navgraph:node(self.fsm.vars.place):has_property("output_offset_y") then
-         self.args["mps_align"].y = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_y")
-      else
-         self.args["mps_align"].y = 0
-      end
       self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
    else
-      if navgraph:node(self.fsm.vars.place):has_property("input_offset_y") then
-         self.args["mps_align"].y = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_y")
-      else
-         self.args["mps_align"].y = 0
-      end
       self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
    end
-   self.args["mps_align"].ori = 0
+   self.args["mps_align"].x = 0.43
+   self.args["mps_align"].y = -0.04
 end
 
 function RE_MPS_ALIGN:init()
-   self.fsm.vars.counter = self.fsm.vars.counter + 1
    local shelf_to_conveyor = 0.09 --TODO measure both values
    local shelf_distance = 0.09
    if self.fsm.vars.atmps == "LEFT" then
@@ -140,19 +125,7 @@ function RE_MPS_ALIGN:init()
 end
 
 function SKILL_PRODUCT_PUT:init()
-   if self.fsm.vars.side == "output" then
-      if navgraph:node(self.fsm.vars.place):has_property("output_offset_x") then
-         self.args["product_put"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_x")
-      else
-         self.args["product_put"].offset_x = 0 
-      end 
-   else
-      if navgraph:node(self.fsm.vars.place):has_property("input_offset_x") then
-         self.args["product_put"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_x")
-      else
-         self.args["product_put"].offset_x = 0 
-      end 
-   end 
+   self.args["product_put"].offset_x = 0 
 end
 
 function SKILL_SHELF_PUT:init()

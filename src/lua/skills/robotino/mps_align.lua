@@ -393,14 +393,14 @@ function MATCH_AVG_LINE:loop()
          -- Input coordinates are supposed to be relative to laser line, but there is no
          -- transform for laser lines, so we do this weird an stupid "manual transformation"
          local center = llutils.center(matched_line)
-         local center_bl = tfm.transform(center, "/base_laser", "/base_link")
-         local p = llutils.point_in_front(center_bl, self.fsm.vars.x)
+         --local center_bl = tfm.transform(center, "/base_laser", "/base_link")
+         local p = llutils.point_in_front(center, self.fsm.vars.x)
          local p_tag = tfm.transform6D(
             {  x = p.x,
                y = p.y + (self.fsm.vars.y or 0),
                z = 0,
-               ori = fawkes.tf.create_quaternion_from_yaw(math.pi) },
-            "/base_link", self.fsm.vars.tag_frame_id
+               ori = fawkes.tf.create_quaternion_from_yaw(matched_line:bearing()) },
+            matched_line:frame_id(), "/odom"
          )
          if p_tag then
             self.fsm.vars.p_tag = p_tag
@@ -422,8 +422,8 @@ function ALIGN_PRECISE:init()
       self.args["motor_move"] = { 
          x = self.fsm.vars.p_tag.x,
          y = self.fsm.vars.p_tag.y,
-         ori = math.pi,
-         frame = self.fsm.vars.tag_frame_id
+         ori = fawkes.tf.get_yaw(self.fsm.vars.p_tag.ori),
+         frame = "/odom"
       }
    else
       print("WARNING: lost laser line before precise alignment. Continuing with odometry only.")

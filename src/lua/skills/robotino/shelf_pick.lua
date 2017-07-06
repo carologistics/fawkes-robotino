@@ -42,7 +42,7 @@ documentation      = [==[ shelf_pick
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local x_distance = 0.07
+local x_distance = 0.27
 if config:exists("/skills/align_distance_conveyor/x") then
    x_distance = config:get_float("/skills/align_distance_conveyor/x")
 end
@@ -52,16 +52,18 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SHELF", fail_to="FAILED"},
    {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="GRAB_PRODUCT", fail_to="FAILED"},
    {"GRAB_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAIL_SAFE"},
-   {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="CHECK_PUCK", fail_to="FAILED"},
+   {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_INTERFACE", fail_to="FAILED"},
    {"CENTER_PUCK", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FAILED"},
    {"FAIL_SAFE", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},
    {"WAIT_AFTER_GRAB", JumpState},
+   {"WAIT_FOR_INTERFACE", JumpState},
    {"CHECK_PUCK", JumpState},
 }
 
 fsm:add_transitions{
    {"GOTO_SHELF", "FAILED", cond="vars.error"},
    {"WAIT_AFTER_GRAB", "LEAVE_SHELF", timeout=0.5},
+   {"WAIT_FOR_INTERFACE", "CHECK_PUCK", timeout=5},
    {"CHECK_PUCK", "CENTER_PUCK", cond="gripper_if:is_holds_puck()", desc="Got a puck"},
    {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="GOT NO PUCK!"},
 }
@@ -93,6 +95,7 @@ end
 
 function APPROACH_SHELF:init()
    self.args["approach_mps"].x = x_distance
+   self.args["approach_mps"].use_conveyor = false
 end
 
 function GRAB_PRODUCT:init()

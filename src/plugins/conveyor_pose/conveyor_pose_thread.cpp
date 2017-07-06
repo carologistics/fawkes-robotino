@@ -26,6 +26,7 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/approximate_voxel_grid.h>
 #include <pcl/features/normal_3d.h>
 
 #include <pcl/ModelCoefficients.h>
@@ -58,7 +59,7 @@
 using namespace fawkes;
 
 /** @class ConveyorPoseThread "conveyor_pose_thread.cpp"
- * Plugin to detect the conveyor beld in a pointcloud (captured from intel real sens)
+ * Plugin to detect the conveyor belt in a pointcloud (captured from Intel RealSense)
  * @author Tobias Neumann
  */
 
@@ -86,20 +87,8 @@ ConveyorPoseThread::init()
   cloud_out_result_name_      = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_result").c_str() );
   cfg_bb_conveyor_pose_name_  = if_prefix + config->get_string( (cfg_prefix + "if/pose_of_beld").c_str() );
   cfg_bb_switch_name_         = if_prefix + config->get_string( (cfg_prefix + "if/switch").c_str() );
-  cfg_bb_config_name_         = if_prefix + config->get_string( (cfg_prefix + "if/config").c_str() );
 
   laserlines_names_       = config->get_strings( (cfg_prefix + "if/laser_lines").c_str() );
-
-//  laserlines_names_.push_back("/laser-lines/1");
-//  laserlines_names_.push_back("/laser-lines/2");
-//  laserlines_names_.push_back("/laser-lines/3");
-//  laserlines_names_.push_back("/laser-lines/4");
-//  laserlines_names_.push_back("/laser-lines/5");
-//  laserlines_names_.push_back("/laser-lines/6");
-//  laserlines_names_.push_back("/laser-lines/7");
-//  laserlines_names_.push_back("/laser-lines/8");
-
-//  bb_tag_name_ = "/tag-vision/0";
 
   cfg_pose_close_if_no_new_pointclouds_  = config->get_bool( (cfg_prefix + "if/pose_close_if_new_pc").c_str() );
 
@@ -108,9 +97,9 @@ ConveyorPoseThread::init()
   vis_hist_angle_diff_        = config->get_float( (cfg_prefix + "vis_hist/diff_angle").c_str() );
   cfg_pose_avg_hist_size_     = config->get_uint( (cfg_prefix + "vis_hist/average/size").c_str() );
   cfg_pose_avg_min_           = config->get_uint( (cfg_prefix + "vis_hist/average/used_min").c_str() );
+  cfg_allow_invalid_poses_    = config->get_uint( (cfg_prefix + "vis_hist/allow_invalid_poses").c_str() );
 
   cfg_enable_switch_          = config->get_bool( (cfg_prefix + "switch_default").c_str() );
-  cfg_enable_product_removal_ = config->get_bool( (cfg_prefix + "product_removal_default").c_str() );
   cfg_use_visualisation_      = config->get_bool( (cfg_prefix + "use_visualisation").c_str() );
 
   cfg_gripper_y_min_          = config->get_float( (cfg_prefix + "gripper/y_min").c_str() );
@@ -119,21 +108,20 @@ ConveyorPoseThread::init()
   cfg_gripper_slice_y_min_    = config->get_float( (cfg_prefix + "gripper/slice/y_min").c_str() );
   cfg_gripper_slice_y_max_    = config->get_float( (cfg_prefix + "gripper/slice/y_max").c_str() );
 
-  cfg_centroid_radius_        = config->get_float( (cfg_prefix + "centroid/radius").c_str() );
-
   cfg_front_space_            = config->get_float( (cfg_prefix + "front/space").c_str() );
   cfg_front_offset_           = config->get_float( (cfg_prefix + "front/offset").c_str() );
 
   cfg_bottom_offset_          = config->get_float( (cfg_prefix + "bottom/offset").c_str() );
 
-  cfg_product_normal_distance_weight_ = config->get_float( (cfg_prefix + "product/normal_distance_weight").c_str() );
-  cfg_product_dist_threshold_         = config->get_float( (cfg_prefix + "product/dist_threshold").c_str() );
-  cfg_product_radius_limit_min_       = config->get_float( (cfg_prefix + "product/radius_limit_min").c_str() );
-  cfg_product_radius_limit_max_       = config->get_float( (cfg_prefix + "product/radius_limit_max").c_str() );
+  cfg_left_cut_               = config->get_float( (cfg_prefix + "left_right/left_cut").c_str() );
+  cfg_right_cut_              = config->get_float( (cfg_prefix + "left_right/right_cut").c_str() );
+  cfg_left_cut_no_ll_         = config->get_float( (cfg_prefix + "left_right/left_cut_no_ll").c_str() );
+  cfg_right_cut_no_ll_        = config->get_float( (cfg_prefix + "left_right/right_cut_no_ll").c_str() );
 
   cfg_plane_dist_threshold_   = config->get_float( (cfg_prefix + "plane/dist_threshold").c_str() );
   cfg_normal_z_minimum_       = config->get_float( (cfg_prefix + "plane/normal_z_minimum").c_str() );
   cfg_plane_height_minimum_   = config->get_float( (cfg_prefix + "plane/height_minimum").c_str() );
+  cfg_plane_width_minimum_    = config->get_float( (cfg_prefix + "plane/width_minimum").c_str() );
 
   cfg_cluster_tolerance_      = config->get_float( (cfg_prefix + "cluster/tolerance").c_str() );
   cfg_cluster_size_min_       = config->get_float( (cfg_prefix + "cluster/size_min").c_str() );
@@ -152,19 +140,14 @@ ConveyorPoseThread::init()
     laserlines_.push_back( blackboard->open_for_reading<fawkes::LaserLineInterface>(ll.c_str()) );
   }
 
-//  bb_tag_ = blackboard->open_for_reading<fawkes::Position3DInterface>(bb_tag_name_.c_str());
-
   enable_pose_ = false;
   if ( ! cfg_pose_close_if_no_new_pointclouds_ ) {
     bb_pose_conditional_open();
   }
 
   bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>(cfg_bb_switch_name_.c_str());
-  bb_config_        = blackboard->open_for_writing<ConveyorConfigInterface>(cfg_bb_config_name_.c_str());
   bb_enable_switch_->set_enabled( cfg_debug_mode_ || cfg_enable_switch_); // ignore cfg_enable_switch_ and set to true if debug mode is used
   bb_enable_switch_->write();
-  bb_config_->set_product_removal( cfg_enable_product_removal_ );
-  bb_config_->write();
 
   visualisation_ = new Visualisation(rosnode);
 }
@@ -177,7 +160,6 @@ ConveyorPoseThread::finalize()
   delete visualisation_;
   blackboard->close(bb_enable_switch_);
   bb_pose_conditional_close();
-  blackboard->close(bb_config_);
 }
 
 void
@@ -202,58 +184,78 @@ void
 ConveyorPoseThread::loop()
 {
   if_read();
-
+  //logger->log_debug(name(),"CONVEYOR-POSE 1: Interface read");
   if ( ! pc_in_check() || ! bb_enable_switch_->is_enabled() ) {
     if ( enable_pose_ ) {
+      vis_hist_ = -1;
       pose trash;
       trash.valid = false;
-      pose_add_element(trash);
+      pose_write(trash);
     }
-
     if ( cfg_pose_close_if_no_new_pointclouds_ ) {
       bb_pose_conditional_close();
     }
 
     return;
   }
-
+  //logger->log_info(name(),"CONVEYOR-POSE 2: Added Trash if no point cloud or not enabled and pose enabled");
   bb_pose_conditional_open();
 
+  pose pose_average;
+  bool pose_average_availabe = pose_get_avg(pose_average);
+  //logger->log_info(name(),"CONVEYOR-POSE 3: set average");
+  if (pose_average_availabe) {
+    vis_hist_ = std::max(1, vis_hist_ + 1);
+    pose_write(pose_average);
+
+    pose_publish_tf(pose_average);
+
+//    tf_send_from_pose_if(pose_current);
+    if (cfg_use_visualisation_) {
+      visualisation_->marker_draw(header_, pose_average.translation, pose_average.rotation);
+    }
+  } else {
+    vis_hist_ = -1;
+    pose trash;
+    trash.valid = false;
+    pose_write(trash);
+  }
+// logger->log_debug(name(),"CONVEYOR-POSE 4: checked average");
   fawkes::LaserLineInterface * ll = NULL;
   bool use_laserline = laserline_get_best_fit( ll );
-
+// logger->log_debug(name(),"CONVEYOR-POSE 5: got laserline");
+  
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
+  uint in_size = cloud_in->points.size();
+ // logger->log_debug(name(), "Size before voxel grid: %u", in_size);
   CloudPtr cloud_vg = cloud_voxel_grid(cloud_in);
+  uint out_size = cloud_vg->points.size();
+ // logger->log_debug(name(), "Size of voxel grid: %u", out_size);
+  if (in_size == out_size) {
+    logger->log_error(name(), "Voxel Grid failed, skipping loop!");
+    return;
+  }
   CloudPtr cloud_gripper = cloud_remove_gripper(cloud_vg);
   CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_gripper, ll, use_laserline);
+ // logger->log_debug(name(),"CONVEYOR-POSE 6: intially filtered pointcloud");
 
-//  CloudPtr cloud_front_side(new Cloud);
-//  if ( use_laserline ) {
-//    // TODO, if this is used, a cfg values for each machine is needed
-//    cloud_front_side = cloud_remove_offset_to_left_right(cloud_pt, ll);
-//  } else {
-//    *cloud_front_side = *cloud_front;
-//  }
+  CloudPtr cloud_front_side(new Cloud);
+    cloud_front_side = cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
+  
+// logger->log_debug(name(),"CONVEYOR-POSE 7: set cut off left and rigt");
+  CloudPtr cloud_bottom_removed = cloud_remove_offset_to_bottom(cloud_front_side);
 
-  Eigen::Vector4f center;
-  pcl::compute3DCentroid<Point, float>(*cloud_front, center);
-  CloudPtr cloud_center = cloud_remove_centroid_based(cloud_front, center);
-  CloudPtr cloud_bottom_removed = cloud_remove_offset_to_bottom(cloud_center);
-
-  CloudPtr cloud_without_products(new Cloud);
-  if ( bb_config_->is_product_removal() ) {
-    cloud_without_products = cloud_remove_products(cloud_bottom_removed);
-//    *cloud_without_products = *cloud_bottom_removed;
-  } else {
-    *cloud_without_products = *cloud_bottom_removed;
-  }
+//  logger->log_debug(name(),"CONVEYOR-POSE 8: removed bottom offset");
+  cloud_publish(cloud_bottom_removed, cloud_out_inter_1_);
 
   // search for best plane
   CloudPtr cloud_choosen;
   pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
   do {
-    CloudPtr cloud_plane = cloud_get_plane(cloud_without_products, coeff);
+  //  logger->log_debug(name(), "In while loop");
+    CloudPtr cloud_plane = cloud_get_plane(cloud_bottom_removed, coeff);
+  //  logger->log_debug(name(), "After getting plane");
     if ( cloud_plane == NULL || ! cloud_plane ) {
       pose trash;
       trash.valid = false;
@@ -262,15 +264,20 @@ ConveyorPoseThread::loop()
     }
 
     size_t id;
+  //  logger->log_debug(name(), "Before clustering");
     boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices = cloud_cluster(cloud_plane);
+  //  logger->log_debug(name(), "After clustering");
     if ( cluster_indices->size() <= 0 ) {
       pose trash;
       trash.valid = false;
       pose_add_element(trash);
       return;
     }
+   // logger->log_debug(name(), "Before split");
     std::vector<CloudPtr> clouds_cluster = cluster_split(cloud_plane, cluster_indices);
+   // logger->log_debug(name(), "Before finding biggest");
     cloud_choosen = cluster_find_biggest(clouds_cluster, id);
+   // logger->log_debug(name(), "After finding biggest");
 
     // check if plane is ok, otherwise remove indicies
 
@@ -293,18 +300,45 @@ ConveyorPoseThread::loop()
       boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
       CloudPtr tmp(new Cloud);
       pcl::ExtractIndices<Point> extract;
-      extract.setInputCloud (cloud_without_products);
+      extract.setInputCloud (cloud_bottom_removed);
       extract.setIndices( extract_indicies );
       extract.setNegative (true);
       extract.filter (*tmp);
-      *cloud_without_products = *tmp;
+      //logger->log_debug(name(), "After extraction");
+      *cloud_bottom_removed = *tmp;
     } else {
       // height is ok
+      float x_min = -200;
+      float x_max = 200;
+      for (Point p : *cloud_choosen ) {
+        if (p.x > x_min) {
+          x_min = p.x;
+        }
+        if (p.x < x_max) {
+          x_max = p.x;
+        }
+      }
+    
+    float width = x_min - x_max;
+    if (width < cfg_plane_width_minimum_) {
+      logger->log_info(name(), "Discard plane, because of width restriction. is: %f\tshould: %f", width, cfg_plane_width_minimum_);      
+      boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
+      CloudPtr tmp(new Cloud);
+      pcl::ExtractIndices<Point> extract;
+      extract.setInputCloud (cloud_bottom_removed);
+      extract.setIndices( extract_indicies );
+      extract.setNegative (true);
+      extract.filter (*tmp);
+      *cloud_bottom_removed = *tmp;
+
+    } else {
+    //height and width ok
       break;
     }
+   }
   } while (true);
-
-  cloud_publish(cloud_without_products, cloud_out_inter_1_);
+  
+ // logger->log_debug(name(),"CONVEYOR-POSE 9: left while true");
   cloud_publish(cloud_choosen, cloud_out_result_);
 
   // get centroid
@@ -317,21 +351,6 @@ ConveyorPoseThread::loop()
   normal(2) = coeff->values[2];
   pose pose_current = calculate_pose(centroid, normal);;
   pose_add_element(pose_current);
-
-  pose pose_average;
-  bool pose_average_availabe = pose_get_avg(pose_average);
-
-  if (pose_average_availabe) {
-    vis_hist_ = std::max(1, vis_hist_ + 1);
-    pose_write(pose_average);
-
-    tf_send_from_pose_if(pose_current);
-    if (cfg_use_visualisation_) {
-      visualisation_->marker_draw(header_, pose_average.translation, pose_average.rotation);
-    }
-  } else {
-    vis_hist_ = -1;
-  }
 }
 
 bool
@@ -365,6 +384,7 @@ ConveyorPoseThread::if_read()
 
   bool rv = bb_enable_switch_->is_enabled();
   while ( ! bb_enable_switch_->msgq_empty() ) {
+    logger->log_info(name(),"RECIEVED SWITCH MESSAGE");
     if (bb_enable_switch_->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
       rv = false;
     } else if (bb_enable_switch_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
@@ -387,26 +407,6 @@ ConveyorPoseThread::if_read()
   // laser lines
   for (fawkes::LaserLineInterface * ll : laserlines_) {
     ll->read();
-  }
-
-  // config
-  bb_config_->read();
-
-  rv = bb_config_->is_product_removal();
-  while ( ! bb_config_->msgq_empty() ) {
-    if (bb_config_->msgq_first_is<ConveyorConfigInterface::DisableProductRemovalMessage>()) {
-      rv = false;
-    } else if (bb_config_->msgq_first_is<ConveyorConfigInterface::EnableProductRemovalMessage>()) {
-      rv = true;
-    }
-
-    bb_config_->msgq_pop();
-  }
-
-  if ( rv != bb_config_->is_product_removal() ) {
-    logger->log_info(name(), "*** remove products from point cloud: %s", rv ? "yes" : "no");
-    bb_config_->set_product_removal( rv );
-    bb_config_->write();
   }
 }
 
@@ -435,7 +435,7 @@ ConveyorPoseThread::pose_get_avg(pose & out)
     }
   }
 
-  if (invalid > 3) {
+  if (invalid > cfg_allow_invalid_poses_) {
     logger->log_warn(name(), "view unstable, got %u invalid frames", invalid);
   }
 
@@ -483,20 +483,24 @@ ConveyorPoseThread::pose_get_avg(pose & out)
   }
 
   // calculate average
-  double roll = 0;
-  double pitch = 0;
-  double yaw = 0;
+  Eigen::Quaternion<float> avgRot;
+  Eigen::Vector4f cumulative;
+  Eigen::Quaternion<float> firstRotation(poses_used.front().rotation.x(), poses_used.front().rotation.y(), poses_used.front().rotation.z(), poses_used.front().rotation.w());
+  float addDet = 1.0 / (float)poses_used.size();
   for (pose p : poses_used) {
+    Eigen::Quaternion<float> newRotation(p.rotation.x(), p.rotation.y(), p.rotation.z(), p.rotation.w());
+
     out.translation.setX( out.translation.x() + p.translation.x() );
     out.translation.setY( out.translation.y() + p.translation.y() );
     out.translation.setZ( out.translation.z() + p.translation.z() );
 
-    fawkes::tf::Matrix3x3 m(p.rotation);
-    fawkes::tf::Scalar rc, pc, yc;
-    m.getEulerYPR(yc, pc, rc);
-    roll += fawkes::normalize_rad(rc);
-    pitch += fawkes::normalize_rad(pc);
-    yaw += fawkes::normalize_rad(yc);
+  //  fawkes::tf::Matrix3x3 m(p.rotation);
+  //  fawkes::tf::Scalar rc, pc, yc;
+  //  m.getEulerYPR(yc, pc, rc);
+  //  roll += fawkes::normalize_rad(rc);
+  //  pitch += fawkes::normalize_rad(pc);
+  //  yaw += fawkes::normalize_rad(yc);
+    avgRot = averageQuaternion(cumulative, newRotation, firstRotation, addDet);
   }
 
   // normalize
@@ -504,10 +508,10 @@ ConveyorPoseThread::pose_get_avg(pose & out)
   out.translation.setY( out.translation.y() / poses_used.size() );
   out.translation.setZ( out.translation.z() / poses_used.size() );
 
-  roll /= poses_used.size();
-  pitch /= poses_used.size();
-  yaw /= poses_used.size();
-  out.rotation.setEuler(yaw, pitch, roll);
+  //roll /= poses_used.size();
+  //pitch /= poses_used.size();
+  //yaw /= poses_used.size();
+  //out.rotation.setEuler(yaw, pitch, roll);
 
 //  logger->log_info(name(), "got %u for avg: (%f\t%f\t%f)\t(%f\t%f\t%f)", poses_used.size(),
 //      out.translation.x(), out.translation.y(), out.translation.z(),
@@ -584,7 +588,7 @@ ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
 {
   CloudPtr out(new Cloud);
   for (Point p : *in) {
-    if ( ! (is_inbetween(cfg_gripper_y_min_, cfg_gripper_y_max_, p.y) && p.z < cfg_gripper_z_max_) )  { // remove gripper
+    if ( !(is_inbetween(cfg_gripper_y_min_, cfg_gripper_y_max_, p.y) && p.z < cfg_gripper_z_max_) )  { // remove gripper
       if (p.y < cfg_gripper_slice_y_max_ && p.y > cfg_gripper_slice_y_min_) { // leave just correct hight
         out->push_back(p);
       }
@@ -594,22 +598,6 @@ ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
   return out;
 }
 
-CloudPtr
-ConveyorPoseThread::cloud_remove_centroid_based(CloudPtr in, Eigen::Vector4f centroid)
-{
-  float distance = cfg_centroid_radius_;
-
-  CloudPtr cloud_out(new Cloud);
-
-  for (Point p : *in) {
-    if ( p.x >= centroid(0) - distance && p.x <= centroid(0) + distance &&
-         p.y >= centroid(1) - distance && p.y <= centroid(1) + distance) {
-      cloud_out->push_back(p);
-    }
-  }
-
-  return cloud_out;
-}
 
 CloudPtr
 ConveyorPoseThread::cloud_remove_offset_to_bottom(CloudPtr in)
@@ -637,6 +625,7 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
 {
   double space = cfg_front_space_;
   double z_min, z_max;
+  z_min = 0;	
   if ( use_ll ) {
     Eigen::Vector3f c = laserline_get_center_transformed(ll);
     z_min = c(2) + cfg_front_offset_ - ( space / 2. );
@@ -664,61 +653,31 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
 }
 
 CloudPtr
-ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll)
+ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
 {
-  double space = 0.12;
-  Eigen::Vector3f c = laserline_get_center_transformed(ll);
+  if (use_ll){
+    Eigen::Vector3f c = laserline_get_center_transformed(ll);
 
-  double x_min = c(0) - ( space / 2. );
-  double x_max = c(0) + ( space / 2. );
+    double x_min = c(0) - cfg_left_cut_;
+    double x_max = c(0) + cfg_right_cut_;
 
-  CloudPtr out(new Cloud);
-  for (Point p : *in) {
-    if ( p.x >= x_min && p.x <= x_max ) {
-      out->push_back(p);
-    }
+    CloudPtr out(new Cloud);
+      for (Point p : *in) {
+        if ( p.x >= x_min && p.x <= x_max ) {
+          out->push_back(p);
+        }
   }
-
   return out;
-}
-
-CloudPtr
-ConveyorPoseThread::cloud_remove_products(CloudPtr in)
-{
-  // Estimate point normals
-  pcl::NormalEstimation<Point, pcl::Normal> ne;
-  pcl::search::KdTree<Point>::Ptr tree (new pcl::search::KdTree<Point> ());
-  ne.setSearchMethod (tree);
-  ne.setInputCloud (in);
-  ne.setKSearch (50);
-  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
-  ne.compute (*cloud_normals);
-
-  // Create the segmentation object for cylinder segmentation and set all the parameters
-  pcl::SACSegmentationFromNormals<Point, pcl::Normal> seg;
-  seg.setOptimizeCoefficients (true);
-  seg.setModelType (pcl::SACMODEL_CYLINDER);
-  seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setNormalDistanceWeight (cfg_product_normal_distance_weight_);
-  seg.setMaxIterations (1000);
-  seg.setDistanceThreshold (cfg_product_dist_threshold_);
-  seg.setRadiusLimits (cfg_product_radius_limit_min_, cfg_product_radius_limit_max_);
-  seg.setInputCloud (in);
-  seg.setInputNormals (cloud_normals);
-
-  // Obtain the cylinder inliers and coefficients
-  pcl::PointIndices::Ptr inliers_cylinder (new pcl::PointIndices);
-  pcl::ModelCoefficients::Ptr coefficients_cylinder (new pcl::ModelCoefficients);
-  seg.segment (*inliers_cylinder, *coefficients_cylinder);
-
-  pcl::ExtractIndices<Point> extract;
-  extract.setInputCloud (in);
-  extract.setIndices (inliers_cylinder);
-  extract.setNegative (true);
-  CloudPtr cloud_cylinder (new Cloud ());
-  extract.filter (*cloud_cylinder);
-
-  return cloud_cylinder;
+  }else{
+    logger->log_info(name(), "-------------STOPPED USING LASERLINE-----------");
+    CloudPtr out(new Cloud);
+    for (Point p : *in) {
+        if ( p.x >= -cfg_left_cut_no_ll_ && p.x <= cfg_right_cut_no_ll_ ) {
+        out->push_back(p);
+      }
+    }
+    return out;
+  }
 }
 
 CloudPtr
@@ -731,7 +690,7 @@ ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coe
   // Create the segmentation object
   pcl::SACSegmentation<pcl::PointXYZ> seg;
   // Optional
-//    seg.setOptimizeCoefficients (true);
+  seg.setOptimizeCoefficients (true);
   // Mandatory
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
@@ -756,22 +715,13 @@ ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coe
   *out = *tmp;
 
   // check if cloud normal is ok
-  Eigen::Vector4f plane;
-  float coverture;
-  pcl::computePointNormal(*out, plane, coverture);
-  if ( plane(2) > cfg_normal_z_minimum_ ) {
-    return out;
-  } else {
-    logger->log_info(name(), "Discard plane, because of normal (%f\t%f\t%f)", plane(0), plane(1), plane(2));
-
-    return CloudPtr();
-  }
+  return out;
 }
 
 boost::shared_ptr<std::vector<pcl::PointIndices>>
 ConveyorPoseThread::cloud_cluster(CloudPtr in)
 {
-  in = cloud_voxel_grid(in);
+  //in = cloud_voxel_grid(in);
   // Creating the KdTree object for the search method of the extraction
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
   tree->setInputCloud (in);
@@ -810,29 +760,29 @@ ConveyorPoseThread::cluster_split(CloudPtr in, boost::shared_ptr<std::vector<pcl
 CloudPtr
 ConveyorPoseThread::cluster_find_biggest(std::vector<CloudPtr> clouds_in, size_t & id)
 {
-  CloudPtr biggeset(new Cloud);
+  CloudPtr biggest(new Cloud);
   size_t i = 0;
   for (CloudPtr current : clouds_in) {
-    if ( biggeset->size() < current->size() ) {
-      biggeset = current;
+    if ( biggest->size() < current->size() ) {
+      biggest = current;
       id = i;
     }
     ++i;
   }
 
-  return biggeset;
+  return biggest;
 }
 
 CloudPtr
 ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
 {
   float ls = cfg_voxel_grid_leave_size_;
-  pcl::VoxelGrid<pcl::PointXYZ> vg;
+  pcl::ApproximateVoxelGrid<pcl::PointXYZ> vg;
   CloudPtr out (new Cloud);
   vg.setInputCloud (in);
+ // logger->log_debug(name(), "voxel leaf size is %f", ls);
   vg.setLeafSize (ls, ls, ls);
   vg.filter (*out);
-
   return out;
 }
 
@@ -846,19 +796,16 @@ ConveyorPoseThread::cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud
 ConveyorPoseThread::pose
 ConveyorPoseThread::calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal)
 {
-  Eigen::Vector3f tf_orign;
-  tf_orign(0) = 1;
-  tf_orign(1) = 0;
-  tf_orign(2) = 0;
-  Eigen::Quaternion<float> q;
-  q.setFromTwoVectors(tf_orign, normal);
-  Eigen::Quaternion<float> q_offset;
-  Eigen::AngleAxisf rollAngle(0, Eigen::Vector3f::UnitZ());
-  Eigen::AngleAxisf yawAngle(0, Eigen::Vector3f::UnitY());
-  Eigen::AngleAxisf pitchAngle(1.57, Eigen::Vector3f::UnitX());
-  q_offset = rollAngle * yawAngle * pitchAngle;
-  q = q * q_offset;
-
+  Eigen::Vector3f tangent0 = normal.cross(Eigen::Vector3f(1,0,0));
+  if (tangent0.dot(tangent0) < 0.0001){
+    tangent0 = normal.cross(Eigen::Vector3f(0,1,0));
+  }
+  tangent0.normalize();
+  Eigen::Vector3f tangent1 = normal.cross(tangent0);
+  tangent1.normalize();
+  Eigen::Matrix3f rotMatrix;
+  rotMatrix << tangent0, tangent1, normal;
+  Eigen::Quaternion<float> q(rotMatrix);
   fawkes::tf::Vector3 origin(centroid(0), centroid(1), centroid(2));
   fawkes::tf::Quaternion rot(q.x(), q.y(), q.z(), q.w());
 
@@ -907,8 +854,85 @@ ConveyorPoseThread::pose_write(pose pose)
   bb_pose_->write();
 }
 
+void
+ConveyorPoseThread::pose_publish_tf(pose pose)
+{
+  // transform data into gripper frame (this is better for later use)
+  tf::Stamped<tf::Pose> tf_pose_cam, tf_pose_gripper;
+  tf_pose_cam.stamp = fawkes::Time((long)header_.stamp / 1000);
+  tf_pose_cam.frame_id = header_.frame_id;
+  tf_pose_cam.setOrigin(tf::Vector3( pose.translation.x(), pose.translation.y(), pose.translation.z() ));
+  tf_pose_cam.setRotation(tf::Quaternion( pose.rotation.x(), pose.rotation.y(), pose.rotation.z(), pose.rotation.w() ));
+  tf_listener->transform_pose("gripper", tf_pose_cam, tf_pose_gripper);
 
+  // publish the transform from the gripper to the conveyor
+  tf::Transform transform(
+                  tf::create_quaternion_from_yaw(M_PI),
+                  tf_pose_gripper.getOrigin()
+                );
+  tf::StampedTransform stamped_transform(transform, tf_pose_gripper.stamp, tf_pose_gripper.frame_id, "conveyor");
+  tf_publisher->send_transform(stamped_transform);
+}
 
+Eigen::Quaternion<float>
+ConveyorPoseThread::averageQuaternion(Eigen::Vector4f &cumulative, Eigen::Quaternion<float> newRotation, Eigen::Quaternion<float> firstRotation, float addDet){
+  
+  float w = 0.0;
+  float x = 0.0;
+  float y = 0.0;
+  float z = 0.0;	
+
+  if(!areQuaternionsClose(newRotation, firstRotation)){
+    newRotation = inverseSignQuaternion(newRotation);
+  }
+
+  cumulative.x() += newRotation.x();
+  x = cumulative.x() * addDet;
+  cumulative.y() += newRotation.y();
+  y = cumulative.y() * addDet;
+  cumulative.z() += newRotation.z();
+  z = cumulative.z() * addDet;
+  cumulative.w() += newRotation.w();
+  w = cumulative.w() * addDet;
+  
+  Eigen::Quaternion<float> result = normalizeQuaternion(x, y, z, w);
+  return result;
+}
+Eigen::Quaternion<float>
+ConveyorPoseThread::normalizeQuaternion(float x, float y, float z, float w){
+
+  float lengthD = 1.0 / (w*w + x*x + y*y + z*z);
+  w *= lengthD;
+  x *= lengthD;
+  y *= lengthD;
+  z *= lengthD;
+  
+  Eigen::Quaternion<float> result(x, y, z, w);
+  return result;
+}
+ 
+//Changes the sign of the quaternion components. This is not the same as the inverse.
+Eigen::Quaternion<float>
+ConveyorPoseThread::inverseSignQuaternion(Eigen::Quaternion<float> q){
+  Eigen::Quaternion<float> result(-q.x(), -q.y(), -q.z(), -q.w());
+  return result;
+}
+ 
+//Returns true if the two input quaternions are close to each other. This can
+//be used to check whether or not one of two quaternions which are supposed to
+//be very similar but has its component signs reversed (q has the same rotation as
+//-q)
+bool
+ConveyorPoseThread::areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quaternion<float> q2){
+  
+  float dot = q1.dot(q2);
+  if(dot < 0.0){ 
+    return false;					
+  } 
+  else{ 
+    return true;
+  }
+}
 
 
 

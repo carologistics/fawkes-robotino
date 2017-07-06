@@ -48,7 +48,7 @@ skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="DECIDE_ENDSKILL"},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_SHELF_PUT", SkillJumpState, skills={{shelf_put}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="FINAL", fail_to="FAILED"},
@@ -67,20 +67,16 @@ fsm:add_transitions{
 
 function MPS_ALIGN:init()
    -- align in front of the conveyor belt
-   self.args["mps_align"].x = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")
-   if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
-      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
-      self.args["mps_align"].y = 0.02
-   else
-      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
-      self.args["mps_align"].y = -0.02
-   end 
-end
-
-function CONVEYOR_ALIGN:init()
-   if self.fsm.vars.option == "pick" then
-      self.args["conveyor_align"].product_present = true
-   end
+--   self.args["mps_align"].x = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")
+--   if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
+--      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
+--      self.args["mps_align"].y = 0.02
+--   else
+--      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
+--      self.args["mps_align"].y = -0.02
+--   end 
+   self.args["mps_align"].x = 0.43
+   self.args["mps_align"].y = -0.04
 end
 
 function SKILL_SHELF_PUT:init()
@@ -121,6 +117,6 @@ function SKILL_PRODUCT_PUT:init()
          self.args["product_put"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_x")
       else
          self.args["product_put"].offset_x = 0
-      end 
+      end
    end 
 end

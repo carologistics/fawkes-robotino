@@ -39,7 +39,7 @@ documentation      = [==[ shelf_put
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
-local x_distance = 0.075
+local x_distance = 0.27
 if config:exists("/skills/align_distance_conveyor/x") then
       x_distance = config:get_float("/skills/align_distance_conveyor/x") - 0.01
 end
@@ -83,6 +83,7 @@ end
 
 function APPROACH_SHELF:init()
    self.args["approach_mps"].x = x_distance
+   self.args["approach_mps"].use_conveyor = false
 end
 
 function STORE_PRODUCT:init()
