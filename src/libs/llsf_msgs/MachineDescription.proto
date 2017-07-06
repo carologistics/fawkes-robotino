@@ -1,9 +1,10 @@
 
 /***************************************************************************
- *  Team.proto - LLSF Protocol - Team Identifier
+ *  MachineDescription.proto - LLSF Protocol - Machine Specification message
  *
- *  Created: Mon Mar 24 18:07:22 2014
- *  Copyright  2013-2014  Tim Niemueller [www.niemueller.de]
+ *  Created: Mon Mar 20 22:13:50 2017
+ *  Copyright  2013  Tim Niemueller [www.niemueller.de]
+ *             2017  Tobias Neumann
  ****************************************************************************/
 
 /*  Redistribution and use in source and binary forms, with or without
@@ -39,10 +40,21 @@ syntax = "proto2";
 package llsf_msgs;
 
 option java_package = "org.robocup_logistics.llsf_msgs";
-option java_outer_classname = "TeamProtos";
+option java_outer_classname = "MachineDescriptionProtos";
 
-// Team identifier.
-enum Team {
-  CYAN = 0;
-  MAGENTA = 1;
+enum LightColor {
+  RED = 0;
+  YELLOW = 1;
+  GREEN = 2;
+}
+
+enum LightState {
+  OFF = 0;
+  ON = 1;
+  BLINK = 2;
+}
+
+enum CSOp {
+  RETRIEVE_CAP = 1;
+  MOUNT_CAP    = 2;
 }

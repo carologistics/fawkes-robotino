@@ -59,7 +59,7 @@
   (time $?now)
   (pose (x ?px) (y ?py))
   (not (and
-    (active-robot (name ?name) (x ?x) (y ?y&:(and (< ?y 0) (< (abs ?x) (abs ?px)))))
+    (active-robot (name ?name) (x ?x) (y ?y&:(and (< ?y 1) (< (abs ?x) (abs ?px)))))
     (team-robot ?name)
   ))
   =>
@@ -152,3 +152,75 @@
   (printout warn "removing exp-state because we are in production" crlf)
   (retract ?s)
 )
+
+
+(defrule game-receive-field-layout-protobuf
+"At the end of the exploration phase, the Refbox sends the true field layout.
+ Assert a field-ground-truth fact for each machine the Refbox told us about."
+  (declare (salience ?*PRIORITY-LOW*))
+  (not (received-field-layout))
+  ?msg <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
+  (phase PRODUCTION)
+=>
+  (foreach ?machine (pb-field-list ?p "machines")
+    (bind ?name (sym-cat (pb-field-value ?machine "name")))
+    (bind ?rot  FALSE)
+    (bind ?zone FALSE)
+    (bind ?type FALSE)
+    (if (pb-has-field ?p "rotation") then
+      (bind ?rot  (pb-field-value ?machine "rotation"))
+    )
+    (if (pb-has-field ?p "zone") then
+      (bind ?zone (clips-name (pb-field-value ?machine "zone")))
+    )
+    (if (pb-has-field ?p "type") then
+      (bind ?type (sym-cat (pb-field-value ?machine "type")))
+    )
+
+    (if (and ?zone ?rot ?type) then
+      (assert
+        (field-ground-truth
+          (machine ?name)
+          (yaw (deg-to-rad ?rot))
+          (orientation ?rot)
+          (zone ?zone)
+          (mtype ?type)
+        )
+      )
+    else
+      (printout t "Received incomplete ground-truth from refbox. Machine: " ?name
+        ", rot: " ?rot ", zone: " ?zone ", type: " ?type crlf)
+    )
+  )
+  (assert (received-field-layout))
+  (retract ?msg)
+)
+
+
+(defrule game-zone-exploration-mark-correct
+  ?gt <- (field-ground-truth (machine ?machine) (orientation ?ori) (zone ?zone) (mtype ?mtype))
+  (found-tag (name ?machine))
+  (exploration-result (machine ?machine) (zone ?zone) (orientation ?ori))
+  ?ze <- (zone-exploration (name ?zone))
+=>
+  (modify ?ze (correct TRUE))
+  (retract ?gt)
+)
+
+
+(defrule game-complete-zone-exploration-with-ground-truth
+"Integrate incoming field-ground-truth facts into our world model."
+  ?gt <- (field-ground-truth (machine ?machine) (yaw ?yaw) (zone ?zone) (mtype ?mtype))
+  (not (found-tag (name ?machine)))
+  ?ze <- (zone-exploration (name ?zone) (machine UNKNOWN|NONE))
+=>
+  (assert
+    (found-tag (name ?machine) (side INPUT) (frame "map")
+      (trans (tag-offset ?zone ?yaw 0.17))
+      (rot (tf-quat-from-yaw ?yaw))
+    )
+  )
+  (modify ?ze (machine ?machine) (correct TRUE))
+  (retract ?gt)
+)
+

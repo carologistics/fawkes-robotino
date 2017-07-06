@@ -74,7 +74,7 @@
     (state EXP_GOTO_NEXT)
   )
   (navigator-set-speed ?max-velocity ?max-rotation)
-  (skill-call drive_to_local place ?next-node)
+  (skill-call goto place ?next-node)
 )
 
 
@@ -101,10 +101,32 @@
 )
 
 
+(defrule exp-goto-next-failed
+  (phase EXPLORATION)
+  ?s <- (state EXP_GOTO_NEXT)
+  ?skill-f <- (skill-done (name "goto") (status FAILED))
+  (exp-next-node (node ?node))
+  (navgraph-node (name ?node) (pos $?node-trans))
+
+  (Position3DInterface (id "Pose") (translation $?trans))
+  (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
+=>
+  (if (< (distance-mf ?node-trans ?trans) 1.5) then
+    (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
+  )
+  (retract ?s ?skill-f)
+  (navigator-set-speed ?max-velocity ?max-rotation)
+  (assert
+    (exp-searching)
+    (state EXP_IDLE)
+  )
+)
+
+
 (defrule exp-goto-next-final
   (phase EXPLORATION)
   ?s <- (state EXP_GOTO_NEXT)
-  ?skill-f <- (skill-done (name "drive_to_local") (status ?))
+  ?skill-f <- (skill-done (name "goto") (status ?))
   (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
 =>
   (retract ?s ?skill-f)
@@ -141,10 +163,12 @@
 (defrule exp-found-line
   "Found a line that is within an unexplored zone."
   (phase EXPLORATION)
-  (exp-searching)
   (LaserLineInterface (id ?id&~:(str-index "moving_avg" ?id))
     (visibility_history ?vh&:(>= ?vh 1))
     (time $?timestamp)
+    (end_point_1 $?ep1)
+    (end_point_2 $?ep2)
+    (frame_id ?frame)
   )
   (MotorInterface (id "Robotino") (vx ?vx) (vy ?vy))
   (exp-zone-margin ?zone-margin)
@@ -153,77 +177,15 @@
       (compensate-movement
         ?*EXP-MOVEMENT-COMPENSATION*
         (create$ ?vx ?vy)
-        (laser-line-get-center ?id ?timestamp)
+        (laser-line-center-map ?ep1 ?ep2 ?frame ?timestamp)
         ?timestamp
       )
     )))
     (machine UNKNOWN)
-    (line-visibility ?zn-vh&:(> ?vh ?zn-vh))
+    (line-visibility ?zn-vh&:(< ?zn-vh 1))
   )
 =>
-  (printout t "EXP found line: " ?zn " vh: " ?vh crlf)
-  (modify ?ze-f (line-visibility ?vh))
-)
-
-
-;(defrule exp-log-line
-;  (phase EXPLORATION)
-;  (exp-searching)
-;  (LaserLineInterface (id ?id&~:(str-index "moving_avg" ?id))
-;    (visibility_history ?vh&:(>= ?vh 1))
-;    (time $?timestamp)
-;  )
-;  (exp-zone-margin ?zone-margin)
-;  (test (get-zone ?zone-margin (laser-line-get-center ?id ?timestamp)))
-;=>
-;  (bind ?zone (get-zone ?zone-margin (laser-line-get-center ?id ?timestamp)))
-;  (do-for-all-facts ((?ze zone-exploration)) (eq ?ze:name ?zone)
-;    (bind ?m ?ze:machine)
-;    (bind ?lv ?ze:line-visibility)
-;  )
-;  (printout t "EXP log line: " ?zone " " ?m " " ?lv crlf)
-;)
-
-
-(defrule exp-stop-to-investigate-zone
-  (phase EXPLORATION)
-  (exp-searching)
-  ?st-f <- (state EXP_GOTO_NEXT)
-  (zone-exploration
-    (name ?zn)
-    (machine UNKNOWN)
-    (line-visibility ?vh&:(> ?vh 0))
-  )
-  ; Use the zone with the highest line-visibility
-  (not (zone-exploration (machine UNKNOWN) (line-visibility ?vh2&:(> ?vh2 ?vh))))
-
-  ; Neither this zone nor the opposite zone is locked
-  (not (locked-resource (resource ?r&:(eq ?r ?zn))))
-  (not (locked-resource (resource ?r2&:(eq ?r2 (mirror-name ?zn)))))
-=>
-  (delayed-do-for-all-facts ((?exp-f explore-zone-target)) TRUE (retract ?exp-f))
-  (retract ?st-f)
-  (assert
-    (state EXP_STOPPING)
-    (explore-zone-target (zone ?zn))
-  )
-  (skill-call relgoto x 0 y 0)
-)
-
-
-(defrule exp-stopped
-  (phase EXPLORATION)
-  ?srch-f <- (exp-searching)
-  ?st-f <- (state EXP_STOPPING)
-  (explore-zone-target (zone ?zn))
-  (MotorInterface (id "Robotino")
-    (vx ?vx&:(< ?vx 0.01)) (vy ?vy&:(< ?vy 0.01)) (omega ?w&:(< ?w 0.01))
-  )
-=>
-  (retract ?st-f ?srch-f)
-  (assert (state EXP_LOCK_REQUIRED)
-    (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?zn))
-  )
+  (synced-modify ?ze-f line-visibility ?vh)
 )
 
 
@@ -243,29 +205,101 @@
     (frame ?frame) (time $?timestamp)
   )
   (exp-zone-margin ?zone-margin)
-  (zone-exploration
+  ?ze-f <- (zone-exploration
     (name ?zn&:(eq ?zn (get-zone ?zone-margin (transform-safe "map" ?frame ?timestamp ?trans ?rot))))
     (machine UNKNOWN)
+    (line-visibility ?lv&:(< ?lv 2))
   )
   (not (locked-resource (resource ?r&:(eq ?r ?zn))))
   ?st-f <- (state ?)
 =>
-  (skill-call relgoto x 0 y 0)
-  (retract ?srch-f ?st-f)
-  (assert (state EXP_LOCK_REQUIRED)
+  (synced-modify ?ze-f line-visibility (+ ?lv 1))
+)
+
+
+(defrule exp-try-locking-zone
+  (phase EXPLORATION)
+  (exp-searching)
+  (state EXP_GOTO_NEXT)
+  ; Not currently locked/trying to lock anything
+  (not (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))
+  (not (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))
+
+  ; A zone for which no lock was refused yet
+  (zone-exploration
+    (name ?zn)
+    (machine UNKNOWN)
+    (line-visibility ?vh&:(> ?vh 0))
+  )
+  (not (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn)))
+
+  ; Neither this zone nor the opposite zone is locked
+  (not (locked-resource (resource ?r&:(eq ?r ?zn))))
+  (not (locked-resource (resource ?r2&:(eq ?r2 (mirror-name ?zn)))))
+
+  ; Locks for all closer zones with a line-visibility > 0 have been refused
+  (Position3DInterface (id "Pose") (translation $?trans))
+  (forall
+    (zone-exploration (machine UNKNOWN) (line-visibility ?vh2&:(> ?vh2 0))
+      (name ?zn2&:(< (distance-mf ?trans (zone-center ?zn2)) (distance-mf ?trans (zone-center ?zn))))
+    )
+    (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn2))
+  )
+=>
+  (printout t "EXP trying to lock zone " ?zn crlf)
+  (assert
     (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?zn))
+  )
+)
+
+
+(defrule exp-tried-locking-all-zones
+  "There is at least one unexplored zone with a line, but locks have been denied for
+   ALL unexplored zones. So clear all REFUSEs and start requesting locks from the beginning."
+  (zone-exploration (name ?) (machine UNKNOWN) (line-visibility ?tmp&:(> ?tmp 0)))
+  (forall
+    (zone-exploration (name ?zn) (machine UNKNOWN) (line-visibility ?vh&:(> ?vh 0)))
+    (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))
+  )
+=>
+  (delayed-do-for-all-facts ((?l lock)) (and (eq ?l:type REFUSE) (eq ?l:agent ?*ROBOT-NAME*))
+    (retract ?l)
+  )
+)
+
+
+(defrule exp-stop-to-investigate-zone
+  "Lock for an explorable zone was accepted"
+  (phase EXPLORATION)
+  (exp-searching)
+  ?st-f <- (state EXP_GOTO_NEXT)
+
+  (zone-exploration (name ?zn))
+  (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))
+=>
+  (printout t "EXP exploring zone " ?zn crlf)
+  (delayed-do-for-all-facts ((?exp-f explore-zone-target)) TRUE (retract ?exp-f))
+  (retract ?st-f)
+  (assert
+    (state EXP_STOPPING)
     (explore-zone-target (zone ?zn))
   )
+  (skill-call relgoto x 0 y 0)
 )
 
 
 (defrule exp-skill-explore-zone
   (phase EXPLORATION)
-  ?st-f <- (state EXP_LOCK_ACCEPTED)
-  ?exp-f <- (explore-zone-target (zone ?zn))
+  ?srch-f <- (exp-searching)
+  ?st-f <- (state EXP_STOPPING)
+  (explore-zone-target (zone ?zn))
+  (skill-done (name "relgoto"))
+  (MotorInterface (id "Robotino")
+    (vx ?vx&:(< ?vx 0.01)) (vy ?vy&:(< ?vy 0.01)) (omega ?w&:(< ?w 0.01))
+  )
   (navigator-default-vmax (velocity ?trans-vmax) (rotation ?rot-vmax))
 =>
-  (retract ?exp-f ?st-f)
+  (retract ?st-f ?srch-f)
   (assert (state EXP_EXPLORE_ZONE))
   (navigator-set-speed ?trans-vmax ?rot-vmax)
   (skill-call explore_zone zone (str-cat ?zn))
@@ -285,8 +319,10 @@
   ; We don't check the visibility_history here since that's already done in the explore_zone skill
   (tag-matching (tag-id ?tag-id) (machine ?machine) (side ?side) (team ?team-color))
   ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (times-searched ?times-searched))
+  (machine (name ?machine) (mtype ?mtype))
+  ?exp-f <- (explore-zone-target (zone ?zn))
 =>
-  (retract ?st-f ?skill-f)
+  (retract ?st-f ?skill-f ?exp-f)
   (assert
     (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))
   )
@@ -298,6 +334,17 @@
     (synced-assert (str-cat "(found-tag (name " ?machine ") (side " ?side ")"
       "(frame \"map\") (trans " (implode$ ?trans) ") "
       "(rot " (implode$ ?rot) ") )")
+    )
+    (assert
+      (exploration-result
+        (machine ?machine) (zone ?zn2)
+        (orientation ?orientation) (team ?team-color)
+      )
+      (exploration-result
+        (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
+        (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
+        (team (mirror-team ?team-color))
+      )
     )
   )
   (assert
@@ -311,22 +358,82 @@
   (phase EXPLORATION)
   ?st-f <- (state EXP_EXPLORE_ZONE)
   ?skill-f <- (skill-done (name "explore_zone") (status ?status))
-  (ZoneInterface (search_state ~YES))
+  ?exp-f <- (explore-zone-target (zone ?zn))
+  (ZoneInterface (id "/explore-zone/info") (zone ?zn-str) (search_state ?s&:(neq ?s YES)))
+  ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (machine ?machine))
 =>
-  (retract ?st-f ?skill-f)
+  (retract ?st-f ?skill-f ?exp-f)
   (if (eq ?status FINAL) then
     (printout error "BUG in explore_zone skill: Result is FINAL but no MPS was found.")
   )
+  (if (and (eq ?s NO) (eq ?machine UNKNOWN)) then
+    (synced-modify ?ze machine NONE)
+  else
+    (synced-modify ?ze line-visibility -1)
+  )
   (assert
+    (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))
     (exp-searching)
     (state EXP_IDLE)
   )
 )
 
 
+(defrule exp-report-to-refbox
+  (phase EXPLORATION)
+  (team-color ?color)
+  (exploration-result (team ?color) (machine ?machine) (zone ?zone)
+    (orientation ?orientation)
+  )
+  (time $?now)
+  ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 1)) (seq ?seq))
+  (game-time $?game-time)
+  (confval (path "/clips-agent/rcll2016/exploration/latest-send-last-report-time")
+    (value ?latest-report-time)
+  )
+  (team-color ?team-color&~nil)
+  (peer-id private ?peer)
+  (state ?s) ; TODO actually enter EXP_PREPARE_FOR_PRODUCTION_FINISHED state
+=>
+  (bind ?mr (pb-create "llsf_msgs.MachineReport"))
+  (pb-set-field ?mr "team_color" ?team-color)
+  (delayed-do-for-all-facts ((?er exploration-result)) (eq ?er:team ?team-color)
+    (bind ?n-explored (length
+      (find-all-facts ((?f zone-exploration))
+        (and (eq ?f:team ?team-color) (neq ?f:machine UNKNOWN))
+      )
+    ))
+    (bind ?n-zones (length
+      (find-all-facts ((?f zone-exploration)) (eq ?f:team ?team-color))
+    ))
+    ; send report for last machine only if the exploration phase is going to end
+    ; or we are prepared for production
+    (if
+      (or
+        (< ?n-explored (- ?n-zones 1))
+        (>= (nth$ 1 ?game-time) ?latest-report-time)
+        (eq ?s EXP_PREPARE_FOR_PRODUCTION_FINISHED)
+      )
+    then
+      (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
+      (pb-set-field ?mre "name" (str-cat ?er:machine))
+      (pb-set-field ?mre "zone" (protobuf-name ?er:zone))
+      (pb-set-field ?mre "rotation" ?er:orientation)
+      (pb-add-list ?mr "machines" ?mre)
+    )
+  )
+  (pb-broadcast ?peer ?mr)
+  (modify ?ws (time ?now) (seq (+ ?seq 1)))
+)
+
+
 (defrule exp-mirror-tag
   (found-tag (name ?machine) (side ?side) (frame ?frame) (trans $?trans) (rot $?rot))
   ; Assuming that ?frame is always "map". Otherwise things will break rather horribly...
+
+  (not (field-ground-truth (machine ?machine)))
+  ; Do not trigger while updating zones/tags from Refbox PB msg after exploration
+
   (tag-matching (tag-id ?tag) (machine ?machine) (side ?side))
   (zone-exploration (name ?zn) (machine ?machine) (times-searched ?times-searched))
 
@@ -335,17 +442,33 @@
   )
   (not (found-tag (name ?machine2&:(eq ?machine2 (mirror-name ?machine)))))
   ?ze2 <- (zone-exploration (name ?zn2&:(eq ?zn2 (mirror-name ?zn))))
+  (machine (name ?machine) (mtype ?mtype))
 =>
+  (bind ?m-rot (mirror-rot ?mtype ?zn ?rot))
+  (if (neq ?rot ?m-rot) then
+    (bind ?tag-yaw (tf-yaw-from-quat ?rot))
+    (bind ?c-trans (translate-tag-x ?tag-yaw -0.17 ?trans))
+    (bind ?m-trans
+      (translate-tag-x
+        (tf-yaw-from-quat ?m-rot)
+        0.17
+        (mirror-trans ?c-trans)
+      )
+    )
+  else
+    (bind ?m-trans (mirror-trans ?trans))
+  )
+  (printout t crlf "========= " ?m-trans crlf crlf)
   (assert
     (found-tag (name ?machine2) (side ?side) (frame ?frame)
-      (trans (mirror-trans ?trans)) (rot (mirror-rot ?rot))
+      (trans ?m-trans) (rot ?m-rot)
     )
   )
-  (modify ?ze2 (machine ?machine2) (times-searched ?times-searched))
+  (synced-modify ?ze2 machine ?machine2 times-searched ?times-searched)
 )
 
 
-(defrule exp-report-found-tag
+(defrule exp-add-tag-to-navgraph
   (or
     (NavGraphWithMPSGeneratorInterface (final TRUE))
     (NavGraphWithMPSGeneratorInterface (msgid 0))
@@ -371,15 +494,14 @@
 )
 
 
-(defrule exp-check-resource-locking
-  "Handle a lock that was accepted by the master"
+(defrule exp-exploration-ends-cleanup
+  "Clean up lock refusal facts when exploration ends"
   (phase EXPLORATION)
-  ?s <- (state EXP_LOCK_REQUIRED)
-  ?l <- (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?r))
-  =>
-  (printout t "Lock for " ?r " accepted." crlf)
-  (retract ?s ?l)
-  (assert (state EXP_LOCK_ACCEPTED))
+  (change-phase PRODUCTION)
+=>
+  (delayed-do-for-all-facts ((?l lock)) (eq ?l:type REFUSE)
+    (retract ?l)
+  )
 )
 
 

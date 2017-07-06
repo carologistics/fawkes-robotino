@@ -12,6 +12,10 @@
   (return (float (sqrt (float(+ (* (- ?x ?x2) (- ?x ?x2)) (* (- ?y ?y2) (- ?y ?y2)))))))
 )
 
+(deffunction distance-mf (?p1 ?p2)
+  (return (distance (nth$ 1 ?p1) (nth$ 2 ?p1) (nth$ 1 ?p2) (nth$ 2 ?p2)))
+)
+
 (deffunction is-working ($?out-of-order)
   "Check if a machine is not out of order"
   (return (eq (nth$ 1 ?out-of-order) 0))
@@ -175,6 +179,14 @@
 (deffunction utils-get-2d-center (?x1 ?y1 ?x2 ?y2)
   (return (create$ (/ (+ ?x1 ?x2) 2) (/ (+ ?y1 ?y2) 2)))
 )
+
+
+(deffunction laser-line-center-map (?ep1 ?ep2 ?frame ?timestamp)
+  (bind ?c (utils-get-2d-center (nth$ 1 ?ep1) (nth$ 2 ?ep1) (nth$ 1 ?ep2) (nth$ 2 ?ep2)))
+  (bind ?c3 (nth$ 1 ?c) (nth$ 2 ?c) 0)
+  (return (transform-safe "map" ?frame ?timestamp ?c3 (create$ 0 0 0 1)))
+)
+
 
 (deffunction round-down (?x)
   (bind ?round (round ?x))
@@ -439,25 +451,29 @@
   (return ?res)
 )
 
-(deffunction laser-line-get-center (?iface-id ?timestamp)
-  "Return the center of a laser line in map coordinates"
-  (bind ?idx (iface-get-idx ?iface-id))
-  (bind ?frame1 (str-cat "laser_line_" ?idx "_e1"))
-  (bind ?frame2 (str-cat "laser_line_" ?idx "_e2"))
-  (bind ?ep2-from-ep1 (transform-safe ?frame1 ?frame2 ?timestamp
-                                      (create$ 0 0 0) (create$ 0 0 0 1)))
-  (if (not ?ep2-from-ep1) then
-    (return FALSE)
-  )
 
-  (bind ?mid-from-ep1
-    (/ (nth$ 1 ?ep2-from-ep1) 2)
-    (/ (nth$ 2 ?ep2-from-ep1) 2)
-    (/ (nth$ 3 ?ep2-from-ep1) 2)
+(deffunction zone-center (?zn)
+  (bind ?x (eval (sub-string 4 4 ?zn)))
+  (bind ?y (eval (sub-string 5 5 ?zn)))
+  (if (eq (sub-string 1 1 ?zn) "M") then
+    (bind ?x (* -1 ?x))
+    (bind ?sgn -1)
+  else
+    (bind ?sgn 1)
   )
-  (bind ?mid-map (transform-safe "map" ?frame1 ?timestamp ?mid-from-ep1 (create$ 0 0 0 1)))
-  (return ?mid-map)
+  (return (create$ (- ?x (* ?sgn 0.5)) (- ?y 0.5)))
 )
+
+
+(deffunction deg-to-rad (?deg)
+  (bind ?bigrad (* (/ ?deg 360) ?*2PI*))
+  (if (> ?bigrad ?*PI*) then
+    (return (* -1 (- ?*2PI* ?bigrad)))
+  else
+    (return ?bigrad)
+  )
+)
+
 
 (deffunction mirror-name (?zn)
   (bind ?team (sub-string 1 1 ?zn))
@@ -508,6 +524,25 @@
 )
 
 
+(deffunction tag-offset (?zone ?yaw ?width)
+  (bind ?c (zone-center ?zone))
+  (bind ?x (nth$ 1 ?c))
+  (bind ?y (nth$ 2 ?c))
+  (bind ?x (+ ?x (* (cos ?yaw) ?width)))
+  (bind ?y (+ ?y (* (sin ?yaw) ?width)))
+  (return (create$ ?x ?y 0.48))
+)
+
+
+(deffunction translate-tag-x (?tag-yaw ?dx $?trans)
+  (return (create$
+    (+ (nth$ 1 ?trans) (* (cos ?tag-yaw) ?dx))
+    (+ (nth$ 2 ?trans) (* (sin ?tag-yaw) ?dx))
+    (nth$ 3 ?trans)
+  ))
+)
+
+
 (deffunction mirror-trans ($?trans)
   (return (create$
     (- 0 (nth$ 1 ?trans))
@@ -516,13 +551,114 @@
   ))
 )
 
-(deffunction mirror-rot ($?rot)
-  (bind ?yaw (tf-yaw-from-quat ?rot))
-  (bind ?yaw-mirror (+ (- 0 (- ?yaw ?*PI-HALF*)) ?*PI-HALF*))
-  (if (> ?yaw-mirror ?*PI*) then
-    (bind ?yaw-mirror (- ?yaw-mirror ?*2PI*)))
-  (if (< ?yaw-mirror (- 0 ?*PI*)) then
-    (bind ?yaw-mirror (+ ?yaw-mirror ?*2PI*)))
-  (return (tf-quat-from-yaw ?yaw-mirror))
+
+(deffunction protobuf-name (?zone)
+  (return
+    (str-cat (sub-string 1 1 ?zone) "_" (sub-string 3 99 ?zone))
+  )
+)
+
+
+(deffunction clips-name (?zone)
+  (return
+    (sym-cat (sub-string 1 1 ?zone) "-" (sub-string 3 99 ?zone))
+  )
+)
+
+(deffunction want-mirrored-rotation (?mtype ?zone)
+"According to the RCLL2017 rulebook, this is when a machine is mirrored"
+  (bind ?zn (str-cat ?zone))
+  (bind ?x (eval (sub-string 4 4 ?zn)))
+  (bind ?y (eval (sub-string 5 5 ?zn)))
+
+  (return (or (member$ ?mtype (create$ BS DS SS))
+              (not (or (eq ?x 7) ; left or right
+                       (eq ?y 8) ; top wall
+                       (eq ?y 1) ; bottom wall
+                       (and (member$ ?x (create$ 5 6 7)); insertion
+                            (eq ?y 2)
+                       )
+                   )
+              )
+  ))
+)
+
+(deffunction mirror-rot (?mtype ?zone $?rot)
+"Mirror rotation according to rules, $?rot is a quaternion"
+  (if (want-mirrored-rotation ?mtype ?zone) then
+    (bind ?yaw (tf-yaw-from-quat ?rot))
+    (bind ?yaw-mirror (+ (- 0 (- ?yaw ?*PI-HALF*)) ?*PI-HALF*))
+    (if (> ?yaw-mirror ?*PI*) then
+      (bind ?yaw-mirror (- ?yaw-mirror ?*2PI*)))
+    (if (< ?yaw-mirror (- 0 ?*PI*)) then
+      (bind ?yaw-mirror (+ ?yaw-mirror ?*2PI*)))
+    (return (tf-quat-from-yaw ?yaw-mirror))
+  else
+    (bind ?zn (str-cat ?zone))
+    (bind ?t (sub-string 1 1 ?zn))
+    (bind ?x (eval (sub-string 4 4 ?zn)))
+    (bind ?y (eval (sub-string 5 5 ?zn)))
+
+    (if (eq ?y 8) then
+      (return (tf-quat-from-yaw ?*PI*))
+    )
+    (if (or (eq ?y 1) (eq ?y 2)) then
+      (return (tf-quat-from-yaw 0.0))
+    )
+    (if (and (eq ?x 7) (eq ?t "M")) then  ; this is the other way around, because I compare with the team color of the originalting machine
+      (return (tf-quat-from-yaw ?*PI-HALF*))
+    )
+    (if (and (eq ?x 7) (eq ?t "C")) then
+      (return (tf-quat-from-yaw (- 0 ?*PI-HALF*)))
+    )
+    (printout error "error in rotation of machines, checked all possible cases, but nothing cateched" crlf)
+    (return ?rot)
+  )
+)
+
+
+(deffunction mirror-team (?team)
+  (if (eq (sym-cat ?team) CYAN) then
+    (return MAGENTA)
+  else
+    (return CYAN)
+  )
+)
+
+(deffunction mirror-orientation (?mtype ?zone ?ori)
+  (bind ?zn (str-cat ?zone))
+  (bind ?t (sub-string 1 1 ?zn))
+  (if (want-mirrored-rotation ?mtype ?zone)
+   then
+    (if (eq ?t "C")
+     then
+      (do-for-fact ((?mo mirror-orientation)) (eq ?mo:cyan ?ori)
+        (bind ?m-ori ?mo:magenta)
+      )   
+     else
+      (do-for-fact ((?mo mirror-orientation)) (eq ?mo:magenta ?ori)
+        (bind ?m-ori ?mo:cyan)
+      )   
+    )   
+    (return ?m-ori)
+   else
+    (bind ?x (eval (sub-string 4 4 ?zn)))
+    (bind ?y (eval (sub-string 5 5 ?zn)))
+
+    (if (eq ?y 8) then
+      (return 180)
+    )   
+    (if (or (eq ?y 1) (eq ?y 2)) then
+      (return 0)
+    )   
+    (if (and (eq ?x 7) (eq ?t "M")) then  ; this is the other way around, because I compare with the team color of the originalting machine
+      (return 90) 
+    )   
+    (if (and (eq ?x 7) (eq ?t "C")) then
+      (return 270)
+    )   
+    (printout error "error in rotation of machines, checked all possible cases, but nothing cateched" crlf)
+    (return ?ori)
+  )
 )
 
