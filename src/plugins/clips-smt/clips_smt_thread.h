@@ -107,8 +107,18 @@ private:
 	bool _solver_done;
 
 	// Francescos formula encoding
-	z3::expr_vector clips_smt_encoder(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m);
-	void clips_smt_solve_formula(std::map<std::string, z3::expr>& variables_pos, std::map<std::string, z3::expr>& variables_d, std::map<std::string, z3::expr>& variables_m,z3::expr_vector formula);
+	z3::expr_vector clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
+										std::map<std::string, z3::expr>& varRobotDuration,
+										std::map<std::string, z3::expr>& varRobotPosition,
+										std::map<std::string, z3::expr>& varMachineDuration,
+										std::map<std::string, z3::expr>& varR,
+										std::map<std::string, z3::expr>& varA,
+										std::map<std::string, z3::expr>& varM,
+										std::map<std::string, z3::expr>& varHold,
+										std::map<std::string, z3::expr>& varS,
+										std::map<std::string, z3::expr>& varRew,
+										std::map<std::string, z3::expr>& varInit);
+	void clips_smt_solve_formula(z3::expr_vector formula);
 
 	void clips_smt_solve_formula_from_smt_file(std::string path);
 	void clips_smt_optimize_formula_from_smt_file(std::string path, std::string var);
@@ -117,6 +127,31 @@ private:
 	std::map<int ,std::string> actions_robot_1;
 	std::map<int ,std::string> actions_robot_2;
 	std::map<int ,std::string> actions_robot_3;
+
+	// Constants for C0-C1
+	const int number_actions = 18;
+	const int plan_horizon = 14;
+	const int deadline = 60;
+	const int time_to_do_something = 5;
+
+	// States of machines for C0-C1
+	std::map<int ,std::string> state1_machines;
+	const int min_state1_machines = 0, max_state1_machines = 20;
+
+	std::map<int ,std::string> state2_machines;
+	const int min_state2_machines = 0, max_state2_machines = 3;
+
+	std::map<int ,std::string> state3_machines;
+	const int min_state3_machines = -1, max_state3_machines = 20;
+
+	std::map<int ,std::string> products;
+	const int min_products = 0, max_products = 20;
+
+	std::map<int ,std::string> machine_groups;
+	const int min_machine_groups = 0, max_machine_groups = 3;
+
+	// Map for incoming orders
+	std::map<int ,std::string> name_orders;
 
 	// Leonards formula encoding
 	GameData clips_smt_convert_protobuf_to_gamedata();
