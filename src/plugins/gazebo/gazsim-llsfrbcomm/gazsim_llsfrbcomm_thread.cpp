@@ -102,8 +102,6 @@ GazsimLLSFRbCommThread::init()
   machine_info_pub_ = gazebo_world_node->Advertise<llsf_msgs::MachineInfo>(config->get_string("/gazsim/topics/machine-info"));
   game_state_pub_ = gazebo_world_node->Advertise<llsf_msgs::GameState>(config->get_string("/gazsim/topics/game-state"));
   puck_info_pub_ = gazebo_world_node->Advertise<llsf_msgs::PuckInfo>(config->get_string("/gazsim/topics/puck-info"));
-  place_puck_under_machine_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/place-puck-under-machine"), &GazsimLLSFRbCommThread::on_puck_place_msg, this);
-  remove_puck_under_machine_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/remove-puck-under-machine"), &GazsimLLSFRbCommThread::on_puck_remove_msg, this);
   time_sync_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/time"), &GazsimLLSFRbCommThread::on_time_sync_msg, this);
   set_game_state_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/set-game-state"), &GazsimLLSFRbCommThread::on_set_game_state_msg, this);
   set_game_phase_sub_ = gazebo_world_node->Subscribe(config->get_string("/gazsim/topics/set-game-phase"), &GazsimLLSFRbCommThread::on_set_game_phase_msg, this);
@@ -203,28 +201,6 @@ void GazsimLLSFRbCommThread::create_client()
 
   //this invokes the connect in the loop
   disconnected_recently_ = true;
-}
-
-void GazsimLLSFRbCommThread::on_puck_place_msg(ConstPlacePuckUnderMachinePtr &msg)
-{
-  //logger->log_info(name(), "Sending PPUM to refbox");
-  if(!client_->connected())
-  {
-    return;
-  }
-  llsf_msgs::PlacePuckUnderMachine to_rb = *msg;
-  client_->send(to_rb);
-}
-
-void GazsimLLSFRbCommThread::on_puck_remove_msg(ConstRemovePuckFromMachinePtr &msg)
-{
-  //logger->log_info(name(), "Sending RPFM to refbox");
-  if(!client_->connected())
-  {
-    return;
-  }
-  llsf_msgs::RemovePuckFromMachine to_rb = *msg;
-  client_->send(to_rb);
 }
 
 void GazsimLLSFRbCommThread::on_time_sync_msg(ConstSimTimePtr &msg)
