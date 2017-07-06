@@ -214,6 +214,7 @@ if [  $COMMAND  == kill ]; then
     killall roscore
     killall llsf-refbox
     killall llsf-refbox-shell
+    killall roslaunch
     exit 0
 fi
 
@@ -260,6 +261,8 @@ if [  $COMMAND  == start ]; then
     	do
 	    # robot roscore
 	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"'"
+            # move_base
+	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"'"
 	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
 	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_PORT $KEEP $@\"'"
 	fi

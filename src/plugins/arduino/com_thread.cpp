@@ -49,6 +49,7 @@ ArduinoComThread::ArduinoComThread(std::string &cfg_name,
         std::string &cfg_prefix)
 : Thread("ArduinoComThread", Thread::OPMODE_WAITFORWAKEUP),
         BlackBoardInterfaceListener("ArduinoThread(%s)", cfg_name.c_str()),
+        BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_WORLDSTATE),
         serial_(io_service_), deadline_(io_service_)
 {
     data_mutex_ = new Mutex();

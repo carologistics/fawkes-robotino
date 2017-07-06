@@ -198,9 +198,9 @@ case $COMMAND in
 	;;
     move_base ) 
 	export ROS_MASTER_URI=http://localhost:$PORT
-	#rosparam set /use_sim_time true
+	rosparam set /use_sim_time true
 	export ROS_PACKAGE_PATH=$FAWKES_DIR/cfg/move_base_robotino:$ROS_PACKAGE_PATH
-	roslaunch $@ $FAWKES_DIR/cfg/move_base_robotino/launch/move_base.launch
+	roslaunch $@ --wait robotino_move_base robotino_move_base_simu.launch
 	;;
     refbox )
 	$LLSF_REFBOX_DIR/bin/llsf-refbox $@

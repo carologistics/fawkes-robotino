@@ -55,7 +55,8 @@ public fawkes::LoggingAspect,
 public fawkes::ConfigurableAspect,
 public fawkes::ClockAspect,
 public fawkes::BlackBoardAspect,
-public fawkes::BlackBoardInterfaceListener
+public fawkes::BlackBoardInterfaceListener,
+public fawkes::BlockedTimingAspect
 {
 public:
 
