@@ -95,6 +95,7 @@ end
 
 function APPROACH_SHELF:init()
    self.args["approach_mps"].x = x_distance
+   self.args["approach_mps"].use_conveyor = false
 end
 
 function GRAB_PRODUCT:init()

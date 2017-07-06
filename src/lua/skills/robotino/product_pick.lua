@@ -80,6 +80,7 @@ end
 
 function DRIVE_FORWARD:init()
    self.args["approach_mps"].x = x_distance - self.fsm.vars.offset_x
+   self.args["approach_mps"].use_conveyor = true
 end
 
 function MOVE_BACK:init()

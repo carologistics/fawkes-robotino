@@ -69,9 +69,9 @@ function transformed_pose(self)
 end
 
 function conveyor_ready(self)
---  if not self.fsm.vars.use_conveyor then
---    return false
---  end
+  if not self.fsm.vars.use_conveyor then
+    return false
+  end
 
   self.fsm.vars.pose = transformed_pose()
   if if_conveyor:visibility_history() > 5 and self.fsm.vars.pose.x < 0.5 then
@@ -83,9 +83,9 @@ function conveyor_ready(self)
 end
 
 function laser_lines_ready(self)
---  if self.fsm.vars.use_conveyor then
---    return false
---  end
+  if self.fsm.vars.use_conveyor then
+    return false
+  end
 
   if if_front_dist:visibility_history() > 0 and self.fsm.vars.ll_dist < 1.0 then
     return true
@@ -106,7 +106,7 @@ fsm:define_states{ export_to=_M, closure={
 
 fsm:add_transitions{
    {"INIT", "APPROACH_CONVEYOR", cond=conveyor_ready},
---   {"INIT", "APPROACH_LASERLINE", cond=laser_lines_ready},
+   {"INIT", "APPROACH_LASERLINE", cond=laser_lines_ready},
    {"INIT", "INIT_LASER_LINES", timeout=2.0},
    {"INIT_LASER_LINES", "APPROACH_LASERLINE", cond="laser_lines_ready(self)"},
    {"INIT_LASER_LINES", "FAILED", timeout=1.0}

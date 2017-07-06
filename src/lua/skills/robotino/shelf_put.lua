@@ -83,6 +83,7 @@ end
 
 function APPROACH_SHELF:init()
    self.args["approach_mps"].x = x_distance
+   self.args["approach_mps"].use_conveyor = false
 end
 
 function STORE_PRODUCT:init()
