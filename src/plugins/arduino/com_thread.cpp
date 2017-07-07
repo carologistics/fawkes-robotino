@@ -242,7 +242,7 @@ ArduinoComThread::loop()
             set_speed_pending_ ||
             move_to_z_0_pending_ ||
             init_pos_pending_) {
-        wakeup();
+        loop();
     }
 
 
