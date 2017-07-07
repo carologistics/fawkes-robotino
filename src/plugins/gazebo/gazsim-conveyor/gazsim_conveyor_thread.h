@@ -34,7 +34,6 @@
 #include <interfaces/SwitchInterface.h>
 #include <utils/time/time.h>
 #include <plugins/gazebo/aspect/gazebo.h>
-#include <plugins/conveyor_pose/interfaces/ConveyorConfigInterface.h_ext>
 
 #include <llsf_msgs/ConveyorVisionResult.pb.h>
 
@@ -68,7 +67,7 @@ class GazsimConveyorThread
  private:
   fawkes::Position3DInterface *pos_if_;
   fawkes::SwitchInterface *switch_if_;
-  fawkes::ConveyorConfigInterface *conv_config_if_;
+  //fawkes::ConveyorConfigInterface *conv_config_if_;
 
   std::string  conveyor_if_name_;
   std::string  frame_name_;
