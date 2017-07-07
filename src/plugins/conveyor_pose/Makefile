@@ -24,8 +24,6 @@ include $(BUILDSYSDIR)/boost.mk
 include $(BUILDSYSDIR)/ros.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
-PRESUBDIRS = interfaces
-
 HAVE_BULLET_VERSION = $(if $(shell $(PKGCONFIG) --atleast-version=2.82 'bullet'; echo $${?/1/}),1,0)
 
 REQUIRED_PCL_LIBS = sample_consensus segmentation filters surface features
