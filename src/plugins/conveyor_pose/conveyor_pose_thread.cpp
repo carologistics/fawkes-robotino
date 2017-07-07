@@ -526,7 +526,7 @@ ConveyorPoseThread::pose_get_avg(pose & out)
   }
 
   if (poses_used.size() <= cfg_pose_avg_min_) {
-    logger->log_warn(name(), "not enough for average, got: %lu", poses_used.size());
+    logger->log_warn(name(), "not enough for average, got: %zu", poses_used.size());
     return false;
   }
 
