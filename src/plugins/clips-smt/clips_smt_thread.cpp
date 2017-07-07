@@ -60,96 +60,82 @@ ClipsSmtThread::init()
 	clips_smt_test_formulaGenerator();
 
 	// initialize maps for Francesco's encoder for C0-C1
-	state1_machines[0]="not_prep";
-	state1_machines[1]="retrieve_C1";
-	state1_machines[2]="retrieve_C2";
-	state1_machines[3]="mount_C1";
-	state1_machines[4]="mount_C2";
-	state1_machines[5]="prep_B1";
-	state1_machines[6]="prep_B2";
-	state1_machines[7]="prep_B3";
-	state1_machines[8]="slide_one_prep_B1C1";
-	state1_machines[9]="slide_one_prep_B1C2";
-	state1_machines[10]="slide_one_prep_B2C1";
-	state1_machines[11]="slide_one_prep_B2C2";
-	state1_machines[12]="slide_one_prep_B3C1";
-	state1_machines[13]="slide_one_prep_B3C2";
-	state1_machines[14]="mount_R1";
-	state1_machines[15]="slide_one_prep_B1R1C1";
-	state1_machines[16]="slide_one_prep_B1R1C2";
-	state1_machines[17]="slide_one_prep_B2R1C1";
-	state1_machines[18]="slide_one_prep_B2R1C2";
-	state1_machines[19]="slide_one_prep_B3R1C1";
-	state1_machines[20]="slide_one_prep_B3R1C2";
+	state1_machines["not_prep"]=0;
+	state1_machines["retrieve_C1"]=1;
+	state1_machines["retrieve_C2"]=2;
+	state1_machines["mount_C1"]=3;
+	state1_machines["mount_C2"]=4;
+	state1_machines["prep_B1"]=5;
+	state1_machines["prep_B2"]=6;
+	state1_machines["prep_B3"]=7;
+	state1_machines["slide_one_prep_B1C1"]=8;
+	state1_machines["slide_one_prep_B1C2"]=9;
+	state1_machines["slide_one_prep_B2C1"]=10;
+	state1_machines["slide_one_prep_B2C2"]=11;
+	state1_machines["slide_one_prep_B3C1"]=12;
+	state1_machines["slide_one_prep_B3C2"]=13;
+	state1_machines["mount_R1"]=14;
+	state1_machines["slide_one_prep_B1R1C1"]=15;
+	state1_machines["slide_one_prep_B1R1C2"]=16;
+	state1_machines["slide_one_prep_B2R1C1"]=17;
+	state1_machines["slide_one_prep_B2R1C2"]=18;
+	state1_machines["slide_one_prep_B3R1C1"]=19;
+	state1_machines["slide_one_prep_B3R1C2"]=20;
 
-	state2_machines[0]="empty";
-	state2_machines[1]="has_C1";
-	state2_machines[2]="has_C2";
-	state2_machines[3]="has_R3";
+	state2_machines["empty"]=0;
+	state2_machines["has_C1"]=1;
+	state2_machines["has_C2"]=2;
+	state2_machines["has_R1"]=3;
 
-	state3_machines[-1]="full";
-	state3_machines[0]="empty";
-	state3_machines[1]="B1";
-	state3_machines[2]="B2";
-	state3_machines[3]="B3";
-	state3_machines[4]="B1C1";
-	state3_machines[5]="B1C2";
-	state3_machines[6]="B2C1";
-	state3_machines[7]="B2C2";
-	state3_machines[8]="B3C1";
-	state3_machines[9]="B3C2";
-	state3_machines[10]="BRC1";
-	state3_machines[11]="BRC2";
-	state3_machines[12]="B1R1";
-	state3_machines[13]="B2R1";
-	state3_machines[14]="B3R1";
-	state3_machines[15]="B1R1C1";
-	state3_machines[16]="B1R1C2";
-	state3_machines[17]="B2R1C1";
-	state3_machines[18]="B2R1C2";
-	state3_machines[19]="B3R1C1";
-	state3_machines[20]="B3R1C2";
+	state3_machines["full"]=-1;
+	state3_machines["empty"]=0;
+	state3_machines["B1"]=1;
+	state3_machines["B2"]=2;
+	state3_machines["B3"]=3;
+	state3_machines["B1C1"]=4;
+	state3_machines["B1C2"]=5;
+	state3_machines["B2C1"]=6;
+	state3_machines["B2C2"]=7;
+	state3_machines["B3C1"]=8;
+	state3_machines["B3C2"]=9;
+	state3_machines["BRC1"]=10;
+	state3_machines["BRC2"]=11;
+	state3_machines["B1R1"]=12;
+	state3_machines["B2R1"]=13;
+	state3_machines["B3R1"]=14;
+	state3_machines["B1R1C1"]=15;
+	state3_machines["B1R1C2"]=16;
+	state3_machines["B2R1C1"]=17;
+	state3_machines["B2R1C2"]=18;
+	state3_machines["B3R1C1"]=19;
+	state3_machines["B3R1C2"]=20;
 
-	products[0]="nothing";
-	products[1]="B1";
-	products[2]="B2";
-	products[3]="B3";
-	products[4]="B1C1";
-	products[5]="B1C2";
-	products[6]="B2C1";
-	products[7]="B2C2";
-	products[8]="B3C1";
-	products[9]="B3C2";
-	products[10]="BRC1";
-	products[11]="BRC2";
-	products[12]="B1R1";
-	products[13]="B2R1";
-	products[14]="B3R1";
-	products[15]="B1R1C1";
-	products[16]="B1R1C2";
-	products[17]="B2R1C1";
-	products[18]="B2R1C2";
-	products[19]="B3R1C1";
-	products[20]="B3R1C2";
+	products["nothing"]=0;
+	products["B1"]=1;
+	products["B2"]=2;
+	products["B3"]=3;
+	products["B1C1"]=4;
+	products["B1C2"]=5;
+	products["B2C1"]=6;
+	products["B2C2"]=7;
+	products["B3C1"]=8;
+	products["B3C2"]=9;
+	products["BRC1"]=10;
+	products["BRC2"]=11;
+	products["B1R1"]=12;
+	products["B2R1"]=13;
+	products["B3R1"]=14;
+	products["B1R1C1"]=15;
+	products["B1R1C2"]=16;
+	products["B2R1C1"]=17;
+	products["B2R1C2"]=18;
+	products["B3R1C1"]=19;
+	products["B3R1C2"]=20;
 
-	machine_groups[0]="CS";
-	machine_groups[1]="BS";
-	machine_groups[2]="DS";
-	machine_groups[3]="RS";
-
-	name_orders[0]="B1C1";
-	name_orders[1]="B1C2";
-	name_orders[2]="B2C1";
-	name_orders[3]="B2C2";
-
-	name_orders[4]="B3C1";
-	name_orders[5]="B3C2";
-	name_orders[6]="B1R1C1";
-	name_orders[7]="B1R1C2";
-	name_orders[8]="B2R1C1";
-	name_orders[9]="B2R1C2";
-	name_orders[10]="B3R1C1";
-	name_orders[11]="B3R1C2";
+	machine_groups["CS"]=0;
+	machine_groups["BS"]=1;
+	machine_groups["DS"]=2;
+	machine_groups["RS"]=3;
 }
 
 
@@ -424,18 +410,33 @@ ClipsSmtThread::clips_smt_fill_node_names()
 	// }
 
 	// Set names of machines fix
-	node_names_[1] = "C-BS-I";
-	node_names_[2] = "C-RS1-I";
-	node_names_[3] = "C-RS2-I";
-	node_names_[4] = "C-CS1-I";
-	node_names_[5] = "C-CS2-I";
-	node_names_[6] = "C-DS-I";
+	// node_names_[1] = "C-BS-I";
+	// node_names_[2] = "C-RS1-I";
+	// node_names_[3] = "C-RS2-I";
+	// node_names_[4] = "C-CS1-I";
+	// node_names_[5] = "C-CS2-I";
+	// node_names_[6] = "C-DS-I";
 	// node_names_[7] = "C-BS-O";
 	// node_names_[8] = "C-RS1-O";
 	// node_names_[9] = "C-RS2-O";
 	// node_names_[10] = "C-CS1-O";
 	// node_names_[11] = "C-CS2-O";
 	// node_names_[12] = "C-DS-O";
+
+	node_names_[1] = "C-BS-I";
+	node_names_[2] = "C-CS1-I";
+	node_names_[3] = "C-CS1-O";
+	node_names_[4] = "C-DS-I";
+	node_names_[5] = "C-RS1-I";
+	node_names_[6] = "C-RS1-I";
+
+	node_names_inverted["C-ins-in"] = 0;
+	node_names_inverted["C-BS-I"] = 1;
+	node_names_inverted["C-CS1-I"] = 2;
+	node_names_inverted["C-CS2-O"] = 3;
+	node_names_inverted["C-DS-I"] = 4;
+	node_names_inverted["C-RS1-I"] = 5;
+	node_names_inverted["C-RS1-O"] = 6;
 }
 
 void
@@ -570,7 +571,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	for(int i = 0; i < number_machines+1; ++i){
 		for(int j = i+1; j < number_machines+1; ++j) {
 			z3::expr var(_z3_context);
-			std::string varName = "initDist" + std::to_string(i) + "_" + std::to_string(j);
+			std::string varName = "initDist_" + std::to_string(i) + "_" + std::to_string(j);
 			var=_z3_context.real_const((varName).c_str());
 			varInit.insert(std::make_pair(varName, var));
 		}
@@ -1337,6 +1338,474 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		}
 	}
 
+	// Action stuff for every order
+	for(int o=0; o<data.orders().size()/2; ++o){
+
+		// Actions for orders of complexity C0-C1 (all, thus we have to make no check)
+		// Determine base, ring and cap color
+		std::string bi = "B";
+		bi += std::to_string(data.orders(o+data.orders().size()/2).base_color());
+		std::string ci = "C";
+		ci += std::to_string(data.orders(o+data.orders().size()/2).cap_color());
+		std::string ri_1 = "R1";
+		std::string bi_ci = bi;
+		bi_ci += ci;
+		std::string bi_ri = bi;
+		bi_ri += ri_1;
+		std::string bi_ri_ci = bi_ri;
+		bi_ri_ci += ci;
+
+		std::string br_ci = "BR";
+		br_ci += ci;
+		std::string retrieve_ci = "retrieve_";
+		retrieve_ci += ci;
+		std::string has_ci = "has_";
+		has_ci += ci;
+		std::string mount_ci = "mount_";
+		mount_ci += ci;
+
+		std::string prep_bi = "prep_";
+		prep_bi += bi;
+		std::string slide_one_prep_bi_ci = "slide_one_prep_";
+		slide_one_prep_bi_ci += bi_ci;
+
+		std::string has_ri = "has_";
+		has_ri += ri_1;
+		std::string mount_ri = "mount_";
+		mount_ri += ri_1;
+		std::string slide_one_prep_bi_ri_ci = "slide_one_prep_";
+		slide_one_prep_bi_ri_ci += bi_ri_ci;
+
+		for(int i=1; i<plan_horizon+1; ++i){
+			// Determine variables needed
+			z3::expr var_a_i(_z3_context);
+			z3::expr var_m_i(_z3_context);
+			z3::expr var_state1A_i(_z3_context);
+			z3::expr var_state1B_i(_z3_context);
+			z3::expr var_state2A_i(_z3_context);
+			z3::expr var_state2B_i(_z3_context);
+			z3::expr var_state3A_i(_z3_context);
+			z3::expr var_state3B_i(_z3_context);
+			z3::expr var_md_i(_z3_context);
+			z3::expr var_pos_i(_z3_context);
+			z3::expr var_holdA_i(_z3_context);
+			z3::expr var_holdB_i(_z3_context);
+			z3::expr var_rd_i(_z3_context);
+
+			it_map = varA.find("A_"+std::to_string(i));
+			if(it_map != varA.end()) {
+				var_a_i = it_map->second;
+			}
+			else {
+				logger->log_error(name(), "var_a_%i not found", i);
+			}
+			it_map = varM.find("M_"+std::to_string(i));
+			if(it_map != varM.end()) {
+				var_m_i = it_map->second;
+			}
+			else {
+				logger->log_error(name(), "var_m_%i not found", i);
+			}
+			it_map = varS.find("state1A_"+std::to_string(i));
+			if(it_map != varS.end()) {
+				var_state1A_i = it_map->second;
+			}
+			else {
+				logger->log_error(name(), "var_state1A_%i not found", i);
+			}
+			it_map = varS.find("state1B_"+std::to_string(i));
+			if(it_map != varS.end()) {
+				var_state1B_i = it_map->second;
+			}
+			else {
+				logger->log_error(name(), "var_state1B_%i not found", i);
+			}
+			it_map = varS.find("state2A_"+std::to_string(i));
+			if(it_map != varS.end()) {
+				var_state2A_i = it_map->second;
+			}
+			else {
+				logger->log_error(name(), "var_state2A_%i not found", i);
+			}
+			it_map = varS.find("state2B_"+std::to_string(i));
+			if(it_map != varS.end()) {
+				var_state2B_i = it_map->second;
+			}
+			else {
+				logger->log_error(name(), "var_state2B_%i not found", i);
+			}
+			it_map = varS.find("state3A_"+std::to_string(i));
+			if(it_map != varS.end()) {
+				var_state3A_i = it_map->second;
+			}
+			else {
+				logger->log_error(name(), "var_state3A_%i not found", i);
+			}
+			it_map = varS.find("state3B_"+std::to_string(i));
+			if(it_map != varS.end()) {
+				var_state3B_i = it_map->second;
+			}
+			else {
+				logger->log_error(name(), "var_state3B_%i not found", i);
+			}
+			it_map = varMachineDuration.find("md_"+std::to_string(i));
+			if(it_map != varMachineDuration.end()) {
+				var_md_i = it_map->second;
+			}
+			else {
+				logger->log_error(name(), "var_md_%i not found", i);
+			}
+			it_map = varRobotPosition.find("pos_"+std::to_string(i));
+			if(it_map != varRobotPosition.end()) {
+				var_pos_i = it_map->second;
+			}
+			else {
+				logger->log_error(name(), "var_pos_%i not found", i);
+			}
+			it_map = varHold.find("holdA_"+std::to_string(i));
+			if(it_map != varHold.end()) {
+				var_holdA_i = it_map->second;
+			}
+			else {
+				logger->log_error(name(), "var_holdA_%i not found", i);
+			}
+			it_map = varHold.find("holdB_"+std::to_string(i));
+			if(it_map != varHold.end()) {
+				var_holdB_i = it_map->second;
+			}
+			else {
+				logger->log_error(name(), "var_holdB_%i not found", i);
+			}
+			it_map = varRobotDuration.find("rd_"+std::to_string(i));
+			if(it_map != varRobotDuration.end()) {
+				var_rd_i = it_map->second;
+			}
+			else {
+				logger->log_error(name(), "var_rd_%i not found", i);
+			}
+
+			// 1.Action : retrieve base with cap from shelf at CS
+			z3::expr constraint_action1((var_m_i == machine_groups["CS"])
+										&& (var_state1B_i == var_state1A_i)
+										&& (var_state2B_i == var_state2A_i)
+										&& (var_state3B_i == var_state3A_i)
+										&& (var_md_i == time_to_fetch)
+										&& (var_pos_i == node_names_inverted["C-CS1-I"])
+										&& (var_holdA_i == products["nothing"])
+										&& (var_holdB_i == products[br_ci])
+										&& (var_rd_i == 0));
+			constraints.push_back(!(var_a_i == 1) || constraint_action1);
+
+			// 2.Action : prepare CS to retrieve cap
+			z3::expr constraint_action2((var_m_i == machine_groups["CS"])
+										&& (var_state1A_i == state1_machines["not_prep"])
+										&& (var_state1B_i == state1_machines[retrieve_ci])
+										&& (var_state2B_i == var_state2A_i)
+										&& (var_state3B_i == var_state3A_i)
+										&& (var_md_i == time_to_prep)
+										&& (var_pos_i == node_names_inverted["C-CS1-I"])
+										&& (var_holdA_i == var_holdB_i)
+										&& (var_rd_i == 0));
+			constraints.push_back(!(var_a_i == 2) || constraint_action2);
+
+			// 3.Action : feed base with cap into CS
+			z3::expr constraint_action3((var_m_i == machine_groups["CS"])
+										&& (var_state1A_i == state1_machines[retrieve_ci])
+										&& (var_state1B_i == state1_machines["not_prep"])
+										&& (var_state2A_i == state2_machines["empty"])
+										&& (var_state2B_i == state2_machines[has_ci])
+										&& (var_state3A_i == state3_machines["empty"])
+										&& (var_state3B_i == state3_machines["full"])
+										&& (var_md_i == time_to_feed)
+										&& (var_pos_i == node_names_inverted["C-CS1-I"])
+										&& (var_holdA_i == products[br_ci])
+										&& (var_holdB_i == products["nothing"])
+										&& (var_rd_i == 0));
+			constraints.push_back(!(var_a_i == 3) || constraint_action3);
+
+			// 4.Action : prepare CS to mount cap
+			z3::expr constraint_action4((var_m_i == machine_groups["CS"])
+										&& (var_state1A_i == state1_machines["not_prep"])
+										&& (var_state1B_i == state1_machines[mount_ci])
+										&& (var_state2A_i == state2_machines[has_ci])
+										&& (var_state2B_i == state2_machines[has_ci])
+										&& (var_state3A_i == state3_machines["empty"])
+										&& (var_state3B_i == state3_machines["empty"])
+										&& (var_md_i == time_to_prep)
+										&& (var_pos_i == node_names_inverted["C-CS1-I"])
+										&& (var_holdA_i == var_holdB_i)
+										&& (var_rd_i == 0));
+			constraints.push_back(!(var_a_i == 4) || constraint_action4);
+
+			// 5.Action : feed base to CS to mount cap
+			z3::expr constraint_action5((var_m_i == machine_groups["CS"])
+										&& (var_state1A_i == state1_machines[mount_ci])
+										&& (var_state1B_i == state1_machines["not_prep"])
+										&& (var_state2A_i == state2_machines[has_ci])
+										&& (var_state2B_i == state2_machines["empty"])
+										&& (var_state3A_i == state3_machines["empty"])
+										&& (var_state3B_i == state3_machines[bi_ci])
+										&& (var_md_i == time_to_feed)
+										&& (var_pos_i == node_names_inverted["C-CS1-I"])
+										&& (var_holdA_i == products[bi])
+										&& (var_holdB_i == products["nothing"])
+										&& (var_rd_i == 0));
+			constraints.push_back(!(var_a_i == 5) || constraint_action5);
+
+			// 6.Action : retrieve base from BS
+			z3::expr constraint_action6((var_m_i == machine_groups["BS"])
+										&& (var_state1A_i == state1_machines[prep_bi])
+										&& (var_state1B_i == state1_machines["not_prep"])
+										&& (var_state2B_i == var_state2A_i)
+										&& (var_state3B_i == var_state3A_i)
+										&& (var_md_i == time_to_fetch)
+										&& (var_pos_i == node_names_inverted["C-BS-I"])
+										&& (var_holdA_i == products["nothing"])
+										&& (var_holdB_i == products[bi])
+										&& (var_rd_i == 0));
+			constraints.push_back(!(var_a_i == 6) || constraint_action6);
+
+			// 7.Action : prepare BS to provide base
+			z3::expr constraint_action7((var_m_i == machine_groups["BS"])
+										&& (var_state1A_i == state1_machines["not_prep"])
+										&& (var_state1B_i == state1_machines[prep_bi])
+										&& (var_state2B_i == var_state2A_i)
+										&& (var_state3B_i == var_state3A_i)
+										&& (var_md_i == time_to_prep)
+										&& (var_pos_i == node_names_inverted["C-BS-I"])
+										&& (var_holdA_i == var_holdB_i)
+										&& (var_rd_i == 0));
+			constraints.push_back(!(var_a_i == 7) || constraint_action7);
+
+			// 8.Action : discard capless base from CS
+			z3::expr constraint_action8((var_m_i == machine_groups["CS"])
+										&& (var_state1A_i == var_state1B_i)
+										&& (var_state2A_i == state2_machines[has_ci])
+										&& (var_state2B_i == state2_machines[has_ci])
+										&& (var_state3A_i == state3_machines["full"])
+										&& (var_state3B_i == state3_machines["empty"])
+										&& (var_md_i == time_to_disc)
+										&& (var_pos_i == node_names_inverted["C-CS1-O"])
+										&& (var_holdA_i == products["nothing"])
+										&& (var_holdB_i == products["nothing"])
+										&& (var_rd_i == 0));
+			constraints.push_back(!(var_a_i == 8) || constraint_action8);
+
+			// 9.Action : retrieve base with cap from CS
+			z3::expr constraint_action9((var_m_i == machine_groups["CS"])
+										&& (var_state1A_i == var_state1B_i)
+										&& (var_state2A_i == state2_machines["empty"])
+										&& (var_state2B_i == state2_machines["empty"])
+										&& (var_state3A_i == state3_machines[bi_ci])
+										&& (var_state3B_i == state3_machines["empty"])
+										&& (var_md_i == time_to_fetch)
+										&& (var_pos_i == node_names_inverted["C-CS1-O"])
+										&& (var_holdA_i == products["nothing"])
+										&& (var_holdB_i == products[bi_ci])
+										&& (var_rd_i == 0));
+			constraints.push_back(!(var_a_i == 9) || constraint_action9);
+
+			// 10.Action : prepare DS for slide specified order
+			z3::expr constraint_action10((var_m_i == machine_groups["DS"])
+										&& (var_state1A_i == state1_machines["not_prep"])
+										&& (var_state1B_i == state1_machines[slide_one_prep_bi_ci])
+										&& (var_state2B_i == var_state2A_i)
+										&& (var_state3B_i == var_state3A_i)
+										&& (var_md_i == time_to_prep)
+										&& (var_pos_i == node_names_inverted["C-DS-I"])
+										&& (var_holdA_i == products[bi_ci])
+										&& (var_holdB_i == var_holdA_i)
+										&& (var_rd_i == 0));
+			constraints.push_back(!(var_a_i == 10) || constraint_action10);
+
+			// 11.Action : deliver to DS
+			z3::expr constraint_action11((var_m_i == machine_groups["DS"])
+										&& (var_state1A_i == state1_machines[slide_one_prep_bi_ci])
+										&& (var_state1B_i == state1_machines["not_prep"])
+										&& (var_state2B_i == var_state2A_i)
+										&& (var_state3B_i == var_state3A_i)
+										&& (var_md_i == time_to_prep)
+										&& (var_pos_i == node_names_inverted["C-DS-I"])
+										&& (var_holdA_i == products[bi_ci])
+										&& (var_holdB_i == products["nothing"])
+										&& (var_rd_i == 0));
+			constraints.push_back(!(var_a_i == 11) || constraint_action11);
+
+			// Actions for orders of complexity C1
+			if(data.orders(o+data.orders().size()/2).ring_colors().size()>0){
+				// 12.Action : prepare RS to mount ring
+				z3::expr constraint_action12((var_m_i == machine_groups["RS"])
+											&& (var_state1A_i == state1_machines["not_prep"])
+											&& (var_state1B_i == state1_machines[mount_ri])
+											&& (var_state2A_i == state2_machines[has_ri])
+											&& (var_state2B_i == state2_machines[has_ri])
+											&& (var_state3A_i == state3_machines["empty"])
+											&& (var_state3B_i == state3_machines["empty"])
+											&& (var_md_i == time_to_prep)
+											&& (var_pos_i == node_names_inverted["C-RS1-I"])
+											&& (var_holdA_i == var_holdB_i)
+											&& (var_rd_i == 0));
+				constraints.push_back(!(var_a_i == 12) || constraint_action12);
+
+				// 13.Action : feed base to RS to mount ring
+				z3::expr constraint_action13((var_m_i == machine_groups["RS"])
+											&& (var_state1A_i == state1_machines[mount_ri])
+											&& (var_state1B_i == state1_machines["not_prep"])
+											&& (var_state2B_i == var_state2A_i)
+											&& (var_state3A_i == state3_machines["empty"])
+											&& (var_state3B_i == state3_machines[bi_ri])
+											&& (var_md_i == time_to_feed)
+											&& (var_pos_i == node_names_inverted["C-RS1-I"])
+											&& (var_holdA_i == products[bi])
+											&& (var_holdB_i == products["nothing"])
+											&& (var_rd_i == 0));
+				constraints.push_back(!(var_a_i == 13) || constraint_action13);
+
+				// 14.Action : retrieve base with ring from RS
+				z3::expr constraint_action14((var_m_i == machine_groups["RS"])
+											&& (var_state1B_i == var_state1A_i)
+											&& (var_state2B_i == var_state2A_i)
+											&& (var_state3A_i == state3_machines[bi_ri])
+											&& (var_state3B_i == state3_machines["empty"])
+											&& (var_md_i == time_to_fetch)
+											&& (var_pos_i == node_names_inverted["C-RS1-O"])
+											&& (var_holdA_i == products["nothing"])
+											&& (var_holdB_i == products[bi_ri])
+											&& (var_rd_i == 0));
+				constraints.push_back(!(var_a_i == 14) || constraint_action14);
+
+				// 15.Action : feed base with one ring to CS to mount cap
+				z3::expr constraint_action15((var_m_i == machine_groups["CS"])
+											&& (var_state1A_i == state1_machines[mount_ci])
+											&& (var_state1B_i == state1_machines["not_prep"])
+											&& (var_state2A_i == state2_machines[has_ci])
+											&& (var_state2B_i == state2_machines["empty"])
+											&& (var_state3A_i == state3_machines["empty"])
+											&& (var_state3B_i == state3_machines[bi_ri_ci])
+											&& (var_md_i == time_to_feed)
+											&& (var_pos_i == node_names_inverted["C-CS1-I"])
+											&& (var_holdA_i == products[bi_ri])
+											&& (var_holdB_i == products["nothing"])
+											&& (var_rd_i == 0));
+				constraints.push_back(!(var_a_i == 15) || constraint_action15);
+
+				// 16.Action : retrieve base with one ring and cap from CS
+				z3::expr constraint_action16((var_m_i == machine_groups["CS"])
+											&& (var_state1B_i == var_state1A_i)
+											&& (var_state2A_i == state2_machines["empty"])
+											&& (var_state2B_i == state2_machines["empty"])
+											&& (var_state3A_i == state3_machines[bi_ri_ci])
+											&& (var_state3B_i == state3_machines["empty"])
+											&& (var_md_i == time_to_fetch)
+											&& (var_pos_i == node_names_inverted["C-CS1-O"])
+											&& (var_holdA_i == products["nothing"])
+											&& (var_holdB_i == products[bi_ri_ci])
+											&& (var_rd_i == 0));
+				constraints.push_back(!(var_a_i == 16) || constraint_action16);
+
+				// 17.Action : prepare DS for slide specified order
+				z3::expr constraint_action17((var_m_i == machine_groups["DS"])
+											&& (var_state1A_i == state1_machines["not_prep"])
+											&& (var_state1B_i == state1_machines[slide_one_prep_bi_ri_ci])
+											&& (var_state2B_i == var_state2A_i)
+											&& (var_state3B_i == var_state3A_i)
+											&& (var_md_i == time_to_prep)
+											&& (var_pos_i == node_names_inverted["C-DS-I"])
+											&& (var_holdA_i == products[bi_ri_ci])
+											&& (var_holdB_i == var_holdA_i)
+											&& (var_rd_i == 0));
+				constraints.push_back(!(var_a_i == 17) || constraint_action17);
+
+				// 18.Action : deliver base with one ring and cap to DS
+				z3::expr constraint_action18((var_m_i == machine_groups["DS"])
+											&& (var_state1A_i == state1_machines[slide_one_prep_bi_ri_ci])
+											&& (var_state1B_i == state1_machines["not_prep"])
+											&& (var_state2B_i == var_state2A_i)
+											&& (var_state3B_i == var_state3A_i)
+											&& (var_md_i == time_to_prep)
+											&& (var_pos_i == node_names_inverted["C-DS-I"])
+											&& (var_holdA_i == products[bi_ri_ci])
+											&& (var_holdB_i == products["nothing"])
+											&& (var_rd_i == 0));
+				constraints.push_back(!(var_a_i == 18) || constraint_action18);
+			}
+		}
+
+		// TODO Add actions for orders of higher complexity
+	}
+
+	// Specify goal state
+	for(int i=1; i<plan_horizon+1; ++i){
+		z3::expr var_a_i(_z3_context);
+		z3::expr var_rew_i(_z3_context);
+		z3::expr var_t_i(_z3_context);
+		z3::expr var_md_i(_z3_context);
+		z3::expr var_t_plan_horizon(_z3_context);
+		z3::expr var_md_plan_horizon(_z3_context);
+
+		it_map = varA.find("A_"+std::to_string(i));
+		if(it_map != varA.end()) {
+			var_a_i = it_map->second;
+		}
+		else {
+			logger->log_error(name(), "var_a_%i not found", i);
+		}
+		it_map = varRew.find("rew_"+std::to_string(i));
+		if(it_map != varRew.end()) {
+			var_rew_i = it_map->second;
+		}
+		else {
+			logger->log_error(name(), "var_rew_%i not found", i);
+		}
+		it_map = varStartTime.find("t_"+std::to_string(i));
+		if(it_map != varStartTime.end()) {
+			var_t_i = it_map->second;
+		}
+		else {
+			logger->log_error(name(), "var_state1A_%i not found", i);
+		}
+		it_map = varMachineDuration.find("md_"+std::to_string(i));
+		if(it_map != varMachineDuration.end()) {
+			var_md_i = it_map->second;
+		}
+		else {
+			logger->log_error(name(), "var_md_%i not found", i);
+		}
+		it_map = varStartTime.find("t_"+std::to_string(plan_horizon));
+		if(it_map != varStartTime.end()) {
+			var_t_plan_horizon = it_map->second;
+		}
+		else {
+			logger->log_error(name(), "var_t_%i not found", plan_horizon);
+		}
+		it_map = varMachineDuration.find("state2B_"+std::to_string(plan_horizon));
+		if(it_map != varMachineDuration.end()) {
+			var_md_plan_horizon = it_map->second;
+		}
+		else {
+			logger->log_error(name(), "var_md_%i not found", plan_horizon);
+		}
+
+		if(i==1){
+			constraints.push_back((var_a_i == 18 && var_rew_i == (deadline-var_t_i-var_md_i))
+									|| (!(var_a_i==18) && var_rew_i==0));
+		}
+		else {
+			z3::expr var_rew_i_1(_z3_context);
+
+			it_map = varRew.find("rew_"+std::to_string(i-1));
+			if(it_map != varRew.end()) {
+				var_rew_i_1 = it_map->second;
+			}
+			else {
+				logger->log_error(name(), "var_rew_%i not found", i);
+			}
+
+			constraints.push_back((var_a_i == 18 && var_rew_i == (var_rew_i_1+deadline-var_t_i-var_md_i))
+									|| (!(var_a_i==18) && var_rew_i==var_rew_i_1));
+		}
+	}
+
 	return constraints;
 }
 
@@ -1664,52 +2133,52 @@ void
 
 		for(unsigned i=0; i<model.size(); ++i) {
 			z3::func_decl function = model[i];
-			// std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
+			std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
 
-			std::string function_name = function.name().str();
-			z3::expr expr = model.get_const_interp(function);
-			int interp;
-			Z3_get_numeral_int(_z3_context, expr, &interp);
-
-			for(int j=1; j<number_machines+1; ++j){
-				if(interp>0) {
-					std::string compare_with_pos_1 = "pos_1_";
-					compare_with_pos_1 += std::to_string(j);
-					std::string compare_with_pos_2 = "pos_2_";
-					compare_with_pos_2 += std::to_string(j);
-					std::string compare_with_pos_3 = "pos_3_";
-					compare_with_pos_3 += std::to_string(j);
-
-					if(function_name.compare(compare_with_pos_1)==0) {
-						actions_robot_1[j] = node_names_[interp];
-					}
-					else if(function_name.compare(compare_with_pos_2)==0) {
-						actions_robot_2[j] = node_names_[interp];
-					}
-					else if(function_name.compare(compare_with_pos_3)==0) {
-						actions_robot_3[j] = node_names_[interp];
-					}
-				}
-			}
+			// std::string function_name = function.name().str();
+			// z3::expr expr = model.get_const_interp(function);
+			// int interp;
+			// Z3_get_numeral_int(_z3_context, expr, &interp);
+			//
+			// for(int j=1; j<number_machines+1; ++j){
+			// 	if(interp>0) {
+			// 		std::string compare_with_pos_1 = "pos_1_";
+			// 		compare_with_pos_1 += std::to_string(j);
+			// 		std::string compare_with_pos_2 = "pos_2_";
+			// 		compare_with_pos_2 += std::to_string(j);
+			// 		std::string compare_with_pos_3 = "pos_3_";
+			// 		compare_with_pos_3 += std::to_string(j);
+			//
+			// 		if(function_name.compare(compare_with_pos_1)==0) {
+			// 			actions_robot_1[j] = node_names_[interp];
+			// 		}
+			// 		else if(function_name.compare(compare_with_pos_2)==0) {
+			// 			actions_robot_2[j] = node_names_[interp];
+			// 		}
+			// 		else if(function_name.compare(compare_with_pos_3)==0) {
+			// 			actions_robot_3[j] = node_names_[interp];
+			// 		}
+			// 	}
+			// }
 		}
 
-		// Add plan specified by the model to stats
-		outputFile << std::endl << "Begin of plan" << std::endl << "R-1 goes to "<< actions_robot_1.size() << " machines:";
-		std::map<int, std::string>::iterator it_actions_1;
-		for(it_actions_1 = actions_robot_1.begin(); it_actions_1!=actions_robot_1.end(); ++it_actions_1) {
-			outputFile << " [" << it_actions_1->first << "] " << it_actions_1->second;
-		}
-		outputFile << std::endl << "R-2 goes to "<< actions_robot_2.size() << " machines:";
-		std::map<int, std::string>::iterator it_actions_2;
-		for(it_actions_2 = actions_robot_2.begin(); it_actions_2!=actions_robot_2.end(); ++it_actions_2) {
-			outputFile << " [" << it_actions_2->first << "] " << it_actions_2->second;
-		}
-		outputFile << std::endl << "R-3 goes to "<< actions_robot_3.size() << " machines:";
-		std::map<int, std::string>::iterator it_actions_3;
-		for(it_actions_3 = actions_robot_3.begin(); it_actions_3!=actions_robot_3.end(); ++it_actions_3) {
-			outputFile << " [" << it_actions_3->first << "] " << it_actions_3->second;
-		}
-		outputFile << std::endl << "End of plan"<< std::endl << std::endl;
+		// // Add plan specified by the model to stats
+		// outputFile << std::endl << "Begin of plan" << std::endl << "R-1 goes to "<< actions_robot_1.size() << " machines:";
+		// std::map<int, std::string>::iterator it_actions_1;
+		// for(it_actions_1 = actions_robot_1.begin(); it_actions_1!=actions_robot_1.end(); ++it_actions_1) {
+		// 	outputFile << " [" << it_actions_1->first << "] " << it_actions_1->second;
+		// }
+		// outputFile << std::endl << "R-2 goes to "<< actions_robot_2.size() << " machines:";
+		// std::map<int, std::string>::iterator it_actions_2;
+		// for(it_actions_2 = actions_robot_2.begin(); it_actions_2!=actions_robot_2.end(); ++it_actions_2) {
+		// 	outputFile << " [" << it_actions_2->first << "] " << it_actions_2->second;
+		// }
+		// outputFile << std::endl << "R-3 goes to "<< actions_robot_3.size() << " machines:";
+		// std::map<int, std::string>::iterator it_actions_3;
+		// for(it_actions_3 = actions_robot_3.begin(); it_actions_3!=actions_robot_3.end(); ++it_actions_3) {
+		// 	outputFile << " [" << it_actions_3->first << "] " << it_actions_3->second;
+		// }
+		// outputFile << std::endl << "End of plan"<< std::endl << std::endl;
 
 	} else {
 
