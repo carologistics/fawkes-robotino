@@ -76,11 +76,10 @@ void MachineSignalSensorThread::loop() {
   if (pipeline_thread_->lock_if_new_data()) {
     std::list<SignalState> known_signals = pipeline_thread_->get_known_signals();
     std::list<SignalState>::iterator best_signal = pipeline_thread_->get_best_signal();
-    std::list<SignalState>::iterator open_gate = known_signals.end();
 
     // Go through all known signals...
     std::list<SignalState>::iterator known_signal = known_signals.begin();
-    for (int i = 0; i < MAX_SIGNALS; i++) {
+    for (size_t i = 0; i < MAX_SIGNALS; i++) {
 
       if (known_signal != known_signals.end()) {
         // Put their states into the blackboard interfaces
@@ -113,7 +112,7 @@ void MachineSignalSensorThread::loop() {
   }
 
   if (! pipeline_thread_->is_enabled()) {
-    for (int i = 0; i < MAX_SIGNALS; i++) {
+    for (size_t i = 0; i < MAX_SIGNALS; i++) {
       bb_signal_states_[i]->set_visibility_history(0);
       bb_signal_states_[i]->set_ready(true);
       bb_signal_states_[i]->write();
