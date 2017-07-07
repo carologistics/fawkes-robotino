@@ -132,26 +132,27 @@ private:
 	const int number_actions = 18;
 	const int plan_horizon = 14;
 	const int deadline = 60;
-	const int time_to_do_something = 5;
+	const int time_to_prep = 5;
+	const int time_to_fetch = 5;
+	const int time_to_feed = 5;
+	const int time_to_disc = 5;
+	const int time_to_del = 5;
 
 	// States of machines for C0-C1
-	std::map<int ,std::string> state1_machines;
+	std::map<std::string, int> state1_machines;
 	const int min_state1_machines = 0, max_state1_machines = 20;
 
-	std::map<int ,std::string> state2_machines;
+	std::map<std::string, int> state2_machines;
 	const int min_state2_machines = 0, max_state2_machines = 3;
 
-	std::map<int ,std::string> state3_machines;
+	std::map<std::string, int> state3_machines;
 	const int min_state3_machines = -1, max_state3_machines = 20;
 
-	std::map<int ,std::string> products;
+	std::map<std::string, int> products;
 	const int min_products = 0, max_products = 20;
 
-	std::map<int ,std::string> machine_groups;
+	std::map<std::string, int> machine_groups;
 	const int min_machine_groups = 0, max_machine_groups = 3;
-
-	// Map for incoming orders
-	std::map<int ,std::string> name_orders;
 
 	// Leonards formula encoding
 	GameData clips_smt_convert_protobuf_to_gamedata();
@@ -184,6 +185,7 @@ private:
 	void clips_smt_compute_distances_machines();
 	std::map<int, std::string> robot_names_;
 	std::map<int, std::string> node_names_;
+	std::map<std::string, int> node_names_inverted;
 	std::map<std::pair<std::string, std::string>, float> distances_;
 
 	fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
