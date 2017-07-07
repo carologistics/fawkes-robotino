@@ -440,7 +440,7 @@ RosBridgeProxyProcessor::advertise  ( std::string topic_name
     }
     catch (fawkes::Exception &e) 
     {
-        logger_->log_info("Processor:" , "Failed to advertise to '%s':", topic_name.c_str(), e.what());
+        logger_->log_error("Processor:" , "Failed to advertise to '%s': %s", topic_name.c_str(), e.what());
         throw e;
     }
 
