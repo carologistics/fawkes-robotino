@@ -42,9 +42,9 @@ documentation      = [==[ shelf_pick
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local x_distance = 0.27
-if config:exists("/skills/align_distance_conveyor/x") then
-   x_distance = config:get_float("/skills/align_distance_conveyor/x")
+local x_distance = 0.25
+if config:exists("/skills/approach_distance_laser/x") then
+   x_distance = config:get_float("/skills/approach_distance_laser/x")
 end
 
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
