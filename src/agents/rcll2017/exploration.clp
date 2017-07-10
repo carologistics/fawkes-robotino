@@ -53,6 +53,8 @@
   (do-for-all-facts ((?nn exp-next-node)) TRUE (retract ?nn))
   (if (<= ?*EXP-ROUTE-IDX* (length$ ?route)) then
     (assert (exp-next-node (node (nth$ ?*EXP-ROUTE-IDX* ?route))))
+  else
+    (assert (exp-do-clusters))
   )
 )
 
@@ -186,6 +188,41 @@
   )
 =>
   (synced-modify ?ze-f line-visibility ?vh)
+  (printout warn "EXP found line: " ?zn " vh: " ?vh crlf)
+)
+
+
+(defrule exp-found-cluster
+  "Found a cluster: Remember it for later when we run out of lines to explore."
+  (phase EXPLORATION)
+  (game-time $?game-time)
+  (Position3DInterface (id ?id&:(str-index "/laser-cluster/mps/" ?id))
+    (visibility_history ?vh&:(> ?vh 1))
+    (translation $?trans) (rotation $?rot)
+    (frame ?frame) (time $?timestamp)
+  )
+  (MotorInterface (id "Robotino") (vx ?vx) (vy ?vy))
+  (exp-zone-margin ?zone-margin)
+  ?ze-f <- (zone-exploration
+    (name ?zn&:(eq ?zn (get-zone ?zone-margin
+      (compensate-movement
+        ?*EXP-MOVEMENT-COMPENSATION*
+        (create$ ?vx ?vy)
+        ?trans
+        ?timestamp
+      )
+    )))
+    (machine UNKNOWN)
+    (cluster-visibility ?zn-vh)
+    (last-cluster-time ?ctime&:(>= (nth$ 1 ?game-time) (+ ?ctime 2)))
+  )
+=>
+  (printout t "EXP cluster ze-f: " ?ze-f crlf)
+  (synced-modify ?ze-f
+    cluster-visibility (+ ?zn-vh 1)
+    last-cluster-time (nth$ 1 ?game-time)
+  )
+  (printout warn "EXP found cluster: " ?zn " vh: " (+ ?zn-vh 1) crlf)
 )
 
 

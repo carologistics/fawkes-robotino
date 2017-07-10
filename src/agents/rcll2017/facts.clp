@@ -58,6 +58,7 @@
     )
   )
   (slot cluster-visibility (type INTEGER) (default 0))
+  (slot last-cluster-time (type INTEGER) (default 0))
   (slot line-visibility (type INTEGER) (default 0))
   (slot machine (type SYMBOL) (allowed-values NONE C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS  M-SS UNKNOWN) (default UNKNOWN))
   (slot team (type SYMBOL) (allowed-symbols nil CYAN MAGENTA))
