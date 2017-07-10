@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "zone_recog"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"mps_recog", "goto"}
+depends_skills     = {"mps_recog", "drive_to"}
 depends_interfaces = {
    {v = "speechsynth", type = "SpeechSynthInterface", id = "Flite"},
    {v = "mps_recognition_if", type = "MPSRecognitionInterface" ,id="/MarkerlessRecognition"},
@@ -122,10 +122,10 @@ end
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
-   {"DRIVE_TO_START", SkillJumpState, skills={{goto}}, final_to="RECOGNIZE_MPS_START", fail_to="FAILED"},
-   {"DRIVE_TO_SECOND", SkillJumpState, skills={{goto}}, final_to="RECOGNIZE_MPS_SECOND", fail_to="FAILED"},
-   {"DRIVE_TO_THIRD", SkillJumpState, skills={{goto}}, final_to="RECOGNIZE_MPS_THIRD", fail_to="FAILED"},
-   {"DRIVE_TO_FINAL", SkillJumpState, skills={{goto}}, final_to="RECOGNIZE_MPS_FINAL", fail_to="FAILED"},
+   {"DRIVE_TO_START", SkillJumpState, skills={{drive_to}}, final_to="RECOGNIZE_MPS_START", fail_to="FAILED"},
+   {"DRIVE_TO_SECOND", SkillJumpState, skills={{drive_to}}, final_to="RECOGNIZE_MPS_SECOND", fail_to="FAILED"},
+   {"DRIVE_TO_THIRD", SkillJumpState, skills={{drive_to}}, final_to="RECOGNIZE_MPS_THIRD", fail_to="FAILED"},
+   {"DRIVE_TO_FINAL", SkillJumpState, skills={{drive_to}}, final_to="RECOGNIZE_MPS_FINAL", fail_to="FAILED"},
    {"RECOGNIZE_MPS_START", SkillJumpState, skills={{mps_recog}}, final_to="DRIVE_TO_SECOND", fail_to="FAILED"},
    {"RECOGNIZE_MPS_SECOND", SkillJumpState, skills={{mps_recog}}, final_to="DRIVE_TO_THIRD", fail_to="FAILED"},
    {"RECOGNIZE_MPS_THIRD", SkillJumpState, skills={{mps_recog}}, final_to="DRIVE_TO_FINAL", fail_to="FAILED"},
@@ -142,34 +142,30 @@ fsm:add_transitions{
 
 
 function DRIVE_TO_START:init()
-   self.args["goto"].x = self.fsm.vars.xLeft 
-   self.args["goto"].y = self.fsm.vars.yZone
-   --self.args["goto"].region_trans = 2
-   self.args["goto"].ori = 0
+   self.args["drive_to"].x = self.fsm.vars.xLeft 
+   self.args["drive_to"].y = self.fsm.vars.yZone
+   self.args["drive_to"].ori = 0
    self.fsm.vars.resultStart = mps_recognition_if:mpstype(); 
 end
 
 function DRIVE_TO_SECOND:init()
-   self.args["goto"].x = self.fsm.vars.xZone
-   self.args["goto"].y = self.fsm.vars.yDown
-   --self.args["goto"].region_trans = 2
-   self.args["goto"].ori = 1.57
+   self.args["drive_to"].x = self.fsm.vars.xZone
+   self.args["drive_to"].y = self.fsm.vars.yDown
+   self.args["drive_to"].ori = 1.57
    self.fsm.vars.resultSecond = mps_recognition_if:mpstype(); 
 end
 
 function DRIVE_TO_THIRD:init()
-   self.args["goto"].x = self.fsm.vars.xRight
-   self.args["goto"].y = self.fsm.vars.yZone
-   --self.args["goto"].region_trans = 2
-   self.args["goto"].ori = 3.1415	
+   self.args["drive_to"].x = self.fsm.vars.xRight
+   self.args["drive_to"].y = self.fsm.vars.yZone
+   self.args["drive_to"].ori = 3.1415	
    self.fsm.vars.resultThird = mps_recognition_if:mpstype(); 
 end
 
 function DRIVE_TO_FINAL:init()
-   self.args["goto"].x = self.fsm.vars.xZone
-   self.args["goto"].y = self.fsm.vars.yUp
-   --self.args["goto"].region_trans = 2
-   self.args["goto"].ori = 4.71
+   self.args["drive_to"].x = self.fsm.vars.xZone
+   self.args["drive_to"].y = self.fsm.vars.yUp
+   self.args["drive_to"].ori = 4.71
    self.fsm.vars.resultFinal = mps_recognition_if:mpstype();
 
 end
