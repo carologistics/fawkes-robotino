@@ -96,9 +96,9 @@ local Y_MAX = 7.6
 -- When we can't find a laser-line in the zone, we try looking at the zone
 -- from these coordinates, relative to the center.
 local ZONE_CORNERS = {
-   { x = 0.7, y = -0.8 },
-   { x = 0.7, y = 0.8 },
-   { x = -0.6, y = 0 }
+   { x = 0.7, y = 0 },
+   { x = 0,   y = 0.7 },
+   { x = -0.8, y = -0.8 },
 }
 
 -- Maximum difference between tag and line trans/rot
@@ -204,7 +204,7 @@ function found_tag()
                )
                if tag_map and in_zone(tag_map.x, tag_map.y) then
                   local yaw = fawkes.tf.get_yaw(tag_map.ori)
-                  if yaw == yaw then
+                  if yaw == yaw then -- false for NAN
                      -- Rescale & Discretize angle from 0..315°
                      print_debug("Yaw 1: " .. yaw)
                      if id % 2 == 0 then
