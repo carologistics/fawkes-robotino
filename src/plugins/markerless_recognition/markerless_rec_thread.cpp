@@ -59,7 +59,6 @@ void MarkerlessRecognitionThread::finalize() {
 	
 Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string image) {
 	
-        std::cout << "recognize current pic" << std::endl;
 	
 	Probability result;
 	result.p[0] = 0.;
@@ -73,7 +72,6 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
   
 	//Open shared library
 	std::string lib = home + "/tensorflow/bazel-bin/tensorflow/tf_wrapper/tensorflowWrapper.so";
-	std::cout << lib << std::endl;
     	handle = dlopen(lib.c_str(),RTLD_NOW);
 	if(!handle){
 		fprintf(stderr, "%s\n", dlerror());
@@ -89,8 +87,7 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	}
 	
 	//path to the image that have to be tested
-	//std::string imPath = (home) + image;
-	std::string imPath = image;		
+	std::string imPath = (home) + image;		
 	
 	//path to the trained graph
 	std::string grPath = (home) + "/fawkes-robotino/etc/tf_data/output_graph_600.pb";
@@ -115,13 +112,24 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	return result;
 }
 
+int checkResult(Probability prob){
+	for(int i = 0; i < 4; i++){
+		if(prob.p[i]<0){
+			return -1;
+		}
+	}
+	return 0;
+}
 
-int   MarkerlessRecognitionThread::recognize_mps() {
+int MarkerlessRecognitionThread::recognize_mps() {
 
         cout << " Start of method recognize_mps() " << std::endl;  
 
+
+	if(vpath.empty()) return -1;
+
         Probability recognition_result = recognize_current_pic(vpath); 
-	//	Probability recognition_result = recognize_current_pic("/TestData/BS/BS_9.jpg");
+	//Probability recognition_result = recognize_current_pic("/TestData/BS/BS_9.jpg");
 	int station = 0;
 
 	int maximum = 0; 
@@ -131,6 +139,9 @@ int   MarkerlessRecognitionThread::recognize_mps() {
                         second = maximum;
 			maximum = i;
 	     	}
+	}
+	if(checkResult(recognition_result)!=0){
+		return -1;
 	}
 	
 	if(recognition_result.p[maximum] < th_first || recognition_result.p[second] > th_sec)
@@ -149,8 +160,6 @@ int   MarkerlessRecognitionThread::recognize_mps() {
 
 	return station;
 
-	//iterates over all stored paths im imageSet_ and calls recognize_current_pic on it
-	//then decides which mps was seen in the set of images
 }
 
 
@@ -158,6 +167,7 @@ void MarkerlessRecognitionThread::init(){
       	
 	home.assign(getenv("HOME"),strlen(getenv("HOME")));   
 	mps_rec_if_ = blackboard->open_for_writing<MPSRecognitionInterface>("/MarkerlessRecognition");
+	recognize_mps();
 
 	std::string prefix = CFG_PREFIX;
 	vpath = this->config->get_string((prefix + "vpath").c_str()); 
@@ -248,7 +258,7 @@ void MarkerlessRecognitionThread::loop(){
    	}
 
 	takePictureFromFVcamera();
-	recognize_mps(); 	
+	//recognize_mps(); 	
 	
 	/*
     
