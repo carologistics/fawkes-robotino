@@ -217,10 +217,10 @@
 )
 
 
-(defrule exp-try-locking-zone
+(defrule exp-try-locking-line
   (phase EXPLORATION)
   (exp-searching)
-  (state EXP_GOTO_NEXT)
+  (state EXP_GOTO_NEXT|EXP_IDLE)
   ; Not currently locked/trying to lock anything
   (not (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))
   (not (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))
