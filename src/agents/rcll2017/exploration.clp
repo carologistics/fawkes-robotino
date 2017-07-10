@@ -272,7 +272,7 @@
 
   ; Neither this zone nor the opposite zone is locked
   (not (locked-resource (resource ?r&:(eq ?r ?zn))))
-  (not (locked-resource (resource ?r2&:(eq ?r2 (mirror-name ?zn)))))
+  ;(not (locked-resource (resource ?r2&:(eq ?r2 (mirror-name ?zn)))))
 
   ; Locks for all closer zones with a line-visibility > 0 have been refused
   (Position3DInterface (id "Pose") (translation $?trans))
