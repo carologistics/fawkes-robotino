@@ -338,7 +338,8 @@
     (assert
       (exploration-result
         (machine ?machine) (zone ?zn2)
-        (orientation ?orientation) (team ?team-color)
+        (orientation ?orientation)
+        (team ?team-color)
       )
       (exploration-result
         (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
@@ -458,7 +459,6 @@
   else
     (bind ?m-trans (mirror-trans ?trans))
   )
-  (printout t crlf "========= " ?m-trans crlf crlf)
   (assert
     (found-tag (name ?machine2) (side ?side) (frame ?frame)
       (trans ?m-trans) (rot ?m-rot)
