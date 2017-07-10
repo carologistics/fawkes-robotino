@@ -506,11 +506,18 @@
 
 
 (defrule exp-add-tag-to-navgraph
+  (not (requested-waiting-positions))
   (or
-    (NavGraphWithMPSGeneratorInterface (final TRUE))
+    (not (last-navgraph-compute-msg))
+    (last-navgraph-compute-msg (final TRUE))
     (NavGraphWithMPSGeneratorInterface (msgid 0))
     (not (NavGraphWithMPSGeneratorInterface))
   )
+
+  (forall (machine (name ?mps))
+    (zone-exploration (machine ?found&:(eq ?mps ?found)))
+  )
+
   (team-color ?team-color)
 
   (found-tag (name ?machine)
@@ -527,7 +534,17 @@
   )
   (not (and (navgraph-added-for-mps (name ?machine)) (navgraph-added-for-mps (name ?machine2))))
 =>
+  (assert (generating-navgraph))
   (navgraph-add-all-new-tags)
+)
+
+
+(defrule exp-navgraph-done
+  ?gen-f <- (generating-navgraph)
+  (last-navgraph-compute-msg (final TRUE))
+=>
+  (retract ?gen-f)
+  (assert (navgraph-done))
 )
 
 
