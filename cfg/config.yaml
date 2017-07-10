@@ -5,6 +5,8 @@
 include:
   # reads files ending in .yaml from modules.d config subdir
   - !ignore-missing conf.d/
+  # reads host-specific config files from host.d subdir
+  - !ignore-missing host.d/
   # Reads the host-specific configuration file, no failure if missing
   - !host-specific host.yaml
 ---
