@@ -29,7 +29,6 @@ depends_skills     = {"motor_move"}
 depends_interfaces = {
   {v = "if_conveyor", type = "Position3DInterface", id="conveyor_pose/pose"},
   {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
-  {v = "conveyor_config", type = "ConveyorConfigInterface", id="conveyor_pose/config"},
   {v = "if_front_dist", type = "Position3DInterface", id="front_dist"}
 }
 
