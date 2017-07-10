@@ -139,34 +139,24 @@ class NavGraphWithMPSGeneratorInterface : public Interface
     virtual Message * clone() const;
   };
 
-  class SetWaitZonesMessage : public Message
+  class GenerateWaitZonesMessage : public Message
   {
    private:
     /** Internal data storage, do NOT modify! */
     typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
-      bool zones[24]; /**< 
-      For each zone whether it should be a waiting zone or not. The index
-      is the Zone ID - 1, e.g., zone Z1 is field 0.
-     */
-    } SetWaitZonesMessage_data_t;
+    } GenerateWaitZonesMessage_data_t;
 
-    SetWaitZonesMessage_data_t *data;
+    GenerateWaitZonesMessage_data_t *data;
 
   interface_enum_map_t enum_map_Side;
    public:
-    SetWaitZonesMessage(const bool * ini_zones);
-    SetWaitZonesMessage();
-    ~SetWaitZonesMessage();
+    GenerateWaitZonesMessage();
+    ~GenerateWaitZonesMessage();
 
-    SetWaitZonesMessage(const SetWaitZonesMessage *m);
+    GenerateWaitZonesMessage(const GenerateWaitZonesMessage *m);
     /* Methods */
-    bool * is_zones() const;
-    bool is_zones(unsigned int index) const;
-    void set_zones(unsigned int index, const bool new_zones);
-    void set_zones(const bool * new_zones);
-    size_t maxlenof_zones() const;
     virtual Message * clone() const;
   };
 
@@ -190,13 +180,16 @@ class NavGraphWithMPSGeneratorInterface : public Interface
       double tag_rotation[4]; /**< 
       Rotation quaternion relative to reference frame, ordered as (x, y, z, w).
      */
+      int16_t zone_coords[2]; /**< 
+      Integral zone coordinates, i.e. [2,3] for C-Z23 or [-2,3] for M-Z23.
+     */
     } UpdateStationByTagMessage_data_t;
 
     UpdateStationByTagMessage_data_t *data;
 
   interface_enum_map_t enum_map_Side;
    public:
-    UpdateStationByTagMessage(const char * ini_name, const Side ini_side, const char * ini_frame, const double * ini_tag_translation, const double * ini_tag_rotation);
+    UpdateStationByTagMessage(const char * ini_name, const Side ini_side, const char * ini_frame, const double * ini_tag_translation, const double * ini_tag_rotation, const int16_t * ini_zone_coords);
     UpdateStationByTagMessage();
     ~UpdateStationByTagMessage();
 
@@ -221,6 +214,11 @@ class NavGraphWithMPSGeneratorInterface : public Interface
     void set_tag_rotation(unsigned int index, const double new_tag_rotation);
     void set_tag_rotation(const double * new_tag_rotation);
     size_t maxlenof_tag_rotation() const;
+    int16_t * zone_coords() const;
+    int16_t zone_coords(unsigned int index) const;
+    void set_zone_coords(unsigned int index, const int16_t new_zone_coords);
+    void set_zone_coords(const int16_t * new_zone_coords);
+    size_t maxlenof_zone_coords() const;
     virtual Message * clone() const;
   };
 

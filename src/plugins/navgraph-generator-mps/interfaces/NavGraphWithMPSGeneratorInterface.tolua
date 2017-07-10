@@ -87,11 +87,10 @@ class NavGraphWithMPSGeneratorInterface : public Interface
     int maxlenof_zones() const;
   };
 
-  class SetWaitZonesMessage : public Message
+  class GenerateWaitZonesMessage : public Message
   {
-    SetWaitZonesMessage(bool * ini_zones);
-    SetWaitZonesMessage();
-    ~SetWaitZonesMessage();
+    GenerateWaitZonesMessage();
+    ~GenerateWaitZonesMessage();
 
     unsigned int      id() const;
 
@@ -110,14 +109,11 @@ class NavGraphWithMPSGeneratorInterface : public Interface
     void              unref();
     unsigned int      refcount();
 
-    bool is_zones(int index);
-    void set_zones(unsigned int index, const bool new_zones);
-    int maxlenof_zones() const;
   };
 
   class UpdateStationByTagMessage : public Message
   {
-    UpdateStationByTagMessage(char * ini_name, Side ini_side, char * ini_frame, double * ini_tag_translation, double * ini_tag_rotation);
+    UpdateStationByTagMessage(char * ini_name, Side ini_side, char * ini_frame, double * ini_tag_translation, double * ini_tag_rotation, short * ini_zone_coords);
     UpdateStationByTagMessage();
     ~UpdateStationByTagMessage();
 
@@ -153,6 +149,9 @@ class NavGraphWithMPSGeneratorInterface : public Interface
     double tag_rotation(int index);
     void set_tag_rotation(unsigned int index, const double new_tag_rotation);
     int maxlenof_tag_rotation() const;
+    short zone_coords(int index);
+    void set_zone_coords(unsigned int index, const short new_zone_coords);
+    int maxlenof_zone_coords() const;
   };
 
   unsigned int msgid();

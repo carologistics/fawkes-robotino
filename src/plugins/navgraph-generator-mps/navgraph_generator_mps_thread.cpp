@@ -52,11 +52,52 @@ namespace fawkes {
   }
 }
 
+
+std::map<uint16_t, std::vector<Eigen::Vector2i>>
+NavGraphGeneratorMPSThread::zone_blocking_ = {
+  {0, {        // 0°
+     {-1, 0},  //
+     { 1, 0}   // x|x
+  } },
+  {45, {       // 45°
+     { 1,  0}, //
+     { 1,  1}, //  xx
+     { 0,  1}, // x\x
+     { 0, -1}, // xx
+     {-1, -1},
+     {-1,  0}
+  } },
+  {90, {       // 90°
+     { 0,  1}, //  x
+     { 0, -1}  //  -
+  } },         //  x
+  {135, {
+     { 0,  1}, // 135°
+     {-1,  1}, //
+     {-1,  0}, // xx
+     { 1,  0}, // x/x
+     { 1, -1}, //  xx
+     { 0, -1}
+  } }
+};             // 180°-315° is the same, see constructor.
+
+
+std::vector<Eigen::Vector2i>
+NavGraphGeneratorMPSThread::reserved_zones_ = {
+                    {-5, 2},   {5, 2},
+  {-7, 1}, {-6, 1}, {-5, 1},   {5, 1}, {6, 1}, {7, 1},
+};
+
+
 /** Constructor. */
 NavGraphGeneratorMPSThread::NavGraphGeneratorMPSThread()
   : Thread("NavGraphGeneratorMPSThread", Thread::OPMODE_WAITFORWAKEUP),
     BlackBoardInterfaceListener("NavGraphGeneratorMPSThread")
 {
+  zone_blocking_[180] = zone_blocking_[0];
+  zone_blocking_[225] = zone_blocking_[45];
+  zone_blocking_[270] = zone_blocking_[90];
+  zone_blocking_[315] = zone_blocking_[135];
 }
 
 /** Destructor. */
@@ -112,7 +153,6 @@ NavGraphGeneratorMPSThread::init()
   cfg_bounding_box_p2_[1] = p2[1];
 
   exp_zones_.resize(24, true);
-  wait_zones_.resize(24, false);
 
   navgen_if_ =
     blackboard->open_for_reading<NavGraphGeneratorInterface>("/navgraph-generator");
@@ -163,7 +203,8 @@ NavGraphGeneratorMPSThread::loop()
       logger->log_warn(name(), "Updating station %s from tag", m->name());
 
       update_station(m->name(), (m->side() == NavGraphWithMPSGeneratorInterface::INPUT),
-		     m->frame(), m->tag_translation(), m->tag_rotation());
+                     m->frame(), m->tag_translation(), m->tag_rotation(),
+                     Eigen::Vector2i { m->zone_coords(0), m->zone_coords(1) } );
 
     } else if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage>() ) {
       NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage *m =
@@ -172,13 +213,8 @@ NavGraphGeneratorMPSThread::loop()
 	exp_zones_[i] = m->is_zones(i);
       }
 
-    } else if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage>() ) {
-      NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage *m =
-	      navgen_mps_if_->msgq_first<NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage>();
-      for (size_t i = 0; i < std::min(m->maxlenof_zones(), wait_zones_.size()); ++i) {
-	      wait_zones_[i] = m->is_zones(i);
-      }
-
+    } else if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::GenerateWaitZonesMessage>() ) {
+      generate_wait_zones(5);
     } else if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::ComputeMessage>() ) {
       NavGraphWithMPSGeneratorInterface::ComputeMessage *m =
 	navgen_mps_if_->msgq_first<NavGraphWithMPSGeneratorInterface::ComputeMessage>();
@@ -196,9 +232,101 @@ NavGraphGeneratorMPSThread::loop()
 }
 
 
+void NavGraphGeneratorMPSThread::generate_wait_zones(int count)
+{
+  wait_zones_.clear();
+  std::vector<Eigen::Vector2i> blocked_zones;
+  for (auto &entry : stations_) {
+    blocked_zones.push_back(entry.second.zone);
+    blocked_zones.insert(blocked_zones.end(),
+                         entry.second.blocked_zones.begin(),
+                         entry.second.blocked_zones.end());
+  }
+
+  std::vector<Eigen::Vector2i> free_zones;
+
+  int x_min, x_max, y_min, y_max;
+  if (cfg_bounding_box_p1_.x() < cfg_bounding_box_p2_.x()) {
+    x_min = int(cfg_bounding_box_p1_.x());
+    x_max = int(cfg_bounding_box_p2_.x());
+  } else {
+    x_min = int(cfg_bounding_box_p2_.x());
+    x_max = int(cfg_bounding_box_p1_.x());
+  }
+  if (cfg_bounding_box_p1_.y() < cfg_bounding_box_p2_.y()) {
+    y_min = int(cfg_bounding_box_p1_.y());
+    y_max = int(cfg_bounding_box_p2_.y());
+  } else {
+    y_min = int(cfg_bounding_box_p2_.y());
+    y_max = int(cfg_bounding_box_p1_.y());
+  }
+
+  for (int x = x_min; x <= x_max; ++x) {
+    for (int y = y_min; y <= y_max; ++y) {
+      if (x != 0 && y != 0) {
+        Eigen::Vector2i zn = {x, y};
+        if (std::find(reserved_zones_.begin(), reserved_zones_.end(), zn) == reserved_zones_.end()
+            && std::find(blocked_zones.begin(), blocked_zones.end(), zn) == blocked_zones.end()) {
+          // Zone is not reserved or blocked
+          free_zones.push_back(zn);
+        }
+      }
+    }
+  }
+
+  logger->log_info(name(), "Free zones: %zu", free_zones.size());
+
+  std::sort(free_zones.begin(), free_zones.end(),
+            [this] (const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) {
+    //double d_lhs_avg = 0, d_rhs_avg = 0;
+    double d_lhs_min = std::numeric_limits<double>::max();
+    double d_rhs_min = std::numeric_limits<double>::max();
+    for (auto &entry : this->stations_) {
+      Eigen::Vector2i &station_zn = entry.second.zone;
+
+      double d_lhs = (lhs - station_zn).norm();
+      if (d_lhs < d_lhs_min)
+        d_lhs_min = d_lhs;
+
+      double d_rhs = (rhs - station_zn).norm();
+      if (d_rhs < d_rhs_min)
+        d_rhs_min = d_rhs;
+    }
+    return d_lhs_min > d_rhs_min;
+  });
+
+  for (auto it = free_zones.begin(); it <= free_zones.begin() + count && it < free_zones.end(); ++it) {
+    wait_zones_.push_back(*it);
+  }
+}
+
+
+/*
+ * 2017 rules: Machine rotation is always a multiple of 45°
+ */
+static inline uint16_t quantize_yaw(float yaw)
+{
+  if (yaw < 0)
+    yaw = 2.0f * float(M_PI) + yaw;
+  uint16_t yaw_discrete = uint16_t(std::round(yaw / float(M_PI) * 4)) * 45;
+  return yaw_discrete == 360 ? 0 : yaw_discrete;
+}
+
+
+std::vector<Eigen::Vector2i>
+NavGraphGeneratorMPSThread::blocked_zones(Eigen::Vector2i zone, uint16_t discrete_ori)
+{
+  std::vector<Eigen::Vector2i> rv;
+  for (const Eigen::Vector2i &offset : zone_blocking_[discrete_ori % 180]) {
+    rv.push_back(zone + offset);
+  }
+  return rv;
+}
+
+
 void
 NavGraphGeneratorMPSThread::update_station(std::string id, bool input, std::string frame,
-					   double tag_pos[3], double tag_ori[4])
+                                           double tag_pos[3], double tag_ori[4], Eigen::Vector2i zone)
  {
   // **** 1. convert to map frame
   tf::Stamped<tf::Pose> pose;
@@ -306,6 +434,9 @@ NavGraphGeneratorMPSThread::update_station(std::string id, bool input, std::stri
   s.output_ori   = output_ori;
   s.output_yaw   = quat_yaw(output_ori);
   s.corners      = corners;
+  s.zone         = zone;
+  s.blocked_zones = blocked_zones(zone, quantize_yaw(quat_yaw(pose_ori)));
+
   stations_[id]  = s;
 }
 
@@ -498,36 +629,35 @@ NavGraphGeneratorMPSThread::generate_navgraph()
     }
   }
 
-	for (size_t i = 0; i < wait_zones_.size(); ++i) {
-		if (wait_zones_[i]) {
-			int z = i;
-			// calc zone coordinates
-			int col = (z / 4); // col is 0-based and is in range [0..2]
-			int col_sign = 1;
-			if (col > 2) {
-				// magenta side, negative X coordinates
-				col -= 3;
-				col_sign = -1;
-			}
-			int row = z - (z / 4) * 4;
+  for (const Eigen::Vector2i &zn : wait_zones_) {
+    std::string z_name = "WAIT-";
 
-			float from_x = col_sign *  col      * 2.;
-			float to_x   = col_sign * (col + 1) * 2.;
-			float from_y =  row      * 1.5;
-			float to_y   = (row + 1) * 1.5;
+    float x = float(zn.x());
+    if (x < 0) {
+      x += 0.5f;
+      z_name += "M-Z";
+    } else {
+      x -= 0.5f;
+      z_name += "C-Z";
+    }
 
-			float center_x = from_x + fabsf(from_x - to_x) / 2. * col_sign;
-			float center_y = from_y + fabsf(from_y - to_y) / 2.;
+    float y = float(zn.y());
+    if (y < 0)
+      y += 0.5f;
+    else
+      y -= 0.5f;
 
-			navgen_if_->msgq_enqueue
-				(new NavGraphGeneratorInterface::AddPointOfInterestMessage
-				 (NavGraph::format_name("WAIT-Z%zu", i+1).c_str(), center_x, center_y,
-				  NavGraphGeneratorInterface::CLOSEST_EDGE_OR_NODE)); 
-		}
-	}
+    z_name += std::to_string(std::abs(zn.x())) + std::to_string(zn.y());
+
+    logger->log_info(name(), "Adding wait zone %s.", z_name.c_str());
+
+    navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddPointOfInterestMessage(
+                               z_name.c_str(), x, y,
+                               NavGraphGeneratorInterface::CLOSEST_EDGE_OR_NODE));
+  }
 
   NavGraphGeneratorInterface::ComputeMessage *compute_msg =
-    new NavGraphGeneratorInterface::ComputeMessage();
+      new NavGraphGeneratorInterface::ComputeMessage();
   compute_msg->ref();
   navgen_if_->msgq_enqueue(compute_msg);
   compute_msgid_ = compute_msg->id();
