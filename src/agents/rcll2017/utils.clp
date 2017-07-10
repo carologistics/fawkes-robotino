@@ -118,43 +118,6 @@
   (return (create-multifield-with-length-and-entry ?length RANDOM-SYMBOL))
 )
 
-(deffunction navgraph-add-all-new-tags ()
-  "send all new tags to the navgraph generator"
-  (bind ?any-tag-to-add FALSE)
-  (delayed-do-for-all-facts ((?ft found-tag)) (not (any-factp ((?added-f navgraph-added-for-mps)) (eq ?ft:name ?added-f:name)))
-    (bind ?any-tag-to-add TRUE)
-    ; report tag position to navgraph generator
-    (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "UpdateStationByTagMessage"))
-    (blackboard-set-msg-field ?msg "name" (str-cat ?ft:name))
-    (blackboard-set-msg-field ?msg "side" ?ft:side)
-    (blackboard-set-msg-field ?msg "frame" ?ft:frame)
-    (blackboard-set-msg-multifield ?msg "tag_translation" ?ft:trans)
-    (blackboard-set-msg-multifield ?msg "tag_rotation" ?ft:rot)
-    (blackboard-send-msg ?msg)
-    (printout t "Send UpdateStationByTagMessage: id " (str-cat ?ft:name) 
-	      " side " ?ft:side
-	      " frame " ?ft:frame
-	      " trans " ?ft:trans
-	      " rot " ?ft:rot  crlf)
-   
-    (assert (navgraph-added-for-mps (name ?ft:name)))
-  )
-  (if ?any-tag-to-add
-    then
-    ; send compute message so we can drive to the output
-    (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "ComputeMessage"))
-    (bind ?compute-msg-id (blackboard-send-msg ?msg))
-
-    ; save the last compute-msg-id to know when it was processed
-    (do-for-all-facts ((?lncm last-navgraph-compute-msg)) TRUE
-      (retract ?lncm)
-    )
-    (assert (last-navgraph-compute-msg (id ?compute-msg-id)))
-    else
-    (printout t "There are no tags to add" crlf)
-  )
-)
-
 (deffunction navigator-set-speed (?max-velocity ?max-rotation)
   (bind ?msg (blackboard-create-msg "NavigatorInterface::Navigator" "SetMaxVelocityMessage"))
   (blackboard-set-msg-field ?msg "max_velocity" ?max-velocity)
@@ -452,6 +415,16 @@
 )
 
 
+(deffunction zone-coords (?zn)
+  (bind ?x (eval (sub-string 4 4 ?zn)))
+  (bind ?y (eval (sub-string 5 5 ?zn)))
+  (if (eq (sub-string 1 1 ?zn) "M") then
+    (bind ?x (* -1 ?x))
+  )
+  (return (create$ ?x ?y))
+)
+
+
 (deffunction zone-center (?zn)
   (bind ?x (eval (sub-string 4 4 ?zn)))
   (bind ?y (eval (sub-string 5 5 ?zn)))
@@ -659,6 +632,51 @@
     )   
     (printout error "error in rotation of machines, checked all possible cases, but nothing cateched" crlf)
     (return ?ori)
+  )
+)
+
+
+(deffunction navgraph-add-all-new-tags ()
+  "send all new tags to the navgraph generator"
+  (bind ?any-tag-to-add FALSE)
+  (delayed-do-for-all-facts ((?ft found-tag) (?ze zone-exploration))
+    (and
+      (not (any-factp ((?added-f navgraph-added-for-mps)) (eq ?ft:name ?added-f:name)))
+      (eq ?ft:name ?ze:machine)
+    )
+
+    (bind ?any-tag-to-add TRUE)
+    ; report tag position to navgraph generator
+    (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "UpdateStationByTagMessage"))
+    (blackboard-set-msg-field ?msg "name" (str-cat ?ft:name))
+    (blackboard-set-msg-field ?msg "side" ?ft:side)
+    (blackboard-set-msg-field ?msg "frame" ?ft:frame)
+    (blackboard-set-msg-multifield ?msg "tag_translation" ?ft:trans)
+    (blackboard-set-msg-multifield ?msg "tag_rotation" ?ft:rot)
+    (blackboard-set-msg-multifield ?msg "zone_coords" (zone-coords ?ze:name))
+    (blackboard-send-msg ?msg)
+    (printout t "Send UpdateStationByTagMessage: id " (str-cat ?ft:name) 
+	      " side " ?ft:side
+	      " frame " ?ft:frame
+	      " trans " ?ft:trans
+	      " rot " ?ft:rot
+        " zone " ?ze:name crlf)
+   
+    (assert (navgraph-added-for-mps (name ?ft:name)))
+  )
+  (if ?any-tag-to-add
+    then
+    ; send compute message so we can drive to the output
+    (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "ComputeMessage"))
+    (bind ?compute-msg-id (blackboard-send-msg ?msg))
+
+    ; save the last compute-msg-id to know when it was processed
+    (do-for-all-facts ((?lncm last-navgraph-compute-msg)) TRUE
+      (retract ?lncm)
+    )
+    (assert (last-navgraph-compute-msg (id ?compute-msg-id)))
+    else
+    (printout t "There are no tags to add" crlf)
   )
 )
 

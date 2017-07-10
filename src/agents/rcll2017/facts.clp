@@ -125,6 +125,7 @@
 
 (deftemplate last-navgraph-compute-msg 
   (slot id (type INTEGER))
+  (slot final (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
 )
 
 (deftemplate navigator-default-vmax
