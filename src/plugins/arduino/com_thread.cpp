@@ -421,7 +421,14 @@ ArduinoComThread::read_packet(unsigned int timeout)
             (boost::lambda::var(ec) = boost::lambda::_1,
             boost::lambda::var(bytes_read_) = boost::lambda::_2));
 
-    do io_service_.run_one(); while (ec == boost::asio::error::would_block);
+//    do io_service_.run_one(); while (ec == boost::asio::error::would_block);
+
+    do {
+        io_service_.run_one();
+        if (ec == boost::asio::error::would_block) {
+            usleep(10000);
+        }
+    } while (ec == boost::asio::error::would_block);
 
     if (ec) {
         if (ec.value() == boost::system::errc::operation_canceled) {
