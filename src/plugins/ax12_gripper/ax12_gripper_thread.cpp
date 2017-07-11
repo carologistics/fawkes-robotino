@@ -353,6 +353,11 @@ GripperAX12AThread::loop()
     }
     __gripper_if->set_angle(get_opening_angle());
     __gripper_if->set_holds_puck(holds_puck());
+
+    unsigned int left_load, right_load;
+    get_loads(left_load, right_load);
+    __gripper_if->set_left_load(left_load & 0x400 ? -((int) left_load & 0x3ff) : (int) left_load);
+    __gripper_if->set_right_load(right_load & 0x400 ? -((int) right_load & 0x3ff) : (int) right_load);
     __gripper_if->write();
   }
   cfg_mutex_.unlock();

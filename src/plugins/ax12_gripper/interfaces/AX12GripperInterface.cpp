@@ -70,8 +70,8 @@ AX12GripperInterface::AX12GripperInterface() : Interface()
   add_fieldinfo(IFT_INT32, "z_lower_bound", 1, &data->z_lower_bound);
   add_fieldinfo(IFT_FLOAT, "left", 1, &data->left);
   add_fieldinfo(IFT_FLOAT, "right", 1, &data->right);
-  add_fieldinfo(IFT_UINT32, "left_load", 1, &data->left_load);
-  add_fieldinfo(IFT_UINT32, "right_load", 1, &data->right_load);
+  add_fieldinfo(IFT_INT32, "left_load", 1, &data->left_load);
+  add_fieldinfo(IFT_INT32, "right_load", 1, &data->right_load);
   add_fieldinfo(IFT_FLOAT, "angle", 1, &data->angle);
   add_fieldinfo(IFT_FLOAT, "offset", 1, &data->offset);
   add_fieldinfo(IFT_UINT32, "msgid", 1, &data->msgid);
@@ -109,7 +109,7 @@ AX12GripperInterface::AX12GripperInterface() : Interface()
   add_messageinfo("SetVelocityMessage");
   add_messageinfo("SetMarginMessage");
   add_messageinfo("SetTorqueMessage");
-  unsigned char tmp_hash[] = {0xf4, 0x13, 0x47, 0xc7, 0x64, 0x97, 0xbb, 0x59, 0xad, 0x3c, 0x30, 0xef, 0xa6, 0x53, 0x4a, 0xc4};
+  unsigned char tmp_hash[] = {0xb0, 0x83, 0x91, 0xb6, 0xc4, 0xb7, 0x81, 0x61, 0xb5, 0xee, 0xe1, 0x3e, 0x5a, 0x35, 0x57, 0x5a};
   set_hash(tmp_hash);
 }
 
@@ -309,7 +309,7 @@ AX12GripperInterface::set_right(const float new_right)
  * Current left load.
  * @return left_load value
  */
-uint32_t
+int32_t
 AX12GripperInterface::left_load() const
 {
   return data->left_load;
@@ -330,7 +330,7 @@ AX12GripperInterface::maxlenof_left_load() const
  * @param new_left_load new left_load value
  */
 void
-AX12GripperInterface::set_left_load(const uint32_t new_left_load)
+AX12GripperInterface::set_left_load(const int32_t new_left_load)
 {
   data->left_load = new_left_load;
   data_changed = true;
@@ -340,7 +340,7 @@ AX12GripperInterface::set_left_load(const uint32_t new_left_load)
  * Current right load.
  * @return right_load value
  */
-uint32_t
+int32_t
 AX12GripperInterface::right_load() const
 {
   return data->right_load;
@@ -361,7 +361,7 @@ AX12GripperInterface::maxlenof_right_load() const
  * @param new_right_load new right_load value
  */
 void
-AX12GripperInterface::set_right_load(const uint32_t new_right_load)
+AX12GripperInterface::set_right_load(const int32_t new_right_load)
 {
   data->right_load = new_right_load;
   data_changed = true;

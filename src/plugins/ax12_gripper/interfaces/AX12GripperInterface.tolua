@@ -553,11 +553,11 @@ class AX12GripperInterface : public Interface
   float right();
   void set_right(const float new_right);
   int maxlenof_right() const;
-  unsigned int left_load();
-  void set_left_load(const unsigned int new_left_load);
+  int left_load();
+  void set_left_load(const int new_left_load);
   int maxlenof_left_load() const;
-  unsigned int right_load();
-  void set_right_load(const unsigned int new_right_load);
+  int right_load();
+  void set_right_load(const int new_right_load);
   int maxlenof_right_load() const;
   float angle();
   void set_angle(const float new_angle);

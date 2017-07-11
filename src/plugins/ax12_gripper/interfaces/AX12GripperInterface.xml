@@ -37,8 +37,8 @@
 
     <field type="float" name="left">Current left.</field>
     <field type="float" name="right">Current right.</field>
-    <field type="uint32" name="left_load">Current left load.</field>
-    <field type="uint32" name="right_load">Current right load.</field>
+    <field type="int32" name="left_load">Current left load.</field>
+    <field type="int32" name="right_load">Current right load.</field>
     <field type="float" name="angle">Current angle.</field>
     <field type="float" name="offset">Current offset.</field>
 

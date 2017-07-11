@@ -56,8 +56,8 @@ class AX12GripperInterface : public Interface
     int32_t z_lower_bound; /**< Z-lower bound. */
     float left; /**< Current left. */
     float right; /**< Current right. */
-    uint32_t left_load; /**< Current left load. */
-    uint32_t right_load; /**< Current right load. */
+    int32_t left_load; /**< Current left load. */
+    int32_t right_load; /**< Current right load. */
     float angle; /**< Current angle. */
     float offset; /**< Current offset. */
     uint32_t msgid; /**< The ID of the message that is currently being
@@ -580,11 +580,11 @@ class AX12GripperInterface : public Interface
   float right() const;
   void set_right(const float new_right);
   size_t maxlenof_right() const;
-  uint32_t left_load() const;
-  void set_left_load(const uint32_t new_left_load);
+  int32_t left_load() const;
+  void set_left_load(const int32_t new_left_load);
   size_t maxlenof_left_load() const;
-  uint32_t right_load() const;
-  void set_right_load(const uint32_t new_right_load);
+  int32_t right_load() const;
+  void set_right_load(const int32_t new_right_load);
   size_t maxlenof_right_load() const;
   float angle() const;
   void set_angle(const float new_angle);
