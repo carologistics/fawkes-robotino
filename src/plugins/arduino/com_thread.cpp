@@ -399,10 +399,6 @@ ArduinoComThread::handle_nodata(const boost::system::error_code &ec)
         logger->log_debug(name(), "Received: %zu  %s\n", s.size(), s.c_str());
         close_device();
         open_device();
-//        for (size_t i = 0; i < s.size(); ++i) {
-//	    printf("%02x ", s[i]);
-//        }
-//        printf("\n");
     }
 }
 
