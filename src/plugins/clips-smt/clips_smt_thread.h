@@ -130,7 +130,7 @@ private:
 
 	// Constants for C0-C1
 	const int number_actions = 18;
-	const int plan_horizon = 14;
+	const int plan_horizon = 11;
 	const int deadline = 60;
 	const int time_to_prep = 5;
 	const int time_to_fetch = 5;

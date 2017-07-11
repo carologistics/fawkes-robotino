@@ -57,7 +57,7 @@ ClipsSmtThread::~ClipsSmtThread()
 void
 ClipsSmtThread::init()
 {
-	clips_smt_test_formulaGenerator();
+	//clips_smt_test_formulaGenerator();
 
 	// initialize maps for Francesco's encoder for C0-C1
 	state1_machines["not_prep"]=0;
@@ -569,7 +569,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 
 	// Variables initDist_i_j
 	for(int i = 0; i < number_machines+1; ++i){
-		for(int j = i+1; j < number_machines+1; ++j) {
+		for(int j = i+1; j < number_machines+1; ++j) { // Before j=i+1 TODO
 			z3::expr var(_z3_context);
 			std::string varName = "initDist_" + std::to_string(i) + "_" + std::to_string(j);
 			var=_z3_context.real_const((varName).c_str());
@@ -668,7 +668,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		var=_z3_context.int_const((varName).c_str());
 		varS.insert(std::make_pair(varName, var));
 
-		varName = "rew" + std::to_string(i);
+		varName = "rew_" + std::to_string(i);
 		var=_z3_context.real_const((varName).c_str());
 		varRew.insert(std::make_pair(varName, var));
 	}
@@ -715,6 +715,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	// 		max_m_first = m;
 	// 	}
 	// }
+
+	logger->log_info(name(), "Add constraints depending on plan_horizon");
 
 	// Constraints depending on plan_horizon
 	for(int i = 1; i < plan_horizon+1; ++i){
@@ -900,6 +902,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 
 	}
 
+	logger->log_info(name(), "Add constraints stating robot states are initially consistent");
+
 	// Constraint: robot states are initially consistent
 	for(int i=1; i<number_robots+1; ++i){
 		z3::expr var_h_i(_z3_context);
@@ -974,28 +978,30 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 
 			for(int k=0; k<number_machines+1; ++k){
 				for(int l=1; l<number_machines+1; ++l){
-					z3::expr var_d_k_l(_z3_context);
-					z3::expr var_d_l_k(_z3_context);
-
-					it_map = varInit.find("initDist_"+std::to_string(k)+"_"+std::to_string(l));
-					if(it_map != varInit.end()) {
-						var_d_k_l = it_map->second;
-					}
-					else {
-						logger->log_error(name(), "var_d_%i_%i not found", k,l);
-					}
-					it_map = varInit.find("initDist_"+std::to_string(l)+"_"+std::to_string(k));
-					if(it_map != varInit.end()) {
-						var_d_l_k = it_map->second;
-					}
-					else {
-						logger->log_error(name(), "var_d_%i_%i not found", l,k);
-					}
-
 					if(k<l){
+						z3::expr var_d_k_l(_z3_context);
+
+						it_map = varInit.find("initDist_"+std::to_string(k)+"_"+std::to_string(l));
+						if(it_map != varInit.end()) {
+							var_d_k_l = it_map->second;
+						}
+						else {
+							logger->log_error(name(), "var_d_%i_%i not found", k,l);
+						}
+
 						constraint2 = constraint2 || (var_pos_i==k && var_pos_ip==l && var_t_ip>=var_d_k_l);
 					}
 					else if(l<k){
+						z3::expr var_d_l_k(_z3_context);
+
+						it_map = varInit.find("initDist_"+std::to_string(l)+"_"+std::to_string(k));
+						if(it_map != varInit.end()) {
+							var_d_l_k = it_map->second;
+						}
+						else {
+							logger->log_error(name(), "var_d_%i_%i not found", l,k);
+						}
+
 						constraint2 = constraint2 || (var_pos_i==k && var_pos_ip==l && var_t_ip>=var_d_l_k);
 					}
 					else {
@@ -1007,6 +1013,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			constraints.push_back(constraint1 || (var_h_ip==var_h_i && constraint2));
 		}
 	}
+
+	logger->log_info(name(), "Add constraints stating robot states are inductively consistent");
 
 	// Constraint: robot states are inductively consistent
 	for(int i=1; i<plan_horizon+1; ++i){
@@ -1038,7 +1046,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		else {
 			logger->log_error(name(), "var_holdB_%i not found", i);
 		}
-		it_map = varRobotPosition.find("pos"+std::to_string(i));
+		it_map = varRobotPosition.find("pos_"+std::to_string(i));
 		if(it_map != varRobotPosition.end()) {
 			var_pos_i = it_map->second;
 		}
@@ -1107,28 +1115,30 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 
 			for(int k=1; k<number_machines+1; ++k){
 				for(int l=1; l<number_machines+1; ++l){
-					z3::expr var_d_k_l(_z3_context);
-					z3::expr var_d_l_k(_z3_context);
-
-					it_map = varInit.find("initDist_"+std::to_string(k)+"_"+std::to_string(l));
-					if(it_map != varInit.end()) {
-						var_d_k_l = it_map->second;
-					}
-					else {
-						logger->log_error(name(), "var_d_%i_%i not found", k,l);
-					}
-					it_map = varInit.find("initDist_"+std::to_string(l)+"_"+std::to_string(k));
-					if(it_map != varInit.end()) {
-						var_d_l_k = it_map->second;
-					}
-					else {
-						logger->log_error(name(), "var_d_%i_%i not found", l,k);
-					}
-
 					if(k<l){
+						z3::expr var_d_k_l(_z3_context);
+
+						it_map = varInit.find("initDist_"+std::to_string(k)+"_"+std::to_string(l));
+						if(it_map != varInit.end()) {
+							var_d_k_l = it_map->second;
+						}
+						else {
+							logger->log_error(name(), "var_d_%i_%i not found", k,l);
+						}
+
 						constraint2 = constraint2 || (var_pos_i==k && var_pos_ip==l && var_t_ip>=var_t_i+var_rd_i+var_d_k_l);
 					}
 					else if(l<k){
+						z3::expr var_d_l_k(_z3_context);
+
+						it_map = varInit.find("initDist_"+std::to_string(l)+"_"+std::to_string(k));
+						if(it_map != varInit.end()) {
+							var_d_l_k = it_map->second;
+						}
+						else {
+							logger->log_error(name(), "var_d_%i_%i not found", l,k);
+						}
+
 						constraint2 = constraint2 || (var_pos_i==k && var_pos_ip==l && var_t_ip>=var_t_i+var_rd_i+var_d_l_k);
 					}
 					else {
@@ -1140,6 +1150,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			constraints.push_back(constraint1 || (var_h_ip==var_h_i && constraint2));
 		}
 	}
+
+	logger->log_info(name(), "Add constraints stating machine states are initially consistent");
 
 	// Constraint: machine states are initially consistent
 	for(int i=min_machine_groups; i<max_machine_groups+1; ++i){
@@ -1153,21 +1165,21 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			var_s1_i = it_map->second;
 		}
 		else {
-			logger->log_error(name(), "var_s1_%i not found", i);
+			logger->log_error(name(), "var_s1_i with i=%i not found", i);
 		}
 		it_map = varInit.find("initState2_"+std::to_string(i));
 		if(it_map != varInit.end()) {
 			var_s2_i = it_map->second;
 		}
 		else {
-			logger->log_error(name(), "var_s2_%i not found", i);
+			logger->log_error(name(), "var_s2_i with i=%i not found", i);
 		}
 		it_map = varInit.find("initState3_"+std::to_string(i));
 		if(it_map != varInit.end()) {
 			var_s3_i = it_map->second;
 		}
 		else {
-			logger->log_error(name(), "var_s3_%i not found", i);
+			logger->log_error(name(), "var_s3_i with i=%i not found", i);
 		}
 
 		for(int ip=1; ip<plan_horizon+1; ++ip){
@@ -1183,46 +1195,48 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			else {
 				logger->log_error(name(), "var_m_%i not found", ip);
 			}
-			it_map = varS.find("state1A_"+std::to_string(i));
+			it_map = varS.find("state1A_"+std::to_string(ip));
 			if(it_map != varS.end()) {
 				var_s1_ip = it_map->second;
 			}
 			else {
-				logger->log_error(name(), "var_s1_%i not found", ip);
+				logger->log_error(name(), "var_s1_ip with ip=%i not found", ip);
 			}
-			it_map = varS.find("state2A_"+std::to_string(i));
+			it_map = varS.find("state2A_"+std::to_string(ip));
 			if(it_map != varS.end()) {
 				var_s2_ip = it_map->second;
 			}
 			else {
-				logger->log_error(name(), "var_s2_%i not found", ip);
+				logger->log_error(name(), "var_s2_ip with ip=%i not found", ip);
 			}
-			it_map = varS.find("state3A_"+std::to_string(i));
+			it_map = varS.find("state3A_"+std::to_string(ip));
 			if(it_map != varS.end()) {
 				var_s3_ip = it_map->second;
 			}
 			else {
-				logger->log_error(name(), "var_s3_%i not found", i);
+				logger->log_error(name(), "var_s3_ip with ip=%i not found", ip);
 			}
 
 			z3::expr constraint1( !(var_m_ip == i));
 
-			for(int ipp=1; ipp<ip; ++ip){
+			for(int ipp=1; ipp<ip; ++ipp){
 				it_map = varM.find("M_"+std::to_string(ipp));
 				if(it_map != varM.end()) {
 					z3::expr var = it_map->second;
-					constraint1 = constraint1 || (var == i);
+					constraint1 = constraint1 || var==i;
 				}
 				else {
 					logger->log_error(name(), "var_m_%i not found", ipp);
 				}
 			}
 
-			z3::expr constraint2(var_s1_ip = var_s1_i && var_s2_ip = var_s2_i && var_s3_ip = var_s3_i);
+			z3::expr constraint2(var_s1_ip==var_s1_i && var_s2_ip==var_s2_i && var_s3_ip==var_s3_i);
 
 			constraints.push_back(constraint1 || constraint2);
 		}
 	}
+
+	logger->log_info(name(), "Add constraints stating robot states are inductively consistent");
 
 	// Constraint: machine states are inductively consistent
 	for(int i=1; i<plan_horizon+1; ++i){
@@ -1321,7 +1335,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 
 			z3::expr constraint1( !(var_m_ip == var_m_i));
 
-			for(int ipp=i+1; ipp<ip; ++ip){
+			for(int ipp=i+1; ipp<ip; ++ipp){
 				it_map = varM.find("M_"+std::to_string(ipp));
 				if(it_map != varM.end()) {
 					z3::expr var = it_map->second;
@@ -1332,14 +1346,17 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 				}
 			}
 
-			z3::expr constraint2(var_t_ip>=var_t_i+var_d_i && var_s1_ip = var_s1_i && var_s2_ip = var_s2_i && var_s3_ip = var_s3_i);
+			z3::expr constraint2(var_t_ip>=var_t_i+var_d_i && var_s1_ip==var_s1_i && var_s2_ip==var_s2_i && var_s3_ip==var_s3_i);
 
 			constraints.push_back(constraint1 || constraint2);
 		}
 	}
 
+	logger->log_info(name(), "Add constraints for actions");
+
 	// Action stuff for every order
-	for(int o=0; o<data.orders().size()/2; ++o){
+	// for(int o=0; o<1; ++o){ // TODO adapt for all orders
+	int o=0;
 
 		// Actions for orders of complexity C0-C1 (all, thus we have to make no check)
 		// Determine base, ring and cap color
@@ -1632,7 +1649,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			constraints.push_back(!(var_a_i == 11) || constraint_action11);
 
 			// Actions for orders of complexity C1
-			if(data.orders(o+data.orders().size()/2).ring_colors().size()>0){
+			if(false){ // TODO adpat for C1 data.orders(o+data.orders().size()/2).ring_colors().size()>0
 				// 12.Action : prepare RS to mount ring
 				z3::expr constraint_action12((var_m_i == machine_groups["RS"])
 											&& (var_state1A_i == state1_machines["not_prep"])
@@ -1732,7 +1749,9 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		}
 
 		// TODO Add actions for orders of higher complexity
-	}
+	// }
+
+	logger->log_info(name(), "Add constraints for goal state");
 
 	// Specify goal state
 	for(int i=1; i<plan_horizon+1; ++i){
@@ -1755,7 +1774,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			var_rew_i = it_map->second;
 		}
 		else {
-			logger->log_error(name(), "var_rew_%i not found", i);
+			logger->log_error(name(), "var_rew_i  with i=%i not found", i);
 		}
 		it_map = varStartTime.find("t_"+std::to_string(i));
 		if(it_map != varStartTime.end()) {
@@ -1778,17 +1797,17 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		else {
 			logger->log_error(name(), "var_t_%i not found", plan_horizon);
 		}
-		it_map = varMachineDuration.find("state2B_"+std::to_string(plan_horizon));
+		it_map = varMachineDuration.find("md_"+std::to_string(plan_horizon));
 		if(it_map != varMachineDuration.end()) {
 			var_md_plan_horizon = it_map->second;
 		}
 		else {
-			logger->log_error(name(), "var_md_%i not found", plan_horizon);
+			logger->log_error(name(), "var_md_i with i=%i not found", plan_horizon);
 		}
 
 		if(i==1){
-			constraints.push_back((var_a_i == 18 && var_rew_i == (deadline-var_t_i-var_md_i))
-									|| (!(var_a_i==18) && var_rew_i==0));
+			constraints.push_back((var_a_i == 11 && var_rew_i == (deadline-var_t_i-var_md_i))
+									|| (!(var_a_i==11) && var_rew_i==0)); // TODO adapt to "last" action
 		}
 		else {
 			z3::expr var_rew_i_1(_z3_context);
@@ -1798,11 +1817,94 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 				var_rew_i_1 = it_map->second;
 			}
 			else {
-				logger->log_error(name(), "var_rew_%i not found", i);
+				logger->log_error(name(), "var_rew_i_1 with i=%i not found", i);
 			}
 
 			constraints.push_back((var_a_i == 18 && var_rew_i == (var_rew_i_1+deadline-var_t_i-var_md_i))
 									|| (!(var_a_i==18) && var_rew_i==var_rew_i_1));
+		}
+	}
+
+	logger->log_info(name(), "Add constraints for initial situation");
+
+	// Specify initial situation for robots
+	for(int i=1; i<number_robots+1; ++i){
+		z3::expr var_initHold_i(_z3_context);
+		z3::expr var_initPos_i(_z3_context);
+
+		it_map = varInit.find("initHold_"+std::to_string(i));
+		if(it_map != varInit.end()) {
+			var_initHold_i = it_map->second;
+		}
+		else {
+			logger->log_error(name(), "var_initHold_i with i=%i not found", i);
+		}
+		it_map = varInit.find("initPos_"+std::to_string(i));
+		if(it_map != varInit.end()) {
+			var_initPos_i = it_map->second;
+		}
+		else {
+			logger->log_error(name(), "var_initPos_i with i=%i not found", i);
+		}
+
+		constraints.push_back(var_initHold_i==products["nothing"]);
+		constraints.push_back(var_initPos_i==0);
+	}
+
+	// Specify initial situation for machines
+	for(int i=min_machine_groups; i<max_machine_groups+1; ++i){
+		z3::expr var_initState1_i(_z3_context);
+		z3::expr var_initState2_i(_z3_context);
+		z3::expr var_initState3_i(_z3_context);
+
+		it_map = varInit.find("initState1_"+std::to_string(i));
+		if(it_map != varInit.end()) {
+			var_initState1_i = it_map->second;
+		}
+		else {
+			logger->log_error(name(), "var_initState1_i with i=%i not found", i);
+		}
+		it_map = varInit.find("initState2_"+std::to_string(i));
+		if(it_map != varInit.end()) {
+			var_initState2_i = it_map->second;
+		}
+		else {
+			logger->log_error(name(), "var_initState2_i with i=%i not found", i);
+		}
+		it_map = varInit.find("initState3_"+std::to_string(i));
+		if(it_map != varInit.end()) {
+			var_initState3_i = it_map->second;
+		}
+		else {
+			logger->log_error(name(), "var_initState3_i with i=%i not found", i);
+		}
+
+		constraints.push_back(var_initState1_i==state1_machines["not_prep"]);
+		if(i==3) {
+			constraints.push_back(var_initState2_i==state2_machines["has_R1"]); // TODO Adapt to the dynamic case
+		}
+		else {
+			constraints.push_back(var_initState2_i==state2_machines["empty"]);
+		}
+		constraints.push_back(var_initState3_i==state3_machines["empty"]);
+	}
+
+	// Specify distances between machines
+	for(int k=0; k<number_machines+1; ++k){
+		for(int l=k+1; l<number_machines+1; ++l){
+			z3::expr var_d_k_l(_z3_context);
+
+			it_map = varInit.find("initDist_"+std::to_string(k)+"_"+std::to_string(l));
+			if(it_map != varInit.end()) {
+				var_d_k_l = it_map->second;
+			}
+			else {
+				logger->log_error(name(), "var_d_k_l with k=%i and l=%i not found", k,l);
+			}
+
+			float distance = distances_[std::make_pair(node_names_[k], node_names_[l])];
+			z3::expr distance_z3 = _z3_context.real_val((std::to_string(distance)).c_str());
+			constraints.push_back(var_d_k_l == distance_z3);
 		}
 	}
 
@@ -2099,6 +2201,10 @@ void
 	//
 	// //z3Optimizer.minimize(m_1*d_1_M + m_2*d_2_M + m_3*d_3_M);
 	// z3Optimizer.minimize(d_1_M + d_2_M + d_3_M);
+
+	z3::expr rew_planhorizon = _z3_context.real_const(("rew_"+std::to_string(plan_horizon)).c_str());
+
+	z3Optimizer.maximize(rew_planhorizon);
 
 	// Export stats into clips_smt_thread_stats.txt
 	std::ofstream outputFile;
