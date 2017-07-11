@@ -108,7 +108,8 @@ AX12GripperInterface::AX12GripperInterface() : Interface()
   add_messageinfo("SetEnabledMessage");
   add_messageinfo("SetVelocityMessage");
   add_messageinfo("SetMarginMessage");
-  unsigned char tmp_hash[] = {0xff, 0x83, 0x2a, 0x67, 0x10, 0x4a, 0x21, 0xb8, 0x88, 0xf, 0xa6, 0xa6, 0x17, 0x20, 0x8f, 0x56};
+  add_messageinfo("SetTorqueMessage");
+  unsigned char tmp_hash[] = {0xf4, 0x13, 0x47, 0xc7, 0x64, 0x97, 0xbb, 0x59, 0xad, 0x3c, 0x30, 0xef, 0xa6, 0x53, 0x4a, 0xc4};
   set_hash(tmp_hash);
 }
 
@@ -976,6 +977,8 @@ AX12GripperInterface::create_message(const char *type) const
     return new SetVelocityMessage();
   } else if ( strncmp("SetMarginMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
     return new SetMarginMessage();
+  } else if ( strncmp("SetTorqueMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
+    return new SetTorqueMessage();
   } else {
     throw UnknownTypeException("The given type '%s' does not match any known "
                                "message type for this interface type.", type);
@@ -2526,6 +2529,96 @@ AX12GripperInterface::SetMarginMessage::clone() const
 {
   return new AX12GripperInterface::SetMarginMessage(this);
 }
+/** @class AX12GripperInterface::SetTorqueMessage <interfaces/AX12GripperInterface.h>
+ * SetTorqueMessage Fawkes BlackBoard Interface Message.
+ * 
+    
+ */
+
+
+/** Constructor with initial values.
+ * @param ini_torque initial value for torque
+ */
+AX12GripperInterface::SetTorqueMessage::SetTorqueMessage(const float ini_torque) : Message("SetTorqueMessage")
+{
+  data_size = sizeof(SetTorqueMessage_data_t);
+  data_ptr  = malloc(data_size);
+  memset(data_ptr, 0, data_size);
+  data      = (SetTorqueMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+  data->torque = ini_torque;
+  add_fieldinfo(IFT_FLOAT, "torque", 1, &data->torque);
+}
+/** Constructor */
+AX12GripperInterface::SetTorqueMessage::SetTorqueMessage() : Message("SetTorqueMessage")
+{
+  data_size = sizeof(SetTorqueMessage_data_t);
+  data_ptr  = malloc(data_size);
+  memset(data_ptr, 0, data_size);
+  data      = (SetTorqueMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+  add_fieldinfo(IFT_FLOAT, "torque", 1, &data->torque);
+}
+
+/** Destructor */
+AX12GripperInterface::SetTorqueMessage::~SetTorqueMessage()
+{
+  free(data_ptr);
+}
+
+/** Copy constructor.
+ * @param m message to copy from
+ */
+AX12GripperInterface::SetTorqueMessage::SetTorqueMessage(const SetTorqueMessage *m) : Message("SetTorqueMessage")
+{
+  data_size = m->data_size;
+  data_ptr  = malloc(data_size);
+  memcpy(data_ptr, m->data_ptr, data_size);
+  data      = (SetTorqueMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+}
+
+/* Methods */
+/** Get torque value.
+ * torque
+ * @return torque value
+ */
+float
+AX12GripperInterface::SetTorqueMessage::torque() const
+{
+  return data->torque;
+}
+
+/** Get maximum length of torque value.
+ * @return length of torque value, can be length of the array or number of 
+ * maximum number of characters for a string
+ */
+size_t
+AX12GripperInterface::SetTorqueMessage::maxlenof_torque() const
+{
+  return 1;
+}
+
+/** Set torque value.
+ * torque
+ * @param new_torque new torque value
+ */
+void
+AX12GripperInterface::SetTorqueMessage::set_torque(const float new_torque)
+{
+  data->torque = new_torque;
+}
+
+/** Clone this message.
+ * Produces a message of the same type as this message and copies the
+ * data to the new message.
+ * @return clone of this message
+ */
+Message *
+AX12GripperInterface::SetTorqueMessage::clone() const
+{
+  return new AX12GripperInterface::SetTorqueMessage(this);
+}
 /** Check if message is valid and can be enqueued.
  * @param message Message to check
  * @return true if the message is valid, false otherwise.
@@ -2603,6 +2696,10 @@ AX12GripperInterface::message_valid(const Message *message) const
   }
   const SetMarginMessage *m17 = dynamic_cast<const SetMarginMessage *>(message);
   if ( m17 != NULL ) {
+    return true;
+  }
+  const SetTorqueMessage *m18 = dynamic_cast<const SetTorqueMessage *>(message);
+  if ( m18 != NULL ) {
     return true;
   }
   return false;

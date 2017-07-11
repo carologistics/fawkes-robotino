@@ -507,6 +507,34 @@ class AX12GripperInterface : public Interface
     int maxlenof_right_margin() const;
   };
 
+  class SetTorqueMessage : public Message
+  {
+    SetTorqueMessage(float ini_torque);
+    SetTorqueMessage();
+    ~SetTorqueMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
+    float torque();
+    void set_torque(const float new_torque);
+    int maxlenof_torque() const;
+  };
+
   unsigned int flags();
   void set_flags(const unsigned int new_flags);
   int maxlenof_flags() const;

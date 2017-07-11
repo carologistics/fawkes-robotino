@@ -144,4 +144,8 @@
     <ref>left_margin</ref>
     <ref>right_margin</ref>
   </message>
+  <message name="SetTorque">
+    <comment>Set max servo's torque in a range of 0 - 1.</comment>
+    <field type="float" name="torque">torque</field>
+  </message>
 </interface>
