@@ -165,7 +165,7 @@
 (defrule exp-found-line
   "Found a line that is within an unexplored zone."
   (phase EXPLORATION)
-  (LaserLineInterface (id ?id&~:(str-index "moving_avg" ?id))
+  (LaserLineInterface
     (visibility_history ?vh&:(>= ?vh 1))
     (time $?timestamp)
     (end_point_1 $?ep1)
@@ -196,7 +196,7 @@
   "Found a cluster: Remember it for later when we run out of lines to explore."
   (phase EXPLORATION)
   (game-time $?game-time)
-  (Position3DInterface (id ?id&:(str-index "/laser-cluster/mps/" ?id))
+  (Position3DInterface (id ?id&:(eq (sub-string 1 19 ?id) "/laser-cluster/mps/"))
     (visibility_history ?vh&:(> ?vh 1))
     (translation $?trans) (rotation $?rot)
     (frame ?frame) (time $?timestamp)
