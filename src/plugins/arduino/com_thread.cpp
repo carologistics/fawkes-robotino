@@ -374,9 +374,16 @@ ArduinoComThread::send_one_message()
         msecs_to_wait_ = cur_msg.get_msecs();
         send_message(cur_msg);
 
-        read_packet(1000); // read receipt
+        std::string s = read_packet(1000); // read receipt
+        logger->log_debug(name(), "Read receipt: %s'", s.c_str());
+        s = read_packet(msecs_to_wait_); // read
+        logger->log_debug(name(), "Read status: %s'", s.c_str());
+
+        return true;
     }
-    return true;
+    else {
+        return false;
+    }
 }
 
 void
