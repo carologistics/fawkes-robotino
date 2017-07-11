@@ -55,6 +55,7 @@ ArduinoComThread::ArduinoComThread(std::string &cfg_name,
     new_data_ = false;
     cfg_prefix_ = cfg_prefix;
     cfg_name_ = cfg_name;
+    set_coalesce_wakeups(false);
 }
 
 /** Destructor. */
@@ -68,7 +69,6 @@ ArduinoComThread::init()
     // -------------------------------------------------------------------------- //
     load_config();
 
-    set_coalesce_wakeups(true);
 
     arduino_if_ =
             blackboard->open_for_writing<ArduinoInterface>("Arduino", cfg_name_.c_str());
