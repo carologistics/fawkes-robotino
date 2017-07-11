@@ -332,6 +332,11 @@ GripperAX12AThread::loop()
         center_pending = true;
         
         __gripper_if->set_final(false);
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SetTorqueMessage>()) {
+        AX12GripperInterface::SetTorqueMessage *msg = __gripper_if->msgq_first(msg);
+
+        set_torque(msg->torque());
+
       } else {
         logger->log_warn(name(), "Unknown message received");
       }
@@ -528,6 +533,21 @@ GripperAX12AThread::set_margins(float left_margin, float right_margin)
   //__logger->log_warn(name(), "Margins set to %f, %f", __left_margin, __right_margin);
 }
 
+/** Set desired torque in a range of 0 - 1.
+ * @param torque torque from 0 - 1
+ */
+void
+GripperAX12AThread::set_torque(float torque)
+{
+  if (torque >= 0. && torque <= 1.0) {
+    DynamixelServoInterface::SetTorqueLimitMessage *torque_left_message = new DynamixelServoInterface::SetTorqueLimitMessage(torque * 0x3FF);
+    DynamixelServoInterface::SetTorqueLimitMessage *torque_right_message = new DynamixelServoInterface::SetTorqueLimitMessage(torque * 0x3FF);
+    __servo_if_left->msgq_enqueue(torque_left_message);
+    __servo_if_right->msgq_enqueue(torque_right_message);
+  } else {
+    logger->log_error(name(), "Unable to set torque to %f - value out of range!", torque);
+  }
+}
 
 /** Get left/right value.
  * @param left upon return contains the current left value

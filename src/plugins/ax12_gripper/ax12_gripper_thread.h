@@ -172,6 +172,7 @@ class GripperAX12AThread
   void get_velocities(float &left_vel, float &right_vel);
   void get_loads(unsigned int &left, unsigned int &right);
   void set_margins(float left_margin, float right_margin);
+  void set_torque(float torque);
   bool is_final();
   bool is_enabled();
   void set_enabled(bool enabled);
