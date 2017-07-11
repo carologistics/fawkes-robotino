@@ -214,15 +214,6 @@ ArduinoComThread::loop()
             arduino_if_->set_final(false);
         }
 
-        if (messages_.size() > 0) {
-            send_one_message();
-        }
-
-        z_movement_pending_ = current_arduino_status != 'I';
-        arduino_if_->set_final(!z_movement_pending_);
-        arduino_if_->set_z_position(current_z_position_);
-        arduino_if_->write();
-
     } else {
         try {
             open_device();
@@ -236,15 +227,18 @@ ArduinoComThread::loop()
             }
         }
     }
-    if (msecs_to_wait_ > 0 ||
-            set_acceleration_pending_ ||
-            set_speed_pending_ ||
-            move_to_z_0_pending_ ||
-            init_pos_pending_) {
-        loop();
+
+    while (messages_.size() > 0) {
+        arduino_if_->set_final(false);
+        arduino_if_->write();
+
+        send_one_message();
+
+        z_movement_pending_ = current_arduino_status != 'I';
+        arduino_if_->set_final(!z_movement_pending_);
+        arduino_if_->set_z_position(current_z_position_);
+        arduino_if_->write();
     }
-
-
 }
 
 bool
