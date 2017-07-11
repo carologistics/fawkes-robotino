@@ -65,7 +65,7 @@ fsm:define_states{
 fsm:add_transitions{
    {"CHECK_WRITER", "FAILED", precond="not gripper_if:has_writer()", desc="No writer for gripper"},
    {"CHECK_WRITER", "COMMAND", cond=true},
-   {"COMMAND", "FINAL", cond="vars.open or vars.center"},
+   {"COMMAND", "FINAL", cond="vars.open or vars.center or vars.set_torque"},
    {"COMMAND", "FAILED", cond="vars.error"},
    {"COMMAND", "WAIT_FOR_GRAB", cond="vars.grab"},
    {"COMMAND", "RELGOTOZ", cond="vars.relgotoz"},
@@ -98,6 +98,11 @@ function COMMAND:init()
       theCloseMessage = gripper_if.CloseMessage:new()
       theCloseMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue(theCloseMessage)
+   elseif self.fsm.vars.command == "SET_TORQUE" then
+      self.fsm.vars.set_torque = true
+      torqueMessage = gripper_if.SetTorqueMessage:new()
+      torqueMessage:set_torque(self.fsm.vars.torque or 0)
+      gripper_if:msgq_enqueue(torqueMessage)
    elseif self.fsm.vars.command == "RELGOTOZ" then
       self.fsm.vars.relgotoz = true
    else
