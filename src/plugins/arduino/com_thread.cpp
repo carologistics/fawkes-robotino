@@ -166,7 +166,8 @@ ArduinoComThread::loop()
             messages_.push(req);
             set_acceleration_pending_ = false;
 
-        } else if (set_speed_pending_) {
+        }
+        if (set_speed_pending_) {
             logger->log_debug(name(), "Set Speed to %u", cfg_rpm_);
             ArduinoComMessage req;
             req.set_command(ArduinoComMessage::CMD_SET_SPEED);
@@ -175,7 +176,8 @@ ArduinoComThread::loop()
             messages_.push(req);
             set_speed_pending_ = false;
 
-        } else if (move_to_z_0_pending_) {
+        }
+        if (move_to_z_0_pending_) {
             logger->log_debug(name(), "Request Z0 reset");
             ArduinoComMessage req;
             req.set_command(ArduinoComMessage::CMD_TO_Z_0);
@@ -183,7 +185,8 @@ ArduinoComThread::loop()
             messages_.push(req);
             move_to_z_0_pending_ = false;
 
-        } else if (init_pos_pending_ && arduino_if_->is_final()) {
+        }
+        if (init_pos_pending_) {
             ArduinoComMessage req;
             req.set_command(ArduinoComMessage::CMD_STEP_DOWN);
             req.set_number(cfg_init_mm_ * ArduinoComMessage::NUM_STEPS_PER_MM);
@@ -192,7 +195,8 @@ ArduinoComThread::loop()
             messages_.push(req);
             init_pos_pending_ = false;
 
-        } else if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_14 &&
+        }
+        if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_14 &&
                 arduino_if_->is_final() && !init_pos_pending_) {
             ArduinoComMessage req;
             req.set_command(ArduinoComMessage::CMD_STEP_UP);
@@ -202,7 +206,8 @@ ArduinoComThread::loop()
             messages_.push(req);
             arduino_if_->set_final(false);
 
-        } else if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_15 &&
+        }
+        if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_15 &&
                 arduino_if_->is_final() && !init_pos_pending_) {
             ArduinoComMessage req;
             req.set_command(ArduinoComMessage::CMD_STEP_DOWN);
