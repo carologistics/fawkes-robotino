@@ -55,7 +55,15 @@ void MarkerlessRecognitionThread::finalize() {
   	image_buffer = NULL;
  	ipl = NULL;
 }
+int checkResult(Probability prob){
+	for(int i = 0; i < 4; i++){
 
+		if(prob.p[i]<=0 || prob.p[i]>=1){
+			return -1;
+		}
+	}
+	return 0;
+}
 	
 Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string image) {
 	
@@ -99,13 +107,18 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	std::string laPath = (home) + "/fawkes-robotino/etc/tf_data/output_labels_600.txt";
 
 	//evaluates the current image
-        result = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str());
+        Probability ret = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str());
         
-
-	for(int i = 0; i < 5; ++i){
- 		logger->log_info(name(), "Result: " << result.p[i] );
-	}	
-
+	
+	if(checkResult(ret)==0){
+		for(int i = 0; i < 5; ++i){
+ 			logger->log_info(name(), "Result: %f", ret.p[i] );
+		}	
+		result = ret;
+	}
+	else {
+		logger->log_info(name(), "Classification failed");
+	}
 	//Still bugged. Seg fault if we try to call dlclose()
 	//dlclose(handle);
    
@@ -115,14 +128,7 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	return result;
 }
 
-int checkResult(Probability prob){
-	for(int i = 0; i < 4; i++){
-		if(prob.p[i]<0){
-			return -1;
-		}
-	}
-	return 0;
-}
+
 
 int MarkerlessRecognitionThread::recognize_mps() {
 
@@ -131,23 +137,35 @@ int MarkerlessRecognitionThread::recognize_mps() {
 	takePictureFromFVcamera(); 
 	if(vpath.empty()) return -1;
 
-        Probability recognition_result = recognize_current_pic(vpath); 
+        //Probability recognition_result = recognize_current_pic(vpath); 
+	Probability recognition_result = recognize_current_pic("/TestData/BS/BS_9.jpg");
 	int station = 0;
 
 	int maximum = 0; 
-	int second = 0;
+	int second = 4;
 	for(int i = 0; i < 4; i++){ 
-	 	if(recognition_result.p[i] > recognition_result.p[maximum]){ 
-                        second = maximum;
+	 	if(i==maximum) continue;
+		if(recognition_result.p[i] >= recognition_result.p[maximum]){ 
+		 	second = maximum;
 			maximum = i;
 	     	}
+		else {
+		       	if(recognition_result.p[i] > recognition_result.p[second]){
+				second = i;
+			}
+		}
 	}
+
 	if(checkResult(recognition_result)!=0){
+		mps_rec_if_->set_final(true);
+		mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) 0);
+		mps_rec_if_->write();
 		return -1;
 	}
 	
 	if(recognition_result.p[maximum] < th_first || recognition_result.p[second] > th_sec)
 	{
+		logger->log_info(name(),"Failed Threshold: %f %f",recognition_result.p[maximum],recognition_result.p[second]);
 		station = 0;
 	}
 	else{
