@@ -68,19 +68,19 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	result.p[4] = 0.; 
 	
 	// Shared library tensoflow 
-	//
-	//	my_function evaluate;
-	//   void *handle;
+	
+	my_function evaluate;
+ 	void *handle;
   
 	//Open shared library
-	//std::string lib = home + "/tensorflow/bazel-bin/tensorflow/tf_wrapper/tensorflowWrapper.so";
-    	//handle = dlopen(lib.c_str(),RTLD_NOW);
-	//if(!handle){
-        //		fprintf(stderr, "%s\n", dlerror());
-	//		return result;
-	//}
+	std::string lib = home + "/tensorflow/bazel-bin/tensorflow/tf_wrapper/tensorflowWrapper.so";
+    	handle = dlopen(lib.c_str(),RTLD_NOW);
+	if(!handle){
+        		fprintf(stderr, "%s\n", dlerror());
+			return result;
+	}
 
-	/*
+	
 	//set function pointer
         *(void**)(&evaluate) = dlsym(handle,"evaluateImage");
 	char* error;
@@ -93,13 +93,13 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	std::string imPath = (home) + image;		
 	
 	//path to the trained graph
-  	//std::string grPath = (home) + "/fawkes-robotino/etc/tf_data/output_graph_600.pb";
+    	std::string grPath = (home) + "/fawkes-robotino/etc/tf_data/output_graph_600.pb";
 	
 	//path to the the trained labels
-	//std::string laPath = (home) + "/fawkes-robotino/etc/tf_data/output_labels_600.txt";
+	std::string laPath = (home) + "/fawkes-robotino/etc/tf_data/output_labels_600.txt";
 
 	//evaluates the current image
-        //result = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str());
+        result = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str());
         
 
 	for(int i = 0; i < 5; ++i){
@@ -110,10 +110,7 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	//dlclose(handle);
    
 	// struct with 5 float values
-	// every time: bs, cs, ds, rs, ss 
-
-	*/ 
-        result.p[3] = 0.9;
+	// every time: bs, cs, ds, rs, ss  
 
 	return result;
 }
@@ -135,7 +132,6 @@ int MarkerlessRecognitionThread::recognize_mps() {
 	if(vpath.empty()) return -1;
 
         Probability recognition_result = recognize_current_pic(vpath); 
-	//Probability recognition_result = recognize_current_pic("/TestData/BS/BS_9.jpg");
 	int station = 0;
 
 	int maximum = 0; 
@@ -280,12 +276,6 @@ void MarkerlessRecognitionThread::loop(){
  			logger->log_info(name(), "Start Recognition");
 			recognize_mps();
     		
-		} else if ( mps_rec_if_->msgq_first_is<MPSRecognitionInterface::TakeDataMessage>() ) {
-    
-			
- 			logger->log_info(name(), "Received TakeData Mesage");
-   			//takePictureFromFVcamera(); 
-			//readImage();
     		}	
    	 	else {
     			logger->log_warn(name(), "Unknown message received");
@@ -296,5 +286,4 @@ void MarkerlessRecognitionThread::loop(){
   	
 	}
 }
-
 

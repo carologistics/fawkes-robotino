@@ -59,11 +59,8 @@ function speak(...)
 end
 
 function send_takedata(self)
-   local msg = mps_recognition_if.TakeDataMessage:new()
+   local msg = mps_recognition_if.ComputeMessage:new()
    mps_recognition_if:msgq_enqueue_copy(msg)
-   
-   local msg2 = mps_recognition_if.ComputeMessage:new()
-   mps_recognition_if:msgq_enqueue_copy(msg2)
 end
 
 function send_cleardata()
@@ -101,7 +98,7 @@ fsm:define_states{ export_to=_M,
    {"CLEAR", JumpState},
    {"TAKEDATA", JumpState},
    {"WAIT", JumpState},
-   {"DECIDE", JumpState},
+   {"OUTPUT", JumpState},
 }
 
 
@@ -112,11 +109,10 @@ fsm:add_transitions{
    {"CLEAR", "TAKEDATA", cond=true},
    {"INIT", "TAKEDATA", cond=mpsRecogPlugin_ready},
    {"TAKEDATA", "WAIT", timeout=0.2},
-   {"WAIT", "DECIDE", cond=data_evaluated},
+   {"WAIT", "OUTPUT", cond=data_evaluated},
    {"WAIT", "WAIT", timeout=1},
-   {"DECIDE", "FINAL", cond=recognition_result},
-   --{"DECIDE","TAKEDATA", cond=recognition_result},
-   {"DECIDE", "FAILED", cond=true},
+   {"OUTPUT", "FINAL", cond=recognition_result},
+   {"OUTPUT", "FAILED", cond=true},
 }
 
 
