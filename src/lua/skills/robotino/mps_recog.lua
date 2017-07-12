@@ -27,7 +27,7 @@ fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {}
 depends_interfaces = {
 	{v = "mps_recognition_if", type = "MPSRecognitionInterface" ,id="/MarkerlessRecognition"},
-	{v = "speechsynth", type = "SpeechSynthInterface", id = "Flite"},
+--	{v = "speechsynth", type = "SpeechSynthInterface", id = "Flite"},
 
 }
 
@@ -54,8 +54,8 @@ MPS_TYPES = {
 
 
 function speak(...)
-   speechsynth:msgq_enqueue_copy(speechsynth.SayMessage:new(string.format(unpack(arg))))
-   printf(unpack(arg))
+   --speechsynth:msgq_enqueue_copy(speechsynth.SayMessage:new(string.format(unpack(arg))))
+    printf(unpack(arg))
 end
 
 function send_takedata(self)
@@ -95,7 +95,7 @@ end
 
 
 fsm:define_states{ export_to=_M,
-   closure={mps_recognition_if=mps_recognition_if,speechsynth=speechsynth},
+   closure={mps_recognition_if=mps_recognition_if}, --,speechsynth=speechsynth},
    {"CHECK_INTERFACE", JumpState},
    {"INIT", JumpState},
    {"CLEAR", JumpState},

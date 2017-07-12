@@ -27,7 +27,7 @@ name               = "zone_recog"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"mps_recog", "drive_to"}
 depends_interfaces = {
-   {v = "speechsynth", type = "SpeechSynthInterface", id = "Flite"},
+  -- {v = "speechsynth", type = "SpeechSynthInterface", id = "Flite"},
    {v = "mps_recognition_if", type = "MPSRecognitionInterface" ,id="/MarkerlessRecognition"},
 
 }
@@ -61,7 +61,7 @@ MPS_TYPES = {
 }
 
 function speak(...)
-   speechsynth:msgq_enqueue_copy(speechsynth.SayMessage:new(string.format(unpack(arg))))
+  -- speechsynth:msgq_enqueue_copy(speechsynth.SayMessage:new(string.format(unpack(arg))))
    printf(unpack(arg))
 end
 
