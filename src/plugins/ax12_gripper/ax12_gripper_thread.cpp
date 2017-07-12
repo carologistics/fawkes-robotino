@@ -347,9 +347,11 @@ GripperAX12AThread::loop()
     joystick_if_->read();
 
     if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_13) {
+      set_torque(1);
         goto_gripper(__cfg_left_open_angle, __cfg_right_open_angle);
     } else if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_12) {
-        goto_gripper(__cfg_left_close_angle, __cfg_right_close_angle);
+      set_torque(0);
+//        goto_gripper(__cfg_left_close_angle, __cfg_right_close_angle);
     }
     __gripper_if->set_angle(get_opening_angle());
     __gripper_if->set_holds_puck(holds_puck());
@@ -606,9 +608,8 @@ GripperAX12AThread::get_opening_angle()
 bool
 GripperAX12AThread::holds_puck()
 {
-  return 
-          (__servo_if_left->load()  & 0x3ff) + (__servo_if_right->load() & 0x3ff) >= __cfg_load_for_holds_puck && 
-          get_opening_angle() >= __cfg_angle_for_holds_puck;
+  return get_opening_angle() >= __cfg_angle_for_holds_puck_min &&
+      get_opening_angle() <= __cfg_angle_for_holds_puck_max;
 }
 
 /** Handle config changes
@@ -665,7 +666,8 @@ void GripperAX12AThread::load_config()
   __cfg_max_load               = config->get_float((__gripper_cfg_prefix + "max_load").c_str());
   __cfg_max_torque             = config->get_float((__gripper_cfg_prefix + "max_torque").c_str());
   __cfg_load_for_holds_puck    = config->get_uint((__gripper_cfg_prefix + "load_for_holds_puck_threshold").c_str());
-  __cfg_angle_for_holds_puck   = config->get_float((__gripper_cfg_prefix + "angle_for_holds_puck_threshold").c_str());
+  __cfg_angle_for_holds_puck_min = config->get_float((__gripper_cfg_prefix + "angle_for_holds_puck_min").c_str());
+  __cfg_angle_for_holds_puck_max = config->get_float((__gripper_cfg_prefix + "angle_for_holds_puck_max").c_str());
   __cfg_center_angle_correction_amount = config->get_float((__gripper_cfg_prefix + "center_angle_correction_amount").c_str());
   __cfg_ifid_joystick_         = config->get_string(__gripper_cfg_prefix + "joystick_interface_id");
 

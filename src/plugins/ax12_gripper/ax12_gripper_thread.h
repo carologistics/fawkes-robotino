@@ -130,7 +130,8 @@ class GripperAX12AThread
   float        __cfg_max_torque;
   float        __cfg_max_load;
   unsigned int __cfg_load_for_holds_puck;
-  float        __cfg_angle_for_holds_puck;
+  float        __cfg_angle_for_holds_puck_min;
+  float        __cfg_angle_for_holds_puck_max;
   float        __cfg_center_angle_correction_amount;
   std::string  __cfg_ifid_joystick_;
 
