@@ -116,3 +116,19 @@
   (assert (robot-name ?robot-name))
   (retract ?cv)
 )
+
+(defrule conf-disable-storage-station-machine
+  (confval (path "/clips-agent/disable-storage-station") (type BOOL) (value true))
+  ?machine-f <- (machine (mtype SS))
+=>
+  (retract ?machine-f)
+)
+
+(defrule conf-disable-storage-station-tags
+  (confval (path "/clips-agent/disable-storage-station") (type BOOL) (value true))
+  ?m-tag-f <- (tag-matching (machine M-SS))
+  ?c-tag-f <- (tag-matching (machine C-SS))
+=>
+  (retract ?m-tag-f ?c-tag-f)
+)
+
