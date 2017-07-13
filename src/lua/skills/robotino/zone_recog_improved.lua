@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "zone_recog_improved"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"mps_recog", "drive_to"}
+depends_skills     = {"mps_recog", "drive_to","tagless_mps_align"}
 depends_interfaces = {
    {v = "speechsynth", type = "SpeechSynthInterface", id = "Flite"},
    {v = "mps_recognition_if", type = "MPSRecognitionInterface" ,id="/MarkerlessRecognition"},
@@ -49,8 +49,8 @@ MPS_WIDTH = 0.35
 BOT_RADIUS = 0.46/2
 START_DIST_TO_MPS = 0.15+BOT_RADIUS
 
-RADIANT_STEPS = 1.0   
-RADIANT_INIT = 4.71
+ROTATION_STEPS = 2*math.pi/8
+INIT_ROTATION = 2*math.pi/8 
 
 START_POS={-MPS_WIDTH/2-START_DIST_TO_MPS,0.,0.}
 
@@ -63,44 +63,12 @@ MPS_TYPES = {
 'Storage Station',
 }
 
+
 function speak(...)
    speechsynth:msgq_enqueue_copy(speechsynth.SayMessage:new(string.format(unpack(arg))))
    printf(unpack(arg))
 end
 
-function calc_final_result(self) 
-
-    result = {}
-    for i=0,5 do
-      result[i] = 0
-    end
-
-    result[self.fsm.vars.resultStart] = result[self.fsm.vars.resultStart] + 1
-    result[self.fsm.vars.resultSecond] = result[self.fsm.vars.resultSecond] + 1
-    result[self.fsm.vars.resultThird] = result[self.fsm.vars.resultThird] + 1
-    result[self.fsm.vars.resultFinal] = result[self.fsm.vars.resultFinal] + 1
-   
-    max = 1 
-
-    for j=0,4 do 
-        if result[j+1] > result[j] then
-	   max = j+1
- 	end 
-    end
-    
-    recognition_result = MPS_TYPES[max]
-    printf("The result of resultStart is %s",self.fsm.vars.resultStart)
-    printf("The result of resultSecond is %s",self.fsm.vars.resultSecond)
-    printf("The result of resultThird is %s",self.fsm.vars.resultThird)
-    printf("The result of resultFinal is %s",self.fsm.vars.resultFinal)
-    printf("The result of max is %s",max)
-    printf("The result array entry 0 is %s", result[1]) 
-    printf("The result of zone_recog is %s",recognition_result)
-
-
-    return true
-
-end
 
 function calc_result(self) 
 	return true; 
@@ -109,44 +77,104 @@ end
 function calc_xy_init(self)
 
   -- zone argument is of the form  M-Z21
-  self.fsm.vars.xZone = tonumber(string.sub(self.fsm.vars.zone, 4, 4)) - 0.5
-  self.fsm.vars.yZone = tonumber(string.sub(self.fsm.vars.zone, 5, 5)) - 0.5
-  if string.sub(self.fsm.vars.zone, 1, 1) == "M" then
-   self.fsm.vars.xZone = 0 - self.fsm.vars.xZone; 
-  end
+  self.fsm.vars.xStart = tonumber(string.sub(self.fsm.vars.zone, 4, 4)) - 0.5
+  self.fsm.vars.yStart = tonumber(string.sub(self.fsm.vars.zone, 5, 5)) - 0.5
  
-  self.fsm.vars.yStart = self.fsm.vars.yZone-1;
-  self.fsm.vars.xStart = self.fsm.vars.xZone; 
-  self.fsm.vars.ori = 1.57;
-
-  self.fsm.vars.xRotate = self.fsm.vars.xStart; 
-  self.fsm.vars.yRotate = self.fsm.vars.yStart;
-
- printf("xRotate is  %s",self.fsm.vars.xRotate)
- printf("yRotate is  %s",self.fsm.vars.yRotate)
-  self.fsm.vars.currentRotationStep = 1;
+  if string.sub(self.fsm.vars.zone, 1, 1) == "M" then
+   self.fsm.vars.xStart = 0 - self.fsm.vars.xStart; 
+  end
 
 
+  self.fsm.vars.x1 = self.fsm.vars.xStart-1;
+  self.fsm.vars.x2 = self.fsm.vars.xStart;
+  self.fsm.vars.x3 = self.fsm.vars.xStart+1;
+
+  self.fsm.vars.y1 = self.fsm.vars.yStart-1;
+  self.fsm.vars.y2 = self.fsm.vars.yStart;
+  self.fsm.vars.y3 = self.fsm.vars.yStart+1;
+
+  self.fsm.vars.driveCounter = 1;
+
+  self.fsm.vars.xCurrent = self.fsm.vars.x1; 
+  self.fsm.vars.yCurrent = self.fsm.vars.y1;
+
+  self.fsm.vars.ori = INIT_ROTATION;  
+
+  self.fsm.vars.secondAlign = false; 
   return true
 
 end
 
-function calc_xy_rotation(self) 
+
+function calc_next_drive(self) 
+
+
+	if self.fsm.vars.x1 == self.fsm.vars.xCurrent and self.fsm.vars.yCurrent ~= self.fsm.vars.yStart then
 	
+		self.fsm.vars.xCurrent = self.fsm.vars.x2 
 
- self.fsm.vars.xRotate = self.fsm.vars.xStart + math.cos(RADIANT_INIT + self.fsm.vars.currentRotationStep * RADIANT_STEPS); 
- self.fsm.vars.yRotate = self.fsm.vars.yStart + math.sin(RADIANT_INIT + self.fsm.vars.currentRotationStep * RADIANT_STEPS);
+	elseif self.fsm.vars.x2 == self.fsm.vars.xCurrent or self.fsm.vars.yCurrent == self.fsm.vars.yStart then 
+		
+		self.fsm.vars.xCurrent = self.fsm.vars.x3
 
- printf("xRotate is %s",self.fsm.vars.xRotate)
- printf("yRotate is %s",self.fsm.vars.yRotate)
- self.fsm.vars.currentRotationStep = self.fsm.vars.currentRotationStep + 1;
+	elseif self.fsm.vars.x3 == self.fsm.vars.xCurrent then 
 
- printf("currentRotationStep is%s",self.fsm.vars.currentRotationStep) 
+		self.fsm.vars.xCurrent = self.fsm.vars.x1
+		self.fsm.vars.yCurrent = self.fsm.vars.yCurrent + 1; 
+	end
 
- return true;
+
+	self.fsm.vars.ori = ROTATION_STEPS * self.fsm.vars.driveCounter  + INIT_ROTATION; 
+	self.fsm.vars.driveCounter = self.fsm.vars.driveCounter + 1; 
+
+	return true; 
 
 end
 
+
+function calc_other_side(self) 
+
+	if self.fsm.vars.secondAlign then 
+		return false; 
+	end
+
+
+	if self.fsm.vars.x1 == self.fsm.vars.xCurrent then 
+
+                self.fsm.vars.xCurrent = self.fsm.vars.x3
+
+        elseif self.fsm.vars.x2 == self.fsm.vars.xCurrent then
+
+                self.fsm.vars.xCurrent = self.fsm.vars.x2
+
+        elseif self.fsm.vars.x3 == self.fsm.vars.xCurrent then
+
+                self.fsm.vars.xCurrent = self.fsm.vars.x1
+        end
+
+
+ 
+        if self.fsm.vars.y1 == self.fsm.vars.yCurrent then
+
+                self.fsm.vars.yCurrent = self.fsm.vars.y3
+
+        elseif self.fsm.vars.y2 == self.fsm.vars.yCurrent then
+
+                self.fsm.vars.yCurrent = self.fsm.vars.y2
+
+        elseif self.fsm.vars.y3 == self.fsm.vars.yCurrent then
+
+                self.fsm.vars.xCurrent = self.fsm.vars.y1
+        end
+
+	self.fsm.vars.ori = self.fsm.vars.ori + math.pi 
+
+	self.fsm.vars.secondAlign = true; 
+
+        return true;
+
+
+end
 
 function recognize_mps(self) 
 	return false; 
@@ -155,36 +183,36 @@ end
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
-   {"CALCULATE_ROTATION",JumpState},
    {"CALCULATE_RESULT",JumpState}, 
-   {"DRIVE_TO_START", SkillJumpState, skills={{drive_to}}, final_to="CALCULATE_ROTATION", fail_to="FAILED"},
-   {"DRIVE_CIRCLE", SkillJumpState, skills={{drive_to}}, final_to="CALCULATE_ROTATION",fail_to="FAILED"}, 
+   {"CALCULATE_NEXT_ALIGN",JumpState},
+   {"CALCULATE_OTHER_SIDE",JumpState}, 
+   {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="TRY_ALIGN", fail_to="FAILED"},
+   {"TRY_ALIGN", SkillJumpState, skills={{tagless_mps_align}}, final_to="CALCULATE_OTHER_SIDE",fail_to="CALCULATE_NEXT_ALIGN"},
+
 }
 
 fsm:add_transitions{
-   {"INIT", "DRIVE_TO_START", cond=calc_xy_init},
+   {"INIT", "DRIVE_TO", cond=calc_xy_init},
    {"INIT", "FAILED",cond=true },
-   {"CALCULATE_ROTATION","DRIVE_CIRCLE",cond=calc_xy_rotation}, 
-   {"CALCULATE_ROTATION","FINAL", cond=true},
+   {"CALCULATE_NEXT_ALIGN","DRIVE_TO",cond=calc_next_drive}, 
+   {"CALCULATE_RESULT","FINAL", cond=true},
+   {"CALCULATE_OTHER_SIDE","DRIVE_TO",cond=calc_other_side}, 
+   {"CALCULATE_OTHER_SIDE","CALCULATE_RESULT",cond=true}, 
 }
 
 
 
 
-function INIT:init() 
 
-end
 
-function DRIVE_TO_START:init()
-   self.args["drive_to"].x = self.fsm.vars.xStart 
-   self.args["drive_to"].y = self.fsm.vars.yStart
-   --self.args["drive_to"].region_trans = 2
+function DRIVE_TO:init()
+   self.args["drive_to"].x = self.fsm.vars.xCurrent 
+   self.args["drive_to"].y = self.fsm.vars.yCurrent
    self.args["drive_to"].ori = self.fsm.vars.ori;
 end
 
-function DRIVE_CIRCLE:init()
 
-  self.args["drive_to"].x = self.fsm.vars.xRotate; 
-  self.args["drive_to"].y = self.fsm.vars.yRotate;
-	
+function TRY_ALIGN:init() 
+
 end
+
