@@ -98,7 +98,7 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	}
 	
 	//path to the image that have to be tested
-	std::string imPath = (home) + image;		
+	std::string imPath = image;		
 	
 	//path to the trained graph
     	std::string grPath = (home) + "/fawkes-robotino/etc/tf_data/output_graph_600.pb";
