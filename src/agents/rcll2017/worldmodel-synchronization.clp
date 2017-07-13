@@ -104,11 +104,31 @@
 (deffunction synced-modify (?fact $?args)
   ; modify a fact and synchronize the change
   ; returns the adress of the modified fact, ?fact is no longer usable
-
+  (bind ?slots-to-change (create$))
+  (bind ?values-to-set (create$))
+  (progn$ (?field ?args)
+    (if (eq (mod ?field-index 2) 1)
+      then
+      (bind ?slots-to-change (insert$ ?slots-to-change 1 ?field))
+      else
+      (bind ?values-to-set (insert$ ?values-to-set 1 ?field))
+    )
+  )
+  (progn$ (?slot ?slots-to-change)
+    (bind ?value (nth$ ?slot-index ?values-to-set))
+    (if (not (wm-check-synchronizability ?fact ?slot ?value))
+      then
+      (return)
+    )
+    ; create worldmodel-change-fact for synchronization
+    (assert (worldmodel-change (key (+ (* 100
+                                          (fact-slot-value ?fact sync-id))
+                                       (wm-sync-get-index-of-slot ?fact ?slot)))
+                               (value ?value))
+    )
+  )
   ; modify the fact locally
-  (bind ?modified-fact (dyn-mod ?fact ?args))
-  (rm-update-fact ?modified-fact)
-  (return ?modified-fact)
+  (return (dyn-mod ?fact ?args))
 )
 
 (deffunction synced-add-to-multifield (?fact ?slot ?value)
@@ -118,10 +138,14 @@
     then
     (return)
   )
+  ; create worldmodel-change-fact for synchronization
+  (assert (worldmodel-change (key (+ (* 100
+                                        (fact-slot-value ?fact sync-id))
+                                     (+ 1 (wm-sync-get-index-of-slot ?fact ?slot))))
+                             (value ?value))
+  )
   ; modify the fact locally
-  (bind ?modified-fact (dyn-add-to-multifield ?fact ?slot ?value))
-  (rm-update-fact ?modified-fact)
-  (return ?modified-fact)
+  (return (dyn-add-to-multifield ?fact ?slot ?value))
 )
 
 (deffunction synced-remove-from-multifield (?fact ?slot ?value)
@@ -131,10 +155,14 @@
     then
     (return)
   )
+  ; create worldmodel-change-fact for synchronization
+  (assert (worldmodel-change (key (+ (* 100
+                                        (fact-slot-value ?fact sync-id))
+                                     (+ 2 (wm-sync-get-index-of-slot ?fact ?slot))))
+                             (value ?value))
+  )
   ; modify the fact locally
-  (bind ?modified-fact (dyn-remove-from-multifield ?fact ?slot ?value))
-  (rm-update-fact ?modified-fact)
-  (return ?modified-fact)
+  (return (dyn-remove-from-multifield ?fact ?slot ?value))
 )
 
 (deffunction synced-assert (?fact)
@@ -149,17 +177,30 @@
                          "(sync-id " (worldmodel-sync-get-sync-id)
                          "))"))
   )
+  ; create worldmodel-change-fact for synchronization
+  (assert (worldmodel-change (key ?*SYNC-ID-ASSERT*)
+                             (value ?fact))
+  )
   ; assert the fact locally
-  (bind ?new-fact (dyn-assert ?fact))
-  (rm-insert-fact ?new-fact)
-  (return ?new-fact)
+  (dyn-assert ?fact)
 )
 
 (deffunction synced-retract (?fact)
   ; retract a fact locally and also for synchronized bots
-  (rm-remove-fact ?fact)
+  ; create worldmodel-change-fact for synchronization
+  (assert (worldmodel-change (key ?*SYNC-ID-RETRACT*)
+                             (value (fact-slot-value ?fact sync-id)))
+  )
   ; retract the fact locally
   (retract ?fact)
+)
+
+(defrule worldmodel-sync-set-agent-in-change
+  "Set the agent field in a new worldmodel change. We know that the change is from this agent because otherwise the field would be set."
+  (declare (salience ?*PRIORITY-WM*))
+  ?wmc <- (worldmodel-change (agent DEFAULT))
+  =>
+  (modify ?wmc (agent (sym-cat ?*ROBOT-NAME*)))
 )
 
 (deffunction worldmodel-sync-apply-key-value-msg (?pair)
@@ -369,6 +410,40 @@
   )
 )
 
+;send worldmodel change
+(defrule worldmodel-sync-send-change
+  (time $?now)
+  ?wmc <- (worldmodel-change (key ?key) (value ?value)
+			     (id ?id) (agent ?agent)
+			     (last-sent $?ls&:(timeout ?now ?ls ?*WORLDMODEL-CHANGE-SEND-PERIOD*)))
+  (not (lock-role MASTER))
+  (peer-id private ?peer)
+  =>
+  ;set random id (needed by the master to determine if a change was already appied)
+  (if (eq ?id 0) then
+    (bind ?id (random 1 99999999))
+  )
+  (bind ?change-msg (pb-create "llsf_msgs.WorldmodelChange"))
+  (bind ?pair-msg (pb-create "llsf_msgs.KeyValuePair"))
+  (pb-set-field ?pair-msg "key" ?key)
+  (switch (type ?value)
+    (case INTEGER then (pb-set-field ?pair-msg "value_uint32" ?value))
+    (case STRING then (pb-set-field ?pair-msg "value_string" ?value))
+    (case SYMBOL then (pb-set-field ?pair-msg "value_symbol" ?value))
+    (case FLOAT then (pb-set-field ?pair-msg "value_float" ?value))
+    (default (printout error "WM-change with key " ?key " has invalid type "
+                       (type ?value) "." crlf))
+  )
+  (pb-set-field ?change-msg "pair" ?pair-msg)
+  
+  (pb-set-field ?change-msg "agent" (str-cat ?agent))
+  (pb-set-field ?change-msg "id" ?id)
+  
+  (pb-broadcast ?peer ?change-msg)
+  (pb-destroy ?change-msg)
+  (modify ?wmc (last-sent ?now) (id ?id))
+)
+
 ;the master does not have to send the change, because it sends the whole worldmodel
 (defrule worldmodel-sync-retract-as-master
   (declare (salience ?*PRIORITY-CLEANUP*))
@@ -461,45 +536,4 @@
     (bind ?new-rule (format nil "(defrule worldmodel-sync-retract-with-sync-id-%s %n ?r <- (synced-fact-to-retract ?sid) %n ?f <- (%s (sync-id ?sid)) %n => %n (retract ?r) %n (retract ?f))" ?temp ?temp))
     (build ?new-rule)
   )
-)
-
-(deffunction worldmodel-sync-remove-fact-with-sync-id (?sync-id $?templates)
-  ; (progn$ (?templ ?templates)       
-  (do-for-fact ((?fact ?templates)) (eq ?fact:sync-id ?sync-id)
-    (retract ?fact)
-  )
-)
-
-(defrule worldmodel-sync-get-trigger-update
-  ?u <- (robmem-trigger (name "robmem-wm") (ptr ?obj))
-  (wm-sync-info (synced-templates $?templates))
-  =>
-  ; (printout warn "I got a trigger update:" (bson-tostring ?obj) crlf)
-  (bind ?optype (bson-get ?obj "op"))
-  (if (eq ?optype "i") then
-    (rm-assert-from-bson (bson-get ?obj "o"))
-  )
-  (if (eq ?optype "u") then
-    ; get updated document (?obj may only contain the changes)
-    (bind ?query (bson-parse (str-cat "{_id:ObjectId(\"" (bson-get (bson-get ?obj "o2") "_id") "\")}")))
-    (bind ?c (robmem-query "syncedrobmem.clipswm" ?query))
-    (if (not (robmem-cursor-more ?c)) then
-      (printout error "Could not find updated document: " (bson-tostring ?query) crlf)
-    )
-    (bson-destroy ?query)
-    (bind ?updated-doc (robmem-cursor-next ?c))
-    (bind ?sync-id (bson-get ?updated-doc "sync-id"))
-    ; update by removing the old fact and asserting the new one
-    (worldmodel-sync-remove-fact-with-sync-id ?sync-id ?templates)
-    (rm-assert-from-bson ?updated-doc)
-  )
-  (if (eq ?optype "r") then
-    (printout warn "Trigger remove not tested yet" crlf)
-    (bind ?sync-id (bson-get (bson-get ?obj "o") "sync-id"))
-    (worldmodel-sync-remove-fact-with-sync-id ?sync-id ?templates)
-  )
-
-  (retract ?u)
-  ;TODO: check:
-  (bson-destroy ?obj)
 )

@@ -73,15 +73,6 @@
   (ff-feature-request "tf")
 )
 
-(defrule enable-robot-memroy
-  "If the robot_memory feature is set, load it, if it is not yet loaded."
-  (ff-feature robot_memory)
-  (not (ff-feature-loaded tf))
-  =>
-  (printout t "Requesting robot-memory feature" crlf)
-  (ff-feature-request "robot_memory")
-)
-
 (deffunction unwatch-rules-facts ()
   ;unwatch some rules to reduce debug output
   ;this is not possible in the config, because the defrules and deffacts are loaded later
@@ -122,11 +113,9 @@
   (ff-feature-loaded motor-switch)
   (ff-feature-loaded protobuf)
   (ff-feature-loaded tf)
-  (ff-feature-loaded robot_memory)
   (ff-feature navgraph)
   =>
   (path-load  rcll2017/utils.clp)
-  (path-load  rcll2017/robot-memory.clp)
   (path-load  rcll2017/worldmodel-synchronization.clp)
   (path-load  rcll2017/net.clp)
   (path-load  rcll2017/worldmodel.clp)
