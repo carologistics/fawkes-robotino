@@ -53,6 +53,7 @@ START_POS={-MPS_WIDTH/2-START_DIST_TO_MPS,0.,0.}
 
 -- Constants
 MPS_TYPES = {
+'No Station', 	
 'Base Station',
 'Cap Station',
 'Delivery Station',
@@ -77,15 +78,15 @@ function calc_final_result(self)
     result[self.fsm.vars.resultThird] = result[self.fsm.vars.resultThird] + 1
     result[self.fsm.vars.resultFinal] = result[self.fsm.vars.resultFinal] + 1
    
-    max = 1 
+    max = 0 
 
-    for j=0,4 do 
-        if result[j+1] > result[j] then
-	   max = j+1
+    for j=0,5 do 
+        if result[j] > result[max] then
+	   max = j
  	end 
     end
     
-    recognition_result = MPS_TYPES[max]
+    recognition_result = MPS_TYPES[max+1]
     printf("The result of resultStart is %s",self.fsm.vars.resultStart)
     printf("The result of resultSecond is %s",self.fsm.vars.resultSecond)
     printf("The result of resultThird is %s",self.fsm.vars.resultThird)
