@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "zone_recog"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"mps_recog", "goto"}
+depends_skills     = {"recog_from_align", "goto","tagless_mps_align"}
 depends_interfaces = {
   -- {v = "speechsynth", type = "SpeechSynthInterface", id = "Flite"},
    {v = "mps_recognition_if", type = "MPSRecognitionInterface" ,id="/MarkerlessRecognition"},
@@ -53,7 +53,7 @@ START_POS={-MPS_WIDTH/2-START_DIST_TO_MPS,0.,0.}
 
 -- Constants
 MPS_TYPES = {
-'No Station', 	
+'No Station',
 'Base Station',
 'Cap Station',
 'Delivery Station',
@@ -67,32 +67,29 @@ function speak(...)
 end
 
 function calc_final_result(self) 
-
+    count = 0
     result = {}
     for i=0,5 do
       result[i] = 0
     end
-
-    result[self.fsm.vars.resultStart] = result[self.fsm.vars.resultStart] + 1
-    result[self.fsm.vars.resultSecond] = result[self.fsm.vars.resultSecond] + 1
-    result[self.fsm.vars.resultThird] = result[self.fsm.vars.resultThird] + 1
-    result[self.fsm.vars.resultFinal] = result[self.fsm.vars.resultFinal] + 1
-   
-    max = 0 
+    
+    local l = self.fsm.vars.results
+    
+    while l do 
+	    result[l.value] = result[l.value]+1
+	    l = l.next
+    end
+    
+    max = 0
 
     for j=0,5 do 
         if result[j] > result[max] then
-	   max = j
+	         printf("Result %d is %d ",j,result[j])
+           max = j
  	end 
     end
     
     recognition_result = MPS_TYPES[max+1]
-    printf("The result of resultStart is %s",self.fsm.vars.resultStart)
-    printf("The result of resultSecond is %s",self.fsm.vars.resultSecond)
-    printf("The result of resultThird is %s",self.fsm.vars.resultThird)
-    printf("The result of resultFinal is %s",self.fsm.vars.resultFinal)
-    printf("The result of max is %s",max)
-    printf("The result array entry 0 is %s", result[1]) 
     printf("The result of zone_recog is %s",recognition_result)
 
 
@@ -123,51 +120,108 @@ end
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
-   {"DRIVE_TO_START", SkillJumpState, skills={{goto}}, final_to="RECOGNIZE_MPS_START", fail_to="FAILED"},
-   {"DRIVE_TO_SECOND", SkillJumpState, skills={{goto}}, final_to="RECOGNIZE_MPS_SECOND", fail_to="FAILED"},
-   {"DRIVE_TO_THIRD", SkillJumpState, skills={{goto}}, final_to="RECOGNIZE_MPS_THIRD", fail_to="FAILED"},
-   {"DRIVE_TO_FINAL", SkillJumpState, skills={{goto}}, final_to="RECOGNIZE_MPS_FINAL", fail_to="FAILED"},
-   {"RECOGNIZE_MPS_START", SkillJumpState, skills={{goto}}, final_to="DRIVE_TO_SECOND", fail_to="FAILED"},
-   {"RECOGNIZE_MPS_SECOND", SkillJumpState, skills={{goto}}, final_to="DRIVE_TO_THIRD", fail_to="FAILED"},
-   {"RECOGNIZE_MPS_THIRD", SkillJumpState, skills={{goto}}, final_to="DRIVE_TO_FINAL", fail_to="FAILED"},
-   {"RECOGNIZE_MPS_FINAL", SkillJumpState, skills={{goto}}, final_to="CALCULATE_RESULT", fail_to="FAILED"},
-   {"CALCULATE_RESULT",JumpState}, 
+   {"DRIVE1", SkillJumpState, skills={{goto}}, final_to="ALIGN1", fail_to="FAILED"},
+   {"DRIVE2", SkillJumpState, skills={{goto}}, final_to="ALIGN2", fail_to="FAILED"},
+   {"DRIVE3", SkillJumpState, skills={{goto}}, final_to="ALIGN3", fail_to="FAILED"},
+   {"DRIVE4", SkillJumpState, skills={{goto}}, final_to="ALIGN4", fail_to="FAILED"},
+   {"CALCULATE_RESULT",JumpState},
+   {"EXPLORE",SkillJumpState, skills={{recog_from_align}}, final_to="CHOOSE_NEXT", fail_to="CHOOSE_NEXT"},
+   {"CHOOSE_NEXT",JumpState},
+   {"ALIGN1",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="DRIVE_TO_SECOND"},
+   {"ALIGN2",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="FAILED"},
+   {"ALIGN3",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="FAILED"},
+   {"ALIGN4",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="FAILED"},
 }
-
 fsm:add_transitions{
    {"INIT", "DRIVE_TO_START", cond=calc_xy_coordinates},
    {"INIT", "FAILED", cond=true},
+   {"CHOOSE_NEXT", "DRIVE3", cond="vars.last == 1"},
+   {"CHOOSE_NEXT", "DRIVE4", cond="vars.last == 2"},
+   {"CHOOSE_NEXT", "CALCULATE_RESULT", cond="vars.last 3 or 4"},
    {"CALCULATE_RESULT","FINAL", cond=calc_final_result},
+   {"CALCULATE_RESULT","DRIVE1", cond=true}
 }
 
+function INIT:init()
+	self.fsm.vars.i = 1
+	self.fsm.vars.resultCount = 0
+	self.fsm.vars.results = nil
+end
+
+function EXPLORE:init()
+	self.args["recog_from_align"].level = self.fsm.vars.i
+end
+
+function ALIGN1:init()
+  self.args["tagless_mps_align"].x1 = 2
+  self.args["tagless_mps_align"].y1 = 2
+  self.args["tagless_mps_align"].x2 = 3
+  self.args["tagless_mps_align"].y2 = 3
+  self.args["tagless_mps_align"].ori = 0
+  self.fsm.vars.last = 1
+end
+
+function ALIGN2:init()
+  self.args["tagless_mps_align"].x1 = 2
+  self.args["tagless_mps_align"].y1 = 2
+  self.args["tagless_mps_align"].x2 = 3
+  self.args["tagless_mps_align"].y2 = 3
+  self.fsm.vars.last = 2
 
 
-function DRIVE_TO_START:init()
+end
+
+function ALIGN3:init()
+  self.fsm.vars.results = {next = self.fsm.vars.result, value = mps_recognition_if:mpstye()};
+  self.fsm.vars.count = self.fsm.vars.count + 1
+  self.args["tagless_mps_align"].y1 = 2
+  self.args["tagless_mps_align"].x2 = 3
+  self.args["tagless_mps_align"].y2 = 3
+ self.fsm.vars.last = 3
+
+end
+
+
+function ALIGN4:init()
+    self.fsm.vars.results = {next = self.fsm.vars.result, value = mps_recognition_if:mpstye()};
+  self.fsm.vars.count = self.fsm.vars.count + 1
+  self.args["tagless_mps_align"].x1 = 2
+  self.args["tagless_mps_align"].y1 = 2
+  self.args["tagless_mps_align"].x2 = 3
+  self.args["tagless_mps_align"].y2 = 3
+  self.fsm.vars.last = 4
+
+end
+
+function CALCULATE_RESULT:init()
+    self.fsm.vars.results = {next = self.fsm.vars.result, value = mps_recognition_if:mpstye()};
+  self.fsm.vars.count = self.fsm.vars.count + 1
+ 
+end
+
+function DRIVE1:init()
+   self.fsm.vars.i = self.fsm.vars.i * 2
    self.args["goto"].x = self.fsm.vars.xLeft 
    self.args["goto"].y = self.fsm.vars.yZone
    self.args["goto"].ori = 0
-   self.fsm.vars.resultStart = mps_recognition_if:mpstype(); 
 end
 
-function DRIVE_TO_SECOND:init()
+function DRIVE2:init()
    self.args["goto"].x = self.fsm.vars.xZone
    self.args["goto"].y = self.fsm.vars.yDown
    self.args["goto"].ori = 1.57
-   self.fsm.vars.resultSecond = mps_recognition_if:mpstype(); 
 end
 
-function DRIVE_TO_THIRD:init()
+function DRIVE3:init()
    self.args["goto"].x = self.fsm.vars.xRight
    self.args["goto"].y = self.fsm.vars.yZone
    self.args["goto"].ori = 3.1415	
-   self.fsm.vars.resultThird = mps_recognition_if:mpstype(); 
 end
 
-function DRIVE_TO_FINAL:init()
+function DRIVE4:init()
    self.args["goto"].x = self.fsm.vars.xZone
    self.args["goto"].y = self.fsm.vars.yUp
    self.args["goto"].ori = 4.71
-   self.fsm.vars.resultFinal = mps_recognition_if:mpstype();
 
 end
 
