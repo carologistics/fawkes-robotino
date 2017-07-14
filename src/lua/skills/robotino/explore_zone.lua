@@ -202,40 +202,44 @@ function found_tag()
                   tag_utils.frame_for_id(fsm.vars.tags, tag_info, id),
                   "map"
                )
-               if tag_map and in_zone(tag_map.x, tag_map.y) then
-                  local yaw = fawkes.tf.get_yaw(tag_map.ori)
-                  if yaw == yaw then -- false for NAN
-                     -- Rescale & Discretize angle from 0..315°
-                     print_debug("Yaw 1: " .. yaw)
-                     if id % 2 == 0 then
-                        yaw = yaw + math.pi
-                        print_debug("Yaw 2: " .. yaw)
-                     end
-                     if yaw < 0 then
-                        yaw = 2 * math.pi + yaw
-                        print_debug("Yaw 3: ".. yaw)
-                     end
-                     local yaw_discrete = math.round(yaw / math.pi * 4) * 45
-                     if yaw_discrete == 360 then yaw_discrete = 0 end
-                     zone_info:set_zone(fsm.vars.zone)
-                     zone_info:set_orientation(yaw_discrete)
-                     zone_info:set_tag_id(id)
-                     zone_info:set_search_state(zone_info.YES)
-                     bb_found_tag:set_translation(0, tag_map.x)
-                     bb_found_tag:set_translation(1, tag_map.y)
-                     bb_found_tag:set_translation(2, tag_map.z)
-                     local line_bearing_map_q = fawkes.tf.create_quaternion_from_yaw(line_bearing_map.ori)
-                     bb_found_tag:set_rotation(0, line_bearing_map_q:x())
-                     bb_found_tag:set_rotation(1, line_bearing_map_q:y())
-                     bb_found_tag:set_rotation(2, line_bearing_map_q:z())
-                     bb_found_tag:set_rotation(3, line_bearing_map_q:w())
-                     bb_found_tag:set_frame("map")
-                     bb_found_tag:set_visibility_history(tag:visibility_history())
-                     fsm.vars.found_something = true
-                     return true
-                  end
+               if not tag_map then
+                 printf("Discarding tag #%d, cannot transform", id)
                else
-                  printf("Discarding tag #%d, misaligned by %f.", id, d_trans)
+                 if in_zone(tag_map.x, tag_map.y) then
+                   local yaw = fawkes.tf.get_yaw(tag_map.ori)
+                   if yaw == yaw then -- false for NAN
+                      -- Rescale & Discretize angle from 0..315°
+                      print_debug("Yaw 1: " .. yaw)
+                      if id % 2 == 0 then
+                         yaw = yaw + math.pi
+                         print_debug("Yaw 2: " .. yaw)
+                      end
+                      if yaw < 0 then
+                         yaw = 2 * math.pi + yaw
+                         print_debug("Yaw 3: ".. yaw)
+                      end
+                      local yaw_discrete = math.round(yaw / math.pi * 4) * 45
+                      if yaw_discrete == 360 then yaw_discrete = 0 end
+                      zone_info:set_zone(fsm.vars.zone)
+                      zone_info:set_orientation(yaw_discrete)
+                      zone_info:set_tag_id(id)
+                      zone_info:set_search_state(zone_info.YES)
+                      bb_found_tag:set_translation(0, tag_map.x)
+                      bb_found_tag:set_translation(1, tag_map.y)
+                      bb_found_tag:set_translation(2, tag_map.z)
+                      local line_bearing_map_q = fawkes.tf.create_quaternion_from_yaw(line_bearing_map.ori)
+                      bb_found_tag:set_rotation(0, line_bearing_map_q:x())
+                      bb_found_tag:set_rotation(1, line_bearing_map_q:y())
+                      bb_found_tag:set_rotation(2, line_bearing_map_q:z())
+                      bb_found_tag:set_rotation(3, line_bearing_map_q:w())
+                      bb_found_tag:set_frame("map")
+                      bb_found_tag:set_visibility_history(tag:visibility_history())
+                      fsm.vars.found_something = true
+                      return true
+                   end
+                 else
+                   printf("Discarding tag #%d, misaligned. Is at %f\t%f", id, tag_map.x, tag_map.y)
+                 end
                end
             end
 
