@@ -21,7 +21,7 @@ plugins/markerless_recognition:
   vframe: "/cam_vision_markerless"
   
   # frame of reference
-  dpath: "/home/casto/depth_image.jpg"
-  vpath: "/home/casto/vision_image.jpg"
+  dpath: "/tmp/depth_image.jpg"
+  vpath: "/tmp/vision_image.jpg"
 
   

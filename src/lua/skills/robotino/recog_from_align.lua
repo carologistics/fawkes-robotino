@@ -49,7 +49,7 @@ MPS_WIDTH = 0.35
 BOT_RADIUS = 0.46/2
 START_DIST_TO_MPS = 0.35+BOT_RADIUS 
 ROTATION_ANGLE = 10 
-
+FACTOR = 0.8
 START_POS={-MPS_WIDTH/2-START_DIST_TO_MPS,0.,0.}
 
 -- Constants
@@ -158,7 +158,7 @@ end
 
 function MOVE_ROTATE:init() 
 
-  self.args["motor_move"] = { x = self.fsm.vars.rotateX, y = self.fsm.vars.rotateY, ori = self.fsm.vars.angle, 
+  self.args["motor_move"] = { x = self.fsm.vars.rotateX*FACTOR, y = self.fsm.vars.rotateY*FACTOR, ori = self.fsm.vars.angle*FACTOR, 
   				vel_trans = 0.2, 
 				tolerance = { x=0.002,y=0.002,ori=0.01}} 
 end
