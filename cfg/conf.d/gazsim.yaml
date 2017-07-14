@@ -12,6 +12,7 @@ gazsim:
   topics:
     gps: "~/gazsim/gps/"
     laser: "~/carologistics-robotino-3/sick_laser/link/laser/scan"
+    backlaser: "~/carologistics-robotino-3/sick_backlaser/link/backlaser/scan"
     gyro: "~/RobotinoSim/Gyro/"
     infrared-puck-sensor: "~/carologistics-robotino-3/infrared_sensor/link/infrared_puck_sensor/scan"
     gripper-laser-left: "~/RobotinoSim/GripperLaserSensor/Left/"
@@ -41,6 +42,11 @@ gazsim:
     interface-id: "Laser tim55x"
     frame-id: !frame base_laser
  
+  backlaser:
+    max_range: 5.5
+    interface-id: "BackLaser tim55x"
+    frame-id: !frame base_laser
+
   webcam:
     # list of ids for all cameras to simulate
     # for each id you need to add entries to the following fields 
