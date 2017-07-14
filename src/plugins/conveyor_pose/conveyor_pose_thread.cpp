@@ -526,12 +526,12 @@ ConveyorPoseThread::pose_get_avg(pose & out)
   }
 
   // calculate average
-  Eigen::Quaternion<float> avgRot;
-  Eigen::Vector4f cumulative;
-  Eigen::Quaternion<float> firstRotation(poses_used.front().rotation.x(), poses_used.front().rotation.y(), poses_used.front().rotation.z(), poses_used.front().rotation.w());
-  float addDet = 1.0 / (float)poses_used.size();
+//  Eigen::Quaternion<float> avgRot;
+//  Eigen::Vector4f cumulative;
+//  Eigen::Quaternion<float> firstRotation(poses_used.front().rotation.x(), poses_used.front().rotation.y(), poses_used.front().rotation.z(), poses_used.front().rotation.w());
+//  float addDet = 1.0 / (float)poses_used.size();
   for (pose p : poses_used) {
-    Eigen::Quaternion<float> newRotation(p.rotation.x(), p.rotation.y(), p.rotation.z(), p.rotation.w());
+//    Eigen::Quaternion<float> newRotation(p.rotation.x(), p.rotation.y(), p.rotation.z(), p.rotation.w());
 
     out.translation.setX( out.translation.x() + p.translation.x() );
     out.translation.setY( out.translation.y() + p.translation.y() );
@@ -543,7 +543,7 @@ ConveyorPoseThread::pose_get_avg(pose & out)
   //  roll += fawkes::normalize_rad(rc);
   //  pitch += fawkes::normalize_rad(pc);
   //  yaw += fawkes::normalize_rad(yc);
-    avgRot = averageQuaternion(cumulative, newRotation, firstRotation, addDet);
+//    avgRot = averageQuaternion(cumulative, newRotation, firstRotation, addDet);
   }
 
   // normalize
