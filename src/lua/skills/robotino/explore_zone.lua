@@ -284,7 +284,7 @@ fsm:add_transitions{
    {"INIT", "TURN", cond="local_bearing(vars.x, vars.y) > CAM_ANGLE"},
    {"INIT", "WAIT_FOR_TAG", cond=true},
    {"WAIT_FOR_TAG", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"WAIT_FOR_TAG", "GET_CLOSER", timeout=1},
+   {"WAIT_FOR_TAG", "GET_CLOSER", timeout=2},
    {"GET_CLOSER", "FAILED", cond="vars.attempts >= MAX_ATTEMPTS", desc="give up"},
    {"GET_CLOSER", "APPROACH_LINE", cond="vars.line_vista"},
    {"GET_CLOSER", "FIND_LINE", cond="vars.cluster_vista"},
@@ -294,11 +294,11 @@ fsm:add_transitions{
    {"FIND_ZONE_CORNER", "APPROACH_ZONE", cond="vars.zone_corner"},
    {"FIND_ZONE_CORNER", "FAILED", cond="not vars.zone_corner"},
    {"APPROACH_ZONE", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"APPROACH_ZONE", "GET_CLOSER", timeout=10},
+   {"APPROACH_ZONE", "GET_CLOSER", timeout=6},
    {"APPROACH_LINE", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"APPROACH_LINE", "GET_CLOSER", timeout=10},
+   {"APPROACH_LINE", "GET_CLOSER", timeout=6},
    {"WAIT_AMCL", "GET_CLOSER", cond=lost_tag, desc="lost tag"},
-   {"WAIT_AMCL", "FINAL", timeout=2},
+   {"WAIT_AMCL", "FINAL", timeout=1},
 }
 
 
