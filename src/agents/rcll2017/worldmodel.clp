@@ -49,7 +49,6 @@
     )
   )
   (assert (received-machine-info))
-  (retract ?pb-msg)
 )
 
 (defrule wm-drive-to-bs-started
