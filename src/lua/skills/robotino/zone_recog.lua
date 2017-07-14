@@ -67,6 +67,7 @@ function speak(...)
 end
 
 function calc_final_result(self) 
+    
     count = 0
     result = {}
     for i=0,5 do
@@ -77,7 +78,9 @@ function calc_final_result(self)
     
     while l do 
 	    result[l.value] = result[l.value]+1
+	    printf("At %d in list is %d",count, l.value)
 	    l = l.next
+	    count = count +1
     end
     
     max = 0
@@ -95,15 +98,19 @@ function calc_final_result(self)
 
     for j=0,5 do
 	    if result[j] == result[max] then
-		    if j~=max then
+		    
+		    if max~=j and self.fsm.vars.i*2<8 then
 			    return false
+		    else
+			    max = j
 		    end
+	          
 	    end
     end
 
     recognition_result = MPS_TYPES[max+1]
     printf("The result of zone_recog is %s",recognition_result)
-
+    printf("Looked at %d pictures", count)
 
     return true
 
