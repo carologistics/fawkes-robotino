@@ -35,6 +35,14 @@ OPTIONS:
    -g                Run Fawkes in gdb
    -v                Run Fawkes in valgrind
    -t                Skip Exploration and add all navgraph points
+   --team-cyan       Set cyan team name
+   --team-magenta		 Set magenta team name
+   --start-game      Automatically run game after initialization
+                     (if used with -t go into PRODUCTION phase,
+                      otherwise the phase will be EXPLORATION,
+                      optionally, "--start-game=PHASE" may be given
+                      to set the phase explicitly)
+                     Typically requires at least --team-cyan.
 EOF
 }
 
@@ -63,6 +71,9 @@ TERM_GEOMETRY=105x56
 GDB=
 SKIP_EXPLORATION=
 FAWKES_USED=false
+START_GAME=
+TEAM_CYAN=
+TEAM_MAGENTA=
 
 if [[ -n $TMUX ]]; then
 	# if $TMUX is set we're inside a tmux session
@@ -76,7 +87,7 @@ fi
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -165,6 +176,23 @@ while true; do
 	     ;;
 	 --ros-launch-robot)
 	     ROS_LAUNCH_ROBOT="--ros-launch $OPTARG"
+	     ;;
+	 --team-cyan)
+	     TEAM_CYAN="$OPTARG"
+	     ;;
+	 --team-magenta)
+	     TEAM_MAGENTA="$OPTARG"
+	     ;;
+	 --start-game)
+			 if [ -n "$OPTARG" ]; then
+					 START_GAME="$OPTARG"
+			 else
+					 if [ -n "$SKIP_EXPLORATION" ]; then
+							 START_GAME="PRODUCTION"
+					 else
+							 START_GAME="EXPLORATION"
+					 fi
+			 fi
 	     ;;
 	 -f)
 	     FIRST_ROBOTINO_NUMBER=$OPTARG
@@ -297,7 +325,7 @@ if [  $COMMAND  == start ]; then
     sleep 10s
     if $FAWKES_USED
     then
-	sleep 15s
+	sleep 5s
 	# publish initial poses
 	echo "publish initial poses"
 	$initial_pose_script_location -c $NUM_CYAN -m $NUM_MAGENTA -d
@@ -305,6 +333,14 @@ if [  $COMMAND  == start ]; then
 	echo "Skipped publishing poses"
     fi
 
+		if [ -n "$START_GAME" ]; then
+				if [ ! -x $LLSF_REFBOX_DIR/bin/rcll-refbox-instruct ]; then
+						echo "rcll-refbox-instruct not found, not built or old version?"
+				else
+						echo "Starting game (Phase: $START_GAME ${TEAM_CYAN:+Cyan: ${TEAM_CYAN}}${TEAM_MAGENTA:+ Magenta: ${TEAM_MAGENTA}})"
+						$LLSF_REFBOX_DIR/bin/rcll-refbox-instruct -p $START_GAME -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
+				fi
+		fi
 
     else
     usage
