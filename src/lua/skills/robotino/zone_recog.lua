@@ -88,7 +88,19 @@ function calc_final_result(self)
            max = j
  	end 
     end
-    
+   
+    if max == 0 then
+    	return false
+    end
+
+    for j=0,5 do
+	    if result[j] == result[max] then
+		    if j~=max then
+			    return false
+		    end
+	    end
+    end
+
     recognition_result = MPS_TYPES[max+1]
     printf("The result of zone_recog is %s",recognition_result)
 
@@ -127,17 +139,17 @@ fsm:define_states{ export_to=_M,
    {"CALCULATE_RESULT",JumpState},
    {"EXPLORE",SkillJumpState, skills={{recog_from_align}}, final_to="CHOOSE_NEXT", fail_to="CHOOSE_NEXT"},
    {"CHOOSE_NEXT",JumpState},
-   {"ALIGN1",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="DRIVE_TO_SECOND"},
+   {"ALIGN1",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="DRIVE2"},
    {"ALIGN2",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="FAILED"},
    {"ALIGN3",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="FAILED"},
    {"ALIGN4",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="FAILED"},
 }
 fsm:add_transitions{
-   {"INIT", "DRIVE_TO_START", cond=calc_xy_coordinates},
+   {"INIT", "DRIVE1", cond=calc_xy_coordinates},
    {"INIT", "FAILED", cond=true},
    {"CHOOSE_NEXT", "DRIVE3", cond="vars.last == 1"},
    {"CHOOSE_NEXT", "DRIVE4", cond="vars.last == 2"},
-   {"CHOOSE_NEXT", "CALCULATE_RESULT", cond="vars.last 3 or 4"},
+   {"CHOOSE_NEXT", "CALCULATE_RESULT", cond="vars.last == 3 or vars.last == 4"},
    {"CALCULATE_RESULT","FINAL", cond=calc_final_result},
    {"CALCULATE_RESULT","DRIVE1", cond=true}
 }
@@ -172,7 +184,7 @@ function ALIGN2:init()
 end
 
 function ALIGN3:init()
-  self.fsm.vars.results = {next = self.fsm.vars.result, value = mps_recognition_if:mpstye()};
+  self.fsm.vars.results = {next = self.fsm.vars.result, value = mps_recognition_if:mpstype()};
   self.fsm.vars.count = self.fsm.vars.count + 1
   self.args["tagless_mps_align"].y1 = 2
   self.args["tagless_mps_align"].x2 = 3
