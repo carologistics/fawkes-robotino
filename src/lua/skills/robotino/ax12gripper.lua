@@ -90,6 +90,14 @@ function COMMAND:init()
       gripper_if:msgq_enqueue(theCenterMessage)
    elseif self.fsm.vars.command == "CLOSE" then
       self.fsm.vars.close = true
+      torqueMessage = gripper_if.SetTorqueMessage:new()
+      torqueMessage:set_torque(0)
+      gripper_if:msgq_enqueue(torqueMessage)
+   elseif self.fsm.vars.command == "CLOSE_TIGHT" then
+      self.fsm.vars.close = true
+      torqueMessage = gripper_if.SetTorqueMessage:new()
+      torqueMessage:set_torque(0.6)
+      gripper_if:msgq_enqueue(torqueMessage)
       theCloseMessage = gripper_if.CloseMessage:new()
       theCloseMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue(theCloseMessage)
