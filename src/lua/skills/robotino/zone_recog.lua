@@ -151,13 +151,15 @@ fsm:add_transitions{
    {"CHOOSE_NEXT", "DRIVE4", cond="vars.last == 2"},
    {"CHOOSE_NEXT", "CALCULATE_RESULT", cond="vars.last == 3 or vars.last == 4"},
    {"CALCULATE_RESULT","FINAL", cond=calc_final_result},
-   {"CALCULATE_RESULT","DRIVE1", cond=true}
+   {"CALCULATE_RESULT","DRIVE1", cond="2*vars.i <= 8"},
+  {"CALCULATE_RESULT","FAILED",cond=true}
 }
 
 function INIT:init()
 	self.fsm.vars.i = 1
 	self.fsm.vars.resultCount = 0
 	self.fsm.vars.results = nil
+self.fsm.vars.count = 0
 end
 
 function EXPLORE:init()
@@ -184,7 +186,7 @@ function ALIGN2:init()
 end
 
 function ALIGN3:init()
-  self.fsm.vars.results = {next = self.fsm.vars.result, value = mps_recognition_if:mpstype()};
+  self.fsm.vars.results = {next = self.fsm.vars.results, value = mps_recognition_if:mpstype()};
   self.fsm.vars.count = self.fsm.vars.count + 1
   self.args["tagless_mps_align"].y1 = 2
   self.args["tagless_mps_align"].x2 = 3
@@ -195,7 +197,7 @@ end
 
 
 function ALIGN4:init()
-    self.fsm.vars.results = {next = self.fsm.vars.result, value = mps_recognition_if:mpstye()};
+    self.fsm.vars.results = {next = self.fsm.vars.results, value = mps_recognition_if:mpstype()};
   self.fsm.vars.count = self.fsm.vars.count + 1
   self.args["tagless_mps_align"].x1 = 2
   self.args["tagless_mps_align"].y1 = 2
@@ -206,7 +208,7 @@ function ALIGN4:init()
 end
 
 function CALCULATE_RESULT:init()
-    self.fsm.vars.results = {next = self.fsm.vars.result, value = mps_recognition_if:mpstye()};
+    self.fsm.vars.results = {next = self.fsm.vars.results, value = mps_recognition_if:mpstype()};
   self.fsm.vars.count = self.fsm.vars.count + 1
  
 end
