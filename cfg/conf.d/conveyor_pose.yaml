@@ -67,8 +67,8 @@ conveyor_pose:
     y_max: -0.015
     z_max: 0.135
     slice:
-      y_min: -0.035
-      y_max: 0.035
+      y_min: -0.045
+      y_max: 0.015
   front:
     # the distance that is not pruned at the front of the MPS
     space: 0.6
@@ -77,16 +77,16 @@ conveyor_pose:
   bottom:
     offset: 0.06
   left_right:
-    left_cut: 0.05
-    right_cut: 0.05
-    left_cut_no_ll: 0.05
-    right_cut_no_ll: 0.05
+    left_cut: 0.1
+    right_cut: 0.1
+    left_cut_no_ll: 0.1
+    right_cut_no_ll: 0.1
   plane:
     # the allowed noise for a plane
     dist_threshold: 0.0025
     normal_z_minimum: 0.1
-    height_minimum: 0.02
-    width_minimum: 0.02
+    height_minimum: 0.025
+    width_minimum: 0.025
   cluster:
     tolerance: 0.0015
     size_min: 100
