@@ -132,6 +132,12 @@ function calc_xy_coordinates(self)
   self.fsm.vars.yUp = self.fsm.vars.yZone+1 
   self.fsm.vars.yDown = self.fsm.vars.yZone-1 
 
+  self.fsm.vars.alginX1 = self.fsm.vars.xZone - 0.5
+  self.fsm.vars.alignY1 = self.fsm.vars.yZone - 0.5
+  self.fsm.vars.alignX2 = self.fsm.vars.xZone + 0.5 
+  slef.fsm.vars.alignY2 = self.fsm.vars.yZone + 0.5 
+  
+
   return true
 
 end
@@ -174,31 +180,33 @@ function EXPLORE:init()
 end
 
 function ALIGN1:init()
-  self.args["tagless_mps_align"].x1 = 2
-  self.args["tagless_mps_align"].y1 = 2
-  self.args["tagless_mps_align"].x2 = 3
-  self.args["tagless_mps_align"].y2 = 3
-  self.args["tagless_mps_align"].ori = 0
+  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
+  self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
+  self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
+  self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
+--  self.args["tagless_mps_align"].ori = 0
   self.fsm.vars.last = 1
 end
 
 function ALIGN2:init()
-  self.args["tagless_mps_align"].x1 = 2
-  self.args["tagless_mps_align"].y1 = 2
-  self.args["tagless_mps_align"].x2 = 3
-  self.args["tagless_mps_align"].y2 = 3
+  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
+  self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
+  self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
+  self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
   self.fsm.vars.last = 2
 
 
 end
 
 function ALIGN3:init()
+
   self.fsm.vars.results = {next = self.fsm.vars.results, value = mps_recognition_if:mpstype()};
   self.fsm.vars.count = self.fsm.vars.count + 1
-  self.args["tagless_mps_align"].y1 = 2
-  self.args["tagless_mps_align"].x2 = 3
-  self.args["tagless_mps_align"].y2 = 3
- self.fsm.vars.last = 3
+  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
+  self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
+  self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
+  self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
+  self.fsm.vars.last = 3
 
 end
 
@@ -206,10 +214,10 @@ end
 function ALIGN4:init()
     self.fsm.vars.results = {next = self.fsm.vars.results, value = mps_recognition_if:mpstype()};
   self.fsm.vars.count = self.fsm.vars.count + 1
-  self.args["tagless_mps_align"].x1 = 2
-  self.args["tagless_mps_align"].y1 = 2
-  self.args["tagless_mps_align"].x2 = 3
-  self.args["tagless_mps_align"].y2 = 3
+  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
+  self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
+  self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
+  self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
   self.fsm.vars.last = 4
 
 end
@@ -243,7 +251,6 @@ function DRIVE4:init()
    self.args["goto"].x = self.fsm.vars.xZone
    self.args["goto"].y = self.fsm.vars.yUp
    self.args["goto"].ori = 4.71
-
 end
 
 
