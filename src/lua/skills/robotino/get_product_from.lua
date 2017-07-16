@@ -89,6 +89,13 @@ function MPS_ALIGN:init()
    self.args["mps_align"].y = -0.04
 end
 
+function CONVEYOR_ALIGN:init()
+   if (self.fsm.vars.shelf == nil) then
+     self.args["conveyor_align"].disable_realsense_afterwards = false
+   end
+end
+
+
 function SKILL_PRODUCT_PICK:init()
    self.args["product_pick"].offset_x = 0 
 end

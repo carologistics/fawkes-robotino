@@ -102,6 +102,13 @@ function MPS_ALIGN:init()
    self.args["mps_align"].y = -0.04
 end
 
+function CONVEYOR_ALIGN:init()
+    if (self.fsm.vars.slide == nil or self.fsm.vars.shelf == nil) then
+      self.args["conveyor_align"].disable_realsense_afterwards = false
+    end
+end
+
+
 function RE_MPS_ALIGN:init()
    local shelf_to_conveyor = 0.09 --TODO measure both values
    local shelf_distance = 0.09
