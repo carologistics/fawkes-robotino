@@ -98,8 +98,8 @@ function MPS_ALIGN:init()
    else
       self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
    end
-   self.args["mps_align"].x = 0.43
-   self.args["mps_align"].y = -0.04
+   self.args["mps_align"].x = 0.4
+   self.args["mps_align"].y = 0
 end
 
 function CONVEYOR_ALIGN:init()

@@ -76,7 +76,7 @@ function MPS_ALIGN:init()
 --      self.args["mps_align"].y = -0.02
 --   end 
    self.args["mps_align"].x = 0.4
-   self.args["mps_align"].y = -0.04
+   self.args["mps_align"].y = 0
 end
 
 function CONVEYOR_ALIGN:init()
