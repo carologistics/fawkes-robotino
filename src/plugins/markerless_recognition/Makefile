@@ -19,6 +19,8 @@ BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
+PRESUBDIRS = interfaces 
+
 LIBS_markerless = fawkescore fawkesutils fawkesaspects fvutils \
 	       fawkestf fawkesinterface fawkesblackboard \
 	       MPSRecognitionInterface hdf5
