@@ -16,10 +16,6 @@
     <comment>
       This interface allows to control mps recognition plugin, e.g. take data, compute machine type, clear taken data.
     </comment>
-    <field type="uint32" name="msgid">
-      The ID of the message that is currently being processed or
-      was processed last.
-    </field>
     <field type="bool" name="final">
       True, if the last recognition triggered by a ComputeMessage has
       been completed, false if it is still running. Also check the
@@ -27,12 +23,6 @@
     </field>
     <field type="MPSType" name="mpstype">
       The result of the recognized mps.
-    </field>
-    <field type="float" name="p_correct">
-      The probability, that the determined type is correct.
-    </field>
-    <field type="float" length="5" name="ptot_mpstype">
-      The total probabilities for the different mps types
     </field>
   </data>
   <message name="Clear">
@@ -42,8 +32,5 @@
   </message>
   <message name="Compute">
     <comment>Trigger recognition calculation.</comment>
-  </message>
-  <message name="TakeData">
-    <comment>Instruct the mps recognition plugin to take data in the current position looking at the mps.</comment>
   </message>
 </interface>
