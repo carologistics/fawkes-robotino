@@ -32,7 +32,8 @@ depends_interfaces = {
 }
 
 documentation      = [==[
-This skill should check if the current picture of the RealSense can be identified by a machine using the mps_recog plugin 
+
+		   	This skill should check if the current picture of the RealSense can be identified by a machine using the mps_recog plugin 
 
 ]==]
 

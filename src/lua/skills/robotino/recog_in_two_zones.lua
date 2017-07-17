@@ -30,9 +30,10 @@ depends_skills     = {"zone_recog"}
 depends_interfaces = {}
 
 documentation      = [==[ recog_in_two_zones
-	This skill does: Drives to two zones and calls zone_recog to recognize the mps located there
-	@param zone1 First zone to drive to
-	@param zone2 Second zone to drive to
+	This skill does: Explores two zones and calls zone_recog to recognize the located MPS
+
+	@param zone1 First zone to explore 
+	@param zone2 Second zone to explore
 ]==]
 
 
