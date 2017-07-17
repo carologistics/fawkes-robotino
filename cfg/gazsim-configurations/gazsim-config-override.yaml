@@ -107,6 +107,8 @@ plugins/static-transforms:
       rot_pitch: 0 
       rot_yaw: 0
       rot_roll: 0
+    cam_conveyor:
+      trans_z: -0.056
 
 plugins/mongodb/clients:
   robotmemory-synced:
