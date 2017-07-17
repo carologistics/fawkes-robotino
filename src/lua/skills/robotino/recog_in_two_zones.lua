@@ -1,3 +1,25 @@
+----------------------------------------------------------------------------
+--  recog_in_two_zones.lua - drives to two zones and recognizes the mps located there 
+--
+--  Copyright 2017 The Carologistics Team
+--
+--  Author : Carsten Stoffels
+----------------------------------------------------------------------------
+
+--  This program is free software; you can redistribute it and/or modify
+--  it under the terms of the GNU General Public License as published by
+--  the Free Software Foundation; either version 2 of the License, or
+--  (at your option) any later version.
+--
+--  This program is distributed in the hope that it will be useful,
+--  but WITHOUT ANY WARRANTY; without even the implied warranty of
+--  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--  GNU Library General Public License for more details.
+--
+--  Read the full text in the LICENSE.GPL file in the doc directory.
+
+
+
 -- Initialize module
 module(..., skillenv.module_init)
 
@@ -7,11 +29,10 @@ fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"zone_recog"}
 depends_interfaces = {}
 
-documentation      = [==[ drive_zones_mps_recognize
-
-                          This skill does:
-                              Drives to the zones and recognizes the mps               
-
+documentation      = [==[ recog_in_two_zones
+	This skill does: Drives to two zones and calls zone_recog to recognize the mps located there
+	@param zone1 First zone to drive to
+	@param zone2 Second zone to drive to
 ]==]
 
 

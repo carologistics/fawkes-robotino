@@ -53,6 +53,10 @@
 #include <iostream>
 #include <stdio.h>
 
+#define THRESHOLD_UPPER 0.8
+#define THRESHOLD_LOWER 0.5
+#define MPS_COUNT 5
+
 namespace fawkes {
   class MPSRecognitionInterface;
   class Position3DInterface;
@@ -65,7 +69,7 @@ namespace firevision {
 
 struct Probability
 {
-	float p[5];
+	float p[MPS_COUNT];
 };
 
 typedef Probability (*my_function)(const char*, const char*, const char*);
@@ -102,6 +106,7 @@ public:
 
   void clear_data();
   Probability recognize_current_pic(const std::string image);
+  Probability recheck_mps(const std::string image);
   int recognize_mps();
   void readImage();	
   void setupCamera();
@@ -121,11 +126,13 @@ public:
   std::string shm_id;
 
 
-    // config handling
-  virtual void config_value_erased(const char *path);
-  virtual void config_tag_changed(const char *new_tag);
-  virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v);
-  virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v);
+
+  // config handling
+  void config_value_erased(const char *path) {};
+  void config_tag_changed(const char *new_tag) {};
+  void config_comment_changed(const fawkes::Configuration::ValueIterator *v) {};
+  void config_value_changed(const fawkes::Configuration::ValueIterator *v){}; 
+
 
   // cv image
    IplImage *ipl;
@@ -148,9 +155,6 @@ public:
 
   std::string vpath; 
   std::string dpath; 
-
-  float th_first = 0.8;
-  float th_sec = 0.5;
 
 };
 

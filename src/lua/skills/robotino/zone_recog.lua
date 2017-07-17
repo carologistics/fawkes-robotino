@@ -1,9 +1,9 @@
 
 ----------------------------------------------------------------------------
---  goto_zones.lua
+--  zone_recog.lua
 --
 --  Created: Sat Jul 01 13:27:47 2017
---  Copyright 2017 Carsten Stoffels
+--  Copyright 2017 Carsten Stoffels, Daniel Habering
 --
 ----------------------------------------------------------------------------
 
@@ -32,11 +32,9 @@ depends_interfaces = {
 
 }
 
-documentation      = [==[ goto_zone
-
-                          This skill does:
-                                drives to the corners of the zone and tries to recognize the mps                  
-
+documentation      = [==[ zone_recog
+This skill does: Circles a given zone in which an mps should be located. Searches for the long sides of the mps. Aligns there and calls recog_from_align. If the first run does not successfull recognizes the mps, it is redone by taking more picture at each side.
+@param zone Zone in which a MPS should be located	
 ]==]
 
 
@@ -44,7 +42,7 @@ documentation      = [==[ goto_zone
 skillenv.skill_module(_M)
 
 -- CONSTANTS
-MPS_LENGTH = 0.7
+MPS_COUNT = 5
 MPS_WIDTH = 0.35
 BOT_RADIUS = 0.46/2
 START_DIST_TO_MPS = 0.15+BOT_RADIUS
@@ -68,9 +66,8 @@ end
 
 function calc_final_result(self) 
     
-    count = 0
     result = {}
-    for i=0,5 do
+    for i=0,MPS_COUNT do
       result[i] = 0
     end
     
@@ -78,16 +75,13 @@ function calc_final_result(self)
     
     while l do 
 	    result[l.value] = result[l.value]+1
-	    printf("At %d in list is %d",count, l.value)
 	    l = l.next
-	    count = count +1
     end
     
     max = 0
 
-    for j=0,5 do 
+    for j=0,MPS_COUNT do 
         if result[j] > result[max] then
-	         printf("Result %d is %d ",j,result[j])
            max = j
  	end 
     end
@@ -96,21 +90,18 @@ function calc_final_result(self)
     	return false
     end
 
-    for j=0,5 do
+    for j=0,MPS_COUNT do
 	    if result[j] == result[max] then
-		    
 		    if max~=j and self.fsm.vars.i*2<8 then
 			    return false
 		    else
 			    max = j
 		    end
-	          
 	    end
     end
 
     recognition_result = MPS_TYPES[max+1]
     printf("The result of zone_recog is %s",recognition_result)
-    printf("Looked at %d pictures", count)
 
     return true
 
@@ -172,7 +163,7 @@ function INIT:init()
 	self.fsm.vars.i = 1
 	self.fsm.vars.resultCount = 0
 	self.fsm.vars.results = nil
-self.fsm.vars.count = 0
+	self.fsm.vars.count = 0
 end
 
 function EXPLORE:init()
@@ -184,7 +175,6 @@ function ALIGN1:init()
   self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
   self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
   self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
---  self.args["tagless_mps_align"].ori = 0
   self.fsm.vars.last = 1
 end
 
@@ -199,9 +189,6 @@ function ALIGN2:init()
 end
 
 function ALIGN3:init()
-
-  self.fsm.vars.results = {next = self.fsm.vars.results, value = mps_recognition_if:mpstype()};
-  self.fsm.vars.count = self.fsm.vars.count + 1
   self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
   self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
   self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
@@ -212,9 +199,7 @@ end
 
 
 function ALIGN4:init()
-    self.fsm.vars.results = {next = self.fsm.vars.results, value = mps_recognition_if:mpstype()};
-  self.fsm.vars.count = self.fsm.vars.count + 1
-  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
+ self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
   self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
   self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
   self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
@@ -222,10 +207,10 @@ function ALIGN4:init()
 
 end
 
-function CALCULATE_RESULT:init()
-    self.fsm.vars.results = {next = self.fsm.vars.results, value = mps_recognition_if:mpstype()};
+function CHOOSE_NEXT:init()
+     self.fsm.vars.results = {next = self.fsm.vars.results, value = mps_recognition_if:mpstype()};
   self.fsm.vars.count = self.fsm.vars.count + 1
- 
+  
 end
 
 function DRIVE1:init()
