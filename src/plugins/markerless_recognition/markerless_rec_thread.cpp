@@ -38,14 +38,6 @@ MarkerlessRecognitionThread::MarkerlessRecognitionThread()
 
 }
 
-
-// config handling
-void MarkerlessRecognitionThread::config_value_erased(const char *path) {};
-void MarkerlessRecognitionThread::config_tag_changed(const char *new_tag) {};
-void MarkerlessRecognitionThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v) {};
-void MarkerlessRecognitionThread::config_value_changed(const fawkes::Configuration::ValueIterator *v){}; 
-
-
 void MarkerlessRecognitionThread::finalize() {
  	blackboard->close(mps_rec_if_);
         delete fv_cam;
@@ -58,7 +50,7 @@ void MarkerlessRecognitionThread::finalize() {
 int checkResult(Probability prob){
 	for(int i = 0; i < 4; i++){
 
-		if(prob.p[i]<=0 || prob.p[i]>=1){
+		if(prob.p[i]<0 || prob.p[i]>1){
 			return -1;
 		}
 	}
@@ -69,12 +61,9 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	
 	
 	Probability result;
-	result.p[0] = 0.;
-        result.p[1] = 0.;
-        result.p[2] = 0.;
-        result.p[3] = 0.;
-	result.p[4] = 0.; 
-	
+	for(int i = 0; i < MPS_COUNT; i++){
+		result.p[i]=0.;
+	}
 	// Shared library tensoflow 
 	
 	my_function evaluate;
@@ -101,14 +90,66 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	std::string imPath = image;		
 	
 	//path to the trained graph
-    	std::string grPath = (home) + "/fawkes-robotino/etc/tf_data/output_graph_600.pb";
+    	std::string grPath = (home) + "/tensorflow/TrainedData/output_graph_600.pb";
 	
 	//path to the the trained labels
-	std::string laPath = (home) + "/fawkes-robotino/etc/tf_data/output_labels_600.txt";
+	std::string laPath = (home) + "/tensorflow/TrainedData/output_labels_600.txt";
 
 	//evaluates the current image
         Probability ret = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str());
-        
+	
+	if(checkResult(ret)==0){
+		for(int i = 0; i < MPS_COUNT; ++i){
+ 			logger->log_info(name(), "Result: %f", ret.p[i] );
+		}	
+		result = ret;
+	}
+	else {
+		logger->log_info(name(), "Classification failed");
+	}
+
+	return result;
+}
+
+Probability MarkerlessRecognitionThread::recheck_mps(const std::string image){
+	logger->log_info(name(), "Started further recognition, to distinguish between RS and CS");
+	Probability result;
+	for(int i = 0; i < 5; i++){
+		result.p[i]=0.;
+	}
+	// Shared library tensoflow 
+	
+	my_function evaluate;
+ 	void *handle;
+  
+	//Open shared library
+	std::string lib = home + "/tensorflow/bazel-bin/tensorflow/tf_wrapper/tensorflowWrapper.so";
+    	handle = dlopen(lib.c_str(),RTLD_NOW);
+	if(!handle){
+        		fprintf(stderr, "%s\n", dlerror());
+			return result;
+	}
+
+	
+	//set function pointer
+        *(void**)(&evaluate) = dlsym(handle,"evaluateImage");
+	char* error;
+	if((error=dlerror())!=NULL) {
+		fprintf(stderr, "%s\n", error);
+		return result;		
+	}
+	
+	//path to the image that have to be tested
+	std::string imPath = image;		
+	
+	//path to the trained graph
+    	std::string grPath = (home) + "/tensorflow/TrainedData/output_graph_RSCS.pb";
+	
+	//path to the the trained labels
+	std::string laPath = (home) + "/tensorflow/TrainedData/output_labels_RSCS.txt";
+
+	//evaluates the current image
+        Probability ret = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str());
 	
 	if(checkResult(ret)==0){
 		for(int i = 0; i < 5; ++i){
@@ -119,16 +160,10 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	else {
 		logger->log_info(name(), "Classification failed");
 	}
-	//Still bugged. Seg fault if we try to call dlclose()
-	//dlclose(handle);
-   
-	// struct with 5 float values
-	// every time: bs, cs, ds, rs, ss  
 
 	return result;
+
 }
-
-
 
 int MarkerlessRecognitionThread::recognize_mps() {
 
@@ -137,13 +172,12 @@ int MarkerlessRecognitionThread::recognize_mps() {
 	takePictureFromFVcamera(); 
 	if(vpath.empty()) return -1;
 
-        //Probability recognition_result = recognize_current_pic(vpath); 
-	Probability recognition_result = recognize_current_pic("/TestData/BS/BS_9.jpg");
+        Probability recognition_result = recognize_current_pic(vpath); 
 	int station = 0;
 
 	int maximum = 0; 
-	int second = 4;
-	for(int i = 0; i < 4; i++){ 
+	int second = MPS_COUNT-1;
+	for(int i = 0; i < MPS_COUNT; i++){ 
 	 	if(i==maximum) continue;
 		if(recognition_result.p[i] >= recognition_result.p[maximum]){ 
 		 	second = maximum;
@@ -163,7 +197,31 @@ int MarkerlessRecognitionThread::recognize_mps() {
 		return -1;
 	}
 	
-	if(recognition_result.p[maximum] < th_first || recognition_result.p[second] > th_sec)
+	if(maximum == CS || maximum == RS){
+		recognition_result = recheck_mps(vpath);
+		for(int i = 0; i < MPS_COUNT; i++){ 
+	 		if(i==maximum) continue;
+			if(recognition_result.p[i] >= recognition_result.p[maximum]){ 
+		 		second = maximum;
+				maximum = i;
+			}
+			else {
+				if(recognition_result.p[i] > recognition_result.p[second]){
+					second = i;
+				}
+			}
+		}
+
+		if(checkResult(recognition_result)!=0){
+			mps_rec_if_->set_final(true);
+			mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) 0);
+			mps_rec_if_->write();
+			return -1;
+		}
+
+	}
+
+	if(recognition_result.p[maximum] < THRESHOLD_UPPER || recognition_result.p[second] > THRESHOLD_LOWER)
 	{
 		logger->log_info(name(),"Failed Threshold: %f %f",recognition_result.p[maximum],recognition_result.p[second]);
 		station = 0;
@@ -249,7 +307,6 @@ void MarkerlessRecognitionThread::init(){
 void MarkerlessRecognitionThread::takePictureFromFVcamera(){ 
 
         logger->log_info(name(),"Taking Picture");
-        
 	
 	//get img form fv
         fv_cam->capture();
@@ -276,8 +333,6 @@ void MarkerlessRecognitionThread::loop(){
       	return;
    	}
 
-	
-
    	while ( ! mps_rec_if_->msgq_empty() ) {
      			
 		if ( mps_rec_if_->msgq_first_is<MPSRecognitionInterface::ComputeMessage>() ) {
@@ -287,7 +342,6 @@ void MarkerlessRecognitionThread::loop(){
 		
 			//MPSRecognitionInterface::TakeDataMessage *m = mps_rec_if_->msgq_first<MPSRecognitionInterface::TakeDataMessage>();
 			//mps_rec_if_->set_msgid(m->id());
-	
 			mps_rec_if_->set_final(false);
 			mps_rec_if_->write();
 
@@ -301,7 +355,6 @@ void MarkerlessRecognitionThread::loop(){
     		}
     			
 		mps_rec_if_->msgq_pop();
-  	
 	}
 }
 

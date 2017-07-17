@@ -1,9 +1,9 @@
 ----------------------------------------------------------------------------
---  check_tag.lua -check if tag in front is the given tag_id 
+--  mps_recog.lua -check if tag in front is the given tag_id 
 --
 --  Copyright 2015 The Carologistics Team
 --
---  Author : Carsten Stoffels, Daniel Habering,Sebastian Schönitz
+--  Author : Carsten Stoffels, Daniel Habering
 ----------------------------------------------------------------------------
 
 --  This program is free software; you can redistribute it and/or modify
