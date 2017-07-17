@@ -33,8 +33,11 @@ depends_interfaces = {
 }
 
 documentation      = [==[ zone_recog
-This skill does: Circles a given zone in which an mps should be located. Searches for the long sides of the mps. Aligns there and calls recog_from_align. If the first run does not successfull recognizes the mps, it is redone by taking more picture at each side.
-@param zone Zone in which a MPS should be located	
+
+			This skill does: Circles a given zone in which an mps should be located. Searches for the long sides of the mps. Aligns there and calls recog_from_align.
+			If the first run does not successfull recognizes the mps, it is redone by taking more picture at each side.
+
+			@param zone Zone in which a MPS should be located	
 ]==]
 
 
@@ -123,11 +126,12 @@ function calc_xy_coordinates(self)
   self.fsm.vars.yUp = self.fsm.vars.yZone+1 
   self.fsm.vars.yDown = self.fsm.vars.yZone-1 
 
-  self.fsm.vars.alginX1 = self.fsm.vars.xZone - 0.5
+  self.fsm.vars.alignX1 = self.fsm.vars.xZone - 0.5
   self.fsm.vars.alignY1 = self.fsm.vars.yZone - 0.5
-  self.fsm.vars.alignX2 = self.fsm.vars.xZone + 0.5 
-  slef.fsm.vars.alignY2 = self.fsm.vars.yZone + 0.5 
-  
+  self.fsm.vars.alignX2 = self.fsm.vars.xZone + 0.5
+  self.fsm.vars.alignY2 = self.fsm.vars.yZone + 0.5
+
+
 
   return true
 
@@ -168,6 +172,10 @@ end
 
 function EXPLORE:init()
 	self.args["recog_from_align"].level = self.fsm.vars.i
+	self.args["recog_from_align"].alignX1 = self.fsm.vars.alignX1
+	self.args["recog_from_align"].alignY1 = self.fsm.vars.alignY1
+	self.args["recog_from_align"].alignX2 = self.fsm.vars.alignX2
+	self.args["recog_from_align"].alignY2 = self.fsm.vars.alignY2
 end
 
 function ALIGN1:init()

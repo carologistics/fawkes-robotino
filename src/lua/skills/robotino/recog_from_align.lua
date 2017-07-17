@@ -32,10 +32,17 @@ depends_interfaces = {
 
 }
 
-documentation      = [==[ drive_to_zone
+documentation      = [==[ recog_from_align 
 
                           This skill does:
-                                drives to the corners of the zone and tries to recognize the mps                  
+				Recognition of station from previous alignment 
+
+			@param x1    : zone parameter for tagless_mps_align 
+			@param y1    : zone parameter for tagless_mps_align  
+			@param x2    : zone parameter for tagless_mps_align 
+			@param y2    : zone parameter for tagless_mps_align 
+
+			@param level : level of the iteration ( increased value means more iteration steps )  
 
 ]==]
 
@@ -95,7 +102,6 @@ end
 
 
 function take_result(self) 
-
 	self.fsm.vars.results[self.fsm.vars.resultCounter] = mps_recognition_if:mpstype() 
 	self.fsm.vars.resultCounter = self.fsm.vars.resultCounter + 1
   return true
@@ -145,7 +151,7 @@ fsm:add_transitions{
    {"CALC_ANGLE", "ALIGN", cond=calc_angle},
    {"CALC_ANGLE", "CALC_RESULT",cond=true}, 
    {"TAKE_RESULT", "CALC_ANGLE", cond=take_result}, 
-    {"CALC_RESULT","FINAL",cond=true}
+   {"CALC_RESULT","FINAL",cond=true}
 }
 
 
@@ -157,17 +163,22 @@ function INIT:init()
 		self.fsm.vars.results[i] = 0 
 	end 
 
-	self.fsm.vars.resultCounter = 0
-    self.fsm.vars.angle = 0
-self.fsm.vars.rotateX = 0
-self.fsm.vars.rotateY=0
-   self.fsm.vars.k = 1
+	 self.fsm.vars.resultCounter = 0
+         self.fsm.vars.angle = 0
+         self.fsm.vars.rotateX = 0
+         self.fsm.vars.rotateY=0
+         self.fsm.vars.k = 1
 end
 
 function MOVE_ROTATE:init() 
 
-  self.args["motor_move"] = { x = self.fsm.vars.rotateX*FACTOR, y = self.fsm.vars.rotateY*FACTOR, ori = self.fsm.vars.angle*FACTOR, 
+  self.args["motor_move"] = { x = self.fsm.vars.rotateX*FACTOR, y = self.fsm.vars.rotateY*FACTOR, ori = self.fsm.vars.angle*(-1)*FACTOR, 
   				vel_trans = 0.2, 
 				tolerance = { x=0.002,y=0.002,ori=0.01}} 
 end
 
+function ALIGN:init() 
+
+	self.args["tagless_mps_align"] = { x1  = self.fsm.vars.alignX1 , y1 = self.fsm.vars.alignY1 , x2  = self.fsm.vars.alignX2 , y2 = self.fsm.vars.alignY2 } 
+
+end 
