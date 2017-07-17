@@ -30,23 +30,30 @@
 
 namespace fawkes {
 
-class MPSRecognitionInterface : public Interface
-{
- /// @cond INTERNALS
- INTERFACE_MGMT_FRIENDS(MPSRecognitionInterface)
- /// @endcond
- public:
-  /* constants */
+class MPSRecognitionInterface : public Interface {
 
-  /** The different types of machines. */
-  typedef enum {
-    NoStationDetected /**< No station detected. */,
-    BS /**< Base station. */,
-    CS /**< Cap station. */,
-    DS /**< Delivery station. */,
-    RS /**< Ring station. */,
-    SS /**< Storage Station. */
-  } MPSType;
+       	/// @cond INTERNALS
+ 
+	INTERFACE_MGMT_FRIENDS(MPSRecognitionInterface)
+ 
+	/// @endcond
+
+       	public:
+ 
+	       	/* constants */
+
+  
+		/** The different types of machines. */
+  
+		typedef enum {
+    
+			NoStationDetected /**< No station detected. */,
+		       	BS /**< Base station. */,
+    			CS /**< Cap station. */,
+    			DS /**< Delivery station. */,
+    			RS /**< Ring station. */,
+    			SS /**< Storage Station. */
+  			} MPSType;
   const char * tostring_MPSType(MPSType value) const;
 
  private:
@@ -63,15 +70,8 @@ class MPSRecognitionInterface : public Interface
       been completed, false if it is still running. Also check the
       msgid field if this field applies to the correct message.
      */
-    int32_t mpstype; /**< 
-      The result of the recognized mps.
-     */
-    float p_correct; /**< 
-      The probability, that the determined type is correct.
-     */
-    float ptot_mpstype[5]; /**< 
-      The total probabilities for the different mps types
-     */
+    int32_t mpstype; 
+
   } MPSRecognitionInterface_data_t;
 
   MPSRecognitionInterface_data_t *data;
@@ -121,26 +121,8 @@ class MPSRecognitionInterface : public Interface
     virtual Message * clone() const;
   };
 
-  class TakeDataMessage : public Message
-  {
-   private:
-    /** Internal data storage, do NOT modify! */
-    typedef struct __attribute__((packed)) {
-      int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
-      int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
-    } TakeDataMessage_data_t;
 
-    TakeDataMessage_data_t *data;
 
-  interface_enum_map_t enum_map_MPSType;
-   public:
-    TakeDataMessage();
-    ~TakeDataMessage();
-
-    TakeDataMessage(const TakeDataMessage *m);
-    /* Methods */
-    virtual Message * clone() const;
-  };
 
   virtual bool message_valid(const Message *message) const;
  private:
@@ -158,14 +140,6 @@ class MPSRecognitionInterface : public Interface
   MPSType mpstype() const;
   void set_mpstype(const MPSType new_mpstype);
   size_t maxlenof_mpstype() const;
-  float p_correct() const;
-  void set_p_correct(const float new_p_correct);
-  size_t maxlenof_p_correct() const;
-  float * ptot_mpstype() const;
-  float ptot_mpstype(unsigned int index) const;
-  void set_ptot_mpstype(unsigned int index, const float new_ptot_mpstype);
-  void set_ptot_mpstype(const float * new_ptot_mpstype);
-  size_t maxlenof_ptot_mpstype() const;
   virtual Message * create_message(const char *type) const;
 
   virtual void copy_values(const Interface *other);
