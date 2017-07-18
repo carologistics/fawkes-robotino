@@ -289,6 +289,8 @@ GripperAX12AThread::loop()
 
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::OpenMessage>()) {
         AX12GripperInterface::OpenMessage *msg = __gripper_if->msgq_first(msg);
+
+        set_torque(1.0);
         goto_gripper(__cfg_left_open_angle + msg->offset(), __cfg_right_open_angle + msg->offset());
 
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CloseMessage>()) {
