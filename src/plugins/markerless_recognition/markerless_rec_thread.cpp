@@ -10,7 +10,7 @@
 #include <dlfcn.h>
 #include <pthread.h>
 #include <string>
-
+#include <unistd.h>
 
 #define CFG_PREFIX "/plugins/markerless_recognition/"
 #define IMAGE_CHANNELS 3
@@ -75,7 +75,7 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	std::string laPath = (home) + "/tensorflow/TrainedData/output_labels_600.txt";
 
 	//evaluates the current image
-        Probability ret = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str());
+        Probability ret = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str(),false);
 	
 	if(checkResult(ret)==0){
 		for(int i = 0; i < MPS_COUNT; ++i){
@@ -107,7 +107,7 @@ Probability MarkerlessRecognitionThread::recheck_mps(const std::string image){
 	std::string laPath = (home) + "/tensorflow/TrainedData/output_labels_RSCS.txt";
 
 	//evaluates the current image
-        Probability ret = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str());
+        Probability ret = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str(),true);
 	
 	if(checkResult(ret)==0){
 		for(int i = 0; i < 5; ++i){
@@ -273,7 +273,36 @@ void MarkerlessRecognitionThread::init(){
 		fprintf(stderr, "%s\n", error);
 	}
 
-	recognize_mps();
+	init_function init_fiveGraph;
+	init_function init_twoGraph;
+
+	*(void**)(&init_fiveGraph) = dlsym(handle,"init_fiveGraph");
+	if((error=dlerror())!=NULL) {
+		fprintf(stderr, "%s\n", dlerror());
+	}
+
+	*(void**)(&init_twoGraph) = dlsym(handle,"init_twoGraph");
+	if((error=dlerror())!=NULL) {
+		fprintf(stderr, "%s\n", dlerror());
+	}
+
+	
+	//path to the trained graph
+    	std::string grPath = (home) + "/tensorflow/TrainedData/output_graph_600.pb";
+	
+	//path to the the trained labels
+	std::string laPath = (home) + "/tensorflow/TrainedData/output_labels_600.txt";
+
+	init_fiveGraph(grPath.c_str(),laPath.c_str());
+	
+	//path to the trained graph
+    	grPath = (home) + "/tensorflow/TrainedData/output_graph_RSCS.pb";
+	
+	//path to the the trained labels
+	laPath = (home) + "/tensorflow/TrainedData/output_labels_RSCS.txt";
+
+
+	init_twoGraph(grPath.c_str(),laPath.c_str());
 }
 
 
