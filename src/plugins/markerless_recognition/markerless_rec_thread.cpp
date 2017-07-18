@@ -64,27 +64,6 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	for(int i = 0; i < MPS_COUNT; i++){
 		result.p[i]=0.;
 	}
-	// Shared library tensoflow 
-	
-	my_function evaluate;
- 	void *handle;
-  
-	//Open shared library
-	std::string lib = home + "/tensorflow/bazel-bin/tensorflow/tf_wrapper/tensorflowWrapper.so";
-    	handle = dlopen(lib.c_str(),RTLD_NOW);
-	if(!handle){
-        		fprintf(stderr, "%s\n", dlerror());
-			return result;
-	}
-
-	
-	//set function pointer
-        *(void**)(&evaluate) = dlsym(handle,"evaluateImage");
-	char* error;
-	if((error=dlerror())!=NULL) {
-		fprintf(stderr, "%s\n", error);
-		return result;		
-	}
 	
 	//path to the image that have to be tested
 	std::string imPath = image;		
@@ -116,27 +95,6 @@ Probability MarkerlessRecognitionThread::recheck_mps(const std::string image){
 	Probability result;
 	for(int i = 0; i < 5; i++){
 		result.p[i]=0.;
-	}
-	// Shared library tensoflow 
-	
-	my_function evaluate;
- 	void *handle;
-  
-	//Open shared library
-	std::string lib = home + "/tensorflow/bazel-bin/tensorflow/tf_wrapper/tensorflowWrapper.so";
-    	handle = dlopen(lib.c_str(),RTLD_NOW);
-	if(!handle){
-        		fprintf(stderr, "%s\n", dlerror());
-			return result;
-	}
-
-	
-	//set function pointer
-        *(void**)(&evaluate) = dlsym(handle,"evaluateImage");
-	char* error;
-	if((error=dlerror())!=NULL) {
-		fprintf(stderr, "%s\n", error);
-		return result;		
 	}
 	
 	//path to the image that have to be tested
@@ -299,7 +257,23 @@ void MarkerlessRecognitionThread::init(){
         	        cvSize(this->img_width,this->img_height),
                 	IPL_DEPTH_8U,IMAGE_CHANNELS);
 
+	//Open shared library
+	std::string lib = home + "/tensorflow/bazel-bin/tensorflow/tf_wrapper/tensorflowWrapper.so";
+    	handle = dlopen(lib.c_str(),RTLD_NOW);
+	if(!handle){
+        		fprintf(stderr, "%s\n", dlerror());
+		
+	}
 
+	
+	//set function pointer
+        *(void**)(&evaluate) = dlsym(handle,"evaluateImage");
+	char* error;
+	if((error=dlerror())!=NULL) {
+		fprintf(stderr, "%s\n", error);
+	}
+
+	recognize_mps();
 }
 
 
