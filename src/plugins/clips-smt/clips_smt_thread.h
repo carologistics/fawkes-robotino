@@ -117,7 +117,8 @@ private:
 										std::map<std::string, z3::expr>& varHold,
 										std::map<std::string, z3::expr>& varS,
 										std::map<std::string, z3::expr>& varRew,
-										std::map<std::string, z3::expr>& varInit);
+										std::map<std::string, z3::expr>& varInit,
+										std::map<std::string, z3::expr>& varO);
 	void clips_smt_solve_formula(z3::expr_vector formula);
 
 	void clips_smt_solve_formula_from_smt_file(std::string path);
@@ -129,8 +130,9 @@ private:
 	std::map<int ,std::string> actions_robot_3;
 
 	// Constants for C0-C1
-	const int number_actions = 18;
-	const int plan_horizon = 11;
+	const int number_actions_c0 = 11;
+	const int number_actions_c1 = 18;
+	const int plan_horizon = 25;
 	const int deadline = 60;
 	const int time_to_prep = 5;
 	const int time_to_fetch = 5;
