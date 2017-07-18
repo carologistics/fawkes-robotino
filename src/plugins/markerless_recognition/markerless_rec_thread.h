@@ -72,7 +72,8 @@ struct Probability
 	float p[MPS_COUNT];
 };
 
-typedef Probability (*my_function)(const char*, const char*, const char*);
+typedef Probability (*my_function)(const char*, const char*, const char*,bool);
+typedef void (*init_function)(const char*, const char*);
 
 enum MPSType {
 	BS,
