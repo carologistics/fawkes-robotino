@@ -57,7 +57,7 @@ function no_writer()
 end
 
 function see_conveyor()
-   return if_conveyor:visibility_history() > 3
+   return if_conveyor:visibility_history() > 10
 end
 
 function tolerances_ok(self)

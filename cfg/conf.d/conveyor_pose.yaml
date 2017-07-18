@@ -11,8 +11,6 @@ conveyor_pose:
   # the point cloud that is used to detect the belt
   cloud_in: "/camera/depth/points"
 
-  realsense_wait_time: 2.5
-
   if:
     # the prefix used for all interfaces
     prefix: conveyor_pose
