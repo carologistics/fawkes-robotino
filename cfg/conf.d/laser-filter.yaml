@@ -55,6 +55,14 @@ plugins/laser-filter:
         only_from_z: -0.23
         only_to_z: 0.33
 
+      4-min:
+        # Filter again after the transform to remove points that are projected
+        # into the laser origin.
+        type: min_circle
+
+        # Radius of minimum length; m
+        radius: 0.04
+
 
   robot-front-1080:
     active: true
