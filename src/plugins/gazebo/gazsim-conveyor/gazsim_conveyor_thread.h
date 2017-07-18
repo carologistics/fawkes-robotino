@@ -29,6 +29,7 @@
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
 #include <aspect/clock.h>
+#include <aspect/tf.h>
 #include <blackboard/interface_listener.h>
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/SwitchInterface.h>
@@ -52,7 +53,8 @@ class GazsimConveyorThread
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
   public fawkes::BlackBoardAspect,
-  public fawkes::GazeboAspect
+  public fawkes::GazeboAspect,
+  public fawkes::TransformAspect
 {
  public:
   GazsimConveyorThread();
@@ -72,6 +74,8 @@ class GazsimConveyorThread
   std::string  conveyor_if_name_;
   std::string  frame_name_;
   std::string  cfg_prefix_;
+  std::string  conveyor_frame_id_;
+  std::string  realsense_frame_id_;
   
   gazebo::transport::SubscriberPtr conveyor_vision_sub_;
   void on_conveyor_vision_msg(ConstConveyorVisionResultPtr &msg);

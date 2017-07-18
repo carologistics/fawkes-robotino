@@ -28,6 +28,7 @@
 #include <core/threading/wait_condition.h>
 #include <boost/lexical_cast.hpp>
 #include <config/change_handler.h>
+#include <tf/types.h>
 
 #include <cstdarg>
 #include <cmath>
@@ -47,6 +48,7 @@ using namespace gazebo;
 GazsimConveyorThread::GazsimConveyorThread()
   : Thread("GazsimConveyorThread", Thread::OPMODE_WAITFORWAKEUP),
     BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT_EXEC),
+    fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose"),
     new_data_(false)
 {
   set_name("GazsimConveyorThread()");
@@ -62,6 +64,8 @@ GazsimConveyorThread::init()
   
   conveyor_if_name_ = config->get_string("/gazsim/conveyor/pose-if-name");
   frame_name_ = config->get_string("/gazsim/conveyor/frame");
+  conveyor_frame_id_ = config->get_string( "/conveyor_pose/conveyor_frame_id" );
+  realsense_frame_id_ = config->get_string( "/realsense/frame_id" );
 
   //setup Position3DInterface if with default values
   pos_if_ = blackboard->open_for_writing<Position3DInterface>(conveyor_if_name_.c_str());
@@ -84,6 +88,9 @@ GazsimConveyorThread::loop()
 	pos_if_->set_frame(frame_name_.c_str());
   if(new_data_)
   {
+    new_data_=false;
+
+    // write to interface
     //swap the axis' because the cam_conveyor frame has the z-axis facing foward
     double trans[] = {-last_msg_.positions().y(), -last_msg_.positions().z(), last_msg_.positions().x()};
     double rot[] = {last_msg_.positions().ori_x(), last_msg_.positions().ori_y(), last_msg_.positions().ori_z(), last_msg_.positions().ori_w()};
@@ -91,7 +98,20 @@ GazsimConveyorThread::loop()
     pos_if_->set_rotation(rot);
     pos_if_->set_visibility_history(loopcount_);
     pos_if_->write();
-    new_data_=false;
+
+    // publishe tf
+    fawkes::tf::StampedTransform transform;
+
+    transform.frame_id = realsense_frame_id_;
+    transform.child_frame_id = conveyor_frame_id_;
+    transform.stamp = fawkes::Time();
+
+    transform.setOrigin( fawkes::tf::Vector3( trans[0], trans[1],trans[2] ) );
+    fawkes::tf::Quaternion q/*(rot[0], rot[1], rot[2], rot[3])*/;
+    q.setEuler(M_PI_2, M_PI_2, 0);
+    transform.setRotation( q );
+
+    tf_publisher->send_transform(transform);
   }
   else if((loopcount_ - pos_if_->visibility_history()) > MAX_LOOP_COUNT_TO_INVISIBLE)
   {
