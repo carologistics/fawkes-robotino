@@ -125,9 +125,12 @@ public:
   /// Image Buffer Id
   std::string shm_id;
 
+  // Shared library tensoflow 
+  my_function evaluate;
+  void *handle;
+  
 
-
-  // config handling
+// config handling
   void config_value_erased(const char *path) {};
   void config_tag_changed(const char *new_tag) {};
   void config_comment_changed(const fawkes::Configuration::ValueIterator *v) {};
