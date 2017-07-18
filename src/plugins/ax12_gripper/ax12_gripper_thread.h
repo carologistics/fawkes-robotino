@@ -147,6 +147,8 @@ class GripperAX12AThread
   bool         z_alignment_pending;
   fawkes::Time time_to_stop_z_align;
   
+  float        cur_torque_;
+
 #ifdef HAVE_TF
   std::string  __cfg_base_frame;
   std::string  __cfg_left_link;

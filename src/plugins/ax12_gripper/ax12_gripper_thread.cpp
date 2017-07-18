@@ -171,6 +171,8 @@ GripperAX12AThread::init()
   bbil_add_message_interface(__rightjoint_if);
   blackboard->register_listener(this);
 
+  cur_torque_ = 1.0;
+
 #ifdef USE_TIMETRACKER
   __tt.reset(new TimeTracker());
   __tt_count = 0;
@@ -231,6 +233,15 @@ GripperAX12AThread::loop()
     }
 
     __gripper_if->set_final(__servo_if_left->is_final() && __servo_if_right->is_final() && !z_alignment_pending);
+
+    // if the torque is disabled we have to track the position of the servos
+    // and constantly send it as goal poses.
+    // Otherwise resetting the torque_limit and trying to go to a new pose
+    // leads to a full speed move of the servos.
+    // This is probably a bug in the AX12 firmware.
+    if (cur_torque_ == 0.0) {
+        goto_gripper(__servo_if_left->angle(), __servo_if_right->angle());
+      }
 
 
     while (! __gripper_if->msgq_empty() ) {
@@ -538,6 +549,9 @@ void
 GripperAX12AThread::set_torque(float torque)
 {
   if (torque >= 0. && torque <= 1.0) {
+    cur_torque_ = torque;
+    logger->log_warn(name(), "Set torque to %f", torque);
+
     DynamixelServoInterface::SetTorqueLimitMessage *torque_left_message = new DynamixelServoInterface::SetTorqueLimitMessage(torque * 0x3FF);
     DynamixelServoInterface::SetTorqueLimitMessage *torque_right_message = new DynamixelServoInterface::SetTorqueLimitMessage(torque * 0x3FF);
     __servo_if_left->msgq_enqueue(torque_left_message);
