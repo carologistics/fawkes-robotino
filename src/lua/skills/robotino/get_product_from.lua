@@ -86,7 +86,12 @@ function MPS_ALIGN:init()
    end
 
    self.args["mps_align"].x = 0.4
-   self.args["mps_align"].y = 0
+
+   if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
+      self.args["mps_align"].y = 0.03
+   else
+      self.args["mps_align"].y = -0.03
+   end
 end
 
 function CONVEYOR_ALIGN:init()
