@@ -129,6 +129,12 @@ GazsimGripperThread::loop()
     } else if (gripper_if_->msgq_first_is<AX12GripperInterface::CloseMessage>()) {
       send_gripper_msg(0);
       gripper_if_->set_holds_puck(false);
+    } else if (gripper_if_->msgq_first_is<AX12GripperInterface::SetTorqueMessage>()) {
+      AX12GripperInterface::SetTorqueMessage *msg = gripper_if_->msgq_first(msg);
+      if ( msg->torque() < 0.2 ) {
+        send_gripper_msg(0);
+        gripper_if_->set_holds_puck(false);
+      }
     } else if (gripper_if_->msgq_first_is<AX12GripperInterface::CloseLoadMessage>()) {
       logger->log_warn(name(), "%s is not implemented in the simulation.",
                        gripper_if_->msgq_first()->type());
