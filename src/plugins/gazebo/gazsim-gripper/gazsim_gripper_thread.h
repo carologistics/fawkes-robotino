@@ -74,6 +74,7 @@ class GazsimGripperThread
 
   //Publisher to sent msgs to gazebo
   gazebo::transport::PublisherPtr set_gripper_pub_;
+  gazebo::transport::PublisherPtr set_conveyor_pub_;
   gazebo::transport::SubscriberPtr gripper_has_puck_sub_;
 
   void send_gripper_msg(int value);

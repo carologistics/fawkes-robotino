@@ -29,6 +29,7 @@ gazsim:
     set-team-name: "~/LLSFRbSim/SetTeamName/"
     message: "~/RobotinoSim/String/"
     gripper: "~/RobotinoSim/SetGripper/"
+    conveyor: "~/RobotinoSim/SetConveyor/"
     gripper-has-puck: "~/RobotinoSim/GripperHasPuck/"
     tag-vision: "~/tag-vision"
   
