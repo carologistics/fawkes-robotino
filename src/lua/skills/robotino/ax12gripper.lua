@@ -82,10 +82,6 @@ function COMMAND:init()
 
    if self.fsm.vars.command == "OPEN" then
       self.fsm.vars.open = true
-      torqueMessage = gripper_if.SetTorqueMessage:new()
-      torqueMessage:set_torque(1)
-      gripper_if:msgq_enqueue(torqueMessage)
-
       theOpenMessage = gripper_if.OpenMessage:new()
       theOpenMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue(theOpenMessage)
