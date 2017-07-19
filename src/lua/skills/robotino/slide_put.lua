@@ -40,7 +40,7 @@ documentation      = [==[ slide_put
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local x_distance = 0.27
+local x_distance = 0.25
 if config:exists("/skills/align_distance_conveyor/x") then
    x_distance = config:get_float("/skills/align_distance_conveyor/x")
 end
@@ -50,7 +50,8 @@ fsm:define_states{ export_to=_M,
    {"GOTO_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SLIDE", fail_to="FAILED"},
    {"APPROACH_SLIDE", SkillJumpState, skills={{approach_mps}}, final_to="STORE_PRODUCT", fail_to="FAILED"},
    {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="LEAVE_SLIDE", fail_to="FAILED"},
-   {"LEAVE_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
+   {"LEAVE_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="CLOSE_GRIPPER", fail_to="CLOSE_GRIPPER"},
+   {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -77,4 +78,9 @@ end
 
 function LEAVE_SLIDE:init()
    self.args["motor_move"].x = -0.1
+end
+
+function CLOSE_GRIPPER:init()
+   self.args["ax12gripper"].command = "CLOSE"
+   printf("close gripper")
 end
