@@ -142,18 +142,16 @@ end
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
-   {"DRIVE1", SkillJumpState, skills={{goto}}, final_to="ALIGN1", fail_to="FAILED"},
-   {"DRIVE2", SkillJumpState, skills={{goto}}, final_to="ALIGN2", fail_to="FAILED"},
-   {"DRIVE3", SkillJumpState, skills={{goto}}, final_to="ALIGN3", fail_to="FAILED"},
-   {"DRIVE4", SkillJumpState, skills={{goto}}, final_to="ALIGN4", fail_to="FAILED"},
+   {"DRIVE1", SkillJumpState, skills={{goto}}, final_to="INITIAL_ALIGN", fail_to="DRIVE2"},
+   {"DRIVE2", SkillJumpState, skills={{goto}}, final_to="ALIGN", fail_to="DRIVE3"},
+   {"DRIVE3", SkillJumpState, skills={{goto}}, final_to="ALIGN", fail_to="DRIVE4"},
+   {"DRIVE4", SkillJumpState, skills={{goto}}, final_to="ALIGN", fail_to="FAILED"},
    {"CALCULATE_RESULT",JumpState},
    {"EXPLORE",SkillJumpState, skills={{recog_from_align}}, final_to="CHOOSE_NEXT", fail_to="CHOOSE_NEXT_FAILED"},
    {"CHOOSE_NEXT_FAILED",JumpsState} 
    {"CHOOSE_NEXT",JumpState},
-   {"ALIGN1",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="DRIVE2"},
-   {"ALIGN2",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="FAILED"},
-   {"ALIGN3",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="FAILED"},
-   {"ALIGN4",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="FAILED"},
+   {"INITIAL_ALIGN",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="DRIVE2"},
+   {"ALIGN",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="FAILED"},
 }
 fsm:add_transitions{
    {"INIT", "DRIVE1", cond=calc_xy_coordinates},
@@ -184,7 +182,7 @@ function EXPLORE:init()
 	self.args["recog_from_align"].alignY2 = self.fsm.vars.alignY2
 end
 
-function ALIGN1:init()
+function INITIAL_ALIGN:init()
   self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
   self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
   self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
@@ -192,34 +190,14 @@ function ALIGN1:init()
   self.fsm.vars.last = 1
 end
 
-function ALIGN2:init()
+function ALIGN:init()
   self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
   self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
   self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
   self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
-  self.fsm.vars.last = 2
-
 
 end
 
-function ALIGN3:init()
-  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
-  self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
-  self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
-  self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
-  self.fsm.vars.last = 3
-
-end
-
-
-function ALIGN4:init()
- self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
-  self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
-  self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
-  self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
-  self.fsm.vars.last = 4
-
-end
 
 function CHOOSE_NEXT:init()
      self.fsm.vars.results = {next = self.fsm.vars.results, value = mps_recognition_if:mpstype()};
@@ -238,18 +216,23 @@ function DRIVE2:init()
    self.args["goto"].x = self.fsm.vars.xZone
    self.args["goto"].y = self.fsm.vars.yDown
    self.args["goto"].ori = 1.57
+   self.fsm.vars.last = 2
 end
 
 function DRIVE3:init()
    self.args["goto"].x = self.fsm.vars.xRight
    self.args["goto"].y = self.fsm.vars.yZone
    self.args["goto"].ori = 3.1415	
+
+   self.fsm.vars.last = 3
+
 end
 
 function DRIVE4:init()
    self.args["goto"].x = self.fsm.vars.xZone
    self.args["goto"].y = self.fsm.vars.yUp
    self.args["goto"].ori = 4.71
+   self.fsm.vars.last = 4
 end
 
 
