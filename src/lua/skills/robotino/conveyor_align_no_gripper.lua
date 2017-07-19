@@ -28,7 +28,6 @@ depends_interfaces = {
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "if_conveyor", type = "Position3DInterface", id="conveyor_pose/pose"},
    {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
-   {v = "conveyor_config", type = "ConveyorConfigInterface", id="conveyor_pose/config"},
 --   {v = "if_gripper", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 

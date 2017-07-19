@@ -98,9 +98,22 @@ function MPS_ALIGN:init()
    else
       self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
    end
-   self.args["mps_align"].x = 0.43
-   self.args["mps_align"].y = -0.04
+
+   self.args["mps_align"].x = 0.4
+
+   if self.fsm.vars.side == "output" then
+      self.args["mps_align"].y = -0.03
+   else
+      self.args["mps_align"].y = 0.03
+   end
 end
+
+function CONVEYOR_ALIGN:init()
+    if (self.fsm.vars.slide == nil or self.fsm.vars.shelf == nil) then
+      self.args["conveyor_align"].disable_realsense_afterwards = false
+    end
+end
+
 
 function RE_MPS_ALIGN:init()
    local shelf_to_conveyor = 0.09 --TODO measure both values

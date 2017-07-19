@@ -99,8 +99,6 @@ private:
   float cfg_front_space_;
   float cfg_front_offset_;
 
-  float cfg_bottom_offset_;
-
   float cfg_left_cut_;
   float cfg_right_cut_;
   float cfg_left_cut_no_ll_;

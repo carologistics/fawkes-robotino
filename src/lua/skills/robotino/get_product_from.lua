@@ -86,9 +86,21 @@ function MPS_ALIGN:init()
       self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
    end
 
-   self.args["mps_align"].x = 0.43
-   self.args["mps_align"].y = -0.04
+   self.args["mps_align"].x = 0.4
+
+   if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
+      self.args["mps_align"].y = 0.03
+   else
+      self.args["mps_align"].y = -0.03
+   end
 end
+
+function CONVEYOR_ALIGN:init()
+   if (self.fsm.vars.shelf == nil) then
+     self.args["conveyor_align"].disable_realsense_afterwards = false
+   end
+end
+
 
 function SKILL_PRODUCT_PICK:init()
    self.args["product_pick"].offset_x = 0 

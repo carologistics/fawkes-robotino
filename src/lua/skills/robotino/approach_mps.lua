@@ -29,7 +29,6 @@ depends_skills     = {"motor_move"}
 depends_interfaces = {
   {v = "if_conveyor", type = "Position3DInterface", id="conveyor_pose/pose"},
   {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
-  {v = "conveyor_config", type = "ConveyorConfigInterface", id="conveyor_pose/config"},
   {v = "if_front_dist", type = "Position3DInterface", id="front_dist"}
 }
 
@@ -128,7 +127,7 @@ end
 function APPROACH_CONVEYOR:init()
   local x_goal = self.fsm.vars.pose.x - self.fsm.vars.x
   printf("distance is: %f => drive to: %f", self.fsm.vars.pose.x, x_goal)
-  self.args["motor_move"] = {x = self.fsm.vars.x, vel_trans = 0.05, frame="conveyor"}
+  self.args["motor_move"] = {x = self.fsm.vars.x, vel_trans = 0.05, frame="conveyor_pose"}
 end
 
 function APPROACH_LASERLINE:init()

@@ -27,12 +27,14 @@ depends_interfaces = {
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "if_conveyor", type = "Position3DInterface", id="conveyor_pose/pose"},
    {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
-   {v = "conveyor_config", type = "ConveyorConfigInterface", id="conveyor_pose/config"},
    {v = "if_gripper", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 
 documentation      = [==[aligns the robot orthogonal to the conveyor by using the
                          conveyor vision
+Parameters:
+       @param disable_realsense_afterwards   disable the realsense after aligning
+
 ]==]
 
 -- Initialize as skill module
@@ -45,7 +47,7 @@ local TOLERANCE_Z = 0.001
 local MAX_TRIES = 20
 --local X_DEST_POS = 0.08
 local X_DEST_POS = 0.16
-local Y_DEST_POS = 0.01
+local Y_DEST_POS = 0.0
 local Z_DEST_POS = 0.056
 local Z_DEST_POS_WITH_PUCK = 0.06
 local cfg_frame_ = "gripper"
@@ -55,7 +57,7 @@ function no_writer()
 end
 
 function see_conveyor()
-   return if_conveyor:visibility_history() > 3
+   return if_conveyor:visibility_history() > 10
 end
 
 function tolerances_ok(self)
@@ -120,18 +122,22 @@ fsm:define_states{ export_to=_M,
    closure={},
    {"INIT", JumpState},
    {"CHECK_VISION", JumpState},
-   {"DRIVE", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="DECIDE_TRY", fail_to="FAILED"},
+   {"DRIVE", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="DECIDE_TRY", fail_to="CLEANUP_FAILED"},
    {"DECIDE_TRY", JumpState},
+   {"CLEANUP_FINAL", JumpState},
+   {"CLEANUP_FAILED", JumpState},
 }
 
 fsm:add_transitions{
    {"INIT", "CHECK_VISION", cond=true},
-   {"CHECK_VISION", "FAILED", timeout=20, desc="No vis_hist on conveyor vision"},
-   {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
+   {"CHECK_VISION", "CLEANUP_FAILED", timeout=20, desc="No vis_hist on conveyor vision"},
+   {"CHECK_VISION", "CLEANUP_FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"CHECK_VISION", "DRIVE", cond=see_conveyor},
-   {"DECIDE_TRY", "FINAL", cond=tolerances_ok, desc="Robot is aligned"},
+   {"DECIDE_TRY", "CLEANUP_FINAL", cond=tolerances_ok, desc="Robot is aligned"},
    {"DECIDE_TRY", "CHECK_VISION", cond=max_tries_not_reached, desc="Do another alignment"},
-   {"DECIDE_TRY", "FAILED", cond=true, desc="Couldn't align within MAX_TRIES"},
+   {"DECIDE_TRY", "CLEANUP_FAILED", cond=true, desc="Couldn't align within MAX_TRIES"},
+   {"CLEANUP_FINAL", "FINAL", cond=true, desc="Cleaning up after final"},
+   {"CLEANUP_FAILED", "FAILED", cond=true, desc="Cleaning up after fail"},
 }
 
 function INIT:init()
@@ -146,7 +152,7 @@ end
 
 function DRIVE:init()
    local pose = pose_des(self)
-   self.args["motor_move"] = {x = pose.x, y = pose.y, tolerance = { x=0.002, y=0.002, ori=0.01 }, vel_trans = 0.2} --TODO set tolerances as defined in the global variable
+   self.args["motor_move"] = {x = pose.x, y = pose.y, tolerance = { x=0.002, y=0.002, ori=0.01 }, vel_trans = 0.05} --TODO set tolerances as defined in the global variable
    local z_position = round(pose.z * 1000)
    print("z_pose: " .. pose.z)
    self.args["ax12gripper"].command = "RELGOTOZ"
@@ -157,14 +163,14 @@ function DRIVE:init()
    end
 end
 
-function cleanup()
-   conveyor_switch:msgq_enqueue_copy(conveyor_switch.DisableSwitchMessage:new())
+function CLEANUP_FINAL:init()
+   if (self.fsm.vars.disable_realsense_afterwards == nil or self.fsm.vars.disable_realsense_afterwards) then
+     conveyor_switch:msgq_enqueue_copy(conveyor_switch.DisableSwitchMessage:new())
+   end
 end
 
-function FINAL:init()
-   cleanup()
-end
-
-function FAILED:init()
-   cleanup()
+function CLEANUP_FAILED:init()
+   if (self.fsm.vars.disable_realsense_afterwards == nil or self.fsm.vars.disable_realsense_afterwards) then
+     conveyor_switch:msgq_enqueue_copy(conveyor_switch.DisableSwitchMessage:new())
+   end
 end

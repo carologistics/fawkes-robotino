@@ -112,8 +112,6 @@ ConveyorPoseThread::init()
   cfg_front_space_            = config->get_float( (cfg_prefix + "front/space").c_str() );
   cfg_front_offset_           = config->get_float( (cfg_prefix + "front/offset").c_str() );
 
-  cfg_bottom_offset_          = config->get_float( (cfg_prefix + "bottom/offset").c_str() );
-
   cfg_left_cut_               = config->get_float( (cfg_prefix + "left_right/left_cut").c_str() );
   cfg_right_cut_              = config->get_float( (cfg_prefix + "left_right/right_cut").c_str() );
   cfg_left_cut_no_ll_         = config->get_float( (cfg_prefix + "left_right/left_cut_no_ll").c_str() );
@@ -292,17 +290,15 @@ ConveyorPoseThread::loop()
     cloud_front_side = cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
   
 // logger->log_debug(name(),"CONVEYOR-POSE 7: set cut off left and rigt");
-  CloudPtr cloud_bottom_removed = cloud_remove_offset_to_bottom(cloud_front_side);
 
-//  logger->log_debug(name(),"CONVEYOR-POSE 8: removed bottom offset");
-  cloud_publish(cloud_bottom_removed, cloud_out_inter_1_);
+  cloud_publish(cloud_front_side, cloud_out_inter_1_);
 
   // search for best plane
   CloudPtr cloud_choosen;
   pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
   do {
   //  logger->log_debug(name(), "In while loop");
-    CloudPtr cloud_plane = cloud_get_plane(cloud_bottom_removed, coeff);
+    CloudPtr cloud_plane = cloud_get_plane(cloud_front_side, coeff);
   //  logger->log_debug(name(), "After getting plane");
     if ( cloud_plane == NULL || ! cloud_plane ) {
       pose trash;
@@ -348,12 +344,12 @@ ConveyorPoseThread::loop()
       boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
       CloudPtr tmp(new Cloud);
       pcl::ExtractIndices<Point> extract;
-      extract.setInputCloud (cloud_bottom_removed);
+      extract.setInputCloud (cloud_front_side);
       extract.setIndices( extract_indicies );
       extract.setNegative (true);
       extract.filter (*tmp);
       //logger->log_debug(name(), "After extraction");
-      *cloud_bottom_removed = *tmp;
+      *cloud_front_side = *tmp;
     } else {
       // height is ok
       float x_min = -200;
@@ -373,11 +369,11 @@ ConveyorPoseThread::loop()
       boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
       CloudPtr tmp(new Cloud);
       pcl::ExtractIndices<Point> extract;
-      extract.setInputCloud (cloud_bottom_removed);
+      extract.setInputCloud (cloud_front_side);
       extract.setIndices( extract_indicies );
       extract.setNegative (true);
       extract.filter (*tmp);
-      *cloud_bottom_removed = *tmp;
+      *cloud_front_side = *tmp;
 
     } else {
     //height and width ok
@@ -514,11 +510,10 @@ ConveyorPoseThread::pose_get_avg(pose & out)
     if ( p.valid ) {
       double dist = (p.translation - median.translation).norm();
 
-//      logger->log_info(name(), "(%f\t%f\t%f)\t(%f\t%f\t%f) => %lf",
+//      logger->log_warn(name(), "(%f\t%f\t%f)\t(%f\t%f\t%f) => %lf",
 //          median.translation.x(), median.translation.y(), median.translation.z(),
 //          p.translation.x(), p.translation.y(), p.translation.z(),
 //          dist);
-
       if (dist <= cfg_pose_diff_) {
         poses_used.push_back(p);
       }
@@ -531,12 +526,12 @@ ConveyorPoseThread::pose_get_avg(pose & out)
   }
 
   // calculate average
-  Eigen::Quaternion<float> avgRot;
-  Eigen::Vector4f cumulative;
-  Eigen::Quaternion<float> firstRotation(poses_used.front().rotation.x(), poses_used.front().rotation.y(), poses_used.front().rotation.z(), poses_used.front().rotation.w());
-  float addDet = 1.0 / (float)poses_used.size();
+//  Eigen::Quaternion<float> avgRot;
+//  Eigen::Vector4f cumulative;
+//  Eigen::Quaternion<float> firstRotation(poses_used.front().rotation.x(), poses_used.front().rotation.y(), poses_used.front().rotation.z(), poses_used.front().rotation.w());
+//  float addDet = 1.0 / (float)poses_used.size();
   for (pose p : poses_used) {
-    Eigen::Quaternion<float> newRotation(p.rotation.x(), p.rotation.y(), p.rotation.z(), p.rotation.w());
+//    Eigen::Quaternion<float> newRotation(p.rotation.x(), p.rotation.y(), p.rotation.z(), p.rotation.w());
 
     out.translation.setX( out.translation.x() + p.translation.x() );
     out.translation.setY( out.translation.y() + p.translation.y() );
@@ -548,7 +543,7 @@ ConveyorPoseThread::pose_get_avg(pose & out)
   //  roll += fawkes::normalize_rad(rc);
   //  pitch += fawkes::normalize_rad(pc);
   //  yaw += fawkes::normalize_rad(yc);
-    avgRot = averageQuaternion(cumulative, newRotation, firstRotation, addDet);
+//    avgRot = averageQuaternion(cumulative, newRotation, firstRotation, addDet);
   }
 
   // normalize
@@ -646,28 +641,6 @@ ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
   return out;
 }
 
-
-CloudPtr
-ConveyorPoseThread::cloud_remove_offset_to_bottom(CloudPtr in)
-{
-  float lowest = -200;
-  for (Point p : *in) {
-    if ( p.y > lowest ) { // the y axis faces downwards
-      lowest = p.y;
-    }
-  }
-
-  CloudPtr out(new Cloud);
-  float limit = lowest - cfg_bottom_offset_;
-  for (Point p : *in) {
-    if (p.y >= limit) {
-      out->push_back(p);
-    }
-  }
-
-  return out;
-}
-
 CloudPtr
 ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
 {
@@ -677,16 +650,6 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
   if ( use_ll ) {
     Eigen::Vector3f c = laserline_get_center_transformed(ll);
     z_min = c(2) + cfg_front_offset_ - ( space / 2. );
-  } else {
-    // get lowest z point
-    double lowest_z = 1000;
-    for (Point p : *in) {
-      if ( p.z < lowest_z ) {
-        lowest_z = p.z;
-      }
-    }
-
-    z_min = lowest_z - (lowest_z / 2.);
   }
   z_max = z_min + space;
 
@@ -918,7 +881,7 @@ ConveyorPoseThread::pose_publish_tf(pose pose)
                   tf::create_quaternion_from_yaw(M_PI),
                   tf_pose_gripper.getOrigin()
                 );
-  tf::StampedTransform stamped_transform(transform, tf_pose_gripper.stamp, tf_pose_gripper.frame_id, "conveyor");
+  tf::StampedTransform stamped_transform(transform, tf_pose_gripper.stamp, tf_pose_gripper.frame_id, conveyor_frame_id_);
   tf_publisher->send_transform(stamped_transform);
 }
 void
