@@ -54,6 +54,9 @@
   ;Timeout before removing rejected tasks when no task is found
   ?*TIMEOUT-REMOVE-REJECTED-WHILE-WAITING* = 25
   
+  ;send a RESET message for a machine after a task fails n times
+  ?*RESET-MACHINE-AFTER-N-RETRIES* = 2
+
   ?*PI* = 3.141592653589
   ?*2PI* = 6.2831853
   ?*PI-HALF* = 1.5707963
