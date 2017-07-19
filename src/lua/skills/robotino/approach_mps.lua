@@ -106,7 +106,7 @@ fsm:define_states{ export_to=_M, closure={
 fsm:add_transitions{
    {"INIT", "APPROACH_CONVEYOR", cond=conveyor_ready},
    {"INIT", "APPROACH_LASERLINE", cond=laser_lines_ready},
-   {"INIT", "INIT_LASER_LINES", timeout=2.0},
+   {"INIT", "INIT_LASER_LINES", timeout=5.0},
    {"INIT_LASER_LINES", "APPROACH_LASERLINE", cond="laser_lines_ready(self)"},
    {"INIT_LASER_LINES", "FAILED", timeout=1.0}
 }

@@ -41,6 +41,7 @@ local x_distance = 0.315
 if config:exists("/skills/approach_distance_conveyor/x") then
       x_distance = config:get_float("/skills/approach_distance_conveyor/x")
 end
+x_distance= x_distance + 0.02
 
 fsm:define_states{ export_to=_M,
    {"DRIVE_FORWARD", SkillJumpState, skills={{approach_mps}},
@@ -51,6 +52,8 @@ fsm:define_states{ export_to=_M,
       final_to="WAIT", fail_to="WAIT"},
    {"WAIT", JumpState},
    {"MOVE_BACK", SkillJumpState, skills={{motor_move}},
+      final_to="CLOSE_GRIPPER", fail_to="FAILED"},
+   {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}},
       final_to="FINAL", fail_to="FAILED"},
 }
 
@@ -70,4 +73,9 @@ end
 
 function MOVE_BACK:init()
    self.args["motor_move"].x = -0.2
+end
+
+function CLOSE_GRIPPER:init()
+   self.args["ax12gripper"].command = "CLOSE"
+   printf("close gripper")
 end

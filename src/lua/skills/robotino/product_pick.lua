@@ -53,7 +53,10 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
       final_to="MOVE_BACK", fail_to="FAIL_SAFE"},
    {"WAIT_OPEN", JumpState},
    {"MOVE_BACK", SkillJumpState, skills={{motor_move}},
-      final_to="CLOSE_GRIPPER_SECOND", fail_to="FAILED"},
+      final_to="WAIT_FOR_GRIPPER", fail_to="FAILED"},
+   {"WAIT_FOR_GRIPPER", JumpState},
+   {"ADJUST_HEIGHT", SkillJumpState, skills={{ax12gripper}},
+      final_to="CLOSE_GRIPPER_SECOND", fail_to="FAIL_SAFE"},
    {"CLOSE_GRIPPER_SECOND", SkillJumpState, skills={{ax12gripper}},
       final_to="MOVE_BACK_SECOND", fail_to="FAIL_SAFE"},
    {"MOVE_BACK_SECOND", SkillJumpState, skills={{motor_move}},
@@ -71,6 +74,7 @@ fsm:add_transitions{
    {"CHECK_PUCK", "CENTER_GRIPPER", cond="gripper_if:is_holds_puck()", desc="Got a puck"},
    {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="GOT NO PUCK!"},
    {"WAIT_FOR_INTERFACE", "CHECK_PUCK", timeout=5},
+   {"WAIT_FOR_GRIPPER", "ADJUST_HEIGHT", timeout=1},
 }
 
 function OPEN_GRIPPER:init()
@@ -84,11 +88,11 @@ function DRIVE_FORWARD:init()
 end
 
 function MOVE_BACK:init()
-   self.args["motor_move"] = {x = -0.02, vel_trans = 0.13, tolerance = { x=0.001, y=0.002, ori=0.01 } }
+   self.args["motor_move"] = {x = -0.025, vel_trans = 0.01, tolerance = { x=0.001, y=0.002, ori=0.01 } }
 end
 
 function MOVE_BACK_SECOND:init()
-   self.args["motor_move"] = {x = -0.195}
+   self.args["motor_move"] = {x = -0.195, vel_trans = 0.05}
 end
 
 function CLOSE_GRIPPER:init()
@@ -96,8 +100,14 @@ function CLOSE_GRIPPER:init()
    printf("close gripper")
 end
 
+function ADJUST_HEIGHT:init()
+   self.args["ax12gripper"].command = "RELGOTOZ"
+   self.args["ax12gripper"].z_position = -4
+   printf("adjusting height")
+end
+
 function CLOSE_GRIPPER_SECOND:init()
-   self.args["ax12gripper"].command = "CLOSE"
+   self.args["ax12gripper"].command = "CLOSE_TIGHT"
    printf("close gripper")
 end
 
