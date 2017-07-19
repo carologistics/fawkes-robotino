@@ -3,6 +3,8 @@ Instruction how to install this plugin:
 ---Tensorflow----
 1. Download tensorflow v1.1.0-rc2
 2. Install to ~/tensorflow
+2.1 Install Bazel 0.4.5
+2.2 In order to do that: install java jdk
 3. Build libtensorflow.so: bazel build -c opt //tensorflow::libtensorflow.so
 4. Add tf_wrapper to ~/tensorflow/tensorflow/ (Ask Daniel Habering)
 5. Build tf_wrapper: bazel build tensorflowWrapper.so

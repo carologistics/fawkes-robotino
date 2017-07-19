@@ -68,7 +68,7 @@ function speak(...)
 end
 
 function calc_final_result(self) 
-    
+    local lcount = 0 
     result = {}
     for i=0,MPS_COUNT do
       result[i] = 0
@@ -79,6 +79,7 @@ function calc_final_result(self)
     while l do 
 	    result[l.value] = result[l.value]+1
 	    l = l.next
+        lcount = lcount+1  
     end
     
     max = 0
@@ -89,14 +90,19 @@ function calc_final_result(self)
  	end 
     end
    
-    if max == 0 then
-    	return false
+    speak("I looked at the station %d times",lcount)
+    if max == 0 or lcount < 2 then
+    	 self.fsm.vars.i = self.fsm.vars.i * 2
+
+        return false
     end
 
     for j=0,MPS_COUNT do
 	    if result[j] == result[max] then
-		    if max~=j and self.fsm.vars.i*2<8 then
-			    return false
+		    if max~=j and self.fsm.vars.i*2>=8 then
+			     self.fsm.vars.i = self.fsm.vars.i * 2
+
+                return false
 		    else
 			    max = j
 		    end
@@ -148,7 +154,7 @@ fsm:define_states{ export_to=_M,
    {"DRIVE4", SkillJumpState, skills={{goto}}, final_to="ALIGN", fail_to="MOVE_FAILED"},
    {"CALCULATE_RESULT",JumpState},
    {"EXPLORE",SkillJumpState, skills={{recog_from_align}}, final_to="CHOOSE_NEXT", fail_to="CHOOSE_NEXT_FAILED"},
-   {"CHOOSE_NEXT_FAILED",JumpsState} 
+   {"CHOOSE_NEXT_FAILED",JumpState}, 
    {"CHOOSE_NEXT",JumpState},
    {"MOVE_FAILED", JumpState},
    {"ALIGN",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="MOVE_FAILED"},
@@ -160,8 +166,8 @@ fsm:add_transitions{
    {"MOVE_FAILED", "DRIVE2", cond="vars.last ==1"},
     {"MOVE_FAILED", "DRIVE3", cond="vars.last ==2"},
     {"MOVE_FAILED", "DRIVE4", cond="vars.last ==3"},
-    {"MOVE_FAILED", "DRIVE1", cond="vars.last ==4"},
- {"MOVE_FAILED", "FAILED", cond="vars.last ==4 and vars.last ~= nil"},
+    {"MOVE_FAILED", "CALCULATE_RESULT", cond="vars.last ==4"},
+ {"MOVE_FAILED", "FAILED", cond="vars.last ==4 and vars.last == nil"},
    {"CHOOSE_NEXT", "DRIVE3", cond="vars.last == 1"},
    {"CHOOSE_NEXT", "DRIVE4", cond="vars.last == 2"},
    {"CHOOSE_NEXT", "CALCULATE_RESULT", cond="vars.last == 3 or vars.last == 4"},
@@ -169,7 +175,7 @@ fsm:add_transitions{
    {"CHOOSE_NEXT_FAILED", "DRIVE4", cond="vars.last == 2"},
    {"CHOOSE_NEXT_FAILED", "CALCULATE_RESULT", cond="vars.last == 3 or vars.last == 4"},
    {"CALCULATE_RESULT","FINAL", cond=calc_final_result},
-   {"CALCULATE_RESULT","DRIVE1", cond="2*vars.i <= 8"},
+   {"CALCULATE_RESULT","DRIVE1", cond="vars.i <= 8"},
   {"CALCULATE_RESULT","FAILED",cond=true}
 }
 
@@ -203,8 +209,7 @@ function CHOOSE_NEXT:init()
 end
 
 function DRIVE1:init()
-   self.fsm.vars.i = self.fsm.vars.i * 2
-   self.args["goto"].x = self.fsm.vars.xLeft 
+     self.args["goto"].x = self.fsm.vars.xLeft 
    self.args["goto"].y = self.fsm.vars.yZone
    self.args["goto"].ori = 0
    self.fsm.vars.last = 1

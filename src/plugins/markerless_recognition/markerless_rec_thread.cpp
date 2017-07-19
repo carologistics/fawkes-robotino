@@ -185,6 +185,30 @@ int MarkerlessRecognitionThread::recognize_mps() {
 		station = 0;
 	}
 	else{
+		if(maximum == CS || maximum == RS){
+			recognition_result = recheck_mps(vpath);
+			for(int i = 0; i < MPS_COUNT; i++){ 
+				if(i==maximum) continue;
+				if(recognition_result.p[i] >= recognition_result.p[maximum]){ 
+					second = maximum;
+					maximum = i;
+				}
+				else {
+					if(recognition_result.p[i] > recognition_result.p[second]){
+						second = i;
+					}
+				}
+			}
+
+			if(checkResult(recognition_result)!=0){
+				mps_rec_if_->set_final(true);
+				mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) 0);
+				mps_rec_if_->write();
+				return -1;
+			}
+
+		}
+
 		station = maximum + 1;
 	}	
 
