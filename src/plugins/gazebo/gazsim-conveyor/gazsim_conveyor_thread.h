@@ -75,7 +75,6 @@ class GazsimConveyorThread
   std::string  frame_name_;
   std::string  cfg_prefix_;
   std::string  conveyor_frame_id_;
-  std::string  realsense_frame_id_;
   
   gazebo::transport::SubscriberPtr conveyor_vision_sub_;
   void on_conveyor_vision_msg(ConstConveyorVisionResultPtr &msg);

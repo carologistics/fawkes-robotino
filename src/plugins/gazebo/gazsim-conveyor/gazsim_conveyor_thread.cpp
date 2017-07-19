@@ -60,19 +60,17 @@ void
 GazsimConveyorThread::init()
 {
   logger->log_debug(name(), 
-		    "Initializing Simulation of the Conveyor Vision Plugin");
-  
-  conveyor_if_name_ = config->get_string("/gazsim/conveyor/pose-if-name");
-  frame_name_ = config->get_string("/gazsim/conveyor/frame");
+        "Initializing Simulation of the Conveyor Vision Plugin");
+  const std::string if_prefix = config->get_string( "/conveyor_pose/if/prefix" ) + "/";
+  conveyor_if_name_ = if_prefix + config->get_string( "/conveyor_pose/if/pose_of_beld" );
+  frame_name_ = config->get_string("/realsense/frame_id");
   conveyor_frame_id_ = config->get_string( "/conveyor_pose/conveyor_frame_id" );
-  realsense_frame_id_ = config->get_string( "/realsense/frame_id" );
 
   //setup Position3DInterface if with default values
   pos_if_ = blackboard->open_for_writing<Position3DInterface>(conveyor_if_name_.c_str());
   switch_if_ = blackboard->open_for_writing<SwitchInterface>(config->get_string("/gazsim/conveyor/switch-if-name").c_str());
   
   conveyor_vision_sub_ = gazebonode->Subscribe("~/RobotinoSim/ConveyorVisionResult/", &GazsimConveyorThread::on_conveyor_vision_msg, this);
-  
 }
 
 void
@@ -102,7 +100,7 @@ GazsimConveyorThread::loop()
     // publishe tf
     fawkes::tf::StampedTransform transform;
 
-    transform.frame_id = realsense_frame_id_;
+    transform.frame_id = frame_name_;
     transform.child_frame_id = conveyor_frame_id_;
     transform.stamp = fawkes::Time();
 
