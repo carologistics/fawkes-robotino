@@ -18,12 +18,12 @@ BASEDIR = ../../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BASEDIR)/fawkes/src/plugins/gazebo/gazebo.mk
 include $(BUILDSYSDIR)/protobuf.mk
-
+include $(BUILDCONFDIR)/tf/tf.mk
 
 LIBS_gazsim_conveyor = m fawkescore fawkesutils fawkesaspects fawkesblackboard \
 		fawkesinterface fawkesconfig gazsim_msgs \
 		fawkesgazeboaspect \
-		llsf_msgs
+		llsf_msgs fawkestf
 OBJS_gazsim_conveyor = gazsim_conveyor_plugin.o gazsim_conveyor_thread.o
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF),11)

@@ -67,6 +67,7 @@ GazsimGripperThread::init()
   cfg_prefix_ = config->get_string("/gazsim/gripper/cfg-prefix");
 
   set_gripper_pub_ = gazebonode->Advertise<msgs::Int>(config->get_string("/gazsim/topics/gripper"));
+  set_conveyor_pub_ = gazebonode->Advertise<msgs::Int>(config->get_string("/gazsim/topics/conveyor"));
   gripper_has_puck_sub_ = gazebonode->Subscribe(
     config->get_string("/gazsim/topics/gripper-has-puck"), 
     &GazsimGripperThread::on_has_puck_msg, this);
@@ -86,9 +87,10 @@ GazsimGripperThread::init()
   gripper_if_->set_right_velocity(0);
   gripper_if_->set_final(true);
   gripper_if_->write();
-  
+
+  cfg_prefix_ = "/arduino/";
   arduino_if_ = blackboard->open_for_writing<ArduinoInterface>(arduino_if_name_.c_str());
-  arduino_if_->set_z_position(0);
+  arduino_if_->set_z_position( config->get_uint(cfg_prefix_ + "/init_mm") );
   arduino_if_->set_final(true);
   arduino_if_->write();
 }
@@ -161,7 +163,7 @@ GazsimGripperThread::loop()
     } else if (gripper_if_->msgq_first_is<AX12GripperInterface::RelGotoZMessage>()) {
       //nothing to do
     } else {
-      logger->log_warn(name(), "Unknown message received");
+      logger->log_warn(name(), "Unknown AX12 message received");
     }
 
     gripper_if_->msgq_pop();
@@ -169,7 +171,25 @@ GazsimGripperThread::loop()
   }
   
   while (! arduino_if_->msgq_empty() ) {
+    if ( arduino_if_->msgq_first_is<ArduinoInterface::MoveToZ0Message>() ) {
+      arduino_if_->set_z_position(0);
+    } else if ( arduino_if_->msgq_first_is<ArduinoInterface::MoveDownwardsMessage>() ) {
+      ArduinoInterface::MoveDownwardsMessage *msg = arduino_if_->msgq_first(msg);
+      arduino_if_->set_z_position( arduino_if_->z_position() + msg->num_mm() );
+      msgs::Int s;
+      s.set_data( + msg->num_mm() );
+      set_conveyor_pub_->Publish( s );
+    } else if ( arduino_if_->msgq_first_is<ArduinoInterface::MoveUpwardsMessage>() ) {
+      ArduinoInterface::MoveUpwardsMessage *msg = arduino_if_->msgq_first(msg);
+      arduino_if_->set_z_position( arduino_if_->z_position() - msg->num_mm() );
+      msgs::Int s;
+      s.set_data( - msg->num_mm() );
+      set_conveyor_pub_->Publish( s );
+    } else {
+      logger->log_warn(name(), "Unknown Arduino message received");
+    }
     arduino_if_->msgq_pop();
+    arduino_if_->write();
   }
 }
 
