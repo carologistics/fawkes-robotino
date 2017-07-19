@@ -36,6 +36,7 @@
 
 #include <string>
 #include <map>
+#include <array>
 
 namespace fawkes {
   class NavGraphWithMPSGeneratorInterface;
@@ -65,8 +66,6 @@ class NavGraphGeneratorMPSThread
 
  private:
   void generate_navgraph();
-  void update_station(std::string id, bool input, std::string frame,
-		      double tag_pos[3], double tag_ori[4]);
   fawkes::NavGraphGeneratorInterface::ConnectionMode mps_node_insmode(std::string name);
 
   virtual void bb_interface_data_changed(fawkes::Interface *interface) throw();
@@ -93,9 +92,9 @@ class NavGraphGeneratorMPSThread
   fawkes::NavGraph                          *base_graph_;
 
   std::vector<unsigned int>                  exp_zones_;
-  std::vector<unsigned int>                  wait_zones_;
 
   unsigned int                               compute_msgid_;
+  std::vector<Eigen::Vector2i>               wait_zones_;
 
   typedef struct {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -118,11 +117,21 @@ class NavGraphGeneratorMPSThread
     Eigen::Vector3f    output_pos;
     Eigen::Quaternionf output_ori;
     float              output_yaw;
+    Eigen::Vector2i    zone;
+    std::vector<Eigen::Vector2i> blocked_zones;
 
-	  std::vector<Eigen::Vector2f> corners;
+	std::vector<Eigen::Vector2f> corners;
 
   } MPSStation;
   std::map<std::string, MPSStation> stations_;
+
+  static std::map<uint16_t, std::vector<Eigen::Vector2i>> zone_blocking_;
+  static std::vector<Eigen::Vector2i>                     reserved_zones_;
+
+  void update_station(std::string id, bool input, std::string frame,
+                      double tag_pos[3], double tag_ori[4], Eigen::Vector2i zone);
+  static inline std::vector<Eigen::Vector2i> blocked_zones(Eigen::Vector2i zone, uint16_t discrete_ori);
+  void generate_wait_zones(int count);
 };
 
 #endif

@@ -53,6 +53,8 @@
   (do-for-all-facts ((?nn exp-next-node)) TRUE (retract ?nn))
   (if (<= ?*EXP-ROUTE-IDX* (length$ ?route)) then
     (assert (exp-next-node (node (nth$ ?*EXP-ROUTE-IDX* ?route))))
+  else
+    (assert (exp-do-clusters))
   )
 )
 
@@ -163,7 +165,7 @@
 (defrule exp-found-line
   "Found a line that is within an unexplored zone."
   (phase EXPLORATION)
-  (LaserLineInterface (id ?id&~:(str-index "moving_avg" ?id))
+  (LaserLineInterface
     (visibility_history ?vh&:(>= ?vh 1))
     (time $?timestamp)
     (end_point_1 $?ep1)
@@ -186,6 +188,41 @@
   )
 =>
   (synced-modify ?ze-f line-visibility ?vh)
+  (printout warn "EXP found line: " ?zn " vh: " ?vh crlf)
+)
+
+
+(defrule exp-found-cluster
+  "Found a cluster: Remember it for later when we run out of lines to explore."
+  (phase EXPLORATION)
+  (game-time $?game-time)
+  (Position3DInterface (id ?id&:(eq (sub-string 1 19 ?id) "/laser-cluster/mps/"))
+    (visibility_history ?vh&:(> ?vh 1))
+    (translation $?trans) (rotation $?rot)
+    (frame ?frame) (time $?timestamp)
+  )
+  (MotorInterface (id "Robotino") (vx ?vx) (vy ?vy))
+  (exp-zone-margin ?zone-margin)
+  ?ze-f <- (zone-exploration
+    (name ?zn&:(eq ?zn (get-zone ?zone-margin
+      (compensate-movement
+        ?*EXP-MOVEMENT-COMPENSATION*
+        (create$ ?vx ?vy)
+        ?trans
+        ?timestamp
+      )
+    )))
+    (machine UNKNOWN)
+    (cluster-visibility ?zn-vh)
+    (last-cluster-time ?ctime&:(>= (nth$ 1 ?game-time) (+ ?ctime 2)))
+  )
+=>
+  (printout t "EXP cluster ze-f: " ?ze-f crlf)
+  (synced-modify ?ze-f
+    cluster-visibility (+ ?zn-vh 1)
+    last-cluster-time (nth$ 1 ?game-time)
+  )
+  (printout warn "EXP found cluster: " ?zn " vh: " (+ ?zn-vh 1) crlf)
 )
 
 
@@ -217,10 +254,10 @@
 )
 
 
-(defrule exp-try-locking-zone
+(defrule exp-try-locking-line
   (phase EXPLORATION)
   (exp-searching)
-  (state EXP_GOTO_NEXT)
+  (state EXP_GOTO_NEXT|EXP_IDLE)
   ; Not currently locked/trying to lock anything
   (not (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))
   (not (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))
@@ -235,7 +272,7 @@
 
   ; Neither this zone nor the opposite zone is locked
   (not (locked-resource (resource ?r&:(eq ?r ?zn))))
-  (not (locked-resource (resource ?r2&:(eq ?r2 (mirror-name ?zn)))))
+  ;(not (locked-resource (resource ?r2&:(eq ?r2 (mirror-name ?zn)))))
 
   ; Locks for all closer zones with a line-visibility > 0 have been refused
   (Position3DInterface (id "Pose") (translation $?trans))
@@ -293,13 +330,13 @@
   ?srch-f <- (exp-searching)
   ?st-f <- (state EXP_STOPPING)
   (explore-zone-target (zone ?zn))
-  (skill-done (name "relgoto"))
+  ?skill-f <- (skill-done (name "relgoto"))
   (MotorInterface (id "Robotino")
     (vx ?vx&:(< ?vx 0.01)) (vy ?vy&:(< ?vy 0.01)) (omega ?w&:(< ?w 0.01))
   )
   (navigator-default-vmax (velocity ?trans-vmax) (rotation ?rot-vmax))
 =>
-  (retract ?st-f ?srch-f)
+  (retract ?st-f ?srch-f ?skill-f)
   (assert (state EXP_EXPLORE_ZONE))
   (navigator-set-speed ?trans-vmax ?rot-vmax)
   (skill-call explore_zone zone (str-cat ?zn))
@@ -338,7 +375,8 @@
     (assert
       (exploration-result
         (machine ?machine) (zone ?zn2)
-        (orientation ?orientation) (team ?team-color)
+        (orientation ?orientation)
+        (team ?team-color)
       )
       (exploration-result
         (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
@@ -458,7 +496,6 @@
   else
     (bind ?m-trans (mirror-trans ?trans))
   )
-  (printout t crlf "========= " ?m-trans crlf crlf)
   (assert
     (found-tag (name ?machine2) (side ?side) (frame ?frame)
       (trans ?m-trans) (rot ?m-rot)
@@ -469,11 +506,18 @@
 
 
 (defrule exp-add-tag-to-navgraph
+  (not (requested-waiting-positions))
   (or
-    (NavGraphWithMPSGeneratorInterface (final TRUE))
+    (not (last-navgraph-compute-msg))
+    (last-navgraph-compute-msg (final TRUE))
     (NavGraphWithMPSGeneratorInterface (msgid 0))
     (not (NavGraphWithMPSGeneratorInterface))
   )
+
+  (forall (machine (name ?mps))
+    (zone-exploration (machine ?found&:(eq ?mps ?found)))
+  )
+
   (team-color ?team-color)
 
   (found-tag (name ?machine)
@@ -490,7 +534,17 @@
   )
   (not (and (navgraph-added-for-mps (name ?machine)) (navgraph-added-for-mps (name ?machine2))))
 =>
+  (assert (generating-navgraph))
   (navgraph-add-all-new-tags)
+)
+
+
+(defrule exp-navgraph-done
+  ?gen-f <- (generating-navgraph)
+  (last-navgraph-compute-msg (final TRUE))
+=>
+  (retract ?gen-f)
+  (assert (navgraph-done))
 )
 
 

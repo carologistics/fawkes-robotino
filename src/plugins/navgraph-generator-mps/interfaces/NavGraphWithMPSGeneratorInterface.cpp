@@ -57,9 +57,9 @@ NavGraphWithMPSGeneratorInterface::NavGraphWithMPSGeneratorInterface() : Interfa
   add_messageinfo("ClearMessage");
   add_messageinfo("ComputeMessage");
   add_messageinfo("SetExplorationZonesMessage");
-  add_messageinfo("SetWaitZonesMessage");
+  add_messageinfo("GenerateWaitZonesMessage");
   add_messageinfo("UpdateStationByTagMessage");
-  unsigned char tmp_hash[] = {0x61, 0xde, 0x75, 0x88, 0x4d, 0xa3, 0x30, 0xd6, 0x10, 0xd2, 0x5e, 0x75, 0x43, 0xcd, 0x91, 0xf5};
+  unsigned char tmp_hash[] = {0x45, 0xc6, 0x9f, 0x47, 0x33, 0x38, 0x46, 0xd7, 0x60, 0x51, 0xff, 0xd, 0x70, 0xab, 0xaf, 0x3c};
   set_hash(tmp_hash);
 }
 
@@ -168,8 +168,8 @@ NavGraphWithMPSGeneratorInterface::create_message(const char *type) const
     return new ComputeMessage();
   } else if ( strncmp("SetExplorationZonesMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
     return new SetExplorationZonesMessage();
-  } else if ( strncmp("SetWaitZonesMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
-    return new SetWaitZonesMessage();
+  } else if ( strncmp("GenerateWaitZonesMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
+    return new GenerateWaitZonesMessage();
   } else if ( strncmp("UpdateStationByTagMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
     return new UpdateStationByTagMessage();
   } else {
@@ -433,43 +433,27 @@ NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage::clone() const
 {
   return new NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage(this);
 }
-/** @class NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage <interfaces/NavGraphWithMPSGeneratorInterface.h>
- * SetWaitZonesMessage Fawkes BlackBoard Interface Message.
+/** @class NavGraphWithMPSGeneratorInterface::GenerateWaitZonesMessage <interfaces/NavGraphWithMPSGeneratorInterface.h>
+ * GenerateWaitZonesMessage Fawkes BlackBoard Interface Message.
  * 
     
  */
 
 
-/** Constructor with initial values.
- * @param ini_zones initial value for zones
- */
-NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::SetWaitZonesMessage(const bool * ini_zones) : Message("SetWaitZonesMessage")
-{
-  data_size = sizeof(SetWaitZonesMessage_data_t);
-  data_ptr  = malloc(data_size);
-  memset(data_ptr, 0, data_size);
-  data      = (SetWaitZonesMessage_data_t *)data_ptr;
-  data_ts   = (message_data_ts_t *)data_ptr;
-  memcpy(data->zones, ini_zones, sizeof(bool) * 24);
-  enum_map_Side[(int)INPUT] = "INPUT";
-  enum_map_Side[(int)OUTPUT] = "OUTPUT";
-  add_fieldinfo(IFT_BOOL, "zones", 24, &data->zones);
-}
 /** Constructor */
-NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::SetWaitZonesMessage() : Message("SetWaitZonesMessage")
+NavGraphWithMPSGeneratorInterface::GenerateWaitZonesMessage::GenerateWaitZonesMessage() : Message("GenerateWaitZonesMessage")
 {
-  data_size = sizeof(SetWaitZonesMessage_data_t);
+  data_size = sizeof(GenerateWaitZonesMessage_data_t);
   data_ptr  = malloc(data_size);
   memset(data_ptr, 0, data_size);
-  data      = (SetWaitZonesMessage_data_t *)data_ptr;
+  data      = (GenerateWaitZonesMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
   enum_map_Side[(int)INPUT] = "INPUT";
   enum_map_Side[(int)OUTPUT] = "OUTPUT";
-  add_fieldinfo(IFT_BOOL, "zones", 24, &data->zones);
 }
 
 /** Destructor */
-NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::~SetWaitZonesMessage()
+NavGraphWithMPSGeneratorInterface::GenerateWaitZonesMessage::~GenerateWaitZonesMessage()
 {
   free(data_ptr);
 }
@@ -477,95 +461,25 @@ NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::~SetWaitZonesMessage()
 /** Copy constructor.
  * @param m message to copy from
  */
-NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::SetWaitZonesMessage(const SetWaitZonesMessage *m) : Message("SetWaitZonesMessage")
+NavGraphWithMPSGeneratorInterface::GenerateWaitZonesMessage::GenerateWaitZonesMessage(const GenerateWaitZonesMessage *m) : Message("GenerateWaitZonesMessage")
 {
   data_size = m->data_size;
   data_ptr  = malloc(data_size);
   memcpy(data_ptr, m->data_ptr, data_size);
-  data      = (SetWaitZonesMessage_data_t *)data_ptr;
+  data      = (GenerateWaitZonesMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
 }
 
 /* Methods */
-/** Get zones value.
- * 
-      For each zone whether it should be a waiting zone or not. The index
-      is the Zone ID - 1, e.g., zone Z1 is field 0.
-    
- * @return zones value
- */
-bool *
-NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::is_zones() const
-{
-  return data->zones;
-}
-
-/** Get zones value at given index.
- * 
-      For each zone whether it should be a waiting zone or not. The index
-      is the Zone ID - 1, e.g., zone Z1 is field 0.
-    
- * @param index index of value
- * @return zones value
- * @exception Exception thrown if index is out of bounds
- */
-bool
-NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::is_zones(unsigned int index) const
-{
-  if (index > 24) {
-    throw Exception("Index value %u out of bounds (0..24)", index);
-  }
-  return data->zones[index];
-}
-
-/** Get maximum length of zones value.
- * @return length of zones value, can be length of the array or number of 
- * maximum number of characters for a string
- */
-size_t
-NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::maxlenof_zones() const
-{
-  return 24;
-}
-
-/** Set zones value.
- * 
-      For each zone whether it should be a waiting zone or not. The index
-      is the Zone ID - 1, e.g., zone Z1 is field 0.
-    
- * @param new_zones new zones value
- */
-void
-NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::set_zones(const bool * new_zones)
-{
-  memcpy(data->zones, new_zones, sizeof(bool) * 24);
-}
-
-/** Set zones value at given index.
- * 
-      For each zone whether it should be a waiting zone or not. The index
-      is the Zone ID - 1, e.g., zone Z1 is field 0.
-    
- * @param new_zones new zones value
- * @param index index for of the value
- */
-void
-NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::set_zones(unsigned int index, const bool new_zones)
-{
-  if (index > 24) {
-    throw Exception("Index value %u out of bounds (0..24)", index);
-  }
-  data->zones[index] = new_zones;
-}
 /** Clone this message.
  * Produces a message of the same type as this message and copies the
  * data to the new message.
  * @return clone of this message
  */
 Message *
-NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::clone() const
+NavGraphWithMPSGeneratorInterface::GenerateWaitZonesMessage::clone() const
 {
-  return new NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage(this);
+  return new NavGraphWithMPSGeneratorInterface::GenerateWaitZonesMessage(this);
 }
 /** @class NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage <interfaces/NavGraphWithMPSGeneratorInterface.h>
  * UpdateStationByTagMessage Fawkes BlackBoard Interface Message.
@@ -580,8 +494,9 @@ NavGraphWithMPSGeneratorInterface::SetWaitZonesMessage::clone() const
  * @param ini_frame initial value for frame
  * @param ini_tag_translation initial value for tag_translation
  * @param ini_tag_rotation initial value for tag_rotation
+ * @param ini_zone_coords initial value for zone_coords
  */
-NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::UpdateStationByTagMessage(const char * ini_name, const Side ini_side, const char * ini_frame, const double * ini_tag_translation, const double * ini_tag_rotation) : Message("UpdateStationByTagMessage")
+NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::UpdateStationByTagMessage(const char * ini_name, const Side ini_side, const char * ini_frame, const double * ini_tag_translation, const double * ini_tag_rotation, const int16_t * ini_zone_coords) : Message("UpdateStationByTagMessage")
 {
   data_size = sizeof(UpdateStationByTagMessage_data_t);
   data_ptr  = malloc(data_size);
@@ -593,6 +508,7 @@ NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::UpdateStationByTag
   strncpy(data->frame, ini_frame, 32);
   memcpy(data->tag_translation, ini_tag_translation, sizeof(double) * 3);
   memcpy(data->tag_rotation, ini_tag_rotation, sizeof(double) * 4);
+  memcpy(data->zone_coords, ini_zone_coords, sizeof(int16_t) * 2);
   enum_map_Side[(int)INPUT] = "INPUT";
   enum_map_Side[(int)OUTPUT] = "OUTPUT";
   add_fieldinfo(IFT_STRING, "name", 64, data->name);
@@ -600,6 +516,7 @@ NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::UpdateStationByTag
   add_fieldinfo(IFT_STRING, "frame", 32, data->frame);
   add_fieldinfo(IFT_DOUBLE, "tag_translation", 3, &data->tag_translation);
   add_fieldinfo(IFT_DOUBLE, "tag_rotation", 4, &data->tag_rotation);
+  add_fieldinfo(IFT_INT16, "zone_coords", 2, &data->zone_coords);
 }
 /** Constructor */
 NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::UpdateStationByTagMessage() : Message("UpdateStationByTagMessage")
@@ -616,6 +533,7 @@ NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::UpdateStationByTag
   add_fieldinfo(IFT_STRING, "frame", 32, data->frame);
   add_fieldinfo(IFT_DOUBLE, "tag_translation", 3, &data->tag_translation);
   add_fieldinfo(IFT_DOUBLE, "tag_rotation", 4, &data->tag_rotation);
+  add_fieldinfo(IFT_INT16, "zone_coords", 2, &data->zone_coords);
 }
 
 /** Destructor */
@@ -867,6 +785,72 @@ NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::set_tag_rotation(u
   }
   data->tag_rotation[index] = new_tag_rotation;
 }
+/** Get zone_coords value.
+ * 
+      Integral zone coordinates, i.e. [2,3] for C-Z23 or [-2,3] for M-Z23.
+    
+ * @return zone_coords value
+ */
+int16_t *
+NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::zone_coords() const
+{
+  return data->zone_coords;
+}
+
+/** Get zone_coords value at given index.
+ * 
+      Integral zone coordinates, i.e. [2,3] for C-Z23 or [-2,3] for M-Z23.
+    
+ * @param index index of value
+ * @return zone_coords value
+ * @exception Exception thrown if index is out of bounds
+ */
+int16_t
+NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::zone_coords(unsigned int index) const
+{
+  if (index > 2) {
+    throw Exception("Index value %u out of bounds (0..2)", index);
+  }
+  return data->zone_coords[index];
+}
+
+/** Get maximum length of zone_coords value.
+ * @return length of zone_coords value, can be length of the array or number of 
+ * maximum number of characters for a string
+ */
+size_t
+NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::maxlenof_zone_coords() const
+{
+  return 2;
+}
+
+/** Set zone_coords value.
+ * 
+      Integral zone coordinates, i.e. [2,3] for C-Z23 or [-2,3] for M-Z23.
+    
+ * @param new_zone_coords new zone_coords value
+ */
+void
+NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::set_zone_coords(const int16_t * new_zone_coords)
+{
+  memcpy(data->zone_coords, new_zone_coords, sizeof(int16_t) * 2);
+}
+
+/** Set zone_coords value at given index.
+ * 
+      Integral zone coordinates, i.e. [2,3] for C-Z23 or [-2,3] for M-Z23.
+    
+ * @param new_zone_coords new zone_coords value
+ * @param index index for of the value
+ */
+void
+NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::set_zone_coords(unsigned int index, const int16_t new_zone_coords)
+{
+  if (index > 2) {
+    throw Exception("Index value %u out of bounds (0..2)", index);
+  }
+  data->zone_coords[index] = new_zone_coords;
+}
 /** Clone this message.
  * Produces a message of the same type as this message and copies the
  * data to the new message.
@@ -896,7 +880,7 @@ NavGraphWithMPSGeneratorInterface::message_valid(const Message *message) const
   if ( m2 != NULL ) {
     return true;
   }
-  const SetWaitZonesMessage *m3 = dynamic_cast<const SetWaitZonesMessage *>(message);
+  const GenerateWaitZonesMessage *m3 = dynamic_cast<const GenerateWaitZonesMessage *>(message);
   if ( m3 != NULL ) {
     return true;
   }

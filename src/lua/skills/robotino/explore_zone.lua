@@ -96,9 +96,9 @@ local Y_MAX = 7.6
 -- When we can't find a laser-line in the zone, we try looking at the zone
 -- from these coordinates, relative to the center.
 local ZONE_CORNERS = {
-   { x = 0.7, y = -0.8 },
-   { x = 0.7, y = 0.8 },
-   { x = -0.6, y = 0 }
+   { x = 0.7, y = 0 },
+   { x = 0,   y = 0.7 },
+   { x = -0.8, y = -0.8 },
 }
 
 -- Maximum difference between tag and line trans/rot
@@ -202,40 +202,44 @@ function found_tag()
                   tag_utils.frame_for_id(fsm.vars.tags, tag_info, id),
                   "map"
                )
-               if tag_map and in_zone(tag_map.x, tag_map.y) then
-                  local yaw = fawkes.tf.get_yaw(tag_map.ori)
-                  if yaw == yaw then
-                     -- Rescale & Discretize angle from 0..315°
-                     print_debug("Yaw 1: " .. yaw)
-                     if id % 2 == 0 then
-                        yaw = yaw + math.pi
-                        print_debug("Yaw 2: " .. yaw)
-                     end
-                     if yaw < 0 then
-                        yaw = 2 * math.pi + yaw
-                        print_debug("Yaw 3: ".. yaw)
-                     end
-                     local yaw_discrete = math.round(yaw / math.pi * 4) * 45
-                     if yaw_discrete == 360 then yaw_discrete = 0 end
-                     zone_info:set_zone(fsm.vars.zone)
-                     zone_info:set_orientation(yaw_discrete)
-                     zone_info:set_tag_id(id)
-                     zone_info:set_search_state(zone_info.YES)
-                     bb_found_tag:set_translation(0, tag_map.x)
-                     bb_found_tag:set_translation(1, tag_map.y)
-                     bb_found_tag:set_translation(2, tag_map.z)
-                     local line_bearing_map_q = fawkes.tf.create_quaternion_from_yaw(line_bearing_map.ori)
-                     bb_found_tag:set_rotation(0, line_bearing_map_q:x())
-                     bb_found_tag:set_rotation(1, line_bearing_map_q:y())
-                     bb_found_tag:set_rotation(2, line_bearing_map_q:z())
-                     bb_found_tag:set_rotation(3, line_bearing_map_q:w())
-                     bb_found_tag:set_frame("map")
-                     bb_found_tag:set_visibility_history(tag:visibility_history())
-                     fsm.vars.found_something = true
-                     return true
-                  end
+               if not tag_map then
+                 printf("Discarding tag #%d, cannot transform", id)
                else
-                  printf("Discarding tag #%d, misaligned by %f.", id, d_trans)
+                 if in_zone(tag_map.x, tag_map.y) then
+                   local yaw = fawkes.tf.get_yaw(tag_map.ori)
+                   if yaw == yaw then -- false for NAN
+                      -- Rescale & Discretize angle from 0..315°
+                      print_debug("Yaw 1: " .. yaw)
+                      if id % 2 == 0 then
+                         yaw = yaw + math.pi
+                         print_debug("Yaw 2: " .. yaw)
+                      end
+                      if yaw < 0 then
+                         yaw = 2 * math.pi + yaw
+                         print_debug("Yaw 3: ".. yaw)
+                      end
+                      local yaw_discrete = math.round(yaw / math.pi * 4) * 45
+                      if yaw_discrete == 360 then yaw_discrete = 0 end
+                      zone_info:set_zone(fsm.vars.zone)
+                      zone_info:set_orientation(yaw_discrete)
+                      zone_info:set_tag_id(id)
+                      zone_info:set_search_state(zone_info.YES)
+                      bb_found_tag:set_translation(0, tag_map.x)
+                      bb_found_tag:set_translation(1, tag_map.y)
+                      bb_found_tag:set_translation(2, tag_map.z)
+                      local line_bearing_map_q = fawkes.tf.create_quaternion_from_yaw(line_bearing_map.ori)
+                      bb_found_tag:set_rotation(0, line_bearing_map_q:x())
+                      bb_found_tag:set_rotation(1, line_bearing_map_q:y())
+                      bb_found_tag:set_rotation(2, line_bearing_map_q:z())
+                      bb_found_tag:set_rotation(3, line_bearing_map_q:w())
+                      bb_found_tag:set_frame("map")
+                      bb_found_tag:set_visibility_history(tag:visibility_history())
+                      fsm.vars.found_something = true
+                      return true
+                   end
+                 else
+                   printf("Discarding tag #%d, misaligned. Is at %f\t%f", id, tag_map.x, tag_map.y)
+                 end
                end
             end
 
@@ -280,7 +284,7 @@ fsm:add_transitions{
    {"INIT", "TURN", cond="local_bearing(vars.x, vars.y) > CAM_ANGLE"},
    {"INIT", "WAIT_FOR_TAG", cond=true},
    {"WAIT_FOR_TAG", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"WAIT_FOR_TAG", "GET_CLOSER", timeout=1},
+   {"WAIT_FOR_TAG", "GET_CLOSER", timeout=2},
    {"GET_CLOSER", "FAILED", cond="vars.attempts >= MAX_ATTEMPTS", desc="give up"},
    {"GET_CLOSER", "APPROACH_LINE", cond="vars.line_vista"},
    {"GET_CLOSER", "FIND_LINE", cond="vars.cluster_vista"},
@@ -290,11 +294,11 @@ fsm:add_transitions{
    {"FIND_ZONE_CORNER", "APPROACH_ZONE", cond="vars.zone_corner"},
    {"FIND_ZONE_CORNER", "FAILED", cond="not vars.zone_corner"},
    {"APPROACH_ZONE", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"APPROACH_ZONE", "GET_CLOSER", timeout=10},
+   {"APPROACH_ZONE", "GET_CLOSER", timeout=6},
    {"APPROACH_LINE", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"APPROACH_LINE", "GET_CLOSER", timeout=10},
+   {"APPROACH_LINE", "GET_CLOSER", timeout=6},
    {"WAIT_AMCL", "GET_CLOSER", cond=lost_tag, desc="lost tag"},
-   {"WAIT_AMCL", "FINAL", timeout=2},
+   {"WAIT_AMCL", "FINAL", timeout=1},
 }
 
 

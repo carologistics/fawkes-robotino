@@ -53,22 +53,19 @@
           (zone-exploration (times-searched ?ts) (machine ?found&:(eq ?mps ?found))))
   (not (added-waiting-positions))
   (not (requested-waiting-positions))
-  =>
+  (last-navgraph-compute-msg (final TRUE))
+  (navgraph-done)
+=>
   (printout t "Adding waiting positions in empty zones" crlf)
-  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "SetWaitZonesMessage"))
-  (bind $?zones-to-wait (create-multifield-with-length-and-entry 24 FALSE))
-
-  (do-for-all-facts ((?zone zone-exploration)) (eq ?zone:machine UNKNOWN)
-    (bind ?zone-name (str-cat ?zone:name))
-    (bind ?zone-index (eval (sub-string 2 (str-length ?zone-name) ?zone-name)))
-    (bind ?zones-to-wait
-          (replace$ ?zones-to-wait ?zone-index ?zone-index TRUE))
-  )
-  (printout t "Adding wait-zones in: " ?zones-to-wait crlf)
-  (blackboard-set-msg-multifield ?msg "zones" ?zones-to-wait)
+  (bind ?msg (blackboard-create-msg
+    "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps"
+    "GenerateWaitZonesMessage"
+  ))
   (blackboard-send-msg ?msg)
-
-  (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "ComputeMessage"))
+  (bind ?msg (blackboard-create-msg
+    "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps"
+    "ComputeMessage"
+  ))
   (bind ?compute-msg-id (blackboard-send-msg ?msg))
   (printout t "Sent compute" crlf)
   (assert (requested-waiting-positions))
@@ -79,17 +76,29 @@
   (assert (last-navgraph-compute-msg (id ?compute-msg-id)))
 )
 
+
 (defrule navgraph-compute-wait-positions-finished
   (requested-waiting-positions)
-  (last-navgraph-compute-msg (id ?compute-msg-id))
-  ?ngg-if <- (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (msgid ?compute-msg-id) (final TRUE))
-  =>
+  (last-navgraph-compute-msg (id ?compute-msg-id) (final TRUE))
+=>
   (assert (added-waiting-positions))
   (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
-  (retract ?ngg-if)
-  (do-for-all-facts ((?waitzone navgraph-node)) (eq "WAIT-Z" (sub-string 1 6 ?waitzone:name))
-    (assert (zone-waitpoint (name (str-cat "WAIT-" (sym-cat (sub-string 6 (str-length ?waitzone:name) ?waitzone:name))))
-                            (x (nth$ 1 ?waitzone:pos)) (y (nth$ 2 ?waitzone:pos))))
+  (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT-" ?waitzone:name)
+    (assert (zone-waitpoint
+      (name ?waitzone:name)
+      (x (nth$ 1 ?waitzone:pos))
+      (y (nth$ 2 ?waitzone:pos))
+    ))
+  )
+)
+
+
+(defrule navgraph-last-msg-final
+  ?last-msg-f <- (last-navgraph-compute-msg (id ?msgid) (final ~TRUE))
+  (NavGraphWithMPSGeneratorInterface (id "/navgraph-generator-mps") (msgid ?msgid) (final TRUE))
+=>
+  (modify ?last-msg-f
+    (final TRUE)
   )
 )
 
