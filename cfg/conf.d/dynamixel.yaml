@@ -67,3 +67,6 @@ dynamixel:
     # to recover on overload shutdown. To recover on all errors set autorecover_flags to 127 (7 bits per error)
     autorecover_enabled: false
     autorecover_flags: 127
+
+    # Allow verbose output on messages received
+    enable_verbose_output: false
