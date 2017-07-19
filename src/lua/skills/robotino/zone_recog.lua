@@ -142,20 +142,26 @@ end
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
-   {"DRIVE1", SkillJumpState, skills={{goto}}, final_to="INITIAL_ALIGN", fail_to="DRIVE2"},
-   {"DRIVE2", SkillJumpState, skills={{goto}}, final_to="ALIGN", fail_to="DRIVE3"},
-   {"DRIVE3", SkillJumpState, skills={{goto}}, final_to="ALIGN", fail_to="DRIVE4"},
-   {"DRIVE4", SkillJumpState, skills={{goto}}, final_to="ALIGN", fail_to="FAILED"},
+   {"DRIVE1", SkillJumpState, skills={{goto}}, final_to="ALIGN", fail_to="MOVE_FAILED"},
+   {"DRIVE2", SkillJumpState, skills={{goto}}, final_to="ALIGN", fail_to="MOVE_FAILED"},
+   {"DRIVE3", SkillJumpState, skills={{goto}}, final_to="ALIGN", fail_to="MOVE_FAILED"},
+   {"DRIVE4", SkillJumpState, skills={{goto}}, final_to="ALIGN", fail_to="MOVE_FAILED"},
    {"CALCULATE_RESULT",JumpState},
    {"EXPLORE",SkillJumpState, skills={{recog_from_align}}, final_to="CHOOSE_NEXT", fail_to="CHOOSE_NEXT_FAILED"},
    {"CHOOSE_NEXT_FAILED",JumpsState} 
    {"CHOOSE_NEXT",JumpState},
-   {"INITIAL_ALIGN",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="DRIVE2"},
-   {"ALIGN",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="FAILED"},
+   {"MOVE_FAILED", JumpState},
+   {"ALIGN",SkillJumpState, skills={{tagless_mps_align}}, final_to="EXPLORE", fail_to="MOVE_FAILED"},
 }
 fsm:add_transitions{
    {"INIT", "DRIVE1", cond=calc_xy_coordinates},
    {"INIT", "FAILED", cond=true},
+
+   {"MOVE_FAILED", "DRIVE2", cond="vars.last ==1"},
+    {"MOVE_FAILED", "DRIVE3", cond="vars.last ==2"},
+    {"MOVE_FAILED", "DRIVE4", cond="vars.last ==3"},
+    {"MOVE_FAILED", "DRIVE1", cond="vars.last ==4"},
+ {"MOVE_FAILED", "FAILED", cond="vars.last ==4 and vars.last ~= nil"},
    {"CHOOSE_NEXT", "DRIVE3", cond="vars.last == 1"},
    {"CHOOSE_NEXT", "DRIVE4", cond="vars.last == 2"},
    {"CHOOSE_NEXT", "CALCULATE_RESULT", cond="vars.last == 3 or vars.last == 4"},
@@ -181,15 +187,6 @@ function EXPLORE:init()
 	self.args["recog_from_align"].alignX2 = self.fsm.vars.alignX2
 	self.args["recog_from_align"].alignY2 = self.fsm.vars.alignY2
 end
-
-function INITIAL_ALIGN:init()
-  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
-  self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
-  self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
-  self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
-  self.fsm.vars.last = 1
-end
-
 function ALIGN:init()
   self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
   self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
@@ -210,6 +207,7 @@ function DRIVE1:init()
    self.args["goto"].x = self.fsm.vars.xLeft 
    self.args["goto"].y = self.fsm.vars.yZone
    self.args["goto"].ori = 0
+   self.fsm.vars.last = 1
 end
 
 function DRIVE2:init()
