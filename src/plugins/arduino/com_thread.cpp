@@ -49,13 +49,13 @@ ArduinoComThread::ArduinoComThread(std::string &cfg_name,
         std::string &cfg_prefix)
 : Thread("ArduinoComThread", Thread::OPMODE_WAITFORWAKEUP),
         BlackBoardInterfaceListener("ArduinoThread(%s)", cfg_name.c_str()),
-        BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_WORLDSTATE),
         serial_(io_service_), deadline_(io_service_)
 {
     data_mutex_ = new Mutex();
     new_data_ = false;
     cfg_prefix_ = cfg_prefix;
     cfg_name_ = cfg_name;
+    set_coalesce_wakeups(false);
 }
 
 /** Destructor. */
@@ -69,7 +69,6 @@ ArduinoComThread::init()
     // -------------------------------------------------------------------------- //
     load_config();
 
-    set_coalesce_wakeups(true);
 
     arduino_if_ =
             blackboard->open_for_writing<ArduinoInterface>("Arduino", cfg_name_.c_str());
@@ -110,11 +109,6 @@ void
 ArduinoComThread::loop()
 {
     if (opened_) {
-        // read result package after we received the "M..." package as a receipt
-        if (msecs_to_wait_ > 0) {
-            read_packet(msecs_to_wait_);
-            msecs_to_wait_ = 0;
-        }
         while (!arduino_if_->msgq_empty() && arduino_if_->is_final()) {
 
             arduino_if_->read();
@@ -167,7 +161,8 @@ ArduinoComThread::loop()
             messages_.push(req);
             set_acceleration_pending_ = false;
 
-        } else if (set_speed_pending_) {
+        }
+        if (set_speed_pending_) {
             logger->log_debug(name(), "Set Speed to %u", cfg_rpm_);
             ArduinoComMessage req;
             req.set_command(ArduinoComMessage::CMD_SET_SPEED);
@@ -176,7 +171,8 @@ ArduinoComThread::loop()
             messages_.push(req);
             set_speed_pending_ = false;
 
-        } else if (move_to_z_0_pending_) {
+        }
+        if (move_to_z_0_pending_) {
             logger->log_debug(name(), "Request Z0 reset");
             ArduinoComMessage req;
             req.set_command(ArduinoComMessage::CMD_TO_Z_0);
@@ -184,7 +180,8 @@ ArduinoComThread::loop()
             messages_.push(req);
             move_to_z_0_pending_ = false;
 
-        } else if (init_pos_pending_ && arduino_if_->is_final()) {
+        }
+        if (init_pos_pending_) {
             ArduinoComMessage req;
             req.set_command(ArduinoComMessage::CMD_STEP_DOWN);
             req.set_number(cfg_init_mm_ * ArduinoComMessage::NUM_STEPS_PER_MM);
@@ -193,7 +190,8 @@ ArduinoComThread::loop()
             messages_.push(req);
             init_pos_pending_ = false;
 
-        } else if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_14 &&
+        }
+        if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_14 &&
                 arduino_if_->is_final() && !init_pos_pending_) {
             ArduinoComMessage req;
             req.set_command(ArduinoComMessage::CMD_STEP_UP);
@@ -203,7 +201,8 @@ ArduinoComThread::loop()
             messages_.push(req);
             arduino_if_->set_final(false);
 
-        } else if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_15 &&
+        }
+        if (joystick_if_->pressed_buttons() & JoystickInterface::BUTTON_15 &&
                 arduino_if_->is_final() && !init_pos_pending_) {
             ArduinoComMessage req;
             req.set_command(ArduinoComMessage::CMD_STEP_DOWN);
@@ -214,15 +213,6 @@ ArduinoComThread::loop()
 
             arduino_if_->set_final(false);
         }
-
-        if (messages_.size() > 0) {
-            send_one_message();
-        }
-
-        z_movement_pending_ = current_arduino_status != 'I';
-        arduino_if_->set_final(!z_movement_pending_);
-        arduino_if_->set_z_position(current_z_position_);
-        arduino_if_->write();
 
     } else {
         try {
@@ -237,15 +227,18 @@ ArduinoComThread::loop()
             }
         }
     }
-    if (msecs_to_wait_ > 0 ||
-            set_acceleration_pending_ ||
-            set_speed_pending_ ||
-            move_to_z_0_pending_ ||
-            init_pos_pending_) {
-        wakeup();
+
+    while (messages_.size() > 0) {
+        arduino_if_->set_final(false);
+        arduino_if_->write();
+
+        send_one_message();
+
+        z_movement_pending_ = current_arduino_status != 'I';
+        arduino_if_->set_final(!z_movement_pending_);
+        arduino_if_->set_z_position(current_z_position_);
+        arduino_if_->write();
     }
-
-
 }
 
 bool
@@ -381,9 +374,16 @@ ArduinoComThread::send_one_message()
         msecs_to_wait_ = cur_msg.get_msecs();
         send_message(cur_msg);
 
-        read_packet(1000); // read receipt
+        std::string s = read_packet(1000); // read receipt
+        logger->log_debug(name(), "Read receipt: %s'", s.c_str());
+        s = read_packet(msecs_to_wait_); // read
+        logger->log_debug(name(), "Read status: %s'", s.c_str());
+
+        return true;
     }
-    return true;
+    else {
+        return false;
+    }
 }
 
 void
@@ -399,10 +399,6 @@ ArduinoComThread::handle_nodata(const boost::system::error_code &ec)
         logger->log_debug(name(), "Received: %zu  %s\n", s.size(), s.c_str());
         close_device();
         open_device();
-//        for (size_t i = 0; i < s.size(); ++i) {
-//	    printf("%02x ", s[i]);
-//        }
-//        printf("\n");
     }
 }
 
@@ -421,7 +417,14 @@ ArduinoComThread::read_packet(unsigned int timeout)
             (boost::lambda::var(ec) = boost::lambda::_1,
             boost::lambda::var(bytes_read_) = boost::lambda::_2));
 
-    do io_service_.run_one(); while (ec == boost::asio::error::would_block);
+//    do io_service_.run_one(); while (ec == boost::asio::error::would_block);
+
+    do {
+        io_service_.run_one();
+        if (ec == boost::asio::error::would_block) {
+            usleep(10000);
+        }
+    } while (ec == boost::asio::error::would_block);
 
     if (ec) {
         if (ec.value() == boost::system::errc::operation_canceled) {
