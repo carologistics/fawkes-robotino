@@ -127,7 +127,7 @@ end
 function APPROACH_CONVEYOR:init()
   local x_goal = self.fsm.vars.pose.x - self.fsm.vars.x
   printf("distance is: %f => drive to: %f", self.fsm.vars.pose.x, x_goal)
-  self.args["motor_move"] = {x = self.fsm.vars.x, vel_trans = 0.05, frame="conveyor"}
+  self.args["motor_move"] = {x = self.fsm.vars.x, vel_trans = 0.05, frame="conveyor_pose"}
 end
 
 function APPROACH_LASERLINE:init()
