@@ -78,3 +78,5 @@ navgraph:
   interactive:
     out-file: navgraph-interactive-saved.yaml
 
+  ros-publishing:
+    enable: true
