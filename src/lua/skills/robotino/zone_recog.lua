@@ -27,7 +27,7 @@ name               = "zone_recog"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"recog_from_align", "goto","tagless_mps_align"}
 depends_interfaces = {
-  -- {v = "speechsynth", type = "SpeechSynthInterface", id = "Flite"},
+   {v = "speechsynth", type = "SpeechSynthInterface", id = "Flite"},
    {v = "mps_recognition_if", type = "MPSRecognitionInterface" ,id="/MarkerlessRecognition"},
 
 }
@@ -63,7 +63,7 @@ MPS_TYPES = {
 }
 
 function speak(...)
-  -- speechsynth:msgq_enqueue_copy(speechsynth.SayMessage:new(string.format(unpack(arg))))
+   speechsynth:msgq_enqueue_copy(speechsynth.SayMessage:new(string.format(unpack(arg))))
    printf(unpack(arg))
 end
 
@@ -104,7 +104,9 @@ function calc_final_result(self)
     end
 
     recognition_result = MPS_TYPES[max+1]
-    printf("The result of zone_recog is %s",recognition_result)
+    
+    speak("The result of the recognition is: %s", recognition_result) 
+    --printf("The result of zone_recog is %s",recognition_result)
 
     return true
 
