@@ -15,7 +15,7 @@ network:
     #listen: !ipv4 127.0.0.1
 
   ipv6:
-    enable: true
+    enable: false
     #listen: !ipv6 "::1"
 
   # Fawkes protocol specific settings
