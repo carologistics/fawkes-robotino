@@ -161,11 +161,16 @@ void TagVisionSimThread::loop()
 
       
       // publish the transform
-      tf::Transform transform(spose_tag_frame.getRotation(),
-                              spose_tag_frame.getOrigin());
-      std::string tag_frame_name = std::string("tag_")+std::to_string(if_index);
-      tf::StampedTransform stamped_transform(transform,time,frame_name_,tag_frame_name);
-      tf_publisher->send_transform(stamped_transform);
+      try {
+        tf::Transform transform(spose_tag_frame.getRotation(),
+                                spose_tag_frame.getOrigin());
+        std::string tag_frame_name = std::string("tag_")+std::to_string(if_index);
+        tf::StampedTransform stamped_transform(transform,time,frame_name_,tag_frame_name);
+        tf_publisher->send_transform(stamped_transform);
+      } catch (fawkes::Exception &e) {
+        logger->log_warn(name(), "Failed to send transform, exception follows");
+        logger->log_warn(name(), e);
+      }
     }
     //clear tags which became unvisibe and count visible tags
     int number_found_tags = 0;
