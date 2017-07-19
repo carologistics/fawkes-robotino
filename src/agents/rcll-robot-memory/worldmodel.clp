@@ -155,8 +155,7 @@
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?csf <- (cap-station (name ?mps) (cap-loaded ?cap))
   ?hf <- (holding ?produced-id)
-  ?pf <- (product (id ?produced-id) (product-id ?product-id) (cap NONE))
-  ?of <- (order (product-id ?product-id) (in-production ?ip))
+  ?pf <- (product (id ?produced-id) (cap NONE))
   =>
   (retract ?hf)
   (printout t "Inserted product " ?produced-id " to be finished in the CS" crlf)
