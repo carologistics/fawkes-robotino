@@ -152,7 +152,7 @@ end
 
 function DRIVE:init()
    local pose = pose_des(self)
-   self.args["motor_move"] = {x = pose.x, y = pose.y, tolerance = { x=0.002, y=0.002, ori=0.01 }, vel_trans = 0.2} --TODO set tolerances as defined in the global variable
+   self.args["motor_move"] = {x = pose.x, y = pose.y, tolerance = { x=0.002, y=0.002, ori=0.01 }, vel_trans = 0.05} --TODO set tolerances as defined in the global variable
    local z_position = round(pose.z * 1000)
    print("z_pose: " .. pose.z)
    self.args["ax12gripper"].command = "RELGOTOZ"
