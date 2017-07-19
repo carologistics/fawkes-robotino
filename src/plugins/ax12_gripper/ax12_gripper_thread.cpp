@@ -239,7 +239,7 @@ GripperAX12AThread::loop()
     // Otherwise resetting the torque_limit and trying to go to a new pose
     // leads to a full speed move of the servos.
     // This is probably a bug in the AX12 firmware.
-    if (cur_torque_ == 0.0) {
+    if (cur_torque_ < 1.0) {
         bool is_final = (__servo_if_left->speed() & 0x3FF) < 8;
         is_final &= (__servo_if_right->speed() & 0x3FF) < 8;
         is_final &= !z_alignment_pending;
