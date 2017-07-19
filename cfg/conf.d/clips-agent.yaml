@@ -41,6 +41,8 @@ clips-agent:
   # <agent name>.clp. It must be in the CLIPS path directories.
   agent: rcll2017/rcll2017
 
+  disable-storage-station: true
+
  
   rcll2016:
     #agent-role defined in host.yaml (this is only the default!)
@@ -120,9 +122,9 @@ clips-agent:
       
       route:
         CYAN:
-          R-1: ["exp-11", "exp-12", "exp-11"]
-          R-2: ["exp-21", "exp-22", "exp-21"]
-          R-3: ["exp-31", "exp-32", "exp-31"]
+          R-1: ["exp-21", "exp-22", "exp-23", "exp-21", "exp-24"]
+          R-2: ["exp-21", "exp-22", "exp-23", "exp-21", "exp-24"]
+          R-3: ["exp-24", "exp-21", "exp-23", "exp-22", "exp-21"]
         MAGENTA:
           R-1: ["exp-12", "exp-11", "exp-12"]
           R-2: ["exp-22", "exp-21", "exp-22"]
