@@ -240,6 +240,12 @@ GripperAX12AThread::loop()
     // leads to a full speed move of the servos.
     // This is probably a bug in the AX12 firmware.
     if (cur_torque_ == 0.0) {
+        bool is_final = (__servo_if_left->speed() & 0x3FF) < 8;
+        is_final &= (__servo_if_right->speed() & 0x3FF) < 8;
+        is_final &= !z_alignment_pending;
+        fawkes::Time now(clock);
+        is_final &= now > (torque_0_timestamp_ + 0.5);
+        __gripper_if->set_final(is_final);
         goto_gripper(__servo_if_left->angle(), __servo_if_right->angle());
       }
 
@@ -339,6 +345,7 @@ GripperAX12AThread::loop()
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SetTorqueMessage>()) {
         AX12GripperInterface::SetTorqueMessage *msg = __gripper_if->msgq_first(msg);
 
+        torque_0_timestamp_ = fawkes::Time();
         set_torque(msg->torque());
 
       } else {
