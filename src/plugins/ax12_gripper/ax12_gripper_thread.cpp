@@ -240,8 +240,8 @@ GripperAX12AThread::loop()
     // leads to a full speed move of the servos.
     // This is probably a bug in the AX12 firmware.
     if (cur_torque_ < 1.0) {
-        bool is_final = (__servo_if_left->speed() & 0x3FF) < 8;
-        is_final &= (__servo_if_right->speed() & 0x3FF) < 8;
+        bool is_final = (__servo_if_left->speed() & 0x3FF) < 32;
+        is_final &= (__servo_if_right->speed() & 0x3FF) < 32;
         is_final &= !z_alignment_pending;
         fawkes::Time now(clock);
         is_final &= now > (torque_0_timestamp_ + 0.5);
