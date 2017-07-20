@@ -141,9 +141,11 @@
       (pb-destroy ?lock-msg)
 
       ;send RELEASE_RCVD only once
-      (if (eq ?lock:type RELEASE_RVCD)
-        then
-	(retract ?lock)
+      (if (eq ?lock:type RELEASE_RVCD) then
+        (printout t "PB sent (lock (type RELEASE_RVCD)"
+          " (agent " ?lock:agent ")"
+          " (resource " ?lock:resource "))" crlf)
+        (retract ?lock)
       )
     )
   )
@@ -159,6 +161,12 @@
   (bind ?r (sym-cat (pb-field-value ?p "resource")))
   ;(printout t "Received lock message with type " ?type " of " ?r " from " ?a crlf)
   (retract ?msg)
+  (if (eq ?type RELEASE_RVCD) then
+    (printout t "PB received (lock (type RELEASE_RVCD)"
+      " (agent " ?a ")"
+      " (resource " ?r "))"
+      crlf)
+  )
   (if (eq ?role MASTER)
     then
     (if (or (eq ?type GET) (eq ?type RELEASE)) then
