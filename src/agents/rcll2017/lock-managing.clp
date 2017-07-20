@@ -120,9 +120,17 @@
   ;(printout t "Sending all lock-messages:" crlf)
   (modify ?s (time ?now) (seq (+ ?seq 1)))
   (delayed-do-for-all-facts ((?lock lock)) TRUE
-    (if (or (and (eq ?role MASTER) (or (eq ?lock:type ACCEPT) (eq ?lock:type REFUSE) (eq ?lock:type RELEASE_RVCD)))
-	    (and (eq ?role SLAVE) (or (eq ?lock:type GET) (eq ?lock:type RELEASE)))) 
-      then
+    (if (or
+      (and
+        (eq ?role MASTER)
+        (or (eq ?lock:type ACCEPT) (eq ?lock:type REFUSE) (eq ?lock:type RELEASE_RVCD))
+      )
+	    (and
+        (eq ?role SLAVE)
+        (or (eq ?lock:type GET) (eq ?lock:type RELEASE))
+      )
+    )
+    then
       ;(printout t "   type " ?lock:type " of " ?lock:resource " from agent " ?lock:agent crlf)
       (bind ?lock-msg (pb-create "llsf_msgs.LockMessage"))
       (pb-set-field ?lock-msg "type" ?lock:type)
