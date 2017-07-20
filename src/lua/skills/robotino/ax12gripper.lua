@@ -76,6 +76,7 @@ fsm:add_transitions{
    {"COMMAND", "CLOSE_GRIPPER_WAIT", cond="vars.close"},
    {"CLOSE_GRIPPER_WAIT", "FINAL_AFTER_IF_FINAL", timeout=0.5},
    {"FINAL_AFTER_IF_FINAL", "FINAL", cond="gripper_if:is_final()"},
+   {"FINAL_AFTER_IF_FINAL", "FAILED", timeout=3},
 }
 
 function COMMAND:init()
