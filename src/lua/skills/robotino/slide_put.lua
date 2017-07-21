@@ -49,9 +49,10 @@ fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
    {"GOTO_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SLIDE", fail_to="FAILED"},
    {"APPROACH_SLIDE", SkillJumpState, skills={{approach_mps}}, final_to="STORE_PRODUCT", fail_to="FAILED"},
-   {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="LEAVE_SLIDE", fail_to="FAILED"},
+   {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="LEAVE_SLIDE", fail_to="LEAVE_SLIDE_FAILED"},
    {"LEAVE_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="CLOSE_GRIPPER", fail_to="CLOSE_GRIPPER"},
-   {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FAILED"},
+   {"LEAVE_SLIDE_FAILED", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},
+   {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FINAL"},
 }
 
 fsm:add_transitions{
@@ -77,6 +78,10 @@ function STORE_PRODUCT:init()
 end
 
 function LEAVE_SLIDE:init()
+   self.args["motor_move"].x = -0.1
+end
+
+function LEAVE_SLIDE_FAILED:init()
    self.args["motor_move"].x = -0.1
 end
 
