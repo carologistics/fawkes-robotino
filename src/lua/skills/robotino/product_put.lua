@@ -41,7 +41,7 @@ local x_distance = 0.315
 if config:exists("/skills/approach_distance_conveyor/x") then
       x_distance = config:get_float("/skills/approach_distance_conveyor/x")
 end
-x_distance= x_distance + 0.02
+x_distance= x_distance
 
 fsm:define_states{ export_to=_M,
    {"DRIVE_FORWARD", SkillJumpState, skills={{approach_mps}},
