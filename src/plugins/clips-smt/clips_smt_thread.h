@@ -132,8 +132,8 @@ private:
 	// Constants for C0-C1
 	const int number_actions_c0 = 11;
 	const int number_actions_c1 = 18;
-	const int plan_horizon = 25;
-	const int deadline = 60;
+	const int plan_horizon = 11;
+	const int deadline = 80;
 	const int time_to_prep = 5;
 	const int time_to_fetch = 5;
 	const int time_to_feed = 5;
@@ -181,6 +181,7 @@ private:
 	int number_machines;
 	int number_bits;
 	int number_robots;
+	int number_orders;
 	void clips_smt_fill_node_names();
 	void clips_smt_fill_robot_names();
 	void clips_smt_compute_distances_robots();
