@@ -1,6 +1,10 @@
+#!/usr/bin/env python3
+
 import os
 import sys
 import re
+
+import argparse
 
 class Line:
     """A simple class to save attributes"""
@@ -91,11 +95,11 @@ def interactive(game_list):
     print("You can operate on these games as following:\n")
     print("")
 
-
-if(len(sys.argv)==1):
-    filename = "../../../bin/debug1.log"
-else:
-    filename=sys.argv[1]
+filename = "../../../bin/debug1.log"
+#if(len(sys.argv)==1):
+#    filename = "../../../bin/debug1.log"
+#else:
+#    filename=sys.argv[1]
 game_list = extract_from_file(filename)
 interactive(game_list)
 start = False
@@ -144,3 +148,12 @@ current_factbase(assert_dict,retract_dict,1500)
 # -i info
 # -t time counted from game start
 # -T time absolute
+parser=argparse.ArgumentParser()
+parser.add_argument("-c", "--contains", type=str, help="Filters whether a keyword is in the output")
+parser.add_argument("-s", "--slotname", type=str, help="Filters for a specific slotname")
+parser.add_argument("-g", "--game", type=int, help="Shows a specific game")
+parser.add_argument("-l", "--list", help="Lists all games found")
+parser.add_argument("-t", "--time", type=int, help="Shows factbase at a specific point in time, counted from the start")
+parser.add_argument("-T", "--Time", type=int, help="Shows factbase at a specific point in time (absolute time)")
+parser.parse_args()
+
