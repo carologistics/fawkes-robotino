@@ -135,3 +135,12 @@ def current_factbase(assert_dict, retract_dict, point_in_time):
     for f_ in factbase:
         print(f_[1])
 current_factbase(assert_dict,retract_dict,1500)
+
+# Was stand wann und wann in der factbase
+# Filter: Positivliste
+# -c contains
+# -s slotname
+# -g game
+# -i info
+# -t time counted from game start
+# -T time absolute
