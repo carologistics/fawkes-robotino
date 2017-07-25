@@ -23,9 +23,9 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "get_product_from"
+name               = "tagless_get_product"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"tagless_mps_align", "product_pick", "drive_to_local","shelf_pick", "conveyor_align"}
+depends_skills     = {"tagless_mps_align", "product_pick", "shelf_pick", "conveyor_align"}
 depends_interfaces = {
 }
 
@@ -38,19 +38,14 @@ Parameters:
       @param place   the name of the MPS (see navgraph)
       @param side    optional the side of the mps (default is output give "input" to get from input)
       @param shelf   optional position on shelf: ( LEFT | MIDDLE | RIGHT )
-      @param atmps   optional if already standing at the mps: ( CONVEYOR )
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
 -- Constants
 
-function already_at_conveyor(self)
-   return (self.fsm.vars.atmps == "CONVEYOR")
-end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
-   {"DRIVE_TO", SkillJumpState, skills={{drive_to_local}}, final_to="MPS_ALIGN", fail_to="FAILED"},
    {"MPS_ALIGN", SkillJumpState, skills={{tagless_mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
@@ -59,28 +54,36 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
 }
 
 fsm:add_transitions{
-   {"INIT", "FAILED", cond="not navgraph", desc="navgraph not available"},
-   {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
-   {"INIT", "MPS_ALIGN", cond=already_at_conveyor, desc="Already in front of the mps, align"},
-   {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"},
+   {"INIT", "MPS_ALIGN", cond=true},
    {"DECIDE_ENDSKILL", "SKILL_SHELF_PICK", cond="vars.shelf", desc="Pick from shelf"},
    {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PICK", cond="true", desc="Pick from conveyor"},
 }
 
 function INIT:init()
-   self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
-end
+  self.fsm.vars.xZone = tonumber(string.sub(self.fsm.vars.zone, 4, 4)) - 0.5
+  self.fsm.vars.yZone = tonumber(string.sub(self.fsm.vars.zone, 5, 5)) - 0.5
+  if string.sub(self.fsm.vars.zone, 1, 1) == "M" then
+   self.fsm.vars.xZone = 0 - self.fsm.vars.xZone
+  end
+ 
+  self.fsm.vars.alignX1 = self.fsm.vars.xZone - 0.5
+  self.fsm.vars.alignY1 = self.fsm.vars.yZone - 0.5
+  self.fsm.vars.alignX2 = self.fsm.vars.xZone + 0.5
+  self.fsm.vars.alignY2 = self.fsm.vars.yZone + 0.5
 
-function DRIVE_TO:init()
-   if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
-      self.args["drive_to_local"] = {place = self.fsm.vars.place .. "-I"}
-   else --if no side is given drive to output
-      self.args["drive_to_local"] = {place = self.fsm.vars.place .. "-O"}
-   end
+
+
 end
 
 function MPS_ALIGN:init()
- end
+   self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
+  self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
+  self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
+  self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
+
+
+
+end
 
 function CONVEYOR_ALIGN:init()
    if (self.fsm.vars.shelf == nil) then
