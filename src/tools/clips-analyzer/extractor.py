@@ -1,9 +1,13 @@
+<<<<<<< HEAD
 #!/usr/bin/env python3
 
+=======
+>>>>>>> 5706ecb74d1f315475f87dd0958a96c7409117c5
 import os
 import sys
 import re
 
+<<<<<<< HEAD
 import argparse
 
 def to_seconds(hour, minute, second):
@@ -36,7 +40,6 @@ class Line:
         self.check_for_skill_statechange()
         
         self.return_time()
-
 
         self.stripped_content = self.strip_content()
 
@@ -87,6 +90,7 @@ def extract_from_file(filename):
         debug_list = []
         for i,line in enumerate(debug_file):
            abs_line_counter = i #abs_line_counter +1
+           rel_line_counter = rel_line_counter +1
            line = line.lstrip().rstrip()
            line = re.search('.*CLIPS.*',line)
            if( line != None ):
@@ -100,6 +104,13 @@ def extract_from_file(filename):
                else:
                     debug_list.append(Line(line.group(),rel_line_counter,abs_line_counter))
                     rel_line_counter = rel_line_counter +1
+                       rel_line_counter = 1
+                       game_list.append(debug_list)
+                       debug_list=[]
+                       debug_list.append(Line(line.group(),rel_line_counter,abs_line_counter))
+                       
+               else:
+                    debug_list.append(Line(line.group(),rel_line_counter,abs_line_counter))
 
 
         game_list.append(debug_list)
@@ -122,6 +133,16 @@ filename = "../../../bin/debug1.log"
 #    filename=sys.argv[1]
 game_list = extract_from_file(filename)
 #interactive(game_list)
+    print("You can operate on these games as following:\n")
+    print("")
+
+
+if(len(sys.argv)==1):
+    filename = "../../../bin/debug1.log"
+else:
+    filename=sys.argv[1]
+game_list = extract_from_file(filename)
+interactive(game_list)
 start = False
 retract_dict = {}
 assert_dict = {}
@@ -149,7 +170,8 @@ for i,line in enumerate(game_list[game_number]):
                 assert_dict.update(fused)
             else:
                 retract_dict.update(fused)
-
+#print(assert_dict)
+#print(retract_dict)
 def current_factbase(assert_dict, retract_dict, point_in_time):
     factbase = []
     for timestep in range(point_in_time+1):
