@@ -72,6 +72,7 @@
             (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?machine))))
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PREFILL-CS*))))
   (found-tag (name ?machine))
+  (or (prefill-cs) (produce-complexity ?complexity))
   =>
   (printout t "PROD: FILL " ?machine " with " ?cap-color " cap from shelf" crlf)
   (bind ?task-id (random-id))
@@ -140,6 +141,7 @@
     (state ~DOWN&~BROKEN))
   (base-station (name ?bs) (active-side ?bs-side) (fail-side ?fs&:(neq ?bs-side ?fs)))
   (found-tag (name ?bs))
+  (or (prefill-rs) (produce-complexity ?complexity&:(neq ?complexity C0)))
   ;check that the task was not rejected before
   (not (and (task (name fill-rs) (state rejected) (id ?rej-id))
             (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 5))) (machine ?rs))))
@@ -270,7 +272,7 @@
   (team-color ?team-color&~nil)
   (holding NONE)
   (machine (mtype BS) (name ?bs) (team ?team-color) (state READY-AT-OUTPUT))
-  (base-station (name ?bs) (fail-side ?side))
+  (base-station (name ?bs) (fail-side ?side&~NONE))
   (not (locked-resource (resource ?res&:(eq ?res (sym-cat ?bs "-" ?side)))))
   (not (and (task (name clear-bs) (state rejected) (id ?rej-id))
             (step (name get-output) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?bs))))
@@ -314,11 +316,13 @@
   ;check for open C0 order
   (product (id ?product-id) (rings $?r&:(eq 0 (length$ ?r))) (cap ?cap-color) (base ?base-color))
   ?of <- (order (product-id ?product-id)
+    (complexity ?complexity)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
     (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*)))
     (end ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-LATEST-TIME*)))
     (in-production 0) (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   )
+  (produce-complexity ?complexity)
   =>
   (printout warn "TODO: production durations not yet implemented" crlf)
   (printout t "PROD: PRODUCE C0 with " ?cap-color " cap at " ?cs crlf)
@@ -393,6 +397,7 @@
     (end ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-CX-LATEST-TIME*)))
     (in-production 0) (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   )
+  (produce-complexity ?complexity)
   =>
   (printout warn "TODO: production durations not yet implemented")
   (printout t "PROD: Add first ring to Cx with " ?ring-color " ring at " ?rs crlf)
@@ -469,6 +474,7 @@
     (end ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-CX-LATEST-TIME*)))
     (in-production 1) (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   )
+  (produce-complexity ?complexity)
   =>
   (printout t "PROD: Add additional ring to Cx with " ?ring-color " ring at " ?rs crlf)
   (bind ?task-id (random-id))
@@ -533,11 +539,13 @@
             (step (name insert) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 5))) (machine ?rs))))
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-ADD-ADDITIONAL-RING-WAITING*))))
   ?of <- (order (product-id ?product-id)
+    (complexity ?complexity)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
     (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-CX-AHEAD-TIME*)))
     (end ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-CX-LATEST-TIME*)))
     (in-production 1) (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   )
+  (produce-complexity ?complexity)
   =>
   (printout t "PROD: Add additional ring to Cx with " ?ring-color " ring at " ?rs crlf)
   (printout t "Waiting with retrieved product before mounting to free RS" crlf)
@@ -604,11 +612,13 @@
     (cap ?cap-color)
   )
   ?of <- (order (product-id ?product-id)
+    (complexity ?complexity)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
     (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-CX-AHEAD-TIME*)))
     (end ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-CX-LATEST-TIME*)))
     (in-production 1) (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   )
+  (produce-complexity ?complexity)
   =>
   (printout warn "TODO: production durations not yet implemented")
   (printout t "PROD: PRODUCE Cx with " ?cap-color " cap at " ?cs crlf)
