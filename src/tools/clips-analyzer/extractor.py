@@ -102,31 +102,31 @@ filename = "../../../bin/debug1.log"
 #    filename=sys.argv[1]
 game_list = extract_from_file(filename)
 interactive(game_list)
-start = False
-retract_dict = {}
-assert_dict = {}
-switch = None
-for i,line in enumerate(game_list[0]):
-#    print("Relative line: "+ str(line.relc) + ", absolute line: "+ str(line.absc)+ ", attribute: "+ str(line.attr) +", content: "+ line.cont)
-#    print("Relative line: "+ str(line.relc) + ", absolute line: "+ str(line.absc)+ ", attribute: "+ str(line.attr) +", content: "+ line.stripped_content)
-    if 'f-0' in line.stripped_content:
-        start=True
-    if start:
-        if 'assert' in line.attr or 'retract' in line.attr:
-            switch = 'assert'
-            temp = re.search('(<\=\=\s)(f\-[0-9]*)\s*(.*)',line.stripped_content)
-            if temp == None:
-                switch = 'retract'
-                temp = re.search('(\=\=>\s)(f\-[0-9]*)\s*(.*)',line.stripped_content)
+def setup(game_number=0):
+    start = False
+    retract_dict = {}
+    assert_dict = {}
+    switch = None
+    for i,line in enumerate(game_list[game_number]):
+    #    print("Relative line: "+ str(line.relc) + ", absolute line: "+ str(line.absc)+ ", attribute: "+ str(line.attr) +", content: "+ line.cont)
+    #    print("Relative line: "+ str(line.relc) + ", absolute line: "+ str(line.absc)+ ", attribute: "+ str(line.attr) +", content: "+ line.stripped_content)
+        if 'f-0' in line.stripped_content:
+            start=True
+        if start:
+            if 'assert' in line.attr or 'retract' in line.attr:
+                switch = 'assert'
+                temp = re.search('(<\=\=\s)(f\-[0-9]*)\s*(.*)',line.stripped_content)
+                if temp == None:
+                    switch = 'retract'
+                    temp = re.search('(\=\=>\s)(f\-[0-9]*)\s*(.*)',line.stripped_content)
 
-            a,b = temp.group(2), temp.group(3)
-            fused = {i:[a,b]}
-            if switch == 'assert':
-                assert_dict.update(fused)
-            else:
-                retract_dict.update(fused)
-#print(assert_dict)
-#print(retract_dict)
+                a,b = temp.group(2), temp.group(3)
+                fused = {i:[a,b]}
+                if switch == 'assert':
+                    assert_dict.update(fused)
+                else:
+                    retract_dict.update(fused)
+
 def current_factbase(assert_dict, retract_dict, point_in_time):
     factbase = []
     for timestep in range(point_in_time+1):
@@ -138,7 +138,7 @@ def current_factbase(assert_dict, retract_dict, point_in_time):
     print ('Facts')
     for f_ in factbase:
         print(f_[1])
-current_factbase(assert_dict,retract_dict,1500)
+#current_factbase(assert_dict,retract_dict,1500)
 
 # Was stand wann und wann in der factbase
 # Filter: Positivliste
@@ -152,8 +152,15 @@ parser=argparse.ArgumentParser()
 parser.add_argument("-c", "--contains", type=str, help="Filters whether a keyword is in the output")
 parser.add_argument("-s", "--slotname", type=str, help="Filters for a specific slotname")
 parser.add_argument("-g", "--game", type=int, help="Shows a specific game")
-parser.add_argument("-l", "--list", help="Lists all games found")
+parser.add_argument("-l", "--list", action="store_true", help="Lists all games found")
 parser.add_argument("-t", "--time", type=int, help="Shows factbase at a specific point in time, counted from the start")
 parser.add_argument("-T", "--Time", type=int, help="Shows factbase at a specific point in time (absolute time)")
-parser.parse_args()
+args = parser.parse_args()
 
+if args.list:
+    for i, _ in enumerate(game_list):
+        print(i)
+if args.game>=0:
+    setup()
+    current_factbase(assert_dict,retract_dict,1500)
+    
