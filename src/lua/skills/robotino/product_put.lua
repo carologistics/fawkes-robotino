@@ -41,20 +41,20 @@ local x_distance = 0.315
 if config:exists("/skills/approach_distance_conveyor/x") then
       x_distance = config:get_float("/skills/approach_distance_conveyor/x")
 end
-x_distance= x_distance + 0.02
+x_distance= x_distance
 
 fsm:define_states{ export_to=_M,
    {"DRIVE_FORWARD", SkillJumpState, skills={{approach_mps}},
       final_to="OPEN_GRIPPER", fail_to="FAILED"},
-   --{"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
-   --   final_to="WAIT", fail_to="FAILED"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
-      final_to="WAIT", fail_to="WAIT"},
+      final_to="WAIT", fail_to="MOVE_BACK_FAILED"},
    {"WAIT", JumpState},
    {"MOVE_BACK", SkillJumpState, skills={{motor_move}},
-      final_to="CLOSE_GRIPPER", fail_to="FAILED"},
+      final_to="CLOSE_GRIPPER", fail_to="CLOSE_GRIPPER"},
+   {"MOVE_BACK_FAILED", SkillJumpState, skills={{motor_move}},
+      final_to="FAILED", fail_to="FAILED"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}},
-      final_to="FINAL", fail_to="FAILED"},
+      final_to="FINAL", fail_to="FINAL"},
 }
 
 fsm:add_transitions{
@@ -72,6 +72,10 @@ function OPEN_GRIPPER:init()
 end
 
 function MOVE_BACK:init()
+   self.args["motor_move"].x = -0.2
+end
+
+function MOVE_BACK_FAILED:init()
    self.args["motor_move"].x = -0.2
 end
 
