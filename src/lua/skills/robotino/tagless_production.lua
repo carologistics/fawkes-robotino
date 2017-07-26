@@ -4,7 +4,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "tagless_production"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"tagless_mps_align","goto","approach_test"}
+depends_skills     = {"tagless_mps_align","goto","approach_test","shelf_pick"}
 depends_interfaces = {
 }
 
@@ -101,7 +101,7 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"MPS_ALIGN_4", SkillJumpState, skills={{tagless_mps_align}}, final_to="SKILL_TAGLESS_SHELF_PICK", fail_to="FAILED"},
    {"DECIDE_SHELF_PICK", JumpState},
    {"SHELF_PICK_SUC",JumpState},
-   {"SKILL_TAGLESS_SHELF_PICK", SkillJumpState, skills={{approach_test}}, final_to="SHELF_PICK_SUC", fail_to="DECIDE_SHELF_PICK"},
+   {"SKILL_TAGLESS_SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="SHELF_PICK_SUC", fail_to="DECIDE_SHELF_PICK"},
    {"SKILL_TAGLESS_PRODUCT_PUT",SkillJumpState, skills={{approach_test}}, final_to="DRIVE_TO_OTHER_SIDE", fail_to="FAILED"},
    {"SKILL_TAGLESS_PRODUCT_PICK",SkillJumpState,skills={{approach_test}}, final_to="FINAL", fail_to="FAILED"},
    --{"SKILL_TAGLESS_PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
@@ -229,14 +229,15 @@ end
 
 function SKILL_TAGLESS_SHELF_PICK:init()
 
-  self.args["approach_test"].side = "input"
-  self.args["approach_test"].option = "pick"
-  self.args["approach_test"].shelf =  self.fsm.vars.currShelf
-
-  self.args["approach_test"].alignX1 = self.fsm.vars.alignX1
-  self.args["approach_test"].alignY1 = self.fsm.vars.alignY1
-  self.args["approach_test"].alignX2 = self.fsm.vars.alignX2
-  self.args["approach_test"].alignY2 = self.fsm.vars.alignY2
+    self.args["shelf_pick"].slot = "MIDDLE"
+--  self.args["approach_test"].side = "input"
+--  self.args["approach_test"].option = "pick"
+--  self.args["approach_test"].shelf =  self.fsm.vars.currShelf
+--
+--  self.args["approach_test"].alignX1 = self.fsm.vars.alignX1
+--  self.args["approach_test"].alignY1 = self.fsm.vars.alignY1
+--  self.args["approach_test"].alignX2 = self.fsm.vars.alignX2
+--  self.args["approach_test"].alignY2 = self.fsm.vars.alignY2
 
 end
 
