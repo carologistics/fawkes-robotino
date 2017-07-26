@@ -153,6 +153,7 @@
   (slot state (type SYMBOL) (allowed-values IDLE BROKEN PREPARED PROCESSING
 					    PROCESSED READY-AT-OUTPUT WAIT-IDLE DOWN))
   (slot sync-id (type INTEGER) (default 0))
+  (slot fail-count (type INTEGER) (default 0))
 )
 
 (deftemplate base-station
@@ -231,8 +232,8 @@
   (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
   (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed)
         (default proposed))
-  (slot priority (type INTEGER) (default 0))
-  ;a task consists of multiple steps
+  (slot priority (type INTEGER) (default 0))	  
+;a task consists of multiple steps
   (slot current-step (type INTEGER) (default 0))
   (multislot steps (type INTEGER)) ;in chronological order refers to the ids of the steps
 )
@@ -346,6 +347,19 @@
   (slot gate (type INTEGER) (allowed-values 1 2 3))
   (slot cs-operation (type SYMBOL) (allowed-symbols MOUNT_CAP RETRIEVE_CAP))
   (slot side (type SYMBOL) (allowed-symbols INPUT OUTPUT))
+)
+
+(deftemplate mps-reset
+ (slot machine (type SYMBOL) (allowed-symbols
+    C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS
+    M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS
+  ))
+ (multislot timer (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
+ ; lock that the robot needs before sending the instruction
+ ; (NONE for no needed lock)
+ (slot lock (type SYMBOL) (default NONE))
+ ;times sent
+ (slot seq (type INTEGER) (default 0))
 )
 
 (deftemplate exp-current-zone
