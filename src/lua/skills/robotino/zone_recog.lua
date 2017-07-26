@@ -68,52 +68,10 @@ function speak(...)
 end
 
 function calc_final_result(self) 
-    local lcount = 0 
-    result = {}
-    for i=0,MPS_COUNT do
-      result[i] = 0
+    if max~=j and self.fsm.vars.i*2>=8 then
+      self.fsm.vars.i = self.fsm.vars.i * 2
+      return false
     end
-    
-    local l = self.fsm.vars.results
-    
-    while l do 
-	    result[l.value] = result[l.value]+1
-	    l = l.next
-        lcount = lcount+1  
-    end
-    
-    max = 0
-
-    for j=0,MPS_COUNT do 
-        if result[j] > result[max] then
-           max = j
- 	end 
-    end
-   
-    speak("I looked at the station %d times",lcount)
-    if max == 0 or lcount < 2 then
-    	 self.fsm.vars.i = self.fsm.vars.i * 2
-
-        return false
-    end
-
-    for j=0,MPS_COUNT do
-	    if result[j] == result[max] then
-		    if max~=j and self.fsm.vars.i*2>=8 then
-			     self.fsm.vars.i = self.fsm.vars.i * 2
-
-                return false
-		    else
-			    max = j
-		    end
-	    end
-    end
-
-    recognition_result = MPS_TYPES[max+1]
-    
-    speak("The result of the recognition is: %s", recognition_result) 
-    --printf("The result of zone_recog is %s",recognition_result)
-
     return true
 
 end
@@ -181,8 +139,6 @@ fsm:add_transitions{
 
 function INIT:init()
 	self.fsm.vars.i = 1
-	self.fsm.vars.resultCount = 0
-	self.fsm.vars.results = nil
 	self.fsm.vars.count = 0
 end
 
@@ -203,8 +159,6 @@ end
 
 
 function CHOOSE_NEXT:init()
-     self.fsm.vars.results = {next = self.fsm.vars.results, value = mps_recognition_if:mpstype()};
-  self.fsm.vars.count = self.fsm.vars.count + 1
   
 end
 

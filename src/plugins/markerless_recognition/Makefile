@@ -30,7 +30,7 @@ OBJS_all    = $(OBJS_markerless)
 
 ifeq ($(HAVE_TF),1)
   CFLAGS  += $(CFLAGS_TF)  -DIS_SLIM_BUILD -std=c++11
-  LDFLAGS += $(LDFLAGS_TF)  -L$(HOME)/tensorflow/bazel-bin/tensorflow -ltensorflow -lstdc++ -lm -lz  -ldl
+  LDFLAGS += $(LDFLAGS_TF)  -L$(HOME)/tensorflow/bazel-bin/tensorflow -ltensorflow -lstdc++ -lm -lz  -ldl -lstdc++fs
 
   PLUGINS_all = $(PLUGINDIR)/markerless.$(SOEXT)
 

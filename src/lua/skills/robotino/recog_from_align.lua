@@ -102,35 +102,11 @@ end
 
 
 function take_result(self) 
-	self.fsm.vars.results[self.fsm.vars.resultCounter] = mps_recognition_if:mpstype() 
-	self.fsm.vars.resultCounter = self.fsm.vars.resultCounter + 1
   return true
 end
 
 function calc_result(self) 
 	
-    local  result = {}
-    
-    for i=0,5 do
-      result[i] = 0
-    end
-
-
-    for i=0, self.fsm.vars.level do 
- 	result[self.fsm.vars.results[i]] = result[self.fsm.vars.results[i]] + 1 
-
-    end
-
-
-    max = 0
-
-    for j=0,5 do
-        if result[j] >= result[max] then
-           max = j
-        end
-    end
-
-    mps_recognition_if_:set_mpstype(max) 
 
     return true  
 end
@@ -157,11 +133,6 @@ fsm:add_transitions{
 
 function INIT:init() 
 
-	self.fsm.vars.results = {} 
-
-	for i =1, self.fsm.vars.level do 
-		self.fsm.vars.results[i] = 0 
-	end 
 
 	 self.fsm.vars.resultCounter = 0
          self.fsm.vars.angle = 0

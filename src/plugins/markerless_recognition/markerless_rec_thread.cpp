@@ -11,6 +11,8 @@
 #include <pthread.h>
 #include <string>
 #include <unistd.h>
+#include <dirent.h>
+#include <experimental/filesystem>
 
 #define CFG_PREFIX "/plugins/markerless_recognition/"
 #define IMAGE_CHANNELS 3
@@ -23,6 +25,8 @@ using namespace cv;
  * Thread to print recognized MPS
  * @author Sebastian Schönitz, Daniel Habering, Carsten Stoffels
  */
+
+int imageCount = 0;
 
 /** Constructor. */
 MarkerlessRecognitionThread::MarkerlessRecognitionThread()
@@ -222,8 +226,70 @@ int MarkerlessRecognitionThread::recognize_mps() {
 }
 
 
+void MarkerlessRecognitionThread::takePictureFromFVcamera(){ 
+
+        logger->log_info(name(),"Taking Picture");
+	
+	//get img form fv
+        fv_cam->capture();
+        firevision::convert(fv_cam->colorspace(),
+                                 firevision::YUV422_PLANAR,
+                                 fv_cam->buffer(),
+                                 image_buffer,
+                                 this->img_width,
+                                 this->img_height);
+        fv_cam->dispose_buffer();
+        //convert img
+        firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
+        visionMat = cvarrToMat(ipl);
+	std::string imagePath = vpath + "_" + std::to_string(imageCount++) + ".jpg";
+        imwrite(imagePath.c_str(), visionMat);
+		
+        mps_rec_if_->set_final(true);
+
+}
+
+
+
 void MarkerlessRecognitionThread::init(){
-      	
+	std::string imagePath = "/tmp/";
+	int max = 0;
+	namespace fs = std::experimental::filesystem;
+	
+	for (auto & p : fs::directory_iterator(imagePath)) {
+		std::cout << p << std::endl;
+		std::string sub = p.path().string().substr(0,12);
+		std::cout << "Sub: " << sub << std::endl;
+		if(sub.compare("/tmp/vision_")==0){
+			std::string numString = p.path().string().substr(12,p.path().string().length()-12-4);
+			std::cout << "Num: " << numString << std::endl;
+			int numInt = atoi(numString.c_str());
+			if(numInt>max) max = numInt;
+		}
+	}
+	imageCount = max+1;
+
+/*
+	DIR *dir;
+	struct dirent *ent;
+	if((dir = opendir(imagePath.c_str()))!=NULL){
+
+		while ((ent =readdir(dir)) != NULL){
+			std::string sub = (ent->d_name).substring(0,7);
+			if(sub.compare("vision_")==0){
+				std::string numString = (ent->d_name).substring(7,ent->d_name.length()-7);
+				int numInt = atoi(numString);
+				if(numInt > max) max = numInt;
+			}
+		}	
+		close(dir);
+		imageCount = max+1;
+	}
+	else {
+		logger->log_info(name(), "Can not find image storage location");
+	}
+*/
+
 	home.assign(getenv("HOME"),strlen(getenv("HOME")));   
 	mps_rec_if_ = blackboard->open_for_writing<MPSRecognitionInterface>("/MarkerlessRecognition");
 
@@ -281,75 +347,7 @@ void MarkerlessRecognitionThread::init(){
         	        cvSize(this->img_width,this->img_height),
                 	IPL_DEPTH_8U,IMAGE_CHANNELS);
 
-	//Open shared library
-	std::string lib = home + "/tensorflow/bazel-bin/tensorflow/tf_wrapper/tensorflowWrapper.so";
-    	handle = dlopen(lib.c_str(),RTLD_NOW);
-	if(!handle){
-        		fprintf(stderr, "%s\n", dlerror());
-		
-	}
-
-	
-	//set function pointer
-        *(void**)(&evaluate) = dlsym(handle,"evaluateImage");
-	char* error;
-	if((error=dlerror())!=NULL) {
-		fprintf(stderr, "%s\n", error);
-	}
-
-	init_function init_fiveGraph;
-	init_function init_twoGraph;
-
-	*(void**)(&init_fiveGraph) = dlsym(handle,"init_fiveGraph");
-	if((error=dlerror())!=NULL) {
-		fprintf(stderr, "%s\n", dlerror());
-	}
-
-	*(void**)(&init_twoGraph) = dlsym(handle,"init_twoGraph");
-	if((error=dlerror())!=NULL) {
-		fprintf(stderr, "%s\n", dlerror());
-	}
-
-	
-	//path to the trained graph
-    	std::string grPath = (home) + "/tensorflow/TrainedData/output_graph_600.pb";
-	
-	//path to the the trained labels
-	std::string laPath = (home) + "/tensorflow/TrainedData/output_labels_600.txt";
-
-	init_fiveGraph(grPath.c_str(),laPath.c_str());
-	
-	//path to the trained graph
-    	grPath = (home) + "/tensorflow/TrainedData/output_graph_RSCS.pb";
-	
-	//path to the the trained labels
-	laPath = (home) + "/tensorflow/TrainedData/output_labels_RSCS.txt";
-
-
-	init_twoGraph(grPath.c_str(),laPath.c_str());
-}
-
-
-
-void MarkerlessRecognitionThread::takePictureFromFVcamera(){ 
-
-        logger->log_info(name(),"Taking Picture");
-	
-	//get img form fv
-        fv_cam->capture();
-        firevision::convert(fv_cam->colorspace(),
-                                 firevision::YUV422_PLANAR,
-                                 fv_cam->buffer(),
-                                 image_buffer,
-                                 this->img_width,
-                                 this->img_height);
-        fv_cam->dispose_buffer();
-        //convert img
-        firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
-        visionMat = cvarrToMat(ipl);
-        imwrite(vpath.c_str(), visionMat);
-		
-
+	takePictureFromFVcamera();
 }
 
 void MarkerlessRecognitionThread::loop(){
@@ -373,8 +371,7 @@ void MarkerlessRecognitionThread::loop(){
 			mps_rec_if_->write();
 
  			logger->log_info(name(), "Start Recognition");
-			recognize_mps();
-    		
+    			takePictureFromFVcamera();
     		}	
    	 	else {
     			logger->log_warn(name(), "Unknown message received");
