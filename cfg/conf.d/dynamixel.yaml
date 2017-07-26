@@ -38,7 +38,7 @@ dynamixel:
 
     # prevent alarm shutdown to turn into the direction of the torque
     # when the particular servo is in overload condition
-    prevent_alarm_shutdown: true
+    prevent_alarm_shutdown: false
 
     # normalized value of torque limit to measure an overload condition
     prevent_alarm_shutdown_threshold: 0.6
