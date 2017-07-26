@@ -47,9 +47,9 @@ local TOLERANCE_Z = 0.001
 local MAX_TRIES = 20
 --local X_DEST_POS = 0.08
 local X_DEST_POS = 0.16
-local Y_DEST_POS = 0.0
-local Z_DEST_POS = 0.056
-local Z_DEST_POS_WITH_PUCK = 0.06
+local Y_DEST_POS = 0.005
+local Z_DEST_POS = 0.06
+local Z_DEST_POS_WITH_PUCK = 0.064
 local cfg_frame_ = "gripper"
 
 function no_writer()
