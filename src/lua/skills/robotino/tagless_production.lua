@@ -233,6 +233,11 @@ function SKILL_TAGLESS_SHELF_PICK:init()
   self.args["approach_test"].option = "pick"
   self.args["approach_test"].shelf =  self.fsm.vars.currShelf
 
+  self.args["approach_test"].alignX1 = self.fsm.vars.alignX1
+  self.args["approach_test"].alignY1 = self.fsm.vars.alignY1
+  self.args["approach_test"].alignX2 = self.fsm.vars.alignX2
+  self.args["approach_test"].alignY2 = self.fsm.vars.alignY2
+
 end
 
 
@@ -240,11 +245,19 @@ end
 function SKILL_TAGLESS_PRODUCT_PICK:init()
   self.args["approach_test"].side = "input"
   self.args["approach_test"].option = "pick"
+  self.args["approach_test"].alignX1 = self.fsm.vars.alignX1
+  self.args["approach_test"].alignY1 = self.fsm.vars.alignY1
+  self.args["approach_test"].alignX2 = self.fsm.vars.alignX2
+  self.args["approach_test"].alignY2 = self.fsm.vars.alignY2
 end
 
 function SKILL_TAGLESS_PRODUCT_PUT:init()
   self.args["approach_test"].side = "output"
   self.args["approach_test"].option = "put"
+   self.args["approach_test"].alignX1 = self.fsm.vars.alignX1
+   self.args["approach_test"].alignY1 = self.fsm.vars.alignY1
+   self.args["approach_test"].alignX2 = self.fsm.vars.alignX2
+   self.args["approach_test"].alignY2 = self.fsm.vars.alignY2
 end
 
 --function SKILL_PRODUCT_PICK:init()

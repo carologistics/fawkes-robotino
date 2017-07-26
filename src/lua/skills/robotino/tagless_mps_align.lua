@@ -51,7 +51,7 @@ skillenv.skill_module(_M)
 
 -- Constants
 MIN_VIS_HIST = 0	-- negative value, because noisy lines can be approached and we hope for better laserline visibility after approach
-DIST_TO_MPS = 0.4+0.46/2
+DIST_TO_MPS = 0.6+0.46/2
 X1=-6.
 X2=6.
 Y1=0.
@@ -98,7 +98,7 @@ function get_best_line(line_list)
       end
    end
 --   printf("distance to closest laserline:%f",min_dist)
-   
+
    return best_line
 end
 
@@ -110,8 +110,8 @@ function get_position_infront_line(line)   -- calculate a point infront of the d
    target={m[1]+math.cos(normal_ori)*DIST_TO_MPS,m[2]+math.sin(normal_ori)*DIST_TO_MPS}
    target_in_base_link = tfm.transform({x=target[1], y=target[2], ori=normal_ori-math.pi}, line:frame_id(), "/base_link")
 
-   local length= a[1] - a[2]; 
-   printf("length of line %s",length); 
+   local length= a[1] - a[2];
+   printf("length of line %s",length);
    return target_in_base_link.x, target_in_base_link.y, target_in_base_link.ori
 end
 
