@@ -55,10 +55,13 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"MOVE_BACK", SkillJumpState, skills={{motor_move}},
       final_to="WAIT_FOR_GRIPPER", fail_to="FAILED"},
    {"WAIT_FOR_GRIPPER", JumpState},
+   {"OPEN_GRIPPER_SECOND", SkillJumpState, skills={{ax12gripper}},
+      final_to="ADJUST_HEIGHT", fail_to="FAIL_SAFE"},
    {"ADJUST_HEIGHT", SkillJumpState, skills={{ax12gripper}},
       final_to="CLOSE_GRIPPER_SECOND", fail_to="FAIL_SAFE"},
    {"CLOSE_GRIPPER_SECOND", SkillJumpState, skills={{ax12gripper}},
-      final_to="MOVE_BACK_SECOND", fail_to="FAIL_SAFE"},
+      final_to="WAIT_FOR_GRIPPER_SECOND", fail_to="FAIL_SAFE"},
+   {"WAIT_FOR_GRIPPER_SECOND", JumpState},
    {"MOVE_BACK_SECOND", SkillJumpState, skills={{motor_move}},
       final_to="WAIT_FOR_INTERFACE", fail_to="FAILED"},
    {"WAIT_FOR_INTERFACE", JumpState},
@@ -74,7 +77,8 @@ fsm:add_transitions{
    {"CHECK_PUCK", "CENTER_GRIPPER", cond="gripper_if:is_holds_puck()", desc="Got a puck"},
    {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="GOT NO PUCK!"},
    {"WAIT_FOR_INTERFACE", "CHECK_PUCK", timeout=5},
-   {"WAIT_FOR_GRIPPER", "ADJUST_HEIGHT", timeout=1},
+   {"WAIT_FOR_GRIPPER", "OPEN_GRIPPER_SECOND", timeout=1},
+   {"WAIT_FOR_GRIPPER_SECOND", "MOVE_BACK_SECOND", timeout=3},
 }
 
 function OPEN_GRIPPER:init()
@@ -106,6 +110,11 @@ function ADJUST_HEIGHT:init()
    printf("adjusting height")
 end
 
+function OPEN_GRIPPER_SECOND:init()
+   self.args["ax12gripper"].command = "OPEN"
+   printf("open gripper")
+end
+
 function CLOSE_GRIPPER_SECOND:init()
    self.args["ax12gripper"].command = "CLOSE_TIGHT"
    printf("close gripper")
@@ -117,5 +126,5 @@ function CENTER_GRIPPER:init()
 end
 
 function FAIL_SAFE:init()
-   self.args["ax12gripper"].x = -0.1
+   self.args["motor_move"].x = -0.1
 end
