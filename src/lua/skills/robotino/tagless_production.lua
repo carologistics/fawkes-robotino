@@ -61,6 +61,7 @@ end
 
 function shelf_decide(self)
 
+
   if self.fsm.vars.pickedShelf == false then
 
     printf("picked shelf false")
@@ -101,12 +102,12 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"DECIDE_SHELF_PICK", JumpState},
    {"SHELF_PICK_SUC",JumpState},
    {"SKILL_TAGLESS_SHELF_PICK", SkillJumpState, skills={{approach_test}}, final_to="SHELF_PICK_SUC", fail_to="DECIDE_SHELF_PICK"},
-   {"SKILL_TAGLESS_PRODUCT_PICK",SkillJumpState, skills={{approach_test}}, final_to="DRIVE_TO_OTHER_SIDE", fail_to="FAILED"},
-   {"SKILL_TAGLESS_PRODUCT_PUT",SkillJumpState,skills={{approach_test}}, final_to="FINAL", fail_to="FAILED"},
+   {"SKILL_TAGLESS_PRODUCT_PUT",SkillJumpState, skills={{approach_test}}, final_to="DRIVE_TO_OTHER_SIDE", fail_to="FAILED"},
+   {"SKILL_TAGLESS_PRODUCT_PICK",SkillJumpState,skills={{approach_test}}, final_to="FINAL", fail_to="FAILED"},
    --{"SKILL_TAGLESS_PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
    {"DRIVE_TO_OTHER_SIDE",SkillJumpState,skills={{goto}}, final_to="MPS_ALIGN_OUTPUT", fail_to="FAILED"},
-   {"MPS_ALIGN_OUTPUT", SkillJumpState, skills={{tagless_mps_align}}, final_to="SKILL_TAGLESS_PRODUCT_PUT", fail_to="FAILED"},
-   {"MPS_ALIGN_PRODUCT_PICK", SkillJumpState, skills={{tagless_mps_align}}, final_to="SKILL_TAGLESS_PRODUCT_PICK",fail_to="FAILED"},
+   {"MPS_ALIGN_OUTPUT", SkillJumpState, skills={{tagless_mps_align}}, final_to="SKILL_TAGLESS_PRODUCT_PICK", fail_to="FAILED"},
+   {"MPS_ALIGN_PRODUCT_PUT", SkillJumpState, skills={{tagless_mps_align}}, final_to="SKILL_TAGLESS_PRODUCT_PUT",fail_to="FAILED"},
    {"SKILL_REALIGN_INPUT", SkillJumpState, skills={{tagless_mps_align}}, final_to="SKILL_TAGLESS_SHELF_PICK", fail_to="FAILED"},
 }
 
@@ -115,7 +116,7 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond=true},
 --   {"SKILL_REALIGN_INPUT","SKILL_TAGLESS_PRODUCT_PICK", cond="self.fsm.vars.pickedShelf == true" },
 --   {"SKILL_REALIGN_INPUT", "SKILL_TAGLESS_SHELF_PICK", cond=true},
-   {"DECIDE_SHELF_PICK", "MPS_ALIGN_PRODUCT_PICK", cond=shelf_decide},
+   {"DECIDE_SHELF_PICK", "MPS_ALIGN_PRODUCT_PUT", cond=true}, --shelf_decide
    {"DECIDE_SHELF_PICK", "SKILL_REALIGN_INPUT", cond=true},
    {"SHELF_PICK_SUC","DECIDE_SHELF_PICK", cond=shelf_suc},
 
