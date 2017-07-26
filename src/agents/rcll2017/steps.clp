@@ -683,7 +683,7 @@ the waiting state until we can use it again."
   (skill-to-execute (skill get_product_from) (args $?args) (target ?mps))
   ?wfl <- (wait-for-lock (priority ?p) (res ?mps))
   =>
-   input or output side?
+  ; input or output side?
   (bind ?navpoint (sym-cat ?navpoint "-O"))
   (if (or (member$ input ?args) (member$ shelf ?args)) then
     (bind ?navpoint (sym-cat ?navpoint "-I"))
