@@ -179,8 +179,9 @@ game_number = 2
 starttime = 0
 
 starttime = game_list[game_number][0].time
-for line in game_list[game_number]:
-    line.calculate_gametime(starttime)
+for i in range(len(game_list)):
+    for line in game_list[i]:
+        line.calculate_gametime(starttime)
 for line in game_list[game_number]:
     if "fire" == line.attr:
         pass
@@ -198,7 +199,7 @@ def show_rules_around(game, game_time, timediff=0):
 
 
 game = game_list[game_number]
-show_rules_around(game, 123, 100)
+#show_rules_around(game, 123, 100)
 
 
 def show_times_when_rule_fired(game, rulename):
@@ -206,10 +207,11 @@ def show_times_when_rule_fired(game, rulename):
     for line in game:
         if line.name is not None:
             if rulename in line.name:
-                print(str(line.game_time) + " sec")
+                print(str(line.game_time) + " sec = " + str(line.game_time//60)+" min and "
+                      +str(line.game_time%60)+" sec -> id: " + str(line.relc))
 
 
-print("Startzeit: " + str(starttime))
+#print("Startzeit: " + str(starttime))
 for i, line in enumerate(game_list[game_number]):
     # print("Relative line: "+ str(line.relc) + ", absolute line: "+ str(line.absc)+ ", attribute: "+ str(line.attr) +", content: "+ line.cont)
     # print("Relative line: "+ str(line.relc) + ", absolute line: "+ str(line.absc)+ ", attribute: "+ str(line.attr) +", content: "+ line.stripped_content)
@@ -266,6 +268,7 @@ parser.add_argument("-t", "--time", type=int, help="Shows factbase at a specific
 parser.add_argument("-T", "--Time", type=int, help="Shows rules at a given time")
 parser.add_argument("-d", "--diff", type=int, help="Provides a certain fuzziness")
 parser.add_argument("-r", "--rule", type=str, help="Shows time of rules fired")
+parser.add_argument("-i", "--id", type=int, help="Shows factbase corresponding to this id ")
 args = parser.parse_args()
 
 
@@ -287,14 +290,22 @@ if args.list:
     list_games()
 if args.game is not None:
     if type(args.game) is int and args.game >= 0:
-        if args.time is not None:
-            current_factbase(assert_dict, retract_dict, args.time)
+        if args.rule is not None:
+            show_times_when_rule_fired(game_list[args.game], args.rule)
+        if args.Time is not None:
+            difftime = 0
+            if args.diff is not None:
+                difftime = args.diff
+            show_rules_around(game_list[args.game], args.Time, difftime)
+        if args.id is not None:
+            fb = current_factbase(assert_dict, retract_dict, args.id)
+            if args.contains is not None:
+                new_fb = list(filter(lambda x: args.contains in x[1], fb))
+                for f in new_fb:
+                    print(f[0] + " : " + f[1])
+            else:
+                for f in fb:
+                    print(f[0] + " : " + f[1])
 
-    if args.rule is not None:
-        show_times_when_rule_fired(args.game, args.rule)
-    if args.Time is not None:
-        difftime = 0
-        if args.diff is not None:
-            difftime = args.diff
-        show_rules_around(args.game, args.Time, difftime)
+
 
