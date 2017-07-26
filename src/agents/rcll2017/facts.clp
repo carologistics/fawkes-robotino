@@ -578,4 +578,12 @@
   (mirror-orientation (cyan 225) (magenta 315))
   (mirror-orientation (cyan 270) (magenta 270))
   (mirror-orientation (cyan 315) (magenta 225))
+
+  (insertion-zone M-Z51)
+  (insertion-zone M-Z61)
+  (insertion-zone M-Z71)
+
+  (insertion-zone C-Z51)
+  (insertion-zone C-Z61)
+  (insertion-zone C-Z71)
 )
