@@ -273,7 +273,7 @@ fsm:define_states{ export_to=_M,
    {"WAIT_FOR_SENORS", JumpState},
    {"FIND_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
    {"PICK_VISTA_POINT", JumpState},
-   {"APPROACH_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
+   {"GOTO_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
    {"GOTO_VISTA_POINT", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
    {"WAIT_AMCL", JumpState}
 }
@@ -284,19 +284,16 @@ fsm:add_transitions{
    {"INIT", "TURN", cond="local_bearing(vars.x, vars.y) > CAM_ANGLE"},
    {"INIT", "WAIT_FOR_TAG", cond=true},
    {"WAIT_FOR_TAG", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"WAIT_FOR_TAG", "WAIT_FOR_SENORS", timeout=2},
+   {"WAIT_FOR_TAG", "WAIT_FOR_SENORS", timeout=1},
    {"WAIT_FOR_SENORS", "WAIT_AMCL", cond=found_tag, desc="found tag"},
    {"WAIT_FOR_SENORS", "FAILED", cond="vars.attempts >= MAX_ATTEMPTS", desc="give up"},
-   {"WAIT_FOR_SENORS", "APPROACH_LINE", cond="vars.line_vista"},
+   {"WAIT_FOR_SENORS", "GOTO_LINE", cond="vars.line_vista"},
    {"WAIT_FOR_SENORS", "FIND_LINE", cond="vars.cluster_vista"},
    {"WAIT_FOR_SENORS", "PICK_VISTA_POINT", timeout=2},
-   {"WAIT_FOR_SENORS", "FAILED", cond="vars.zone_corner_idx > 1 and not vars.found_something", desc="prolly nuthn here"},
    {"PICK_VISTA_POINT", "GOTO_VISTA_POINT", cond="vars.zone_corner"},
    {"PICK_VISTA_POINT", "FAILED", cond="not vars.zone_corner"},
    {"GOTO_VISTA_POINT", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"GOTO_VISTA_POINT", "WAIT_FOR_SENORS", timeout=6},
-   {"APPROACH_LINE", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"APPROACH_LINE", "WAIT_FOR_SENORS", timeout=6},
+   {"GOTO_LINE", "WAIT_AMCL", cond=found_tag, desc="found tag"},
    {"WAIT_AMCL", "WAIT_FOR_SENORS", cond=lost_tag, desc="lost tag"},
    {"WAIT_AMCL", "FINAL", timeout=1},
 }
@@ -431,7 +428,7 @@ function FIND_LINE:init()
 end
 
 
-function APPROACH_LINE:init()
+function GOTO_LINE:init()
    self.fsm.vars.found_something = true
    self.args["goto"] = {
       x = self.fsm.vars.line_vista.x,
