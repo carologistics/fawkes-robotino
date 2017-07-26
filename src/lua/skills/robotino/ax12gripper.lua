@@ -59,16 +59,19 @@ fsm:define_states{
    {"CHECK_GRAB_SUCCESS", JumpState},
    {"RELGOTOZ", SkillJumpState, skills={{gripper_z_align}}, final_to="FINAL", fail_to="FAILED"},
    {"FINAL_AFTER_IF_FINAL", JumpState},
+   {"RESET_AFTER_IF_FINAL", JumpState},
+   {"RESET_TORQUE", JumpState},
 }
 
 -- Transitions
 fsm:add_transitions{
    {"CHECK_WRITER", "FAILED", precond="not gripper_if:has_writer()", desc="No writer for gripper"},
    {"CHECK_WRITER", "COMMAND", cond=true},
-   {"COMMAND", "FINAL", cond="vars.open or vars.center or vars.set_torque"},
+   {"COMMAND", "FINAL", cond="vars.open or vars.set_torque"},
    {"COMMAND", "FAILED", cond="vars.error"},
    {"COMMAND", "WAIT_FOR_GRAB", cond="vars.grab"},
    {"COMMAND", "RELGOTOZ", cond="vars.relgotoz"},
+   {"COMMAND", "RESET_AFTER_IF_FINAL", cond="vars.close_tight or vars_center"},
    {"WAIT_FOR_GRAB", "CHECK_GRAB_SUCCESS", timeout=1.5},
    {"CHECK_GRAB_SUCCESS", "FINAL", cond="gripper_if:is_holds_puck()"},
    {"CHECK_GRAB_SUCCESS", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Gripper doesn't hold a puck"},
@@ -77,6 +80,9 @@ fsm:add_transitions{
    {"CLOSE_GRIPPER_WAIT", "FINAL_AFTER_IF_FINAL", timeout=0.5},
    {"FINAL_AFTER_IF_FINAL", "FINAL", cond="gripper_if:is_final()"},
    {"FINAL_AFTER_IF_FINAL", "FAILED", timeout=3},
+   {"RESET_AFTER_IF_FINAL", "RESET_TORQUE", cond="gripper_if:is_final()"},
+   {"RESET_AFTER_IF_FINAL", "FAILED", timeout=3},
+   {"RESET_TORQUE", "FINAL", cond=true},
 }
 
 function COMMAND:init()
@@ -96,10 +102,6 @@ function COMMAND:init()
       theCenterMessage = gripper_if.CenterMessage:new()
       gripper_if:msgq_enqueue(theCenterMessage)
 
-      torqueMessage = gripper_if.SetTorqueMessage:new()
-      torqueMessage:set_torque(0)
-      gripper_if:msgq_enqueue(torqueMessage)
-
    elseif self.fsm.vars.command == "CLOSE" then
       self.fsm.vars.close = true
       torqueMessage = gripper_if.SetTorqueMessage:new()
@@ -107,7 +109,7 @@ function COMMAND:init()
       gripper_if:msgq_enqueue(torqueMessage)
 
    elseif self.fsm.vars.command == "CLOSE_TIGHT" then
-      self.fsm.vars.close = true
+      self.fsm.vars.close_tight = true
       torqueMessage = gripper_if.SetTorqueMessage:new()
       torqueMessage:set_torque(0.6)
       gripper_if:msgq_enqueue(torqueMessage)
@@ -116,26 +118,25 @@ function COMMAND:init()
       theCloseMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue(theCloseMessage)
 
-      torqueMessage = gripper_if.SetTorqueMessage:new()
-      torqueMessage:set_torque(0)
-      gripper_if:msgq_enqueue(torqueMessage)
-
    elseif self.fsm.vars.command == "GRAB" then
       self.fsm.vars.grab = true
       theCloseMessage = gripper_if.CloseMessage:new()
       theCloseMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue(theCloseMessage)
-   elseif self.fsm.vars.command == "SET_TORQUE" then
+
+  elseif self.fsm.vars.command == "SET_TORQUE" then
       self.fsm.vars.set_torque = true
       torqueMessage = gripper_if.SetTorqueMessage:new()
       torqueMessage:set_torque(self.fsm.vars.torque or 0)
       gripper_if:msgq_enqueue(torqueMessage)
-   elseif self.fsm.vars.command == "RELGOTOZ" then
+
+  elseif self.fsm.vars.command == "RELGOTOZ" then
       self.fsm.vars.relgotoz = true
-   else
+  else
       self.fsm:set_error("No known command")
       self.fsm.vars.error = true
-   end
+  end
+
 end
 
 function RELGOTOZ:init()
@@ -146,4 +147,10 @@ function RELGOTOZ:init()
         self.args["gripper_z_align"].command = "DOWN"
         self.args["gripper_z_align"].num_mm = -self.fsm.vars.z_position
       end
+end
+
+function RESET_TORQUE()
+      torqueMessage = gripper_if.SetTorqueMessage:new()
+      torqueMessage:set_torque(0)
+      gripper_if:msgq_enqueue(torqueMessage)
 end
