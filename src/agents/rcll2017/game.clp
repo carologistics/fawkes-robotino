@@ -59,7 +59,8 @@
   (time $?now)
   (pose (x ?px) (y ?py))
   (not (and
-    (active-robot (name ?name) (x ?x) (y ?y&:(and (< ?y 1) (< (abs ?x) (abs ?px)))))
+    (active-robot (name ?name) (x ?x&:(< (abs ?x) (abs ?px))) (y ?y))
+    (insertion-zone ?z&:(eq ?z (get-zone 0 (create$ ?x ?y))))
     (team-robot ?name)
   ))
   =>
