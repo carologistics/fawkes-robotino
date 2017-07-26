@@ -134,13 +134,14 @@ fsm:define_states{ export_to=_M, closure={
       pose_error=pose_error, tag_visible=tag_visible, MIN_VIS_HIST_TAG=MIN_VIS_HIST_TAG,
       want_search=want_search, line_visible=line_visible },
    {"INIT",                   JumpState},
-   {"CHECK_TAG",              JumpState},
-   {"FIND_TAG",               JumpState},
-   {"SEARCH_LINES",           SkillJumpState, skills={{"motor_move"}}, final_to="CHECK_TAG", fail_to="FAILED"},
-   {"TURN_AROUND",            SkillJumpState, skills={{"motor_move"}}, final_to="CHECK_TAG", fail_to="FAILED"},
+   --{"CHECK_TAG",              JumpState},
+   --{"FIND_TAG",               JumpState},
+   {"SEARCH_LINES",           SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_LINE", fail_to="FAILED"},
+  -- {"TURN_AROUND",            SkillJumpState, skills={{"motor_move"}}, final_to="CHECK_TAG", fail_to="FAILED"},
    {"MATCH_LINE",             JumpState},
    {"NO_LINE",                JumpState},
-   {"SEARCH_TAG_LINE",        SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_LINE", fail_to="CHECK_TAG"},
+
+   {"SEARCH_TAG_LINE",        SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_LINE", fail_to="FAILED"},
    {"ALIGN_FAST",             SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_AVG_LINE", fail_to="FAILED"},
    {"MATCH_AVG_LINE",         JumpState},
    {"ALIGN_PRECISE",          SkillJumpState, skills={{"motor_move"}}, final_to="ALIGN_TURN", fail_to="ALIGN_FAST"},
@@ -149,17 +150,17 @@ fsm:define_states{ export_to=_M, closure={
 
 fsm:add_transitions{
    {"INIT",          "FAILED",          precond="not vars.x", desc="x argument missing"},
-   {"INIT",          "CHECK_TAG",       cond=true},
+   {"INIT",          "SEARCH_LINES",       cond=true},
 
-   {"CHECK_TAG",     "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
-   {"CHECK_TAG",     "FIND_TAG",        timeout=1, desc="no tag"},
+  -- {"CHECK_TAG",     "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
+  -- {"CHECK_TAG",     "FIND_TAG",        timeout=1, desc="no tag"},
 
-   {"FIND_TAG",      "SEARCH_LINES",    cond="want_search() and #vars.interesting_lines > 0", desc="search 4 tag"},
-   {"FIND_TAG",      "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
-   {"FIND_TAG",      "TURN_AROUND",     timeout=1, desc="no interesting lines"},
-   {"FIND_TAG",      "FAILED",          cond="not want_search()"},
+  -- {"FIND_TAG",      "SEARCH_LINES",    cond="want_search() and #vars.interesting_lines > 0", desc="search 4 tag"},
+  -- {"FIND_TAG",      "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
+  -- {"FIND_TAG",      "TURN_AROUND",     timeout=1, desc="no interesting lines"},
+  -- {"FIND_TAG",      "FAILED",          cond="not want_search()"},
 
-   {"SEARCH_LINES",  "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
+    {"SEARCH_LINES",  "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
 
    {"MATCH_LINE",   "ALIGN_FAST",       cond="vars.matched_line and tag_visible(MIN_VIS_HIST_TAG)"},
    {"MATCH_LINE",   "NO_LINE",          timeout=2, desc="lost line"},
@@ -205,8 +206,8 @@ function INIT:init()
 
    self.fsm.vars.interesting_lines = {}
 
-   self.fsm.vars.tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7,
-      tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
+   --self.fsm.vars.tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7,
+  --    tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
 
    self.fsm.vars.search_idx = 0
    self.fsm.vars.globalsearch_done = false
@@ -242,7 +243,7 @@ end
 -- Return all lines which may have the tag we're looking for
 function get_interesting_lines(lines)
    local rv = {}
-   
+
    -- Shallow-copy input table so we don't delete values from it
    local good_lines = {}
    for k,v in pairs(lines) do good_lines[k] = v end
@@ -255,7 +256,7 @@ function get_interesting_lines(lines)
          if matched then good_lines[matched:id()] = nil end
       end
    end
-   
+
    -- Use only lines that have been inspected 0 times or less often than the others
    local max_num_visited = 1
    for k,v in pairs(fsm.vars.lines_visited) do
@@ -283,21 +284,21 @@ function get_interesting_lines(lines)
 end
 
 
-function CHECK_TAG:loop()
-   local tag = tag_utils.iface_for_id(fsm.vars.tags, tag_info, fsm.vars.tag_id)
-   if tag and tag:visibility_history() > MIN_VIS_HIST_TAG then
-      self.fsm.vars.matched_line = match_line(tag, self.fsm.vars.lines)
-   end
-end
+--function CHECK_TAG:loop()
+--   local tag = tag_utils.iface_for_id(fsm.vars.tags, tag_info, fsm.vars.tag_id)--
+--   if tag and tag:visibility_history() > MIN_VIS_HIST_TAG then
+--      self.fsm.vars.matched_line = match_line(tag, self.fsm.vars.lines)
+--   end
+--end
 
 
-function FIND_TAG:init()
-   self.fsm.vars.interesting_lines = get_interesting_lines(self.fsm.vars.lines)
-end
+--function FIND_TAG:init()
+--   self.fsm.vars.interesting_lines = get_interesting_lines(self.fsm.vars.lines)
+--end
 
-function FIND_TAG:loop()
-   self.fsm.vars.interesting_lines = get_interesting_lines(self.fsm.vars.lines)
-end
+--function FIND_TAG:loop()
+--   self.fsm.vars.interesting_lines = get_interesting_lines(self.fsm.vars.lines)
+--end
 
 
 function SEARCH_LINES:init()
@@ -315,23 +316,23 @@ function SEARCH_LINES:init()
       end
    end
 
-   self.fsm.vars.lines_visited[chosen_line:id()] = self.fsm.vars.lines_visited[chosen_line:id()] + 1
-   
+  -- self.fsm.vars.lines_visited[chosen_line:id()] = self.fsm.vars.lines_visited[chosen_line:id()] + 1
+
    print("SEARCH LINES turn ori: " .. ori)
    self.args["motor_move"].ori = ori
    self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
 end
 
 
-function TURN_AROUND:init()
-   print("TURN_AROUND search_idx: " .. self.fsm.vars.search_idx)
-   self.args["motor_move"] = TURN_MOVES[math.mod(self.fsm.vars.search_idx, #TURN_MOVES)+1]
-   self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
+--function TURN_AROUND:init()
+--   print("TURN_AROUND search_idx: " .. self.fsm.vars.search_idx)
+--   self.args["motor_move"] = TURN_MOVES[math.mod(self.fsm.vars.search_idx, #TURN_MOVES)+1]
+--   self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
 
-   for k,v in pairs(self.fsm.vars.lines_visited) do
-      self.fsm.vars.lines_visited[k] = 0
-   end
-end
+--   for k,v in pairs(self.fsm.vars.lines_visited) do
+--      self.fsm.vars.lines_visited[k] = 0
+--   end
+-- end
 
 
 function MATCH_LINE:init()
@@ -369,7 +370,7 @@ function ALIGN_FAST:init()
    printf("center l: %f, %f, %f", center.x, center.y, center.ori)
    local center_bl = tfm.transform(center, "/base_laser", "/base_link")
    local p = llutils.point_in_front(center_bl, self.fsm.vars.x)
-   
+
    printf("p    : %f %f %f", p.x, p.y, p.ori)
 
    self.args["motor_move"] = {
@@ -412,14 +413,14 @@ end
 
 function ALIGN_PRECISE:init()
    self.fsm.vars.align_attempts = self.fsm.vars.align_attempts + 1
-  
+
    if self.fsm.vars.p_tag then
       printf("p_tag: %f %f %f",
          self.fsm.vars.p_tag.x,
          self.fsm.vars.p_tag.y,
          fawkes.tf.get_yaw(self.fsm.vars.p_tag.ori))
 
-      self.args["motor_move"] = { 
+      self.args["motor_move"] = {
          x = self.fsm.vars.p_tag.x,
          y = self.fsm.vars.p_tag.y,
          ori = fawkes.tf.get_yaw(self.fsm.vars.p_tag.ori),
@@ -437,5 +438,3 @@ function ALIGN_TURN:init()
       ori = self.fsm.vars.ori
    }
 end
-
-
