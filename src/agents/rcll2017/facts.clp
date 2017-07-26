@@ -580,4 +580,12 @@
   (mirror-orientation (cyan 315) (magenta 225))
 
   (produce-complexity C0)
+
+  (insertion-zone M-Z51)
+  (insertion-zone M-Z61)
+  (insertion-zone M-Z71)
+
+  (insertion-zone C-Z51)
+  (insertion-zone C-Z61)
+  (insertion-zone C-Z71)
 )
