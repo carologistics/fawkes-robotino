@@ -120,9 +120,17 @@
   ;(printout t "Sending all lock-messages:" crlf)
   (modify ?s (time ?now) (seq (+ ?seq 1)))
   (delayed-do-for-all-facts ((?lock lock)) TRUE
-    (if (or (and (eq ?role MASTER) (or (eq ?lock:type ACCEPT) (eq ?lock:type REFUSE) (eq ?lock:type RELEASE_RVCD)))
-	    (and (eq ?role SLAVE) (or (eq ?lock:type GET) (eq ?lock:type RELEASE)))) 
-      then
+    (if (or
+      (and
+        (eq ?role MASTER)
+        (or (eq ?lock:type ACCEPT) (eq ?lock:type REFUSE) (eq ?lock:type RELEASE_RVCD))
+      )
+	    (and
+        (eq ?role SLAVE)
+        (or (eq ?lock:type GET) (eq ?lock:type RELEASE))
+      )
+    )
+    then
       ;(printout t "   type " ?lock:type " of " ?lock:resource " from agent " ?lock:agent crlf)
       (bind ?lock-msg (pb-create "llsf_msgs.LockMessage"))
       (pb-set-field ?lock-msg "type" ?lock:type)
@@ -133,9 +141,11 @@
       (pb-destroy ?lock-msg)
 
       ;send RELEASE_RCVD only once
-      (if (eq ?lock:type RELEASE_RVCD)
-        then
-	(retract ?lock)
+      (if (eq ?lock:type RELEASE_RVCD) then
+        (printout t "PB sent (lock (type RELEASE_RVCD)"
+          " (agent " ?lock:agent ")"
+          " (resource " ?lock:resource "))" crlf)
+        (retract ?lock)
       )
     )
   )
@@ -151,6 +161,12 @@
   (bind ?r (sym-cat (pb-field-value ?p "resource")))
   ;(printout t "Received lock message with type " ?type " of " ?r " from " ?a crlf)
   (retract ?msg)
+  (if (eq ?type RELEASE_RVCD) then
+    (printout t "PB received (lock (type RELEASE_RVCD)"
+      " (agent " ?a ")"
+      " (resource " ?r "))"
+      crlf)
+  )
   (if (eq ?role MASTER)
     then
     (if (or (eq ?type GET) (eq ?type RELEASE)) then
