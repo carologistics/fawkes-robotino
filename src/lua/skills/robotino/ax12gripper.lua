@@ -71,7 +71,7 @@ fsm:add_transitions{
    {"COMMAND", "FAILED", cond="vars.error"},
    {"COMMAND", "WAIT_FOR_GRAB", cond="vars.grab"},
    {"COMMAND", "RELGOTOZ", cond="vars.relgotoz"},
-   {"COMMAND", "RESET_AFTER_IF_FINAL", cond="vars.close_tight or vars_center"},
+   {"COMMAND", "RESET_AFTER_IF_FINAL", cond="vars.close_tight or vars.center"},
    {"WAIT_FOR_GRAB", "CHECK_GRAB_SUCCESS", timeout=1.5},
    {"CHECK_GRAB_SUCCESS", "FINAL", cond="gripper_if:is_holds_puck()"},
    {"CHECK_GRAB_SUCCESS", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Gripper doesn't hold a puck"},
@@ -111,7 +111,7 @@ function COMMAND:init()
    elseif self.fsm.vars.command == "CLOSE_TIGHT" then
       self.fsm.vars.close_tight = true
       torqueMessage = gripper_if.SetTorqueMessage:new()
-      torqueMessage:set_torque(0.6)
+      torqueMessage:set_torque(1)
       gripper_if:msgq_enqueue(torqueMessage)
 
       theCloseMessage = gripper_if.CloseMessage:new()
@@ -149,7 +149,7 @@ function RELGOTOZ:init()
       end
 end
 
-function RESET_TORQUE()
+function RESET_TORQUE:init()
       torqueMessage = gripper_if.SetTorqueMessage:new()
       torqueMessage:set_torque(0)
       gripper_if:msgq_enqueue(torqueMessage)
