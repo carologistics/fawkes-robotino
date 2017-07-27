@@ -74,9 +74,7 @@
   (assert (state TASK-FAILED-WAITING)
           (timer (name wait-after-fail)))
   (modify ?task (state failed))
-  (if (or
-    (eq ?step-name insert)
-    (eq ?step-name get-output))
+  (if (eq ?step-name get-output)
   then
   (assert (mps-reset (machine ?mps)))
   )
