@@ -58,7 +58,7 @@ fsm:define_states{
    {"WAIT_FOR_GRAB", JumpState},
    {"CHECK_GRAB_SUCCESS", JumpState},
    {"RELGOTOZ", SkillJumpState, skills={{gripper_z_align}}, final_to="FINAL", fail_to="FAILED"},
-   {"RESTORE", SkillJumpState, skills={{gripper_z_align}}, final_to="FINAL", fail_to="FAILED"},
+   {"RESET_Z_POS", SkillJumpState, skills={{gripper_z_align}}, final_to="FINAL", fail_to="FAILED"},
    {"FINAL_AFTER_IF_FINAL", JumpState},
    {"RESET_AFTER_IF_FINAL", JumpState},
    {"RESET_TORQUE", JumpState},
@@ -73,7 +73,7 @@ fsm:add_transitions{
    {"COMMAND", "WAIT_FOR_GRAB", cond="vars.grab"},
    {"COMMAND", "RELGOTOZ", cond="vars.relgotoz"},
    {"COMMAND", "RESET_AFTER_IF_FINAL", cond="vars.close_tight or vars.center"},
-   {"COMMAND", "RESTORE", cond="vars.restore"},
+   {"COMMAND", "RESET_Z_POS", cond="vars.restore"},
    {"WAIT_FOR_GRAB", "CHECK_GRAB_SUCCESS", timeout=1.5},
    {"CHECK_GRAB_SUCCESS", "FINAL", cond="gripper_if:is_holds_puck()"},
    {"CHECK_GRAB_SUCCESS", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Gripper doesn't hold a puck"},
@@ -135,7 +135,7 @@ function COMMAND:init()
   elseif self.fsm.vars.command == "RELGOTOZ" then
       self.fsm.vars.relgotoz = true
 
-  elseif self.fsm.vars.command == "RESTORE" then
+  elseif self.fsm.vars.command == "RESET_Z_POS" then
       self.fsm.vars.restore = true
 
   else
@@ -161,6 +161,6 @@ function RESET_TORQUE:init()
       gripper_if:msgq_enqueue(torqueMessage)
 end
 
-function RESTORE:init()
-      self.args["gripper_z_align"].command = "RESTORE"
+function RESET_Z_POS:init()
+      self.args["gripper_z_align"].command = "RESET_Z_POS"
 end

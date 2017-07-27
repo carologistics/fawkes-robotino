@@ -84,9 +84,9 @@ function COMMAND:init()
    elseif self.fsm.vars.command == "TO_UPPER_Z" then
       theToZ0Message = gripper_arduino_if.MoveToZ0Message:new()
       gripper_arduino_if:msgq_enqueue_copy(theToZ0Message)
-   elseif self.fsm.vars.command == "RESTORE" then
-      theRestoreMessage = gripper_arduino_if.RestoreMessage:new()
-      gripper_arduino_if:msgq_enqueue_copy(theRestoreMessage)
+   elseif self.fsm.vars.command == "RESET_Z_POS" then
+      theResetZPosMessage = gripper_arduino_if.ResetZPosMessage:new()
+      gripper_arduino_if:msgq_enqueue_copy(theResetZPosMessage)
    else
       self.fsm:set_error("No known command")
       self.fsm.vars.error = true
