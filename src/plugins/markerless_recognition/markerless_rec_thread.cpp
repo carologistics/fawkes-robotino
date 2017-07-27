@@ -64,19 +64,27 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 	for(int i = 0; i < MPS_COUNT; i++){
 		result.p[i]=0.;
 	}
-	
 	//path to the image that have to be tested
 	std::string imPath = image;		
 	
 	//path to the trained graph
-    	std::string grPath = (home) + "/tensorflow/TrainedData/output_graph_600.pb";
+    	std::string grPath = (home) + "/tensorflow/TrainedData/output_graph_10_8000.pb";
 	
 	//path to the the trained labels
-	std::string laPath = (home) + "/tensorflow/TrainedData/output_labels_600.txt";
+	std::string laPath = (home) + "/tensorflow/TrainedData/output_labels_10.txt";
 
 	//evaluates the current image
-        Probability ret = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str(),false);
+	std::vector<float> retVec = evaluate(MPS_COUNT,imPath.c_str(), grPath.c_str(), laPath.c_str(),false);
 	
+	for(int i = 0; i < (int)retVec.size(); i++){
+		std::cout << "retVec: " << retVec[i] << std::endl;
+	}
+	Probability ret;
+	for(int i = 0; i < MPS_COUNT; i++){
+		ret.p[i] = retVec[i];
+	}
+
+
 	if(checkResult(ret)==0){
 		for(int i = 0; i < MPS_COUNT; ++i){
  			logger->log_info(name(), "Result: %f", ret.p[i] );
@@ -93,7 +101,7 @@ Probability MarkerlessRecognitionThread::recognize_current_pic(const std::string
 Probability MarkerlessRecognitionThread::recheck_mps(const std::string image){
 	logger->log_info(name(), "Started further recognition, to distinguish between RS and CS");
 	Probability result;
-	for(int i = 0; i < 5; i++){
+	for(int i = 0; i < MPS_COUNT; i++){
 		result.p[i]=0.;
 	}
 	
@@ -107,10 +115,15 @@ Probability MarkerlessRecognitionThread::recheck_mps(const std::string image){
 	std::string laPath = (home) + "/tensorflow/TrainedData/output_labels_RSCS.txt";
 
 	//evaluates the current image
-        Probability ret = evaluate(imPath.c_str(), grPath.c_str(), laPath.c_str(),true);
-	
+
+	std::vector<float> retVec = evaluate(MPS_COUNT,imPath.c_str(), grPath.c_str(), laPath.c_str(),true);
+	Probability ret;
+	for(int i = 0; i < MPS_COUNT; i++){
+		ret.p[i] = retVec[i];
+	}
+
 	if(checkResult(ret)==0){
-		for(int i = 0; i < 5; ++i){
+		for(int i = 0; i < MPS_COUNT; ++i){
  			logger->log_info(name(), "Result: %f", ret.p[i] );
 		}	
 		result = ret;
@@ -154,30 +167,6 @@ int MarkerlessRecognitionThread::recognize_mps() {
 		mps_rec_if_->write();
 		return -1;
 	}
-	
-	if(maximum == CS || maximum == RS){
-		recognition_result = recheck_mps(vpath);
-		for(int i = 0; i < MPS_COUNT; i++){ 
-	 		if(i==maximum) continue;
-			if(recognition_result.p[i] >= recognition_result.p[maximum]){ 
-		 		second = maximum;
-				maximum = i;
-			}
-			else {
-				if(recognition_result.p[i] > recognition_result.p[second]){
-					second = i;
-				}
-			}
-		}
-
-		if(checkResult(recognition_result)!=0){
-			mps_rec_if_->set_final(true);
-			mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) 0);
-			mps_rec_if_->write();
-			return -1;
-		}
-
-	}
 
 	if(recognition_result.p[maximum] < THRESHOLD_UPPER || recognition_result.p[second] > THRESHOLD_LOWER)
 	{
@@ -185,7 +174,7 @@ int MarkerlessRecognitionThread::recognize_mps() {
 		station = 0;
 	}
 	else{
-		if(maximum == CS || maximum == RS){
+		/*if(maximum == CS || maximum == RS){
 			recognition_result = recheck_mps(vpath);
 			for(int i = 0; i < MPS_COUNT; i++){ 
 				if(i==maximum) continue;
@@ -208,12 +197,13 @@ int MarkerlessRecognitionThread::recognize_mps() {
 			}
 
 		}
-
-		station = maximum + 1;
+*/
+		station = maximum;
 	}	
 
         mps_rec_if_->set_final(true);
-	mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) station );
+	if(MPS_COUNT>5) 	mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) ((int)(station/2)+1) );
+	else mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) (station+1));
 	mps_rec_if_->write();	
 	
 	logger->log_info(name(), " Finished recognizing "); 
@@ -297,29 +287,29 @@ void MarkerlessRecognitionThread::init(){
 		fprintf(stderr, "%s\n", error);
 	}
 
-	init_function init_fiveGraph;
-	init_function init_twoGraph;
+	init_function initGraph;
+//	init_function init_twoGraph;
 
-	*(void**)(&init_fiveGraph) = dlsym(handle,"init_fiveGraph");
+	*(void**)(&initGraph) = dlsym(handle,"init_fiveGraph");
 	if((error=dlerror())!=NULL) {
 		fprintf(stderr, "%s\n", dlerror());
 	}
 
-	*(void**)(&init_twoGraph) = dlsym(handle,"init_twoGraph");
+	/**(void**)(&init_twoGraph) = dlsym(handle,"init_twoGraph");
 	if((error=dlerror())!=NULL) {
 		fprintf(stderr, "%s\n", dlerror());
 	}
 
-	
+	*/
 	//path to the trained graph
-    	std::string grPath = (home) + "/tensorflow/TrainedData/output_graph_600.pb";
+    	std::string grPath = (home) + "/tensorflow/TrainedData/output_graph_10_8000.pb";
 	
 	//path to the the trained labels
-	std::string laPath = (home) + "/tensorflow/TrainedData/output_labels_600.txt";
+	std::string laPath = (home) + "/tensorflow/TrainedData/output_labels_10.txt";
 
-	init_fiveGraph(grPath.c_str(),laPath.c_str());
+	initGraph(grPath.c_str(),laPath.c_str());
 	
-	//path to the trained graph
+/*	//path to the trained graph
     	grPath = (home) + "/tensorflow/TrainedData/output_graph_RSCS.pb";
 	
 	//path to the the trained labels
@@ -327,6 +317,8 @@ void MarkerlessRecognitionThread::init(){
 
 
 	init_twoGraph(grPath.c_str(),laPath.c_str());
+	*/
+	recognize_mps();
 }
 
 
