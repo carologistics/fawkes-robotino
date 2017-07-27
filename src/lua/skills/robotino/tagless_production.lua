@@ -4,7 +4,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "tagless_production"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"tagless_mps_align","goto","mps_recog_side","shelf_pick","product_pick","product_put"}
+depends_skills     = {"tagless_mps_align","goto","mps_recog_side","shelf_pick","product_pick","product_put","approach_test"}
 depends_interfaces = {
 }
 
@@ -90,10 +90,10 @@ end
 function side_check_evaluation(self)
 
 
-    recognition_result = MPS_TYPES[mps_recognition_if:mpstype()+1];
-      if(recognition_result == 'cap-input') then
-          return true
-      end
+    --recognition_result = MPS_TYPES[mps_recognition_if:mpstype()+1];
+    --  if(recognition_result == 'cap-input') then
+    --      return true
+    --  end
     return false
 end
 
@@ -108,13 +108,13 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"MPS_ALIGN_3", SkillJumpState, skills={{tagless_mps_align}}, final_to="CHECK_SIDE", fail_to="DRIVE_TO_4"},
    {"MPS_ALIGN_4", SkillJumpState, skills={{tagless_mps_align}}, final_to="CHECK_SIDE", fail_to="FAILED"},
    {"CHECK_SIDE_EVALUATE",JumpState},
-   {"CHECK_SIDE", SkillJumpState, skills={{mps_recog_side}}, final_to="CHECK_SIDE_EVALUATE", fail_to="SKILL_TAGLESS_SHELF_PICK"},
+   {"CHECK_SIDE", SkillJumpState, skills={{mps_recog_side}}, final_to="CHECK_SIDE_EVALUATE", fail_to="CHECK_SIDE_EVALUATE"},
    {"DRIVE_TO_CORRECT_SIDE", SkillJumpState, skills={{goto}}, final_to="SKILL_TAGLESS_SHELF_PICK",fail_to="FAILED"},
    {"DECIDE_SHELF_PICK", JumpState},
    {"SHELF_PICK_SUC",JumpState},
-   {"SKILL_TAGLESS_SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="SHELF_PICK_SUC", fail_to="DECIDE_SHELF_PICK"},
-   {"SKILL_TAGLESS_PRODUCT_PUT",SkillJumpState, skills={{product_put}}, final_to="DRIVE_TO_OTHER_SIDE", fail_to="FAILED"},
-   {"SKILL_TAGLESS_PRODUCT_PICK",SkillJumpState,skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
+   {"SKILL_TAGLESS_SHELF_PICK", SkillJumpState, skills={{approach_test}}, final_to="SHELF_PICK_SUC", fail_to="DECIDE_SHELF_PICK"},
+   {"SKILL_TAGLESS_PRODUCT_PUT",SkillJumpState, skills={{approach_test}}, final_to="DRIVE_TO_OTHER_SIDE", fail_to="FAILED"},
+   {"SKILL_TAGLESS_PRODUCT_PICK",SkillJumpState,skills={{approach_test}}, final_to="FINAL", fail_to="FAILED"},
    --{"SKILL_TAGLESS_PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
    {"DRIVE_TO_OTHER_SIDE",SkillJumpState,skills={{goto}}, final_to="MPS_ALIGN_OUTPUT", fail_to="FAILED"},
    {"MPS_ALIGN_OUTPUT", SkillJumpState, skills={{tagless_mps_align}}, final_to="SKILL_TAGLESS_PRODUCT_PICK", fail_to="FAILED"},
@@ -130,8 +130,8 @@ fsm:add_transitions{
    {"DECIDE_SHELF_PICK", "MPS_ALIGN_PRODUCT_PUT", cond=shelf_decide}, --shelf_decide
    {"DECIDE_SHELF_PICK", "SKILL_REALIGN_INPUT", cond=true},
    {"SHELF_PICK_SUC","DECIDE_SHELF_PICK", cond=shelf_suc},
-   {"CHECK_SIDE","DRIVE_TO_CORRECT_SIDE", cond=side_check_evaluation},
-   {"CHECK_SIDE", "SKILL_TAGLESS_SHELF_PICK",cond=true}
+   {"CHECK_SIDE_EVALUATE","SKILL_TAGLESS_SHELF_PICK", cond=side_check_evaluation},
+   {"CHECK_SIDE_EVALUATE", "DRIVE_TO_CORRECT_SIDE",cond=true},
 }
 
 
@@ -238,30 +238,37 @@ function DRIVE_TO_CORRECT_SIDE:init()
 
     if (self.fsm.vars.lastX > self.fsm.vars.xZone) then
       self.args["goto"].x = self.fsm.vars.lastX - 2
+      self.fsm.vars.lastX = self.fsm.vars.lastX - 2
     end
 
     if (self.fsm.vars.lastX < self.fsm.vars.xZone) then
         self.args["goto"].x = self.fsm.vars.lastX + 2
+        self.fsm.vars.lastX = self.fsm.vars.lastX + 2
       end
 
 
     if (self.fsm.vars.lastX == self.fsm.vars.xZone) then
        self.args["goto"].x = self.fsm.vars.lastX
+
     end
 
     if (self.fsm.vars.lastY > self.fsm.vars.yZone) then
            self.args["goto"].y = self.fsm.vars.lastY -2
+           self.fsm.vars.lastY = self.fsm.vars.lastY -2
     end
 
     if (self.fsm.vars.lastY < self.fsm.vars.yZone) then
              self.args["goto"].y = self.fsm.vars.lastY + 2
+             self.fsm.vars.lastY = self.fsm.vars.lastY + 2
     end
 
     if (self.fsm.vars.lastY == self.fsm.vars.yZone) then
              self.args["goto"].y = self.fsm.vars.lastY
+
     end
 
     self.args["goto"].ori = self.fsm.vars.lasatOri + 3.1415
+    self.fsm.vars.lasatOri = self.fsm.vars.lasatOri + 3.1415
 
 end
 
@@ -298,8 +305,9 @@ end
 
 function SKILL_TAGLESS_SHELF_PICK:init()
 
-    self.args["shelf_pick"].slot = "MIDDLE"
-
+    printf("pick und %s",self.fsm.vars.currShelf)
+    self.args["approach_test"].option = "pick"
+    self.args["approach_test"].shelf = self.fsm.vars.currShelf
 
 end
 
@@ -307,10 +315,11 @@ end
 
 function SKILL_TAGLESS_PRODUCT_PICK:init()
 
-  self.args["product_pick"].offset_x = 0
+  self.args["approach_test"].option = "pick"
 
 end
 
 function SKILL_TAGLESS_PRODUCT_PUT:init()
-  self.args["product_put"].offset_x = 0
+
+  self.args["approach_test"].option = "put"
 end

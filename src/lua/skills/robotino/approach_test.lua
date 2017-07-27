@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "approach_test"
 fsm                = SkillHSM:new{name=name, start="MPS_ALIGN", debug=false}
-depends_skills     = {"mps_align","product_put","product_pick","shelf_put","shelf_pick","slide_put","conveyor_align"}
+depends_skills     = {"tagless_mps_align","product_put","product_pick","shelf_put","shelf_pick","slide_put","conveyor_align"}
 depends_interfaces = {
 }
 
@@ -47,7 +47,7 @@ skillenv.skill_module(_M)
 -- Constants
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
-   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
+   {"MPS_ALIGN", SkillJumpState, skills={{tagless_mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_SHELF_PUT", SkillJumpState, skills={{shelf_put}}, final_to="FINAL", fail_to="FAILED"},
@@ -76,13 +76,11 @@ function MPS_ALIGN:init()
 --      self.args["mps_align"].y = -0.02
 --   end
 
-  --  self.args["tagless_mps_align"].alignX1 = self.fsm.vars.alignX1
-  --  self.args["tagless_mps_align"].alignY1 = self.fsm.vars.alignY1
-  --  self.args["tagless_mps_align"].alignX2 = self.fsm.vars.alignX2
-  --  self.args["tagless_mps_align"].alignY2 = self.fsm.vars.alignY2
+    self.args["tagless_mps_align"].alignX1 = self.fsm.vars.alignX1
+    self.args["tagless_mps_align"].alignY1 = self.fsm.vars.alignY1
+    self.args["tagless_mps_align"].alignX2 = self.fsm.vars.alignX2
+    self.args["tagless_mps_align"].alignY2 = self.fsm.vars.alignY2
 
-  self.args["mps_align"].x = 0.4
-  self.args["mps_align"].y = 0
 
 end
 
