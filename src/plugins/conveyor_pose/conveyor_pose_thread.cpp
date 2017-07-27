@@ -339,7 +339,7 @@ ConveyorPoseThread::loop()
 
     float height = y_min - y_max;
     if (height < cfg_plane_height_minimum_) {
-      logger->log_info(name(), "Discard plane, because of height restriction. is: %f\tshould: %f", height, cfg_plane_height_minimum_);
+     // logger->log_info(name(), "Discard plane, because of height restriction. is: %f\tshould: %f", height, cfg_plane_height_minimum_);
 
       boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
       CloudPtr tmp(new Cloud);
@@ -365,7 +365,7 @@ ConveyorPoseThread::loop()
     
     float width = x_min - x_max;
     if (width < cfg_plane_width_minimum_) {
-      logger->log_info(name(), "Discard plane, because of width restriction. is: %f\tshould: %f", width, cfg_plane_width_minimum_);      
+     // logger->log_info(name(), "Discard plane, because of width restriction. is: %f\tshould: %f", width, cfg_plane_width_minimum_);
       boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
       CloudPtr tmp(new Cloud);
       pcl::ExtractIndices<Point> extract;
