@@ -121,22 +121,22 @@ class ArduinoInterface : public Interface
     virtual Message * clone() const;
   };
 
-  class RestoreMessage : public Message
+  class ResetZPosMessage : public Message
   {
    private:
     /** Internal data storage, do NOT modify! */
     typedef struct __attribute__((packed)) {
       int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
       int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
-    } RestoreMessage_data_t;
+    } ResetZPosMessage_data_t;
 
-    RestoreMessage_data_t *data;
+    ResetZPosMessage_data_t *data;
 
    public:
-    RestoreMessage();
-    ~RestoreMessage();
+    ResetZPosMessage();
+    ~ResetZPosMessage();
 
-    RestoreMessage(const RestoreMessage *m);
+    ResetZPosMessage(const ResetZPosMessage *m);
     /* Methods */
     virtual Message * clone() const;
   };
