@@ -86,6 +86,30 @@ class ArduinoInterface : public Interface
 
   };
 
+  class ResetZPosMessage : public Message
+  {
+    ResetZPosMessage();
+    ~ResetZPosMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
+  };
+
   unsigned int z_position();
   void set_z_position(const unsigned int new_z_position);
   int maxlenof_z_position() const;
