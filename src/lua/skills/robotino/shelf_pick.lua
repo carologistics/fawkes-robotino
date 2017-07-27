@@ -54,8 +54,8 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="GRAB_PRODUCT", fail_to="FAILED"},
    {"GRAB_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAIL_SAFE"},
    {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_INTERFACE", fail_to="FAILED"},
-   {"CENTER_PUCK", SkillJumpState, skills={{ax12gripper}}, final_to="RESTORE", fail_to="FAILED"},
-   {"RESTORE", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FAILED"},
+   {"CENTER_PUCK", SkillJumpState, skills={{ax12gripper}}, final_to="RESET_Z_POS", fail_to="FAILED"},
+   {"RESET_Z_POS", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FAILED"},
    {"FAIL_SAFE", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},
    {"WAIT_AFTER_GRAB", JumpState},
    {"WAIT_FOR_INTERFACE", JumpState},
@@ -119,8 +119,8 @@ function CENTER_PUCK:init()
    self.args["ax12gripper"].command = "CENTER"
 end
 
-function RESTORE:init()
-   self.args["ax12gripper"].command = "RESTORE"
+function RESET_Z_POS:init()
+   self.args["ax12gripper"].command = "RESET_Z_POS"
 end
 
 function FAIL_SAFE:init()
