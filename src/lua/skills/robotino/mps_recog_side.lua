@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------
---  mps_recog.lua -check if tag in front is the given tag_id 
+--  mps_recog_side.lua -check if tag in front is the given tag_id
 --
 --  Copyright 2015 The Carologistics Team
 --
@@ -22,18 +22,19 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "mps_recog"
+name               = "mps_recog_side"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {}
 depends_interfaces = {
 	{v = "mps_recognition_if", type = "MPSRecognitionInterface" ,id="/MarkerlessRecognition"},
---	{v = "speechsynth", type = "SpeechSynthInterface", id = "Flite"},
-
 }
+
+--1 input
+--2 output
 
 documentation      = [==[
 
-		   	This skill should check if the current picture of the RealSense can be identified by a machine using the mps_recog plugin 
+		   	This skill should check if the current picture of the RealSense can be identified by a machine using the mps_recog plugin
 
 ]==]
 
@@ -45,11 +46,8 @@ skillenv.skill_module(_M)
 -- Constants
 MPS_TYPES = {
 'No Station',
-'Base Station',
-'Cap Station',
-'Delivery Station',
-'Ring Station',
-'Storage Station',
+'cap-input',
+'cap-output'
 }
 
 
@@ -82,12 +80,12 @@ end
 
 function recognition_result()
    --recognition_result=mps_recognition_if:toString_MPSType(mps_recognition_if:mpstype());
-   --recognition_result="testStation"; 
+   --recognition_result="testStation";
    recognition_result = MPS_TYPES[mps_recognition_if:mpstype()+1];
    speak("Recognition completed! Result: %s",MPS_TYPES[mps_recognition_if:mpstype()+1])
 
    printf("The result is %s",recognition_result);
-  
+
    return true;
 end
 

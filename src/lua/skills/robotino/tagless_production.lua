@@ -24,7 +24,7 @@ skillenv.skill_module(_M)
 MPS_TYPES = {
 'No Station',
 'cap-input',
-'cap-output'
+'cap-output',
 }
 
 
@@ -108,7 +108,7 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"MPS_ALIGN_3", SkillJumpState, skills={{tagless_mps_align}}, final_to="CHECK_SIDE", fail_to="DRIVE_TO_4"},
    {"MPS_ALIGN_4", SkillJumpState, skills={{tagless_mps_align}}, final_to="CHECK_SIDE", fail_to="FAILED"},
    {"CHECK_SIDE_EVALUATE",JumpState},
-   {"CHECK_SIDE", SkillJumpState, skills={{mps_recog}}, final_to="CHECK_SIDE_EVALUATE", fail_to="SKILL_TAGLESS_SHELF_PICK"},
+   {"CHECK_SIDE", SkillJumpState, skills={{mps_recog_side}}, final_to="CHECK_SIDE_EVALUATE", fail_to="SKILL_TAGLESS_SHELF_PICK"},
    {"DRIVE_TO_CORRECT_SIDE", SkillJumpState, skills={{goto}}, final_to="SKILL_TAGLESS_SHELF_PICK",fail_to="FAILED"},
    {"DECIDE_SHELF_PICK", JumpState},
    {"SHELF_PICK_SUC",JumpState},
@@ -130,7 +130,7 @@ fsm:add_transitions{
    {"DECIDE_SHELF_PICK", "MPS_ALIGN_PRODUCT_PUT", cond=shelf_decide}, --shelf_decide
    {"DECIDE_SHELF_PICK", "SKILL_REALIGN_INPUT", cond=true},
    {"SHELF_PICK_SUC","DECIDE_SHELF_PICK", cond=shelf_suc},
-   {"CHECK_SIDE","DRIVE_TO_CORRECT_SIDE", cond=side_check},
+   {"CHECK_SIDE","DRIVE_TO_CORRECT_SIDE", cond=side_check_evaluation},
    {"CHECK_SIDE", "SKILL_TAGLESS_SHELF_PICK",cond=true}
 }
 
