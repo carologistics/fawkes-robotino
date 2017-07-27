@@ -146,6 +146,14 @@ ArduinoComThread::loop()
 
             } else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveToZ0Message>()) {
                 move_to_z_0_pending_ = true;
+
+            } else if (arduino_if_->msgq_first_is<ArduinoInterface::RestoreMessage>()) {
+                ArduinoComMessage req;
+                req.set_command(ArduinoComMessage::CMD_STEP_UP);
+                req.set_number((cfg_init_mm_ - current_z_position_) * ArduinoComMessage::NUM_STEPS_PER_MM);
+                req.set_msecs(((double) ((cfg_init_mm_ - current_z_position_) * ArduinoComMessage::NUM_STEPS_PER_MM) / (double)cfg_speed_) * 1000. * 10.);
+                logger->log_debug(name(), "Moving to init_mm position, %u steps", (cfg_init_mm_ - current_z_position_) * ArduinoComMessage::NUM_STEPS_PER_MM);
+                messages_.push(req);
             }
             arduino_if_->msgq_pop();
         }

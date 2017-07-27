@@ -55,7 +55,8 @@ ArduinoInterface::ArduinoInterface() : Interface()
   add_messageinfo("MoveUpwardsMessage");
   add_messageinfo("MoveDownwardsMessage");
   add_messageinfo("MoveToZ0Message");
-  unsigned char tmp_hash[] = {0x4b, 0x67, 0x78, 0x18, 0x4b, 0xbb, 0x94, 0xa9, 0x99, 0x1e, 0xde, 0x2, 0x7c, 0xab, 0x32, 0x59};
+  add_messageinfo("RestoreMessage");
+  unsigned char tmp_hash[] = {0x36, 0x49, 0x2a, 0x40, 0xb1, 0xa9, 0x81, 0x86, 0xfa, 0x1e, 0x7e, 0xa0, 0x59, 0xfd, 0x27, 0xde};
   set_hash(tmp_hash);
 }
 
@@ -137,6 +138,8 @@ ArduinoInterface::create_message(const char *type) const
     return new MoveDownwardsMessage();
   } else if ( strncmp("MoveToZ0Message", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
     return new MoveToZ0Message();
+  } else if ( strncmp("RestoreMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
+    return new RestoreMessage();
   } else {
     throw UnknownTypeException("The given type '%s' does not match any known "
                                "message type for this interface type.", type);
@@ -391,6 +394,52 @@ ArduinoInterface::MoveToZ0Message::clone() const
 {
   return new ArduinoInterface::MoveToZ0Message(this);
 }
+/** @class ArduinoInterface::RestoreMessage <interfaces/ArduinoInterface.h>
+ * RestoreMessage Fawkes BlackBoard Interface Message.
+ * 
+    
+ */
+
+
+/** Constructor */
+ArduinoInterface::RestoreMessage::RestoreMessage() : Message("RestoreMessage")
+{
+  data_size = sizeof(RestoreMessage_data_t);
+  data_ptr  = malloc(data_size);
+  memset(data_ptr, 0, data_size);
+  data      = (RestoreMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+}
+
+/** Destructor */
+ArduinoInterface::RestoreMessage::~RestoreMessage()
+{
+  free(data_ptr);
+}
+
+/** Copy constructor.
+ * @param m message to copy from
+ */
+ArduinoInterface::RestoreMessage::RestoreMessage(const RestoreMessage *m) : Message("RestoreMessage")
+{
+  data_size = m->data_size;
+  data_ptr  = malloc(data_size);
+  memcpy(data_ptr, m->data_ptr, data_size);
+  data      = (RestoreMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+}
+
+/* Methods */
+/** Clone this message.
+ * Produces a message of the same type as this message and copies the
+ * data to the new message.
+ * @return clone of this message
+ */
+Message *
+ArduinoInterface::RestoreMessage::clone() const
+{
+  return new ArduinoInterface::RestoreMessage(this);
+}
 /** Check if message is valid and can be enqueued.
  * @param message Message to check
  * @return true if the message is valid, false otherwise.
@@ -408,6 +457,10 @@ ArduinoInterface::message_valid(const Message *message) const
   }
   const MoveToZ0Message *m2 = dynamic_cast<const MoveToZ0Message *>(message);
   if ( m2 != NULL ) {
+    return true;
+  }
+  const RestoreMessage *m3 = dynamic_cast<const RestoreMessage *>(message);
+  if ( m3 != NULL ) {
     return true;
   }
   return false;
