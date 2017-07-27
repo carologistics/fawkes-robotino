@@ -67,6 +67,8 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"WAIT_FOR_INTERFACE", JumpState},
    {"CHECK_PUCK", JumpState},
    {"CENTER_GRIPPER", SkillJumpState, skills={{ax12gripper}},
+      final_to="RESTORE", fail_to="FAILED"},
+   {"RESTORE", SkillJumpState, skills={{ax12gripper}},
       final_to="FINAL", fail_to="FAILED"},
    {"FAIL_SAFE", SkillJumpState, skills={{motor_move}},
       final_to="FAILED", fail_to="FAILED"},
@@ -92,7 +94,7 @@ function DRIVE_FORWARD:init()
 end
 
 function MOVE_BACK:init()
-   self.args["motor_move"] = {x = -0.025, vel_trans = 0.01, tolerance = { x=0.001, y=0.002, ori=0.01 } }
+   self.args["motor_move"] = {x = -0.017, vel_trans = 0.01, tolerance = { x=0.001, y=0.002, ori=0.01 } }
 end
 
 function MOVE_BACK_SECOND:init()
@@ -127,4 +129,8 @@ end
 
 function FAIL_SAFE:init()
    self.args["motor_move"].x = -0.1
+end
+
+function RESTORE:init()
+   self.args["ax12gripper"].command = "RESTORE"
 end

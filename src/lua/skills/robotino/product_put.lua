@@ -54,6 +54,8 @@ fsm:define_states{ export_to=_M,
    {"MOVE_BACK_FAILED", SkillJumpState, skills={{motor_move}},
       final_to="FAILED", fail_to="FAILED"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}},
+      final_to="RESTORE", fail_to="RESTORE"},
+   {"RESTORE", SkillJumpState, skills={{ax12gripper}},
       final_to="FINAL", fail_to="FINAL"},
 }
 
@@ -82,4 +84,8 @@ end
 function CLOSE_GRIPPER:init()
    self.args["ax12gripper"].command = "CLOSE"
    printf("close gripper")
+end
+
+function RESTORE:init()
+   self.args["ax12gripper"].command = "RESTORE"
 end

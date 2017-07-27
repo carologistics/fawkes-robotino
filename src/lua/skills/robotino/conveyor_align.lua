@@ -42,14 +42,20 @@ Parameters:
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
+local z_pos = 0.048
+if config:exists("/skills/conveyor_align/z_pos") then
+   z_pos = config:get_float("/skills/conveyor_align/z_pos")
+end
+
+
 local TOLERANCE_Y = 0.002
 local TOLERANCE_Z = 0.001
 local MAX_TRIES = 20
 --local X_DEST_POS = 0.08
 local X_DEST_POS = 0.16
 local Y_DEST_POS = 0.0
-local Z_DEST_POS = 0.044
-local Z_DEST_POS_WITH_PUCK = 0.05
+local Z_DEST_POS = z_pos
+local Z_DEST_POS_WITH_PUCK = z_pos + 0.004
 local cfg_frame_ = "gripper"
 
 function no_writer()

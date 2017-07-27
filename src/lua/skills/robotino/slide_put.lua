@@ -52,7 +52,8 @@ fsm:define_states{ export_to=_M,
    {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="LEAVE_SLIDE", fail_to="LEAVE_SLIDE_FAILED"},
    {"LEAVE_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="CLOSE_GRIPPER", fail_to="CLOSE_GRIPPER"},
    {"LEAVE_SLIDE_FAILED", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},
-   {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FINAL"},
+   {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="RESTORE", fail_to="RESTORE"},
+   {"RESTORE", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FINAL"},
 }
 
 fsm:add_transitions{
@@ -88,4 +89,8 @@ end
 function CLOSE_GRIPPER:init()
    self.args["ax12gripper"].command = "CLOSE"
    printf("close gripper")
+end
+
+function RESTORE:init()
+   self.args["ax12gripper"].command = "RESTORE"
 end
