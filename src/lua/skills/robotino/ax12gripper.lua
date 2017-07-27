@@ -159,6 +159,7 @@ function RESET_TORQUE:init()
       torqueMessage = gripper_if.SetTorqueMessage:new()
       torqueMessage:set_torque(0)
       gripper_if:msgq_enqueue(torqueMessage)
+end
 
 function RESTORE:init()
       self.args["gripper_z_align"].command = "RESTORE"
