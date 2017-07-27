@@ -4,7 +4,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "tagless_production"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"tagless_mps_align","goto","approach_test","shelf_pick","product_pick","product_put"}
+depends_skills     = {"tagless_mps_align","goto","mps_recog_side","shelf_pick","product_pick","product_put"}
 depends_interfaces = {
 }
 
@@ -15,21 +15,22 @@ from the navgraph
 
 Parameters:
 
-      @
+      @ zone
 
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
 -- Constants
+MPS_TYPES = {
+'No Station',
+'cap-input',
+'cap-output'
+}
+
 
 function already_at_conveyor(self)
    return (self.fsm.vars.atmps == "CONVEYOR")
 end
-
-function zoneInit(self)
-  return true
-end
-
 
 
 function calc_xy_coordinates(self)
@@ -86,9 +87,14 @@ function shelf_suc(self)
     return true
 end
 
-function side_check(self)
+function side_check_evaluation(self)
 
-    return true
+
+    recognition_result = MPS_TYPES[mps_recognition_if:mpstype()+1];
+      if(recognition_result == 'cap-input') then
+          return true
+      end
+    return false
 end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
@@ -101,7 +107,8 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"MPS_ALIGN_2", SkillJumpState, skills={{tagless_mps_align}}, final_to="CHECK_SIDE", fail_to="DRIVE_TO_3"},
    {"MPS_ALIGN_3", SkillJumpState, skills={{tagless_mps_align}}, final_to="CHECK_SIDE", fail_to="DRIVE_TO_4"},
    {"MPS_ALIGN_4", SkillJumpState, skills={{tagless_mps_align}}, final_to="CHECK_SIDE", fail_to="FAILED"},
-   {"CHECK_SIDE",JumpState},
+   {"CHECK_SIDE_EVALUATE",JumpState},
+   {"CHECK_SIDE", SkillJumpState, skills={{mps_recog}}, final_to="CHECK_SIDE_EVALUATE", fail_to="SKILL_TAGLESS_SHELF_PICK"},
    {"DRIVE_TO_CORRECT_SIDE", SkillJumpState, skills={{goto}}, final_to="SKILL_TAGLESS_SHELF_PICK",fail_to="FAILED"},
    {"DECIDE_SHELF_PICK", JumpState},
    {"SHELF_PICK_SUC",JumpState},
@@ -179,6 +186,11 @@ function MPS_ALIGN_1:init()
 end
 
 function MPS_ALIGN_2:init()
+
+  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
+   self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
+   self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
+   self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
 
 
 end
