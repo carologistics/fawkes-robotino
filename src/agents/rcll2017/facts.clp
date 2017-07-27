@@ -580,4 +580,7 @@
   (mirror-orientation (cyan 315) (magenta 225))
 
   (produce-complexity C0)
+  (produce-complexity C1)
+  (produce-complexity C2)
+  (produce-complexity C3)
 )
