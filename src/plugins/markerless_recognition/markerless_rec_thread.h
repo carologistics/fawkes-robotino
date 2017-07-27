@@ -54,7 +54,7 @@
 #include <stdio.h>
 
 #define THRESHOLD_UPPER 0.8
-#define THRESHOLD_LOWER 0.5
+#define THRESHOLD_LOWER 0.1
 #define MPS_COUNT 10
 
 namespace fawkes {
