@@ -54,6 +54,34 @@ enum LightState {
   BLINK = 2;
 }
 
+enum MachineSide {
+  INPUT  = 1;
+  OUTPUT = 2;
+}
+
+enum ConveyorDirection {
+  FORWARD  = 1;	// from input to output
+  BACKWARD = 2;	// from output to input
+}
+
+enum SensorOnMPS {
+  SENSOR_INPUT  = 1;
+  SENSOR_OUTPUT = 2;
+  SENSOR_MIDDLE = 3;
+}
+
+enum SSOp {
+  STORE   = 1;
+  RETRIEVE = 2;
+}
+
+message SSSlot {
+  // Ordering is a right hand coordinate system, starting at the left bottom front corner
+  required uint32 x = 1; // [0-5] height; the shelfs
+  required uint32 y = 2; // [0-3] width;  the place on the shelf
+  required uint32 z = 3; // [0-1] depth;  the front or back row of the shelf
+}
+
 enum CSOp {
   RETRIEVE_CAP = 1;
   MOUNT_CAP    = 2;

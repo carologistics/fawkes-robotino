@@ -65,7 +65,7 @@
   (phase PRODUCTION)
   ?state <- (state STEP-FAILED)
   ?task <- (task (state running) (current-step ?id-failed) (name ?task-name))
-  (step (id ?id-failed) (state failed) (name ?step-name))
+  (step (id ?id-failed) (state failed) (name ?step-name) (machine ?mps))
   (time $?now)
   =>
   (printout warn "Task " ?task-name " failed in step " ?step-name crlf)
@@ -74,6 +74,10 @@
   (assert (state TASK-FAILED-WAITING)
           (timer (name wait-after-fail)))
   (modify ?task (state failed))
+  ;(if (eq ?step-name get-output)
+  ;then
+  ;(assert (mps-reset (machine ?mps)))
+  ;)
   (printout t "Calling motor_move to stop current skill" crlf)
   (skill-call motor_move x 0.0)
   (printout info "Timelog: Task " ?task-name " failed." crlf)

@@ -61,7 +61,7 @@
                                 (ring-color ?ring-color) (cs-operation ?cs-op)
                                 (side ?side) (lock ?lock))
   ;eigther no lock needed or already aquired
-  (or (machine (name ?unused&:(eq ?lock NONE)))
+  (or (test (eq ?lock NONE))
       (wait-for-lock (res ?lock) (state use)))
   (machine (name ?machine) (mtype ?mtype))
   (team-color ?team-color)
@@ -97,3 +97,43 @@
   (printout t "Mps " ?machine " successfully instructed" crlf)
   (retract ?mps-inst)
 )
+
+(deffunction mps-instruction-reset-machine (?machine ?team-color)
+ "Create ResetMachine Message"
+  (bind ?reset-msg (pb-create "llsf_msgs.ResetMachine"))
+  (pb-set-field ?reset-msg "team_color" ?team-color)
+  (pb-set-field ?reset-msg "machine" ?machine) 
+(return ?reset-msg)
+)
+
+(defrule mps-instruction-send-reset-periodicaly
+  "Periodically send reset to mps, until machine reseted."
+  (time $?now)
+  ?mps-reset <- (mps-reset (machine ?machine) (seq ?seq) 
+                           (timer $?t&:(timeout ?now ?t ?*MPS_RESET-PERIOD*))
+			                     (lock ?lock))
+  (or (test (eq ?lock NONE))
+      (wait-for-lock (res ?lock) (state use)))
+  (team-color ?team-color)
+  (peer-id private ?peer)
+  =>  
+  (bind ?instruction (mps-instruction-reset-machine ?machine ?team-color))  
+  (pb-broadcast ?peer ?instruction)
+  (pb-destroy ?instruction)
+  (printout t "Sent mps-reset for " ?machine crlf)
+  (modify ?mps-reset (timer ?now) (seq (+ 1 ?seq)))
+)
+
+(defrule mps-instruction-stop-send-reset-message
+  "Stop reset the mps, if machine is reseted (state BROKEN)."
+  (time $?now)
+  ?mps-reset <- (mps-reset (machine ?machine)
+                                (seq ?seq&:(>= ?seq ?*MIN-TIMES-TO-SEND-MPS-RESET*)))
+  (machine (name ?machine) (state BROKEN))
+  =>
+  (printout t "Mps " ?machine " successfully reseted" crlf)
+  (retract ?mps-reset)
+)
+
+
+
