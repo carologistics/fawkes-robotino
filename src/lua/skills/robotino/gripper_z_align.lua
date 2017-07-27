@@ -55,6 +55,7 @@ fsm:add_transitions{
    {"CHECK_WRITER", "FAILED", precond="not gripper_arduino_if:has_writer()", desc="No writer for arduino"},
    {"CHECK_WRITER", "COMMAND", cond=true},
    {"COMMAND", "WAIT_COMMAND", timeout=1.0},
+   {"WAIT_COMMAND", "FINAL", cond="vars.restore"},
    {"WAIT_COMMAND", "FINAL", cond="gripper_arduino_if:is_final()"},
    {"WAIT_COMMAND", "FAILED", cond="vars.error"},
 }
@@ -85,6 +86,7 @@ function COMMAND:init()
       theToZ0Message = gripper_arduino_if.MoveToZ0Message:new()
       gripper_arduino_if:msgq_enqueue_copy(theToZ0Message)
    elseif self.fsm.vars.command == "RESET_Z_POS" then
+      self.fsm.vars.restore = true
       theResetZPosMessage = gripper_arduino_if.ResetZPosMessage:new()
       gripper_arduino_if:msgq_enqueue_copy(theResetZPosMessage)
    else
