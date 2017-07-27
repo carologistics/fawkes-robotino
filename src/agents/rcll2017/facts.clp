@@ -153,7 +153,6 @@
   (slot state (type SYMBOL) (allowed-values IDLE BROKEN PREPARED PROCESSING
 					    PROCESSED READY-AT-OUTPUT WAIT-IDLE DOWN))
   (slot sync-id (type INTEGER) (default 0))
-  (slot fail-count (type INTEGER) (default 0))
 )
 
 (deftemplate base-station

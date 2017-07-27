@@ -813,12 +813,4 @@
   (assert (no-task-found (nth$ 1 ?game-time)))
 )
 
-(defrule prod-reset-machine-after-multiple-task-fails
-  (phase PRODUCTION)
-  ;?step <- (step (name ?name) (machine ?machine) (fail-count ?fail-cnt&:(>= ?fail-cnt ?*RESET-MACHINE-AFTER-N-RETRIES*)))
-  ?m <- (machine (name ?name) (fail-count ?fail-cnt&:(>= ?fail-cnt ?*RESET-MACHINE-AFTER-N-RETRIES*)))
- =>
- (printout t ?name " failed " ?fail-cnt " times. Sending reset message." clrf)
- (modify ?m (fail-count 0))
- (assert (mps-reset (machine ?name)))
-)
+
