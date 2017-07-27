@@ -147,7 +147,7 @@ ArduinoComThread::loop()
             } else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveToZ0Message>()) {
                 move_to_z_0_pending_ = true;
 
-            } else if (arduino_if_->msgq_first_is<ArduinoInterface::RestoreMessage>()) {
+            } else if (arduino_if_->msgq_first_is<ArduinoInterface::ResetZPosMessage>()) {
                 if((cfg_init_mm_ - current_z_position_) != 0) {
                     ArduinoComMessage req;
                     if ((cfg_init_mm_ - current_z_position_) < 0) {

@@ -55,8 +55,8 @@ ArduinoInterface::ArduinoInterface() : Interface()
   add_messageinfo("MoveUpwardsMessage");
   add_messageinfo("MoveDownwardsMessage");
   add_messageinfo("MoveToZ0Message");
-  add_messageinfo("RestoreMessage");
-  unsigned char tmp_hash[] = {0x36, 0x49, 0x2a, 0x40, 0xb1, 0xa9, 0x81, 0x86, 0xfa, 0x1e, 0x7e, 0xa0, 0x59, 0xfd, 0x27, 0xde};
+  add_messageinfo("ResetZPosMessage");
+  unsigned char tmp_hash[] = {0xb9, 0xe6, 0xc, 0x1a, 0x7b, 0xbb, 0xfe, 0xb2, 0x81, 0x96, 0xbd, 0x11, 0xc9, 0x58, 0xc9, 0x88};
   set_hash(tmp_hash);
 }
 
@@ -138,8 +138,8 @@ ArduinoInterface::create_message(const char *type) const
     return new MoveDownwardsMessage();
   } else if ( strncmp("MoveToZ0Message", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
     return new MoveToZ0Message();
-  } else if ( strncmp("RestoreMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
-    return new RestoreMessage();
+  } else if ( strncmp("ResetZPosMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
+    return new ResetZPosMessage();
   } else {
     throw UnknownTypeException("The given type '%s' does not match any known "
                                "message type for this interface type.", type);
@@ -394,25 +394,25 @@ ArduinoInterface::MoveToZ0Message::clone() const
 {
   return new ArduinoInterface::MoveToZ0Message(this);
 }
-/** @class ArduinoInterface::RestoreMessage <interfaces/ArduinoInterface.h>
- * RestoreMessage Fawkes BlackBoard Interface Message.
+/** @class ArduinoInterface::ResetZPosMessage <interfaces/ArduinoInterface.h>
+ * ResetZPosMessage Fawkes BlackBoard Interface Message.
  * 
     
  */
 
 
 /** Constructor */
-ArduinoInterface::RestoreMessage::RestoreMessage() : Message("RestoreMessage")
+ArduinoInterface::ResetZPosMessage::ResetZPosMessage() : Message("ResetZPosMessage")
 {
-  data_size = sizeof(RestoreMessage_data_t);
+  data_size = sizeof(ResetZPosMessage_data_t);
   data_ptr  = malloc(data_size);
   memset(data_ptr, 0, data_size);
-  data      = (RestoreMessage_data_t *)data_ptr;
+  data      = (ResetZPosMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
 }
 
 /** Destructor */
-ArduinoInterface::RestoreMessage::~RestoreMessage()
+ArduinoInterface::ResetZPosMessage::~ResetZPosMessage()
 {
   free(data_ptr);
 }
@@ -420,12 +420,12 @@ ArduinoInterface::RestoreMessage::~RestoreMessage()
 /** Copy constructor.
  * @param m message to copy from
  */
-ArduinoInterface::RestoreMessage::RestoreMessage(const RestoreMessage *m) : Message("RestoreMessage")
+ArduinoInterface::ResetZPosMessage::ResetZPosMessage(const ResetZPosMessage *m) : Message("ResetZPosMessage")
 {
   data_size = m->data_size;
   data_ptr  = malloc(data_size);
   memcpy(data_ptr, m->data_ptr, data_size);
-  data      = (RestoreMessage_data_t *)data_ptr;
+  data      = (ResetZPosMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
 }
 
@@ -436,9 +436,9 @@ ArduinoInterface::RestoreMessage::RestoreMessage(const RestoreMessage *m) : Mess
  * @return clone of this message
  */
 Message *
-ArduinoInterface::RestoreMessage::clone() const
+ArduinoInterface::ResetZPosMessage::clone() const
 {
-  return new ArduinoInterface::RestoreMessage(this);
+  return new ArduinoInterface::ResetZPosMessage(this);
 }
 /** Check if message is valid and can be enqueued.
  * @param message Message to check
@@ -459,7 +459,7 @@ ArduinoInterface::message_valid(const Message *message) const
   if ( m2 != NULL ) {
     return true;
   }
-  const RestoreMessage *m3 = dynamic_cast<const RestoreMessage *>(message);
+  const ResetZPosMessage *m3 = dynamic_cast<const ResetZPosMessage *>(message);
   if ( m3 != NULL ) {
     return true;
   }
