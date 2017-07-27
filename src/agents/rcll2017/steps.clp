@@ -634,8 +634,10 @@ the waiting state until we can use it again."
     (synced-modify ?bsf fail-side NONE)
     else
     (assert (state STEP-FAILED))
+    (assert (mps-reset (machine ?mps)))
     (modify ?step (state failed))
     (synced-modify ?bsf fail-side ?side)
+
   )
   (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource PREPARE-BS)))
 )
@@ -664,8 +666,7 @@ the waiting state until we can use it again."
 (defrule step-common-fail
   (declare (salience ?*PRIORITY-STEP-FAILED*))
   (phase PRODUCTION)
-  ?step <- (step (name get-from-shelf|insert|get-output|discard|drive-to) (machine ?machine) (state running))
-  ?m <- (machine (name ?machine) (fail-count ?fail-cnt)) 
+  ?step <- (step (name get-from-shelf|insert|get-output|discard|drive-to) (state running))
   ?state <- (state SKILL-FAILED)
   ?ste <- (skill-to-execute (skill get_product_from|bring_product_to|ax12gripper|drive_to)
 			    (args $?args) (state failed))
@@ -674,8 +675,6 @@ the waiting state until we can use it again."
   (retract ?state ?ste)
   (assert (state STEP-FAILED))
   (modify ?step (state failed))
-  (modify ?m (fail-count (+ ?fail-cnt 1)))
-  (printout t "Step failed " (+ ?fail-cnt 1) " times machine: " ?machine crlf)
 )
 
 ;;;;;;;;;;;;;;;;;
