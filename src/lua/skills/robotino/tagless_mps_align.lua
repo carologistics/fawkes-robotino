@@ -51,7 +51,7 @@ skillenv.skill_module(_M)
 
 -- Constants
 MIN_VIS_HIST = 0	-- negative value, because noisy lines can be approached and we hope for better laserline visibility after approach
-DIST_TO_MPS = 0.6+0.46/2
+DIST_TO_MPS = 0.25+0.46/2
 X1=-6.
 X2=6.
 Y1=0.

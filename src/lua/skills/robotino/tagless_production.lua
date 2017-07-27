@@ -4,7 +4,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "tagless_production"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"tagless_mps_align","goto","approach_test","shelf_pick"}
+depends_skills     = {"tagless_mps_align","goto","approach_test","shelf_pick","product_pick","product_put"}
 depends_interfaces = {
 }
 
@@ -61,7 +61,6 @@ end
 
 function shelf_decide(self)
 
-
   if self.fsm.vars.pickedShelf == false then
 
     printf("picked shelf false")
@@ -87,7 +86,10 @@ function shelf_suc(self)
     return true
 end
 
+function side_check(self)
 
+    return true
+end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
@@ -95,15 +97,17 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"DRIVE_TO_2", SkillJumpState, skills={{goto}}, final_to="MPS_ALIGN_2", fail_to="DRIVE_TO_3"},
    {"DRIVE_TO_3", SkillJumpState, skills={{goto}}, final_to="MPS_ALIGN_3", fail_to="DRIVE_TO_4"},
    {"DRIVE_TO_4", SkillJumpState, skills={{goto}}, final_to="MPS_ALIGN_4", fail_to="FAILED"},
-   {"MPS_ALIGN_1", SkillJumpState, skills={{tagless_mps_align}}, final_to="SKILL_TAGLESS_SHELF_PICK", fail_to="DRIVE_TO_2"},
-   {"MPS_ALIGN_2", SkillJumpState, skills={{tagless_mps_align}}, final_to="SKILL_TAGLESS_SHELF_PICK", fail_to="DRIVE_TO_3"},
-   {"MPS_ALIGN_3", SkillJumpState, skills={{tagless_mps_align}}, final_to="SKILL_TAGLESS_SHELF_PICK", fail_to="DRIVE_TO_4"},
-   {"MPS_ALIGN_4", SkillJumpState, skills={{tagless_mps_align}}, final_to="SKILL_TAGLESS_SHELF_PICK", fail_to="FAILED"},
+   {"MPS_ALIGN_1", SkillJumpState, skills={{tagless_mps_align}}, final_to="CHECK_SIDE", fail_to="DRIVE_TO_2"},
+   {"MPS_ALIGN_2", SkillJumpState, skills={{tagless_mps_align}}, final_to="CHECK_SIDE", fail_to="DRIVE_TO_3"},
+   {"MPS_ALIGN_3", SkillJumpState, skills={{tagless_mps_align}}, final_to="CHECK_SIDE", fail_to="DRIVE_TO_4"},
+   {"MPS_ALIGN_4", SkillJumpState, skills={{tagless_mps_align}}, final_to="CHECK_SIDE", fail_to="FAILED"},
+   {"CHECK_SIDE",JumpState},
+   {"DRIVE_TO_CORRECT_SIDE", SkillJumpState, skills={{goto}}, final_to="SKILL_TAGLESS_SHELF_PICK",fail_to="FAILED"},
    {"DECIDE_SHELF_PICK", JumpState},
    {"SHELF_PICK_SUC",JumpState},
    {"SKILL_TAGLESS_SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="SHELF_PICK_SUC", fail_to="DECIDE_SHELF_PICK"},
-   {"SKILL_TAGLESS_PRODUCT_PUT",SkillJumpState, skills={{approach_test}}, final_to="DRIVE_TO_OTHER_SIDE", fail_to="FAILED"},
-   {"SKILL_TAGLESS_PRODUCT_PICK",SkillJumpState,skills={{approach_test}}, final_to="FINAL", fail_to="FAILED"},
+   {"SKILL_TAGLESS_PRODUCT_PUT",SkillJumpState, skills={{product_put}}, final_to="DRIVE_TO_OTHER_SIDE", fail_to="FAILED"},
+   {"SKILL_TAGLESS_PRODUCT_PICK",SkillJumpState,skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
    --{"SKILL_TAGLESS_PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
    {"DRIVE_TO_OTHER_SIDE",SkillJumpState,skills={{goto}}, final_to="MPS_ALIGN_OUTPUT", fail_to="FAILED"},
    {"MPS_ALIGN_OUTPUT", SkillJumpState, skills={{tagless_mps_align}}, final_to="SKILL_TAGLESS_PRODUCT_PICK", fail_to="FAILED"},
@@ -116,10 +120,11 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond=true},
 --   {"SKILL_REALIGN_INPUT","SKILL_TAGLESS_PRODUCT_PICK", cond="self.fsm.vars.pickedShelf == true" },
 --   {"SKILL_REALIGN_INPUT", "SKILL_TAGLESS_SHELF_PICK", cond=true},
-   {"DECIDE_SHELF_PICK", "MPS_ALIGN_PRODUCT_PUT", cond=true}, --shelf_decide
+   {"DECIDE_SHELF_PICK", "MPS_ALIGN_PRODUCT_PUT", cond=shelf_decide}, --shelf_decide
    {"DECIDE_SHELF_PICK", "SKILL_REALIGN_INPUT", cond=true},
    {"SHELF_PICK_SUC","DECIDE_SHELF_PICK", cond=shelf_suc},
-
+   {"CHECK_SIDE","DRIVE_TO_CORRECT_SIDE", cond=side_check},
+   {"CHECK_SIDE", "SKILL_TAGLESS_SHELF_PICK",cond=true}
 }
 
 
@@ -174,10 +179,7 @@ function MPS_ALIGN_1:init()
 end
 
 function MPS_ALIGN_2:init()
- self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
-  self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
-  self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
-  self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
+
 
 end
 function MPS_ALIGN_3:init()
@@ -195,6 +197,61 @@ function MPS_ALIGN_4:init()
 
 end
 
+
+function MPS_ALIGN_OUTPUT:init()
+  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
+   self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
+   self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
+   self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
+
+end
+
+function MPS_ALIGN_PRODUCT_PUT:init()
+  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
+   self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
+   self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
+   self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
+end
+
+function SKILL_REALIGN_INPUT:init()
+  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
+   self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
+   self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
+   self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
+end
+
+
+function DRIVE_TO_CORRECT_SIDE:init()
+
+
+    if (self.fsm.vars.lastX > self.fsm.vars.xZone) then
+      self.args["goto"].x = self.fsm.vars.lastX - 2
+    end
+
+    if (self.fsm.vars.lastX < self.fsm.vars.xZone) then
+        self.args["goto"].x = self.fsm.vars.lastX + 2
+      end
+
+
+    if (self.fsm.vars.lastX == self.fsm.vars.xZone) then
+       self.args["goto"].x = self.fsm.vars.lastX
+    end
+
+    if (self.fsm.vars.lastY > self.fsm.vars.yZone) then
+           self.args["goto"].y = self.fsm.vars.lastY -2
+    end
+
+    if (self.fsm.vars.lastY < self.fsm.vars.yZone) then
+             self.args["goto"].y = self.fsm.vars.lastY + 2
+    end
+
+    if (self.fsm.vars.lastY == self.fsm.vars.yZone) then
+             self.args["goto"].y = self.fsm.vars.lastY
+    end
+
+    self.args["goto"].ori = self.fsm.vars.lasatOri + 3.1415
+
+end
 
 function DRIVE_TO_OTHER_SIDE:init()
 
@@ -230,41 +287,18 @@ end
 function SKILL_TAGLESS_SHELF_PICK:init()
 
     self.args["shelf_pick"].slot = "MIDDLE"
---  self.args["approach_test"].side = "input"
---  self.args["approach_test"].option = "pick"
---  self.args["approach_test"].shelf =  self.fsm.vars.currShelf
---
---  self.args["approach_test"].alignX1 = self.fsm.vars.alignX1
---  self.args["approach_test"].alignY1 = self.fsm.vars.alignY1
---  self.args["approach_test"].alignX2 = self.fsm.vars.alignX2
---  self.args["approach_test"].alignY2 = self.fsm.vars.alignY2
+
 
 end
 
 
 
 function SKILL_TAGLESS_PRODUCT_PICK:init()
-  self.args["approach_test"].side = "input"
-  self.args["approach_test"].option = "pick"
-  self.args["approach_test"].alignX1 = self.fsm.vars.alignX1
-  self.args["approach_test"].alignY1 = self.fsm.vars.alignY1
-  self.args["approach_test"].alignX2 = self.fsm.vars.alignX2
-  self.args["approach_test"].alignY2 = self.fsm.vars.alignY2
+
+  self.args["product_pick"].offset_x = 0
+
 end
 
 function SKILL_TAGLESS_PRODUCT_PUT:init()
-  self.args["approach_test"].side = "output"
-  self.args["approach_test"].option = "put"
-   self.args["approach_test"].alignX1 = self.fsm.vars.alignX1
-   self.args["approach_test"].alignY1 = self.fsm.vars.alignY1
-   self.args["approach_test"].alignX2 = self.fsm.vars.alignX2
-   self.args["approach_test"].alignY2 = self.fsm.vars.alignY2
+  self.args["product_put"].offset_x = 0
 end
-
---function SKILL_PRODUCT_PICK:init()
---   self.args["product_pick"].offset_x = 0
---end
-
---function SKILL_SHELF_PICK:init()
---   self.args["shelf_pick"] = {slot = self.fsm.vars.shelf}
---end
