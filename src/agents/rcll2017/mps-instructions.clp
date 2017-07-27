@@ -61,7 +61,7 @@
                                 (ring-color ?ring-color) (cs-operation ?cs-op)
                                 (side ?side) (lock ?lock))
   ;eigther no lock needed or already aquired
-  (or (test (eq ?lock NONE)))
+  (or (test (eq ?lock NONE))
       (wait-for-lock (res ?lock) (state use)))
   (machine (name ?machine) (mtype ?mtype))
   (team-color ?team-color)
