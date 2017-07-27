@@ -42,14 +42,15 @@ documentation      = [==[ shelf_pick
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local x_distance = 0.25
+local x_distance = 0.27
 if config:exists("/skills/approach_distance_laser/x") then
    x_distance = config:get_float("/skills/approach_distance_laser/x")
 end
 
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"INIT",       SkillJumpState, skills={{ax12gripper}}, final_to="GOTO_SHELF", fail_to="FAILED" },
-   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SHELF", fail_to="FAILED"},
+   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="ADJUST_HEIGHT", fail_to="FAILED"},
+   {"ADJUST_HEIGHT",       SkillJumpState, skills={{ax12gripper}}, final_to="APPROACH_SHELF", fail_to="FAILED" },
    {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="GRAB_PRODUCT", fail_to="FAILED"},
    {"GRAB_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAIL_SAFE"},
    {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_INTERFACE", fail_to="FAILED"},
@@ -92,6 +93,13 @@ function GOTO_SHELF:init()
 				tolerance = { x=0.002, y=0.002, ori=0.01 }
 			}
 end
+
+function ADJUST_HEIGHT:init()
+   self.args["ax12gripper"].command = "RELGOTOZ"
+   self.args["ax12gripper"].z_position = -4
+   printf("adjusting height")
+end
+
 
 function APPROACH_SHELF:init()
    self.args["approach_mps"].x = x_distance
