@@ -202,7 +202,7 @@ int MarkerlessRecognitionThread::recognize_mps() {
 	}	
 
         mps_rec_if_->set_final(true);
-	if(MPS_COUNT>5) 	mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) ((int)(station/2)+1) );
+	if(MPS_COUNT>5) 	mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) ((int)(station+1)/2) );
 	else mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) (station+1));
 	mps_rec_if_->write();	
 	
