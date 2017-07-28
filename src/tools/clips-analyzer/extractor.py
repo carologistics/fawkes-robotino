@@ -10,13 +10,26 @@ cursor = db_games.cursor()
 cursor.execute('''CREATE TABLE IF NOT EXISTS games_meta(id INTEGER PRIMARY KEY, game_table_name TEXT)''')
 db_games.commit()
 
+
 def create_games_table(db, crs, number):
     crs.execute("CREATE TABLE IF NOT EXISTS game" + str(
         number) + "(id INTEGER PRIMARY KEY,cont TEXT, relc INTEGER, absc INTEGER,"
                 + " attr TEXT, time INTEGER, gametime INTEGER, name TEXT)")
     tb_exists = "SELECT name FROM sqlite_master WHERE type='table' AND name='games_meta'"
     if not crs.execute(tb_exists).fetchone():
-        crs.execute("INSERT INTO game" + str(number) + "(game_table_name) VALUES(?)", ("game" + str(number)))
+        crs.execute("INSERT INTO games_meta(game_table_name) VALUES(?);", ("game" + str(number)))
+    db.commit()
+
+
+def create_games_facts_table(db, crs, number):
+    crs.execute("CREATE TABLE IF NOT EXISTS game" + str(
+        number) + "_facts(id INTEGER PRIMARY KEY,name TEXT, content TEXT, relc INTEGER)")
+    db.commit()
+
+
+def create_games_rules_fired_table(db, crs, number):
+    crs.execute("CREATE TABLE IF NOT EXISTS game" + str(
+        number) + "_rules_fired(id INTEGER PRIMARY KEY,name TEXT, gametime INTEGER, relc INTEGER)")
     db.commit()
 
 
@@ -69,11 +82,11 @@ class Line:
 
     def check_for_retract(self):
         if re.search(r"==>", self.cont) is not None:
-            self.attr = 'retract'
+            self.attr = 'assert'
 
     def check_for_assert(self):
         if re.search(r"<==", self.cont) is not None:
-            self.attr = 'assert'
+            self.attr = 'retract'
 
     def check_for_calling_skill(self):
         if re.search(r"Calling skill", self.cont) is not None:
@@ -125,18 +138,15 @@ def extract_from_file(filename):
             if line is not None:
                 if (re.search(r'Trying CLIPS file .*/fawkes-robotino/fawkes/src/plugins/clips/clips/ff-config.clp',
                               line.group()) is not None):
-                    if debug_list:
+                    rel_line_counter = 1;
+                    if len(debug_list) > 0:
                         game_list.append(debug_list)
-                        debug_list = []
-                        debug_list.append(Line(line.group(), rel_line_counter, abs_line_counter))
-                        rel_line_counter = 0
-                    else:
-                        debug_list.append(Line(line.group(), rel_line_counter, abs_line_counter))
-                        rel_line_counter = rel_line_counter + 1
-                        # rel_line_counter = 1
-                        # game_list.append(debug_list)
-                        # debug_list=[]
-                        # debug_list.append(Line(line.group(),rel_line_counter,abs_line_counter))
+                        debug_list = [Line(line.group(), rel_line_counter, abs_line_counter)]
+
+                        # rel_line_counter = 0
+                        # else:
+                        #     debug_list = [Line(line.group(), rel_line_counter, abs_line_counter)]
+                        #     rel_line_counter = rel_line_counter + 1
 
                 else:
                     debug_list.append(Line(line.group(), rel_line_counter, abs_line_counter))
@@ -150,8 +160,6 @@ def interactive(game_list):
         print("There is 1 game in this logfile: " + filename)
     else:
         print("There are " + str(len(game_list)) + " games in this logfile: " + filename)
-
-    print("\n")
     print("Please use the flag -h or --help for how this programm can be used\n")
     print("")
 
@@ -170,15 +178,6 @@ switch = None
 game_number = 2
 starttime = 0
 
-starttime = game_list[game_number][0].time
-for i in range(len(game_list)):
-    for line in game_list[i]:
-        line.calculate_gametime(starttime)
-for line in game_list[game_number]:
-    if "fire" == line.attr:
-        pass
-        # print(str(line.game_time) + " sec: Rule " + line.name)
-
 
 def show_rules_around(current_game, game_time, timediff=0):
     time_min = game_time - timediff
@@ -190,16 +189,58 @@ def show_rules_around(current_game, game_time, timediff=0):
                 print(str(g.game_time) + " sec: Rule " + g.name)
 
 
-game = game_list[game_number]
+# game = game_list[game_number]
 
+for i in range(len(game_list)):
+    create_games_table(db_games, cursor, i)
+    create_games_facts_table(db_games, cursor, i)
+    create_games_rules_fired_table(db_games, cursor, i)
+    cursor.execute("INSERT INTO games_meta(game_table_name) VALUES(?)", ("game" + str(i),))
+    db_games.commit()
+
+for i in range(len(game_list)):
+    starttime = game_list[i][0].time
+    for line in game_list[i]:
+        line.calculate_gametime(starttime)
+        if line.name is not None:
+            cursor.execute("INSERT INTO  game" + str(i) + "(cont, relc, absc, attr, time, gametime, name)" \
+                                                          "VALUES(?,?,?,?,?,?,?)", \
+                           (line.cont, line.relc, line.absc, line.attr, line.time, line.game_time, line.name))
+        else:
+            cursor.execute("INSERT INTO  game" + str(i) + "(cont, relc, absc, attr, time, gametime)" \
+                                                          "VALUES(?,?,?,?,?,?)", \
+                           (line.cont, line.relc, line.absc, line.attr, line.time, line.game_time))
+    db_games.commit()
+
+for i in range(len(game_list)):
+    t = ('assert',)
+    fact_list = cursor.execute('SELECT * FROM game' + str(i) + ' WHERE attr=?', t)
+    assert_list = []
+    switch = False
+    for fact in fact_list:
+        f = re.search(r"==>\s*(f-[0-9]*)\s*\((.*)\)", fact[1])
+        if "f-0"==f.group(1):
+            switch = True
+        if True == switch:
+            assert_list.append((f.group(1), f.group(2), fact[2]))
+    cursor.executemany("INSERT INTO  game" + str(i) + "_facts(name, content, relc) VALUES(?,?,?)", assert_list)
+    db_games.commit()
+
+    t = ('fire',)
+    fact_list = cursor.execute('SELECT * FROM game' + str(i) + ' WHERE attr=?', t)
+    rule_list = []
+    for fact in fact_list:
+        rule_list.append((fact[7],fact[2],fact[6]))
+    cursor.executemany("INSERT INTO  game" + str(i) + "_rules_fired(name, relc, gametime) VALUES(?,?,?)", rule_list)
+    db_games.commit()
 
 def show_times_when_rule_fired(game, rulename):
     print("Rule " + rulename + " was fired at these times:")
     for g in game:
         if g.name is not None:
             if rulename in g.name:
-                print(str(g.game_time) + " sec = " + str(g.game_time//60)+" min and "
-                      +str(g.game_time%60)+" sec -> id: " + str(g.relc))
+                print(str(g.game_time) + " sec = " + str(g.game_time // 60) + " min and "
+                      + str(g.game_time % 60) + " sec -> id: " + str(g.relc))
 
 
 for i, line in enumerate(game_list[game_number]):
@@ -221,6 +262,8 @@ for i, line in enumerate(game_list[game_number]):
                 retract_dict.update(fused)
 
 
+# print(assert_dict)
+
 def current_factbase(assert_dictionary, retract_dictionary, point_in_time):
     factbase = []
     for timestep in range(point_in_time + 1):
@@ -230,6 +273,7 @@ def current_factbase(assert_dictionary, retract_dictionary, point_in_time):
             if retract_dictionary[timestep] in factbase:
                 factbase.remove(retract_dictionary[timestep])
     return factbase
+
 
 # Was stand wann und wann in der factbase
 # Filter: Positivliste
