@@ -170,7 +170,7 @@
   (if (eq ?role MASTER)
     then
     (if (or (eq ?type GET) (eq ?type RELEASE)) then
-      (do-for-all-facts ((?old lock)) (and (eq ?old:type GET)
+      (delayed-do-for-all-facts ((?old lock)) (and (eq ?old:type GET)
                                            (eq ?old:agent ?a)
                                            (eq ?old:resource ?r))
         (retract ?old)
@@ -223,7 +223,7 @@
   =>
   ;(printout t "Receiving all locks:" crlf)
   ;retract old locks
-  (do-for-all-facts ((?lock locked-resource)) TRUE
+  (delayed-do-for-all-facts ((?lock locked-resource)) TRUE
     (retract ?lock)
   )
   ;read current locks

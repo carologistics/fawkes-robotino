@@ -671,7 +671,7 @@
     (bind ?compute-msg-id (blackboard-send-msg ?msg))
 
     ; save the last compute-msg-id to know when it was processed
-    (do-for-all-facts ((?lncm last-navgraph-compute-msg)) TRUE
+    (delayed-do-for-all-facts ((?lncm last-navgraph-compute-msg)) TRUE
       (retract ?lncm)
     )
     (assert (last-navgraph-compute-msg (id ?compute-msg-id)))

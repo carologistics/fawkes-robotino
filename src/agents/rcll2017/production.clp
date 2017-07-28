@@ -853,6 +853,7 @@
   =>
   (printout t "Removing rejected tasks after waiting for "
             ?*TIMEOUT-REMOVE-REJECTED-WHILE-WAITING* "s" crlf)
+  (coordination-release-all-subgoal-locks)
   (coordination-remove-old-rejected-tasks)
   (retract ?no-task)
   (assert (no-task-found (nth$ 1 ?game-time)))
