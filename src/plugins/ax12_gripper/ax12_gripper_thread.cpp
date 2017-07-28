@@ -173,6 +173,9 @@ GripperAX12AThread::init()
 
   cur_torque_ = 1.0;
 
+  // initialize motion_start_timestamp
+  motion_start_timestamp_ = fawkes::Time();
+
 #ifdef USE_TIMETRACKER
   __tt.reset(new TimeTracker());
   __tt_count = 0;
@@ -210,6 +213,8 @@ GripperAX12AThread::loop()
     __servo_if_left->read();
     __servo_if_right->read();
 
+    fawkes::Time now(clock);
+
       // load is given in values from 0 - 1023 is ccw load, 1024 - 2047 is cw load but we are only interested in overall load
     if (load_left_pending && (__servo_if_left->load() & 0x3ff) >= (__cfg_max_load * 0x3ff)) {
       DynamixelServoInterface::StopMessage *stop_message = new DynamixelServoInterface::StopMessage();
@@ -222,17 +227,13 @@ GripperAX12AThread::loop()
       load_right_pending = false;
     }
     if (center_pending && __servo_if_left->is_final() && __servo_if_right->is_final()) {
-      //Enable PreventAlarmShutdown on both servos
-      DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_left_msg  = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
-      DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_right_msg = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
-      prevent_left_msg->set_enable_prevent_alarm_shutdown(false);
-      prevent_right_msg->set_enable_prevent_alarm_shutdown(false);
-      __servo_if_left ->msgq_enqueue(prevent_left_msg);
-      __servo_if_right->msgq_enqueue(prevent_right_msg);
       center_pending = false;
     }
 
-    __gripper_if->set_final(__servo_if_left->is_final() && __servo_if_right->is_final() && !z_alignment_pending);
+    __gripper_if->set_final(now > (motion_start_timestamp_ + 0.5) &&
+                            __servo_if_left->is_final() &&
+                            __servo_if_right->is_final() &&
+                            !z_alignment_pending);
 
     // if the torque is disabled we have to track the position of the servos
     // and constantly send it as goal poses.
@@ -243,8 +244,7 @@ GripperAX12AThread::loop()
         bool is_final = (__servo_if_left->speed() & 0x3FF) < 32;
         is_final &= (__servo_if_right->speed() & 0x3FF) < 32;
         is_final &= !z_alignment_pending;
-        fawkes::Time now(clock);
-        is_final &= now > (torque_0_timestamp_ + 0.5);
+        is_final &= now > (motion_start_timestamp_ + 0.5);
         __gripper_if->set_final(is_final);
         goto_gripper(__servo_if_left->angle(), __servo_if_right->angle());
       }
@@ -325,14 +325,6 @@ GripperAX12AThread::loop()
 
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CenterMessage>()) {
         
-        //Disable PreventAlarmShutdown on both servos
-        DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_left_msg  = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
-        DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_right_msg = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
-        prevent_left_msg->set_enable_prevent_alarm_shutdown(false);
-        prevent_right_msg->set_enable_prevent_alarm_shutdown(false);
-        __servo_if_left ->msgq_enqueue(prevent_left_msg);
-        __servo_if_right->msgq_enqueue(prevent_right_msg);
-        
         // The target_opening_angle has to be smaller than the opening_angle because
         // the servos tend to open a little when only the opening_angle is used.
         float target_opening_angle_per_servo = (get_opening_angle() - __cfg_center_angle_correction_amount) / 2.;
@@ -340,12 +332,14 @@ GripperAX12AThread::loop()
         goto_gripper(__servo_if_left->angle() - (__servo_if_left->angle() + target_opening_angle_per_servo),
                      __servo_if_right->angle() - (__servo_if_right->angle() - target_opening_angle_per_servo));
         center_pending = true;
+
+        motion_start_timestamp_ = fawkes::Time(clock);
         
         __gripper_if->set_final(false);
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SetTorqueMessage>()) {
         AX12GripperInterface::SetTorqueMessage *msg = __gripper_if->msgq_first(msg);
 
-        torque_0_timestamp_ = fawkes::Time();
+        motion_start_timestamp_ = fawkes::Time(clock);
         set_torque(msg->torque());
 
       } else {
