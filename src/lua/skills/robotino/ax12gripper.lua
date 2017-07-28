@@ -48,6 +48,10 @@ function relgotoz_allowed(self)
    return (cur_z + desired_z) <= upper_bound and (cur_z + desired_z) >= lower_bound
 end
 
+function center_check(self)
+   return self.fsm.vars.center and (os.time() > self.fsm.vars.center_timestamp + 0.5)
+end
+
 -- States
 fsm:define_states{
    export_to=_M,
@@ -72,7 +76,8 @@ fsm:add_transitions{
    {"COMMAND", "FAILED", cond="vars.error"},
    {"COMMAND", "WAIT_FOR_GRAB", cond="vars.grab"},
    {"COMMAND", "RELGOTOZ", cond="vars.relgotoz"},
-   {"COMMAND", "RESET_AFTER_IF_FINAL", cond="vars.close_tight or vars.center"},
+   {"COMMAND", "RESET_AFTER_IF_FINAL", cond=center_check},
+   {"COMMAND", "RESET_AFTER_IF_FINAL", cond="vars.close_tight"},
    {"COMMAND", "RESET_Z_POS", cond="vars.restore"},
    {"WAIT_FOR_GRAB", "CHECK_GRAB_SUCCESS", timeout=1.5},
    {"CHECK_GRAB_SUCCESS", "FINAL", cond="gripper_if:is_holds_puck()"},
@@ -97,6 +102,7 @@ function COMMAND:init()
 
    elseif self.fsm.vars.command == "CENTER" then
       self.fsm.vars.center = true
+      self.fsm.vars.center_timestamp = os.time()
       torqueMessage = gripper_if.SetTorqueMessage:new()
       torqueMessage:set_torque(1)
       gripper_if:msgq_enqueue(torqueMessage)
