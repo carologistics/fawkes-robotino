@@ -225,8 +225,8 @@ GripperAX12AThread::loop()
       //Enable PreventAlarmShutdown on both servos
       DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_left_msg  = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
       DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_right_msg = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
-      prevent_left_msg->set_enable_prevent_alarm_shutdown(true);
-      prevent_right_msg->set_enable_prevent_alarm_shutdown(true);
+      prevent_left_msg->set_enable_prevent_alarm_shutdown(false);
+      prevent_right_msg->set_enable_prevent_alarm_shutdown(false);
       __servo_if_left ->msgq_enqueue(prevent_left_msg);
       __servo_if_right->msgq_enqueue(prevent_right_msg);
       center_pending = false;
