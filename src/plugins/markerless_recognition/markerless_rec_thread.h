@@ -54,8 +54,8 @@
 #include <stdio.h>
 
 #define THRESHOLD_UPPER 0.8
-#define THRESHOLD_LOWER 0.5
-#define MPS_COUNT 2
+#define THRESHOLD_LOWER 0.1
+#define MPS_COUNT 10
 
 namespace fawkes {
   class MPSRecognitionInterface;
@@ -72,12 +72,17 @@ struct Probability
 	float p[MPS_COUNT];
 };
 
-typedef Probability (*my_function)(const char*, const char*, const char*,bool);
+typedef std::vector<float> (*my_function)(int,const char*, const char*, const char*,bool);
 typedef void (*init_function)(const char*, const char*);
 
 enum MPSType {
-	CS_I,
-	CS_O
+	BS,
+	CS,
+	DS,
+	RS,
+	SS,
+	NoStationDetected,
+	CorR
 };
 
 class MarkerlessRecognitionThread
