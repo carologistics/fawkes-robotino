@@ -54,9 +54,9 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
     goto_zero_start: true
     
     # Left open angle in rad
-    left_open: -0.50  # -45 degrees
+    left_open: -0.35  # -45 degrees
     # Right open angle in rad
-    right_open: 0.50  # 45 degrees
+    right_open: 0.35  # 45 degrees
     # Left close angle in rad
     left_close: 0.3  # 10 degrees
     # Right close angle in rad
