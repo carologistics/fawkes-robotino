@@ -797,18 +797,18 @@
   )
 )
 
-;(defrule prod-reset-mps-with-inconsistent-state
-;  "Reset an MPS which is expected to be IDLE but is actually READY-AT-OUTPUT"
-;  (declare (salience ?*PRIORITY-RESET-MPS*))
-;  ;(lock-role MASTER)
-;  (team-color ?team-color&~nil)
-;  (machine (name ?mps) (state READY-AT-OUTPUT) (team ?team-color))
-;  (step (name instruct-mps) (machine ?mps))
-;  =>
-;  (printout error
-;    "Expected machine " ?mps " to be IDLE, but it is READY-AT-OUTPUT")
-;  (assert (mps-reset (machine ?mps)))
-;)
+(defrule prod-reset-mps-with-inconsistent-state
+  "Reset an MPS which is expected to be IDLE but is actually READY-AT-OUTPUT"
+  (declare (salience ?*PRIORITY-RESET-MPS*))
+  ;(lock-role MASTER)
+  (team-color ?team-color&~nil)
+  (machine (name ?mps) (state READY-AT-OUTPUT) (team ?team-color))
+  (step (name instruct-mps) (machine ?mps) (state wait-for-activation))
+  =>
+  (printout error
+    "Expected machine " ?mps " to be IDLE, but it is READY-AT-OUTPUT")
+  (assert (mps-reset (machine ?mps)))
+)
  
 (defrule prod-nothing-to-do-save-factbase
   "If the agent can't find any task, save the factbase to find problems"
