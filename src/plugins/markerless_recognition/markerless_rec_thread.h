@@ -55,7 +55,7 @@
 
 #define THRESHOLD_UPPER 0.8
 #define THRESHOLD_LOWER 0.1
-#define MPS_COUNT 10
+#define MPS_COUNT 2
 
 namespace fawkes {
   class MPSRecognitionInterface;

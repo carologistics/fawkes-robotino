@@ -48,7 +48,7 @@ void MarkerlessRecognitionThread::finalize() {
  	ipl = NULL;
 }
 int checkResult(Probability prob){
-	for(int i = 0; i < 4; i++){
+	for(int i = 0; i < MPS_COUNT; i++){
 
 		if(prob.p[i]<0 || prob.p[i]>1){
 			return -1;
@@ -203,7 +203,7 @@ int MarkerlessRecognitionThread::recognize_mps() {
 
         mps_rec_if_->set_final(true);
 	if(MPS_COUNT>5) 	mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) ((int)(station+1)/2) );
-	else mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) (station+1));
+	else mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) (station));
 	mps_rec_if_->write();	
 	
 	logger->log_info(name(), " Finished recognizing "); 
