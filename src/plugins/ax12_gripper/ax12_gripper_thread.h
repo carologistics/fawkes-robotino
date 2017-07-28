@@ -148,7 +148,7 @@ class GripperAX12AThread
   fawkes::Time time_to_stop_z_align;
   
   float        cur_torque_;
-  fawkes::Time torque_0_timestamp_;
+  fawkes::Time motion_start_timestamp_;
 
 #ifdef HAVE_TF
   std::string  __cfg_base_frame;
