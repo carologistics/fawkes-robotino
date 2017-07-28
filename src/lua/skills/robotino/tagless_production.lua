@@ -57,6 +57,14 @@ function calc_xy_coordinates(self)
   self.fsm.vars.currShelf = "LEFT"
   self.fsm.vars.pickedShelf = false
 
+
+  if self.fsm.vars.machine == nil then
+      self.fsm.vars.machine = "C-CS1"
+  end
+
+  os.execute("../../llsf-refbox/bin/rcll-set-machine-state " .. self.fsm.vars.machine .. "  RESET &")
+
+
   return true
 end
 
@@ -94,7 +102,7 @@ function side_check_evaluation(self)
     --  if(recognition_result == 'cap-input') then
     --      return true
     --  end
-    return false
+    return true
 end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
@@ -118,7 +126,8 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    --{"SKILL_TAGLESS_PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
    {"DRIVE_TO_OTHER_SIDE",SkillJumpState,skills={{goto}}, final_to="MPS_ALIGN_OUTPUT", fail_to="FAILED"},
    {"MPS_ALIGN_OUTPUT", SkillJumpState, skills={{tagless_mps_align}}, final_to="SKILL_TAGLESS_PRODUCT_PICK", fail_to="FAILED"},
-   {"MPS_ALIGN_PRODUCT_PUT", SkillJumpState, skills={{tagless_mps_align}}, final_to="SKILL_TAGLESS_PRODUCT_PUT",fail_to="FAILED"},
+   {"MPS_ALIGN_PRODUCT_PUT", SkillJumpState, skills={{tagless_mps_align}}, final_to="INSTRUCT_MACHINE_MOUNT",fail_to="FAILED"},
+   {"INSTRUCT_MACHINE_MOUNT", JumpState},
    {"SKILL_REALIGN_INPUT", SkillJumpState, skills={{tagless_mps_align}}, final_to="SKILL_TAGLESS_SHELF_PICK", fail_to="FAILED"},
 }
 
@@ -132,6 +141,7 @@ fsm:add_transitions{
    {"SHELF_PICK_SUC","DECIDE_SHELF_PICK", cond=shelf_suc},
    {"CHECK_SIDE_EVALUATE","SKILL_TAGLESS_SHELF_PICK", cond=side_check_evaluation},
    {"CHECK_SIDE_EVALUATE", "DRIVE_TO_CORRECT_SIDE",cond=true},
+   {"INSTRUCT_MACHINE_MOUNT","SKILL_TAGLESS_PRODUCT_PUT",cond=true},
 }
 
 
@@ -179,7 +189,7 @@ end
 
 
 function MPS_ALIGN_1:init()
- self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
+  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
   self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
   self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
   self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
@@ -202,7 +212,7 @@ function MPS_ALIGN_3:init()
 
 end
 function MPS_ALIGN_4:init()
- self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
+  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
   self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
   self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
   self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
@@ -211,7 +221,7 @@ end
 
 
 function MPS_ALIGN_OUTPUT:init()
-  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
+   self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
    self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
    self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
    self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
@@ -219,14 +229,14 @@ function MPS_ALIGN_OUTPUT:init()
 end
 
 function MPS_ALIGN_PRODUCT_PUT:init()
-  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
+   self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
    self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
    self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
    self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
 end
 
 function SKILL_REALIGN_INPUT:init()
-  self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
+   self.args["tagless_mps_align"].x1 = self.fsm.vars.alignX1
    self.args["tagless_mps_align"].y1 = self.fsm.vars.alignY1
    self.args["tagless_mps_align"].x2 = self.fsm.vars.alignX2
    self.args["tagless_mps_align"].y2 = self.fsm.vars.alignY2
@@ -322,4 +332,17 @@ end
 function SKILL_TAGLESS_PRODUCT_PUT:init()
 
   self.args["approach_test"].option = "put"
+end
+
+
+--function INSTRUCT_MACHINE_RETRIEVE:init()
+--   os.execute("../../llsf-refbox/bin/rcll-prepare-machine Carologistics " .. self.fsm.vars.machine .. "  RETRIEVE_CAP &")
+--end
+
+function INSTRUCT_MACHINE_MOUNT:init()
+    printf("SENDING MOUNT")
+
+    os.execute("../../llsf-refbox/bin/rcll-prepare-machine Carologistics " .. self.fsm.vars.machine .. "  MOUNT_CAP &")
+
+
 end
