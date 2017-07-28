@@ -6,6 +6,8 @@ name               = "tagless_production"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"tagless_mps_align","goto","mps_recog_side","shelf_pick","product_pick","product_put","approach_test"}
 depends_interfaces = {
+          {v = "mps_recognition_if", type = "MPSRecognitionInterface", id="/MarkerlessRecognition"},
+
 }
 
 documentation      = [==[
@@ -97,12 +99,13 @@ end
 
 function side_check_evaluation(self)
 
+    recognition_result = MPS_TYPES[mps_recognition_if:mpstype()+1];
 
-    --recognition_result = MPS_TYPES[mps_recognition_if:mpstype()+1];
-    --  if(recognition_result == 'cap-input') then
-    --      return true
-    --  end
-    return true
+    if(recognition_result == 'cap-input') then
+          return true
+    end
+    return false
+
 end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
