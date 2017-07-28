@@ -579,7 +579,7 @@ the waiting state until we can use it again."
   (retract ?state)
   (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?lock) (priority ?p)))
   ; Retract all lock releases for ?res that gets the lock
-  (do-for-all-facts ((?release lock)) (and (eq ?release:agent ?*ROBOT-NAME*)
+  (delayed-do-for-all-facts ((?release lock)) (and (eq ?release:agent ?*ROBOT-NAME*)
                                            (eq ?release:resource ?lock)
                                            (eq ?release:type RELEASE))
     (retract ?release)
