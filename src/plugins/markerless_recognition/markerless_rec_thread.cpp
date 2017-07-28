@@ -198,7 +198,7 @@ int MarkerlessRecognitionThread::recognize_mps() {
 
 		}
 */
-		station = maximum;
+		station = maximum+1;
 	}	
 
         mps_rec_if_->set_final(true);
