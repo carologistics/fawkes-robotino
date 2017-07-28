@@ -342,6 +342,27 @@ GripperAX12AThread::loop()
         motion_start_timestamp_ = fawkes::Time(clock);
         set_torque(msg->torque());
 
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SlapMessage>()) {
+        AX12GripperInterface::SlapMessage *msg = __gripper_if->msgq_first(msg);
+
+        if (msg->slapmode() == AX12GripperInterface::SlapMode::LEFT) {
+          // open the gripper and disable torque on the left
+          set_torque_right(1);
+          goto_gripper(__cfg_left_open_angle, __cfg_right_open_angle);
+
+          motion_start_timestamp_ = fawkes::Time(clock);
+          set_torque_left(0);
+        } else if (msg->slapmode() == AX12GripperInterface::SlapMode::RIGHT) {
+          // open the gripper and disable torque on the right
+          set_torque_left(1);
+          goto_gripper(__cfg_left_open_angle, __cfg_right_open_angle);
+
+          motion_start_timestamp_ = fawkes::Time(clock);
+          set_torque_right(0);
+        } else {
+          logger->log_error(name(), "SlapMessage received but no side given.");
+        }
+
       } else {
         logger->log_warn(name(), "Unknown message received");
       }
@@ -552,15 +573,42 @@ void
 GripperAX12AThread::set_torque(float torque)
 {
   if (torque >= 0. && torque <= 1.0) {
+    set_torque_left(torque);
+    set_torque_right(torque);
+  }
+}
+
+/** Set desired left servo torque in a range of 0 - 1.
+ * @param torque torque from 0 - 1
+ */
+void
+GripperAX12AThread::set_torque_left(float torque)
+{
+  if (torque >= 0. && torque <= 1.0) {
     cur_torque_ = torque;
-    logger->log_warn(name(), "Set torque to %f", torque);
+    logger->log_debug(name(), "Set left torque to %f", torque);
 
     DynamixelServoInterface::SetTorqueLimitMessage *torque_left_message = new DynamixelServoInterface::SetTorqueLimitMessage(torque * 0x3FF);
-    DynamixelServoInterface::SetTorqueLimitMessage *torque_right_message = new DynamixelServoInterface::SetTorqueLimitMessage(torque * 0x3FF);
     __servo_if_left->msgq_enqueue(torque_left_message);
+  } else {
+    logger->log_error(name(), "Unable to set left torque to %f - value out of range!", torque);
+  }
+}
+
+/** Set desired left servo torque in a range of 0 - 1.
+ * @param torque torque from 0 - 1
+ */
+void
+GripperAX12AThread::set_torque_right(float torque)
+{
+  if (torque >= 0. && torque <= 1.0) {
+    cur_torque_ = torque;
+    logger->log_debug(name(), "Set right torque to %f", torque);
+
+    DynamixelServoInterface::SetTorqueLimitMessage *torque_right_message = new DynamixelServoInterface::SetTorqueLimitMessage(torque * 0x3FF);
     __servo_if_right->msgq_enqueue(torque_right_message);
   } else {
-    logger->log_error(name(), "Unable to set torque to %f - value out of range!", torque);
+    logger->log_error(name(), "Unable to set right torque to %f - value out of range!", torque);
   }
 }
 
