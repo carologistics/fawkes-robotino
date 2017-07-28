@@ -87,7 +87,7 @@ function recognition_result()
    speak("Recognition completed! Result: %s",MPS_TYPES[mps_recognition_if:mpstype()+1])
 
    printf("The result is %s",recognition_result);
-  
+   printf("Acutal: %d",mps_recognition_if:mpstype())
    return true;
 end
 
