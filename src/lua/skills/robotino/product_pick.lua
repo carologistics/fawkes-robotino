@@ -94,7 +94,7 @@ function DRIVE_FORWARD:init()
 end
 
 function MOVE_BACK:init()
-   self.args["motor_move"] = {x = -0.017, vel_trans = 0.01, tolerance = { x=0.001, y=0.002, ori=0.01 } }
+   self.args["motor_move"] = {x = -0.017, vel_trans = 0.03, tolerance = { x=0.001, y=0.002, ori=0.01 } }
 end
 
 function MOVE_BACK_SECOND:init()
