@@ -64,6 +64,8 @@ AX12GripperInterface::AX12GripperInterface() : Interface()
   data      = (AX12GripperInterface_data_t *)data_ptr;
   data_ts   = (interface_data_ts_t *)data_ptr;
   memset(data_ptr, 0, data_size);
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_UINT32, "flags", 1, &data->flags);
   add_fieldinfo(IFT_INT32, "z_position", 1, &data->z_position);
   add_fieldinfo(IFT_INT32, "z_upper_bound", 1, &data->z_upper_bound);
@@ -109,7 +111,8 @@ AX12GripperInterface::AX12GripperInterface() : Interface()
   add_messageinfo("SetVelocityMessage");
   add_messageinfo("SetMarginMessage");
   add_messageinfo("SetTorqueMessage");
-  unsigned char tmp_hash[] = {0xb0, 0x83, 0x91, 0xb6, 0xc4, 0xb7, 0x81, 0x61, 0xb5, 0xee, 0xe1, 0x3e, 0x5a, 0x35, 0x57, 0x5a};
+  add_messageinfo("SlapMessage");
+  unsigned char tmp_hash[] = {0xc6, 0x92, 0x7f, 0xc5, 0x2b, 0xa6, 0x6a, 0x63, 0xba, 0x3a, 0xd9, 0x49, 0xd3, 0xa4, 0xae, 0x9e};
   set_hash(tmp_hash);
 }
 
@@ -117,6 +120,19 @@ AX12GripperInterface::AX12GripperInterface() : Interface()
 AX12GripperInterface::~AX12GripperInterface()
 {
   free(data_ptr);
+}
+/** Convert SlapMode constant to string.
+ * @param value value to convert to string
+ * @return constant value as string.
+ */
+const char *
+AX12GripperInterface::tostring_SlapMode(SlapMode value) const
+{
+  switch (value) {
+  case LEFT: return "LEFT";
+  case RIGHT: return "RIGHT";
+  default: return "UNKNOWN";
+  }
 }
 /* Methods */
 /** Get flags value.
@@ -979,6 +995,8 @@ AX12GripperInterface::create_message(const char *type) const
     return new SetMarginMessage();
   } else if ( strncmp("SetTorqueMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
     return new SetTorqueMessage();
+  } else if ( strncmp("SlapMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
+    return new SlapMessage();
   } else {
     throw UnknownTypeException("The given type '%s' does not match any known "
                                "message type for this interface type.", type);
@@ -1003,6 +1021,9 @@ AX12GripperInterface::copy_values(const Interface *other)
 const char *
 AX12GripperInterface::enum_tostring(const char *enumtype, int val) const
 {
+  if (strcmp(enumtype, "SlapMode") == 0) {
+    return tostring_SlapMode((SlapMode)val);
+  }
   throw UnknownTypeException("Unknown enum type %s", enumtype);
 }
 
@@ -1025,6 +1046,8 @@ AX12GripperInterface::Open_AngleMessage::Open_AngleMessage(const float ini_angle
   data      = (Open_AngleMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
   data->angle = ini_angle;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "angle", 1, &data->angle);
 }
 /** Constructor */
@@ -1035,6 +1058,8 @@ AX12GripperInterface::Open_AngleMessage::Open_AngleMessage() : Message("Open_Ang
   memset(data_ptr, 0, data_size);
   data      = (Open_AngleMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "angle", 1, &data->angle);
 }
 
@@ -1115,6 +1140,8 @@ AX12GripperInterface::CloseLoadMessage::CloseLoadMessage(const float ini_offset)
   data      = (CloseLoadMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
   data->offset = ini_offset;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "offset", 1, &data->offset);
 }
 /** Constructor */
@@ -1125,6 +1152,8 @@ AX12GripperInterface::CloseLoadMessage::CloseLoadMessage() : Message("CloseLoadM
   memset(data_ptr, 0, data_size);
   data      = (CloseLoadMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "offset", 1, &data->offset);
 }
 
@@ -1202,6 +1231,8 @@ AX12GripperInterface::CenterMessage::CenterMessage() : Message("CenterMessage")
   memset(data_ptr, 0, data_size);
   data      = (CenterMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
 }
 
 /** Destructor */
@@ -1251,6 +1282,8 @@ AX12GripperInterface::CloseMessage::CloseMessage(const float ini_offset) : Messa
   data      = (CloseMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
   data->offset = ini_offset;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "offset", 1, &data->offset);
 }
 /** Constructor */
@@ -1261,6 +1294,8 @@ AX12GripperInterface::CloseMessage::CloseMessage() : Message("CloseMessage")
   memset(data_ptr, 0, data_size);
   data      = (CloseMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "offset", 1, &data->offset);
 }
 
@@ -1341,6 +1376,8 @@ AX12GripperInterface::OpenMessage::OpenMessage(const float ini_offset) : Message
   data      = (OpenMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
   data->offset = ini_offset;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "offset", 1, &data->offset);
 }
 /** Constructor */
@@ -1351,6 +1388,8 @@ AX12GripperInterface::OpenMessage::OpenMessage() : Message("OpenMessage")
   memset(data_ptr, 0, data_size);
   data      = (OpenMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "offset", 1, &data->offset);
 }
 
@@ -1431,6 +1470,8 @@ AX12GripperInterface::RelGotoZMessage::RelGotoZMessage(const int32_t ini_rel_z) 
   data      = (RelGotoZMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
   data->rel_z = ini_rel_z;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_INT32, "rel_z", 1, &data->rel_z);
 }
 /** Constructor */
@@ -1441,6 +1482,8 @@ AX12GripperInterface::RelGotoZMessage::RelGotoZMessage() : Message("RelGotoZMess
   memset(data_ptr, 0, data_size);
   data      = (RelGotoZMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_INT32, "rel_z", 1, &data->rel_z);
 }
 
@@ -1518,6 +1561,8 @@ AX12GripperInterface::StopLeftMessage::StopLeftMessage() : Message("StopLeftMess
   memset(data_ptr, 0, data_size);
   data      = (StopLeftMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
 }
 
 /** Destructor */
@@ -1564,6 +1609,8 @@ AX12GripperInterface::StopRightMessage::StopRightMessage() : Message("StopRightM
   memset(data_ptr, 0, data_size);
   data      = (StopRightMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
 }
 
 /** Destructor */
@@ -1610,6 +1657,8 @@ AX12GripperInterface::StopMessage::StopMessage() : Message("StopMessage")
   memset(data_ptr, 0, data_size);
   data      = (StopMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
 }
 
 /** Destructor */
@@ -1656,6 +1705,8 @@ AX12GripperInterface::FlushMessage::FlushMessage() : Message("FlushMessage")
   memset(data_ptr, 0, data_size);
   data      = (FlushMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
 }
 
 /** Destructor */
@@ -1702,6 +1753,8 @@ AX12GripperInterface::CalibrateMessage::CalibrateMessage() : Message("CalibrateM
   memset(data_ptr, 0, data_size);
   data      = (CalibrateMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
 }
 
 /** Destructor */
@@ -1748,6 +1801,8 @@ AX12GripperInterface::ParkMessage::ParkMessage() : Message("ParkMessage")
   memset(data_ptr, 0, data_size);
   data      = (ParkMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
 }
 
 /** Destructor */
@@ -1799,6 +1854,8 @@ AX12GripperInterface::GotoMessage::GotoMessage(const float ini_left, const float
   data_ts   = (message_data_ts_t *)data_ptr;
   data->left = ini_left;
   data->right = ini_right;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "left", 1, &data->left);
   add_fieldinfo(IFT_FLOAT, "right", 1, &data->right);
 }
@@ -1810,6 +1867,8 @@ AX12GripperInterface::GotoMessage::GotoMessage() : Message("GotoMessage")
   memset(data_ptr, 0, data_size);
   data      = (GotoMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "left", 1, &data->left);
   add_fieldinfo(IFT_FLOAT, "right", 1, &data->right);
 }
@@ -1925,6 +1984,8 @@ AX12GripperInterface::TimedGotoMessage::TimedGotoMessage(const float ini_time_se
   data->time_sec = ini_time_sec;
   data->left = ini_left;
   data->right = ini_right;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "time_sec", 1, &data->time_sec);
   add_fieldinfo(IFT_FLOAT, "left", 1, &data->left);
   add_fieldinfo(IFT_FLOAT, "right", 1, &data->right);
@@ -1937,6 +1998,8 @@ AX12GripperInterface::TimedGotoMessage::TimedGotoMessage() : Message("TimedGotoM
   memset(data_ptr, 0, data_size);
   data      = (TimedGotoMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "time_sec", 1, &data->time_sec);
   add_fieldinfo(IFT_FLOAT, "left", 1, &data->left);
   add_fieldinfo(IFT_FLOAT, "right", 1, &data->right);
@@ -2083,6 +2146,8 @@ AX12GripperInterface::SetServoMessage::SetServoMessage(const uint32_t ini_servoI
   data_ts   = (message_data_ts_t *)data_ptr;
   data->servoID = ini_servoID;
   data->angle = ini_angle;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_UINT32, "servoID", 1, &data->servoID);
   add_fieldinfo(IFT_FLOAT, "angle", 1, &data->angle);
 }
@@ -2094,6 +2159,8 @@ AX12GripperInterface::SetServoMessage::SetServoMessage() : Message("SetServoMess
   memset(data_ptr, 0, data_size);
   data      = (SetServoMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_UINT32, "servoID", 1, &data->servoID);
   add_fieldinfo(IFT_FLOAT, "angle", 1, &data->angle);
 }
@@ -2205,6 +2272,8 @@ AX12GripperInterface::SetEnabledMessage::SetEnabledMessage(const bool ini_enable
   data      = (SetEnabledMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
   data->enabled = ini_enabled;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_BOOL, "enabled", 1, &data->enabled);
 }
 /** Constructor */
@@ -2215,6 +2284,8 @@ AX12GripperInterface::SetEnabledMessage::SetEnabledMessage() : Message("SetEnabl
   memset(data_ptr, 0, data_size);
   data      = (SetEnabledMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_BOOL, "enabled", 1, &data->enabled);
 }
 
@@ -2297,6 +2368,8 @@ AX12GripperInterface::SetVelocityMessage::SetVelocityMessage(const float ini_lef
   data_ts   = (message_data_ts_t *)data_ptr;
   data->left_velocity = ini_left_velocity;
   data->right_velocity = ini_right_velocity;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "left_velocity", 1, &data->left_velocity);
   add_fieldinfo(IFT_FLOAT, "right_velocity", 1, &data->right_velocity);
 }
@@ -2308,6 +2381,8 @@ AX12GripperInterface::SetVelocityMessage::SetVelocityMessage() : Message("SetVel
   memset(data_ptr, 0, data_size);
   data      = (SetVelocityMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "left_velocity", 1, &data->left_velocity);
   add_fieldinfo(IFT_FLOAT, "right_velocity", 1, &data->right_velocity);
 }
@@ -2421,6 +2496,8 @@ AX12GripperInterface::SetMarginMessage::SetMarginMessage(const float ini_left_ma
   data_ts   = (message_data_ts_t *)data_ptr;
   data->left_margin = ini_left_margin;
   data->right_margin = ini_right_margin;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "left_margin", 1, &data->left_margin);
   add_fieldinfo(IFT_FLOAT, "right_margin", 1, &data->right_margin);
 }
@@ -2432,6 +2509,8 @@ AX12GripperInterface::SetMarginMessage::SetMarginMessage() : Message("SetMarginM
   memset(data_ptr, 0, data_size);
   data      = (SetMarginMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "left_margin", 1, &data->left_margin);
   add_fieldinfo(IFT_FLOAT, "right_margin", 1, &data->right_margin);
 }
@@ -2547,6 +2626,8 @@ AX12GripperInterface::SetTorqueMessage::SetTorqueMessage(const float ini_torque)
   data      = (SetTorqueMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
   data->torque = ini_torque;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "torque", 1, &data->torque);
 }
 /** Constructor */
@@ -2557,6 +2638,8 @@ AX12GripperInterface::SetTorqueMessage::SetTorqueMessage() : Message("SetTorqueM
   memset(data_ptr, 0, data_size);
   data      = (SetTorqueMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
   add_fieldinfo(IFT_FLOAT, "torque", 1, &data->torque);
 }
 
@@ -2618,6 +2701,100 @@ Message *
 AX12GripperInterface::SetTorqueMessage::clone() const
 {
   return new AX12GripperInterface::SetTorqueMessage(this);
+}
+/** @class AX12GripperInterface::SlapMessage <interfaces/AX12GripperInterface.h>
+ * SlapMessage Fawkes BlackBoard Interface Message.
+ * 
+    
+ */
+
+
+/** Constructor with initial values.
+ * @param ini_slapmode initial value for slapmode
+ */
+AX12GripperInterface::SlapMessage::SlapMessage(const uint8_t ini_slapmode) : Message("SlapMessage")
+{
+  data_size = sizeof(SlapMessage_data_t);
+  data_ptr  = malloc(data_size);
+  memset(data_ptr, 0, data_size);
+  data      = (SlapMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+  data->slapmode = ini_slapmode;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
+  add_fieldinfo(IFT_UINT8, "slapmode", 1, &data->slapmode);
+}
+/** Constructor */
+AX12GripperInterface::SlapMessage::SlapMessage() : Message("SlapMessage")
+{
+  data_size = sizeof(SlapMessage_data_t);
+  data_ptr  = malloc(data_size);
+  memset(data_ptr, 0, data_size);
+  data      = (SlapMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
+  add_fieldinfo(IFT_UINT8, "slapmode", 1, &data->slapmode);
+}
+
+/** Destructor */
+AX12GripperInterface::SlapMessage::~SlapMessage()
+{
+  free(data_ptr);
+}
+
+/** Copy constructor.
+ * @param m message to copy from
+ */
+AX12GripperInterface::SlapMessage::SlapMessage(const SlapMessage *m) : Message("SlapMessage")
+{
+  data_size = m->data_size;
+  data_ptr  = malloc(data_size);
+  memcpy(data_ptr, m->data_ptr, data_size);
+  data      = (SlapMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+}
+
+/* Methods */
+/** Get slapmode value.
+ * Either 0 for left, 1 for right.
+ * @return slapmode value
+ */
+uint8_t
+AX12GripperInterface::SlapMessage::slapmode() const
+{
+  return data->slapmode;
+}
+
+/** Get maximum length of slapmode value.
+ * @return length of slapmode value, can be length of the array or number of 
+ * maximum number of characters for a string
+ */
+size_t
+AX12GripperInterface::SlapMessage::maxlenof_slapmode() const
+{
+  return 1;
+}
+
+/** Set slapmode value.
+ * Either 0 for left, 1 for right.
+ * @param new_slapmode new slapmode value
+ */
+void
+AX12GripperInterface::SlapMessage::set_slapmode(const uint8_t new_slapmode)
+{
+  data->slapmode = new_slapmode;
+}
+
+/** Clone this message.
+ * Produces a message of the same type as this message and copies the
+ * data to the new message.
+ * @return clone of this message
+ */
+Message *
+AX12GripperInterface::SlapMessage::clone() const
+{
+  return new AX12GripperInterface::SlapMessage(this);
 }
 /** Check if message is valid and can be enqueued.
  * @param message Message to check
@@ -2700,6 +2877,10 @@ AX12GripperInterface::message_valid(const Message *message) const
   }
   const SetTorqueMessage *m18 = dynamic_cast<const SetTorqueMessage *>(message);
   if ( m18 != NULL ) {
+    return true;
+  }
+  const SlapMessage *m19 = dynamic_cast<const SlapMessage *>(message);
+  if ( m19 != NULL ) {
     return true;
   }
   return false;

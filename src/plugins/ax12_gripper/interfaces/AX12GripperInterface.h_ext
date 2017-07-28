@@ -45,6 +45,13 @@ class AX12GripperInterface : public Interface
   static const uint32_t ERROR_LEFT_OUTOFRANGE;
   static const uint32_t ERROR_RIGHT_OUTOFRANGE;
 
+  /** Either close the gripper only on the left or on the right side. */
+  typedef enum {
+    LEFT = 0 /**< Slap left */,
+    RIGHT = 1 /**< Slap right */
+  } SlapMode;
+  const char * tostring_SlapMode(SlapMode value) const;
+
  private:
   /** Internal data storage, do NOT modify! */
   typedef struct __attribute__((packed)) {
@@ -86,6 +93,7 @@ class AX12GripperInterface : public Interface
 
   AX12GripperInterface_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
  public:
   /* messages */
   class Open_AngleMessage : public Message
@@ -100,6 +108,7 @@ class AX12GripperInterface : public Interface
 
     Open_AngleMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     Open_AngleMessage(const float ini_angle);
     Open_AngleMessage();
@@ -125,6 +134,7 @@ class AX12GripperInterface : public Interface
 
     CloseLoadMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     CloseLoadMessage(const float ini_offset);
     CloseLoadMessage();
@@ -149,6 +159,7 @@ class AX12GripperInterface : public Interface
 
     CenterMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     CenterMessage();
     ~CenterMessage();
@@ -170,6 +181,7 @@ class AX12GripperInterface : public Interface
 
     CloseMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     CloseMessage(const float ini_offset);
     CloseMessage();
@@ -195,6 +207,7 @@ class AX12GripperInterface : public Interface
 
     OpenMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     OpenMessage(const float ini_offset);
     OpenMessage();
@@ -220,6 +233,7 @@ class AX12GripperInterface : public Interface
 
     RelGotoZMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     RelGotoZMessage(const int32_t ini_rel_z);
     RelGotoZMessage();
@@ -244,6 +258,7 @@ class AX12GripperInterface : public Interface
 
     StopLeftMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     StopLeftMessage();
     ~StopLeftMessage();
@@ -264,6 +279,7 @@ class AX12GripperInterface : public Interface
 
     StopRightMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     StopRightMessage();
     ~StopRightMessage();
@@ -284,6 +300,7 @@ class AX12GripperInterface : public Interface
 
     StopMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     StopMessage();
     ~StopMessage();
@@ -304,6 +321,7 @@ class AX12GripperInterface : public Interface
 
     FlushMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     FlushMessage();
     ~FlushMessage();
@@ -324,6 +342,7 @@ class AX12GripperInterface : public Interface
 
     CalibrateMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     CalibrateMessage();
     ~CalibrateMessage();
@@ -344,6 +363,7 @@ class AX12GripperInterface : public Interface
 
     ParkMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     ParkMessage();
     ~ParkMessage();
@@ -366,6 +386,7 @@ class AX12GripperInterface : public Interface
 
     GotoMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     GotoMessage(const float ini_left, const float ini_right);
     GotoMessage();
@@ -397,6 +418,7 @@ class AX12GripperInterface : public Interface
 
     TimedGotoMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     TimedGotoMessage(const float ini_time_sec, const float ini_left, const float ini_right);
     TimedGotoMessage();
@@ -429,6 +451,7 @@ class AX12GripperInterface : public Interface
 
     SetServoMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     SetServoMessage(const uint32_t ini_servoID, const float ini_angle);
     SetServoMessage();
@@ -457,6 +480,7 @@ class AX12GripperInterface : public Interface
 
     SetEnabledMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     SetEnabledMessage(const bool ini_enabled);
     SetEnabledMessage();
@@ -483,6 +507,7 @@ class AX12GripperInterface : public Interface
 
     SetVelocityMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     SetVelocityMessage(const float ini_left_velocity, const float ini_right_velocity);
     SetVelocityMessage();
@@ -514,6 +539,7 @@ class AX12GripperInterface : public Interface
 
     SetMarginMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     SetMarginMessage(const float ini_left_margin, const float ini_right_margin);
     SetMarginMessage();
@@ -542,6 +568,7 @@ class AX12GripperInterface : public Interface
 
     SetTorqueMessage_data_t *data;
 
+  interface_enum_map_t enum_map_SlapMode;
    public:
     SetTorqueMessage(const float ini_torque);
     SetTorqueMessage();
@@ -552,6 +579,32 @@ class AX12GripperInterface : public Interface
     float torque() const;
     void set_torque(const float new_torque);
     size_t maxlenof_torque() const;
+    virtual Message * clone() const;
+  };
+
+  class SlapMessage : public Message
+  {
+   private:
+    /** Internal data storage, do NOT modify! */
+    typedef struct __attribute__((packed)) {
+      int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
+      int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
+      uint8_t slapmode; /**< Either 0 for left, 1 for right. */
+    } SlapMessage_data_t;
+
+    SlapMessage_data_t *data;
+
+  interface_enum_map_t enum_map_SlapMode;
+   public:
+    SlapMessage(const uint8_t ini_slapmode);
+    SlapMessage();
+    ~SlapMessage();
+
+    SlapMessage(const SlapMessage *m);
+    /* Methods */
+    uint8_t slapmode() const;
+    void set_slapmode(const uint8_t new_slapmode);
+    size_t maxlenof_slapmode() const;
     virtual Message * clone() const;
   };
 
