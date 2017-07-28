@@ -65,7 +65,7 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
 fsm:add_transitions{
    {"GOTO_SHELF", "FAILED", cond="vars.error"},
    {"WAIT_AFTER_GRAB", "LEAVE_SHELF", timeout=0.5},
-   {"WAIT_FOR_INTERFACE", "CHECK_PUCK", timeout=5},
+   {"WAIT_FOR_INTERFACE", "CHECK_PUCK", timeout=2},
    {"CHECK_PUCK", "CENTER_PUCK", cond="gripper_if:is_holds_puck()", desc="Got a puck"},
    {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="GOT NO PUCK!"},
 }
