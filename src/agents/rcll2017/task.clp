@@ -74,10 +74,10 @@
   (assert (state TASK-FAILED-WAITING)
           (timer (name wait-after-fail)))
   (modify ?task (state failed))
-  ;(if (eq ?step-name get-output)
-  ;then
-  ;(assert (mps-reset (machine ?mps)))
-  ;)
+  (if (eq ?step-name get-output)
+  then
+  (assert (mps-reset (machine ?mps)))
+  )
   (printout t "Calling motor_move to stop current skill" crlf)
   (skill-call motor_move x 0.0)
   (printout info "Timelog: Task " ?task-name " failed." crlf)
