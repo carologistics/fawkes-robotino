@@ -115,6 +115,11 @@
 
 (deffunction coordination-release-all-subgoal-locks ()
   ;release all locks for subtask goals
+  (do-for-all-facts ((?step step)) (and (or (eq ?step:state finished) (eq ?step:state failed))
+                                        (neq ?step:lock NONE)
+                                   )
+    (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?step:lock)))
+  )
   (delayed-do-for-all-facts ((?ntl needed-task-lock)) TRUE
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
     (bind ?fact-ptr (coordination-get-fact-address-of-place ?ntl:place))
