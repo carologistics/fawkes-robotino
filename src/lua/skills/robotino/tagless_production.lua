@@ -11,13 +11,12 @@ depends_interfaces = {
 }
 
 documentation      = [==[
-aligns to a machine and picks a product from the conveyor.
-It will get the offsets and the align distance for the machine
-from the navgraph
 
 Parameters:
 
-      @ zone
+      @ zone                 - zone the machine stands in, e.g.: "C-Z44" for zone 44 on cyan side
+      @ optional : shelf     - this shelf is used for the first pick, possible values = {"LEFT","MIDDLE","RIGHT"}
+      @ optional : givenSide - first side seen by the bot, possible values = {I,O}
 
 ]==]
 -- Initialize as skill module
@@ -35,7 +34,7 @@ function already_at_conveyor(self)
 end
 
 
-function calc_xy_coordinates(self)
+function init_calc(self)
 
   -- zone argument is of the form  M-Z21
   self.fsm.vars.xZone = tonumber(string.sub(self.fsm.vars.zone, 4, 4)) - 0.5
@@ -56,14 +55,23 @@ function calc_xy_coordinates(self)
   self.fsm.vars.alignY2 = self.fsm.vars.yZone + 0.5
 
 
-  self.fsm.vars.currShelf = "LEFT"
   self.fsm.vars.pickedShelf = false
 
+  -- SET OPTIONAL PARAMETERS
 
   if self.fsm.vars.machine == nil then
       self.fsm.vars.machine = "C-CS1"
   end
 
+  if self.fsm.vars.shelf == nil then
+      self.fsm.vars.currShelf = "LEFT"
+  else
+      self.fsm.vars.currShelf = self.fsm.vars.shelf
+  end
+
+
+
+  -- RESET MACHINE
   os.execute("../../llsf-refbox/bin/rcll-set-machine-state " .. self.fsm.vars.machine .. "  RESET &")
 
 
@@ -74,22 +82,19 @@ function shelf_decide(self)
 
   if self.fsm.vars.pickedShelf == false then
 
-    printf("picked shelf false")
     if (self.fsm.vars.currShelf == "LEFT" ) then
-        printf("curr shelf was LEFT")
-
         self.fsm.vars.currShelf = "MIDDLE"
-
     elseif (self.fsm.vars.currShelf == "MIDDLE") then
-
         self.fsm.vars.currShelf = "RIGHT"
+    elseif (self.fsm.vars.currShelf == "RIGHT") then
+        self.fsm.vars.currShelf = "TRIED ALL"
+    end
+    return false
 
-     end
-        return false
   else
-       return true
-
+    return true
   end
+
 end
 
 function shelf_suc(self)
@@ -99,7 +104,15 @@ end
 
 function side_check_evaluation(self)
 
-    recognition_result = MPS_TYPES[mps_recognition_if:mpstype()+1];
+    if (self.fsm.vars.givenSide == "I") then
+          return true
+    end
+    if (self.fsm.vars.givenSide == "O") then
+        return false
+    end
+
+
+  --  recognition_result = MPS_TYPES[mps_recognition_if:mpstype()+1];
 
     if(recognition_result == 'cap-input') then
           return true
@@ -107,6 +120,18 @@ function side_check_evaluation(self)
     return false
 
 end
+
+
+function wrong_side(self)
+
+     if self.fsm.vars.currShelf == "TRIED ALL" then
+         self.fsm.vars.currShelf = "LEFT"
+         return true
+     end
+
+     return false
+
+ end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
@@ -135,11 +160,12 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
 }
 
 fsm:add_transitions{
-   {"INIT", "DRIVE_TO_1", cond=calc_xy_coordinates},
+   {"INIT", "DRIVE_TO_1", cond=init_calc},
    {"INIT", "FAILED", cond=true},
 --   {"SKILL_REALIGN_INPUT","SKILL_TAGLESS_PRODUCT_PICK", cond="self.fsm.vars.pickedShelf == true" },
 --   {"SKILL_REALIGN_INPUT", "SKILL_TAGLESS_SHELF_PICK", cond=true},
-   {"DECIDE_SHELF_PICK", "MPS_ALIGN_PRODUCT_PUT", cond=shelf_decide}, --shelf_decide
+   {"DECIDE_SHELF_PICK", "MPS_ALIGN_PRODUCT_PUT", cond=shelf_decide,desc="shelf pick succeeded"}, --shelf_decide
+   {"DECIDE_SHELF_PICK", "DRIVE_TO_CORRECT_SIDE", cond=wrong_side, desc="all picks failed, wrong side"},
    {"DECIDE_SHELF_PICK", "SKILL_REALIGN_INPUT", cond=true},
    {"SHELF_PICK_SUC","DECIDE_SHELF_PICK", cond=shelf_suc},
    {"CHECK_SIDE_EVALUATE","SKILL_TAGLESS_SHELF_PICK", cond=side_check_evaluation},
@@ -252,67 +278,55 @@ function DRIVE_TO_CORRECT_SIDE:init()
     if (self.fsm.vars.lastX > self.fsm.vars.xZone) then
       self.args["goto"].x = self.fsm.vars.lastX - 2
       self.fsm.vars.lastX = self.fsm.vars.lastX - 2
-    end
-
-    if (self.fsm.vars.lastX < self.fsm.vars.xZone) then
-        self.args["goto"].x = self.fsm.vars.lastX + 2
-        self.fsm.vars.lastX = self.fsm.vars.lastX + 2
-      end
-
-
-    if (self.fsm.vars.lastX == self.fsm.vars.xZone) then
+    elseif (self.fsm.vars.lastX < self.fsm.vars.xZone) then
+      self.args["goto"].x = self.fsm.vars.lastX + 2
+      self.fsm.vars.lastX = self.fsm.vars.lastX + 2
+    elseif (self.fsm.vars.lastX == self.fsm.vars.xZone) then
        self.args["goto"].x = self.fsm.vars.lastX
-
     end
 
     if (self.fsm.vars.lastY > self.fsm.vars.yZone) then
-           self.args["goto"].y = self.fsm.vars.lastY -2
+       self.args["goto"].y = self.fsm.vars.lastY -2
            self.fsm.vars.lastY = self.fsm.vars.lastY -2
-    end
-
-    if (self.fsm.vars.lastY < self.fsm.vars.yZone) then
-             self.args["goto"].y = self.fsm.vars.lastY + 2
-             self.fsm.vars.lastY = self.fsm.vars.lastY + 2
-    end
-
-    if (self.fsm.vars.lastY == self.fsm.vars.yZone) then
+    elseif (self.fsm.vars.lastY < self.fsm.vars.yZone) then
+       self.args["goto"].y = self.fsm.vars.lastY + 2
+       self.fsm.vars.lastY = self.fsm.vars.lastY + 2
+    elseif (self.fsm.vars.lastY == self.fsm.vars.yZone) then
              self.args["goto"].y = self.fsm.vars.lastY
-
     end
 
     self.args["goto"].ori = self.fsm.vars.lasatOri + 3.1415
     self.fsm.vars.lasatOri = self.fsm.vars.lasatOri + 3.1415
 
+    printf("GOTO x %s, y %s, ori %s", self.fsm.vars.lastX, self.fsm.vars.lastY,self.fsm.vars.lasatOri)
 end
 
 function DRIVE_TO_OTHER_SIDE:init()
 
-      if (self.fsm.vars.lastX > self.fsm.vars.xZone) then
-         self.args["goto"].x = self.fsm.vars.lastX - 2
-       end
+  if (self.fsm.vars.lastX > self.fsm.vars.xZone) then
+    self.args["goto"].x = self.fsm.vars.lastX - 2
+    self.fsm.vars.lastX = self.fsm.vars.lastX - 2
+  elseif (self.fsm.vars.lastX < self.fsm.vars.xZone) then
+    self.args["goto"].x = self.fsm.vars.lastX + 2
+    self.fsm.vars.lastX = self.fsm.vars.lastX + 2
+  elseif (self.fsm.vars.lastX == self.fsm.vars.xZone) then
+     self.args["goto"].x = self.fsm.vars.lastX
+  end
 
-      if (self.fsm.vars.lastX < self.fsm.vars.xZone) then
-           self.args["goto"].x = self.fsm.vars.lastX + 2
-      end
+  if (self.fsm.vars.lastY > self.fsm.vars.yZone) then
+     self.args["goto"].y = self.fsm.vars.lastY -2
+         self.fsm.vars.lastY = self.fsm.vars.lastY -2
+  elseif (self.fsm.vars.lastY < self.fsm.vars.yZone) then
+     self.args["goto"].y = self.fsm.vars.lastY + 2
+     self.fsm.vars.lastY = self.fsm.vars.lastY + 2
+  elseif (self.fsm.vars.lastY == self.fsm.vars.yZone) then
+           self.args["goto"].y = self.fsm.vars.lastY
+  end
 
-      if (self.fsm.vars.lastX == self.fsm.vars.xZone) then
-          self.args["goto"].x = self.fsm.vars.lastX
-      end
+  self.args["goto"].ori = self.fsm.vars.lasatOri + 3.1415
+  self.fsm.vars.lasatOri = self.fsm.vars.lasatOri + 3.1415
 
-      if (self.fsm.vars.lastY > self.fsm.vars.yZone) then
-               self.args["goto"].y = self.fsm.vars.lastY -2
-      end
-
-      if (self.fsm.vars.lastY < self.fsm.vars.yZone) then
-                 self.args["goto"].y = self.fsm.vars.lastY + 2
-      end
-
-      if (self.fsm.vars.lastY == self.fsm.vars.yZone) then
-                self.args["goto"].y = self.fsm.vars.lastY
-      end
-
-
-      self.args["goto"].ori = self.fsm.vars.lasatOri + 3.1415
+  printf("GOTO x %s, y %s, ori %s", self.fsm.vars.lastX, self.fsm.vars.lastY,self.fsm.vars.lasatOri)
 
 end
 
