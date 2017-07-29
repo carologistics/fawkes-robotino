@@ -96,8 +96,14 @@ WebtoolsBridgeThread::init()
 	bridge_manager_->register_processor(
 	  std::make_shared<RosBridgeProxyProcessor>("/", logger, config, clock));
 
-	bridge_manager_->register_processor(
-	  std::make_shared<ClipsProcessor>("clips", logger, config, clock, clips_env_mgr));
+	std::map<std::string, LockPtr<CLIPS::Environment>> rv = clips_env_mgr->environments();
+
+	if (rv.find("agent") != rv.end()) {
+		bridge_manager_->register_processor(
+		  std::make_shared<ClipsProcessor>("clips", logger, config, clock, clips_env_mgr));
+	} else {
+		logger->log_warn(name(), " CLIPS agent was not found. No bridge will be registered for it!");
+	}
 
 	try {
 		web_server_ = websocketpp::lib::make_shared<WebSocketServer>(logger, bridge_manager_);
