@@ -52,7 +52,7 @@ if config:exists("/skills/conveyor_align/pick_offset") then
 end
 
 local TOLERANCE_Y = 0.002
-local TOLERANCE_Z = 0.001
+local TOLERANCE_Z = 0.002
 local MAX_TRIES = 20
 --local X_DEST_POS = 0.08
 local X_DEST_POS = 0.16
