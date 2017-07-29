@@ -76,6 +76,12 @@ nodes:
       - always-copy: true
   - !unconnected
     name: exp-22
+    pos: [0, 4]
+    properties:
+      - orientation: 2.9
+      - always-copy: true
+  - !unconnected
+    name: exp-23
     pos: [-5.0, 4]
     properties:
       - orientation: 0.85
@@ -88,13 +94,11 @@ nodes:
     pos: [4, 2]
     properties:
       - orientation: 3.14
-      - always-copy: true
   - !unconnected
     name: exp-32
     pos: [-4.0, 2]
     properties:
       - orientation: 0
-      - always-copy: true
 
 # drive into field points
 # Cyan
