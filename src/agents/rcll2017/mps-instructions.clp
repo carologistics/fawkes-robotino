@@ -98,6 +98,17 @@
   (retract ?mps-inst)
 )
 
+(defrule mps-instruction-stop-sending-when-mps-is-broken
+  "Stop instructing the mps, when the MPS is/became broken"
+  (time $?now)
+  ?mps-inst <- (mps-instruction (machine ?machine) 
+                                (seq ?seq&:(>= ?seq ?*MIN-TIMES-TO-SEND-MPS-INSTRUCTIONS*)))
+  (machine (name ?machine) (state BROKEN))
+  =>
+  (printout error "Mps " ?machine " broke during instructed" crlf)
+  (retract ?mps-inst)
+)
+
 (deffunction mps-instruction-reset-machine (?machine ?team-color)
  "Create ResetMachine Message"
   (bind ?reset-msg (pb-create "llsf_msgs.ResetMachine"))
