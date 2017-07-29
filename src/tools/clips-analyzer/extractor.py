@@ -21,16 +21,43 @@ def create_games_table(db, crs, number):
     db.commit()
 
 
-def create_games_facts_table(db, crs, number):
+def create_games_asserts_table(db, crs, number):
     crs.execute("CREATE TABLE IF NOT EXISTS game" + str(
-        number) + "_facts(id INTEGER PRIMARY KEY,name TEXT, content TEXT, relc INTEGER)")
+        number) + "_asserts(id INTEGER PRIMARY KEY,name TEXT, content TEXT, relc INTEGER)")
     db.commit()
 
+
+def create_games_retracts_table(db, crs, number):
+    crs.execute("CREATE TABLE IF NOT EXISTS game" + str(
+        number) + "_retracts(id INTEGER PRIMARY KEY,name TEXT, content TEXT, relc INTEGER)")
+    db.commit()
+
+def create_games_factbase_changes_table(db, crs, number):
+    crs.execute("CREATE TABLE IF NOT EXISTS game" + str(
+        number) + "_factbase_changes(id INTEGER PRIMARY KEY,name TEXT, content TEXT, relc INTEGER, type TEXT)")
+    db.commit()
 
 def create_games_rules_fired_table(db, crs, number):
     crs.execute("CREATE TABLE IF NOT EXISTS game" + str(
-        number) + "_rules_fired(id INTEGER PRIMARY KEY,name TEXT, gametime INTEGER, relc INTEGER)")
+        number) + "_rules_fired(id INTEGER PRIMARY KEY,name TEXT, gametime INTEGER, relc INTEGER, facts TEXT)")
     db.commit()
+
+
+def merge_list_of_lists_with_order(list1, list2, field):
+    new_list = []
+    pos_temp = 0
+    pos1, pos2 = 0, 0
+    #Merged list nach relc.
+
+    for pos1 in range(len(list1)):
+        for pos2 in range(pos_temp, len(list2)):
+            if list1[pos1][field] <= list2[pos2][field]:
+                new_list.append(list1[pos1])
+                break
+            else:
+                new_list.append(list2[pos2])
+                pos_temp = pos2 + 1
+    return new_list
 
 
 def to_seconds(hour, minute, second):
@@ -193,7 +220,9 @@ def show_rules_around(current_game, game_time, timediff=0):
 
 for i in range(len(game_list)):
     create_games_table(db_games, cursor, i)
-    create_games_facts_table(db_games, cursor, i)
+    create_games_asserts_table(db_games, cursor, i)
+    create_games_retracts_table(db_games, cursor, i)
+    create_games_factbase_changes_table(db_games, cursor, i)
     create_games_rules_fired_table(db_games, cursor, i)
     cursor.execute("INSERT INTO games_meta(game_table_name) VALUES(?)", ("game" + str(i),))
     db_games.commit()
@@ -219,20 +248,71 @@ for i in range(len(game_list)):
     switch = False
     for fact in fact_list:
         f = re.search(r"==>\s*(f-[0-9]*)\s*\((.*)\)", fact[1])
-        if "f-0"==f.group(1):
+        if "f-0" == f.group(1):
             switch = True
-        if True == switch:
+        if switch:
             assert_list.append((f.group(1), f.group(2), fact[2]))
-    cursor.executemany("INSERT INTO  game" + str(i) + "_facts(name, content, relc) VALUES(?,?,?)", assert_list)
+    cursor.executemany("INSERT INTO  game" + str(i) + "_asserts(name, content, relc) VALUES(?,?,?)", assert_list)
+    db_games.commit()
+
+    t = ('retract',)
+    fact_list = cursor.execute('SELECT * FROM game' + str(i) + ' WHERE attr=?', t)
+    retract_list = []
+    switch = False
+    for fact in fact_list:
+        f = re.search(r"<==\s*(f-[0-9]*)\s*\((.*)\)", fact[1])
+        if "f-0" == f.group(1):
+            switch = True
+        if switch:
+            retract_list.append((f.group(1), f.group(2), fact[2]))
+    cursor.executemany("INSERT INTO  game" + str(i) + "_retracts(name, content, relc) VALUES(?,?,?)", retract_list)
     db_games.commit()
 
     t = ('fire',)
-    fact_list = cursor.execute('SELECT * FROM game' + str(i) + ' WHERE attr=?', t)
+    temp_list = cursor.execute('SELECT * FROM game' + str(i) + ' WHERE attr=?', t)
     rule_list = []
-    for fact in fact_list:
-        rule_list.append((fact[7],fact[2],fact[6]))
-    cursor.executemany("INSERT INTO  game" + str(i) + "_rules_fired(name, relc, gametime) VALUES(?,?,?)", rule_list)
+    for rule in temp_list:
+        facts = re.search(r"agent\):.*:\s*(.*)", rule[1])
+        rule_list.append((rule[7], rule[2], rule[6], facts.group(1)))
+    cursor.executemany("INSERT INTO  game" + str(i) + "_rules_fired(name, relc, gametime, facts) VALUES(?,?,?,?)",
+                       rule_list)
     db_games.commit()
+
+#Create assert and retract table
+for i in range(len(game_list)):
+    a = ('assert',)
+    r = ('retract',)
+    asserts = cursor.execute('SELECT * FROM game' + str(i) + "_asserts ORDER BY relc ")
+    new_asserts = [list(x+('assert',)) for x in asserts]
+    retracts = cursor.execute('SELECT * FROM game' + str(i) + "_retracts ORDER BY relc")
+    new_retracts = [list(x+('retract',)) for x in retracts]
+    merged_list = merge_list_of_lists_with_order(new_asserts, new_retracts, 3)
+    new_merged_list = [x[1:] for x in merged_list]
+    start = 0
+    for j, m in enumerate(new_merged_list):
+        if m[-1] == 'assert':
+            start = j
+            break
+    new_merged_list = new_merged_list[start:]
+    cursor.executemany("INSERT INTO  game" + str(i) + "_factbase_changes(name, content, relc, type) VALUES(?,?,?,?)",
+                       new_merged_list)
+    db_games.commit()
+
+
+def get_factbase_until_rule_fired(game,crs, rule_id):
+    r = crs.execute('SELECT * FROM '+game+'_rules_fired WHERE id = '+str(rule_id))
+    r = [x[3] for x in r]
+    for i,x in enumerate(r):
+        pass
+    changes = crs.execute('SELECT * FROM '+game+'_factbase_changes WHERE relc < '+ str(r[0]))
+    factbase = []
+    for change in changes:
+        if 'assert' == change[4]:
+            factbase.append(change[2])
+        if 'retract' == change[4]:
+            factbase.remove(change[2])
+    return factbase
+
 
 def show_times_when_rule_fired(game, rulename):
     print("Rule " + rulename + " was fired at these times:")
