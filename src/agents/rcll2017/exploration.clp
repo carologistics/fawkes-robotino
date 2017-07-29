@@ -426,7 +426,7 @@
   (if (and (eq ?s NO) (eq ?machine UNKNOWN)) then
     (synced-modify ?ze machine NONE times-searched (+ ?times-searched 1))
   else
-    (synced-modify ?ze line-visibility -1 times-searched (+ ?times-searched 1))
+    (synced-modify ?ze line-visibility 0 times-searched (+ ?times-searched 1))
   )
   (assert
     (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))
