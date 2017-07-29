@@ -33,8 +33,10 @@ depends_interfaces = {
 
 documentation      = [==[Skill to open and close AX12 - gripper.
 @param command    can be one of OPEN, CLOSE, CENTER or RELGOTOZ (RELGOTOZ requires the z_position parameter to be set)
+                  or MODIFY_OPENING_ANGLE.
 @param z_position only used with the RELGOTOZ-command - the desired relative position in mm.
                   The skill fails when a desired relative z position is set that would lead out of the grippers z-bounds
+@param angle_difference only used for MODIFY_OPENING_ANGLE command. Positive value to increase angle, negative to reduce.
 ]==]
 
 -- Initialize as skill module
@@ -58,6 +60,13 @@ fsm:define_states{
    closure={gripper_if=gripper_if, right_fully_loaded=right_fully_loaded, left_fully_loaded=left_fully_loaded},
    {"CHECK_WRITER", JumpState},
    {"COMMAND", JumpState},
+   {"SLAP_LEFT", JumpState},
+   {"SLAP_RIGHT", JumpState},
+   {"OPEN_FROM_SLAP_LEFT", JumpState},
+   {"OPEN_FROM_SLAP_RIGHT", JumpState},
+   {"WAIT_FROM_SLAP_LEFT", JumpState},
+   {"WAIT_FROM_SLAP_RIGHT", JumpState},
+   {"OPEN", JumpState},
    {"CLOSE_GRIPPER_WAIT", JumpState},
    {"WAIT_FOR_GRAB", JumpState},
    {"CHECK_GRAB_SUCCESS", JumpState},
@@ -72,7 +81,7 @@ fsm:define_states{
 fsm:add_transitions{
    {"CHECK_WRITER", "FAILED", precond="not gripper_if:has_writer()", desc="No writer for gripper"},
    {"CHECK_WRITER", "COMMAND", cond=true},
-   {"COMMAND", "FINAL", cond="vars.open or vars.set_torque"},
+   {"COMMAND", "FINAL", cond="vars.open or vars.center or vars.set_torque or vars.modify_opening_angle"},
    {"COMMAND", "FAILED", cond="vars.error"},
    {"COMMAND", "WAIT_FOR_GRAB", cond="vars.grab"},
    {"COMMAND", "RELGOTOZ", cond="vars.relgotoz"},
@@ -140,12 +149,12 @@ function COMMAND:init()
    elseif self.fsm.vars.command == "SLAP_LEFT" then
       self.fsm.vars.slap = true
       slapMessage = gripper_if.SlapMessage:new()
-      slapMessage:set_side(0)
+      slapMessage:set_slapmode(0)
       gripper_if:msgq_enqueue(slapMessage)
    elseif self.fsm.vars.command == "SLAP_RIGHT" then
       self.fsm.vars.slap = true
       slapMessage = gripper_if.SlapMessage:new()
-      slapMessage:set_side(1)
+      slapMessage:set_slapmode(1)
       gripper_if:msgq_enqueue(slapMessage)
    elseif self.fsm.vars.command == "RELGOTOZ" then
       self.fsm.vars.relgotoz = true
@@ -153,7 +162,12 @@ function COMMAND:init()
   elseif self.fsm.vars.command == "RESET_Z_POS" then
       self.fsm.vars.restore = true
 
-  else
+   elseif self.fsm.vars.command == "MODIFY_OPENING_ANGLE" then
+      self.fsm.vars.modify_opening_angle = true
+      theOpenMessage = gripper_if.ModifyOpeningAngleByMessage:new()
+      theOpenMessage:set_angle_difference(self.fsm.vars.angle_difference or 0)
+      gripper_if:msgq_enqueue(theOpenMessage)
+   else
       self.fsm:set_error("No known command")
       self.fsm.vars.error = true
   end
@@ -178,4 +192,34 @@ end
 
 function RESET_Z_POS:init()
       self.args["gripper_z_align"].command = "RESET_Z_POS"
+end
+
+function SLAP_LEFT:init()
+   slapMessage = gripper_if.SlapMessage:new()
+   slapMessage:set_slapmode(0)
+   gripper_if:msgq_enqueue(slapMessage)
+end
+
+function SLAP_RIGHT:init()
+   slapMessage = gripper_if.SlapMessage:new()
+   slapMessage:set_slapmode(1)
+   gripper_if:msgq_enqueue(slapMessage)
+end
+
+function OPEN_FROM_SLAP_LEFT:init()
+  theOpenMessage = gripper_if.OpenMessage:new()
+  theOpenMessage:set_offset(self.fsm.vars.offset or 0)
+  gripper_if:msgq_enqueue(theOpenMessage)
+end
+
+function OPEN_FROM_SLAP_RIGHT:init()
+  theOpenMessage = gripper_if.OpenMessage:new()
+  theOpenMessage:set_offset(self.fsm.vars.offset or 0)
+  gripper_if:msgq_enqueue(theOpenMessage)
+end
+
+function OPEN:init()
+  theOpenMessage = gripper_if.OpenMessage:new()
+  theOpenMessage:set_offset(self.fsm.vars.offset or 0)
+  gripper_if:msgq_enqueue(theOpenMessage)
 end
