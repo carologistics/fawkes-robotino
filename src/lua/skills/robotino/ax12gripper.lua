@@ -35,6 +35,7 @@ documentation      = [==[Skill to open and close AX12 - gripper.
 @param command    can be one of OPEN, CLOSE, CENTER or RELGOTOZ (RELGOTOZ requires the z_position parameter to be set)
 @param z_position only used with the RELGOTOZ-command - the desired relative position in mm.
                   The skill fails when a desired relative z position is set that would lead out of the grippers z-bounds
+@param angle_difference only used for MODIFY_OPENING_ANGLE command. Positive value to increase angle, negative to reduce.
 ]==]
 
 -- Initialize as skill module
@@ -131,6 +132,12 @@ function COMMAND:init()
       gripper_if:msgq_enqueue(torqueMessage)
    elseif self.fsm.vars.command == "RELGOTOZ" then
       self.fsm.vars.relgotoz = true
+
+	 elseif self.fsm.vars.command == "MODIFY_OPENING_ANGLE" then
+      self.fsm.vars.modify_opening_angle = true
+      theOpenMessage = gripper_if.ModifyOpeningAngleByMessage:new()
+      theOpenMessage:set_angle_difference(self.fsm.vars.angle_difference or 0)
+      gripper_if:msgq_enqueue(theOpenMessage)
    else
       self.fsm:set_error("No known command")
       self.fsm.vars.error = true
