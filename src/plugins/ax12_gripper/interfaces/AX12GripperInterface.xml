@@ -92,6 +92,12 @@
     <comment>Open gripper.</comment>
     <ref>offset</ref>
   </message>
+  <message name="ModifyOpeningAngleBy">
+    <comment>Modify opening angle only by a slight amount.</comment>
+    <field type="float" name="angle_difference">
+	    Angle by which to modify the opening angle of the gripper.
+    </field>
+  </message>
   <message name="RelGotoZ">
     <comment>Move the gripper to a desired Z Position relative to the current z position</comment>
     <field type="int32" name="rel_z">New z relative to the current z, in mm.</field>

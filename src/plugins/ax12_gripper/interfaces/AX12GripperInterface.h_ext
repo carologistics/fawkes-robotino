@@ -221,6 +221,34 @@ class AX12GripperInterface : public Interface
     virtual Message * clone() const;
   };
 
+  class ModifyOpeningAngleByMessage : public Message
+  {
+   private:
+    /** Internal data storage, do NOT modify! */
+    typedef struct __attribute__((packed)) {
+      int64_t timestamp_sec;  /**< Interface Unix timestamp, seconds */
+      int64_t timestamp_usec; /**< Interface Unix timestamp, micro-seconds */
+      float angle_difference; /**< 
+	    Angle by which to modify the opening angle of the gripper.
+     */
+    } ModifyOpeningAngleByMessage_data_t;
+
+    ModifyOpeningAngleByMessage_data_t *data;
+
+  interface_enum_map_t enum_map_SlapMode;
+   public:
+    ModifyOpeningAngleByMessage(const float ini_angle_difference);
+    ModifyOpeningAngleByMessage();
+    ~ModifyOpeningAngleByMessage();
+
+    ModifyOpeningAngleByMessage(const ModifyOpeningAngleByMessage *m);
+    /* Methods */
+    float angle_difference() const;
+    void set_angle_difference(const float new_angle_difference);
+    size_t maxlenof_angle_difference() const;
+    virtual Message * clone() const;
+  };
+
   class RelGotoZMessage : public Message
   {
    private:

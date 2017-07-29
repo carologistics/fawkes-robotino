@@ -154,6 +154,34 @@ class AX12GripperInterface : public Interface
     int maxlenof_offset() const;
   };
 
+  class ModifyOpeningAngleByMessage : public Message
+  {
+    ModifyOpeningAngleByMessage(float ini_angle_difference);
+    ModifyOpeningAngleByMessage();
+    ~ModifyOpeningAngleByMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
+    float angle_difference();
+    void set_angle_difference(const float new_angle_difference);
+    int maxlenof_angle_difference() const;
+  };
+
   class RelGotoZMessage : public Message
   {
     RelGotoZMessage(int ini_rel_z);

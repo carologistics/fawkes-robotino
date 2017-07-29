@@ -97,6 +97,7 @@ AX12GripperInterface::AX12GripperInterface() : Interface()
   add_messageinfo("CenterMessage");
   add_messageinfo("CloseMessage");
   add_messageinfo("OpenMessage");
+  add_messageinfo("ModifyOpeningAngleByMessage");
   add_messageinfo("RelGotoZMessage");
   add_messageinfo("StopLeftMessage");
   add_messageinfo("StopRightMessage");
@@ -112,7 +113,7 @@ AX12GripperInterface::AX12GripperInterface() : Interface()
   add_messageinfo("SetMarginMessage");
   add_messageinfo("SetTorqueMessage");
   add_messageinfo("SlapMessage");
-  unsigned char tmp_hash[] = {0xc6, 0x92, 0x7f, 0xc5, 0x2b, 0xa6, 0x6a, 0x63, 0xba, 0x3a, 0xd9, 0x49, 0xd3, 0xa4, 0xae, 0x9e};
+  unsigned char tmp_hash[] = {0xf0, 0xdd, 0x7b, 0x63, 0x53, 0x57, 0xb8, 0x18, 0x9a, 0x28, 0x7e, 0x8a, 0x76, 0x69, 0x6a, 0x25};
   set_hash(tmp_hash);
 }
 
@@ -967,6 +968,8 @@ AX12GripperInterface::create_message(const char *type) const
     return new CloseMessage();
   } else if ( strncmp("OpenMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
     return new OpenMessage();
+  } else if ( strncmp("ModifyOpeningAngleByMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
+    return new ModifyOpeningAngleByMessage();
   } else if ( strncmp("RelGotoZMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
     return new RelGotoZMessage();
   } else if ( strncmp("StopLeftMessage", type, __INTERFACE_MESSAGE_TYPE_SIZE) == 0 ) {
@@ -1451,6 +1454,104 @@ Message *
 AX12GripperInterface::OpenMessage::clone() const
 {
   return new AX12GripperInterface::OpenMessage(this);
+}
+/** @class AX12GripperInterface::ModifyOpeningAngleByMessage <interfaces/AX12GripperInterface.h>
+ * ModifyOpeningAngleByMessage Fawkes BlackBoard Interface Message.
+ * 
+    
+ */
+
+
+/** Constructor with initial values.
+ * @param ini_angle_difference initial value for angle_difference
+ */
+AX12GripperInterface::ModifyOpeningAngleByMessage::ModifyOpeningAngleByMessage(const float ini_angle_difference) : Message("ModifyOpeningAngleByMessage")
+{
+  data_size = sizeof(ModifyOpeningAngleByMessage_data_t);
+  data_ptr  = malloc(data_size);
+  memset(data_ptr, 0, data_size);
+  data      = (ModifyOpeningAngleByMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+  data->angle_difference = ini_angle_difference;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
+  add_fieldinfo(IFT_FLOAT, "angle_difference", 1, &data->angle_difference);
+}
+/** Constructor */
+AX12GripperInterface::ModifyOpeningAngleByMessage::ModifyOpeningAngleByMessage() : Message("ModifyOpeningAngleByMessage")
+{
+  data_size = sizeof(ModifyOpeningAngleByMessage_data_t);
+  data_ptr  = malloc(data_size);
+  memset(data_ptr, 0, data_size);
+  data      = (ModifyOpeningAngleByMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+  enum_map_SlapMode[(int)LEFT] = "LEFT";
+  enum_map_SlapMode[(int)RIGHT] = "RIGHT";
+  add_fieldinfo(IFT_FLOAT, "angle_difference", 1, &data->angle_difference);
+}
+
+/** Destructor */
+AX12GripperInterface::ModifyOpeningAngleByMessage::~ModifyOpeningAngleByMessage()
+{
+  free(data_ptr);
+}
+
+/** Copy constructor.
+ * @param m message to copy from
+ */
+AX12GripperInterface::ModifyOpeningAngleByMessage::ModifyOpeningAngleByMessage(const ModifyOpeningAngleByMessage *m) : Message("ModifyOpeningAngleByMessage")
+{
+  data_size = m->data_size;
+  data_ptr  = malloc(data_size);
+  memcpy(data_ptr, m->data_ptr, data_size);
+  data      = (ModifyOpeningAngleByMessage_data_t *)data_ptr;
+  data_ts   = (message_data_ts_t *)data_ptr;
+}
+
+/* Methods */
+/** Get angle_difference value.
+ * 
+	    Angle by which to modify the opening angle of the gripper.
+    
+ * @return angle_difference value
+ */
+float
+AX12GripperInterface::ModifyOpeningAngleByMessage::angle_difference() const
+{
+  return data->angle_difference;
+}
+
+/** Get maximum length of angle_difference value.
+ * @return length of angle_difference value, can be length of the array or number of 
+ * maximum number of characters for a string
+ */
+size_t
+AX12GripperInterface::ModifyOpeningAngleByMessage::maxlenof_angle_difference() const
+{
+  return 1;
+}
+
+/** Set angle_difference value.
+ * 
+	    Angle by which to modify the opening angle of the gripper.
+    
+ * @param new_angle_difference new angle_difference value
+ */
+void
+AX12GripperInterface::ModifyOpeningAngleByMessage::set_angle_difference(const float new_angle_difference)
+{
+  data->angle_difference = new_angle_difference;
+}
+
+/** Clone this message.
+ * Produces a message of the same type as this message and copies the
+ * data to the new message.
+ * @return clone of this message
+ */
+Message *
+AX12GripperInterface::ModifyOpeningAngleByMessage::clone() const
+{
+  return new AX12GripperInterface::ModifyOpeningAngleByMessage(this);
 }
 /** @class AX12GripperInterface::RelGotoZMessage <interfaces/AX12GripperInterface.h>
  * RelGotoZMessage Fawkes BlackBoard Interface Message.
@@ -2823,64 +2924,68 @@ AX12GripperInterface::message_valid(const Message *message) const
   if ( m4 != NULL ) {
     return true;
   }
-  const RelGotoZMessage *m5 = dynamic_cast<const RelGotoZMessage *>(message);
+  const ModifyOpeningAngleByMessage *m5 = dynamic_cast<const ModifyOpeningAngleByMessage *>(message);
   if ( m5 != NULL ) {
     return true;
   }
-  const StopLeftMessage *m6 = dynamic_cast<const StopLeftMessage *>(message);
+  const RelGotoZMessage *m6 = dynamic_cast<const RelGotoZMessage *>(message);
   if ( m6 != NULL ) {
     return true;
   }
-  const StopRightMessage *m7 = dynamic_cast<const StopRightMessage *>(message);
+  const StopLeftMessage *m7 = dynamic_cast<const StopLeftMessage *>(message);
   if ( m7 != NULL ) {
     return true;
   }
-  const StopMessage *m8 = dynamic_cast<const StopMessage *>(message);
+  const StopRightMessage *m8 = dynamic_cast<const StopRightMessage *>(message);
   if ( m8 != NULL ) {
     return true;
   }
-  const FlushMessage *m9 = dynamic_cast<const FlushMessage *>(message);
+  const StopMessage *m9 = dynamic_cast<const StopMessage *>(message);
   if ( m9 != NULL ) {
     return true;
   }
-  const CalibrateMessage *m10 = dynamic_cast<const CalibrateMessage *>(message);
+  const FlushMessage *m10 = dynamic_cast<const FlushMessage *>(message);
   if ( m10 != NULL ) {
     return true;
   }
-  const ParkMessage *m11 = dynamic_cast<const ParkMessage *>(message);
+  const CalibrateMessage *m11 = dynamic_cast<const CalibrateMessage *>(message);
   if ( m11 != NULL ) {
     return true;
   }
-  const GotoMessage *m12 = dynamic_cast<const GotoMessage *>(message);
+  const ParkMessage *m12 = dynamic_cast<const ParkMessage *>(message);
   if ( m12 != NULL ) {
     return true;
   }
-  const TimedGotoMessage *m13 = dynamic_cast<const TimedGotoMessage *>(message);
+  const GotoMessage *m13 = dynamic_cast<const GotoMessage *>(message);
   if ( m13 != NULL ) {
     return true;
   }
-  const SetServoMessage *m14 = dynamic_cast<const SetServoMessage *>(message);
+  const TimedGotoMessage *m14 = dynamic_cast<const TimedGotoMessage *>(message);
   if ( m14 != NULL ) {
     return true;
   }
-  const SetEnabledMessage *m15 = dynamic_cast<const SetEnabledMessage *>(message);
+  const SetServoMessage *m15 = dynamic_cast<const SetServoMessage *>(message);
   if ( m15 != NULL ) {
     return true;
   }
-  const SetVelocityMessage *m16 = dynamic_cast<const SetVelocityMessage *>(message);
+  const SetEnabledMessage *m16 = dynamic_cast<const SetEnabledMessage *>(message);
   if ( m16 != NULL ) {
     return true;
   }
-  const SetMarginMessage *m17 = dynamic_cast<const SetMarginMessage *>(message);
+  const SetVelocityMessage *m17 = dynamic_cast<const SetVelocityMessage *>(message);
   if ( m17 != NULL ) {
     return true;
   }
-  const SetTorqueMessage *m18 = dynamic_cast<const SetTorqueMessage *>(message);
+  const SetMarginMessage *m18 = dynamic_cast<const SetMarginMessage *>(message);
   if ( m18 != NULL ) {
     return true;
   }
-  const SlapMessage *m19 = dynamic_cast<const SlapMessage *>(message);
+  const SetTorqueMessage *m19 = dynamic_cast<const SetTorqueMessage *>(message);
   if ( m19 != NULL ) {
+    return true;
+  }
+  const SlapMessage *m20 = dynamic_cast<const SlapMessage *>(message);
+  if ( m20 != NULL ) {
     return true;
   }
   return false;
