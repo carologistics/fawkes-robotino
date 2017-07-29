@@ -637,7 +637,9 @@ the waiting state until we can use it again."
 (defrule step-get-base-finish-fail
   (declare (salience ?*PRIORITY-STEP-FINISH*))
   (phase PRODUCTION)
-  ?step <- (step (name get-base) (state running) (side ?side))
+  ?step <- (step (name get-base) (state running) (side ?side) (product-id ?product-id))
+  ?of <- (order (product-id ?product-id))
+  ; TODO, this will disable the ability to get bases without an assosiated order, e.g. bases to throw into RS station slides
   ?state <- (state ?result&SKILL-FINAL|SKILL-FAILED)
   ?ste <- (skill-to-execute (skill get_product_from)
                             (args $?args) (state final|failed))
@@ -657,7 +659,7 @@ the waiting state until we can use it again."
     (assert (mps-reset (machine ?mps)))
     (modify ?step (state failed))
     (synced-modify ?bsf fail-side ?side)
-
+    (synced-modify ?of in-production 0)
   )
   (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource PREPARE-BS)))
 )
