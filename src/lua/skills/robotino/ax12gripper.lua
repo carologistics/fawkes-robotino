@@ -85,7 +85,7 @@ fsm:add_transitions{
    {"CHECK_GRAB_SUCCESS", "FINAL", cond="gripper_if:is_holds_puck()"},
    {"CHECK_GRAB_SUCCESS", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Gripper doesn't hold a puck"},
    {"CHECK_GRAB_SUCCESS", "FAILED", timeout=5, desc="Gripper timeout"},
-   {"COMMAND", "CLOSE_GRIPPER_WAIT", cond="vars.close"},
+   {"COMMAND", "CLOSE_GRIPPER_WAIT", cond="vars.close or vars.slap"},
    {"CLOSE_GRIPPER_WAIT", "FINAL_AFTER_IF_FINAL", timeout=0.5},
    {"FINAL_AFTER_IF_FINAL", "FINAL", cond="gripper_if:is_final()"},
    {"FINAL_AFTER_IF_FINAL", "FAILED", timeout=3},
@@ -134,13 +134,22 @@ function COMMAND:init()
       theCloseMessage:set_offset(self.fsm.vars.offset or 0)
       gripper_if:msgq_enqueue(theCloseMessage)
 
-  elseif self.fsm.vars.command == "SET_TORQUE" then
+   elseif self.fsm.vars.command == "SET_TORQUE" then
       self.fsm.vars.set_torque = true
       torqueMessage = gripper_if.SetTorqueMessage:new()
       torqueMessage:set_torque(self.fsm.vars.torque or 0)
       gripper_if:msgq_enqueue(torqueMessage)
-
-  elseif self.fsm.vars.command == "RELGOTOZ" then
+   elseif self.fsm.vars.command == "SLAP_LEFT" then
+      self.fsm.vars.slap = true
+      slapMessage = gripper_if.SlapMessage:new()
+      slapMessage:set_side(0)
+      gripper_if:msgq_enqueue(slapMessage)
+   elseif self.fsm.vars.command == "SLAP_RIGHT" then
+      self.fsm.vars.slap = true
+      slapMessage = gripper_if.SlapMessage:new()
+      slapMessage:set_side(1)
+      gripper_if:msgq_enqueue(slapMessage)
+   elseif self.fsm.vars.command == "RELGOTOZ" then
       self.fsm.vars.relgotoz = true
 
   elseif self.fsm.vars.command == "RESET_Z_POS" then
