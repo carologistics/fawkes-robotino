@@ -69,7 +69,7 @@ conveyor_pose:
       y_max: 0.035
   front:
     # the distance that is not pruned at the front of the MPS
-    space: 0.6
+    space: 0.3
     # this should be a tf, but I did not get it work :(
     offset: 0.005
   bottom:
