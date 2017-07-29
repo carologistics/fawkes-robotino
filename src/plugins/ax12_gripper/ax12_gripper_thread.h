@@ -149,6 +149,8 @@ class GripperAX12AThread
   
   float        cur_torque_;
   fawkes::Time motion_start_timestamp_;
+  bool         slap_left_pending_;
+  bool         slap_right_pending_;
 
 #ifdef HAVE_TF
   std::string  __cfg_base_frame;
