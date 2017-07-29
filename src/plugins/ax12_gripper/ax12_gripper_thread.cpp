@@ -355,18 +355,27 @@ GripperAX12AThread::loop()
 
         if (msg->slapmode() == AX12GripperInterface::SlapMode::LEFT) {
           // open the gripper and disable torque on the left
-          set_torque_right(1);
+          DynamixelServoInterface::SetTorqueLimitMessage *torque_left_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+          DynamixelServoInterface::SetTorqueLimitMessage *torque_right_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+          torque_left_msg->set_torque_limit(0);
+          torque_right_msg->set_torque_limit(1023);
+          __servo_if_left ->msgq_enqueue(torque_left_msg);
+          __servo_if_right->msgq_enqueue(torque_right_msg);
+
           goto_gripper(__cfg_left_open_angle, __cfg_right_open_angle);
 
           motion_start_timestamp_ = fawkes::Time(clock);
-          set_torque_left(0);
         } else if (msg->slapmode() == AX12GripperInterface::SlapMode::RIGHT) {
+          DynamixelServoInterface::SetTorqueLimitMessage *torque_left_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+          DynamixelServoInterface::SetTorqueLimitMessage *torque_right_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+          torque_left_msg->set_torque_limit(1023);
+          torque_right_msg->set_torque_limit(0);
+          __servo_if_left ->msgq_enqueue(torque_left_msg);
+          __servo_if_right->msgq_enqueue(torque_right_msg);
           // open the gripper and disable torque on the right
-          set_torque_left(1);
           goto_gripper(__cfg_left_open_angle, __cfg_right_open_angle);
 
           motion_start_timestamp_ = fawkes::Time(clock);
-          set_torque_right(0);
         } else {
           logger->log_error(name(), "SlapMessage received but no side given.");
         }
