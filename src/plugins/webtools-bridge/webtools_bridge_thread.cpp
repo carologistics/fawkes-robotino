@@ -98,11 +98,18 @@ WebtoolsBridgeThread::init()
                                                                                   , config
                                                                                   , clock));
 
-  bridge_manager_->register_processor(std::make_shared<ClipsProcessor> ("clips"
-                                                                        , logger
-                                                                        , config
-                                                                        , clock
-                                                                        , clips_env_mgr));
+  std::map<std::string, LockPtr<CLIPS::Environment>> rv= clips_env_mgr->environments();
+
+  if ( rv.find("agent") != rv.end()) {
+    bridge_manager_->register_processor(std::make_shared<ClipsProcessor> ("clips"
+                                                                          , logger
+                                                                          , config
+                                                                          , clock
+                                                                          , clips_env_mgr));
+  }
+  else{
+    logger->log_warn(name(), " CLIPS agent was not found. No bridge will be registered for it!");
+  }
 
 
   try
