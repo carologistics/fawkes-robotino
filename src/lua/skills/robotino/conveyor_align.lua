@@ -48,7 +48,7 @@ end
 
 local pick_offset = 0
 if config:exists("/skills/conveyor_align/pick_offset") then
-   pickoffset = config:get_float("/skills/conveyor_align/pick_offset")
+   pick_offset = config:get_float("/skills/conveyor_align/pick_offset")
 end
 
 local TOLERANCE_Y = 0.002
