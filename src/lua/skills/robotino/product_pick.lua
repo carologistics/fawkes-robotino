@@ -35,6 +35,8 @@ and opens the gripper
 @param offset_x the offset_x from the navgraph point
 ]==]
 
+-- the angle to open the gripper after the first grasp
+OPENING_ANGLE = 0.1
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -113,7 +115,8 @@ function ADJUST_HEIGHT:init()
 end
 
 function OPEN_GRIPPER_SECOND:init()
-   self.args["ax12gripper"].command = "OPEN"
+   self.args["ax12gripper"].command = "MODIFY_OPENING_ANGLE"
+   self.args["ax12gripper"].angle_difference = OPENING_ANGLE
    printf("open gripper")
 end
 
