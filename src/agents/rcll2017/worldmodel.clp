@@ -9,7 +9,6 @@
 ; knowledge evaluation request
 (defrule wm-recv-MachineInfo
   ?pb-msg <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
-  (phase ?phase)
   (game-time $?game-time)
   =>
   ; (printout t "***** Received MachineInfo *****" crlf)
@@ -38,8 +37,7 @@
       )
     )
     ; only update zone info at start of production
-    (if (and (eq ?phase PRODUCTION)
-             (< (nth$ 1 ?game-time) 10)
+    (if (and (< (nth$ 1 ?game-time) 10)
              (pb-has-field ?m "zone")) then
       (bind ?m-zone (sym-cat (pb-field-value ?m "zone")))
       (do-for-fact ((?zone-exp zone-exploration))

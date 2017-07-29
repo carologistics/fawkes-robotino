@@ -310,6 +310,11 @@
   (slot waitpoint (type SYMBOL))
 )
 
+(deftemplate place-needing-waitpoint
+  (slot name (type SYMBOL))
+  (multislot pos (type INTEGER))
+)
+
 (deftemplate puck-storage
   (slot name (type SYMBOL))
   (slot puck (type INTEGER) (default 0))

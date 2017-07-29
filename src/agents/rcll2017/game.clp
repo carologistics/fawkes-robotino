@@ -15,8 +15,8 @@
   ?cf <- (change-phase ?phase)
   ?pf <- (phase ?old)
   (or
-    (navgraph-done)
     (change-phase ~PRODUCTION)
+    (waitpoints-done)
   )
   =>
   (retract ?cf ?pf)
@@ -164,7 +164,6 @@
   (declare (salience ?*PRIORITY-LOW*))
   (not (received-field-layout))
   ?msg <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
-  (phase PRODUCTION)
 =>
   (foreach ?machine (pb-field-list ?p "machines")
     (bind ?name (sym-cat (pb-field-value ?machine "name")))
@@ -191,12 +190,12 @@
           (mtype ?type)
         )
       )
+      (assert (received-field-layout))
     else
       (printout t "Received incomplete ground-truth from refbox. Machine: " ?name
         ", rot: " ?rot ", zone: " ?zone ", type: " ?type crlf)
     )
   )
-  (assert (received-field-layout))
   (retract ?msg)
 )
 
