@@ -14,10 +14,6 @@
   "Changes game state"
   ?cf <- (change-phase ?phase)
   ?pf <- (phase ?old)
-  (or
-    (navgraph-done)
-    (change-phase ~PRODUCTION)
-  )
   =>
   (retract ?cf ?pf)
   (assert (phase ?phase))
