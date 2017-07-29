@@ -56,12 +56,12 @@ fsm:define_states{ export_to=_M,
    {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}},
       final_to="RESET_Z_POS", fail_to="RESET_Z_POS"},
    {"SLAP_LEFT", SkillJumpState, skills={{ax12gripper}},
-      final_to="WAIT_SLAP_LEFT", fail_to="FINAL"},
+      final_to="OPEN_FROM_SLAP_LEFT", fail_to="FINAL"},
    {"WAIT_SLAP_LEFT", JumpState},
    {"OPEN_FROM_SLAP_LEFT", SkillJumpState, skills={{ax12gripper}},
       final_to="SLAP_RIGHT", fail_to="FINAL"},
    {"SLAP_RIGHT", SkillJumpState, skills={{ax12gripper}},
-      final_to="WAIT_SLAP_RIGHT", fail_to="FINAL"},
+      final_to="OPEN_FROM_SLAP_RIGHT", fail_to="FINAL"},
    {"WAIT_SLAP_RIGHT", JumpState},
    {"OPEN_FROM_SLAP_RIGHT", SkillJumpState, skills={{ax12gripper}},
       final_to="MOVE_BACK", fail_to="FINAL"},
@@ -72,8 +72,6 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
 --   {"WAIT", "MOVE_BACK", timeout=0.5, desc="wait for gripper to open"}
    {"WAIT", "SLAP_LEFT", timeout=0.5, desc="wait for gripper to open, then slap left"},
-   {"WAIT_SLAP_LEFT", "OPEN_FROM_SLAP_LEFT", timeout=1.0, desc="wait for gripper slap left, then open"},
-   {"WAIT_SLAP_RIGHT", "OPEN_FROM_SLAP_RIGHT", timeout=1.0, desc="wait for gripper slap right, then open"}
 }
 
 function DRIVE_FORWARD:init()
