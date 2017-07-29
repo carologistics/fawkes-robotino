@@ -129,9 +129,9 @@ function calc_result(self)
            max = j
         end
     end
-
+    speak("On this i recognized a %s",MPS_TYPE[max+1])
     mps_recognition_if_:set_mpstype(max) 
-
+   
     return true  
 end
 

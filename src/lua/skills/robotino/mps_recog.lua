@@ -84,10 +84,8 @@ function recognition_result()
    --recognition_result=mps_recognition_if:toString_MPSType(mps_recognition_if:mpstype());
    --recognition_result="testStation"; 
    recognition_result = MPS_TYPES[mps_recognition_if:mpstype()+1];
-   speak("Recognition completed! Result: %s",MPS_TYPES[mps_recognition_if:mpstype()+1])
-
-   printf("The result is %s",recognition_result);
-   printf("Acutal: %d",mps_recognition_if:mpstype())
+   speak("Recognition completed! I think i saw a %s",MPS_TYPES[mps_recognition_if:mpstype()+1])
+   printf("Passed mps: %d",mps_recognition_if:mpstype());
    return true;
 end
 

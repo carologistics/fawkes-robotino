@@ -93,16 +93,17 @@ function calc_final_result(self)
     speak("I looked at the station %d times",lcount)
     if max == 0 or lcount < 2 then
     	 self.fsm.vars.i = self.fsm.vars.i * 2
-
+	speak("I am not sure enough about what i see")
         return false
     end
 
     for j=0,MPS_COUNT do
 	    if result[j] == result[max] then
+		    
 		    if max~=j and self.fsm.vars.i*2>=8 then
 			     self.fsm.vars.i = self.fsm.vars.i * 2
-
-                return false
+			     speak("I am not sure if a see a %s or a %s",MPS_TYPE[max+1],MPS_TYPE[j+1])
+                	     return false
 		    else
 			    max = j
 		    end
