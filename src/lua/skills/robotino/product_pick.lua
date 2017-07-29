@@ -64,6 +64,8 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"CLOSE_GRIPPER_SECOND", SkillJumpState, skills={{ax12gripper}},
       final_to="WAIT_FOR_GRIPPER_SECOND", fail_to="FAIL_SAFE"},
    {"WAIT_FOR_GRIPPER_SECOND", JumpState},
+   {"MOVE_UP_AFTER_PICK", SkillJumpState, skills={{ax12gripper}},
+      final_to="MOVE_BACK_SECOND", fail_to="MOVE_BACK_SECOND"},
    {"MOVE_BACK_SECOND", SkillJumpState, skills={{motor_move}},
       final_to="WAIT_FOR_INTERFACE", fail_to="FAILED"},
    {"WAIT_FOR_INTERFACE", JumpState},
@@ -82,7 +84,7 @@ fsm:add_transitions{
    {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="GOT NO PUCK!"},
    {"WAIT_FOR_INTERFACE", "CHECK_PUCK", timeout=2},
    {"WAIT_FOR_GRIPPER", "OPEN_GRIPPER_SECOND", timeout=1},
-   {"WAIT_FOR_GRIPPER_SECOND", "MOVE_BACK_SECOND", timeout=3},
+   {"WAIT_FOR_GRIPPER_SECOND", "MOVE_UP_AFTER_PICK", timeout=1},
 }
 
 function OPEN_GRIPPER:init()
@@ -123,6 +125,12 @@ end
 function CLOSE_GRIPPER_SECOND:init()
    self.args["ax12gripper"].command = "CLOSE_TIGHT"
    printf("close gripper")
+end
+
+function MOVE_UP_AFTER_PICK:init()
+   self.args["ax12gripper"].command = "RELGOTOZ"
+   self.args["ax12gripper"].z_position = 2
+   printf("adjusting height")
 end
 
 function CENTER_GRIPPER:init()
