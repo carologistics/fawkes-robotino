@@ -355,18 +355,27 @@ GripperAX12AThread::loop()
 
         if (msg->slapmode() == AX12GripperInterface::SlapMode::LEFT) {
           // open the gripper and disable torque on the left
-          set_torque_right(1);
+          DynamixelServoInterface::SetTorqueLimitMessage *torque_left_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+          DynamixelServoInterface::SetTorqueLimitMessage *torque_right_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+          torque_left_msg->set_torque_limit(0);
+          torque_right_msg->set_torque_limit(1023);
+          __servo_if_left ->msgq_enqueue(torque_left_msg);
+          __servo_if_right->msgq_enqueue(torque_right_msg);
+
           goto_gripper(__cfg_left_open_angle, __cfg_right_open_angle);
 
           motion_start_timestamp_ = fawkes::Time(clock);
-          set_torque_left(0);
         } else if (msg->slapmode() == AX12GripperInterface::SlapMode::RIGHT) {
+          DynamixelServoInterface::SetTorqueLimitMessage *torque_left_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+          DynamixelServoInterface::SetTorqueLimitMessage *torque_right_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+          torque_left_msg->set_torque_limit(1023);
+          torque_right_msg->set_torque_limit(0);
+          __servo_if_left ->msgq_enqueue(torque_left_msg);
+          __servo_if_right->msgq_enqueue(torque_right_msg);
           // open the gripper and disable torque on the right
-          set_torque_left(1);
           goto_gripper(__cfg_left_open_angle, __cfg_right_open_angle);
 
           motion_start_timestamp_ = fawkes::Time(clock);
-          set_torque_right(0);
         } else {
           logger->log_error(name(), "SlapMessage received but no side given.");
         }
@@ -581,8 +590,8 @@ void
 GripperAX12AThread::set_torque(float torque)
 {
   if (torque >= 0. && torque <= 1.0) {
-    set_torque_left(torque);
-    set_torque_right(torque);
+    set_torque_left((unsigned int) (torque * 1023));
+    set_torque_right((unsigned int) (torque * 1023));
   }
 }
 
@@ -590,16 +599,16 @@ GripperAX12AThread::set_torque(float torque)
  * @param torque torque from 0 - 1
  */
 void
-GripperAX12AThread::set_torque_left(float torque)
+GripperAX12AThread::set_torque_left(unsigned int torque)
 {
-  if (torque >= 0. && torque <= 1.0) {
+  if (torque >= 0 && torque <= 1023) {
     cur_torque_ = torque;
-    logger->log_debug(name(), "Set left torque to %f", torque);
+    logger->log_debug(name(), "Set left torque to %u", torque);
 
-    DynamixelServoInterface::SetTorqueLimitMessage *torque_left_message = new DynamixelServoInterface::SetTorqueLimitMessage(torque * 0x3FF);
+    DynamixelServoInterface::SetTorqueLimitMessage *torque_left_message = new DynamixelServoInterface::SetTorqueLimitMessage(torque);
     __servo_if_left->msgq_enqueue(torque_left_message);
   } else {
-    logger->log_error(name(), "Unable to set left torque to %f - value out of range!", torque);
+    logger->log_error(name(), "Unable to set left torque to %u - value out of range!", torque);
   }
 }
 
@@ -607,16 +616,16 @@ GripperAX12AThread::set_torque_left(float torque)
  * @param torque torque from 0 - 1
  */
 void
-GripperAX12AThread::set_torque_right(float torque)
+GripperAX12AThread::set_torque_right(unsigned int torque)
 {
-  if (torque >= 0. && torque <= 1.0) {
+  if (torque >= 0 && torque <= 1023) {
     cur_torque_ = torque;
-    logger->log_debug(name(), "Set right torque to %f", torque);
+    logger->log_debug(name(), "Set right torque to %u", torque);
 
-    DynamixelServoInterface::SetTorqueLimitMessage *torque_right_message = new DynamixelServoInterface::SetTorqueLimitMessage(torque * 0x3FF);
+    DynamixelServoInterface::SetTorqueLimitMessage *torque_right_message = new DynamixelServoInterface::SetTorqueLimitMessage(torque);
     __servo_if_right->msgq_enqueue(torque_right_message);
   } else {
-    logger->log_error(name(), "Unable to set right torque to %f - value out of range!", torque);
+    logger->log_error(name(), "Unable to set right torque to %u - value out of range!", torque);
   }
 }
 
