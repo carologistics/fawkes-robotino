@@ -60,6 +60,13 @@ fsm:define_states{
    closure={gripper_if=gripper_if, right_fully_loaded=right_fully_loaded, left_fully_loaded=left_fully_loaded},
    {"CHECK_WRITER", JumpState},
    {"COMMAND", JumpState},
+   {"SLAP_LEFT", JumpState},
+   {"SLAP_RIGHT", JumpState},
+   {"OPEN_FROM_SLAP_LEFT", JumpState},
+   {"OPEN_FROM_SLAP_RIGHT", JumpState},
+   {"WAIT_FROM_SLAP_LEFT", JumpState},
+   {"WAIT_FROM_SLAP_RIGHT", JumpState},
+   {"OPEN", JumpState},
    {"CLOSE_GRIPPER_WAIT", JumpState},
    {"WAIT_FOR_GRAB", JumpState},
    {"CHECK_GRAB_SUCCESS", JumpState},
@@ -142,12 +149,12 @@ function COMMAND:init()
    elseif self.fsm.vars.command == "SLAP_LEFT" then
       self.fsm.vars.slap = true
       slapMessage = gripper_if.SlapMessage:new()
-      slapMessage:set_side(0)
+      slapMessage:set_slapmode(0)
       gripper_if:msgq_enqueue(slapMessage)
    elseif self.fsm.vars.command == "SLAP_RIGHT" then
       self.fsm.vars.slap = true
       slapMessage = gripper_if.SlapMessage:new()
-      slapMessage:set_side(1)
+      slapMessage:set_slapmode(1)
       gripper_if:msgq_enqueue(slapMessage)
    elseif self.fsm.vars.command == "RELGOTOZ" then
       self.fsm.vars.relgotoz = true
@@ -185,4 +192,34 @@ end
 
 function RESET_Z_POS:init()
       self.args["gripper_z_align"].command = "RESET_Z_POS"
+end
+
+function SLAP_LEFT:init()
+   slapMessage = gripper_if.SlapMessage:new()
+   slapMessage:set_slapmode(0)
+   gripper_if:msgq_enqueue(slapMessage)
+end
+
+function SLAP_RIGHT:init()
+   slapMessage = gripper_if.SlapMessage:new()
+   slapMessage:set_slapmode(1)
+   gripper_if:msgq_enqueue(slapMessage)
+end
+
+function OPEN_FROM_SLAP_LEFT:init()
+  theOpenMessage = gripper_if.OpenMessage:new()
+  theOpenMessage:set_offset(self.fsm.vars.offset or 0)
+  gripper_if:msgq_enqueue(theOpenMessage)
+end
+
+function OPEN_FROM_SLAP_RIGHT:init()
+  theOpenMessage = gripper_if.OpenMessage:new()
+  theOpenMessage:set_offset(self.fsm.vars.offset or 0)
+  gripper_if:msgq_enqueue(theOpenMessage)
+end
+
+function OPEN:init()
+  theOpenMessage = gripper_if.OpenMessage:new()
+  theOpenMessage:set_offset(self.fsm.vars.offset or 0)
+  gripper_if:msgq_enqueue(theOpenMessage)
 end
