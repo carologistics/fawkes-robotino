@@ -443,6 +443,26 @@
   (assert (state STEP-FAILED))
 )
 
+(defrule step-abort-filling-cs-race-condition-with-break
+  "abort preparting and inserting of a base to be mounted with a cap (can happen because of race condition when remove product failed)"
+  (declare (salience ?*PRIORITY-STEP-FAILED*))
+  (phase PRODUCTION)
+  ?step <- (step (id ?step-id) (name insert) (state running)
+                 (machine ?mps)
+                 (already-at-mps ?already-at-mps))
+  (or (cap-station (name ?mps) (cap-loaded NONE))
+      (machine (name ?mps) (state BROKEN))
+  )
+  ?state <- (state SKILL-EXECUTION)
+  ?ste <- (skill-to-execute (state running))
+  (step (name instruct-mps) (machine ?mps) (cs-operation MOUNT_CAP))
+  =>
+  (printout t "Step: Abort inserting CS to MOUNT when no cap is stored" crlf)
+  (retract ?state ?ste)
+  (assert (state STEP-FAILED))
+  (modify ?step (state failed))
+)
+
 (defrule step-abort-filling-rs
   "abort filling 4th base into RS (can happen because of race condition)"
   (declare (salience ?*PRIORITY-STEP-FAILED*))
