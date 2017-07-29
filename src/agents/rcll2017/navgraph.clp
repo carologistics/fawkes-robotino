@@ -48,7 +48,6 @@
 
 (defrule navgraph-generate-waiting-positions
   "To generate waiting positions in the empty zones we have to send the SetWaitZones message to the navgraph-generation interface"
-  (phase PRODUCTION)
   (forall (machine (name ?mps))
           (zone-exploration (times-searched ?ts) (machine ?found&:(eq ?mps ?found))))
   (not (added-waiting-positions))
@@ -103,16 +102,21 @@
 )
 
 
-(defrule navgraph-assign-places-to-waitpoints
-  "Assing places to waitpoints so we can drive there when the place is locked."
-  (added-waiting-positions)
+(defrule navgraph-select-places-for-waitpoints
   (navgraph-node (name ?p&:(or (eq "-I" (sub-string (- (str-length ?p) 1) (str-length ?p) ?p))
                                (eq "-O" (sub-string (- (str-length ?p) 1) (str-length ?p) ?p))))                               
                  (pos $?pos))
-  (wait-point ?wait-point)
+=>
+  (assert (place-needing-waitpoint (name ?p) (pos ?pos)))
+)
+
+
+(defrule navgraph-assign-places-to-waitpoints
+  "Assing places to waitpoints so we can drive there when the place is locked."
+  (added-waiting-positions)
+  ?p-f <- (place-needing-waitpoint (name ?p) (pos $?pos))
   =>
   ;find nearest waiting point
-  (bind ?nearest-wp ?wait-point);default
   (bind ?nearest-dist 10000)
   (delayed-do-for-all-facts ((?wpt zone-waitpoint)) TRUE
     (bind ?dist (distance (nth$ 1 ?pos) (nth$ 2 ?pos) ?wpt:x ?wpt:y))
@@ -121,8 +125,20 @@
       (bind ?nearest-wp ?wpt:name)
     )
   )
+  (assert (assigning-wait-positions))
   (assert (place-waitpoint-assignment (place (sym-cat ?p)) (waitpoint ?nearest-wp)))
+  (retract ?p-f)
 )
+
+
+(defrule navgraph-all-waitpoints-assigned
+  ?ass-f <- (assigning-wait-positions)
+  (not (place-needing-waitpoint))
+=>
+  (assert (waitpoints-done))
+  (retract ?ass-f)
+)
+
 
 (defrule navgraph-sim-add-found-tags-when-added-by-ground-truth
   "When the gazsim-navgraph-generator plugin is used to add the navgraph points to test production without exploration, we have to add the found-tags"
