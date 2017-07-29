@@ -643,7 +643,7 @@
   (holding NONE)
   (game-time $?game-time)
   (machine (mtype CS) (produced-id ?produced-id&~0)
-           (name ?cs) (team ?team-color) (incoming $?i&~:(member$ GET-PROD ?i))
+           (name ?cs) (team ?team-color) ;(incoming $?i&~:(member$ GET-PROD ?i))
            (state ~BROKEN))
   (product
     (id ?produced-id)
