@@ -181,7 +181,7 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-	self.fsm.vars.i = 1
+	self.fsm.vars.i = 2
 	self.fsm.vars.resultCount = 0
 	self.fsm.vars.results = nil
 	self.fsm.vars.count = 0
