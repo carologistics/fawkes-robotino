@@ -299,6 +299,14 @@ GripperAX12AThread::loop()
         set_torque(1.0);
         goto_gripper(__cfg_left_open_angle + msg->offset(), __cfg_right_open_angle + msg->offset());
 
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::ModifyOpeningAngleByMessage>()) {
+        AX12GripperInterface::ModifyOpeningAngleByMessage *msg = __gripper_if->msgq_first(msg);
+        const float angle_difference = msg->angle_difference();
+
+        set_torque(1.0);
+        goto_gripper(__servo_if_left->angle()  - angle_difference,
+                     __servo_if_right->angle() + angle_difference);
+
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CloseMessage>()) {
         AX12GripperInterface::CloseMessage *msg = __gripper_if->msgq_first(msg);
 
