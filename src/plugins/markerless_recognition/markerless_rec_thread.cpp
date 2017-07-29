@@ -24,6 +24,8 @@ using namespace cv;
  * @author Sebastian Schönitz, Daniel Habering, Carsten Stoffels
  */
 
+std::vector<std::string> stationNames ={"BaseStation","CapStation","DeliveryStation","RingStation","StorageStation"};
+
 /** Constructor. */
 MarkerlessRecognitionThread::MarkerlessRecognitionThread()
   : Thread("MarkerlessRecognitionThread", Thread::OPMODE_WAITFORWAKEUP),
@@ -35,17 +37,20 @@ MarkerlessRecognitionThread::MarkerlessRecognitionThread()
     shm_buffer = NULL;
     image_buffer = NULL;
     ipl = NULL;
-
+	
 }
 
 void MarkerlessRecognitionThread::finalize() {
- 	blackboard->close(mps_rec_if_);
+	//printf("Closing Plugin\n");
+	blackboard->close(mps_rec_if_);
         delete fv_cam;
   	fv_cam = NULL;
   	delete shm_buffer;
   	shm_buffer= NULL;
   	image_buffer = NULL;
  	ipl = NULL;
+	dlclose(handle);
+	//printf("Do I get here?\n");
 }
 int checkResult(Probability prob){
 	for(int i = 0; i < 4; i++){
@@ -172,6 +177,10 @@ int MarkerlessRecognitionThread::recognize_mps() {
 	{
 		logger->log_info(name(),"Failed Threshold: %f %f",recognition_result.p[maximum],recognition_result.p[second]);
 		station = 0;
+	        mps_rec_if_->set_final(true);
+    		mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) station) ;	
+    		mps_rec_if_->write();	
+		return station;
 	}
 	else{
 		/*if(maximum == CS || maximum == RS){
@@ -197,16 +206,25 @@ int MarkerlessRecognitionThread::recognize_mps() {
 			}
 
 		}
+*
 */
 		station = maximum;
 	}	
 
         mps_rec_if_->set_final(true);
-	if(MPS_COUNT>5) 	mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) (((int)(station/2))+1)) ;
-	else mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) (station+1));
+	if(MPS_COUNT>5){
+		fawkes::MPSRecognitionInterface::MPSType actSt = (fawkes::MPSRecognitionInterface::MPSType) (((int)(station/2))+1);
+		mps_rec_if_->set_mpstype(actSt) ;
+		logger->log_info(name(), " Finished recognizing: %s ",stationNames[actSt].c_str()); 
+
+	}
+	else {
+		mps_rec_if_->set_mpstype((fawkes::MPSRecognitionInterface::MPSType) (station+1));
+		logger->log_info(name(), " Finished recognizing: %s ",stationNames[station+1].c_str()); 
+
+	}
 	mps_rec_if_->write();	
 	
-	logger->log_info(name(), " Finished recognizing "); 
 	return station;
 
 }
@@ -273,7 +291,7 @@ void MarkerlessRecognitionThread::init(){
 
 	//Open shared library
 	std::string lib = home + "/tensorflow/bazel-bin/tensorflow/tf_wrapper/tensorflowWrapper.so";
-    	handle = dlopen(lib.c_str(),RTLD_NOW);
+    	handle = dlopen(lib.c_str(),RTLD_LAZY|RTLD_GLOBAL);
 	if(!handle){
         		fprintf(stderr, "%s\n", dlerror());
 		
@@ -318,6 +336,14 @@ void MarkerlessRecognitionThread::init(){
 
 	init_twoGraph(grPath.c_str(),laPath.c_str());
 	*/
+	
+	//Take 4 pictures to remove the initial unsufficient lighting of the pictures
+	takePictureFromFVcamera();
+	takePictureFromFVcamera();
+	takePictureFromFVcamera();
+	takePictureFromFVcamera();
+	
+
 	recognize_mps();
 }
 
@@ -325,7 +351,6 @@ void MarkerlessRecognitionThread::init(){
 
 void MarkerlessRecognitionThread::takePictureFromFVcamera(){ 
 
-        logger->log_info(name(),"Taking Picture");
 	
 	//get img form fv
         fv_cam->capture();
@@ -338,7 +363,7 @@ void MarkerlessRecognitionThread::takePictureFromFVcamera(){
         fv_cam->dispose_buffer();
         //convert img
         firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
-        visionMat = cvarrToMat(ipl);
+	visionMat = cvarrToMat(ipl);
         imwrite(vpath.c_str(), visionMat);
 		
 
