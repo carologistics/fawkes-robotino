@@ -264,33 +264,6 @@
   )
 )
 
-(defrule prod-clear-bs
-  "Clear BS if base retrieval failed"
-  (declare (salience ?*PRIORITY-CLEAR-BS*))
-  (phase PRODUCTION)
-  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
-  (team-color ?team-color&~nil)
-  (holding NONE)
-  (machine (mtype BS) (name ?bs) (team ?team-color) (state READY-AT-OUTPUT))
-  (base-station (name ?bs) (fail-side ?side&~NONE))
-  (not (locked-resource (resource ?res&:(eq ?res (sym-cat ?bs "-" ?side)))))
-  (not (and (task (name clear-bs) (state rejected) (id ?rej-id))
-            (step (name get-output) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?bs))))
-  (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-CLEAR-BS*))))
-  =>
-  (printout t "PROD: Clearing BS due to failed base retrieval" crlf)
-  (bind ?task-id (random-id))
-  (assert
-    (task (name clear-bs) (id ?task-id) (state proposed)
-      (steps (create$ (+ ?task-id 1)))
-      (priority ?*PRIORITY-CLEAR-BS*))
-    (step (name get-output) (id (+ ?task-id 1))
-      (task-priority ?*PRIORITY-CLEAR-BS*)
-      (machine ?bs) (machine-feature CONVEYOR) (side ?side))
-    (needed-task-lock (task-id ?task-id) (action CLEAR-BS) (place ?bs))
-  )
-)
-  
 (defrule prod-produce-c0
   "Produce a C0"
   (declare (salience ?*PRIORITY-PRODUCE-C0*))
@@ -773,6 +746,19 @@
     (needed-task-lock (task-id ?task-id) (action GET-PROD) (place ?rs))
   )
 )
+
+(defrule prod-reset-mps-with-inconsistent-state
+  "Reset an MPS which is expected to be IDLE but is actually READY-AT-OUTPUT"
+  (declare (salience ?*PRIORITY-RESET-MPS*))
+  ;(lock-role MASTER)
+  (team-color ?team-color&~nil)
+  (machine (name ?mps) (state READY-AT-OUTPUT) (team ?team-color))
+  (step (name instruct-mps) (machine ?mps) (state wait-for-activation))
+  =>
+  (printout error
+    "Expected machine " ?mps " to be IDLE, but it is READY-AT-OUTPUT")
+  (assert (mps-reset (machine ?mps)))
+)
  
 (defrule prod-nothing-to-do-save-factbase
   "If the agent can't find any task, save the factbase to find problems"
@@ -822,3 +808,5 @@
   (retract ?no-task)
   (assert (no-task-found (nth$ 1 ?game-time)))
 )
+
+
