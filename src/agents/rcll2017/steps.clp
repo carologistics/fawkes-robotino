@@ -617,7 +617,7 @@ the waiting state until we can use it again."
     (synced-modify ?bsf fail-side NONE)
     else
     (assert (state STEP-FAILED))
-    ;(assert (mps-reset (machine ?mps)))
+    (assert (mps-reset (machine ?mps)))
     (modify ?step (state failed))
     (synced-modify ?bsf fail-side ?side)
 
