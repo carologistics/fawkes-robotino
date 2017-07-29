@@ -117,8 +117,7 @@ private:
 										std::map<std::string, z3::expr>& varHold,
 										std::map<std::string, z3::expr>& varS,
 										std::map<std::string, z3::expr>& varRew,
-										std::map<std::string, z3::expr>& varInit,
-										std::map<std::string, z3::expr>& varO);
+										std::map<std::string, z3::expr>& varInit);
 	void clips_smt_solve_formula(z3::expr_vector formula);
 
 	void clips_smt_solve_formula_from_smt_file(std::string path);
@@ -130,9 +129,10 @@ private:
 	std::map<int ,std::string> actions_robot_3;
 
 	// Constants for C0-C1
-	const int number_actions_c0 = 11;
-	const int number_actions_c1 = 18;
-	const int plan_horizon = 11;
+	const int number_final_action_c0 = 11;
+	const int number_final_action_c1 = 18;
+	const int number_required_actions_c0 = 11;
+	const int number_required_actions_c1 = 14;
 	const int deadline = 80;
 	const int time_to_prep = 5;
 	const int time_to_fetch = 5;
@@ -140,21 +140,37 @@ private:
 	const int time_to_disc = 5;
 	const int time_to_del = 5;
 
+	int number_actions;
+	int plan_horizon;
+
 	// States of machines for C0-C1
 	std::map<std::string, int> state1_machines;
-	const int min_state1_machines = 0, max_state1_machines = 20;
+	const int min_state1_machines = 0, max_state1_machines = 13;
 
 	std::map<std::string, int> state2_machines;
-	const int min_state2_machines = 0, max_state2_machines = 3;
+	const int min_state2_machines = 0, max_state2_machines = 2;
 
 	std::map<std::string, int> state3_machines;
-	const int min_state3_machines = -1, max_state3_machines = 20;
+	const int min_state3_machines = -1, max_state3_machines = 11;
 
 	std::map<std::string, int> products;
-	const int min_products = 0, max_products = 20;
+	const int min_products = 0, max_products = 11;
 
 	std::map<std::string, int> machine_groups;
-	const int min_machine_groups = 0, max_machine_groups = 3;
+	const int min_machine_groups = 0, max_machine_groups = 2;
+
+	std::map<int , float> model_times;
+	std::map<int , int> model_positions;
+	std::map<int , int> model_robots;
+	std::map<int , int> model_actions;
+	std::map<int , int> model_holdA;
+	std::map<int , int> model_state1A;
+	std::map<int , int> model_state2A;
+	std::map<int , int> model_state3A;
+	std::map<int , int> model_holdB;
+	std::map<int , int> model_state1B;
+	std::map<int , int> model_state2B;
+	std::map<int , int> model_state3B;
 
 	// Leonards formula encoding
 	GameData clips_smt_convert_protobuf_to_gamedata();
@@ -182,6 +198,8 @@ private:
 	int number_bits;
 	int number_robots;
 	int number_orders;
+	int number_orders_c0;
+	int number_orders_c1;
 	void clips_smt_fill_node_names();
 	void clips_smt_fill_robot_names();
 	void clips_smt_compute_distances_robots();
