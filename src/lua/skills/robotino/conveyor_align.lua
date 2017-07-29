@@ -27,6 +27,7 @@ depends_interfaces = {
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "if_conveyor", type = "Position3DInterface", id="conveyor_pose/pose"},
    {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
+   {v = "if_gripper", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 
 documentation      = [==[aligns the robot orthogonal to the conveyor by using the
@@ -57,7 +58,8 @@ local MAX_TRIES = 20
 --local X_DEST_POS = 0.08
 local X_DEST_POS = 0.16
 local Y_DEST_POS = 0.0
-local Z_DEST_POS = z_pos + pick_offset
+local Z_DEST_POS = z_pos
+local Z_DEST_POS_PICK = z_pos + pick_offset
 local cfg_frame_ = "gripper"
 
 function no_writer()
@@ -81,6 +83,9 @@ function max_tries_not_reached(self)
 end
 
 function pose_offset(self)
+   if not if_gripper:is_holds_puck() then
+      Z_DEST_POS = Z_DEST_POS_PICK
+   end
 
    local from = { x = if_conveyor:translation(0),
                   y = if_conveyor:translation(1),
