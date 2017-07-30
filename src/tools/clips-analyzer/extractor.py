@@ -291,19 +291,10 @@ def extract_from_file(filename):
     return game_list
 
 
+# TODO: YAML auslesen
 filename = "../../../bin/debug1.log"
 
 game_list = extract_from_file(filename)
-
-
-# def show_rules_around(current_game, game_time, timediff=0):
-#    time_min = game_time - timediff
-#    time_max = game_time + timediff
-#
-#    for g in current_game:
-#        if "fire" == g.attr:
-#            if time_min <= g.game_time <= time_max:
-#                print(str(g.game_time) + " sec: Rule " + g.name)
 
 
 def get_factbase_until_rule_fired(game, crs, rule_id):
@@ -346,18 +337,36 @@ def show_rules_around(number_of_game, gametime, deviation=0):
         print(rule)
 
 
+def show_facts_leading_to_fireing(number_of_game, relc):
+    query = cursor.execute('SELECT  * FROM  game' + str(number_of_game) + '_rules_fired WHERE relc =' + str(relc))
+    fact_field = [x[4] for x in query]
+    fact_field = fact_field[0]
+    facts = fact_field.split(",")
+    for fact in facts:
+        if fact != '*':
+            query2 = cursor.execute('SELECT  * FROM  game' + str(number_of_game) + '_asserts WHERE name = ?', (fact,))
+            cont = [x[2] for x in query2]
+            cont = cont[0]
+            print(fact + ' : ' + cont)
+        elif fact == '*':
+            print("Some facts must not be present")
+            #TODO: Negative facts querying
+
+
 number_of_games = len(game_list)
 setup(number_of_games)
-#fill_game_table(number_of_games)
-#fill_game_asserts_table(number_of_games)
-#fill_game_retracts_table(number_of_games)
-#fill_game_rules_fired_table(number_of_games)
-#fill_game_factbase_changes(number_of_games)
+# fill_game_table(number_of_games)
+# fill_game_asserts_table(number_of_games)
+# fill_game_retracts_table(number_of_games)
+# fill_game_rules_fired_table(number_of_games)
+# fill_game_factbase_changes(number_of_games)
 
-#show_rules_around(2, 100, 10)
-#show_relc_of_rule_fired(2, 'worldmodel-sync-set-sync-id-for-cap-station')
-#print("\n")
-#show_relc_of_fuzzy_rule_fired(2, 'load')
+show_facts_leading_to_fireing(2, 826)
+
+# show_rules_around(2, 100, 10)
+# show_relc_of_rule_fired(2, 'worldmodel-sync-set-sync-id-for-cap-station')
+# print("\n")
+# show_relc_of_fuzzy_rule_fired(2, 'load')
 
 # Was stand wann und wann in der factbase
 # Filter: Positivliste
@@ -367,6 +376,8 @@ setup(number_of_games)
 # -i info
 # -t time counted from game start
 # -T time absolute
+# TODO
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--filter", type=str, help="Filters whether a keyword is in the output")
 parser.add_argument("-g", "--game", type=int, help="Shows a specific game")
@@ -380,7 +391,7 @@ args = parser.parse_args()
 
 
 def list_games():
-    print("There are " + str(len(game_list)) + " games that can be found in " + filename)
+    print("There are " + str(number_of_games) + " games that can be found in " + filename)
     print("\nFor more information use -h or --help")
 
 
