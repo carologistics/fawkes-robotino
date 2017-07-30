@@ -1,3 +1,4 @@
+
 #include "image_rec_thread.h"
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -101,8 +102,7 @@ int ImageRecognitionThread::recognize() {
 	takePictureFromFVcamera(); 
 	if(vpath.empty()) return -1;
 
-        //Probability recognition_result = recognize_current_pic(vpath); 
-	Probability recognition_result = recognize_current_pic("/home/Sagre/Validation/CS-I/vision_14.jpg");
+        Probability recognition_result = recognize_current_pic(vpath); 
 	int recResult = 0;
 
 	int maximum = 0; 
