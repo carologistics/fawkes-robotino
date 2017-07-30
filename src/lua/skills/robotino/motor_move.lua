@@ -65,7 +65,7 @@ local D_DECEL =       { x=0.035, y=0.035, ori=0.15 }    -- deceleration distance
 local ACCEL =         { x=0.06, y=0.06, ori=0.21 }   -- accelerate by this factor every loop
 local MONITOR_LEN     = 15   -- STUCK monitor: Watch distance moved over this many loops
 local STUCK_MAX       = 120  -- STUCK timeout: Fail after being stuck for this many loops
-local STUCK_THRESHOLD = 0.8  -- STUCK threshold: Consider ourselves stuck if we moved less than
+local STUCK_THRESHOLD = 0.6  -- STUCK threshold: Consider ourselves stuck if we moved less than
                              --                  this factor times V_MIN speed during the
                              --                  last MONITOR_LEN loops
 
