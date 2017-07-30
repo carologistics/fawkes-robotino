@@ -3,9 +3,15 @@
 import argparse
 import re
 import sqlite3
+from ruamel import yaml
 
 db_games = sqlite3.connect('data/analyzer')
 cursor = db_games.cursor()
+
+# Loading paths from yaml-file
+with open("paths.yaml", "r") as paths_file:
+    code = yaml.safe_load(paths_file)
+    filename = (code['debuglog']['filepath'])
 
 
 def create_games_table(db, crs, number):
@@ -282,17 +288,12 @@ def extract_from_file(filename):
                     if len(debug_list) > 0:
                         game_list.append(debug_list)
                         debug_list = [Line(line.group(), rel_line_counter, abs_line_counter)]
-
-
                 else:
                     debug_list.append(Line(line.group(), rel_line_counter, abs_line_counter))
 
         game_list.append(debug_list)
     return game_list
 
-
-# TODO: YAML auslesen
-filename = "../../../bin/debug1.log"
 
 game_list = extract_from_file(filename)
 
@@ -350,7 +351,7 @@ def show_facts_leading_to_fireing(number_of_game, relc):
             print(fact + ' : ' + cont)
         elif fact == '*':
             print("Some facts must not be present")
-            #TODO: Negative facts querying
+            # TODO: Negative facts querying
 
 
 number_of_games = len(game_list)
