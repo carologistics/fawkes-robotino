@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="ImageRecognitionInterface" author="Daniel Habering" year="2017">
+  <constants>
+   <enum name="RecClass">
+     <comment>The different types of machines.</comment>
+  </enum>
+  </constants>
+  <data>
+    <comment>
+      This interface allows to control image recognition plugin, e.g. take data, compute type, clear taken data.
+    </comment>
+    <field type="bool" name="final">
+      True, if the last recognition triggered by a ComputeMessage has
+      been completed, false if it is still running. Also check the
+      msgid field if this field applies to the correct message.
+    </field>
+    <field type="RecClass" name="recclass">
+      The result of the recognized image.
+    </field>
+  </data>
+  <message name="Clear">
+    <comment>
+      Remove all currently taken data.
+    </comment>
+  </message>
+  <message name="Recognition">
+    <comment>Trigger recognition calculation.</comment>
+  </message>
+</interface>
