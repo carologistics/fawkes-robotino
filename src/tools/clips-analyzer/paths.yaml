@@ -1,2 +1,12 @@
 debuglog:
   filepath: ../../../bin/debug1.log
+
+clipsfilepaths:
+  basedir: ../../../
+  robotmemory: src/agents/rcll-robot-memory/
+  agent: src/agents/rcll2017/
+  agent_setup: fawkes/src/plugins/clips-agent/clips/
+  protobuf: fawkes/src/plugins/clips-protobuf/clips/
+  navgraph: fawkes/src/plugins/clips-navgraph/clips/
+  ros: fawkes/src/plugins/clips-ros/clips/
+  plugins: fawkes/src/plugins/clips/clips/
