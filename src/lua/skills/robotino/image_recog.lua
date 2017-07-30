@@ -64,18 +64,12 @@ function send_cleardata()
 end
 
 function mpsRecogPlugin_ready()
-  return mps_recognition_if:is_final()
+  return im_recognition_if:is_final()
 end
 
-function data_evaluated(self)
-   if not mpsRecogPlugin_ready() then
-      return false
-   end
-   return true
-end
 
-function recognition_result()
-   recognition_result = self.fsm.vars.classes[im_recognition_if:mpstype()+1];
+function recognition_result(self)
+   recognition_result = self.fsm.vars.classes[im_recognition_if:recclass()+1];
    printf("Recognition Result: %s",recognition_result);
    return true;
 end
@@ -89,6 +83,7 @@ end
 
 function getClasses(self)
 	file = os.getenv("HOME")
+	count = 2
 	file = file .. "/fawkes-robotino/cfg/conf.d/image_recognition.yaml"
 	if fileExists(file) then
 		lines = {}
@@ -108,7 +103,10 @@ function getClasses(self)
 		
 		if fileExists(labels) then
 			for line in io.lines(labels) do
-				self.fsm.vars.classes[#self.fsm.vars.classes+1] = line
+				self.fsm.vars.classes[count]= line
+				printf("%s",self.fsm.vars.classes[count])
+				count = count +1	
+
 			end
 			return true
 		else
@@ -150,6 +148,7 @@ fsm:add_transitions{
 
 function INIT:init()
 	self.fsm.vars.classes = {}
+	self.fsm.vars.classes[1] = "unknown"
 end
 
 function CLEAR:init()

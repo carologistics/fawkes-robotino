@@ -3,7 +3,8 @@
 <interface name="ImageRecognitionInterface" author="Daniel Habering" year="2017">
   <constants>
    <enum name="RecClass">
-     <comment>The different types of machines.</comment>
+	   <comment>The different types of machines.</comment>
+	   <item name="Unknown">Unkown</item>
   </enum>
   </constants>
   <data>
