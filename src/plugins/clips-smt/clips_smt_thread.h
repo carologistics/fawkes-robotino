@@ -129,11 +129,11 @@ private:
 	std::map<int ,std::string> actions_robot_3;
 
 	// Constants for C0-C1
-	const int number_final_action_c0 = 11;
+	const int number_final_action_c0 = 4;
 	const int number_final_action_c1 = 18;
-	const int number_required_actions_c0 = 11;
+	const int number_required_actions_c0 = 4;
 	const int number_required_actions_c1 = 14;
-	const int deadline = 80;
+	const int deadline = 900;
 	const int time_to_prep = 5;
 	const int time_to_fetch = 5;
 	const int time_to_feed = 5;
@@ -142,6 +142,17 @@ private:
 
 	int number_actions;
 	int plan_horizon;
+
+
+	// Real pairs: 0+900, 29+103, 246+150, 556+166, 900+300
+	const bool add_temporal_constraint = true;
+	const int upper_bound_offset = 0;
+	const int lower_bound_c0_0 = 0;
+	const int upper_bound_c0_0 = lower_bound_c0_0+900;
+	const int lower_bound_c0_1 = 29;
+	const int upper_bound_c0_1 = lower_bound_c0_1+103;
+	const int lower_bound_c0_2 = 246;
+	const int upper_bound_c0_2 = lower_bound_c0_2+150;
 
 	// States of machines for C0-C1
 	std::map<std::string, int> state1_machines;
@@ -198,8 +209,8 @@ private:
 	int number_bits;
 	int number_robots;
 	int number_orders;
-	int number_orders_c0;
-	int number_orders_c1;
+	const int number_orders_c0 = 3;
+	const int number_orders_c1 = 0;
 	void clips_smt_fill_node_names();
 	void clips_smt_fill_robot_names();
 	void clips_smt_compute_distances_robots();
