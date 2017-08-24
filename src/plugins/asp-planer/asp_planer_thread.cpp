@@ -491,6 +491,16 @@ AspPlanerThread::init(void)
 	return;
 }
 
+constexpr int
+constexprStrLen(const char *str) {
+	int size = 0;
+	while ( *str++ )
+	{
+		++size;
+	} //while ( *str++ )
+	return size;
+}
+
 void
 AspPlanerThread::loop(void)
 {
@@ -555,7 +565,9 @@ AspPlanerThread::loop(void)
 
 				constexpr const char *idleFormat = " Idle: %d seconds";
 				constexpr const char *failed = " Failed", *notFailed = "";
-				char idleString[std::strlen(idleFormat) + 1 + 3] = {0};
+				constexpr auto idleLen = constexprStrLen(idleFormat);
+				char idleString[idleLen + 1 + constexprStrLen("-32766")] = {0};
+				//                                             ^^^^^^ longest string value for a short
 
 				for ( const auto& task : pair.second.Tasks )
 				{
@@ -571,7 +583,7 @@ AspPlanerThread::loop(void)
 
 					if ( task.Begin > last )
 					{
-						const int idle = task.Begin - last;
+						const short idle = task.Begin - last;
 						std::sprintf(idleString, idleFormat, idle);
 						if ( !noAdd )
 						{
