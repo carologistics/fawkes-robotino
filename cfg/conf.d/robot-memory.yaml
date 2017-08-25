@@ -21,6 +21,7 @@ plugins/robot-memory:
     mongo-client-connection-distributed: "robotmemory-synced"
     # distribute robot memory
     distributed: true
+	distributed-create: false
     # how lagre should the oplog be (minimum 50 mb)
     oplog-size: 1000
     # configuration for setting up all mongod and mongos instances:
@@ -32,7 +33,7 @@ plugins/robot-memory:
       port: 27081
       replica-set-name: "syncedrobmem"
       db-path: "~/.robot-memory/dbs/distributed"
-      replica-set-members: "[{_id:1,host:'localhost:27081'}]"
+      replica-set-members: "['stargazer:20721','orinoco:27021','agamemnon:27021','pegasus:27021']"
       replica-id: 1 #this should be the robot number, override it in host.yaml
       # initiate automatically
       initiate: true
