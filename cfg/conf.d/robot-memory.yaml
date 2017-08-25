@@ -29,10 +29,10 @@ plugins/robot-memory:
     # configuration for setting up all mongod and mongos instances:
     local:
       replica-set-name: "local" #single instance set needed to optain the oplog, not actually replicated 
-      port: 27077
+      port: 27017
       db-path: "~/.robot-memory/dbs/local"
     replicated:
-      port: 27081
+      port: 27021
       replica-set-name: "syncedrobmem"
       db-path: "~/.robot-memory/dbs/distributed"
       replica-set-members:
