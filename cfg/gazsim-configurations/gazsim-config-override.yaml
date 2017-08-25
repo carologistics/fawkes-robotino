@@ -116,7 +116,7 @@ plugins/mongodb/clients:
   robotmemory-synced-sim:
     active: true
     mode: connection
-    hostport: localhost:27021
+    hostport: localhost:27081
       
 plugins/robot-memory:
   setup:

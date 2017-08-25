@@ -21,7 +21,6 @@ SUBDIRS	= clips-motor-switch \
 	  machine-signal \
 	  ax12_gripper \
 	  arduino \
-	  tag_vision \
       navgraph_broker \
 	  navgraph-generator-mps \
 	  conveyor_pose \
