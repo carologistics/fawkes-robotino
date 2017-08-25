@@ -27,10 +27,10 @@ plugins/robot-memory:
     # configuration for setting up all mongod and mongos instances:
     local:
       replica-set-name: "local" #single instance set needed to optain the oplog, not actually replicated 
-      port: 27077
+      port: 27017
       db-path: "~/.robot-memory/dbs/local"
     replicated:
-      port: 27081
+      port: 27021
       replica-set-name: "syncedrobmem"
       db-path: "~/.robot-memory/dbs/distributed"
       replica-set-members: "['stargazer:20721','orinoco:27021','agamemnon:27021','pegasus:27021']"
@@ -55,8 +55,11 @@ plugins/mongodb/clients:
       mode: replica_set
       name: syncedrobmem
       hosts:
-        localhost: localhost:27081
+        stargazer: stargazer:27021
+		orinoco: orinoco:27021
+		agamemnon: agamemnon:27021
+		pegasus: pegasus:27021
     robotmemory-local:
       active: true
       mode: connection
-      hostport: localhost:27077
+      hostport: localhost:27017
