@@ -24,7 +24,7 @@ clips-agent:
     load-reasoner: false
 
 asp-agent:
-  team-name: "ASP Rules!"
+  team-name: "CaroASP"
   robot-number: 8
   robot-name: Surak
 
@@ -32,9 +32,9 @@ asp-agent:
 
   peer-address: 127.0.0.1
   peer-recv-port: 4418
-  peer-send-port: 4428
-  cyan-recv-port: 4458
-  magenta-recv-port: 4468
-  cyan-send-port: 4478
-  magenta-send-port: 4488
+  peer-send-port: 4458
+  cyan-recv-port: 4478
+  magenta-recv-port: 4518
+  cyan-send-port: 4498
+  magenta-send-port: 4538
 
