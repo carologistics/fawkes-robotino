@@ -35,6 +35,14 @@ OPTIONS:
    -g                Run Fawkes in gdb
    -v                Run Fawkes in valgrind
    -t                Skip Exploration and add all navgraph points
+   --team-cyan       Set cyan team name
+   --team-magenta		 Set magenta team name
+   --start-game      Automatically run game after initialization
+                     (if used with -t go into PRODUCTION phase,
+                      otherwise the phase will be EXPLORATION,
+                      optionally, "--start-game=PHASE" may be given
+                      to set the phase explicitly)
+                     Typically requires at least --team-cyan.
    --asp             Run with ASP agent and global planer
    --asp-exec        Run the ASP executive for the robots
    --asp-planer      Start the ASP planner
@@ -46,7 +54,7 @@ EOF
 
 COMMAND=start
 CONF=
-VISUALIZATION=
+HEADLESS=
 ROS=
 ROS_LAUNCH_MAIN=
 ROS_LAUNCH_ROBOT=
@@ -66,9 +74,24 @@ TERM_GEOMETRY=105x56
 GDB=
 SKIP_EXPLORATION=
 FAWKES_USED=false
+START_GAME=
+TEAM_CYAN=
+TEAM_MAGENTA=
 START_ASP_PLANER=false
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,asp,asp-exec,asp-planer" -- "$@")
+if [[ -n $TMUX ]]; then
+	# if $TMUX is set we're inside a tmux session
+	TERM_COMMAND=":"
+	SUBTERM_ARGS="; tmux new-window"
+else
+	TERM_COMMAND="gnome-terminal --geometry=$TERM_GEOMETRY"
+	SUBTERM_ARGS="--tab -e"
+fi
+
+ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
+ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
+
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,asp,asp-exec,asp-planer" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -90,7 +113,7 @@ while true; do
 	     CONF=-c\ $OPTARG
              ;;
          -l)
-	     VISUALIZATION=-l
+	     HEADLESS=-l
              ;;
          -x)
 	     COMMAND=$OPTARG
@@ -127,12 +150,6 @@ while true; do
 	     ;;
 	 -n)
 	     NUM_ROBOTINOS=$OPTARG
-	     if (( $NUM_ROBOTINOS >= 3 )); then
-		     NUM_CYAN=3
-         NUM_MAGENTA=$(expr $NUM_ROBOTINOS - 3)
-       else
-	       NUM_CYAN=$NUM_ROBOTINOS
-       fi
 	     ;;
 	 -e)
 	     REPLAY="-e $OPTARG"
@@ -172,6 +189,23 @@ while true; do
 	 --ros-launch-robot)
 	     ROS_LAUNCH_ROBOT="--ros-launch $OPTARG"
 	     ;;
+	 --team-cyan)
+	     TEAM_CYAN="$OPTARG"
+	     ;;
+	 --team-magenta)
+	     TEAM_MAGENTA="$OPTARG"
+	     ;;
+	 --start-game)
+			 if [ -n "$OPTARG" ]; then
+					 START_GAME="$OPTARG"
+			 else
+					 if [ -n "$SKIP_EXPLORATION" ]; then
+							 START_GAME="PRODUCTION"
+					 else
+							 START_GAME="EXPLORATION"
+					 fi
+			 fi
+	     ;;
 	 -f)
 	     FIRST_ROBOTINO_NUMBER=$OPTARG
 	     ;;
@@ -181,7 +215,9 @@ while true; do
 	 -p)
 	     FAWKES_BIN=$OPTARG/bin
 	     ;;
-	 --) break;
+	 --)
+	     shift
+	     break
              ;;
      esac
      shift
@@ -194,12 +230,27 @@ then
      exit 1
 fi
 
-if [ $NUM_ROBOTINOS -lt 0 ] || [ $NUM_ROBOTINOS -gt 6 ]
+
+if [ $FIRST_ROBOTINO_NUMBER -le 0 ] || [ $FIRST_ROBOTINO_NUMBER -gt 6 ]
 then
-     echo Number Robotinos wrong
+     echo Invalid first robotino number, must be in 1..6.
+     exit 1
+fi
+if [ $NUM_ROBOTINOS -le 0 ] || [ $(($FIRST_ROBOTINO_NUMBER-1+$NUM_ROBOTINOS)) -gt 6 ]
+then
+     echo Invalid number of robotinos, must be 1..$((6-$FIRST_ROBOTINO_NUMBER+1))
      exit 1
 fi
 
+if [ $FIRST_ROBOTINO_NUMBER -gt 3 ]; then
+  NUM_CYAN=0
+else
+  NUM_CYAN=$((3 - $FIRST_ROBOTINO_NUMBER + 1))
+  if [ $NUM_CYAN -gt $NUM_ROBOTINOS ]; then
+    NUM_CYAN=$NUM_ROBOTINOS
+  fi
+fi
+NUM_MAGENTA=$(($NUM_ROBOTINOS-$NUM_CYAN))
 
 #execute command
 
@@ -218,6 +269,7 @@ if [  $COMMAND  == kill ]; then
     killall roscore
     killall llsf-refbox
     killall llsf-refbox-shell
+    killall roslaunch
     exit 0
 fi
 
@@ -235,37 +287,39 @@ if [  $COMMAND  == start ]; then
     fi
 
     # delete old shm files. Only do this for the simulation, not on live bot.
-    rm /dev/shm/*fawkes*
+    [[ -f /dev/shm/*fawkes* ]] && rm /dev/shm/*fawkes*
 
     #construct command to open everything in one terminal window with multiple tabs instead of 10.000 windows
 
-    OPEN_COMMAND="gnome-terminal --geometry=$TERM_GEOMETRY"
+    OPEN_COMMAND="$TERM_COMMAND"
 
     if $START_GAZEBO
     then
 	#start gazebo
-	if [[ -z $VISUALIZATION ]]
+	if [[ -z $HEADLESS ]]
 	then
-	    OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x gazebo $REPLAY $KEEP\"'"
+	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x gazebo $REPLAY $KEEP $@\"'"
 	else
 	    #run headless
-	    OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x gzserver $REPLAY $KEEP\"'"
+	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x gzserver $REPLAY $KEEP $@\"'"
 	fi
     fi
 
     if [  "$ROS"  == "-r" ]; then
     	#start roscores
 	# main roscore (non-robot)
-	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x roscore -p ${ROS_MASTER_URI##*:} $KEEP\"'"
+	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roscore -p $ROS_MASTER_PORT $KEEP $@\"'"
 	if [ -n "$ROS_LAUNCH_MAIN" ]; then
-		OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_MAIN -p ${ROS_MASTER_URI##*:} $KEEP\"'"
+		OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_MAIN -p $ROS_MASTER_PORT $KEEP $@\"'"
 	fi
     	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     	do
 	    # robot roscore
-	    OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP\"'"
+	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"'"
+            # move_base
+	    #OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"'"
 	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
-		OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_URI $KEEP\"'"
+	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_PORT $KEEP $@\"'"
 	fi
     	done
     fi
@@ -273,37 +327,37 @@ if [  $COMMAND  == start ]; then
     if $START_GAZEBO
     then
 	#start refbox
-	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x refbox $KEEP\"'"
+	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x refbox $KEEP $@\"'"
     	#start refbox shell
-    	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"$startup_script_location -x refbox-shell $KEEP\"'"
+    	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x refbox-shell $KEEP $@\"'"
     fi
 
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION\"'"
+	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"'"
 	FAWKES_USED=true
     done
 
     if $START_ASP_PLANER
     then
-	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x asp -p ${ROS_MASTER_URI##*:} $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION\"'"
+	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x asp -p ${ROS_MASTER_URI##*:} $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"'"
     fi
 
     if $START_GAZEBO
     then
     	#start fawkes for communication, llsfrbcomm and eventually statistics
-	OPEN_COMMAND="$OPEN_COMMAND --tab -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm $KEEP $SHUTDOWN\"'"
+	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm $KEEP $SHUTDOWN $@\"'"
     fi
 
     # open windows
-    #echo $OPEN_COMMAND
+    echo "executing $OPEN_COMMAND"
     eval $OPEN_COMMAND
 
     sleep 10s
     if $FAWKES_USED
     then
-	sleep 15s
+	sleep 5s
 	# publish initial poses
 	echo "publish initial poses"
 	$initial_pose_script_location -c $NUM_CYAN -m $NUM_MAGENTA -d
@@ -311,6 +365,14 @@ if [  $COMMAND  == start ]; then
 	echo "Skipped publishing poses"
     fi
 
+		if [ -n "$START_GAME" ]; then
+				if [ ! -x $LLSF_REFBOX_DIR/bin/rcll-refbox-instruct ]; then
+						echo "rcll-refbox-instruct not found, not built or old version?"
+				else
+						echo "Starting game (Phase: $START_GAME ${TEAM_CYAN:+Cyan: ${TEAM_CYAN}}${TEAM_MAGENTA:+ Magenta: ${TEAM_MAGENTA}})"
+						$LLSF_REFBOX_DIR/bin/rcll-refbox-instruct -p $START_GAME -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
+				fi
+		fi
 
     else
     usage

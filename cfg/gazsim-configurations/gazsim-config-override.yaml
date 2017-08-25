@@ -112,10 +112,10 @@ plugins/mongodb/clients:
   robotmemory-synced-sim:
     active: true
     mode: connection
-    hostport: localhost:27021
+    hostport: localhost:27081
       
 plugins/robot-memory:
   setup:
     mongo-client-connection-distributed: "robotmemory-synced-sim"
     replicated:
-      replica-set-members: "[{_id:1,host:'localhost:27021'}]"
+      replica-set-members: "[{_id:1,host:'localhost:27081'}]"
