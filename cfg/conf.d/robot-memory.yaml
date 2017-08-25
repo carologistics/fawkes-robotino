@@ -21,7 +21,7 @@ plugins/robot-memory:
     mongo-client-connection-distributed: "robotmemory-synced"
     # distribute robot memory
     distributed: true
-	distributed-create: false
+    distributed-create: false
     # how lagre should the oplog be (minimum 50 mb)
     oplog-size: 1000
     # configuration for setting up all mongod and mongos instances:
@@ -56,9 +56,9 @@ plugins/mongodb/clients:
       name: syncedrobmem
       hosts:
         stargazer: stargazer:27021
-		orinoco: orinoco:27021
-		agamemnon: agamemnon:27021
-		pegasus: pegasus:27021
+        orinoco: orinoco:27021
+        agamemnon: agamemnon:27021
+        pegasus: pegasus:27021
     robotmemory-local:
       active: true
       mode: connection
