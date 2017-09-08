@@ -129,10 +129,15 @@ private:
 	std::map<int ,std::string> actions_robot_3;
 
 	// Constants for C0-C1
-	const int number_final_action_c0 = 4;
+	const int number_final_action_c0 = 11;
+	const int number_final_macroaction_c0 = 15;
 	const int number_final_action_c1 = 18;
-	const int number_required_actions_c0 = 4;
+	const int number_max_required_actions_c0 = 11;
+	const int number_min_required_actions_c0 = 4;
 	const int number_required_actions_c1 = 14;
+
+	const int number_total_action_c0 = 16;
+
 	const int deadline = 900;
 	const int time_to_prep = 5;
 	const int time_to_fetch = 5;
@@ -209,7 +214,7 @@ private:
 	int number_bits;
 	int number_robots;
 	int number_orders;
-	const int number_orders_c0 = 3;
+	const int number_orders_c0 = 2;
 	const int number_orders_c1 = 0;
 	void clips_smt_fill_node_names();
 	void clips_smt_fill_robot_names();
