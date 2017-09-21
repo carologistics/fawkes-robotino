@@ -307,7 +307,7 @@ ClipsSmtThread::loop()
 	actions_robot_fg_2.clear();
 	actions_robot_fg_3.clear();
 
-	number_robots = data.robots().size()-1;
+	number_robots = 1; // data.robots().size()-1;
 	number_machines = 4;//= data.machines().size();
 	number_bits = ceil(log2(number_machines));
 
@@ -316,6 +316,13 @@ ClipsSmtThread::loop()
 	// if(number_orders_c1) number_actions = number_required_actions_c1;
 	// else number_actions = number_required_actions_c0;
 	number_actions = number_orders_c0*number_total_action_c0;
+
+	logger->log_info(name(), "Create plan with %i robot(s), %i machine(s), %i order(s) with plan_horizon %i and %i actions",
+							number_robots,
+							number_machines,
+							number_orders,
+							plan_horizon,
+							number_actions);
 
 	// Compute distances between nodes using navgraph
 	clips_smt_fill_node_names();
@@ -748,7 +755,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		it_map = varA.find("A_"+std::to_string(i));
 		if(it_map != varA.end()) {
 			z3::expr var = it_map->second;
-			z3::expr constraint( 0 <= var && var <= number_actions);
+			z3::expr constraint( 1 <= var && var <= number_actions);
 
 			constraints.push_back(constraint);
 		}
@@ -1415,14 +1422,14 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			logger->log_error(name(), "var_rd_%i not found", i);
 		}
 
-		// 0.Action: Empty action (Including a one time step back?)
-		z3::expr constraint_action0((var_state1B_i == var_state1A_i)
-									&& (var_state2B_i == var_state2A_i)
-									&& (var_state3B_i == var_state3A_i)
-									&& (var_md_i == 0)
-									&& (var_holdA_i == var_holdB_i)
-									&& (var_rd_i == 0));
-		constraints.push_back(!(var_a_i == 0) || constraint_action0);
+		// // 0.Action: Empty action (Including a one time step back?)
+		// z3::expr constraint_action0((var_state1B_i == var_state1A_i)
+		// 							&& (var_state2B_i == var_state2A_i)
+		// 							&& (var_state3B_i == var_state3A_i)
+		// 							&& (var_md_i == 0)
+		// 							&& (var_holdA_i == var_holdB_i)
+		// 							&& (var_rd_i == 0));
+		// constraints.push_back(!(var_a_i == 0) || constraint_action0);
 
 		for(int o=0; o<number_orders_c0; ++o){ // for(int o=0; o<data.orders().size()/2; ++o){
 
@@ -1460,75 +1467,75 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			slide_one_prep_bi_ci += bi_ci;
 
 
-			// 1.Macroaction: Prepare CapStation for Base input [1,2,3,8,4]
-			z3::expr constraint_macroaction1((var_m_i == machine_groups["CS"])
-										&& (var_state1A_i == state1_machines["not_prep"])
-										&& (var_state1B_i == state1_machines[mount_ci])
-										&& (var_state2A_i == state2_machines["empty"])
- 										&& (var_state2B_i == state2_machines[has_ci])
-										&& (var_state3A_i == state3_machines["empty"])
-										&& (var_state3B_i == state3_machines["empty"])
-										&& (var_md_i == time_to_fetch+time_to_prep+time_to_feed+time_to_prep+time_to_disc)
-										&& (var_pos_i == node_names_inverted["C-CS1-I"])
-										&& (var_holdA_i == products["nothing"])
-										&& (var_holdB_i == products["nothing"])
-										&& (var_rd_i == 0));
-			constraints.push_back(!(var_a_i == (12 + o*number_total_action_c0)) || constraint_macroaction1);
+			// // 1.Macroaction: Prepare CapStation for Base input [1,2,3,8,4]
+			// z3::expr constraint_macroaction1((var_m_i == machine_groups["CS"])
+			// 							&& (var_state1A_i == state1_machines["not_prep"])
+			// 							&& (var_state1B_i == state1_machines[mount_ci])
+			// 							&& (var_state2A_i == state2_machines["empty"])
+ 		// 								&& (var_state2B_i == state2_machines[has_ci])
+			// 							&& (var_state3A_i == state3_machines["empty"])
+			// 							&& (var_state3B_i == state3_machines["empty"])
+			// 							&& (var_md_i == time_to_fetch+time_to_prep+time_to_feed+time_to_prep+time_to_disc)
+			// 							&& (var_pos_i == node_names_inverted["C-CS1-I"])
+			// 							&& (var_holdA_i == products["nothing"])
+			// 							&& (var_holdB_i == products["nothing"])
+			// 							&& (var_rd_i == 0));
+			// constraints.push_back(!(var_a_i == (12 + o*number_total_action_c0)) || constraint_macroaction1);
+			//
+			// // 2.Macroaction : Get Base from BaseStation [7,6]
+			// z3::expr constraint_macroaction2((var_m_i == machine_groups["BS"])
+			// 							&& (var_state1A_i == state1_machines["not_prep"])
+			// 							&& (var_state1B_i == state1_machines["not_prep"])
+			// 							&& (var_state2B_i == var_state2A_i)
+			// 							&& (var_state3B_i == var_state3A_i)
+			// 							&& (var_md_i == time_to_prep+time_to_fetch)
+			// 							&& (var_pos_i == node_names_inverted["C-BS-I"])
+			// 							&& (var_holdA_i == products["nothing"])
+			// 							&& (var_holdB_i == products[bi])
+			// 							&& (var_rd_i == 0));
+			// constraints.push_back(!(var_a_i == (13 + o*number_total_action_c0)) || constraint_macroaction2);
+			//
+			// // 3.Macroaction : Construct product [5,9]
+			// z3::expr constraint_macroaction3((var_m_i == machine_groups["CS"])
+			// 							&& (var_state1A_i == state1_machines[mount_ci])
+			// 							&& (var_state1B_i == state1_machines["not_prep"])
+			// 							&& (var_state2A_i == state2_machines[has_ci])
+			// 							&& (var_state2B_i == state2_machines["empty"])
+			// 							&& (var_state3A_i == state3_machines["empty"])
+			// 							&& (var_state3B_i == state3_machines["empty"])
+			// 							&& (var_md_i == time_to_feed+time_to_fetch)
+			// 							&& (var_pos_i == node_names_inverted["C-CS1-I"])
+			// 							&& (var_holdA_i == products[bi])
+			// 							&& (var_holdB_i == products[bi_ci])
+			// 							&& (var_rd_i == 0));
+			// constraints.push_back(!(var_a_i == (14 + o*number_total_action_c0)) || constraint_macroaction3);
+			//
+			// // 4.Macroaction : Deliver product [10,11]
+			// z3::expr constraint_macroaction4((var_m_i == machine_groups["DS"])
+			// 							&& (var_state1B_i == var_state1A_i)
+			// 							&& (var_state2B_i == var_state2A_i)
+			// 							&& (var_state3B_i == var_state3A_i)
+			// 							&& (var_md_i == time_to_prep+time_to_prep)
+			// 							&& (var_pos_i == node_names_inverted["C-DS-I"])
+			// 							&& (var_holdA_i == products[bi_ci])
+			// 							&& (var_holdB_i == products["nothing"])
+			// 							&& (var_rd_i == 0));
+			// constraints.push_back(!(var_a_i == (15 + o*number_total_action_c0)) || constraint_macroaction4);
 
-			// 2.Macroaction : Get Base from BaseStation [7,6]
-			z3::expr constraint_macroaction2((var_m_i == machine_groups["BS"])
-										&& (var_state1A_i == state1_machines["not_prep"])
-										&& (var_state1B_i == state1_machines["not_prep"])
-										&& (var_state2B_i == var_state2A_i)
-										&& (var_state3B_i == var_state3A_i)
-										&& (var_md_i == time_to_prep+time_to_fetch)
-										&& (var_pos_i == node_names_inverted["C-BS-I"])
-										&& (var_holdA_i == products["nothing"])
-										&& (var_holdB_i == products[bi])
-										&& (var_rd_i == 0));
-			constraints.push_back(!(var_a_i == (13 + o*number_total_action_c0)) || constraint_macroaction2);
-
-			// 3.Macroaction : Construct product [5,9]
-			z3::expr constraint_macroaction3((var_m_i == machine_groups["CS"])
-										&& (var_state1A_i == state1_machines[mount_ci])
-										&& (var_state1B_i == state1_machines["not_prep"])
-										&& (var_state2A_i == state2_machines[has_ci])
-										&& (var_state2B_i == state2_machines["empty"])
-										&& (var_state3A_i == state3_machines["empty"])
-										&& (var_state3B_i == state3_machines["empty"])
-										&& (var_md_i == time_to_feed+time_to_fetch)
-										&& (var_pos_i == node_names_inverted["C-CS1-I"])
-										&& (var_holdA_i == products[bi])
-										&& (var_holdB_i == products[bi_ci])
-										&& (var_rd_i == 0));
-			constraints.push_back(!(var_a_i == (14 + o*number_total_action_c0)) || constraint_macroaction3);
-
-			// 4.Macroaction : Deliver product [10,11]
-			z3::expr constraint_macroaction4((var_m_i == machine_groups["DS"])
-										&& (var_state1B_i == var_state1A_i)
-										&& (var_state2B_i == var_state2A_i)
-										&& (var_state3B_i == var_state3A_i)
-										&& (var_md_i == time_to_prep+time_to_prep)
-										&& (var_pos_i == node_names_inverted["C-DS-I"])
-										&& (var_holdA_i == products[bi_ci])
-										&& (var_holdB_i == products["nothing"])
-										&& (var_rd_i == 0));
-			constraints.push_back(!(var_a_i == (15 + o*number_total_action_c0)) || constraint_macroaction4);
-
-			// 5.Macroaction: Operate at CapStation for Base input [3,8]
-			z3::expr constraint_macroaction5((var_m_i == machine_groups["CS"])
-										&& (var_state1A_i == state1_machines[retrieve_ci])
-										&& (var_state1B_i == state1_machines[mount_ci])
-										&& (var_state2A_i == state2_machines["empty"])
- 										&& (var_state2B_i == state2_machines[has_ci])
-										&& (var_state3A_i == state3_machines["empty"])
-										&& (var_state3B_i == state3_machines["empty"])
-										&& (var_md_i == time_to_feed+time_to_disc)
-										&& (var_pos_i == node_names_inverted["C-CS1-I"])
-										&& (var_holdA_i == products[br_ci])
-										&& (var_holdB_i == products["nothing"])
-										&& (var_rd_i == 0));
-			constraints.push_back(!(var_a_i == (16 + o*number_total_action_c0)) || constraint_macroaction5);
+			// // 5.Macroaction: Operate at CapStation for Base input [3,8]
+			// z3::expr constraint_macroaction5((var_m_i == machine_groups["CS"])
+			// 							&& (var_state1A_i == state1_machines[retrieve_ci])
+			// 							&& (var_state1B_i == state1_machines[mount_ci])
+			// 							&& (var_state2A_i == state2_machines["empty"])
+ 		// 								&& (var_state2B_i == state2_machines[has_ci])
+			// 							&& (var_state3A_i == state3_machines["empty"])
+			// 							&& (var_state3B_i == state3_machines["empty"])
+			// 							&& (var_md_i == time_to_feed+time_to_disc)
+			// 							&& (var_pos_i == node_names_inverted["C-CS1-I"])
+			// 							&& (var_holdA_i == products[br_ci])
+			// 							&& (var_holdB_i == products["nothing"])
+			// 							&& (var_rd_i == 0));
+			// constraints.push_back(!(var_a_i == (16 + o*number_total_action_c0)) || constraint_macroaction5);
 
 			// 1.Action : retrieve base with cap from shelf at CS
 
@@ -1627,8 +1634,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			// 8.Action : discard capless base from CS
 			z3::expr constraint_action8((var_m_i == machine_groups["CS"])
 										&& (var_state1A_i == var_state1B_i)
-										&& (var_state2A_i == state1_machines[has_ci])
-										&& (var_state2B_i == state1_machines[has_ci])
+										&& (var_state2A_i == state2_machines[has_ci])
+										&& (var_state2B_i == state2_machines[has_ci])
 										&& (var_state3A_i == state3_machines["full"])
 										&& (var_state3B_i == state3_machines["empty"])
 										&& (var_md_i == time_to_disc)
@@ -1661,7 +1668,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 										&& (var_md_i == time_to_prep)
 										&& (var_pos_i == node_names_inverted["C-DS-I"])
 										&& (var_holdA_i == products[bi_ci])
-										&& (var_holdB_i == var_holdA_i)
+										&& (var_holdB_i == products[bi_ci])
 										&& (var_rd_i == 0));
 			constraints.push_back(!(var_a_i == (10 + o*number_total_action_c0)) || constraint_action10);
 
@@ -1841,167 +1848,189 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		}
 	}
 
+	// Constraints to fix a sequence of actions
+	// z3::expr var_a_fix(_z3_context);
+	//
+	// it_map = varA.find("A_"+std::to_string(1));
+	// var_a_fix = it_map->second;
+	// constraints.push_back(var_a_fix == 7);
+	//
+	// it_map = varA.find("A_"+std::to_string(2));
+	// var_a_fix = it_map->second;
+	// constraints.push_back(var_a_fix == 6);
+	//
+	// it_map = varA.find("A_"+std::to_string(3));
+	// var_a_fix = it_map->second;
+	// constraints.push_back(var_a_fix == 1);
+	//
 	// it_map = varA.find("A_"+std::to_string(4));
-	// if(it_map != varA.end()) {
-	// 	z3::expr var_a_ph = it_map->second;
-	// 	constraints.push_back(var_a_ph == 15);
+	// var_a_fix = it_map->second;
+	// constraints.push_back(var_a_fix == 2);
+	//
+	// it_map = varA.find("A_"+std::to_string(5));
+	// var_a_fix = it_map->second;
+	// constraints.push_back(var_a_fix == 3);
+	//
+	// it_map = varA.find("A_"+std::to_string(6));
+	// var_a_fix = it_map->second;
+	// constraints.push_back(var_a_fix == 8);
+
+	// it_map = varA.find("A_"+std::to_string(7));
+	// var_a_fix = it_map->second;
+	// constraints.push_back(var_a_fix == 4);
+	//
+	// it_map = varA.find("A_"+std::to_string(8));
+	// var_a_fix = it_map->second;
+	// constraints.push_back(var_a_fix == 5);
+	//
+	// it_map = varA.find("A_"+std::to_string(9));
+	// var_a_fix = it_map->second;
+	// constraints.push_back(var_a_fix == 9);
+	//
+	// it_map = varA.find("A_"+std::to_string(10));
+	// var_a_fix = it_map->second;
+	// constraints.push_back(var_a_fix == 10);
+	//
+	// it_map = varA.find("A_"+std::to_string(11));
+	// var_a_fix = it_map->second;
+	// constraints.push_back(var_a_fix == 11);
+
+	// logger->log_info(name(), "Add constraints for unique actions and null sequences");
+	//
+	// // Constraint that no action is chosen twice and if 0 is chosen, then all fellow actions are 0 too
+	// for(int i=1; i<plan_horizon+1; ++i){
+	//
+	// 	// Determine variables needed
+	// 	z3::expr var_a_i(_z3_context);
+	//
+	// 	it_map = varA.find("A_"+std::to_string(i));
+	// 	if(it_map != varA.end()) {
+	// 		var_a_i = it_map->second;
+	// 	}
+	// 	else {
+	// 		logger->log_error(name(), "var_a_%i not found", i);
+	// 	}
+	//
+	// 	z3::expr constraint_condition(var_a_i==0);
+	// 	z3::expr constraint_effect_unique(var_true);
+	// 	z3::expr constraint_effect_null(var_true);
+	//
+	// 	for(int j=i+1; j<plan_horizon+1; ++j){
+	// 		// Determine variables needed
+	// 		z3::expr var_a_j(_z3_context);
+	//
+	// 		it_map = varA.find("A_"+std::to_string(j));
+	// 		if(it_map != varA.end()) {
+	// 			var_a_j = it_map->second;
+	// 		}
+	// 		else {
+	// 			logger->log_error(name(), "var_a_%i not found", j);
+	// 		}
+	//
+	// 		constraint_effect_unique = constraint_effect_unique && !(var_a_i == var_a_j);
+	// 		constraint_effect_null = constraint_effect_null && var_a_j == 0;
+	// 	}
+	//
+	// 	constraints.push_back(constraint_condition || constraint_effect_unique);
+	// 	constraints.push_back(!constraint_condition || constraint_effect_null);
 	// }
-	// else {
-	// 	logger->log_error(name(), "var_a_%i not found", plan_horizon);
+
+	// logger->log_info(name(), "Add constraints to exclude pure and macro actions");
+	//
+	// // Constraint that no action is chosen twice and if 0 is chosen, then all fellow actions are 0 too
+	// for(int i=1; i<plan_horizon+1; ++i){
+	//
+	// 	// Determine variables needed
+	// 	z3::expr var_a_i(_z3_context);
+	//
+	// 	it_map = varA.find("A_"+std::to_string(i));
+	// 	if(it_map != varA.end()) {
+	// 		var_a_i = it_map->second;
+	// 	}
+	// 	else {
+	// 		logger->log_error(name(), "var_a_%i not found", i);
+	// 	}
+	//
+	// 	for(int o=0; o<number_orders_c0; ++o){
+	//
+	// 		z3::expr constraint_condition_1(var_a_i==o*number_total_action_c0+1);
+	// 		z3::expr constraint_condition_2(var_a_i==o*number_total_action_c0+2);
+	// 		z3::expr constraint_condition_3(var_a_i==o*number_total_action_c0+3);
+	// 		z3::expr constraint_condition_4(var_a_i==o*number_total_action_c0+4);
+	// 		z3::expr constraint_condition_5(var_a_i==o*number_total_action_c0+5);
+	// 		z3::expr constraint_condition_6(var_a_i==o*number_total_action_c0+6);
+	// 		z3::expr constraint_condition_7(var_a_i==o*number_total_action_c0+7);
+	// 		z3::expr constraint_condition_8(var_a_i==o*number_total_action_c0+8);
+	// 		z3::expr constraint_condition_9(var_a_i==o*number_total_action_c0+9);
+	// 		z3::expr constraint_condition_10(var_a_i==o*number_total_action_c0+10);
+	// 		z3::expr constraint_condition_11(var_a_i==o*number_total_action_c0+11);
+	// 		z3::expr constraint_condition_12(var_a_i==o*number_total_action_c0+12);
+	// 		z3::expr constraint_condition_13(var_a_i==o*number_total_action_c0+13);
+	// 		z3::expr constraint_condition_14(var_a_i==o*number_total_action_c0+14);
+	// 		z3::expr constraint_condition_15(var_a_i==o*number_total_action_c0+15);
+	// 		// z3::expr constraint_condition_16(var_a_i==o*number_total_action_c0+16);
+	//
+	// 		z3::expr constraint_effect_macro_12(var_true);
+	// 		z3::expr constraint_effect_macro_13(var_true);
+	// 		z3::expr constraint_effect_macro_14(var_true);
+	// 		z3::expr constraint_effect_macro_15(var_true);
+	// 		// z3::expr constraint_effect_macro_16(var_true);
+	// 		z3::expr constraint_effect_pure_12(var_true);
+	// 		z3::expr constraint_effect_pure_13(var_true);
+	// 		z3::expr constraint_effect_pure_14(var_true);
+	// 		z3::expr constraint_effect_pure_15(var_true);
+	// 		// z3::expr constraint_effect_pure_16(var_true);
+	//
+	//
+	// 		for(int j=i+1; j<plan_horizon+1; ++j){
+	// 			// Determine variables needed
+	// 			z3::expr var_a_j(_z3_context);
+	//
+	// 			it_map = varA.find("A_"+std::to_string(j));
+	// 			if(it_map != varA.end()) {
+	// 				var_a_j = it_map->second;
+	// 			}
+	// 			else {
+	// 				logger->log_error(name(), "var_a_%i not found", j);
+	// 			}
+	//
+	// 			constraint_effect_macro_12 = constraint_effect_macro_12 && !(var_a_j == o*number_total_action_c0+12);
+	// 			constraint_effect_macro_13 = constraint_effect_macro_13 && !(var_a_j == o*number_total_action_c0+13);
+	// 			constraint_effect_macro_14 = constraint_effect_macro_14 && !(var_a_j == o*number_total_action_c0+14);
+	// 			constraint_effect_macro_15 = constraint_effect_macro_15 && !(var_a_j == o*number_total_action_c0+15);
+	// 			// constraint_effect_macro_16 = constraint_effect_macro_16 && !(var_a_j == o*number_total_action_c0+16);
+	//
+	// 			constraint_effect_pure_12 = constraint_effect_pure_12 && !(var_a_j == o*number_total_action_c0+1)
+	// 																	&& !(var_a_j == o*number_total_action_c0+2)
+	// 																	&& !(var_a_j == o*number_total_action_c0+3)
+	// 																	&& !(var_a_j == o*number_total_action_c0+8)
+	// 																	&& !(var_a_j == o*number_total_action_c0+4);
+	// 			constraint_effect_pure_13 = constraint_effect_pure_13 && !(var_a_j == o*number_total_action_c0+7) && !(var_a_j == o*number_total_action_c0+6);
+	// 			constraint_effect_pure_14 = constraint_effect_pure_14 && !(var_a_j == o*number_total_action_c0+5) && !(var_a_j == o*number_total_action_c0+9);
+	// 			constraint_effect_pure_15 = constraint_effect_pure_15 && !(var_a_j == o*number_total_action_c0+10) && !(var_a_j == o*number_total_action_c0+11);
+	// 			// constraint_effect_pure_16 = constraint_effect_pure_16 && !(var_a_j == o*number_total_action_c0+3)
+	// 			// 														&& !(var_a_j == o*number_total_action_c0+8);
+	// 		}
+	//
+	// 		constraints.push_back(!constraint_condition_1 || constraint_effect_macro_12);
+	// 		constraints.push_back(!constraint_condition_2 || constraint_effect_macro_12);
+	// 		constraints.push_back(!constraint_condition_3 || constraint_effect_macro_12); // && constraint_effect_macro_16));
+	// 		constraints.push_back(!constraint_condition_4 || constraint_effect_macro_12);
+	// 		constraints.push_back(!constraint_condition_5 || constraint_effect_macro_14);
+	// 		constraints.push_back(!constraint_condition_6 || constraint_effect_macro_13);
+	// 		constraints.push_back(!constraint_condition_7 || constraint_effect_macro_13);
+	// 		constraints.push_back(!constraint_condition_8 || constraint_effect_macro_12); // && constraint_effect_macro_16));
+	// 		constraints.push_back(!constraint_condition_9 || constraint_effect_macro_14);
+	// 		constraints.push_back(!constraint_condition_10 || constraint_effect_macro_15);
+	// 		constraints.push_back(!constraint_condition_11 || constraint_effect_macro_15);
+	// 		constraints.push_back(!constraint_condition_12 || constraint_effect_pure_12);
+	// 		constraints.push_back(!constraint_condition_13 || constraint_effect_pure_13);
+	// 		constraints.push_back(!constraint_condition_14 || constraint_effect_pure_14);
+	// 		constraints.push_back(!constraint_condition_15 || constraint_effect_pure_15);
+	// 		// constraints.push_back(!constraint_condition_16 || constraint_effect_pure_16);
+	//
+	// 	}
 	// }
-	// it_map = varA.find("A_"+std::to_string(plan_horizon-1));
-	// if(it_map != varA.end()) {
-	// 	z3::expr var_a_ph_1 = it_map->second;
-	// 	constraints.push_back(var_a_ph_1 == 33);
-	// }
-	// else {
-	// 	logger->log_error(name(), "var_a_%i not found", plan_horizon-1);
-	// }
-	// it_map = varA.find("A_"+std::to_string(plan_horizon-2));
-	// if(it_map != varA.end()) {
-	// 	z3::expr var_a_ph_2 = it_map->second;
-	// 	constraints.push_back(var_a_ph_2 == 22);
-	// }
-	// else {
-	// 	logger->log_error(name(), "var_a_%i not found", plan_horizon-2);
-	// }
-
-	logger->log_info(name(), "Add constraints for unique actions and null sequences");
-
-	// Constraint that no action is chosen twice and if 0 is chosen, then all fellow actions are 0 too
-	for(int i=1; i<plan_horizon+1; ++i){
-
-		// Determine variables needed
-		z3::expr var_a_i(_z3_context);
-
-		it_map = varA.find("A_"+std::to_string(i));
-		if(it_map != varA.end()) {
-			var_a_i = it_map->second;
-		}
-		else {
-			logger->log_error(name(), "var_a_%i not found", i);
-		}
-
-		z3::expr constraint_condition(var_a_i==0);
-		z3::expr constraint_effect_unique(var_true);
-		z3::expr constraint_effect_null(var_true);
-
-		for(int j=i+1; j<plan_horizon+1; ++j){
-			// Determine variables needed
-			z3::expr var_a_j(_z3_context);
-
-			it_map = varA.find("A_"+std::to_string(j));
-			if(it_map != varA.end()) {
-				var_a_j = it_map->second;
-			}
-			else {
-				logger->log_error(name(), "var_a_%i not found", j);
-			}
-
-			constraint_effect_unique = constraint_effect_unique && !(var_a_i == var_a_j);
-			constraint_effect_null = constraint_effect_null && var_a_j == 0;
-		}
-
-		constraints.push_back(constraint_condition || constraint_effect_unique);
-		constraints.push_back(!constraint_condition || constraint_effect_null);
-	}
-
-	logger->log_info(name(), "Add constraints to exclude pure and macro actions");
-
-	// Constraint that no action is chosen twice and if 0 is chosen, then all fellow actions are 0 too
-	for(int i=1; i<plan_horizon+1; ++i){
-
-		// Determine variables needed
-		z3::expr var_a_i(_z3_context);
-
-		it_map = varA.find("A_"+std::to_string(i));
-		if(it_map != varA.end()) {
-			var_a_i = it_map->second;
-		}
-		else {
-			logger->log_error(name(), "var_a_%i not found", i);
-		}
-
-		for(int o=0; o<number_orders_c0; ++o){
-
-			z3::expr constraint_condition_1(var_a_i==o*number_total_action_c0+1);
-			z3::expr constraint_condition_2(var_a_i==o*number_total_action_c0+2);
-			z3::expr constraint_condition_3(var_a_i==o*number_total_action_c0+3);
-			z3::expr constraint_condition_4(var_a_i==o*number_total_action_c0+4);
-			z3::expr constraint_condition_5(var_a_i==o*number_total_action_c0+5);
-			z3::expr constraint_condition_6(var_a_i==o*number_total_action_c0+6);
-			z3::expr constraint_condition_7(var_a_i==o*number_total_action_c0+7);
-			z3::expr constraint_condition_8(var_a_i==o*number_total_action_c0+8);
-			z3::expr constraint_condition_9(var_a_i==o*number_total_action_c0+9);
-			z3::expr constraint_condition_10(var_a_i==o*number_total_action_c0+10);
-			z3::expr constraint_condition_11(var_a_i==o*number_total_action_c0+11);
-			z3::expr constraint_condition_12(var_a_i==o*number_total_action_c0+12);
-			z3::expr constraint_condition_13(var_a_i==o*number_total_action_c0+13);
-			z3::expr constraint_condition_14(var_a_i==o*number_total_action_c0+14);
-			z3::expr constraint_condition_15(var_a_i==o*number_total_action_c0+15);
-			z3::expr constraint_condition_16(var_a_i==o*number_total_action_c0+16);
-
-			z3::expr constraint_effect_macro_12(var_true);
-			z3::expr constraint_effect_macro_13(var_true);
-			z3::expr constraint_effect_macro_14(var_true);
-			z3::expr constraint_effect_macro_15(var_true);
-			z3::expr constraint_effect_macro_16(var_true);
-			z3::expr constraint_effect_pure_12(var_true);
-			z3::expr constraint_effect_pure_13(var_true);
-			z3::expr constraint_effect_pure_14(var_true);
-			z3::expr constraint_effect_pure_15(var_true);
-			z3::expr constraint_effect_pure_16(var_true);
-
-
-			for(int j=i+1; j<plan_horizon+1; ++j){
-				// Determine variables needed
-				z3::expr var_a_j(_z3_context);
-
-				it_map = varA.find("A_"+std::to_string(j));
-				if(it_map != varA.end()) {
-					var_a_j = it_map->second;
-				}
-				else {
-					logger->log_error(name(), "var_a_%i not found", j);
-				}
-
-				constraint_effect_macro_12 = constraint_effect_macro_12 && !(var_a_j == o*number_total_action_c0+12);
-				constraint_effect_macro_13 = constraint_effect_macro_13 && !(var_a_j == o*number_total_action_c0+13);
-				constraint_effect_macro_14 = constraint_effect_macro_14 && !(var_a_j == o*number_total_action_c0+14);
-				constraint_effect_macro_15 = constraint_effect_macro_15 && !(var_a_j == o*number_total_action_c0+15);
-				constraint_effect_macro_16 = constraint_effect_macro_16 && !(var_a_j == o*number_total_action_c0+16);
-
-				constraint_effect_pure_12 = constraint_effect_pure_12 && !(var_a_j == o*number_total_action_c0+1)
-																		&& !(var_a_j == o*number_total_action_c0+2)
-																		&& !(var_a_j == o*number_total_action_c0+3)
-																		&& !(var_a_j == o*number_total_action_c0+8)
-																		&& !(var_a_j == o*number_total_action_c0+4);
-				constraint_effect_pure_13 = constraint_effect_pure_13 && !(var_a_j == o*number_total_action_c0+7) && !(var_a_j == o*number_total_action_c0+6);
-				constraint_effect_pure_14 = constraint_effect_pure_14 && !(var_a_j == o*number_total_action_c0+5) && !(var_a_j == o*number_total_action_c0+9);
-				constraint_effect_pure_15 = constraint_effect_pure_15 && !(var_a_j == o*number_total_action_c0+10) && !(var_a_j == o*number_total_action_c0+11);
-				constraint_effect_pure_16 = constraint_effect_pure_16 && !(var_a_j == o*number_total_action_c0+3)
-																		&& !(var_a_j == o*number_total_action_c0+8);
-			}
-
-			constraints.push_back(!constraint_condition_1 || constraint_effect_macro_12);
-			constraints.push_back(!constraint_condition_2 || constraint_effect_macro_12);
-			constraints.push_back(!constraint_condition_3 || (constraint_effect_macro_12 && constraint_effect_macro_16));
-			constraints.push_back(!constraint_condition_4 || constraint_effect_macro_12);
-			constraints.push_back(!constraint_condition_5 || constraint_effect_macro_14);
-			constraints.push_back(!constraint_condition_6 || constraint_effect_macro_13);
-			constraints.push_back(!constraint_condition_7 || constraint_effect_macro_13);
-			constraints.push_back(!constraint_condition_8 || (constraint_effect_macro_12 && constraint_effect_macro_16));
-			constraints.push_back(!constraint_condition_9 || constraint_effect_macro_14);
-			constraints.push_back(!constraint_condition_10 || constraint_effect_macro_15);
-			constraints.push_back(!constraint_condition_11 || constraint_effect_macro_15);
-			constraints.push_back(!constraint_condition_12 || constraint_effect_pure_12);
-			constraints.push_back(!constraint_condition_13 || constraint_effect_pure_13);
-			constraints.push_back(!constraint_condition_14 || constraint_effect_pure_14);
-			constraints.push_back(!constraint_condition_15 || constraint_effect_pure_15);
-			constraints.push_back(!constraint_condition_16 || constraint_effect_pure_16);
-
-		}
-	}
 
 	logger->log_info(name(), "Add constraints for final actions");
 
@@ -2031,7 +2060,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 				logger->log_error(name(), "var_t_%i not found", i);
 			}
 
-			z3::expr constraint_finalaction(var_a_i == o*number_total_action_c0+number_final_action_c0 || var_a_i == o*number_total_action_c0+number_final_macroaction_c0);
+			z3::expr constraint_finalaction(var_a_i == o*number_total_action_c0+number_final_action_c0); // || var_a_i == o*number_total_action_c0+number_final_macroaction_c0);
 
 			if(add_temporal_constraint){
 				switch(o){

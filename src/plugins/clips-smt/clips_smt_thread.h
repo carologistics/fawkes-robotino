@@ -133,10 +133,10 @@ private:
 	const int number_final_macroaction_c0 = 15;
 	const int number_final_action_c1 = 18;
 	const int number_max_required_actions_c0 = 11;
-	const int number_min_required_actions_c0 = 4;
+	const int number_min_required_actions_c0 = number_max_required_actions_c0;//4;
 	const int number_required_actions_c1 = 14;
 
-	const int number_total_action_c0 = 16;
+	const int number_total_action_c0 = 11;//16;
 
 	const int deadline = 900;
 	const int time_to_prep = 5;
@@ -150,7 +150,7 @@ private:
 
 
 	// Real pairs: 0+900, 29+103, 246+150, 556+166, 900+300
-	const bool add_temporal_constraint = true;
+	const bool add_temporal_constraint = false;
 	const int upper_bound_offset = 0;
 	const int lower_bound_c0_0 = 0;
 	const int upper_bound_c0_0 = lower_bound_c0_0+900;
@@ -214,7 +214,7 @@ private:
 	int number_bits;
 	int number_robots;
 	int number_orders;
-	const int number_orders_c0 = 2;
+	const int number_orders_c0 = 1;
 	const int number_orders_c1 = 0;
 	void clips_smt_fill_node_names();
 	void clips_smt_fill_robot_names();
