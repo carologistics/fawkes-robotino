@@ -236,6 +236,9 @@ private:
 	void clips_smt_test_formulaGenerator();
 
 	std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
+
+	// Help
+	z3::expr getVar(std::map<std::string, z3::expr>& vars, std::string var_id);
 };
 
 #endif
