@@ -148,33 +148,30 @@ private:
 	int number_actions;
 	int plan_horizon;
 
-
 	// Real pairs: 0+900, 29+103, 246+150, 556+166, 900+300
-	const bool add_temporal_constraint = false;
+	const bool add_temporal_constraint = true;
 	const int upper_bound_offset = 0;
-	const int lower_bound_c0_0 = 0;
-	const int upper_bound_c0_0 = lower_bound_c0_0+900;
-	const int lower_bound_c0_1 = 29;
-	const int upper_bound_c0_1 = lower_bound_c0_1+103;
-	const int lower_bound_c0_2 = 246;
-	const int upper_bound_c0_2 = lower_bound_c0_2+150;
+	std::map<int, int> lower_bounds_c0;
+	std::map<int, int> upper_bounds_c0;
 
 	// States of machines for C0-C1
 	std::map<std::string, int> state1_machines;
 	const int min_state1_machines = 0, max_state1_machines = 13;
-
 	std::map<std::string, int> state2_machines;
 	const int min_state2_machines = 0, max_state2_machines = 2;
-
 	std::map<std::string, int> state3_machines;
 	const int min_state3_machines = -1, max_state3_machines = 11;
-
 	std::map<std::string, int> products;
+	std::map<int, std::string> products_inverted;
 	const int min_products = 0, max_products = 11;
-
 	std::map<std::string, int> machine_groups;
 	const int min_machine_groups = 0, max_machine_groups = 2;
 
+	std::map<int, std::string> actions;
+	std::map<int, std::string> orders_base;
+	std::map<int, std::string> orders_cap;
+
+	// Visualization of computed plan
 	std::map<int , float> model_times;
 	std::map<int , int> model_positions;
 	std::map<int , int> model_robots;
