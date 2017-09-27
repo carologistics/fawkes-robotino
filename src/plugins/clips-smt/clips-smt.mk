@@ -37,21 +37,21 @@ ifneq ($(wildcard $(SYSROOT)/usr/include/z3/z3++.h),)
 endif
 
 # test carl
-ifneq ($(wildcard $(SYSROOT)/usr/local/include/carl/numbers/numbers.h),)
-  HAVE_LIBCARL=1
-  LDFLAGS_LIBCARL += -Wl,-rpath,/usr/local/lib
-  CFLAGS_LIBCARL += -I/usr/local/include
-endif
-ifneq ($(wildcard $(SYSROOT)/usr/include/carl/numbers/numbers.h),)
-  HAVE_LIBCARL=1
-  LDFLAGS_LIBCARL += -L/usr/lib
-  CFLAGS_LIBCARL += -I/usr/include
-endif
-ifneq ($(wildcard $(HOME)/.local/usr/local/include/carl/numbers/numbers.h),)
-  HAVE_LIBCARL=1
-  LDFLAGS_LIBCARL += -L$(HOME)/.local/usr/local/lib -Wl,-rpath,$(HOME)/.local/usr/local/lib
-  CFLAGS_LIBCARL += -I$(HOME)/.local/usr/local/include
-endif
+# ifneq ($(wildcard $(SYSROOT)/usr/local/include/carl/numbers/numbers.h),)
+#   HAVE_LIBCARL=1
+#   LDFLAGS_LIBCARL += -Wl,-rpath,/usr/local/lib
+#   CFLAGS_LIBCARL += -I/usr/local/include
+# endif
+# ifneq ($(wildcard $(SYSROOT)/usr/include/carl/numbers/numbers.h),)
+#   HAVE_LIBCARL=1
+#   LDFLAGS_LIBCARL += -L/usr/lib
+#   CFLAGS_LIBCARL += -I/usr/include
+# endif
+# ifneq ($(wildcard $(HOME)/.local/usr/local/include/carl/numbers/numbers.h),)
+#   HAVE_LIBCARL=1
+#   LDFLAGS_LIBCARL += -L$(HOME)/.local/usr/local/lib -Wl,-rpath,$(HOME)/.local/usr/local/lib
+#   CFLAGS_LIBCARL += -I$(HOME)/.local/usr/local/include
+# endif
 
 #check for gcc version to support c++14
 GCCVERSION := $(shell expr `gcc -dumpversion | cut -f1 -d.` \>= 4.9)

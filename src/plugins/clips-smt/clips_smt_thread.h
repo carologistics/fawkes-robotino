@@ -39,30 +39,30 @@
 #endif
 
 #include <z3++.h>
-#include <carl/numbers/numbers.h>
+// #include <carl/numbers/numbers.h>
 // #include <carl/core/VariablePool.h>
-#include <carl/formula/Formula.h>
-#include <carl/io/SMTLIBStream.h>
+// #include <carl/formula/Formula.h>
+// #include <carl/io/SMTLIBStream.h>
 
 #include <vector>
 #include <string>
 #include <map>
 #include <iostream>
+#include <fstream>
 #include <math.h>
 #include <memory>
 
 // #include "FormulaGenerator/FormulaGenerator.h"
-#include "FormulaGenerator/GameData.h"
-#include "FormulaGenerator/formulaGeneratorTest.cpp"
+// #include "FormulaGenerator/GameData.h"
+// #include "FormulaGenerator/formulaGeneratorTest.cpp"
 
 #include <llsf_msgs/ClipsSmtData.pb.h>
-
 
 #include <boost/cerrno.hpp>
 
 
 namespace fawkes {
-	class SubProcess;
+	// class SubProcess;
 	class NavGraphStaticListEdgeCostConstraint;
 }
 
@@ -119,10 +119,9 @@ private:
 										std::map<std::string, z3::expr>& varRew,
 										std::map<std::string, z3::expr>& varInit);
 	void clips_smt_solve_formula(z3::expr_vector formula);
-
 	void clips_smt_solve_formula_from_smt_file(std::string path);
 	void clips_smt_optimize_formula_from_smt_file(std::string path, std::string var);
-	void clips_smt_solve_formula_from_fg_smt_file(std::string path, FormulaGenerator fg);
+	// void clips_smt_solve_formula_from_fg_smt_file(std::string path, FormulaGenerator fg);
 
 	std::map<int ,std::string> actions_robot_1;
 	std::map<int ,std::string> actions_robot_2;
@@ -148,7 +147,6 @@ private:
 	int number_actions;
 	int plan_horizon;
 
-	// Real pairs: 0+900, 29+103, 246+150, 556+166, 900+300
 	const bool add_temporal_constraint = true;
 	const int upper_bound_offset = 0;
 	std::map<int, int> lower_bounds_c0;
@@ -186,16 +184,16 @@ private:
 	std::map<int , int> model_state3B;
 
 	// Leonards formula encoding
-	GameData clips_smt_convert_protobuf_to_gamedata();
-	std::vector<int> actions_robot_fg_1;
-	std::vector<int> actions_robot_fg_2;
-	std::vector<int> actions_robot_fg_3;
+	// GameData clips_smt_convert_protobuf_to_gamedata();
+	// std::vector<int> actions_robot_fg_1;
+	// std::vector<int> actions_robot_fg_2;
+	// std::vector<int> actions_robot_fg_3;
 
-	std::vector<std::shared_ptr<Robot>> gamedata_robots;
-	std::vector<std::shared_ptr<BaseStation>> gamedata_basestations;
-	std::vector<std::shared_ptr<RingStation>> gamedata_ringstations;
-	std::vector<std::shared_ptr<CapStation>> gamedata_capstations;
-	std::vector<std::shared_ptr<DeliveryStation>> gamedata_deliverystations;
+	// std::vector<std::shared_ptr<Robot>> gamedata_robots;
+	// std::vector<std::shared_ptr<BaseStation>> gamedata_basestations;
+	// std::vector<std::shared_ptr<RingStation>> gamedata_ringstations;
+	// std::vector<std::shared_ptr<CapStation>> gamedata_capstations;
+	// std::vector<std::shared_ptr<DeliveryStation>> gamedata_deliverystations;
 
 	// Communication with the agent API
 	CLIPS::Value clips_smt_request(std::string env_name, std::string handle, void *msgptr);
@@ -206,13 +204,16 @@ private:
 	std::string data_env;
 	std::string data_handle;
 
-	// Navgraph
+	// Global variables
 	int number_machines;
-	int number_bits;
 	int number_robots;
+	// int number_bits;
 	int number_orders;
+	int number_orders_protobuf;
 	const int number_orders_c0 = 1;
 	const int number_orders_c1 = 0;
+
+	// Navgraph
 	void clips_smt_fill_node_names();
 	void clips_smt_fill_robot_names();
 	void clips_smt_compute_distances_robots();
@@ -227,10 +228,9 @@ private:
 	std::string cfg_global_frame_;
 
 	// Test
-	void clips_smt_test_python();
-	void clips_smt_test_z3();
-	void clips_smt_test_carl();
-	void clips_smt_test_formulaGenerator();
+	// void clips_smt_test_z3();
+	// void clips_smt_test_carl();
+	// void clips_smt_test_formulaGenerator();
 
 	std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
 

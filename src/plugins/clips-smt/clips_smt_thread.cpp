@@ -33,7 +33,7 @@
 #include <llsf_msgs/Plan.pb.h>
 
 using namespace fawkes;
-using Rational = mpq_class;
+// using Rational = mpq_class;
 
 /** @class ClipsNavGraphThread "clips-protobuf-thread.h"
  * Provide protobuf functionality to CLIPS environment.
@@ -334,13 +334,18 @@ ClipsSmtThread::loop()
 {
 	logger->log_info(name(), "Thread performs loop and is running [%d]", running());
 
-	actions_robot_fg_1.clear();
-	actions_robot_fg_2.clear();
-	actions_robot_fg_3.clear();
+	// actions_robot_fg_1.clear();
+	// actions_robot_fg_2.clear();
+	// actions_robot_fg_3.clear();
 
 	number_robots = 1; // data.robots().size()-1;
-	number_machines = 4;//= data.machines().size();
-	number_bits = ceil(log2(number_machines));
+	number_machines = 4;// data.machines().size();
+	number_orders_protobuf = data.orders().size()/2;
+	if(number_orders_protobuf==0){
+		logger->log_info(name(), "Protobuf orders is empty, thus use predefined number of orders");
+	}
+
+	// number_bits = ceil(log2(number_machines));
 
 	number_orders = number_orders_c0+number_orders_c1; // data.robots().size()/2;
 	plan_horizon = number_orders_c0*number_max_required_actions_c0 + number_orders_c1*number_required_actions_c1;
@@ -348,7 +353,7 @@ ClipsSmtThread::loop()
 	// else number_actions = number_required_actions_c0;
 	number_actions = number_orders_c0*number_total_action_c0;
 
-	logger->log_info(name(), "Create plan with %i robot(s), %i machine(s), %i order(s) with plan_horizon %i and %i actions",
+	logger->log_info(name(), "Create plan with %i robot(s) (fix), %i machine(s) (fix), %i order(s) (dynamic) with plan_horizon %i and %i actions",
 							number_robots,
 							number_machines,
 							number_orders,
@@ -381,14 +386,14 @@ ClipsSmtThread::loop()
 												varM, varHold, varS,
 												varRew, varInit);
 
-	// Give it to z3 solver
+	// Pass it to z3 solver
 	clips_smt_solve_formula(formula);
 
 	// Test formulaGenerator
 	// logger->log_info(name(), "Convert protobuf to gamedata");
 	// clips_smt_convert_protobuf_to_gamedata();
 
-	// // Test precomputed .smt2 files
+	// Test precomputed .smt2 files
 	// logger->log_info(name(), "Call precomputed .smt2 file and optimize.");
 	// clips_smt_optimize_formula_from_smt_file("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/FormulaEncodings/benchmark_navgraph-costs-027_planner.smt2", "d_1");
 
@@ -409,7 +414,7 @@ ClipsSmtThread::loop()
 void
 ClipsSmtThread::graph_changed() throw()
 {
-	 //wakeup();
+	// wakeup();
 }
 
 void
@@ -443,6 +448,7 @@ ClipsSmtThread::clips_smt_fill_node_names()
 	// node_names_[11] = "C-CS2-O";
 	// node_names_[12] = "C-DS-O";
 
+	// Set only required names of machines fix
 	node_names_[1] = "C-BS-I";
 	node_names_[2] = "C-CS1-I";
 	node_names_[3] = "C-CS1-O";
@@ -519,8 +525,8 @@ ClipsSmtThread::clips_smt_compute_distances_machines()
 	MutexLocker lock(navgraph.objmutex_ptr());
 
 	// Prepare file stream to export the distances between machines
-	ofstream myfile;
-	myfile.open ("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/navgraph-costs-000.csv");
+	std::ofstream of_distances;
+	of_distances.open ("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/navgraph-costs-000.csv");
 
 	// Compute distances between unconnected C-ins-in and all other machines
 	NavGraphNode ins_node(navgraph->node("C-ins-in"));
@@ -535,7 +541,7 @@ ClipsSmtThread::clips_smt_compute_distances_machines()
 		NavGraphPath p = navgraph->search_path(from, to);
 
 		// logger->log_info(name(), "Distance between node %s and node %s is %f", from.name().c_str(), node_names_[i].c_str(), p.cost());
-		myfile << "C-ins-in;" << node_names_[i].c_str() <<";" << p.cost()+navgraph->cost(from, ins_node) << "\n";
+		of_distances << "C-ins-in;" << node_names_[i].c_str() <<";" << p.cost()+navgraph->cost(from, ins_node) << "\n";
 		distances_[nodes_pair] = p.cost() + navgraph->cost(from, ins_node);
 	}
 
@@ -547,12 +553,12 @@ ClipsSmtThread::clips_smt_compute_distances_machines()
 
 			NavGraphPath p = navgraph->search_path(node_names_[i], node_names_[j]);
 			// logger->log_info(name(), "Distance between node %s and node %s is %f", node_names_[i].c_str(), node_names_[j].c_str(), p.cost());
-			myfile << node_names_[i].c_str() << ";" << node_names_[j].c_str() <<";" << p.cost() << "\n";
+			of_distances << node_names_[i].c_str() << ";" << node_names_[j].c_str() <<";" << p.cost() << "\n";
 			distances_[nodes_pair] = p.cost();
 		}
 	}
 
-	myfile.close();
+	of_distances.close();
 }
 
 /*
@@ -797,17 +803,16 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 
 		for(int o=0; o<number_orders; ++o){
 
-			// Determine base, ring and cap color via protobuf
 			std::string bi = "B";
 			std::string ci = "C";
 
 			if(data.orders().size()/2>=1){
+				// Determine base, ring and cap color via protobuf
 				bi += std::to_string(data.orders(o+data.orders().size()/2).base_color());
 				ci += std::to_string(data.orders(o+data.orders().size()/2).cap_color());
 			}
 			else {
 				// Fix colors of orders of complexity c0
-				logger->log_info(name(), "Protobuf orders is empty (size is %i), thus use predefined orders", data.orders().size()/2);
 				switch(o){
 					case 0: bi = "B1";
 							ci = "C1";
@@ -1252,264 +1257,264 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	return constraints;
 }
 
-GameData
-ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
-{
-	GameData gD = GameData();
-	gamedata_robots.clear();
-	gamedata_basestations.clear();
-	gamedata_ringstations.clear();
-	gamedata_capstations.clear();
-	gamedata_deliverystations.clear();
-
-	// Machines
-	for (int i = 1; i < number_machines+1; i++){
-		std::string name_machine = node_names_[i];
-		if(name_machine[2] == 'B') { // BaseStation
-			auto bs_temp = std::make_shared<BaseStation>(i);
-			bs_temp->setPossibleBaseColors({Workpiece::RED, Workpiece::BLACK, Workpiece::SILVER}); // TODO Is this constant behavior
-			bs_temp->setDispenseBaseTime(1);
-			gamedata_basestations.push_back(bs_temp);
-			gD.addMachine(bs_temp);
-		}
-		else if(name_machine[2] == 'R') { // RingStation
-			auto rs_temp = std::make_shared<RingStation>(i);
-
-			/**
-			for(int j=0; j<data.machines(i-1).ring_colors().size(); ++j) {
-				rs_temp->addPossibleRingColor(static_cast<Workpiece::Color>(data.machines(i-1).ring_colors(j)+1), 1); // TODO Add all possibleRingColors with number of bases required for production ADD NUMBERS
-				// rs_temp->setRingColorSetup(static_cast<Workpiece::Color>(data.machines(i-1).ring_colors(j)+1)); // TODO Add ringColorSetup BACK
-			}
-			**/
-
-			if(name_machine[4] == '1'){
-				rs_temp->addPossibleRingColor(Workpiece::ORANGE, 1);
-				rs_temp->addPossibleRingColor(Workpiece::BLUE, 1);
-			}
-			else if(name_machine[4] == '2'){
-				rs_temp->addPossibleRingColor(Workpiece::GREEN, 1);
-				rs_temp->addPossibleRingColor(Workpiece::YELLOW, 1);
-			}
-
-			rs_temp->setFeedBaseTime(1);
-			rs_temp->setMountRingTime(10);
-			rs_temp->setAdditinalBasesFed(data.machines(i-1).loaded_with());
-			gamedata_ringstations.push_back(rs_temp);
-			gD.addMachine(rs_temp);
-		}
-		else if(name_machine[2] == 'C') { // CapStation
-			auto cs_temp = std::make_shared<CapStation>(i);
-			if(name_machine[4] == '1'){
-				cs_temp->addPossibleCapColor(Workpiece::GREY);
-				cs_temp->setFedCapColor(Workpiece::GREY); // TODO Add fedCapColor BACK ONLY BUFFER
-			}
-			else if(name_machine[4] == '2'){
-				cs_temp->addPossibleCapColor(Workpiece::BLACK);
-				cs_temp->setFedCapColor(Workpiece::BLACK); // TODO Add fedCapColor BACK ONLY BUFFER
-			}
-			cs_temp->setFeedCapTime(1);
-			cs_temp->setMountCapTime(5);
-			gamedata_capstations.push_back(cs_temp);
-			gD.addMachine(cs_temp);
-		}
-		else if(name_machine[2] == 'D') { // DeliveryStation
-			auto ds_temp = std::make_shared<DeliveryStation>(i);
-			gamedata_deliverystations.push_back(ds_temp);
-			gD.addMachine(ds_temp);
-		}
-	}
-
-	// Robots
-	for (int i = 0; i < number_robots; i++)
-	{
-		std::string name_robot = robot_names_[i];
-		auto r_temp = std::make_shared<Robot>(i);
-		Workpiece pr0 = Workpiece(Workpiece::BLACK,{}, Workpiece::NONE);
-		r_temp->setWorkpiece(pr0);
-		// TODO Add Workpiece corresponding to robot
-		gamedata_robots.push_back(r_temp);
-		gD.addMachine(r_temp);
-	}
-
-	// TODO Test if correct machines are mapped to each other
-	// Note that index m will go over all types of stations
-	// Robot machine distance
-
-	int limit_basestation = gamedata_basestations.size();
-	int limit_ringstation = limit_basestation + gamedata_ringstations.size();
-	int limit_capstation = limit_ringstation + gamedata_capstations.size();
-	// int limit_deliverystation = limit_capstation + gamedata_deliverystations.size();
-
-	for(int r=0; r<number_robots; ++r) {
-		// logger->log_info(name(), "Watch robot %i", r);
-		for(int m=0; m<number_machines; ++m) {
-			// logger->log_info(name(), "Watch machine %i named %s", m, node_names_[m+1].c_str());
-			float distance = distances_[std::make_pair(robot_names_[r], node_names_[m+1])];
-
-			// logger->log_info(name(), "Distance computed %f", distance);
-
-			if(m<limit_basestation) {
-				// Inside gamedata_basestations
-				// logger->log_info(name(), "Inside gamedata_basestations");
-
-				Machine::addMovingTime(*gamedata_robots[r], *gamedata_basestations[m], distance);
-			}
-			else if(m<limit_ringstation) {
-				// Inside gamedata_ringstations
-				int m_temp = m-gamedata_basestations.size();
-				// logger->log_info(name(), "Inside gamedata_ringstations with m_temp %i", m_temp);
-				Machine::addMovingTime(*gamedata_robots[r], *gamedata_ringstations[m_temp], distance);
-			}
-			else if(m<limit_capstation) {
-				// Inside gamedata_capstations
-				int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size();
-				// logger->log_info(name(), "Inside gamedata_capstations with m_temp %i", m_temp);
-				Machine::addMovingTime(*gamedata_robots[r], *gamedata_capstations[m_temp], distance);
-			}
-			else {
-				// Inside gamedata_deliverystations
-				int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
-				// logger->log_info(name(), "Inside gamedata_deliverystations with m_temp %i", m_temp);
-				Machine::addMovingTime(*gamedata_robots[r], *gamedata_deliverystations[m_temp], distance);
-			}
-
-			// logger->log_info(name(), "Distance added");
-		}
-	}
-
-	// Machine machine distance
-	for(int n=0; n<number_machines; ++n) {
-		for(int m=n+1; m<number_machines; ++m) {
-			float distance = distances_[std::make_pair(node_names_[n+1], node_names_[m+1])];
-			if(n<limit_basestation) {
-				// n is inside gamedata_basestations
-				if(m<limit_basestation) {
-					// m is inside gamedata_basestations
-					Machine::addMovingTime(*gamedata_basestations[n], *gamedata_basestations[m], distance);
-				}
-				else if(m<limit_ringstation) {
-					// m is inside gamedata_ringstations
-					int m_temp = m-gamedata_basestations.size();
-					Machine::addMovingTime(*gamedata_basestations[n], *gamedata_ringstations[m_temp], distance);
-				}
-				else if(m<limit_capstation) {
-					// m is inside gamedata_capstations
-					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size();
-					Machine::addMovingTime(*gamedata_basestations[n], *gamedata_capstations[m_temp], distance);
-				}
-				else {
-					// m is inside gamedata_deliverystations
-					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
-					Machine::addMovingTime(*gamedata_basestations[n], *gamedata_deliverystations[m_temp], distance);
-				}
-			}
-			else if(n<limit_ringstation) {
-				// n is inside gamedata_ringstations
-				int n_temp = n-gamedata_basestations.size();
-				if(m<limit_ringstation) {
-					// m is inside gamedata_ringstations
-					int m_temp = m-gamedata_basestations.size();
-					Machine::addMovingTime(*gamedata_ringstations[n_temp], *gamedata_ringstations[m_temp], distance);
-				}
-				else if(m<limit_capstation) {
-					// m is inside gamedata_capstations
-					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size();
-					Machine::addMovingTime(*gamedata_ringstations[n_temp], *gamedata_capstations[m_temp], distance);
-				}
-				else {
-					// m is inside gamedata_deliverystations
-					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
-					Machine::addMovingTime(*gamedata_ringstations[n_temp], *gamedata_deliverystations[m_temp], distance);
-				}
-			}
-			else if(n<limit_capstation) {
-				// n is inside gamedata_capstations
-				int n_temp = n-gamedata_basestations.size()-gamedata_ringstations.size();
-				if(m<limit_capstation) {
-					// m is inside gamedata_capstations
-					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size();
-					Machine::addMovingTime(*gamedata_capstations[n_temp], *gamedata_capstations[m_temp], distance);
-				}
-				else {
-					// m is inside gamedata_deliverystations
-					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
-					Machine::addMovingTime(*gamedata_capstations[n_temp], *gamedata_deliverystations[m_temp], distance);
-				}
-			}
-			else {
-				// n and m are inside gamedata_deliverystations
-				int n_temp = n-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
-				int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
-				Machine::addMovingTime(*gamedata_deliverystations[n_temp], *gamedata_deliverystations[m_temp], distance);
-			}
-		}
-	}
-
-	// Orders
-	for (int i = 0; i < data.orders().size()/2; i++)
-	{
-		//Color conversions
-		Workpiece::Color bc_temp = Workpiece::NONE;
-		switch(data.orders(i+data.orders().size()/2).base_color()){
-			case 1: bc_temp = static_cast<Workpiece::Color>(Workpiece::RED);
-					break;
-			case 2: bc_temp = static_cast<Workpiece::Color>(Workpiece::BLACK);
-					break;
-			case 3: bc_temp = static_cast<Workpiece::Color>(Workpiece::SILVER);
-					break;
-			default: break;
-		}
-
-		std::vector<Workpiece::Color> rc_temps;
-		for (int j = 0; j < data.orders(i+data.orders().size()/2).ring_colors().size(); j++){
-			switch(data.orders(i+data.orders().size()/2).ring_colors(j)){
-				case 1: rc_temps.push_back(static_cast<Workpiece::Color>(Workpiece::BLUE));
-						break;
-				case 2: rc_temps.push_back(static_cast<Workpiece::Color>(Workpiece::GREEN));
-						break;
-				case 3: rc_temps.push_back(static_cast<Workpiece::Color>(Workpiece::ORANGE));
-						break;
-				case 4: rc_temps.push_back(static_cast<Workpiece::Color>(Workpiece::YELLOW));
-						break;
-				default: break;
-			}
-
-		}
-
-		Workpiece::Color cc_temp = Workpiece::NONE;
-		switch(data.orders(i+data.orders().size()/2).cap_color()){
-			case 1: cc_temp = static_cast<Workpiece::Color>(Workpiece::BLACK);
-					break;
-			case 2: cc_temp = static_cast<Workpiece::Color>(Workpiece::GREY);
-					break;
-			default: break;
-		}
-
-		Workpiece p_temp = Workpiece(bc_temp, rc_temps, cc_temp);
-		auto o_temp = std::make_shared<Order>(i, p_temp, data.orders(i).delivery_period_end()*100); // TODO Fix third parameter
-		gD.addOrder(o_temp);
-	}
-
-
-	logger->log_info(name(), "Create fg with gD");
-	FormulaGenerator fg = FormulaGenerator(1, gD);
-	// logger->log_info(name(), "Display fg.createFormula()");
-	// cout << fg.createFormula() << std::endl << std::endl;
-	logger->log_info(name(), "Display gD.toString()");
-	cout << gD.toString() << std::endl;
-
-	logger->log_info(name(), "Export GameData formula to file gD_fg_formula.smt");
-	std::ofstream outputFile("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/gD_fg_formula.smt"); // TODO (Igor) Exchange path with config value
-	outputFile << carl::outputSMTLIB(carl::Logic::QF_NIRA, {fg.createFormula()});
-	outputFile.close();
-
-	clips_smt_solve_formula_from_fg_smt_file("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/gD_fg_formula.smt", fg);
-
-
-	logger->log_info(name(), "Finish extracting");
-
-	return gD;
-}
+// GameData
+// ClipsSmtThread::clips_smt_convert_protobuf_to_gamedata()
+// {
+// 	GameData gD = GameData();
+// 	gamedata_robots.clear();
+// 	gamedata_basestations.clear();
+// 	gamedata_ringstations.clear();
+// 	gamedata_capstations.clear();
+// 	gamedata_deliverystations.clear();
+//
+// 	// Machines
+// 	for (int i = 1; i < number_machines+1; i++){
+// 		std::string name_machine = node_names_[i];
+// 		if(name_machine[2] == 'B') { // BaseStation
+// 			auto bs_temp = std::make_shared<BaseStation>(i);
+// 			bs_temp->setPossibleBaseColors({Workpiece::RED, Workpiece::BLACK, Workpiece::SILVER}); // TODO Is this constant behavior
+// 			bs_temp->setDispenseBaseTime(1);
+// 			gamedata_basestations.push_back(bs_temp);
+// 			gD.addMachine(bs_temp);
+// 		}
+// 		else if(name_machine[2] == 'R') { // RingStation
+// 			auto rs_temp = std::make_shared<RingStation>(i);
+//
+// 			/**
+// 			for(int j=0; j<data.machines(i-1).ring_colors().size(); ++j) {
+// 				rs_temp->addPossibleRingColor(static_cast<Workpiece::Color>(data.machines(i-1).ring_colors(j)+1), 1); // TODO Add all possibleRingColors with number of bases required for production ADD NUMBERS
+// 				// rs_temp->setRingColorSetup(static_cast<Workpiece::Color>(data.machines(i-1).ring_colors(j)+1)); // TODO Add ringColorSetup BACK
+// 			}
+// 			**/
+//
+// 			if(name_machine[4] == '1'){
+// 				rs_temp->addPossibleRingColor(Workpiece::ORANGE, 1);
+// 				rs_temp->addPossibleRingColor(Workpiece::BLUE, 1);
+// 			}
+// 			else if(name_machine[4] == '2'){
+// 				rs_temp->addPossibleRingColor(Workpiece::GREEN, 1);
+// 				rs_temp->addPossibleRingColor(Workpiece::YELLOW, 1);
+// 			}
+//
+// 			rs_temp->setFeedBaseTime(1);
+// 			rs_temp->setMountRingTime(10);
+// 			rs_temp->setAdditinalBasesFed(data.machines(i-1).loaded_with());
+// 			gamedata_ringstations.push_back(rs_temp);
+// 			gD.addMachine(rs_temp);
+// 		}
+// 		else if(name_machine[2] == 'C') { // CapStation
+// 			auto cs_temp = std::make_shared<CapStation>(i);
+// 			if(name_machine[4] == '1'){
+// 				cs_temp->addPossibleCapColor(Workpiece::GREY);
+// 				cs_temp->setFedCapColor(Workpiece::GREY); // TODO Add fedCapColor BACK ONLY BUFFER
+// 			}
+// 			else if(name_machine[4] == '2'){
+// 				cs_temp->addPossibleCapColor(Workpiece::BLACK);
+// 				cs_temp->setFedCapColor(Workpiece::BLACK); // TODO Add fedCapColor BACK ONLY BUFFER
+// 			}
+// 			cs_temp->setFeedCapTime(1);
+// 			cs_temp->setMountCapTime(5);
+// 			gamedata_capstations.push_back(cs_temp);
+// 			gD.addMachine(cs_temp);
+// 		}
+// 		else if(name_machine[2] == 'D') { // DeliveryStation
+// 			auto ds_temp = std::make_shared<DeliveryStation>(i);
+// 			gamedata_deliverystations.push_back(ds_temp);
+// 			gD.addMachine(ds_temp);
+// 		}
+// 	}
+//
+// 	// Robots
+// 	for (int i = 0; i < number_robots; i++)
+// 	{
+// 		std::string name_robot = robot_names_[i];
+// 		auto r_temp = std::make_shared<Robot>(i);
+// 		Workpiece pr0 = Workpiece(Workpiece::BLACK,{}, Workpiece::NONE);
+// 		r_temp->setWorkpiece(pr0);
+// 		// TODO Add Workpiece corresponding to robot
+// 		gamedata_robots.push_back(r_temp);
+// 		gD.addMachine(r_temp);
+// 	}
+//
+// 	// TODO Test if correct machines are mapped to each other
+// 	// Note that index m will go over all types of stations
+// 	// Robot machine distance
+//
+// 	int limit_basestation = gamedata_basestations.size();
+// 	int limit_ringstation = limit_basestation + gamedata_ringstations.size();
+// 	int limit_capstation = limit_ringstation + gamedata_capstations.size();
+// 	// int limit_deliverystation = limit_capstation + gamedata_deliverystations.size();
+//
+// 	for(int r=0; r<number_robots; ++r) {
+// 		// logger->log_info(name(), "Watch robot %i", r);
+// 		for(int m=0; m<number_machines; ++m) {
+// 			// logger->log_info(name(), "Watch machine %i named %s", m, node_names_[m+1].c_str());
+// 			float distance = distances_[std::make_pair(robot_names_[r], node_names_[m+1])];
+//
+// 			// logger->log_info(name(), "Distance computed %f", distance);
+//
+// 			if(m<limit_basestation) {
+// 				// Inside gamedata_basestations
+// 				// logger->log_info(name(), "Inside gamedata_basestations");
+//
+// 				Machine::addMovingTime(*gamedata_robots[r], *gamedata_basestations[m], distance);
+// 			}
+// 			else if(m<limit_ringstation) {
+// 				// Inside gamedata_ringstations
+// 				int m_temp = m-gamedata_basestations.size();
+// 				// logger->log_info(name(), "Inside gamedata_ringstations with m_temp %i", m_temp);
+// 				Machine::addMovingTime(*gamedata_robots[r], *gamedata_ringstations[m_temp], distance);
+// 			}
+// 			else if(m<limit_capstation) {
+// 				// Inside gamedata_capstations
+// 				int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size();
+// 				// logger->log_info(name(), "Inside gamedata_capstations with m_temp %i", m_temp);
+// 				Machine::addMovingTime(*gamedata_robots[r], *gamedata_capstations[m_temp], distance);
+// 			}
+// 			else {
+// 				// Inside gamedata_deliverystations
+// 				int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
+// 				// logger->log_info(name(), "Inside gamedata_deliverystations with m_temp %i", m_temp);
+// 				Machine::addMovingTime(*gamedata_robots[r], *gamedata_deliverystations[m_temp], distance);
+// 			}
+//
+// 			// logger->log_info(name(), "Distance added");
+// 		}
+// 	}
+//
+// 	// Machine machine distance
+// 	for(int n=0; n<number_machines; ++n) {
+// 		for(int m=n+1; m<number_machines; ++m) {
+// 			float distance = distances_[std::make_pair(node_names_[n+1], node_names_[m+1])];
+// 			if(n<limit_basestation) {
+// 				// n is inside gamedata_basestations
+// 				if(m<limit_basestation) {
+// 					// m is inside gamedata_basestations
+// 					Machine::addMovingTime(*gamedata_basestations[n], *gamedata_basestations[m], distance);
+// 				}
+// 				else if(m<limit_ringstation) {
+// 					// m is inside gamedata_ringstations
+// 					int m_temp = m-gamedata_basestations.size();
+// 					Machine::addMovingTime(*gamedata_basestations[n], *gamedata_ringstations[m_temp], distance);
+// 				}
+// 				else if(m<limit_capstation) {
+// 					// m is inside gamedata_capstations
+// 					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size();
+// 					Machine::addMovingTime(*gamedata_basestations[n], *gamedata_capstations[m_temp], distance);
+// 				}
+// 				else {
+// 					// m is inside gamedata_deliverystations
+// 					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
+// 					Machine::addMovingTime(*gamedata_basestations[n], *gamedata_deliverystations[m_temp], distance);
+// 				}
+// 			}
+// 			else if(n<limit_ringstation) {
+// 				// n is inside gamedata_ringstations
+// 				int n_temp = n-gamedata_basestations.size();
+// 				if(m<limit_ringstation) {
+// 					// m is inside gamedata_ringstations
+// 					int m_temp = m-gamedata_basestations.size();
+// 					Machine::addMovingTime(*gamedata_ringstations[n_temp], *gamedata_ringstations[m_temp], distance);
+// 				}
+// 				else if(m<limit_capstation) {
+// 					// m is inside gamedata_capstations
+// 					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size();
+// 					Machine::addMovingTime(*gamedata_ringstations[n_temp], *gamedata_capstations[m_temp], distance);
+// 				}
+// 				else {
+// 					// m is inside gamedata_deliverystations
+// 					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
+// 					Machine::addMovingTime(*gamedata_ringstations[n_temp], *gamedata_deliverystations[m_temp], distance);
+// 				}
+// 			}
+// 			else if(n<limit_capstation) {
+// 				// n is inside gamedata_capstations
+// 				int n_temp = n-gamedata_basestations.size()-gamedata_ringstations.size();
+// 				if(m<limit_capstation) {
+// 					// m is inside gamedata_capstations
+// 					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size();
+// 					Machine::addMovingTime(*gamedata_capstations[n_temp], *gamedata_capstations[m_temp], distance);
+// 				}
+// 				else {
+// 					// m is inside gamedata_deliverystations
+// 					int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
+// 					Machine::addMovingTime(*gamedata_capstations[n_temp], *gamedata_deliverystations[m_temp], distance);
+// 				}
+// 			}
+// 			else {
+// 				// n and m are inside gamedata_deliverystations
+// 				int n_temp = n-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
+// 				int m_temp = m-gamedata_basestations.size()-gamedata_ringstations.size()-gamedata_capstations.size();
+// 				Machine::addMovingTime(*gamedata_deliverystations[n_temp], *gamedata_deliverystations[m_temp], distance);
+// 			}
+// 		}
+// 	}
+//
+// 	// Orders
+// 	for (int i = 0; i < data.orders().size()/2; i++)
+// 	{
+// 		//Color conversions
+// 		Workpiece::Color bc_temp = Workpiece::NONE;
+// 		switch(data.orders(i+data.orders().size()/2).base_color()){
+// 			case 1: bc_temp = static_cast<Workpiece::Color>(Workpiece::RED);
+// 					break;
+// 			case 2: bc_temp = static_cast<Workpiece::Color>(Workpiece::BLACK);
+// 					break;
+// 			case 3: bc_temp = static_cast<Workpiece::Color>(Workpiece::SILVER);
+// 					break;
+// 			default: break;
+// 		}
+//
+// 		std::vector<Workpiece::Color> rc_temps;
+// 		for (int j = 0; j < data.orders(i+data.orders().size()/2).ring_colors().size(); j++){
+// 			switch(data.orders(i+data.orders().size()/2).ring_colors(j)){
+// 				case 1: rc_temps.push_back(static_cast<Workpiece::Color>(Workpiece::BLUE));
+// 						break;
+// 				case 2: rc_temps.push_back(static_cast<Workpiece::Color>(Workpiece::GREEN));
+// 						break;
+// 				case 3: rc_temps.push_back(static_cast<Workpiece::Color>(Workpiece::ORANGE));
+// 						break;
+// 				case 4: rc_temps.push_back(static_cast<Workpiece::Color>(Workpiece::YELLOW));
+// 						break;
+// 				default: break;
+// 			}
+//
+// 		}
+//
+// 		Workpiece::Color cc_temp = Workpiece::NONE;
+// 		switch(data.orders(i+data.orders().size()/2).cap_color()){
+// 			case 1: cc_temp = static_cast<Workpiece::Color>(Workpiece::BLACK);
+// 					break;
+// 			case 2: cc_temp = static_cast<Workpiece::Color>(Workpiece::GREY);
+// 					break;
+// 			default: break;
+// 		}
+//
+// 		Workpiece p_temp = Workpiece(bc_temp, rc_temps, cc_temp);
+// 		auto o_temp = std::make_shared<Order>(i, p_temp, data.orders(i).delivery_period_end()*100); // TODO Fix third parameter
+// 		gD.addOrder(o_temp);
+// 	}
+//
+//
+// 	logger->log_info(name(), "Create fg with gD");
+// 	FormulaGenerator fg = FormulaGenerator(1, gD);
+// 	// logger->log_info(name(), "Display fg.createFormula()");
+// 	// cout << fg.createFormula() << std::endl << std::endl;
+// 	logger->log_info(name(), "Display gD.toString()");
+// 	cout << gD.toString() << std::endl;
+//
+// 	logger->log_info(name(), "Export GameData formula to file gD_fg_formula.smt");
+// 	std::ofstream of_fg_formula("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/gD_fg_formula.smt"); // TODO (Igor) Exchange path with config value
+// 	of_fg_formula << carl::outputSMTLIB(carl::Logic::QF_NIRA, {fg.createFormula()});
+// 	of_fg_formula.close();
+//
+// 	clips_smt_solve_formula_from_fg_smt_file("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/gD_fg_formula.smt", fg);
+//
+//
+// 	logger->log_info(name(), "Finish extracting");
+//
+// 	return gD;
+// }
 
 /*
  * Solve encoding of exploration phase
@@ -1549,13 +1554,13 @@ void
 	// z3Optimizer.maximize(rew_planhorizon); // TODO
 
 	// Export stats into clips_smt_thread_stats.txt
-	std::ofstream outputFile;
-	outputFile.open("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/clips_smt_thread_stats.txt", std::ofstream::out | std::ofstream::app);
+	std::ofstream of_stats;
+	of_stats.open("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/clips_smt_thread_stats.txt", std::ofstream::out | std::ofstream::app);
 
 	// Add time stamp to stats
 	time_t now = time(0);
 	char* dt = ctime(&now);
-	outputFile << std::endl << dt << std::endl;
+	of_stats << std::endl << dt << std::endl;
 
 	// Begin measuring solving time
 	std::chrono::high_resolution_clock::time_point end;
@@ -1564,17 +1569,17 @@ void
 	z3::set_param("pp.decimal", true);
 
 	// Export formula into .smt file
-	std::ofstream outputFile_smt2("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/encoder_c0_formula.smt"); // TODO (Igor) Exchange path with config value
-	// outputFile_smt2 << Z3_optimize_to_string(_z3_context, z3Optimizer);
-	outputFile_smt2 << z3Optimizer.to_smt2() << std::endl;
-	outputFile_smt2.close();
+	std::ofstream of_c0_formula("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/encoder_c0_formula.smt"); // TODO (Igor) Exchange path with config value
+	// of_c0_formula << Z3_optimize_to_string(_z3_context, z3Optimizer);
+	of_c0_formula << z3Optimizer.to_smt2() << std::endl;
+	of_c0_formula.close();
 
 	if (z3Optimizer.check() == z3::sat){
 		// End measuring solving time in case of sat
 		end = std::chrono::high_resolution_clock::now();
 
 		// Add sat to stats
-		outputFile << "SAT" << std::endl;
+		of_stats << "SAT" << std::endl;
 
 		logger->log_info(name(), "Finished solving and optimizing formula with SAT");
 
@@ -1659,29 +1664,28 @@ void
 		}
 
 		// Add plan specified by the model to stats
-		outputFile << "number_orders_c0: " << number_orders_c0 << std::endl;
-
-		outputFile << "add_temporal_constraint: " << add_temporal_constraint << std::endl;
+		// of_stats << "number_orders_c0: " << number_orders_c0 << std::endl;
+		// of_stats << "add_temporal_constraint: " << add_temporal_constraint << std::endl;
 		for(int o=0; o<number_orders; ++o){
-			outputFile << "O" << o+1 << ": " << orders_base[o] << orders_cap[o];
+			of_stats << "O" << o+1 << ": " << orders_base[o] << orders_cap[o];
 			if(add_temporal_constraint){
-				outputFile << lower_bounds_c0[o] << "s < o0 < " << upper_bounds_c0[o] << "s-" << upper_bound_offset << "s"<< std::endl;
+				of_stats << " with bounds " << lower_bounds_c0[o] << "s < o0 < " << upper_bounds_c0[o] << "s-" << upper_bound_offset << "s";
 			}
-			outputFile << std::endl;
+			of_stats << std::endl;
 		}
 
-		outputFile << std::endl;
+		of_stats << std::endl;
 
 		for(int j=1; j<plan_horizon+1; ++j){
-			outputFile << j <<". ";
-			outputFile << "R" << model_robots[j] << " for O" << ((model_actions[j]-1)/number_max_required_actions_c0)+1;
-			outputFile << " does " << actions[model_actions[j]]; //A" << model_actions[j];
-			outputFile  << " and holds " << products_inverted[model_holdB[j]] << " at "<< node_names_[model_positions[j]];
+			of_stats << j <<". ";
+			of_stats << "R" << model_robots[j] << " for O" << ((model_actions[j]-1)/number_max_required_actions_c0)+1;
+			of_stats << " does " << actions[model_actions[j]]; //A" << model_actions[j];
+			of_stats  << " and holds " << products_inverted[model_holdB[j]] << " at "<< node_names_[model_positions[j]];
 			// ":[H(" << model_holdA[j] << "-" << model_holdB[j] <<
 			// "), S1(" << model_state1A[j] << "-" << model_state1B[j] <<
 			// "), S2(" << model_state2A[j] << "-" << model_state2B[j] <<
 			// "), S3(" << model_state3A[j] << "-" << model_state3B[j] <<"]";
-			outputFile << " [t = " << model_times[j] << "s]" << std::endl;
+			of_stats << " [t = " << model_times[j] << "s]" << std::endl;
 		}
 	} else {
 
@@ -1689,7 +1693,7 @@ void
 		end = std::chrono::high_resolution_clock::now();
 
 		// Add unsat to stats
-		outputFile << "UNSAT" << std::endl;
+		of_stats << "UNSAT" << std::endl;
 
 		logger->log_info(name(), "Finished solving and optimizing formula with UNSAT");
 	}
@@ -1700,8 +1704,8 @@ void
 
 	// logger->log_info(name(), "Time difference is %f ms", diff); // Measure time in nanoseconds but display in milliseconds for convenience
 
-	outputFile << "Time used for solving: " << diff_ms << " ms, " << diff_m << " m" << std::endl << "__________ __________ __________";
-	outputFile.close();
+	of_stats << "Time used for solving: " << diff_ms << " ms, " << diff_m << " m" << std::endl << "__________ __________ __________";
+	of_stats.close();
 }
 
 void ClipsSmtThread::clips_smt_solve_formula_from_smt_file(std::string path) {
@@ -1817,89 +1821,89 @@ void ClipsSmtThread::clips_smt_optimize_formula_from_smt_file(std::string path, 
 		}
 
 		// Export stats into clips_smt_thread_stats.txt
-		std::ofstream outputFile;
-		outputFile.open("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/clips_smt_thread_stats.txt", std::ofstream::out | std::ofstream::app);
+		std::ofstream of_stats;
+		of_stats.open("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/clips_smt_thread_stats.txt", std::ofstream::out | std::ofstream::app);
 
 		time_t now = time(0);
 		char* dt = ctime(&now);
-		outputFile << std::endl << dt << std::endl;
+		of_stats << std::endl << dt << std::endl;
 
 		// Add plan specified by the model to stats
-		outputFile << "Begin of plan" << std::endl << "R-1 goes to "<< actions_robot_1.size() << " machines:";
+		of_stats << "Begin of plan" << std::endl << "R-1 goes to "<< actions_robot_1.size() << " machines:";
 		std::map<int, std::string>::iterator it_actions_1;
 		for(it_actions_1 = actions_robot_1.begin(); it_actions_1!=actions_robot_1.end(); ++it_actions_1) {
-			outputFile << " [" << it_actions_1->first << "] " << it_actions_1->second;
+			of_stats << " [" << it_actions_1->first << "] " << it_actions_1->second;
 		}
-		outputFile << std::endl << "R-2 goes to "<< actions_robot_2.size() << " machines:";
+		of_stats << std::endl << "R-2 goes to "<< actions_robot_2.size() << " machines:";
 		std::map<int, std::string>::iterator it_actions_2;
 		for(it_actions_2 = actions_robot_2.begin(); it_actions_2!=actions_robot_2.end(); ++it_actions_2) {
-			outputFile << " [" << it_actions_2->first << "] " << it_actions_2->second;
+			of_stats << " [" << it_actions_2->first << "] " << it_actions_2->second;
 		}
-		outputFile << std::endl << "R-3 goes to "<< actions_robot_3.size() << " machines:";
+		of_stats << std::endl << "R-3 goes to "<< actions_robot_3.size() << " machines:";
 		std::map<int, std::string>::iterator it_actions_3;
 		for(it_actions_3 = actions_robot_3.begin(); it_actions_3!=actions_robot_3.end(); ++it_actions_3) {
-			outputFile << " [" << it_actions_3->first << "] " << it_actions_3->second;
+			of_stats << " [" << it_actions_3->first << "] " << it_actions_3->second;
 		}
-		outputFile << std::endl << "End of plan"<< std::endl << "__________ __________ __________" << std::endl;
+		of_stats << std::endl << "End of plan"<< std::endl << "__________ __________ __________" << std::endl;
 	}
 	else logger->log_info(name(), "Test of import .smt file into z3 constraint did NOT work (UNSAT)");
 }
 
-void ClipsSmtThread::clips_smt_solve_formula_from_fg_smt_file(std::string path, FormulaGenerator fg) {
-	Z3_ast a = Z3_parse_smtlib2_file(_z3_context, path.c_str(), 0, 0, 0, 0, 0, 0); // TODO (Igor) Exchange path with config value
-	z3::expr e(_z3_context, a);
-
-	z3::solver s(_z3_context);
-	s.add(e);
-
-	// Start measuring sovling time
-	std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
-	if(s.check() == z3::sat) {
-		// Stop measuring sovling time
-		std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-
-		// Compute time for solving
-		double diff_ms = (double) std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count()/1000;
-		double diff_m = (double) std::chrono::duration_cast<std::chrono::seconds> (end - begin).count()/60;
-
-		logger->log_info(name(), "Test of import .smt file into z3 constraint did work (SAT) [%f ms, %f m]", diff_ms, diff_m);
-
-		z3::model model = s.get_model();
-		logger->log_info(name(), "Display model with %i entries", model.size());
-		for(unsigned i=0; i<model.size(); ++i) {
-			z3::func_decl function = model[i];
-			std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
-		}
-
-		logger->log_info(name(), "Create actions with fg and model");
-		std::vector<Action> actions = fg.getActions(model);
-		logger->log_info(name(), "Print actions");
-		for(auto action: actions) {
-			logger->log_info(name(), "Action: %s", action.toString().c_str());
-
-			logger->log_info(name(), "Get station_id");
-			int station_id = action.getStation()->getId();
-
-			// Extract move from actions
-			switch(action.getRobot()->getId()){
-				case 0: if(actions_robot_fg_1.empty() || actions_robot_fg_1.back() != station_id) {
-							actions_robot_fg_1.push_back(station_id);
-						}
-						break;
-				case 1: if(actions_robot_fg_2.empty() || actions_robot_fg_2.back() != station_id) {
-							actions_robot_fg_2.push_back(station_id);
-						}
-						break;
-				case 2: if(actions_robot_fg_3.empty() || actions_robot_fg_3.back() != station_id) {
-							actions_robot_fg_3.push_back(station_id);
-						}
-						break;
-				default: break;
-			}
-		}
-	}
-	else logger->log_info(name(), "Test of import .smt file into z3 constraint did NOT work (UNSAT)");
-}
+// void ClipsSmtThread::clips_smt_solve_formula_from_fg_smt_file(std::string path, FormulaGenerator fg) {
+// 	Z3_ast a = Z3_parse_smtlib2_file(_z3_context, path.c_str(), 0, 0, 0, 0, 0, 0); // TODO (Igor) Exchange path with config value
+// 	z3::expr e(_z3_context, a);
+//
+// 	z3::solver s(_z3_context);
+// 	s.add(e);
+//
+// 	// Start measuring sovling time
+// 	std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
+// 	if(s.check() == z3::sat) {
+// 		// Stop measuring sovling time
+// 		std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+//
+// 		// Compute time for solving
+// 		double diff_ms = (double) std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count()/1000;
+// 		double diff_m = (double) std::chrono::duration_cast<std::chrono::seconds> (end - begin).count()/60;
+//
+// 		logger->log_info(name(), "Test of import .smt file into z3 constraint did work (SAT) [%f ms, %f m]", diff_ms, diff_m);
+//
+// 		z3::model model = s.get_model();
+// 		logger->log_info(name(), "Display model with %i entries", model.size());
+// 		for(unsigned i=0; i<model.size(); ++i) {
+// 			z3::func_decl function = model[i];
+// 			std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
+// 		}
+//
+// 		logger->log_info(name(), "Create actions with fg and model");
+// 		std::vector<Action> actions = fg.getActions(model);
+// 		logger->log_info(name(), "Print actions");
+// 		for(auto action: actions) {
+// 			logger->log_info(name(), "Action: %s", action.toString().c_str());
+//
+// 			logger->log_info(name(), "Get station_id");
+// 			int station_id = action.getStation()->getId();
+//
+// 			// Extract move from actions
+// 			switch(action.getRobot()->getId()){
+// 				case 0: if(actions_robot_fg_1.empty() || actions_robot_fg_1.back() != station_id) {
+// 							actions_robot_fg_1.push_back(station_id);
+// 						}
+// 						break;
+// 				case 1: if(actions_robot_fg_2.empty() || actions_robot_fg_2.back() != station_id) {
+// 							actions_robot_fg_2.push_back(station_id);
+// 						}
+// 						break;
+// 				case 2: if(actions_robot_fg_3.empty() || actions_robot_fg_3.back() != station_id) {
+// 							actions_robot_fg_3.push_back(station_id);
+// 						}
+// 						break;
+// 				default: break;
+// 			}
+// 		}
+// 	}
+// 	else logger->log_info(name(), "Test of import .smt file into z3 constraint did NOT work (UNSAT)");
+// }
 
 /**
  * Test methods
@@ -1908,45 +1912,45 @@ void ClipsSmtThread::clips_smt_solve_formula_from_fg_smt_file(std::string path, 
  * - formulaGenerator: Similar to z3 test method, but with test case of formulaGenerator
  **/
 
-void
-ClipsSmtThread::clips_smt_test_z3()
-{
+// void
+// ClipsSmtThread::clips_smt_test_z3()
+// {
+//
+// 	logger->log_info(name(), "Test z3 extern binary");
+//
+// 	logger->log_info(name(), "Setup carl test formula");
+// 	carl::Variable x = carl::freshRealVariable("x");
+// 	Rational r = 4;
+// 	carl::MultivariatePolynomial<Rational> mp = Rational(r*r)*x*x + r*x + r;
+// 	carl::Formula<carl::MultivariatePolynomial<Rational>> f(mp, carl::Relation::GEQ);
+//
+// 	logger->log_info(name(), "Export carl test formula to file carl_formula.smt");
+// 	std::ofstream of_carl_formula("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/carl_formula.smt"); // TODO (Igor) Exchange path with config value
+// 	of_carl_formula << carl::outputSMTLIB(carl::Logic::QF_NRA, {f});
+// 	of_carl_formula.close();
+//
+// 	logger->log_info(name(), "Import carl test formula from file carl_formula.smt into z3 formula");
+//
+// 	clips_smt_solve_formula_from_smt_file("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/carl_formula.smt");
+// }
 
-	logger->log_info(name(), "Test z3 extern binary");
-
-	logger->log_info(name(), "Setup carl test formula");
-	carl::Variable x = carl::freshRealVariable("x");
-	Rational r = 4;
-	carl::MultivariatePolynomial<Rational> mp = Rational(r*r)*x*x + r*x + r;
-	carl::Formula<carl::MultivariatePolynomial<Rational>> f(mp, carl::Relation::GEQ);
-
-	logger->log_info(name(), "Export carl test formula to file carl_formula.smt");
-	std::ofstream outputFile("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/carl_formula.smt"); // TODO (Igor) Exchange path with config value
-	outputFile << carl::outputSMTLIB(carl::Logic::QF_NRA, {f});
-	outputFile.close();
-
-	logger->log_info(name(), "Import carl test formula from file carl_formula.smt into z3 formula");
-
-	clips_smt_solve_formula_from_smt_file("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/carl_formula.smt");
-}
-
-void ClipsSmtThread::clips_smt_test_formulaGenerator()
-{
-	logger->log_info(name(), "Test FormulaGenerator extern binary");
-
-	GameData gD = FormulaGeneratorTest::createGameDataTestCase();
-	FormulaGenerator fg = FormulaGenerator(1, gD);
-
-	logger->log_info(name(), "Export FormulaGenerator formula to file fg_formula.smt");
-	std::ofstream outputFile("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt"); // TODO (Igor) Exchange path with config value
-	outputFile << carl::outputSMTLIB(carl::Logic::QF_NIRA, {fg.createFormula()});
-	outputFile.close();
-
-	logger->log_info(name(), "Import FormulaGenerator formula from file fg_formula.smt into z3 formula");
-
-
-	clips_smt_solve_formula_from_fg_smt_file("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt", fg);
-}
+// void ClipsSmtThread::clips_smt_test_formulaGenerator()
+// {
+// 	logger->log_info(name(), "Test FormulaGenerator extern binary");
+//
+// 	GameData gD = FormulaGeneratorTest::createGameDataTestCase();
+// 	FormulaGenerator fg = FormulaGenerator(1, gD);
+//
+// 	logger->log_info(name(), "Export FormulaGenerator formula to file fg_formula.smt");
+// 	std::ofstream of_fg_formula("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt"); // TODO (Igor) Exchange path with config value
+// 	of_fg_formula << carl::outputSMTLIB(carl::Logic::QF_NIRA, {fg.createFormula()});
+// 	of_fg_formula.close();
+//
+// 	logger->log_info(name(), "Import FormulaGenerator formula from file fg_formula.smt into z3 formula");
+//
+//
+// 	clips_smt_solve_formula_from_fg_smt_file("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/fg_formula.smt", fg);
+// }
 
 z3::expr ClipsSmtThread::getVar(std::map<std::string, z3::expr>& vars, std::string var_id)
 {
