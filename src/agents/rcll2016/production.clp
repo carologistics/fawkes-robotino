@@ -297,6 +297,7 @@
 					(case "enter-field" then (printout warn "Ignoring enter-field, done implicitly" crlf))
 					(case "move" then
 						(bind ?to "")
+            (bind ?side "")
 						(progn$ (?arg (pb-field-list ?a "params"))
 							(if (eq (pb-field-value ?arg "key") "to") then
 								(bind ?to (pb-field-value ?arg "value"))
@@ -314,6 +315,7 @@
           ;ACTION:::::GET FROM SHELF::::::
           (case "retrive_shelf" then
             (bind ?mps "")
+            (bind ?side "")
             (bind ?shelf FALSE)
             (progn$ (?arg (pb-field-list ?a "params"))
               (if (eq (pb-field-value ?arg "key") "mps") then
@@ -345,6 +347,7 @@
           ;ACTION:::::RETRIVE::::::
           (case "retrive" then
             (bind ?mps "")
+            (bind ?side "")
             (progn$ (?arg (pb-field-list ?a "params"))
               (if (eq (pb-field-value ?arg "key") "mps") then
                 (bind ?mps (pb-field-value ?arg "value"))
@@ -370,6 +373,7 @@
           ;ACTION:::::FEED::::::
           (case "feed" then
             (bind ?mps "")
+            (bind ?side "")
             (progn$ (?arg (pb-field-list ?a "params"))
               (if (eq (pb-field-value ?arg "key") "mps") then
                 (bind ?mps (pb-field-value ?arg "value"))
@@ -386,11 +390,24 @@
             (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
             (assert (step (name insert) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (already-at-mps FALSE) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
           )
+
+          ;ACTION:::::Discard::::::
+          (case "discard" then
+            (printout t "discarding Product to" crlf)
+            
+            ;Translation into Steps
+            (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+            (assert (step (name discard) (id (+ ?task-id ?ai))  )) 
+          )
           
           ;ACTION:::::PREPARE::::::
           (case "prepare" then
             (bind ?mps "")
+            (bind ?side "")
             (bind ?mps-type "")
+            (bind ?operation "")
+            (bind ?gate "")
+            (bind ?base-color "")
             (progn$ (?arg (pb-field-list ?a "params"))
               (if (eq (pb-field-value ?arg "key") "mps") then
                 (bind ?mps (pb-field-value ?arg "value"))
@@ -401,29 +418,53 @@
                     (bind ?mps-type ?machine:mtype)
                 )   
               else
-                (switch ?mps-type
-                  (case BS
-                    then
-                      (printout t "machine preperd as BS  " ?mps " type " ?mps-type crlf) )
-                  (case CS
-                    then
-                      (printout t "machine preperd as CS  " ?mps " type " ?mps-type crlf) )
-                  (case DS
-                    then
-                      (printout t "machine preperd as DS  " ?mps " type " ?mps-type crlf) )
-                  (case RS
-                    then
-                      (printout t "machine preperd as RS  " ?mps " type " ?mps-type crlf) )
+                (if (eq (pb-field-value ?arg "key") "operation") then
+                (bind ?operation (pb-field-value ?arg "value"))
+                 ;  (step (name instruct-mps) (state wait-for-activation) (side ?side) (id ?step-id)
+                 ; (machine ?mps) (base ?base) (ring ?ring) (gate ?gate)
+                 ; (cs-operation ?cs-op) (lock ?lock) (task-priority ?p))
 
-                  (default (printout warn "Machine Type Not Found ...yet! " ?actname crlf))
+                else
+                  (if (eq (pb-field-value ?arg "key") "color") then
+                    (bind ?operation (pb-field-value ?arg "value"))  
+                  else
+                     (if (eq (pb-field-value ?arg "key") "gate") then
+                      (bind ?operation (pb-field-value ?arg "value"))  
+                    else
+                      (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+                    ) 
+                  ) 
                 )
-
-                ; (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
               )
-
             )
 
+
             (printout t "Intructing to" ?mps " at " ?side crlf)
+            (switch ?mps-type
+                  (case BS
+                    then
+                      (printout t "machine preperd as BS  " ?mps " type " ?mps-type  "color" ?color crlf) 
+                        (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+                        (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (base RED) ))
+                      )
+                  (case CS
+                    then
+                      (printout t "machine preperd as CS  " ?mps " type " ?mps-type "operation" ?operation crlf) 
+                      (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+                      (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (cs-operation RETRIEVE_CAP) ))
+                      )
+                  (case DS
+                    then
+                      (printout t "machine preperd as DS  " ?mps " type " ?mps-type "gate" ?gate crlf) )
+                      (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+                      (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (gate 1) ))
+                  (case RS
+                    then
+                      (printout t "machine preperd as RS  " ?mps " type " ?mps-type "ringg_color   Not implemented yet!" ?crlf) )
+
+                  (default (printout warn "Machine Type Not Found or Worng Format! " ?actname crlf))
+                )
+
             
             ;Translation into Steps
             ; (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
