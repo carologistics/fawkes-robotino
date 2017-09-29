@@ -68,7 +68,7 @@
 ; 	  )
 ; 	)
 ; 	(printout t "Plan: " (pb-tostring ?ap) crlf)
-	
+
 ; 	(if (pb-has-field ?ap "sequential_plan")
 ; 	 then
 ; 		(bind ?p (pb-field-value ?ap "sequential_plan"))
@@ -212,11 +212,11 @@
 	)
   (return ?o)
 )
-;MAg Notes: 
-; This is totally wrong..Each order is sent in 2 llsf.Order msgs. 
+;MAg Notes:
+; This is totally wrong..Each order is sent in 2 llsf.Order msgs.
 ; One that has everything but the porduct color speceficationa dn
 ; the other has only the colors (without even relating to an ID).
-; Furhtermore, This function creats an order msg for all product facts in the db 
+; Furhtermore, This function creats an order msg for all product facts in the db
 ; (Even thought this does not really have to be the case, Product means than one thing)
 
 (deffunction smt-create-orders-productcolors (?team-color)
@@ -313,7 +313,7 @@
 						(assert (step (name drive-to) (id (+ ?task-id ?ai))	(machine ?to) (side ?side)))
 					)
           ;ACTION:::::GET FROM SHELF::::::
-          (case "retrive_shelf" then
+          (case "retrieve_shelf" then
             (bind ?mps "")
             (bind ?side "")
             (bind ?shelf FALSE)
@@ -333,7 +333,7 @@
             )
             (printout t "Retrieving from" ?mps " at " ?side "shelf" ?shelf crlf)
             ;Translation into Steps
-            (if (and  (neq ?shelf FALSE) 
+            (if (and  (neq ?shelf FALSE)
                       (any-factp ((?machine machine)) (and (eq ?machine:name ?mps)  (eq ?machine:mtype CS)))
                 )
             then
@@ -345,7 +345,7 @@
           )
 
           ;ACTION:::::RETRIVE::::::
-          (case "retrive" then
+          (case "retrieve" then
             (bind ?mps "")
             (bind ?side "")
             (progn$ (?arg (pb-field-list ?a "params"))
@@ -359,7 +359,7 @@
               )
             )
             (printout t "Retrieving from" ?mps " at " ?side crlf)
-            
+
             ;Translation into Steps
             (if (any-factp ((?machine machine)) (and (eq ?machine:name ?mps)  (eq ?machine:mtype BS)))
               then
@@ -368,8 +368,8 @@
               else
               (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
               (assert (step (name get-output) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (machine-feature CONVEYOR) ))
-            )  
-          )      
+            )
+          )
           ;ACTION:::::FEED::::::
           (case "feed" then
             (bind ?mps "")
@@ -385,7 +385,7 @@
               )
             )
             (printout t "Brining Product to" ?mps " at " ?side crlf)
-            
+
             ;Translation into Steps
             (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
             (assert (step (name insert) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (already-at-mps FALSE) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
@@ -394,12 +394,12 @@
           ;ACTION:::::Discard::::::
           (case "discard" then
             (printout t "discarding Product to" crlf)
-            
+
             ;Translation into Steps
             (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-            (assert (step (name discard) (id (+ ?task-id ?ai))  )) 
+            (assert (step (name discard) (id (+ ?task-id ?ai))  ))
           )
-          
+
           ;ACTION:::::PREPARE::::::
           (case "prepare" then
             (bind ?mps "")
@@ -413,66 +413,76 @@
                 (bind ?mps (pb-field-value ?arg "value"))
                 (bind ?mps-splitted (str-split ?mps "-"))
                 (bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-                (bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT)) 
+                (bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
                 (do-for-fact ((?machine machine)) (eq ?machine:name ?mps)
                     (bind ?mps-type ?machine:mtype)
-                )   
+                )
               else
                 (if (eq (pb-field-value ?arg "key") "operation") then
                 (bind ?operation (pb-field-value ?arg "value"))
                  ;  (step (name instruct-mps) (state wait-for-activation) (side ?side) (id ?step-id)
                  ; (machine ?mps) (base ?base) (ring ?ring) (gate ?gate)
                  ; (cs-operation ?cs-op) (lock ?lock) (task-priority ?p))
+				 (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+				 (if (eq ?operation "RETRIEVE_CAP") then
+				 	(assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (cs-operation RETRIEVE_CAP) ))
+				else
+					(assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (cs-operation MOUNT_CAP) ))
+				 )
 
                 else
                   (if (eq (pb-field-value ?arg "key") "color") then
-                    (bind ?operation (pb-field-value ?arg "value"))  
+                    (bind ?base-color (pb-field-value ?arg "value"))
+					(bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+				   (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (base RED) ))
                   else
                      (if (eq (pb-field-value ?arg "key") "gate") then
-                      (bind ?operation (pb-field-value ?arg "value"))  
+                      (bind ?gate (pb-field-value ?arg "value"))
+					  (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+		              (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (gate 1) ))
                     else
                       (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
-                    ) 
-                  ) 
+                    )
+                  )
                 )
               )
             )
 
 
             (printout t "Intructing to" ?mps " at " ?side crlf)
-            (switch ?mps-type
-                  (case BS
-                    then
-                      (printout t "machine preperd as BS  " ?mps " type " ?mps-type  "color" ?color crlf) 
-                        (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-                        (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (base RED) ))
-                      )
-                  (case CS
-                    then
-                      (printout t "machine preperd as CS  " ?mps " type " ?mps-type "operation" ?operation crlf) 
-                      (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-                      (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (cs-operation RETRIEVE_CAP) ))
-                      )
-                  (case DS
-                    then
-                      (printout t "machine preperd as DS  " ?mps " type " ?mps-type "gate" ?gate crlf) )
-                      (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-                      (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (gate 1) ))
-                  (case RS
-                    then
-                      (printout t "machine preperd as RS  " ?mps " type " ?mps-type "ringg_color   Not implemented yet!" ?crlf) )
+            ; (switch ?mps-type
+            ;       (case BS then
+            ;         then
+            ;           (printout t "machine preperd as BS  " ?mps " type " ?mps-type  "color" ?color crlf)
+            ;             (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+            ;             (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (base RED) ))
+            ;           )
+            ;       (case CS then
+            ;         then
+            ;           (printout t "machine preperd as CS  " ?mps " type " ?mps-type "operation" ?operation crlf)
+            ;           (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+            ;           (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (cs-operation RETRIEVE_CAP) ))
+            ;           )
+            ;       (case DS then
+            ;         then
+            ;           (printout t "machine preperd as DS  " ?mps " type " ?mps-type "gate" ?gate crlf) )
+            ;           (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
+            ;           (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (gate 1) ))
+            ;       (case RS
+            ;         then
+            ;           (printout t "machine preperd as RS  " ?mps " type " ?mps-type "ringg_color   Not implemented yet!" ?crlf) )
+			;
+            ;       (default (printout warn "Machine Type Not Found or Worng Format! " ?actname crlf))
+            ;     )
 
-                  (default (printout warn "Machine Type Not Found or Worng Format! " ?actname crlf))
-                )
 
-            
             ;Translation into Steps
             ; (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
             ; (assert (step (name insert) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (already-at-mps FALSE) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
           )
 
 					(default (printout warn "Unknown action " ?actname crlf))
-				
+
         )
 			)
 
