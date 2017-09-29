@@ -236,6 +236,8 @@ private:
 
 	// Help
 	z3::expr getVar(std::map<std::string, z3::expr>& vars, std::string var_id);
+	std::string getCapColor(int product_id);
+	std::string getBaseColor(int product_id);
 };
 
 #endif

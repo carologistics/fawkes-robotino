@@ -225,6 +225,50 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 {
 	// Just a simple demonstration, all robots would move to the same place...
 	std::shared_ptr<llsf_msgs::ActorGroupPlan> agplan(new llsf_msgs::ActorGroupPlan());
+	// llsf_msgs::ActorSpecificPlan *actor_plan = agplan->add_plans();
+	// actor_plan->set_actor_name("R-1");
+	// llsf_msgs::SequentialPlan *plan = actor_plan->mutable_sequential_plan();
+	// llsf_msgs::PlanAction *action;
+	// llsf_msgs::PlanActionParameter *param;
+
+	// action = plan->add_actions();
+	// action->set_name("enter-field");
+
+
+	// Francesco's C0 Scenario
+	// Loop through model_actions
+	for(unsigned int i=0; i<model_actions.size(); ++i){
+		switch(model_actions[i]){
+			case 1:		// Get black cap with cap carrier from shelf of corresponding C-CS 
+					// Move action and get from shelf?
+					break;
+			case 2:		// Prepare corresponding C-CS to hold black cap with cap carrier
+					break;		
+			case 3:		// Put black cap with cap carrier into corresponding C-CS
+					break;		
+			case 4:		// Prepare corresponding C-CS to mount red base with black cap 
+					break;		
+			case 5:		// Put red base into corresponding C-CS
+					break;		
+			case 6:		// Get red base from C-BS-O
+					break;		
+			case 7:		// Prepare C-BS to output red base
+					break;		
+			case 8:		// Discard cap carrier from corresponding C-CS output
+					// Move to output side, get cap carrier and discard via opening gripper
+					break;		
+			case 9:		// Get product red_base_black_cap at corresponding C-CS output
+					break;		
+			case 10:	// Prepare C-DS to receive product red_base_black_cap
+					break;		
+			case 11:	// Put product red_base_black_cap into C-DS-I
+					break;		
+			default:	break;
+		}	
+       	}
+
+
+
 	for (const auto &r : std::vector<std::string>{"R-1", "R-2", "R-3"}) {
 		llsf_msgs::ActorSpecificPlan *actor_plan = agplan->add_plans();
 		actor_plan->set_actor_name(r);
@@ -235,8 +279,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 		action = plan->add_actions();
 		action->set_name("enter-field");
 
-
-		// Francesco
+		// Francesco's Move Scenario
 		if(r.compare("R-1")==0){
 			std::map<int, std::string>::iterator it_actions;
 			for(it_actions = actions_robot_1.begin(); it_actions!=actions_robot_1.end(); ++it_actions) {
@@ -1970,4 +2013,31 @@ z3::expr ClipsSmtThread::getVar(std::map<std::string, z3::expr>& vars, std::stri
 
 	// Return default value false
 	return _z3_context.bool_val(false);
+}
+
+std::string ClipsSmtThread::getCapColor(int product_id)
+{
+	if(product_id==4 || product_id==6 || product_id==8 || product_id==10){
+		return "CAP_BLACK";
+	}
+	else if(product_id==5 || product_id==7 || product_id==9 || product_id==11){
+		return "CAP_GREY";
+	}
+
+	return "empty";
+}
+
+std::string ClipsSmtThread::getBaseColor(int product_id)
+{
+	if(product_id==1 || product_id==4 || product_id==5){
+		return "BASE_RED";
+	}
+	else if(product_id==2 || product_id==6 || product_id==7){
+		return "BASE_BLACK";
+	}
+	else if(product_id==3 || product_id==8 || product_id==9){
+		return "BASE_SILVER";
+	}
+
+	return "empty";
 }
