@@ -248,7 +248,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value("C-CS1-I");
 
 					action = plan->add_actions();
-					action->set_name("retrive_shelf");
+					action->set_name("retrieve_shelf");
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value("C-CS1-I");
