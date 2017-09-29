@@ -225,11 +225,11 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 {
 	// Just a simple demonstration, all robots would move to the same place...
 	std::shared_ptr<llsf_msgs::ActorGroupPlan> agplan(new llsf_msgs::ActorGroupPlan());
-	// llsf_msgs::ActorSpecificPlan *actor_plan = agplan->add_plans();
-	// actor_plan->set_actor_name("R-1");
-	// llsf_msgs::SequentialPlan *plan = actor_plan->mutable_sequential_plan();
-	// llsf_msgs::PlanAction *action;
-	// llsf_msgs::PlanActionParameter *param;
+	llsf_msgs::ActorSpecificPlan *actor_plan = agplan->add_plans();
+	actor_plan->set_actor_name("R-1");
+	llsf_msgs::SequentialPlan *plan = actor_plan->mutable_sequential_plan();
+	llsf_msgs::PlanAction *action;
+	llsf_msgs::PlanActionParameter *param;
 
 	// action = plan->add_actions();
 	// action->set_name("enter-field");
@@ -239,110 +239,250 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 	// Loop through model_actions
 	for(unsigned int i=0; i<model_actions.size(); ++i){
 		switch(model_actions[i]){
-			case 1:		// Get black cap with cap carrier from shelf of corresponding C-CS 
+			case 1:		// Get black cap with cap carrier from shelf of corresponding C-CS
 					// Move action and get from shelf?
+					action = plan->add_actions();
+					action->set_name("move");
+					param = action->add_params();
+					param->set_key("to");
+					param->set_value("C-CS1-I");
+
+					action = plan->add_actions();
+					action->set_name("retrive_shelf");
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value("C-CS1-I");
+					param = action->add_params();
+					param->set_key("shelf");
+					param->set_value("TRUE");
+
 					break;
 			case 2:		// Prepare corresponding C-CS to hold black cap with cap carrier
-					break;		
+					action = plan->add_actions();
+					action->set_name("move");
+					param = action->add_params();
+					param->set_key("to");
+					param->set_value("C-CS1-I");
+
+					action = plan->add_actions();
+					action->set_name("prepare");
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value("C-CS1-I");
+					param = action->add_params();
+					param->set_key("operation");
+					param->set_value("RETRIEVE_CAP");
+					break;
 			case 3:		// Put black cap with cap carrier into corresponding C-CS
-					break;		
-			case 4:		// Prepare corresponding C-CS to mount red base with black cap 
-					break;		
+					action = plan->add_actions();
+					action->set_name("move");
+					param = action->add_params();
+					param->set_key("to");
+					param->set_value("C-CS1-I");
+
+					action = plan->add_actions();
+					action->set_name("feed");
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value("C-CS1-I");
+					break;
+			case 4:		// Prepare corresponding C-CS to mount red base with black cap
+					action = plan->add_actions();
+					action->set_name("move");
+					param = action->add_params();
+					param->set_key("to");
+					param->set_value("C-CS1-I");
+
+					action = plan->add_actions();
+					action->set_name("prepare");
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value("C-CS1-I");
+					param = action->add_params();
+					param->set_key("operation");
+					param->set_value("MOUNT_CAP");
+					break;
 			case 5:		// Put red base into corresponding C-CS
-					break;		
+					action = plan->add_actions();
+					action->set_name("move");
+					param = action->add_params();
+					param->set_key("to");
+					param->set_value("C-CS1-I");
+
+					action = plan->add_actions();
+					action->set_name("feed");
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value("C-CS1-I");
+					break;
 			case 6:		// Get red base from C-BS-O
-					break;		
+					action = plan->add_actions();
+					action->set_name("move");
+					param = action->add_params();
+					param->set_key("to");
+					param->set_value("C-BS-O");
+
+					action = plan->add_actions();
+					action->set_name("retrieve");
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value("C-BS-O");
+					break;
 			case 7:		// Prepare C-BS to output red base
-					break;		
+					action = plan->add_actions();
+					action->set_name("move");
+					param = action->add_params();
+					param->set_key("to");
+					param->set_value("C-BS-O");
+
+					action = plan->add_actions();
+					action->set_name("prepare");
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value("C-BS-O");
+					param = action->add_params();
+					param->set_key("color");
+					param->set_value("BASE_RED");
+					break;
 			case 8:		// Discard cap carrier from corresponding C-CS output
 					// Move to output side, get cap carrier and discard via opening gripper
-					break;		
+					action = plan->add_actions();
+					action->set_name("move");
+					param = action->add_params();
+					param->set_key("to");
+					param->set_value("C-CS1-O");
+
+					action = plan->add_actions();
+					action->set_name("retrieve");
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value("C-CS1-O");
+
+					action = plan->add_actions();
+					action->set_name("discard");
+					break;
 			case 9:		// Get product red_base_black_cap at corresponding C-CS output
-					break;		
+					action = plan->add_actions();
+					action->set_name("move");
+					param = action->add_params();
+					param->set_key("to");
+					param->set_value("C-CS1-O");
+
+					action = plan->add_actions();
+					action->set_name("retrieve");
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value("C-CS1-O");
+					break;
 			case 10:	// Prepare C-DS to receive product red_base_black_cap
-					break;		
+					action = plan->add_actions();
+					action->set_name("move");
+					param = action->add_params();
+					param->set_key("to");
+					param->set_value("C-DS-I");
+
+					action = plan->add_actions();
+					action->set_name("prepare");
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value("C-DS-I");
+					param = action->add_params();
+					param->set_key("gate");
+					param->set_value("1");
+					break;
 			case 11:	// Put product red_base_black_cap into C-DS-I
-					break;		
+					action = plan->add_actions();
+					action->set_name("move");
+					param = action->add_params();
+					param->set_key("to");
+					param->set_value("C-DS-I");
+
+					action = plan->add_actions();
+					action->set_name("feed");
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value("C-DS-I");
+					break;
 			default:	break;
-		}	
+		}
        	}
 
 
 
-	for (const auto &r : std::vector<std::string>{"R-1", "R-2", "R-3"}) {
-		llsf_msgs::ActorSpecificPlan *actor_plan = agplan->add_plans();
-		actor_plan->set_actor_name(r);
-		llsf_msgs::SequentialPlan *plan = actor_plan->mutable_sequential_plan();
-		llsf_msgs::PlanAction *action;
-		llsf_msgs::PlanActionParameter *param;
-
-		action = plan->add_actions();
-		action->set_name("enter-field");
-
-		// Francesco's Move Scenario
-		if(r.compare("R-1")==0){
-			std::map<int, std::string>::iterator it_actions;
-			for(it_actions = actions_robot_1.begin(); it_actions!=actions_robot_1.end(); ++it_actions) {
-				action = plan->add_actions();
-				action->set_name("move");
-				param = action->add_params();
-				param->set_key("to");
-				param->set_value(it_actions->second);
-			}
-		}
-		else if(r.compare("R-2")==0){
-			std::map<int, std::string>::iterator it_actions;
-			for(it_actions = actions_robot_2.begin(); it_actions!=actions_robot_2.end(); ++it_actions) {
-				action = plan->add_actions();
-				action->set_name("move");
-				param = action->add_params();
-				param->set_key("to");
-				param->set_value(it_actions->second);
-			}
-		}
-		else if(r.compare("R-3")==0){
-			std::map<int, std::string>::iterator it_actions;
-			for(it_actions = actions_robot_3.begin(); it_actions!=actions_robot_3.end(); ++it_actions) {
-				action = plan->add_actions();
-				action->set_name("move");
-				param = action->add_params();
-				param->set_key("to");
-				param->set_value(it_actions->second);
-			}
-		}
-
-		// // Leonard
-		// if(r.compare("R-1")==0){
-		// 	std::map<int, std::string>::iterator it_actions;
-		// 	for(int move_to: actions_robot_fg_1) {
-		// 		action = plan->add_actions();
-		// 		action->set_name("move");
-		// 		param = action->add_params();
-		// 		param->set_key("to");
-		// 		param->set_value(node_names_[move_to]);
-		// 	}
-		// }
-		// else if(r.compare("R-2")==0){
-		// 	std::map<int, std::string>::iterator it_actions;
-		// 	for(int move_to: actions_robot_fg_2) {
-		// 		action = plan->add_actions();
-		// 		action->set_name("move");
-		// 		param = action->add_params();
-		// 		param->set_key("to");
-		// 		param->set_value(node_names_[move_to]);
-		// 	}
-		// }
-		// else if(r.compare("R-3")==0){
-		// 	std::map<int, std::string>::iterator it_actions;
-		// 	for(int move_to: actions_robot_fg_3) {
-		// 		action = plan->add_actions();
-		// 		action->set_name("move");
-		// 		param = action->add_params();
-		// 		param->set_key("to");
-		// 		param->set_value(node_names_[move_to]);
-		// 	}
-		// }
-	}
+	// for (const auto &r : std::vector<std::string>{"R-1", "R-2", "R-3"}) {
+	// 	llsf_msgs::ActorSpecificPlan *actor_plan = agplan->add_plans();
+	// 	actor_plan->set_actor_name(r);
+	// 	llsf_msgs::SequentialPlan *plan = actor_plan->mutable_sequential_plan();
+	// 	llsf_msgs::PlanAction *action;
+	// 	llsf_msgs::PlanActionParameter *param;
+	//
+	// 	action = plan->add_actions();
+	// 	action->set_name("enter-field");
+	//
+	// 	// Francesco's Move Scenario
+	// 	if(r.compare("R-1")==0){
+	// 		std::map<int, std::string>::iterator it_actions;
+	// 		for(it_actions = actions_robot_1.begin(); it_actions!=actions_robot_1.end(); ++it_actions) {
+	// 			action = plan->add_actions();
+	// 			action->set_name("move");
+	// 			param = action->add_params();
+	// 			param->set_key("to");
+	// 			param->set_value(it_actions->second);
+	// 		}
+	// 	}
+	// 	else if(r.compare("R-2")==0){
+	// 		std::map<int, std::string>::iterator it_actions;
+	// 		for(it_actions = actions_robot_2.begin(); it_actions!=actions_robot_2.end(); ++it_actions) {
+	// 			action = plan->add_actions();
+	// 			action->set_name("move");
+	// 			param = action->add_params();
+	// 			param->set_key("to");
+	// 			param->set_value(it_actions->second);
+	// 		}
+	// 	}
+	// 	else if(r.compare("R-3")==0){
+	// 		std::map<int, std::string>::iterator it_actions;
+	// 		for(it_actions = actions_robot_3.begin(); it_actions!=actions_robot_3.end(); ++it_actions) {
+	// 			action = plan->add_actions();
+	// 			action->set_name("move");
+	// 			param = action->add_params();
+	// 			param->set_key("to");
+	// 			param->set_value(it_actions->second);
+	// 		}
+	// 	}
+	//
+	// 	// // Leonard
+	// 	// if(r.compare("R-1")==0){
+	// 	// 	std::map<int, std::string>::iterator it_actions;
+	// 	// 	for(int move_to: actions_robot_fg_1) {
+	// 	// 		action = plan->add_actions();
+	// 	// 		action->set_name("move");
+	// 	// 		param = action->add_params();
+	// 	// 		param->set_key("to");
+	// 	// 		param->set_value(node_names_[move_to]);
+	// 	// 	}
+	// 	// }
+	// 	// else if(r.compare("R-2")==0){
+	// 	// 	std::map<int, std::string>::iterator it_actions;
+	// 	// 	for(int move_to: actions_robot_fg_2) {
+	// 	// 		action = plan->add_actions();
+	// 	// 		action->set_name("move");
+	// 	// 		param = action->add_params();
+	// 	// 		param->set_key("to");
+	// 	// 		param->set_value(node_names_[move_to]);
+	// 	// 	}
+	// 	// }
+	// 	// else if(r.compare("R-3")==0){
+	// 	// 	std::map<int, std::string>::iterator it_actions;
+	// 	// 	for(int move_to: actions_robot_fg_3) {
+	// 	// 		action = plan->add_actions();
+	// 	// 		action->set_name("move");
+	// 	// 		param = action->add_params();
+	// 	// 		param->set_key("to");
+	// 	// 		param->set_value(node_names_[move_to]);
+	// 	// 	}
+	// 	// }
+	// }
 
 
 	// Use handle to associate plan to initial request
