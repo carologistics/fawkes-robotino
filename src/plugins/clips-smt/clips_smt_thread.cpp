@@ -134,12 +134,16 @@ ClipsSmtThread::init()
 	actions[10] = "|P|DS|BC>>|";
 	actions[11] = "|F|DS|>BC>|";
 
+	// TODO read from protobuf
 	lower_bounds_c0[0] = 0;
 	lower_bounds_c0[1] = 29;
 	lower_bounds_c0[2] = 246;
 	upper_bounds_c0[0] = lower_bounds_c0[0]+900;
 	upper_bounds_c0[1] = lower_bounds_c0[1]+103;
 	upper_bounds_c0[2] = lower_bounds_c0[1]+150;
+
+	shelf_position.push_back(true);
+	shelf_position.push_back(true);
 }
 
 
@@ -646,6 +650,12 @@ ClipsSmtThread::clips_smt_fill_node_names()
 	node_names_inverted["C-DS-I"] = 4;
 	// node_names_inverted["C-RS1-I"] = 5;
 	// node_names_inverted["C-RS1-O"] = 6;
+
+	caps_and_colors_input["C1"] = "C-CS1-I";
+	caps_and_colors_input["C2"] = "C-CS2-I";
+	caps_and_colors_output["C1"] = "C-CS1-I";
+	caps_and_colors_output["C2"] = "C-CS2-I";
+
 }
 
 void
@@ -1108,7 +1118,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 										&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
 										&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
 										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_fetch)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-CS1-I"])
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
 										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products[br_ci])
 										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
@@ -1121,7 +1131,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 										&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
 										&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
 										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-CS1-I"])
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
 										&& (getVar(varHold, "holdA_"+std::to_string(i)) == getVar(varHold, "holdB_"+std::to_string(i)))
 										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
 			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (2 + o*number_total_action_c0)) || constraint_action2);
@@ -1135,7 +1145,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 										&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines["empty"])
 										&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines["full"])
 										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_feed)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-CS1-I"])
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
 										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[br_ci])
 										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
@@ -1150,7 +1160,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 										&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines["empty"])
 										&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines["empty"])
 										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-CS1-I"])
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
 										&& (getVar(varHold, "holdA_"+std::to_string(i)) == getVar(varHold, "holdB_"+std::to_string(i)))
 										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
 			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (4 + o*number_total_action_c0)) || constraint_action4);
@@ -1164,7 +1174,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 										&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines["empty"])
 										&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines[bi_ci])
 										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_feed)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-CS1-I"])
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
 										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[bi])
 										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
@@ -1203,7 +1213,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 										&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines["full"])
 										&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines["empty"])
 										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_disc)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-CS1-O"])
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_output[ci]])
 										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
@@ -1217,7 +1227,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 										&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines[bi_ci])
 										&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines["empty"])
 										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_fetch)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-CS1-O"])
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_output[ci]])
 										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products[bi_ci])
 										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
@@ -2180,4 +2190,25 @@ std::string ClipsSmtThread::getBaseColor(int product_id)
 	}
 
 	return "empty";
+}
+
+void ClipsSmtThread::initShelf()
+{
+	shelf_position[0] = true;
+	shelf_position[1] = true;
+}
+
+std::string ClipsSmtThread::getNextShelf()
+{
+	if(shelf_position[0]){
+		shelf_position[0] = false;
+		return "LEFT";
+	}
+	else if(shelf_position[1]){
+		shelf_position[1] = false;
+		return "MIDDLE";
+	}
+
+	initShelf();
+	return "LEFT";
 }
