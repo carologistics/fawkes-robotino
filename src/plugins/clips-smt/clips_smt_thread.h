@@ -220,8 +220,12 @@ private:
 	void clips_smt_compute_distances_machines();
 	std::map<int, std::string> robot_names_;
 	std::map<int, std::string> node_names_;
-	std::map<std::string, int> node_names_inverted;
 	std::map<std::pair<std::string, std::string>, float> distances_;
+	std::map<std::string, int> node_names_inverted;
+
+	std::map<std::string, std::string> caps_and_colors_input;
+	std::map<std::string, std::string> caps_and_colors_output;
+	std::vector<bool> shelf_position;
 
 	fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
 	std::string cfg_base_frame_;
@@ -238,6 +242,8 @@ private:
 	z3::expr getVar(std::map<std::string, z3::expr>& vars, std::string var_id);
 	std::string getCapColor(int product_id);
 	std::string getBaseColor(int product_id);
+	void initShelf();
+	std::string getNextShelf();
 };
 
 #endif
