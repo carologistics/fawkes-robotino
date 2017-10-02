@@ -53,7 +53,7 @@
   ?step <- (step (id ?step-id) (name insert) (state wait-for-activation) (task-priority ?p)
                  (machine ?mps) (machine-feature ?feature&~SLIDE) (gate ?gate) (ring ?ring)
                  (already-at-mps ?already-at-mps))
-  (machine (name ?mps) (mtype ?mtype) (state IDLE))
+  (machine (name ?mps) (mtype ?mtype) (state IDLE|PREPARED))
   (task (name ?task-name)  (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
