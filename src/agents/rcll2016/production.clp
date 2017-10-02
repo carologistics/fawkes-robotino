@@ -333,9 +333,10 @@
             )
             (printout t "Retrieving from" ?mps " at " ?side "shelf" ?shelf crlf)
             ;Translation into Steps
-            (if (and  (neq ?shelf FALSE)
-                      (any-factp ((?machine machine)) (and (eq ?machine:name ?mps)  (eq ?machine:mtype CS)))
-                )
+            (if (neq ?shelf "FALSE")
+              ; (and  
+              ;         (any-factp ((?machine machine)) (and (eq ?machine:name ?mps)  (eq ?machine:mtype CS)))
+              ;   )
             then
               (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
               (assert (step (name get-from-shelf) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (machine-feature SHELF)))
