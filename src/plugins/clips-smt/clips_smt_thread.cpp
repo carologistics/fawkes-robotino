@@ -249,13 +249,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					param = action->add_params();
 					param->set_key("to");
-					param->set_value("C-CS1-I");
+					param->set_value(node_names_[model_positions[i]]);
 
 					action = plan->add_actions();
 					action->set_name("retrieve_shelf");
 					param = action->add_params();
 					param->set_key("mps");
-					param->set_value("C-CS1-I");
+					param->set_value(node_names_[model_positions[i]]);
 					param = action->add_params();
 					param->set_key("shelf");
 					param->set_value("TRUE");
@@ -266,13 +266,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					param = action->add_params();
 					param->set_key("to");
-					param->set_value("C-CS1-I");
+					param->set_value(node_names_[model_positions[i]]);
 
 					action = plan->add_actions();
 					action->set_name("prepare");
 					param = action->add_params();
 					param->set_key("mps");
-					param->set_value("C-CS1-I");
+					param->set_value(node_names_[model_positions[i]]);
 					param = action->add_params();
 					param->set_key("operation");
 					param->set_value("RETRIEVE_CAP");
@@ -282,26 +282,26 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					param = action->add_params();
 					param->set_key("to");
-					param->set_value("C-CS1-I");
+					param->set_value(node_names_[model_positions[i]]);
 
 					action = plan->add_actions();
 					action->set_name("feed");
 					param = action->add_params();
 					param->set_key("mps");
-					param->set_value("C-CS1-I");
+					param->set_value(node_names_[model_positions[i]]);
 					break;
 			case 4:		// Prepare corresponding C-CS to mount red base with black cap
 					action = plan->add_actions();
 					action->set_name("move");
 					param = action->add_params();
 					param->set_key("to");
-					param->set_value("C-CS1-I");
+					param->set_value(node_names_[model_positions[i]]);
 
 					action = plan->add_actions();
 					action->set_name("prepare");
 					param = action->add_params();
 					param->set_key("mps");
-					param->set_value("C-CS1-I");
+					param->set_value(node_names_[model_positions[i]]);
 					param = action->add_params();
 					param->set_key("operation");
 					param->set_value("MOUNT_CAP");
@@ -311,13 +311,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					param = action->add_params();
 					param->set_key("to");
-					param->set_value("C-CS1-I");
+					param->set_value(node_names_[model_positions[i]]);
 
 					action = plan->add_actions();
 					action->set_name("feed");
 					param = action->add_params();
 					param->set_key("mps");
-					param->set_value("C-CS1-I");
+					param->set_value(node_names_[model_positions[i]]);
 					break;
 			case 6:		// Get red base from C-BS-O
 					action = plan->add_actions();
@@ -346,7 +346,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value("C-BS-O");
 					param = action->add_params();
 					param->set_key("color");
-					param->set_value("BASE_RED");
+					param->set_value(getBaseColor(orders_base[(model_actions[i]-1)/number_max_required_actions_c0]));
 					break;
 			case 8:		// Discard cap carrier from corresponding C-CS output
 					// Move to output side, get cap carrier and discard via opening gripper
@@ -354,13 +354,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					param = action->add_params();
 					param->set_key("to");
-					param->set_value("C-CS1-O");
+					param->set_value(node_names_[model_positions[i]]);
 
 					action = plan->add_actions();
 					action->set_name("retrieve");
 					param = action->add_params();
 					param->set_key("mps");
-					param->set_value("C-CS1-O");
+					param->set_value(node_names_[model_positions[i]]);
 
 					action = plan->add_actions();
 					action->set_name("discard");
@@ -370,13 +370,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					param = action->add_params();
 					param->set_key("to");
-					param->set_value("C-CS1-O");
+					param->set_value(node_names_[model_positions[i]]);
 
 					action = plan->add_actions();
 					action->set_name("retrieve");
 					param = action->add_params();
 					param->set_key("mps");
-					param->set_value("C-CS1-O");
+					param->set_value(node_names_[model_positions[i]]);
 					break;
 			case 10:	// Prepare C-DS to receive product red_base_black_cap
 					action = plan->add_actions();
@@ -526,7 +526,7 @@ ClipsSmtThread::loop()
 	// actions_robot_fg_3.clear();
 
 	number_robots = 1; // data.robots().size()-1;
-	number_machines = 4;// data.machines().size();
+	number_machines = 6;// data.machines().size();
 	number_orders_protobuf = data.orders().size()/2;
 	if(number_orders_protobuf==0){
 		logger->log_info(name(), "Protobuf orders is empty, thus use predefined number of orders");
@@ -639,7 +639,9 @@ ClipsSmtThread::clips_smt_fill_node_names()
 	node_names_[1] = "C-BS-I";
 	node_names_[2] = "C-CS1-I";
 	node_names_[3] = "C-CS1-O";
-	node_names_[4] = "C-DS-I";
+	node_names_[4] = "C-CS2-I";
+	node_names_[5] = "C-CS2-O";
+	node_names_[6] = "C-DS-I";
 	// node_names_[5] = "C-RS1-I";
 	// node_names_[6] = "C-RS1-O";
 
@@ -647,15 +649,28 @@ ClipsSmtThread::clips_smt_fill_node_names()
 	node_names_inverted["C-BS-I"] = 1;
 	node_names_inverted["C-CS1-I"] = 2;
 	node_names_inverted["C-CS1-O"] = 3;
-	node_names_inverted["C-DS-I"] = 4;
+	node_names_inverted["C-CS2-I"] = 4;
+	node_names_inverted["C-CS2-O"] = 5;
+	node_names_inverted["C-DS-I"] = 6;
 	// node_names_inverted["C-RS1-I"] = 5;
 	// node_names_inverted["C-RS1-O"] = 6;
 
-	caps_and_colors_input["C1"] = "C-CS1-I";
-	caps_and_colors_input["C2"] = "C-CS2-I";
-	caps_and_colors_output["C1"] = "C-CS1-I";
-	caps_and_colors_output["C2"] = "C-CS2-I";
-
+	if(config->get_string("/clips-agent/rcll2016/cap-station/assigned-color/C-CS1").compare("BLACK")==0){
+		// C-CS1 contins black c1 caps and C-CS2 grey ones
+		logger->log_info(name(), "C-CS1 contins black c1 caps and C-CS2 grey ones");
+		caps_and_colors_input["C1"] = "C-CS1-I";
+		caps_and_colors_input["C2"] = "C-CS2-I";
+		caps_and_colors_output["C1"] = "C-CS1-O";
+		caps_and_colors_output["C2"] = "C-CS2-O";
+	}
+	else {
+		// C-CS1 contins grey c1 caps and C-CS2 black ones
+		logger->log_info(name(), "C-CS1 contins grey c1 caps and C-CS2 black ones");
+		caps_and_colors_input["C2"] = "C-CS1-I";
+		caps_and_colors_input["C1"] = "C-CS2-I";
+		caps_and_colors_output["C2"] = "C-CS1-O";
+		caps_and_colors_output["C1"] = "C-CS2-O";
+	}
 }
 
 void
@@ -1001,27 +1016,35 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 
 			if(data.orders().size()/2>=1){
 				// Determine base, ring and cap color via protobuf
-				bi += std::to_string(data.orders(o+data.orders().size()/2).base_color());
-				ci += std::to_string(data.orders(o+data.orders().size()/2).cap_color());
+				orders_base[o] = data.orders(o+data.orders().size()/2).base_color();
+				orders_cap[o] = data.orders(o+data.orders().size()/2).cap_color();
+
+				bi += std::to_string(orders_base[o]);
+				ci += std::to_string(orders_cap[o]);
 			}
 			else {
 				// Fix colors of orders of complexity c0
 				switch(o){
-					case 0: bi = "B1";
+					case 0: orders_base[o] = 1;
+							orders_cap[o] = 1;
+
+							bi = "B1";
 							ci = "C1";
 							break;
-					case 1: bi = "B3";
+					case 1: orders_base[o] = 3;
+							orders_cap[o] = 2;
+
+							bi = "B3";
 							ci = "C2";
 							break;
-					case 2: bi = "B2";
+					case 2: orders_base[o] = 2;
+							orders_cap[o] = 1;
+
+							bi = "B2";
 							ci = "C1";
 							break;
 				}
 			}
-
-			// Save information for Visualization
-			orders_base[o] = bi;
-			orders_cap[o] = ci;
 
 			// Determine required strings
 			std::string bi_ci = bi;
@@ -2167,29 +2190,55 @@ z3::expr ClipsSmtThread::getVar(std::map<std::string, z3::expr>& vars, std::stri
 
 std::string ClipsSmtThread::getCapColor(int product_id)
 {
-	if(product_id==4 || product_id==6 || product_id==8 || product_id==10){
-		return "CAP_BLACK";
-	}
-	else if(product_id==5 || product_id==7 || product_id==9 || product_id==11){
-		return "CAP_GREY";
+	// if(product_id==4 || product_id==6 || product_id==8 || product_id==10){
+	// 	return "CAP_BLACK";
+	// }
+	// else if(product_id==5 || product_id==7 || product_id==9 || product_id==11){
+	// 	return "CAP_GREY";
+	// }
+
+	std::string product_color;
+
+	switch(product_id){
+		case 1: product_color = "CAP_BLACK";
+				break;
+		case 2: product_color = "CAP_GREY";
+				break;
+		default: product_color = "EMPTY";
+				break;
 	}
 
-	return "empty";
+	return product_color;
 }
 
 std::string ClipsSmtThread::getBaseColor(int product_id)
 {
-	if(product_id==1 || product_id==4 || product_id==5){
-		return "BASE_RED";
-	}
-	else if(product_id==2 || product_id==6 || product_id==7){
-		return "BASE_BLACK";
-	}
-	else if(product_id==3 || product_id==8 || product_id==9){
-		return "BASE_SILVER";
+	// if(product_id==1 || product_id==4 || product_id==5){
+	// 	return "BASE_RED";
+	// }
+	// else if(product_id==2 || product_id==6 || product_id==7){
+	// 	return "BASE_BLACK";
+	// }
+	// else if(product_id==3 || product_id==8 || product_id==9){
+	// 	return "BASE_SILVER";
+	// }
+	//
+	// return "empty";
+
+	std::string product_color;
+
+	switch(product_id){
+		case 1: product_color = "BASE_RED";
+				break;
+		case 2: product_color = "BASE_BLACK";
+				break;
+		case 3: product_color = "BASE_SILVER";
+				break;
+		default: product_color = "EMPTY";
+				break;
 	}
 
-	return "empty";
+	return product_color;
 }
 
 void ClipsSmtThread::initShelf()
