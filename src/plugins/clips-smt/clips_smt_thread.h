@@ -166,8 +166,8 @@ private:
 	const int min_machine_groups = 0, max_machine_groups = 2;
 
 	std::map<int, std::string> actions;
-	std::map<int, std::string> orders_base;
-	std::map<int, std::string> orders_cap;
+	std::map<int, int> orders_base;
+	std::map<int, int> orders_cap;
 
 	// Visualization of computed plan
 	std::map<int , float> model_times;
