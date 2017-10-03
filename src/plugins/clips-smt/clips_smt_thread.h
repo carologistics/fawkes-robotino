@@ -128,14 +128,14 @@ private:
 	std::map<int ,std::string> actions_robot_3;
 
 	// Constants for C0-C1
-	const int number_final_action_c0 = 11;
+	const int number_final_action_c0 = 6;
 	const int number_final_macroaction_c0 = 15;
 	const int number_final_action_c1 = 18;
-	const int number_max_required_actions_c0 = 11;
+	const int number_max_required_actions_c0 = 6;
 	const int number_min_required_actions_c0 = number_max_required_actions_c0;//4;
 	const int number_required_actions_c1 = 14;
 
-	const int number_total_action_c0 = 11;//16;
+	const int number_total_action_c0 = 6;//16;
 
 	const int deadline = 900;
 	const int time_to_prep = 5;

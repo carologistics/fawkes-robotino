@@ -122,17 +122,26 @@ ClipsSmtThread::init()
 	machine_groups["BS"]=1;
 	machine_groups["DS"]=2;
 
-	actions[1] = "|R|CSS|>>BRC|";
-	actions[2] = "|P|CS|BRC>>|";
-	actions[3] = "|F|CS|>BRC>|";
-	actions[4] = "|P|CS|B>C>|";
-	actions[5] = "|F|CS|>B+C>";
-	actions[6] = "|R|BS|>>B|";
-	actions[7] = "|P|BS|B>>|";
-	actions[8] = "|R|CS|>C>BR|";
-	actions[9] = "|R|CS|>>BC|";
-	actions[10] = "|P|DS|BC>>|";
-	actions[11] = "|F|DS|>BC>|";
+	// MACRO ACTIONS
+	actions[1] = "|R|CSS|>>BRC| |P|CS|BRC>>| |F|CS|>BRC>|";
+	actions[2] = "|R|CS|>C>BR|";
+	actions[3] = "|P|BS|B>>| |R|BS|>>B|";
+	actions[4] = "|P|CS|B>C>| |F|CS|>B+C>|";
+	actions[5] = "|R|CS|>>BC|";
+	actions[6] = "|P|DS|BC>>| |F|DS|>BC>|";
+
+	// PURE ACTIONS
+	// actions[1] = "|R|CSS|>>BRC|";
+	// actions[2] = "|P|CS|BRC>>|";
+	// actions[3] = "|F|CS|>BRC>|";
+	// actions[4] = "|P|CS|B>C>|";
+	// actions[5] = "|F|CS|>B+C>";
+	// actions[6] = "|R|BS|>>B|";
+	// actions[7] = "|P|BS|B>>|";
+	// actions[8] = "|R|CS|>C>BR|";
+	// actions[9] = "|R|CS|>>BC|";
+	// actions[10] = "|P|DS|BC>>|";
+	// actions[11] = "|F|DS|>BC>|";
 
 	// TODO read from protobuf
 	lower_bounds_c0[0] = 0;
@@ -243,8 +252,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 	// Loop through model_actions
 	for(unsigned int i=0; i<model_actions.size(); ++i){
 		switch(model_actions[i]){
-			case 1:		// Get black cap with cap carrier from shelf of corresponding C-CS
-					// Move action and get from shelf?
+			case 1:	// Actions 1,2,3
 					action = plan->add_actions();
 					action->set_name("move");
 					param = action->add_params();
@@ -260,14 +268,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("shelf");
 					param->set_value("TRUE");
 
-					break;
-			case 2:		// Prepare corresponding C-CS to hold black cap with cap carrier
-					action = plan->add_actions();
-					action->set_name("move");
-					param = action->add_params();
-					param->set_key("to");
-					param->set_value(node_names_[model_positions[i]]);
-
 					action = plan->add_actions();
 					action->set_name("prepare");
 					param = action->add_params();
@@ -276,13 +276,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("operation");
 					param->set_value("RETRIEVE_CAP");
-					break;
-			case 3:		// Put black cap with cap carrier into corresponding C-CS
-					action = plan->add_actions();
-					action->set_name("move");
-					param = action->add_params();
-					param->set_key("to");
-					param->set_value(node_names_[model_positions[i]]);
 
 					action = plan->add_actions();
 					action->set_name("feed");
@@ -290,66 +283,8 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 					break;
-			case 4:		// Prepare corresponding C-CS to mount red base with black cap
-					action = plan->add_actions();
-					action->set_name("move");
-					param = action->add_params();
-					param->set_key("to");
-					param->set_value(node_names_[model_positions[i]]);
 
-					action = plan->add_actions();
-					action->set_name("prepare");
-					param = action->add_params();
-					param->set_key("mps");
-					param->set_value(node_names_[model_positions[i]]);
-					param = action->add_params();
-					param->set_key("operation");
-					param->set_value("MOUNT_CAP");
-					break;
-			case 5:		// Put red base into corresponding C-CS
-					action = plan->add_actions();
-					action->set_name("move");
-					param = action->add_params();
-					param->set_key("to");
-					param->set_value(node_names_[model_positions[i]]);
-
-					action = plan->add_actions();
-					action->set_name("feed");
-					param = action->add_params();
-					param->set_key("mps");
-					param->set_value(node_names_[model_positions[i]]);
-					break;
-			case 6:		// Get red base from C-BS-O
-					action = plan->add_actions();
-					action->set_name("move");
-					param = action->add_params();
-					param->set_key("to");
-					param->set_value("C-BS-O");
-
-					action = plan->add_actions();
-					action->set_name("retrieve");
-					param = action->add_params();
-					param->set_key("mps");
-					param->set_value("C-BS-O");
-					break;
-			case 7:		// Prepare C-BS to output red base
-					action = plan->add_actions();
-					action->set_name("move");
-					param = action->add_params();
-					param->set_key("to");
-					param->set_value("C-BS-O");
-
-					action = plan->add_actions();
-					action->set_name("prepare");
-					param = action->add_params();
-					param->set_key("mps");
-					param->set_value("C-BS-O");
-					param = action->add_params();
-					param->set_key("color");
-					param->set_value(getBaseColor(orders_base[(model_actions[i]-1)/number_max_required_actions_c0]));
-					break;
-			case 8:		// Discard cap carrier from corresponding C-CS output
-					// Move to output side, get cap carrier and discard via opening gripper
+			case 2:	// Action 8
 					action = plan->add_actions();
 					action->set_name("move");
 					param = action->add_params();
@@ -365,7 +300,54 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action = plan->add_actions();
 					action->set_name("discard");
 					break;
-			case 9:		// Get product red_base_black_cap at corresponding C-CS output
+
+			case 3:	// Action 7,6
+					action = plan->add_actions();
+					action->set_name("move");
+					param = action->add_params();
+					param->set_key("to");
+					param->set_value("C-BS-O");
+
+					action = plan->add_actions();
+					action->set_name("prepare");
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value("C-BS-O");
+					param = action->add_params();
+					param->set_key("color");
+					param->set_value(getBaseColor(orders_base[(model_actions[i]-1)/number_max_required_actions_c0]));
+
+					action = plan->add_actions();
+					action->set_name("retrieve");
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value("C-BS-O");
+					break;
+
+			case 4:	// Action 4,5
+					action = plan->add_actions();
+					action->set_name("move");
+					param = action->add_params();
+					param->set_key("to");
+					param->set_value(node_names_[model_positions[i]]);
+
+					action = plan->add_actions();
+					action->set_name("prepare");
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
+					param->set_key("operation");
+					param->set_value("MOUNT_CAP");
+
+					action = plan->add_actions();
+					action->set_name("feed");
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value(node_names_[model_positions[i]]);
+					break;
+
+			case 9:	// Action 9
 					action = plan->add_actions();
 					action->set_name("move");
 					param = action->add_params();
@@ -378,7 +360,8 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 					break;
-			case 10:	// Prepare C-DS to receive product red_base_black_cap
+
+			case 10:	// Action 10,11
 					action = plan->add_actions();
 					action->set_name("move");
 					param = action->add_params();
@@ -393,13 +376,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("gate");
 					param->set_value("1");
-					break;
-			case 11:	// Put product red_base_black_cap into C-DS-I
-					action = plan->add_actions();
-					action->set_name("move");
-					param = action->add_params();
-					param->set_key("to");
-					param->set_value("C-DS-I");
 
 					action = plan->add_actions();
 					action->set_name("feed");
@@ -1062,9 +1038,91 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			std::string slide_one_prep_bi_ci = "slide_one_prep_";
 			slide_one_prep_bi_ci += bi_ci;
 
+			// Macroactions to combine prepare and operation
+			// 1.Macroaction: Prepare CapStation for Retrieve [1,2,3]
+			z3::expr constraint_macroaction1((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
+										&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines["not_prep"])
+										&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines["not_prep"])
+										&& (getVar(varS, "state2A_"+std::to_string(i)) == state2_machines["empty"])
+										&& (getVar(varS, "state2B_"+std::to_string(i)) == state2_machines[has_ci])
+										&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines["empty"])
+										&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines["full"])
+										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_fetch+time_to_prep+time_to_feed)
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
+										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
+										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
+										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (1 + o*number_total_action_c0)) || constraint_macroaction1);
+
+			// 2.Macroaction : discard capless base from CS [8]
+			z3::expr constraint_macroaction2((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
+										&& (getVar(varS, "state1A_"+std::to_string(i)) == getVar(varS, "state1B_"+std::to_string(i)))
+										&& (getVar(varS, "state2A_"+std::to_string(i)) == state2_machines[has_ci])
+										&& (getVar(varS, "state2B_"+std::to_string(i)) == state2_machines[has_ci])
+										&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines["full"])
+										&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines["empty"])
+										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_disc)
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_output[ci]])
+										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
+										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
+										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (2 + o*number_total_action_c0)) || constraint_macroaction2);
+
+			// 3.Macroaction : Get Base from BaseStation [7,6]
+			z3::expr constraint_macroaction3((getVar(varM, "M_"+std::to_string(i)) == machine_groups["BS"])
+										&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines["not_prep"])
+										&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines["not_prep"])
+										&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
+										&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
+										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep+time_to_fetch)
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-BS-I"])
+										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
+										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products[bi])
+										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (3 + o*number_total_action_c0)) || constraint_macroaction3);
+
+			// 4.Macroaction : Prepare CapStation for Mount [4,5]
+			z3::expr constraint_macroaction4((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
+										&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines["not_prep"])
+										&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines["not_prep"])
+										&& (getVar(varS, "state2A_"+std::to_string(i)) == state2_machines[has_ci])
+										&& (getVar(varS, "state2B_"+std::to_string(i)) == state2_machines["empty"])
+										&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines["empty"])
+										&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines[bi_ci])
+										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep+time_to_feed)
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
+										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[bi])
+										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
+										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (4 + o*number_total_action_c0)) || constraint_macroaction4);
+
+			// 5.Action : retrieve base with cap from CS [9]
+			z3::expr constraint_macroaction5((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
+									&& (getVar(varS, "state1A_"+std::to_string(i)) == getVar(varS, "state1B_"+std::to_string(i)))
+									&& (getVar(varS, "state2A_"+std::to_string(i)) == state2_machines["empty"])
+									&& (getVar(varS, "state2B_"+std::to_string(i)) == state2_machines["empty"])
+									&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines[bi_ci])
+									&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines["empty"])
+									&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_fetch)
+									&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_output[ci]])
+									&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
+									&& (getVar(varHold, "holdB_"+std::to_string(i)) == products[bi_ci])
+									&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (5 + o*number_total_action_c0)) || constraint_macroaction5);
+
+			// 6.Macroaction : Deliver product [10,11]
+			z3::expr constraint_macroaction6((getVar(varM, "M_"+std::to_string(i)) == machine_groups["DS"])
+										&& (getVar(varS, "state1B_"+std::to_string(i)) == getVar(varS, "state1A_"+std::to_string(i)))
+										&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
+										&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
+										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep+time_to_prep)
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-DS-I"])
+										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[bi_ci])
+										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
+										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (6 + o*number_total_action_c0)) || constraint_macroaction6);
 
 			// Macroactions to combine pure actions
-
 			// // 1.Macroaction: Prepare CapStation for Base input [1,2,3,8,4]
 			// z3::expr constraint_macroaction1((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
 			// 							&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines["not_prep"])
@@ -1135,152 +1193,154 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			// 							&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
 			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (16 + o*number_total_action_c0)) || constraint_macroaction5);
 
-			// 1.Action : retrieve base with cap from shelf at CS
-			z3::expr constraint_action1((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
-										&& (getVar(varS, "state1B_"+std::to_string(i)) == getVar(varS, "state1A_"+std::to_string(i)))
-										&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
-										&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
-										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_fetch)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
-										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
-										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products[br_ci])
-										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (1 + o*number_total_action_c0)) || constraint_action1);
+			// PURE ACTIONS
 
-			// 2.Action : prepare CS to retrieve cap
-			z3::expr constraint_action2((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
-										&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines["not_prep"])
-										&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines[retrieve_ci])
-										&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
-										&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
-										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
-										&& (getVar(varHold, "holdA_"+std::to_string(i)) == getVar(varHold, "holdB_"+std::to_string(i)))
-										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (2 + o*number_total_action_c0)) || constraint_action2);
-
-			// 3.Action : feed base with cap into CS
-			z3::expr constraint_action3((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
-										&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines[retrieve_ci])
-										&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines["not_prep"])
-										&& (getVar(varS, "state2A_"+std::to_string(i)) == state2_machines["empty"])
-										&& (getVar(varS, "state2B_"+std::to_string(i)) == state2_machines[has_ci])
-										&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines["empty"])
-										&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines["full"])
-										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_feed)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
-										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[br_ci])
-										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
-										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (3 + o*number_total_action_c0)) || constraint_action3);
-
-			// 4.Action : prepare CS to mount cap
-			z3::expr constraint_action4((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
-										&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines["not_prep"])
-										&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines[mount_ci])
-										&& (getVar(varS, "state2A_"+std::to_string(i)) == state2_machines[has_ci])
-										&& (getVar(varS, "state2B_"+std::to_string(i)) == state2_machines[has_ci])
-										&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines["empty"])
-										&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines["empty"])
-										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
-										&& (getVar(varHold, "holdA_"+std::to_string(i)) == getVar(varHold, "holdB_"+std::to_string(i)))
-										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (4 + o*number_total_action_c0)) || constraint_action4);
-
-			// 5.Action : feed base to CS to mount cap
-			z3::expr constraint_action5((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
-										&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines[mount_ci])
-										&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines["not_prep"])
-										&& (getVar(varS, "state2A_"+std::to_string(i)) == state2_machines[has_ci])
-										&& (getVar(varS, "state2B_"+std::to_string(i)) == state2_machines["empty"])
-										&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines["empty"])
-										&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines[bi_ci])
-										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_feed)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
-										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[bi])
-										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
-										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (5 + o*number_total_action_c0)) || constraint_action5);
-
-			// 6.Action : retrieve base from BS
-			z3::expr constraint_action6((getVar(varM, "M_"+std::to_string(i)) == machine_groups["BS"])
-										&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines[prep_bi])
-										&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines["not_prep"])
-										&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
-										&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
-										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_fetch)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-BS-I"])
-										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
-										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products[bi])
-										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (6 + o*number_total_action_c0)) || constraint_action6);
-
-			// 7.Action : prepare BS to provide base
-			z3::expr constraint_action7((getVar(varM, "M_"+std::to_string(i)) == machine_groups["BS"])
-										&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines["not_prep"])
-										&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines[prep_bi])
-										&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
-										&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
-										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-BS-I"])
-										&& (getVar(varHold, "holdA_"+std::to_string(i)) == getVar(varHold, "holdB_"+std::to_string(i)))
-										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (7 + o*number_total_action_c0)) || constraint_action7);
-
-			// 8.Action : discard capless base from CS
-			z3::expr constraint_action8((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
-										&& (getVar(varS, "state1A_"+std::to_string(i)) == getVar(varS, "state1B_"+std::to_string(i)))
-										&& (getVar(varS, "state2A_"+std::to_string(i)) == state2_machines[has_ci])
-										&& (getVar(varS, "state2B_"+std::to_string(i)) == state2_machines[has_ci])
-										&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines["full"])
-										&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines["empty"])
-										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_disc)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_output[ci]])
-										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
-										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
-										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (8 + o*number_total_action_c0)) || constraint_action8);
-
-			// 9.Action : retrieve base with cap from CS
-			z3::expr constraint_action9((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
-										&& (getVar(varS, "state1A_"+std::to_string(i)) == getVar(varS, "state1B_"+std::to_string(i)))
-										&& (getVar(varS, "state2A_"+std::to_string(i)) == state2_machines["empty"])
-										&& (getVar(varS, "state2B_"+std::to_string(i)) == state2_machines["empty"])
-										&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines[bi_ci])
-										&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines["empty"])
-										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_fetch)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_output[ci]])
-										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
-										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products[bi_ci])
-										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (9 + o*number_total_action_c0)) || constraint_action9);
-
-			// 10.Action : prepare DS for slide specified order
-			z3::expr constraint_action10((getVar(varM, "M_"+std::to_string(i)) == machine_groups["DS"])
-										&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines["not_prep"])
-										&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines[slide_one_prep_bi_ci])
-										&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
-										&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
-										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-DS-I"])
-										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[bi_ci])
-										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products[bi_ci])
-										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (10 + o*number_total_action_c0)) || constraint_action10);
-
-			// 11.Action : deliver to DS
-			z3::expr constraint_action11((getVar(varM, "M_"+std::to_string(i)) == machine_groups["DS"])
-										&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines[slide_one_prep_bi_ci])
-										&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines["not_prep"])
-										&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
-										&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
-										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-DS-I"])
-										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[bi_ci])
-										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
-										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (11 + o*number_total_action_c0)) || constraint_action11);
+			// // 1.Action : retrieve base with cap from shelf at CS
+			// z3::expr constraint_action1((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
+			// 							&& (getVar(varS, "state1B_"+std::to_string(i)) == getVar(varS, "state1A_"+std::to_string(i)))
+			// 							&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
+			// 							&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
+			// 							&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_fetch)
+			// 							&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
+			// 							&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
+			// 							&& (getVar(varHold, "holdB_"+std::to_string(i)) == products[br_ci])
+			// 							&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (1 + o*number_total_action_c0)) || constraint_action1);
+			//
+			// // 2.Action : prepare CS to retrieve cap
+			// z3::expr constraint_action2((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
+			// 							&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines["not_prep"])
+			// 							&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines[retrieve_ci])
+			// 							&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
+			// 							&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
+			// 							&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep)
+			// 							&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
+			// 							&& (getVar(varHold, "holdA_"+std::to_string(i)) == getVar(varHold, "holdB_"+std::to_string(i)))
+			// 							&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (2 + o*number_total_action_c0)) || constraint_action2);
+			//
+			// // 3.Action : feed base with cap into CS
+			// z3::expr constraint_action3((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
+			// 							&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines[retrieve_ci])
+			// 							&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines["not_prep"])
+			// 							&& (getVar(varS, "state2A_"+std::to_string(i)) == state2_machines["empty"])
+			// 							&& (getVar(varS, "state2B_"+std::to_string(i)) == state2_machines[has_ci])
+			// 							&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines["empty"])
+			// 							&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines["full"])
+			// 							&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_feed)
+			// 							&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
+			// 							&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[br_ci])
+			// 							&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
+			// 							&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (3 + o*number_total_action_c0)) || constraint_action3);
+			//
+			// // 4.Action : prepare CS to mount cap
+			// z3::expr constraint_action4((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
+			// 							&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines["not_prep"])
+			// 							&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines[mount_ci])
+			// 							&& (getVar(varS, "state2A_"+std::to_string(i)) == state2_machines[has_ci])
+			// 							&& (getVar(varS, "state2B_"+std::to_string(i)) == state2_machines[has_ci])
+			// 							&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines["empty"])
+			// 							&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines["empty"])
+			// 							&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep)
+			// 							&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
+			// 							&& (getVar(varHold, "holdA_"+std::to_string(i)) == getVar(varHold, "holdB_"+std::to_string(i)))
+			// 							&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (4 + o*number_total_action_c0)) || constraint_action4);
+			//
+			// // 5.Action : feed base to CS to mount cap
+			// z3::expr constraint_action5((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
+			// 							&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines[mount_ci])
+			// 							&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines["not_prep"])
+			// 							&& (getVar(varS, "state2A_"+std::to_string(i)) == state2_machines[has_ci])
+			// 							&& (getVar(varS, "state2B_"+std::to_string(i)) == state2_machines["empty"])
+			// 							&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines["empty"])
+			// 							&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines[bi_ci])
+			// 							&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_feed)
+			// 							&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_input[ci]])
+			// 							&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[bi])
+			// 							&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
+			// 							&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (5 + o*number_total_action_c0)) || constraint_action5);
+			//
+			// // 6.Action : retrieve base from BS
+			// z3::expr constraint_action6((getVar(varM, "M_"+std::to_string(i)) == machine_groups["BS"])
+			// 							&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines[prep_bi])
+			// 							&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines["not_prep"])
+			// 							&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
+			// 							&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
+			// 							&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_fetch)
+			// 							&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-BS-I"])
+			// 							&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
+			// 							&& (getVar(varHold, "holdB_"+std::to_string(i)) == products[bi])
+			// 							&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (6 + o*number_total_action_c0)) || constraint_action6);
+			//
+			// // 7.Action : prepare BS to provide base
+			// z3::expr constraint_action7((getVar(varM, "M_"+std::to_string(i)) == machine_groups["BS"])
+			// 							&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines["not_prep"])
+			// 							&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines[prep_bi])
+			// 							&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
+			// 							&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
+			// 							&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep)
+			// 							&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-BS-I"])
+			// 							&& (getVar(varHold, "holdA_"+std::to_string(i)) == getVar(varHold, "holdB_"+std::to_string(i)))
+			// 							&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (7 + o*number_total_action_c0)) || constraint_action7);
+			//
+			// // 8.Action : discard capless base from CS
+			// z3::expr constraint_action8((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
+			// 							&& (getVar(varS, "state1A_"+std::to_string(i)) == getVar(varS, "state1B_"+std::to_string(i)))
+			// 							&& (getVar(varS, "state2A_"+std::to_string(i)) == state2_machines[has_ci])
+			// 							&& (getVar(varS, "state2B_"+std::to_string(i)) == state2_machines[has_ci])
+			// 							&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines["full"])
+			// 							&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines["empty"])
+			// 							&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_disc)
+			// 							&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_output[ci]])
+			// 							&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
+			// 							&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
+			// 							&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (8 + o*number_total_action_c0)) || constraint_action8);
+			//
+			// // 9.Action : retrieve base with cap from CS
+			// z3::expr constraint_action9((getVar(varM, "M_"+std::to_string(i)) == machine_groups["CS"])
+			// 							&& (getVar(varS, "state1A_"+std::to_string(i)) == getVar(varS, "state1B_"+std::to_string(i)))
+			// 							&& (getVar(varS, "state2A_"+std::to_string(i)) == state2_machines["empty"])
+			// 							&& (getVar(varS, "state2B_"+std::to_string(i)) == state2_machines["empty"])
+			// 							&& (getVar(varS, "state3A_"+std::to_string(i)) == state3_machines[bi_ci])
+			// 							&& (getVar(varS, "state3B_"+std::to_string(i)) == state3_machines["empty"])
+			// 							&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_fetch)
+			// 							&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[caps_and_colors_output[ci]])
+			// 							&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
+			// 							&& (getVar(varHold, "holdB_"+std::to_string(i)) == products[bi_ci])
+			// 							&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (9 + o*number_total_action_c0)) || constraint_action9);
+			//
+			// // 10.Action : prepare DS for slide specified order
+			// z3::expr constraint_action10((getVar(varM, "M_"+std::to_string(i)) == machine_groups["DS"])
+			// 							&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines["not_prep"])
+			// 							&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines[slide_one_prep_bi_ci])
+			// 							&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
+			// 							&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
+			// 							&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep)
+			// 							&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-DS-I"])
+			// 							&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[bi_ci])
+			// 							&& (getVar(varHold, "holdB_"+std::to_string(i)) == products[bi_ci])
+			// 							&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (10 + o*number_total_action_c0)) || constraint_action10);
+			//
+			// // 11.Action : deliver to DS
+			// z3::expr constraint_action11((getVar(varM, "M_"+std::to_string(i)) == machine_groups["DS"])
+			// 							&& (getVar(varS, "state1A_"+std::to_string(i)) == state1_machines[slide_one_prep_bi_ci])
+			// 							&& (getVar(varS, "state1B_"+std::to_string(i)) == state1_machines["not_prep"])
+			// 							&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
+			// 							&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
+			// 							&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep)
+			// 							&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-DS-I"])
+			// 							&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[bi_ci])
+			// 							&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
+			// 							&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == (11 + o*number_total_action_c0)) || constraint_action11);
 		}
 	}
 
