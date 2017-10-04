@@ -308,8 +308,9 @@
 								(printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
 							)
 						)
-						(bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-						(assert (step (name drive-to) (id (+ ?task-id ?ai))	(machine ?to) (side ?side)))
+            (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+						(bind ?steps (append$ ?steps ?next-step-id))
+						(assert (step (name drive-to) (id ?next-step-id)	(machine ?to) (side ?side)))
             (printout t "Action Added: Driving to " ?to " at " ?side crlf)
 					)
 
@@ -336,8 +337,9 @@
             (if (and (neq ?shelf "FALSE")
                        (any-factp ((?machine machine)) (and (eq ?machine:name (string-to-field ?mps))  (eq ?machine:mtype CS)))  )
             then
-              (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-              (assert (step (name get-from-shelf) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (machine-feature SHELF)))
+              (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+						  (bind ?steps (append$ ?steps ?next-step-id))
+              (assert (step (name get-from-shelf) (id ?next-step-id) (machine ?mps) (side ?side) (machine-feature SHELF)))
               (printout t "Action Added: Retrieving from" ?mps " at " ?side "shelf" ?shelf crlf)
             else
               (printout t "Wrong Parameters passed to retrive_shelf Action (mps:" ?mps "side:" ?side "shelf:" ?shelf ")" crlf)
@@ -359,12 +361,14 @@
             )
             (if (any-factp ((?machine machine)) (and (eq ?machine:name (string-to-field ?mps))  (eq ?machine:mtype BS)))
               then
-              (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-              (assert (step (name get-base) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (base RED) )) ;MAGNOTE_ Set the corect base color according to the goal
+              (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+						  (bind ?steps (append$ ?steps ?next-step-id))
+              (assert (step (name get-base) (id ?next-step-id) (machine ?mps) (side ?side) (base RED) )) ;MAGNOTE_ Set the corect base color according to the goal
               (printout t "Action Added: Retrieving Base from" ?mps " at " ?side "Base-Color" RED crlf)
               else
-              (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-              (assert (step (name get-output) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (machine-feature CONVEYOR) ))
+              (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+					   	(bind ?steps (append$ ?steps ?next-step-id))
+              (assert (step (name get-output) (id ?next-step-id) (machine ?mps) (side ?side) (machine-feature CONVEYOR) ))
               (printout t "Action Added: Retrieving Output from" ?mps "side:" ?side ")" crlf)
 
             )
@@ -383,14 +387,16 @@
                 (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
               )
             )
-            (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-            (assert (step (name insert) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (already-at-mps FALSE) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
+            (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+						(bind ?steps (append$ ?steps ?next-step-id))
+            (assert (step (name insert) (id ?next-step-id) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (already-at-mps FALSE) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
             (printout t "Actions Added: Brining Product to" ?mps " at " ?side crlf)
           )
           ;ACTION:::::Discard::::::
           (case "discard" then
-            (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-            (assert (step (name discard) (id (+ ?task-id ?ai))  ))
+            (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+						(bind ?steps (append$ ?steps ?next-step-id))
+            (assert (step (name discard) (id ?next-step-id)  ))
             (printout t "Actions Added: discarding Product to" crlf)
           )
           ;ACTION:::::PREPARE::::::
@@ -414,22 +420,26 @@
                 (if (eq (pb-field-value ?arg "key") "operation") then
                   (bind ?operation (pb-field-value ?arg "value"))
         				  (if (eq ?operation "RETRIEVE_CAP") then
-                    (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-        				 	  (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (cs-operation RETRIEVE_CAP) ))
+                    (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+						        (bind ?steps (append$ ?steps ?next-step-id))
+        				 	  (assert (step (name instruct-mps) (id ?next-step-id) (machine ?mps) (side ?side) (cs-operation RETRIEVE_CAP) ))
         				  else
-                    (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-                    (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (cs-operation MOUNT_CAP) ))
+                    (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+						        (bind ?steps (append$ ?steps ?next-step-id))
+                    (assert (step (name instruct-mps) (id ?next-step-id) (machine ?mps) (side ?side) (cs-operation MOUNT_CAP) ))
         				  )
                 else
                   (if (eq (pb-field-value ?arg "key") "color") then
                     (bind ?base-color (utils-remove-prefix (pb-field-value ?arg "value") BASE_))
-                    (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-                    (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (base ?base-color) ))
+                    (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+						        (bind ?steps (append$ ?steps ?next-step-id))
+                    (assert (step (name instruct-mps) (id ?next-step-id) (machine ?mps) (side ?side) (base ?base-color) ))
                   else
                     (if (eq (pb-field-value ?arg "key") "gate") then
                       (bind ?gate (string-to-field (pb-field-value ?arg "value")))
-                      (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-		                  (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (gate ?gate) ))
+                      (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+						          (bind ?steps (append$ ?steps ?next-step-id))
+		                  (assert (step (name instruct-mps) (id ?next-step-id) (machine ?mps) (side ?side) (gate ?gate) ))
                     else
                       (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
                     )
