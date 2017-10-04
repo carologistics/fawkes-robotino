@@ -87,7 +87,7 @@
 ; 	(pb-destroy ?ap)
 ; )
 
-(deffunction smt-create-data (?robots ?addrobots ?machines ?orders ?productcolors)
+(deffunction smt-create-data (?robots ?addrobots ?machines ?orders)
 	(bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
 	(foreach ?r ?robots
 		(pb-add-list ?p "robots" ?r)
@@ -101,9 +101,9 @@
 	(foreach ?o ?orders
 		(pb-add-list ?p "orders" ?o)
 	)
-	(foreach ?pc ?productcolors
-		(pb-add-list ?p "orders" ?pc)
-	)
+	; (foreach ?pc ?productcolors
+	; 	(pb-add-list ?p "orders" ?pc)
+	; )
 	(printout t "Proto:" (pb-tostring ?p) crlf)
 	(return ?p)
 )
@@ -159,7 +159,7 @@
 	(return ?rv)
 )
 
-(deffunction smt-create-order (?id ?gate ?complexity ?q-req ?q-del ?begin ?end ?team-color)
+(deffunction smt-create-order (?id ?product-id ?gate ?complexity ?q-req ?q-del ?begin ?end ?team-color)
   (bind ?o (pb-create "llsf_msgs.Order"))
 	(pb-set-field ?o "id" ?id)
 	(pb-set-field ?o "delivery_gate" ?gate)
@@ -173,59 +173,87 @@
 	)
 	(pb-set-field ?o "delivery_period_begin" ?begin)
 	(pb-set-field ?o "delivery_period_end" ?end)
-	(return ?o)
+	
+  (do-for-fact ((?product product)) (eq ?product:id ?product-id)
+    (bind ?rlist (create$))
+    (progn$ (?r ?product:rings)
+      (switch ?r
+        (case GREEN then (bind ?rlist (append$ ?rlist "RING_GREEN")))
+        (case BLUE then (bind ?rlist (append$ ?rlist "RING_BLUE")))
+        (case ORANGE then (bind ?rlist (append$ ?rlist "RING_ORANGE")))
+        (case YELLOW then (bind ?rlist (append$ ?rlist "RING_YELLOW")))
+        (default (printout warn "Ring color not found" crlf))
+      )
+    )
+    (foreach ?rings ?rlist
+     (pb-add-list ?o "ring_colors" ?rings)
+    )
+    (switch ?product:cap
+      (case BLACK then (pb-set-field ?o "cap_color" "CAP_BLACK"))
+      (case GREY then (pb-set-field ?o "cap_color" "CAP_GREY"))
+      (default (printout warn "Cap color not found" crlf))
+    )
+    (switch ?product:base
+      (case BLACK then (pb-set-field ?o "base_color" "BASE_BLACK"))
+      (case RED then (pb-set-field ?o "base_color" "BASE_RED"))
+      (case SILVER then (pb-set-field ?o "base_color" "BASE_SILVER"))
+      (default (printout warn "Base color not found" crlf))
+    ) 
+  )
+
+  (return ?o)
 )
 
 (deffunction smt-create-orders (?team-color)
 	(bind ?rv (create$))
 	(do-for-all-facts ((?o order)) TRUE
-		(bind ?rv (append$ ?rv (smt-create-order ?o:id ?o:delivery-gate ?o:complexity ?o:quantity-requested ?o:quantity-delivered ?o:begin ?o:end ?team-color)))
+		(bind ?rv (append$ ?rv (smt-create-order ?o:id ?o:product-id ?o:delivery-gate ?o:complexity ?o:quantity-requested ?o:quantity-delivered ?o:begin ?o:end ?team-color)))
 	)
 	(return ?rv)
 )
 
-(deffunction smt-create-order-productcolors (?rcolor ?ccolor ?bcolor ?team-color)
-	(bind ?o (pb-create "llsf_msgs.Order"))
-	(bind ?rlist (create$))
-  (progn$ (?r ?rcolor)
-	(switch ?r
-		(case GREEN then (bind ?rlist (append$ ?rlist "RING_GREEN")))
-	  (case BLUE then (bind ?rlist (append$ ?rlist "RING_BLUE")))
-		(case ORANGE then (bind ?rlist (append$ ?rlist "RING_ORANGE")))
-		(case YELLOW then (bind ?rlist (append$ ?rlist "RING_YELLOW")))
-		(default (printout warn "Ring color not found" crlf))
-	)
-	)
-	(foreach ?rings ?rlist
-	 (pb-add-list ?o "ring_colors" ?rings)
-	)
-  (switch ?ccolor
-	  (case BLACK then (pb-set-field ?o "cap_color" "CAP_BLACK"))
-	  (case GREY then (pb-set-field ?o "cap_color" "CAP_GREY"))
-		(default (printout warn "Cap color not found" crlf))
-	)
-  (switch ?bcolor
-		(case BLACK then (pb-set-field ?o "base_color" "BASE_BLACK"))
-	  (case RED then (pb-set-field ?o "base_color" "BASE_RED"))
-		(case SILVER then (pb-set-field ?o "base_color" "BASE_SILVER"))
-		(default (printout warn "Base color not found" crlf))
-	)
-  (return ?o)
-)
-;MAg Notes:
-; This is totally wrong..Each order is sent in 2 llsf.Order msgs.
-; One that has everything but the porduct color speceficationa dn
-; the other has only the colors (without even relating to an ID).
-; Furhtermore, This function creats an order msg for all product facts in the db
-; (Even thought this does not really have to be the case, Product means than one thing)
+; (deffunction smt-create-order-productcolors (?rcolor ?ccolor ?bcolor ?team-color)
+; 	(bind ?o (pb-create "llsf_msgs.Order"))
+; 	(bind ?rlist (create$))
+;   (progn$ (?r ?rcolor)
+; 	(switch ?r
+; 		(case GREEN then (bind ?rlist (append$ ?rlist "RING_GREEN")))
+; 	  (case BLUE then (bind ?rlist (append$ ?rlist "RING_BLUE")))
+; 		(case ORANGE then (bind ?rlist (append$ ?rlist "RING_ORANGE")))
+; 		(case YELLOW then (bind ?rlist (append$ ?rlist "RING_YELLOW")))
+; 		(default (printout warn "Ring color not found" crlf))
+; 	)
+; 	)
+; 	(foreach ?rings ?rlist
+; 	 (pb-add-list ?o "ring_colors" ?rings)
+; 	)
+;   (switch ?ccolor
+; 	  (case BLACK then (pb-set-field ?o "cap_color" "CAP_BLACK"))
+; 	  (case GREY then (pb-set-field ?o "cap_color" "CAP_GREY"))
+; 		(default (printout warn "Cap color not found" crlf))
+; 	)
+;   (switch ?bcolor
+; 		(case BLACK then (pb-set-field ?o "base_color" "BASE_BLACK"))
+; 	  (case RED then (pb-set-field ?o "base_color" "BASE_RED"))
+; 		(case SILVER then (pb-set-field ?o "base_color" "BASE_SILVER"))
+; 		(default (printout warn "Base color not found" crlf))
+; 	)
+;   (return ?o)
+; )
+; ;MAg Notes:
+; ; This is totally wrong..Each order is sent in 2 llsf.Order msgs.
+; ; One that has everything but the porduct color speceficationa dn
+; ; the other has only the colors (without even relating to an ID).
+; ; Furhtermore, This function creats an order msg for all product facts in the db
+; ; (Even thought this does not really have to be the case, Product means than one thing)
 
-(deffunction smt-create-orders-productcolors (?team-color)
-	(bind ?rv (create$))
-	(do-for-all-facts ((?c product)) TRUE
-		(bind ?rv (append$ ?rv (smt-create-order-productcolors ?c:rings ?c:cap ?c:base ?team-color)))
-	)
-	(return ?rv)
-)
+; (deffunction smt-create-orders-productcolors (?team-color)
+; 	(bind ?rv (create$))
+; 	(do-for-all-facts ((?c product)) TRUE
+; 		(bind ?rv (append$ ?rv (smt-create-order-productcolors ?c:rings ?c:cap ?c:base ?team-color)))
+; 	)
+; 	(return ?rv)
+; )
 
 (defrule production-call-clips-smt
   (phase PRODUCTION)
@@ -240,7 +268,7 @@
 		  (smt-create-additional-robots ?team-color)
 	    (smt-create-machines ?team-color)
 	    (smt-create-orders ?team-color)
-			(smt-create-orders-productcolors ?team-color)
+			; (smt-create-orders-productcolors ?team-color)
 	  )
 	)
 
@@ -314,7 +342,6 @@
 						(assert (step (name drive-to) (id ?next-step-id)	(machine ?to) (side ?side)))
             (printout t "Action Added: Driving to: " ?to " at: " ?side crlf)
 					)
-
           ;ACTION:::::GET FROM SHELF::::::
           (case "retrieve_shelf" then
             (bind ?mps "")
