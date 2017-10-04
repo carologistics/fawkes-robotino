@@ -333,10 +333,8 @@
             )
             (printout t "Retrieving from" ?mps " at " ?side "shelf" ?shelf crlf)
             ;Translation into Steps
-            (if (neq ?shelf "FALSE")
-              ; (and  
-              ;         (any-factp ((?machine machine)) (and (eq ?machine:name ?mps)  (eq ?machine:mtype CS)))
-              ;   )
+            (if (and (neq ?shelf "FALSE")
+                       (any-factp ((?machine machine)) (and (eq ?machine:name (string-to-field ?mps))  (eq ?machine:mtype CS)))  )
             then
               (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
               (assert (step (name get-from-shelf) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (machine-feature SHELF)))
@@ -359,16 +357,18 @@
                 (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
               )
             )
-            (printout t "Retrieving from" ?mps " at " ?side crlf)
 
             ;Translation into Steps
-            (if (any-factp ((?machine machine)) (and (eq ?machine:name ?mps)  (eq ?machine:mtype BS)))
+            (if (any-factp ((?machine machine)) (and (eq ?machine:name (string-to-field ?mps))  (eq ?machine:mtype BS)))
               then
               (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
               (assert (step (name get-base) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (base RED) )) ;MAGNOTE_ Set the corect base color according to the goal
+              (printout t "Retrieving Base from" ?mps " at " ?side "Base-Color" RED crlf)
               else
               (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
               (assert (step (name get-output) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (machine-feature CONVEYOR) ))
+              (printout t "Retrieving Output from" ?mps "side:" ?side ")" crlf)
+
             )
           )
           ;ACTION:::::FEED::::::
