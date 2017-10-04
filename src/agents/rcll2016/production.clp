@@ -432,8 +432,12 @@
                   (if (eq (pb-field-value ?arg "key") "color") then
                     (bind ?base-color (utils-remove-prefix (pb-field-value ?arg "value") BASE_))
                     (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+                    (bind ?steps (append$ ?steps ?next-step-id))
+                    (assert (step (name acquire-lock) (id ?next-step-id) (task-priority ?*PRIORITY-PREFILL-RS*) (lock PREPARE-BS))) ;is released after get-base
+                    (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 						        (bind ?steps (append$ ?steps ?next-step-id))
                     (assert (step (name instruct-mps) (id ?next-step-id) (machine ?mps) (side ?side) (base ?base-color) ))
+
                   else
                     (if (eq (pb-field-value ?arg "key") "gate") then
                       (bind ?gate (string-to-field (pb-field-value ?arg "value")))
