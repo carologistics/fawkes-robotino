@@ -420,17 +420,16 @@
                     (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
                     (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (cs-operation MOUNT_CAP) ))
         				  )
-
                 else
                   (if (eq (pb-field-value ?arg "key") "color") then
-                    (bind ?base-color (pb-field-value ?arg "value"))
+                    (bind ?base-color (utils-remove-prefix (pb-field-value ?arg "value") BASE_))
                     (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-                    (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (base RED) ))
+                    (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (base ?base-color) ))
                   else
                     (if (eq (pb-field-value ?arg "key") "gate") then
-                      (bind ?gate (pb-field-value ?arg "value"))
+                      (bind ?gate (string-to-field (pb-field-value ?arg "value")))
                       (bind ?steps (append$ ?steps (+ ?task-id ?ai)))
-		                  (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (gate 1) ))
+		                  (assert (step (name instruct-mps) (id (+ ?task-id ?ai)) (machine ?mps) (side ?side) (gate ?gate) ))
                     else
                       (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
                     )
