@@ -347,7 +347,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value(node_names_[model_positions[i]]);
 					break;
 
-			case 9:	// Action 9
+			case 5:	// Action 9
 					action = plan->add_actions();
 					action->set_name("move");
 					param = action->add_params();
@@ -361,7 +361,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value(node_names_[model_positions[i]]);
 					break;
 
-			case 10:	// Action 10,11
+			case 6:	// Action 10,11
 					action = plan->add_actions();
 					action->set_name("move");
 					param = action->add_params();
@@ -501,7 +501,7 @@ ClipsSmtThread::loop()
 	// actions_robot_fg_2.clear();
 	// actions_robot_fg_3.clear();
 
-	number_robots = 1; // data.robots().size()-1;
+	number_robots = data.robots().size()-1;
 	number_machines = 6;// data.machines().size();
 	number_orders_protobuf = data.orders().size()/2;
 	if(number_orders_protobuf==0){
