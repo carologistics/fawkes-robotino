@@ -101,9 +101,6 @@
 	(foreach ?o ?orders
 		(pb-add-list ?p "orders" ?o)
 	)
-	; (foreach ?pc ?productcolors
-	; 	(pb-add-list ?p "orders" ?pc)
-	; )
 	(printout t "Proto:" (pb-tostring ?p) crlf)
 	(return ?p)
 )
@@ -173,7 +170,7 @@
 	)
 	(pb-set-field ?o "delivery_period_begin" ?begin)
 	(pb-set-field ?o "delivery_period_end" ?end)
-	
+
   (do-for-fact ((?product product)) (eq ?product:id ?product-id)
     (bind ?rlist (create$))
     (progn$ (?r ?product:rings)
@@ -212,49 +209,6 @@
 	(return ?rv)
 )
 
-; (deffunction smt-create-order-productcolors (?rcolor ?ccolor ?bcolor ?team-color)
-; 	(bind ?o (pb-create "llsf_msgs.Order"))
-; 	(bind ?rlist (create$))
-;   (progn$ (?r ?rcolor)
-; 	(switch ?r
-; 		(case GREEN then (bind ?rlist (append$ ?rlist "RING_GREEN")))
-; 	  (case BLUE then (bind ?rlist (append$ ?rlist "RING_BLUE")))
-; 		(case ORANGE then (bind ?rlist (append$ ?rlist "RING_ORANGE")))
-; 		(case YELLOW then (bind ?rlist (append$ ?rlist "RING_YELLOW")))
-; 		(default (printout warn "Ring color not found" crlf))
-; 	)
-; 	)
-; 	(foreach ?rings ?rlist
-; 	 (pb-add-list ?o "ring_colors" ?rings)
-; 	)
-;   (switch ?ccolor
-; 	  (case BLACK then (pb-set-field ?o "cap_color" "CAP_BLACK"))
-; 	  (case GREY then (pb-set-field ?o "cap_color" "CAP_GREY"))
-; 		(default (printout warn "Cap color not found" crlf))
-; 	)
-;   (switch ?bcolor
-; 		(case BLACK then (pb-set-field ?o "base_color" "BASE_BLACK"))
-; 	  (case RED then (pb-set-field ?o "base_color" "BASE_RED"))
-; 		(case SILVER then (pb-set-field ?o "base_color" "BASE_SILVER"))
-; 		(default (printout warn "Base color not found" crlf))
-; 	)
-;   (return ?o)
-; )
-; ;MAg Notes:
-; ; This is totally wrong..Each order is sent in 2 llsf.Order msgs.
-; ; One that has everything but the porduct color speceficationa dn
-; ; the other has only the colors (without even relating to an ID).
-; ; Furhtermore, This function creats an order msg for all product facts in the db
-; ; (Even thought this does not really have to be the case, Product means than one thing)
-
-; (deffunction smt-create-orders-productcolors (?team-color)
-; 	(bind ?rv (create$))
-; 	(do-for-all-facts ((?c product)) TRUE
-; 		(bind ?rv (append$ ?rv (smt-create-order-productcolors ?c:rings ?c:cap ?c:base ?team-color)))
-; 	)
-; 	(return ?rv)
-; )
-
 (defrule production-call-clips-smt
   (phase PRODUCTION)
   (team-color ?team-color&CYAN|MAGENTA)
@@ -268,7 +222,6 @@
 		  (smt-create-additional-robots ?team-color)
 	    (smt-create-machines ?team-color)
 	    (smt-create-orders ?team-color)
-			; (smt-create-orders-productcolors ?team-color)
 	  )
 	)
 
@@ -492,8 +445,6 @@
 	)
 	(pb-destroy ?plans)
 )
-
-
 
 (defrule prod-propose-task-idle
   "If we are idle change state to the proposed task."
