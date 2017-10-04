@@ -288,6 +288,7 @@
 			(bind ?task-id (random-id))
 			(bind ?actions (pb-field-list ?p "actions"))
 			(bind ?steps (create$))
+      (bind ?goal-base-color ""); Tempratly get the goal-info from the plan (for now a static C0 production is assumed)
 
 			(loop-for-count (?ai (length$ ?actions))
 				(bind ?a (nth$ ?ai ?actions))
@@ -310,7 +311,7 @@
             (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 						(bind ?steps (append$ ?steps ?next-step-id))
 						(assert (step (name drive-to) (id ?next-step-id)	(machine ?to) (side ?side)))
-            (printout t "Action Added: Driving to " ?to " at " ?side crlf)
+            (printout t "Action Added: Driving to: " ?to " at: " ?side crlf)
 					)
 
           ;ACTION:::::GET FROM SHELF::::::
@@ -339,7 +340,7 @@
               (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 						  (bind ?steps (append$ ?steps ?next-step-id))
               (assert (step (name get-from-shelf) (id ?next-step-id) (machine ?mps) (side ?side) (machine-feature SHELF)))
-              (printout t "Action Added: Retrieving from" ?mps " at " ?side "shelf" ?shelf crlf)
+              (printout t "Action Added: Retrieving from Shelf: " ?mps " at: " ?side " shelf: " ?shelf crlf)
             else
               (printout t "Wrong Parameters passed to retrive_shelf Action (mps:" ?mps "side:" ?side "shelf:" ?shelf ")" crlf)
             )
@@ -362,13 +363,13 @@
               then
               (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 						  (bind ?steps (append$ ?steps ?next-step-id))
-              (assert (step (name get-base) (id ?next-step-id) (machine ?mps) (side ?side) (base RED) )) ;MAGNOTE_ Set the corect base color according to the goal
-              (printout t "Action Added: Retrieving Base from" ?mps " at " ?side "Base-Color" RED crlf)
+              (assert (step (name get-base) (id ?next-step-id) (machine ?mps) (side ?side) (base ?goal-base-color) )) ;MAGNOTE_ Set the corect base color according to the goal
+              (printout t "Action Added: Retrieving Base from: " ?mps " at: " ?side " Base-Color: " ?goal-base-color  crlf)
               else
               (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 					   	(bind ?steps (append$ ?steps ?next-step-id))
               (assert (step (name get-output) (id ?next-step-id) (machine ?mps) (side ?side) (machine-feature CONVEYOR) ))
-              (printout t "Action Added: Retrieving Output from" ?mps "side:" ?side ")" crlf)
+              (printout t "Action Added: Retrieving Output from: " ?mps " side: " ?side crlf)
 
             )
           )
@@ -389,14 +390,14 @@
             (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 						(bind ?steps (append$ ?steps ?next-step-id))
             (assert (step (name insert) (id ?next-step-id) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (already-at-mps FALSE) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
-            (printout t "Actions Added: Brining Product to" ?mps " at " ?side crlf)
+            (printout t "Action Added: Brining Product to: " ?mps " at: " ?side crlf)
           )
           ;ACTION:::::Discard::::::
           (case "discard" then
             (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 						(bind ?steps (append$ ?steps ?next-step-id))
             (assert (step (name discard) (id ?next-step-id)  ))
-            (printout t "Actions Added: discarding Product to" crlf)
+            (printout t "Action Added: discarding Product to" crlf)
           )
           ;ACTION:::::PREPARE::::::
           (case "prepare" then
@@ -405,7 +406,6 @@
             (bind ?mps-type "")
             (bind ?operation "")
             (bind ?gate "")
-            (bind ?base-color "")
             (progn$ (?arg (pb-field-list ?a "params"))
               (if (eq (pb-field-value ?arg "key") "mps") then
                 (bind ?mps (pb-field-value ?arg "value"))
@@ -429,13 +429,13 @@
         				  )
                 else
                   (if (eq (pb-field-value ?arg "key") "color") then
-                    (bind ?base-color (utils-remove-prefix (pb-field-value ?arg "value") BASE_))
+                    (bind ?goal-base-color (utils-remove-prefix (pb-field-value ?arg "value") BASE_)) ;TEMP: The color of the base of the goal is recognized here
                     (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
                     (bind ?steps (append$ ?steps ?next-step-id))
                     (assert (step (name acquire-lock) (id ?next-step-id) (task-priority ?*PRIORITY-PREFILL-RS*) (lock PREPARE-BS))) ;is released after get-base
                     (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 						        (bind ?steps (append$ ?steps ?next-step-id))
-                    (assert (step (name instruct-mps) (id ?next-step-id) (machine ?mps) (side ?side) (base ?base-color) ))
+                    (assert (step (name instruct-mps) (id ?next-step-id) (machine ?mps) (side ?side) (base ?goal-base-color) ))
 
                   else
                     (if (eq (pb-field-value ?arg "key") "gate") then
@@ -450,7 +450,7 @@
                 )
               )
             )
-            (printout t "Actions Added: Instructing to" ?mps " at " ?side crlf)
+            (printout t "Action Added: Instructing to: " ?mps " at: " ?side crlf)
           )
 
 					(default (printout warn "Unknown action " ?actname crlf))
