@@ -143,14 +143,6 @@ ClipsSmtThread::init()
 	// actions[10] = "|P|DS|BC>>|";
 	// actions[11] = "|F|DS|>BC>|";
 
-	// TODO read from protobuf
-	lower_bounds_c0[0] = 0;
-	lower_bounds_c0[1] = 29;
-	lower_bounds_c0[2] = 246;
-	upper_bounds_c0[0] = lower_bounds_c0[0]+900;
-	upper_bounds_c0[1] = lower_bounds_c0[1]+103;
-	upper_bounds_c0[2] = lower_bounds_c0[1]+150;
-
 	shelf_position.push_back(true);
 	shelf_position.push_back(true);
 }
@@ -266,7 +258,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value(node_names_[model_positions[i]]);
 					param = action->add_params();
 					param->set_key("shelf");
-					param->set_value("TRUE");
+					param->set_value("TRUE"); // TODO Replace TRUE by getNextShelf() once implemented
 
 					action = plan->add_actions();
 					action->set_name("prepare");
@@ -375,7 +367,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value("C-DS-I");
 					param = action->add_params();
 					param->set_key("gate");
-					param->set_value("1");
+					param->set_value(std::to_string(orders_gate[0]));
 
 					action = plan->add_actions();
 					action->set_name("feed");
@@ -503,9 +495,21 @@ ClipsSmtThread::loop()
 
 	number_robots = data.robots().size()-1;
 	number_machines = 6;// data.machines().size();
-	number_orders_protobuf = data.orders().size()/2;
+	number_orders_protobuf = data.orders().size();
 	if(number_orders_protobuf==0){
 		logger->log_info(name(), "Protobuf orders is empty, thus use predefined number of orders");
+	}
+	else {
+		for(int o=0; o<number_orders_protobuf; ++o){
+			lower_bounds_c0[o] = data.orders(o).delivery_period_begin();
+			upper_bounds_c0[o] = data.orders(o).delivery_period_end();
+
+			orders_base.push_back(data.orders(o).base_color());
+			orders_cap.push_back(data.orders(o).cap_color());
+			orders_gate.push_back(data.orders(o).delivery_gate());
+
+			logger->log_info(name(), "Deliver Order %i [B%i,C%i] between %i and %i.", o, orders_base[o], orders_cap[o], lower_bounds_c0[o], upper_bounds_c0[o]);
+		}
 	}
 
 	// number_bits = ceil(log2(number_machines));
@@ -972,7 +976,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	}
 
 	// Action stuff for every order
-	logger->log_info(name(), "Add constraints for actions for %i orders", number_orders);
+	logger->log_info(name(), "Add constraints for actions for %i orders (%i inside protobuf)", number_orders, number_orders_protobuf);
 
 	for(int i=1; i<plan_horizon+1; ++i){
 
@@ -990,31 +994,31 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			std::string bi = "B";
 			std::string ci = "C";
 
-			if(data.orders().size()/2>=1){
+			if(number_orders_protobuf>=1){
 				// Determine base, ring and cap color via protobuf
-				orders_base[o] = data.orders(o+data.orders().size()/2).base_color();
-				orders_cap[o] = data.orders(o+data.orders().size()/2).cap_color();
-
 				bi += std::to_string(orders_base[o]);
 				ci += std::to_string(orders_cap[o]);
 			}
 			else {
 				// Fix colors of orders of complexity c0
 				switch(o){
-					case 0: orders_base[o] = 1;
-							orders_cap[o] = 1;
+					case 0: orders_base.push_back(1);
+							orders_cap.push_back(1);
+							orders_gate.push_back(1);
 
 							bi = "B1";
 							ci = "C1";
 							break;
-					case 1: orders_base[o] = 3;
-							orders_cap[o] = 2;
+					case 1: orders_base.push_back(3);
+							orders_cap.push_back(2);
+							orders_gate.push_back(1);
 
 							bi = "B3";
 							ci = "C2";
 							break;
-					case 2: orders_base[o] = 2;
-							orders_cap[o] = 1;
+					case 2: orders_base.push_back(2);
+							orders_cap.push_back(1);
+							orders_gate.push_back(1);
 
 							bi = "B2";
 							ci = "C1";
