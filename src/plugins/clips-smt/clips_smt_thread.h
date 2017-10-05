@@ -148,9 +148,6 @@ private:
 	int plan_horizon;
 
 	const bool add_temporal_constraint = false;
-	const int upper_bound_offset = 0;
-	std::map<int, int> lower_bounds_c0;
-	std::map<int, int> upper_bounds_c0;
 
 	// States of machines for C0-C1
 	std::map<std::string, int> state1_machines;
@@ -166,9 +163,6 @@ private:
 	const int min_machine_groups = 0, max_machine_groups = 2;
 
 	std::map<int, std::string> actions;
-	std::vector<int> orders_base;
-	std::vector<int> orders_cap;
-	std::vector<int> orders_gate;
 
 	// Visualization of computed plan
 	std::map<int , float> model_times;

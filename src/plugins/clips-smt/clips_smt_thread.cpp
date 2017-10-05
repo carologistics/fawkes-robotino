@@ -230,6 +230,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 {
 	// Just a simple demonstration, all robots would move to the same place...
 	std::shared_ptr<llsf_msgs::ActorGroupPlan> agplan(new llsf_msgs::ActorGroupPlan());
+
 	llsf_msgs::ActorSpecificPlan *actor_plan = agplan->add_plans();
 	actor_plan->set_actor_name("R-1");
 	llsf_msgs::SequentialPlan *plan = actor_plan->mutable_sequential_plan();
@@ -239,7 +240,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 	// action = plan->add_actions();
 	// action->set_name("enter-field");
 
-
 	// Francesco's C0 Scenario
 	// Loop through model_actions
 	for(unsigned int i=0; i<model_actions.size(); ++i){
@@ -247,12 +247,14 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 			case 1:	// Actions 1,2,3
 					action = plan->add_actions();
 					action->set_name("move");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
 
 					action = plan->add_actions();
 					action->set_name("retrieve_shelf");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -262,6 +264,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					action = plan->add_actions();
 					action->set_name("prepare");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -271,6 +274,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					action = plan->add_actions();
 					action->set_name("feed");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -279,38 +283,44 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 			case 2:	// Action 8
 					action = plan->add_actions();
 					action->set_name("move");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
 
 					action = plan->add_actions();
 					action->set_name("retrieve");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 
 					action = plan->add_actions();
 					action->set_name("discard");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					break;
 
 			case 3:	// Action 7,6
 					action = plan->add_actions();
 					action->set_name("move");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value("C-BS-O");
 
 					action = plan->add_actions();
 					action->set_name("prepare");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value("C-BS-O");
 					param = action->add_params();
 					param->set_key("color");
-					param->set_value(getBaseColor(orders_base[(model_actions[i]-1)/number_max_required_actions_c0]));
+					param->set_value(getBaseColor(data.orders((model_actions[i]-1)/number_max_required_actions_c0).base_color()));
 
 					action = plan->add_actions();
 					action->set_name("retrieve");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value("C-BS-O");
@@ -319,12 +329,14 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 			case 4:	// Action 4,5
 					action = plan->add_actions();
 					action->set_name("move");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
 
 					action = plan->add_actions();
 					action->set_name("prepare");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -334,6 +346,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					action = plan->add_actions();
 					action->set_name("feed");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -342,12 +355,14 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 			case 5:	// Action 9
 					action = plan->add_actions();
 					action->set_name("move");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
 
 					action = plan->add_actions();
 					action->set_name("retrieve");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -356,28 +371,31 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 			case 6:	// Action 10,11
 					action = plan->add_actions();
 					action->set_name("move");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value("C-DS-I");
 
 					action = plan->add_actions();
 					action->set_name("prepare");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value("C-DS-I");
 					param = action->add_params();
 					param->set_key("gate");
-					param->set_value(std::to_string(orders_gate[0]));
+					param->set_value(std::to_string(data.orders(0).delivery_gate()));
 
 					action = plan->add_actions();
 					action->set_name("feed");
+					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value("C-DS-I");
 					break;
 			default:	break;
 		}
-       	}
+	}
 
 
 
@@ -497,19 +515,7 @@ ClipsSmtThread::loop()
 	number_machines = 6;// data.machines().size();
 	number_orders_protobuf = data.orders().size();
 	if(number_orders_protobuf==0){
-		logger->log_info(name(), "Protobuf orders is empty, thus use predefined number of orders");
-	}
-	else {
-		for(int o=0; o<number_orders_protobuf; ++o){
-			lower_bounds_c0[o] = data.orders(o).delivery_period_begin();
-			upper_bounds_c0[o] = data.orders(o).delivery_period_end();
-
-			orders_base.push_back(data.orders(o).base_color());
-			orders_cap.push_back(data.orders(o).cap_color());
-			orders_gate.push_back(data.orders(o).delivery_gate());
-
-			logger->log_info(name(), "Deliver Order %i [B%i,C%i] between %i and %i.", o, orders_base[o], orders_cap[o], lower_bounds_c0[o], upper_bounds_c0[o]);
-		}
+		logger->log_info(name(), "Protobuf orders is empty, no orders to consider");
 	}
 
 	// number_bits = ceil(log2(number_machines));
@@ -519,13 +525,6 @@ ClipsSmtThread::loop()
 	// if(number_orders_c1) number_actions = number_required_actions_c1;
 	// else number_actions = number_required_actions_c0;
 	number_actions = number_orders_c0*number_total_action_c0;
-
-	logger->log_info(name(), "Create plan with %i robot(s) (fix), %i machine(s) (fix), %i order(s) (dynamic) with plan_horizon %i and %i actions",
-							number_robots,
-							number_machines,
-							number_orders,
-							plan_horizon,
-							number_actions);
 
 	// Compute distances between nodes using navgraph
 	clips_smt_fill_node_names();
@@ -994,37 +993,9 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			std::string bi = "B";
 			std::string ci = "C";
 
-			if(number_orders_protobuf>=1){
-				// Determine base, ring and cap color via protobuf
-				bi += std::to_string(orders_base[o]);
-				ci += std::to_string(orders_cap[o]);
-			}
-			else {
-				// Fix colors of orders of complexity c0
-				switch(o){
-					case 0: orders_base.push_back(1);
-							orders_cap.push_back(1);
-							orders_gate.push_back(1);
-
-							bi = "B1";
-							ci = "C1";
-							break;
-					case 1: orders_base.push_back(3);
-							orders_cap.push_back(2);
-							orders_gate.push_back(1);
-
-							bi = "B3";
-							ci = "C2";
-							break;
-					case 2: orders_base.push_back(2);
-							orders_cap.push_back(1);
-							orders_gate.push_back(1);
-
-							bi = "B2";
-							ci = "C1";
-							break;
-				}
-			}
+			// Determine base, ring and cap color via protobuf
+			bi += std::to_string(data.orders(o).base_color());
+			ci += std::to_string(data.orders(o).cap_color());
 
 			// Determine required strings
 			std::string bi_ci = bi;
@@ -1348,31 +1319,31 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		}
 	}
 
-	// logger->log_info(name(), "Add constraints for goal state");
-	//
-	// // Specify goal state
-	// for(int i=1; i<plan_horizon+1; ++i){
-	// 	if(i==1){
-	// 		constraints.push_back(((getVar(varA, "A_"+std::to_string(i)) == number_final_action_c0
-	// 										|| getVar(varA, "A_"+std::to_string(i)) == 2*number_final_action_c0
-	// 										|| getVar(varA, "A_"+std::to_string(i)) == 3*number_final_action_c0)
-	// 									&& getVar(varRew, "rew_"+std::to_string(i)) == (deadline-getVar(varStartTime, "t_"+std::to_string(i))-getVar(varMachineDuration, "md_"+std::to_string(i))))
-	// 								|| (!(getVar(varA, "A_"+std::to_string(i)) == number_final_action_c0
-	// 										|| getVar(varA, "A_"+std::to_string(i)) == 2*number_final_action_c0
-	// 										|| getVar(varA, "A_"+std::to_string(i)) == 3*number_final_action_c0)
-	// 									&& getVar(varRew, "rew_"+std::to_string(i))==0)); // TODO adapt to "last" action
-	// 	}
-	// 	else {
-	// 		constraints.push_back(((getVar(varA, "A_"+std::to_string(i)) == number_final_action_c0
-	// 										|| getVar(varA, "A_"+std::to_string(i)) == 2*number_final_action_c0
-	// 										|| getVar(varA, "A_"+std::to_string(i)) == 3*number_final_action_c0)
-	// 									&& getVar(varRew, "rew_"+std::to_string(i)) == (getVar(varRew, "rew_"+std::to_string(i-1))+deadline-getVar(varStartTime, "t_"+std::to_string(i))-getVar(varMachineDuration, "md_"+std::to_string(i))))
-	// 								|| (!(getVar(varA, "A_"+std::to_string(i)) == number_final_action_c0
-	// 										|| getVar(varA, "A_"+std::to_string(i)) == 2*number_final_action_c0
-	// 										|| getVar(varA, "A_"+std::to_string(i)) == 3*number_final_action_c0)
-	// 									&& getVar(varRew, "rew_"+std::to_string(i))==getVar(varRew, "rew_"+std::to_string(i-1))));
-	// 	}
-	// }
+	logger->log_info(name(), "Add constraints for goal state");
+
+	// Specify goal state
+	for(int i=1; i<plan_horizon+1; ++i){
+		if(i==1){
+			constraints.push_back(((getVar(varA, "A_"+std::to_string(i)) == number_final_action_c0
+											|| getVar(varA, "A_"+std::to_string(i)) == 2*number_final_action_c0
+											|| getVar(varA, "A_"+std::to_string(i)) == 3*number_final_action_c0)
+										&& getVar(varRew, "rew_"+std::to_string(i)) == (deadline-getVar(varStartTime, "t_"+std::to_string(i))-getVar(varMachineDuration, "md_"+std::to_string(i))))
+									|| (!(getVar(varA, "A_"+std::to_string(i)) == number_final_action_c0
+											|| getVar(varA, "A_"+std::to_string(i)) == 2*number_final_action_c0
+											|| getVar(varA, "A_"+std::to_string(i)) == 3*number_final_action_c0)
+										&& getVar(varRew, "rew_"+std::to_string(i))==0)); // TODO adapt to "last" action
+		}
+		else {
+			constraints.push_back(((getVar(varA, "A_"+std::to_string(i)) == number_final_action_c0
+											|| getVar(varA, "A_"+std::to_string(i)) == 2*number_final_action_c0
+											|| getVar(varA, "A_"+std::to_string(i)) == 3*number_final_action_c0)
+										&& getVar(varRew, "rew_"+std::to_string(i)) == (getVar(varRew, "rew_"+std::to_string(i-1))+deadline-getVar(varStartTime, "t_"+std::to_string(i))-getVar(varMachineDuration, "md_"+std::to_string(i))))
+									|| (!(getVar(varA, "A_"+std::to_string(i)) == number_final_action_c0
+											|| getVar(varA, "A_"+std::to_string(i)) == 2*number_final_action_c0
+											|| getVar(varA, "A_"+std::to_string(i)) == 3*number_final_action_c0)
+										&& getVar(varRew, "rew_"+std::to_string(i))==getVar(varRew, "rew_"+std::to_string(i-1))));
+		}
+	}
 
 	logger->log_info(name(), "Add constraints for initial situation");
 
@@ -1523,8 +1494,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			z3::expr constraint_finalaction(getVar(varA, "A_"+std::to_string(i)) == o*number_total_action_c0+number_final_action_c0); // || var_a_i == o*number_total_action_c0+number_final_macroaction_c0);
 
 			if(add_temporal_constraint){
-				constraints.push_back(!constraint_finalaction || (getVar(varStartTime, "t_"+std::to_string(i)) < upper_bounds_c0[o]-upper_bound_offset
-																		&& getVar(varStartTime, "t_"+std::to_string(i)) >lower_bounds_c0[o]));
+				constraints.push_back(!constraint_finalaction || (getVar(varStartTime, "t_"+std::to_string(i)) < (int) data.orders(o).delivery_period_end()
+																		&& getVar(varStartTime, "t_"+std::to_string(i)) > (int) data.orders(o).delivery_period_begin()));
 			}
 
 			constraint_subgoal = constraint_subgoal || constraint_finalaction;
@@ -1809,8 +1780,8 @@ void
 {
 	logger->log_info(name(), "Solve z3 formula");
 
-	z3::solver z3Optimizer(_z3_context);
-	// z3::optimize z3Optimizer(_z3_context);
+	// z3::solver z3Optimizer(_z3_context);
+	z3::optimize z3Optimizer(_z3_context);
 
 	std::map<std::string, z3::expr>::iterator it_map;
 
@@ -1831,7 +1802,7 @@ void
 
 	z3::expr rew_planhorizon = _z3_context.real_const(("rew_"+std::to_string(plan_horizon)).c_str());
 
-	// z3Optimizer.maximize(rew_planhorizon); // TODO
+	z3Optimizer.maximize(rew_planhorizon); // TODO
 
 	// Export stats into clips_smt_thread_stats.txt
 	std::ofstream of_stats;
@@ -1850,8 +1821,8 @@ void
 
 	// Export formula into .smt file
 	std::ofstream of_c0_formula("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/encoder_c0_formula.smt"); // TODO (Igor) Exchange path with config value
-	// of_c0_formula << Z3_optimize_to_string(_z3_context, z3Optimizer);
-	of_c0_formula << z3Optimizer.to_smt2() << std::endl;
+	of_c0_formula << Z3_optimize_to_string(_z3_context, z3Optimizer);
+	// of_c0_formula << z3Optimizer.to_smt2() << std::endl;
 	of_c0_formula.close();
 
 	if (z3Optimizer.check() == z3::sat){
@@ -1947,9 +1918,9 @@ void
 		// of_stats << "number_orders_c0: " << number_orders_c0 << std::endl;
 		// of_stats << "add_temporal_constraint: " << add_temporal_constraint << std::endl;
 		for(int o=0; o<number_orders; ++o){
-			of_stats << "O" << o+1 << ": " << orders_base[o] << orders_cap[o];
+			of_stats << "O" << o+1 << ": B" << data.orders(o).base_color() << "C" << data.orders(o).cap_color() ;
 			if(add_temporal_constraint){
-				of_stats << " with bounds " << lower_bounds_c0[o] << "s < o0 < " << upper_bounds_c0[o] << "s-" << upper_bound_offset << "s";
+				of_stats << " with bounds " << data.orders(o).delivery_period_begin() << "s < o0 < " << data.orders(o).delivery_period_end() << "s";
 			}
 			of_stats << std::endl;
 		}
