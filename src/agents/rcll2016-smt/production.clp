@@ -157,6 +157,7 @@
 )
 
 (deffunction smt-create-order (?id ?product-id ?gate ?complexity ?q-req ?q-del ?begin ?end ?team-color)
+  (printout t "Creating Data msgs:: Order with id " ?id  crlf)
   (bind ?o (pb-create "llsf_msgs.Order"))
 	(pb-set-field ?o "id" ?id)
 	(pb-set-field ?o "delivery_gate" ?gate)
@@ -215,6 +216,8 @@
 	(state IDLE)
 	(not (plan-requested))
 	(test (eq ?*ROBOT-NAME* "R-1"))
+  (exists (machine))
+  (exists (order))
 =>
 	(bind ?p
 	  (smt-create-data
