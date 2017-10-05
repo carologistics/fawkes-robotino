@@ -70,9 +70,12 @@ message PlanActionParameter {
  *     - to: GOAL
  *
  * The params list are PlanActionParameter instances.
+ *
+ * actor is an optional recommended actor by the planner
  */
 message PlanAction {
   required string name = 1;
+  optional string actor = 3;
   repeated PlanActionParameter params = 2;
 }
 
