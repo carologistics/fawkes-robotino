@@ -301,7 +301,7 @@
             (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 						(bind ?steps (append$ ?steps ?next-step-id))
 						(assert (step (name drive-to) (id ?next-step-id)	(machine ?to) (side ?side) (actor ?action-specific-actor)))
-            (printout t "Action Added: Driving to: " ?to " at: " ?side crlf)
+            (printout t "Action Added: " ?action-specific-actor " Driving to: " ?to " at: " ?side crlf)
 					)
           ;ACTION:::::GET FROM SHELF::::::
           (case "retrieve_shelf" then
@@ -333,7 +333,7 @@
               (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 						  (bind ?steps (append$ ?steps ?next-step-id))
               (assert (step (name get-from-shelf) (id ?next-step-id) (machine ?mps) (side ?side) (machine-feature SHELF) (actor ?action-specific-actor)))
-              (printout t "Action Added: Retrieving from Shelf: " ?mps " at: " ?side " shelf: " ?shelf crlf)
+              (printout t "Action Added: " ?action-specific-actor " Retrieving from Shelf: " ?mps " at: " ?side " shelf: " ?shelf crlf)
             else
               (printout t "Wrong Parameters passed to retrive_shelf Action (mps:" ?mps "side:" ?side "shelf:" ?shelf ")" crlf)
             )
@@ -362,12 +362,12 @@
               (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 						  (bind ?steps (append$ ?steps ?next-step-id))
               (assert (step (name get-base) (id ?next-step-id) (machine ?mps) (side ?side) (base ?goal-base-color) (actor ?action-specific-actor) ))
-              (printout t "Action Added: Retrieving Base from: " ?mps " at: " ?side " Base-Color: " ?goal-base-color  crlf)
+              (printout t "Action Added: " ?action-specific-actor " Retrieving Base from: " ?mps " at: " ?side " Base-Color: " ?goal-base-color  crlf)
               else
               (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 					   	(bind ?steps (append$ ?steps ?next-step-id))
               (assert (step (name get-output) (id ?next-step-id) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (actor ?action-specific-actor) ))
-              (printout t "Action Added: Retrieving Output from: " ?mps " side: " ?side crlf)
+              (printout t "Action Added: " ?action-specific-actor " Retrieving Output from: " ?mps " side: " ?side crlf)
 
             )
           )
@@ -393,7 +393,7 @@
             (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 						(bind ?steps (append$ ?steps ?next-step-id))
             (assert (step (name insert) (id ?next-step-id) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (already-at-mps FALSE) (actor ?action-specific-actor) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
-            (printout t "Action Added: Brining Product to: " ?mps " at: " ?side crlf)
+            (printout t "Action Added: " ?action-specific-actor " Brining Product to: " ?mps " at: " ?side crlf)
           )
           ;ACTION:::::Discard::::::
           (case "discard" then
@@ -405,7 +405,7 @@
             (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 						(bind ?steps (append$ ?steps ?next-step-id))
             (assert (step (name discard) (id ?next-step-id) (actor ?action-specific-actor) ))
-            (printout t "Action Added: discarding Product to" crlf)
+            (printout t "Action Added: " ?action-specific-actor " discarding Product to" crlf)
           )
           ;ACTION:::::PREPARE::::::
           (case "prepare" then
@@ -463,7 +463,7 @@
                 )
               )
             )
-            (printout t "Action Added: Instructing to: " ?mps " at: " ?side crlf)
+            (printout t "Action Added: " ?action-specific-actor " Instructing to: " ?mps " at: " ?side crlf)
           )
 
 					(default (printout warn "Unknown action " ?actname crlf))
@@ -485,6 +485,7 @@
   (step (id ?id) (state inactive) (actor ?actor-name))
   (forall (step (id ?id_others)) (test (>= ?id_others ?id)))
   (not (task))
+  (lock-role MASTER)
   =>
   (bind ?task-id (random-id))
   (assert (task (id ?task-id) (state proposed) (steps ?id) (robot ?actor-name)))
