@@ -231,6 +231,7 @@
                                             drive-to wait-for-rs wait-for-output acquire-lock release-lock))
   (slot state (type SYMBOL) (allowed-symbols inactive wait-for-activation running finished failed) (default inactive))
   ;optional arguments of a step
+  (slot actor (type STRING) (allowed-values "R-1" "R-2" "R-3" "") (default ""))
   (slot task-priority (type INTEGER))
   (slot machine (type SYMBOL))
   (slot zone (type SYMBOL))
