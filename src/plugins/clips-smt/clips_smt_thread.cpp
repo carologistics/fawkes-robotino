@@ -517,6 +517,9 @@ ClipsSmtThread::loop()
 	if(number_orders_protobuf==0){
 		logger->log_info(name(), "Protobuf orders is empty, no orders to consider");
 	}
+	logger->log_info(name(), "number_robots: %i", number_robots);
+	logger->log_info(name(), "number_machines: %i", number_machines);
+
 
 	// number_bits = ceil(log2(number_machines));
 
@@ -806,6 +809,9 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		varStartTime.insert(std::make_pair("t_" + std::to_string(i), _z3_context.real_const(("t_" + std::to_string(i)).c_str())));
 		varRobotDuration.insert(std::make_pair("rd_" + std::to_string(i), _z3_context.real_const(("rd_" + std::to_string(i)).c_str())));
 		varRobotPosition.insert(std::make_pair("pos_" + std::to_string(i), _z3_context.int_const(("pos_" + std::to_string(i)).c_str())));
+		for(int r=1; r<number_robots+1; ++r){
+			varRobotPosition.insert(std::make_pair("pos_" + std::to_string(r) + "_" + std::to_string(i), _z3_context.int_const(("pos_" + std::to_string(r) + "_" + std::to_string(i)).c_str())));
+		}
 		varMachineDuration.insert(std::make_pair("md_" + std::to_string(i), _z3_context.real_const(("md_" + std::to_string(i)).c_str())));
 		varR.insert(std::make_pair("R_" + std::to_string(i), _z3_context.int_const(("R_" + std::to_string(i)).c_str())));
 		varA.insert(std::make_pair("A_" + std::to_string(i), _z3_context.int_const(("A_" + std::to_string(i)).c_str())));
@@ -843,6 +849,9 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 
 		constraints.push_back(0 <= getVar(varRobotDuration, "rd_"+std::to_string(i))); // VarRobotDuration
 		constraints.push_back(1 <= getVar(varRobotPosition, "pos_"+std::to_string(i)) && getVar(varRobotPosition, "pos_"+std::to_string(i)) <= number_machines); // VarRobotPosition
+		for(int r=1; r<number_robots+1; ++r){
+			constraints.push_back(0 <= getVar(varRobotPosition, "pos_"+std::to_string(r)+"_"+std::to_string(i)) && getVar(varRobotPosition, "pos_"+std::to_string(r)+"_"+std::to_string(i)) <= number_machines); // VarRobotPosition
+		}
 		constraints.push_back(0 <= getVar(varMachineDuration, "md_"+std::to_string(i))); // VarMachineDuration
 		constraints.push_back(1 <= getVar(varR, "R_"+std::to_string(i)) && getVar(varR, "R_"+std::to_string(i)) <= number_robots); // VarR
 		constraints.push_back(1 <= getVar(varA, "A_"+std::to_string(i)) && getVar(varA, "A_"+std::to_string(i)) <= number_actions); // VarA
@@ -932,6 +941,36 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			}
 
 			constraints.push_back(constraint1 || (getVar(varHold, "holdA_"+std::to_string(ip))==getVar(varHold, "holdB_"+std::to_string(i)) && constraint2));
+		}
+	}
+
+	// Constraint: Robots can not occupy the same position in the same action step
+	for(int i=1; i<plan_horizon+1; ++i){
+		for(int r=1; r<number_robots+1; ++r){
+
+			// If robot r is acting in step i then set his position to the position in step i
+			z3::expr constraint_precondition( getVar(varR, "R_"+std::to_string(i))==r );
+			z3::expr constraint_effect( getVar(varRobotPosition, "pos_"+std::to_string(r)+"_"+std::to_string(i)) == getVar(varRobotPosition, "pos_"+std::to_string(i)) );
+
+			for(int rp=1; rp<number_robots+1; ++rp){
+				if(r!=rp){
+					if(i==1){
+						constraint_effect = constraint_effect && getVar(varRobotPosition, "pos_"+std::to_string(rp)+"_"+std::to_string(i)) == getVar(varInit, "initPos_"+std::to_string(rp));
+					}
+					else {
+						constraint_effect = constraint_effect && getVar(varRobotPosition, "pos_"+std::to_string(rp)+"_"+std::to_string(i)) == getVar(varRobotPosition, "pos_"+std::to_string(rp)+"_"+std::to_string(i-1));
+					}
+				}
+			}
+
+			constraints.push_back( !(constraint_precondition) || constraint_effect);
+
+			// All robot's positions must exclude each other
+			for(int rp=r+1; rp<number_robots+1; ++rp){
+				constraints.push_back( !(getVar(varRobotPosition, "pos_"+std::to_string(r)+"_"+std::to_string(i)) == getVar(varRobotPosition, "pos_"+std::to_string(rp)+"_"+std::to_string(i)))
+			 							|| ( getVar(varRobotPosition, "pos_"+std::to_string(r)+"_"+std::to_string(i)) == 0
+											&& getVar(varRobotPosition, "pos_"+std::to_string(rp)+"_"+std::to_string(i)) == 0) );
+			}
 		}
 	}
 
@@ -1505,6 +1544,17 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	}
 	constraints.push_back(constraint_goal);
 
+	// Influence order of robots chosen
+	constraints.push_back( getVar(varR, "R_1") == 1); // Already enough for two robots
+
+	if(number_robots>2){
+		for(int i=2; i<plan_horizon+1; ++i){
+			// If pos_2_i is not 0 anymore and was in the step before pos_3_i must still be 0
+			constraints.push_back( !(getVar(varRobotPosition, "pos_2_"+std::to_string(i))>0 && getVar(varRobotPosition, "pos_2_"+std::to_string(i-1))==0)
+		 							|| getVar(varRobotPosition, "pos_3_"+std::to_string(i))==0 );
+		}
+	}
+
 	return constraints;
 }
 
@@ -1853,6 +1903,12 @@ void
 					cw_time += std::to_string(j);
 					std::string cw_pos = "pos_";
 					cw_pos += std::to_string(j);
+					std::string cw_pos_R1 = "pos_1_";
+					cw_pos_R1 += std::to_string(j);
+					std::string cw_pos_R2 = "pos_2_";
+					cw_pos_R2 += std::to_string(j);
+					std::string cw_pos_R3 = "pos_3_";
+					cw_pos_R3 += std::to_string(j);
 					std::string cw_robot = "R_";
 					cw_robot += std::to_string(j);
 					std::string cw_action = "A_";
@@ -1879,6 +1935,15 @@ void
 					}
 					else if(function_name.compare(cw_pos)==0) {
 						model_positions[j] = (int) interp;
+					}
+					else if(function_name.compare(cw_pos_R1)==0) {
+						model_positions_R1[j] = (int) interp;
+					}
+					else if(function_name.compare(cw_pos_R2)==0) {
+						model_positions_R2[j] = (int) interp;
+					}
+					else if(function_name.compare(cw_pos_R3)==0) {
+						model_positions_R3[j] = (int) interp;
 					}
 					else if(function_name.compare(cw_robot)==0) {
 						model_robots[j] = (int) interp;
@@ -1936,7 +2001,7 @@ void
 			// "), S1(" << model_state1A[j] << "-" << model_state1B[j] <<
 			// "), S2(" << model_state2A[j] << "-" << model_state2B[j] <<
 			// "), S3(" << model_state3A[j] << "-" << model_state3B[j] <<"]";
-			of_stats << " [t = " << model_times[j] << "s]" << std::endl;
+			of_stats << " [t = " << model_times[j] << "s] [R1: " << node_names_[model_positions_R1[j]] <<", R2: " << node_names_[model_positions_R2[j]] << ", R3: " << node_names_[model_positions_R3[j]] << "]" << std::endl;
 		}
 	} else {
 
