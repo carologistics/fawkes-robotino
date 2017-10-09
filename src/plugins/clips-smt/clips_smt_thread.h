@@ -167,6 +167,9 @@ private:
 	// Visualization of computed plan
 	std::map<int , float> model_times;
 	std::map<int , int> model_positions;
+	std::map<int , int> model_positions_R1;
+	std::map<int , int> model_positions_R2;
+	std::map<int , int> model_positions_R3;
 	std::map<int , int> model_robots;
 	std::map<int , int> model_actions;
 	std::map<int , int> model_holdA;
