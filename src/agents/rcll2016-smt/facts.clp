@@ -217,7 +217,7 @@
   ;a task consists of multiple steps
   (slot current-step (type INTEGER) (default 0))
   (multislot steps (type INTEGER)) ;in chronological order refers to the ids of the steps
-  (slot sync-id (type INTEGER) (default 0))
+  (slot sync-id (type INTEGER) (default 155555))
 )
 
 ; Template for a step
