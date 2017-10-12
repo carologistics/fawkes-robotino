@@ -54,7 +54,7 @@ clips-agent:
     cyan-port: 4441
     magenta-port: 4442
 
-    team-name: Carologistics
+    team-name: CaroSMT
     crypto-key: randomkey
     cipher: "aes-128-cbc"
 
