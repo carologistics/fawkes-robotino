@@ -306,14 +306,14 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("to");
-					param->set_value("C-BS-O");
+					param->set_value(node_names_[1]);
 
 					action = plan->add_actions();
 					action->set_name("prepare");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("mps");
-					param->set_value("C-BS-O");
+					param->set_value(node_names_[1]);
 					param = action->add_params();
 					param->set_key("color");
 					param->set_value(getBaseColor(data.orders((model_actions[i]-1)/number_max_required_actions_c0).base_color()));
@@ -323,7 +323,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("mps");
-					param->set_value("C-BS-O");
+					param->set_value(node_names_[1]);
 					break;
 
 			case 4:	// Action 4,5
@@ -374,14 +374,14 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("to");
-					param->set_value("C-DS-I");
+					param->set_value(node_names_[6]);
 
 					action = plan->add_actions();
 					action->set_name("prepare");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("mps");
-					param->set_value("C-DS-I");
+					param->set_value(node_names_[6]);
 					param = action->add_params();
 					param->set_key("gate");
 					param->set_value(std::to_string(data.orders(0).delivery_gate()));
@@ -391,7 +391,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					param = action->add_params();
 					param->set_key("mps");
-					param->set_value("C-DS-I");
+					param->set_value(node_names_[6]);
 					break;
 			default:	break;
 		}
@@ -593,7 +593,7 @@ ClipsSmtThread::clips_smt_fill_node_names()
 	node_names_.clear();
 
 	// C-ins-in is never in the list of machines, therefore add it here
-	node_names_[0] = "C-ins-in";
+	// node_names_[0] = "C-ins-in";
 
 	// // Read names of machines automatically
 	// for(int i=0; i<number_machines; ++i){
@@ -617,41 +617,90 @@ ClipsSmtThread::clips_smt_fill_node_names()
 	// node_names_[11] = "C-CS2-O";
 	// node_names_[12] = "C-DS-O";
 
-	// Set only required names of machines fix
-	node_names_[1] = "C-BS-I";
-	node_names_[2] = "C-CS1-I";
-	node_names_[3] = "C-CS1-O";
-	node_names_[4] = "C-CS2-I";
-	node_names_[5] = "C-CS2-O";
-	node_names_[6] = "C-DS-I";
-	// node_names_[5] = "C-RS1-I";
-	// node_names_[6] = "C-RS1-O";
+	if(data.robots(0).team_color() == 0){
 
-	node_names_inverted["C-ins-in"] = 0;
-	node_names_inverted["C-BS-I"] = 1;
-	node_names_inverted["C-CS1-I"] = 2;
-	node_names_inverted["C-CS1-O"] = 3;
-	node_names_inverted["C-CS2-I"] = 4;
-	node_names_inverted["C-CS2-O"] = 5;
-	node_names_inverted["C-DS-I"] = 6;
-	// node_names_inverted["C-RS1-I"] = 5;
-	// node_names_inverted["C-RS1-O"] = 6;
+		logger->log_info(name(), "Team_color is CYAN");
+		// Set only required names of machines fix
+		node_names_[0] = "C-ins-in";
+		node_names_[1] = "C-BS-O";
+		node_names_[2] = "C-CS1-I";
+		node_names_[3] = "C-CS1-O";
+		node_names_[4] = "C-CS2-I";
+		node_names_[5] = "C-CS2-O";
+		node_names_[6] = "C-DS-I";
+		// node_names_[5] = "C-RS1-I";
+		// node_names_[6] = "C-RS1-O";
 
-	if(config->get_string("/clips-agent/rcll2016/cap-station/assigned-color/C-CS1").compare("BLACK")==0){
-		// C-CS1 contins black c1 caps and C-CS2 grey ones
-		logger->log_info(name(), "C-CS1 contins black c1 caps and C-CS2 grey ones");
-		caps_and_colors_input["C1"] = "C-CS1-I";
-		caps_and_colors_input["C2"] = "C-CS2-I";
-		caps_and_colors_output["C1"] = "C-CS1-O";
-		caps_and_colors_output["C2"] = "C-CS2-O";
+		node_names_inverted["C-ins-in"] = 0;
+		node_names_inverted["C-BS-O"] = 1;
+		node_names_inverted["C-CS1-I"] = 2;
+		node_names_inverted["C-CS1-O"] = 3;
+		node_names_inverted["C-CS2-I"] = 4;
+		node_names_inverted["C-CS2-O"] = 5;
+		node_names_inverted["C-DS-I"] = 6;
+		// node_names_inverted["C-RS1-I"] = 5;
+		// node_names_inverted["C-RS1-O"] = 6;
+
+		if(config->get_string("/clips-agent/rcll2016/cap-station/assigned-color/C-CS1").compare("BLACK")==0){
+			// C-CS1 contins black c1 caps and C-CS2 grey ones
+			logger->log_info(name(), "C-CS1 contins black c1 caps and C-CS2 grey ones");
+			caps_and_colors_input["C1"] = "C-CS1-I";
+			caps_and_colors_input["C2"] = "C-CS2-I";
+			caps_and_colors_output["C1"] = "C-CS1-O";
+			caps_and_colors_output["C2"] = "C-CS2-O";
+		}
+		else {
+			// C-CS1 contins grey c1 caps and C-CS2 black ones
+			logger->log_info(name(), "C-CS1 contins grey c1 caps and C-CS2 black ones");
+			caps_and_colors_input["C2"] = "C-CS1-I";
+			caps_and_colors_input["C1"] = "C-CS2-I";
+			caps_and_colors_output["C2"] = "C-CS1-O";
+			caps_and_colors_output["C1"] = "C-CS2-O";
+		}
+	}
+	else if(data.robots(0).team_color() == 1){
+
+		logger->log_info(name(), "Team_color is MAGENTA");
+		// Set only required names of machines fix
+		node_names_[0] = "M-ins-in";
+		node_names_[1] = "M-BS-O";
+		node_names_[2] = "M-CS1-I";
+		node_names_[3] = "M-CS1-O";
+		node_names_[4] = "M-CS2-I";
+		node_names_[5] = "M-CS2-O";
+		node_names_[6] = "M-DS-I";
+		// node_names_[5] = "C-RS1-I";
+		// node_names_[6] = "C-RS1-O";
+
+		node_names_inverted["M-ins-in"] = 0;
+		node_names_inverted["M-BS-O"] = 1;
+		node_names_inverted["M-CS1-I"] = 2;
+		node_names_inverted["M-CS1-O"] = 3;
+		node_names_inverted["M-CS2-I"] = 4;
+		node_names_inverted["M-CS2-O"] = 5;
+		node_names_inverted["M-DS-I"] = 6;
+		// node_names_inverted["C-RS1-I"] = 5;
+		// node_names_inverted["C-RS1-O"] = 6;
+
+		if(config->get_string("/clips-agent/rcll2016/cap-station/assigned-color/M-CS1").compare("BLACK")==0){
+			// C-CS1 contins black c1 caps and C-CS2 grey ones
+			logger->log_info(name(), "M-CS1 contins black c1 caps and M-CS2 grey ones");
+			caps_and_colors_input["C1"] = "M-CS1-I";
+			caps_and_colors_input["C2"] = "M-CS2-I";
+			caps_and_colors_output["C1"] = "M-CS1-O";
+			caps_and_colors_output["C2"] = "M-CS2-O";
+		}
+		else {
+			// C-CS1 contins grey c1 caps and C-CS2 black ones
+			logger->log_info(name(), "M-CS1 contins grey c1 caps and M-CS2 black ones");
+			caps_and_colors_input["C2"] = "M-CS1-I";
+			caps_and_colors_input["C1"] = "M-CS2-I";
+			caps_and_colors_output["C2"] = "M-CS1-O";
+			caps_and_colors_output["C1"] = "M-CS2-O";
+		}
 	}
 	else {
-		// C-CS1 contins grey c1 caps and C-CS2 black ones
-		logger->log_info(name(), "C-CS1 contins grey c1 caps and C-CS2 black ones");
-		caps_and_colors_input["C2"] = "C-CS1-I";
-		caps_and_colors_input["C1"] = "C-CS2-I";
-		caps_and_colors_output["C2"] = "C-CS1-O";
-		caps_and_colors_output["C1"] = "C-CS2-O";
+		logger->log_info(name(), "Team_color is UNKNOWN");
 	}
 }
 
@@ -719,7 +768,7 @@ ClipsSmtThread::clips_smt_compute_distances_machines()
 	of_distances.open ("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/navgraph-costs-000.csv");
 
 	// Compute distances between unconnected C-ins-in and all other machines
-	NavGraphNode ins_node(navgraph->node("C-ins-in"));
+	NavGraphNode ins_node(navgraph->node(node_names_[0]));
 	NavGraphNode from = navgraph->closest_node(ins_node.x(), ins_node.y());
 
 	for (unsigned int i = 1; i < node_names_.size(); ++i) {
@@ -731,7 +780,7 @@ ClipsSmtThread::clips_smt_compute_distances_machines()
 		NavGraphPath p = navgraph->search_path(from, to);
 
 		// logger->log_info(name(), "Distance between node %s and node %s is %f", from.name().c_str(), node_names_[i].c_str(), p.cost());
-		of_distances << "C-ins-in;" << node_names_[i].c_str() <<";" << p.cost()+navgraph->cost(from, ins_node) << "\n";
+		of_distances << node_names_[0] << ";" << node_names_[i].c_str() <<";" << p.cost()+navgraph->cost(from, ins_node) << "\n";
 		distances_[nodes_pair] = p.cost() + navgraph->cost(from, ins_node);
 	}
 
@@ -1089,7 +1138,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 										&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
 										&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
 										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep+time_to_fetch)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-BS-I"])
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[node_names_[1]])
 										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products[bi])
 										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
@@ -1130,7 +1179,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 										&& (getVar(varS, "state2B_"+std::to_string(i)) == getVar(varS, "state2A_"+std::to_string(i)))
 										&& (getVar(varS, "state3B_"+std::to_string(i)) == getVar(varS, "state3A_"+std::to_string(i)))
 										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_prep+time_to_prep)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted["C-DS-I"])
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[node_names_[6]])
 										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[bi_ci])
 										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
