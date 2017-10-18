@@ -236,25 +236,34 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 	llsf_msgs::SequentialPlan *plan = actor_plan->mutable_sequential_plan();
 	llsf_msgs::PlanAction *action;
 	llsf_msgs::PlanActionParameter *param;
+	// llsf_msgs::uint32 *uint32;
 
 	// action = plan->add_actions();
 	// action->set_name("enter-field");
 
 	// Francesco's C0 Scenario
 	// Loop through model_actions
+	std::map<uint32_t,uint32_t> action_id_last;
+	uint32_t action_id=0;
 	for(unsigned int i=0; i<model_actions.size(); ++i){
 		switch(model_actions[i]){
 			case 1:	// Actions 1,2,3
+					std::cout << "Add actions 1,2,3 to protobuf" << std::endl;
+
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
 
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("retrieve_shelf");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -262,9 +271,11 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("shelf");
 					param->set_value("TRUE"); // TODO Replace TRUE by getNextShelf() once implemented
 
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("prepare");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -272,45 +283,67 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("operation");
 					param->set_value("RETRIEVE_CAP");
 
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("feed");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+
+					std::cout << "[1,2,3] Last action_id added and stored into action_id_last is " << action_id_last[model_actions[i]] << std::endl;
+					std::cout << "Depends on nothing" << std::endl;
 					break;
 
 			case 2:	// Action 8
+					std::cout << "Add actions 8 to protobuf" << std::endl;
+
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
 
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("retrieve");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("discard");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
-					break;
+					action->set_id(action_id);
+					action->add_parent_id(action_id_last[1]);
 
+					std::cout << "[8] Last action_id added and stored into action_id_last is " << action_id_last[model_actions[i]] << std::endl;
+					std::cout << "Depends on [1,2,3: " << action_id_last[1] << "]" << std::endl;
+					break;
 			case 3:	// Action 7,6
+					std::cout << "Add actions 7,6 to protobuf" << std::endl;
+
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[1]);
 
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("prepare");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[1]);
@@ -318,25 +351,34 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("color");
 					param->set_value(getBaseColor(data.orders((model_actions[i]-1)/number_max_required_actions_c0).base_color()));
 
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("retrieve");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("mps");
-					param->set_value(node_names_[1]);
-					break;
 
+					std::cout << "[7,6] Last action_id added and stored into action_id_last is " << action_id_last[model_actions[i]] << std::endl;
+					std::cout << "Depends on nothing" << std::endl;
+					break;
 			case 4:	// Action 4,5
+					std::cout << "Add actions 4,5 to protobuf" << std::endl;
+
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
 
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("prepare");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -344,41 +386,64 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("operation");
 					param->set_value("MOUNT_CAP");
 
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("feed");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
+					action->add_parent_id(action_id_last[1]);
+					action->add_parent_id(action_id_last[2]);
+					action->add_parent_id(action_id_last[3]);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
-					break;
 
+					std::cout << "[4,5] Last action_id added and stored into action_id_last is " << action_id_last[model_actions[i]] << std::endl;
+					std::cout << "Depends on [1,2,3: " << action_id_last[1] << "], [8: " << action_id_last[2] << "] and [7,6: " << action_id_last[3] << "]" << std::endl;
+					break;
 			case 5:	// Action 9
+					std::cout << "Add actions 9 to protobuf" << std::endl;
+
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
 
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("retrieve");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
+					action->add_parent_id(action_id_last[4]);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+
+					std::cout << "[9] Last action_id added and stored into action_id_last is " << action_id_last[model_actions[i]] << std::endl;
+					std::cout << "Depends on [4,5: " << action_id_last[4] << "]" << std::endl;
 					break;
 
 			case 6:	// Action 10,11
+					std::cout << "Add actions 10,11 to protobuf" << std::endl;
+
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[6]);
 
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("prepare");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[6]);
@@ -386,15 +451,22 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("gate");
 					param->set_value(std::to_string(data.orders(0).delivery_gate()));
 
+					++action_id;
 					action = plan->add_actions();
 					action->set_name("feed");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_id(action_id);
+					action->add_parent_id(action_id_last[5]);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[6]);
+
+					std::cout << "[10,11] Last action_id added and stored into action_id_last is " << action_id_last[model_actions[i]] << std::endl;
+					std::cout << "Depends on [1,2,3: " << action_id_last[5] << "]" << std::endl;
 					break;
 			default:	break;
 		}
+		action_id_last[model_actions[i]]=action_id;
 	}
 
 
