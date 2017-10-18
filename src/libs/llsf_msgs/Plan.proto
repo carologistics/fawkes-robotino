@@ -76,6 +76,8 @@ message PlanActionParameter {
 message PlanAction {
   required string name = 1;
   optional string actor = 3;
+  required uint32 id = 4;
+  repeated uint32 parent_id = 5;
   repeated PlanActionParameter params = 2;
 }
 
