@@ -246,7 +246,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 	std::map<uint32_t,uint32_t> action_id_last;
 	uint32_t action_id=0;
 	for(unsigned int i=0; i<model_actions.size(); ++i){
-		switch(model_actions[i]){
+		switch(((model_actions[i]-1)%number_total_action_c0)+1){
 			case 1:	// Actions 1,2,3
 					std::cout << "Add actions 1,2,3 to protobuf" << std::endl;
 
@@ -1628,11 +1628,30 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	constraints.push_back( getVar(varR, "R_1") == 1); // Already enough for two robots
 
 	if(number_robots>2){
+		// z3::expr constraint_use_r2(var_false);
+		// z3::expr constraint_use_r3(var_false);
+
 		for(int i=2; i<plan_horizon+1; ++i){
-			// If pos_2_i is not 0 anymore and was in the step before pos_3_i must still be 0
-			constraints.push_back( !(getVar(varRobotPosition, "pos_2_"+std::to_string(i))>0 && getVar(varRobotPosition, "pos_2_"+std::to_string(i-1))==0)
-		 							|| getVar(varRobotPosition, "pos_3_"+std::to_string(i))==0 );
+			// // At one point r2 and r3 have to be used
+			// constraint_use_r2 = constraint_use_r2 || ( getVar(varRobotPosition, "pos_2_"+std::to_string(i))>0 );
+			// constraint_use_r3 = constraint_use_r3 || ( getVar(varRobotPosition, "pos_3_"+std::to_string(i))>0 );
+
+			// If R_i is 3 and R-3 was never used before then R-2 has been used already
+			// z3::expr constraint_no_r3(var_true);
+			// z3::expr constraint_use_r2(var_false);
+			// for(int j=2; j<i; ++j){
+			// 	constraint_no_r3 = constraint_no_r3 && ( getVar(varR, "R_"+std::to_string(j)) != 3 );
+			// 	constraint_use_r2 = constraint_use_r2 || ( getVar(varR, "R_"+std::to_string(j)) == 2 );
+			// }
+			// constraints.push_back( !(getVar(varR, "R_"+std::to_string(i))==3 && constraint_no_r3) || constraint_use_r2 );
+
+
+			// If pos_3_i is not 0 anymore and was in the step before pos_2_i is not zero anymore
+			constraints.push_back( !(getVar(varRobotPosition, "pos_3_"+std::to_string(i))>0 && getVar(varRobotPosition, "pos_3_"+std::to_string(i-1))==0)
+		 							|| getVar(varRobotPosition, "pos_2_"+std::to_string(i))!=0 );
 		}
+		// constraints.push_back(constraint_use_r2);
+		// constraints.push_back(constraint_use_r3);
 	}
 
 	return constraints;
