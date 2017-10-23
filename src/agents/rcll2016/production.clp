@@ -270,7 +270,7 @@
 		 then
 			(bind ?p (pb-field-value ?ap "sequential_plan"))
 
-			(bind ?task-id (random-id))
+			; (bind ?task-id (random-id))
 			(bind ?actions (pb-field-list ?p "actions"))
 			(bind ?steps (create$))
       (bind ?goal-base-color ""); Tempratly get the goal-info from the plan (for now a static C0 production is assumed)
@@ -298,10 +298,12 @@
                 (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
               )
             )
-            (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-						(bind ?steps (append$ ?steps ?next-step-id))
+
+            ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+            (bind ?next-step-id (pb-field-value ?a "id"))
+            (bind ?steps (append$ ?steps ?next-step-id))
 						(assert (step (name drive-to) (id ?next-step-id)	(machine ?to) (side ?side) (actor ?action-specific-actor)))
-            (printout t "Action Added: " ?action-specific-actor " Driving to: " ?to " at: " ?side crlf)
+            (printout t "Action Added: " ?next-step-id " " ?action-specific-actor " Driving to: " ?to " at: " ?side crlf)
 					)
           ;ACTION:::::GET FROM SHELF::::::
           (case "retrieve_shelf" then
@@ -330,10 +332,11 @@
             (if (and (neq ?shelf "FALSE")
                        (any-factp ((?machine machine)) (and (eq ?machine:name (string-to-field ?mps))  (eq ?machine:mtype CS)))  )
             then
-              (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-						  (bind ?steps (append$ ?steps ?next-step-id))
+              ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+              (bind ?next-step-id (pb-field-value ?a "id"))
+              (bind ?steps (append$ ?steps ?next-step-id))
               (assert (step (name get-from-shelf) (id ?next-step-id) (machine ?mps) (side ?side) (machine-feature SHELF) (actor ?action-specific-actor)))
-              (printout t "Action Added: " ?action-specific-actor " Retrieving from Shelf: " ?mps " at: " ?side " shelf: " ?shelf crlf)
+              (printout t "Action Added: " ?next-step-id " " ?action-specific-actor " Retrieving from Shelf: " ?mps " at: " ?side " shelf: " ?shelf crlf)
             else
               (printout t "Wrong Parameters passed to retrive_shelf Action (mps:" ?mps "side:" ?side "shelf:" ?shelf ")" crlf)
             )
@@ -359,15 +362,17 @@
             )
             (if (any-factp ((?machine machine)) (and (eq ?machine:name (string-to-field ?mps))  (eq ?machine:mtype BS)))
               then
-              (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-						  (bind ?steps (append$ ?steps ?next-step-id))
+              ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+              (bind ?next-step-id (pb-field-value ?a "id"))
+              (bind ?steps (append$ ?steps ?next-step-id))
               (assert (step (name get-base) (id ?next-step-id) (machine ?mps) (side ?side) (base ?goal-base-color) (actor ?action-specific-actor) ))
-              (printout t "Action Added: " ?action-specific-actor " Retrieving Base from: " ?mps " at: " ?side " Base-Color: " ?goal-base-color  crlf)
+              (printout t "Action Added: " ?next-step-id " " ?action-specific-actor " Retrieving Base from: " ?mps " at: " ?side " Base-Color: " ?goal-base-color  crlf)
               else
-              (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-					   	(bind ?steps (append$ ?steps ?next-step-id))
+              ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+              (bind ?next-step-id (pb-field-value ?a "id"))
+              (bind ?steps (append$ ?steps ?next-step-id))
               (assert (step (name get-output) (id ?next-step-id) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (actor ?action-specific-actor) ))
-              (printout t "Action Added: " ?action-specific-actor " Retrieving Output from: " ?mps " side: " ?side crlf)
+              (printout t "Action Added: " ?next-step-id " " ?action-specific-actor " Retrieving Output from: " ?mps " side: " ?side crlf)
 
             )
           )
@@ -390,10 +395,11 @@
                 (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
               )
             )
-            (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-						(bind ?steps (append$ ?steps ?next-step-id))
+            ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+            (bind ?next-step-id (pb-field-value ?a "id"))
+            (bind ?steps (append$ ?steps ?next-step-id))
             (assert (step (name insert) (id ?next-step-id) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (already-at-mps FALSE) (actor ?action-specific-actor) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
-            (printout t "Action Added: " ?action-specific-actor " Brining Product to: " ?mps " at: " ?side crlf)
+            (printout t "Action Added: " ?next-step-id " " ?action-specific-actor " Brining Product to: " ?mps " at: " ?side crlf)
           )
           ;ACTION:::::Discard::::::
           (case "discard" then
@@ -402,10 +408,11 @@
               then
               (bind ?action-specific-actor (pb-field-value ?a "actor"))
             )
-            (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-						(bind ?steps (append$ ?steps ?next-step-id))
+            ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+            (bind ?next-step-id (pb-field-value ?a "id"))
+			(bind ?steps (append$ ?steps ?next-step-id))
             (assert (step (name discard) (id ?next-step-id) (actor ?action-specific-actor) ))
-            (printout t "Action Added: " ?action-specific-actor " discarding Product to" crlf)
+            (printout t "Action Added: " ?next-step-id " " ?action-specific-actor " discarding Product to" crlf)
           )
           ;ACTION:::::PREPARE::::::
           (case "prepare" then
@@ -432,30 +439,35 @@
                 (if (eq (pb-field-value ?arg "key") "operation") then
                   (bind ?operation (pb-field-value ?arg "value"))
         				  (if (eq ?operation "RETRIEVE_CAP") then
-                    (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-						        (bind ?steps (append$ ?steps ?next-step-id))
-        				 	  (assert (step (name instruct-mps) (id ?next-step-id) (machine ?mps) (side ?side) (cs-operation RETRIEVE_CAP) (actor ?action-specific-actor) ))
+                    		; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+						    (bind ?next-step-id (pb-field-value ?a "id"))
+						    (bind ?steps (append$ ?steps ?next-step-id))
+						    (assert (step (name instruct-mps) (id ?next-step-id) (machine ?mps) (side ?side) (cs-operation RETRIEVE_CAP) (actor ?action-specific-actor) ))
         				  else
-                    (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-						        (bind ?steps (append$ ?steps ?next-step-id))
-                    (assert (step (name instruct-mps) (id ?next-step-id) (machine ?mps) (side ?side) (cs-operation MOUNT_CAP) (actor ?action-specific-actor) ))
+                    		; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+                    		(bind ?next-step-id (pb-field-value ?a "id"))
+						    (bind ?steps (append$ ?steps ?next-step-id))
+                    		(assert (step (name instruct-mps) (id ?next-step-id) (machine ?mps) (side ?side) (cs-operation MOUNT_CAP) (actor ?action-specific-actor) ))
         				  )
                 else
                   (if (eq (pb-field-value ?arg "key") "color") then
                     (bind ?goal-base-color (utils-remove-prefix (pb-field-value ?arg "value") BASE_)) ;TEMP: The color of the base of the goal is recognized here
-                    (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+                    ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+                    (bind ?next-step-id (random-id))
                     (bind ?steps (append$ ?steps ?next-step-id))
                     (assert (step (name acquire-lock) (id ?next-step-id) (task-priority ?*PRIORITY-PREFILL-RS*) (lock PREPARE-BS) (actor ?action-specific-actor) )) ;is released after get-base
-                    (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-						        (bind ?steps (append$ ?steps ?next-step-id))
+                    ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+                    (bind ?next-step-id (pb-field-value ?a "id"))
+                    (bind ?steps (append$ ?steps ?next-step-id))
                     (assert (step (name instruct-mps) (id ?next-step-id) (machine ?mps) (side ?side) (base ?goal-base-color) (actor ?action-specific-actor) ))
 
                   else
                     (if (eq (pb-field-value ?arg "key") "gate") then
-                      (bind ?gate (string-to-field (pb-field-value ?arg "value")))
-                      (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-						          (bind ?steps (append$ ?steps ?next-step-id))
-		                  (assert (step (name instruct-mps) (id ?next-step-id) (machine ?mps) (side ?side) (gate ?gate) (actor ?action-specific-actor) ))
+                   	  (bind ?gate (string-to-field (pb-field-value ?arg "value")))
+                      ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+                      (bind ?next-step-id (pb-field-value ?a "id"))
+                   	  (bind ?steps (append$ ?steps ?next-step-id))
+		              (assert (step (name instruct-mps) (id ?next-step-id) (machine ?mps) (side ?side) (gate ?gate) (actor ?action-specific-actor) ))
                     else
                       (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
                     )
@@ -484,12 +496,27 @@
   (phase PRODUCTION)
   (step (id ?id) (state inactive) (actor ?actor-name))
   (forall (step (id ?id_others)) (test (>= ?id_others ?id)))
-  (not (task))
+  (or 	(not (task))
+  		(forall (task (state ?task-state)) (test (eq ?task-state finished)))
+  	)
   (lock-role MASTER)
   =>
   (bind ?task-id (random-id))
   (assert (task (id ?task-id) (state proposed) (steps ?id) (robot ?actor-name)))
   )
+
+
+; (defrule switch-to-the-next-task
+;   "Make a task containing the first step in a sequence of steps with no task"
+;   (phase PRODUCTION)
+;   (step (id ?id) (state inactive) (actor ?actor-name))
+;   (forall (step (id ?id_others)) (test (>= ?id_others ?id)))
+;   (not (task))
+;   (lock-role MASTER)
+;   =>
+;   (bind ?task-id (random-id))
+;   (assert (task (id ?task-id) (state proposed) (steps ?id) (robot ?actor-name)))
+;   )
 
 
 (defrule prod-propose-task-idle
