@@ -264,6 +264,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("retrieve_shelf");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -276,6 +277,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("prepare");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -288,6 +290,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("feed");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -304,7 +307,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					action->add_parent_id(action_id_last[1]);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -314,6 +316,8 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("retrieve");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
+					action->add_parent_id(action_id_last[1]);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -323,6 +327,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("discard");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
 
 					std::cout << "[8] Last action_id added and stored into action_id_last is " << action_id_last[model_actions[i]] << std::endl;
 					std::cout << "Depends on [1,2,3: " << action_id_last[1] << "]" << std::endl;
@@ -344,6 +349,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("prepare");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[1]);
@@ -356,6 +362,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("retrieve");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[1]);
@@ -371,8 +378,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					action->add_parent_id(action_id_last[1]);
-					action->add_parent_id(action_id_last[2]);
 					action->add_parent_id(action_id_last[3]);
 					param = action->add_params();
 					param->set_key("to");
@@ -383,6 +388,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("prepare");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
+					action->add_parent_id(action_id_last[1]);
+					action->add_parent_id(action_id_last[2]);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -395,6 +403,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("feed");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -410,7 +419,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					action->add_parent_id(action_id_last[4]);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -420,6 +428,8 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("retrieve");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
+					action->add_parent_id(action_id_last[4]);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -446,6 +456,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("prepare");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[6]);
@@ -458,6 +469,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("feed");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[6]);
