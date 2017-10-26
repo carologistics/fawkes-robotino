@@ -516,16 +516,44 @@
 	(pb-destroy ?plans)
 )
 
+; (defrule switch-to-the-next-task
+;   "Make a task containing the first step in a sequence of steps with no task"
+;   (phase PRODUCTION)
+;   (step (id ?id) (state inactive) (actor ?actor-name))
+;   (forall (step (id ?id_others)) (test (>= ?id_others ?id)))
+;   (or 	(not (task))
+;   		(forall (task (state ?task-state)) (test (eq ?task-state finished)))
+;   	)
+;   (lock-role MASTER)
+;   =>
+;   (bind ?task-id (random-id))
+;   (assert (task (id ?task-id) (state proposed) (steps ?id) (robot ?actor-name)))
+;   )
 
-(defrule switch-to-the-next-task
-  "Make a task containing the first step in a sequence of steps with no task"
+(deffunction parent-actions-finished ($?actions-ids)
+  "check if all actions in the list of ids are finished successfully"
+  (foreach ?a ?actions-ids
+    (bind ?result (any-factp ((?task task)) (and (eq ?task:state finished) (eq ?task:current-step ?a))))
+    (printout t "Parents Actions Check: " ?a " is " ?result  crlf)
+    (if (not ?result) then 
+      (return FALSE)
+      )
+  )
+  (return TRUE)
+)
+
+(defrule assigen-tasks-for-parallel-execution
+  "propose the next reasonable task for an agent"
+  (time $?now)
   (phase PRODUCTION)
-  (step (id ?id) (state inactive) (actor ?actor-name))
-  (forall (step (id ?id_others)) (test (>= ?id_others ?id)))
-  (or 	(not (task))
-  		(forall (task (state ?task-state)) (test (eq ?task-state finished)))
-  	)
   (lock-role MASTER)
+  (step (id ?id) (state inactive) (parents-ids $?parents-ids) (actor ?actor-name))
+  (forall (step (id ?id_others) (actor ?actor-name))
+          (test (>= ?id_others ?id))
+          )
+  (not (task (robot ?actor-name) (state proposed|asked|rejected|ordered|running|failed) ))
+  (test (parent-actions-finished ?parents-ids))
+  ; (task (state finished) (current-step ?current-step&:(member$ ?current-step ?parents-ids)))
   =>
   (bind ?task-id (random-id))
   (assert (task (id ?task-id) (state proposed) (steps ?id) (robot ?actor-name)))
