@@ -135,7 +135,7 @@
   (do-for-all-facts ((?step step)) (member$ ?step:id ?steps)
     (synced-retract ?step)
   )
-  (synced-retract ?t)
+  ; (synced-retract ?t)
   (retract ?s)
   (assert (state IDLE))
   (coordination-remove-old-rejected-tasks)
@@ -147,7 +147,7 @@
   ?t <- (task (name ?task) (state finished)  (robot ?r&:(eq ?r ?*ROBOT-NAME*)))
   =>
   (coordination-release-all-subgoal-locks)
-  (synced-retract ?t)
+  ; (synced-retract ?t)
 )
 
 (defrule coordination-release-and-reject-task-after-failed
