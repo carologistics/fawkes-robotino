@@ -217,7 +217,7 @@
   ;a task consists of multiple steps
   (slot current-step (type INTEGER) (default 0))
   (multislot steps (type INTEGER)) ;in chronological order refers to the ids of the steps
-  (slot sync-id (type INTEGER) (default 155555))
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 ; Template for a step
@@ -228,10 +228,10 @@
 (deftemplate step
   (slot id (type INTEGER))
   (multislot parents-ids  (type INTEGER))
-  (slot actor (type STRING) (allowed-values "R-1" "R-2" "R-3" "") (default ""))
   (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-base find-tag instruct-mps discard
                                             drive-to wait-for-rs wait-for-output acquire-lock release-lock))
   (slot state (type SYMBOL) (allowed-symbols inactive wait-for-activation running finished failed) (default inactive))
+  (slot actor (type STRING) (allowed-values "R-1" "R-2" "R-3" "") (default ""))
   ;optional arguments of a step
   (slot task-priority (type INTEGER))
   (slot machine (type SYMBOL))
