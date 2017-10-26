@@ -220,6 +220,7 @@ private:
 	std::map<int, std::string> node_names_;
 	std::map<std::pair<std::string, std::string>, float> distances_;
 	std::map<std::string, int> node_names_inverted;
+	std::map<int, int> robot_permutation_;
 
 	std::map<std::string, std::string> caps_and_colors_input;
 	std::map<std::string, std::string> caps_and_colors_output;
