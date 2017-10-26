@@ -291,7 +291,7 @@
             )
             (bind ?parents-ids (create$)) 
             (progn$ (?arg (pb-field-list ?a "parent_id"))
-              (bind ?parents-ids (append$ ?parents-ids ?arg))
+              (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
             )
             (progn$ (?arg (pb-field-list ?a "params"))
               (if (eq (pb-field-value ?arg "key") "to") then
@@ -323,7 +323,7 @@
             )
             (bind ?parents-ids (create$)) 
             (progn$ (?arg (pb-field-list ?a "parent_id"))
-              (bind ?parents-ids (append$ ?parents-ids ?arg))
+              (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
             )
             (progn$ (?arg (pb-field-list ?a "params"))
               (if (eq (pb-field-value ?arg "key") "mps") then
@@ -363,7 +363,7 @@
             )
             (bind ?parents-ids (create$)) 
             (progn$ (?arg (pb-field-list ?a "parent_id"))
-              (bind ?parents-ids (append$ ?parents-ids ?arg))
+              (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
             )
             (progn$ (?arg (pb-field-list ?a "params"))
               (if (eq (pb-field-value ?arg "key") "mps") then
@@ -403,7 +403,7 @@
             )
             (bind ?parents-ids (create$)) 
             (progn$ (?arg (pb-field-list ?a "parent_id"))
-              (bind ?parents-ids (append$ ?parents-ids ?arg))
+              (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
             )
             (progn$ (?arg (pb-field-list ?a "params"))
               (if (eq (pb-field-value ?arg "key") "mps") then
@@ -450,7 +450,7 @@
             )
             (bind ?parents-ids (create$)) 
             (progn$ (?arg (pb-field-list ?a "parent_id"))
-              (bind ?parents-ids (append$ ?parents-ids ?arg))
+              (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
             )
             (progn$ (?arg (pb-field-list ?a "params"))
               (if (eq (pb-field-value ?arg "key") "mps") then
