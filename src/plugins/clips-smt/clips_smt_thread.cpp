@@ -145,6 +145,10 @@ ClipsSmtThread::init()
 
 	shelf_position.push_back(true);
 	shelf_position.push_back(true);
+
+	robot_permutation_[1]=1;
+	robot_permutation_[2]=2;
+	robot_permutation_[3]=3;
 }
 
 
@@ -253,7 +257,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("to");
@@ -262,7 +266,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("retrieve_shelf");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					param = action->add_params();
@@ -275,7 +279,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("prepare");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					param = action->add_params();
@@ -288,7 +292,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("feed");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					param = action->add_params();
@@ -305,7 +309,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("to");
@@ -314,7 +318,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("retrieve");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[1]);
@@ -325,7 +329,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("discard");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 
@@ -338,7 +342,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("to");
@@ -347,7 +351,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("prepare");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					param = action->add_params();
@@ -360,7 +364,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("retrieve");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					param = action->add_params();
@@ -376,7 +380,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id_last[3]);
 					param = action->add_params();
@@ -386,7 +390,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("prepare");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[1]);
@@ -401,7 +405,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("feed");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					param = action->add_params();
@@ -417,7 +421,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					param = action->add_params();
 					param->set_key("to");
@@ -426,7 +430,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("retrieve");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[4]);
@@ -444,7 +448,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id_last[5]);
 					param = action->add_params();
@@ -454,7 +458,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("prepare");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					param = action->add_params();
@@ -467,7 +471,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("feed");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					param = action->add_params();
@@ -1637,7 +1641,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	constraints.push_back(constraint_goal);
 
 	// Influence order of robots chosen
-	constraints.push_back( getVar(varR, "R_1") == 1); // Already enough for two robots
+	// constraints.push_back( getVar(varR, "R_1") == 2); // Already enough for two robots
 
 	if(number_robots>2){
 		// z3::expr constraint_use_r2(var_false);
@@ -1659,8 +1663,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 
 
 			// If pos_3_i is not 0 anymore and was in the step before pos_2_i is not zero anymore
-			constraints.push_back( !(getVar(varRobotPosition, "pos_3_"+std::to_string(i))>0 && getVar(varRobotPosition, "pos_3_"+std::to_string(i-1))==0)
-		 							|| getVar(varRobotPosition, "pos_2_"+std::to_string(i))!=0 );
+			// constraints.push_back( !(getVar(varRobotPosition, "pos_3_"+std::to_string(i))>0 && getVar(varRobotPosition, "pos_3_"+std::to_string(i-1))==0)
+									 // || getVar(varRobotPosition, "pos_2_"+std::to_string(i))!=0 );
 		}
 		// constraints.push_back(constraint_use_r2);
 		// constraints.push_back(constraint_use_r3);
@@ -2015,8 +2019,7 @@ void
 					std::string cw_pos = "pos_";
 					cw_pos += std::to_string(j);
 					std::string cw_pos_R1 = "pos_1_";
-					cw_pos_R1 += std::to_string(j);
-					std::string cw_pos_R2 = "pos_2_";
+					cw_pos_R1 += std::to_string(j); std::string cw_pos_R2 = "pos_2_";
 					cw_pos_R2 += std::to_string(j);
 					std::string cw_pos_R3 = "pos_3_";
 					cw_pos_R3 += std::to_string(j);
@@ -2058,6 +2061,7 @@ void
 					}
 					else if(function_name.compare(cw_robot)==0) {
 						model_robots[j] = (int) interp;
+
 					}
 					else if(function_name.compare(cw_action)==0) {
 						model_actions[j] = (int) interp;
@@ -2090,6 +2094,21 @@ void
 			}
 		}
 
+		bool set_robot_permutation = true;
+		for(unsigned int i = 1; i < model_robots.size(); ++i){
+			if(set_robot_permutation){
+				if(i==1){
+					robot_permutation_[model_robots[1]]=1;	
+				}
+				else if(model_robots[i] != model_robots[1]){
+					robot_permutation_[model_robots[i]] = 2;
+					std::cout << "Try to access robot_permutation_ at position " << 6-(model_robots[1]+model_robots[i]) << std::endl;
+					robot_permutation_[6-(model_robots[1]+model_robots[i])] = 3;
+					set_robot_permutation = false;
+				}
+			}
+		}
+
 		// Add plan specified by the model to stats
 		// of_stats << "number_orders_c0: " << number_orders_c0 << std::endl;
 		// of_stats << "add_temporal_constraint: " << add_temporal_constraint << std::endl;
@@ -2114,6 +2133,7 @@ void
 			// "), S3(" << model_state3A[j] << "-" << model_state3B[j] <<"]";
 			of_stats << " [t = " << model_times[j] << "s] [R1: " << node_names_[model_positions_R1[j]] <<", R2: " << node_names_[model_positions_R2[j]] << ", R3: " << node_names_[model_positions_R3[j]] << "]" << std::endl;
 		}
+		of_stats << " robot_permutation_ has following values:  " << robot_permutation_[1] <<", " <<  robot_permutation_[2] << ", " <<  robot_permutation_[3] << std::endl;
 	} else {
 
 		// End measuring solving time in case of unsat
