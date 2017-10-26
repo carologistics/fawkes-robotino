@@ -48,7 +48,7 @@ clips-executive:
 
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  spec: test
+  spec: visitall
 
   specs:
     test:
@@ -64,3 +64,14 @@ clips-executive:
         say: say{text=?(text)s, wait=true}
         say-hello: say{text="Hello ?(name)y", wait=true}
         say-goodbye: say{text="Good bye", wait=true}
+    visitall:
+      domain: visit-all/visitall-domain.clp
+      goal-reasoner: visit-all/goal-reasoner.clp
+      goal-expander: visit-all/fixed-sequence.clp
+      action-selection: visit-all/action-selection.clp
+      #macro-expansion: visit-all/action-selection.clp
+      action-execution: plan-exec.clp
+      execution-monitoring: visit-all/execution-monitoring.clp
+
+      action-mapping:
+        visit: ppgoto{place=?(to)s}
