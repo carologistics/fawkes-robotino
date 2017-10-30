@@ -129,13 +129,14 @@ private:
 
 	// Constants for C0-C1
 	const int number_final_action_c0 = 6;
-	const int number_final_macroaction_c0 = 15;
-	const int number_final_action_c1 = 18;
+	// const int number_final_macroaction_c0 = 15;
 	const int number_max_required_actions_c0 = 6;
 	const int number_min_required_actions_c0 = number_max_required_actions_c0;//4;
-	const int number_required_actions_c1 = 14;
-
 	const int number_total_action_c0 = 6;//16;
+
+	const int number_final_action_c1 = 11;
+	const int number_required_actions_c1 = 8;
+	const int number_total_action_c1 = 11;
 
 	const int deadline = 900;
 	const int time_to_prep = 5;
@@ -153,14 +154,14 @@ private:
 	std::map<std::string, int> state1_machines;
 	const int min_state1_machines = 0, max_state1_machines = 13;
 	std::map<std::string, int> state2_machines;
-	const int min_state2_machines = 0, max_state2_machines = 2;
+	const int min_state2_machines = 0, max_state2_machines = 6;
 	std::map<std::string, int> state3_machines;
-	const int min_state3_machines = -1, max_state3_machines = 11;
+	const int min_state3_machines = -1, max_state3_machines = 45;
 	std::map<std::string, int> products;
 	std::map<int, std::string> products_inverted;
-	const int min_products = 0, max_products = 11;
+	const int min_products = 0, max_products = 45;
 	std::map<std::string, int> machine_groups;
-	const int min_machine_groups = 0, max_machine_groups = 2;
+	const int min_machine_groups = 0, max_machine_groups = 3;
 
 	std::map<int, std::string> actions;
 
@@ -222,8 +223,8 @@ private:
 	std::map<std::string, int> node_names_inverted;
 	std::map<int, int> robot_permutation_;
 
-	std::map<std::string, std::string> caps_and_colors_input;
-	std::map<std::string, std::string> caps_and_colors_output;
+	std::map<std::string, std::string> colors_input;
+	std::map<std::string, std::string> colors_output;
 	std::vector<bool> shelf_position;
 
 	fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
