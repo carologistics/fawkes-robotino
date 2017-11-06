@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="RecvBeaconInterface" author="Victor Mataré" year="2017">
+  <constants>
+    <enum name="TEAM_COLOR">
+      <comment>Team color</comment>
+      <item name="CYAN">Cyan team</item>
+      <item name="MAGENTA">Magenta team</item>
+    </enum>
+  </constants>
+
+  <data>
+    <comment>Data from last received BeaconSignal</comment>
+    <field type="int64" name="time_sec">Seconds since game start</field>
+    <field type="int64" name="time_nsec">Nanoseconds portion</field>
+    <field type="uint32" name="number">Jersey number (dummy value if rcv'd from refbox)</field>
+    <field type="string" name="team_name" length="255">Team name (dummy value if rcv'd from refbox)</field>
+    <field type="string" name="peer_name" length="255">Peer name</field>
+    <field type="TEAM_COLOR" name="team_color">Team color</field>
+    <field type="float" name="pose" length="3">Pose (unused if rcv'd from refbox)</field>
+  </data>
+
+</interface>
+

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="RCLLGameStateInterface" author="Victor Mataré" year="2017">
+  <constants>
+    <enum name="GameState">
+      <comment>Game state</comment>
+      <item name="INIT">Just after startup of the refbox</item>
+      <item name="WAIT_START">Time not yet running</item>
+      <item name="RUNNING">Game is running</item>
+      <item name="PAUSED">Game was paused</item>
+    </enum>
+    <enum name="GamePhase">
+      <comment>Game phase</comment>
+      <item name="PRE_GAME">Game hasn't begun</item>
+      <item name="SETUP">Setup phase</item>
+      <item name="EXPLORATION">Exploration phase</item>
+      <item name="PRODUCTION">Production phase</item>
+      <item name="POST_GAME">Game has ended</item>
+    </enum>
+  </constants>
+  <data>
+    <comment>Full game state</comment>
+    <field type="int64" name="game_time_sec">Time in seconds since game start</field>
+    <field type="int64" name="game_time_nsec">Nanoseconds part</field>
+    <field type="GameState" name="state">Current game state</field>
+    <field type="GamePhase" name="phase">Current game phase</field>
+    <field type="uint32" name="points_cyan">Points awarded to cyan</field>
+    <field type="string" name="team_cyan" length="255">Name of the cyan team</field>
+    <field type="uint32" name="points_magenta">Points awarded to magenta</field>
+    <field type="string" name="team_magenta" length="255">Name of the magenta team</field>
+  </data>
+</interface>
+

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="PrepareMachineInterface" author="Victor Mataré" year="2017">
+  <constants>
+    <enum name="MachineSide">
+      <comment>Side of an MPS</comment>
+      <item name="OUTPUT">Output side (even tag ID)</item>
+      <item name="INPUT">Input side (odd tag ID)</item>
+    </enum>
+    <enum name="BaseColor">
+      <comment>What color to output</comment>
+      <item name="BASE_RED">Red base</item>
+      <item name="BASE_BLACK">Black base</item>
+      <item name="BASE_SILVER">Silver base</item>
+    </enum>
+    <enum name="RingColor">
+      <comment>Available ring colors</comment>
+      <item name="RING_BLUE">Blue ring</item>
+      <item name="RING_GREEN">Green ring</item>
+      <item name="RING_ORANGE">Orange ring</item>
+      <item name="RING_YELLOW">Yellow ring</item>
+    </enum>
+    <enum name="CapColor">
+      <comment>Available cap colors</comment>
+      <item name="CAP_BLACK">Black cap</item>
+      <item name="CAP_GREY">Grey cap</item>
+    </enum>
+    <enum name="Team">
+      <comment>Team color</comment>
+      <item name="CYAN">Cyan team</item>
+      <item name="MAGENTA">Magenta team</item>
+    </enum>
+    <enum name="SSOp">
+      <comment>Storage Station operation</comment>
+      <item name="STORE">Store something</item>
+      <item name="RETRIEVE">Retrieve something</item>
+    </enum>
+    <enum name="CSOp">
+      <comment>Cap Station operation</comment>
+      <item name="RETRIEVE_CAP">Retrieve cap</item>
+      <item name="MOUNT_CAP">Mount cap</item>
+    </enum>
+  </constants>
+  
+  <data>
+    <comment>No data needed really, just store last msgid</comment>
+    <field type="uint32" name="last_msgid">Last sent message ID</field>
+    <field type="int64" name="peer_id">Peer ID to send to</field>
+  </data>
+
+  <message name="SetPeerMessage">
+    <comment>Set peer ID that messages should be sent to</comment>
+    <field type="int64" name="peer_id">Peer ID to use</field>
+  </message>
+  <message name="PrepareBS">
+    <comment>Make BS output specified base element at the specified side</comment>
+    <field type="Team" name="team_color">The sending team's color</field>
+    <field type="string" length="16" name="machine">Machine name</field>
+    <field type="MachineSide" name="side">Where the base should come out</field>
+    <field type="BaseColor" name="color">What base color should come out</field>
+  </message>
+  <message name="PrepareDS">
+    <field type="Team" name="team_color">The sending team's color</field>
+    <field type="string" length="16" name="machine">Machine name</field>
+    <field type="uint32" name="gate">Delivery gate</field>
+  </message>
+  <message name="PrepareSS">
+    <field type="Team" name="team_color">The sending team's color</field>
+    <field type="string" length="16" name="machine">Machine name</field>
+    <field type="SSOp" name="operation">Operation to perform</field>
+    <field type="uint32" length="3" name="slot">Where to store/retrieve</field>
+  </message>
+  <message name="PrepareRS">
+    <field type="Team" name="team_color">The sending team's color</field>
+    <field type="string" length="16" name="machine">Machine name</field>
+    <field type="RingColor" name="ring_color">Ring color</field>
+  </message>
+  <message name="PrepareCS">
+    <field type="Team" name="team_color">The sending team's color</field>
+    <field type="string" length="16" name="machine">Machine name</field>
+    <field type="CSOp" name="operation">Operation to perform</field>
+  </message>
+</interface>
+
