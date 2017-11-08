@@ -78,7 +78,7 @@ message PlanAction {
   optional string actor = 3;
   required uint32 id = 4;
   repeated uint32 parent_id = 5;
-  required uint32 goal_id = 6;
+  optional uint32 goal_id = 6;
   repeated PlanActionParameter params = 2;
 }
 
