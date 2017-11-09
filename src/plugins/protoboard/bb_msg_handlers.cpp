@@ -8,6 +8,8 @@
 #include <libs/llsf_msgs/MachineInstructions.pb.h>
 #include <libs/llsf_msgs/GameState.pb.h>
 #include <libs/llsf_msgs/OrderInfo.pb.h>
+#include <libs/llsf_msgs/RobotInfo.pb.h>
+#include <libs/llsf_msgs/VersionInfo.pb.h>
 
 namespace protoboard {
 
@@ -22,8 +24,14 @@ std::unordered_map<std::string, std::shared_ptr<pb_convert>> make_receiving_inte
     make_pair("llsf_msgs.Order", make_shared<pb_converter<llsf_msgs::Order, OrderInterface>>()),
     make_pair("llsf_msgs.BeaconSignal", make_shared<pb_converter<llsf_msgs::BeaconSignal, RecvBeaconInterface>>()),
     make_pair("llsf_msgs.GameState", make_shared<pb_converter<llsf_msgs::GameState, RCLLGameStateInterface>>()),
+
+    // Dummy handler, i.e. discard message
+    make_pair("llsf_msgs.RobotInfo", make_shared<pb_convert>()),
+    make_pair("llsf_msgs.VersionInfo", make_shared<pb_convert>())
   };
 };
+
+
 
 
 /****************************************
