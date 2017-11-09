@@ -6,6 +6,7 @@
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
+#include <aspect/clock.h>
 #include <blackboard/utils/on_message_waker.h>
 
 #include <boost/fusion/include/std_tuple.hpp>
@@ -119,7 +120,8 @@ class BlackboardManager :
     public fawkes::Thread,
     public fawkes::LoggingAspect,
     public fawkes::ConfigurableAspect,
-    public fawkes::BlackBoardAspect
+    public fawkes::BlackBoardAspect,
+    public fawkes::ClockAspect
 {
 public:
   BlackboardManager(ProtobufThead *msg_handler);
