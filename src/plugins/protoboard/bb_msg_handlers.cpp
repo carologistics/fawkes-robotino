@@ -21,7 +21,14 @@ using namespace boost::fusion;
 
 std::unordered_map<std::string, std::shared_ptr<pb_convert>> make_receiving_interfaces_map() {
   return {
-    make_pair("llsf_msgs.Order", make_shared<pb_converter<llsf_msgs::Order, OrderInterface>>()),
+    make_pair(
+          "llsf_msgs.OrderInfo",
+          make_shared<
+            pb_nesting_converter<
+              llsf_msgs::OrderInfo,
+              pb_buffered_converter<llsf_msgs::Order, OrderInterface>
+            >
+          >()),
     make_pair("llsf_msgs.BeaconSignal", make_shared<pb_converter<llsf_msgs::BeaconSignal, RecvBeaconInterface>>()),
     make_pair("llsf_msgs.GameState", make_shared<pb_converter<llsf_msgs::GameState, RCLLGameStateInterface>>()),
 
@@ -30,8 +37,6 @@ std::unordered_map<std::string, std::shared_ptr<pb_convert>> make_receiving_inte
     make_pair("llsf_msgs.VersionInfo", make_shared<pb_convert>())
   };
 };
-
-
 
 
 /****************************************
@@ -70,7 +75,18 @@ complexity_enum_order {
 
 template<>
 void
-pb_converter<llsf_msgs::Order, OrderInterface>::handle(
+pb_nesting_converter<llsf_msgs::OrderInfo, pb_buffered_converter<llsf_msgs::Order, OrderInterface>>::handle(
+    const llsf_msgs::OrderInfo &msg,
+    pb_buffered_converter<llsf_msgs::Order, OrderInterface> &order_to_iface)
+{
+  for (const llsf_msgs::Order &order : msg.orders())
+    order_to_iface.handle(order);
+}
+
+
+template<>
+void
+pb_buffered_converter<llsf_msgs::Order, OrderInterface>::handle(
     const llsf_msgs::Order &msg,
     OrderInterface *iface)
 {
