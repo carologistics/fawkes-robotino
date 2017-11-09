@@ -183,15 +183,29 @@ BlackboardManager::handle_message(
     SendBeaconInterface::SendBeaconMessage *msg)
 {
   std::shared_ptr<llsf_msgs::BeaconSignal> m = std::make_shared<llsf_msgs::BeaconSignal>();
+
+  // Set time here to simplify blackboard interface
+  llsf_msgs::Time *time = new llsf_msgs::Time();
+  time->set_sec(clock->now().get_sec());
+  time->set_nsec(clock->now().get_nsec());
+
   llsf_msgs::Pose2D *pose = new llsf_msgs::Pose2D();
   pose->set_x(msg->translation(0));
   pose->set_y(msg->translation(1));
   pose->set_ori(msg->orientation());
+  pose->set_allocated_timestamp(time);
+
   m->set_allocated_pose(pose);
   m->set_allocated_team_name(new std::string(msg->team_name()));
   m->set_number(msg->number());
   m->set_allocated_peer_name(new std::string(msg->peer_name()));
   m->set_team_color(team_enum_beacon.of(msg->team_color()));
+
+  m->set_allocated_time(new llsf_msgs::Time(*time));
+
+  // Same for sequence number, good idea to count it centrally, anyways
+  static google::protobuf::uint64 beacon_seq = 0;
+  m->set_seq(beacon_seq++);
 
   message_handler_->send(iface->peer_id(), m);
 }
