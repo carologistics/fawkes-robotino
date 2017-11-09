@@ -51,21 +51,28 @@ void BlackboardManager::loop()
         ProtobufPeerInterface::CreatePeerLocalCryptoMessage
       > ();
 
+  // Handle sending blackboard interfaces
   did_something |= boost::fusion::any(bb_sending_interfaces_, handle_messages { this });
 
+  // Handle receiving blackboard interfaces
   while (message_handler_->pb_queue_incoming()) {
     ProtobufThead::incoming_message inc = message_handler_->pb_queue_pop();
     pb_conversion_map::iterator it;
 
     if ((it = bb_receiving_interfaces_.find(inc.msg->GetTypeName())) == bb_receiving_interfaces_.end())
       logger->log_error(name(), "Received message of unregistered type `%s'", inc.msg->GetTypeName().c_str());
-    else
+    else try {
       it->second->handle(inc.msg);
+    } catch (std::exception &e) {
+      logger->log_error(name(), "Exception while handling %s: %s",
+                        inc.msg->GetTypeName().c_str(), e.what());
+    }
 
     did_something = true;
   }
 
   if (!did_something)
+    // Thread woke up, but nothing was handled
     logger->log_warn(name(), "Spurious wakeup. WTF?");
 }
 
