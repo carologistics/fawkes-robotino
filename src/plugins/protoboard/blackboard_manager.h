@@ -134,23 +134,29 @@ protected:
 private:
   void add_peer(fawkes::ProtobufPeerInterface *iface, long peer_id);
 
-  template<class MessageT, class InterfaceT> bool handle_message_type(InterfaceT *iface)
+  template<class MessageT, class InterfaceT>
+  bool handle_message_type(InterfaceT *iface)
   {
     if (!iface->msgq_empty()) {
-      logger->log_info(name(), "%s", iface->uid());
       bool rv = false;
       while (MessageT *msg = iface->msgq_first_safe(msg)) {
-        logger->log_info(name(), "%s", msg->type());
-        handle_message(iface, msg);
+        try {
+          handle_message(iface, msg);
+        } catch (std::exception &e) {
+          logger->log_error(name(), "Exception handling %s on %s: %s",
+                            msg->type(), iface->uid(), e.what());
+        }
         iface->msgq_pop();
         rv = true;
       }
+      iface->write();
       return rv;
     } else
       return false;
   }
 
-  template<class InterfaceT, class MessageT> void handle_message(InterfaceT *iface, MessageT *msg);
+  template<class InterfaceT, class MessageT>
+  void handle_message(InterfaceT *iface, MessageT *msg);
 
 
   template<class InterfaceT>
@@ -162,7 +168,8 @@ private:
       : iface(iface), manager(manager)
     {}
 
-    template<class MessageT> bool handle_msg_types ()
+    template<class MessageT>
+    bool handle_msg_types ()
     {
       return manager->handle_message_type<MessageT>(iface);
     }
