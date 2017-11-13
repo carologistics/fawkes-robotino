@@ -1,0 +1,1 @@
+../etc/scripts/hackathon.bash
