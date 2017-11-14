@@ -24,9 +24,10 @@ std::unordered_map<std::string, std::shared_ptr<pb_convert>> make_receiving_inte
     make_pair(
           "llsf_msgs.OrderInfo",
           make_shared<
-            pb_nesting_converter<
+            pb_sequence_converter<
               llsf_msgs::OrderInfo,
-              pb_buffered_converter<llsf_msgs::Order, OrderInterface>
+              pb_converter<llsf_msgs::Order, OrderInterface>,
+              10
             >
           >()),
     make_pair("llsf_msgs.BeaconSignal", make_shared<pb_converter<llsf_msgs::BeaconSignal, RecvBeaconInterface>>()),
@@ -74,32 +75,43 @@ complexity_enum_order {
 
 
 template<>
-void
-pb_nesting_converter<llsf_msgs::OrderInfo, pb_buffered_converter<llsf_msgs::Order, OrderInterface>>::handle(
-    const llsf_msgs::OrderInfo &msg,
-    pb_buffered_converter<llsf_msgs::Order, OrderInterface> &order_to_iface)
-{
-  for (const llsf_msgs::Order &order : msg.orders())
-    order_to_iface.handle(order);
-}
+const google::protobuf::RepeatedPtrField<llsf_msgs::Order> &
+pb_sequence_converter<llsf_msgs::OrderInfo, pb_converter<llsf_msgs::Order, OrderInterface>, 10>::extract_sequence(
+    const llsf_msgs::OrderInfo &msg)
+{ return msg.orders(); }
 
 
 template<>
 void
-pb_buffered_converter<llsf_msgs::Order, OrderInterface>::handle(
+pb_converter<llsf_msgs::Order, OrderInterface>::handle(
     const llsf_msgs::Order &msg,
     OrderInterface *iface)
 {
-  iface->set_base_color(base_color_enum_order.of(msg.base_color()));
-  iface->set_cap_color(cap_color_enum_order.of(msg.cap_color()));
-  iface->set_complexity(complexity_enum_order.of(msg.complexity()));
+  if (iface->base_color() != base_color_enum_order.of(msg.base_color()))
+    iface->set_base_color(base_color_enum_order.of(msg.base_color()));
+  if (iface->cap_color() != cap_color_enum_order.of(msg.cap_color()))
+    iface->set_cap_color(cap_color_enum_order.of(msg.cap_color()));
+  if (iface->complexity() != complexity_enum_order.of(msg.complexity()))
+    iface->set_complexity(complexity_enum_order.of(msg.complexity()));
+
   for (int i = 0; i < msg.ring_colors_size(); ++i)
-    iface->set_ring_colors(static_cast<unsigned int>(i),
-                           ring_color_enum_order.of(msg.ring_colors(i)));
-  iface->set_order_id(msg.id());
-  iface->set_delivery_period_begin(msg.delivery_period_begin());
-  iface->set_delivery_period_end(msg.delivery_period_end());
-  iface->set_delivery_gate(msg.delivery_gate());
+    if (iface->ring_colors(static_cast<unsigned int>(i)) != ring_color_enum_order.of(msg.ring_colors(i)))
+      iface->set_ring_colors(static_cast<unsigned int>(i), ring_color_enum_order.of(msg.ring_colors(i)));
+
+  if (iface->order_id() != msg.id())
+    iface->set_order_id(msg.id());
+  if (iface->delivery_period_begin() != msg.delivery_period_begin())
+    iface->set_delivery_period_begin(msg.delivery_period_begin());
+  if (iface->delivery_period_end() != msg.delivery_period_end())
+    iface->set_delivery_period_end(msg.delivery_period_end());
+  if (iface->delivery_gate() != msg.delivery_gate())
+    iface->set_delivery_gate(msg.delivery_gate());
+  if (iface->quantity_delivered_cyan() != msg.quantity_delivered_cyan())
+    iface->set_quantity_delivered_cyan(msg.quantity_delivered_cyan());
+  if (iface->quantity_delivered_magenta() != msg.quantity_delivered_magenta())
+    iface->set_quantity_delivered_magenta(msg.quantity_delivered_magenta());
+  if (iface->quantity_requested() != msg.quantity_requested())
+    iface->set_quantity_requested(msg.quantity_requested());
 };
 
 

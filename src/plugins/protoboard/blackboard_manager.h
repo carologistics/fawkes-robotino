@@ -57,6 +57,7 @@ class pb_convert : public std::enable_shared_from_this<pb_convert> {
 public:
   pb_convert()
     : blackboard_(nullptr)
+    , logger_(nullptr)
   {}
 
   virtual ~pb_convert();
@@ -74,7 +75,6 @@ public:
   virtual void handle(const google::protobuf::Message &)
   {}
 
-
 protected:
   fawkes::BlackBoard *blackboard_;
   fawkes::Logger *logger_;
@@ -84,72 +84,86 @@ protected:
 template<class ProtoT, class IfaceT>
 class pb_converter : public pb_convert {
 public:
+  typedef ProtoT input_type;
+  typedef IfaceT output_type;
+
   pb_converter()
       : interface_(nullptr)
   {}
+
+  virtual ~pb_converter()
+  { blackboard_->close(interface_); }
 
   virtual void
   init(fawkes::BlackBoard *blackboard, fawkes::Logger *logger) override
   {
     pb_convert::init(blackboard, logger);
     interface_ = blackboard_->open_for_writing<IfaceT>(
-        iface_id_for_type<IfaceT>(0).c_str());
+          iface_id_for_type<IfaceT>(0).c_str());
   }
 
   virtual void
   handle(const google::protobuf::Message &msg) override
-  { handle(dynamic_cast<const ProtoT &>(msg), interface_); }
+  {
+    handle(dynamic_cast<const ProtoT &>(msg), interface_);
+    interface_->write();
+  }
+
+  virtual void handle(const ProtoT &msg)
+  { handle(msg, interface_); }
 
   virtual void handle(const ProtoT &msg, IfaceT *iface);
+
+  virtual bool is_open()
+  { return interface_; }
+
+  virtual void close()
+  {
+    if (is_open()) {
+      blackboard_->close(interface_);
+      interface_ = nullptr;
+    }
+  }
 
 private:
   IfaceT *interface_;
 };
 
 
-template<class ProtoT, class IfaceT, size_t num_ifaces = 8>
-class pb_buffered_converter : public pb_convert {
+template<class ProtoT, class OutputT, size_t seq_length>
+class pb_sequence_converter : public pb_convert {
 public:
-  pb_buffered_converter()
-      : interfaces_(num_ifaces, nullptr)
-      , pb_msg_index_(0)
+  typedef google::protobuf::RepeatedPtrField<typename OutputT::input_type> sequence_type;
+
+  pb_sequence_converter()
+      : sub_converters_(seq_length)
   {}
 
   virtual void
   handle(const google::protobuf::Message &msg) override
   {
-    size_t if_idx = pb_msg_index_ % interfaces_.size();
-    if (interfaces_[if_idx])
-      blackboard_->close(interfaces_[if_idx]);
+    typename std::vector<OutputT>::iterator out_it = sub_converters_.begin();
+    sequence_type fields = extract_sequence(dynamic_cast<const ProtoT &>(msg));
+    typename sequence_type::const_iterator field_it = fields.begin();
 
-    interfaces_[if_idx] = blackboard_->open_for_writing<IfaceT>(
-          iface_id_for_type<IfaceT>(++pb_msg_index_).c_str());
+    while (out_it != sub_converters_.end() && field_it != fields.end()) {
+      if (!out_it->is_open())
+        out_it->init(blackboard_, logger_);
+      out_it->handle(*field_it);
 
-    handle(dynamic_cast<const ProtoT &>(msg), interfaces_[if_idx]);
-    interfaces_[if_idx]->write();
+      ++out_it;
+      ++field_it;
+    }
+    for ( ; out_it != sub_converters_.end(); ++out_it) {
+      if (out_it->is_open())
+        out_it->close();
+    }
   }
 
-  virtual void handle(const ProtoT &msg, IfaceT *iface);
+  virtual const sequence_type &extract_sequence(const ProtoT &msg);
 
 private:
-  std::vector<IfaceT *> interfaces_;
-  size_t pb_msg_index_;
-};
-
-
-template<class ProtoT, class ConverterT>
-class pb_nesting_converter : public pb_convert {
-public:
-  virtual void
-  handle(const google::protobuf::Message &msg) override
-  {
-    handle(dynamic_cast<const ProtoT &>(msg), sub_converter_);
-  }
-
-  virtual void handle(const ProtoT &msg, ConverterT &sub_converter);
-
-private:
-  ConverterT sub_converter_;
+  std::vector<OutputT> sub_converters_;
 };
 
 
