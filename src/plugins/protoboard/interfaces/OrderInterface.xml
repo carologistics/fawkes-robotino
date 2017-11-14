@@ -43,6 +43,9 @@
     <field type="uint32" name="delivery_period_begin">Delivery window start (seconds of game time)</field>
     <field type="uint32" name="delivery_period_end">Delivery window end (seconds of game time)</field>
     <field type="uint32" name="delivery_gate">Which gate must be used at the DS</field>
+    <field type="uint32" name="quantity_requested">How many of this type must be delivered</field>
+    <field type="uint32" name="quantity_delivered_cyan">How many were delivered by Cyan</field>
+    <field type="uint32" name="quantity_delivered_magenta">How many were delivered by Magenta</field>
   </data>
 </interface>
 
