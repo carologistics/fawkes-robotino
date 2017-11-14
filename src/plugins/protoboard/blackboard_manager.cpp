@@ -25,11 +25,11 @@ void BlackboardManager::init()
 {
   peer_iface_ = blackboard->open_for_writing<ProtobufPeerInterface>("/protoboard/peers");
 
-  for (pb_conversion_map::value_type &c : bb_receiving_interfaces_)
-    c.second->init(blackboard, logger);
-
   on_message_waker_ = new fawkes::BlackBoardOnMessageWaker(blackboard, peer_iface_, this);
   boost::fusion::for_each(bb_sending_interfaces_, init_interface{this});
+
+  for (pb_conversion_map::value_type &c : bb_receiving_interfaces_)
+    c.second->init(blackboard, logger);
 }
 
 
