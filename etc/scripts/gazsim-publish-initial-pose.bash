@@ -22,7 +22,7 @@ EOF
  
 #check options
 
-PORT=1910
+PORT=1921
 X=
 Y=
 O0=0.0
@@ -110,5 +110,5 @@ then
      exit 1
 fi
 
-$FAWKES_DIR/bin/ffset_pose $X $Y 0.0 $O0 $O1 $O2 $O3
+$FAWKES_DIR/bin/ffset_pose -r localhost:$PORT $X $Y 0.0 $O0 $O1 $O2 $O3
 
