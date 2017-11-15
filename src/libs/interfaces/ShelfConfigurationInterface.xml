@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="ShelfConfiguration" author="Till Hofmann" year="2017">
+  <constants>
+    <enum name="SlotColor">
+      <comment>
+        Possible colors of a slot on the shelf.
+      </comment>
+      <item name="RED">red</item>
+      <item name="BLACK">black</item>
+      <item name="EMPTY">empty</item>
+    </enum>
+  </constants>
+  <data>
+    <comment>
+     A configuration of a shelf, determines the color of each of its three
+     slots.
+    </comment>
+  <field type="SlotColor" name="left">
+    The color of the left slot.
+  </field>
+  <field type="SlotColor" name="center">
+    The color of the center slot.
+  </field>
+  <field type="SlotColor" name="right">
+    The color of the right slot.
+  </field>
+  <field type="bool" name="ready">
+    Whether the shelf configuration is done.
+  </field>
+  </data>
+</interface>
