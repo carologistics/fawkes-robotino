@@ -62,6 +62,7 @@ clips-executive:
       #macro-expansion: hackathon/action-selection.clp
       action-execution: plan-exec.clp
       execution-monitoring: hackathon/execution-monitoring.clp
+      state-estimation: hackathon/state-estimation-init.clp
 
       action-mapping:
         say: say{text=?(text)s, wait=true}
