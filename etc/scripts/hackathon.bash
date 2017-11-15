@@ -31,7 +31,7 @@ REPLAY=
 FAWKES_BIN=$FAWKES_DIR/bin
 META_PLUGIN=
 START_GAZEBO=true
-GAZEBO_WORLD=~/robotics/gazebo-rcll/worlds/carologistics/hackathon2017.world
+GAZEBO_WORLD=${GAZEBO_WORLD_PATH:-~/robotics/gazebo-rcll/worlds/carologistics/hackathon2017.world}
 while getopts “hx:c:lrksn:e:dm:aof:p:w” OPTION
 do
      case $OPTION in
