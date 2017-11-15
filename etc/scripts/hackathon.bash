@@ -196,7 +196,7 @@ if [  $COMMAND  == start ]; then
     # publish initial poses
     sleep 15s
     echo "publish initial poses"
-    $initial_pose_script_location -k
+    $initial_pose_script_location -p 1921 -x 0.7 -y 2.461 -o 0 0 0.7 0.7
 
     else
     usage
