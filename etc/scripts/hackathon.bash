@@ -183,6 +183,12 @@ if [  $COMMAND  == start ]; then
 	OPEN_COMMAND="$OPEN_COMMAND --tab -t Fawkes_Comm -e 'bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm -p 11311 $KEEP $SHUTDOWN\"'"
     fi
 
+    if $START_MOVE_BASE
+    then
+	#start move_base for path planning
+	OPEN_COMMAND="$OPEN_COMMAND --tab -t move_base -e 'bash -c \"roslaunch --wait robotino_move_base robotino_move_base_simu.launch\"'"
+    fi
+
     # open windows
     #echo $OPEN_COMMAND
     eval $OPEN_COMMAND
