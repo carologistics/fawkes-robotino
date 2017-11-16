@@ -14,3 +14,13 @@
   =>
   (blackboard-open-reading "Position3DInterface" "Pose")
 )
+
+(defrule state-estimation-open-shelf-configuration-interface
+  "Open the ShelfConfiguration blackboard interface to get the goal
+   configuration."
+  (executive-init)
+  (ff-feature-loaded blackboard)
+  (not (blackboard-interface (type "ShelfConfigurationInterface") (id "shelf")))
+  =>
+  (blackboard-open-reading "ShelfConfigurationInterface" "shelf")
+)
