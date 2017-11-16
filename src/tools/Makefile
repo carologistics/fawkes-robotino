@@ -16,7 +16,7 @@
 BASEDIR = ../..
 include $(BASEDIR)/etc/buildsys/config.mk
 
-SUBDIRS	= gamectrl
+SUBDIRS	= gamectrl configure_shelf
 
 include $(BUILDSYSDIR)/rules.mk
 
