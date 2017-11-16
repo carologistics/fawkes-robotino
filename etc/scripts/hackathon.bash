@@ -199,7 +199,9 @@ if [  $COMMAND  == start ]; then
     sleep 15s
     echo "publish initial poses"
     $initial_pose_script_location -p 1921 -x 0.7 -y 2.461 -o 0 0 0.7 0.7
-    $initial_pose_script_location -p 1922 -x 5.5 -y 2.4 -o 0 0 0.7 0.7
+    if [ $NUM_ROBOTINOS -gt 1 ] ; then
+      $initial_pose_script_location -p 1922 -x 5.5 -y 2.4 -o 0 0 0.7 0.7
+    fi
 
     else
     usage
