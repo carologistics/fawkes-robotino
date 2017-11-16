@@ -24,3 +24,14 @@
   =>
   (blackboard-open-reading "ShelfConfigurationInterface" "shelf")
 )
+
+(defrule state-estimation-open-other-robot-pose-interface
+  "Open the synced blackboard interface of the other robot."
+  (executive-init)
+  (ff-feature-loaded blackboard)
+  (not
+    (blackboard-interface (type "Position3DInterface") (id "OtherRobotPose"))
+  )
+  =>
+  (blackboard-open-reading "Position3DInterface" "OtherRobotPose")
+)
