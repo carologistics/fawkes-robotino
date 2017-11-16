@@ -128,6 +128,7 @@ if [  $COMMAND  == kill ]; then
     killall roscore
     killall llsf-refbox
     killall llsf-refbox-shell
+    killall roslaunch
     exit 0
 fi
 
