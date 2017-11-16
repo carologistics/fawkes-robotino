@@ -1,0 +1,91 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,navgraph/
+---
+graph-name: LLSF
+root: SW
+
+default-properties:
+    # Max. distance between actual and target positions to deem the target
+    # reached. This value is for intermediate nodes on a path; m
+    # The value can be overwritten per node in the graph file.
+    - travel_tolerance: 1.5
+
+    # Max. distance between actual and target positions to deem the target
+    # reached. This value is for the last node on a path; m
+    # The value can be overwritten per node in the graph file.
+    - target_tolerance: 0.7
+
+    # Max. distance between actual and target orientation to deem the target
+    # reached. This value is for the last node on a path; rad
+    - orientation_tolerance: 0.6
+
+    # When following a plan the robot will check all upcoming nodes if they
+    # are close to the robot within this tolerance. If so, they take a shortcut
+    # and will go to the node in the plan after the shortcut node.
+    # This is potentially dangerous depending on the graph and navigator as it
+    # might violate the typical graph constraint of only having direct-line-of-tavel
+    # connections. The value can be overidden with a node property of the same name; m
+    - shortcut_tolerance: 1.2
+
+    # Distance from base_link to the MPS to align
+    - align_distance: 0.45
+
+    # Signal position on the table. Z is the table height above ground.
+    - signal_hint_x: 0.035
+    - signal_hint_y: -0.1
+    - signal_hint_z: 0.78
+
+    # Offset for aligning in front of the conveyor using the laser line
+    - input_offset_y: 0.025
+    - output_offset_y: -0.025
+
+
+nodes:
+  - !unconnected
+    name: source-red
+    pos: [2.5, 4.5]
+    properties:
+      - tag_output: 33
+  - name: source-red-output
+    pos: [2.5, 4.0]
+    properties:
+      - orientation: 1.57
+  - !unconnected
+    name: source-black
+    pos: [3.5, 4.5]
+    properties:
+      - tag_output: 34
+  - name: source-black-output
+    pos: [3.5, 4.0]
+    properties:
+      - orientation: 1.57
+  - !unconnected
+    name: target-magenta
+    pos: [1.5, 0.5]
+    properties:
+      - tag_input: 17
+  - name: target-magenta-input
+    pos: [1.5, 1.0]
+    properties:
+      - orientation: -1.57
+  - !unconnected
+    name: target-cyan
+    pos: [4.5, 0.5]
+    properties:
+      - tag_input: 18
+  - name: target-cyan-input
+    pos: [4.5, 1.0]
+    properties:
+      - orientation: -1.57
+  - name: center-field
+    pos: [3.0, 3.0]
+
+# Possible directional tags:
+# !bidir (bidirectional, default), !dir (directed)
+connections:
+# common
+  - [center-field, source-red-output]
+  - [center-field, source-black-output]
+  - [center-field, target-magenta-input]
+  - [center-field, target-cyan-input]
+
