@@ -58,3 +58,10 @@ fawkes/bbsync:
         laser_front_dist: Position3DInterface::front_dist
       writing:
         tfTags: TransformInterface::TF tags
+    other-robotino:
+      active: true
+      host: localhost
+      port: !tcp-port 1910
+      check_interval: 1000
+      reading:
+        robot_pose: Position3DInterface::Pose=OtherRobotPose

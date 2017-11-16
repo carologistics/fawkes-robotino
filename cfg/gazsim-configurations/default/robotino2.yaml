@@ -16,4 +16,3 @@ fawkes:
   # Main app relevant settings
   mainapp:
     loggers: console;file/debug:debug2_$time.log
-

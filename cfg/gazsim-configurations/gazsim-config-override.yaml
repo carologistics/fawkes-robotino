@@ -124,3 +124,7 @@ plugins/robot-memory:
     replicated:
       replica-set-members:
         - localhost:27021
+
+fawkes/bbsync:
+  peers:
+    robotino-base/active: false

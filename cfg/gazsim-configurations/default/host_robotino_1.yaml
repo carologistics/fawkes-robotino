@@ -68,3 +68,6 @@ webtools-bridge:
   #port where rosbridge is expected to start. Websocket connection will be established to forward the Ros requests to the Rosbridge
   rosbridge-port: 9090
   rosbridge-uri: "ws://localhost:9090"
+
+fawkes/bbsync:
+    peers/other-robotino/port: !tcp-port 1922
