@@ -1,11 +1,19 @@
-
 (defrule action-selection-select
+  (Position3DInterface (id "Pose") (translation $?robot-trans))
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status FORMULATED)
-											(action-name ?action-name))
+											(action-name goto) (param-values $?params))
+  (navgraph-node (name ?goal-node&:(eq ?goal-node (nth$ 1 ?params))) (pos $?goal-pos))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	(goal (id ?goal-id) (mode DISPATCHED))
 	(not (plan-action (status PENDING|WAITING|RUNNING|FAILED)))
-	(not (plan-action (status FORMULATED) (id ?oid&:(< ?oid ?id))))
+	(not (and
+    (plan-action (plan-id ?plan-id) (id ?other-id&~?id) (status FORMULATED)
+      (action-name goto) (param-values $?otherp))
+    (navgraph-node (name ?othern&:(eq ?othern (nth$ 1 ?otherp)))
+      (pos $?other-pos&:
+        (navgraph-closer (subseq$ ?robot-trans 1 2) ?other-pos ?goal-pos)
+    ))
+  ))
 	=>
 	(modify ?pa (status PENDING))
 )
