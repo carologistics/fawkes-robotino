@@ -79,3 +79,4 @@ clips-executive:
 
       action-mapping:
         visit: ppgoto{place=?(to)s}
+      blackboard-preload: ["Position3DInterface"]
