@@ -75,6 +75,7 @@ clips-executive:
       #macro-expansion: visit-all/action-selection.clp
       action-execution: plan-exec.clp
       execution-monitoring: visit-all/execution-monitoring.clp
+      state-estimation: visit-all/state-estimation-init.clp
 
       action-mapping:
         visit: ppgoto{place=?(to)s}
