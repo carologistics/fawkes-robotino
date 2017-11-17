@@ -148,7 +148,7 @@ fsm:define_states{ export_to=_M, closure={
 }
 
 fsm:add_transitions{
-   {"INIT",          "FAILED",          precond="not vars.x", desc="x argument missing"},
+   --{"INIT",          "FAILED",          precond="not vars.x", desc="x argument missing"},
    {"INIT",          "CHECK_TAG",       cond=true},
 
    {"CHECK_TAG",     "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
@@ -173,6 +173,7 @@ fsm:add_transitions{
 }
 
 function INIT:init()
+   self.fsm.vars.x   = self.fsm.vars.x   or 0.5
    self.fsm.vars.y   = self.fsm.vars.y   or 0
    self.fsm.vars.ori = self.fsm.vars.ori or 0
 
