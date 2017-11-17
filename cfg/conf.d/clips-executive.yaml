@@ -80,6 +80,11 @@ clips-executive:
       state-estimation: hackathon/state-estimation-init.clp
 
       action-mapping:
+        goto: ppgoto{place=?(to)s}
+        conveyor-align: conveyor_align()
+        pick: shelf_pick{slot=?(slot)s}
+        put: shelf_put{slot=?(slot)s}
+        mps-align: mps_align{x=0.5}
         say: say{text=?(text)s, wait=true}
         say-hello: say{text="Hello ?(name)y", wait=true}
         say-goodbye: say{text="Good bye", wait=true}
