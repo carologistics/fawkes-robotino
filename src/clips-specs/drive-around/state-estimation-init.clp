@@ -6,6 +6,10 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file in the doc directory.
 ;---------------------------------------------------------------------------
 
+(deftemplate robot-pose
+  (slot node (type STRING))
+)
+
 (defrule state-estimation-open-pose-interface
   "Open the Pose blackboard interface to get the robot pose."
   (executive-init)
@@ -34,4 +38,5 @@
   )
   =>
   (blackboard-open-reading "Position3DInterface" "OtherRobotPose")
+  (path-load "drive-around/state-estimation.clp")
 )
