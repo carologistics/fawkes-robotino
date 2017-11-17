@@ -70,7 +70,7 @@ clips-executive:
       blackboard-preload: ["Position3DInterface"]
 
     hackathon:
-      domain: hackathon/test-domain.clp
+      domain: hackathon/domain.clp
       goal-reasoner: hackathon/goal-reasoner.clp
       goal-expander: hackathon/fixed-sequence.clp
       action-selection: hackathon/action-selection.clp
