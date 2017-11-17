@@ -14,6 +14,8 @@
     (domain-loaded)
     (domain-object-type (name location))
     (domain-object-type (name mps))
+    (domain-object-type (name slot-type))
+    (domain-object-type (name tag))
     (domain-predicate (name at) (param-names l) (param-types location))
     (domain-operator (name goto))
     ;(domain-operator-parameter (name from) (operator goto) (type location))
@@ -28,10 +30,13 @@
     (domain-precondition (part-of conveyor-align) (type conjunction))
 
     (domain-operator (name pick))
+    (domain-operator-parameter (operator pick) (name slot) (type slot-type))
     (domain-precondition (part-of pick) (type conjunction))
 
     (domain-operator (name put))
+    (domain-operator-parameter (operator put) (name slot) (type slot-type))
     (domain-precondition (part-of put) (type conjunction))
+
     (domain-object-type (name text))
     (domain-operator (name say-hello))
     (domain-precondition (part-of say-hello) (type conjunction))
