@@ -10,7 +10,7 @@ clips-executive:
   # If CLIPS debugging is enabled, certain rules and facts can be excluded
   # from watching, e.g. if they are showing up at too high frequencies or
   # are not of interest.
-  unwatch-facts: ["time"]
+  unwatch-facts: ["time", "Position3DInterface"]
   unwatch-rules: ["time-retract", "blackboard-read"]
 
   # Currently not working in clips-executive!
@@ -51,9 +51,24 @@ clips-executive:
 
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  spec: hackathon
+  spec: drive-around
 
   specs:
+    drive-around:
+      domain: drive-around/domain.clp
+      goal-reasoner: drive-around/goal-reasoner.clp
+      goal-expander: drive-around/fixed-sequence.clp
+      action-selection: drive-around/action-selection.clp
+      #macro-expansion: drive-around/action-selection.clp
+      action-execution: plan-exec.clp
+      execution-monitoring: drive-around/execution-monitoring.clp
+      state-estimation: drive-around/state-estimation-init.clp
+
+      action-mapping:
+        goto: ppgoto{place=?(to)s}
+
+      blackboard-preload: ["Position3DInterface"]
+
     hackathon:
       domain: hackathon/test-domain.clp
       goal-reasoner: hackathon/goal-reasoner.clp
