@@ -172,6 +172,9 @@ if [  $COMMAND  == start ]; then
     	done
     fi
 
+    if [ $NUM_ROBOTINOS -gt 1 ] ; then
+      META_PLUGIN="${META_PLUGIN:+${META_PLUGIN},}bbsync"
+    fi
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
