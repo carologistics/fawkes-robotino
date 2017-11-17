@@ -50,6 +50,9 @@ clips-executive:
   # <agent name>.clp. It must be in the CLIPS path directories.
   spec: visitall
 
+  # Use navgraph feature which adds facts for navgraph nodes.
+  use_navgraph: true
+
   specs:
     test:
       domain: test-scenario/test-domain.clp
