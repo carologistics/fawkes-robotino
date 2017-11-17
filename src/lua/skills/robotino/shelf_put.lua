@@ -63,14 +63,14 @@ fsm:add_transitions{
 
 
 function GOTO_SHELF:init()
-   local shelf_to_conveyor = 0.09 --TODO measure both values
-   local shelf_distance = 0.09
+   local shelf_to_conveyor = 0.0  --TODO measure both values
+   local shelf_distance = 0.1
    if self.fsm.vars.slot == "LEFT" then
-      dest_y = shelf_to_conveyor
+      dest_y = shelf_to_conveyor - shelf_distance
    elseif self.fsm.vars.slot == "MIDDLE" then
-      dest_y = shelf_to_conveyor + shelf_distance
+      dest_y = shelf_to_conveyor
    elseif self.fsm.vars.slot == "RIGHT" then
-      dest_y = shelf_to_conveyor + 2*shelf_distance
+      dest_y = shelf_to_conveyor + shelf_distance
    else
       dest_y = 0
       self.fsm:set_error("no shelf side set")
