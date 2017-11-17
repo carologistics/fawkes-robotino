@@ -13,7 +13,7 @@
 	(not (goal))
 	(not (goal-already-tried))
 	=>
-	(assert (goal (id TESTGOAL)))
+	(assert (goal (id VISITALL)))
 	; This is just to make sure we formulate the goal only once.
 	; In an actual domain this would be more sophisticated.
 	(assert (goal-already-tried))
