@@ -133,19 +133,30 @@ private:
 	 */
 
 	// c0
-	const int index_delivery_action_c0 = 6;
-	const int number_required_actions_c0 = 6;
+	int number_required_actions_c0 = 6;
 	const int index_upper_bound_actions_c0 = 6;
 
 	// c1
-	const int index_delivery_action_c1 = 11;
-	const int number_required_actions_c1 = 8;
-	const int index_upper_bound_actions_c1 = 11;
+	int number_required_actions_c1 = 8;
+	const int index_upper_bound_actions_c1 = 9;
+
+	// c2
+	int number_required_actions_c2 = 10;
+	const int index_upper_bound_actions_c2 = 11;
+
+	// c3
+	int number_required_actions_c3 = 12;
+	const int index_upper_bound_actions_c3 = 13;
 
 	// All ci
+	int index_delivery_action = 6;
 	int index_upper_bound_actions;
+	int number_required_actions;
 	int number_total_actions;
 	int plan_horizon;
+
+	// RingColor constants
+	std::vector<int> number_required_bases;
 	
 	// Time constants // TODO evalutate realistic constants
 	const int deadline = 900;
@@ -169,12 +180,15 @@ private:
 
 	// State3 refers to the possibilty of retrieving (CS, RS)
 	std::map<std::string, int> state3_machines;
-	const int min_state3_machines = -1, max_state3_machines = 45;
+	const int min_state3_machines = -1, max_state3_machines = 765;
+
+	// State4,5 refers to the number of bases fed into the ring stations RS1 and RS2
+	const int min_state45_machines = 0, max_state45_machines = 3;
 
 	// Products refers to all possible products
 	std::map<std::string, int> products;
 	std::map<int, std::string> products_inverted;
-	const int min_products = 0, max_products = 45;
+	const int min_products = 0, max_products = 765;
 
 	// Machine_groups refers to all possible machines (DS, CS, RS, BS)
 	std::map<std::string, int> machine_groups;
@@ -194,10 +208,14 @@ private:
 	std::map<int, int> model_state1A;
 	std::map<int, int> model_state2A;
 	std::map<int, int> model_state3A;
+	std::map<int, int> model_state4A;
+	std::map<int, int> model_state5A;
 	std::map<int, int> model_holdB;
 	std::map<int, int> model_state1B;
 	std::map<int, int> model_state2B;
 	std::map<int, int> model_state3B;
+	std::map<int, int> model_state4B;
+	std::map<int, int> model_state5B;
 
 	// Leonard Korps formula encoding
 	// GameData clips_smt_convert_protobuf_to_gamedata();
@@ -228,6 +246,12 @@ private:
 	int number_orders;
 	const int number_orders_c0 = 1;
 	const int number_orders_c1 = 0;
+	const int number_orders_c2 = 0;
+	const int number_orders_c3 = 0;
+
+	int base_order;
+	std::vector<int> rings_order;
+	int cap_order;
 
 	// Navgraph
 	void clips_smt_fill_node_names();
@@ -240,6 +264,7 @@ private:
 	std::map<int, std::string> node_names_;
 	std::map<std::string, int> node_names_inverted;
 	std::map<std::pair<std::string, std::string>, float> distances_;
+	float velocity_scaling_ = 1;
 
 	std::map<std::string, std::string> colors_input;
 	std::map<std::string, std::string> colors_output;
