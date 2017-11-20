@@ -87,7 +87,7 @@
 ; 	(pb-destroy ?ap)
 ; )
 
-(deffunction smt-create-data (?robots ?addrobots ?machines ?orders)
+(deffunction smt-create-data (?robots ?addrobots ?machines ?orders ?rings)
 	(bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
 	(foreach ?r ?robots
 		(pb-add-list ?p "robots" ?r)
@@ -101,6 +101,11 @@
 	(foreach ?o ?orders
 		(pb-add-list ?p "orders" ?o)
 	)
+  (foreach ?ring ?rings
+    (pb-add-list ?p "rings" ?ring)
+  )
+  
+    
 	(printout t "Proto:" (pb-tostring ?p) crlf)
 	(return ?p)
 )
@@ -210,6 +215,28 @@
 	(return ?rv)
 )
 
+(deffunction smt-create-ring (?ring-color ?req-bases)
+  (printout t "Creating Data msgs:: Ring color " ?ring-color  crlf)
+  (bind ?r (pb-create "llsf_msgs.Ring"))
+  (pb-set-field ?r "raw_material" ?req-bases)
+  (switch ?ring-color
+    (case GREEN then (pb-set-field ?r "ring_color" "RING_GREEN"))
+    (case BLUE then (pb-set-field ?r "ring_color" "RING_BLUE"))
+    (case ORANGE then (pb-set-field ?r "ring_color" "RING_ORANGE"))
+    (case YELLOW then (pb-set-field ?r "ring_color" "RING_YELLOW"))
+    (default (printout warn "Ring color not found" crlf))
+    )
+  (return ?r)
+)
+
+(deffunction smt-create-rings (?team-color)
+  (bind ?rv (create$))
+  (do-for-all-facts ((?r ring)) TRUE
+    (bind ?rv (append$ ?rv (smt-create-ring ?r:color ?r:req-bases)))
+  )
+  (return ?rv)
+)
+
 (defrule production-call-clips-smt
   (phase PRODUCTION)
   (team-color ?team-color&CYAN|MAGENTA)
@@ -218,6 +245,7 @@
 	(test (eq ?*ROBOT-NAME* "R-1"))
   (exists (machine))
   (exists (order))
+  (exists (ring))
 =>
 	(bind ?p
 	  (smt-create-data
@@ -225,6 +253,7 @@
 		  (smt-create-additional-robots ?team-color)
 	    (smt-create-machines ?team-color)
 	    (smt-create-orders ?team-color)
+      (smt-create-rings ?team-color)
 	  )
 	)
 
