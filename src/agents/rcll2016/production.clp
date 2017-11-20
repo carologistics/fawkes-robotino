@@ -150,6 +150,28 @@
 	(pb-set-field ?pose "y" ?pose-y)
 	(pb-set-field ?pose "ori" 0.0)
 	(pb-set-field ?m "pose" ?pose)
+
+   ; set available rings for ring-stations
+    (if (eq ?mtype RS) then
+      (do-for-fact ((?rs ring-station)) (eq ?rs:name ?name)
+        (if (neq 0 (length$ ?rs:available-colors)) then
+          (bind ?rlist (create$))
+          (progn$ (?r ?rs:available-colors)
+            (switch ?r
+              (case GREEN then (bind ?rlist (append$ ?rlist "RING_GREEN")))
+              (case BLUE then (bind ?rlist (append$ ?rlist "RING_BLUE")))
+              (case ORANGE then (bind ?rlist (append$ ?rlist "RING_ORANGE")))
+              (case YELLOW then (bind ?rlist (append$ ?rlist "RING_YELLOW")))
+              (default (printout warn "Ring color not found" crlf))
+            )
+          )
+          (foreach ?rings ?rlist
+           (pb-add-list ?m "ring_colors" ?rings)
+          )
+        )
+      )
+    )
+
 	(return ?m)
 )
 
@@ -246,6 +268,7 @@
   (exists (machine))
   (exists (order))
   (exists (ring))
+  (exists (ring-station))
 =>
 	(bind ?p
 	  (smt-create-data
