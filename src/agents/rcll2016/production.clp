@@ -269,6 +269,7 @@
   (exists (order))
   (exists (ring))
   (exists (ring-station))
+  (exists (order (complexity C3)))
 =>
 	(bind ?p
 	  (smt-create-data
