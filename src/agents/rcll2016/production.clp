@@ -517,15 +517,15 @@
                 (if (eq (pb-field-value ?arg "key") "operation") then
                   (bind ?operation (pb-field-value ?arg "value"))
         				  (if (eq ?operation "RETRIEVE_CAP") then
-                    		; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-						    (bind ?next-step-id (* ?action-id 100))
-						    (bind ?steps (append$ ?steps ?next-step-id))
-						    (assert (step (name instruct-mps) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (cs-operation RETRIEVE_CAP) (actor ?action-specific-actor) ))
-        				  else
-                    		; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-                        (bind ?next-step-id (* ?action-id 100))
-						            (bind ?steps (append$ ?steps ?next-step-id))
-                    		(assert (step (name instruct-mps) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (cs-operation MOUNT_CAP) (actor ?action-specific-actor) ))
+                    ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+    						    (bind ?next-step-id (* ?action-id 100))
+    						    (bind ?steps (append$ ?steps ?next-step-id))
+    						    (assert (step (name instruct-mps) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (cs-operation RETRIEVE_CAP) (actor ?action-specific-actor) ))
+            			else
+                		; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+                    (bind ?next-step-id (* ?action-id 100))
+				            (bind ?steps (append$ ?steps ?next-step-id))
+                		(assert (step (name instruct-mps) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (cs-operation MOUNT_CAP) (actor ?action-specific-actor) ))
         				  )
                 else
                   (if (eq (pb-field-value ?arg "key") "color") then
@@ -547,7 +547,20 @@
                    	  (bind ?steps (append$ ?steps ?next-step-id))
 		                  (assert (step (name instruct-mps) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (gate ?gate) (actor ?action-specific-actor) ))
                     else
-                      (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+                      (if (eq (pb-field-value ?arg "key") "ring_color") then
+                        (bind ?goal-ring-color (utils-remove-prefix (pb-field-value ?arg "value") RING_)) ;TEMP: The color of the base of the goal is recognized here
+                        ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+                        ; (bind ?next-step-id (- (* ?action-id 100) 1)) ;Injected step (Needs to be executed but does not come in the plan)
+                        ; (bind ?steps (append$ ?steps ?next-step-id))
+                        ; (assert (step (name acquire-lock) (id ?next-step-id) (parents-ids ?parents-ids) (task-priority ?*PRIORITY-PREFILL-RS*) (lock PREPARE-RS) (actor ?action-specific-actor) )) ;is released after get-base
+                        ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+                        (bind ?next-step-id (* ?action-id 100))
+                        (bind ?steps (append$ ?steps ?next-step-id))
+                        (assert (step (name instruct-mps) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (ring ?goal-ring-color) (actor ?action-specific-actor) ))
+                      else  
+                        (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+                      )
+
                     )
                   )
                 )
