@@ -103,10 +103,14 @@ private:
 	z3::context _z3_context;
 	bool _solver_done;
 
-	// Solve formula
 	z3::expr clips_smt_extract_formula_from_smt_file(std::string path);
-	void clips_smt_solve_formula(z3::expr_vector formula, std::string var);
+
+	void clips_smt_solve_formula(z3::expr_vector formula);
+	void clips_smt_optimize_formula(z3::expr_vector formula, std::string var);
 	// void clips_smt_solve_formula_from_fg_smt_file(std::string path, FormulaGenerator fg);
+	
+	void clips_smt_extract_plan_from_model(z3::model model, std::chrono::high_resolution_clock::time_point begin, std::chrono::high_resolution_clock::time_point end);
+	void clips_smt_extract_unsat_reason(std::chrono::high_resolution_clock::time_point begin, std::chrono::high_resolution_clock::time_point end);
 
 	// Francescos Leofantes formula encoding
 	z3::expr_vector clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
@@ -195,8 +199,7 @@ private:
 	const int min_machine_groups = 0, max_machine_groups = 3;
 
 	// Visualization of computed plan
-	std::map<int, std::string> actions;
-	
+	std::vector<std::string> description_actions;
 	std::map<int, float> model_times;
 	std::map<int, int> model_positions;
 	std::map<int, int> model_positions_R1;
@@ -244,15 +247,24 @@ private:
 	int number_robots;
 	int number_orders_protobuf;
 	int number_orders;
-	const int number_orders_c0 = 1;
-	const int number_orders_c1 = 0;
-	const int number_orders_c2 = 0;
-	const int number_orders_c3 = 0;
+	int number_orders_c0 = 0;
+	int number_orders_c1 = 0;
+	int number_orders_c2 = 0;
+	int number_orders_c3 = 0;
+	int order_id = 0;
+	std::string team;
 
 	int base_order;
 	std::vector<int> rings_order;
 	int cap_order;
 
+	// Protobuf
+	void clips_smt_fill_general_info();
+	void clips_smt_fill_order_details();
+	void clips_smt_fill_ringstation_details();
+	void clips_smt_fill_capstation_details();
+	// Manage numbers
+	void clips_smt_initialize_numbers();
 	// Navgraph
 	void clips_smt_fill_node_names();
 	void clips_smt_fill_robot_names();
@@ -282,6 +294,7 @@ private:
 	z3::expr getVar(std::map<std::string, z3::expr>& vars, std::string var_id);
 	std::string getCapColor(int product_id);
 	std::string getBaseColor(int product_id);
+	std::string getRingColor(int product_id);
 	void initShelf();
 	std::string getNextShelf();
 };

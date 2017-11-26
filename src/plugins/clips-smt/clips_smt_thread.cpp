@@ -57,7 +57,16 @@ ClipsSmtThread::~ClipsSmtThread()
 void
 ClipsSmtThread::init()
 {
+	/**
+	 * Initialize maps for the formula encoder.
+	 */
 
+	/**
+	 * State1 is for now unused because the MACRO actions omit the need to encode if a machine is prepapred or not.
+	 * Before we encoded prepare a machine as a PURE action which was necessary to use the machine afterwards,
+	 * for example for MOUNT or RETRIEVE at the CS, get the base at the BS or deliver at the DS.
+	 * This is now encoded in one MACRO action assuming that the same robot is preparing and using the machine.
+	 */
 	// initialize maps for Francesco Leofante's encoder for C0-C1
 	// state1_machines["not_prep"]=0;
 	// state1_machines["retrieve_C1"]=1;
@@ -74,235 +83,175 @@ ClipsSmtThread::init()
 	// state1_machines["slide_one_prep_B3C1"]=12;
 	// state1_machines["slide_one_prep_B3C2"]=13;
 
+	/*
+	 * State2 encodes if the CS has the cap retrieved in order to mount it with some subproduct.
+	 */
 	state2_machines["empty"]=0;
 	state2_machines["has_C1"]=1;
 	state2_machines["has_C2"]=2;
-	// state2_machines["has_R1"]=3;
-	// state2_machines["has_R2"]=4;
-	// state2_machines["has_R3"]=5;
-	// state2_machines["has_R4"]=6;
 
-	// Add product names by iterating over all possible products
-	// unsigned int ctr = 0;
-	// for(unsigned int b=1; b<4; ++b){
-	//     for(unsigned int r1=0; r1<5; ++r1) {
-	//         for(unsigned int r2=0; r2<5; ++r2) {
-	//             for(unsigned int r3=0; r3<5; ++r3) {
-	//                 for(unsigned int c=0; c<3; ++c) {
-					
-	//                 std::string name = "B"+std::to_string(b);
-	//                 if(r1>0) name += "R"+std::to_string(r1);
-	//                 if(r1>0 && r2>0) name += "R"+std::to_string(r2);
-	//                 else if(r1==0 && r2>0) continue;
-	//                 if(r1>0 && r2>0 && r3>0) name += "R"+std::to_string(r3);
-	//                 else if(r1==0 && r2==0 && r3>0) continue;
-	//                 if(c>0) name += "C"+std::to_string(c);
+	/*
+	 * State3 encodes the output of an station which can be any product (at the CS) and subproduct (at the BS and RS).
+	 * This information is required at the same time for the map products. 
+	 * TODO Use only one map?
+	 * TODO Does a smarter way exist to invert a map?
+	 */
+	state3_machines["full"]=-1;
+	state3_machines["empty"]=0;
+	products["nothing"]=0;
+	products_inverted[0]="nothing";
 
-	//                 ctr++;
-
-	//                 std::cout << ctr << "." << name.c_str() << std::endl;
-
-	//                 state3_machines[name] = ctr;
-	//                 products[name] = ctr;
-	//                 products_inverted[ctr] = name;
-	//                 }
-	//             }
-	//         }
-	//     }
-	// }
-
-	// Add product names by iterating over all possible products
 	unsigned int ctr = 0;
 
-	// Only bases
+	// B1 ... B3 
 	for(unsigned int b=1; b<4; ++b){
 		std::string name = "B"+std::to_string(b);
-
 		ctr++;
 		state3_machines[name] = ctr;
 		products[name] = ctr;
 		products_inverted[ctr] = name;
-
-		std::cout << ctr << "." << name.c_str() << std::endl;
 	}
 
-	/*
-	 * C0
-	 */
-	
-	// Only bases and caps
+	// B1C1 ... B3C2
 	for(unsigned int b=1; b<4; ++b){
 		for(unsigned int c=1; c<3; ++c) {
 			std::string name = "B"+std::to_string(b)+"C"+std::to_string(c);
-
 			ctr++;
 			state3_machines[name] = ctr;
 			products[name] = ctr;
 			products_inverted[ctr] = name;
-
-			std::cout << ctr << "." << name.c_str() << std::endl;
 		}
 	}
 
-	// Only bases and ring1 
+	// B1R1 ... B3R4
 	for(unsigned int b=1; b<4; ++b){
 		for(unsigned int r1=1; r1<5; ++r1) {
 			std::string name = "B"+std::to_string(b)+"R"+std::to_string(r1);
-
 			ctr++;
 			state3_machines[name] = ctr;
 			products[name] = ctr;
 			products_inverted[ctr] = name;
-
-			std::cout << ctr << "." << name.c_str() << std::endl;
 		}
 	}
 
-	/*
-	 * C1
-	 */
-
-	// Only bases, ring1 and cap 
+	// B1R1C1 ... B3R4C2
 	for(unsigned int b=1; b<4; ++b){
 		for(unsigned int r1=1; r1<5; ++r1) {
 			for(unsigned int c=1; c<3; ++c) {
 				std::string name = "B"+std::to_string(b)+"R"+std::to_string(r1)+"C"+std::to_string(c);
-
 				ctr++;
 				state3_machines[name] = ctr;
 				products[name] = ctr;
 				products_inverted[ctr] = name;
-
-				std::cout << ctr << "." << name.c_str() << std::endl;
 			}
 		}
 	}
 
-	// Only bases, ring1 and ring2
+	// B1R1R1 ... B3R4R4
 	for(unsigned int b=1; b<4; ++b){
 		for(unsigned int r1=1; r1<5; ++r1) {
 			for(unsigned int r2=1; r2<5; ++r2) {
 				std::string name = "B"+std::to_string(b)+"R"+std::to_string(r1)+"R"+std::to_string(r2);
-
 				ctr++;
 				state3_machines[name] = ctr;
 				products[name] = ctr;
 				products_inverted[ctr] = name;
-
-				std::cout << ctr << "." << name.c_str() << std::endl;
 			}
 		}
 	}
 
-	/*
-	 * C2
-	 */
-
-	// Only bases, ring1, ring2 and cap 
+	// B1R1R1C1 ... B3R4R4C2
 	for(unsigned int b=1; b<4; ++b){
 		for(unsigned int r1=1; r1<5; ++r1) {
 			for(unsigned int r2=1; r2<5; ++r2) {
 				for(unsigned int c=1; c<3; ++c) {
 					std::string name = "B"+std::to_string(b)+"R"+std::to_string(r1)+"R"+std::to_string(r2)+"C"+std::to_string(c);
-
 					ctr++;
 					state3_machines[name] = ctr;
 					products[name] = ctr;
 					products_inverted[ctr] = name;
-
-					std::cout << ctr << "." << name.c_str() << std::endl;
 				}
 			}
 		}
 	}
 
-	// Only bases, ring1, ring2 and ring3
+	// B1R1R1R1 ... B3R4R4R4
 	for(unsigned int b=1; b<4; ++b){
 		for(unsigned int r1=1; r1<5; ++r1) {
 			for(unsigned int r2=1; r2<5; ++r2) {
 				for(unsigned int r3=1; r3<5; ++r3) {
 					std::string name = "B"+std::to_string(b)+"R"+std::to_string(r1)+"R"+std::to_string(r2)+"R"+std::to_string(r3);
-
 					ctr++;
 					state3_machines[name] = ctr;
 					products[name] = ctr;
 					products_inverted[ctr] = name;
-
-					std::cout << ctr << "." << name.c_str() << std::endl;
 				}
 			}
 		}
 	}
 
-	/*
-	 * C3
-	 */
-
-	// Only bases, ring1, ring2, ring3 and cap 
+	// B1R1R1R1C1 ... B3R4R4R4C2
 	for(unsigned int b=1; b<4; ++b){
 		for(unsigned int r1=1; r1<5; ++r1) {
 			for(unsigned int r2=1; r2<5; ++r2) {
 				for(unsigned int r3=1; r3<5; ++r3) {
 					for(unsigned int c=1; c<3; ++c) {
 						std::string name = "B"+std::to_string(b)+"R"+std::to_string(r1)+"R"+std::to_string(r2)+"R"+std::to_string(r3)+"C"+std::to_string(c);
-
 						ctr++;
 						state3_machines[name] = ctr;
 						products[name] = ctr;
 						products_inverted[ctr] = name;
-
-						std::cout << ctr << "." << name.c_str() << std::endl;
 					}
 				}
 			}
 		}
 	}
 
-	state3_machines["full"]=-1;
-	state3_machines["empty"]=0;
-
-	products["nothing"]=0;
-	products_inverted[0]="nothing";
-
 	machine_groups["CS"]=0;
 	machine_groups["BS"]=1;
 	machine_groups["RS"]=2;
 	machine_groups["DS"]=3;
 
-	// Visualize MACRO-actions
-	actions[1] = "|R|CSS|>>BRC| |P|CS|BRC>>| |F|CS|>BRC>|";
-	actions[2] = "|R|CS|>C>BR|";
-	actions[3] = "|P|BS|B>>| |R|BS|>>B|";
-	actions[4] = "|P|CS|B>C>| |F|CS|>B+C>|";
-	actions[5] = "|R|CS|>>BC|";
-	actions[6] = "|P|DS|BC>>| |F|DS|>BC>|";
-	actions[7] = "|F|RS|>B>";
-	actions[8] = "|P|RS|B>R>| |F|RS|>B+R>|";
-	actions[9] = "|R|RS|>>BR";
-	actions[10] = "|P|RS|BR>R>| |F|RS|>BR+R>|";
-	actions[11] = "|R|RS|>>BRR";
-	actions[12] = "|P|RS|BRR>R>| |F|RS|>BRR+R>|";
-	actions[13] = "|R|RS|>>BRRR";
+	/**
+	 * Initialize maps and vectors for managing the input and ouput.
+	 */
 
-	// Initialize shelf positions // TODO Use all shelf-positions in protobuf
+	// Description of MACRO-actions
+	description_actions.push_back("dummy"); // We are not interested in the action with value 0
+	description_actions.push_back("|R|CSS|>>BRC| |P|CS|BRC>>| |F|CS|>BRC>|"); // 1
+	description_actions.push_back("|R|CS|>C>BR|"); // 2
+	description_actions.push_back("|P|BS|B>>| |R|BS|>>B|"); // 3
+	description_actions.push_back("|P|CS|B>C>| |F|CS|>B+C>|"); // 4
+	description_actions.push_back("|R|CS|>>BC|"); // 5
+	description_actions.push_back("|P|DS|BC>>| |F|DS|>BC>|"); // 6
+	description_actions.push_back("|F|RS|>B>"); // 7
+	description_actions.push_back("|P|RS|B>R>| |F|RS|>B+R>|"); // 8
+	description_actions.push_back("|R|RS|>>BR"); // 9
+	description_actions.push_back("|P|RS|BR>R>| |F|RS|>BR+R>|"); // 10
+	description_actions.push_back("|R|RS|>>BRR"); // 11
+	description_actions.push_back("|P|RS|BRR>R>| |F|RS|>BRR+R>|"); // 12
+	description_actions.push_back("|R|RS|>>BRRR"); // 13
+
+	// shelf positions // TODO Use all shelf-positions in protobuf
 	shelf_position.push_back(true);
 	shelf_position.push_back(true);
 
-	// Initialize robot_permutation
+	// robot_permutation
 	robot_permutation_[1]=1;
 	robot_permutation_[2]=2;
 	robot_permutation_[3]=3;
 
-	// Initialize number_required_bases TODO read dynamically
-	number_required_bases.push_back(0);
-	number_required_bases.push_back(1);
-	number_required_bases.push_back(2);
-	number_required_bases.push_back(3);
+	// number_required_bases
+	number_required_bases.push_back(0); // We are not interested in the entry 0 because there is no corresponding base
+	number_required_bases.push_back(0); // 1 or RING_BLUE
+	number_required_bases.push_back(0); // 2 or RING_GREEN
+	number_required_bases.push_back(0); // 3 or RING_ORANGE
+	number_required_bases.push_back(0); // 4 or RING_YELLOW
 
-	// Initialize rings_order TOOD read dynamically
-	rings_order.push_back(2);
+	// Initialize rings_order
 	rings_order.push_back(0);
-	rings_order.push_back(1);
+	rings_order.push_back(0);
+	rings_order.push_back(0);
 }
 
 
@@ -412,7 +361,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -423,7 +372,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -437,7 +386,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -451,7 +400,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -465,7 +414,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -477,7 +426,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[1]);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -488,7 +437,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 
 					break;
 			case 3:	// Action 7,6
@@ -498,7 +447,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[1]);
@@ -509,13 +458,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[1]);
 					param = action->add_params();
 					param->set_key("color");
-					param->set_value(getBaseColor(data.orders((model_actions[i]-1)/number_total_actions).base_color()));
+					param->set_value(getBaseColor(data.orders(order_id).base_color()));
 
 					++action_id;
 					action = plan->add_actions();
@@ -523,7 +472,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[1]);
@@ -548,7 +497,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					else if(number_orders_c3) {
 						action->add_parent_id(action_id_last[13]);
 					}
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -561,7 +510,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[1]);
 					action->add_parent_id(action_id_last[2]);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -575,7 +524,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -589,7 +538,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id_last[2]);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -601,14 +550,14 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[4]);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 
 					break;
 
-			case 6:	// Action 10,11
+			case 6:	// Action 1order_id,11
 
 					++action_id;
 					action = plan->add_actions();
@@ -616,7 +565,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id_last[5]);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[6]);
@@ -627,13 +576,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[6]);
 					param = action->add_params();
 					param->set_key("gate");
-					param->set_value(std::to_string(data.orders((model_actions[i]-1)/index_upper_bound_actions).delivery_gate()));
+					param->set_value(std::to_string(data.orders(order_id).delivery_gate()));
 
 					++action_id;
 					action = plan->add_actions();
@@ -641,7 +590,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[6]);
@@ -656,24 +605,10 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id_last[3]);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
-
-					++action_id;
-					action = plan->add_actions();
-					action->set_name("prepare");
-					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
-					action->set_id(action_id);
-					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
-					param = action->add_params();
-					param->set_key("mps");
-					param->set_value(node_names_[model_positions[i]]);
-					// param = action->add_params();
-					// param->set_key("operation");
-					// param->set_value("PAY_RING"); // TODO add param
 
 					++action_id;
 					action = plan->add_actions();
@@ -681,10 +616,12 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+					param->set_key("slide");
+					param->set_value("TRUE");
 
 					break;
 
@@ -696,8 +633,8 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id_last[3]);
-					action->add_parent_id(action_id_last[7]);
-					action->set_goal_id(0);
+					// action->add_parent_id(action_id_last[7]);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -708,13 +645,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
-					// param = action->add_params();
-					// param->set_key("operation");
-					// param->set_value("MOUNT_RING"); // TODO add param
+					param = action->add_params();
+					param->set_key("color");
+					param->set_value(getRingColor(data.orders(order_id).ring_colors(order_id)));
 
 					++action_id;
 					action = plan->add_actions();
@@ -722,7 +659,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -736,7 +673,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -748,7 +685,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[8]);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -763,9 +700,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id_last[3]);
-					action->add_parent_id(action_id_last[7]);
+					// action->add_parent_id(action_id_last[7]);
 					action->add_parent_id(action_id_last[9]);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -776,13 +713,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
-					// param = action->add_params();
-					// param->set_key("operation");
-					// param->set_value("MOUNT_RING"); // TODO add param
+					param = action->add_params();
+					param->set_key("color");
+					param->set_value(getRingColor(data.orders(order_id).ring_colors(1)));
 
 					++action_id;
 					action = plan->add_actions();
@@ -790,7 +727,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -802,7 +739,8 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
-					action->set_goal_id(0);
+					action->add_parent_id(action_id_last[9]);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -814,7 +752,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[10]);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -829,9 +767,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id_last[3]);
-					action->add_parent_id(action_id_last[7]);
+					// action->add_parent_id(action_id_last[7]);
 					action->add_parent_id(action_id_last[11]);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -842,13 +780,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
-					// param = action->add_params();
-					// param->set_key("operation");
-					// param->set_value("MOUNT_RING"); // TODO add param
+					param = action->add_params();
+					param->set_key("color");
+					param->set_value(getRingColor(data.orders(order_id).ring_colors(2)));
 
 					++action_id;
 					action = plan->add_actions();
@@ -856,7 +794,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -868,7 +806,8 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
-					action->set_goal_id(0);
+					action->add_parent_id(action_id_last[11]);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -880,7 +819,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[12]);
-					action->set_goal_id(0);
+					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -926,43 +865,14 @@ ClipsSmtThread::loop()
 {
 	logger->log_info(name(), "Thread performs loop and is running [%d]", running());
 
-	// Set global variables
-	number_robots = data.robots().size()-1;
-	number_machines = 10; // data.machines().size();
-	
-	number_orders_protobuf = data.orders().size();
-	number_orders = number_orders_c0 + number_orders_c1 + number_orders_c2 + number_orders_c3; 
+	// Extract required information from protobuf
+	clips_smt_fill_general_info();
+	clips_smt_fill_order_details();
+	clips_smt_fill_ringstation_details();
+	clips_smt_fill_capstation_details();
+	clips_smt_initialize_numbers();
 
-	base_order = data.orders(0).base_color();
-	// TODO read rings_order
-	cap_order = data.orders(0).cap_color();
-
-	number_required_actions_c1 += 2*number_required_bases[rings_order[0]];
-	number_required_actions_c2 += 2*number_required_bases[rings_order[0]] + 2*number_required_bases[rings_order[1]];
-	number_required_actions_c3 += 2*number_required_bases[rings_order[0]] + 2*number_required_bases[rings_order[1]] + 2*number_required_bases[rings_order[2]];
-
-	plan_horizon = number_orders_c0*number_required_actions_c0 + number_orders_c1*number_required_actions_c1 + number_orders_c2*number_required_actions_c2 + number_orders_c3*number_required_actions_c3;
-
-	if(number_orders_c3) {
-		index_upper_bound_actions = index_upper_bound_actions_c3;
-		number_required_actions = number_required_actions_c3;
-	}
-	else if (number_orders_c2) {
-		index_upper_bound_actions = index_upper_bound_actions_c2;
-		number_required_actions = number_required_actions_c2;
-	}
-	else if(number_orders_c1) {
-		index_upper_bound_actions = index_upper_bound_actions_c1;
-		number_required_actions = number_required_actions_c1;
-	}
-	else {
-		index_upper_bound_actions = index_upper_bound_actions_c0;
-		number_required_actions = number_required_actions_c0;
-	}
-
-	number_total_actions = number_orders*index_upper_bound_actions;
-
-	// Compute distances between nodes and robots using navgraph
+	// Extract required information from navgraph
 	clips_smt_fill_node_names();
 	clips_smt_fill_robot_names();
 	clips_smt_compute_distances_robots();
@@ -991,8 +901,10 @@ ClipsSmtThread::loop()
 												varM, varHold, varS,
 												varRew, varInit);
 
-	// Pass it to z3 solver
-	clips_smt_solve_formula(formula, "rew_");
+	// Pass it to z3 solver 
+	clips_smt_solve_formula(formula);
+	// Pass it ot z3 optimizer
+	// clips_smt_optimize_formula(formula, "rew_");
 
 	/*
 	 * Leonard Korp's approach
@@ -1013,6 +925,174 @@ ClipsSmtThread::loop()
 }
 
 /**
+ * From protobuf Methods
+ *	- Order details
+ *	- Ringstation details
+ *	- Capstation details (actually from the config)
+ */
+
+void
+ClipsSmtThread::clips_smt_fill_general_info()
+{
+	logger->log_info(name(), "Extract general information");
+
+	// Extract constants
+	number_robots = data.robots().size()-1;
+	number_machines = 10; // data.machines().size();
+	number_orders_protobuf = data.orders().size();
+
+	// Extract team from protobuf
+	team = "M";
+	if(data.robots(0).team_color() == 0){
+		team = "C";
+	}
+}
+void
+ClipsSmtThread::clips_smt_fill_order_details()
+{
+	logger->log_info(name(), "Extract details about order to pursue");
+
+	// Goal strategy pick the desired complexity
+	int desired_complexity = 3;
+	for(int i=0; i<number_orders_protobuf; ++i) {
+		if(data.orders(i).complexity() == desired_complexity) {
+
+			// base and cap information is only needed for product description and can be kept in its orginal form
+			// rings information has to be decrease in order to access the number_required_bases map correctly
+			base_order = data.orders(i).base_color();
+			rings_order[0] = data.orders(i).ring_colors(0);
+			rings_order[1] = data.orders(i).ring_colors(1);
+			rings_order[2] = data.orders(i).ring_colors(2);
+			cap_order = data.orders(i).cap_color();
+			
+			order_id = i;
+			number_orders_c3 = 1;
+		}
+	}
+	
+	// Extract how many bases are required for the corresponding colors
+	for( int i=0; i<data.rings().size(); ++i ) {
+		number_required_bases[data.rings(i).ring_color()] = data.rings(i).raw_material();
+	}
+}
+
+void
+ClipsSmtThread::clips_smt_fill_ringstation_details()
+{
+	logger->log_info(name(), "Extract details about ringstations");
+
+	// Extract information from protobuf which
+	std::string cw_ringStation = team+"-RS1";
+	for(int i=0; i<data.machines().size(); ++i) {
+		if(cw_ringStation.compare(data.machines(i).name()) == 0){
+			if(data.machines(i).ring_colors(0)==1 || data.machines(i).ring_colors(1)==1) {
+				// team-RS1 contains blue r1 ring
+				colors_input["R1"] = team+"-RS1-I";
+				colors_output["R1"] = team+"-RS1-O";
+			}
+			else {
+				// team-RS2 contains blue r1 rings
+				colors_input["R1"] = team+"-RS2-I";
+				colors_output["R1"] = team+"-RS2-O";
+			}
+			if(data.machines(i).ring_colors(0)==2 || data.machines(i).ring_colors(1)==2) {
+				// team-RS1 contains green r2 rings
+				colors_input["R2"] = team+"-RS1-I";
+				colors_output["R2"] = team+"-RS1-O";
+			}
+			else {
+				// team-RS2 contains green r2 rings
+				colors_input["R2"] = team+"-RS2-I";
+				colors_output["R2"] = team+"-RS2-O";
+			}
+			if(data.machines(i).ring_colors(0)==3 || data.machines(i).ring_colors(1)==3) {
+				// team-RS1 contains orange r3 rings
+				colors_input["R3"] = team+"-RS1-I";
+				colors_output["R3"] = team+"-RS1-O";
+			}
+			else {
+				// team-RS2 contains orange r3 rings
+				colors_input["R3"] = team+"-RS2-I";
+				colors_output["R3"] = team+"-RS2-O";
+			}
+			if(data.machines(i).ring_colors(0)==4 || data.machines(i).ring_colors(1)==4) {
+				// team-RS1 contains yellow r4 rings
+				colors_input["R4"] = team+"-RS1-I";
+				colors_output["R4"] = team+"-RS1-O";
+			}
+			else {
+				// team-RS2 contains yellow r4 rings
+				colors_input["R4"] = team+"-RS2-I";
+				colors_output["R4"] = team+"-RS2-O";
+			}
+			continue;
+		}
+	}
+}
+
+void
+ClipsSmtThread::clips_smt_fill_capstation_details()
+{
+	logger->log_info(name(), "Extract details about capstations");
+
+	// Extract information from config which cap-station-shelf has which color
+	if(config->get_string("/clips-agent/rcll2016/cap-station/assigned-color/"+team+"-CS1").compare("BLACK")==0){
+		// team-CS1 contains black c1 caps and C-CS2 grey ones
+		colors_input["C1"] = team+"-CS1-I";
+		colors_input["C2"] = team+"-CS2-I";
+		colors_output["C1"] = team+"-CS1-O";
+		colors_output["C2"] = team+"-CS2-O";
+	}
+	else {
+		// team-CS1 contains grey c1 caps and C-CS2 black ones
+		colors_input["C2"] = team+"-CS1-I";
+		colors_input["C1"] = team+"-CS2-I";
+		colors_output["C2"] = team+"-CS1-O";
+		colors_output["C1"] = team+"-CS2-O";
+	}
+}
+
+/**
+ * Manage order and actions constants
+ */
+
+void
+ClipsSmtThread::clips_smt_initialize_numbers()
+{
+	logger->log_info(name(), "Initialize numbers");
+
+	// Determine number_required_actions for the corresponding complexity
+	number_required_actions_c1 += 2*number_required_bases[rings_order[0]];
+	number_required_actions_c2 += 2*number_required_bases[rings_order[0]] + 2*number_required_bases[rings_order[1]];
+	number_required_actions_c3 += 2*number_required_bases[rings_order[0]] + 2*number_required_bases[rings_order[1]] + 2*number_required_bases[rings_order[2]];
+
+	// Determine the plan_horizon
+	plan_horizon = number_orders_c0*number_required_actions_c0 + number_orders_c1*number_required_actions_c1 + number_orders_c2*number_required_actions_c2 + number_orders_c3*number_required_actions_c3;
+
+	// Determine index_upper_bound_actions and number_required_actions
+	if(number_orders_c3) {
+		index_upper_bound_actions = index_upper_bound_actions_c3;
+		number_required_actions = number_required_actions_c3;
+	}
+	else if (number_orders_c2) {
+		index_upper_bound_actions = index_upper_bound_actions_c2;
+		number_required_actions = number_required_actions_c2;
+	}
+	else if(number_orders_c1) {
+		index_upper_bound_actions = index_upper_bound_actions_c1;
+		number_required_actions = number_required_actions_c1;
+	}
+	else {
+		index_upper_bound_actions = index_upper_bound_actions_c0;
+		number_required_actions = number_required_actions_c0;
+	}
+
+	// For now we assume that only one order is solved at the same time TODO remove or keep current structure?
+	number_orders = 1; //number_orders_c0 + number_orders_c1 + number_orders_c2 + number_orders_c3; 
+	number_total_actions = number_orders*index_upper_bound_actions;
+}
+
+/**
  * Navgraph Methods
  *	- Set names of nodes
  *	- Set names of robots
@@ -1029,14 +1109,9 @@ ClipsSmtThread::graph_changed() throw()
 void
 ClipsSmtThread::clips_smt_fill_node_names()
 {
-	logger->log_info(name(), "Get name of machines using protobuf data");
+	logger->log_info(name(), "Extract name of machines");
 	node_names_.clear();
 
-	// Extract team from protobuf
-	std::string team = "M";
-	if(data.robots(0).team_color() == 0){
-		team = "C";
-	}
 
 	// // Read names of machines automatically
 	// C-ins-in is never in the list of machines, therefore add it here
@@ -1073,68 +1148,12 @@ ClipsSmtThread::clips_smt_fill_node_names()
 	node_names_inverted[team+"-RS1-O"] = 8;
 	node_names_inverted[team+"-RS2-I"] = 9;
 	node_names_inverted[team+"-RS2-O"] = 10;
-
-	if(config->get_string("/clips-agent/rcll2016/cap-station/assigned-color/"+team+"-CS1").compare("BLACK")==0){
-		// team-CS1 contains black c1 caps and C-CS2 grey ones
-		colors_input["C1"] = team+"-CS1-I";
-		colors_input["C2"] = team+"-CS2-I";
-		colors_output["C1"] = team+"-CS1-O";
-		colors_output["C2"] = team+"-CS2-O";
-	}
-	else {
-		// team-CS1 contains grey c1 caps and C-CS2 black ones
-		colors_input["C2"] = team+"-CS1-I";
-		colors_input["C1"] = team+"-CS2-I";
-		colors_output["C2"] = team+"-CS1-O";
-		colors_output["C1"] = team+"-CS2-O";
-	}
-
-	if(true) { //config->get_string("/clips-agent/rcll2016/ring-station/assigned-color/"+team+"-RS1").compare("BLUE")==0){
-		// team-RS1 contains blue r1 rings
-		colors_input["R1"] = team+"-RS1-I";
-		colors_output["R1"] = team+"-RS1-O";
-	}
-	else {
-		// team-RS2 contains blue r1 rings
-		colors_input["R1"] = team+"-RS2-I";
-		colors_output["R1"] = team+"-RS2-O";
-	}
-	if(true) { // config->get_string("/clips-agent/rcll2016/ring-station/assigned-color/"+team+"-RS1").compare("GREEN")==0){
-		// team-RS1 contains green r2 rings
-		colors_input["R2"] = team+"-RS1-I";
-		colors_output["R2"] = team+"-RS1-O";
-	}
-	else {
-		// team-RS2 contains green r2 rings
-		colors_input["R2"] = team+"-RS2-I";
-		colors_output["R2"] = team+"-RS2-O";
-	}
-	if(false) { // config->get_string("/clips-agent/rcll2016/ring-station/assigned-color/"+team+"-RS1").compare("ORANGE")==0){
-		// team-RS1 contains orange r3 rings
-		colors_input["R3"] = team+"-RS1-I";
-		colors_output["R3"] = team+"-RS1-O";
-	}
-	else {
-		// team-RS2 contains orange r3 rings
-		colors_input["R3"] = team+"-RS2-I";
-		colors_output["R3"] = team+"-RS2-O";
-	}
-	if(false) { // config->get_string("/clips-agent/rcll2016/ring-station/assigned-color/"+team+"-RS1").compare("YELLOW")==0){
-		// team-RS1 contains yellow r4 rings
-		colors_input["R4"] = team+"-RS1-I";
-		colors_output["R4"] = team+"-RS1-O";
-	}
-	else {
-		// team-RS2 contains yellow r4 rings
-		colors_input["R4"] = team+"-RS2-I";
-		colors_output["R4"] = team+"-RS2-O";
-	}
 }
 
 void
 ClipsSmtThread::clips_smt_fill_robot_names()
 {
-	logger->log_info(name(), "Get name of robots using protobuf data");
+	logger->log_info(name(), "Extract name of robots");
 	robot_names_.clear();
 
 	// // Read names of robots automatically
@@ -1305,7 +1324,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	logger->log_info(name(), "Add constraints");
 
 	// Constraints depending on plan_horizon
-	logger->log_info(name(), "Add constraints depending on plan_horizon");
+	// logger->log_info(name(), "Add constraints depending on plan_horizon");
 
 	for(int i = 1; i < plan_horizon+1; ++i){
 
@@ -1343,7 +1362,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	}
 
 	// Constraint: robot states are initially consistent
-	logger->log_info(name(), "Add constraints stating robot states are initially consistent");
+	// logger->log_info(name(), "Add constraints stating robot states are initially consistent");
 
 	for(int i=1; i<number_robots+1; ++i){
 		for(int ip=1; ip<plan_horizon+1; ++ip){
@@ -1381,7 +1400,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	}
 
 	// Constraint: robot states are inductively consistent
-	logger->log_info(name(), "Add constraints stating robot states are inductively consistent");
+	// logger->log_info(name(), "Add constraints stating robot states are inductively consistent");
 
 	for(int i=1; i<plan_horizon+1; ++i){
 		for(int ip=i+1; ip<plan_horizon+1; ++ip){
@@ -1450,7 +1469,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	}
 
 	// Constraint: machine states are initially consistent
-	logger->log_info(name(), "Add constraints stating machine states are initially consistent");
+	// logger->log_info(name(), "Add constraints stating machine states are initially consistent");
 
 	for(int i=min_machine_groups; i<max_machine_groups+1; ++i){
 		for(int ip=1; ip<plan_horizon+1; ++ip){
@@ -1470,7 +1489,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 						&& getVar(varS, "state5A_"+std::to_string(1))==getVar(varInit, "initState5"));
 
 	// Constraint: machine states are inductively consistent
-	logger->log_info(name(), "Add constraints stating robot states are inductively consistent");
+	// logger->log_info(name(), "Add constraints stating robot states are inductively consistent");
 
 	for(int i=1; i<plan_horizon+1; ++i){
 		for(int ip=i+1; ip<plan_horizon+1; ++ip){
@@ -1495,7 +1514,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	}
 
 	// Constraint: every action is encoded for every order
-	logger->log_info(name(), "Add constraints for actions for %i orders (%i inside protobuf)", number_orders, number_orders_protobuf);
+	// logger->log_info(name(), "Add constraints for actions for %i orders (%i inside protobuf)", number_orders, number_orders_protobuf);
 
 	// Save ids of order_colors as strings
 	std::string base_order_str = std::to_string(base_order);
@@ -1735,8 +1754,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 										&& ( !constraint_rs2 || ( getVar(varS, "state5B_"+std::to_string(i)) == getVar(varS, "state5A_"+std::to_string(i))+1
 											&& getVar(varS, "state4B_"+std::to_string(i)) == getVar(varS, "state4A_"+std::to_string(i))) )
 										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_feed)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[colors_input[r1i]])
-										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["B1"])
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == 7 || getVar(varRobotPosition, "pos_"+std::to_string(i)) == 9) 
+										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[bi])
 										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
 			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 7) || constraint_macroaction7);
@@ -1868,8 +1887,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 										&& ( !constraint_rs2 || ( getVar(varS, "state5B_"+std::to_string(i)) == getVar(varS, "state5A_"+std::to_string(i))+1
 											&& getVar(varS, "state4B_"+std::to_string(i)) == getVar(varS, "state4A_"+std::to_string(i))) )
 										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_feed)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[colors_input[r1i]])
-										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["B1"])
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == 7 || getVar(varRobotPosition, "pos_"+std::to_string(i)) == 9) 
+										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[bi])
 										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
 			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 7) || constraint_macroaction7);
@@ -2030,8 +2049,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 										&& ( !constraint_rs2 || ( getVar(varS, "state5B_"+std::to_string(i)) == getVar(varS, "state5A_"+std::to_string(i))+1
 											&& getVar(varS, "state4B_"+std::to_string(i)) == getVar(varS, "state4A_"+std::to_string(i))) )
 										&& (getVar(varMachineDuration, "md_"+std::to_string(i)) == time_to_feed)
-										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == node_names_inverted[colors_input[r1i]])
-										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products["B1"])
+										&& (getVar(varRobotPosition, "pos_"+std::to_string(i)) == 7 || getVar(varRobotPosition, "pos_"+std::to_string(i)) == 9) 
+										&& (getVar(varHold, "holdA_"+std::to_string(i)) == products[bi])
 										&& (getVar(varHold, "holdB_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(varRobotDuration, "rd_"+std::to_string(i)) == 0));
 			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 7) || constraint_macroaction7);
@@ -2128,7 +2147,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		}
 	}
 
-	logger->log_info(name(), "Add constraints for goal state");
+	// logger->log_info(name(), "Add constraints for goal state");
 
 	// Specify goal state
 	for(int o=0; o<number_orders; ++o) {
@@ -2150,7 +2169,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		}
 	}
 
-	logger->log_info(name(), "Add constraints for initial situation");
+	// logger->log_info(name(), "Add constraints for initial situation");
 
 	// Specify initial situation for robots
 	for(int i=1; i<number_robots+1; ++i){
@@ -2171,7 +2190,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	constraints.push_back(getVar(varInit, "initState4")==0);
 	constraints.push_back(getVar(varInit, "initState5")==0);
 
-	logger->log_info(name(), "Add constraints for distances between machines");
+	// logger->log_info(name(), "Add constraints for distances between machines");
 
 	// Specify distances between machines
 	for(int k=0; k<number_machines+1; ++k){
@@ -2182,24 +2201,9 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		}
 	}
 
-	// logger->log_info(name(), "Add constraints to fix execution of actions"); // TODO Use to test specific sequence of actions
-
-	// Constraints to fix a sequence of actions
-	// constraints.push_back(getVar(varA, "A_1") == 1);
-	// constraints.push_back(getVar(varA, "A_2") == 7);
-	// constraints.push_back(getVar(varA, "A_3") == 2);
-	// constraints.push_back(getVar(varA, "A_4") == 3);
-	// constraints.push_back(getVar(varA, "A_5") == 8);
-	// constraints.push_back(getVar(varA, "A_6") == 6);
-	// constraints.push_back(getVar(varA, "A_7") == 4);
-	// constraints.push_back(getVar(varA, "A_8") == 5);
-	// constraints.push_back(getVar(varA, "A_9") == 9);
-	// constraints.push_back(getVar(varA, "A_10") == 10);
-	// constraints.push_back(getVar(varA, "A_11") == 11);
-
 	constraints.push_back(getVar(varR, "R_1") == 1);
 
-	logger->log_info(name(), "Add constraints for final actions");
+	// logger->log_info(name(), "Add constraints for final actions");
 
 	// Constraints encoding that final_actions for each order have to be at least executed once (if desiered, during the delivery window)
 	z3::expr constraint_goal(var_true);
@@ -2493,40 +2497,57 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
  */
 
 void
- ClipsSmtThread::clips_smt_solve_formula(z3::expr_vector formula, std::string var)
+ ClipsSmtThread::clips_smt_solve_formula(z3::expr_vector formula)
 {
 	logger->log_info(name(), "Solve z3 formula");
 
-	// z3::solver z3Optimizer(_z3_context); // Use for solving
+	z3::solver z3Solver(_z3_context); // Use for solving
+
+	for (unsigned i = 0; i < formula.size(); i++) {
+		z3Solver.add(formula[i]);
+	}
+
+	// Begin measuring solving time
+	std::chrono::high_resolution_clock::time_point end;
+	std::chrono::high_resolution_clock::time_point begin = std::chrono::high_resolution_clock::now();
+
+	z3::set_param("pp.decimal", true);
+
+	// Export formula into .smt file
+	std::ofstream of_c0_formula("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/encoder_c0_formula.smt"); // TODO (Igor) Exchange path with config value
+	of_c0_formula << z3Solver.to_smt2() << std::endl;
+	of_c0_formula.close();
+
+	if (z3Solver.check() == z3::sat){
+		// End measuring solving time in case of sat
+		end = std::chrono::high_resolution_clock::now();
+
+		logger->log_info(name(), "Finished solving SAT formula");
+		clips_smt_extract_plan_from_model(z3Solver.get_model(), begin, end);
+
+	} else {
+		// End measuring solving time in case of unsat
+		end = std::chrono::high_resolution_clock::now();
+
+		logger->log_info(name(), "Finished solving UNSAT formula");
+		clips_smt_extract_unsat_reason(begin, end);
+	}
+}
+
+void
+ ClipsSmtThread::clips_smt_optimize_formula(z3::expr_vector formula, std::string var)
+{
+	logger->log_info(name(), "Optimize z3 formula");
+
 	z3::optimize z3Optimizer(_z3_context); // Use for optimizing
 
 	for (unsigned i = 0; i < formula.size(); i++) {
 		z3Optimizer.add(formula[i]);
 	}
 
-	// // Add objective functions
-	// z3::expr d_1_M = _z3_context.real_const(("d_"+std::to_string(1)+"_"+std::to_string(number_machines)).c_str());
-	// z3::expr d_2_M = _z3_context.real_const(("d_"+std::to_string(2)+"_"+std::to_string(number_machines)).c_str());
-	// z3::expr d_3_M = _z3_context.real_const(("d_"+std::to_string(3)+"_"+std::to_string(number_machines)).c_str());
-	// z3::expr m_1 = _z3_context.bool_const(("m_"+std::to_string(1)).c_str());
-	// z3::expr m_2 = _z3_context.bool_const(("m_"+std::to_string(2)).c_str());
-	// z3::expr m_3 = _z3_context.bool_const(("m_"+std::to_string(3)).c_str());
-	//
-	// //z3Optimizer.minimize(m_1*d_1_M + m_2*d_2_M + m_3*d_3_M);
-	// z3Optimizer.minimize(d_1_M + d_2_M + d_3_M);
-
+	// Prepare optimizing
 	z3::expr rew_planhorizon = _z3_context.real_const((var.c_str()+std::to_string(plan_horizon)).c_str());
-
 	z3Optimizer.maximize(rew_planhorizon);
-
-	// Export stats into clips_smt_thread_stats.txt
-	std::ofstream of_stats;
-	of_stats.open("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/clips_smt_thread_stats.txt", std::ofstream::out | std::ofstream::app);
-
-	// Add time stamp to stats
-	time_t now = time(0);
-	char* dt = ctime(&now);
-	of_stats << std::endl << dt << std::endl;
 
 	// Begin measuring solving time
 	std::chrono::high_resolution_clock::time_point end;
@@ -2537,183 +2558,194 @@ void
 	// Export formula into .smt file
 	std::ofstream of_c0_formula("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/encoder_c0_formula.smt"); // TODO (Igor) Exchange path with config value
 	of_c0_formula << Z3_optimize_to_string(_z3_context, z3Optimizer);
-	// of_c0_formula << z3Optimizer.to_smt2() << std::endl;
 	of_c0_formula.close();
 
 	if (z3Optimizer.check() == z3::sat){
-		// End measuring solving time in case of sat
+		// End measuring solving time
 		end = std::chrono::high_resolution_clock::now();
 
-		// Add sat to stats
-		of_stats << "SAT" << std::endl;
+		logger->log_info(name(), "Finished optimizing SAT formula");
+		clips_smt_extract_plan_from_model(z3Optimizer.get_model(), begin, end);
 
-		logger->log_info(name(), "Finished solving and optimizing formula with SAT");
+	} else {
+		// End measuring solving time
+		end = std::chrono::high_resolution_clock::now();
 
-		z3::model model = z3Optimizer.get_model();
+		logger->log_info(name(), "Finished optimizing UNSAT formula");
+		clips_smt_extract_unsat_reason(begin, end);
+	}
+}
 
-		for(unsigned i=0; i<model.size(); ++i) {
-			z3::func_decl function = model[i];
-			// std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
+z3::expr ClipsSmtThread::clips_smt_extract_formula_from_smt_file(std::string path) {
 
-			std::string function_name = function.name().str();
-			z3::expr expr = model.get_const_interp(function);
-			float interp;
-			std::string s_interp;
-			s_interp = Z3_get_numeral_decimal_string(_z3_context, expr, 6);
-			interp = std::stof(s_interp);
+	Z3_ast a = Z3_parse_smtlib2_file(_z3_context, path.c_str(), 0, 0, 0, 0, 0, 0); // TODO (Igor) Exchange path with config value
+	z3::expr e(_z3_context, a);
 
-			for(int j=1; j<plan_horizon+1; ++j){
-				if(interp>0) {
-					std::string cw_time = "t_";
-					cw_time += std::to_string(j);
-					std::string cw_pos = "pos_";
-					cw_pos += std::to_string(j);
-					std::string cw_pos_R1 = "pos_1_";
-					cw_pos_R1 += std::to_string(j); std::string cw_pos_R2 = "pos_2_";
-					cw_pos_R2 += std::to_string(j);
-					std::string cw_pos_R3 = "pos_3_";
-					cw_pos_R3 += std::to_string(j);
-					std::string cw_robot = "R_";
-					cw_robot += std::to_string(j);
-					std::string cw_action = "A_";
-					cw_action += std::to_string(j);
-					std::string cw_holdA = "holdA_";
-					cw_holdA += std::to_string(j);
-					std::string cw_state1A = "state1A_";
-					cw_state1A += std::to_string(j);
-					std::string cw_state2A = "state2A_";
-					cw_state2A += std::to_string(j);
-					std::string cw_state3A = "state3A_";
-					cw_state3A += std::to_string(j);
-					std::string cw_state4A = "state4A_";
-					cw_state4A += std::to_string(j);
-					std::string cw_state5A = "state5A_";
-					cw_state5A += std::to_string(j);
-					std::string cw_holdB = "holdB_";
-					cw_holdB += std::to_string(j);
-					std::string cw_state1B = "state1B_";
-					cw_state1B += std::to_string(j);
-					std::string cw_state2B = "state2B_";
-					cw_state2B += std::to_string(j);
-					std::string cw_state3B = "state3B_";
-					cw_state3B += std::to_string(j);
-					std::string cw_state4B = "state4B_";
-					cw_state4B += std::to_string(j);
-					std::string cw_state5B = "state5B_";
-					cw_state5B += std::to_string(j);
+	return e;
+}
 
-					if(function_name.compare(cw_time)==0) {
-						model_times[j] = interp;
-					}
-					else if(function_name.compare(cw_pos)==0) {
-						model_positions[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_pos_R1)==0) {
-						model_positions_R1[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_pos_R2)==0) {
-						model_positions_R2[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_pos_R3)==0) {
-						model_positions_R3[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_robot)==0) {
-						model_robots[j] = (int) interp;
+void
+ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model, std::chrono::high_resolution_clock::time_point begin, std::chrono::high_resolution_clock::time_point end)
+{
+	// Export stats into clips_smt_thread_stats.txt
+	std::ofstream of_stats;
+	of_stats.open("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/clips_smt_thread_stats.txt", std::ofstream::out | std::ofstream::app);
 
-					}
-					else if(function_name.compare(cw_action)==0) {
-						model_actions[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_holdA)==0) {
-						model_holdA[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_state1A)==0) {
-						model_state1A[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_state2A)==0) {
-						model_state2A[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_state3A)==0) {
-						model_state3A[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_state4A)==0) {
-						model_state4A[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_state5A)==0) {
-						model_state5A[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_holdB)==0) {
-						model_holdB[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_state1B)==0) {
-						model_state1B[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_state2B)==0) {
-						model_state2B[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_state3B)==0) {
-						model_state3B[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_state4B)==0) {
-						model_state4B[j] = (int) interp;
-					}
-					else if(function_name.compare(cw_state5B)==0) {
-						model_state5B[j] = (int) interp;
-					}
+	// Add time and date stamp to stats
+	time_t now = time(0);
+	char* dt = ctime(&now);
+	of_stats << std::endl << dt << std::endl;
 
-				}
-			}
-		}
+	// Add sat to stats
+	of_stats << "SAT" << std::endl;
 
-		bool set_robot_permutation = true;
-		for(unsigned int i = 1; i < model_robots.size(); ++i){
-			if(set_robot_permutation){
-				if(i==1){
-					robot_permutation_[model_robots[1]]=1;	
-				}
-				else if(model_robots[i] != model_robots[1]){
-					robot_permutation_[model_robots[i]] = 2;
-					std::cout << "Try to access robot_permutation_ at position " << 6-(model_robots[1]+model_robots[i]) << std::endl;
-					robot_permutation_[6-(model_robots[1]+model_robots[i])] = 3;
-					set_robot_permutation = false;
-				}
-			}
-		}
+	// Extract plan from model
+	for(unsigned i=0; i<model.size(); ++i) {
+		z3::func_decl function = model[i];
+		// std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
 
-		// Add plan specified by the model to stats
-		// of_stats << "number_orders_c0: " << number_orders_c0 << std::endl;
-		// of_stats << "add_temporal_constraint: " << add_temporal_constraint << std::endl;
-		for(int o=0; o<number_orders; ++o){
-			of_stats << "O" << o+1 << ": B" << data.orders(o).base_color() << "C" << data.orders(o).cap_color() ;
-			if(add_temporal_constraint){
-				of_stats << " with bounds " << data.orders(o).delivery_period_begin() << "s < o0 < " << data.orders(o).delivery_period_end() << "s";
-			}
-			of_stats << std::endl;
-		}
-
-		of_stats << std::endl;
+		std::string function_name = function.name().str();
+		z3::expr expr = model.get_const_interp(function);
+		float interp;
+		std::string s_interp;
+		s_interp = Z3_get_numeral_decimal_string(_z3_context, expr, 6);
+		interp = std::stof(s_interp);
 
 		for(int j=1; j<plan_horizon+1; ++j){
-			of_stats << j <<". ";
-			of_stats << "R" << model_robots[j] << " for O" << ((model_actions[j]-1)/index_upper_bound_actions)+1;
-			of_stats << " does " << actions[((model_actions[j]-1)%index_upper_bound_actions)+1]  << " (A" << model_actions[j] << ")"; //of_stats  << " and holds " << products_inverted[model_holdB[j]] << " at "<< node_names_[model_positions[j]];
-			// ":[H(" << model_holdA[j] << "-" << model_holdB[j] <<
-			// "), S1(" << model_state1A[j] << "-" << model_state1B[j] <<
-			// "), S2(" << model_state2A[j] << "-" << model_state2B[j] <<
-			// "), S3(" << model_state3A[j] << "-" << model_state3B[j] <<"]";
-			of_stats << " [" << model_state4B[j] << ", " << model_state5B[j] << "]"; 
-			of_stats << " [t = " << model_times[j] << "s]" << std::endl; // [R1: " << node_names_[model_positions_R1[j]] <<", R2: " << node_names_[model_positions_R2[j]] << ", R3: " << node_names_[model_positions_R3[j]] << "]" << std::endl;
+			if(interp>0) {
+
+				// Determine a string for every variable and once it is met save the value
+				std::string cw_time = "t_";
+				cw_time += std::to_string(j);
+				std::string cw_pos = "pos_";
+				cw_pos += std::to_string(j);
+				std::string cw_pos_R1 = "pos_1_";
+				cw_pos_R1 += std::to_string(j); std::string cw_pos_R2 = "pos_2_";
+				cw_pos_R2 += std::to_string(j);
+				std::string cw_pos_R3 = "pos_3_";
+				cw_pos_R3 += std::to_string(j);
+				std::string cw_robot = "R_";
+				cw_robot += std::to_string(j);
+				std::string cw_action = "A_";
+				cw_action += std::to_string(j);
+				std::string cw_holdA = "holdA_";
+				cw_holdA += std::to_string(j);
+				std::string cw_state1A = "state1A_";
+				cw_state1A += std::to_string(j);
+				std::string cw_state2A = "state2A_";
+				cw_state2A += std::to_string(j);
+				std::string cw_state3A = "state3A_";
+				cw_state3A += std::to_string(j);
+				std::string cw_state4A = "state4A_";
+				cw_state4A += std::to_string(j);
+				std::string cw_state5A = "state5A_";
+				cw_state5A += std::to_string(j);
+				std::string cw_holdB = "holdB_";
+				cw_holdB += std::to_string(j);
+				std::string cw_state1B = "state1B_";
+				cw_state1B += std::to_string(j);
+				std::string cw_state2B = "state2B_";
+				cw_state2B += std::to_string(j);
+				std::string cw_state3B = "state3B_";
+				cw_state3B += std::to_string(j);
+				std::string cw_state4B = "state4B_";
+				cw_state4B += std::to_string(j);
+				std::string cw_state5B = "state5B_";
+				cw_state5B += std::to_string(j);
+
+				if(function_name.compare(cw_time)==0) {
+					model_times[j] = interp;
+				}
+				else if(function_name.compare(cw_pos)==0) {
+					model_positions[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_pos_R1)==0) {
+					model_positions_R1[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_pos_R2)==0) {
+					model_positions_R2[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_pos_R3)==0) {
+					model_positions_R3[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_robot)==0) {
+					model_robots[j] = (int) interp;
+
+				}
+				else if(function_name.compare(cw_action)==0) {
+					model_actions[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_holdA)==0) {
+					model_holdA[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_state1A)==0) {
+					model_state1A[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_state2A)==0) {
+					model_state2A[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_state3A)==0) {
+					model_state3A[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_state4A)==0) {
+					model_state4A[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_state5A)==0) {
+					model_state5A[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_holdB)==0) {
+					model_holdB[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_state1B)==0) {
+					model_state1B[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_state2B)==0) {
+					model_state2B[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_state3B)==0) {
+					model_state3B[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_state4B)==0) {
+					model_state4B[j] = (int) interp;
+				}
+				else if(function_name.compare(cw_state5B)==0) {
+					model_state5B[j] = (int) interp;
+				}
+
+			}
 		}
-		// of_stats << " robot_permutation_ has following values:  " << robot_permutation_[1] <<", " <<  robot_permutation_[2] << ", " <<  robot_permutation_[3] << std::endl;
-	} else {
+	}
 
-		// End measuring solving time in case of unsat
-		end = std::chrono::high_resolution_clock::now();
+	// Determine which robot has been used after R-1 (fixed by constraint) to return it as the second robot
+	// Loop through all robots used and break after obtaining the information
+	for(unsigned int i = 1; i < model_robots.size(); ++i){
+		if(model_robots[i] != model_robots[1] && model_robots[i] == 3){
+			robot_permutation_[3] = 2;
+			robot_permutation_[2] = 3;
+			continue;
+		}
+		else {
+		continue;
+		}
+	}
 
-		// Add unsat to stats
-		of_stats << "UNSAT" << std::endl;
+	// Add plan specified by the model to stats
+	of_stats << "O" << order_id+1 << ": B" << base_order << "R" << rings_order[0] << "R" << rings_order[1] << "R" << rings_order[2] << "C" << cap_order;
+	if(add_temporal_constraint){
+		of_stats << " with bounds " << data.orders(order_id).delivery_period_begin() << "s < o0 < " << data.orders(order_id).delivery_period_end() << "s";
+	}
+	of_stats << std::endl;
 
-		logger->log_info(name(), "Finished solving and optimizing formula with UNSAT");
+	for(int j=1; j<plan_horizon+1; ++j){
+		of_stats << j <<". ";
+		of_stats << "R" << model_robots[j] << " for O" << ((model_actions[j]-1)/index_upper_bound_actions)+1;
+		of_stats << " does " << description_actions[((model_actions[j]-1)%index_upper_bound_actions)+1]  << " (A" << model_actions[j] << ")"; //of_stats  << " and holds " << products_inverted[model_holdB[j]] << " at "<< node_names_[model_positions[j]];
+		// ":[H(" << model_holdA[j] << "-" << model_holdB[j] <<
+		// "), S1(" << model_state1A[j] << "-" << model_state1B[j] <<
+		// "), S2(" << model_state2A[j] << "-" << model_state2B[j] <<
+		// "), S3(" << model_state3A[j] << "-" << model_state3B[j] <<"]";
+		of_stats << " [" << model_state4B[j] << ", " << model_state5B[j] << "]"; 
+		of_stats << " [t = " << model_times[j] << "s]" << std::endl; // [R1: " << node_names_[model_positions_R1[j]] <<", R2: " << node_names_[model_positions_R2[j]] << ", R3: " << node_names_[model_positions_R3[j]] << "]" << std::endl;
 	}
 
 	// Compute time for solving
@@ -2726,12 +2758,30 @@ void
 	of_stats.close();
 }
 
-z3::expr ClipsSmtThread::clips_smt_extract_formula_from_smt_file(std::string path) {
+// TODO read unsat core to determine time not meet or machine broken
+void
+ClipsSmtThread::clips_smt_extract_unsat_reason(std::chrono::high_resolution_clock::time_point begin, std::chrono::high_resolution_clock::time_point end)
+{
+	// Export stats into clips_smt_thread_stats.txt
+	std::ofstream of_stats;
+	of_stats.open("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/clips_smt_thread_stats.txt", std::ofstream::out | std::ofstream::app);
 
-	Z3_ast a = Z3_parse_smtlib2_file(_z3_context, path.c_str(), 0, 0, 0, 0, 0, 0); // TODO (Igor) Exchange path with config value
-	z3::expr e(_z3_context, a);
+	// Add time and date stamp to stats
+	time_t now = time(0);
+	char* dt = ctime(&now);
+	of_stats << std::endl << dt << std::endl;
+	
+	// Add unsat to stats
+	of_stats << "UNSAT" << std::endl;
 
-	return e;
+	// Compute time for solving
+	double diff_ms = (double) std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count()/1000;
+	double diff_m = (double) std::chrono::duration_cast<std::chrono::seconds> (end - begin).count()/60;
+
+	// logger->log_info(name(), "Time difference is %f ms", diff); // Measure time in nanoseconds but display in milliseconds for convenience
+
+	of_stats << "Time used for solving: " << diff_ms << " ms, " << diff_m << " m" << std::endl << "__________ __________ __________";
+	of_stats.close();
 }
 
 // void ClipsSmtThread::clips_smt_solve_formula_from_fg_smt_file(std::string path, FormulaGenerator fg) {
@@ -2884,6 +2934,27 @@ std::string ClipsSmtThread::getBaseColor(int product_id)
 		case 2: product_color = "BASE_BLACK";
 				break;
 		case 3: product_color = "BASE_SILVER";
+				break;
+		default: product_color = "EMPTY";
+				break;
+	}
+
+	return product_color;
+}
+
+std::string ClipsSmtThread::getRingColor(int product_id)
+{
+
+	std::string product_color;
+
+	switch(product_id){
+		case 1: product_color = "RING_BLUE";
+				break;
+		case 2: product_color = "RING_GREEN";
+				break;
+		case 3: product_color = "RING_ORANGE";
+				break;
+		case 4: product_color = "RING_YELLOW";
 				break;
 		default: product_color = "EMPTY";
 				break;
