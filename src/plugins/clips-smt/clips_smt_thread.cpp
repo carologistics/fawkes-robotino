@@ -785,7 +785,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 					param = action->add_params();
-					param->set_key("color");
+					param->set_key("ring_color");
 					param->set_value(getRingColor(data.orders(order_id).ring_colors(1)));
 
 					++action_id;
@@ -882,7 +882,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 					param = action->add_params();
-					param->set_key("color");
+					param->set_key("ring_color");
 					param->set_value(getRingColor(data.orders(order_id).ring_colors(2)));
 
 					++action_id;
