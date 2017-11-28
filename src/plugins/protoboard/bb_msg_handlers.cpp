@@ -26,8 +26,7 @@ std::unordered_map<std::string, std::shared_ptr<pb_convert>> make_receiving_inte
           make_shared<
             pb_sequence_converter<
               llsf_msgs::OrderInfo,
-              pb_converter<llsf_msgs::Order, OrderInterface>,
-              10
+              pb_converter<llsf_msgs::Order, OrderInterface>
             >
           >()),
     make_pair("llsf_msgs.BeaconSignal", make_shared<pb_converter<llsf_msgs::BeaconSignal, RecvBeaconInterface>>()),
@@ -76,9 +75,15 @@ complexity_enum_order {
 
 template<>
 const google::protobuf::RepeatedPtrField<llsf_msgs::Order> &
-pb_sequence_converter<llsf_msgs::OrderInfo, pb_converter<llsf_msgs::Order, OrderInterface>, 10>::extract_sequence(
+pb_sequence_converter<llsf_msgs::OrderInfo, pb_converter<llsf_msgs::Order, OrderInterface>>::extract_sequence(
     const llsf_msgs::OrderInfo &msg)
 { return msg.orders(); }
+
+
+template<>
+bool
+pb_converter<llsf_msgs::Order, OrderInterface>::corresponds(const llsf_msgs::Order &msg, const OrderInterface *iface)
+{ return iface->order_id() == msg.id(); }
 
 
 template<>
