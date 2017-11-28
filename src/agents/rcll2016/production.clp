@@ -264,7 +264,7 @@
   (team-color ?team-color&CYAN|MAGENTA)
 	(state IDLE)
 	(not (plan-requested))
-	(test (eq ?*ROBOT-NAME* "R-1"))
+  (lock-role MASTER)
   (exists (machine))
   (exists (order))
   (exists (ring))
