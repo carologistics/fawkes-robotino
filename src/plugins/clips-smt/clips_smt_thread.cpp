@@ -339,7 +339,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 	std::shared_ptr<llsf_msgs::ActorGroupPlan> agplan(new llsf_msgs::ActorGroupPlan());
 
 	llsf_msgs::ActorSpecificPlan *actor_plan = agplan->add_plans();
-	actor_plan->set_actor_name("R-1");
+	actor_plan->set_actor_name("Master");
 	llsf_msgs::SequentialPlan *plan = actor_plan->mutable_sequential_plan();
 	llsf_msgs::PlanAction *action;
 	llsf_msgs::PlanActionParameter *param;
@@ -349,7 +349,17 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 	// action->set_name("enter-field");
 
 	// Francesco Leofante's approach
-	std::map<uint32_t,uint32_t> action_id_last;
+	std::vector<uint32_t> action_id_last;
+	for(int i=0; i<=number_total_actions; ++i){
+		action_id_last.push_back(0);
+	}
+	uint32_t action_id_last_rs1_pay=0;
+	uint32_t action_id_last_rs1_feed=0;
+	uint32_t action_id_last_rs1_retr=0;
+	uint32_t action_id_last_rs2_pay=0;
+	uint32_t action_id_last_rs2_feed=0;
+	uint32_t action_id_last_rs2_retr=0;
+
 	uint32_t action_id=0;
 
 	for(unsigned int i=0; i<model_actions.size(); ++i){
@@ -447,6 +457,8 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
+					// Only go to the base station if last robot which got a base (mentioned in our sequential plan) finishes its action
+					if(action_id_last[3]) action->add_parent_id(action_id_last[3]);
 					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
@@ -604,7 +616,26 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
+					// Only go to ring station
+					// ...if the base was picked up // TODO is it we same robot?
 					action->add_parent_id(action_id_last[3]);
+					// ...if the corresponding ring station is not blocked by feeding or older paying 
+					if(model_positions[i]==7){
+						if(action_id_last_rs1_pay) {
+							action->add_parent_id(action_id_last_rs1_pay);
+						}
+						if(action_id_last_rs1_feed) {
+							action->add_parent_id(action_id_last_rs1_feed);
+						}
+					}
+					else if(model_positions[i]==9){
+						if(action_id_last_rs2_pay) {
+							action->add_parent_id(action_id_last_rs2_pay);
+						}
+						if(action_id_last_rs2_feed) {
+							action->add_parent_id(action_id_last_rs2_feed);
+						}
+					}
 					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
@@ -620,8 +651,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
 					param->set_key("slide");
-					param->set_value("TRUE");
+					param->set_value("true");
+
+					// Save action_id_last for feed at the correpsonding ring station
+					if(model_positions[i]==7) action_id_last_rs1_pay = action_id;
+					else action_id_last_rs2_pay = action_id;
 
 					break;
 
@@ -632,8 +668,16 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
+					// Go to the ring station
+					// ...if we picked up the base
 					action->add_parent_id(action_id_last[3]);
-					// action->add_parent_id(action_id_last[7]);
+					// ...if the corresponding ring station is not blocked by paying
+					if(model_positions[i]==7 && action_id_last_rs1_pay) {
+						action->add_parent_id(action_id_last_rs1_pay);
+					}
+					else if(model_positions[i]==9 && action_id_last_rs2_pay) {
+						action->add_parent_id(action_id_last_rs2_pay);
+					}
 					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
@@ -650,8 +694,8 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 					param = action->add_params();
-					param->set_key("color");
-					param->set_value(getRingColor(data.orders(order_id).ring_colors(order_id)));
+					param->set_key("ring_color");
+					param->set_value(getRingColor(data.orders(order_id).ring_colors(0)));
 
 					++action_id;
 					action = plan->add_actions();
@@ -663,6 +707,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+
+					if(model_positions[i]==7) action_id_last_rs1_feed = action_id;
+					else action_id_last_rs2_feed = action_id;
 
 					break;
 
@@ -690,6 +737,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 
+					if(model_positions[i]==7) action_id_last_rs1_retr = action_id;
+					else action_id_last_rs2_retr = action_id;
+
 					break;
 
 			case 10: // Action prepare RS and feed base for second ring
@@ -699,9 +749,26 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
-					action->add_parent_id(action_id_last[3]);
-					// action->add_parent_id(action_id_last[7]);
+					// Goto the ring station
+					// ...if the base mounted with the first ring was picked up
 					action->add_parent_id(action_id_last[9]);
+					// ...if the corresponding ring station is not blocked by feeding or older paying 
+					if(model_positions[i]==7){
+						if(action_id_last_rs1_pay) {
+							action->add_parent_id(action_id_last_rs1_pay);
+						}
+						if(action_id_last_rs1_feed) {
+							action->add_parent_id(action_id_last_rs1_feed);
+						}
+					}
+					else if(model_positions[i]==9){
+						if(action_id_last_rs2_pay) {
+							action->add_parent_id(action_id_last_rs2_pay);
+						}
+						if(action_id_last_rs2_feed) {
+							action->add_parent_id(action_id_last_rs2_feed);
+						}
+					}
 					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
@@ -732,6 +799,10 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 
+					if(model_positions[i]==7) action_id_last_rs1_feed = action_id;
+					else action_id_last_rs2_feed = action_id;
+					
+					break;
 			case 11: // Action retrieve base_ring at RS for second ring
 
 					++action_id;
@@ -739,7 +810,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
-					action->add_parent_id(action_id_last[9]);
+					// Go to the ring station output side if the corresponding ring station is not blocked by older retr 
+					if(model_positions[i]==7 && action_id_last_rs1_retr) {
+						action->add_parent_id(action_id_last_rs1_retr);
+					}
+					else if(model_positions[i]==9 && action_id_last_rs2_retr) {
+						action->add_parent_id(action_id_last_rs2_retr);
+					}
 					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
@@ -757,6 +834,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 
+					if(model_positions[i]==7) action_id_last_rs1_retr = action_id;
+					else action_id_last_rs2_retr = action_id;
+
 					break;
 
 			case 12: // Action prepare RS and feed base for third ring
@@ -766,9 +846,26 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
-					action->add_parent_id(action_id_last[3]);
-					// action->add_parent_id(action_id_last[7]);
+					// Goto the ring station
+					// ...if the base mounted with the first ring was picked up
 					action->add_parent_id(action_id_last[11]);
+					// ...if the corresponding ring station is not blocked by feeding or older paying 
+					if(model_positions[i]==7){
+						if(action_id_last_rs1_pay) {
+							action->add_parent_id(action_id_last_rs1_pay);
+						}
+						if(action_id_last_rs1_feed) {
+							action->add_parent_id(action_id_last_rs1_feed);
+						}
+					}
+					else if(model_positions[i]==9){
+						if(action_id_last_rs2_pay) {
+							action->add_parent_id(action_id_last_rs2_pay);
+						}
+						if(action_id_last_rs2_feed) {
+							action->add_parent_id(action_id_last_rs2_feed);
+						}
+					}
 					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
@@ -799,6 +896,10 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 
+					if(model_positions[i]==7) action_id_last_rs1_feed = action_id;
+					else action_id_last_rs2_feed = action_id;
+
+					break;
 			case 13: // Action retrieve base_ring at RS for third ring
 
 					++action_id;
@@ -806,7 +907,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
-					action->add_parent_id(action_id_last[11]);
+					// Go to the ring station output side if the corresponding ring station is not blocked by older retr 
+					if(model_positions[i]==7 && action_id_last_rs1_retr) {
+						action->add_parent_id(action_id_last_rs1_retr);
+					}
+					else if(model_positions[i]==9 && action_id_last_rs2_retr) {
+						action->add_parent_id(action_id_last_rs2_retr);
+					}
 					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
@@ -823,6 +930,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+
+					if(model_positions[i]==7) action_id_last_rs1_retr = action_id;
+					else action_id_last_rs2_retr = action_id;
 
 					break;
 
@@ -952,7 +1062,7 @@ ClipsSmtThread::clips_smt_fill_order_details()
 {
 	logger->log_info(name(), "Extract details about order to pursue");
 
-	// Goal strategy pick the desired complexity
+	// Goal strategy pick last one of desired complexity
 	int desired_complexity = 3;
 	for(int i=0; i<number_orders_protobuf; ++i) {
 		if(data.orders(i).complexity() == desired_complexity) {
@@ -2718,15 +2828,15 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model, std::chrono::
 
 	// Determine which robot has been used after R-1 (fixed by constraint) to return it as the second robot
 	// Loop through all robots used and break after obtaining the information
+	int index_not_robot_one=0;
 	for(unsigned int i = 1; i < model_robots.size(); ++i){
-		if(model_robots[i] != model_robots[1] && model_robots[i] == 3){
-			robot_permutation_[3] = 2;
-			robot_permutation_[2] = 3;
-			continue;
+		if(model_robots[i] != model_robots[1] && index_not_robot_one==0){
+			index_not_robot_one = i;
 		}
-		else {
-		continue;
-		}
+	}
+	if(model_robots[index_not_robot_one] == 3) {
+		robot_permutation_[3] = 2;
+		robot_permutation_[2] = 3;
 	}
 
 	// Add plan specified by the model to stats
@@ -2747,6 +2857,7 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model, std::chrono::
 		of_stats << " [" << model_state4B[j] << ", " << model_state5B[j] << "]"; 
 		of_stats << " [t = " << model_times[j] << "s]" << std::endl; // [R1: " << node_names_[model_positions_R1[j]] <<", R2: " << node_names_[model_positions_R2[j]] << ", R3: " << node_names_[model_positions_R3[j]] << "]" << std::endl;
 	}
+	of_stats << "robot_permutation_ [" << robot_permutation_[1] << ", " << robot_permutation_[2] << ", " << robot_permutation_[3] << "]" << std::endl;
 
 	// Compute time for solving
 	double diff_ms = (double) std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count()/1000;
