@@ -13,6 +13,8 @@
 #include <boost/fusion/include/for_each.hpp>
 #include <boost/fusion/include/any.hpp>
 
+#include <boost/core/demangle.hpp>
+
 #include <boost/bimap.hpp>
 
 #include <type_traits>
@@ -35,11 +37,9 @@ class BlackboardManager;
 
 
 template<class pbEnumT, class bbEnumT>
-struct enum_map {
+class enum_map {
+public:
   typedef boost::bimap<pbEnumT, bbEnumT> bimapT;
-  const std::vector<typename bimapT::value_type> list;
-  const boost::bimap<pbEnumT, bbEnumT> map;
-
   constexpr enum_map(std::initializer_list<typename bimapT::value_type> init)
     : list(init),
       map(list.begin(), list.end())
@@ -50,6 +50,10 @@ struct enum_map {
 
   constexpr pbEnumT of(bbEnumT v) const
   { return map.right.at(v); }
+
+private:
+  const std::vector<typename bimapT::value_type> list;
+  const bimapT map;
 };
 
 
@@ -63,7 +67,7 @@ public:
   virtual ~pb_convert();
 
   virtual void
-  init(fawkes::BlackBoard *blackboard, fawkes::Logger *logger)
+  init(fawkes::BlackBoard *blackboard, fawkes::Logger *logger, size_t = 0)
   {
     blackboard_ = blackboard;
     logger_ = logger;
@@ -88,31 +92,53 @@ public:
   typedef IfaceT output_type;
 
   pb_converter()
-      : interface_(nullptr)
+    : pb_convert()
+    , interface_(nullptr)
   {}
 
+  // Don't copy this
+  pb_converter(const pb_converter<ProtoT, IfaceT> &) = delete;
+  pb_converter<ProtoT, IfaceT> &operator = (const pb_converter<ProtoT, IfaceT> &) = delete;
+
+  // Only move!
+  pb_converter(pb_converter<ProtoT, IfaceT> &&o)
+    : pb_convert(o)
+    , interface_(std::move(o.interface_))
+  { o.interface_ = nullptr; }
+
+  pb_converter<ProtoT, IfaceT> &operator = (pb_converter<ProtoT, IfaceT> &&o)
+  {
+    pb_convert::operator = (o);
+    this->interface_ = o.interface_;
+    o.interface_ = nullptr;
+    return *this;
+  }
+
+
   virtual ~pb_converter()
-  { blackboard_->close(interface_); }
+  { close(); }
 
   virtual void
-  init(fawkes::BlackBoard *blackboard, fawkes::Logger *logger) override
+  init(fawkes::BlackBoard *blackboard, fawkes::Logger *logger, size_t id = 0) override
   {
     pb_convert::init(blackboard, logger);
     interface_ = blackboard_->open_for_writing<IfaceT>(
-          iface_id_for_type<IfaceT>(0).c_str());
+          iface_id_for_type<IfaceT>(id).c_str());
+    logger->log_info(
+          boost::core::demangle(typeid(*this).name()).c_str(),
+          "Initialized %s.",
+          iface_id_for_type<IfaceT>(id).c_str());
   }
 
   virtual void
   handle(const google::protobuf::Message &msg) override
-  {
-    handle(dynamic_cast<const ProtoT &>(msg), interface_);
-    interface_->write();
-  }
+  { handle(dynamic_cast<const ProtoT &>(msg)); }
 
   virtual void handle(const ProtoT &msg)
-  { handle(msg, interface_); }
-
-  virtual void handle(const ProtoT &msg, IfaceT *iface);
+  {
+    handle(msg, interface_);
+    interface_->write();
+  }
 
   virtual bool is_open()
   { return interface_; }
@@ -125,18 +151,43 @@ public:
     }
   }
 
+  IfaceT *interface()
+  { return interface_; }
+
+  virtual bool corresponds_to(const ProtoT &msg)
+  {
+    if (is_open()) {
+      interface()->read();
+      return corresponds(msg, interface());
+    }
+    else
+      return true;
+  }
+
+protected:
+  virtual void handle(const ProtoT &msg, IfaceT *iface);
+  static bool corresponds(const ProtoT &, const IfaceT *)
+  {
+    throw fawkes::Exception(
+          boost::core::demangle(typeid(pb_converter<ProtoT, IfaceT>).name()).c_str(),
+          "BUG: corresponds(...) must"
+          "be overridden for every converter used in a sequence.");
+  }
+
+
 private:
   IfaceT *interface_;
 };
 
 
-template<class ProtoT, class OutputT, size_t seq_length>
+template<class ProtoT, class OutputT>
 class pb_sequence_converter : public pb_convert {
 public:
   typedef google::protobuf::RepeatedPtrField<typename OutputT::input_type> sequence_type;
 
   pb_sequence_converter()
-      : sub_converters_(seq_length)
+      : sub_converters_()
+      , seq_id_(0)
   {}
 
   virtual void
@@ -146,24 +197,32 @@ public:
     sequence_type fields = extract_sequence(dynamic_cast<const ProtoT &>(msg));
     typename sequence_type::const_iterator field_it = fields.begin();
 
-    while (out_it != sub_converters_.end() && field_it != fields.end()) {
-      if (!out_it->is_open())
-        out_it->init(blackboard_, logger_);
-      out_it->handle(*field_it);
+    for ( ; field_it != fields.end(); ++field_it) {
+      // Try to find a corresponding output converter
+      for (out_it = sub_converters_.begin(); out_it != sub_converters_.end(); ++out_it) {
+        if (out_it->corresponds_to(*field_it))
+          break;
+      }
 
-      ++out_it;
-      ++field_it;
+      if (out_it == sub_converters_.end()) {
+        // No corresponding converter found, create new
+        sub_converters_.emplace_back();
+        out_it = --sub_converters_.end();
+      }
+
+      if (!out_it->is_open())
+        out_it->init(blackboard_, logger_, seq_id_++);
+      out_it->handle(*field_it);
     }
-    for ( ; out_it != sub_converters_.end(); ++out_it) {
-      if (out_it->is_open())
-        out_it->close();
-    }
+
+    sub_converters_.erase(out_it + 1, sub_converters_.end());
   }
 
   virtual const sequence_type &extract_sequence(const ProtoT &msg);
 
 private:
   std::vector<OutputT> sub_converters_;
+  size_t seq_id_;
 };
 
 
@@ -236,15 +295,6 @@ private:
     typename std::enable_if<(sizeof...(MessageTs) > 0), bool>::type
     handle_msg_types ()
     { return handle_msg_types<MessageTs...>() || handle_msg_types<MessageT1>(); }
-  };
-
-
-  struct init_interface {
-    BlackboardManager *manager;
-    template<class IfaceT, class... MessageTs>
-    void operator() (bb_iface_manager<IfaceT, type_list<MessageTs...>> &iface_mgr) const {
-      iface_mgr.init(manager->blackboard, manager);
-    }
   };
 
 
