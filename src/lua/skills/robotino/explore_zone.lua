@@ -96,9 +96,9 @@ local Y_MAX = 7.6
 -- When we can't find a laser-line in the zone, we try looking at the zone
 -- from these coordinates, relative to the center.
 local ZONE_CORNERS = {
-   { x = 0.7, y = 0 },
-   { x = 0,   y = 0.7 },
-   { x = -0.8, y = -0.8 },
+   { x = 0.7, y = 0.07 },
+   { x = -0.07,   y = 0.7 },
+   { x = -0.76, y = -0.81 },
 }
 
 -- Maximum difference between tag and line trans/rot
@@ -270,11 +270,11 @@ fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
    {"WAIT_FOR_TAG", JumpState},
    {"TURN", SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_TAG", fail_to="FAILED"},
-   {"GET_CLOSER", JumpState},
+   {"WAIT_FOR_SENORS", JumpState},
    {"FIND_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
-   {"FIND_ZONE_CORNER", JumpState},
-   {"APPROACH_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
-   {"APPROACH_ZONE", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
+   {"PICK_VISTA_POINT", JumpState},
+   {"GOTO_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
+   {"GOTO_VISTA_POINT", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
    {"WAIT_AMCL", JumpState}
 }
 
@@ -284,20 +284,17 @@ fsm:add_transitions{
    {"INIT", "TURN", cond="local_bearing(vars.x, vars.y) > CAM_ANGLE"},
    {"INIT", "WAIT_FOR_TAG", cond=true},
    {"WAIT_FOR_TAG", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"WAIT_FOR_TAG", "GET_CLOSER", timeout=2},
-   {"GET_CLOSER", "FAILED", cond="vars.attempts >= MAX_ATTEMPTS", desc="give up"},
-   {"GET_CLOSER", "APPROACH_LINE", cond="vars.line_vista"},
-   {"GET_CLOSER", "FIND_LINE", cond="vars.cluster_vista"},
-   {"GET_CLOSER", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"GET_CLOSER", "FIND_ZONE_CORNER", timeout=2},
-   {"GET_CLOSER", "FAILED", cond="vars.zone_corner_idx > 1 and not vars.found_something", desc="prolly nuthn here"},
-   {"FIND_ZONE_CORNER", "APPROACH_ZONE", cond="vars.zone_corner"},
-   {"FIND_ZONE_CORNER", "FAILED", cond="not vars.zone_corner"},
-   {"APPROACH_ZONE", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"APPROACH_ZONE", "GET_CLOSER", timeout=6},
-   {"APPROACH_LINE", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"APPROACH_LINE", "GET_CLOSER", timeout=6},
-   {"WAIT_AMCL", "GET_CLOSER", cond=lost_tag, desc="lost tag"},
+   {"WAIT_FOR_TAG", "WAIT_FOR_SENORS", timeout=1},
+   {"WAIT_FOR_SENORS", "WAIT_AMCL", cond=found_tag, desc="found tag"},
+   {"WAIT_FOR_SENORS", "FAILED", cond="vars.attempts >= MAX_ATTEMPTS", desc="give up"},
+   {"WAIT_FOR_SENORS", "GOTO_LINE", cond="vars.line_vista"},
+   {"WAIT_FOR_SENORS", "FIND_LINE", cond="vars.cluster_vista"},
+   {"WAIT_FOR_SENORS", "PICK_VISTA_POINT", timeout=2},
+   {"PICK_VISTA_POINT", "GOTO_VISTA_POINT", cond="vars.zone_corner"},
+   {"PICK_VISTA_POINT", "FAILED", cond="not vars.zone_corner"},
+   {"GOTO_VISTA_POINT", "WAIT_AMCL", cond=found_tag, desc="found tag"},
+   {"GOTO_LINE", "WAIT_AMCL", cond=found_tag, desc="found tag"},
+   {"WAIT_AMCL", "WAIT_FOR_SENORS", cond=lost_tag, desc="lost tag"},
    {"WAIT_AMCL", "FINAL", timeout=1},
 }
 
@@ -357,12 +354,12 @@ function TURN:init()
 end
 
 
-function GET_CLOSER:init()
+function WAIT_FOR_SENORS:init()
    self.fsm.vars.line_vista = nil
    self.fsm.vars.cluster_vista = nil
 end
 
-function GET_CLOSER:loop()
+function WAIT_FOR_SENORS:loop()
    local line = line_in_zone(self.fsm.vars.lines)
    if line then
       local p = llutils.point_in_front(llutils.center(line), 0.8)
@@ -420,7 +417,7 @@ function GET_CLOSER:loop()
 end
 
 
-function GET_CLOSER:exit()
+function WAIT_FOR_SENORS:exit()
    self.fsm.vars.attempts = self.fsm.vars.attempts + 1
 end
 
@@ -431,7 +428,7 @@ function FIND_LINE:init()
 end
 
 
-function APPROACH_LINE:init()
+function GOTO_LINE:init()
    self.fsm.vars.found_something = true
    self.args["goto"] = {
       x = self.fsm.vars.line_vista.x,
@@ -441,7 +438,7 @@ function APPROACH_LINE:init()
 end
 
 
-function FIND_ZONE_CORNER:init()
+function PICK_VISTA_POINT:init()
    -- Make sure we don't use a zone corner coordinate that's inside a wall or
    -- entirely outside the playing field...
    
@@ -475,7 +472,7 @@ function FIND_ZONE_CORNER:init()
 end
 
 
-function APPROACH_ZONE:init()
+function GOTO_VISTA_POINT:init()
    self.args["goto"] = self.fsm.vars.zone_corner
 end
 
