@@ -49,7 +49,8 @@ fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
    {"GOTO_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SLIDE", fail_to="FAILED"},
    {"APPROACH_SLIDE", SkillJumpState, skills={{approach_mps}}, final_to="STORE_PRODUCT", fail_to="FAILED"},
-   {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="LEAVE_SLIDE", fail_to="LEAVE_SLIDE_FAILED"},
+   {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_FOR_GRIPPER", fail_to="LEAVE_SLIDE_FAILED"},
+   {"WAIT_FOR_GRIPPER", JumpState},
    {"LEAVE_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="CLOSE_GRIPPER", fail_to="CLOSE_GRIPPER"},
    {"LEAVE_SLIDE_FAILED", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="RESET_Z_POS", fail_to="RESET_Z_POS"},
@@ -58,6 +59,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT", "GOTO_SLIDE", cond=true},
+   {"WAIT_FOR_GRIPPER", "LEAVE_SLIDE", timeout=1},
 }
 
 
