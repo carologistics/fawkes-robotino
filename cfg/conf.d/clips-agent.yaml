@@ -122,13 +122,13 @@ clips-agent:
       
       route:
         CYAN:
-          R-1: ["exp-21", "exp-22", "exp-23", "exp-21", "exp-24"]
-          R-2: ["exp-21", "exp-22", "exp-23", "exp-21", "exp-24"]
-          R-3: ["exp-24", "exp-21", "exp-23", "exp-22", "exp-21"]
+          R-1: ["exp-12", "exp-11", "exp-22"]
+          R-2: ["exp-22", "exp-23", "exp-31"]
+          R-3: ["exp-31", "exp-32", "exp-21"]
         MAGENTA:
-          R-1: ["exp-12", "exp-11", "exp-12"]
-          R-2: ["exp-22", "exp-21", "exp-22"]
-          R-3: ["exp-32", "exp-31", "exp-32"]
+          R-1: ["exp-11", "exp-12", "exp-21"]
+          R-2: ["exp-22", "exp-21", "exp-32"]
+          R-3: ["exp-32", "exp-31", "exp-22"]
 
       #the time in seconds to report all machines even if we are not prepared for production
       latest-send-last-report-time: 210 # =3:30
