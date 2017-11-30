@@ -20,17 +20,24 @@
 ;
 
 (define (domain visit-machines)
-  (:requirements :strips :typing :universal-preconditions)
-  (:types machine marked)
+  (:requirements :strips :typing)
+  (:types 
+          machine - object
+          team - object
+  )
   (:constants
-    VISITED UNVISITED - marked
+    CYAN MAGENTA - team
   )
   (:predicates
-    (visited-status ?m - machine ?marked - marked)
+    (visited ?m - machine)
+    (team-color ?t - team)
+    (team-machine ?t - team ?m - machine)
   )
   (:action visit
-    :parameters (?m - machine)
-    :precondition (visited-status ?m UNVISITED)
-    :effect (visited-status ?m VISITED)
+    :parameters (?m - machine ?t - team )
+    :precondition (and (team-color ?t) 
+                       (team-machine ?t ?m)
+                       (not (visited ?m)))
+    :effect (visited ?m)
   )
 )
