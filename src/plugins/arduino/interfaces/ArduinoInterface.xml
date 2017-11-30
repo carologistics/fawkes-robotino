@@ -21,4 +21,7 @@
   <message name="MoveToZ0">
     <comment>Move gripper to upper z position.</comment>
   </message>
+  <message name="ResetZPos">
+    <comment>Restore gripper's z position to the "init_mm" position.</comment>
+  </message>
 </interface>
