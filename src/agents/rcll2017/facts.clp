@@ -588,4 +588,12 @@
   (produce-complexity C1)
   (produce-complexity C2)
   (produce-complexity C3)
+  
+  (insertion-zone M-Z51)
+  (insertion-zone M-Z61)
+  (insertion-zone M-Z71)
+
+  (insertion-zone C-Z51)
+  (insertion-zone C-Z61)
+  (insertion-zone C-Z71)
 )
