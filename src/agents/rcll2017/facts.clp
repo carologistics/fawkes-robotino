@@ -583,4 +583,6 @@
   (mirror-orientation (cyan 225) (magenta 315))
   (mirror-orientation (cyan 270) (magenta 270))
   (mirror-orientation (cyan 315) (magenta 225))
+
+  (produce-complexity C0)
 )

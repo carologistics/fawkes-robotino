@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "explore_zone"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = { "goto", "drive_to_local", "motor_move" }
+depends_skills     = { "goto", "motor_move" }
 depends_interfaces = {
    {v = "zone_info", type="ZoneInterface",       id="/explore-zone/info", writing=true},
    {v = "bb_found_tag", type="Position3DInterface", id="/explore-zone/found-tag", writing=true},
