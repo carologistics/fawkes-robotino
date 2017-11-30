@@ -13,6 +13,11 @@ class AX12GripperInterface : public Interface
   static const unsigned int ERROR_LEFT_OUTOFRANGE;
   static const unsigned int ERROR_RIGHT_OUTOFRANGE;
 
+  typedef enum {
+    LEFT = 0,
+    RIGHT = 1
+  } SlapMode;
+
   class Open_AngleMessage : public Message
   {
     Open_AngleMessage(float ini_angle);
@@ -147,6 +152,34 @@ class AX12GripperInterface : public Interface
     float offset();
     void set_offset(const float new_offset);
     int maxlenof_offset() const;
+  };
+
+  class ModifyOpeningAngleByMessage : public Message
+  {
+    ModifyOpeningAngleByMessage(float ini_angle_difference);
+    ModifyOpeningAngleByMessage();
+    ~ModifyOpeningAngleByMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
+    float angle_difference();
+    void set_angle_difference(const float new_angle_difference);
+    int maxlenof_angle_difference() const;
   };
 
   class RelGotoZMessage : public Message
@@ -533,6 +566,34 @@ class AX12GripperInterface : public Interface
     float torque();
     void set_torque(const float new_torque);
     int maxlenof_torque() const;
+  };
+
+  class SlapMessage : public Message
+  {
+    SlapMessage(unsigned char ini_slapmode);
+    SlapMessage();
+    ~SlapMessage();
+
+    unsigned int      id() const;
+
+    unsigned int      sender_id() const;
+    const char *      sender_thread_name() const;
+    Interface *       interface() const;
+    const char *      type() const;
+
+    const void *      datachunk() const;
+    unsigned int      datasize() const;
+
+    void              set_from_chunk(const void *chunk);
+
+    /* from RefCount */
+    void              ref();
+    void              unref();
+    unsigned int      refcount();
+
+    unsigned char slapmode();
+    void set_slapmode(const unsigned char new_slapmode);
+    int maxlenof_slapmode() const;
   };
 
   unsigned int flags();

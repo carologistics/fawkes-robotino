@@ -173,6 +173,11 @@ GripperAX12AThread::init()
 
   cur_torque_ = 1.0;
 
+  // initialize motion_start_timestamp
+  motion_start_timestamp_ = fawkes::Time();
+  slap_left_pending_ = false;
+  slap_right_pending_ = false;
+
 #ifdef USE_TIMETRACKER
   __tt.reset(new TimeTracker());
   __tt_count = 0;
@@ -210,6 +215,8 @@ GripperAX12AThread::loop()
     __servo_if_left->read();
     __servo_if_right->read();
 
+    fawkes::Time now(clock);
+
       // load is given in values from 0 - 1023 is ccw load, 1024 - 2047 is cw load but we are only interested in overall load
     if (load_left_pending && (__servo_if_left->load() & 0x3ff) >= (__cfg_max_load * 0x3ff)) {
       DynamixelServoInterface::StopMessage *stop_message = new DynamixelServoInterface::StopMessage();
@@ -222,17 +229,31 @@ GripperAX12AThread::loop()
       load_right_pending = false;
     }
     if (center_pending && __servo_if_left->is_final() && __servo_if_right->is_final()) {
-      //Enable PreventAlarmShutdown on both servos
-      DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_left_msg  = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
-      DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_right_msg = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
-      prevent_left_msg->set_enable_prevent_alarm_shutdown(true);
-      prevent_right_msg->set_enable_prevent_alarm_shutdown(true);
-      __servo_if_left ->msgq_enqueue(prevent_left_msg);
-      __servo_if_right->msgq_enqueue(prevent_right_msg);
       center_pending = false;
     }
 
-    __gripper_if->set_final(__servo_if_left->is_final() && __servo_if_right->is_final() && !z_alignment_pending);
+    bool is_final = now > (motion_start_timestamp_ + 0.5) &&
+                    __servo_if_left->is_final() &&
+                    __servo_if_right->is_final() &&
+                    !z_alignment_pending;
+
+
+    if (slap_left_pending_) {
+      // the left servo is overriding the middle when it crosses the
+      // angle values from less than 0 to greater than 0
+      bool left_done = __servo_if_left->angle() >= 0.;
+      is_final &= left_done;
+      slap_left_pending_ = !left_done;
+    }
+    if (slap_right_pending_) {
+      // the right servo is overriding the middle when it crosses the
+      // angle values from greater than 0 to less than 0
+      bool right_done = __servo_if_right->angle() <= 0.;
+      is_final &= right_done;
+      slap_right_pending_ = !right_done;
+    }
+
+    __gripper_if->set_final(is_final);
 
     // if the torque is disabled we have to track the position of the servos
     // and constantly send it as goal poses.
@@ -243,8 +264,7 @@ GripperAX12AThread::loop()
         bool is_final = (__servo_if_left->speed() & 0x3FF) < 32;
         is_final &= (__servo_if_right->speed() & 0x3FF) < 32;
         is_final &= !z_alignment_pending;
-        fawkes::Time now(clock);
-        is_final &= now > (torque_0_timestamp_ + 0.5);
+        is_final &= now > (motion_start_timestamp_ + 0.5);
         __gripper_if->set_final(is_final);
         goto_gripper(__servo_if_left->angle(), __servo_if_right->angle());
       }
@@ -299,6 +319,14 @@ GripperAX12AThread::loop()
         set_torque(1.0);
         goto_gripper(__cfg_left_open_angle + msg->offset(), __cfg_right_open_angle + msg->offset());
 
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::ModifyOpeningAngleByMessage>()) {
+        AX12GripperInterface::ModifyOpeningAngleByMessage *msg = __gripper_if->msgq_first(msg);
+        const float angle_difference = msg->angle_difference();
+
+        set_torque(1.0);
+        goto_gripper(__servo_if_left->angle()  - angle_difference,
+                     __servo_if_right->angle() + angle_difference);
+
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CloseMessage>()) {
         AX12GripperInterface::CloseMessage *msg = __gripper_if->msgq_first(msg);
 
@@ -325,14 +353,6 @@ GripperAX12AThread::loop()
 
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::CenterMessage>()) {
         
-        //Disable PreventAlarmShutdown on both servos
-        DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_left_msg  = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
-        DynamixelServoInterface::SetPreventAlarmShutdownMessage *prevent_right_msg = new DynamixelServoInterface::SetPreventAlarmShutdownMessage();
-        prevent_left_msg->set_enable_prevent_alarm_shutdown(false);
-        prevent_right_msg->set_enable_prevent_alarm_shutdown(false);
-        __servo_if_left ->msgq_enqueue(prevent_left_msg);
-        __servo_if_right->msgq_enqueue(prevent_right_msg);
-        
         // The target_opening_angle has to be smaller than the opening_angle because
         // the servos tend to open a little when only the opening_angle is used.
         float target_opening_angle_per_servo = (get_opening_angle() - __cfg_center_angle_correction_amount) / 2.;
@@ -340,13 +360,49 @@ GripperAX12AThread::loop()
         goto_gripper(__servo_if_left->angle() - (__servo_if_left->angle() + target_opening_angle_per_servo),
                      __servo_if_right->angle() - (__servo_if_right->angle() - target_opening_angle_per_servo));
         center_pending = true;
+
+        motion_start_timestamp_ = fawkes::Time(clock);
         
         __gripper_if->set_final(false);
       } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SetTorqueMessage>()) {
         AX12GripperInterface::SetTorqueMessage *msg = __gripper_if->msgq_first(msg);
 
-        torque_0_timestamp_ = fawkes::Time();
+        motion_start_timestamp_ = fawkes::Time(clock);
         set_torque(msg->torque());
+
+      } else if (__gripper_if->msgq_first_is<AX12GripperInterface::SlapMessage>()) {
+        AX12GripperInterface::SlapMessage *msg = __gripper_if->msgq_first(msg);
+
+        if (msg->slapmode() == AX12GripperInterface::SlapMode::LEFT) {
+          // open the gripper and disable torque on the left
+          DynamixelServoInterface::SetTorqueLimitMessage *torque_left_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+          DynamixelServoInterface::SetTorqueLimitMessage *torque_right_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+          torque_left_msg->set_torque_limit(0);
+          torque_right_msg->set_torque_limit(1023);
+          __servo_if_left ->msgq_enqueue(torque_left_msg);
+          __servo_if_right->msgq_enqueue(torque_right_msg);
+
+          goto_gripper(__cfg_left_open_angle, __cfg_right_open_angle);
+
+          motion_start_timestamp_ = fawkes::Time(clock);
+          slap_left_pending_ = true;
+
+        } else if (msg->slapmode() == AX12GripperInterface::SlapMode::RIGHT) {
+          DynamixelServoInterface::SetTorqueLimitMessage *torque_left_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+          DynamixelServoInterface::SetTorqueLimitMessage *torque_right_msg = new DynamixelServoInterface::SetTorqueLimitMessage();
+          torque_left_msg->set_torque_limit(1023);
+          torque_right_msg->set_torque_limit(0);
+          __servo_if_left ->msgq_enqueue(torque_left_msg);
+          __servo_if_right->msgq_enqueue(torque_right_msg);
+          // open the gripper and disable torque on the right
+          goto_gripper(__cfg_left_open_angle, __cfg_right_open_angle);
+
+          motion_start_timestamp_ = fawkes::Time(clock);
+          slap_right_pending_ = true;
+
+        } else {
+          logger->log_error(name(), "SlapMessage received but no side given.");
+        }
 
       } else {
         logger->log_warn(name(), "Unknown message received");
@@ -558,15 +614,42 @@ void
 GripperAX12AThread::set_torque(float torque)
 {
   if (torque >= 0. && torque <= 1.0) {
-    cur_torque_ = torque;
-    logger->log_warn(name(), "Set torque to %f", torque);
+    set_torque_left((unsigned int) (torque * 1023));
+    set_torque_right((unsigned int) (torque * 1023));
+  }
+}
 
-    DynamixelServoInterface::SetTorqueLimitMessage *torque_left_message = new DynamixelServoInterface::SetTorqueLimitMessage(torque * 0x3FF);
-    DynamixelServoInterface::SetTorqueLimitMessage *torque_right_message = new DynamixelServoInterface::SetTorqueLimitMessage(torque * 0x3FF);
+/** Set desired left servo torque in a range of 0 - 1.
+ * @param torque torque from 0 - 1
+ */
+void
+GripperAX12AThread::set_torque_left(unsigned int torque)
+{
+  if (torque >= 0 && torque <= 1023) {
+    cur_torque_ = torque;
+    logger->log_debug(name(), "Set left torque to %u", torque);
+
+    DynamixelServoInterface::SetTorqueLimitMessage *torque_left_message = new DynamixelServoInterface::SetTorqueLimitMessage(torque);
     __servo_if_left->msgq_enqueue(torque_left_message);
+  } else {
+    logger->log_error(name(), "Unable to set left torque to %u - value out of range!", torque);
+  }
+}
+
+/** Set desired left servo torque in a range of 0 - 1.
+ * @param torque torque from 0 - 1
+ */
+void
+GripperAX12AThread::set_torque_right(unsigned int torque)
+{
+  if (torque >= 0 && torque <= 1023) {
+    cur_torque_ = torque;
+    logger->log_debug(name(), "Set right torque to %u", torque);
+
+    DynamixelServoInterface::SetTorqueLimitMessage *torque_right_message = new DynamixelServoInterface::SetTorqueLimitMessage(torque);
     __servo_if_right->msgq_enqueue(torque_right_message);
   } else {
-    logger->log_error(name(), "Unable to set torque to %f - value out of range!", torque);
+    logger->log_error(name(), "Unable to set right torque to %u - value out of range!", torque);
   }
 }
 
