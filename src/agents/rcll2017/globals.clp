@@ -16,8 +16,12 @@
   ?*WORLDMODEL-SYNC-PERIOD* = 1.0
   ?*WORLDMODEL-CHANGE-SEND-PERIOD* = 0.5
   ?*MPS_INSTRUCTION-PERIOD* = 0.2
+  ?*MPS_RESET-PERIOD* = 0.2
+
 
   ?*MIN-TIMES-TO-SEND-MPS-INSTRUCTIONS* = 4
+  ?*MIN-TIMES-TO-SEND-MPS-RESET* = 4
+
 
   ?*TEAM-NAME*    = "?"
   ?*ROBOT-NAME*   = "?"
@@ -54,6 +58,9 @@
   ;Timeout before removing rejected tasks when no task is found
   ?*TIMEOUT-REMOVE-REJECTED-WHILE-WAITING* = 25
   
+  ;send a RESET message for a machine after a task fails n times
+  ?*RESET-MACHINE-AFTER-N-RETRIES* = 2
+
   ?*PI* = 3.141592653589
   ?*2PI* = 6.2831853
   ?*PI-HALF* = 1.5707963
@@ -73,7 +80,7 @@
 
   ?*PRODUCE-CAP-AHEAD-TIME* = 90
   ?*PRODUCE-RING-AHEAD-TIME* = 120
-  ?*PRODUCE-C0-AHEAD-TIME* = 90
+  ?*PRODUCE-C0-AHEAD-TIME* = 150
   ?*PRODUCE-C0-LATEST-TIME* = 30
   ?*PRODUCE-CX-AHEAD-TIME* = 90
   ?*PRODUCE-CX-LATEST-TIME* = 30

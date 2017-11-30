@@ -268,33 +268,6 @@
   )
 )
 
-(defrule prod-clear-bs
-  "Clear BS if base retrieval failed"
-  (declare (salience ?*PRIORITY-CLEAR-BS*))
-  (phase PRODUCTION)
-  (state IDLE|WAIT_AND_LOOK_FOR_ALTERATIVE)
-  (team-color ?team-color&~nil)
-  (holding NONE)
-  (machine (mtype BS) (name ?bs) (team ?team-color) (state READY-AT-OUTPUT))
-  (base-station (name ?bs) (fail-side ?side&~NONE))
-  (not (locked-resource (resource ?res&:(eq ?res (sym-cat ?bs "-" ?side)))))
-  (not (and (task (name clear-bs) (state rejected) (id ?rej-id))
-            (step (name get-output) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 1))) (machine ?bs))))
-  (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-CLEAR-BS*))))
-  =>
-  (printout t "PROD: Clearing BS due to failed base retrieval" crlf)
-  (bind ?task-id (random-id))
-  (assert
-    (task (name clear-bs) (id ?task-id) (state proposed)
-      (steps (create$ (+ ?task-id 1)))
-      (priority ?*PRIORITY-CLEAR-BS*))
-    (step (name get-output) (id (+ ?task-id 1))
-      (task-priority ?*PRIORITY-CLEAR-BS*)
-      (machine ?bs) (machine-feature CONVEYOR) (side ?side))
-    (needed-task-lock (task-id ?task-id) (action CLEAR-BS) (place ?bs))
-  )
-)
-  
 (defrule prod-produce-c0
   "Produce a C0"
   (declare (salience ?*PRIORITY-PRODUCE-C0*))
@@ -305,13 +278,13 @@
   (game-time $?game-time)
   (machine (mtype CS) (incoming $?i&~:(member$ PROD_CAP ?i))
            (name ?cs) (team ?team-color) (produced-id 0)
-           (state ~DOWN&~BROKEN))
+           (state ~BROKEN))
   (cap-station (name ?cs) (cap-loaded ?cap-color) (assigned-cap-color ?cap-color))
   (found-tag (name ?cs))
   (machine (mtype BS) 
     (name ?bs) (team ?team-color)
     (state ~DOWN&~BROKEN))
-  (base-station (name ?bs) (active-side ?bs-side) (fail-side ?fs&:(neq ?bs-side ?fs)))
+  (base-station (name ?bs) (active-side ?bs-side))
   (found-tag (name ?bs))
   ;check that the task was not rejected before
   (not (and (task (name produce-c0) (state rejected) (id ?rej-id))
@@ -670,16 +643,15 @@
   (holding NONE)
   (game-time $?game-time)
   (machine (mtype CS) (produced-id ?produced-id&~0)
-           (name ?cs) (team ?team-color) (incoming $?i&~:(member$ GET-PROD ?i))
-           (state ~DOWN&~BROKEN))
+           (name ?cs) (team ?team-color) ;(incoming $?i&~:(member$ GET-PROD ?i))
+           (state ~BROKEN))
   (product
     (id ?produced-id)
     (product-id ?product-id)
     (cap ?cap-color)
   )
   ?ds-f <- (machine (mtype DS)
-                    (name ?ds) (team ?team-color)
-                    (state ~DOWN&~BROKEN))
+                    (name ?ds) (team ?team-color))
   ;check that the task was not rejected before
   (not (and (task (name deliver) (state rejected) (id ?rej-id))
             (step (name get-output) (id ?rej-st&:(eq ?rej-st (+ ?rej-id 2))) (machine ?cs))))
@@ -796,6 +768,19 @@
     (needed-task-lock (task-id ?task-id) (action GET-PROD) (place ?rs))
   )
 )
+
+(defrule prod-reset-mps-with-inconsistent-state
+  "Reset an MPS which is expected to be IDLE but is actually READY-AT-OUTPUT"
+  (declare (salience ?*PRIORITY-RESET-MPS*))
+  ;(lock-role MASTER)
+  (team-color ?team-color&~nil)
+  (machine (name ?mps) (state READY-AT-OUTPUT) (team ?team-color))
+  (step (name instruct-mps) (machine ?mps) (state wait-for-activation))
+  =>
+  (printout error
+    "Expected machine " ?mps " to be IDLE, but it is READY-AT-OUTPUT")
+  (assert (mps-reset (machine ?mps)))
+)
  
 (defrule prod-nothing-to-do-save-factbase
   "If the agent can't find any task, save the factbase to find problems"
@@ -840,7 +825,10 @@
   =>
   (printout t "Removing rejected tasks after waiting for "
             ?*TIMEOUT-REMOVE-REJECTED-WHILE-WAITING* "s" crlf)
+  (coordination-release-all-subgoal-locks)
   (coordination-remove-old-rejected-tasks)
   (retract ?no-task)
   (assert (no-task-found (nth$ 1 ?game-time)))
 )
+
+
