@@ -40,7 +40,7 @@
          (team-machine MAGENTA M-CS1)
          (team-machine MAGENTA M-CS2)
          (team-machine MAGENTA M-DS)
-         <<#DOMAINFACTS|{relation:domain-fact'}>>(<<name>> <<param_values>>)
+         <<#DOMAINFACTS|{relation:'domain-fact'}>>(<<name>> <<param_values>>)
          <</DOMAINFACTS>>
   )
   (:goal
