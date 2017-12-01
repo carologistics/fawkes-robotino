@@ -52,6 +52,8 @@ clips-executive:
 
   # Use navgraph feature which adds facts for navgraph nodes.
   use_navgraph: true
+  use_pddl: true
+  sync_domain_facts: true
 
   specs:
     test:
