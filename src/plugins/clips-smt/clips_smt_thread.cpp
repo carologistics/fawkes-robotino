@@ -353,10 +353,14 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 	for(int i=0; i<=number_total_actions; ++i){
 		action_id_last.push_back(0);
 	}
-	uint32_t action_id_last_rs1_pay=0;
+	std::vector<uint32_t> action_id_last_bs_robot;
+	for(int i=0; i<=4; ++i){
+		action_id_last_bs_robot.push_back(0);
+	}
+	std::vector<uint32_t> action_id_last_rs1_pay;
+	std::vector<uint32_t> action_id_last_rs2_pay;
 	uint32_t action_id_last_rs1_feed=0;
 	uint32_t action_id_last_rs1_retr=0;
-	uint32_t action_id_last_rs2_pay=0;
 	uint32_t action_id_last_rs2_feed=0;
 	uint32_t action_id_last_rs2_retr=0;
 
@@ -458,7 +462,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					// Only go to the base station if last robot which got a base (mentioned in our sequential plan) finishes its action
-					if(action_id_last[3]) action->add_parent_id(action_id_last[3]);
+					// if(action_id_last[3]) action->add_parent_id(action_id_last[3]);
 					action->set_goal_id(order_id);
 					param = action->add_params();
 					param->set_key("to");
@@ -488,6 +492,8 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[1]);
+
+					action_id_last_bs_robot[model_robots[i]] = action_id;
 
 					break;
 			case 4:	// Action 4,5
@@ -617,22 +623,16 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					// Only go to ring station
-					// ...if the base was picked up // TODO is it we same robot?
-					action->add_parent_id(action_id_last[3]);
-					// ...if the corresponding ring station is not blocked by feeding or older paying 
-					if(model_positions[i]==7){
-						if(action_id_last_rs1_pay) {
-							action->add_parent_id(action_id_last_rs1_pay);
-						}
-						if(action_id_last_rs1_feed) {
+					// ...if the base was picked up 
+					action->add_parent_id(action_id_last_bs_robot[model_robots[i]]);
+					// ...if the corresponding ring station is not blocked by feeding
+					if(model_positions[i]==7 && action_id_last_rs1_feed) {
+						if(action_id_last_rs1_pay.size() >= 3) { 
 							action->add_parent_id(action_id_last_rs1_feed);
 						}
 					}
-					else if(model_positions[i]==9){
-						if(action_id_last_rs2_pay) {
-							action->add_parent_id(action_id_last_rs2_pay);
-						}
-						if(action_id_last_rs2_feed) {
+					else if(model_positions[i]==9 && action_id_last_rs2_feed) {
+						if(action_id_last_rs2_pay.size() >= 3) { 
 							action->add_parent_id(action_id_last_rs2_feed);
 						}
 					}
@@ -656,8 +656,12 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value("true");
 
 					// Save action_id_last for feed at the correpsonding ring station
-					if(model_positions[i]==7) action_id_last_rs1_pay = action_id;
-					else action_id_last_rs2_pay = action_id;
+					if(model_positions[i] == 7) {
+						action_id_last_rs1_pay.push_back(action_id);
+					}
+					else if(model_positions[i] == 9) {
+						action_id_last_rs2_pay.push_back(action_id);
+					}
 
 					break;
 
@@ -670,13 +674,17 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					// Go to the ring station
 					// ...if we picked up the base
-					action->add_parent_id(action_id_last[3]);
-					// ...if the corresponding ring station is not blocked by paying
-					if(model_positions[i]==7 && action_id_last_rs1_pay) {
-						action->add_parent_id(action_id_last_rs1_pay);
+					action->add_parent_id(action_id_last_bs_robot[model_robots[i]]);
+					// ...if the corresponding ring station is not blocked by any older paying
+					if(model_positions[i]==7) {
+						for(unsigned int j=0; j<action_id_last_rs1_pay.size(); ++j) {
+							action->add_parent_id(action_id_last_rs1_pay[j]);
+						}
 					}
-					else if(model_positions[i]==9 && action_id_last_rs2_pay) {
-						action->add_parent_id(action_id_last_rs2_pay);
+					else if(model_positions[i]==9) {
+						for(unsigned int j=0; j<action_id_last_rs2_pay.size(); ++j) {
+							action->add_parent_id(action_id_last_rs2_pay[j]);
+						}
 					}
 					action->set_goal_id(order_id);
 					param = action->add_params();
@@ -752,18 +760,18 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					// Goto the ring station
 					// ...if the base mounted with the first ring was picked up
 					action->add_parent_id(action_id_last[9]);
-					// ...if the corresponding ring station is not blocked by feeding or older paying 
+					// ...if the corresponding ring station is not blocked by feeding or any older paying 
 					if(model_positions[i]==7){
-						if(action_id_last_rs1_pay) {
-							action->add_parent_id(action_id_last_rs1_pay);
+						for(unsigned int j=0; j<action_id_last_rs1_pay.size(); ++j) {
+							action->add_parent_id(action_id_last_rs1_pay[j]);
 						}
 						if(action_id_last_rs1_feed) {
 							action->add_parent_id(action_id_last_rs1_feed);
 						}
 					}
 					else if(model_positions[i]==9){
-						if(action_id_last_rs2_pay) {
-							action->add_parent_id(action_id_last_rs2_pay);
+						for(unsigned int j=0; j<action_id_last_rs2_pay.size(); ++j) {
+							action->add_parent_id(action_id_last_rs2_pay[j]);
 						}
 						if(action_id_last_rs2_feed) {
 							action->add_parent_id(action_id_last_rs2_feed);
@@ -849,18 +857,18 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					// Goto the ring station
 					// ...if the base mounted with the first ring was picked up
 					action->add_parent_id(action_id_last[11]);
-					// ...if the corresponding ring station is not blocked by feeding or older paying 
+					// ...if the corresponding ring station is not blocked by feeding or any older paying 
 					if(model_positions[i]==7){
-						if(action_id_last_rs1_pay) {
-							action->add_parent_id(action_id_last_rs1_pay);
+						for(unsigned int j=0; j<action_id_last_rs1_pay.size(); ++j) {
+							action->add_parent_id(action_id_last_rs1_pay[j]);
 						}
 						if(action_id_last_rs1_feed) {
 							action->add_parent_id(action_id_last_rs1_feed);
 						}
 					}
 					else if(model_positions[i]==9){
-						if(action_id_last_rs2_pay) {
-							action->add_parent_id(action_id_last_rs2_pay);
+						for(unsigned int j=0; j<action_id_last_rs2_pay.size(); ++j) {
+							action->add_parent_id(action_id_last_rs2_pay[j]);
 						}
 						if(action_id_last_rs2_feed) {
 							action->add_parent_id(action_id_last_rs2_feed);
@@ -2312,6 +2320,9 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	}
 
 	constraints.push_back(getVar(varR, "R_1") == 1);
+	// constraints.push_back(getVar(varR, "R_1") == 1 && getVar(varA, "A_1") == 3);
+	// constraints.push_back(getVar(varR, "R_2") == 2 && getVar(varA, "A_2") == 1);
+	// constraints.push_back(getVar(varR, "R_3") == 3 && getVar(varA, "A_3") == 2);
 
 	// logger->log_info(name(), "Add constraints for final actions");
 
