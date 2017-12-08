@@ -80,5 +80,5 @@ clips-executive:
       state-estimation: visit-all/state-estimation-init.clp
 
       action-mapping:
-        visit: ppgoto{place=?(to)s}
+        visit: ppgoto{place=?(m)S}
       blackboard-preload: ["Position3DInterface"]
