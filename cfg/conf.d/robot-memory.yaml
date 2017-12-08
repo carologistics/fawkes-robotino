@@ -63,4 +63,4 @@ plugins/mongodb/clients:
     robotmemory-local:
       active: true
       mode: connection
-      hostport: localhost:27017
+      hostport: localhost:27027
