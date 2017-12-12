@@ -102,7 +102,7 @@
   ?mn <- (master-name ?)
   (or
     (not (exists (active-robot (name ?name)) (team-robot ?name)))
-    (pose (name "R-2"))
+    (test (eq ?*ROBOT-NAME* "R-2"))
     )
   =>
   (printout t "MASTER timed out -> Getting MASTER" crlf)
