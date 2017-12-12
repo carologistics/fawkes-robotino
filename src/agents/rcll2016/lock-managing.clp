@@ -100,6 +100,10 @@
   (time $?now)
   ?mls <- (master-last-seen $?last&:(timeout ?now ?last (+ ?*CURRENT-MASTER-TIMEOUT* ?*MASTER-TIMEOUT-ROBOT-OFFSET*)))
   ?mn <- (master-name ?)
+  (or
+    (not (exists (active-robot (name ?name)) (team-robot ?name)))
+    (pose (name "R-2"))
+    )
   =>
   (printout t "MASTER timed out -> Getting MASTER" crlf)
   (retract ?r ?mn)
