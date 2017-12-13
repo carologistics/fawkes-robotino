@@ -62,6 +62,7 @@
     (active-robot (name ?name) (x ?x) (y ?y&:(and (< ?y 0) (< (abs ?x) (abs ?px)))))
     (team-robot ?name)
   ))
+  (or (phase EXPLORATION) (added-waiting-positions))
   =>
   (retract ?sf ?cf)
   (assert (state MOVE_INTO_FIELD))
