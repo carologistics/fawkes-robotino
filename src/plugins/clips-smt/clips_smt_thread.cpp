@@ -493,7 +493,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[1]);
 
-					action_id_last_bs_robot[model_robots[i]] = action_id;
+					action_id_last_bs_robot[robot_permutation_[model_robots[i]]] = action_id;
 
 					break;
 			case 4:	// Action 4,5
@@ -623,9 +623,11 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					// Only go to ring station
-					// ...if the base was picked up 
-					action->add_parent_id(action_id_last_bs_robot[model_robots[i]]);
-					// ...if the corresponding ring station is not blocked by feeding
+					// ...if the base was picked up (trivial because it is the same robot)
+					action->add_parent_id(action_id_last_bs_robot[robot_permutation_[model_robots[i]]]);
+					// TODO Here we assume that a ring station is only used at maximum two times
+					// ...if the corresponding ring station is already filled with 3 bases, wait for the feed action to occur in order to empty.
+					// This feed action occurs due to the sequential form of the smt generated plan.
 					if(model_positions[i]==7 && action_id_last_rs1_feed) {
 						if(action_id_last_rs1_pay.size() >= 3) { 
 							action->add_parent_id(action_id_last_rs1_feed);
@@ -673,17 +675,27 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					// Go to the ring station
-					// ...if we picked up the base
-					action->add_parent_id(action_id_last_bs_robot[model_robots[i]]);
-					// ...if the corresponding ring station is not blocked by any older paying
+					// ...if we picked up the base (trivial)
+					action->add_parent_id(action_id_last_bs_robot[robot_permutation_[model_robots[i]]]);
+					// ...if the corresponding ring station is not blocked by any older necessary paying
 					if(model_positions[i]==7) {
 						for(unsigned int j=0; j<action_id_last_rs1_pay.size(); ++j) {
-							action->add_parent_id(action_id_last_rs1_pay[j]);
+							if((int) j<number_required_bases[rings_order[0]]) {
+								action->add_parent_id(action_id_last_rs1_pay[j]);
+							}
+							else {
+								std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 1." << std::endl;
+							}
 						}
 					}
 					else if(model_positions[i]==9) {
 						for(unsigned int j=0; j<action_id_last_rs2_pay.size(); ++j) {
-							action->add_parent_id(action_id_last_rs2_pay[j]);
+							if((int) j<number_required_bases[rings_order[0]]) {
+								action->add_parent_id(action_id_last_rs2_pay[j]);
+							}
+							else {
+								std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 2." << std::endl;
+							}
 						}
 					}
 					action->set_goal_id(order_id);
@@ -716,8 +728,12 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 
-					if(model_positions[i]==7) action_id_last_rs1_feed = action_id;
-					else action_id_last_rs2_feed = action_id;
+					if(model_positions[i]==7) {
+						action_id_last_rs1_feed = action_id;
+					}
+					else if(model_positions[i]==9){
+						action_id_last_rs2_feed = action_id;
+					}
 
 					break;
 
@@ -745,8 +761,12 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 
-					if(model_positions[i]==7) action_id_last_rs1_retr = action_id;
-					else action_id_last_rs2_retr = action_id;
+					if(model_positions[i]==8) {
+						action_id_last_rs1_retr = action_id;
+					}
+					else if(model_positions[i]==10){
+						action_id_last_rs2_retr = action_id;
+					}
 
 					break;
 
@@ -758,9 +778,14 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					// Goto the ring station
-					// ...if the base mounted with the first ring was picked up
+					// ...if the base mounted with the first ring was picked up (trivial)
 					action->add_parent_id(action_id_last[9]);
 					// ...if the corresponding ring station is not blocked by feeding or any older paying 
+					// TODO Here we assume that one ring station is only used twice,
+					// therefore it is sufficient to add all payment action ids here.
+					// The ones which belonged to the first ring at this ringstation have been executed already
+					// and ony the latest ones are important.
+					// We could ONLY add the latest one if we compare index j with j>nrb[ro[0]] and j<nrb[ro[1]].
 					if(model_positions[i]==7){
 						for(unsigned int j=0; j<action_id_last_rs1_pay.size(); ++j) {
 							action->add_parent_id(action_id_last_rs1_pay[j]);
@@ -807,8 +832,12 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 
-					if(model_positions[i]==7) action_id_last_rs1_feed = action_id;
-					else action_id_last_rs2_feed = action_id;
+					if(model_positions[i]==7) {
+						action_id_last_rs1_feed = action_id;
+					}
+					else if(model_positions[i]==9){
+						action_id_last_rs2_feed = action_id;
+					}
 					
 					break;
 			case 11: // Action retrieve base_ring at RS for second ring
@@ -819,10 +848,10 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					// Go to the ring station output side if the corresponding ring station is not blocked by older retr 
-					if(model_positions[i]==7 && action_id_last_rs1_retr) {
+					if(model_positions[i]==8 && action_id_last_rs1_retr) {
 						action->add_parent_id(action_id_last_rs1_retr);
 					}
-					else if(model_positions[i]==9 && action_id_last_rs2_retr) {
+					else if(model_positions[i]==10 && action_id_last_rs2_retr) {
 						action->add_parent_id(action_id_last_rs2_retr);
 					}
 					action->set_goal_id(order_id);
@@ -842,8 +871,12 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 
-					if(model_positions[i]==7) action_id_last_rs1_retr = action_id;
-					else action_id_last_rs2_retr = action_id;
+					if(model_positions[i]==8) {
+						action_id_last_rs1_retr = action_id;
+					}
+					else if(model_positions[i]==10){
+						action_id_last_rs2_retr = action_id;
+					}
 
 					break;
 
@@ -904,8 +937,12 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 
-					if(model_positions[i]==7) action_id_last_rs1_feed = action_id;
-					else action_id_last_rs2_feed = action_id;
+					if(model_positions[i]==7) {
+						action_id_last_rs1_feed = action_id;
+					}
+					else if(model_positions[i]==9){
+						action_id_last_rs2_feed = action_id;
+					}
 
 					break;
 			case 13: // Action retrieve base_ring at RS for third ring
@@ -916,10 +953,10 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					// Go to the ring station output side if the corresponding ring station is not blocked by older retr 
-					if(model_positions[i]==7 && action_id_last_rs1_retr) {
+					if(model_positions[i]==8 && action_id_last_rs1_retr) {
 						action->add_parent_id(action_id_last_rs1_retr);
 					}
-					else if(model_positions[i]==9 && action_id_last_rs2_retr) {
+					else if(model_positions[i]==10 && action_id_last_rs2_retr) {
 						action->add_parent_id(action_id_last_rs2_retr);
 					}
 					action->set_goal_id(order_id);
@@ -939,8 +976,12 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 
-					if(model_positions[i]==7) action_id_last_rs1_retr = action_id;
-					else action_id_last_rs2_retr = action_id;
+					if(model_positions[i]==8) {
+						action_id_last_rs1_retr = action_id;
+					}
+					else if(model_positions[i]==10){
+						action_id_last_rs2_retr = action_id;
+					}
 
 					break;
 
@@ -1629,6 +1670,65 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			constraints.push_back(getVar(varS, "state4B_"+std::to_string(i))==getVar(varS, "state4A_"+std::to_string(i+1))
 									&& getVar(varS, "state5B_"+std::to_string(i))==getVar(varS, "state5A_"+std::to_string(i+1)));
 		}
+	}
+
+	// Constraint: every action depends on actions to happen before
+	for(int i=1; i<plan_horizon+1; ++i) {
+
+		// Inter MACRO action dependency
+		z3::expr constraint_dependency1(var_false);
+		z3::expr constraint_dependency2(var_false);
+		z3::expr constraint_dependency3(var_false);
+		z3::expr constraint_dependency4(var_false);
+		z3::expr constraint_dependency5(var_false);
+		z3::expr constraint_dependency6(var_false);
+		z3::expr constraint_dependency7(var_false);
+		z3::expr constraint_dependency8(var_false);
+		z3::expr constraint_dependency9(var_false);
+		z3::expr constraint_dependency10(var_false);
+		z3::expr constraint_dependency11(var_false);
+		z3::expr constraint_dependency12(var_false);
+		z3::expr constraint_dependency13(var_false);
+
+		for(int j=1; j<i; ++j) {
+			constraint_dependency1 = constraint_dependency1 || getVar(varA, "A_"+std::to_string(j)) == 1;
+			constraint_dependency2 = constraint_dependency2 || getVar(varA, "A_"+std::to_string(j)) == 2;
+			constraint_dependency3 = constraint_dependency3 || getVar(varA, "A_"+std::to_string(j)) == 3;
+			constraint_dependency4 = constraint_dependency4 || getVar(varA, "A_"+std::to_string(j)) == 4;
+			constraint_dependency5 = constraint_dependency5 || getVar(varA, "A_"+std::to_string(j)) == 5;
+			constraint_dependency6 = constraint_dependency6 || getVar(varA, "A_"+std::to_string(j)) == 6;
+			constraint_dependency7 = constraint_dependency7 || getVar(varA, "A_"+std::to_string(j)) == 7;
+			constraint_dependency8 = constraint_dependency8 || getVar(varA, "A_"+std::to_string(j)) == 8;
+			constraint_dependency9 = constraint_dependency9 || getVar(varA, "A_"+std::to_string(j)) == 9;
+			constraint_dependency10 = constraint_dependency10 || getVar(varA, "A_"+std::to_string(j)) == 10;
+			constraint_dependency11 = constraint_dependency11 || getVar(varA, "A_"+std::to_string(j)) == 11;
+			constraint_dependency12 = constraint_dependency12 || getVar(varA, "A_"+std::to_string(j)) == 12;
+			constraint_dependency13 = constraint_dependency13 || getVar(varA, "A_"+std::to_string(j)) == 13;
+		}
+
+		z3::expr constraint_inter2(constraint_dependency1);
+		z3::expr constraint_inter7(constraint_dependency3);
+		z3::expr constraint_inter8(constraint_dependency3);
+		z3::expr constraint_inter9(constraint_dependency8);
+		z3::expr constraint_inter10(constraint_dependency9);
+		z3::expr constraint_inter11(constraint_dependency10);
+		z3::expr constraint_inter12(constraint_dependency11);
+		z3::expr constraint_inter13(constraint_dependency12);
+		z3::expr constraint_inter4(constraint_dependency13 && constraint_dependency1 && constraint_dependency2); 
+		z3::expr constraint_inter5(constraint_dependency4);
+		z3::expr constraint_inter6(constraint_dependency5);
+
+		constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 2) || constraint_inter2);
+		constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 4) || constraint_inter4);
+		constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 5) || constraint_inter5);
+		constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 6) || constraint_inter6);
+		constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 7) || constraint_inter7);
+		constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 8) || constraint_inter8);
+		constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 9) || constraint_inter9);
+		constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 10) || constraint_inter10);
+		constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 11) || constraint_inter11);
+		constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 12) || constraint_inter12);
+		constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 13) || constraint_inter13);
 	}
 
 	// Constraint: every action is encoded for every order
