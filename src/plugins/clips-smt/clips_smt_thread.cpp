@@ -375,7 +375,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -386,7 +386,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -400,7 +400,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -414,7 +414,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -428,7 +428,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -440,7 +440,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[1]);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -451,7 +451,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 
 					break;
 			case 3:	// Action 7,6
@@ -463,7 +463,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					// Only go to the base station if last robot which got a base (mentioned in our sequential plan) finishes its action
 					// if(action_id_last[3]) action->add_parent_id(action_id_last[3]);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[1]);
@@ -474,7 +474,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[1]);
@@ -488,7 +488,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[1]);
@@ -515,7 +515,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					else if(number_orders_c3) {
 						action->add_parent_id(action_id_last[13]);
 					}
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -528,7 +528,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[1]);
 					action->add_parent_id(action_id_last[2]);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -542,7 +542,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -556,7 +556,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id_last[2]);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -568,7 +568,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[4]);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -583,7 +583,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id_last[5]);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[6]);
@@ -594,7 +594,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[6]);
@@ -608,7 +608,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[6]);
@@ -638,7 +638,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 							action->add_parent_id(action_id_last_rs2_feed);
 						}
 					}
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -649,7 +649,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -698,7 +698,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 							}
 						}
 					}
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -709,7 +709,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -723,7 +723,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -744,7 +744,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -756,7 +756,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[8]);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -802,7 +802,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 							action->add_parent_id(action_id_last_rs2_feed);
 						}
 					}
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -813,7 +813,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -827,7 +827,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -854,7 +854,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					else if(model_positions[i]==10 && action_id_last_rs2_retr) {
 						action->add_parent_id(action_id_last_rs2_retr);
 					}
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -866,7 +866,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[10]);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -907,7 +907,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 							action->add_parent_id(action_id_last_rs2_feed);
 						}
 					}
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -918,7 +918,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -932,7 +932,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -959,7 +959,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					else if(model_positions[i]==10 && action_id_last_rs2_retr) {
 						action->add_parent_id(action_id_last_rs2_retr);
 					}
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names_[model_positions[i]]);
@@ -971,7 +971,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[12]);
-					action->set_goal_id(order_id);
+					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
@@ -1671,6 +1671,21 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 									&& getVar(varS, "state5B_"+std::to_string(i))==getVar(varS, "state5A_"+std::to_string(i+1)));
 		}
 	}
+
+	// // Constraints to fix robot order
+	// // Start with R-1
+	// constraints.push_back(getVar(varR, "R_1") == 1);
+
+	// // R-3 is chosen if R-2 has been chosen before
+	// for(int i=3; i<plan_horizon+1; ++i) {
+	//     z3::expr constraint_r2_used(var_false);
+		
+	//     for(int j=1; j<i; ++j) {
+	//         constraint_r2_used == constraint_r2_used || getVar(varR, "R_"+std::to_string(j)) == 2;
+	//     }
+
+	//     constraints.push_back(!(getVar(varR, "R_"+std::to_string(i)) == 3) || constraint_r2_used);
+	// }
 
 	// Constraint: every action depends on actions to happen before
 	for(int i=1; i<plan_horizon+1; ++i) {
