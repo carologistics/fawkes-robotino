@@ -606,7 +606,7 @@
   "check if all actions in the list of ids are finished successfully"
   (foreach ?a ?actions-ids
     (bind ?result (any-factp ((?task task)) (and (eq ?task:state finished) (eq ?task:current-step ?a))))
-    (printout t "Parents Actions Check: " ?a " is " ?result  crlf)
+    ; (printout t "Parents Actions Check: " ?a " is " ?result  crlf)
     (if (not ?result) then 
       (return FALSE)
       )
