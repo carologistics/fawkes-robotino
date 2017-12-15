@@ -313,7 +313,7 @@
   (not (task (state proposed) (priority ?max-prod&:(>= ?max-prod ?*PRIORITY-PRODUCE-C0*))))
   ;check for open C0 order
   (product (id ?product-id) (rings $?r&:(eq 0 (length$ ?r))) (cap ?cap-color) (base ?base-color))
-  ?of <- (order (product-id ?product-id)
+  ?of <- (order (id 1) (product-id ?product-id)
     (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
     (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*)))
     (end ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-LATEST-TIME*)))
