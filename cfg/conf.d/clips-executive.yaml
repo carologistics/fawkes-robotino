@@ -48,7 +48,7 @@ clips-executive:
 
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  spec: visitall
+  spec: rcll2017
 
   # Use navgraph feature which adds facts for navgraph nodes.
   use_navgraph: true
@@ -81,4 +81,19 @@ clips-executive:
 
       action-mapping:
         visit: ppgoto{place=?(m)S}
+      blackboard-preload: ["Position3DInterface"]
+
+    rcll2017:
+      environment: rcll2017/environment.clp
+      domain: rcll2017/visitall-domain.clp
+      goal-reasoner: rcll2017/goal-reasoner.clp
+      goal-expander: rcll2017/fixed-sequence.clp
+      action-selection: rcll2017/action-selection.clp
+      #macro-expansion: visit-all/action-selection.clp
+      action-execution: plan-exec.clp
+      execution-monitoring: rcll2017/execution-monitoring.clp
+      state-estimation: rcll2017/state-estimation-init.clp
+
+      action-mapping:
+        visit: ppgoto{place=?(to)S}
       blackboard-preload: ["Position3DInterface"]
