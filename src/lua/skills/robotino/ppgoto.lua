@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "ppgoto"
-fsm                = SkillHSM:new{name=name, start="PPGOTO", debug=false}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = { "goto" }
 depends_interfaces = {
    {v = "ppnavi", type = "NavigatorInterface", id="Pathplan"}
@@ -59,9 +59,18 @@ place:     name of a place
 -- Initialize as skill module
 skillenv.skill_module(...)
 
+
+-- Constants
+-- probability that the skill should fail
+RANDOM_FAIL_THRESHOLD = 0.5
+
 -- Jumpconditions
 function jumpcond_paramfail(state)
    return state.fsm.vars.param_fail
+end
+
+function jumpcond_randomfail(state)
+   return state.fsm.vars.random_fail < RANDOM_FAIL_THRESHOLD
 end
 
 function jumpcond_navifail(state)
@@ -95,6 +104,7 @@ fsm:define_states{
    export_to=_M,
    closure={ppnavi=ppnavi},
 
+   {"INIT", JumpState},
    {"PPGOTO", JumpState},
    {"TIMEOUT", JumpState},
    {"SKILL_GOTO", SkillJumpState, skills={{goto}}, final_to="FINAL", fail_to="FAILED"},
@@ -102,6 +112,8 @@ fsm:define_states{
 
 -- Transitions
 fsm:add_transitions{
+   {"INIT", "FAILED", cond=jumpcond_randomfail, desc="Random failure"},
+   {"INIT", "PPGOTO", cond=true},
    {"PPGOTO", "FAILED", cond_and_precond="not ppnavi:has_writer()", desc="No writer for interface"},
    {"PPGOTO", "FAILED", cond=jumpcond_paramfail, desc="Invalid/insufficient parameters"},
    {"PPGOTO", "FINAL", cond=jumpcond_navifinal, desc="Position reached"},
@@ -109,6 +121,10 @@ fsm:add_transitions{
    {"TIMEOUT", "SKILL_GOTO", timeout=1},
 
 }
+
+function INIT:init()
+  self.fsm.vars.random_fail = math.random()
+end
 
 function PPGOTO:init()
    if self.fsm.vars.x ~= nil and self.fsm.vars.y ~= nil then
