@@ -416,7 +416,7 @@
   (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
   ?step <- (step (name instruct-mps) (state wait-for-activation) (side ?side) (id ?step-id)
                  (machine ?mps) (base ?base) (ring ?ring) (gate ?gate)
-                 (cs-operation ?cs-op) (lock ?lock) (task-priority ?p))
+                 (cs-operation ?cs-op) (lock ?lock) (task-priority ?p) (goal-id ?goal-id))
   (machine (name ?mps) (mtype ?mtype) (state IDLE))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
