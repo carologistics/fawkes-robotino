@@ -413,6 +413,7 @@
 (defrule step-instruct-mps
   (declare (salience ?*PRIORITY-STEP-START*))
   (phase PRODUCTION)
+  (game-time $?game-time)
   (task (state running) (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (current-step ?step-id))
   ?step <- (step (name instruct-mps) (state wait-for-activation) (side ?side) (id ?step-id)
                  (machine ?mps) (base ?base) (ring ?ring) (gate ?gate)
@@ -420,6 +421,12 @@
   (machine (name ?mps) (mtype ?mtype) (state IDLE))
   ?state <- (state STEP-STARTED)
   (team-color ?team)
+  (or (test (neq ?mtype DS))
+      (order (id ?goal-id)
+      (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
+      (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*)))
+      (delivery-gate ?gate))
+  )
   =>
   (retract ?state)
   (switch ?mtype
