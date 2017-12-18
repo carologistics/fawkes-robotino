@@ -463,6 +463,37 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					// Only go to the base station if last robot which got a base (mentioned in our sequential plan) finishes its action
 					// if(action_id_last[3]) action->add_parent_id(action_id_last[3]);
+					// Only go to the base station if the base intended to be mounted comes after all the base retrievals which are intended as payment
+					// Look ahead to dermine if this instance of action 3 is the (!) one which requires additional parent_ids
+					for(unsigned j=i+1; j<model_actions.size(); ++j) {
+
+						// Check if action is an instance of action 8 and the current base retrieval is performed by the same robot
+						if(model_actions[j] == 8 && model_robots[i] == model_robots[j]) {
+
+							if(model_positions[j]==7) {
+								for(unsigned int k=0; k<action_id_last_rs1_pay.size(); ++k) {
+									if((int) k<number_required_bases[rings_order[0]]) {
+										action->add_parent_id(action_id_last_rs1_pay[k]);
+									}
+									else {
+										std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 1." << std::endl;
+									}
+								}
+							}
+							else if(model_positions[j]==9) {
+								for(unsigned int k=0; k<action_id_last_rs2_pay.size(); ++k) {
+									if((int) k<number_required_bases[rings_order[0]]) {
+										action->add_parent_id(action_id_last_rs2_pay[k]);
+									}
+									else {
+										std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 2." << std::endl;
+									}
+								}
+							}
+
+						}
+
+					}
 					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
@@ -1672,20 +1703,30 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		}
 	}
 
-	// // Constraints to fix robot order
-	// // Start with R-1
-	// constraints.push_back(getVar(varR, "R_1") == 1);
+	// Constraints to fix robot order
+	// Start with R-1
+	constraints.push_back(getVar(varR, "R_1") == 1);
 
-	// // R-3 is chosen if R-2 has been chosen before
-	// for(int i=3; i<plan_horizon+1; ++i) {
-	//     z3::expr constraint_r2_used(var_false);
+	// R-3 is chosen if R-2 has been chosen before
+	for(int i=3; i<plan_horizon+1; ++i) {
+		z3::expr constraint_r2_used(var_false);
 		
-	//     for(int j=1; j<i; ++j) {
-	//         constraint_r2_used == constraint_r2_used || getVar(varR, "R_"+std::to_string(j)) == 2;
-	//     }
+		for(int j=2; j<i; ++j) {
+			constraint_r2_used = constraint_r2_used || getVar(varR, "R_"+std::to_string(j)) == 2;
+		}
 
-	//     constraints.push_back(!(getVar(varR, "R_"+std::to_string(i)) == 3) || constraint_r2_used);
-	// }
+		constraints.push_back(!(getVar(varR, "R_"+std::to_string(i)) == 3) || constraint_r2_used);
+	}
+
+	// Constraint: for some actions the robot is fixed
+	for(int i=1; i<plan_horizon+1; ++i) {
+		for(int j=1; j<i; ++j) {
+			constraints.push_back( !( getVar(varA, "A_"+std::to_string(j)) == 9 && getVar(varA, "A_"+std::to_string(i)) == 10 ) || getVar(varR, "R_"+std::to_string(j)) == getVar(varR, "R_"+std::to_string(i)) );
+			constraints.push_back( !( getVar(varA, "A_"+std::to_string(j)) == 11 && getVar(varA, "A_"+std::to_string(i)) == 12 ) || getVar(varR, "R_"+std::to_string(j)) == getVar(varR, "R_"+std::to_string(i)) );
+			constraints.push_back( !( getVar(varA, "A_"+std::to_string(j)) == 13 && getVar(varA, "A_"+std::to_string(i)) == 4 ) || getVar(varR, "R_"+std::to_string(j)) == getVar(varR, "R_"+std::to_string(i)) );
+			constraints.push_back( !( getVar(varA, "A_"+std::to_string(j)) == 5 && getVar(varA, "A_"+std::to_string(i)) == 6 ) || getVar(varR, "R_"+std::to_string(j)) == getVar(varR, "R_"+std::to_string(i)) );
+		}
+	}
 
 	// Constraint: every action depends on actions to happen before
 	for(int i=1; i<plan_horizon+1; ++i) {
