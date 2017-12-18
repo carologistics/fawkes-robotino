@@ -331,15 +331,14 @@ if [  $COMMAND  == start ]; then
     echo "executing $OPEN_COMMAND"
     eval $OPEN_COMMAND
 
-    sleep 10s
     if $FAWKES_USED
     then
-	sleep 5s
 	# publish initial poses
 	echo "publish initial poses"
 	$initial_pose_script_location -c $NUM_CYAN -m $NUM_MAGENTA -d
     else
 	echo "Skipped publishing poses"
+  sleep 10
     fi
 
 		if [ -n "$START_GAME" ]; then

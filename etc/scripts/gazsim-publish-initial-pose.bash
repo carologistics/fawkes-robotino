@@ -19,6 +19,21 @@ OPTIONS:
    -m N                Assume N available robots of team magenta (default: 0)
 EOF
 }
+
+wait_for_amcl()
+{
+  if [ $# -lt 1 ] ; then
+    echo "wait_for_amcl: Missing argument!"
+    exit 1
+  fi
+  echo -n "Waiting for AMCL to be ready on $1 ."
+  while [ "$(${FAWKES_DIR}/bin/ffplugin -r $1 | grep -w amcl)" = "" ]
+  do
+    echo -n "."
+    sleep 1
+  done
+  echo " sending position!"
+}
  
 #check options
 
@@ -73,21 +88,27 @@ do
 	     script_path=$FAWKES_DIR/bin
 	     set_pose=$script_path/ffset_pose
        if (( $CN >= 1 )); then
+         wait_for_amcl localhost:1921
 			   $set_pose -r localhost:1921 -t 2.0 --  4.5  0.5 0.0  0.0 0.0 0.7 0.7
 	     fi
        if (( $CN >= 2 )); then
+         wait_for_amcl localhost:1922
 		     $set_pose -r localhost:1922 -t 2.0 --  5.5 0.5 0.0  0.0 0.0 0.7 0.7
 	     fi
        if (( $CN >= 3 )); then
+         wait_for_amcl localhost:1923
 		     $set_pose -r localhost:1923 -t 2.0 --  6.5  0.5 0.0  0.0 0.0 0.7 0.7
 	     fi
        if (( $MN >= 1 )); then
+         wait_for_amcl localhost:1924
 		     $set_pose -r localhost:1924 -t 2.0 -- -4.5  0.5 0.0  0.0 0.0 0.7 0.7
 	     fi
        if (( $MN >= 2 )); then
+         wait_for_amcl localhost:1925
 		     $set_pose -r localhost:1925 -t 2.0 -- -5.5 0.5 0.0  0.0 0.0 0.7 0.7
 	     fi
        if (( $MN >= 3 )); then
+         wait_for_amcl localhost:1926
 		     $set_pose -r localhost:1926 -t 2.0 -- -6.5  0.5 0.0  0.0 0.0 0.7 0.7
 	     fi
 	     exit 0
