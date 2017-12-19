@@ -1094,7 +1094,7 @@ ClipsSmtThread::loop()
 	// Pass it to z3 solver 
 	clips_smt_solve_formula(formula);
 	// Pass it ot z3 optimizer
-	// clips_smt_optimize_formula(formula, "rew_");
+	clips_smt_optimize_formula(formula, "rew_");
 
 	/*
 	 * Leonard Korp's approach
@@ -1706,6 +1706,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	// Constraints to fix robot order
 	// Start with R-1
 	constraints.push_back(getVar(varR, "R_1") == 1);
+	constraints.push_back(getVar(varR, "R_2") == 1 || getVar(varR, "R_2") ==  2);
 
 	// R-3 is chosen if R-2 has been chosen before
 	for(int i=3; i<plan_horizon+1; ++i) {
@@ -2475,11 +2476,6 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		}
 	}
 
-	constraints.push_back(getVar(varR, "R_1") == 1);
-	// constraints.push_back(getVar(varR, "R_1") == 1 && getVar(varA, "A_1") == 3);
-	// constraints.push_back(getVar(varR, "R_2") == 2 && getVar(varA, "A_2") == 1);
-	// constraints.push_back(getVar(varR, "R_3") == 3 && getVar(varA, "A_3") == 2);
-
 	// logger->log_info(name(), "Add constraints for final actions");
 
 	// Constraints encoding that final_actions for each order have to be at least executed once (if desiered, during the delivery window)
@@ -2791,7 +2787,7 @@ void
 	z3::set_param("pp.decimal", true);
 
 	// Export formula into .smt file
-	std::ofstream of_c0_formula("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/encoder_c0_formula.smt"); // TODO (Igor) Exchange path with config value
+	std::ofstream of_c0_formula("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/formula_smt.smt"); // TODO (Igor) Exchange path with config value
 	of_c0_formula << z3Solver.to_smt2() << std::endl;
 	of_c0_formula.close();
 
@@ -2799,15 +2795,15 @@ void
 		// End measuring solving time in case of sat
 		end = std::chrono::high_resolution_clock::now();
 
-		logger->log_info(name(), "Finished solving SAT formula");
-		clips_smt_extract_plan_from_model(z3Solver.get_model(), begin, end);
+		logger->log_info(name(), "Finished solving");
+		clips_smt_extract_plan_from_model(z3Solver.get_model(), "/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/clips_smt_thread_stats_smt.txt", begin, end);
 
 	} else {
 		// End measuring solving time in case of unsat
 		end = std::chrono::high_resolution_clock::now();
 
-		logger->log_info(name(), "Finished solving UNSAT formula");
-		clips_smt_extract_unsat_reason(begin, end);
+		logger->log_info(name(), "Formula is UNSAT");
+		clips_smt_extract_unsat_reason("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/clips_smt_thread_stats_smt.txt", begin, end);
 	}
 }
 
@@ -2833,7 +2829,7 @@ void
 	z3::set_param("pp.decimal", true);
 
 	// Export formula into .smt file
-	std::ofstream of_c0_formula("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/encoder_c0_formula.smt"); // TODO (Igor) Exchange path with config value
+	std::ofstream of_c0_formula("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/formula_omt.smt"); // TODO (Igor) Exchange path with config value
 	of_c0_formula << Z3_optimize_to_string(_z3_context, z3Optimizer);
 	of_c0_formula.close();
 
@@ -2841,15 +2837,15 @@ void
 		// End measuring solving time
 		end = std::chrono::high_resolution_clock::now();
 
-		logger->log_info(name(), "Finished optimizing SAT formula");
-		clips_smt_extract_plan_from_model(z3Optimizer.get_model(), begin, end);
+		logger->log_info(name(), "Finished optimizing");
+		clips_smt_extract_plan_from_model(z3Optimizer.get_model(), "/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/clips_smt_thread_stats_omt.txt", begin, end);
 
 	} else {
 		// End measuring solving time
 		end = std::chrono::high_resolution_clock::now();
 
-		logger->log_info(name(), "Finished optimizing UNSAT formula");
-		clips_smt_extract_unsat_reason(begin, end);
+		logger->log_info(name(), "Optimizing is not possible due to UNSAT formula");
+		clips_smt_extract_unsat_reason("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/clips_smt_thread_stats_omt.txt", begin, end);
 	}
 }
 
@@ -2862,11 +2858,11 @@ z3::expr ClipsSmtThread::clips_smt_extract_formula_from_smt_file(std::string pat
 }
 
 void
-ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model, std::chrono::high_resolution_clock::time_point begin, std::chrono::high_resolution_clock::time_point end)
+ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model, std::string of_path, std::chrono::high_resolution_clock::time_point begin, std::chrono::high_resolution_clock::time_point end)
 {
 	// Export stats into clips_smt_thread_stats.txt
 	std::ofstream of_stats;
-	of_stats.open("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/clips_smt_thread_stats.txt", std::ofstream::out | std::ofstream::app);
+	of_stats.open(of_path, std::ofstream::out | std::ofstream::app);
 
 	// Add time and date stamp to stats
 	time_t now = time(0);
@@ -2874,7 +2870,7 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model, std::chrono::
 	of_stats << std::endl << dt << std::endl;
 
 	// Add sat to stats
-	of_stats << "SAT" << std::endl;
+	of_stats << "Formula is SAT" << std::endl;
 
 	// Extract plan from model
 	for(unsigned i=0; i<model.size(); ++i) {
@@ -3038,11 +3034,11 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model, std::chrono::
 
 // TODO read unsat core to determine time not meet or machine broken
 void
-ClipsSmtThread::clips_smt_extract_unsat_reason(std::chrono::high_resolution_clock::time_point begin, std::chrono::high_resolution_clock::time_point end)
+ClipsSmtThread::clips_smt_extract_unsat_reason(std::string of_path, std::chrono::high_resolution_clock::time_point begin, std::chrono::high_resolution_clock::time_point end)
 {
 	// Export stats into clips_smt_thread_stats.txt
 	std::ofstream of_stats;
-	of_stats.open("/home/robosim/robotics/fawkes-robotino/src/plugins/clips-smt/clips_smt_thread_stats.txt", std::ofstream::out | std::ofstream::app);
+	of_stats.open(of_path, std::ofstream::out | std::ofstream::app);
 
 	// Add time and date stamp to stats
 	time_t now = time(0);
@@ -3050,7 +3046,7 @@ ClipsSmtThread::clips_smt_extract_unsat_reason(std::chrono::high_resolution_cloc
 	of_stats << std::endl << dt << std::endl;
 	
 	// Add unsat to stats
-	of_stats << "UNSAT" << std::endl;
+	of_stats << "Formula is UNSAT" << std::endl;
 
 	// Compute time for solving
 	double diff_ms = (double) std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count()/1000;
