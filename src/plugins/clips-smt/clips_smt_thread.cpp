@@ -1094,7 +1094,7 @@ ClipsSmtThread::loop()
 	// Pass it to z3 solver 
 	clips_smt_solve_formula(formula);
 	// Pass it ot z3 optimizer
-	clips_smt_optimize_formula(formula, "rew_");
+	// clips_smt_optimize_formula(formula, "rew_");
 
 	/*
 	 * Leonard Korp's approach
@@ -1706,10 +1706,10 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	// Constraints to fix robot order
 	// Start with R-1
 	constraints.push_back(getVar(varR, "R_1") == 1);
-	constraints.push_back(getVar(varR, "R_2") == 1 || getVar(varR, "R_2") ==  2);
 
 	// R-3 is chosen if R-2 has been chosen before
-	for(int i=3; i<plan_horizon+1; ++i) {
+	// z3::expr constraint_r3_used(var_false);
+	for(int i=2; i<plan_horizon+1; ++i) {
 		z3::expr constraint_r2_used(var_false);
 		
 		for(int j=2; j<i; ++j) {
@@ -1717,7 +1717,10 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		}
 
 		constraints.push_back(!(getVar(varR, "R_"+std::to_string(i)) == 3) || constraint_r2_used);
+
+		// constraint_r3_used = constraint_r3_used || getVar(varR, "R_"+std::to_string(j)) == 3;
 	}
+	// constraints.push_back(constraint_r3_used);
 
 	// Constraint: for some actions the robot is fixed
 	for(int i=1; i<plan_horizon+1; ++i) {
