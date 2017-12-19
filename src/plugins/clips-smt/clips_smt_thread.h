@@ -109,8 +109,8 @@ private:
 	void clips_smt_optimize_formula(z3::expr_vector formula, std::string var);
 	// void clips_smt_solve_formula_from_fg_smt_file(std::string path, FormulaGenerator fg);
 	
-	void clips_smt_extract_plan_from_model(z3::model model, std::chrono::high_resolution_clock::time_point begin, std::chrono::high_resolution_clock::time_point end);
-	void clips_smt_extract_unsat_reason(std::chrono::high_resolution_clock::time_point begin, std::chrono::high_resolution_clock::time_point end);
+	void clips_smt_extract_plan_from_model(z3::model model, std::string of_path, std::chrono::high_resolution_clock::time_point begin, std::chrono::high_resolution_clock::time_point end);
+	void clips_smt_extract_unsat_reason(std::string of_path, std::chrono::high_resolution_clock::time_point begin, std::chrono::high_resolution_clock::time_point end);
 
 	// Francescos Leofantes formula encoding
 	z3::expr_vector clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
