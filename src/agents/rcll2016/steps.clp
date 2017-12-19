@@ -424,7 +424,7 @@
   (or (test (neq ?mtype DS))
       (order (id ?goal-id)
       (quantity-requested ?qr) (quantity-delivered ?qd&:(> ?qr ?qd))
-      (begin ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*)))
+      (begin ?begin&:(< ?begin (nth$ 1 ?game-time)))
       (delivery-gate ?gate))
   )
   =>
