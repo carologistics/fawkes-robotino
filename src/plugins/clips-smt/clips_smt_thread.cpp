@@ -218,19 +218,33 @@ ClipsSmtThread::init()
 
 	// Description of MACRO-actions
 	description_actions.push_back("dummy"); // We are not interested in the action with value 0
-	description_actions.push_back("|R|CSS|>>BRC| |P|CS|BRC>>| |F|CS|>BRC>|"); // 1
-	description_actions.push_back("|R|CS|>C>BR|"); // 2
-	description_actions.push_back("|P|BS|B>>| |R|BS|>>B|"); // 3
-	description_actions.push_back("|P|CS|B>C>| |F|CS|>B+C>|"); // 4
-	description_actions.push_back("|R|CS|>>BC|"); // 5
-	description_actions.push_back("|P|DS|BC>>| |F|DS|>BC>|"); // 6
-	description_actions.push_back("|F|RS|>B>"); // 7
-	description_actions.push_back("|P|RS|B>R>| |F|RS|>B+R>|"); // 8
-	description_actions.push_back("|R|RS|>>BR"); // 9
-	description_actions.push_back("|P|RS|BR>R>| |F|RS|>BR+R>|"); // 10
-	description_actions.push_back("|R|RS|>>BRR"); // 11
-	description_actions.push_back("|P|RS|BRR>R>| |F|RS|>BRR+R>|"); // 12
-	description_actions.push_back("|R|RS|>>BRRR"); // 13
+	description_actions.push_back("[Feed C with cap carrier from shelf into CS]"); // 1
+	description_actions.push_back("[Discard cap carrier at CS-O]"); // 2
+	description_actions.push_back("[Retrieve B at BS]"); // 3
+	description_actions.push_back("[Feed intermediate workpiece into CS-I to mount with C]"); // 4
+	description_actions.push_back("[Retrieve final product at CS-O]"); // 5
+	description_actions.push_back("[Deliver final product at DS]"); // 6
+	description_actions.push_back("[Feed additional base into RS-I]"); // 7
+	description_actions.push_back("[Feed B into RS-I to mount with R1]"); // 8
+	description_actions.push_back("[Retrieve BR1 at RS-O]"); // 9
+	description_actions.push_back("[Feed BR1 into RS-I to mount with R2]"); // 10
+	description_actions.push_back("[Retrieve BR1R2 at RS-O]"); // 11
+	description_actions.push_back("[Feed BR1R2 into RS-I to mount with R3]"); // 12
+	description_actions.push_back("Retrieve BR1R2R3 at RS-O"); // 13
+
+	// description_actions.push_back("|R|CSS|>>BRC| |P|CS|BRC>>| |F|CS|>BRC>|"); // 1
+	// description_actions.push_back("|R|CS|>C>BR|"); // 2
+	// description_actions.push_back("|P|BS|B>>| |R|BS|>>B|"); // 3
+	// description_actions.push_back("|P|CS|B>C>| |F|CS|>B+C>|"); // 4
+	// description_actions.push_back("|R|CS|>>BC|"); // 5
+	// description_actions.push_back("|P|DS|BC>>| |F|DS|>BC>|"); // 6
+	// description_actions.push_back("|F|RS|>B>"); // 7
+	// description_actions.push_back("|P|RS|B>R>| |F|RS|>B+R>|"); // 8
+	// description_actions.push_back("|R|RS|>>BR"); // 9
+	// description_actions.push_back("|P|RS|BR>R>| |F|RS|>BR+R>|"); // 10
+	// description_actions.push_back("|R|RS|>>BRR"); // 11
+	// description_actions.push_back("|P|RS|BRR>R>| |F|RS|>BRR+R>|"); // 12
+	// description_actions.push_back("|R|RS|>>BRRR"); // 13
 
 	// shelf positions // TODO Use all shelf-positions in protobuf
 	shelf_position.push_back(true);
