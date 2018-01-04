@@ -219,6 +219,7 @@ private:
 	std::map<int, int> model_state3B;
 	std::map<int, int> model_state4B;
 	std::map<int, int> model_state5B;
+	std::map<int, int> model_score;
 
 	// Leonard Korps formula encoding
 	// GameData clips_smt_convert_protobuf_to_gamedata();
