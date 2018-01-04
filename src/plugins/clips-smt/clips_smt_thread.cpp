@@ -463,13 +463,21 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					// Only go to the base station if last robot which got a base (mentioned in our sequential plan) finishes its action
 					// if(action_id_last[3]) action->add_parent_id(action_id_last[3]);
+
 					// Only go to the base station if the base intended to be mounted comes after all the base retrievals which are intended as payment
 					// Look ahead to dermine if this instance of action 3 is the (!) one which requires additional parent_ids
-					for(unsigned j=i+1; j<model_actions.size(); ++j) {
+					for(unsigned int j=i+1; j<model_actions.size(); ++j) {
+
+						// Check if action is an instance of action 7 and the current base retrieval is performed by the same robot
+						// In this case we do not need to add further parent_ids
+						if(model_actions[j] == 7 && model_robots[i] == model_robots[j]) {
+							break;
+						}
 
 						// Check if action is an instance of action 8 and the current base retrieval is performed by the same robot
-						if(model_actions[j] == 8 && model_robots[i] == model_robots[j]) {
+						else if(model_actions[j] == 8 && model_robots[i] == model_robots[j]) {
 
+							// RS1
 							if(model_positions[j]==7) {
 								for(unsigned int k=0; k<action_id_last_rs1_pay.size(); ++k) {
 									if((int) k<number_required_bases[rings_order[0]]) {
@@ -480,6 +488,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 									}
 								}
 							}
+							// RS2
 							else if(model_positions[j]==9) {
 								for(unsigned int k=0; k<action_id_last_rs2_pay.size(); ++k) {
 									if((int) k<number_required_bases[rings_order[0]]) {
