@@ -34,7 +34,7 @@
    )
 )
 
-(defrule  refbox-comm-enable-public
+(defrule refbox-comm-enable-public
   "Enable peer connection to the unencrypted refbox channel"
   (confval (path "/config/rcll/peer-address") (value ?peer-address))
   (confval (path "/config/rcll/peer-port") (value ?peer-port))
@@ -46,5 +46,15 @@
           (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
    )
 )
+
+(defrule refbox-recv-BeaconSignal
+  ?pf <- (protobuf-msg (type "llsf_msgs.BeaconSignal") (ptr ?p))
+  (time $?now)
+  =>
+  (bind ?beacon-name (pb-field-value ?p "peer_name"))
+  (printout t "Beacon Recieved from " ?beacon-name crlf)
+  (retract ?pf) 
+)
+
 
 
