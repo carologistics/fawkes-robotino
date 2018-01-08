@@ -98,3 +98,17 @@ clips-executive:
       action-mapping:
         visit: ppgoto{place=?(to)S}
       blackboard-preload: ["Position3DInterface"]
+
+      wm-config:
+        rcll:
+          peer-address: 127.0.0.1
+          peer-recv-port: 4444
+          peer-send-port: 4445
+          cyan-recv-port: 4441
+          magenta-recv-port: 4442
+          cyan-send-port: 4446
+          magenta-send-port: 4447
+
+          team-name: Carologistics
+          crypto-key: randomkey
+          cipher: "aes-128-cbc"
