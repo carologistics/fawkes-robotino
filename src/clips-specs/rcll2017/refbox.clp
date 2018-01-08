@@ -20,3 +20,31 @@
   )  
 )
 
+(defrule refbox-comm-enable-local-public
+  "Enable local peer connection to the unencrypted refbox channel"
+  (wm-fact (id "/config/rcll/peer-address") (value ?peer-address))
+  (wm-fact (id "/config/rcll/peer-send-port") (value ?peer-send-port))
+  (wm-fact (id "/config/rcll/peer-recv-port") (value ?peer-recv-port))
+  (not (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE)))
+  =>
+  (printout t "Enabling local peer (public)" crlf)
+  (bind ?peer-id (pb-peer-create-local ?peer-address ?peer-send-port ?peer-recv-port))
+  (assert (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE) (type BOOL))
+          (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
+   )
+)
+
+(defrule  refbox-comm-enable-public
+  "Enable peer connection to the unencrypted refbox channel"
+  (confval (path "/config/rcll/peer-address") (value ?peer-address))
+  (confval (path "/config/rcll/peer-port") (value ?peer-port))
+  (not (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE)))
+  =>
+  (printout t "Enabling remote peer (public)" crlf)
+  (bind ?peer-id (pb-peer-create ?peer-address ?peer-port))
+  (assert (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE) (type BOOL))
+          (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
+   )
+)
+
+
