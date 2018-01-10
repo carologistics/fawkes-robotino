@@ -138,6 +138,7 @@
             (wm-fact (key domain fact order-complexity args? order ?order-id complexity ?complexity) (type BOOL) (value TRUE) )
             (wm-fact (key domain fact order-base-color args? order ?order-id base-color ?base) (type BOOL) (value TRUE) )
             (wm-fact (key domain fact order-cap-color  args? order ?order-id cap-color ?cap) (type BOOL) (value TRUE) )
+            (wm-fact (key domain fact order-gate  args? order ?order-id ds-gate (sym-cat GATE- ?delivery-gate)) (type BOOL) (value TRUE) )
             (wm-fact (key refbox order ?order-id quantity-requested) (type UINT) (value ?quantity-requested) )
             (wm-fact (key refbox order ?order-id delivery-begin) (type UINT) (value ?begin) )
             (wm-fact (key refbox order ?order-id delivery-end) (type UINT) (value ?end) )
@@ -153,7 +154,6 @@
               (retract ?old-deliverd-fact)
           )
           (assert (wm-fact (key refbox order ?order-id quantity-delivered ?team-color) (type UINT) (value ?quantity-delivered) ))
-    
     )
   )
   (retract ?pf)
