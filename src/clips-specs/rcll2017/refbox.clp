@@ -1,5 +1,5 @@
 ;---------------------------------------------------------------------------
-;  refbox.clp - Refbox communitcation and actions
+;  refbox.clp - Refbox communitcation
 ;
 ;  Created: Mon 8 Jan 2017 13:21:21 CET
 ;  Copyright  2017  Mostafa Gomaa <gomaa@kbsg.rwth-aachen.de>
@@ -18,6 +18,7 @@
     (wm-fact (id "/refbox/phase")  (type UNKNOWN) (value PRE_GAME) )
     (wm-fact (id "/refbox/state")  (type UNKNOWN) (value WAIT_START) )
     (wm-fact (id "/refbox/game-time?sec=0.0,nsec=0.0")  (type BOOL) (value TRUE) )
+    (timer (name beacon) (time (create$ 0 0)) (seq 1))
   )  
 )
 
