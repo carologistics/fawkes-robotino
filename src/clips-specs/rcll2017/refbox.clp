@@ -49,6 +49,32 @@
    )
 )
 
+(defrule refbox-comm-enable-local-team-private
+  "Enable local peer connection to the encrypted team channel"
+  (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE))
+  (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
+  (wm-fact (id "/config/rcll/peer-address") (value ?address))
+  (wm-fact (id "/config/rcll/crypto-key") (value ?key))
+  (wm-fact (id "/config/rcll/cipher") (value ?cipher))
+  (wm-fact (id "/config/rcll/cyan-recv-port") (value ?cyan-recv-port))
+  (wm-fact (id "/config/rcll/cyan-send-port") (value ?cyan-send-port))
+  (wm-fact (id "/config/rcll/magenta-recv-port") (value ?magenta-recv-port))
+  (wm-fact (id "/config/rcll/magenta-send-port") (value ?magenta-send-port))
+  (not (wm-fact (id "/refbox/comm/private-peer-enabled") (value TRUE) ))
+  =>
+  (if (eq ?team-color CYAN)
+    then
+      (printout t "Enabling local peer (cyan only)" crlf)
+      (bind ?peer-id (pb-peer-create-local-crypto ?address ?cyan-send-port ?cyan-recv-port ?key ?cipher))
+      else
+      (printout t "Enabling local peer (magenta only)" crlf)
+      (bind ?peer-id (pb-peer-create-local-crypto ?address ?magenta-send-port ?magenta-recv-port ?key ?cipher))
+    )
+  (assert (wm-fact (id "/refbox/comm/private-peer-enabled") (value TRUE) (type BOOL))
+          (wm-fact (id "/refbox/comm/peer-id/private") (value ?peer-id) (type INT))
+    )
+)
+
 (defrule refbox-recv-BeaconSignal
   ?pf <- (protobuf-msg (type "llsf_msgs.BeaconSignal") (ptr ?p))
   (time $?now)
