@@ -102,20 +102,20 @@
 
 (defrule net-recv-order
   "Assert orders sent by the refbox."
-  ; An order in the pddl domain is modeled with predicates
+  ; An order is modled in the pddl domain as the predicats
   ; (order-complexity ?ord - order ?com - order-complexity)
   ; (order-base-color ?ord - order ?col - base-color)
   ; (order-ring1-color ?ord - order ?col - ring-color)
   ; (order-ring2-color ?ord - order ?col - ring-color)
   ; (order-ring3-color ?ord - order ?col - ring-color)
   ; (order-cap-color ?ord - order ?col - cap-color)
-
+  ; (order-gate ?ord - order ?gate - ds-gate)
   ?pf <- (protobuf-msg (type "llsf_msgs.OrderInfo") (ptr ?ptr))
   (wm-fact (id "/refbox/team-color") (value ?team-color) )
   =>
   (foreach ?o (pb-field-list ?ptr "orders")
     (bind ?id (pb-field-value ?o "id"))
-    (bind ?order-id (str-cat "o" ?id))
+    (bind ?order-id (sym-cat o ?id))
     ;check if the order is new
     (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ domain fact order-complexity) )
                                                   (eq ?order-id (nth$ (+ (member$ order ?wm-fact:key) 1) ?wm-fact:key)))))
@@ -138,10 +138,22 @@
             (wm-fact (key domain fact order-complexity args? order ?order-id complexity ?complexity) (type BOOL) (value TRUE) )
             (wm-fact (key domain fact order-base-color args? order ?order-id base-color ?base) (type BOOL) (value TRUE) )
             (wm-fact (key domain fact order-cap-color  args? order ?order-id cap-color ?cap) (type BOOL) (value TRUE) )
+            (wm-fact (key refbox order ?order-id quantity-requested) (type UINT) (value ?quantity-requested) )
+            (wm-fact (key refbox order ?order-id delivery-begin) (type UINT) (value ?begin) )
+            (wm-fact (key refbox order ?order-id delivery-end) (type UINT) (value ?end) )
             )
           (printout t "Added order " ?id " with " (pb-field-value ?o "cap_color") crlf)
       else
-          
+          (if (eq ?team-color CYAN) then
+            (bind ?quantity-delivered (pb-field-value ?o "quantity_delivered_cyan"))
+          else
+            (bind ?quantity-delivered (pb-field-value ?o "quantity_delivered_magenta"))
+          )      
+          (do-for-fact ((?old-deliverd-fact wm-fact)) (wm-key-prefix ?old-deliverd-fact:key (create$ refbox order ?order-id quantity-delivered ?team-color)) 
+              (retract ?old-deliverd-fact)
+          )
+          (assert (wm-fact (key refbox order ?order-id quantity-delivered ?team-color) (type UINT) (value ?quantity-delivered) ))
+    
     )
   )
   (retract ?pf)
