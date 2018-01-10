@@ -1,8 +1,8 @@
 ;---------------------------------------------------------------------------
-;  visitall-domain.clp - Simple domain to visit some/all locations
+;  rcll-domain.clp - Simple domain Of RCLL
 ;
-;  Created: Thu 26 Oct 2017 21:46:58 CEST
-;  Copyright  2017  Till Hofmann <hofmann@kbsg.rwth-aachen.de>
+;  Created:: Mon 10 Jan 2017 13:21:21 CET
+;  Copyright  2017  Mostafa Gomaa <gomaa@kbsg.rwth-aachen.de>
 ;  Licensed under GPLv2+ license, cf. LICENSE file of cedar
 ;---------------------------------------------------------------------------
 
@@ -22,4 +22,6 @@
     (domain-effect
       (part-of visit) (predicate visited) (param-names to))
   )
+  
+  (path-load "rcll2017/refbox.clp")
 )
