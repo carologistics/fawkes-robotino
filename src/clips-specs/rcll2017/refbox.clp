@@ -185,3 +185,33 @@
   )
   (retract ?pf)
 )
+
+(defrule refbox-recv-MachineInfo
+  ?pb-msg <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
+  (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
+  =>
+  ; (printout t "***** Received MachineInfo *****" crlf)
+  (retract ?pb-msg)
+  (foreach ?m (pb-field-list ?p "machines")
+    (bind ?m-name (sym-cat (pb-field-value ?m "name")))
+    (bind ?m-type (sym-cat (pb-field-value ?m "type")))
+    (bind ?m-team (sym-cat (pb-field-value ?m "team_color")))
+    (bind ?m-state (sym-cat (pb-field-value ?m "state")))
+    (if (not (any-factp ((?wm-fact wm-fact)) 
+              (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-type)) 
+                    (eq ?m-name (wm-key-arg ?wm-fact:key mps)))))
+      then
+      (if (eq ?team-color ?m-team) then
+        (assert (wm-fact (key domain fact mps-type args? mps ?m-name mps-typename ?m-type)))
+        (assert (wm-fact (key domain fact mps-state args? mps ?m-name mps-statename ?m-state))) 
+      )
+    )
+   (do-for-fact ((?wm-fact wm-fact)) 
+                  (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-state)) 
+                        (eq ?m-name (wm-key-arg ?wm-fact:key mps))
+                        (neq ?m-state (wm-key-arg ?wm-fact:key mps-statename)))
+      (retract ?wm-fact)
+      (assert (wm-fact (key domain fact mps-state args? mps ?m-name mps-statename ?m-state))) 
+    )
+   )
+)
