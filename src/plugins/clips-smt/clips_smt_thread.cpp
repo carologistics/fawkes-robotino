@@ -1116,7 +1116,7 @@ ClipsSmtThread::loop()
 												varRew, varInit);
 
 	// Pass it to z3 solver 
-	clips_smt_solve_formula(formula);
+	// clips_smt_solve_formula(formula);
 	// Pass it ot z3 optimizer
 	clips_smt_optimize_formula(formula, "score_");
 
@@ -2475,94 +2475,157 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	// TODO add for multiple orders
 	// logger->log_info(name(), "Add constraints for scores");
 	for(int i=1; i<plan_horizon+1; ++i){
+		//phase1
+		z3::expr constraint_no_8(var_true);
+		//phase2
+		z3::expr constraint_yes_8(var_false);
+		z3::expr constraint_no_10(var_true);
+		//phase3
+		z3::expr constraint_yes_10(var_false);
+
+		for(int j=1; j<i; ++j){
+			constraint_no_8 = constraint_no_8 && !(getVar(varA, "A_"+std::to_string(j)) == 8);
+			constraint_yes_8 = constraint_yes_8 || getVar(varA, "A_"+std::to_string(j)) == 8;
+			constraint_no_10 = constraint_no_10 && !(getVar(varA, "A_"+std::to_string(j)) == 10);
+			constraint_yes_10 = constraint_yes_10 || getVar(varA, "A_"+std::to_string(j)) == 10;
+		}
+
 		// First step
 		if(i==1){
-			// Add points depending on the action variable assignments
-			// +0 for action 1,2,3,5,9,11,13
-			constraints.push_back(!( 	getVar(varA, "A_1") == 1 ||
-										getVar(varA, "A_1") == 2 ||
-										getVar(varA, "A_1") == 3 ||
-										getVar(varA, "A_1") == 5 ||
-										getVar(varA, "A_1") == 9 ||
-										getVar(varA, "A_1") == 11 ||
-										getVar(varA, "A_1") == 13
-									) || getVar(varRew, "score_1") == 0);
 
-			// +2 for action 7
-			constraints.push_back(!(getVar(varA, "A_1") == 7) || getVar(varRew, "score_1") == 2);
+			// phase 0
+			constraints.push_back(!(getVar(varA, "A_1") == 1) || getVar(varRew, "score_1") == 1);
+			constraints.push_back(!(getVar(varA, "A_1") == 2) || getVar(varRew, "score_1") == 2);
+			// phase 1
+			constraints.push_back(!( constraint_no_8 && getVar(varA, "A_1") == 3) || getVar(varRew, "score_1") == 11);
+			constraints.push_back(!( constraint_no_8 && getVar(varA, "A_1") == 7) || getVar(varRew, "score_1") == 12);
+			constraints.push_back(!( getVar(varA, "A_1") == 8) || getVar(varRew, "score_1") == 13);
+			constraints.push_back(!( getVar(varA, "A_1") == 9) || getVar(varRew, "score_1") == 14);
+			// phase 2
+			constraints.push_back(!( constraint_yes_8 && constraint_no_10 && getVar(varA, "A_1") == 3) || getVar(varRew, "score_1") == 110);
+			constraints.push_back(!( constraint_yes_8 && constraint_no_10 && getVar(varA, "A_1") == 7) || getVar(varRew, "score_1") == 120);
+			constraints.push_back(!( getVar(varA, "A_1") == 10) || getVar(varRew, "score_1") == 130);
+			constraints.push_back(!( getVar(varA, "A_1") == 11) || getVar(varRew, "score_1") == 140);
+			// phase 3
+			constraints.push_back(!( constraint_yes_10 && getVar(varA, "A_1") == 3) || getVar(varRew, "score_1") == 1100);
+			constraints.push_back(!( constraint_yes_10 && getVar(varA, "A_1") == 7) || getVar(varRew, "score_1") == 1200);
+			constraints.push_back(!( getVar(varA, "A_1") == 12) || getVar(varRew, "score_1") == 1300);
+			constraints.push_back(!( getVar(varA, "A_1") == 13) || getVar(varRew, "score_1") == 1400);
+			// phase 4
+			constraints.push_back(!(getVar(varA, "A_1") == 4) || getVar(varRew, "score_1") == 11000);
+			constraints.push_back(!(getVar(varA, "A_1") == 5) || getVar(varRew, "score_1") == 12000);
+			constraints.push_back(!(getVar(varA, "A_1") == 6) || getVar(varRew, "score_1") == 13000);
 
-			// +5 for action 8, 10, 12 if the corresponding rings cost 0 additional bases
-			constraints.push_back(!( 	(getVar(varA, "A_1") == 8 && number_required_bases[0]==0) ||
-										(getVar(varA, "A_1") == 10 && number_required_bases[1]==0)
-									) || getVar(varRew, "score_1") == 5);
+			// // Add points depending on the action variable assignments
+			// // +0 for action 1,2,3,5,9,11,13
+			// constraints.push_back(!( 	getVar(varA, "A_1") == 1 ||
+			//                             getVar(varA, "A_1") == 2 ||
+			//                             getVar(varA, "A_1") == 3 ||
+			//                             getVar(varA, "A_1") == 5 ||
+			//                             getVar(varA, "A_1") == 9 ||
+			//                             getVar(varA, "A_1") == 11 ||
+			//                             getVar(varA, "A_1") == 13
+			//                         ) || getVar(varRew, "score_1") == 0);
 
-			// +10 for action 8, 10, 12 if the corresponding rings cost 1 additional base
-			constraints.push_back(!( 	(getVar(varA, "A_1") == 8 && number_required_bases[0]==1) ||
-										(getVar(varA, "A_1") == 10 && number_required_bases[1]==1)
-									) || getVar(varRew, "score_1") == 10);
+			// // +2 for action 7
+			// constraints.push_back(!(getVar(varA, "A_1") == 7) || getVar(varRew, "score_1") == 2);
 
-			// +20 for action 8, 10, 12 if the corresponding rings cost 2 additional bases
-			constraints.push_back(!( 	(getVar(varA, "A_1") == 8 && number_required_bases[0]==2) ||
-										(getVar(varA, "A_1") == 10 && number_required_bases[1]==2)
-									) || getVar(varRew, "score_1") == 20);
+			// // +5 for action 8, 10, 12 if the corresponding rings cost 0 additional bases
+			// constraints.push_back(!( 	(getVar(varA, "A_1") == 8 && number_required_bases[0]==0) ||
+			//                             (getVar(varA, "A_1") == 10 && number_required_bases[1]==0)
+			//                         ) || getVar(varRew, "score_1") == 5);
 
-			// +10 for action 8 (mounting last ring of a c1)
-			// +30 for action 10 (mounting last ring of a c2)
-			// +80 for action 12 (mounting last ring of a c3)
-			constraints.push_back(!(getVar(varA, "A_1") == 12 && number_required_bases[2]==0) || getVar(varRew, "score_1") == 85);
-			constraints.push_back(!(getVar(varA, "A_1") == 12 && number_required_bases[2]==1) || getVar(varRew, "score_1") == 90);
-			constraints.push_back(!(getVar(varA, "A_1") == 12 && number_required_bases[2]==2) || getVar(varRew, "score_1") == 100);
+			// // +10 for action 8, 10, 12 if the corresponding rings cost 1 additional base
+			// constraints.push_back(!( 	(getVar(varA, "A_1") == 8 && number_required_bases[0]==1) ||
+			//                             (getVar(varA, "A_1") == 10 && number_required_bases[1]==1)
+			//                         ) || getVar(varRew, "score_1") == 10);
 
-			// +10 for action 4 (mounting cap)
-			constraints.push_back(!(getVar(varA, "A_1") == 4) || getVar(varRew, "score_1") == 10);
+			// // +20 for action 8, 10, 12 if the corresponding rings cost 2 additional bases
+			// constraints.push_back(!( 	(getVar(varA, "A_1") == 8 && number_required_bases[0]==2) ||
+			//                             (getVar(varA, "A_1") == 10 && number_required_bases[1]==2)
+			//                         ) || getVar(varRew, "score_1") == 20);
 
-			// +20 for action 6 (deliver product)
-			constraints.push_back(!(getVar(varA, "A_1") == 6) || getVar(varRew, "score_1") == 20);
+			// // +10 for action 8 (mounting last ring of a c1)
+			// // +30 for action 10 (mounting last ring of a c2)
+			// // +80 for action 12 (mounting last ring of a c3)
+			// constraints.push_back(!(getVar(varA, "A_1") == 12 && number_required_bases[2]==0) || getVar(varRew, "score_1") == 85);
+			// constraints.push_back(!(getVar(varA, "A_1") == 12 && number_required_bases[2]==1) || getVar(varRew, "score_1") == 90);
+			// constraints.push_back(!(getVar(varA, "A_1") == 12 && number_required_bases[2]==2) || getVar(varRew, "score_1") == 100);
+
+			// // +10 for action 4 (mounting cap)
+			// constraints.push_back(!(getVar(varA, "A_1") == 4) || getVar(varRew, "score_1") == 10);
+
+			// // +20 for action 6 (deliver product)
+			// constraints.push_back(!(getVar(varA, "A_1") == 6) || getVar(varRew, "score_1") == 20);
 
 		}
 		// Next step referring on the score one step before
 		else {
-			// Add points depending on the action variable assignments
-			// +0 for action 1,2,3,5,9,11,13
-			constraints.push_back(!( 	getVar(varA, "A_"+std::to_string(i)) == 1 ||
-										getVar(varA, "A_"+std::to_string(i)) == 2 ||
-										getVar(varA, "A_"+std::to_string(i)) == 3 ||
-										getVar(varA, "A_"+std::to_string(i)) == 5 ||
-										getVar(varA, "A_"+std::to_string(i)) == 9 ||
-										getVar(varA, "A_"+std::to_string(i)) == 11 ||
-										getVar(varA, "A_"+std::to_string(i)) == 13
-									) || getVar(varRew, "score_"+std::to_string(i)) == getVar(varRew, "score_"+std::to_string(i-1)));
 
-			// +2 for action 7
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 7) || getVar(varRew, "score_"+std::to_string(i)) == 2+getVar(varRew, "score_"+std::to_string(i-1)));
+			// phase 0
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 1) || getVar(varRew, "score_"+std::to_string(i)) == 1+getVar(varRew, "score_"+std::to_string(i-1)));
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 2) || getVar(varRew, "score_"+std::to_string(i)) == 2+getVar(varRew, "score_"+std::to_string(i-1)));
+			// phase 1
+			constraints.push_back(!( constraint_no_8 && getVar(varA, "A_"+std::to_string(i)) == 3) || getVar(varRew, "score_"+std::to_string(i)) == 11+getVar(varRew, "score_"+std::to_string(i-1)));
+			constraints.push_back(!( constraint_no_8 && getVar(varA, "A_"+std::to_string(i)) == 7) || getVar(varRew, "score_"+std::to_string(i)) == 12+getVar(varRew, "score_"+std::to_string(i-1)));
+			constraints.push_back(!( getVar(varA, "A_"+std::to_string(i)) == 8) || getVar(varRew, "score_"+std::to_string(i)) == 13+getVar(varRew, "score_"+std::to_string(i-1)));
+			constraints.push_back(!( getVar(varA, "A_"+std::to_string(i)) == 9) || getVar(varRew, "score_"+std::to_string(i)) == 14+getVar(varRew, "score_"+std::to_string(i-1)));
+			// phase 2
+			constraints.push_back(!( constraint_yes_8 && constraint_no_10 && getVar(varA, "A_"+std::to_string(i)) == 3) || getVar(varRew, "score_"+std::to_string(i)) == 110+getVar(varRew, "score_"+std::to_string(i-1)));
+			constraints.push_back(!( constraint_yes_8 && constraint_no_10 && getVar(varA, "A_"+std::to_string(i)) == 7) || getVar(varRew, "score_"+std::to_string(i)) == 120+getVar(varRew, "score_"+std::to_string(i-1)));
+			constraints.push_back(!( getVar(varA, "A_"+std::to_string(i)) == 10) || getVar(varRew, "score_"+std::to_string(i)) == 130+getVar(varRew, "score_"+std::to_string(i-1)));
+			constraints.push_back(!( getVar(varA, "A_"+std::to_string(i)) == 11) || getVar(varRew, "score_"+std::to_string(i)) == 140+getVar(varRew, "score_"+std::to_string(i-1)));
+			// phase 3
+			constraints.push_back(!( constraint_yes_10 && getVar(varA, "A_"+std::to_string(i)) == 3) || getVar(varRew, "score_"+std::to_string(i)) == 1100+getVar(varRew, "score_"+std::to_string(i-1)));
+			constraints.push_back(!( constraint_yes_10 && getVar(varA, "A_"+std::to_string(i)) == 7) || getVar(varRew, "score_"+std::to_string(i)) == 1200+getVar(varRew, "score_"+std::to_string(i-1)));
+			constraints.push_back(!( getVar(varA, "A_"+std::to_string(i)) == 12) || getVar(varRew, "score_"+std::to_string(i)) == 1300+getVar(varRew, "score_"+std::to_string(i-1)));
+			constraints.push_back(!( getVar(varA, "A_"+std::to_string(i)) == 13) || getVar(varRew, "score_"+std::to_string(i)) == 1400+getVar(varRew, "score_"+std::to_string(i-1)));
+			// phase 4
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 4) || getVar(varRew, "score_"+std::to_string(i)) == 11000+getVar(varRew, "score_"+std::to_string(i-1)));
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 5) || getVar(varRew, "score_"+std::to_string(i)) == 12000+getVar(varRew, "score_"+std::to_string(i-1)));
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 6) || getVar(varRew, "score_"+std::to_string(i)) == 13000+getVar(varRew, "score_"+std::to_string(i-1)));
 
-			// +5 for action 8, 10, 12 if the corresponding rings cost 0 additional bases
-			constraints.push_back(!( 	(getVar(varA, "A_"+std::to_string(i)) == 8 && number_required_bases[0]==0) ||
-										(getVar(varA, "A_"+std::to_string(i)) == 10 && number_required_bases[1]==0)
-									) || getVar(varRew, "score_"+std::to_string(i)) == 5+getVar(varRew, "score_"+std::to_string(i-1)));
+			// // Add points depending on the action variable assignments
+			// // +0 for action 1,2,3,5,9,11,13
+			// constraints.push_back(!( 	getVar(varA, "A_"+std::to_string(i)) == 1 ||
+			//                             getVar(varA, "A_"+std::to_string(i)) == 2 ||
+			//                             getVar(varA, "A_"+std::to_string(i)) == 3 ||
+			//                             getVar(varA, "A_"+std::to_string(i)) == 5 ||
+			//                             getVar(varA, "A_"+std::to_string(i)) == 9 ||
+			//                             getVar(varA, "A_"+std::to_string(i)) == 11 ||
+			//                             getVar(varA, "A_"+std::to_string(i)) == 13
+			//                         ) || getVar(varRew, "score_"+std::to_string(i)) == getVar(varRew, "score_"+std::to_string(i-1)));
 
-			// +10 for action 8, 10, 12 if the corresponding rings cost 1 additional base
-			constraints.push_back(!( 	(getVar(varA, "A_"+std::to_string(i)) == 8 && number_required_bases[0]==1) ||
-										(getVar(varA, "A_"+std::to_string(i)) == 10 && number_required_bases[1]==1)
-									) || getVar(varRew, "score_"+std::to_string(i)) == 10+getVar(varRew, "score_"+std::to_string(i-1)));
+			// // +2 for action 7
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 7) || getVar(varRew, "score_"+std::to_string(i)) == 2+getVar(varRew, "score_"+std::to_string(i-1)));
 
-			// +20 for action 8, 10, 12 if the corresponding rings cost 2 additional bases
-			constraints.push_back(!( 	(getVar(varA, "A_"+std::to_string(i)) == 8 && number_required_bases[0]==2) ||
-										(getVar(varA, "A_"+std::to_string(i)) == 10 && number_required_bases[1]==2)
-									) || getVar(varRew, "score_"+std::to_string(i)) == 20+getVar(varRew, "score_"+std::to_string(i-1)));
+			// // +5 for action 8, 10, 12 if the corresponding rings cost 0 additional bases
+			// constraints.push_back(!( 	(getVar(varA, "A_"+std::to_string(i)) == 8 && number_required_bases[0]==0) ||
+			//                             (getVar(varA, "A_"+std::to_string(i)) == 10 && number_required_bases[1]==0)
+			//                         ) || getVar(varRew, "score_"+std::to_string(i)) == 5+getVar(varRew, "score_"+std::to_string(i-1)));
 
-			// +10 for action 8 (mounting last ring of a c1)
-			// +30 for action 10 (mounting last ring of a c2)
-			// +80 for action 12 (mounting last ring of a c3)
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 12 && number_required_bases[2]==0) || getVar(varRew, "score_"+std::to_string(i)) == 85+getVar(varRew, "score_"+std::to_string(i-1)));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 12 && number_required_bases[2]==1) || getVar(varRew, "score_"+std::to_string(i)) == 90+getVar(varRew, "score_"+std::to_string(i-1)));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 12 && number_required_bases[2]==2) || getVar(varRew, "score_"+std::to_string(i)) == 100+getVar(varRew, "score_"+std::to_string(i-1)));
+			// // +10 for action 8, 10, 12 if the corresponding rings cost 1 additional base
+			// constraints.push_back(!( 	(getVar(varA, "A_"+std::to_string(i)) == 8 && number_required_bases[0]==1) ||
+			//                             (getVar(varA, "A_"+std::to_string(i)) == 10 && number_required_bases[1]==1)
+			//                         ) || getVar(varRew, "score_"+std::to_string(i)) == 10+getVar(varRew, "score_"+std::to_string(i-1)));
 
-			// +10 for action 4 (mounting cap)
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 4) || getVar(varRew, "score_"+std::to_string(i)) == 10+getVar(varRew, "score_"+std::to_string(i-1)));
+			// // +20 for action 8, 10, 12 if the corresponding rings cost 2 additional bases
+			// constraints.push_back(!( 	(getVar(varA, "A_"+std::to_string(i)) == 8 && number_required_bases[0]==2) ||
+			//                             (getVar(varA, "A_"+std::to_string(i)) == 10 && number_required_bases[1]==2)
+			//                         ) || getVar(varRew, "score_"+std::to_string(i)) == 20+getVar(varRew, "score_"+std::to_string(i-1)));
 
-			// +20 for action 6 (deliver product)
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 6) || getVar(varRew, "score_"+std::to_string(i)) == 20+getVar(varRew, "score_"+std::to_string(i-1)));
+			// // +10 for action 8 (mounting last ring of a c1)
+			// // +30 for action 10 (mounting last ring of a c2)
+			// // +80 for action 12 (mounting last ring of a c3)
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 12 && number_required_bases[2]==0) || getVar(varRew, "score_"+std::to_string(i)) == 85+getVar(varRew, "score_"+std::to_string(i-1)));
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 12 && number_required_bases[2]==1) || getVar(varRew, "score_"+std::to_string(i)) == 90+getVar(varRew, "score_"+std::to_string(i-1)));
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 12 && number_required_bases[2]==2) || getVar(varRew, "score_"+std::to_string(i)) == 100+getVar(varRew, "score_"+std::to_string(i-1)));
+
+			// // +10 for action 4 (mounting cap)
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 4) || getVar(varRew, "score_"+std::to_string(i)) == 10+getVar(varRew, "score_"+std::to_string(i-1)));
+
+			// // +20 for action 6 (deliver product)
+			// constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 6) || getVar(varRew, "score_"+std::to_string(i)) == 20+getVar(varRew, "score_"+std::to_string(i-1)));
 		}
 	}
 
@@ -3133,7 +3196,7 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model, std::string o
 	}
 
 	// Add plan specified by the model to stats
-	of_stats << "O" << order_id+1 << ": B" << base_order << "R" << rings_order[0] << "R" << rings_order[1] << "R" << rings_order[2] << "C" << cap_order;
+	of_stats << "O" << order_id+1 << ": B" << base_order << "R" << rings_order[0] << "R" << rings_order[1] << "R" << rings_order[2] << "C" << cap_order << " [" << number_required_bases[rings_order[0]] << number_required_bases[rings_order[1]] << number_required_bases[rings_order[2]] << "]";
 	if(add_temporal_constraint){
 		of_stats << " with bounds " << data.orders(order_id).delivery_period_begin() << "s < o0 < " << data.orders(order_id).delivery_period_end() << "s";
 	}
@@ -3141,16 +3204,16 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model, std::string o
 
 	for(int j=1; j<plan_horizon+1; ++j){
 		of_stats << j <<". ";
-		of_stats << "R" << model_robots[j] << " for O" << ((model_actions[j]-1)/index_upper_bound_actions)+1;
-		of_stats << " does " << description_actions[((model_actions[j]-1)%index_upper_bound_actions)+1]  << " (A" << model_actions[j] << ")"; //of_stats  << " and holds " << products_inverted[model_holdB[j]] << " at "<< node_names_[model_positions[j]];
+		of_stats << "R" << model_robots[j]; //<< " for O" << ((model_actions[j]-1)/index_upper_bound_actions)+1;
+		of_stats << " does (A" << model_actions[j] << ") " << description_actions[((model_actions[j]-1)%index_upper_bound_actions)+1];//  << " (A" << model_actions[j] << ")"; //of_stats  << " and holds " << products_inverted[model_holdB[j]] << " at "<< node_names_[model_positions[j]];
 		// ":[H(" << model_holdA[j] << "-" << model_holdB[j] <<
 		// "), S1(" << model_state1A[j] << "-" << model_state1B[j] <<
 		// "), S2(" << model_state2A[j] << "-" << model_state2B[j] <<
 		// "), S3(" << model_state3A[j] << "-" << model_state3B[j] <<"]";
-		of_stats << " [" << model_state4B[j] << ", " << model_state5B[j] << "]"; 
-		of_stats << " [t = " << model_times[j] << "s]" << std::endl; // [R1: " << node_names_[model_positions_R1[j]] <<", R2: " << node_names_[model_positions_R2[j]] << ", R3: " << node_names_[model_positions_R3[j]] << "]" << std::endl;
+		of_stats << " [" << model_state4B[j] << ", " << model_state5B[j] << "]" << std::endl; 
+		// of_stats << " [t = " << model_times[j] << "s]" << std::endl; // [R1: " << node_names_[model_positions_R1[j]] <<", R2: " << node_names_[model_positions_R2[j]] << ", R3: " << node_names_[model_positions_R3[j]] << "]" << std::endl;
 	}
-	of_stats << "robot_permutation_ [" << robot_permutation_[1] << ", " << robot_permutation_[2] << ", " << robot_permutation_[3] << "]" << std::endl;
+	// of_stats << "robot_permutation_ [" << robot_permutation_[1] << ", " << robot_permutation_[2] << ", " << robot_permutation_[3] << "]" << std::endl;
 	of_stats << "score of product is " <<  model_score[plan_horizon] << std::endl;
 
 	// Compute time for solving
