@@ -1118,7 +1118,7 @@ ClipsSmtThread::loop()
 	// Pass it to z3 solver 
 	clips_smt_solve_formula(formula);
 	// Pass it ot z3 optimizer
-	// clips_smt_optimize_formula(formula, "rew_");
+	clips_smt_optimize_formula(formula, "score_");
 
 	/*
 	 * Leonard Korp's approach
@@ -1281,7 +1281,8 @@ ClipsSmtThread::clips_smt_initialize_numbers()
 	number_required_actions_c3 += 2*number_required_bases[rings_order[0]] + 2*number_required_bases[rings_order[1]] + 2*number_required_bases[rings_order[2]];
 
 	// Determine the plan_horizon
-	plan_horizon = number_orders_c0*number_required_actions_c0 + number_orders_c1*number_required_actions_c1 + number_orders_c2*number_required_actions_c2 + number_orders_c3*number_required_actions_c3;
+	// plan_horizon = number_orders_c0*number_required_actions_c0 + number_orders_c1*number_required_actions_c1 + number_orders_c2*number_required_actions_c2 + number_orders_c3*number_required_actions_c3;
+	plan_horizon = 10;
 
 	// Determine index_upper_bound_actions and number_required_actions
 	if(number_orders_c3) {
@@ -2602,25 +2603,26 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	// logger->log_info(name(), "Add constraints for final actions");
 
 	// Constraints encoding that final_actions for each order have to be at least executed once (if desiered, during the delivery window)
-	z3::expr constraint_goal(var_true);
-	for(int o=0; o<number_orders; ++o){
+	// On branch smt-planning-score we can not longer ensure to finish a product
+	// z3::expr constraint_goal(var_true);
+	// for(int o=0; o<number_orders; ++o){
 
-		z3::expr constraint_subgoal(var_false);
-		for(int i=number_required_actions; i<plan_horizon+1; ++i){
+	//     z3::expr constraint_subgoal(var_false);
+	//     for(int i=number_required_actions; i<plan_horizon+1; ++i){
 
-			z3::expr constraint_finalaction(getVar(varA, "A_"+std::to_string(i)) == o*index_upper_bound_actions+index_delivery_action);
+	//         z3::expr constraint_finalaction(getVar(varA, "A_"+std::to_string(i)) == o*index_upper_bound_actions+index_delivery_action);
 
-			if(add_temporal_constraint){
-				constraints.push_back(!constraint_finalaction || (getVar(varStartTime, "t_"+std::to_string(i)) < (int) data.orders(o).delivery_period_end()
-																		&& getVar(varStartTime, "t_"+std::to_string(i)) > (int) data.orders(o).delivery_period_begin()));
-			}
+	//         if(add_temporal_constraint){
+	//             constraints.push_back(!constraint_finalaction || (getVar(varStartTime, "t_"+std::to_string(i)) < (int) data.orders(o).delivery_period_end()
+	//                                                                     && getVar(varStartTime, "t_"+std::to_string(i)) > (int) data.orders(o).delivery_period_begin()));
+	//         }
 
-			constraint_subgoal = constraint_subgoal || constraint_finalaction;
-		}
+	//         constraint_subgoal = constraint_subgoal || constraint_finalaction;
+	//     }
 
-		constraint_goal = constraint_goal && constraint_subgoal;
-	}
-	constraints.push_back(constraint_goal);
+	//     constraint_goal = constraint_goal && constraint_subgoal;
+	// }
+	// constraints.push_back(constraint_goal);
 
 	return constraints;
 }
