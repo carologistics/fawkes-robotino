@@ -100,3 +100,49 @@
 )
 
 
+(defrule net-recv-order
+  "Assert orders sent by the refbox."
+  ; An order in the pddl domain is modeled with predicates
+  ; (order-complexity ?ord - order ?com - order-complexity)
+  ; (order-base-color ?ord - order ?col - base-color)
+  ; (order-ring1-color ?ord - order ?col - ring-color)
+  ; (order-ring2-color ?ord - order ?col - ring-color)
+  ; (order-ring3-color ?ord - order ?col - ring-color)
+  ; (order-cap-color ?ord - order ?col - cap-color)
+
+  ?pf <- (protobuf-msg (type "llsf_msgs.OrderInfo") (ptr ?ptr))
+  (wm-fact (id "/refbox/team-color") (value ?team-color) )
+  =>
+  (foreach ?o (pb-field-list ?ptr "orders")
+    (bind ?id (pb-field-value ?o "id"))
+    (bind ?order-id (str-cat "o" ?id))
+    ;check if the order is new
+    (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ domain fact order-complexity) )
+                                                  (eq ?order-id (nth$ (+ (member$ order ?wm-fact:key) 1) ?wm-fact:key)))))
+        then
+          (bind ?complexity (pb-field-value ?o "complexity"))
+          (bind ?delivery-gate (pb-field-value ?o "delivery_gate"))
+          (bind ?quantity-requested (pb-field-value ?o "quantity_requested"))
+          (bind ?begin (pb-field-value ?o "delivery_period_begin"))
+          (bind ?end (pb-field-value ?o "delivery_period_end"))
+          (if (pb-has-field ?o "base_color") then
+            (bind ?base (pb-field-value ?o "base_color"))
+          else
+            (bind ?base UNKNOWN)
+          )
+          (bind ?cap (pb-field-value ?o "cap_color"))
+          (progn$ (?p (pb-field-list ?o "ring_colors"))
+            (assert (wm-fact (key domain fact (sym-cat order- ring ?p-index -color) args? order ?order-id ring-color ?p) (type BOOL) (value TRUE) ))
+          )
+          (assert 
+            (wm-fact (key domain fact order-complexity args? order ?order-id complexity ?complexity) (type BOOL) (value TRUE) )
+            (wm-fact (key domain fact order-base-color args? order ?order-id base-color ?base) (type BOOL) (value TRUE) )
+            (wm-fact (key domain fact order-cap-color  args? order ?order-id cap-color ?cap) (type BOOL) (value TRUE) )
+            )
+          (printout t "Added order " ?id " with " (pb-field-value ?o "cap_color") crlf)
+      else
+          
+    )
+  )
+  (retract ?pf)
+)
