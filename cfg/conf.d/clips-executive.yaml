@@ -91,7 +91,7 @@ clips-executive:
       goal-expander: rcll2017/fixed-sequence.clp
       action-selection: rcll2017/action-selection.clp
       #macro-expansion: visit-all/action-selection.clp
-      action-execution: skills-actions.clp
+      action-execution: ["skills-actions.clp" , "rcll2017/custom-actions.clp" ]
       execution-monitoring: rcll2017/execution-monitoring.clp
       state-estimation: rcll2017/state-estimation-init.clp
 
