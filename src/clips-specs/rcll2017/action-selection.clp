@@ -4,8 +4,8 @@
 											(action-name ?action-name))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	(goal (id ?goal-id) (mode DISPATCHED))
-	(not (plan-action (status PENDING|WAITING|RUNNING|FAILED)))
-	(not (plan-action (status FORMULATED) (id ?oid&:(< ?oid ?id))))
+	(not (plan-action (plan-id ?plan-id) (status PENDING|WAITING|RUNNING|FAILED)))
+	(not (plan-action (plan-id ?plan-id) (status FORMULATED) (id ?oid&:(< ?oid ?id))))
 	=>
 	(modify ?pa (status PENDING))
 )
