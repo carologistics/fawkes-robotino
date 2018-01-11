@@ -32,7 +32,7 @@
     (wm-fact (id "/refbox/phase")  (type UNKNOWN) (value PRE_GAME) )
     (wm-fact (id "/refbox/state")  (type UNKNOWN) (value WAIT_START) )
     (wm-fact (id "/refbox/game-time?sec=0.0,nsec=0.0")  (type BOOL) (value TRUE) )
-    (timer (name beacon) (time (create$ 0 0)) (seq 1))
+    (wm-fact (key refbox beacon seq) (type UINT) (value 1))
   )  
 )
 
