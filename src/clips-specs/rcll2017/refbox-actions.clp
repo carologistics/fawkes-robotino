@@ -52,3 +52,20 @@
 	(pb-destroy ?beacon)
 	(modify ?pa (status FINAL))
 )
+
+
+(defrule refbox-action-bs-prepare-start
+	(time $?now)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status PENDING)
+	                      (action-name prepare-bs) (executable TRUE)
+	                      (param-names m side bc)
+	                      (param-values ?mps ?side ?base-color))
+	(wm-fact (key refbox team-color) (value ?team-color&:(neq ?team-color nil)))
+	(wm-fact (key refbox comm peer-id private) (value ?peer-id))
+	=>
+	(printout t "Action-prepare-bs Started" ?mps crlf)
+	(assert (metadata-prepare-bs ?mps ?side ?base-color ?team-color ?peer-id))
+	(assert (timer (name prepare-bs-send-timer) (time ?now) (seq 1)))
+	(assert (timer (name prepare-bs-wait-rcv) (time ?now) (seq 1)))
+	(modify ?pa (status RUNNING))
+)
