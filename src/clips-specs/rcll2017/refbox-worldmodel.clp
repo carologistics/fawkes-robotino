@@ -79,7 +79,7 @@
   =>
   (foreach ?o (pb-field-list ?ptr "orders")
     (bind ?id (pb-field-value ?o "id"))
-    (bind ?order-id (sym-cat o ?id))
+    (bind ?order-id (sym-cat O ?id))
     ;check if the order is new
     (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ domain fact order-complexity) )
                                                   (eq ?order-id (wm-key-arg ?wm-fact:key ord)))))
