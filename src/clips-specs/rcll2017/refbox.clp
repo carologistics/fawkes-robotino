@@ -127,25 +127,18 @@
 )
 
 
-(defrule net-recv-order
+(defrule refbox-recv-order
   "Assert orders sent by the refbox."
-  ; An order is modled in the pddl domain as the predicats
-  ; (order-complexity ?ord - order ?com - order-complexity)
-  ; (order-base-color ?ord - order ?col - base-color)
-  ; (order-ring1-color ?ord - order ?col - ring-color)
-  ; (order-ring2-color ?ord - order ?col - ring-color)
-  ; (order-ring3-color ?ord - order ?col - ring-color)
-  ; (order-cap-color ?ord - order ?col - cap-color)
-  ; (order-gate ?ord - order ?gate - ds-gate)
   ?pf <- (protobuf-msg (type "llsf_msgs.OrderInfo") (ptr ?ptr))
-  (wm-fact (id "/refbox/team-color") (value ?team-color) )
+  (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   =>
   (foreach ?o (pb-field-list ?ptr "orders")
     (bind ?id (pb-field-value ?o "id"))
     (bind ?order-id (sym-cat o ?id))
     ;check if the order is new
     (if (not (any-factp ((?wm-fact wm-fact)) (and (wm-key-prefix ?wm-fact:key (create$ domain fact order-complexity) )
-                                                  (eq ?order-id (nth$ (+ (member$ order ?wm-fact:key) 1) ?wm-fact:key)))))
+                                                  (eq ?order-id (wm-key-arg ?wm-fact:key ord)))))
+                                                  ; (eq ?order-id (nth$ (+ (member$ order ?wm-fact:key) 1) ?wm-fact:key))
         then
           (bind ?complexity (pb-field-value ?o "complexity"))
           (bind ?delivery-gate (pb-field-value ?o "delivery_gate"))
@@ -159,13 +152,13 @@
           )
           (bind ?cap (pb-field-value ?o "cap_color"))
           (progn$ (?p (pb-field-list ?o "ring_colors"))
-            (assert (wm-fact (key domain fact (sym-cat order- ring ?p-index -color) args? order ?order-id ring-color ?p) (type BOOL) (value TRUE) ))
+            (assert (wm-fact (key domain fact (sym-cat order- ring ?p-index -color) args? ord ?order-id col ?p) (type BOOL) (value TRUE) ))
           )
           (assert 
-            (wm-fact (key domain fact order-complexity args? order ?order-id complexity ?complexity) (type BOOL) (value TRUE) )
-            (wm-fact (key domain fact order-base-color args? order ?order-id base-color ?base) (type BOOL) (value TRUE) )
-            (wm-fact (key domain fact order-cap-color  args? order ?order-id cap-color ?cap) (type BOOL) (value TRUE) )
-            (wm-fact (key domain fact order-gate  args? order ?order-id ds-gate (sym-cat GATE- ?delivery-gate)) (type BOOL) (value TRUE) )
+            (wm-fact (key domain fact order-complexity args? ord ?order-id comp ?complexity) (type BOOL) (value TRUE) )
+            (wm-fact (key domain fact order-base-color args? ord ?order-id col ?base) (type BOOL) (value TRUE) )
+            (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?cap) (type BOOL) (value TRUE) )
+            (wm-fact (key domain fact order-gate  args? ord ?order-id gate (sym-cat GATE- ?delivery-gate)) (type BOOL) (value TRUE) )
             (wm-fact (key refbox order ?order-id quantity-requested) (type UINT) (value ?quantity-requested) )
             (wm-fact (key refbox order ?order-id delivery-begin) (type UINT) (value ?begin) )
             (wm-fact (key refbox order ?order-id delivery-end) (type UINT) (value ?end) )
@@ -199,19 +192,19 @@
     (bind ?m-state (sym-cat (pb-field-value ?m "state")))
     (if (not (any-factp ((?wm-fact wm-fact)) 
               (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-type)) 
-                    (eq ?m-name (wm-key-arg ?wm-fact:key mps)))))
+                    (eq ?m-name (wm-key-arg ?wm-fact:key m)))))
       then
       (if (eq ?team-color ?m-team) then
-        (assert (wm-fact (key domain fact mps-type args? mps ?m-name mps-typename ?m-type)))
-        (assert (wm-fact (key domain fact mps-state args? mps ?m-name mps-statename ?m-state))) 
+        (assert (wm-fact (key domain fact mps-type args? m ?m-name t ?m-type)))
+        (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state))) 
       )
     )
    (do-for-fact ((?wm-fact wm-fact)) 
                   (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-state)) 
-                        (eq ?m-name (wm-key-arg ?wm-fact:key mps))
-                        (neq ?m-state (wm-key-arg ?wm-fact:key mps-statename)))
+                        (eq ?m-name (wm-key-arg ?wm-fact:key m))
+                        (neq ?m-state (wm-key-arg ?wm-fact:key s)))
       (retract ?wm-fact)
-      (assert (wm-fact (key domain fact mps-state args? mps ?m-name mps-statename ?m-state))) 
+      (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state))) 
     )
    )
 )
