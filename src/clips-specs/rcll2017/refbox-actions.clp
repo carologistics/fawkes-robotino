@@ -13,7 +13,7 @@
 
 (defrule action-send-beacon-signal
 	(time $?now)
-  	?f <- (timer (name beacon) (time $?t&:(timeout ?now ?t ?*BEACON-PERIOD*)) (seq ?seq))
+  ?bs <- (wm-fact (key refbox beacon seq) (value ?seq))
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status PENDING)
                       (action-name send-beacon) (executable TRUE)
                       (param-names $?param-names)
@@ -25,7 +25,7 @@
   	(wm-fact (id "/refbox/comm/peer-id/public") (value ?peer) (type INT))
   	(Position3DInterface (id "Pose") (translation $?trans) (rotation $?ori) (time $?ptime))
   	=>
-	(modify ?f (time ?now) (seq (+ ?seq 1)))
+  (modify ?bs (value (+ ?seq 1)))
 	(if (debug 3) then (printout t "Sending beacon" crlf))
 	(bind ?beacon (pb-create "llsf_msgs.BeaconSignal"))
 	(bind ?beacon-time (pb-field-value ?beacon "time"))
