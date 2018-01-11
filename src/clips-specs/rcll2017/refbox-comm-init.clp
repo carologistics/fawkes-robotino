@@ -38,6 +38,7 @@
 
 (defrule refbox-comm-enable-local-public
   "Enable local peer connection to the unencrypted refbox channel"
+  (executive-init)
   (wm-fact (id "/config/rcll/peer-address") (value ?peer-address))
   (wm-fact (id "/config/rcll/peer-send-port") (value ?peer-send-port))
   (wm-fact (id "/config/rcll/peer-recv-port") (value ?peer-recv-port))
@@ -50,8 +51,20 @@
    )
 )
 
+(defrule refbox-comm-close-local-public
+  "Disable the local peer connection on finalize"
+  (executive-finalize)
+  ?pe <- (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE))
+  (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
+  =>
+  (printout t "Closing local peer (public)" crlf)
+  (pb-peer-destroy ?peer-id)
+  (modify ?pe (value FALSE))
+)
+
 (defrule refbox-comm-enable-public
   "Enable peer connection to the unencrypted refbox channel"
+  (executive-init)
   (confval (path "/config/rcll/peer-address") (value ?peer-address))
   (confval (path "/config/rcll/peer-port") (value ?peer-port))
   (not (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE)))
@@ -63,8 +76,20 @@
    )
 )
 
+(defrule refbox-comm-close-public
+  "Disable the remote peer connection on finalize"
+  (executive-finalize)
+  ?pe <- (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE) (type BOOL))
+  (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
+  =>
+  (printout t "Closing remote peer (public)" crlf)
+  (pb-peer-destroy ?peer-id)
+  (modify ?pe (value FALSE))
+)
+
 (defrule refbox-comm-enable-local-team-private
   "Enable local peer connection to the encrypted team channel"
+  (executive-init)
   (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   (wm-fact (id "/config/rcll/peer-address") (value ?address))
@@ -87,4 +112,15 @@
   (assert (wm-fact (id "/refbox/comm/private-peer-enabled") (value TRUE) (type BOOL))
           (wm-fact (id "/refbox/comm/peer-id/private") (value ?peer-id) (type INT))
     )
+)
+
+(defrule refbox-comm-close-private
+  "Disable the local private peer connection on finalize"
+  (executive-finalize)
+  ?pe <- (wm-fact (id "/refbox/comm/private-peer-enabled") (value TRUE) (type BOOL))
+  (wm-fact (id "/refbox/comm/peer-id/private") (value ?peer-id) (type INT))
+  =>
+  (printout t "Closing local private peer" crlf)
+  (pb-peer-destroy ?peer-id)
+  (modify ?pe (value FALSE))
 )
