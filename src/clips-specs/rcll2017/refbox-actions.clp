@@ -10,6 +10,8 @@
   ; network sending periods; seconds
   ?*BEACON-PERIOD* = 1.0
   ?*PREPARE-PERIOD* = 1.0
+  ?*ABORT-PREPARE-PERIOD* = 10.0
+
 )
 
 (defrule action-send-beacon-signal
@@ -64,16 +66,14 @@
 	(wm-fact (key refbox team-color) (value ?team-color&:(neq ?team-color nil)))
 	(wm-fact (key refbox comm peer-id private) (value ?peer-id))
 	=>
-	(printout t "Action-prepare-bs Started" ?mps crlf)
+	(printout t "Action Prepare-bs Started" ?mps crlf)
 	(assert (metadata-prepare-bs ?mps ?side ?base-color ?team-color ?peer-id))
 	(assert (timer (name prepare-bs-send-timer) (time ?now) (seq 1)))
-	(assert (timer (name prepare-bs-wait-rcv) (time ?now) (seq 1)))
+	(assert (timer (name prepare-bs-abort-timer) (time ?now) (seq 1)))
 	(modify ?pa (status RUNNING))
 )
 
-
 (defrule refbox-action-bs-prepare-send-signal
-	"Preiodically send the prepare msg after aciton is started"
 	(time $?now)
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status RUNNING)
 	                      (action-name prepare-bs) (executable TRUE)
@@ -104,9 +104,27 @@
 	                      (param-names m side bc)
 	                      (param-values ?mps ?side ?base-color))
 	?st <- (timer (name prepare-bs-send-timer))
+	?at <- (timer (name prepare-bs-abort-timer))
 	?md <- (metadata-prepare-bs $?date)
 	(wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|PROCESSING))
 	=>
 	(retract ?st ?md)
 	(modify ?pa (status EXECUTED))
+)
+
+
+(defrule refbox-action-bs-prepare-abort
+	"Abort preparing and fail the action if took too long"
+	(time $?now)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status RUNNING)
+	                      (action-name prepare-bs) (executable TRUE)
+	                      (param-names m side bc)
+	                      (param-values ?mps ?side ?base-color))
+	?at <- (timer (name prepare-bs-abort-timer) (time $?t&:(timeout ?now ?t ?*ABORT-PREPARE-PERIOD*)) (seq ?seq))
+	?st <- (timer (name prepare-bs-send-timer))
+	?md <- (metadata-prepare-bs $?date)
+	(not (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|PROCESSING)))
+	=>
+	(retract ?st ?md ?at)
+	(modify ?pa (status FAILED))
 )
