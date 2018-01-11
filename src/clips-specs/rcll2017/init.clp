@@ -22,6 +22,7 @@
 (defrule initialization-done
   "We're done initializing if we have a team color."
   (wm-fact (key refbox team-color) (value ~NONE))
+  (wm-fact (key refbox comm private-peer-enabled) (value TRUE) )
   ?i <- (executive-init)
   =>
   (retract ?i)
