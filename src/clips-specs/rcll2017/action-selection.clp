@@ -12,7 +12,7 @@
 
 (defrule action-selection-done
 	(plan (id ?plan-id) (goal-id ?goal-id))
-	?g <- (goal (id ?goal-id) (mode DISPATCHED))
+	?g <- (goal (id ?goal-id) (mode DISPATCHED) (type ACHIEVE))
 	(not (plan-action (plan-id ?plan-id) (status ~FINAL)))
 	=>
 	(modify ?g (mode COMPLETED))

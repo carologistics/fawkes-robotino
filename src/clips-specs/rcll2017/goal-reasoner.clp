@@ -2,6 +2,7 @@
 (deftemplate goal-meta
 	(slot goal-id (type SYMBOL))
 	(slot num-tries (type INTEGER))
+  (multislot last-achieve (type INTEGER) (cardinality 2 2) (default 0 0))
 )
 
 (defglobal
@@ -10,15 +11,33 @@
 
 ; #  Goal Creation
 (defrule goal-reasoner-create
-	(not (goal))
-	(not (goal-already-tried))
+	(not (goal (id TESTGOAL)))
+	(not (goal-already-tried TESTGOAL))
 	=>
 	(assert (goal (id TESTGOAL)))
 	; This is just to make sure we formulate the goal only once.
 	; In an actual domain this would be more sophisticated.
-	(assert (goal-already-tried))
+	(assert (goal-already-tried TESTGOAL))
 )
 
+(defrule goal-reasoner-create-beacon-maintain
+  (not (goal (id BEACONMAINTAIN)))
+  =>
+  (assert (goal (id BEACONMAINTAIN) (type MAINTAIN)))
+)
+
+; sub-goal of the maintenance goal
+(defrule goal-reasoner-create-beacon-achieve
+  ?g <- (goal (id BEACONMAINTAIN) (mode SELECTED|DISPATCHED))
+  (not (goal (id BEACONACHIEVE)))
+  (time $?now)
+  ; TODO: make interval a constant
+  (goal-meta (goal-id BEACONMAINTAIN)
+    (last-achieve $?last&:(timeout ?now ?last 1)))
+  =>
+  (assert (goal (id BEACONACHIEVE) (parent BEACONMAINTAIN)))
+  (modify ?g (mode EXPANDED))
+)
 
 ; #  Goal Selection
 ; We can choose one or more goals for expansion, e.g., calling
@@ -52,7 +71,25 @@
 )
 
 ; #  Goal Monitoring
-(defrule goal-reasonder-completed
+(defrule goal-reasoner-subgoal-completed
+	?g <- (goal (id ?goal-id) (parent ?parent-id) (mode COMPLETED))
+  ?p <- (goal (id ?parent-id) (mode DISPATCHED))
+  ?m <- (goal-meta (goal-id ?parent-id))
+  (time $?now)
+  =>
+	(printout t "Goal '" ?goal-id "' (part of '" ?parent-id
+    "') has been completed, cleaning up" crlf)
+	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+		(delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
+			(retract ?a)
+		)
+		(retract ?p)
+	)
+  (retract ?g)
+  (modify ?m (last-achieve ?now))
+)
+
+(defrule goal-reasoner-completed
 	?g <- (goal (id ?goal-id) (mode COMPLETED))
 	?gm <- (goal-meta (goal-id ?goal-id))
 	=>
