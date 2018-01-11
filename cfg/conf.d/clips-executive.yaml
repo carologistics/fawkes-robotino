@@ -54,6 +54,7 @@ clips-executive:
   use_navgraph: true
   use_pddl: true
   use_protobuf: true
+  use_tf: true
   sync_domain_facts: true
 
   specs:
