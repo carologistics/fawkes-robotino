@@ -86,7 +86,7 @@ clips-executive:
 
     rcll2017:
       environment: rcll2017/environment.clp
-      domain: rcll2017/rcll-domain.clp
+      domain: rcll2017/domain.clp
       goal-reasoner: rcll2017/goal-reasoner.clp
       goal-expander: rcll2017/fixed-sequence.clp
       action-selection: rcll2017/action-selection.clp
