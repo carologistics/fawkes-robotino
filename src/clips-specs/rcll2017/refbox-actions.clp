@@ -9,6 +9,7 @@
 (defglobal
   ; network sending periods; seconds
   ?*BEACON-PERIOD* = 1.0
+  ?*PREPARE-PERIOD* = 1.0
 )
 
 (defrule action-send-beacon-signal
@@ -69,3 +70,29 @@
 	(assert (timer (name prepare-bs-wait-rcv) (time ?now) (seq 1)))
 	(modify ?pa (status RUNNING))
 )
+
+
+(defrule refbox-action-bs-prepare-send-signal
+	"Preiodically send the prepare msg after aciton is started"
+	(time $?now)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status RUNNING)
+	                      (action-name prepare-bs) (executable TRUE)
+	                      (param-names m side bc)
+	                      (param-values ?mps ?side ?base-color))
+	(metadata-prepare-bs ?mps ?side ?base-color ?team-color ?peer-id)
+	?st <- (timer (name prepare-bs-send-timer) (time $?t&:(timeout ?now ?t ?*PREPARE-PERIOD*)) (seq ?seq))
+	=>
+	(bind ?bs-inst (pb-create "llsf_msgs.PrepareInstructionBS"))
+  	(pb-set-field ?bs-inst "side" ?side)
+  	(pb-set-field ?bs-inst "color" ?base-color)
+	(bind ?machine-instruction (pb-create "llsf_msgs.PrepareMachine"))
+	(pb-set-field ?machine-instruction "team_color" ?team-color)
+	(pb-set-field ?machine-instruction "machine" (str-cat ?mps))
+  	(pb-set-field ?machine-instruction "instruction_bs" ?bs-inst)
+  	(pb-broadcast ?peer-id ?machine-instruction)
+  	(pb-destroy ?machine-instruction)
+  	(printout t "Sent mps-instruction for " ?mps crlf)
+
+	(modify ?st (time ?now) (seq (+ ?seq 1)))
+)
+
