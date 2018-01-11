@@ -38,6 +38,16 @@
 	(pb-set-field ?beacon "team_color" ?team-color)
 	(pb-set-field ?beacon "number" ?robot-number)
 
+	(bind ?beacon-pose (pb-field-value ?beacon "pose"))
+	(pb-set-field ?beacon-pose "x" (nth$ 1 ?trans))
+	(pb-set-field ?beacon-pose "y" (nth$ 2 ?trans))
+	(pb-set-field ?beacon-pose "ori" (tf-yaw-from-quat ?ori))
+	(bind ?beacon-pose-time (pb-field-value ?beacon-pose "timestamp"))
+	(pb-set-field ?beacon-pose-time "sec" (nth$ 1 ?ptime))
+	(pb-set-field ?beacon-pose-time "nsec" (* (nth$ 2 ?ptime) 1000))
+	(pb-set-field ?beacon-pose "timestamp" ?beacon-pose-time)
+	(pb-set-field ?beacon "pose" ?beacon-pose)
+
 	(pb-broadcast ?peer ?beacon)
 	(pb-destroy ?beacon)
 	(modify ?pa (status FINAL))
