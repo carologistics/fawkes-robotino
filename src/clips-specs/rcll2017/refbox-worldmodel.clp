@@ -140,8 +140,8 @@
                     (eq ?m-name (wm-key-arg ?wm-fact:key m)))))
       then
       (if (eq ?team-color ?m-team) then
-        (assert (wm-fact (key domain fact mps-type args? m ?m-name t ?m-type)))
-        (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state))) 
+        (assert (wm-fact (key domain fact mps-type args? m ?m-name t ?m-type) (type BOOL) (value TRUE) ))
+        (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state) (type BOOL) (value TRUE) )) 
       )
     )
    (do-for-fact ((?wm-fact wm-fact)) 
