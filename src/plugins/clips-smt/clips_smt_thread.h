@@ -200,6 +200,7 @@ private:
 
 	// Visualization of computed plan
 	std::vector<std::string> description_actions;
+	std::map<int, int> model_machines;
 	std::map<int, float> model_times;
 	std::map<int, int> model_positions;
 	std::map<int, int> model_positions_R1;
@@ -220,6 +221,15 @@ private:
 	std::map<int, int> model_state4B;
 	std::map<int, int> model_state5B;
 	std::map<int, int> model_score;
+
+	// Visualization of world state
+	std::vector<int> world_initHold;
+	std::vector<int> world_initPos;
+	int world_initState2;
+	std::vector<int> world_initState3;
+	int world_initState4;
+	int world_initState5;
+	std::vector<int> world_all_actions;
 
 	// Leonard Korps formula encoding
 	// GameData clips_smt_convert_protobuf_to_gamedata();
