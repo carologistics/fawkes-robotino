@@ -1,5 +1,5 @@
 ;---------------------------------------------------------------------------
-;  custom-actions.clp - Action that needs to be executed by clips
+;  custom-actions.clp - Actions that interact with the RefBox
 ;
 ;  Created:: Mon 10 Jan 2017 13:21:21 CET
 ;  Copyright  2017  Mostafa Gomaa <gomaa@kbsg.rwth-aachen.de>
