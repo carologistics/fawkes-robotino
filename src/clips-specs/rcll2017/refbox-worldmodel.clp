@@ -155,7 +155,7 @@
                         (eq ?m-name (wm-key-arg ?wm-fact:key m))
                         (neq ?m-state (wm-key-arg ?wm-fact:key s)))
       (retract ?wm-fact)
-      (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state))) 
+      (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state) (type BOOL) (value TRUE))) 
     )
    )
 )
