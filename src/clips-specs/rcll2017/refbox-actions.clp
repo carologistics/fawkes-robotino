@@ -96,3 +96,17 @@
 	(modify ?st (time ?now) (seq (+ ?seq 1)))
 )
 
+(defrule refbox-action-bs-prepare-final
+	"Finalize the prepare action if the desired machine state was reached"
+	(time $?now)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status RUNNING)
+	                      (action-name prepare-bs) (executable TRUE)
+	                      (param-names m side bc)
+	                      (param-values ?mps ?side ?base-color))
+	?st <- (timer (name prepare-bs-send-timer))
+	?md <- (metadata-prepare-bs $?date)
+	(wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|PROCESSING))
+	=>
+	(retract ?st ?md)
+	(modify ?pa (status EXECUTED))
+)
