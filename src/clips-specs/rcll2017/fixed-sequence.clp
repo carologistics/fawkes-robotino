@@ -10,3 +10,13 @@
 	 )
 	(modify ?g (mode EXPANDED))
 )
+
+(defrule goal-expander-send-beacon-signal
+  ?g <- (goal (mode SELECTED) (id BEACONACHIEVE))
+=>
+  (assert
+    (plan (id BEACONPLAN) (goal-id BEACONACHIEVE))
+    (plan-action (id 1) (plan-id BEACONPLAN) (duration 0.0)
+      (action-name send-beacon)))
+  (modify ?g (mode EXPANDED))
+)
