@@ -57,19 +57,22 @@
 )
 
 
-(defrule refbox-action-bs-prepare-start
+(defrule refbox-action-prepare-mps-start
 	(time $?now)
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status PENDING)
-	                      (action-name prepare-bs) (executable TRUE)
-	                      (param-names m side bc)
-	                      (param-values ?mps ?side ?base-color))
+	                      (action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs)
+	                      (executable TRUE)
+	                      (param-names $?param-names)
+	                      (param-values $?param-values))
 	(wm-fact (key refbox team-color) (value ?team-color&:(neq ?team-color nil)))
 	(wm-fact (key refbox comm peer-id private) (value ?peer-id))
 	=>
-	(printout t "Action Prepare-bs Started" ?mps crlf)
-	(assert (metadata-prepare-bs ?mps ?side ?base-color ?team-color ?peer-id))
-	(assert (timer (name prepare-bs-send-timer) (time ?now) (seq 1)))
-	(assert (timer (name prepare-bs-abort-timer) (time ?now) (seq 1)))
+	(bind ?mps (nth$ 1 ?param-values))
+	(bind ?instruction_info (rest$ ?param-values))
+	(printout t "Action Prepare " ?mps " Started"  crlf)
+	(assert (metadata-prepare-mps ?mps ?team-color ?peer-id ?instruction_info))
+	(assert (timer (name prepare-mps-send-timer) (time ?now) (seq 1)))
+	(assert (timer (name prepare-mps-abort-timer) (time ?now) (seq 1)))
 	(modify ?pa (status RUNNING))
 )
 
