@@ -29,7 +29,6 @@
   	(Position3DInterface (id "Pose") (translation $?trans) (rotation $?ori) (time $?ptime))
   	=>
   (modify ?bs (value (+ ?seq 1)))
-	(if (debug 3) then (printout t "Sending beacon" crlf))
 	(bind ?beacon (pb-create "llsf_msgs.BeaconSignal"))
 	(bind ?beacon-time (pb-field-value ?beacon "time"))
 	(pb-set-field ?beacon-time "sec" (nth$ 1 ?now))

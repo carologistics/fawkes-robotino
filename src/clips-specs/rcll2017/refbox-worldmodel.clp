@@ -25,7 +25,7 @@
   (time $?now)
   =>
   (bind ?beacon-name (pb-field-value ?p "peer_name"))
-  (printout t "Beacon Recieved from " ?beacon-name crlf)
+  (printout debug "Beacon Recieved from " ?beacon-name crlf)
   (retract ?pf) 
 )
 

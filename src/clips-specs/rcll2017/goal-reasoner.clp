@@ -77,7 +77,7 @@
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
   =>
-	(printout t "Goal '" ?goal-id "' (part of '" ?parent-id
+	(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
     "') has been completed, cleaning up" crlf)
 	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
 		(delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
