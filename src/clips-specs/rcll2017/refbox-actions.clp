@@ -10,7 +10,7 @@
   ; network sending periods; seconds
   ?*BEACON-PERIOD* = 1.0
   ?*PREPARE-PERIOD* = 1.0
-  ?*ABORT-PREPARE-PERIOD* = 10.0
+  ?*ABORT-PREPARE-PERIOD* = 30.0
 
 )
 
