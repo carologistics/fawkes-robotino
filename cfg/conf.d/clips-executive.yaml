@@ -99,6 +99,7 @@ clips-executive:
         "rcll2017/refbox-actions.clp" ]
       execution-monitoring: rcll2017/execution-monitoring.clp
       state-estimation: rcll2017/state-estimation-init.clp
+      worldmodel: rcll2017/init-worldmodel.clp
 
       action-mapping:
         visit: ppgoto{place=?(to)S}
