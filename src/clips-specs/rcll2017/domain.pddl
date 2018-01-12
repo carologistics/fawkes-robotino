@@ -98,7 +98,7 @@
 	(:action prepare-bs
 		:parameters (?m - mps ?side - mps-side ?bc - base-color)
 		:precondition (and (mps-type ?m BS) (mps-state ?m IDLE))
-		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m PROCESSING)
+		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m READY-AT-OUTPUT)
 								 (bs-prepared-color ?m ?bc) (bs-prepared-side ?m ?side))
 	)
 
@@ -117,13 +117,12 @@
 
 	(:action bs-dispense
 		:parameters (?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
-		:precondition (and (mps-type ?m BS) (mps-state ?m PROCESSING)
+		:precondition (and (mps-type ?m BS) (mps-state ?m READY-AT-OUTPUT)
 											 (bs-prepared-color ?m ?basecol) (bs-prepared-side ?m ?side)
 											 (wp-base-color ?wp BASE_NONE) (wp-unused ?wp))
 		:effect (and (wp-at ?wp ?m ?side)
 								 (not (wp-base-color ?wp BASE_NONE)) (wp-base-color ?wp ?basecol)
-								 (not (wp-unused ?wp)) (wp-usable ?wp)
-								 (not (mps-state ?m PROCESSING)) (mps-state ?m READY-AT-OUTPUT))
+								 (not (wp-unused ?wp)) (wp-usable ?wp))
 	)
 		
 	(:action cs-mount-cap
