@@ -51,7 +51,7 @@
 		CAP_NONE CAP_BLACK CAP_GREY - cap-color
 		GATE-1 GATE-2 GATE-3 - ds-gate
 		RING_NONE RING_BLUE RING_GREEN RING_ORANGE RING_YELLOW - ring-color
-		CS_RETRIEVE CS_MOUNT - cs-operation
+		RETRIEVE_CAP MOUNT_CAP - cs-operation
 		C0 C1 C2 C3 - order-complexity-value
 		LEFT MIDDLE RIGHT - shelf-spot
 	)
@@ -128,24 +128,24 @@
 	(:action cs-mount-cap
 		:parameters (?m - mps ?wp - workpiece ?capcol - cap-color)
 		:precondition (and (mps-type ?m CS) (mps-state ?m PROCESSING)
-										(cs-buffered ?m ?capcol) (cs-prepared-for ?m CS_MOUNT)
+										(cs-buffered ?m ?capcol) (cs-prepared-for ?m MOUNT_CAP)
 										(wp-usable ?wp) (wp-at ?wp ?m INPUT)
 										(wp-cap-color ?wp CAP_NONE))
 		:effect (and (not (mps-state ?m PROCESSING)) (mps-state ?m READY-AT-OUTPUT)
 								 (not (wp-at ?wp ?m INPUT)) (wp-at ?wp ?m OUTPUT)
 								 (not (wp-cap-color ?wp CAP_NONE)) (wp-cap-color ?wp ?capcol)
-								 (cs-can-perform ?m CS_RETRIEVE))
+								 (cs-can-perform ?m RETRIEVE_CAP))
 	)
 
 	(:action cs-retrieve-cap
 		:parameters (?m - mps ?cc - cap-carrier ?capcol - cap-color)
 		:precondition (and (mps-type ?m CS) (mps-state ?m PROCESSING)
-										(cs-prepared-for ?m CS_RETRIEVE)
+										(cs-prepared-for ?m RETRIEVE_CAP)
 										(wp-at ?cc ?m INPUT)  (wp-cap-color ?cc ?capcol))
 		:effect (and (not (mps-state ?m PROCESSING)) (mps-state ?m READY-AT-OUTPUT)
 								 (not (wp-at ?cc ?m INPUT)) (wp-at ?cc ?m OUTPUT)
 								 (not (wp-cap-color ?cc ?capcol)) (wp-cap-color ?cc CAP_NONE)
-								 (cs-buffered ?m ?capcol) (cs-can-perform ?m CS_MOUNT))
+								 (cs-buffered ?m ?capcol) (cs-can-perform ?m MOUNT_CAP))
 	)
 	
 	(:action prepare-rs
