@@ -150,19 +150,22 @@
 	(modify ?pa (status EXECUTED))
 )
 
-
-(defrule refbox-action-bs-prepare-abort
+(defrule refbox-action-prepare-mps-abort
 	"Abort preparing and fail the action if took too long"
 	(time $?now)
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status RUNNING)
-	                      (action-name prepare-bs) (executable TRUE)
-	                      (param-names m side bc)
-	                      (param-values ?mps ?side ?base-color))
-	?at <- (timer (name prepare-bs-abort-timer) (time $?t&:(timeout ?now ?t ?*ABORT-PREPARE-PERIOD*)) (seq ?seq))
-	?st <- (timer (name prepare-bs-send-timer))
-	?md <- (metadata-prepare-bs $?date)
-	(not (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|PROCESSING)))
+	                      	(action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs)
+							(executable TRUE)
+	                      	(param-names $?param-names)
+	                      	(param-values $?param-values))
+	?at <- (timer (name prepare-mps-abort-timer) 
+					(time $?t&:(timeout ?now ?t ?*ABORT-PREPARE-PERIOD*))
+					(seq ?seq))
+	?st <- (timer (name prepare-mps-send-timer))
+	?md <- (metadata-prepare-mps ?mps $?date)
+	(not (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|PROCESSING|PREPARED)))
 	=>
+	(printout t "Action Prepare " ?mps " is Aborted" crlf)
 	(retract ?st ?md ?at)
 	(modify ?pa (status FAILED))
 )
