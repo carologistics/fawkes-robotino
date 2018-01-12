@@ -44,7 +44,7 @@
 
 	(:constants
 		START - location
-		BS CS DS RS - mps-typename
+		BS CS DS RS SS - mps-typename
 		IDLE BROKEN PREPARED PROCESSING PROCESSED WAIT-IDLE READY-AT-OUTPUT DOWN - mps-statename
 		INPUT OUTPUT - mps-side
 		BASE_NONE BASE_RED BASE_BLACK BASE_SILVER - base-color
