@@ -132,19 +132,21 @@
 	(modify ?st (time ?now) (seq (+ ?seq 1)))
 )
 
-(defrule refbox-action-bs-prepare-final
+(defrule refbox-action-prepare-mps-final
 	"Finalize the prepare action if the desired machine state was reached"
 	(time $?now)
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status RUNNING)
-	                      (action-name prepare-bs) (executable TRUE)
-	                      (param-names m side bc)
-	                      (param-values ?mps ?side ?base-color))
-	?st <- (timer (name prepare-bs-send-timer))
-	?at <- (timer (name prepare-bs-abort-timer))
-	?md <- (metadata-prepare-bs $?date)
-	(wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|PROCESSING))
+	                      (action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs)
+	                      (executable TRUE)
+	                      (param-names $?param-names)
+	                      (param-values $?param-values))
+	?st <- (timer (name prepare-mps-send-timer))
+	?at <- (timer (name prepare-mps-abort-timer))
+	?md <- (metadata-prepare-mps ?mps $?date)
+	(wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|PROCESSING|PREPARED))
 	=>
-	(retract ?st ?md)
+	(printout t "Action Prepare " ?mps " is final" crlf)
+	(retract ?st ?at ?md)
 	(modify ?pa (status EXECUTED))
 )
 
