@@ -20,9 +20,18 @@
 ;
 
 (defrule initialization-done
-  "We're done initializing if we have a team color."
-  (wm-fact (key refbox team-color) (value ~NONE))
+  "Finish Initialization"
   (wm-fact (key refbox comm private-peer-enabled) (value TRUE) )
+  ?i <- (executive-init)
+  =>
+  (printout t "Finished initialization" crlf)
+  (retract ?i)
+)
+
+(defrule initialization-abort-on-finalize
+  "Abort initialization if we are in finalize"
+  (declare (salience 500))
+  (executive-finalize)
   ?i <- (executive-init)
   =>
   (retract ?i)
