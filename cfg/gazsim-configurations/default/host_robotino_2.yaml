@@ -72,7 +72,7 @@ webtools-bridge:
 clips-executive:
   specs:
     rcll2017:
-      wm-config:
+      parameters:
         rcll:
           team-name: Carologistics
           robot-name: R-2
