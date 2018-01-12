@@ -101,7 +101,7 @@ clips-executive:
         visit: ppgoto{place=?(to)S}
       blackboard-preload: ["Position3DInterface"]
 
-      wm-config:
+      parameters:
         rcll:
           peer-address: 127.0.0.1
           peer-recv-port: 4444
