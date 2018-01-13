@@ -19,11 +19,12 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
-(defrule action-bs-dispense
+(defrule action-execute-noop
   ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status PENDING)
-         (action-name bs-dispense) (executable TRUE)
+         (action-name ?action&bs-dispense|cs-retrieve-cap|cs-mount-cap|fulfill-order)
+         (executable TRUE)
          (param-values $?param-values))
   =>
-  (printout warn "Executing bs-dispense" ?param-values crlf)
+  (printout t "Executing " ?action ?param-values crlf)
   (modify ?pa (status EXECUTED))
 )
