@@ -139,7 +139,7 @@
 
 	(:action cs-retrieve-cap
 		:parameters (?m - mps ?cc - cap-carrier ?capcol - cap-color)
-		:precondition (and (mps-type ?m CS) (mps-state ?m PROCESSING)
+		:precondition (and (mps-type ?m CS)
 										(cs-prepared-for ?m RETRIEVE_CAP)
 										(wp-at ?cc ?m INPUT)  (wp-cap-color ?cc ?capcol))
 		:effect (and (not (mps-state ?m PROCESSING)) (mps-state ?m READY-AT-OUTPUT)
