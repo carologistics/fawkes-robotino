@@ -59,7 +59,7 @@
 (defrule refbox-action-prepare-mps-start
 	(time $?now)
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status PENDING)
-	                      (action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs)
+	                      (action-name ?action&prepare-bs|prepare-cs|prepare-ds|prepare-rs)
 	                      (executable TRUE)
 	                      (param-names $?param-names)
 	                      (param-values $?param-values))
@@ -68,7 +68,7 @@
 	=>
 	(bind ?mps (nth$ 1 ?param-values))
 	(bind ?instruction_info (rest$ ?param-values))
-	(printout t "Action Prepare " ?mps " Started"  crlf)
+	(printout t "Executing " ?action ?param-values crlf)
 	(assert (metadata-prepare-mps ?mps ?team-color ?peer-id ?instruction_info))
 	(assert (timer (name prepare-mps-send-timer) (time ?now) (seq 1)))
 	(assert (timer (name prepare-mps-abort-timer) (time ?now) (seq 1)))
