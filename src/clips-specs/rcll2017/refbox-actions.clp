@@ -110,6 +110,7 @@
       then
     	(bind ?ds-inst (pb-create "llsf_msgs.PrepareInstructionDS"))
   		(bind ?gate-sym (nth$ 1 ?instruction_info))
+  		(if (eq ?gate-sym GATE-0) then (bind ?gate 0) )
   		(if (eq ?gate-sym GATE-1) then (bind ?gate 1) )
   		(if (eq ?gate-sym GATE-2) then (bind ?gate 2) )
   		(if (eq ?gate-sym GATE-3) then (bind ?gate 3) )
