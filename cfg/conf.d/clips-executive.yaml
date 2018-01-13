@@ -102,7 +102,13 @@ clips-executive:
       worldmodel: rcll2017/init-worldmodel.clp
 
       action-mapping:
-        visit: ppgoto{place=?(to)S}
+        enter-field: drive_into_field{team=?(team-color)S}
+        move-wp-put: ppgoto{place="?(to)Y-I"}
+        wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
+        wp-put: bring_product_to{place=?(m)S}
+        move-wp-get: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|INPUT/I/"}
+        wp-get: get_product_from{place=?(m)S, side=?(side)S}
+        wp-discard: ax12gripper{command="OPEN"}
       blackboard-preload: ["Position3DInterface"]
 
       parameters:
