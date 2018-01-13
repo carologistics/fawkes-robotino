@@ -220,7 +220,7 @@
 		:precondition (and (entered-field ?r)
 										(at ?r ?from ?from-side)
 										(location-free ?to INPUT)
-										(mps-state ?to PREPARED))
+										(mps-state ?to IDLE))
 		:effect (and (not (at ?r ?from ?from-side))
 								 (location-free ?from ?from-side)
 								 (not (location-free ?to INPUT))
