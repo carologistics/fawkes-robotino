@@ -264,14 +264,18 @@ ClipsSmtThread::init()
 	number_required_bases.push_back(0); // 3 or RING_ORANGE
 	number_required_bases.push_back(0); // 4 or RING_YELLOW
 
+	// Initialize base_order
+	base_order = 0;
 	// Initialize rings_order
 	rings_order.push_back(0);
-	rings_order.push_back(0);
-	rings_order.push_back(0);
+	rings_order.push_back(1);
+	rings_order.push_back(2);
+	// Initialize cap_order
+	cap_order = 0;
 
 	// Initialize world state fix 
 	world_initHold.push_back(0); // dummy
-	world_initHold.push_back(products["nothing"]);
+	world_initHold.push_back(products["B1R1"]);
 	world_initHold.push_back(products["nothing"]);
 	world_initHold.push_back(products["nothing"]);
 
@@ -1205,11 +1209,11 @@ ClipsSmtThread::clips_smt_fill_order_details()
 
 			// base and cap information is only needed for product description and can be kept in its orginal form
 			// rings information has to be decrease in order to access the number_required_bases map correctly
-			base_order = data.orders(i).base_color();
-			rings_order[0] = data.orders(i).ring_colors(0);
-			rings_order[1] = data.orders(i).ring_colors(1);
-			rings_order[2] = data.orders(i).ring_colors(2);
-			cap_order = data.orders(i).cap_color();
+			// base_order = data.orders(i).base_color();
+			// rings_order[0] = data.orders(i).ring_colors(0);
+			// rings_order[1] = data.orders(i).ring_colors(1);
+			// rings_order[2] = data.orders(i).ring_colors(2);
+			// cap_order = data.orders(i).cap_color();
 			
 			order_id = i;
 			number_orders_c3 = 1;
@@ -1218,7 +1222,7 @@ ClipsSmtThread::clips_smt_fill_order_details()
 	
 	// Extract how many bases are required for the corresponding colors
 	for( int i=0; i<data.rings().size(); ++i ) {
-		number_required_bases[data.rings(i).ring_color()] = data.rings(i).raw_material();
+		// number_required_bases[data.rings(i).ring_color()] = data.rings(i).raw_material();
 	}
 }
 
@@ -1876,18 +1880,25 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	// Construct combined string identifiers
 	std::string bi_ci = bi;
 	bi_ci += ci;
+	std::cout << "state3_machines bi_ci " << state3_machines[bi_ci] << std::endl;
 	std::string bi_r1i = bi;
 	bi_r1i += r1i;
+	std::cout << "state3_machines bi_r1i " << state3_machines[bi_r1i] << std::endl;
 	std::string bi_r1i_ci = bi_r1i;
 	bi_r1i_ci += ci;
+	std::cout << "state3_machines bi_r1i_ci " << state3_machines[bi_r1i_ci] << std::endl;
 	std::string bi_r1i_r2i = bi_r1i;
 	bi_r1i_r2i += r2i;
+	std::cout << "state3_machines bi_r1i_r2i " << state3_machines[bi_r1i_r2i] << std::endl;
 	std::string bi_r1i_r2i_ci = bi_r1i_r2i;
 	bi_r1i_r2i_ci += ci;
+	std::cout << "state3_machines bi_r1i_r2i_ci " << state3_machines[bi_r1i_r2i_ci] << std::endl;
 	std::string bi_r1i_r2i_r3i = bi_r1i_r2i;
 	bi_r1i_r2i_r3i += r3i;
+	std::cout << "state3_machines bi_r1i_r2i_r3i " << state3_machines[bi_r1i_r2i_r3i] << std::endl;
 	std::string bi_r1i_r2i_r3i_ci = bi_r1i_r2i_r3i;
 	bi_r1i_r2i_r3i_ci += ci;
+	std::cout << "state3_machines bi_r1i_r2i_r3i_ci " << state3_machines[bi_r1i_r2i_r3i_ci] << std::endl;
 
 	std::string has_ci = "has_";
 	has_ci += ci;
@@ -2513,7 +2524,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 			constraint_action_10_appeared = constraint_action_10_appeared || getVar(varA, "A_"+std::to_string(j)) == 10;
 		}
 
-		for(unsigned j=1; j<world_all_actions.size(); ++j){
+		for(unsigned j=0; j<world_all_actions.size(); ++j){
+			std::cout << "Consider " << j << " world action " << world_all_actions[j] << std::endl;
 			if(world_all_actions[j] == 8) {
 				constraint_action_8_appeared = constraint_action_8_appeared || var_true;
 			}
@@ -2526,28 +2538,28 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		if(i==1){
 
 			// phase 0
-			constraints.push_back(!(getVar(varA, "A_1") == 1) || getVar(varRew, "score_1") == 1100000-getVar(varStartTime, "t_"+std::to_string(i)));
-			constraints.push_back(!(getVar(varA, "A_1") == 2) || getVar(varRew, "score_1") == 1200000-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!(getVar(varA, "A_1") == 1) || getVar(varRew, "score_1") == 110-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!(getVar(varA, "A_1") == 2) || getVar(varRew, "score_1") == 120-getVar(varStartTime, "t_"+std::to_string(i)));
 			// phase 1
-			constraints.push_back(!( !(constraint_action_8_appeared) && getVar(varA, "A_1") == 3) || getVar(varRew, "score_1") == 110-getVar(varStartTime, "t_"+std::to_string(i)));
-			constraints.push_back(!( !(constraint_action_8_appeared) && getVar(varA, "A_1") == 7) || getVar(varRew, "score_1") == 120-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!( !(constraint_action_8_appeared) && getVar(varA, "A_1") == 3) || getVar(varRew, "score_1") == 130-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!( !(constraint_action_8_appeared) && getVar(varA, "A_1") == 7) || getVar(varRew, "score_1") == 140-getVar(varStartTime, "t_"+std::to_string(i)));
 			// phase 2
 			constraints.push_back(!( getVar(varA, "A_1") == 8) || getVar(varRew, "score_1") == 1100-getVar(varStartTime, "t_"+std::to_string(i)));
-			constraints.push_back(!( getVar(varA, "A_1") == 9) || getVar(varRew, "score_1") == 1200-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!( getVar(varA, "A_1") == 9) || getVar(varRew, "score_1") == 1500-getVar(varStartTime, "t_"+std::to_string(i)));
 			constraints.push_back(!( constraint_action_8_appeared && !(constraint_action_10_appeared) && getVar(varA, "A_1") == 3) || getVar(varRew, "score_1") == 1300-getVar(varStartTime, "t_"+std::to_string(i)));
 			constraints.push_back(!( constraint_action_8_appeared && !(constraint_action_10_appeared) && getVar(varA, "A_1") == 7) || getVar(varRew, "score_1") == 1400-getVar(varStartTime, "t_"+std::to_string(i)));
 			// phase 3
 			constraints.push_back(!( getVar(varA, "A_1") == 10) || getVar(varRew, "score_1") == 11000-getVar(varStartTime, "t_"+std::to_string(i)));
-			constraints.push_back(!( getVar(varA, "A_1") == 11) || getVar(varRew, "score_1") == 12000-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!( getVar(varA, "A_1") == 11) || getVar(varRew, "score_1") == 15000-getVar(varStartTime, "t_"+std::to_string(i)));
 			constraints.push_back(!( constraint_action_10_appeared && getVar(varA, "A_1") == 3) || getVar(varRew, "score_1") == 13000-getVar(varStartTime, "t_"+std::to_string(i)));
 			constraints.push_back(!( constraint_action_10_appeared && getVar(varA, "A_1") == 7) || getVar(varRew, "score_1") == 14000-getVar(varStartTime, "t_"+std::to_string(i)));
 			// phase 4
 			constraints.push_back(!( getVar(varA, "A_1") == 12) || getVar(varRew, "score_1") == 110000-getVar(varStartTime, "t_"+std::to_string(i)));
 			constraints.push_back(!( getVar(varA, "A_1") == 13) || getVar(varRew, "score_1") == 120000-getVar(varStartTime, "t_"+std::to_string(i)));
 			// phase 5
-			constraints.push_back(!(getVar(varA, "A_1") == 4) || getVar(varRew, "score_1") == 13000000-getVar(varStartTime, "t_"+std::to_string(i)));
-			constraints.push_back(!(getVar(varA, "A_1") == 5) || getVar(varRew, "score_1") == 14000000-getVar(varStartTime, "t_"+std::to_string(i)));
-			constraints.push_back(!(getVar(varA, "A_1") == 6) || getVar(varRew, "score_1") == 15000000-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!(getVar(varA, "A_1") == 4) || getVar(varRew, "score_1") == 130000-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!(getVar(varA, "A_1") == 5) || getVar(varRew, "score_1") == 140000-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!(getVar(varA, "A_1") == 6) || getVar(varRew, "score_1") == 150000-getVar(varStartTime, "t_"+std::to_string(i)));
 
 			// // Add points depending on the action variable assignments
 			// // +0 for action 1,2,3,5,9,11,13
@@ -2596,28 +2608,28 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		else {
 
 			// phase 0
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 1) || getVar(varRew, "score_"+std::to_string(i)) == 1100000+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 2) || getVar(varRew, "score_"+std::to_string(i)) == 1200000+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 1) || getVar(varRew, "score_"+std::to_string(i)) == 110+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 2) || getVar(varRew, "score_"+std::to_string(i)) == 120+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
 			// phase 1
-			constraints.push_back(!( !(constraint_action_8_appeared) && getVar(varA, "A_"+std::to_string(i)) == 3) || getVar(varRew, "score_"+std::to_string(i)) == 110+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
-			constraints.push_back(!( !(constraint_action_8_appeared) && getVar(varA, "A_"+std::to_string(i)) == 7) || getVar(varRew, "score_"+std::to_string(i)) == 120+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!( !(constraint_action_8_appeared) && getVar(varA, "A_"+std::to_string(i)) == 3) || getVar(varRew, "score_"+std::to_string(i)) == 130+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!( !(constraint_action_8_appeared) && getVar(varA, "A_"+std::to_string(i)) == 7) || getVar(varRew, "score_"+std::to_string(i)) == 140+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
 			// phase 2
 			constraints.push_back(!( getVar(varA, "A_"+std::to_string(i)) == 8) || getVar(varRew, "score_"+std::to_string(i)) == 1100+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
-			constraints.push_back(!( getVar(varA, "A_"+std::to_string(i)) == 9) || getVar(varRew, "score_"+std::to_string(i)) == 1200+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!( getVar(varA, "A_"+std::to_string(i)) == 9) || getVar(varRew, "score_"+std::to_string(i)) == 1500+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
 			constraints.push_back(!( constraint_action_8_appeared && !(constraint_action_10_appeared) && getVar(varA, "A_"+std::to_string(i)) == 3) || getVar(varRew, "score_"+std::to_string(i)) == 1300+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
 			constraints.push_back(!( constraint_action_8_appeared && !(constraint_action_10_appeared) && getVar(varA, "A_"+std::to_string(i)) == 7) || getVar(varRew, "score_"+std::to_string(i)) == 1400+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
 			// phase 3
 			constraints.push_back(!( getVar(varA, "A_"+std::to_string(i)) == 10) || getVar(varRew, "score_"+std::to_string(i)) == 11000+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
-			constraints.push_back(!( getVar(varA, "A_"+std::to_string(i)) == 11) || getVar(varRew, "score_"+std::to_string(i)) == 12000+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!( getVar(varA, "A_"+std::to_string(i)) == 11) || getVar(varRew, "score_"+std::to_string(i)) == 15000+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
 			constraints.push_back(!( constraint_action_10_appeared && getVar(varA, "A_"+std::to_string(i)) == 3) || getVar(varRew, "score_"+std::to_string(i)) == 13000+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
 			constraints.push_back(!( constraint_action_10_appeared && getVar(varA, "A_"+std::to_string(i)) == 7) || getVar(varRew, "score_"+std::to_string(i)) == 14000+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
 			// phase 4
 			constraints.push_back(!( getVar(varA, "A_"+std::to_string(i)) == 12) || getVar(varRew, "score_"+std::to_string(i)) == 110000+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
 			constraints.push_back(!( getVar(varA, "A_"+std::to_string(i)) == 13) || getVar(varRew, "score_"+std::to_string(i)) == 120000+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
 			// phase 5
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 4) || getVar(varRew, "score_"+std::to_string(i)) == 13000000+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 5) || getVar(varRew, "score_"+std::to_string(i)) == 14000000+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
-			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 6) || getVar(varRew, "score_"+std::to_string(i)) == 15000000+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 4) || getVar(varRew, "score_"+std::to_string(i)) == 130000+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 5) || getVar(varRew, "score_"+std::to_string(i)) == 140000+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
+			constraints.push_back(!(getVar(varA, "A_"+std::to_string(i)) == 6) || getVar(varRew, "score_"+std::to_string(i)) == 150000+getVar(varRew, "score_"+std::to_string(i-1))-getVar(varStartTime, "t_"+std::to_string(i)));
 
 			// // Add points depending on the action variable assignments
 			// // +0 for action 1,2,3,5,9,11,13
@@ -2675,7 +2687,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 
 	// Specify initial situation for machines
 	for(int i=min_machine_groups; i<max_machine_groups+1; ++i){
-		constraints.push_back(getVar(varInit, "initState2_"+std::to_string(i)) == world_initState2); // TODO Adapt to the dynamic case
+		constraints.push_back(getVar(varInit, "initState2_"+std::to_string(i)) == world_initState2); 
 		constraints.push_back(getVar(varInit, "initState3_"+std::to_string(i)) == world_initState3[i]);
 	}
 	constraints.push_back(getVar(varInit, "initState4") == world_initState4);
@@ -3249,6 +3261,7 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model, std::string o
 		// "), S2(" << model_state2A[j] << "-" << model_state2B[j] <<
 		// "), S3(" << model_state3A[j] << "-" << model_state3B[j] <<"]";
 		of_stats << " [" << node_names_[model_positions[j]] << "]";
+		of_stats << " [modelmachines " << model_machines[j] << "]";
 		of_stats << " [" << model_state4B[j] << ", " << model_state5B[j] << "]"; 
 		of_stats << " [" << model_score[j] << "]";
 		of_stats << " [" << model_times[j] << "s]" << std::endl; // [R1: " << node_names_[model_positions_R1[j]] <<", R2: " << node_names_[model_positions_R2[j]] << ", R3: " << node_names_[model_positions_R3[j]] << "]" << std::endl;
@@ -3284,9 +3297,12 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model, std::string o
 	}
 
 	// all_actions
-	for(unsigned j=1; j<model_actions.size(); ++j){
+	std::cout << "World actions are";
+	for(int j=1; j<plan_horizon+1; ++j){
 		world_all_actions.push_back(model_actions[j]);
+		std::cout << "  " << world_all_actions.back();
 	}
+	std::cout << std::endl;
 }
 
 // TODO read unsat core to determine time not meet or machine broken
