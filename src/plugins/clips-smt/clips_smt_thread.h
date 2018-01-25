@@ -161,6 +161,8 @@ private:
 
 	// RingColor constants
 	std::vector<int> number_required_bases;
+	int max_number_required_bases_r1;
+	int max_number_required_bases_r2;
 	
 	// Time constants // TODO evalutate realistic constants
 	const int deadline = 900;
@@ -221,15 +223,17 @@ private:
 	std::map<int, int> model_state4B;
 	std::map<int, int> model_state5B;
 	std::map<int, int> model_score;
+	std::map<int, int> model_points;
 
 	// Visualization of world state
 	std::vector<int> world_initHold;
 	std::vector<int> world_initPos;
-	int world_initState2;
+	std::vector<int> world_initState2;
 	std::vector<int> world_initState3;
 	int world_initState4;
 	int world_initState5;
 	std::vector<int> world_all_actions;
+	int world_points;
 
 	// Leonard Korps formula encoding
 	// GameData clips_smt_convert_protobuf_to_gamedata();
@@ -273,6 +277,7 @@ private:
 	void clips_smt_fill_general_info();
 	void clips_smt_fill_order_details();
 	void clips_smt_fill_ringstation_details();
+	void clips_smt_fill_ringstation_details_extended();
 	void clips_smt_fill_capstation_details();
 	// Manage numbers
 	void clips_smt_initialize_numbers();
@@ -308,6 +313,7 @@ private:
 	std::string getRingColor(int product_id);
 	void initShelf();
 	std::string getNextShelf();
+	void clips_smt_clear_maps();
 };
 
 #endif
