@@ -146,7 +146,7 @@
 	=>
 	(printout t "Action Prepare " ?mps " is final" crlf)
 	(retract ?st ?at ?md)
-	(modify ?pa (status EXECUTED))
+	(modify ?pa (status EXECUTION-SUCCEEDED))
 )
 
 (defrule refbox-action-prepare-mps-abort
@@ -165,5 +165,5 @@
 	=>
 	(printout t "Action Prepare " ?mps " is Aborted" crlf)
 	(retract ?st ?md ?at)
-	(modify ?pa (status FAILED))
+	(modify ?pa (status EXECUTION-FAILED))
 )
