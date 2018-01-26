@@ -35,6 +35,14 @@
   (modify ?p (sensed TRUE))
 )
 
+(defrule domain-wp-put-nowait
+  (executive-init)
+  (domain-loaded)
+	?o <- (domain-operator (name wp-put))
+	=>
+	(modify ?o (wait-sensed FALSE))
+)
+
 (defrule load-initial-facts
   (executive-init)
   (domain-loaded)
