@@ -234,6 +234,7 @@ private:
 	int world_initState5;
 	std::vector<int> world_all_actions;
 	int world_points;
+	std::vector<int> world_machines_down;
 
 	// Leonard Korps formula encoding
 	// GameData clips_smt_convert_protobuf_to_gamedata();

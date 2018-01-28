@@ -302,6 +302,9 @@ ClipsSmtThread::init()
 	world_initState5 = 0;
 
 	world_points = 0;
+
+	world_machines_down.push_back(2);
+	world_machines_down.push_back(3);
 }
 
 
@@ -1322,6 +1325,25 @@ ClipsSmtThread::clips_smt_fill_ringstation_details()
 void
 ClipsSmtThread::clips_smt_fill_ringstation_details_extended()
 {
+
+	for(int i=0; i<data.machines().size(); ++i){
+		std::string cw_down = "DOWN";
+		std::string cw_break = "BREAK";
+
+		if(cw_down.compare(data.machines(i).state().c_str()) == 0 || cw_break.compare(data.machines(i).state().c_str()) == 0) {
+			std::string machine_name = data.machines(i).name().c_str();
+			machine_name += "-I";
+
+			world_machines_down.push_back(node_names_inverted[machine_name]);
+		}
+	}
+
+	std::cout << "Machines down are ";
+	for(int world_machine_down: world_machines_down) {
+		std::cout << world_machine_down << " ";
+	}
+	std::cout << std::endl;
+
 	for(unsigned i=0; i<rings_order.size(); ++i) {
 		// std::cout << "Check color of R" << rings_order[i] << " corresponding to station " << node_names_inverted[colors_input["R"+std::to_string(rings_order[i])]] << std::endl;
 		switch(node_names_inverted[colors_input["R"+std::to_string(rings_order[i])]]) {
@@ -2845,8 +2867,6 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		}
 	}
 
-	// Specify update of scores
-
 	// logger->log_info(name(), "Add constraints for initial situation");
 
 	// Specify initial situation for robots
@@ -2862,6 +2882,16 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 	}
 	constraints.push_back(getVar(varInit, "initState4") == world_initState4);
 	constraints.push_back(getVar(varInit, "initState5") == world_initState5);
+
+
+	z3::expr constraint_world_machine_down(var_true);
+	for(int i=1; i<plan_horizon+1; ++i){
+
+		for(int world_machine_down: world_machines_down) {
+			constraint_world_machine_down = constraint_world_machine_down && getVar(varRobotPosition, "pos_"+std::to_string(i)) != world_machine_down;
+		}
+	}
+	constraints.push_back(constraint_world_machine_down);
 
 	// logger->log_info(name(), "Add constraints for distances between machines");
 
