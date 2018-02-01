@@ -77,8 +77,10 @@ ClipsSmtThread::init()
 	products_inverted[0]="nothing";
 	products["full"]=1;
 	products_inverted[1]="full";
+	products["BR"]=2;
+	products_inverted[2]="BR";
 
-	unsigned ctr = 1;
+	unsigned ctr = 2;
 
 	// B1 ... B3 
 	for(unsigned b=1; b<4; ++b){
@@ -1955,7 +1957,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& var)
 									&& (getVar(var, "addRS1B_"+std::to_string(i)) == getVar(var, "addRS1A_"+std::to_string(i)))
 									&& (getVar(var, "addRS2B_"+std::to_string(i)) == getVar(var, "addRS2A_"+std::to_string(i)))
 									&& (getVar(var, "md_"+std::to_string(i)) == 0)
-									&& (getVar(var, "holdB_"+std::to_string(i)) == getVar(var, "holdA_"+std::to_string(i)))
+									&& (getVar(var, "holdB_"+std::to_string(i)) == getVar(var, "holdA_"+std::to_string(i))
+										|| getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
 		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 0) || constraint_dummyaction);
 
@@ -1990,7 +1993,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& var)
 										&& (getVar(var, "md_"+std::to_string(i)) == time_to_disc)
 										&& (getVar(var, "pos_"+std::to_string(i)) == node_names_inverted[colors_output[ci]])
 										&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
-										&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
+										&& (getVar(var, "holdB_"+std::to_string(i)) == products["BR"])
 										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
 			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 2) || constraint_macroaction2);
 
@@ -2372,7 +2375,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& var)
 										&& (getVar(var, "md_"+std::to_string(i)) == time_to_disc)
 										&& (getVar(var, "pos_"+std::to_string(i)) == node_names_inverted[colors_output[ci]])
 										&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
-										&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
+										&& (getVar(var, "holdB_"+std::to_string(i)) == products["BR"])
 										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
 			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 2) || constraint_macroaction2);
 
@@ -2442,7 +2445,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& var)
 											&& getVar(var, "addRS1B_"+std::to_string(i)) == getVar(var, "addRS1A_"+std::to_string(i))) )
 										&& (getVar(var, "md_"+std::to_string(i)) == time_to_feed)
 										&& (getVar(var, "pos_"+std::to_string(i)) == 7 || getVar(var, "pos_"+std::to_string(i)) == 9) 
-										&& (getVar(var, "holdA_"+std::to_string(i)) == products[bi])
+										&& (getVar(var, "holdA_"+std::to_string(i)) == products[bi]
+											|| getVar(var, "holdA_"+std::to_string(i)) == products["BR"])
 										&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
 			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 7) || constraint_macroaction7);

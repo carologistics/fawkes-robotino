@@ -202,7 +202,7 @@ private:
 
 	std::map<std::string, int> products;
 	std::map<int, std::string> products_inverted;
-	const int min_products = -1, max_products = 766;
+	const int min_products = -1, max_products = 767;
 
 	std::map<std::string, int> machine_groups;
 	const int min_machine_groups = 0, max_machine_groups = 3;
