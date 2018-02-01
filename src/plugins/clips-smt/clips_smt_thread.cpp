@@ -1098,7 +1098,7 @@ ClipsSmtThread::loop()
 	// Extract required information from protobuf
 	clips_smt_fill_general_info();
 	// Start with desired complexity 3 and decrease until a valid order was found (by comparing number_order)
-	clips_smt_fill_order_details(3);
+	clips_smt_fill_order_details(0);
 	clips_smt_fill_ringstation_details();
 	clips_smt_fill_capstation_details();
 	clips_smt_initialize_numbers();
@@ -1187,6 +1187,7 @@ ClipsSmtThread::clips_smt_fill_order_details(int desired_complexity)
 
 	// Goal strategy pick last one of desired complexity
 	for(int i=0; i<number_orders_protobuf; ++i) {
+		std::cout << "Compare data_complexity " << data.orders(i).complexity() << " with desired_complexity " << desired_complexity << std::endl;
 		if(data.orders(i).complexity() == desired_complexity) {
 
 			base_order = data.orders(i).base_color();
@@ -1220,6 +1221,8 @@ ClipsSmtThread::clips_smt_fill_order_details(int desired_complexity)
 			order_id = i;
 		}
 	}
+
+	std::cout << "Detected number_orders (" << number_orders_c0 <<", "  << number_orders_c1 <<", " << number_required_actions_c2 << ", " << number_orders_c3 << ")" << std::endl;
 	
 }
 
@@ -1928,10 +1931,6 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& var)
 	std::string r3i = "R" + ring3_order_str;
 	std::string ci = "C" + cap_order_str;
 
-
-	// BR represents the random base or so-called cap carrier
-	std::string br_ci = "BR" + ci;
-
 	// Construct combined string identifiers
 	std::string bi_ci = bi + ci;
 	std::string bi_r1i = bi + r1i;
@@ -2547,6 +2546,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& var)
 		//phase
 		z3::expr constraint_action_1_appeared(var_false);
 		z3::expr constraint_action_2_appeared(var_false);
+		z3::expr constraint_action_3_appeared(var_false);
 		z3::expr constraint_action_8_appeared(var_false);
 		z3::expr constraint_action_9_appeared(var_false);
 		z3::expr constraint_action_10_appeared(var_false);
@@ -2557,6 +2557,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& var)
 		for(int j=1; j<i; ++j){
 			constraint_action_1_appeared = constraint_action_1_appeared || getVar(var, "A_"+std::to_string(j)) == 1;
 			constraint_action_2_appeared = constraint_action_2_appeared || getVar(var, "A_"+std::to_string(j)) == 2;
+			constraint_action_3_appeared = constraint_action_3_appeared || getVar(var, "A_"+std::to_string(j)) == 3;
 			constraint_action_8_appeared = constraint_action_8_appeared || getVar(var, "A_"+std::to_string(j)) == 8;
 			constraint_action_9_appeared = constraint_action_9_appeared || getVar(var, "A_"+std::to_string(j)) == 9;
 			constraint_action_10_appeared = constraint_action_10_appeared || getVar(var, "A_"+std::to_string(j)) == 10;
@@ -2571,6 +2572,9 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& var)
 			}
 			else if(world_all_actions[j] == 2) {
 				constraint_action_2_appeared = constraint_action_2_appeared || var_true;
+			}
+			else if(world_all_actions[j] == 3) {
+				constraint_action_3_appeared = constraint_action_3_appeared || var_true;
 			}
 			else if(world_all_actions[j] == 8) {
 				constraint_action_8_appeared = constraint_action_8_appeared || var_true;
@@ -2595,6 +2599,9 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& var)
 		// Do not consider action 1 and 2 a second time in the production cycle of the product
 		constraints.push_back(!(constraint_action_1_appeared) || getVar(var, "A_"+std::to_string(i)) != 1);
 		constraints.push_back(!(constraint_action_2_appeared) || getVar(var, "A_"+std::to_string(i)) != 2);
+		if(number_orders_c0) {
+			constraints.push_back(!(constraint_action_3_appeared) || getVar(var, "A_"+std::to_string(i)) != 3);
+		}
 		constraints.push_back(!(constraint_action_8_appeared) || getVar(var, "A_"+std::to_string(i)) != 8);
 		constraints.push_back(!(constraint_action_9_appeared) || getVar(var, "A_"+std::to_string(i)) != 9);
 		constraints.push_back(!(constraint_action_10_appeared) || getVar(var, "A_"+std::to_string(i)) != 10);
@@ -2624,8 +2631,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& var)
 			// phase 6 (mount R3)
 			constraints.push_back(!( getVar(var, "A_1") == 12) || getVar(var, "score_1") == 11000000-getVar(var, "t_"+std::to_string(i)));
 			// phase 7 (prepare C)
-			constraints.push_back(!( constraint_action_12_appeared && getVar(var, "A_1") == 3) || getVar(var, "score_1") == 0-getVar(var, "t_"+std::to_string(i)));
-			constraints.push_back(!( constraint_action_12_appeared && getVar(var, "A_1") == 7) || getVar(var, "score_1") == 0-getVar(var, "t_"+std::to_string(i)));
+			constraints.push_back(!( constraint_action_12_appeared && getVar(var, "A_1") == 3) || getVar(var, "score_1") == 0-getVar(var, "t_"+std::to_string(i))-100000000);
+			constraints.push_back(!( constraint_action_12_appeared && getVar(var, "A_1") == 7) || getVar(var, "score_1") == 0-getVar(var, "t_"+std::to_string(i))-100000000);
 			constraints.push_back(!( getVar(var, "A_1") == 1) || getVar(var, "score_1") == 110000000-getVar(var, "t_"+std::to_string(i)));
 			constraints.push_back(!( getVar(var, "A_1") == 2) || getVar(var, "score_1") == 120000000-getVar(var, "t_"+std::to_string(i)));
 			constraints.push_back(!( getVar(var, "A_1") == 13) || getVar(var, "score_1") == 130000000-getVar(var, "t_"+std::to_string(i)));
@@ -2638,7 +2645,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& var)
 
 			// Add points depending on the action variable assignments
 			// +0 for action 1,2,3,5,9,11,13
-			constraints.push_back(!( 	getVar(var, "A_1") == 1 ||
+			constraints.push_back(!( 	getVar(var, "A_1") == 0 ||
+										getVar(var, "A_1") == 1 ||
 										getVar(var, "A_1") == 2 ||
 										getVar(var, "A_1") == 3 ||
 										getVar(var, "A_1") == 5 ||
@@ -2701,8 +2709,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& var)
 			// phase 6 (mount R3)
 			constraints.push_back(!( getVar(var, "A_"+std::to_string(i)) == 12) || getVar(var, "score_"+std::to_string(i)) == 11000000/i +getVar(var, "score_"+std::to_string(i-1))-getVar(var, "t_"+std::to_string(i)));
 			// phase 7 (prepare C)
-			constraints.push_back(!( constraint_action_12_appeared && getVar(var, "A_"+std::to_string(i)) == 3) || getVar(var, "score_"+std::to_string(i)) == getVar(var, "score_"+std::to_string(i-1))-getVar(var, "t_"+std::to_string(i)));
-			constraints.push_back(!( constraint_action_12_appeared && getVar(var, "A_"+std::to_string(i)) == 7) || getVar(var, "score_"+std::to_string(i)) == getVar(var, "score_"+std::to_string(i-1))-getVar(var, "t_"+std::to_string(i)));
+			constraints.push_back(!( constraint_action_12_appeared && getVar(var, "A_"+std::to_string(i)) == 3) || getVar(var, "score_"+std::to_string(i)) == getVar(var, "score_"+std::to_string(i-1))-getVar(var, "t_"+std::to_string(i))-100000000);
+			constraints.push_back(!( constraint_action_12_appeared && getVar(var, "A_"+std::to_string(i)) == 7) || getVar(var, "score_"+std::to_string(i)) == getVar(var, "score_"+std::to_string(i-1))-getVar(var, "t_"+std::to_string(i))-100000000);
 			constraints.push_back(!( getVar(var, "A_"+std::to_string(i)) == 1) || getVar(var, "score_"+std::to_string(i)) == 110000000/i +getVar(var, "score_"+std::to_string(i-1))-getVar(var, "t_"+std::to_string(i)));
 			constraints.push_back(!( getVar(var, "A_"+std::to_string(i)) == 2) || getVar(var, "score_"+std::to_string(i)) == 120000000/i +getVar(var, "score_"+std::to_string(i-1))-getVar(var, "t_"+std::to_string(i)));
 			constraints.push_back(!( getVar(var, "A_"+std::to_string(i)) == 13) || getVar(var, "score_"+std::to_string(i)) == 130000000/i +getVar(var, "score_"+std::to_string(i-1))-getVar(var, "t_"+std::to_string(i)));
@@ -2714,7 +2722,8 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& var)
 
 			// Add points depending on the action variable assignments
 			// +0 for action 1,2,3,5,9,11,13
-			constraints.push_back(!( 	getVar(var, "A_"+std::to_string(i)) == 1 ||
+			constraints.push_back(!( 	getVar(var, "A_"+std::to_string(i)) == 0 ||
+										getVar(var, "A_"+std::to_string(i)) == 1 ||
 										getVar(var, "A_"+std::to_string(i)) == 2 ||
 										getVar(var, "A_"+std::to_string(i)) == 3 ||
 										getVar(var, "A_"+std::to_string(i)) == 5 ||
