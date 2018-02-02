@@ -38,7 +38,7 @@
 (defrule domain-wp-put-nowait
   (executive-init)
   (domain-loaded)
-	?o <- (domain-operator (name wp-put))
+	?o <- (domain-operator (name wp-put) (wait-sensed ~FALSE))
 	=>
 	(modify ?o (wait-sensed FALSE))
 )
