@@ -26,5 +26,5 @@
          (param-values $?param-values))
   =>
   (printout t "Executing " ?action ?param-values crlf)
-  (modify ?pa (status EXECUTED))
+  (modify ?pa (status EXECUTION-SUCCEEDED))
 )
