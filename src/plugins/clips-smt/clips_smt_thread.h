@@ -106,8 +106,7 @@ private:
 	std::map<std::string, int> node_names_inverted;
 	std::map<std::pair<std::string, std::string>, float> distances_;
 
-	std::map<std::string, std::string> colors_input;
-	std::map<std::string, std::string> colors_output;
+	std::map<std::string, std::string> colors_station;
 	std::vector<bool> shelf_position;
 
 	std::map<unsigned, std::string> base_colors;
@@ -160,7 +159,7 @@ private:
 	int number_required_actions_c3 = 12;
 	const int index_upper_bound_actions_c3 = 13;
 
-	const int index_delivery_action = 6;
+	const int index_delivery_action = 5;
 	int index_upper_bound_actions;
 	int number_required_actions;
 	int number_total_actions;
@@ -182,6 +181,22 @@ private:
 	const int time_to_del = 5;
 	const float velocity_scaling_ = 1;
 
+	// Score&Points
+	int points_scale = 100;
+	int points_penalty = 50;
+	int points_get_base = 0*points_scale;
+	int points_none = 5*points_scale;
+	int points_additional_base = 2*points_scale;
+	int points_mount_ring_0 = 5*points_scale;
+	int points_mount_ring_1 = 10*points_scale;
+	int points_mount_ring_2 = 20*points_scale;
+	int points_mount_ring1_last = 10*points_scale;
+	int points_mount_ring2_last = 30*points_scale;
+	int points_mount_ring3_last = 80*points_scale;
+	int points_mount_cap = 10*points_scale;
+	int points_deliver = 20*points_scale;
+	const int initial_points = 0;
+
 	// Consider delivery window for orders
 	const bool add_temporal_constraint = false;
 
@@ -202,10 +217,10 @@ private:
 
 	std::map<std::string, int> products;
 	std::map<int, std::string> products_inverted;
-	const int min_products = -1, max_products = 767;
+	const int min_products = -1, max_products = 768;
 
 	std::map<std::string, int> machine_groups;
-	const int min_machine_groups = 0, max_machine_groups = 3;
+	const int min_machine_groups = 0, max_machine_groups = 4;
 
 	// Visualization of computed plan
 	std::vector<std::string> description_actions;
@@ -221,13 +236,9 @@ private:
 	std::map<int, int> model_holdA;
 	std::map<int, int> model_insideA;
 	std::map<int, int> model_outputA;
-	std::map<int, int> model_addRS1A;
-	std::map<int, int> model_addRS2A;
 	std::map<int, int> model_holdB;
 	std::map<int, int> model_insideB;
 	std::map<int, int> model_outputB;
-	std::map<int, int> model_addRS1B;
-	std::map<int, int> model_addRS2B;
 	std::map<int, int> model_score;
 	std::map<int, int> model_points;
 
@@ -264,8 +275,8 @@ private:
 	void clips_smt_fill_general_info();
 	void clips_smt_fill_order_details(int desired_complexity);
 	void clips_smt_fill_ringstation_details();
-	void clips_smt_fill_ringstation_details_extended();
 	void clips_smt_fill_capstation_details();
+	void clips_smt_fill_station_details_extended();
 	// Manage numbers
 	void clips_smt_initialize_numbers();
 	// Navgraph
