@@ -36,18 +36,18 @@ clips-agent:
   # This is particularly useful to kick an SkillGUI which is holding
   # the lock just due to an oversight.
   steal-skiller-control: true
- 
+
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
   agent: rcll2017/rcll2017
 
   disable-storage-station: true
 
- 
+
   rcll2016:
     #agent-role defined in host.yaml (this is only the default!)
     agent-role: nothing
-        
+
     enable-sim: false
 
     #real-world-setup:
@@ -64,7 +64,7 @@ clips-agent:
     cyan-send-port: 4446
     magenta-send-port: 4447
 
-    team-name: Carologistics
+    team-name: CaroSMT
     crypto-key: randomkey
     cipher: "aes-128-cbc"
 
@@ -86,7 +86,7 @@ clips-agent:
         C-CS2: BLACK
         M-CS1: GREY
         M-CS2: BLACK
-    
+
     waiting-points:
       ins-1-robotino1: WAIT_FOR_INS_1_ROBOTINO_1
       ins-2-robotino1: WAIT_FOR_INS_2_ROBOTINO_1
@@ -124,7 +124,7 @@ clips-agent:
       cyan: [D1_PUCK_STORAGE_1, D1_PUCK_STORAGE_2]
       magenta: [D2_PUCK_STORAGE_1, D2_PUCK_STORAGE_2]
 
-    exploration:      
+    exploration:
       #row defined in host.yaml (this is only the default!)
       row: MID
       

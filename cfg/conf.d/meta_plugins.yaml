@@ -24,7 +24,7 @@ fawkes/meta_plugins:
   gazsim-meta-robotino-vision-high-level: gazsim-tag-vision,gazsim-machine-signal
   gazsim-meta-robotino-vision-low-level: fvbase,gazsim-webcam,tag_vision,gazsim-machine-signal
   gazsim-organization: gazebo,gazsim-comm,gazsim-llsfrbcomm
-  gazsim-meta-clips: m-clips,clips-agent
+  gazsim-meta-clips: m-clips,clips-smt,clips-agent
   gazsim-meta-agent: gazsim-meta-clips
   gazsim-meta-clips-exec: m-clips,m-robot-memory,pddl-robot-memory,clips_robot_memory,pddl-planner,clips-executive
  

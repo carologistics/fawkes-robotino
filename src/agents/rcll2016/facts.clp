@@ -209,6 +209,7 @@
 ; Common template for an abstract task which consists of a sequence of steps
 (deftemplate task
   (slot id (type INTEGER))
+  (slot robot (type STRING) (allowed-values "R-1" "R-2" "R-3"))
   (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
   (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed)
         (default proposed))
@@ -216,6 +217,7 @@
   ;a task consists of multiple steps
   (slot current-step (type INTEGER) (default 0))
   (multislot steps (type INTEGER)) ;in chronological order refers to the ids of the steps
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 ; Template for a step
@@ -225,9 +227,12 @@
 ; The arguments of a specific step are optional and used when required
 (deftemplate step
   (slot id (type INTEGER))
+  (multislot parents-ids  (type INTEGER))
   (slot name (type SYMBOL) (allowed-symbols get-from-shelf insert get-output get-base find-tag instruct-mps discard
                                             drive-to wait-for-rs wait-for-output acquire-lock release-lock))
   (slot state (type SYMBOL) (allowed-symbols inactive wait-for-activation running finished failed) (default inactive))
+  (slot actor (type STRING) (allowed-values "R-1" "R-2" "R-3" "") (default ""))
+  (slot goal-id (type INTEGER) (default 0))
   ;optional arguments of a step
   (slot task-priority (type INTEGER))
   (slot machine (type SYMBOL))
@@ -242,6 +247,7 @@
   (slot already-at-mps (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
   (slot side (type SYMBOL) (allowed-symbols INPUT OUTPUT) (default OUTPUT))
   (slot lock (type SYMBOL) (default NONE))
+  (slot sync-id (type INTEGER) (default 0))
 )
 
 ; Needed locks for a task which guarantee that no other robot tries to accomplish the same goal by doing some task
@@ -400,7 +406,7 @@
 
   (already-received-wm-changes (create$))
 
-  (pose (x 0.0) (y 0.0))
+  (pose (x 0.0) (y 0.0) (name ?*ROBOT-NAME*))
   (puck-in-gripper FALSE)
 
   (team-robot R-1)
@@ -416,7 +422,7 @@
   (deliver CYAN deliver1 0 0)
   (deliver MAGENTA deliver2 0 0)
 
-  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag base-station exp-matching)))
+  (wm-sync-info (synced-templates (create$ machine zone-exploration cap-station ring-station product order found-tag base-station exp-matching task step)))
   ; zone-exploration, machine, cap-station, product, ring station
 
   (last-zoneinfo)
