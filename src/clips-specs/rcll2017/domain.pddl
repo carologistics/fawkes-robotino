@@ -73,6 +73,7 @@
 		(cs-buffered ?m - mps ?col - cap-color)
 		(cs-free ?m - mps)
 		(rs-prepared-color ?m - mps ?col - ring-color)
+    (ds-prepared-gate ?m - mps ?g - ds-gate)
 		(order-complexity ?ord - order ?com - order-complexity-value)
 		(order-base-color ?ord - order ?col - base-color)
 		(order-ring1-color ?ord - order ?col - ring-color)
@@ -105,7 +106,8 @@
 	(:action prepare-ds
 		:parameters (?m - mps ?gate - ds-gate)
 		:precondition (and (mps-type ?m DS) (mps-state ?m IDLE))
-		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m PREPARED))
+		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m PREPARED)
+                 (ds-prepared-gate ?m ?gate))
 	)
 
 	(:action prepare-cs
@@ -320,43 +322,49 @@
 	)
 
 	(:action fulfill-order-c0
-		:parameters (?ord - order ?wp - workpiece ?m - mps
+		:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate
 		             ?basecol - base-color ?capcol - cap-color)
 		:precondition (and (wp-at ?wp ?m INPUT)
                       (wp-usable ?wp)
-											 (mps-state ?m PROCESSING)
                        (mps-type ?m DS)
+											 (ds-prepared ?m ?g)
+                       (order-gate ?ord ?g)
 											 (order-complexity ?ord C0)
 											 (order-base-color ?ord ?basecol) (wp-base-color ?wp ?basecol)
 											 (order-cap-color ?ord ?capcol) (wp-cap-color ?wp ?capcol)
 											 (wp-ring1-color ?wp RING_NONE) (wp-ring2-color ?wp RING_NONE) (wp-ring3-color ?wp RING_NONE))
 		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT))
+                 (not (ds-prepared ?m ?g))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
-								 
 	)
 
 	(:action fulfill-order-c1
-		:parameters (?ord - order ?wp - workpiece ?m - mps
+		:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate
 		             ?basecol - base-color ?capcol - cap-color
 		             ?ring1col - ring-color)
 
 		:precondition (and (wp-at ?wp ?m INPUT) (wp-usable ?wp)
-											 (mps-type ?m DS) (mps-state ?m PROCESSING)
+											 (mps-type ?m DS)
+											 (ds-prepared ?m ?g)
+                       (order-gate ?ord ?g)
 											 (order-complexity ?ord C1)
 											 (order-base-color ?ord ?basecol) (wp-base-color ?wp ?basecol)
 											 (order-ring1-color ?ord ?ring1col) (wp-ring1-color ?wp ?ring1col)
 											 (order-cap-color ?ord ?capcol) (wp-cap-color ?wp ?capcol))
 		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT))
+                 (not (ds-prepared ?m ?g))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
 	)
 
 	(:action fulfill-order-c2
-		:parameters (?ord - order ?wp - workpiece ?m - mps
+		:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate
 		             ?basecol - base-color ?capcol - cap-color
 		             ?ring1col - ring-color ?ring2col - ring-color)
 
 		:precondition (and (wp-at ?wp ?m INPUT) (wp-usable ?wp)
-											 (mps-type ?m DS) (mps-state ?m PROCESSING)
+											 (mps-type ?m DS)
+											 (ds-prepared ?m ?g)
+                       (order-gate ?ord ?g)
 											 (order-complexity ?ord C2)
 											 (order-base-color ?ord ?basecol) (wp-base-color ?wp ?basecol)
 											 (order-ring1-color ?ord ?ring1col) (wp-ring1-color ?wp ?ring1col)
@@ -364,17 +372,20 @@
 											 (wp-ring3-color ?wp RING_NONE)
 											 (order-cap-color ?ord ?capcol) (wp-cap-color ?wp ?capcol))
 		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT))
+                 (not (ds-prepared ?m ?g))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
 								 
 	)
 
 	(:action fulfill-order-c3
-		:parameters (?ord - order ?wp - workpiece ?m - mps
+		:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate
 		             ?basecol - base-color ?capcol - cap-color
 		             ?ring1col - ring-color ?ring2col - ring-color ?ring3col - ring-color)
 
 		:precondition (and (wp-at ?wp ?m INPUT) (wp-usable ?wp)
-											 (mps-type ?m DS) (mps-state ?m PROCESSING)
+											 (mps-type ?m DS)
+											 (ds-prepared ?m ?g)
+                       (order-gate ?ord ?g)
 											 (order-complexity ?ord C3)
 											 (order-base-color ?ord ?basecol) (wp-base-color ?wp ?basecol)
 											 (order-ring1-color ?ord ?ring1col) (wp-ring1-color ?wp ?ring1col)
@@ -383,6 +394,7 @@
 											 (order-cap-color ?ord ?capcol) (wp-cap-color ?wp ?capcol)
 											 )
 		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT))
+                 (not (ds-prepared ?m ?g))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
 	)
 )
