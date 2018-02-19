@@ -64,6 +64,9 @@ public:
     , logger_(nullptr)
   {}
 
+  pb_convert(const pb_convert &) = default;
+  pb_convert &operator = (const pb_convert &) = default;
+
   virtual ~pb_convert();
 
   virtual void
@@ -170,7 +173,7 @@ protected:
   {
     throw fawkes::Exception(
           boost::core::demangle(typeid(pb_converter<ProtoT, IfaceT>).name()).c_str(),
-          "BUG: corresponds(...) must"
+          "BUG: corresponds(...) must "
           "be overridden for every converter used in a sequence.");
   }
 
