@@ -37,6 +37,15 @@
   ?*SALIENCE-GOAL-EVALUTATE-GENERIC* = -1
 )
 
+(defrule goal-reasoner-create-complexity
+  (not (goal (id COMPLEXITY)))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id comp C0) (value TRUE))
+  =>
+  (assert (goal (id COMPLEXITY)))
+  (printout t "Detect goal " ?order-id " with complexity 0" crlf)
+)
+
+
 ; #  Goal Selection
 ; We can choose one or more goals for expansion, e.g., calling
 ; a planner to determine the required steps.
