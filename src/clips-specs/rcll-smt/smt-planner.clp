@@ -91,9 +91,10 @@
 
 (deffunction smt-create-additional-robots (?team-color)
 	(bind ?rv (create$))
-	(do-for-all-facts ((?p pose)) TRUE
-		(bind ?rv (append$ ?rv (smt-create-robot ?p:name ?team-color 0 ?p:x ?p:y)))
-	)
+	; TODO Add additional-robots
+	; (do-for-all-facts ((?p pose)) TRUE
+	;     (bind ?rv (append$ ?rv (smt-create-robot ?p:name ?team-color 0 ?p:x ?p:y)))
+	; )
 	(return ?rv)
 )
 
