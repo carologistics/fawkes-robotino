@@ -53,38 +53,6 @@
 	(return ?a)
 )
 
-; (defrule production-plan-test
-;   (phase PRODUCTION)
-;   (team-color ?team-color&CYAN|MAGENTA)
-; =>
-; 	(bind ?ap
-; 	  (plan-create-actspec-sequential "R-1"
-; 	    (plan-create-sequential (create$
-; 	      (plan-create-action "move" "from" "START" "to" "C-BS-I")
-; 	      (plan-create-action "move" "from" "C-BS-I" "to" "C-DS-I")
-; 	    ))
-; 	  )
-; 	)
-; 	(printout t "Plan: " (pb-tostring ?ap) crlf)
-
-; 	(if (pb-has-field ?ap "sequential_plan")
-; 	 then
-; 		(bind ?p (pb-field-value ?ap "sequential_plan"))
-; 		(printout t "Sequential plan is set:" crlf (pb-tostring ?p) crlf)
-; 		(foreach ?a (pb-field-list ?p "actions")
-; 			(bind ?actname (pb-field-value ?a "name"))
-; 			(printout t "  Action '" ?actname "':" crlf)
-; 			; Must use progn$ here, foreach cannot be nested in same scope
-; 			(progn$ (?p (pb-field-list ?a "params"))
-; 				(printout t "  - " (pb-field-value ?p "key") ": " (pb-field-value ?p "value") crlf)
-; 			)
-; 		)
-; 	 else
-; 	  (printout warn "Sequential plan not set on ActorSpecificPlan" crlf)
-; 	)
-; 	(pb-destroy ?ap)
-; )
-
 (deffunction smt-create-data (?robots ?addrobots ?machines ?orders ?rings)
 	(bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
 	(foreach ?r ?robots
