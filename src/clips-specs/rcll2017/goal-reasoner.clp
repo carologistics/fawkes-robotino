@@ -28,7 +28,7 @@
 
 (defrule goal-reasoner-create-complexity
   (not (goal (id COMPLEXITY)))
-  (wm-fact (key domain fact order-complexity args? ord ?order-id comp C0) (value TRUE))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE))
   =>
   (assert (goal (id COMPLEXITY)))
   (printout t "Detect goal " ?order-id " with complexity 0" crlf)
