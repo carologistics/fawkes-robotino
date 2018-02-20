@@ -144,8 +144,13 @@
 
 (deffunction smt-create-machines (?team-color)
 	(bind ?rv (create$))
-	(do-for-all-facts ((?m machine)) (eq ?m:team ?team-color)
-		(bind ?rv (append$ ?rv (smt-create-machine ?m:name ?m:mtype ?m:state ?m:team ?m:x ?m:y)))
+	(do-for-all-facts ((?wm-fact wm-fact) (?wm-fact2 wm-fact))
+		(and
+			(wm-key-prefix ?wm-fact:key (create$ domain fact mps-state))
+			(wm-key-prefix ?wm-fact2:key (create$ domain fact mps-type))
+			(eq (wm-key-arg ?wm-fact:key m) (wm-key-arg ?wm-fact2:key m))
+		)
+		(bind ?rv (append$ ?rv (smt-create-machine (wm-key-arg ?wm-fact:key m) (wm-key-arg ?wm-fact2:key t) (wm-key-arg ?wm-fact:key s) ?team-color 0 0))) ; TODO Do we only have access to machines from our team?
 	)
 	(return ?rv)
 )
