@@ -80,7 +80,7 @@
 	(bind ?r (pb-create "llsf_msgs.Robot"))
 	(pb-set-field ?r "name" ?name)
 	(pb-set-field ?r "team_color" ?team-color)
-	(pb-set-field ?r "number" ?*ROBOT-NUMBER*)
+	(pb-set-field ?r "number" 1) ; TODO adapt to constant ?*ROBOT-NUMBER*)
 	(bind ?pose (pb-create "llsf_msgs.Pose2D"))
 	(pb-set-field ?pose "x" ?pose-x)
 	(pb-set-field ?pose "y" ?pose-y)
