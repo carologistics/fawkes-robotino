@@ -100,8 +100,8 @@
 
 (deffunction smt-create-robots (?team-color)
 	(bind ?rv (create$))
-	(do-for-all-facts ((?r active-robot)) TRUE
-		(bind ?rv (append$ ?rv (smt-create-robot ?r:name ?team-color 0 ?r:x ?r:y)))
+	(do-for-all-facts ((?wm-fact wm-fact)) (wm-key-prefix ?wm-fact:key (create$ domain fact robot-waiting))
+		(bind ?rv (append$ ?rv (smt-create-robot (wm-key-arg ?wm-fact:key r) ?team-color 0 0 0))) ; TODO Add correct pose of robot
 	)
 	(return ?rv)
 )
