@@ -203,8 +203,22 @@
 
 (deffunction smt-create-orders (?team-color)
 	(bind ?rv (create$))
-	(do-for-all-facts ((?o order)) TRUE
-		(bind ?rv (append$ ?rv (smt-create-order ?o:id ?o:product-id ?o:delivery-gate ?o:complexity ?o:quantity-requested ?o:quantity-delivered ?o:begin ?o:end ?team-color)))
+	(do-for-all-facts ((?wm-fact wm-fact) (?wm-fact2 wm-fact))
+		(and
+			(wm-key-prefix ?wm-fact:key (create$ domain fact order-complexity))
+			(wm-key-prefix ?wm-fact2:key (create$ domain fact order-gate))
+			(eq (wm-key-arg ?wm-fact:key ord) (wm-key-arg ?wm-fact2:key ord))
+		)
+		(bind ?rv (append$ ?rv (smt-create-order
+									(wm-key-arg ?wm-fact:key ord) ; order-id
+									(wm-key-arg ?wm-fact:key ord) ; order-product-id TODO What is the difference
+									(wm-key-arg ?wm-fact:key gate)
+									(wm-key-arg ?wm-fact:key com)
+									1 ; quantity-requested
+									0 ; quantity-delivered
+									0 ; begin
+									900 ; end
+									?team-color)))
 	)
 	(return ?rv)
 )
