@@ -26,6 +26,14 @@
   (assert (goal (id BEACONMAINTAIN) (type MAINTAIN)))
 )
 
+(defrule goal-reasoner-create-complexity
+  (not (goal (id COMPLEXITY)))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id comp C0) (value TRUE))
+  =>
+  (assert (goal (id COMPLEXITY)))
+  (printout t "Detect goal " ?order-id " with complexity 0" crlf)
+)
+
 ; sub-goal of the maintenance goal
 (defrule goal-reasoner-create-beacon-achieve
   ?g <- (goal (id BEACONMAINTAIN) (mode SELECTED|DISPATCHED))
