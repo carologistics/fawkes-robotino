@@ -126,13 +126,7 @@
 			(wm-key-prefix ?wm-fact:key (create$ domain fact rs-ring-spec))
 			(eq ?name (wm-key-arg ?wm-fact:key m))
 		)
-		(switch (wm-key-arg ?wm-fact:key r)
-		  (case GREEN then (bind ?rlist (append$ ?rlist "RING_GREEN")))
-		  (case BLUE then (bind ?rlist (append$ ?rlist "RING_BLUE")))
-		  (case ORANGE then (bind ?rlist (append$ ?rlist "RING_ORANGE")))
-		  (case YELLOW then (bind ?rlist (append$ ?rlist "RING_YELLOW")))
-		  (default (printout warn "Ring color not found" crlf))
-		)
+		(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key r)))
       )
 	  (foreach ?rings ?rlist
 	   (pb-add-list ?m "ring_colors" ?rings)
@@ -178,7 +172,6 @@
 			(eq ?id (wm-key-arg ?wm-fact:key ord))
 		)
 		(pb-set-field ?o "cap_color" (wm-key-arg ?wm-fact:key col))
-		)
 	)
 	; Extract order-cap-color
 	(do-for-all-facts ((?wm-fact wm-fact))
