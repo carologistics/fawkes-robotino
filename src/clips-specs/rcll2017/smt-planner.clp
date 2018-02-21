@@ -171,32 +171,50 @@
 	(pb-set-field ?o "delivery_period_begin" ?begin)
 	(pb-set-field ?o "delivery_period_end" ?end)
 
-  (do-for-fact ((?product product)) (eq ?product:id ?product-id)
-    (bind ?rlist (create$))
-    (progn$ (?r ?product:rings)
-      (switch ?r
-        (case GREEN then (bind ?rlist (append$ ?rlist "RING_GREEN")))
-        (case BLUE then (bind ?rlist (append$ ?rlist "RING_BLUE")))
-        (case ORANGE then (bind ?rlist (append$ ?rlist "RING_ORANGE")))
-        (case YELLOW then (bind ?rlist (append$ ?rlist "RING_YELLOW")))
-        (default (printout warn "Ring color not found" crlf))
-      )
-    )
-    (foreach ?rings ?rlist
-     (pb-add-list ?o "ring_colors" ?rings)
-    )
-    (switch ?product:cap
-      (case BLACK then (pb-set-field ?o "cap_color" "CAP_BLACK"))
-      (case GREY then (pb-set-field ?o "cap_color" "CAP_GREY"))
-      (default (printout warn "Cap color not found" crlf))
-    )
-    (switch ?product:base
-      (case BLACK then (pb-set-field ?o "base_color" "BASE_BLACK"))
-      (case RED then (pb-set-field ?o "base_color" "BASE_RED"))
-      (case SILVER then (pb-set-field ?o "base_color" "BASE_SILVER"))
-      (default (printout warn "Base color not found" crlf))
-    ) 
-  )
+	; Extract order-base-color
+	(do-for-all-facts ((?wm-fact wm-fact))
+		(and
+			(wm-key-prefix ?wm-fact:key (create$ domain fact order-base-color))
+			(eq ?id (wm-key-arg ?wm-fact:key ord))
+		)
+		(switch (wm-key-arg ?wm-fact:key col)
+		  (case BLACK then (pb-set-field ?o "cap_color" "CAP_BLACK"))
+		  (case GREY then (pb-set-field ?o "cap_color" "CAP_GREY"))
+		  (default (printout warn "Cap color not found" crlf))
+		)
+	)
+	; Extract order-cap-color
+	(do-for-all-facts ((?wm-fact wm-fact))
+		(and
+			(wm-key-prefix ?wm-fact:key (create$ domain fact order-cap-color))
+			(eq ?id (wm-key-arg ?wm-fact:key ord))
+		)
+		(switch (wm-key-arg ?wm-fact:key col)
+		  (case BLACK then (pb-set-field ?o "base_color" "BASE_BLACK"))
+		  (case RED then (pb-set-field ?o "base_color" "BASE_RED"))
+		  (case SILVER then (pb-set-field ?o "base_color" "BASE_SILVER"))
+		  (default (printout warn "Base color not found" crlf))
+		) 
+	)
+
+	; Extract order-ring-color
+	(bind ?rlist (create$))
+	(do-for-all-facts ((?wm-fact wm-fact))
+		(and
+			(wm-key-prefix ?wm-fact:key (create$ domain fact order-ring1-color)) ;(sym-cat order- ring ?p-index -color))) TODO Add loop over numbers 1-3
+			(eq ?id (wm-key-arg ?wm-fact:key ord))
+		)
+	  (switch (wm-key-arg ?wm-fact:key col)
+		(case GREEN then (bind ?rlist (append$ ?rlist "RING_GREEN")))
+		(case BLUE then (bind ?rlist (append$ ?rlist "RING_BLUE")))
+		(case ORANGE then (bind ?rlist (append$ ?rlist "RING_ORANGE")))
+		(case YELLOW then (bind ?rlist (append$ ?rlist "RING_YELLOW")))
+		(default (printout warn "Ring color not found" crlf))
+	  )
+	)
+	(foreach ?rings ?rlist
+	 (pb-add-list ?o "ring_colors" ?rings)
+	)
 
   (return ?o)
 )
