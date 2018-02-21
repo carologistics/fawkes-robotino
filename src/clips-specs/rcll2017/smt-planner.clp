@@ -217,25 +217,36 @@
 
 (deffunction smt-create-orders (?team-color)
 	(bind ?rv (create$))
-	(do-for-all-facts ((?wm-fact wm-fact) (?wm-fact2 wm-fact) (?wm-fact3 wm-fact) (?wm-fact4 wm-fact) (?wm-fact5 wm-fact) (?wm-fact6 wm-fact))
-		(and
-			(wm-key-prefix ?wm-fact:key (create$ domain fact order-complexity))
-			(wm-key-prefix ?wm-fact2:key (create$ domain fact order-gate))
-			(eq (wm-key-arg ?wm-fact:key ord) (wm-key-arg ?wm-fact2:key ord))
-			(eq ?wm-fact3:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) quantity-requested))
-			(eq ?wm-fact4:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) quantity-delivered))
-			(eq ?wm-fact5:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) delivery-begin))
-			(eq ?wm-fact6:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) delivery-end))
+	(do-for-all-facts ((?do domain-object)) (eq ?do:type order)
+		(do-for-fact ((?wm-fact wm-fact)) 
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
+				(eq ?do:name (wm-key-arg ?wm-fact:key ord))
+			)
+			(do-for-fact ((?wm-fact2 wm-fact)) 
+				(and
+					(wm-key-prefix ?wm-fact2:key (create$ domain fact order-complexity))
+					(eq ?do:name (wm-key-arg ?wm-fact2:key ord))
+				)
+				(do-for-fact ((?wm-fact3 wm-fact)) (eq ?wm-fact3:key (create$ refbox order ?do:name quantity-requested))
+					(do-for-fact ((?wm-fact4 wm-fact)) (eq ?wm-fact4:key (create$ refbox order ?do:name quantity-delivered ?team-color))
+						(do-for-fact ((?wm-fact5 wm-fact)) (eq ?wm-fact5:key (create$ refbox order ?do:name delivery-begin))
+							(do-for-fact ((?wm-fact6 wm-fact)) (eq ?wm-fact6:key (create$ refbox order ?do:name delivery-end))
+								(bind ?rv (append$ ?rv (smt-create-order
+															?do:name ; order-id
+															(wm-key-arg ?wm-fact:key gate) ; TODO Add the correct gate information
+															(wm-key-arg ?wm-fact2:key com)
+															?wm-fact3:value ; quantity-requested
+															?wm-fact4:value ; quantity-delivered
+															?wm-fact5:value ; begin
+															?wm-fact6:value ; end
+															?team-color)))
+							)
+						)
+					)
+				)
+			)
 		)
-		(bind ?rv (append$ ?rv (smt-create-order
-									(wm-key-arg ?wm-fact:key ord) ; order-id
-									(wm-key-arg ?wm-fact:key gate)
-									(wm-key-arg ?wm-fact:key com)
-									?wm-fact3:value ; quantity-requested
-									?wm-fact4:value ; quantity-delivered
-									?wm-fact5:value ; begin
-									?wm-fact6:value ; end
-									?team-color)))
 	)
 	(return ?rv)
 )
@@ -276,7 +287,6 @@
   ; (not (plan-requested))
   ; (test (eq ?*ROBOT-NAME* "R-1"))
 =>
-  (printout t "Call smt plugin" crlf)
 	(bind ?p
 	  (smt-create-data
 		  (smt-create-robots ?team-color)
