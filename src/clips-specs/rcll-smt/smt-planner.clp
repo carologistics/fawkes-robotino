@@ -146,7 +146,13 @@
 			(wm-key-prefix ?wm-fact2:key (create$ domain fact mps-type))
 			(eq (wm-key-arg ?wm-fact:key m) (wm-key-arg ?wm-fact2:key m))
 		)
-		(bind ?rv (append$ ?rv (smt-create-machine (wm-key-arg ?wm-fact:key m) (wm-key-arg ?wm-fact2:key t) (wm-key-arg ?wm-fact:key s) ?team-color 0 0))) ; TODO Do we only have access to machines from our team?
+		(bind ?rv (append$ ?rv (smt-create-machine
+									(wm-key-arg ?wm-fact:key m) ; name
+									(wm-key-arg ?wm-fact2:key t) ; type
+									(wm-key-arg ?wm-fact:key s) ; state
+									?team-color
+									0 ; pose-x
+									0))) ; pose-y
 	)
 	(return ?rv)
 )
