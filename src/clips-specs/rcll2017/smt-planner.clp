@@ -166,20 +166,20 @@
 	(pb-set-field ?o "delivery_period_end" ?end)
 
 	; Extract order-base-color
-	(do-for-all-facts ((?wm-fact wm-fact))
+	(do-for-fact ((?wm-fact wm-fact))
 		(and
 			(wm-key-prefix ?wm-fact:key (create$ domain fact order-base-color))
 			(eq ?id (wm-key-arg ?wm-fact:key ord))
 		)
-		(pb-set-field ?o "cap_color" (wm-key-arg ?wm-fact:key col))
+		(pb-set-field ?o "base_color" (wm-key-arg ?wm-fact:key col))
 	)
 	; Extract order-cap-color
-	(do-for-all-facts ((?wm-fact wm-fact))
+	(do-for-fact ((?wm-fact wm-fact))
 		(and
 			(wm-key-prefix ?wm-fact:key (create$ domain fact order-cap-color))
 			(eq ?id (wm-key-arg ?wm-fact:key ord))
 		)
-		(pb-set-field ?o "base_color" (wm-key-arg ?wm-fact:key col))
+		(pb-set-field ?o "cap_color" (wm-key-arg ?wm-fact:key col))
 	)
 
 	; Extract order-ring-color
