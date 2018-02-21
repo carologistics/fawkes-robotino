@@ -267,3 +267,31 @@
   (bind ?rv (append$ ?rv (smt-create-ring "RING_YELLOW" 0)))
   (return ?rv)
 )
+
+; Call plugin clips-smt
+(defrule production-call-clips-smt
+  (goal (id COMPLEXITY))
+  ; (phase PRODUCTION)
+  ; (team-color ?team-color&CYAN|MAGENTA)
+  ; (state IDLE)
+  ; (not (plan-requested))
+  ; (test (eq ?*ROBOT-NAME* "R-1"))
+  ; (exists (machine))
+  ; (exists (order))
+  ; (exists (ring))
+  ; (exists (ring-station))
+  ; (exists (order (complexity C3)))
+=>
+	(bind ?p
+	  (smt-create-data
+		  (smt-create-robots ?team-color)
+		  (smt-create-additional-robots ?team-color)
+	    (smt-create-machines ?team-color)
+	    (smt-create-orders ?team-color)
+      (smt-create-rings ?team-color)
+	  )
+	)
+
+	(smt-request "test" ?p)
+	; (assert (plan-requested))
+)
