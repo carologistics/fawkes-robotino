@@ -199,18 +199,29 @@
 
 	; Extract order-ring-color
 	(bind ?rlist (create$))
-	(do-for-all-facts ((?wm-fact wm-fact))
+	; order-ring1-color
+	(do-for-fact ((?wm-fact wm-fact))
 		(and
-			(wm-key-prefix ?wm-fact:key (create$ domain fact order-ring1-color)) ;(sym-cat order- ring ?p-index -color))) TODO Add loop over numbers 1-3
+			(wm-key-prefix ?wm-fact:key (create$ domain fact order-ring1-color))
 			(eq ?id (wm-key-arg ?wm-fact:key ord))
 		)
-	  (switch (wm-key-arg ?wm-fact:key col)
-		(case GREEN then (bind ?rlist (append$ ?rlist "RING_GREEN")))
-		(case BLUE then (bind ?rlist (append$ ?rlist "RING_BLUE")))
-		(case ORANGE then (bind ?rlist (append$ ?rlist "RING_ORANGE")))
-		(case YELLOW then (bind ?rlist (append$ ?rlist "RING_YELLOW")))
-		(default (printout warn "Ring color not found" crlf))
-	  )
+		(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+	)
+	; order-ring2-color
+	(do-for-fact ((?wm-fact wm-fact))
+		(and
+			(wm-key-prefix ?wm-fact:key (create$ domain fact order-ring2-color))
+			(eq ?id (wm-key-arg ?wm-fact:key ord))
+		)
+		(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+	)
+	; order-ring3-color
+	(do-for-fact ((?wm-fact wm-fact))
+		(and
+			(wm-key-prefix ?wm-fact:key (create$ domain fact order-ring3-color))
+			(eq ?id (wm-key-arg ?wm-fact:key ord))
+		)
+		(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
 	)
 	(foreach ?rings ?rlist
 	 (pb-add-list ?o "ring_colors" ?rings)
