@@ -255,13 +255,7 @@
   (printout t "Creating Data msgs:: Ring color " ?ring-color  crlf)
   (bind ?r (pb-create "llsf_msgs.Ring"))
   (pb-set-field ?r "raw_material" ?req-bases)
-  (switch ?ring-color
-    (case GREEN then (pb-set-field ?r "ring_color" "RING_GREEN"))
-    (case BLUE then (pb-set-field ?r "ring_color" "RING_BLUE"))
-    (case ORANGE then (pb-set-field ?r "ring_color" "RING_ORANGE"))
-    (case YELLOW then (pb-set-field ?r "ring_color" "RING_YELLOW"))
-    (default (printout warn "Ring color not found" crlf))
-    )
+  (pb-set-field ?r "ring_color" ?ring-color)
   (return ?r)
 )
 
