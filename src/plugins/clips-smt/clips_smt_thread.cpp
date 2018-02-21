@@ -1143,20 +1143,20 @@ ClipsSmtThread::clips_smt_fill_order_details()
 	logger->log_info(name(), "Extract details about order to pursue");
 
 	// Goal strategy pick last one of desired complexity
-	int desired_complexity = 3;
+	int desired_complexity = 0;
 	for(int i=0; i<number_orders_protobuf; ++i) {
 		if(data.orders(i).complexity() == desired_complexity) {
 
 			// base and cap information is only needed for product description and can be kept in its orginal form
 			// rings information has to be decrease in order to access the number_required_bases map correctly
 			base_order = data.orders(i).base_color();
-			rings_order[0] = data.orders(i).ring_colors(0);
-			rings_order[1] = data.orders(i).ring_colors(1);
-			rings_order[2] = data.orders(i).ring_colors(2);
+			// rings_order[0] = data.orders(i).ring_colors(0);
+			// rings_order[1] = data.orders(i).ring_colors(1);
+			// rings_order[2] = data.orders(i).ring_colors(2);
 			cap_order = data.orders(i).cap_color();
 			
 			order_id = i;
-			number_orders_c3 = 1;
+			number_orders_c0 = 1;
 		}
 	}
 	
@@ -1774,7 +1774,7 @@ ClipsSmtThread::clips_smt_encoder(std::map<std::string, z3::expr>& varStartTime,
 		z3::expr constraint_inter11(constraint_dependency10);
 		z3::expr constraint_inter12(constraint_dependency11);
 		z3::expr constraint_inter13(constraint_dependency12);
-		z3::expr constraint_inter4(constraint_dependency13 && constraint_dependency1 && constraint_dependency2); 
+		z3::expr constraint_inter4(constraint_dependency3 && constraint_dependency1 && constraint_dependency2); 
 		z3::expr constraint_inter5(constraint_dependency4);
 		z3::expr constraint_inter6(constraint_dependency5);
 
