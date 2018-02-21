@@ -286,17 +286,13 @@
 ; Call plugin clips-smt
 (defrule production-call-clips-smt
   (goal (id COMPLEXITY))
-  ; (phase PRODUCTION)
-  ; (team-color ?team-color&CYAN|MAGENTA)
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
   ; (state IDLE)
   ; (not (plan-requested))
   ; (test (eq ?*ROBOT-NAME* "R-1"))
-  ; (exists (machine))
-  ; (exists (order))
-  ; (exists (ring))
-  ; (exists (ring-station))
-  ; (exists (order (complexity C3)))
 =>
+  (printout t "Call smt plugin" crlf)
 	(bind ?p
 	  (smt-create-data
 		  (smt-create-robots ?team-color)
