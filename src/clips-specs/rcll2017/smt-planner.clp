@@ -177,10 +177,7 @@
 			(wm-key-prefix ?wm-fact:key (create$ domain fact order-base-color))
 			(eq ?id (wm-key-arg ?wm-fact:key ord))
 		)
-		(switch (wm-key-arg ?wm-fact:key col)
-		  (case BLACK then (pb-set-field ?o "cap_color" "CAP_BLACK"))
-		  (case GREY then (pb-set-field ?o "cap_color" "CAP_GREY"))
-		  (default (printout warn "Cap color not found" crlf))
+		(pb-set-field ?o "cap_color" (wm-key-arg ?wm-fact:key col))
 		)
 	)
 	; Extract order-cap-color
@@ -189,12 +186,7 @@
 			(wm-key-prefix ?wm-fact:key (create$ domain fact order-cap-color))
 			(eq ?id (wm-key-arg ?wm-fact:key ord))
 		)
-		(switch (wm-key-arg ?wm-fact:key col)
-		  (case BLACK then (pb-set-field ?o "base_color" "BASE_BLACK"))
-		  (case RED then (pb-set-field ?o "base_color" "BASE_RED"))
-		  (case SILVER then (pb-set-field ?o "base_color" "BASE_SILVER"))
-		  (default (printout warn "Base color not found" crlf))
-		) 
+		(pb-set-field ?o "base_color" (wm-key-arg ?wm-fact:key col))
 	)
 
 	; Extract order-ring-color
