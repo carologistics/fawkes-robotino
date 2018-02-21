@@ -9,8 +9,8 @@ fawkes/meta_plugins:
   m-bare: bbsync,static-transforms,webview
   m-fv: fvbase,fvfountain
   m-fv-vision: m-bare,m-fv,tag_vision,fvretriever
-  m-clips: clips,clips-motor-switch,clips-protobuf,clips-webview,clips-navgraph,clips-tf
-  m-clips-agent: m-clips,m-fv-vision,clips-agent,webtools-bridge,clips-smt
+  m-clips: clips,clips-motor-switch,clips-protobuf,clips-webview,clips-navgraph,clips-tf,clips-smt
+  m-clips-agent: m-clips,m-fv-vision,clips-agent,webtools-bridge
   m-skiller: ros,m-fv-vision,navgraph,navgraph-generator,navgraph-generator-mps,skiller,realsense,conveyor-pose,ros-pcl
   m-robot-memory: mongodb,robot-memory
   m-full: m-skiller,m-clips-agent
@@ -26,7 +26,7 @@ fawkes/meta_plugins:
   gazsim-organization: gazebo,gazsim-comm,gazsim-llsfrbcomm
   gazsim-meta-clips: m-clips,clips-smt,clips-agent
   gazsim-meta-agent: gazsim-meta-clips
-  gazsim-meta-clips-exec: m-clips,m-robot-memory,pddl-robot-memory,clips_robot_memory,clips-pddl-parser,pddl-planner,clips-executive#,clips-smt
+  gazsim-meta-clips-exec: m-clips,m-robot-memory,pddl-robot-memory,clips_robot_memory,clips-pddl-parser,pddl-planner,clips-executive
  
   #
   # Robotino base meta plugin
