@@ -221,21 +221,25 @@
 
 (deffunction smt-create-orders (?team-color)
 	(bind ?rv (create$))
-	(do-for-all-facts ((?wm-fact wm-fact) (?wm-fact2 wm-fact))
+	(do-for-all-facts ((?wm-fact wm-fact) (?wm-fact2 wm-fact) (?wm-fact3 wm-fact) (?wm-fact4 wm-fact) (?wm-fact5 wm-fact) (?wm-fact6 wm-fact))
 		(and
 			(wm-key-prefix ?wm-fact:key (create$ domain fact order-complexity))
 			(wm-key-prefix ?wm-fact2:key (create$ domain fact order-gate))
 			(eq (wm-key-arg ?wm-fact:key ord) (wm-key-arg ?wm-fact2:key ord))
+			(eq ?wm-fact3:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) quantity-requested))
+			(eq ?wm-fact4:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) quantity-delivered))
+			(eq ?wm-fact5:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) delivery-begin))
+			(eq ?wm-fact6:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) delivery-end))
 		)
 		(bind ?rv (append$ ?rv (smt-create-order
 									(wm-key-arg ?wm-fact:key ord) ; order-id
 									(wm-key-arg ?wm-fact:key ord) ; order-product-id TODO What is the difference
 									(wm-key-arg ?wm-fact:key gate)
 									(wm-key-arg ?wm-fact:key com)
-									1 ; quantity-requested
-									0 ; quantity-delivered
-									0 ; begin
-									900 ; end
+									?wm-fact3:value ; quantity-requested
+									?wm-fact4:value ; quantity-delivered
+									?wm-fact5:value ; begin
+									?wm-fact6:value ; end
 									?team-color)))
 	)
 	(return ?rv)
