@@ -76,6 +76,7 @@
 	(return ?p)
 )
 
+; Add robot information from worldmodel to protobuf
 (deffunction smt-create-robot (?name ?team-color ?number ?pose-x ?pose-y)
 	(bind ?r (pb-create "llsf_msgs.Robot"))
 	(pb-set-field ?r "name" ?name)
@@ -106,6 +107,7 @@
 	(return ?rv)
 )
 
+; Add machine information from worldmodel to protobuf
 (deffunction smt-create-machine (?name ?mtype ?state ?team-color ?pose-x ?pose-y)
 	(bind ?m (pb-create "llsf_msgs.Machine"))
 	(pb-set-field ?m "name" (str-cat ?name))
@@ -149,6 +151,7 @@
 	(return ?rv)
 )
 
+; Add order information from worldmodel to protobuf
 (deffunction smt-create-order (?id ?gate ?complexity ?q-req ?q-del ?begin ?end ?team-color)
   (printout t "Creating Data msgs:: Order with id " ?id  crlf)
   (bind ?o (pb-create "llsf_msgs.Order"))
@@ -251,6 +254,7 @@
 	(return ?rv)
 )
 
+; Add ring information from worldmodel to protobuf
 (deffunction smt-create-ring (?ring-color ?req-bases)
   (printout t "Creating Data msgs:: Ring color " ?ring-color  crlf)
   (bind ?r (pb-create "llsf_msgs.Ring"))
