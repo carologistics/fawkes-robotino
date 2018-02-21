@@ -155,7 +155,7 @@
 	(return ?rv)
 )
 
-(deffunction smt-create-order (?id ?product-id ?gate ?complexity ?q-req ?q-del ?begin ?end ?team-color)
+(deffunction smt-create-order (?id ?gate ?complexity ?q-req ?q-del ?begin ?end ?team-color)
   (printout t "Creating Data msgs:: Order with id " ?id  crlf)
   (bind ?o (pb-create "llsf_msgs.Order"))
 	(pb-set-field ?o "id" ?id)
@@ -236,7 +236,6 @@
 		)
 		(bind ?rv (append$ ?rv (smt-create-order
 									(wm-key-arg ?wm-fact:key ord) ; order-id
-									(wm-key-arg ?wm-fact:key ord) ; order-product-id TODO What is the difference
 									(wm-key-arg ?wm-fact:key gate)
 									(wm-key-arg ?wm-fact:key com)
 									?wm-fact3:value ; quantity-requested
