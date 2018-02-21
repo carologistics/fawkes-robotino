@@ -257,8 +257,13 @@
 
 (deffunction smt-create-rings (?team-color)
   (bind ?rv (create$))
-  (do-for-all-facts ((?r ring)) TRUE
-    (bind ?rv (append$ ?rv (smt-create-ring ?r:color ?r:req-bases)))
-  )
+  ; (do-for-all-facts ((?r ring)) TRUE
+  ;   (bind ?rv (append$ ?rv (smt-create-ring ?r:color ?r:req-bases)))
+  ; )
+  ; TODO Replace fix call by real data
+  (bind ?rv (append$ ?rv (smt-create-ring "RING_GREEN" 2)))
+  (bind ?rv (append$ ?rv (smt-create-ring "RING_BLUE" 1)))
+  (bind ?rv (append$ ?rv (smt-create-ring "RING_ORANGE" 0)))
+  (bind ?rv (append$ ?rv (smt-create-ring "RING_YELLOW" 0)))
   (return ?rv)
 )
