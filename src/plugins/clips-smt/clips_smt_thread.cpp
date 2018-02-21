@@ -1127,7 +1127,7 @@ ClipsSmtThread::clips_smt_fill_general_info()
 	logger->log_info(name(), "Extract general information");
 
 	// Extract constants
-	number_robots = data.robots().size()-1;
+	number_robots = data.robots().size();
 	number_machines = 10; // data.machines().size();
 	number_orders_protobuf = data.orders().size();
 
@@ -1373,7 +1373,7 @@ ClipsSmtThread::clips_smt_compute_distances_robots()
 	MutexLocker lock(navgraph.objmutex_ptr());
 
 	// Compute distances between robotos positions and machines
-	for(int r = 0; r < number_robots+1; ++r){
+	for(int r = 0; r < number_robots; ++r){
 		if(data.robots(r).name().compare("R-1")==0 || data.robots(r).name().compare("R-2")==0 || data.robots(r).name().compare("R-3")==0) { // Avoid robot 'RefBox'
 			NavGraphNode robot_node(data.robots(r).name().c_str(), data.robots(r).pose().x(), data.robots(r).pose().y());
 			NavGraphNode from = navgraph->closest_node(robot_node.x(), robot_node.y());
