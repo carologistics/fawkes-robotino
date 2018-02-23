@@ -1,0 +1,76 @@
+Note on old clips agent (rcll2017)
+
+
+Migration Road Map:
+	1- Translate old agents Steps and their corresponding worldmodel effects into Actions
+		Map into existing Action / Create new Actions if needed
+	2- Translate Tasks into Plans
+	3- Create Goals
+	4- static goal sequence for testing
+	5- Dynamic Goal Reasoning
+	6- Multiple Agents Coordination
+	7- WorldModel Sync across agents
+
+
+Task names:
+	clear-bs
+	clear-cs
+	clear-rs
+	fill-cap
+	fill-rs
+	produce-c0
+	produce-cx
+	add-first-ring
+	add-additional-ring
+	deliver
+	discard-unknown
+	exploration-catch-up
+
+
+Mapping: From Steps to Actions
+
+
+	Step drive to 			--> (:action  move-wp-get
+							Or
+							--> (:action  move-wp-put
+
+		Those actions u need to to/from locations to be an mps and its side
+		Be careful, To be able to go to any random location or a waiting point
+		something else needs to come in moiled.
+
+
+
+	Step get-from-shelf  	--> (:action wp-get-shelf
+									(?r - robot ?cc - cap-carrier ?m - mps ?spot - shelf-spot)
+
+		BEHAVIOR: The main difference in behaviour is that the step includes in it the calculation of which
+		shelf position should be used.. so it is more dynamic. While the Action needs this information
+		to be determined before calling the action.
+		Also the workpeice id in the Action needs to be there before the action calling. Whereas in
+		the step a 'product' with random id is generated upon completion
+
+
+	Step-get							--> (:action wp-get
+
+	Step-insert-start 					1-> (:action wp-put
+												(?r - robot ?from - location ?from-side - mps-side ?to - mps)
+
+		BEHAVIOR: of being already at the mps (for example when picking up from shelf) is left out.
+		I can have another action for that later on or a pass it as a parameter.
+		(ie, driving smoothly in a sliding move from the shelf to the input field)
+
+		In the old agent, depending on the Task that this 'Insert' Step was part of, effects to the world model would
+		differ. Those are models by the following exogenous actions.
+		[TASK: fill-cap]  				2-> (:action cs-retrieve-cap
+		[TASK: add-first-ring 			2-> (:action rs-mount-ring1
+			|add-additional-ring]		2-> (:action rs-mount-ring2
+											&&  (:action rs-mount-ring3
+				What is still missing in the modelling here is that checking and consuming of
+				the bases needed for that ring. Need to do this soon. But for a first C0
+				production that is enough
+
+		[TASK produce-c0|produce-cx] 	2-> (:action cs-mount-cap
+		[TASK deliver] 					2-> (:action  fulfill-order-c0
+										2-> (:action  fulfill-order-c1
+										2-> (:action  fulfill-order-c2
+										2-> (:action  fulfill-order-c3
