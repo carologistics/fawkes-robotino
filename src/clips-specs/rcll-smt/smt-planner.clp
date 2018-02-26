@@ -309,6 +309,7 @@
 (defrule production-smt-plan-completed
 	(smt-plan-complete ?handle)
 	  ?g <- (goal (id COMPLEXITY) (mode SELECTED))
+  (wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
 	=>
 	(printout t "SMT plan handle completed " ?handle  crlf)
 	(assert
@@ -318,6 +319,13 @@
 
 	(printout t "Plan: " (pb-tostring ?plans) crlf)
 
+	(bind ?from START)
+	(bind ?from-side INPUT)
+	(assert
+		 (plan-action (id 99) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+									(action-name enter-field)
+									(param-names r team-color) (param-values R-1 ?team-color))
+	)
 	(progn$ (?ap (pb-field-list ?plans "plans"))
 		; ?ap is of type ActorSpecificPlan
 		(bind ?actor-name (pb-field-value ?ap "actor_name"))
@@ -354,7 +362,7 @@
                 (bind ?to (pb-field-value ?arg "value"))
 				(bind ?to-splitted (str-split ?to "-"))
 				(bind ?to (str-join "-" (subseq$ ?to-splitted 1 2)))
-				(bind ?side (if (eq (nth$ 3 ?to-splitted) "I") then INPUT else OUTPUT))
+				(bind ?to-side (if (eq (nth$ 3 ?to-splitted) "I") then INPUT else OUTPUT))
                else
                 (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
               )
@@ -366,40 +374,42 @@
             ; (assert (step (name drive-to) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?to) (side ?side) (actor ?action-specific-actor)))
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name visit)
-											(param-names to) (param-values ?to))
+											(action-name move)
+											(param-names r from from-side to to-side) (param-values (string-to-field ?action-specific-actor) ?from ?from-side (string-to-field ?to) ?to-side))
 			)
+			(bind ?from (string-to-field ?to))
+			(bind ?from-side ?to-side)
             (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Driving to: " ?to " at: " ?side crlf)
           )
-          ;ACTION:::::GET FROM SHELF::::::
-          (case "retrieve_shelf" then
-            (bind ?mps "")
-            (bind ?side "")
-            (bind ?shelf FALSE)
-            (bind ?action-specific-actor "")
-            (bind ?action-id (pb-field-value ?a "id"))
-            (if (pb-has-field ?a "actor") 
-              then
-              (bind ?action-specific-actor (pb-field-value ?a "actor"))
-            )
-            (bind ?parents-ids (create$)) 
-            (progn$ (?arg (pb-field-list ?a "parent_id"))
-              (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-            )
-            (progn$ (?arg (pb-field-list ?a "params"))
-              (if (eq (pb-field-value ?arg "key") "mps") then
-                (bind ?mps (pb-field-value ?arg "value"))
+		  ;ACTION:::::GET FROM SHELF::::::
+		  (case "retrieve_shelf" then
+			(bind ?mps "")
+			(bind ?side "")
+			(bind ?shelf FALSE)
+			(bind ?action-specific-actor "")
+			(bind ?action-id (pb-field-value ?a "id"))
+			(if (pb-has-field ?a "actor") 
+			  then
+			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
+			)
+			(bind ?parents-ids (create$)) 
+			(progn$ (?arg (pb-field-list ?a "parent_id"))
+			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+			)
+			(progn$ (?arg (pb-field-list ?a "params"))
+			  (if (eq (pb-field-value ?arg "key") "mps") then
+				(bind ?mps (pb-field-value ?arg "value"))
 				(bind ?mps-splitted (str-split ?mps "-"))
 				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
 				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-               else
-                (if (eq (pb-field-value ?arg "key") "shelf") then
-                  (bind ?shelf (pb-field-value ?arg "value"))
-                 else
-                  (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
-                )
-              )
-            )
+			   else
+				(if (eq (pb-field-value ?arg "key") "shelf") then
+				  (bind ?shelf (pb-field-value ?arg "value"))
+				 else
+				  (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+				)
+			  )
+			)
 			(if (and (neq ?shelf "FALSE")
 					; (any-factp ((?machine machine)) (and (eq ?machine:name (string-to-field ?mps))  (eq ?machine:mtype CS)))
 					(any-factp ((?wm-fact wm-fact))
@@ -424,31 +434,31 @@
 			else
 			  (printout t "Wrong Parameters passed to retrive_shelf Action (mps:" ?mps "side:" ?side "shelf:" ?shelf ")" crlf)
 			)
-          )
-          ;ACTION:::::RETRIVE::::::
-          (case "retrieve" then
-            (bind ?mps "")
-            (bind ?side "")
-            (bind ?action-specific-actor "")
-            (bind ?action-id (pb-field-value ?a "id"))
-            (if (pb-has-field ?a "actor") 
-              then
-              (bind ?action-specific-actor (pb-field-value ?a "actor"))
-            )
-            (bind ?parents-ids (create$)) 
-            (progn$ (?arg (pb-field-list ?a "parent_id"))
-              (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-            )
-            (progn$ (?arg (pb-field-list ?a "params"))
-              (if (eq (pb-field-value ?arg "key") "mps") then
-                (bind ?mps (pb-field-value ?arg "value"))
+		  )
+		  ;ACTION:::::RETRIVE::::::
+		  (case "retrieve" then
+			(bind ?mps "")
+			(bind ?side "")
+			(bind ?action-specific-actor "")
+			(bind ?action-id (pb-field-value ?a "id"))
+			(if (pb-has-field ?a "actor") 
+			  then
+			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
+			)
+			(bind ?parents-ids (create$)) 
+			(progn$ (?arg (pb-field-list ?a "parent_id"))
+			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+			)
+			(progn$ (?arg (pb-field-list ?a "params"))
+			  (if (eq (pb-field-value ?arg "key") "mps") then
+				(bind ?mps (pb-field-value ?arg "value"))
 				(bind ?mps-splitted (str-split ?mps "-"))
 				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
 				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-              else
-                (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
-              )
-            )
+			  else
+				(printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+			  )
+			)
 			(if ;(any-factp ((?machine machine)) (and (eq ?machine:name (string-to-field ?mps))  (eq ?machine:mtype BS)))
 				(any-factp ((?wm-fact wm-fact))
 					(and 
@@ -481,89 +491,89 @@
 			  (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Retrieving Output from: " ?mps " side: " ?side crlf)
 
 			)
-          )
-          ;ACTION:::::FEED::::::
-          (case "feed" then
-            (bind ?mps "")
-            (bind ?side "")
-            (bind ?action-specific-actor "")
-            (bind ?action-id (pb-field-value ?a "id"))
-            (bind ?machine-feature CONVEYOR)
-            (if (pb-has-field ?a "actor") 
-              then
-              (bind ?action-specific-actor (pb-field-value ?a "actor"))
-            )
-            (bind ?parents-ids (create$)) 
-            (progn$ (?arg (pb-field-list ?a "parent_id"))
-              (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-            )
-            (progn$ (?arg (pb-field-list ?a "params"))
-              (if (eq (pb-field-value ?arg "key") "mps") then
-                (bind ?mps (pb-field-value ?arg "value"))
+		  )
+		  ;ACTION:::::FEED::::::
+		  (case "feed" then
+			(bind ?mps "")
+			(bind ?side "")
+			(bind ?action-specific-actor "")
+			(bind ?action-id (pb-field-value ?a "id"))
+			(bind ?machine-feature CONVEYOR)
+			(if (pb-has-field ?a "actor") 
+			  then
+			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
+			)
+			(bind ?parents-ids (create$)) 
+			(progn$ (?arg (pb-field-list ?a "parent_id"))
+			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+			)
+			(progn$ (?arg (pb-field-list ?a "params"))
+			  (if (eq (pb-field-value ?arg "key") "mps") then
+				(bind ?mps (pb-field-value ?arg "value"))
 				(bind ?mps-splitted (str-split ?mps "-"))
 				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
 				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-              else
-                (if (eq (pb-field-value ?arg "key") "slide") then
-                  (bind ?slide (pb-field-value ?arg "value"))
-                  (bind ?machine-feature (if (eq ?slide "true") then SLIDE else CONVEYOR))
-                else
-                  (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
-                )
-              )
-            )
-            ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-            (bind ?next-step-id (* ?action-id 100))
-            (bind ?steps (append$ ?steps ?next-step-id))
-            ; (assert (step (name insert) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (machine-feature ?machine-feature) (already-at-mps FALSE) (actor ?action-specific-actor) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
+			  else
+				(if (eq (pb-field-value ?arg "key") "slide") then
+				  (bind ?slide (pb-field-value ?arg "value"))
+				  (bind ?machine-feature (if (eq ?slide "true") then SLIDE else CONVEYOR))
+				else
+				  (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+				)
+			  )
+			)
+			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+			(bind ?next-step-id (* ?action-id 100))
+			(bind ?steps (append$ ?steps ?next-step-id))
+			; (assert (step (name insert) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (machine-feature ?machine-feature) (already-at-mps FALSE) (actor ?action-specific-actor) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 											(action-name insert)
 											(param-names to) (param-values ?mps))
 			)
-            (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Brining Product to: " ?mps " at: " ?side crlf)
-          )
-          ;ACTION:::::Discard::::::
-          (case "discard" then
-            (bind ?action-specific-actor "")
-            (bind ?action-id (pb-field-value ?a "id"))
-            (if (pb-has-field ?a "actor") 
-              then
-              (bind ?action-specific-actor (pb-field-value ?a "actor"))
-            )
-            ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-            (bind ?next-step-id (* ?action-id 100))
-            (bind ?steps (append$ ?steps ?next-step-id))
-            ; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
+			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Brining Product to: " ?mps " at: " ?side crlf)
+		  )
+		  ;ACTION:::::Discard::::::
+		  (case "discard" then
+			(bind ?action-specific-actor "")
+			(bind ?action-id (pb-field-value ?a "id"))
+			(if (pb-has-field ?a "actor") 
+			  then
+			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
+			)
+			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+			(bind ?next-step-id (* ?action-id 100))
+			(bind ?steps (append$ ?steps ?next-step-id))
+			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 											(action-name discard))
 			)
-            (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] discarding Product to" crlf)
-          )
-          ;ACTION:::::PREPARE::::::
-          (case "prepare" then
-            (bind ?mps "")
-            (bind ?side "")
-            (bind ?mps-type "")
-            (bind ?operation "")
-            (bind ?gate "")
-            (bind ?action-specific-actor "")
-            (bind ?action-id (pb-field-value ?a "id"))
-            (bind ?goal-id "")
-            (if (pb-has-field ?a "actor") 
-              then
-              (bind ?action-specific-actor (pb-field-value ?a "actor"))
-            )
-            (if (pb-has-field ?a "goal_id") 
-              then
-              (bind ?goal-id (pb-field-value ?a "goal_id"))
-            )
-            (bind ?parents-ids (create$)) 
-            (progn$ (?arg (pb-field-list ?a "parent_id"))
-              (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-            )
-            (progn$ (?arg (pb-field-list ?a "params"))
+			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] discarding Product to" crlf)
+		  )
+		  ;ACTION:::::PREPARE::::::
+		  (case "prepare" then
+			(bind ?mps "")
+			(bind ?side "")
+			(bind ?mps-type "")
+			(bind ?operation "")
+			(bind ?gate "")
+			(bind ?action-specific-actor "")
+			(bind ?action-id (pb-field-value ?a "id"))
+			(bind ?goal-id "")
+			(if (pb-has-field ?a "actor") 
+			  then
+			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
+			)
+			(if (pb-has-field ?a "goal_id") 
+			  then
+			  (bind ?goal-id (pb-field-value ?a "goal_id"))
+			)
+			(bind ?parents-ids (create$)) 
+			(progn$ (?arg (pb-field-list ?a "parent_id"))
+			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+			)
+			(progn$ (?arg (pb-field-list ?a "params"))
 			  (if (eq (pb-field-value ?arg "key") "mps") then
 				(bind ?mps (pb-field-value ?arg "value"))
 				(bind ?mps-splitted (str-split ?mps "-"))
@@ -650,8 +660,8 @@
 				)
 			  )
 			)
-            (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Instructing to: " ?mps " at: " ?side crlf)
-          )
+			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Instructing to: " ?mps " at: " ?side crlf)
+		  )
 		)
 
 					; (default (printout warn "Unknown action " ?actname crlf))
