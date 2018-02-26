@@ -31,6 +31,21 @@
   (modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-enter-field
+  ?g <- (goal (mode SELECTED) (id ENTER-FIELD))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact robot-waiting args? r ?robot) (value TRUE))
+=>
+  (assert
+    (plan (id ENTER-FIELD-PLAN) (goal-id ENTER-FIELD))
+    (plan-action (id 1) (plan-id ENTER-FIELD-PLAN) (duration 0.0)
+                                 (action-name enter-field)
+                                 (param-names r team-color)
+                                 (param-values ?robot ?team-color))
+    )
+  (modify ?g (mode EXPANDED))
+)
+
 (defrule goal-prefill-cap-station
  ?g <- (goal (mode SELECTED) (id FILL-CAP))
  =>
