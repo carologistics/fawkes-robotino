@@ -6,18 +6,32 @@
 )
 
 (defglobal
-	?*GOAL-MAX-TRIES* = 3
+  ?*GOAL-MAX-TRIES* = 3
 )
 
 ; #  Goal Creation
 (defrule goal-reasoner-create
-	(not (goal (id TESTGOAL)))
-	(not (goal-already-tried TESTGOAL))
-	=>
-	(assert (goal (id TESTGOAL)))
-	; This is just to make sure we formulate the goal only once.
-	; In an actual domain this would be more sophisticated.
-	(assert (goal-already-tried TESTGOAL))
+  (not (goal (id TESTGOAL)))
+  (not (goal-already-tried TESTGOAL))
+  =>
+  (assert (goal (id TESTGOAL)))
+  ; This is just to make sure we formulate the goal only once.
+  ; In an actual domain this would be more sophisticated.
+  (assert (goal-already-tried TESTGOAL))
+)
+
+(defrule goal-reasoner-create-enter-field
+  (not (goal (id ENTER-FIELD)))
+  (not (goal-already-tried ENTER-FIELD))
+  (wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
+  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
+  (wm-fact (key domain fact robot-waiting args? r ?robot))
+  (not (wm-fact (key domain fact entered-field args? r ?robot)))
+  =>
+  (assert (goal (id ENTER-FIELD)))
+  ; This is just to make sure we formulate the goal only once.
+  ; In an actual domain this would be more sophisticated.
+  (assert (goal-already-tried ENTER-FIELD))
 )
 
 ; ## Maintenance Goals
@@ -63,14 +77,16 @@
   (modify ?g (mode EXPANDED))
 )
 
+
+
 ; #  Goal Selection
 ; We can choose one or more goals for expansion, e.g., calling
 ; a planner to determine the required steps.
 (defrule goal-reasoner-select
-	?g <- (goal (id ?goal-id) (mode FORMULATED))
-	=>
-	(modify ?g (mode SELECTED))
-	(assert (goal-meta (goal-id ?goal-id)))
+  ?g <- (goal (id ?goal-id) (mode FORMULATED))
+  =>
+  (modify ?g (mode SELECTED))
+  (assert (goal-meta (goal-id ?goal-id)))
 )
 
 ; #  Commit to goal (we "intend" it)
@@ -78,9 +94,9 @@
 ; different planners. This step would allow to commit one out of these
 ; plans.
 (defrule goal-reasoner-commit
-	?g <- (goal (mode EXPANDED))
-	=>
-	(modify ?g (mode COMMITTED))
+  ?g <- (goal (mode EXPANDED))
+  =>
+  (modify ?g (mode COMMITTED))
 )
 
 ; #  Dispatch goal (action selection and execution now kick in)
@@ -89,9 +105,9 @@
 ; orders. It is then up to action selection and execution to determine
 ; what to do when.
 (defrule goal-reasoner-dispatch
-	?g <- (goal (mode COMMITTED))
-	=>
-	(modify ?g (mode DISPATCHED))
+  ?g <- (goal (mode COMMITTED))
+  =>
+  (modify ?g (mode DISPATCHED))
 )
 
 ; #  Goal Monitoring
