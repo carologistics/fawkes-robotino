@@ -415,6 +415,11 @@
 			  (bind ?next-step-id (* ?action-id 100))
 			  (bind ?steps (append$ ?steps ?next-step-id))
 			  ; (assert (step (name get-from-shelf) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (machine-feature SHELF) (actor ?action-specific-actor)))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name get-from-shelf)
+											(param-names to) (param-values ?mps))
+			)
 			  (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Retrieving from Shelf: " ?mps " at: " ?side " shelf: " ?shelf crlf)
 			else
 			  (printout t "Wrong Parameters passed to retrive_shelf Action (mps:" ?mps "side:" ?side "shelf:" ?shelf ")" crlf)
@@ -457,12 +462,22 @@
 			  (bind ?next-step-id (* ?action-id 100))
 			  (bind ?steps (append$ ?steps ?next-step-id))
 			  ; (assert (step (name get-base) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (base ?goal-base-color) (actor ?action-specific-actor) ))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name get-base)
+											(param-names to base) (param-values ?mps ?goal-base-color))
+			)
 			  (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Retrieving Base from: " ?mps " at: " ?side " Base-Color: " ?goal-base-color  crlf)
 			  else
 			  ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 			  (bind ?next-step-id (* ?action-id 100))
 			  (bind ?steps (append$ ?steps ?next-step-id))
 			  ; (assert (step (name get-output) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (actor ?action-specific-actor) ))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name get-output)
+											(param-names to) (param-values ?mps))
+			)
 			  (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Retrieving Output from: " ?mps " side: " ?side crlf)
 
 			)
@@ -501,6 +516,11 @@
             (bind ?next-step-id (* ?action-id 100))
             (bind ?steps (append$ ?steps ?next-step-id))
             ; (assert (step (name insert) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (machine-feature ?machine-feature) (already-at-mps FALSE) (actor ?action-specific-actor) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name insert)
+											(param-names to) (param-values ?mps))
+			)
             (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Brining Product to: " ?mps " at: " ?side crlf)
           )
           ;ACTION:::::Discard::::::
@@ -515,6 +535,10 @@
             (bind ?next-step-id (* ?action-id 100))
             (bind ?steps (append$ ?steps ?next-step-id))
             ; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name discard))
+			)
             (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] discarding Product to" crlf)
           )
           ;ACTION:::::PREPARE::::::
@@ -561,11 +585,21 @@
 								(bind ?next-step-id (* ?action-id 100))
 								(bind ?steps (append$ ?steps ?next-step-id))
 								; (assert (step (name instruct-mps) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (cs-operation retrieve_cap) (actor ?action-specific-actor) (goal-id ?goal-id) ))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name instruct-mps)
+											(param-names to cs-operation) (param-values ?mps retrieve_cap))
+			)
 						else
 						; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 					(bind ?next-step-id (* ?action-id 100))
 							(bind ?steps (append$ ?steps ?next-step-id))
 						; (assert (step (name instruct-mps) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (cs-operation mount_cap) (actor ?action-specific-actor) (goal-id ?goal-id) ))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name instruct-mps)
+											(param-names to cs-operation) (param-values ?mps mount_cap))
+			)
 						  )
 				else
 				  (if (eq (pb-field-value ?arg "key") "color") then
@@ -586,6 +620,11 @@
 					  (bind ?next-step-id (* ?action-id 100))
 						 (bind ?steps (append$ ?steps ?next-step-id))
 						  ; (assert (step (name instruct-mps) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (gate ?gate) (actor ?action-specific-actor) (goal-id ?goal-id) ))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name instruct-mps)
+											(param-names to) (param-values ?mps))
+			)
 					else
 					  (if (eq (pb-field-value ?arg "key") "ring_color") then
 						; (bind ?goal-ring-color (utils-remove-prefix (pb-field-value ?arg "value") ring_)) ;temp: the color of the base of the goal is recognized here
@@ -597,6 +636,11 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(bind ?steps (append$ ?steps ?next-step-id))
 						; (assert (step (name instruct-mps) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (ring ?goal-ring-color) (actor ?action-specific-actor) (goal-id ?goal-id)))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name instruct-mps)
+											(param-names to) (param-values ?mps))
+			)
 					  else  
 						(printout warn "unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
 					  )
