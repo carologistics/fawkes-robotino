@@ -392,7 +392,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value(node_names_[model_positions[i]]);
 					param = action->add_params();
 					param->set_key("shelf");
-					param->set_value("TRUE"); // TODO Replace TRUE by getNextShelf() once implemented
+					param->set_value(getNextShelf()); // TODO Replace TRUE by getNextShelf() once implemented
 
 					++action_id;
 					action = plan->add_actions();
