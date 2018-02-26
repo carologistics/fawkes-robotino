@@ -34,6 +34,20 @@
   (assert (goal-already-tried ENTER-FIELD))
 )
 
+(defrule goal-reasoner-create-fill-cap-goal
+	(not (goal (id FILL-CAP)))
+	(not (goal-already-tried FILL-CAP))
+	(wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
+	(wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
+	(wm-fact (key domain fact order-complexity args? ord O1 com C0) (type BOOL) (value TRUE))
+	(wm-fact (key domain fact entered-field args? r R-1))
+	=>
+	(assert (goal (id FILL-CAP)))
+	; This is just to make sure we formulate the goal only once.
+	; In an actual domain this would be more sophisticated.
+	(assert (goal-already-tried FILL-CAP))
+)
+
 ; ## Maintenance Goals
 (defrule goal-reasoner-create-beacon-maintain
   (not (goal (id BEACONMAINTAIN)))
