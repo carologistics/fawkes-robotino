@@ -352,9 +352,9 @@
             (progn$ (?arg (pb-field-list ?a "params"))
               (if (eq (pb-field-value ?arg "key") "to") then
                 (bind ?to (pb-field-value ?arg "value"))
-                ; (bind ?to-splitted (str-split ?to "-"))
-                ; (bind ?to (str-join "-" (subseq$ ?to-splitted 1 2)))
-                ; (bind ?side (if (eq (nth$ 3 ?to-splitted) "I") then INPUT else OUTPUT))
+				(bind ?to-splitted (str-split ?to "-"))
+				(bind ?to (str-join "-" (subseq$ ?to-splitted 1 2)))
+				(bind ?side (if (eq (nth$ 3 ?to-splitted) "I") then INPUT else OUTPUT))
                else
                 (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
               )
@@ -389,9 +389,9 @@
             (progn$ (?arg (pb-field-list ?a "params"))
               (if (eq (pb-field-value ?arg "key") "mps") then
                 (bind ?mps (pb-field-value ?arg "value"))
-                ; (bind ?mps-splitted (str-split ?mps "-"))
-                ; (bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-                ; (bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
+				(bind ?mps-splitted (str-split ?mps "-"))
+				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
                else
                 (if (eq (pb-field-value ?arg "key") "shelf") then
                   (bind ?shelf (pb-field-value ?arg "value"))
@@ -442,9 +442,9 @@
             (progn$ (?arg (pb-field-list ?a "params"))
               (if (eq (pb-field-value ?arg "key") "mps") then
                 (bind ?mps (pb-field-value ?arg "value"))
-                ; (bind ?mps-splitted (str-split ?mps "-"))
-                ; (bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-                ; (bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
+				(bind ?mps-splitted (str-split ?mps "-"))
+				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
               else
                 (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
               )
@@ -500,9 +500,9 @@
             (progn$ (?arg (pb-field-list ?a "params"))
               (if (eq (pb-field-value ?arg "key") "mps") then
                 (bind ?mps (pb-field-value ?arg "value"))
-                ; (bind ?mps-splitted (str-split ?mps "-"))
-                ; (bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-                ; (bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
+				(bind ?mps-splitted (str-split ?mps "-"))
+				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
               else
                 (if (eq (pb-field-value ?arg "key") "slide") then
                   (bind ?slide (pb-field-value ?arg "value"))
@@ -566,9 +566,9 @@
             (progn$ (?arg (pb-field-list ?a "params"))
 			  (if (eq (pb-field-value ?arg "key") "mps") then
 				(bind ?mps (pb-field-value ?arg "value"))
-				; (bind ?mps-splitted (str-split ?mps "-"))
-				; (bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-				; (bind ?side (if (eq (nth$ 3 ?mps-splitted) "i") then input else output))
+				(bind ?mps-splitted (str-split ?mps "-"))
+				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "i") then input else output))
 				; (do-for-fact ((?machine machine)) (eq ?machine:name ?mps)
 				(do-for-fact ((?wm-fact wm-fact))
 					(and 
@@ -603,7 +603,7 @@
 						  )
 				else
 				  (if (eq (pb-field-value ?arg "key") "color") then
-					; (bind ?goal-base-color (utils-remove-prefix (pb-field-value ?arg "value") base_)) ;temp: the color of the base of the goal is recognized here
+					(bind ?goal-base-color (utils-remove-prefix (pb-field-value ?arg "value") base_)) ;temp: the color of the base of the goal is recognized here
 					; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 					(bind ?next-step-id (- (* ?action-id 100) 1)) ;injected step (needs to be executed but does not come in the plan)
 					(bind ?steps (append$ ?steps ?next-step-id))
@@ -627,7 +627,7 @@
 			)
 					else
 					  (if (eq (pb-field-value ?arg "key") "ring_color") then
-						; (bind ?goal-ring-color (utils-remove-prefix (pb-field-value ?arg "value") ring_)) ;temp: the color of the base of the goal is recognized here
+						(bind ?goal-ring-color (utils-remove-prefix (pb-field-value ?arg "value") ring_)) ;temp: the color of the base of the goal is recognized here
 						; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 						; (bind ?next-step-id (- (* ?action-id 100) 1)) ;injected step (needs to be executed but does not come in the plan)
 						; (bind ?steps (append$ ?steps ?next-step-id))
