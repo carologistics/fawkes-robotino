@@ -422,8 +422,8 @@
 					(and
 						(wm-key-prefix ?wm-fact2:key (create$ domain fact wp-on-shelf))
 						(eq (wm-key-arg ?wm-fact:key m) (wm-key-arg ?wm-fact2:key m))
+						(eq (string-to-field ?shelf) (wm-key-arg ?wm-fact2:key spot))
 					)
-					(printout t "Found wm-fact2 with wp " (wm-key-arg ?wm-fact2:key wp) " m " (wm-key-arg ?wm-fact2:key m) "and spot " (wm-key-arg ?wm-fact2:key spot) crlf)
 					(bind ?next-step-id (* ?action-id 100))
 					(assert
 						 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
