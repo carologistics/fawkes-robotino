@@ -511,7 +511,7 @@
 											(action-name wp-put)
 											(param-names r wp m) (param-values (string-to-field ?action-specific-actor) ?wp (string-to-field ?mps)))
 			)
-			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Brining Product to: " ?mps " at: " ?side crlf)
+			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Bringing Product to: " ?mps " at: " ?side crlf)
 		  )
 		  ;ACTION:::::Discard::::::
 		  (case "discard" then
@@ -689,119 +689,7 @@
 			)
 			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Prepare RS" crlf)
 		  )
-		;   ;ACTION:::::PREPARE::::::
-		;   (case "prepare" then
-		;     (bind ?mps "")
-		;     (bind ?side "")
-		;     (bind ?mps-type "")
-		;     (bind ?operation "")
-		;     (bind ?gate "")
-		;     (bind ?action-specific-actor "")
-		;     (bind ?action-id (pb-field-value ?a "id"))
-		;     (bind ?goal-id "")
-		;     (if (pb-has-field ?a "actor") 
-		;       then
-		;       (bind ?action-specific-actor (pb-field-value ?a "actor"))
-		;     )
-		;     (if (pb-has-field ?a "goal_id") 
-		;       then
-		;       (bind ?goal-id (pb-field-value ?a "goal_id"))
-		;     )
-		;     (bind ?parents-ids (create$)) 
-		;     (progn$ (?arg (pb-field-list ?a "parent_id"))
-		;       (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-		;     )
-		;     (progn$ (?arg (pb-field-list ?a "params"))
-		;       (if (eq (pb-field-value ?arg "key") "mps") then
-		;         (bind ?mps (pb-field-value ?arg "value"))
-		;         (bind ?mps-splitted (str-split ?mps "-"))
-		;         (bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-		;         (bind ?side (if (eq (nth$ 3 ?mps-splitted) "i") then input else output))
-		;         ; (do-for-fact ((?machine machine)) (eq ?machine:name ?mps)
-		;         (do-for-fact ((?wm-fact wm-fact))
-		;             (and 
-		;                 (wm-key-prefix ?wm-fact:key (create$ domain fact mps-type))
-		;                 (eq (string-to-field ?mps) (wm-key-arg ?wm-fact:key m))
-		;             )
-		;             (bind ?mps-type (wm-key-arg ?wm-fact:key t))
-		;         )
-		;       else
-		;         (if (eq (pb-field-value ?arg "key") "operation") then
-		;           (bind ?operation (pb-field-value ?arg "value"))
-		;                   (if (eq ?operation "retrieve_cap") then
-		;             ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-		;                         (bind ?next-step-id (* ?action-id 100))
-		;                         (bind ?steps (append$ ?steps ?next-step-id))
-		;                         ; (assert (step (name instruct-mps) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (cs-operation retrieve_cap) (actor ?action-specific-actor) (goal-id ?goal-id) ))
-		;                     (assert
-		;                          (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-		;                                                     (action-name instruct-mps)
-		;                                                     (param-names to cs-operation) (param-values ?mps retrieve_cap))
-		;                     )
-		;                 else
-		;                 ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-		;             (bind ?next-step-id (* ?action-id 100))
-		;                     (bind ?steps (append$ ?steps ?next-step-id))
-		;                 ; (assert (step (name instruct-mps) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (cs-operation mount_cap) (actor ?action-specific-actor) (goal-id ?goal-id) ))
-		;                     (assert
-		;                          (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-		;                                                     (action-name instruct-mps)
-		;                                                     (param-names to cs-operation) (param-values ?mps mount_cap))
-		;                     )
-		;                   )
-		;         else
-		;           (if (eq (pb-field-value ?arg "key") "color") then
-		;             (bind ?goal-base-color (utils-remove-prefix (pb-field-value ?arg "value") base_)) ;temp: the color of the base of the goal is recognized here
-		;             ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-		;             (bind ?next-step-id (- (* ?action-id 100) 1)) ;injected step (needs to be executed but does not come in the plan)
-		;             (bind ?steps (append$ ?steps ?next-step-id))
-		;             ; (assert (step (name acquire-lock) (id ?next-step-id) (parents-ids ?parents-ids) (task-priority ?*priority-prefill-rs*) (lock prepare-bs) (actor ?action-specific-actor) (goal-id ?goal-id) )) ;is released after get-base
-		;             ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-		;             (bind ?next-step-id (* ?action-id 100))
-		;             (bind ?steps (append$ ?steps ?next-step-id))
-		;             ; (assert (step (name instruct-mps) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (base ?goal-base-color) (actor ?action-specific-actor) (goal-id ?goal-id) ))
-
-		;           else
-		;             (if (eq (pb-field-value ?arg "key") "gate") then
-		;                  (bind ?gate (string-to-field (pb-field-value ?arg "value")))
-		;               ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-		;               (bind ?next-step-id (* ?action-id 100))
-		;                  (bind ?steps (append$ ?steps ?next-step-id))
-		;                   ; (assert (step (name instruct-mps) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (gate ?gate) (actor ?action-specific-actor) (goal-id ?goal-id) ))
-		;                 (assert
-		;                      (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-		;                                                 (action-name instruct-mps)
-		;                                                 (param-names to) (param-values ?mps))
-		;                 )
-		;             else
-		;               (if (eq (pb-field-value ?arg "key") "ring_color") then
-		;                 (bind ?goal-ring-color (utils-remove-prefix (pb-field-value ?arg "value") ring_)) ;temp: the color of the base of the goal is recognized here
-		;                 ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-		;                 ; (bind ?next-step-id (- (* ?action-id 100) 1)) ;injected step (needs to be executed but does not come in the plan)
-		;                 ; (bind ?steps (append$ ?steps ?next-step-id))
-		;                 ; (assert (step (name acquire-lock) (id ?next-step-id) (parents-ids ?parents-ids) (task-priority ?*priority-prefill-rs*) (lock prepare-rs) (actor ?action-specific-actor) )) ;is released after get-base
-		;                 ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-		;                 (bind ?next-step-id (* ?action-id 100))
-		;                 (bind ?steps (append$ ?steps ?next-step-id))
-		;                 ; (assert (step (name instruct-mps) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (ring ?goal-ring-color) (actor ?action-specific-actor) (goal-id ?goal-id)))
-		;                 (assert
-		;                      (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-		;                                                 (action-name instruct-mps)
-		;                                                 (param-names to) (param-values ?mps))
-		;                 )
-		;               else  
-		;                 (printout warn "unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
-		;               )
-		;             )
-		;           )
-		;         )
-		;       )
-		;     )
-		;     (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Instructing to: " ?mps " at: " ?side crlf)
-		;   )
-		; )
-
-					; (default (printout warn "Unknown action " ?actname crlf))
+			(default (printout warn "Unknown action " ?actname crlf))
         )
 			)
 
