@@ -651,6 +651,44 @@
 			)
 			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Prepare CS with " ?operation crlf)
 		  )
+		  ;ACTION:::::Prepare_RS::::::
+		  (case "prepare-rs" then
+			(bind ?action-specific-actor "")
+			(bind ?m "")
+			(bind ?action-id (pb-field-value ?a "id"))
+			(if (pb-has-field ?a "actor") 
+			  then
+			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
+			)
+			(bind ?parents-ids (create$)) 
+			(progn$ (?arg (pb-field-list ?a "parent_id"))
+			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+			)
+			(progn$ (?arg (pb-field-list ?a "params"))
+			  (if (eq (pb-field-value ?arg "key") "mps") then
+				(bind ?mps (pb-field-value ?arg "value"))
+				(bind ?mps-splitted (str-split ?mps "-"))
+				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+			  else
+				  (if (eq (pb-field-value ?arg "key") "ring_color") then
+						(bind ?goal-ring-color (utils-remove-prefix (pb-field-value ?arg "value") ring_)) ;temp: the color of the base of the goal is recognized here
+
+					else
+						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+					)
+			  )
+			)
+			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+			(bind ?next-step-id (* ?action-id 100))
+			(bind ?steps (append$ ?steps ?next-step-id))
+			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name prepare-rs)
+											(param-names m rc) (param-values (string-to-field ?mps) (string-to-field ?goal-ring-color)))
+			)
+			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Prepare RS" crlf)
+		  )
 		;   ;ACTION:::::PREPARE::::::
 		;   (case "prepare" then
 		;     (bind ?mps "")
