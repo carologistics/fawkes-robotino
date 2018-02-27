@@ -504,7 +504,7 @@
 			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 			(bind ?next-step-id (* ?action-id 100))
 			(bind ?steps (append$ ?steps ?next-step-id))
-				(bind ?wp WP1) ; TODO use correct workpiece depending on mps
+			(bind ?wp WP1) ; TODO use correct workpiece depending on mps
 			; (assert (step (name insert) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (machine-feature ?machine-feature) (already-at-mps FALSE) (actor ?action-specific-actor) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
@@ -513,24 +513,26 @@
 			)
 			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Brining Product to: " ?mps " at: " ?side crlf)
 		  )
-		;   ;ACTION:::::Discard::::::
-		;   (case "discard" then
-		;     (bind ?action-specific-actor "")
-		;     (bind ?action-id (pb-field-value ?a "id"))
-		;     (if (pb-has-field ?a "actor") 
-		;       then
-		;       (bind ?action-specific-actor (pb-field-value ?a "actor"))
-		;     )
-		;     ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-		;     (bind ?next-step-id (* ?action-id 100))
-		;     (bind ?steps (append$ ?steps ?next-step-id))
-		;     ; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-		;     (assert
-		;          (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-		;                                     (action-name discard))
-		;     )
-		;     (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] discarding Product to" crlf)
-		;   )
+		  ;ACTION:::::Discard::::::
+		  (case "discard" then
+			(bind ?action-specific-actor "")
+			(bind ?action-id (pb-field-value ?a "id"))
+			(if (pb-has-field ?a "actor") 
+			  then
+			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
+			)
+			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+			(bind ?next-step-id (* ?action-id 100))
+			(bind ?steps (append$ ?steps ?next-step-id))
+			(bind ?cc CCG1) ; TODO use correct workpiece depending on mps
+			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name wp-discard)
+											(param-names r cc) (param-values (string-to-field ?action-specific-actor) ?cc))
+			)
+			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] discarding Product to" crlf)
+		  )
 		;   ;ACTION:::::PREPARE::::::
 		;   (case "prepare" then
 		;     (bind ?mps "")
