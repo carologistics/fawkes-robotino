@@ -29,11 +29,45 @@ Task names:
 
 Tasks Life Cycle:
 	proposed
+		Rules of production.clp suggest tasks based on the
+		state of the world model and the priorities of the task.
+		The proposed task wont have a robot specified explicitly.
+		Yet, each robot is responsible of their proposed tasks. (A
+		task could only be executed on the robot it was proposed on)
+
+		Binding of the parameters is also done here and the Task
+		is given a name, local-id and the "needed-task-lock"s
+		that could later be used for coordination are asserted.
+
+		During proposal, the needed-task-lock is asserted with an Action and a Place.
+		The combination of those names "action~place"  will be used as resource for
+		coordination and task locking.
+		Possible Actions in production.clp:
+			Action FILL_CAP  		in TASK [fill-cap]			place: ?cs
+
+			Action GET-PROD  		in TASK [clear-cs]			place: ?cs
+								[clear-rs]			place: ?rs
+								[deliver]			place: ?cs
+
+			Action PREFILL-RS 		in TASK [fill-rs]			place: ?rs
+
+			Action PROD_CAP 		in TASK [produce-c0]			place: ?cs
+								[produce-cx]			place: ?cs
+
+			Action PROD_RING		in TASK [add-first-ring]		place: ?rs
+								[add-additional-ring]		place: ?rs
+			Action DELIVER 			in TASK [deliver]			place: ?ds
+
 	asked
+		All resources needed has been requested from the lock master
 	rejected
+
 	ordered
+
 	running
+
 	finished
+
 	failed
 
 Steps Names:
@@ -49,9 +83,9 @@ Steps Names:
 	acquire-lock
 	release-lock
 
+
+
 Mapping: From Steps to Actions
-
-
 	Step drive to 			--> (:action  move-wp-get
 							Or
 							--> (:action  move-wp-put
