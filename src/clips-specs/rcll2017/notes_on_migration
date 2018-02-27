@@ -1,4 +1,4 @@
-Note on old clips agent (rcll2017)
+Note on old clips agent (rcll2017) migration into clips-executive
 
 
 Migration Road Map:
@@ -26,6 +26,28 @@ Task names:
 	discard-unknown
 	exploration-catch-up
 
+
+Tasks Life Cycle:
+	proposed
+	asked
+	rejected
+	ordered
+	running
+	finished
+	failed
+
+Steps Names:
+	get-from-shelf
+	insert
+	get-output
+	get-base
+	find-tag
+	instruct-mps
+	discard
+	drive-to wait-for-rs
+	wait-for-output
+	acquire-lock
+	release-lock
 
 Mapping: From Steps to Actions
 
