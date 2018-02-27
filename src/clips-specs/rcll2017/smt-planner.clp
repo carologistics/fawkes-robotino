@@ -554,17 +554,12 @@
 				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
 				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
 			  else
-				(if (eq (pb-field-value ?arg "key") "slide") then
-				  (bind ?slide (pb-field-value ?arg "value"))
-				  (bind ?machine-feature (if (eq ?slide "true") then SLIDE else CONVEYOR))
-				else
 				  (if (eq (pb-field-value ?arg "key") "color") then
 					(bind ?goal-base-color (utils-remove-prefix (pb-field-value ?arg "value") base_)) ;temp: the color of the base of the goal is recognized here
 
 					else
 						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
 					)
-				)
 			  )
 			)
 			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
@@ -576,7 +571,46 @@
 											(action-name prepare-bs)
 											(param-names m side bc) (param-values (string-to-field ?mps) ?side (string-to-field ?goal-base-color)))
 			)
-			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] prepare BS" crlf)
+			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Prepare BS" crlf)
+		  )
+		  ;ACTION:::::Prepare_DS::::::
+		  (case "prepare-ds" then
+			(bind ?action-specific-actor "")
+			(bind ?m "")
+			(bind ?gate "")
+			(bind ?action-id (pb-field-value ?a "id"))
+			(if (pb-has-field ?a "actor") 
+			  then
+			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
+			)
+			(bind ?parents-ids (create$)) 
+			(progn$ (?arg (pb-field-list ?a "parent_id"))
+			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+			)
+			(progn$ (?arg (pb-field-list ?a "params"))
+			  (if (eq (pb-field-value ?arg "key") "mps") then
+				(bind ?mps (pb-field-value ?arg "value"))
+				(bind ?mps-splitted (str-split ?mps "-"))
+				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+			  else
+			  (if (eq (pb-field-value ?arg "key") "gate") then
+				 (bind ?gate (string-to-field (pb-field-value ?arg "value")))
+
+				else
+					(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+				)
+			  )
+			)
+			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+			(bind ?next-step-id (* ?action-id 100))
+			(bind ?steps (append$ ?steps ?next-step-id))
+			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name prepare-ds)
+											(param-names m gate) (param-values (string-to-field ?mps) ?gate))
+			)
+			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Prepare DS" crlf)
 		  )
 		;   ;ACTION:::::PREPARE::::::
 		;   (case "prepare" then
