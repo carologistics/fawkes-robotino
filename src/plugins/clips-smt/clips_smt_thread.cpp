@@ -396,7 +396,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("prepare");
+					action->set_name("prepare-cs");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -501,7 +501,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("prepare");
+					action->set_name("prepare-bs");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -553,7 +553,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("prepare");
+					action->set_name("prepare-cs");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -621,7 +621,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("prepare");
+					action->set_name("prepare-ds");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -736,7 +736,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("prepare");
+					action->set_name("prepare-rs");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -840,7 +840,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("prepare");
+					action->set_name("prepare-rs");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -945,7 +945,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("prepare");
+					action->set_name("prepare-rs");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
