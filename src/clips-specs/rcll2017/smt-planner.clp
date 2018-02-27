@@ -435,62 +435,42 @@
 			)
 		)
 		;   ;ACTION:::::RETRIVE::::::
-		;   (case "retrieve" then
-		;     (bind ?mps "")
-		;     (bind ?side "")
-		;     (bind ?action-specific-actor "")
-		;     (bind ?action-id (pb-field-value ?a "id"))
-		;     (if (pb-has-field ?a "actor") 
-		;       then
-		;       (bind ?action-specific-actor (pb-field-value ?a "actor"))
-		;     )
-		;     (bind ?parents-ids (create$)) 
-		;     (progn$ (?arg (pb-field-list ?a "parent_id"))
-		;       (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-		;     )
-		;     (progn$ (?arg (pb-field-list ?a "params"))
-		;       (if (eq (pb-field-value ?arg "key") "mps") then
-		;         (bind ?mps (pb-field-value ?arg "value"))
-		;         (bind ?mps-splitted (str-split ?mps "-"))
-		;         (bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-		;         (bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-		;       else
-		;         (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
-		;       )
-		;     )
-		;     (if ;(any-factp ((?machine machine)) (and (eq ?machine:name (string-to-field ?mps))  (eq ?machine:mtype BS)))
-		;         (any-factp ((?wm-fact wm-fact))
-		;             (and 
-		;                 (wm-key-prefix ?wm-fact:key (create$ domain fact mps-type))
-		;                 (eq (string-to-field ?mps) (wm-key-arg ?wm-fact:key m))
-		;                 (eq BS (wm-key-arg ?wm-fact:key t))
-		;             )
-		;         )
-		;       then
-		;       ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-		;       (bind ?next-step-id (* ?action-id 100))
-		;       (bind ?steps (append$ ?steps ?next-step-id))
-		;       ; (assert (step (name get-base) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (base ?goal-base-color) (actor ?action-specific-actor) ))
-		;     (assert
-		;          (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-		;                                     (action-name get-base)
-		;                                     (param-names to base) (param-values ?mps ?goal-base-color))
-		;     )
-		;       (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Retrieving Base from: " ?mps " at: " ?side " Base-Color: " ?goal-base-color  crlf)
-		;       else
-		;       ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-		;       (bind ?next-step-id (* ?action-id 100))
-		;       (bind ?steps (append$ ?steps ?next-step-id))
-		;       ; (assert (step (name get-output) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (actor ?action-specific-actor) ))
-		;     (assert
-		;          (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-		;                                     (action-name get-output)
-		;                                     (param-names to) (param-values ?mps))
-		;     )
-		;       (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Retrieving Output from: " ?mps " side: " ?side crlf)
+		  (case "retrieve" then
+			(bind ?mps "")
+			(bind ?side "")
+			(bind ?action-specific-actor "")
+			(bind ?action-id (pb-field-value ?a "id"))
+			(if (pb-has-field ?a "actor") 
+			  then
+			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
+			)
+			(bind ?parents-ids (create$)) 
+			(progn$ (?arg (pb-field-list ?a "parent_id"))
+			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+			)
+			(progn$ (?arg (pb-field-list ?a "params"))
+			  (if (eq (pb-field-value ?arg "key") "mps") then
+				(bind ?mps (pb-field-value ?arg "value"))
+				(bind ?mps-splitted (str-split ?mps "-"))
+				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
+			  else
+				(printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+			  )
+			)
+			  ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+			  (bind ?next-step-id (* ?action-id 100))
+			  (bind ?steps (append$ ?steps ?next-step-id))
+				(bind ?wp WP1) ; TODO use correct workpiece depending on mps
+			  ; (assert (step (name get-output) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (actor ?action-specific-actor) ))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name wp-get)
+											(param-names r wp m side) (param-values (string-to-field ?action-specific-actor) ?wp (string-to-field ?mps) ?side))
+			)
+			  (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Retrieving Output from: " ?mps " side: " ?side crlf)
 
-		;     )
-		;   )
+		  )
 		;   ;ACTION:::::FEED::::::
 		;   (case "feed" then
 		;     (bind ?mps "")
