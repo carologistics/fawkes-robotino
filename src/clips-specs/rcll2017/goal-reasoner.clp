@@ -48,6 +48,26 @@
 	(assert (goal-already-tried FILL-CAP))
 )
 
+(defrule goal-reasoner-create-clear-cs
+	"Remove an unknown base from CS after retrieving a cap from it."
+	(not (goal (id CLEAR-CS)))
+	(not (goal-already-tried CLEAR-CS))
+	(wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
+	(wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	(wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+	;Maybe add a check for the base_color
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	(wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
+	(not (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	; (test (eq ?robot R-1))
+	=>
+	(assert (goal (id CLEAR-CS)))
+	; This is just to make sure we formulate the goal only once.
+	; In an actual domain this would be more sophisticated.
+	(assert (goal-already-tried CLEAR-CS))
+)
+
 ; ## Maintenance Goals
 (defrule goal-reasoner-create-beacon-maintain
   (not (goal (id BEACONMAINTAIN)))
