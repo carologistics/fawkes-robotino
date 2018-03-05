@@ -97,17 +97,25 @@
 
 (defrule goal-remove-empty-base-from-cs
  ?g <- (goal (mode SELECTED) (id CLEAR-CS))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+ ;maybe Need to make sure its the same ?mps in the gaol
+ (wm-fact (key domain fact mps-type args? m ?mps t CS))
+ (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
+ (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+ (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+ (not (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+ (test (eq ?robot R-1))
  =>
  (assert
   (plan (id CLEAR-CS-PLAN) (goal-id CLEAR-CS))
   (plan-action (id 1) (plan-id CLEAR-CS-PLAN) (duration 4.0)
         (action-name move-wp-get)
         (param-names r from from-side to to-side )
-        (param-values ))
+        (param-values ?robot ?curr-location ?curr-side ?mps OUTPUT))
   (plan-action (id 2) (plan-id CLEAR-CS-PLAN) (duration 4.0)
         (action-name wp-get)
         (param-names r wp m side)
-        (param-values ))
+        (param-values ?robot ?wp ?mps OUTPUT))
 
  )
  (modify ?g (mode EXPANDED))
