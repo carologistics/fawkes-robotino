@@ -64,7 +64,7 @@
 	;Maybe add a check for the base_color
 	(wm-fact (key domain fact mps-type args? m ?mps t CS))
 	(wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
-	(not (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
 	; (test (eq ?robot R-1))
 	=>
 	(assert (goal (id CLEAR-CS) (params robot R-1 mps ?mps wp ?wp)))
