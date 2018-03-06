@@ -21,22 +21,26 @@
 )
 
 (defrule goal-reasoner-create-enter-field
-  (not (goal (id ENTER-FIELD)))
-  (not (goal-already-tried ENTER-FIELD))
-  (wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
-  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
-  (wm-fact (key domain fact robot-waiting args? r ?robot))
-  (not (wm-fact (key domain fact entered-field args? r ?robot)))
-  =>
-  (assert (goal (id ENTER-FIELD)))
-  ; This is just to make sure we formulate the goal only once.
-  ; In an actual domain this would be more sophisticated.
-  (assert (goal-already-tried ENTER-FIELD))
+	(not (goal (id ENTER-FIELD)))
+	(not (goal-already-tried ENTER-FIELD))
+	(not (goal (type ACHIEVE)
+			(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	(wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
+	(wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
+	(wm-fact (key domain fact robot-waiting args? r ?robot))
+	(not (wm-fact (key domain fact entered-field args? r ?robot)))
+	=>
+	(assert (goal (id ENTER-FIELD)))
+	; This is just to make sure we formulate the goal only once.
+	; In an actual domain this would be more sophisticated.
+	(assert (goal-already-tried ENTER-FIELD))
 )
 
 (defrule goal-reasoner-create-fill-cap-goal
 	(not (goal (id FILL-CAP)))
 	(not (goal-already-tried FILL-CAP))
+	(not (goal (type ACHIEVE)
+			(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	(wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
 	(wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
 	(wm-fact (key domain fact mps-type args? m ?mps t CS)(value TRUE))
@@ -57,6 +61,8 @@
 	"Remove an unknown base from CS after retrieving a cap from it."
 	(not (goal (id CLEAR-CS)))
 	(not (goal-already-tried CLEAR-CS))
+	(not (goal (type ACHIEVE)
+			(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 	(wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
 	(wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
