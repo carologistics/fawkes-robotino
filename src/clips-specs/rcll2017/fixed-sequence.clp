@@ -127,45 +127,51 @@
 
 
 (defrule goal-produce-c0
- ?g <- (goal (mode SELECTED) (id PRODUCE-C0))
+ ?g <- (goal (mode SELECTED) (id PRODUCE-C0) (params robot ?robot
+                                                      bs ?bs
+                                                      bs-side ?bs-side
+                                                      bs-color ?base-color
+                                                      mps ?mps
+                                                      cs-color ?cap-color
+                                                      wp ?wp))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
  (assert
   (plan (id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0))
   (plan-action (id 1) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
-        (action-name move-wp-get)
+        (action-name move)
         (param-names r from from-side to to-side )
-        (param-values ))
+        (param-values ?robot ?curr-location ?curr-side ?bs ?bs-side))
   (plan-action (id 2) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
         (action-name prepare-bs)
         (param-names m side bc)
-        (param-values ))
+        (param-values ?bs ?bs-side ?base-color))
   (plan-action (id 3) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
         (action-name bs-dispense)
         (param-names r m side wp basecol)
-        (param-values ))
-  (plan-action (id 2) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
+        (param-values ?robot ?bs ?bs-side ?wp ?base-color))
+  (plan-action (id 4) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
         (action-name wp-get)
         (param-names r wp m side)
-        (param-values ))
-  (plan-action (id 3) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
+        (param-values ?robot ?wp ?bs ?bs-side))
+  (plan-action (id 5) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
         (action-name move-wp-put)
         (param-names r from from-side to)
-        (param-values ))
-  (plan-action (id 4) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
+        (param-values ?robot ?bs ?bs-side ?mps))
+  (plan-action (id 6) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
         (action-name prepare-cs)
         (param-names m op)
-        (param-values ))
-  (plan-action (id 5) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
+        (param-values ?mps MOUNT_CAP))
+  (plan-action (id 7) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
         (action-name wp-put)
         (param-names r wp m)
-        (param-values ))
-   (plan-action (id 6) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
+        (param-values ?robot ?wp ?mps))
+   (plan-action (id 8) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
         (action-name cs-mount-cap)
         (param-names m wp capcol)
-        (param-values ))
+        (param-values ?mps ?wp ?cap-color ))
  )
  (modify ?g (mode EXPANDED))
-
 )
 
 (defrule goal-deliver
