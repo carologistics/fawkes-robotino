@@ -39,10 +39,15 @@
 	(not (goal-already-tried FILL-CAP))
 	(wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
 	(wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
-	(wm-fact (key domain fact order-complexity args? ord O1 com C0) (type BOOL) (value TRUE))
+	(wm-fact (key domain fact mps-type args? m ?mps t CS)(value TRUE))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN) (value TRUE))
+	(wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP) (value TRUE))
+    (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color) (value TRUE)))
+	(not (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	(wm-fact (key domain fact entered-field args? r R-1))
+	; (test (eq ?robot R-1))
 	=>
-	(assert (goal (id FILL-CAP)))
+	(assert (goal (id FILL-CAP) (params robot R-1 mps ?mps)))
 	; This is just to make sure we formulate the goal only once.
 	; In an actual domain this would be more sophisticated.
 	(assert (goal-already-tried FILL-CAP))
@@ -62,7 +67,7 @@
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
 	; (test (eq ?robot R-1))
 	=>
-	(assert (goal (id CLEAR-CS)))
+	(assert (goal (id CLEAR-CS) (params robot R-1 mps ?mps wp ?wp)))
 	; This is just to make sure we formulate the goal only once.
 	; In an actual domain this would be more sophisticated.
 	(assert (goal-already-tried CLEAR-CS))

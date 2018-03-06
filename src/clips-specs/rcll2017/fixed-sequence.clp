@@ -48,13 +48,9 @@
 
 (defrule goal-expander-prefill-cap-station
    "Feed a CS with a cap from its shelf so that afterwards it can directly put the cap on a product."
-    ?g <- (goal (mode SELECTED) (id FILL-CAP))
+    ?g <- (goal (mode SELECTED) (id FILL-CAP) (params robot ?robot mps ?mps))
     (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-    (wm-fact (key domain fact mps-type args? m ?mps t CS)(value TRUE))
-    (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN) (value TRUE))
-    (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP) (value TRUE))
-    (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color) (value TRUE)))
-    (test (and (eq ?robot R-1) (eq ?mps C-CS1))) ;?mps and ?robot will should be passed in the goal param
+    ;Reasoning about the wm is in Goal Creation
     =>
     (do-for-fact ((?fact-wp-on-shelf wm-fact) (?fact-wp-cap-color wm-fact))
             (and (wm-key-prefix ?fact-wp-cap-color:key (create$ domain fact wp-cap-color))
@@ -96,15 +92,9 @@
 )
 
 (defrule goal-remove-empty-base-from-cs
- ?g <- (goal (mode SELECTED) (id CLEAR-CS))
+ ?g <- (goal (mode SELECTED) (id CLEAR-CS) (params robot ?robot mps ?mps wp ?wp))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
- ;maybe Need to make sure its the same ?mps in the gaol
- (wm-fact (key domain fact mps-type args? m ?mps t CS))
- (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
- (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
- (not (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
- (test (eq ?robot R-1))
+;Reasoning about the wm is in Goal Creation
  =>
  (assert
   (plan (id CLEAR-CS-PLAN) (goal-id CLEAR-CS))
