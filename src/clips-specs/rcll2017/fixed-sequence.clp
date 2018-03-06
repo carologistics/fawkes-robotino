@@ -111,6 +111,21 @@
  (modify ?g (mode EXPANDED))
 )
 
+
+(defrule goal-expander-discard-unneeded-base
+ ?g <- (goal (mode SELECTED) (id DISCARD-UNKNOWN) (params robot ?robot wp ?wp))
+  =>
+  (assert
+    (plan (id DISCARD-UNKNOWN-PLAN) (goal-id DISCARD-UNKNOWN))
+    (plan-action (id 1) (plan-id DISCARD-UNKNOWN-PLAN) (duration 4.0)
+          (action-name wp-discard)
+          (param-names r cc )
+          (param-values ?robot ?wp))
+  )
+  (modify ?g (mode EXPANDED))
+)
+
+
 (defrule goal-produce-c0
  ?g <- (goal (mode SELECTED) (id PRODUCE-C0))
  =>

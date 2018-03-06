@@ -79,6 +79,25 @@
 	(assert (goal-already-tried CLEAR-CS))
 )
 
+(defrule goal-reasoner-create-discard-unknown
+  "Discard a base which is not needed if no RS can be pre-filled"
+  (not (goal (id DISCARD-UNKNOWN)))
+  (not (goal-already-tried DISCARD-UNKNOWN))
+  (not (goal (type ACHIEVE)
+      (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+  (wm-fact (key refbox state) (value RUNNING))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  ;To-Do: Model state IDLE
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  ;For now this will discard any thing its holding
+  ;To-Do: Only Create goal if RS has enough at slide
+  ;question: or would be more correct to create it and later
+  ;   reject it because its not useful
+  =>
+  (assert (goal (id DISCARD-UNKNOWN) (params robot ?robot wp ?wp)))
+  (assert (goal-already-tried DISCARD-UNKNOWN))
+)
+
 ; ## Maintenance Goals
 (defrule goal-reasoner-create-beacon-maintain
   (not (goal (id BEACONMAINTAIN)))
