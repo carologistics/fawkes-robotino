@@ -36,10 +36,12 @@
 
 (defrule goal-reasoner-create-complexity
   (not (goal (id COMPLEXITY)))
+	(not (goal-already-tried COMPLEXITY))
   (wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE))
   =>
   (assert (goal (id COMPLEXITY)))
   (printout t "Detect goal " ?order-id " with complexity 0" crlf)
+	(assert (goal-already-tried COMPLEXITY))
 )
 
 ; ### sub-goals of the maintenance goal
