@@ -343,7 +343,11 @@
 				(bind ?a (nth$ ?ai ?actions))
 				(bind ?actname (pb-field-value ?a "name"))
         (switch ?actname
+
+		  ;ACTION:::::ENTER-FIELD:::::
           (case "enter-field" then (printout warn "Ignoring enter-field, done implicitly" crlf))
+
+		  ;ACTION::::MOVE::::::
           (case "move" then
             (bind ?to "")
             (bind ?side "")
@@ -377,12 +381,13 @@
 											(action-name move)
 											(param-names r from from-side to to-side) (param-values (string-to-field ?action-specific-actor) ?from ?from-side (string-to-field ?to) ?to-side))
 			)
+            (printout t "Action added: " ?action-specific-actor " [" ?action-id  "] move from: " ?from " at: " ?from-side " to: " ?to " at: " ?to-side crlf)
 			(bind ?from (string-to-field ?to))
 			(bind ?from-side ?to-side)
-            (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Driving to: " ?to " at: " ?side crlf)
           )
-		  ;ACTION:::::GET FROM SHELF::::::
-		  (case "retrieve_shelf" then
+
+		  ;ACTION:::::WP-GET-SHELF:::::
+		  (case "wp-get-shelf" then
 			(bind ?mps "")
 			(bind ?side "")
 			(bind ?shelf FALSE)
@@ -431,12 +436,13 @@
 													(action-name wp-get-shelf)
 													(param-names r cc m spot) (param-values (string-to-field ?action-specific-actor) (wm-key-arg ?wm-fact2:key wp) (string-to-field ?mps) (string-to-field ?shelf)))
 					)
-					(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Retrieving from Shelf: " ?mps " at: " ?side " shelf: " ?shelf crlf)
+					(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-get-shelf: " ?mps " at: " ?side " shelf: " ?shelf crlf)
 				)
 			)
 		)
-		;   ;ACTION:::::RETRIVE::::::
-		  (case "retrieve" then
+
+			;ACTION:::::WP-GET:::::
+		  (case "wp-get" then
 			(bind ?mps "")
 			(bind ?side "")
 			(bind ?action-specific-actor "")
@@ -468,11 +474,12 @@
 											(action-name wp-get)
 											(param-names r wp m side) (param-values (string-to-field ?action-specific-actor) ?wp (string-to-field ?mps) ?side))
 			)
-			  (printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Retrieving Output from: " ?mps " side: " ?side crlf)
+			  (printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-get from: " ?mps " side: " ?side crlf)
 
 		  )
-		  ;ACTION:::::FEED::::::
-		  (case "feed" then
+
+		  ;ACTION:::::WP-PUT:::::
+		  (case "wp-put" then
 			(bind ?mps "")
 			(bind ?side "")
 			(bind ?action-specific-actor "")
@@ -510,10 +517,11 @@
 											(action-name wp-put)
 											(param-names r wp m) (param-values (string-to-field ?action-specific-actor) ?wp (string-to-field ?mps)))
 			)
-			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Bringing Product to: " ?mps " at: " ?side crlf)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-put to: " ?mps " at: " ?side crlf)
 		  )
-		  ;ACTION:::::Discard::::::
-		  (case "discard" then
+
+		  ;ACTION:::::WP-DISCARD:::::
+		  (case "wp-discard" then
 			(bind ?action-specific-actor "")
 			(bind ?action-id (pb-field-value ?a "id"))
 			(if (pb-has-field ?a "actor") 
@@ -523,15 +531,17 @@
 			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 			(bind ?next-step-id (* ?action-id 100))
 			(bind ?steps (append$ ?steps ?next-step-id))
+			(bind ?cc ?wp)
 			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 											(action-name wp-discard)
-											(param-names r cc) (param-values (string-to-field ?action-specific-actor) ?wp))
+											(param-names r cc) (param-values (string-to-field ?action-specific-actor) ?cc))
 			)
-			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] discarding Product to" crlf)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-discard" crlf)
 		  )
-		  ;ACTION:::::Prepare_BS::::::
+
+		  ;ACTION:::::PREPARE-BS:::::
 		  (case "prepare-bs" then
 			(bind ?action-specific-actor "")
 			(bind ?m "")
@@ -569,9 +579,10 @@
 											(action-name prepare-bs)
 											(param-names m side bc) (param-values (string-to-field ?mps) ?side (string-to-field ?goal-base-color)))
 			)
-			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Prepare BS" crlf)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-bs" crlf)
 		  )
-		  ;ACTION:::::Prepare_DS::::::
+
+		  ;ACTION:::::PREPARE-DS:::::
 		  (case "prepare-ds" then
 			(bind ?action-specific-actor "")
 			(bind ?m "")
@@ -608,9 +619,10 @@
 											(action-name prepare-ds)
 											(param-names m gate) (param-values (string-to-field ?mps) ?gate))
 			)
-			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Prepare DS" crlf)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-ds" crlf)
 		  )
-		  ;ACTION:::::Prepare_CS::::::
+
+		  ;ACTION:::::PREPARE-CS:::::
 		  (case "prepare-cs" then
 			(bind ?action-specific-actor "")
 			(bind ?m "")
@@ -647,9 +659,10 @@
 											(action-name prepare-cs)
 											(param-names m op) (param-values (string-to-field ?mps) (string-to-field ?operation)))
 			)
-			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Prepare CS with " ?operation crlf)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-cs at: " ?mps " with " ?operation crlf)
 		  )
-		  ;ACTION:::::CS_Retrieve_Cap::::::
+
+		  ;ACTION:::::CS-RETRIEVE-CAP:::::
 		  (case "cs-retrieve-cap" then
 			(bind ?m "")
 			(bind ?cap-color "")
@@ -681,9 +694,10 @@
 											(action-name cs-retrieve-cap)
 											(param-names m cc capcol) (param-values (string-to-field ?mps) ?wp (string-to-field ?cap-color)))
 			)
-			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Tell CS to retrieve cap" crlf)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] cs-retrieve-cap at: " ?mps crlf)
 		  )
-		  ;ACTION:::::Prepare_RS::::::
+
+		  ;ACTION:::::PREPARE-RS::::::
 		  (case "prepare-rs" then
 			(bind ?action-specific-actor "")
 			(bind ?m "")
@@ -719,8 +733,10 @@
 											(action-name prepare-rs)
 											(param-names m rc) (param-values (string-to-field ?mps) (string-to-field ?goal-ring-color)))
 			)
-			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Prepare RS" crlf)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-rs at: " ?mps crlf)
 		  )
+
+			;ACTION:::::DEFAULT:::::
 			(default (printout warn "Unknown action " ?actname crlf))
         )
 			)
