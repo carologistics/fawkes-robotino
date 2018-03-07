@@ -462,7 +462,6 @@
 			  ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 			  (bind ?next-step-id (* ?action-id 100))
 			  (bind ?steps (append$ ?steps ?next-step-id))
-				(bind ?wp WP1) ; TODO use correct workpiece depending on mps
 			  ; (assert (step (name get-output) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (actor ?action-specific-actor) ))
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
@@ -524,12 +523,11 @@
 			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 			(bind ?next-step-id (* ?action-id 100))
 			(bind ?steps (append$ ?steps ?next-step-id))
-			(bind ?cc CCG1) ; TODO use correct workpiece depending on mps
 			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 											(action-name wp-discard)
-											(param-names r cc) (param-values (string-to-field ?action-specific-actor) ?cc))
+											(param-names r cc) (param-values (string-to-field ?action-specific-actor) ?wp))
 			)
 			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] discarding Product to" crlf)
 		  )
