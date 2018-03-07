@@ -425,6 +425,7 @@
 						(eq (string-to-field ?shelf) (wm-key-arg ?wm-fact2:key spot))
 					)
 					(bind ?next-step-id (* ?action-id 100))
+					(bind ?wp (wm-key-arg ?wm-fact2:key wp))
 					(assert
 						 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 													(action-name wp-get-shelf)
@@ -504,7 +505,6 @@
 			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 			(bind ?next-step-id (* ?action-id 100))
 			(bind ?steps (append$ ?steps ?next-step-id))
-			(bind ?wp WP1) ; TODO use correct workpiece depending on mps
 			; (assert (step (name insert) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (machine-feature ?machine-feature) (already-at-mps FALSE) (actor ?action-specific-actor) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
@@ -650,6 +650,40 @@
 											(param-names m op) (param-values (string-to-field ?mps) (string-to-field ?operation)))
 			)
 			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Prepare CS with " ?operation crlf)
+		  )
+		  ;ACTION:::::CS_Retrieve_Cap::::::
+		  (case "cs-retrieve-cap" then
+			(bind ?m "")
+			(bind ?cap-color "")
+			(bind ?action-id (pb-field-value ?a "id"))
+			(bind ?parents-ids (create$)) 
+			(progn$ (?arg (pb-field-list ?a "parent_id"))
+			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+			)
+			(progn$ (?arg (pb-field-list ?a "params"))
+			  (if (eq (pb-field-value ?arg "key") "mps") then
+				(bind ?mps (pb-field-value ?arg "value"))
+				(bind ?mps-splitted (str-split ?mps "-"))
+				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+			  else
+				(if (eq (pb-field-value ?arg "key") "cap-color") then
+				  (bind ?cap-color (pb-field-value ?arg "value"))
+
+				else
+					(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+				)
+			  )
+			)
+			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+			(bind ?next-step-id (* ?action-id 100))
+			(bind ?steps (append$ ?steps ?next-step-id))
+			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name cs-retrieve-cap)
+											(param-names m cc capcol) (param-values (string-to-field ?mps) ?wp (string-to-field ?cap-color)))
+			)
+			(printout t "Action Added: " ?action-specific-actor " [" ?action-id  "] Tell CS to retrieve cap" crlf)
 		  )
 		  ;ACTION:::::Prepare_RS::::::
 		  (case "prepare-rs" then
