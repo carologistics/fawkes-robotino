@@ -563,7 +563,8 @@
 				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
 			  else
 				  (if (eq (pb-field-value ?arg "key") "color") then
-					(bind ?goal-base-color (utils-remove-prefix (pb-field-value ?arg "value") base_)) ;temp: the color of the base of the goal is recognized here
+					; (bind ?goal-base-color (utils-remove-prefix (pb-field-value ?arg "value") base_)) ;temp: the color of the base of the goal is recognized here
+					(bind ?goal-base-color (pb-field-value ?arg "value")) 
 
 					else
 						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -579,7 +580,50 @@
 											(action-name prepare-bs)
 											(param-names m side bc) (param-values (string-to-field ?mps) ?side (string-to-field ?goal-base-color)))
 			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-bs" crlf)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-bs with base-color: " ?goal-base-color crlf)
+		  )
+
+		  ;ACTION:::::BS-DISPENSE:::::
+		  (case "bs-dispense" then
+			(bind ?action-specific-actor "")
+			(bind ?m "")
+			(bind ?side "")
+			(bind ?action-id (pb-field-value ?a "id"))
+			(if (pb-has-field ?a "actor") 
+			  then
+			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
+			)
+			(bind ?parents-ids (create$)) 
+			(progn$ (?arg (pb-field-list ?a "parent_id"))
+			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+			)
+			(progn$ (?arg (pb-field-list ?a "params"))
+			  (if (eq (pb-field-value ?arg "key") "mps") then
+				(bind ?mps (pb-field-value ?arg "value"))
+				(bind ?mps-splitted (str-split ?mps "-"))
+				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
+			  else
+				  (if (eq (pb-field-value ?arg "key") "color") then
+					; (bind ?goal-base-color (utils-remove-prefix (pb-field-value ?arg "value") base_)) ;temp: the color of the base of the goal is recognized here
+					(bind ?goal-base-color (pb-field-value ?arg "value")) 
+
+					else
+						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+					)
+			  )
+			)
+			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+			(bind ?next-step-id (* ?action-id 100))
+			(bind ?steps (append$ ?steps ?next-step-id))
+			(bind ?wp WP1)
+			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name bs-dispense)
+											(param-names m side wp basecol) (param-values (string-to-field ?mps) ?side ?wp (string-to-field ?goal-base-color)))
+			)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] bs-dispense with basecolor: " ?goal-base-color crlf)
 		  )
 
 		  ;ACTION:::::PREPARE-DS:::::
