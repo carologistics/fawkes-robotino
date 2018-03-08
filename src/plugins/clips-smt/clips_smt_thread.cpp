@@ -606,6 +606,20 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 
+					++action_id;
+					action = plan->add_actions();
+					action->set_name("cs-mount-cap");
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
+					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
+					action->set_goal_id(data.orders(order_id).id());
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
+					param->set_key("cap-color");
+					param->set_value(getCapColor(data.orders(order_id).cap_color()));
+
 					break;
 			case 5:	// Action 9
 
