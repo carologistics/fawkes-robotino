@@ -382,7 +382,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("retrieve_shelf");
+					action->set_name("wp-get-shelf");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -410,7 +410,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("feed");
+					action->set_name("wp-put");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -449,7 +449,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("retrieve");
+					action->set_name("wp-get");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -461,7 +461,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("discard");
+					action->set_name("wp-discard");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -529,7 +529,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("retrieve");
+					action->set_name("wp-get");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -583,7 +583,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("feed");
+					action->set_name("wp-put");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -608,7 +608,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("retrieve");
+					action->set_name("wp-get");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -649,7 +649,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("feed");
+					action->set_name("wp-put");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -690,7 +690,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("feed");
+					action->set_name("wp-put");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -764,7 +764,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("feed");
+					action->set_name("wp-put");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -796,7 +796,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("retrieve");
+					action->set_name("wp-get");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -868,7 +868,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("feed");
+					action->set_name("wp-put");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -906,7 +906,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("retrieve");
+					action->set_name("wp-get");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -973,7 +973,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("feed");
+					action->set_name("wp-put");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -1011,7 +1011,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("retrieve");
+					action->set_name("wp-get");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
