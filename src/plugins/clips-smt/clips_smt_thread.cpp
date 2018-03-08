@@ -529,6 +529,20 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
+					action->set_name("bs-dispense");
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
+					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
+					action->set_goal_id(data.orders(order_id).id());
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value(node_names_[1]);
+					param = action->add_params();
+					param->set_key("color");
+					param->set_value(getBaseColor(data.orders(order_id).base_color()));
+
+					++action_id;
+					action = plan->add_actions();
 					action->set_name("wp-get");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
