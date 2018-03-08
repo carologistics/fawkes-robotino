@@ -741,6 +741,41 @@
 			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] cs-retrieve-cap at: " ?mps crlf)
 		  )
 
+		  ;ACTION:::::CS-MOUNT-CAP:::::
+		  (case "cs-mount-cap" then
+			(bind ?m "")
+			(bind ?cap-color "")
+			(bind ?action-id (pb-field-value ?a "id"))
+			(bind ?parents-ids (create$)) 
+			(progn$ (?arg (pb-field-list ?a "parent_id"))
+			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+			)
+			(progn$ (?arg (pb-field-list ?a "params"))
+			  (if (eq (pb-field-value ?arg "key") "mps") then
+				(bind ?mps (pb-field-value ?arg "value"))
+				(bind ?mps-splitted (str-split ?mps "-"))
+				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+			  else
+				(if (eq (pb-field-value ?arg "key") "cap-color") then
+				  (bind ?cap-color (pb-field-value ?arg "value"))
+
+				else
+					(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+				)
+			  )
+			)
+			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+			(bind ?next-step-id (* ?action-id 100))
+			(bind ?steps (append$ ?steps ?next-step-id))
+			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name cs-mount-cap)
+											(param-names m wp capcol) (param-values (string-to-field ?mps) ?wp (string-to-field ?cap-color)))
+			)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] cs-mount-cap at: " ?mps crlf)
+		  )
+
 		  ;ACTION:::::PREPARE-RS::::::
 		  (case "prepare-rs" then
 			(bind ?action-specific-actor "")
