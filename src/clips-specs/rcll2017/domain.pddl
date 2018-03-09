@@ -328,6 +328,21 @@
 								 (not (mps-state ?m PREPARED)) (mps-state ?m PROCESSING))
 	)
 
+	(:action wp-put-slide-cc
+		:parameters (?r - robot ?wp - cap-carrier ?m - mps ?rs-before - ring-num ?rs-after - ring-num)
+		:precondition (and (mps-type ?m RS)
+							(at ?r ?m INPUT)
+							(wp-usable ?wp)
+							(holding ?r ?wp)
+							(rs-filled-with ?m ?rs-before)
+							(rs-inc ?rs-before ?rs-after))
+		:effect (and (not (wp-usable ?wp))
+					(not (holding ?r ?wp))
+					(can-hold ?r)
+					(not (rs-filled-with ?m ?rs-before))
+					(rs-filled-with ?m ?rs-after))
+	)
+
 	(:action fulfill-order-c0
 		:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate
 		             ?basecol - base-color ?capcol - cap-color)
