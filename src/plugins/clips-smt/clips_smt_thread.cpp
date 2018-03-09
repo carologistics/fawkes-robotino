@@ -699,6 +699,15 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("base-color");
 					param->set_value(getBaseColor(data.orders(order_id).base_color()));
+					// param = action->add_params();
+					// param->set_key("ring1-color");
+					// param->set_value(getRingColor(data.orders(order_id).ring_colors(0)));
+					// param = action->add_params();
+					// param->set_key("ring2-color");
+					// param->set_value(getRingColor(data.orders(order_id).ring_colors(1)));
+					// param = action->add_params();
+					// param->set_key("ring3-color");
+					// param->set_value(getRingColor(data.orders(order_id).ring_colors(2)));
 					param = action->add_params();
 					param->set_key("cap-color");
 					param->set_value(getCapColor(data.orders(order_id).cap_color()));
@@ -818,6 +827,21 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
 
+					++action_id;
+					action = plan->add_actions();
+					action->set_name("rs-mount-ring1");
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
+					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
+					action->set_goal_id(data.orders(order_id).id());
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
+					param->set_key("ring-color");
+					param->set_value(getRingColor(data.orders(order_id).ring_colors(0)));
+
+
 					if(model_positions[i]==7) {
 						action_id_last_rs1_feed = action_id;
 					}
@@ -921,6 +945,20 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+
+					++action_id;
+					action = plan->add_actions();
+					action->set_name("rs-mount-ring2");
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
+					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
+					action->set_goal_id(data.orders(order_id).id());
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
+					param->set_key("ring-color");
+					param->set_value(getRingColor(data.orders(order_id).ring_colors(1)));
 
 					if(model_positions[i]==7) {
 						action_id_last_rs1_feed = action_id;
@@ -1026,6 +1064,20 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+
+					++action_id;
+					action = plan->add_actions();
+					action->set_name("rs-mount-ring3");
+					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
+					action->set_id(action_id);
+					action->add_parent_id(action_id-1);
+					action->set_goal_id(data.orders(order_id).id());
+					param = action->add_params();
+					param->set_key("mps");
+					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
+					param->set_key("ring-color");
+					param->set_value(getRingColor(data.orders(order_id).ring_colors(2)));
 
 					if(model_positions[i]==7) {
 						action_id_last_rs1_feed = action_id;
