@@ -96,8 +96,13 @@
             (bind ?base UNKNOWN)
           )
           (bind ?cap (pb-field-value ?o "cap_color"))
+          (bind ?rings-count 0)
           (progn$ (?p (pb-field-list ?o "ring_colors"))
             (assert (wm-fact (key domain fact (sym-cat order- ring ?p-index -color) args? ord ?order-id col ?p) (type BOOL) (value TRUE) ))
+            (bind ?rings-count ?p-index)
+          )
+          (loop-for-count (?c (+ 1 ?rings-count) 3) do
+            (assert (wm-fact (key domain fact (sym-cat order- ring ?c -color) args? ord ?order-id col RING_NONE) (type BOOL) (value TRUE) ))
           )
           (assert 
             (wm-fact (key domain fact order-complexity args? ord ?order-id comp ?complexity) (type BOOL) (value TRUE) )
