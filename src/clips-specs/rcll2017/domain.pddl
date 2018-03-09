@@ -40,6 +40,7 @@
 		workpiece - object
 		cap-carrier - workpiece
 		shelf-spot - object
+		ring-num - object
 	)
 
 	(:constants
@@ -54,6 +55,7 @@
 		RETRIEVE_CAP MOUNT_CAP - cs-operation
 		C0 C1 C2 C3 - order-complexity-value
 		LEFT MIDDLE RIGHT - shelf-spot
+		NA ZERO ONE TWO THREE - ring-num
 	)
 
 	(:predicates
@@ -67,7 +69,7 @@
 		(mps-state ?m - mps ?s - mps-statename)
 		(bs-prepared-color ?m - mps ?col - base-color)
 		(bs-prepared-side ?m - mps ?side - mps-side)
-		(rs-ring-spec ?m - mps ?r - ring-color)
+		(rs-ring-spec ?m - mps ?r - ring-color ?rn - ring-num)
 		(cs-can-perform ?m - mps ?op - cs-operation)
 		(cs-prepared-for ?m - mps ?op - cs-operation)
 		(cs-buffered ?m - mps ?col - cap-color)
