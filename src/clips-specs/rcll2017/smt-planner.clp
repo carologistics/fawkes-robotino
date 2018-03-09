@@ -309,6 +309,7 @@
 (defrule production-smt-plan-completed
 	(smt-plan-complete ?handle)
 	  ?g <- (goal (id COMPLEXITY) (mode SELECTED))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE))
   (wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
 	=>
 	(printout t "SMT plan handle completed " ?handle  crlf)
@@ -664,6 +665,47 @@
 											(param-names m gate) (param-values (string-to-field ?mps) ?gate))
 			)
 			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-ds" crlf)
+		  )
+
+		  ;ACTION:::::FULFILL-ORDER-C0:::::
+		  (case "fulfill-order-c0" then
+			(bind ?m "")
+			(bind ?base-color "")
+			(bind ?cap-color "")
+			(bind ?action-id (pb-field-value ?a "id"))
+			(bind ?parents-ids (create$)) 
+			(progn$ (?arg (pb-field-list ?a "parent_id"))
+			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+			)
+			(progn$ (?arg (pb-field-list ?a "params"))
+			  (if (eq (pb-field-value ?arg "key") "mps") then
+				(bind ?mps (pb-field-value ?arg "value"))
+				(bind ?mps-splitted (str-split ?mps "-"))
+				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+			  else
+				(if (eq (pb-field-value ?arg "key") "base-color") then
+				  (bind ?base-color (pb-field-value ?arg "value"))
+
+				else
+					(if (eq (pb-field-value ?arg "key") "cap-color") then
+					  (bind ?cap-color (pb-field-value ?arg "value"))
+
+					else
+						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+					)
+				)
+			  )
+			)
+			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
+			(bind ?next-step-id (* ?action-id 100))
+			(bind ?steps (append$ ?steps ?next-step-id))
+			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
+			(assert
+				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+											(action-name fulfill-order-c0)
+											(param-names ord wp m basecol capcol) (param-values ?order-id ?wp (string-to-field ?mps) (string-to-field ?base-color) (string-to-field ?cap-color)))
+			)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c0 " ?order-id crlf)
 		  )
 
 		  ;ACTION:::::PREPARE-CS:::::
