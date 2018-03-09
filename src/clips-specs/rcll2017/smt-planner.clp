@@ -647,22 +647,28 @@
 				(bind ?mps-splitted (str-split ?mps "-"))
 				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
 			  else
-			  (if (eq (pb-field-value ?arg "key") "gate") then
-				 (bind ?gate (string-to-field (pb-field-value ?arg "value")))
+			  ; (if (eq (pb-field-value ?arg "key") "gate") then
+			  ;    (bind ?gate (string-to-field (pb-field-value ?arg "value")))
 
-				else
+			  ;   else
 					(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
-				)
+				; )
 			  )
 			)
 			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 			(bind ?next-step-id (* ?action-id 100))
 			(bind ?steps (append$ ?steps ?next-step-id))
 			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name prepare-ds)
-											(param-names m gate) (param-values (string-to-field ?mps) ?gate))
+			(do-for-fact ((?wm-fact wm-fact)) 
+				(and
+					(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
+					(eq ?order-id (wm-key-arg ?wm-fact:key ord))
+				)
+				(assert
+					 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+												(action-name prepare-ds)
+												(param-names m gate) (param-values (string-to-field ?mps) (wm-key-arg ?wm-fact:key gate) ))
+				)
 			)
 			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-ds" crlf)
 		  )
