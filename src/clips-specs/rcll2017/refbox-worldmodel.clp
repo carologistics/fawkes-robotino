@@ -151,7 +151,7 @@
     ; set available rings for ring-stations
       (if (eq ?m-type RS) then
         (progn$ (?rc (pb-field-list ?m "ring_colors"))
-          (assert (wm-fact (key domain fact rs-ring-spec args? m ?m-name r ?rc) (type BOOL) (value TRUE))) 
+          (assert (wm-fact (key domain fact rs-ring-spec args? m ?m-name r ?rc rn NA) (type BOOL) (value TRUE))) 
         )
       )
     )
@@ -163,4 +163,25 @@
       (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state) (type BOOL) (value TRUE))) 
     )
    )
+)
+
+(defrule refbox-recv-RingInfo
+  ?pf <- (protobuf-msg (type "llsf_msgs.RingInfo") (ptr ?p))
+  =>
+  (foreach ?r (pb-field-list ?p "rings")
+    (bind ?color (pb-field-value ?r "ring_color"))
+    (bind ?raw_material (pb-field-value ?r "raw_material"))
+    (do-for-all-facts ((?wm-fact wm-fact)) 
+                  (and  (wm-key-prefix ?wm-fact:key (create$ domain fact rs-ring-spec)) 
+                        (eq ?color (wm-key-arg ?wm-fact:key r))
+                        (neq ?raw_material (wm-key-arg ?wm-fact:key rn)))
+      (if (eq ?raw_material 0) then (bind ?rn ZERO))
+      (if (eq ?raw_material 1) then (bind ?rn ONE))
+      (if (eq ?raw_material 2) then (bind ?rn TOW))
+      (if (eq ?raw_material 3) then (bind ?rn THREE))
+      (bind ?mps (wm-key-arg ?wm-fact:key m))
+      (retract ?wm-fact)
+      (assert (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?color rn ?rn) (type BOOL) (value TRUE))) 
+    )
+  )
 )
