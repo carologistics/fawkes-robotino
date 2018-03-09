@@ -70,6 +70,11 @@
 		(bs-prepared-color ?m - mps ?col - base-color)
 		(bs-prepared-side ?m - mps ?side - mps-side)
 		(rs-ring-spec ?m - mps ?r - ring-color ?rn - ring-num)
+		(rs-prepared-color ?m - mps ?col - ring-color)
+		(rs-filled-with ?m - mps ?n - ring-num)
+		; These must be static predicates stating the legal ring-num operations
+		(rs-sub ?minuend - ring-num ?subtrahend - ring-num ?difference - ring-num)
+		(rs-inc ?summand - ring-num ?sum - ring-num)
 		(cs-can-perform ?m - mps ?op - cs-operation)
 		(cs-prepared-for ?m - mps ?op - cs-operation)
 		(cs-buffered ?m - mps ?col - cap-color)
