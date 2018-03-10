@@ -10,16 +10,6 @@
 )
 
 ; #  Goal Creation
-(defrule goal-reasoner-create
-  (not (goal (id TESTGOAL)))
-  (not (goal-already-tried TESTGOAL))
-  =>
-  (assert (goal (id TESTGOAL)))
-  ; This is just to make sure we formulate the goal only once.
-  ; In an actual domain this would be more sophisticated.
-  (assert (goal-already-tried TESTGOAL))
-)
-
 (defrule goal-reasoner-create-enter-field
 	(not (goal (id ENTER-FIELD)))
 	(not (goal-already-tried ENTER-FIELD))
