@@ -129,6 +129,52 @@
 	(assert (goal-already-tried PRODUCE-C0))
 )
 
+(defrule goal-reasoner-create-deliver
+  (not (goal (id DELIVER)))
+  ; (not (goal-already-tried DELIVER))
+  (not (goal (type ACHIEVE) ))
+  (wm-fact (key refbox state) (value RUNNING))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  ;To-Do: Model state IDLE|wait-and-look-for-alternatives
+  (wm-fact (key domain fact mps-type args? m ?ds t DS)(value TRUE))
+  (wm-fact (key domain fact mps-type args? m ?mps t CS)(value TRUE))
+  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN) (value TRUE))
+
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
+  ;note: could be moved to rejected checks
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  (wm-fact (key refbox order ?order quantity-delivered CYAN) (value ?qd&:(> ?qr ?qd)))
+
+  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+  ;ToDo: All the time considerations need to be added
+  =>
+  (assert (goal (id DELIVER) (params robot R-1
+                                    mps ?mps
+                                    order ?order
+                                    wp ?wp
+                                    ds ?ds
+                                    ds-gate ?gate
+                                    base-color ?base-color
+                                    cap-color ?cap-color
+                                    )))
+  (assert (goal-already-tried DELIVER))
+)
+
 ; ## Maintenance Goals
 (defrule goal-reasoner-create-beacon-maintain
   (not (goal (id BEACONMAINTAIN)))
