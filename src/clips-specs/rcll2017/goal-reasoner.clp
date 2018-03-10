@@ -23,8 +23,7 @@
 (defrule goal-reasoner-create-enter-field
 	(not (goal (id ENTER-FIELD)))
 	(not (goal-already-tried ENTER-FIELD))
-	(not (goal (type ACHIEVE)
-			(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	(not (goal (type ACHIEVE) ))
 	(wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
 	(wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
 	(wm-fact (key domain fact robot-waiting args? r ?robot))
@@ -39,8 +38,7 @@
 (defrule goal-reasoner-create-fill-cap-goal
 	(not (goal (id FILL-CAP)))
 	(not (goal-already-tried FILL-CAP))
-	(not (goal (type ACHIEVE)
-			(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	(not (goal (type ACHIEVE) ))
 	(wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
 	(wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
 	(wm-fact (key domain fact mps-type args? m ?mps t CS)(value TRUE))
@@ -61,8 +59,7 @@
 	"Remove an unknown base from CS after retrieving a cap from it."
 	(not (goal (id CLEAR-CS)))
 	(not (goal-already-tried CLEAR-CS))
-	(not (goal (type ACHIEVE)
-			(mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+	(not (goal (type ACHIEVE) ))
 	(wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
 	(wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
 	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
@@ -80,60 +77,58 @@
 )
 
 (defrule goal-reasoner-create-discard-unknown
-  "Discard a base which is not needed if no RS can be pre-filled"
-  (not (goal (id DISCARD-UNKNOWN)))
-  (not (goal-already-tried DISCARD-UNKNOWN))
-  (not (goal (type ACHIEVE)
-      (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
-  (wm-fact (key refbox state) (value RUNNING))
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  ;To-Do: Model state IDLE
-  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-  ;For now this will discard any thing its holding
-  ;To-Do: Only Create goal if RS has enough at slide
-  ;question: or would be more correct to create it and later
-  ;   reject it because its not useful
-  =>
-  (assert (goal (id DISCARD-UNKNOWN) (params robot ?robot wp ?wp)))
-  (assert (goal-already-tried DISCARD-UNKNOWN))
+	"Discard a base which is not needed if no RS can be pre-filled"
+	(not (goal (id DISCARD-UNKNOWN)))
+	(not (goal-already-tried DISCARD-UNKNOWN))
+	(not (goal (type ACHIEVE) ))
+	(wm-fact (key refbox state) (value RUNNING))
+	(wm-fact (key refbox phase) (value PRODUCTION))
+	;To-Do: Model state IDLE
+	(wm-fact (key domain fact holding args? r ?robot wp ?wp))
+	;For now this will discard any thing its holding
+	;To-Do: Only Create goal if RS has enough at slide
+	;question: or would be more correct to create it and later
+	;		reject it because its not useful
+	=>
+	(assert (goal (id DISCARD-UNKNOWN) (params robot ?robot wp ?wp)))
+	(assert (goal-already-tried DISCARD-UNKNOWN))
 )
 
 (defrule goal-reasoner-create-produce-c0
-  (not (goal (id PRODUCE-C0)))
-  (not (goal-already-tried PRODUCE-C0))
-  (not (goal (type ACHIEVE)
-      (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
-  (wm-fact (key refbox state) (value RUNNING))
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  ;To-Do: Model state IDLE|wait-and-look-for-alternatives
-  (wm-fact (key domain fact mps-type args? m ?mps t CS)(value TRUE))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN) (value TRUE))
-  (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color) (value TRUE))
-  (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP) (value TRUE))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  (wm-fact (key domain fact mps-type args? m ?bs t BS)(value TRUE))
-  (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN) (value TRUE))
-  ;To-Do: Model the bs active-side
-  (wm-fact (key domain fact order-complexity args? ord ?order com C0))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  ;note: could be moved to rejected checks
-  (wm-fact (key refbox order ?order quantity-delivered CYAN) (value ?qd&:(> ?qr ?qd)))
-  ;ToDo: All the time considerations need to be added
-  ;note: The wp could either stay here and formulate goals
-  ;   for all the work-pieces.or matched else where
-  ;   (during or during expansion)
-  (wm-fact (key domain fact wp-unused args? wp ?wp))
-  =>
-  (assert (goal (id PRODUCE-C0) (params robot R-1
-                    bs ?bs
-                    bs-side INPUT
-                    bs-color ?base-color
-                    mps ?mps
-                    cs-color ?cap-color
-                    wp ?wp)))
-  (assert (goal-already-tried PRODUCE-C0))
+	(not (goal (id PRODUCE-C0)))
+	(not (goal-already-tried PRODUCE-C0))
+	(not (goal (type ACHIEVE) ))
+	(wm-fact (key refbox state) (value RUNNING))
+	(wm-fact (key refbox phase) (value PRODUCTION))
+	;To-Do: Model state IDLE|wait-and-look-for-alternatives
+	(wm-fact (key domain fact mps-type args? m ?mps t CS)(value TRUE))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN) (value TRUE))
+	(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color) (value TRUE))
+	(wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP) (value TRUE))
+	(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	(wm-fact (key domain fact mps-type args? m ?bs t BS)(value TRUE))
+	(wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN) (value TRUE))
+	;To-Do: Model the bs active-side
+	(wm-fact (key domain fact order-complexity args? ord ?order com C0))
+	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+	(wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+	;note: could be moved to rejected checks
+	(wm-fact (key refbox order ?order quantity-delivered CYAN) (value ?qd&:(> ?qr ?qd)))
+	;ToDo: All the time considerations need to be added
+	;note: The wp could either stay here and formulate goals
+	;		for all the work-pieces.or matched else where
+	;		(during or during expansion)
+	(wm-fact (key domain fact wp-unused args? wp ?wp))
+	=>
+	(assert (goal (id PRODUCE-C0) (params robot R-1
+										bs ?bs
+										bs-side INPUT
+										bs-color ?base-color
+										mps ?mps
+										cs-color ?cap-color
+										wp ?wp)))
+	(assert (goal-already-tried PRODUCE-C0))
 )
 
 ; ## Maintenance Goals
