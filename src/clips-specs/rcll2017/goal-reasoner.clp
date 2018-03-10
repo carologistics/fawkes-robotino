@@ -105,6 +105,7 @@
 	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN) (value TRUE))
 	(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color) (value TRUE))
 	(wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP) (value TRUE))
+	(not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?mps side ?any-side)))
 	(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 	(wm-fact (key domain fact mps-type args? m ?bs t BS)(value TRUE))
 	(wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN) (value TRUE))
