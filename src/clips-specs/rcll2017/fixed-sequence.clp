@@ -46,22 +46,25 @@
   (modify ?g (mode EXPANDED))
 )
 
+
 (defrule goal-expander-prefill-cap-station
    "Feed a CS with a cap from its shelf so that afterwards it can directly put the cap on a product."
     ?g <- (goal (mode SELECTED) (id FILL-CAP) (params robot ?robot mps ?mps))
     (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
     ;Reasoning about the wm is in Goal Creation
     =>
-    (do-for-fact ((?fact-wp-on-shelf wm-fact) (?fact-wp-cap-color wm-fact))
-            (and (wm-key-prefix ?fact-wp-cap-color:key (create$ domain fact wp-cap-color))
-                 (wm-key-prefix ?fact-wp-on-shelf:key (create$ domain fact wp-on-shelf))
+    (do-for-fact ((?fact-wp-on-shelf wm-fact))
+            (and (wm-key-prefix ?fact-wp-on-shelf:key (create$ domain fact wp-on-shelf))
                  (eq (wm-key-arg ?fact-wp-on-shelf:key m) ?mps))
-                 (eq (wm-key-arg ?fact-wp-on-shelf:key wp)
-                     (wm-key-arg ?fact-wp-cap-color:key wp))
 
-        (bind ?cc (wm-key-arg ?fact-wp-on-shelf:key wp))
-        (bind ?shelf-spot (wm-key-arg ?fact-wp-on-shelf:key spot))
+      (bind ?cc (wm-key-arg ?fact-wp-on-shelf:key wp))
+      (bind ?shelf-spot (wm-key-arg ?fact-wp-on-shelf:key spot))
+
+      (do-for-fact ((?fact-wp-cap-color wm-fact))
+              (and (wm-key-prefix ?fact-wp-cap-color:key (create$ domain fact wp-cap-color))
+                    (eq (wm-key-arg ?fact-wp-cap-color:key wp) ?cc))
         (bind ?cap-color (wm-key-arg ?fact-wp-cap-color:key col))
+      )
     )
 
     (assert
