@@ -128,6 +128,26 @@
   (modify ?g (mode EXPANDED))
 )
 
+(deffunction random-id ()
+  "Return a random task id"
+  (return (random 0 1000000000))
+)
+
+(deffunction spawn-wp ()
+  "Spawn a new WP by Creating relevante domain facts"
+  (bind ?wp-id (sym-cat WP (random-id)))
+  (assert
+    (domain-object (name ?wp-id) (type workpiece))
+    (domain-fact (name wp-unused) (param-values ?wp-id))
+    (domain-fact (name wp-base-color) (param-values ?wp-id BASE_NONE))
+    (domain-fact (name wp-cap-color) (param-values ?wp-id CAP_NONE))
+    (domain-fact (name wp-ring1-color) (param-values ?wp-id RING_NONE))
+    (domain-fact (name wp-ring2-color) (param-values ?wp-id RING_NONE))
+    (domain-fact (name wp-ring3-color) (param-values ?wp-id RING_NONE))
+  )
+  (return ?wp-id)
+)
+
 
 (defrule goal-produce-c0
  ?g <- (goal (mode SELECTED) (id PRODUCE-C0) (params robot ?robot
@@ -136,11 +156,11 @@
                                                       bs-color ?base-color
                                                       mps ?mps
                                                       cs-color ?cap-color
-                                                      wp ?wp))
                                                       order ?order
                                                       ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
+ (bind ?wp (spawn-wp))
  (assert
   (plan (id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0))
   (plan-action (id 1) (plan-id PRODUCE-C0-PLAN) (duration 4.0)

@@ -117,10 +117,6 @@
 	;note: could be moved to rejected checks
 	(wm-fact (key refbox order ?order quantity-delivered CYAN) (value ?qd&:(> ?qr ?qd)))
 	;ToDo: All the time considerations need to be added
-	;note: The wp could either stay here and formulate goals
-	;		for all the work-pieces.or matched else where
-	;		(during or during expansion)
-	(wm-fact (key domain fact wp-unused args? wp ?wp))
 	=>
 	(assert (goal (id PRODUCE-C0) (params robot R-1
 										bs ?bs
@@ -128,7 +124,6 @@
 										bs-color ?base-color
 										mps ?mps
 										cs-color ?cap-color
-										wp ?wp)))
 										order ?order
 										)))
 	(assert (goal-already-tried PRODUCE-C0))
