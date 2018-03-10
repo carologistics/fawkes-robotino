@@ -129,6 +129,8 @@
 										mps ?mps
 										cs-color ?cap-color
 										wp ?wp)))
+										order ?order
+										)))
 	(assert (goal-already-tried PRODUCE-C0))
 )
 
@@ -210,7 +212,7 @@
 
 ; #  Goal Monitoring
 
-; ##Sub-Goals Evaluation
+; ## Goal Evaluation
 (deffunction random-id ()
   "Return a random task id"
   (return (random 0 1000000000))
@@ -239,7 +241,31 @@
   (modify ?m (last-achieve ?now))
 )
 
-; ## Goal Evaluation
+(defrule goal-reasoner-evaluate-completed-produce-c0
+	?g <- (goal (id PRODUCE-C0) (mode FINISHED) (outcome COMPLETED)
+				(params robot ?robot
+                          bs ?bs
+                          bs-side ?bs-side
+                          bs-color ?base-color
+                          mps ?mps
+                          cs-color ?cap-color
+                          order ?order
+                          )
+				)
+	?gm <- (goal-meta (goal-id PRODUCE-C0))
+	(plan (goal-id PRODUCE-C0)
+			(id ?plan-id))
+	?p <-(plan-action
+			(plan-id ?plan-id)
+			(action-name bs-dispense)
+			(param-names r m side wp basecol)
+	        (param-values ?robot ?bs ?bs-side ?wp ?base-color))
+	=>
+	(printout t "Goal '" PRODUCE-C0 "' has been completed, Evaluating" crlf)
+	(assert (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order)))
+	(modify ?g (mode EVALUATED))
+)
+
 (defrule goal-reasoner-evaluate-completed-subgoal-common
   ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome COMPLETED))
   ?pg <- (goal (id ?parent-id) (mode DISPATCHED))

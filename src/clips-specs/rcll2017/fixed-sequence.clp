@@ -137,6 +137,8 @@
                                                       mps ?mps
                                                       cs-color ?cap-color
                                                       wp ?wp))
+                                                      order ?order
+                                                      ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
  (assert
