@@ -128,6 +128,7 @@
     (domain-fact (name rs-inc) (param-values ZERO ONE))
     (domain-fact (name rs-inc) (param-values ONE TWO))
     (domain-fact (name rs-inc) (param-values TWO THREE))
-    
+    (domain-fact (name rs-filled-with) (param-values C-RS1 ZERO))
+    (domain-fact (name rs-filled-with) (param-values C-RS2 ZERO))
   )
 )
