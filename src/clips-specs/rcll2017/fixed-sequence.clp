@@ -200,34 +200,43 @@
 )
 
 (defrule goal-deliver
- ?g <- (goal (mode SELECTED) (id PRODUCE-C0))
+ ?g <- (goal (mode SELECTED) (id DELIVER) (params robot ?robot
+                                                        mps ?mps
+                                                        order ?order
+                                                        wp ?wp
+                                                        ds ?ds
+                                                        ds-gate ?gate
+                                                        base-color ?base-color
+                                                        cap-color ?cap-color
+                                                        ))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
  (assert
-  (plan (id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0))
-  (plan-action (id 1) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
-        (action-name move-wp-get)
+  (plan (id DELIVER-PLAN) (goal-id DELIVER))
+  (plan-action (id 1) (plan-id DELIVER-PLAN) (duration 4.0)
+        (action-name move)
         (param-names r from from-side to to-side )
-        (param-values ))
-  (plan-action (id 2) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
+        (param-values ?robot ?curr-location ?curr-side ?mps OUTPUT))
+  (plan-action (id 2) (plan-id DELIVER-PLAN) (duration 4.0)
         (action-name wp-get)
         (param-names r wp m side)
-        (param-values ))
-  (plan-action (id 3) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
+        (param-values ?robot ?wp ?mps OUTPUT))
+  (plan-action (id 3) (plan-id DELIVER-PLAN) (duration 4.0)
         (action-name move-wp-put)
         (param-names r from from-side to)
-        (param-values ))
-  (plan-action (id 4) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
+        (param-values ?robot ?mps OUTPUT ?ds))
+  (plan-action (id 4) (plan-id DELIVER-PLAN) (duration 4.0)
         (action-name prepare-ds)
         (param-names m gate)
-        (param-values ))
-  (plan-action (id 5) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
+        (param-values ?ds ?gate))
+  (plan-action (id 5) (plan-id DELIVER-PLAN) (duration 4.0)
         (action-name wp-put)
         (param-names r wp m)
-        (param-values ))
-  (plan-action (id 6) (plan-id PRODUCE-C0-PLAN) (duration 4.0)
+        (param-values ?robot ?wp ?ds))
+  (plan-action (id 6) (plan-id DELIVER-PLAN) (duration 4.0)
         (action-name fulfill-order-c0)
-        (param-names ord wp m g)
-        (param-values ))
+        (param-names ord wp m g basecol capcol)
+        (param-values ?order ?wp ?ds ?gate ?base-color  ?cap-color))
  )
  (modify ?g (mode EXPANDED))
 )
