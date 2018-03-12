@@ -96,8 +96,13 @@
             (bind ?base UNKNOWN)
           )
           (bind ?cap (pb-field-value ?o "cap_color"))
+          (bind ?rings-count 0)
           (progn$ (?p (pb-field-list ?o "ring_colors"))
             (assert (wm-fact (key domain fact (sym-cat order- ring ?p-index -color) args? ord ?order-id col ?p) (type BOOL) (value TRUE) ))
+            (bind ?rings-count ?p-index)
+          )
+          (loop-for-count (?c (+ 1 ?rings-count) 3) do
+            (assert (wm-fact (key domain fact (sym-cat order- ring ?c -color) args? ord ?order-id col RING_NONE) (type BOOL) (value TRUE) ))
           )
           (assert 
             (wm-fact (key domain fact order-complexity args? ord ?order-id comp ?complexity) (type BOOL) (value TRUE) )
@@ -146,7 +151,7 @@
     ; set available rings for ring-stations
       (if (eq ?m-type RS) then
         (progn$ (?rc (pb-field-list ?m "ring_colors"))
-          (assert (wm-fact (key domain fact rs-ring-spec args? m ?m-name r ?rc) (type BOOL) (value TRUE))) 
+          (assert (wm-fact (key domain fact rs-ring-spec args? m ?m-name r ?rc rn NA) (type BOOL) (value TRUE))) 
         )
       )
     )
@@ -158,4 +163,25 @@
       (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state) (type BOOL) (value TRUE))) 
     )
    )
+)
+
+(defrule refbox-recv-RingInfo
+  ?pf <- (protobuf-msg (type "llsf_msgs.RingInfo") (ptr ?p))
+  =>
+  (foreach ?r (pb-field-list ?p "rings")
+    (bind ?color (pb-field-value ?r "ring_color"))
+    (bind ?raw-material (pb-field-value ?r "raw_material"))
+    (bind ?rn ZERO)
+    (if (eq ?raw-material 1) then (bind ?rn ONE))
+    (if (eq ?raw-material 2) then (bind ?rn TOW))
+    (if (eq ?raw-material 3) then (bind ?rn THREE))
+    (do-for-all-facts ((?wm-fact wm-fact)) 
+                  (and  (wm-key-prefix ?wm-fact:key (create$ domain fact rs-ring-spec)) 
+                        (eq ?color (wm-key-arg ?wm-fact:key r))
+                        (neq ?rn (wm-key-arg ?wm-fact:key rn)))
+      (bind ?mps (wm-key-arg ?wm-fact:key m))
+      (retract ?wm-fact)
+      (assert (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?color rn ?rn) (type BOOL) (value TRUE))) 
+    )
+  )
 )
