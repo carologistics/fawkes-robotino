@@ -21,7 +21,7 @@
 
 (defrule action-execute-noop
   ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status PENDING)
-         (action-name ?action&bs-dispense|cs-retrieve-cap|cs-mount-cap|fulfill-order-c0)
+         (action-name ?action&bs-dispense|cs-retrieve-cap|cs-mount-cap|rs-mount-ring1|rs-mount-ring2|rs-mount-ring3|fulfill-order-c0|fulfill-order-c1|fulfill-order-c2|fulfill-order-c3)
          (executable TRUE)
          (param-values $?param-values))
   =>
