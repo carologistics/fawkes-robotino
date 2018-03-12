@@ -161,8 +161,8 @@
 (deffunction smt-create-order (?id ?gate ?complexity ?q-req ?q-del ?begin ?end ?team-color)
   (printout t "Creating Data msgs:: Order with id " ?id  crlf)
   (bind ?o (pb-create "llsf_msgs.Order"))
-	(pb-set-field ?o "id" ?id)
-	(pb-set-field ?o "delivery_gate" ?gate)
+	(pb-set-field ?o "id" 1) ; TODO Use or ommit real ?id
+	(pb-set-field ?o "delivery_gate" 1) ; TODO Use or ommit real ?gate
 	(pb-set-field ?o "complexity" ?complexity)
 	(pb-set-field ?o "quantity_requested" ?q-req)
 	(if (eq ?team-color CYAN)
@@ -262,23 +262,25 @@
 
 ; Add ring information from worldmodel to protobuf
 (deffunction smt-create-ring (?ring-color ?req-bases)
-  (printout t "Creating Data msgs:: Ring color " ?ring-color  crlf)
+  (printout t "Creating Data msgs:: Ring color " ?ring-color " with req-bases " ?req-bases  crlf)
   (bind ?r (pb-create "llsf_msgs.Ring"))
-  (pb-set-field ?r "raw_material" ?req-bases)
   (pb-set-field ?r "ring_color" ?ring-color)
+  (bind ?req-bases-number 0)
+      (switch ?req-bases
+        (case ONE then (bind ?req-bases-number 1))
+        (case TWO then (bind ?req-bases-number 2))
+        (case THREE then (bind ?req-bases-number 3))
+        (default (printout warn "Ring color not found" crlf))
+      )
+  (pb-set-field ?r "raw_material" ?req-bases-number)
   (return ?r)
 )
 
 (deffunction smt-create-rings (?team-color)
   (bind ?rv (create$))
-  ; (do-for-all-facts ((?r ring)) TRUE
-  ;   (bind ?rv (append$ ?rv (smt-create-ring ?r:color ?r:req-bases)))
-  ; )
-  ; TODO Replace fix call by real data
-  (bind ?rv (append$ ?rv (smt-create-ring "RING_GREEN" 2)))
-  (bind ?rv (append$ ?rv (smt-create-ring "RING_BLUE" 1)))
-  (bind ?rv (append$ ?rv (smt-create-ring "RING_ORANGE" 0)))
-  (bind ?rv (append$ ?rv (smt-create-ring "RING_YELLOW" 0)))
+      (do-for-all-facts ((?wm-fact wm-fact)) (wm-key-prefix ?wm-fact:key (create$ domain fact rs-ring-spec))
+		(bind ?rv (append$ ?rv (smt-create-ring (wm-key-arg ?wm-fact:key r) (wm-key-arg ?wm-fact:key rn))))
+      )
   (return ?rv)
 )
 
@@ -287,6 +289,7 @@
   (goal (id COMPLEXITY) (mode SELECTED))
   (wm-fact (key refbox phase) (value PRODUCTION))
   (wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
+  (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ZERO) (value TRUE))
   ; (state IDLE)
   ; (not (plan-requested))
   ; (test (eq ?*ROBOT-NAME* "R-1"))
@@ -309,7 +312,7 @@
 (defrule production-smt-plan-completed
 	(smt-plan-complete ?handle)
 	  ?g <- (goal (id COMPLEXITY) (mode SELECTED))
-  (wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com C3) (value TRUE))
   (wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
 	=>
 	(printout t "SMT plan handle completed " ?handle  crlf)
@@ -1003,7 +1006,7 @@
 				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
 			  else
 				  (if (eq (pb-field-value ?arg "key") "ring_color") then
-						(bind ?goal-ring-color (utils-remove-prefix (pb-field-value ?arg "value") ring_)) ;temp: the color of the base of the goal is recognized here
+						(bind ?goal-ring-color (pb-field-value ?arg "value") ) ;temp: the color of the base of the goal is recognized here
 
 					else
 						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1019,7 +1022,7 @@
 											(action-name prepare-rs)
 											(param-names m rc) (param-values (string-to-field ?mps) (string-to-field ?goal-ring-color)))
 			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-rs at: " ?mps crlf)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-rs at: " ?mps " with ring-color: " ?goal-ring-color crlf)
 		  )
 
 		  ;ACTION:::::RS-MOUNT-RING1:::::
@@ -1054,7 +1057,7 @@
 											(action-name rs-mount-ring1)
 											(param-names m wp col) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color)))
 			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring1 at: " ?mps crlf)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring1 at: " ?mps " with ring-color: " ?ring-color crlf)
 		  )
 
 		  ;ACTION:::::RS-MOUNT-RING2:::::
@@ -1089,7 +1092,7 @@
 											(action-name rs-mount-ring2)
 											(param-names m wp col) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color)))
 			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring2 at: " ?mps crlf)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring2 at: " ?mps " with ring-color: " ?ring-color crlf)
 		  )
 
 		  ;ACTION:::::RS-MOUNT-RING3:::::
@@ -1124,7 +1127,7 @@
 											(action-name rs-mount-ring3)
 											(param-names m wp col) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color)))
 			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring3 at: " ?mps crlf)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring3 at: " ?mps " with ring-color: " ?ring-color crlf)
 		  )
 
 			;ACTION:::::DEFAULT:::::
