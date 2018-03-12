@@ -744,7 +744,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("wp-put");
+					action->set_name("wp-put-slide-cc");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -759,9 +759,23 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					// Save action_id_last for feed at the correpsonding ring station
 					if(model_positions[i] == 7) {
 						action_id_last_rs1_pay.push_back(action_id);
+
+						param = action->add_params();
+						param->set_key("rs-before");
+						param->set_value(getAddBases(model_state4A[i]));
+						param = action->add_params();
+						param->set_key("rs-after");
+						param->set_value(getAddBases(model_state4B[i]));
 					}
 					else if(model_positions[i] == 9) {
 						action_id_last_rs2_pay.push_back(action_id);
+
+						param = action->add_params();
+						param->set_key("rs-before");
+						param->set_value(getAddBases(model_state5A[i]));
+						param = action->add_params();
+						param->set_key("rs-after");
+						param->set_value(getAddBases(model_state5B[i]));
 					}
 
 					break;
@@ -3349,6 +3363,27 @@ std::string ClipsSmtThread::getRingColor(int product_id)
 	}
 
 	return product_color;
+}
+
+std::string ClipsSmtThread::getAddBases(int add_bases)
+{
+
+	std::string add_bases_string;
+
+	switch(add_bases){
+		case 0: add_bases_string = "ZERO";
+				break;
+		case 1: add_bases_string = "ONE";
+				break;
+		case 2: add_bases_string = "TWO";
+				break;
+		case 3: add_bases_string = "THREE";
+				break;
+		default: add_bases_string = "ERROR";
+				break;
+	}
+
+	return add_bases_string;
 }
 
 void ClipsSmtThread::initShelf()
