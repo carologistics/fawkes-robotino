@@ -295,6 +295,7 @@ private:
 	std::string getCapColor(int product_id);
 	std::string getBaseColor(int product_id);
 	std::string getRingColor(int product_id);
+	std::string getAddBases(int add_bases);
 	void initShelf();
 	std::string getNextShelf();
 };
