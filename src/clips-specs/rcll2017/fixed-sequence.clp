@@ -116,6 +116,30 @@
   (modify ?g (mode EXPANDED))
 )
 
+
+(defrule goal-expander-fill-rs
+ ?g <- (goal (mode SELECTED) (id FILL-RS) (params robot ?robot
+                                                    mps ?mps
+                                                    wp ?wp
+                                                    rs-before ?rs-before
+                                                    rs-after ?rs-after))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  =>
+  (assert
+    (plan (id FILL-RS-PLAN) (goal-id FILL-RS))
+     (plan-action (id 1) (plan-id FILL-RS-PLAN) (duration 4.0)
+                                    (action-name move)
+                                    (param-names r from from-side to to-side )
+                                    (param-values ?robot ?curr-location ?curr-side ?mps INPUT))
+    (plan-action (id 2) (plan-id FILL-RS-PLAN) (duration 4.0)
+          (action-name wp-put-slide-cc)
+          (param-names r wp m rs-before rs-after)
+          (param-values ?robot ?wp ?mps ?rs-before ?rs-after))
+  )
+  (modify ?g (mode EXPANDED))
+)
+
+
 (deffunction random-id ()
   "Return a random task id"
   (return (random 0 1000000000))

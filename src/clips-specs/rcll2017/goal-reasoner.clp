@@ -66,6 +66,32 @@
 	(assert (goal-already-tried CLEAR-CS))
 )
 
+(defrule goal-reasoner-insert-unknown-base-to-rs
+	"Insert a base with unknown color in a RS for preparation"
+	(not (goal (id FILL-RS)))
+	; (not (goal-already-tried FILL-RS))
+	(not (goal (type ACHIEVE) ))
+	(wm-fact (key refbox state) (value RUNNING))
+	(wm-fact (key refbox phase) (value PRODUCTION))
+	(wm-fact (key domain fact mps-type args? m ?mps t RS) (value TRUE))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN) (value TRUE))
+	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TOW) (value TRUE))
+	(wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
+	(wm-fact (key domain fact holding args? r ?robot wp ?wp) (value TRUE))
+	(wm-fact (key domain fact wp-usable args? wp ?wp) (value TRUE))
+	;CCs don't have a base color. Hence, models base with UNKOWN color
+	(not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color) (value TRUE)))
+	=>
+	(assert (goal (id FILL-RS) (params robot ?robot
+										mps ?mps
+										wp ?wp
+										rs-before ?rs-before
+										rs-after ?rs-after)))
+	(assert (goal-already-tried FILL-RS))
+	;Todo: dont pass the RN in the params, reason about it and check
+	;it again for rejection Or selection
+)
+
 (defrule goal-reasoner-create-discard-unknown
 	"Discard a base which is not needed if no RS can be pre-filled"
 	(not (goal (id DISCARD-UNKNOWN)))
