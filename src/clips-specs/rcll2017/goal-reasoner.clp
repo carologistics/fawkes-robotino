@@ -300,8 +300,8 @@
 )
 
 (defrule goal-reasoner-evaluate-completed-produce-c0
-	?g <- (goal (id PRODUCE-C0) (mode FINISHED) (outcome COMPLETED)
-				(params robot ?robot
+  ?g <- (goal (id PRODUCE-C0) (mode FINISHED) (outcome COMPLETED)
+        (params robot ?robot
                           bs ?bs
                           bs-side ?bs-side
                           bs-color ?base-color
@@ -309,19 +309,19 @@
                           cs-color ?cap-color
                           order ?order
                           )
-				)
-	?gm <- (goal-meta (goal-id PRODUCE-C0))
-	(plan (goal-id PRODUCE-C0)
-			(id ?plan-id))
-	?p <-(plan-action
-			(plan-id ?plan-id)
-			(action-name bs-dispense)
-			(param-names r m side wp basecol)
-	        (param-values ?robot ?bs ?bs-side ?wp ?base-color))
-	=>
-	(printout t "Goal '" PRODUCE-C0 "' has been completed, Evaluating" crlf)
-	(assert (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (value TRUE)))
-	(modify ?g (mode EVALUATED))
+        )
+  ?gm <- (goal-meta (goal-id PRODUCE-C0))
+  (plan (goal-id PRODUCE-C0)
+      (id ?plan-id))
+  ?p <-(plan-action
+      (plan-id ?plan-id)
+      (action-name bs-dispense)
+      (param-names r m side wp basecol)
+          (param-values ?robot ?bs ?bs-side ?wp ?base-color))
+  =>
+  (printout t "Goal '" PRODUCE-C0 "' has been completed, Evaluating" crlf)
+  (assert (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (value TRUE)))
+  (modify ?g (mode EVALUATED))
 )
 
 (defrule goal-reasoner-evaluate-completed-subgoal-common
@@ -340,6 +340,7 @@
 (defrule goal-reasoner-evaluate-common
   ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome ?outcome))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
+  (test (neq ?goal-id PRODUCE-C0))
   =>
   (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
   (if (eq ?outcome FAILED)
