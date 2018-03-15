@@ -140,14 +140,16 @@
 (defrule goal-reasoner-create-discard-unknown
 	"Discard a base which is not needed if no RS can be pre-filled"
 	(not (goal (id DISCARD-UNKNOWN)))
-	(not (goal-already-tried DISCARD-UNKNOWN))
+	; (not (goal-already-tried DISCARD-UNKNOWN))
 	(not (goal (type ACHIEVE) ))
 	(wm-fact (key refbox state) (value RUNNING))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	;To-Do: Model state IDLE
-	;For now this will discard any thing its holding
-	;To-Do: Only Create goal if RS has enough at slide
 	(wm-fact (key domain fact holding args? r ?robot wp ?wp) (value TRUE))
+	(wm-fact (key domain fact mps-type args? m ?mps t RS) (value TRUE))
+	;only discard if ring stations have at least two bases loaded
+	(wm-fact (key domain fact rs-filled-with args? m ?mps n TOW|THREE) (value TRUE))
+
 	;question: or would be more correct to create it and later
 	;		reject it because its not useful
 	=>
