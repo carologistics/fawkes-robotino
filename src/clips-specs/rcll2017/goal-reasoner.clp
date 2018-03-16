@@ -61,8 +61,8 @@
 	(not (goal (type ACHIEVE) ))
 	(wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
 	(wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
-	(wm-fact (key domain fact robot-waiting args? r ?robot) (value TRUE))
-	(not (wm-fact (key domain fact entered-field args? r ?robot) (value TRUE)))
+	(wm-fact (key domain fact robot-waiting args? r ?robot))
+	(not (wm-fact (key domain fact entered-field args? r ?robot)))
 	=>
 	(assert (goal (id ENTER-FIELD)))
 	; This is just to make sure we formulate the goal only once.
@@ -76,12 +76,12 @@
 	(not (goal (type ACHIEVE) ))
 	(wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
 	(wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
-	(wm-fact (key domain fact mps-type args? m ?mps t CS) (value TRUE))
-	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN) (value TRUE))
-	(wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP) (value TRUE))
-    (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color) (value TRUE)))
-	(not (wm-fact (key domain fact holding args? r ?robot wp ?wp) (value TRUE)))
-	(wm-fact (key domain fact entered-field args? r R-1) (value TRUE))
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
+	(wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
+	(not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
+	(not (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+	(wm-fact (key domain fact entered-field args? r R-1))
 	; (test (eq ?robot R-1))
 	=>
 	(assert (goal (id FILL-CAP) (params robot R-1 mps ?mps)))
@@ -97,12 +97,12 @@
 	(not (goal (type ACHIEVE) ))
 	(wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
 	(wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT) (value TRUE))
-	(wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE) (value TRUE))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	(wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
 	;Maybe add a check for the base_color
-	(wm-fact (key domain fact mps-type args? m ?mps t CS) (value TRUE))
-	(wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT) (value TRUE))
-	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp) (value TRUE)))
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	(wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
+	(not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
 	; (test (eq ?robot R-1))
 	=>
 	(assert (goal (id CLEAR-CS) (params robot R-1 mps ?mps wp ?wp)))
@@ -112,29 +112,29 @@
 )
 
 (defrule goal-reasoner-insert-unknown-base-to-rs
-  "Insert a base with unknown color in a RS for preparation"
-  (not (goal (id FILL-RS)))
-  ; (not (goal-already-tried FILL-RS))
-  (not (goal (type ACHIEVE) ))
-  (wm-fact (key refbox state) (value RUNNING))
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  (wm-fact (key domain fact mps-type args? m ?mps t RS) (value TRUE))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN) (value TRUE))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TOW) (value TRUE))
-  (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
-  (wm-fact (key domain fact holding args? r ?robot wp ?wp) (value TRUE))
-  (wm-fact (key domain fact wp-usable args? wp ?wp) (value TRUE))
-  ;CCs don't have a base color. Hence, models base with UNKOWN color
-  (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color) (value TRUE)))
-  =>
-  (assert (goal (id FILL-RS) (params robot ?robot
-                    mps ?mps
-                    wp ?wp
-                    rs-before ?rs-before
-                    rs-after ?rs-after)))
-  (assert (goal-already-tried FILL-RS))
-  ;Todo: dont pass the RN in the params, reason about it and check
-  ;it again for rejection Or selection
+	"Insert a base with unknown color in a RS for preparation"
+	(not (goal (id FILL-RS)))
+	; (not (goal-already-tried FILL-RS))
+	(not (goal (type ACHIEVE) ))
+	(wm-fact (key refbox state) (value RUNNING))
+	(wm-fact (key refbox phase) (value PRODUCTION))
+	(wm-fact (key domain fact mps-type args? m ?mps t RS))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN))
+	(wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TOW))
+	(wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
+	(wm-fact (key domain fact holding args? r ?robot wp ?wp))
+	(wm-fact (key domain fact wp-usable args? wp ?wp))
+	;CCs don't have a base color. Hence, models base with UNKOWN color
+	(not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color)))
+	=>
+	(assert (goal (id FILL-RS) (params robot ?robot
+										mps ?mps
+										wp ?wp
+										rs-before ?rs-before
+										rs-after ?rs-after)))
+	(assert (goal-already-tried FILL-RS))
+	;Todo: dont pass the RN in the params, reason about it and check
+	;it again for rejection Or selection
 )
 
 (defrule goal-reasoner-create-discard-unknown
@@ -145,10 +145,10 @@
 	(wm-fact (key refbox state) (value RUNNING))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	;To-Do: Model state IDLE
-	(wm-fact (key domain fact holding args? r ?robot wp ?wp) (value TRUE))
-	(wm-fact (key domain fact mps-type args? m ?mps t RS) (value TRUE))
+	(wm-fact (key domain fact holding args? r ?robot wp ?wp))
+	(wm-fact (key domain fact mps-type args? m ?mps t RS))
 	;only discard if ring stations have at least two bases loaded
-	(wm-fact (key domain fact rs-filled-with args? m ?mps n TOW|THREE) (value TRUE))
+	(wm-fact (key domain fact rs-filled-with args? m ?mps n TOW|THREE))
 
 	;question: or would be more correct to create it and later
 	;		reject it because its not useful
@@ -164,18 +164,18 @@
 	(wm-fact (key refbox state) (value RUNNING))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	;To-Do: Model state IDLE|wait-and-look-for-alternatives
-	(wm-fact (key domain fact mps-type args? m ?mps t CS) (value TRUE))
-	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN) (value TRUE))
-	(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color) (value TRUE))
-	(wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP) (value TRUE))
-	(not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?mps side ?any-side) (value TRUE)))
-	(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp) (value TRUE)))
-	(wm-fact (key domain fact mps-type args? m ?bs t BS) (value TRUE))
-	(wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN) (value TRUE))
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+	(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
+	(wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
+	(not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?mps side ?any-side)))
+	(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+	(wm-fact (key domain fact mps-type args? m ?bs t BS))
+	(wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
 	;To-Do: Model the bs active-side
-	(wm-fact (key domain fact order-complexity args? ord ?order com C0) (value TRUE))
-	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color) (value TRUE))
-	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color) (value TRUE))
+	(wm-fact (key domain fact order-complexity args? ord ?order com C0))
+	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
 	(wm-fact (key refbox order ?order quantity-requested) (value ?qr))
 	;note: could be moved to rejected checks
 	(wm-fact (key refbox order ?order quantity-delivered CYAN) (value ?qd&:(> ?qr ?qd)))
@@ -199,30 +199,30 @@
 	(wm-fact (key refbox state) (value RUNNING))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	;To-Do: Model state IDLE|wait-and-look-for-alternatives
-	(wm-fact (key domain fact mps-type args? m ?ds t DS) (value TRUE))
-	(wm-fact (key domain fact mps-type args? m ?mps t CS) (value TRUE))
-	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN) (value TRUE))
+	(wm-fact (key domain fact mps-type args? m ?ds t DS))
+	(wm-fact (key domain fact mps-type args? m ?mps t CS))
+	(wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
 
-	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT) (value TRUE))
-	(wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color) (value TRUE))
-	(wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color) (value TRUE))
-	(wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color) (value TRUE))
-	(wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color) (value TRUE))
-	(wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color) (value TRUE))
+	(wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+	(wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+	(wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+	(wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+	(wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+	(wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
 
-	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity) (value TRUE))
-	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color) (value TRUE))
-	(wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color) (value TRUE))
-	(wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color) (value TRUE))
-	(wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color) (value TRUE))
-	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color) (value TRUE))
-	(wm-fact (key domain fact order-gate args? ord ?order gate ?gate) (value TRUE))
+	(wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+	(wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+	(wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+	(wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+	(wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+	(wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+	(wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
 	;note: could be moved to rejected checks
 	(wm-fact (key refbox order ?order quantity-requested) (value ?qr))
 	(wm-fact (key refbox order ?order quantity-delivered CYAN) (value ?qd&:(> ?qr ?qd)))
 
-	(wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (value TRUE))
-	(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp) (value TRUE)))
+	(wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+	(not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 	;ToDo: All the time considerations need to be added
 	=>
 	(assert (goal (id DELIVER) (params robot R-1
