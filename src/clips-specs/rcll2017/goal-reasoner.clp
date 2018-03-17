@@ -71,7 +71,7 @@
 )
 
 ; #  Goal Monitoring
-(defrule goal-reasoner-evaluate-completed-subgoal
+(defrule goal-reasoner-evaluate-completed-subgoal-common
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FINISHED) (outcome COMPLETED))
   ?p <- (goal (id ?parent-id) (mode DISPATCHED))
   ?m <- (goal-meta (goal-id ?parent-id))
@@ -83,7 +83,7 @@
   (modify ?m (last-achieve ?now))
 )
 
-(defrule goal-reasoner-evaluate-completed
+(defrule goal-reasoner-evaluate-completed-common
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome COMPLETED))
   ?gm <- (goal-meta (goal-id ?goal-id))
   =>
@@ -91,7 +91,7 @@
   (modify ?g (mode EVALUATED))
 )
 
-(defrule goal-reasoner-evaluate-failed
+(defrule goal-reasoner-evaluate-failed-common
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
@@ -102,7 +102,7 @@
 )
 
 ; # Goal Clean up
-(defrule goal-reasoner-cleanup-completed-subgoal
+(defrule goal-reasoner-cleanup-completed-subgoal-common
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode EVALUATED) (outcome COMPLETED))
   ?p <- (goal (id ?parent-id) (mode DISPATCHED))
   ?m <- (goal-meta (goal-id ?parent-id))
@@ -118,7 +118,7 @@
    (retract ?g)
 )
 
-(defrule goal-reasoner-cleanup-completed
+(defrule goal-reasoner-cleanup-completed-common
   ?g <- (goal (id ?goal-id) (mode EVALUATED) (outcome COMPLETED))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
@@ -132,7 +132,7 @@
   (retract ?g ?gm)
 )
 
-(defrule goal-reasoner-cleanup-failed
+(defrule goal-reasoner-cleanup-failed-common
   ?g <- (goal (id ?goal-id) (mode EVALUATED) (outcome FAILED))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
