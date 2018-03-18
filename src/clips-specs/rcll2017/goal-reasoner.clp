@@ -74,7 +74,7 @@
 (defrule goal-reasoner-create-fill-cap-goal
   (domain-facts-loaded)
   (not (goal (id FILL-CAP)))
-  (not (goal-already-tried FILL-CAP))
+  ; (not (goal-already-tried FILL-CAP))
   (not (goal (type ACHIEVE) ))
   (wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
@@ -83,6 +83,7 @@
   (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
   (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+  ;ToDo: remove condition and ensure by salience
   (wm-fact (key domain fact entered-field args? r R-1))
   ; (test (eq ?robot R-1))
   =>
@@ -96,7 +97,7 @@
   "Remove an unknown base from CS after retrieving a cap from it."
   (domain-facts-loaded)
   (not (goal (id CLEAR-CS)))
-  (not (goal-already-tried CLEAR-CS))
+  ; (not (goal-already-tried CLEAR-CS))
   (not (goal (type ACHIEVE) ))
   (wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
@@ -122,12 +123,12 @@
   (not (goal (type ACHIEVE) ))
   (wm-fact (key refbox state) (value RUNNING))
   (wm-fact (key refbox phase) (value PRODUCTION))
+  (wm-fact (key domain fact wp-usable args? wp ?wp))
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TOW))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
-  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-  (wm-fact (key domain fact wp-usable args? wp ?wp))
+  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TOW))
   ;CCs don't have a base color. Hence, models base with UNKOWN color
   (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color)))
   =>
@@ -165,7 +166,7 @@
 (defrule goal-reasoner-create-produce-c0
   (domain-facts-loaded)
   (not (goal (id PRODUCE-C0)))
-  (not (goal-already-tried PRODUCE-C0))
+  ; (not (goal-already-tried PRODUCE-C0))
   (not (goal (type ACHIEVE) ))
   (wm-fact (key refbox state) (value RUNNING))
   (wm-fact (key refbox phase) (value PRODUCTION))
@@ -174,9 +175,9 @@
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
+  (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?mps side ?any-side)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
   ;To-Do: Model the bs active-side
   (wm-fact (key domain fact order-complexity args? ord ?order com C0))
@@ -308,27 +309,29 @@
 
 (defrule goal-reasoner-evaluate-completed-produce-c0
   ?g <- (goal (id PRODUCE-C0) (mode FINISHED) (outcome COMPLETED)
-        (params robot ?robot
-                          bs ?bs
-                          bs-side ?bs-side
-                          bs-color ?base-color
-                          mps ?mps
-                          cs-color ?cap-color
-                          order ?order
-                          )
-        )
-  ?gm <- (goal-meta (goal-id PRODUCE-C0))
-  (plan (goal-id PRODUCE-C0)
-      (id ?plan-id))
-  ?p <-(plan-action
-      (plan-id ?plan-id)
-      (action-name bs-dispense)
-      (param-names r m side wp basecol)
-          (param-values ?robot ?bs ?bs-side ?wp ?base-color))
-  =>
-  (printout t "Goal '" PRODUCE-C0 "' has been completed, Evaluating" crlf)
-  (assert (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (value TRUE)))
-  (modify ?g (mode EVALUATED))
+                              (params robot ?robot
+                                      bs ?bs
+                                      bs-side ?bs-side
+                                      bs-color ?base-color
+                                      mps ?mps
+                                      cs-color ?cap-color
+                                      order ?order
+                                      ))
+ ?gm <- (goal-meta (goal-id PRODUCE-C0))
+ (plan (goal-id PRODUCE-C0)
+   (id ?plan-id))
+ ?p <-(plan-action
+   (plan-id ?plan-id)
+   (action-name bs-dispense)
+   (param-names r m side wp basecol)
+         (param-values ?robot ?bs ?bs-side ?wp ?base-color))
+   ;ToDO:  Remove param from the matching. This is dangerouns if params changed
+   ;ToDo: function support for processing goal params by arg
+   ;ToDo: function support for processing action params by name
+ =>
+ (printout t "Goal '" PRODUCE-C0 "' has been completed, Evaluating" crlf)
+ (assert (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (value TRUE)))
+ (modify ?g (mode EVALUATED))
 )
 
 (defrule goal-reasoner-evaluate-completed-subgoal-common
