@@ -20,13 +20,21 @@
 	(assert (goal-already-tried TESTGOAL))
 )
 
+; ## Maintenance Goals
 (defrule goal-reasoner-create-beacon-maintain
   (not (goal (id BEACONMAINTAIN)))
   =>
   (assert (goal (id BEACONMAINTAIN) (type MAINTAIN)))
 )
 
-; sub-goal of the maintenance goal
+(defrule goal-reasoner-create-wp-spawn-maintain
+ (domain-facts-loaded)
+ (not (goal (id WPSPAWN-MAINTAIN)))
+ =>
+ (assert (goal (id WPSPAWN-MAINTAIN) (type MAINTAIN)))
+)
+
+; ### sub-goals of the maintenance goal
 (defrule goal-reasoner-create-beacon-achieve
   ?g <- (goal (id BEACONMAINTAIN) (mode SELECTED|DISPATCHED))
   (not (goal (id BEACONACHIEVE)))
@@ -36,6 +44,22 @@
     (last-achieve $?last&:(timeout ?now ?last 1)))
   =>
   (assert (goal (id BEACONACHIEVE) (parent BEACONMAINTAIN)))
+  (modify ?g (mode EXPANDED))
+)
+
+(defrule goal-reasoner-create-wp-spawn-achieve
+  ?g <- (goal (id WPSPAWN-MAINTAIN) (mode SELECTED|DISPATCHED))
+  (not (goal (id WPSPAWN-ACHIEVE)))
+  (time $?now)
+  ; TODO: make interval a constant
+  (goal-meta (goal-id WPSPAWN-MAINTAIN)
+  (last-achieve $?last&:(timeout ?now ?last 1)))
+  (wm-fact (key domain fact self args? r ?robot))
+  (not (and
+    (domain-object (name ?wp) (type workpiece))
+    (wm-fact (key domain fact wp-spawned-by args? wp ?wp r ?robot))))
+  =>
+  (assert (goal (id WPSPAWN-ACHIEVE) (parent WPSPAWN-MAINTAIN)))
   (modify ?g (mode EXPANDED))
 )
 
