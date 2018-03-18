@@ -155,4 +155,6 @@
     (domain-fact (name rs-filled-with) (param-values ?rs1 ZERO))
     (domain-fact (name rs-filled-with) (param-values ?rs2 ZERO))
   )
+
+  (assert (domain-facts-loaded))
 )

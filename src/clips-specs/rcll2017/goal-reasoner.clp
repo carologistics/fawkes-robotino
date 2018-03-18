@@ -56,6 +56,7 @@
 
 ; ## Achieve Goals
 (defrule goal-reasoner-create-enter-field
+  (domain-facts-loaded)
   (not (goal (id ENTER-FIELD)))
   (not (goal-already-tried ENTER-FIELD))
   (not (goal (type ACHIEVE) ))
@@ -71,6 +72,7 @@
 )
 
 (defrule goal-reasoner-create-fill-cap-goal
+  (domain-facts-loaded)
   (not (goal (id FILL-CAP)))
   (not (goal-already-tried FILL-CAP))
   (not (goal (type ACHIEVE) ))
@@ -92,6 +94,7 @@
 
 (defrule goal-reasoner-create-clear-cs
   "Remove an unknown base from CS after retrieving a cap from it."
+  (domain-facts-loaded)
   (not (goal (id CLEAR-CS)))
   (not (goal-already-tried CLEAR-CS))
   (not (goal (type ACHIEVE) ))
@@ -113,6 +116,7 @@
 
 (defrule goal-reasoner-insert-unknown-base-to-rs
   "Insert a base with unknown color in a RS for preparation"
+  (domain-facts-loaded)
   (not (goal (id FILL-RS)))
   ; (not (goal-already-tried FILL-RS))
   (not (goal (type ACHIEVE) ))
@@ -139,6 +143,7 @@
 
 (defrule goal-reasoner-create-discard-unknown
   "Discard a base which is not needed if no RS can be pre-filled"
+  (domain-facts-loaded)
   (not (goal (id DISCARD-UNKNOWN)))
   ; (not (goal-already-tried DISCARD-UNKNOWN))
   (not (goal (type ACHIEVE) ))
@@ -158,6 +163,7 @@
 )
 
 (defrule goal-reasoner-create-produce-c0
+  (domain-facts-loaded)
   (not (goal (id PRODUCE-C0)))
   (not (goal-already-tried PRODUCE-C0))
   (not (goal (type ACHIEVE) ))
@@ -193,6 +199,7 @@
 )
 
 (defrule goal-reasoner-create-deliver
+  (domain-facts-loaded)
   (not (goal (id DELIVER)))
   ; (not (goal-already-tried DELIVER))
   (not (goal (type ACHIEVE) ))
