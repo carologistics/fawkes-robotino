@@ -95,11 +95,42 @@
 )
 
 ; #  Goal Monitoring
+
+; ##Sub-Goals Evaluation
+(deffunction random-id ()
+  "Return a random task id"
+  (return (random 0 1000000000))
+)
+
+(defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
+  ?g <- (goal (id WPSPAWN-ACHIEVE) (parent WPSPAWN-MAINTAIN) (mode FINISHED) (outcome COMPLETED))
+  ?p <- (goal (id WPSPAWN-MAINTAIN) (mode DISPATCHED))
+  ?m <- (goal-meta (goal-id WPSPAWN-MAINTAIN))
+  (time $?now)
+  =>
+  (printout debug "Goal '" WPSPAWN-ACHIEVE "' (part of '" WPSPAWN-MAINTAIN
+    "') has been completed, Evaluating" crlf)
+     (bind ?wp-id (sym-cat WP (random-id)))
+  (assert
+    (domain-object (name ?wp-id) (type workpiece))
+    (wm-fact (key domain fact wp-unused args? wp ?wp-id) (value TRUE))
+    (wm-fact (key domain fact wp-cap-color args? wp ?wp-id col CAP_NONE) (value TRUE))
+    (wm-fact (key domain fact wp-ring1-color args? wp ?wp-id col RING_NONE) (value TRUE))
+    (wm-fact (key domain fact wp-ring2-color args? wp ?wp-id col RING_NONE) (value TRUE))
+    (wm-fact (key domain fact wp-ring3-color args? wp ?wp-id col RING_NONE) (value TRUE))
+    (wm-fact (key domain fact wp-base-color args? wp ?wp-id col BASE_NONE) (value TRUE))
+    (wm-fact (key domain fact wp-spawned-by args? wp ?wp-id r R-1) (value TRUE))
+  )
+  (modify ?g (mode EVALUATED))
+  (modify ?m (last-achieve ?now))
+)
+
 (defrule goal-reasoner-subgoal-completed
 	?g <- (goal (id ?goal-id) (parent ?parent-id) (mode COMPLETED))
   ?p <- (goal (id ?parent-id) (mode DISPATCHED))
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
+  (test (neq ?goal-id WPSPAWN-ACHIEVE))
   =>
 	(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
     "') has been completed, cleaning up" crlf)
