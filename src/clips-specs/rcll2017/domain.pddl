@@ -136,7 +136,9 @@
 		:effect (and (not (mps-state ?m PROCESSING)) (mps-state ?m READY-AT-OUTPUT)
 								 (not (wp-at ?wp ?m INPUT)) (wp-at ?wp ?m OUTPUT)
 								 (not (wp-cap-color ?wp CAP_NONE)) (wp-cap-color ?wp ?capcol)
-								 (cs-can-perform ?m RETRIEVE_CAP))
+								 (cs-can-perform ?m RETRIEVE_CAP)
+								 (not (cs-prepared-for ?m MOUNT_CAP))
+								 (not (cs-buffered ?m ?capcol)))
 	)
 
 	(:action cs-retrieve-cap
@@ -147,7 +149,8 @@
 		:effect (and (not (mps-state ?m PROCESSING)) (mps-state ?m READY-AT-OUTPUT)
 								 (not (wp-at ?cc ?m INPUT)) (wp-at ?cc ?m OUTPUT)
 								 (not (wp-cap-color ?cc ?capcol)) (wp-cap-color ?cc CAP_NONE)
-								 (cs-buffered ?m ?capcol) (cs-can-perform ?m MOUNT_CAP))
+								 (cs-buffered ?m ?capcol)(cs-can-perform ?m MOUNT_CAP)
+								 (not (cs-prepared-for ?m RETRIEVE_CAP)))
 	)
 	
 	(:action prepare-rs
