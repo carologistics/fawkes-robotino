@@ -71,6 +71,8 @@
 )
 
 ; #  Goal Monitoring
+
+; ##Sub-Goals Evaluation
 (defrule goal-reasoner-evaluate-completed-subgoal-common
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FINISHED) (outcome COMPLETED))
   ?p <- (goal (id ?parent-id) (mode DISPATCHED))
@@ -83,8 +85,9 @@
   (modify ?m (last-achieve ?now))
 )
 
+; ## Goals Evaluation
 (defrule goal-reasoner-evaluate-completed-common
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome COMPLETED))
+  ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome COMPLETED))
   ?gm <- (goal-meta (goal-id ?goal-id))
   =>
   (printout t "Goal '" ?goal-id "' has been completed, evaluating" crlf)
@@ -92,7 +95,7 @@
 )
 
 (defrule goal-reasoner-evaluate-failed-common
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome FAILED))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
   (printout error "Goal '" ?goal-id "' has failed, evaluating" crlf)
@@ -119,7 +122,7 @@
 )
 
 (defrule goal-reasoner-cleanup-completed-common
-  ?g <- (goal (id ?goal-id) (mode EVALUATED) (outcome COMPLETED))
+  ?g <- (goal (id ?goal-id) (parent nil) (mode EVALUATED) (outcome COMPLETED))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
   (printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
@@ -133,7 +136,7 @@
 )
 
 (defrule goal-reasoner-cleanup-failed-common
-  ?g <- (goal (id ?goal-id) (mode EVALUATED) (outcome FAILED))
+  ?g <- (goal (id ?goal-id) (parent nil) (mode EVALUATED) (outcome FAILED))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
   (printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
