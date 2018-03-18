@@ -19,7 +19,7 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
-(defrule action-execute-noop
+(defrule action-execute-exogenous-noops
   ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status PENDING)
          (action-name ?action&bs-dispense|cs-retrieve-cap|cs-mount-cap|fulfill-order)
          (executable TRUE)
