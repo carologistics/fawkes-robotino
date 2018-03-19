@@ -10,15 +10,15 @@
 )
 
 ; #  Goal Creation
-(defrule goal-reasoner-create
-	(not (goal (id TESTGOAL)))
-	(not (goal-already-tried TESTGOAL))
-	=>
-	(assert (goal (id TESTGOAL)))
-	; This is just to make sure we formulate the goal only once.
-	; In an actual domain this would be more sophisticated.
-	(assert (goal-already-tried TESTGOAL))
-)
+; (defrule goal-reasoner-create
+;     (not (goal (id TESTGOAL)))
+;     (not (goal-already-tried TESTGOAL))
+;     =>
+;     (assert (goal (id TESTGOAL)))
+;     ; This is just to make sure we formulate the goal only once.
+;     ; In an actual domain this would be more sophisticated.
+;     (assert (goal-already-tried TESTGOAL))
+; )
 
 (defrule goal-reasoner-create-beacon-maintain
   (not (goal (id BEACONMAINTAIN)))
@@ -29,7 +29,7 @@
 (defrule goal-reasoner-create-complexity
   (not (goal (id COMPLEXITY)))
 	(not (goal-already-tried COMPLEXITY))
-  (wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE))
+  (wm-fact (key domain fact order-complexity args? ord ?order-id com C3) (value TRUE))
   =>
   (assert (goal (id COMPLEXITY)))
   (printout t "Detect goal " ?order-id " with complexity 0" crlf)
