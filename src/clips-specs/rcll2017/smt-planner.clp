@@ -434,11 +434,12 @@
 						(eq (string-to-field ?shelf) (wm-key-arg ?wm-fact2:key spot))
 					)
 					(bind ?next-step-id (* ?action-id 100))
-					(bind ?wp (wm-key-arg ?wm-fact2:key wp))
+					(bind ?wp (string-to-field (wm-key-arg ?wm-fact2:key wp)))
+			(printout t "wp is " ?wp crlf)
 					(assert
 						 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 													(action-name wp-get-shelf)
-													(param-names r cc m spot) (param-values (string-to-field ?action-specific-actor) (wm-key-arg ?wm-fact2:key wp) (string-to-field ?mps) (string-to-field ?shelf)))
+													(param-names r cc m spot) (param-values (string-to-field ?action-specific-actor) ?wp (string-to-field ?mps) (string-to-field ?shelf)))
 					)
 					(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-get-shelf: " ?mps " at: " ?side " shelf: " ?shelf crlf)
 				)
@@ -516,6 +517,7 @@
 			(bind ?next-step-id (* ?action-id 100))
 			(bind ?steps (append$ ?steps ?next-step-id))
 			; (assert (step (name insert) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (machine-feature ?machine-feature) (already-at-mps FALSE) (actor ?action-specific-actor) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
+			(printout t "wp is " ?wp crlf)
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 											(action-name wp-put)
@@ -1044,6 +1046,9 @@
 		  (case "prepare-rs" then
 			(bind ?action-specific-actor "")
 			(bind ?m "")
+			(bind ?rs-before "")
+			(bind ?rs-after "")
+			(bind ?r-req "")
 			(bind ?action-id (pb-field-value ?a "id"))
 			(if (pb-has-field ?a "actor") 
 			  then
@@ -1063,7 +1068,22 @@
 						(bind ?goal-ring-color (pb-field-value ?arg "value") ) ;temp: the color of the base of the goal is recognized here
 
 					else
-						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+						(if (eq (pb-field-value ?arg "key") "rs-before") then
+						  (bind ?rs-before (pb-field-value ?arg "value"))
+
+						else
+							(if (eq (pb-field-value ?arg "key") "rs-after") then
+							  (bind ?rs-after (pb-field-value ?arg "value"))
+
+							else
+								(if (eq (pb-field-value ?arg "key") "rs-after") then
+								  (bind ?r-req (pb-field-value ?arg "value"))
+
+								else
+									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+								)
+							)
+						)
 					)
 			  )
 			)
@@ -1074,7 +1094,7 @@
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 											(action-name prepare-rs)
-											(param-names m rc) (param-values (string-to-field ?mps) (string-to-field ?goal-ring-color)))
+											(param-names m rc rs-before rs-after r-req) (param-values (string-to-field ?mps) (string-to-field ?goal-ring-color) (string-to-field ?rs-before) (string-to-field ?rs-after) (string-to-field ?r-req)))
 			)
 			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-rs at: " ?mps " with ring-color: " ?goal-ring-color crlf)
 		  )
@@ -1083,6 +1103,9 @@
 		  (case "rs-mount-ring1" then
 			(bind ?m "")
 			(bind ?ring-color "")
+			(bind ?rs-before "")
+			(bind ?rs-after "")
+			(bind ?r-req "")
 			(bind ?action-id (pb-field-value ?a "id"))
 			(bind ?parents-ids (create$)) 
 			(progn$ (?arg (pb-field-list ?a "parent_id"))
@@ -1098,7 +1121,22 @@
 				  (bind ?ring-color (pb-field-value ?arg "value"))
 
 				else
-					(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+						(if (eq (pb-field-value ?arg "key") "rs-before") then
+						  (bind ?rs-before (pb-field-value ?arg "value"))
+
+						else
+							(if (eq (pb-field-value ?arg "key") "rs-after") then
+							  (bind ?rs-after (pb-field-value ?arg "value"))
+
+							else
+								(if (eq (pb-field-value ?arg "key") "rs-after") then
+								  (bind ?r-req (pb-field-value ?arg "value"))
+
+								else
+									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+								)
+							)
+						)
 				)
 			  )
 			)
@@ -1109,7 +1147,7 @@
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 											(action-name rs-mount-ring1)
-											(param-names m wp col) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color)))
+											(param-names m wp col rs-before rs-after r-req) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color) (string-to-field ?rs-before) (string-to-field ?rs-after) (string-to-field ?r-req)))
 			)
 			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring1 at: " ?mps " with ring-color: " ?ring-color crlf)
 		  )
@@ -1118,6 +1156,10 @@
 		  (case "rs-mount-ring2" then
 			(bind ?m "")
 			(bind ?ring-color "")
+			(bind ?rs-before "")
+			(bind ?rs-after "")
+			(bind ?r-req "")
+			(bind ?col1 "")
 			(bind ?action-id (pb-field-value ?a "id"))
 			(bind ?parents-ids (create$)) 
 			(progn$ (?arg (pb-field-list ?a "parent_id"))
@@ -1133,7 +1175,27 @@
 				  (bind ?ring-color (pb-field-value ?arg "value"))
 
 				else
-					(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+						(if (eq (pb-field-value ?arg "key") "rs-before") then
+						  (bind ?rs-before (pb-field-value ?arg "value"))
+
+						else
+							(if (eq (pb-field-value ?arg "key") "rs-after") then
+							  (bind ?rs-after (pb-field-value ?arg "value"))
+
+							else
+								(if (eq (pb-field-value ?arg "key") "rs-after") then
+								  (bind ?r-req (pb-field-value ?arg "value"))
+
+								else
+									(if (eq (pb-field-value ?arg "key") "col1") then
+									  (bind ?col1 (pb-field-value ?arg "value"))
+
+									else
+										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+									)
+								)
+							)
+						)
 				)
 			  )
 			)
@@ -1144,7 +1206,7 @@
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 											(action-name rs-mount-ring2)
-											(param-names m wp col) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color)))
+											(param-names m wp col rs-before rs-after r-req col1) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color) (string-to-field ?rs-before) (string-to-field ?rs-after) (string-to-field ?r-req) (string-to-field ?col1)))
 			)
 			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring2 at: " ?mps " with ring-color: " ?ring-color crlf)
 		  )
@@ -1153,6 +1215,11 @@
 		  (case "rs-mount-ring3" then
 			(bind ?m "")
 			(bind ?ring-color "")
+			(bind ?rs-before "")
+			(bind ?rs-after "")
+			(bind ?r-req "")
+			(bind ?col1 "")
+			(bind ?col2 "")
 			(bind ?action-id (pb-field-value ?a "id"))
 			(bind ?parents-ids (create$)) 
 			(progn$ (?arg (pb-field-list ?a "parent_id"))
@@ -1168,7 +1235,32 @@
 				  (bind ?ring-color (pb-field-value ?arg "value"))
 
 				else
-					(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+						(if (eq (pb-field-value ?arg "key") "rs-before") then
+						  (bind ?rs-before (pb-field-value ?arg "value"))
+
+						else
+							(if (eq (pb-field-value ?arg "key") "rs-after") then
+							  (bind ?rs-after (pb-field-value ?arg "value"))
+
+							else
+								(if (eq (pb-field-value ?arg "key") "rs-after") then
+								  (bind ?r-req (pb-field-value ?arg "value"))
+
+								else
+									(if (eq (pb-field-value ?arg "key") "col1") then
+									  (bind ?col1 (pb-field-value ?arg "value"))
+
+									else
+										(if (eq (pb-field-value ?arg "key") "col2") then
+										  (bind ?col2 (pb-field-value ?arg "value"))
+
+										else
+											(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+										)
+									)
+								)
+							)
+						)
 				)
 			  )
 			)
@@ -1179,7 +1271,7 @@
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 											(action-name rs-mount-ring3)
-											(param-names m wp col) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color)))
+											(param-names m wp col rs-before rs-after r-req col1 col2) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color) (string-to-field ?rs-before) (string-to-field ?rs-after) (string-to-field ?r-req) (string-to-field ?col1) (string-to-field ?col2)))
 			)
 			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring3 at: " ?mps " with ring-color: " ?ring-color crlf)
 		  )
