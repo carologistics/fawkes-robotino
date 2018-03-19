@@ -7,6 +7,27 @@
 
 (defglobal
   ?*GOAL-MAX-TRIES* = 3
+  ; production order priorities
+  ?*PRIORITY-FIND-MISSING-MPS* = 110
+  ?*PRIORITY-DELIVER* = 100
+  ?*PRIORITY-RESET-MPS* = 98
+  ?*PRIORITY-CLEAR-BS* = 97
+  ?*PRIORITY-PRODUCE-CX* = 95
+  ?*PRIORITY-PRODUCE-C0* = 90
+  ?*PRIORITY-ADD-ADDITIONAL-RING* = 85
+  ?*PRIORITY-ADD-FIRST-RING* = 80
+  ?*PRIORITY-CLEAR-CS* = 70
+  ?*PRIORITY-CLEAR-RS* = 55
+  ?*PRIORITY-PREFILL-CS* = 50
+  ?*PRIORITY-PREFILL-RS-WITH-HOLDING-BASE* = 45
+  ?*PRIORITY-PREFILL-RS* = 40
+  ?*PRIORITY-ADD-ADDITIONAL-RING-WAITING* = 20
+  ?*PRIORITY-DISCARD-UNKNOWN* = 10
+  ?*PRIORITY-NOTHING-TO-DO* = -1
+  ;ToDo:The proirites are copied from old agent
+  ;     for the current moment. Filter out uneeded
+  ;     later. For now needed for refrence.
+
 )
 
 ; #  Goal Creation
@@ -87,7 +108,9 @@
   (wm-fact (key domain fact entered-field args? r R-1))
   ; (test (eq ?robot R-1))
   =>
-  (assert (goal (id FILL-CAP) (params robot R-1 mps ?mps)))
+  (assert (goal (id FILL-CAP) (priority ?*PRIORITY-PREFILL-CS*)
+            (params robot R-1
+                    mps ?mps)))
   ; This is just to make sure we formulate the goal only once.
   ; In an actual domain this would be more sophisticated.
   (assert (goal-already-tried FILL-CAP))
@@ -109,7 +132,9 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
   ; (test (eq ?robot R-1))
   =>
-  (assert (goal (id CLEAR-CS) (params robot R-1 mps ?mps wp ?wp)))
+  (assert (goal (id CLEAR-CS) (priority ?*PRIORITY-CLEAR-CS*)
+            (params robot R-1
+                    mps ?mps wp ?wp)))
   ; This is just to make sure we formulate the goal only once.
   ; In an actual domain this would be more sophisticated.
   (assert (goal-already-tried CLEAR-CS))
@@ -132,11 +157,12 @@
   ;CCs don't have a base color. Hence, models base with UNKOWN color
   (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color)))
   =>
-  (assert (goal (id FILL-RS) (params robot ?robot
-           mps ?mps
-           wp ?wp
-           rs-before ?rs-before
-           rs-after ?rs-after)))
+  (assert (goal (id FILL-RS) (priority ?*PRIORITY-PREFILL-RS*)
+            (params robot ?robot
+                    mps ?mps
+                    wp ?wp
+                    rs-before ?rs-before
+                    rs-after ?rs-after)))
   (assert (goal-already-tried FILL-RS))
   ;Todo: dont pass the RN in the params, reason about it and check
   ;it again for rejection Or selection
@@ -159,7 +185,9 @@
   ;question: or would be more correct to create it and later
   ;  reject it because its not useful
   =>
-  (assert (goal (id DISCARD-UNKNOWN) (params robot ?robot wp ?wp)))
+  (assert (goal (id DISCARD-UNKNOWN) (priority ?*PRIORITY-DISCARD-UNKNOWN*)
+            (params robot ?robot
+                    wp ?wp)))
   (assert (goal-already-tried DISCARD-UNKNOWN))
 )
 
@@ -188,14 +216,15 @@
   (wm-fact (key refbox order ?order quantity-delivered CYAN) (value ?qd&:(> ?qr ?qd)))
   ;ToDo: All the time considerations need to be added
   =>
-  (assert (goal (id PRODUCE-C0) (params robot R-1
-           bs ?bs
-           bs-side INPUT
-           bs-color ?base-color
-           mps ?mps
-           cs-color ?cap-color
-           order ?order
-           )))
+  (assert (goal (id PRODUCE-C0) (priority ?*PRIORITY-PRODUCE-C0*)
+            (params robot R-1
+                    bs ?bs
+                    bs-side INPUT
+                    bs-color ?base-color
+                    mps ?mps
+                    cs-color ?cap-color
+                    order ?order
+                    )))
   (assert (goal-already-tried PRODUCE-C0))
 )
 
@@ -233,15 +262,16 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;ToDo: All the time considerations need to be added
   =>
-  (assert (goal (id DELIVER) (params robot R-1
-                                     mps ?mps
-                                     order ?order
-                                     wp ?wp
-                                     ds ?ds
-                                     ds-gate ?gate
-                                     base-color ?base-color
-                                     cap-color ?cap-color
-                                     )))
+  (assert (goal (id DELIVER) (priority ?*PRIORITY-DELIVER*)
+            (params robot R-1
+                    mps ?mps
+                    order ?order
+                    wp ?wp
+                    ds ?ds
+                    ds-gate ?gate
+                    base-color ?base-color
+                    cap-color ?cap-color
+                    )))
   (assert (goal-already-tried DELIVER))
 )
 
