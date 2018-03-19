@@ -640,7 +640,7 @@
 											(action-name prepare-bs)
 											(param-names m side bc) (param-values (string-to-field ?mps) ?side (string-to-field ?goal-base-color)))
 			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-bs with base-color: " ?goal-base-color crlf)
+			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-bs with base-color: " ?goal-base-color " at: " ?side crlf)
 		  )
 
 		  ;ACTION:::::BS-DISPENSE:::::
@@ -669,14 +669,19 @@
 					(bind ?goal-base-color (pb-field-value ?arg "value")) 
 
 					else
-						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+						(if (eq (pb-field-value ?arg "key") "wp") then
+						  (bind ?wp (pb-field-value ?arg "value"))
+
+						else
+							(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+						)
 					)
 			  )
 			)
 			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 			(bind ?next-step-id (* ?action-id 100))
 			(bind ?steps (append$ ?steps ?next-step-id))
-			(bind ?wp WP1)
+			(bind ?wp (string-to-field ?wp))
 			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
@@ -765,10 +770,16 @@
 			(bind ?next-step-id (* ?action-id 100))
 			(bind ?steps (append$ ?steps ?next-step-id))
 			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name fulfill-order-c0)
-											(param-names ord wp m basecol capcol) (param-values ?order-id ?wp (string-to-field ?mps) (string-to-field ?base-color) (string-to-field ?cap-color)))
+			(do-for-fact ((?wm-fact wm-fact)) 
+				(and
+					(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
+					(eq ?order-id (wm-key-arg ?wm-fact:key ord))
+				)
+				(assert
+					 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+												(action-name fulfill-order-c0)
+												(param-names ord wp m g basecol capcol) (param-values ?order-id ?wp (string-to-field ?mps) (wm-key-arg ?wm-fact:key gate) (string-to-field ?base-color) (string-to-field ?cap-color)))
+				)
 			)
 			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c0 " ?order-id crlf)
 		  )
@@ -812,10 +823,16 @@
 			(bind ?next-step-id (* ?action-id 100))
 			(bind ?steps (append$ ?steps ?next-step-id))
 			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name fulfill-order-c1)
-											(param-names ord wp m basecol ring1col capcol) (param-values ?order-id ?wp (string-to-field ?mps) (string-to-field ?base-color) (string-to-field ?ring1-color) (string-to-field ?cap-color)))
+			(do-for-fact ((?wm-fact wm-fact)) 
+				(and
+					(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
+					(eq ?order-id (wm-key-arg ?wm-fact:key ord))
+				)
+				(assert
+					 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+												(action-name fulfill-order-c1)
+												(param-names ord wp m g basecol ring1col capcol) (param-values ?order-id ?wp (string-to-field ?mps) (wm-key-arg ?wm-fact:key gate) (string-to-field ?base-color) (string-to-field ?ring1-color) (string-to-field ?cap-color)))
+				)
 			)
 			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c1 " ?order-id crlf)
 		  )
@@ -865,10 +882,16 @@
 			(bind ?next-step-id (* ?action-id 100))
 			(bind ?steps (append$ ?steps ?next-step-id))
 			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name fulfill-order-c2)
-											(param-names ord wp m basecol ring1col ring2col capcol) (param-values ?order-id ?wp (string-to-field ?mps) (string-to-field ?base-color) (string-to-field ?ring1-color) (string-to-field ?ring2-color) (string-to-field ?cap-color)))
+			(do-for-fact ((?wm-fact wm-fact)) 
+				(and
+					(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
+					(eq ?order-id (wm-key-arg ?wm-fact:key ord))
+				)
+				(assert
+					 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+												(action-name fulfill-order-c2)
+												(param-names ord wp m g basecol ring1col ring2col capcol) (param-values ?order-id ?wp (string-to-field ?mps) (wm-key-arg ?wm-fact:key gate) (string-to-field ?base-color) (string-to-field ?ring1-color) (string-to-field ?ring2-color) (string-to-field ?cap-color)))
+				)
 			)
 			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c2 " ?order-id crlf)
 		  )
@@ -924,10 +947,16 @@
 			(bind ?next-step-id (* ?action-id 100))
 			(bind ?steps (append$ ?steps ?next-step-id))
 			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name fulfill-order-c3)
-											(param-names ord wp m basecol ring1col ring2col ring3col capcol) (param-values ?order-id ?wp (string-to-field ?mps) (string-to-field ?base-color) (string-to-field ?ring1-color) (string-to-field ?ring2-color) (string-to-field ?ring3-color) (string-to-field ?cap-color)))
+			(do-for-fact ((?wm-fact wm-fact)) 
+				(and
+					(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
+					(eq ?order-id (wm-key-arg ?wm-fact:key ord))
+				)
+				(assert
+					 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+												(action-name fulfill-order-c3)
+												(param-names ord wp m g basecol ring1col ring2col ring3col capcol) (param-values ?order-id ?wp (string-to-field ?mps) (wm-key-arg ?wm-fact:key gate) (string-to-field ?base-color) (string-to-field ?ring1-color) (string-to-field ?ring2-color) (string-to-field ?ring3-color) (string-to-field ?cap-color)))
+				)
 			)
 			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c3 " ?order-id crlf)
 		  )
@@ -1076,7 +1105,7 @@
 							  (bind ?rs-after (pb-field-value ?arg "value"))
 
 							else
-								(if (eq (pb-field-value ?arg "key") "rs-after") then
+								(if (eq (pb-field-value ?arg "key") "r-req") then
 								  (bind ?r-req (pb-field-value ?arg "value"))
 
 								else
@@ -1129,7 +1158,7 @@
 							  (bind ?rs-after (pb-field-value ?arg "value"))
 
 							else
-								(if (eq (pb-field-value ?arg "key") "rs-after") then
+								(if (eq (pb-field-value ?arg "key") "r-req") then
 								  (bind ?r-req (pb-field-value ?arg "value"))
 
 								else
@@ -1183,7 +1212,7 @@
 							  (bind ?rs-after (pb-field-value ?arg "value"))
 
 							else
-								(if (eq (pb-field-value ?arg "key") "rs-after") then
+								(if (eq (pb-field-value ?arg "key") "r-req") then
 								  (bind ?r-req (pb-field-value ?arg "value"))
 
 								else
@@ -1243,7 +1272,7 @@
 							  (bind ?rs-after (pb-field-value ?arg "value"))
 
 							else
-								(if (eq (pb-field-value ?arg "key") "rs-after") then
+								(if (eq (pb-field-value ?arg "key") "r-req") then
 								  (bind ?r-req (pb-field-value ?arg "value"))
 
 								else
