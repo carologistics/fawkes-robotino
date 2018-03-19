@@ -365,6 +365,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 	uint32_t action_id_last_rs2_retr=0;
 
 	uint32_t action_id=0;
+	std::string wp;
 
 	for(unsigned int i=0; i<model_actions.size(); ++i){
 		switch(model_actions[i]) { // }((model_actions[i]-1)%index_upper_bound_actions)+1){
@@ -504,7 +505,10 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 									}
 								}
 							}
-
+							wp = "WP1";
+						}
+						else {
+							wp = "WP2";
 						}
 
 					}
@@ -540,6 +544,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("color");
 					param->set_value(getBaseColor(data.orders(order_id).base_color()));
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value(wp);
 
 					++action_id;
 					action = plan->add_actions();
@@ -688,7 +695,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					action = plan->add_actions();
-					action->set_name("fulfill-order-c0");
+					action->set_name("fulfill-order-c3");
 					action->set_actor("R-"+std::to_string(robot_permutation_[model_robots[i]]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
@@ -699,15 +706,15 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("base-color");
 					param->set_value(getBaseColor(data.orders(order_id).base_color()));
-					// param = action->add_params();
-					// param->set_key("ring1-color");
-					// param->set_value(getRingColor(data.orders(order_id).ring_colors(0)));
-					// param = action->add_params();
-					// param->set_key("ring2-color");
-					// param->set_value(getRingColor(data.orders(order_id).ring_colors(1)));
-					// param = action->add_params();
-					// param->set_key("ring3-color");
-					// param->set_value(getRingColor(data.orders(order_id).ring_colors(2)));
+					param = action->add_params();
+					param->set_key("ring1-color");
+					param->set_value(getRingColor(data.orders(order_id).ring_colors(0)));
+					param = action->add_params();
+					param->set_key("ring2-color");
+					param->set_value(getRingColor(data.orders(order_id).ring_colors(1)));
+					param = action->add_params();
+					param->set_key("ring3-color");
+					param->set_value(getRingColor(data.orders(order_id).ring_colors(2)));
 					param = action->add_params();
 					param->set_key("cap-color");
 					param->set_value(getCapColor(data.orders(order_id).cap_color()));
@@ -829,6 +836,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("ring_color");
 					param->set_value(getRingColor(data.orders(order_id).ring_colors(0)));
+					if(model_positions[i] == 7) {
+						param = action->add_params();
+						param->set_key("rs-before");
+						param->set_value(getAddBases(model_state4A[i]));
+						param = action->add_params();
+						param->set_key("rs-after");
+						param->set_value(getAddBases(model_state4B[i]));
+					}
+					else if(model_positions[i] == 9) {
+						param = action->add_params();
+						param->set_key("rs-before");
+						param->set_value(getAddBases(model_state5A[i]));
+						param = action->add_params();
+						param->set_key("rs-after");
+						param->set_value(getAddBases(model_state5B[i]));
+					}
+					param = action->add_params();
+					param->set_key("r-req");
+					param->set_value(getAddBases(number_required_bases[rings_order[0]]));
 
 					++action_id;
 					action = plan->add_actions();
@@ -854,6 +880,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("ring-color");
 					param->set_value(getRingColor(data.orders(order_id).ring_colors(0)));
+					if(model_positions[i] == 7) {
+						param = action->add_params();
+						param->set_key("rs-before");
+						param->set_value(getAddBases(model_state4A[i]));
+						param = action->add_params();
+						param->set_key("rs-after");
+						param->set_value(getAddBases(model_state4B[i]));
+					}
+					else if(model_positions[i] == 9) {
+						param = action->add_params();
+						param->set_key("rs-before");
+						param->set_value(getAddBases(model_state5A[i]));
+						param = action->add_params();
+						param->set_key("rs-after");
+						param->set_value(getAddBases(model_state5B[i]));
+					}
+					param = action->add_params();
+					param->set_key("r-req");
+					param->set_value(getAddBases(number_required_bases[rings_order[0]]));
 
 
 					if(model_positions[i]==7) {
@@ -948,6 +993,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("ring_color");
 					param->set_value(getRingColor(data.orders(order_id).ring_colors(1)));
+					if(model_positions[i] == 7) {
+						param = action->add_params();
+						param->set_key("rs-before");
+						param->set_value(getAddBases(model_state4A[i]));
+						param = action->add_params();
+						param->set_key("rs-after");
+						param->set_value(getAddBases(model_state4B[i]));
+					}
+					else if(model_positions[i] == 9) {
+						param = action->add_params();
+						param->set_key("rs-before");
+						param->set_value(getAddBases(model_state5A[i]));
+						param = action->add_params();
+						param->set_key("rs-after");
+						param->set_value(getAddBases(model_state5B[i]));
+					}
+					param = action->add_params();
+					param->set_key("r-req");
+					param->set_value(getAddBases(number_required_bases[rings_order[1]]));
 
 					++action_id;
 					action = plan->add_actions();
@@ -973,6 +1037,28 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("ring-color");
 					param->set_value(getRingColor(data.orders(order_id).ring_colors(1)));
+					if(model_positions[i] == 7) {
+						param = action->add_params();
+						param->set_key("rs-before");
+						param->set_value(getAddBases(model_state4A[i]));
+						param = action->add_params();
+						param->set_key("rs-after");
+						param->set_value(getAddBases(model_state4B[i]));
+					}
+					else if(model_positions[i] == 9) {
+						param = action->add_params();
+						param->set_key("rs-before");
+						param->set_value(getAddBases(model_state5A[i]));
+						param = action->add_params();
+						param->set_key("rs-after");
+						param->set_value(getAddBases(model_state5B[i]));
+					}
+					param = action->add_params();
+					param->set_key("r-req");
+					param->set_value(getAddBases(number_required_bases[rings_order[1]]));
+					param = action->add_params();
+					param->set_key("col1");
+					param->set_value(getRingColor(data.orders(order_id).ring_colors(0)));
 
 					if(model_positions[i]==7) {
 						action_id_last_rs1_feed = action_id;
@@ -1067,6 +1153,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("ring_color");
 					param->set_value(getRingColor(data.orders(order_id).ring_colors(2)));
+					if(model_positions[i] == 7) {
+						param = action->add_params();
+						param->set_key("rs-before");
+						param->set_value(getAddBases(model_state4A[i]));
+						param = action->add_params();
+						param->set_key("rs-after");
+						param->set_value(getAddBases(model_state4B[i]));
+					}
+					else if(model_positions[i] == 9) {
+						param = action->add_params();
+						param->set_key("rs-before");
+						param->set_value(getAddBases(model_state5A[i]));
+						param = action->add_params();
+						param->set_key("rs-after");
+						param->set_value(getAddBases(model_state5B[i]));
+					}
+					param = action->add_params();
+					param->set_key("r-req");
+					param->set_value(getAddBases(number_required_bases[rings_order[2]]));
 
 					++action_id;
 					action = plan->add_actions();
@@ -1092,6 +1197,31 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("ring-color");
 					param->set_value(getRingColor(data.orders(order_id).ring_colors(2)));
+					if(model_positions[i] == 7) {
+						param = action->add_params();
+						param->set_key("rs-before");
+						param->set_value(getAddBases(model_state4A[i]));
+						param = action->add_params();
+						param->set_key("rs-after");
+						param->set_value(getAddBases(model_state4B[i]));
+					}
+					else if(model_positions[i] == 9) {
+						param = action->add_params();
+						param->set_key("rs-before");
+						param->set_value(getAddBases(model_state5A[i]));
+						param = action->add_params();
+						param->set_key("rs-after");
+						param->set_value(getAddBases(model_state5B[i]));
+					}
+					param = action->add_params();
+					param->set_key("r-req");
+					param->set_value(getAddBases(number_required_bases[rings_order[2]]));
+					param = action->add_params();
+					param->set_key("col1");
+					param->set_value(getRingColor(data.orders(order_id).ring_colors(0)));
+					param = action->add_params();
+					param->set_key("col2");
+					param->set_value(getRingColor(data.orders(order_id).ring_colors(1)));
 
 					if(model_positions[i]==7) {
 						action_id_last_rs1_feed = action_id;
@@ -1268,20 +1398,20 @@ ClipsSmtThread::clips_smt_fill_order_details()
 	logger->log_info(name(), "Extract details about order to pursue");
 
 	// Goal strategy pick last one of desired complexity
-	int desired_complexity = 0;
+	int desired_complexity = 3;
 	for(int i=0; i<number_orders_protobuf; ++i) {
 		if(data.orders(i).complexity() == desired_complexity) {
 
 			// base and cap information is only needed for product description and can be kept in its orginal form
 			// rings information has to be decrease in order to access the number_required_bases map correctly
 			base_order = data.orders(i).base_color();
-			// rings_order[0] = data.orders(i).ring_colors(0);
-			// rings_order[1] = data.orders(i).ring_colors(1);
-			// rings_order[2] = data.orders(i).ring_colors(2);
+			rings_order[0] = data.orders(i).ring_colors(0);
+			rings_order[1] = data.orders(i).ring_colors(1);
+			rings_order[2] = data.orders(i).ring_colors(2);
 			cap_order = data.orders(i).cap_color();
 			
 			order_id = i;
-			number_orders_c0 = 1;
+			number_orders_c3 = 1;
 		}
 	}
 	
