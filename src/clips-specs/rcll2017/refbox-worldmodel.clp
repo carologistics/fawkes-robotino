@@ -173,7 +173,7 @@
     (bind ?raw-material (pb-field-value ?r "raw_material"))
     (bind ?rn ZERO)
     (if (eq ?raw-material 1) then (bind ?rn ONE))
-    (if (eq ?raw-material 2) then (bind ?rn TOW))
+    (if (eq ?raw-material 2) then (bind ?rn TWO))
     (if (eq ?raw-material 3) then (bind ?rn THREE))
     (do-for-all-facts ((?wm-fact wm-fact)) 
                   (and  (wm-key-prefix ?wm-fact:key (create$ domain fact rs-ring-spec)) 
