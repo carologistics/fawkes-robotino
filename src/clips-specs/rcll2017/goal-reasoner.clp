@@ -92,13 +92,11 @@
   (modify ?g (mode EXPANDED))
 )
 
-; ## Achieve Goals
 (defrule goal-reasoner-create-enter-field
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  (not (goal (id ENTER-FIELD)))
+  ; (not (goal (id ENTER-FIELD)))
   (not (goal-already-tried ENTER-FIELD))
-  (not (goal (type ACHIEVE) ))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
@@ -112,9 +110,8 @@
 (defrule goal-reasoner-create-fill-cap-goal
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  (not (goal (id FILL-CAP)))
+  ; (not (goal (id FILL-CAP)))
   ; (not (goal-already-tried FILL-CAP))
-  (not (goal (type ACHIEVE) ))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
@@ -139,9 +136,8 @@
   "Remove an unknown base from CS after retrieving a cap from it."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  (not (goal (id CLEAR-CS)))
+  ; (not (goal (id CLEAR-CS)))
   ; (not (goal-already-tried CLEAR-CS))
-  (not (goal (type ACHIEVE) ))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ;Maybe add a check for the base_color
@@ -166,9 +162,8 @@
   "Insert a base with unknown color in a RS for preparation"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  (not (goal (id FILL-RS)))
+  ; (not (goal (id FILL-RS)))
   ; (not (goal-already-tried FILL-RS))
-  (not (goal (type ACHIEVE) ))
   (wm-fact (key domain fact wp-usable args? wp ?wp))
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
@@ -198,7 +193,6 @@
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
   (not (goal (id DISCARD-UNKNOWN)))
   ; (not (goal-already-tried DISCARD-UNKNOWN))
-  (not (goal (type ACHIEVE) ))
   ;To-Do: Model state IDLE
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
@@ -220,9 +214,8 @@
 (defrule goal-reasoner-create-produce-c0
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  (not (goal (id PRODUCE-C0)))
+  ; (not (goal (id PRODUCE-C0)))
   ; (not (goal-already-tried PRODUCE-C0))
-  (not (goal (type ACHIEVE) ))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
@@ -258,9 +251,8 @@
 (defrule goal-reasoner-create-deliver
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  (not (goal (id DELIVER)))
+  ; (not (goal (id DELIVER)))
   ; (not (goal-already-tried DELIVER))
-  (not (goal (type ACHIEVE) ))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
@@ -308,9 +300,31 @@
 ; a planner to determine the required steps.
 (defrule goal-reasoner-select
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (id ?goal-id) (mode FORMULATED))
-  =>
+  ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FORMULATED))
+  (test (neq ?parent-id PRODUCTION-MAINTAIN))
+   =>
   (modify ?g (mode SELECTED))
+  (assert (goal-meta (goal-id ?goal-id)))
+)
+
+(defrule goal-reasoner-select-production-subgoal
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?p <- (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  ?g <- (goal (id ?goal-id)
+              (parent PRODUCTION-MAINTAIN)
+              (priority ?priority)
+              (mode FORMULATED))
+  ;No production goal with a higher priority formulated
+  (not (goal (parent PRODUCTION-MAINTAIN)
+             (priority ?h-priority&:(> ?h-priority ?priority))
+             (mode FORMULATED)))
+  ;No other production goal being processed
+  (not (goal (parent PRODUCTION-MAINTAIN)
+             (mode SELECTED|EXPANDED|COMMITTED|DISPATCHED|FINISHED|EVALUATED)))
+=>
+  (printout t "Goal " ?goal-id " selected!" crlf)
+  (modify ?g (mode SELECTED))
+  (modify ?p (mode EXPANDED))
   (assert (goal-meta (goal-id ?goal-id)))
 )
 
@@ -424,10 +438,31 @@
 )
 
 ; # Goal Clean up
+(defrule goal-reasoner-cleanup-all-production-subgoals
+  "Clean up all production goals if one has been evaluated"
+  (goal (id ?goal-id) (parent PRODUCTION-MAINTAIN) (mode EVALUATED) (outcome ?outcome))
+  ?pg <- (goal (id PRODUCTION-MAINTAIN) (mode DISPATCHED))
+  ?m <- (goal-meta (goal-id ?parent-id))
+  =>
+  (delayed-do-for-all-facts ((?sg goal)) (eq ?sg:parent PRODUCTION-MAINTAIN)
+    (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?sg:id)
+     (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
+      (retract ?a)
+     )
+     (retract ?p)
+    )
+    (printout t "Goal '" ?sg:id "' (part of '" ?sg:parent
+       "') has been evaluated, cleaning up" crlf)
+    (retract ?sg)
+  )
+  (modify ?pg (mode SELECTED))
+)
+
 (defrule goal-reasoner-cleanup-completed-subgoal-common
   ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode EVALUATED) (outcome COMPLETED))
   ?pg <- (goal (id ?parent-id) (mode DISPATCHED))
   ?m <- (goal-meta (goal-id ?parent-id))
+  (test (neq ?parent-id PRODUCTION-MAINTAIN))
   =>
   (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
      "') has been evaluated, cleaning up" crlf)
