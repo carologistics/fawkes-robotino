@@ -50,6 +50,19 @@
  (assert (goal (id WPSPAWN-MAINTAIN) (type MAINTAIN)))
 )
 
+(defrule goal-reasoer-create-goal-production-maintain
+  "The parent production goal. Allowes formulation of
+  production goals only if proper game state selected
+  and domain loaded. Other production goals are
+  formulated as sub-goals of this goal"
+  (domain-facts-loaded)
+  (not (goal (id PRODUCTION-MAINTAIN)))
+  (wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
+  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
+  =>
+  (assert (goal (id PRODUCTION-MAINTAIN) (type MAINTAIN)))
+)
+
 ; ### sub-goals of the maintenance goal
 (defrule goal-reasoner-create-beacon-achieve
   ?g <- (goal (id BEACONMAINTAIN) (mode SELECTED|DISPATCHED))
@@ -81,30 +94,27 @@
 
 ; ## Achieve Goals
 (defrule goal-reasoner-create-enter-field
-  (domain-facts-loaded)
-  (not (goal (id ENTER-FIELD)))
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (not (goal (id ENTER-FIELD)))
   (not (goal-already-tried ENTER-FIELD))
   (not (goal (type ACHIEVE) ))
-  (wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
-  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
-  (assert (goal (id ENTER-FIELD)))
+  (printout t "Goal " ENTER-FIELD " formulated" crlf)
+  (assert (goal (id ENTER-FIELD) (parent PRODUCTION-MAINTAIN)))
   ; This is just to make sure we formulate the goal only once.
   ; In an actual domain this would be more sophisticated.
   (assert (goal-already-tried ENTER-FIELD))
 )
 
 (defrule goal-reasoner-create-fill-cap-goal
-  (domain-facts-loaded)
-  (not (goal (id FILL-CAP)))
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (not (goal (id FILL-CAP)))
   ; (not (goal-already-tried FILL-CAP))
   (not (goal (type ACHIEVE) ))
-  (wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
-  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
@@ -114,9 +124,12 @@
   (wm-fact (key domain fact entered-field args? r R-1))
   ; (test (eq ?robot R-1))
   =>
+  (printout t "Goal " FILL-CAP " formulated" crlf)
   (assert (goal (id FILL-CAP) (priority ?*PRIORITY-PREFILL-CS*)
-            (params robot R-1
-                    mps ?mps)))
+                              (parent PRODUCTION-MAINTAIN)
+                              (params robot R-1
+                                      mps ?mps
+                                      )))
   ; This is just to make sure we formulate the goal only once.
   ; In an actual domain this would be more sophisticated.
   (assert (goal-already-tried FILL-CAP))
@@ -124,13 +137,11 @@
 
 (defrule goal-reasoner-create-clear-cs
   "Remove an unknown base from CS after retrieving a cap from it."
-  (domain-facts-loaded)
-  (not (goal (id CLEAR-CS)))
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (not (goal (id CLEAR-CS)))
   ; (not (goal-already-tried CLEAR-CS))
   (not (goal (type ACHIEVE) ))
-  (wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
-  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ;Maybe add a check for the base_color
@@ -139,9 +150,13 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
   ; (test (eq ?robot R-1))
   =>
+  (printout t "Goal " CLEAR-CS " formulated" crlf)
   (assert (goal (id CLEAR-CS) (priority ?*PRIORITY-CLEAR-CS*)
-            (params robot R-1
-                    mps ?mps wp ?wp)))
+                              (parent PRODUCTION-MAINTAIN)
+                              (params robot R-1
+                                      mps ?mps
+                                      wp ?wp
+                                      )))
   ; This is just to make sure we formulate the goal only once.
   ; In an actual domain this would be more sophisticated.
   (assert (goal-already-tried CLEAR-CS))
@@ -149,13 +164,11 @@
 
 (defrule goal-reasoner-insert-unknown-base-to-rs
   "Insert a base with unknown color in a RS for preparation"
-  (domain-facts-loaded)
-  (not (goal (id FILL-RS)))
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (not (goal (id FILL-RS)))
   ; (not (goal-already-tried FILL-RS))
   (not (goal (type ACHIEVE) ))
-  (wm-fact (key refbox state) (value RUNNING))
-  (wm-fact (key refbox phase) (value PRODUCTION))
   (wm-fact (key domain fact wp-usable args? wp ?wp))
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
@@ -165,12 +178,15 @@
   ;CCs don't have a base color. Hence, models base with UNKOWN color
   (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color)))
   =>
+  (printout t "Goal " FILL-RS " formulated" crlf)
   (assert (goal (id FILL-RS) (priority ?*PRIORITY-PREFILL-RS*)
-            (params robot ?robot
-                    mps ?mps
-                    wp ?wp
-                    rs-before ?rs-before
-                    rs-after ?rs-after)))
+                             (parent PRODUCTION-MAINTAIN)
+                             (params robot ?robot
+                                     mps ?mps
+                                     wp ?wp
+                                     rs-before ?rs-before
+                                     rs-after ?rs-after
+                                     )))
   (assert (goal-already-tried FILL-RS))
   ;Todo: dont pass the RN in the params, reason about it and check
   ;it again for rejection Or selection
@@ -178,13 +194,11 @@
 
 (defrule goal-reasoner-create-discard-unknown
   "Discard a base which is not needed if no RS can be pre-filled"
-  (domain-facts-loaded)
-  (not (goal (id DISCARD-UNKNOWN)))
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (not (goal (id DISCARD-UNKNOWN)))
   ; (not (goal-already-tried DISCARD-UNKNOWN))
   (not (goal (type ACHIEVE) ))
-  (wm-fact (key refbox state) (value RUNNING))
-  (wm-fact (key refbox phase) (value PRODUCTION))
   ;To-Do: Model state IDLE
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
@@ -194,20 +208,21 @@
   ;question: or would be more correct to create it and later
   ;  reject it because its not useful
   =>
+  (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
   (assert (goal (id DISCARD-UNKNOWN) (priority ?*PRIORITY-DISCARD-UNKNOWN*)
-            (params robot ?robot
-                    wp ?wp)))
+                                     (parent PRODUCTION-MAINTAIN)
+                                     (params robot ?robot
+                                             wp ?wp
+                                             )))
   (assert (goal-already-tried DISCARD-UNKNOWN))
 )
 
 (defrule goal-reasoner-create-produce-c0
-  (domain-facts-loaded)
-  (not (goal (id PRODUCE-C0)))
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (not (goal (id PRODUCE-C0)))
   ; (not (goal-already-tried PRODUCE-C0))
   (not (goal (type ACHIEVE) ))
-  (wm-fact (key refbox state) (value RUNNING))
-  (wm-fact (key refbox phase) (value PRODUCTION))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
@@ -226,26 +241,26 @@
   (wm-fact (key refbox order ?order quantity-delivered CYAN) (value ?qd&:(> ?qr ?qd)))
   ;ToDo: All the time considerations need to be added
   =>
+  (printout t "Goal " PRODUCE-C0 " formulated" crlf)
   (assert (goal (id PRODUCE-C0) (priority ?*PRIORITY-PRODUCE-C0*)
-            (params robot R-1
-                    bs ?bs
-                    bs-side INPUT
-                    bs-color ?base-color
-                    mps ?mps
-                    cs-color ?cap-color
-                    order ?order
-                    )))
+                                (parent PRODUCTION-MAINTAIN)
+                                (params robot R-1
+                                        bs ?bs
+                                        bs-side INPUT
+                                        bs-color ?base-color
+                                        mps ?mps
+                                        cs-color ?cap-color
+                                        order ?order
+                                        )))
   (assert (goal-already-tried PRODUCE-C0))
 )
 
 (defrule goal-reasoner-create-deliver
-  (domain-facts-loaded)
-  (not (goal (id DELIVER)))
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (not (goal (id DELIVER)))
   ; (not (goal-already-tried DELIVER))
   (not (goal (type ACHIEVE) ))
-  (wm-fact (key refbox state) (value RUNNING))
-  (wm-fact (key refbox phase) (value PRODUCTION))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
@@ -273,16 +288,18 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;ToDo: All the time considerations need to be added
   =>
+  (printout t "Goal " DELIVER " formulated" crlf)
   (assert (goal (id DELIVER) (priority ?*PRIORITY-DELIVER*)
-            (params robot R-1
-                    mps ?mps
-                    order ?order
-                    wp ?wp
-                    ds ?ds
-                    ds-gate ?gate
-                    base-color ?base-color
-                    cap-color ?cap-color
-                    )))
+                             (parent PRODUCTION-MAINTAIN)
+                             (params robot R-1
+                                     mps ?mps
+                                     order ?order
+                                     wp ?wp
+                                     ds ?ds
+                                     ds-gate ?gate
+                                     base-color ?base-color
+                                     cap-color ?cap-color
+                                     )))
   (assert (goal-already-tried DELIVER))
 )
 
@@ -349,8 +366,9 @@
   (modify ?m (last-achieve ?now))
 )
 
-(defrule goal-reasoner-evaluate-completed-produce-c0
-  ?g <- (goal (id PRODUCE-C0) (mode FINISHED) (outcome COMPLETED)
+(defrule goal-reasoner-evaluate-completed-subgoal-produce-c0
+  ?g <- (goal (id PRODUCE-C0) (parent ?parent-id)
+              (mode FINISHED) (outcome COMPLETED)
                               (params robot ?robot
                                       bs ?bs
                                       bs-side ?bs-side
@@ -359,7 +377,7 @@
                                       cs-color ?cap-color
                                       order ?order
                                       ))
- ?gm <- (goal-meta (goal-id PRODUCE-C0))
+ ?gm <- (goal-meta (goal-id ?parent-id))
  (plan (goal-id PRODUCE-C0)
    (id ?plan-id))
  ?p <-(plan-action
@@ -367,13 +385,15 @@
    (action-name bs-dispense)
    (param-names r m side wp basecol)
          (param-values ?robot ?bs ?bs-side ?wp ?base-color))
-   ;ToDO:  Remove param from the matching. This is dangerouns if params changed
-   ;ToDo: function support for processing goal params by arg
-   ;ToDo: function support for processing action params by name
+ (time $?now)
+ ;ToDO:  Remove param from the matching. This is dangerouns if params changed
+ ;ToDo: function support for processing goal params by arg
+ ;ToDo: function support for processing action params by name
  =>
  (printout t "Goal '" PRODUCE-C0 "' has been completed, Evaluating" crlf)
  (assert (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (value TRUE)))
  (modify ?g (mode EVALUATED))
+ (modify ?gm (last-achieve ?now))
 )
 
 (defrule goal-reasoner-evaluate-completed-subgoal-common
@@ -382,6 +402,7 @@
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
   (test (neq ?goal-id WPSPAWN-ACHIEVE))
+  (test (neq ?goal-id PRODUCE-C0))
   =>
   (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
     "') has been completed, Evaluating" crlf)
@@ -392,7 +413,6 @@
 (defrule goal-reasoner-evaluate-common
   ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome ?outcome))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
-  (test (neq ?goal-id PRODUCE-C0))
   =>
   (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
   (if (eq ?outcome FAILED)
