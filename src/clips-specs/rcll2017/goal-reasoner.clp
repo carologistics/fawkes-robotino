@@ -85,22 +85,16 @@
   (modify ?m (last-achieve ?now))
 )
 
-; ## Goals Evaluation
-(defrule goal-reasoner-evaluate-completed-common
-  ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome COMPLETED))
-  ?gm <- (goal-meta (goal-id ?goal-id))
-  =>
-  (printout t "Goal '" ?goal-id "' has been completed, evaluating" crlf)
-  (modify ?g (mode EVALUATED))
-)
-
-(defrule goal-reasoner-evaluate-failed-common
-  ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome FAILED))
+(defrule goal-reasoner-evaluate-common
+  ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome ?outcome))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
-  (printout error "Goal '" ?goal-id "' has failed, evaluating" crlf)
-  (bind ?num-tries (+ ?num-tries 1))
-  (modify ?gm (num-tries ?num-tries))
+  (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
+  (if (eq ?outcome FAILED)
+    then
+    (bind ?num-tries (+ ?num-tries 1))
+    (modify ?gm (num-tries ?num-tries))
+  )
   (modify ?g (mode EVALUATED))
 )
 
@@ -118,11 +112,11 @@
    )
    (retract ?p)
   )
-   (retract ?g)
+  (retract ?g)
 )
 
-(defrule goal-reasoner-cleanup-completed-common
-  ?g <- (goal (id ?goal-id) (parent nil) (mode EVALUATED) (outcome COMPLETED))
+(defrule goal-reasoner-cleanup-common
+  ?g <- (goal (id ?goal-id) (parent nil) (mode EVALUATED) (outcome ?outcome))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
   (printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
@@ -132,27 +126,12 @@
     )
     (retract ?p)
   )
-  (retract ?g ?gm)
-)
 
-(defrule goal-reasoner-cleanup-failed-common
-  ?g <- (goal (id ?goal-id) (parent nil) (mode EVALUATED) (outcome FAILED))
-  ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
-  =>
-  (printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
-  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-    (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
-      (retract ?a)
+  (if (and (eq ?outcome failed) (< ?num-tries ?*GOAL-MAX-TRIES*) )
+    then
+      (printout t "Triggering re-expansion" crlf)
+      (modify ?g (mode SELECTED))
+    else
+      (retract ?g ?gm)
     )
-    (retract ?p)
-  )
-  (if (< ?num-tries ?*GOAL-MAX-TRIES*)
-   then
-    (printout t "Triggering re-expansion" crlf)
-    (modify ?g (mode SELECTED))
-   else
-    (printout t "Goal failed " ?num-tries " times, aborting" crlf)
-    (retract ?g ?gm)
- )
 )
-
