@@ -72,10 +72,10 @@
 
 ; #  Goal Monitoring
 
-; ##Sub-Goals Evaluation
+; ## Goal Evaluation
 (defrule goal-reasoner-evaluate-completed-subgoal-common
-  ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FINISHED) (outcome COMPLETED))
-  ?p <- (goal (id ?parent-id) (mode DISPATCHED))
+  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome COMPLETED))
+  ?pg <- (goal (id ?parent-id) (mode DISPATCHED))
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
   =>
@@ -106,8 +106,8 @@
 
 ; # Goal Clean up
 (defrule goal-reasoner-cleanup-completed-subgoal-common
-  ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode EVALUATED) (outcome COMPLETED))
-  ?p <- (goal (id ?parent-id) (mode DISPATCHED))
+  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode EVALUATED) (outcome COMPLETED))
+  ?pg <- (goal (id ?parent-id) (mode DISPATCHED))
   ?m <- (goal-meta (goal-id ?parent-id))
   =>
   (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
