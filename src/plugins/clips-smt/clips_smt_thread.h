@@ -298,6 +298,7 @@ private:
 	std::string getAddBases(int add_bases);
 	void initShelf();
 	std::string getNextShelf();
+	std::string getCapCarrier(std::string cap_color);
 };
 
 #endif
