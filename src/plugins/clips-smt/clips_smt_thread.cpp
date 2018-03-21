@@ -419,6 +419,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value(getCapCarrier(getCapColor(data.orders(order_id).cap_color())));
 
 					++action_id;
 					action = plan->add_actions();
@@ -459,6 +462,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value(getCapCarrier(getCapColor(data.orders(order_id).cap_color())));
 
 					++action_id;
 					action = plan->add_actions();
@@ -467,6 +473,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->set_goal_id(data.orders(order_id).id());
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value(getCapCarrier(getCapColor(data.orders(order_id).cap_color())));
 
 					break;
 			case 3:	// Action 7,6
@@ -506,9 +515,11 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 								}
 							}
 							wp = "WP1";
+							break;
 						}
-						else {
+						else if(model_actions[j] == 7 && model_robots[i] == model_robots[j]) {
 							wp = "WP2";
+							break;
 						}
 
 					}
@@ -558,6 +569,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[1]);
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value(wp);
 
 					action_id_last_bs_robot[robot_permutation_[model_robots[i]]] = action_id;
 
@@ -612,6 +626,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value("WP1");
 
 					++action_id;
 					action = plan->add_actions();
@@ -626,6 +643,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("cap-color");
 					param->set_value(getCapColor(data.orders(order_id).cap_color()));
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value("WP1");
 
 					break;
 			case 5:	// Action 9
@@ -652,6 +672,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value("WP1");
 
 					break;
 
@@ -692,6 +715,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[6]);
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value("WP1");
 
 					++action_id;
 					action = plan->add_actions();
@@ -718,6 +744,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("cap-color");
 					param->set_value(getCapColor(data.orders(order_id).cap_color()));
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value("WP1");
 
 					break;
 
@@ -762,6 +791,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("slide");
 					param->set_value("true");
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value("WP2");
 
 					// Save action_id_last for feed at the correpsonding ring station
 					if(model_positions[i] == 7) {
@@ -866,6 +898,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value("WP1");
 
 					++action_id;
 					action = plan->add_actions();
@@ -899,6 +934,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("r-req");
 					param->set_value(getAddBases(number_required_bases[rings_order[0]]));
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value("WP1");
 
 
 					if(model_positions[i]==7) {
@@ -933,6 +971,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value("WP1");
 
 					if(model_positions[i]==8) {
 						action_id_last_rs1_retr = action_id;
@@ -1023,6 +1064,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value("WP1");
 
 					++action_id;
 					action = plan->add_actions();
@@ -1059,6 +1103,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("col1");
 					param->set_value(getRingColor(data.orders(order_id).ring_colors(0)));
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value("WP1");
 
 					if(model_positions[i]==7) {
 						action_id_last_rs1_feed = action_id;
@@ -1098,6 +1145,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value("WP1");
 
 					if(model_positions[i]==8) {
 						action_id_last_rs1_retr = action_id;
@@ -1183,6 +1233,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value("WP1");
 
 					++action_id;
 					action = plan->add_actions();
@@ -1222,6 +1275,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("col2");
 					param->set_value(getRingColor(data.orders(order_id).ring_colors(1)));
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value("WP1");
 
 					if(model_positions[i]==7) {
 						action_id_last_rs1_feed = action_id;
@@ -1261,6 +1317,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names_[model_positions[i]]);
+					param = action->add_params();
+					param->set_key("wp");
+					param->set_value("WP1");
 
 					if(model_positions[i]==8) {
 						action_id_last_rs1_retr = action_id;
@@ -3536,3 +3595,11 @@ std::string ClipsSmtThread::getNextShelf()
 	initShelf();
 	return "LEFT";
 }
+
+std::string ClipsSmtThread::getCapCarrier(std::string cap_color) {
+	if(cap_color.compare("CAP_GREY") == 0) {
+		return "CCG1";
+	}
+
+	return "CCB1";
+} 
