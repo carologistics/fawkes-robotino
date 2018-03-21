@@ -1289,7 +1289,7 @@
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 											(action-name rs-mount-ring2)
-											(param-names m wp col rs-before rs-after r-req col1) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color) (string-to-field ?rs-before) (string-to-field ?rs-after) (string-to-field ?r-req) (string-to-field ?col1)))
+											(param-names m wp col col1 rs-before rs-after r-req) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color) (string-to-field ?col1) (string-to-field ?rs-before) (string-to-field ?rs-after) (string-to-field ?r-req) ))
 			)
 			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring2 at: " ?mps " with ring-color: " ?ring-color crlf)
 		  )
@@ -1359,7 +1359,7 @@
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 											(action-name rs-mount-ring3)
-											(param-names m wp col rs-before rs-after r-req col1 col2) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color) (string-to-field ?rs-before) (string-to-field ?rs-after) (string-to-field ?r-req) (string-to-field ?col1) (string-to-field ?col2)))
+											(param-names m wp col col1 col2 rs-before rs-after r-req) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color) (string-to-field ?col1) (string-to-field ?col2) (string-to-field ?rs-before) (string-to-field ?rs-after) (string-to-field ?r-req)))
 			)
 			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring3 at: " ?mps " with ring-color: " ?ring-color crlf)
 		  )
