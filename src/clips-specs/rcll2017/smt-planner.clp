@@ -435,7 +435,6 @@
 					)
 					(bind ?next-step-id (* ?action-id 100))
 					(bind ?wp (string-to-field (wm-key-arg ?wm-fact2:key wp)))
-			(printout t "wp is " ?wp crlf)
 					(assert
 						 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 													(action-name wp-get-shelf)
@@ -467,7 +466,12 @@
 				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
 				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
 			  else
-				(printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+					(if (eq (pb-field-value ?arg "key") "wp") then
+					  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+					else
+						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+					)
 			  )
 			)
 			  ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
@@ -509,7 +513,12 @@
 				  (bind ?slide (pb-field-value ?arg "value"))
 				  (bind ?machine-feature (if (eq ?slide "true") then SLIDE else CONVEYOR))
 				else
-				  (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+					(if (eq (pb-field-value ?arg "key") "wp") then
+					  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+					else
+						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+					)
 				)
 			  )
 			)
@@ -517,7 +526,6 @@
 			(bind ?next-step-id (* ?action-id 100))
 			(bind ?steps (append$ ?steps ?next-step-id))
 			; (assert (step (name insert) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (machine-feature ?machine-feature) (already-at-mps FALSE) (actor ?action-specific-actor) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
-			(printout t "wp is " ?wp crlf)
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 											(action-name wp-put)
@@ -562,7 +570,12 @@
 						  (bind ?rs-after (pb-field-value ?arg "value"))
 
 						else
-							(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+							(if (eq (pb-field-value ?arg "key") "wp") then
+							  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+							else
+								(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+							)
 						)
 					)
 				)
@@ -588,15 +601,22 @@
 			  then
 			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
 			)
+			(progn$ (?arg (pb-field-list ?a "params"))
+				(if (eq (pb-field-value ?arg "key") "wp") then
+				  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+				else
+					(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+				)
+			)
 			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 			(bind ?next-step-id (* ?action-id 100))
 			(bind ?steps (append$ ?steps ?next-step-id))
-			(bind ?cc ?wp)
 			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
 											(action-name wp-discard)
-											(param-names r cc) (param-values (string-to-field ?action-specific-actor) ?cc))
+											(param-names r cc) (param-values (string-to-field ?action-specific-actor) ?wp))
 			)
 			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-discard" crlf)
 		  )
@@ -670,7 +690,7 @@
 
 					else
 						(if (eq (pb-field-value ?arg "key") "wp") then
-						  (bind ?wp (pb-field-value ?arg "value"))
+						  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
 
 						else
 							(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -681,7 +701,6 @@
 			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
 			(bind ?next-step-id (* ?action-id 100))
 			(bind ?steps (append$ ?steps ?next-step-id))
-			(bind ?wp (string-to-field ?wp))
 			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
 			(assert
 				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
@@ -761,7 +780,12 @@
 					  (bind ?cap-color (pb-field-value ?arg "value"))
 
 					else
-						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+							(if (eq (pb-field-value ?arg "key") "wp") then
+							  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+							else
+								(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+							)
 					)
 				)
 			  )
@@ -813,7 +837,12 @@
 						  (bind ?cap-color (pb-field-value ?arg "value"))
 
 						else
-							(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+							(if (eq (pb-field-value ?arg "key") "wp") then
+							  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+							else
+								(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+							)
 						)
 					)
 				)
@@ -871,7 +900,12 @@
 							  (bind ?cap-color (pb-field-value ?arg "value"))
 
 							else
-								(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+								(if (eq (pb-field-value ?arg "key") "wp") then
+								  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+								else
+									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+								)
 							)
 						)
 					)
@@ -935,7 +969,12 @@
 								  (bind ?cap-color (pb-field-value ?arg "value"))
 
 								else
-									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+									(if (eq (pb-field-value ?arg "key") "wp") then
+									  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+									else
+										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+									)
 								)
 							)
 						)
@@ -1055,7 +1094,12 @@
 				  (bind ?cap-color (pb-field-value ?arg "value"))
 
 				else
-					(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+					(if (eq (pb-field-value ?arg "key") "wp") then
+					  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+					else
+						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+					)
 				)
 			  )
 			)
@@ -1162,7 +1206,12 @@
 								  (bind ?r-req (pb-field-value ?arg "value"))
 
 								else
-									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+									(if (eq (pb-field-value ?arg "key") "wp") then
+									  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+									else
+										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+									)
 								)
 							)
 						)
@@ -1220,7 +1269,12 @@
 									  (bind ?col1 (pb-field-value ?arg "value"))
 
 									else
-										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+										(if (eq (pb-field-value ?arg "key") "wp") then
+										  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+										else
+											(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+										)
 									)
 								)
 							)
@@ -1284,7 +1338,12 @@
 										  (bind ?col2 (pb-field-value ?arg "value"))
 
 										else
-											(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+											(if (eq (pb-field-value ?arg "key") "wp") then
+											  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+											else
+												(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+											)
 										)
 									)
 								)
