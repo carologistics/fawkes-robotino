@@ -1,6 +1,7 @@
 
 (defrule goal-expander-send-beacon-signal
-  ?g <- (goal (mode SELECTED) (id BEACONACHIEVE))
+  ?p <- (goal (mode EXPANDED) (id ?parent-id))
+  ?g <- (goal (mode SELECTED) (parent ?parent-id) (id BEACONACHIEVE))
 =>
   (assert
     (plan (id BEACONPLAN) (goal-id BEACONACHIEVE))
@@ -10,7 +11,8 @@
 )
 
 (defrule goal-expander-wp-spawn
-  ?g <- (goal (mode SELECTED) (id WPSPAWN-ACHIEVE))
+  ?p <- (goal (mode EXPANDED) (id ?parent-id))
+  ?g <- (goal (mode SELECTED) (parent ?parent-id) (id WPSPAWN-ACHIEVE))
 =>
   (assert
     (plan (id SPAWNPLAN) (goal-id WPSPAWN-ACHIEVE))
@@ -20,7 +22,8 @@
 )
 
 (defrule goal-expander-enter-field
-  ?g <- (goal (mode SELECTED) (id ENTER-FIELD))
+  ?p <- (goal (mode EXPANDED) (id ?parent))
+  ?g <- (goal (mode SELECTED) (parent ?parent) (id ENTER-FIELD))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
 =>
@@ -36,10 +39,14 @@
 
 
 (defrule goal-expander-prefill-cap-station
-   "Feed a CS with a cap from its shelf so that afterwards it can directly put the cap on a product."
-    ?g <- (goal (mode SELECTED) (id FILL-CAP) (params robot ?robot mps ?mps))
+   "Feed a CS with a cap from its shelf so that afterwards
+   it can directly put the cap on a product."
+    ?p <- (goal (mode EXPANDED) (id ?parent))
+    ?g <- (goal (mode SELECTED) (parent ?parent) (id FILL-CAP)
+                                                (params robot ?robot
+                                                        mps ?mps
+                                                        ))
     (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-    ;Reasoning about the wm is in Goal Creation
     =>
     (do-for-fact ((?fact-wp-on-shelf wm-fact))
             (and (wm-key-prefix ?fact-wp-on-shelf:key (create$ domain fact wp-on-shelf))
@@ -54,7 +61,6 @@
         (bind ?cap-color (wm-key-arg ?fact-wp-cap-color:key col))
       )
     )
-
     (assert
         (plan (id FILL-CAP-PLAN) (goal-id FILL-CAP))
         (plan-action (id 1) (plan-id FILL-CAP-PLAN) (duration 4.0)
@@ -83,9 +89,13 @@
 )
 
 (defrule goal-remove-empty-base-from-cs
- ?g <- (goal (mode SELECTED) (id CLEAR-CS) (params robot ?robot mps ?mps wp ?wp))
+ ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?g <- (goal (mode SELECTED) (parent ?parent) (id CLEAR-CS)
+                                             (params robot ?robot
+                                                      mps ?mps
+                                                      wp ?wp
+                                                      ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-;Reasoning about the wm is in Goal Creation
  =>
  (assert
   (plan (id CLEAR-CS-PLAN) (goal-id CLEAR-CS))
@@ -104,7 +114,11 @@
 
 
 (defrule goal-expander-discard-unneeded-base
- ?g <- (goal (mode SELECTED) (id DISCARD-UNKNOWN) (params robot ?robot wp ?wp))
+ ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?g <- (goal (mode SELECTED) (parent ?parent) (id DISCARD-UNKNOWN)
+                                             (params robot ?robot
+                                                    wp ?wp
+                                                    ))
   =>
   (assert
     (plan (id DISCARD-UNKNOWN-PLAN) (goal-id DISCARD-UNKNOWN))
@@ -118,11 +132,14 @@
 
 
 (defrule goal-expander-fill-rs
- ?g <- (goal (mode SELECTED) (id FILL-RS) (params robot ?robot
-                                                    mps ?mps
-                                                    wp ?wp
-                                                    rs-before ?rs-before
-                                                    rs-after ?rs-after))
+ ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?g <- (goal (mode SELECTED) (parent ?parent) (id FILL-RS)
+                                             (params robot ?robot
+                                                      mps ?mps
+                                                      wp ?wp
+                                                      rs-before ?rs-before
+                                                      rs-after ?rs-after
+                                                      ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   =>
   (assert
@@ -140,7 +157,9 @@
 )
 
 (defrule goal-produce-c0
- ?g <- (goal (mode SELECTED) (id PRODUCE-C0) (params robot ?robot
+ ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?g <- (goal (mode SELECTED) (parent ?parent) (id PRODUCE-C0)
+                                             (params robot ?robot
                                                       bs ?bs
                                                       bs-side ?bs-side
                                                       bs-color ?base-color
@@ -203,15 +222,17 @@
 )
 
 (defrule goal-deliver
- ?g <- (goal (mode SELECTED) (id DELIVER) (params robot ?robot
-                                                        mps ?mps
-                                                        order ?order
-                                                        wp ?wp
-                                                        ds ?ds
-                                                        ds-gate ?gate
-                                                        base-color ?base-color
-                                                        cap-color ?cap-color
-                                                        ))
+ ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?g <- (goal (mode SELECTED) (parent ?parent) (id DELIVER)
+                                             (params robot ?robot
+                                                          mps ?mps
+                                                          order ?order
+                                                          wp ?wp
+                                                          ds ?ds
+                                                          ds-gate ?gate
+                                                          base-color ?base-color
+                                                          cap-color ?cap-color
+                                                          ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
  (assert
