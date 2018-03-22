@@ -359,7 +359,7 @@
 
 (defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
   ?g <- (goal (id WPSPAWN-ACHIEVE) (parent WPSPAWN-MAINTAIN) (mode FINISHED) (outcome COMPLETED))
-  ?p <- (goal (id WPSPAWN-MAINTAIN) (mode DISPATCHED))
+  ?p <- (goal (id WPSPAWN-MAINTAIN))
   ?m <- (goal-meta (goal-id WPSPAWN-MAINTAIN))
   (time $?now)
   =>
@@ -412,7 +412,7 @@
 
 (defrule goal-reasoner-evaluate-completed-subgoal-common
   ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome COMPLETED))
-  ?pg <- (goal (id ?parent-id) (mode DISPATCHED))
+  ?pg <- (goal (id ?parent-id))
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
   (test (neq ?goal-id WPSPAWN-ACHIEVE))
@@ -441,7 +441,7 @@
 (defrule goal-reasoner-cleanup-all-production-subgoals
   "Clean up all production goals if one has been evaluated"
   (goal (id ?goal-id) (parent PRODUCTION-MAINTAIN) (mode EVALUATED) (outcome ?outcome))
-  ?pg <- (goal (id PRODUCTION-MAINTAIN) (mode DISPATCHED))
+  ?pg <- (goal (id PRODUCTION-MAINTAIN))
   ?m <- (goal-meta (goal-id ?parent-id))
   =>
   (delayed-do-for-all-facts ((?sg goal)) (eq ?sg:parent PRODUCTION-MAINTAIN)
@@ -460,7 +460,7 @@
 
 (defrule goal-reasoner-cleanup-completed-subgoal-common
   ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode EVALUATED) (outcome COMPLETED))
-  ?pg <- (goal (id ?parent-id) (mode DISPATCHED))
+  ?pg <- (goal (id ?parent-id))
   ?m <- (goal-meta (goal-id ?parent-id))
   (test (neq ?parent-id PRODUCTION-MAINTAIN))
   =>
