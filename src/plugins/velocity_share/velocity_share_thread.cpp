@@ -60,19 +60,19 @@ VelocityShareThread::init()
   motor_if_ = blackboard->open_for_reading<MotorInterface>("Robotino");
 
   now_ = ros::Time::now();
-  // try to find robotname_ (this robot) in COLLECTION.
+  // try to find robot_number (this robot) in COLLECTION.
   mongo::BSONObjBuilder q;
   q.append("object", "robot");
-  q.append("name", robotname_);
+  q.append("robot_number", robot_number_);
   QResCursor res = robot_memory->query(q.obj(), COLLECTION);
 
   if (!res->more()) {
     // If not available, add this robot
-    logger->log_warn(name(), "%s not found in collection %s, creating a new object", robotname_.c_str(), COLLECTION);
+    logger->log_warn(name(), "Robot %i not found in collection %s, creating a new object", robot_number_, COLLECTION);
 
     mongo::BSONObjBuilder b;
     b.append("object", "robot");
-    b.append("name", robotname_);
+    q.append("robot_number", robot_number_);
     b.append("pose", mongo::fromjson("{x:0.0,y:0.0,ori:0.0}"));
     b.append("vel", mongo::fromjson("{x:0.0,y:0.0,z:0.0}"));
     b.appendNumber("timestamp", now_.toSec());
@@ -91,7 +91,7 @@ VelocityShareThread::init()
   last_vori_ = 0.0;
   update_needed_ = false;
 
-  logger->log_info(name(), "Plugin initialized for robot: %s", robotname_.c_str());
+  logger->log_info(name(), "Plugin initialized for robot: %i", robot_number_);
 }
 
 void
@@ -100,7 +100,7 @@ VelocityShareThread::finalize()
   //remove this robot from robot_memory
   mongo::BSONObjBuilder q;
   q.append("object", "robot");
-  q.append("name", robotname_);
+  q.append("robot_number", robot_number_);
   robot_memory->remove(q.obj(), COLLECTION);
   delete time_wait_;
   blackboard->close(pose_if_);
@@ -145,7 +145,7 @@ VelocityShareThread::loop()
     // first, create the query for this robot
     mongo::BSONObjBuilder query;
     query.append("object", "robot");
-    query.append("name", robotname_);
+    query.append("robot_number", robot_number_);
 
     const char* target_frame = "map";
     const char* source_frame = "base_link";
@@ -202,13 +202,13 @@ VelocityShareThread::loop()
     mongo::BSONObj robot = res->next();
 
     // if the found object is this robot, continue.
-    if (robotname_.compare(robot.getField("name").String()) == 0) {
+    if (robot.getField("robot_number").Number() == robot_number_) {
       continue;
     }
 
     mongo::BSONObj robot_pose = robot.getField("pose").Obj();
     mongo::BSONObj robot_vel = robot.getField("vel").Obj();
-    std::string this_robot_name = robot.getField("name").String();
+    int this_robot_number = robot.getField("robot_number").Number();
 
     // create quaternion from yaw
     float yaw = robot_pose.getField("ori").number();
@@ -226,7 +226,7 @@ VelocityShareThread::loop()
     ros::Time ros_robottime(robotdate);
     info.header.stamp = ros_robottime;
     info.header.frame_id = "map";
-    info.robotvelinfo.robot_name = this_robot_name;
+    info.robotvelinfo.robot_name = "Robotino " + std::to_string(this_robot_number);
 
     info.robotvelinfo.pose.position.x = robot_pose.getField("x").number();
     info.robotvelinfo.pose.position.y = robot_pose.getField("y").number();
@@ -280,7 +280,7 @@ void VelocityShareThread::load_config()
   // get robot-name
   try {
     std::string robotname_confpath = config->get_string(prefix + "robot_name_confpath");
-    robotname_ = config->get_string(robotname_confpath);
+    robot_number_ = atoi(config->get_string(robotname_confpath).c_str());
   } catch (Exception &e) {
     logger->log_error( name() , "Can't read the robot name. Is 'robot-name' specified?" );
   }

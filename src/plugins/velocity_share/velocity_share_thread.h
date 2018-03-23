@@ -65,7 +65,6 @@ private:
 
   fawkes::Position3DInterface *pose_if_;
   fawkes::MotorInterface *motor_if_;
-  std::string robotname_;
   fawkes::TimeWait *time_wait_;
   float update_rate_;
 
@@ -74,6 +73,9 @@ private:
   float cur_vx_, cur_vy_, cur_vori_;
   float last_vx_, last_vy_, last_vori_;
   bool update_needed_;
+
+  // used to determine the priority between robots
+  int robot_number_;
 
   bool almost_equal(float a, float b);
   void load_config();
