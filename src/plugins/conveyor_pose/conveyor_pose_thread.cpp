@@ -287,7 +287,7 @@ ConveyorPoseThread::loop()
  // logger->log_debug(name(),"CONVEYOR-POSE 6: intially filtered pointcloud");
 
   CloudPtr cloud_front_side(new Cloud);
-    cloud_front_side = cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
+  cloud_front_side = cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
   
 // logger->log_debug(name(),"CONVEYOR-POSE 7: set cut off left and rigt");
 
@@ -362,24 +362,24 @@ ConveyorPoseThread::loop()
           x_max = p.x;
         }
       }
-    
-    float width = x_min - x_max;
-    if (width < cfg_plane_width_minimum_) {
-      logger->log_info(name(), "Discard plane, because of width restriction. is: %f\tshould: %f", width, cfg_plane_width_minimum_);      
-      boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
-      CloudPtr tmp(new Cloud);
-      pcl::ExtractIndices<Point> extract;
-      extract.setInputCloud (cloud_front_side);
-      extract.setIndices( extract_indicies );
-      extract.setNegative (true);
-      extract.filter (*tmp);
-      *cloud_front_side = *tmp;
 
-    } else {
-    //height and width ok
-      break;
+      float width = x_min - x_max;
+      if (width < cfg_plane_width_minimum_) {
+        logger->log_info(name(), "Discard plane, because of width restriction. is: %f\tshould: %f", width, cfg_plane_width_minimum_);
+        boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
+        CloudPtr tmp(new Cloud);
+        pcl::ExtractIndices<Point> extract;
+        extract.setInputCloud (cloud_front_side);
+        extract.setIndices( extract_indicies );
+        extract.setNegative (true);
+        extract.filter (*tmp);
+        *cloud_front_side = *tmp;
+
+      } else {
+        //height and width ok
+        break;
+      }
     }
-   }
   } while (true);
   
  // logger->log_debug(name(),"CONVEYOR-POSE 9: left while true");
@@ -673,17 +673,17 @@ ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::Laser
     double x_max = c(0) + cfg_right_cut_;
 
     CloudPtr out(new Cloud);
-      for (Point p : *in) {
-        if ( p.x >= x_min && p.x <= x_max ) {
-          out->push_back(p);
-        }
-  }
-  return out;
+    for (Point p : *in) {
+      if ( p.x >= x_min && p.x <= x_max ) {
+        out->push_back(p);
+      }
+    }
+    return out;
   }else{
     logger->log_info(name(), "-------------STOPPED USING LASERLINE-----------");
     CloudPtr out(new Cloud);
     for (Point p : *in) {
-        if ( p.x >= -cfg_left_cut_no_ll_ && p.x <= cfg_right_cut_no_ll_ ) {
+      if ( p.x >= -cfg_left_cut_no_ll_ && p.x <= cfg_right_cut_no_ll_ ) {
         out->push_back(p);
       }
     }
