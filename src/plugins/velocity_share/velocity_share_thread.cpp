@@ -227,6 +227,7 @@ VelocityShareThread::loop()
     info.header.stamp = ros_robottime;
     info.header.frame_id = "map";
     info.robotvelinfo.robot_name = "Robotino " + std::to_string(this_robot_number);
+    info.robotvelinfo.high_prio = robot_number_ < this_robot_number;
 
     info.robotvelinfo.pose.position.x = robot_pose.getField("x").number();
     info.robotvelinfo.pose.position.y = robot_pose.getField("y").number();
