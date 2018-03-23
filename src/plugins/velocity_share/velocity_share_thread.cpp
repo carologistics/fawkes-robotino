@@ -187,8 +187,6 @@ VelocityShareThread::loop()
     // do not make use of mongo::Date_t for easier conversion from and to ROS::Time
     obj.appendNumber("timestamp", now_.toSec() );
 
-    logger->log_info(name(), "set timestamp: %f", now_.toSec());
-
     mongo::BSONObjBuilder update;
     update.append("$set", obj.obj());
     robot_memory->update(query.obj(), update.obj(), COLLECTION);
