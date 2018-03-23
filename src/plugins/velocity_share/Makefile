@@ -16,8 +16,8 @@
 BASEDIR = ../../..
 
 include $(BASEDIR)/etc/buildsys/config.mk
-include $(BASEDIR)/fawkes/src/plugins/mongodb/mongodb.mk
-include $(BASEDIR)/fawkes/src/plugins/robot-memory/robot_memory.mk
+include $(FAWKES_BASEDIR)/src/plugins/mongodb/mongodb.mk
+include $(FAWKES_BASEDIR)/src/plugins/robot-memory/robot_memory.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDSYSDIR)/ros.mk
 
