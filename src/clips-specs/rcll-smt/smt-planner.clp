@@ -311,13 +311,13 @@
 ; Extract plan from protobuf
 (defrule production-smt-plan-completed
 	(smt-plan-complete ?handle)
-	  ?g <- (goal (id COMPLEXITY) (mode SELECTED))
-  (wm-fact (key domain fact order-complexity args? ord ?order-id com C3) (value TRUE))
-  (wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
+	?g <- (goal (id COMPLEXITY) (mode SELECTED))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com C3) (value TRUE))
+	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
 	=>
 	(printout t "SMT plan handle completed " ?handle  crlf)
 	(assert
-	 (plan (id COMPLEXITY-PLAN) (goal-id COMPLEXITY))
+		(plan (id COMPLEXITY-PLAN) (goal-id COMPLEXITY))
 	)
 	(bind ?plans (smt-get-plan ?handle))
 
@@ -335,642 +335,180 @@
 		(bind ?actor-name (pb-field-value ?ap "actor_name"))
 		(printout t "Working on ActorSpecificPlan of " ?actor-name crlf)
 		(if (pb-has-field ?ap "sequential_plan")
-		 then
+			then
 			(bind ?p (pb-field-value ?ap "sequential_plan"))
 
-			; (bind ?task-id (random-id))
 			(bind ?actions (pb-field-list ?p "actions"))
-			(bind ?steps (create$)) // TODO replace by plan-action
-      (bind ?goal-base-color ""); Tempratly get the goal-info from the plan (for now a static C0 production is assumed)
+			(bind ?goal-base-color "")
 
 			(loop-for-count (?ai (length$ ?actions))
 				(bind ?a (nth$ ?ai ?actions))
 				(bind ?actname (pb-field-value ?a "name"))
-        (switch ?actname
 
-		  ;ACTION:::::ENTER-FIELD:::::
-          (case "enter-field" then (printout warn "Ignoring enter-field, done implicitly" crlf))
+				(switch ?actname
 
-		  ;ACTION::::MOVE::::::
-          (case "move" then
-            (bind ?to "")
-            (bind ?side "")
-            (bind ?action-specific-actor "")
-            (bind ?action-id (pb-field-value ?a "id"))
-            (if (pb-has-field ?a "actor") 
-              then
-              (bind ?action-specific-actor (pb-field-value ?a "actor"))
-            )
-            (bind ?parents-ids (create$)) 
-            (progn$ (?arg (pb-field-list ?a "parent_id"))
-              (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-            )
-            (progn$ (?arg (pb-field-list ?a "params"))
-              (if (eq (pb-field-value ?arg "key") "to") then
-                (bind ?to (pb-field-value ?arg "value"))
-				(bind ?to-splitted (str-split ?to "-"))
-				(bind ?to (str-join "-" (subseq$ ?to-splitted 1 2)))
-				(bind ?to-side (if (eq (nth$ 3 ?to-splitted) "I") then INPUT else OUTPUT))
-               else
-                (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
-              )
-            )
+					;ACTION:::::ENTER-FIELD:::::
+					(case "enter-field" then (printout warn "Ignoring enter-field, done implicitly" crlf))
 
-            ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-            (bind ?next-step-id (* ?action-id 100))
-            (bind ?steps (append$ ?steps ?next-step-id))
-            ; (assert (step (name drive-to) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?to) (side ?side) (actor ?action-specific-actor)))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name move)
-											(param-names r from from-side to to-side) (param-values (string-to-field ?action-specific-actor) ?from ?from-side (string-to-field ?to) ?to-side))
-			)
-            (printout t "Action added: " ?action-specific-actor " [" ?action-id  "] move from: " ?from " at: " ?from-side " to: " ?to " at: " ?to-side crlf)
-			(bind ?from (string-to-field ?to))
-			(bind ?from-side ?to-side)
-          )
-
-		  ;ACTION:::::WP-GET-SHELF:::::
-		  (case "wp-get-shelf" then
-			(bind ?mps "")
-			(bind ?side "")
-			(bind ?shelf FALSE)
-			(bind ?action-specific-actor "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(if (pb-has-field ?a "actor") 
-			  then
-			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
-			)
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-			   else
-				(if (eq (pb-field-value ?arg "key") "shelf") then
-				  (bind ?shelf (pb-field-value ?arg "value"))
-				 else
-				  (printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
-				)
-			  )
-			)
-			; Make sure that mps is of type CS
-			; Match the corresponding cap carrier wp
-			(do-for-fact ((?wm-fact wm-fact))
-				(and
-					(wm-key-prefix ?wm-fact:key (create$ domain fact mps-type))
-					(eq (string-to-field ?mps) (wm-key-arg ?wm-fact:key m))
-					(eq CS (wm-key-arg ?wm-fact:key t))
-				)
-				(do-for-fact ((?wm-fact2 wm-fact))
-					(and
-						(wm-key-prefix ?wm-fact2:key (create$ domain fact wp-on-shelf))
-						(eq (wm-key-arg ?wm-fact:key m) (wm-key-arg ?wm-fact2:key m))
-						(eq (string-to-field ?shelf) (wm-key-arg ?wm-fact2:key spot))
-					)
-					(bind ?next-step-id (* ?action-id 100))
-					(bind ?wp (string-to-field (wm-key-arg ?wm-fact2:key wp)))
-					(assert
-						 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-													(action-name wp-get-shelf)
-													(param-names r cc m spot) (param-values (string-to-field ?action-specific-actor) ?wp (string-to-field ?mps) (string-to-field ?shelf)))
-					)
-					(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-get-shelf: " ?mps " at: " ?side " shelf: " ?shelf crlf)
-				)
-			)
-		)
-
-			;ACTION:::::WP-GET:::::
-		  (case "wp-get" then
-			(bind ?mps "")
-			(bind ?side "")
-			(bind ?action-specific-actor "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(if (pb-has-field ?a "actor") 
-			  then
-			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
-			)
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-			  else
-					(if (eq (pb-field-value ?arg "key") "wp") then
-					  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
-
-					else
-						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
-					)
-			  )
-			)
-			  ; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			  (bind ?next-step-id (* ?action-id 100))
-			  (bind ?steps (append$ ?steps ?next-step-id))
-			  ; (assert (step (name get-output) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (machine-feature CONVEYOR) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name wp-get)
-											(param-names r wp m side) (param-values (string-to-field ?action-specific-actor) ?wp (string-to-field ?mps) ?side))
-			)
-			  (printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-get from: " ?mps " side: " ?side crlf)
-
-		  )
-
-		  ;ACTION:::::WP-PUT:::::
-		  (case "wp-put" then
-			(bind ?mps "")
-			(bind ?side "")
-			(bind ?action-specific-actor "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(bind ?machine-feature CONVEYOR)
-			(if (pb-has-field ?a "actor") 
-			  then
-			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
-			)
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-			  else
-				(if (eq (pb-field-value ?arg "key") "slide") then
-				  (bind ?slide (pb-field-value ?arg "value"))
-				  (bind ?machine-feature (if (eq ?slide "true") then SLIDE else CONVEYOR))
-				else
-					(if (eq (pb-field-value ?arg "key") "wp") then
-					  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
-
-					else
-						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
-					)
-				)
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name insert) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (machine-feature ?machine-feature) (already-at-mps FALSE) (actor ?action-specific-actor) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name wp-put)
-											(param-names r wp m) (param-values (string-to-field ?action-specific-actor) ?wp (string-to-field ?mps)))
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-put to: " ?mps " at: " ?side crlf)
-		  )
-
-		  ;ACTION:::::WP-PUT-SLIDE-CC:::::
-		  (case "wp-put-slide-cc" then
-			(bind ?mps "")
-			(bind ?side "")
-			(bind ?action-specific-actor "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(bind ?machine-feature CONVEYOR)
-			(bind ?rs-before "")
-			(bind ?rs-after "")
-			(if (pb-has-field ?a "actor") 
-			  then
-			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
-			)
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-			  else
-				(if (eq (pb-field-value ?arg "key") "slide") then
-				  (bind ?slide (pb-field-value ?arg "value"))
-				  (bind ?machine-feature (if (eq ?slide "true") then SLIDE else CONVEYOR))
-				else
-					(if (eq (pb-field-value ?arg "key") "rs-before") then
-					  (bind ?rs-before (pb-field-value ?arg "value"))
-
-					else
-						(if (eq (pb-field-value ?arg "key") "rs-after") then
-						  (bind ?rs-after (pb-field-value ?arg "value"))
-
-						else
-							(if (eq (pb-field-value ?arg "key") "wp") then
-							  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
-
+					;ACTION::::MOVE::::::
+					(case "move" then
+						(bind ?to "")
+						(bind ?to-side "")
+						(bind ?action-specific-actor "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(if (pb-has-field ?a "actor") 
+							then
+							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+						)
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "to") then
+								(bind ?to (pb-field-value ?arg "value"))
+								(bind ?to-splitted (str-split ?to "-"))
+								(bind ?to (str-join "-" (subseq$ ?to-splitted 1 2)))
+								(bind ?to-side (if (eq (nth$ 3 ?to-splitted) "I") then INPUT else OUTPUT))
+								(bind ?to (string-to-field ?to))
 							else
-								(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+								(printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
 							)
 						)
-					)
-				)
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name insert) (id ?next-step-id) (parents-ids ?parents-ids) (machine ?mps) (side ?side) (machine-feature ?machine-feature) (already-at-mps FALSE) (actor ?action-specific-actor) )) ;MAGNOTE_ atmps should be true only when we had just picked from the shelf. Find that case
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name wp-put-slide-cc)
-											(param-names r wp m rs-before rs-after) (param-values (string-to-field ?action-specific-actor) ?wp (string-to-field ?mps) (string-to-field ?rs-before) (string-to-field ?rs-after) ))
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-put-slide-cc to: " ?mps " at: " ?side " with before: " ?rs-before " and after: " ?rs-after crlf)
-		  )
 
-		  ;ACTION:::::WP-DISCARD:::::
-		  (case "wp-discard" then
-			(bind ?action-specific-actor "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(if (pb-has-field ?a "actor") 
-			  then
-			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-				(if (eq (pb-field-value ?arg "key") "wp") then
-				  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
-
-				else
-					(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
-				)
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name wp-discard)
-											(param-names r cc) (param-values (string-to-field ?action-specific-actor) ?wp))
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-discard" crlf)
-		  )
-
-		  ;ACTION:::::PREPARE-BS:::::
-		  (case "prepare-bs" then
-			(bind ?action-specific-actor "")
-			(bind ?m "")
-			(bind ?side "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(if (pb-has-field ?a "actor") 
-			  then
-			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
-			)
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-			  else
-				  (if (eq (pb-field-value ?arg "key") "color") then
-					; (bind ?goal-base-color (utils-remove-prefix (pb-field-value ?arg "value") base_)) ;temp: the color of the base of the goal is recognized here
-					(bind ?goal-base-color (pb-field-value ?arg "value")) 
-
-					else
-						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
-					)
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name prepare-bs)
-											(param-names m side bc) (param-values (string-to-field ?mps) ?side (string-to-field ?goal-base-color)))
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-bs with base-color: " ?goal-base-color " at: " ?side crlf)
-		  )
-
-		  ;ACTION:::::BS-DISPENSE:::::
-		  (case "bs-dispense" then
-			(bind ?action-specific-actor "")
-			(bind ?m "")
-			(bind ?side "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(if (pb-has-field ?a "actor") 
-			  then
-			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
-			)
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-				(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-			  else
-				  (if (eq (pb-field-value ?arg "key") "color") then
-					; (bind ?goal-base-color (utils-remove-prefix (pb-field-value ?arg "value") base_)) ;temp: the color of the base of the goal is recognized here
-					(bind ?goal-base-color (pb-field-value ?arg "value")) 
-
-					else
-						(if (eq (pb-field-value ?arg "key") "wp") then
-						  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
-
-						else
-							(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
-						)
-					)
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name bs-dispense)
-											(param-names m side wp basecol) (param-values (string-to-field ?mps) ?side ?wp (string-to-field ?goal-base-color)))
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] bs-dispense with basecolor: " ?goal-base-color crlf)
-		  )
-
-		  ;ACTION:::::PREPARE-DS:::::
-		  (case "prepare-ds" then
-			(bind ?action-specific-actor "")
-			(bind ?m "")
-			(bind ?gate "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(if (pb-has-field ?a "actor") 
-			  then
-			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
-			)
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-			  else
-			  ; (if (eq (pb-field-value ?arg "key") "gate") then
-			  ;    (bind ?gate (string-to-field (pb-field-value ?arg "value")))
-
-			  ;   else
-					(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
-				; )
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(do-for-fact ((?wm-fact wm-fact)) 
-				(and
-					(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
-					(eq ?order-id (wm-key-arg ?wm-fact:key ord))
-				)
-				(assert
-					 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-												(action-name prepare-ds)
-												(param-names m gate) (param-values (string-to-field ?mps) (wm-key-arg ?wm-fact:key gate) ))
-				)
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-ds" crlf)
-		  )
-
-		  ;ACTION:::::FULFILL-ORDER-C0:::::
-		  (case "fulfill-order-c0" then
-			(bind ?m "")
-			(bind ?base-color "")
-			(bind ?cap-color "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-			  else
-				(if (eq (pb-field-value ?arg "key") "base-color") then
-				  (bind ?base-color (pb-field-value ?arg "value"))
-
-				else
-					(if (eq (pb-field-value ?arg "key") "cap-color") then
-					  (bind ?cap-color (pb-field-value ?arg "value"))
-
-					else
-							(if (eq (pb-field-value ?arg "key") "wp") then
-							  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
-
-							else
-								(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
-							)
-					)
-				)
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(do-for-fact ((?wm-fact wm-fact)) 
-				(and
-					(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
-					(eq ?order-id (wm-key-arg ?wm-fact:key ord))
-				)
-				(assert
-					 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-												(action-name fulfill-order-c0)
-												(param-names ord wp m g basecol capcol) (param-values ?order-id ?wp (string-to-field ?mps) (wm-key-arg ?wm-fact:key gate) (string-to-field ?base-color) (string-to-field ?cap-color)))
-				)
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c0 " ?order-id crlf)
-		  )
-
-		  ;ACTION:::::FULFILL-ORDER-C1:::::
-		  (case "fulfill-order-c1" then
-			(bind ?m "")
-			(bind ?base-color "")
-			(bind ?ring1-color "")
-			(bind ?cap-color "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-			  else
-				(if (eq (pb-field-value ?arg "key") "base-color") then
-				  (bind ?base-color (pb-field-value ?arg "value"))
-
-				else
-					(if (eq (pb-field-value ?arg "key") "ring1-color") then
-					  (bind ?ring1-color (pb-field-value ?arg "value"))
-
-					else
-						(if (eq (pb-field-value ?arg "key") "cap-color") then
-						  (bind ?cap-color (pb-field-value ?arg "value"))
-
-						else
-							(if (eq (pb-field-value ?arg "key") "wp") then
-							  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
-
-							else
-								(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+						(bind ?next-step-id (* ?action-id 100))
+						(assert
+							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(action-name move)
+								(param-names r from from-side to to-side)
+								(param-values ?action-specific-actor ?from ?from-side ?to ?to-side)
 							)
 						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] move from: " ?from " at: " ?from-side " to: " ?to " at: " ?to-side crlf)
+						; Keep track from where a robot comes from
+						; TODO Extend to multiple robots, maybe from clips-smt plugin via protobuf
+						(bind ?from ?to)
+						(bind ?from-side ?to-side)
 					)
-				)
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(do-for-fact ((?wm-fact wm-fact)) 
-				(and
-					(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
-					(eq ?order-id (wm-key-arg ?wm-fact:key ord))
-				)
-				(assert
-					 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-												(action-name fulfill-order-c1)
-												(param-names ord wp m g basecol ring1col capcol) (param-values ?order-id ?wp (string-to-field ?mps) (wm-key-arg ?wm-fact:key gate) (string-to-field ?base-color) (string-to-field ?ring1-color) (string-to-field ?cap-color)))
-				)
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c1 " ?order-id crlf)
-		  )
 
-		  ;ACTION:::::FULFILL-ORDER-C2:::::
-		  (case "fulfill-order-c2" then
-			(bind ?m "")
-			(bind ?base-color "")
-			(bind ?ring1-color "")
-			(bind ?ring2-color "")
-			(bind ?cap-color "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-			  else
-				(if (eq (pb-field-value ?arg "key") "base-color") then
-				  (bind ?base-color (pb-field-value ?arg "value"))
+					;ACTION:::::WP-GET-SHELF:::::
+					(case "wp-get-shelf" then
+						(bind ?mps "")
+						(bind ?side "")
+						(bind ?shelf FALSE)
+						(bind ?action-specific-actor "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(if (pb-has-field ?a "actor") 
+							then
+							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+						)
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
+								(bind ?mps (string-to-field ?mps))
+							else
+								(if (eq (pb-field-value ?arg "key") "shelf") then
+									(bind ?shelf (string-to-field (pb-field-value ?arg "value")))
 
-				else
-					(if (eq (pb-field-value ?arg "key") "ring1-color") then
-					  (bind ?ring1-color (pb-field-value ?arg "value"))
+								else
+									(if (eq (pb-field-value ?arg "key") "wp") then
+										(bind ?wp (string-to-field (pb-field-value ?arg "value")))
 
-					else
-						(if (eq (pb-field-value ?arg "key") "ring2-color") then
-						  (bind ?ring2-color (pb-field-value ?arg "value"))
+									else
+										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+									)
+								)
+							)
+						)
 
-						else
-							(if (eq (pb-field-value ?arg "key") "cap-color") then
-							  (bind ?cap-color (pb-field-value ?arg "value"))
+						(bind ?next-step-id (* ?action-id 100))
+						(assert
+							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(action-name wp-get-shelf)
+								(param-names r cc m spot)
+								(param-values ?action-specific-actor ?wp ?mps ?shelf)
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-get-shelf: " ?mps " at: " ?side " shelf: " ?shelf crlf)
+					)
 
+					;ACTION:::::WP-GET:::::
+					(case "wp-get" then
+						(bind ?mps "")
+						(bind ?side "")
+						(bind ?action-specific-actor "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(if (pb-has-field ?a "actor") 
+							then
+							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+						)
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
+								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "wp") then
-								  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+									(bind ?wp (string-to-field (pb-field-value ?arg "value")))
 
 								else
 									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
 								)
 							)
 						)
+						(bind ?next-step-id (* ?action-id 100))
+						(assert
+							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(action-name wp-get)
+								(param-names r wp m side)
+								(param-values ?action-specific-actor ?wp ?mps ?side)
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-get from: " ?mps " side: " ?side crlf)
 					)
-				)
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(do-for-fact ((?wm-fact wm-fact)) 
-				(and
-					(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
-					(eq ?order-id (wm-key-arg ?wm-fact:key ord))
-				)
-				(assert
-					 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-												(action-name fulfill-order-c2)
-												(param-names ord wp m g basecol ring1col ring2col capcol) (param-values ?order-id ?wp (string-to-field ?mps) (wm-key-arg ?wm-fact:key gate) (string-to-field ?base-color) (string-to-field ?ring1-color) (string-to-field ?ring2-color) (string-to-field ?cap-color)))
-				)
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c2 " ?order-id crlf)
-		  )
 
-		  ;ACTION:::::FULFILL-ORDER-C3:::::
-		  (case "fulfill-order-c3" then
-			(bind ?m "")
-			(bind ?base-color "")
-			(bind ?ring1-color "")
-			(bind ?ring2-color "")
-			(bind ?ring3-color "")
-			(bind ?cap-color "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-			  else
-				(if (eq (pb-field-value ?arg "key") "base-color") then
-				  (bind ?base-color (pb-field-value ?arg "value"))
-
-				else
-					(if (eq (pb-field-value ?arg "key") "ring1-color") then
-					  (bind ?ring1-color (pb-field-value ?arg "value"))
-
-					else
-						(if (eq (pb-field-value ?arg "key") "ring2-color") then
-						  (bind ?ring2-color (pb-field-value ?arg "value"))
-
-						else
-							(if (eq (pb-field-value ?arg "key") "ring3-color") then
-							  (bind ?ring3-color (pb-field-value ?arg "value"))
-
+					;ACTION:::::WP-PUT:::::
+					(case "wp-put" then
+						(bind ?mps "")
+						(bind ?side "")
+						(bind ?action-specific-actor "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(bind ?machine-feature CONVEYOR)
+						(if (pb-has-field ?a "actor") 
+							then
+							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+						)
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
+								(bind ?mps (string-to-field ?mps))
 							else
-								(if (eq (pb-field-value ?arg "key") "cap-color") then
-								  (bind ?cap-color (pb-field-value ?arg "value"))
-
+								(if (eq (pb-field-value ?arg "key") "slide") then
+									(bind ?slide (pb-field-value ?arg "value"))
+									(bind ?machine-feature (if (eq ?slide "true") then SLIDE else CONVEYOR))
 								else
 									(if (eq (pb-field-value ?arg "key") "wp") then
-									  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+										(bind ?wp (string-to-field (pb-field-value ?arg "value")))
 
 									else
 										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -978,368 +516,56 @@
 								)
 							)
 						)
-					)
-				)
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(do-for-fact ((?wm-fact wm-fact)) 
-				(and
-					(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
-					(eq ?order-id (wm-key-arg ?wm-fact:key ord))
-				)
-				(assert
-					 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-												(action-name fulfill-order-c3)
-												(param-names ord wp m g basecol ring1col ring2col ring3col capcol) (param-values ?order-id ?wp (string-to-field ?mps) (wm-key-arg ?wm-fact:key gate) (string-to-field ?base-color) (string-to-field ?ring1-color) (string-to-field ?ring2-color) (string-to-field ?ring3-color) (string-to-field ?cap-color)))
-				)
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c3 " ?order-id crlf)
-		  )
-
-		  ;ACTION:::::PREPARE-CS:::::
-		  (case "prepare-cs" then
-			(bind ?action-specific-actor "")
-			(bind ?m "")
-			(bind ?operation "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(if (pb-has-field ?a "actor") 
-			  then
-			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
-			)
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-			  else
-				(if (eq (pb-field-value ?arg "key") "operation") then
-				  (bind ?operation (pb-field-value ?arg "value"))
-
-				else
-					(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
-				)
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name prepare-cs)
-											(param-names m op) (param-values (string-to-field ?mps) (string-to-field ?operation)))
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-cs at: " ?mps " with " ?operation crlf)
-		  )
-
-		  ;ACTION:::::CS-RETRIEVE-CAP:::::
-		  (case "cs-retrieve-cap" then
-			(bind ?m "")
-			(bind ?cap-color "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-			  else
-				(if (eq (pb-field-value ?arg "key") "cap-color") then
-				  (bind ?cap-color (pb-field-value ?arg "value"))
-
-				else
-					(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
-				)
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name cs-retrieve-cap)
-											(param-names m cc capcol) (param-values (string-to-field ?mps) ?wp (string-to-field ?cap-color)))
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] cs-retrieve-cap at: " ?mps crlf)
-		  )
-
-		  ;ACTION:::::CS-MOUNT-CAP:::::
-		  (case "cs-mount-cap" then
-			(bind ?m "")
-			(bind ?cap-color "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-			  else
-				(if (eq (pb-field-value ?arg "key") "cap-color") then
-				  (bind ?cap-color (pb-field-value ?arg "value"))
-
-				else
-					(if (eq (pb-field-value ?arg "key") "wp") then
-					  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
-
-					else
-						(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
-					)
-				)
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name cs-mount-cap)
-											(param-names m wp capcol) (param-values (string-to-field ?mps) ?wp (string-to-field ?cap-color)))
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] cs-mount-cap at: " ?mps crlf)
-		  )
-
-		  ;ACTION:::::PREPARE-RS::::::
-		  (case "prepare-rs" then
-			(bind ?action-specific-actor "")
-			(bind ?m "")
-			(bind ?rs-before "")
-			(bind ?rs-after "")
-			(bind ?r-req "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(if (pb-has-field ?a "actor") 
-			  then
-			  (bind ?action-specific-actor (pb-field-value ?a "actor"))
-			)
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-			  else
-				  (if (eq (pb-field-value ?arg "key") "ring_color") then
-						(bind ?goal-ring-color (pb-field-value ?arg "value") ) ;temp: the color of the base of the goal is recognized here
-
-					else
-						(if (eq (pb-field-value ?arg "key") "rs-before") then
-						  (bind ?rs-before (pb-field-value ?arg "value"))
-
-						else
-							(if (eq (pb-field-value ?arg "key") "rs-after") then
-							  (bind ?rs-after (pb-field-value ?arg "value"))
-
-							else
-								(if (eq (pb-field-value ?arg "key") "r-req") then
-								  (bind ?r-req (pb-field-value ?arg "value"))
-
-								else
-									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
-								)
+						(bind ?next-step-id (* ?action-id 100))
+						(assert
+							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(action-name wp-put)
+								(param-names r wp m)
+								(param-values ?action-specific-actor ?wp ?mps)
 							)
 						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-put to: " ?mps " at: " ?side crlf)
 					)
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name prepare-rs)
-											(param-names m rc rs-before rs-after r-req) (param-values (string-to-field ?mps) (string-to-field ?goal-ring-color) (string-to-field ?rs-before) (string-to-field ?rs-after) (string-to-field ?r-req)))
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-rs at: " ?mps " with ring-color: " ?goal-ring-color crlf)
-		  )
 
-		  ;ACTION:::::RS-MOUNT-RING1:::::
-		  (case "rs-mount-ring1" then
-			(bind ?m "")
-			(bind ?ring-color "")
-			(bind ?rs-before "")
-			(bind ?rs-after "")
-			(bind ?r-req "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-			  else
-				(if (eq (pb-field-value ?arg "key") "ring-color") then
-				  (bind ?ring-color (pb-field-value ?arg "value"))
-
-				else
-						(if (eq (pb-field-value ?arg "key") "rs-before") then
-						  (bind ?rs-before (pb-field-value ?arg "value"))
-
-						else
-							(if (eq (pb-field-value ?arg "key") "rs-after") then
-							  (bind ?rs-after (pb-field-value ?arg "value"))
-
-							else
-								(if (eq (pb-field-value ?arg "key") "r-req") then
-								  (bind ?r-req (pb-field-value ?arg "value"))
-
-								else
-									(if (eq (pb-field-value ?arg "key") "wp") then
-									  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
-
-									else
-										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
-									)
-								)
-							)
+					;ACTION:::::WP-PUT-SLIDE-CC:::::
+					(case "wp-put-slide-cc" then
+						(bind ?mps "")
+						(bind ?side "")
+						(bind ?action-specific-actor "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(bind ?machine-feature CONVEYOR)
+						(bind ?rs-before "")
+						(bind ?rs-after "")
+						(if (pb-has-field ?a "actor") 
+							then
+							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
 						)
-				)
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name rs-mount-ring1)
-											(param-names m wp col rs-before rs-after r-req) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color) (string-to-field ?rs-before) (string-to-field ?rs-after) (string-to-field ?r-req)))
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring1 at: " ?mps " with ring-color: " ?ring-color crlf)
-		  )
-
-		  ;ACTION:::::RS-MOUNT-RING2:::::
-		  (case "rs-mount-ring2" then
-			(bind ?m "")
-			(bind ?ring-color "")
-			(bind ?rs-before "")
-			(bind ?rs-after "")
-			(bind ?r-req "")
-			(bind ?col1 "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-			  else
-				(if (eq (pb-field-value ?arg "key") "ring-color") then
-				  (bind ?ring-color (pb-field-value ?arg "value"))
-
-				else
-						(if (eq (pb-field-value ?arg "key") "rs-before") then
-						  (bind ?rs-before (pb-field-value ?arg "value"))
-
-						else
-							(if (eq (pb-field-value ?arg "key") "rs-after") then
-							  (bind ?rs-after (pb-field-value ?arg "value"))
-
-							else
-								(if (eq (pb-field-value ?arg "key") "r-req") then
-								  (bind ?r-req (pb-field-value ?arg "value"))
-
-								else
-									(if (eq (pb-field-value ?arg "key") "col1") then
-									  (bind ?col1 (pb-field-value ?arg "value"))
-
-									else
-										(if (eq (pb-field-value ?arg "key") "wp") then
-										  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
-
-										else
-											(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
-										)
-									)
-								)
-							)
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
-				)
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name rs-mount-ring2)
-											(param-names m wp col col1 rs-before rs-after r-req) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color) (string-to-field ?col1) (string-to-field ?rs-before) (string-to-field ?rs-after) (string-to-field ?r-req) ))
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring2 at: " ?mps " with ring-color: " ?ring-color crlf)
-		  )
-
-		  ;ACTION:::::RS-MOUNT-RING3:::::
-		  (case "rs-mount-ring3" then
-			(bind ?m "")
-			(bind ?ring-color "")
-			(bind ?rs-before "")
-			(bind ?rs-after "")
-			(bind ?r-req "")
-			(bind ?col1 "")
-			(bind ?col2 "")
-			(bind ?action-id (pb-field-value ?a "id"))
-			(bind ?parents-ids (create$)) 
-			(progn$ (?arg (pb-field-list ?a "parent_id"))
-			  (bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
-			)
-			(progn$ (?arg (pb-field-list ?a "params"))
-			  (if (eq (pb-field-value ?arg "key") "mps") then
-				(bind ?mps (pb-field-value ?arg "value"))
-				(bind ?mps-splitted (str-split ?mps "-"))
-				(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-			  else
-				(if (eq (pb-field-value ?arg "key") "ring-color") then
-				  (bind ?ring-color (pb-field-value ?arg "value"))
-
-				else
-						(if (eq (pb-field-value ?arg "key") "rs-before") then
-						  (bind ?rs-before (pb-field-value ?arg "value"))
-
-						else
-							(if (eq (pb-field-value ?arg "key") "rs-after") then
-							  (bind ?rs-after (pb-field-value ?arg "value"))
-
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
+								(bind ?mps (string-to-field ?mps))
 							else
-								(if (eq (pb-field-value ?arg "key") "r-req") then
-								  (bind ?r-req (pb-field-value ?arg "value"))
-
+								(if (eq (pb-field-value ?arg "key") "slide") then
+								  (bind ?slide (pb-field-value ?arg "value"))
+								  (bind ?machine-feature (if (eq ?slide "true") then SLIDE else CONVEYOR))
 								else
-									(if (eq (pb-field-value ?arg "key") "col1") then
-									  (bind ?col1 (pb-field-value ?arg "value"))
+									(if (eq (pb-field-value ?arg "key") "rs-before") then
+										(bind ?rs-before (string-to-field (pb-field-value ?arg "value")))
 
 									else
-										(if (eq (pb-field-value ?arg "key") "col2") then
-										  (bind ?col2 (pb-field-value ?arg "value"))
+										(if (eq (pb-field-value ?arg "key") "rs-after") then
+											(bind ?rs-after (string-to-field (pb-field-value ?arg "value")))
 
 										else
 											(if (eq (pb-field-value ?arg "key") "wp") then
-											  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+												 (bind ?wp (string-to-field (pb-field-value ?arg "value")))
 
 											else
 												(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1349,31 +575,794 @@
 								)
 							)
 						)
+						(bind ?next-step-id (* ?action-id 100))
+						(assert
+							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(action-name wp-put-slide-cc)
+								(param-names r wp m rs-before rs-after)
+								(param-values ?action-specific-actor ?wp ?mps ?rs-before ?rs-after )
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-put-slide-cc to: " ?mps " at: " ?side " with before: " ?rs-before " and after: " ?rs-after crlf)
+					)
+
+					;ACTION:::::WP-DISCARD:::::
+					(case "wp-discard" then
+						(bind ?action-specific-actor "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(if (pb-has-field ?a "actor") 
+							then
+							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "wp") then
+								(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+							else
+								(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+							)
+						)
+						(bind ?next-step-id (* ?action-id 100))
+						(assert
+							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(action-name wp-discard)
+								(param-names r cc)
+								(param-values ?action-specific-actor ?wp)
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-discard" crlf)
+					)
+
+					;ACTION:::::PREPARE-BS:::::
+					(case "prepare-bs" then
+						(bind ?action-specific-actor "")
+						(bind ?m "")
+						(bind ?side "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(if (pb-has-field ?a "actor") 
+							then
+							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+						)
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
+								(bind ?mps (string-to-field ?mps))
+							else
+								(if (eq (pb-field-value ?arg "key") "color") then
+									(bind ?goal-base-color (string-to-field (pb-field-value ?arg "value"))) 
+
+								else
+									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+								)
+							)
+						)
+						(bind ?next-step-id (* ?action-id 100))
+						(assert
+							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(action-name prepare-bs)
+								(param-names m side bc)
+								(param-values ?mps ?side ?goal-base-color)
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-bs with base-color: " ?goal-base-color " at: " ?side crlf)
+					)
+
+					;ACTION:::::BS-DISPENSE:::::
+					(case "bs-dispense" then
+						(bind ?action-specific-actor "")
+						(bind ?m "")
+						(bind ?side "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(if (pb-has-field ?a "actor") 
+							then
+							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+						)
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
+								(bind ?mps (string-to-field ?mps))
+							else
+								(if (eq (pb-field-value ?arg "key") "color") then
+									(bind ?goal-base-color (string-to-field (pb-field-value ?arg "value"))) 
+
+								else
+									(if (eq (pb-field-value ?arg "key") "wp") then
+										(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+									else
+										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+									)
+								)
+							)
+						)
+						(bind ?next-step-id (* ?action-id 100))
+						(assert
+							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(action-name bs-dispense)
+								(param-names m side wp basecol)
+								(param-values ?mps ?side ?wp ?goal-base-color)
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] bs-dispense with basecolor: " ?goal-base-color crlf)
+					)
+
+					;ACTION:::::PREPARE-DS:::::
+					(case "prepare-ds" then
+						(bind ?action-specific-actor "")
+						(bind ?m "")
+						(bind ?gate "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(if (pb-has-field ?a "actor") 
+							then
+							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+						)
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?mps (string-to-field ?mps))
+
+							else
+								(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+							)
+						)
+						(bind ?next-step-id (* ?action-id 100))
+						(do-for-fact ((?wm-fact wm-fact)) 
+							(and
+								(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
+								(eq ?order-id (wm-key-arg ?wm-fact:key ord))
+							)
+							(assert
+								(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+									(action-name prepare-ds)
+									(param-names m gate)
+									(param-values ?mps (wm-key-arg ?wm-fact:key gate))
+								)
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-ds" crlf)
+					)
+
+					;ACTION:::::FULFILL-ORDER-C0:::::
+					(case "fulfill-order-c0" then
+						(bind ?m "")
+						(bind ?base-color "")
+						(bind ?cap-color "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?mps (string-to-field ?mps))
+
+							else
+								(if (eq (pb-field-value ?arg "key") "base-color") then
+									(bind ?base-color (string-to-field (pb-field-value ?arg "value")))
+
+								else
+									(if (eq (pb-field-value ?arg "key") "cap-color") then
+										(bind ?cap-color (string-to-field (pb-field-value ?arg "value")))
+
+									else
+										(if (eq (pb-field-value ?arg "key") "wp") then
+											(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+										else
+											(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+										)
+									)
+								)
+							)
+						)
+						(bind ?next-step-id (* ?action-id 100))
+						; Extract information order-gate of the corresponding order with id order-id from fact-base
+						; TODO Extract information from plan of clips-smt plugin via protobuf
+						(do-for-fact ((?wm-fact wm-fact)) 
+							(and
+								(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
+								(eq ?order-id (wm-key-arg ?wm-fact:key ord))
+							)
+
+							(assert
+								(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+									(action-name fulfill-order-c0)
+									(param-names ord wp m g basecol capcol)
+									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color)
+								)
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c0 " ?order-id crlf)
+					)
+
+					;ACTION:::::FULFILL-ORDER-C1:::::
+					(case "fulfill-order-c1" then
+						(bind ?m "")
+						(bind ?base-color "")
+						(bind ?ring1-color "")
+						(bind ?cap-color "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?mps (string-to-field ?mps))
+							else
+								(if (eq (pb-field-value ?arg "key") "base-color") then
+									(bind ?base-color (string-to-field (pb-field-value ?arg "value")))
+
+								else
+									(if (eq (pb-field-value ?arg "key") "ring1-color") then
+										(bind ?ring1-color (string-to-field (pb-field-value ?arg "value")))
+
+									else
+										(if (eq (pb-field-value ?arg "key") "cap-color") then
+											(bind ?cap-color (string-to-field (pb-field-value ?arg "value")))
+
+										else
+											(if (eq (pb-field-value ?arg "key") "wp") then
+												(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+											else
+												(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+											)
+										)
+									)
+								)
+							)
+						)
+						(bind ?next-step-id (* ?action-id 100))
+						(do-for-fact ((?wm-fact wm-fact))
+							(and
+								(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
+								(eq ?order-id (wm-key-arg ?wm-fact:key ord))
+							)
+							(assert
+								(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+									(action-name fulfill-order-c1)
+									(param-names ord wp m g basecol ring1col capcol)
+									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?ring1-color ?cap-color)
+								)
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c1 " ?order-id crlf)
+					)
+
+					;ACTION:::::FULFILL-ORDER-C2:::::
+					(case "fulfill-order-c2" then
+						(bind ?m "")
+						(bind ?base-color "")
+						(bind ?ring1-color "")
+						(bind ?ring2-color "")
+						(bind ?cap-color "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?mps (string-to-field ?mps))
+							else
+								(if (eq (pb-field-value ?arg "key") "base-color") then
+									(bind ?base-color (string-to-field (pb-field-value ?arg "value")))
+
+								else
+									(if (eq (pb-field-value ?arg "key") "ring1-color") then
+										(bind ?ring1-color (string-to-field (pb-field-value ?arg "value")))
+
+									else
+										(if (eq (pb-field-value ?arg "key") "ring2-color") then
+											(bind ?ring2-color (string-to-field (pb-field-value ?arg "value")))
+
+										else
+											(if (eq (pb-field-value ?arg "key") "cap-color") then
+												(bind ?cap-color (string-to-field (pb-field-value ?arg "value")))
+
+											else
+												(if (eq (pb-field-value ?arg "key") "wp") then
+													(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+												else
+													(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+												)
+											)
+										)
+									)
+								)
+							)
+						)
+						(bind ?next-step-id (* ?action-id 100))
+						(do-for-fact ((?wm-fact wm-fact)) 
+							(and
+								(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
+								(eq ?order-id (wm-key-arg ?wm-fact:key ord))
+							)
+							(assert
+								(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+									(action-name fulfill-order-c2)
+									(param-names ord wp m g basecol ring1col ring2col capcol)
+									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?ring1-color ?ring2-color ?cap-color)
+								)
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c2 " ?order-id crlf)
+					)
+
+					;ACTION:::::FULFILL-ORDER-C3:::::
+					(case "fulfill-order-c3" then
+						(bind ?m "")
+						(bind ?base-color "")
+						(bind ?ring1-color "")
+						(bind ?ring2-color "")
+						(bind ?ring3-color "")
+						(bind ?cap-color "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?mps (string-to-field ?mps))
+
+							 else
+								(if (eq (pb-field-value ?arg "key") "base-color") then
+								  (bind ?base-color (string-to-field (pb-field-value ?arg "value")))
+
+								else
+									(if (eq (pb-field-value ?arg "key") "ring1-color") then
+									  (bind ?ring1-color (string-to-field (pb-field-value ?arg "value")))
+
+									else
+										(if (eq (pb-field-value ?arg "key") "ring2-color") then
+										  (bind ?ring2-color (string-to-field (pb-field-value ?arg "value")))
+
+										else
+											(if (eq (pb-field-value ?arg "key") "ring3-color") then
+											  (bind ?ring3-color (string-to-field (pb-field-value ?arg "value")))
+
+											else
+												(if (eq (pb-field-value ?arg "key") "cap-color") then
+												  (bind ?cap-color (string-to-field (pb-field-value ?arg "value")))
+
+												else
+													(if (eq (pb-field-value ?arg "key") "wp") then
+													  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+													else
+														(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+													)
+												)
+											)
+										)
+									)
+								)
+							)
+						)
+						(bind ?next-step-id (* ?action-id 100))
+						(do-for-fact ((?wm-fact wm-fact)) 
+							(and
+								(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
+								(eq ?order-id (wm-key-arg ?wm-fact:key ord))
+							)
+							(assert
+								(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+									(action-name fulfill-order-c3)
+									(param-names ord wp m g basecol ring1col ring2col ring3col capcol)
+									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color)
+								)
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c3 " ?order-id crlf)
+				  )
+
+					;ACTION:::::PREPARE-CS:::::
+					(case "prepare-cs" then
+						(bind ?action-specific-actor "")
+						(bind ?m "")
+						(bind ?operation "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(if (pb-has-field ?a "actor") 
+							then
+							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+						)
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?mps (string-to-field ?mps))
+							else
+								(if (eq (pb-field-value ?arg "key") "operation") then
+									(bind ?operation (string-to-field (pb-field-value ?arg "value")))
+
+								else
+									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+								)
+							)
+						)
+						(bind ?next-step-id (* ?action-id 100))
+						(assert
+							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(action-name prepare-cs)
+								(param-names m op)
+								(param-values ?mps ?operation)
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-cs at: " ?mps " with " ?operation crlf)
+					)
+
+					;ACTION:::::CS-RETRIEVE-CAP:::::
+					(case "cs-retrieve-cap" then
+						(bind ?m "")
+						(bind ?cap-color "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?mps (string-to-field ?mps))
+							else
+								(if (eq (pb-field-value ?arg "key") "cap-color") then
+									(bind ?cap-color (string-to-field (pb-field-value ?arg "value")))
+
+								else
+									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+								)
+							)
+						)
+						(bind ?next-step-id (* ?action-id 100))
+						(assert
+							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(action-name cs-retrieve-cap)
+								(param-names m cc capcol)
+								(param-values ?mps ?wp ?cap-color)
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] cs-retrieve-cap at: " ?mps crlf)
+					)
+
+					;ACTION:::::CS-MOUNT-CAP:::::
+					(case "cs-mount-cap" then
+						(bind ?m "")
+						(bind ?cap-color "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?mps (string-to-field ?mps))
+							else
+								(if (eq (pb-field-value ?arg "key") "cap-color") then
+									(bind ?cap-color (string-to-field (pb-field-value ?arg "value")))
+
+								else
+									(if (eq (pb-field-value ?arg "key") "wp") then
+									  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+									else
+										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+									)
+								)
+							)
+						)
+						(bind ?next-step-id (* ?action-id 100))
+						(assert
+							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(action-name cs-mount-cap)
+								(param-names m wp capcol)
+								(param-values ?mps ?wp ?cap-color)
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] cs-mount-cap at: " ?mps crlf)
+					)
+
+					;ACTION:::::PREPARE-RS::::::
+					(case "prepare-rs" then
+						(bind ?action-specific-actor "")
+						(bind ?m "")
+						(bind ?rs-before "")
+						(bind ?rs-after "")
+						(bind ?r-req "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(if (pb-has-field ?a "actor") 
+							then
+							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+						)
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?mps (string-to-field ?mps))
+							else
+								(if (eq (pb-field-value ?arg "key") "ring_color") then
+										(bind ?goal-ring-color (string-to-field (pb-field-value ?arg "value")) ) ;temp: the color of the base of the goal is recognized here
+
+								else
+									(if (eq (pb-field-value ?arg "key") "rs-before") then
+									  (bind ?rs-before (string-to-field (pb-field-value ?arg "value")))
+
+									else
+										(if (eq (pb-field-value ?arg "key") "rs-after") then
+										  (bind ?rs-after (string-to-field (pb-field-value ?arg "value")))
+
+										else
+											(if (eq (pb-field-value ?arg "key") "r-req") then
+											  (bind ?r-req (string-to-field (pb-field-value ?arg "value")))
+
+											else
+												(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+											)
+										)
+									)
+								)
+							)
+						)
+						(bind ?next-step-id (* ?action-id 100))
+						(assert
+							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(action-name prepare-rs)
+								(param-names m rc rs-before rs-after r-req)
+								(param-values ?mps ?goal-ring-color ?rs-before ?rs-after ?r-req))
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-rs at: " ?mps " with ring-color: " ?goal-ring-color crlf)
+					  )
+
+					;ACTION:::::RS-MOUNT-RING1:::::
+					(case "rs-mount-ring1" then
+						(bind ?m "")
+						(bind ?ring-color "")
+						(bind ?rs-before "")
+						(bind ?rs-after "")
+						(bind ?r-req "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?mps (string-to-field ?mps))
+							else
+								(if (eq (pb-field-value ?arg "key") "ring-color") then
+									(bind ?ring-color (string-to-field (pb-field-value ?arg "value")))
+
+								else
+									(if (eq (pb-field-value ?arg "key") "rs-before") then
+									  (bind ?rs-before (string-to-field (pb-field-value ?arg "value")))
+
+									else
+										(if (eq (pb-field-value ?arg "key") "rs-after") then
+										  (bind ?rs-after (string-to-field (pb-field-value ?arg "value")))
+
+										else
+											(if (eq (pb-field-value ?arg "key") "r-req") then
+											  (bind ?r-req (string-to-field (pb-field-value ?arg "value")))
+
+											else
+												(if (eq (pb-field-value ?arg "key") "wp") then
+												  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+												else
+													(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+												)
+											)
+										)
+									)
+								)
+							)
+						)
+						(bind ?next-step-id (* ?action-id 100))
+						(assert
+							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(action-name rs-mount-ring1)
+								(param-names m wp col rs-before rs-after r-req)
+								(param-values ?mps ?wp ?ring-color ?rs-before ?rs-after ?r-req)
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring1 at: " ?mps " with ring-color: " ?ring-color crlf)
+					)
+
+					;ACTION:::::RS-MOUNT-RING2:::::
+					(case "rs-mount-ring2" then
+						(bind ?m "")
+						(bind ?ring-color "")
+						(bind ?rs-before "")
+						(bind ?rs-after "")
+						(bind ?r-req "")
+						(bind ?col1 "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?mps (string-to-field ?mps))
+							else
+								(if (eq (pb-field-value ?arg "key") "ring-color") then
+								  (bind ?ring-color (string-to-field (pb-field-value ?arg "value")))
+
+								else
+									(if (eq (pb-field-value ?arg "key") "rs-before") then
+										(bind ?rs-before (string-to-field (pb-field-value ?arg "value")))
+
+									else
+										(if (eq (pb-field-value ?arg "key") "rs-after") then
+											(bind ?rs-after (string-to-field (pb-field-value ?arg "value")))
+
+										else
+											(if (eq (pb-field-value ?arg "key") "r-req") then
+												(bind ?r-req (string-to-field (pb-field-value ?arg "value")))
+
+											else
+												(if (eq (pb-field-value ?arg "key") "col1") then
+													(bind ?col1 (string-to-field (pb-field-value ?arg "value")))
+
+												else
+													(if (eq (pb-field-value ?arg "key") "wp") then
+														(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+													else
+														(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+													)
+												)
+											)
+										)
+									)
+								)
+							)
+						)
+						(bind ?next-step-id (* ?action-id 100))
+						(assert
+							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(action-name rs-mount-ring2)
+								(param-names m wp col col1 rs-before rs-after r-req)
+								(param-values ?mps ?wp ?ring-color ?col1 ?rs-before ?rs-after ?r-req )
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring2 at: " ?mps " with ring-color: " ?ring-color crlf)
+					)
+
+					;ACTION:::::RS-MOUNT-RING3:::::
+					(case "rs-mount-ring3" then
+						(bind ?m "")
+						(bind ?ring-color "")
+						(bind ?rs-before "")
+						(bind ?rs-after "")
+						(bind ?r-req "")
+						(bind ?col1 "")
+						(bind ?col2 "")
+						(bind ?action-id (pb-field-value ?a "id"))
+						(bind ?parents-ids (create$)) 
+						(progn$ (?arg (pb-field-list ?a "parent_id"))
+							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
+						)
+						(progn$ (?arg (pb-field-list ?a "params"))
+							(if (eq (pb-field-value ?arg "key") "mps") then
+								(bind ?mps (pb-field-value ?arg "value"))
+								(bind ?mps-splitted (str-split ?mps "-"))
+								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
+								(bind ?mps (string-to-field ?mps))
+							else
+								(if (eq (pb-field-value ?arg "key") "ring-color") then
+								  (bind ?ring-color (string-to-field (pb-field-value ?arg "value")))
+
+								else
+									(if (eq (pb-field-value ?arg "key") "rs-before") then
+										(bind ?rs-before (string-to-field (pb-field-value ?arg "value")))
+
+									else
+										(if (eq (pb-field-value ?arg "key") "rs-after") then
+											(bind ?rs-after (string-to-field (pb-field-value ?arg "value")))
+
+										else
+											(if (eq (pb-field-value ?arg "key") "r-req") then
+												(bind ?r-req (string-to-field (pb-field-value ?arg "value")))
+
+											else
+												(if (eq (pb-field-value ?arg "key") "col1") then
+													(bind ?col1 (string-to-field (pb-field-value ?arg "value")))
+
+												else
+													(if (eq (pb-field-value ?arg "key") "col2") then
+														(bind ?col2 (string-to-field (pb-field-value ?arg "value")))
+
+													else
+														(if (eq (pb-field-value ?arg "key") "wp") then
+															(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+
+														else
+															(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
+														)
+													)
+												)
+											)
+										)
+									)
+								)
+							)
+						)
+						(bind ?next-step-id (* ?action-id 100))
+						(assert
+							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(action-name rs-mount-ring3)
+								(param-names m wp col col1 col2 rs-before rs-after r-req)
+								(param-values ?mps ?wp ?ring-color ?col1 ?col2 ?rs-before ?rs-after ?r-req)
+							)
+						)
+						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring3 at: " ?mps " with ring-color: " ?ring-color crlf)
+					)
+
+					;ACTION:::::DEFAULT:::::
+					(default (printout warn "Unknown action " ?actname crlf))
 				)
-			  )
-			)
-			; (bind ?next-step-id (+ ?task-id (+ (length$ ?steps) 1)))
-			(bind ?next-step-id (* ?action-id 100))
-			(bind ?steps (append$ ?steps ?next-step-id))
-			; (assert (step (name discard) (id ?next-step-id) (parents-ids ?parents-ids) (actor ?action-specific-actor) ))
-			(assert
-				 (plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-											(action-name rs-mount-ring3)
-											(param-names m wp col col1 col2 rs-before rs-after r-req) (param-values (string-to-field ?mps) ?wp (string-to-field ?ring-color) (string-to-field ?col1) (string-to-field ?col2) (string-to-field ?rs-before) (string-to-field ?rs-after) (string-to-field ?r-req)))
-			)
-			(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring3 at: " ?mps " with ring-color: " ?ring-color crlf)
-		  )
-
-			;ACTION:::::DEFAULT:::::
-			(default (printout warn "Unknown action " ?actname crlf))
-        )
 			)
 
-			; (assert (task (id ?task-id) (state proposed) (steps ?steps) (robot ?actor-name)))
-		 else
-	  	(printout warn "Sequential plan not set on ActorSpecificPlan" crlf)
+		else
+			(printout warn "Sequential plan not set on ActorSpecificPlan" crlf)
 		)
 	)
 	(pb-destroy ?plans)
-  (modify ?g (mode EXPANDED))
+	(modify ?g (mode EXPANDED))
 )
