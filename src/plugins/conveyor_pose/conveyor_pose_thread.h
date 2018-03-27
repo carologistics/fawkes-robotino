@@ -58,20 +58,10 @@ class ConveyorPoseThread
   public fawkes::TransformAspect
 {
 private:
-  class pose {
+  class pose : public fawkes::tf::Pose {
   public:
+    using fawkes::tf::Pose::Pose;
     bool valid = true;
-    fawkes::tf::Vector3 translation;
-    fawkes::tf::Quaternion rotation;
-    pose() {
-      translation.setX(0);
-      translation.setY(0);
-      translation.setZ(0);
-      rotation.setX(0);
-      rotation.setY(0);
-      rotation.setZ(0);
-      rotation.setW(0);
-    }
   };
   Visualisation * visualisation_;
 
@@ -84,6 +74,8 @@ private:
   std::string cfg_bb_realsense_switch_name_;
   std::string conveyor_frame_id_;
   std::vector<std::string> laserlines_names_;
+
+  CloudPtr model_;
 
   bool cfg_pose_close_if_no_new_pointclouds_;
 //  std::string bb_tag_name_;
@@ -104,17 +96,15 @@ private:
   float cfg_left_cut_no_ll_;
   float cfg_right_cut_no_ll_;
 
-  float cfg_plane_dist_threshold_;
-
-  float cfg_plane_height_minimum_;
-  float cfg_plane_width_minimum_;
-  float cfg_normal_z_minimum_;
-
-  float cfg_cluster_tolerance_;
-  float cfg_cluster_size_min_;
-  float cfg_cluster_size_max_;
-
   float cfg_voxel_grid_leave_size_;
+
+  double cfg_model_ss_;
+  double cfg_scene_ss_;
+  double cfg_rf_rad_;
+  double cfg_descr_rad_;
+  double cfg_cg_size_;
+  int cfg_cg_thresh_;
+  bool cfg_use_hough_;
 
   uint cfg_allow_invalid_poses_;
 
@@ -170,16 +160,13 @@ private:
  CloudPtr cloud_remove_offset_to_bottom(CloudPtr in);
  CloudPtr cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll = NULL, bool use_ll = false);
  CloudPtr cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll);
- CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);
  boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
  CloudPtr cloud_voxel_grid(CloudPtr in);
 
- std::vector<CloudPtr> cluster_split(CloudPtr in, boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices);
- CloudPtr cluster_find_biggest(std::vector<CloudPtr> clouds_in, size_t & id);
+ pose cloud_correspondence_grouping(CloudPtr model, CloudPtr scene);
 
  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
 
- pose calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal);
  void tf_send_from_pose_if(pose pose);
  void pose_write(pose pose);
  Eigen::Quaternion<float> averageQuaternion(Eigen::Vector4f &cumulative, Eigen::Quaternion<float> newRotation, Eigen::Quaternion<float> firstRotation, float addDet);
