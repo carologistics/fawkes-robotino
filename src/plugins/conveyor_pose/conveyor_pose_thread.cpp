@@ -21,38 +21,44 @@
 
 #include "conveyor_pose_thread.h"
 
-#include <pcl/ModelCoefficients.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/approximate_voxel_grid.h>
 #include <pcl/features/normal_3d.h>
-
-#include <pcl/ModelCoefficients.h>
-#include <pcl/filters/extract_indices.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/common/centroid.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/filters/extract_indices.h>
-#include <pcl/surface/convex_hull.h>
-#include <pcl/kdtree/kdtree.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/filters/project_inliers.h>
 #include <pcl/filters/conditional_removal.h>
-#include <pcl/common/centroid.h>
 #include <pcl/common/transforms.h>
 #include <pcl/common/distances.h>
 #include <pcl/registration/distances.h>
 #include <pcl/features/normal_3d_omp.h>
 
+#include <pcl/io/pcd_io.h>
+#include <pcl/io/ply_io.h>
+
+#include <pcl/conversions.h>
+#include <pcl/point_cloud.h>
+#include <pcl/correspondence.h>
+
+#include <pcl/features/normal_3d_omp.h>
+#include <pcl/features/shot_omp.h>
+#include <pcl/features/board.h>
+
+#include <pcl/filters/uniform_sampling.h>
+
+#include <pcl/recognition/cg/hough_3d.h>
+#include <pcl/recognition/cg/geometric_consistency.h>
+
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/common/transforms.h>
+
 #include <tf/types.h>
 #include <utils/math/angle.h>
+
+#include <core/exceptions/system.h>
 
 #include <cmath>
 
@@ -117,26 +123,23 @@ ConveyorPoseThread::init()
   cfg_left_cut_no_ll_         = config->get_float( (cfg_prefix + "left_right/left_cut_no_ll").c_str() );
   cfg_right_cut_no_ll_        = config->get_float( (cfg_prefix + "left_right/right_cut_no_ll").c_str() );
 
-  cfg_plane_dist_threshold_   = config->get_float( (cfg_prefix + "plane/dist_threshold").c_str() );
-  cfg_normal_z_minimum_       = config->get_float( (cfg_prefix + "plane/normal_z_minimum").c_str() );
-  cfg_plane_height_minimum_   = config->get_float( (cfg_prefix + "plane/height_minimum").c_str() );
-  cfg_plane_width_minimum_    = config->get_float( (cfg_prefix + "plane/width_minimum").c_str() );
-
-  cfg_cluster_tolerance_      = config->get_float( (cfg_prefix + "cluster/tolerance").c_str() );
-  cfg_cluster_size_min_       = config->get_float( (cfg_prefix + "cluster/size_min").c_str() );
-  cfg_cluster_size_max_       = config->get_float( (cfg_prefix + "cluster/size_max").c_str() );
+  cfg_model_ss_               = double(config->get_float_or_default((cfg_prefix + "cg/model_sampling_radius").c_str(), 0.01f));
+  cfg_scene_ss_               = double(config->get_float_or_default((cfg_prefix + "cg/scene_sampling_radius").c_str(), 0.03f));
+  cfg_rf_rad_                 = double(config->get_float_or_default((cfg_prefix + "cg/reference_frame_radius").c_str(), 0.015f));
+  cfg_descr_rad_              = double(config->get_float_or_default((cfg_prefix + "cg/descriptor_radius").c_str(), 0.02f));
+  cfg_cg_size_                = double(config->get_float_or_default((cfg_prefix + "cg/cluster_size").c_str(), 0.01f));
+  cfg_cg_thresh_              = config->get_int_or_default((cfg_prefix + "cg/clustering_threshold").c_str(), 5);
+  cfg_use_hough_              = config->get_bool_or_default((cfg_prefix + "cg/use_hough").c_str(), false);
 
   cfg_voxel_grid_leave_size_  = config->get_float( (cfg_prefix + "voxel_grid/leave_size").c_str() );
 
-  cfg_bb_realsense_switch_name_ = "realsense";
-  try {
-    cfg_bb_realsense_switch_name_ = config->get_string((cfg_prefix+"realsense_switch").c_str());
-  } catch (Exception &e) {} // ignore, use default
-  try {
-    wait_time_ = Time(config->get_float((cfg_prefix+"realsense_wait_time").c_str()));
-  } catch (Exception &e) {
-    wait_time_ = Time(1.);
-  } // ignore, use default
+  cfg_bb_realsense_switch_name_ = config->get_string_or_default((cfg_prefix + "realsense_switch").c_str(), "realsense");
+  wait_time_ = Time(double(config->get_float_or_default((cfg_prefix + "realsense_wait_time").c_str(), 1.0f)));
+
+  std::string model_path = config->get_string((cfg_prefix + "model_file").c_str());
+  if (pcl::io::loadPCDFile(model_path, *model_) < 0) {
+    throw fawkes::FileReadException(model_path.c_str());
+  }
 
   cloud_in_registered_ = false;
 
@@ -171,7 +174,7 @@ ConveyorPoseThread::finalize()
   delete visualisation_;
   blackboard->close(bb_enable_switch_);
   logger->log_info(name(), "Unloading, disabling %s",
-    cfg_bb_realsense_switch_name_.c_str());
+                   cfg_bb_realsense_switch_name_.c_str());
   realsense_switch_->msgq_enqueue(new SwitchInterface::DisableSwitchMessage());
   blackboard->close(realsense_switch_);
   bb_pose_conditional_close();
@@ -258,7 +261,7 @@ ConveyorPoseThread::loop()
 
 //    tf_send_from_pose_if(pose_current);
     if (cfg_use_visualisation_) {
-      visualisation_->marker_draw(header_, pose_average.translation, pose_average.rotation);
+      visualisation_->marker_draw(header_, pose_average.getOrigin(), pose_average.getRotation());
     }
   } else {
     vis_hist_ = -1;
@@ -273,10 +276,10 @@ ConveyorPoseThread::loop()
   
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
-  uint in_size = cloud_in->points.size();
+  size_t in_size = cloud_in->points.size();
  // logger->log_debug(name(), "Size before voxel grid: %u", in_size);
   CloudPtr cloud_vg = cloud_voxel_grid(cloud_in);
-  uint out_size = cloud_vg->points.size();
+  size_t out_size = cloud_vg->points.size();
  // logger->log_debug(name(), "Size of voxel grid: %u", out_size);
   if (in_size == out_size) {
     logger->log_error(name(), "Voxel Grid failed, skipping loop!");
@@ -289,112 +292,169 @@ ConveyorPoseThread::loop()
   CloudPtr cloud_front_side(new Cloud);
   cloud_front_side = cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
   
-// logger->log_debug(name(),"CONVEYOR-POSE 7: set cut off left and rigt");
-
   cloud_publish(cloud_front_side, cloud_out_inter_1_);
 
-  // search for best plane
-  CloudPtr cloud_choosen;
-  pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
-  do {
-  //  logger->log_debug(name(), "In while loop");
-    CloudPtr cloud_plane = cloud_get_plane(cloud_front_side, coeff);
-  //  logger->log_debug(name(), "After getting plane");
-    if ( cloud_plane == NULL || ! cloud_plane ) {
-      pose trash;
-      trash.valid = false;
-      pose_add_element(trash);
-      return;
-    }
+  pose pose_current = cloud_correspondence_grouping(model_, cloud_front_side);
 
-    size_t id;
-  //  logger->log_debug(name(), "Before clustering");
-    boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices = cloud_cluster(cloud_plane);
-  //  logger->log_debug(name(), "After clustering");
-    if ( cluster_indices->size() <= 0 ) {
-      pose trash;
-      trash.valid = false;
-      pose_add_element(trash);
-      return;
-    }
-   // logger->log_debug(name(), "Before split");
-    std::vector<CloudPtr> clouds_cluster = cluster_split(cloud_plane, cluster_indices);
-   // logger->log_debug(name(), "Before finding biggest");
-    cloud_choosen = cluster_find_biggest(clouds_cluster, id);
-   // logger->log_debug(name(), "After finding biggest");
-
-    // check if plane is ok, otherwise remove indicies
-
-    // check if the height is ok (remove shelfs)
-    float y_min = -200;
-    float y_max = 200;
-    for (Point p : *cloud_choosen ) {
-      if (p.y > y_min) {
-        y_min = p.y;
-      }
-      if (p.y < y_max) {
-        y_max = p.y;
-      }
-    }
-
-    float height = y_min - y_max;
-    if (height < cfg_plane_height_minimum_) {
-      logger->log_info(name(), "Discard plane, because of height restriction. is: %f\tshould: %f", height, cfg_plane_height_minimum_);
-
-      boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
-      CloudPtr tmp(new Cloud);
-      pcl::ExtractIndices<Point> extract;
-      extract.setInputCloud (cloud_front_side);
-      extract.setIndices( extract_indicies );
-      extract.setNegative (true);
-      extract.filter (*tmp);
-      //logger->log_debug(name(), "After extraction");
-      *cloud_front_side = *tmp;
-    } else {
-      // height is ok
-      float x_min = -200;
-      float x_max = 200;
-      for (Point p : *cloud_choosen ) {
-        if (p.x > x_min) {
-          x_min = p.x;
-        }
-        if (p.x < x_max) {
-          x_max = p.x;
-        }
-      }
-
-      float width = x_min - x_max;
-      if (width < cfg_plane_width_minimum_) {
-        logger->log_info(name(), "Discard plane, because of width restriction. is: %f\tshould: %f", width, cfg_plane_width_minimum_);
-        boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
-        CloudPtr tmp(new Cloud);
-        pcl::ExtractIndices<Point> extract;
-        extract.setInputCloud (cloud_front_side);
-        extract.setIndices( extract_indicies );
-        extract.setNegative (true);
-        extract.filter (*tmp);
-        *cloud_front_side = *tmp;
-
-      } else {
-        //height and width ok
-        break;
-      }
-    }
-  } while (true);
-  
- // logger->log_debug(name(),"CONVEYOR-POSE 9: left while true");
-  cloud_publish(cloud_choosen, cloud_out_result_);
-
-  // get centroid
-  Eigen::Vector4f centroid;
-  pcl::compute3DCentroid<Point, float>(*cloud_choosen, centroid);
-
-  Eigen::Vector3f normal;
-  normal(0) = coeff->values[0];
-  normal(1) = coeff->values[1];
-  normal(2) = coeff->values[2];
-  pose pose_current = calculate_pose(centroid, normal);;
   pose_add_element(pose_current);
+}
+
+
+ConveyorPoseThread::pose
+ConveyorPoseThread::cloud_correspondence_grouping(CloudPtr model, CloudPtr scene)
+{
+  pcl::NormalEstimationOMP<Point, pcl::Normal> norm_est;
+  norm_est.setKSearch (10);
+  norm_est.setInputCloud (model);
+  pcl::PointCloud<pcl::Normal>::Ptr model_normals(new pcl::PointCloud<pcl::Normal>());
+  norm_est.compute (*model_normals);
+
+  norm_est.setInputCloud (scene);
+  pcl::PointCloud<pcl::Normal>::Ptr scene_normals(new pcl::PointCloud<pcl::Normal>());
+  norm_est.compute (*scene_normals);
+
+  //
+  //  Downsample Clouds to Extract keypoints
+  //
+  pcl::UniformSampling<Point> uniform_sampling;
+  uniform_sampling.setInputCloud (model);
+  uniform_sampling.setRadiusSearch (cfg_model_ss_);
+  CloudPtr model_keypoints;
+  uniform_sampling.filter(*model_keypoints);
+  std::cout << "Model total points: " << model->size () << "; Selected Keypoints: " << model_keypoints->size () << std::endl;
+
+  uniform_sampling.setInputCloud (scene);
+  uniform_sampling.setRadiusSearch (cfg_scene_ss_);
+  CloudPtr scene_keypoints;
+  uniform_sampling.filter(*scene_keypoints);
+  std::cout << "Scene total points: " << scene->size () << "; Selected Keypoints: " << scene_keypoints->size () << std::endl;
+
+
+  //
+  //  Compute Descriptor for keypoints
+  //
+  pcl::SHOTEstimationOMP<Point, pcl::Normal, pcl::SHOT352> descr_est;
+  descr_est.setRadiusSearch (cfg_descr_rad_);
+  descr_est.setInputCloud (model_keypoints);
+  descr_est.setInputNormals (model_normals);
+  descr_est.setSearchSurface (model);
+  pcl::PointCloud<pcl::SHOT352>::Ptr model_descriptors (new pcl::PointCloud<pcl::SHOT352> ());
+  descr_est.compute (*model_descriptors);
+
+  descr_est.setInputCloud (scene_keypoints);
+  descr_est.setInputNormals (scene_normals);
+  descr_est.setSearchSurface (scene);
+  pcl::PointCloud<pcl::SHOT352>::Ptr scene_descriptors (new pcl::PointCloud<pcl::SHOT352> ());
+  descr_est.compute (*scene_descriptors);
+
+  //
+  //  Find Model-Scene Correspondences with KdTree
+  //
+  pcl::CorrespondencesPtr model_scene_corrs (new pcl::Correspondences ());
+
+  pcl::KdTreeFLANN<pcl::SHOT352> match_search;
+  match_search.setInputCloud (model_descriptors);
+
+  //  For each scene keypoint descriptor, find nearest neighbor into the model keypoints descriptor cloud and add it to the correspondences vector.
+  for (size_t i = 0; i < scene_descriptors->size (); ++i) {
+    std::vector<int> neigh_indices (1);
+    std::vector<float> neigh_sqr_dists (1);
+    if (!pcl_isfinite (scene_descriptors->at (i).descriptor[0])) //skipping NaNs
+      continue;
+    int found_neighs = match_search.nearestKSearch (scene_descriptors->at (i), 1, neigh_indices, neigh_sqr_dists);
+    if (found_neighs == 1 && neigh_sqr_dists[0] < 0.25f) {
+      // add match only if the squared descriptor distance is less than 0.25 (SHOT descriptor distances are between 0 and 1 by design)
+      pcl::Correspondence corr (neigh_indices[0], static_cast<int> (i), neigh_sqr_dists[0]);
+      model_scene_corrs->push_back (corr);
+    }
+  }
+  std::cout << "Correspondences found: " << model_scene_corrs->size () << std::endl;
+
+  //
+  //  Actual Clustering
+  //
+  std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> rototranslations;
+  std::vector<pcl::Correspondences> clustered_corrs;
+
+  //  Using Hough3D
+  if (cfg_use_hough_) {
+    //  Compute (Keypoints) Reference Frames only for Hough
+    pcl::PointCloud<pcl::ReferenceFrame>::Ptr model_rf (new pcl::PointCloud<pcl::ReferenceFrame> ());
+    pcl::PointCloud<pcl::ReferenceFrame>::Ptr scene_rf (new pcl::PointCloud<pcl::ReferenceFrame> ());
+
+    pcl::BOARDLocalReferenceFrameEstimation<Point, pcl::Normal, pcl::ReferenceFrame> rf_est;
+    rf_est.setFindHoles (true);
+    rf_est.setRadiusSearch (cfg_rf_rad_);
+
+    rf_est.setInputCloud (model_keypoints);
+    rf_est.setInputNormals (model_normals);
+    rf_est.setSearchSurface (model);
+    rf_est.compute (*model_rf);
+
+    rf_est.setInputCloud (scene_keypoints);
+    rf_est.setInputNormals (scene_normals);
+    rf_est.setSearchSurface (scene);
+    rf_est.compute (*scene_rf);
+
+    //  Clustering
+    pcl::Hough3DGrouping<Point, Point, pcl::ReferenceFrame, pcl::ReferenceFrame> clusterer;
+    clusterer.setHoughBinSize (cfg_cg_size_);
+    clusterer.setHoughThreshold (cfg_cg_thresh_);
+    clusterer.setUseInterpolation (true);
+    clusterer.setUseDistanceWeight (false);
+
+    clusterer.setInputCloud (model_keypoints);
+    clusterer.setInputRf (model_rf);
+    clusterer.setSceneCloud (scene_keypoints);
+    clusterer.setSceneRf (scene_rf);
+    clusterer.setModelSceneCorrespondences (model_scene_corrs);
+
+    //clusterer.cluster (clustered_corrs);
+    clusterer.recognize (rototranslations, clustered_corrs);
+  }
+  else // Using GeometricConsistency
+  {
+    pcl::GeometricConsistencyGrouping<Point, Point> gc_clusterer;
+    gc_clusterer.setGCSize (cfg_cg_size_);
+    gc_clusterer.setGCThreshold (cfg_cg_thresh_);
+
+    gc_clusterer.setInputCloud (model_keypoints);
+    gc_clusterer.setSceneCloud (scene_keypoints);
+    gc_clusterer.setModelSceneCorrespondences (model_scene_corrs);
+
+    //gc_clusterer.cluster (clustered_corrs);
+    gc_clusterer.recognize (rototranslations, clustered_corrs);
+  }
+
+  size_t corrs = 0;
+  size_t max_corrs = 0;
+  auto best_match = rototranslations.end();
+  auto rit = rototranslations.begin();
+  auto cit = clustered_corrs.begin();
+  for ( ; rit < rototranslations.end() && cit < clustered_corrs.end(); ++rit, ++cit) {
+    corrs = cit->size();
+    if(corrs > max_corrs) {
+      max_corrs = corrs;
+      best_match = rit;
+    }
+    else break;
+  }
+
+  pose rv;
+  if (best_match == rototranslations.end()) {
+    rv.valid = false;
+    return rv;
+  }
+  else {
+    Eigen::Matrix4f &m = *best_match;
+    rv.setOrigin( { double(m(0,3)), double(m(1,3)), double(m(2,3)) } );
+    rv.setBasis( {
+            double(m(0,0)), double(m(0,1)), double(m(0,2)),
+            double(m(1,0)), double(m(1,1)), double(m(1,2)),
+            double(m(2,0)), double(m(2,1)), double(m(2,2))
+    } );
+    return rv;
+  }
 }
 
 bool
@@ -484,8 +544,8 @@ ConveyorPoseThread::pose_get_avg(pose & out)
   }
 
   // Weiszfeld's algorithm to find the geometric median
-  median.translation.setValue(0, 0, 0);
-  median.rotation.setEuler(0, 0, 0);
+  median.setOrigin({0, 0, 0});
+  median.setRotation(fawkes::tf::Quaternion({0, 0, 0}));
   unsigned int iteraterions = 20;
   for (unsigned int i = 0; i < iteraterions; ++i) {
 
@@ -494,21 +554,20 @@ ConveyorPoseThread::pose_get_avg(pose & out)
 
     for (pose p : poses_) {
       if ( p.valid ) {
-        double divisor_current = (p.translation - median.translation).norm();
+        double divisor_current = (p.getOrigin() - median.getOrigin()).norm();
         divisor += ( 1 / divisor_current );
-        numerator += ( p.translation / divisor_current );
+        numerator += ( p.getOrigin() / divisor_current );
 //        logger->log_info(name(), "(%lf\t%lf\t%lf) /\t%lf", numerator.x(), numerator.y(), numerator.z(), divisor);
       }
     }
-    median.translation = numerator / divisor;
-
+    median.setOrigin(numerator / divisor);
   }
 
   // remove outliers
   std::list<pose> poses_used;
   for (pose p : poses_) {
     if ( p.valid ) {
-      double dist = (p.translation - median.translation).norm();
+      double dist = (p.getOrigin() - median.getOrigin()).norm();
 
 //      logger->log_warn(name(), "(%f\t%f\t%f)\t(%f\t%f\t%f) => %lf",
 //          median.translation.x(), median.translation.y(), median.translation.z(),
@@ -533,9 +592,7 @@ ConveyorPoseThread::pose_get_avg(pose & out)
   for (pose p : poses_used) {
 //    Eigen::Quaternion<float> newRotation(p.rotation.x(), p.rotation.y(), p.rotation.z(), p.rotation.w());
 
-    out.translation.setX( out.translation.x() + p.translation.x() );
-    out.translation.setY( out.translation.y() + p.translation.y() );
-    out.translation.setZ( out.translation.z() + p.translation.z() );
+    out.setOrigin(out.getOrigin() + p.getOrigin());
 
   //  fawkes::tf::Matrix3x3 m(p.rotation);
   //  fawkes::tf::Scalar rc, pc, yc;
@@ -547,9 +604,7 @@ ConveyorPoseThread::pose_get_avg(pose & out)
   }
 
   // normalize
-  out.translation.setX( out.translation.x() / poses_used.size() );
-  out.translation.setY( out.translation.y() / poses_used.size() );
-  out.translation.setZ( out.translation.z() / poses_used.size() );
+  out.setOrigin(out.getOrigin() / poses_used.size());
 
   //roll /= poses_used.size();
   //pitch /= poses_used.size();
@@ -691,98 +746,6 @@ ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::Laser
   }
 }
 
-CloudPtr
-ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff)
-{
-  CloudPtr out ( new Cloud(*in) );
-
-  // get planes
-  pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
-  // Create the segmentation object
-  pcl::SACSegmentation<pcl::PointXYZ> seg;
-  // Optional
-  seg.setOptimizeCoefficients (true);
-  // Mandatory
-  seg.setModelType (pcl::SACMODEL_PLANE);
-  seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setDistanceThreshold (cfg_plane_dist_threshold_);
-
-  seg.setInputCloud (out);
-  seg.segment (*inliers, *coeff);
-
-  if (inliers->indices.size () == 0) {
-    logger->log_error(name(), "Could not estimate a planar model for the given dataset.");
-    return CloudPtr();
-  }
-
-  // get inliers
-  CloudPtr tmp ( new Cloud );
-  pcl::ExtractIndices<Point> extract;
-  extract.setInputCloud (out);
-  extract.setIndices (inliers);
-  extract.setNegative (false);
-
-  extract.filter (*tmp);
-  *out = *tmp;
-
-  // check if cloud normal is ok
-  return out;
-}
-
-boost::shared_ptr<std::vector<pcl::PointIndices>>
-ConveyorPoseThread::cloud_cluster(CloudPtr in)
-{
-  //in = cloud_voxel_grid(in);
-  // Creating the KdTree object for the search method of the extraction
-  pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
-  tree->setInputCloud (in);
-
-  boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices(new std::vector<pcl::PointIndices>);
-  pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-  ec.setClusterTolerance (cfg_cluster_tolerance_);
-  ec.setMinClusterSize (cfg_cluster_size_min_);
-  ec.setMaxClusterSize (cfg_cluster_size_max_);
-  ec.setSearchMethod (tree);
-  ec.setInputCloud (in);
-  ec.extract (*cluster_indices);
-
-  return cluster_indices;
-}
-
-std::vector<CloudPtr>
-ConveyorPoseThread::cluster_split(CloudPtr in, boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices)
-{
-  std::vector<CloudPtr> clouds_out;
-  for (std::vector<pcl::PointIndices>::const_iterator c_it = cluster_indices->begin (); c_it != cluster_indices->end (); ++c_it) {
-    CloudPtr cloud_cluster (new Cloud);
-    for (std::vector<int>::const_iterator p_it = c_it->indices.begin (); p_it != c_it->indices.end (); ++p_it) {
-      cloud_cluster->points.push_back (in->points[*p_it]);
-    }
-    cloud_cluster->width = cloud_cluster->points.size ();
-    cloud_cluster->height = 1;
-    cloud_cluster->is_dense = true;
-
-    clouds_out.push_back(cloud_cluster);
-  }
-
-  return clouds_out;
-}
-
-CloudPtr
-ConveyorPoseThread::cluster_find_biggest(std::vector<CloudPtr> clouds_in, size_t & id)
-{
-  CloudPtr biggest(new Cloud);
-  size_t i = 0;
-  for (CloudPtr current : clouds_in) {
-    if ( biggest->size() < current->size() ) {
-      biggest = current;
-      id = i;
-    }
-    ++i;
-  }
-
-  return biggest;
-}
 
 CloudPtr
 ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
@@ -804,28 +767,6 @@ ConveyorPoseThread::cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud
   cloud_out->header = header_;
 }
 
-ConveyorPoseThread::pose
-ConveyorPoseThread::calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal)
-{
-  Eigen::Vector3f tangent0 = normal.cross(Eigen::Vector3f(1,0,0));
-  if (tangent0.dot(tangent0) < 0.0001){
-    tangent0 = normal.cross(Eigen::Vector3f(0,1,0));
-  }
-  tangent0.normalize();
-  Eigen::Vector3f tangent1 = normal.cross(tangent0);
-  tangent1.normalize();
-  Eigen::Matrix3f rotMatrix;
-  rotMatrix << tangent0, tangent1, normal;
-  Eigen::Quaternion<float> q(rotMatrix);
-  fawkes::tf::Vector3 origin(centroid(0), centroid(1), centroid(2));
-  fawkes::tf::Quaternion rot(q.x(), q.y(), q.z(), q.w());
-
-  pose ret;
-  ret.translation = origin;
-  ret.rotation = rot;
-
-  return ret;
-}
 
 void
 ConveyorPoseThread::tf_send_from_pose_if(pose pose)
@@ -839,8 +780,8 @@ ConveyorPoseThread::tf_send_from_pose_if(pose pose)
   pt.set_time((long)header_.stamp / 1000);
   transform.stamp = pt;
 
-  transform.setOrigin(pose.translation);
-  transform.setRotation(pose.rotation);
+  transform.setOrigin(pose.getOrigin());
+  transform.setRotation(pose.getRotation());
 
   tf_publisher->send_transform(transform);
 }
@@ -848,16 +789,13 @@ ConveyorPoseThread::tf_send_from_pose_if(pose pose)
 void
 ConveyorPoseThread::pose_write(pose pose)
 {
-  double translation[3], rotation[4];
-  translation[0] = pose.translation.x();
-  translation[1] = pose.translation.y();
-  translation[2] = pose.translation.z();
-  rotation[0] = pose.rotation.x();
-  rotation[1] = pose.rotation.y();
-  rotation[2] = pose.rotation.z();
-  rotation[3] = pose.rotation.w();
-  bb_pose_->set_translation(translation);
-  bb_pose_->set_rotation(rotation);
+  bb_pose_->set_translation(0, pose.getOrigin().getX());
+  bb_pose_->set_translation(1, pose.getOrigin().getY());
+  bb_pose_->set_translation(2, pose.getOrigin().getZ());
+  bb_pose_->set_rotation(0, pose.getRotation().getX());
+  bb_pose_->set_rotation(1, pose.getRotation().getY());
+  bb_pose_->set_rotation(2, pose.getRotation().getZ());
+  bb_pose_->set_rotation(3, pose.getRotation().getW());
 
   bb_pose_->set_frame(header_.frame_id.c_str());
   fawkes::Time stamp((long)header_.stamp);
@@ -872,8 +810,8 @@ ConveyorPoseThread::pose_publish_tf(pose pose)
   tf::Stamped<tf::Pose> tf_pose_cam, tf_pose_gripper;
   tf_pose_cam.stamp = fawkes::Time((long)header_.stamp / 1000);
   tf_pose_cam.frame_id = header_.frame_id;
-  tf_pose_cam.setOrigin(tf::Vector3( pose.translation.x(), pose.translation.y(), pose.translation.z() ));
-  tf_pose_cam.setRotation(tf::Quaternion( pose.rotation.x(), pose.rotation.y(), pose.rotation.z(), pose.rotation.w() ));
+  tf_pose_cam.setOrigin(pose.getOrigin());
+  tf_pose_cam.setRotation(pose.getRotation());
   tf_listener->transform_pose("gripper", tf_pose_cam, tf_pose_gripper);
 
   // publish the transform from the gripper to the conveyor
