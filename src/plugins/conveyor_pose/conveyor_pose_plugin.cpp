@@ -42,5 +42,5 @@ class ConveyorPosePlugin : public fawkes::Plugin
   }
 };
 
-PLUGIN_DESCRIPTION("Plugin to detec the conveyor beld from a pointcloud")
+PLUGIN_DESCRIPTION("Detect the conveyor belt in a pointcloud")
 EXPORT_PLUGIN(ConveyorPosePlugin)
