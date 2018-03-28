@@ -42,7 +42,6 @@ conveyor_pose:
   
   conveyor_frame_id: conveyor_pose
   switch_default: false
-  product_removal_default: false
   use_visualisation: false
 
 
@@ -79,12 +78,6 @@ conveyor_pose:
     right_cut: 0.1
     left_cut_no_ll: 0.1
     right_cut_no_ll: 0.1
-  plane:
-    # the allowed noise for a plane
-    dist_threshold: 0.0025
-    normal_z_minimum: 0.1
-    height_minimum: 0.025
-    width_minimum: 0.025
   cluster:
     tolerance: 0.0015
     size_min: 100
