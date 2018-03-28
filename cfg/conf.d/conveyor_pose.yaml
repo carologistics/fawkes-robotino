@@ -16,11 +16,11 @@ conveyor_pose:
     prefix: conveyor_pose
 
     # the output point clouds
-    cloud_out_intermediet: inter
+    cloud_out_intermediate: inter
     cloud_out_result: result
   
     # the position 3d interface of the result
-    pose_of_beld: pose
+    name: pose
     # should the pose interface be closed if no new pointcloud is availabe.
     # This would result that the if would have no writer after starup and at some ocasions during runtime.
     pose_close_if_new_pc: false
@@ -90,5 +90,5 @@ conveyor_pose:
     size_min: 100
     size_max: 25000
   voxel_grid:
-    leave_size: 0.001
+    leaf_size: 0.001
 

@@ -96,7 +96,7 @@ private:
   float cfg_left_cut_no_ll_;
   float cfg_right_cut_no_ll_;
 
-  float cfg_voxel_grid_leave_size_;
+  float cfg_voxel_grid_leaf_size_;
 
   double cfg_model_ss_;
   double cfg_scene_ss_;
