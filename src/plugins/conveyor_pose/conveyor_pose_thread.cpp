@@ -21,39 +21,20 @@
 
 #include "conveyor_pose_thread.h"
 
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/approximate_voxel_grid.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/filters/passthrough.h>
-#include <pcl/common/centroid.h>
-#include <pcl/segmentation/extract_clusters.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/kdtree/kdtree_flann.h>
-#include <pcl/filters/project_inliers.h>
-#include <pcl/filters/conditional_removal.h>
 #include <pcl/common/transforms.h>
 #include <pcl/common/distances.h>
-#include <pcl/registration/distances.h>
-#include <pcl/features/normal_3d_omp.h>
-
 #include <pcl/io/pcd_io.h>
-#include <pcl/io/ply_io.h>
-
 #include <pcl/conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/correspondence.h>
-
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/features/shot_omp.h>
 #include <pcl/features/board.h>
-
 #include <pcl/filters/uniform_sampling.h>
-
+#include <pcl/filters/approximate_voxel_grid.h>
 #include <pcl/recognition/cg/hough_3d.h>
 #include <pcl/recognition/cg/geometric_consistency.h>
-
 #include <pcl/kdtree/kdtree_flann.h>
-#include <pcl/common/transforms.h>
 
 #include <tf/types.h>
 #include <utils/math/angle.h>
