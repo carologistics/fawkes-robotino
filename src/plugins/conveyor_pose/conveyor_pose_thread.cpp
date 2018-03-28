@@ -118,9 +118,12 @@ ConveyorPoseThread::init()
   wait_time_ = Time(double(config->get_float_or_default((cfg_prefix + "realsense_wait_time").c_str(), 1.0f)));
 
   std::string model_path = config->get_string((cfg_prefix + "model_file").c_str());
-  if (pcl::io::loadPCDFile(model_path, *model_) < 0) {
-    throw fawkes::FileReadException(model_path.c_str());
-  }
+  if (model_path.substr(0, 1) != "/")
+    model_path = CONFDIR "/" + model_path;
+
+  int errnum;
+  if ((errnum = pcl::io::loadPCDFile(model_path, *model_)) < 0)
+    throw fawkes::CouldNotOpenFileException(model_path.c_str(), errnum, ("Set from " + cfg_prefix + "model_file").c_str());
 
   cloud_in_registered_ = false;
 
