@@ -71,9 +71,9 @@ ConveyorPoseThread::init()
 
   const std::string if_prefix = config->get_string( (cfg_prefix + "if/prefix").c_str() ) + "/";
 
-  cloud_out_inter_1_name_     = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_intermediet").c_str() );
+  cloud_out_inter_1_name_     = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_intermediate").c_str() );
   cloud_out_result_name_      = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_result").c_str() );
-  cfg_bb_conveyor_pose_name_  = if_prefix + config->get_string( (cfg_prefix + "if/pose_of_beld").c_str() );
+  cfg_bb_conveyor_pose_name_  = if_prefix + config->get_string( (cfg_prefix + "if/name").c_str() );
   cfg_bb_switch_name_         = if_prefix + config->get_string( (cfg_prefix + "if/switch").c_str() );
 
   laserlines_names_       = config->get_strings( (cfg_prefix + "if/laser_lines").c_str() );
@@ -112,7 +112,7 @@ ConveyorPoseThread::init()
   cfg_cg_thresh_              = config->get_int_or_default((cfg_prefix + "cg/clustering_threshold").c_str(), 5);
   cfg_use_hough_              = config->get_bool_or_default((cfg_prefix + "cg/use_hough").c_str(), false);
 
-  cfg_voxel_grid_leave_size_  = config->get_float( (cfg_prefix + "voxel_grid/leave_size").c_str() );
+  cfg_voxel_grid_leaf_size_  = config->get_float( (cfg_prefix + "voxel_grid/leaf_size").c_str() );
 
   cfg_bb_realsense_switch_name_ = config->get_string_or_default((cfg_prefix + "realsense_switch").c_str(), "realsense");
   wait_time_ = Time(double(config->get_float_or_default((cfg_prefix + "realsense_wait_time").c_str(), 1.0f)));
@@ -731,7 +731,7 @@ ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::Laser
 CloudPtr
 ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
 {
-  float ls = cfg_voxel_grid_leave_size_;
+  float ls = cfg_voxel_grid_leaf_size_;
   pcl::ApproximateVoxelGrid<pcl::PointXYZ> vg;
   CloudPtr out (new Cloud);
   vg.setInputCloud (in);
