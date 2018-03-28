@@ -11,6 +11,10 @@ conveyor_pose:
   # the point cloud that is used to detect the belt
   cloud_in: "/camera/depth/points"
 
+  # Path to the PCD file containing the conveyor model.
+  # Relative paths (i.e. not starting with "/") are looked up in CONFDIR (e.g. fawkes-robotino/cfg)
+  model_file: "conveyor_model.pcd"
+
   if:
     # the prefix used for all interfaces
     prefix: conveyor_pose
