@@ -72,7 +72,7 @@ VelocityShareThread::init()
 
     mongo::BSONObjBuilder b;
     b.append("object", "robot");
-    q.append("robot_number", robot_number_);
+    b.append("robot_number", robot_number_);
     b.append("pose", mongo::fromjson("{x:0.0,y:0.0,ori:0.0}"));
     b.append("vel", mongo::fromjson("{x:0.0,y:0.0,z:0.0}"));
     b.appendNumber("timestamp", now_.toSec());
