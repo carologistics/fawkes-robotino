@@ -281,7 +281,7 @@ void VelocityShareThread::load_config()
   // get robot-name
   try {
     std::string robotname_confpath = config->get_string(prefix + "robot_name_confpath");
-    robot_number_ = atoi(config->get_string(robotname_confpath).c_str());
+    robot_number_ = atoi(config->get_string(robotname_confpath).c_str() + 2);
   } catch (Exception &e) {
     logger->log_error( name() , "Can't read the robot name. Is 'robot-name' specified?" );
   }
