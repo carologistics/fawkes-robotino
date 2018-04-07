@@ -27,14 +27,12 @@
 #include <pcl/conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/correspondence.h>
-#include <pcl/features/normal_3d_omp.h>
-#include <pcl/features/shot_omp.h>
 #include <pcl/features/board.h>
-#include <pcl/filters/uniform_sampling.h>
 #include <pcl/filters/approximate_voxel_grid.h>
 #include <pcl/recognition/cg/hough_3d.h>
 #include <pcl/recognition/cg/geometric_consistency.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/kdtree/impl/kdtree_flann.hpp>
 
 #include <tf/types.h>
 #include <utils/math/angle.h>
@@ -125,6 +123,31 @@ ConveyorPoseThread::init()
   if ((errnum = pcl::io::loadPCDFile(model_path, *model_)) < 0)
     throw fawkes::CouldNotOpenFileException(model_path.c_str(), errnum, ("Set from " + cfg_prefix + "model_file").c_str());
 
+    uniform_sampling_.setInputCloud(model_);
+    uniform_sampling_.setRadiusSearch(cfg_model_ss_);
+    model_keypoints_.reset(new Cloud());
+    uniform_sampling_.filter(*model_keypoints_);
+    logger->log_info(name(), "Model total points: %zu; Selected Keypoints: %zu",
+                     model_->size(), model_keypoints_->size());
+
+    model_normals_.reset(new pcl::PointCloud<pcl::Normal>());
+    norm_est_.setKSearch(10);
+    norm_est_.setInputCloud(model_);
+    norm_est_.compute(*model_normals_);
+
+    //  Compute Descriptor for keypoints
+    descr_est_.setRadiusSearch(cfg_descr_rad_);
+    descr_est_.setInputCloud(model_keypoints_);
+    descr_est_.setInputNormals(model_normals_);
+    descr_est_.setSearchSurface(model_);
+    model_descriptors_.reset(new pcl::PointCloud<pcl::SHOT352>());
+    descr_est_.compute(*model_descriptors_);
+
+    if (!model_descriptors_->is_dense) {
+      throw fawkes::Exception("Failed to compute model descriptors");
+    }
+  }
+
   cloud_in_registered_ = false;
 
   cloud_out_inter_1_ = new Cloud();
@@ -149,6 +172,7 @@ ConveyorPoseThread::init()
 
   visualisation_ = new Visualisation(rosnode);
 }
+
 
 void
 ConveyorPoseThread::finalize()
@@ -285,78 +309,51 @@ ConveyorPoseThread::loop()
 
 
 ConveyorPoseThread::pose
-ConveyorPoseThread::cloud_correspondence_grouping(CloudPtr model, CloudPtr scene)
+ConveyorPoseThread::cloud_correspondence_grouping(CloudPtr scene)
 {
-  pcl::NormalEstimationOMP<Point, pcl::Normal> norm_est;
-  norm_est.setKSearch (10);
-  norm_est.setInputCloud (model);
-  pcl::PointCloud<pcl::Normal>::Ptr model_normals(new pcl::PointCloud<pcl::Normal>());
-  norm_est.compute (*model_normals);
-
-  norm_est.setInputCloud (scene);
+  norm_est_.setInputCloud (scene);
   pcl::PointCloud<pcl::Normal>::Ptr scene_normals(new pcl::PointCloud<pcl::Normal>());
-  norm_est.compute (*scene_normals);
+  norm_est_.compute (*scene_normals);
 
-  //
-  //  Downsample Clouds to Extract keypoints
-  //
-  pcl::UniformSampling<Point> uniform_sampling;
-  uniform_sampling.setInputCloud (model);
-  uniform_sampling.setRadiusSearch (cfg_model_ss_);
-  CloudPtr model_keypoints;
-  uniform_sampling.filter(*model_keypoints);
-  std::cout << "Model total points: " << model->size () << "; Selected Keypoints: " << model_keypoints->size () << std::endl;
+  uniform_sampling_.setInputCloud (scene);
+  uniform_sampling_.setRadiusSearch (cfg_scene_ss_);
+  CloudPtr scene_keypoints(new Cloud());
+  uniform_sampling_.filter(*scene_keypoints);
+  logger->log_info(name(), "Scene total points: %zu, Selected Keypoints: %zu", scene->size(), scene_keypoints->size());
 
-  uniform_sampling.setInputCloud (scene);
-  uniform_sampling.setRadiusSearch (cfg_scene_ss_);
-  CloudPtr scene_keypoints;
-  uniform_sampling.filter(*scene_keypoints);
-  std::cout << "Scene total points: " << scene->size () << "; Selected Keypoints: " << scene_keypoints->size () << std::endl;
-
-
-  //
-  //  Compute Descriptor for keypoints
-  //
-  pcl::SHOTEstimationOMP<Point, pcl::Normal, pcl::SHOT352> descr_est;
-  descr_est.setRadiusSearch (cfg_descr_rad_);
-  descr_est.setInputCloud (model_keypoints);
-  descr_est.setInputNormals (model_normals);
-  descr_est.setSearchSurface (model);
-  pcl::PointCloud<pcl::SHOT352>::Ptr model_descriptors (new pcl::PointCloud<pcl::SHOT352> ());
-  descr_est.compute (*model_descriptors);
-
-  descr_est.setInputCloud (scene_keypoints);
-  descr_est.setInputNormals (scene_normals);
-  descr_est.setSearchSurface (scene);
+  descr_est_.setInputCloud (scene_keypoints);
+  descr_est_.setInputNormals (scene_normals);
+  descr_est_.setSearchSurface (scene);
   pcl::PointCloud<pcl::SHOT352>::Ptr scene_descriptors (new pcl::PointCloud<pcl::SHOT352> ());
-  descr_est.compute (*scene_descriptors);
+  descr_est_.compute (*scene_descriptors);
 
-  //
+  if (!scene_descriptors->is_dense) {
+    logger->log_error(name(), "Failed to compute scene descriptors");
+    return pose { false };
+  }
+
   //  Find Model-Scene Correspondences with KdTree
-  //
   pcl::CorrespondencesPtr model_scene_corrs (new pcl::Correspondences ());
 
   pcl::KdTreeFLANN<pcl::SHOT352> match_search;
-  match_search.setInputCloud (model_descriptors);
+  match_search.setInputCloud (model_descriptors_);
 
   //  For each scene keypoint descriptor, find nearest neighbor into the model keypoints descriptor cloud and add it to the correspondences vector.
   for (size_t i = 0; i < scene_descriptors->size (); ++i) {
-    std::vector<int> neigh_indices (1);
-    std::vector<float> neigh_sqr_dists (1);
-    if (!pcl_isfinite (scene_descriptors->at (i).descriptor[0])) //skipping NaNs
+    std::vector<int> neigh_indices(1);
+    std::vector<float> neigh_sqr_dists(1);
+    if (!pcl_isfinite(scene_descriptors->at(i).descriptor[0])) //skipping NaNs
       continue;
-    int found_neighs = match_search.nearestKSearch (scene_descriptors->at (i), 1, neigh_indices, neigh_sqr_dists);
+    int found_neighs = match_search.nearestKSearch(scene_descriptors->at(i), 1, neigh_indices, neigh_sqr_dists);
     if (found_neighs == 1 && neigh_sqr_dists[0] < 0.25f) {
       // add match only if the squared descriptor distance is less than 0.25 (SHOT descriptor distances are between 0 and 1 by design)
-      pcl::Correspondence corr (neigh_indices[0], static_cast<int> (i), neigh_sqr_dists[0]);
-      model_scene_corrs->push_back (corr);
+      pcl::Correspondence corr(neigh_indices[0], static_cast<int>(i), neigh_sqr_dists[0]);
+      model_scene_corrs->push_back(corr);
     }
   }
-  std::cout << "Correspondences found: " << model_scene_corrs->size () << std::endl;
+  logger->log_info(name(), "Correspondences found: %zu", model_scene_corrs->size());
 
-  //
   //  Actual Clustering
-  //
   std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> rototranslations;
   std::vector<pcl::Correspondences> clustered_corrs;
 
@@ -370,9 +367,9 @@ ConveyorPoseThread::cloud_correspondence_grouping(CloudPtr model, CloudPtr scene
     rf_est.setFindHoles (true);
     rf_est.setRadiusSearch (cfg_rf_rad_);
 
-    rf_est.setInputCloud (model_keypoints);
-    rf_est.setInputNormals (model_normals);
-    rf_est.setSearchSurface (model);
+    rf_est.setInputCloud (model_keypoints_);
+    rf_est.setInputNormals (model_normals_);
+    rf_est.setSearchSurface (model_);
     rf_est.compute (*model_rf);
 
     rf_est.setInputCloud (scene_keypoints);
@@ -387,7 +384,7 @@ ConveyorPoseThread::cloud_correspondence_grouping(CloudPtr model, CloudPtr scene
     clusterer.setUseInterpolation (true);
     clusterer.setUseDistanceWeight (false);
 
-    clusterer.setInputCloud (model_keypoints);
+    clusterer.setInputCloud (model_keypoints_);
     clusterer.setInputRf (model_rf);
     clusterer.setSceneCloud (scene_keypoints);
     clusterer.setSceneRf (scene_rf);
@@ -402,7 +399,7 @@ ConveyorPoseThread::cloud_correspondence_grouping(CloudPtr model, CloudPtr scene
     gc_clusterer.setGCSize (cfg_cg_size_);
     gc_clusterer.setGCThreshold (cfg_cg_thresh_);
 
-    gc_clusterer.setInputCloud (model_keypoints);
+    gc_clusterer.setInputCloud (model_keypoints_);
     gc_clusterer.setSceneCloud (scene_keypoints);
     gc_clusterer.setModelSceneCorrespondences (model_scene_corrs);
 

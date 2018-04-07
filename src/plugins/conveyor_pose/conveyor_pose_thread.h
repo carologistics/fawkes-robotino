@@ -37,6 +37,10 @@
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/LaserLineInterface.h>
 
+#include <pcl/filters/uniform_sampling.h>
+#include <pcl/features/normal_3d_omp.h>
+#include <pcl/features/shot_omp.h>
+
 #include "visualisation.hpp"
 
 #include <string>
@@ -76,6 +80,16 @@ private:
   std::vector<std::string> laserlines_names_;
 
   CloudPtr model_;
+  CloudPtr model_keypoints_;
+  pcl::PointCloud<pcl::Normal>::Ptr model_normals_;
+  pcl::PointCloud<pcl::SHOT352>::Ptr model_descriptors_;
+
+  pcl::UniformSampling<Point> uniform_sampling_;
+  pcl::NormalEstimationOMP<Point, pcl::Normal> norm_est_;
+  pcl::SHOTEstimationOMP<Point, pcl::Normal, pcl::SHOT352> descr_est_;
+
+  bool cfg_record_model_;
+  std::string cfg_model_path_;
 
   bool cfg_pose_close_if_no_new_pointclouds_;
 //  std::string bb_tag_name_;
@@ -163,7 +177,7 @@ private:
  boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
  CloudPtr cloud_voxel_grid(CloudPtr in);
 
- pose cloud_correspondence_grouping(CloudPtr model, CloudPtr scene);
+ pose cloud_correspondence_grouping(CloudPtr scene);
 
  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
 
