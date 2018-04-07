@@ -26,7 +26,7 @@ include $(BUILDCONFDIR)/tf/tf.mk
 
 HAVE_BULLET_VERSION = $(if $(shell $(PKGCONFIG) --atleast-version=2.82 'bullet'; echo $${?/1/}),1,0)
 
-REQUIRED_PCL_LIBS = sample_consensus segmentation filters surface features
+REQUIRED_PCL_LIBS = filters kdtree recognition
 
 #The necessary libraries your plugin needs.
 LIBS_conveyor_pose = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
