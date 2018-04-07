@@ -261,8 +261,7 @@ ConveyorPoseThread::loop()
   if ( ! pc_in_check() || ! bb_enable_switch_->is_enabled() ) {
     if ( enable_pose_ ) {
       vis_hist_ = -1;
-      pose trash;
-      trash.valid = false;
+      pose trash { false };
       pose_write(trash);
     }
     if ( cfg_pose_close_if_no_new_pointclouds_ ) {
@@ -281,7 +280,7 @@ ConveyorPoseThread::loop()
   bb_pose_conditional_open();
 
   if (!cfg_record_model_) {
-    pose pose_average;
+    pose pose_average { true };
     bool pose_average_availabe = pose_get_avg(pose_average);
     //logger->log_info(name(),"CONVEYOR-POSE 3: set average");
     if (pose_average_availabe) {
@@ -296,7 +295,7 @@ ConveyorPoseThread::loop()
       }
     } else {
       vis_hist_ = -1;
-      pose trash;
+      pose trash { false };
       pose_write(trash);
     }
   }
@@ -450,9 +449,8 @@ ConveyorPoseThread::cloud_correspondence_grouping(CloudPtr scene)
     else break;
   }
 
-  pose rv;
+  pose rv { false };
   if (best_match == rototranslations.end()) {
-    rv.valid = false;
     return rv;
   }
   else {
@@ -463,6 +461,7 @@ ConveyorPoseThread::cloud_correspondence_grouping(CloudPtr scene)
             double(m(1,0)), double(m(1,1)), double(m(1,2)),
             double(m(2,0)), double(m(2,1)), double(m(2,2))
     } );
+    rv.valid = true;
     return rv;
   }
 }
@@ -539,7 +538,7 @@ ConveyorPoseThread::pose_add_element(pose element)
 bool
 ConveyorPoseThread::pose_get_avg(pose & out)
 {
-  pose median;
+  pose median { true };
 
   // count invalid loops
   unsigned int invalid = 0;
