@@ -65,7 +65,13 @@ private:
   class pose : public fawkes::tf::Pose {
   public:
     using fawkes::tf::Pose::Pose;
-    bool valid = true;
+    pose() = delete;
+    pose(bool valid)
+      : fawkes::tf::Pose()
+      , valid(valid)
+    {}
+
+    bool valid;
   };
   Visualisation * visualisation_;
 
