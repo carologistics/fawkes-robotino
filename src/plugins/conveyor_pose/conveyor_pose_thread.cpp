@@ -646,6 +646,10 @@ ConveyorPoseThread::laserline_get_best_fit(fawkes::LaserLineInterface * &best_fi
     if ( ll->visibility_history() <= 2 )
       continue;
     // just if not too far away
+    if ( ! tf_listener->can_transform(header_.frame_id, ll->frame_id(), fawkes::Time(0,0))) {
+      logger->log_error(name(), "Can't transform from %s to %s", ll->frame_id(), header_.frame_id.c_str());
+      continue;
+    }
     Eigen::Vector3f center = laserline_get_center_transformed(ll);
 
     if ( std::sqrt( center(0) * center(0) + center(2) * center(2) ) > 0.8f )
