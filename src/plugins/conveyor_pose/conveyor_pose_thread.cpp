@@ -303,6 +303,11 @@ ConveyorPoseThread::loop()
 // logger->log_debug(name(),"CONVEYOR-POSE 4: checked average");
   fawkes::LaserLineInterface * ll = NULL;
   bool use_laserline = laserline_get_best_fit( ll );
+
+  // No point in recording a model when there's no laser line
+  if (cfg_record_model_ && !use_laserline)
+    return;
+
 // logger->log_debug(name(),"CONVEYOR-POSE 5: got laserline");
   
   CloudPtr cloud_in(new Cloud(**cloud_in_));
