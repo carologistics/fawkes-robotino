@@ -635,28 +635,41 @@ ConveyorPoseThread::laserline_get_best_fit(fawkes::LaserLineInterface * &best_fi
   // get best line
   for (fawkes::LaserLineInterface * ll : laserlines_) {
     // just with writer
-    if ( ! ll->has_writer() ) { continue; }
+    if ( ! ll->has_writer() )
+      continue;
     // just with history
-    if ( ll->visibility_history() <= 2 ) { continue; }
+    if ( ll->visibility_history() <= 2 )
+      continue;
     // just if not too far away
     Eigen::Vector3f center = laserline_get_center_transformed(ll);
 
-    if ( std::sqrt( center(0) * center(0) +
-                    center(2) * center(2) ) > 0.8 ) { continue; }
+    if ( std::sqrt( center(0) * center(0) + center(2) * center(2) ) > 0.8f )
+      continue;
 
     // take with lowest angle
-    if ( fabs(best_fit->bearing()) > fabs(ll->bearing()) ) {
+    if ( fabs(best_fit->bearing()) > fabs(ll->bearing()) )
       best_fit = ll;
-    }
   }
 
-  if ( ! best_fit->has_writer() ) { logger->log_info(name(), "no writer for laser lines"); best_fit = NULL; return false; }
-  if ( best_fit->visibility_history() <= 2 ) { best_fit = NULL; return false;  }
-  if ( fabs(best_fit->bearing()) > 0.35 ) { best_fit = NULL; return false;  } // ~20 deg
+  if ( ! best_fit->has_writer() ) {
+    logger->log_info(name(), "no writer for laser lines");
+    best_fit = NULL;
+    return false;
+  }
+  if ( best_fit->visibility_history() <= 2 ) {
+    best_fit = NULL;
+    return false;
+  }
+  if ( fabs(best_fit->bearing()) > 0.35f ) {
+    best_fit = NULL;
+    return false; // ~20 deg
+  }
   Eigen::Vector3f center = laserline_get_center_transformed(best_fit);
 
-  if ( std::sqrt( center(0) * center(0) +
-                  center(2) * center(2) ) > 0.8 ) { best_fit = NULL; return false;  }
+  if ( std::sqrt( center(0) * center(0) + center(2) * center(2) ) > 0.8f ) {
+    best_fit = NULL;
+    return false;
+  }
 
   return true;
 }
