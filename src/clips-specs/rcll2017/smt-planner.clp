@@ -87,6 +87,77 @@
 	(pb-set-field ?pose "y" ?pose-y)
 	(pb-set-field ?pose "ori" 0.0)
 	(pb-set-field ?r "pose" ?pose)
+
+	(do-for-fact ((?holding wm-fact))
+		(and
+			(wm-key-prefix ?holding:key (create$ domain fact holding))
+			(eq ?name (wm-key-arg ?holding:key r))
+		)
+
+		(bind ?o (pb-create "llsf_msgs.Order"))
+		(pb-set-field ?o "id" 1)
+		(pb-set-field ?o "delivery_gate" 1)
+		(pb-set-field ?o "complexity" 3)
+		(pb-set-field ?o "quantity_requested" 1)
+		(if (eq ?team-color CYAN)
+		 then
+		  (pb-set-field ?o "quantity_delivered_cyan" 0)
+		 else
+		  (pb-set-field ?o "quantity_delivered_magenta" 0)
+		)
+		(pb-set-field ?o "delivery_period_begin" 0)
+		(pb-set-field ?o "delivery_period_end" 900)
+
+		; Extract wp-base-color
+		(do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact wp-base-color))
+				(eq WP1 (wm-key-arg ?wm-fact:key wp))
+			)
+			(pb-set-field ?o "base_color" (wm-key-arg ?wm-fact:key col))
+		)
+		; Extract order-cap-color
+		(do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact wp-cap-color))
+				(eq WP1 (wm-key-arg ?wm-fact:key wp))
+			)
+			(pb-set-field ?o "cap_color" (wm-key-arg ?wm-fact:key col))
+		)
+
+		; Extract order-ring-color
+		(bind ?rlist (create$))
+		; order-ring1-color
+		(do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact wp-ring1-color))
+				(eq WP1 (wm-key-arg ?wm-fact:key wp))
+			)
+			(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+		)
+		; order-ring2-color
+		(do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact wp-ring2-color))
+				(eq WP1 (wm-key-arg ?wm-fact:key wp))
+			)
+			(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+		)
+		; order-ring3-color
+		(do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact wp-ring3-color))
+				(eq WP1 (wm-key-arg ?wm-fact:key wp))
+			)
+			(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+		)
+		(foreach ?rings ?rlist
+		 (pb-add-list ?o "ring_colors" ?rings)
+		)
+
+		(pb-set-field ?r "wp" ?o)
+	)
+
 	(return ?r)
 )
 
@@ -134,6 +205,75 @@
 	   (pb-add-list ?m "ring_colors" ?rings)
 	  )
     )
+
+	(do-for-fact ((?wp-at wm-fact))
+		(and
+			(wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
+			(eq ?name (wm-key-arg ?wp-at:key m))
+		)
+
+		(bind ?o (pb-create "llsf_msgs.Order"))
+		(pb-set-field ?o "id" 1)
+		(pb-set-field ?o "delivery_gate" 1)
+		(pb-set-field ?o "complexity" 3)
+		(pb-set-field ?o "quantity_requested" 1)
+		(if (eq ?team-color CYAN)
+		 then
+		  (pb-set-field ?o "quantity_delivered_cyan" 0)
+		 else
+		  (pb-set-field ?o "quantity_delivered_magenta" 0)
+		)
+		(pb-set-field ?o "delivery_period_begin" 0)
+		(pb-set-field ?o "delivery_period_end" 900)
+	
+		; Extract wp-base-color
+		(do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact wp-base-color))
+				(eq WP1 (wm-key-arg ?wm-fact:key wp))
+			)
+			(pb-set-field ?o "base_color" (wm-key-arg ?wm-fact:key col))
+		)
+		; Extract order-cap-color
+		(do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact wp-cap-color))
+				(eq WP1 (wm-key-arg ?wm-fact:key wp))
+			)
+			(pb-set-field ?o "cap_color" (wm-key-arg ?wm-fact:key col))
+		)
+
+		; Extract order-ring-color
+		(bind ?rlist (create$))
+		; order-ring1-color
+		(do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact wp-ring1-color))
+				(eq WP1 (wm-key-arg ?wm-fact:key wp))
+			)
+			(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+		)
+		; order-ring2-color
+		(do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact wp-ring2-color))
+				(eq WP1 (wm-key-arg ?wm-fact:key wp))
+			)
+			(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+		)
+		; order-ring3-color
+		(do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact wp-ring3-color))
+				(eq WP1 (wm-key-arg ?wm-fact:key wp))
+			)
+			(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+		)
+		(foreach ?rings ?rlist
+		 (pb-add-list ?o "ring_colors" ?rings)
+		)
+		(pb-set-field ?m "wp" ?o)
+	)
 
 	(return ?m)
 )
