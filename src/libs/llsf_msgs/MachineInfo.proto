@@ -45,6 +45,7 @@ import "Team.proto";
 import "Zone.proto";
 import "MachineInstructions.proto";
 import "MachineDescription.proto";
+import "OrderInfo.proto";
 
 option java_package = "org.robocup_logistics.llsf_msgs";
 option java_outer_classname = "MachineInfoProtos";
@@ -102,6 +103,8 @@ message Machine {
 	// more fine-grained exploration (only clients)
 	optional ExplorationState exploration_zone_state = 22;
 	optional ExplorationState exploration_rotation_state = 21;
+
+  optional Order wp = 23;
 
 }
 
