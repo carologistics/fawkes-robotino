@@ -41,6 +41,7 @@ package llsf_msgs;
 import "Time.proto";
 import "Pose2D.proto";
 import "Team.proto";
+import "OrderInfo.proto";
 
 option java_package = "org.robocup_logistics.llsf_msgs";
 option java_outer_classname = "RobotInfoProtos";
@@ -85,6 +86,7 @@ message Robot {
   // number of times maintenance
   // has been performed, including current
   optional uint32 maintenance_cycles = 10;
+  optional Order wp = 13;
 }
 
 message RobotInfo {
