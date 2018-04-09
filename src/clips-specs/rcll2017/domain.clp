@@ -3,6 +3,7 @@
 ;
 ;  Created: Tue 09 Jan 2018 17:03:31 CET
 ;  Copyright  2018  Till Hofmann <hofmann@kbsg.rwth-aachen.de>
+;             2018  Mostafa Gomaa <gomaa@kbsg.rwth-aachen.de>
 ;  Licensed under GPLv2+ license, cf. LICENSE file in the doc directory.
 ;---------------------------------------------------------------------------
 
