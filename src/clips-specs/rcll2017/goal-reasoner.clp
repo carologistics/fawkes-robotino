@@ -88,7 +88,8 @@
     (domain-object (name ?wp) (type workpiece))
     (wm-fact (key domain fact wp-spawned-by args? wp ?wp r ?robot))))
   =>
-  (assert (goal (id WPSPAWN-ACHIEVE) (parent WPSPAWN-MAINTAIN)))
+  (assert (goal (id WPSPAWN-ACHIEVE) (parent WPSPAWN-MAINTAIN)
+                                     (params robot ?robot)))
 )
 
 (defrule goal-reasoner-create-enter-field
@@ -96,6 +97,7 @@
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
   ; (not (goal (id ENTER-FIELD)))
   (not (goal-already-tried ENTER-FIELD))
+  (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
@@ -111,19 +113,19 @@
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
   ; (not (goal (id FILL-CAP)))
   ; (not (goal-already-tried FILL-CAP))
+  (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
   (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
   ;ToDo: remove condition and ensure by salience
-  (wm-fact (key domain fact entered-field args? r R-1))
-  ; (test (eq ?robot R-1))
+  (wm-fact (key domain fact entered-field args? r ?robot))
   =>
   (printout t "Goal " FILL-CAP " formulated" crlf)
   (assert (goal (id FILL-CAP) (priority ?*PRIORITY-PREFILL-CS*)
                               (parent PRODUCTION-MAINTAIN)
-                              (params robot R-1
+                              (params robot ?robot
                                       mps ?mps
                                       )))
   ; This is just to make sure we formulate the goal only once.
@@ -137,18 +139,18 @@
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
   ; (not (goal (id CLEAR-CS)))
   ; (not (goal-already-tried CLEAR-CS))
+  (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ;Maybe add a check for the base_color
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
-  ; (test (eq ?robot R-1))
   =>
   (printout t "Goal " CLEAR-CS " formulated" crlf)
   (assert (goal (id CLEAR-CS) (priority ?*PRIORITY-CLEAR-CS*)
                               (parent PRODUCTION-MAINTAIN)
-                              (params robot R-1
+                              (params robot ?robot
                                       mps ?mps
                                       wp ?wp
                                       )))
@@ -163,6 +165,7 @@
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
   ; (not (goal (id FILL-RS)))
   ; (not (goal-already-tried FILL-RS))
+  (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact wp-usable args? wp ?wp))
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
@@ -193,6 +196,7 @@
   (not (goal (id DISCARD-UNKNOWN)))
   ; (not (goal-already-tried DISCARD-UNKNOWN))
   ;To-Do: Model state IDLE
+  (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
   ;only discard if ring stations have at least two bases loaded
@@ -216,6 +220,7 @@
   ; (not (goal (id PRODUCE-C0)))
   ; (not (goal-already-tried PRODUCE-C0))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
+  (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
@@ -236,7 +241,7 @@
   (printout t "Goal " PRODUCE-C0 " formulated" crlf)
   (assert (goal (id PRODUCE-C0) (priority ?*PRIORITY-PRODUCE-C0*)
                                 (parent PRODUCTION-MAINTAIN)
-                                (params robot R-1
+                                (params robot ?robot
                                         bs ?bs
                                         bs-side INPUT
                                         bs-color ?base-color
@@ -253,6 +258,7 @@
   ; (not (goal (id DELIVER)))
   ; (not (goal-already-tried DELIVER))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
+  (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
@@ -282,7 +288,7 @@
   (printout t "Goal " DELIVER " formulated" crlf)
   (assert (goal (id DELIVER) (priority ?*PRIORITY-DELIVER*)
                              (parent PRODUCTION-MAINTAIN)
-                             (params robot R-1
+                             (params robot ?robot
                                      mps ?mps
                                      order ?order
                                      wp ?wp
@@ -367,10 +373,13 @@
 )
 
 (defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
-  ?g <- (goal (id WPSPAWN-ACHIEVE) (parent WPSPAWN-MAINTAIN) (mode FINISHED) (outcome COMPLETED))
+  ?g <- (goal (id WPSPAWN-ACHIEVE) (parent WPSPAWN-MAINTAIN)
+            (mode FINISHED) (outcome COMPLETED)
+            (params robot ?robot))
   ?p <- (goal (id WPSPAWN-MAINTAIN))
   ?m <- (goal-meta (goal-id WPSPAWN-MAINTAIN))
   (time $?now)
+  (wm-fact (key domain fact self args? r ?robot))
   =>
   (printout debug "Goal '" WPSPAWN-ACHIEVE "' (part of '" WPSPAWN-MAINTAIN
     "') has been completed, Evaluating" crlf)
@@ -383,7 +392,7 @@
     (wm-fact (key domain fact wp-ring2-color args? wp ?wp-id col RING_NONE) (value TRUE))
     (wm-fact (key domain fact wp-ring3-color args? wp ?wp-id col RING_NONE) (value TRUE))
     (wm-fact (key domain fact wp-base-color args? wp ?wp-id col BASE_NONE) (value TRUE))
-    (wm-fact (key domain fact wp-spawned-by args? wp ?wp-id r R-1) (value TRUE))
+    (wm-fact (key domain fact wp-spawned-by args? wp ?wp-id r ?robot) (value TRUE))
   )
   (modify ?g (mode EVALUATED))
   (modify ?m (last-achieve ?now))
@@ -409,6 +418,7 @@
    (param-names r m side wp basecol)
          (param-values ?robot ?bs ?bs-side ?wp ?base-color))
  (time $?now)
+ (wm-fact (key domain fact self args? r ?robot))
  ;ToDO:  Remove param from the matching. This is dangerouns if params changed
  ;ToDo: function support for processing goal params by arg
  ;ToDo: function support for processing action params by name
