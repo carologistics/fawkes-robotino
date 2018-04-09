@@ -115,13 +115,35 @@ ConveyorPoseThread::init()
   cfg_bb_realsense_switch_name_ = config->get_string_or_default((cfg_prefix + "realsense_switch").c_str(), "realsense");
   wait_time_ = Time(double(config->get_float_or_default((cfg_prefix + "realsense_wait_time").c_str(), 1.0f)));
 
-  std::string model_path = config->get_string((cfg_prefix + "model_file").c_str());
-  if (model_path.substr(0, 1) != "/")
-    model_path = CONFDIR "/" + model_path;
+  cfg_model_path_ = config->get_string((cfg_prefix + "model_file").c_str());
+  if (cfg_model_path_.substr(0, 1) != "/")
+    cfg_model_path_ = CONFDIR "/" + cfg_model_path_;
 
-  int errnum;
-  if ((errnum = pcl::io::loadPCDFile(model_path, *model_)) < 0)
-    throw fawkes::CouldNotOpenFileException(model_path.c_str(), errnum, ("Set from " + cfg_prefix + "model_file").c_str());
+  cfg_record_model_ = config->get_bool_or_default((cfg_prefix + "record_model").c_str(), false);
+  if (cfg_record_model_) {
+    FILE *tmp = nullptr;
+    unsigned int count = 1;
+    bool exists;
+    std::string new_model_path = cfg_model_path_;
+    do {
+      exists = false;
+      tmp = ::fopen(new_model_path.c_str(), "r");
+      if (tmp) {
+        exists = true;
+        ::fclose(tmp);
+        new_model_path = cfg_model_path_ + std::to_string(count++);
+      }
+    } while(exists);
+    cfg_model_path_ = new_model_path;
+    logger->log_info(name(), "Writing point cloud to %s", cfg_model_path_.c_str());
+  }
+  else {
+    int errnum;
+    model_.reset(new Cloud());
+    if ((errnum = pcl::io::loadPCDFile(cfg_model_path_, *model_)) < 0)
+      throw fawkes::CouldNotOpenFileException(cfg_model_path_.c_str(), errnum,
+                                              ("Set from " + cfg_prefix + "model_file").c_str());
+
 
     uniform_sampling_.setInputCloud(model_);
     uniform_sampling_.setRadiusSearch(cfg_model_ss_);
@@ -258,25 +280,27 @@ ConveyorPoseThread::loop()
   //logger->log_info(name(),"CONVEYOR-POSE 2: Added Trash if no point cloud or not enabled and pose enabled");
   bb_pose_conditional_open();
 
-  pose pose_average;
-  bool pose_average_availabe = pose_get_avg(pose_average);
-  //logger->log_info(name(),"CONVEYOR-POSE 3: set average");
-  if (pose_average_availabe) {
-    vis_hist_ = std::max(1, vis_hist_ + 1);
-    pose_write(pose_average);
+  if (!cfg_record_model_) {
+    pose pose_average;
+    bool pose_average_availabe = pose_get_avg(pose_average);
+    //logger->log_info(name(),"CONVEYOR-POSE 3: set average");
+    if (pose_average_availabe) {
+      vis_hist_ = std::max(1, vis_hist_ + 1);
+      pose_write(pose_average);
 
-    pose_publish_tf(pose_average);
+      pose_publish_tf(pose_average);
 
-//    tf_send_from_pose_if(pose_current);
-    if (cfg_use_visualisation_) {
-      visualisation_->marker_draw(header_, pose_average.getOrigin(), pose_average.getRotation());
+      //    tf_send_from_pose_if(pose_current);
+      if (cfg_use_visualisation_) {
+        visualisation_->marker_draw(header_, pose_average.getOrigin(), pose_average.getRotation());
+      }
+    } else {
+      vis_hist_ = -1;
+      pose trash;
+      pose_write(trash);
     }
-  } else {
-    vis_hist_ = -1;
-    pose trash;
-    trash.valid = false;
-    pose_write(trash);
   }
+
 // logger->log_debug(name(),"CONVEYOR-POSE 4: checked average");
   fawkes::LaserLineInterface * ll = NULL;
   bool use_laserline = laserline_get_best_fit( ll );
@@ -302,9 +326,14 @@ ConveyorPoseThread::loop()
   
   cloud_publish(cloud_front_side, cloud_out_inter_1_);
 
-  pose pose_current = cloud_correspondence_grouping(model_, cloud_front_side);
-
-  pose_add_element(pose_current);
+  if (cfg_record_model_) {
+    int rv = pcl::io::savePCDFileASCII(cfg_model_path_, *cloud_front_side);
+    if (rv)
+      logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_model_path_.c_str());
+  }
+  else {
+    pose_add_element(cloud_correspondence_grouping(cloud_front_side));
+  }
 }
 
 
