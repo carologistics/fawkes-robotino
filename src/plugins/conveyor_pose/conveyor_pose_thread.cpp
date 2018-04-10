@@ -26,13 +26,8 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/conversions.h>
 #include <pcl/point_cloud.h>
-#include <pcl/correspondence.h>
-#include <pcl/features/board.h>
 #include <pcl/filters/approximate_voxel_grid.h>
-#include <pcl/recognition/cg/hough_3d.h>
-#include <pcl/recognition/cg/geometric_consistency.h>
-#include <pcl/kdtree/kdtree_flann.h>
-#include <pcl/kdtree/impl/kdtree_flann.hpp>
+
 
 #include <tf/types.h>
 #include <utils/math/angle.h>
@@ -57,7 +52,10 @@ ConveyorPoseThread::ConveyorPoseThread() :
                 cloud_out_raw_name_("raw"),
                 cloud_out_trimmed_name_("trimmed"),
                 realsense_switch_(nullptr)
-{}
+{
+  // Lock config mutex until init() it done
+  config_mutex_.lock();
+}
 
 void
 ConveyorPoseThread::init()
@@ -117,6 +115,8 @@ ConveyorPoseThread::init()
   if (cfg_model_path_.substr(0, 1) != "/")
     cfg_model_path_ = CONFDIR "/" + cfg_model_path_;
 
+  trimmed_scene_.reset(new Cloud());
+
   cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
   if (cfg_record_model_) {
     FILE *tmp = nullptr;
@@ -140,8 +140,7 @@ ConveyorPoseThread::init()
     model_.reset(new Cloud());
     if ((errnum = pcl::io::loadPCDFile(cfg_model_path_, *model_)) < 0)
       throw fawkes::CouldNotOpenFileException(cfg_model_path_.c_str(), errnum,
-                                              ("Set from " + cfg_prefix + "model_file").c_str());
-
+                                              "Set from " CFG_PREFIX "/model_file");
 
     uniform_sampling_.setInputCloud(model_);
     uniform_sampling_.setRadiusSearch(cfg_model_ss_);
@@ -191,6 +190,8 @@ ConveyorPoseThread::init()
   realsense_switch_ = blackboard->open_for_reading<SwitchInterface>(cfg_bb_realsense_switch_name_.c_str());
 
   visualisation_ = new Visualisation(rosnode);
+
+  config_mutex_.unlock();
 }
 
 
@@ -256,7 +257,7 @@ ConveyorPoseThread::loop()
       new SwitchInterface::DisableSwitchMessage());
   }
 
-  if ( ! pc_in_check() || ! bb_enable_switch_->is_enabled() ) {
+  if ( ! input_cloud_available() || ! bb_enable_switch_->is_enabled() ) {
     if ( enable_pose_ ) {
       vis_hist_ = -1;
       pose trash { false };
@@ -265,8 +266,16 @@ ConveyorPoseThread::loop()
     if ( cfg_pose_close_if_no_new_pointclouds_ ) {
       bb_pose_conditional_close();
     }
+
+    // We're disabled, so block the ConveyorVisionThread
+    cloud_mutex_.lock();
+
     return;
   }
+
+  cloud_mutex_.try_lock();
+  cloud_mutex_.unlock();
+
   if (need_to_wait()) {
     logger->log_debug(name(),
       "Waiting for %s for %f sec, still %f sec remaining",
@@ -323,155 +332,31 @@ ConveyorPoseThread::loop()
   CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_gripper, ll, use_laserline);
  // logger->log_debug(name(),"CONVEYOR-POSE 6: intially filtered pointcloud");
 
-  CloudPtr cloud_front_side(new Cloud);
-  cloud_front_side = cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
-  
-  cloud_publish(cloud_in, cloud_out_raw_);
-  cloud_publish(cloud_front_side, cloud_out_trimmed_);
-
-  if (cfg_record_model_) {
-    int rv = pcl::io::savePCDFileASCII(cfg_model_path_, *cloud_front_side);
-    if (rv)
-      logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_model_path_.c_str());
-  }
-  else {
-    pose_add_element(cloud_correspondence_grouping(cloud_front_side));
-  }
-}
-
-
-ConveyorPoseThread::pose
-ConveyorPoseThread::cloud_correspondence_grouping(CloudPtr scene)
-{
-  norm_est_.setInputCloud (scene);
-  pcl::PointCloud<pcl::Normal>::Ptr scene_normals(new pcl::PointCloud<pcl::Normal>());
-  norm_est_.compute (*scene_normals);
-
-  uniform_sampling_.setInputCloud (scene);
-  uniform_sampling_.setRadiusSearch (cfg_scene_ss_);
-  CloudPtr scene_keypoints(new Cloud());
-  uniform_sampling_.filter(*scene_keypoints);
-  logger->log_debug(name(), "Scene total points: %zu, Selected Keypoints: %zu", scene->size(), scene_keypoints->size());
-
-  descr_est_.setInputCloud (scene_keypoints);
-  descr_est_.setInputNormals (scene_normals);
-  descr_est_.setSearchSurface (scene);
-  pcl::PointCloud<pcl::SHOT352>::Ptr scene_descriptors (new pcl::PointCloud<pcl::SHOT352> ());
-  descr_est_.compute (*scene_descriptors);
-
-  if (!scene_descriptors->is_dense) {
-    logger->log_error(name(), "Failed to compute scene descriptors");
-    return pose { false };
-  }
-
-  //  Find Model-Scene Correspondences with KdTree
-  pcl::CorrespondencesPtr model_scene_corrs (new pcl::Correspondences ());
-
-  pcl::KdTreeFLANN<pcl::SHOT352> match_search;
-  match_search.setInputCloud (model_descriptors_);
-
-  //  For each scene keypoint descriptor, find nearest neighbor into the model keypoints descriptor cloud and add it to the correspondences vector.
-  for (size_t i = 0; i < scene_descriptors->size (); ++i) {
-    std::vector<int> neigh_indices(1);
-    std::vector<float> neigh_sqr_dists(1);
-    if (!pcl_isfinite(scene_descriptors->at(i).descriptor[0])) //skipping NaNs
-      continue;
-    int found_neighs = match_search.nearestKSearch(scene_descriptors->at(i), 1, neigh_indices, neigh_sqr_dists);
-    if (found_neighs == 1 && neigh_sqr_dists[0] < 0.25f) {
-      // add match only if the squared descriptor distance is less than 0.25 (SHOT descriptor distances are between 0 and 1 by design)
-      pcl::Correspondence corr(neigh_indices[0], static_cast<int>(i), neigh_sqr_dists[0]);
-      model_scene_corrs->push_back(corr);
-    }
-  }
-  logger->log_debug(name(), "Correspondences found: %zu", model_scene_corrs->size());
-
-  //  Actual Clustering
-  std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> rototranslations;
-  std::vector<pcl::Correspondences> clustered_corrs;
-
-  //  Using Hough3D
-  if (cfg_use_hough_) {
-    //  Compute (Keypoints) Reference Frames only for Hough
-    pcl::PointCloud<pcl::ReferenceFrame>::Ptr model_rf (new pcl::PointCloud<pcl::ReferenceFrame> ());
-    pcl::PointCloud<pcl::ReferenceFrame>::Ptr scene_rf (new pcl::PointCloud<pcl::ReferenceFrame> ());
-
-    pcl::BOARDLocalReferenceFrameEstimation<Point, pcl::Normal, pcl::ReferenceFrame> rf_est;
-    rf_est.setFindHoles (true);
-    rf_est.setRadiusSearch (cfg_rf_rad_);
-
-    rf_est.setInputCloud (model_keypoints_);
-    rf_est.setInputNormals (model_normals_);
-    rf_est.setSearchSurface (model_);
-    rf_est.compute (*model_rf);
-
-    rf_est.setInputCloud (scene_keypoints);
-    rf_est.setInputNormals (scene_normals);
-    rf_est.setSearchSurface (scene);
-    rf_est.compute (*scene_rf);
-
-    //  Clustering
-    pcl::Hough3DGrouping<Point, Point, pcl::ReferenceFrame, pcl::ReferenceFrame> clusterer;
-    clusterer.setHoughBinSize (cfg_cg_size_);
-    clusterer.setHoughThreshold (cfg_cg_thresh_);
-    clusterer.setUseInterpolation (true);
-    clusterer.setUseDistanceWeight (false);
-
-    clusterer.setInputCloud (model_keypoints_);
-    clusterer.setInputRf (model_rf);
-    clusterer.setSceneCloud (scene_keypoints);
-    clusterer.setSceneRf (scene_rf);
-    clusterer.setModelSceneCorrespondences (model_scene_corrs);
-
-    //clusterer.cluster (clustered_corrs);
-    clusterer.recognize (rototranslations, clustered_corrs);
-  }
-  else // Using GeometricConsistency
   {
-    pcl::GeometricConsistencyGrouping<Point, Point> gc_clusterer;
-    gc_clusterer.setGCSize (cfg_cg_size_);
-    gc_clusterer.setGCThreshold (cfg_cg_thresh_);
+    MutexLocker locked(&cloud_mutex_);
+    trimmed_scene_ = cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
 
-    gc_clusterer.setInputCloud (model_keypoints_);
-    gc_clusterer.setSceneCloud (scene_keypoints);
-    gc_clusterer.setModelSceneCorrespondences (model_scene_corrs);
+    cloud_publish(cloud_in, cloud_out_raw_);
+    cloud_publish(trimmed_scene_, cloud_out_trimmed_);
 
-    //gc_clusterer.cluster (clustered_corrs);
-    gc_clusterer.recognize (rototranslations, clustered_corrs);
-  }
-
-  size_t corrs = 0;
-  size_t max_corrs = 0;
-  auto best_match = rototranslations.end();
-  auto rit = rototranslations.begin();
-  auto cit = clustered_corrs.begin();
-  for ( ; rit < rototranslations.end() && cit < clustered_corrs.end(); ++rit, ++cit) {
-    corrs = cit->size();
-    if(corrs > max_corrs) {
-      max_corrs = corrs;
-      best_match = rit;
+    if (cfg_record_model_) {
+      int rv = pcl::io::savePCDFileASCII(cfg_model_path_, *trimmed_scene_);
+      if (rv)
+        logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_model_path_.c_str());
     }
-    else break;
-  }
-
-  pose rv { false };
-  if (best_match == rototranslations.end()) {
-    return rv;
-  }
-  else {
-    Eigen::Matrix4f &m = *best_match;
-    rv.setOrigin( { double(m(0,3)), double(m(1,3)), double(m(2,3)) } );
-    rv.setBasis( {
-            double(m(0,0)), double(m(0,1)), double(m(0,2)),
-            double(m(1,0)), double(m(1,1)), double(m(1,2)),
-            double(m(2,0)), double(m(2,1)), double(m(2,2))
-    } );
-    rv.valid = true;
-    return rv;
   }
 }
+
+
+CloudPtr ConveyorPoseThread::get_scene()
+{
+  MutexLocker locked(&cloud_mutex_);
+  return trimmed_scene_;
+}
+
 
 bool
-ConveyorPoseThread::pc_in_check()
+ConveyorPoseThread::input_cloud_available()
 {
   if (pcl_manager->exists_pointcloud(cloud_in_name_.c_str())) {                // does the pc exists
     if ( ! cloud_in_registered_) {                                             // do I already have this pc
@@ -530,6 +415,7 @@ ConveyorPoseThread::if_read()
 void
 ConveyorPoseThread::pose_add_element(pose element)
 {
+  MutexLocker locked(&pose_mutex_);
   //add element
   poses_.push_front(element);
 
