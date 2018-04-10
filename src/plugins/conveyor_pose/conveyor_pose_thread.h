@@ -24,12 +24,17 @@
 #define _CONVEYOR_POSE_THREAD_
 
 #include <core/threading/thread.h>
+#include <core/threading/mutex.h>
+#include <core/threading/mutex_locker.h>
+
 #include <aspect/blocked_timing.h>
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
 #include <aspect/pointcloud.h>
 #include <aspect/tf.h>
+
+#include <config/change_handler.h>
 
 #include <plugins/ros/aspect/ros.h>
 
@@ -45,6 +50,9 @@
 
 #include <string>
 #include <map>
+#include <atomic>
+
+#define CFG_PREFIX "/plugins/conveyor_pose"
 
 typedef pcl::PointXYZ Point;
 typedef pcl::PointCloud<Point> Cloud;
@@ -56,6 +64,7 @@ class ConveyorPoseThread
   public fawkes::BlockedTimingAspect,
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
+  public fawkes::ConfigurationChangeHandler,
   public fawkes::BlackBoardAspect,
   public fawkes::PointCloudAspect,
   public fawkes::ROSAspect,
@@ -77,8 +86,8 @@ private:
 
   // cfg values
   std::string cloud_in_name_;
-  std::string cloud_out_inter_1_name_;
-  std::string cloud_out_result_name_;
+  const std::string cloud_out_raw_name_;
+  const std::string cloud_out_trimmed_name_;
   std::string cfg_bb_conveyor_pose_name_;
   std::string cfg_bb_switch_name_;
   std::string cfg_bb_realsense_switch_name_;
@@ -94,37 +103,39 @@ private:
   pcl::NormalEstimationOMP<Point, pcl::Normal> norm_est_;
   pcl::SHOTEstimationOMP<Point, pcl::Normal, pcl::SHOT352> descr_est_;
 
+  fawkes::Mutex config_mutex_;
+
   bool cfg_record_model_;
   std::string cfg_model_path_;
 
   bool cfg_pose_close_if_no_new_pointclouds_;
 //  std::string bb_tag_name_;
-  float cfg_pose_diff_;
-  float vis_hist_angle_diff_;
+  std::atomic<float> cfg_pose_diff_;
+  std::atomic<float> vis_hist_angle_diff_;
 
-  float cfg_gripper_y_min_;
-  float cfg_gripper_y_max_;
-  float cfg_gripper_z_max_;
-  float cfg_gripper_slice_y_min_;
-  float cfg_gripper_slice_y_max_;
+  std::atomic<float> cfg_gripper_y_min_;
+  std::atomic<float> cfg_gripper_y_max_;
+  std::atomic<float> cfg_gripper_z_max_;
+  std::atomic<float> cfg_gripper_slice_y_min_;
+  std::atomic<float> cfg_gripper_slice_y_max_;
 
-  float cfg_front_space_;
-  float cfg_front_offset_;
+  std::atomic<float> cfg_front_space_;
+  std::atomic<float> cfg_front_offset_;
 
-  float cfg_left_cut_;
-  float cfg_right_cut_;
-  float cfg_left_cut_no_ll_;
-  float cfg_right_cut_no_ll_;
+  std::atomic<float> cfg_left_cut_;
+  std::atomic<float> cfg_right_cut_;
+  std::atomic<float> cfg_left_cut_no_ll_;
+  std::atomic<float> cfg_right_cut_no_ll_;
 
-  float cfg_voxel_grid_leaf_size_;
+  std::atomic<float> cfg_voxel_grid_leaf_size_;
 
-  double cfg_model_ss_;
-  double cfg_scene_ss_;
-  double cfg_rf_rad_;
-  double cfg_descr_rad_;
-  double cfg_cg_size_;
-  int cfg_cg_thresh_;
-  bool cfg_use_hough_;
+  std::atomic<double> cfg_model_ss_;
+  std::atomic<double> cfg_scene_ss_;
+  std::atomic<double> cfg_rf_rad_;
+  std::atomic<double> cfg_descr_rad_;
+  std::atomic<double> cfg_cg_size_;
+  std::atomic<int> cfg_cg_thresh_;
+  std::atomic_bool cfg_use_hough_;
 
   uint cfg_allow_invalid_poses_;
 
@@ -146,8 +157,8 @@ private:
 
   // point clouds from pcl_manager
   fawkes::RefPtr<const Cloud> cloud_in_;
-  fawkes::RefPtr<Cloud> cloud_out_inter_1_;
-  fawkes::RefPtr<Cloud> cloud_out_result_;
+  fawkes::RefPtr<Cloud> cloud_out_raw_;
+  fawkes::RefPtr<Cloud> cloud_out_trimmed_;
 
   // interfaces write
   fawkes::SwitchInterface * bb_enable_switch_;
@@ -193,6 +204,11 @@ private:
  Eigen::Quaternion<float> normalizeQuaternion(float x, float y, float z, float w);
  Eigen::Quaternion<float> inverseSignQuaternion(Eigen::Quaternion<float> q);
  bool areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quaternion<float> q2);
+
+ virtual void config_value_erased(const char *path) override;
+ virtual void config_tag_changed(const char *new_tag) override;
+ virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v) override;
+ virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v) override;
 
 protected:
   virtual void run() { Thread::run(); }

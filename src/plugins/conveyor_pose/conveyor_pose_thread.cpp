@@ -52,74 +52,72 @@ using namespace fawkes;
 ConveyorPoseThread::ConveyorPoseThread() :
 		Thread("ConveyorPoseThread", Thread::OPMODE_WAITFORWAKEUP),
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS),
+                ConfigurationChangeHandler(CFG_PREFIX),
 		fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose"),
-		realsense_switch_(NULL)
-{
-
-}
+                cloud_out_raw_name_("raw"),
+                cloud_out_trimmed_name_("trimmed"),
+                realsense_switch_(nullptr)
+{}
 
 void
 ConveyorPoseThread::init()
 {
-  const std::string cfg_prefix = "/conveyor_pose/";
+  config->add_change_handler(this);
 
-  cfg_debug_mode_ = config->get_bool( (cfg_prefix + "debug").c_str() );
+  cfg_debug_mode_ = config->get_bool( CFG_PREFIX "/debug" );
+  cloud_in_name_ = config->get_string( CFG_PREFIX "/cloud_in" );
 
-  cloud_in_name_ = config->get_string( (cfg_prefix + "cloud_in").c_str() );
+  const std::string if_prefix = config->get_string( CFG_PREFIX "/if/prefix" ) + "/";
 
-  const std::string if_prefix = config->get_string( (cfg_prefix + "if/prefix").c_str() ) + "/";
+  cfg_bb_conveyor_pose_name_  = if_prefix + config->get_string( CFG_PREFIX "/if/name" );
+  cfg_bb_switch_name_         = if_prefix + config->get_string( CFG_PREFIX "/if/switch" );
 
-  cloud_out_inter_1_name_     = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_intermediate").c_str() );
-  cloud_out_result_name_      = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_result").c_str() );
-  cfg_bb_conveyor_pose_name_  = if_prefix + config->get_string( (cfg_prefix + "if/name").c_str() );
-  cfg_bb_switch_name_         = if_prefix + config->get_string( (cfg_prefix + "if/switch").c_str() );
+  laserlines_names_       = config->get_strings( CFG_PREFIX "/if/laser_lines" );
 
-  laserlines_names_       = config->get_strings( (cfg_prefix + "if/laser_lines").c_str() );
+  cfg_pose_close_if_no_new_pointclouds_  = config->get_bool( CFG_PREFIX "/if/pose_close_if_new_pc" );
 
-  cfg_pose_close_if_no_new_pointclouds_  = config->get_bool( (cfg_prefix + "if/pose_close_if_new_pc").c_str() );
+  conveyor_frame_id_          = config->get_string( CFG_PREFIX "/conveyor_frame_id" );
+  cfg_pose_diff_              = config->get_float( CFG_PREFIX "/vis_hist/diff_pose" );
+  vis_hist_angle_diff_        = config->get_float( CFG_PREFIX "/vis_hist/diff_angle" );
+  cfg_pose_avg_hist_size_     = config->get_uint( CFG_PREFIX "/vis_hist/average/size" );
+  cfg_pose_avg_min_           = config->get_uint( CFG_PREFIX "/vis_hist/average/used_min" );
+  cfg_allow_invalid_poses_    = config->get_uint( CFG_PREFIX "/vis_hist/allow_invalid_poses" );
 
-  conveyor_frame_id_          = config->get_string( (cfg_prefix + "conveyor_frame_id").c_str() );
-  cfg_pose_diff_              = config->get_float( (cfg_prefix + "vis_hist/diff_pose").c_str() );
-  vis_hist_angle_diff_        = config->get_float( (cfg_prefix + "vis_hist/diff_angle").c_str() );
-  cfg_pose_avg_hist_size_     = config->get_uint( (cfg_prefix + "vis_hist/average/size").c_str() );
-  cfg_pose_avg_min_           = config->get_uint( (cfg_prefix + "vis_hist/average/used_min").c_str() );
-  cfg_allow_invalid_poses_    = config->get_uint( (cfg_prefix + "vis_hist/allow_invalid_poses").c_str() );
+  cfg_enable_switch_          = config->get_bool( CFG_PREFIX "/switch_default" );
+  cfg_use_visualisation_      = config->get_bool( CFG_PREFIX "/use_visualisation" );
 
-  cfg_enable_switch_          = config->get_bool( (cfg_prefix + "switch_default").c_str() );
-  cfg_use_visualisation_      = config->get_bool( (cfg_prefix + "use_visualisation").c_str() );
+  cfg_gripper_y_min_          = config->get_float( CFG_PREFIX "/gripper/y_min" );
+  cfg_gripper_y_max_          = config->get_float( CFG_PREFIX "/gripper/y_max" );
+  cfg_gripper_z_max_          = config->get_float( CFG_PREFIX "/gripper/z_max" );
+  cfg_gripper_slice_y_min_    = config->get_float( CFG_PREFIX "/gripper/slice/y_min" );
+  cfg_gripper_slice_y_max_    = config->get_float( CFG_PREFIX "/gripper/slice/y_max" );
 
-  cfg_gripper_y_min_          = config->get_float( (cfg_prefix + "gripper/y_min").c_str() );
-  cfg_gripper_y_max_          = config->get_float( (cfg_prefix + "gripper/y_max").c_str() );
-  cfg_gripper_z_max_          = config->get_float( (cfg_prefix + "gripper/z_max").c_str() );
-  cfg_gripper_slice_y_min_    = config->get_float( (cfg_prefix + "gripper/slice/y_min").c_str() );
-  cfg_gripper_slice_y_max_    = config->get_float( (cfg_prefix + "gripper/slice/y_max").c_str() );
+  cfg_front_space_            = config->get_float( CFG_PREFIX "/front/space" );
+  cfg_front_offset_           = config->get_float( CFG_PREFIX "/front/offset" );
 
-  cfg_front_space_            = config->get_float( (cfg_prefix + "front/space").c_str() );
-  cfg_front_offset_           = config->get_float( (cfg_prefix + "front/offset").c_str() );
+  cfg_left_cut_               = config->get_float( CFG_PREFIX "/left_right/left_cut" );
+  cfg_right_cut_              = config->get_float( CFG_PREFIX "/left_right/right_cut" );
+  cfg_left_cut_no_ll_         = config->get_float( CFG_PREFIX "/left_right/left_cut_no_ll" );
+  cfg_right_cut_no_ll_        = config->get_float( CFG_PREFIX "/left_right/right_cut_no_ll" );
 
-  cfg_left_cut_               = config->get_float( (cfg_prefix + "left_right/left_cut").c_str() );
-  cfg_right_cut_              = config->get_float( (cfg_prefix + "left_right/right_cut").c_str() );
-  cfg_left_cut_no_ll_         = config->get_float( (cfg_prefix + "left_right/left_cut_no_ll").c_str() );
-  cfg_right_cut_no_ll_        = config->get_float( (cfg_prefix + "left_right/right_cut_no_ll").c_str() );
+  cfg_model_ss_               = double(config->get_float_or_default(CFG_PREFIX "/cg/model_sampling_radius", 0.01f));
+  cfg_scene_ss_               = double(config->get_float_or_default(CFG_PREFIX "/cg/scene_sampling_radius", 0.03f));
+  cfg_rf_rad_                 = double(config->get_float_or_default(CFG_PREFIX "/cg/reference_frame_radius", 0.015f));
+  cfg_descr_rad_              = double(config->get_float_or_default(CFG_PREFIX "/cg/descriptor_radius", 0.02f));
+  cfg_cg_size_                = double(config->get_float_or_default(CFG_PREFIX "/cg/cluster_size", 0.01f));
+  cfg_cg_thresh_              = config->get_int_or_default(CFG_PREFIX "/cg/clustering_threshold", 5);
+  cfg_use_hough_              = config->get_bool_or_default(CFG_PREFIX "/cg/use_hough", false);
 
-  cfg_model_ss_               = double(config->get_float_or_default((cfg_prefix + "cg/model_sampling_radius").c_str(), 0.01f));
-  cfg_scene_ss_               = double(config->get_float_or_default((cfg_prefix + "cg/scene_sampling_radius").c_str(), 0.03f));
-  cfg_rf_rad_                 = double(config->get_float_or_default((cfg_prefix + "cg/reference_frame_radius").c_str(), 0.015f));
-  cfg_descr_rad_              = double(config->get_float_or_default((cfg_prefix + "cg/descriptor_radius").c_str(), 0.02f));
-  cfg_cg_size_                = double(config->get_float_or_default((cfg_prefix + "cg/cluster_size").c_str(), 0.01f));
-  cfg_cg_thresh_              = config->get_int_or_default((cfg_prefix + "cg/clustering_threshold").c_str(), 5);
-  cfg_use_hough_              = config->get_bool_or_default((cfg_prefix + "cg/use_hough").c_str(), false);
+  cfg_voxel_grid_leaf_size_  = config->get_float( CFG_PREFIX "/voxel_grid/leaf_size" );
 
-  cfg_voxel_grid_leaf_size_  = config->get_float( (cfg_prefix + "voxel_grid/leaf_size").c_str() );
+  cfg_bb_realsense_switch_name_ = config->get_string_or_default(CFG_PREFIX "/realsense_switch", "realsense");
+  wait_time_ = Time(double(config->get_float_or_default(CFG_PREFIX "/realsense_wait_time", 1.0f)));
 
-  cfg_bb_realsense_switch_name_ = config->get_string_or_default((cfg_prefix + "realsense_switch").c_str(), "realsense");
-  wait_time_ = Time(double(config->get_float_or_default((cfg_prefix + "realsense_wait_time").c_str(), 1.0f)));
-
-  cfg_model_path_ = config->get_string((cfg_prefix + "model_file").c_str());
+  cfg_model_path_ = config->get_string(CFG_PREFIX "/model_file");
   if (cfg_model_path_.substr(0, 1) != "/")
     cfg_model_path_ = CONFDIR "/" + cfg_model_path_;
 
-  cfg_record_model_ = config->get_bool_or_default((cfg_prefix + "record_model").c_str(), false);
+  cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
   if (cfg_record_model_) {
     FILE *tmp = nullptr;
     unsigned int count = 1;
@@ -172,10 +170,10 @@ ConveyorPoseThread::init()
 
   cloud_in_registered_ = false;
 
-  cloud_out_inter_1_ = new Cloud();
-  cloud_out_result_ = new Cloud();
-  pcl_manager->add_pointcloud(cloud_out_inter_1_name_.c_str(), cloud_out_inter_1_);
-  pcl_manager->add_pointcloud(cloud_out_result_name_.c_str(), cloud_out_result_);
+  cloud_out_raw_ = new Cloud();
+  cloud_out_trimmed_ = new Cloud();
+  pcl_manager->add_pointcloud(cloud_out_raw_name_.c_str(), cloud_out_raw_);
+  pcl_manager->add_pointcloud(cloud_out_trimmed_name_.c_str(), cloud_out_trimmed_);
 
   for (std::string ll : laserlines_names_) {
     laserlines_.push_back( blackboard->open_for_reading<fawkes::LaserLineInterface>(ll.c_str()) );
@@ -199,8 +197,8 @@ ConveyorPoseThread::init()
 void
 ConveyorPoseThread::finalize()
 {
-  pcl_manager->remove_pointcloud(cloud_out_inter_1_name_.c_str());
-  pcl_manager->remove_pointcloud(cloud_out_result_name_.c_str());
+  pcl_manager->remove_pointcloud(cloud_out_raw_name_.c_str());
+  pcl_manager->remove_pointcloud(cloud_out_trimmed_name_.c_str());
   delete visualisation_;
   blackboard->close(bb_enable_switch_);
   logger->log_info(name(), "Unloading, disabling %s",
@@ -328,7 +326,8 @@ ConveyorPoseThread::loop()
   CloudPtr cloud_front_side(new Cloud);
   cloud_front_side = cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
   
-  cloud_publish(cloud_front_side, cloud_out_inter_1_);
+  cloud_publish(cloud_in, cloud_out_raw_);
+  cloud_publish(cloud_front_side, cloud_out_trimmed_);
 
   if (cfg_record_model_) {
     int rv = pcl::io::savePCDFileASCII(cfg_model_path_, *cloud_front_side);
@@ -352,7 +351,7 @@ ConveyorPoseThread::cloud_correspondence_grouping(CloudPtr scene)
   uniform_sampling_.setRadiusSearch (cfg_scene_ss_);
   CloudPtr scene_keypoints(new Cloud());
   uniform_sampling_.filter(*scene_keypoints);
-  logger->log_info(name(), "Scene total points: %zu, Selected Keypoints: %zu", scene->size(), scene_keypoints->size());
+  logger->log_debug(name(), "Scene total points: %zu, Selected Keypoints: %zu", scene->size(), scene_keypoints->size());
 
   descr_est_.setInputCloud (scene_keypoints);
   descr_est_.setInputNormals (scene_normals);
@@ -384,7 +383,7 @@ ConveyorPoseThread::cloud_correspondence_grouping(CloudPtr scene)
       model_scene_corrs->push_back(corr);
     }
   }
-  logger->log_info(name(), "Correspondences found: %zu", model_scene_corrs->size());
+  logger->log_debug(name(), "Correspondences found: %zu", model_scene_corrs->size());
 
   //  Actual Clustering
   std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> rototranslations;
@@ -925,3 +924,70 @@ ConveyorPoseThread::need_to_wait()
   return Time() < wait_start_ + wait_time_;
 }
 
+
+void ConveyorPoseThread::config_value_erased(const char *path)
+{}
+
+void ConveyorPoseThread::config_tag_changed(const char *new_tag)
+{}
+
+void ConveyorPoseThread::config_comment_changed(const Configuration::ValueIterator *v)
+{}
+
+void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator *v) {
+  if (v->valid()) {
+    std::string path = v->path();
+    logger->log_info(name(), "Updating config value %s", v->path());
+    std::string sufx = path.substr(strlen(CFG_PREFIX));
+    std::string sub_prefix = sufx.substr(0, sufx.substr(1).find("/")+1);
+    std::string full_pfx = CFG_PREFIX + sub_prefix;
+    std::string opt = path.substr(full_pfx.length());
+
+    fawkes::MutexLocker locked { &config_mutex_ };
+
+    if (sub_prefix == "/vis_hist") {
+      if (opt == "/diff_pose")
+        cfg_pose_diff_ = v->get_float();
+      else if (opt == "/diff_angle")
+        vis_hist_angle_diff_ = v->get_float();
+    } else if (sub_prefix == "/cg") {
+      if (opt == "/model_sampling_radius")
+        cfg_model_ss_ = double(v->get_float());
+      else if (opt == "/scene_sampling_radius")
+        cfg_scene_ss_ = double(v->get_float());
+      else if (opt == "/reference_frame_radius")
+        cfg_rf_rad_ = double(v->get_float());
+      else if (opt == "/descriptor_radius")
+        cfg_descr_rad_ = double(v->get_float());
+      else if (opt == "/cluster_size")
+        cfg_cg_size_ = double(v->get_float());
+      else if (opt == "/clustering_threshold")
+        cfg_cg_thresh_ = v->get_int();
+    } else if (sub_prefix == "/gripper") {
+      if (opt == "/y_min")
+        cfg_gripper_y_min_ = v->get_float();
+      else if (opt == "/y_max")
+        cfg_gripper_y_max_ = v->get_float();
+      else if (opt == "/z_max")
+        cfg_gripper_z_max_ = v->get_float();
+      else if (opt == "/slice/y_min")
+        cfg_gripper_slice_y_min_ = v->get_float();
+      else if (opt == "/slice/y_max")
+        cfg_gripper_slice_y_max_ = v->get_float();
+    } else if (sub_prefix == "/front") {
+      if (opt == "/space")
+        cfg_front_space_ = v->get_float();
+      else if (opt == "/offset")
+        cfg_front_offset_ = v->get_float();
+    } else if (sub_prefix == "/left_right") {
+      if (opt == "/left_cut")
+        cfg_left_cut_ = v->get_float();
+      else if (opt == "/right_cut")
+        cfg_right_cut_ = v->get_float();
+      else if (opt == "/left_cut_no_ll")
+        cfg_left_cut_no_ll_ = v->get_float();
+      else if (opt == "/right_cut_no_ll")
+        cfg_right_cut_no_ll_ = v->get_float();
+    }
+  }
+}
