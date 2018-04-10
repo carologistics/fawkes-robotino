@@ -71,6 +71,8 @@ class ConveyorPoseThread
   public fawkes::TransformAspect
 {
 private:
+  friend class CorrespondenceGroupingThread;
+
   class pose : public fawkes::tf::Pose {
   public:
     using fawkes::tf::Pose::Pose;
@@ -169,17 +171,23 @@ private:
   fawkes::SwitchInterface *realsense_switch_;
   fawkes::Time wait_start_;
   fawkes::Time wait_time_;
+
+  fawkes::Mutex pose_mutex_;
+  fawkes::Mutex cloud_mutex_;
+
+  CloudPtr trimmed_scene_;
 //  fawkes::Position3DInterface * bb_tag_;
 
  /**
   * check if the pointcloud is available
   */
- bool pc_in_check();
+ bool input_cloud_available();
  void bb_pose_conditional_open();
  void bb_pose_conditional_close();
 
  void pose_add_element(pose element);
  bool pose_get_avg(pose & out);
+ CloudPtr get_scene();
 
  void if_read();
  bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
@@ -193,8 +201,6 @@ private:
  CloudPtr cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll);
  boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
  CloudPtr cloud_voxel_grid(CloudPtr in);
-
- pose cloud_correspondence_grouping(CloudPtr scene);
 
  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
 
@@ -215,14 +221,15 @@ private:
  virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v) override;
 
 protected:
-  virtual void run() { Thread::run(); }
+  virtual void run() override
+  { Thread::run(); }
 
 public:
   ConveyorPoseThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+  virtual void init() override;
+  virtual void loop() override ;
+  virtual void finalize() override;
 
 };
 

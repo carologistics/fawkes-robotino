@@ -33,7 +33,7 @@ LIBS_conveyor_pose = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
                      fawkestf fawkesblackboard fawkesinterface fawkespcl_utils fawkesrosaspect \
                      SwitchInterface Position3DInterface LaserLineInterface
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
-OBJS_conveyor_pose = conveyor_pose_plugin.o conveyor_pose_thread.o
+OBJS_conveyor_pose = conveyor_pose_plugin.o conveyor_pose_thread.o correspondence_grouping_thread.o
 
 OBJS_all = $(OBJS_conveyor_pose)
 
