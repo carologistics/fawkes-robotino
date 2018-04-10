@@ -23,6 +23,7 @@
 #include <core/plugin.h>
 
 #include "conveyor_pose_thread.h"
+#include "correspondence_grouping_thread.h"
 
 using namespace fawkes;
 
@@ -38,7 +39,9 @@ class ConveyorPosePlugin : public fawkes::Plugin
   ConveyorPosePlugin(Configuration *config)
     : Plugin(config)
   {
-    thread_list.push_back(new ConveyorPoseThread());
+    ConveyorPoseThread *cp_thread = new ConveyorPoseThread();
+    thread_list.push_back(cp_thread);
+    thread_list.push_back(new CorrespondenceGroupingThread(cp_thread));
   }
 };
 
