@@ -12,16 +12,26 @@
 
 CorrespondenceGroupingThread::CorrespondenceGroupingThread(ConveyorPoseThread *cp_thread)
   : Thread("CorrespondenceGrouping", Thread::OPMODE_CONTINUOUS),
-    main_thread_(cp_thread)
+    main_thread_(cp_thread),
+    running_(false)
 {
-  
+  // Enable finalization while blocked in loop()
+  set_prepfin_conc_loop(true);
+}
+
+
+void CorrespondenceGroupingThread::set_running(bool running)
+{
+  running_ = running;
+  if (running)
+    wait_enabled_.wake_all();
 }
 
 
 void CorrespondenceGroupingThread::loop()
 {
-  if (main_thread_->cfg_record_model_)
-    exit();
+  while (!running_)
+    wait_enabled_.wait();
 
   CloudPtr scene = main_thread_->get_scene();
   main_thread_->norm_est_.setInputCloud(scene);

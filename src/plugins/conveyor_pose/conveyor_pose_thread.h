@@ -59,6 +59,8 @@ typedef pcl::PointCloud<Point> Cloud;
 typedef typename Cloud::Ptr CloudPtr;
 typedef typename Cloud::ConstPtr CloudConstPtr;
 
+class CorrespondenceGroupingThread;
+
 class ConveyorPoseThread
 : public fawkes::Thread,
   public fawkes::BlockedTimingAspect,
@@ -104,6 +106,8 @@ private:
   pcl::UniformSampling<Point> uniform_sampling_;
   pcl::NormalEstimationOMP<Point, pcl::Normal> norm_est_;
   pcl::SHOTEstimationOMP<Point, pcl::Normal, pcl::SHOT352> descr_est_;
+
+  CorrespondenceGroupingThread *cg_thread_;
 
   fawkes::Mutex config_mutex_;
 
@@ -236,6 +240,8 @@ public:
   virtual void init() override;
   virtual void loop() override ;
   virtual void finalize() override;
+
+  void set_cg_thread(CorrespondenceGroupingThread *cg_thread);
 
 };
 
