@@ -19,8 +19,6 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include "conveyor_pose_thread.h"
-
 #include <pcl/common/transforms.h>
 #include <pcl/common/distances.h>
 #include <pcl/io/pcd_io.h>
@@ -36,6 +34,9 @@
 
 #include <cmath>
 
+#include "conveyor_pose_thread.h"
+#include "correspondence_grouping_thread.h"
+
 using namespace fawkes;
 
 /** @class ConveyorPoseThread "conveyor_pose_thread.cpp"
@@ -44,18 +45,16 @@ using namespace fawkes;
  */
 
 /** Constructor. */
-ConveyorPoseThread::ConveyorPoseThread() :
-		Thread("ConveyorPoseThread", Thread::OPMODE_WAITFORWAKEUP),
-		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS),
-                ConfigurationChangeHandler(CFG_PREFIX),
-		fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose"),
-                cloud_out_raw_name_("raw"),
-                cloud_out_trimmed_name_("trimmed"),
-                realsense_switch_(nullptr)
-{
-  // Lock config mutex until init() it done
-  config_mutex_.lock();
-}
+ConveyorPoseThread::ConveyorPoseThread()
+  : Thread("ConveyorPoseThread", Thread::OPMODE_WAITFORWAKEUP)
+  , BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS)
+  , ConfigurationChangeHandler(CFG_PREFIX)
+  , fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose")
+  , cloud_out_raw_name_("raw")
+  , cloud_out_trimmed_name_("trimmed")
+  , cg_thread_(nullptr)
+  , realsense_switch_(nullptr)
+{}
 
 void
 ConveyorPoseThread::init()
@@ -190,8 +189,6 @@ ConveyorPoseThread::init()
   realsense_switch_ = blackboard->open_for_reading<SwitchInterface>(cfg_bb_realsense_switch_name_.c_str());
 
   visualisation_ = new Visualisation(rosnode);
-
-  config_mutex_.unlock();
 }
 
 
@@ -265,15 +262,9 @@ ConveyorPoseThread::loop()
     if ( cfg_pose_close_if_no_new_pointclouds_ ) {
       bb_pose_conditional_close();
     }
-
-    // We're disabled, so block the ConveyorVisionThread
-    cloud_mutex_.lock();
-
+    cg_thread_->set_running(false);
     return;
   }
-
-  cloud_mutex_.try_lock();
-  cloud_mutex_.unlock();
 
   if (need_to_wait()) {
     logger->log_debug(name(),
@@ -337,6 +328,9 @@ ConveyorPoseThread::loop()
         logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_model_path_.c_str());
     }
   }
+
+  if (!cfg_record_model_ && bb_enable_switch_->is_enabled())
+    cg_thread_->set_running(true);
 }
 
 
@@ -801,6 +795,10 @@ ConveyorPoseThread::need_to_wait()
 {
   return Time() < wait_start_ + wait_time_;
 }
+
+void
+ConveyorPoseThread::set_cg_thread(CorrespondenceGroupingThread *cg_thread)
+{ cg_thread_ = cg_thread; }
 
 
 void ConveyorPoseThread::config_value_erased(const char *path)
