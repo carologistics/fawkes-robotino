@@ -231,7 +231,6 @@ void
 ConveyorPoseThread::loop()
 {
   if_read();
-  //logger->log_debug(name(),"CONVEYOR-POSE 1: Interface read");
   realsense_switch_->read();
 
   if (bb_enable_switch_->is_enabled()) {
@@ -257,7 +256,7 @@ ConveyorPoseThread::loop()
       new SwitchInterface::DisableSwitchMessage());
   }
 
-  if ( ! input_cloud_available() || ! bb_enable_switch_->is_enabled() ) {
+  if ( ! update_input_cloud() || ! bb_enable_switch_->is_enabled() ) {
     if ( enable_pose_ ) {
       vis_hist_ = -1;
       pose trash { false };
@@ -307,7 +306,6 @@ ConveyorPoseThread::loop()
     }
   }
 
-// logger->log_debug(name(),"CONVEYOR-POSE 4: checked average");
   fawkes::LaserLineInterface * ll = NULL;
   bool use_laserline = laserline_get_best_fit( ll );
 
@@ -315,25 +313,19 @@ ConveyorPoseThread::loop()
   if (cfg_record_model_ && !use_laserline)
     return;
 
-// logger->log_debug(name(),"CONVEYOR-POSE 5: got laserline");
-  
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
   size_t in_size = cloud_in->points.size();
- // logger->log_debug(name(), "Size before voxel grid: %u", in_size);
   CloudPtr cloud_vg = cloud_voxel_grid(cloud_in);
   size_t out_size = cloud_vg->points.size();
- // logger->log_debug(name(), "Size of voxel grid: %u", out_size);
   if (in_size == out_size) {
     logger->log_error(name(), "Voxel Grid failed, skipping loop!");
     return;
   }
   CloudPtr cloud_gripper = cloud_remove_gripper(cloud_vg);
   CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_gripper, ll, use_laserline);
- // logger->log_debug(name(),"CONVEYOR-POSE 6: intially filtered pointcloud");
 
-  {
-    MutexLocker locked(&cloud_mutex_);
+  { MutexLocker locked(&cloud_mutex_);
     trimmed_scene_ = cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
 
     cloud_publish(cloud_in, cloud_out_raw_);
@@ -356,7 +348,7 @@ CloudPtr ConveyorPoseThread::get_scene()
 
 
 bool
-ConveyorPoseThread::input_cloud_available()
+ConveyorPoseThread::update_input_cloud()
 {
   if (pcl_manager->exists_pointcloud(cloud_in_name_.c_str())) {                // does the pc exists
     if ( ! cloud_in_registered_) {                                             // do I already have this pc
@@ -386,7 +378,7 @@ ConveyorPoseThread::if_read()
 
   bool rv = bb_enable_switch_->is_enabled();
   while ( ! bb_enable_switch_->msgq_empty() ) {
-    logger->log_info(name(),"RECIEVED SWITCH MESSAGE");
+    logger->log_info(name(),"RECEIVED SWITCH MESSAGE");
     if (bb_enable_switch_->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
       rv = false;
     } else if (bb_enable_switch_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {

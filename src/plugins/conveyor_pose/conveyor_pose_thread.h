@@ -181,7 +181,7 @@ private:
  /**
   * check if the pointcloud is available
   */
- bool input_cloud_available();
+ bool update_input_cloud();
  void bb_pose_conditional_open();
  void bb_pose_conditional_close();
 
@@ -206,7 +206,13 @@ private:
 
  void tf_send_from_pose_if(pose pose);
  void pose_write(pose pose);
- Eigen::Quaternion<float> averageQuaternion(Eigen::Vector4f &cumulative, Eigen::Quaternion<float> newRotation, Eigen::Quaternion<float> firstRotation, float addDet);
+
+ Eigen::Quaternion<float> averageQuaternion(
+     Eigen::Vector4f &cumulative,
+     Eigen::Quaternion<float> newRotation,
+     Eigen::Quaternion<float> firstRotation,
+     float addDet);
+
  Eigen::Quaternion<float> normalizeQuaternion(float x, float y, float z, float w);
  Eigen::Quaternion<float> inverseSignQuaternion(Eigen::Quaternion<float> q);
  bool areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quaternion<float> q2);
