@@ -107,3 +107,50 @@ webview:
     # Typically this is provided by mailcap in /etc/mime.types.
     mime-file: /etc/mime.types
 
+  # For the given URLs, a handler will be configured that captures
+  # requests if no other handler is registered, i.e., the actual
+  # plugin handling these requests has not been loaded.
+  # If this is not a user-facing page, but rather an endpoint ingested
+  # by some program, this may provide better feedback.
+  # For user pages, with the appropriate catchall above, we always
+  # serve the UI and it will do something useful.
+  explicit-404:
+    - /metrics
+    - /xmlrpc
+
+  # Backend configuration to be send to the frontend.
+  # Enables to monitor multiple robots from one frontend.
+  # The following is an example configuration.
+  backends:
+    # The following origin config is automatically created by the
+    # fronted. It should generally NOT be enabled and only serves as a
+    # reference.
+    #
+    # origin:
+    #   name: Local
+    #   url: $ORIGIN
+    #   services:
+    #     api: $ORIGIN/api
+    #     prometheus: $SCHEME://$HOSTNAME:9090
+
+    robot1:
+      name: Robotino 1
+      url: https://robotino-1.lan.carologistics.org
+      services:
+        api: https://robotino-1.lan.carologistics.org/api
+        prometheus: https://prometheus-1.lan.carologistics.org
+
+    robot2:
+      name: Robotino 2
+      url: https://robotino-2.lan.carologistics.org
+      services:
+        api: https://robotino-2.lan.carologistics.org/api
+        prometheus: https://prometheus-2.lan.carologistics.org
+
+    robot3:
+      name: Robotino 3
+      url: https://robotino-3.lan.carologistics.org
+      services:
+        api: https://robotino-3.lan.carologistics.org/api
+        prometheus: https://prometheus-3.lan.carologistics.org
+
