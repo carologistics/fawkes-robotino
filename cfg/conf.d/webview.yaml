@@ -154,3 +154,36 @@ webview:
         api: https://robotino-3.lan.carologistics.org/api
         prometheus: https://prometheus-3.lan.carologistics.org
 
+  dashboard:
+    charts:
+      1-cpu:
+        name: CPU
+        query: avg without (cpu)(irate(node_cpu{job="node",instance="localhost:9100",mode!="idle"}[5m]))
+        legend_format: ((mode))
+        y_tick_format: ".0%"
+        y_min: 0.0
+        y_max: 1.0
+      2-mem:
+        name: Memory
+        query: namedprocess_namegroup_memory_bytes{memtype="resident"}
+        legend_format: ((groupname))
+        y_tick_format: bytes
+      3-threads_cpu:
+        name: Per Thread CPU
+        query: sum by (threadname)(irate(namedprocess_namegroup_thread_cpu_seconds_total{groupname="fawkes",instance="localhost:9256",job="proc"}[5m]))
+        legend_format: ((threadname))
+        y_tick_format: ".1%"
+      4-network:
+        name: Network Traffic
+        queries:
+          - irate(node_network_receive_bytes{device="enp0s25"}[1m])
+          - irate(node_network_transmit_bytes{device="enp0s25"}[1m])
+        legend_formats:
+          - ((device)) read
+          - ((device)) write
+        y_tick_format: bytes/s
+      5-mongodb-ops:
+        name: MongoDB Operations
+        query: rate(mongodb_op_counters_total{}[1m])
+        legend_format: ((type))
+        remove_all_zero: false
