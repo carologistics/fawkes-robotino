@@ -35,7 +35,7 @@
 #include <cmath>
 #include <cstdio>
 
-#include "conveyor_pose_thread.h"
+//#include "conveyor_pose_thread.h"
 #include "correspondence_grouping_thread.h"
 
 using namespace fawkes;
@@ -108,18 +108,18 @@ ConveyorPoseThread::init()
     cfg_model_path_ = CONFDIR "/" + cfg_model_path_;
 
   //------------------------------------------- Begin
-  cfg_model_paths.insert(std::make_pair("base_m", config-> get_string(CFG_PREFIX "/model_files/base_station_m").c_str()));
-  cfg_model_paths.insert(std::make_pair("base_c", config-> get_string(CFG_PREFIX  "/model_files/base_station_c").c_str()));
-  cfg_model_paths.insert(std::make_pair("ring_m1", config-> get_string(CFG_PREFIX  "/model_files/base_station_m_1").c_str()));
-  cfg_model_paths.insert(std::make_pair("ring_m2", config-> get_string(CFG_PREFIX  "/model_files/base_station_m_2").c_str()));
-  cfg_model_paths.insert(std::make_pair("ring_c1", config-> get_string(CFG_PREFIX  "/model_files/base_station_c_1").c_str()));
-  cfg_model_paths.insert(std::make_pair("ring_c2", config-> get_string(CFG_PREFIX  "/model_files/base_station_c_2").c_str()));
-  cfg_model_paths.insert(std::make_pair("cap_m1", config-> get_string(CFG_PREFIX  "/model_files/base_station_m_1").c_str()));
-  cfg_model_paths.insert(std::make_pair("cap_m2", config-> get_string(CFG_PREFIX  "/model_files/base_station_m_2").c_str()));
-  cfg_model_paths.insert(std::make_pair("cap_c1", config-> get_string(CFG_PREFIX  "/model_files/base_station_c_1").c_str()));
-  cfg_model_paths.insert(std::make_pair("cap_c2", config-> get_string(CFG_PREFIX  "/model_files/base_station_c_2").c_str()));
-  cfg_model_paths.insert(std::make_pair("del_m", config-> get_string(CFG_PREFIX  "/model_files/base_station_m").c_str()));
-  cfg_model_paths.insert(std::make_pair("del_c", config-> get_string(CFG_PREFIX "/model_files/base_station_c").c_str()));
+  cfg_model_paths.insert(std::make_pair("M_BS", config-> get_string(CFG_PREFIX "/model_files/base_station_m").c_str()));
+  cfg_model_paths.insert(std::make_pair("C_BS", config-> get_string(CFG_PREFIX  "/model_files/base_station_c").c_str()));
+  cfg_model_paths.insert(std::make_pair("M_RS1", config-> get_string(CFG_PREFIX  "/model_files/base_station_m_1").c_str()));
+  cfg_model_paths.insert(std::make_pair("M_RS2", config-> get_string(CFG_PREFIX  "/model_files/base_station_m_2").c_str()));
+  cfg_model_paths.insert(std::make_pair("C_RS1", config-> get_string(CFG_PREFIX  "/model_files/base_station_c_1").c_str()));
+  cfg_model_paths.insert(std::make_pair("C_RS2", config-> get_string(CFG_PREFIX  "/model_files/base_station_c_2").c_str()));
+  cfg_model_paths.insert(std::make_pair("M_CS1", config-> get_string(CFG_PREFIX  "/model_files/base_station_m_1").c_str()));
+  cfg_model_paths.insert(std::make_pair("M_CS2", config-> get_string(CFG_PREFIX  "/model_files/base_station_m_2").c_str()));
+  cfg_model_paths.insert(std::make_pair("C_CS1", config-> get_string(CFG_PREFIX  "/model_files/base_station_c_1").c_str()));
+  cfg_model_paths.insert(std::make_pair("C_CS2", config-> get_string(CFG_PREFIX  "/model_files/base_station_c_2").c_str()));
+  cfg_model_paths.insert(std::make_pair("M_DS", config-> get_string(CFG_PREFIX  "/model_files/base_station_m").c_str()));
+  cfg_model_paths.insert(std::make_pair("C_DS", config-> get_string(CFG_PREFIX "/model_files/base_station_c").c_str()));
 
   // set not set stations to default model_path
   std::map<std::string,std::string>::iterator path_it;
@@ -128,6 +128,8 @@ ConveyorPoseThread::init()
        if( path_it->second == "default")
            path_it->second = cfg_model_path_;
   }
+
+  conv_pos_if_ = blackboard->open_for_reading<ConveyorPoseInterface>("/ApproachingStation");
 
   //------------------------------------------- End
   trimmed_scene_.reset(new Cloud());
@@ -170,6 +172,7 @@ ConveyorPoseThread::init()
 
   //Calculation for all stations
   //-----------------------------------------Begin
+
   std::map<std::string,std::string>::iterator it;
      for (it = cfg_model_paths.begin(); it != cfg_model_paths.end(); it++ )
      {
@@ -248,6 +251,7 @@ ConveyorPoseThread::finalize()
   realsense_switch_->msgq_enqueue(new SwitchInterface::DisableSwitchMessage());
   blackboard->close(realsense_switch_);
   blackboard->close(bb_pose_);
+  blackboard->close(conv_pos_if_);
 }
 
 
@@ -414,6 +418,19 @@ ConveyorPoseThread::record_model()
 }
 
 
+void
+ConveyorPoseThread::update_approaching_station()
+{
+    if (conv_pos_if_->has_writer()){
+        conv_pos_if_->read();
+        approached_station = conv_pos_if_->station();
+       logger->log_info(name(), "Approaching MPS: %s", approached_station.c_str());
+    } else{
+        logger->log_warn(name(), "No writer for ConveyorPoseInterface");
+    }
+
+
+}
 bool
 ConveyorPoseThread::update_input_cloud()
 {
