@@ -33,6 +33,7 @@
 #include <core/exceptions/system.h>
 
 #include <cmath>
+#include <cstdio>
 
 #include "conveyor_pose_thread.h"
 #include "correspondence_grouping_thread.h"
@@ -319,9 +320,27 @@ ConveyorPoseThread::loop()
     cloud_publish(trimmed_scene_, cloud_out_trimmed_);
 
     if (cfg_record_model_) {
-      int rv = pcl::io::savePCDFileASCII(cfg_model_path_, *trimmed_scene_);
+      tf::Stamped<tf::Pose> pose_cam;
+      tf_listener->transform_origin(cloud_in_->header.frame_id, "gripper", pose_cam);
+      Eigen::Matrix4f tf_to_cam = Eigen::Matrix4f::Identity();
+      btMatrix3x3 &rot = pose_cam.getBasis();
+      btVector3 &trans = pose_cam.getOrigin();
+      tf_to_cam(0,3) = float(trans.getX());
+      tf_to_cam(1,3) = float(trans.getY());
+      tf_to_cam(2,3) = float(trans.getZ());
+      tf_to_cam.block<3,3>(0,0)
+          << float(rot[0][0]), float(rot[0][1]), float(rot[0][2]),
+             float(rot[1][0]), float(rot[1][1]), float(rot[1][2]),
+             float(rot[2][0]), float(rot[2][1]), float(rot[2][2]);
+      Cloud transformed_cloud;
+      pcl::transformPointCloud(*trimmed_scene_, transformed_cloud, tf_to_cam);
+
+      // Overwrite and atomically rename model file so it can be copied at any time
+      int rv = pcl::io::savePCDFileASCII(cfg_model_path_ + "_tmp", transformed_cloud);
       if (rv)
         logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_model_path_.c_str());
+      else
+        ::rename((cfg_model_path_ + "_tmp").c_str(), cfg_model_path_.c_str());
     }
   }
 
