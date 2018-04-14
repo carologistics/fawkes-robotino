@@ -27,6 +27,21 @@ plugins/conveyor_pose:
   # Path to the PCD file containing the conveyor model.
   # Relative paths (i.e. not starting with "/") are looked up in CONFDIR (e.g. fawkes-robotino/cfg)
   model_file: "conveyor_model.pcd"
+ 
+  model_files:
+        bas_station_m: "default"
+        bas_station_c: "default"
+        rin_station_m_1: "default"
+        rin_station_m_2: "default"
+        rin_station_c_1: "default"
+        rin_station_c_2: "default"
+        cap_station_m_1: "default"
+        cap_station_m_2: "default"
+        cap_station_c_1: "default"
+        cap_station_c_2: "default"
+        del_station_c: "default"
+        del_station_m: "default"
+
 
   icp:
     conveyor_hint:
