@@ -140,6 +140,7 @@ private:
   std::atomic<double> cfg_rf_rad_;
   std::atomic<double> cfg_descr_rad_;
   std::atomic<double> cfg_cg_size_;
+  std::atomic<float> cfg_max_descr_dist_;
   std::atomic<int> cfg_cg_thresh_;
   std::atomic_bool cfg_use_hough_;
 
