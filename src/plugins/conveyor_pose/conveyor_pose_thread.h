@@ -41,6 +41,7 @@
 #include <interfaces/SwitchInterface.h>
 #include <interfaces/ConveyorPoseInterface.h>
 #include <interfaces/LaserLineInterface.h>
+#include <interfaces/ConveyorPoseInterface.h>
 
 //#include <pcl/filters/uniform_sampling.h>
 #include <pcl/features/normal_3d_omp.h>
@@ -53,6 +54,8 @@
 #include <set>
 #include <array>
 
+
+
 #define CFG_PREFIX "/plugins/conveyor_pose"
 
 typedef pcl::PointXYZ Point;
@@ -61,6 +64,11 @@ typedef typename Cloud::Ptr CloudPtr;
 typedef typename Cloud::ConstPtr CloudConstPtr;
 
 class RecognitionThread;
+
+namespace fawkes {
+    class ConveyorPoseInterface;
+    class Position3DInterface;
+}
 
 class ConveyorPoseThread
 : public fawkes::Thread,
@@ -121,11 +129,31 @@ private:
   Eigen::Matrix4f initial_tf_;
 
 
+
+  // ------------------------------------------------------ Begin
+
+
+
+  //ConveyorPoseInterface *conv_pos_interface;
+  fawkes::ConveyorPoseInterface *conv_pos_if_;
+
+  std::string approached_station;
+
+  void update_approaching_station();
+
+
+  //Path for all stations
+  std::map<std::string, std::string> cfg_model_paths;
+
+  //Reference Information for every station
   CloudPtr insert_model_;
   CloudPtr insert_model_keypoints_;
   pcl::PointCloud<pcl::Normal>::Ptr insert_model_normals_;
 
   pcl::NormalEstimationOMP<Point, pcl::PointNormal> norm_est_;
+
+  // -------------------------------------------------------- End
+
 
   RecognitionThread *cg_thread_;
 
@@ -135,8 +163,7 @@ private:
   std::string cfg_model_path_;
   std::string cfg_model_origin_frame_;
 
-  //Path for all stations
-  std::map<std::string, std::string> cfg_model_paths;
+
 
   std::atomic<float> cfg_gripper_y_min_;
   std::atomic<float> cfg_gripper_y_max_;
