@@ -66,6 +66,10 @@ conveyor_pose:
     #cluster_size: 0.01
     #clustering_threshold: 5
 
+    # Discard model/scene descriptor pairs that exceed this distance.
+    # Normalized value, so it ranges from 0 to 1. Default: 0.25
+    #max_descriptor_distance: 0.25
+
     # Use pcl::Hough3DGrouping instead of pcl::GeometricConsistencyGrouping
     #use_hough: false
 
