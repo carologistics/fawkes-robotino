@@ -19,12 +19,8 @@ public:
 
   virtual void loop() override;
 
-  void set_running(bool);
-
 private:
   ConveyorPoseThread *main_thread_;
-  fawkes::WaitCondition wait_enabled_;
-  std::atomic_bool running_;
 };
 
 #endif // CORRESPONDENCE_GROUPING_THREAD_H

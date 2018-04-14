@@ -11,28 +11,20 @@
 #include "conveyor_pose_thread.h"
 
 CorrespondenceGroupingThread::CorrespondenceGroupingThread(ConveyorPoseThread *cp_thread)
-  : Thread("CorrespondenceGrouping", Thread::OPMODE_CONTINUOUS),
-    main_thread_(cp_thread),
-    running_(false)
+  : Thread("CorrespondenceGrouping", Thread::OPMODE_WAITFORWAKEUP)
+  , main_thread_(cp_thread)
 {
   // Enable finalization while blocked in loop()
   set_prepfin_conc_loop(true);
-}
 
-
-void CorrespondenceGroupingThread::set_running(bool running)
-{
-  running_ = running;
-  if (running)
-    wait_enabled_.wake_all();
+  // This thread is expected to be slow, so the main thread might try to wake it up more
+  // than once before the loop() is done.
+  set_coalesce_wakeups(true);
 }
 
 
 void CorrespondenceGroupingThread::loop()
 {
-  while (!running_)
-    wait_enabled_.wait();
-
   CloudPtr scene = main_thread_->get_scene();
   main_thread_->norm_est_.setInputCloud(scene);
   pcl::PointCloud<pcl::Normal>::Ptr scene_normals(new pcl::PointCloud<pcl::Normal>());
@@ -158,7 +150,10 @@ void CorrespondenceGroupingThread::loop()
             double(m(1,0)), double(m(1,1)), double(m(1,2)),
             double(m(2,0)), double(m(2,1)), double(m(2,2))
     } );
-    logger->log_info(name(), "%f %f %f", rv.getOrigin().getX(), rv.getOrigin().getY(), rv.getOrigin().getZ());
+    logger->log_info(name(), "%f %f %f, max_corrs=%zu",
+                     rv.getOrigin().getX(), rv.getOrigin().getY(), rv.getOrigin().getZ(),
+                     max_corrs
+                     );
     rv.valid = true;
     main_thread_->pose_add_element(rv);
   }
