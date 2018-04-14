@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="ConveyorPoseInterface" author="Carsten Stoffels" year="2018">
+  <data>
+    <comment>
+      Storage for information about the ConveyorPose
+    </comment>
+    <field type="string" length="32" name="station">
+    	The station on which the pose has to be estimated
+    </field>
+  </data>
+</interface>
