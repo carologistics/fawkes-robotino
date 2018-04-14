@@ -121,6 +121,14 @@ ConveyorPoseThread::init()
   cfg_model_paths.insert(std::make_pair("del_m", config-> get_string(CFG_PREFIX  "/model_files/base_station_m").c_str()));
   cfg_model_paths.insert(std::make_pair("del_c", config-> get_string(CFG_PREFIX "/model_files/base_station_c").c_str()));
 
+  // set not set stations to default model_path
+  std::map<std::string,std::string>::iterator path_it;
+  for ( path_it = cfg_model_paths.begin(); path_it != cfg_model_paths.end(); path_it++ )
+  {
+       if( path_it->second == "default")
+           path_it->second = cfg_model_path_;
+  }
+
   //------------------------------------------- End
   trimmed_scene_.reset(new Cloud());
 
