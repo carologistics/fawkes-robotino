@@ -105,6 +105,7 @@ ConveyorPoseThread::init()
   cfg_cg_size_                = double(config->get_float_or_default(CFG_PREFIX "/cg/cluster_size", 0.01f));
   cfg_cg_thresh_              = config->get_int_or_default(CFG_PREFIX "/cg/clustering_threshold", 5);
   cfg_use_hough_              = config->get_bool_or_default(CFG_PREFIX "/cg/use_hough", false);
+  cfg_max_descr_dist_         = config->get_float_or_default(CFG_PREFIX "/cg/max_descriptor_distance", 0.25f);
 
   cfg_voxel_grid_leaf_size_  = config->get_float( CFG_PREFIX "/voxel_grid/leaf_size" );
 
@@ -854,6 +855,8 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         cfg_cg_size_ = double(v->get_float());
       else if (opt == "/clustering_threshold")
         cfg_cg_thresh_ = v->get_int();
+      else if (opt == "/max_descriptor_distance")
+        cfg_max_descr_dist_ = v->get_float();
     } else if (sub_prefix == "/gripper") {
       if (opt == "/y_min")
         cfg_gripper_y_min_ = v->get_float();
