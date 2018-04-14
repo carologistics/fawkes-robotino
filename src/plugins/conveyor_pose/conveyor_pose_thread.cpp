@@ -107,6 +107,21 @@ ConveyorPoseThread::init()
   if (cfg_model_path_.substr(0, 1) != "/")
     cfg_model_path_ = CONFDIR "/" + cfg_model_path_;
 
+  //------------------------------------------- Begin
+  cfg_model_paths.insert(std::make_pair("base_m", config-> get_string(CFG_PREFIX "/model_files/base_station_m").c_str()));
+  cfg_model_paths.insert(std::make_pair("base_c", config-> get_string(CFG_PREFIX  "/model_files/base_station_c").c_str()));
+  cfg_model_paths.insert(std::make_pair("ring_m1", config-> get_string(CFG_PREFIX  "/model_files/base_station_m_1").c_str()));
+  cfg_model_paths.insert(std::make_pair("ring_m2", config-> get_string(CFG_PREFIX  "/model_files/base_station_m_2").c_str()));
+  cfg_model_paths.insert(std::make_pair("ring_c1", config-> get_string(CFG_PREFIX  "/model_files/base_station_c_1").c_str()));
+  cfg_model_paths.insert(std::make_pair("ring_c2", config-> get_string(CFG_PREFIX  "/model_files/base_station_c_2").c_str()));
+  cfg_model_paths.insert(std::make_pair("cap_m1", config-> get_string(CFG_PREFIX  "/model_files/base_station_m_1").c_str()));
+  cfg_model_paths.insert(std::make_pair("cap_m2", config-> get_string(CFG_PREFIX  "/model_files/base_station_m_2").c_str()));
+  cfg_model_paths.insert(std::make_pair("cap_c1", config-> get_string(CFG_PREFIX  "/model_files/base_station_c_1").c_str()));
+  cfg_model_paths.insert(std::make_pair("cap_c2", config-> get_string(CFG_PREFIX  "/model_files/base_station_c_2").c_str()));
+  cfg_model_paths.insert(std::make_pair("del_m", config-> get_string(CFG_PREFIX  "/model_files/base_station_m").c_str()));
+  cfg_model_paths.insert(std::make_pair("del_c", config-> get_string(CFG_PREFIX "/model_files/base_station_c").c_str()));
+
+  //------------------------------------------- End
   trimmed_scene_.reset(new Cloud());
 
   cfg_model_origin_frame_ = config->get_string(CFG_PREFIX "/model_origin_frame");
@@ -142,7 +157,54 @@ ConveyorPoseThread::init()
     model_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
     norm_est_.compute(*model_with_normals_);
     pcl::copyPointCloud(*model_, *model_with_normals_);
+
   }
+
+  //Calculation for all stations
+  //-----------------------------------------Begin
+  std::map<std::string,std::string>::iterator it;
+     for (it = cfg_model_paths.begin(); it != cfg_model_paths.end(); it++ )
+     {
+
+
+         int errnum;
+         insert_model_.reset(new Cloud());
+
+         if ((errnum = pcl::io::loadPCDFile(it->second, *model_)) < 0)
+           throw fawkes::CouldNotOpenFileException(cfg_model_path_.c_str(), errnum, "Set from " CFG_PREFIX "/model_file");
+
+         uniform_sampling_.setInputCloud(insert_model_);
+         uniform_sampling_.setRadiusSearch(cfg_model_ss_);
+         insert_model_keypoints_.reset(new Cloud());
+         uniform_sampling_.filter(*insert_model_keypoints_);
+         logger->log_info(name(), "Model total points: %zu; Selected Keypoints: %zu",
+                          insert_model_->size(), insert_model_keypoints_->size());
+
+
+
+         insert_model_normals_.reset(new pcl::PointCloud<pcl::Normal>());
+         norm_est_.setKSearch(10);
+         norm_est_.setInputCloud(insert_model_);
+         norm_est_.compute(*insert_model_normals_);
+
+         //  Compute Descriptor for keypoints
+         descr_est_.setRadiusSearch(cfg_descr_rad_);
+         descr_est_.setInputCloud(insert_model_keypoints_);
+         descr_est_.setInputNormals(insert_model_normals_);
+         descr_est_.setSearchSurface(insert_model_);
+         insert_model_descriptors_.reset(new pcl::PointCloud<pcl::SHOT352>());
+         descr_est_.compute(*insert_model_descriptors_);
+
+         if (!insert_model_descriptors_->is_dense) {
+           throw fawkes::Exception("Failed to compute model descriptors");
+         }
+
+         station_to_model_.insert(std::make_pair(it->first,insert_model_));
+         station_to_model_keypoints_.insert(std::make_pair(it->first,insert_model_keypoints_));
+
+     }
+
+  //-----------------------------------------End
 
   cloud_in_registered_ = false;
 
@@ -242,6 +304,7 @@ ConveyorPoseThread::loop()
 
     cloud_publish(cloud_in, cloud_out_raw_);
     cloud_publish(trimmed_scene_, cloud_out_trimmed_);
+
 
     if (cfg_record_model_) {
       record_model();
