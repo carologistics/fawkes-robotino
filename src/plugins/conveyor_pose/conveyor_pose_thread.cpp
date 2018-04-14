@@ -262,8 +262,6 @@ ConveyorPoseThread::loop()
     if ( cfg_pose_close_if_no_new_pointclouds_ ) {
       bb_pose_conditional_close();
     }
-    cg_thread_->set_running(false);
-    return;
   }
 
   if (need_to_wait()) {
@@ -273,13 +271,11 @@ ConveyorPoseThread::loop()
       wait_time_.in_sec(), (wait_start_ + wait_time_ - Time()).in_sec() );
     return;
   }
-  //logger->log_info(name(),"CONVEYOR-POSE 2: Added Trash if no point cloud or not enabled and pose enabled");
   bb_pose_conditional_open();
 
   if (!cfg_record_model_) {
     pose pose_average { true };
     bool pose_average_availabe = pose_get_avg(pose_average);
-    //logger->log_info(name(),"CONVEYOR-POSE 3: set average");
     if (pose_average_availabe) {
       vis_hist_ = std::max(1, vis_hist_ + 1);
       pose_write(pose_average);
@@ -330,7 +326,7 @@ ConveyorPoseThread::loop()
   }
 
   if (!cfg_record_model_ && bb_enable_switch_->is_enabled())
-    cg_thread_->set_running(true);
+    cg_thread_->wakeup();
 }
 
 
