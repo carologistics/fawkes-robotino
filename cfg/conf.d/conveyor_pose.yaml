@@ -27,10 +27,6 @@ conveyor_pose:
     # the prefix used for all interfaces
     prefix: conveyor_pose
 
-    # the output point clouds
-    cloud_out_intermediate: inter
-    cloud_out_result: result
-  
     # the position 3d interface of the result
     name: pose
     # should the pose interface be closed if no new pointcloud is availabe.
@@ -100,17 +96,11 @@ conveyor_pose:
     space: 0.6
     # this should be a tf, but I did not get it work :(
     offset: 0.005
-  bottom:
-    offset: 0.06
   left_right:
     left_cut: 0.1
     right_cut: 0.1
     left_cut_no_ll: 0.1
     right_cut_no_ll: 0.1
-  cluster:
-    tolerance: 0.0015
-    size_min: 100
-    size_max: 25000
   voxel_grid:
     leaf_size: 0.001
 
