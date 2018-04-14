@@ -61,7 +61,7 @@ void CorrespondenceGroupingThread::loop()
     if (!pcl_isfinite(scene_descriptors->at(i).descriptor[0])) //skipping NaNs
       continue;
     int found_neighs = match_search.nearestKSearch(scene_descriptors->at(i), 1, neigh_indices, neigh_sqr_dists);
-    if (found_neighs == 1 && neigh_sqr_dists[0] < 0.25f) {
+    if (found_neighs == 1 && neigh_sqr_dists[0] < main_thread_->cfg_max_descr_dist_) {
       // add match only if the squared descriptor distance is less than 0.25
       // (SHOT descriptor distances are between 0 and 1 by design)
       pcl::Correspondence corr(neigh_indices[0], static_cast<int>(i), neigh_sqr_dists[0]);
