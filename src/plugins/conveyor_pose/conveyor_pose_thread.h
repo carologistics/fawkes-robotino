@@ -120,6 +120,11 @@ private:
   pcl::PointCloud<pcl::PointNormal>::Ptr scene_with_normals_;
   Eigen::Matrix4f initial_tf_;
 
+
+  CloudPtr insert_model_;
+  CloudPtr insert_model_keypoints_;
+  pcl::PointCloud<pcl::Normal>::Ptr insert_model_normals_;
+
   pcl::NormalEstimationOMP<Point, pcl::PointNormal> norm_est_;
 
   RecognitionThread *cg_thread_;
@@ -129,6 +134,9 @@ private:
   bool cfg_record_model_;
   std::string cfg_model_path_;
   std::string cfg_model_origin_frame_;
+
+  //Path for all stations
+  std::map<std::string, std::string> cfg_model_paths;
 
   std::atomic<float> cfg_gripper_y_min_;
   std::atomic<float> cfg_gripper_y_max_;
