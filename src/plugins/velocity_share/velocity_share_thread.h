@@ -63,15 +63,8 @@ private:
   virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v);
   virtual void config_value_erased(const char *path);
 
-  fawkes::Position3DInterface *pose_if_;
-  fawkes::MotorInterface *motor_if_;
   fawkes::TimeWait *time_wait_;
   float update_rate_;
-
-  // velocity scaling to increase the actual velocity reported to other robots.
-  float velocity_scale_;
-  float cur_vx_, cur_vy_, cur_vori_;
-  float last_vx_, last_vy_, last_vori_;
   bool update_needed_;
 
   // used to determine the priority between robots
