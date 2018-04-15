@@ -60,25 +60,6 @@ VelocityShareThread::init()
   motor_if_ = blackboard->open_for_reading<MotorInterface>("Robotino");
 
   now_ = ros::Time::now();
-  // try to find robot_number (this robot) in COLLECTION.
-  mongo::BSONObjBuilder q;
-  q.append("object", "robot");
-  q.append("robot_number", robot_number_);
-  QResCursor res = robot_memory->query(q.obj(), COLLECTION);
-
-  if (!res->more()) {
-    // If not available, add this robot
-    logger->log_warn(name(), "Robot %i not found in collection %s, creating a new object", robot_number_, COLLECTION);
-
-    mongo::BSONObjBuilder b;
-    b.append("object", "robot");
-    b.append("robot_number", robot_number_);
-    b.append("pose", mongo::fromjson("{x:0.0,y:0.0,ori:0.0}"));
-    b.append("vel", mongo::fromjson("{x:0.0,y:0.0,z:0.0}"));
-    b.appendNumber("timestamp", now_.toSec());
-
-    robot_memory->insert(b.obj(), COLLECTION);
-  }
 
   time_wait_ = new TimeWait(clock, (long int)(1000000 * (1. / update_rate_)));
   //  last_vel_ = new Time(clock);
@@ -310,4 +291,22 @@ void VelocityShareThread::load_config()
     logger->log_error(name() , "Can't read robot_vel_topic name. Setting default to %s",
                       vel_share_pub_topic_.c_str() );
   }
+
+  // recreate an object for this robot in robot_memory,
+  // we do not know the data structure of the previous object so simply create a new one.
+  mongo::BSONObjBuilder q;
+  q.append("object", "robot");
+  q.append("robot_number", robot_number_);
+  robot_memory->remove(q.obj(), COLLECTION);
+
+  mongo::BSONArrayBuilder path_array;
+  path_array.append(0.0);
+  path_array.append(0.0);
+
+  mongo::BSONObjBuilder b;
+  b.append("object", "robot");
+  b.append("robot_number", robot_number_);
+  b.appendArray("path", path_array.arr());
+  b.appendNumber("timestamp", now_.toSec());
+  robot_memory->insert(b.obj(), COLLECTION);
 }
