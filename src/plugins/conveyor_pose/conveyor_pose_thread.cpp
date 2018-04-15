@@ -212,6 +212,7 @@ ConveyorPoseThread::init()
 
          station_to_model_.insert(std::make_pair(it->first,insert_model_));
          station_to_model_keypoints_.insert(std::make_pair(it->first,insert_model_keypoints_));
+         station_to_model_descriptors_.insert(std::make_pair(it->first,insert_model_descriptors_));
 
      }
 
