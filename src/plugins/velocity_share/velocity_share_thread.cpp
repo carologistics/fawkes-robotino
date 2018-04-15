@@ -54,7 +54,7 @@ VelocityShareThread::init()
   config->add_change_handler(this);
   load_config();
 
-  vel_share_pub_ = rosnode->advertise<velocity_share_msgs::RobotVelInfoStamped>(vel_share_pub_topic_, 100);
+  vel_share_pub_ = rosnode->advertise<velocity_share_msgs::RobotVelInfo>(vel_share_pub_topic_, 100);
 
   now_ = ros::Time::now();
 
@@ -85,23 +85,47 @@ VelocityShareThread::loop()
   // update time
   now_ = ros::Time::now();
 
+  /// START UPDATE OF OWN PATH
+  if (update_needed_) {
+    // update current path poses
     // first, create the query for this robot
     mongo::BSONObjBuilder query;
     query.append("object", "robot");
     query.append("robot_number", robot_number_);
 
+    unsigned int num_cells = std::min(cfg_max_cell_lookahead_count_, (unsigned int) path_.poses.size());
 
+    if (num_cells > 0) {
+      // floor of num_cells / cfg_number_of_segments_ is taken
+      unsigned int cell_step = std::max(num_cells / cfg_number_of_segments_, (unsigned int) 1);
 
+      mongo::BSONArrayBuilder path_array;
+      for (size_t i = 0; i < num_cells; i += cell_step) {
 
+        // Insert x, y coordinates as tupels
+        path_array.append(path_.poses[i].pose.position.x);
+        path_array.append(path_.poses[i].pose.position.y);
+      }
 
+      // make sure that the last segment is inserted.
+      path_array.append(path_.poses[num_cells - 1].pose.position.x);
+      path_array.append(path_.poses[num_cells - 1].pose.position.y);
 
-    mongo::BSONObjBuilder update;
-    update.append("$set", obj.obj());
-    robot_memory->update(query.obj(), update.obj(), COLLECTION);
-    update_needed_ = false;
+      // add path
+      mongo::BSONObjBuilder obj;
+      obj.appendArray("path", path_array.arr());
+      obj.appendNumber("timestamp", now_.toSec());
+
+      mongo::BSONObjBuilder update;
+      update.append("$set", obj.obj());
+      robot_memory->update(query.obj(), update.obj(), COLLECTION);
+
+      update_needed_ = false;
+    }
   }
+  /// END UPDATE OF OWN PATH
 
-  //query other robot poses
+  //query other robot paths
   mongo::BSONObjBuilder q;
   q.append("object", "robot");
   QResCursor res = robot_memory->query(q.obj(), COLLECTION);
@@ -109,18 +133,40 @@ VelocityShareThread::loop()
   {
     mongo::BSONObj robot = res->next();
 
+    int this_robot_number = robot.getField("robot_number").Number();
+
     // if the found object is this robot, continue.
-    if (robot.getField("robot_number").Number() == robot_number_) {
+    if (this_robot_number == robot_number_) {
       continue;
     }
+    std::vector<mongo::BSONElement> robot_path = robot.getField("path").Array();
 
+    velocity_share_msgs::RobotVelInfo vel_info;
 
     double robotdate = robot.getField("timestamp").number();
-
     ros::Time ros_robottime(robotdate);
 
+    vel_info.robot_name = "Robotino " + std::to_string(this_robot_number);
+    vel_info.high_prio = robot_number_ < this_robot_number;
+    vel_info.path.header.stamp = ros_robottime;
+    vel_info.path.header.frame_id = "map";
+
+    for (unsigned int i = 0; i < robot_path.size(); i+=2) {
+      try
+      {
+        geometry_msgs::PoseStamped cur_pose;
+        cur_pose.pose.position.x = robot_path[i].number();
+        cur_pose.pose.position.y = robot_path[i+1].number();
+        vel_info.path.poses.push_back(cur_pose);
+      } catch (mongo::AssertionException ex)  {
+        logger->log_error(name(), "Exception at line %i: %s", __LINE__, ex.what());
+      }
+    }
+
     // TODO: only publish on change!
-    vel_share_pub_.publish(info);
+    if (vel_info.path.poses.size() > 2) {
+      vel_share_pub_.publish(vel_info);
+    }
   }
 
   time_wait_->wait();
@@ -176,6 +222,22 @@ void VelocityShareThread::load_config()
     vel_share_pub_topic_ = "/robot_velocities";
     logger->log_error(name() , "Can't read robot_vel_topic name. Setting default to %s",
                       vel_share_pub_topic_.c_str() );
+  }
+
+  try {
+    cfg_number_of_segments_ = config->get_uint(prefix + "number_of_segments");
+  } catch (Exception &e) {
+    cfg_number_of_segments_ = 2;
+    logger->log_error(name() , "number_of_segments config value is missing. Setting default to %u",
+                      cfg_number_of_segments_ );
+  }
+
+  try {
+    cfg_max_cell_lookahead_count_ = config->get_uint(prefix + "max_cell_lookahead_count");
+  } catch (Exception &e) {
+    cfg_max_cell_lookahead_count_ = 40;
+    logger->log_error(name() , "max_cell_lookahead_count config value is missing. Setting default to %u",
+                      cfg_max_cell_lookahead_count_ );
   }
 
   // recreate an object for this robot in robot_memory,
