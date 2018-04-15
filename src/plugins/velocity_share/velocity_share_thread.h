@@ -31,9 +31,9 @@
 #include <plugins/robot-memory/aspect/robot_memory_aspect.h>
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/MotorInterface.h>
-#include <geometry_msgs/Twist.h>
-#include <velocity_share_msgs/RobotVelInfoStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Path.h>
+#include <velocity_share_msgs/RobotVelInfo.h>
 #include <ros/subscriber.h>
 #include <ros/node_handle.h>
 #include <config/change_handler.h>
@@ -67,6 +67,9 @@ private:
   fawkes::TimeWait *time_wait_;
   float update_rate_;
   bool update_needed_;
+
+  unsigned int cfg_max_cell_lookahead_count_;
+  unsigned int cfg_number_of_segments_;
 
   // used to determine the priority between robots
   int robot_number_;
