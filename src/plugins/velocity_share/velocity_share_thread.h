@@ -33,6 +33,7 @@
 #include <interfaces/MotorInterface.h>
 #include <geometry_msgs/Twist.h>
 #include <velocity_share_msgs/RobotVelInfoStamped.h>
+#include <nav_msgs/Path.h>
 #include <ros/subscriber.h>
 #include <ros/node_handle.h>
 #include <config/change_handler.h>
@@ -70,13 +71,16 @@ private:
   // used to determine the priority between robots
   int robot_number_;
 
-  bool almost_equal(float a, float b);
   void load_config();
 
+  ros::Subscriber path_sub_;
+  nav_msgs::Path path_;
   ros::Time now_;
 
   std::string vel_share_pub_topic_;
   ros::Publisher vel_share_pub_;
+
+  void pathCallback(const ros::MessageEvent<const nav_msgs::Path> &path);
 };
 
 #endif

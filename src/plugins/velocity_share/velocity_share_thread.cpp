@@ -62,6 +62,8 @@ VelocityShareThread::init()
 
   update_needed_ = false;
 
+  path_sub_ = rosnode->subscribe("/move_base/GlobalPlanner/plan", 1, &VelocityShareThread::pathCallback, this);
+
   logger->log_info(name(), "Plugin initialized for robot: %i", robot_number_);
 }
 
@@ -125,16 +127,13 @@ VelocityShareThread::loop()
 }
 
 /**
- * Check for equality of two floats based on the absolute difference compared to the
- * epsilon EPS.
- * @param a first float to compare.
- * @param b second float to compare.
- * @return bool on almost equality or not
+ * Update global path published by move_base
  */
-inline bool
-VelocityShareThread::almost_equal(float a, float b)
+void
+VelocityShareThread::pathCallback(const ros::MessageEvent<nav_msgs::Path const> &path)
 {
-  return (fabs(a - b) < EPS);
+  path_ = (nav_msgs::Path) *path.getMessage();
+  update_needed_ = true;
 }
 
 void VelocityShareThread::config_value_erased(const char *path) {}
