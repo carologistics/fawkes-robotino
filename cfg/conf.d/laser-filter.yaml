@@ -24,6 +24,9 @@ plugins/laser-filter:
     active: false
     in/sick-tim55x: Laser1080Interface::Laser front
     out/filtered: Laser360Interface::Laser front 360
+    filters:
+      1-copy:
+        type: copy
 
   back-downsample:
     active: false
@@ -38,6 +41,9 @@ plugins/laser-filter:
     active: true
     in/sick-tim55x: Laser1080Interface::Laser back
     out/filtered: Laser360Interface::Laser back 360
+    filters:
+      1-copy:
+        type: copy
 
   filter-front-360:
     active: true
