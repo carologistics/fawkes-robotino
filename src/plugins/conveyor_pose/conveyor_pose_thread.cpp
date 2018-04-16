@@ -167,17 +167,19 @@ ConveyorPoseThread::init()
     model_descriptors_.reset(new pcl::PointCloud<pcl::SHOT352>());
     descr_est_.compute(*model_descriptors_);
 
-    if (!model_descriptors_->is_dense) {
+    /*if (!model_descriptors_->is_dense) {
       throw fawkes::Exception("Failed to compute model descriptors");
-    }
+    }*/
   }
 
   cloud_in_registered_ = false;
 
   cloud_out_raw_ = new Cloud();
   cloud_out_trimmed_ = new Cloud();
+  cloud_out_model_ = new Cloud();
   pcl_manager->add_pointcloud(cloud_out_raw_name_.c_str(), cloud_out_raw_);
   pcl_manager->add_pointcloud(cloud_out_trimmed_name_.c_str(), cloud_out_trimmed_);
+  pcl_manager->add_pointcloud("model", cloud_out_model_);
 
   for (std::string ll : laserlines_names_) {
     laserlines_.push_back( blackboard->open_for_reading<fawkes::LaserLineInterface>(ll.c_str()) );
@@ -343,16 +345,17 @@ ConveyorPoseThread::loop()
           << float(rot[0][0]), float(rot[0][1]), float(rot[0][2]),
              float(rot[1][0]), float(rot[1][1]), float(rot[1][2]),
              float(rot[2][0]), float(rot[2][1]), float(rot[2][2]);
-      Cloud transformed_cloud;
-      pcl::transformPointCloud(*trimmed_scene_, transformed_cloud, tf_to_cam);
+      pcl::transformPointCloud(*trimmed_scene_, *model_, tf_to_cam);
 
       // Overwrite and atomically rename model file so it can be copied at any time
-      int rv = pcl::io::savePCDFileASCII(cfg_model_path_ + "_tmp", transformed_cloud);
+      int rv = pcl::io::savePCDFileASCII(cfg_model_path_ + "_tmp", *model_);
       if (rv)
         logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_model_path_.c_str());
       else
         ::rename((cfg_model_path_ + "_tmp").c_str(), cfg_model_path_.c_str());
     }
+
+    cloud_publish(model_, cloud_out_model_);
   }
 
   if (!cfg_record_model_ && bb_enable_switch_->is_enabled())
