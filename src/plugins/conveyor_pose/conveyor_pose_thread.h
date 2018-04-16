@@ -86,14 +86,14 @@ private:
 
     bool valid;
   };
+
   Visualisation * visualisation_;
 
   // cfg values
+  std::string cfg_if_prefix_;
   std::string cloud_in_name_;
   const std::string cloud_out_raw_name_;
   const std::string cloud_out_trimmed_name_;
-  std::string cfg_bb_conveyor_pose_name_;
-  std::string cfg_bb_switch_name_;
   std::string cfg_bb_realsense_switch_name_;
   std::string conveyor_frame_id_;
   std::vector<std::string> laserlines_names_;
@@ -230,6 +230,16 @@ private:
  virtual void config_tag_changed(const char *new_tag) override;
  virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v) override;
  virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v) override;
+
+ template<typename T>
+ inline void change_val(const std::string &setting, std::atomic<T> &var, const T& val)
+ {
+   if (var != val) {
+     logger->log_info(name(), "Changing %s from %s to %s",
+                      setting.c_str(), std::to_string(var).c_str(), std::to_string(val).c_str());
+     var = val;
+   }
+ }
 
 protected:
   virtual void run() override
