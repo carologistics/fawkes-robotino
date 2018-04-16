@@ -751,7 +751,7 @@ ConveyorPoseThread::pose_publish_tf(pose pose)
 
   // publish the transform from the gripper to the conveyor
   tf::Transform transform(
-                  tf::create_quaternion_from_yaw(M_PI),
+                  tf_pose_gripper.getRotation(),
                   tf_pose_gripper.getOrigin()
                 );
   tf::StampedTransform stamped_transform(transform, tf_pose_gripper.stamp, tf_pose_gripper.frame_id, conveyor_frame_id_);
