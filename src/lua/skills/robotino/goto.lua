@@ -61,8 +61,12 @@ function target_reached()
    return navigator:is_final()
 end
 
-function can_navigate()
+function has_navigator()
    return navigator:has_writer()
+end
+
+function can_navigate(self)
+   return self.fsm.vars.x ~= nil and self.fsm.vars.y ~= nil and self.fsm.vars.ori ~= nil
 end
 
 function target_unreachable()
@@ -73,16 +77,19 @@ function target_unreachable()
 end
 
 fsm:define_states{ export_to=_M,
-  closure={check_navgraph=check_navgraph, reached_target_region=reached_target_region, },
+  closure={check_navgraph=check_navgraph, reached_target_region=reached_target_region, has_navigator=has_navigator},
   {"CHECK_INPUT",   JumpState},
+  {"WAIT_TF",       JumpState},
   {"INIT",          JumpState},
   {"MOVING",        JumpState},
   {"TIMEOUT",       JumpState},
 }
 
 fsm:add_transitions{
-  {"CHECK_INPUT", "INIT", cond=can_navigate },
-  {"CHECK_INPUT", "FAILED", cond="not can_navigate()", desc="Navigator not running" },
+  {"CHECK_INPUT", "FAILED", cond="not has_navigator()", desc="Navigator not running"},
+  {"CHECK_INPUT", "INIT", cond=can_navigate},
+  {"CHECK_INPUT", "WAIT_TF", cond=true},
+  {"WAIT_TF", "INIT", cond=can_navigate},
   {"INIT",  "FAILED",         precond=check_navgraph, desc="no navgraph"},
   {"INIT",  "FAILED",         cond="not vars.target_valid",                 desc="target invalid"},
   {"INIT",  "MOVING",         cond=true},
@@ -91,12 +98,6 @@ fsm:add_transitions{
   {"TIMEOUT", "FAILED",        cond=target_unreachable, desc="Target unreachable"},
 }
 
-function CHECK_INPUT:init()
-      local cur_pose = tf_mod.transform({x=0, y=0, ori=0}, "base_link", "map")
-      self.fsm.vars.x   = self.fsm.vars.x   or self.fsm.vars.rel_x or cur_pose.x
-      self.fsm.vars.y   = self.fsm.vars.y   or self.fsm.vars.rel_y or cur_pose.y
-      self.fsm.vars.ori = self.fsm.vars.ori or self.fsm.vars.rel_ori or cur_pose.ori
-end
 
 function INIT:init()
   self.fsm.vars.target_valid = true
@@ -127,6 +128,17 @@ function INIT:init()
   end 
 
   self.fsm.vars.region_trans = self.fsm.vars.region_trans or REGION_TRANS
+end
+
+function WAIT_TF:loop()
+   local cur_pose = tf_mod.transform({x=0, y=0, ori=0}, "base_link", "map")
+   if cur_pose == nil then
+      print_warn("Failed to transform from 'base_link' to 'map'!")
+      return
+   end
+   self.fsm.vars.x   = cur_pose.x
+   self.fsm.vars.y   = cur_pose.y
+   self.fsm.vars.ori = cur_pose.ori
 end
 
 function MOVING:init()
