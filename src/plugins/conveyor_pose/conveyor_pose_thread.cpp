@@ -432,18 +432,22 @@ ConveyorPoseThread::pose_add_element(pose element)
 {
   MutexLocker locked(&pose_mutex_);
   //add element
-  poses_.push_front(element);
+  poses_.insert(element);
 
   // if to full, remove oldest
   while (poses_.size() > cfg_pose_avg_hist_size_) {
-    poses_.pop_back();
+    poses_.erase(--poses_.end());
   }
 }
 
 bool
 ConveyorPoseThread::pose_get_avg(pose & out)
 {
-  pose median { true };
+  //if (poses_.back().valid) {
+    out = *poses_.begin();
+    return out.valid;
+  //}
+  /*pose median { true };
 
   // count invalid loops
   unsigned int invalid = 0;
@@ -529,7 +533,7 @@ ConveyorPoseThread::pose_get_avg(pose & out)
 //      out.translation.x(), out.translation.y(), out.translation.z(),
 //      roll, pitch, yaw);
 
-  return true;
+  return true;*/
 }
 
 bool
