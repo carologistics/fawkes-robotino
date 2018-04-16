@@ -1,6 +1,7 @@
 
 (defrule action-selection-select
-	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status FORMULATED)
+	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+                      (id ?id) (status FORMULATED)
                       (action-name ?action-name)
                       (param-values $?param-values))
 	(plan (id ?plan-id) (goal-id ?goal-id))
