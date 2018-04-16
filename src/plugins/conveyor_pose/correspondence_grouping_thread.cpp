@@ -42,10 +42,10 @@ void CorrespondenceGroupingThread::loop()
   pcl::PointCloud<pcl::SHOT352>::Ptr scene_descriptors (new pcl::PointCloud<pcl::SHOT352> ());
   main_thread_->descr_est_.compute (*scene_descriptors);
 
-  if (!scene_descriptors->is_dense) {
+  /*if (!scene_descriptors->is_dense) {
     logger->log_error(name(), "Failed to compute scene descriptors");
     main_thread_->pose_add_element(false);
-  }
+  }*/
 
   //  Find Model-Scene Correspondences with KdTree
   pcl::CorrespondencesPtr model_scene_corrs (new pcl::Correspondences ());
