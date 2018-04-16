@@ -55,6 +55,7 @@ void CorrespondenceGroupingThread::loop()
 
   //  For each scene keypoint descriptor, find nearest neighbor into the model
   // keypoints descriptor cloud and add it to the correspondences vector.
+  double descr_quality = 1;
   for (size_t i = 0; i < scene_descriptors->size (); ++i) {
     std::vector<int> neigh_indices(1);
     std::vector<float> neigh_sqr_dists(1);
@@ -66,6 +67,7 @@ void CorrespondenceGroupingThread::loop()
       // (SHOT descriptor distances are between 0 and 1 by design)
       pcl::Correspondence corr(neigh_indices[0], static_cast<int>(i), neigh_sqr_dists[0]);
       model_scene_corrs->push_back(corr);
+      descr_quality *= 1.0 - double(neigh_sqr_dists[0]);
     }
   }
   logger->log_debug(name(), "Correspondences found: %zu", model_scene_corrs->size());
@@ -155,6 +157,7 @@ void CorrespondenceGroupingThread::loop()
                      max_corrs
                      );
     rv.valid = true;
+    rv.quality = float(descr_quality * model_scene_corrs->size());
     main_thread_->pose_add_element(rv);
   }
 }
