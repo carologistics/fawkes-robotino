@@ -113,6 +113,7 @@ private:
 
   bool cfg_record_model_;
   std::string cfg_model_path_;
+  std::string cfg_model_origin_frame_;
 
   bool cfg_pose_close_if_no_new_pointclouds_;
 //  std::string bb_tag_name_;

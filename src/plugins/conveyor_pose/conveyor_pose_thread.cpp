@@ -117,6 +117,7 @@ ConveyorPoseThread::init()
 
   trimmed_scene_.reset(new Cloud());
 
+  cfg_model_origin_frame_ = config->get_string(CFG_PREFIX "/model_origin_frame");
   cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
   model_.reset(new Cloud());
   if (cfg_record_model_) {
@@ -325,7 +326,13 @@ ConveyorPoseThread::loop()
 
     if (cfg_record_model_) {
       tf::Stamped<tf::Pose> pose_cam;
-      tf_listener->transform_origin(cloud_in_->header.frame_id, "gripper", pose_cam);
+      if (!tf_listener->can_transform(cloud_in_->header.frame_id, cfg_model_origin_frame_,
+                                      fawkes::Time(0,0))) {
+        logger->log_error(name(), "Cannot transform from %s to %s",
+                          cloud_in_->header.frame_id.c_str(), cfg_model_origin_frame_.c_str());
+        return;
+      }
+      tf_listener->transform_origin(cloud_in_->header.frame_id, cfg_model_origin_frame_, pose_cam);
       Eigen::Matrix4f tf_to_cam = Eigen::Matrix4f::Identity();
       btMatrix3x3 &rot = pose_cam.getBasis();
       btVector3 &trans = pose_cam.getOrigin();
