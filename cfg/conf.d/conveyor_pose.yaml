@@ -27,21 +27,6 @@ plugins/conveyor_pose:
   # Path to the PCD file containing the conveyor model.
   # Relative paths (i.e. not starting with "/") are looked up in CONFDIR (e.g. fawkes-robotino/cfg)
   model_file: "conveyor_model.pcd"
- 
-  model_files:
-        bas_station_m: "default"
-        bas_station_c: "default"
-        rin_station_m_1: "default"
-        rin_station_m_2: "default"
-        rin_station_c_1: "default"
-        rin_station_c_2: "default"
-        cap_station_m_1: "default"
-        cap_station_m_2: "default"
-        cap_station_c_1: "default"
-        cap_station_c_2: "default"
-        del_station_c: "default"
-        del_station_m: "default"
-
 
   icp:
     conveyor_hint:
@@ -49,6 +34,34 @@ plugins/conveyor_pose:
       y: -0.02
       z: 0.6
     max_correspondence_dist: 0.007
+
+  # Station the current referrence model is taken from (should be of the form e.g.: C-CS1-I for input of Cap Station 1 of team cyan)
+  # Choose default for default model
+  record_station: "C-CS1-I"
+
+  model_files:
+          M-BS-I: "default"
+          M-BS-O: "default"
+          C-BS-I: "default"
+          C-BS-O: "default"
+          M-CS1-I: "default"
+          M-CS1-O: "default"
+          C-CS1-I: "default"
+          C-CS1-O: "default"
+          M-CS2-I: "default"
+          M-CS2-O: "default"
+          C-CS2-I: "default"
+          C-CS2-O: "default"
+          M-RS1-I: "default"
+          M-RS1-O: "default"
+          C-RS1-I: "default"
+          C-RS1-O: "default"
+          M-RS2-I: "default"
+          M-RS2-O: "default"
+          C-RS2-I: "default"
+          C-RS2-O: "default"
+          M-DS-I: "default"
+          C-DS-O: "default"
 
   if:
     # the prefix used for all interfaces
@@ -74,7 +87,7 @@ plugins/conveyor_pose:
       "/laser-lines/7",
       "/laser-lines/8"
     ]
-  
+
   conveyor_frame_id: conveyor_pose
   switch_default: false
   use_visualisation: false
