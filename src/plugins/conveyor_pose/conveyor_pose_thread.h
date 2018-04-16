@@ -51,6 +51,7 @@
 #include <string>
 #include <map>
 #include <atomic>
+#include <set>
 
 #define CFG_PREFIX "/plugins/conveyor_pose"
 
@@ -79,12 +80,25 @@ private:
   public:
     using fawkes::tf::Pose::Pose;
     pose() = delete;
-    pose(bool valid)
+    pose(bool valid, float quality = 0)
       : fawkes::tf::Pose()
       , valid(valid)
+      , quality(quality)
     {}
 
+    bool operator == (const pose &other) const {
+      return this->getBasis() == other.getBasis()
+          && this->getOrigin() == other.getOrigin();
+    }
+
     bool valid;
+    float quality;
+  };
+
+  struct compare_poses_by_quality {
+    bool operator () (const pose &lhs, const pose &rhs) const {
+      return lhs.quality >= rhs.quality;
+    }
   };
 
   Visualisation * visualisation_;
@@ -160,7 +174,7 @@ private:
   size_t cfg_pose_avg_hist_size_;
   size_t cfg_pose_avg_min_;
 
-  std::list<pose> poses_;
+  std::set<pose, compare_poses_by_quality> poses_;
 
   // point clouds from pcl_manager
   fawkes::RefPtr<const Cloud> cloud_in_;
