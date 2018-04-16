@@ -155,7 +155,6 @@ private:
   bool cloud_in_registered_;
   bool cfg_use_visualisation_;
   pcl::PCLHeader header_;
-  std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose_;
   int vis_hist_;
 
   size_t cfg_pose_avg_hist_size_;
@@ -167,6 +166,7 @@ private:
   fawkes::RefPtr<const Cloud> cloud_in_;
   fawkes::RefPtr<Cloud> cloud_out_raw_;
   fawkes::RefPtr<Cloud> cloud_out_trimmed_;
+  fawkes::RefPtr<Cloud> cloud_out_model_;
 
   // interfaces write
   fawkes::SwitchInterface * bb_enable_switch_;
