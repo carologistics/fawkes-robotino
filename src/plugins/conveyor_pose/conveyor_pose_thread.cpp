@@ -65,10 +65,9 @@ ConveyorPoseThread::init()
   cfg_debug_mode_ = config->get_bool( CFG_PREFIX "/debug" );
   cloud_in_name_ = config->get_string( CFG_PREFIX "/cloud_in" );
 
-  const std::string if_prefix = config->get_string( CFG_PREFIX "/if/prefix" ) + "/";
-
-  cfg_bb_conveyor_pose_name_  = if_prefix + config->get_string( CFG_PREFIX "/if/name" );
-  cfg_bb_switch_name_         = if_prefix + config->get_string( CFG_PREFIX "/if/switch" );
+  cfg_if_prefix_ = config->get_string( CFG_PREFIX "/if/prefix" );
+  if (cfg_if_prefix_.back() != '/')
+    cfg_if_prefix_.append("/");
 
   laserlines_names_       = config->get_strings( CFG_PREFIX "/if/laser_lines" );
 
@@ -119,6 +118,7 @@ ConveyorPoseThread::init()
   trimmed_scene_.reset(new Cloud());
 
   cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
+  model_.reset(new Cloud());
   if (cfg_record_model_) {
     FILE *tmp = nullptr;
     unsigned int count = 1;
@@ -130,7 +130,11 @@ ConveyorPoseThread::init()
       if (tmp) {
         exists = true;
         ::fclose(tmp);
-        new_model_path = cfg_model_path_ + std::to_string(count++);
+        if (cfg_model_path_.substr(cfg_model_path_.length() - 5) == ".pcd")
+          new_model_path = cfg_model_path_.substr(cfg_model_path_.length() - 5)
+              + std::to_string(count++) + ".pcd";
+        else
+          new_model_path = cfg_model_path_ + std::to_string(count++);
       }
     } while(exists);
     cfg_model_path_ = new_model_path;
@@ -138,7 +142,6 @@ ConveyorPoseThread::init()
   }
   else {
     int errnum;
-    model_.reset(new Cloud());
     if ((errnum = pcl::io::loadPCDFile(cfg_model_path_, *model_)) < 0)
       throw fawkes::CouldNotOpenFileException(cfg_model_path_.c_str(), errnum,
                                               "Set from " CFG_PREFIX "/model_file");
@@ -184,7 +187,7 @@ ConveyorPoseThread::init()
     bb_pose_conditional_open();
   }
 
-  bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>(cfg_bb_switch_name_.c_str());
+  bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>((cfg_if_prefix_ + "switch").c_str());
   bb_enable_switch_->set_enabled( cfg_debug_mode_ || cfg_enable_switch_); // ignore cfg_enable_switch_ and set to true if debug mode is used
   bb_enable_switch_->write();
 
@@ -213,7 +216,7 @@ ConveyorPoseThread::bb_pose_conditional_open()
 {
   if ( ! enable_pose_ ) {
     enable_pose_ = true;
-    bb_pose_ = blackboard->open_for_writing<fawkes::Position3DInterface>(cfg_bb_conveyor_pose_name_.c_str());
+    bb_pose_ = blackboard->open_for_writing<fawkes::Position3DInterface>((cfg_if_prefix_ + "/pose").c_str());
   }
 }
 
@@ -826,10 +829,10 @@ void ConveyorPoseThread::config_tag_changed(const char *new_tag)
 void ConveyorPoseThread::config_comment_changed(const Configuration::ValueIterator *v)
 {}
 
+
 void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator *v) {
   if (v->valid()) {
     std::string path = v->path();
-    logger->log_info(name(), "Updating config value %s", v->path());
     std::string sufx = path.substr(strlen(CFG_PREFIX));
     std::string sub_prefix = sufx.substr(0, sufx.substr(1).find("/")+1);
     std::string full_pfx = CFG_PREFIX + sub_prefix;
@@ -839,49 +842,51 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
 
     if (sub_prefix == "/vis_hist") {
       if (opt == "/diff_pose")
-        cfg_pose_diff_ = v->get_float();
+        change_val(opt, cfg_pose_diff_, v->get_float());
       else if (opt == "/diff_angle")
-        vis_hist_angle_diff_ = v->get_float();
+        change_val(opt, vis_hist_angle_diff_, v->get_float());
     } else if (sub_prefix == "/cg") {
       if (opt == "/model_sampling_radius")
-        cfg_model_ss_ = double(v->get_float());
+        change_val(opt, cfg_model_ss_, double(v->get_float()));
       else if (opt == "/scene_sampling_radius")
-        cfg_scene_ss_ = double(v->get_float());
+        change_val(opt, cfg_scene_ss_, double(v->get_float()));
       else if (opt == "/reference_frame_radius")
-        cfg_rf_rad_ = double(v->get_float());
+        change_val(opt, cfg_rf_rad_, double(v->get_float()));
       else if (opt == "/descriptor_radius")
-        cfg_descr_rad_ = double(v->get_float());
+        change_val(opt, cfg_descr_rad_, double(v->get_float()));
       else if (opt == "/cluster_size")
-        cfg_cg_size_ = double(v->get_float());
+        change_val(opt, cfg_cg_size_, double(v->get_float()));
       else if (opt == "/clustering_threshold")
-        cfg_cg_thresh_ = v->get_int();
+        change_val(opt, cfg_cg_thresh_, v->get_int());
       else if (opt == "/max_descriptor_distance")
-        cfg_max_descr_dist_ = v->get_float();
+        change_val(opt, cfg_max_descr_dist_, v->get_float());
     } else if (sub_prefix == "/gripper") {
       if (opt == "/y_min")
-        cfg_gripper_y_min_ = v->get_float();
+        change_val(opt, cfg_gripper_y_min_, v->get_float());
       else if (opt == "/y_max")
-        cfg_gripper_y_max_ = v->get_float();
+        change_val(opt, cfg_gripper_y_max_, v->get_float());
       else if (opt == "/z_max")
-        cfg_gripper_z_max_ = v->get_float();
+        change_val(opt, cfg_gripper_z_max_, v->get_float());
       else if (opt == "/slice/y_min")
-        cfg_gripper_slice_y_min_ = v->get_float();
+        change_val(opt, cfg_gripper_slice_y_min_, v->get_float());
       else if (opt == "/slice/y_max")
-        cfg_gripper_slice_y_max_ = v->get_float();
+        change_val(opt, cfg_gripper_slice_y_max_, v->get_float());
     } else if (sub_prefix == "/front") {
       if (opt == "/space")
-        cfg_front_space_ = v->get_float();
+        change_val(opt, cfg_front_space_, v->get_float());
       else if (opt == "/offset")
-        cfg_front_offset_ = v->get_float();
+        change_val(opt, cfg_front_offset_, v->get_float());
     } else if (sub_prefix == "/left_right") {
       if (opt == "/left_cut")
-        cfg_left_cut_ = v->get_float();
+        change_val(opt, cfg_left_cut_, v->get_float());
       else if (opt == "/right_cut")
-        cfg_right_cut_ = v->get_float();
+        change_val(opt, cfg_right_cut_, v->get_float());
       else if (opt == "/left_cut_no_ll")
-        cfg_left_cut_no_ll_ = v->get_float();
+        change_val(opt, cfg_left_cut_no_ll_, v->get_float());
       else if (opt == "/right_cut_no_ll")
-        cfg_right_cut_no_ll_ = v->get_float();
+        change_val(opt, cfg_right_cut_no_ll_, v->get_float());
     }
+    fawkes::MutexLocker locked2 { &pose_mutex_ };
+    poses_.clear();
   }
 }
