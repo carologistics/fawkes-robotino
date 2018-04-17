@@ -30,6 +30,7 @@ SUBDIRS	= clips-motor-switch \
 		laser_front_dist \
 		mps-laser-gen \
 		webtools-bridge \
+		velocity_share \
 
 include $(BUILDSYSDIR)/rules.mk
 
