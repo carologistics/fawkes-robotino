@@ -32,7 +32,8 @@ SUBDIRS	= clips-motor-switch \
 		webtools-bridge \
 		skiller_motor_state \
 		protoboard-rcll \
-		asp-planner
+		asp-planner \
+		velocity_share
 
 
 include $(BUILDSYSDIR)/rules.mk
