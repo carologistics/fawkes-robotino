@@ -32,6 +32,8 @@ fawkes/meta_plugins:
     - ros-navigator
     - gazsim-vis-localization
     - skiller
+    - m-robot-memory
+    - velocity_share
   gazsim-meta-robotino-no-ros:
     - gazsim-meta-robotino
     - amcl
