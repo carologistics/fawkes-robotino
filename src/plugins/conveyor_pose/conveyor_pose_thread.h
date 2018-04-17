@@ -140,6 +140,8 @@ private:
   std::string approached_station;
 
   void update_approaching_station();
+  void set_computing(bool computing);
+  void set_computing_station(std::string station);
 
 
   //Path for all stations
