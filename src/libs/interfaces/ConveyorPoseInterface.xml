@@ -5,8 +5,18 @@
     <comment>
       Storage for information about the ConveyorPose
     </comment>
-    <field type="string" length="32" name="station">
+    <field type="string" length="32" name="approaching_station">
     	The station on which the pose has to be estimated
     </field>
+    <field type="string" length="32" name="computing_station">
+        The station the conveyor pose plugin is calculating on
+    </field>
+    <field type="bool" name="computing"> 
+        Is true if the plugin is computing the pose on a pointcloud at the moment
+    </field> 
   </data>
+  <message name="UpdateStation">
+	<comment>Update station information in the plugin.</comment>
+    	<field type="string" length="32" name="station"> New approaching station. </field>
+  </message>
 </interface>
