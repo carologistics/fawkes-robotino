@@ -34,6 +34,7 @@ fawkes/meta_plugins:
   gazsim-meta-robotino-ros-movebase:
     - ros-cmdvel
     - ros-navigator
+    - velocity_share
   gazsim-meta-robotino-no-ros:
     - gazsim-meta-robotino
     - amcl
