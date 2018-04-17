@@ -141,6 +141,7 @@ ConveyorPoseThread::init()
   }
 
   conv_pos_if_ = blackboard->open_for_reading<ConveyorPoseInterface>("/ApproachingStation");
+
   trimmed_scene_.reset(new Cloud());
 
   cfg_model_origin_frame_ = config->get_string(CFG_PREFIX "/model_origin_frame");
@@ -335,6 +336,21 @@ ConveyorPoseThread::finalize()
 void
 ConveyorPoseThread::loop()
 {
+    // Check for Messages in ConveyorPoseInterface and update informations if needed
+    while ( !conv_pos_if_->msgq_empty() ) {
+            if (conv_pos_if_->msgq_first_is<ConveyorPoseInterface::UpdateStationMessage>() ) {
+
+                   //Update Station
+                   logger->log_info(name(), "Received UpdateStation message");
+                   ConveyorPoseInterface::UpdateStationMessage *msg = conv_pos_if_->msgq_first<ConveyorPoseInterface::UpdateStationMessage>();
+                   conv_pos_if_->set_approaching_station(msg->station());
+            }
+            else {
+                    logger->log_warn(name(), "Unknown message received");
+            }
+            conv_pos_if_->msgq_pop();
+    }
+
   if_read();
   realsense_switch_->read();
 
@@ -495,12 +511,31 @@ ConveyorPoseThread::record_model()
 }
 
 
+
+//writes computing station to ComputationInformation interface
+
+void
+ConveyorPoseThread::set_computing_station(std::string station)
+{
+    conv_pos_if_->set_computing_station(station.c_str());
+    logger->log_info(name(), "Set Station to: %s", station.c_str());
+}
+
+//sets computing flag in ComputationInformation interface
+void
+ConveyorPoseThread::set_computing(bool computing){
+
+    conv_pos_if_->set_computing(computing);
+    logger->log_info(name(), "Set Computing to: %d", computing);
+}
+
+
 void
 ConveyorPoseThread::update_approaching_station()
 {
     if (conv_pos_if_->has_writer()){
         conv_pos_if_->read();
-        approached_station = conv_pos_if_->station();
+        approached_station = conv_pos_if_->approaching_station();
        logger->log_info(name(), "Approaching MPS: %s", approached_station.c_str());
     } else{
         logger->log_warn(name(), "No writer for ConveyorPoseInterface");
