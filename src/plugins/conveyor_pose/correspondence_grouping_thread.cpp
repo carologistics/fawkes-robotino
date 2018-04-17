@@ -28,6 +28,7 @@ void RecognitionThread::init()
 }
 
 
+
 void RecognitionThread::loop()
 {
   pcl::PointCloud<pcl::PointNormal>::Ptr model_with_normals(new pcl::PointCloud<pcl::PointNormal>());
