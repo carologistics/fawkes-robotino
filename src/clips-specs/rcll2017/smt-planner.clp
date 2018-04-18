@@ -70,8 +70,8 @@
   (foreach ?ring ?rings
     (pb-add-list ?p "rings" ?ring)
   )
-  
-    
+
+
 	(printout t "Proto:" (pb-tostring ?p) crlf)
 	(return ?p)
 )
@@ -227,12 +227,12 @@
 (deffunction smt-create-orders (?team-color)
 	(bind ?rv (create$))
 	(do-for-all-facts ((?do domain-object)) (eq ?do:type order)
-		(do-for-fact ((?wm-fact wm-fact)) 
+		(do-for-fact ((?wm-fact wm-fact))
 			(and
 				(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
 				(eq ?do:name (wm-key-arg ?wm-fact:key ord))
 			)
-			(do-for-fact ((?wm-fact2 wm-fact)) 
+			(do-for-fact ((?wm-fact2 wm-fact))
 				(and
 					(wm-key-prefix ?wm-fact2:key (create$ domain fact order-complexity))
 					(eq ?do:name (wm-key-arg ?wm-fact2:key ord))
@@ -356,11 +356,11 @@
 						(bind ?to-side "")
 						(bind ?action-specific-actor "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(if (pb-has-field ?a "actor") 
+						(if (pb-has-field ?a "actor")
 							then
 							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
 						)
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -379,6 +379,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(parents-ids ?parents-ids)
 								(action-name move)
 								(param-names r from from-side to to-side)
 								(param-values ?action-specific-actor ?from ?from-side ?to ?to-side)
@@ -398,11 +399,11 @@
 						(bind ?shelf FALSE)
 						(bind ?action-specific-actor "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(if (pb-has-field ?a "actor") 
+						(if (pb-has-field ?a "actor")
 							then
 							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
 						)
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -431,6 +432,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(parents-ids ?parents-ids)
 								(action-name wp-get-shelf)
 								(param-names r cc m spot)
 								(param-values ?action-specific-actor ?wp ?mps ?shelf)
@@ -445,11 +447,11 @@
 						(bind ?side "")
 						(bind ?action-specific-actor "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(if (pb-has-field ?a "actor") 
+						(if (pb-has-field ?a "actor")
 							then
 							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
 						)
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -472,6 +474,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(parents-ids ?parents-ids)
 								(action-name wp-get)
 								(param-names r wp m side)
 								(param-values ?action-specific-actor ?wp ?mps ?side)
@@ -487,11 +490,11 @@
 						(bind ?action-specific-actor "")
 						(bind ?action-id (pb-field-value ?a "id"))
 						(bind ?machine-feature CONVEYOR)
-						(if (pb-has-field ?a "actor") 
+						(if (pb-has-field ?a "actor")
 							then
 							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
 						)
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -519,6 +522,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(parents-ids ?parents-ids)
 								(action-name wp-put)
 								(param-names r wp m)
 								(param-values ?action-specific-actor ?wp ?mps)
@@ -536,11 +540,11 @@
 						(bind ?machine-feature CONVEYOR)
 						(bind ?rs-before "")
 						(bind ?rs-after "")
-						(if (pb-has-field ?a "actor") 
+						(if (pb-has-field ?a "actor")
 							then
 							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
 						)
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -578,6 +582,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(parents-ids ?parents-ids)
 								(action-name wp-put-slide-cc)
 								(param-names r wp m rs-before rs-after)
 								(param-values ?action-specific-actor ?wp ?mps ?rs-before ?rs-after )
@@ -590,7 +595,7 @@
 					(case "wp-discard" then
 						(bind ?action-specific-actor "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(if (pb-has-field ?a "actor") 
+						(if (pb-has-field ?a "actor")
 							then
 							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
 						)
@@ -605,6 +610,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(parents-ids ?parents-ids)
 								(action-name wp-discard)
 								(param-names r cc)
 								(param-values ?action-specific-actor ?wp)
@@ -619,11 +625,11 @@
 						(bind ?m "")
 						(bind ?side "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(if (pb-has-field ?a "actor") 
+						(if (pb-has-field ?a "actor")
 							then
 							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
 						)
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -636,7 +642,7 @@
 								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "color") then
-									(bind ?goal-base-color (string-to-field (pb-field-value ?arg "value"))) 
+									(bind ?goal-base-color (string-to-field (pb-field-value ?arg "value")))
 
 								else
 									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -646,6 +652,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(parents-ids ?parents-ids)
 								(action-name prepare-bs)
 								(param-names m side bc)
 								(param-values ?mps ?side ?goal-base-color)
@@ -660,11 +667,11 @@
 						(bind ?m "")
 						(bind ?side "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(if (pb-has-field ?a "actor") 
+						(if (pb-has-field ?a "actor")
 							then
 							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
 						)
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -677,7 +684,7 @@
 								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "color") then
-									(bind ?goal-base-color (string-to-field (pb-field-value ?arg "value"))) 
+									(bind ?goal-base-color (string-to-field (pb-field-value ?arg "value")))
 
 								else
 									(if (eq (pb-field-value ?arg "key") "wp") then
@@ -692,6 +699,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(parents-ids ?parents-ids)
 								(action-name bs-dispense)
 								(param-names m side wp basecol)
 								(param-values ?mps ?side ?wp ?goal-base-color)
@@ -706,11 +714,11 @@
 						(bind ?m "")
 						(bind ?gate "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(if (pb-has-field ?a "actor") 
+						(if (pb-has-field ?a "actor")
 							then
 							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
 						)
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -726,13 +734,14 @@
 							)
 						)
 						(bind ?next-step-id (* ?action-id 100))
-						(do-for-fact ((?wm-fact wm-fact)) 
+						(do-for-fact ((?wm-fact wm-fact))
 							(and
 								(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
 								(eq ?order-id (wm-key-arg ?wm-fact:key ord))
 							)
 							(assert
 								(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+									(parents-ids ?parents-ids)
 									(action-name prepare-ds)
 									(param-names m gate)
 									(param-values ?mps (wm-key-arg ?wm-fact:key gate))
@@ -748,7 +757,7 @@
 						(bind ?base-color "")
 						(bind ?cap-color "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -781,7 +790,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						; Extract information order-gate of the corresponding order with id order-id from fact-base
 						; TODO Extract information from plan of clips-smt plugin via protobuf
-						(do-for-fact ((?wm-fact wm-fact)) 
+						(do-for-fact ((?wm-fact wm-fact))
 							(and
 								(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
 								(eq ?order-id (wm-key-arg ?wm-fact:key ord))
@@ -789,6 +798,7 @@
 
 							(assert
 								(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+									(parents-ids ?parents-ids)
 									(action-name fulfill-order-c0)
 									(param-names ord wp m g basecol capcol)
 									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color)
@@ -805,7 +815,7 @@
 						(bind ?ring1-color "")
 						(bind ?cap-color "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -847,6 +857,7 @@
 							)
 							(assert
 								(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+									(parents-ids ?parents-ids)
 									(action-name fulfill-order-c1)
 									(param-names ord wp m g basecol ring1col capcol)
 									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?ring1-color ?cap-color)
@@ -864,7 +875,7 @@
 						(bind ?ring2-color "")
 						(bind ?cap-color "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -904,13 +915,14 @@
 							)
 						)
 						(bind ?next-step-id (* ?action-id 100))
-						(do-for-fact ((?wm-fact wm-fact)) 
+						(do-for-fact ((?wm-fact wm-fact))
 							(and
 								(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
 								(eq ?order-id (wm-key-arg ?wm-fact:key ord))
 							)
 							(assert
 								(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+									(parents-ids ?parents-ids)
 									(action-name fulfill-order-c2)
 									(param-names ord wp m g basecol ring1col ring2col capcol)
 									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?ring1-color ?ring2-color ?cap-color)
@@ -929,7 +941,7 @@
 						(bind ?ring3-color "")
 						(bind ?cap-color "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -975,13 +987,14 @@
 							)
 						)
 						(bind ?next-step-id (* ?action-id 100))
-						(do-for-fact ((?wm-fact wm-fact)) 
+						(do-for-fact ((?wm-fact wm-fact))
 							(and
 								(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
 								(eq ?order-id (wm-key-arg ?wm-fact:key ord))
 							)
 							(assert
 								(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+									(parents-ids ?parents-ids)
 									(action-name fulfill-order-c3)
 									(param-names ord wp m g basecol ring1col ring2col ring3col capcol)
 									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color)
@@ -997,11 +1010,11 @@
 						(bind ?m "")
 						(bind ?operation "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(if (pb-has-field ?a "actor") 
+						(if (pb-has-field ?a "actor")
 							then
 							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
 						)
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -1023,6 +1036,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(parents-ids ?parents-ids)
 								(action-name prepare-cs)
 								(param-names m op)
 								(param-values ?mps ?operation)
@@ -1036,7 +1050,7 @@
 						(bind ?m "")
 						(bind ?cap-color "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -1058,6 +1072,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(parents-ids ?parents-ids)
 								(action-name cs-retrieve-cap)
 								(param-names m cc capcol)
 								(param-values ?mps ?wp ?cap-color)
@@ -1071,7 +1086,7 @@
 						(bind ?m "")
 						(bind ?cap-color "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -1098,6 +1113,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(parents-ids ?parents-ids)
 								(action-name cs-mount-cap)
 								(param-names m wp capcol)
 								(param-values ?mps ?wp ?cap-color)
@@ -1114,11 +1130,11 @@
 						(bind ?rs-after "")
 						(bind ?r-req "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(if (pb-has-field ?a "actor") 
+						(if (pb-has-field ?a "actor")
 							then
 							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
 						)
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -1155,6 +1171,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(parents-ids ?parents-ids)
 								(action-name prepare-rs)
 								(param-names m rc rs-before rs-after r-req)
 								(param-values ?mps ?goal-ring-color ?rs-before ?rs-after ?r-req))
@@ -1170,7 +1187,7 @@
 						(bind ?rs-after "")
 						(bind ?r-req "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -1212,6 +1229,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(parents-ids ?parents-ids)
 								(action-name rs-mount-ring1)
 								(param-names m wp col rs-before rs-after r-req)
 								(param-values ?mps ?wp ?ring-color ?rs-before ?rs-after ?r-req)
@@ -1229,7 +1247,7 @@
 						(bind ?r-req "")
 						(bind ?col1 "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -1276,6 +1294,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(parents-ids ?parents-ids)
 								(action-name rs-mount-ring2)
 								(param-names m wp col col1 rs-before rs-after r-req)
 								(param-values ?mps ?wp ?ring-color ?col1 ?rs-before ?rs-after ?r-req )
@@ -1294,7 +1313,7 @@
 						(bind ?col1 "")
 						(bind ?col2 "")
 						(bind ?action-id (pb-field-value ?a "id"))
-						(bind ?parents-ids (create$)) 
+						(bind ?parents-ids (create$))
 						(progn$ (?arg (pb-field-list ?a "parent_id"))
 							(bind ?parents-ids (append$ ?parents-ids (* ?arg 100)))
 						)
@@ -1346,6 +1365,7 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
+								(parents-ids ?parents-ids)
 								(action-name rs-mount-ring3)
 								(param-names m wp col col1 col2 rs-before rs-after r-req)
 								(param-values ?mps ?wp ?ring-color ?col1 ?col2 ?rs-before ?rs-after ?r-req)
