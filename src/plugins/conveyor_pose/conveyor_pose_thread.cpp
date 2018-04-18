@@ -97,15 +97,6 @@ ConveyorPoseThread::init()
   cfg_left_cut_no_ll_         = config->get_float( CFG_PREFIX "/left_right/left_cut_no_ll" );
   cfg_right_cut_no_ll_        = config->get_float( CFG_PREFIX "/left_right/right_cut_no_ll" );
 
-  cfg_model_ss_               = double(config->get_float_or_default(CFG_PREFIX "/cg/model_sampling_radius", 0.01f));
-  cfg_scene_ss_               = double(config->get_float_or_default(CFG_PREFIX "/cg/scene_sampling_radius", 0.03f));
-  cfg_rf_rad_                 = double(config->get_float_or_default(CFG_PREFIX "/cg/reference_frame_radius", 0.015f));
-  cfg_descr_rad_              = double(config->get_float_or_default(CFG_PREFIX "/cg/descriptor_radius", 0.02f));
-  cfg_cg_size_                = double(config->get_float_or_default(CFG_PREFIX "/cg/cluster_size", 0.01f));
-  cfg_cg_thresh_              = config->get_int_or_default(CFG_PREFIX "/cg/clustering_threshold", 5);
-  cfg_use_hough_              = config->get_bool_or_default(CFG_PREFIX "/cg/use_hough", false);
-  cfg_max_descr_dist_         = config->get_float_or_default(CFG_PREFIX "/cg/max_descriptor_distance", 0.25f);
-
   cfg_voxel_grid_leaf_size_  = config->get_float( CFG_PREFIX "/voxel_grid/leaf_size" );
 
   cfg_bb_realsense_switch_name_ = config->get_string_or_default(CFG_PREFIX "/realsense_switch", "realsense");
@@ -146,30 +137,6 @@ ConveyorPoseThread::init()
     if ((errnum = pcl::io::loadPCDFile(cfg_model_path_, *model_)) < 0)
       throw fawkes::CouldNotOpenFileException(cfg_model_path_.c_str(), errnum,
                                               "Set from " CFG_PREFIX "/model_file");
-
-    uniform_sampling_.setInputCloud(model_);
-    uniform_sampling_.setRadiusSearch(cfg_model_ss_);
-    model_keypoints_.reset(new Cloud());
-    uniform_sampling_.filter(*model_keypoints_);
-    logger->log_info(name(), "Model total points: %zu; Selected Keypoints: %zu",
-                     model_->size(), model_keypoints_->size());
-
-    model_normals_.reset(new pcl::PointCloud<pcl::Normal>());
-    norm_est_.setKSearch(10);
-    norm_est_.setInputCloud(model_);
-    norm_est_.compute(*model_normals_);
-
-    //  Compute Descriptor for keypoints
-    descr_est_.setRadiusSearch(cfg_descr_rad_);
-    descr_est_.setInputCloud(model_keypoints_);
-    descr_est_.setInputNormals(model_normals_);
-    descr_est_.setSearchSurface(model_);
-    model_descriptors_.reset(new pcl::PointCloud<pcl::SHOT352>());
-    descr_est_.compute(*model_descriptors_);
-
-    /*if (!model_descriptors_->is_dense) {
-      throw fawkes::Exception("Failed to compute model descriptors");
-    }*/
   }
 
   cloud_in_registered_ = false;
@@ -196,7 +163,7 @@ ConveyorPoseThread::init()
 
   realsense_switch_ = blackboard->open_for_reading<SwitchInterface>(cfg_bb_realsense_switch_name_.c_str());
 
-  visualisation_ = new Visualisation(rosnode);
+  //visualisation_ = new Visualisation(rosnode);
 }
 
 
@@ -205,7 +172,7 @@ ConveyorPoseThread::finalize()
 {
   pcl_manager->remove_pointcloud(cloud_out_raw_name_.c_str());
   pcl_manager->remove_pointcloud(cloud_out_trimmed_name_.c_str());
-  delete visualisation_;
+  //delete visualisation_;
   blackboard->close(bb_enable_switch_);
   logger->log_info(name(), "Unloading, disabling %s",
                    cfg_bb_realsense_switch_name_.c_str());
@@ -213,6 +180,7 @@ ConveyorPoseThread::finalize()
   blackboard->close(realsense_switch_);
   bb_pose_conditional_close();
 }
+
 
 void
 ConveyorPoseThread::bb_pose_conditional_open()
@@ -223,6 +191,7 @@ ConveyorPoseThread::bb_pose_conditional_open()
   }
 }
 
+
 void
 ConveyorPoseThread::bb_pose_conditional_close()
 {
@@ -231,6 +200,7 @@ ConveyorPoseThread::bb_pose_conditional_close()
     blackboard->close(bb_pose_);
   }
 }
+
 
 void
 ConveyorPoseThread::loop()
@@ -282,91 +252,149 @@ ConveyorPoseThread::loop()
   bb_pose_conditional_open();
 
   if (!cfg_record_model_) {
-    pose pose_average { true };
+    /*pose pose_average { true };
     bool pose_average_availabe = pose_get_avg(pose_average);
-    if (pose_average_availabe) {
+    if (pose_average_availabe) {*/
       vis_hist_ = std::max(1, vis_hist_ + 1);
-      pose_write(pose_average);
+      MutexLocker locked(&pose_mutex_);
+      pose_write(result_pose_);
 
-      pose_publish_tf(pose_average);
+      pose_publish_tf(result_pose_);
 
       //    tf_send_from_pose_if(pose_current);
-      if (cfg_use_visualisation_) {
+      /*if (cfg_use_visualisation_) {
         visualisation_->marker_draw(header_, pose_average.getOrigin(), pose_average.getRotation());
-      }
-    } else {
+      }*/
+    /*} else {
       vis_hist_ = -1;
       pose trash { false };
       pose_write(trash);
+    }*/
+  }
+
+  if (bb_enable_switch_->is_enabled()) {
+    fawkes::LaserLineInterface * ll = NULL;
+    bool use_laserline = laserline_get_best_fit( ll );
+
+    // No point in recording a model when there's no laser line
+    if (cfg_record_model_ && !use_laserline)
+      return;
+
+    CloudPtr cloud_in(new Cloud(**cloud_in_));
+
+    size_t in_size = cloud_in->points.size();
+    CloudPtr cloud_vg = cloud_voxel_grid(cloud_in);
+    size_t out_size = cloud_vg->points.size();
+    if (in_size == out_size) {
+      logger->log_error(name(), "Voxel Grid failed, skipping loop!");
+      return;
     }
-  }
+    CloudPtr cloud_gripper = cloud_remove_gripper(cloud_vg);
+    CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_gripper, ll, use_laserline);
 
-  fawkes::LaserLineInterface * ll = NULL;
-  bool use_laserline = laserline_get_best_fit( ll );
-
-  // No point in recording a model when there's no laser line
-  if (cfg_record_model_ && !use_laserline)
-    return;
-
-  CloudPtr cloud_in(new Cloud(**cloud_in_));
-
-  size_t in_size = cloud_in->points.size();
-  CloudPtr cloud_vg = cloud_voxel_grid(cloud_in);
-  size_t out_size = cloud_vg->points.size();
-  if (in_size == out_size) {
-    logger->log_error(name(), "Voxel Grid failed, skipping loop!");
-    return;
-  }
-  CloudPtr cloud_gripper = cloud_remove_gripper(cloud_vg);
-  CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_gripper, ll, use_laserline);
-
-  { MutexLocker locked(&cloud_mutex_);
     trimmed_scene_ = cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
 
     cloud_publish(cloud_in, cloud_out_raw_);
     cloud_publish(trimmed_scene_, cloud_out_trimmed_);
 
     if (cfg_record_model_) {
-      tf::Stamped<tf::Pose> pose_cam;
-      if (!tf_listener->can_transform(cloud_in_->header.frame_id, cfg_model_origin_frame_,
-                                      fawkes::Time(0,0))) {
-        logger->log_error(name(), "Cannot transform from %s to %s",
-                          cloud_in_->header.frame_id.c_str(), cfg_model_origin_frame_.c_str());
-        return;
-      }
-      tf_listener->transform_origin(cloud_in_->header.frame_id, cfg_model_origin_frame_, pose_cam);
-      Eigen::Matrix4f tf_to_cam = Eigen::Matrix4f::Identity();
-      btMatrix3x3 &rot = pose_cam.getBasis();
-      btVector3 &trans = pose_cam.getOrigin();
-      tf_to_cam(0,3) = float(trans.getX());
-      tf_to_cam(1,3) = float(trans.getY());
-      tf_to_cam(2,3) = float(trans.getZ());
-      tf_to_cam.block<3,3>(0,0)
-          << float(rot[0][0]), float(rot[0][1]), float(rot[0][2]),
-             float(rot[1][0]), float(rot[1][1]), float(rot[1][2]),
-             float(rot[2][0]), float(rot[2][1]), float(rot[2][2]);
-      pcl::transformPointCloud(*trimmed_scene_, *model_, tf_to_cam);
-
-      // Overwrite and atomically rename model file so it can be copied at any time
-      int rv = pcl::io::savePCDFileASCII(cfg_model_path_ + "_tmp", *model_);
-      if (rv)
-        logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_model_path_.c_str());
-      else
-        ::rename((cfg_model_path_ + "_tmp").c_str(), cfg_model_path_.c_str());
+      record_model();
+      cloud_publish(model_, cloud_out_model_);
     }
+    else if (use_laserline) {
+      try {
+        { MutexLocker locked(&cloud_mutex_);
 
-    cloud_publish(model_, cloud_out_model_);
+          initial_tf_ = guess_initial_tf_from_laserline(ll);
+          CloudPtr prealigned_model(new Cloud());
+          pcl::transformPointCloud(*model_, *prealigned_model, initial_tf_);
+
+          prealigned_model_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
+          norm_est_.setInputCloud(prealigned_model);
+          norm_est_.compute(*prealigned_model_with_normals_);
+          pcl::copyPointCloud(*prealigned_model, *prealigned_model_with_normals_);
+
+          norm_est_.setInputCloud(trimmed_scene_);
+          scene_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
+          norm_est_.compute(*scene_with_normals_);
+          pcl::copyPointCloud(*trimmed_scene_, *scene_with_normals_);
+        }
+        cg_thread_->wakeup();
+      } catch (std::exception &e) {
+        logger->log_error(name(), "Exception preprocessing point clouds: %s", e.what());
+      }
+    }
   }
-
-  if (!cfg_record_model_ && bb_enable_switch_->is_enabled())
-    cg_thread_->wakeup();
 }
 
 
-CloudPtr ConveyorPoseThread::get_scene()
+Eigen::Matrix4f
+ConveyorPoseThread::guess_initial_tf_from_laserline(fawkes::LaserLineInterface *line)
 {
-  MutexLocker locked(&cloud_mutex_);
-  return trimmed_scene_;
+  Eigen::Matrix4f rv(Eigen::Matrix4f::Identity());
+  tf::Stamped<tf::Pose> conveyor_hint_laser;
+
+  // Vector from end point 1 to end point 2
+  if (!tf_listener->transform_origin(line->end_point_2_frame_id(), line->end_point_1_frame_id(),
+                                     conveyor_hint_laser, Time(0,0)))
+    throw fawkes::Exception("Failed to transform from %s to %s",
+                            line->end_point_2_frame_id(), line->end_point_1_frame_id());
+
+  // Halve that to get line center
+  conveyor_hint_laser.setOrigin(conveyor_hint_laser.getOrigin() / 2);
+
+  // Add distance from line center to conveyor
+  // TODO: Make configurable
+  conveyor_hint_laser.setOrigin(conveyor_hint_laser.getOrigin() + tf::Vector3{-0.01, -0.02, 0.6});
+  conveyor_hint_laser.setRotation(
+        tf::Quaternion(tf::Vector3(0,1,0), -M_PI/2)
+        * tf::Quaternion(tf::Vector3(0,0,1), M_PI/2));
+
+  // Transform into PCL source frame
+  tf::Stamped<tf::Pose> conveyor_hint_cam;
+  tf_listener->transform_pose(header_.frame_id, conveyor_hint_laser, conveyor_hint_cam);
+
+  tf::Matrix3x3 rot = conveyor_hint_cam.getBasis();
+  tf::Vector3 trans = conveyor_hint_cam.getOrigin();
+  rv.block<3,3>(0,0)
+      << float(rot[0][0]), float(rot[0][1]), float(rot[0][2]),
+      float(rot[1][0]), float(rot[1][1]), float(rot[1][2]),
+      float(rot[2][0]), float(rot[2][1]), float(rot[2][2]);
+  rv.block<3,1>(0,3) << float(trans[0]), float(trans[1]), float(trans[2]);
+  return rv;
+}
+
+
+void
+ConveyorPoseThread::record_model()
+{
+  // Transform model
+  tf::Stamped<tf::Pose> pose_cam;
+  if (!tf_listener->can_transform(cloud_in_->header.frame_id, cfg_model_origin_frame_,
+                                  fawkes::Time(0,0))) {
+    logger->log_error(name(), "Cannot transform from %s to %s",
+                      cloud_in_->header.frame_id.c_str(), cfg_model_origin_frame_.c_str());
+    return;
+  }
+  tf_listener->transform_origin(cloud_in_->header.frame_id, cfg_model_origin_frame_, pose_cam);
+  Eigen::Matrix4f tf_to_cam = Eigen::Matrix4f::Identity();
+  btMatrix3x3 &rot = pose_cam.getBasis();
+  btVector3 &trans = pose_cam.getOrigin();
+  tf_to_cam(0,3) = float(trans.getX());
+  tf_to_cam(1,3) = float(trans.getY());
+  tf_to_cam(2,3) = float(trans.getZ());
+  tf_to_cam.block<3,3>(0,0)
+      << float(rot[0][0]), float(rot[0][1]), float(rot[0][2]),
+      float(rot[1][0]), float(rot[1][1]), float(rot[1][2]),
+      float(rot[2][0]), float(rot[2][1]), float(rot[2][2]);
+  pcl::transformPointCloud(*trimmed_scene_, *model_, tf_to_cam);
+
+  // Overwrite and atomically rename model file so it can be copied at any time
+  int rv = pcl::io::savePCDFileASCII(cfg_model_path_ + "_tmp", *model_);
+  if (rv)
+    logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_model_path_.c_str());
+  else
+    ::rename((cfg_model_path_ + "_tmp").c_str(), cfg_model_path_.c_str());
 }
 
 
@@ -392,6 +420,7 @@ ConveyorPoseThread::update_input_cloud()
     return false;
   }
 }
+
 
 void
 ConveyorPoseThread::if_read()
@@ -427,6 +456,7 @@ ConveyorPoseThread::if_read()
   }
 }
 
+
 void
 ConveyorPoseThread::pose_add_element(pose element)
 {
@@ -439,6 +469,7 @@ ConveyorPoseThread::pose_add_element(pose element)
     poses_.erase(--poses_.end());
   }
 }
+
 
 bool
 ConveyorPoseThread::pose_get_avg(pose & out)
@@ -536,6 +567,7 @@ ConveyorPoseThread::pose_get_avg(pose & out)
   return true;*/
 }
 
+
 bool
 ConveyorPoseThread::laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit)
 {
@@ -587,6 +619,7 @@ ConveyorPoseThread::laserline_get_best_fit(fawkes::LaserLineInterface * &best_fi
   return true;
 }
 
+
 Eigen::Vector3f
 ConveyorPoseThread::laserline_get_center_transformed(fawkes::LaserLineInterface * ll)
 {
@@ -604,6 +637,7 @@ ConveyorPoseThread::laserline_get_center_transformed(fawkes::LaserLineInterface 
   return out;
 }
 
+
 bool
 ConveyorPoseThread::is_inbetween(double a, double b, double val) {
   double low = std::min(a, b);
@@ -615,6 +649,7 @@ ConveyorPoseThread::is_inbetween(double a, double b, double val) {
     return false;
   }
 }
+
 
 CloudPtr
 ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
@@ -630,6 +665,7 @@ ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
 
   return out;
 }
+
 
 CloudPtr
 ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
@@ -652,6 +688,7 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
 
   return out;
 }
+
 
 CloudPtr
 ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
@@ -721,8 +758,9 @@ ConveyorPoseThread::tf_send_from_pose_if(pose pose)
   tf_publisher->send_transform(transform);
 }
 
+
 void
-ConveyorPoseThread::pose_write(pose pose)
+ConveyorPoseThread::pose_write(const tf::Pose &pose)
 {
   bb_pose_->set_translation(0, pose.getOrigin().getX());
   bb_pose_->set_translation(1, pose.getOrigin().getY());
@@ -738,8 +776,9 @@ ConveyorPoseThread::pose_write(pose pose)
   bb_pose_->write();
 }
 
+
 void
-ConveyorPoseThread::pose_publish_tf(pose pose)
+ConveyorPoseThread::pose_publish_tf(const tf::Pose &pose)
 {
   // transform data into gripper frame (this is better for later use)
   tf::Stamped<tf::Pose> tf_pose_cam, tf_pose_gripper;
@@ -757,6 +796,8 @@ ConveyorPoseThread::pose_publish_tf(pose pose)
   tf::StampedTransform stamped_transform(transform, tf_pose_gripper.stamp, tf_pose_gripper.frame_id, conveyor_frame_id_);
   tf_publisher->send_transform(stamped_transform);
 }
+
+
 void
 ConveyorPoseThread::start_waiting()
 {
@@ -830,7 +871,7 @@ ConveyorPoseThread::need_to_wait()
 }
 
 void
-ConveyorPoseThread::set_cg_thread(CorrespondenceGroupingThread *cg_thread)
+ConveyorPoseThread::set_cg_thread(RecognitionThread *cg_thread)
 { cg_thread_ = cg_thread; }
 
 
@@ -859,21 +900,6 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         change_val(opt, cfg_pose_diff_, v->get_float());
       else if (opt == "/diff_angle")
         change_val(opt, vis_hist_angle_diff_, v->get_float());
-    } else if (sub_prefix == "/cg") {
-      if (opt == "/model_sampling_radius")
-        change_val(opt, cfg_model_ss_, double(v->get_float()));
-      else if (opt == "/scene_sampling_radius")
-        change_val(opt, cfg_scene_ss_, double(v->get_float()));
-      else if (opt == "/reference_frame_radius")
-        change_val(opt, cfg_rf_rad_, double(v->get_float()));
-      else if (opt == "/descriptor_radius")
-        change_val(opt, cfg_descr_rad_, double(v->get_float()));
-      else if (opt == "/cluster_size")
-        change_val(opt, cfg_cg_size_, double(v->get_float()));
-      else if (opt == "/clustering_threshold")
-        change_val(opt, cfg_cg_thresh_, v->get_int());
-      else if (opt == "/max_descriptor_distance")
-        change_val(opt, cfg_max_descr_dist_, v->get_float());
     } else if (sub_prefix == "/gripper") {
       if (opt == "/y_min")
         change_val(opt, cfg_gripper_y_min_, v->get_float());
