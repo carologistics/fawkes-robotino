@@ -62,3 +62,16 @@ plugins/tag_vision:
   
 plugins/robot-memory:
   database: robmem6
+
+clips-executive/specs/rcll2017/parameters/rcll:
+  team-name: Carologistics
+  robot-name: R-6
+  robot-number: 6
+
+  peer-address: 127.0.0.1
+  peer-recv-port: 4416
+  peer-send-port: 4426
+  cyan-recv-port: 4456
+  magenta-recv-port: 4466
+  cyan-send-port: 4476
+  magenta-send-port: 4486
