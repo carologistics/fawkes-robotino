@@ -109,6 +109,7 @@
 
 (defglobal
   ?*COMMON-TIMEOUT-DURATION* = 20
+  ?*MPS-DOWN-TIMEOUT-DURATION* = 120
 )
 
 (defrule create-action-timeout
@@ -137,13 +138,13 @@
 	(param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
-  ?ast <- (pending-timer (plan-id ?plan-id) (action-id ?id) (timeout-time $?timeout))
+  ?pt <- (pending-timer (plan-id ?plan-id) (action-id ?id) (timeout-time $?timeout))
   (time $?now)
   (test (and (> (nth$ 1 ?now) (nth$ 1 ?timeout)) (> (nth$ 2 ?now) (nth$ 2 ?timeout))))
   =>
   (printout error "Action was too long pending: " ?action-name crlf)
   (modify ?p (status FAILED))
-  (retract ?ast)
+  (retract ?pt)
 )
 
 (defrule remove-timer
@@ -153,7 +154,24 @@
 	(param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
-  ?ast <- (pending-timer (plan-id ?plan-id) (action-id ?id) (timeout-time $?timeout))
+  ?pt <- (pending-timer (plan-id ?plan-id) (action-id ?id) (timeout-time $?timeout))
   =>
-  (retract ?ast)
+  (retract ?pt)
 )
+
+(defrule enhance-timer-on-downed-mps
+  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	(id ?id) (status PENDING)
+	(action-name ?action-name)
+	(param-values $? ?mps $?))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  
+  (wm-fact (key domain fact mps-state args? m ?mps s DOWN))
+  ?pt <- (pending-timer (plan-id ?plan-id) (action-id ?id) (timeout-time $?timeout))
+  =>
+  (printout t "Detected that " ?mps " is down while " ?action-name " is waiting for it. Enhance timeout-timer" crlf)
+  (bind ?timeout-longer (create$ (+ (nth$ 1 ?timeout) ?*MPS-DOWN-TIMEOUT-DURATION*) (nth$ 2 ?timeout)))
+  (modify ?pt (timeout-time ?timeout-longer))
+)
+
