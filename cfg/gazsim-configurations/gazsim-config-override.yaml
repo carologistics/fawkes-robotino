@@ -87,12 +87,16 @@ plugins/amcl:
   map-lasergen/origin_y: -0.5
 
 plugins/laser-filter:
-  robot-front/active: false
-  robot-back/active: false
+  front-downsample/active: false
+  front-360to360/active: false
+  filter-front-360/active: false
+  filter-front-1080/active: false
+  back-downsample/active: false
+  back-360to360/active: false
+  filter-back-360/active: false
+  filter-back-1080/active: false
   robot-merged/active: false
-  sick-downsample/active: false
   simulation/active: true
-  robot-front-1080/active: false
 
 laser-lines/input_cloud: urg-filtered
 
