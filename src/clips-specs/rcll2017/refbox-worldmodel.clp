@@ -32,7 +32,7 @@
 
 (defrule refbox-recv-GameState
   ?pf <- (protobuf-msg (type "llsf_msgs.GameState") (ptr ?p) (rcvd-from ?host ?port))
-  ?gt <- (wm-fact (key refbox game-time $?args )  (value TRUE))
+  ?gt <- (wm-fact (key refbox game-time))
   ?rp <- (wm-fact (id "/refbox/phase")  (value ?phase) )
   ?rs <- (wm-fact (id "/refbox/state")  (value ?state) )
   ?pm <- (wm-fact (id "/refbox/points/magenta"))
@@ -66,7 +66,7 @@
   (bind ?time (pb-field-value ?p "game_time"))
   (bind ?sec (pb-field-value ?time "sec"))
   (bind ?nsec (pb-field-value ?time "nsec"))
-  (assert (wm-fact (key refbox game-time args? sec ?sec nsec ?nsec ) (type BOOL) (value TRUE)) )
+  (assert (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec ?nsec)))
   (assert (wm-fact (id "/refbox/points/magenta") (type UINT) (value (pb-field-value ?p "points_magenta")) ))
   (assert (wm-fact (id "/refbox/points/cyan") (type UINT) (value (pb-field-value ?p "points_cyan")) ))
 )
