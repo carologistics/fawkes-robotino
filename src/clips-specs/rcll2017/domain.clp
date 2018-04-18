@@ -28,7 +28,6 @@
 )
 
 (defrule test-domain-set-sensed-predicates
-  (executive-init)
   (domain-loaded)
   ?p <- (domain-predicate (name mps-state) (sensed FALSE))
 =>
@@ -36,15 +35,13 @@
 )
 
 (defrule domain-wp-put-nowait
-  (executive-init)
   (domain-loaded)
 	?o <- (domain-operator (name wp-put) (wait-sensed ~FALSE))
 	=>
 	(modify ?o (wait-sensed FALSE))
 )
 
-(defrule load-initial-facts
-  (executive-init)
+(defrule domain-load-initial-facts
   (domain-loaded)
   =>
   (assert

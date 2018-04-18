@@ -23,7 +23,6 @@
 (defrule refbox-init
   "Initialization of refbox related facts."
   (executive-init)
-  (domain-loaded)
   =>
   (assert 
     (wm-fact (id "/refbox/team-color") )
