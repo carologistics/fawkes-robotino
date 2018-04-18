@@ -42,11 +42,10 @@
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/LaserLineInterface.h>
 
-#include <pcl/filters/uniform_sampling.h>
+//#include <pcl/filters/uniform_sampling.h>
 #include <pcl/features/normal_3d_omp.h>
-#include <pcl/features/shot_omp.h>
 
-#include "visualisation.hpp"
+//#include "visualisation.hpp"
 
 #include <string>
 #include <map>
@@ -60,7 +59,7 @@ typedef pcl::PointCloud<Point> Cloud;
 typedef typename Cloud::Ptr CloudPtr;
 typedef typename Cloud::ConstPtr CloudConstPtr;
 
-class CorrespondenceGroupingThread;
+class RecognitionThread;
 
 class ConveyorPoseThread
 : public fawkes::Thread,
@@ -74,7 +73,7 @@ class ConveyorPoseThread
   public fawkes::TransformAspect
 {
 private:
-  friend class CorrespondenceGroupingThread;
+  friend class RecognitionThread;
 
   class pose : public fawkes::tf::Pose {
   public:
@@ -101,7 +100,7 @@ private:
     }
   };
 
-  Visualisation * visualisation_;
+  //Visualisation * visualisation_;
 
   // cfg values
   std::string cfg_if_prefix_;
@@ -113,15 +112,16 @@ private:
   std::vector<std::string> laserlines_names_;
 
   CloudPtr model_;
-  CloudPtr model_keypoints_;
-  pcl::PointCloud<pcl::Normal>::Ptr model_normals_;
-  pcl::PointCloud<pcl::SHOT352>::Ptr model_descriptors_;
+  CloudPtr aligned_model_;
+  CloudPtr trimmed_scene_;
 
-  pcl::UniformSampling<Point> uniform_sampling_;
-  pcl::NormalEstimationOMP<Point, pcl::Normal> norm_est_;
-  pcl::SHOTEstimationOMP<Point, pcl::Normal, pcl::SHOT352> descr_est_;
+  pcl::PointCloud<pcl::PointNormal>::Ptr prealigned_model_with_normals_;
+  pcl::PointCloud<pcl::PointNormal>::Ptr scene_with_normals_;
+  Eigen::Matrix4f initial_tf_;
 
-  CorrespondenceGroupingThread *cg_thread_;
+  pcl::NormalEstimationOMP<Point, pcl::PointNormal> norm_est_;
+
+  RecognitionThread *cg_thread_;
 
   fawkes::Mutex config_mutex_;
 
@@ -150,15 +150,6 @@ private:
 
   std::atomic<float> cfg_voxel_grid_leaf_size_;
 
-  std::atomic<double> cfg_model_ss_;
-  std::atomic<double> cfg_scene_ss_;
-  std::atomic<double> cfg_rf_rad_;
-  std::atomic<double> cfg_descr_rad_;
-  std::atomic<double> cfg_cg_size_;
-  std::atomic<float> cfg_max_descr_dist_;
-  std::atomic<int> cfg_cg_thresh_;
-  std::atomic_bool cfg_use_hough_;
-
   uint cfg_allow_invalid_poses_;
 
   // state vars
@@ -175,6 +166,7 @@ private:
   size_t cfg_pose_avg_min_;
 
   std::set<pose, compare_poses_by_quality> poses_;
+  fawkes::tf::Stamped<fawkes::tf::Pose> result_pose_;
 
   // point clouds from pcl_manager
   fawkes::RefPtr<const Cloud> cloud_in_;
@@ -195,7 +187,6 @@ private:
   fawkes::Mutex pose_mutex_;
   fawkes::Mutex cloud_mutex_;
 
-  CloudPtr trimmed_scene_;
 //  fawkes::Position3DInterface * bb_tag_;
 
  /**
@@ -207,11 +198,13 @@ private:
 
  void pose_add_element(pose element);
  bool pose_get_avg(pose & out);
- CloudPtr get_scene();
 
  void if_read();
  bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
  Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface * ll);
+ fawkes::tf::Stamped<fawkes::tf::Pose> laserline_get_center(fawkes::LaserLineInterface *ll);
+
+ Eigen::Matrix4f guess_initial_tf_from_laserline(fawkes::LaserLineInterface *ll);
 
  bool is_inbetween(double a, double b, double val);
 
@@ -225,7 +218,8 @@ private:
  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
 
  void tf_send_from_pose_if(pose pose);
- void pose_write(pose pose);
+ void pose_write(const fawkes::tf::Pose &pose);
+ void record_model();
 
  Eigen::Quaternion<float> averageQuaternion(
      Eigen::Vector4f &cumulative,
@@ -237,7 +231,7 @@ private:
  Eigen::Quaternion<float> inverseSignQuaternion(Eigen::Quaternion<float> q);
  bool areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quaternion<float> q2);
 
- void pose_publish_tf(pose pose);
+ void pose_publish_tf(const fawkes::tf::Pose &pose);
  void start_waiting();
  bool need_to_wait();
 
@@ -261,13 +255,14 @@ protected:
   { Thread::run(); }
 
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   ConveyorPoseThread();
 
   virtual void init() override;
   virtual void loop() override ;
   virtual void finalize() override;
 
-  void set_cg_thread(CorrespondenceGroupingThread *cg_thread);
+  void set_cg_thread(RecognitionThread *cg_thread);
 
 };
 
