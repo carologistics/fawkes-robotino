@@ -191,8 +191,9 @@
 	(pb-set-field ?pose "ori" 0.0)
 	(pb-set-field ?m "pose" ?pose)
 
-   ; set available rings for ring-stations
+	; if machine is of type ringstation
     (if (eq ?mtype RS) then
+	   ; set available rings for ring-stations
 	  (bind ?rlist (create$))
       (do-for-all-facts ((?wm-fact wm-fact))
 		(and
@@ -204,7 +205,30 @@
 	  (foreach ?rings ?rlist
 	   (pb-add-list ?m "ring_colors" ?rings)
 	  )
+
+		; set amount of additional bases machine is loaded with
+		(bind ?filled-with (create$))
+		(do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact rs-filled-with))
+				(eq ?name (wm-key-arg ?wm-fact:key m))
+			)
+		   (pb-set-field ?m "loaded_with" (wm-key-arg ?wm-fact:key n))
+		)
     )
+
+	; if machine is of type capstation
+	(if (eq ?mtype CS) then
+		; set amount of additional bases machine is loaded with
+		(bind ?filled-with (create$))
+		(do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact cs-prepared-for))
+				(eq ?name (wm-key-arg ?wm-fact:key m))
+			)
+		   (pb-set-field ?m "cs_prepared_for" (wm-key-arg ?wm-fact:key c))
+		)
+	)
 
 	(do-for-fact ((?wp-at wm-fact))
 		(and
@@ -225,7 +249,7 @@
 		)
 		(pb-set-field ?o "delivery_period_begin" 0)
 		(pb-set-field ?o "delivery_period_end" 900)
-	
+
 		; Extract wp-base-color
 		(do-for-fact ((?wm-fact wm-fact))
 			(and
