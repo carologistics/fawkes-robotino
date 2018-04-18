@@ -33,6 +33,7 @@
   ?*SALIENCE-GOAL-SELECT* = 200
 
   ; production order priorities
+  ?*PRIORITY-ENTER-FIELD* = 200
   ?*PRIORITY-FIND-MISSING-MPS* = 110
   ?*PRIORITY-DELIVER* = 100
   ?*PRIORITY-RESET-MPS* = 98
@@ -122,7 +123,8 @@
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
-  (assert (goal (id ENTER-FIELD) (parent PRODUCTION-MAINTAIN)))
+  (assert (goal (id ENTER-FIELD) (priority ?*PRIORITY-ENTER-FIELD*)
+                                 (parent PRODUCTION-MAINTAIN)))
   ; This is just to make sure we formulate the goal only once.
   ; In an actual domain this would be more sophisticated.
   (assert (goal-already-tried ENTER-FIELD))
@@ -139,8 +141,6 @@
   (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
   (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
-  ;ToDo: remove condition and ensure by salience
-  (wm-fact (key domain fact entered-field args? r ?robot))
   =>
   (printout t "Goal " FILL-CAP " formulated" crlf)
   (assert (goal (id FILL-CAP) (priority ?*PRIORITY-PREFILL-CS*)
