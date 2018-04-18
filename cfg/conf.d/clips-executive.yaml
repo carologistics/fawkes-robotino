@@ -89,7 +89,7 @@ clips-executive:
       init: rcll2017/init.clp
       communication: ["rcll2017/refbox-comm-init.clp", "rcll2017/refbox-worldmodel.clp"]
       domain: rcll2017/domain.clp
-      goal-reasoner: rcll2017/goal-reasoner.clp
+      goal-reasoner: [ "rcll2017/goal-reasoner.clp" , "rcll2017/goal-production.clp" ]
       goal-expander: rcll2017/fixed-sequence.clp
       action-selection: rcll2017/action-selection.clp
       #macro-expansion: visit-all/action-selection.clp
