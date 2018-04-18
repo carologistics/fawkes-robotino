@@ -33,31 +33,22 @@
   ?*SALIENCE-GOAL-SELECT* = 200
 )
 
-; # Expand parent goal
-;Expanding a parent goal means it has some formulated goals
-(defrule goal-reasoner-expand-parent-goal
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
-  ?p <- (goal (id ?parent-id) (mode SELECTED))
-  ?g <- (goal (parent ?parent-id) (mode FORMULATED))
-  =>
-  (modify ?p (mode EXPANDED))
-)
 
 ; #  Goal Selection
 ; We can choose one or more goals for expansion, e.g., calling
 ; a planner to determine the required steps.
-(defrule goal-reasoner-select
+(defrule goal-reasoner-select-goal
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent ?parent) (id ?goal-id) (mode FORMULATED))
-  (not (goal (id ?parent) (type MAINTAIN)))
+  ?g <- (goal (parent nil) (id ?goal-id) (mode FORMULATED))
    =>
   (modify ?g (mode SELECTED))
   (assert (goal-meta (goal-id ?goal-id)))
 )
 
-(defrule goal-reasoner-select-maintaince-subgoal
+;Select subgoal only when parent goal is expanded
+(defrule goal-reasoner-select-subgoal
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?p <- (goal (id ?parent-id) (mode EXPANDED) (type MAINTAIN))
+  ?p <- (goal (id ?parent-id) (mode EXPANDED))
   ?g <- (goal (parent ?parent-id) (mode FORMULATED)
           (id ?subgoal-id) (priority ?priority))
   ;Select the formulated subgoal with the highest priority
@@ -74,6 +65,16 @@
   (printout t "Goal " ?subgoal-id " selected!" crlf)
   (modify ?g (mode SELECTED))
   (assert (goal-meta (goal-id ?subgoal-id)))
+)
+
+; # Expand a parent goal
+;Expanding a parent goal means it has some formulated goals
+(defrule goal-reasoner-expand-parent-goal
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  ?p <- (goal (id ?parent-id) (mode SELECTED))
+  ?g <- (goal (parent ?parent-id) (mode FORMULATED))
+  =>
+  (modify ?p (mode EXPANDED))
 )
 
 ; #  Commit to goal (we "intend" it)
@@ -124,6 +125,8 @@
     (bind ?num-tries (+ ?num-tries 1))
     (modify ?gm (num-tries ?num-tries))
   )
+
+
   (modify ?g (mode EVALUATED))
 )
 
