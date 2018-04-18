@@ -40,7 +40,7 @@ class ConveyorPosePlugin : public fawkes::Plugin
     : Plugin(config)
   {
     ConveyorPoseThread *pose_thread = new ConveyorPoseThread();
-    CorrespondenceGroupingThread *cg_thread = new CorrespondenceGroupingThread(pose_thread);
+    RecognitionThread *cg_thread = new RecognitionThread(pose_thread);
     pose_thread->set_cg_thread(cg_thread);
     thread_list.push_back(pose_thread);
     thread_list.push_back(cg_thread);
