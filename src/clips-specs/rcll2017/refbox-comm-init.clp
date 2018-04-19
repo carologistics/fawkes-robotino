@@ -113,6 +113,31 @@
     )
 )
 
+(defrule refbox-comm-enable-team-private
+  "Enable local peer connection to the encrypted team channel"
+  (executive-init)
+  (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE))
+  (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
+  (wm-fact (id "/config/rcll/peer-address") (value ?address))
+  (wm-fact (id "/config/rcll/crypto-key") (value ?key))
+  (wm-fact (id "/config/rcll/cipher") (value ?cipher))
+  (wm-fact (id "/config/rcll/cyan-port") (value ?cyan-port))
+  (wm-fact (id "/config/rcll/magenta-port") (value ?magenta-port))
+  (not (wm-fact (id "/refbox/comm/private-peer-enabled") (value TRUE) ))
+  =>
+  (if (eq ?team-color CYAN)
+    then
+      (printout t "Enabling remote peer (cyan only)" crlf)
+      (bind ?peer-id (pb-peer-create-crypto ?address ?cyan-port ?key ?cipher))
+      else
+      (printout t "Enabling remote peer (magenta only)" crlf)
+      (bind ?peer-id (pb-peer-create-crypto ?address ?magenta-port ?key ?cipher))
+    )
+  (assert (wm-fact (id "/refbox/comm/private-peer-enabled") (value TRUE) (type BOOL))
+          (wm-fact (id "/refbox/comm/peer-id/private") (value ?peer-id) (type INT))
+    )
+)
+
 (defrule refbox-comm-close-private
   "Disable the local private peer connection on finalize"
   (executive-finalize)
