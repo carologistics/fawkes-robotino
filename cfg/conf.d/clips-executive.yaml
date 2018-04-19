@@ -1,0 +1,128 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-executive
+---
+clips-executive:
+  # If true, will enable watching of facts and rules
+  clips-debug: true
+
+  # If CLIPS debugging is enabled, certain rules and facts can be excluded
+  # from watching, e.g. if they are showing up at too high frequencies or
+  # are not of interest.
+  unwatch-facts: ["time"]
+  unwatch-rules: ["time-retract", "blackboard-read"]
+
+  # Currently not working in clips-executive!
+  #
+  # If true, simulate skills (assuming they always succeed) instead of
+  # actually executing the skills. The time indicates how long it should
+  # take to declare success on skill execution. Note that this cannot
+  # simulate side effects, like a called component writing to an interface
+  #skill-sim: true
+  #skill-sim-time: 2.0
+
+  # debug level is a number of: 0 ~ none, 1 ~ minimal, 2 ~ more, 3 ~ maximum
+  debug-level: 3
+
+  # automatically pre-require redefine-warning feature? Enabling
+  # this in the plugin instead of in the initial code (init.clp) is
+  # beneficial because it already catches errors in said file.
+  request-redefine-warning-feature: true
+
+  # Automatically assert the (start) fact after successful initialization,
+  # otherwise wait until the an enable message has been received
+  # auto-start: true
+
+  # If set to true, will trigger the assertion of a (time (now)) fact in
+  # each loop. This can be used to trigger loop events in CLIPS.
+  assert-time-each-loop: true
+
+  # If set to true will force the acquisition of the skiller control.
+  # This is particularly useful to kick an SkillGUI which is holding
+  # the lock just due to an oversight.
+  steal-skiller-control: true
+
+  # Directory where to look for CLIPS files
+  clips-dirs: ["@BASEDIR@/src/clips-specs"]
+
+  # Agent name. On startup the clips-agent will try to resolve a file named
+  # <agent name>.clp. It must be in the CLIPS path directories.
+  spec: rcll2017
+
+  # Use navgraph feature which adds facts for navgraph nodes.
+  use_navgraph: true
+  use_pddl: true
+  use_protobuf: true
+  use_tf: true
+  sync_domain_facts: true
+
+  specs:
+    test:
+      domain: test-scenario/test-domain.clp
+      goal-reasoner: test-scenario/goal-reasoner.clp
+      goal-expander: test-scenario/fixed-sequence.clp
+      action-selection: test-scenario/action-selection.clp
+      #macro-expansion: test-scenario/action-selection.clp
+      action-execution: plan-exec.clp
+      execution-monitoring: test-scenario/execution-monitoring.clp
+
+      action-mapping:
+        say: say{text=?(text)s, wait=true}
+        say-hello: say{text="Hello ?(name)y", wait=true}
+        say-goodbye: say{text="Good bye", wait=true}
+    visitall:
+      domain: visit-all/visitall-domain.clp
+      goal-reasoner: visit-all/goal-reasoner.clp
+      goal-expander: visit-all/fixed-sequence.clp
+      action-selection: visit-all/action-selection.clp
+      #macro-expansion: visit-all/action-selection.clp
+      action-execution: plan-exec.clp
+      execution-monitoring: visit-all/execution-monitoring.clp
+      state-estimation: visit-all/state-estimation-init.clp
+
+      action-mapping:
+        visit: ppgoto{place=?(m)S}
+      blackboard-preload: ["Position3DInterface"]
+
+    rcll2017:
+      init: rcll2017/init.clp
+      communication: ["rcll2017/refbox-comm-init.clp", "rcll2017/refbox-worldmodel.clp"]
+      domain: rcll2017/domain.clp
+      goal-reasoner: [ "rcll2017/goal-reasoner.clp" , "rcll2017/goal-production.clp" ]
+      goal-expander: rcll2017/fixed-sequence.clp
+      action-selection: rcll2017/action-selection.clp
+      #macro-expansion: visit-all/action-selection.clp
+      action-execution: [
+        "skills-actions.clp",
+        "rcll2017/noop-actions.clp",
+        "rcll2017/refbox-actions.clp" ]
+      execution-monitoring: rcll2017/execution-monitoring.clp
+      state-estimation: rcll2017/state-estimation-init.clp
+      worldmodel: rcll2017/init-worldmodel.clp
+
+      action-mapping:
+        enter-field: drive_into_field{team=?(team-color)S}
+        move: ppgoto{place="?(to)Y-I"}
+        move-wp-put: ppgoto{place="?(to)Y-I"}
+        wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
+        wp-put: bring_product_to{place=?(m)S}
+        wp-put-slide-cc: bring_product_to{place=?(m)S, slide="TRUE"}
+        move-wp-get: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        wp-get: get_product_from{place=?(m)S, side=?(side|/INPUT/input/|/OUTPUT/output/)s}
+        wp-discard: ax12gripper{command="OPEN"}
+      blackboard-preload: ["Position3DInterface"]
+
+      parameters:
+        rcll:
+          peer-address: 127.0.0.1
+          peer-recv-port: 4444
+          peer-send-port: 4445
+          cyan-recv-port: 4441
+          magenta-recv-port: 4442
+          cyan-send-port: 4446
+          magenta-send-port: 4447
+
+          team-name: Carologistics
+          crypto-key: randomkey
+          cipher: "aes-128-cbc"

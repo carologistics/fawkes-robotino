@@ -157,7 +157,7 @@ while true; do
 	     META_PLUGIN="-m $OPTARG"
 	     ;;
 	 -a)
-	     META_PLUGIN="-m gazsim-meta-agent"
+	     META_PLUGIN="-m gazsim-meta-clips-exec"
 	     ;;
 	 -o)
 	     START_GAZEBO=false
