@@ -7,6 +7,81 @@ plugins/mongodb:
 
   clients:
     default:
-      active: true
+      enabled: true
       mode: connection
       hostport: localhost:27017
+
+    robot-memory-local-direct:
+      enabled: true
+      mode: connection
+      hostport: robotino-laptop:27021
+
+    robot-memory-local:
+      enabled: true
+      mode: replica_set
+      name: robot-memory-local
+      hosts:
+        - robotino-laptop:27021
+
+    robot-memory-distributed-direct:
+      enabled: true
+      mode: connection
+      hostport: robotino-laptop:27022
+
+    robot-memory-distributed:
+      enabled: true
+      mode: replica_set
+      name: robot-memory-distributed
+      hosts:
+        - robotino-laptop-1:27022
+        - robotino-laptop-2:27022
+        - robotino-laptop-3:27022
+
+  # The following defines the mongod instances you want
+  # the mongodb plugin to run
+  instances:
+    robot-memory-local:
+      enabled: true
+      termination-grace-period: 15
+      clear-data-on-termination: true
+      port: 27021
+      data-path: /tmp/mongodb-robot-memory-local
+      log:
+        path: /tmp/mongodb-robot-memory-local.log
+        append: true
+      replica-set: robot-memory-local
+      oplog-size: 100
+
+    robot-memory-distributed:
+      enabled: true
+      termination-grace-period: 15
+      clear-data-on-termination: true
+      port: 27022
+      data-path: /tmp/mongodb-robot-memory-distributed
+      log:
+        path: /tmp/mongodb-robot-memory-distributed.log
+        append: true
+      replica-set: robot-memory-distributed
+      oplog-size: 100
+
+  replica-sets:
+    bootstrap-mongodb:
+      client: default
+      database: replica_set_leaders
+      collection: replica_set_mgmt
+
+    managed-sets:
+
+      robot-memory-local:
+        enabled: true
+        local-client: robot-memory-local-direct
+        hosts:
+          - robotino-laptop:27021
+
+      robot-memory-distributed:
+        enabled: true
+        local-client: robot-memory-distributed-direct
+        hosts:
+          - robotino-laptop-1:27022
+          - robotino-laptop-2:27022
+          - robotino-laptop-3:27022

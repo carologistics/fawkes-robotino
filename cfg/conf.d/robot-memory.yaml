@@ -50,17 +50,3 @@ plugins/robot-memory:
       collections: ['robmem.blackboard','robmem.transform','robmem.test']
       priority: -10
       caching-time: 0.0
-    
-    
-  
-plugins/mongodb/clients:
-    robotmemory-synced:
-      active: true
-      mode: replica_set
-      name: syncedrobmem
-      hosts:
-        localhost: localhost:27021
-    robotmemory-local:
-      active: true
-      mode: connection
-      hostport: localhost:27027
