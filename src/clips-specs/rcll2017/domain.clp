@@ -34,11 +34,28 @@
   (modify ?p (sensed TRUE))
 )
 
+(defrule domain-set-value-predicates
+  ?p <- (domain-predicate (name mps-state) (value-predicate FALSE))
+=>
+  (modify ?p (value-predicate TRUE))
+)
+
 (defrule domain-wp-put-nowait
   (domain-loaded)
 	?o <- (domain-operator (name wp-put) (wait-sensed ~FALSE))
 	=>
 	(modify ?o (wait-sensed FALSE))
+)
+
+(defrule domain-exogenous-actions
+  ?op <- (domain-operator
+    (name bs-dispense | cs-mount-cap | cs-retrieve-cap | rs-mount-ring1 |
+          rs-mount-ring2 | rs-mount-ring3 | fulfill-order-c0 |
+          fulfill-order-c1 | fulfill-order-c2 | fulfill-order-c3)
+    (exogenous FALSE)
+  )
+  =>
+  (modify ?op (exogenous TRUE))
 )
 
 (defrule domain-load-initial-facts
