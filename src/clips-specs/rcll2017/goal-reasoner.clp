@@ -100,12 +100,24 @@
   (modify ?g (mode DISPATCHED))
 )
 
-; #  Goal Monitoring
+(defrule goal-reasoner-finish-parent-goal
+  ?pg <- (goal (id ?pg-id) (mode DISPATCHED))
+  ?sg <- (goal (id ?sg-id) (parent ?pg-id) (mode EVALUATED) (outcome ?outcome))
+  (time $?now)
+  =>
+  (printout debug "Goal '" ?pg-id " finised and " ?outcome "cause " ?sg-id
+    "' has been Evaluated" crlf)
+  ;Finish the parent goal with the same outcome
+  ;Could be extended later for custom behavior
+  ;in case we want to try something else to achive that goal
+  (modify ?pg (mode FINISHED) (outcome ?outcome))
+)
 
+; #  Goal Monitoring
 ; ## Goal Evaluation
-(defrule goal-reasoner-evaluate-completed-subgoal-common
+(defrule goal-reasoner-evaluate-subgoal-common
   (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
-  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome COMPLETED))
+  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome ?outcome))
   ?pg <- (goal (id ?parent-id))
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
@@ -115,6 +127,7 @@
   (modify ?g (mode EVALUATED))
   (modify ?m (last-achieve ?now))
 )
+
 
 (defrule goal-reasoner-evaluate-common
   (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
@@ -128,36 +141,18 @@
     (modify ?gm (num-tries ?num-tries))
   )
 
-
   (modify ?g (mode EVALUATED))
 )
 
 ; # Goal Clean up
-(defrule goal-reasoner-cleanup-maintinace-subgoal
-  "Clean up all achieve sub-goals if one has been evaluated and reset maintenance goal"
-  ?pg <- (goal (id ?parent-id) (type MAINTAIN))
-  ?pm <- (goal-meta (goal-id ?parent-id))
-  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode EVALUATED) (outcome ?outcome))
-  =>
-  (delayed-do-for-all-facts ((?sg goal)) (eq ?sg:parent ?parent-id)
-    (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?sg:id)
-     (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
-      (retract ?a)
-     )
-     (retract ?p)
-    )
-    (printout t "Goal '" ?sg:id "' (part of '" ?sg:parent
-       "') has been evaluated, cleaning up" crlf)
-    (retract ?sg)
-  )
-  (modify ?pg (mode SELECTED))
-)
-
 (defrule goal-reasoner-cleanup-common
-  ?g <- (goal (id ?goal-id) (parent nil) (mode EVALUATED) (outcome ?outcome))
+  ?g <- (goal (id ?goal-id) (parent nil) (type ?goal-type)
+          (mode EVALUATED) (outcome ?outcome))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
   (printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
+
+  ;Flush plans of this goal
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
     (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
       (retract ?a)
@@ -165,10 +160,23 @@
     (retract ?p)
   )
 
-  (if (and (eq ?outcome failed) (< ?num-tries ?*GOAL-MAX-TRIES*) )
+  (delayed-do-for-all-facts ((?sg goal)) (eq ?sg:parent ?goal-id)
+    (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?sg:id)
+     (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
+      (retract ?a)
+     )
+     (retract ?p)
+    )
+    (printout t "Goal '" ?sg:id "' (part of '" ?sg:parent
+       "') has, cleaning up" crlf)
+    (retract ?sg)
+  )
+
+  (if (or (eq ?goal-type MAINTAIN)
+          (and (eq ?outcome failed) (< ?num-tries ?*GOAL-MAX-TRIES*)))
     then
       (printout t "Triggering re-expansion" crlf)
-      (modify ?g (mode SELECTED))
+      (modify ?g (mode SELECTED) (outcome UNKNOWN))
     else
       (retract ?g ?gm)
     )
