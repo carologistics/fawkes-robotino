@@ -20,3 +20,13 @@
       (action-name send-beacon)))
   (modify ?g (mode EXPANDED))
 )
+
+(defrule goal-expander-wp-spawn
+  ?g <- (goal (mode SELECTED) (id WPSPAWN-ACHIEVE))
+=>
+  (assert
+    (plan (id SPAWNPLAN) (goal-id WPSPAWN-ACHIEVE))
+    (plan-action (id 1) (plan-id SPAWNPLAN) (duration 0.0)
+      (action-name noop)))
+  (modify ?g (mode EXPANDED))
+)

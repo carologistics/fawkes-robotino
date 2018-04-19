@@ -80,6 +80,8 @@
     (domain-fact (name wp-ring2-color) (param-values WP1 RING_NONE))
     (domain-fact (name wp-ring3-color) (param-values WP1 RING_NONE))
     (domain-fact (name wp-unused) (param-values WP1))
+    (domain-fact (name wp-spawned-by) (param-values R-1 WP1))
+    (domain-fact (name self) (param-values R-1))
     (domain-fact (name location-free) (param-values START INPUT))
     (domain-fact (name location-free) (param-values C-BS INPUT))
     (domain-fact (name location-free) (param-values C-BS OUTPUT))

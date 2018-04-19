@@ -19,7 +19,7 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
-(defrule action-execute-noop
+(defrule action-execute-exogenous-noops
   ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status PENDING)
                    (action-name ?action&bs-dispense|cs-retrieve-cap
                         |cs-mount-cap
@@ -35,4 +35,17 @@
   =>
   (printout t "Executing " ?action ?param-values crlf)
   (modify ?pa (status EXECUTION-SUCCEEDED))
+)
+
+(defrule action-execute-noop
+  "Direclty finalize the action 'noop'"
+  ?pa <- (plan-action  (action-name noop)
+                         (plan-id ?plan-id)
+                         (id ?id)
+                         (status PENDING)
+                         (executable TRUE))
+  =>
+  (printout t "Executing and Finalzing action 'noop' "crlf)
+  ;Need to finalize directly since it has no effects to be aplied
+  (modify ?pa (status FINAL))
 )

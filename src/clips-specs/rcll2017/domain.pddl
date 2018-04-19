@@ -59,6 +59,7 @@
 	)
 
 	(:predicates
+		(self ?r - robot)
 		(at ?r - robot ?m - location ?side - mps-side)
 		(holding ?r - robot ?wp - workpiece)
 		(can-hold ?r - robot)
@@ -99,6 +100,7 @@
 		(wp-ring3-color ?wp - workpiece ?col - ring-color)
 		(wp-cap-color ?wp - workpiece ?col - cap-color)
 		(wp-on-shelf ?wp - workpiece ?m - mps ?spot - shelf-spot)
+		(wp-spawned-by ?wp - workpiece ?r - robot)
     (spot-free ?m - mps ?spot - shelf-spot)
 	)
 
@@ -124,13 +126,17 @@
 	)
 
 	(:action bs-dispense
-		:parameters (?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
+		:parameters (?r - robot ?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
 		:precondition (and (mps-type ?m BS) (mps-state ?m READY-AT-OUTPUT)
 											 (bs-prepared-color ?m ?basecol) (bs-prepared-side ?m ?side)
-											 (wp-base-color ?wp BASE_NONE) (wp-unused ?wp))
+											 (wp-base-color ?wp BASE_NONE) (wp-unused ?wp)
+											 (wp-spawned-by ?wp ?r)
+											 (self ?r))
+											 ;(not (wp-usable ?wp))
 		:effect (and (wp-at ?wp ?m ?side)
 								 (not (wp-base-color ?wp BASE_NONE)) (wp-base-color ?wp ?basecol)
-								 (not (wp-unused ?wp)) (wp-usable ?wp))
+								 (not (wp-unused ?wp)) (wp-usable ?wp)
+								 (not (wp-spawned-by ?wp ?r)))
 	)
 		
 	(:action cs-mount-cap
