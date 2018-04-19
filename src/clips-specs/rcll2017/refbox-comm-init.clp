@@ -23,7 +23,6 @@
 (defrule refbox-init
   "Initialization of refbox related facts."
   (executive-init)
-  (domain-loaded)
   =>
   (assert 
     (wm-fact (id "/refbox/team-color") )
@@ -31,7 +30,7 @@
     (wm-fact (id "/refbox/points/cyan") (type UINT) (value 0) )
     (wm-fact (id "/refbox/phase")  (type UNKNOWN) (value PRE_GAME) )
     (wm-fact (id "/refbox/state")  (type UNKNOWN) (value WAIT_START) )
-    (wm-fact (id "/refbox/game-time?sec=0.0,nsec=0.0")  (type BOOL) (value TRUE) )
+    (wm-fact (id "/refbox/game-time")  (type UINT) (is-list TRUE) (values 0 0))
     (wm-fact (key refbox beacon seq) (type UINT) (value 1))
   )  
 )
