@@ -31,8 +31,10 @@
   ?*SALIENCE-GOAL-REJECT* = 400
   ?*SALIENCE-GOAL-EXPAND* = 300
   ?*SALIENCE-GOAL-SELECT* = 200
+  ; common evaluate rules should have
+  ;   lower salience than case specific ones
+  ?*SALIENCE-GOAL-EVALUTATE-GENERIC* = -1
 )
-
 
 ; #  Goal Selection
 ; We can choose one or more goals for expansion, e.g., calling
@@ -102,12 +104,11 @@
 
 ; ## Goal Evaluation
 (defrule goal-reasoner-evaluate-completed-subgoal-common
+  (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome COMPLETED))
   ?pg <- (goal (id ?parent-id))
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
-  (test (neq ?goal-id WPSPAWN-ACHIEVE))
-  (test (neq ?goal-id PRODUCE-C0))
   =>
   (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
     "') has been completed, Evaluating" crlf)
@@ -116,6 +117,7 @@
 )
 
 (defrule goal-reasoner-evaluate-common
+  (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome ?outcome))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
