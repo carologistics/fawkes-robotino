@@ -35,7 +35,7 @@
 #include <cmath>
 #include <cstdio>
 
-//#include "conveyor_pose_thread.h"
+#include "conveyor_pose_thread.h"
 #include "correspondence_grouping_thread.h"
 
 using namespace fawkes;
@@ -64,12 +64,14 @@ ConveyorPoseThread::init()
 {
   config->add_change_handler(this);
 
+
   cfg_debug_mode_ = config->get_bool( CFG_PREFIX "/debug" );
   cloud_in_name_ = config->get_string( CFG_PREFIX "/cloud_in" );
 
   cfg_if_prefix_ = config->get_string( CFG_PREFIX "/if/prefix" );
   if (cfg_if_prefix_.back() != '/')
     cfg_if_prefix_.append("/");
+
 
   laserlines_names_       = config->get_strings( CFG_PREFIX "/if/laser_lines" );
 
@@ -103,9 +105,12 @@ ConveyorPoseThread::init()
   cfg_bb_realsense_switch_name_ = config->get_string_or_default(CFG_PREFIX "/realsense_switch", "realsense");
   wait_time_ = Time(double(config->get_float_or_default(CFG_PREFIX "/realsense_wait_time", 1.0f)));
 
+
+
   cfg_model_path_ = config->get_string(CFG_PREFIX "/model_file");
   if (cfg_model_path_.substr(0, 1) != "/")
     cfg_model_path_ = CONFDIR "/" + cfg_model_path_;
+
 
   // Adaption to different Models for every station
   //------------------------------------------- Begin
@@ -132,6 +137,8 @@ ConveyorPoseThread::init()
   cfg_model_paths.insert(std::make_pair("M-DS-I", config-> get_string(CFG_PREFIX  "/model_files/M-DS-I").c_str()));
   cfg_model_paths.insert(std::make_pair("C-DS-I", config-> get_string(CFG_PREFIX  "/model_files/C-DS-I").c_str()));
 
+
+
   // set not set stations to default model_path
   std::map<std::string,std::string>::iterator path_it;
   for ( path_it = cfg_model_paths.begin(); path_it != cfg_model_paths.end(); path_it++ )
@@ -140,7 +147,7 @@ ConveyorPoseThread::init()
            path_it->second = cfg_model_path_;
   }
 
-  conv_pos_if_ = blackboard->open_for_reading<ConveyorPoseInterface>("/ApproachingStation");
+  conv_pos_if_ = blackboard->open_for_writing<ConveyorPoseInterface>("/ApproachingStation");
 
   trimmed_scene_.reset(new Cloud());
 
@@ -336,6 +343,7 @@ ConveyorPoseThread::finalize()
 void
 ConveyorPoseThread::loop()
 {
+
     // Check for Messages in ConveyorPoseInterface and update informations if needed
     while ( !conv_pos_if_->msgq_empty() ) {
             if (conv_pos_if_->msgq_first_is<ConveyorPoseInterface::UpdateStationMessage>() ) {
@@ -519,17 +527,22 @@ ConveyorPoseThread::set_computing_station(std::string station)
 {
     conv_pos_if_->set_computing_station(station.c_str());
     logger->log_info(name(), "Set Station to: %s", station.c_str());
+    conv_pos_if_->write();
+
 }
 
-//sets computing flag in ComputationInformation interface
+//sets/unsets computing flag in ComputationInformation interface
 void
 ConveyorPoseThread::set_computing(bool computing){
 
     conv_pos_if_->set_computing(computing);
     logger->log_info(name(), "Set Computing to: %d", computing);
+    conv_pos_if_->write();
 }
 
 
+//Should update the approaching station send by the skill
+//TODO: Check if needed or loop update is enough
 void
 ConveyorPoseThread::update_approaching_station()
 {
