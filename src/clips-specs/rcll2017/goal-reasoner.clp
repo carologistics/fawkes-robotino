@@ -125,58 +125,67 @@
   (modify ?m (last-achieve ?now))
 )
 
-(defrule goal-reasoner-subgoal-completed
-	?g <- (goal (id ?goal-id) (parent ?parent-id) (mode COMPLETED))
-  ?p <- (goal (id ?parent-id) (mode DISPATCHED))
+; ## Goal Evaluation
+(defrule goal-reasoner-evaluate-completed-subgoal-common
+  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome COMPLETED))
+  ?pg <- (goal (id ?parent-id) (mode DISPATCHED))
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
   (test (neq ?goal-id WPSPAWN-ACHIEVE))
   =>
-	(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
-    "') has been completed, cleaning up" crlf)
-	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-		(delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
-			(retract ?a)
-		)
-		(retract ?p)
-	)
-  (retract ?g)
+  (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
+    "') has been completed, Evaluating" crlf)
+  (modify ?g (mode EVALUATED))
   (modify ?m (last-achieve ?now))
 )
 
-(defrule goal-reasoner-completed
-	?g <- (goal (id ?goal-id) (mode COMPLETED))
-	?gm <- (goal-meta (goal-id ?goal-id))
-	=>
-	(printout t "Goal '" ?goal-id "' has been completed, cleaning up" crlf)
-	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-		(delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
-			(retract ?a)
-		)
-		(retract ?p)
-	)
-	(retract ?g ?gm)
+(defrule goal-reasoner-evaluate-common
+  ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome ?outcome))
+  ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
+  =>
+  (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
+  (if (eq ?outcome FAILED)
+    then
+    (bind ?num-tries (+ ?num-tries 1))
+    (modify ?gm (num-tries ?num-tries))
+  )
+  (modify ?g (mode EVALUATED))
 )
 
-(defrule goal-reasoner-failed
-	?g <- (goal (id ?goal-id) (mode FAILED))
-	?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
-	=>
-	(printout error "Goal '" ?goal-id "' has failed, cleaning up" crlf)
-	(delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-		(delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
-			(retract ?a)
-		)
-		(retract ?p)
-	)
-	(bind ?num-tries (+ ?num-tries 1))
-	(if (< ?num-tries ?*GOAL-MAX-TRIES*)
-	then
-		(printout t "Triggering re-expansion" crlf)
-		(modify ?g (mode SELECTED))
-		(modify ?gm (num-tries ?num-tries))
-	else
-		(printout t "Goal failed " ?num-tries " times, aborting" crlf)
-		(retract ?g ?gm)
-	)
+; # Goal Clean up
+(defrule goal-reasoner-cleanup-completed-subgoal-common
+  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode EVALUATED) (outcome COMPLETED))
+  ?pg <- (goal (id ?parent-id) (mode DISPATCHED))
+  ?m <- (goal-meta (goal-id ?parent-id))
+  =>
+  (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
+     "') has been evaluated, cleaning up" crlf)
+  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+   (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
+    (retract ?a)
+   )
+   (retract ?p)
+  )
+  (retract ?g)
+)
+
+(defrule goal-reasoner-cleanup-common
+  ?g <- (goal (id ?goal-id) (parent nil) (mode EVALUATED) (outcome ?outcome))
+  ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
+  =>
+  (printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
+  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+    (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
+      (retract ?a)
+    )
+    (retract ?p)
+  )
+
+  (if (and (eq ?outcome failed) (< ?num-tries ?*GOAL-MAX-TRIES*) )
+    then
+      (printout t "Triggering re-expansion" crlf)
+      (modify ?g (mode SELECTED))
+    else
+      (retract ?g ?gm)
+    )
 )
