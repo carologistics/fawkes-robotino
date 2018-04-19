@@ -11,6 +11,11 @@ plugins/mongodb:
       mode: connection
       hostport: localhost:27017
 
+    arbiter:
+      enabled: false
+      mode: connection
+      hostport: arbiter:27017
+
     robot-memory-local-direct:
       enabled: true
       mode: connection
@@ -67,6 +72,7 @@ plugins/mongodb:
   replica-sets:
     bootstrap-mongodb:
       client: default
+      #client: arbiter
       database: replica_set_leaders
       collection: replica_set_mgmt
 
