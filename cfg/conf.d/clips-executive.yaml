@@ -48,11 +48,13 @@ clips-executive:
 
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  spec: visitall
+  spec: rcll2017
 
   # Use navgraph feature which adds facts for navgraph nodes.
   use_navgraph: true
   use_pddl: true
+  use_protobuf: true
+  use_tf: true
   sync_domain_facts: true
 
   specs:
@@ -82,3 +84,43 @@ clips-executive:
       action-mapping:
         visit: ppgoto{place=?(m)S}
       blackboard-preload: ["Position3DInterface"]
+
+    rcll2017:
+      init: rcll2017/init.clp
+      communication: ["rcll2017/refbox-comm-init.clp", "rcll2017/refbox-worldmodel.clp"]
+      domain: rcll2017/domain.clp
+      goal-reasoner: rcll2017/goal-reasoner.clp
+      goal-expander: rcll2017/fixed-sequence.clp
+      action-selection: rcll2017/action-selection.clp
+      #macro-expansion: visit-all/action-selection.clp
+      action-execution: [
+        "skills-actions.clp",
+        "rcll2017/noop-actions.clp",
+        "rcll2017/refbox-actions.clp" ]
+      execution-monitoring: rcll2017/execution-monitoring.clp
+      state-estimation: rcll2017/state-estimation-init.clp
+      worldmodel: rcll2017/init-worldmodel.clp
+
+      action-mapping:
+        enter-field: drive_into_field{team=?(team-color)S}
+        move-wp-put: ppgoto{place="?(to)Y-I"}
+        wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
+        wp-put: bring_product_to{place=?(m)S}
+        move-wp-get: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        wp-get: get_product_from{place=?(m)S, side=?(side|/INPUT/input/|/OUTPUT/output/)s}
+        wp-discard: ax12gripper{command="OPEN"}
+      blackboard-preload: ["Position3DInterface"]
+
+      parameters:
+        rcll:
+          peer-address: 127.0.0.1
+          peer-recv-port: 4444
+          peer-send-port: 4445
+          cyan-recv-port: 4441
+          magenta-recv-port: 4442
+          cyan-send-port: 4446
+          magenta-send-port: 4447
+
+          team-name: Carologistics
+          crypto-key: randomkey
+          cipher: "aes-128-cbc"
