@@ -104,12 +104,12 @@ nodes:
 # Cyan
   - !unconnected
     name: C-ins-out
-    pos: [5.0, -0.5]
+    pos: [4.5, 0.5]
     properties:
       - always-copy: true
   - !unconnected
     name: C-ins-in
-    pos: [6, -0.5]
+    pos: [6.5, 0.5]
     properties:
       - always-copy: true
       - orientation: 1.5
