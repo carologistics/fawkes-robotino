@@ -29,17 +29,14 @@ plugins/robot-memory:
     # configuration for setting up all mongod and mongos instances:
     local:
       replica-set-name: "local" #single instance set needed to optain the oplog, not actually replicated 
-      port: 27017
+      port: 27027
       db-path: "~/.robot-memory/dbs/local"
     replicated:
       port: 27021
       replica-set-name: "syncedrobmem"
       db-path: "~/.robot-memory/dbs/distributed"
       replica-set-members:
-        - robotino-laptop-1:27021
-        - robotino-laptop-2:27021
-        - robotino-laptop-3:27021
-        - robotino-arbiter:27021
+        - localhost:27021
       replica-id: 1 #this should be the robot number, override it in host.yaml
       # initiate automatically
       initiate: true
@@ -62,11 +59,8 @@ plugins/mongodb/clients:
       mode: replica_set
       name: syncedrobmem
       hosts:
-        robotino-laptop-1: robotino-laptop-1:27021
-        robotino-laptop-2: robotino-laptop-2:27021
-        robotino-laptop-3: robotino-laptop-3:27021
-        robotino-arbiter: robotino-arbiter:27021
+        localhost: localhost:27021
     robotmemory-local:
       active: true
       mode: connection
-      hostport: localhost:27017
+      hostport: localhost:27027
