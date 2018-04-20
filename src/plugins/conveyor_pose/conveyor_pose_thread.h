@@ -115,7 +115,7 @@ private:
   CloudPtr aligned_model_;
   CloudPtr trimmed_scene_;
 
-  pcl::PointCloud<pcl::PointNormal>::Ptr prealigned_model_with_normals_;
+  pcl::PointCloud<pcl::PointNormal>::Ptr model_with_normals_;
   pcl::PointCloud<pcl::PointNormal>::Ptr scene_with_normals_;
   Eigen::Matrix4f initial_tf_;
 
