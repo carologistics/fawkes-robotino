@@ -55,15 +55,15 @@ nodes:
   #
   - !unconnected
     name: exp-11
-    pos: [4, 4.5]
+    pos: [1.5, 3.5]
     properties:
-      - orientation: 0.2
+      - orientation: 2.4
       - always-copy: true
   - !unconnected
     name: exp-12
-    pos: [1.0, 4]
+    pos: [2.5, 1.5]
     properties:
-      - orientation: 2.9
+      - orientation: 3.1
       - always-copy: true
 
   # Middle row
@@ -76,29 +76,29 @@ nodes:
       - always-copy: true
   - !unconnected
     name: exp-22
-    pos: [3.5, 2.5]
+    pos: [3.5, 0.5]
     properties:
-      - orientation: 2.9
+      - orientation: 2.4
       - always-copy: true
   - !unconnected
     name: exp-23
-    pos: [5.0, 2.5]
+    pos: [2.5, 4.5]
     properties:
-      - orientation: 0.85
+      - orientation: 3.9
       - always-copy: true
   
   # Low (near) row
   #
   - !unconnected
     name: exp-31
-    pos: [5, 1]
+    pos: [5.5, 0.5]
     properties:
-      - orientation: 3.14
+      - orientation: 1.6
   - !unconnected
     name: exp-32
-    pos: [2, 1]
+    pos: [5.5, 4.5]
     properties:
-      - orientation: 0
+      - orientation: 3.1
 
 # drive into field points
 # Cyan
