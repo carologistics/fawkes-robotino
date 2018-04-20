@@ -151,73 +151,11 @@ ConveyorPoseThread::init()
 
   trimmed_scene_.reset(new Cloud());
 
+
+
   cfg_model_origin_frame_ = config->get_string(CFG_PREFIX "/model_origin_frame");
   cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
   model_.reset(new Cloud());
-  if (cfg_record_model_) {
-    FILE *tmp = nullptr;
-    unsigned int count = 1;
-    bool exists;
-
-    std::string reference_station_ = config->get_string_or_default(CFG_PREFIX "/record_station","default");
-    std::string reference_path_ = "/reference_models/" + reference_station_ + "/" + reference_station_ ;
-    do{
-        exists = false;
-        tmp = ::fopen(reference_path_.c_str(),"r");
-            if(tmp) {
-                exists = true;
-                ::fclose(tmp);
-                reference_path_ = reference_path_ + std::to_string(count++);
-            }
-
-      } while(exists);
-
-     logger->log_info(name(), "Writing point cloud to %s", reference_path_.c_str());
-
-  }else{
-     std::map<std::string,std::string>::iterator it;
-        for (it = cfg_model_paths.begin(); it != cfg_model_paths.end(); it++ )
-        {
-
-
-            int errnum;
-            insert_model_.reset(new Cloud());
-
-            if ((errnum = pcl::io::loadPCDFile(it->second, *model_)) < 0)
-              throw fawkes::CouldNotOpenFileException(cfg_model_path_.c_str(), errnum, "Set from " CFG_PREFIX "/model_file");
-
-            uniform_sampling_.setInputCloud(insert_model_);
-            uniform_sampling_.setRadiusSearch(cfg_model_ss_);
-            insert_model_keypoints_.reset(new Cloud());
-            uniform_sampling_.filter(*insert_model_keypoints_);
-            logger->log_info(name(), "Model total points: %zu; Selected Keypoints: %zu",
-                             insert_model_->size(), insert_model_keypoints_->size());
-
-
-            insert_model_normals_.reset(new pcl::PointCloud<pcl::Normal>());
-            norm_est_.setKSearch(10);
-            norm_est_.setInputCloud(insert_model_);
-            norm_est_.compute(*insert_model_normals_);
-
-            //  Compute Descriptor for keypoints
-            descr_est_.setRadiusSearch(cfg_descr_rad_);
-            descr_est_.setInputCloud(insert_model_keypoints_);
-            descr_est_.setInputNormals(insert_model_normals_);
-            descr_est_.setSearchSurface(insert_model_);
-            insert_model_descriptors_.reset(new pcl::PointCloud<pcl::SHOT352>());
-            descr_est_.compute(*insert_model_descriptors_);
-
-            if (!insert_model_descriptors_->is_dense) {
-              throw fawkes::Exception("Failed to compute model descriptors");
-            }
-
-            station_to_model_.insert(std::make_pair(it->first,insert_model_));
-            station_to_model_keypoints_.insert(std::make_pair(it->first,insert_model_keypoints_));
-            station_to_model_descriptors_.insert(std::make_pair(it->first,insert_model_descriptors_));
-
-        }
-    }
-     //-----------------------------------------End
 
   cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
   if (cfg_record_model_) {
@@ -239,8 +177,27 @@ ConveyorPoseThread::init()
           new_model_path = cfg_model_path_ + std::to_string(count++);
       }
     } while(exists);
+
     cfg_model_path_ = new_model_path;
     logger->log_info(name(), "Writing point cloud to %s", cfg_model_path_.c_str());
+
+
+
+    // Take Reference model for several stations:
+    std::string reference_station_ = config->get_string_or_default(CFG_PREFIX "/record_station","default");
+    std::string reference_path_ = "/reference_models/" + reference_station_ + "/" + reference_station_ ;
+    do{
+        exists = false;
+        tmp = ::fopen(reference_path_.c_str(),"r");
+            if(tmp) {
+                exists = true;
+                ::fclose(tmp);
+                reference_path_ = reference_path_ + std::to_string(count++);
+            }
+
+      } while(exists);
+
+     logger->log_info(name(), "Writing point cloud to %s", reference_path_.c_str());
   }
   else {
     int errnum;
@@ -252,55 +209,25 @@ ConveyorPoseThread::init()
     norm_est_.compute(*model_with_normals_);
     pcl::copyPointCloud(*model_, *model_with_normals_);
 
+
+    // Calculate Model for Every Station
+    std::map<std::string,std::string>::iterator it;
+       for (it = cfg_model_paths.begin(); it != cfg_model_paths.end(); it++ )
+       {
+           if ((errnum = pcl::io::loadPCDFile(it->second, *insert_model_)) < 0)
+             throw fawkes::CouldNotOpenFileException(it->second.c_str(), errnum,
+                                                     "Set from " CFG_PREFIX "/model_file");
+
+           norm_est_.setInputCloud(insert_model_);
+           insert_model_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
+           norm_est_.compute(*insert_model_with_normals_);
+           // station_to_model_with_normals_.insert(std::make_pair(it->first,insert_model_with_normals_));
+           pcl::copyPointCloud(*insert_model_, *insert_model_with_normals_);
+           station_to_model_.insert(std::make_pair(it->first,insert_model_));
+
+
+       }
   }
-
-  //Calculation for all stations
-  //-----------------------------------------Begin
-
-  std::map<std::string,std::string>::iterator it;
-     for (it = cfg_model_paths.begin(); it != cfg_model_paths.end(); it++ )
-     {
-
-
-         int errnum;
-         insert_model_.reset(new Cloud());
-
-         if ((errnum = pcl::io::loadPCDFile(it->second, *model_)) < 0)
-           throw fawkes::CouldNotOpenFileException(cfg_model_path_.c_str(), errnum, "Set from " CFG_PREFIX "/model_file");
-
-         uniform_sampling_.setInputCloud(insert_model_);
-         uniform_sampling_.setRadiusSearch(cfg_model_ss_);
-         insert_model_keypoints_.reset(new Cloud());
-         uniform_sampling_.filter(*insert_model_keypoints_);
-         logger->log_info(name(), "Model total points: %zu; Selected Keypoints: %zu",
-                          insert_model_->size(), insert_model_keypoints_->size());
-
-
-
-         insert_model_normals_.reset(new pcl::PointCloud<pcl::Normal>());
-         norm_est_.setKSearch(10);
-         norm_est_.setInputCloud(insert_model_);
-         norm_est_.compute(*insert_model_normals_);
-
-         //  Compute Descriptor for keypoints
-         descr_est_.setRadiusSearch(cfg_descr_rad_);
-         descr_est_.setInputCloud(insert_model_keypoints_);
-         descr_est_.setInputNormals(insert_model_normals_);
-         descr_est_.setSearchSurface(insert_model_);
-         insert_model_descriptors_.reset(new pcl::PointCloud<pcl::SHOT352>());
-         descr_est_.compute(*insert_model_descriptors_);
-
-         if (!insert_model_descriptors_->is_dense) {
-           throw fawkes::Exception("Failed to compute model descriptors");
-         }
-
-         station_to_model_.insert(std::make_pair(it->first,insert_model_));
-         station_to_model_keypoints_.insert(std::make_pair(it->first,insert_model_keypoints_));
-         station_to_model_descriptors_.insert(std::make_pair(it->first,insert_model_descriptors_));
-
-     }
-
-
 
   cloud_in_registered_ = false;
 
@@ -510,7 +437,7 @@ ConveyorPoseThread::record_model()
       float(rot[2][0]), float(rot[2][1]), float(rot[2][2]);
   pcl::transformPointCloud(*trimmed_scene_, *model_, tf_to_cam);
 
-  // Overwrite and atomically rename model file so it can be copied at any time
+  // Overwrite and atomically rename model so it can be copied at any time
   int rv = pcl::io::savePCDFileASCII(cfg_model_path_ + "_tmp", *model_);
   if (rv)
     logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_model_path_.c_str());
