@@ -1,143 +1,101 @@
+;A timeout for an action 
+(deftemplate pending-timer
+  (slot plan-id (type SYMBOL))
+  (slot action-id(type NUMBER))
+  (multislot timeout-time)
+  (multislot start-time)
+  (slot status)
+)
+
+(defglobal
+  ?*COMMON-TIMEOUT-DURATION* = 30
+  ?*MPS-DOWN-TIMEOUT-DURATION* = 120
+)
+
 ;React to broken mps
 (defrule broken-mps-reject-goals
   (declare (salience 1))
-  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
+  (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps))
   ?g <- (goal (id ?goal-id) (mode FORMULATED|SELECTED|EXPANDED) (params $? ?mps $?))
   (plan (id ?plan-id) (goal-id ?goal-id))
   =>
   (modify ?g (mode REJECTED))
 )
 
-(defrule broken-mps-exit-goal
+(defrule broken-mps-add-flag
   (declare (salience 1))
   (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
-  ?pa <- (plan-action (id ?id) (action-name ?action-name)
-	(plan-id ?plan-id) (goal-id ?goal-id)
-	(status ?status&~FINAL)
-	(param-values $? ?mps $?))
+  (not (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps)))
+  => 
+  (assert (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps)))
+)
+
+(defrule broken-mps-remove-facts
+  (declare (salience 1))
+  ?flag <- (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps))
+  (wm-fact (key domain fact mps-state args? m ?mps s ?s&~BROKEN))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
-  =>
-  (modify ?pa (status FAILED))
-)
-  
-
-
-;Clean up facts
-(defrule broken-mps-remove-wp-facts
-  (declare (salience 1))
-  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
-  ?wa <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
-  ?wm <- (wm-fact (key domain fact ?fact& : (neq ?fact wp-at) args? $? wp ?wp $?))
+  (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	(status ?status& : (and (neq ?status FINAL) (neq ?status FORMULATED) (neq ?status FAILED)))
+	(param-values $? ?mps $?)))	
+  (wm-fact (key domain fact mps-type args? m ?mps t ?type))
    =>
-  (retract ?wm)
+  (printout error "MPS " ?mps " was broken, cleaning up facts" crlf)
+  (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?mps (wm-key-args ?wf:key)) FALSE) 
+					 (or
+						(neq (member$ wp-at (wm-key-path ?wf:key)) FALSE)
+						(neq (member$ bs-prepared-color (wm-key-path ?wf:key)) FALSE)
+						(neq (member$ ds-prepared-gate (wm-key-path ?wf:key)) FALSE)
+					 	(neq (member$ bs-prepared-side (wm-key-path ?wf:key)) FALSE)
+						(neq (member$ cs-prepared-for (wm-key-path ?wf:key)) FALSE)
+						(neq (member$ cs-can-perform (wm-key-path ?wf:key)) FALSE)
+						(neq (member$ rs-filled-with (wm-key-path ?wf:key)) FALSE) 
+						(neq (member$ rs-prepared-color (wm-key-path ?wf:key)) FALSE)
+					 )
+		  		    )			
+		(retract ?wf)
+		(printout t "CLEANED: " ?wf:key crlf)
+  )
+  (switch ?type
+	(case CS then 
+		(assert (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP)))
+	)
+	(case RS then
+		(assert (wm-fact (key domain fact rs-filled-with args? m ?mps n ZERO)))
+	)
+  )	
+  (retract ?flag)
 )
 
-(defrule broken-mps-remove-wp-at
-  (declare (salience 1))
-  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
-  ?wa <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
-  (not (wm-fact (key domain fact ?fact& : (neq ?fact wp-at) args $? wp ?wp $?)))
-  =>
-  (retract ?wa)
-)
-
-(defrule broken-mps-remove-bs-prepared-color
-  (declare (salience 1))
-  (wm-fact (key domain fact mps-state args? m ?msp s BROKEN))
-  ?wa <- (wm-fact (key domain fact bs-prepared-color args? m ?mps col ?col))
-  =>
-  (retract ?wa)
-)
-
-(defrule broken-mps-remove-bs-prepared-side 
-  (declare (salience 1))
-  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
-  ?wa <- (wm-fact (key domain fact bs-prepared-side args? m ?mps side ?side))
-  =>
-  (retract ?wa)
-)
-
-(defrule broken-mps-reset-cs-can-perform
-  (declare (salience 1))
-  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
-  ?wa <- (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
-  ?cb <- (wm-fact (key domain fact cs-buffered args? m ?mps col ?col))
-   =>
-  (modify ?wa (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
-  (retract ?cb)
-)
-
-(defrule broken-mps-remove-cs-prepared-for
-  (declare (salience 1))
-  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
-  ?wa <- (wm-fact (key domain fact cs-prepare-for args? m ?mps op ?op))
-  =>
-  (retract ?wa)
-)
-
-(defrule broken-mps-remove-rs-prepared-color
-  (declare (salience 1))
-  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
-  ?wa <- (wm-fact (key domain fact rs-prepared-color args? m ?mps col ?col))
-  =>
-  (retract ?wa)
-)
-
-(defrule broken-mps-reset-rs-filled-with
-  (declare (salience 1))
-  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
-  ?wa <- (wm-fact (key domain fact rs-filled-with args? m ?mps n ?ring-num))
-  =>
-  (modify ?wa (key domaini fact rs-filled-with args? m ?mps n ZERO))
-) 
-
-(defrule broken-mps-remove-ds-prepared-gate
-  (declare (salience 1))
-  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
-  ?wa <- (wm-fact (key domain fact ds-prepared-gate args? m ?mps g ?gate))
-  =>
-  (retract ?wa)
-
-;A timeout for an action 
-(deftemplate pending-timer
-  (slot plan-id (type SYMBOL))
-  (slot action-id(type NUMBER))
-  (multislot timeout-time)
-)
-
-(defglobal
-  ?*COMMON-TIMEOUT-DURATION* = 20
-  ?*MPS-DOWN-TIMEOUT-DURATION* = 120
-)
 
 (defrule create-action-timeout
   (declare (salience 1))
   (plan-action (plan-id ?plan-id) (goal-id ?goal-id) 
-  	(id ?id) (status PENDING)
+  	(id ?id) (status ?status& : (and (neq ?status FORMULATED) (neq ?status RUNNING) (neq ?status FAILED) (neq ?status FINAL)))
   	(action-name ?action-name)
 	(param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
   (test (neq ?goal-id BEACONACHIEVE))
 
-  (not (pending-timer (plan-id ?plan-id) (action-id ?id)))
+  (not (pending-timer (plan-id ?plan-id) (action-id ?id) (status ?status)))
   (time $?now)	
   ;Maybe check for a DOWNED mps here?
   =>
   (bind ?sec (+ (nth$ 1 ?now) ?*COMMON-TIMEOUT-DURATION*))
   (bind $?timeout (create$ ?sec (nth$ 2 ?now)))
-  (assert (pending-timer (plan-id ?plan-id) (action-id ?id) (timeout-time ?timeout)))
+  (assert (pending-timer (plan-id ?plan-id) (action-id ?id) (timeout-time ?timeout) (status ?status) (start-time ?now)))
 )
 
 (defrule detect-timeout
   ?p <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-  	(id ?id) (status PENDING)
+  	(id ?id) (status ?status)
 	(action-name ?action-name)
 	(param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
-  ?pt <- (pending-timer (plan-id ?plan-id) (action-id ?id) (timeout-time $?timeout))
+  ?pt <- (pending-timer (plan-id ?plan-id) (status ?status) (action-id ?id) (timeout-time $?timeout))
   (time $?now)
   (test (and (> (nth$ 1 ?now) (nth$ 1 ?timeout)) (> (nth$ 2 ?now) (nth$ 2 ?timeout))))
   =>
@@ -148,12 +106,12 @@
 
 (defrule remove-timer
   (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	(id ?id) (status ?status&~PENDING)
+	(id ?id) (status ?status)
 	(action-name ?action-name)
 	(param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
-  ?pt <- (pending-timer (plan-id ?plan-id) (action-id ?id) (timeout-time $?timeout))
+  ?pt <- (pending-timer (plan-id ?plan-id) (action-id ?id) (status ?st& : (neq ?st ?status)) (timeout-time $?timeout))
   =>
   (retract ?pt)
 )
@@ -167,10 +125,58 @@
   (goal (id ?goal-id) (mode DISPATCHED))
   
   (wm-fact (key domain fact mps-state args? m ?mps s DOWN))
-  ?pt <- (pending-timer (plan-id ?plan-id) (action-id ?id) (timeout-time $?timeout))
+  ?pt <- (pending-timer (plan-id ?plan-id) (action-id ?id) (start-time $?starttime) (timeout-time $?timeout))
+  (test (< (nth$ 1 ?timeout) (+ (nth$ 1 ?starttime) ?*MPS-DOWN-TIMEOUT-DURATION* ?*COMMON-TIMEOUT-DURATION*)))
   =>
   (printout t "Detected that " ?mps " is down while " ?action-name " is waiting for it. Enhance timeout-timer" crlf)
   (bind ?timeout-longer (create$ (+ (nth$ 1 ?timeout) ?*MPS-DOWN-TIMEOUT-DURATION*) (nth$ 2 ?timeout)))
   (modify ?pt (timeout-time ?timeout-longer))
+)
+
+;DONT DO THAT
+(defrule cleanup-facts-wp-get-shelf
+  (declare (salience 1))
+  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	(status FAILED)
+	(action-name wp-get-shelf)
+	(param-values ?r ?cc ?m ?side))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  ?shelf <- (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?m spot ?side))
+  ?wp-cap <- (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?col))
+  =>
+  (retract ?shelf)
+  (retract ?wp-cap)
+) 
+
+;DONT DO THAT
+(defrule cleanup-facts-wp-get-remove-wp-facts
+  (declare (salience 1))
+  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	(status FAILED)
+	(action-name wp-get)
+	(param-values ?r ?cc ?m ?side))
+  (wm-fact (key domain fact mps-state args? m ?m s IDLE))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  ?wm <- (wm-fact (key domain fact ?fact args? $? wp ?cc $?))
+  =>
+  (retract ?wm)
+)
+
+;DONT DO THAT
+(defrule cleanup-facts-wp-put-remove-wp-facts
+  (declare (salience 1))
+  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	(status FAILED)
+	(action-name wp-put)
+	(param-values ?r ?cc ?m))
+  (wm-fact (key domain fact mps-state args? m ?m s PREPARED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  ?wf <- (wm-fact (key domain fact ?fact args? $? wp ?cc $?))
+  =>
+  (retract ?wf)
+  (assert (domain-fact (name can-hold) (param-values ?r))) 
 )
 

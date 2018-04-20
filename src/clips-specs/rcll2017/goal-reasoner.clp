@@ -101,7 +101,7 @@
 
 ; ## Goal Evaluation
 (defrule goal-reasoner-evaluate-completed-subgoal-common
-  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome COMPLETED))
+  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome ?outcome))
   ?pg <- (goal (id ?parent-id))
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
@@ -109,7 +109,7 @@
   (test (neq ?goal-id PRODUCE-C0))
   =>
   (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
-    "') has been completed, Evaluating" crlf)
+    "') has been " ?outcome ", Evaluating" crlf)
   (modify ?g (mode EVALUATED))
   (modify ?m (last-achieve ?now))
 )

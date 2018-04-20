@@ -340,11 +340,11 @@
 ; ## Goal Evaluation
 (defrule goal-reasoner-evaluate-completed-subgoal-produce-c0
   ?g <- (goal (id PRODUCE-C0) (parent ?parent-id)
-              (mode FINISHED) (outcome COMPLETED)
-                              (params robot ?robot
-                                      bs ?bs
-                                      bs-side ?bs-side
-                                      bs-color ?base-color
+              (mode FINISHED) (outcome ?outcome)
+                              (params robot ?robot 
+                                      bs ?bs 
+                                      bs-side ?bs-side 
+                                      bs-color ?base-color 
                                       mps ?mps
                                       cs-color ?cap-color
                                       order ?order
@@ -363,7 +363,7 @@
  ;ToDo: function support for processing goal params by arg
  ;ToDo: function support for processing action params by name
  =>
- (printout t "Goal '" PRODUCE-C0 "' has been completed, Evaluating" crlf)
+ (printout t "Goal '" PRODUCE-C0 "' has been " ?outcome ", Evaluating" crlf)
  (assert (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (value TRUE)))
  (modify ?g (mode EVALUATED))
  (modify ?gm (last-achieve ?now))
