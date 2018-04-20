@@ -7,12 +7,12 @@ plugins/mongodb:
 
   clients:
     default:
-      enabled: true
+      enabled: false
       mode: connection
       hostport: localhost:27017
 
     arbiter:
-      enabled: false
+      enabled: true
       mode: connection
       hostport: arbiter:27017
 
@@ -71,8 +71,7 @@ plugins/mongodb:
 
   replica-sets:
     bootstrap-mongodb:
-      client: default
-      #client: arbiter
+      client: arbiter
       database: replica_set_leaders
       collection: replica_set_mgmt
 
