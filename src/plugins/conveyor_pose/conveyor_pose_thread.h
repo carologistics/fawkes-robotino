@@ -130,10 +130,6 @@ private:
 
 
 
-  // ------------------------------------------------------ Begin
-
-
-
   //ConveyorPoseInterface *conv_pos_interface;
   fawkes::ConveyorPoseInterface *conv_pos_if_;
 
@@ -151,10 +147,17 @@ private:
   CloudPtr insert_model_;
   CloudPtr insert_model_keypoints_;
   pcl::PointCloud<pcl::Normal>::Ptr insert_model_normals_;
+  pcl::PointCloud<pcl::PointNormal>::Ptr insert_model_with_normals_;
+  //CloudPtr insert_model_keypoints_;
+  //pcl::PointCloud<pcl::Normal>::Ptr insert_model_normals_;
+  //pcl::PointCloud<pcl::SHOT352>::Ptr insert_model_descriptors_;
+   std::map<std::string,CloudPtr> station_to_model_;
+   std::map<std::string,CloudPtr> station_to_model_with_normals_;
+  //std::map<std::string,CloudPtr> station_to_model_keypoints_;
+  //std::map<std::string,pcl::PointCloud<pcl::Normal>::Ptr> station_to_model_normals_;
+  //std::map<std::string,pcl::PointCloud<pcl::SHOT352>::Ptr> station_to_model_descriptors_;
 
   pcl::NormalEstimationOMP<Point, pcl::PointNormal> norm_est_;
-
-  // -------------------------------------------------------- End
 
 
   RecognitionThread *cg_thread_;
