@@ -57,24 +57,6 @@ conveyor_pose:
   switch_default: false
   use_visualisation: false
 
-  # Config for the PCL correspondence grouping algorithm
-  # All settings are optional and use the defaults below
-  cg:
-    #model_sampling_radius: 0.01
-    #scene_sampling_radius: 0.03
-    #reference_frame_radius: 0.015
-    #descriptor_radius: 0.02
-    #cluster_size: 0.01
-    #clustering_threshold: 5
-
-    # Discard model/scene descriptor pairs that exceed this distance.
-    # Normalized value, so it ranges from 0 to 1. Default: 0.25
-    #max_descriptor_distance: 0.25
-
-    # Use pcl::Hough3DGrouping instead of pcl::GeometricConsistencyGrouping
-    #use_hough: false
-
-
   # the maximum allowed distance that the vis_hist is not resetet
   vis_hist:
     # distance in x, y, z
