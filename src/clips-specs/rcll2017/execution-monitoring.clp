@@ -12,6 +12,20 @@
   ?*MPS-DOWN-TIMEOUT-DURATION* = 120
 )
 
+(defrule gripper-init
+        (executive-init)
+        (ff-feature-loaded blackboard)
+        (not (gripper-blackboard-init))
+	=>
+        (blackboard-open-reading "AX12GripperInterface" "Gripper")
+	(assert (gripper-blackboard-init))
+       ; (assert (skiller-control))
+       ; (path-load "skills.clp")
+       ; (assert (ff-feature-loaded skills))
+)
+
+
+
 ;React to broken mps
 (defrule broken-mps-reject-goals
   (declare (salience 1))
@@ -135,49 +149,76 @@
   (modify ?pt (timeout-time ?timeout-longer))
 )
 
-;DONT DO THAT
-(defrule cleanup-facts-wp-get-shelf
-  (declare (salience 1))
-  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	(status FAILED)
-	(action-name wp-get-shelf)
-	(param-values ?r ?cc ?m ?side))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
-  ?shelf <- (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?m spot ?side))
-  ?wp-cap <- (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?col))
-  =>
-  (retract ?shelf)
-  (retract ?wp-cap)
-)
+;(defrule set-uncertain-flag-after-failure
+;  (declare (salience 3))
+;  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+;	(id ?id) (status FAILED)
+;	(action-name ?action-name)
+;	(param-values $?values)
+;  )
+;  (wm-fact (key domain fact mps-state args? m ?mps s ?state))
+;  (test (neq (member$ ?mps ?values) FALSE))
+;
+;  (domain-obj-is-of-type ?wp workpiece)
+;  (test (neq (member$ ?wp ?values) FALSE))
+;
+;  (wm-fact (key domain fact self args? r ?r))
+;  (not (wm-fact (key monitoring uncertain args? an ?action-name m ?mps r ?r wp ?wp) (values ?action-name ?r ?mps ?wp)))
+;  =>
+;  (assert (wm-fact (key monitoring uncertain args? an ?action-name  m ?mps r ?r wp ?wp) (values ?action-name ?r ?mps ?wp)))
+;)
 
-;DONT DO THAT
-(defrule cleanup-facts-wp-get-remove-wp-facts
-  (declare (salience 1))
-  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	(status FAILED)
-	(action-name wp-get)
-	(param-values ?r ?cc ?m ?side))
-  (wm-fact (key domain fact mps-state args? m ?m s IDLE))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
-  ?wm <- (wm-fact (key domain fact ?fact args? $? wp ?cc $?))
-  =>
-  (retract ?wm)
-)
+;(defrule reject-goal-with-uncertainies
+;  (declare (salience 1))
+;  ?g <- (goal (id ?goal-id) (mode ?mode& : (and (neq ?mode DISPATCHED) (neq ?mode REJECTED))) (params $?param))
+;  (wm-fact (key monitoring uncertain $?) (values $? ?v& : (neq (member$ ?v ?param) FALSE)))
+;  =>
+;  (modify ?g (mode REJECTED))
+;)
 
-;DONT DO THAT
-(defrule cleanup-facts-wp-put-remove-wp-facts
-  (declare (salience 1))
-  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	(status FAILED)
-	(action-name wp-put)
-	(param-values ?r ?cc ?m))
-  (wm-fact (key domain fact mps-state args? m ?m s PREPARED))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
-  ?wf <- (wm-fact (key domain fact ?fact args? $? wp ?cc $?))
-  =>
-  (retract ?wf)
-  (assert (domain-fact (name can-hold) (param-values ?r)))
-)
+;(defrule resolve-wp-get-uncertainty
+;  ?mon <- (wm-fact (key monitoring uncertain args? an wp-get m ?mps r ?r wp ?wp))
+;  (wm-fact (key domain fact mps-state args? m ?mps s ?state))
+;
+;  (wm-fact (key sensor fact holding args r ?r s ?gripped))
+;  =>
+;  (if (eq ?gripped TRUE)
+;	then
+;	(do-for-all-facts ((?wm wm-fact)) (and (neq (member$ ?wp (wm-key-args ?wm:key)) FALSE)
+;					       (neq (member$ wp-at (wm-key-path ?wm:key)) FALSE)
+;					   )
+;		(retract ?wm)
+;	)
+;	(do-for-all-facts ((?ch wm-fact)) (and (neq (member$ ?r (wm-key-args ?ch:key)) FALSE)
+;					(neq (member$ can-hold (wm-key-path ?ch:key)) FALSE)
+;					  )
+;		(retract ?ch)
+;	)
+;	else
+;	(if (neq ?state READY-AT-OUTPUT)
+;		then
+;		(do-for-all-facts ((?wm wm-fact)) (neq (member$ ?wp (wm-key-args ?wm:key)) FALSE)
+;			(retract ?wm)
+;		)
+;		(assert (wm-fact (key domain fact can-hold args? r ?r)))
+;	)
+ ; )
+;  (retract ?mon)
+;)
+
+;(defrule resolve-wp-put-uncertainty
+;  ?mon <- (wm-fact (key monitoring uncertain args? an wp-put m ?mps r ?r wp ?wp))
+;  (wm-fact (key domain fact mps-state args? m ?mps s ?state))
+;
+;  (wm-fact (key sensor fact holding args r ?r s ?gripped))
+;  =>
+;  (if (eq ?gripped FALSE)
+;	then
+;	(do-for-all-facts ((?wm wm-fact)) (and (neq (member$ ?r (wm-key-args ?wm:key)) FALSE)
+;						(neq (member$ holding (wm-key-path ?wm:key)) FALSE)
+;					   )
+;		(retract ?wm)
+;	)
+;  )
+;)
+
