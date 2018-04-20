@@ -54,6 +54,7 @@ ConveyorPoseThread::ConveyorPoseThread()
   , cloud_out_raw_name_("raw")
   , cloud_out_trimmed_name_("trimmed")
   , cg_thread_(nullptr)
+  , result_pose_(tf::Pose::getIdentity(), Time(0,0), "NOT_INITIALIZED")
   , realsense_switch_(nullptr)
 {}
 
@@ -137,6 +138,10 @@ ConveyorPoseThread::init()
     if ((errnum = pcl::io::loadPCDFile(cfg_model_path_, *model_)) < 0)
       throw fawkes::CouldNotOpenFileException(cfg_model_path_.c_str(), errnum,
                                               "Set from " CFG_PREFIX "/model_file");
+    norm_est_.setInputCloud(model_);
+    model_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
+    norm_est_.compute(*model_with_normals_);
+    pcl::copyPointCloud(*model_, *model_with_normals_);
   }
 
   cloud_in_registered_ = false;
@@ -302,26 +307,21 @@ ConveyorPoseThread::loop()
       cloud_publish(model_, cloud_out_model_);
     }
     else if (use_laserline) {
-      try {
-        { MutexLocker locked(&cloud_mutex_);
-
+      if (cloud_mutex_.try_lock()) {
+        try {
+          logger->log_info(name(), "Cloud incoming");
           initial_tf_ = guess_initial_tf_from_laserline(ll);
-          CloudPtr prealigned_model(new Cloud());
-          pcl::transformPointCloud(*model_, *prealigned_model, initial_tf_);
 
-          prealigned_model_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
-          norm_est_.setInputCloud(prealigned_model);
-          norm_est_.compute(*prealigned_model_with_normals_);
-          pcl::copyPointCloud(*prealigned_model, *prealigned_model_with_normals_);
-
-          norm_est_.setInputCloud(trimmed_scene_);
           scene_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
+          norm_est_.setInputCloud(trimmed_scene_);
           norm_est_.compute(*scene_with_normals_);
           pcl::copyPointCloud(*trimmed_scene_, *scene_with_normals_);
+
+          cg_thread_->wakeup();
+        } catch (std::exception &e) {
+          logger->log_error(name(), "Exception preprocessing point clouds: %s", e.what());
         }
-        cg_thread_->wakeup();
-      } catch (std::exception &e) {
-        logger->log_error(name(), "Exception preprocessing point clouds: %s", e.what());
+        cloud_mutex_.unlock();
       }
     }
   }
