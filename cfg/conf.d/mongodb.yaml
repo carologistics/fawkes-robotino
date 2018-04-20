@@ -19,14 +19,14 @@ plugins/mongodb:
     robot-memory-local-direct:
       enabled: true
       mode: connection
-      hostport: robotino-laptop:27021
+      hostport: localhost:27021
 
     robot-memory-local:
       enabled: true
       mode: replica_set
       name: robot-memory-local
       hosts:
-        - robotino-laptop:27021
+        - localhost:27021
 
     robot-memory-distributed-direct:
       enabled: true
@@ -81,7 +81,7 @@ plugins/mongodb:
         enabled: true
         local-client: robot-memory-local-direct
         hosts:
-          - robotino-laptop:27021
+          - localhost:27021
 
       robot-memory-distributed:
         enabled: true
