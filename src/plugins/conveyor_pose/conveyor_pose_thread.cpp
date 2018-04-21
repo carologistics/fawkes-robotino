@@ -113,34 +113,36 @@ ConveyorPoseThread::init()
 
 
   // Adaption to different Models for every station
-  cfg_model_paths.insert(std::make_pair("M-BS-I", config-> get_string(CFG_PREFIX  "/model_files/M-BS-I").c_str()));
-  cfg_model_paths.insert(std::make_pair("M-BS-O", config-> get_string(CFG_PREFIX  "/model_files/M-BS-O").c_str()));
-  cfg_model_paths.insert(std::make_pair("C-BS-I", config-> get_string(CFG_PREFIX  "/model_files/C-BS-I").c_str()));
-  cfg_model_paths.insert(std::make_pair("C-BS-O", config-> get_string(CFG_PREFIX  "/model_files/C-BS-O").c_str()));
-  cfg_model_paths.insert(std::make_pair("M-CS1-I", config-> get_string(CFG_PREFIX "/model_files/M-CS1-I").c_str()));
-  cfg_model_paths.insert(std::make_pair("M-CS1-O", config-> get_string(CFG_PREFIX "/model_files/M-CS1-O").c_str()));
-  cfg_model_paths.insert(std::make_pair("C-CS1-I", config-> get_string(CFG_PREFIX "/model_files/C-CS1-I").c_str()));
-  cfg_model_paths.insert(std::make_pair("C-CS1-O", config-> get_string(CFG_PREFIX "/model_files/C-CS1-O").c_str()));
-  cfg_model_paths.insert(std::make_pair("M-CS2-I", config-> get_string(CFG_PREFIX "/model_files/M-CS2-I").c_str()));
-  cfg_model_paths.insert(std::make_pair("M-CS2-O", config-> get_string(CFG_PREFIX "/model_files/M-CS2-O").c_str()));
-  cfg_model_paths.insert(std::make_pair("C-CS2-I", config-> get_string(CFG_PREFIX "/model_files/C-CS2-I").c_str()));
-  cfg_model_paths.insert(std::make_pair("C-CS2-O", config-> get_string(CFG_PREFIX "/model_files/C-CS2-O").c_str()));
-  cfg_model_paths.insert(std::make_pair("M-RS1-I", config-> get_string(CFG_PREFIX "/model_files/M-RS1-I").c_str()));
-  cfg_model_paths.insert(std::make_pair("M-RS1-O", config-> get_string(CFG_PREFIX "/model_files/M-RS1-O").c_str()));
-  cfg_model_paths.insert(std::make_pair("C-RS1-I", config-> get_string(CFG_PREFIX "/model_files/C-RS1-I").c_str()));
-  cfg_model_paths.insert(std::make_pair("C-RS1-O", config-> get_string(CFG_PREFIX "/model_files/C-RS1-O").c_str()));
-  cfg_model_paths.insert(std::make_pair("M-RS2-I", config-> get_string(CFG_PREFIX "/model_files/M-RS2-I").c_str()));
-  cfg_model_paths.insert(std::make_pair("M-RS2-O", config-> get_string(CFG_PREFIX "/model_files/M-RS2-O").c_str()));
-  cfg_model_paths.insert(std::make_pair("C-RS2-I", config-> get_string(CFG_PREFIX "/model_files/C-RS2-I").c_str()));
-  cfg_model_paths.insert(std::make_pair("C-RS2-O", config-> get_string(CFG_PREFIX "/model_files/C-RS2-O").c_str()));
-  cfg_model_paths.insert(std::make_pair("M-DS-I", config-> get_string(CFG_PREFIX  "/model_files/M-DS-I").c_str()));
-  cfg_model_paths.insert(std::make_pair("C-DS-I", config-> get_string(CFG_PREFIX  "/model_files/C-DS-I").c_str()));
+  // Load all model paths, should be "default" if the default model path should be used
+
+  station_to_path_.insert(std::make_pair("M-BS-I", config-> get_string(CFG_PREFIX  "/model_files/M-BS-I").c_str()));
+  station_to_path_.insert(std::make_pair("M-BS-O", config-> get_string(CFG_PREFIX  "/model_files/M-BS-O").c_str()));
+  station_to_path_.insert(std::make_pair("C-BS-I", config-> get_string(CFG_PREFIX  "/model_files/C-BS-I").c_str()));
+  station_to_path_.insert(std::make_pair("C-BS-O", config-> get_string(CFG_PREFIX  "/model_files/C-BS-O").c_str()));
+  station_to_path_.insert(std::make_pair("M-CS1-I", config-> get_string(CFG_PREFIX "/model_files/M-CS1-I").c_str()));
+  station_to_path_.insert(std::make_pair("M-CS1-O", config-> get_string(CFG_PREFIX "/model_files/M-CS1-O").c_str()));
+  station_to_path_.insert(std::make_pair("C-CS1-I", config-> get_string(CFG_PREFIX "/model_files/C-CS1-I").c_str()));
+  station_to_path_.insert(std::make_pair("C-CS1-O", config-> get_string(CFG_PREFIX "/model_files/C-CS1-O").c_str()));
+  station_to_path_.insert(std::make_pair("M-CS2-I", config-> get_string(CFG_PREFIX "/model_files/M-CS2-I").c_str()));
+  station_to_path_.insert(std::make_pair("M-CS2-O", config-> get_string(CFG_PREFIX "/model_files/M-CS2-O").c_str()));
+  station_to_path_.insert(std::make_pair("C-CS2-I", config-> get_string(CFG_PREFIX "/model_files/C-CS2-I").c_str()));
+  station_to_path_.insert(std::make_pair("C-CS2-O", config-> get_string(CFG_PREFIX "/model_files/C-CS2-O").c_str()));
+  station_to_path_.insert(std::make_pair("M-RS1-I", config-> get_string(CFG_PREFIX "/model_files/M-RS1-I").c_str()));
+  station_to_path_.insert(std::make_pair("M-RS1-O", config-> get_string(CFG_PREFIX "/model_files/M-RS1-O").c_str()));
+  station_to_path_.insert(std::make_pair("C-RS1-I", config-> get_string(CFG_PREFIX "/model_files/C-RS1-I").c_str()));
+  station_to_path_.insert(std::make_pair("C-RS1-O", config-> get_string(CFG_PREFIX "/model_files/C-RS1-O").c_str()));
+  station_to_path_.insert(std::make_pair("M-RS2-I", config-> get_string(CFG_PREFIX "/model_files/M-RS2-I").c_str()));
+  station_to_path_.insert(std::make_pair("M-RS2-O", config-> get_string(CFG_PREFIX "/model_files/M-RS2-O").c_str()));
+  station_to_path_.insert(std::make_pair("C-RS2-I", config-> get_string(CFG_PREFIX "/model_files/C-RS2-I").c_str()));
+  station_to_path_.insert(std::make_pair("C-RS2-O", config-> get_string(CFG_PREFIX "/model_files/C-RS2-O").c_str()));
+  station_to_path_.insert(std::make_pair("M-DS-I", config-> get_string(CFG_PREFIX  "/model_files/M-DS-I").c_str()));
+  station_to_path_.insert(std::make_pair("C-DS-I", config-> get_string(CFG_PREFIX  "/model_files/C-DS-I").c_str()));
 
 
 
-  // set not set stations to default model_path
+  // set not set station_model_path to default model_path
   std::map<std::string,std::string>::iterator path_it;
-  for ( path_it = cfg_model_paths.begin(); path_it != cfg_model_paths.end(); path_it++ )
+  for ( path_it = station_to_path_.begin(); path_it != station_to_path_.end(); path_it++ )
   {
        if( path_it->second == "default")
            path_it->second = cfg_model_path_;
@@ -181,7 +183,8 @@ ConveyorPoseThread::init()
 
 
 
-    // Take Reference model for several stations:
+    // Take Reference model for ALL! stations:
+
     std::string reference_station_ = config->get_string_or_default(CFG_PREFIX "/record_station","default");
     std::string reference_path_ = "/reference_models/" + reference_station_ + "/" + reference_station_ ;
     do{
@@ -215,16 +218,14 @@ ConveyorPoseThread::init()
 
     // Loading PCD file and calculation of model with normals for ALL! stations
     std::map<std::string,std::string>::iterator it;
-       for (it = cfg_model_paths.begin(); it != cfg_model_paths.end(); it++ )
+       for (it = station_to_path_.begin(); it != station_to_path_.end(); it++ )
        {
-           std::cout << " Load path " + it->second << std::endl;
            if ((errnum = pcl::io::loadPCDFile(it->second, *insert_model_)) < 0)
              throw fawkes::CouldNotOpenFileException(it->second.c_str(), errnum,
                                                      "Set from " CFG_PREFIX "/model_file");
 
            norm_est_.setInputCloud(insert_model_);
            insert_model_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
-           std::cout << "komme bis zum loaden des files" << std::endl;
 
            norm_est_.compute(*insert_model_with_normals_);
            // station_to_model_with_normals_.insert(std::make_pair(it->first,insert_model_with_normals_));
@@ -235,7 +236,6 @@ ConveyorPoseThread::init()
        }
 
   }
-
 
 
   cloud_in_registered_ = false;
