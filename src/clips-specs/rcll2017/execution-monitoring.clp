@@ -49,6 +49,7 @@
 						(neq (member$ ds-prepared-gate (wm-key-path ?wf:key)) FALSE)
 						(neq (member$ bs-prepared-side (wm-key-path ?wf:key)) FALSE)
 						(neq (member$ cs-prepared-for (wm-key-path ?wf:key)) FALSE)
+						(neq (member$ cs-buffered (wm-key-path ?wf:key)) FALSE)
 						(neq (member$ cs-can-perform (wm-key-path ?wf:key)) FALSE)
 						(neq (member$ rs-filled-with (wm-key-path ?wf:key)) FALSE)
 						(neq (member$ rs-prepared-color (wm-key-path ?wf:key)) FALSE)
