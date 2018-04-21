@@ -32,6 +32,10 @@
 
 #include <core/exceptions/system.h>
 
+#include <interfaces/SwitchInterface.h>
+#include <interfaces/LaserLineInterface.h>
+#include <interfaces/ConveyorPoseInterface.h>
+
 #include <cmath>
 #include <cstdio>
 
@@ -82,9 +86,7 @@ ConveyorPoseThread::init()
   cfg_conveyor_hint_[1]       = config->get_float( CFG_PREFIX "/icp/conveyor_hint/y" );
   cfg_conveyor_hint_[2]       = config->get_float( CFG_PREFIX "/icp/conveyor_hint/z" );
 
-
   cfg_enable_switch_          = config->get_bool( CFG_PREFIX "/switch_default" );
-  cfg_use_visualisation_      = config->get_bool( CFG_PREFIX "/use_visualisation" );
 
   cfg_gripper_y_min_          = config->get_float( CFG_PREFIX "/gripper/y_min" );
   cfg_gripper_y_max_          = config->get_float( CFG_PREFIX "/gripper/y_max" );
@@ -106,7 +108,6 @@ ConveyorPoseThread::init()
   wait_time_ = Time(double(config->get_float_or_default(CFG_PREFIX "/realsense_wait_time", 1.0f)));
 
 
-
   cfg_model_path_ = config->get_string(CFG_PREFIX "/model_file");
   if (cfg_model_path_.substr(0, 1) != "/")
     cfg_model_path_ = CONFDIR "/" + cfg_model_path_;
@@ -115,90 +116,67 @@ ConveyorPoseThread::init()
   // Adaption to different Models for every station
   // Load all model paths, should be "default" if the default model path should be used
 
-  station_to_path_.insert(std::make_pair("M-BS-I", config-> get_string(CFG_PREFIX  "/model_files/M-BS-I").c_str()));
-  station_to_path_.insert(std::make_pair("M-BS-O", config-> get_string(CFG_PREFIX  "/model_files/M-BS-O").c_str()));
-  station_to_path_.insert(std::make_pair("C-BS-I", config-> get_string(CFG_PREFIX  "/model_files/C-BS-I").c_str()));
-  station_to_path_.insert(std::make_pair("C-BS-O", config-> get_string(CFG_PREFIX  "/model_files/C-BS-O").c_str()));
-  station_to_path_.insert(std::make_pair("M-CS1-I", config-> get_string(CFG_PREFIX "/model_files/M-CS1-I").c_str()));
-  station_to_path_.insert(std::make_pair("M-CS1-O", config-> get_string(CFG_PREFIX "/model_files/M-CS1-O").c_str()));
-  station_to_path_.insert(std::make_pair("C-CS1-I", config-> get_string(CFG_PREFIX "/model_files/C-CS1-I").c_str()));
-  station_to_path_.insert(std::make_pair("C-CS1-O", config-> get_string(CFG_PREFIX "/model_files/C-CS1-O").c_str()));
-  station_to_path_.insert(std::make_pair("M-CS2-I", config-> get_string(CFG_PREFIX "/model_files/M-CS2-I").c_str()));
-  station_to_path_.insert(std::make_pair("M-CS2-O", config-> get_string(CFG_PREFIX "/model_files/M-CS2-O").c_str()));
-  station_to_path_.insert(std::make_pair("C-CS2-I", config-> get_string(CFG_PREFIX "/model_files/C-CS2-I").c_str()));
-  station_to_path_.insert(std::make_pair("C-CS2-O", config-> get_string(CFG_PREFIX "/model_files/C-CS2-O").c_str()));
-  station_to_path_.insert(std::make_pair("M-RS1-I", config-> get_string(CFG_PREFIX "/model_files/M-RS1-I").c_str()));
-  station_to_path_.insert(std::make_pair("M-RS1-O", config-> get_string(CFG_PREFIX "/model_files/M-RS1-O").c_str()));
-  station_to_path_.insert(std::make_pair("C-RS1-I", config-> get_string(CFG_PREFIX "/model_files/C-RS1-I").c_str()));
-  station_to_path_.insert(std::make_pair("C-RS1-O", config-> get_string(CFG_PREFIX "/model_files/C-RS1-O").c_str()));
-  station_to_path_.insert(std::make_pair("M-RS2-I", config-> get_string(CFG_PREFIX "/model_files/M-RS2-I").c_str()));
-  station_to_path_.insert(std::make_pair("M-RS2-O", config-> get_string(CFG_PREFIX "/model_files/M-RS2-O").c_str()));
-  station_to_path_.insert(std::make_pair("C-RS2-I", config-> get_string(CFG_PREFIX "/model_files/C-RS2-I").c_str()));
-  station_to_path_.insert(std::make_pair("C-RS2-O", config-> get_string(CFG_PREFIX "/model_files/C-RS2-O").c_str()));
-  station_to_path_.insert(std::make_pair("M-DS-I", config-> get_string(CFG_PREFIX  "/model_files/M-DS-I").c_str()));
-  station_to_path_.insert(std::make_pair("C-DS-I", config-> get_string(CFG_PREFIX  "/model_files/C-DS-I").c_str()));
-
+  station_to_path_.insert({"M-BS-I", config->get_string(CFG_PREFIX  "/model_files/M-BS-I")});
+  station_to_path_.insert({"M-BS-O", config->get_string(CFG_PREFIX  "/model_files/M-BS-O")});
+  station_to_path_.insert({"C-BS-I", config->get_string(CFG_PREFIX  "/model_files/C-BS-I")});
+  station_to_path_.insert({"C-BS-O", config->get_string(CFG_PREFIX  "/model_files/C-BS-O")});
+  station_to_path_.insert({"M-CS1-I", config->get_string(CFG_PREFIX "/model_files/M-CS1-I")});
+  station_to_path_.insert({"M-CS1-O", config->get_string(CFG_PREFIX "/model_files/M-CS1-O")});
+  station_to_path_.insert({"C-CS1-I", config->get_string(CFG_PREFIX "/model_files/C-CS1-I")});
+  station_to_path_.insert({"C-CS1-O", config->get_string(CFG_PREFIX "/model_files/C-CS1-O")});
+  station_to_path_.insert({"M-CS2-I", config->get_string(CFG_PREFIX "/model_files/M-CS2-I")});
+  station_to_path_.insert({"M-CS2-O", config->get_string(CFG_PREFIX "/model_files/M-CS2-O")});
+  station_to_path_.insert({"C-CS2-I", config->get_string(CFG_PREFIX "/model_files/C-CS2-I")});
+  station_to_path_.insert({"C-CS2-O", config->get_string(CFG_PREFIX "/model_files/C-CS2-O")});
+  station_to_path_.insert({"M-RS1-I", config->get_string(CFG_PREFIX "/model_files/M-RS1-I")});
+  station_to_path_.insert({"M-RS1-O", config->get_string(CFG_PREFIX "/model_files/M-RS1-O")});
+  station_to_path_.insert({"C-RS1-I", config->get_string(CFG_PREFIX "/model_files/C-RS1-I")});
+  station_to_path_.insert({"C-RS1-O", config->get_string(CFG_PREFIX "/model_files/C-RS1-O")});
+  station_to_path_.insert({"M-RS2-I", config->get_string(CFG_PREFIX "/model_files/M-RS2-I")});
+  station_to_path_.insert({"M-RS2-O", config->get_string(CFG_PREFIX "/model_files/M-RS2-O")});
+  station_to_path_.insert({"C-RS2-I", config->get_string(CFG_PREFIX "/model_files/C-RS2-I")});
+  station_to_path_.insert({"C-RS2-O", config->get_string(CFG_PREFIX "/model_files/C-RS2-O")});
+  station_to_path_.insert({"M-DS-I", config->get_string(CFG_PREFIX  "/model_files/M-DS-I")});
+  station_to_path_.insert({"C-DS-I", config->get_string(CFG_PREFIX  "/model_files/C-DS-I")});
 
 
   // set not set station_model_path to default model_path
   std::map<std::string,std::string>::iterator path_it;
   for ( path_it = station_to_path_.begin(); path_it != station_to_path_.end(); path_it++ )
   {
-       if( path_it->second == "default")
-           path_it->second = cfg_model_path_;
+    if( path_it->second == "default")
+      path_it->second = cfg_model_path_;
   }
-
-  conv_pos_if_ = blackboard->open_for_writing<ConveyorPoseInterface>("/ApproachingStation");
 
   trimmed_scene_.reset(new Cloud());
 
   cfg_model_origin_frame_ = config->get_string(CFG_PREFIX "/model_origin_frame");
   cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
   model_.reset(new Cloud());
-  insert_model_.reset(new Cloud());
 
   cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
-  if (cfg_record_model_) {
-    FILE *tmp = nullptr;
-    unsigned int count = 1;
-    bool exists;
 
-    std::string new_model_path = cfg_model_path_;
+  if (cfg_record_model_) {
+    std::string reference_station = config->get_string_or_default(CFG_PREFIX "/record_station","default");
+    std::string reference_path = CONFDIR "/icp_models/"
+        + reference_station + "/" + reference_station + ".pcd" ;
+    std::string new_reference_path = reference_path;
+    bool exists;
+    FILE *tmp;
+    size_t count = 0;
+
     do {
       exists = false;
-      tmp = ::fopen(new_model_path.c_str(), "r");
-      if (tmp) {
+      tmp = ::fopen(new_reference_path.c_str(),"r");
+      if(tmp) {
         exists = true;
         ::fclose(tmp);
-        if (cfg_model_path_.substr(cfg_model_path_.length() - 5) == ".pcd")
-          new_model_path = cfg_model_path_.substr(cfg_model_path_.length() - 5)
-              + std::to_string(count++) + ".pcd";
-        else
-          new_model_path = cfg_model_path_ + std::to_string(count++);
+        new_reference_path = reference_path + std::to_string(count++);
       }
     } while(exists);
 
-    cfg_model_path_ = new_model_path;
-    logger->log_info(name(), "Writing point cloud to %s", cfg_model_path_.c_str());
-
-
-
-    // Take Reference model for ALL! stations:
-
-    std::string reference_station_ = config->get_string_or_default(CFG_PREFIX "/record_station","default");
-    std::string reference_path_ = "/reference_models/" + reference_station_ + "/" + reference_station_ ;
-    do{
-        exists = false;
-        tmp = ::fopen(reference_path_.c_str(),"r");
-            if(tmp) {
-                exists = true;
-                ::fclose(tmp);
-                reference_path_ = reference_path_ + std::to_string(count++);
-            }
-
-      } while(exists);
-       reference_path_ = reference_path_ + ".pcd";
-     logger->log_info(name(), "Writing point cloud to %s", reference_path_.c_str());
+    reference_path = new_reference_path + ".pcd";
+    logger->log_info(name(), "Writing point cloud to %s", reference_path.c_str());
   }
   else {
 
@@ -215,28 +193,22 @@ ConveyorPoseThread::init()
     norm_est_.compute(*model_with_normals_);
     pcl::copyPointCloud(*model_, *model_with_normals_);
 
-
     // Loading PCD file and calculation of model with normals for ALL! stations
     std::map<std::string,std::string>::iterator it;
-       for (it = station_to_path_.begin(); it != station_to_path_.end(); it++ )
-       {
-           if ((errnum = pcl::io::loadPCDFile(it->second, *insert_model_)) < 0)
-             throw fawkes::CouldNotOpenFileException(it->second.c_str(), errnum,
-                                                     "Set from " CFG_PREFIX "/model_file");
+    for (it = station_to_path_.begin(); it != station_to_path_.end(); it++ ) {
+      CloudPtr model(new Cloud());
+      pcl::PointCloud<pcl::PointNormal>::Ptr insert_model_with_normals(new pcl::PointCloud<pcl::PointNormal>());
+      if ((errnum = pcl::io::loadPCDFile(it->second, *model)) < 0)
+        throw fawkes::CouldNotOpenFileException(it->second.c_str(), errnum,
+                                                "Set from " CFG_PREFIX "/model_file");
 
-           norm_est_.setInputCloud(insert_model_);
-           insert_model_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
+      norm_est_.setInputCloud(model);
+      norm_est_.compute(*insert_model_with_normals);
+      pcl::copyPointCloud(*model, *insert_model_with_normals);
 
-           norm_est_.compute(*insert_model_with_normals_);
-           // station_to_model_with_normals_.insert(std::make_pair(it->first,insert_model_with_normals_));
-           pcl::copyPointCloud(*insert_model_, *insert_model_with_normals_);
-           station_to_model_.insert(std::make_pair(it->first,insert_model_));
-
-
-       }
-
+      station_to_model_.insert({it->first, insert_model_with_normals});
+    }
   }
-
 
   cloud_in_registered_ = false;
 
@@ -272,7 +244,6 @@ ConveyorPoseThread::finalize()
   realsense_switch_->msgq_enqueue(new SwitchInterface::DisableSwitchMessage());
   blackboard->close(realsense_switch_);
   blackboard->close(bb_pose_);
-  blackboard->close(conv_pos_if_);
 }
 
 
@@ -280,20 +251,22 @@ void
 ConveyorPoseThread::loop()
 {
 
-    // Check for Messages in ConveyorPoseInterface and update informations if needed
-    while ( !conv_pos_if_->msgq_empty() ) {
-            if (conv_pos_if_->msgq_first_is<ConveyorPoseInterface::UpdateStationMessage>() ) {
+  // Check for Messages in ConveyorPoseInterface and update informations if needed
+  while ( !bb_pose_->msgq_empty() ) {
+    if (bb_pose_->msgq_first_is<ConveyorPoseInterface::SetStationMessage>() ) {
 
-                   //Update Station
-                   logger->log_info(name(), "Received UpdateStation message");
-                   ConveyorPoseInterface::UpdateStationMessage *msg = conv_pos_if_->msgq_first<ConveyorPoseInterface::UpdateStationMessage>();
-                   conv_pos_if_->set_approaching_station(msg->station());
-            }
-            else {
-                    logger->log_warn(name(), "Unknown message received");
-            }
-            conv_pos_if_->msgq_pop();
+      //Update Station
+      logger->log_info(name(), "Received UpdateStation message");
+      ConveyorPoseInterface::SetStationMessage *msg =
+          bb_pose_->msgq_first<ConveyorPoseInterface::SetStationMessage>();
+      bb_pose_->set_current_station(msg->station());
+      result_fitness_ = std::numeric_limits<double>::min();
     }
+    else {
+      logger->log_warn(name(), "Unknown message received");
+    }
+    bb_pose_->msgq_pop();
+  }
 
   if_read();
   realsense_switch_->read();
@@ -459,39 +432,22 @@ ConveyorPoseThread::record_model()
 //writes computing station to ComputationInformation interface
 
 void
-ConveyorPoseThread::set_computing_station(std::string station)
+ConveyorPoseThread::set_current_station(std::string station)
 {
-    conv_pos_if_->set_computing_station(station.c_str());
+    bb_pose_->set_current_station(station.c_str());
     logger->log_info(name(), "Set Station to: %s", station.c_str());
-    conv_pos_if_->write();
+    bb_pose_->write();
 
-}
-
-//sets/unsets computing flag in ComputationInformation interface
-void
-ConveyorPoseThread::set_computing(bool computing){
-
-    conv_pos_if_->set_computing(computing);
-    logger->log_info(name(), "Set Computing to: %d", computing);
-    conv_pos_if_->write();
-}
-
-
-//Should update the approaching station send by the skill
-//TODO: Check if needed or loop update is enough
-void
-ConveyorPoseThread::update_approaching_station()
-{
-    if (conv_pos_if_->has_writer()){
-        conv_pos_if_->read();
-        approached_station = conv_pos_if_->approaching_station();
-       logger->log_info(name(), "Approaching MPS: %s", approached_station.c_str());
-    } else{
-        logger->log_warn(name(), "No writer for ConveyorPoseInterface");
+    auto map_it = station_to_model_.find(station);
+    if (map_it == station_to_model_.end())
+      logger->log_error(name(), "Invalid station name: %s", station.c_str());
+    else {
+      MutexLocker locked(&cloud_mutex_);
+      model_with_normals_ = map_it->second;
     }
-
-
 }
+
+
 bool
 ConveyorPoseThread::update_input_cloud()
 {
@@ -916,6 +872,5 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
       else if (opt == "/conveyor_hint/z")
         change_val(opt, cfg_conveyor_hint_[2], v->get_float());
     }
-    fawkes::MutexLocker locked2 { &pose_mutex_ };
   }
 }
