@@ -257,6 +257,7 @@ ConveyorPoseThread::loop()
           norm_est_.setInputCloud(trimmed_scene_);
           norm_est_.compute(*scene_with_normals_);
           pcl::copyPointCloud(*trimmed_scene_, *scene_with_normals_);
+          scene_with_normals_->header = trimmed_scene_->header;
 
           cg_thread_->wakeup();
         } catch (std::exception &e) {
@@ -496,7 +497,7 @@ ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
       }
     }
   }
-
+  out->header = in->header;
   return out;
 }
 
@@ -520,6 +521,7 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
     }
   }
 
+  out->header = in->header;
   return out;
 }
 
@@ -527,29 +529,27 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
 CloudPtr
 ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
 {
-  if (use_ll){
+  CloudPtr out(new Cloud);
+
+  if (use_ll) {
     Eigen::Vector3f c = laserline_get_center_transformed(ll);
 
     double x_min = c(0) - cfg_left_cut_;
     double x_max = c(0) + cfg_right_cut_;
 
-    CloudPtr out(new Cloud);
-    for (Point p : *in) {
-      if ( p.x >= x_min && p.x <= x_max ) {
+    for (Point p : *in)
+      if ( p.x >= x_min && p.x <= x_max )
         out->push_back(p);
-      }
-    }
-    return out;
-  }else{
+
+  } else {
     logger->log_info(name(), "-------------STOPPED USING LASERLINE-----------");
-    CloudPtr out(new Cloud);
-    for (Point p : *in) {
-      if ( p.x >= -cfg_left_cut_no_ll_ && p.x <= cfg_right_cut_no_ll_ ) {
+    for (Point p : *in)
+      if ( p.x >= -cfg_left_cut_no_ll_ && p.x <= cfg_right_cut_no_ll_ )
         out->push_back(p);
-      }
-    }
-    return out;
   }
+
+  out->header = in->header;
+  return out;
 }
 
 
@@ -563,6 +563,7 @@ ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
  // logger->log_debug(name(), "voxel leaf size is %f", ls);
   vg.setLeafSize (ls, ls, ls);
   vg.filter (*out);
+  out->header = in->header;
   return out;
 }
 
