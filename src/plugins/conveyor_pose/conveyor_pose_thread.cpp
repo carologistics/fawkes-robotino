@@ -344,6 +344,7 @@ ConveyorPoseThread::loop()
           pcl::copyPointCloud(*trimmed_scene_, *scene_with_normals_);
           scene_with_normals_->header = trimmed_scene_->header;
 
+          icp_cancelled_ = false;
           cg_thread_->wakeup();
         } catch (std::exception &e) {
           logger->log_error(name(), "Exception preprocessing point clouds: %s", e.what());
@@ -434,17 +435,23 @@ ConveyorPoseThread::record_model()
 void
 ConveyorPoseThread::set_current_station(std::string station)
 {
-    bb_pose_->set_current_station(station.c_str());
-    logger->log_info(name(), "Set Station to: %s", station.c_str());
-    bb_pose_->write();
+  logger->log_info(name(), "Set Station to: %s", station.c_str());
 
-    auto map_it = station_to_model_.find(station);
-    if (map_it == station_to_model_.end())
-      logger->log_error(name(), "Invalid station name: %s", station.c_str());
-    else {
-      MutexLocker locked(&cloud_mutex_);
-      model_with_normals_ = map_it->second;
-    }
+  { MutexLocker locked(&bb_mutex_);
+    icp_cancelled_ = true;
+    bb_pose_->set_current_station(station.c_str());
+    result_fitness_ = std::numeric_limits<double>::min();
+    bb_pose_->set_euclidean_fitness(result_fitness_);
+    bb_pose_->write();
+  }
+
+  auto map_it = station_to_model_.find(station);
+  if (map_it == station_to_model_.end())
+    logger->log_error(name(), "Invalid station name: %s", station.c_str());
+  else {
+    MutexLocker locked(&cloud_mutex_);
+    model_with_normals_ = map_it->second;
+  }
 }
 
 
@@ -702,6 +709,8 @@ ConveyorPoseThread::tf_send_from_pose_if(pose pose)
 void
 ConveyorPoseThread::pose_write()
 {
+  MutexLocker locked(&bb_mutex_);
+
   bb_pose_->set_translation(0, result_pose_.getOrigin().getX());
   bb_pose_->set_translation(1, result_pose_.getOrigin().getY());
   bb_pose_->set_translation(2, result_pose_.getOrigin().getZ());
@@ -745,6 +754,7 @@ ConveyorPoseThread::start_waiting()
 {
   wait_start_ = Time();
 }
+
 
 Eigen::Quaternion<float>
 ConveyorPoseThread::averageQuaternion(Eigen::Vector4f &cumulative, Eigen::Quaternion<float> newRotation, Eigen::Quaternion<float> firstRotation, float addDet){
