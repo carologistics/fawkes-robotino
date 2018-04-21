@@ -114,6 +114,8 @@ private:
   std::string conveyor_frame_id_;
   std::vector<std::string> laserlines_names_;
 
+  std::atomic_bool icp_cancelled_;
+
   CloudPtr model_;
   CloudPtr aligned_model_;
   CloudPtr trimmed_scene_;
@@ -192,7 +194,7 @@ private:
   fawkes::Time wait_start_;
   fawkes::Time wait_time_;
 
-  fawkes::Mutex pose_mutex_;
+  fawkes::Mutex bb_mutex_;
   fawkes::Mutex cloud_mutex_;
 
 //  fawkes::Position3DInterface * bb_tag_;
