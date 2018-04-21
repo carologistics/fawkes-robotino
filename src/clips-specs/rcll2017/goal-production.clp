@@ -78,6 +78,13 @@
  (assert (goal (id WPSPAWN-MAINTAIN) (type MAINTAIN)))
 )
 
+(defrule goal-reasoner-create-refill-shelf-maintain
+  (domain-facts-loaded)
+  (not (goal (id REFILL-SHELF-MAINTAIN)))
+  =>
+  (assert (goal (id REFILL-SHELF-MAINTAIN) (type MAINTAIN))
+)
+
 (defrule goal-reasoner-create-wp-spawn-achieve
   ?g <- (goal (id WPSPAWN-MAINTAIN) (mode SELECTED))
   (not (goal (id WPSPAWN-ACHIEVE)))
