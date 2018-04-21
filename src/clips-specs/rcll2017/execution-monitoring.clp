@@ -143,7 +143,7 @@
   (declare (salience 1))
   (plan-action (id ?id) (goal-id ?goal-id)
 	(plan-id ?plan-id)
-	(action-name wp-put|wp-put-slide-cc)
+	(action-name ?an& : (or (eq ?an wp-put) (eq ?an wp-put-slide-cc)))
 	(param-values ?r ?wp ?mps ?side $?)
 	(status FAILED))
   (plan (id ?plan-id) (goal-id ?goal-id))
@@ -152,6 +152,7 @@
   =>
   (retract ?hold)
   (modify ?g (mode EVALUATED))
+  (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
   (assert (domain-fact (name can-hold) (param-values ?r)))
 )
 
@@ -160,7 +161,7 @@
   (wm-fact (key domain fact mps-state args? m ?mps s ?s& : (and (neq ?s READY-AT-OUTPUT) (neq ?s DOWN))))
   ?wpat <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   =>
-  (printout error "Cleaned up wp-at fact because the mps-state did not match" crlf)
+  (printout "Cleaned up wp-at fact because the mps-state did not match" crlf)
   (retract ?wpat)
 )
 
@@ -181,10 +182,11 @@
 )
 
 (defrule common-failed-evaluation
-  ?g <- (goal (id ??goal-id) (mode FINISHED) (outcome FAILED))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   (plan (id ?plan-id) (goal-id ?goal-id))
-  (plan-action (goal-id ?goal-id) (status FAILED))
+  (plan-action (action-name ?an) (goal-id ?goal-id) (status FAILED))
   =>
+  (printout t "Goal " ?goal-id " has been failed because of " ?an " and is evaluated" crlf)
   (modify ?g (mode EVALUATED))
 )
 

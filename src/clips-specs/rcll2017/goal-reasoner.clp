@@ -110,7 +110,7 @@
   (test (neq ?goal-id PRODUCE-C0))
   =>
   (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
-    "') has been " ?outcome ", Evaluating" crlf)
+    "') has been completed, Evaluating" crlf)
   (modify ?g (mode EVALUATED))
   (modify ?m (last-achieve ?now))
 )

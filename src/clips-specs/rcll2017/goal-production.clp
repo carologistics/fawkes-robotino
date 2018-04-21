@@ -363,7 +363,7 @@
  ;ToDo: function support for processing goal params by arg
  ;ToDo: function support for processing action params by name
  =>
- (printout t "Goal '" PRODUCE-C0 "' has been " ?outcome ", Evaluating" crlf)
+ (printout t "Goal '" PRODUCE-C0 "' has been completed, Evaluating" crlf)
  (assert (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (value TRUE)))
  (modify ?g (mode EVALUATED))
  (modify ?gm (last-achieve ?now))
