@@ -42,7 +42,7 @@
   (printout warn "***** Enabling motor *****" crlf)
   (retract ?sf)
   (assert (wm-fact (key game state) (type UNKNOWN) (value RUNNING)))
-  ; (motor-enable)
+  (motor-enable)
 )
 
 (defrule pause
@@ -58,7 +58,7 @@
   (printout warn "Paused, disabling motor" crlf)
   (retract ?sf)
   (assert  (wm-fact (key game state) (type UNKNOWN) (value PAUSED)))
-  ; (motor-disable)
+  (motor-disable)
 )
 
 
