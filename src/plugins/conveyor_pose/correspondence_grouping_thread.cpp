@@ -69,7 +69,7 @@ void RecognitionThread::loop()
     // Align
     pcl::IterativeClosestPointNonLinear<pcl::PointNormal, pcl::PointNormal> reg;
     reg.setTransformationEpsilon (1e-6);
-    reg.setMaxCorrespondenceDistance (0.04);
+    reg.setMaxCorrespondenceDistance (double(main_thread_->cfg_icp_max_corr_dist_));
     reg.setPointRepresentation (boost::make_shared<const MyPointRepresentation> (point_representation));
 
     reg.setInputTarget (scene_with_normals);
@@ -98,7 +98,7 @@ void RecognitionThread::loop()
       //is smaller than the threshold, refine the process by reducing
       //the maximal correspondence distance
       if (std::abs((reg.getLastIncrementalTransformation() - prev).sum()) < reg.getTransformationEpsilon())
-        reg.setMaxCorrespondenceDistance (reg.getMaxCorrespondenceDistance () - 0.001);
+        reg.setMaxCorrespondenceDistance (reg.getMaxCorrespondenceDistance () * 0.8);
 
       prev = reg.getLastIncrementalTransformation ();
     }

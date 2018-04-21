@@ -3,7 +3,7 @@
 ---
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
 ---
-conveyor_pose:
+plugins/conveyor_pose:
   # sets the debug mode within the plugin, which eases the debugging,
   # which results in the following:
   # - the switch if is ignored, the plugin i running always
@@ -27,6 +27,13 @@ conveyor_pose:
   # Path to the PCD file containing the conveyor model.
   # Relative paths (i.e. not starting with "/") are looked up in CONFDIR (e.g. fawkes-robotino/cfg)
   model_file: "conveyor_model.pcd"
+
+  icp:
+    conveyor_hint:
+      x: -0.01
+      y: -0.02
+      z: 0.6
+    max_correspondence_dist: 0.007
 
   if:
     # the prefix used for all interfaces
