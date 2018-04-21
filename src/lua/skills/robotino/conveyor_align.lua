@@ -23,9 +23,9 @@ module(..., skillenv.module_init)
 name               = "conveyor_align"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"motor_move", "ax12gripper"}
-depends_interfaces = { 
+depends_interfaces = {
    {v = "motor", type = "MotorInterface", id="Robotino" },
-   {v = "if_conveyor", type = "Position3DInterface", id="conveyor_pose/pose"},
+   {v = "if_conveyor", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
    {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
    {v = "if_gripper", type = "AX12GripperInterface", id="Gripper AX12"},
 }
@@ -57,7 +57,7 @@ end
 
 local TOLERANCE_Y = 0.002
 local TOLERANCE_Z = 0.002
-local MAX_TRIES = 20
+local MAX_TRIES = 3
 --local X_DEST_POS = 0.08
 local X_DEST_POS = 0.16
 local Y_DEST_POS = 0.0
@@ -69,8 +69,8 @@ function no_writer()
    return not if_conveyor:has_writer()
 end
 
-function see_conveyor()
-   return if_conveyor:visibility_history() > 10
+function conveyor_icp_converged()
+   return if_conveyor:euclidean_fitness() > config:get_float("/skills/conveyor_align/euclidean_fitness_tol")
 end
 
 function tolerances_ok(self)
@@ -145,7 +145,7 @@ fsm:add_transitions{
    {"INIT", "CHECK_VISION", cond=true},
    {"CHECK_VISION", "CLEANUP_FAILED", timeout=20, desc="No vis_hist on conveyor vision"},
    {"CHECK_VISION", "CLEANUP_FAILED", cond=no_writer, desc="No writer for conveyor vision"},
-   {"CHECK_VISION", "DRIVE", cond=see_conveyor},
+   {"CHECK_VISION", "DRIVE", cond=conveyor_icp_converged},
    {"DECIDE_TRY", "CLEANUP_FINAL", cond=tolerances_ok, desc="Robot is aligned"},
    {"DECIDE_TRY", "CHECK_VISION", cond=max_tries_not_reached, desc="Do another alignment"},
    {"DECIDE_TRY", "CLEANUP_FAILED", cond=true, desc="Couldn't align within MAX_TRIES"},
@@ -156,6 +156,16 @@ fsm:add_transitions{
 function INIT:init()
    self.fsm.vars.counter = 0
    conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
+end
+
+function CHECK_VISION:init()
+    if (self.fsm.vars.target_on_mps == "INPUT_C") then
+        if_conveyor:msgq_enqueue_copy(if_conveyor.SetStationMessage:new(self.fsm.vars.mps .. "-I"))
+    elseif (self.fsm.vars.target_on_mps == "OUTPUT_C") then
+        if_conveyor:msgq_enqueue_copy(if_conveyor.SetStationMessage:new(self.fsm.vars.mps .. "-O"))
+    else
+        print_error("This target on mps " .. self.fsm.vars.target_on_mps .. " is not yet implemented!")
+    end
 end
 
 function DECIDE_TRY:init()
