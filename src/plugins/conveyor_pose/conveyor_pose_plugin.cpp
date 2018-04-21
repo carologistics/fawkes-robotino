@@ -23,7 +23,7 @@
 #include <core/plugin.h>
 
 #include "conveyor_pose_thread.h"
-#include "correspondence_grouping_thread.h"
+#include "recognition_thread.h"
 
 using namespace fawkes;
 
