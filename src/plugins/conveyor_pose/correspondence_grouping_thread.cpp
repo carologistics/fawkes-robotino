@@ -39,22 +39,10 @@ void RecognitionThread::loop()
 
     std::vector<int> tmp;
     pcl::removeNaNNormalsFromPointCloud(*main_thread_->model_with_normals_, *model_with_normals, tmp);
-    if (tmp.size())
-      logger->log_warn(name(), "Removed %zu NaNNormals from model", tmp.size());
-    tmp.clear();
     pcl::removeNaNFromPointCloud(*model_with_normals, *model_with_normals, tmp);
-    if (tmp.size())
-      logger->log_warn(name(), "Removed %zu NaNs from model", tmp.size());
-    tmp.clear();
-
     pcl::removeNaNNormalsFromPointCloud(*main_thread_->scene_with_normals_, *scene_with_normals, tmp);
-    if (tmp.size())
-      logger->log_warn(name(), "Removed %zu NaNNormalss from scene", tmp.size());
-    tmp.clear();
     pcl::removeNaNFromPointCloud(*scene_with_normals, *scene_with_normals, tmp);
-    if (tmp.size())
-      logger->log_warn(name(), "Removed %zu NaNs from scene", tmp.size());
-    tmp.clear();
+    scene_with_normals->header = main_thread_->scene_with_normals_->header;
 
     initial_tf = main_thread_->initial_tf_;
 
