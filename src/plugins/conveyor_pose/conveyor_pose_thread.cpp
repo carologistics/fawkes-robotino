@@ -55,6 +55,7 @@ ConveyorPoseThread::ConveyorPoseThread()
   , cloud_out_trimmed_name_("trimmed")
   , cg_thread_(nullptr)
   , result_pose_(tf::Pose::getIdentity(), Time(0,0), "NOT_INITIALIZED")
+  , result_fitness_(std::numeric_limits<double>::min())
   , realsense_switch_(nullptr)
 {}
 
@@ -71,8 +72,6 @@ ConveyorPoseThread::init()
     cfg_if_prefix_.append("/");
 
   laserlines_names_       = config->get_strings( CFG_PREFIX "/if/laser_lines" );
-
-  cfg_pose_close_if_no_new_pointclouds_  = config->get_bool( CFG_PREFIX "/if/pose_close_if_new_pc" );
 
   conveyor_frame_id_          = config->get_string( CFG_PREFIX "/conveyor_frame_id" );
   cfg_pose_diff_              = config->get_float( CFG_PREFIX "/vis_hist/diff_pose" );
@@ -157,18 +156,12 @@ ConveyorPoseThread::init()
     laserlines_.push_back( blackboard->open_for_reading<fawkes::LaserLineInterface>(ll.c_str()) );
   }
 
-  enable_pose_ = false;
-  if ( ! cfg_pose_close_if_no_new_pointclouds_ ) {
-    bb_pose_conditional_open();
-  }
-
   bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>((cfg_if_prefix_ + "switch").c_str());
   bb_enable_switch_->set_enabled( cfg_debug_mode_ || cfg_enable_switch_); // ignore cfg_enable_switch_ and set to true if debug mode is used
   bb_enable_switch_->write();
 
+  bb_pose_ = blackboard->open_for_writing<ConveyorPoseInterface>((cfg_if_prefix_ + "status").c_str());
   realsense_switch_ = blackboard->open_for_reading<SwitchInterface>(cfg_bb_realsense_switch_name_.c_str());
-
-  //visualisation_ = new Visualisation(rosnode);
 }
 
 
@@ -177,33 +170,13 @@ ConveyorPoseThread::finalize()
 {
   pcl_manager->remove_pointcloud(cloud_out_raw_name_.c_str());
   pcl_manager->remove_pointcloud(cloud_out_trimmed_name_.c_str());
-  //delete visualisation_;
+  pcl_manager->remove_pointcloud("model");
   blackboard->close(bb_enable_switch_);
   logger->log_info(name(), "Unloading, disabling %s",
                    cfg_bb_realsense_switch_name_.c_str());
   realsense_switch_->msgq_enqueue(new SwitchInterface::DisableSwitchMessage());
   blackboard->close(realsense_switch_);
-  bb_pose_conditional_close();
-}
-
-
-void
-ConveyorPoseThread::bb_pose_conditional_open()
-{
-  if ( ! enable_pose_ ) {
-    enable_pose_ = true;
-    bb_pose_ = blackboard->open_for_writing<fawkes::Position3DInterface>((cfg_if_prefix_ + "/pose").c_str());
-  }
-}
-
-
-void
-ConveyorPoseThread::bb_pose_conditional_close()
-{
-  if ( enable_pose_ ) {
-    enable_pose_ = false;
-    blackboard->close(bb_pose_);
-  }
+  blackboard->close(bb_pose_);
 }
 
 
@@ -236,17 +209,6 @@ ConveyorPoseThread::loop()
       new SwitchInterface::DisableSwitchMessage());
   }
 
-  if ( ! update_input_cloud() || ! bb_enable_switch_->is_enabled() ) {
-    if ( enable_pose_ ) {
-      vis_hist_ = -1;
-      pose trash { false };
-      pose_write(trash);
-    }
-    if ( cfg_pose_close_if_no_new_pointclouds_ ) {
-      bb_pose_conditional_close();
-    }
-  }
-
   if (need_to_wait()) {
     logger->log_debug(name(),
       "Waiting for %s for %f sec, still %f sec remaining",
@@ -254,30 +216,8 @@ ConveyorPoseThread::loop()
       wait_time_.in_sec(), (wait_start_ + wait_time_ - Time()).in_sec() );
     return;
   }
-  bb_pose_conditional_open();
 
-  if (!cfg_record_model_) {
-    /*pose pose_average { true };
-    bool pose_average_availabe = pose_get_avg(pose_average);
-    if (pose_average_availabe) {*/
-      vis_hist_ = std::max(1, vis_hist_ + 1);
-      MutexLocker locked(&pose_mutex_);
-      pose_write(result_pose_);
-
-      pose_publish_tf(result_pose_);
-
-      //    tf_send_from_pose_if(pose_current);
-      /*if (cfg_use_visualisation_) {
-        visualisation_->marker_draw(header_, pose_average.getOrigin(), pose_average.getRotation());
-      }*/
-    /*} else {
-      vis_hist_ = -1;
-      pose trash { false };
-      pose_write(trash);
-    }*/
-  }
-
-  if (bb_enable_switch_->is_enabled()) {
+  if (bb_enable_switch_->is_enabled() && update_input_cloud()) {
     fawkes::LaserLineInterface * ll = NULL;
     bool use_laserline = laserline_get_best_fit( ll );
 
@@ -412,7 +352,7 @@ ConveyorPoseThread::update_input_cloud()
     unsigned long time_old = header_.stamp;
     header_ = cloud_in_->header;
 
-    return time_old != header_.stamp;                                          // true, if there is a new cloud, false otherwise
+    return time_old != header_.stamp; // true, if there is a new cloud, false otherwise
 
   } else {
     logger->log_debug(name(), "can't get pointcloud %s", cloud_in_name_.c_str());
@@ -456,116 +396,6 @@ ConveyorPoseThread::if_read()
   }
 }
 
-
-void
-ConveyorPoseThread::pose_add_element(pose element)
-{
-  MutexLocker locked(&pose_mutex_);
-  //add element
-  poses_.insert(element);
-
-  // if to full, remove oldest
-  while (poses_.size() > cfg_pose_avg_hist_size_) {
-    poses_.erase(--poses_.end());
-  }
-}
-
-
-bool
-ConveyorPoseThread::pose_get_avg(pose & out)
-{
-  //if (poses_.back().valid) {
-    out = *poses_.begin();
-    return out.valid;
-  //}
-  /*pose median { true };
-
-  // count invalid loops
-  unsigned int invalid = 0;
-  for (pose p : poses_) {
-    if ( ! p.valid ) {
-      invalid++;
-    }
-  }
-
-  if (invalid > cfg_allow_invalid_poses_) {
-    logger->log_warn(name(), "view unstable, got %u invalid frames", invalid);
-  }
-
-  // Weiszfeld's algorithm to find the geometric median
-  median.setOrigin({0, 0, 0});
-  median.setRotation(fawkes::tf::Quaternion({0, 0, 0}));
-  unsigned int iteraterions = 20;
-  for (unsigned int i = 0; i < iteraterions; ++i) {
-
-    fawkes::tf::Vector3 numerator(0, 0, 0);
-    double divisor = 0;
-
-    for (pose p : poses_) {
-      if ( p.valid ) {
-        double divisor_current = (p.getOrigin() - median.getOrigin()).norm();
-        divisor += ( 1 / divisor_current );
-        numerator += ( p.getOrigin() / divisor_current );
-//        logger->log_info(name(), "(%lf\t%lf\t%lf) /\t%lf", numerator.x(), numerator.y(), numerator.z(), divisor);
-      }
-    }
-    median.setOrigin(numerator / divisor);
-  }
-
-  // remove outliers
-  std::list<pose> poses_used;
-  for (pose p : poses_) {
-    if ( p.valid ) {
-      double dist = (p.getOrigin() - median.getOrigin()).norm();
-
-//      logger->log_warn(name(), "(%f\t%f\t%f)\t(%f\t%f\t%f) => %lf",
-//          median.translation.x(), median.translation.y(), median.translation.z(),
-//          p.translation.x(), p.translation.y(), p.translation.z(),
-//          dist);
-      if (dist <= cfg_pose_diff_) {
-        poses_used.push_back(p);
-      }
-    }
-  }
-
-  if (poses_used.size() <= cfg_pose_avg_min_) {
-    logger->log_warn(name(), "not enough for average, got: %zu", poses_used.size());
-    return false;
-  }
-
-  // calculate average
-//  Eigen::Quaternion<float> avgRot;
-//  Eigen::Vector4f cumulative;
-//  Eigen::Quaternion<float> firstRotation(poses_used.front().rotation.x(), poses_used.front().rotation.y(), poses_used.front().rotation.z(), poses_used.front().rotation.w());
-//  float addDet = 1.0 / (float)poses_used.size();
-  for (pose p : poses_used) {
-//    Eigen::Quaternion<float> newRotation(p.rotation.x(), p.rotation.y(), p.rotation.z(), p.rotation.w());
-
-    out.setOrigin(out.getOrigin() + p.getOrigin());
-
-  //  fawkes::tf::Matrix3x3 m(p.rotation);
-  //  fawkes::tf::Scalar rc, pc, yc;
-  //  m.getEulerYPR(yc, pc, rc);
-  //  roll += fawkes::normalize_rad(rc);
-  //  pitch += fawkes::normalize_rad(pc);
-  //  yaw += fawkes::normalize_rad(yc);
-//    avgRot = averageQuaternion(cumulative, newRotation, firstRotation, addDet);
-  }
-
-  // normalize
-  out.setOrigin(out.getOrigin() / poses_used.size());
-
-  //roll /= poses_used.size();
-  //pitch /= poses_used.size();
-  //yaw /= poses_used.size();
-  //out.rotation.setEuler(yaw, pitch, roll);
-
-//  logger->log_info(name(), "got %u for avg: (%f\t%f\t%f)\t(%f\t%f\t%f)", poses_used.size(),
-//      out.translation.x(), out.translation.y(), out.translation.z(),
-//      roll, pitch, yaw);
-
-  return true;*/
-}
 
 
 bool
@@ -760,19 +590,21 @@ ConveyorPoseThread::tf_send_from_pose_if(pose pose)
 
 
 void
-ConveyorPoseThread::pose_write(const tf::Pose &pose)
+ConveyorPoseThread::pose_write()
 {
-  bb_pose_->set_translation(0, pose.getOrigin().getX());
-  bb_pose_->set_translation(1, pose.getOrigin().getY());
-  bb_pose_->set_translation(2, pose.getOrigin().getZ());
-  bb_pose_->set_rotation(0, pose.getRotation().getX());
-  bb_pose_->set_rotation(1, pose.getRotation().getY());
-  bb_pose_->set_rotation(2, pose.getRotation().getZ());
-  bb_pose_->set_rotation(3, pose.getRotation().getW());
+  bb_pose_->set_translation(0, result_pose_.getOrigin().getX());
+  bb_pose_->set_translation(1, result_pose_.getOrigin().getY());
+  bb_pose_->set_translation(2, result_pose_.getOrigin().getZ());
+  bb_pose_->set_rotation(0, result_pose_.getRotation().getX());
+  bb_pose_->set_rotation(1, result_pose_.getRotation().getY());
+  bb_pose_->set_rotation(2, result_pose_.getRotation().getZ());
+  bb_pose_->set_rotation(3, result_pose_.getRotation().getW());
 
   bb_pose_->set_frame(header_.frame_id.c_str());
-  fawkes::Time stamp((long)header_.stamp);
-  bb_pose_->set_visibility_history(vis_hist_);
+  bb_pose_->set_euclidean_fitness(result_fitness_);
+  long timestamp[2];
+  result_pose_.stamp.get_timestamp(timestamp[0], timestamp[1]);
+  bb_pose_->set_input_timestamp(timestamp);
   bb_pose_->write();
 }
 
@@ -927,6 +759,5 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         change_val(opt, cfg_right_cut_no_ll_, v->get_float());
     }
     fawkes::MutexLocker locked2 { &pose_mutex_ };
-    poses_.clear();
   }
 }
