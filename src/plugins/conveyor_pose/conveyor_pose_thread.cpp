@@ -74,11 +74,12 @@ ConveyorPoseThread::init()
   laserlines_names_       = config->get_strings( CFG_PREFIX "/if/laser_lines" );
 
   conveyor_frame_id_          = config->get_string( CFG_PREFIX "/conveyor_frame_id" );
-  cfg_pose_diff_              = config->get_float( CFG_PREFIX "/vis_hist/diff_pose" );
-  vis_hist_angle_diff_        = config->get_float( CFG_PREFIX "/vis_hist/diff_angle" );
-  cfg_pose_avg_hist_size_     = config->get_uint( CFG_PREFIX "/vis_hist/average/size" );
-  cfg_pose_avg_min_           = config->get_uint( CFG_PREFIX "/vis_hist/average/used_min" );
-  cfg_allow_invalid_poses_    = config->get_uint( CFG_PREFIX "/vis_hist/allow_invalid_poses" );
+
+  cfg_icp_max_corr_dist_      = config->get_float( CFG_PREFIX "/icp/max_correspondence_dist" );
+  cfg_conveyor_hint_[0]       = config->get_float( CFG_PREFIX "/icp/conveyor_hint/x" );
+  cfg_conveyor_hint_[1]       = config->get_float( CFG_PREFIX "/icp/conveyor_hint/y" );
+  cfg_conveyor_hint_[2]       = config->get_float( CFG_PREFIX "/icp/conveyor_hint/z" );
+
 
   cfg_enable_switch_          = config->get_bool( CFG_PREFIX "/switch_default" );
   cfg_use_visualisation_      = config->get_bool( CFG_PREFIX "/use_visualisation" );
@@ -285,7 +286,10 @@ ConveyorPoseThread::guess_initial_tf_from_laserline(fawkes::LaserLineInterface *
 
   // Add distance from line center to conveyor
   // TODO: Make configurable
-  conveyor_hint_laser.setOrigin(conveyor_hint_laser.getOrigin() + tf::Vector3{-0.01, -0.02, 0.6});
+  conveyor_hint_laser.setOrigin(conveyor_hint_laser.getOrigin() + tf::Vector3 {
+                                  double(cfg_conveyor_hint_[0]),
+                                  double(cfg_conveyor_hint_[1]),
+                                  double(cfg_conveyor_hint_[2]) } );
   conveyor_hint_laser.setRotation(
         tf::Quaternion(tf::Vector3(0,1,0), -M_PI/2)
         * tf::Quaternion(tf::Vector3(0,0,1), M_PI/2));
@@ -727,12 +731,7 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
 
     fawkes::MutexLocker locked { &config_mutex_ };
 
-    if (sub_prefix == "/vis_hist") {
-      if (opt == "/diff_pose")
-        change_val(opt, cfg_pose_diff_, v->get_float());
-      else if (opt == "/diff_angle")
-        change_val(opt, vis_hist_angle_diff_, v->get_float());
-    } else if (sub_prefix == "/gripper") {
+    if (sub_prefix == "/gripper") {
       if (opt == "/y_min")
         change_val(opt, cfg_gripper_y_min_, v->get_float());
       else if (opt == "/y_max")
@@ -757,6 +756,15 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         change_val(opt, cfg_left_cut_no_ll_, v->get_float());
       else if (opt == "/right_cut_no_ll")
         change_val(opt, cfg_right_cut_no_ll_, v->get_float());
+    } else if (sub_prefix == "/icp") {
+      if (opt == "/max_correspondence_dist")
+        change_val(opt, cfg_icp_max_corr_dist_, v->get_float());
+      if (opt == "/conveyor_hint/x")
+        change_val(opt, cfg_conveyor_hint_[0], v->get_float());
+      else if (opt == "/conveyor_hint/y")
+        change_val(opt, cfg_conveyor_hint_[1], v->get_float());
+      else if (opt == "/conveyor_hint/z")
+        change_val(opt, cfg_conveyor_hint_[2], v->get_float());
     }
     fawkes::MutexLocker locked2 { &pose_mutex_ };
   }
