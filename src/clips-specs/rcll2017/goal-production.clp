@@ -98,6 +98,7 @@
   (not (goal (id PRODUCTION-MAINTAIN)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
+  (NavGraphWithMPSGeneratorInterface (final TRUE))
   =>
   (assert (goal (id PRODUCTION-MAINTAIN) (type MAINTAIN)))
 )
