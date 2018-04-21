@@ -68,6 +68,8 @@
                                                         cc ?cc
                                                         ))
     (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+    (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?shelf-spot))
+    (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
     =>
    (assert
         (plan (id FILL-CAP-PLAN) (goal-id FILL-CAP))
