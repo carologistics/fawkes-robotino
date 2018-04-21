@@ -69,3 +69,59 @@
   (bind ?y (+ ?y (* (sin ?yaw) ?width)))
   (return (create$ ?x ?y 0.48))
 )
+
+
+(deffunction navgraph-add-all-new-tags ()
+  "send all new tags to the navgraph generator"
+  (bind ?any-tag-to-add FALSE)
+
+  (delayed-do-for-all-facts ((?ft-n wm-fact))
+      (wm-key-prefix ?ft-n:key (create$ game found-tag name))
+    (bind ?mps (wm-key-arg ?ft-n:key m))
+
+      (do-for-fact ((?wm-fact wm-fact)) (eq ?wm-fact:key (create$ game found-tag side args? m ?mps))
+        (bind ?side ?wm-fact:value))
+      (do-for-fact ((?wm-fact wm-fact)) (eq ?wm-fact:key (create$ game found-tag frame args? m ?mps))
+        (bind ?frame ?wm-fact:value))
+      (do-for-fact ((?wm-fact wm-fact)) (eq ?wm-fact:key (create$ game found-tag trans args? m ?mps))
+        (bind ?trans ?wm-fact:values))
+      (do-for-fact ((?wm-fact wm-fact)) (eq ?wm-fact:key (create$ game found-tag rot args? m ?mps))
+        (bind ?rot ?wm-fact:values))
+      (do-for-fact ((?wm-fact wm-fact)) (eq ?wm-fact:key (create$ game found-tag zone args? m ?mps))
+        (bind ?zone ?wm-fact:value))
+
+      (bind ?any-tag-to-add TRUE)
+      ; report tag position to navgraph generator
+      (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "UpdateStationByTagMessage"))
+      (blackboard-set-msg-field ?msg "name" (str-cat ?mps))
+      (blackboard-set-msg-field ?msg "side" ?side)
+      (blackboard-set-msg-field ?msg "frame" ?frame)
+      (blackboard-set-msg-multifield ?msg "tag_translation" ?trans)
+      (blackboard-set-msg-multifield ?msg "tag_rotation" ?rot)
+      (blackboard-set-msg-multifield ?msg "zone_coords" (zone-coords ?zone))
+      (blackboard-send-msg ?msg)
+      (printout t "Send UpdateStationByTagMessage: id " (str-cat ?mps)
+          " side " ?side
+          " frame " ?frame
+          " trans " ?trans
+          " rot " ?rot
+          " zone " ?zone
+          crlf)
+    ;   ; (assert (navgraph-added-for-mps (name ?ft-mps:value)))
+    ; )
+  )
+  (if ?any-tag-to-add
+    then
+    ; send compute message so we can drive to the output
+    (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "ComputeMessage"))
+    (bind ?compute-msg-id (blackboard-send-msg ?msg))
+
+    ; save the last compute-msg-id to know when it was processed
+    ; (delayed-do-for-all-facts ((?lncm last-navgraph-compute-msg)) TRUE
+    ;   (retract ?lncm)
+    ; )
+    ; (assert (last-navgraph-compute-msg (id ?compute-msg-id)))
+    else
+    (printout t "There are no tags to add" crlf)
+  )
+)
