@@ -28,6 +28,8 @@ fawkes/meta_plugins:
   m-clips-executive:
     - m-clips
     - m-fv-vision
+    - clips-pddl-parser
+    - m-robot-memory
     - clips-executive
     - clips-executive-rest-api
   m-skiller:
