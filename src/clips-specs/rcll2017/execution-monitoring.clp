@@ -147,6 +147,7 @@
   =>
   (retract ?hold)
   (modify ?g (mode EVALUATED))
+  (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
   (assert (domain-fact (name can-hold) (param-values ?r)))
 )
 
@@ -155,7 +156,7 @@
   (wm-fact (key domain fact mps-state args? m ?mps s ?s& : (and (neq ?s READY-AT-OUTPUT) (neq ?s DOWN))))
   ?wpat <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   =>
-  (printout error "Cleaned up wp-at fact because the mps-state did not match" crlf)
+  (printout "Cleaned up wp-at fact because the mps-state did not match" crlf)
   (retract ?wpat)
 )
 
@@ -170,16 +171,18 @@
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?hold <- (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot))
   =>
-  (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated" crlf)
+  (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated")
   (retract ?hold)
   (modify ?g (mode EVALUATED))
   (assert (domain-fact (name can-hold) (param-values ?r)))
 )
 
 (defrule common-failed-evaluation
-  ?g <- (goal (id ??goal-id) (mode FINISHED) (outcome FAILED))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   (plan (id ?plan-id) (goal-id ?goal-id))
-  (plan-action (goal-id ?goal-id) (status FAILED))
+  (plan-action (action-name ?an) (goal-id ?goal-id) (status FAILED))
   =>
+  (printout t "Goal " ?goal-id " has been failed because of " ?an " and is evaluated" crlf)
   (modify ?g (mode EVALUATED))
 )
+
