@@ -60,3 +60,24 @@
   (assert  (wm-fact (key game state) (type UNKNOWN) (value PAUSED)))
   ; (motor-disable)
 )
+
+
+(defrule game-complete-found-tags-with-ground-truth
+  "Integrate incoming field-ground-truth facts into our world model."
+  ?gt <-  (wm-fact (key refbox field-ground-truth name args? m ?mps))
+  ?gt-y <-(wm-fact (key refbox field-ground-truth yaw args? m ?mps) (value ?yaw))
+  ?gt-z <-(wm-fact (key refbox field-ground-truth zone args? m ?mps) (value ?zone))
+  ?gt-t <-(wm-fact (key refbox field-ground-truth mtype args? m ?mps) (value ?mtype))
+  ?gt-o <-(wm-fact (key refbox field-ground-truth orientation args? m ?mps) (value ?ori))
+  (not (wm-fact (key game found-tag name args? m ?mps)))
+=>
+  (assert
+    (wm-fact (key game found-tag name args? m ?mps) (type BOOL) (value TRUE))
+    (wm-fact (key game found-tag side args? m ?mps) (type UNKNOWN) (value INPUT))
+    (wm-fact (key game found-tag frame args? m ?mps) (type STRING) (value "map"))
+    (wm-fact (key game found-tag trans args? m ?mps) (type FLOAT) (is-list TRUE) (values (tag-offset ?zone ?yaw 0.17)))
+    (wm-fact (key game found-tag rot args? m ?mps) (type FLOAT) (is-list TRUE) (values (tf-quat-from-yaw ?yaw )))
+    (wm-fact (key game found-tag zone args? m ?mps) (type UNKNOWN) (value ?zone))
+  )
+  (retract ?gt ?gt-t ?gt-z ?gt-y ?gt-o)
+)
