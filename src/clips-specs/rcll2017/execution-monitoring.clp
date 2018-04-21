@@ -21,6 +21,19 @@
   (modify ?g (mode REJECTED))
 )
 
+(defrule reset-prepare-action-on-downed
+  (declare (salience 1))
+  (wm-fact (key domain fact mps-state args? m ?mps s DOWN))
+  ?pa <- (plan-action (id ?id) (goal-id ?goal-id)
+        (plan-id ?plan-id)
+        (action-name prepare-cs|prepare-rs|prepare-ds|prepare-bs)
+        (status RUNNING)
+	(param-values $? ?mps $?))
+  =>
+  (modify ?pa (status FORMULATED))
+)
+
+
 (defrule broken-mps-add-flam
   (declare (salience 1))
   (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
@@ -157,6 +170,7 @@
   (wm-fact (key domain fact mps-state args? m ?mps s ?s& : (and (neq ?s READY-AT-OUTPUT) (neq ?s DOWN))))
   ?wpat <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   =>
+  ;TODO: Send Maintenance message
   (printout "Cleaned up wp-at fact because the mps-state did not match" crlf)
   (retract ?wpat)
 )
