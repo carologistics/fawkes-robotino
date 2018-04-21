@@ -134,4 +134,39 @@
   (modify ?pt (timeout-time ?timeout-longer))
 )
 
+(defrule cleanup-after-wp-put
+  (plan-action (id ?id) (goal-id ?goal-id)
+	(plan-id ?plan-id)
+	(action-name ?an&:(or (eq ?an wp-put) (eq ?an wp-put-slide-cc)))
+	(param-values ?r ?wp ?mps $?)
+	(status FAILED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  ?hold <- (wm-fact (key domain fact holding args? r ?r wp ?wp))
+  =>
+  (retract ?hold)
+  (assert (domain-fact (name can-hold) (param-values ?r)))
+)
 
+(defrule cleanup-mps-output
+  (wm-fact (key domain fact mps-state args? m ?mps s ?s& : (and (neq ?s READY-AT-OUTPUT) (neq ?s DOWN))))
+  ?wpat <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+  =>
+  (printout error "Cleaned up wp-at fact because the mps-state did not match" crlf)
+  (retract ?wpat)
+)
+
+(defrule cleanup-get-shelf-failed
+   (plan-action (id ?id) (goal-id ?goal-id)
+	(plan-id ?plan-id)
+	(action-name wp-get-shelf)
+	(param-values ?r ?wp ?mps ?spot)
+	(status FAILED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  ?hold <- (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot))
+  =>
+  (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated" crlf)
+  (retract ?hold)
+  (assert (domain-fact (name can-hold) (param-values ?r)))
+)
