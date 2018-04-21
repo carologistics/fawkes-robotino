@@ -107,6 +107,7 @@
   (time $?now)
   (test (neq ?goal-id WPSPAWN-ACHIEVE))
   (test (neq ?goal-id PRODUCE-C0))
+  (test (neq ?goal-id REFILL-SHELF-ACHIEVE))
   =>
   (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
     "') has been completed, Evaluating" crlf)

@@ -41,6 +41,17 @@
   (modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-refill-shelf
+  ?p <- (goal (mode EXPANDED) (id ?parent-id))
+  ?g <- (goal (mode SELECTED) (parent ?parent-id) (id REFILL-SHELF-ACHIEVE))
+  =>
+  (assert
+     (plan (id REFILLPLAN) (goal-id REFILL-SHELF-ACHIEVE))
+     (plan-action (id 1) (plan-id REFILLPLAN) (goal-id REFILL-SHELF-ACHIEVE)
+        (action-name noop)))
+  (modify ?g (mode EXPANDED))
+)
+
 (defrule goal-expander-enter-field
   ?p <- (goal (mode EXPANDED) (id ?parent))
   ?g <- (goal (mode SELECTED) (parent ?parent) (id ENTER-FIELD))
