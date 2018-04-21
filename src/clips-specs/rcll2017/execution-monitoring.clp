@@ -17,14 +17,60 @@
         (ff-feature-loaded blackboard)
         (not (gripper-blackboard-init))
 	=>
-        (blackboard-open-reading "AX12GripperInterface" "Gripper")
+        (blackboard-open-reading "AX12GripperInterface" "Gripper AX12")
 	(assert (gripper-blackboard-init))
-       ; (assert (skiller-control))
-       ; (path-load "skills.clp")
-       ; (assert (ff-feature-loaded skills))
 )
 
+(defrule update-gripper-facts-gripped
+	(declare (salience 100))
+	(TRUE)
+	(Position3DInterface (id "Pose"))
+	(AX12GripperInterface (holds_puck TRUE))
+	?ch <- (wm-fact (key domain fact can-hold args? r ?r))
+	=>
+	(printout t "Found facts contradicting the sensed gripping state -> updated" crlf)
+	(retract ?ch)
+)
 
+(defrule update-gripper-facts-ungripped
+	(declare (salience 100))
+	(AX12GripperInterface (holds_puck FALSE))
+	?hold <- (wm-fact (key domain fact holding args? r ?r wp ?wp))
+	=>
+	(printout t "Found facts contradicting the sensed gripping state -> updated" crlf)
+	(retract ?hold)
+	(assert (domain-fact (name can-hold) (param-values ?r)))
+)
+
+(defrule remove-wp-from-machine
+	(declare (salience 1))
+	(AX12GripperInterface (holds_puck TRUE))
+	(plan-action (status RUNNING) (plan-id ?plan-id)
+		(goal-id ?goal-id)
+		(action-name wp-get)
+		(param-values $? ?mps $? ?wp $?))
+	(domain-obj-is-type ?wp workpiece)
+	(domain-obj-is-type ?mps mps)
+	=>
+	(do-for-all-facts ((?wm wm-fact)) (and (neq (member$ ?wp (wm-key-args ?wm:key)) FALSE)
+						(neq (member$ wp-at (wm-key-path ?wm:key)) FALSE))
+		(retract ?wm)
+	)
+)
+
+(defrule remove-wp-from-shelf
+	(declare (salience 1))
+	(AX12GripperInterface (holds_puck TRUE))
+	(plan-action (status RUNNING) (plan-id ?plan-id)
+		(goal-id ?goal-id)
+		(action-name wp-get-shelf)
+		(param-values $? ?wp $? ?mps $?))
+	(domain-obj-is-type ?wp workpiece)
+	(domain-obj-is-type ?mps mps)
+	?wm <- (wm-fact (key domain fact wp-on-shelf args? wp ?wp mps ?mps spot ?spot)) 
+	=>
+	(retract ?wm)
+)
 
 ;React to broken mps
 (defrule broken-mps-reject-goals
@@ -36,7 +82,7 @@
   (modify ?g (mode REJECTED))
 )
 
-(defrule broken-mps-add-flag
+(defrule broken-mps-add-flam
   (declare (salience 1))
   (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
   (not (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps)))
