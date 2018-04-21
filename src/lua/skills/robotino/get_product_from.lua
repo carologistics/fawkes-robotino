@@ -96,8 +96,13 @@ function MPS_ALIGN:init()
 end
 
 function CONVEYOR_ALIGN:init()
-   if (self.fsm.vars.shelf == nil) then
-     self.args["conveyor_align"].disable_realsense_afterwards = false
+   self.args["conveyor_align"].mps = place
+
+   if (self.fsm.vars.shelf ~= nil) then
+       self.args["conveyor_align"].target_on_mps = self.fsm.vars.shelf .. "_S"
+   else
+       self.args["conveyor_align"].target_on_mps = string.upper(self.fsm.vars.side) .. "_C"
+       self.args["conveyor_align"].disable_realsense_afterwards = false
    end
 end
 

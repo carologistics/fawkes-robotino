@@ -35,7 +35,7 @@ depends_interfaces = {
 documentation      = [==[
                         The robot just drives forward according to the current distance to the mps and the desired position
                         @param "x" int The x distance of the conveyor in the base_link frame when finished
---                        @param "use_conveyor" default is true, set this to false when the conveyor is not visibly
+--                        @param "use_conveyor" default is false, set this to false when the conveyor is not visibly
                      ]==]
 
 
@@ -113,7 +113,7 @@ fsm:add_transitions{
 
 function INIT:init()
   if self.fsm.vars.use_conveyor == nil then
-    self.fsm.vars.use_conveyor = true
+    self.fsm.vars.use_conveyor = false
   end
   
   conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())

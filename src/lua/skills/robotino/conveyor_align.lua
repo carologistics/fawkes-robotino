@@ -30,11 +30,14 @@ depends_interfaces = {
    {v = "if_gripper", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 
-documentation      = [==[aligns the robot orthogonal to the conveyor by using the
-                         conveyor vision
-Parameters:
-       @param disable_realsense_afterwards   disable the realsense after aligning
+documentation      = [==[
+aligns the robot orthogonal to the conveyor by using the conveyor vision
 
+Parameters:
+   @param mps               the name of the MPS (see navgraph)
+   @param target_on_mps     conveyor, shelf or slide:
+                            ( INPUT_C | OUTPUT_C | LEFT_S | MIDDLE_S | RIGHT_S | SLIDE )
+   @param disable_realsense_afterwards   disable the realsense after aligning
 ]==]
 
 -- Initialize as skill module
