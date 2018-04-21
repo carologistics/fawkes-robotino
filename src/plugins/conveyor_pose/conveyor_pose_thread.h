@@ -148,8 +148,6 @@ private:
   std::string cfg_model_origin_frame_;
   std::string cfg_record_path_;
 
-
-
   std::atomic<float> cfg_gripper_y_min_;
   std::atomic<float> cfg_gripper_y_max_;
   std::atomic<float> cfg_gripper_z_max_;
