@@ -33,7 +33,6 @@
   (wm-fact (key domain fact mps-state args? m ?mps s DOWN))
   ?pa <- (plan-action (id ?id) (goal-id ?goal-id)
         (plan-id ?plan-id)
-        (goal-id ?goal-id)
         (action-name prepare-cs|prepare-rs|prepare-ds|prepare-bs)
         (status RUNNING)
 	(param-values $? ?mps $?))

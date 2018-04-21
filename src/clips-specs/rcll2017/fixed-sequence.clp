@@ -42,7 +42,7 @@
 )
 
 (defrule goal-expander-refill-shelf
-  ?p <- (goal (monde EXPANDED) (id ?parent-id))
+  ?p <- (goal (mode EXPANDED) (id ?parent-id))
   ?g <- (goal (mode SELECTED) (parent ?parent-id) (id REFILL-SHELF-ACHIEVE))
   =>
   (assert
