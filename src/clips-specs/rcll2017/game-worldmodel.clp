@@ -81,3 +81,16 @@
   )
   (retract ?gt ?gt-t ?gt-z ?gt-y ?gt-o)
 )
+
+(defrule game-generate-navgraph-when-all-tages-found
+  "Generate the navgraph when all the mps tags where found."
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (forall
+    (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+    (wm-fact (key game found-tag name args? m ?mps ))
+  )
+=>
+  (printout t "Trigering NavGraph generation with Ground-truth" crlf)
+  (navgraph-add-all-new-tags)
+)
