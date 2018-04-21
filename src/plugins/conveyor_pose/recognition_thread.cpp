@@ -3,7 +3,7 @@
 #include <pcl/registration/transforms.h>
 #include <pcl/filters/filter.h>
 
-#include "correspondence_grouping_thread.h"
+#include "recognition_thread.h"
 #include "conveyor_pose_thread.h"
 
 #include <utils/time/clock.h>
