@@ -144,7 +144,7 @@
   (plan-action (id ?id) (goal-id ?goal-id)
 	(plan-id ?plan-id)
 	(action-name ?an& : (or (eq ?an wp-put) (eq ?an wp-put-slide-cc)))
-	(param-values ?r ?wp ?mps ?side $?)
+	(param-values ?r ?wp ?mps $?)
 	(status FAILED))
   (plan (id ?plan-id) (goal-id ?goal-id))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))	
