@@ -51,6 +51,7 @@
 #include <map>
 #include <atomic>
 #include <set>
+#include <array>
 
 #define CFG_PREFIX "/plugins/conveyor_pose"
 
@@ -129,9 +130,6 @@ private:
   std::string cfg_model_path_;
   std::string cfg_model_origin_frame_;
 
-  std::atomic<float> cfg_pose_diff_;
-  std::atomic<float> vis_hist_angle_diff_;
-
   std::atomic<float> cfg_gripper_y_min_;
   std::atomic<float> cfg_gripper_y_max_;
   std::atomic<float> cfg_gripper_z_max_;
@@ -146,9 +144,10 @@ private:
   std::atomic<float> cfg_left_cut_no_ll_;
   std::atomic<float> cfg_right_cut_no_ll_;
 
-  std::atomic<float> cfg_voxel_grid_leaf_size_;
+  std::atomic<float> cfg_icp_max_corr_dist_;
 
-  uint cfg_allow_invalid_poses_;
+  std::atomic<float> cfg_voxel_grid_leaf_size_;
+  std::array<std::atomic<float>, 3> cfg_conveyor_hint_;
 
   // state vars
   bool cfg_enable_switch_;
@@ -157,7 +156,6 @@ private:
   bool cloud_in_registered_;
   bool cfg_use_visualisation_;
   pcl::PCLHeader header_;
-  int vis_hist_;
 
   //std::set<pose, compare_poses_by_quality> poses_;
   fawkes::tf::Stamped<fawkes::tf::Pose> result_pose_;
