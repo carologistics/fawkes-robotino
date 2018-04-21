@@ -38,15 +38,8 @@
 
 #include <plugins/ros/aspect/ros.h>
 
-#include <interfaces/SwitchInterface.h>
-#include <interfaces/ConveyorPoseInterface.h>
-#include <interfaces/LaserLineInterface.h>
-#include <interfaces/ConveyorPoseInterface.h>
-
 //#include <pcl/filters/uniform_sampling.h>
 #include <pcl/features/normal_3d_omp.h>
-
-//#include "visualisation.hpp"
 
 #include <string>
 #include <map>
@@ -67,7 +60,8 @@ class RecognitionThread;
 
 namespace fawkes {
     class ConveyorPoseInterface;
-    class Position3DInterface;
+    class SwitchInterface;
+    class LaserLineInterface;
 }
 
 class ConveyorPoseThread
@@ -128,30 +122,16 @@ private:
   pcl::PointCloud<pcl::PointNormal>::Ptr scene_with_normals_;
   Eigen::Matrix4f initial_tf_;
 
+  std::string current_station_;
 
-
-  //ConveyorPoseInterface *conv_pos_interface;
-  fawkes::ConveyorPoseInterface *conv_pos_if_;
-
-  std::string approached_station;
-
-  void update_approaching_station();
-  void set_computing(bool computing);
-  void set_computing_station(std::string station);
+  void set_current_station(std::string station);
 
 
   //Mapping from station to its correspoinding model path
   std::map<std::string, std::string> station_to_path_;
 
-  //Reference Information for every station
-  CloudPtr insert_model_;
-  CloudPtr insert_model_keypoints_;
-  pcl::PointCloud<pcl::Normal>::Ptr insert_model_normals_;
-  pcl::PointCloud<pcl::PointNormal>::Ptr insert_model_with_normals_;
-
-  // Mapping  of every station to its calculated pointcloud model
-  std::map<std::string,CloudPtr> station_to_model_;
-  std::map<std::string,CloudPtr> station_to_model_with_normals_;
+  // Mapping from station name to preprocessed pointcloud model
+  std::map<std::string, pcl::PointCloud<pcl::PointNormal>::Ptr> station_to_model_;
 
 
   pcl::NormalEstimationOMP<Point, pcl::PointNormal> norm_est_;
@@ -189,9 +169,7 @@ private:
   // state vars
   bool cfg_enable_switch_;
   bool cfg_debug_mode_;
-  bool cfg_enable_product_removal_;
   bool cloud_in_registered_;
-  bool cfg_use_visualisation_;
   pcl::PCLHeader header_;
 
   //std::set<pose, compare_poses_by_quality> poses_;
