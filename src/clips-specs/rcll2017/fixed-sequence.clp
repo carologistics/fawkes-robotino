@@ -65,23 +65,11 @@
     ?g <- (goal (mode SELECTED) (parent ?parent) (id FILL-CAP)
                                                 (params robot ?robot
                                                         mps ?mps
+                                                        cc ?cc
                                                         ))
     (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
     =>
-    (do-for-fact ((?fact-wp-on-shelf wm-fact))
-            (and (wm-key-prefix ?fact-wp-on-shelf:key (create$ domain fact wp-on-shelf))
-                 (eq (wm-key-arg ?fact-wp-on-shelf:key m) ?mps))
-
-      (bind ?cc (wm-key-arg ?fact-wp-on-shelf:key wp))
-      (bind ?shelf-spot (wm-key-arg ?fact-wp-on-shelf:key spot))
-
-      (do-for-fact ((?fact-wp-cap-color wm-fact))
-              (and (wm-key-prefix ?fact-wp-cap-color:key (create$ domain fact wp-cap-color))
-                    (eq (wm-key-arg ?fact-wp-cap-color:key wp) ?cc))
-        (bind ?cap-color (wm-key-arg ?fact-wp-cap-color:key col))
-      )
-    )
-    (assert
+   (assert
         (plan (id FILL-CAP-PLAN) (goal-id FILL-CAP))
         (plan-action (id 1) (plan-id FILL-CAP-PLAN) (goal-id FILL-CAP)
                                     (action-name move)

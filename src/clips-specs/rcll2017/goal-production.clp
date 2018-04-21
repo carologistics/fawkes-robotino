@@ -136,6 +136,7 @@
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
   (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
   =>
@@ -144,6 +145,7 @@
                               (parent PRODUCTION-MAINTAIN)
                               (params robot ?robot
                                       mps ?mps
+                                      cc ?cc
                                       )))
   ; This is just to make sure we formulate the goal only once.
   ; In an actual domain this would be more sophisticated.
