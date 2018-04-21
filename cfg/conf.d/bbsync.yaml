@@ -31,6 +31,38 @@ fawkes/bbsync:
         tfGripper: TransformInterface::/tf/GRIPPER AX12A
         tfOdom:    TransformInterface::/tf/Robotino Odometry
         tfAmcl:    TransformInterface::/tf/odom
+        line1_e1:  TransformInterface::/tf/laser_line_1_e1
+        line1_e2:  TransformInterface::/tf/laser_line_1_e2
+        line2_e1:  TransformInterface::/tf/laser_line_2_e1
+        line2_e2:  TransformInterface::/tf/laser_line_2_e2
+        line3_e1:  TransformInterface::/tf/laser_line_3_e1
+        line3_e2:  TransformInterface::/tf/laser_line_3_e2
+        line4_e1:  TransformInterface::/tf/laser_line_4_e1
+        line4_e2:  TransformInterface::/tf/laser_line_4_e2
+        line5_e1:  TransformInterface::/tf/laser_line_5_e1
+        line5_e2:  TransformInterface::/tf/laser_line_5_e2
+        line6_e1:  TransformInterface::/tf/laser_line_6_e1
+        line6_e2:  TransformInterface::/tf/laser_line_6_e2
+        line7_e1:  TransformInterface::/tf/laser_line_7_e1
+        line7_e2:  TransformInterface::/tf/laser_line_7_e2
+        line8_e1:  TransformInterface::/tf/laser_line_8_e1
+        line8_e2:  TransformInterface::/tf/laser_line_8_e2
+        line1_avg_e1:  TransformInterface::/tf/laser_line_avg_1_e1
+        line1_avg_e2:  TransformInterface::/tf/laser_line_avg_1_e2
+        line2_avg_e1:  TransformInterface::/tf/laser_line_avg_2_e1
+        line2_avg_e2:  TransformInterface::/tf/laser_line_avg_2_e2
+        line3_avg_e1:  TransformInterface::/tf/laser_line_avg_3_e1
+        line3_avg_e2:  TransformInterface::/tf/laser_line_avg_3_e2
+        line4_avg_e1:  TransformInterface::/tf/laser_line_avg_4_e1
+        line4_avg_e2:  TransformInterface::/tf/laser_line_avg_4_e2
+        line5_avg_e1:  TransformInterface::/tf/laser_line_avg_5_e1
+        line5_avg_e2:  TransformInterface::/tf/laser_line_avg_5_e2
+        line6_avg_e1:  TransformInterface::/tf/laser_line_avg_6_e1
+        line6_avg_e2:  TransformInterface::/tf/laser_line_avg_6_e2
+        line7_avg_e1:  TransformInterface::/tf/laser_line_avg_7_e1
+        line7_avg_e2:  TransformInterface::/tf/laser_line_avg_7_e2
+        line8_avg_e1:  TransformInterface::/tf/laser_line_avg_8_e1
+        line8_avg_e2:  TransformInterface::/tf/laser_line_avg_8_e2
         tfLaserFrontDist:    TransformInterface::/tf/laser-front-dist
         motor-switch: SwitchInterface::Robotino Motor
         line1: LaserLineInterface::/laser-lines/1
