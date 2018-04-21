@@ -21,5 +21,15 @@
       The sum of squared distances between all corresponding points between the
       input cloud and the transformed model.
     </field>
+    <field type="string" length="16" name="current_station">
+      Name of the currently used station/conveyor model
+    </field>
   </data>
+  <message name="SetStation">
+	  <comment>Set which conveyor model the plugin should use</comment>
+    <field type="string" length="32" name="station">
+      Name and side of the station, formatted as e.g. C-CS1-I
+    </field>
+  </message>
+
 </interface>
