@@ -238,7 +238,7 @@
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
 		:precondition (and (entered-field ?r)
 										(at ?r ?from ?from-side)
-										(location-free ?to ?to-side))
+										(or (at ?r ?to ?to-side) (location-free ?to ?to-side)))
 		:effect (and (not (at ?r ?from ?from-side))
 								 (location-free ?from ?from-side)
 								 (not (location-free ?to ?to-side))
