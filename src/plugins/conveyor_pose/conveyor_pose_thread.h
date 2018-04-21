@@ -39,7 +39,7 @@
 #include <plugins/ros/aspect/ros.h>
 
 #include <interfaces/SwitchInterface.h>
-#include <interfaces/Position3DInterface.h>
+#include <interfaces/ConveyorPoseInterface.h>
 #include <interfaces/LaserLineInterface.h>
 
 //#include <pcl/filters/uniform_sampling.h>
@@ -129,8 +129,6 @@ private:
   std::string cfg_model_path_;
   std::string cfg_model_origin_frame_;
 
-  bool cfg_pose_close_if_no_new_pointclouds_;
-//  std::string bb_tag_name_;
   std::atomic<float> cfg_pose_diff_;
   std::atomic<float> vis_hist_angle_diff_;
 
@@ -153,7 +151,6 @@ private:
   uint cfg_allow_invalid_poses_;
 
   // state vars
-  bool enable_pose_;
   bool cfg_enable_switch_;
   bool cfg_debug_mode_;
   bool cfg_enable_product_removal_;
@@ -162,11 +159,9 @@ private:
   pcl::PCLHeader header_;
   int vis_hist_;
 
-  size_t cfg_pose_avg_hist_size_;
-  size_t cfg_pose_avg_min_;
-
-  std::set<pose, compare_poses_by_quality> poses_;
+  //std::set<pose, compare_poses_by_quality> poses_;
   fawkes::tf::Stamped<fawkes::tf::Pose> result_pose_;
+  std::atomic<double> result_fitness_;
 
   // point clouds from pcl_manager
   fawkes::RefPtr<const Cloud> cloud_in_;
@@ -175,8 +170,8 @@ private:
   fawkes::RefPtr<Cloud> cloud_out_model_;
 
   // interfaces write
-  fawkes::SwitchInterface * bb_enable_switch_;
-  fawkes::Position3DInterface * bb_pose_;
+  fawkes::SwitchInterface *bb_enable_switch_;
+  fawkes::ConveyorPoseInterface *bb_pose_;
 
   // interfaces read
   std::vector<fawkes::LaserLineInterface * > laserlines_;
@@ -193,11 +188,6 @@ private:
   * check if the pointcloud is available
   */
  bool update_input_cloud();
- void bb_pose_conditional_open();
- void bb_pose_conditional_close();
-
- void pose_add_element(pose element);
- bool pose_get_avg(pose & out);
 
  void if_read();
  bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
@@ -218,7 +208,7 @@ private:
  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
 
  void tf_send_from_pose_if(pose pose);
- void pose_write(const fawkes::tf::Pose &pose);
+ void pose_write();
  void record_model();
 
  Eigen::Quaternion<float> averageQuaternion(

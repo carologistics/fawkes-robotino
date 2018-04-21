@@ -101,29 +101,30 @@ void RecognitionThread::loop()
         reg.setMaxCorrespondenceDistance (reg.getMaxCorrespondenceDistance () - 0.001);
 
       prev = reg.getLastIncrementalTransformation ();
-
     }
 
+
     pcl::copyPointCloud(*model_with_normals, *aligned_model);
-    main_thread_->cloud_publish(aligned_model, main_thread_->cloud_out_model_);
 
-    tf::Stamped<tf::Pose> rv;
     Eigen::Matrix4f m = Ti * initial_tf;
-    //Eigen::Matrix4f m = initial_tf;;
-    rv.setOrigin( { double(m(0,3)), double(m(1,3)), double(m(2,3)) } );
-    rv.setBasis( {
-                   double(m(0,0)), double(m(0,1)), double(m(0,2)),
-                   double(m(1,0)), double(m(1,1)), double(m(1,2)),
-                   double(m(2,0)), double(m(2,1)), double(m(2,2))
-                 } );
-    rv.frame_id = scene_with_normals->header.frame_id;
-    rv.stamp = Clock::instance()->now();
-    logger->log_info(name(), "%f %f %f",
-                     rv.getOrigin().getX(), rv.getOrigin().getY(), rv.getOrigin().getZ()
-                     );
 
+    double new_fitness = (1 / reg.getFitnessScore())
+        / double(std::min(model_with_normals->size(), scene_with_normals->size()));
+
+    main_thread_->cloud_publish(aligned_model, main_thread_->cloud_out_model_);
     MutexLocker locked2(&main_thread_->pose_mutex_);
-    main_thread_->result_pose_ = rv;
+    main_thread_->result_fitness_ = new_fitness;
+    main_thread_->result_pose_.setOrigin( { double(m(0,3)), double(m(1,3)), double(m(2,3)) } );
+    main_thread_->result_pose_.setBasis( {
+                                           double(m(0,0)), double(m(0,1)), double(m(0,2)),
+                                           double(m(1,0)), double(m(1,1)), double(m(1,2)),
+                                           double(m(2,0)), double(m(2,1)), double(m(2,2))
+                                         } );
+    main_thread_->result_pose_.frame_id = scene_with_normals->header.frame_id;
+    main_thread_->result_pose_.stamp = Time { static_cast<long>(scene_with_normals->header.stamp) };
+
+    main_thread_->pose_write();
+    main_thread_->pose_publish_tf(main_thread_->result_pose_);
   }
 }
 
