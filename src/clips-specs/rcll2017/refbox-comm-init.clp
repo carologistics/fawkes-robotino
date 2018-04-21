@@ -30,9 +30,25 @@
     (wm-fact (id "/refbox/points/cyan") (type UINT) (value 0) )
     (wm-fact (id "/refbox/phase")  (type UNKNOWN) (value PRE_GAME) )
     (wm-fact (id "/refbox/state")  (type UNKNOWN) (value WAIT_START) )
+    (wm-fact (id "/game/state")  (type UNKNOWN) (value WAIT_START) )
     (wm-fact (id "/refbox/game-time")  (type UINT) (is-list TRUE) (values 0 0))
     (wm-fact (key refbox beacon seq) (type UINT) (value 1))
   )  
+)
+
+(defrule refbox-comm-enable-public
+  "Enable peer connection to the unencrypted refbox channel"
+  ; (declare (salience ?*PRIORITY-LOW*))
+  (executive-init)
+  (wm-fact (id "/config/rcll/peer-address") (value ?peer-address))
+  (wm-fact (id "/config/rcll/peer-port") (value ?peer-port))
+  (not (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE)))
+  =>
+  (printout t "Enabling remote peer (public)" crlf)
+  (bind ?peer-id (pb-peer-create ?peer-address ?peer-port))
+  (assert (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE) (type BOOL))
+          (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
+   )
 )
 
 (defrule refbox-comm-enable-local-public
@@ -61,19 +77,6 @@
   (modify ?pe (value FALSE))
 )
 
-(defrule refbox-comm-enable-public
-  "Enable peer connection to the unencrypted refbox channel"
-  (executive-init)
-  (confval (path "/config/rcll/peer-address") (value ?peer-address))
-  (confval (path "/config/rcll/peer-port") (value ?peer-port))
-  (not (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE)))
-  =>
-  (printout t "Enabling remote peer (public)" crlf)
-  (bind ?peer-id (pb-peer-create ?peer-address ?peer-port))
-  (assert (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE) (type BOOL))
-          (wm-fact (id "/refbox/comm/peer-id/public") (value ?peer-id) (type INT))
-   )
-)
 
 (defrule refbox-comm-close-public
   "Disable the remote peer connection on finalize"
@@ -107,6 +110,31 @@
       else
       (printout t "Enabling local peer (magenta only)" crlf)
       (bind ?peer-id (pb-peer-create-local-crypto ?address ?magenta-send-port ?magenta-recv-port ?key ?cipher))
+    )
+  (assert (wm-fact (id "/refbox/comm/private-peer-enabled") (value TRUE) (type BOOL))
+          (wm-fact (id "/refbox/comm/peer-id/private") (value ?peer-id) (type INT))
+    )
+)
+
+(defrule refbox-comm-enable-team-private
+  "Enable local peer connection to the encrypted team channel"
+  (executive-init)
+  (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE))
+  (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
+  (wm-fact (id "/config/rcll/peer-address") (value ?address))
+  (wm-fact (id "/config/rcll/crypto-key") (value ?key))
+  (wm-fact (id "/config/rcll/cipher") (value ?cipher))
+  (wm-fact (id "/config/rcll/cyan-port") (value ?cyan-port))
+  (wm-fact (id "/config/rcll/magenta-port") (value ?magenta-port))
+  (not (wm-fact (id "/refbox/comm/private-peer-enabled") (value TRUE) ))
+  =>
+  (if (eq ?team-color CYAN)
+    then
+      (printout t "Enabling remote peer (cyan only)" crlf)
+      (bind ?peer-id (pb-peer-create-crypto ?address ?cyan-port ?key ?cipher))
+      else
+      (printout t "Enabling remote peer (magenta only)" crlf)
+      (bind ?peer-id (pb-peer-create-crypto ?address ?magenta-port ?key ?cipher))
     )
   (assert (wm-fact (id "/refbox/comm/private-peer-enabled") (value TRUE) (type BOOL))
           (wm-fact (id "/refbox/comm/peer-id/private") (value ?peer-id) (type INT))
