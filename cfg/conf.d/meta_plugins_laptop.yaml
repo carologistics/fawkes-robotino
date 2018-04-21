@@ -25,7 +25,6 @@ fawkes/meta_plugins:
     - m-clips
     - m-fv-vision
     - clips-agent
-    - webtools-bridge
   m-clips-executive:
     - m-clips
     - m-fv-vision
