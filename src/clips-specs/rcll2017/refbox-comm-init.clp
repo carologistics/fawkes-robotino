@@ -64,8 +64,8 @@
 (defrule refbox-comm-enable-public
   "Enable peer connection to the unencrypted refbox channel"
   (executive-init)
-  (confval (path "/config/rcll/peer-address") (value ?peer-address))
-  (confval (path "/config/rcll/peer-port") (value ?peer-port))
+  (wm-fact (id "/config/rcll/peer-address") (value ?peer-address))
+  (wm-fact (id "/config/rcll/peer-port") (value ?peer-port))
   (not (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE)))
   =>
   (printout t "Enabling remote peer (public)" crlf)
