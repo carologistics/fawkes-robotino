@@ -47,7 +47,7 @@ ifeq ($(shell hostname),robotino-base)
 endif
 
 # Globally enable optimization for the Robotino platform
-CFLAGS_EXTRA  += -g -Wall -Werror -O3
+CFLAGS_EXTRA  += -g -Wall -Werror -O2
 
 endif # __robotino_config_mk_
 
