@@ -124,6 +124,15 @@
     (domain-fact (name location-free) (param-values ?rs1 OUTPUT))
     (domain-fact (name location-free) (param-values ?rs2 INPUT))
     (domain-fact (name location-free) (param-values ?rs2 OUTPUT))
+    
+    (domain-fact (name mps-team) (param-values ?bs ?team-color))
+    (domain-fact (name mps-team) (param-values ?ds ?team-color))
+    (domain-fact (name mps-team) (param-values ?ss ?team-color))
+    (domain-fact (name mps-team) (param-values ?cs1 ?team-color))
+    (domain-fact (name mps-team) (param-values ?cs2 ?team-color))
+    (domain-fact (name mps-team) (param-values ?rs1 ?team-color))
+    (domain-fact (name mps-team) (param-values ?rs2 ?team-color))
+    
     (domain-fact (name cs-can-perform) (param-values ?cs1 RETRIEVE_CAP))
     (domain-fact (name cs-can-perform) (param-values ?cs2 RETRIEVE_CAP))
     (domain-fact (name cs-free) (param-values ?cs1))
