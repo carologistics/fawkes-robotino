@@ -111,7 +111,7 @@ navgraph-generator-mps:
     # This is the spacing of the grid, i.e., the grid has cells of
     # spacing x spacing size. Points are generated in the middle of
     # the cells.
-    spacing: 1.0
+    spacing: 0.5
 
     # Minimum distance of any edge to an obstacle, if the distance
     # is less than the given margin the edge is removed.
