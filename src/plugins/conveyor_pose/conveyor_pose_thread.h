@@ -140,22 +140,19 @@ private:
   void set_computing_station(std::string station);
 
 
-  //Path for all stations
-  std::map<std::string, std::string> cfg_model_paths;
+  //Mapping from station to its correspoinding model path
+  std::map<std::string, std::string> station_to_path_;
 
   //Reference Information for every station
   CloudPtr insert_model_;
   CloudPtr insert_model_keypoints_;
   pcl::PointCloud<pcl::Normal>::Ptr insert_model_normals_;
   pcl::PointCloud<pcl::PointNormal>::Ptr insert_model_with_normals_;
-  //CloudPtr insert_model_keypoints_;
-  //pcl::PointCloud<pcl::Normal>::Ptr insert_model_normals_;
-  //pcl::PointCloud<pcl::SHOT352>::Ptr insert_model_descriptors_;
-   std::map<std::string,CloudPtr> station_to_model_;
-   std::map<std::string,CloudPtr> station_to_model_with_normals_;
-  //std::map<std::string,CloudPtr> station_to_model_keypoints_;
-  //std::map<std::string,pcl::PointCloud<pcl::Normal>::Ptr> station_to_model_normals_;
-  //std::map<std::string,pcl::PointCloud<pcl::SHOT352>::Ptr> station_to_model_descriptors_;
+
+  // Mapping  of every station to its calculated pointcloud model
+  std::map<std::string,CloudPtr> station_to_model_;
+  std::map<std::string,CloudPtr> station_to_model_with_normals_;
+
 
   pcl::NormalEstimationOMP<Point, pcl::PointNormal> norm_est_;
 
