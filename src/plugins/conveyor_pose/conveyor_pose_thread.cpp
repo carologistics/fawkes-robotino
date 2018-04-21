@@ -113,7 +113,6 @@ ConveyorPoseThread::init()
     cfg_model_path_ = CONFDIR "/" + cfg_model_path_;
 
 
-  // Adaption to different Models for every station
   // Load all model paths, should be "default" if the default model path should be used
 
   station_to_path_.insert({"M-BS-I", config->get_string(CFG_PREFIX  "/model_files/M-BS-I")});
@@ -154,13 +153,14 @@ ConveyorPoseThread::init()
   cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
   model_.reset(new Cloud());
 
-  cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
+  // if recording is set, record PCD file and stores in icp_models folder structure
+  // else load pcd file for every station and calculate model with normals
 
   if (cfg_record_model_) {
     std::string reference_station = config->get_string_or_default(CFG_PREFIX "/record_station","default");
     std::string reference_path = CONFDIR "/icp_models/"
-        + reference_station + "/" + reference_station + ".pcd" ;
-    std::string new_reference_path = reference_path;
+        + reference_station + "/" + reference_station;
+    std::string new_reference_path = reference_path + ".pcd";
     bool exists;
     FILE *tmp;
     size_t count = 0;
@@ -171,7 +171,7 @@ ConveyorPoseThread::init()
       if(tmp) {
         exists = true;
         ::fclose(tmp);
-        new_reference_path = reference_path + std::to_string(count++);
+        new_reference_path = reference_path + std::to_string(count++) + ".pcd";
       }
     } while(exists);
 
@@ -180,7 +180,7 @@ ConveyorPoseThread::init()
   }
   else {
 
-    //Loading of PCD file and calculation of model with normals for DEFAULT! station
+    //Load default PCD file from icp_models and calculate model with normals for it
 
     int errnum;
 
