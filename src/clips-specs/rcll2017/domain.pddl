@@ -68,6 +68,7 @@
 		(robot-waiting ?r - robot)
 		(mps-type ?m - mps ?t - mps-typename)
 		(mps-state ?m - mps ?s - mps-statename)
+		(mps-team ?m - mps ?col - team-color)
 		(bs-prepared-color ?m - mps ?col - base-color)
 		(bs-prepared-side ?m - mps ?side - mps-side)
 		(cs-can-perform ?m - mps ?op - cs-operation)
@@ -80,7 +81,7 @@
 		;rs-sub and rs-inc are static predicates stating the legal ring-num operations
 		(rs-sub ?minuend - ring-num ?subtrahend - ring-num ?difference - ring-num)
 		(rs-inc ?summand - ring-num ?sum - ring-num)
-    (ds-prepared-gate ?m - mps ?g - ds-gate)
+		(ds-prepared-gate ?m - mps ?g - ds-gate)
 		(order-complexity ?ord - order ?com - order-complexity-value)
 		(order-base-color ?ord - order ?col - base-color)
 		(order-ring1-color ?ord - order ?col - ring-color)

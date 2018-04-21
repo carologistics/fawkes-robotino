@@ -42,6 +42,13 @@
   ;     for the current moment. Filter out uneeded
   ;     later. For now needed for refrence.
 
+  ?*PRODUCE-C0-AHEAD-TIME* = 150
+  ?*PRODUCE-C0-LATEST-TIME* = 30
+
+  ?*DELIVER-AHEAD-TIME* = 60
+  ?*DELIVER-LATEST-TIME* = 10
+  ?*DELIVER-ABORT-TIMEOUT* = 30
+
 )
 
 ; ## Maintain beacon sending
@@ -96,8 +103,8 @@
   formulated as sub-goals of this goal"
   (domain-facts-loaded)
   (not (goal (id PRODUCTION-MAINTAIN)))
-  (wm-fact (key refbox state) (type UNKNOWN) (value RUNNING))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
+  (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
   =>
   (assert (goal (id PRODUCTION-MAINTAIN) (type MAINTAIN)))
 )
@@ -243,10 +250,21 @@
   (wm-fact (key domain fact order-complexity args? ord ?order com C0))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   ;note: could be moved to rejected checks
-  (wm-fact (key refbox order ?order quantity-delivered CYAN) (value ?qd&:(> ?qr ?qd)))
-  ;ToDo: All the time considerations need to be added
+  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
+	(value ?qd&:(> ?qr ?qd)))
+  (wm-fact (key refbox order ?order-id delivery-begin) (type UINT)
+	(value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*))))
+  (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
+	(value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-LATEST-TIME*))))
+  ;TODO for multi-agent
+  ;	Model old agents constraints
+  ; 	(in-production 0)
+  ; 	(in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   =>
   (printout t "Goal " PRODUCE-C0 " formulated" crlf)
   (assert (goal (id PRODUCE-C0) (priority ?*PRIORITY-PRODUCE-C0*)
@@ -287,13 +305,21 @@
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
-  ;note: could be moved to rejected checks
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key refbox order ?order quantity-delivered CYAN) (value ?qd&:(> ?qr ?qd)))
-
-  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  ;ToDo: All the time considerations need to be added
+
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  ;note: could be moved to rejected checks
+  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
+    (value ?qd&:(> ?qr ?qd)))
+  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key refbox order ?order-id delivery-begin) (type UINT)
+    (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
+  ;TODO for multi-agent
+  ; Model old agents constraints
+  ;  (in-production ?ip&:(> ?ip 0))
+  ;  (in-delivery ?id)
   =>
   (printout t "Goal " DELIVER " formulated" crlf)
   (assert (goal (id DELIVER) (priority ?*PRIORITY-DELIVER*)

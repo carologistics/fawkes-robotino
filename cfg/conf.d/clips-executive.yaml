@@ -86,7 +86,7 @@ clips-executive:
       blackboard-preload: ["Position3DInterface"]
 
     rcll2017:
-      init: rcll2017/init.clp
+      init: ["rcll2017/init.clp" , "rcll2017/utils.clp" ]
       communication: ["rcll2017/refbox-comm-init.clp", "rcll2017/refbox-worldmodel.clp"]
       domain: rcll2017/domain.clp
       goal-reasoner: [ "rcll2017/goal-reasoner.clp" , "rcll2017/goal-production.clp" ]
@@ -99,7 +99,7 @@ clips-executive:
         "rcll2017/refbox-actions.clp" ]
       execution-monitoring: rcll2017/execution-monitoring.clp
       state-estimation: rcll2017/state-estimation-init.clp
-      worldmodel: rcll2017/init-worldmodel.clp
+      worldmodel: ["rcll2017/init-worldmodel.clp" , "rcll2017/game-worldmodel.clp"]
 
       action-mapping:
         enter-field: drive_into_field{team=?(team-color)S}
@@ -115,13 +115,11 @@ clips-executive:
 
       parameters:
         rcll:
-          peer-address: 127.0.0.1
-          peer-recv-port: 4444
-          peer-send-port: 4445
-          cyan-recv-port: 4441
-          magenta-recv-port: 4442
-          cyan-send-port: 4446
-          magenta-send-port: 4447
+        #real-world-setup:
+          peer-address: 172.26.255.255
+          peer-port: 4444
+          cyan-port: 4441
+          magenta-port: 4442
 
           team-name: Carologistics
           crypto-key: randomkey
