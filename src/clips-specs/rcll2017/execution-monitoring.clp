@@ -176,6 +176,7 @@
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))	
   ?hold <- (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot))
   =>
+  (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated")
   (retract ?hold)
   (modify ?g (mode EVALUATED))
   (assert (domain-fact (name can-hold) (param-values ?r)))
