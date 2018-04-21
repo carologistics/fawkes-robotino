@@ -135,20 +135,23 @@
 )
 
 (defrule cleanup-after-wp-put
+  (declare (salience 1))
   (plan-action (id ?id) (goal-id ?goal-id)
 	(plan-id ?plan-id)
 	(action-name ?an&:(or (eq ?an wp-put) (eq ?an wp-put-slide-cc)))
 	(param-values ?r ?wp ?mps $?)
 	(status FAILED))
   (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?hold <- (wm-fact (key domain fact holding args? r ?r wp ?wp))
   =>
   (retract ?hold)
+  (modify ?g (mode EVALUATED))
   (assert (domain-fact (name can-hold) (param-values ?r)))
 )
 
 (defrule cleanup-mps-output
+  (declare (salience 1))
   (wm-fact (key domain fact mps-state args? m ?mps s ?s& : (and (neq ?s READY-AT-OUTPUT) (neq ?s DOWN))))
   ?wpat <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   =>
@@ -157,16 +160,26 @@
 )
 
 (defrule cleanup-get-shelf-failed
+  (declare (salience 1))
    (plan-action (id ?id) (goal-id ?goal-id)
 	(plan-id ?plan-id)
 	(action-name wp-get-shelf)
 	(param-values ?r ?wp ?mps ?spot)
 	(status FAILED))
   (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?hold <- (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot))
   =>
   (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated" crlf)
   (retract ?hold)
+  (modify ?g (mode EVALUATED))
   (assert (domain-fact (name can-hold) (param-values ?r)))
+)
+
+(defrule common-failed-evaluation
+  ?g <- (goal (id ??goal-id) (mode FINISHED) (outcome FAILED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (plan-action (goal-id ?goal-id) (status FAILED))
+  =>
+  (modify ?g (mode EVALUATED))
 )
