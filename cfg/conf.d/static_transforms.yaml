@@ -58,13 +58,6 @@ plugins/static-transforms:
       trans_y: 0
       trans_z: 0
 
-    fingers:
-      frame: !frame gripper
-      child_frame: !frame gripper_fingers
-      trans_x: 0.11
-      trans_y: 0.005
-      trans_z: -0.02
-
     cam_conveyor:
       frame: !frame gripper
       child_frame: !frame cam_conveyor
