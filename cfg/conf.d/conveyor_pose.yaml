@@ -67,15 +67,8 @@ plugins/conveyor_pose:
     # the prefix used for all interfaces
     prefix: conveyor_pose
 
-    # the position 3d interface of the result
-    name: pose
-    # should the pose interface be closed if no new pointcloud is availabe.
-    # This would result that the if would have no writer after starup and at some ocasions during runtime.
-    pose_close_if_new_pc: false
     # the switch interface
     switch: switch
-    # the dynamic config interface
-    config: config
     # the laser lines, they don't use the prefix
     laser_lines: [
       "/laser-lines/1",
