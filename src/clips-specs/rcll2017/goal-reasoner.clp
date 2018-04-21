@@ -100,8 +100,9 @@
 ; #  Goal Monitoring
 
 ; ## Goal Evaluation
-(defrule goal-reasoner-evaluate-completed-subgoal-common
-  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome ?outcome))
+
+ (defrule goal-reasoner-evaluate-completed-subgoal-common
+  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome COMPLETED))
   ?pg <- (goal (id ?parent-id))
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)

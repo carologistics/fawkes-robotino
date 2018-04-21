@@ -340,7 +340,7 @@
 ; ## Goal Evaluation
 (defrule goal-reasoner-evaluate-completed-subgoal-produce-c0
   ?g <- (goal (id PRODUCE-C0) (parent ?parent-id)
-              (mode FINISHED) (outcome ?outcome)
+              (mode FINISHED) (outcome COMPLETED)
                               (params robot ?robot 
                                       bs ?bs 
                                       bs-side ?bs-side 
