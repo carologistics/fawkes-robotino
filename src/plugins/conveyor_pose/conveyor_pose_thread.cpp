@@ -113,7 +113,6 @@ ConveyorPoseThread::init()
 
 
   // Adaption to different Models for every station
-  //------------------------------------------- Begin
   cfg_model_paths.insert(std::make_pair("M-BS-I", config-> get_string(CFG_PREFIX  "/model_files/M-BS-I").c_str()));
   cfg_model_paths.insert(std::make_pair("M-BS-O", config-> get_string(CFG_PREFIX  "/model_files/M-BS-O").c_str()));
   cfg_model_paths.insert(std::make_pair("C-BS-I", config-> get_string(CFG_PREFIX  "/model_files/C-BS-I").c_str()));
@@ -151,11 +150,10 @@ ConveyorPoseThread::init()
 
   trimmed_scene_.reset(new Cloud());
 
-
-
   cfg_model_origin_frame_ = config->get_string(CFG_PREFIX "/model_origin_frame");
   cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
   model_.reset(new Cloud());
+  insert_model_.reset(new Cloud());
 
   cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
   if (cfg_record_model_) {
@@ -196,30 +194,38 @@ ConveyorPoseThread::init()
             }
 
       } while(exists);
-
+       reference_path_ = reference_path_ + ".pcd";
      logger->log_info(name(), "Writing point cloud to %s", reference_path_.c_str());
   }
   else {
+
+    //Loading of PCD file and calculation of model with normals for DEFAULT! station
+
     int errnum;
+
     if ((errnum = pcl::io::loadPCDFile(cfg_model_path_, *model_)) < 0)
       throw fawkes::CouldNotOpenFileException(cfg_model_path_.c_str(), errnum,
                                               "Set from " CFG_PREFIX "/model_file");
+
     norm_est_.setInputCloud(model_);
     model_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
     norm_est_.compute(*model_with_normals_);
     pcl::copyPointCloud(*model_, *model_with_normals_);
 
 
-    // Calculate Model for Every Station
+    // Loading PCD file and calculation of model with normals for ALL! stations
     std::map<std::string,std::string>::iterator it;
        for (it = cfg_model_paths.begin(); it != cfg_model_paths.end(); it++ )
        {
+           std::cout << " Load path " + it->second << std::endl;
            if ((errnum = pcl::io::loadPCDFile(it->second, *insert_model_)) < 0)
              throw fawkes::CouldNotOpenFileException(it->second.c_str(), errnum,
                                                      "Set from " CFG_PREFIX "/model_file");
 
            norm_est_.setInputCloud(insert_model_);
            insert_model_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
+           std::cout << "komme bis zum loaden des files" << std::endl;
+
            norm_est_.compute(*insert_model_with_normals_);
            // station_to_model_with_normals_.insert(std::make_pair(it->first,insert_model_with_normals_));
            pcl::copyPointCloud(*insert_model_, *insert_model_with_normals_);
@@ -227,7 +233,10 @@ ConveyorPoseThread::init()
 
 
        }
+
   }
+
+
 
   cloud_in_registered_ = false;
 
