@@ -153,37 +153,42 @@ ConveyorPoseThread::init()
   cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
   model_.reset(new Cloud());
 
-  // if recording is set, record PCD file and stores in icp_models folder structure
+  // if recording is set, a pointcloud written to the the cfg_model_path
   // else load pcd file for every station and calculate model with normals
 
   if (cfg_record_model_) {
-    std::string reference_station = config->get_string_or_default(CFG_PREFIX "/record_station","default");
-    std::string reference_path = CONFDIR "/icp_models/"
-        + reference_station + "/" + reference_station;
-    std::string new_reference_path = reference_path + ".pcd";
+
+    std::string reference_station = config->get_string_or_default(CFG_PREFIX "/record_file","recorded_file");
+    cfg_record_path_ = CONFDIR   "/" + reference_station;
+    std::string new_record_path = cfg_record_path_;
     bool exists;
     FILE *tmp;
     size_t count = 0;
 
     do {
       exists = false;
-      tmp = ::fopen(new_reference_path.c_str(),"r");
+      tmp = ::fopen(new_record_path.c_str(),"r");
       if(tmp) {
         exists = true;
         ::fclose(tmp);
-        new_reference_path = reference_path + std::to_string(count++) + ".pcd";
+        if(cfg_record_path_.substr(cfg_record_path_.length() - 4) == ".pcd")
+          new_record_path = cfg_record_path_.substr(0,cfg_record_path_.length()-4)
+              + std::to_string(count++) + ".pcd";
+        else
+          new_record_path = cfg_record_path_ + std::to_string(count++);
       }
     } while(exists);
 
-    reference_path = new_reference_path + ".pcd";
-    logger->log_info(name(), "Writing point cloud to %s", reference_path.c_str());
+    cfg_record_path_= new_record_path;
+
+    logger->log_info(name(), "Writing point cloud to %s", cfg_record_path_.c_str());
+
   }
   else {
 
-    //Load default PCD file from icp_models and calculate model with normals for it
+    //Load default PCD file from model path and calculate model with normals for it
 
     int errnum;
-
     if ((errnum = pcl::io::loadPCDFile(cfg_model_path_, *model_)) < 0)
       throw fawkes::CouldNotOpenFileException(cfg_model_path_.c_str(), errnum,
                                               "Set from " CFG_PREFIX "/model_file");
@@ -421,17 +426,17 @@ ConveyorPoseThread::record_model()
   pcl::transformPointCloud(*trimmed_scene_, *model_, tf_to_cam);
 
   // Overwrite and atomically rename model so it can be copied at any time
-  int rv = pcl::io::savePCDFileASCII(cfg_model_path_ + "_tmp", *model_);
+  int rv = pcl::io::savePCDFileASCII(cfg_record_path_, *model_);
   if (rv)
-    logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_model_path_.c_str());
+    logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_record_path_.c_str());
   else
-    ::rename((cfg_model_path_ + "_tmp").c_str(), cfg_model_path_.c_str());
+    ::rename((cfg_record_path_ + ".pcd").c_str(), cfg_record_path_.c_str());
+
 }
 
 
 
-//writes computing station to ComputationInformation interface
-
+//Sets current station in ConveyorPose Interface
 void
 ConveyorPoseThread::set_current_station(std::string station)
 {
