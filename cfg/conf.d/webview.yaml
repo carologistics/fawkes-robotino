@@ -183,9 +183,38 @@ webview:
           - ((device)) transmit
         y_tick_format: bytes/s
         y_tick_count: 6
+      5-cpu:
+        name: CPU (Base)
+        query: avg without (cpu)(irate(node_cpu{job="node",instance="robotino-base:9100",mode!="idle"}[5m]))
+        legend_format: ((mode))
+        y_tick_format: ".0%"
+        y_min: 0.0
+        y_max: 1.0
+      6-mem:
+        name: Memory (Base)
+        query: namedprocess_namegroup_memory_bytes{instance="robotino-base:9256",memtype="resident"}
+        legend_format: ((groupname))
+        y_tick_format: bytes
+      7-threads_cpu:
+        name: Per Thread CPU
+        query: sum by (threadname)(irate(namedprocess_namegroup_thread_cpu_seconds_total{groupname="fawkes",instance="robotino-base:9256",job="proc"}[5m]))
+        legend_format: ((threadname))
+        y_tick_format: ".1%"
+      8-network:
+        name: Network Traffic (Base)
+        queries:
+          - 'irate(node_network_receive_bytes{device="enp0s25"}[1m])'
+          - '- irate(node_network_transmit_bytes{device="enp0s25"}[1m])'
+        legend_formats:
+          - ((device)) receive
+          - ((device)) transmit
+        y_tick_format: bytes/s
+        y_tick_count: 6
         y_axis_center: 0.0
-      5-mongodb-ops:
-        name: MongoDB Operations
-        query: rate(mongodb_op_counters_total{}[1m])
+        y_axis_center: 0.0
+      9-mongodb-ops:
+        name: MongoDB Operations (Laptop)
+        query: rate(mongodb_op_counters_total{instance="localhost:9001"}[1m])
         legend_format: ((type))
         remove_all_zero: false
+
