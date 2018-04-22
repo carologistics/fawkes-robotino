@@ -153,12 +153,12 @@ ConveyorPoseThread::init()
   cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
   model_.reset(new Cloud());
 
-  // if recording is set, a pointcloud written to the the cfg_model_path
+  // if recording is set, a pointcloud written to the the cfg_record_path_
   // else load pcd file for every station and calculate model with normals
 
   if (cfg_record_model_) {
 
-    std::string reference_station = config->get_string_or_default(CFG_PREFIX "/record_file","recorded_file");
+    std::string reference_station = config->get_string_or_default(CFG_PREFIX "/record_path","recorded_file.pcd");
     cfg_record_path_ = CONFDIR   "/" + reference_station;
     std::string new_record_path = cfg_record_path_;
     bool exists;
