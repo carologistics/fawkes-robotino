@@ -196,7 +196,7 @@ webview:
         legend_format: ((groupname))
         y_tick_format: bytes
       7-threads_cpu:
-        name: Per Thread CPU
+        name: Per Thread CPU (Base)
         query: sum by (threadname)(irate(namedprocess_namegroup_thread_cpu_seconds_total{groupname="fawkes",instance="robotino-base:9256",job="proc"}[5m]))
         legend_format: ((threadname))
         y_tick_format: ".1%"
