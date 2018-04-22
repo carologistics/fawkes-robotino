@@ -714,8 +714,6 @@ ConveyorPoseThread::tf_send_from_pose_if(pose pose)
 void
 ConveyorPoseThread::pose_write()
 {
-  MutexLocker locked(&bb_mutex_);
-
   bb_pose_->set_translation(0, result_pose_.getOrigin().getX());
   bb_pose_->set_translation(1, result_pose_.getOrigin().getY());
   bb_pose_->set_translation(2, result_pose_.getOrigin().getZ());
