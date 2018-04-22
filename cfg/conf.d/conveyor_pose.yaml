@@ -17,7 +17,11 @@ plugins/conveyor_pose:
   # no recognition is done when this is enabled.
   # If the target file already exists, an increasing integer is appended until
   # a file is found that doesn't exist, yet.
-  record_model: false
+  record_model: true
+
+  # If recording is enabled, a PCD file is written to CONFDIR "/" record path
+  # (e.g.: conveyor_model_.pcd)
+  record_path: "conveyor_model.pcd"
 
   # When recording a model (see above), transform the recorded model into this frame before
   # saving it. The robot should be positioned so that this frame is at the desired origin of
@@ -28,17 +32,8 @@ plugins/conveyor_pose:
   # Relative paths (i.e. not starting with "/") are looked up in CONFDIR (e.g. fawkes-robotino/cfg)
   model_file: "conveyor_model.pcd"
 
-  icp:
-    conveyor_hint:
-      x: -0.01
-      y: -0.02
-      z: 0.6
-    max_correspondence_dist: 0.007
-
-  # Station the current referrence model is taken from (should be of the form e.g.: C-CS1-I for input of Cap Station 1 of team cyan)
-  # Choose default for default model
-  record_station: "C-CS1-I"
-
+  # Configurable PCD paths for every station containing the conveyor model
+  # If the value is "default", the model_file PCD is taken
   model_files:
     M-BS-I: "default"
     M-BS-O: "default"
@@ -62,6 +57,13 @@ plugins/conveyor_pose:
     C-RS2-O: "default"
     M-DS-I: "default"
     C-DS-I: "default"
+
+  icp:
+    conveyor_hint:
+      x: -0.01
+      y: -0.02
+      z: 0.6
+    max_correspondence_dist: 0.007
 
   if:
     # the prefix used for all interfaces
