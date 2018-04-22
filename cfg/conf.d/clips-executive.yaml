@@ -55,6 +55,7 @@ clips-executive:
   use_pddl: false
   use_protobuf: true
   use_tf: true
+  use_motor_switch: true
   sync_domain_facts: false
 
   specs:
