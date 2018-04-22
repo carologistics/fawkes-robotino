@@ -146,6 +146,7 @@ private:
   bool cfg_record_model_;
   std::string cfg_model_path_;
   std::string cfg_model_origin_frame_;
+  std::string cfg_record_path_;
 
 
 
