@@ -78,13 +78,6 @@
  (assert (goal (id WPSPAWN-MAINTAIN) (type MAINTAIN)))
 )
 
-(defrule goal-reasoner-create-refill-shelf-maintain
-  (domain-facts-loaded)
-  (not (goal (id REFILL-SHELF-MAINTAIN)))
-  =>
-  (assert (goal (id REFILL-SHELF-MAINTAIN) (type MAINTAIN))
-)
-
 (defrule goal-reasoner-create-wp-spawn-achieve
   ?g <- (goal (id WPSPAWN-MAINTAIN) (mode SELECTED))
   (not (goal (id WPSPAWN-ACHIEVE)))
@@ -101,7 +94,14 @@
                                      (params robot ?robot)))
 )
 
-(defrule goal-reasoner-create-refill-shelf-achiece
+(defrule goal-reasoner-create-refill-shelf-maintain
+  (domain-facts-loaded)
+  (not (goal (id REFILL-SHELF-MAINTAIN)))
+  =>
+  (assert (goal (id REFILL-SHELF-MAINTAIN) (type MAINTAIN)))
+)
+
+(defrule goal-reasoner-create-refill-shelf-achieve
   ?g <- (goal (id REFILL-SHELF-MAINTAIN) (mode SELECTED))
   (not (goal (id REFILL-SHELF-ACHIEVE)))
   (time $?now)
@@ -394,39 +394,39 @@
   (return (random 0 1000000000))
 )
 
-;(defrule goal-reasoner-evaluate-completed-subgoal-refill-shelf
-;  ?g <- (goal (id REFILL-SHELF-ACHIEVE) (parent REFILL-SHELF-MAINTAIN)
-;             (mode FINISHED) (outcome COMPLETED)
-;             (params mps ?mps))
-;  ?p <- (goal(id REFILL-SHELF-MAINTAIN))
-;  (wm-fact (key domain fact ;TODO
-;  =>
-;  (if (eq ?col CAP_GREY)
-;     then  
-;     (bind ?cc1 (sym-cat CCG (random-id)))
-;     (bind ?cc2 (sym-cat CCG (random-id)))
-;     (bind ?cc3 (sym-cat CCG (random-id)))
-;     else
-;     (bind ?cc1 (sym-cat CCB (random-id)))
-;     (bind ?cc2 (sym-cat CCB (random-id)))
-;     (bind ?cc3 (sym-cat CCB (random-id)))
-;   )
-;   (assert
-;     (domain-object (name ?cc1) (type cap-carrier))
-;     (domain-object (name ?cc2) (type cap-carrier))
-;     (domain-object (name ?cc3) (type cap-carrier))
-;     (wm-fact (key domain fact wp-unused args? wp ?cc1))
-;     (wm-fact (key domain fact wp-unused args? wp ?cc2))
-;     (wm-fact (key domain fact wp-unused args? wp ?cc3))
-;     (wm-fact (key domain fact wp-cap-color args? wp ?cc1 col ?col))
- ;    (wm-fact (key domain fact wp-cap-color args? wp ?cc2 col ?col))
-;     (wm-fact (key domain fact wp-cap-color args? wp ?cc3 col ?col))
-;     (wm-fact (key domain fact wp-on-shelf args? wp ?cc1 m ?mps spot LEFT))
-;     (wm-fact (key domain fact wp-on-shelf args? wp ?cc2 m ?mps spot MIDDLE))
-;     (wm-fact (key domain fact wp-on-shelf args? wp ?cc3 m ?mps spot RIGHT))
-;   )
-;   (modify ?g (mode EVALUATED))
-;)
+(defrule goal-reasoner-evaluate-completed-subgoal-refill-shelf
+  ?g <- (goal (id REFILL-SHELF-ACHIEVE) (parent REFILL-SHELF-MAINTAIN)
+             (mode FINISHED) (outcome COMPLETED)
+             (params mps ?mps))
+  ?p <- (goal(id REFILL-SHELF-MAINTAIN))
+  (wm-fact (key domain fact cs-color args? m ?mps col ?col)) 
+  =>
+  (if (eq ?col CAP_GREY)
+     then  
+     (bind ?cc1 (sym-cat CCG (random-id)))
+     (bind ?cc2 (sym-cat CCG (random-id)))
+     (bind ?cc3 (sym-cat CCG (random-id)))
+     else
+     (bind ?cc1 (sym-cat CCB (random-id)))
+     (bind ?cc2 (sym-cat CCB (random-id)))
+     (bind ?cc3 (sym-cat CCB (random-id)))
+   )
+   (assert
+     (domain-object (name ?cc1) (type cap-carrier))
+     (domain-object (name ?cc2) (type cap-carrier))
+     (domain-object (name ?cc3) (type cap-carrier))
+     (wm-fact (key domain fact wp-unused args? wp ?cc1))
+     (wm-fact (key domain fact wp-unused args? wp ?cc2))
+     (wm-fact (key domain fact wp-unused args? wp ?cc3))
+     (wm-fact (key domain fact wp-cap-color args? wp ?cc1 col ?col))
+     (wm-fact (key domain fact wp-cap-color args? wp ?cc2 col ?col))
+     (wm-fact (key domain fact wp-cap-color args? wp ?cc3 col ?col))
+     (wm-fact (key domain fact wp-on-shelf args? wp ?cc1 m ?mps spot LEFT))
+     (wm-fact (key domain fact wp-on-shelf args? wp ?cc2 m ?mps spot MIDDLE))
+     (wm-fact (key domain fact wp-on-shelf args? wp ?cc3 m ?mps spot RIGHT))
+   )
+   (modify ?g (mode EVALUATED))
+)
      
  
 

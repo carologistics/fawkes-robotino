@@ -36,8 +36,11 @@
         (action-name prepare-cs|prepare-rs|prepare-ds|prepare-bs)
         (status RUNNING)
 	(param-values $? ?mps $?))
+  ?ta <- (timer (name prepare-mps-abort-timer))
+  ?ts <- (timer (name prepare-mps-send-timer))
   =>
   (modify ?pa (status FORMULATED))
+  (retract ?ta ?ts)
 )
 
 
