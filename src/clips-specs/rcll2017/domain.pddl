@@ -255,7 +255,7 @@
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps)
 		:precondition (and (entered-field ?r)
 										(at ?r ?from ?from-side)
-										(location-free ?to INPUT)
+										(or (location-free ?to INPUT) (at ?r ?to INPUT))
 										(mps-state ?to IDLE))
 		:effect (and (not (at ?r ?from ?from-side))
 								 (location-free ?from ?from-side)
@@ -267,7 +267,7 @@
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
 		:precondition (and (entered-field ?r)
 										(at ?r ?from ?from-side)
-										(location-free ?to ?to-side)
+										(or (location-free ?to ?to-side) (at ?r ?to ?to-side))
 										(mps-state ?to READY-AT-OUTPUT)
 										(can-hold ?r))
 		:effect (and (not (at ?r ?from ?from-side))
@@ -278,7 +278,7 @@
 
 	(:action enter-field
 		:parameters (?r - robot ?team-color - team-color)
-		:precondition (and (location-free START INPUT)
+		:precondition (and (or (location-free START INPUT) (at ?r START INPUT))
 										(robot-waiting ?r))
 		:effect (and (entered-field ?r)
 								 (at ?r START INPUT)
