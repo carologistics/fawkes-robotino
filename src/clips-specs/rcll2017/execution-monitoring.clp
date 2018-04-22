@@ -18,6 +18,18 @@
   ?*COMMON-TIMEOUT-DURATION* = 30
   ?*MPS-DOWN-TIMEOUT-DURATION* = 120
 )
+
+(defrule gripper-init
+        (executive-init)
+        (ff-feature-loaded blackboard)
+        (not (gripper-blackboard-init))
+	=>
+        (blackboard-open-reading "AX12GripperInterface" "Gripper AX12")
+	(assert (gripper-blackboard-init))
+)
+
+
+
 ;React to broken mps
 (defrule broken-mps-reject-goals
   (declare (salience 1))
@@ -166,11 +178,15 @@
   (plan (id ?plan-id) (goal-id ?goal-id))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))	
   ?hold <- (wm-fact (key domain fact holding args? r ?r wp ?wp))
+  (AX12GripperInterface (holds_puck ?holds))
   =>
-  (retract ?hold)
-  (modify ?g (mode EVALUATED))
+  (if (eq ?holds TRUE)
+      then
+      (retract ?hold)
+      (assert (domain-fact (name can-hold) (param-values ?r)))
+  )
   (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
-  (assert (domain-fact (name can-hold) (param-values ?r)))
+  (modify ?g (mode EVALUATED))
 )
 
 (defrule cleanup-mps-output
