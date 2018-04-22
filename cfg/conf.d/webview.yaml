@@ -176,12 +176,14 @@ webview:
       4-network:
         name: Network Traffic
         queries:
-          - irate(node_network_receive_bytes{device="enp0s25"}[1m])
-          - irate(node_network_transmit_bytes{device="enp0s25"}[1m])
+          - 'irate(node_network_receive_bytes{device="enp0s25"}[1m])'
+          - '- irate(node_network_transmit_bytes{device="enp0s25"}[1m])'
         legend_formats:
-          - ((device)) read
-          - ((device)) write
+          - ((device)) receive
+          - ((device)) transmit
         y_tick_format: bytes/s
+        y_tick_count: 6
+        y_axis_center: 0.0
       5-mongodb-ops:
         name: MongoDB Operations
         query: rate(mongodb_op_counters_total{}[1m])
