@@ -18,9 +18,3 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
-
-(defrule init-worldmodel-clean-robot-memory
-  (executive-init)
-  =>
-  (robot-memory-sync-clean-domain-facts)
-)
