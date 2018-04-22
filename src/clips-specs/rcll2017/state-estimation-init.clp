@@ -14,3 +14,11 @@
   =>
   (blackboard-open-reading "Position3DInterface" "Pose")
 )
+
+(defrule gripper-init
+        (executive-init)
+        (ff-feature-loaded blackboard)
+  (not (blackboard-interface (type "AX12GripperInterface") (id "Gripper AX12")))
+  =>
+  (blackboard-open-reading "AX12GripperInterface" "Gripper AX12")
+)
