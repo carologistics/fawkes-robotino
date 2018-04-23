@@ -122,8 +122,8 @@ private:
 
   pcl::PointCloud<pcl::PointNormal>::Ptr model_with_normals_;
   pcl::PointCloud<pcl::PointNormal>::Ptr scene_with_normals_;
-  Eigen::Matrix4f initial_tf_;
 
+  fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_laser_odom_;
   std::atomic_bool have_laser_line_;
 
   std::string current_station_;
@@ -165,6 +165,8 @@ private:
   std::atomic<float> cfg_right_cut_no_ll_;
 
   std::atomic<float> cfg_icp_max_corr_dist_;
+  std::array<std::atomic<float>, 3> cfg_icp_conveyor_hint_;
+  std::atomic<double> cfg_icp_track_odom_min_fitness_;
 
   std::atomic<float> cfg_voxel_grid_leaf_size_;
   std::map<std::string, std::array<std::atomic<float>, 3> > cfg_hint_;
@@ -210,7 +212,7 @@ private:
  Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface * ll);
  fawkes::tf::Stamped<fawkes::tf::Pose> laserline_get_center(fawkes::LaserLineInterface *ll);
 
- Eigen::Matrix4f guess_initial_tf_from_laserline(fawkes::LaserLineInterface *ll, std::string hint_id);
+ void set_initial_tf_from_laserline(fawkes::LaserLineInterface *ll, std::string hint_id);
 
  bool is_inbetween(double a, double b, double val);
 
@@ -262,5 +264,7 @@ public:
 
 };
 
+Eigen::Matrix4f pose_to_eigen(const fawkes::tf::Pose &pose);
+fawkes::tf::Pose eigen_to_pose(const Eigen::Matrix4f &m);
 
 #endif
