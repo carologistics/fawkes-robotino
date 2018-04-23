@@ -13,6 +13,7 @@ using namespace fawkes;
 RecognitionThread::RecognitionThread(ConveyorPoseThread *cp_thread)
   : Thread("CorrespondenceGrouping", Thread::OPMODE_WAITFORWAKEUP)
   , main_thread_(cp_thread)
+  , initial_guess_tracked_fitness_(std::numeric_limits<double>::min())
 {
   // Enable finalization while blocked in loop()
   set_prepfin_conc_loop(true);
@@ -44,7 +45,30 @@ void RecognitionThread::loop()
     pcl::removeNaNFromPointCloud(*scene_with_normals, *scene_with_normals, tmp);
     scene_with_normals->header = main_thread_->scene_with_normals_->header;
 
-    initial_tf = main_thread_->initial_tf_;
+    tf::Stamped<tf::Pose> initial_pose_cam;
+    try {
+      if (initial_guess_tracked_fitness_ >= main_thread_->cfg_icp_track_odom_min_fitness_)
+        tf_listener->transform_pose(
+              scene_with_normals->header.frame_id,
+              tf::Stamped<tf::Pose>(initial_guess_icp_odom_, Time(0,0), initial_guess_icp_odom_.frame_id),
+              initial_pose_cam);
+      else {
+        if (main_thread_->have_laser_line_)
+          tf_listener->transform_pose(
+                scene_with_normals->header.frame_id,
+                tf::Stamped<tf::Pose>(main_thread_->initial_guess_laser_odom_, Time(0,0),
+                                      main_thread_->initial_guess_laser_odom_.frame_id),
+                initial_pose_cam);
+        else {
+          logger->log_error(name(), "Cannot get initial guess: No laser line "
+                                    "and no past results above fitness threshold");
+          return;
+        }
+      }
+    } catch (tf::TransformException &e) {
+      logger->log_error(name(), e);
+    }
+    initial_tf = pose_to_eigen(initial_pose_cam);
   }
 
   MyPointRepresentation point_representation;
@@ -88,36 +112,45 @@ void RecognitionThread::loop()
 
     prev = reg.getLastIncrementalTransformation ();
 
-    if (main_thread_->icp_cancelled_)
+    if (main_thread_->icp_cancelled_) {
+      logger->log_info(name(), "ICP cancelled at iteration #%d", i);
       return;
+    }
   }
-
 
   CloudPtr aligned_model(new Cloud());
   pcl::copyPointCloud(*model_with_normals, *aligned_model);
   main_thread_->cloud_publish(aligned_model, main_thread_->cloud_out_model_);
-
-  Eigen::Matrix4f m = Ti * initial_tf;
 
   double new_fitness = (1 / reg.getFitnessScore())
       / double(std::min(model_with_normals->size(), scene_with_normals->size()));
 
   { MutexLocker locked2(&main_thread_->bb_mutex_);
 
-    if (!main_thread_->icp_cancelled_) {
-      main_thread_->result_fitness_ = new_fitness;
-      main_thread_->result_pose_.setOrigin( { double(m(0,3)), double(m(1,3)), double(m(2,3)) } );
-      main_thread_->result_pose_.setBasis( {
-                                             double(m(0,0)), double(m(0,1)), double(m(0,2)),
-                                             double(m(1,0)), double(m(1,1)), double(m(1,2)),
-                                             double(m(2,0)), double(m(2,1)), double(m(2,2))
-                                           } );
-      main_thread_->result_pose_.frame_id = scene_with_normals->header.frame_id;
-      main_thread_->result_pose_.stamp = Time { static_cast<long>(scene_with_normals->header.stamp) };
+    main_thread_->result_fitness_ = new_fitness;
+    main_thread_->result_pose_.set_data(eigen_to_pose(Ti * initial_tf));
+    main_thread_->result_pose_.frame_id = scene_with_normals->header.frame_id;
+    main_thread_->result_pose_.stamp = Time { long(scene_with_normals->header.stamp) / 1000 };
 
-      main_thread_->pose_write();
-      main_thread_->pose_publish_tf(main_thread_->result_pose_);
+    if (new_fitness > initial_guess_tracked_fitness_) {
+      try {
+        tf_listener->transform_pose(
+              "odom",
+              tf::Stamped<tf::Pose>(main_thread_->result_pose_, Time(0,0), main_thread_->result_pose_.frame_id),
+              initial_guess_icp_odom_);
+        initial_guess_tracked_fitness_ = new_fitness;
+
+        // Use rotation from laser-based guess because it has a very small rotational error,
+        // but a large translational error.
+        if (main_thread_->initial_guess_laser_odom_.stamp != Time(0,0))
+          initial_guess_icp_odom_.setBasis(main_thread_->initial_guess_laser_odom_.getBasis());
+      } catch(tf::TransformException &e) {
+        logger->log_error(name(), e);
+      }
     }
+
+    main_thread_->pose_write();
+    main_thread_->pose_publish_tf(main_thread_->result_pose_);
   }
 }
 
