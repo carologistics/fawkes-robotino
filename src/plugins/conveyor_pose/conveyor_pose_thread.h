@@ -167,7 +167,7 @@ private:
   std::atomic<float> cfg_icp_max_corr_dist_;
 
   std::atomic<float> cfg_voxel_grid_leaf_size_;
-  std::array<std::atomic<float>, 3> cfg_conveyor_hint_;
+  std::map<std::string, std::array<std::atomic<float>, 3> > cfg_hint_;
 
   // state vars
   bool cfg_enable_switch_;
@@ -210,7 +210,7 @@ private:
  Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface * ll);
  fawkes::tf::Stamped<fawkes::tf::Pose> laserline_get_center(fawkes::LaserLineInterface *ll);
 
- Eigen::Matrix4f guess_initial_tf_from_laserline(fawkes::LaserLineInterface *ll);
+ Eigen::Matrix4f guess_initial_tf_from_laserline(fawkes::LaserLineInterface *ll, std::string hint_id);
 
  bool is_inbetween(double a, double b, double val);
 
