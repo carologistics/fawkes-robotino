@@ -82,9 +82,23 @@ ConveyorPoseThread::init()
   conveyor_frame_id_          = config->get_string( CFG_PREFIX "/conveyor_frame_id" );
 
   cfg_icp_max_corr_dist_      = config->get_float( CFG_PREFIX "/icp/max_correspondence_dist" );
-  cfg_conveyor_hint_[0]       = config->get_float( CFG_PREFIX "/icp/conveyor_hint/x" );
-  cfg_conveyor_hint_[1]       = config->get_float( CFG_PREFIX "/icp/conveyor_hint/y" );
-  cfg_conveyor_hint_[2]       = config->get_float( CFG_PREFIX "/icp/conveyor_hint/z" );
+  cfg_hint_["conveyor"]; cfg_hint_["left_shelf"]; cfg_hint_["middle_shelf"]; cfg_hint_["right_shelf"]; cfg_hint_["slide"];
+  cfg_hint_["conveyor"][0]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/x" );
+  cfg_hint_["conveyor"][1]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/y" );
+  cfg_hint_["conveyor"][2]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/z" );
+  cfg_hint_["left_shelf"][0]  = config->get_float( CFG_PREFIX "/icp/hint/left_shelf/x" );
+  cfg_hint_["left_shelf"][1]  = config->get_float( CFG_PREFIX "/icp/hint/left_shelf/y" );
+  cfg_hint_["left_shelf"][2]  = config->get_float( CFG_PREFIX "/icp/hint/left_shelf/z" );
+  cfg_hint_["middle_shelf"][0]= config->get_float( CFG_PREFIX "/icp/hint/middle_shelf/x" );
+  cfg_hint_["middle_shelf"][1]= config->get_float( CFG_PREFIX "/icp/hint/middle_shelf/y" );
+  cfg_hint_["middle_shelf"][2]= config->get_float( CFG_PREFIX "/icp/hint/middle_shelf/z" );
+  cfg_hint_["right_shelf"][0] = config->get_float( CFG_PREFIX "/icp/hint/right_shelf/x" );
+  cfg_hint_["right_shelf"][1] = config->get_float( CFG_PREFIX "/icp/hint/right_shelf/y" );
+  cfg_hint_["right_shelf"][2] = config->get_float( CFG_PREFIX "/icp/hint/right_shelf/z" );
+  cfg_hint_["slide"][0]       = config->get_float( CFG_PREFIX "/icp/hint/slide/x" );
+  cfg_hint_["slide"][1]       = config->get_float( CFG_PREFIX "/icp/hint/slide/y" );
+  cfg_hint_["slide"][2]       = config->get_float( CFG_PREFIX "/icp/hint/slide/z" );
+
 
   cfg_enable_switch_          = config->get_bool( CFG_PREFIX "/switch_default" );
 
@@ -341,7 +355,16 @@ ConveyorPoseThread::loop()
       if (cloud_mutex_.try_lock()) {
         try {
           logger->log_info(name(), "Cloud incoming");
-          initial_tf_ = guess_initial_tf_from_laserline(ll);
+          if(current_station_.back() == 'L')
+            initial_tf_ = guess_initial_tf_from_laserline(ll, "left_shelf");
+          else if(current_station_.back() == 'M')
+            initial_tf_ = guess_initial_tf_from_laserline(ll, "middle_shelf");
+          else if(current_station_.back() == 'R')
+            initial_tf_ = guess_initial_tf_from_laserline(ll, "right_shelf");
+          else if(current_station_.back() == 'S')
+            initial_tf_ = guess_initial_tf_from_laserline(ll, "slide");
+          else
+            initial_tf_ = guess_initial_tf_from_laserline(ll, "conveyor");
 
           scene_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
           norm_est_.setInputCloud(trimmed_scene_);
@@ -362,7 +385,7 @@ ConveyorPoseThread::loop()
 
 
 Eigen::Matrix4f
-ConveyorPoseThread::guess_initial_tf_from_laserline(fawkes::LaserLineInterface *line)
+ConveyorPoseThread::guess_initial_tf_from_laserline(fawkes::LaserLineInterface *line, std::string hint_id)
 {
   Eigen::Matrix4f rv(Eigen::Matrix4f::Identity());
   tf::Stamped<tf::Pose> conveyor_hint_laser;
@@ -379,9 +402,9 @@ ConveyorPoseThread::guess_initial_tf_from_laserline(fawkes::LaserLineInterface *
   // Add distance from line center to conveyor
   // TODO: Make configurable
   conveyor_hint_laser.setOrigin(conveyor_hint_laser.getOrigin() + tf::Vector3 {
-                                  double(cfg_conveyor_hint_[0]),
-                                  double(cfg_conveyor_hint_[1]),
-                                  double(cfg_conveyor_hint_[2]) } );
+                                  double(cfg_hint_[hint_id][0]),
+                                  double(cfg_hint_[hint_id][1]),
+                                  double(cfg_hint_[hint_id][2]) } );
   conveyor_hint_laser.setRotation(
         tf::Quaternion(tf::Vector3(0,1,0), -M_PI/2)
         * tf::Quaternion(tf::Vector3(0,0,1), M_PI/2));
@@ -456,6 +479,7 @@ ConveyorPoseThread::set_current_station(std::string station)
   else {
     MutexLocker locked(&cloud_mutex_);
     model_with_normals_ = map_it->second;
+    current_station_ = station;
   }
 }
 
@@ -878,12 +902,36 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
     } else if (sub_prefix == "/icp") {
       if (opt == "/max_correspondence_dist")
         change_val(opt, cfg_icp_max_corr_dist_, v->get_float());
-      if (opt == "/conveyor_hint/x")
-        change_val(opt, cfg_conveyor_hint_[0], v->get_float());
-      else if (opt == "/conveyor_hint/y")
-        change_val(opt, cfg_conveyor_hint_[1], v->get_float());
-      else if (opt == "/conveyor_hint/z")
-        change_val(opt, cfg_conveyor_hint_[2], v->get_float());
+      if (opt == "/hint/conveyor/x")
+        change_val(opt, cfg_hint_["conveyor"][0], v->get_float());
+      else if (opt == "/hint/conveyor/y")
+        change_val(opt, cfg_hint_["conveyor"][1], v->get_float());
+      else if (opt == "/hint/conveyor/z")
+        change_val(opt, cfg_hint_["conveyor"][2], v->get_float());
+      else if (opt == "/hint/left_shelf/x")
+        change_val(opt, cfg_hint_["left_shelf"][0], v->get_float());
+      else if (opt == "/hint/left_shelf/y")
+        change_val(opt, cfg_hint_["left_shelf"][1], v->get_float());
+      else if (opt == "/hint/left_shelf/z")
+        change_val(opt, cfg_hint_["left_shelf"][2], v->get_float());
+      else if (opt == "/hint/middle_shelf/x")
+        change_val(opt, cfg_hint_["middle_shelf"][0], v->get_float());
+      else if (opt == "/hint/middle_shelf/y")
+        change_val(opt, cfg_hint_["middle_shelf"][1], v->get_float());
+      else if (opt == "/hint/middle_shelf/z")
+        change_val(opt, cfg_hint_["middle_shelf"][2], v->get_float());
+      else if (opt == "/hint/right_shelf/x")
+        change_val(opt, cfg_hint_["right_shelf"][0], v->get_float());
+      else if (opt == "/hint/right_shelf/y")
+        change_val(opt, cfg_hint_["right_shelf"][1], v->get_float());
+      else if (opt == "/hint/right_shelf/z")
+        change_val(opt, cfg_hint_["right_shelf"][2], v->get_float());
+      else if (opt == "/hint/slide/x")
+        change_val(opt, cfg_hint_["slide"][0], v->get_float());
+      else if (opt == "/hint/slide/y")
+        change_val(opt, cfg_hint_["slide"][1], v->get_float());
+      else if (opt == "/hint/slide/z")
+        change_val(opt, cfg_hint_["slide"][2], v->get_float());
     }
   }
 }
