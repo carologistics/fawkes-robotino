@@ -60,13 +60,13 @@
 (defrule broken-mps-fail-goal
 ;TODO: Only Do When Goal Is Production Goal (when first put and then prepare)
   (declare (salience 1))
-  ?fg <-(wm-fact (key monitoring fail-goal (type UNKNOWN) (value ?goal-id)))
+  ?fg <-(wm-fact (key monitoring fail-goal) (type UNKNOWN) (value ?goal-id))
   ?g <- (goal (id ?goal-id) (mode DISPATCHED))
-  (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (status ?s (and (neq ?s FINAL) (neq ?s FAILED) (neq ?s FORMULATED)))))
+  (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (status ?s&:(and (neq ?s FINAL) (neq ?s FAILED) (neq ?s FORMULATED)))))
   =>
   (printout error "Fail goal " ?goal-id " because it is unsatisfiable" crlf)
   (retract ?fg)
-  (modify ?g (mode FAILED))
+  (modify ?g (mode FINISHED) (outcome FAILED))
 )
 
 (defrule broken-mps-add-fail-goal-flag
@@ -88,7 +88,7 @@
   (declare (salience 1))
   (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
   (not (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps)))
-  (not (wm-fact (key monitoring fail-goal) (type UNKNWON) (value ?mps)))
+  (not (wm-fact (key monitoring fail-goal) (type UNKNOWN) (value ?mps)))
   => 
   (assert (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps)))
 )
