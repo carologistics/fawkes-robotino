@@ -59,10 +59,27 @@ plugins/conveyor_pose:
     C-DS-I: "default"
 
   icp:
-    conveyor_hint:
-      x: -0.01
-      y: -0.02
-      z: 0.6
+    hint:
+      conveyor:
+        x: -0.01
+        y: -0.02
+        z: 0.6
+      left_shelf:
+        x: -0.01
+        y: -0.22
+        z: 0.6
+      middle_shelf:
+        x: -0.01
+        y: -0.27
+        z: 0.6
+      right_shelf:
+        x: -0.01
+        y: -0.32
+        z: 0.6
+      slide:
+        x: -0.01
+        y: -0.32
+        z: 0.6
     max_correspondence_dist: 0.007
 
   if:
