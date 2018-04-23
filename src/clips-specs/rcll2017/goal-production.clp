@@ -136,8 +136,9 @@
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side ?any-side)))
   (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
   =>
   (printout t "Goal " FILL-CAP " formulated" crlf)
   (assert (goal (id FILL-CAP) (priority ?*PRIORITY-PREFILL-CS*)
