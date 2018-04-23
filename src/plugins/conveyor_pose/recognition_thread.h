@@ -4,6 +4,7 @@
 #include <core/threading/thread.h>
 #include <core/threading/wait_condition.h>
 #include <aspect/logging.h>
+#include <aspect/tf.h>
 #include <atomic>
 
 #include "conveyor_pose_thread.h"
@@ -11,6 +12,7 @@
 class RecognitionThread
     : public fawkes::Thread
     , public fawkes::LoggingAspect
+    , public fawkes::TransformAspect
 {
 public:
   RecognitionThread(ConveyorPoseThread *cp_thread);
@@ -22,6 +24,9 @@ public:
 
 private:
   ConveyorPoseThread *main_thread_;
+
+  fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_icp_odom_;
+  double initial_guess_tracked_fitness_;
 };
 
 

@@ -84,7 +84,8 @@ ConveyorPoseThread::init()
   cfg_icp_max_corr_dist_      = config->get_float( CFG_PREFIX "/icp/max_correspondence_dist" );
 
   cfg_hint_["conveyor"]; cfg_hint_["left_shelf"];
-  cfg_hint_["middle_shelf"]; cfg_hint_["right_shelf"]; cfg_hint_["slide"];
+  cfg_hint_["middle_shelf"]; cfg_hint_["right_shelf"];
+  cfg_hint_["slide"];
 
   cfg_hint_["conveyor"][0]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/x" );
   cfg_hint_["conveyor"][1]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/y" );
@@ -101,6 +102,8 @@ ConveyorPoseThread::init()
   cfg_hint_["slide"][0]       = config->get_float( CFG_PREFIX "/icp/hint/slide/x" );
   cfg_hint_["slide"][1]       = config->get_float( CFG_PREFIX "/icp/hint/slide/y" );
   cfg_hint_["slide"][2]       = config->get_float( CFG_PREFIX "/icp/hint/slide/z" );
+
+  cfg_icp_track_odom_min_fitness_ = double(config->get_float( CFG_PREFIX "/icp/track_odom_min_fitness" ));
 
   cfg_enable_switch_          = config->get_bool( CFG_PREFIX "/switch_default" );
 
@@ -359,20 +362,21 @@ ConveyorPoseThread::loop()
       record_model();
       cloud_publish(model_, cloud_out_model_);
     }
-    else if (have_laser_line) {
+    else {
       if (cloud_mutex_.try_lock()) {
         try {
-          logger->log_info(name(), "Cloud incoming");
-          if(current_station_.back() == 'L')
-            initial_tf_ = guess_initial_tf_from_laserline(ll, "left_shelf");
-          else if(current_station_.back() == 'M')
-            initial_tf_ = guess_initial_tf_from_laserline(ll, "middle_shelf");
-          else if(current_station_.back() == 'R')
-            initial_tf_ = guess_initial_tf_from_laserline(ll, "right_shelf");
-          else if(current_station_.back() == 'S')
-            initial_tf_ = guess_initial_tf_from_laserline(ll, "slide");
-          else
-            initial_tf_ = guess_initial_tf_from_laserline(ll, "conveyor");
+          if (have_laser_line_) {
+            if(current_station_.back() == 'L')
+              set_initial_tf_from_laserline(ll, "left_shelf");
+            else if(current_station_.back() == 'M')
+              set_initial_tf_from_laserline(ll, "middle_shelf");
+            else if(current_station_.back() == 'R')
+              set_initial_tf_from_laserline(ll, "right_shelf");
+            else if(current_station_.back() == 'S')
+              set_initial_tf_from_laserline(ll, "slide");
+            else
+              set_initial_tf_from_laserline(ll, "conveyor");
+          }
 
           scene_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
           norm_est_.setInputCloud(trimmed_scene_);
@@ -392,42 +396,34 @@ ConveyorPoseThread::loop()
 }
 
 
-Eigen::Matrix4f
-ConveyorPoseThread::guess_initial_tf_from_laserline(fawkes::LaserLineInterface *line, std::string hint_id)
+void
+ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *line, std::string hint_id)
 {
-  Eigen::Matrix4f rv(Eigen::Matrix4f::Identity());
-  tf::Stamped<tf::Pose> conveyor_hint_laser;
+  tf::Stamped<tf::Pose> initial_guess;
 
   // Vector from end point 1 to end point 2
   if (!tf_listener->transform_origin(line->end_point_2_frame_id(), line->end_point_1_frame_id(),
-                                     conveyor_hint_laser, Time(0,0)))
+                                     initial_guess, Time(0,0)))
     throw fawkes::Exception("Failed to transform from %s to %s",
                             line->end_point_2_frame_id(), line->end_point_1_frame_id());
 
   // Halve that to get line center
-  conveyor_hint_laser.setOrigin(conveyor_hint_laser.getOrigin() / 2);
+  initial_guess.setOrigin(initial_guess.getOrigin() / 2);
 
   // Add distance from line center to conveyor
-  conveyor_hint_laser.setOrigin(conveyor_hint_laser.getOrigin() + tf::Vector3 {
+  initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
                                   double(cfg_hint_[hint_id][0]),
                                   double(cfg_hint_[hint_id][1]),
                                   double(cfg_hint_[hint_id][2]) } );
-  conveyor_hint_laser.setRotation(
+  initial_guess.setRotation(
         tf::Quaternion(tf::Vector3(0,1,0), -M_PI/2)
-        * tf::Quaternion(tf::Vector3(0,0,1), M_PI/2));
+      * tf::Quaternion(tf::Vector3(0,0,1), M_PI/2));
 
-  // Transform into PCL source frame
-  tf::Stamped<tf::Pose> conveyor_hint_cam;
-  tf_listener->transform_pose(header_.frame_id, conveyor_hint_laser, conveyor_hint_cam);
-
-  tf::Matrix3x3 rot = conveyor_hint_cam.getBasis();
-  tf::Vector3 trans = conveyor_hint_cam.getOrigin();
-  rv.block<3,3>(0,0)
-      << float(rot[0][0]), float(rot[0][1]), float(rot[0][2]),
-      float(rot[1][0]), float(rot[1][1]), float(rot[1][2]),
-      float(rot[2][0]), float(rot[2][1]), float(rot[2][2]);
-  rv.block<3,1>(0,3) << float(trans[0]), float(trans[1]), float(trans[2]);
-  return rv;
+  // Transform with Time(0,0) to just get the latest transform
+  tf_listener->transform_pose(
+        "odom",
+        tf::Stamped<tf::Pose>(initial_guess, Time(0,0), initial_guess.frame_id),
+        initial_guess_laser_odom_);
 }
 
 
@@ -443,16 +439,7 @@ ConveyorPoseThread::record_model()
     return;
   }
   tf_listener->transform_origin(cloud_in_->header.frame_id, cfg_model_origin_frame_, pose_cam);
-  Eigen::Matrix4f tf_to_cam = Eigen::Matrix4f::Identity();
-  btMatrix3x3 &rot = pose_cam.getBasis();
-  btVector3 &trans = pose_cam.getOrigin();
-  tf_to_cam(0,3) = float(trans.getX());
-  tf_to_cam(1,3) = float(trans.getY());
-  tf_to_cam(2,3) = float(trans.getZ());
-  tf_to_cam.block<3,3>(0,0)
-      << float(rot[0][0]), float(rot[0][1]), float(rot[0][2]),
-      float(rot[1][0]), float(rot[1][1]), float(rot[1][2]),
-      float(rot[2][0]), float(rot[2][1]), float(rot[2][2]);
+  Eigen::Matrix4f tf_to_cam = pose_to_eigen(pose_cam);
   pcl::transformPointCloud(*trimmed_scene_, *model_, tf_to_cam);
 
   // Overwrite and atomically rename model so it can be copied at any time
@@ -466,7 +453,6 @@ ConveyorPoseThread::record_model()
     logger->log_error(name(), "Exception saving point cloud to %s: %s", cfg_model_path_.c_str(), e.what());
   }
 }
-
 
 
 //Sets current station in ConveyorPose Interface
@@ -883,4 +869,31 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         change_val(opt, cfg_hint_["slide"][2], v->get_float());
     }
   }
+}
+
+
+Eigen::Matrix4f pose_to_eigen(const fawkes::tf::Pose &pose)
+{
+  const tf::Matrix3x3 &rot = pose.getBasis();
+  const tf::Vector3 &trans = pose.getOrigin();
+  Eigen::Matrix4f rv(Eigen::Matrix4f::Identity());
+  rv.block<3,3>(0,0)
+      << float(rot[0][0]), float(rot[0][1]), float(rot[0][2]),
+         float(rot[1][0]), float(rot[1][1]), float(rot[1][2]),
+         float(rot[2][0]), float(rot[2][1]), float(rot[2][2]);
+  rv.block<3,1>(0,3) << float(trans[0]), float(trans[1]), float(trans[2]);
+  return rv;
+}
+
+
+fawkes::tf::Pose eigen_to_pose(const Eigen::Matrix4f &m)
+{
+  fawkes::tf::Pose rv;
+  rv.setOrigin( { double(m(0,3)), double(m(1,3)), double(m(2,3)) } );
+  rv.setBasis( {
+                 double(m(0,0)), double(m(0,1)), double(m(0,2)),
+                 double(m(1,0)), double(m(1,1)), double(m(1,2)),
+                 double(m(2,0)), double(m(2,1)), double(m(2,2))
+               } );
+  return rv;
 }
