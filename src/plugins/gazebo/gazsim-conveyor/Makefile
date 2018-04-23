@@ -21,7 +21,7 @@ include $(BUILDSYSDIR)/protobuf.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
 LIBS_gazsim_conveyor = m fawkescore fawkesutils fawkesaspects fawkesblackboard \
-		fawkesinterface fawkesconfig gazsim_msgs \
+		fawkesinterface ConveyorPoseInterface fawkesconfig gazsim_msgs \
 		fawkesgazeboaspect \
 		llsf_msgs fawkestf
 OBJS_gazsim_conveyor = gazsim_conveyor_plugin.o gazsim_conveyor_thread.o
