@@ -124,6 +124,8 @@ private:
   pcl::PointCloud<pcl::PointNormal>::Ptr scene_with_normals_;
   Eigen::Matrix4f initial_tf_;
 
+  std::atomic_bool have_laser_line_;
+
   std::string current_station_;
 
   void set_current_station(std::string station);
@@ -139,7 +141,7 @@ private:
   pcl::NormalEstimationOMP<Point, pcl::PointNormal> norm_est_;
 
 
-  RecognitionThread *cg_thread_;
+  RecognitionThread *recognition_thread_;
 
   fawkes::Mutex config_mutex_;
 
@@ -224,16 +226,6 @@ private:
  void tf_send_from_pose_if(pose pose);
  void pose_write();
  void record_model();
-
- Eigen::Quaternion<float> averageQuaternion(
-     Eigen::Vector4f &cumulative,
-     Eigen::Quaternion<float> newRotation,
-     Eigen::Quaternion<float> firstRotation,
-     float addDet);
-
- Eigen::Quaternion<float> normalizeQuaternion(float x, float y, float z, float w);
- Eigen::Quaternion<float> inverseSignQuaternion(Eigen::Quaternion<float> q);
- bool areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quaternion<float> q2);
 
  virtual void config_value_erased(const char *path) override;
  virtual void config_tag_changed(const char *new_tag) override;
