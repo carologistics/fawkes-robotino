@@ -456,12 +456,15 @@ ConveyorPoseThread::record_model()
   pcl::transformPointCloud(*trimmed_scene_, *model_, tf_to_cam);
 
   // Overwrite and atomically rename model so it can be copied at any time
-  int rv = pcl::io::savePCDFileASCII(cfg_record_path_, *model_);
-  if (rv)
-    logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_record_path_.c_str());
-  else
-    ::rename((cfg_record_path_ + ".pcd").c_str(), cfg_record_path_.c_str());
-
+  try {
+    int rv = pcl::io::savePCDFileASCII(cfg_record_path_, *model_);
+    if (rv)
+      logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_record_path_.c_str());
+    else
+      ::rename((cfg_record_path_ + ".pcd").c_str(), cfg_record_path_.c_str());
+  } catch (pcl::IOException &e) {
+    logger->log_error(name(), "Exception saving point cloud to %s: %s", cfg_model_path_.c_str(), e.what());
+  }
 }
 
 
