@@ -42,7 +42,18 @@
 (defrule broken-mps-fail-goal
 ;TODO: Only Do When Goal Is Production Goal (when first put and then prepare)
   (declare (salience 1))
-  ?fg <-(wm-fact (key monitoring fail-goal (type UNKNOWN) (value ?mps)))
+  ?fg <-(wm-fact (key monitoring fail-goal) (type UNKNOWN) (value ?goal-id))
+  ?g <- (goal (id ?goal-id) (mode DISPATCHED))
+  (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (status ~FORMULATED&~PENDING&~FINAL&~FAILED)))
+  =>
+  (printout t "Fail goal " ?goal-id " because it is unsatisfiable" crlf)
+  (retract ?fg)
+  (modify ?g (mode FINISHED) (outcome FAILED))
+)
+
+(defrule broken-mps-add-fail-goal-flag
+  (declare (salience 1))
+  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
   ?g <- (goal (id ?goal-id) (mode DISPATCHED))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
@@ -53,13 +64,11 @@
   (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
   (not (wm-fact (key monitoring fail-goal) (value ?goal-id)))
   =>
-  (printout error "Fail goal " ?goal-id " because it depends on broken mps " ?mps crlf)
-  (retract ?fg)
-  (modify ?g (mode FAILED))
+  (assert (wm-fact (key monitoring fail-goal) (value ?goal-id)))
 )
 
 
-(defrule broken-mps-add-flam
+(defrule broken-mps-add-reset-flag
   (declare (salience 1))
   (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
   (not (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps)))
