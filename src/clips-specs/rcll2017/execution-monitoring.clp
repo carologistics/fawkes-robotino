@@ -17,6 +17,7 @@
 (defglobal
   ?*COMMON-TIMEOUT-DURATION* = 30
   ?*MPS-DOWN-TIMEOUT-DURATION* = 120
+  ?*HOLDING-MONITORING* = 60
 )
 
 (defrule gripper-init
@@ -253,3 +254,19 @@
   (modify ?g (mode EVALUATED))
 )
 
+(defrule monitoring-holding
+  (time $?now)
+  ?hold <- (wm-fact (key domain fact holding args? r ?r wp ?wp))
+  (AX12GripperInterface (holds_puck FALSE) (time ?s&:(> ?s (+ (nth$ 1 ?now) ?*HOLDING-MONITORING*)) ?ms&:(> ?ms (nth$ 2 ?now))))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
+       (status FORMULATED)
+       (action-name ?an)
+       (param-values $? ?wp $?))
+  (not (wm-fact (key monitoring fail-goal) (value ?goal-id)))
+  =>
+  (assert (wm-fact (key monitoring fail-goal) (value ?goal-id)))
+  (retract ?hold)
+  (assert (wm-fact (key domain fact can-hold args? r ?r)))
+) 
