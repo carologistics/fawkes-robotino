@@ -57,7 +57,7 @@ ConveyorPoseThread::ConveyorPoseThread()
   , fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose")
   , cloud_out_raw_name_("raw")
   , cloud_out_trimmed_name_("trimmed")
-  , cg_thread_(nullptr)
+  , recognition_thread_(nullptr)
   , result_pose_(tf::Pose::getIdentity(), Time(0,0), "NOT_INITIALIZED")
   , result_fitness_(std::numeric_limits<double>::min())
   , realsense_switch_(nullptr)
@@ -82,7 +82,10 @@ ConveyorPoseThread::init()
   conveyor_frame_id_          = config->get_string( CFG_PREFIX "/conveyor_frame_id" );
 
   cfg_icp_max_corr_dist_      = config->get_float( CFG_PREFIX "/icp/max_correspondence_dist" );
-  cfg_hint_["conveyor"]; cfg_hint_["left_shelf"]; cfg_hint_["middle_shelf"]; cfg_hint_["right_shelf"]; cfg_hint_["slide"];
+
+  cfg_hint_["conveyor"]; cfg_hint_["left_shelf"];
+  cfg_hint_["middle_shelf"]; cfg_hint_["right_shelf"]; cfg_hint_["slide"];
+
   cfg_hint_["conveyor"][0]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/x" );
   cfg_hint_["conveyor"][1]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/y" );
   cfg_hint_["conveyor"][2]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/z" );
@@ -98,7 +101,6 @@ ConveyorPoseThread::init()
   cfg_hint_["slide"][0]       = config->get_float( CFG_PREFIX "/icp/hint/slide/x" );
   cfg_hint_["slide"][1]       = config->get_float( CFG_PREFIX "/icp/hint/slide/y" );
   cfg_hint_["slide"][2]       = config->get_float( CFG_PREFIX "/icp/hint/slide/z" );
-
 
   cfg_enable_switch_          = config->get_bool( CFG_PREFIX "/switch_default" );
 
@@ -176,6 +178,7 @@ ConveyorPoseThread::init()
     std::string reference_station = config->get_string_or_default(CFG_PREFIX "/record_path","recorded_file.pcd");
     cfg_record_path_ = CONFDIR   "/" + reference_station;
     std::string new_record_path = cfg_record_path_;
+
     bool exists;
     FILE *tmp;
     size_t count = 0;
@@ -191,6 +194,7 @@ ConveyorPoseThread::init()
               + std::to_string(count++) + ".pcd";
         else
           new_record_path = cfg_record_path_ + std::to_string(count++);
+
       }
     } while(exists);
 
@@ -279,7 +283,7 @@ ConveyorPoseThread::loop()
     if (bb_pose_->msgq_first_is<ConveyorPoseInterface::SetStationMessage>() ) {
 
       //Update Station
-      logger->log_info(name(), "Received UpdateStation message");
+      logger->log_info(name(), "Received SetStationMessage");
       ConveyorPoseInterface::SetStationMessage *msg =
           bb_pose_->msgq_first<ConveyorPoseInterface::SetStationMessage>();
       bb_pose_->set_current_station(msg->station());
@@ -327,10 +331,10 @@ ConveyorPoseThread::loop()
 
   if (bb_enable_switch_->is_enabled() && update_input_cloud()) {
     fawkes::LaserLineInterface * ll = NULL;
-    bool use_laserline = laserline_get_best_fit( ll );
+    have_laser_line_ = laserline_get_best_fit( ll );
 
     // No point in recording a model when there's no laser line
-    if (cfg_record_model_ && !use_laserline)
+    if (cfg_record_model_ && !have_laser_line_)
       return;
 
     CloudPtr cloud_in(new Cloud(**cloud_in_));
@@ -343,9 +347,9 @@ ConveyorPoseThread::loop()
       return;
     }
     CloudPtr cloud_gripper = cloud_remove_gripper(cloud_vg);
-    CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_gripper, ll, use_laserline);
+    CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_gripper, ll, have_laser_line_);
 
-    trimmed_scene_ = cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
+    trimmed_scene_ = cloud_remove_offset_to_left_right(cloud_front, ll, have_laser_line_);
 
     cloud_publish(cloud_in, cloud_out_raw_);
     cloud_publish(trimmed_scene_, cloud_out_trimmed_);
@@ -355,7 +359,7 @@ ConveyorPoseThread::loop()
       record_model();
       cloud_publish(model_, cloud_out_model_);
     }
-    else if (use_laserline) {
+    else if (have_laser_line) {
       if (cloud_mutex_.try_lock()) {
         try {
           logger->log_info(name(), "Cloud incoming");
@@ -377,7 +381,7 @@ ConveyorPoseThread::loop()
           scene_with_normals_->header = trimmed_scene_->header;
 
           icp_cancelled_ = false;
-          cg_thread_->wakeup();
+          recognition_thread_->wakeup();
         } catch (std::exception &e) {
           logger->log_error(name(), "Exception preprocessing point clouds: %s", e.what());
         }
@@ -404,7 +408,6 @@ ConveyorPoseThread::guess_initial_tf_from_laserline(fawkes::LaserLineInterface *
   conveyor_hint_laser.setOrigin(conveyor_hint_laser.getOrigin() / 2);
 
   // Add distance from line center to conveyor
-  // TODO: Make configurable
   conveyor_hint_laser.setOrigin(conveyor_hint_laser.getOrigin() + tf::Vector3 {
                                   double(cfg_hint_[hint_id][0]),
                                   double(cfg_hint_[hint_id][1]),
@@ -623,11 +626,7 @@ ConveyorPoseThread::is_inbetween(double a, double b, double val) {
   double low = std::min(a, b);
   double up  = std::max(a, b);
 
-  if (val >= low && val <= up) {
-    return true;
-  } else {
-    return false;
-  }
+  return val >= low && val <= up;
 }
 
 
@@ -787,75 +786,16 @@ ConveyorPoseThread::start_waiting()
 }
 
 
-Eigen::Quaternion<float>
-ConveyorPoseThread::averageQuaternion(Eigen::Vector4f &cumulative, Eigen::Quaternion<float> newRotation, Eigen::Quaternion<float> firstRotation, float addDet){
-  
-  float w = 0.0;
-  float x = 0.0;
-  float y = 0.0;
-  float z = 0.0;	
-
-  if(!areQuaternionsClose(newRotation, firstRotation)){
-    newRotation = inverseSignQuaternion(newRotation);
-  }
-
-  cumulative.x() += newRotation.x();
-  x = cumulative.x() * addDet;
-  cumulative.y() += newRotation.y();
-  y = cumulative.y() * addDet;
-  cumulative.z() += newRotation.z();
-  z = cumulative.z() * addDet;
-  cumulative.w() += newRotation.w();
-  w = cumulative.w() * addDet;
-  
-  Eigen::Quaternion<float> result = normalizeQuaternion(x, y, z, w);
-  return result;
-}
-Eigen::Quaternion<float>
-ConveyorPoseThread::normalizeQuaternion(float x, float y, float z, float w){
-
-  float lengthD = 1.0 / (w*w + x*x + y*y + z*z);
-  w *= lengthD;
-  x *= lengthD;
-  y *= lengthD;
-  z *= lengthD;
-  
-  Eigen::Quaternion<float> result(x, y, z, w);
-  return result;
-}
- 
-//Changes the sign of the quaternion components. This is not the same as the inverse.
-Eigen::Quaternion<float>
-ConveyorPoseThread::inverseSignQuaternion(Eigen::Quaternion<float> q){
-  Eigen::Quaternion<float> result(-q.x(), -q.y(), -q.z(), -q.w());
-  return result;
-}
- 
-//Returns true if the two input quaternions are close to each other. This can
-//be used to check whether or not one of two quaternions which are supposed to
-//be very similar but has its component signs reversed (q has the same rotation as
-//-q)
-bool
-ConveyorPoseThread::areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quaternion<float> q2){
-  
-  float dot = q1.dot(q2);
-  if(dot < 0.0){ 
-    return false;					
-  } 
-  else{ 
-    return true;
-  }
-}
-
 bool
 ConveyorPoseThread::need_to_wait()
 {
   return Time() < wait_start_ + wait_time_;
 }
 
+
 void
 ConveyorPoseThread::set_cg_thread(RecognitionThread *cg_thread)
-{ cg_thread_ = cg_thread; }
+{ recognition_thread_ = cg_thread; }
 
 
 void ConveyorPoseThread::config_value_erased(const char *path)
@@ -906,7 +846,9 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
     } else if (sub_prefix == "/icp") {
       if (opt == "/max_correspondence_dist")
         change_val(opt, cfg_icp_max_corr_dist_, v->get_float());
-      if (opt == "/hint/conveyor/x")
+      else if (opt == "/track_odom_min_fitness")
+        change_val(opt, cfg_icp_track_odom_min_fitness_, double(v->get_float()));
+      else if (opt == "/hint/conveyor/x")
         change_val(opt, cfg_hint_["conveyor"][0], v->get_float());
       else if (opt == "/hint/conveyor/y")
         change_val(opt, cfg_hint_["conveyor"][1], v->get_float());
