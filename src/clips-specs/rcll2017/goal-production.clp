@@ -177,12 +177,38 @@
   (assert (goal-already-tried CLEAR-CS))
 )
 
+
+(defrule goal-reasoner-clear-cs-from-expired-product
+  "Remove an unknown base from CS after retrieving a cap from it."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  ;Robot Conditions
+  (wm-fact (key domain fact self args? r ?robot))
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+  ;MPS Condition
+  (wm-fact (key domain fact mps-type args? m ?mps t CS))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
+  ;Order conditions
+  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
+    (value ?end&:(< ?end (nth$ 1 ?game-time))))
+  =>
+  (printout t "Goal " CLEAR-CS " formulated" crlf)
+  (assert (goal (id CLEAR-CS) (priority ?*PRIORITY-CLEAR-CS*)
+                              (parent PRODUCTION-MAINTAIN)
+                              (params robot ?robot
+                                      mps ?mps
+                                      wp ?wp
+                                      )))
+)
+
+
 (defrule goal-reasoner-insert-unknown-base-to-rs
   "Insert a base with unknown color in a RS for preparation"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  ; (not (goal (id FILL-RS)))
-  ; (not (goal-already-tried FILL-RS))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact wp-usable args? wp ?wp))
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
