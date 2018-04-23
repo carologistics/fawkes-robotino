@@ -31,7 +31,8 @@
 #include <aspect/clock.h>
 #include <aspect/tf.h>
 #include <blackboard/interface_listener.h>
-#include <interfaces/Position3DInterface.h>
+//#include <interfaces/Position3DInterface.h>
+#include <interfaces/ConveyorPoseInterface.h>
 #include <interfaces/SwitchInterface.h>
 #include <utils/time/time.h>
 #include <plugins/gazebo/aspect/gazebo.h>
@@ -44,6 +45,7 @@
 #include <gazebo/transport/transport.hh>
 
 #define MAX_LOOP_COUNT_TO_INVISIBLE 5
+#define CFG_PREFIX "/plugins/conveyor_pose"
 
 typedef const boost::shared_ptr<llsf_msgs::ConveyorVisionResult const> ConstConveyorVisionResultPtr;
 
@@ -67,15 +69,15 @@ class GazsimConveyorThread
  protected: virtual void run() { Thread::run(); }
 
  private:
-  fawkes::Position3DInterface *pos_if_;
+  fawkes::ConveyorPoseInterface *pos_if_;
   fawkes::SwitchInterface *switch_if_;
   //fawkes::ConveyorConfigInterface *conv_config_if_;
 
   std::string  conveyor_if_name_;
   std::string  frame_name_;
-  std::string  cfg_prefix_;
+  std::string  cfg_if_prefix_;
   std::string  conveyor_frame_id_;
-  
+
   gazebo::transport::SubscriberPtr conveyor_vision_sub_;
   void on_conveyor_vision_msg(ConstConveyorVisionResultPtr &msg);
   
