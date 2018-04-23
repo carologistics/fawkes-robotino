@@ -47,12 +47,30 @@
         (plan-id ?plan-id)
         (action-name prepare-cs|prepare-rs|prepare-ds|prepare-bs)
         (status RUNNING)
-	(param-values $? ?mps $?))
+	(param-values $? ?mps $?)
+	(executable TRUE))
   ?ta <- (timer (name prepare-mps-abort-timer))
   ?ts <- (timer (name prepare-mps-send-timer))
   =>
-  (modify ?pa (status FORMULATED))
+  (modify ?pa (status FORMULATED) (executable FALSE))
   (retract ?ta ?ts)
+)
+
+(defrule broken-mps-fail-goal
+;TODO: Only Do When Goal Is Production Goal (when first put and then prepare)
+  (declare (salience 1))
+  ?fg <-(wm-fact (key monitoring fail-goal (type UNKNOWN) (value ?mps)))
+  ?g <- (goal (id ?goal-id) (mode DISPATCHED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
+     (status FORMULATED)
+     (param-values $? ?mps $?)
+     (action-name ?an))
+  (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (status ?s (and (neq ?s FINAL) (neq ?s FAILED) (neq ?s FORMULATED)))))
+  =>
+  (printout error "Fail goal " ?goal-id " because it depends on broken mps " ?mps crlf)
+  (retract ?fg)
+  (modify ?g (mode FAILED))
 )
 
 
@@ -60,6 +78,7 @@
   (declare (salience 1))
   (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
   (not (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps)))
+  (not (wm-fact (key monitoring fail-goal) (type UNKNWON) (value ?mps)))
   => 
   (assert (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps)))
 )
@@ -180,7 +199,7 @@
   ?hold <- (wm-fact (key domain fact holding args? r ?r wp ?wp))
   (AX12GripperInterface (holds_puck ?holds))
   =>
-  (if (eq ?holds TRUE)
+  (if (eq ?holds FALSE)
       then
       (retract ?hold)
       (assert (domain-fact (name can-hold) (param-values ?r)))
