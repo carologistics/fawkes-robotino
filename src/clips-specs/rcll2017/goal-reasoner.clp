@@ -31,33 +31,26 @@
   ?*SALIENCE-GOAL-REJECT* = 400
   ?*SALIENCE-GOAL-EXPAND* = 300
   ?*SALIENCE-GOAL-SELECT* = 200
-)
-
-; # Expand parent goal
-;Expanding a parent goal means it has some formulated goals
-(defrule goal-reasoner-expand-parent-goal
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
-  ?p <- (goal (id ?parent-id) (mode SELECTED))
-  ?g <- (goal (parent ?parent-id) (mode FORMULATED))
-  =>
-  (modify ?p (mode EXPANDED))
+  ; common evaluate rules should have
+  ;   lower salience than case specific ones
+  ?*SALIENCE-GOAL-EVALUTATE-GENERIC* = -1
 )
 
 ; #  Goal Selection
 ; We can choose one or more goals for expansion, e.g., calling
 ; a planner to determine the required steps.
-(defrule goal-reasoner-select
+(defrule goal-reasoner-select-goal
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent ?parent) (id ?goal-id) (mode FORMULATED))
-  (not (goal (id ?parent) (type MAINTAIN)))
+  ?g <- (goal (parent nil) (id ?goal-id) (mode FORMULATED))
    =>
   (modify ?g (mode SELECTED))
   (assert (goal-meta (goal-id ?goal-id)))
 )
 
-(defrule goal-reasoner-select-maintaince-subgoal
+;Select subgoal only when parent goal is expanded
+(defrule goal-reasoner-select-subgoal
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?p <- (goal (id ?parent-id) (mode EXPANDED) (type MAINTAIN))
+  ?p <- (goal (id ?parent-id) (mode EXPANDED))
   ?g <- (goal (parent ?parent-id) (mode FORMULATED)
           (id ?subgoal-id) (priority ?priority))
   ;Select the formulated subgoal with the highest priority
@@ -74,6 +67,16 @@
   (printout t "Goal " ?subgoal-id " selected!" crlf)
   (modify ?g (mode SELECTED))
   (assert (goal-meta (goal-id ?subgoal-id)))
+)
+
+; # Expand a parent goal
+;Expanding a parent goal means it has some formulated goals
+(defrule goal-reasoner-expand-parent-goal
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  ?p <- (goal (id ?parent-id) (mode SELECTED))
+  ?g <- (goal (parent ?parent-id) (mode FORMULATED))
+  =>
+  (modify ?p (mode EXPANDED))
 )
 
 ; #  Commit to goal (we "intend" it)
@@ -97,16 +100,27 @@
   (modify ?g (mode DISPATCHED))
 )
 
-; #  Goal Monitoring
+(defrule goal-reasoner-finish-parent-goal
+  ?pg <- (goal (id ?pg-id) (mode DISPATCHED))
+  ?sg <- (goal (id ?sg-id) (parent ?pg-id) (mode EVALUATED) (outcome ?outcome))
+  (time $?now)
+  =>
+  (printout debug "Goal '" ?pg-id " finised and " ?outcome "cause " ?sg-id
+    "' has been Evaluated" crlf)
+  ;Finish the parent goal with the same outcome
+  ;Could be extended later for custom behavior
+  ;in case we want to try something else to achive that goal
+  (modify ?pg (mode FINISHED) (outcome ?outcome))
+)
 
+; #  Goal Monitoring
 ; ## Goal Evaluation
-(defrule goal-reasoner-evaluate-completed-subgoal-common
-  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome COMPLETED))
+(defrule goal-reasoner-evaluate-subgoal-common
+  (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
+  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome ?outcome))
   ?pg <- (goal (id ?parent-id))
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
-  (test (neq ?goal-id WPSPAWN-ACHIEVE))
-  (test (neq ?goal-id PRODUCE-C0))
   =>
   (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
     "') has been completed, Evaluating" crlf)
@@ -114,7 +128,9 @@
   (modify ?m (last-achieve ?now))
 )
 
+
 (defrule goal-reasoner-evaluate-common
+  (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome ?outcome))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
@@ -124,35 +140,19 @@
     (bind ?num-tries (+ ?num-tries 1))
     (modify ?gm (num-tries ?num-tries))
   )
+
   (modify ?g (mode EVALUATED))
 )
 
 ; # Goal Clean up
-(defrule goal-reasoner-cleanup-maintinace-subgoal
-  "Clean up all achieve sub-goals if one has been evaluated and reset maintenance goal"
-  ?pg <- (goal (id ?parent-id) (type MAINTAIN))
-  ?pm <- (goal-meta (goal-id ?parent-id))
-  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode EVALUATED) (outcome ?outcome))
-  =>
-  (delayed-do-for-all-facts ((?sg goal)) (eq ?sg:parent ?parent-id)
-    (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?sg:id)
-     (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
-      (retract ?a)
-     )
-     (retract ?p)
-    )
-    (printout t "Goal '" ?sg:id "' (part of '" ?sg:parent
-       "') has been evaluated, cleaning up" crlf)
-    (retract ?sg)
-  )
-  (modify ?pg (mode SELECTED))
-)
-
 (defrule goal-reasoner-cleanup-common
-  ?g <- (goal (id ?goal-id) (parent nil) (mode EVALUATED) (outcome ?outcome))
+  ?g <- (goal (id ?goal-id) (parent nil) (type ?goal-type)
+          (mode EVALUATED) (outcome ?outcome))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
   (printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
+
+  ;Flush plans of this goal
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
     (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
       (retract ?a)
@@ -160,10 +160,23 @@
     (retract ?p)
   )
 
-  (if (and (eq ?outcome failed) (< ?num-tries ?*GOAL-MAX-TRIES*) )
+  (delayed-do-for-all-facts ((?sg goal)) (eq ?sg:parent ?goal-id)
+    (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?sg:id)
+     (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
+      (retract ?a)
+     )
+     (retract ?p)
+    )
+    (printout t "Goal '" ?sg:id "' (part of '" ?sg:parent
+       "') has, cleaning up" crlf)
+    (retract ?sg)
+  )
+
+  (if (or (eq ?goal-type MAINTAIN)
+          (and (eq ?outcome failed) (< ?num-tries ?*GOAL-MAX-TRIES*)))
     then
       (printout t "Triggering re-expansion" crlf)
-      (modify ?g (mode SELECTED))
+      (modify ?g (mode SELECTED) (outcome UNKNOWN))
     else
       (retract ?g ?gm)
     )
