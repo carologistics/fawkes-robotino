@@ -29,6 +29,7 @@
 #include <boost/lexical_cast.hpp>
 #include <config/change_handler.h>
 #include <tf/types.h>
+#include <interfaces/ConveyorPoseInterface.h>
 
 #include <cstdarg>
 #include <cmath>
@@ -61,13 +62,16 @@ GazsimConveyorThread::init()
 {
   logger->log_debug(name(), 
         "Initializing Simulation of the Conveyor Vision Plugin");
-  const std::string if_prefix = config->get_string( "/conveyor_pose/if/prefix" ) + "/";
-  conveyor_if_name_ = if_prefix + config->get_string( "/conveyor_pose/if/pose_of_beld" );
+  const std::string if_prefix = config->get_string( "plugins/conveyor_pose/if/prefix" ) + "/";
   frame_name_ = config->get_string("/realsense/frame_id");
-  conveyor_frame_id_ = config->get_string( "/conveyor_pose/conveyor_frame_id" );
+  conveyor_frame_id_ = config->get_string( "plugins/conveyor_pose/conveyor_frame_id" );
 
-  //setup Position3DInterface if with default values
-  pos_if_ = blackboard->open_for_writing<Position3DInterface>(conveyor_if_name_.c_str());
+  cfg_if_prefix_ = config->get_string( CFG_PREFIX "/if/prefix" );
+  if (cfg_if_prefix_.back() != '/')
+    cfg_if_prefix_.append("/");
+
+  //setup ConveyorPoseInterface if with default values
+  pos_if_ = blackboard->open_for_writing<ConveyorPoseInterface>((cfg_if_prefix_ + "status").c_str());
   switch_if_ = blackboard->open_for_writing<SwitchInterface>(config->get_string("/gazsim/conveyor/switch-if-name").c_str());
   
   conveyor_vision_sub_ = gazebonode->Subscribe("~/RobotinoSim/ConveyorVisionResult/", &GazsimConveyorThread::on_conveyor_vision_msg, this);
@@ -83,7 +87,8 @@ GazsimConveyorThread::finalize()
 void
 GazsimConveyorThread::loop()
 {
-	pos_if_->set_frame(frame_name_.c_str());
+
+  pos_if_->set_frame(frame_name_.c_str());
   if(new_data_)
   {
     new_data_=false;
@@ -94,7 +99,7 @@ GazsimConveyorThread::loop()
     double rot[] = {last_msg_.positions().ori_x(), last_msg_.positions().ori_y(), last_msg_.positions().ori_z(), last_msg_.positions().ori_w()};
     pos_if_->set_translation(trans);
     pos_if_->set_rotation(rot);
-    pos_if_->set_visibility_history(loopcount_);
+    pos_if_->set_euclidean_fitness(rand() % 100);
     pos_if_->write();
 
     // publishe tf
@@ -111,12 +116,7 @@ GazsimConveyorThread::loop()
 
     tf_publisher->send_transform(transform);
   }
-  else if((loopcount_ - pos_if_->visibility_history()) > MAX_LOOP_COUNT_TO_INVISIBLE)
-  {
-    pos_if_->set_visibility_history(-1);
-    pos_if_->write();
-    loopcount_ = -1;
-  }
+
   loopcount_++;
 }
 
