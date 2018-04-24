@@ -881,9 +881,7 @@
   (wm-fact (key domain fact self args? r ?r))
   (exp-searching)
   ?st-f <- (state EXP_GOTO_NEXT)
-  ?pa <- (plan-action (action-name ?an) (goal-id EXPLORATION) (status ?s&~FINAL&~FAILED&~FORMULATED))
-  ?se <- (skill-action-mapping (skill-name ?an) (skill-id ?skill-id))
-  ?skill <- (skill (skill-id ?skill-id))
+  ?skill <- (skill (skill-id ?skill-id) (status S_RUNNING))
   (zone-exploration (name ?zn))
   (lock (type ACCEPT) (resource ?zn))
 =>
