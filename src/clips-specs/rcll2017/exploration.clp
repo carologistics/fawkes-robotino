@@ -13,9 +13,16 @@
   ?*EXP-ROUTE-IDX* = 1
   ?*EXP-MOVEMENT-COMPENSATION* = 0.0
 )
+
+(deftemplate tag-matching
+  (slot machine (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
+  (slot side (type SYMBOL) (allowed-values INPUT OUTPUT))
+  (slot tag-id (type INTEGER))
+  (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
+)
+
 ; This deftemplate is only needed because do-for-all-facts doesn't
 ; work for implied deftemplates
-
 ;facts
 (deftemplate exp-next-node
   (slot node (type STRING))
@@ -629,14 +636,14 @@
 (defrule exp-found-tag
   (goal (id EXPLORATION) (mode DISPATCHED))
   ?srch-f <- (exp-searching)
-  ;(tag-matching (tag-id ?tag) (machine ?machine) (side ?side)) what about tag-matching
+  (tag-matching (tag-id ?tag) (machine ?machine) (side ?side))
   (not (found-tag (name ?machine)))
   (TagVisionInterface (id "/tag-vision/info")
     (tags_visible ?num-tags&:(> ?num-tags 0))
-    ;(tag_id $?tag-ids&:(member$ ?tag ?tag-ids))
+    (tag_id $?tag-ids&:(member$ ?tag ?tag-ids))
   )
   (Position3DInterface
-    ;(id ?tag-if-id&:(eq ?tag-if-id (str-cat "/tag-vision/" (- (member$ ?tag ?tag-ids) 1))))
+    (id ?tag-if-id&:(eq ?tag-if-id (str-cat "/tag-vision/" (- (member$ ?tag ?tag-ids) 1))))
     (visibility_history ?vh&:(> ?vh 1))
     (translation $?trans) (rotation $?rot)
     (frame ?frame) (time $?timestamp)
@@ -783,7 +790,7 @@
     (frame ?frame) (translation $?trans) (rotation $?rot)
   )
   ; We don't check the visibility_history here since that's already done in the explore_zone skill
-  ;(tag-matching (tag-id ?tag-id) (machine ?machine) (side ?side) (team ?team-color)) TODO what about tag-matching
+  (tag-matching (tag-id ?tag-id) (machine ?machine) (side ?side) (team ?team-color))
   ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (times-searched ?times-searched))
   ;(machine (name ?machine) (mtype ?mtype))
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
@@ -903,12 +910,12 @@
   (not (field-ground-truth (machine ?machine)))
   ; Do not trigger while updating zones/tags from Refbox PB msg after exploration
 
-  ;(tag-matching (tag-id ?tag) (machine ?machine) (side ?side)) TODO what about tag-matching
+  (tag-matching (tag-id ?tag) (machine ?machine) (side ?side))
   (zone-exploration (name ?zn) (machine ?machine) (times-searched ?times-searched))
 
-  ;(tag-matching (tag-id ?tag2) (side ?side)
-  ;  (machine ?machine2&:(eq ?machine2 (mirror-name ?machine)))
-  ;) TODO what about tag-matching
+  (tag-matching (tag-id ?tag2) (side ?side)
+    (machine ?machine2&:(eq ?machine2 (mirror-name ?machine)))
+  )
   (found-tag (name ?machine2&:(eq ?machine2 (mirror-name ?machine))))
   ?ze2 <- (zone-exploration (name ?zn2&:(eq ?zn2 (mirror-name ?zn))))
   ;(machine (name ?machine) (mtype ?mtype))
@@ -955,15 +962,15 @@
   (found-tag (name ?machine)
     (side ?side) (frame ?) (trans $?) (rot $?)
   )
-  ;(tag-matching (tag-id ?tag) (team ?team-color)
-  ;  (machine ?machine) (side ?side)
-  ;) TODO what about tag-matching
+  (tag-matching (tag-id ?tag) (team ?team-color)
+    (machine ?machine) (side ?side)
+  )
   (found-tag (name ?machine2&:(eq ?machine2 (mirror-name ?machine)))
     (side ?side) (frame ?) (trans $?) (rot $?)
   )
-  ;(tag-matching (tag-id ?tag2) (team ?team-color2&~?team-color)
-  ;  (machine ?machine2) (side ?side)
-  ;) TODO what about tag-matching
+  (tag-matching (tag-id ?tag2) (team ?team-color2&~?team-color)
+    (machine ?machine2) (side ?side)
+  )
   (not (and (navgraph-added-for-mps (name ?machine)) (navgraph-added-for-mps (name ?machine2))))
 =>
   (assert (generating-navgraph))
@@ -991,3 +998,53 @@
   (printout warn "empty effect" crlf)
   (modify ?g (mode FINISHED) (outcome COMPLETED))
 )
+
+; TODO Integrate into our initialization
+;(deffacts startup-facts
+;  (tag-matching (machine C-BS) (side INPUT) (team CYAN) (tag-id 65))
+;  (tag-matching (machine C-CS1) (side INPUT) (team CYAN) (tag-id 1))
+;   (tag-matching (machine C-CS2) (side INPUT) (team CYAN) (tag-id 17))
+;   (tag-matching (machine C-RS1) (side INPUT) (team CYAN) (tag-id 33))
+;   (tag-matching (machine C-RS2) (side INPUT) (team CYAN) (tag-id 177))
+;   (tag-matching (machine C-DS) (side INPUT) (team CYAN) (tag-id 81))
+;   (tag-matching (machine C-SS) (side INPUT) (team CYAN) (tag-id 193))
+;   (tag-matching (machine C-BS) (side OUTPUT) (team CYAN) (tag-id 66))
+;   (tag-matching (machine C-CS1) (side OUTPUT) (team CYAN) (tag-id 2))
+;   (tag-matching (machine C-CS2) (side OUTPUT) (team CYAN) (tag-id 18))
+;   (tag-matching (machine C-RS1) (side OUTPUT) (team CYAN) (tag-id 34))
+;   (tag-matching (machine C-RS2) (side OUTPUT) (team CYAN) (tag-id 178))
+;   (tag-matching (machine C-DS) (side OUTPUT) (team CYAN) (tag-id 82))
+;   (tag-matching (machine C-SS) (side OUTPUT) (team CYAN) (tag-id 194))
+;
+;   (tag-matching (machine M-BS) (side INPUT) (team MAGENTA) (tag-id 161))
+;   (tag-matching (machine M-CS1) (side INPUT) (team MAGENTA) (tag-id 97))
+;   (tag-matching (machine M-CS2) (side INPUT) (team MAGENTA) (tag-id 113))
+;   (tag-matching (machine M-RS1) (side INPUT) (team MAGENTA) (tag-id 129))
+;   (tag-matching (machine M-RS2) (side INPUT) (team MAGENTA) (tag-id 145))
+;   (tag-matching (machine M-DS) (side INPUT) (team MAGENTA) (tag-id 49))
+;   (tag-matching (machine M-SS) (side INPUT) (team MAGENTA) (tag-id 209))
+;   (tag-matching (machine M-BS) (side OUTPUT) (team MAGENTA) (tag-id 162))
+;   (tag-matching (machine M-CS1) (side OUTPUT) (team MAGENTA) (tag-id 98))
+;   (tag-matching (machine M-CS2) (side OUTPUT) (team MAGENTA) (tag-id 114))
+;   (tag-matching (machine M-RS1) (side OUTPUT) (team MAGENTA) (tag-id 130))
+;   (tag-matching (machine M-RS2) (side OUTPUT) (team MAGENTA) (tag-id 146))
+;   (tag-matching (machine M-DS) (side OUTPUT) (team MAGENTA) (tag-id 50))
+;   (tag-matching (machine M-SS) (side OUTPUT) (team MAGENTA) (tag-id 210))
+;
+;   (mirror-orientation (cyan 0) (magenta 180))
+;   (mirror-orientation (cyan 45) (magenta 135))
+;   (mirror-orientation (cyan 90) (magenta 90))
+;   (mirror-orientation (cyan 135) (magenta 45))
+;   (mirror-orientation (cyan 180) (magenta 0))
+;   (mirror-orientation (cyan 225) (magenta 315))
+;   (mirror-orientation (cyan 270) (magenta 270))
+;   (mirror-orientation (cyan 315) (magenta 225))
+;
+;   (insertion-zone M-Z51)
+;   (insertion-zone M-Z61)
+;   (insertion-zone M-Z71)
+;
+;   (insertion-zone C-Z51)
+;   (insertion-zone C-Z61)
+;   (insertion-zone C-Z71)
+; )
