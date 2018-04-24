@@ -42,3 +42,14 @@
   =>
   (blackboard-open "MotorInterface" "Robotino")
 )
+
+(defrule exploration-interfaces-init
+  (executive-init)
+  (ff-feature-loaded blackboard)
+  =>
+  (blackboard-open "MotorInterface" "Robotino")
+  (blackboard-open "LaserLineInterface" "Laser")
+  (blackboard-open "TagVisionInterface" "/tag-vision/info")
+  (blackboard-open "ZoneInterface" "/explore-zone/info")
+  (blackboard-open "Position3DInterface" "/explore-zone/found-tag")
+)
