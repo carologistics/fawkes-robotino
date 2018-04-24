@@ -69,6 +69,9 @@ clips-executive/specs/rcll2017/parameters/rcll:
   robot-number: 5
 
   peer-address: 127.0.0.1
+  peer-port: 0
+  cyan-port: 0
+  magenta-port: 0
   peer-recv-port: 4415
   peer-send-port: 4425
   cyan-recv-port: 4455
