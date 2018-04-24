@@ -465,4 +465,18 @@
                  (not (ds-prepared-gate ?m ?g))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
 	)
+
+
+
+	(:action stop
+			:parameters (?r - robot)
+			:precondition (entered-field ?r)
+			:effect (entered-field ?r)
+	)
+
+	(:action explore-zone
+			:parameters (?r - robot ?zone - zone)
+			:precondition (entered-field ?r)
+			:effect (entered-field ?r)
+	)
 )
