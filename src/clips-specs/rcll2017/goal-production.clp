@@ -106,12 +106,10 @@
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
   (NavGraphWithMPSGeneratorInterface (final TRUE))
-  (NavGraphGeneratorInterface (final TRUE))
-  (NavigatorInterface (final TRUE))
+  (wm-fact (key domain fact entered-field args? r ?robot))
   =>
   (assert (goal (id PRODUCTION-MAINTAIN) (type MAINTAIN)))
 )
-
 
 (defrule goal-reasoner-create-enter-field
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
