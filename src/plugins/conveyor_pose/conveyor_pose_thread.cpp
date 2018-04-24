@@ -129,6 +129,7 @@ ConveyorPoseThread::init()
 
   // Load all model paths, should be "default" if the default model path should be used
 
+  station_to_path_.insert({"default",cfg_model_path_});
   station_to_path_.insert({"M-BS-I", config->get_string(CFG_PREFIX  "/model_files/M-BS-I")});
   station_to_path_.insert({"M-BS-O", config->get_string(CFG_PREFIX  "/model_files/M-BS-O")});
   station_to_path_.insert({"C-BS-I", config->get_string(CFG_PREFIX  "/model_files/C-BS-I")});
@@ -247,6 +248,9 @@ ConveyorPoseThread::init()
   bb_enable_switch_->write();
 
   bb_pose_ = blackboard->open_for_writing<ConveyorPoseInterface>((cfg_if_prefix_ + "status").c_str());
+  bb_pose_->set_current_station("default");
+  bb_pose_->write();
+
   realsense_switch_ = blackboard->open_for_reading<SwitchInterface>(cfg_bb_realsense_switch_name_.c_str());
 }
 
