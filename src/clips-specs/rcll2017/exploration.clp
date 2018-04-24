@@ -122,8 +122,11 @@
   (slot rotation (type FLOAT))
 )
 
-(deffacts startup-exploration
-    (zone-exploration (name C-Z11) (team CYAN))
+(defrule startup-exploration
+    (not (zone-exploration))
+=> 
+  (assert 
+(zone-exploration (name C-Z11) (team CYAN))
     (zone-exploration (name C-Z21) (team CYAN))
     (zone-exploration (name C-Z31) (team CYAN))
     (zone-exploration (name C-Z41) (team CYAN))
@@ -232,6 +235,7 @@
     (zone-exploration (name M-Z58) (team MAGENTA))
     (zone-exploration (name M-Z68) (team MAGENTA))
     (zone-exploration (name M-Z78) (team MAGENTA))
+  )
 )
 
 
@@ -686,7 +690,9 @@
 ;  (if ?zone then
     ;(synced-modify ?ze machine NONE times-searched (+ 1 ?times-searched)) TODO now wm-facts
 ;  )
+   (modify ?ze (machine NONE) (times-searched (+ 1 ?times-searched)))
 )
+
 
 
 (defrule exp-found-line
@@ -715,6 +721,7 @@
   )
 =>
   ;(synced-modify ?ze-f line-visibility ?vh) TODO now wm-fact
+  (modify ?ze-f (line-visibility ?vh))
   (printout warn "EXP found line: " ?zn " vh: " ?vh crlf)
 )
 
@@ -746,6 +753,7 @@
   )
 =>
   (printout t "EXP cluster ze-f: " ?ze-f crlf)
+  (modify ?ze-f (cluster-visibility (+ ?zn-vh 1)) (last-cluster-time (nth$ 1 ?game-time)))
   ;(synced-modify ?ze-f
   ;  cluster-visibility (+ ?zn-vh 1)
   ;  last-cluster-time (nth$ 1 ?game-time)
@@ -776,10 +784,12 @@
     (machine UNKNOWN)
     (line-visibility ?lv&:(< ?lv 2))
   )
+  
   ;(not (locked-resource (resource ?r&:(eq ?r ?zn)))) TODO what about locks
   ?st-f <- (state ?)
 =>
   ;(synced-modify ?ze-f line-visibility (+ ?lv 1)) TODO now wm-fact
+  (modify ?ze-f (line-visibility (+ ?lv 1)))
 )
 
 
@@ -932,6 +942,9 @@
     ;  "(frame \"map\") (trans " (implode$ ?trans) ") "
     ;  "(rot " (implode$ ?rot) ") )")
     ;) TODO synced-assert
+    
+    (modify ?ze (machine ?machine) (times-searched (+ 1 ?times-searched)))
+    (assert (found-tag (name ?machine) (side ?side)))
     (assert
       (exploration-result
         (machine ?machine) (zone ?zn2)
@@ -966,8 +979,10 @@
     (printout error "BUG in explore_zone skill: Result is FINAL but no MPS was found.")
   )
   (if (and (eq ?s NO) (eq ?machine UNKNOWN)) then
+    (modify ?ze (machine NONE) (times-searched (+ ?times-searched 1)))
     ;(synced-modify ?ze machine NONE times-searched (+ ?times-searched 1)) TODO now wm-facts
   else
+    (modify ?ze (line-visibility 0) (times-searched (+ ?times-searched 1)))
     ;(synced-modify ?ze line-visibility 0 times-searched (+ ?times-searched 1)) TODO now wm-facts
   )
   (assert
@@ -987,11 +1002,13 @@
   (time $?now)
   ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 1)) (seq ?seq))
   (wm-fact (key refbox game-time) (values $?game-time))
-  (confval (path "/clips-executive/specs/rcll2017/parameters/rcll/latest-send-last-report-time")
+  (wm-path (id "/config/rcll/latest-send-last-report-time")
     (value ?latest-report-time)
   )
-  (team-color ?team-color&~nil)
-  (peer-id private ?peer)
+  (wm-fact (key refbox team-color) (value ?team-color&~nil))
+  ;(team-color ?team-color&~nil)
+  (wm-fact (key refbox comm peer-id public) (value ?peer))
+;  (peer-id private ?peer)
   (state ?s) ; TODO actually enter EXP_PREPARE_FOR_PRODUCTION_FINISHED state
 =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
@@ -1066,6 +1083,7 @@
       (trans ?m-trans) (rot ?m-rot)
     )
   )
+  (modify ?ze2 (machine ?machine2) (times-searched ?times-searched))
   ;(synced-modify ?ze2 machine ?machine2 times-searched ?times-searched) TODO now wm-facts
 )
 
