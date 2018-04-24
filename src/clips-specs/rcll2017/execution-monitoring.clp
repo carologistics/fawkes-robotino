@@ -40,7 +40,7 @@
   ?g <- (goal (id ?goal-id) (mode DISPATCHED))
   (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (status ~FORMULATED&~PENDING&~FINAL&~FAILED)))
   =>
-  (printout error "Fail goal " ?goal-id " because it is unsatisfiable" crlf)
+  (printout t "Fail goal " ?goal-id " because it is unsatisfiable" crlf)
   (retract ?fg)
   (modify ?g (mode FINISHED) (outcome FAILED))
 )
@@ -54,6 +54,8 @@
      (status FORMULATED|PENDING)
      (param-values $? ?mps $?)
      (action-name ?an))
+  ;Is this enough for wp-put-slide-cc??
+  (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
   (not (wm-fact (key monitoring fail-goal) (value ?goal-id)))
   =>
   (assert (wm-fact (key monitoring fail-goal) (type UNKNOWN) (value ?goal-id)))
@@ -78,7 +80,7 @@
   ;   status ~FORMULATED&~FAILED~FINAL&)))
   ; (param-values $? ?mps $?)))
    =>
-  (printout error "MPS " ?mps " was broken, cleaning up facts" crlf)
+  (printout t "MPS " ?mps " was broken, cleaning up facts" crlf)
   (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?mps (wm-key-args ?wf:key)) FALSE) 
            (or
             (wm-key-prefix ?wf:key (create$ domain fact wp-at))
@@ -97,10 +99,10 @@
   )
   (switch ?type
     (case CS then
-      (assert (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP)))
+      (assert (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP) (value TRUE)))
     )
     (case RS then
-      (assert (wm-fact (key domain fact rs-filled-with args? m ?mps n ZERO)))
+      (assert (wm-fact (key domain fact rs-filled-with args? m ?mps n ZERO) (value TRUE)))
     )
   )
   ; (retract ?flag)
@@ -113,6 +115,7 @@
   ?g <- (goal (id ?goal-id) (mode FORMULATED|SELECTED|EXPANDED) (params $? ?mps $?))
   (plan (id ?plan-id) (goal-id ?goal-id))
   =>
+
   (modify ?g (mode REJECTED))
 )
 
@@ -147,7 +150,7 @@
   (time $?now)
   (test (and (> (nth$ 1 ?now) (nth$ 1 ?timeout)) (> (nth$ 2 ?now) (nth$ 2 ?timeout))))
   =>
-  (printout error "Action "  ?action-name " timedout after " ?status  crlf)
+  (printout t "Action "  ?action-name " timedout after " ?status  crlf)
   (modify ?p (status FAILED))
   (retract ?pt)
 )
@@ -169,6 +172,7 @@
 	(id ?id) (status PENDING)
 	(action-name ?action-name)
 	(param-values $? ?mps $?))
+  (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
   (wm-fact (key domain fact mps-state args? m ?mps s ~ IDLE&~READY-AT-OUTPUT))
@@ -252,5 +256,5 @@
   (printout t "Exec-Monitoring: ensory information contradicts domain" crlf)
   (assert (wm-fact (key monitoring fail-goal) (value ?goal-id)))
   (retract ?hold)
-  (assert (wm-fact (key domain fact can-hold args? r ?r)))
+  (assert (wm-fact (key domain fact can-hold args? r ?r) (value TRUE)))
 ) 
