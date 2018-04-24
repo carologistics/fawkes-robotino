@@ -139,7 +139,19 @@ clips-executive:
           peer-port: 4444
           cyan-port: 4441
           magenta-port: 4442
+          latest-send-last-report-time: 210 # =3:30
 
           team-name: Carologistics
           crypto-key: randomkey
           cipher: "aes-128-cbc"
+          route:
+            CYAN:
+              R-1: ["exp-12", "exp-11", "exp-22"]
+              R-2: ["exp-22", "exp-23", "exp-31"]
+              R-3: ["exp-31", "exp-32", "exp-21"]
+            MAGENTA:
+              R-1: ["exp-11", "exp-12", "exp-21"]
+              R-2: ["exp-22", "exp-21", "exp-32"]
+              R-3: ["exp-32", "exp-31", "exp-22"]
+
+

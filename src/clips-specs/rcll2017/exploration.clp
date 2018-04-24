@@ -401,22 +401,27 @@
   "Read configuration for exploration row order of machines"
   (declare (salience ?*PRIORITY-WM*))
   (goal (id EXPLORATION) (mode DISPATCHED))
-  (robot-name ?robot-name)
-  (team-color ?team)
-  (confval
-    (path ?path&:(eq ?path (str-cat "/clips-agent/rcll2016/exploration/route/" ?team "/" ?robot-name)))
-    (list-value $?route)
+  (wm-fact (key domain fact self args? r ?robot-name))
+  ;(robot-name ?robot-name)
+  
+  (wm-fact (key refbox team-color) (value ?team))
+  ;(team-color ?team)
+  (wm-fact
+    (id ?id&:(eq ?id (str-cat "/config/rcll/route/" ?team "/" ?robot-name)))
+    (values $?route)
   )
 =>
   (assert (exp-route ?route)
   )
-  (printout t "Exploration route: " ?route crlf)
+ ; (assert (exp-route "exp-12"))
+  (printout t "Exploration route: " ?route " " ?team " " ?robot-name crlf)
 )
 
 (defrule exp-start
   (goal (id EXPLORATION) (mode DISPATCHED))
   ?st <- (exploration-start)
-  (team-color ?team-color)
+  (wm-fact (key refbox team-color) (value ?team-color))
+  ;(team-color ?team-color)
   (NavigatorInterface (id "Navigator") (max_velocity ?max-velocity) (max_rotation ?max-rotation))
 =>
   (retract ?st)
@@ -804,12 +809,12 @@
       (exploration-result
         (machine ?machine) (zone ?zn2)
         (orientation ?orientation)
-        ;(team ?team-color)
+        (team ?team-color)
       )
       (exploration-result
         (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
         (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
-  ;      (team (mirror-team ?team-color))
+        (team (mirror-team ?team-color))
       )
     )
   )
@@ -855,7 +860,7 @@
   (time $?now)
   ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 1)) (seq ?seq))
   (game-time $?game-time)
-  (confval (path "/clips-agent/rcll2016/exploration/latest-send-last-report-time")
+  (confval (path "/clips-executive/specs/rcll2017/parameters/rcll/latest-send-last-report-time")
     (value ?latest-report-time)
   )
   (team-color ?team-color&~nil)
@@ -951,7 +956,8 @@
     (zone-exploration (machine ?found&:(eq ?mps ?found)))
   )
 
-  (team-color ?team-color)
+  (wm-fact (key refbox team-color) (value ?team-color))
+  ;(team-color ?team-color)
 
   (found-tag (name ?machine)
     (side ?side) (frame ?) (trans $?) (rot $?)
