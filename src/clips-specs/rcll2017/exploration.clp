@@ -687,10 +687,10 @@
   )
 =>
   (bind ?zone (get-zone 0.07 ?trans))
-;  (if ?zone then
+  (if ?zone then
     ;(synced-modify ?ze machine NONE times-searched (+ 1 ?times-searched)) TODO now wm-facts
-;  )
    (modify ?ze (machine NONE) (times-searched (+ 1 ?times-searched)))
+  )
 )
 
 
@@ -817,17 +817,17 @@
 
   ; Locks for all closer zones with a line-visibility > 0 have been refused
   (Position3DInterface (id "Pose") (translation $?trans))
-  (not
-    (zone-exploration (machine UNKNOWN) (line-visibility ?vh2&:(> ?vh2 0))
-      (name ?zn2&:(< (distance-mf ?trans (zone-center ?zn2)) (distance-mf ?trans (zone-center ?zn))))
-    )
+  ;(not
+   ; (zone-exploration (machine UNKNOWN) (line-visibility ?vh2&:(> ?vh2 0))
+   ;   (name ?zn2&:(< (distance-mf ?trans (zone-center ?zn2)) (distance-mf ?trans (zone-center ?zn))))
+   ; )
     ;(lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn2))  TODO what about locks
-  )
+  ;)
 =>
   (printout t "EXP trying to lock zone " ?zn crlf)
-  ;(assert
-    ;(lock (type GET) (agent ?*ROBOT-NAME*) (resource ?zn))  TODO what about locks
-  ;)
+;  (assert
+;    (lock (type ACCEPT) (agent ?*ROBOT-NAME*) (resource ?zn))  TODO what about locks
+;  )
 )
 
 
@@ -848,21 +848,21 @@
   (modify ?sl-f (+ ?search-limit 1))
 )
 
-
-(defrule exp-tried-locking-all-zones
-  "There is at least one unexplored zone with a line, but locks have been denied for
-   ALL unexplored zones. So clear all REFUSEs and start requesting locks from the beginning."
-  (zone-exploration (name ?) (machine UNKNOWN) (line-visibility ?tmp&:(> ?tmp 0)))
-  (not
-    (zone-exploration (name ?zn) (machine UNKNOWN) (line-visibility ?vh&:(> ?vh 0)))
-    ;(lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))  TODO what about locks
-  )
-=>
-  ;(delayed-do-for-all-facts ((?l lock)) (and (eq ?l:type REFUSE) (eq ?l:agent ?*ROBOT-NAME*))  TODO what about locks
-  ;  (retract ?l)
-  ;)
-  (printout warn "empty effect" crlf)
-)
+;
+;(defrule exp-tried-locking-all-zones
+;  "There is at least one unexplored zone with a line, but locks have been denied for
+;   ALL unexplored zones. So clear all REFUSEs and start requesting locks from the beginning."
+;  (zone-exploration (name ?) (machine UNKNOWN) (line-visibility ?tmp&:(> ?tmp 0)))
+;  (not
+;    (zone-exploration (name ?zn) (machine UNKNOWN) (line-visibility ?vh&:(> ?vh 0)))
+;    ;(lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))  TODO what about locks
+;  )
+;=>
+; ; (delayed-do-for-all-facts ((?l lock)) (and (eq ?l:type REFUSE) (eq ?l:agent ?*ROBOT-NAME*))  TODO what about locks
+; ;   (retract ?l)
+; ; )
+;  (printout warn "empty effect" crlf)
+;)
 
 
 (defrule exp-stop-to-investigate-zone
@@ -874,7 +874,7 @@
   ?st-f <- (state EXP_GOTO_NEXT)
 
   (zone-exploration (name ?zn))
-  ;(lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))  TODO what about locks
+ ; (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))  TODO what about locks
 =>
   (printout t "EXP exploring zone " ?zn crlf)
   (delayed-do-for-all-facts ((?exp-f explore-zone-target)) TRUE (retract ?exp-f))
@@ -930,9 +930,9 @@
   ?exp-f <- (explore-zone-target (zone ?zn))
 =>
   (retract ?st-f ?exp-f ?pa); ?skill-f )
-  ;(assert
-  ;  (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))  TODO what about locks
-  ;)
+ ; (assert
+ ;   (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))  TODO what about locks
+ ; )
   (if (any-factp ((?ft found-tag)) (eq ?ft:name ?machine)) then
     (printout error "BUG: Tag for " ?machine " already found. Locking glitch or agent bug!" crlf)
   else
