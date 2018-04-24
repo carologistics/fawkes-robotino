@@ -115,14 +115,15 @@
 
 (defrule goal-reasoner-create-enter-field
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
+  (wm-fact (key refbox state) (value RUNNING))
+  (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
+  ; (NavGraphGeneratorInterface (final TRUE))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
-  (assert (goal (id ENTER-FIELD) (priority ?*PRIORITY-ENTER-FIELD*)
-                                 (parent PRODUCTION-MAINTAIN)))
+  (assert (goal (id ENTER-FIELD) (priority ?*PRIORITY-ENTER-FIELD*)))
 )
 
 (defrule goal-reasoner-create-fill-cap-goal
@@ -346,6 +347,13 @@
 )
 
 ; ## Goal Evaluation
+(defrule goal-reasoner-evaluate-failed-enter-field
+  ?g <- (goal (id ENTER-FIELD) (mode FINISHED) (outcome FAILED))
+ =>
+ (printout t "Goal '" ENTER-FIELD"' has failed, Evaluating" crlf)
+ (modify ?g (mode SELECTED) (outcome UNKNOWN))
+)
+
 (defrule goal-reasoner-evaluate-completed-subgoal-produce-c0
   ?g <- (goal (id PRODUCE-C0) (parent ?parent-id)
               (mode FINISHED) (outcome COMPLETED)
