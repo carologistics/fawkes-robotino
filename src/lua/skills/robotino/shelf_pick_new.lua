@@ -34,7 +34,7 @@ local shelf_distance = 0.1
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"INIT", JumpState},
    {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="ADJUST_GRIPPER", fail_to="FAILED"},
-   {"ADJUST_GRIPPER", SkillJumpState, skills={{}}, final_to="GRIP_PRODUCT", fail_to="FAILED" },
+   {"ADJUST_GRIPPER", SkillJumpState, skills={{}}, final_to="OPEN_GRIPPER", fail_to="FAILED" },
    {"OPEN_GRIPPER", SkillJumpState, skills={{}}, final_to="MOVE_GRIPPER"},
    {"MOVE_GRIPPER", SkillJumpState, skills={{}}, final_to="CLOSE_GRIPPER", fail_to="FAILED"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{}}, final_to="MOVE_GRIPPER_BACK", fail_to="FAILED"},
