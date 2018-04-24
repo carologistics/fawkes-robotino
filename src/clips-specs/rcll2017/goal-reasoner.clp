@@ -113,6 +113,16 @@
   (modify ?pg (mode FINISHED) (outcome ?outcome))
 )
 
+(defrule goal-reasoner-fail-parent-goal-if-subgoals-rejected
+  ?pg <- (goal (id ?pg-id) (mode DISPATCHED))
+  (not (goal (id ?sg-id) (parent ?pg-id) (mode ~REJECTED)))
+  (goal (parent ?pg-id))
+  (time $?now)
+  =>
+  (printout debug "Goal '" ?pg-id " failed because all subgoald been REJECTED" crlf)
+  (modify ?pg (mode FINISHED) (outcome FAILED))
+)
+
 ; #  Goal Monitoring
 ; ## Goal Evaluation
 (defrule goal-reasoner-evaluate-subgoal-common
