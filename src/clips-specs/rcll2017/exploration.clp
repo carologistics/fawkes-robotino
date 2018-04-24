@@ -881,7 +881,7 @@
   (wm-fact (key domain fact self args? r ?r))
   (exp-searching)
   ?st-f <- (state EXP_GOTO_NEXT)
-  ?skill <- (skill (skill-id ?skill-id) (status S_RUNNING))
+  ?skill <- (skill (id ?skill-id) (status S_RUNNING))
   (zone-exploration (name ?zn))
   (lock (type ACCEPT) (resource ?zn))
 =>
@@ -938,7 +938,7 @@
   ;(tag-matching (tag-id ?tag-id) (machine ?machine) (side ?side) (team ?team-color))
   ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (times-searched ?times-searched))
   ;(machine (name ?machine) (mtype ?mtype))
-  (domain-fact (name mps-type) (param-values ?machine ?mtype))
+;  (domain-fact (name mps-type) (param-values ?machine ?mtype))
   ?exp-f <- (explore-zone-target (zone ?zn))
   ?lock <- (lock (type ACCEPT) (resource ?r&:(eq ?r (sym-cat ?zn-str))))
 =>
@@ -967,7 +967,7 @@
       )
       (exploration-result
         (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
-        (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
+  ;      (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
         (team (mirror-team ?team-color))
       )
     )
@@ -1059,7 +1059,7 @@
   )
   (pb-broadcast ?peer ?mr)
   (modify ?ws (time ?now) (seq (+ ?seq 1)))
-  (printout error "Reported mps " crlf)
+  (printout error "Reported mps : " ?mr crlf)
 )
 
 
