@@ -229,15 +229,8 @@
    (domain-fact (name mirror-orientation) (param-values 270 270))
    (domain-fact (name mirror-orientation) (param-values 315 225))
 
-   (domain-fact (name insertion-zone) (param-values M-Z51))
-   (domain-fact (name insertion-zone) (param-values M-Z61))
-   (domain-fact (name insertion-zone) (param-values M-Z71))
 
-   (domain-fact (name insertion-zone) (param-values C-Z51))
-   (domain-fact (name insertion-zone) (param-values C-Z61))
-   (domain-fact (name insertion-zone( (param-values C-Z71))
-
-  )
+ ) 
 
   (assert (domain-facts-loaded))
 )
