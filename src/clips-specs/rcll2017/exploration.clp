@@ -596,6 +596,7 @@
     (not (NavGraphWithMPSGeneratorInterface))
   )
 =>
+  (printout t "Goto next node " ?next-node crlf)
   (retract ?s)
   (assert
     (state EXP_GOTO_NEXT)
@@ -790,6 +791,7 @@
 =>
   ;(synced-modify ?ze-f line-visibility (+ ?lv 1)) TODO now wm-fact
   (modify ?ze-f (line-visibility (+ ?lv 1)))
+  (printout t "Found tag in " ?zn crlf)
 )
 
 
@@ -883,6 +885,7 @@
     (state EXP_STOPPING)
     (explore-zone-target (zone ?zn))
   )
+  (printout t "Stop to explore zone " ?zn crlf)
   (assert (plan-action (action-name stop) (param-values ?r) (plan-id ?plan-id) (goal-id EXPLORATION) (status PENDING)))
   ;(skill-call relgoto x y 0) TODO make this a plan action
 )
@@ -902,6 +905,7 @@
   (navigator-default-vmax (velocity ?trans-vmax) (rotation ?rot-vmax))
   (wm-fact (key domain fact self args? r ?r))
 =>
+  (printout t "Start exploring zone: " ?zn crlf)
   (retract ?st-f ?srch-f ?pa) ;?skill-f)
   (assert (state EXP_EXPLORE_ZONE))
   (navigator-set-speed ?trans-vmax ?rot-vmax)
@@ -957,6 +961,7 @@
         (team (mirror-team ?team-color))
       )
     )
+    (printout t "Exploration successfull. Found " ?machine " in " ?zn2 crlf)
   )
   (assert
     (exp-searching)
@@ -1041,6 +1046,7 @@
   )
   (pb-broadcast ?peer ?mr)
   (modify ?ws (time ?now) (seq (+ ?seq 1)))
+  (printout t "Reported mps " ?er:machine " in " ?er:zone crlf)
 )
 
 
