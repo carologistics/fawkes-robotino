@@ -808,8 +808,7 @@
   (state EXP_GOTO_NEXT|EXP_IDLE)
   ; Not currently locked/trying to lock anything
   ;(not (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))  TODO what about locks
-  (not (lock (type ACCEPT) (resource ?)))  TODO what about locks
-
+  (not (lock (type ACCEPT) (resource ?)))
   ; An explorable zone for which no lock was refused yet
   (exp-repeated-search-limit ?search-limit)
   (zone-exploration
@@ -835,7 +834,7 @@
 =>
   (printout t "EXP trying to lock zone " ?zn crlf)
   (assert
-    (lock (type ACCEPT) (agent ?*ROBOT-NAME*) (resource ?zn))  TODO what about locks
+    (lock (type ACCEPT) (resource ?zn))
   )
 )
 
@@ -883,7 +882,7 @@
   ?st-f <- (state EXP_GOTO_NEXT)
 
   (zone-exploration (name ?zn))
-  (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))  TODO what about locks
+  (lock (type ACCEPT) (resource ?zn))
 =>
   (printout t "EXP exploring zone " ?zn crlf)
   (delayed-do-for-all-facts ((?exp-f explore-zone-target)) TRUE (retract ?exp-f))
@@ -939,7 +938,7 @@
   ;(machine (name ?machine) (mtype ?mtype))
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
   ?exp-f <- (explore-zone-target (zone ?zn))
-  ?lock <- (lock (type ACCEPT) (resource (sym-cat ?zn-str)))
+  ?lock <- (lock (type ACCEPT) (resource ?r&:(eq ?r (sym-cat ?zn-str))))
 =>
   (retract ?st-f ?exp-f ?pa); ?skill-f )
   (retract ?lock)
@@ -987,7 +986,7 @@
   ?exp-f <- (explore-zone-target (zone ?zn))
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str) (search_state ?s&:(neq ?s YES)))
   ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (machine ?machine) (times-searched ?times-searched))
-  ?hold <- (lock (type ACCEPT) (resource (sym-cat ?zn-str)))
+  ?hold <- (lock (type ACCEPT) (resource ?r&:(eq ?r (sym-cat ?zn-str))))
 =>
   (printout t "Exploration of " ?zn " failed" crlf)
   (retract ?st-f ?exp-f ?pa) ;?skill-f)
@@ -1012,7 +1011,7 @@
 
 (defrule exp-report-to-refbox
   (goal (id EXPLORATION) (mode DISPATCHED))
-  (wm-fact (key refbox team-color) (value ?color)) 
+  (wm-fact (key refbox team-color) (value ?color))
 ; (team-color ?color)
   (exploration-result (team ?color) (machine ?machine) (zone ?zone)
     (orientation ?orientation)
@@ -1058,7 +1057,7 @@
   )
   (pb-broadcast ?peer ?mr)
   (modify ?ws (time ?now) (seq (+ ?seq 1)))
-  (printout t "Reported mps " ?er:machine " in " ?er:zone crlf)
+  (printout error "Reported mps " crlf)
 )
 
 
