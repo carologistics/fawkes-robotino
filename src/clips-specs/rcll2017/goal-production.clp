@@ -114,7 +114,6 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
   ; (not (goal (id ENTER-FIELD)))
-  (not (goal-already-tried ENTER-FIELD))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
@@ -122,9 +121,6 @@
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
   (assert (goal (id ENTER-FIELD) (priority ?*PRIORITY-ENTER-FIELD*)
                                  (parent PRODUCTION-MAINTAIN)))
-  ; This is just to make sure we formulate the goal only once.
-  ; In an actual domain this would be more sophisticated.
-  (assert (goal-already-tried ENTER-FIELD))
 )
 
 (defrule goal-reasoner-create-fill-cap-goal
