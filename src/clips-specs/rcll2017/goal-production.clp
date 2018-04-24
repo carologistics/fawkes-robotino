@@ -108,19 +108,29 @@
 
 (defrule goal-reasoner-create-enter-field
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+<<<<<<< HEAD
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
   ; (not (goal (id ENTER-FIELD)))
   (not (goal-already-tried ENTER-FIELD))
+=======
+>>>>>>> 8d24e138c... cx/rcll2017: ENTER-FIELD its own achieve goal
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
+  (wm-fact (key refbox state) (value RUNNING))
+  (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
+  ; (NavGraphGeneratorInterface (final TRUE))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
+<<<<<<< HEAD
   (assert (goal (id ENTER-FIELD) (priority ?*PRIORITY-ENTER-FIELD*)
                                  (parent PRODUCTION-MAINTAIN)))
   ; This is just to make sure we formulate the goal only once.
   ; In an actual domain this would be more sophisticated.
   (assert (goal-already-tried ENTER-FIELD))
+=======
+  (assert (goal (id ENTER-FIELD) (priority ?*PRIORITY-ENTER-FIELD*)))
+>>>>>>> 8d24e138c... cx/rcll2017: ENTER-FIELD its own achieve goal
 )
 
 (defrule goal-reasoner-create-fill-cap-goal
@@ -315,6 +325,13 @@
 
 
 ; ## Goal Evaluation
+(defrule goal-reasoner-evaluate-failed-enter-field
+  ?g <- (goal (id ENTER-FIELD) (mode FINISHED) (outcome FAILED))
+ =>
+ (printout t "Goal '" ENTER-FIELD"' has failed, Evaluating" crlf)
+ (modify ?g (mode SELECTED) (outcome UNKNOWN))
+)
+
 (defrule goal-reasoner-evaluate-completed-subgoal-produce-c0
   ?g <- (goal (id PRODUCE-C0) (parent ?parent-id)
               (mode FINISHED) (outcome COMPLETED)
