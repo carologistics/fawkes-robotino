@@ -229,8 +229,7 @@
    (domain-fact (name mirror-orientation) (param-values 270 270))
    (domain-fact (name mirror-orientation) (param-values 315 225))
 
-
- ) 
+     ) 
 
   (assert (domain-facts-loaded))
 )

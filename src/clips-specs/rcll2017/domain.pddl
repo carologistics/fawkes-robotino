@@ -41,6 +41,7 @@
 		cap-carrier - workpiece
 		shelf-spot - object
 		ring-num - object
+		zone - object
 	)
 
 	(:constants
@@ -450,7 +451,7 @@
 
 
         (:action move-node
-			:parameters (?r - robot ?n - node)
+			:parameters (?r - robot ?z - zone)
 			:precondition (entered-field ?r) 
 			:effect (entered-field ?r)
 	)
@@ -462,7 +463,7 @@
 	)
 
 	(:action explore-zone
-			:parameters (?r - robot ?zone - zone)
+			:parameters (?r - robot ?z - zone)
 			:precondition (entered-field ?r)
 			:effect (entered-field ?r)
 	)
