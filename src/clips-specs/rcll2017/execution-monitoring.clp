@@ -7,39 +7,12 @@
   (slot status)
 )
 
-(deftemplate gripped-wp-at
-  (slot wp)
-  (slot r)
-  (multislot pos)
-  (multislot rot)
-)
-
 (defglobal
   ?*COMMON-TIMEOUT-DURATION* = 30
   ?*MPS-DOWN-TIMEOUT-DURATION* = 120
   ?*HOLDING-MONITORING* = 60
 )
 
-(defrule gripper-init
-        (executive-init)
-        (ff-feature-loaded blackboard)
-        (not (gripper-blackboard-init))
-	=>
-        (blackboard-open-reading "AX12GripperInterface" "Gripper AX12")
-	(assert (gripper-blackboard-init))
-)
-
-
-
-;React to broken mps
-(defrule broken-mps-reject-goals
-  (declare (salience 1))
-  (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps))
-  ?g <- (goal (id ?goal-id) (mode FORMULATED|SELECTED|EXPANDED) (params $? ?mps $?))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  =>
-  (modify ?g (mode REJECTED))
-)
 
 (defrule reset-prepare-action-on-downed
   (declare (salience 1))
@@ -48,8 +21,8 @@
         (plan-id ?plan-id)
         (action-name prepare-cs|prepare-rs|prepare-ds|prepare-bs)
         (status RUNNING)
-	(param-values $? ?mps $?)
-	(executable TRUE))
+        (param-values $? ?mps $?)
+        (executable TRUE))
   ?ta <- (timer (name prepare-mps-abort-timer))
   ?ts <- (timer (name prepare-mps-send-timer))
   =>
@@ -57,12 +30,15 @@
   (retract ?ta ?ts)
 )
 
+
+
+;React to broken mps
 (defrule broken-mps-fail-goal
 ;TODO: Only Do When Goal Is Production Goal (when first put and then prepare)
   (declare (salience 1))
   ?fg <-(wm-fact (key monitoring fail-goal) (type UNKNOWN) (value ?goal-id))
   ?g <- (goal (id ?goal-id) (mode DISPATCHED))
-  (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (status ?s&:(and (neq ?s FINAL) (neq ?s FAILED) (neq ?s FORMULATED)))))
+  (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (status ~FORMULATED&~PENDING&~FINAL&~FAILED)))
   =>
   (printout error "Fail goal " ?goal-id " because it is unsatisfiable" crlf)
   (retract ?fg)
@@ -75,74 +51,82 @@
   ?g <- (goal (id ?goal-id) (mode DISPATCHED))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
-     (status FORMULATED)
+     (status FORMULATED|PENDING)
      (param-values $? ?mps $?)
      (action-name ?an))
   (not (wm-fact (key monitoring fail-goal) (value ?goal-id)))
   =>
-  (assert (wm-fact (key monitoring fail-goal) (value ?goal-id)))
+  (assert (wm-fact (key monitoring fail-goal) (type UNKNOWN) (value ?goal-id)))
 )
 
-
-(defrule broken-mps-add-reset-flag
-  (declare (salience 1))
-  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
-  (not (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps)))
-  (not (wm-fact (key monitoring fail-goal) (type UNKNOWN) (value ?mps)))
-  => 
-  (assert (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps)))
-)
+; (defrule broken-mps-add-reset-flag
+;   (declare (salience 1))
+;   (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
+;   (not (wm-fact (key monitoring mps-flush-fact) (type UNKNOWN) (value ?mps)))
+;   => 
+;   (assert (wm-fact (key monitoring mps-flush-facts) (type UNKNOWN) (value ?mps)))
+; )
 
 (defrule broken-mps-remove-facts
   (declare (salience 1))
-  ?flag <- (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps))
-  (wm-fact (key domain fact mps-state args? m ?mps s ?s&~BROKEN))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
-  (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	(status ?status& : (and (neq ?status FINAL) (neq ?status FORMULATED) (neq ?status FAILED)))
-	(param-values $? ?mps $?)))	
+  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
   (wm-fact (key domain fact mps-type args? m ?mps t ?type))
+  ; ?flag <- (wm-fact (key monitoring mps-flush-facts) (type UNKNOWN) (value ?mps))
+  ; (plan (id ?plan-id) (goal-id ?goal-id))
+  ; (goal (id ?goal-id) (mode DISPATCHED))
+  ; (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+  ;   status ~FORMULATED&~FAILED~FINAL&)))
+  ; (param-values $? ?mps $?)))
    =>
   (printout error "MPS " ?mps " was broken, cleaning up facts" crlf)
   (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?mps (wm-key-args ?wf:key)) FALSE) 
-					 (or
-						(neq (member$ wp-at (wm-key-path ?wf:key)) FALSE)
-						(neq (member$ bs-prepared-color (wm-key-path ?wf:key)) FALSE)
-						(neq (member$ ds-prepared-gate (wm-key-path ?wf:key)) FALSE)
-					 	(neq (member$ bs-prepared-side (wm-key-path ?wf:key)) FALSE)
-						(neq (member$ cs-prepared-for (wm-key-path ?wf:key)) FALSE)
-						(neq (member$ cs-buffered (wm-key-path ?wf:key)) FALSE)
-						(neq (member$ cs-can-perform (wm-key-path ?wf:key)) FALSE)
-						(neq (member$ rs-filled-with (wm-key-path ?wf:key)) FALSE) 
-						(neq (member$ rs-prepared-color (wm-key-path ?wf:key)) FALSE)
-					 )
-		  		    )			
-		(retract ?wf)
-		(printout t "CLEANED: " ?wf:key crlf)
+           (or
+            (wm-key-prefix ?wf:key (create$ domain fact wp-at))
+            (wm-key-prefix ?wf:key (create$ domain fact bs-prepared-color))
+            (wm-key-prefix ?wf:key (create$ domain fact ds-prepared-gate))
+            (wm-key-prefix ?wf:key (create$ domain fact bs-prepared-side))
+            (wm-key-prefix ?wf:key (create$ domain fact cs-prepared-for))
+            (wm-key-prefix ?wf:key (create$ domain fact cs-buffered))
+            (wm-key-prefix ?wf:key (create$ domain fact cs-can-perform))
+            (wm-key-prefix ?wf:key (create$ domain fact rs-filled-with))
+            (wm-key-prefix ?wf:key (create$ domain fact rs-prepared-color))
+           )
+              )     
+    (retract ?wf)
+    (printout t "Exec-Monotoring: Broken Machine " ?wf:key crlf " domain facts flushed!")
   )
   (switch ?type
-	(case CS then 
-		(assert (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP)))
-	)
-	(case RS then
-		(assert (wm-fact (key domain fact rs-filled-with args? m ?mps n ZERO)))
-	)
-  )	
-  (retract ?flag)
+    (case CS then
+      (assert (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP)))
+    )
+    (case RS then
+      (assert (wm-fact (key domain fact rs-filled-with args? m ?mps n ZERO)))
+    )
+  )
+  ; (retract ?flag)
+)
+
+(defrule broken-mps-reject-goals
+  (declare (salience 1))
+  ; (wm-fact (key monitoring mps-flush-facts) (type UNKNOWN) (value ?mps))
+  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
+  ?g <- (goal (id ?goal-id) (mode FORMULATED|SELECTED|EXPANDED) (params $? ?mps $?))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  =>
+  (modify ?g (mode REJECTED))
 )
 
 
 (defrule create-action-timeout
   (declare (salience 1))
   (plan-action (plan-id ?plan-id) (goal-id ?goal-id) 
-  	(id ?id) (status ?status& : (and (neq ?status FORMULATED) (neq ?status RUNNING) (neq ?status FAILED) (neq ?status FINAL)))
-  	(action-name ?action-name)
-	(param-values $?param-values))
+      (id ?id) 
+      (status ?status&~FORMULATED&~RUNNING&~FAILED&~FINAL)
+      (action-name ?action-name)
+      (param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
   (test (neq ?goal-id BEACONACHIEVE))
-
   (not (pending-timer (plan-id ?plan-id) (action-id ?id) (status ?status)))
   (time $?now)	
   ;Maybe check for a DOWNED mps here?
@@ -163,7 +147,7 @@
   (time $?now)
   (test (and (> (nth$ 1 ?now) (nth$ 1 ?timeout)) (> (nth$ 2 ?now) (nth$ 2 ?timeout))))
   =>
-  (printout error "Action was too long pending: " ?action-name crlf)
+  (printout error "Action "  ?action-name " timedout after " ?status  crlf)
   (modify ?p (status FAILED))
   (retract ?pt)
 )
@@ -187,8 +171,7 @@
 	(param-values $? ?mps $?))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
-  
-  (wm-fact (key domain fact mps-state args? m ?mps s DOWN))
+  (wm-fact (key domain fact mps-state args? m ?mps s ~ IDLE&~READY-AT-OUTPUT))
   ?pt <- (pending-timer (plan-id ?plan-id) (action-id ?id) (start-time $?starttime) (timeout-time $?timeout))
   (test (< (nth$ 1 ?timeout) (+ (nth$ 1 ?starttime) ?*MPS-DOWN-TIMEOUT-DURATION* ?*COMMON-TIMEOUT-DURATION*)))
   =>
@@ -239,7 +222,7 @@
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))	
   ?hold <- (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot))
   =>
-  (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated")
+  (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated" crlf)
   (retract ?hold)
   (modify ?g (mode EVALUATED))
   (assert (domain-fact (name can-hold) (param-values ?r)))
@@ -266,6 +249,7 @@
        (param-values $? ?wp $?))
   (not (wm-fact (key monitoring fail-goal) (value ?goal-id)))
   =>
+  (printout t "Exec-Monitoring: ensory information contradicts domain" crlf)
   (assert (wm-fact (key monitoring fail-goal) (value ?goal-id)))
   (retract ?hold)
   (assert (wm-fact (key domain fact can-hold args? r ?r)))
