@@ -27,11 +27,12 @@ name               = "bring_product_to_general"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"bring_product_to", "bring_product_to_new"}
 
-documentation      = [==[ 
+documentation      = [==[
 Decides wether the old or the new gripper skill is used, based on the information stored in the host.yaml
 The following parameters are just passed to the corresponding sub-skill
 
 Parameters:
+      @param gripper name of the mounted gripper: (NEW_GRIPPER | OLD_GRIPPER)
       @param place   the name of the MPS (see navgraph)
       @param side    optional the side of the mps, default is input (give "output" to bring to output)
       @param shelf   optional position on shelf: ( LEFT | MIDDLE | RIGHT )
@@ -42,6 +43,20 @@ Parameters:
 skillenv.skill_module(_M)
 -- constants
 
+
+function new_gripper(self)
+     if self.fsm.vars.gripper == NEW_GRIPPER then
+       return true
+     end
+     return false
+end
+
+function old_gripper(self)
+     if self.fsm.vars.gripper == OLD_GRIPPER then
+       return true
+     end
+     return false
+end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_if},
    {"INIT", JumpState},
