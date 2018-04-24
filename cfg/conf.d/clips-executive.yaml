@@ -112,7 +112,7 @@ clips-executive:
         move-wp-get: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
         wp-get: get_product_from{place=?(m)S, side=?(side|/INPUT/input/|/OUTPUT/output/)s}
         wp-discard: ax12gripper{command="OPEN"}
-      blackboard-preload: ["Position3DInterface"]
+      blackboard-preload: ["Position3DInterface", "NavGraphWithMPSGeneratorInterface" , "NavigatorInterface"]
 
       parameters:
         rcll:

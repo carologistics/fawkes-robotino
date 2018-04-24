@@ -41,7 +41,7 @@
   ; (declare (salience ?*PRIORITY-LOW*))
   (executive-init)
   (wm-fact (id "/config/rcll/peer-address") (value ?peer-address))
-  (wm-fact (id "/config/rcll/peer-port") (value ?peer-port))
+  (wm-fact (id "/config/rcll/peer-port") (value ?peer-port&~0))
   (not (wm-fact (id "/refbox/comm/peer-enabled") (value TRUE)))
   =>
   (printout t "Enabling remote peer (public)" crlf)
@@ -124,8 +124,8 @@
   (wm-fact (id "/config/rcll/peer-address") (value ?address))
   (wm-fact (id "/config/rcll/crypto-key") (value ?key))
   (wm-fact (id "/config/rcll/cipher") (value ?cipher))
-  (wm-fact (id "/config/rcll/cyan-port") (value ?cyan-port))
-  (wm-fact (id "/config/rcll/magenta-port") (value ?magenta-port))
+  (wm-fact (id "/config/rcll/cyan-port") (value ?cyan-port&~0))
+  (wm-fact (id "/config/rcll/magenta-port") (value ?magenta-port&~0))
   (not (wm-fact (id "/refbox/comm/private-peer-enabled") (value TRUE) ))
   =>
   (if (eq ?team-color CYAN)
