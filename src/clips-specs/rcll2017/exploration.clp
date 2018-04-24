@@ -747,7 +747,7 @@
   ; We don't check the visibility_history here since that's already done in the explore_zone skill
   ;(tag-matching (tag-id ?tag-id) (machine ?machine) (side ?side) (team ?team-color)) TODO what about tag-matching
   ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (times-searched ?times-searched))
-  ;(machine (name ?machine) (mtype ?mtype)) TODO machine fact
+  ;(machine (name ?machine) (mtype ?mtype))
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
   ?exp-f <- (explore-zone-target (zone ?zn))
 =>
@@ -872,7 +872,7 @@
   ;) TODO what about tag-matching
   (found-tag (name ?machine2&:(eq ?machine2 (mirror-name ?machine))))
   ?ze2 <- (zone-exploration (name ?zn2&:(eq ?zn2 (mirror-name ?zn))))
-  ;(machine (name ?machine) (mtype ?mtype)) TODO machine fact
+  ;(machine (name ?machine) (mtype ?mtype))
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
 =>
   (bind ?m-rot (mirror-rot ?mtype ?zn ?rot))
@@ -906,10 +906,10 @@
     (NavGraphWithMPSGeneratorInterface (msgid 0))
     (not (NavGraphWithMPSGeneratorInterface))
   )
-
-  ;(forall (machine (name ?mps)) TODO machine template
-  ;  (zone-exploration (machine ?found&:(eq ?mps ?found)))
-  ;)
+  ;(forall (machine (name ?mps))
+  (forall (domain-fact (name mps-type) (param-values ?mps ?mps-type))
+    (zone-exploration (machine ?found&:(eq ?mps ?found)))
+  )
 
   (team-color ?team-color)
 
