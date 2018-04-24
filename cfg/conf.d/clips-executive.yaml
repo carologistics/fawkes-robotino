@@ -119,7 +119,7 @@ clips-executive:
 
       action-mapping:
         enter-field: drive_into_field{team=?(team-color)S}
-        explore-zone: explore_zone{zone=?(z)}
+        explore-zone: explore_zone{zone=?(z)s}
         move-node: goto{place=?(z)s}
         move: ppgoto{place="?(to)Y-I"}
         go-wait: ppgoto{place="?(to)Y"}
@@ -141,6 +141,7 @@ clips-executive:
           peer-port: 4444
           cyan-port: 4441
           magenta-port: 4442
+
 
           team-name: Carologistics
           crypto-key: randomkey
@@ -170,3 +171,5 @@ clips-executive:
             # investigating it further (i.e. call the explore_zone skill on it)
 
             zone-margin: 0.15
+            latest-send-last-report-time: 210 # =3:30
+

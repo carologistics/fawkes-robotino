@@ -122,8 +122,11 @@
   (slot rotation (type FLOAT))
 )
 
-(deffacts startup-exploration
-    (zone-exploration (name C-Z11) (team CYAN))
+(defrule startup-exploration
+    (not (zone-exploration))
+=>
+  (assert
+(zone-exploration (name C-Z11) (team CYAN))
     (zone-exploration (name C-Z21) (team CYAN))
     (zone-exploration (name C-Z31) (team CYAN))
     (zone-exploration (name C-Z41) (team CYAN))
@@ -232,6 +235,7 @@
     (zone-exploration (name M-Z58) (team MAGENTA))
     (zone-exploration (name M-Z68) (team MAGENTA))
     (zone-exploration (name M-Z78) (team MAGENTA))
+  )
 )
 
 
@@ -526,25 +530,31 @@
   "Read configuration for exploration row order of machines"
   (declare (salience ?*PRIORITY-WM*))
   (goal (id EXPLORATION) (mode DISPATCHED))
-  (robot-name ?robot-name)
-  (team-color ?team)
-  (confval
-    (path ?path&:(eq ?path (str-cat "/clips-agent/rcll2016/exploration/route/" ?team "/" ?robot-name)))
-    (list-value $?route)
+  (wm-fact (key domain fact self args? r ?robot-name))
+  ;(robot-name ?robot-name)
+
+  (wm-fact (key refbox team-color) (value ?team))
+  ;(team-color ?team)
+  (wm-fact
+    (id ?id&:(eq ?id (str-cat "/config/rcll/route/" ?team "/" ?robot-name)))
+    (values $?route)
   )
 =>
   (assert (exp-route ?route)
   )
-  (printout t "Exploration route: " ?route crlf)
+ ; (assert (exp-route "exp-12"))
+  (printout t "Exploration route: " ?route " " ?team " " ?robot-name crlf)
 )
 
 (defrule exp-start
   (goal (id EXPLORATION) (mode DISPATCHED))
-  ?st <- (exploration-start)
-  (team-color ?team-color)
+  ;?st <- (exploration-start)
+  (not (timer (name send-machine-reports)))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  ;(team-color ?team-color)
   (NavigatorInterface (id "Navigator") (max_velocity ?max-velocity) (max_rotation ?max-rotation))
 =>
-  (retract ?st)
+  ;(retract ?st)
   (assert (state EXP_IDLE)
           (timer (name send-machine-reports))
           (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
@@ -930,12 +940,12 @@
       (exploration-result
         (machine ?machine) (zone ?zn2)
         (orientation ?orientation)
-        ;(team ?team-color)
+        (team ?team-color)
       )
       (exploration-result
         (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
         (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
-  ;      (team (mirror-team ?team-color))
+        (team (mirror-team ?team-color))
       )
     )
   )
@@ -981,11 +991,13 @@
   (time $?now)
   ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 1)) (seq ?seq))
   (wm-fact (key refbox game-time) (values $?game-time))
-  (confval (path "/clips-executive/specs/rcll2017/parameters/rcll/latest-send-last-report-time")
+  (wm-path (id "/config/rcll/latest-send-last-report-time")
     (value ?latest-report-time)
   )
-  (team-color ?team-color&~nil)
-  (peer-id private ?peer)
+  (wm-fact (key refbox team-color) (value ?team-color&~nil))
+  ;(team-color ?team-color&~nil)
+  (wm-fact (key refbox comm peer-id public) (value ?peer))
+;  (peer-id private ?peer)
   (state ?s) ; TODO actually enter EXP_PREPARE_FOR_PRODUCTION_FINISHED state
 =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
@@ -1077,7 +1089,8 @@
     (zone-exploration (machine ?found&:(eq ?mps ?found) ))
   )
 
-  (team-color ?team-color)
+  (wm-fact (key refbox team-color) (value ?team-color))
+  ;(team-color ?team-color)
 
   (found-tag (name ?machine)
     (side ?side) (frame ?) (trans $?) (rot $?)
@@ -1120,4 +1133,3 @@
   (printout warn "empty effect" crlf)
   (modify ?g (mode FINISHED) (outcome COMPLETED))
 )
-
