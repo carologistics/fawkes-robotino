@@ -27,6 +27,13 @@
 )
 
 ; EXPLORATION
+(deftemplate lock
+  (slot type (type SYMBOL) (allowed-values GET REFUSE ACCEPT RELEASE RELEASE_RVCD))
+  (slot agent (type STRING))
+  (slot resource (type SYMBOL))
+  (slot priority (type INTEGER) (default 0))
+)
+
 
 (deftemplate zone-exploration
   (slot name (type SYMBOL)
@@ -558,7 +565,7 @@
   (assert (state EXP_IDLE)
           (timer (name send-machine-reports))
           (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
-          (exp-repeated-search-limit 0)
+          (exp-repeated-search-limit 4)
   )
   (if (eq ?team-color nil) then
     (printout error "Ouch, starting exploration but I don't know my team color" crlf)
@@ -801,7 +808,7 @@
   (state EXP_GOTO_NEXT|EXP_IDLE)
   ; Not currently locked/trying to lock anything
   ;(not (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))  TODO what about locks
-  ;(not (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))  TODO what about locks
+  (not (lock (type ACCEPT) (resource ?)))  TODO what about locks
 
   ; An explorable zone for which no lock was refused yet
   (exp-repeated-search-limit ?search-limit)
@@ -827,9 +834,9 @@
   ;)
 =>
   (printout t "EXP trying to lock zone " ?zn crlf)
-;  (assert
-;    (lock (type ACCEPT) (agent ?*ROBOT-NAME*) (resource ?zn))  TODO what about locks
-;  )
+  (assert
+    (lock (type ACCEPT) (agent ?*ROBOT-NAME*) (resource ?zn))  TODO what about locks
+  )
 )
 
 
@@ -876,7 +883,7 @@
   ?st-f <- (state EXP_GOTO_NEXT)
 
   (zone-exploration (name ?zn))
- ; (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))  TODO what about locks
+  (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))  TODO what about locks
 =>
   (printout t "EXP exploring zone " ?zn crlf)
   (delayed-do-for-all-facts ((?exp-f explore-zone-target)) TRUE (retract ?exp-f))
@@ -932,8 +939,10 @@
   ;(machine (name ?machine) (mtype ?mtype))
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
   ?exp-f <- (explore-zone-target (zone ?zn))
+  ?lock <- (lock (type ACCEPT) (resource (sym-cat ?zn-str)))
 =>
   (retract ?st-f ?exp-f ?pa); ?skill-f )
+  (retract ?lock)
  ; (assert
  ;   (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))  TODO what about locks
  ; )
@@ -978,7 +987,9 @@
   ?exp-f <- (explore-zone-target (zone ?zn))
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str) (search_state ?s&:(neq ?s YES)))
   ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (machine ?machine) (times-searched ?times-searched))
+  ?hold <- (lock (type ACCEPT) (resource (sym-cat ?zn-str)))
 =>
+  (printout t "Exploration of " ?zn " failed" crlf)
   (retract ?st-f ?exp-f ?pa) ;?skill-f)
   (if (eq ?status FINAL) then
     (printout error "BUG in explore_zone skill: Result is FINAL but no MPS was found.")
@@ -990,6 +1001,7 @@
     (modify ?ze (line-visibility 0) (times-searched (+ ?times-searched 1)))
     ;(synced-modify ?ze line-visibility 0 times-searched (+ ?times-searched 1)) TODO now wm-facts
   )
+  (retract ?hold)
   (assert
     ;(lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))  TODO what about locks
     (exp-searching)
