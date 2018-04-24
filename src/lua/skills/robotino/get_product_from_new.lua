@@ -25,14 +25,12 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from_new"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"mps_align", "product_pick_new", "drive_to"}
+depends_skills     = {"mps_align", "product_pick_new","shelf_pick_new", "drive_to"}
 depends_interfaces = {
 }
 
 documentation      = [==[
-aligns to a machine and picks a product from the conveyor.
-It will get the offsets and the align distance for the machine
-from the navgraph
+aligns to a machine and picks a product from the conveyor or the shelf.
 
 Parameters:
       @param place   the name of the MPS (see navgraph)
@@ -60,8 +58,10 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
    {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
    {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"PRODUCT_PICK_NEW", SkillJumpState, skills={{product_pick_new}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"CONVEYOR_ALIGN",SkillJumpState,skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
+   {"PRODUCT_PICK_NEW", SkillJumpState, skills={{product_pick_new}}, final_to="FINAL", fail_to="FAILED"},
+   {"SHELF_PICK_NEW", SkillJumpState, skills={{shelf_pick_new}}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -69,6 +69,8 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
    {"INIT", "MPS_ALIGN", cond=already_at_conveyor, desc="Already in front of the mps, align"},
    {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"},
+   {"DECIDE_ENDSKILL", "PRODUCT_PICK_NEW", cond=vars.shelf, desc="Pick from shelf"},
+   {"DECIDE_ENDSKILL", "SHELF_PICK_NEW", cond=true, desc="Pick from conveyor"},
 }
 
 function INIT:init()
@@ -91,22 +93,18 @@ function MPS_ALIGN:init()
    end
 
    self.args["mps_align"].x = x_Distance
-
-   if self.fsm.vars.side == "input" then
-      self.args["mps_align"].y = y_Input
-   else if self.fsm.vars.side == "output" then
-      self.args["mps_align"].y = y_Output
-   else if self.fsm.vars.shelf == "LEFT" then
-      self.args["mps_align"].y = y_Shelf_Left
-   else if self.fsm.vars.shelf == "MIDDLE" then
-      self.args["mps_align"].y = y_Shelf_Middle
-   else if self.fsm.vars.shelf == "RIGHT" then
-      self.args["mps_align"].y = y_Shelf_Right
-   end
 end
 
 function CONVEYOR_ALIGN:init()
    if (self.fsm.vars.shelf == nil) then
      self.args["conveyor_align"].disable_realsense_afterwards = false
    end
+end
+
+function CONVEYOR_PICK:init()
+  self.args["product_pick_new"].offset_x = 0
+end
+
+function SHELF_PICK:init()
+  self.args["shelf_pick_new"] = {slot = self.fsm.vars.shelf}
 end
