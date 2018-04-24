@@ -817,6 +817,7 @@
     (line-visibility ?vh&:(> ?vh 0))
     (times-searched ?ts&:(<= ?ts ?search-limit))
   )
+  (not (plan-action (goal-id EXPLORATION) (status PENDING|WAITING)))
   ;(not (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn)))  TODO what about locks
 
   ; Neither this zone nor the opposite zone is locked
@@ -880,10 +881,13 @@
   (wm-fact (key domain fact self args? r ?r))
   (exp-searching)
   ?st-f <- (state EXP_GOTO_NEXT)
-
+  ?pa <- (plan-action (action-name ?an) (goal-id EXPLORATION) (status ?s&~FINAL&~FAILED&~FORMULATED))
+  ?se <- (skill-action-mapping (skill-name ?an) (skill-id ?skill-id))
+  ?skill <- (skill (skill-id ?skill-id))
   (zone-exploration (name ?zn))
   (lock (type ACCEPT) (resource ?zn))
 =>
+  (modify ?skill (status S_FAILED))
   (printout t "EXP exploring zone " ?zn crlf)
   (delayed-do-for-all-facts ((?exp-f explore-zone-target)) TRUE (retract ?exp-f))
   (retract ?st-f)
@@ -1019,7 +1023,7 @@
   (time $?now)
   ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 1)) (seq ?seq))
   (wm-fact (key refbox game-time) (values $?game-time))
-  (wm-fact (id "/config/rcll/latest-send-last-report-time")
+  (wm-fact (id "/config/rcll/exploration/latest-send-last-report-time")
     (value ?latest-report-time)
   )
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
