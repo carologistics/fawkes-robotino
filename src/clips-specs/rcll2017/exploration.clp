@@ -374,6 +374,14 @@
   )
 )
 
+(defrule conf-get-exp-vmax
+  (wm-fact (id "/config/rcll/exploration/max-velocity") (type FLOAT) (value ?max-velocity))
+  (wm-fact (id "/config/rcll/exploration/max-rotation") (type FLOAT) (value ?max-rotation))
+  =>
+  (assert (exp-navigator-vmax ?max-velocity ?max-rotation))
+)
+
+
 (defrule start-exploration-goal
   (not (goal (id EXPLORATION)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value EXPLORATION))

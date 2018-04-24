@@ -449,6 +449,11 @@
 	)
 
 
+        (:action move-node
+			:parameters (?r - robot ?n - node)
+			:precondition (entered-field ?r) 
+			:effect (entered-field ?r)
+	)
 
 	(:action stop
 			:parameters (?r - robot)

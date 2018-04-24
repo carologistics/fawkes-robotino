@@ -120,6 +120,7 @@ clips-executive:
       action-mapping:
         enter-field: drive_into_field{team=?(team-color)S}
         explore-zone: explore_zone{zone=?(zone)S}
+        move-node: goto{place=?(zone)S} 
         move: ppgoto{place="?(to)Y-I"}
         move-wp-put: ppgoto{place="?(to)Y-I"}
         wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
@@ -153,5 +154,11 @@ clips-executive:
               R-1: ["exp-11", "exp-12", "exp-21"]
               R-2: ["exp-22", "exp-21", "exp-32"]
               R-3: ["exp-32", "exp-31", "exp-22"]
+          
+          exploration:    
+            # Reduce navigator velocity while traveling the field so we can find laser-lines more reliably
+            max-velocity: 0.4
+            max-rotation: 0.5
+
 
 
