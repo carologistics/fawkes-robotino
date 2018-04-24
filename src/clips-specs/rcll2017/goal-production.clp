@@ -112,7 +112,7 @@
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
   =>
-  (assert (goal (id REFILL-SHELF-ACHIEVE) (parent REFILL-SHELF-MAINTAIN) 
+  (assert (goal (id REFILL-SHELF-ACHIEVE) (parent REFILL-SHELF-MAINTAIN)
                                           (params mps ?mps)))
 )
 
@@ -487,10 +487,10 @@
              (mode FINISHED) (outcome COMPLETED)
              (params mps ?mps))
   ?p <- (goal(id REFILL-SHELF-MAINTAIN))
-  (wm-fact (key domain fact cs-color args? m ?mps col ?col)) 
+  (wm-fact (key domain fact cs-color args? m ?mps col ?col))
   =>
   (if (eq ?col CAP_GREY)
-     then  
+     then
      (bind ?cc1 (sym-cat CCG (random-id)))
      (bind ?cc2 (sym-cat CCG (random-id)))
      (bind ?cc3 (sym-cat CCG (random-id)))
@@ -515,8 +515,8 @@
    )
    (modify ?g (mode EVALUATED))
 )
-     
- 
+
+
 (defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
   ?g <- (goal (id WPSPAWN-ACHIEVE) (parent WPSPAWN-MAINTAIN)
             (mode FINISHED) (outcome COMPLETED)
