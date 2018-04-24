@@ -388,7 +388,7 @@
   =>
   (assert (plan (id EXPLORATION-PLAN) (goal-id EXPLORATION)))
   (modify ?g (mode EXPANDED))
-) 
+)
 
 ;(defrule launch-exploration-blackboards
 
@@ -403,7 +403,7 @@
   (goal (id EXPLORATION) (mode DISPATCHED))
   (wm-fact (key domain fact self args? r ?robot-name))
   ;(robot-name ?robot-name)
-  
+
   (wm-fact (key refbox team-color) (value ?team))
   ;(team-color ?team)
   (wm-fact
@@ -419,12 +419,13 @@
 
 (defrule exp-start
   (goal (id EXPLORATION) (mode DISPATCHED))
-  ?st <- (exploration-start)
+  ;?st <- (exploration-start)
+  (not (timer (name send-machine-reports)))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;(team-color ?team-color)
   (NavigatorInterface (id "Navigator") (max_velocity ?max-velocity) (max_rotation ?max-rotation))
 =>
-  (retract ?st)
+  ;(retract ?st)
   (assert (state EXP_IDLE)
           (timer (name send-machine-reports))
           (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
@@ -630,7 +631,7 @@
 (defrule exp-found-tag
   (goal (id EXPLORATION) (mode DISPATCHED))
   ?srch-f <- (exp-searching)
-  (domain-fact (name tag-matching) (param-values ?machine ?side ?col ?tag)) 
+  (domain-fact (name tag-matching) (param-values ?machine ?side ?col ?tag))
 ;(tag-id ?tag) (machine ?machine) (side ?side))
   (not (found-tag (name ?machine)))
   (TagVisionInterface (id "/tag-vision/info")
@@ -914,7 +915,7 @@
  ; (tag-matching (tag-id ?tag2) (side ?side)
   ;  (machine ?machine2&:(eq ?machine2 (mirror-name ?machine)))
   ;)
-  
+
   (found-tag (name ?machine2&:(eq ?machine2 (mirror-name ?machine))))
   ?ze2 <- (zone-exploration (name ?zn2&:(eq ?zn2 (mirror-name ?zn))))
   ;(machine (name ?machine) (mtype ?mtype))
@@ -1000,5 +1001,3 @@
   (printout warn "empty effect" crlf)
   (modify ?g (mode FINISHED) (outcome COMPLETED))
 )
-
-
