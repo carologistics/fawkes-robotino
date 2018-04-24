@@ -124,8 +124,8 @@
 
 (defrule startup-exploration
     (not (zone-exploration))
-=> 
-  (assert 
+=>
+  (assert
 (zone-exploration (name C-Z11) (team CYAN))
     (zone-exploration (name C-Z21) (team CYAN))
     (zone-exploration (name C-Z31) (team CYAN))
@@ -729,7 +729,7 @@
 (defrule exp-found-cluster
   "Found a cluster: Remember it for later when we run out of lines to explore."
   (goal (id EXPLORATION) (mode DISPATCHED))
-  
+
   (wm-fact (key refbox game-time) (values $?game-time))
   (Position3DInterface (id ?id&:(eq (sub-string 1 19 ?id) "/laser-cluster/mps/"))
     (visibility_history ?vh&:(> ?vh 1))
@@ -784,7 +784,7 @@
     (machine UNKNOWN)
     (line-visibility ?lv&:(< ?lv 2))
   )
-  
+
   ;(not (locked-resource (resource ?r&:(eq ?r ?zn)))) TODO what about locks
   ?st-f <- (state ?)
 =>
@@ -894,7 +894,7 @@
   ?srch-f <- (exp-searching)
   ?st-f <- (state EXP_STOPPING)
   (explore-zone-target (zone ?zn))
-  ?pa <- (plan-action (action-name stop) (status ?s))
+  ?pa <- (plan-action (action-name stop) (status FAILED|FINAL))
   ;?skill-f <- (skill-done (name "relgoto")) TODO this should be a plan action
   (MotorInterface (id "Robotino")
     (vx ?vx&:(< ?vx 0.01)) (vy ?vy&:(< ?vy 0.01)) (omega ?w&:(< ?w 0.01))
@@ -942,7 +942,7 @@
     ;  "(frame \"map\") (trans " (implode$ ?trans) ") "
     ;  "(rot " (implode$ ?rot) ") )")
     ;) TODO synced-assert
-    
+
     (modify ?ze (machine ?machine) (times-searched (+ 1 ?times-searched)))
     (assert (found-tag (name ?machine) (side ?side)))
     (assert
@@ -968,7 +968,7 @@
 (defrule exp-skill-explore-zone-failed
   (goal (id EXPLORATION) (mode DISPATCHED))
   ?st-f <- (state EXP_EXPLORE_ZONE)
-  ?pa <- (plan-action (action-name explore-zone) (status ?status))
+  ?pa <- (plan-action (action-name explore-zone) (status ?status&:(or (eq ?status FINAL) (eq ?status FAILED))))
   ;?skill-f <- (skill-done (name "explore_zone") (status ?status)) TODO this should be a skill
   ?exp-f <- (explore-zone-target (zone ?zn))
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str) (search_state ?s&:(neq ?s YES)))
@@ -995,14 +995,15 @@
 
 (defrule exp-report-to-refbox
   (goal (id EXPLORATION) (mode DISPATCHED))
-  (team-color ?color)
+  (wm-fact (key refbox team-color) (value ?color)) 
+; (team-color ?color)
   (exploration-result (team ?color) (machine ?machine) (zone ?zone)
     (orientation ?orientation)
   )
   (time $?now)
   ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 1)) (seq ?seq))
   (wm-fact (key refbox game-time) (values $?game-time))
-  (wm-path (id "/config/rcll/latest-send-last-report-time")
+  (wm-fact (id "/config/rcll/latest-send-last-report-time")
     (value ?latest-report-time)
   )
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
