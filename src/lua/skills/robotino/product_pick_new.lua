@@ -33,9 +33,9 @@ depends_interfaces = {
    {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
 }
 
-documentation      = [==[The robot needs to be aligned with the machine, then just drives forward
+documentation      = [==[The robot needs to be aligned with the machine, then checks for pose of the conveyor_pose
+  and adapts the gripper position if necessary. It then uses the gripper to actually pick the product.
 and opens the gripper
-@param offset_x the offset_x from the navgraph point
 ]==]
 
 
