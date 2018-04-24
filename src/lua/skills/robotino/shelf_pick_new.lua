@@ -26,6 +26,12 @@ depends_skills     = {"motor_move"}
 depends_interfaces = {
 }
 
+documentation  = [==[The robot needs to be aligned with the conveyor and then grips product from shelf.
+        @param slot       string  the slot to pick the puck of; options ( LEFT | MIDDLE | RIGHT )
+]==]
+
+-- Initialize as skill module
+skillenv.skill_module(_M)
 
 -- Tunables
 local shelf_to_conveyor = 0.1
