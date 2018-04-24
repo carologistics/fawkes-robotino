@@ -108,10 +108,17 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"OPEN_GRIPPER", SkillJumpState, skills={{}},final_to="MOVE_GRIPPER", fail_to="FAIL"},
    {"MOVE_GRIPPER", SkillJumpState, skills={{}}, final_to="CLOSE_GRIPPER",fail_to="FAIL"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{}}, final_to = "CLOSE_GRIPPER", fail_to="FAIL"},
-   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{}}, final_to = "FINAL", fail_to="FAIL"},
+   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{}}, final_to = "DRIVE_BACK", fail_to="FAIL"},
+   {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}}, final_to="FINAL", fail_to="FAIL"},
 }
 
 fsm:add_transitions{
    {"CHECK_VISION", "OPEN_GRIPPER",cond=valid_pose , desc= "Conveyor Pose in Range"},
    {"CHECK_VISION", "ADJUST_GRIPPER",cond=valid_pose, desc=" Pose offset to high"},
 }
+
+--TODO ADD SKILLS FOR GRIPPER
+
+function DRIVE_BACK:init()
+   self.args["motor_move"].x = -0.2
+end
