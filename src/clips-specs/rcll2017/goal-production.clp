@@ -113,7 +113,6 @@
 (defrule goal-reasoner-create-enter-field
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  ; (not (goal (id ENTER-FIELD)))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
@@ -126,8 +125,6 @@
 (defrule goal-reasoner-create-fill-cap-goal
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  ; (not (goal (id FILL-CAP)))
-  ; (not (goal-already-tried FILL-CAP))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
@@ -142,17 +139,13 @@
                               (params robot ?robot
                                       mps ?mps
                                       )))
-  ; This is just to make sure we formulate the goal only once.
-  ; In an actual domain this would be more sophisticated.
-  (assert (goal-already-tried FILL-CAP))
+  ; (assert (goal-already-tried FILL-CAP))
 )
 
 (defrule goal-reasoner-create-clear-cs
   "Remove an unknown base from CS after retrieving a cap from it."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  ; (not (goal (id CLEAR-CS)))
-  ; (not (goal-already-tried CLEAR-CS))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
@@ -168,9 +161,7 @@
                                       mps ?mps
                                       wp ?wp
                                       )))
-  ; This is just to make sure we formulate the goal only once.
-  ; In an actual domain this would be more sophisticated.
-  (assert (goal-already-tried CLEAR-CS))
+  ; (assert (goal-already-tried CLEAR-CS))
 )
 
 
@@ -224,17 +215,13 @@
                                      rs-before ?rs-before
                                      rs-after ?rs-after
                                      )))
-  (assert (goal-already-tried FILL-RS))
-  ;Todo: dont pass the RN in the params, reason about it and check
-  ;it again for rejection Or selection
+  ; (assert (goal-already-tried FILL-RS))
 )
 
 (defrule goal-reasoner-create-discard-unknown
   "Discard a base which is not needed if no RS can be pre-filled"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  (not (goal (id DISCARD-UNKNOWN)))
-  ; (not (goal-already-tried DISCARD-UNKNOWN))
   ;To-Do: Model state IDLE
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
@@ -251,14 +238,12 @@
                                      (params robot ?robot
                                              wp ?wp
                                              )))
-  (assert (goal-already-tried DISCARD-UNKNOWN))
+  ; (assert (goal-already-tried DISCARD-UNKNOWN))
 )
 
 (defrule goal-reasoner-create-produce-c0
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  ; (not (goal (id PRODUCE-C0)))
-  ; (not (goal-already-tried PRODUCE-C0))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
@@ -300,14 +285,12 @@
                                         cs-color ?cap-color
                                         order ?order
                                         )))
-  (assert (goal-already-tried PRODUCE-C0))
+  ; (assert (goal-already-tried PRODUCE-C0))
 )
 
 (defrule goal-reasoner-create-deliver
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  ; (not (goal (id DELIVER)))
-  ; (not (goal-already-tried DELIVER))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
@@ -356,7 +339,7 @@
                                      base-color ?base-color
                                      cap-color ?cap-color
                                      )))
-  (assert (goal-already-tried DELIVER))
+  ; (assert (goal-already-tried DELIVER))
 )
 
 
