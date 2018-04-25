@@ -178,7 +178,7 @@ private:
   pcl::PCLHeader header_;
 
   //std::set<pose, compare_poses_by_quality> poses_;
-  fawkes::tf::Stamped<fawkes::tf::Pose> result_pose_;
+  std::unique_ptr<fawkes::tf::Stamped<fawkes::tf::Pose>> result_pose_;
   std::atomic<double> result_fitness_;
 
   // point clouds from pcl_manager
@@ -207,7 +207,7 @@ private:
   */
  bool update_input_cloud();
 
- void if_read();
+ void bb_update_switch();
  bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
  Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface * ll);
  fawkes::tf::Stamped<fawkes::tf::Pose> laserline_get_center(fawkes::LaserLineInterface *ll);
@@ -225,7 +225,6 @@ private:
 
  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
 
- void tf_send_from_pose_if(pose pose);
  void pose_write();
  void record_model();
 
