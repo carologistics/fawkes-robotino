@@ -53,13 +53,10 @@
 	(return ?a)
 )
 
-(deffunction smt-create-data (?robots ?addrobots ?machines ?orders ?rings)
+(deffunction smt-create-data (?robots ?machines ?orders ?rings)
 	(bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
 	(foreach ?r ?robots
 		(pb-add-list ?p "robots" ?r)
-	)
-	(foreach ?ar ?addrobots
-		(pb-add-list ?p "robots" ?ar)
 	)
 	(foreach ?m ?machines
 		(pb-add-list ?p "machines" ?m)
@@ -67,10 +64,9 @@
 	(foreach ?o ?orders
 		(pb-add-list ?p "orders" ?o)
 	)
-  (foreach ?ring ?rings
-    (pb-add-list ?p "rings" ?ring)
-  )
-
+	(foreach ?ring ?rings
+		(pb-add-list ?p "rings" ?ring)
+	)
 
 	(printout t "Proto:" (pb-tostring ?p) crlf)
 	(return ?p)
@@ -159,15 +155,6 @@
 	)
 
 	(return ?r)
-)
-
-(deffunction smt-create-additional-robots (?team-color)
-	(bind ?rv (create$))
-	; TODO Add additional-robots
-	; (do-for-all-facts ((?p pose)) TRUE
-	;     (bind ?rv (append$ ?rv (smt-create-robot ?p:name ?team-color 0 ?p:x ?p:y)))
-	; )
-	(return ?rv)
 )
 
 (deffunction smt-create-robots (?team-color)
@@ -390,31 +377,29 @@
 
 (deffunction smt-create-orders (?team-color)
 	(bind ?rv (create$))
-	(do-for-all-facts ((?do domain-object)) (eq ?do:type order)
-		(do-for-fact ((?wm-fact wm-fact))
+	(do-for-fact ((?wm-fact wm-fact))
+		(and
+			(wm-key-prefix ?wm-fact:key (create$ domain fact order-complexity))
+			(eq C3 (wm-key-arg ?wm-fact:key com)) ; Desiered complexity is set here
+		)
+		(do-for-fact ((?wm-fact2 wm-fact))
 			(and
-				(wm-key-prefix ?wm-fact:key (create$ domain fact order-gate))
-				(eq ?do:name (wm-key-arg ?wm-fact:key ord))
+				(wm-key-prefix ?wm-fact2:key (create$ domain fact order-gate))
+				(eq (wm-key-arg ?wm-fact:key ord) (wm-key-arg ?wm-fact2:key ord))
 			)
-			(do-for-fact ((?wm-fact2 wm-fact))
-				(and
-					(wm-key-prefix ?wm-fact2:key (create$ domain fact order-complexity))
-					(eq ?do:name (wm-key-arg ?wm-fact2:key ord))
-				)
-				(do-for-fact ((?wm-fact3 wm-fact)) (eq ?wm-fact3:key (create$ refbox order ?do:name quantity-requested))
-					(do-for-fact ((?wm-fact4 wm-fact)) (eq ?wm-fact4:key (create$ refbox order ?do:name quantity-delivered ?team-color))
-						(do-for-fact ((?wm-fact5 wm-fact)) (eq ?wm-fact5:key (create$ refbox order ?do:name delivery-begin))
-							(do-for-fact ((?wm-fact6 wm-fact)) (eq ?wm-fact6:key (create$ refbox order ?do:name delivery-end))
-								(bind ?rv (append$ ?rv (smt-create-order
-															?do:name ; order-id
-															(wm-key-arg ?wm-fact:key gate) ; TODO Add the correct gate information
-															(wm-key-arg ?wm-fact2:key com)
-															?wm-fact3:value ; quantity-requested
-															?wm-fact4:value ; quantity-delivered
-															?wm-fact5:value ; begin
-															?wm-fact6:value ; end
-															?team-color)))
-							)
+			(do-for-fact ((?wm-fact3 wm-fact)) (eq ?wm-fact3:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) quantity-requested))
+				(do-for-fact ((?wm-fact4 wm-fact)) (eq ?wm-fact4:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) quantity-delivered ?team-color))
+					(do-for-fact ((?wm-fact5 wm-fact)) (eq ?wm-fact5:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) delivery-begin))
+						(do-for-fact ((?wm-fact6 wm-fact)) (eq ?wm-fact6:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) delivery-end))
+							(bind ?rv (append$ ?rv (smt-create-order
+														(wm-key-arg ?wm-fact:key ord) ; order-id
+														(wm-key-arg ?wm-fact2:key gate) ; TODO Add the correct gate information
+														(wm-key-arg ?wm-fact:key com)
+														?wm-fact3:value ; quantity-requested
+														?wm-fact4:value ; quantity-delivered
+														?wm-fact5:value ; begin
+														?wm-fact6:value ; end
+														?team-color)))
 						)
 					)
 				)
@@ -460,11 +445,10 @@
 =>
 	(bind ?p
 	  (smt-create-data
-		  (smt-create-robots ?team-color)
-		  (smt-create-additional-robots ?team-color)
-	    (smt-create-machines ?team-color)
-	    (smt-create-orders ?team-color)
-      (smt-create-rings ?team-color)
+			(smt-create-robots ?team-color)
+			(smt-create-machines ?team-color)
+			(smt-create-orders ?team-color)
+			(smt-create-rings ?team-color)
 	  )
 	)
 
@@ -543,7 +527,6 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-								(parents-ids ?parents-ids)
 								(action-name move)
 								(param-names r from from-side to to-side)
 								(param-values ?action-specific-actor ?from ?from-side ?to ?to-side)
@@ -596,7 +579,6 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-								(parents-ids ?parents-ids)
 								(action-name wp-get-shelf)
 								(param-names r cc m spot)
 								(param-values ?action-specific-actor ?wp ?mps ?shelf)
@@ -638,7 +620,6 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-								(parents-ids ?parents-ids)
 								(action-name wp-get)
 								(param-names r wp m side)
 								(param-values ?action-specific-actor ?wp ?mps ?side)
@@ -686,7 +667,6 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-								(parents-ids ?parents-ids)
 								(action-name wp-put)
 								(param-names r wp m)
 								(param-values ?action-specific-actor ?wp ?mps)
@@ -746,7 +726,6 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-								(parents-ids ?parents-ids)
 								(action-name wp-put-slide-cc)
 								(param-names r wp m rs-before rs-after)
 								(param-values ?action-specific-actor ?wp ?mps ?rs-before ?rs-after )
@@ -774,7 +753,6 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-								(parents-ids ?parents-ids)
 								(action-name wp-discard)
 								(param-names r cc)
 								(param-values ?action-specific-actor ?wp)
@@ -816,7 +794,6 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-								(parents-ids ?parents-ids)
 								(action-name prepare-bs)
 								(param-names m side bc)
 								(param-values ?mps ?side ?goal-base-color)
@@ -863,7 +840,6 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-								(parents-ids ?parents-ids)
 								(action-name bs-dispense)
 								(param-names m side wp basecol)
 								(param-values ?mps ?side ?wp ?goal-base-color)
@@ -905,7 +881,6 @@
 							)
 							(assert
 								(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-									(parents-ids ?parents-ids)
 									(action-name prepare-ds)
 									(param-names m gate)
 									(param-values ?mps (wm-key-arg ?wm-fact:key gate))
@@ -962,7 +937,6 @@
 
 							(assert
 								(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-									(parents-ids ?parents-ids)
 									(action-name fulfill-order-c0)
 									(param-names ord wp m g basecol capcol)
 									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color)
@@ -1021,7 +995,6 @@
 							)
 							(assert
 								(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-									(parents-ids ?parents-ids)
 									(action-name fulfill-order-c1)
 									(param-names ord wp m g basecol ring1col capcol)
 									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?ring1-color ?cap-color)
@@ -1086,7 +1059,6 @@
 							)
 							(assert
 								(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-									(parents-ids ?parents-ids)
 									(action-name fulfill-order-c2)
 									(param-names ord wp m g basecol ring1col ring2col capcol)
 									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?ring1-color ?ring2-color ?cap-color)
@@ -1158,7 +1130,6 @@
 							)
 							(assert
 								(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-									(parents-ids ?parents-ids)
 									(action-name fulfill-order-c3)
 									(param-names ord wp m g basecol ring1col ring2col ring3col capcol)
 									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color)
@@ -1200,7 +1171,6 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-								(parents-ids ?parents-ids)
 								(action-name prepare-cs)
 								(param-names m op)
 								(param-values ?mps ?operation)
@@ -1236,7 +1206,6 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-								(parents-ids ?parents-ids)
 								(action-name cs-retrieve-cap)
 								(param-names m cc capcol)
 								(param-values ?mps ?wp ?cap-color)
@@ -1277,7 +1246,6 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-								(parents-ids ?parents-ids)
 								(action-name cs-mount-cap)
 								(param-names m wp capcol)
 								(param-values ?mps ?wp ?cap-color)
@@ -1335,7 +1303,6 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-								(parents-ids ?parents-ids)
 								(action-name prepare-rs)
 								(param-names m rc rs-before rs-after r-req)
 								(param-values ?mps ?goal-ring-color ?rs-before ?rs-after ?r-req))
@@ -1393,7 +1360,6 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-								(parents-ids ?parents-ids)
 								(action-name rs-mount-ring1)
 								(param-names m wp col rs-before rs-after r-req)
 								(param-values ?mps ?wp ?ring-color ?rs-before ?rs-after ?r-req)
@@ -1458,7 +1424,6 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-								(parents-ids ?parents-ids)
 								(action-name rs-mount-ring2)
 								(param-names m wp col col1 rs-before rs-after r-req)
 								(param-values ?mps ?wp ?ring-color ?col1 ?rs-before ?rs-after ?r-req )
@@ -1529,7 +1494,6 @@
 						(bind ?next-step-id (* ?action-id 100))
 						(assert
 							(plan-action (id ?next-step-id) (plan-id COMPLEXITY-PLAN) (duration 4.0)
-								(parents-ids ?parents-ids)
 								(action-name rs-mount-ring3)
 								(param-names m wp col col1 col2 rs-before rs-after r-req)
 								(param-values ?mps ?wp ?ring-color ?col1 ?col2 ?rs-before ?rs-after ?r-req)
