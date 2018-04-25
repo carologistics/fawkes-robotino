@@ -95,7 +95,7 @@
            )
               )
     (retract ?wf)
-    (printout t "Exec-Monotoring: Broken Machine " ?wf:key crlf " domain facts flushed!")
+    (printout t "Exec-Monotoring: Broken Machine " ?wf:key crlf " domain facts flushed!"  crlf)
   )
   (switch ?type
     (case CS then
@@ -223,20 +223,10 @@
 	(status FAILED))
   (plan (id ?plan-id) (goal-id ?goal-id))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
-  ?hold <- (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot))
+  ?wp-s<- (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot))
   =>
-  (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated")
-  (retract ?hold)
-  (modify ?g (mode EVALUATED))
-  (assert (domain-fact (name can-hold) (param-values ?r)))
-)
-
-(defrule common-failed-evaluation
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (plan-action (action-name ?an) (goal-id ?goal-id) (status FAILED))
-  =>
-  (printout t "Goal " ?goal-id " has been failed because of " ?an " and is evaluated" crlf)
+  (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated" crlf)
+  (retract ?wp-s)
   (modify ?g (mode EVALUATED))
 )
 
