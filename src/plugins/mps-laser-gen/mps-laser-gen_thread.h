@@ -32,6 +32,7 @@
 #include <navgraph/aspect/navgraph.h>
 #include <plugins/ros/aspect/ros.h>
 #include <aspect/tf.h>
+#include <interfaces/LaserBoxFilterInterface.h>
 
 #include <string>
 
@@ -81,6 +82,7 @@ class MPSLaserGenThread
 
  private:
   fawkes::Laser360Interface* laser_if_;
+  fawkes::LaserBoxFilterInterface* laser_box_filter_if_;
   ros::Publisher vispub_;
   std::string mps_laser_gen_cfg_prefix;
   std::map<std::string, MPS> mpses;

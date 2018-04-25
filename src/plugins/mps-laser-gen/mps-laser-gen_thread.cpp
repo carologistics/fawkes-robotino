@@ -55,7 +55,8 @@ MPSLaserGenThread::init()
 	vispub_ =
 		rosnode->advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 100, /* latching */ true);
 
-	laser_if_ = blackboard->open_for_writing<Laser360Interface>("Laser MPS");
+  laser_if_ = blackboard->open_for_writing<Laser360Interface>("Laser MPS");
+  laser_box_filter_if_ = blackboard->open_for_reading<LaserBoxFilterInterface>("Laser Box Filter");
   load_config();
 }
 
