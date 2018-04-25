@@ -15,6 +15,7 @@ class RecognitionThread
     , public fawkes::TransformAspect
 {
 public:
+  friend class ConveyorPoseThread;
   RecognitionThread(ConveyorPoseThread *cp_thread);
 
   using pose = ConveyorPoseThread::pose;
