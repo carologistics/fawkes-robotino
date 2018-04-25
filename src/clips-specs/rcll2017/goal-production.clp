@@ -108,12 +108,15 @@
 (defrule goal-reasoner-create-refill-shelf-achieve
   ?g <- (goal (id REFILL-SHELF-MAINTAIN) (mode SELECTED))
   (not (goal (id REFILL-SHELF-ACHIEVE)))
-  (time $?now)
+  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
+  (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
   =>
   (assert (goal (id REFILL-SHELF-ACHIEVE) (parent REFILL-SHELF-MAINTAIN) 
-                                          (params mps ?mps)))
+                                        (params mps ?mps)))
 )
 
 ; ## Maintain production
