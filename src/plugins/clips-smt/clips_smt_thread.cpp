@@ -1543,7 +1543,7 @@ ClipsSmtThread::clips_smt_fill_capstation_details()
 	logger->log_info(name(), "Extract details about capstations");
 
 	// Extract information from config which cap-station-shelf has which color
-	if(config->get_string("/clips-agent/rcll2016/cap-station/assigned-color/"+team+"-CS1").compare("BLACK")==0){
+	if(config->get_string(("/clips-agent/rcll2016/cap-station/assigned-color/"+team+"-CS1").c_str()).compare("BLACK")==0){
 		// team-CS1 contains black c1 caps and C-CS2 grey ones
 		colors_input["C1"] = team+"-CS1-I";
 		colors_input["C2"] = team+"-CS2-I";
