@@ -125,3 +125,27 @@
     (printout t "There are no tags to add" crlf)
   )
 )
+
+(deffunction random-id ()
+  "Return a random task id"
+  (return (random 0 1000000000))
+)
+
+(deffunction get-param-by-arg (?params ?arg)
+	"Extract the argument named in ?arg.
+   @param ?params the paramter list
+   @param ?arg name of argument to extract
+
+   @return returns nil if value is not specified, or a single or
+           multi-field value depending on the argument value."
+	(bind ?l (member$ ?arg ?params))
+	(bind ?L (length$ ?params))
+	(if ?l then
+		(while (<= (+ ?l 1) ?L) do
+			(if (eq (nth$ ?l ?params) ?arg) then
+				(return (nth$ (+ ?l 1) ?params))
+			)
+		)
+	)
+	(return nil)
+)
