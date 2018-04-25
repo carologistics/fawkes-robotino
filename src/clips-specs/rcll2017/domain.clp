@@ -150,6 +150,13 @@
     (domain-fact (name mps-team) (param-values ?rs1 ?team-color))
     (domain-fact (name mps-team) (param-values ?rs2 ?team-color))
     
+    (domain-fact (name mps-type) (param-values ?bs BS))
+    (domain-fact (name mps-type) (param-values ?ds DS))
+    (domain-fact (name mps-type) (param-values ?ss SS))
+    (domain-fact (name mps-type) (param-values ?cs1 CS))
+    (domain-fact (name mps-type) (param-values ?cs2 CS))
+    (domain-fact (name mps-type) (param-values ?rs1 RS))
+    (domain-fact (name mps-type) (param-values ?rs2 RS))
     (domain-fact (name cs-can-perform) (param-values ?cs1 RETRIEVE_CAP))
     (domain-fact (name cs-can-perform) (param-values ?cs2 RETRIEVE_CAP))
     (domain-fact (name cs-free) (param-values ?cs1))
