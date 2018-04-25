@@ -22,7 +22,7 @@ plugins/laser-filter:
   front-360to360:
     # Do nothing, just rename so we can always use the same name.
     active: false
-    in/sick-tim55x: Laser1080Interface::Laser front
+    in/sick-tim55x: Laser360Interface::Laser front
     out/filtered: Laser360Interface::Laser front 360
     filters:
       1-copy:
@@ -39,7 +39,7 @@ plugins/laser-filter:
   back-360to360:
     # Do nothing, just rename so we can always use the same name.
     active: true
-    in/sick-tim55x: Laser1080Interface::Laser back
+    in/sick-tim55x: Laser360Interface::Laser back
     out/filtered: Laser360Interface::Laser back 360
     filters:
       1-copy:
