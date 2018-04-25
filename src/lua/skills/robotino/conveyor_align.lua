@@ -131,6 +131,7 @@ end
 fsm:define_states{ export_to=_M,
    closure={},
    {"INIT", JumpState},
+   {"RESET_GRIPPER_POS", SkillJumpState, skills={{ax12gripper}}, final_to="CHECK_VISION", fail_to="CLEANUP_FAILED"},
    {"CHECK_VISION", JumpState},
    {"DRIVE", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="DECIDE_TRY", fail_to="CLEANUP_FAILED"},
    {"DECIDE_TRY", JumpState},
@@ -139,7 +140,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   {"INIT", "CHECK_VISION", cond=true},
+   {"INIT", "RESET_GRIPPER_POS", cond=true},
    {"CHECK_VISION", "CLEANUP_FAILED", timeout=20, desc="No vis_hist on conveyor vision"},
    {"CHECK_VISION", "CLEANUP_FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"CHECK_VISION", "DRIVE", cond=see_conveyor},
@@ -153,6 +154,10 @@ fsm:add_transitions{
 function INIT:init()
    self.fsm.vars.counter = 0
    conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
+end
+
+function RESET_GRIPPER_POS:init()
+   self.args["ax12gripper"] = {command="RESET_Z_POS"}
 end
 
 function DECIDE_TRY:init()
