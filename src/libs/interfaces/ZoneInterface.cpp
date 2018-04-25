@@ -219,7 +219,8 @@ ZoneInterface::maxlenof_zone() const
 void
 ZoneInterface::set_zone(const char * new_zone)
 {
-  strncpy(data->zone, new_zone, sizeof(data->zone));
+  strncpy(data->zone, new_zone, sizeof(data->zone)-1);
+  data->zone[sizeof(data->zone)-1] = 0;
   data_changed = true;
 }
 

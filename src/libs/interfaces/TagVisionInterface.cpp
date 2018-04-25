@@ -94,7 +94,8 @@ TagVisionInterface::maxlenof_frame() const
 void
 TagVisionInterface::set_frame(const char * new_frame)
 {
-  strncpy(data->frame, new_frame, sizeof(data->frame));
+  strncpy(data->frame, new_frame, sizeof(data->frame)-1);
+  data->frame[sizeof(data->frame)-1] = 0;
   data_changed = true;
 }
 
