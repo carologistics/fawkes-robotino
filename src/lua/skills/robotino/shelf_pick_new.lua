@@ -36,11 +36,11 @@ skillenv.skill_module(_M)
 -- Tunables
 local shelf_to_conveyor = 0.1
 local shelf_distance = 0.1
+local drive_back_distance = -0.2
 
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"INIT", JumpState},
-   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="ADJUST_GRIPPER", fail_to="FAILED"},
-   {"ADJUST_GRIPPER", SkillJumpState, skills={{}}, final_to="OPEN_GRIPPER", fail_to="FAILED" },
+   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="OPEN_GRIPPER", fail_to="FAILED"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{}}, final_to="MOVE_GRIPPER"},
    {"MOVE_GRIPPER", SkillJumpState, skills={{}}, final_to="CLOSE_GRIPPER", fail_to="FAILED"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{}}, final_to="MOVE_GRIPPER_BACK", fail_to="FAILED"},
@@ -74,5 +74,5 @@ function GOTO_SHELF:init()
 end
 
 function DRIVE_BACK:init()
-   self.args["motor_move"].x = -0.2
+   self.args["motor_move"].x = drive_back_distance
 end
