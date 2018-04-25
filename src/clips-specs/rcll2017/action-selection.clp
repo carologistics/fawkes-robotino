@@ -23,7 +23,7 @@
 
 (defrule action-selection-failed
 	(plan (id ?plan-id) (goal-id ?goal-id))
-	?g <- (goal (id ?goal-id&~EXPLORATION) (mode DISPATCHED))
+	?g <- (goal (id ?goal-id) (mode DISPATCHED))
 	(plan-action (goal-id ?goal-id) (plan-id ?plan-id) (status FAILED))
 	=>
 	(modify ?g (mode FINISHED) (outcome FAILED))
