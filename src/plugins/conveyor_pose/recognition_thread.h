@@ -33,6 +33,7 @@ public:
 
   virtual void loop() override;
   virtual void init() override;
+  void constrainTransformToGround(fawkes::tf::Stamped<fawkes::tf::Pose>& fittedPose_conv);
 
 private:
   ConveyorPoseThread *main_thread_;
