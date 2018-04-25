@@ -592,7 +592,7 @@
 (defrule exp-goto-next
   (goal (id EXPLORATION) (mode DISPATCHED))
   (plan (id ?plan-id) (goal-id EXPLORATION))
-  (not (plan-action (goal-id EXPLORATION)))
+  ;(not (plan-action (goal-id EXPLORATION)))
   (wm-fact (key domain fact self args? r ?r))
   ?s <- (state ?state&:(or (eq ?state EXP_START) (eq ?state EXP_IDLE)))
   (exp-next-node (node ?next-node))
@@ -610,7 +610,9 @@
     (state EXP_GOTO_NEXT)
   )
   (navigator-set-speed ?max-velocity ?max-rotation)
-  (assert (plan-action (id 1) (action-name move-node) (param-values ?r ?next-node) (plan-id ?plan-id) (goal-id EXPLORATION) (status PENDING)))
+  (bind ?skill-id (skill-call move-node r z ?r ?next-node))
+   
+  ;(assert (plan-action (id 0) (action-name move-node) (param-values ?r ?next-node) (plan-id ?plan-id) (goal-id EXPLORATION) (status PENDING)))
   ;(skill-call goto place ?next-node) TODO make this a plan action
 )
 
@@ -619,12 +621,13 @@
   (goal (id EXPLORATION) (mode DISPATCHED))
   (plan (id ?plan-id) (goal-id EXPLORATION))
   (wm-fact (key domain fact self args? r ?r))
-
+  ;?pa <- (plan-action (goal-id EXPLORATION))
   ?s <- (state EXP_GOTO_NEXT)
   (exp-next-node (node ?next-node))
   (navgraph-node (name ?next-node) (pos $?node-trans))
   (zone-exploration (name ?zn&:(eq ?zn (get-zone ?node-trans))) (machine ?machine&~UNKNOWN&~NONE))
   (Position3DInterface (id "Pose") (translation $?pose-trans))
+  ?skill <- (skill (status S_RUNNING))
   (test (< 1.5 (distance
     (nth$ 1 ?node-trans)
     (nth$ 2 ?node-trans)
@@ -632,10 +635,12 @@
     (nth$ 2 ?pose-trans)
   )))
 =>
+  (modify ?skill (stats S_FAILED))
   (printout t "Node " ?next-node " blocked by " ?machine
     " but we got close enough. Proceeding to next node." crlf)
-  (retract ?s)
-  (assert (plan-action (id 1) (action-name stop) (param-values ?r) (status PENDING)))  ;(skill-call relgoto x 0 y 0) TODO Make this a plan action
+  (retract ?s );pa
+  (skill-call stop r ?r)
+  ;(assert (plan-action (id 1) (action-name stop) (param-values ?r) (status PENDING)))  ;(skill-call relgoto x 0 y 0) TODO Make this a plan action
   (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
   (assert (state EXP_IDLE))
 )
@@ -644,7 +649,9 @@
 (defrule exp-goto-next-failed
   (goal (id EXPLORATION) (mode DISPATCHED))
   ?s <- (state EXP_GOTO_NEXT)
-  ?pa <- (plan-action (action-name move-node) (status FAILED))
+ ; ?pa <- (plan-action (action-name move-node) (status FAILED))
+ ; (not (plan-action (action-name ~move-node) (status ~FAILED&~FINAL&~FORMULATED)))
+  ?skill <- (skill (name move-node) (status S_FAILED))
   ;?skill-f <- (skill-done (name "goto") (status FAILED)) TODO this should be a failed action
   (exp-next-node (node ?node))
   (navgraph-node (name ?node) (pos $?node-trans))
@@ -655,7 +662,7 @@
   (if (< (distance-mf ?node-trans ?trans) 1.5) then
     (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
   )
-  (retract ?s ?pa);?skill-f)
+  (retract ?s ?skill);?skill-f)
   (navigator-set-speed ?max-velocity ?max-rotation)
   (assert
     (exp-searching)
@@ -667,11 +674,12 @@
 (defrule exp-goto-next-final
   (goal (id EXPLORATION) (mode DISPATCHED))
   ?s <- (state EXP_GOTO_NEXT)
-  ?pa <- (plan-action (action-name move-node) (status FINAL))
+  ?skill <- (skill (name move-node) (status S_FINAL))
+  ;?pa <- (plan-action (action-name move-node) (status FINAL))
   ;?skill-f <- (skill-done (name "goto") (status ?)) TODO this schould be a plan-action
   (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
 =>
-  (retract ?s ?pa) ;?skill-f)
+  (retract ?s ?skill) ;?skill-f)
   (navigator-set-speed ?max-velocity ?max-rotation)
   (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
   (assert
@@ -881,13 +889,14 @@
   (wm-fact (key domain fact self args? r ?r))
   (exp-searching)
   ?st-f <- (state EXP_GOTO_NEXT)
+  
   ?skill <- (skill (id ?skill-id) (status S_RUNNING))
   (zone-exploration (name ?zn))
-  ?pa <- (plan-action (goal EXPLORATION))
+  ;?pa <- (plan-action (goal-id EXPLORATION))
   (lock (type ACCEPT) (resource ?zn))
 =>
-  (retract ?pa)
-  (modify ?skill (status S_FAILED))
+  ;(modify ?skill (status S_FAILED))
+  (retract ?skill)
   (printout t "EXP exploring zone " ?zn crlf)
   (delayed-do-for-all-facts ((?exp-f explore-zone-target)) TRUE (retract ?exp-f))
   (retract ?st-f)
@@ -896,7 +905,8 @@
     (explore-zone-target (zone ?zn))
   )
   (printout t "Stop to explore zone " ?zn crlf)
-  (assert (plan-action (action-name stop) (param-values ?r) (plan-id ?plan-id) (goal-id EXPLORATION) (status PENDING)))
+  (skill-call stop r ?r)
+  ;(assert (plan-action (action-name stop) (param-values ?r) (plan-id ?plan-id) (goal-id EXPLORATION) (status PENDING)))
   ;(skill-call relgoto x y 0) TODO make this a plan action
 )
 
@@ -907,8 +917,9 @@
   ?srch-f <- (exp-searching)
   ?st-f <- (state EXP_STOPPING)
   (explore-zone-target (zone ?zn))
-  ?pa <- (plan-action (action-name stop) (status FAILED|FINAL))
+  ;?pa <- (plan-action (action-name stop) (status FAILED|FINAL))
   ;?skill-f <- (skill-done (name "relgoto")) TODO this should be a plan action
+  ?skill <- (skill (name stop) (status S_FINAL|S_FAILED))
   (MotorInterface (id "Robotino")
     (vx ?vx&:(< ?vx 0.01)) (vy ?vy&:(< ?vy 0.01)) (omega ?w&:(< ?w 0.01))
   )
@@ -916,10 +927,11 @@
   (wm-fact (key domain fact self args? r ?r))
 =>
   (printout t "Start exploring zone: " ?zn crlf)
-  (retract ?st-f ?srch-f ?pa) ;?skill-f)
+  (retract ?st-f ?srch-f ?skill) ;?skill-f)
   (assert (state EXP_EXPLORE_ZONE))
   (navigator-set-speed ?trans-vmax ?rot-vmax)
-  (assert (plan-action (id 1) (plan-id ?plan-id) (goal-id EXPLORATION) (action-name explore-zone) (param-values ?r ?zn) (status PENDING)))
+  (skill-call explore-zone r z ?r ?zn)
+  ;(assert (plan-action (id 1) (plan-id ?plan-id) (goal-id EXPLORATION) (action-name explore-zone) (param-values ?r ?zn) (status PENDING)))
   ;(skill-call explore_zone zone (str-cat ?zn)) TODO make this a plan action
 )
 
@@ -927,7 +939,8 @@
 (defrule exp-skill-explore-zone-final
   (goal (id EXPLORATION) (mode DISPATCHED))
   ?st-f <- (state EXP_EXPLORE_ZONE)
-  ?pa <- (plan-action (action-name explore-zone) (status FINAL))
+  ?skill <- (skill (name explore-zone) (status S_FINAL))
+  ;?pa <- (plan-action (action-name explore-zone) (status FINAL))
   ;?skill-f <- (skill-done (name "explore_zone") (status FINAL)) TODO this should be a plan-action
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str)
     (orientation ?orientation) (tag_id ?tag-id) (search_state YES)
@@ -944,7 +957,7 @@
   ?exp-f <- (explore-zone-target (zone ?zn))
   ?lock <- (lock (type ACCEPT) (resource ?r&:(eq ?r (sym-cat ?zn-str))))
 =>
-  (retract ?st-f ?exp-f ?pa); ?skill-f )
+  (retract ?st-f ?exp-f ?skill); ?skill-f )
   (retract ?lock)
  ; (assert
  ;   (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))  TODO what about locks
@@ -985,7 +998,8 @@
 (defrule exp-skill-explore-zone-failed
   (goal (id EXPLORATION) (mode DISPATCHED))
   ?st-f <- (state EXP_EXPLORE_ZONE)
-  ?pa <- (plan-action (action-name explore-zone) (status ?status&:(or (eq ?status FINAL) (eq ?status FAILED))))
+  ?skill <- (skill (name explore-zone) (status ?status&FINAL|FAILED))
+  ;?pa <- (plan-action (action-name explore-zone) (status ?status&:(or (eq ?status FINAL) (eq ?status FAILED))))
   ;?skill-f <- (skill-done (name "explore_zone") (status ?status)) TODO this should be a skill
   ?exp-f <- (explore-zone-target (zone ?zn))
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str) (search_state ?s&:(neq ?s YES)))
@@ -993,8 +1007,8 @@
   ?hold <- (lock (type ACCEPT) (resource ?r&:(eq ?r (sym-cat ?zn-str))))
 =>
   (printout t "Exploration of " ?zn " failed" crlf)
-  (retract ?st-f ?exp-f ?pa) ;?skill-f)
-  (if (eq ?status FINAL) then
+  (retract ?st-f ?exp-f ?skill) ;?skill-f)
+  (if (eq ?status S_FINAL) then
     (printout error "BUG in explore_zone skill: Result is FINAL but no MPS was found.")
   )
   (if (and (eq ?s NO) (eq ?machine UNKNOWN)) then
