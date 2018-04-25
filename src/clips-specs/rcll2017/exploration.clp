@@ -515,22 +515,14 @@
   (wm-fact (key refbox phase) (type UNKNOWN) (value EXPLORATION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
   =>
-  (assert (goal (id EXPLORATION) (type MAINTAIN)))
+  (assert (goal (id EXPLORATION) (type ACHIEVE)))
 )
 
 (defrule expand-exploration-goal
   ?g <- (goal (id EXPLORATION) (mode SELECTED))
-  (not (plan (goal-id EXPLORATION)))
   =>
-  (assert (plan (id EXPLORATION-PLAN) (goal-id EXPLORATION)))
   (modify ?g (mode EXPANDED))
 )
-
-;(defrule launch-exploration-blackboards
-
-
-
-;)
 
 ;Read exploration rows from config
 (defrule exp-cfg-get-row
@@ -538,10 +530,7 @@
   (declare (salience ?*PRIORITY-WM*))
   (goal (id EXPLORATION) (mode DISPATCHED))
   (wm-fact (key domain fact self args? r ?robot-name))
-  ;(robot-name ?robot-name)
-
   (wm-fact (key refbox team-color) (value ?team))
-  ;(team-color ?team)
   (wm-fact
     (id ?id&:(eq ?id (str-cat "/config/rcll/route/" ?team "/" ?robot-name)))
     (values $?route)
@@ -549,19 +538,15 @@
 =>
   (assert (exp-route ?route)
   )
- ; (assert (exp-route "exp-12"))
   (printout t "Exploration route: " ?route " " ?team " " ?robot-name crlf)
 )
 
 (defrule exp-start
   (goal (id EXPLORATION) (mode DISPATCHED))
-  ;?st <- (exploration-start)
   (not (timer (name send-machine-reports)))
   (wm-fact (key refbox team-color) (value ?team-color))
-  ;(team-color ?team-color)
   (NavigatorInterface (id "Navigator") (max_velocity ?max-velocity) (max_rotation ?max-rotation))
 =>
-  ;(retract ?st)
   (assert (state EXP_IDLE)
           (timer (name send-machine-reports))
           (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
@@ -591,8 +576,6 @@
 
 (defrule exp-goto-next
   (goal (id EXPLORATION) (mode DISPATCHED))
-  (plan (id ?plan-id) (goal-id EXPLORATION))
-  (not (plan-action (goal-id EXPLORATION)))
   (wm-fact (key domain fact self args? r ?r))
   ?s <- (state ?state&:(or (eq ?state EXP_START) (eq ?state EXP_IDLE)))
   (exp-next-node (node ?next-node))
@@ -610,21 +593,19 @@
     (state EXP_GOTO_NEXT)
   )
   (navigator-set-speed ?max-velocity ?max-rotation)
-  (assert (plan-action (id 1) (action-name move-node) (param-values ?r ?next-node) (plan-id ?plan-id) (goal-id EXPLORATION) (status PENDING)))
-  ;(skill-call goto place ?next-node) TODO make this a plan action
+  (bind ?skill-id (skill-call move-node (create$ r z) (create$ ?r ?next-node)))
 )
 
 
 (defrule exp-node-blocked
   (goal (id EXPLORATION) (mode DISPATCHED))
-  (plan (id ?plan-id) (goal-id EXPLORATION))
   (wm-fact (key domain fact self args? r ?r))
-
   ?s <- (state EXP_GOTO_NEXT)
   (exp-next-node (node ?next-node))
   (navgraph-node (name ?next-node) (pos $?node-trans))
   (zone-exploration (name ?zn&:(eq ?zn (get-zone ?node-trans))) (machine ?machine&~UNKNOWN&~NONE))
   (Position3DInterface (id "Pose") (translation $?pose-trans))
+  ?skill <- (skill (status S_RUNNING))
   (test (< 1.5 (distance
     (nth$ 1 ?node-trans)
     (nth$ 2 ?node-trans)
@@ -632,10 +613,11 @@
     (nth$ 2 ?pose-trans)
   )))
 =>
+  (modify ?skill (status S_FAILED))
   (printout t "Node " ?next-node " blocked by " ?machine
     " but we got close enough. Proceeding to next node." crlf)
   (retract ?s)
-  (assert (plan-action (id 1) (action-name stop) (param-values ?r) (status PENDING)))  ;(skill-call relgoto x 0 y 0) TODO Make this a plan action
+  (skill-call stop (create$ r) (create$ ?r))
   (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
   (assert (state EXP_IDLE))
 )
@@ -644,8 +626,7 @@
 (defrule exp-goto-next-failed
   (goal (id EXPLORATION) (mode DISPATCHED))
   ?s <- (state EXP_GOTO_NEXT)
-  ?pa <- (plan-action (action-name move-node) (status FAILED))
-  ;?skill-f <- (skill-done (name "goto") (status FAILED)) TODO this should be a failed action
+  ?skill <- (skill (name move-node) (status S_FAILED))
   (exp-next-node (node ?node))
   (navgraph-node (name ?node) (pos $?node-trans))
 
@@ -655,7 +636,7 @@
   (if (< (distance-mf ?node-trans ?trans) 1.5) then
     (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
   )
-  (retract ?s ?pa);?skill-f)
+  (retract ?s ?skill)
   (navigator-set-speed ?max-velocity ?max-rotation)
   (assert
     (exp-searching)
@@ -667,11 +648,10 @@
 (defrule exp-goto-next-final
   (goal (id EXPLORATION) (mode DISPATCHED))
   ?s <- (state EXP_GOTO_NEXT)
-  ?pa <- (plan-action (action-name move-node) (status FINAL))
-  ;?skill-f <- (skill-done (name "goto") (status ?)) TODO this schould be a plan-action
+  ?skill <- (skill (name move-node) (status S_FINAL))
   (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
 =>
-  (retract ?s ?pa) ;?skill-f)
+  (retract ?s ?skill)
   (navigator-set-speed ?max-velocity ?max-rotation)
   (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
   (assert
@@ -697,7 +677,7 @@
 =>
   (bind ?zone (get-zone 0.07 ?trans))
   (if ?zone then
-    ;(synced-modify ?ze machine NONE times-searched (+ 1 ?times-searched)) TODO now wm-facts
+    ;(synced-modify ?ze machine NONE times-searched (+ 1 ?times-searched)) TODO synced-modify
    (modify ?ze (machine NONE) (times-searched (+ 1 ?times-searched)))
   )
 )
@@ -729,7 +709,7 @@
     (line-visibility ?zn-vh&:(< ?zn-vh 1))
   )
 =>
-  ;(synced-modify ?ze-f line-visibility ?vh) TODO now wm-fact
+  ;(synced-modify ?ze-f line-visibility ?vh) TODO synced-modify
   (modify ?ze-f (line-visibility ?vh))
   (printout warn "EXP found line: " ?zn " vh: " ?vh crlf)
 )
@@ -766,7 +746,7 @@
   ;(synced-modify ?ze-f
   ;  cluster-visibility (+ ?zn-vh 1)
   ;  last-cluster-time (nth$ 1 ?game-time)
-  ;) TODO now wm-fact
+  ;) TODO synced-modify
   (printout warn "EXP found cluster: " ?zn " vh: " (+ ?zn-vh 1) crlf)
 )
 
@@ -775,7 +755,6 @@
   (goal (id EXPLORATION) (mode DISPATCHED))
   ?srch-f <- (exp-searching)
   (domain-fact (name tag-matching) (param-values ?machine ?side ?col ?tag))
-;(tag-id ?tag) (machine ?machine) (side ?side))
   (not (found-tag (name ?machine)))
   (TagVisionInterface (id "/tag-vision/info")
     (tags_visible ?num-tags&:(> ?num-tags 0))
@@ -794,10 +773,10 @@
     (line-visibility ?lv&:(< ?lv 2))
   )
 
-  ;(not (locked-resource (resource ?r&:(eq ?r ?zn)))) TODO what about locks
+  ;(not (locked-resource (resource ?r&:(eq ?r ?zn)))) TODO locked-resource
   ?st-f <- (state ?)
 =>
-  ;(synced-modify ?ze-f line-visibility (+ ?lv 1)) TODO now wm-fact
+  ;(synced-modify ?ze-f line-visibility (+ ?lv 1)) TODO synced-modify
   (modify ?ze-f (line-visibility (+ ?lv 1)))
   (printout t "Found tag in " ?zn crlf)
 )
@@ -808,7 +787,7 @@
   (exp-searching)
   (state EXP_GOTO_NEXT|EXP_IDLE)
   ; Not currently locked/trying to lock anything
-  ;(not (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))  TODO what about locks
+  ;(not (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))  TODO lock GET
   (not (lock (type ACCEPT) (resource ?)))
   ; An explorable zone for which no lock was refused yet
   (exp-repeated-search-limit ?search-limit)
@@ -818,19 +797,19 @@
     (line-visibility ?vh&:(> ?vh 0))
     (times-searched ?ts&:(<= ?ts ?search-limit))
   )
-  ;(not (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn)))  TODO what about locks
+  ;(not (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn)))  TODO lock REFUSE
 
   ; Neither this zone nor the opposite zone is locked
-  ;(not (locked-resource (resource ?r&:(eq ?r ?zn))))  TODO what about locked-resource
+  ;(not (locked-resource (resource ?r&:(eq ?r ?zn))))  TODO locked-resource
   ;(not (locked-resource (resource ?r2&:(eq ?r2 (mirror-name ?zn)))))
 
   ; Locks for all closer zones with a line-visibility > 0 have been refused
   (Position3DInterface (id "Pose") (translation $?trans))
-  ;(not
+  ;(forall
    ; (zone-exploration (machine UNKNOWN) (line-visibility ?vh2&:(> ?vh2 0))
    ;   (name ?zn2&:(< (distance-mf ?trans (zone-center ?zn2)) (distance-mf ?trans (zone-center ?zn))))
    ; )
-    ;(lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn2))  TODO what about locks
+    ;(lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn2))  TODO lock REFUSE
   ;)
 =>
   (printout t "EXP trying to lock zone " ?zn crlf)
@@ -864,10 +843,10 @@
 ;  (zone-exploration (name ?) (machine UNKNOWN) (line-visibility ?tmp&:(> ?tmp 0)))
 ;  (not
 ;    (zone-exploration (name ?zn) (machine UNKNOWN) (line-visibility ?vh&:(> ?vh 0)))
-;    ;(lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))  TODO what about locks
+;    ;(lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))  TODO lock REFUSE
 ;  )
 ;=>
-; ; (delayed-do-for-all-facts ((?l lock)) (and (eq ?l:type REFUSE) (eq ?l:agent ?*ROBOT-NAME*))  TODO what about locks
+; ; (delayed-do-for-all-facts ((?l lock)) (and (eq ?l:type REFUSE) (eq ?l:agent ?*ROBOT-NAME*))
 ; ;   (retract ?l)
 ; ; )
 ;  (printout warn "empty effect" crlf)
@@ -877,17 +856,15 @@
 (defrule exp-stop-to-investigate-zone
   "Lock for an explorable zone was accepted"
   (goal (id EXPLORATION) (mode DISPATCHED))
-  (plan (id ?plan-id) (goal-id EXPLORATION))
   (wm-fact (key domain fact self args? r ?r))
   (exp-searching)
   ?st-f <- (state EXP_GOTO_NEXT)
+
   ?skill <- (skill (id ?skill-id) (status S_RUNNING))
   (zone-exploration (name ?zn))
-  ?pa <- (plan-action (goal EXPLORATION))
   (lock (type ACCEPT) (resource ?zn))
 =>
-  (retract ?pa)
-  (modify ?skill (status S_FAILED))
+  (retract ?skill)
   (printout t "EXP exploring zone " ?zn crlf)
   (delayed-do-for-all-facts ((?exp-f explore-zone-target)) TRUE (retract ?exp-f))
   (retract ?st-f)
@@ -896,19 +873,16 @@
     (explore-zone-target (zone ?zn))
   )
   (printout t "Stop to explore zone " ?zn crlf)
-  (assert (plan-action (action-name stop) (param-values ?r) (plan-id ?plan-id) (goal-id EXPLORATION) (status PENDING)))
-  ;(skill-call relgoto x y 0) TODO make this a plan action
+  (skill-call stop (create$ r) (create$ ?r))
 )
 
 
 (defrule exp-skill-explore-zone
   (goal (id EXPLORATION) (mode DISPATCHED))
-  (plan (id ?plan-id) (goal-id EXPLORATION))
   ?srch-f <- (exp-searching)
   ?st-f <- (state EXP_STOPPING)
   (explore-zone-target (zone ?zn))
-  ?pa <- (plan-action (action-name stop) (status FAILED|FINAL))
-  ;?skill-f <- (skill-done (name "relgoto")) TODO this should be a plan action
+  ?skill <- (skill (name stop) (status S_FINAL|S_FAILED))
   (MotorInterface (id "Robotino")
     (vx ?vx&:(< ?vx 0.01)) (vy ?vy&:(< ?vy 0.01)) (omega ?w&:(< ?w 0.01))
   )
@@ -916,19 +890,17 @@
   (wm-fact (key domain fact self args? r ?r))
 =>
   (printout t "Start exploring zone: " ?zn crlf)
-  (retract ?st-f ?srch-f ?pa) ;?skill-f)
+  (retract ?st-f ?srch-f ?skill)
   (assert (state EXP_EXPLORE_ZONE))
   (navigator-set-speed ?trans-vmax ?rot-vmax)
-  (assert (plan-action (id 1) (plan-id ?plan-id) (goal-id EXPLORATION) (action-name explore-zone) (param-values ?r ?zn) (status PENDING)))
-  ;(skill-call explore_zone zone (str-cat ?zn)) TODO make this a plan action
+  (skill-call explore-zone (create$ r z) (create$ ?r ?zn))
 )
 
 
 (defrule exp-skill-explore-zone-final
   (goal (id EXPLORATION) (mode DISPATCHED))
   ?st-f <- (state EXP_EXPLORE_ZONE)
-  ?pa <- (plan-action (action-name explore-zone) (status FINAL))
-  ;?skill-f <- (skill-done (name "explore_zone") (status FINAL)) TODO this should be a plan-action
+  ?skill <- (skill (name explore-zone) (status S_FINAL))
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str)
     (orientation ?orientation) (tag_id ?tag-id) (search_state YES)
   )
@@ -937,30 +909,28 @@
   )
   ; We don't check the visibility_history here since that's already done in the explore_zone skill
   (domain-fact (name tag-matching) (param-values ?machine ?side ?team-color ?tag-id))
-  ;(tag-matching (tag-id ?tag-id) (machine ?machine) (side ?side) (team ?team-color))
   ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (times-searched ?times-searched))
-  ;(machine (name ?machine) (mtype ?mtype))
-;  (domain-fact (name mps-type) (param-values ?machine ?mtype))
+  (domain-fact (name mps-type) (param-values ?machine ?mtype))
   ?exp-f <- (explore-zone-target (zone ?zn))
   ?lock <- (lock (type ACCEPT) (resource ?r&:(eq ?r (sym-cat ?zn-str))))
 =>
-  (retract ?st-f ?exp-f ?pa); ?skill-f )
+  (retract ?st-f ?exp-f ?skill)
   (retract ?lock)
  ; (assert
- ;   (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))  TODO what about locks
- ; )
+ ;   (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))
+ ; ) TODO lock RELEASE
   (if (any-factp ((?ft found-tag)) (eq ?ft:name ?machine)) then
     (printout error "BUG: Tag for " ?machine " already found. Locking glitch or agent bug!" crlf)
   else
     ; Order is important here: Update state before zone-exploration to avoid endless loop.
-    ;(synced-modify ?ze machine ?machine times-searched (+ 1 ?times-searched)) TODO now wm-facts
+    ;(synced-modify ?ze machine ?machine times-searched (+ 1 ?times-searched)) TODO synced-modify
     ;(synced-assert (str-cat "(found-tag (name " ?machine ") (side " ?side ")"
     ;  "(frame \"map\") (trans " (implode$ ?trans) ") "
     ;  "(rot " (implode$ ?rot) ") )")
     ;) TODO synced-assert
 
     (modify ?ze (machine ?machine) (times-searched (+ 1 ?times-searched)))
-    (assert (found-tag (name ?machine) (side ?side)))
+    (assert (found-tag (name ?machine) (side ?side) (frame "map") (trans ?trans) (rot ?rot)))
     (assert
       (exploration-result
         (machine ?machine) (zone ?zn2)
@@ -969,7 +939,7 @@
       )
       (exploration-result
         (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
-  ;      (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
+        (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
         (team (mirror-team ?team-color))
       )
     )
@@ -985,28 +955,27 @@
 (defrule exp-skill-explore-zone-failed
   (goal (id EXPLORATION) (mode DISPATCHED))
   ?st-f <- (state EXP_EXPLORE_ZONE)
-  ?pa <- (plan-action (action-name explore-zone) (status ?status&:(or (eq ?status FINAL) (eq ?status FAILED))))
-  ;?skill-f <- (skill-done (name "explore_zone") (status ?status)) TODO this should be a skill
+  ?skill <- (skill (name explore-zone) (status ?status&S_FINAL|S_FAILED))
   ?exp-f <- (explore-zone-target (zone ?zn))
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str) (search_state ?s&:(neq ?s YES)))
   ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (machine ?machine) (times-searched ?times-searched))
   ?hold <- (lock (type ACCEPT) (resource ?r&:(eq ?r (sym-cat ?zn-str))))
 =>
   (printout t "Exploration of " ?zn " failed" crlf)
-  (retract ?st-f ?exp-f ?pa) ;?skill-f)
-  (if (eq ?status FINAL) then
+  (retract ?st-f ?exp-f ?skill)
+  (if (eq ?status S_FINAL) then
     (printout error "BUG in explore_zone skill: Result is FINAL but no MPS was found.")
   )
   (if (and (eq ?s NO) (eq ?machine UNKNOWN)) then
     (modify ?ze (machine NONE) (times-searched (+ ?times-searched 1)))
-    ;(synced-modify ?ze machine NONE times-searched (+ ?times-searched 1)) TODO now wm-facts
+    ;(synced-modify ?ze machine NONE times-searched (+ ?times-searched 1)) TODO synced-modify
   else
     (modify ?ze (line-visibility 0) (times-searched (+ ?times-searched 1)))
-    ;(synced-modify ?ze line-visibility 0 times-searched (+ ?times-searched 1)) TODO now wm-facts
+    ;(synced-modify ?ze line-visibility 0 times-searched (+ ?times-searched 1)) TODO synced-modify
   )
   (retract ?hold)
   (assert
-    ;(lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))  TODO what about locks
+    ;(lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str))) TODO lock RELEASE
     (exp-searching)
     (state EXP_IDLE)
   )
@@ -1016,7 +985,6 @@
 (defrule exp-report-to-refbox
   (goal (id EXPLORATION) (mode DISPATCHED))
   (wm-fact (key refbox team-color) (value ?color))
-; (team-color ?color)
   (exploration-result (team ?color) (machine ?machine) (zone ?zone)
     (orientation ?orientation)
   )
@@ -1027,9 +995,7 @@
     (value ?latest-report-time)
   )
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
-  ;(team-color ?team-color&~nil)
   (wm-fact (key refbox comm peer-id public) (value ?peer))
-;  (peer-id private ?peer)
   (state ?s) ; TODO actually enter EXP_PREPARE_FOR_PRODUCTION_FINISHED state
 =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
@@ -1064,106 +1030,16 @@
   (printout error "Reported mps : " ?mr crlf)
 )
 
-
-(defrule exp-mirror-tag
-  (found-tag (name ?machine) (side ?side) (frame ?frame) (trans $?trans) (rot $?rot))
-  ; Assuming that ?frame is always "map". Otherwise things will break rather horribly...
-
-  (not (field-ground-truth (machine ?machine)))
-  ; Do not trigger while updating zones/tags from Refbox PB msg after exploration
-
-  (domain-fact (name tag-matching) (param-values ?machine ?side ?team-color ?tag))
-;  (tag-matching (tag-id ?tag) (machine ?machine) (side ?side))
-  (zone-exploration (name ?zn) (machine ?machine) (times-searched ?times-searched))
-
-  (domain-fact (name tag-matching) (param-values ?machine2&:(eq ?machine2 (mirror-name ?machine)) ?side ?col ?tag2))
- ; (tag-matching (tag-id ?tag2) (side ?side)
-  ;  (machine ?machine2&:(eq ?machine2 (mirror-name ?machine)))
-  ;)
-
-  (found-tag (name ?machine2&:(eq ?machine2 (mirror-name ?machine))))
-  ?ze2 <- (zone-exploration (name ?zn2&:(eq ?zn2 (mirror-name ?zn))))
-  ;(machine (name ?machine) (mtype ?mtype))
-  (domain-fact (name mps-type) (param-values ?machine ?mtype))
-=>
-  (bind ?m-rot (mirror-rot ?mtype ?zn ?rot))
-  (if (neq ?rot ?m-rot) then
-    (bind ?tag-yaw (tf-yaw-from-quat ?rot))
-    (bind ?c-trans (translate-tag-x ?tag-yaw -0.17 ?trans))
-    (bind ?m-trans
-      (translate-tag-x
-        (tf-yaw-from-quat ?m-rot)
-        0.17
-        (mirror-trans ?c-trans)
-      )
-    )
-  else
-    (bind ?m-trans (mirror-trans ?trans))
-  )
-  (assert
-    (found-tag (name ?machine2) (side ?side) (frame ?frame)
-      (trans ?m-trans) (rot ?m-rot)
-    )
-  )
-  (modify ?ze2 (machine ?machine2) (times-searched ?times-searched))
-  ;(synced-modify ?ze2 machine ?machine2 times-searched ?times-searched) TODO now wm-facts
-)
-
-
-(defrule exp-add-tag-to-navgraph
-  (not (requested-waiting-positions))
-  (or
-    (not (last-navgraph-compute-msg))
-    (last-navgraph-compute-msg (final TRUE))
-    (NavGraphWithMPSGeneratorInterface (msgid 0))
-    (not (NavGraphWithMPSGeneratorInterface))
-  )
-  ;(forall (machine (name ?mps))
-  (forall (domain-fact (name mps-type) (param-values ?mps ?mps-type))
-    (zone-exploration (machine ?found&:(eq ?mps ?found) ))
-  )
-
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;(team-color ?team-color)
-
-  (found-tag (name ?machine)
-    (side ?side) (frame ?) (trans $?) (rot $?)
-  )
-  (domain-fact (name tag-matching) (param-values ?machine ?side ?team-color ?tag))
- ; (tag-matching (tag-id ?tag) (team ?team-color)
- ;   (machine ?machine) (side ?side)
- ;; )
-  (found-tag (name ?machine2&:(eq ?machine2 (mirror-name ?machine)))
-    (side ?side) (frame ?) (trans $?) (rot $?)
-  )
-  (domain-fact (name tag-matching) (param-values ?machine2 ?side ?team-color2&:(neq ?team-color ?team-color2) ?tag2))
-;  (tag-matching (tag-id ?tag2) (team ?team-color2&~?team-color)
-;    (machine ?machine2) (side ?side)
-;  )
-  (not (and (navgraph-added-for-mps (name ?machine)) (navgraph-added-for-mps (name ?machine2))))
-=>
-  (assert (generating-navgraph))
-  (navgraph-add-all-new-tags)
-)
-
-
-(defrule exp-navgraph-done
-  ?gen-f <- (generating-navgraph)
-  (last-navgraph-compute-msg (final TRUE))
-=>
-  (retract ?gen-f)
-  (assert (navgraph-done))
-)
-
-
 (defrule exp-exploration-ends-cleanup
   "Clean up lock refusal facts when exploration ends"
   ?g <- (goal (id EXPLORATION) (mode DISPATCHED))
-  (change-phase PRODUCTION)
+  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
+  (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
+
 =>
-  ;(delayed-do-for-all-facts ((?l lock)) (eq ?l:type REFUSE)  TODO what about locks
-  ;  (retract ?l)
-  ;)
-  (printout warn "empty effect" crlf)
+  (delayed-do-for-all-facts ((?l lock)) (eq ?l:type REFUSE)
+    (retract ?l)
+  )
+  (printout t "exploration phase ended, cleaning up" crlf)
   (modify ?g (mode FINISHED) (outcome COMPLETED))
 )
