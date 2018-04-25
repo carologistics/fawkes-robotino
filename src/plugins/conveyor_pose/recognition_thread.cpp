@@ -140,10 +140,6 @@ void RecognitionThread::loop()
               initial_guess_icp_odom_);
         initial_guess_tracked_fitness_ = new_fitness;
 
-        // Use rotation from laser-based guess because it has a very small rotational error,
-        // but a large translational error.
-        if (main_thread_->initial_guess_laser_odom_.stamp != Time(0,0))
-          initial_guess_icp_odom_.setBasis(main_thread_->initial_guess_laser_odom_.getBasis());
       } catch(tf::TransformException &e) {
         logger->log_error(name(), e);
       }
