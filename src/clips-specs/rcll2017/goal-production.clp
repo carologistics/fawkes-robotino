@@ -231,7 +231,7 @@
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
   ;only discard if ring stations have at least two bases loaded
-  (wm-fact (key domain fact rs-filled-with args? m ?mps n TOW|THREE))
+  (wm-fact (key domain fact rs-filled-with args? m ?mps n TWO|THREE))
 
   ;question: or would be more correct to create it and later
   ;  reject it because its not useful
@@ -377,6 +377,7 @@
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
 
+  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
@@ -392,13 +393,15 @@
   ;note: could be moved to rejected checks
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
     (value ?qd&:(> ?qr ?qd)))
-  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key refbox order ?order-id delivery-begin) (type UINT)
+  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
     (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
   ;TODO for multi-agent
   ; Model old agents constraints
   ;  (in-production ?ip&:(> ?ip 0))
   ;  (in-delivery ?id)
+
+  ;On evaluation of delivery. Update the quanetities deliverd
+  ;Delete the evaluated wp-for-order
   =>
   (printout t "Goal " DELIVER " formulated" crlf)
   (assert (goal (id DELIVER) (priority ?*PRIORITY-DELIVER*)
