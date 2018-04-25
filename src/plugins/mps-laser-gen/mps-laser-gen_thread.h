@@ -64,6 +64,10 @@ private:
   fawkes::Laser360Interface *laser_if_;
   ros::Publisher vispub_;
   std::string mps_laser_gen_cfg_prefix;
+  float cfg_mps_length_;
+  float cfg_mps_width_;
+
+  void load_config();
 
 };
 
