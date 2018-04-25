@@ -105,6 +105,8 @@
 		(wp-on-shelf ?wp - workpiece ?m - mps ?spot - shelf-spot)
 		(wp-spawned-by ?wp - workpiece ?r - robot)
     (spot-free ?m - mps ?spot - shelf-spot)
+
+    (locked ?name - object)
 	)
 
 ;Kind of a hack. actually it should model the removal of present workpieces
@@ -466,7 +468,6 @@
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
 	)
 
-
         (:action move-node
 			:parameters (?r - robot ?z - zone)
 			:precondition (self ?r)
@@ -484,4 +485,20 @@
 			:precondition (self ?r)
 			:effect (self ?r)
 	)
+
+  (:action lock
+    :parameters (?name - object)
+    :precondition (not (locked ?name))
+    :effect (locked ?name)
+  )
+  (:action unlock
+    :parameters (?name - object)
+    :precondition (locked ?name)
+    :effect (not (locked ?name))
+  )
+  (:action eventually-unlock
+    :parameters (?name - object)
+    :precondition (locked ?name)
+    :effect (not (locked ?name))
+  )
 )
