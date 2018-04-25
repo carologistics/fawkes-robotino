@@ -58,7 +58,6 @@ ConveyorPoseThread::ConveyorPoseThread()
   , cloud_out_raw_name_("raw")
   , cloud_out_trimmed_name_("trimmed")
   , recognition_thread_(nullptr)
-  , result_pose_(tf::Pose::getIdentity(), Time(0,0), "NOT_INITIALIZED")
   , result_fitness_(std::numeric_limits<double>::min())
   , realsense_switch_(nullptr)
 {}
@@ -298,7 +297,7 @@ ConveyorPoseThread::loop()
     bb_pose_->msgq_pop();
   }
 
-  if_read();
+  bb_update_switch();
   realsense_switch_->read();
 
   if (bb_enable_switch_->is_enabled()) {
@@ -363,6 +362,18 @@ ConveyorPoseThread::loop()
       cloud_publish(model_, cloud_out_model_);
     }
     else {
+      if (bb_mutex_.try_lock()) {
+        try {
+          if (result_pose_) {
+            pose_write();
+            pose_publish_tf(*result_pose_);
+            result_pose_.release();
+          }
+        } catch (std::exception &e) {
+          logger->log_error(name(), "Unexpected exception: %s", e.what());
+        }
+        bb_mutex_.unlock();
+      }
       if (cloud_mutex_.try_lock()) {
         try {
           if (have_laser_line_) {
@@ -468,6 +479,9 @@ ConveyorPoseThread::set_current_station(std::string station)
       result_fitness_ = std::numeric_limits<double>::min();
       bb_pose_->set_euclidean_fitness(result_fitness_);
       bb_pose_->write();
+
+      MutexLocker locked2(&cloud_mutex_);
+
       recognition_thread_->initial_guess_tracked_fitness_ = std::numeric_limits<double>::min();
     }
 
@@ -476,6 +490,7 @@ ConveyorPoseThread::set_current_station(std::string station)
       logger->log_error(name(), "Invalid station name: %s", station.c_str());
     else {
       MutexLocker locked(&cloud_mutex_);
+
       model_with_normals_ = map_it->second;
       current_station_ = station;
     }
@@ -508,17 +523,27 @@ ConveyorPoseThread::update_input_cloud()
 
 
 void
-ConveyorPoseThread::if_read()
+ConveyorPoseThread::bb_update_switch()
 {
   // enable switch
   bb_enable_switch_->read();
 
   bool rv = bb_enable_switch_->is_enabled();
   while ( ! bb_enable_switch_->msgq_empty() ) {
-    logger->log_info(name(),"RECEIVED SWITCH MESSAGE");
     if (bb_enable_switch_->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
+      logger->log_info(name(),"Received DisableSwitchMessage");
       rv = false;
+      { MutexLocker locked(&bb_mutex_);
+        icp_cancelled_ = true;
+        result_fitness_ = std::numeric_limits<double>::min();
+        bb_pose_->set_euclidean_fitness(result_fitness_);
+        bb_pose_->write();
+      }
+      { MutexLocker locked { &cloud_mutex_ };
+        recognition_thread_->initial_guess_tracked_fitness_ = std::numeric_limits<double>::min();
+      }
     } else if (bb_enable_switch_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
+      logger->log_info(name(),"Received EnableSwitchMessage");
       rv = true;
     }
 
@@ -712,39 +737,24 @@ ConveyorPoseThread::cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud
 
 
 void
-ConveyorPoseThread::tf_send_from_pose_if(pose pose)
-{
-  fawkes::tf::StampedTransform transform;
-
-  transform.frame_id = header_.frame_id;
-  transform.child_frame_id = conveyor_frame_id_;
-  // TODO use time of header, just don't works with bagfiles
-  fawkes::Time pt;
-  pt.set_time((long)header_.stamp / 1000);
-  transform.stamp = pt;
-
-  transform.setOrigin(pose.getOrigin());
-  transform.setRotation(pose.getRotation());
-
-  tf_publisher->send_transform(transform);
-}
-
-
-void
 ConveyorPoseThread::pose_write()
 {
-  bb_pose_->set_translation(0, result_pose_.getOrigin().getX());
-  bb_pose_->set_translation(1, result_pose_.getOrigin().getY());
-  bb_pose_->set_translation(2, result_pose_.getOrigin().getZ());
-  bb_pose_->set_rotation(0, result_pose_.getRotation().getX());
-  bb_pose_->set_rotation(1, result_pose_.getRotation().getY());
-  bb_pose_->set_rotation(2, result_pose_.getRotation().getZ());
-  bb_pose_->set_rotation(3, result_pose_.getRotation().getW());
+  if (!result_pose_) {
+    logger->log_error(name(), "BUG: calling pose_write() when result_pose_ is unset!");
+    return;
+  }
+  bb_pose_->set_translation(0, result_pose_->getOrigin().getX());
+  bb_pose_->set_translation(1, result_pose_->getOrigin().getY());
+  bb_pose_->set_translation(2, result_pose_->getOrigin().getZ());
+  bb_pose_->set_rotation(0, result_pose_->getRotation().getX());
+  bb_pose_->set_rotation(1, result_pose_->getRotation().getY());
+  bb_pose_->set_rotation(2, result_pose_->getRotation().getZ());
+  bb_pose_->set_rotation(3, result_pose_->getRotation().getW());
 
-  bb_pose_->set_frame(header_.frame_id.c_str());
+  bb_pose_->set_frame(result_pose_->frame_id.c_str());
   bb_pose_->set_euclidean_fitness(result_fitness_);
   long timestamp[2];
-  result_pose_.stamp.get_timestamp(timestamp[0], timestamp[1]);
+  result_pose_->stamp.get_timestamp(timestamp[0], timestamp[1]);
   bb_pose_->set_input_timestamp(timestamp);
   bb_pose_->write();
 }
@@ -871,6 +881,8 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
       else if (opt == "/hint/slide/z")
         change_val(opt, cfg_hint_["slide"][2], v->get_float());
     }
+    MutexLocker locked2 { &cloud_mutex_ };
+    recognition_thread_->initial_guess_tracked_fitness_ = std::numeric_limits<double>::min();
   }
 }
 
