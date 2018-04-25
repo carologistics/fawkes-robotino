@@ -240,6 +240,74 @@
   )
 )
 
+(defrule goal-mount-first-ring
+ ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?g <- (goal (mode SELECTED) (parent ?parent) (id MOUNT-FIRST-RING)
+                                             (params robot ?robot
+                                                      bs ?bs
+                                                      bs-side ?bs-side
+                                                      bs-color ?base-color
+                                                      mps ?mps
+                                                      ring-color ?ring-color
+                                                      rs-before ?rs-before
+                                                      rs-after ?rs-after
+                                                      rs-req ?rs-req
+                                                      order ?order
+                                                      ))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+ =>
+ (bind ?spawned-wp NA)
+ (do-for-fact ((?wp-spawned-by wm-fact))
+            (and (wm-key-prefix ?wp-spawned-by:key (create$ domain fact wp-spawned-by))
+                 (eq (wm-key-arg ?wp-spawned-by:key r) ?robot))
+   (bind ?spawned-wp (wm-key-arg ?wp-spawned-by:key wp))
+ )
+
+ (if (eq ?spawned-wp NA)
+  then
+   (printout t "No Spawned WP found for " ?robot " Failing goal" crlf)
+   (modify ?g (mode FINISHED) (outcome FAILED)
+              (message "Could not expand goal, No spawned WP found!!"))
+  else
+     (assert
+      (plan (id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING))
+      (plan-action (id 1) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+            (action-name move)
+            (param-names r from from-side to to-side )
+            (param-values ?robot ?curr-location ?curr-side ?bs ?bs-side))
+      (plan-action (id 2) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+            (action-name prepare-bs)
+            (param-names m side bc)
+            (param-values ?bs ?bs-side ?base-color))
+      (plan-action (id 3) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+            (action-name bs-dispense)
+            (param-names r m side wp basecol)
+            (param-values ?robot ?bs ?bs-side ?spawned-wp ?base-color))
+      (plan-action (id 4) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+            (action-name wp-get)
+            (param-names r wp m side)
+            (param-values ?robot ?spawned-wp ?bs ?bs-side))
+      (plan-action (id 5) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+            (action-name move-wp-put)
+            (param-names r from from-side to)
+            (param-values ?robot ?bs ?bs-side ?mps))
+      (plan-action (id 6) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+            (action-name prepare-rs)
+            (param-names m rc rs-before rs-after rs-req)
+            (param-values ?mps ?ring-color ?rs-before ?rs-after ?rs-req))
+      (plan-action (id 7) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+            (action-name wp-put)
+            (param-names r wp m)
+            (param-values ?robot ?spawned-wp ?mps))
+       (plan-action (id 8) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+            (action-name rs-mount-ring1)
+            (param-names m wp col rs-before rs-after rs-req)
+            (param-values ?mps ?spawned-wp ?ring-color ?rs-before ?rs-after ?rs-req))
+     )
+    (modify ?g (mode EXPANDED))
+  )
+)
+
 (defrule goal-deliver
  ?p <- (goal (mode EXPANDED) (id ?parent))
  ?g <- (goal (mode SELECTED) (parent ?parent) (id DELIVER)
