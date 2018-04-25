@@ -32,25 +32,8 @@
 #include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#include <Eigen/Geometry>
 
 using namespace fawkes;
-
-/// @cond INTERNAL
-class MPS {
- public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-  Eigen::Vector2f center;
-  Eigen::Vector2f corners[4];
-
-	unsigned int closest_idx;
-	unsigned int adjacent_1;
-	unsigned int adjacent_2;
-
-	float bearing;
-};
-/// @endcond
 
 
 /** @class MPSLaserGenThread "mps-laser-gen_thread.h"
@@ -128,8 +111,6 @@ MPSLaserGenThread::loop()
 // #endif
   size_t id_num = 0;
 
-  std::map<std::string, MPS> mpses;
-  
   for (const fawkes::NavGraphNode &n : nodes) {
 	  if (n.has_property("mps") && n.property_as_bool("mps")) {
 		  float ori = 0.;

@@ -37,6 +37,7 @@
 
 #include <interfaces/Laser360Interface.h>
 #include <ros/publisher.h>
+#include <Eigen/Geometry>
 
 namespace fawkes {
 }
@@ -52,6 +53,22 @@ class MPSLaserGenThread
 	public fawkes::TransformAspect
 {
 
+/// @cond INTERNAL
+  class MPS {
+   public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    Eigen::Vector2f center;
+    Eigen::Vector2f corners[4];
+
+    unsigned int closest_idx;
+    unsigned int adjacent_1;
+    unsigned int adjacent_2;
+
+    float bearing;
+  };
+  /// @endcond
+
  public:
   MPSLaserGenThread(std::string mps_laser_gen_prefix);
 
@@ -66,6 +83,7 @@ class MPSLaserGenThread
   fawkes::Laser360Interface* laser_if_;
   ros::Publisher vispub_;
   std::string mps_laser_gen_cfg_prefix;
+  std::map<std::string, MPS> mpses;
   float cfg_mps_length_;
   float cfg_mps_width_;
 
