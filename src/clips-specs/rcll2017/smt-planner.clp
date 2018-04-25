@@ -532,6 +532,9 @@
 								(param-values ?action-specific-actor ?from ?from-side ?to ?to-side)
 							)
 						)
+						(assert
+							(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
+						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] move from: " ?from " at: " ?from-side " to: " ?to " at: " ?to-side crlf)
 						; Keep track from where a robot comes from
 						; TODO Extend to multiple robots, maybe from clips-smt plugin via protobuf
@@ -584,6 +587,9 @@
 								(param-values ?action-specific-actor ?wp ?mps ?shelf)
 							)
 						)
+						(assert
+							(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
+						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-get-shelf: " ?mps " at: " ?side " shelf: " ?shelf crlf)
 					)
 
@@ -624,6 +630,9 @@
 								(param-names r wp m side)
 								(param-values ?action-specific-actor ?wp ?mps ?side)
 							)
+						)
+						(assert
+							(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
 						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-get from: " ?mps " side: " ?side crlf)
 					)
@@ -671,6 +680,9 @@
 								(param-names r wp m)
 								(param-values ?action-specific-actor ?wp ?mps)
 							)
+						)
+						(assert
+							(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
 						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-put to: " ?mps " at: " ?side crlf)
 					)
@@ -731,6 +743,9 @@
 								(param-values ?action-specific-actor ?wp ?mps ?rs-before ?rs-after )
 							)
 						)
+						(assert
+							(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
+						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-put-slide-cc to: " ?mps " at: " ?side " with before: " ?rs-before " and after: " ?rs-after crlf)
 					)
 
@@ -757,6 +772,9 @@
 								(param-names r cc)
 								(param-values ?action-specific-actor ?wp)
 							)
+						)
+						(assert
+							(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
 						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] wp-discard" crlf)
 					)
@@ -798,6 +816,9 @@
 								(param-names m side bc)
 								(param-values ?mps ?side ?goal-base-color)
 							)
+						)
+						(assert
+							(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
 						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-bs with base-color: " ?goal-base-color " at: " ?side crlf)
 					)
@@ -845,6 +866,9 @@
 								(param-values ?mps ?side ?wp ?goal-base-color)
 							)
 						)
+						(assert
+							(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
+						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] bs-dispense with basecolor: " ?goal-base-color crlf)
 					)
 
@@ -885,6 +909,9 @@
 									(param-names m gate)
 									(param-values ?mps (wm-key-arg ?wm-fact:key gate))
 								)
+							)
+							(assert
+								(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
 							)
 						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-ds" crlf)
@@ -941,6 +968,9 @@
 									(param-names ord wp m g basecol capcol)
 									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color)
 								)
+							)
+							(assert
+								(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
 							)
 						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c0 " ?order-id crlf)
@@ -999,6 +1029,9 @@
 									(param-names ord wp m g basecol ring1col capcol)
 									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?ring1-color ?cap-color)
 								)
+							)
+							(assert
+								(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
 							)
 						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c1 " ?order-id crlf)
@@ -1063,6 +1096,9 @@
 									(param-names ord wp m g basecol ring1col ring2col capcol)
 									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?ring1-color ?ring2-color ?cap-color)
 								)
+							)
+							(assert
+								(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
 							)
 						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c2 " ?order-id crlf)
@@ -1135,6 +1171,9 @@
 									(param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color)
 								)
 							)
+							(assert
+								(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
+							)
 						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] fulfill-order-c3 " ?order-id crlf)
 				  )
@@ -1176,6 +1215,9 @@
 								(param-values ?mps ?operation)
 							)
 						)
+						(assert
+							(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
+						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-cs at: " ?mps " with " ?operation crlf)
 					)
 
@@ -1210,6 +1252,9 @@
 								(param-names m cc capcol)
 								(param-values ?mps ?wp ?cap-color)
 							)
+						)
+						(assert
+							(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
 						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] cs-retrieve-cap at: " ?mps crlf)
 					)
@@ -1250,6 +1295,9 @@
 								(param-names m wp capcol)
 								(param-values ?mps ?wp ?cap-color)
 							)
+						)
+						(assert
+							(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
 						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] cs-mount-cap at: " ?mps crlf)
 					)
@@ -1306,6 +1354,9 @@
 								(action-name prepare-rs)
 								(param-names m rc rs-before rs-after r-req)
 								(param-values ?mps ?goal-ring-color ?rs-before ?rs-after ?r-req))
+						)
+						(assert
+							(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
 						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] prepare-rs at: " ?mps " with ring-color: " ?goal-ring-color crlf)
 					  )
@@ -1364,6 +1415,9 @@
 								(param-names m wp col rs-before rs-after r-req)
 								(param-values ?mps ?wp ?ring-color ?rs-before ?rs-after ?r-req)
 							)
+						)
+						(assert
+							(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
 						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring1 at: " ?mps " with ring-color: " ?ring-color crlf)
 					)
@@ -1428,6 +1482,9 @@
 								(param-names m wp col col1 rs-before rs-after r-req)
 								(param-values ?mps ?wp ?ring-color ?col1 ?rs-before ?rs-after ?r-req )
 							)
+						)
+						(assert
+							(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
 						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring2 at: " ?mps " with ring-color: " ?ring-color crlf)
 					)
@@ -1498,6 +1555,9 @@
 								(param-names m wp col col1 col2 rs-before rs-after r-req)
 								(param-values ?mps ?wp ?ring-color ?col1 ?col2 ?rs-before ?rs-after ?r-req)
 							)
+						)
+						(assert
+							(wm-fact (key plan COMPLEXITY-PLAN COMPLEXITY ?next-step-id) (is-list TRUE) (values ?parents-ids))
 						)
 						(printout t "Action added: " ?action-specific-actor " [" ?action-id  "] rs-mount-ring3 at: " ?mps " with ring-color: " ?ring-color crlf)
 					)
