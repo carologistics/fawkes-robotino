@@ -143,6 +143,7 @@ void RecognitionThread::loop()
     main_thread_->result_pose_.set_data(eigen_to_pose(Ti * initial_tf));
     main_thread_->result_pose_.frame_id = scene_with_normals->header.frame_id;
     main_thread_->result_pose_.stamp = Time { long(scene_with_normals->header.stamp) / 1000 };
+    constrainTransformToGround(main_thread_->result_pose_);
 
     if (new_fitness > initial_guess_tracked_fitness_) {
       try {
@@ -162,6 +163,32 @@ void RecognitionThread::loop()
   }
 }
 
+void RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::tf::Pose>& fittedPose_conv){
+  fawkes::tf::Stamped<fawkes::tf::Pose> fittedPose_base;
+  tf_listener->transform_pose("base_link", fittedPose_conv, fittedPose_base);
+  fawkes::tf::Matrix3x3 basis = fittedPose_base.getBasis();
+  fawkes::tf::Vector3 yaxis_possibility_row = basis.getRow(1);
+  printf("row basis: %f/%f/%f", yaxis_possibility_row[0], yaxis_possibility_row[1], yaxis_possibility_row[2]);
+  fawkes::tf::Vector3 yaxis_possibility_col = basis.getColumn(1);
+  printf("col basis: %f/%f/%f", yaxis_possibility_col[0], yaxis_possibility_col[1], yaxis_possibility_col[2]);
+  fawkes::tf::Vector3 aligned_y(0, 0, -1);
+  fawkes::tf::Scalar angle = yaxis_possibility_col.angle(aligned_y);
+  fawkes::tf::Vector3 rotational_axis = yaxis_possibility_col.cross(aligned_y);
+  rotational_axis.normalize();
+  fawkes::tf::Quaternion rotation(rotational_axis, angle);
+  fawkes::tf::Quaternion resultRotation = fittedPose_base.getRotation();
+  resultRotation *= rotation;
+  fittedPose_base.setRotation(resultRotation);
+
+  //sanity check
+  basis = fittedPose_base.getBasis();
+  yaxis_possibility_row = basis.getRow(1);
+  printf("row basis: %f/%f/%f", yaxis_possibility_row[0], yaxis_possibility_row[1], yaxis_possibility_row[2]);
+  yaxis_possibility_col = basis.getColumn(1);
+  printf("col basis: %f/%f/%f", yaxis_possibility_col[0], yaxis_possibility_col[1], yaxis_possibility_col[2]);
+
+  // tf_listener->transform_pose(fittedPose_conv.frame_id, fittedPose_base, fittedPose_conv);
+}
 
 void MyPointRepresentation::copyToFloatArray (const pcl::PointNormal &p, float * out) const
 {
