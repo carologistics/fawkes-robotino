@@ -65,4 +65,5 @@ fawkes/meta_plugins:
     - clips-pddl-parser
     - pddl-planner
     - clips-executive
+    - clips-executive-rest-api
 
