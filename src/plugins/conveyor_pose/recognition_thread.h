@@ -7,7 +7,18 @@
 #include <aspect/tf.h>
 #include <atomic>
 
+#include <pcl/registration/icp_nl.h>
+
 #include "conveyor_pose_thread.h"
+
+
+class CustomICP : public pcl::IterativeClosestPointNonLinear<pcl::PointNormal, pcl::PointNormal> {
+public:
+  using pcl::IterativeClosestPointNonLinear<pcl::PointNormal, pcl::PointNormal>::IterativeClosestPointNonLinear;
+
+  double getScaledFitness();
+};
+
 
 class RecognitionThread
     : public fawkes::Thread
