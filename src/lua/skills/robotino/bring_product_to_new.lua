@@ -130,5 +130,5 @@ function SKILL_SLIDE_PUT:init()
 end
 
 function MOVE_BACK:init()
-  self.args["motor_move"].x = -move_back_distance
+  self.args["motor_move"].x = move_back_distance
 end
