@@ -592,6 +592,7 @@
 (defrule exp-goto-next
   (goal (id EXPLORATION) (mode DISPATCHED))
   (plan (id ?plan-id) (goal-id EXPLORATION))
+  (not (plan-action (goal-id EXPLORATION)))
   (wm-fact (key domain fact self args? r ?r))
   ?s <- (state ?state&:(or (eq ?state EXP_START) (eq ?state EXP_IDLE)))
   (exp-next-node (node ?next-node))
@@ -817,7 +818,6 @@
     (line-visibility ?vh&:(> ?vh 0))
     (times-searched ?ts&:(<= ?ts ?search-limit))
   )
-  (not (plan-action (goal-id EXPLORATION) (status PENDING|WAITING)))
   ;(not (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn)))  TODO what about locks
 
   ; Neither this zone nor the opposite zone is locked
@@ -883,8 +883,10 @@
   ?st-f <- (state EXP_GOTO_NEXT)
   ?skill <- (skill (id ?skill-id) (status S_RUNNING))
   (zone-exploration (name ?zn))
+  ?pa <- (plan-action (goal EXPLORATION))
   (lock (type ACCEPT) (resource ?zn))
 =>
+  (retract ?pa)
   (modify ?skill (status S_FAILED))
   (printout t "EXP exploring zone " ?zn crlf)
   (delayed-do-for-all-facts ((?exp-f explore-zone-target)) TRUE (retract ?exp-f))
