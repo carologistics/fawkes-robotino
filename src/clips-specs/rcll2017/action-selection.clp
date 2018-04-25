@@ -23,7 +23,7 @@
 
 (defrule action-seleection-explorezone-release-locks
 	?p <- (plan (id EXPLORE-ZONE) (goal-id EXPLORATION))
-	(not (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (status ?s&~FINAL&~FORMULATED&~FAILED))) 
+	(not (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (status ?s&~FINAL&~FORMULATED&~FAILED)))
 	?rl <- (plan-action (plan-id EXPLORE-ZONE) (action-name release-locks) (status FORMULATED))
 	=>
 	(modify ?rl (status PENDING))
@@ -32,15 +32,18 @@
 
 (defrule action-selection-explorezone-done
 	?p <- (plan (id EXPLORE-ZONE) (goal-id EXPLORATION))
-	(not (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (status ?s&~FINAL&~FORMULATED&~FAILED))) 
-	(plan-action (plan-id EXPLORE-ZONE) (action-name release-locks) (status FINAL))
+	(or (not (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (status ?s&~FINAL)))
+					 (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (status ?s&FAILED))
+	)
+	(or (plan-action (plan-id EXPLORE-ZONE) (action-name release-locks) (status FINAL))
+		  (not (plan-action (plan-id EXPLORE-ZONE) (action-name release-locks))))
 	=>
-	(do-for-all-facts ((?pa plan-action)) (eq ?pa:plan-id EXPLOREZONE)
+	(do-for-all-facts ((?pa plan-action)) (eq ?pa:plan-id EXPLORE-ZONE)
 		(retract ?pa)
 	)
 	(retract ?p)
 )
-	
+
 (defrule action-selection-exploration-failed
 	?p <- (plan (id EXPLORATION-PLAN) (goal-id EXPLORATION))
 	?pa <- (plan-action (plan-id EXPLORATION-PLAN) (goal-id EXPLORATION) (id ?id)
@@ -74,7 +77,7 @@
 
 (defrule action-selection-done
 	(plan (id ?plan-id) (goal-id ?goal-id))
-	?g <- (goal (id ?goal-id) (mode DISPATCHED) (type ACHIEVE))
+	?g <- (goal (id ?goal-id&~EXPLORATION) (mode DISPATCHED) (type ACHIEVE))
 	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (status ~FINAL)))
 	=>
 	(modify ?g (mode FINISHED) (outcome COMPLETED))
@@ -82,7 +85,7 @@
 
 (defrule action-selection-failed
 	(plan (id ?plan-id) (goal-id ?goal-id))
-	?g <- (goal (id ?goal-id) (mode DISPATCHED))
+	?g <- (goal (id ?goal-id&~EXPLORATION) (mode DISPATCHED))
 	(plan-action (goal-id ?goal-id) (plan-id ?plan-id) (status FAILED))
 	=>
 	(modify ?g (mode FINISHED) (outcome FAILED))
