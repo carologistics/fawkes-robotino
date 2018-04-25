@@ -57,16 +57,20 @@ public:
  * @author Tim Niemueller
  */
 
-MPSLaserGenThread::MPSLaserGenThread()
-    : Thread("MPSLaserGenThread", Thread::OPMODE_WAITFORWAKEUP),
-      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_ACQUIRE),
-      TransformAspect(TransformAspect::ONLY_LISTENER) {}
+MPSLaserGenThread::MPSLaserGenThread(std::string mps_laser_gen_prefix)
+ : Thread("MPSLaserGenThread", Thread::OPMODE_WAITFORWAKEUP),
+   BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_ACQUIRE),
+   TransformAspect(TransformAspect::ONLY_LISTENER)
+{
+  mps_laser_gen_cfg_prefix = mps_laser_gen_prefix;
+}
 
 void MPSLaserGenThread::init() {
   vispub_ = rosnode->advertise<visualization_msgs::MarkerArray>(
       "visualization_marker_array", 100, /* latching */ true);
 
   laser_if_ = blackboard->open_for_writing<Laser360Interface>("Laser MPS");
+  load_config();
 }
 
 void MPSLaserGenThread::loop() {
