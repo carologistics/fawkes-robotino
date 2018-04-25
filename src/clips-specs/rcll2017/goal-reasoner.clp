@@ -32,7 +32,6 @@
   (wm-fact (key domain fact order-complexity args? ord ?order-id com C3) (value TRUE))
   =>
   (assert (goal (id COMPLEXITY)))
-  (printout t "Detect goal " ?order-id " with complexity 0" crlf)
 	(assert (goal-already-tried COMPLEXITY))
 )
 
@@ -82,7 +81,7 @@
 
 ; #  Goal Monitoring
 (defrule goal-reasoner-subgoal-completed
-	?g <- (goal (id ?goal-id) (parent ?parent-id) (mode COMPLETED))
+	?g <- (goal (id ?goal-id) (parent ?parent-id) (mode FINISHED) (outcome COMPLETED))
   ?p <- (goal (id ?parent-id) (mode DISPATCHED))
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
@@ -100,7 +99,7 @@
 )
 
 (defrule goal-reasoner-completed
-	?g <- (goal (id ?goal-id) (mode COMPLETED))
+	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome COMPLETED))
 	?gm <- (goal-meta (goal-id ?goal-id))
 	=>
 	(printout t "Goal '" ?goal-id "' has been completed, cleaning up" crlf)
@@ -114,7 +113,7 @@
 )
 
 (defrule goal-reasoner-failed
-	?g <- (goal (id ?goal-id) (mode FAILED))
+	?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
 	?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
 	=>
 	(printout error "Goal '" ?goal-id "' has failed, cleaning up" crlf)
