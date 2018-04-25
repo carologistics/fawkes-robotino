@@ -41,6 +41,17 @@
   (modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-refill-shelf
+  ?p <- (goal (mode EXPANDED) (id ?parent-id))
+  ?g <- (goal (mode SELECTED) (parent ?parent-id) (id REFILL-SHELF-ACHIEVE))
+  =>
+  (assert
+     (plan (id REFILLPLAN) (goal-id REFILL-SHELF-ACHIEVE))
+     (plan-action (id 1) (plan-id REFILLPLAN) (goal-id REFILL-SHELF-ACHIEVE)
+        (action-name noop)))
+  (modify ?g (mode EXPANDED))
+)
+
 (defrule goal-expander-enter-field
   ?g <- (goal (mode SELECTED) (id ENTER-FIELD))
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -64,23 +75,13 @@
     ?g <- (goal (mode SELECTED) (parent ?parent) (id FILL-CAP)
                                                 (params robot ?robot
                                                         mps ?mps
+                                                        cc ?cc
                                                         ))
     (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+    (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?shelf-spot))
+    (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
     =>
-    (do-for-fact ((?fact-wp-on-shelf wm-fact))
-            (and (wm-key-prefix ?fact-wp-on-shelf:key (create$ domain fact wp-on-shelf))
-                 (eq (wm-key-arg ?fact-wp-on-shelf:key m) ?mps))
-
-      (bind ?cc (wm-key-arg ?fact-wp-on-shelf:key wp))
-      (bind ?shelf-spot (wm-key-arg ?fact-wp-on-shelf:key spot))
-
-      (do-for-fact ((?fact-wp-cap-color wm-fact))
-              (and (wm-key-prefix ?fact-wp-cap-color:key (create$ domain fact wp-cap-color))
-                    (eq (wm-key-arg ?fact-wp-cap-color:key wp) ?cc))
-        (bind ?cap-color (wm-key-arg ?fact-wp-cap-color:key col))
-      )
-    )
-    (assert
+   (assert
         (plan (id FILL-CAP-PLAN) (goal-id FILL-CAP))
         (plan-action (id 1) (plan-id FILL-CAP-PLAN) (goal-id FILL-CAP)
                                     (action-name move)

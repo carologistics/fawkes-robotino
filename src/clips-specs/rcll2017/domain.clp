@@ -161,6 +161,8 @@
     (domain-fact (name cs-can-perform) (param-values ?cs2 RETRIEVE_CAP))
     (domain-fact (name cs-free) (param-values ?cs1))
     (domain-fact (name cs-free) (param-values ?cs2))
+    (domain-fact (name cs-color) (param-values ?cs1 CAP_GREY))
+    (domain-fact (name cs-color) (param-values ?cs2 CAP_BLACK))
     (domain-fact (name wp-cap-color) (param-values CCB1 CAP_BLACK))
     (domain-fact (name wp-cap-color) (param-values CCB2 CAP_BLACK))
     (domain-fact (name wp-cap-color) (param-values CCB3 CAP_BLACK))
