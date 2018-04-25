@@ -151,9 +151,11 @@
 (defrule goal-reasoner-create-fill-cap-goal
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
   (not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side ?any-side)))
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
@@ -174,12 +176,14 @@
   "Remove an unknown base from CS after retrieving a cap from it."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ;Maybe add a check for the base_color
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
   =>
   (printout t "Goal " CLEAR-CS " formulated" crlf)
@@ -198,6 +202,7 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot Conditions
   (wm-fact (key domain fact self args? r ?robot))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
@@ -205,6 +210,7 @@
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;Order conditions
   (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
@@ -224,11 +230,13 @@
   "Insert a base with unknown color in a RS for preparation"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact wp-usable args? wp ?wp))
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TOW))
   ;CCs don't have a base color. Hence, models base with UNKOWN color
@@ -250,10 +258,12 @@
   "Discard a base which is not needed if no RS can be pre-filled"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (wm-fact (key refbox team-color) (value ?team-color))
   ;To-Do: Model state IDLE
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;only discard if ring stations have at least two bases loaded
   (wm-fact (key domain fact rs-filled-with args? m ?mps n TWO|THREE))
 
@@ -273,16 +283,22 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
+  ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
+  ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
+  ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?mps side ?any-side)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
+  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
   ;To-Do: Model the bs active-side
+  ;Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com C0))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
@@ -290,7 +306,6 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  ;note: could be moved to rejected checks
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
 	(value ?qd&:(> ?qr ?qd)))
   (wm-fact (key refbox order ?order-id delivery-begin) (type UINT)
@@ -336,6 +351,7 @@
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
   (wm-fact (key domain fact mps-state args?      m ?mps-rs s ~BROKEN))
+  (wm-fact (key domain fact mps-team args?       m ?mps-rs col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
   (wm-fact (key domain fact rs-ring-spec args?   m ?mps-rs r ?ring-color rn ?bases-needed))
   (wm-fact (key domain fact minuend ?bases-filled
@@ -349,6 +365,7 @@
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args?  m ?mps-bs t BS))
   (wm-fact (key domain fact mps-state args? m ?mps-bs s ~BROKEN))
+  (wm-fact (key domain fact mps-team args?  m ?mps-bs col ?team-color))
   (not (wm-fact (key domain fact wp-at args? wp ?bs-wp m ?mps-bs side ?any-bs-side)))
   ;Order CEs
   (not (wm-fact (key evaluated fact wp-for-order args? wp ?ord-wp ord ?order)))
@@ -390,9 +407,13 @@
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   (wm-fact (key domain fact self args? r ?robot))
+  ;CEs for MPS-DS
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
+  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+  ;CEs for MPS-CS
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
