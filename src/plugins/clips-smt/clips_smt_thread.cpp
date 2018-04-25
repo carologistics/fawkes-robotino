@@ -1460,21 +1460,38 @@ ClipsSmtThread::clips_smt_fill_order_details()
 	logger->log_info(name(), "Extract details about order to pursue");
 
 	// Goal strategy pick last one of desired complexity
-	int desired_complexity = 3;
-	for(int i=0; i<number_orders_protobuf; ++i) {
-		if(data.orders(i).complexity() == desired_complexity) {
+	int desired_complexity = data.orders(0).complexity();
 
-			// base and cap information is only needed for product description and can be kept in its orginal form
-			// rings information has to be decrease in order to access the number_required_bases map correctly
-			base_order = data.orders(i).base_color();
-			rings_order[0] = data.orders(i).ring_colors(0);
-			rings_order[1] = data.orders(i).ring_colors(1);
-			rings_order[2] = data.orders(i).ring_colors(2);
-			cap_order = data.orders(i).cap_color();
-			
-			order_id = i;
-			number_orders_c3 = 1;
-		}
+	// base and cap information is only needed for product description and can be kept in its orginal form
+	// rings information has to be decrease in order to access the number_required_bases map correctly
+	base_order = data.orders(0).base_color();
+	if(desired_complexity > 0) {
+		rings_order[0] = data.orders(0).ring_colors(0);
+	}
+	if(desired_complexity > 1) {
+		rings_order[1] = data.orders(0).ring_colors(1);
+	}
+	if(desired_complexity == 3) {
+		rings_order[2] = data.orders(0).ring_colors(2);
+	}
+	cap_order = data.orders(0).cap_color();
+	order_id = 0;
+	
+	switch(desired_complexity) {
+		case 0:
+				number_orders_c0 = 1;
+				break;
+		case 1:
+				number_orders_c1 = 1;
+				break;
+		case 2:
+				number_orders_c2 = 1;
+				break;
+		case 3:
+				number_orders_c3 = 1;
+				break;
+		default:
+				break;
 	}
 	
 	// Extract how many bases are required for the corresponding colors
