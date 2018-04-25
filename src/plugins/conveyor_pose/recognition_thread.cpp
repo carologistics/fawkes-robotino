@@ -182,12 +182,12 @@ void RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::t
   tf_listener->transform_pose("base_link", fittedPose_conv, fittedPose_base);
   fawkes::tf::Matrix3x3 basis = fittedPose_base.getBasis();
   fawkes::tf::Vector3 yaxis_possibility_row = basis.getRow(1);
-  printf("row basis: %f/%f/%f", yaxis_possibility_row[0], yaxis_possibility_row[1], yaxis_possibility_row[2]);
-  fawkes::tf::Vector3 yaxis_possibility_col = basis.getColumn(1);
-  printf("col basis: %f/%f/%f", yaxis_possibility_col[0], yaxis_possibility_col[1], yaxis_possibility_col[2]);
+  printf("\nrow basis: %f/%f/%f\n", yaxis_possibility_row[0], yaxis_possibility_row[1], yaxis_possibility_row[2]);
+  fawkes::tf::Vector3 yaxis_tf = basis.getColumn(1);
+  printf("col basis: %f/%f/%f\n", yaxis_tf[0], yaxis_tf[1], yaxis_tf[2]);
   fawkes::tf::Vector3 aligned_y(0, 0, -1);
-  fawkes::tf::Scalar angle = yaxis_possibility_col.angle(aligned_y);
-  fawkes::tf::Vector3 rotational_axis = yaxis_possibility_col.cross(aligned_y);
+  fawkes::tf::Scalar angle = yaxis_tf.angle(aligned_y);
+  fawkes::tf::Vector3 rotational_axis = yaxis_tf.cross(aligned_y);
   rotational_axis.normalize();
   fawkes::tf::Quaternion rotation(rotational_axis, angle);
   fawkes::tf::Quaternion resultRotation = fittedPose_base.getRotation();
@@ -196,12 +196,12 @@ void RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::t
 
   //sanity check
   basis = fittedPose_base.getBasis();
-  yaxis_possibility_row = basis.getRow(1);
-  printf("row basis: %f/%f/%f", yaxis_possibility_row[0], yaxis_possibility_row[1], yaxis_possibility_row[2]);
-  yaxis_possibility_col = basis.getColumn(1);
-  printf("col basis: %f/%f/%f", yaxis_possibility_col[0], yaxis_possibility_col[1], yaxis_possibility_col[2]);
+  // yaxis_possibility_row = basis.getRow(1);
+  // printf("row basis: %f/%f/%f", yaxis_possibility_row[0], yaxis_possibility_row[1], yaxis_possibility_row[2]);
+  yaxis_tf = basis.getColumn(1);
+  printf("col basis result: %f/%f/%f\n", yaxis_tf[0], yaxis_tf[1], yaxis_tf[2]);
 
-  // tf_listener->transform_pose(fittedPose_conv.frame_id, fittedPose_base, fittedPose_conv);
+  tf_listener->transform_pose(fittedPose_conv.frame_id, fittedPose_base, fittedPose_conv);
 }
 
 void MyPointRepresentation::copyToFloatArray (const pcl::PointNormal &p, float * out) const
