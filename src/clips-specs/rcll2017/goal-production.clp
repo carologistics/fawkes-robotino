@@ -44,6 +44,10 @@
 
   ?*PRODUCE-C0-AHEAD-TIME* = 150
   ?*PRODUCE-C0-LATEST-TIME* = 30
+  ?*PRODUCE-CX-AHEAD-TIME* = 90
+  ?*PRODUCE-CX-LATEST-TIME* = 30
+  ?*PRODUCE-CAP-AHEAD-TIME* = 90
+  ?*PRODUCE-RING-AHEAD-TIME* = 120
 
   ?*DELIVER-AHEAD-TIME* = 60
   ?*DELIVER-LATEST-TIME* = 10
@@ -287,6 +291,75 @@
                                         )))
   ; (assert (goal-already-tried PRODUCE-C0))
 )
+
+
+(deffunction tac-ring-mount-time (?complexity ?rings)
+  "Determine time to mount the remaining rings plus cap"
+  (bind ?max-rings (eval (sub-string 2 3 (str-cat ?complexity))))
+  (return (+ (* (- ?max-rings ?rings) ?*PRODUCE-RING-AHEAD-TIME*) ?*PRODUCE-CAP-AHEAD-TIME*))
+)
+
+
+(defrule goal-reasoner-create-mount-first-ring
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  ;Robot CEs
+  (wm-fact (key domain fact self args?         r ?robot))
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
+  ;MPS-RS CEs
+  (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
+  (wm-fact (key domain fact mps-state args?      m ?mps-rs s ~BROKEN))
+  (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
+  (wm-fact (key domain fact rs-ring-spec args?   m ?mps-rs r ?ring-color rn ?bases-needed))
+  (wm-fact (key domain fact minuend ?bases-filled
+                            subtrahend ?bases-needed
+                            difference ?bases-remain&ZERO|ONE|TWO|THREE))
+  (not (wm-fact (key domain fact rs-prepared-for args?  m ?mps-rs col ?some-col)))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp-rs m ?mps-rs side ?any-rs-side)))
+  ;TODO think a lot about the old CE
+  ; (incoming $?i&~:(member$ PROD_RING ?i))
+  ; and what does it emply for the new locking
+  ;MPS-BS CEs
+  (wm-fact (key domain fact mps-type args?  m ?mps-bs t BS))
+  (wm-fact (key domain fact mps-state args? m ?mps-bs s ~BROKEN))
+  (not (wm-fact (key domain fact wp-at args? wp ?bs-wp m ?mps-bs side ?any-bs-side)))
+  ;Order CEs
+  (not (wm-fact (key evaluated fact wp-for-order args? wp ?ord-wp ord ?order)))
+
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  (wm-fact (key refbox order ?order quantity-delivered ?team-color) (value ?qd&:(> ?qr ?qd)))
+  ; (wm-fact (key refbox order ?order delivery-begin) (type UINT)
+    ; (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) (tac-ring-mount-time ?complexity 0)))))
+  ; (wm-fact (key refbox order ?order delivery-end) (type UINT)
+    ; (value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-CX-LATEST-TIME*))))
+  ;TODO for multi-agent
+  ; Model old agents constraints
+  ;  (in-production 0))
+  ;  (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
+  (wm-fact (key config rcll allowed-produce-complexity) (values ?complexity))
+  =>
+  (printout t "Goal " MOUNT-FIRST-RING " formulated" crlf)
+  (assert (goal (id MOUNT-FIRST-RING) (priority ?*PRIORITY-DELIVER*)
+                             (parent PRODUCTION-MAINTAIN)
+                             (params robot ?robot
+                                        bs ?mps-bs
+                                        bs-side OUTPUT
+                                        bs-color ?base-color
+                                        mps ?mps-rs
+                                        ring-color ?ring-color
+                                        rs-before ?bases-filled
+                                        rs-after ?bases-remain
+                                        rs-req ?bases-needed
+                                        order ?order
+                                        )))
+  )
+
 
 (defrule goal-reasoner-create-deliver
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
