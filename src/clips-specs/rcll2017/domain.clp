@@ -128,6 +128,20 @@
     ; (domain-fact (name wp-unused) (param-values WP1))
     ; (domain-fact (name wp-spawned-by) (param-values R-1 WP1))
     (domain-fact (name self) (param-values ?self))
+    (domain-fact (name mps-type) (param-values C-CS1 CS))
+    (domain-fact (name mps-type) (param-values C-CS2 CS))
+    (domain-fact (name mps-type) (param-values C-RS1 RS))
+    (domain-fact (name mps-type) (param-values C-RS2 RS))
+    (domain-fact (name mps-type) (param-values C-DS DS))
+    (domain-fact (name mps-type) (param-values C-SS SS))
+    (domain-fact (name mps-type) (param-values C-BS BS))
+    (domain-fact (name mps-type) (param-values M-CS1 CS))
+    (domain-fact (name mps-type) (param-values M-CS2 CS))
+    (domain-fact (name mps-type) (param-values M-RS1 RS))
+    (domain-fact (name mps-type) (param-values M-RS2 RS))
+    (domain-fact (name mps-type) (param-values M-DS DS))
+    (domain-fact (name mps-type) (param-values M-SS SS))
+    (domain-fact (name mps-type) (param-values M-BS BS))
     (domain-fact (name location-free) (param-values START INPUT))
     (domain-fact (name location-free) (param-values ?bs INPUT))
     (domain-fact (name location-free) (param-values ?bs OUTPUT))
@@ -141,7 +155,7 @@
     (domain-fact (name location-free) (param-values ?rs1 OUTPUT))
     (domain-fact (name location-free) (param-values ?rs2 INPUT))
     (domain-fact (name location-free) (param-values ?rs2 OUTPUT))
-    
+
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
     (domain-fact (name mps-team) (param-values ?ss ?team-color))
@@ -149,7 +163,6 @@
     (domain-fact (name mps-team) (param-values ?cs2 ?team-color))
     (domain-fact (name mps-team) (param-values ?rs1 ?team-color))
     (domain-fact (name mps-team) (param-values ?rs2 ?team-color))
-    
     (domain-fact (name mps-type) (param-values ?bs BS))
     (domain-fact (name mps-type) (param-values ?ds DS))
     (domain-fact (name mps-type) (param-values ?ss SS))
@@ -229,7 +242,7 @@
    (domain-fact (name mirror-orientation) (param-values 270 270))
    (domain-fact (name mirror-orientation) (param-values 315 225))
 
-     ) 
+     )
 
   (assert (domain-facts-loaded))
 )
