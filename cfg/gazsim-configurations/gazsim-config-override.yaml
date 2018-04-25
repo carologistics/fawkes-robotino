@@ -114,11 +114,14 @@ plugins/mongodb:
   clients:
     default/enabled: true
     arbiter/enabled: false
-    robot-memory-distributed-direct/hostport: localhost:27022
     robot-memory-distributed/hosts:
-      - localhost:27022
+      - localhost:27031
+      - localhost:27032
+      - localhost:27033
   replica-sets:
     bootstrap-mongodb/client: default
     managed-sets:
       robot-memory-distributed/hosts:
-        - localhost:27022
+        - localhost:27031
+        - localhost:27032
+        - localhost:27033
