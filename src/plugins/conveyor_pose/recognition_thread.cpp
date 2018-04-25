@@ -1,5 +1,3 @@
-#include <pcl/registration/icp.h>
-#include <pcl/registration/icp_nl.h>
 #include <pcl/registration/transforms.h>
 #include <pcl/filters/filter.h>
 
@@ -9,6 +7,18 @@
 #include <utils/time/clock.h>
 
 using namespace fawkes;
+
+
+double CustomICP::getScaledFitness()
+{
+  double sum_dists = 0;
+  for (const pcl::Correspondence &corr : *correspondences_) {
+    if (corr.index_match >= 0)
+      sum_dists += double(std::sqrt(corr.distance));
+  }
+  return double(correspondences_->size()) / sum_dists;
+}
+
 
 RecognitionThread::RecognitionThread(ConveyorPoseThread *cp_thread)
   : Thread("CorrespondenceGrouping", Thread::OPMODE_WAITFORWAKEUP)
@@ -77,7 +87,7 @@ void RecognitionThread::loop()
   point_representation.setRescaleValues (alpha);
 
   // Align
-  pcl::IterativeClosestPointNonLinear<pcl::PointNormal, pcl::PointNormal> reg;
+  CustomICP reg;
   reg.setTransformationEpsilon (1e-6);
   reg.setMaxCorrespondenceDistance (double(main_thread_->cfg_icp_max_corr_dist_));
   reg.setPointRepresentation (boost::make_shared<const MyPointRepresentation> (point_representation));
@@ -119,11 +129,13 @@ void RecognitionThread::loop()
   }
 
   CloudPtr aligned_model(new Cloud());
-  pcl::copyPointCloud(*model_with_normals, *aligned_model);
+  pcl::copyPointCloud(*reg_result, *aligned_model);
   main_thread_->cloud_publish(aligned_model, main_thread_->cloud_out_model_);
 
-  double new_fitness = (1 / reg.getFitnessScore())
-      / double(std::min(model_with_normals->size(), scene_with_normals->size()));
+
+  /*double new_fitness = (1 / reg.getFitnessScore())
+      / double(std::min(model_with_normals->size(), scene_with_normals->size()));*/
+  double new_fitness = reg.getScaledFitness();
 
   { MutexLocker locked2(&main_thread_->bb_mutex_);
 
