@@ -128,6 +128,7 @@
     ; (domain-fact (name wp-unused) (param-values WP1))
     ; (domain-fact (name wp-spawned-by) (param-values R-1 WP1))
     (domain-fact (name self) (param-values ?self))
+    (domain-fact (name at) (param-values ?self START INPUT))
     (domain-fact (name location-free) (param-values START INPUT))
     (domain-fact (name location-free) (param-values ?bs INPUT))
     (domain-fact (name location-free) (param-values ?bs OUTPUT))
