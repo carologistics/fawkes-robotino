@@ -459,23 +459,26 @@ ConveyorPoseThread::record_model()
 void
 ConveyorPoseThread::set_current_station(std::string station)
 {
-  logger->log_info(name(), "Set Station to: %s", station.c_str());
+  if (station != bb_pose_->current_station()) {
+    logger->log_info(name(), "Set Station to: %s", station.c_str());
 
-  { MutexLocker locked(&bb_mutex_);
-    icp_cancelled_ = true;
-    bb_pose_->set_current_station(station.c_str());
-    result_fitness_ = std::numeric_limits<double>::min();
-    bb_pose_->set_euclidean_fitness(result_fitness_);
-    bb_pose_->write();
-  }
+    { MutexLocker locked(&bb_mutex_);
+      icp_cancelled_ = true;
+      bb_pose_->set_current_station(station.c_str());
+      result_fitness_ = std::numeric_limits<double>::min();
+      bb_pose_->set_euclidean_fitness(result_fitness_);
+      bb_pose_->write();
+      recognition_thread_->initial_guess_tracked_fitness_ = std::numeric_limits<double>::min();
+    }
 
-  auto map_it = station_to_model_.find(station);
-  if (map_it == station_to_model_.end())
-    logger->log_error(name(), "Invalid station name: %s", station.c_str());
-  else {
-    MutexLocker locked(&cloud_mutex_);
-    model_with_normals_ = map_it->second;
-    current_station_ = station;
+    auto map_it = station_to_model_.find(station);
+    if (map_it == station_to_model_.end())
+      logger->log_error(name(), "Invalid station name: %s", station.c_str());
+    else {
+      MutexLocker locked(&cloud_mutex_);
+      model_with_normals_ = map_it->second;
+      current_station_ = station;
+    }
   }
 }
 
