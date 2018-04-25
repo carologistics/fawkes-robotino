@@ -83,8 +83,8 @@ MPSLaserGenThread::loop()
 	std::vector<fawkes::NavGraphNode> nodes = navgraph->nodes();
   navgraph.unlock();
 
-  const float mps_length = 0.70;
-  const float mps_width  = 0.34;
+  const float mps_length = cfg_mps_length_;
+  const float mps_width  = cfg_mps_width_;
 
   const float mps_length_2 = mps_length / 2.;
   const float mps_width_2 = mps_width / 2.;
@@ -268,3 +268,9 @@ MPSLaserGenThread::finalize()
 	blackboard->close(laser_if_);
 }
 
+void
+MPSLaserGenThread::load_config()
+{
+  cfg_mps_length_ = config->get_int((mps_laser_gen_cfg_prefix + "mps_length").c_str());
+  cfg_mps_width_ = config->get_int((mps_laser_gen_cfg_prefix + "mps_width").c_str());
+}
