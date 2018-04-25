@@ -510,93 +510,6 @@
   (retract ?cv)
 )
 
-(defrule start-exploration-goal
-  (not (goal (id EXPLORATION)))
-  (wm-fact (key refbox phase) (type UNKNOWN) (value EXPLORATION))
-  (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
-  =>
-  (assert (goal (id EXPLORATION) (type ACHIEVE)))
-)
-
-(defrule expand-exploration-goal
-  ?g <- (goal (id EXPLORATION) (mode SELECTED))
-  =>
-  (modify ?g (mode EXPANDED))
-)
-
-;Read exploration rows from config
-(defrule exp-cfg-get-row
-  "Read configuration for exploration row order of machines"
-  (declare (salience ?*PRIORITY-WM*))
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  (wm-fact (key domain fact self args? r ?robot-name))
-  (wm-fact (key refbox team-color) (value ?team))
-  (wm-fact
-    (id ?id&:(eq ?id (str-cat "/config/rcll/route/" ?team "/" ?robot-name)))
-    (values $?route)
-  )
-=>
-  (assert (exp-route ?route)
-  )
-  (printout t "Exploration route: " ?route " " ?team " " ?robot-name crlf)
-)
-
-(defrule exp-start
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  (not (timer (name send-machine-reports)))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (NavigatorInterface (id "Navigator") (max_velocity ?max-velocity) (max_rotation ?max-rotation))
-=>
-  (assert (state EXP_IDLE)
-          (timer (name send-machine-reports))
-          (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
-          (exp-repeated-search-limit 4)
-  )
-  (if (eq ?team-color nil) then
-    (printout error "Ouch, starting exploration but I don't know my team color" crlf)
-  )
-  (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
-)
-
-
-(defrule exp-set-next-node
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  (exp-route $?route)
-  (state EXP_IDLE)
-=>
-  (do-for-all-facts ((?nn exp-next-node)) TRUE (retract ?nn))
-  (if (<= ?*EXP-ROUTE-IDX* (length$ ?route)) then
-    (assert (exp-next-node (node (nth$ ?*EXP-ROUTE-IDX* ?route))))
-  else
-    ; Currently unused
-    (assert (exp-do-clusters))
-  )
-)
-
-
-(defrule exp-goto-next
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  (wm-fact (key domain fact self args? r ?r))
-  ?s <- (state ?state&:(or (eq ?state EXP_START) (eq ?state EXP_IDLE)))
-  (exp-next-node (node ?next-node))
-  (navgraph-node (name ?next-node))
-  (exp-navigator-vmax ?max-velocity ?max-rotation)
-  (or
-    (NavGraphWithMPSGeneratorInterface (final TRUE))
-    (NavGraphWithMPSGeneratorInterface (msgid 0))
-    (not (NavGraphWithMPSGeneratorInterface))
-  )
-=>
-  (printout t "Goto next node " ?next-node crlf)
-  (retract ?s)
-  (assert
-    (state EXP_GOTO_NEXT)
-  )
-  (navigator-set-speed ?max-velocity ?max-rotation)
-  (bind ?skill-id (skill-call move-node (create$ r z) (create$ ?r ?next-node)))
-)
-
-
 (defrule exp-node-blocked
   (goal (id EXPLORATION) (mode DISPATCHED))
   (wm-fact (key domain fact self args? r ?r))
@@ -622,44 +535,15 @@
   (assert (state EXP_IDLE))
 )
 
-
-(defrule exp-goto-next-failed
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  ?s <- (state EXP_GOTO_NEXT)
-  ?skill <- (skill (name move-node) (status S_FAILED))
-  (exp-next-node (node ?node))
-  (navgraph-node (name ?node) (pos $?node-trans))
-
-  (Position3DInterface (id "Pose") (translation $?trans))
-  (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
-=>
-  (if (< (distance-mf ?node-trans ?trans) 1.5) then
-    (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
-  )
-  (retract ?s ?skill)
-  (navigator-set-speed ?max-velocity ?max-rotation)
-  (assert
-    (exp-searching)
-    (state EXP_IDLE)
-  )
+(defrule goal-reasoner-create-exploration-goal
+  (not (goal (id EXPLORATION)))
+  (wm-fact (key domain fact self args? r ?r))
+  (wm-fact (key domain fact entered-field args? r ?r))
+  (wm-fact (key refbox phase) (type UNKNOWN) (value EXPLORATION))
+  (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
+  =>
+  (assert (goal (id EXPLORATION) (type ACHIEVE)))
 )
-
-
-(defrule exp-goto-next-final
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  ?s <- (state EXP_GOTO_NEXT)
-  ?skill <- (skill (name move-node) (status S_FINAL))
-  (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
-=>
-  (retract ?s ?skill)
-  (navigator-set-speed ?max-velocity ?max-rotation)
-  (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
-  (assert
-    (exp-searching)
-    (state EXP_IDLE)
-  )
-)
-
 
 (defrule exp-passed-through-quadrant
   "We're driving slowly through a certain quadrant: reason enough to believe there's no machine here."
