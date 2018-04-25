@@ -266,7 +266,9 @@ GripperAX12AThread::loop()
         is_final &= !z_alignment_pending;
         is_final &= now > (motion_start_timestamp_ + 0.5);
         __gripper_if->set_final(is_final);
-        goto_gripper(__servo_if_left->angle(), __servo_if_right->angle());
+        if (is_final == false) {
+            goto_gripper(__servo_if_left->angle(), __servo_if_right->angle());
+        }
       }
 
 
