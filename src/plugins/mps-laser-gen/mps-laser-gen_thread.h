@@ -84,6 +84,9 @@ class MPSLaserGenThread
   ros::Publisher vispub_;
   std::string mps_laser_gen_cfg_prefix;
   std::map<std::string, MPS> mpses;
+
+  bool cfg_enable_mps_laser_gen_;
+  bool cfg_enable_mps_box_filter_;
   float cfg_mps_length_;
   float cfg_mps_width_;
 

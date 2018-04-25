@@ -252,6 +252,8 @@ MPSLaserGenThread::finalize()
 void
 MPSLaserGenThread::load_config()
 {
-  cfg_mps_length_ = config->get_int((mps_laser_gen_cfg_prefix + "mps_length").c_str());
-  cfg_mps_width_ = config->get_int((mps_laser_gen_cfg_prefix + "mps_width").c_str());
+  cfg_enable_mps_laser_gen_ = config->get_bool((mps_laser_gen_cfg_prefix + "enable_laser_gen").c_str());
+  cfg_enable_mps_box_filter_ = config->get_bool((mps_laser_gen_cfg_prefix + "enable_mps_box_filter").c_str());
+  cfg_mps_length_ = config->get_float((mps_laser_gen_cfg_prefix + "mps_length").c_str());
+  cfg_mps_width_ = config->get_float((mps_laser_gen_cfg_prefix + "mps_width").c_str());
 }
