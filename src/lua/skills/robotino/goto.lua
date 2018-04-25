@@ -1,9 +1,9 @@
 
 ----------------------------------------------------------------------------
---  goto.lua - 
+--  goto.lua -
 --
 --  Created: Thu Aug 14 14:32:47 2008
---  modified by Victor Mataré
+--  modified by Victor Mataré, David Schmidt
 --              2015  Tobias Neumann
 --
 ----------------------------------------------------------------------------
@@ -25,10 +25,9 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "goto"
-fsm                = SkillHSM:new{name=name, start="CHECK_INPUT"}
+fsm                = SkillHSM:new{name=name, start="CHECK_NAVIGATOR", debug=true}
 depends_skills     = { }
 depends_interfaces = {
---   {v = "pose", type="Position3DInterface", id="Pose"},
    {v = "navigator", type="NavigatorInterface", id="Navigator"},
 }
 
@@ -47,13 +46,6 @@ skillenv.skill_module(_M)
 
 local tf_mod = require 'fawkes.tfutils'
 
--- Tunables
---local REGION_TRANS=0.2
-
-function check_navgraph(self)
-  return self.fsm.vars.place ~= nil and not navgraph
-end
-
 function target_reached()
    if navigator:is_final() and navigator:error_code() ~= 0 then
       return false
@@ -65,8 +57,12 @@ function has_navigator()
    return navigator:has_writer()
 end
 
-function can_navigate(self)
+function has_target_coordinates(self)
    return self.fsm.vars.x ~= nil and self.fsm.vars.y ~= nil and self.fsm.vars.ori ~= nil
+end
+
+function has_place(self)
+   return self.fsm.vars.place ~= nil
 end
 
 function target_unreachable()
@@ -77,32 +73,33 @@ function target_unreachable()
 end
 
 fsm:define_states{ export_to=_M,
-  closure={check_navgraph=check_navgraph, reached_target_region=reached_target_region, has_navigator=has_navigator},
-  {"CHECK_INPUT",   JumpState},
-  {"WAIT_TF",       JumpState},
+  closure={has_navigator=has_navigator},
+  {"CHECK_NAVIGATOR",   JumpState},
+  {"COMPUTE_COORDINATES_BY_PLACE",       JumpState},
   {"INIT",          JumpState},
   {"MOVING",        JumpState},
   {"TIMEOUT",       JumpState},
 }
 
 fsm:add_transitions{
-  {"CHECK_INPUT", "FAILED", cond="not has_navigator()", desc="Navigator not running"},
-  {"CHECK_INPUT", "INIT", cond=can_navigate},
-  {"CHECK_INPUT", "WAIT_TF", cond=true},
-  {"WAIT_TF", "INIT", cond=can_navigate},
-  {"INIT",  "FAILED",         precond=check_navgraph, desc="no navgraph"},
-  {"INIT",  "FAILED",         cond="not vars.target_valid",                 desc="target invalid"},
-  {"INIT",  "MOVING",         cond=true},
+  {"CHECK_NAVIGATOR", "FAILED", cond="not has_navigator()", desc="Navigator not running"},
+  {"CHECK_NAVIGATOR", "MOVING", cond=has_target_coordinates},
+  {"CHECK_NAVIGATOR", "COMPUTE_COORDINATES_BY_PLACE", cond=has_place},
+  {"CHECK_NAVIGATOR", "FAILED", cond=true, desc="missing target information"},
+  {"COMPUTE_COORDINATES_BY_PLACE", "MOVING", cond=has_target_coordinates, desc="finished computing coordinates"},
+  {"COMPUTE_COORDINATES_BY_PLACE", "FAILED", timeout=10, desc="computation of coordinates by place failed"},
   {"MOVING", "TIMEOUT",       timeout=2}, -- Give the interface some time to update
   {"TIMEOUT", "FINAL",         cond=target_reached, desc="Target reached"},
   {"TIMEOUT", "FAILED",        cond=target_unreachable, desc="Target unreachable"},
 }
 
+function CHECK_NAVIGATOR:init()
+   if self.fsm.vars.place == nil and (self.fsm.vars.x == nil or self.fsm.vars.y == nil or self.fsm.vars.ori == nil) then
+      print_error("Skill goto is missing arguments, either place or x, y, ori")
+   end
+end
 
-function INIT:init()
-  self.fsm.vars.target_valid = true
-
-
+function COMPUTE_COORDINATES_BY_PLACE:loop()
   if self.fsm.vars.place ~= nil then
     if string.match(self.fsm.vars.place, "[MC][-]Z[1-7][1-8]") then
       -- place argument is a zone, e.g. M-Z21
@@ -115,36 +112,30 @@ function INIT:init()
     else
       -- place argument is a navgraph point
       local node = navgraph:node(self.fsm.vars.place)
-      if node:is_valid() then
-        self.fsm.vars.x = node:x()
-        self.fsm.vars.y = node:y()
-        if node:has_property("orientation") then
-          self.fsm.vars.ori = node:property_as_float("orientation");
-        end
+      if not node:is_valid() then
+        print_warn("Navgraph node is invalid. Navgraph computation probably still running!")
+        return
+      end
+      local cur_pose = tf_mod.transform({x=0, y=0, ori=0}, "base_link", "map")
+      if cur_pose == nil then
+        print_warn("Failed to load transform from 'base_link' to 'map'!")
+        return
+      end
+      self.fsm.vars.x = node:x()
+      self.fsm.vars.y = node:y()
+      if node:has_property("orientation") then
+        self.fsm.vars.ori = node:property_as_float("orientation");
       else
-        self.fsm.vars.target_valid = false
+        self.fsm.vars.ori = cur_pose.ori
       end
     end
-  end 
-
-  self.fsm.vars.region_trans = self.fsm.vars.region_trans or REGION_TRANS
-end
-
-function WAIT_TF:loop()
-   local cur_pose = tf_mod.transform({x=0, y=0, ori=0}, "base_link", "map")
-   if cur_pose == nil then
-      print_warn("Failed to transform from 'base_link' to 'map'!")
-      return
-   end
-   self.fsm.vars.x   = cur_pose.x
-   self.fsm.vars.y   = cur_pose.y
-   self.fsm.vars.ori = cur_pose.ori
+  else
+    print_error("Missing argument 'place'!")
+  end
 end
 
 function MOVING:init()
    self.fsm.vars.msgid_timeout = os.time() + 1
-
-   print(self.fsm.vars.ori)
 
    local msg = navigator.CartesianGotoWithFrameMessage:new(
       self.fsm.vars.x,
