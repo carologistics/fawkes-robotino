@@ -49,8 +49,8 @@ class MPSLaserGenThread : public fawkes::Thread,
                           public fawkes::ROSAspect,
                           public fawkes::TransformAspect {
 
-public:
-  MPSLaserGenThread();
+ public:
+  MPSLaserGenThread(std::string mps_laser_gen_prefix);
 
   virtual void init();
   virtual void finalize();
@@ -63,6 +63,8 @@ protected:
 private:
   fawkes::Laser360Interface *laser_if_;
   ros::Publisher vispub_;
+  std::string mps_laser_gen_cfg_prefix;
+
 };
 
 #endif
