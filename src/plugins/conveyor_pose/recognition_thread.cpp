@@ -22,6 +22,7 @@ double CustomICP::getScaledFitness()
 
 RecognitionThread::RecognitionThread(ConveyorPoseThread *cp_thread)
   : Thread("CorrespondenceGrouping", Thread::OPMODE_WAITFORWAKEUP)
+  , TransformAspect(fawkes::TransformAspect::BOTH, "conveyor_pose_initial_guess")
   , main_thread_(cp_thread)
   , initial_guess_tracked_fitness_(std::numeric_limits<double>::min())
 {
@@ -45,6 +46,7 @@ void RecognitionThread::loop()
   pcl::PointCloud<pcl::PointNormal>::Ptr model_with_normals(new pcl::PointCloud<pcl::PointNormal>());
   pcl::PointCloud<pcl::PointNormal>::Ptr scene_with_normals(new pcl::PointCloud<pcl::PointNormal>());
   Eigen::Matrix4f initial_tf;
+  tf::Stamped<tf::Pose> initial_pose_cam;
 
   { fawkes::MutexLocker locked { &main_thread_->cloud_mutex_ };
 
@@ -55,13 +57,15 @@ void RecognitionThread::loop()
     pcl::removeNaNFromPointCloud(*scene_with_normals, *scene_with_normals, tmp);
     scene_with_normals->header = main_thread_->scene_with_normals_->header;
 
-    tf::Stamped<tf::Pose> initial_pose_cam;
     try {
-      if (initial_guess_tracked_fitness_ >= main_thread_->cfg_icp_track_odom_min_fitness_)
+      if (initial_guess_tracked_fitness_ >= main_thread_->cfg_icp_track_odom_min_fitness_
+          || ( !main_thread_->have_laser_line_
+               && initial_guess_tracked_fitness_ >= main_thread_->cfg_icp_track_odom_min_fitness_ / 2) ) {
         tf_listener->transform_pose(
               scene_with_normals->header.frame_id,
               tf::Stamped<tf::Pose>(initial_guess_icp_odom_, Time(0,0), initial_guess_icp_odom_.frame_id),
               initial_pose_cam);
+      }
       else {
         if (main_thread_->have_laser_line_)
           tf_listener->transform_pose(
@@ -78,8 +82,14 @@ void RecognitionThread::loop()
     } catch (tf::TransformException &e) {
       logger->log_error(name(), e);
     }
-    initial_tf = pose_to_eigen(initial_pose_cam);
   }
+
+  initial_tf = pose_to_eigen(initial_pose_cam);
+
+  tf_publisher->send_transform(
+        tf::StampedTransform(
+          initial_pose_cam, initial_pose_cam.stamp,
+          initial_pose_cam.frame_id, "conveyor_pose_initial_guess"));
 
   MyPointRepresentation point_representation;
   // weigh the 'curvature' dimension so that it is balanced against x, y, and z
@@ -132,35 +142,39 @@ void RecognitionThread::loop()
   pcl::copyPointCloud(*reg_result, *aligned_model);
   main_thread_->cloud_publish(aligned_model, main_thread_->cloud_out_model_);
 
+  tf::Stamped<tf::Pose> result_pose {
+    eigen_to_pose(Ti * initial_tf),
+    Time { long(scene_with_normals->header.stamp) / 1000 },
+    scene_with_normals->header.frame_id
+  };
+
+  constrainTransformToGround(result_pose);
 
   /*double new_fitness = (1 / reg.getFitnessScore())
       / double(std::min(model_with_normals->size(), scene_with_normals->size()));*/
   double new_fitness = reg.getScaledFitness();
 
   { MutexLocker locked2(&main_thread_->bb_mutex_);
-
-    main_thread_->result_fitness_ = new_fitness;
-    main_thread_->result_pose_.set_data(eigen_to_pose(Ti * initial_tf));
-    main_thread_->result_pose_.frame_id = scene_with_normals->header.frame_id;
-    main_thread_->result_pose_.stamp = Time { long(scene_with_normals->header.stamp) / 1000 };
-    constrainTransformToGround(main_thread_->result_pose_);
-
-    if (new_fitness > initial_guess_tracked_fitness_) {
-      try {
-        tf_listener->transform_pose(
-              "odom",
-              tf::Stamped<tf::Pose>(main_thread_->result_pose_, Time(0,0), main_thread_->result_pose_.frame_id),
-              initial_guess_icp_odom_);
-        initial_guess_tracked_fitness_ = new_fitness;
-
-      } catch(tf::TransformException &e) {
-        logger->log_error(name(), e);
-      }
+    if (!main_thread_->icp_cancelled_) {
+      main_thread_->result_fitness_ = new_fitness;
+      main_thread_->result_pose_.reset(new tf::Stamped<tf::Pose> { result_pose });
     }
+  } // MutexLocker
 
-    main_thread_->pose_write();
-    main_thread_->pose_publish_tf(main_thread_->result_pose_);
+  if (new_fitness > initial_guess_tracked_fitness_) {
+    try {
+      tf_listener->transform_pose(
+            "odom",
+            tf::Stamped<tf::Pose>(result_pose, Time(0,0), result_pose.frame_id),
+            initial_guess_icp_odom_
+      );
+      initial_guess_tracked_fitness_ = new_fitness;
+
+    } catch(tf::TransformException &e) {
+      logger->log_error(name(), e);
+    }
   }
+
 }
 
 void RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::tf::Pose>& fittedPose_conv){
