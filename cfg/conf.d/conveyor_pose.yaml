@@ -17,7 +17,7 @@ plugins/conveyor_pose:
   # no recognition is done when this is enabled.
   # If the target file already exists, an increasing integer is appended until
   # a file is found that doesn't exist, yet.
-  record_model: true
+  record_model: false
 
   # If recording is enabled, a PCD file is written to CONFDIR "/" record path
   # (e.g.: conveyor_model_.pcd)
