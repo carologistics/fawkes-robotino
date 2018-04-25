@@ -53,7 +53,7 @@ class MPSLaserGenThread
 {
 
  public:
-  MPSLaserGenThread();
+  MPSLaserGenThread(std::string mps_laser_gen_prefix);
 
   virtual void init();
   virtual void finalize();
@@ -65,6 +65,7 @@ class MPSLaserGenThread
  private:
   fawkes::Laser360Interface* laser_if_;
   ros::Publisher vispub_;
+  std::string mps_laser_gen_cfg_prefix;
 
 };
 
