@@ -503,9 +503,11 @@ NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::UpdateStationByTag
   memset(data_ptr, 0, data_size);
   data      = (UpdateStationByTagMessage_data_t *)data_ptr;
   data_ts   = (message_data_ts_t *)data_ptr;
-  strncpy(data->name, ini_name, 64);
+  strncpy(data->name, ini_name, 64-1);
+  data->name[64-1] = 0;
   data->side = ini_side;
-  strncpy(data->frame, ini_frame, 32);
+  strncpy(data->frame, ini_frame, 32-1);
+  data->frame[32-1] = 0;
   memcpy(data->tag_translation, ini_tag_translation, sizeof(double) * 3);
   memcpy(data->tag_rotation, ini_tag_rotation, sizeof(double) * 4);
   memcpy(data->zone_coords, ini_zone_coords, sizeof(int16_t) * 2);
@@ -586,7 +588,8 @@ NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::maxlenof_name() co
 void
 NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::set_name(const char * new_name)
 {
-  strncpy(data->name, new_name, sizeof(data->name));
+  strncpy(data->name, new_name, sizeof(data->name)-1);
+  data->name[sizeof(data->name)-1] = 0;
 }
 
 /** Get side value.
@@ -650,7 +653,8 @@ NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::maxlenof_frame() c
 void
 NavGraphWithMPSGeneratorInterface::UpdateStationByTagMessage::set_frame(const char * new_frame)
 {
-  strncpy(data->frame, new_frame, sizeof(data->frame));
+  strncpy(data->frame, new_frame, sizeof(data->frame)-1);
+  data->frame[sizeof(data->frame)-1] = 0;
 }
 
 /** Get tag_translation value.

@@ -41,6 +41,7 @@
 		cap-carrier - workpiece
 		shelf-spot - object
 		ring-num - object
+		zone - object
 	)
 
 	(:constants
@@ -446,5 +447,24 @@
 		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT))
                  (not (ds-prepared-gate ?m ?g))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
+	)
+
+
+        (:action move-node
+			:parameters (?r - robot ?z - zone)
+			:precondition (entered-field ?r) 
+			:effect (entered-field ?r)
+	)
+
+	(:action stop
+			:parameters (?r - robot)
+			:precondition (entered-field ?r)
+			:effect (entered-field ?r)
+	)
+
+	(:action explore-zone
+			:parameters (?r - robot ?z - zone)
+			:precondition (entered-field ?r)
+			:effect (entered-field ?r)
 	)
 )
