@@ -109,7 +109,9 @@
   ?g <- (goal (id REFILL-SHELF-MAINTAIN) (mode SELECTED))
   (not (goal (id REFILL-SHELF-ACHIEVE)))
   (time $?now)
+  (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
+  (wm-fact (key domain fact mps-team args? m ?mps t ?team-color))
   (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
   =>
   (assert (goal (id REFILL-SHELF-ACHIEVE) (parent REFILL-SHELF-MAINTAIN)

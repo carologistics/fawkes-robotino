@@ -605,7 +605,6 @@
   (plan-action (id ?action-id2) (action-name ?action-name2) (plan-id ?plan-id) (status FINAL|FAILED))
   ?skill <- (skill (id ?skill-id) (name ?action-name) (status S_RUNNING))
   (zone-exploration (name ?zn))
-  (not (explore-flag))
   =>
   (modify ?skill (status S_FAILED))
   (printout t "EXP formulating zone exploration plan " ?zn crlf)
@@ -614,10 +613,9 @@
     ;(plan-action (id 1) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name lock-resource))
     (plan-action (id 2) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name stop) (param-names r) (param-values ?r))
     (plan-action (id 3) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name explore-zone) (param-names r z) (param-values ?r ?zn))
-    (plan-action (id 4) (plan-id EXPLORE-ZONE) (goal-id EXPLROATION) (action-name evaluation))
+    (plan-action (id 4) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name evaluation))
     ;(plan-action (id 5) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name release-resource))
   )
-  (assert (explore-flag))
 )
 
 
@@ -657,7 +655,7 @@
 (defrule exp-skill-explore-zone-final
   (goal (id EXPLORATION) (mode DISPATCHED))
   (plan-action (action-name explore-zone) (status FINAL))
-  ?pa <- (plan-action (action-name evaluation) (plan EXPLORE-ZONE) (status PENDING))
+  ?pa <- (plan-action (action-name evaluation) (plan-id EXPLORE-ZONE) (status PENDING))
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str)
     (orientation ?orientation) (tag_id ?tag-id) (search_state YES)
   )
@@ -670,7 +668,6 @@
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
   (not (exploration-result
     (machine ?machine) (zone ?zn2)))
-  ?ef <- (explore-flag)
   =>
   (modify ?pa (status FINAL))
  ; (assert
@@ -701,7 +698,6 @@
       )
     )
     (printout t "Exploration successfull. Found " ?machine " in " ?zn2 crlf)
-    (retract ?ef)
   )
 )
 
@@ -713,7 +709,6 @@
   (plan-action (action-name explore-zone) (plan-id EXPLORE-ZONE) (param-values ?r ?zn-str) (status FAILED))
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str) (search_state ?s&:(neq ?s YES)))
   ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (machine ?machine) (times-searched ?times-searched))
-  ?ef <- (explore-flag)
 =>
   (modify ?pa (status FINAL))
   (printout t "Exploration of " ?zn-str " failed" crlf)
@@ -725,7 +720,6 @@
     (modify ?ze (line-visibility 0) (times-searched (+ ?times-searched 1)))
   ;(synced-modify ?ze line-visibility 0 times-searched (+ ?times-searched 1)) TODO synced-modify
   )
-  (retract ?ef)
 )
 
 ; TODO RELEASE LOCKS IF action of subgoal fails
