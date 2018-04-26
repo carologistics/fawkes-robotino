@@ -83,6 +83,17 @@ plugins/conveyor_pose:
         x: -0.01
         y: -0.32
         z: 0.6
+      cap_station:
+        x: 0
+      ring_station:
+        x: 0
+      delivery_station:
+        x: 0.5
+      base_station:
+        x: 0
+      storage_station:
+        x: 0
+
     max_correspondence_dist: 0.01
 
     # Prefer last ICP result over laser line for initial guess if fitness is above this threshold

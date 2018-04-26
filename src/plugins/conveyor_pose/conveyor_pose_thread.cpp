@@ -85,6 +85,11 @@ ConveyorPoseThread::init()
   cfg_hint_["conveyor"]; cfg_hint_["left_shelf"];
   cfg_hint_["middle_shelf"]; cfg_hint_["right_shelf"];
   cfg_hint_["slide"];
+  cfg_hint_["cap_station"];
+  cfg_hint_["ring_station"];
+  cfg_hint_["base_station"];
+  cfg_hint_["delivery_station"];
+  cfg_hint_["storage_station"];
 
   cfg_hint_["conveyor"][0]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/x" );
   cfg_hint_["conveyor"][1]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/y" );
@@ -101,6 +106,25 @@ ConveyorPoseThread::init()
   cfg_hint_["slide"][0]       = config->get_float( CFG_PREFIX "/icp/hint/slide/x" );
   cfg_hint_["slide"][1]       = config->get_float( CFG_PREFIX "/icp/hint/slide/y" );
   cfg_hint_["slide"][2]       = config->get_float( CFG_PREFIX "/icp/hint/slide/z" );
+  cfg_hint_["cap_station"][0] = config->get_float( CFG_PREFIX "/icp/hint/cap_station/x" );
+  cfg_hint_["cap_station"][1] = 0;
+  cfg_hint_["cap_station"][2] = 0;
+  cfg_hint_["ring_station"][0] = config->get_float( CFG_PREFIX "/icp/hint/ring_station/x" );
+  cfg_hint_["ring_station"][1] = 0;
+  cfg_hint_["ring_station"][2] = 0;
+  cfg_hint_["base_station"][0] = config->get_float( CFG_PREFIX "/icp/hint/base_station/x" );
+  cfg_hint_["base_station"][1] = 0;
+  cfg_hint_["base_station"][2] = 0;
+  cfg_hint_["delivery_station"][0] = config->get_float( CFG_PREFIX "/icp/hint/delivery_station/x" );
+  cfg_hint_["delivery_station"][1] = 0;
+  cfg_hint_["delivery_station"][2] = 0;
+  cfg_hint_["storage_station"][0] = config->get_float( CFG_PREFIX "/icp/hint/storage_station/x" );
+  cfg_hint_["storage_station"][1] = 0;
+  cfg_hint_["storage_station"][2] = 0;
+  cfg_hint_["default"][0] = 0;
+  cfg_hint_["default"][1] = 0;
+  cfg_hint_["default"][2] = 0;
+
 
   cfg_icp_track_odom_min_fitness_ = double(config->get_float( CFG_PREFIX "/icp/track_odom_min_fitness" ));
 
@@ -378,15 +402,35 @@ ConveyorPoseThread::loop()
         try {
           if (have_laser_line_) {
             if(current_station_.back() == 'L')
-              set_initial_tf_from_laserline(ll, "left_shelf");
+              set_initial_tf_from_laserline(ll, "cap_station", "left_shelf");
             else if(current_station_.back() == 'M')
-              set_initial_tf_from_laserline(ll, "middle_shelf");
+              set_initial_tf_from_laserline(ll, "cap_station","middle_shelf");
             else if(current_station_.back() == 'R')
-              set_initial_tf_from_laserline(ll, "right_shelf");
+              set_initial_tf_from_laserline(ll, "cap_station", "right_shelf");
             else if(current_station_.back() == 'S')
-              set_initial_tf_from_laserline(ll, "slide");
+              set_initial_tf_from_laserline(ll, "ring_station","slide");
+            else if(current_station_.at(2) == 'C' && current_station_.back() == 'I') // Cap Station Input
+              set_initial_tf_from_laserline(ll,"cap_station","input");
+            else if(current_station_.at(2) == 'C' && current_station_.back() == 'O') // Cap Station Output
+              set_initial_tf_from_laserline(ll,"cap_station","output");
+            else if(current_station_.at(2) == 'R' && current_station_.back() == 'I') // Ring Station Input
+              set_initial_tf_from_laserline(ll,"ring_station","input");
+            else if(current_station_.at(2) == 'R' && current_station_.back() == 'O') // Ring Station Output
+              set_initial_tf_from_laserline(ll,"ring_station","output");
+            else if(current_station_.at(2) == 'B' && current_station_.back() == 'I') // Base Station Output
+              set_initial_tf_from_laserline(ll,"base_station","input");
+            else if(current_station_.at(2) == 'B' && current_station_.back() == 'O') // Base Station Output
+              set_initial_tf_from_laserline(ll,"base_station","output");
+            else if(current_station_.at(2) == 'D' && current_station_.back() == 'I') // Delivery Station Output
+              set_initial_tf_from_laserline(ll,"delivery_station","input");
+            else if(current_station_.at(2) == 'D' && current_station_.back() == 'O') // Delivery Station Output
+              set_initial_tf_from_laserline(ll,"delivery_station","output");
+            else if(current_station_.at(2) == 'S' && current_station_.back() == 'I') // Storage Station Output
+              set_initial_tf_from_laserline(ll,"storage_station","input");
+            else if(current_station_.at(2) == 'S' && current_station_.back() == 'O') // Storage Station Output
+              set_initial_tf_from_laserline(ll,"storage_station","output");
             else
-              set_initial_tf_from_laserline(ll, "conveyor");
+              set_initial_tf_from_laserline(ll, "default","conveyor");
           }
 
           scene_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
@@ -408,7 +452,7 @@ ConveyorPoseThread::loop()
 
 
 void
-ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *line, std::string hint_id)
+ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *line, std::string station_hint_id, std::string side_hint_id)
 {
   tf::Stamped<tf::Pose> initial_guess;
 
@@ -423,9 +467,25 @@ ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *li
 
   // Add distance from line center to conveyor
   initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
-                                  double(cfg_hint_[hint_id][0]),
-                                  double(cfg_hint_[hint_id][1]),
-                                  double(cfg_hint_[hint_id][2]) } );
+                                  double(cfg_hint_[side_hint_id][0]),
+                                  double(cfg_hint_[side_hint_id][1]),
+                                  double(cfg_hint_[side_hint_id][2]) } );
+
+
+  // Add distance offset for station (if output is used, the negative input offset is used)
+
+  if(side_hint_id == "input"){
+    initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
+                                    double(cfg_hint_[station_hint_id][0]),
+                                    double(cfg_hint_[station_hint_id][1]),
+                                    double(cfg_hint_[station_hint_id][2]) } );
+  }else if (side_hint_id == "output"){
+    initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
+                                    double(-cfg_hint_[station_hint_id][0]),
+                                    double(cfg_hint_[station_hint_id][1]),
+                                    double(cfg_hint_[station_hint_id][2]) } );
+  }
+
   initial_guess.setRotation(
         tf::Quaternion(tf::Vector3(0,1,0), -M_PI/2)
       * tf::Quaternion(tf::Vector3(0,0,1), M_PI/2));
@@ -880,6 +940,16 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         change_val(opt, cfg_hint_["slide"][1], v->get_float());
       else if (opt == "/hint/slide/z")
         change_val(opt, cfg_hint_["slide"][2], v->get_float());
+      else if (opt == "/hint/base_station/x")
+        change_val(opt, cfg_hint_["base_station"][0], v->get_float());
+      else if (opt == "/hint/cap_station/x")
+        change_val(opt, cfg_hint_["cap_station"][0], v->get_float());
+      else if (opt == "/hint/ring_station/x")
+        change_val(opt, cfg_hint_["ring_station"][0], v->get_float());
+      else if (opt == "/hint/delivery_station/x")
+        change_val(opt, cfg_hint_["delivery_station"][0], v->get_float());
+      else if (opt == "/hint/storage_station/x")
+        change_val(opt, cfg_hint_["storage_station"][0], v->get_float());
     }
     MutexLocker locked2 { &cloud_mutex_ };
     recognition_thread_->initial_guess_tracked_fitness_ = std::numeric_limits<double>::min();
