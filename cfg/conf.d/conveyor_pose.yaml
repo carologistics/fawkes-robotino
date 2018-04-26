@@ -80,10 +80,10 @@ plugins/conveyor_pose:
         x: -0.01
         y: -0.32
         z: 0.6
-    max_correspondence_dist: 0.007
+    max_correspondence_dist: 0.01
 
     # Prefer last ICP result over laser line for initial guess if fitness is above this threshold
-    track_odom_min_fitness: 1000
+    track_odom_min_fitness: 8
 
   if:
     # the prefix used for all interfaces
