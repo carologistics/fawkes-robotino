@@ -32,7 +32,7 @@ depends_interfaces = {
 
 documentation      = [==[The robot needs to be aligned with the machine, then just drives forward
 and opens the gripper
-@param offset_x the offset_x from the navgraph point
+@param offset_x the offset_x from the navgraph point, default in cfg/conf.d/skills.yaml:skills/product_pick/offset_x
 ]==]
 
 -- the angle to open the gripper after the first grasp
@@ -88,6 +88,13 @@ fsm:add_transitions{
 }
 
 function OPEN_GRIPPER:init()
+   if self.fsm.vars.offset_x == nil then
+      self.fsm.vars.offset_x = - 0.01
+      if config:exists("/skills/product_pick/offset_x") then
+         self.fsm.vars.offset_x = config:get_float("/skills/product_pick/offset_x")
+      end
+   end
+
    self.args["ax12gripper"].command = "OPEN"
    printf("open gripper")
 end

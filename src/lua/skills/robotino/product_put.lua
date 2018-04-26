@@ -30,7 +30,7 @@ depends_interfaces = { }
 
 documentation      = [==[The robot needs to be aligned with the machine, then just drives forward
 and opens the gripper
-@param offset_x the offset_x from the navgraph point
+@param offset_x the offset_x from the navgraph point, default in cfg/conf.d/skills.yaml:skills/product_put/offset_x
 ]==]
 
 
@@ -77,6 +77,13 @@ fsm:add_transitions{
 }
 
 function DRIVE_FORWARD:init()
+   if self.fsm.vars.offset_x == nil then
+      self.fsm.vars.offset_x = - 0.01
+      if config:exists("/skills/product_put/offset_x") then
+         self.fsm.vars.offset_x = config:get_float("/skills/product_put/offset_x")
+      end
+   end
+
    self.args["approach_mps"].x = x_distance - self.fsm.vars.offset_x
    self.args["approach_mps"].use_conveyor = true
 end

@@ -99,30 +99,22 @@ function SKILL_PRODUCT_PICK:init()
    if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
       if navgraph:node(self.fsm.vars.place):has_property("input_offset_x") then
          self.args["product_pick"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_x")
-      else
-         self.args["product_pick"].offset_x = 0
-      end 
+      end
    else --if no side is given get from output
       if navgraph:node(self.fsm.vars.place):has_property("output_offset_x") then
          self.args["product_pick"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_x")
-      else
-         self.args["product_pick"].offset_x = 0
-      end 
-   end 
+      end
+   end
 end
 
 function SKILL_PRODUCT_PUT:init()
    if self.fsm.vars.side == "output" then
       if navgraph:node(self.fsm.vars.place):has_property("output_offset_x") then
          self.args["product_put"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_x")
-      else
-         self.args["product_put"].offset_x = 0
-      end 
+      end
    else
       if navgraph:node(self.fsm.vars.place):has_property("input_offset_x") then
          self.args["product_put"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_x")
-      else
-         self.args["product_put"].offset_x = 0
       end
-   end 
+   end
 end

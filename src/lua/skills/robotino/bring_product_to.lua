@@ -137,10 +137,6 @@ function RE_MPS_ALIGN:init()
 			}
 end
 
-function SKILL_PRODUCT_PUT:init()
-   self.args["product_put"].offset_x = 0 
-end
-
 function SKILL_SHELF_PUT:init()
    -- Just hand through the Shelf position
    self.args["shelf_put"].slot = self.fsm.vars.shelf

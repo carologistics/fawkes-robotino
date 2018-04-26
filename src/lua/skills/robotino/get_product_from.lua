@@ -101,11 +101,6 @@ function CONVEYOR_ALIGN:init()
    end
 end
 
-
-function SKILL_PRODUCT_PICK:init()
-   self.args["product_pick"].offset_x = 0 
-end
-
 function SKILL_SHELF_PICK:init()
    self.args["shelf_pick"] = {slot = self.fsm.vars.shelf}
 end
