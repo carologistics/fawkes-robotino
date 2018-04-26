@@ -193,6 +193,7 @@ end
 
 function DRIVE:init()
    local pose = pose_des(self)
+   print_info("Motor move to %f,%f ori %f", pose.x, pose.y, pose.ori)
    self.args["motor_move"] = {x = pose.x, y = pose.y, ori = pose.ori, tolerance = { x=0.002, y=0.002, ori=0.01 }, vel_trans = 0.05} --TODO set tolerances as defined in the global variable
    local z_position = round(pose.z * 1000)
    print("z_pose: " .. pose.z)

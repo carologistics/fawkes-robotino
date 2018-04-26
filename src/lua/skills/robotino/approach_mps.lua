@@ -70,13 +70,6 @@ function transformed_pose(self)
 end
 
 function conveyor_ready(self)
-  if self.fsm.vars.x == nil then
-    self.fsm.vars.x = 0.27
-    if config:exists("/skills/approach_mps/x_dist") then
-      self.fsm.vars.x = config:get_float("/skills/approach_mps/x_dist")
-    end
-  end
-
   if not self.fsm.vars.use_conveyor then
     return false
   end
