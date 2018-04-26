@@ -134,28 +134,28 @@ ConveyorPoseThread::init()
   // Load all model paths, should be "default" if the default model path should be used
 
   station_to_path_.insert({"default",cfg_model_path_});
-  station_to_path_.insert({"M-BS-I", config->get_string(CFG_PREFIX  "/model_files/M-BS-I")});
-  station_to_path_.insert({"M-BS-O", config->get_string(CFG_PREFIX  "/model_files/M-BS-O")});
-  station_to_path_.insert({"C-BS-I", config->get_string(CFG_PREFIX  "/model_files/C-BS-I")});
-  station_to_path_.insert({"C-BS-O", config->get_string(CFG_PREFIX  "/model_files/C-BS-O")});
-  station_to_path_.insert({"M-CS1-I", config->get_string(CFG_PREFIX "/model_files/M-CS1-I")});
-  station_to_path_.insert({"M-CS1-O", config->get_string(CFG_PREFIX "/model_files/M-CS1-O")});
-  station_to_path_.insert({"C-CS1-I", config->get_string(CFG_PREFIX "/model_files/C-CS1-I")});
-  station_to_path_.insert({"C-CS1-O", config->get_string(CFG_PREFIX "/model_files/C-CS1-O")});
-  station_to_path_.insert({"M-CS2-I", config->get_string(CFG_PREFIX "/model_files/M-CS2-I")});
-  station_to_path_.insert({"M-CS2-O", config->get_string(CFG_PREFIX "/model_files/M-CS2-O")});
-  station_to_path_.insert({"C-CS2-I", config->get_string(CFG_PREFIX "/model_files/C-CS2-I")});
-  station_to_path_.insert({"C-CS2-O", config->get_string(CFG_PREFIX "/model_files/C-CS2-O")});
-  station_to_path_.insert({"M-RS1-I", config->get_string(CFG_PREFIX "/model_files/M-RS1-I")});
-  station_to_path_.insert({"M-RS1-O", config->get_string(CFG_PREFIX "/model_files/M-RS1-O")});
-  station_to_path_.insert({"C-RS1-I", config->get_string(CFG_PREFIX "/model_files/C-RS1-I")});
-  station_to_path_.insert({"C-RS1-O", config->get_string(CFG_PREFIX "/model_files/C-RS1-O")});
-  station_to_path_.insert({"M-RS2-I", config->get_string(CFG_PREFIX "/model_files/M-RS2-I")});
-  station_to_path_.insert({"M-RS2-O", config->get_string(CFG_PREFIX "/model_files/M-RS2-O")});
-  station_to_path_.insert({"C-RS2-I", config->get_string(CFG_PREFIX "/model_files/C-RS2-I")});
-  station_to_path_.insert({"C-RS2-O", config->get_string(CFG_PREFIX "/model_files/C-RS2-O")});
-  station_to_path_.insert({"M-DS-I", config->get_string(CFG_PREFIX  "/model_files/M-DS-I")});
-  station_to_path_.insert({"C-DS-I", config->get_string(CFG_PREFIX  "/model_files/C-DS-I")});
+  station_to_path_.insert({"M-BS-I", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/M-BS-I")});
+  station_to_path_.insert({"M-BS-O", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/M-BS-O")});
+  station_to_path_.insert({"C-BS-I", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/C-BS-I")});
+  station_to_path_.insert({"C-BS-O", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/C-BS-O")});
+  station_to_path_.insert({"M-CS1-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-CS1-I")});
+  station_to_path_.insert({"M-CS1-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-CS1-O")});
+  station_to_path_.insert({"C-CS1-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-CS1-I")});
+  station_to_path_.insert({"C-CS1-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-CS1-O")});
+  station_to_path_.insert({"M-CS2-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-CS2-I")});
+  station_to_path_.insert({"M-CS2-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-CS2-O")});
+  station_to_path_.insert({"C-CS2-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-CS2-I")});
+  station_to_path_.insert({"C-CS2-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-CS2-O")});
+  station_to_path_.insert({"M-RS1-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-RS1-I")});
+  station_to_path_.insert({"M-RS1-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-RS1-O")});
+  station_to_path_.insert({"C-RS1-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-RS1-I")});
+  station_to_path_.insert({"C-RS1-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-RS1-O")});
+  station_to_path_.insert({"M-RS2-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-RS2-I")});
+  station_to_path_.insert({"M-RS2-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-RS2-O")});
+  station_to_path_.insert({"C-RS2-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-RS2-I")});
+  station_to_path_.insert({"C-RS2-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-RS2-O")});
+  station_to_path_.insert({"M-DS-I", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/M-DS-I")});
+  station_to_path_.insert({"C-DS-I", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/C-DS-I")});
 
 
   // set not set station_model_path to default model_path
