@@ -43,8 +43,6 @@ Parameters:
 skillenv.skill_module(_M)
 -- constants
 
-function:new_gripper()
-
 ----------------------------------------------------------------------------
 --  get_product_from_general.lua
 --
@@ -65,8 +63,7 @@ function:new_gripper()
 --
 --  Read the full text in the LICENSE.GPL file in the doc directory.
 
--- Initialize module
-module(..., skillenv.module_init)
+
 
 -- Crucial skill information
 name               = "get_product_from_general"
@@ -86,7 +83,7 @@ Parameters:
       @param atmps   optional position at mps shelf, default NO (not at mps at all) : ( NO | LEFT | MIDDLE | RIGHT | CONVEYOR )
 ]==]
 -- Initialize as skill module
-skillenv.skill_module(_M)
+-- skillenv.skill_module(_M)
 -- constants
 
 function new_gripper(self)
@@ -116,7 +113,6 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-   --TODO Read in gripper value
 end
 
 function OLD_BRING_PRODUCT:init()
@@ -130,47 +126,6 @@ function OLD_BRING_PRODUCT:init()
 end
 
 function NEW_BRING_PRODUCT:init()
-
-      self.args["get_product_from_new"].place = self.fsm.vars.place
-      self.args["get_product_from_new"].side  = self.fsm.vars.side
-      self.args["get_product_from_new"].shelf = self.fsm.vars.shelf
-      self.args["get_product_from_new"].slide = self.fsm.vars.slide
-      self.args["get_product_from_new"].atmps = self.fsm.vars.atmps
-
-end
-
-
-
-end
-
-
-fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_if},
-   {"INIT", JumpState},
-   {"OLD_GET_PRODUCT", SkillJumpState, skills={{get_product_from}}, final_to="FINAL", fail_to="FAILED"},
-   {"NEW_GET_PRODUCT", SkillJumpState, skills={{get_product_from_new}}, final_to="FINAL", fail_to="FAILED"},
-}
-
-fsm:add_transitions{
-   {"INIT", "NEW_BRING_PRODUCT", cond=new_gripper() , desc="host says: new gripper"},
-   {"INIT", "OLD_BRING_PRODUCT", cond=false , desc="host says: old gripper"},
-   {"INIT", "FAILED", cond=true, desc= "gripper decision not set"},
-}
-
-function INIT:init()
-   --TODO Read in gripper value  -- self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
-end
-
-function OLD_GET_PRODUCT:init()
-
-      self.args["get_product_from"].place = self.fsm.vars.place
-      self.args["get_product_from"].side  = self.fsm.vars.side
-      self.args["get_product_from"].shelf = self.fsm.vars.shelf
-      self.args["get_product_from"].slide = self.fsm.vars.slide
-      self.args["get_product_from"].atmps = self.fsm.vars.atmps
-
-end
-
-function NEW_GET_PRODUCT:init()
 
       self.args["get_product_from_new"].place = self.fsm.vars.place
       self.args["get_product_from_new"].side  = self.fsm.vars.side
