@@ -609,6 +609,7 @@
   (plan-action (id ?action-id2) (action-name ?action-name2) (plan-id ?plan-id) (status FINAL|FAILED))
   ?skill <- (skill (id ?skill-id) (name ?action-name) (status S_RUNNING))
   (zone-exploration (name ?zn))
+  (not (exploration-result (zone ?zn)))
   =>
   (bind ?new-ts (+ 1 ?ts))
   (modify ?ze (values line-vis 0 time-searched ?new-ts))
@@ -707,6 +708,13 @@
   )
 )
 
+(defrule exp-skill-explore-zone-failed
+  (plan-action (action-name explore-zone) (status FAILED))
+  ?p <- (plan-action (action-name evaluation) (status PENDING))
+  =>
+  (printout t "EXP explore-zone fail, nothing to do for evaluation" crlf)
+  (modify ?p (status FINAL))
+)
 
 ;(defrule exp-skill-explore-zone-failed
 ;  (goal (id EXPLORATION) (mode DISPATCHED))
