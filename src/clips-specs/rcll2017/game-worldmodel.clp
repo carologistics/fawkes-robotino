@@ -58,7 +58,11 @@
   (printout warn "***** Paused, Disabling motor *****" crlf)
   (retract ?sf)
   (assert  (wm-fact (key game state) (type UNKNOWN) (value PAUSED)))
-  (motor-disable)
+;  (motor-disable)
+  (bind ?msg (blackboard-create-msg "MotorInterface::Robotino" "SetMotorStateMessage"))
+  (blackboard-set-msg-field ?msg "motor_state" 1)
+  (blackboard-send-msg ?msg)
+
 )
 
 

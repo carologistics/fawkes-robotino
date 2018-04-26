@@ -26,10 +26,19 @@
   ; (blackboard-open "MotorInterface" "Robotino")
 )
 
-(defrule gripper-init
-        (executive-init)
-        (ff-feature-loaded blackboard)
+(defrule state-estimation-gripper-init
+  (executive-init)
+  (ff-feature-loaded blackboard)
   (not (blackboard-interface (type "AX12GripperInterface") (id "Gripper AX12")))
   =>
   (blackboard-open-reading "AX12GripperInterface" "Gripper AX12")
+)
+
+(defrule state-estimation-motor-interfaces
+  "Open the Navgraph blackboard interfaces ."
+  (executive-init)
+  (ff-feature-loaded blackboard)
+  (not (blackboard-interface (type "MotorInterface") (id "Robotino")))
+  =>
+  (blackboard-open "MotorInterface" "Robotino")
 )
