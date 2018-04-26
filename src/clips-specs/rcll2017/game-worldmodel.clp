@@ -21,7 +21,7 @@
 
 (defrule change-state-ignore
   "State changes are only allowed during play"
-  (wm-fact (key refbox phase ~PRODUCTION&~EXPLORATION&~POST_GAME))
+  (wm-fact (key refbox phase) (value ~PRODUCTION&~EXPLORATION&~POST_GAME))
   (wm-fact (key refbox state) (value ?refbox-state))
   (not (wm-fact (key game state) (value ?refbox-state)))
   =>
@@ -50,12 +50,12 @@
   ; ?sf <- (state ?state&~PAUSED&~WAIT_START)
   ; ?cf <- (change-state ?cs&~RUNNING)
   ; ?rf <- (refbox-state ~?cs)
-  (wm-fact (key refbox phase PRODUCTION|EXPLORATION|POST_GAME))
-  (wm-fact (key game state) (value ?refbox-state&~RUNNING))
+  (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION|POST_GAME))
+  (wm-fact (key refbox state) (value ?refbox-state&~RUNNING))
   ?sf <- (wm-fact (key game state) (value ?game-state&~PAUSED&~WAIT_START))
   ; (not (simulation-is-running))
   =>
-  (printout warn "Paused, disabling motor" crlf)
+  (printout warn "***** Paused, Disabling motor *****" crlf)
   (retract ?sf)
   (assert  (wm-fact (key game state) (type UNKNOWN) (value PAUSED)))
   (motor-disable)
