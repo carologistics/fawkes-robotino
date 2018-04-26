@@ -16,11 +16,9 @@
 )
 
 ; EXPLORATION
-(deftemplate lock
-  (slot type (type SYMBOL) (allowed-values GET REFUSE ACCEPT RELEASE RELEASE_RVCD))
-  (slot agent (type STRING))
+(deftemplate tried-lock
   (slot resource (type SYMBOL))
-  (slot priority (type INTEGER) (default 0))
+  (slot result (type SYMBOL) (allowed-symbols ACCEPT REJECT)) 
 )
 
 
@@ -585,6 +583,7 @@
     (line-visibility ?vh&:(> ?vh 0))
     (times-searched ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*))
   )
+  (not (tried-lock (resource ?zn)))
   ;(not (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn)))  TODO lock REFUSE
 
   ; Neither this zone nor the opposite zone is locked
@@ -607,6 +606,7 @@
   (zone-exploration (name ?zn))
   (not (exploration-result (zone ?zn)))
   =>
+  (assert (tried-lock (resource ?zn) (result REJECT)))
   (bind ?new-vh (+ 1 ?vh))
   (modify ?ze (line-visibility 0) (times-searched ?new-vh))
   (modify ?skill (status S_FAILED))
@@ -638,21 +638,18 @@
   (modify ?*EXP-SEARCH-LIMIT* (+ ?*EXP-SEARCH-LIMIT* 1))
 )
 
-;
-;(defrule exp-tried-locking-all-zones
-;  "There is at least one unexplored zone with a line, but locks have been denied for
-;   ALL unexplored zones. So clear all REFUSEs and start requesting locks from the beginning."
-;  (zone-exploration (name ?) (machine UNKNOWN) (line-visibility ?tmp&:(> ?tmp 0)))
-;  (not
-;    (zone-exploration (name ?zn) (machine UNKNOWN) (line-visibility ?vh&:(> ?vh 0)))
-;    ;(lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn))  TODO lock REFUSE
-;  )
-;=>
-; ; (delayed-do-for-all-facts ((?l lock)) (and (eq ?l:type REFUSE) (eq ?l:agent ?*ROBOT-NAME*))
-; ;   (retract ?l)
-; ; )
-;  (printout warn "empty effect" crlf)
-;)
+
+(defrule exp-tried-locking-all-zones
+  "There is at least one unexplored zone with a line, but locks have been denied for
+   ALL unexplored zones. So clear all REFUSEs and start requesting locks from the beginning."
+   
+  (forall (zone-exploration (name ?zn)) (tried-lock (resource ?zn))
+=>
+  (delayed-do-for-all-facts ((?l tried-lock)) (eq ?l:result REJECT) 
+    (retract ?l)
+  )
+  (printout t "EXP Flushed tried-locks to restart on unsecure zones" crlf)
+)
 
 
 (defrule exp-skill-explore-zone-final
@@ -665,6 +662,7 @@
   (Position3DInterface (id "/explore-zone/found-tag")
     (frame ?frame) (translation $?trans) (rotation $?rot)
   )
+  ?lock <- (tried-lock (resource ?zn-str))
   ; We don't check the visibility_history here since that's already done in the explore_zone skill
   (domain-fact (name tag-matching) (param-values ?machine ?side ?team-color ?tag-id))
   ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (times-searched ?times-searched))
@@ -672,6 +670,7 @@
   (not (exploration-result
     (machine ?machine) (zone ?zn2)))
   =>
+  (modify ?lock (result ACCEPT))
   (modify ?pa (status FINAL))
  ; (assert
  ;   (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))
