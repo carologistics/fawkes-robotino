@@ -112,6 +112,10 @@ NavGraphGeneratorMPSThread::init()
   cfg_mps_width_         = config->get_float("/navgraph-generator-mps/mps-width");
   cfg_mps_length_        = config->get_float("/navgraph-generator-mps/mps-length");
   cfg_mps_approach_dist_ = config->get_float("/navgraph-generator-mps/approach-distance");
+  cfg_left_shelf_dist_   = config->get_float("/navgraph-generator-mps/left-shelf-distance");
+  cfg_middle_shelf_dist_ = config->get_float("/navgraph-generator-mps/middle-shelf-distance");
+  cfg_right_shelf_dist_  = config->get_float("/navgraph-generator-mps/right-shelf-distance");
+  cfg_slide_dist_        = config->get_float("/navgraph-generator-mps/slide-distance");
   cfg_mps_corner_obst_   = config->get_bool("/navgraph-generator-mps/add-corners-as-obstacles");
 
   cfg_map_min_dist_      = config->get_float("/navgraph-generator-mps/map-cell-min-dist");
@@ -439,6 +443,23 @@ NavGraphGeneratorMPSThread::update_station(std::string id, bool input, std::stri
   s.zone         = zone;
   s.blocked_zones = blocked_zones(zone, quantize_yaw(quat_yaw(pose_ori)));
 
+  // **** 6. add additional optional approach points
+  Eigen::Vector2f pos(input_pos[0], input_pos[1]);
+  Eigen::Vector2f out_pos(output_pos[0], output_pos[1]);
+  Eigen::Quaternionf ori = input_ori;
+  float yaw = quat_yaw(ori);
+  Eigen::Vector2f unit_translation_direction = Eigen::Rotation2Df(M_PI/2) * (pos - out_pos);
+  unit_translation_direction.normalize();
+
+  if(id.substr(2,2) == "CS"){
+    // add shelf approach points
+    s.approach_points["-L"] = {pos + unit_translation_direction * cfg_left_shelf_dist_, ori, yaw};
+    s.approach_points["-M"] = {pos + unit_translation_direction * cfg_middle_shelf_dist_, ori, yaw};
+    s.approach_points["-R"] = {pos + unit_translation_direction * cfg_right_shelf_dist_, ori, yaw};
+  } else if(id.substr(2,2) == "RS"){
+    s.approach_points["-S"] = {pos + unit_translation_direction * cfg_slide_dist_, ori, yaw};
+  }
+
   stations_[id]  = s;
 }
 
@@ -500,6 +521,13 @@ NavGraphGeneratorMPSThread::generate_navgraph()
     (new NavGraphGeneratorInterface::SetCopyGraphDefaultPropertiesMessage(true));
 
   for (const auto &s : stations_) {
+    for (const auto &ml : s.second.approach_points){
+      navgen_if_->msgq_enqueue
+        (new NavGraphGeneratorInterface::AddPointOfInterestWithOriMessage
+         ((s.first + ml.first).c_str(),
+          ml.second.pos[0], ml.second.pos[1], ml.second.yaw,
+          mps_node_insmode(s.first + ml.first)));
+    }
     navgen_if_->msgq_enqueue
 	    (new NavGraphGeneratorInterface::AddPointOfInterestWithOriMessage
 	     ((s.first + "-I").c_str(),

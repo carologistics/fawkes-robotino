@@ -77,8 +77,14 @@ navgraph-generator-mps:
   # The length (length of long edge) of MPS stations; m
   mps-length: 0.7
 
-  # The distance in which to place approach points from the machine (measured from the outsite of the mps, not the center); m
+  # The distance in which to place approach points from the machine (measured from the outside of the mps, not the center); m
   approach-distance: 0.75
+
+  # Distance of the shelfs along the long side of the MPS (CS) relative to the middle
+  left-shelf-distance: 0.105
+  middle-shelf-distance: 0.205
+  right-shelf-distance: 0.305
+  slide-distance: 0.280
 
   # Set to true to add the corners of an MPS as obstacles themselves.
   # Otherwise only the center point of the MPS is added as obstacles
