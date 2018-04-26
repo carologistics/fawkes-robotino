@@ -7,6 +7,6 @@ skills:
   # The distance the robot has to drive after being aligned
   # in front of the mps
   conveyor_align:
-    euclidean_fitness_tol: 200
+    euclidean_fitness_tol: 8
   mps_align:
     x_dist_default: 0.35
