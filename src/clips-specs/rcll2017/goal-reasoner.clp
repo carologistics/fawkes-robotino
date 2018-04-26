@@ -22,6 +22,7 @@
 (deftemplate goal-meta
   (slot goal-id (type SYMBOL))
   (slot num-tries (type INTEGER))
+  (slot max-tries (type INTEGER))
   (multislot last-achieve (type INTEGER) (cardinality 2 2) (default 0 0))
 )
 
@@ -44,7 +45,7 @@
   ?g <- (goal (parent nil) (id ?goal-id) (mode FORMULATED))
    =>
   (modify ?g (mode SELECTED))
-  (assert (goal-meta (goal-id ?goal-id)))
+  (assert (goal-meta (goal-id ?goal-id) (max-tries ?*GOAL-MAX-TRIES*)))
 )
 
 ;Select subgoal only when parent goal is expanded
@@ -158,7 +159,7 @@
 (defrule goal-reasoner-cleanup-common
   ?g <- (goal (id ?goal-id) (parent nil) (type ?goal-type)
           (mode EVALUATED) (outcome ?outcome))
-  ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
+  ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries) (max-tries ?max-tries))
   =>
   (printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
 
@@ -183,7 +184,7 @@
   )
 
   (if (or (eq ?goal-type MAINTAIN)
-          (and (eq ?outcome failed) (< ?num-tries ?*GOAL-MAX-TRIES*)))
+          (and (eq ?outcome FAILED) (<= ?num-tries ?max-tries)))
     then
       (printout t "Triggering re-expansion" crlf)
       (modify ?g (mode SELECTED) (outcome UNKNOWN))
