@@ -212,7 +212,7 @@ private:
  Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface * ll);
  fawkes::tf::Stamped<fawkes::tf::Pose> laserline_get_center(fawkes::LaserLineInterface *ll);
 
- void set_initial_tf_from_laserline(fawkes::LaserLineInterface *ll, std::string hint_id);
+ void set_initial_tf_from_laserline(fawkes::LaserLineInterface *ll, std::string station_hint_id,std::string side_hint_id);
 
  bool is_inbetween(double a, double b, double val);
 
