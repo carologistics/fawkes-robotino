@@ -6,8 +6,8 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/tag_vision
 
 plugins/mps_laser_gen:
   # MPS dimensions
-  mps_length: 0.7
-  mps_width: 0.34
+  mps_length: 0.9
+  mps_width: 0.54
 
   enable_laser_gen: false
   enable_mps_box_filter: true
