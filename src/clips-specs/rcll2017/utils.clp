@@ -149,3 +149,196 @@
 	)
 	(return nil)
 )
+
+;---------------Exploration-Phase functions--------------------------
+(deffunction distance (?x ?y ?x2 ?y2)
+  "Returns the distance of two points in the x,y-plane."
+  (return (float (sqrt (float(+ (* (- ?x ?x2) (- ?x ?x2)) (* (- ?y ?y2) (- ?y ?y2)))))))
+)
+
+(deffunction protobuf-name (?zone)
+  (return
+    (str-cat (sub-string 1 1 ?zone) "_" (sub-string 3 99 ?zone))
+  )
+)
+
+(deffunction transform-safe (?to-frame ?from-frame ?timestamp ?trans ?rot)
+  (if (tf-can-transform ?to-frame ?from-frame ?timestamp) then
+    (bind ?rv (tf-transform-pose ?to-frame ?from-frame ?timestamp ?trans ?rot))
+  else
+    (if (tf-can-transform ?to-frame ?from-frame (create$ 0 0)) then
+      (bind ?rv (tf-transform-pose ?to-frame ?from-frame (create$ 0 0) ?trans ?rot))
+    else
+      (return FALSE)
+    )
+  )
+  (if (= (length$ ?rv) 7) then
+    (return ?rv)
+  else
+    (return FALSE)
+  )
+)
+
+(deffunction compensate-movement (?factor ?v-odom ?p ?timestamp)
+  (if (eq ?p FALSE) then
+    (return FALSE)
+  )
+  (if (= 2 (length$ ?v-odom)) then
+    (bind ?v-odom (create$ (nth$ 1 ?v-odom) (nth$ 2 ?v-odom) 0))
+  )
+  (bind ?p-map (transform-safe "map" "base_link" ?timestamp (create$ 0 0 0) (create$ 0 0 0 1)))
+  (if (<> 7 (length$ ?p-map)) then
+    (return FALSE)
+  )
+  (bind ?pv-map (transform-safe "map" "base_link" ?timestamp ?v-odom (create$ 0 0 0 1)))
+  (if (<> 7 (length$ ?pv-map)) then
+    (return FALSE)
+  )
+  (bind ?v-map (create$
+    (- (nth$ 1 ?pv-map) (nth$ 1 ?p-map))
+    (- (nth$ 2 ?pv-map) (nth$ 2 ?p-map))
+  ))
+  (bind ?rv (create$
+    (+ (nth$ 1 ?p) (* ?factor (nth$ 1 ?v-map)))
+    (+ (nth$ 2 ?p) (* ?factor (nth$ 2 ?v-map)))
+  ))
+  (return ?rv)
+)
+
+(deffunction distance-mf (?p1 ?p2)
+  (return (distance (nth$ 1 ?p1) (nth$ 2 ?p1) (nth$ 1 ?p2) (nth$ 2 ?p2)))
+)
+
+(deffunction round-down (?x)
+  (bind ?round (round ?x))
+  (if (< ?x ?round) then
+    (return (- ?round 1))
+  )
+  (return ?round)
+)
+
+(deffunction round-up (?x)
+  (bind ?round (round ?x))
+  (if (> ?x ?round) then
+    (return (+ ?round 1))
+  )
+  (return ?round)
+)
+(deffunction get-zone (?margin $?vector)
+  "Return the zone name for a given map coordinate $?vector if its
+   distance from the zone borders is greater or equal than ?margin."
+  (if (eq ?vector FALSE) then
+    (return FALSE)
+  )
+  (bind ?x (nth$ 1 ?vector))
+  (bind ?y (nth$ 2 ?vector))
+  (if (not (and (numberp ?x) (numberp ?y))) then
+    (return FALSE)
+  )
+
+  (if (<= ?y 0) then
+    ; y <= 0 is outside the playing field
+    (return FALSE)
+  else
+    (bind ?yr (round-up ?y))
+  )
+
+  (if (or (< (- ?x ?margin) (round-down ?x))
+          (> (+ ?x ?margin) (round-up ?x))
+          (< (- ?y ?margin) (round-down ?y))
+          (> (+ ?y ?margin) (round-up ?y))
+      ) then
+    (return FALSE)
+  )
+
+  (if (< ?x 0) then
+    (bind ?rv M-Z)
+    (bind ?x (* ?x -1))
+  else
+    (bind ?rv C-Z)
+  )
+  (bind ?xr (round-up ?x))
+
+  (return (sym-cat ?rv ?xr ?yr))
+)
+(deffunction utils-get-2d-center (?x1 ?y1 ?x2 ?y2)
+  (return (create$ (/ (+ ?x1 ?x2) 2) (/ (+ ?y1 ?y2) 2)))
+)
+(deffunction laser-line-center-map (?ep1 ?ep2 ?frame ?timestamp)
+  (bind ?c (utils-get-2d-center (nth$ 1 ?ep1) (nth$ 2 ?ep1) (nth$ 1 ?ep2) (nth$ 2 ?ep2)))
+  (bind ?c3 (nth$ 1 ?c) (nth$ 2 ?c) 0)
+  (return (transform-safe "map" ?frame ?timestamp ?c3 (create$ 0 0 0 1)))
+)
+
+(deffunction mirror-name (?zn)
+  (bind ?team (sub-string 1 1 ?zn))
+  (bind ?zone (sub-string 3 99 ?zn))
+  (if (eq ?team "M") then
+    (return (sym-cat "C-" ?zone))
+  else
+    (return (sym-cat "M-" ?zone))
+  )
+)
+
+(deffunction want-mirrored-rotation (?mtype ?zone)
+"According to the RCLL2017 rulebook, this is when a machine is mirrored"
+  (bind ?zn (str-cat ?zone))
+  (bind ?x (eval (sub-string 4 4 ?zn)))
+  (bind ?y (eval (sub-string 5 5 ?zn)))
+
+  (return (or (member$ ?mtype (create$ BS DS SS))
+              (not (or (eq ?x 7) ; left or right
+                       (eq ?y 8) ; top wall
+                       (eq ?y 1) ; bottom wall
+                       (and (member$ ?x (create$ 5 6 7)); insertion
+                            (eq ?y 2)
+                       )
+                   )
+              )
+  ))
+)
+
+(deffunction mirror-orientation (?mtype ?zone ?ori)
+  (bind ?zn (str-cat ?zone))
+  (bind ?t (sub-string 1 1 ?zn))
+  (if (want-mirrored-rotation ?mtype ?zone)
+   then
+    (if (eq ?t "C")
+     then
+      (do-for-fact ((?mo domain-fact)) (and (eq (nth$ 1 ?mo:param-values) ?ori) (eq ?mo:name mirror-orientation))
+        (bind ?m-ori (nth$ 2 ?mo:param-values))
+      )
+     else
+      (do-for-fact ((?mo domain-fact)) (and (eq (nth$ 2 ?mo:param-values) ?ori) (eq ?mo:name mirror-orientation))
+        (bind ?m-ori (nth$ 1 ?mo:param-values))
+      )
+    )
+    (return ?m-ori)
+   else
+    (bind ?x (eval (sub-string 4 4 ?zn)))
+    (bind ?y (eval (sub-string 5 5 ?zn)))
+
+    (if (eq ?y 8) then
+      (return 180)
+    )
+    (if (or (eq ?y 1) (eq ?y 2)) then
+      (return 0)
+    )
+    (if (and (eq ?x 7) (eq ?t "M")) then  ; this is the other way around, because I compare with the team color of the originalting machine
+      (return 90)
+    )
+    (if (and (eq ?x 7) (eq ?t "C")) then
+      (return 270)
+    )
+    (printout error "error in rotation of machines, checked all possible cases, but nothing cateched" crlf)
+    (return ?ori)
+  )
+)
+
+(deffunction mirror-team (?team)
+  (if (eq (sym-cat ?team) CYAN) then
+    (return MAGENTA)
+  else
+    (return CYAN)
+  )
+)
