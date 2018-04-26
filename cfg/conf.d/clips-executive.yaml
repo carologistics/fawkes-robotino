@@ -143,7 +143,7 @@ clips-executive:
      
 
           team-name: Carologistics
-          crypto-key: randomkey
+          crypto-key: aeQu0ahCha
           cipher: "aes-128-cbc"
           route:
             CYAN:
