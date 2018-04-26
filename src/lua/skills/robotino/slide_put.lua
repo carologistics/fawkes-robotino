@@ -75,7 +75,6 @@ function GOTO_SLIDE:init()
 end
 
 function APPROACH_SLIDE:init()
-   self.args["approach_mps"].x = x_distance
    self.args["approach_mps"].use_conveyor = false
 end
 

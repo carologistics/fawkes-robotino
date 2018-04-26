@@ -70,6 +70,13 @@ function transformed_pose(self)
 end
 
 function conveyor_ready(self)
+  if self.fsm.vars.x == nil then
+    self.fsm.vars.x = 0.27
+    if config:exists("/skills/approach_mps/x_dist") then
+      self.fsm.vars.x = config:get_float("/skills/approach_mps/x_dist")
+    end
+  end
+
   if not self.fsm.vars.use_conveyor then
     return false
   end
@@ -89,7 +96,7 @@ function laser_lines_ready(self)
     return false
   end
 
-  if if_front_dist:visibility_history() > 0 and self.fsm.vars.ll_dist < 1.0 then
+  if if_front_dist:visibility_history() > 0 and self.fsm.vars.ll_dist < 0.5 then
     return true
   else
     printf("mps_approach failed: visibility history is %f, dist to object in front is %f. I don't drive with this visibility history or this far without collision avoidance", if_front_dist:visibility_history(), self.fsm.vars.ll_dist)
