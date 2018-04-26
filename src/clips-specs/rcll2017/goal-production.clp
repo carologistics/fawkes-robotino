@@ -132,6 +132,8 @@
   (not (goal (id PRODUCTION-MAINTAIN)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
+  (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key domain fact entered-field args? r ?robot))
   (NavGraphWithMPSGeneratorInterface (final TRUE))
   =>
   (assert (goal (id PRODUCTION-MAINTAIN) (type MAINTAIN)))
