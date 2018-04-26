@@ -18,4 +18,3 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
-

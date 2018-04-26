@@ -32,25 +32,8 @@
 #include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#include <Eigen/Geometry>
 
 using namespace fawkes;
-
-/// @cond INTERNAL
-class MPS {
- public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-  Eigen::Vector2f center;
-  Eigen::Vector2f corners[4];
-
-	unsigned int closest_idx;
-	unsigned int adjacent_1;
-	unsigned int adjacent_2;
-
-	float bearing;
-};
-/// @endcond
 
 
 /** @class MPSLaserGenThread "mps-laser-gen_thread.h"
@@ -58,11 +41,12 @@ class MPS {
  * @author Tim Niemueller
  */
 
-MPSLaserGenThread::MPSLaserGenThread()
+MPSLaserGenThread::MPSLaserGenThread(std::string mps_laser_gen_prefix)
  : Thread("MPSLaserGenThread", Thread::OPMODE_WAITFORWAKEUP),
    BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_ACQUIRE),
    TransformAspect(TransformAspect::ONLY_LISTENER)
 {
+  mps_laser_gen_cfg_prefix = mps_laser_gen_prefix;
 }
 
 void
@@ -71,7 +55,9 @@ MPSLaserGenThread::init()
 	vispub_ =
 		rosnode->advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 100, /* latching */ true);
 
-	laser_if_ = blackboard->open_for_writing<Laser360Interface>("Laser MPS");
+  laser_if_ = blackboard->open_for_writing<Laser360Interface>("Laser MPS");
+  laser_box_filter_if_ = blackboard->open_for_reading<LaserBoxFilterInterface>("Laser Box Filter");
+  load_config();
 }
 
 void
@@ -81,8 +67,8 @@ MPSLaserGenThread::loop()
 	std::vector<fawkes::NavGraphNode> nodes = navgraph->nodes();
   navgraph.unlock();
 
-  const float mps_length = 0.70;
-  const float mps_width  = 0.34;
+  const float mps_length = cfg_mps_length_;
+  const float mps_width  = cfg_mps_width_;
 
   const float mps_length_2 = mps_length / 2.;
   const float mps_width_2 = mps_width / 2.;
@@ -126,94 +112,125 @@ MPSLaserGenThread::loop()
 // #endif
   size_t id_num = 0;
 
-  std::map<std::string, MPS> mpses;
-  
   for (const fawkes::NavGraphNode &n : nodes) {
-	  if (n.has_property("mps") && n.property_as_bool("mps")) {
-		  float ori = 0.;
-		  if (n.has_property("orientation")) {
-			  ori = n.property_as_float("orientation");
-		  }
+    if (n.has_property("mps") && n.property_as_bool("mps")) {
+      float ori = 0.;
+      if (n.has_property("orientation")) {
+        ori = n.property_as_float("orientation");
+      }
 
-		  MPS mps;
-		  mps.center = transform * Eigen::Vector2f(n.x(), n.y());
-		  mps.corners[0] = sensor_rotation * Eigen::Vector2f(  mps_width_2, - mps_length_2);
-		  mps.corners[1] = sensor_rotation * Eigen::Vector2f(- mps_width_2, - mps_length_2);
-		  mps.corners[2] = sensor_rotation * Eigen::Vector2f(- mps_width_2,   mps_length_2);
-		  mps.corners[3] = sensor_rotation * Eigen::Vector2f(  mps_width_2,   mps_length_2);
+      MPS mps;
+      // send a message to the box_filter laser filter if needed
+      if (cfg_enable_mps_box_filter_ == true && mpses.count( n.name() ) == 0) {
+        mps.center = Eigen::Vector2f(n.x(), n.y());
 
-		  Eigen::Rotation2Df rot(ori);
+        mps.corners[0] = Eigen::Vector2f(  mps_width_2, - mps_length_2);
+        mps.corners[1] = Eigen::Vector2f(- mps_width_2, - mps_length_2);
+        mps.corners[2] = Eigen::Vector2f(- mps_width_2,   mps_length_2);
+        mps.corners[3] = Eigen::Vector2f(  mps_width_2,   mps_length_2);
 
-		  mps.corners[0] = (rot * mps.corners[0]) + mps.center;
-		  mps.corners[1] = (rot * mps.corners[1]) + mps.center;
-		  mps.corners[2] = (rot * mps.corners[2]) + mps.center;
-		  mps.corners[3] = (rot * mps.corners[3]) + mps.center;
+        Eigen::Rotation2Df rot(ori);
+        mps.corners[0] = (rot * mps.corners[0]) + mps.center;
+        mps.corners[1] = (rot * mps.corners[1]) + mps.center;
+        mps.corners[2] = (rot * mps.corners[2]) + mps.center;
+        mps.corners[3] = (rot * mps.corners[3]) + mps.center;
 
-		  float dists[4] = { mps.corners[0].norm(), mps.corners[1].norm(),
-		                     mps.corners[2].norm(), mps.corners[3].norm() };
-		  mps.closest_idx = 0;
-		  for (unsigned int i = 1; i < 4; ++i) {
-			  if (dists[i] < dists[mps.closest_idx])  mps.closest_idx = i;
-		  }
+        LaserBoxFilterInterface::CreateNewBoxFilterMessage *box_filter_msg = new LaserBoxFilterInterface::CreateNewBoxFilterMessage();
+        box_filter_msg->set_p1(0, mps.corners[0][0]);
+        box_filter_msg->set_p1(1, mps.corners[0][1]);
+        box_filter_msg->set_p2(0, mps.corners[1][0]);
+        box_filter_msg->set_p2(1, mps.corners[1][1]);
+        box_filter_msg->set_p3(0, mps.corners[2][0]);
+        box_filter_msg->set_p3(1, mps.corners[2][1]);
+        box_filter_msg->set_p4(0, mps.corners[3][0]);
+        box_filter_msg->set_p4(1, mps.corners[3][1]);
 
-		  mps.adjacent_1 = (mps.closest_idx == 0) ? 3 : mps.closest_idx - 1;
-		  mps.adjacent_2 = (mps.closest_idx == 3) ? 0 : mps.closest_idx + 1;
+        laser_box_filter_if_->read();
+        laser_box_filter_if_->msgq_enqueue(box_filter_msg);
 
-		  mps.bearing = atan2f(mps.corners[mps.closest_idx][1], mps.corners[mps.closest_idx][0]);
-		  //logger->log_info(name(), "Station %s bearing %f", n.name().c_str(), mps.bearing);
-		  
-		  mpses[n.name()] = mps;
-		  
-		  {
-			  visualization_msgs::Marker sphere;
-			  sphere.header.frame_id = sensor_frame;
-			  sphere.header.stamp = ros::Time::now();
-			  sphere.ns = "mps-laser-gen";
-			  sphere.id = id_num++;
-			  sphere.type = visualization_msgs::Marker::SPHERE;
-			  sphere.action = visualization_msgs::Marker::ADD;
-			  sphere.pose.position.x =  mps.center[0];
-			  sphere.pose.position.y =  mps.center[1];
-			  sphere.pose.position.z = 0.;
-			  sphere.pose.orientation.w = 1.;
-			  sphere.scale.x = sphere.scale.y = sphere.scale.z = 0.1;
-			  sphere.color.r = 0.f;
-			  sphere.color.g = 1.f;
-			  sphere.color.b = 0.f;
-			  sphere.color.a = 1.0;
-			  sphere.lifetime = ros::Duration(0, 0);
-			  m.markers.push_back(sphere);
-		  }
+        mpses[n.name()] = mps;
+      }
 
-		  for (unsigned int i = 0; i < 4; ++i) {
-			  visualization_msgs::Marker sphere;
-			  sphere.header.frame_id = sensor_frame;
-			  sphere.header.stamp = ros::Time::now();
-			  sphere.ns = "mps-laser-gen";
-			  sphere.id = id_num++;
-			  sphere.type = visualization_msgs::Marker::SPHERE;
-			  sphere.action = visualization_msgs::Marker::ADD;
-			  sphere.pose.position.x =  mps.corners[i][0];
-			  sphere.pose.position.y =  mps.corners[i][1];
-			  sphere.pose.position.z = 0.;
-			  sphere.pose.orientation.w = 1.;
-			  sphere.scale.x = sphere.scale.y = sphere.scale.z = 0.05;
-			  if (i == mps.closest_idx) {
-				  sphere.color.r = 0.f;
-				  sphere.color.b = 1.f;
-			  } else if (i == mps.adjacent_1 || i == mps.adjacent_2) {
-				  sphere.color.r = 1.f;
-				  sphere.color.b = 1.f;
-			  } else {
-				  sphere.color.r = 1.f;
-				  sphere.color.b = 0.f;
-			  }
-			  sphere.color.g = 0.f;
-			  sphere.color.a = 1.0;
-			  sphere.lifetime = ros::Duration(0, 0);
-			  m.markers.push_back(sphere);
-		  }
-	  }
+      if (cfg_enable_mps_laser_gen_ == true) {
+        mps.center = transform * Eigen::Vector2f(n.x(), n.y());
+
+        mps.corners[0] = sensor_rotation * Eigen::Vector2f(  mps_width_2, - mps_length_2);
+        mps.corners[1] = sensor_rotation * Eigen::Vector2f(- mps_width_2, - mps_length_2);
+        mps.corners[2] = sensor_rotation * Eigen::Vector2f(- mps_width_2,   mps_length_2);
+        mps.corners[3] = sensor_rotation * Eigen::Vector2f(  mps_width_2,   mps_length_2);
+
+        Eigen::Rotation2Df rot(ori);
+        mps.corners[0] = (rot * mps.corners[0]) + mps.center;
+        mps.corners[1] = (rot * mps.corners[1]) + mps.center;
+        mps.corners[2] = (rot * mps.corners[2]) + mps.center;
+        mps.corners[3] = (rot * mps.corners[3]) + mps.center;
+
+        float dists[4] = { mps.corners[0].norm(), mps.corners[1].norm(),
+                           mps.corners[2].norm(), mps.corners[3].norm() };
+        mps.closest_idx = 0;
+        for (unsigned int i = 1; i < 4; ++i) {
+          if (dists[i] < dists[mps.closest_idx])  mps.closest_idx = i;
+        }
+
+        mps.adjacent_1 = (mps.closest_idx == 0) ? 3 : mps.closest_idx - 1;
+        mps.adjacent_2 = (mps.closest_idx == 3) ? 0 : mps.closest_idx + 1;
+
+        mps.bearing = atan2f(mps.corners[mps.closest_idx][1], mps.corners[mps.closest_idx][0]);
+        //logger->log_info(name(), "Station %s bearing %f", n.name().c_str(), mps.bearing);
+
+        mpses[n.name()] = mps;
+
+        {
+          visualization_msgs::Marker sphere;
+          sphere.header.frame_id = sensor_frame;
+          sphere.header.stamp = ros::Time::now();
+          sphere.ns = "mps-laser-gen";
+          sphere.id = id_num++;
+          sphere.type = visualization_msgs::Marker::SPHERE;
+          sphere.action = visualization_msgs::Marker::ADD;
+          sphere.pose.position.x =  mps.center[0];
+          sphere.pose.position.y =  mps.center[1];
+          sphere.pose.position.z = 0.;
+          sphere.pose.orientation.w = 1.;
+          sphere.scale.x = sphere.scale.y = sphere.scale.z = 0.1;
+          sphere.color.r = 0.f;
+          sphere.color.g = 1.f;
+          sphere.color.b = 0.f;
+          sphere.color.a = 1.0;
+          sphere.lifetime = ros::Duration(0, 0);
+          m.markers.push_back(sphere);
+        }
+
+        for (unsigned int i = 0; i < 4; ++i) {
+          visualization_msgs::Marker sphere;
+          sphere.header.frame_id = sensor_frame;
+          sphere.header.stamp = ros::Time::now();
+          sphere.ns = "mps-laser-gen";
+          sphere.id = id_num++;
+          sphere.type = visualization_msgs::Marker::SPHERE;
+          sphere.action = visualization_msgs::Marker::ADD;
+          sphere.pose.position.x =  mps.corners[i][0];
+          sphere.pose.position.y =  mps.corners[i][1];
+          sphere.pose.position.z = 0.;
+          sphere.pose.orientation.w = 1.;
+          sphere.scale.x = sphere.scale.y = sphere.scale.z = 0.05;
+          if (i == mps.closest_idx) {
+            sphere.color.r = 0.f;
+            sphere.color.b = 1.f;
+          } else if (i == mps.adjacent_1 || i == mps.adjacent_2) {
+            sphere.color.r = 1.f;
+            sphere.color.b = 1.f;
+          } else {
+            sphere.color.r = 1.f;
+            sphere.color.b = 0.f;
+          }
+          sphere.color.g = 0.f;
+          sphere.color.a = 1.0;
+          sphere.lifetime = ros::Duration(0, 0);
+          m.markers.push_back(sphere);
+        }
+      }
+    }
   }
 
 
@@ -266,3 +283,11 @@ MPSLaserGenThread::finalize()
 	blackboard->close(laser_if_);
 }
 
+void
+MPSLaserGenThread::load_config()
+{
+  cfg_enable_mps_laser_gen_ = config->get_bool((mps_laser_gen_cfg_prefix + "enable_laser_gen").c_str());
+  cfg_enable_mps_box_filter_ = config->get_bool((mps_laser_gen_cfg_prefix + "enable_mps_box_filter").c_str());
+  cfg_mps_length_ = config->get_float((mps_laser_gen_cfg_prefix + "mps_length").c_str());
+  cfg_mps_width_ = config->get_float((mps_laser_gen_cfg_prefix + "mps_width").c_str());
+}

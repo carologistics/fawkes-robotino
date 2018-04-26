@@ -10,24 +10,24 @@ fawkes/meta_plugins:
   m-fv: fvbase,fvfountain
   m-fv-vision: m-bare,m-fv,tag_vision,fvretriever
   m-clips: clips,clips-motor-switch,clips-protobuf,clips-rest-api,clips-navgraph,clips-tf
-  m-clips-agent: m-clips,m-fv-vision,clips-agent,webtools-bridge
-  m-clips-executive: m-clips,m-fv-vision,clips-executive,clips-executive-rest-api
-  m-skiller: ros,m-fv-vision,navgraph,navgraph-generator,navgraph-generator-mps,skiller,realsense,conveyor-pose,ros-pcl,skiller-rest-api
+  m-clips-agent: m-clips,m-fv-vision,clips-agent
   m-robot-memory: mongodb,robot-memory
-  m-full: m-skiller,m-clips-agent
+  m-clips-executive: m-clips,m-fv-vision,clips-pddl-parser,m-robot-memory,clips_robot_memory,clips-executive,clips-executive-rest-api
+  m-skiller: ros,m-fv-vision,navgraph,navgraph-generator,navgraph-generator-mps,skiller,realsense,conveyor-pose,ros-pcl,skiller-rest-api,mps-laser-gen
+  m-full: m-skiller,m-clips-executive
 
   #
   # Gazebo stuff
   #
   gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,gazsim-gripper,gazsim-conveyor,laser_front_dist,webview
-  gazsim-meta-robotino-ros: gazsim-meta-robotino,ros,ros-clock,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,amcl,navgraph,navgraph-generator,navgraph-generator-mps,laser-lines,ros-cmdvel,ros-navigator,gazsim-vis-localization,skiller
-  gazsim-meta-robotino-no-ros: gazsim-meta-robotino,amcl,navgraph,navgraph-generator,navgraph-generator-mps,laser-lines,colli,gazsim-vis-localization,skiller
+  gazsim-meta-robotino-ros: gazsim-meta-robotino,ros,ros-clock,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,amcl,navgraph,navgraph-generator,navgraph-generator-mps,laser-lines,ros-cmdvel,ros-navigator,gazsim-vis-localization,skiller,mps-laser-gen
+  gazsim-meta-robotino-no-ros: gazsim-meta-robotino,amcl,navgraph,navgraph-generator,navgraph-generator-mps,laser-lines,colli,gazsim-vis-localization,skiller,mps-laser-gen
   gazsim-meta-robotino-vision-high-level: gazsim-tag-vision,gazsim-machine-signal
   gazsim-meta-robotino-vision-low-level: fvbase,gazsim-webcam,tag_vision,gazsim-machine-signal
   gazsim-organization: gazebo,gazsim-comm,gazsim-llsfrbcomm
   gazsim-meta-clips: m-clips,clips-agent
   gazsim-meta-agent: gazsim-meta-clips
-  gazsim-meta-clips-exec: m-clips,m-robot-memory,pddl-robot-memory,clips_robot_memory,clips-pddl-parser,pddl-planner,clips-executive
+  gazsim-meta-clips-exec: m-clips,m-robot-memory,pddl-robot-memory,clips_robot_memory,clips-pddl-parser,pddl-planner,clips-executive,clips-executive-rest-api
  
   #
   # Robotino base meta plugin
