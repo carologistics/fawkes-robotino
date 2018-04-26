@@ -452,19 +452,19 @@
 
         (:action move-node
 			:parameters (?r - robot ?z - zone)
-			:precondition (entered-field ?r) 
-			:effect (entered-field ?r)
+			:precondition (self ?r) 
+			:effect (self ?r)
 	)
 
 	(:action stop
 			:parameters (?r - robot)
-			:precondition (entered-field ?r)
-			:effect (entered-field ?r)
+			:precondition (self ?r)
+			:effect (self ?r)
 	)
 
 	(:action explore-zone
 			:parameters (?r - robot ?z - zone)
-			:precondition (entered-field ?r)
-			:effect (entered-field ?r)
+			:precondition (self ?r)
+			:effect (self ?r)
 	)
 )
