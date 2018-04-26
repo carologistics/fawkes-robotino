@@ -771,7 +771,6 @@
   )
   (pb-broadcast ?peer ?mr)
   (modify ?ws (time ?now) (seq (+ ?seq 1)))
-  (printout error "Reported mps : " (implode$ ?mr) crlf)
 )
 
 (defrule exp-exploration-ends-cleanup

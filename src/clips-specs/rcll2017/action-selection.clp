@@ -6,7 +6,7 @@
 			(action-name ?action-name)
 			(param-values $?param-values))
 	(goal (id EXPLORATION) (mode DISPATCHED))
-	(not (plan-action (goal-id EXPLORATION) (status PENDING|WAITING|RUNNING)))
+	(not (plan-action (goal-id EXPLORATION) (status FAILED|PENDING|WAITING|RUNNING)))
 	(not (plan (id EXPLORE-ZONE) (goal-id EXPLORATION)))
 	(not (plan-action (plan-id EXPLORATION-PLAN) (goal-id EXPLORATION) (status FORMULATED) (id ?oid&: (< ?oid ?id))))
 	=>
@@ -57,6 +57,7 @@
 	(if (< (distance-mf ?node-pos ?r-pose) 1.5) then
 		(printout t "EXP Go to next node" crlf)
 		(modify ?panext (status PENDING))
+		(modify ?pa (status FINAL))
 		else
 		(printout t "EXP Retry node" crlf)
 		(modify ?pa (status FORMULATED))
@@ -87,7 +88,7 @@
 
 (defrule action-selection-failed
 	(plan (id ?plan-id) (goal-id ?goal-id))
-	?g <- (goal (id ?goal-id&~EXPLORATION) (mode DISPATCHED))
+	?g <- (goal (id ?goal-id& :(neq ?goal-id EXPLORATION)) (mode DISPATCHED))
 	(plan-action (goal-id ?goal-id) (plan-id ?plan-id) (status FAILED))
 	=>
 	(modify ?g (mode FINISHED) (outcome FAILED))
