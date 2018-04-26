@@ -53,13 +53,13 @@
 )
 
 (defrule goal-expander-enter-field
-  ?g <- (goal (mode SELECTED) (id ENTER-FIELD))
+  ?g <- (goal (mode SELECTED) (id ENTER-FIELD-ACHIEVE))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
 =>
   (assert
-    (plan (id ENTER-FIELD-PLAN) (goal-id ENTER-FIELD))
-    (plan-action (id 1) (plan-id ENTER-FIELD-PLAN) (goal-id ENTER-FIELD)
+    (plan (id ENTER-FIELD-PLAN) (goal-id ENTER-FIELD-ACHIEVE))
+    (plan-action (id 1) (plan-id ENTER-FIELD-PLAN) (goal-id ENTER-FIELD-ACHIEVE)
                                  (action-name enter-field)
                                  (param-names r team-color)
                                  (param-values ?robot ?team-color))
