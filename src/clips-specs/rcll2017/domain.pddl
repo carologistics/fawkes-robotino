@@ -281,7 +281,7 @@
 		:effect (and (entered-field ?r)
 								 (at ?r START INPUT)
 								 (not (location-free START INPUT))
-								 (not (robot-waiting ?r)) (can-hold ?r))
+								 (not (robot-waiting ?r)))
 	)
 
 	(:action wp-discard
