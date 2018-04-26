@@ -45,7 +45,7 @@ local gripper_z = 0
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"INIT", JumpState},
    {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="OPEN_GRIPPER", fail_to="FAILED"},
-   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER"},
+   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_XY"},
    {"MOVE_GRIPPER_XY", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_XY", fail_to="FAILED"},
    {"MOVE_GRIPPER_Z", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER", fail_to="FAILED"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="FAILED"},

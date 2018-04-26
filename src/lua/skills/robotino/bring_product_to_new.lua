@@ -23,9 +23,9 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "bring_product_to"
+name               = "bring_product_to_new"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"mps_align", "product_put_new", "drive_to_local","shelf_put_new","slide_put_new","conveyor_align","motor_move"}
+depends_skills     = {"mps_align", "product_put_new", "drive_to_local","slide_put_new","conveyor_align","motor_move"}
 depends_interfaces = {
   {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"}
 }
@@ -60,12 +60,11 @@ end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_if},
    {"INIT", JumpState},
-   {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
+   {"DRIVE_TO", SkillJumpState, skills={{drive_to_local}}, final_to="MPS_ALIGN", fail_to="FAILED"},
    {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
    {"PRODUCT_PUT_NEW", SkillJumpState, skills={{product_put_new}}, final_to="FINAL", fail_to="FAILED"},
-   {"SHELF_PUT_NEW", SkillJumpState, skills={{shelf_put_new}}, final_to="MOVE_BACK", fail_to="FAIELD"},
    {"SLIDE_PUT_NEW", SkillJumpState, skills={{slide_put_new}}, final_to="MOVE_BACK", fail_to="FAILED"},
    {"MOVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
@@ -77,9 +76,8 @@ fsm:add_transitions{
    {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"},
    {"DRIVE_TO", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
    {"MPS_ALIGN", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
-   {"DECIDE_ENDSKILL", "SKILL_SHELF_PUT_NEW", cond="vars.shelf", desc="Put on shelf using new skill"},
-   {"DECIDE_ENDSKILL", "SKILL_SLIDE_PUT_NEW", cond="vars.slide", desc="Put on slide using new skill"},
-   {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PUT_NEW", cond=true, desc="Put on conveyor using new skill"},
+   {"DECIDE_ENDSKILL", "SLIDE_PUT_NEW", cond="vars.slide", desc="Put on slide"},
+   {"DECIDE_ENDSKILL", "PRODUCT_PUT_NEW", cond=true, desc="Put on conveyor using new skill"},
 }
 
 function INIT:init()
@@ -117,17 +115,13 @@ function CONVEYOR_ALIGN:init()
     end
 end
 
-function SKILL_PRODUCT_PUT:init()
+function PRODUCT_PUT_NEW:init()
    self.args["product_put_new"].offset_x = 0
 end
 
-function SKILL_SHELF_PUT:init()
-   -- Just hand through the Shelf position
-   self.args["shelf_put_new"].slot = self.fsm.vars.shelf
-end
+function SLIDE_PUT_NEW:init()
+end 
 
-function SKILL_SLIDE_PUT:init()
-end
 
 function MOVE_BACK:init()
   self.args["motor_move"].x = move_back_distance

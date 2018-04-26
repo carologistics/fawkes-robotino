@@ -24,7 +24,7 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "gripper_commands_new.lua"
+name               = "gripper_commands_new"
 fsm                = SkillHSM:new{name=name, start="CHECK_WRITER", debug=false}
 depends_skills     = nil
 depends_interfaces = {
@@ -35,7 +35,7 @@ documentation      = [==[
     @param command    can be : ( OPEN | CLOSE | MOVEABS | CALIBRATE | MOVEGRIPPERABS ) or DOWN (UP or DOWN require the desired number of millimeters)
     @param x   absolute x position for gripper move
     @param y   absolute y position for gripper move
-    @param z   absolute z position for gripper move 
+    @param z   absolute z position for gripper move
 
 ]==]
 
@@ -55,8 +55,8 @@ fsm:define_states{
 -- Transitions
 fsm:add_transitions{
    {"CHECK_WRITER", "FAILED", precond="not gripper_if:has_writer()", desc="No writer for gripper"},
-   {"CHECK_WRITER", "COMMAND", cond=true},
-   {"COMMAND", "WAIT_COMMAND", cond= timeout=1.0},
+   {"CHECK_WRITER", "COMMAND", cond=true, desc="Writer ok got to command"},
+   {"COMMAND", "WAIT_COMMAND", timeout=1.0},
    {"WAIT_COMMAND", "FINAL", cond="vars.restore"},
    {"WAIT_COMMAND", "FINAL", cond="arduino:is_final()"},
    {"WAIT_COMMAND", "FAILED", cond="vars.error"},

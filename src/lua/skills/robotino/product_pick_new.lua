@@ -1,6 +1,5 @@
-
 ----------------------------------------------------------------------------
---  product_pick.lua
+--  product_pick_new.lua
 --
 --  Created Wed Apr 15
 --  Copyright  2015  Johannes Rothe
@@ -25,8 +24,8 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "product_pick_new"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"gripper_commands_new", "approach_mps"}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+depends_skills     = {"gripper_commands_new", "motor_move"}
 depends_interfaces = {
    {v = "if_conv_pos", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
    {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
@@ -52,7 +51,8 @@ local Z_OFFSET_RANGE = 0.05
 local gripper_x = 0
 local gripper_y = 0
 local gripper_z = 0
-local gripper_back_z = 0 
+local gripper_back_z = 0
+local drive_back_distance = -0.2
 local cfg_frame_ = "gripper"
 
 
@@ -73,6 +73,7 @@ function pose_offset(self)
                           z = if_conv_pos:rotation(2),
                           w = if_conv_pos:rotation(3),
                         }
+                 }
 
    print("z_pose intial: " .. cp.z)
    return { x = cp.x,
@@ -107,13 +108,13 @@ end
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"INIT", JumpState},
    {"CHECK_VISION", JumpState},
-   {"ADJUST_GRIPPER", SkillJumpState,skills{{gripper_commands_new}},final_to="CHECK_VISION",fail_to="FAIL"},
-   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="MOVE_GRIPPER", fail_to="FAIL"},
-   {"MOVE_GRIPPER_XY", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_Z",fail_to="FAIL"},
-   {"MOVE_GRIPPER_Z", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER",fail_to="FAIL"},
-   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to = "MOVE_GRIPPER_BACK", fail_to="FAIL"},
-   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "DRIVE_BACK", fail_to="FAIL"},
-   {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}}, final_to="FINAL", fail_to="FAIL"},
+   {"ADJUST_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="CHECK_VISION",fail_to="FAILED"},
+   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="MOVE_GRIPPER_XY", fail_to="FAILED"},
+   {"MOVE_GRIPPER_XY", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_Z",fail_to="FAILED"},
+   {"MOVE_GRIPPER_Z", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER",fail_to="FAILED"},
+   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to = "MOVE_GRIPPER_BACK", fail_to="FAILED"},
+   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "DRIVE_BACK", fail_to="FAILED"},
+   {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -146,5 +147,5 @@ function MOVE_GRIPPER_BACK:init()
 end
 
 function DRIVE_BACK:init()
-   self.args["motor_move"].x = -0.2
+   self.args["motor_move"].x = drive_back_distance
 end
