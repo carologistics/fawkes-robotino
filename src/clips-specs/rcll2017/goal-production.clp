@@ -20,8 +20,11 @@
 ;
 
 (defglobal
+  ; Number of retrying enter-field
+  ; until succeeding it manually
+  ?*ENTER-FIELD-RETRIES* = 10
+
   ; production order priorities
-  ?*PRIORITY-ENTER-FIELD* = 200
   ?*PRIORITY-FIND-MISSING-MPS* = 110
   ?*PRIORITY-DELIVER* = 100
   ?*PRIORITY-RESET-MPS* = 98
@@ -143,8 +146,8 @@
   ; (NavGraphGeneratorInterface (final TRUE))
   ; (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
-  (printout t "Goal " ENTER-FIELD " formulated" crlf)
-  (assert (goal (id ENTER-FIELD) (priority ?*PRIORITY-ENTER-FIELD*)))
+  (printout t "Goal " ENTER-FIELD-ACHIEVE " formulated" crlf)
+  (assert (goal (id ENTER-FIELD-ACHIEVE) ))
 )
 
 (defrule goal-reasoner-create-fill-cap-goal
@@ -463,12 +466,22 @@
 )
 
 ; ## Goal Evaluation
-; (defrule goal-reasoner-evaluate-failed-enter-field
-;   ?g <- (goal (id ENTER-FIELD) (mode FINISHED) (outcome FAILED))
-;  =>
-;  (printout t "Goal '" ENTER-FIELD"' has failed, Evaluating" crlf)
-;  (modify ?g (mode SELECTED) (outcome UNKNOWN))
-; )
+ (defrule goal-reasoner-evaluate-failed-enter-field
+   ?g <- (goal (id ENTER-FIELD-ACHIEVE) (mode FINISHED) (outcome FAILED))
+  ?pa <- (plan-action (goal-id ENTER-FIELD-ACHIEVE) (status FAILED) (action-name enter-field))
+  ?gm <- (goal-meta (goal-id ENTER-FIELD-ACHIEVE) (num-tries ?num-tries))
+  =>
+  (printout t "Goal '" ENTER-FIELD-ACHIEVE"' has failed, Evaluating" crlf)
+
+  (if (= ?num-tries ?*ENTER-FIELD-RETRIES*) then
+	(modify ?pa (status EXECUTION-SUCCEEDED))
+	(modify ?g (mode DISPATCHED) (outcome UNKNOWN))
+        else
+	(bind ?num-tries (+ 1 ?num-tries))
+	(modify ?gm (num-tries ?num-tries) (max-tries ?*ENTER-FIELD-RETRIES*))
+	(modify ?g (mode EVALUATED))
+  )
+)
 
 (defrule goal-reasoner-evaluate-completed-subgoal-produce-c0
   ?g <- (goal (id PRODUCE-C0) (parent ?parent-id)
