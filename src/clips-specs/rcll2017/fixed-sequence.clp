@@ -52,6 +52,23 @@
   (modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-exploration
+  ?g <- (goal (mode SELECTED) (id EXPLORATION))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact self args? r ?r))
+  (wm-fact (id ?id&: (eq ?id (str-cat "/config/rcll/route/" ?team-color "/" ?r))) (values $?route))
+  =>
+  (assert (plan (goal-id EXPLORATION) (id EXPLORATION-PLAN)))
+  (bind ?action-id 3)
+  (foreach ?node ?route
+	(assert (plan-action (id ?action-id) (goal-id EXPLORATION) (plan-id EXPLORATION-PLAN) (action-name move-node) (param-values ?r ?node)))
+	(bind ?action-id (+ ?action-id 3))
+  )
+  (modify ?g (mode EXPANDED))
+)
+
+
+
 (defrule goal-expander-enter-field
   ?g <- (goal (mode SELECTED) (id ENTER-FIELD))
   (wm-fact (key refbox team-color) (value ?team-color))

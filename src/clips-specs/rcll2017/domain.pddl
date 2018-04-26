@@ -41,6 +41,7 @@
 		cap-carrier - workpiece
 		shelf-spot - object
 		ring-num - object
+		zone - object
 	)
 
 	(:constants
@@ -238,8 +239,7 @@
 	;
 	(:action move
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
-		:precondition (and (entered-field ?r)
-										(at ?r ?from ?from-side)
+		:precondition (and (at ?r ?from ?from-side)
 										(or (at ?r ?to ?to-side) (location-free ?to ?to-side)))
 		:effect (and (not (at ?r ?from ?from-side))
 								 (location-free ?from ?from-side)
@@ -254,8 +254,7 @@
 	; actions cut the planning time by about 95%.
 	(:action move-wp-put
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps)
-		:precondition (and (entered-field ?r)
-										(at ?r ?from ?from-side)
+		:precondition (and (at ?r ?from ?from-side)
 										(or (location-free ?to INPUT) (at ?r ?to INPUT))
 										(mps-state ?to IDLE))
 		:effect (and (not (at ?r ?from ?from-side))
@@ -266,8 +265,7 @@
 
 	(:action move-wp-get
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
-		:precondition (and (entered-field ?r)
-										(at ?r ?from ?from-side)
+		:precondition (and (at ?r ?from ?from-side)
 										(or (location-free ?to ?to-side) (at ?r ?to ?to-side))
 										(mps-state ?to READY-AT-OUTPUT)
 										(can-hold ?r))
@@ -446,5 +444,24 @@
 		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT))
                  (not (ds-prepared-gate ?m ?g))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
+	)
+
+
+        (:action move-node
+			:parameters (?r - robot ?z - zone)
+			:precondition (entered-field ?r) 
+			:effect (entered-field ?r)
+	)
+
+	(:action stop
+			:parameters (?r - robot)
+			:precondition (entered-field ?r)
+			:effect (entered-field ?r)
+	)
+
+	(:action explore-zone
+			:parameters (?r - robot ?z - zone)
+			:precondition (entered-field ?r)
+			:effect (entered-field ?r)
 	)
 )
