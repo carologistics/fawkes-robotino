@@ -13,10 +13,13 @@ double CustomICP::getScaledFitness()
 {
   double sum_dists = 0;
   for (const pcl::Correspondence &corr : *correspondences_) {
-    if (corr.index_match >= 0)
-      sum_dists += double(std::sqrt(corr.distance));
+    if (corr.index_match >= 0) {
+      //sum_dists += double(std::sqrt(corr.distance));
+      sum_dists += 1 / (0.001 + double(std::sqrt(corr.distance)));
+    }
   }
-  return double(correspondences_->size()) / sum_dists;
+  return sum_dists;
+  //return double(correspondences_->size()) / sum_dists;
 }
 
 
@@ -152,7 +155,7 @@ void RecognitionThread::loop()
 
   /*double new_fitness = (1 / reg.getFitnessScore())
       / double(std::min(model_with_normals->size(), scene_with_normals->size()));*/
-  double new_fitness = reg.getScaledFitness();
+  double new_fitness = (1 / reg.getFitnessScore()) / 10000;
 
   { MutexLocker locked2(&main_thread_->bb_mutex_);
     if (!main_thread_->icp_cancelled_) {
@@ -182,9 +185,9 @@ void RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::t
   tf_listener->transform_pose("base_link", fittedPose_conv, fittedPose_base);
   fawkes::tf::Matrix3x3 basis = fittedPose_base.getBasis();
   fawkes::tf::Vector3 yaxis_possibility_row = basis.getRow(1);
-  printf("\nrow basis: %f/%f/%f\n", yaxis_possibility_row[0], yaxis_possibility_row[1], yaxis_possibility_row[2]);
+  //printf("\nrow basis: %f/%f/%f\n", yaxis_possibility_row[0], yaxis_possibility_row[1], yaxis_possibility_row[2]);
   fawkes::tf::Vector3 yaxis_tf = basis.getColumn(1);
-  printf("col basis: %f/%f/%f\n", yaxis_tf[0], yaxis_tf[1], yaxis_tf[2]);
+  //printf("col basis: %f/%f/%f\n", yaxis_tf[0], yaxis_tf[1], yaxis_tf[2]);
   fawkes::tf::Vector3 aligned_y(0, 0, -1);
   fawkes::tf::Scalar angle = yaxis_tf.angle(aligned_y);
   fawkes::tf::Vector3 rotational_axis = yaxis_tf.cross(aligned_y);
@@ -199,7 +202,7 @@ void RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::t
   // yaxis_possibility_row = basis.getRow(1);
   // printf("row basis: %f/%f/%f", yaxis_possibility_row[0], yaxis_possibility_row[1], yaxis_possibility_row[2]);
   yaxis_tf = basis.getColumn(1);
-  printf("col basis result: %f/%f/%f\n", yaxis_tf[0], yaxis_tf[1], yaxis_tf[2]);
+  //printf("col basis result: %f/%f/%f\n", yaxis_tf[0], yaxis_tf[1], yaxis_tf[2]);
 
   tf_listener->transform_pose(fittedPose_conv.frame_id, fittedPose_base, fittedPose_conv);
 }
