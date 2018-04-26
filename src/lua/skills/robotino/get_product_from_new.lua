@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from_new"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"mps_align", "product_pick_new","shelf_pick_new", "drive_to"}
+depends_skills     = {"mps_align", "product_pick_new","shelf_pick_new", "drive_to","conveyor_align"}
 depends_interfaces = {
 }
 
@@ -61,7 +61,7 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"CONVEYOR_ALIGN",SkillJumpState,skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
    {"PRODUCT_PICK_NEW", SkillJumpState, skills={{product_pick_new}}, final_to="FINAL", fail_to="FAILED"},
-   {"SHELF_PICK_NEW", SkillJumpState, skills={{shelf_pick_new}}}, final_to="FINAL", fail_to="FAILED"},
+   {"SHELF_PICK_NEW", SkillJumpState, skills={{shelf_pick_new}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -69,7 +69,7 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
    {"INIT", "MPS_ALIGN", cond=already_at_conveyor, desc="Already in front of the mps, align"},
    {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"},
-   {"DECIDE_ENDSKILL", "PRODUCT_PICK_NEW", cond=vars.shelf, desc="Pick from shelf"},
+   {"DECIDE_ENDSKILL", "PRODUCT_PICK_NEW", cond="vars.shelf", desc="Pick from shelf"},
    {"DECIDE_ENDSKILL", "SHELF_PICK_NEW", cond=true, desc="Pick from conveyor"},
 }
 
@@ -101,10 +101,10 @@ function CONVEYOR_ALIGN:init()
    end
 end
 
-function CONVEYOR_PICK:init()
+function PRODUCT_PICK_NEW:init()
   self.args["product_pick_new"].offset_x = 0
 end
 
-function SHELF_PICK:init()
+function SHELF_PICK_NEW:init()
   self.args["shelf_pick_new"] = {slot = self.fsm.vars.shelf}
 end
