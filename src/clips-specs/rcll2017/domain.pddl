@@ -48,7 +48,7 @@
 		START - location
 		BS CS DS RS SS - mps-typename
 		IDLE BROKEN PREPARED PROCESSING PROCESSED WAIT-IDLE READY-AT-OUTPUT DOWN - mps-statename
-		INPUT OUTPUT - mps-side
+		;INPUT OUTPUT - mps-side
 		BASE_NONE BASE_RED BASE_BLACK BASE_SILVER - base-color
 		CAP_NONE CAP_BLACK CAP_GREY - cap-color
 		GATE-1 GATE-2 GATE-3 - ds-gate
