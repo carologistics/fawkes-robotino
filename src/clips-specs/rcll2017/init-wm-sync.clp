@@ -25,7 +25,7 @@
 ;  (robot-memory-sync-clean-domain-facts)
 ;)
 
-(deffunction wm-sync-flush-locks
+(deffunction wm-sync-flush-locks-of-agent
   (?owner)
   (printout warn "Clearing all locks of " ?owner crlf)
   (bind ?doc (bson-create))
@@ -33,10 +33,22 @@
   (robmem-remove ?*MUTEX-COLLECTION* ?doc)
 )
 
+(deffunction wm-sync-flush-all-locks
+  ()
+  (printout warn "Clearing all locks of all agents" crlf)
+  (bind ?doc (bson-create))
+  (robmem-remove ?*MUTEX-COLLECTION* ?doc)
+)
+
 (defrule init-wm-sync-flush-locks
   (executive-init)
   (wm-fact (id "/cx/identity") (value ?self))
   =>
-  (printout warn "Flushing all locks" crlf)
-  (wm-sync-flush-locks ?self)
+  (wm-sync-flush-locks-of-agent ?self)
+)
+
+(defrule init-wm-sync-flush-locks-during-setup
+  (wm-fact (key refbox phase) (value SETUP))
+  =>
+  (wm-sync-flush-all-locks)
 )
