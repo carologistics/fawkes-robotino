@@ -80,6 +80,7 @@
   (unwatch facts MotorInterface)
   (unwatch facts NavigatorInterface)
   (unwatch facts ZoneInterface)
+)
 
 (defrule state-estimation-motor-interfaces
   "Open the Navgraph blackboard interfaces ."
