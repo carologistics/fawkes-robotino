@@ -26,10 +26,9 @@
   ; (blackboard-open "MotorInterface" "Robotino")
 )
 
-(defrule gripper-init
-        (executive-init)
-        (ff-feature-loaded blackboard)
-        (not (gripper-blackboard-init))
+(defrule state-estimation-gripper-init
+  (executive-init)
+  (ff-feature-loaded blackboard)
   (not (blackboard-interface (type "AX12GripperInterface") (id "Gripper AX12")))
   =>
   (blackboard-open-reading "AX12GripperInterface" "Gripper AX12")
@@ -69,7 +68,6 @@
   (blackboard-open "LaserLineInterface" "/laser-lines/6")
   (blackboard-open "LaserLineInterface" "/laser-lines/7")
   (blackboard-open "LaserLineInterface" "/laser-lines/8")
-  (blackboard-open "MotorInterface" "Robotino")
   (blackboard-open "ZoneInterface" "/explore-zone/info")
  (unwatch rules blackboard-read)
   (unwatch facts RobotinoSensorInterface)
@@ -83,4 +81,11 @@
   (unwatch facts NavigatorInterface)
   (unwatch facts ZoneInterface)
 
+(defrule state-estimation-motor-interfaces
+  "Open the Navgraph blackboard interfaces ."
+  (executive-init)
+  (ff-feature-loaded blackboard)
+  (not (blackboard-interface (type "MotorInterface") (id "Robotino")))
+  =>
+  (blackboard-open "MotorInterface" "Robotino")
 )
