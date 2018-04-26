@@ -1,6 +1,5 @@
-
-
 (defrule action-selection-exploration-select
+	(goal (id EXPLORATION) (mode DISPATCHED))
 	?pa <- (plan-action (plan-id EXPLORATION-PLAN) (goal-id EXPLORATION)
 			(id ?id) (status FORMULATED)
 			(action-name ?action-name)
@@ -22,6 +21,7 @@
 )
 
 (defrule action-seleection-explorezone-release-locks
+	(goal (id EXPLORATION) (mode DISPATCHED))
 	?p <- (plan (id EXPLORE-ZONE) (goal-id EXPLORATION))
 	(not (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (status ?s&~FINAL&~FORMULATED&~FAILED)))
 	?rl <- (plan-action (plan-id EXPLORE-ZONE) (action-name release-locks) (status FORMULATED))
@@ -32,6 +32,7 @@
 
 (defrule action-selection-explorezone-done
 	?p <- (plan (id EXPLORE-ZONE) (goal-id EXPLORATION))
+	(goal (id EXPLORATION) (mode DISPATCHED))
 	(or (not (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (status ?s&~FINAL)))
 					 (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (status ?s&FAILED))
 	)
@@ -46,6 +47,7 @@
 
 (defrule action-selection-exploration-failed
 	?p <- (plan (id EXPLORATION-PLAN) (goal-id EXPLORATION))
+	(goal (id EXPLORATION) (mode DISPATCHED))
 	?pa <- (plan-action (plan-id EXPLORATION-PLAN) (goal-id EXPLORATION) (id ?id)
 			(action-name move-node) (param-values ?r ?node) (status FAILED))
 	(Position3DInterface (id "Pose") (translation $?r-pose))
