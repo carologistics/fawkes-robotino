@@ -41,7 +41,7 @@ local x_move_back = -0.2
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
-   {"MOVE_GRIPPER_Z", SkillJumpState, skills{{gripper_commands_new}}, final_to="OPEN_GRIPPER","FAILED"},
+   {"MOVE_GRIPPER_Z", SkillJumpState, skills={{gripper_commands_new}}, final_to="OPEN_GRIPPER","FAILED"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="WAIT", fail_to="FAILED"},
    {"WAIT", JumpState},
    {"MOVE_BACK", SkillJumpState, skills={{motor_move}},final_to="CLOSE_GRIPPER", fail_to="FAILED"},
@@ -49,6 +49,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
+  {"INIT","MOVE_GRIPPER_Z", cond=true},
   {"WAIT", "MOVE_BACK", timeout=0.5, desc="wait for gripper to open, then move back"},
 }
 

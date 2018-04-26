@@ -65,33 +65,31 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_i
 }
 
 fsm:add_transitions{
-   {"INIT", "NEW_BRING_PRODUCT", cond=false , desc="host says: new gripper"},  
-   {"INIT", "OLD_BRING_PRODUCT", cond=false , desc="host says: old gripper"}, 
+   {"INIT", "NEW_BRING_PRODUCT", cond=new_gripper , desc="host says: new gripper"},
+   {"INIT", "OLD_BRING_PRODUCT", cond=old_gripper , desc="host says: old gripper"},
    {"INIT", "FAILED", cond=true, desc="No gripper decision set"},
 }
 
 function INIT:init()
-   --TODO Read in gripper value 
+   --TODO Read in gripper value
 end
 
 function OLD_BRING_PRODUCT:init()
 
-      self.args["bring_product_to"].place = self.fsm.vars.place 
-      self.args["bring_product_to"].side  = self.fsm.vars.side 
-      self.args["bring_product_to"].shelf = self.fsm.vars.shelf 
-      self.args["bring_product_to"].slide = self.fsm.vars.slide 
-      self.args["bring_product_to"].atmps = self.fsm.vars.atmps 
-      
+      self.args["bring_product_to"].place = self.fsm.vars.place
+      self.args["bring_product_to"].side  = self.fsm.vars.side
+      self.args["bring_product_to"].shelf = self.fsm.vars.shelf
+      self.args["bring_product_to"].slide = self.fsm.vars.slide
+      self.args["bring_product_to"].atmps = self.fsm.vars.atmps
+
 end
 
 function NEW_BRING_PRODUCT:init()
 
-      self.args["bring_product_to_new"].place = self.fsm.vars.place 
-      self.args["bring_product_to_new"].side  = self.fsm.vars.side 
-      self.args["bring_product_to_new"].shelf = self.fsm.vars.shelf 
-      self.args["bring_product_to_new"].slide = self.fsm.vars.slide 
-      self.args["bring_product_to_new"].atmps = self.fsm.vars.atmps 
+      self.args["bring_product_to_new"].place = self.fsm.vars.place
+      self.args["bring_product_to_new"].side  = self.fsm.vars.side
+      self.args["bring_product_to_new"].shelf = self.fsm.vars.shelf
+      self.args["bring_product_to_new"].slide = self.fsm.vars.slide
+      self.args["bring_product_to_new"].atmps = self.fsm.vars.atmps
 
 end
-
-

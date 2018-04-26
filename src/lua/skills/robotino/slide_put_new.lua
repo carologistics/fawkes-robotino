@@ -15,8 +15,8 @@ documentation      = [==[
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
-local slide_distance=-0.275, --TODO measure exact value
-local move_back_dist=-0.2
+local slide_distance = -0.275 --TODO measure exact value
+local move_back_dist = -0.2
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
