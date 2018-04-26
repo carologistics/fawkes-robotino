@@ -580,7 +580,7 @@
   ;(not (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))  TODO lock GET
   ;(not (lock (type ACCEPT) (resource ?)))
   ; An explorable zone for which no lock was refused yet
-  (zone-exploration
+  ?ze <- (zone-exploration
     (name ?zn)
     (machine UNKNOWN)
     (line-visibility ?vh&:(> ?vh 0))
@@ -601,11 +601,14 @@
     ;(lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn2))  TODO lock REFUSE
   ;)
   (plan (id ?plan-id&EXPLORATION-PLAN) (goal-id EXPLORATION))
+  (not (plan (id EXPLORE-ZONE)))
   (plan-action (id ?action-id) (action-name ?action-name) (plan-id ?plan-id) (status RUNNING))
   (plan-action (id ?action-id2) (action-name ?action-name2) (plan-id ?plan-id) (status FINAL|FAILED))
   ?skill <- (skill (id ?skill-id) (name ?action-name) (status S_RUNNING))
   (zone-exploration (name ?zn))
   =>
+  (bind ?new-vh (+ 1 ?vh))
+  (modify ?ze (line-visibility 0) (times-searched ?new-vh))
   (modify ?skill (status S_FAILED))
   (printout t "EXP formulating zone exploration plan " ?zn crlf)
   (assert
@@ -697,30 +700,31 @@
         (team (mirror-team ?team-color))
       )
     )
-    (printout t "Exploration successfull. Found " ?machine " in " ?zn2 crlf)
+    (printout t "EXP explore-zone successfull. Found " ?machine " in " ?zn2 crlf)
   )
 )
 
-(defrule exp-skill-explore-zone-failed
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  ;?skill <- (skill (name explore-zone) (status ?status&S_FINAL|S_FAILED))
-  (plan (id EXPLORE-ZONE) (goal-id EXPLORATION))
-  ?pa <- (plan-action (action-name evaluation) (status PENDING))
-  (plan-action (action-name explore-zone) (plan-id EXPLORE-ZONE) (param-values ?r ?zn-str) (status FAILED))
-  (ZoneInterface (id "/explore-zone/info") (zone ?zn-str) (search_state ?s&:(neq ?s YES)))
-  ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (machine ?machine) (times-searched ?times-searched))
-=>
-  (modify ?pa (status FINAL))
-  (printout t "Exploration of " ?zn-str " failed" crlf)
-  ;(retract ?st-f ?exp-f ?skill)
-  (if (and (eq ?s NO) (eq ?machine UNKNOWN)) then
-    (modify ?ze (machine NONE) (times-searched (+ ?times-searched 1)))
-  ;(synced-modify ?ze machine NONE times-searched (+ ?times-searched 1)) TODO synced-modify
-    else
-    (modify ?ze (line-visibility 0) (times-searched (+ ?times-searched 1)))
-  ;(synced-modify ?ze line-visibility 0 times-searched (+ ?times-searched 1)) TODO synced-modify
-  )
-)
+
+;(defrule exp-skill-explore-zone-failed
+;  (goal (id EXPLORATION) (mode DISPATCHED))
+;  ;?skill <- (skill (name explore-zone) (status ?status&S_FINAL|S_FAILED))
+;  (plan (id EXPLORE-ZONE) (goal-id EXPLORATION))
+;  ?pa <- (plan-action (action-name evaluation) (status PENDING))
+;  (plan-action (action-name explore-zone) (plan-id EXPLORE-ZONE) (param-values ?r ?zn-str) (status FAILED))
+;  (ZoneInterface (id "/explore-zone/info") (zone ?zn-str) (search_state ?s&:(neq ?s YES)))
+;  ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (machine ?machine) (times-searched ?times-searched))
+;=>
+;  (modify ?pa (status FINAL))
+;  (printout t "EXP Exploration of " ?zn-str " failed" crlf)
+;  ;(retract ?st-f ?exp-f ?skill)
+;  (if (and (eq ?s NO) (eq ?machine UNKNOWN)) then
+;    (modify ?ze (machine NONE) (times-searched (+ ?times-searched 1)))
+;  ;(synced-modify ?ze machine NONE times-searched (+ ?times-searched 1)) TODO synced-modify
+;    else
+;    (modify ?ze (line-visibility 0) (times-searched (+ ?times-searched 1)))
+;  ;(synced-modify ?ze line-visibility 0 times-searched (+ ?times-searched 1)) TODO synced-modify
+;  )
+;)
 
 ; TODO RELEASE LOCKS IF action of subgoal fails
 
@@ -767,7 +771,7 @@
   )
   (pb-broadcast ?peer ?mr)
   (modify ?ws (time ?now) (seq (+ ?seq 1)))
-  (printout error "Reported mps : " ?mr crlf)
+  (printout error "Reported mps : " (implode$ ?mr) crlf)
 )
 
 (defrule exp-exploration-ends-cleanup

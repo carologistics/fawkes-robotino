@@ -55,8 +55,10 @@
 	(not (plan-action (plan-id EXPLORATION-PLAN) (id ?hid&: (and (< ?hid ?oid) (> ?hid ?id))) (status FORMULATED)))
 	=>
 	(if (< (distance-mf ?node-pos ?r-pose) 1.5) then
+		(printout t "EXP Go to next node" crlf)
 		(modify ?panext (status PENDING))
 		else
+		(printout t "EXP Retry node" crlf)
 		(modify ?pa (status FORMULATED))
 	)
 )
