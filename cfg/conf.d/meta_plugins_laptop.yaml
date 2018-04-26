@@ -57,6 +57,7 @@ fawkes/meta_plugins:
     - clips-pddl-parser
     - m-robot-memory
     - clips_robot_memory
+    - velocity_share
   m-robot-memory:
     - mongodb
     - robot-memory
