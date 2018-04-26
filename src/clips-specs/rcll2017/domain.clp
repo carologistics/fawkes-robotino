@@ -28,9 +28,9 @@
   (assert (domain-loaded))
 )
 
-(defrule test-domain-set-sensed-predicates
+(defrule domain-set-sensed-predicates
   (domain-loaded)
-  ?p <- (domain-predicate (name mps-state) (sensed FALSE))
+  ?p <- (domain-predicate (name mps-state|location-locked) (sensed FALSE))
 =>
   (modify ?p (sensed TRUE))
 )
@@ -41,9 +41,9 @@
   (modify ?p (value-predicate TRUE))
 )
 
-(defrule domain-wp-put-nowait
+(defrule domain-nowait-actions
   (domain-loaded)
-	?o <- (domain-operator (name wp-put|wp-get|prepare-bs|prepare-ds|prepare-cs) (wait-sensed ~FALSE))
+	?o <- (domain-operator (name wp-put|wp-get|prepare-bs|prepare-ds|prepare-cs|location-unlock) (wait-sensed ~FALSE))
 	=>
 	(modify ?o (wait-sensed FALSE))
 )

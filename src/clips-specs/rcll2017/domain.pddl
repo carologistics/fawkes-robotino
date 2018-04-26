@@ -107,6 +107,7 @@
     (spot-free ?m - mps ?spot - shelf-spot)
 
     (locked ?name - object)
+    (location-locked ?m - mps ?s - mps-side)
 	)
 
 ;Kind of a hack. actually it should model the removal of present workpieces
@@ -500,5 +501,15 @@
     :parameters (?name - object)
     :precondition (locked ?name)
     :effect (not (locked ?name))
+  )
+  (:action location-lock
+    :parameters (?location - mps ?side - side)
+    :precondition (not (location-locked ?location ?side))
+    :effect (location-locked ?location ?side)
+  )
+  (:action location-unlock
+    :parameters (?location - mps ?side - side)
+    :precondition (location-locked ?location ?side)
+    :effect (not (location-locked ?location ?side))
   )
 )
