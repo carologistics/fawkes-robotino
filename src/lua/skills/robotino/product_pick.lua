@@ -32,7 +32,6 @@ depends_interfaces = {
 
 documentation      = [==[The robot needs to be aligned with the machine, then just drives forward
 and opens the gripper
-@param offset_x the offset_x from the navgraph point
 ]==]
 
 -- the angle to open the gripper after the first grasp
@@ -41,10 +40,6 @@ OPENING_ANGLE = 0.1
 -- Initialize as skill module
 skillenv.skill_module(_M)
 local tfm = require("tf_module")
-local x_distance = 0.315
-if config:exists("/skills/approach_distance_conveyor/x") then
-   x_distance = config:get_float("/skills/approach_distance_conveyor/x")
-end
 
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
@@ -93,7 +88,6 @@ function OPEN_GRIPPER:init()
 end
 
 function DRIVE_FORWARD:init()
-   self.args["approach_mps"].x = x_distance - self.fsm.vars.offset_x
    self.args["approach_mps"].use_conveyor = true
 end
 

@@ -40,11 +40,6 @@ documentation      = [==[ slide_put
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local x_distance = 0.25
-if config:exists("/skills/approach_distance_laser/x") then
-   x_distance = config:get_float("/skills/approach_distance_laser/x")
-end
-
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
    {"GOTO_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SLIDE", fail_to="FAILED"},
@@ -72,7 +67,6 @@ function GOTO_SLIDE:init()
 end
 
 function APPROACH_SLIDE:init()
-   self.args["approach_mps"].x = x_distance
    self.args["approach_mps"].use_conveyor = false
 end
 

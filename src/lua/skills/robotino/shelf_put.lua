@@ -34,15 +34,11 @@ depends_interfaces = {}
 documentation      = [==[ shelf_put
 
                           This skill does:
-                          - Puts a product on the shelf                    
+                          - Puts a product on the shelf
 ]==]
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
-local x_distance = 0.25
-if config:exists("/skills/approach_distance_laser/x") then
-      x_distance = config:get_float("/skills/approach_distance_laser/x") - 0.01
-end
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
@@ -84,7 +80,6 @@ function GOTO_SHELF:init()
 end
 
 function APPROACH_SHELF:init()
-   self.args["approach_mps"].x = x_distance
    self.args["approach_mps"].use_conveyor = false
 end
 
