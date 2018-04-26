@@ -486,6 +486,11 @@
     :precondition (not (locked ?name))
     :effect (locked ?name)
   )
+	(:action one-time-lock
+    :parameters (?name - object)
+    :precondition (not (locked ?name))
+    :effect (locked ?name)
+  )
   (:action unlock
     :parameters (?name - object)
     :precondition (locked ?name)

@@ -25,3 +25,10 @@
   (printout info "Setting /cx/identity to " ?name crlf)
   (assert (wm-fact (key cx identity) (value ?name)))
 )
+
+(defrule init-worldmodel-sync
+  (executive-init)
+  (wm-fact (key cx identity))
+  =>
+  (wm-robmem-sync-enable "/explore-zone")
+)

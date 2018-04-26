@@ -28,13 +28,14 @@
 
 (defrule lock-actions-lock-start
 	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
-                      (action-name ?action&lock|location-lock)
+                      (action-name ?action&one-time-lock|lock|location-lock)
                       (status PENDING) (executable TRUE)
                       (param-names $?param-names)
                       (param-values $?param-values))
   (time $?now)
 	=>
-  (if (eq ?action lock) then
+  (if (or (eq ?action lock) (eq ?action one-time-lock))
+  then
 	  (bind ?lock-name (plan-action-arg name ?param-names ?param-values))
   else
     (bind ?lock-name
@@ -51,7 +52,7 @@
 
 (defrule lock-actions-lock-acquired
 	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
-                      (action-name ?action-name&lock|location-lock)
+                      (action-name ?action-name&one-time-lock|lock|location-lock)
                       (param-values $?param-values)
                       (status RUNNING))
   ?mf <- (mutex (name ?name) (request LOCK) (response ACQUIRED))
@@ -69,15 +70,22 @@
 
 (defrule lock-actions-lock-rejected
 	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
-                      (action-name lock|location-lock) (status RUNNING))
+                      (action-name ?action-name&one-time-lock|lock|location-lock) (status RUNNING))
   ?mf <- (mutex (name ?name) (response REJECTED|ERROR)
                 (error-msg ?error-msg))
   ?li <- (lock-info (name ?name) (goal-id ?goal-id) (plan-id ?plan-id)
                     (action-id ?id))
 	=>
   (printout warn "Lock " ?name " was rejected " crlf)
-	(modify ?mf (request NONE) (response NONE) (error-msg ""))
-  (modify ?li (status WAITING) (last-error ?error-msg))
+  (if (eq ?action-name one-time-lock)
+  then
+  (modify ?mf (request NONE) (response NONE) (error-msg ""))
+  (modify ?pa (status EXECUTION-FAILED) (error-msg ?error-msg))
+  (retract ?li)
+  else
+	 (modify ?mf (request NONE) (response NONE) (error-msg ""))
+   (modify ?li (status WAITING) (last-error ?error-msg))
+  )
 )
 
 (defrule lock-actions-lock-retry
