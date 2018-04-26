@@ -70,7 +70,7 @@
 (defrule lock-actions-lock-rejected
 	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
                       (action-name lock|location-lock) (status RUNNING))
-  ?mf <- (mutex (name ?name) (request LOCK) (response REJECTED|ERROR)
+  ?mf <- (mutex (name ?name) (response REJECTED|ERROR)
                 (error-msg ?error-msg))
   ?li <- (lock-info (name ?name) (goal-id ?goal-id) (plan-id ?plan-id)
                     (action-id ?id))
