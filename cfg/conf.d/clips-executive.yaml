@@ -122,6 +122,7 @@ clips-executive:
         explore-zone: explore_zone{zone=?(z)s}
         move-node: goto{place=?(z)s} 
         move: ppgoto{place="?(to)Y-I"}
+        go-wait: ppgoto{place="?(to)Y"}
         move-wp-put: ppgoto{place="?(to)Y-I"}
         wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
         wp-put: bring_product_to{place=?(m)S}
@@ -165,3 +166,4 @@ clips-executive:
             zone-margin: 0.15 
             latest-send-last-report-time: 210 # =3:30
 
+          master: R-2
