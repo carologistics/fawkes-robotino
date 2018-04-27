@@ -1,0 +1,21 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/tag_vision
+---
+
+plugins/velocity_share:
+  robot_name_confpath: "/clips-agent/rcll2016/robot-name"
+
+  # update rate in Hz
+  update_rate: 4
+  #  velocity_scale: 3
+
+  # The maximum number of cells to be taken as a lookahead
+  max_cell_lookahead_count: 80
+
+  # Divide the to be reported path into this number of segments.
+  # Each end point including the start point is reported.
+  # Consider this value to be the desired resolution of the
+  # path to be reported.
+  number_of_segments: 3
