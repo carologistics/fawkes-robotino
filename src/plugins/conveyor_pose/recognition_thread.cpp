@@ -158,26 +158,26 @@ void RecognitionThread::loop()
   double new_fitness = (1 / reg.getFitnessScore()) / 10000;
 
   { MutexLocker locked2(&main_thread_->bb_mutex_);
+
     if (!main_thread_->icp_cancelled_) {
       main_thread_->result_fitness_ = new_fitness;
       main_thread_->result_pose_.reset(new tf::Stamped<tf::Pose> { result_pose });
+
+      if (new_fitness > initial_guess_tracked_fitness_) {
+        try {
+          tf_listener->transform_pose(
+                "odom",
+                tf::Stamped<tf::Pose>(result_pose, Time(0,0), result_pose.frame_id),
+                initial_guess_icp_odom_
+          );
+          initial_guess_tracked_fitness_ = new_fitness;
+
+        } catch(tf::TransformException &e) {
+          logger->log_error(name(), e);
+        }
+      }
     }
   } // MutexLocker
-
-  if (new_fitness > initial_guess_tracked_fitness_) {
-    try {
-      tf_listener->transform_pose(
-            "odom",
-            tf::Stamped<tf::Pose>(result_pose, Time(0,0), result_pose.frame_id),
-            initial_guess_icp_odom_
-      );
-      initial_guess_tracked_fitness_ = new_fitness;
-
-    } catch(tf::TransformException &e) {
-      logger->log_error(name(), e);
-    }
-  }
-
 }
 
 void RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::tf::Pose>& fittedPose_conv){

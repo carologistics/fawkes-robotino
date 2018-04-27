@@ -116,7 +116,7 @@ private:
 
   std::atomic_bool icp_cancelled_;
 
-  CloudPtr model_;
+  CloudPtr default_model_;
   CloudPtr aligned_model_;
   CloudPtr trimmed_scene_;
 
@@ -128,7 +128,7 @@ private:
 
   std::string current_station_;
 
-  void set_current_station(std::string station);
+  void set_current_station(const std::string &station);
 
 
   //Mapping from station to its correspoinding model path
