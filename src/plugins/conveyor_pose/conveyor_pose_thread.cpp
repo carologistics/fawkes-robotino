@@ -238,6 +238,10 @@ ConveyorPoseThread::init()
       throw fawkes::CouldNotOpenFileException(cfg_model_path_.c_str(), errnum,
                                               "Set from " CFG_PREFIX "/model_file");
 
+    size_t point_number = model_->size();
+    logger->log_info(name(), "The first pointcloud number of points is %f", double(point_number));
+
+
     norm_est_.setInputCloud(model_);
     model_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
     norm_est_.compute(*model_with_normals_);
@@ -252,6 +256,10 @@ ConveyorPoseThread::init()
         throw fawkes::CouldNotOpenFileException(it->second.c_str(), errnum,
                                                 "Set from " CFG_PREFIX "/model_file");
 
+
+      size_t point_number = model_->size();
+      logger->log_info(name(), "The first pointcloud number of %s points is %f",it->first.c_str(),double(point_number));
+
       norm_est_.setInputCloud(model);
       norm_est_.compute(*insert_model_with_normals);
       pcl::copyPointCloud(*model, *insert_model_with_normals);
@@ -265,6 +273,7 @@ ConveyorPoseThread::init()
   cloud_out_raw_ = new Cloud();
   cloud_out_trimmed_ = new Cloud();
   cloud_out_model_ = new Cloud();
+
   pcl_manager->add_pointcloud(cloud_out_raw_name_.c_str(), cloud_out_raw_);
   pcl_manager->add_pointcloud(cloud_out_trimmed_name_.c_str(), cloud_out_trimmed_);
   pcl_manager->add_pointcloud("model", cloud_out_model_);

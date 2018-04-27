@@ -60,6 +60,9 @@ void RecognitionThread::loop()
     pcl::removeNaNFromPointCloud(*scene_with_normals, *scene_with_normals, tmp);
     scene_with_normals->header = main_thread_->scene_with_normals_->header;
 
+    size_t point_number = model_with_normals->size();
+    logger->log_info(name(), "Model with numbers in Recog thread %f", double(point_number));
+
     try {
       if (initial_guess_tracked_fitness_ >= main_thread_->cfg_icp_track_odom_min_fitness_
           || ( !main_thread_->have_laser_line_
@@ -143,6 +146,10 @@ void RecognitionThread::loop()
 
   CloudPtr aligned_model(new Cloud());
   pcl::copyPointCloud(*reg_result, *aligned_model);
+
+  size_t point_number = aligned_model->size();
+  logger->log_info(name(), "The published model number of points is %f",double(point_number));
+
   main_thread_->cloud_publish(aligned_model, main_thread_->cloud_out_model_);
 
   tf::Stamped<tf::Pose> result_pose {
