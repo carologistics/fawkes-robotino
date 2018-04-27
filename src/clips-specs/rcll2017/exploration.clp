@@ -403,28 +403,11 @@
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
   (pb-set-field ?mr "team_color" ?team-color)
   (delayed-do-for-all-facts ((?er exploration-result)) (eq ?er:team ?team-color)
-    (bind ?n-explored (length
-      (find-all-facts ((?f wm-fact))
-        (and (eq (wm-key-arg ?f:key team) ?team-color) (eq (wm-key-arg ?f:key machine) UNKNOWN))
-      )
-    ))
-    (bind ?n-zones (length
-      (find-all-facts ((?f wm-fact))
-        (eq (wm-key-arg ?f:key team) ?team-color))
-    ))
-    ; or we are prepared for production
-    (if
-      (or
-        (< ?n-explored (- ?n-zones 1))
-        (>= (nth$ 1 ?game-time) ?latest-report-time)
-      )
-    then
       (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
       (pb-set-field ?mre "name" (str-cat ?er:machine))
       (pb-set-field ?mre "zone" (protobuf-name ?er:zone))
       (pb-set-field ?mre "rotation" ?er:orientation)
       (pb-add-list ?mr "machines" ?mre)
-    )
   )
   (pb-broadcast ?peer ?mr)
   (modify ?ws (time ?now) (seq (+ ?seq 1)))
