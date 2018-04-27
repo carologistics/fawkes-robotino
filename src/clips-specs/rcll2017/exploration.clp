@@ -233,6 +233,7 @@
 
 (defrule goal-reasoner-create-exploration-goal
   (not (goal (id EXPLORATION)))
+  (wm-fact (key domain fact entered-field args? r ?r))
   (wm-fact (key domain fact self args? r ?r))
   (wm-fact (key refbox phase) (type UNKNOWN) (value EXPLORATION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
@@ -522,10 +523,8 @@
   ?g <- (goal (id EXPLORATION) (mode DISPATCHED))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
-  ?pa <- (plan-action (goal-id EXPLORATION) (status WAITING|RUNNING))
 =>
-  (modify ?pa (status FAILED))
-  (delayed-do-for-all-facts ((?l tried-lock)) (eq ?l:type REFUSE)
+  (delayed-do-for-all-facts ((?l tried-lock)) (eq ?l:result REJECT)
     (retract ?l)
   )
   (printout t "exploration phase ended, cleaning up" crlf)
