@@ -4,7 +4,48 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/laser-filter
 ---
 plugins/laser-filter:
-  robot-front:
+  # If you have a 1080 laser, enable the downsample filter and disable the
+  # 360to360 filter.
+  # For a 360 laser, disable the downsample filter and enable the 360to360
+  # filter.
+  # Enable the filter-{front,back}-1080 filter if you need a filtered 1080
+  # laser.
+
+  front-downsample:
+    active: true
+    in/sick-tim55x: Laser1080Interface::Laser front
+    out/filtered: Laser360Interface::Laser front 360
+    filters:
+      1-min:
+        type: 1080to360
+
+  front-360to360:
+    # Do nothing, just rename so we can always use the same name.
+    active: false
+    in/sick-tim55x: Laser360Interface::Laser front
+    out/filtered: Laser360Interface::Laser front 360
+    filters:
+      1-copy:
+        type: copy
+
+  back-downsample:
+    active: false
+    in/sick-tim55x: Laser1080Interface::Laser back
+    out/filtered: Laser360Interface::Laser back 360
+    filters:
+      1-min:
+        type: 1080to360
+
+  back-360to360:
+    # Do nothing, just rename so we can always use the same name.
+    active: true
+    in/sick-tim55x: Laser360Interface::Laser back
+    out/filtered: Laser360Interface::Laser back 360
+    filters:
+      1-copy:
+        type: copy
+
+  filter-front-360:
     active: true
     in/sick-tim55x: Laser360Interface::Laser front 360
     out/filtered: Laser360Interface::Laser front-filtered
@@ -14,37 +55,29 @@ plugins/laser-filter:
       1-min:
         # Threshold for minimum value to get rid of erroneous beams on most black surfaces
         type: min_circle
-
         # Radius of minimum length; m
         radius: 0.04
-
       2-sector:
         # Ignore a defined range of beams (e.g. those hitting the robot itself)
         type: circle_sector
-
         from: 235
         to: 125
 
-  robot-back:
+  filter-back-360:
     active: true
-    in/sick-tim55x: Laser360Interface::Laser back
+    in/sick-tim55x: Laser360Interface::Laser back 360
     out/filtered: Laser360Interface::Laser back-filtered
-
     filters:
       1-min:
         # Threshold for minimum value to get rid of erroneous beams on most black surfaces
         type: min_circle
-
         # Radius of minimum length; m
         radius: 0.04
-
       2-sector:
         # Ignore a defined range of beams (e.g. those hitting the robot itself)
         type: circle_sector
-
         from: 245
         to: 135
-
       3-projection:
         type: projection
         target_frame: !frame base_laser
@@ -54,41 +87,62 @@ plugins/laser-filter:
         not_to_y: 0.0
         only_from_z: -0.17
         only_to_z: 0.33
-
       4-min:
         # Filter again after the transform to remove points that are projected
         # into the laser origin.
         type: min_circle
-
         # Radius of minimum length; m
         radius: 0.04
 
-
-  robot-front-1080:
+  filter-front-1080:
     active: true
-
     # URG input interface
     #in/urg: Laser360Interface::Laser urg
     in/sick-tim55x: Laser1080Interface::Laser front
-
     # URG filtered output interface
-    out/filtered: Laser1080Interface::Laser filtered-1080
-
+    out/filtered: Laser1080Interface::Laser front-filtered-1080
     filters:
-
       1-min:
         # Threshold for minimum value to get rid of erroneous beams on most black surfaces
         type: min_circle
-
         # Radius of minimum length; m
         radius: 0.04
-
       2-sector:
         # Ignore a defined range of beams (e.g. those hitting the robot itself)
         type: circle_sector
-
         from: 705
         to: 375
+
+  filter-back-1080:
+    active: false
+    in/sick-tim55x: Laser360Interface::Laser back
+    out/filtered: Laser360Interface::Laser back-filtered-1080
+    filters:
+      1-min:
+        # Threshold for minimum value to get rid of erroneous beams on most black surfaces
+        type: min_circle
+        # Radius of minimum length; m
+        radius: 0.04
+      2-sector:
+        # Ignore a defined range of beams (e.g. those hitting the robot itself)
+        type: circle_sector
+        from: 735
+        to: 405
+      3-projection:
+        type: projection
+        target_frame: !frame base_laser
+        not_from_x: 0.0
+        not_to_x: 0.0
+        not_from_y: 0.0
+        not_to_y: 0.0
+        only_from_z: -0.17
+        only_to_z: 0.33
+      4-min:
+        # Filter again after the transform to remove points that are projected
+        # into the laser origin.
+        type: min_circle
+        # Radius of minimum length; m
+        radius: 0.04
 
   robot-merged:
     active: true
@@ -108,40 +162,19 @@ plugins/laser-filter:
       1-min:
         type: min_circle
         radius: 0.04
-
       2-sector:
         type: circle_sector
         from: 235
         to: 125
 
-
-  sick-downsample:
-    active: true
-
-    # URG input interface
-    #in/urg: Laser360Interface::Laser urg
-    in/sick-tim55x: Laser1080Interface::Laser front
-
-    # URG filtered output interface
-    out/filtered: Laser360Interface::Laser front 360
-
-    filters:
-      1-min:
-        # Threshold for minimum value to get rid of erroneous beams on most black surfaces
-        type: 1080to360
-
   colli:
     active: false
-
     # URG input interface
     in/urg: Laser360Interface::Laser urg-filtered
     in/map: Laser360Interface::Map Laser
-
     # URG filtered output interface
     out/filtered: Laser360Interface::Laser colli
-
     filters:
-
       1-mix:
         type: min_merge
         timestamp_selection: first

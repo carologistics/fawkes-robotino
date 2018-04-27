@@ -75,6 +75,10 @@ class NavGraphGeneratorMPSThread
   float                                      cfg_mps_width_;
   float                                      cfg_mps_length_;
   float                                      cfg_mps_approach_dist_;
+  float                                      cfg_left_shelf_dist_;
+  float                                      cfg_middle_shelf_dist_;
+  float                                      cfg_right_shelf_dist_;
+  float                                      cfg_slide_dist_;
   bool                                       cfg_mps_corner_obst_;
   float                                      cfg_map_min_dist_;
   float                                      cfg_map_point_max_dist_;
@@ -96,6 +100,14 @@ class NavGraphGeneratorMPSThread
 
   unsigned int                               compute_msgid_;
   std::vector<Eigen::Vector2i>               wait_zones_;
+
+  typedef struct {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    Eigen::Vector2f    pos;
+    Eigen::Quaternionf ori;
+    float              yaw;
+  } MapLocation;
 
   typedef struct {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -122,6 +134,8 @@ class NavGraphGeneratorMPSThread
     std::vector<Eigen::Vector2i> blocked_zones;
 
 	std::vector<Eigen::Vector2f> corners;
+
+    std::map<std::string, MapLocation> approach_points;
 
   } MPSStation;
   std::map<std::string, MPSStation> stations_;
