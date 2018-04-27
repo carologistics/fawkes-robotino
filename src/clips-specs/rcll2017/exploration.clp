@@ -202,44 +202,15 @@
   (assert (exp-navigator-vmax ?max-velocity ?max-rotation))
 )
 
-(defrule conf-get-exp-zone-margin
-  ?cv <- (wm-fact (id "/config/rcll/exploration/zone-margin") (type FLOAT) (value ?zone-margin))
-  =>
-  (assert (exp-zone-margin ?zone-margin))
-  (retract ?cv)
-)
-
-(defrule exp-node-blocked
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  (wm-fact (key domain fact self args? r ?r))
-  ?s <- (state EXP_GOTO_NEXT)
-  (navgraph-node (name ?next-node) (pos $?node-trans))
-  (wm-fact (key explore-zone ?zn&:(eq ?zn (get-zone ?node-trans)) args? machine ?machine&~UNKNOWN&~NONE team ?))
-  (Position3DInterface (id "Pose") (translation $?pose-trans))
-  ?skill <- (skill (status S_RUNNING))
-  (test (< 1.5 (distance
-    (nth$ 1 ?node-trans)
-    (nth$ 2 ?node-trans)
-    (nth$ 1 ?pose-trans)
-    (nth$ 2 ?pose-trans)
-  )))
-=>
-  (modify ?skill (status S_FAILED))
-  (printout t "Node " ?next-node " blocked by " ?machine
-    " but we got close enough. Proceeding to next node." crlf)
-  (retract ?s)
-  (skill-call stop (create$ r) (create$ ?r))
-  (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
-  (assert (state EXP_IDLE))
-)
-
 (defrule goal-reasoner-create-exploration-goal
   (not (goal (id EXPLORATION)))
   (wm-fact (key domain fact entered-field args? r ?r))
   (wm-fact (key domain fact self args? r ?r))
   (wm-fact (key refbox phase) (type UNKNOWN) (value EXPLORATION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
+  ?cv <- (wm-fact (id "/config/rcll/exploration/zone-margin") (type FLOAT) (value ?zone-margin))
   =>
+  (assert (exp-zone-margin ?zone-margin))
   (assert (timer (name send-machine-reports)))
   (assert (goal (id EXPLORATION) (type ACHIEVE)))
 )
@@ -257,11 +228,8 @@
   (bind ?zone (get-zone 0.07 ?trans))
   (if ?zone then
     (modify ?ze (key explore-zone ?zn args? machine NONE team ?team) (values ?vis_str  (+ 1  ?time-searched_str)))
-    ;(synced-modify ?ze machine NONE  (+ 1 ?times-searched)) TODO synced-modify
   )
 )
-
-
 
 (defrule exp-found-line
   "Found a line that is within an unexplored zone."
@@ -283,7 +251,6 @@
                                               ?timestamp)))
                               args? machine UNKNOWN team ?team) (values ?zn-vh_str&:(< ?zn-vh_str 1) ?ts_str))
 =>
-  ;(synced-modify ?ze-f line-visibility ?vh) TODO synced-modify
   (modify ?ze-f (key explore-zone ?zn args? machine UNKNOWN team ?team) (values ?vh ?ts_str))
   (printout warn "EXP found line: " ?zn " vh: " ?vh crlf)
 )
@@ -307,9 +274,7 @@
   ?ze-f <- (wm-fact (key explore-zone ?zn&:(eq ?zn (get-zone ?zone-margin
                                                       (transform-safe "map" ?frame ?timestamp ?trans ?rot)))
                                                   args? machine UNKNOWN team ?team) (values ?lv_str&:(< ?lv_str 2) ?ts))
-  ;(not (locked-resource (resource ?r&:(eq ?r ?zn)))) TODO locked-resource
 =>
-  ;(synced-modify ?ze-f line-visibility (+ ?lv 1)) TODO synced-modify
   (modify ?ze-f (values (+ ?lv_str 1)  ?ts))
   (printout t "Found tag in " ?zn crlf)
 )
@@ -319,18 +284,21 @@
   (goal (id EXPLORATION) (mode DISPATCHED))
   (wm-fact (key domain fact self args? r ?r))
   (Position3DInterface (id "Pose") (translation $?trans))
-  ?ze <- (wm-fact (key explore-zone ?zn args? machine ?machine team ?team) (values ?vh_str&:(> ?vh_str 0)  ?ts_str&:(<= ?ts_str ?*EXP-SEARCH-LIMIT*)))
-  (not (wm-fact (key explore-zone ?zn2&:(< (distance-mf (zone-center ?zn2) ?trans) (distance-mf (zone-center ?zn) ?trans)) args? machine ?machine2 team ?team2) (values ?vh2&:(> ?vh2 0) ?ts2&:(<= ?ts2 ?*EXP-SEARCH-LIMIT*)))) 
+  ?ze <- (wm-fact (key explore-zone ?zn args? machine ?machine team ?team) (values ?vh&:(> ?vh 0) ?ts_str&:(<= ?ts_str ?*EXP-SEARCH-LIMIT*)))
+  (not (wm-fact (key
+		explore-zone ?zn2&:(< (distance-mf (zone-center ?zn2) ?trans) (distance-mf (zone-center ?zn) ?trans))
+		args? machine ?machine2 team ?team2)
+		(values ?vh2&:(> ?vh2 0) ?ts2&:(<= ?ts2 ?*EXP-SEARCH-LIMIT*))))
   (not (tried-lock (resource ?zn)))
   (plan (id ?plan-id&EXPLORATION-PLAN) (goal-id EXPLORATION))
   (not (plan (id EXPLORE-ZONE)))
-  
+
   (plan-action (id ?action-id) (action-name move-node) (plan-id ?plan-id) (status RUNNING))
   (plan-action (id ?action-id2) (action-name ?action-name2) (plan-id ?plan-id) (status FINAL|FAILED))
-  
+
   ?skill <- (skill (id ?skill-id) (name ?action-name) (status S_RUNNING))
   (not (exploration-result (zone ?zn)))
-   
+
   =>
   (assert (tried-lock (resource ?zn) (result REJECT)))
   (bind ?new-ts (+ 1 ?ts_str))
@@ -365,8 +333,6 @@
 (defrule exp-tried-locking-all-zones
   "There is at least one unexplored zone with a line, but locks have been denied for
    ALL unexplored zones. So clear all REFUSEs and start requesting locks from the beginning."
-
-
   (forall (wm-fact (key explore-zone ?zn args? machine ?machine team ?team)) (tried-lock (resource ?zn)))
 =>
   (delayed-do-for-all-facts ((?l tried-lock)) (eq ?l:result REJECT)
@@ -387,30 +353,18 @@
     (frame ?frame) (translation $?trans) (rotation $?rot)
   )
   ?lock <- (tried-lock (resource ?zn-sym&:(eq ?zn-sym (sym-cat ?zn-str))))
-  ; We don't check the visibility_history here since that's already done in the explore_zone skill
   (domain-fact (name tag-matching) (param-values ?machine ?side ?team-color ?tag-id))
 
   ?ze <-
     (wm-fact (key explore-zone ?zn2&:(eq ?zn2 (sym-cat ?zn-str)) args? machine ?machine2 team ?team2) (values ?vis2_str ?times-searched_str))
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
-  (not (exploration-result
-    (machine ?machine) (zone ?zn2)))
+  (not (exploration-result (machine ?machine) (zone ?zn2)))
   =>
   (modify ?lock (result ACCEPT))
   (modify ?pa (status FINAL))
- ; (assert
- ;   (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))
- ; ) TODO lock RELEASE
   (if (any-factp ((?ft found-tag)) (eq ?ft:name ?machine)) then
     (printout error "BUG: Tag for " ?machine " already found. Locking glitch or agent bug!" crlf)
   else
-    ; Order is important here: Update state before zone-exploration to avoid endless loop.
-    ;(synced-modify ?ze machine ?machine  (+ 1 ?times-searched)) TODO synced-modify
-    ;(synced-assert (str-cat "(found-tag (name " ?machine ") (side " ?side ")"
-    ;  "(frame \"map\") (trans " (implode$ ?trans) ") "
-    ;  "(rot " (implode$ ?rot) ") )")
-    ;) TODO synced-assert
-
     (modify ?ze (values ?vis2_str (+ 1 ?times-searched_str)))
     (assert (found-tag (name ?machine) (side ?side) (frame "map") (trans ?trans) (rot ?rot)))
     (assert
@@ -437,29 +391,6 @@
   (modify ?p (status FINAL))
 )
 
-;(defrule exp-skill-explore-zone-failed
-;  (goal (id EXPLORATION) (mode DISPATCHED))
-;  ;?skill <- (skill (name explore-zone) (status ?status&S_FINAL|S_FAILED))
-;  (plan (id EXPLORE-ZONE) (goal-id EXPLORATION))
-;  ?pa <- (plan-action (action-name evaluation) (status PENDING))
-;  (plan-action (action-name explore-zone) (plan-id EXPLORE-ZONE) (param-values ?r ?zn-str) (status FAILED))
-;  (ZoneInterface (id "/explore-zone/info") (zone ?zn-str) (search_state ?s&:(neq ?s YES)))
-;  ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (machine ?machine) ( ?times-searched))
-;=>
-;  (modify ?pa (status FINAL))
-;  (printout t "EXP Exploration of " ?zn-str " failed" crlf)
-;  ;(retract ?st-f ?exp-f ?skill)
-;  (if (and (eq ?s NO) (eq ?machine UNKNOWN)) then
-;    (modify ?ze (machine NONE) ( (+ ? 1)))
-;  ;(synced-modify ?ze machine NONE  (+ ? 1)) TODO synced-modify
-;    else
-;    (modify ?ze (line-visibility 0) ( (+ ? 1)))
-;  ;(synced-modify ?ze line-visibility 0  (+ ? 1)) TODO synced-modify
-;  )
-;)
-
-; TODO RELEASE LOCKS IF action of subgoal fails
-
 (defrule exp-report-to-refbox
   (goal (id EXPLORATION) (mode DISPATCHED))
   (wm-fact (key refbox team-color) (value ?color))
@@ -478,29 +409,11 @@
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
   (pb-set-field ?mr "team_color" ?team-color)
   (delayed-do-for-all-facts ((?er exploration-result)) (eq ?er:team ?team-color)
-    (bind ?n-explored (length
-      (find-all-facts ((?f wm-fact))
-        (and (eq (wm-key-arg ?f:key team) ?team-color) (eq (wm-key-arg ?f:key machine) UNKNOWN))
-      )
-    ))
-    (bind ?n-zones (length
-      (find-all-facts ((?f wm-fact))
-        (eq (wm-key-arg ?f:key team) ?team-color))
-    ))
-    ; send report for last machine only if the exploration phase is going to end
-    ; or we are prepared for production
-    (if
-      (or
-        (< ?n-explored (- ?n-zones 1))
-        (>= (nth$ 1 ?game-time) ?latest-report-time)
-      )
-    then
       (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
       (pb-set-field ?mre "name" (str-cat ?er:machine))
       (pb-set-field ?mre "zone" (protobuf-name ?er:zone))
       (pb-set-field ?mre "rotation" ?er:orientation)
       (pb-add-list ?mr "machines" ?mre)
-    )
   )
   (pb-broadcast ?peer ?mr)
   (modify ?ws (time ?now) (seq (+ ?seq 1)))
