@@ -324,7 +324,7 @@
   (exp-zone-margin ?zone-margin)
  ; ?ze <- (wm-fact (key explore-zone ?zn&:(eq ?zn (get-zone ?pos)) args? machine ?machine team ?team) (values line-vis ?vh&:(> ?vh 0)  time-searched ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
   ;(Position3DInterface (id "Pose") (translation $?act-pos))
-  (not (wm-fact (key explore-zone ?zn2&:(< (distance-mf (zone-center ?zn2) ?trans) (distance-mf (zone-center ?zn) ?trans)) args? machine ?machine team ?team) (values line-vis ?vh2&:(> ?vh2 0) time-searched ?ts2)))
+  (not (wm-fact (key explore-zone ?zn2&:(< (distance-mf (zone-center ?zn2) ?trans) (distance-mf (zone-center ?zn) ?trans)) args? machine ?machine2 team ?team2) (values line-vis ?vh2&:(> ?vh2 0) time-searched ?ts2<= ?ts2 ?*EXP-SEARCH-LIMIT*)))
   (not (tried-lock (resource ?zn)))
   (plan (id ?plan-id&EXPLORATION-PLAN) (goal-id EXPLORATION))
   (not (plan (id EXPLORE-ZONE)))
