@@ -86,11 +86,6 @@ clips-executive:
           - name: navgraph
           - name: protobuf
           - name: tf
-          - name: robmem-wait
-            feature-request: false
-            files: ["BATCH|robmem-wait-init.clp"]
-            wait-for: robmem-initialized
-          - name: robot_memory
         stage-3:
           - name: utils
             file: rcll2017/utils.clp
