@@ -106,21 +106,42 @@ ConveyorPoseThread::init()
   cfg_hint_["slide"][0]       = config->get_float( CFG_PREFIX "/icp/hint/slide/x" );
   cfg_hint_["slide"][1]       = config->get_float( CFG_PREFIX "/icp/hint/slide/y" );
   cfg_hint_["slide"][2]       = config->get_float( CFG_PREFIX "/icp/hint/slide/z" );
-  cfg_hint_["cap_station"][0] = config->get_float( CFG_PREFIX "/icp/hint/cap_station/x" );
-  cfg_hint_["cap_station"][1] = 0;
-  cfg_hint_["cap_station"][2] = 0;
-  cfg_hint_["ring_station"][0] = config->get_float( CFG_PREFIX "/icp/hint/ring_station/x" );
-  cfg_hint_["ring_station"][1] = 0;
-  cfg_hint_["ring_station"][2] = 0;
-  cfg_hint_["base_station"][0] = config->get_float( CFG_PREFIX "/icp/hint/base_station/x" );
-  cfg_hint_["base_station"][1] = 0;
-  cfg_hint_["base_station"][2] = 0;
-  cfg_hint_["delivery_station"][0] = config->get_float( CFG_PREFIX "/icp/hint/delivery_station/x" );
-  cfg_hint_["delivery_station"][1] = 0;
-  cfg_hint_["delivery_station"][2] = 0;
-  cfg_hint_["storage_station"][0] = config->get_float( CFG_PREFIX "/icp/hint/storage_station/x" );
-  cfg_hint_["storage_station"][1] = 0;
-  cfg_hint_["storage_station"][2] = 0;
+
+  cfg_hint_["cap_station"][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/cap_station/x", 0.f );
+  cfg_hint_["cap_station"][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/cap_station/y", 0.f );
+  cfg_hint_["cap_station"][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/cap_station/z", 0.f );
+
+  cfg_hint_["ring_station"][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/ring_station/x", 0.f );
+  cfg_hint_["ring_station"][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/ring_station/y", 0.f );
+  cfg_hint_["ring_station"][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/ring_station/z", 0.f );
+
+  cfg_hint_["base_station"][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/base_station/x", 0.f );
+  cfg_hint_["base_station"][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/base_station/y", 0.f );
+  cfg_hint_["base_station"][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/base_station/z", 0.f );
+
+  cfg_hint_["delivery_station"][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/delivery_station/x", 0.f );
+  cfg_hint_["delivery_station"][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/delivery_station/y", 0.f );
+  cfg_hint_["delivery_station"][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/delivery_station/z", 0.f );
+
+  cfg_hint_["storage_station"][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/storage_station/x", 0.f );
+  cfg_hint_["storage_station"][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/storage_station/y", 0.f );
+  cfg_hint_["storage_station"][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/storage_station/z", 0.f );
+
   cfg_hint_["default"][0] = 0;
   cfg_hint_["default"][1] = 0;
   cfg_hint_["default"][2] = 0;
