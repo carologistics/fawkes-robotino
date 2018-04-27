@@ -100,6 +100,7 @@ clips-executive:
             file: rcll2017/state-estimation-init.clp
           - name: worldmodel
             files:
+              - wm-robmem-sync.clp
               - rcll2017/init-wm-sync.clp
               - rcll2017/init-worldmodel.clp
               - rcll2017/game-worldmodel.clp

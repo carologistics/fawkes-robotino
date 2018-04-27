@@ -18,3 +18,10 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
+
+(defrule init-worldmodel-set-identity
+  (wm-fact (key config rcll robot-name) (value ?name))
+  =>
+  (printout info "Setting /cx/identity to " ?name crlf)
+  (assert (wm-fact (key cx identity) (value ?name)))
+)
