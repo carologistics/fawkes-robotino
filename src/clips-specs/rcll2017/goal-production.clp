@@ -172,7 +172,7 @@
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key domain fact self args? r ?self))
   (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
-  (or (wm-fact (key domain fact at args? r ?self m ?waitpoint side WAIT)
+  (or (wm-fact (key domain fact at args? r ?self m ?waitpoint side WAIT))
       (wm-fact (key domain fact at args? r ?self m START side INPUT)))
   (wm-fact (key config rcll master) (value ?master&:(neq ?self (sym-cat ?master))))
   =>
