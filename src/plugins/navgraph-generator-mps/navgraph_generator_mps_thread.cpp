@@ -280,7 +280,8 @@ NavGraphGeneratorMPSThread::loop()
 void NavGraphGeneratorMPSThread::generate_wait_zones(size_t count, std::vector<Eigen::Vector2i> &free_zones)
 {
   std::sort(free_zones.begin(), free_zones.end(),
-            [this] (const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) {
+            [this] (const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs)
+  {
     double d_lhs_min = std::numeric_limits<double>::max();
     double d_rhs_min = std::numeric_limits<double>::max();
     for (auto &entry : this->stations_) {
@@ -631,25 +632,21 @@ NavGraphGeneratorMPSThread::generate_navgraph()
     }
   }
 
+  size_t count = 1;
   for (const Eigen::Vector2i &zn : wait_zones_) {
-    std::string z_name = "WAIT-";
+    std::string z_name = "WAIT-" + std::to_string(count++);
 
     float x = float(zn.x());
-    if (x < 0) {
+    if (x < 0)
       x += 0.5f;
-      z_name += "M-Z";
-    } else {
+    else
       x -= 0.5f;
-      z_name += "C-Z";
-    }
 
     float y = float(zn.y());
     if (y < 0)
       y += 0.5f;
     else
       y -= 0.5f;
-
-    z_name += std::to_string(std::abs(zn.x())) + std::to_string(zn.y());
 
     logger->log_info(name(), "Adding wait zone %s.", z_name.c_str());
 
