@@ -15,7 +15,7 @@
 
 (defrule action-selection-exploration-done
 	(not (plan-action (goal-id EXPLORATION) (plan-id EXPLORATION-PLAN) (status ?status&~FINAL&~FAILED)))
-	?g <- (goal (id EXPLROATION) (mode DISPATCHED))
+	?g <- (goal (id EXPLORATION) (mode DISPATCHED))
 	=>
 	(modify ?g (mode FINISHED) (outcome COMPLETED))
 )
