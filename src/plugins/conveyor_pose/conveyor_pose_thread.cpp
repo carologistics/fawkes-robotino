@@ -194,7 +194,7 @@ ConveyorPoseThread::init()
 
   cfg_model_origin_frame_ = config->get_string(CFG_PREFIX "/model_origin_frame");
   cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
-  model_.reset(new Cloud());
+  default_model_.reset(new Cloud());
 
   // if recording is set, a pointcloud written to the the cfg_record_path_
   // else load pcd file for every station and calculate model with normals
@@ -234,29 +234,28 @@ ConveyorPoseThread::init()
     //Load default PCD file from model path and calculate model with normals for it
 
     int errnum;
-    if ((errnum = pcl::io::loadPCDFile(cfg_model_path_, *model_)) < 0)
+    if ((errnum = pcl::io::loadPCDFile(cfg_model_path_, *default_model_)) < 0)
       throw fawkes::CouldNotOpenFileException(cfg_model_path_.c_str(), errnum,
                                               "Set from " CFG_PREFIX "/model_file");
 
-    norm_est_.setInputCloud(model_);
+    norm_est_.setInputCloud(default_model_);
     model_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
     norm_est_.compute(*model_with_normals_);
-    pcl::copyPointCloud(*model_, *model_with_normals_);
+    pcl::copyPointCloud(*default_model_, *model_with_normals_);
 
     // Loading PCD file and calculation of model with normals for ALL! stations
-    std::map<std::string,std::string>::iterator it;
-    for (it = station_to_path_.begin(); it != station_to_path_.end(); it++ ) {
+    for (const auto &pair : station_to_path_) {
       CloudPtr model(new Cloud());
-      pcl::PointCloud<pcl::PointNormal>::Ptr insert_model_with_normals(new pcl::PointCloud<pcl::PointNormal>());
-      if ((errnum = pcl::io::loadPCDFile(it->second, *model)) < 0)
-        throw fawkes::CouldNotOpenFileException(it->second.c_str(), errnum,
-                                                "Set from " CFG_PREFIX "/model_file");
+      pcl::PointCloud<pcl::PointNormal>::Ptr model_with_normals(new pcl::PointCloud<pcl::PointNormal>());
+      if ((errnum = pcl::io::loadPCDFile(pair.second, *model)) < 0)
+        throw fawkes::CouldNotOpenFileException(pair.second.c_str(), errnum,
+                                                ("For station " + pair.first).c_str());
 
       norm_est_.setInputCloud(model);
-      norm_est_.compute(*insert_model_with_normals);
-      pcl::copyPointCloud(*model, *insert_model_with_normals);
+      norm_est_.compute(*model_with_normals);
+      pcl::copyPointCloud(*model, *model_with_normals);
 
-      station_to_model_.insert({it->first, insert_model_with_normals});
+      station_to_model_.insert({pair.first, model_with_normals});
     }
   }
 
@@ -312,8 +311,9 @@ ConveyorPoseThread::loop()
       logger->log_info(name(), "Received SetStationMessage");
       ConveyorPoseInterface::SetStationMessage *msg =
           bb_pose_->msgq_first<ConveyorPoseInterface::SetStationMessage>();
+      set_current_station(msg->station());
       bb_pose_->set_current_station(msg->station());
-      result_fitness_ = std::numeric_limits<double>::min();
+      bb_pose_->write();
     }
     else {
       logger->log_warn(name(), "Unknown message received");
@@ -383,7 +383,7 @@ ConveyorPoseThread::loop()
 
     if (cfg_record_model_) {
       record_model();
-      cloud_publish(model_, cloud_out_model_);
+      cloud_publish(default_model_, cloud_out_model_);
     }
     else {
       if (bb_mutex_.try_lock()) {
@@ -511,11 +511,11 @@ ConveyorPoseThread::record_model()
   }
   tf_listener->transform_origin(cloud_in_->header.frame_id, cfg_model_origin_frame_, pose_cam);
   Eigen::Matrix4f tf_to_cam = pose_to_eigen(pose_cam);
-  pcl::transformPointCloud(*trimmed_scene_, *model_, tf_to_cam);
+  pcl::transformPointCloud(*trimmed_scene_, *default_model_, tf_to_cam);
 
   // Overwrite and atomically rename model so it can be copied at any time
   try {
-    int rv = pcl::io::savePCDFileASCII(cfg_record_path_, *model_);
+    int rv = pcl::io::savePCDFileASCII(cfg_record_path_, *default_model_);
     if (rv)
       logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_record_path_.c_str());
     else
@@ -528,31 +528,29 @@ ConveyorPoseThread::record_model()
 
 //Sets current station in ConveyorPose Interface
 void
-ConveyorPoseThread::set_current_station(std::string station)
+ConveyorPoseThread::set_current_station(const std::string &station)
 {
   if (station != bb_pose_->current_station()) {
-    logger->log_info(name(), "Set Station to: %s", station.c_str());
+    auto map_it = station_to_model_.find(station);
+    if (map_it == station_to_model_.end())
+      logger->log_error(name(), "Invalid station name: %s", station.c_str());
+    else {
+      logger->log_info(name(), "Set Station to: %s", bb_pose_->current_station());
 
-    { MutexLocker locked(&bb_mutex_);
+      MutexLocker locked(&cloud_mutex_);
+      MutexLocker locked2(&bb_mutex_);
+
+      model_with_normals_ = map_it->second;
+      current_station_ = station;
+
       icp_cancelled_ = true;
       bb_pose_->set_current_station(station.c_str());
       result_fitness_ = std::numeric_limits<double>::min();
       bb_pose_->set_euclidean_fitness(result_fitness_);
       bb_pose_->write();
 
-      MutexLocker locked2(&cloud_mutex_);
-
       recognition_thread_->initial_guess_tracked_fitness_ = std::numeric_limits<double>::min();
-    }
-
-    auto map_it = station_to_model_.find(station);
-    if (map_it == station_to_model_.end())
-      logger->log_error(name(), "Invalid station name: %s", station.c_str());
-    else {
-      MutexLocker locked(&cloud_mutex_);
-
-      model_with_normals_ = map_it->second;
-      current_station_ = station;
+      result_fitness_ = std::numeric_limits<double>::min();
     }
   }
 }
