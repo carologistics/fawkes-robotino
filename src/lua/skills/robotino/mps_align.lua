@@ -82,6 +82,7 @@ local llutils = require("fawkes.laser-lines_utils")
 local tag_utils = require("tag_utils")
 
 -- Tunables
+local x_dist_default = config:get_float("/skills/mps_align/x_dist_default")
 local MIN_VIS_HIST_LINE=5 --15
 local MIN_VIS_HIST_LINE_SEARCH=4
 local MIN_VIS_HIST_TAG=10
@@ -148,7 +149,6 @@ fsm:define_states{ export_to=_M, closure={
 }
 
 fsm:add_transitions{
-   {"INIT",          "FAILED",          precond="not vars.x", desc="x argument missing"},
    {"INIT",          "CHECK_TAG",       cond=true},
 
    {"CHECK_TAG",     "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
@@ -173,6 +173,8 @@ fsm:add_transitions{
 }
 
 function INIT:init()
+   print_info("INIT: MPS_ALIGN")
+   self.fsm.vars.x   = self.fsm.vars.x   or x_dist_default
    self.fsm.vars.y   = self.fsm.vars.y   or 0
    self.fsm.vars.ori = self.fsm.vars.ori or 0
 
