@@ -126,3 +126,5 @@ plugins/mongodb:
     managed-sets:
       robot-memory-distributed/hosts:
         - localhost:27022
+
+clips-executive/specs/rcll2017/parameters/rcll/crypto-key: randomkey
