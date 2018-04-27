@@ -321,6 +321,10 @@
   ;(not (lock (type ACCEPT) (resource ?)))
   ; An explorable zone for which no lock was refused yet
   ?ze <- (wm-fact (key explore-zone ?zn args? machine ?machine team ?team) (values line-vis ?vh&:(> ?vh 0)  time-searched ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
+  (Position3DInterface (id "Pose") (translation $?act-pos))
+  (navgraph-node (name ?zn) (pos $?pos))
+  (not (and (wm-fact (key explore-zone ?zn2 args? machine ?machine team ?team) (values line-vis ?vh2&:(> ?vh2 0) time-searched ?ts2)) (navgraph-node (name ?zn2) (pos $?pose2&:(< (distance-mf ?pose2 ?act-pos) (distance-mf ?pos ?act-pos))))))
+  
   (not (tried-lock (resource ?zn)))
   ;(not (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn)))  TODO lock REFUSE
 
