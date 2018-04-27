@@ -266,7 +266,6 @@
     (bind ?rv C-Z)
   )
   (bind ?xr (round-up ?x))
-
   (return (sym-cat ?rv ?xr ?yr))
 )
 (deffunction utils-get-2d-center (?x1 ?y1 ?x2 ?y2)
