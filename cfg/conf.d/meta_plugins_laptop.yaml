@@ -33,6 +33,7 @@ fawkes/meta_plugins:
     - m-robot-memory
     - clips_robot_memory
     - clips-pddl-parser
+    - m-no-agent
     - clips-executive
     - clips-executive-rest-api
   m-skiller:
@@ -49,9 +50,15 @@ fawkes/meta_plugins:
     - skiller-rest-api
     - skiller_motor_state
     - mps-laser-gen
+  m-no-agent:
+    - m-skiller
+    - m-clips
+    - m-fv-vision
+    - clips-pddl-parser
+    - m-robot-memory
+    - clips_robot_memory
   m-robot-memory:
     - mongodb
     - robot-memory
   m-full:
-    - m-skiller
     - m-clips-executive
