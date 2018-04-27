@@ -68,6 +68,28 @@
 )
 
 
+(defrule goal-expander-go-wait
+   "Feed a CS with a cap from its shelf so that afterwards
+   it can directly put the cap on a product."
+    ?p <- (goal (mode EXPANDED) (id ?parent))
+    ?g <- (goal (mode SELECTED) (parent ?parent) (id GO-WAIT)
+                                                (params r ?robot
+                                                  point ?waitpoint
+                                                        ))
+    (wm-fact (key domain fact self args? r ?robot))
+    (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+    =>
+   (assert
+        (plan (id GO-WAIT-PLAN) (goal-id GO-WAIT))
+        (plan-action (id 1) (plan-id GO-WAIT-PLAN) (goal-id GO-WAIT)
+                                    (action-name go-wait)
+                                    (param-names r to)
+                                    (param-values ?robot ?waitpoint))
+    )
+    (modify ?g (mode EXPANDED))
+)
+
+
 (defrule goal-expander-prefill-cap-station
    "Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."

@@ -236,6 +236,20 @@
 	; However, this also creates a tremendous number of options during search and
 	; hence is detrimental for planning performance.
 	;
+	(:action go-wait
+		:parameters (?r - robot ?to - mps ?from - mps)
+		:precondition (and (location-free ?to WAIT)
+							(or (at ?r START INPUT)
+								(at ?r ?from WAIT)
+							)
+						)
+		:effect (and
+					(not (at ?r START INPUT))
+					(not (at ?r ?from WAIT))
+					(location-free START INPUT)
+					(at ?r ?to WAIT))
+	)
+
 	(:action move
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
 		:precondition (and (at ?r ?from ?from-side)

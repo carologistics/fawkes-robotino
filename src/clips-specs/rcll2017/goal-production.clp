@@ -25,6 +25,7 @@
   ?*ENTER-FIELD-RETRIES* = 10
 
   ; production order priorities
+  ?*PRIORITY-GO-WAIT-HACK* = 200
   ?*PRIORITY-FIND-MISSING-MPS* = 110
   ?*PRIORITY-DELIVER* = 100
   ?*PRIORITY-RESET-MPS* = 98
@@ -137,6 +138,50 @@
   (NavGraphWithMPSGeneratorInterface (final TRUE))
   =>
   (assert (goal (id PRODUCTION-MAINTAIN) (type MAINTAIN)))
+  (bind ?msg (blackboard-create-msg
+    "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps"
+    "GenerateWaitZonesMessage"
+  ))
+  (blackboard-send-msg ?msg)
+  (bind ?msg (blackboard-create-msg
+    "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps"
+    "ComputeMessage"
+  ))
+  (bind ?compute-msg-id (blackboard-send-msg ?msg))
+  (assert (requested-waiting-positions))
+
+)
+
+(defrule navgraph-compute-wait-positions-finished
+  (requested-waiting-positions)
+  (NavGraphWithMPSGeneratorInterface (final TRUE))
+=>
+  (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
+  (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT-" ?waitzone:name)
+    (assert
+      (domain-object (name ?waitzone:name) (type location))
+      (domain-fact (name location-free) (param-values (sym-cat ?waitzone:name) WAIT))
+      (wm-fact (key generated waitzone args? name (sym-cat ?waitzone:name)) (is-list TRUE) (type INT) (values (nth$ 1 ?waitzone:pos) (nth$ 2 ?waitzone:pos)))
+    )
+  )
+)
+
+(defrule goal-reasoner-create-go-wait-hack
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (wm-fact (key domain fact self args? r ?self))
+  (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
+  (or (wm-fact (key domain fact at args? r ?self m ?waitpoint side WAIT))
+      (wm-fact (key domain fact at args? r ?self m START side INPUT)))
+  (wm-fact (key config rcll master) (value ?master&:(neq ?self (sym-cat ?master))))
+  =>
+  (printout t "Goal " GO-WAIT " formulated" crlf)
+  (assert (goal (id GO-WAIT) (priority  ?*PRIORITY-GO-WAIT-HACK*)
+                              (parent PRODUCTION-MAINTAIN)
+                              (params r ?self
+                                      point ?waitpoint
+                                      )))
+  ; (assert (goal-already-tried FILL-CAP))
 )
 
 (defrule goal-reasoner-create-enter-field
@@ -165,6 +210,7 @@
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
   (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
+  (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
   =>
   (printout t "Goal " FILL-CAP " formulated" crlf)
   (assert (goal (id FILL-CAP) (priority ?*PRIORITY-PREFILL-CS*)
@@ -189,6 +235,7 @@
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+  (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
   =>
   (printout t "Goal " CLEAR-CS " formulated" crlf)
   (assert (goal (id CLEAR-CS) (priority ?*PRIORITY-CLEAR-CS*)
@@ -219,6 +266,7 @@
   (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
     (value ?end&:(< ?end (nth$ 1 ?game-time))))
+  (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
   =>
   (printout t "Goal " CLEAR-CS " formulated" crlf)
   (assert (goal (id CLEAR-CS) (priority ?*PRIORITY-CLEAR-CS*)
@@ -245,6 +293,7 @@
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TOW))
   ;CCs don't have a base color. Hence, models base with UNKOWN color
   (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color)))
+  (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
   =>
   (printout t "Goal " FILL-RS " formulated" crlf)
   (assert (goal (id FILL-RS) (priority ?*PRIORITY-PREFILL-RS*)
@@ -270,7 +319,7 @@
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;only discard if ring stations have at least two bases loaded
   (wm-fact (key domain fact rs-filled-with args? m ?mps n TWO|THREE))
-
+  (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
   ;question: or would be more correct to create it and later
   ;  reject it because its not useful
   =>
@@ -316,6 +365,7 @@
 	(value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*))))
   (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
 	(value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-LATEST-TIME*))))
+  (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
   ;TODO for multi-agent
   ;	Model old agents constraints
   ; 	(in-production 0)
