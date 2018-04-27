@@ -10,3 +10,7 @@ skills:
     x: 0.31
   approach_distance_laser:
     x: 0.27
+  conveyor_align:
+    euclidean_fitness_tol: 200
+  mps_align:
+    x_dist_default: 0.35

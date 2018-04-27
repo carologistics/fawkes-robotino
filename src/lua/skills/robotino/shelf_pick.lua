@@ -71,6 +71,7 @@ fsm:add_transitions{
 }
 
 function INIT:init()
+   print_info("INIT: SHELF_PICK")
    self.args["ax12gripper"].command = "OPEN"
 end
 

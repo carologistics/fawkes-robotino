@@ -82,6 +82,9 @@ fsm:add_transitions{
 
 function INIT:init()
    self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
+   if self.fsm.vars.side == nil then
+      self.fsm.vars.side = "input"
+   end
 end
 
 function DRIVE_TO:init()
@@ -99,8 +102,6 @@ function MPS_ALIGN:init()
       self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
    end
 
-   self.args["mps_align"].x = 0.4
-
    if self.fsm.vars.side == "output" then
       self.args["mps_align"].y = -0.03
    else
@@ -109,9 +110,16 @@ function MPS_ALIGN:init()
 end
 
 function CONVEYOR_ALIGN:init()
-    if (self.fsm.vars.slide == nil or self.fsm.vars.shelf == nil) then
+  self.args["conveyor_align"].mps = self.fsm.vars.place
+
+  if (self.fsm.vars.shelf ~= nil) then
+      self.args["conveyor_align"].target_on_mps = self.fsm.vars.shelf .. "_S"
+  elseif (self.fsm.vars.slide ~= nil) then
+      self.args["conveyor_align"].target_on_mps = "SLIDE"
+  else
+      self.args["conveyor_align"].target_on_mps = string.upper(self.fsm.vars.side) .. "_C"
       self.args["conveyor_align"].disable_realsense_afterwards = false
-    end
+  end
 end
 
 

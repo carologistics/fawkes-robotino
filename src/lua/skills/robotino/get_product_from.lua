@@ -68,6 +68,7 @@ fsm:add_transitions{
 }
 
 function INIT:init()
+   print_info("INIT: GET_PRODUCT_FROM")
    self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
 end
 
@@ -86,8 +87,6 @@ function MPS_ALIGN:init()
       self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
    end
 
-   self.args["mps_align"].x = 0.4
-
    if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
       self.args["mps_align"].y = 0.03
    else
@@ -96,14 +95,19 @@ function MPS_ALIGN:init()
 end
 
 function CONVEYOR_ALIGN:init()
-   if (self.fsm.vars.shelf == nil) then
-     self.args["conveyor_align"].disable_realsense_afterwards = false
+   self.args["conveyor_align"].mps = self.fsm.vars.place
+
+   if (self.fsm.vars.shelf ~= nil) then
+       self.args["conveyor_align"].target_on_mps = self.fsm.vars.shelf .. "_S"
+   else
+       self.args["conveyor_align"].target_on_mps = string.upper(self.fsm.vars.side) .. "_C"
+       self.args["conveyor_align"].disable_realsense_afterwards = false
    end
 end
 
 
 function SKILL_PRODUCT_PICK:init()
-   self.args["product_pick"].offset_x = 0 
+   self.args["product_pick"].offset_x = 0
 end
 
 function SKILL_SHELF_PICK:init()
