@@ -30,30 +30,24 @@
 
 (defrule enable-motor-on-start
   "Enables the motor on game start. Motor is not started in clips-simulation."
-  ; (declare (salience ?*PRIORITY-HIGH*))
-  ; (phase EXPLORATION|PRODUCTION|WHACK_A_MOLE_CHALLENGE)
-  ; (state WAIT_START)
-  ; (change-state RUNNING)
   (wm-fact (key refbox phase) (value  EXPLORATION|PRODUCTION))
   (wm-fact (key refbox state) (value RUNNING))
   ?sf <- (wm-fact (key game state) (value ~RUNNING))
-  ; (not (simulation-is-running))
   =>
   (printout warn "***** Enabling motor *****" crlf)
   (retract ?sf)
   (assert (wm-fact (key game state) (type UNKNOWN) (value RUNNING)))
-  (motor-enable)
+  ; (motor-enable)
+  (bind ?msg (blackboard-create-msg "MotorInterface::Robotino" "SetMotorStateMessage"))
+  (blackboard-set-msg-field ?msg "motor_state" 0)
+  (blackboard-send-msg ?msg)
 )
 
 (defrule pause
   "If game state is something in the middle of the game (not PAUSED or WAIT_START) and the requested change state is not RUNNING change states to PAUSED. The motor is disabled. Rule is not applied in clips-simulation."
-  ; ?sf <- (state ?state&~PAUSED&~WAIT_START)
-  ; ?cf <- (change-state ?cs&~RUNNING)
-  ; ?rf <- (refbox-state ~?cs)
   (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION|POST_GAME))
   (wm-fact (key refbox state) (value ?refbox-state&~RUNNING))
   ?sf <- (wm-fact (key game state) (value ?game-state&~PAUSED&~WAIT_START))
-  ; (not (simulation-is-running))
   =>
   (printout warn "***** Paused, Disabling motor *****" crlf)
   (retract ?sf)

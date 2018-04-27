@@ -522,9 +522,7 @@
   ?g <- (goal (id EXPLORATION) (mode DISPATCHED))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
-  ?pa <- (plan-action (goal-id EXPLORATION) (status WAITING|RUNNING))
 =>
-  (modify ?pa (status FAILED))
   (delayed-do-for-all-facts ((?l tried-lock)) (eq ?l:type REFUSE)
     (retract ?l)
   )
