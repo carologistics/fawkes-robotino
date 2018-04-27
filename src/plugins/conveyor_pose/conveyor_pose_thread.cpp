@@ -959,16 +959,41 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         change_val(opt, cfg_hint_["slide"][1], v->get_float());
       else if (opt == "/hint/slide/z")
         change_val(opt, cfg_hint_["slide"][2], v->get_float());
-      else if (opt == "/hint/base_station/x")
+
+      else if (opt == "/conveyor_offset/base_station/x")
         change_val(opt, cfg_hint_["base_station"][0], v->get_float());
+      else if (opt == "/conveyor_offset/base_station/y")
+        change_val(opt, cfg_hint_["base_station"][1], v->get_float());
+      else if (opt == "/conveyor_offset/base_station/z")
+        change_val(opt, cfg_hint_["base_station"][2], v->get_float());
+
       else if (opt == "/hint/cap_station/x")
         change_val(opt, cfg_hint_["cap_station"][0], v->get_float());
+      else if (opt == "/hint/cap_station/y")
+        change_val(opt, cfg_hint_["cap_station"][1], v->get_float());
+      else if (opt == "/hint/cap_station/z")
+        change_val(opt, cfg_hint_["cap_station"][2], v->get_float());
+
       else if (opt == "/hint/ring_station/x")
         change_val(opt, cfg_hint_["ring_station"][0], v->get_float());
+      else if (opt == "/hint/ring_station/y")
+        change_val(opt, cfg_hint_["ring_station"][1], v->get_float());
+      else if (opt == "/hint/ring_station/z")
+        change_val(opt, cfg_hint_["ring_station"][2], v->get_float());
+
       else if (opt == "/hint/delivery_station/x")
         change_val(opt, cfg_hint_["delivery_station"][0], v->get_float());
+      else if (opt == "/hint/delivery_station/y")
+        change_val(opt, cfg_hint_["delivery_station"][1], v->get_float());
+      else if (opt == "/hint/delivery_station/z")
+        change_val(opt, cfg_hint_["delivery_station"][2], v->get_float());
+
       else if (opt == "/hint/storage_station/x")
         change_val(opt, cfg_hint_["storage_station"][0], v->get_float());
+      else if (opt == "/hint/storage_station/y")
+        change_val(opt, cfg_hint_["storage_station"][1], v->get_float());
+      else if (opt == "/hint/storage_station/z")
+        change_val(opt, cfg_hint_["storage_station"][2], v->get_float());
     }
     MutexLocker locked2 { &cloud_mutex_ };
     recognition_thread_->initial_guess_tracked_fitness_ = std::numeric_limits<double>::min();
