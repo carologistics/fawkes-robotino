@@ -233,6 +233,7 @@
 
 (defrule goal-reasoner-create-exploration-goal
   (not (goal (id EXPLORATION)))
+  (wm-fact (key domain fact entered-field args? r ?r))
   (wm-fact (key domain fact self args? r ?r))
   (wm-fact (key refbox phase) (type UNKNOWN) (value EXPLORATION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
@@ -315,33 +316,22 @@
 (defrule exp-try-locking-line
   (goal (id EXPLORATION) (mode DISPATCHED))
   (wm-fact (key domain fact self args? r ?r))
-  ; Not currently locked/trying to lock anything
-  ;(not (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))  TODO lock GET
-  ;(not (lock (type ACCEPT) (resource ?)))
-  ; An explorable zone for which no lock was refused yet
-  ?ze <- (wm-fact (key explore-zone ?zn args? machine ?machine team ?team) (values line-vis ?vh&:(> ?vh 0)  time-searched ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
-  (not (tried-lock (resource ?zn)))
-  ;(not (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn)))  TODO lock REFUSE
-
-  ; Neither this zone nor the opposite zone is locked
-  ;(not (locked-resource (resource ?r&:(eq ?r ?zn))))  TODO locked-resource
-  ;(not (locked-resource (resource ?r2&:(eq ?r2 (mirror-name ?zn)))))
-
-  ; Locks for all closer zones with a line-visibility > 0 have been refused
   (Position3DInterface (id "Pose") (translation $?trans))
-  ;(forall
-   ; (zone-exploration (machine UNKNOWN) (line-visibility ?vh2&:(> ?vh2 0))
-   ;   (name ?zn2&:(< (distance-mf ?trans (zone-center ?zn2)) (distance-mf ?trans (zone-center ?zn))))
-   ; )
-    ;(lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn2))  TODO lock REFUSE
-  ;)
+  ?ze <- (wm-fact (key explore-zone ?zn args? machine ?machine team ?team) (values line-vis ?vh&:(> ?vh 0)  time-searched ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
+  
+ ; ?ze <- (wm-fact (key explore-zone ?zn&:(eq ?zn (get-zone ?pos)) args? machine ?machine team ?team) (values line-vis ?vh&:(> ?vh 0)  time-searched ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
+  ;(Position3DInterface (id "Pose") (translation $?act-pos))
+  (not (wm-fact (key explore-zone ?zn2&:(< (distance-mf (zone-center ?zn2) ?trans) (distance-mf (zone-center ?zn) ?trans)) args? machine ?machine2 team ?team2) (values line-vis ?vh2&:(> ?vh2 0) time-searched ?ts2&:(<= ?ts2 ?*EXP-SEARCH-LIMIT*)))) 
+  (not (tried-lock (resource ?zn)))
   (plan (id ?plan-id&EXPLORATION-PLAN) (goal-id EXPLORATION))
   (not (plan (id EXPLORE-ZONE)))
-  (plan-action (id ?action-id) (action-name ?action-name) (plan-id ?plan-id) (status RUNNING))
+  
+  (plan-action (id ?action-id) (action-name move-node) (plan-id ?plan-id) (status RUNNING))
   (plan-action (id ?action-id2) (action-name ?action-name2) (plan-id ?plan-id) (status FINAL|FAILED))
+  
   ?skill <- (skill (id ?skill-id) (name ?action-name) (status S_RUNNING))
-  (wm-fact (key explore-zone ?zn args? $?))
   (not (exploration-result (zone ?zn)))
+   
   =>
   (assert (tried-lock (resource ?zn) (result REJECT)))
   (bind ?new-vh (+ 1 ?vh))
@@ -523,7 +513,7 @@
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
 =>
-  (delayed-do-for-all-facts ((?l tried-lock)) (eq ?l:type REFUSE)
+  (delayed-do-for-all-facts ((?l tried-lock)) (eq ?l:result REJECT)
     (retract ?l)
   )
   (printout t "exploration phase ended, cleaning up" crlf)
