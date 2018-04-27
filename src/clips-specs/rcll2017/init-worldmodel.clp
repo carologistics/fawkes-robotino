@@ -30,5 +30,5 @@
   (executive-init)
   (wm-fact (key cx identity))
   =>
-  (wm-robmem-sync-enable "/explore-zone")
+  (wm-robmem-sync-enable "/exploration/result")
 )

@@ -21,32 +21,32 @@
   (slot result (type SYMBOL) (allowed-values ACCEPT REJECT))
 )
 
-(deftemplate exploration-result
-  (slot machine (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
-  (slot zone (type SYMBOL)
-    (allowed-values
-      M-Z78 M-Z68 M-Z58 M-Z48 M-Z38 M-Z28 M-Z18
-      M-Z77 M-Z67 M-Z57 M-Z47 M-Z37 M-Z27 M-Z17
-      M-Z76 M-Z66 M-Z56 M-Z46 M-Z36 M-Z26 M-Z16
-      M-Z75 M-Z65 M-Z55 M-Z45 M-Z35 M-Z25 M-Z15
-      M-Z74 M-Z64 M-Z54 M-Z44 M-Z34 M-Z24 M-Z14
-      M-Z73 M-Z63 M-Z53 M-Z43 M-Z33 M-Z23 M-Z13
-      M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12
-                        M-Z41 M-Z31 M-Z21 M-Z11
-
-      C-Z18 C-Z28 C-Z38 C-Z48 C-Z58 C-Z68 C-Z78
-      C-Z17 C-Z27 C-Z37 C-Z47 C-Z57 C-Z67 C-Z77
-      C-Z16 C-Z26 C-Z36 C-Z46 C-Z56 C-Z66 C-Z76
-      C-Z15 C-Z25 C-Z35 C-Z45 C-Z55 C-Z65 C-Z75
-      C-Z14 C-Z24 C-Z34 C-Z44 C-Z54 C-Z64 C-Z74
-      C-Z13 C-Z23 C-Z33 C-Z43 C-Z53 C-Z63 C-Z73
-      C-Z12 C-Z22 C-Z32 C-Z42 C-Z52 C-Z62 C-Z72
-      C-Z11 C-Z21 C-Z31 C-Z41
-    )
-  )
-  (slot orientation (type INTEGER) (default -1))
-  (slot team (type SYMBOL) (allowed-values CYAN MAGENTA))
-)
+; (deftemplate exploration-result
+;   (slot machine (type SYMBOL) (allowed-values C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
+;   (slot zone (type SYMBOL)
+;     (allowed-values
+;       M-Z78 M-Z68 M-Z58 M-Z48 M-Z38 M-Z28 M-Z18
+;       M-Z77 M-Z67 M-Z57 M-Z47 M-Z37 M-Z27 M-Z17
+;       M-Z76 M-Z66 M-Z56 M-Z46 M-Z36 M-Z26 M-Z16
+;       M-Z75 M-Z65 M-Z55 M-Z45 M-Z35 M-Z25 M-Z15
+;       M-Z74 M-Z64 M-Z54 M-Z44 M-Z34 M-Z24 M-Z14
+;       M-Z73 M-Z63 M-Z53 M-Z43 M-Z33 M-Z23 M-Z13
+;       M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12
+;                         M-Z41 M-Z31 M-Z21 M-Z11
+;
+;       C-Z18 C-Z28 C-Z38 C-Z48 C-Z58 C-Z68 C-Z78
+;       C-Z17 C-Z27 C-Z37 C-Z47 C-Z57 C-Z67 C-Z77
+;       C-Z16 C-Z26 C-Z36 C-Z46 C-Z56 C-Z66 C-Z76
+;       C-Z15 C-Z25 C-Z35 C-Z45 C-Z55 C-Z65 C-Z75
+;       C-Z14 C-Z24 C-Z34 C-Z44 C-Z54 C-Z64 C-Z74
+;       C-Z13 C-Z23 C-Z33 C-Z43 C-Z53 C-Z63 C-Z73
+;       C-Z12 C-Z22 C-Z32 C-Z42 C-Z52 C-Z62 C-Z72
+;       C-Z11 C-Z21 C-Z31 C-Z41
+;     )
+;   )
+;   (slot orientation (type INTEGER) (default -1))
+;   (slot team (type SYMBOL) (allowed-values CYAN MAGENTA))
+; )
 
 (deftemplate found-tag
   (slot name (type SYMBOL))
@@ -59,7 +59,7 @@
 
 (defrule startup-exploration
     (not (wm-fact (key exploration zone args? zone ?zn args? ?vis machine ?machine team ?team ?ts)))
-    (wm-fact (key cx identity) (value "R-1"))
+    ;(wm-fact (key cx identity) (value "R-1"))
     ;(wm-robmem-sync-conf (wm-fact-key-prefix explore-zone) (enabled TRUE))
 =>
   (assert
@@ -297,7 +297,7 @@
   (plan-action (id ?action-id2) (action-name ?action-name2) (plan-id ?plan-id) (status FINAL|FAILED))
 
   ?skill <- (skill (id ?skill-id) (name ?action-name) (status S_RUNNING))
-  (not (exploration-result (zone ?zn)))
+  (not (wm-fact (key exploration result args? zone ?zn $?args)))
 
   =>
   (assert (tried-lock (resource ?zn) (result REJECT)))
@@ -308,10 +308,12 @@
   (assert
     (plan (id EXPLORE-ZONE) (goal-id EXPLORATION))
     (plan-action (id 1) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name one-time-lock) (param-names (create$ name)) (param-values (create$ ?zn)))
-    (plan-action (id 2) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name stop) (param-names r) (param-values ?r))
-    (plan-action (id 3) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name explore-zone) (param-names r z) (param-values ?r ?zn))
-    (plan-action (id 4) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name evaluation))
-    (plan-action (id 5) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name unlock) (param-names (create$ name)) (param-values (create$ ?zn)))
+    (plan-action (id 2) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name one-time-lock) (param-names (create$ name)) (param-values (create$ (mirror-name ?zn))))
+    (plan-action (id 3) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name stop) (param-names r) (param-values ?r))
+    (plan-action (id 4) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name explore-zone) (param-names r z) (param-values ?r ?zn))
+    (plan-action (id 5) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name evaluation))
+    (plan-action (id 6) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name unlock) (param-names (create$ name)) (param-values (create$ ?zn)))
+    (plan-action (id 7) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name unlock) (param-names (create$ name)) (param-values (create$ (mirror-name ?zn))))
   )
 )
 
@@ -358,7 +360,7 @@
   ?ze <-
     (wm-fact (key exploration zone args? zone ?zn2&:(eq ?zn2 (sym-cat ?zn-str))  machine ?machine2 team ?team2) (values ?vis2_str ?times-searched_str))
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
-  (not (exploration-result (machine ?machine) (zone ?zn2)))
+  (not (wm-fact (key exploration result args? zone ?zn2 machine ?machine)))
   =>
   (modify ?lock (result ACCEPT))
   (modify ?pa (status FINAL))
@@ -368,16 +370,9 @@
     (modify ?ze (values ?vis2_str (+ 1 ?times-searched_str)))
     (assert (found-tag (name ?machine) (side ?side) (frame "map") (trans ?trans) (rot ?rot)))
     (assert
-      (exploration-result
-        (machine ?machine) (zone ?zn2)
-        (orientation ?orientation)
-        (team ?team-color)
-      )
-      (exploration-result
-        (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
-        (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
-        (team (mirror-team ?team-color))
-      )
+      (wm-fact (key exploration result args? zone ?zn2 machine ?machine team ?team-color) (value ?orientation) (is-list FALSE) (type INT))
+
+      (wm-fact (key exploration result args? zone (mirror-name ?zn2)  machine ?machine team (mirror-team ?team-color)) (value ?orientation) (is-list FALSE) (type INT))
     )
     (printout t "EXP explore-zone successfull. Found " ?machine " in " ?zn2 crlf)
   )
@@ -394,9 +389,7 @@
 (defrule exp-report-to-refbox
   (goal (id EXPLORATION) (mode DISPATCHED))
   (wm-fact (key refbox team-color) (value ?color))
-  (exploration-result (team ?color) (machine ?machine) (zone ?zone)
-    (orientation ?orientation)
-  )
+  (wm-fact (key exploration result args? zone ?zone machine ?machine team ?color) (value ?orientation) (is-list FALSE) (type INT))
   (time $?now)
   ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 1)) (seq ?seq))
   (wm-fact (key refbox game-time) (values $?game-time))
@@ -408,11 +401,11 @@
 =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
   (pb-set-field ?mr "team_color" ?team-color)
-  (delayed-do-for-all-facts ((?er exploration-result)) (eq ?er:team ?team-color)
+  (delayed-do-for-all-facts ((?er wm-fact)) (and (eq (wm-key-arg ?er:key team) ?team-color) (wm-key-prefix ?er:key (create$ exploration result)))
       (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
-      (pb-set-field ?mre "name" (str-cat ?er:machine))
-      (pb-set-field ?mre "zone" (protobuf-name ?er:zone))
-      (pb-set-field ?mre "rotation" ?er:orientation)
+      (pb-set-field ?mre "name" (str-cat (wm-key-arg ?er:key machine)))
+      (pb-set-field ?mre "zone" (protobuf-name (wm-key-arg ?er:key zone)))
+      (pb-set-field ?mre "rotation" ?er:value)
       (pb-add-list ?mr "machines" ?mre)
   )
   (pb-broadcast ?peer ?mr)

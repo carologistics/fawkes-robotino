@@ -12,6 +12,7 @@
   ?*LOCK-ACTION-RETRY-PERIOD-SEC* = 2
   ?*LOCK-ACTION-TIMEOUT-SEC* = 60
   ?*UNLOCK-DISTANCE* = 0.5
+  ?*ONE-TIME-LOCK-ACTION-TIMEOUT-SEC* = 5
 )
 
 (deftemplate lock-info
@@ -102,13 +103,27 @@
 
 (defrule lock-actions-lock-failed
 	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
-                      (action-name lock|location-lock) (status RUNNING))
+                      (action-name one-time-lock|lock|location-lock) (status RUNNING))
   ?li <- (lock-info (name ?name) (goal-id ?goal-id) (plan-id ?plan-id)
                     (action-id ?id) (status WAITING) (start-time $?start)
                     (last-error ?error-msg))
   (time $?now&:(timeout ?now ?start ?*LOCK-ACTION-TIMEOUT-SEC*))
   =>
   (printout warn "Failed to get lock " ?name " in " ?*LOCK-ACTION-TIMEOUT-SEC*
+    "s, giving up" crlf)
+	(modify ?pa (status EXECUTION-FAILED) (error-msg ?error-msg))
+  (retract ?li)
+)
+
+(defrule lock-actions-lock-failed-instantly
+	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
+                      (action-name one-time-lock) (status RUNNING))
+  ?li <- (lock-info (name ?name) (goal-id ?goal-id) (plan-id ?plan-id)
+                    (action-id ?id) (status REQUESTED) (start-time $?start)
+                    (last-error ?error-msg))
+  (time $?now&:(timeout ?now ?start ?*ONE-TIME-LOCK-ACTION-TIMEOUT-SEC*))
+  =>
+  (printout warn "Failed to get lock " ?name " in " ?*ONE-TIME-LOCK-ACTION-TIMEOUT-SEC*
     "s, giving up" crlf)
 	(modify ?pa (status EXECUTION-FAILED) (error-msg ?error-msg))
   (retract ?li)
