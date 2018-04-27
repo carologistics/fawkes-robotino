@@ -557,7 +557,7 @@ ConveyorPoseThread::set_current_station(const std::string &station)
     if (map_it == station_to_model_.end())
       logger->log_error(name(), "Invalid station name: %s", station.c_str());
     else {
-      logger->log_info(name(), "Set Station to: %s", bb_pose_->current_station());
+      logger->log_info(name(), "Set Station to: %s", station.c_str());
 
       MutexLocker locked(&cloud_mutex_);
       MutexLocker locked2(&bb_mutex_);
