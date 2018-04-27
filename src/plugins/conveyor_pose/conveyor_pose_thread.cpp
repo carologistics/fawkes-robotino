@@ -489,9 +489,9 @@ ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *li
 
   // Add distance from line center to conveyor
   initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
-                                  double(cfg_hint_[side_hint_id][0]),
-                                  double(cfg_hint_[side_hint_id][1]),
-                                  double(cfg_hint_[side_hint_id][2]) } );
+                                  double(cfg_hint_["conveyor"][0]),
+                                  double(cfg_hint_["conveyor"][1]),
+                                  double(cfg_hint_["conveyor"][2]) } );
 
 
   // Add distance offset for station (if output is used, the negative input offset is used)
@@ -503,8 +503,8 @@ ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *li
                                     double(cfg_hint_[station_hint_id][2]) } );
   }else if (side_hint_id == "output"){
     initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
-                                    double(-cfg_hint_[station_hint_id][0]),
-                                    double(cfg_hint_[station_hint_id][1]),
+                                    double(cfg_hint_[station_hint_id][0]),
+                                    double(-cfg_hint_[station_hint_id][1]),
                                     double(cfg_hint_[station_hint_id][2]) } );
   }
 
