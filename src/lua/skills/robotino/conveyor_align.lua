@@ -50,8 +50,9 @@ function no_writer()
    return not if_conveyor:has_writer()
 end
 
-function conveyor_icp_converged()
-   return if_conveyor:euclidean_fitness() > config:get_float("/skills/conveyor_align/euclidean_fitness_tol")
+function conveyor_icp_converged(self)
+   self.fsm.vars.euclidean_fitness_tol = self.fsm.vars.euclidean_fitness_tol * 0.98
+   return if_conveyor:euclidean_fitness() > self.fsm.vars.euclidean_fitness_tol
 end
 
 function tolerances_ok(self)
@@ -168,7 +169,6 @@ function INIT:init()
    self.fsm.vars.cfg_frame_ = "gripper"
 
    self.fsm.vars.counter = 0
-   conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
 end
 
 function RESET_GRIPPER_POS:init()
@@ -176,6 +176,8 @@ function RESET_GRIPPER_POS:init()
 end
 
 function CHECK_VISION:init()
+    self.fsm.vars.euclidean_fitness_tol = config:get_float("/skills/conveyor_align/euclidean_fitness_tol")
+    conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
     if (self.fsm.vars.target_on_mps == "INPUT_C") then
         if_conveyor:msgq_enqueue_copy(if_conveyor.SetStationMessage:new(self.fsm.vars.mps .. "-I"))
     elseif (self.fsm.vars.target_on_mps == "OUTPUT_C") then

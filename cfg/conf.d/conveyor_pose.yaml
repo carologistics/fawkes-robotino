@@ -85,15 +85,15 @@ plugins/conveyor_pose:
         z: 0.6
     conveyor_offset:
       cap_station:
-        y: -0.025
+        y: -0.0265
       ring_station:
-        y: -0.025
+        y: -0.0265
       delivery_station:
-        y: -0.025
+        y: -0.0265
       base_station:
-        y: -0.025
+        y: -0.0265
       storage_station:
-        y: -0.025
+        y: -0.0265
 
     max_correspondence_dist: 0.01
 
