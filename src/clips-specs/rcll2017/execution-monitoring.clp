@@ -20,7 +20,7 @@
     (goal-id ?goal-id)
     (action-id ?action-id)
     (name mps-state)
-    (params-values ?mps READY-AT-OUTPUT)
+    (param-values ?mps READY-AT-OUTPUT)
     (type POSITIVE))
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
   (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT)))
