@@ -123,6 +123,19 @@
                                           (params mps ?mps)))
 )
 
+(defrule navgraph-compute-wait-positions-finished
+  (NavGraphWithMPSGeneratorInterface (final TRUE))
+=>
+  (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
+  (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT-" ?waitzone:name)
+    (assert
+      (domain-object (name ?waitzone:name) (type location))
+      (domain-fact (name location-free) (param-values (sym-cat ?waitzone:name) WAIT))
+      (wm-fact (key navgraph waitzone args? name (sym-cat ?waitzone:name)) (is-list TRUE) (type INT) (values (nth$ 1 ?waitzone:pos) (nth$ 2 ?waitzone:pos)))
+    )
+  )
+  (assert (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE)))
+)
 
 ; ## Maintain production
 (defrule goal-reasoer-create-goal-production-maintain
@@ -137,34 +150,9 @@
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact entered-field args? r ?robot))
   (NavGraphWithMPSGeneratorInterface (final TRUE))
+  (wm-fact (key navgraph waitzone generated))
   =>
   (assert (goal (id PRODUCTION-MAINTAIN) (type MAINTAIN)))
-  (bind ?msg (blackboard-create-msg
-    "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps"
-    "GenerateWaitZonesMessage"
-  ))
-  (blackboard-send-msg ?msg)
-  (bind ?msg (blackboard-create-msg
-    "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps"
-    "ComputeMessage"
-  ))
-  (bind ?compute-msg-id (blackboard-send-msg ?msg))
-  (assert (requested-waiting-positions))
-
-)
-
-(defrule navgraph-compute-wait-positions-finished
-  (requested-waiting-positions)
-  (NavGraphWithMPSGeneratorInterface (final TRUE))
-=>
-  (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
-  (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT-" ?waitzone:name)
-    (assert
-      (domain-object (name ?waitzone:name) (type location))
-      (domain-fact (name location-free) (param-values (sym-cat ?waitzone:name) WAIT))
-      (wm-fact (key generated waitzone args? name (sym-cat ?waitzone:name)) (is-list TRUE) (type INT) (values (nth$ 1 ?waitzone:pos) (nth$ 2 ?waitzone:pos)))
-    )
-  )
 )
 
 (defrule goal-reasoner-create-go-wait-hack
@@ -172,7 +160,7 @@
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key domain fact self args? r ?self))
   (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
-  (or (wm-fact (key domain fact at args? r ?self m ?waitpoint side WAIT))
+  (or (wm-fact (key domain fact at args? r ?self m ?another-point&:(neq ?waitpoint ?another-point) side WAIT))
       (wm-fact (key domain fact at args? r ?self m START side INPUT)))
   (wm-fact (key config rcll master) (value ?master&:(neq ?self (sym-cat ?master))))
   =>
@@ -211,7 +199,6 @@
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
   (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
-  (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
   =>
   (printout t "Goal " FILL-CAP " formulated" crlf)
   (assert (goal (id FILL-CAP) (priority ?*PRIORITY-PREFILL-CS*)
@@ -236,7 +223,6 @@
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
-  (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
   =>
   (printout t "Goal " CLEAR-CS " formulated" crlf)
   (assert (goal (id CLEAR-CS) (priority ?*PRIORITY-CLEAR-CS*)
@@ -267,7 +253,6 @@
   (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
     (value ?end&:(< ?end (nth$ 1 ?game-time))))
-  (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
   =>
   (printout t "Goal " CLEAR-CS " formulated" crlf)
   (assert (goal (id CLEAR-CS) (priority ?*PRIORITY-CLEAR-CS*)
@@ -279,7 +264,7 @@
 )
 
 
-(defrule goal-reasoner-insert-unknown-base-to-rs
+(defrule goal-reasoner-create-prifill-ring-station
   "Insert a base with unknown color in a RS for preparation"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
@@ -288,13 +273,13 @@
   (wm-fact (key domain fact wp-usable args? wp ?wp))
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
+  ;TODO: make the mps-state  a precond of the put-slid to save traviling time
   (wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TOW))
   ;CCs don't have a base color. Hence, models base with UNKOWN color
-  (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color)))
-  (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
+  ; (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color)))
   =>
   (printout t "Goal " FILL-RS " formulated" crlf)
   (assert (goal (id FILL-RS) (priority ?*PRIORITY-PREFILL-RS*)
@@ -320,7 +305,6 @@
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;only discard if ring stations have at least two bases loaded
   (wm-fact (key domain fact rs-filled-with args? m ?mps n TWO|THREE))
-  (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
   ;question: or would be more correct to create it and later
   ;  reject it because its not useful
   =>
@@ -366,7 +350,6 @@
 	(value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*))))
   (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
 	(value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-LATEST-TIME*))))
-  (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
   ;TODO for multi-agent
   ;	Model old agents constraints
   ; 	(in-production 0)

@@ -110,11 +110,19 @@
     ;   ; (assert (navgraph-added-for-mps (name ?ft-mps:value)))
     ; )
   )
+
+  (bind ?msg (blackboard-create-msg
+    "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps"
+    "GenerateWaitZonesMessage"
+  ))
+  (blackboard-send-msg ?msg)
+  
   (if ?any-tag-to-add
     then
     ; send compute message so we can drive to the output
     (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "ComputeMessage"))
     (bind ?compute-msg-id (blackboard-send-msg ?msg))
+    (printout t "Sent compute" crlf)
 
     ; save the last compute-msg-id to know when it was processed
     ; (delayed-do-for-all-facts ((?lncm last-navgraph-compute-msg)) TRUE
