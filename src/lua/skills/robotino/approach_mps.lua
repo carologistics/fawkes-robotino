@@ -36,7 +36,7 @@ documentation      = [==[
 The robot just drives forward according to the current distance to the mps and the desired position
 
 @param "x" int The x distance of the conveyor in the base_link frame when finished
-@param "use_conveyor" default is false, set this to false when the conveyor is not visibly
+@param "use_conveyor" default is false
 ]==]
 
 
@@ -123,7 +123,7 @@ function INIT:init()
   end
 
   if self.fsm.vars.use_conveyor == nil then
-    self.fsm.vars.use_conveyor = true
+    self.fsm.vars.use_conveyor = false
   end
 
   conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
@@ -143,7 +143,7 @@ end
 function APPROACH_LASERLINE:init()
   local x_goal = if_front_dist:translation(0) - self.fsm.vars.x
   printf("distance is: %f => drive to: %f", if_front_dist:translation(0), x_goal)
-  self.args["motor_move"] = {x = self.fsm.vars.x, vel_trans = 0.05, frame="front_dist"}
+  self.args["motor_move"] = {x = self.fsm.vars.x, vel_trans = 0.05}
 end
 
 function cleanup()
