@@ -109,10 +109,14 @@ clips-executive:
                      rcll2017/refbox-worldmodel.clp ]
           - name: domain
             file: rcll2017/domain.clp
+          - name: resource-locking
+            file: rcll2017/resource-locking.clp
           - name: goal-reasoner
             files: [rcll2017/goal-reasoner.clp, rcll2017/goal-production.clp, rcll2017/exploration.clp]
           - name: goal-expander
             file: rcll2017/fixed-sequence.clp
+          - name: goal-commitment
+            file: rcll2017/goal-commitment.clp
           - name: action-selection
             file: rcll2017/action-selection.clp
           - name: action-execution
