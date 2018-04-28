@@ -56,6 +56,26 @@
 )
 
 
+(defrule refbox-action-reset-mps-start
+	(time $?now)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status PENDING)
+	                      (action-name ?action&reset-mps)
+	                      (executable TRUE)
+	                      (param-names $?param-names)
+	                      (param-values $?param-values))
+	(wm-fact (key refbox team-color) (value ?team-color&:(neq ?team-color nil)))
+	(wm-fact (key refbox comm peer-id private) (value ?peer-id))
+	=>
+	(bind ?mps (nth$ 1 ?param-values))
+	(bind ?instruction_info (rest$ ?param-values))
+	(printout t "Executing " ?action ?param-values crlf)
+	(assert (metadata-reset-mps ?mps ?team-color ?peer-id ?instruction_info))
+	(assert (timer (name reset-mps-send-timer) (time ?now) (seq 1)))
+	(assert (timer (name reset-mps-abort-timer) (time ?now) (seq 1)))
+	(modify ?pa (status RUNNING))
+)
+
+
 (defrule refbox-action-prepare-mps-start
 	(time $?now)
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status PENDING)
@@ -73,6 +93,31 @@
 	(assert (timer (name prepare-mps-send-timer) (time ?now) (seq 1)))
 	(assert (timer (name prepare-mps-abort-timer) (time ?now) (seq 1)))
 	(modify ?pa (status RUNNING))
+)
+
+(defrule refbox-action-reset-mps-send-signal
+	(time $?now)
+	?st <- (timer (name reset-mps-send-timer) 
+					(time $?t&:(timeout ?now ?t ?*PREPARE-PERIOD*))
+					(seq ?seq))
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status RUNNING)
+	                      (action-name reset-mps)
+	                      (executable TRUE)
+	                      (param-names $?param-names)
+	                      (param-values $? ?mps $?))
+	(domain-obj-is-of-type ?mps mps)
+	(metadata-reset-mps ?mps ?team-color ?peer-id $?instruction_info)
+	(wm-fact (key domain fact mps-type args? m ?mps t ?mps-type) (value TRUE))
+	=>
+	(bind ?machine-instruction (pb-create "llsf_msgs.ResetMachine"))
+	(pb-set-field ?machine-instruction "team_color" ?team-color)
+	(pb-set-field ?machine-instruction "machine" (str-cat ?mps))
+
+  	(pb-broadcast ?peer-id ?machine-instruction)
+  	(pb-destroy ?machine-instruction)
+  	(printout t "Sent Reset Msg for " ?mps  crlf)
+
+	(modify ?st (time ?now) (seq (+ ?seq 1)))
 )
 
 (defrule refbox-action-mps-prepare-send-signal
@@ -132,6 +177,23 @@
 	(modify ?st (time ?now) (seq (+ ?seq 1)))
 )
 
+(defrule refbox-action-reset-mps-final
+	"Finalize the prepare action if the desired machine state was reached"
+	(time $?now)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status RUNNING)
+	                      (action-name reset-mps)
+	                      (param-names $?param-names)
+	                      (param-values $? ?mps $?))
+	?st <- (timer (name reset-mps-send-timer))
+	?at <- (timer (name reset-mps-abort-timer))
+;	?md <- (metadata-prepare-mps ?mps $?date)
+	(wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
+	=>
+	(printout t "Action Reset " ?mps " is final" crlf)
+	(retract ?st ?at)
+	(modify ?pa (status EXECUTION-SUCCEEDED))
+)
+
 (defrule refbox-action-prepare-mps-final
 	"Finalize the prepare action if the desired machine state was reached"
 	(time $?now)
@@ -147,6 +209,25 @@
 	(printout t "Action Prepare " ?mps " is final" crlf)
 	(retract ?st ?at ?md)
 	(modify ?pa (status EXECUTION-SUCCEEDED))
+)
+
+(defrule refbox-action-reset-mps-abort
+	"Abort preparing and fail the action if took too long"
+	(time $?now)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status RUNNING)
+				(action-name reset-mps)
+				(param-names $?param-names)
+				(param-values $? ?mps $?))
+	?at <- (timer (name reset-mps-abort-timer) 
+					(time $?t&:(timeout ?now ?t ?*ABORT-PREPARE-PERIOD*))
+					(seq ?seq))
+	?st <- (timer (name reset-mps-send-timer))
+;	?md <- (metadata-prepare-mps ?mps $?date)
+	(not (wm-fact (key domain fact mps-state args? m ?mps s BROKEN)))
+	=>
+	(printout t "Action Reset " ?mps " is Aborted" crlf)
+	(retract ?st ?at);md
+	(modify ?pa (status EXECUTION-FAILED))
 )
 
 (defrule refbox-action-prepare-mps-abort

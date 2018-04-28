@@ -106,6 +106,13 @@
     (spot-free ?m - mps ?spot - shelf-spot)
 	)
 
+;Kind of a hack. actually it should model the removal of present workpieces
+	(:action reset-mps
+		:parameters (?m - mps)
+		:precondition (or (mps-state ?m BROKEN) (not (mps-state ?m BROKEN)))
+		:effect (mps-state ?m BROKEN)
+	)
+
 	(:action prepare-bs
 		:parameters (?m - mps ?side - mps-side ?bc - base-color)
 		:precondition (and (mps-type ?m BS) (mps-state ?m IDLE))
