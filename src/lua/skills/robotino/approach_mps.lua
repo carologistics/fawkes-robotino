@@ -112,6 +112,13 @@ fsm:add_transitions{
 }
 
 function INIT:init()
+  if self.fsm.vars.x == nil then
+    self.fsm.vars.x = 0.27
+    if config:exists("/skills/approach_mps/x_dist") then
+      self.fsm.vars.x = config:get_float("/skills/approach_mps/x_dist")
+    end
+  end
+
   if self.fsm.vars.use_conveyor == nil then
     self.fsm.vars.use_conveyor = true
   end

@@ -21,7 +21,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "conveyor_align"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"motor_move", "ax12gripper"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
@@ -42,25 +42,6 @@ Parameters:
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
-local z_pos = 0.048
-if config:exists("/skills/conveyor_align/z_pos") then
-   z_pos = config:get_float("/skills/conveyor_align/z_pos")
-end
-
-local pick_offset = 0
-if config:exists("/skills/conveyor_align/pick_offset") then
-   pick_offset = config:get_float("/skills/conveyor_align/pick_offset")
-end
-
-local TOLERANCE_Y = 0.002
-local TOLERANCE_Z = 0.002
-local MAX_TRIES = 20
---local X_DEST_POS = 0.08
-local X_DEST_POS = 0.16
-local Y_DEST_POS = 0.0
-local Z_DEST_POS = z_pos
-local Z_DEST_POS_PICK = z_pos + pick_offset
-local cfg_frame_ = "gripper"
 
 function no_writer()
    return not if_conveyor:has_writer()
@@ -73,18 +54,18 @@ end
 function tolerances_ok(self)
    local pose = pose_des(self)
    print("pose_y = " .. pose.y)
-   if math.abs(pose.y) <= TOLERANCE_Y and math.abs(pose.z) <= TOLERANCE_Z and max_tries_not_reached(self) then
+   if math.abs(pose.y) <= self.fsm.vars.TOLERANCE_Y and math.abs(pose.z) <= self.fsm.vars.TOLERANCE_Z and max_tries_not_reached(self) then
       return true
    end
 end
 
 function max_tries_not_reached(self)
-   return (self.fsm.vars.counter < MAX_TRIES)
+   return (self.fsm.vars.counter < self.fsm.vars.MAX_TRIES)
 end
 
 function pose_offset(self)
    if not if_gripper:is_holds_puck() then
-      Z_DEST_POS = Z_DEST_POS_PICK
+      self.fsm.vars.Z_DEST_POS = self.fsm.vars.Z_DEST_POS_PICK
    end
 
    local from = { x = if_conveyor:translation(0),
@@ -96,7 +77,7 @@ function pose_offset(self)
                           w = if_conveyor:rotation(3),
                         }
                 }
-   local cp = tfm.transform6D(from, if_conveyor:frame(), cfg_frame_)
+   local cp = tfm.transform6D(from, if_conveyor:frame(), self.fsm.vars.cfg_frame_)
 
    -- TODO check nil
 
@@ -115,9 +96,9 @@ end
 
 function pose_des(self)
    local pose = pose_offset(self)
-   pose.x = pose.x - X_DEST_POS
-   pose.y = pose.y - Y_DEST_POS
-   pose.z = pose.z + Z_DEST_POS
+   pose.x = pose.x - self.fsm.vars.X_DEST_POS
+   pose.y = pose.y - self.fsm.vars.Y_DEST_POS
+   pose.z = pose.z + self.fsm.vars.Z_DEST_POS
    return pose
 end
 
@@ -152,6 +133,39 @@ fsm:add_transitions{
 }
 
 function INIT:init()
+   print_info("INIT: CONVEYOR_ALIGN")
+
+   self.fsm.vars.PICK_OFFSET = 0
+   if config:exists("/skills/conveyor_align/pick_offset") then
+      self.fsm.vars.PICK_OFFSET = config:get_float("/skills/conveyor_align/pick_offset")
+   end
+   self.fsm.vars.TOLERANCE_Y = 0.003
+   if config:exists("/skills/conveyor_align/tolerance_y") then
+      self.fsm.vars.TOLERANCE_Y = config:get_float("/skills/conveyor_align/tolerance_y")
+   end
+   self.fsm.vars.TOLERANCE_Z = 0.003
+   if config:exists("/skills/conveyor_align/tolerance_z") then
+      self.fsm.vars.TOLERANCE_Z = config:get_float("/skills/conveyor_align/tolerance_z")
+   end
+   self.fsm.vars.MAX_TRIES = 10
+   if config:exists("/skills/conveyor_align/max_tries") then
+      self.fsm.vars.MAX_TRIES = config:get_float("/skills/conveyor_align/max_tries")
+   end
+   self.fsm.vars.X_DEST_POS = 0.16
+   if config:exists("/skills/conveyor_align/x_dest_pos") then
+      self.fsm.vars.X_DEST_POS = config:get_float("/skills/conveyor_align/x_dest_pos")
+   end
+   self.fsm.vars.Y_DEST_POS = 0.005
+   if config:exists("/skills/conveyor_align/y_dest_pos") then
+      self.fsm.vars.Y_DEST_POS = config:get_float("/skills/conveyor_align/y_dest_pos")
+   end
+   self.fsm.vars.Z_DEST_POS = 0.048
+   if config:exists("/skills/conveyor_align/z_dest_pos") then
+      self.fsm.vars.Z_DEST_POS = config:get_float("/skills/conveyor_align/z_dest_pos")
+   end
+   self.fsm.vars.Z_DEST_POS_PICK = self.fsm.vars.Z_DEST_POS + self.fsm.vars.PICK_OFFSET
+   self.fsm.vars.cfg_frame_ = "gripper"
+
    self.fsm.vars.counter = 0
    conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
 end
@@ -171,7 +185,7 @@ function DRIVE:init()
    local z_position = round(pose.z * 1000)
    print("z_pose: " .. pose.z)
    self.args["ax12gripper"].command = "RELGOTOZ"
-   if math.abs(pose.z) >= TOLERANCE_Z then
+   if math.abs(pose.z) >= self.fsm.vars.TOLERANCE_Z then
       self.args["ax12gripper"].z_position = z_position
    else
       self.args["ax12gripper"].z_position = 0
