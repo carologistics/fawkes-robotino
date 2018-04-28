@@ -23,6 +23,7 @@
   ; Number of retrying enter-field
   ; until succeeding it manually
   ?*ENTER-FIELD-RETRIES* = 10
+  ?*MAX-RETRIES-PICK* = 3
 
   ; production order priorities
   ?*PRIORITY-GO-WAIT-HACK* = 200
@@ -445,7 +446,7 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key domain fact self args? r ?self))
-  t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
+  ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
   =>
   (printout t "Goal " RESET-MPS " formulated" crlf)

@@ -11,7 +11,6 @@
   ?*COMMON-TIMEOUT-DURATION* = 30
   ?*MPS-DOWN-TIMEOUT-DURATION* = 120
   ?*HOLDING-MONITORING* = 60
-  ?*MAX-RETRIES-PICK* = 3
 )
 
 ;Execution Monitoring MPS state
@@ -321,8 +320,8 @@
   ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) 
           (value ?tries&:(<= ?tries ?*MAX-RETRIES-PICK*)))
   =>
-  (bind ?tried (+ 1 ?tried))
+  (bind ?tries (+ 1 ?tries))
   (modify ?pa (status PENDING))
-  (modify ?wm (value ?tried))
+  (modify ?wm (value ?tries))
 )
  
