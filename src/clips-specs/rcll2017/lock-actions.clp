@@ -12,6 +12,7 @@
   ?*LOCK-ACTION-RETRY-PERIOD-SEC* = 2
   ?*LOCK-ACTION-TIMEOUT-SEC* = 60
   ?*UNLOCK-DISTANCE* = 0.5
+  ?*ONE-TIME-LOCK-ACTION-TIMEOUT-SEC* = 5
 )
 
 (deftemplate lock-info
@@ -28,13 +29,14 @@
 
 (defrule lock-actions-lock-start
 	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
-                      (action-name ?action&lock|location-lock)
+                      (action-name ?action&one-time-lock|lock|location-lock)
                       (status PENDING) (executable TRUE)
                       (param-names $?param-names)
                       (param-values $?param-values))
   (time $?now)
 	=>
-  (if (eq ?action lock) then
+  (if (or (eq ?action lock) (eq ?action one-time-lock))
+  then
 	  (bind ?lock-name (plan-action-arg name ?param-names ?param-values))
   else
     (bind ?lock-name
@@ -45,13 +47,13 @@
 	(mutex-try-lock-async ?lock-name)
   (printout warn "Trying to lock " ?lock-name crlf)
   (assert (lock-info (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id)
-            (name ?lock-name) (start-time ?now) (last-try ?now)))
+            (name ?lock-name) (status REQUESTED) (start-time ?now) (last-try ?now)))
 	(modify ?pa (status RUNNING))
 )
 
 (defrule lock-actions-lock-acquired
 	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
-                      (action-name ?action-name&lock|location-lock)
+                      (action-name ?action-name&one-time-lock|lock|location-lock)
                       (param-values $?param-values)
                       (status RUNNING))
   ?mf <- (mutex (name ?name) (request LOCK) (response ACQUIRED))
@@ -69,15 +71,22 @@
 
 (defrule lock-actions-lock-rejected
 	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
-                      (action-name lock|location-lock) (status RUNNING))
+                      (action-name ?action-name&one-time-lock|lock|location-lock) (status RUNNING))
   ?mf <- (mutex (name ?name) (response REJECTED|ERROR)
                 (error-msg ?error-msg))
   ?li <- (lock-info (name ?name) (goal-id ?goal-id) (plan-id ?plan-id)
                     (action-id ?id))
 	=>
   (printout warn "Lock " ?name " was rejected " crlf)
-	(modify ?mf (request NONE) (response NONE) (error-msg ""))
-  (modify ?li (status WAITING) (last-error ?error-msg))
+  (if (eq ?action-name one-time-lock)
+  then
+  (modify ?mf (request NONE) (response NONE) (error-msg ""))
+  (modify ?pa (status EXECUTION-FAILED) (error-msg ?error-msg))
+  (retract ?li)
+  else
+	 (modify ?mf (request NONE) (response NONE) (error-msg ""))
+   (modify ?li (status WAITING) (last-error ?error-msg))
+  )
 )
 
 (defrule lock-actions-lock-retry
@@ -106,6 +115,20 @@
   (retract ?li)
 )
 
+(defrule lock-actions-lock-failed-instantly
+	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
+                      (action-name one-time-lock) (status RUNNING))
+  ?li <- (lock-info (name ?name) (goal-id ?goal-id) (plan-id ?plan-id)
+                    (action-id ?id) (status REQUESTED) (start-time $?start)
+                    (last-error ?error-msg))
+  (time $?now&:(timeout ?now ?start ?*ONE-TIME-LOCK-ACTION-TIMEOUT-SEC*))
+  =>
+  (printout warn "Failed to get lock " ?name " in " ?*ONE-TIME-LOCK-ACTION-TIMEOUT-SEC*
+    "s, giving up" crlf)
+	(modify ?pa (status EXECUTION-FAILED) (error-msg ?error-msg))
+  (retract ?li)
+)
+
 (defrule lock-actions-unlock-start
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status PENDING)
                       (action-name unlock) (executable TRUE)
@@ -117,7 +140,7 @@
 	;(bind ?rv (robmem-mutex-unlock (str-cat ?lock-name)))
 	;(modify ?pa (status (if ?rv then EXECUTION-SUCCEEDED else EXECUTION-FAILED)))
 	(mutex-unlock-async ?lock-name)
-	(modify ?pa (status RUNNING))
+	(modify ?pa (status EXECUTION-SUCCEEDED))
 )
 
 (defrule lock-actions-unlock-done

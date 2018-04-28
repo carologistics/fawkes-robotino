@@ -5,7 +5,7 @@
 			(action-name ?action-name)
 			(param-values $?param-values))
 	(goal (id EXPLORATION) (mode DISPATCHED))
-	(not (plan-action (goal-id EXPLORATION) (status FAILED|PENDING|WAITING|RUNNING)))
+	(not (plan-action (goal-id EXPLORATION) (status ~FINAL&~FAILED&~FORMULATED)))
 	(not (plan (id EXPLORE-ZONE) (goal-id EXPLORATION)))
 	(not (plan-action (plan-id EXPLORATION-PLAN) (goal-id EXPLORATION) (status FORMULATED) (id ?oid&: (< ?oid ?id))))
 	=>
@@ -20,11 +20,12 @@
 	(modify ?g (mode FINISHED) (outcome COMPLETED))
 )
 
-(defrule action-seleection-explorezone-release-locks
+(defrule action-selection-explorezone-unlock
 	(goal (id EXPLORATION) (mode DISPATCHED))
 	?p <- (plan (id EXPLORE-ZONE) (goal-id EXPLORATION))
 	(not (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (status ?s&~FINAL&~FORMULATED&~FAILED)))
-	?rl <- (plan-action (plan-id EXPLORE-ZONE) (action-name release-locks) (status FORMULATED))
+	?rl <- (plan-action (plan-id EXPLORE-ZONE) (action-name unlock) (status FORMULATED))
+	(plan-action (plan-id EXPLORE-ZONE) (status FAILED))
 	=>
 	(modify ?rl (status PENDING))
 )
@@ -34,10 +35,11 @@
 	?p <- (plan (id EXPLORE-ZONE) (goal-id EXPLORATION))
 	(goal (id EXPLORATION) (mode DISPATCHED))
 	(or (not (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (status ?s&~FINAL)))
-					 (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (status ?s&FAILED))
+		 (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (status ?s&FAILED))
 	)
-	(or (plan-action (plan-id EXPLORE-ZONE) (action-name release-locks) (status FINAL))
-		  (not (plan-action (plan-id EXPLORE-ZONE) (action-name release-locks))))
+	(or (not (and (plan-action (plan-id EXPLORE-ZONE) (action-name one-time-lock) (param-values ?res) (status FINAL)) 
+		 (plan-action (plan-id EXPLORE-ZONE) (action-name unlock) (param-values ?res) (status ~FINAL))))
+	    (not (plan-action (plan-id EXPLORE-ZONE) (action-name unlock))))
 	=>
 	(do-for-all-facts ((?pa plan-action)) (eq ?pa:plan-id EXPLORE-ZONE)
 		(retract ?pa)
@@ -50,7 +52,8 @@
 	(goal (id EXPLORATION) (mode DISPATCHED))
 	?pa <- (plan-action (plan-id EXPLORATION-PLAN) (goal-id EXPLORATION) (id ?id)
 			(action-name move-node) (param-values ?r ?node) (status FAILED))
-	(Position3DInterface (id "Pose") (translation $?r-pose))
+	(not (plan-action (plan-id EXPLORATION-PLAN) (goal-id EXPLORATION) (id ?fid&:(> ?fid ?id)) (action-name move-node) (status FAILED|FINAL)))
+        (Position3DInterface (id "Pose") (translation $?r-pose))
 	(navgraph-node (name ?node) (pos $?node-pos))
 	(not (plan (id EXPLORE-ZONE) (goal-id EXPLORATION)))
 	?panext <- (plan-action (plan-id EXPLORATION-PLAN) (goal-id EXPLORATION) (id ?oid&: (> ?oid ?id)) (status FORMULATED))
@@ -59,7 +62,7 @@
 	(if (< (distance-mf ?node-pos ?r-pose) 1.5) then
 		(printout t "EXP Go to next node" crlf)
 		(modify ?panext (status PENDING))
-		(modify ?pa (status FINAL))
+		;(modify ?pa (status EXECUTION-SUCCEEDED))
 		else
 		(printout t "EXP Retry node" crlf)
 		(modify ?pa (status FORMULATED))
@@ -71,7 +74,7 @@
                       (id ?id) (status FORMULATED)
                       (action-name ?action-name)
                       (param-values $?param-values))
-	(plan (id ?plan-id) (goal-id ?goal-id))
+	(plan (id ?plan-id&~EXPLORATION-PLAN) (goal-id ?goal-id))
 	(goal (id ?goal-id) (mode DISPATCHED))
 	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (status PENDING|WAITING|RUNNING|FAILED)))
 	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (status FORMULATED) (id ?oid&:(< ?oid ?id))))
