@@ -20,7 +20,7 @@
 ;
 
 (defglobal
-  ?*GOAL-COMMITMENT-AUTO-RENEW* = TRUE
+  ?*GOAL-COMMITMENT-AUTO-RENEW* = FALSE
 )
 
 (deffunction goal-to-lock (?goal $?params)
@@ -35,7 +35,7 @@
       (return (create$ (sym-cat resource- (nth$ 4 ?params)))))
     (case PRODUCE-C0 then
       (return (create$ (sym-cat resource- (nth$ 10 ?params))
-                       (sym-cat resource- (nth$ 12 ?params)))))
+                       (sym-cat resource- (nth$ 14 ?params)))))
     (case DELIVER then
       (return (create$ (sym-cat resource- (nth$ 4 ?params))
                        (sym-cat resource- (nth$ 6 ?params))

@@ -19,36 +19,9 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
-;(defrule init-wm-sync-flush-facts
-;  (executive-init)
-;  =>
-;  (robot-memory-sync-clean-domain-facts)
-;)
-
-(deffunction wm-sync-flush-locks-of-agent
-  (?owner)
-  (printout warn "Clearing all locks of " ?owner crlf)
-  (bind ?doc (bson-create))
-  (bson-append ?doc "locked-by" ?owner)
-  (robmem-remove ?*MUTEX-COLLECTION* ?doc)
-)
-
-(deffunction wm-sync-flush-all-locks
-  ()
-  (printout warn "Clearing all locks of all agents" crlf)
-  (bind ?doc (bson-create))
-  (robmem-remove ?*MUTEX-COLLECTION* ?doc)
-)
-
-(defrule init-wm-sync-flush-locks
-  (executive-init)
-  (wm-fact (id "/cx/identity") (value ?self))
-  =>
-  (wm-sync-flush-locks-of-agent ?self)
-)
-
 (defrule init-wm-sync-flush-locks-during-setup
   (wm-fact (key refbox phase) (value SETUP))
   =>
-  (wm-sync-flush-all-locks)
+  (printout warn "Flushing all locks!" crlf)
+  (mutex-flush-locks-async)
 )

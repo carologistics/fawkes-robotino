@@ -32,6 +32,9 @@
   ?*SALIENCE-GOAL-REJECT* = 400
   ?*SALIENCE-GOAL-EXPAND* = 300
   ?*SALIENCE-GOAL-SELECT* = 200
+  ; PRE-EVALUATE rules should do additional steps in EVALUATION but must not
+  ; set the goal to EVALUATED
+  ?*SALIENCE-GOAL-PRE-EVALUATE* = 1
   ; common evaluate rules should have
   ;   lower salience than case specific ones
   ?*SALIENCE-GOAL-EVALUTATE-GENERIC* = -1
@@ -122,6 +125,20 @@
   (modify ?pg (mode FINISHED) (outcome FAILED))
 )
 
+(defrule goal-reasoner-cleanup-rejected-goal
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?g <- (goal (id ?goal-id) (mode REJECTED))
+  =>
+  (do-for-all-facts ((?plan plan)) (eq ?plan:goal-id ?goal-id)
+    (do-for-all-facts
+      ((?action plan-action))
+      (and (eq ?action:goal-id ?goal-id) (eq ?action:plan-id ?plan:id))
+      (retract ?action)
+    )
+    (retract ?plan)
+  )
+)
+
 ; #  Goal Monitoring
 ; ## Goal Evaluation
 (defrule goal-reasoner-evaluate-subgoal-common
@@ -138,19 +155,59 @@
 )
 
 (defrule goal-reasoner-evaluate-clean-locks
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
   ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
                      (action-name lock) (param-values ?name))
-  (wm-fact (key domain fact locked args? name ?name))
+  ;(wm-fact (key domain fact locked args? name ?name))
+  (mutex (name ?name) (state LOCKED) (request NONE))
   =>
   (printout warn "Removing lock " ?name " of failed plan " ?plan-id
-                 " of goal " ?goal-id)
+                 " of goal " ?goal-id crlf)
+  (assert (goal-reasoner-unlock-pending ?name))
+  (mutex-unlock-async ?name)
+)
+
+(defrule goal-reasoner-evaluate-clean-location-locks
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
+  ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
+                     (action-name location-lock) (param-values ?loc ?side))
+  (mutex (name ?name&:(eq ?name (sym-cat ?loc - ?side)))
+         (state LOCKED) (request NONE))
+  =>
+  ; TODO only unlock if we are at a safe distance
+  (printout warn "Removing location lock " ?name " without moving away!" crlf)
+  (assert (goal-reasoner-unlock-pending ?name))
+  (mutex-unlock-async ?name)
+)
+
+(defrule goal-reasoner-evaluate-release-resource-locks
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (params $?params))
+  =>
+  (foreach ?mutex (goal-to-lock ?goal-id ?params)
+    (printout warn "Goal " ?goal-id " finished: Releasing " ?mutex crlf)
+    (mutex-unlock-async ?mutex)
+    (assert (goal-reasoner-unlock-pending ?mutex))
+  )
+)
+
+(defrule goal-reasoner-evaluate-pending-unlock
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?p <- (goal-reasoner-unlock-pending ?lock)
+  ?m <- (mutex (name ?lock) (request UNLOCK) (response UNLOCKED))
+  =>
+  (modify ?m (request NONE) (response NONE))
+  (retract ?p)
 )
 
 (defrule goal-reasoner-evaluate-common
   (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome ?outcome))
+  (not (goal-reasoner-unlock-pending ?))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
  ; (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)

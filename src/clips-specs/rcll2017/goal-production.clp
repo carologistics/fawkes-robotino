@@ -25,7 +25,7 @@
   ?*ENTER-FIELD-RETRIES* = 10
 
   ; production order priorities
-  ?*PRIORITY-GO-WAIT-HACK* = 200
+  ?*PRIORITY-GO-WAIT-HACK* = 10
   ?*PRIORITY-FIND-MISSING-MPS* = 110
   ?*PRIORITY-DELIVER* = 100
   ?*PRIORITY-RESET-MPS* = 98
@@ -149,13 +149,13 @@
     "ComputeMessage"
   ))
   (bind ?compute-msg-id (blackboard-send-msg ?msg))
-  (assert (requested-waiting-positions))
+  (assert (requested-waiting-positions ?compute-msg-id))
 
 )
 
 (defrule navgraph-compute-wait-positions-finished
-  (requested-waiting-positions)
-  (NavGraphWithMPSGeneratorInterface (final TRUE))
+  ?rwp <- (requested-waiting-positions ?msg-id)
+  (NavGraphWithMPSGeneratorInterface (final TRUE) (msgid ?msg-id))
 =>
   (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
   (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT-" ?waitzone:name)
@@ -165,6 +165,7 @@
       (wm-fact (key generated waitzone args? name (sym-cat ?waitzone:name)) (is-list TRUE) (type INT) (values (nth$ 1 ?waitzone:pos) (nth$ 2 ?waitzone:pos)))
     )
   )
+  (retract ?rwp)
 )
 
 (defrule goal-reasoner-create-go-wait-hack
@@ -532,6 +533,9 @@
 )
 
 ; ## Goal Evaluation
+
+;(deffunction goal-reason
+
  (defrule goal-reasoner-evaluate-failed-enter-field
    ?g <- (goal (id ENTER-FIELD-ACHIEVE) (mode FINISHED) (outcome FAILED))
   ?pa <- (plan-action (goal-id ENTER-FIELD-ACHIEVE) (status FAILED) (action-name enter-field))
