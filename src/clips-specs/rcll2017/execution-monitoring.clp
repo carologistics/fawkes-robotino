@@ -39,7 +39,12 @@
 
 (defrule execution-monitoring-incosistent-yet-exepected-mps-state-idle
   (declare (salience 1))
-  (domain-pending-sensed-fact (name mps-state) (param-values ?mps IDLE))
+  (domain-pending-sensed-fact
+    (goal-id ?goal-id)
+    (action-id ?action-id)
+    (name mps-state)
+    (param-values ?mps IDLE)
+    (type POSITIVE))
   (wm-fact (key domain fact mps-state args? m ?mps IDLE))
   ?wpat <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   =>
