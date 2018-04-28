@@ -31,7 +31,7 @@
   (bind ?wp-gen  (sym-cat WP- (gensym)))
   (assert (domain-object (name (sym-cat WP- (gensym))) (type workpiece))
           (wm-fact (key domain fact wp-at args? wp ?wp-gen m ?mps side OUTPUT))
-          (wm-fact (key domain fact wp-unused args? wp ?wp-gen))
+          (wm-fact (key domain fact wp-usable args? wp ?wp-gen))
           )
   ;TODO..check if it exists somewhere that will pervent execusion
   (printout warn "A WP has been Generated at the OUTPUT side" crlf)
