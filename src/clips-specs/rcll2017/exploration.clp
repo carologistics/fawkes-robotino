@@ -372,7 +372,7 @@
     (assert
       (wm-fact (key exploration result args? zone ?zn2 machine ?machine team ?team-color) (value ?orientation) (is-list FALSE) (type INT))
 
-      (wm-fact (key exploration result args? zone (mirror-name ?zn2)  machine ?machine team (mirror-team ?team-color)) (value ?orientation) (is-list FALSE) (type INT))
+      (wm-fact (key exploration result args? zone (mirror-name ?zn2)  machine (mirror-name ?machine) team (mirror-team ?team-color)) (value (mirror-orientation ?mtype ?zn2 ?orientation)) (is-list FALSE) (type INT))
     )
     (printout t "EXP explore-zone successfull. Found " ?machine " in " ?zn2 crlf)
   )
@@ -401,7 +401,8 @@
 =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
   (pb-set-field ?mr "team_color" ?team-color)
-  (delayed-do-for-all-facts ((?er wm-fact)) (and (eq (wm-key-arg ?er:key team) ?team-color) (wm-key-prefix ?er:key (create$ exploration result)))
+  (do-for-all-facts ((?er wm-fact)) (and (eq (wm-key-arg ?er:key team) ?team-color) (wm-key-prefix ?er:key (create$ exploration result)))
+      (printout error "Report: " (str-cat (wm-key-arg ?er:key machine)) " " (wm-key-arg ?er:key zone) " " ?er:value crlf)
       (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
       (pb-set-field ?mre "name" (str-cat (wm-key-arg ?er:key machine)))
       (pb-set-field ?mre "zone" (protobuf-name (wm-key-arg ?er:key zone)))
