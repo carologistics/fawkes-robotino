@@ -167,7 +167,8 @@ clips-executive:
             latest-send-last-report-time: 210 # =3:30
 
           master: R-2
-          
+
           waitpoint-in-cyan: R-1
           waitpoint-in-cyan: R-2
           waitpoint-in-magenta: R-3
+          allowed-complexities: ["C0" , "C1"]
