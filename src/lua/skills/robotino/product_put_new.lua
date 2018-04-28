@@ -38,10 +38,14 @@ documentation      = [==[
 skillenv.skill_module(_M)
 
 local x_move_back = -0.2
+local gripper_x = 0
+local gripper_y = 0
+local gripper_z = 0
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
-   {"MOVE_GRIPPER_Z", SkillJumpState, skills={{gripper_commands_new}}, final_to="OPEN_GRIPPER","FAILED"},
+   {"MOVE_GRIPPER_YZ", SkillJumpState, skills={{gripper_commands_new}},final_to="MOVE_GRIPPER_X",FAILED},
+   {"MOVE_GRIPPER_X", SkillJumpState, skills={{gripper_commands_new}}, final_to="OPEN_GRIPPER","FAILED"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="WAIT", fail_to="FAILED"},
    {"WAIT", JumpState},
    {"MOVE_BACK", SkillJumpState, skills={{motor_move}},final_to="CLOSE_GRIPPER", fail_to="FAILED"},
@@ -49,11 +53,20 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-  {"INIT","MOVE_GRIPPER_Z", cond=true},
+  {"INIT","MOVE_GRIPPER_X", cond=true},
   {"WAIT", "MOVE_BACK", timeout=0.5, desc="wait for gripper to open, then move back"},
 }
 
+function MOVE_GRIPPER_YZ:init()
+  self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].y = gripper_y
+  self.args["gripper_commands_new"].z = gripper_z
+end
 
+function MOVE_GRIPPER_X:init()
+  self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].x = gripper_x
+end
 function OPEN_GRIPPER:init()
    self.args["gripper_commands_new"].command = "OPEN"
 end
