@@ -105,6 +105,9 @@
 		(wp-on-shelf ?wp - workpiece ?m - mps ?spot - shelf-spot)
 		(wp-spawned-by ?wp - workpiece ?r - robot)
     (spot-free ?m - mps ?spot - shelf-spot)
+
+    (locked ?name - object)
+    (location-locked ?m - mps ?s - mps-side)
 	)
 
 	(:action prepare-bs
@@ -460,7 +463,6 @@
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
 	)
 
-
         (:action move-node
 			:parameters (?r - robot ?z - zone)
 			:precondition (self ?r) 
@@ -478,4 +480,30 @@
 			:precondition (self ?r)
 			:effect (self ?r)
 	)
+
+  (:action lock
+    :parameters (?name - object)
+    :precondition (not (locked ?name))
+    :effect (locked ?name)
+  )
+  (:action unlock
+    :parameters (?name - object)
+    :precondition (locked ?name)
+    :effect (not (locked ?name))
+  )
+  (:action eventually-unlock
+    :parameters (?name - object)
+    :precondition (locked ?name)
+    :effect (not (locked ?name))
+  )
+  (:action location-lock
+    :parameters (?location - mps ?side - side)
+    :precondition (not (location-locked ?location ?side))
+    :effect (location-locked ?location ?side)
+  )
+  (:action location-unlock
+    :parameters (?location - mps ?side - side)
+    :precondition (location-locked ?location ?side)
+    :effect (not (location-locked ?location ?side))
+  )
 )

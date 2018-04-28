@@ -89,12 +89,16 @@ clips-executive:
         stage-3:
           - name: utils
             file: rcll2017/utils.clp
+          - name: coordination
+            file: coordination-mutex.clp
           - name: state-estimation
             file: rcll2017/state-estimation-init.clp
           - name: worldmodel
-            files: [
-                     rcll2017/init-worldmodel.clp,
-                     rcll2017/game-worldmodel.clp ]
+            files:
+              - wm-robmem-sync.clp
+              - rcll2017/init-wm-sync.clp
+              - rcll2017/init-worldmodel.clp
+              - rcll2017/game-worldmodel.clp
           - name: communication
             files: [ rcll2017/refbox-comm-init.clp,
                      rcll2017/refbox-worldmodel.clp ]
@@ -107,8 +111,11 @@ clips-executive:
           - name: action-selection
             file: rcll2017/action-selection.clp
           - name: action-execution
-            files:  [ skills-actions.clp, rcll2017/noop-actions.clp,
-                      rcll2017/refbox-actions.clp ]
+            files:
+              - skills-actions.clp
+              - rcll2017/noop-actions.clp
+              - rcll2017/refbox-actions.clp
+              - rcll2017/lock-actions.clp
           - name: execution-monitoring
             file: rcll2017/execution-monitoring.clp
 

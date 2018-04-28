@@ -1,7 +1,7 @@
 ;---------------------------------------------------------------------------
-;  init-worldmodel.clp - Initialize the world model
+;  init-wm-sync.clp - Initialize world model synchronization
 ;
-;  Created: Fri 12 Jan 2018 15:01:59 CET
+;  Created: Tue 24 Apr 2018 19:50:36 CEST
 ;  Copyright  2018  Till Hofmann <hofmann@kbsg.rwth-aachen.de>
 ;  Licensed under GPLv2+ license, cf. LICENSE file in the doc directory.
 ;---------------------------------------------------------------------------
@@ -19,9 +19,36 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
-(defrule init-worldmodel-set-identity
-  (wm-fact (key config rcll robot-name) (value ?name))
+;(defrule init-wm-sync-flush-facts
+;  (executive-init)
+;  =>
+;  (robot-memory-sync-clean-domain-facts)
+;)
+
+(deffunction wm-sync-flush-locks-of-agent
+  (?owner)
+  (printout warn "Clearing all locks of " ?owner crlf)
+  (bind ?doc (bson-create))
+  (bson-append ?doc "locked-by" ?owner)
+  (robmem-remove ?*MUTEX-COLLECTION* ?doc)
+)
+
+(deffunction wm-sync-flush-all-locks
+  ()
+  (printout warn "Clearing all locks of all agents" crlf)
+  (bind ?doc (bson-create))
+  (robmem-remove ?*MUTEX-COLLECTION* ?doc)
+)
+
+(defrule init-wm-sync-flush-locks
+  (executive-init)
+  (wm-fact (id "/cx/identity") (value ?self))
   =>
-  (printout info "Setting /cx/identity to " ?name crlf)
-  (assert (wm-fact (key cx identity) (value ?name)))
+  (wm-sync-flush-locks-of-agent ?self)
+)
+
+(defrule init-wm-sync-flush-locks-during-setup
+  (wm-fact (key refbox phase) (value SETUP))
+  =>
+  (wm-sync-flush-all-locks)
 )
