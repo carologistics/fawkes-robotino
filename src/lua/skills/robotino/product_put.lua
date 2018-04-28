@@ -70,10 +70,6 @@ fsm:add_transitions{
    {"WAIT_FOR_GRIPPER", "MOVE_BACK", timeout=0.5}
 }
 
-function DRIVE_FORWARD:init()
-   self.args["approach_mps"].use_conveyor = true
-end
-
 function OPEN_GRIPPER:init()
    self.args["ax12gripper"].command = "OPEN"
    printf("open gripper")

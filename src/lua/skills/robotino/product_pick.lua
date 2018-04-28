@@ -87,10 +87,6 @@ function OPEN_GRIPPER:init()
    printf("open gripper")
 end
 
-function DRIVE_FORWARD:init()
-   self.args["approach_mps"].use_conveyor = true
-end
-
 function MOVE_BACK:init()
    self.args["motor_move"] = {x = -0.0, vel_trans = 0.03, tolerance = { x=0.001, y=0.002, ori=0.01 } }
 end
