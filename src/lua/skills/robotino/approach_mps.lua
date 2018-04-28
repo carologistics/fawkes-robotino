@@ -76,7 +76,7 @@ function conveyor_ready(self)
 
   self.fsm.vars.pose = transformed_pose()
   distsqr = self.fsm.vars.pose.x * self.fsm.vars.pose.x + self.fsm.vars.pose.y * self.fsm.vars.pose.y
-  if if_conveyor:euclidean_fitness() > 0 and distsqr < 0.5 * 0.5 then
+  if if_conveyor:euclidean_fitness() > config:get_float("/skills/conveyor_align/euclidean_fitness_tol") and distsqr < 0.5 * 0.5 then
     return true
   else
     printf("mps_approach failed: euclidean_fitness is %f, dist to object in front is %f. I don't drive with this bad convergence or this far without collision avoidance", if_conveyor:euclidean_fitness(), math.sqrt(distsqr))
