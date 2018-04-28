@@ -10,3 +10,5 @@ skills:
     euclidean_fitness_tol: 5
   mps_align:
     x_dist_default: 0.35
+  approach_mps:
+    x_dist: 0.28
