@@ -60,10 +60,6 @@ function no_writer()
    return not if_conveyor:has_writer()
 end
 
-function see_conveyor()
-   return if_conv_pos:euclidean_fitness()
-end
-
 function pose_offset(self)
    local from = { x = if_conv_pos:translation(0),
                   y = if_conv_pos:translation(1),
@@ -108,32 +104,33 @@ end
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"INIT", JumpState},
    {"CHECK_VISION", JumpState},
-   {"ADJUST_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="CHECK_VISION",fail_to="FAILED"},
-   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="MOVE_GRIPPER_XY", fail_to="FAILED"},
-   {"MOVE_GRIPPER_XY", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_Z",fail_to="FAILED"},
-   {"MOVE_GRIPPER_Z", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER",fail_to="FAILED"},
+--   {"ADJUST_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="CHECK_VISION",fail_to="FAILED"},
+   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="MOVE_GRIPPER_YZ", fail_to="FAILED"},
+   {"MOVE_GRIPPER_YZ", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_X",fail_to="FAILED"},
+   {"MOVE_GRIPPER_X", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER",fail_to="FAILED"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to = "MOVE_GRIPPER_BACK", fail_to="FAILED"},
    {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "DRIVE_BACK", fail_to="FAILED"},
    {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
-   {"CHECK_VISION", "OPEN_GRIPPER",cond=valid_pose , desc= "Conveyor Pose in Range"},
-   {"CHECK_VISION", "ADJUST_GRIPPER",cond=true, desc=" Pose offset to high"},
+   {"CHECK_VISION", "OPEN_GRIPPER",cond=true , desc= "Conveyor Pose in Range"},
+   --{"CHECK_VISION", "ADJUST_GRIPPER",cond=true, desc=" Pose offset to high"},
 }
+
 
 function OPEN_GRIPPER:init()
   self.args["gripper_commands_new"].command = "OPEN"
 end
 
-function MOVE_GRIPPER_XY:init()
-  self.args["gripper_commands_new"].x = gripper_x
+function MOVE_GRIPPER_YZ:init()
+  self.args["gripper_commands_new"].x = gripper_z
   self.args["gripper_commands_new"].y = gripper_y
   self.args["gripper_commands_new"].command = "MOVEABS"
 end
 
-function MOVE_GRIPPER_Z:init()
-  self.args["gripper_commands_new"].z = gripper_z
+function MOVE_GRIPPER_X:init()
+  self.args["gripper_commands_new"].z = gripper_x
   self.args["gripper_commands_new"].command = "MOVEABS"
 end
 
