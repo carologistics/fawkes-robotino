@@ -264,7 +264,7 @@
 )
 
 
-(defrule goal-reasoner-insert-unknown-base-to-rs
+(defrule goal-reasoner-create-prifill-ring-station
   "Insert a base with unknown color in a RS for preparation"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
@@ -273,12 +273,13 @@
   (wm-fact (key domain fact wp-usable args? wp ?wp))
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
+  ;TODO: make the mps-state  a precond of the put-slid to save traviling time
   (wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TOW))
   ;CCs don't have a base color. Hence, models base with UNKOWN color
-  (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color)))
+  ; (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color)))
   =>
   (printout t "Goal " FILL-RS " formulated" crlf)
   (assert (goal (id FILL-RS) (priority ?*PRIORITY-PREFILL-RS*)
