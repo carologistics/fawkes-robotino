@@ -5,7 +5,7 @@
 			(action-name ?action-name)
 			(param-values $?param-values))
 	(goal (id EXPLORATION) (mode DISPATCHED))
-	(not (plan-action (goal-id EXPLORATION) (status ~FINAL&~FAILED&~FORMULATED)))
+	(not (plan-action (goal-id EXPLORATION) (status ~FINAL&~FORMULATED)))
 	(not (plan (id EXPLORE-ZONE) (goal-id EXPLORATION)))
 	(not (plan-action (plan-id EXPLORATION-PLAN) (goal-id EXPLORATION) (status FORMULATED) (id ?oid&: (< ?oid ?id))))
 	=>
@@ -37,7 +37,7 @@
 	(or (not (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (status ?s&~FINAL)))
 		 (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (status ?s&FAILED))
 	)
-	(or (not (and (plan-action (plan-id EXPLORE-ZONE) (action-name one-time-lock) (param-values ?res) (status FINAL)) 
+	(or (not (and (plan-action (plan-id EXPLORE-ZONE) (action-name one-time-lock) (param-values ?res) (status FINAL))
 		 (plan-action (plan-id EXPLORE-ZONE) (action-name unlock) (param-values ?res) (status ~FINAL))))
 	    (not (plan-action (plan-id EXPLORE-ZONE) (action-name unlock))))
 	=>
@@ -61,8 +61,8 @@
 	=>
 	(if (< (distance-mf ?node-pos ?r-pose) 1.5) then
 		(printout t "EXP Go to next node" crlf)
-		(modify ?panext (status PENDING))
-		;(modify ?pa (status EXECUTION-SUCCEEDED))
+		;(modify ?panext (status PENDING))
+		(modify ?pa (status EXECUTION-SUCCEEDED))
 		else
 		(printout t "EXP Retry node" crlf)
 		(modify ?pa (status FORMULATED))
