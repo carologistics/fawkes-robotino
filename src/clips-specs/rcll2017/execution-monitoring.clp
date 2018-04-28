@@ -13,6 +13,43 @@
   ?*HOLDING-MONITORING* = 60
 )
 
+;Execution Monitoring MPS state
+(defrule execution-monitoring-incosistent-yet-exepected-mps-state-ready-at-output
+  (declare (salience 1))
+  (domain-pending-sensed-fact
+    (goal-id ?goal-id)
+    (action-id ?action-id)
+    (name mps-state)
+    (params-values ?mps READY-AT-OUTPUT)
+    (type POSITIVE))
+  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT)))
+  =>
+  ;TODO: Send Maintenance message
+  (printout warn "Monitoring: MPS state READY-AT-OUTPUT but no WP at output, Yet action " ?action-id " in Goal " ?goal-id
+    "expected it!" crlf)
+  (bind ?wp-gen  (sym-cat WP- (gensym)))
+  (assert (domain-object (name (sym-cat WP- (gensym))) (type workpiece))
+          (wm-fact (key domain fact wp-at args? wp ?wp-gen m ?mps side OUTPUT))
+          (wm-fact (key domain fact wp-unused args? wp ?wp-gen))
+          )
+  ;TODO..check if it exists somewhere that will pervent execusion
+  (printout warn "A WP has been Generated at the OUTPUT side" crlf)
+)
+
+(defrule execution-monitoring-incosistent-yet-exepected-mps-state-idle
+  (declare (salience 1))
+  (domain-pending-sensed-fact (name mps-state) (?mps IDLE))
+  (wm-fact (key domain fact mps-state args? m ?mps IDLE))
+  ?wpat <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+  =>
+  ;TODO: Send Maintenance message
+  (printout warn "Monitoring: MPS state IDLE but WP exists at output, Yet action " ?action-id " in Goal " ?goal-id
+    "expected it!!" crlf)
+  (retract ?wpat)
+  (printout warn "The WP has been retracted!!" crlf)
+)
+
 
 (defrule reset-prepare-action-on-downed
   (declare (salience 1))
@@ -167,7 +204,7 @@
   (retract ?pt)
 )
 
-(defrule enhance-timer-on-downed-mps
+(defrule execution-monitoring-increase-timeout-duration-for-actions
   (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
 	(id ?id) (status PENDING)
 	(action-name ?action-name)
@@ -175,7 +212,7 @@
   (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~ IDLE&~READY-AT-OUTPUT))
+  (wm-fact (key domain fact mps-state args? m ?mps s ~IDLE&~READY-AT-OUTPUT))
   ?pt <- (pending-timer (plan-id ?plan-id) (action-id ?id) (start-time $?starttime) (timeout-time $?timeout))
   (test (< (nth$ 1 ?timeout) (+ (nth$ 1 ?starttime) ?*MPS-DOWN-TIMEOUT-DURATION* ?*COMMON-TIMEOUT-DURATION*)))
   =>
@@ -203,16 +240,6 @@
   )
   (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
   (modify ?g (mode EVALUATED))
-)
-
-(defrule cleanup-mps-output
-  (declare (salience 1))
-  (wm-fact (key domain fact mps-state args? m ?mps s ?s& : (and (neq ?s READY-AT-OUTPUT) (neq ?s DOWN))))
-  ?wpat <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-  =>
-  ;TODO: Send Maintenance message
-  (printout "Cleaned up wp-at fact because the mps-state did not match" crlf)
-  (retract ?wpat)
 )
 
 (defrule cleanup-get-shelf-failed
