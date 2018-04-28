@@ -11,7 +11,7 @@
   ?*COMMON-TIMEOUT-DURATION* = 30
   ?*MPS-DOWN-TIMEOUT-DURATION* = 120
   ?*HOLDING-MONITORING* = 60
-  ?*RETRY-GET-MAX* = 3
+  ?*WP-GET-RETRIES* = 3
 )
 
 ;Execution Monitoring MPS state
@@ -282,31 +282,42 @@
   (assert (wm-fact (key domain fact can-hold args? r ?r) (value TRUE)))
 )
 
-(defrule retry-wp-get
+(defrule retry-wp-get-assert-counter
   (declare (salience 1))
   ?pa <- (plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
-	(status EXECUTION-FAILED)
-	(action-name wp-get)
-	(param-values $? ?wp $?))
+	(status FAILED)
+	(action-name ?an&wp-get)
+	(param-values $? ?wp $? ?mps $?))
+  (domain-obj-is-of-type ?mps mps)
+  (domain-obj-is-of-type ?wp workpiece)
+  (wm-fact (key domain fact self args? r ?r))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
+  (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)))
   =>
-  (do-for-all-facts ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring get-retry))
-	(bind ?retry ?wm:value)
-	(if (< ?retry ?*RETRY-GET-MAX*) then
-		(printout t "For fucks sake, get this f****** product" crlf)
-		(modify ?pa (status PENDING))
-		(bind ?retry (+ 1 ?retry))
-		(modify ?wm (key monitoring get-retry) (value ?retry))
-	  else
-		(printout t "Nevermind, I quit" crlf)
-		(retract ?wm)
-	)
-  )
-  (if (not (any-factp ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring get-retry)))) then
-	(assert (wm-fact (key monitoring get-retry) (type INT) (value 1)))
-	(printout t "REALLY? Gonna try again" crlf)
+  (if (< 1 ?*WP-GET-RETRIES*) then
 	(modify ?pa (status PENDING))
+  	(assert (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value 1)))
   )
 )
-  
+
+(defrule retry-wp-get-increase-counter
+  (declare (salience 1))
+  ?pa <- (plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
+	(status FAILED)
+	(action-name ?an&wp-get)
+	(param-values $? ?wp $? ?mps $?))
+  (domain-obj-is-of-type ?mps mps)
+  (domain-obj-is-of-type ?wp workpiece)
+  (wm-fact (key domain fact self args? r ?r))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value ?tries))
+  =>
+  (bind ?tries (+ 1 ?tries))
+  (if (<= ?tries ?*WP-GET-RETRIES*) then
+	(modify ?pa (status PENDING))
+	(modify ?wm (value ?tries))
+  )
+)
+ 
