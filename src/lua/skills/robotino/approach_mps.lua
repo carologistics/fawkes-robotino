@@ -93,7 +93,7 @@ function laser_lines_ready(self)
     return true
   else
     printf("mps_approach failed: visibility history is %f, dist to object in front is %f. I don't drive with this visibility history or this far without collision avoidance", if_front_dist:visibility_history(), self.fsm.vars.ll_dist)
-  return false
+    return false
   end
 end
 
@@ -110,7 +110,7 @@ fsm:add_transitions{
    {"INIT", "APPROACH_CONVEYOR", cond=conveyor_ready},
    {"INIT", "APPROACH_LASERLINE", cond=laser_lines_ready},
    {"INIT", "INIT_LASER_LINES", timeout=5.0},
-   {"INIT_LASER_LINES", "APPROACH_LASERLINE", cond="laser_lines_ready(self)"},
+   {"INIT_LASER_LINES", "APPROACH_LASERLINE", cond=laser_lines_ready},
    {"INIT_LASER_LINES", "FAILED", timeout=1.0}
 }
 
@@ -128,6 +128,10 @@ function INIT:init()
 
   conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
   self.fsm.vars.ll_dist = if_front_dist:translation(0) - self.fsm.vars.x
+end
+
+function INIT_LASER_LINES:init()
+  self.fsm.vars.use_conveyor = false
 end
 
 function APPROACH_CONVEYOR:init()
