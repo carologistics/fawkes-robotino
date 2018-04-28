@@ -47,7 +47,7 @@
 	(mutex-try-lock-async ?lock-name)
   (printout warn "Trying to lock " ?lock-name crlf)
   (assert (lock-info (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id)
-            (name ?lock-name) (start-time ?now) (last-try ?now)))
+            (name ?lock-name) (status REQUESTED) (start-time ?now) (last-try ?now)))
 	(modify ?pa (status RUNNING))
 )
 
@@ -103,7 +103,7 @@
 
 (defrule lock-actions-lock-failed
 	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
-                      (action-name one-time-lock|lock|location-lock) (status RUNNING))
+                      (action-name lock|location-lock) (status RUNNING))
   ?li <- (lock-info (name ?name) (goal-id ?goal-id) (plan-id ?plan-id)
                     (action-id ?id) (status WAITING) (start-time $?start)
                     (last-error ?error-msg))
@@ -140,7 +140,7 @@
 	;(bind ?rv (robmem-mutex-unlock (str-cat ?lock-name)))
 	;(modify ?pa (status (if ?rv then EXECUTION-SUCCEEDED else EXECUTION-FAILED)))
 	(mutex-unlock-async ?lock-name)
-	(modify ?pa (status RUNNING))
+	(modify ?pa (status EXECUTION-SUCCEEDED))
 )
 
 (defrule lock-actions-unlock-done
