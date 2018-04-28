@@ -437,7 +437,7 @@
         (param-names r wp m side)
         (param-values ?robot ?wp ?mps OUTPUT))
   (plan-action (id 3) (plan-id DELIVER-PLAN) (goal-id DELIVER)
-        (action-name move)
+        (action-name move))
   (plan-action (id 5) (plan-id DELIVER-PLAN) (goal-id DELIVER)
         (action-name unlock) (param-values ?mps))
   (plan-action (id 6) (plan-id DELIVER-PLAN) (goal-id DELIVER)
@@ -448,7 +448,6 @@
         (param-values ?ds INPUT))
   (plan-action (id 8) (plan-id DELIVER-PLAN) (goal-id DELIVER)
         (action-name move-wp-put)
->>>>>>> cx-production-locking
         (param-names r from from-side to)
         (param-values ?robot ?mps OUTPUT ?ds))
   (plan-action (id 9) (plan-id DELIVER-PLAN) (goal-id DELIVER)
