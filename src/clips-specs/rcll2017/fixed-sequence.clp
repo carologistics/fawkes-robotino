@@ -353,7 +353,7 @@
             (param-values ?robot ?bs ?bs-side ?mps INPUT))
       (plan-action (id 6) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
             (action-name prepare-rs)
-            (param-names m rc rs-before rs-after rs-req)
+            (param-names m rc rs-before rs-after r-req)
             (param-values ?mps ?ring-color ?rs-before ?rs-after ?rs-req))
       (plan-action (id 7) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
             (action-name wp-put)
@@ -361,12 +361,57 @@
             (param-values ?robot ?spawned-wp ?mps))
        (plan-action (id 8) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
             (action-name rs-mount-ring1)
-            (param-names m wp col rs-before rs-after rs-req)
+            (param-names m wp col rs-before rs-after r-req)
             (param-values ?mps ?spawned-wp ?ring-color ?rs-before ?rs-after ?rs-req))
      )
     (modify ?g (mode EXPANDED))
   )
 )
+
+
+(defrule goal-produce-c1
+ ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?g <- (goal (mode SELECTED) (parent ?parent) (id PRODUCE-C1)
+                                              (params robot ?robot
+                                                        wp ?wp
+                                                        rs ?rs
+                                                        mps ?mps
+                                                        cs-color ?cap-color
+                                                        order ?order
+                                                        ))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+ =>
+   (assert
+    (plan (id PRODUCE-C1-PLAN) (goal-id PRODUCE-C1))
+    (plan-action (id 1) (plan-id PRODUCE-C1-PLAN) (goal-id PRODUCE-C1)
+          (action-name move)
+          (param-names r from from-side to to-side )
+          (param-values ?robot ?curr-location ?curr-side ?rs OUTPUT))
+    (plan-action (id 2) (plan-id PRODUCE-C1-PLAN) (goal-id PRODUCE-C1)
+          (action-name wp-get)
+          (param-names r wp m side)
+          (param-values ?robot ?wp ?rs OUTPUT))
+    (plan-action (id 3) (plan-id PRODUCE-C1-PLAN) (goal-id PRODUCE-C1)
+          (action-name move)
+          (param-names r from from-side to to-side)
+          (param-values ?robot ?rs OUTPUT ?mps INPUT))
+    (plan-action (id 4) (plan-id PRODUCE-C1-PLAN) (goal-id PRODUCE-C1)
+          (action-name prepare-cs)
+          (param-names m op)
+          (param-values ?mps MOUNT_CAP))
+    (plan-action (id 5) (plan-id PRODUCE-C1-PLAN) (goal-id PRODUCE-C1)
+          (action-name wp-put)
+          (param-names r wp m)
+          (param-values ?robot ?wp ?mps))
+     (plan-action (id 6) (plan-id PRODUCE-C1-PLAN) (goal-id PRODUCE-C1)
+          (action-name cs-mount-cap)
+          (param-names m wp capcol)
+          (param-values ?mps ?wp ?cap-color))
+   )
+  (modify ?g (mode EXPANDED))
+)
+
+
 
 (defrule goal-reset-mps
   ?p <- (goal (mode EXPANDED) (id ?parent))
