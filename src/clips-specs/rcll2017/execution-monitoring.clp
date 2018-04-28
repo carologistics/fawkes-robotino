@@ -11,6 +11,7 @@
   ?*COMMON-TIMEOUT-DURATION* = 30
   ?*MPS-DOWN-TIMEOUT-DURATION* = 120
   ?*HOLDING-MONITORING* = 60
+  ?*RETRY-GET-MAX* = 3
 )
 
 ;Execution Monitoring MPS state
@@ -279,4 +280,33 @@
   (assert (wm-fact (key monitoring fail-goal) (value ?goal-id)))
   (retract ?hold)
   (assert (wm-fact (key domain fact can-hold args? r ?r) (value TRUE)))
-) 
+)
+
+(defrule retry-wp-get
+  (declare (salience 1))
+  ?pa <- (plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
+	(status EXECUTION-FAILED)
+	(action-name wp-get)
+	(param-values $? ?wp $?))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  =>
+  (do-for-all-facts ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring get-retry))
+	(bind ?retry ?wm:value)
+	(if (< ?retry ?*RETRY-GET-MAX*) then
+		(printout t "For fucks sake, get this f****** product" crlf)
+		(modify ?pa (status PENDING))
+		(bind ?retry (+ 1 ?retry))
+		(modify ?wm (key monitoring get-retry) (value ?retry))
+	  else
+		(printout t "Nevermind, I quit" crlf)
+		(retract ?wm)
+	)
+  )
+  (if (not (any-factp ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring get-retry)))) then
+	(assert (wm-fact (key monitoring get-retry) (type INT) (value 1)))
+	(printout t "REALLY? Gonna try again" crlf)
+	(modify ?pa (status PENDING))
+  )
+)
+  
