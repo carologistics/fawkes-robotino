@@ -139,7 +139,7 @@
 
 (defrule goal-reasoner-evaluate-clean-locks
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
-  ?p <- (plan (id ?plan-id) (goal ?goal-id))
+  ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
   ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
                      (action-name lock) (param-values ?name))
   (wm-fact (key domain fact locked args? name ?name))
