@@ -11,7 +11,7 @@
   ?*COMMON-TIMEOUT-DURATION* = 30
   ?*MPS-DOWN-TIMEOUT-DURATION* = 120
   ?*HOLDING-MONITORING* = 60
-  ?*WP-GET-RETRIES* = 3
+  ?*MAX-RETRIES-PICK* = 3
 )
 
 ;Execution Monitoring MPS state
@@ -282,42 +282,47 @@
   (assert (wm-fact (key domain fact can-hold args? r ?r) (value TRUE)))
 )
 
-(defrule retry-wp-get-assert-counter
+(defrule execution-monitoring-start-retry-action-wp-get
   (declare (salience 1))
-  ?pa <- (plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
-	(status FAILED)
-	(action-name ?an&wp-get)
-	(param-values $? ?wp $? ?mps $?))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  ?pa <- (plan-action
+              (action-name ?an&wp-get)
+              (plan-id ?plan-id)
+              (goal-id ?goal-id)
+              (status FAILED)
+              (param-values $? ?wp $? ?mps $?))
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
   (wm-fact (key domain fact self args? r ?r))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
   (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)))
   =>
-  (if (< 1 ?*WP-GET-RETRIES*) then
-	(modify ?pa (status PENDING))
-  	(assert (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value 1)))
+  (if (< 1 ?*MAX-RETRIES-PICK*) then
+    (modify ?pa (status PENDING))
+    (assert
+      (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value 1))
+    )
   )
 )
 
-(defrule retry-wp-get-increase-counter
+(defrule execution-monitoring-finish-retry-action-wp-get
   (declare (salience 1))
-  ?pa <- (plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
-	(status FAILED)
-	(action-name ?an&wp-get)
-	(param-values $? ?wp $? ?mps $?))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  ?pa <- (plan-action 
+              (action-name ?an&wp-get)
+              (plan-id ?plan-id)
+              (goal-id ?goal-id)
+              (status FAILED)
+              (param-values $? ?wp $? ?mps $?))
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
   (wm-fact (key domain fact self args? r ?r))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
-  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value ?tries))
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) 
+          (value ?tries&:(<= ?tries ?*MAX-RETRIES-PICK*)))
   =>
-  (bind ?tries (+ 1 ?tries))
-  (if (<= ?tries ?*WP-GET-RETRIES*) then
-	(modify ?pa (status PENDING))
-	(modify ?wm (value ?tries))
-  )
+  (bind ?tried (+ 1 ?tried))
+  (modify ?pa (status PENDING))
+  (modify ?wm (value ?tried))
 )
  
