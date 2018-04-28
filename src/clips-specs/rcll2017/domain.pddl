@@ -130,7 +130,7 @@
 	(:action prepare-cs
 		:parameters (?m - mps ?op - cs-operation)
 		:precondition (and (mps-type ?m CS) (mps-state ?m IDLE) (cs-can-perform ?m ?op))
-		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m PREPARED)
+		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m READY-AT-OUTPUT)
 								 (not (cs-can-perform ?m ?op)) (cs-prepared-for ?m ?op))
 	)
 
@@ -147,10 +147,10 @@
 								 (not (wp-unused ?wp)) (wp-usable ?wp)
 								 (not (wp-spawned-by ?wp ?r)))
 	)
-		
+
 	(:action cs-mount-cap
 		:parameters (?m - mps ?wp - workpiece ?capcol - cap-color)
-		:precondition (and (mps-type ?m CS) (mps-state ?m PROCESSING)
+		:precondition (and (mps-type ?m CS) (mps-state ?m READY-AT-OUTPUT)
 										(cs-buffered ?m ?capcol) (cs-prepared-for ?m MOUNT_CAP)
 										(wp-usable ?wp) (wp-at ?wp ?m INPUT)
 										(wp-cap-color ?wp CAP_NONE))
@@ -164,7 +164,7 @@
 
 	(:action cs-retrieve-cap
 		:parameters (?m - mps ?cc - cap-carrier ?capcol - cap-color)
-		:precondition (and (mps-type ?m CS) (mps-state ?m PROCESSING)
+		:precondition (and (mps-type ?m CS) (mps-state ?m READY-AT-OUTPUT)
 										(cs-prepared-for ?m RETRIEVE_CAP)
 										(wp-at ?cc ?m INPUT)  (wp-cap-color ?cc ?capcol))
 		:effect (and (not (mps-state ?m PROCESSING)) (mps-state ?m READY-AT-OUTPUT)
@@ -173,7 +173,7 @@
 								 (cs-buffered ?m ?capcol)(cs-can-perform ?m MOUNT_CAP)
 								 (not (cs-prepared-for ?m RETRIEVE_CAP)))
 	)
-	
+
 	(:action prepare-rs
 		:parameters (?m - mps ?rc - ring-color ?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
 		:precondition (and (mps-type ?m RS) (mps-state ?m IDLE) (rs-ring-spec ?m ?rc ?r-req)
@@ -250,7 +250,7 @@
 								(at ?r ?from WAIT)
 							)
 						)
-		:effect (and 
+		:effect (and
 					(not (at ?r START INPUT))
 					(not (at ?r ?from WAIT))
 					(location-free START INPUT)
@@ -308,7 +308,7 @@
 	(:action wp-discard
 		:parameters (?r - robot ?cc - cap-carrier)
 		:precondition (and (holding ?r ?cc))
-		:effect (and (not (holding ?r ?cc)) (wp-unused ?cc) (not (wp-usable ?cc)) 
+		:effect (and (not (holding ?r ?cc)) (wp-unused ?cc) (not (wp-usable ?cc))
                  (can-hold ?r))
 	)
 
@@ -368,10 +368,9 @@
 
 	(:action wp-put
 		:parameters (?r - robot ?wp - workpiece ?m - mps)
-		:precondition (and (at ?r ?m INPUT) (mps-state ?m PREPARED)
+		:precondition (and (at ?r ?m INPUT) (mps-state ?m IDLE)
 										(wp-usable ?wp) (holding ?r ?wp))
-		:effect (and (wp-at ?wp ?m INPUT) (not (holding ?r ?wp)) (can-hold ?r)
-								 (not (mps-state ?m PREPARED)) (mps-state ?m PROCESSING))
+		:effect (and (wp-at ?wp ?m INPUT) (not (holding ?r ?wp)) (can-hold ?r))
 	)
 
 	(:action wp-put-slide-cc
@@ -442,7 +441,7 @@
 		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT))
                  (not (ds-prepared-gate ?m ?g))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
-								 
+
 	)
 
 	(:action fulfill-order-c3
