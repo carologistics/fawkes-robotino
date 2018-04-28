@@ -81,14 +81,12 @@
 )
 
 ; #  Commit to goal (we "intend" it)
-; A goal might actually be expanded into multiple plans, e.g., by
-; different planners. This step would allow to commit one out of these
-; plans.
-(defrule goal-reasoner-commit
-  ?g <- (goal (mode EXPANDED))
-  =>
-  (modify ?g (mode COMMITTED))
-)
+; Do not just commit to a goal, we first need to get all locks.
+;(defrule goal-reasoner-commit
+;  ?g <- (goal (mode EXPANDED))
+;  =>
+;  (modify ?g (mode COMMITTED))
+;)
 
 ; #  Dispatch goal (action selection and execution now kick in)
 ; Trigger execution of a plan. We may commit to multiple plans
