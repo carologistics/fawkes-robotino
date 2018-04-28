@@ -440,6 +440,25 @@
   )
 
 
+
+(defrule goal-reasoner-create-reset-mps
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (wm-fact (key domain fact self args? r ?self))
+  t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
+                (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+  =>
+  (printout t "Goal " RESET-MPS " formulated" crlf)
+  (assert (goal (id RESET-MPS) (priority  ?*PRIORITY-RESET-MPS*)
+                              (parent PRODUCTION-MAINTAIN)
+                              (params r ?self
+                                      m ?mps
+                                      )))
+  (retract ?t)
+)
+
+
+
 (defrule goal-reasoner-create-deliver
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))

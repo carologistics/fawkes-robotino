@@ -154,6 +154,25 @@
  (modify ?g (mode EXPANDED))
 )
 
+;Alternative pesudo implemantation for the RESET-MPS but as a plan
+; The goal commitment should decide which one to pick
+; (defrule goal-reset-mps
+;  ?p <- (goal (mode EXPANDED) (id ?parent))
+;  ?g <- (goal (mode SELECTED) (parent ?parent) (id CLEAR-CS)
+;                                              (params robot ?robot
+;                                                       mps ?mps
+;                                                       wp ?wp
+;                                                       ))
+;   =>
+;   (assert
+;     (plan (id RESET-MPS-PLAN) (goal-id CLEAR-CS))
+;     (plan-action (id 1) (plan-id RESET-MPS-PLAN) (goal-id CLEAR-CS)
+;           (action-name reset-mps)
+;           (param-names r m)
+;           (param-values ?robot ?mps))
+;   )
+;   (modify ?g (mode EXPANDED))
+; )
 
 (defrule goal-expander-discard-unneeded-base
  ?p <- (goal (mode EXPANDED) (id ?parent))
@@ -329,6 +348,22 @@
      )
     (modify ?g (mode EXPANDED))
   )
+)
+
+(defrule goal-reset-mps
+  ?p <- (goal (mode EXPANDED) (id ?parent))
+  ?g <- (goal (mode SELECTED) (parent ?parent) (id RESET-MPS)
+                                             (params r ?robot
+                                                      m ?mps))
+  =>
+  (assert
+    (plan (id RESET-MPS-PLAN) (goal-id RESET-MPS))
+      (plan-action (id 1) (plan-id RESET-MPS-PLAN) (goal-id RESET-MPS)
+        (action-name reset-mps)
+        (param-names m)
+        (param-values ?mps))
+  )
+  (modify ?g (mode EXPANDED))
 )
 
 (defrule goal-deliver
