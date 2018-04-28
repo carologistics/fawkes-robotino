@@ -31,7 +31,7 @@
   (bind ?wp-gen  (sym-cat WP- (gensym)))
   (assert (domain-object (name (sym-cat WP- (gensym))) (type workpiece))
           (wm-fact (key domain fact wp-at args? wp ?wp-gen m ?mps side OUTPUT))
-          (wm-fact (key domain fact wp-unused args? wp ?wp-gen))
+          (wm-fact (key domain fact wp-usable args? wp ?wp-gen))
           )
   ;TODO..check if it exists somewhere that will pervent execusion
   (printout warn "A WP has been Generated at the OUTPUT side" crlf)
@@ -39,7 +39,12 @@
 
 (defrule execution-monitoring-incosistent-yet-exepected-mps-state-idle
   (declare (salience 1))
-  (domain-pending-sensed-fact (name mps-state) (?mps IDLE))
+  (domain-pending-sensed-fact
+    (goal-id ?goal-id)
+    (action-id ?action-id)
+    (name mps-state)
+    (param-values ?mps IDLE)
+    (type POSITIVE))
   (wm-fact (key domain fact mps-state args? m ?mps IDLE))
   ?wpat <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   =>
