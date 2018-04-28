@@ -25,7 +25,7 @@
   ?*ENTER-FIELD-RETRIES* = 10
 
   ; production order priorities
-  ?*PRIORITY-GO-WAIT-HACK* = 200
+  ?*PRIORITY-GO-WAIT-HACK* = 10
   ?*PRIORITY-FIND-MISSING-MPS* = 110
   ?*PRIORITY-DELIVER* = 100
   ?*PRIORITY-RESET-MPS* = 98
@@ -514,6 +514,9 @@
 )
 
 ; ## Goal Evaluation
+
+;(deffunction goal-reason
+
  (defrule goal-reasoner-evaluate-failed-enter-field
    ?g <- (goal (id ENTER-FIELD-ACHIEVE) (mode FINISHED) (outcome FAILED))
   ?pa <- (plan-action (goal-id ENTER-FIELD-ACHIEVE) (status FAILED) (action-name enter-field))

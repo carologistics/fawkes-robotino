@@ -102,6 +102,8 @@
     (domain-object (name ?rs1) (type mps))
     (domain-object (name ?rs2) (type mps))
     (domain-object (name ?ss) (type mps))
+    (domain-object (name INPUT) (type mps-side))
+    (domain-object (name OUTPUT) (type mps-side))
     (domain-object (name ?team-color) (type team-color))
     (domain-object (name O1) (type order))
     (domain-object (name O2) (type order))
