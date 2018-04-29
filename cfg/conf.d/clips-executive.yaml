@@ -113,7 +113,7 @@ clips-executive:
             file: rcll2017/execution-monitoring.clp
 
       action-mapping:
-        enter-field: drive_into_field{team=?(team-color)S}
+        enter-field: drive_into_field{team=?(team-color)S, wait=?(r|/R-1/0.0/|/R-2/10.0/|/R-3/20.0/)f}
         explore-zone: explore_zone{zone=?(z)s}
         move-node: goto{place=?(z)s} 
         move: ppgoto{place="?(to)Y-I"}
