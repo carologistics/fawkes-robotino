@@ -279,26 +279,37 @@ NavGraphGeneratorMPSThread::loop()
 
 void NavGraphGeneratorMPSThread::generate_wait_zones(size_t count, std::vector<Eigen::Vector2i> &free_zones)
 {
-  std::sort(free_zones.begin(), free_zones.end(),
-            [this] (const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) {
-    double d_lhs_min = std::numeric_limits<double>::max();
-    double d_rhs_min = std::numeric_limits<double>::max();
-    for (auto &entry : this->stations_) {
-      Eigen::Vector2i &station_zn = entry.second.zone;
+    for (int i; i < count && i < free_zones.size(); ++i) {
+      std::sort(free_zones.begin(), free_zones.end(),
+                [this] (const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) {
+        double d_lhs_min = std::numeric_limits<double>::max();
+        double d_rhs_min = std::numeric_limits<double>::max();
+        for (auto &entry : this->stations_) {
+          Eigen::Vector2i &station_zn = entry.second.zone;
 
-      double d_lhs = (lhs - station_zn).norm();
-      if (d_lhs < d_lhs_min)
-        d_lhs_min = d_lhs;
+          double d_lhs = (lhs - station_zn).norm();
+          if (d_lhs < d_lhs_min)
+            d_lhs_min = d_lhs;
 
-      double d_rhs = (rhs - station_zn).norm();
-      if (d_rhs < d_rhs_min)
-        d_rhs_min = d_rhs;
-    }
-    return d_lhs_min > d_rhs_min;
-  });
+          double d_rhs = (rhs - station_zn).norm();
+          if (d_rhs < d_rhs_min)
+            d_rhs_min = d_rhs;
+        }
+        for (auto &entry : wait_zones_) {
+          Eigen::Vector2i &station_zn = entry;
 
-  for (auto it = free_zones.begin(); it < free_zones.begin() + count && it < free_zones.end(); ++it) {
-    wait_zones_.push_back(*it);
+          double d_lhs = (lhs - station_zn).norm();
+          if (d_lhs < d_lhs_min)
+            d_lhs_min = d_lhs;
+
+          double d_rhs = (rhs - station_zn).norm();
+          if (d_rhs < d_rhs_min)
+            d_rhs_min = d_rhs;
+        }
+        return d_lhs_min > d_rhs_min;
+      });
+
+    wait_zones_.push_back(free_zones.front());
   }
 }
 
