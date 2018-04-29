@@ -131,13 +131,13 @@
                                     (param-names r cc m spot)
                                     (param-values ?robot ?cc ?mps ?shelf-spot))
         (plan-action (id 3) (plan-id FILL-CAP-PLAN) (goal-id FILL-CAP)
-                                    (action-name prepare-cs)
-                                    (param-names m op)
-                                    (param-values ?mps RETRIEVE_CAP))
-        (plan-action (id 4) (plan-id FILL-CAP-PLAN) (goal-id FILL-CAP)
                                     (action-name wp-put)
                                     (param-names r wp m)
                                     (param-values ?robot ?cc ?mps))
+        (plan-action (id 4) (plan-id FILL-CAP-PLAN) (goal-id FILL-CAP)
+                                    (action-name prepare-cs)
+                                    (param-names m op)
+                                    (param-values ?mps RETRIEVE_CAP))
         (plan-action (id 5) (plan-id FILL-CAP-PLAN) (goal-id FILL-CAP)
                                     (action-name cs-retrieve-cap)
                                     (param-names m cc capcol)
@@ -171,6 +171,25 @@
  (modify ?g (mode EXPANDED))
 )
 
+;Alternative pesudo implemantation for the RESET-MPS but as a plan
+; The goal commitment should decide which one to pick
+; (defrule goal-reset-mps
+;  ?p <- (goal (mode EXPANDED) (id ?parent))
+;  ?g <- (goal (mode SELECTED) (parent ?parent) (id CLEAR-CS)
+;                                              (params robot ?robot
+;                                                       mps ?mps
+;                                                       wp ?wp
+;                                                       ))
+;   =>
+;   (assert
+;     (plan (id RESET-MPS-PLAN) (goal-id CLEAR-CS))
+;     (plan-action (id 1) (plan-id RESET-MPS-PLAN) (goal-id CLEAR-CS)
+;           (action-name reset-mps)
+;           (param-names r m)
+;           (param-values ?robot ?mps))
+;   )
+;   (modify ?g (mode EXPANDED))
+; )
 
 (defrule goal-expander-discard-unneeded-base
  ?p <- (goal (mode EXPANDED) (id ?parent))
@@ -264,13 +283,13 @@
           (param-names r from from-side to to-side)
           (param-values ?robot ?bs ?bs-side ?mps INPUT))
     (plan-action (id 6) (plan-id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0)
+                (action-name wp-put)
+                (param-names r wp m)
+                (param-values ?robot ?spawned-wp ?mps))
+    (plan-action (id 7) (plan-id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0)
           (action-name prepare-cs)
           (param-names m op)
           (param-values ?mps MOUNT_CAP))
-    (plan-action (id 7) (plan-id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0)
-          (action-name wp-put)
-          (param-names r wp m)
-          (param-values ?robot ?spawned-wp ?mps))
      (plan-action (id 8) (plan-id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0)
           (action-name cs-mount-cap)
           (param-names m wp capcol)
@@ -346,6 +365,22 @@
      )
     (modify ?g (mode EXPANDED))
   )
+)
+
+(defrule goal-reset-mps
+  ?p <- (goal (mode EXPANDED) (id ?parent))
+  ?g <- (goal (mode SELECTED) (parent ?parent) (id RESET-MPS)
+                                             (params r ?robot
+                                                      m ?mps))
+  =>
+  (assert
+    (plan (id RESET-MPS-PLAN) (goal-id RESET-MPS))
+      (plan-action (id 1) (plan-id RESET-MPS-PLAN) (goal-id RESET-MPS)
+        (action-name reset-mps)
+        (param-names m)
+        (param-values ?mps))
+  )
+  (modify ?g (mode EXPANDED))
 )
 
 (defrule goal-deliver
