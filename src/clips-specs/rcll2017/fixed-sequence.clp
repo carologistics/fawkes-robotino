@@ -92,6 +92,7 @@
     ?g <- (goal (mode SELECTED) (parent ?parent) (id GO-WAIT)
                                                 (params r ?robot
                                                   point ?waitpoint
+                                                  point-side ?waitpoint-side
                                                         ))
     (wm-fact (key domain fact self args? r ?robot))
     (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
@@ -99,9 +100,9 @@
    (assert
         (plan (id GO-WAIT-PLAN) (goal-id GO-WAIT))
         (plan-action (id 1) (plan-id GO-WAIT-PLAN) (goal-id GO-WAIT)
-                                    (action-name go-wait)
-                                    (param-names r to from)
-                                    (param-values ?robot ?waitpoint ?curr-location))
+                                    (action-name move)
+                                    (param-names r from from-side to to-side)
+                                    (param-values ?robot ?curr-location ?curr-side ?waitpoint ?waitpoint-side))
     )
     (modify ?g (mode EXPANDED))
 )
