@@ -299,7 +299,7 @@
   (modify ?ze (values line-vis 0 time-searched ?new-ts))
   (assert (tried-lock (resource ?zn) (result REJECT)))
   (modify ?skill (status S_FAILED))
-  (printout t "EXP formulating zone exploration plan " ?zn crlf)
+  (printout t "EXP formulating zone exploration plan " ?zn " with vh: " ?vh crlf)
   (assert
     (plan (id EXPLORE-ZONE) (goal-id EXPLORATION))
     ;(plan-action (id 1) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name lock-resource))
@@ -426,4 +426,31 @@
   )
   (printout t "exploration phase ended, cleaning up" crlf)
   (modify ?g (mode FINISHED) (outcome COMPLETED))
+)
+
+(deffunction get-mps-type-from-name (?mps)
+  (bind ?type (sym-cat (sub-string 3 4 (str-cat ?mps))))
+  (return ?type)
+)
+
+(defrule refbox-recv-ExploreInfo
+  (declare (salience 1000))
+  ?pb-msg <- (protobuf-msg (type "llsf_msgs.MachineReport") (ptr ?p))
+  (wm-fact (id "/refbox/team-color") (value ?team-name&:(neq ?team-name nil)))
+  =>
+  (foreach ?m (pb-field-list ?p "machines")
+
+    (bind ?m-name (sym-cat (pb-field-value ?m "name")))
+    (bind ?m-zone (sym-cat (pb-field-value ?m "zone")))
+    (bind ?m-rotation (eval (sym-cat (pb-field-value ?m "rotation"))))
+    (if (not (any-factp ((?er exploration-result)) (eq ?m-name ?er:machine) ))
+      then
+	(bind ?m-type (get-mps-type-from-name ?m-name))
+        (assert (exploration-result (machine ?m-name) (zone ?m-zone) (orientation ?m-rotation) (team ?team-name )))
+	(assert (exploration-result
+			(machine (mirror-name ?m-name)) (zone (mirror-name ?m-zone))
+			(orientation (mirror-orientation ?m-type ?m-zone ?m-rotation))
+			(team (mirror-team ?team-name))))
+   )
+  )
 )
