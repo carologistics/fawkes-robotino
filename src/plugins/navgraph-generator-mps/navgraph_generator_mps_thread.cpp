@@ -84,7 +84,7 @@ NavGraphGeneratorMPSThread::zone_blocking_ = {
 
 std::vector<Eigen::Vector2i>
 NavGraphGeneratorMPSThread::reserved_zones_ = {
-                    {-5, 2},   {5, 2},
+           {-6, 2}  {-5, 2},   {5, 2}, {6, 2},
   {-7, 1}, {-6, 1}, {-5, 1},   {5, 1}, {6, 1}, {7, 1},
 };
 
