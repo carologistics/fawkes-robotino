@@ -39,7 +39,12 @@
 
 (defrule execution-monitoring-incosistent-yet-exepected-mps-state-idle
   (declare (salience 1))
-  (domain-pending-sensed-fact (name mps-state) (?mps IDLE))
+  (domain-pending-sensed-fact
+    (goal-id ?goal-id)
+    (action-id ?action-id)
+    (name mps-state)
+    (param-values ?mps IDLE)
+    (type POSITIVE))
   (wm-fact (key domain fact mps-state args? m ?mps IDLE))
   ?wpat <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   =>
@@ -275,3 +280,47 @@
 ;  (retract ?hold)
 ;  (assert (wm-fact (key domain fact can-hold args? r ?r) (value TRUE)))
 ;)
+
+(defrule execution-monitoring-start-retry-action-wp-get
+  (declare (salience 1))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  ?pa <- (plan-action
+              (action-name ?an&wp-get)
+              (plan-id ?plan-id)
+              (goal-id ?goal-id)
+              (status FAILED)
+              (param-values $? ?wp $? ?mps $?))
+  (domain-obj-is-of-type ?mps mps)
+  (domain-obj-is-of-type ?wp workpiece)
+  (wm-fact (key domain fact self args? r ?r))
+  (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)))
+  =>
+  (if (< 1 ?*MAX-RETRIES-PICK*) then
+    (modify ?pa (status PENDING))
+    (assert
+      (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value 1))
+    )
+  )
+)
+
+(defrule execution-monitoring-finish-retry-action-wp-get
+  (declare (salience 1))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  ?pa <- (plan-action 
+              (action-name ?an&wp-get)
+              (plan-id ?plan-id)
+              (goal-id ?goal-id)
+              (status FAILED)
+              (param-values $? ?wp $? ?mps $?))
+  (domain-obj-is-of-type ?mps mps)
+  (domain-obj-is-of-type ?wp workpiece)
+  (wm-fact (key domain fact self args? r ?r))
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) 
+          (value ?tries&:(<= ?tries ?*MAX-RETRIES-PICK*)))
+  =>
+  (bind ?tries (+ 1 ?tries))
+  (modify ?pa (status PENDING))
+  (modify ?wm (value ?tries))
+)
