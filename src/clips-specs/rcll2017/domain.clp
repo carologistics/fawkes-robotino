@@ -143,6 +143,8 @@
     (domain-fact (name location-free) (param-values ?rs1 OUTPUT))
     (domain-fact (name location-free) (param-values ?rs2 INPUT))
     (domain-fact (name location-free) (param-values ?rs2 OUTPUT))
+
+    (domain-fact (name location-free) (param-values ?ss INPUT))
     
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
