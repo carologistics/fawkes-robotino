@@ -65,8 +65,8 @@ conveyor_pose:
     y_max: -0.015
     z_max: 0.135
     slice:
-      y_min: -0.04
-      y_max: 0.04
+      y_min: -0.025
+      y_max: 0.03
   front:
     # the distance that is not pruned at the front of the MPS
     space: 0.6

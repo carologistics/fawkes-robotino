@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "product_put"
-fsm                = SkillHSM:new{name=name, start="DRIVE_FORWARD", debug=false}
+fsm                = SkillHSM:new{name=name, start="LIFT_GRIPPER", debug=false}
 depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
 depends_interfaces = { }
 
@@ -44,6 +44,7 @@ end
 x_distance= x_distance
 
 fsm:define_states{ export_to=_M,
+   {"LIFT_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="DRIVE_FORWARD", fail_to="FAILED"},
    {"DRIVE_FORWARD", SkillJumpState, skills={{approach_mps}},
       final_to="OPEN_GRIPPER", fail_to="FAILED"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
@@ -75,6 +76,11 @@ fsm:add_transitions{
    {"WAIT", "SLAP_LEFT", timeout=0.5, desc="wait for gripper to open, then slap left"},
    {"WAIT_FOR_GRIPPER", "MOVE_BACK", timeout=0.5}
 }
+
+function LIFT_GRIPPER:init()
+   self.args["ax12gripper"].command = "RELGOTOZ"
+   self.args["ax12gripper"].z_position = 5
+end
 
 function DRIVE_FORWARD:init()
    self.args["approach_mps"].x = x_distance - self.fsm.vars.offset_x
