@@ -22,7 +22,7 @@
 (defglobal
   ; Number of retrying enter-field
   ; until succeeding it manually
-  ?*ENTER-FIELD-RETRIES* = 3
+  ?*ENTER-FIELD-RETRIES* = 1
   ?*MAX-RETRIES-PICK* = 2
   ?*MAX-RETRIES-PUT-SLIDE* = 2
 
