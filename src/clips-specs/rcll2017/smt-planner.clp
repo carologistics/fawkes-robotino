@@ -471,6 +471,9 @@
 
 ;---------------------------------------------------------------------------
 ;  Add plan action out of wm-facts plan after wm-fact sync
+;  TODO
+;    - Add filter for correct robot (compare ?action-specific-actor with own name) in order to add only own actions
+;    - Add filter for R-1 for exogenous actions
 ;---------------------------------------------------------------------------
 
 (defrule production-add-plan-action-move
@@ -934,16 +937,6 @@
 							)
 						)
 
-						; (assert
-						;     (plan-action
-						;         (id ?next-step-id)
-						;         (plan-id ?plan-id)
-						;         (duration 4.0)
-						;         (action-name move)
-						;         (param-names r from from-side to to-side)
-						;         (param-values ?action-specific-actor ?from ?from-side ?to ?to-side)
-						;     )
-						; )
 						(assert
 							(wm-fact
 								(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1001,16 +994,6 @@
 							)
 						)
 
-						; (assert
-						;     (plan-action
-						;         (id ?next-step-id)
-						;         (plan-id ?plan-id)
-						;         (duration 4.0)
-						;         (action-name wp-get-shelf)
-						;         (param-names r cc m spot)
-						;         (param-values ?action-specific-actor ?wp ?mps ?shelf)
-						;     )
-						; )
 						(assert
 							(wm-fact
 								(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1058,16 +1041,6 @@
 							)
 						)
 
-						; (assert
-						;     (plan-action
-						;         (id ?next-step-id)
-						;         (plan-id ?plan-id)
-						;         (duration 4.0)
-						;         (action-name wp-get)
-						;         (param-names r wp m side)
-						;         (param-values ?action-specific-actor ?wp ?mps ?side)
-						;     )
-						; )
 						(assert
 							(wm-fact
 								(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1121,16 +1094,6 @@
 							)
 						)
 
-						; (assert
-						;     (plan-action
-						;         (id ?next-step-id)
-						;         (plan-id ?plan-id)
-						;         (duration 4.0)
-						;         (action-name wp-put)
-						;         (param-names r wp m)
-						;         (param-values ?action-specific-actor ?wp ?mps)
-						;     )
-						; )
 						(assert
 							(wm-fact
 								(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1193,16 +1156,7 @@
 								)
 							)
 						)
-						; (assert
-						;     (plan-action
-						;         (id ?next-step-id)
-						;         (plan-id ?plan-id)
-						;         (duration 4.0)
-						;         (action-name wp-put-slide-cc)
-						;         (param-names r wp m rs-before rs-after)
-						;         (param-values ?action-specific-actor ?wp ?mps ?rs-before ?rs-after )
-						;     )
-						; )
+
 						(assert
 							(wm-fact
 								(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1242,16 +1196,6 @@
 							)
 						)
 
-						; (assert
-						;     (plan-action
-						;         (id ?next-step-id)
-						;         (plan-id ?plan-id)
-						;         (duration 4.0)
-						;         (action-name wp-discard)
-						;         (param-names r cc)
-						;         (param-values ?action-specific-actor ?wp)
-						;     )
-						; )
 						(assert
 							(wm-fact
 								(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1299,16 +1243,6 @@
 							)
 						)
 
-						; (assert
-						;     (plan-action
-						;         (id ?next-step-id)
-						;         (plan-id ?plan-id)
-						;         (duration 4.0)
-						;         (action-name prepare-bs)
-						;         (param-names m side bc)
-						;         (param-values ?mps ?side ?goal-base-color)
-						;     )
-						; )
 						(assert
 							(wm-fact
 								(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1361,16 +1295,6 @@
 							)
 						)
 
-						; (assert
-						;     (plan-action
-						;         (id ?next-step-id)
-						;         (plan-id ?plan-id)
-						;         (duration 4.0)
-						;         (action-name bs-dispense)
-						;         (param-names m side wp basecol)
-						;         (param-values ?mps ?side ?wp ?goal-base-color)
-						;     )
-						; )
 						(assert
 							(wm-fact
 								(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1418,16 +1342,6 @@
 								(eq ?order-id (wm-key-arg ?wm-fact:key ord))
 							)
 
-							; (assert
-							;     (plan-action
-							;         (id ?next-step-id)
-							;         (plan-id ?plan-id)
-							;         (duration 4.0)
-							;         (action-name prepare-ds)
-							;         (param-names m gate)
-							;         (param-values ?mps (wm-key-arg ?wm-fact:key gate))
-							;     )
-							; )
 							(assert
 								(wm-fact
 									(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1489,16 +1403,6 @@
 								(eq ?order-id (wm-key-arg ?wm-fact:key ord))
 							)
 
-							; (assert
-							;     (plan-action
-							;         (id ?next-step-id)
-							;         (plan-id ?plan-id)
-							;         (duration 4.0)
-							;         (action-name fulfill-order-c0)
-							;         (param-names ord wp m g basecol capcol)
-							;         (param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color)
-							;     )
-							; )
 							(assert
 								(wm-fact
 									(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1563,16 +1467,6 @@
 								(eq ?order-id (wm-key-arg ?wm-fact:key ord))
 							)
 
-							; (assert
-							;     (plan-action
-							;         (id ?next-step-id)
-							;         (plan-id ?plan-id)
-							;         (duration 4.0)
-							;         (action-name fulfill-order-c1)
-							;         (param-names ord wp m g basecol capcol ring1col)
-							;         (param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color ?ring1-color)
-							;     )
-							; )
 							(assert
 								(wm-fact
 									(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1642,16 +1536,6 @@
 								(eq ?order-id (wm-key-arg ?wm-fact:key ord))
 							)
 
-							; (assert
-							;     (plan-action
-							;         (id ?next-step-id)
-							;         (plan-id ?plan-id)
-							;         (duration 4.0)
-							;         (action-name fulfill-order-c2)
-							;         (param-names ord wp m g basecol capcol ring1col ring2col)
-							;         (param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color ?ring1-color ?ring2-color)
-							;     )
-							; )
 							(assert
 								(wm-fact
 									(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1727,16 +1611,6 @@
 								(eq ?order-id (wm-key-arg ?wm-fact:key ord))
 							)
 
-							; (assert
-							;     (plan-action
-							;         (id ?next-step-id)
-							;         (plan-id ?plan-id)
-							;         (duration 4.0)
-							;         (action-name fulfill-order-c3)
-							;         (param-names ord wp m g basecol capcol ring1col ring2col ring3col)
-							;         (param-values ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)
-							;     )
-							; )
 							(assert
 								(wm-fact
 									(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1784,16 +1658,6 @@
 							)
 						)
 
-						; (assert
-						;     (plan-action
-						;         (id ?next-step-id)
-						;         (plan-id ?plan-id)
-						;         (duration 4.0)
-						;         (action-name prepare-cs)
-						;         (param-names m op)
-						;         (param-values ?mps ?operation)
-						;     )
-						; )
 						(assert
 							(wm-fact
 								(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1836,16 +1700,6 @@
 							)
 						)
 
-						; (assert
-						;     (plan-action
-						;         (id ?next-step-id)
-						;         (plan-id ?plan-id)
-						;         (duration 4.0)
-						;         (action-name cs-retrieve-cap)
-						;         (param-names m cc capcol)
-						;         (param-values ?mps ?wp ?cap-color)
-						;     )
-						; )
 						(assert
 							(wm-fact
 								(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1893,16 +1747,6 @@
 							)
 						)
 
-						; (assert
-						;     (plan-action
-						;         (id ?next-step-id)
-						;         (plan-id ?plan-id)
-						;         (duration 4.0)
-						;         (action-name cs-mount-cap)
-						;         (param-names m wp capcol)
-						;         (param-values ?mps ?wp ?cap-color)
-						;     )
-						; )
 						(assert
 							(wm-fact
 								(key plan ?plan-id ?goal-id ?next-step-id)
@@ -1964,16 +1808,6 @@
 							)
 						)
 
-						; (assert
-						;     (plan-action
-						;         (id ?next-step-id)
-						;         (plan-id ?plan-id)
-						;         (duration 4.0)
-						;         (action-name prepare-rs)
-						;         (param-names m rc rs-before rs-after r-req)
-						;         (param-values ?mps ?goal-ring-color ?rs-before ?rs-after ?r-req)
-						;     )
-						; )
 						(assert
 							(wm-fact
 								(key plan ?plan-id ?goal-id ?next-step-id)
@@ -2036,16 +1870,6 @@
 							)
 						)
 
-						; (assert
-						;     (plan-action
-						;         (id ?next-step-id)
-						;         (plan-id ?plan-id)
-						;         (duration 4.0)
-						;         (action-name rs-mount-ring1)
-						;         (param-names m wp col rs-before rs-after r-req)
-						;         (param-values ?mps ?wp ?ring-color ?rs-before ?rs-after ?r-req)
-						;     )
-						; )
 						(assert
 							(wm-fact
 								(key plan ?plan-id ?goal-id ?next-step-id)
@@ -2113,16 +1937,6 @@
 							)
 						)
 
-						; (assert
-						;     (plan-action
-						;         (id ?next-step-id)
-						;         (plan-id ?plan-id)
-						;         (duration 4.0)
-						;         (action-name rs-mount-ring2)
-						;         (param-names m wp col col1 rs-before rs-after r-req)
-						;         (param-values ?mps ?wp ?ring-color ?col1 ?rs-before ?rs-after ?r-req )
-						;     )
-						; )
 						(assert
 							(wm-fact
 								(key plan ?plan-id ?goal-id ?next-step-id)
@@ -2194,16 +2008,7 @@
 								)
 							)
 						)
-						; (assert
-						;     (plan-action
-						;         (id ?next-step-id)
-						;         (plan-id ?plan-id)
-						;         (duration 4.0)
-						;         (action-name rs-mount-ring3)
-						;         (param-names m wp col col1 col2 rs-before rs-after r-req)
-						;         (param-values ?mps ?wp ?ring-color ?col1 ?col2 ?rs-before ?rs-after ?r-req)
-						;     )
-						; )
+
 						(assert
 							(wm-fact
 								(key plan ?plan-id ?goal-id ?next-step-id)
