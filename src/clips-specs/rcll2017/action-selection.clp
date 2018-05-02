@@ -5,7 +5,7 @@
 		(bind ?result
 			(do-for-fact ((?wm-fact wm-fact))
 				(and
-					(wm-key-prefix ?wm-fact:key (create$ plan-action ?plan-id ?goal-id ?a status))
+					(wm-key-prefix ?wm-fact:key (create$ plan-action ?goal-id ?plan-id ?a status))
 					(eq ?wm-fact:value FINAL)
 				)
 			)
@@ -30,35 +30,35 @@
 	(modify ?wmf (value ?status-new))
 )
 
-; (defrule action-selection-select-parallel
-;     "select earliest action if no other is chosen and if all actions indicated by parents-ids are finished"
-;     ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status FORMULATED)
-;                       (action-name ?action-name)
-;                       (param-values $?param-values))
-;     (plan (id ?plan-id) (goal-id ?goal-id))
-;     (goal (id ?goal-id) (mode DISPATCHED))
-;     (wm-fact (key plan-action ?goal-id ?plan-id ?sym-id&:(eq ?sym-id ?id) dep) (values ?parents-ids))
-;     (not (plan-action (plan-id ?plan-id) (status PENDING|WAITING|RUNNING|FAILED)))
-;     (not (plan-action (plan-id ?plan-id) (status FORMULATED) (id ?oid&:(< ?oid ?id))))
-;     ; (test (parent-actions-finished ?goal-id ?plan-id ?parents-ids))
-;     =>
-;     (printout t "Selected next action " ?action-name ?param-values " with sym-id " ?sym-id " and id " ?id crlf)
-;     (modify ?pa (status PENDING))
-; )
-
-(defrule action-selection-select
-	"select earliest action if no other is chosen"
+(defrule action-selection-select-parallel
+	"select earliest action if no other is chosen and if all actions indicated by parents-ids are finished"
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status FORMULATED)
 					  (action-name ?action-name)
 					  (param-values $?param-values))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	(goal (id ?goal-id) (mode DISPATCHED))
+	(wm-fact (key plan-action ?goal-id ?plan-id ?sym-id&:(eq ?sym-id ?id) dep)); (values ?parents-ids))
 	(not (plan-action (plan-id ?plan-id) (status PENDING|WAITING|RUNNING|FAILED)))
 	(not (plan-action (plan-id ?plan-id) (status FORMULATED) (id ?oid&:(< ?oid ?id))))
+	; (test (parent-actions-finished ?goal-id ?plan-id ?parents-ids))
 	=>
-  (printout t "Selected next action " ?action-name ?param-values crlf)
+	(printout t "Selected next action " ?action-name ?param-values " with sym-id " ?sym-id " and id " ?id crlf)
 	(modify ?pa (status PENDING))
 )
+
+; (defrule action-selection-select
+;     "select earliest action if no other is chosen"
+;     ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status FORMULATED)
+;                       (action-name ?action-name)
+;                       (param-values $?param-values))
+;     (plan (id ?plan-id) (goal-id ?goal-id))
+;     (goal (id ?goal-id) (mode DISPATCHED))
+;     (not (plan-action (plan-id ?plan-id) (status PENDING|WAITING|RUNNING|FAILED)))
+;     (not (plan-action (plan-id ?plan-id) (status FORMULATED) (id ?oid&:(< ?oid ?id))))
+;     =>
+;   (printout t "Selected next action " ?action-name ?param-values crlf)
+;     (modify ?pa (status PENDING))
+; )
 
 (defrule action-selection-done
 	(plan (id ?plan-id) (goal-id ?goal-id))
