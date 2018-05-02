@@ -5,8 +5,8 @@
 		(bind ?result
 			(do-for-fact ((?wm-fact wm-fact))
 				(and
-					(wm-key-prefix ?wm-fact:key (create$ planfinal ?plan-id ?goal-id))
-					(eq ?wm-fact:value ?a)
+					(wm-key-prefix ?wm-fact:key (create$ plan-action ?plan-id ?goal-id ?a status))
+					(eq ?wm-fact:value FINAL)
 				)
 			)
 		)
@@ -37,12 +37,12 @@
 ;                       (param-values $?param-values))
 ;     (plan (id ?plan-id) (goal-id ?goal-id))
 ;     (goal (id ?goal-id) (mode DISPATCHED))
-;     (wm-fact (key plandep ?goal-id ?plan-id ?sym-id&:(eq ?sym-id ?id)) (values ?parents-ids))
+;     (wm-fact (key plan-action ?goal-id ?plan-id ?sym-id&:(eq ?sym-id ?id) dep) (values ?parents-ids))
 ;     (not (plan-action (plan-id ?plan-id) (status PENDING|WAITING|RUNNING|FAILED)))
 ;     (not (plan-action (plan-id ?plan-id) (status FORMULATED) (id ?oid&:(< ?oid ?id))))
-;     (test (parent-actions-finished ?goal-id ?plan-id ?parents-ids))
+;     ; (test (parent-actions-finished ?goal-id ?plan-id ?parents-ids))
 ;     =>
-;     (printout t "Selected next action " ?action-name ?param-values crlf)
+;     (printout t "Selected next action " ?action-name ?param-values " with sym-id " ?sym-id " and id " ?id crlf)
 ;     (modify ?pa (status PENDING))
 ; )
 
