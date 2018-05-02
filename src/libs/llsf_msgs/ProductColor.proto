@@ -59,4 +59,6 @@ enum CapColor {
   CAP_BLACK = 1;
   CAP_GREY  = 2;
   CAP_NONE = 3;
+  CAP_CARRIER_BLACK = 4;
+  CAP_CARRIER_GREY  = 5;
 }
