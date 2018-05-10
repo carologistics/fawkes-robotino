@@ -1,13 +1,14 @@
 (deffunction parent-actions-finished (?goal-id ?plan-id $?actions-ids)
 	"check if all actions in the list of ids are finished successfully"
 	(foreach ?a ?actions-ids
-		(printout t "parent-actions-finished check for planfinal " ?a crlf)
+		(printout t "parent-actions-finished check for planfinal " ?a " with goal and plan id " ?goal-id " " ?plan-id crlf)
 		(bind ?result
 			(do-for-fact ((?wm-fact wm-fact))
 				(and
 					(wm-key-prefix ?wm-fact:key (create$ plan-action ?goal-id ?plan-id ?a status))
 					(eq ?wm-fact:value FINAL)
 				)
+				(printout t "parent-actions-finished found wm-fact with " ?wm-fact:value crlf)
 			)
 		)
 		(if (not ?result) then
@@ -27,6 +28,7 @@
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	(goal (id ?goal-id) (mode DISPATCHED))
 	=>
+	(printout t "Updated action with sym-id " ?sym-id " from " ?status-old " to " ?status-new  crlf)
 	(modify ?wmf (value ?status-new))
 )
 
@@ -37,12 +39,13 @@
 					  (param-values $?param-values))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	(goal (id ?goal-id) (mode DISPATCHED))
-	(wm-fact (key plan-action ?goal-id ?plan-id ?sym-id&:(eq ?sym-id ?id) dep)); (values ?parents-ids))
+	(wm-fact (key plan-action ?goal-id ?plan-id ?sym-id&:(eq ?sym-id ?id) dep) (values $?parents-ids))
+	(wm-fact (key plan-action ?goal-id ?plan-id ?sym-id-o status))
 	(not (plan-action (plan-id ?plan-id) (status PENDING|WAITING|RUNNING|FAILED)))
 	(not (plan-action (plan-id ?plan-id) (status FORMULATED) (id ?oid&:(< ?oid ?id))))
-	; (test (parent-actions-finished ?goal-id ?plan-id ?parents-ids))
+	(test (parent-actions-finished ?goal-id ?plan-id ?parents-ids))
 	=>
-	(printout t "Selected next action " ?action-name ?param-values " with sym-id " ?sym-id " and id " ?id crlf)
+	(printout t "Selected next action " ?action-name ?param-values " with sym-id " ?sym-id " and id " ?id " moreover parents-ids " ?parents-ids  crlf)
 	(modify ?pa (status PENDING))
 )
 
