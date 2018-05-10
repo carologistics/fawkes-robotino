@@ -356,6 +356,8 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("wp");
 					param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]);
 
+					break; 
+
 			case 2:	// 2.Action: Prepare and feed CS for RETRIEVE with cap_carrier
 
 					++action_id;
