@@ -1044,7 +1044,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
-								(values 99 ?parents-ids)
+								(values ?parents-ids)
 							)
 						)
 						(assert
