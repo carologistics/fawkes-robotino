@@ -936,7 +936,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					}
 					param = action->add_params();
 					param->set_key("r-req");
-					param->set_value(add_bases_description[rings[0]]);
+					param->set_value(add_bases_description[rings_req_add_bases[rings[0]]]);
 
 					++action_id;
 					action = plan->add_actions();
@@ -983,7 +983,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					}
 					param = action->add_params();
 					param->set_key("r-req");
-					param->set_value(add_bases_description[rings[0]]);
+					param->set_value(add_bases_description[rings_req_add_bases[rings[0]]]);
 					param = action->add_params();
 					param->set_key("wp");
 					param->set_value("WP1");
@@ -1102,7 +1102,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					}
 					param = action->add_params();
 					param->set_key("r-req");
-					param->set_value(add_bases_description[rings[1]]);
+					param->set_value(add_bases_description[rings_req_add_bases[rings[1]]]);
 
 					++action_id;
 					action = plan->add_actions();
@@ -1149,7 +1149,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					}
 					param = action->add_params();
 					param->set_key("r-req");
-					param->set_value(add_bases_description[rings[1]]);
+					param->set_value(add_bases_description[rings_req_add_bases[rings[1]]]);
 					param = action->add_params();
 					param->set_key("col1");
 					param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(0)]);
@@ -1271,7 +1271,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					}
 					param = action->add_params();
 					param->set_key("r-req");
-					param->set_value(add_bases_description[rings[2]]);
+					param->set_value(add_bases_description[rings_req_add_bases[rings[2]]]);
 
 					++action_id;
 					action = plan->add_actions();
@@ -1318,7 +1318,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					}
 					param = action->add_params();
 					param->set_key("r-req");
-					param->set_value(add_bases_description[rings[2]]);
+					param->set_value(add_bases_description[rings_req_add_bases[rings[2]]]);
 					param = action->add_params();
 					param->set_key("col1");
 					param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(0)]);
