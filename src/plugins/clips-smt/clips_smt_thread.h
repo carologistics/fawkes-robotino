@@ -117,7 +117,7 @@ private:
 	std::string team;
 
 	// Order
-	int desired_complexity = 3;
+	int desired_complexity = 0;
 	int order_id;
 	int base;
 	std::vector<int> rings;

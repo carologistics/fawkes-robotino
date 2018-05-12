@@ -695,33 +695,108 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value("WP1");
 
 					++action_id;
-					action = plan->add_actions();
-					action->set_name("fulfill-order-c3");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
-					action->set_id(action_id);
-					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
-					param = action->add_params();
-					param->set_key("mps");
-					param->set_value(node_names[6]);
-					param = action->add_params();
-					param->set_key("base-color");
-					param->set_value(base_colors_inverted[data.orders(order_id).base_color()]);
-					param = action->add_params();
-					param->set_key("ring1-color");
-					param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(0)]);
-					param = action->add_params();
-					param->set_key("ring2-color");
-					param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(1)]);
-					param = action->add_params();
-					param->set_key("ring3-color");
-					param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(2)]);
-					param = action->add_params();
-					param->set_key("cap-color");
-					param->set_value(cap_colors_inverted[data.orders(order_id).cap_color()]);
-					param = action->add_params();
-					param->set_key("wp");
-					param->set_value("WP1");
+					switch(data.orders(order_id).complexity()) {
+						case 0:	
+								action = plan->add_actions();
+								action->set_name("fulfill-order-c0");
+								action->set_actor("R-"+std::to_string(model_robots[i]));
+								action->set_id(action_id);
+								action->add_parent_id(action_id-1);
+								action->set_goal_id(data.orders(order_id).id());
+								param = action->add_params();
+								param->set_key("mps");
+								param->set_value(node_names[6]);
+								param = action->add_params();
+								param->set_key("base-color");
+								param->set_value(base_colors_inverted[data.orders(order_id).base_color()]);
+								param = action->add_params();
+								param->set_key("cap-color");
+								param->set_value(cap_colors_inverted[data.orders(order_id).cap_color()]);
+								param = action->add_params();
+								param->set_key("wp");
+								param->set_value("WP1");
+								break;
+						case 1:	
+								action = plan->add_actions();
+								action->set_name("fulfill-order-c1");
+								action->set_actor("R-"+std::to_string(model_robots[i]));
+								action->set_id(action_id);
+								action->add_parent_id(action_id-1);
+								action->set_goal_id(data.orders(order_id).id());
+								param = action->add_params();
+								param->set_key("mps");
+								param->set_value(node_names[6]);
+								param = action->add_params();
+								param->set_key("base-color");
+								param->set_value(base_colors_inverted[data.orders(order_id).base_color()]);
+								param = action->add_params();
+								param->set_key("ring1-color");
+								param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(0)]);
+								param = action->add_params();
+								param->set_key("cap-color");
+								param->set_value(cap_colors_inverted[data.orders(order_id).cap_color()]);
+								param = action->add_params();
+								param->set_key("wp");
+								param->set_value("WP1");
+								break;
+						case 2:	
+								action = plan->add_actions();
+								action->set_name("fulfill-order-c2");
+								action->set_actor("R-"+std::to_string(model_robots[i]));
+								action->set_id(action_id);
+								action->add_parent_id(action_id-1);
+								action->set_goal_id(data.orders(order_id).id());
+								param = action->add_params();
+								param->set_key("mps");
+								param->set_value(node_names[6]);
+								param = action->add_params();
+								param->set_key("base-color");
+								param->set_value(base_colors_inverted[data.orders(order_id).base_color()]);
+								param = action->add_params();
+								param->set_key("ring1-color");
+								param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(0)]);
+								param = action->add_params();
+								param->set_key("ring2-color");
+								param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(1)]);
+								param = action->add_params();
+								param->set_key("cap-color");
+								param->set_value(cap_colors_inverted[data.orders(order_id).cap_color()]);
+								param = action->add_params();
+								param->set_key("wp");
+								param->set_value("WP1");
+								break;
+						case 3:	
+								action = plan->add_actions();
+								action->set_name("fulfill-order-c3");
+								action->set_actor("R-"+std::to_string(model_robots[i]));
+								action->set_id(action_id);
+								action->add_parent_id(action_id-1);
+								action->set_goal_id(data.orders(order_id).id());
+								param = action->add_params();
+								param->set_key("mps");
+								param->set_value(node_names[6]);
+								param = action->add_params();
+								param->set_key("base-color");
+								param->set_value(base_colors_inverted[data.orders(order_id).base_color()]);
+								param = action->add_params();
+								param->set_key("ring1-color");
+								param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(0)]);
+								param = action->add_params();
+								param->set_key("ring2-color");
+								param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(1)]);
+								param = action->add_params();
+								param->set_key("ring3-color");
+								param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(2)]);
+								param = action->add_params();
+								param->set_key("cap-color");
+								param->set_value(cap_colors_inverted[data.orders(order_id).cap_color()]);
+								param = action->add_params();
+								param->set_key("wp");
+								param->set_value("WP1");
+								break;
+						default:
+								break;
+					}
 
 					break;
 
@@ -1390,31 +1465,30 @@ ClipsSmtThread::clips_smt_init_game()
 
 	// Extract order details
 	for(int i=0; i<data.orders().size(); ++i) {
-		if(data.orders(i).complexity() == desired_complexity) {
-			order_id = i;
-			base = data.orders(i).base_color();
-			if(desired_complexity>0){
-				rings.push_back(data.orders(i).ring_colors(0));
-			}
-			else {
-				rings.push_back(1); // DUMMY
-			}
-			if(desired_complexity>1){
-				rings.push_back(data.orders(i).ring_colors(1));
-			}
-			else {
-				rings.push_back(1); // DUMMY
-			}
-			if(desired_complexity==3){
-				rings.push_back(data.orders(i).ring_colors(2));
-			}
-			else {
-				rings.push_back(1); // DUMMY
-			}
-			cap = data.orders(i).cap_color();
-			delivery_period_begin = data.orders(i).delivery_period_begin();
-			delivery_period_end = data.orders(i).delivery_period_end();
+		desired_complexity = data.orders(i).complexity(); // Cover last given order
+		order_id = i;
+		base = data.orders(i).base_color();
+		if(desired_complexity>0){
+			rings.push_back(data.orders(i).ring_colors(0));
 		}
+		else {
+			rings.push_back(1); // DUMMY
+		}
+		if(desired_complexity>1){
+			rings.push_back(data.orders(i).ring_colors(1));
+		}
+		else {
+			rings.push_back(1); // DUMMY
+		}
+		if(desired_complexity==3){
+			rings.push_back(data.orders(i).ring_colors(2));
+		}
+		else {
+			rings.push_back(1); // DUMMY
+		}
+		cap = data.orders(i).cap_color();
+		delivery_period_begin = data.orders(i).delivery_period_begin();
+		delivery_period_end = data.orders(i).delivery_period_end();
 	}
 
 	// Extract how many bases are required for the corresponding colors
