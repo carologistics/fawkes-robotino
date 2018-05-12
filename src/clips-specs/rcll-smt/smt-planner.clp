@@ -398,29 +398,50 @@
 
 	; Extract order-ring-color
 	(bind ?rlist (create$))
-	; order-ring1-color
-	(do-for-fact ((?wm-fact wm-fact))
-		(and
-			(wm-key-prefix ?wm-fact:key (create$ domain fact order-ring1-color))
-			(eq ?id (wm-key-arg ?wm-fact:key ord))
+	(if
+		(or
+			(eq C1 ?complexity)
+			(eq C2 ?complexity)
+			(eq C3 ?complexity)
 		)
-		(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+		then
+	
+		; order-ring1-color
+		(do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact order-ring1-color))
+				(eq ?id (wm-key-arg ?wm-fact:key ord))
+			)
+			(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+		)
 	)
-	; order-ring2-color
-	(do-for-fact ((?wm-fact wm-fact))
-		(and
-			(wm-key-prefix ?wm-fact:key (create$ domain fact order-ring2-color))
-			(eq ?id (wm-key-arg ?wm-fact:key ord))
+	(if
+		(or
+			(eq C2 ?complexity)
+			(eq C3 ?complexity)
 		)
-		(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+		then
+	
+		; order-ring2-color
+		(do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact order-ring2-color))
+				(eq ?id (wm-key-arg ?wm-fact:key ord))
+			)
+			(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+		)
 	)
-	; order-ring3-color
-	(do-for-fact ((?wm-fact wm-fact))
-		(and
-			(wm-key-prefix ?wm-fact:key (create$ domain fact order-ring3-color))
-			(eq ?id (wm-key-arg ?wm-fact:key ord))
+	(if (eq C3 ?complexity)
+		then
+
+		; order-ring3-color
+		(do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact order-ring3-color))
+				(eq ?id (wm-key-arg ?wm-fact:key ord))
+			)
+			(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
 		)
-		(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
 	)
 
 	(foreach ?rings ?rlist
@@ -436,7 +457,7 @@
 	(do-for-fact ((?wm-fact wm-fact))
 		(and
 			(wm-key-prefix ?wm-fact:key (create$ domain fact order-complexity))
-			(eq C3 (wm-key-arg ?wm-fact:key com)) ; Desiered complexity is set here
+			(eq C0 (wm-key-arg ?wm-fact:key com)) ; Desiered complexity is set here
 		)
 
 		(do-for-fact ((?wm-fact2 wm-fact))
