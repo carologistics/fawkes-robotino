@@ -104,7 +104,7 @@ clips-executive:
 
       action-mapping:
         enter-field: drive_into_field{team=?(team-color)S}
-        move: ppgoto{place="?(to)Y-I"}
+        move: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
         move-wp-put: ppgoto{place="?(to)Y-I"}
         wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
         wp-put: bring_product_to{place=?(m)S}
