@@ -439,7 +439,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value(node_names[model_positions[i]]);
 					param = action->add_params();
 					param->set_key("wp");
-					param->set_value(cap_colors_inverted[data.orders(order_id).cap_color()]);
+					param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]);
 
 					++action_id;
 					action = plan->add_actions();
@@ -464,39 +464,44 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					// if(action_id_last[3]) action->add_parent_id(action_id_last[3]);
 					// Only go to the base station if the base intended to be mounted comes after all the base retrievals which are intended as payment
 					// Look ahead to dermine if this instance of action 3 is the (!) one which requires additional parent_ids
-					for(unsigned j=i+1; j<model_actions.size(); ++j) {
+					if(data.orders(order_id).complexity() > 0) {
+						for(unsigned j=i+1; j<model_actions.size(); ++j) {
 
-						// Check if action is an instance of action 8 and the current base retrieval is performed by the same robot
-						if(model_actions[j] == 8 && model_robots[i] == model_robots[j]) {
+							// Check if action is an instance of action 8 and the current base retrieval is performed by the same robot
+							if(model_actions[j] == 8 && model_robots[i] == model_robots[j]) {
 
-							if(model_positions[j]==7) {
-								for(unsigned int k=0; k<action_id_last_rs1_pay.size(); ++k) {
-									if((int) k<rings_req_add_bases[rings[0]]) {
-										action->add_parent_id(action_id_last_rs1_pay[k]);
-									}
-									else {
-										std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 1." << std::endl;
+								if(model_positions[j]==7) {
+									for(unsigned int k=0; k<action_id_last_rs1_pay.size(); ++k) {
+										if((int) k<rings_req_add_bases[rings[0]]) {
+											action->add_parent_id(action_id_last_rs1_pay[k]);
+										}
+										else {
+											std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 1." << std::endl;
+										}
 									}
 								}
-							}
-							else if(model_positions[j]==9) {
-								for(unsigned int k=0; k<action_id_last_rs2_pay.size(); ++k) {
-									if((int) k<rings_req_add_bases[rings[0]]) {
-										action->add_parent_id(action_id_last_rs2_pay[k]);
-									}
-									else {
-										std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 2." << std::endl;
+								else if(model_positions[j]==9) {
+									for(unsigned int k=0; k<action_id_last_rs2_pay.size(); ++k) {
+										if((int) k<rings_req_add_bases[rings[0]]) {
+											action->add_parent_id(action_id_last_rs2_pay[k]);
+										}
+										else {
+											std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 2." << std::endl;
+										}
 									}
 								}
+								wp = "WP1";
+								break;
 							}
-							wp = "WP1";
-							break;
-						}
-						else if(model_actions[j] == 7 && model_robots[i] == model_robots[j]) {
-							wp = "WP2";
-							break;
-						}
+							else if(model_actions[j] == 7 && model_robots[i] == model_robots[j]) {
+								wp = "WP2";
+								break;
+							}
 
+						}
+					}
+					else {
+						wp = "WP1";
 					}
 					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
