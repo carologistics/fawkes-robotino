@@ -29,7 +29,7 @@
 		(pb-add-list ?p "rings" ?ring)
 	)
 
-	; (printout t "Proto:" (pb-tostring ?p) crlf)
+	(printout t "Proto:" (pb-tostring ?p) crlf)
 	(return ?p)
 )
 
@@ -221,11 +221,11 @@
 		; set amount of additional bases machine is loaded with
 		(do-for-fact ((?wm-fact wm-fact))
 			(and
-				(wm-key-prefix ?wm-fact:key (create$ domain fact cs-prepared-for))
+				(wm-key-prefix ?wm-fact:key (create$ domain fact cs-buffered))
 				(eq ?name (wm-key-arg ?wm-fact:key m))
 			)
 
-		   (pb-set-field ?m "cs_prepared_for" (wm-key-arg ?wm-fact:key c))
+		   (pb-set-field ?m "cs_buffered" (wm-key-arg ?wm-fact:key col))
 		)
 	)
 
