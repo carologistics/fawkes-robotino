@@ -105,7 +105,7 @@ message Machine {
 	optional ExplorationState exploration_rotation_state = 21;
 
   optional Order wp = 23;
-  optional string cs_prepared_for = 24;
+  optional string cs_buffered = 24;
 
 }
 
