@@ -60,10 +60,20 @@
 ;     (modify ?pa (status PENDING))
 ; )
 
+(defrule action-selection-continue
+	(plan (id ?plan-id) (goal-id ?goal-id))
+	?g <- (goal (id ?goal-id) (mode DISPATCHED) (type ACHIEVE))
+	(not (plan-action (plan-id ?plan-id) (status ~FINAL)))
+	(not (plan-action (action-name fulfill-order-c0|fulfill-order-c1|fulfill-order-c2|fulfill-order-c3)))
+	=>
+	(modify ?g (mode SELECTED))
+)
+
 (defrule action-selection-done
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	?g <- (goal (id ?goal-id) (mode DISPATCHED) (type ACHIEVE))
 	(not (plan-action (plan-id ?plan-id) (status ~FINAL)))
+	(plan-action (action-name fulfill-order-c0|fulfill-order-c1|fulfill-order-c2|fulfill-order-c3))
 	=>
 	(modify ?g (mode FINISHED) (outcome COMPLETED))
 )
