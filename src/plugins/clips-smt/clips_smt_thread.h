@@ -103,6 +103,7 @@ private:
 	// Solver logic
 	z3::context _z3_context;
 	z3::expr_vector clips_smt_encoder();
+	z3::expr_vector clips_smt_encoder_window();
 	void clips_smt_solve_formula(z3::expr_vector formula);
 	void clips_smt_optimize_formula(z3::expr_vector formula, std::string var);
 	void clips_smt_extract_plan_from_model(z3::model model);
@@ -161,6 +162,22 @@ private:
 	std::map<std::string, int> machine_groups;
 	const int min_machine_groups = 0, max_machine_groups = 4;
 
+	// Score&Points
+	int points_scale = 100;
+	int points_penalty = 50;
+	int points_get_base = 0*points_scale;
+	int points_none = 5*points_scale;
+	int points_additional_base = 2*points_scale;
+	int points_mount_ring_0 = 5*points_scale;
+	int points_mount_ring_1 = 10*points_scale;
+	int points_mount_ring_2 = 20*points_scale;
+	int points_mount_ring1_last = 10*points_scale;
+	int points_mount_ring2_last = 30*points_scale;
+	int points_mount_ring3_last = 80*points_scale;
+	int points_mount_cap = 10*points_scale;
+	int points_deliver = 20*points_scale;
+	const int initial_points = 0;
+
 	// Visualization of computed plan
 	const int index_delivery_action = 6;
 	std::map<int, int> model_machines;
@@ -175,6 +192,15 @@ private:
 	std::map<int, int> model_insideB;
 	std::map<int, int> model_outputB;
 	std::map<int, int> model_rew;
+
+	// Visualization of world state
+	std::vector<int> world_initHold;
+	std::vector<int> world_initPos;
+	std::vector<int> world_initInside;
+	std::vector<int> world_initOutside;
+	std::vector<int> world_all_actions;
+	int world_points;
+	std::vector<int> world_machines_down;
 
 	// Communication with the agent API
 	CLIPS::Value clips_smt_request(std::string env_name, std::string handle, void *msgptr);
@@ -195,6 +221,7 @@ private:
 	std::vector<bool> shelf_position;
 	void initShelf();
 	std::string getNextShelf();
+	void clips_smt_clear_maps();
 };
 
 #endif
