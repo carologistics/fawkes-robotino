@@ -54,6 +54,7 @@ void
 ClipsSmtThread::init()
 {
 	logger->log_info(name(), "clips_smt_init_pre");
+	clips_smt_clear_maps();
 
 	// Order
 	base_colors["BASE_NONE"] = 0;
@@ -90,6 +91,7 @@ ClipsSmtThread::init()
 
 	// Prepare PlanHorizon
 	// MACRO ACTIONS
+	amount_min_req_actions.clear();
 	amount_min_req_actions.push_back(6);
 	amount_min_req_actions.push_back(8);
 	amount_min_req_actions.push_back(10);
@@ -211,30 +213,30 @@ ClipsSmtThread::init()
 	shelf_position.push_back(true);
 	shelf_position.push_back(true);
 
-	// Initialize world state fix
-	world_initHold.push_back(0); // dummy
-	world_initHold.push_back(products["nothing"]);
-	world_initHold.push_back(products["nothing"]);
-	world_initHold.push_back(products["nothing"]);
+	// // Initialize world state fix
+	// world_initHold.push_back(0); // dummy
+	// world_initHold.push_back(products["nothing"]);
+	// world_initHold.push_back(products["nothing"]);
+	// world_initHold.push_back(products["nothing"]);
 
-	world_initPos.push_back(0); // dummy
-	world_initPos.push_back(0);
-	world_initPos.push_back(0);
-	world_initPos.push_back(0);
+	// world_initPos.push_back(0); // dummy
+	// world_initPos.push_back(0);
+	// world_initPos.push_back(0);
+	// world_initPos.push_back(0);
 
-	world_initInside.push_back(0); // BS
-	world_initInside.push_back(inside_capstation["nothing"]); // CS1
-	world_initInside.push_back(inside_capstation["nothing"]); // CS2
-	world_initInside.push_back(0); // RS1
-	world_initInside.push_back(0); // RS2
+	// world_initInside.push_back(0); // BS
+	// world_initInside.push_back(inside_capstation["nothing"]); // CS1
+	// world_initInside.push_back(inside_capstation["nothing"]); // CS2
+	// world_initInside.push_back(0); // RS1
+	// world_initInside.push_back(0); // RS2
 
-	world_initOutside.push_back(products["nothing"]); // BS
-	world_initOutside.push_back(products["nothing"]); // RS1
-	world_initOutside.push_back(products["nothing"]); // RS2
-	world_initOutside.push_back(products["nothing"]); // CS1
-	world_initOutside.push_back(products["nothing"]); // CS2
+	// world_initOutside.push_back(products["nothing"]); // BS
+	// world_initOutside.push_back(products["nothing"]); // RS1
+	// world_initOutside.push_back(products["nothing"]); // RS2
+	// world_initOutside.push_back(products["nothing"]); // CS1
+	// world_initOutside.push_back(products["nothing"]); // CS2
 
-	world_points = 0;
+	// world_points = 0;
 }
 
 
@@ -1478,7 +1480,7 @@ ClipsSmtThread::loop()
 	logger->log_info(name(), "Thread performs loop and is running [%d]", running());
 
 	// Further initialization after init() depending on protobuf data
-	clips_smt_clear_maps();
+	// clips_smt_clear_maps();
 	clips_smt_init_game();
 	clips_smt_init_navgraph();
 	// clips_smt_init_post();
@@ -1611,7 +1613,30 @@ ClipsSmtThread::clips_smt_init_game()
 		}
 	}
 
-	// TODO Add more world_init info from data
+	// Initialize world state fix
+	world_initHold.push_back(0); // dummy
+	world_initHold.push_back(products["nothing"]);
+	world_initHold.push_back(products["nothing"]);
+	world_initHold.push_back(products["nothing"]);
+
+	world_initPos.push_back(0); // dummy
+	world_initPos.push_back(0);
+	world_initPos.push_back(0);
+	world_initPos.push_back(0);
+
+	world_initInside.push_back(0); // BS
+	world_initInside.push_back(inside_capstation["nothing"]); // CS1
+	world_initInside.push_back(inside_capstation["nothing"]); // CS2
+	world_initInside.push_back(0); // RS1
+	world_initInside.push_back(0); // RS2
+
+	world_initOutside.push_back(products["nothing"]); // BS
+	world_initOutside.push_back(products["nothing"]); // RS1
+	world_initOutside.push_back(products["nothing"]); // RS2
+	world_initOutside.push_back(products["nothing"]); // CS1
+	world_initOutside.push_back(products["nothing"]); // CS2
+
+	world_points = 0;
 }
 
 void
@@ -3469,6 +3494,27 @@ std::string ClipsSmtThread::getNextShelf()
 
 void ClipsSmtThread::clips_smt_clear_maps()
 {
+	rings.clear();
+	node_names.clear();
+	node_names_inverted.clear();
+	distances.clear();
+	station_colors.clear();
+	base_colors.clear();
+	base_colors_inverted.clear();
+	rings_colors.clear();
+	rings_colors_inverted.clear();
+	cap_colors.clear();
+	cap_colors_inverted.clear();
+	add_bases_description.clear();
+	cap_carrier_colors.clear();
+	rings_req_add_bases.clear();
+	amount_min_req_actions.clear();
+	index_upper_bound_actions.clear();
+	inside_capstation.clear();
+	products.clear();
+	products_inverted.clear();
+	machine_groups.clear();
+
 	model_machines.clear();
 	model_times.clear();
 	model_positions.clear();
@@ -3481,4 +3527,13 @@ void ClipsSmtThread::clips_smt_clear_maps()
 	model_insideB.clear();
 	model_outputB.clear();
 	model_rew.clear();
+
+	world_initHold.clear();
+	world_initPos.clear();
+	world_initInside.clear();
+	world_initOutside.clear();
+	world_all_actions.clear(); // TODO Do we need and if yes, how to fill this map?
+	world_machines_down.clear();
+
+	shelf_position.clear(); // TODO How to keep this information?
 }
