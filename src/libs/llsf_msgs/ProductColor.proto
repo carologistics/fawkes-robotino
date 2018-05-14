@@ -53,6 +53,7 @@ enum BaseColor {
   BASE_BLACK = 2;
   BASE_SILVER = 3;
   BASE_NONE = 4;
+  BASE_RANDOM = 5;
 }
 
 enum CapColor {
