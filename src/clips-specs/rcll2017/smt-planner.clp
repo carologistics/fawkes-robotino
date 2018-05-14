@@ -968,7 +968,7 @@
 	?plan-req <- (plan-requested ?goal-id)
 
 	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com C3) (value TRUE))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE))
 	=>
 	(printout t "SMT plan handle completed " ?handle  crlf)
 
@@ -983,13 +983,20 @@
 	(bind ?plans (smt-get-plan ?handle))
 	; (printout t "Plan: " (pb-tostring ?plans) crlf)
 
-	; Keep track of position TODO think about multiple robots, should this information be done here or on the plugin-side
-	(bind ?from START)
-	(bind ?from-side INPUT)
+	; parent_id of 0 refers to already dependencies from the old plans
+	(assert (wm-fact (key plan-action ?goal-id ?plan-id (string-to-field "0") status) (value FINAL)) ) 
 
-	; Assert plan-action enter-field
-	; TODO Exchange R-1 by own id and add enterfield for other robots
 	(do-for-fact ((?pf production-first)) TRUE 
+		(assert (wm-fact (key robot-position from R-1) (value START)) )
+		(assert (wm-fact (key robot-position from-side R-1) (value INPUT)) )
+		(assert (wm-fact (key robot-position from R-2) (value START)) )
+		(assert (wm-fact (key robot-position from-side R-2) (value INPUT)) )
+		(assert (wm-fact (key robot-position from R-3) (value START)) )
+		(assert (wm-fact (key robot-position from-side R-3) (value INPUT)) )
+
+
+		; TODO Exchange R-1 by own id and add enterfield for other robots
+		; Assert plan-action enter-field
 		(assert
 			(wm-fact
 				(key plan-action ?goal-id ?plan-id (string-to-field "99") action)
@@ -1061,38 +1068,43 @@
 							)
 						)
 
-						(assert
-							(wm-fact
-								(key plan-action ?goal-id ?plan-id ?next-step-id action)
-								(is-list TRUE)
-								(values move ?action-specific-actor ?from ?from-side ?to ?to-side)
-							)
-						)
-						(assert
-							(wm-fact
-								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
-								(is-list TRUE)
-								(values ?parents-ids)
-							)
-						)
-						(assert
-							(wm-fact
-								(key plan-action ?goal-id ?plan-id ?next-step-id status)
-								(value FORMULATED)
-							)
-						)
-						(assert
-							(wm-fact
-								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
-								(value ?action-specific-actor)
-							)
-						)
+						(do-for-fact ((?wm-from wm-fact)) (wm-key-prefix ?wm-from:key (create$ robot-position from ?action-specific-actor))
+							(do-for-fact ((?wm-from-side wm-fact)) (wm-key-prefix ?wm-from-side:key (create$ robot-position from-side ?action-specific-actor))
 
-						(printout t "plan-action move added: " ?action-specific-actor " [" ?action-id  "] from: " ?from " at: " ?from-side " to: " ?to " at: " ?to-side crlf)
+								(assert
+									(wm-fact
+										(key plan-action ?goal-id ?plan-id ?next-step-id action)
+										(is-list TRUE)
+										(values move ?action-specific-actor ?wm-from:value ?wm-from-side:value ?to ?to-side)
+									)
+								)
+								(assert
+									(wm-fact
+										(key plan-action ?goal-id ?plan-id ?next-step-id dep)
+										(is-list TRUE)
+										(values ?parents-ids)
+									)
+								)
+								(assert
+									(wm-fact
+										(key plan-action ?goal-id ?plan-id ?next-step-id status)
+										(value FORMULATED)
+									)
+								)
+								(assert
+									(wm-fact
+										(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+										(value ?action-specific-actor)
+									)
+								)
 
-						; Keep track from where a robot comes from
-						(bind ?from ?to)
-						(bind ?from-side ?to-side)
+								(printout t "plan-action move added: " ?action-specific-actor " [" ?action-id  "] from: " ?wm-from:value " at: " ?wm-from-side:value " to: " ?to " at: " ?to-side crlf)
+
+								; Keep track from where a robot comes from
+								(modify ?wm-from (value ?to))
+								(modify ?wm-from-side (value ?to-side))
+							)
+						)
 					)
 
 					;ACTION:::::WP-GET-SHELF:::::
