@@ -87,8 +87,14 @@ ClipsSmtThread::init()
 	add_bases_description[1] = "ONE";
 	add_bases_description[2] = "TWO";
 	add_bases_description[3] = "THREE";
-	cap_carrier_colors["CAP_GREY"] = "CCG1";
-	cap_carrier_colors["CAP_BLACK"] = "CCB1";
+	add_bases_description_inverted["ERROR"] = -1;
+	add_bases_description_inverted["ZERO"] = 0;
+	add_bases_description_inverted["ONE"] = 1;
+	add_bases_description_inverted["TWO"] = 2;
+	add_bases_description_inverted["THREE"] = 3;
+	cap_carrier_colors["CAP_GREY"] = "CCG";
+	cap_carrier_colors["CAP_BLACK"] = "CCB";
+	cap_carrier_index = 0;
 
 	// Prepare PlanHorizon
 	// MACRO ACTIONS
@@ -413,7 +419,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value(getNextShelf());
 					param = action->add_params();
 					param->set_key("wp");
-					param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]);
+					param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]+std::to_string(cap_carrier_index));
 
 					break; 
 
@@ -455,7 +461,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value(node_names[model_positions[i]]);
 					param = action->add_params();
 					param->set_key("wp");
-					param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]);
+					param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]+std::to_string(cap_carrier_index));
 
 					++action_id;
 					action = plan->add_actions();
@@ -498,7 +504,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value(node_names[model_positions[i]]);
 					param = action->add_params();
 					param->set_key("wp");
-					param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]);
+					param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]+std::to_string(cap_carrier_index));
 
 					++action_id;
 					action = plan->add_actions();
@@ -509,7 +515,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("wp");
-					param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]);
+					param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]+std::to_string(cap_carrier_index));
 
 					break;
 
@@ -1488,19 +1494,27 @@ ClipsSmtThread::loop()
 	// Further initialization after init() depending on protobuf data
 	clips_smt_clear_maps();
 	clips_smt_init_game();
-	clips_smt_init_navgraph();
-	// clips_smt_init_post();
-	plan_horizon = 3;
 
-	// Declare formulas for encoding
-	// z3::expr_vector formula = clips_smt_encoder();
-	z3::expr_vector formula = clips_smt_encoder_window();
+	// Strategy MACRO
+	if(!data.strategy()){
+		clips_smt_init_post();
 
-	// Pass it to z3 solver
-	// clips_smt_solve_formula(formula);
-	// Pass it ot z3 optimizer
-	// clips_smt_optimize_formula(formula, "rew_");
-	clips_smt_optimize_formula(formula, "rew_");
+		// Declare formulas for encoding
+		z3::expr_vector formula = clips_smt_encoder();
+
+		// Pass it to z3 solver
+		clips_smt_solve_formula(formula);
+	}
+	// Strategy WINDOW
+	else {
+		plan_horizon = 5;
+
+		// Declare formulas for encoding
+		z3::expr_vector formula = clips_smt_encoder_window();
+
+		// Pass it ot z3 optimizer
+		clips_smt_optimize_formula(formula, "rew_");
+	}
 
 	logger->log_info(name(), "Thread reached end of loop");
 
@@ -1579,6 +1593,7 @@ ClipsSmtThread::clips_smt_init_game()
 			station_colors["C2"] = team+"-CS2";
 		}
 
+		clips_smt_init_navgraph();
 		init_game_once = false;
 	}
 
@@ -1611,8 +1626,9 @@ ClipsSmtThread::clips_smt_init_game()
 	}
 
 
-	// Extract which machines are down
+	// Extract down/break, inside and output information of machine
 	for(int i=0; i<data.machines().size(); ++i){
+		// Extract which machines are down
 		std::string var_down = "DOWN";
 		std::string var_break = "BREAK";
 
@@ -1625,12 +1641,33 @@ ClipsSmtThread::clips_smt_init_game()
 
 		std::string cs1_name = team+"-CS1";
 		std::string cs2_name = team+"-CS2";
-		if(cs1_name.compare(data.machines(i).name()) == 0) {
+		std::string rs1_name = team+"-RS1";
+		std::string rs2_name = team+"-RS2";
+
+		// Extract add_bases of RS 
+		if(rs1_name.compare(data.machines(i).name()) == 0) {
+			world_initInside[1] = add_bases_description_inverted[data.machines(i).loaded_with()];
+			world_initOutside[1] = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
+		}
+		else if(rs2_name.compare(data.machines(i).name()) == 0) {
+			world_initInside[2] = add_bases_description_inverted[data.machines(i).loaded_with()];
+			world_initOutside[2] = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
+		}
+		// Extract inside of CS 
+		else if(cs1_name.compare(data.machines(i).name()) == 0) {
 			world_initInside[3] = cap_colors[data.machines(i).cs_buffered()];
+			world_initOutside[3] = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
 		}
 		else if(cs2_name.compare(data.machines(i).name()) == 0) {
 			world_initInside[4] = cap_colors[data.machines(i).cs_buffered()];
+			world_initOutside[4] = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
 		}
+	}
+
+	// Extract holding and location information of robots
+	for(int i=0; i<data.robots().size(); ++i){
+		world_initPos[i+1] = node_names_inverted[data.robots(i).location()];
+		world_initHold[i+1] = clips_smt_rewrite_product(data.robots(i).wp().base_color(), data.robots(i).wp().ring_colors(0), data.robots(i).wp().ring_colors(1), data.robots(i).wp().ring_colors(2), data.robots(i).wp().cap_color());
 	}
 }
 
@@ -3426,12 +3463,7 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model)
 	}
 
 	// Add plan specified by the model to stats
-	// std::cout << "Generate plan for order with complexity " << desired_complexity << " with components: B" << base << "R" << rings[0] << "R" << rings[1] << "R" << rings[2] << "C" << cap << " [" << rings_req_add_bases[rings[0]] << rings_req_add_bases[rings[1]] << rings_req_add_bases[rings[2]] << "]";
 	logger->log_info(name(), "Generate plan for order with complexity %i with components: B%iC%i", desired_complexity, base, cap);
-	if(consider_temporal_constraint){
-		std::cout << " with bounds " << delivery_period_begin << "s < o0 < " << delivery_period_end << "s";
-	}
-	// std::cout << std::endl;
 
 	for(int j=1; j<plan_horizon+1; ++j){
 		logger->log_info(name(), "%i. R-%i A%i hold[%i-%i] pos[%i] M%i input[%i-%i] output[%i-%i] time[%f] rew[%i]", j, model_robots[j], model_actions[j], model_holdA[j], model_holdB[j], model_positions[j], model_machines[j], model_insideA[j], model_insideB[j], model_outputA[j], model_outputB[j], model_times[j], model_rew[j]);
@@ -3477,6 +3509,13 @@ void ClipsSmtThread::initShelf()
 
 std::string ClipsSmtThread::getNextShelf()
 {
+	if(cap_carrier_index<3) {
+		cap_carrier_index++;
+	}
+	else {
+		cap_carrier_index = 1;
+	}
+
 	if(shelf_position[0]){
 		shelf_position[0] = false;
 		return "LEFT";
@@ -3492,27 +3531,6 @@ std::string ClipsSmtThread::getNextShelf()
 
 void ClipsSmtThread::clips_smt_clear_maps()
 {
-	// rings.clear();
-	// node_names.clear();
-	// node_names_inverted.clear();
-	// distances.clear();
-	// station_colors.clear();
-	// base_colors.clear();
-	// base_colors_inverted.clear();
-	// rings_colors.clear();
-	// rings_colors_inverted.clear();
-	// cap_colors.clear();
-	// cap_colors_inverted.clear();
-	// add_bases_description.clear();
-	// cap_carrier_colors.clear();
-	// rings_req_add_bases.clear();
-	// amount_min_req_actions.clear();
-	// index_upper_bound_actions.clear();
-	// inside_capstation.clear();
-	// products.clear();
-	// products_inverted.clear();
-	// machine_groups.clear();
-
 	model_machines.clear();
 	model_times.clear();
 	model_positions.clear();
@@ -3525,13 +3543,64 @@ void ClipsSmtThread::clips_smt_clear_maps()
 	model_insideB.clear();
 	model_outputB.clear();
 	model_rew.clear();
+}
 
-	// world_initHold.clear();
-	// world_initPos.clear();
-	// world_initInside.clear();
-	// world_initOutside.clear();
-	// world_all_actions.clear(); // TODO Do we need and if yes, how to fill this map?
-	// world_machines_down.clear();
+int ClipsSmtThread::clips_smt_rewrite_product(int base, int ring1, int ring2, int ring3, int cap)
+{
+	std::string product_description = "nothing";
+	
+	// cap_carrier before and after retrieve
+	// BRC1
+	if (base == 5 && ring1 == 5 && ring2 == 5 && ring3 == 5 && cap == 4) {
+		product_description = "BRC1";
+	}
+	// BRC2
+	else if (base == 5 && ring1 == 5 && ring2 == 5 && ring3 == 5 && cap == 5) {
+		product_description = "BRC2";
+	}
+	// BR
+	else if (base == 5 && ring1 == 5 && ring2 == 5 && ring3 == 5 && cap == 3) {
+		product_description = "BR";
+	}
+	// wp
+	// Only B
+	else if (base < 4 && ring1 == 5 && ring2 == 5 && ring3 == 5 && cap == 3) {
+		product_description = "B"+std::to_string(base);
+	}
+	// C0
+	else if (base < 4 && ring1 == 5 && ring2 == 5 && ring3 == 5 && cap < 3) {
+		product_description = "B"+std::to_string(base)+"C"+std::to_string(cap);
+	}
+	// Only BxRx
+	else if (base < 4 && ring1 < 5 && ring2 == 5 && ring3 == 5 && cap == 3) {
+		product_description = "B"+std::to_string(base)+"R"+std::to_string(ring1);
+	}
+	// C1
+	else if (base < 4 && ring1 < 5 && ring2 == 5 && ring3 == 5 && cap < 3) {
+		product_description = "B"+std::to_string(base)+"R"+std::to_string(ring1)+"C"+std::to_string(cap);
+	}
+	// Only BxRxRx
+	else if (base < 4 && ring1 < 5 && ring2 < 5 && ring3 == 5 && cap == 3) {
+		product_description = "B"+std::to_string(base)+"R"+std::to_string(ring1)+"R"+std::to_string(ring2);
+	}
+	// C2
+	else if (base < 4 && ring1 < 5 && ring2 < 5 && ring3 == 5 && cap < 3) {
+		product_description = "B"+std::to_string(base)+"R"+std::to_string(ring1)+"R"+std::to_string(ring2)+"C"+std::to_string(cap);
+	}
+	// Only BxRxRxRx
+	else if (base < 4 && ring1 < 5 && ring2 < 5 && ring3 < 5 && cap == 3) {
+		product_description = "B"+std::to_string(base)+"R"+std::to_string(ring1)+"R"+std::to_string(ring2)+"R"+std::to_string(ring3);
+	}
+	// C3
+	else if (base < 4 && ring1 < 5 && ring2 < 5 && ring3 < 5 && cap < 3) {
+		product_description = "B"+std::to_string(base)+"R"+std::to_string(ring1)+"R"+std::to_string(ring2)+"R"+std::to_string(ring3)+"C"+std::to_string(cap);
+	}
+	// empty
+	else if (base == 4 && ring1 == 5 && ring2 == 5 && ring3 == 5 && cap == 3) {
+	}
+	else {
+		logger->log_info(name(), "Product was not recognized");
+	}
 
-	// shelf_position.clear(); // TODO How to keep this information?
+	return products[product_description];
 }
