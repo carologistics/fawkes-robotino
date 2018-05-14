@@ -109,6 +109,7 @@ private:
 	void clips_smt_extract_plan_from_model(z3::model model);
 
 	// Init methods
+	bool init_game_once;
 	void clips_smt_init_game();
 	void clips_smt_init_navgraph();
 	void clips_smt_init_post();
