@@ -217,6 +217,7 @@
 
 	; if machine is of type capstation
 	(if (eq ?mtype CS) then
+		(bind ?cs_buffered "CAP_NONE")
 
 		; set amount of additional bases machine is loaded with
 		(do-for-fact ((?wm-fact wm-fact))
@@ -224,9 +225,11 @@
 				(wm-key-prefix ?wm-fact:key (create$ domain fact cs-buffered))
 				(eq ?name (wm-key-arg ?wm-fact:key m))
 			)
-
-		   (pb-set-field ?m "cs_buffered" (wm-key-arg ?wm-fact:key col))
+			
+			(bind ?cs_buffered (wm-key-arg ?wm-fact:key col))
 		)
+
+		(pb-set-field ?m "cs_buffered" ?cs_buffered)
 	)
 
 	; Detect which machine has wps at the output
@@ -959,7 +962,7 @@
 
 (defrule production-smt-plan-completed
 	; Call plugin clips-smt
-	(smt-plan-complete ?handle)
+	?spc <- (smt-plan-complete ?handle)
 
 	?g <- (goal (id ?goal-id) (mode SELECTED))
 	?plan-req <- (plan-requested ?goal-id)
@@ -969,6 +972,7 @@
 	=>
 	(printout t "SMT plan handle completed " ?handle  crlf)
 
+	(retract ?spc)
 	; Create instance of plan
 	(bind ?plan-id SMT-PLAN) ; TODO combine with random id number
 	(assert
@@ -985,29 +989,32 @@
 
 	; Assert plan-action enter-field
 	; TODO Exchange R-1 by own id and add enterfield for other robots
-	(assert
-		(wm-fact
-			(key plan-action ?goal-id ?plan-id (string-to-field "99") action)
-			(is-list TRUE)
-			(values enter-field R-1 ?team-color) 
+	(do-for-fact ((?pf production-first)) TRUE 
+		(assert
+			(wm-fact
+				(key plan-action ?goal-id ?plan-id (string-to-field "99") action)
+				(is-list TRUE)
+				(values enter-field R-1 ?team-color) 
+			)
 		)
-	)
-	(assert
-		(wm-fact
-			(key plan-action ?goal-id ?plan-id (string-to-field "99") dep)
+		(assert
+			(wm-fact
+				(key plan-action ?goal-id ?plan-id (string-to-field "99") dep)
+			)
 		)
-	)
-	(assert
-		(wm-fact
-			(key plan-action ?goal-id ?plan-id (string-to-field "99") status)
-			(value FORMULATED)
+		(assert
+			(wm-fact
+				(key plan-action ?goal-id ?plan-id (string-to-field "99") status)
+				(value FORMULATED)
+			)
 		)
-	)
-	(assert
-		(wm-fact
-			(key plan-action ?goal-id ?plan-id (string-to-field "99") actor)
-			(value R-1)
+		(assert
+			(wm-fact
+				(key plan-action ?goal-id ?plan-id (string-to-field "99") actor)
+				(value R-1)
+			)
 		)
+		(retract ?pf)
 	)
 
 	; Extract actions inside ActorSpecificPlan -> SequentialPlan -> Actions
