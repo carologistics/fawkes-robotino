@@ -13,7 +13,7 @@
 ;---------------------------------------------------------------------------
 
 ; High level pb strucutre collecting data the plugin needs
-(deffunction smt-create-data (?robots ?machines ?orders ?rings)
+(deffunction smt-create-data (?robots ?machines ?orders ?rings ?strategy)
 	(bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
 
 	(foreach ?r ?robots
@@ -28,6 +28,7 @@
 	(foreach ?ring ?rings
 		(pb-add-list ?p "rings" ?ring)
 	)
+	(pb-set-field ?p "strategy" ?strategy)
 
 	(printout t "Proto:" (pb-tostring ?p) crlf)
 	(return ?p)
@@ -48,28 +49,52 @@
 	(pb-set-field ?pose "ori" 0.0)
 	(pb-set-field ?r "pose" ?pose)
 
+	(bind ?location "C-ins")
+	(bind ?location-side "INPUT")
+	(bind ?location-side-short "-in")
+	(do-for-fact ((?wm-fact wm-fact))
+		(and
+			(wm-key-prefix ?wm-fact:key (create$ domain fact at))
+			(eq ?name (wm-key-arg ?wm-fact:key r))
+		)
+
+		(bind ?location (wm-key-arg ?wm-fact:key m))
+		(bind ?location-side (wm-key-arg ?wm-fact:key side))
+		(bind ?location-side-short "-I")
+		(if (eq ?location-side "OUTPUT") then
+			(bind ?location-side-short "-O")
+		)
+	)
+	(pb-set-field ?r "location" (str-cat ?location ?location-side-short))
+
+	; Add information for robot holding wp
+	; Fill dummy information for required fields in llsf_msgs.Order as we are only interested in the colors of the wp
+	(bind ?o (pb-create "llsf_msgs.Order"))
+	(pb-set-field ?o "id" 1)
+	(pb-set-field ?o "delivery_gate" 1)
+	(pb-set-field ?o "complexity" 1)
+	(pb-set-field ?o "quantity_requested" 1)
+	(if (eq ?team-color CYAN)
+	 then
+	  (pb-set-field ?o "quantity_delivered_cyan" 0)
+	 else
+	  (pb-set-field ?o "quantity_delivered_magenta" 0)
+	)
+	(pb-set-field ?o "delivery_period_begin" 0)
+	(pb-set-field ?o "delivery_period_end" 900)
+	; Prepare colors in case product is not completed or a cap carrier
+	(bind ?holding-cap "CAP_NONE")
+	(bind ?holding-ring1 "RING_NONE")
+	(bind ?holding-ring2 "RING_NONE")
+	(bind ?holding-ring3 "RING_NONE")
+	(bind ?holding-base "BASE_NONE")
+
 	; Detect if some robot is currently holding wp
 	(do-for-fact ((?holding wm-fact))
 		(and
 			(wm-key-prefix ?holding:key (create$ domain fact holding))
 			(eq ?name (wm-key-arg ?holding:key r))
 		)
-
-		(bind ?o (pb-create "llsf_msgs.Order"))
-
-		; Fill dummy information for required fields in llsf_msgs.Order as we are only interested in the colors of the wp
-		(pb-set-field ?o "id" 1)
-		(pb-set-field ?o "delivery_gate" 1)
-		(pb-set-field ?o "complexity" 1)
-		(pb-set-field ?o "quantity_requested" 1)
-		(if (eq ?team-color CYAN)
-		 then
-		  (pb-set-field ?o "quantity_delivered_cyan" 0)
-		 else
-		  (pb-set-field ?o "quantity_delivered_magenta" 0)
-		)
-		(pb-set-field ?o "delivery_period_begin" 0)
-		(pb-set-field ?o "delivery_period_end" 900)
 
 		(bind ?holding-wp (wm-key-arg ?holding:key wp))
 		(if ; cap_carrier_grey
@@ -79,7 +104,8 @@
 				(eq ?holding-wp CCG3)
 			)
 		then
-			(pb-set-field ?o "cap_color" "CAP_CARRIER_GREY")
+			(bind ?holding-cap "CAP_CARRIER_GREY")
+			(bind ?holding-base "BASE_RANDOM")
 		else
 			(if ; cap_carrier_black
 				(or 
@@ -88,7 +114,8 @@
 					(eq ?holding-wp CCB3)
 				)
 			then
-				(pb-set-field ?o "cap_color" "CAP_CARRIER_BLACK")
+				(bind ?holding-cap "CAP_CARRIER_BLACK")
+				(bind ?holding-base "BASE_RANDOM")
 			else
 				(if ; WP1 (product) or WP2 (additional base)
 					(or 
@@ -103,7 +130,7 @@
 							(eq ?holding-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(pb-set-field ?o "base_color" (wm-key-arg ?wm-fact:key col))
+						(bind ?holding-base (wm-key-arg ?wm-fact:key col))
 					)
 
 					; wp-cap-color
@@ -113,18 +140,17 @@
 							(eq ?holding-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(pb-set-field ?o "cap_color" (wm-key-arg ?wm-fact:key col))
+						(bind ?holding-cap (wm-key-arg ?wm-fact:key col))
 					)
 
 					; wp-ring-color
-					(bind ?rlist (create$))
 					(do-for-fact ((?wm-fact wm-fact))
 						(and
 							(wm-key-prefix ?wm-fact:key (create$ domain fact wp-ring1-color))
 							(eq ?holding-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+						(bind ?holding-ring1 (wm-key-arg ?wm-fact:key col))
 					)
 					(do-for-fact ((?wm-fact wm-fact))
 						(and
@@ -132,7 +158,7 @@
 							(eq ?holding-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+						(bind ?holding-ring2 (wm-key-arg ?wm-fact:key col))
 					)
 					(do-for-fact ((?wm-fact wm-fact))
 						(and
@@ -140,10 +166,7 @@
 							(eq ?holding-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
-					)
-					(foreach ?rings ?rlist
-					 (pb-add-list ?o "ring_colors" ?rings)
+						(bind ?holding-ring3 (wm-key-arg ?wm-fact:key col))
 					)
 				else
 					(printout t "No known wp in holding" crlf)
@@ -151,9 +174,14 @@
 
 			)
 		)
-
-		(pb-set-field ?r "wp" ?o)
 	)
+	(pb-set-field ?o "cap_color" ?holding-cap)
+	(pb-add-list ?o "ring_colors" ?holding-ring1)
+	(pb-add-list ?o "ring_colors" ?holding-ring2)
+	(pb-add-list ?o "ring_colors" ?holding-ring3)
+	(pb-set-field ?o "base_color" ?holding-base)
+
+	(pb-set-field ?r "wp" ?o)
 
 	(return ?r)
 )
@@ -162,9 +190,9 @@
 	(bind ?rv (create$))
 
 	(do-for-all-facts ((?wm-fact wm-fact))
-		(wm-key-prefix ?wm-fact:key (create$ domain fact robot-waiting))
+		(wm-key-prefix ?wm-fact:key (create$ domain objects-by-type robot))
 
-		(bind ?rv (append$ ?rv (smt-create-robot (wm-key-arg ?wm-fact:key r) ?team-color 0 0 0))) ; TODO add correct pose of robot
+		(bind ?rv (append$ ?rv (smt-create-robot R-1 ?team-color 0 0 0)))
 	)
 
 	(return ?rv)
@@ -232,28 +260,34 @@
 		(pb-set-field ?m "cs_buffered" ?cs_buffered)
 	)
 
-	; Detect which machine has wps at the output
+	; Add information for machine with wp-at
+	; Fill dummy information for required fields in llsf_msgs.Order as we are only interested in the colors of the wp
+	(bind ?o (pb-create "llsf_msgs.Order"))
+	(pb-set-field ?o "id" 1)
+	(pb-set-field ?o "delivery_gate" 1)
+	(pb-set-field ?o "complexity" 1)
+	(pb-set-field ?o "quantity_requested" 1)
+	(if (eq ?team-color CYAN)
+	 then
+	  (pb-set-field ?o "quantity_delivered_cyan" 0)
+	 else
+	  (pb-set-field ?o "quantity_delivered_magenta" 0)
+	)
+	(pb-set-field ?o "delivery_period_begin" 0)
+	(pb-set-field ?o "delivery_period_end" 900)
+	; Prepare colors in case product is not completed or a cap carrier
+	(bind ?wp-at-cap "CAP_NONE")
+	(bind ?wp-at-ring1 "RING_NONE")
+	(bind ?wp-at-ring2 "RING_NONE")
+	(bind ?wp-at-ring3 "RING_NONE")
+	(bind ?wp-at-base "BASE_NONE")
+
+	; Detect if some robot is currently wp-at wp
 	(do-for-fact ((?wp-at wm-fact))
 		(and
 			(wm-key-prefix ?wp-at:key (create$ domain fact wp-at))
 			(eq ?name (wm-key-arg ?wp-at:key m))
 		)
-
-		(bind ?o (pb-create "llsf_msgs.Order"))
-
-		; TODO read information from ?wp-at
-		(pb-set-field ?o "id" 1)
-		(pb-set-field ?o "delivery_gate" 1)
-		(pb-set-field ?o "complexity" 3)
-		(pb-set-field ?o "quantity_requested" 1)
-		(if (eq ?team-color CYAN)
-		 then
-		  (pb-set-field ?o "quantity_delivered_cyan" 0)
-		 else
-		  (pb-set-field ?o "quantity_delivered_magenta" 0)
-		)
-		(pb-set-field ?o "delivery_period_begin" 0)
-		(pb-set-field ?o "delivery_period_end" 900)
 
 		(bind ?wp-at-wp (wm-key-arg ?wp-at:key wp))
 		(if ; cap_carrier_grey
@@ -263,7 +297,8 @@
 				(eq ?wp-at-wp CCG3)
 			)
 		then
-			(pb-set-field ?o "cap_color" "CAP_CARRIER_GREY")
+			(bind ?wp-at-cap "CAP_CARRIER_GREY")
+			(bind ?wp-at-base "BASE_RANDOM")
 		else
 			(if ; cap_carrier_black
 				(or 
@@ -272,7 +307,8 @@
 					(eq ?wp-at-wp CCB3)
 				)
 			then
-				(pb-set-field ?o "cap_color" "CAP_CARRIER_BLACK")
+				(bind ?wp-at-cap "CAP_CARRIER_BLACK")
+				(bind ?wp-at-base "BASE_RANDOM")
 			else
 				(if ; WP1 (product) or WP2 (additional base)
 					(or 
@@ -287,7 +323,7 @@
 							(eq ?wp-at-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(pb-set-field ?o "base_color" (wm-key-arg ?wm-fact:key col))
+						(bind ?wp-at-base (wm-key-arg ?wm-fact:key col))
 					)
 
 					; wp-cap-color
@@ -297,18 +333,17 @@
 							(eq ?wp-at-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(pb-set-field ?o "cap_color" (wm-key-arg ?wm-fact:key col))
+						(bind ?wp-at-cap (wm-key-arg ?wm-fact:key col))
 					)
 
 					; wp-ring-color
-					(bind ?rlist (create$))
 					(do-for-fact ((?wm-fact wm-fact))
 						(and
 							(wm-key-prefix ?wm-fact:key (create$ domain fact wp-ring1-color))
 							(eq ?wp-at-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+						(bind ?wp-at-ring1 (wm-key-arg ?wm-fact:key col))
 					)
 					(do-for-fact ((?wm-fact wm-fact))
 						(and
@@ -316,7 +351,7 @@
 							(eq ?wp-at-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
+						(bind ?wp-at-ring2 (wm-key-arg ?wm-fact:key col))
 					)
 					(do-for-fact ((?wm-fact wm-fact))
 						(and
@@ -324,20 +359,22 @@
 							(eq ?wp-at-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?rlist (append$ ?rlist (wm-key-arg ?wm-fact:key col)))
-					)
-					(foreach ?rings ?rlist
-					 (pb-add-list ?o "ring_colors" ?rings)
+						(bind ?wp-at-ring3 (wm-key-arg ?wm-fact:key col))
 					)
 				else
-					(printout t "No known wp in holding" crlf)
+					(printout t "No known wp in wp-at" crlf)
 				)
 
 			)
 		)
-
-		(pb-set-field ?m "wp" ?o)
 	)
+	(pb-set-field ?o "cap_color" ?wp-at-cap)
+	(pb-add-list ?o "ring_colors" ?wp-at-ring1)
+	(pb-add-list ?o "ring_colors" ?wp-at-ring2)
+	(pb-add-list ?o "ring_colors" ?wp-at-ring3)
+	(pb-set-field ?o "base_color" ?wp-at-base)
+
+	(pb-set-field ?m "wp" ?o)
 
 	(return ?m)
 )
@@ -460,7 +497,7 @@
 	(do-for-fact ((?wm-fact wm-fact))
 		(and
 			(wm-key-prefix ?wm-fact:key (create$ domain fact order-complexity))
-			(eq C0 (wm-key-arg ?wm-fact:key com)) ; Desiered complexity is set here
+			(eq C3 (wm-key-arg ?wm-fact:key com)) ; Desiered complexity is set here
 		)
 
 		(do-for-fact ((?wm-fact2 wm-fact))
@@ -544,6 +581,7 @@
 			(smt-create-machines ?team-color)
 			(smt-create-orders ?team-color)
 			(smt-create-rings ?team-color)
+			0
 	  )
 	)
 
