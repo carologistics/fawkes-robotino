@@ -336,15 +336,19 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 	// Francesco Leofante's approach
 	std::vector<uint32_t> action_id_last;
+	action_id_last.clear();
 	for(int i=0; i<=index_upper_bound_actions[desired_complexity]; ++i){
 		action_id_last.push_back(0);
 	}
 	std::vector<uint32_t> action_id_last_bs_robot;
+	action_id_last_bs_robot.clear();
 	for(int i=0; i<=4; ++i){
 		action_id_last_bs_robot.push_back(0);
 	}
 	std::vector<uint32_t> action_id_last_rs1_pay;
+	action_id_last_rs1_pay.clear();
 	std::vector<uint32_t> action_id_last_rs2_pay;
+	action_id_last_rs2_pay.clear();
 	uint32_t action_id_last_rs1_feed=0;
 	uint32_t action_id_last_rs1_retr=0;
 	uint32_t action_id_last_rs2_feed=0;
@@ -621,7 +625,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					switch(desired_complexity) {
 						case 0:
-								action->add_parent_id(action_id_last[3]);
+								action->add_parent_id(action_id_last[4]);
 								break;
 						case 1:
 								action->add_parent_id(action_id_last[9]);
@@ -648,6 +652,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[1]);
 					action->add_parent_id(action_id_last[2]);
+					action->add_parent_id(action_id_last[3]);
 					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
@@ -3370,7 +3375,7 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model)
 	// Extract plan from model
 	for(unsigned i=0; i<model.size(); ++i) {
 		z3::func_decl function = model[i];
-		std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
+		// std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
 
 		std::string function_name = function.name().str();
 		z3::expr expr = model.get_const_interp(function);
