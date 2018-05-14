@@ -414,7 +414,7 @@
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
   ;To-Do: Model the bs active-side
   ;Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com C0))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
 
@@ -431,6 +431,8 @@
   ;	Model old agents constraints
   ; 	(in-production 0)
   ; 	(in-delivery ?id&:(> ?qr (+ ?qd ?id)))
+  (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+  (test (eq ?complexity C0))
   =>
   (printout t "Goal " PRODUCE-C0 " formulated" crlf)
   (assert (goal (id PRODUCE-C0) (priority ?*PRIORITY-PRODUCE-C0*)
@@ -480,7 +482,7 @@
   ;Order CEs
   (not (wm-fact (key evaluated fact wp-for-order args? wp ?ord-wp ord ?order)))
 
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&~C0))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
@@ -494,6 +496,7 @@
   ;  (in-production 0))
   ;  (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+  (test (neq ?complexity C0))
   =>
   (printout t "Goal " MOUNT-FIRST-RING " formulated" crlf)
   (assert (goal (id MOUNT-FIRST-RING) (priority ?*PRIORITY-DELIVER*)
