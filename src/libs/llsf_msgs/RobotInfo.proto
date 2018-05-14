@@ -87,6 +87,7 @@ message Robot {
   // has been performed, including current
   optional uint32 maintenance_cycles = 10;
   optional Order wp = 13;
+  required string location = 14;
 }
 
 message RobotInfo {

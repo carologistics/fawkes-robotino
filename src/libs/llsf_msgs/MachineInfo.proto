@@ -89,7 +89,7 @@ message Machine {
   // Correctly reported? (zone and type correct)
   optional bool      correctly_reported = 9;
   // Number of bases loaded
-  optional uint32    loaded_with = 13 [default = 0];
+  optional string    loaded_with = 13 [default = "ZERO"];
 
   repeated RingColor ring_colors = 14;
 
