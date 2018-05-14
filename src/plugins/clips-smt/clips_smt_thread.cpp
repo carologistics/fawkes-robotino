@@ -54,7 +54,8 @@ void
 ClipsSmtThread::init()
 {
 	logger->log_info(name(), "clips_smt_init_pre");
-	clips_smt_clear_maps();
+
+	init_game_once = true;
 
 	// Order
 	base_colors["BASE_NONE"] = 0;
@@ -213,30 +214,30 @@ ClipsSmtThread::init()
 	shelf_position.push_back(true);
 	shelf_position.push_back(true);
 
-	// // Initialize world state fix
-	// world_initHold.push_back(0); // dummy
-	// world_initHold.push_back(products["nothing"]);
-	// world_initHold.push_back(products["nothing"]);
-	// world_initHold.push_back(products["nothing"]);
+	// Initialize world state fix
+	world_initHold.push_back(0); // dummy
+	world_initHold.push_back(products["nothing"]);
+	world_initHold.push_back(products["nothing"]);
+	world_initHold.push_back(products["nothing"]);
 
-	// world_initPos.push_back(0); // dummy
-	// world_initPos.push_back(0);
-	// world_initPos.push_back(0);
-	// world_initPos.push_back(0);
+	world_initPos.push_back(0); // dummy
+	world_initPos.push_back(0);
+	world_initPos.push_back(0);
+	world_initPos.push_back(0);
 
-	// world_initInside.push_back(0); // BS
-	// world_initInside.push_back(inside_capstation["nothing"]); // CS1
-	// world_initInside.push_back(inside_capstation["nothing"]); // CS2
-	// world_initInside.push_back(0); // RS1
-	// world_initInside.push_back(0); // RS2
+	world_initInside.push_back(0); // BS
+	world_initInside.push_back(inside_capstation["nothing"]); // CS1
+	world_initInside.push_back(inside_capstation["nothing"]); // CS2
+	world_initInside.push_back(0); // RS1
+	world_initInside.push_back(0); // RS2
 
-	// world_initOutside.push_back(products["nothing"]); // BS
-	// world_initOutside.push_back(products["nothing"]); // RS1
-	// world_initOutside.push_back(products["nothing"]); // RS2
-	// world_initOutside.push_back(products["nothing"]); // CS1
-	// world_initOutside.push_back(products["nothing"]); // CS2
+	world_initOutside.push_back(products["nothing"]); // BS
+	world_initOutside.push_back(products["nothing"]); // RS1
+	world_initOutside.push_back(products["nothing"]); // RS2
+	world_initOutside.push_back(products["nothing"]); // CS1
+	world_initOutside.push_back(products["nothing"]); // CS2
 
-	// world_points = 0;
+	world_points = 0;
 }
 
 
@@ -1480,7 +1481,7 @@ ClipsSmtThread::loop()
 	logger->log_info(name(), "Thread performs loop and is running [%d]", running());
 
 	// Further initialization after init() depending on protobuf data
-	// clips_smt_clear_maps();
+	clips_smt_clear_maps();
 	clips_smt_init_game();
 	clips_smt_init_navgraph();
 	// clips_smt_init_post();
@@ -1518,13 +1519,62 @@ ClipsSmtThread::clips_smt_init_game()
 {
 	logger->log_info(name(), "clips_smt_init_game");
 
-	// Extract amount of robots
-	amount_robots = data.robots().size();
+	if(init_game_once) {
+		// Extract amount of robots
+		amount_robots = data.robots().size();
 
-	// Extract team
-	team = "M";
-	if(data.robots(0).team_color() == 0){
-		team = "C";
+		// Extract team
+		team = "M";
+		if(data.robots(0).team_color() == 0){
+			team = "C";
+		}
+
+		// Extract how many bases are required for the corresponding colors
+		for( int i=0; i<data.rings().size(); ++i ) {
+			rings_req_add_bases[data.rings(i).ring_color()] = data.rings(i).raw_material();
+		}
+
+		// Extract station_colors ring_stations
+		std::string cw_ringStation = team+"-RS1";
+		for(int i=0; i<data.machines().size(); ++i) {
+			if(cw_ringStation.compare(data.machines(i).name()) == 0){
+				if(data.machines(i).ring_colors(0)==1 || data.machines(i).ring_colors(1)==1) {
+					station_colors["R1"] = "RS1";
+				}
+				else {
+					station_colors["R1"] = "RS2";
+				}
+				if(data.machines(i).ring_colors(0)==2 || data.machines(i).ring_colors(1)==2) {
+					station_colors["R2"] = "RS1";
+				}
+				else {
+					station_colors["R2"] = "RS2";
+				}
+				if(data.machines(i).ring_colors(0)==3 || data.machines(i).ring_colors(1)==3) {
+					station_colors["R3"] = "RS1";
+				}
+				else {
+					station_colors["R3"] = "RS2";
+				}
+				if(data.machines(i).ring_colors(0)==4 || data.machines(i).ring_colors(1)==4) {
+					station_colors["R4"] = "RS1";
+				}
+				else {
+					station_colors["R4"] = "RS2";
+				}
+				continue;
+			}
+		}
+
+		// Extract station_colors cap_stations with information from config
+		station_colors["C1"] = "CS2";
+		station_colors["C2"] = "CS1";
+		if(config->get_string("/clips-agent/rcll2016/cap-station/assigned-color/"+team+"-CS1").compare("BLACK")==0){
+			station_colors["C1"] = team+"-CS1";
+			station_colors["C2"] = team+"-CS2";
+		}
+
+		init_game_once = false;
 	}
 
 	// Extract order details
@@ -1555,50 +1605,6 @@ ClipsSmtThread::clips_smt_init_game()
 		delivery_period_end = data.orders(i).delivery_period_end();
 	}
 
-	// Extract how many bases are required for the corresponding colors
-	for( int i=0; i<data.rings().size(); ++i ) {
-		rings_req_add_bases[data.rings(i).ring_color()] = data.rings(i).raw_material();
-	}
-
-	// Extract station_colors ring_stations
-	std::string cw_ringStation = team+"-RS1";
-	for(int i=0; i<data.machines().size(); ++i) {
-		if(cw_ringStation.compare(data.machines(i).name()) == 0){
-			if(data.machines(i).ring_colors(0)==1 || data.machines(i).ring_colors(1)==1) {
-				station_colors["R1"] = "RS1";
-			}
-			else {
-				station_colors["R1"] = "RS2";
-			}
-			if(data.machines(i).ring_colors(0)==2 || data.machines(i).ring_colors(1)==2) {
-				station_colors["R2"] = "RS1";
-			}
-			else {
-				station_colors["R2"] = "RS2";
-			}
-			if(data.machines(i).ring_colors(0)==3 || data.machines(i).ring_colors(1)==3) {
-				station_colors["R3"] = "RS1";
-			}
-			else {
-				station_colors["R3"] = "RS2";
-			}
-			if(data.machines(i).ring_colors(0)==4 || data.machines(i).ring_colors(1)==4) {
-				station_colors["R4"] = "RS1";
-			}
-			else {
-				station_colors["R4"] = "RS2";
-			}
-			continue;
-		}
-	}
-
-	// Extract station_colors cap_stations with information from config
-	station_colors["C1"] = "CS2";
-	station_colors["C2"] = "CS1";
-	if(config->get_string("/clips-agent/rcll2016/cap-station/assigned-color/"+team+"-CS1").compare("BLACK")==0){
-		station_colors["C1"] = team+"-CS1";
-		station_colors["C2"] = team+"-CS2";
-	}
 
 	// Extract which machines are down
 	for(int i=0; i<data.machines().size(); ++i){
@@ -1611,32 +1617,16 @@ ClipsSmtThread::clips_smt_init_game()
 
 			world_machines_down.push_back(node_names_inverted[machine_name]);
 		}
+
+		std::string cs1_name = team+"-CS1";
+		std::string cs2_name = team+"-CS2";
+		if(cs1_name.compare(data.machines(i).name()) == 0) {
+			world_initInside[3] = cap_colors[data.machines(i).cs_buffered()];
+		}
+		else if(cs2_name.compare(data.machines(i).name()) == 0) {
+			world_initInside[4] = cap_colors[data.machines(i).cs_buffered()];
+		}
 	}
-
-	// Initialize world state fix
-	world_initHold.push_back(0); // dummy
-	world_initHold.push_back(products["nothing"]);
-	world_initHold.push_back(products["nothing"]);
-	world_initHold.push_back(products["nothing"]);
-
-	world_initPos.push_back(0); // dummy
-	world_initPos.push_back(0);
-	world_initPos.push_back(0);
-	world_initPos.push_back(0);
-
-	world_initInside.push_back(0); // BS
-	world_initInside.push_back(inside_capstation["nothing"]); // CS1
-	world_initInside.push_back(inside_capstation["nothing"]); // CS2
-	world_initInside.push_back(0); // RS1
-	world_initInside.push_back(0); // RS2
-
-	world_initOutside.push_back(products["nothing"]); // BS
-	world_initOutside.push_back(products["nothing"]); // RS1
-	world_initOutside.push_back(products["nothing"]); // RS2
-	world_initOutside.push_back(products["nothing"]); // CS1
-	world_initOutside.push_back(products["nothing"]); // CS2
-
-	world_points = 0;
 }
 
 void
@@ -2367,15 +2357,28 @@ ClipsSmtThread::clips_smt_encoder()
 
 	// Specify initial situation for robots
 	for(int i=1; i<amount_robots+1; ++i){
-		constraints.push_back(getVar(var, "initHold_"+std::to_string(i)) == products["nothing"]);
-		constraints.push_back(getVar(var, "initPos_"+std::to_string(i)) == node_names_inverted[team+"-ins-in"]);
+		constraints.push_back(getVar(var, "initHold_"+std::to_string(i)) == world_initHold[i]);
+		constraints.push_back(getVar(var, "initPos_"+std::to_string(i)) == world_initPos[i]);
 	}
 
 	// Specify initial situation for machines
 	for(int i=min_machine_groups; i<max_machine_groups+1; ++i){
-		constraints.push_back(getVar(var, "initInside_"+std::to_string(i)) == 0);
-		constraints.push_back(getVar(var, "initOutside_"+std::to_string(i)) == 0);
+		constraints.push_back(getVar(var, "initInside_"+std::to_string(i)) == world_initInside[i]);
+		constraints.push_back(getVar(var, "initOutside_"+std::to_string(i)) == world_initOutside[i]);
 	}
+
+
+	// Specify positions which are down and therefore not useable
+	z3::expr constraint_world_machine_down(var_true);
+	for(int i=1; i<plan_horizon+1; ++i){
+
+		for(int world_machine_down: world_machines_down) {
+
+			// Distinguish between action 1 which operates on the input side but is still valid even if the corresponding cap station is down and other actions
+			constraint_world_machine_down = constraint_world_machine_down && ( getVar(var, "A_"+std::to_string(i)) == 1 || getVar(var, "pos_"+std::to_string(i)) != world_machine_down);
+		}
+	}
+	constraints.push_back(constraint_world_machine_down);
 
 	// Specify distances between machines
 	for(int k=0; k<amount_machines+1; ++k){
@@ -3073,45 +3076,45 @@ ClipsSmtThread::clips_smt_encoder_window()
 
 		// Constraints stating that a action appeared
 		z3::expr constraint_action_1_appeared(var_false);
-		z3::expr constraint_action_6_appeared(var_false);
 		z3::expr constraint_action_2_appeared(var_false);
 		z3::expr constraint_action_3_appeared(var_false);
+		z3::expr constraint_action_4_appeared(var_false);
 		z3::expr constraint_action_8_appeared(var_false);
 		z3::expr constraint_action_9_appeared(var_false);
 		z3::expr constraint_action_10_appeared(var_false);
 		z3::expr constraint_action_11_appeared(var_false);
 		z3::expr constraint_action_12_appeared(var_false);
 		z3::expr constraint_action_13_appeared(var_false);
-		z3::expr constraint_action_4_appeared(var_false);
 		z3::expr constraint_action_5_appeared(var_false);
+		z3::expr constraint_action_6_appeared(var_false);
 
 		for(int j=1; j<i; ++j){
 			constraint_action_1_appeared = constraint_action_1_appeared || getVar(var, "A_"+std::to_string(j)) == 1;
-			constraint_action_6_appeared = constraint_action_6_appeared || getVar(var, "A_"+std::to_string(j)) == 6;
 			constraint_action_2_appeared = constraint_action_2_appeared || getVar(var, "A_"+std::to_string(j)) == 2;
 			constraint_action_3_appeared = constraint_action_3_appeared || getVar(var, "A_"+std::to_string(j)) == 3;
+			constraint_action_4_appeared = constraint_action_4_appeared || getVar(var, "A_"+std::to_string(j)) == 4;
 			constraint_action_8_appeared = constraint_action_8_appeared || getVar(var, "A_"+std::to_string(j)) == 8;
 			constraint_action_9_appeared = constraint_action_9_appeared || getVar(var, "A_"+std::to_string(j)) == 9;
 			constraint_action_10_appeared = constraint_action_10_appeared || getVar(var, "A_"+std::to_string(j)) == 10;
 			constraint_action_11_appeared = constraint_action_11_appeared || getVar(var, "A_"+std::to_string(j)) == 11;
 			constraint_action_12_appeared = constraint_action_12_appeared || getVar(var, "A_"+std::to_string(j)) == 12;
 			constraint_action_13_appeared = constraint_action_13_appeared || getVar(var, "A_"+std::to_string(j)) == 13;
-			constraint_action_4_appeared = constraint_action_4_appeared || getVar(var, "A_"+std::to_string(j)) == 4;
 			constraint_action_5_appeared = constraint_action_5_appeared || getVar(var, "A_"+std::to_string(j)) == 5;
+			constraint_action_6_appeared = constraint_action_6_appeared || getVar(var, "A_"+std::to_string(j)) == 6;
 		}
 
 		for(unsigned j=0; j<world_all_actions.size(); ++j){
 			if(world_all_actions[j] == 1) {
 				constraint_action_1_appeared = constraint_action_1_appeared || var_true;
 			}
-			else if(world_all_actions[j] == 6) {
-				constraint_action_6_appeared = constraint_action_6_appeared || var_true;
-			}
 			else if(world_all_actions[j] == 2) {
 				constraint_action_2_appeared = constraint_action_2_appeared || var_true;
 			}
 			else if(world_all_actions[j] == 3) {
 				constraint_action_3_appeared = constraint_action_3_appeared || var_true;
+			}
+			else if(world_all_actions[j] == 4) {
+				constraint_action_4_appeared = constraint_action_4_appeared || var_true;
 			}
 			else if(world_all_actions[j] == 8) {
 				constraint_action_8_appeared = constraint_action_8_appeared || var_true;
@@ -3131,20 +3134,20 @@ ClipsSmtThread::clips_smt_encoder_window()
 			else if(world_all_actions[j] == 13) {
 				constraint_action_13_appeared = constraint_action_13_appeared || var_true;
 			}
-			else if(world_all_actions[j] == 4) {
-				constraint_action_4_appeared = constraint_action_4_appeared || var_true;
-			}
 			else if(world_all_actions[j] == 5) {
 				constraint_action_5_appeared = constraint_action_5_appeared || var_true;
 			}
+			else if(world_all_actions[j] == 6) {
+				constraint_action_6_appeared = constraint_action_6_appeared || var_true;
+			}
 		}
 
-		// Onyl consider action 3,7 multiple times if we have an complexity higher than 0
+		// Onyl consider action 4,7 multiple times if we have an complexity higher than 0
 		constraints.push_back(!(constraint_action_1_appeared) || getVar(var, "A_"+std::to_string(i)) != 1);
-		constraints.push_back(!(constraint_action_6_appeared) || getVar(var, "A_"+std::to_string(i)) != 6);
 		constraints.push_back(!(constraint_action_2_appeared) || getVar(var, "A_"+std::to_string(i)) != 2);
+		constraints.push_back(!(constraint_action_3_appeared) || getVar(var, "A_"+std::to_string(i)) != 3);
 		if(!desired_complexity) {
-			constraints.push_back(!(constraint_action_3_appeared) || getVar(var, "A_"+std::to_string(i)) != 3);
+			constraints.push_back(!(constraint_action_4_appeared) || getVar(var, "A_"+std::to_string(i)) != 4);
 		}
 		constraints.push_back(!(constraint_action_8_appeared) || getVar(var, "A_"+std::to_string(i)) != 8);
 		constraints.push_back(!(constraint_action_9_appeared) || getVar(var, "A_"+std::to_string(i)) != 9);
@@ -3152,8 +3155,8 @@ ClipsSmtThread::clips_smt_encoder_window()
 		constraints.push_back(!(constraint_action_11_appeared) || getVar(var, "A_"+std::to_string(i)) != 11);
 		constraints.push_back(!(constraint_action_12_appeared) || getVar(var, "A_"+std::to_string(i)) != 12);
 		constraints.push_back(!(constraint_action_13_appeared) || getVar(var, "A_"+std::to_string(i)) != 13);
-		constraints.push_back(!(constraint_action_4_appeared) || getVar(var, "A_"+std::to_string(i)) != 4);
 		constraints.push_back(!(constraint_action_5_appeared) || getVar(var, "A_"+std::to_string(i)) != 5);
+		constraints.push_back(!(constraint_action_6_appeared) || getVar(var, "A_"+std::to_string(i)) != 6);
 
 		// First step refering to world_points
 		if(i==1){
@@ -3163,7 +3166,6 @@ ClipsSmtThread::clips_smt_encoder_window()
 			constraints.push_back(!( 	getVar(var, "A_1") == 1 ||
 										getVar(var, "A_1") == 2 ||
 										getVar(var, "A_1") == 3 ||
-										getVar(var, "A_1") == 6 ||
 										getVar(var, "A_1") == 9 ||
 										getVar(var, "A_1") == 11 ||
 										getVar(var, "A_1") == 13
@@ -3201,11 +3203,10 @@ ClipsSmtThread::clips_smt_encoder_window()
 			constraints.push_back(!( 	getVar(var, "A_"+std::to_string(i)) == 1 ||
 										getVar(var, "A_"+std::to_string(i)) == 2 ||
 										getVar(var, "A_"+std::to_string(i)) == 3 ||
-										getVar(var, "A_"+std::to_string(i)) == 6 ||
 										getVar(var, "A_"+std::to_string(i)) == 9 ||
 										getVar(var, "A_"+std::to_string(i)) == 11 ||
 										getVar(var, "A_"+std::to_string(i)) == 13
-									) || getVar(var, "rew_"+std::to_string(i)) == points_none + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+									) || getVar(var, "rew_"+std::to_string(i)) == (points_none/i) + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
 			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 4) || getVar(var, "rew_"+std::to_string(i)) == points_get_base + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 7) || getVar(var, "rew_"+std::to_string(i)) == points_additional_base + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
@@ -3369,7 +3370,7 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model)
 	// Extract plan from model
 	for(unsigned i=0; i<model.size(); ++i) {
 		z3::func_decl function = model[i];
-		// std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
+		std::cout << "Model contains [" << function.name() <<"] " << model.get_const_interp(function) << std::endl;
 
 		std::string function_name = function.name().str();
 		z3::expr expr = model.get_const_interp(function);
@@ -3428,16 +3429,8 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model)
 	// std::cout << std::endl;
 
 	for(int j=1; j<plan_horizon+1; ++j){
-		// std::cout << j << "." <<
-		// "\tR-" << model_robots[j] <<
-		// " A" << model_actions[j] <<
-		// " hold[" << model_holdA[j] << "-" << model_holdB[j] << "]" <<
-		// " pos[" << node_names[model_positions[j]] << "]" <<
-		// "\tM" << model_machines[j] <<
-		// " input[" << model_insideA[j] << "-" << model_insideB[j] << "]" <<
-		// " output[" << model_outputA[j] << "-" << model_outputB[j] << "]" <<
-		// " time[" << model_times[j] << "s]" << std::endl;
-		logger->log_info(name(), "%i. R-%i A%i hold[%i-%i] pos[%i] M%i input[%i-%i] output[%i-%i] time[%f]", j, model_robots[j], model_actions[j], model_holdA[j], model_holdB[j], model_positions[j], model_machines[j], model_insideA[j], model_insideB[j], model_outputA[j], model_outputB[j], model_times[j]);
+		logger->log_info(name(), "%i. R-%i A%i hold[%i-%i] pos[%i] M%i input[%i-%i] output[%i-%i] time[%f] rew[%i]", j, model_robots[j], model_actions[j], model_holdA[j], model_holdB[j], model_positions[j], model_machines[j], model_insideA[j], model_insideB[j], model_outputA[j], model_outputB[j], model_times[j], model_rew[j]);
+		world_all_actions.push_back(model_actions[j]);
 	}
 }
 
@@ -3494,26 +3487,26 @@ std::string ClipsSmtThread::getNextShelf()
 
 void ClipsSmtThread::clips_smt_clear_maps()
 {
-	rings.clear();
-	node_names.clear();
-	node_names_inverted.clear();
-	distances.clear();
-	station_colors.clear();
-	base_colors.clear();
-	base_colors_inverted.clear();
-	rings_colors.clear();
-	rings_colors_inverted.clear();
-	cap_colors.clear();
-	cap_colors_inverted.clear();
-	add_bases_description.clear();
-	cap_carrier_colors.clear();
-	rings_req_add_bases.clear();
-	amount_min_req_actions.clear();
-	index_upper_bound_actions.clear();
-	inside_capstation.clear();
-	products.clear();
-	products_inverted.clear();
-	machine_groups.clear();
+	// rings.clear();
+	// node_names.clear();
+	// node_names_inverted.clear();
+	// distances.clear();
+	// station_colors.clear();
+	// base_colors.clear();
+	// base_colors_inverted.clear();
+	// rings_colors.clear();
+	// rings_colors_inverted.clear();
+	// cap_colors.clear();
+	// cap_colors_inverted.clear();
+	// add_bases_description.clear();
+	// cap_carrier_colors.clear();
+	// rings_req_add_bases.clear();
+	// amount_min_req_actions.clear();
+	// index_upper_bound_actions.clear();
+	// inside_capstation.clear();
+	// products.clear();
+	// products_inverted.clear();
+	// machine_groups.clear();
 
 	model_machines.clear();
 	model_times.clear();
@@ -3528,12 +3521,12 @@ void ClipsSmtThread::clips_smt_clear_maps()
 	model_outputB.clear();
 	model_rew.clear();
 
-	world_initHold.clear();
-	world_initPos.clear();
-	world_initInside.clear();
-	world_initOutside.clear();
-	world_all_actions.clear(); // TODO Do we need and if yes, how to fill this map?
-	world_machines_down.clear();
+	// world_initHold.clear();
+	// world_initPos.clear();
+	// world_initInside.clear();
+	// world_initOutside.clear();
+	// world_all_actions.clear(); // TODO Do we need and if yes, how to fill this map?
+	// world_machines_down.clear();
 
-	shelf_position.clear(); // TODO How to keep this information?
+	// shelf_position.clear(); // TODO How to keep this information?
 }
