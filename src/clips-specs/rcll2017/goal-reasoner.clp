@@ -33,6 +33,7 @@
   =>
   (assert (goal (id COMPLEXITY)))
 	(assert (goal-already-tried COMPLEXITY))
+	(assert (production-first COMPLEXITY))
 )
 
 ; sub-goal of the maintenance goal
