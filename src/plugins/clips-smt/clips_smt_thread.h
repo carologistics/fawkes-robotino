@@ -141,7 +141,9 @@ private:
 	std::map<std::string, int> cap_colors;
 	std::map<int, std::string> cap_colors_inverted;
 	std::map<int, std::string> add_bases_description;
+	std::map<std::string, int> add_bases_description_inverted;
 	std::map<std::string, std::string> cap_carrier_colors;
+	int cap_carrier_index;
 	// How many additional bases are required for rings
 	std::map<int, int> rings_req_add_bases;
 
@@ -223,6 +225,7 @@ private:
 	void initShelf();
 	std::string getNextShelf();
 	void clips_smt_clear_maps();
+	int clips_smt_rewrite_product(int base, int ring1, int ring2, int ring3, int cap);
 };
 
 #endif
