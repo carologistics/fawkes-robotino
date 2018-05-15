@@ -259,6 +259,24 @@
 		)
 
 		(pb-set-field ?m "cs_buffered" ?cs_buffered)
+
+		; set spec of cs
+		(do-for-all-facts ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact wp-on-shelf))
+				(eq ?name (wm-key-arg ?wm-fact:key m))
+			)
+
+			(do-for-fact ((?wm-fact2 wm-fact))
+				(and
+					(wm-key-prefix ?wm-fact2:key (create$ domain fact wp-cap-color))
+					(eq (wm-key-arg ?wm-fact:key wp) (wm-key-arg ?wm-fact2:key wp))
+				)
+
+				(pb-set-field ?m "cap_color" (wm-key-arg ?wm-fact2:key col))
+			)
+
+		)
 	)
 
 	; Add information for machine with wp-at
@@ -498,7 +516,7 @@
 	(do-for-fact ((?wm-fact wm-fact))
 		(and
 			(wm-key-prefix ?wm-fact:key (create$ domain fact order-complexity))
-			(eq C3 (wm-key-arg ?wm-fact:key com)) ; Desiered complexity is set here
+			(eq C0 (wm-key-arg ?wm-fact:key com)) ; Desiered complexity is set here
 		)
 
 		(do-for-fact ((?wm-fact2 wm-fact))
@@ -583,7 +601,7 @@
 			(smt-create-orders ?team-color)
 			(smt-create-rings ?team-color)
 			1 ; Strategy set here, 0 means MACRO and 1 WINDOW
-			2 ; Window size for strategy WINDOW
+			5 ; Window size for strategy WINDOW
 	  )
 	)
 
