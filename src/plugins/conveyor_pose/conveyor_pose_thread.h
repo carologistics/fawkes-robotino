@@ -115,8 +115,6 @@ private:
   std::string conveyor_frame_id_;
   std::vector<std::string> laserlines_names_;
 
-  std::atomic_bool icp_cancelled_;
-
   CloudPtr default_model_;
   CloudPtr aligned_model_;
   CloudPtr trimmed_scene_;
@@ -167,8 +165,16 @@ private:
   std::atomic<float> cfg_right_cut_no_ll_;
 
   std::atomic<float> cfg_icp_max_corr_dist_;
+  std::atomic<double> cfg_icp_tf_epsilon_;
+  std::atomic<double> cfg_icp_refinement_factor_;
   std::array<std::atomic<float>, 3> cfg_icp_conveyor_hint_;
-  std::atomic<double> cfg_icp_track_odom_min_fitness_;
+  std::atomic<int> cfg_icp_max_iterations_;
+  std::atomic<float> cfg_icp_hv_penalty_thresh_;
+  std::atomic<float> cfg_icp_hv_support_thresh_;
+  std::atomic<float> cfg_icp_hv_inlier_thresh_;
+  std::atomic<unsigned int> cfg_icp_min_loops_;
+  std::atomic<unsigned int> cfg_icp_max_loops_;
+  std::atomic_bool cfg_icp_auto_restart_;
 
   std::atomic<float> cfg_voxel_grid_leaf_size_;
   //std::map<std::string, std::array<std::atomic<float>, 3> > cfg_hint_;
