@@ -104,7 +104,7 @@ private:
 	z3::context _z3_context;
 	z3::expr_vector clips_smt_encoder();
 	z3::expr_vector clips_smt_encoder_window();
-	void clips_smt_solve_formula(z3::expr_vector formula);
+	bool clips_smt_solve_formula(z3::expr_vector formula);
 	void clips_smt_optimize_formula(z3::expr_vector formula, std::string var);
 	void clips_smt_extract_plan_from_model(z3::model model);
 
@@ -149,6 +149,7 @@ private:
 
 	// PlanHorizon
 	int plan_horizon;
+	int plan_horizon_max;
 	std::vector<int> amount_min_req_actions; // 6,8,10,12
 	std::vector<int> index_upper_bound_actions; // 6,9,11,13
 	int amount_req_actions_add_bases; // 2
