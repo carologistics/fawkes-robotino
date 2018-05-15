@@ -83,6 +83,16 @@ ConveyorPoseThread::init()
   conveyor_frame_id_          = config->get_string( CFG_PREFIX "/conveyor_frame_id" );
 
   cfg_icp_max_corr_dist_      = config->get_float( CFG_PREFIX "/icp/max_correspondence_dist" );
+  cfg_icp_max_iterations_     = config->get_int( CFG_PREFIX "/icp/max_iterations" );
+  cfg_icp_refinement_factor_  = double(config->get_float( CFG_PREFIX "/icp/refinement_factor" ));
+  cfg_icp_tf_epsilon_         = double(config->get_float( CFG_PREFIX "/icp/transformation_epsilon" ));
+  cfg_icp_min_loops_          = config->get_uint( CFG_PREFIX "/icp/min_loops" );
+  cfg_icp_max_loops_          = config->get_uint( CFG_PREFIX "/icp/max_loops" );
+  cfg_icp_auto_restart_       = config->get_bool( CFG_PREFIX "/icp/auto_restart" );
+
+  cfg_icp_hv_inlier_thresh_   = config->get_float( CFG_PREFIX "/icp/hv_inlier_threshold" );
+  cfg_icp_hv_penalty_thresh_  = config->get_float( CFG_PREFIX "/icp/hv_penalty_threshold" );
+  cfg_icp_hv_support_thresh_  = config->get_float( CFG_PREFIX "/icp/hv_support_threshold" );
 
   // Init of station target hints
   cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR];
@@ -181,8 +191,6 @@ ConveyorPoseThread::init()
   cfg_hint_["default"][1] = 0;
   cfg_hint_["default"][2] = 0;
   */
-
-  cfg_icp_track_odom_min_fitness_ = double(config->get_float( CFG_PREFIX "/icp/track_odom_min_fitness" ));
 
   cfg_enable_switch_          = config->get_bool( CFG_PREFIX "/switch_default" );
 
@@ -457,7 +465,10 @@ ConveyorPoseThread::loop()
     return;
   }
 
-  if (bb_enable_switch_->is_enabled() && update_input_cloud()) {
+  if (!bb_enable_switch_->is_enabled()) {
+    recognition_thread_->enabled_ = false;
+  }
+  else if (update_input_cloud()) {
     fawkes::LaserLineInterface * ll = NULL;
     have_laser_line_ = laserline_get_best_fit( ll );
 
@@ -545,15 +556,16 @@ ConveyorPoseThread::loop()
           pcl::copyPointCloud(*trimmed_scene_, *scene_with_normals_);
           scene_with_normals_->header = trimmed_scene_->header;
 
-          icp_cancelled_ = false;
-          recognition_thread_->wakeup();
+          recognition_thread_->enabled_ = true;
+          recognition_thread_->wait_enabled_.wake_all();
+
         } catch (std::exception &e) {
           logger->log_error(name(), "Exception preprocessing point clouds: %s", e.what());
         }
         cloud_mutex_.unlock();
-      }
-    }
-  }
+      } // cloud_mutex_.try_lock()
+    } // ! cfg_record_model_
+  } // update_input_cloud()
 }
 
 //TODO: Change cfg_hint_
@@ -665,7 +677,6 @@ ConveyorPoseThread::update_station_information(ConveyorPoseInterface::MPS_TYPE m
       current_mps_type_ = mps_type;
       current_mps_target_ = mps_target;
 
-      icp_cancelled_ = true;
       //bb_pose_->set_current_station(station.c_str());
       bb_pose_->set_current_mps_type(mps_type);
       bb_pose_->set_current_mps_target(mps_target);
@@ -673,7 +684,7 @@ ConveyorPoseThread::update_station_information(ConveyorPoseInterface::MPS_TYPE m
       bb_pose_->set_euclidean_fitness(result_fitness_);
       bb_pose_->write();
 
-      recognition_thread_->initial_guess_tracked_fitness_ = std::numeric_limits<double>::min();
+      recognition_thread_->enabled_ = false;
       result_fitness_ = std::numeric_limits<double>::min();
 
     }
@@ -700,14 +711,14 @@ ConveyorPoseThread::set_current_station(const std::string &station)
       model_with_normals_ = map_it->second;
       current_station_ = station;
 
-      icp_cancelled_ = true;
+      // Disable/stop recognition thread. It gets re-enabled with the next ConveyorPoseThread::loop()
+      // if the switch interface is still enabled.
+      recognition_thread_->enabled_ = false;
+
       bb_pose_->set_current_station(station.c_str());
       result_fitness_ = std::numeric_limits<double>::min();
       bb_pose_->set_euclidean_fitness(result_fitness_);
       bb_pose_->write();
-
-      recognition_thread_->initial_guess_tracked_fitness_ = std::numeric_limits<double>::min();
-      result_fitness_ = std::numeric_limits<double>::min();
     }
   }
 }
@@ -716,7 +727,7 @@ ConveyorPoseThread::set_current_station(const std::string &station)
 bool
 ConveyorPoseThread::update_input_cloud()
 {
-  if (pcl_manager->exists_pointcloud(cloud_in_name_.c_str())) {                // does the pc exists
+  if (pcl_manager->exists_pointcloud(cloud_in_name_.c_str())) {
     if ( ! cloud_in_registered_) {                                             // do I already have this pc
       cloud_in_ = pcl_manager->get_pointcloud<Point>(cloud_in_name_.c_str());
       if (cloud_in_->points.size() > 0) {
@@ -749,13 +760,9 @@ ConveyorPoseThread::bb_update_switch()
       logger->log_info(name(),"Received DisableSwitchMessage");
       rv = false;
       { MutexLocker locked(&bb_mutex_);
-        icp_cancelled_ = true;
         result_fitness_ = std::numeric_limits<double>::min();
         bb_pose_->set_euclidean_fitness(result_fitness_);
         bb_pose_->write();
-      }
-      { MutexLocker locked { &cloud_mutex_ };
-        recognition_thread_->initial_guess_tracked_fitness_ = std::numeric_limits<double>::min();
       }
     } else if (bb_enable_switch_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
       logger->log_info(name(),"Received EnableSwitchMessage");
@@ -1063,8 +1070,25 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
     } else if (sub_prefix == "/icp") {
       if (opt == "/max_correspondence_dist")
         change_val(opt, cfg_icp_max_corr_dist_, v->get_float());
-      else if (opt == "/track_odom_min_fitness")
-        change_val(opt, cfg_icp_track_odom_min_fitness_, double(v->get_float())); //TODO: update config names
+      else if (opt == "/transformation_epsilon")
+        change_val(opt, cfg_icp_tf_epsilon_, double(v->get_float()));
+      else if (opt == "/refinement_factor")
+        change_val(opt, cfg_icp_refinement_factor_, double(v->get_float()));
+      else if (opt == "/max_iterations")
+        change_val(opt, cfg_icp_max_iterations_, v->get_int());
+      else if (opt == "/hv_penalty_threshold")
+        change_val(opt, cfg_icp_hv_penalty_thresh_, v->get_float());
+      else if (opt == "/hv_support_threshold")
+        change_val(opt, cfg_icp_hv_support_thresh_, v->get_float());
+      else if (opt == "/hv_inlier_threshold")
+        change_val(opt, cfg_icp_hv_inlier_thresh_, v->get_float());
+      else if (opt == "/min_loops")
+        change_val(opt, cfg_icp_min_loops_, v->get_uint());
+      else if (opt == "/max_loops")
+        change_val(opt, cfg_icp_max_loops_, v->get_uint());
+      else if (opt == "/auto_restart")
+        change_val(opt, cfg_icp_auto_restart_, v->get_bool());
+
       else if (opt == "/hint/conveyor/x")
       {
         change_val(opt, cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][0], v->get_float());
@@ -1141,7 +1165,7 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         change_val(opt, cfg_type_hint_[ConveyorPoseInterface::STORAGE_STATION][2], v->get_float());
     }
     MutexLocker locked2 { &cloud_mutex_ };
-    recognition_thread_->initial_guess_tracked_fitness_ = std::numeric_limits<double>::min();
+    recognition_thread_->enabled_ = false;
   }
 }
 
