@@ -1498,6 +1498,7 @@ ClipsSmtThread::loop()
 	// Strategy MACRO
 	if(!data.strategy()){
 		clips_smt_init_post();
+		logger->log_info(name(), "Plan_horizon for macro approach is set to %i", plan_horizon);
 
 		// Declare formulas for encoding
 		z3::expr_vector formula = clips_smt_encoder();
@@ -1507,7 +1508,8 @@ ClipsSmtThread::loop()
 	}
 	// Strategy WINDOW
 	else {
-		plan_horizon = 5;
+		plan_horizon = data.window();
+		logger->log_info(name(), "Plan_horizon for window approach is set to %i", plan_horizon);
 
 		// Declare formulas for encoding
 		z3::expr_vector formula = clips_smt_encoder_window();
@@ -2441,7 +2443,7 @@ ClipsSmtThread::clips_smt_encoder()
 z3::expr_vector
 ClipsSmtThread::clips_smt_encoder_window()
 {
-	logger->log_info(name(), "clips_smt_encoder");
+	logger->log_info(name(), "clips_smt_encoder_window");
 
 	/*
 	 * PRECOMPUTATION
@@ -2733,50 +2735,50 @@ ClipsSmtThread::clips_smt_encoder_window()
 		z3::expr constraint_dependency12(var_false);
 		z3::expr constraint_dependency13(var_false);
 
-		for(unsigned j=0; j<world_all_actions.size(); ++j){
-			switch(world_all_actions[j]) {
-				case 1: constraint_dependency1 = constraint_dependency1 || var_true;
-						break;
+		// for(unsigned j=0; j<world_all_actions.size(); ++j){
+		//     switch(world_all_actions[j]) {
+		//         case 1: constraint_dependency1 = constraint_dependency1 || var_true;
+		//                 break;
 
-				case 2: constraint_dependency2 = constraint_dependency2 || var_true;
-						break;
+		//         case 2: constraint_dependency2 = constraint_dependency2 || var_true;
+		//                 break;
 
-				case 3: constraint_dependency3 = constraint_dependency3 || var_true;
-						break;
+		//         case 3: constraint_dependency3 = constraint_dependency3 || var_true;
+		//                 break;
 
-				case 4: constraint_dependency4 = constraint_dependency4 || var_true;
-						break;
+		//         case 4: constraint_dependency4 = constraint_dependency4 || var_true;
+		//                 break;
 
-				case 5: constraint_dependency5 = constraint_dependency5 || var_true;
-						break;
+		//         case 5: constraint_dependency5 = constraint_dependency5 || var_true;
+		//                 break;
 
-				case 6: constraint_dependency6 = constraint_dependency6 || var_true;
-						break;
+		//         case 6: constraint_dependency6 = constraint_dependency6 || var_true;
+		//                 break;
 
-				case 7: constraint_dependency7 = constraint_dependency7 || var_true;
-						break;
+		//         case 7: constraint_dependency7 = constraint_dependency7 || var_true;
+		//                 break;
 
-				case 8: constraint_dependency8 = constraint_dependency8 || var_true;
-						break;
+		//         case 8: constraint_dependency8 = constraint_dependency8 || var_true;
+		//                 break;
 
-				case 9: constraint_dependency9 = constraint_dependency9 || var_true;
-						break;
+		//         case 9: constraint_dependency9 = constraint_dependency9 || var_true;
+		//                 break;
 
-				case 10: constraint_dependency10 = constraint_dependency10 || var_true;
-						break;
+		//         case 10: constraint_dependency10 = constraint_dependency10 || var_true;
+		//                 break;
 
-				case 11: constraint_dependency11 = constraint_dependency11 || var_true;
-						break;
+		//         case 11: constraint_dependency11 = constraint_dependency11 || var_true;
+		//                 break;
 
-				case 12: constraint_dependency12 = constraint_dependency12 || var_true;
-						break;
+		//         case 12: constraint_dependency12 = constraint_dependency12 || var_true;
+		//                 break;
 
-				case 13: constraint_dependency13 = constraint_dependency13 || var_true;
-						break;
+		//         case 13: constraint_dependency13 = constraint_dependency13 || var_true;
+		//                 break;
 
-				default: break;
-			}
-		}
+		//         default: break;
+		//     }
+		// }
 
 		for(int j=1; j<i; ++j) {
 			constraint_dependency1 = constraint_dependency1 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 1);
@@ -3145,44 +3147,44 @@ ClipsSmtThread::clips_smt_encoder_window()
 			constraint_action_6_appeared = constraint_action_6_appeared || getVar(var, "A_"+std::to_string(j)) == 6;
 		}
 
-		for(unsigned j=0; j<world_all_actions.size(); ++j){
-			if(world_all_actions[j] == 1) {
-				constraint_action_1_appeared = constraint_action_1_appeared || var_true;
-			}
-			else if(world_all_actions[j] == 2) {
-				constraint_action_2_appeared = constraint_action_2_appeared || var_true;
-			}
-			else if(world_all_actions[j] == 3) {
-				constraint_action_3_appeared = constraint_action_3_appeared || var_true;
-			}
-			else if(world_all_actions[j] == 4) {
-				constraint_action_4_appeared = constraint_action_4_appeared || var_true;
-			}
-			else if(world_all_actions[j] == 8) {
-				constraint_action_8_appeared = constraint_action_8_appeared || var_true;
-			}
-			else if(world_all_actions[j] == 9) {
-				constraint_action_9_appeared = constraint_action_9_appeared || var_true;
-			}
-			else if(world_all_actions[j] == 10) {
-				constraint_action_10_appeared = constraint_action_10_appeared || var_true;
-			}
-			else if(world_all_actions[j] == 11) {
-				constraint_action_11_appeared = constraint_action_11_appeared || var_true;
-			}
-			else if(world_all_actions[j] == 12) {
-				constraint_action_12_appeared = constraint_action_12_appeared || var_true;
-			}
-			else if(world_all_actions[j] == 13) {
-				constraint_action_13_appeared = constraint_action_13_appeared || var_true;
-			}
-			else if(world_all_actions[j] == 5) {
-				constraint_action_5_appeared = constraint_action_5_appeared || var_true;
-			}
-			else if(world_all_actions[j] == 6) {
-				constraint_action_6_appeared = constraint_action_6_appeared || var_true;
-			}
-		}
+		// for(unsigned j=0; j<world_all_actions.size(); ++j){
+		//     if(world_all_actions[j] == 1) {
+		//         constraint_action_1_appeared = constraint_action_1_appeared || var_true;
+		//     }
+		//     else if(world_all_actions[j] == 2) {
+		//         constraint_action_2_appeared = constraint_action_2_appeared || var_true;
+		//     }
+		//     else if(world_all_actions[j] == 3) {
+		//         constraint_action_3_appeared = constraint_action_3_appeared || var_true;
+		//     }
+		//     else if(world_all_actions[j] == 4) {
+		//         constraint_action_4_appeared = constraint_action_4_appeared || var_true;
+		//     }
+		//     else if(world_all_actions[j] == 8) {
+		//         constraint_action_8_appeared = constraint_action_8_appeared || var_true;
+		//     }
+		//     else if(world_all_actions[j] == 9) {
+		//         constraint_action_9_appeared = constraint_action_9_appeared || var_true;
+		//     }
+		//     else if(world_all_actions[j] == 10) {
+		//         constraint_action_10_appeared = constraint_action_10_appeared || var_true;
+		//     }
+		//     else if(world_all_actions[j] == 11) {
+		//         constraint_action_11_appeared = constraint_action_11_appeared || var_true;
+		//     }
+		//     else if(world_all_actions[j] == 12) {
+		//         constraint_action_12_appeared = constraint_action_12_appeared || var_true;
+		//     }
+		//     else if(world_all_actions[j] == 13) {
+		//         constraint_action_13_appeared = constraint_action_13_appeared || var_true;
+		//     }
+		//     else if(world_all_actions[j] == 5) {
+		//         constraint_action_5_appeared = constraint_action_5_appeared || var_true;
+		//     }
+		//     else if(world_all_actions[j] == 6) {
+		//         constraint_action_6_appeared = constraint_action_6_appeared || var_true;
+		//     }
+		// }
 
 		// Onyl consider action 4,7 multiple times if we have an complexity higher than 0
 		constraints.push_back(!(constraint_action_1_appeared) || getVar(var, "A_"+std::to_string(i)) != 1);
@@ -3467,7 +3469,7 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model)
 
 	for(int j=1; j<plan_horizon+1; ++j){
 		logger->log_info(name(), "%i. R-%i A%i hold[%i-%i] pos[%i] M%i input[%i-%i] output[%i-%i] time[%f] rew[%i]", j, model_robots[j], model_actions[j], model_holdA[j], model_holdB[j], model_positions[j], model_machines[j], model_insideA[j], model_insideB[j], model_outputA[j], model_outputB[j], model_times[j], model_rew[j]);
-		world_all_actions.push_back(model_actions[j]);
+		// world_all_actions.push_back(model_actions[j]);
 	}
 }
 
@@ -3543,6 +3545,7 @@ void ClipsSmtThread::clips_smt_clear_maps()
 	model_insideB.clear();
 	model_outputB.clear();
 	model_rew.clear();
+	world_all_actions.clear();
 }
 
 int ClipsSmtThread::clips_smt_rewrite_product(int base, int ring1, int ring2, int ring3, int cap)
