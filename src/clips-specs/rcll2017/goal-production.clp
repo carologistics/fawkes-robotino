@@ -724,7 +724,7 @@
   (modify ?g (mode EVALUATED))
 )
 
-(defrule goal-reasoner-evaluate-completed-subgoals-produce-c0-&-mount-first ring
+(defrule goal-reasoner-evaluate-completed-subgoals-produce-c0--mount-first-ring
   "Bind a WP to a and order on complition of the goals that dispense the base for production"
   ?g <- (goal (id PRODUCE-C0|MOUNT-FIRST-RING)
               (parent ?parent-id)
