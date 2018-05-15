@@ -13,7 +13,7 @@
 ;---------------------------------------------------------------------------
 
 ; High level pb strucutre collecting data the plugin needs
-(deffunction smt-create-data (?robots ?machines ?orders ?rings ?strategy)
+(deffunction smt-create-data (?robots ?machines ?orders ?rings ?strategy ?window)
 	(bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
 
 	(foreach ?r ?robots
@@ -29,6 +29,7 @@
 		(pb-add-list ?p "rings" ?ring)
 	)
 	(pb-set-field ?p "strategy" ?strategy)
+	(pb-set-field ?p "window" ?window)
 
 	(printout t "Proto:" (pb-tostring ?p) crlf)
 	(return ?p)
@@ -581,7 +582,8 @@
 			(smt-create-machines ?team-color)
 			(smt-create-orders ?team-color)
 			(smt-create-rings ?team-color)
-			0
+			1 ; Strategy set here, 0 means MACRO and 1 WINDOW
+			5 ; Window size for strategy WINDOW
 	  )
 	)
 
@@ -1012,7 +1014,7 @@
 
 	(retract ?spc)
 	; Create instance of plan
-	(bind ?plan-id SMT-PLAN) ; TODO combine with random id number
+	(bind ?plan-id (string-to-field (str-cat SMT-PLAN (gensym)) ) )
 	(assert
 		(plan (id ?plan-id) (goal-id ?goal-id))
 	)
