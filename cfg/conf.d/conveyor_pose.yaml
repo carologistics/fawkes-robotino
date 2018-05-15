@@ -6,12 +6,13 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
 plugins/conveyor_pose:
   # sets the debug mode within the plugin, which eases the debugging,
   # which results in the following:
-  # - the switch if is ignored, the plugin i running always
+  # - the switch if is ignored, the plugin is always running
   debug: false
-  # the point cloud that is used to detect the belt
+
+  # the point cloud that is used for detection (i.e. the scene)
   cloud_in: "/camera/depth/points"
 
-  # Write trimmed point cloud into model_file (see options below for file name and
+  # Write trimmed scene cloud into model_file (see options below for file name and
   # trimming parameters)
   # This completely changes the mode of operation to just record pointclouds,
   # no recognition is done when this is enabled.
@@ -68,7 +69,60 @@ plugins/conveyor_pose:
     M-SS-O:  "conveyor_pcls/no_cone.pcd"
     C-SS-I:  "conveyor_pcls/no_cone.pcd"
     C-SS-O:  "conveyor_pcls/no_cone.pcd"
+
+  voxel_grid:
+    # Downsample all point clouds to this resolution
+    leaf_size: 0.001
+
   icp:
+    # Recognition parameters
+
+    # Ignore model point if it doesn't have a scene correspondence within this radius
+    # ATTENTION: this is very sensitive to the error of the initial estimate!
+    max_correspondence_dist: 0.01
+
+    # ICP stops iterating if the last transformation was shorter than this distance.
+    # If this value is reached, max_correspondence_dist is multiplied by refinement_factor.
+    transformation_epsilon: 0.001
+
+    # Multiply max_correspondence_dist by this factor if transformation_epsilon was reached.
+    # This is needed to be able to ignore model points that are invisible in the scene due to
+    # self-occlusion.
+    # Range: (0,1)
+    refinement_factor: 0.85
+
+    # Maximum number of (internal!) ICP iterations per recognition loop
+    max_iterations: 2
+
+    # Minimum number of recognition loops before the first hypothesis verification is performed
+    min_loops: 5
+
+    # Maximum number of recognition loops before either stopping or restarting with a new scene
+    max_loops: 30
+
+    # Restart with a new scene when max_loops have been run, even if a match has been found
+    # (i.e. run until the whole plugin is disable via the switch interface)
+    # If false, the recognition loop stops if a match has been found within max_loops.
+    auto_restart: false
+
+
+    # Hypothesis Verification
+
+    # Model points that have scene points within this radius are considered supported.
+    # Those that have none are penalized. See the support/penalty thresholds below.
+    # Pay attention to the voxel_grid/leaf_size value above. The closer this gets to the
+    # leaf size (i.e. the cloud resolution), the unlikelier it is to match anything.
+    hv_inlier_threshold: 0.002
+
+    # Max. proportion of penalized model points for a match
+    hv_penalty_threshold: 0.1
+
+    # Min. proportion of supported model points for a match
+    hv_support_threshold: 0.4
+
+
+    # Offset of interesting objects relative to the center of the laser line
+
     hint:
       conveyor:
         x: 0.015
@@ -90,6 +144,9 @@ plugins/conveyor_pose:
         x: -0.01
         y: -0.32
         z: 0.6
+    
+    
+    # Station-specific offset added to the hints configured above
     mps_type_offset:
       cap_station:
         y: -0.025
@@ -101,11 +158,6 @@ plugins/conveyor_pose:
         y: -0.025
       storage_station:
         y: -0.025
-
-    max_correspondence_dist: 0.01
-
-    # Prefer last ICP result over laser line for initial guess if fitness is above this threshold
-    track_odom_min_fitness: 8
 
   if:
     # the prefix used for all interfaces
@@ -146,5 +198,5 @@ plugins/conveyor_pose:
     right_cut: 0.1
     left_cut_no_ll: 0.1
     right_cut_no_ll: 0.1
-  voxel_grid:
-    leaf_size: 0.001
+
+

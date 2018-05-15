@@ -24,17 +24,13 @@ double CustomICP::getScaledFitness()
 
 
 RecognitionThread::RecognitionThread(ConveyorPoseThread *cp_thread)
-  : Thread("CorrespondenceGrouping", Thread::OPMODE_WAITFORWAKEUP)
+  : Thread("CorrespondenceGrouping", Thread::OPMODE_CONTINUOUS)
   , TransformAspect(fawkes::TransformAspect::BOTH, "conveyor_pose_initial_guess")
   , main_thread_(cp_thread)
-  , initial_guess_tracked_fitness_(std::numeric_limits<double>::min())
+  , enabled_(false)
 {
-  // Enable finalization while blocked in loop()
+  // Allow finalization while loop() is blocked
   set_prepfin_conc_loop(true);
-
-  // This thread is expected to be slow, so the main thread might try to wake it up more
-  // than once before the loop() is done.
-  set_coalesce_wakeups(true);
 }
 
 
@@ -43,36 +39,35 @@ void RecognitionThread::init()
 }
 
 
-
-void RecognitionThread::loop()
+void RecognitionThread::restart_icp()
 {
-  pcl::PointCloud<pcl::PointNormal>::Ptr model_with_normals(new pcl::PointCloud<pcl::PointNormal>());
-  pcl::PointCloud<pcl::PointNormal>::Ptr scene_with_normals(new pcl::PointCloud<pcl::PointNormal>());
-  Eigen::Matrix4f initial_tf;
+  logger->log_info(name(), "Restarting ICP");
+
+  model_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
+  scene_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
   tf::Stamped<tf::Pose> initial_pose_cam;
 
   { fawkes::MutexLocker locked { &main_thread_->cloud_mutex_ };
 
     std::vector<int> tmp;
-    pcl::removeNaNNormalsFromPointCloud(*main_thread_->model_with_normals_, *model_with_normals, tmp);
-    pcl::removeNaNFromPointCloud(*model_with_normals, *model_with_normals, tmp);
-    pcl::removeNaNNormalsFromPointCloud(*main_thread_->scene_with_normals_, *scene_with_normals, tmp);
-    pcl::removeNaNFromPointCloud(*scene_with_normals, *scene_with_normals, tmp);
-    scene_with_normals->header = main_thread_->scene_with_normals_->header;
+    pcl::removeNaNNormalsFromPointCloud(*main_thread_->model_with_normals_, *model_with_normals_, tmp);
+    pcl::removeNaNFromPointCloud(*model_with_normals_, *model_with_normals_, tmp);
+    pcl::removeNaNNormalsFromPointCloud(*main_thread_->scene_with_normals_, *scene_with_normals_, tmp);
+    pcl::removeNaNFromPointCloud(*scene_with_normals_, *scene_with_normals_, tmp);
+    scene_with_normals_->header = main_thread_->scene_with_normals_->header;
 
     try {
-      if (initial_guess_tracked_fitness_ >= main_thread_->cfg_icp_track_odom_min_fitness_
-          || ( !main_thread_->have_laser_line_
-               && initial_guess_tracked_fitness_ >= main_thread_->cfg_icp_track_odom_min_fitness_ / 2) ) {
+      if (!main_thread_->have_laser_line_)
+      {
         tf_listener->transform_pose(
-              scene_with_normals->header.frame_id,
+              scene_with_normals_->header.frame_id,
               tf::Stamped<tf::Pose>(initial_guess_icp_odom_, Time(0,0), initial_guess_icp_odom_.frame_id),
               initial_pose_cam);
       }
       else {
         if (main_thread_->have_laser_line_)
           tf_listener->transform_pose(
-                scene_with_normals->header.frame_id,
+                scene_with_normals_->header.frame_id,
                 tf::Stamped<tf::Pose>(main_thread_->initial_guess_laser_odom_, Time(0,0),
                                       main_thread_->initial_guess_laser_odom_.frame_id),
                 initial_pose_cam);
@@ -87,94 +82,138 @@ void RecognitionThread::loop()
     }
   }
 
-  initial_tf = pose_to_eigen(initial_pose_cam);
+  hypot_verif_.setSceneCloud(scene_with_normals_);
+  hypot_verif_.setResolution(main_thread_->cfg_voxel_grid_leaf_size_);
+  hypot_verif_.setInlierThreshold(main_thread_->cfg_voxel_grid_leaf_size_);
+  hypot_verif_.setPenaltyThreshold(main_thread_->cfg_icp_hv_penalty_thresh_);
+  hypot_verif_.setSupportThreshold(main_thread_->cfg_icp_hv_support_thresh_);
+
+  initial_tf_ = pose_to_eigen(initial_pose_cam);
 
   tf_publisher->send_transform(
         tf::StampedTransform(
           initial_pose_cam, initial_pose_cam.stamp,
           initial_pose_cam.frame_id, "conveyor_pose_initial_guess"));
 
+  icp_result_.reset(new pcl::PointCloud<pcl::PointNormal>());
+
   MyPointRepresentation point_representation;
   // weigh the 'curvature' dimension so that it is balanced against x, y, and z
   float alpha[4] = {1.0, 1.0, 1.0, 1.0};
-  point_representation.setRescaleValues (alpha);
+  point_representation.setRescaleValues(alpha);
+  icp_.setPointRepresentation(boost::make_shared<const MyPointRepresentation>(point_representation));
 
-  // Align
-  CustomICP reg;
-  reg.setTransformationEpsilon (1e-6);
-  reg.setMaxCorrespondenceDistance (double(main_thread_->cfg_icp_max_corr_dist_));
-  reg.setPointRepresentation (boost::make_shared<const MyPointRepresentation> (point_representation));
+  // Set tunables
+  icp_.setTransformationEpsilon(std::pow(main_thread_->cfg_icp_tf_epsilon_, 2));
+  icp_.setMaxCorrespondenceDistance(double(main_thread_->cfg_icp_max_corr_dist_));
+  icp_.setInputTarget(scene_with_normals_);
+  icp_.setMaximumIterations(main_thread_->cfg_icp_max_iterations_);
 
-  reg.setInputTarget (scene_with_normals);
+  // Run first alignment with initial estimate
+  icp_.setInputSource(model_with_normals_);
+  icp_.align(*icp_result_, initial_tf_);
+  final_tf_ = icp_.getFinalTransformation();
 
-  // Run the same optimization in a loop and visualize the results
-  Eigen::Matrix4f Ti(Eigen::Matrix4f::Identity());
-  Eigen::Matrix4f prev;
-  reg.setMaximumIterations (2);
+  iterations_ = 0;
+  last_raw_fitness_ = std::numeric_limits<double>::max();
+}
 
-  pcl::PointCloud<pcl::PointNormal>::Ptr reg_result(new pcl::PointCloud<pcl::PointNormal>());
 
-  reg.setInputSource (model_with_normals);
-  reg.align (*reg_result, initial_tf);
+void RecognitionThread::loop()
+{
+  if (!enabled_) {
+    logger->log_info(name(), "ICP stopped");
 
-  for (int i = 0; i < 30; ++i) {
-    model_with_normals = reg_result;
+    while (!enabled_)
+      wait_enabled_.wait();
 
-    // Estimate
-    reg.setInputSource (model_with_normals);
-    reg.align (*reg_result);
+    restart_icp();
+  }
 
-    //accumulate transformation between each Iteration
-    Ti = reg.getFinalTransformation () * Ti;
+  if (!enabled_) // cancel if disabled from ConveyorPoseThread
+    return;
 
-    //if the difference between this transformation and the previous one
-    //is smaller than the threshold, refine the process by reducing
-    //the maximal correspondence distance
-    if (std::abs((reg.getLastIncrementalTransformation() - prev).sum()) < reg.getTransformationEpsilon())
-      reg.setMaxCorrespondenceDistance (reg.getMaxCorrespondenceDistance () * 0.8);
+  icp_.setInputSource(icp_result_);
+  icp_.align(*icp_result_);
 
-    prev = reg.getLastIncrementalTransformation ();
+  //accumulate transformation between each Iteration
+  final_tf_ = icp_.getFinalTransformation() * final_tf_;
 
-    if (main_thread_->icp_cancelled_) {
-      logger->log_info(name(), "ICP cancelled at iteration #%d", i);
-      return;
+  if (!enabled_) // cancel if disabled from ConveyorPoseThread
+    return;
+
+  if (iterations_++ >= main_thread_->cfg_icp_min_loops_) {
+
+    // Perform hypothesis verification
+    std::vector<pcl::PointCloud<pcl::PointNormal>::ConstPtr> icp_result_vector { icp_result_ };
+    hypot_verif_.addModels(icp_result_vector);
+    hypot_verif_.verify();
+    std::vector<bool> hypot_mask;
+    hypot_verif_.getMask(hypot_mask);
+
+    if (hypot_mask[0] && icp_.getFitnessScore() < last_raw_fitness_) {
+      // Match improved
+      last_raw_fitness_ = icp_.getFitnessScore();
+      publish_result();
+    }
+
+    if (iterations_ >= main_thread_->cfg_icp_max_loops_) {
+      if (last_raw_fitness_ >= std::numeric_limits<double>::max() - 1) {
+        logger->log_warn(name(), "No acceptable fit after %u iterations", iterations_);
+        restart_icp();
+      }
+      else {
+        if (main_thread_->cfg_icp_auto_restart_)
+          restart_icp();
+        else
+          enabled_ = false;
+      }
     }
   }
 
+  //if the difference between this transformation and the previous one
+  //is smaller than the threshold, refine the process by reducing
+  //the maximal correspondence distance
+  if (double(std::abs((icp_.getLastIncrementalTransformation() - prev_last_tf_).sum())) < icp_.getTransformationEpsilon()) {
+    icp_.setMaxCorrespondenceDistance(icp_.getMaxCorrespondenceDistance () * main_thread_->cfg_icp_refinement_factor_);
+  }
+
+  prev_last_tf_ = icp_.getLastIncrementalTransformation();
+}
+
+
+void RecognitionThread::publish_result()
+{
   CloudPtr aligned_model(new Cloud());
-  pcl::copyPointCloud(*reg_result, *aligned_model);
+  pcl::copyPointCloud(*icp_result_, *aligned_model);
   main_thread_->cloud_publish(aligned_model, main_thread_->cloud_out_model_);
 
   tf::Stamped<tf::Pose> result_pose {
-    eigen_to_pose(Ti * initial_tf),
-    Time { long(scene_with_normals->header.stamp) / 1000 },
-    scene_with_normals->header.frame_id
+    eigen_to_pose(final_tf_),
+    Time { long(scene_with_normals_->header.stamp) / 1000 },
+    scene_with_normals_->header.frame_id
   };
 
   // constrainTransformToGround(result_pose);
 
   /*double new_fitness = (1 / reg.getFitnessScore())
       / double(std::min(model_with_normals->size(), scene_with_normals->size()));*/
-  double new_fitness = (1 / reg.getFitnessScore()) / 10000;
+  double new_fitness = (1 / icp_.getFitnessScore()) / 10000;
 
   { MutexLocker locked2(&main_thread_->bb_mutex_);
 
-    if (!main_thread_->icp_cancelled_) {
+    if (enabled_) {
       main_thread_->result_fitness_ = new_fitness;
       main_thread_->result_pose_.reset(new tf::Stamped<tf::Pose> { result_pose });
 
-      if (new_fitness > initial_guess_tracked_fitness_) {
-        try {
-          tf_listener->transform_pose(
-                "odom",
-                tf::Stamped<tf::Pose>(result_pose, Time(0,0), result_pose.frame_id),
-                initial_guess_icp_odom_
-          );
-          initial_guess_tracked_fitness_ = new_fitness;
+      try {
+        tf_listener->transform_pose(
+              "odom",
+              tf::Stamped<tf::Pose>(result_pose, Time(0,0), result_pose.frame_id),
+              initial_guess_icp_odom_);
 
-        } catch(tf::TransformException &e) {
-          logger->log_error(name(), e);
-        }
+      } catch(tf::TransformException &e) {
+        logger->log_error(name(), e);
       }
     }
   } // MutexLocker
@@ -199,7 +238,9 @@ void RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::t
   tf_listener->transform_pose("base_link", fittedPose_conv, fittedPose_base);
   fittedPose_base.setRotation(constrainYtoNegZ(fittedPose_base.getRotation()));
   tf_listener->transform_pose(fittedPose_conv.frame_id, fittedPose_base, fittedPose_conv);
+
 }
+
 
 void MyPointRepresentation::copyToFloatArray (const pcl::PointNormal &p, float * out) const
 {
