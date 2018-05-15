@@ -583,7 +583,7 @@
 			(smt-create-orders ?team-color)
 			(smt-create-rings ?team-color)
 			1 ; Strategy set here, 0 means MACRO and 1 WINDOW
-			5 ; Window size for strategy WINDOW
+			2 ; Window size for strategy WINDOW
 	  )
 	)
 
@@ -1014,7 +1014,7 @@
 
 	(retract ?spc)
 	; Create instance of plan
-	(bind ?plan-id (string-to-field (str-cat SMT-PLAN (gensym)) ) )
+	(bind ?plan-id SMT-PLAN) ; (string-to-field (str-cat SMT-PLAN (gensym)) ) )
 	(assert
 		(plan (id ?plan-id) (goal-id ?goal-id))
 	)
