@@ -106,6 +106,7 @@ message Machine {
 
   optional Order wp = 23;
   optional string cs_buffered = 24;
+  optional CapColor cap_color = 25;
 
 }
 
