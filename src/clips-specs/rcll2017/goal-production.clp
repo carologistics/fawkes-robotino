@@ -248,7 +248,7 @@
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ;Maybe add a check for the base_color
-  ; (wm-fact (key domain fact mps-type args? m ?mps t CS))
+  (wm-fact (key domain fact mps-type args? m ?mps t CS|BS))
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
