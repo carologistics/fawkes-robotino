@@ -151,7 +151,7 @@ void RecognitionThread::loop()
     scene_with_normals->header.frame_id
   };
 
-  constrainTransformToGround(result_pose);
+  // constrainTransformToGround(result_pose);
 
   /*double new_fitness = (1 / reg.getFitnessScore())
       / double(std::min(model_with_normals->size(), scene_with_normals->size()));*/
@@ -180,31 +180,25 @@ void RecognitionThread::loop()
   } // MutexLocker
 }
 
+fawkes::tf::Quaternion constrainYtoNegZ(fawkes::tf::Quaternion rotation){
+  fawkes::tf::Transform pose;
+  pose.setRotation(rotation);
+  fawkes::tf::Matrix3x3 basis = pose.getBasis();
+  fawkes::tf::Vector3 yaxis_tf = basis.getColumn(1);
+  fawkes::tf::Vector3 aligned_y(0, 0, -1);
+  fawkes::tf::Scalar angle = yaxis_tf.angle(aligned_y);
+  fawkes::tf::Vector3 rotational_axis = yaxis_tf.cross(aligned_y);
+  rotational_axis.normalize();
+  fawkes::tf::Quaternion resultRotation(rotational_axis, angle);
+  resultRotation *= rotation;
+  return resultRotation;
+}
+
 void RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::tf::Pose>& fittedPose_conv){
-  // fawkes::tf::Stamped<fawkes::tf::Pose> fittedPose_base;
-  // tf_listener->transform_pose("base_link", fittedPose_conv, fittedPose_base);
-  // fawkes::tf::Matrix3x3 basis = fittedPose_base.getBasis();
-  // // fawkes::tf::Vector3 yaxis_possibility_row = basis.getRow(1);
-  // //printf("\nrow basis: %f/%f/%f\n", yaxis_possibility_row[0], yaxis_possibility_row[1], yaxis_possibility_row[2]);
-  // fawkes::tf::Vector3 yaxis_tf = basis.getColumn(1);
-  // //printf("col basis: %f/%f/%f\n", yaxis_tf[0], yaxis_tf[1], yaxis_tf[2]);
-  // fawkes::tf::Vector3 aligned_y(0, 0, -1);
-  // fawkes::tf::Scalar angle = yaxis_tf.angle(aligned_y);
-  // fawkes::tf::Vector3 rotational_axis = yaxis_tf.cross(aligned_y);
-  // rotational_axis.normalize();
-  // fawkes::tf::Quaternion resultRotation(rotational_axis, angle);
-  // fawkes::tf::Quaternion poseRotation = fittedPose_base.getRotation();
-  // resultRotation *= poseRotation;
-  // fittedPose_base.setRotation(resultRotation);
-  //
-  // //sanity check
-  // basis = fittedPose_base.getBasis();
-  // // yaxis_possibility_row = basis.getRow(1);
-  // // printf("row basis: %f/%f/%f", yaxis_possibility_row[0], yaxis_possibility_row[1], yaxis_possibility_row[2]);
-  // yaxis_tf = basis.getColumn(1);
-  // printf("col basis result: %f/%f/%f\n", yaxis_tf[0], yaxis_tf[1], yaxis_tf[2]);
-  //
-  // // tf_listener->transform_pose(fittedPose_conv.frame_id, fittedPose_base, fittedPose_conv);
+  fawkes::tf::Stamped<fawkes::tf::Pose> fittedPose_base;
+  tf_listener->transform_pose("base_link", fittedPose_conv, fittedPose_base);
+  fittedPose_base.setRotation(constrainYtoNegZ(fittedPose_base.getRotation()));
+  tf_listener->transform_pose(fittedPose_conv.frame_id, fittedPose_base, fittedPose_conv);
 }
 
 void MyPointRepresentation::copyToFloatArray (const pcl::PointNormal &p, float * out) const
