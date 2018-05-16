@@ -71,7 +71,7 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill get_product_from) (state final) (target ?mps))
-  (step (name get-from-shelf) (state running))
+  (step (name get-from-shelf) (state running) (actor ?robot&:(eq ?robot ?*ROBOT-NAME*)))
   (cap-station (name ?mps) (assigned-cap-color ?color))
   ?hf <- (holding NONE)
   =>
@@ -85,7 +85,7 @@
 (defrule wm-get-from-shelf-failed
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FAILED)
-  (step (name get-from-shelf) (state running))
+  (step (name get-from-shelf) (state running) (actor ?robot&:(eq ?robot ?*ROBOT-NAME*)))
   (skill-to-execute (skill get_product_from) (state failed) (target ?mps))
   (holding NONE)
   =>
@@ -98,8 +98,8 @@
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
   ?mps-f <- (machine (name ?mps))
   ?cs-f <- (cap-station (name ?mps))
-  (step (name insert) (state running))
-  (task (name fill-cap|clear-cs))
+  (step (name insert) (state running) (actor ?robot&:(eq ?robot ?*ROBOT-NAME*)))
+  (task (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (name fill-cap|clear-cs))
   ;an inserted puck without cap will be the final product
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?csf <- (cap-station (name ?mps))
@@ -118,9 +118,9 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
-  (step (name insert) (state running) (ring ?ring-color))
+  (step (name insert) (state running) (ring ?ring-color) (actor ?robot&:(eq ?robot ?*ROBOT-NAME*)) )
   (ring (color ?ring-color) (req-bases ?rb))
-  (task (name add-first-ring|add-additional-ring) (state running))
+  (task (robot ?robot&:(eq ?robot ?*ROBOT-NAME*)) (name add-first-ring|add-additional-ring) (state running))
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?rsf <- (ring-station (name ?mps) (bases-loaded ?bl))
   ?hf <- (holding ?product-id)
@@ -150,8 +150,8 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
-  (step (name insert) (state running))
-  (task (name produce-c0|produce-cx))
+  (step (name insert) (state running) (actor ?robot&:(eq ?robot ?*ROBOT-NAME*)))
+  (task (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (name produce-c0|produce-cx))
   ?mf <- (machine (name ?mps) (loaded-id 0) (produced-id 0))
   ?csf <- (cap-station (name ?mps) (cap-loaded ?cap))
   ?hf <- (holding ?produced-id)
@@ -171,8 +171,8 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
-  (step (name insert) (state running))
-  (task (name deliver))
+  (step (name insert) (state running) (actor ?robot&:(eq ?robot ?*ROBOT-NAME*)))
+  (task (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (name deliver))
   ?mf <- (machine (name ?mps) (mtype DS))
   ?hf <- (holding ?produced-id&~NONE)
   (product
@@ -195,8 +195,8 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill bring_product_to) (state final) (target ?mps))
-  (step (name insert) (state running) (machine-feature SLIDE))
-  (task (name fill-rs) (state running))
+  (step (name insert) (state running) (machine-feature SLIDE) (actor ?robot&:(eq ?robot ?*ROBOT-NAME*)))
+  (task (robot ?r&:(eq ?r ?*ROBOT-NAME*)) (name fill-rs) (state running))
   ?rsf <- (ring-station (name ?mps) (bases-loaded ?bl))
   ?hf <- (holding ?product-id)
   ?pf <- (product (id ?product-id))
@@ -213,7 +213,7 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FAILED)
   (skill-to-execute (skill bring_product_to) (state failed) (target ?mps))
-  (step (name insert) (state running))
+  (step (name insert) (state running) (actor ?robot&:(eq ?robot ?*ROBOT-NAME*)))
   ?hf <- (holding ?puck-id)
   ?pf <- (product (id ?puck-id))
   =>
@@ -227,7 +227,7 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill get_product_from) (state final) (target ?mps))
-  (step (name get-output) (state running))
+  (step (name get-output) (state running) (actor ?robot&:(eq ?robot ?*ROBOT-NAME*)))
   ?mf <- (machine (name ?mps) (produced-id ?produced-id))
   ?hf <- (holding NONE)
   =>
@@ -241,7 +241,7 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FINAL)
   (skill-to-execute (skill get_product_from) (state final) (target ?mps))
-  (step (name get-base) (state running) (product-id ?product-id))
+  (step (name get-base) (state running) (product-id ?product-id) (actor ?robot&:(eq ?robot ?*ROBOT-NAME*)))
   ?mf <- (machine (name ?mps) (produced-id ?produced-id))
   ?hf <- (holding NONE)
   ?pf <- (product (id ?produced-id))
@@ -257,7 +257,7 @@
   (declare (salience ?*PRIORITY-WM*))
   (state SKILL-FAILED)
   (skill-to-execute (skill get_product_from) (state failed) (target ?mps))
-  (step (name get-output|get-base) (state running))
+  (step (name get-output|get-base) (state running) (actor ?robot&:(eq ?robot ?*ROBOT-NAME*)))
   ?mf <- (machine (name ?mps) (produced-id ?puck-id&~0) (state ?mps-state))
   =>
   (printout t "Failed to fetch a product from the output of " ?mps crlf)
@@ -346,9 +346,9 @@
 (defrule wm-update-pose
   (declare (salience ?*PRIORITY-CLEANUP*))
   ?pif <- (Position3DInterface (id "Pose") (translation $?pos))
-  ?pose <- (pose (x ?) (y ?))
+  ?pose <- (pose (x ?) (y ?) (name ?))
   =>
-  (modify ?pose (x (nth$ 1 ?pos)) (y (nth$ 2 ?pos)))
+  (modify ?pose (x (nth$ 1 ?pos)) (y (nth$ 2 ?pos)) (name ?*ROBOT-NAME*))
   (retract ?pif)
 )
 
@@ -375,8 +375,8 @@
   "Set the correct loaded-id after color is ordered at BS"
   (declare (salience ?*PRIORITY-WM*))
   ?bs <- (machine (mtype BS) (produced-id 0) (state PROCESSED|PREPARED|READY-AT-OUTPUT|PROCESSING))
-  (step (name get-base) (state running) (base ?base-color))
-  (step (name get-base) (state running) (base ?base-color) (product-id ?product-id))
+  (step (name get-base) (state running) (base ?base-color) (actor ?robot&:(eq ?robot ?*ROBOT-NAME*)))
+  (step (name get-base) (state running) (base ?base-color) (product-id ?product-id) (actor ?robot&:(eq ?robot ?*ROBOT-NAME*)))
   (not (skill-to-execute (skill get_product_from) (state final|failed)))
   =>
   (bind ?produced-id (random-id))

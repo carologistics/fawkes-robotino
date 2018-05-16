@@ -105,7 +105,7 @@ gazsim:
 
     imu:
       frame: !frame imu
-      
+
   comm:
     package-loss: 0.0
     #all peers which need the comm plugin
