@@ -112,7 +112,12 @@ end
 
 function ADJUST_HEIGHT:init()
    self.args["ax12gripper"].command = "RELGOTOZ"
-   self.args["ax12gripper"].z_position = -4
+
+   if config:exists("/skills/product_pick/adjust_down") then
+      self.args["ax12gripper"].z_position = config:get_float("/skills/product_pick/adjust_down")
+   else
+      self.args["ax12gripper"].z_position = -4
+   end
    printf("adjusting height")
 end
 

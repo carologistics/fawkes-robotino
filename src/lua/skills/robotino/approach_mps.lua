@@ -34,8 +34,9 @@ depends_interfaces = {
 
 documentation      = [==[
                         The robot just drives forward according to the current distance to the mps and the desired position
-                        @param "x" int The x distance of the conveyor in the base_link frame when finished
---                        @param "use_conveyor" default is true, set this to false when the conveyor is not visibly
+                        @param "x" The x distance of the conveyor in the base_link frame when finished,
+                                   default to 0.27 or config value /skills/approach_mps/x_dist
+                        @param "use_conveyor" default is true, set this to false when the conveyor is not visibly
                      ]==]
 
 
@@ -112,6 +113,13 @@ fsm:add_transitions{
 }
 
 function INIT:init()
+  if self.fsm.vars.x == nil then
+    self.fsm.vars.x = 0.27
+    if config:exists("/skills/approach_mps/x_dist") then
+      self.fsm.vars.x = config:get_float("/skills/approach_mps/x_dist")
+    end
+  end
+
   if self.fsm.vars.use_conveyor == nil then
     self.fsm.vars.use_conveyor = true
   end
