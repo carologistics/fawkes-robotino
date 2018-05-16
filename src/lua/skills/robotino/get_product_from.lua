@@ -104,11 +104,11 @@ function MPS_ALIGN:init()
    if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
       self.args["mps_align"].y = 0.03
       if self.fsm.vars.shelf == "LEFT" then
-          self.args["mps_align"].y += left_shelf_distance
+          self.args["mps_align"].y = self.args["mps_align"].y + left_shelf_distance
       elseif self.fsm.vars.shelf == "MIDDLE" then
-          self.args["mps_align"].y += middle_shelf_distance
+          self.args["mps_align"].y = self.args["mps_align"].y + middle_shelf_distance
       elseif self.fsm.vars.shelf == "RIGHT" then
-          self.args["mps_align"].y += right_shelf_distance
+          self.args["mps_align"].y = self.args["mps_align"].y + right_shelf_distance
       end
    else
       self.args["mps_align"].y = -0.03
