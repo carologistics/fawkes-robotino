@@ -33,6 +33,7 @@
 #include <aspect/blackboard.h>
 #include <aspect/pointcloud.h>
 #include <aspect/tf.h>
+#include <interfaces/ConveyorPoseInterface.h>
 
 #include <config/change_handler.h>
 
@@ -126,7 +127,8 @@ private:
   fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_laser_odom_;
   std::atomic_bool have_laser_line_;
 
-  std::string current_station_;
+  fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
+  fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
 
   void set_current_station(const std::string &station);
 
