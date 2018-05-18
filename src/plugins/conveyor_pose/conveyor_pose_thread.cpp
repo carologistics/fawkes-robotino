@@ -57,7 +57,8 @@ ConveyorPoseThread::ConveyorPoseThread()
   , fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose")
   , cloud_out_raw_name_("raw")
   , cloud_out_trimmed_name_("trimmed")
-  , current_station_("default")
+  , current_mps_type_(ConveyorPoseInterface::NO_STATION)
+  , current_mps_target_(ConveyorPoseInterface::NO_LOCATION)
   , recognition_thread_(nullptr)
   , result_fitness_(std::numeric_limits<double>::min())
   , realsense_switch_(nullptr)
@@ -428,6 +429,7 @@ ConveyorPoseThread::loop()
       if (cloud_mutex_.try_lock()) {
         try {
           if (have_laser_line_) {
+            /* TODO: Rewrite to enums usage
             if(current_station_.back() == 'L')
               set_initial_tf_from_laserline(ll, "cap_station", "left_shelf");
             else if(current_station_.back() == 'M')
@@ -458,6 +460,7 @@ ConveyorPoseThread::loop()
               set_initial_tf_from_laserline(ll,"storage_station","output");
             else
               set_initial_tf_from_laserline(ll, "default","conveyor");
+              */
           }
 
           scene_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
