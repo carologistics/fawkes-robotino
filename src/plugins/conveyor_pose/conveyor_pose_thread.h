@@ -52,11 +52,6 @@
 
 #define CFG_PREFIX "/plugins/conveyor_pose"
 
-typedef pcl::PointXYZ Point;
-typedef pcl::PointCloud<Point> Cloud;
-typedef typename Cloud::Ptr CloudPtr;
-typedef typename Cloud::ConstPtr CloudConstPtr;
-
 class RecognitionThread;
 
 namespace fawkes {
@@ -76,6 +71,12 @@ class ConveyorPoseThread
   public fawkes::ROSAspect,
   public fawkes::TransformAspect
 {
+public:
+  typedef pcl::PointXYZ Point;
+  typedef pcl::PointCloud<Point> Cloud;
+  typedef Cloud::Ptr CloudPtr;
+  typedef Cloud::ConstPtr CloudConstPtr;
+
 private:
   friend class RecognitionThread;
 
@@ -116,11 +117,10 @@ private:
   std::vector<std::string> laserlines_names_;
 
   CloudPtr default_model_;
-  CloudPtr aligned_model_;
   CloudPtr trimmed_scene_;
 
-  pcl::PointCloud<pcl::PointNormal>::Ptr model_with_normals_;
-  pcl::PointCloud<pcl::PointNormal>::Ptr scene_with_normals_;
+  CloudPtr model_with_normals_;
+  CloudPtr scene_with_normals_;
 
   fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_laser_odom_;
   std::atomic_bool have_laser_line_;
@@ -135,11 +135,7 @@ private:
   std::map<std::pair<fawkes::ConveyorPoseInterface::MPS_TYPE,fawkes::ConveyorPoseInterface::MPS_TARGET>, std::string> type_target_to_path_;
 
   // Mapping from station name to preprocessed pointcloud model
-  std::map<std::pair<fawkes::ConveyorPoseInterface::MPS_TYPE,fawkes::ConveyorPoseInterface::MPS_TARGET>, pcl::PointCloud<pcl::PointNormal>::Ptr> type_target_to_model_;
-
-
-  pcl::NormalEstimationOMP<Point, pcl::PointNormal> norm_est_;
-
+  std::map<std::pair<fawkes::ConveyorPoseInterface::MPS_TYPE,fawkes::ConveyorPoseInterface::MPS_TARGET>, CloudPtr> type_target_to_model_;
 
   RecognitionThread *recognition_thread_;
 
