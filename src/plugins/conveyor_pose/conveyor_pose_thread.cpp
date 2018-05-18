@@ -44,6 +44,9 @@
 
 using namespace fawkes;
 
+using Cloud = ConveyorPoseThread::Cloud;
+using CloudPtr = ConveyorPoseThread::CloudPtr;
+
 /** @class ConveyorPoseThread "conveyor_pose_thread.cpp"
  * Plugin to detect the conveyor belt in a pointcloud (captured from Intel RealSense)
  * @author Tobias Neumann
@@ -341,26 +344,18 @@ ConveyorPoseThread::init()
       throw fawkes::CouldNotOpenFileException(cfg_model_path_.c_str(), errnum,
                                               "Set from " CFG_PREFIX "/model_file");
 
-    norm_est_.setInputCloud(default_model_);
-    model_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
-    norm_est_.compute(*model_with_normals_);
-    pcl::copyPointCloud(*default_model_, *model_with_normals_);
+    model_with_normals_ = default_model_;
 
     // Loading PCD file and calculation of model with normals for ALL! stations
     // TODO: Redo with correct mapping
     for (const auto &pair : type_target_to_path_) {
       CloudPtr model(new Cloud());
-      pcl::PointCloud<pcl::PointNormal>::Ptr model_with_normals(new pcl::PointCloud<pcl::PointNormal>());
       if ((errnum = pcl::io::loadPCDFile(pair.second, *model)) < 0)
         throw fawkes::CouldNotOpenFileException(pair.second.c_str(), errnum,
                                                 ("For station " )   ); //TODO:: print
 
-      norm_est_.setInputCloud(model);
-      norm_est_.compute(*model_with_normals);
-      pcl::copyPointCloud(*model, *model_with_normals);
-
       // TODO: Do insert to correct map
-      type_target_to_model_.insert({pair.first, model_with_normals});
+      type_target_to_model_.insert({pair.first, model});
     }
 
   }
@@ -466,7 +461,7 @@ ConveyorPoseThread::loop()
   }
 
   if (!bb_enable_switch_->is_enabled()) {
-    recognition_thread_->enabled_ = false;
+    recognition_thread_->disable();
   }
   else if (update_input_cloud()) {
     fawkes::LaserLineInterface * ll = NULL;
@@ -550,14 +545,10 @@ ConveyorPoseThread::loop()
               */
           }
 
-          scene_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
-          norm_est_.setInputCloud(trimmed_scene_);
-          norm_est_.compute(*scene_with_normals_);
-          pcl::copyPointCloud(*trimmed_scene_, *scene_with_normals_);
-          scene_with_normals_->header = trimmed_scene_->header;
+          scene_with_normals_ = trimmed_scene_;
 
-          recognition_thread_->enabled_ = true;
-          recognition_thread_->wait_enabled_.wake_all();
+          if (cfg_debug_mode_)
+            recognition_thread_->enable();
 
         } catch (std::exception &e) {
           logger->log_error(name(), "Exception preprocessing point clouds: %s", e.what());
@@ -684,12 +675,10 @@ ConveyorPoseThread::update_station_information(ConveyorPoseInterface::MPS_TYPE m
       bb_pose_->set_euclidean_fitness(result_fitness_);
       bb_pose_->write();
 
-      recognition_thread_->enabled_ = false;
+      recognition_thread_->disable();
       result_fitness_ = std::numeric_limits<double>::min();
-
     }
   }
-
 }
 
 /*
@@ -1165,7 +1154,7 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         change_val(opt, cfg_type_hint_[ConveyorPoseInterface::STORAGE_STATION][2], v->get_float());
     }
     MutexLocker locked2 { &cloud_mutex_ };
-    recognition_thread_->enabled_ = false;
+    recognition_thread_->disable();
   }
 }
 

@@ -13,25 +13,11 @@
 #include "conveyor_pose_thread.h"
 
 
-class CustomICP : public pcl::IterativeClosestPointNonLinear<pcl::PointNormal, pcl::PointNormal> {
+class CustomICP : public pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ> {
 public:
-  using pcl::IterativeClosestPointNonLinear<pcl::PointNormal, pcl::PointNormal>::IterativeClosestPointNonLinear;
+  using pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ>::IterativeClosestPointNonLinear;
 
   double getScaledFitness();
-};
-
-
-// Define a new point representation for < x, y, z, curvature >
-class MyPointRepresentation : public pcl::PointRepresentation<pcl::PointNormal>
-{
-public:
-  MyPointRepresentation()
-  {
-    nr_dimensions_ = 4;
-  }
-
-  // Override the copyToFloatArray method to define our feature vector
-  virtual void copyToFloatArray (const pcl::PointNormal &p, float * out) const override;
 };
 
 
@@ -41,21 +27,26 @@ class RecognitionThread
     , public fawkes::TransformAspect
 {
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+  using Point = ConveyorPoseThread::Point;
+  using Cloud = ConveyorPoseThread::Cloud;
+  using CloudPtr = ConveyorPoseThread::CloudPtr;
+  using pose = ConveyorPoseThread::pose;
+
   friend class ConveyorPoseThread;
   RecognitionThread(ConveyorPoseThread *cp_thread);
 
-  using pose = ConveyorPoseThread::pose;
-
   virtual void loop() override;
   virtual void init() override;
-
-  void restart_icp();
-
-  void publish_result();
-
-  void constrainTransformToGround(fawkes::tf::Stamped<fawkes::tf::Pose>& fittedPose_conv);
+  void enable();
+  void disable();
 
 private:
+  void restart_icp();
+  void publish_result();
+  void constrainTransformToGround(fawkes::tf::Stamped<fawkes::tf::Pose>& fittedPose_conv);
+
   ConveyorPoseThread *main_thread_;
 
   fawkes::WaitCondition wait_enabled_;
@@ -63,13 +54,13 @@ private:
 
   fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_icp_odom_;
   Eigen::Matrix4f initial_tf_;
-  pcl::PointCloud<pcl::PointNormal>::Ptr model_with_normals_;
-  pcl::PointCloud<pcl::PointNormal>::Ptr scene_with_normals_;
+  CloudPtr model_with_normals_;
+  CloudPtr scene_with_normals_;
 
   CustomICP icp_;
-  pcl::PapazovHV<pcl::PointNormal, pcl::PointNormal> hypot_verif_;
+  pcl::PapazovHV<Point, Point> hypot_verif_;
   Eigen::Matrix4f prev_last_tf_;
-  pcl::PointCloud<pcl::PointNormal>::Ptr icp_result_;
+  CloudPtr icp_result_;
   Eigen::Matrix4f final_tf_;
 
   unsigned int iterations_;
