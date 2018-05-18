@@ -84,7 +84,7 @@ void RecognitionThread::restart_icp()
 
   hypot_verif_.setSceneCloud(scene_with_normals_);
   hypot_verif_.setResolution(main_thread_->cfg_voxel_grid_leaf_size_);
-  hypot_verif_.setInlierThreshold(main_thread_->cfg_voxel_grid_leaf_size_);
+  hypot_verif_.setInlierThreshold(main_thread_->cfg_icp_hv_inlier_thresh_);
   hypot_verif_.setPenaltyThreshold(main_thread_->cfg_icp_hv_penalty_thresh_);
   hypot_verif_.setSupportThreshold(main_thread_->cfg_icp_hv_support_thresh_);
 
