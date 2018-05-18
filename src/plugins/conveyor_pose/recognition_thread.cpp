@@ -1,5 +1,6 @@
 #include <pcl/registration/transforms.h>
 #include <pcl/filters/filter.h>
+#include <pcl/recognition/impl/hv/hv_papazov.hpp>
 
 #include "recognition_thread.h"
 #include "conveyor_pose_thread.h"
@@ -43,42 +44,35 @@ void RecognitionThread::restart_icp()
 {
   logger->log_info(name(), "Restarting ICP");
 
-  model_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
-  scene_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
+  //model_with_normals_.reset(new Cloud());
+  //scene_with_normals_.reset(new Cloud());
   tf::Stamped<tf::Pose> initial_pose_cam;
 
   { fawkes::MutexLocker locked { &main_thread_->cloud_mutex_ };
-
     std::vector<int> tmp;
-    pcl::removeNaNNormalsFromPointCloud(*main_thread_->model_with_normals_, *model_with_normals_, tmp);
+    model_with_normals_ = main_thread_->model_with_normals_;
     pcl::removeNaNFromPointCloud(*model_with_normals_, *model_with_normals_, tmp);
-    pcl::removeNaNNormalsFromPointCloud(*main_thread_->scene_with_normals_, *scene_with_normals_, tmp);
+    scene_with_normals_ = main_thread_->scene_with_normals_;
     pcl::removeNaNFromPointCloud(*scene_with_normals_, *scene_with_normals_, tmp);
-    scene_with_normals_->header = main_thread_->scene_with_normals_->header;
 
     try {
-      if (!main_thread_->have_laser_line_)
-      {
+      if (!main_thread_->have_laser_line_) {
         tf_listener->transform_pose(
               scene_with_normals_->header.frame_id,
               tf::Stamped<tf::Pose>(initial_guess_icp_odom_, Time(0,0), initial_guess_icp_odom_.frame_id),
               initial_pose_cam);
       }
       else {
-        if (main_thread_->have_laser_line_)
-          tf_listener->transform_pose(
-                scene_with_normals_->header.frame_id,
-                tf::Stamped<tf::Pose>(main_thread_->initial_guess_laser_odom_, Time(0,0),
-                                      main_thread_->initial_guess_laser_odom_.frame_id),
-                initial_pose_cam);
-        else {
-          logger->log_error(name(), "Cannot get initial guess: No laser line "
-                                    "and no past results above fitness threshold");
-          return;
-        }
+        tf_listener->transform_pose(
+              scene_with_normals_->header.frame_id,
+              tf::Stamped<tf::Pose>(main_thread_->initial_guess_laser_odom_, Time(0,0),
+                                    main_thread_->initial_guess_laser_odom_.frame_id),
+              initial_pose_cam);
       }
     } catch (tf::TransformException &e) {
       logger->log_error(name(), e);
+      enabled_ = false;
+      return;
     }
   }
 
@@ -95,13 +89,9 @@ void RecognitionThread::restart_icp()
           initial_pose_cam, initial_pose_cam.stamp,
           initial_pose_cam.frame_id, "conveyor_pose_initial_guess"));
 
-  icp_result_.reset(new pcl::PointCloud<pcl::PointNormal>());
+  icp_result_.reset(new Cloud());
 
-  MyPointRepresentation point_representation;
-  // weigh the 'curvature' dimension so that it is balanced against x, y, and z
-  float alpha[4] = {1.0, 1.0, 1.0, 1.0};
-  point_representation.setRescaleValues(alpha);
-  icp_.setPointRepresentation(boost::make_shared<const MyPointRepresentation>(point_representation));
+  icp_ = CustomICP();
 
   // Set tunables
   icp_.setTransformationEpsilon(std::pow(main_thread_->cfg_icp_tf_epsilon_, 2));
@@ -142,11 +132,22 @@ void RecognitionThread::loop()
   if (!enabled_) // cancel if disabled from ConveyorPoseThread
     return;
 
-  if (iterations_++ >= main_thread_->cfg_icp_min_loops_) {
+  //if the difference between this transformation and the previous one
+  //is smaller than the threshold, refine the process by reducing
+  //the maximal correspondence distance
+  bool epsilon_reached = false;
+  if (double(std::abs((icp_.getLastIncrementalTransformation() - prev_last_tf_).sum())) < icp_.getTransformationEpsilon()) {
+    icp_.setMaxCorrespondenceDistance(icp_.getMaxCorrespondenceDistance () * main_thread_->cfg_icp_refinement_factor_);
+    epsilon_reached = true;
+  }
+  prev_last_tf_ = icp_.getLastIncrementalTransformation();
 
+  if (iterations_++ >= main_thread_->cfg_icp_min_loops_ || epsilon_reached) {
     // Perform hypothesis verification
-    std::vector<pcl::PointCloud<pcl::PointNormal>::ConstPtr> icp_result_vector { icp_result_ };
-    hypot_verif_.addModels(icp_result_vector);
+    std::vector<Cloud::ConstPtr> icp_result_vector { icp_result_ };
+    //hypot_verif_.addCompleteModels(icp_result_vector);
+    hypot_verif_.addModels(icp_result_vector, true);
+
     hypot_verif_.verify();
     std::vector<bool> hypot_mask;
     hypot_verif_.getMask(hypot_mask);
@@ -155,6 +156,7 @@ void RecognitionThread::loop()
       // Match improved
       last_raw_fitness_ = icp_.getFitnessScore();
       publish_result();
+      logger->log_info(name(), "FIT!");
     }
 
     if (iterations_ >= main_thread_->cfg_icp_max_loops_) {
@@ -171,14 +173,6 @@ void RecognitionThread::loop()
     }
   }
 
-  //if the difference between this transformation and the previous one
-  //is smaller than the threshold, refine the process by reducing
-  //the maximal correspondence distance
-  if (double(std::abs((icp_.getLastIncrementalTransformation() - prev_last_tf_).sum())) < icp_.getTransformationEpsilon()) {
-    icp_.setMaxCorrespondenceDistance(icp_.getMaxCorrespondenceDistance () * main_thread_->cfg_icp_refinement_factor_);
-  }
-
-  prev_last_tf_ = icp_.getLastIncrementalTransformation();
 }
 
 
@@ -238,15 +232,16 @@ void RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::t
   tf_listener->transform_pose("base_link", fittedPose_conv, fittedPose_base);
   fittedPose_base.setRotation(constrainYtoNegZ(fittedPose_base.getRotation()));
   tf_listener->transform_pose(fittedPose_conv.frame_id, fittedPose_base, fittedPose_conv);
-
 }
 
-
-void MyPointRepresentation::copyToFloatArray (const pcl::PointNormal &p, float * out) const
+void RecognitionThread::enable()
 {
-  // < x, y, z, curvature >
-  out[0] = p.x;
-  out[1] = p.y;
-  out[2] = p.z;
-  out[3] = p.curvature;
+  enabled_ = true;
+  wait_enabled_.wake_all();
 }
+
+
+void RecognitionThread::disable()
+{ enabled_ = false; }
+
+
