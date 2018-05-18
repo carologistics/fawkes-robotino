@@ -73,6 +73,7 @@
 		(cs-can-perform ?m - mps ?op - cs-operation)
 		(cs-prepared-for ?m - mps ?op - cs-operation)
 		(cs-buffered ?m - mps ?col - cap-color)
+		(cs-color ?m - mps ?col - cap-color)
 		(cs-free ?m - mps)
 		(rs-prepared-color ?m - mps ?col - ring-color)
 		(rs-ring-spec ?m - mps ?r - ring-color ?rn - ring-num)
