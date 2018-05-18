@@ -112,13 +112,13 @@ plugins/conveyor_pose:
     # Those that have none are penalized. See the support/penalty thresholds below.
     # Pay attention to the voxel_grid/leaf_size value above. The closer this gets to the
     # leaf size (i.e. the cloud resolution), the unlikelier it is to match anything.
-    hv_inlier_threshold: 0.002
+    hv_inlier_threshold: 0.004
 
     # Max. proportion of penalized model points for a match
     hv_penalty_threshold: 0.1
 
     # Min. proportion of supported model points for a match
-    hv_support_threshold: 0.4
+    hv_support_threshold: 0.7
 
 
     # Offset of interesting objects relative to the center of the laser line
