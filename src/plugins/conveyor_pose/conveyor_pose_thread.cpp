@@ -83,8 +83,10 @@ ConveyorPoseThread::init()
 
   cfg_icp_max_corr_dist_      = config->get_float( CFG_PREFIX "/icp/max_correspondence_dist" );
 
-  cfg_hint_["conveyor"]; cfg_hint_["left_shelf"];
-  cfg_hint_["middle_shelf"]; cfg_hint_["right_shelf"];
+  cfg_hint_["conveyor"];
+  cfg_hint_["left_shelf"];
+  cfg_hint_["middle_shelf"];
+  cfg_hint_["right_shelf"];
   cfg_hint_["slide"];
   cfg_hint_["cap_station"];
   cfg_hint_["ring_station"];
@@ -109,11 +111,11 @@ ConveyorPoseThread::init()
   cfg_hint_["slide"][2]       = config->get_float( CFG_PREFIX "/icp/hint/slide/z" );
 
   cfg_hint_["cap_station"][0] = config->get_float_or_default(
-        CFG_PREFIX "/icp/conveyor_offset/cap_station/x", 0.f );
+        CFG_PREFIX "/icp/hint/cap_station/x", 0.f );
   cfg_hint_["cap_station"][1] = config->get_float_or_default(
-        CFG_PREFIX "/icp/conveyor_offset/cap_station/y", 0.f );
+        CFG_PREFIX "/icp/hint/cap_station/y", 0.f );
   cfg_hint_["cap_station"][2] = config->get_float_or_default(
-        CFG_PREFIX "/icp/conveyor_offset/cap_station/z", 0.f );
+        CFG_PREFIX "/icp/hint/cap_station/z", 0.f );
 
   cfg_hint_["ring_station"][0] = config->get_float_or_default(
         CFG_PREFIX "/icp/conveyor_offset/ring_station/x", 0.f );
@@ -299,7 +301,9 @@ ConveyorPoseThread::init()
   bb_enable_switch_->write();
 
   bb_pose_ = blackboard->open_for_writing<ConveyorPoseInterface>((cfg_if_prefix_ + "status").c_str());
-  bb_pose_->set_current_station("default");
+  bb_pose_->set_current_MPS_type(bb_pose_->NO_STATION);
+  bb_pose_->set_current_MPS_target(bb_pose_->NO_LOCATION);
+
   bb_pose_->write();
 
   realsense_switch_ = blackboard->open_for_reading<SwitchInterface>(cfg_bb_realsense_switch_name_.c_str());
@@ -333,8 +337,9 @@ ConveyorPoseThread::loop()
       logger->log_info(name(), "Received SetStationMessage");
       ConveyorPoseInterface::SetStationMessage *msg =
           bb_pose_->msgq_first<ConveyorPoseInterface::SetStationMessage>();
-      set_current_station(msg->station());
-      bb_pose_->set_current_station(msg->station());
+      //set_current_station(msg->station());
+      bb_pose_->set_current_MPS_type(msg->MPS_type_to_set());
+      bb_pose_->set_current_MPS_target(msg->MPS_target_to_set());
       bb_pose_->write();
     }
     else {
@@ -548,6 +553,8 @@ ConveyorPoseThread::record_model()
 }
 
 
+/*
+TODO: Rewrite
 //Sets current station in ConveyorPose Interface
 void
 ConveyorPoseThread::set_current_station(const std::string &station)
@@ -557,7 +564,7 @@ ConveyorPoseThread::set_current_station(const std::string &station)
     if (map_it == station_to_model_.end())
       logger->log_error(name(), "Invalid station name: %s", station.c_str());
     else {
-      logger->log_info(name(), "Set Station to: %s", station.c_str());
+      logger->log_info(name(), "Set Station to: %s", bb_pose_->current_station());
 
       MutexLocker locked(&cloud_mutex_);
       MutexLocker locked2(&bb_mutex_);
@@ -576,7 +583,7 @@ ConveyorPoseThread::set_current_station(const std::string &station)
     }
   }
 }
-
+*/
 
 bool
 ConveyorPoseThread::update_input_cloud()
