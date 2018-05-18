@@ -32,6 +32,13 @@ plugins/conveyor_pose:
   # Relative paths (i.e. not starting with "/") are looked up in CONFDIR (e.g. fawkes-robotino/cfg)
   model_file: "conveyor_pcls/default.pcd"
 
+  # Paths to the default PCD models taking as reverence model in the conveyor pose model
+  reference_default_models:
+    with_cone: "conveyor_pcls/default_with_cone.pcd"
+    no_cone: "conveyor_pcls/default_no_cone.pcd"
+    shelf: "conveyor_pcls/default_puck.pcd"
+    slide: "conveyor_pcls/slide.pcd"
+
   # Configurable PCD paths for every station containing the conveyor model
   # If the value is "default", the model_file PCD is taken
   model_files:
