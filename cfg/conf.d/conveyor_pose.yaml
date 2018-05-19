@@ -37,7 +37,7 @@ plugins/conveyor_pose:
     with_cone: "conveyor_pcls/default_with_cone.pcd"
     no_cone: "conveyor_pcls/default_no_cone.pcd"
     shelf: "conveyor_pcls/default_puck.pcd"
-    slide: "conveyor_pcls/slide.pcd"
+    slide: "conveyor_pcls/default_slide.pcd"
 
   # Configurable PCD paths for every station containing the conveyor model
   # If the value is "default", the model_file PCD is taken
