@@ -95,7 +95,7 @@ ConveyorPoseThread::init()
   cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][0]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/x" );
   cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][1]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/y" );
   cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][2]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/z" );
-  cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][0]   = -config->get_float( CFG_PREFIX "/icp/hint/conveyor/x"); // TODO: make negative
+  cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][0]   = -config->get_float( CFG_PREFIX "/icp/hint/conveyor/x");
   cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][1]   = config->get_float( CFG_PREFIX "/icp/hint/conveyor/y");
   cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][2]   = config->get_float( CFG_PREFIX "/icp/hint/conveyor/z");
   cfg_target_hint_[ConveyorPoseInterface::SHELF_LEFT][0]  = config->get_float( CFG_PREFIX "/icp/hint/left_shelf/x" );
@@ -205,7 +205,7 @@ ConveyorPoseThread::init()
   cfg_bb_realsense_switch_name_ = config->get_string_or_default(CFG_PREFIX "/realsense_switch", "realsense");
   wait_time_ = Time(double(config->get_float_or_default(CFG_PREFIX "/realsense_wait_time", 1.0f)));
 
-
+   //TODO should be removed
   cfg_model_path_ = config->get_string(CFG_PREFIX "/model_file");
   if (cfg_model_path_.substr(0, 1) != "/")
     cfg_model_path_ = CONFDIR "/" + cfg_model_path_;
@@ -222,22 +222,22 @@ ConveyorPoseThread::init()
       switch(mps_target)
       {
       case ConveyorPoseInterface::INPUT_CONVEYOR:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "reference_default_models/with_cone");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_default_models/with_cone");
         break;
       case ConveyorPoseInterface::OUTPUT_CONVEYOR:
-        type_target_to_path_[{mps_type,mps_target}] =CONFDIR "/" + config->get_string(CFG_PREFIX "reference_default_models/no_cone");
+        type_target_to_path_[{mps_type,mps_target}] =CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_default_models/no_cone");
         break;
       case ConveyorPoseInterface::SHELF_LEFT:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "reference_default_models/shelf");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_default_models/shelf");
         break;
       case ConveyorPoseInterface::SHELF_MIDDLE:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "reference_default_models/shelf");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_default_models/shelf");
         break;
       case ConveyorPoseInterface::SHELF_RIGHT:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "reference_default_models/shelf");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_default_models/shelf");
         break;
       case ConveyorPoseInterface::SLIDE:
-        type_target_to_path_[{mps_type,mps_target}] =CONFDIR "/" + config->get_string(CFG_PREFIX "reference_default_models/slide");
+        type_target_to_path_[{mps_type,mps_target}] =CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_default_models/slide");
         break;
       case ConveyorPoseInterface::NO_LOCATION:
         break;
@@ -411,9 +411,10 @@ ConveyorPoseThread::loop()
       logger->log_info(name(), "Received SetStationMessage");
       ConveyorPoseInterface::SetStationMessage *msg =
           bb_pose_->msgq_first<ConveyorPoseInterface::SetStationMessage>();
-      //set_current_station(msg->station());
-      bb_pose_->set_current_MPS_type(msg->MPS_type_to_set());
-      bb_pose_->set_current_MPS_target(msg->MPS_target_to_set());
+      //set_set_current_station(msg->station());
+      update_station_information(msg->MPS_type_to_set(),msg->MPS_target_to_set());
+      //bb_pose_->set_current_MPS_type(msg->MPS_type_to_set());
+      //bb_pose_->set_current_MPS_target(msg->MPS_target_to_set());
       bb_pose_->write();
     }
     else {
@@ -647,8 +648,41 @@ ConveyorPoseThread::record_model()
 }
 
 
+void
+ConveyorPoseThread::update_station_information(ConveyorPoseInterface::MPS_TYPE mps_type, ConveyorPoseInterface::MPS_TARGET mps_target)
+{
+  if(mps_type != bb_pose_->current_MPS_type() || mps_target != bb_pose_->current_MPS_target()){
+    auto map_it = type_target_to_model_.find({mps_type,mps_target});
+    if ( map_it == type_target_to_model_.end())
+      logger->log_error(name(), "Invalid station type or target: %i,%i", mps_type, mps_target);
+    else {
+      logger->log_info(name(), "Set Station type to : %i Set Station target to: %i", bb_pose_->current_MPS_type(),bb_pose_->current_MPS_target());
+
+      MutexLocker locked(&cloud_mutex_);
+      MutexLocker locked2(&bb_mutex_);
+
+      model_with_normals_ = map_it->second;
+      current_mps_type_ = mps_type;
+      current_mps_target_ = mps_target;
+
+      icp_cancelled_ = true;
+      //bb_pose_->set_current_station(station.c_str());
+      bb_pose_->set_current_MPS_type(mps_type);
+      bb_pose_->set_current_MPS_target(mps_target);
+      result_fitness_ = std::numeric_limits<double>::min();
+      bb_pose_->set_euclidean_fitness(result_fitness_);
+      bb_pose_->write();
+
+      recognition_thread_->initial_guess_tracked_fitness_ = std::numeric_limits<double>::min();
+      result_fitness_ = std::numeric_limits<double>::min();
+
+    }
+  }
+
+}
+
 /*
-TODO: Rewrite
+TODO: Remove if it isnt needed
 //Sets current station in ConveyorPose Interface
 void
 ConveyorPoseThread::set_current_station(const std::string &station)

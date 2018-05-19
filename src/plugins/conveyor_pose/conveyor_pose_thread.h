@@ -130,8 +130,8 @@ private:
   fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
   fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
 
-  void set_current_station(const std::string &station);
-
+  //void set_current_station(const std::string &station);
+  void update_station_information(fawkes::ConveyorPoseInterface::MPS_TYPE mps_type, fawkes::ConveyorPoseInterface::MPS_TARGET mps_target);
 
   //Mapping from {Type,Target} to its corresponding model path
   std::map<std::pair<fawkes::ConveyorPoseInterface::MPS_TYPE,fawkes::ConveyorPoseInterface::MPS_TARGET>, std::string> type_target_to_path_;
