@@ -308,22 +308,22 @@ ConveyorPoseThread::init()
     pcl::copyPointCloud(*default_model_, *model_with_normals_);
 
     // Loading PCD file and calculation of model with normals for ALL! stations
-    /* TODO: Redo with correct mapping
-    for (const auto &pair : station_to_path_) {
+    // TODO: Redo with correct mapping
+    for (const auto &pair : type_target_to_path_) {
       CloudPtr model(new Cloud());
       pcl::PointCloud<pcl::PointNormal>::Ptr model_with_normals(new pcl::PointCloud<pcl::PointNormal>());
       if ((errnum = pcl::io::loadPCDFile(pair.second, *model)) < 0)
         throw fawkes::CouldNotOpenFileException(pair.second.c_str(), errnum,
-                                                ("For station " + pair.first).c_str());
+                                                ("For station " )); //TODO:: print
 
       norm_est_.setInputCloud(model);
       norm_est_.compute(*model_with_normals);
       pcl::copyPointCloud(*model, *model_with_normals);
 
       // TODO: Do insert to correct map
-      //station_to_model_.insert({pair.first, model_with_normals});
+      type_target_to_model_.insert({pair.first, model_with_normals});
     }
-    */
+
   }
 
   cloud_in_registered_ = false;
