@@ -133,11 +133,11 @@ private:
   void set_current_station(const std::string &station);
 
 
-  //Mapping from station to its correspoinding model path
-  std::map<std::string, std::string> station_to_path_;
+  //Mapping from {Type,Target} to its corresponding model path
+  std::map<std::pair<fawkes::ConveyorPoseInterface::MPS_TYPE,fawkes::ConveyorPoseInterface::MPS_TARGET>, std::string> type_target_to_path_;
 
   // Mapping from station name to preprocessed pointcloud model
-  std::map<std::string, pcl::PointCloud<pcl::PointNormal>::Ptr> station_to_model_;
+  std::map<std::pair<fawkes::ConveyorPoseInterface::MPS_TYPE,fawkes::ConveyorPoseInterface::MPS_TARGET>, pcl::PointCloud<pcl::PointNormal>::Ptr> type_target_to_model_;
 
 
   pcl::NormalEstimationOMP<Point, pcl::PointNormal> norm_est_;

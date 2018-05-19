@@ -180,8 +180,46 @@ ConveyorPoseThread::init()
     cfg_model_path_ = CONFDIR "/" + cfg_model_path_;
 
 
+  // Load default reference pcl for shelf, input belt (with cone), output belt (without cone) and slide
+
+  for ( int i = ConveyorPoseInterface::NO_STATION; i != ConveyorPoseInterface::LAST_MPS_TYPE_ELEMENT; i++ )
+  {
+    ConveyorPoseInterface::MPS_TYPE mps_type = static_cast<ConveyorPoseInterface::MPS_TYPE>(i);
+    for (int j = ConveyorPoseInterface::NO_LOCATION; j != ConveyorPoseInterface::LAST_MPS_TARGET_ELEMENT; j++)
+    {
+      ConveyorPoseInterface::MPS_TARGET mps_target = static_cast<ConveyorPoseInterface::MPS_TARGET>(j);
+      switch(mps_target)
+      {
+      case ConveyorPoseInterface::INPUT_CONVEYOR:
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "reference_default_models/with_cone");
+        break;
+      case ConveyorPoseInterface::OUTPUT_CONVEYOR:
+        type_target_to_path_[{mps_type,mps_target}] =CONFDIR "/" + config->get_string(CFG_PREFIX "reference_default_models/no_cone");
+        break;
+      case ConveyorPoseInterface::SHELF_LEFT:
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "reference_default_models/shelf");
+        break;
+      case ConveyorPoseInterface::SHELF_MIDDLE:
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "reference_default_models/shelf");
+        break;
+      case ConveyorPoseInterface::SHELF_RIGHT:
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "reference_default_models/shelf");
+        break;
+      case ConveyorPoseInterface::SLIDE:
+        type_target_to_path_[{mps_type,mps_target}] =CONFDIR "/" + config->get_string(CFG_PREFIX "reference_default_models/slide");
+        break;
+      case ConveyorPoseInterface::NO_LOCATION:
+        break;
+      case ConveyorPoseInterface::LAST_MPS_TARGET_ELEMENT:
+        break;
+      }
+    }
+  }
+
+
   // Load all model paths, should be "default" if the default model path should be used
 
+  /* TODO: remove if it isn't needed
   station_to_path_.insert({"default",cfg_model_path_});
   station_to_path_.insert({"M-BS-I", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/M-BS-I")});
   station_to_path_.insert({"M-BS-O", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/M-BS-O")});
@@ -205,15 +243,16 @@ ConveyorPoseThread::init()
   station_to_path_.insert({"C-RS2-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-RS2-O")});
   station_to_path_.insert({"M-DS-I", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/M-DS-I")});
   station_to_path_.insert({"C-DS-I", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/C-DS-I")});
-
+  */
 
   // set not set station_model_path to default model_path
+  /*
   std::map<std::string,std::string>::iterator path_it;
   for ( path_it = station_to_path_.begin(); path_it != station_to_path_.end(); path_it++ )
   {
     if( path_it->second == "default")
       path_it->second = cfg_model_path_;
-  }
+  }*/
 
   trimmed_scene_.reset(new Cloud());
 
@@ -269,6 +308,7 @@ ConveyorPoseThread::init()
     pcl::copyPointCloud(*default_model_, *model_with_normals_);
 
     // Loading PCD file and calculation of model with normals for ALL! stations
+    /* TODO: Redo with correct mapping
     for (const auto &pair : station_to_path_) {
       CloudPtr model(new Cloud());
       pcl::PointCloud<pcl::PointNormal>::Ptr model_with_normals(new pcl::PointCloud<pcl::PointNormal>());
@@ -280,8 +320,10 @@ ConveyorPoseThread::init()
       norm_est_.compute(*model_with_normals);
       pcl::copyPointCloud(*model, *model_with_normals);
 
-      station_to_model_.insert({pair.first, model_with_normals});
+      // TODO: Do insert to correct map
+      //station_to_model_.insert({pair.first, model_with_normals});
     }
+    */
   }
 
   cloud_in_registered_ = false;
