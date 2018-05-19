@@ -171,7 +171,9 @@ private:
   std::atomic<double> cfg_icp_track_odom_min_fitness_;
 
   std::atomic<float> cfg_voxel_grid_leaf_size_;
-  std::map<std::string, std::array<std::atomic<float>, 3> > cfg_hint_;
+  //std::map<std::string, std::array<std::atomic<float>, 3> > cfg_hint_;
+  std::map<fawkes::ConveyorPoseInterface::MPS_TARGET, std::array<std::atomic<float>, 3>> cfg_target_hint_;
+  std::map<fawkes::ConveyorPoseInterface::MPS_TYPE, std::array<std::atomic<float>, 3>> cfg_type_hint_;
 
   // state vars
   bool cfg_enable_switch_;
@@ -214,7 +216,7 @@ private:
  Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface * ll);
  fawkes::tf::Stamped<fawkes::tf::Pose> laserline_get_center(fawkes::LaserLineInterface *ll);
 
- void set_initial_tf_from_laserline(fawkes::LaserLineInterface *ll, std::string station_hint_id,std::string side_hint_id);
+ void set_initial_tf_from_laserline(fawkes::LaserLineInterface *ll, fawkes::ConveyorPoseInterface::MPS_TYPE mps_type,fawkes::ConveyorPoseInterface::MPS_TARGET mps_target);
 
  bool is_inbetween(double a, double b, double val);
 
