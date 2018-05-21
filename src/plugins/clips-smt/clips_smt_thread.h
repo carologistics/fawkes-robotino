@@ -179,7 +179,7 @@ private:
 	int points_mount_ring2_last = 30*points_scale;
 	int points_mount_ring3_last = 80*points_scale;
 	int points_mount_cap = 10*points_scale;
-	int points_deliver = 20*points_scale;
+	int points_deliver = 100*points_scale;
 	const int initial_points = 0;
 
 	// Visualization of computed plan
