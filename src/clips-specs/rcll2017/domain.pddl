@@ -244,7 +244,6 @@
 	 							 (not (location-free ?to ?to-side))
 	 							 (at ?r ?to ?to-side))
 	 )
-
 	; Move actions specific for the expected follow-up action.
 	; This models the move in two versions specific to the expected next action,
 	; either the retrieval or the delivery of a workpiece. While a more generic

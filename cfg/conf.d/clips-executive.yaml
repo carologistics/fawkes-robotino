@@ -108,7 +108,7 @@ clips-executive:
           - name: goal-reasoner
             files: [rcll2017/goal-reasoner.clp]
           - name: goal-expander
-            file: rcll2017/smt-planner.clp
+            files: [rcll2017/smt-planner.clp , fixed-sequence.clp ]
           - name: action-selection
             file: rcll2017/action-selection.clp
           - name: action-execution

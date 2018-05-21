@@ -1,37 +1,36 @@
+;---------------------------------------------------------------------------
+;  goal-reasoner.clp - Goal reasoning for RCLL domain
+;
+;  Created: Tue 09 Jan 2018 17:03:31 CET
+;  Copyright  2018  Mostafa Gomaa <gomaa@kbsg.rwth-aachen.de>
+;  Licensed under GPLv2+ license, cf. LICENSE file in the doc directory.
+;---------------------------------------------------------------------------
+
+; This program is free software; you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version.
+;
+; This program is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU Library General Public License for more details.
+;
+; Read the full text in the LICENSE.GPL file in the doc directory.
+;
 
 (deftemplate goal-meta
-	(slot goal-id (type SYMBOL))
-	(slot num-tries (type INTEGER))
+  (slot goal-id (type SYMBOL))
+  (slot num-tries (type INTEGER))
   (multislot last-achieve (type INTEGER) (cardinality 2 2) (default 0 0))
 )
 
 (defglobal
-	?*GOAL-MAX-TRIES* = 3
-)
-
-; #  Goal Creation
-; (defrule goal-reasoner-create
-;     (not (goal (id TESTGOAL)))
-;     (not (goal-already-tried TESTGOAL))
-;     =>
-;     (assert (goal (id TESTGOAL)))
-;     ; This is just to make sure we formulate the goal only once.
-;     ; In an actual domain this would be more sophisticated.
-;     (assert (goal-already-tried TESTGOAL))
-; )
-
-; ## Maintenance Goals
-(defrule goal-reasoner-create-beacon-maintain
-  (not (goal (id BEACONMAINTAIN)))
-  =>
-  (assert (goal (id BEACONMAINTAIN) (type MAINTAIN)))
-)
-
-(defrule goal-reasoner-create-wp-spawn-maintain
- (domain-facts-loaded)
- (not (goal (id WPSPAWN-MAINTAIN)))
- =>
- (assert (goal (id WPSPAWN-MAINTAIN) (type MAINTAIN)))
+  ?*GOAL-MAX-TRIES* = 3
+  ?*SALIENCE-GOAL-FORMULATE* = 500
+  ?*SALIENCE-GOAL-REJECT* = 400
+  ?*SALIENCE-GOAL-EXPAND* = 300
+  ?*SALIENCE-GOAL-SELECT* = 200
 )
 
 (defrule goal-reasoner-create-complexity
@@ -45,43 +44,47 @@
 	(assert (production-first COMPLEXITY))
 )
 
-; ### sub-goals of the maintenance goal
-(defrule goal-reasoner-create-beacon-achieve
-  ?g <- (goal (id BEACONMAINTAIN) (mode SELECTED|DISPATCHED))
-  (not (goal (id BEACONACHIEVE)))
-  (time $?now)
-  ; TODO: make interval a constant
-  (goal-meta (goal-id BEACONMAINTAIN)
-    (last-achieve $?last&:(timeout ?now ?last 1)))
+; # Expand parent goal
+;Expanding a parent goal means it has some formulated goals
+(defrule goal-reasoner-expand-parent-goal
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  ?p <- (goal (id ?parent-id) (mode SELECTED))
+  ?g <- (goal (parent ?parent-id) (mode FORMULATED))
   =>
-  (assert (goal (id BEACONACHIEVE) (parent BEACONMAINTAIN)))
-  (modify ?g (mode EXPANDED))
-)
-
-(defrule goal-reasoner-create-wp-spawn-achieve
-  ?g <- (goal (id WPSPAWN-MAINTAIN) (mode SELECTED|DISPATCHED))
-  (not (goal (id WPSPAWN-ACHIEVE)))
-  (time $?now)
-  ; TODO: make interval a constant
-  (goal-meta (goal-id WPSPAWN-MAINTAIN)
-  (last-achieve $?last&:(timeout ?now ?last 1)))
-  (wm-fact (key domain fact self args? r ?robot))
-  (not (and
-    (domain-object (name ?wp) (type workpiece))
-    (wm-fact (key domain fact wp-spawned-by args? wp ?wp r ?robot))))
-  =>
-  (assert (goal (id WPSPAWN-ACHIEVE) (parent WPSPAWN-MAINTAIN)))
-  (modify ?g (mode EXPANDED))
+  (modify ?p (mode EXPANDED))
 )
 
 ; #  Goal Selection
 ; We can choose one or more goals for expansion, e.g., calling
 ; a planner to determine the required steps.
 (defrule goal-reasoner-select
-	?g <- (goal (id ?goal-id) (mode FORMULATED))
-	=>
-	(modify ?g (mode SELECTED))
-	(assert (goal-meta (goal-id ?goal-id)))
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?g <- (goal (parent ?parent) (id ?goal-id) (mode FORMULATED))
+  (not (goal (id ?parent) (type MAINTAIN)))
+   =>
+  (modify ?g (mode SELECTED))
+  (assert (goal-meta (goal-id ?goal-id)))
+)
+
+(defrule goal-reasoner-select-maintaince-subgoal
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?p <- (goal (id ?parent-id) (mode EXPANDED) (type MAINTAIN))
+  ?g <- (goal (parent ?parent-id) (mode FORMULATED)
+          (id ?subgoal-id) (priority ?priority))
+  ;Select the formulated subgoal with the highest priority
+  (not (goal (parent ?parent-id) (mode FORMULATED)
+             (priority ?h-priority&:(> ?h-priority ?priority)))
+  )
+  ;No other subgoal being processed
+  (not (goal (parent ?parent-id)
+             (mode SELECTED|EXPANDED|
+                   COMMITTED|DISPATCHED|
+                   FINISHED|EVALUATED))
+  )
+=>
+  (printout t "Goal " ?subgoal-id " selected!" crlf)
+  (modify ?g (mode SELECTED))
+  (assert (goal-meta (goal-id ?subgoal-id)))
 )
 
 ; #  Commit to goal (we "intend" it)
@@ -89,9 +92,9 @@
 ; different planners. This step would allow to commit one out of these
 ; plans.
 (defrule goal-reasoner-commit
-	?g <- (goal (mode EXPANDED))
-	=>
-	(modify ?g (mode COMMITTED))
+  ?g <- (goal (mode EXPANDED))
+  =>
+  (modify ?g (mode COMMITTED))
 )
 
 ; #  Dispatch goal (action selection and execution now kick in)
@@ -100,49 +103,21 @@
 ; orders. It is then up to action selection and execution to determine
 ; what to do when.
 (defrule goal-reasoner-dispatch
-	?g <- (goal (mode COMMITTED))
-	=>
-	(modify ?g (mode DISPATCHED))
+  ?g <- (goal (mode COMMITTED))
+  =>
+  (modify ?g (mode DISPATCHED))
 )
 
 ; #  Goal Monitoring
 
-; ##Sub-Goals Evaluation
-(deffunction random-id ()
-  "Return a random task id"
-  (return (random 0 1000000000))
-)
-
-(defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
-  ?g <- (goal (id WPSPAWN-ACHIEVE) (parent WPSPAWN-MAINTAIN) (mode FINISHED) (outcome COMPLETED))
-  ?p <- (goal (id WPSPAWN-MAINTAIN) (mode DISPATCHED))
-  ?m <- (goal-meta (goal-id WPSPAWN-MAINTAIN))
-  (time $?now)
-  =>
-  (printout debug "Goal '" WPSPAWN-ACHIEVE "' (part of '" WPSPAWN-MAINTAIN
-    "') has been completed, Evaluating" crlf)
-     (bind ?wp-id (sym-cat WP (random-id)))
-  (assert
-    (domain-object (name ?wp-id) (type workpiece))
-    (wm-fact (key domain fact wp-unused args? wp ?wp-id) (value TRUE))
-    (wm-fact (key domain fact wp-cap-color args? wp ?wp-id col CAP_NONE) (value TRUE))
-    (wm-fact (key domain fact wp-ring1-color args? wp ?wp-id col RING_NONE) (value TRUE))
-    (wm-fact (key domain fact wp-ring2-color args? wp ?wp-id col RING_NONE) (value TRUE))
-    (wm-fact (key domain fact wp-ring3-color args? wp ?wp-id col RING_NONE) (value TRUE))
-    (wm-fact (key domain fact wp-base-color args? wp ?wp-id col BASE_NONE) (value TRUE))
-    (wm-fact (key domain fact wp-spawned-by args? wp ?wp-id r R-1) (value TRUE))
-  )
-  (modify ?g (mode EVALUATED))
-  (modify ?m (last-achieve ?now))
-)
-
 ; ## Goal Evaluation
 (defrule goal-reasoner-evaluate-completed-subgoal-common
   ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome COMPLETED))
-  ?pg <- (goal (id ?parent-id) (mode DISPATCHED))
+  ?pg <- (goal (id ?parent-id))
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
   (test (neq ?goal-id WPSPAWN-ACHIEVE))
+  (test (neq ?goal-id PRODUCE-C0))
   =>
   (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
     "') has been completed, Evaluating" crlf)
@@ -164,20 +139,24 @@
 )
 
 ; # Goal Clean up
-(defrule goal-reasoner-cleanup-completed-subgoal-common
-  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode EVALUATED) (outcome COMPLETED))
-  ?pg <- (goal (id ?parent-id) (mode DISPATCHED))
-  ?m <- (goal-meta (goal-id ?parent-id))
+(defrule goal-reasoner-cleanup-maintinace-subgoal
+  "Clean up all achieve sub-goals if one has been evaluated and reset maintenance goal"
+  ?pg <- (goal (id ?parent-id) (type MAINTAIN))
+  ?pm <- (goal-meta (goal-id ?parent-id))
+  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode EVALUATED) (outcome ?outcome))
   =>
-  (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
-     "') has been evaluated, cleaning up" crlf)
-  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-   (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
-    (retract ?a)
-   )
-   (retract ?p)
+  (delayed-do-for-all-facts ((?sg goal)) (eq ?sg:parent ?parent-id)
+    (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?sg:id)
+     (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
+      (retract ?a)
+     )
+     (retract ?p)
+    )
+    (printout t "Goal '" ?sg:id "' (part of '" ?sg:parent
+       "') has been evaluated, cleaning up" crlf)
+    (retract ?sg)
   )
-  (retract ?g)
+  (modify ?pg (mode SELECTED))
 )
 
 (defrule goal-reasoner-cleanup-common
