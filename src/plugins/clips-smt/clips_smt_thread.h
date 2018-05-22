@@ -151,7 +151,7 @@ private:
 	int plan_horizon;
 	int plan_horizon_max;
 	std::vector<int> amount_min_req_actions; // 6,8,10,12
-	std::vector<int> index_upper_bound_actions; // 6,9,11,13
+	std::vector<int> index_upper_bound_actions; // 6,9,11,13 -> 10,13,15,17
 	int amount_req_actions_add_bases; // 2
 
 	// States of machines
@@ -183,7 +183,21 @@ private:
 	const int initial_points = 0;
 
 	// Visualization of computed plan
-	const int index_delivery_action = 6;
+	int index_action_0 = 0;
+	int index_action_1 = 1;
+	int index_action_2 = 2;
+	int index_action_3 = 3;
+	int index_action_4 = 4;
+	int index_action_5 = 5;
+	int index_action_6 = 6;
+	int index_action_7 = 7;
+	int index_action_8 = 8;
+	int index_action_9 = 9;
+	int index_action_10 = 10;
+	int index_action_11 = 11;
+	int index_action_12 = 12;
+	int index_action_13 = 13;
+	const int index_delivery_action = index_action_6;
 	std::map<int, int> model_machines;
 	std::map<int, float> model_times;
 	std::map<int, int> model_positions;
