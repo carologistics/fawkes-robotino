@@ -600,7 +600,7 @@
 			(smt-create-machines ?team-color)
 			(smt-create-orders ?team-color)
 			(smt-create-rings ?team-color)
-			1 ; Strategy set here, 0 means MACRO and 1 WINDOW
+			0 ; Strategy set here, 0 means MACRO and 1 WINDOW
 			5 ; Window size for strategy WINDOW
 	  )
 	)
