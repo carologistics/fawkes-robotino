@@ -675,7 +675,7 @@ ConveyorPoseThread::update_station_information(ConveyorPoseInterface::MPS_TYPE m
       bb_pose_->set_euclidean_fitness(result_fitness_);
       bb_pose_->write();
 
-      recognition_thread_->disable();
+      recognition_thread_->restart();
       result_fitness_ = std::numeric_limits<double>::min();
     }
   }
