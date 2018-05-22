@@ -99,11 +99,11 @@ ClipsSmtThread::init()
 	// Prepare PlanHorizon
 	// MACRO ACTIONS
 	amount_min_req_actions.clear();
-	amount_min_req_actions.push_back(6);
 	amount_min_req_actions.push_back(8);
 	amount_min_req_actions.push_back(10);
 	amount_min_req_actions.push_back(12);
-	index_upper_bound_actions.push_back(6);
+	amount_min_req_actions.push_back(14);
+	index_upper_bound_actions.push_back(7);
 	index_upper_bound_actions.push_back(9);
 	index_upper_bound_actions.push_back(11);
 	index_upper_bound_actions.push_back(13);
@@ -365,33 +365,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 	for(unsigned int i=1; i<=model_actions.size(); ++i){
 		switch(model_actions[i]) {
-			case 0:	// Dummyaction: Move or discard
-
-					++action_id;
-					action = plan->add_actions();
-					action->set_name("move");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
-					action->set_id(action_id);
-					action->set_goal_id(data.orders(order_id).id());
-					param = action->add_params();
-					param->set_key("to");
-					param->set_value(node_names[model_positions[i]]);
-
-					if(model_holdA[i]>0 && model_holdB[i]==0) {
-						++action_id;
-						action = plan->add_actions();
-						action->set_name("wp-discard");
-						action->set_actor("R-"+std::to_string(model_robots[i]));
-						action->set_id(action_id);
-						action->add_parent_id(action_id-1);
-						action->set_goal_id(data.orders(order_id).id());
-						param = action->add_params();
-						param->set_key("wp");
-						param->set_value("WP1");
-					}
-
-					break;
-
+					
 			case 1:	// 1.Action: Retrieve cap_carrier_cap from CS-Shelf
 
 					++action_id;
@@ -491,31 +465,38 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
 
-					++action_id;
-					action = plan->add_actions();
-					action->set_name("wp-get");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
-					action->set_id(action_id);
-					action->add_parent_id(action_id-1);
-					action->add_parent_id(action_id_last[1]);
-					action->set_goal_id(data.orders(order_id).id());
-					param = action->add_params();
-					param->set_key("mps");
-					param->set_value(node_names[model_positions[i]]);
-					param = action->add_params();
-					param->set_key("wp");
-					param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]+std::to_string(cap_carrier_index));
-
-					++action_id;
-					action = plan->add_actions();
-					action->set_name("wp-discard");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
-					action->set_id(action_id);
-					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
-					param = action->add_params();
-					param->set_key("wp");
-					param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]+std::to_string(cap_carrier_index));
+					if(model_outputA[i] == products["BR"]) {
+						++action_id;
+						action = plan->add_actions();
+						action->set_name("wp-get");
+						action->set_actor("R-"+std::to_string(model_robots[i]));
+						action->set_id(action_id);
+						action->add_parent_id(action_id-1);
+						action->add_parent_id(action_id_last[1]);
+						action->set_goal_id(data.orders(order_id).id());
+						param = action->add_params();
+						param->set_key("mps");
+						param->set_value(node_names[model_positions[i]]);
+						param = action->add_params();
+						param->set_key("wp");
+						param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]+std::to_string(cap_carrier_index));
+					}
+					else {
+						++action_id;
+						action = plan->add_actions();
+						action->set_name("wp-get");
+						action->set_actor("R-"+std::to_string(model_robots[i]));
+						action->set_id(action_id);
+						action->add_parent_id(action_id-1);
+						action->add_parent_id(action_id_last[4]);
+						action->set_goal_id(data.orders(order_id).id());
+						param = action->add_params();
+						param->set_key("mps");
+						param->set_value(node_names[model_positions[i]]);
+						param = action->add_params();
+						param->set_key("wp");
+						param->set_value("WP1");
+					}
 
 					break;
 
@@ -530,80 +511,82 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					// if(action_id_last[3]) action->add_parent_id(action_id_last[3]);
 					// Only go to the base station if the base intended to be mounted comes after all the base retrievals which are intended as payment
 					// Look ahead to dermine if this instance of action 3 is the (!) one which requires additional parent_ids
-					if(data.orders(order_id).complexity() > 0) {
-						for(unsigned j=i+1; j<model_actions.size(); ++j) {
+					wp = "WP2"; // TODO How to determine dummy
+					for(unsigned j=i+1; j<=model_actions.size(); ++j) {
 
-							// Check if action is an instance of action 8 and the current base retrieval is performed by the same robot
-							if(model_actions[j] == 8 && model_robots[i] == model_robots[j]) {
+						// Check if action is an instance of action 8 and the current base retrieval is performed by the same robot
+						if(model_actions[j] == 8 && model_robots[i] == model_robots[j]) {
 
-								if(model_positions[j]==7) {
-									for(unsigned int k=0; k<action_id_last_rs1_pay.size(); ++k) {
-										if((int) k<rings_req_add_bases[rings[0]]) {
-											action->add_parent_id(action_id_last_rs1_pay[k]);
-										}
-										else {
-											std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 1." << std::endl;
-										}
+							if(model_positions[j]==7) {
+								for(unsigned int k=0; k<action_id_last_rs1_pay.size(); ++k) {
+									if((int) k<rings_req_add_bases[rings[0]]) {
+										action->add_parent_id(action_id_last_rs1_pay[k]);
+									}
+									else {
+										std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 1." << std::endl;
 									}
 								}
-								else if(model_positions[j]==9) {
-									for(unsigned int k=0; k<action_id_last_rs2_pay.size(); ++k) {
-										if((int) k<rings_req_add_bases[rings[0]]) {
-											action->add_parent_id(action_id_last_rs2_pay[k]);
-										}
-										else {
-											std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 2." << std::endl;
-										}
+							}
+							else if(model_positions[j]==9) {
+								for(unsigned int k=0; k<action_id_last_rs2_pay.size(); ++k) {
+									if((int) k<rings_req_add_bases[rings[0]]) {
+										action->add_parent_id(action_id_last_rs2_pay[k]);
+									}
+									else {
+										std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 2." << std::endl;
 									}
 								}
-								wp = "WP1";
-								break;
 							}
-							else if(model_actions[j] == 7 && model_robots[i] == model_robots[j]) {
-								wp = "WP2";
-								break;
-							}
-
+							wp = "WP1";
+							break;
 						}
-					}
-					else {
-						wp = "WP1";
+						else if(model_actions[j] == 5 && model_robots[i] == model_robots[j]) {
+							wp = "WP1";
+							break;
+						}
+						else if(model_actions[j] == 7 && model_robots[i] == model_robots[j]) {
+							wp = "WP2";
+							break;
+						}
+
 					}
 					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[1]);
 
-					++action_id;
-					action = plan->add_actions();
-					action->set_name("prepare-bs");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
-					action->set_id(action_id);
-					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
-					param = action->add_params();
-					param->set_key("mps");
-					param->set_value(node_names[1]);
-					param = action->add_params();
-					param->set_key("color");
-					param->set_value(base_colors_inverted[data.orders(order_id).base_color()]);
+					if(model_outputA[i] == products["nothing"]) {
+						++action_id;
+						action = plan->add_actions();
+						action->set_name("prepare-bs");
+						action->set_actor("R-"+std::to_string(model_robots[i]));
+						action->set_id(action_id);
+						action->add_parent_id(action_id-1);
+						action->set_goal_id(data.orders(order_id).id());
+						param = action->add_params();
+						param->set_key("mps");
+						param->set_value(node_names[1]);
+						param = action->add_params();
+						param->set_key("color");
+						param->set_value(base_colors_inverted[data.orders(order_id).base_color()]);
 
-					++action_id;
-					action = plan->add_actions();
-					action->set_name("bs-dispense");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
-					action->set_id(action_id);
-					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
-					param = action->add_params();
-					param->set_key("mps");
-					param->set_value(node_names[1]);
-					param = action->add_params();
-					param->set_key("color");
-					param->set_value(base_colors_inverted[data.orders(order_id).base_color()]);
-					param = action->add_params();
-					param->set_key("wp");
-					param->set_value(wp);
+						++action_id;
+						action = plan->add_actions();
+						action->set_name("bs-dispense");
+						action->set_actor("R-"+std::to_string(model_robots[i]));
+						action->set_id(action_id);
+						action->add_parent_id(action_id-1);
+						action->set_goal_id(data.orders(order_id).id());
+						param = action->add_params();
+						param->set_key("mps");
+						param->set_value(node_names[1]);
+						param = action->add_params();
+						param->set_key("color");
+						param->set_value(base_colors_inverted[data.orders(order_id).base_color()]);
+						param = action->add_params();
+						param->set_key("wp");
+						param->set_value(wp);
+					}
 
 					++action_id;
 					action = plan->add_actions();
@@ -622,6 +605,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action_id_last_bs_robot[model_robots[i]] = action_id;
 
 					break;
+
 			case 5: // 5.Action : Prepare and mount sub_product with cap at CS
 
 					++action_id;
@@ -699,33 +683,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value("WP1");
 
 					break;
-			case 6:	// 6.Action : Retrieve product at CS and deliver at DS
-
-					++action_id;
-					action = plan->add_actions();
-					action->set_name("move");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
-					action->set_id(action_id);
-					action->add_parent_id(action_id_last[2]);
-					action->set_goal_id(data.orders(order_id).id());
-					param = action->add_params();
-					param->set_key("to");
-					param->set_value(node_names[model_positions[i]]);
-
-					++action_id;
-					action = plan->add_actions();
-					action->set_name("wp-get");
-					action->set_actor("R-"+std::to_string(model_robots[i]));
-					action->set_id(action_id);
-					action->add_parent_id(action_id-1);
-					action->add_parent_id(action_id_last[4]);
-					action->set_goal_id(data.orders(order_id).id());
-					param = action->add_params();
-					param->set_key("mps");
-					param->set_value(node_names[model_positions[i]]);
-					param = action->add_params();
-					param->set_key("wp");
-					param->set_value("WP1");
+			case 6:	// 6.Action : Deliver at DS
 
 					++action_id;
 					action = plan->add_actions();
@@ -915,7 +873,12 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value("true");
 					param = action->add_params();
 					param->set_key("wp");
-					param->set_value("WP2");
+					if(model_holdA[i]<=3) {
+						param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]+std::to_string(cap_carrier_index));
+					}
+					else {
+						param->set_value("WP2");
+					}
 
 					// Save action_id_last for feed at the correpsonding ring station
 					if(model_positions[i] == 7) {
@@ -1501,11 +1464,15 @@ ClipsSmtThread::loop()
 		logger->log_info(name(), "Plan_horizon for macro approach is set to %i", plan_horizon_max);
 
 		bool solve = true;
-		plan_horizon = 0;
+		if(world_initHold[1]==0 && world_initInside[1]==0 && world_initInside[2]==0 && world_initInside[3]==0 && world_initInside[4]==0 && world_initOutside[0]==0 && world_initOutside[1]==0 && world_initOutside[2]==0 && world_initOutside[3]==0 && world_initOutside[4]==0) {
+			plan_horizon = plan_horizon_max;
+		}
+		else {
+			plan_horizon = 1;
+		}
 
-		while(solve && plan_horizon < plan_horizon_max) {
+		while(solve && plan_horizon < plan_horizon_max+5) {
 
-			plan_horizon++;
 			logger->log_info(name(), "%i iteration for macro approach", plan_horizon);
 
 			// Declare formulas for encoding
@@ -1515,6 +1482,7 @@ ClipsSmtThread::loop()
 			if(clips_smt_solve_formula(formula)) {
 				solve = false;
 			}
+			plan_horizon++;
 		}
 	}
 	// Strategy WINDOW
@@ -1595,14 +1563,16 @@ ClipsSmtThread::clips_smt_init_game()
 				else {
 					station_colors["R4"] = "RS2";
 				}
-				continue;
+				// continue;
 			}
 			else if(cw_capStation.compare(data.machines(i).name()) == 0){
 				if(data.machines(i).cap_color()==1) {
+					std::cout << "BLACK cap for CS1" << std::endl;
 					station_colors["C1"] = "CS1";
 					station_colors["C2"] = "CS2";
 				}
 				else {
+					std::cout << "GREY cap for CS1" << std::endl;
 					station_colors["C1"] = "CS2";
 					station_colors["C2"] = "CS1";
 				}
@@ -1625,7 +1595,7 @@ ClipsSmtThread::clips_smt_init_game()
 	for(int i=0; i<data.orders().size(); ++i) {
 		desired_complexity = data.orders(i).complexity(); // Cover last given order
 		order_id = i;
-		base = 1; // data.orders(i).base_color();
+		base = data.orders(i).base_color();
 		if(desired_complexity>0){
 			rings.push_back(data.orders(i).ring_colors(0));
 		}
@@ -1644,7 +1614,7 @@ ClipsSmtThread::clips_smt_init_game()
 		else {
 			rings.push_back(1); // DUMMY
 		}
-		cap = 1; // data.orders(i).cap_color();
+		cap = data.orders(i).cap_color();
 		delivery_period_begin = data.orders(i).delivery_period_begin();
 		delivery_period_end = data.orders(i).delivery_period_end();
 	}
@@ -1667,6 +1637,7 @@ ClipsSmtThread::clips_smt_init_game()
 		std::string cs2_name = team+"-CS2";
 		std::string rs1_name = team+"-RS1";
 		std::string rs2_name = team+"-RS2";
+		std::string bs_name = team+"-BS";
 
 		// Extract add_bases of RS 
 		if(rs1_name.compare(data.machines(i).name()) == 0) {
@@ -1685,6 +1656,14 @@ ClipsSmtThread::clips_smt_init_game()
 		else if(cs2_name.compare(data.machines(i).name()) == 0) {
 			world_initInside[4] = cap_colors[data.machines(i).cs_buffered()];
 			world_initOutside[4] = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
+		}
+		else if(cs2_name.compare(data.machines(i).name()) == 0) {
+			world_initInside[4] = cap_colors[data.machines(i).cs_buffered()];
+			world_initOutside[4] = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
+		}
+		else if(bs_name.compare(data.machines(i).name()) == 0) {
+			world_initInside[0] = 0;
+			world_initOutside[0] = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
 		}
 	}
 
@@ -1770,18 +1749,21 @@ ClipsSmtThread::clips_smt_init_post()
 				break;
 		case 1:
 				plan_horizon_max = amount_min_req_actions[1]
-									+ amount_req_actions_add_bases*rings_req_add_bases[rings[0]];
+									+ amount_req_actions_add_bases*rings_req_add_bases[rings[0]]
+									- amount_req_actions_add_bases;
 				break;
 		case 2:
 				plan_horizon_max = amount_min_req_actions[2]
 									+ amount_req_actions_add_bases*rings_req_add_bases[rings[0]]
-									+ amount_req_actions_add_bases*rings_req_add_bases[rings[1]];
+									+ amount_req_actions_add_bases*rings_req_add_bases[rings[1]]
+									- amount_req_actions_add_bases;
 				break;
 		case 3:
 				plan_horizon_max = amount_min_req_actions[3]
 									+ amount_req_actions_add_bases*rings_req_add_bases[rings[0]]
 									+ amount_req_actions_add_bases*rings_req_add_bases[rings[1]]
-									+ amount_req_actions_add_bases*rings_req_add_bases[rings[2]];
+									+ amount_req_actions_add_bases*rings_req_add_bases[rings[2]]
+									- amount_req_actions_add_bases;
 				break;
 		default:
 				std::cout << "Wrong desired_complexity " << desired_complexity << " for determining plan_horizon" << std::endl;
@@ -1888,7 +1870,7 @@ ClipsSmtThread::clips_smt_encoder()
 		}
 		constraints.push_back(0 <= getVar(var, "md_"+std::to_string(i))); // VarMachineDuration
 		constraints.push_back(1 <= getVar(var, "R_"+std::to_string(i)) && getVar(var, "R_"+std::to_string(i)) <= amount_robots); // VarR
-		constraints.push_back(0 < getVar(var, "A_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(i)) <= index_upper_bound_actions[desired_complexity]); // VarA
+		constraints.push_back(1 <= getVar(var, "A_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(i)) <= index_upper_bound_actions[desired_complexity]); // VarA
 		constraints.push_back(min_machine_groups <= getVar(var, "M_"+std::to_string(i)) && getVar(var, "M_"+std::to_string(i)) <= max_machine_groups); // VarM
 
 		constraints.push_back(min_products <= getVar(var, "holdA_"+std::to_string(i)) && getVar(var, "holdA_"+std::to_string(i)) <= max_products); // VarHoldA
@@ -2207,7 +2189,7 @@ ClipsSmtThread::clips_smt_encoder()
 
 		/*
 		 * ----------------------------------------------------------------------------------------------------------------------------------------------
-		 * Actions all complexities require (which correspond to complexity 0
+		 * Actions all complexities require (which correspond to complexity 0)
 		 * ----------------------------------------------------------------------------------------------------------------------------------------------
 		 */
 
@@ -2220,7 +2202,7 @@ ClipsSmtThread::clips_smt_encoder()
 									&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "holdB_"+std::to_string(i)) == products[br_ci])
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 1) || constraintaction1);
+		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_1) || constraintaction1);
 
 		// 2.Action : Prepare and feed CS for RETRIEVE with cap_carrier
 		z3::expr constraintaction2((getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"] || getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"])
@@ -2234,31 +2216,32 @@ ClipsSmtThread::clips_smt_encoder()
 									&& (getVar(var, "holdA_"+std::to_string(i)) == products[br_ci])
 									&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 2) || constraintaction2);
+		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_2) || constraintaction2);
 
 		// 3.Action : Retrieve cap_carrier at CS
 		z3::expr constraintaction3((getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"] || getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"])
 									&& (getVar(var, "insideB_"+std::to_string(i)) == getVar(var, "insideA_"+std::to_string(i)))
-									&& (getVar(var, "outputA_"+std::to_string(i)) == products["BR"])
+									&& (getVar(var, "outputA_"+std::to_string(i)) > 0) // Must be higher than 0 in order to retrieve someting as no prepare is intended here
 									&& (getVar(var, "outputB_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "md_"+std::to_string(i)) == time_to_disc)
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"]) || getVar(var, "pos_"+std::to_string(i)) == 3)
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"]) || getVar(var, "pos_"+std::to_string(i)) == 5)
 									&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
-									&& (getVar(var, "holdB_"+std::to_string(i)) == 0)
+									&& (getVar(var, "holdB_"+std::to_string(i)) == getVar(var, "outputA_"+std::to_string(i)))
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 3) || constraintaction3);
+		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_3) || constraintaction3);
 
 		// 4.Action : Prepare and retrieve base from BS
 		z3::expr constraintaction4((getVar(var, "M_"+std::to_string(i)) == machine_groups["BS"])
 									&& (getVar(var, "insideB_"+std::to_string(i)) == getVar(var, "insideA_"+std::to_string(i)))
-									&& (getVar(var, "outputB_"+std::to_string(i)) == getVar(var, "outputA_"+std::to_string(i)))
+									&& (getVar(var, "outputB_"+std::to_string(i)) == products["nothing"]) // outputA is bound by the init or the predecessor
 									&& (getVar(var, "md_"+std::to_string(i)) == time_to_prep+time_to_fetch)
 									&& (getVar(var, "pos_"+std::to_string(i)) == 1)
 									&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
-									&& (getVar(var, "holdB_"+std::to_string(i)) == products[bi])
+									&& (!(getVar(var, "outputA_"+std::to_string(i)) == 0) || getVar(var, "holdB_"+std::to_string(i)) == products[bi])
+									&& (!(getVar(var, "outputA_"+std::to_string(i)) > 0) || getVar(var, "holdB_"+std::to_string(i)) == getVar(var, "outputA_"+std::to_string(i)))
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 4) || constraintaction4);
+		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_4) || constraintaction4);
 
 		// 5.Action : Prepare and mount sub_product with cap at CS
 		z3::expr constraintaction5((getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"] || getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"])
@@ -2266,26 +2249,36 @@ ClipsSmtThread::clips_smt_encoder()
 									&& (getVar(var, "insideB_"+std::to_string(i)) == inside_capstation["nothing"])
 									&& (getVar(var, "outputA_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "outputB_"+std::to_string(i)) == products[product])
-									&& (getVar(var, "md_"+std::to_string(i)) == time_to_prep+time_to_feed)
+									&& (getVar(var, "md_"+std::to_string(i)) == time_to_prep+time_to_feed) // TODO adapt the time
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"]) || getVar(var, "pos_"+std::to_string(i)) == 2)
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"]) || getVar(var, "pos_"+std::to_string(i)) == 4)
 									&& (getVar(var, "holdA_"+std::to_string(i)) == products[sub_product])
 									&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 5) || constraintaction5);
+		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_5) || constraintaction5);
 
-		// 6.Action : Retrieve product at CS and deliver at DS
-		z3::expr constraintaction6((getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"] || getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"])
+		// 6.Action : Hold product and deliver at DS
+		z3::expr constraintaction6((getVar(var, "M_"+std::to_string(i)) == machine_groups["BS"]) // TODO own group?
 									&& (getVar(var, "insideB_"+std::to_string(i)) == getVar(var, "insideA_"+std::to_string(i)))
-									&& (getVar(var, "outputA_"+std::to_string(i)) == products[product])
-									&& (getVar(var, "outputB_"+std::to_string(i)) == products["nothing"])
-									&& (getVar(var, "md_"+std::to_string(i)) == time_to_fetch+time_to_prep+time_to_feed)
-									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"]) || getVar(var, "pos_"+std::to_string(i)) == 3)
-									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"]) || getVar(var, "pos_"+std::to_string(i)) == 5)
-									&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
+									&& (getVar(var, "outputB_"+std::to_string(i)) == getVar(var, "outputA_"+std::to_string(i)))
+									&& (getVar(var, "md_"+std::to_string(i)) == time_to_prep+time_to_feed)
+									&& (getVar(var, "pos_"+std::to_string(i)) == 6)
+									&& (getVar(var, "holdA_"+std::to_string(i)) == products[product])
 									&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 6) || constraintaction6);
+		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_6) || constraintaction6);
+
+		// 7.Action : Feed additional base into RS for payment and points
+		z3::expr constraintaction7((getVar(var, "M_"+std::to_string(i)) == machine_groups["RS1"] || getVar(var, "M_"+std::to_string(i)) == machine_groups["RS2"])
+									&& (getVar(var, "insideB_"+std::to_string(i)) == getVar(var, "insideA_"+std::to_string(i))+1)
+									&& (getVar(var, "outputB_"+std::to_string(i)) == getVar(var, "outputA_"+std::to_string(i)))
+									&& (getVar(var, "md_"+std::to_string(i)) == time_to_feed)
+									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS1"]) || getVar(var, "pos_"+std::to_string(i)) == 7)
+									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS2"]) || getVar(var, "pos_"+std::to_string(i)) == 9)
+									&& (getVar(var, "holdA_"+std::to_string(i)) > 0)
+									&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
+									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
+		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_7) || constraintaction7);
 
 		/*
 		 * ----------------------------------------------------------------------------------------------------------------------------------------------
@@ -2294,17 +2287,6 @@ ClipsSmtThread::clips_smt_encoder()
 		 */
 		if(desired_complexity > 0) {
 
-			// 7.Action : Feed additional base into RS
-			z3::expr constraintaction7((getVar(var, "M_"+std::to_string(i)) == machine_groups["RS1"] || getVar(var, "M_"+std::to_string(i)) == machine_groups["RS2"])
-										&& (getVar(var, "insideB_"+std::to_string(i)) == getVar(var, "insideA_"+std::to_string(i))+1)
-										&& (getVar(var, "outputB_"+std::to_string(i)) == getVar(var, "outputA_"+std::to_string(i)))
-										&& (getVar(var, "md_"+std::to_string(i)) == time_to_feed)
-										&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS1"]) || getVar(var, "pos_"+std::to_string(i)) == 7)
-										&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS2"]) || getVar(var, "pos_"+std::to_string(i)) == 9)
-										&& (getVar(var, "holdA_"+std::to_string(i)) == products[bi])
-										&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
-										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 7) || constraintaction7);
 
 			// 8.Action : Prepare and mount base with ring1 at RS
 			z3::expr constraintaction8((getVar(var, "M_"+std::to_string(i)) == machine_groups[station_colors[r1i]])
@@ -2316,7 +2298,7 @@ ClipsSmtThread::clips_smt_encoder()
 										&& (getVar(var, "holdA_"+std::to_string(i)) == products[bi])
 										&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 8) || constraintaction8);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_8) || constraintaction8);
 
 			// 9.Action : Retrieve base_ring1 from RS
 			z3::expr constraintaction9((getVar(var, "M_"+std::to_string(i)) == machine_groups[station_colors[r1i]])
@@ -2328,7 +2310,7 @@ ClipsSmtThread::clips_smt_encoder()
 										&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(var, "holdB_"+std::to_string(i)) == products[bi_r1i])
 										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 9) || constraintaction9);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_9) || constraintaction9);
 		}
 		/*
 		 * ----------------------------------------------------------------------------------------------------------------------------------------------
@@ -2347,7 +2329,7 @@ ClipsSmtThread::clips_smt_encoder()
 										&& (getVar(var, "holdA_"+std::to_string(i)) == products[bi_r1i])
 										&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 10) || constraintaction10);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_10) || constraintaction10);
 
 			// 11.Action : Retrieve base_ring1_ring2 from RS
 			z3::expr constraintaction11((getVar(var, "M_"+std::to_string(i)) == machine_groups[station_colors[r2i]])
@@ -2359,7 +2341,7 @@ ClipsSmtThread::clips_smt_encoder()
 										&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(var, "holdB_"+std::to_string(i)) == products[bi_r1i_r2i])
 										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 11) || constraintaction11);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_11) || constraintaction11);
 		}
 		/*
 		 * ----------------------------------------------------------------------------------------------------------------------------------------------
@@ -2378,7 +2360,7 @@ ClipsSmtThread::clips_smt_encoder()
 										&& (getVar(var, "holdA_"+std::to_string(i)) == products[bi_r1i_r2i])
 										&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 12) || constraintaction12);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_12) || constraintaction12);
 
 			// 13.Action : Retrieve base_ring1_ring2_ring3 from RS
 			z3::expr constraintaction13((getVar(var, "M_"+std::to_string(i)) == machine_groups[station_colors[r3i]])
@@ -2390,7 +2372,7 @@ ClipsSmtThread::clips_smt_encoder()
 										&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(var, "holdB_"+std::to_string(i)) == products[bi_r1i_r2i_r3i])
 										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 13) || constraintaction13);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_13) || constraintaction13);
 		}
 	}
 
@@ -2730,10 +2712,25 @@ ClipsSmtThread::clips_smt_encoder_window()
 	// Constraint: for some actions the robot is fixed
 	for(int i=1; i<plan_horizon+1; ++i) {
 		for(int j=1; j<i; ++j) {
-			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == 1 && getVar(var, "A_"+std::to_string(i)) == 2 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
-			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == 9 && getVar(var, "A_"+std::to_string(i)) == 10 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
-			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == 11 && getVar(var, "A_"+std::to_string(i)) == 12 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
-			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == 13 && getVar(var, "A_"+std::to_string(i)) == 4 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
+			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == index_action_1 && getVar(var, "A_"+std::to_string(i)) == index_action_2 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
+
+			switch (desired_complexity) {
+				case 0:
+			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == index_action_4 && getVar(var, "A_"+std::to_string(i)) == index_action_5 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
+						break;
+				case 1:
+			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == index_action_9 && getVar(var, "A_"+std::to_string(i)) == index_action_5 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
+						break;
+				case 2:
+			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == index_action_9 && getVar(var, "A_"+std::to_string(i)) == index_action_10 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
+			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == index_action_11 && getVar(var, "A_"+std::to_string(i)) == index_action_5 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
+						break;
+				case 3:
+			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == index_action_9 && getVar(var, "A_"+std::to_string(i)) == index_action_10 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
+			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == index_action_11 && getVar(var, "A_"+std::to_string(i)) == index_action_12 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
+			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == index_action_13 && getVar(var, "A_"+std::to_string(i)) == index_action_5 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
+						break;
+			}
 		}
 	}
 
@@ -2911,26 +2908,21 @@ ClipsSmtThread::clips_smt_encoder_window()
 	// For every step up to the plan_horizon add all req actions depending on the order complexity
 	for(int i=1; i<plan_horizon+1; ++i){
 
-		/*
-		 * ----------------------------------------------------------------------------------------------------------------------------------------------
-		 * Actions all complexities require (which correspond to complexity 0
-		 * ----------------------------------------------------------------------------------------------------------------------------------------------
-		 */
-		// 0.Dummyaction: Move somewhere else and do nothing
-		z3::expr constraint_dummyaction(
-									(getVar(var, "insideB_"+std::to_string(i)) == getVar(var, "insideA_"+std::to_string(i)))
+
+		// 0.Action: Do nothing
+		z3::expr constraintaction0((getVar(var, "M_"+std::to_string(i)) == machine_groups[station_colors[ci]])
+									&& (getVar(var, "insideB_"+std::to_string(i)) == getVar(var, "insideA_"+std::to_string(i)))
 									&& (getVar(var, "outputB_"+std::to_string(i)) == getVar(var, "outputA_"+std::to_string(i)))
 									&& (getVar(var, "md_"+std::to_string(i)) == 0)
-									&& ((getVar(var, "holdB_"+std::to_string(i)) == getVar(var, "holdA_"+std::to_string(i)) && getVar(var, "t_"+std::to_string(i)) > 0)
-										||
-										(getVar(var, "holdA_"+std::to_string(i)) > 0 && getVar(var, "holdB_"+std::to_string(i)) == products["nothing"]))
-									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["BS"]) || getVar(var, "pos_"+std::to_string(i)) == 1)
-									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"]) || getVar(var, "pos_"+std::to_string(i)) == 2 || getVar(var, "pos_"+std::to_string(i)) == 3)
-									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"]) || getVar(var, "pos_"+std::to_string(i)) == 4 || getVar(var, "pos_"+std::to_string(i)) == 5)
-									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS1"]) || getVar(var, "pos_"+std::to_string(i)) == 7 || getVar(var, "pos_"+std::to_string(i)) == 8)
-									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS2"]) || getVar(var, "pos_"+std::to_string(i)) == 9 || getVar(var, "pos_"+std::to_string(i)) == 10)
+									&& (getVar(var, "holdB_"+std::to_string(i)) == getVar(var, "holdA_"+std::to_string(i)))
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 0) || constraint_dummyaction);
+		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_0) || constraintaction0);
+
+		/*
+		 * ----------------------------------------------------------------------------------------------------------------------------------------------
+		 * Actions all complexities require (which correspond to complexity 0)
+		 * ----------------------------------------------------------------------------------------------------------------------------------------------
+		 */
 
 		// 1.Action: Retrieve cap_carrier_cap from CS-Shelf
 		z3::expr constraintaction1((getVar(var, "M_"+std::to_string(i)) == machine_groups[station_colors[ci]])
@@ -2941,7 +2933,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 									&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "holdB_"+std::to_string(i)) == products[br_ci])
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 1) || constraintaction1);
+		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_1) || constraintaction1);
 
 		// 2.Action : Prepare and feed CS for RETRIEVE with cap_carrier
 		z3::expr constraintaction2((getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"] || getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"])
@@ -2955,58 +2947,68 @@ ClipsSmtThread::clips_smt_encoder_window()
 									&& (getVar(var, "holdA_"+std::to_string(i)) == products[br_ci])
 									&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 2) || constraintaction2);
+		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_2) || constraintaction2);
 
 		// 3.Action : Retrieve cap_carrier at CS
 		z3::expr constraintaction3((getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"] || getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"])
 									&& (getVar(var, "insideB_"+std::to_string(i)) == getVar(var, "insideA_"+std::to_string(i)))
-									&& (getVar(var, "outputA_"+std::to_string(i)) == products["BR"])
+									&& (getVar(var, "outputA_"+std::to_string(i)) > 0) // products["BR"]) // Must be higher than 0 in order to retrieve someting as no prepare is intended here
 									&& (getVar(var, "outputB_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "md_"+std::to_string(i)) == time_to_disc)
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"]) || getVar(var, "pos_"+std::to_string(i)) == 3)
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"]) || getVar(var, "pos_"+std::to_string(i)) == 5)
 									&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
-									&& (getVar(var, "holdB_"+std::to_string(i)) == 0)
+									&& (getVar(var, "holdB_"+std::to_string(i)) == getVar(var, "outputA_"+std::to_string(i)))
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 3) || constraintaction3);
+		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_3) || constraintaction3);
 
 		// 4.Action : Prepare and retrieve base from BS
 		z3::expr constraintaction4((getVar(var, "M_"+std::to_string(i)) == machine_groups["BS"])
 									&& (getVar(var, "insideB_"+std::to_string(i)) == getVar(var, "insideA_"+std::to_string(i)))
-									&& (getVar(var, "outputB_"+std::to_string(i)) == getVar(var, "outputA_"+std::to_string(i)))
+									&& (getVar(var, "outputB_"+std::to_string(i)) == products["nothing"]) // outputA is bound by the init or the predecessor
 									&& (getVar(var, "md_"+std::to_string(i)) == time_to_prep+time_to_fetch)
 									&& (getVar(var, "pos_"+std::to_string(i)) == 1)
 									&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
-									&& (getVar(var, "holdB_"+std::to_string(i)) == products[bi])
+									&& (!(getVar(var, "outputA_"+std::to_string(i)) == 0) || getVar(var, "holdB_"+std::to_string(i)) == products[bi])
+									&& (!(getVar(var, "outputA_"+std::to_string(i)) > 0) || getVar(var, "holdB_"+std::to_string(i)) == getVar(var, "outputA_"+std::to_string(i))) // outputA is 0 or the initial output
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 4) || constraintaction4);
-
+		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_4) || constraintaction4);
 		// 5.Action : Prepare and mount sub_product with cap at CS
 		z3::expr constraintaction5((getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"] || getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"])
 									&& (getVar(var, "insideA_"+std::to_string(i)) == inside_capstation[has_ci])
 									&& (getVar(var, "insideB_"+std::to_string(i)) == inside_capstation["nothing"])
 									&& (getVar(var, "outputA_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "outputB_"+std::to_string(i)) == products[product])
-									&& (getVar(var, "md_"+std::to_string(i)) == time_to_prep+time_to_feed)
+									&& (getVar(var, "md_"+std::to_string(i)) == time_to_prep+time_to_feed) // TODO adapt the time
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"]) || getVar(var, "pos_"+std::to_string(i)) == 2)
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"]) || getVar(var, "pos_"+std::to_string(i)) == 4)
 									&& (getVar(var, "holdA_"+std::to_string(i)) == products[sub_product])
 									&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 5) || constraintaction5);
+		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_5) || constraintaction5);
 
-		// 6.Action : Retrieve product at CS and deliver at DS
-		z3::expr constraintaction6((getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"] || getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"])
+		// 6.Action : Hold product and deliver at DS
+		z3::expr constraintaction6((getVar(var, "M_"+std::to_string(i)) == machine_groups["BS"]) // TODO own group?
 									&& (getVar(var, "insideB_"+std::to_string(i)) == getVar(var, "insideA_"+std::to_string(i)))
-									&& (getVar(var, "outputA_"+std::to_string(i)) == products[product])
-									&& (getVar(var, "outputB_"+std::to_string(i)) == products["nothing"])
-									&& (getVar(var, "md_"+std::to_string(i)) == time_to_fetch+time_to_prep+time_to_feed)
-									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"]) || getVar(var, "pos_"+std::to_string(i)) == 3)
-									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"]) || getVar(var, "pos_"+std::to_string(i)) == 5)
-									&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
+									&& (getVar(var, "outputB_"+std::to_string(i)) == getVar(var, "outputA_"+std::to_string(i)))
+									&& (getVar(var, "md_"+std::to_string(i)) == time_to_prep+time_to_feed)
+									&& (getVar(var, "pos_"+std::to_string(i)) == 6)
+									&& (getVar(var, "holdA_"+std::to_string(i)) == products[product])
 									&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 6) || constraintaction6);
+		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_6) || constraintaction6);
+
+		// 7.Action : Feed additional base into RS for payment and points
+		z3::expr constraintaction7((getVar(var, "M_"+std::to_string(i)) == machine_groups["RS1"] || getVar(var, "M_"+std::to_string(i)) == machine_groups["RS2"])
+									&& (getVar(var, "insideB_"+std::to_string(i)) == getVar(var, "insideA_"+std::to_string(i))+1)
+									&& (getVar(var, "outputB_"+std::to_string(i)) == getVar(var, "outputA_"+std::to_string(i)))
+									&& (getVar(var, "md_"+std::to_string(i)) == time_to_feed)
+									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS1"]) || getVar(var, "pos_"+std::to_string(i)) == 7)
+									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS2"]) || getVar(var, "pos_"+std::to_string(i)) == 9)
+									&& (getVar(var, "holdA_"+std::to_string(i)) > 0)
+									&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
+									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
+		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_7) || constraintaction7);
 
 		/*
 		 * ----------------------------------------------------------------------------------------------------------------------------------------------
@@ -3015,17 +3017,6 @@ ClipsSmtThread::clips_smt_encoder_window()
 		 */
 		if(desired_complexity > 0) {
 
-			// 7.Action : Feed additional base into RS
-			z3::expr constraintaction7((getVar(var, "M_"+std::to_string(i)) == machine_groups["RS1"] || getVar(var, "M_"+std::to_string(i)) == machine_groups["RS2"])
-										&& (getVar(var, "insideB_"+std::to_string(i)) == getVar(var, "insideA_"+std::to_string(i))+1)
-										&& (getVar(var, "outputB_"+std::to_string(i)) == getVar(var, "outputA_"+std::to_string(i)))
-										&& (getVar(var, "md_"+std::to_string(i)) == time_to_feed)
-										&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS1"]) || getVar(var, "pos_"+std::to_string(i)) == 7)
-										&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS2"]) || getVar(var, "pos_"+std::to_string(i)) == 9)
-										&& (getVar(var, "holdA_"+std::to_string(i)) == products[bi])
-										&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
-										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 7) || constraintaction7);
 
 			// 8.Action : Prepare and mount base with ring1 at RS
 			z3::expr constraintaction8((getVar(var, "M_"+std::to_string(i)) == machine_groups[station_colors[r1i]])
@@ -3037,7 +3028,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 										&& (getVar(var, "holdA_"+std::to_string(i)) == products[bi])
 										&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 8) || constraintaction8);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_8) || constraintaction8);
 
 			// 9.Action : Retrieve base_ring1 from RS
 			z3::expr constraintaction9((getVar(var, "M_"+std::to_string(i)) == machine_groups[station_colors[r1i]])
@@ -3049,7 +3040,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 										&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(var, "holdB_"+std::to_string(i)) == products[bi_r1i])
 										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 9) || constraintaction9);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_9) || constraintaction9);
 		}
 		/*
 		 * ----------------------------------------------------------------------------------------------------------------------------------------------
@@ -3068,7 +3059,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 										&& (getVar(var, "holdA_"+std::to_string(i)) == products[bi_r1i])
 										&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 10) || constraintaction10);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_10) || constraintaction10);
 
 			// 11.Action : Retrieve base_ring1_ring2 from RS
 			z3::expr constraintaction11((getVar(var, "M_"+std::to_string(i)) == machine_groups[station_colors[r2i]])
@@ -3080,7 +3071,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 										&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(var, "holdB_"+std::to_string(i)) == products[bi_r1i_r2i])
 										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 11) || constraintaction11);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_11) || constraintaction11);
 		}
 		/*
 		 * ----------------------------------------------------------------------------------------------------------------------------------------------
@@ -3099,7 +3090,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 										&& (getVar(var, "holdA_"+std::to_string(i)) == products[bi_r1i_r2i])
 										&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 12) || constraintaction12);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_12) || constraintaction12);
 
 			// 13.Action : Retrieve base_ring1_ring2_ring3 from RS
 			z3::expr constraintaction13((getVar(var, "M_"+std::to_string(i)) == machine_groups[station_colors[r3i]])
@@ -3111,7 +3102,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 										&& (getVar(var, "holdA_"+std::to_string(i)) == products["nothing"])
 										&& (getVar(var, "holdB_"+std::to_string(i)) == products[bi_r1i_r2i_r3i])
 										&& (getVar(var, "rd_"+std::to_string(i)) == 0));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 13) || constraintaction13);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_13) || constraintaction13);
 		}
 	}
 
@@ -3222,76 +3213,75 @@ ClipsSmtThread::clips_smt_encoder_window()
 
 		// First step refering to world_points
 		if(i==1){
-
 			constraints.push_back(!(getVar(var, "A_1") == 0) || getVar(var, "rew_1") == world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)) - points_penalty);
 
-			constraints.push_back(!( 	getVar(var, "A_1") == 1 ||
-										getVar(var, "A_1") == 2 ||
-										getVar(var, "A_1") == 3 ||
-										getVar(var, "A_1") == 9 ||
-										getVar(var, "A_1") == 11 ||
-										getVar(var, "A_1") == 13
-									) || getVar(var, "rew_1") == initial_points + points_none + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+			constraints.push_back(!( 	getVar(var, "A_1") == index_action_1 ||
+										getVar(var, "A_1") == index_action_2 ||
+										getVar(var, "A_1") == index_action_3 ||
+										getVar(var, "A_1") == index_action_9 ||
+										getVar(var, "A_1") == index_action_11 ||
+										getVar(var, "A_1") == index_action_13 ) || getVar(var, "rew_1") == initial_points + points_none + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
-			constraints.push_back(!(getVar(var, "A_1") == 4) || getVar(var, "rew_1") == initial_points + points_get_base + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
-			constraints.push_back(!(getVar(var, "A_1") == 7) || getVar(var, "rew_1") == initial_points + points_additional_base + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+			constraints.push_back(!(getVar(var, "A_1") == index_action_4) || getVar(var, "rew_1") == initial_points + points_get_base + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+			constraints.push_back(!(getVar(var, "A_1") == index_action_7) || getVar(var, "rew_1") == initial_points + points_additional_base + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
-			constraints.push_back(!( 	(getVar(var, "A_1") == 8 && rings_req_add_bases[0]==0) ||
-										(getVar(var, "A_1") == 10 && rings_req_add_bases[1]==0)
+			constraints.push_back(!( 	(getVar(var, "A_1") == index_action_8 && rings_req_add_bases[0]==0) ||
+										(getVar(var, "A_1") == index_action_10 && rings_req_add_bases[1]==0)
 									) || getVar(var, "rew_1") == initial_points + points_mount_ring_0 + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
-			constraints.push_back(!( 	(getVar(var, "A_1") == 8 && rings_req_add_bases[0]==1) ||
-										(getVar(var, "A_1") == 10 && rings_req_add_bases[1]==1)
+			constraints.push_back(!( 	(getVar(var, "A_1") == index_action_8 && rings_req_add_bases[0]==1) ||
+										(getVar(var, "A_1") == index_action_10 && rings_req_add_bases[1]==1)
 									) || getVar(var, "rew_1") == initial_points + points_mount_ring_1 + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
-			constraints.push_back(!( 	(getVar(var, "A_1") == 8 && rings_req_add_bases[0]==2) ||
-										(getVar(var, "A_1") == 10 && rings_req_add_bases[1]==2)
+			constraints.push_back(!( 	(getVar(var, "A_1") == index_action_8 && rings_req_add_bases[0]==2) ||
+										(getVar(var, "A_1") == index_action_10 && rings_req_add_bases[1]==2)
 									) || getVar(var, "rew_1") == initial_points + points_mount_ring_2 + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
-			constraints.push_back(!(getVar(var, "A_1") == 12 && rings_req_add_bases[2]==0) || getVar(var, "rew_1") == initial_points + points_mount_ring1_last + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
-			constraints.push_back(!(getVar(var, "A_1") == 12 && rings_req_add_bases[2]==1) || getVar(var, "rew_1") == initial_points + points_mount_ring2_last + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
-			constraints.push_back(!(getVar(var, "A_1") == 12 && rings_req_add_bases[2]==2) || getVar(var, "rew_1") == initial_points + points_mount_ring3_last + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+			constraints.push_back(!(getVar(var, "A_1") == index_action_12 && rings_req_add_bases[2]==0) || getVar(var, "rew_1") == initial_points + points_mount_ring1_last + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+			constraints.push_back(!(getVar(var, "A_1") == index_action_12 && rings_req_add_bases[2]==1) || getVar(var, "rew_1") == initial_points + points_mount_ring2_last + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+			constraints.push_back(!(getVar(var, "A_1") == index_action_12 && rings_req_add_bases[2]==2) || getVar(var, "rew_1") == initial_points + points_mount_ring3_last + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
-			constraints.push_back(!(getVar(var, "A_1") == 5) || getVar(var, "rew_1") == initial_points + points_mount_cap + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+			constraints.push_back(!(getVar(var, "A_1") == index_action_5) || getVar(var, "rew_1") == initial_points + points_mount_cap + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
-			constraints.push_back(!(getVar(var, "A_1") == 6) || getVar(var, "rew_1") == initial_points + points_deliver + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+			constraints.push_back(!(	getVar(var, "A_1") == index_delivery_action
+									) || getVar(var, "rew_1") == initial_points + points_deliver + world_points - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
 		}
 		// Other steps refering to points_i-1
 		else {
-
 			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 0) || getVar(var, "rew_"+std::to_string(i)) == getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)) - points_penalty);
 
-			constraints.push_back(!( 	getVar(var, "A_"+std::to_string(i)) == 1 ||
-										getVar(var, "A_"+std::to_string(i)) == 2 ||
-										getVar(var, "A_"+std::to_string(i)) == 3 ||
-										getVar(var, "A_"+std::to_string(i)) == 9 ||
-										getVar(var, "A_"+std::to_string(i)) == 11 ||
-										getVar(var, "A_"+std::to_string(i)) == 13
+			constraints.push_back(!( 	getVar(var, "A_"+std::to_string(i)) == index_action_1 ||
+										getVar(var, "A_"+std::to_string(i)) == index_action_2 ||
+										getVar(var, "A_"+std::to_string(i)) == index_action_3 ||
+										getVar(var, "A_"+std::to_string(i)) == index_action_9 ||
+										getVar(var, "A_"+std::to_string(i)) == index_action_11 ||
+										getVar(var, "A_"+std::to_string(i)) == index_action_13
 									) || getVar(var, "rew_"+std::to_string(i)) == (points_none/i) + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 4) || getVar(var, "rew_"+std::to_string(i)) == points_get_base + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 7) || getVar(var, "rew_"+std::to_string(i)) == points_additional_base + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_4) || getVar(var, "rew_"+std::to_string(i)) == points_get_base + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_7) || getVar(var, "rew_"+std::to_string(i)) == points_additional_base + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
-			constraints.push_back(!( 	(getVar(var, "A_"+std::to_string(i)) == 8 && rings_req_add_bases[0]==0) ||
-										(getVar(var, "A_"+std::to_string(i)) == 10 && rings_req_add_bases[1]==0)
+			constraints.push_back(!( 	(getVar(var, "A_"+std::to_string(i)) == index_action_8 && rings_req_add_bases[0]==0) ||
+										(getVar(var, "A_"+std::to_string(i)) == index_action_10 && rings_req_add_bases[1]==0)
 									) || getVar(var, "rew_"+std::to_string(i)) == (points_mount_ring_0/i) + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
-			constraints.push_back(!( 	(getVar(var, "A_"+std::to_string(i)) == 8 && rings_req_add_bases[0]==1) ||
-										(getVar(var, "A_"+std::to_string(i)) == 10 && rings_req_add_bases[1]==1)
+			constraints.push_back(!( 	(getVar(var, "A_"+std::to_string(i)) == index_action_8 && rings_req_add_bases[0]==1) ||
+										(getVar(var, "A_"+std::to_string(i)) == index_action_10 && rings_req_add_bases[1]==1)
 									) || getVar(var, "rew_"+std::to_string(i)) == (points_mount_ring_1/i) + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
-			constraints.push_back(!( 	(getVar(var, "A_"+std::to_string(i)) == 8 && rings_req_add_bases[0]==2) ||
-										(getVar(var, "A_"+std::to_string(i)) == 10 && rings_req_add_bases[1]==2)
+			constraints.push_back(!( 	(getVar(var, "A_"+std::to_string(i)) == index_action_8 && rings_req_add_bases[0]==2) ||
+										(getVar(var, "A_"+std::to_string(i)) == index_action_10 && rings_req_add_bases[1]==2)
 									) || getVar(var, "rew_"+std::to_string(i)) == (points_mount_ring_2/i) + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 12 && rings_req_add_bases[2]==0) || getVar(var, "rew_"+std::to_string(i)) == (points_mount_ring1_last/i) + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 12 && rings_req_add_bases[2]==1) || getVar(var, "rew_"+std::to_string(i)) == (points_mount_ring2_last/i) + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 12 && rings_req_add_bases[2]==2) || getVar(var, "rew_"+std::to_string(i)) == (points_mount_ring3_last/i) + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_12 && rings_req_add_bases[2]==0) || getVar(var, "rew_"+std::to_string(i)) == (points_mount_ring1_last/i) + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_12 && rings_req_add_bases[2]==1) || getVar(var, "rew_"+std::to_string(i)) == (points_mount_ring2_last/i) + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_12 && rings_req_add_bases[2]==2) || getVar(var, "rew_"+std::to_string(i)) == (points_mount_ring3_last/i) + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 5) || getVar(var, "rew_"+std::to_string(i)) == (points_mount_cap/i) + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_5) || getVar(var, "rew_"+std::to_string(i)) == (points_mount_cap/i) + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 
-			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 6) || getVar(var, "rew_"+std::to_string(i)) == (points_deliver/i) + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
+			constraints.push_back(!(	getVar(var, "A_"+std::to_string(i)) == index_delivery_action
+									) || getVar(var, "rew_"+std::to_string(i)) == (points_deliver/i) + getVar(var, "rew_"+std::to_string(i-1)) - getVar(var, "t_"+std::to_string(i)) - getVar(var, "md_"+std::to_string(i)));
 		}
 	}
 
