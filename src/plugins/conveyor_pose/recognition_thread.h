@@ -34,13 +34,13 @@ public:
   using CloudPtr = ConveyorPoseThread::CloudPtr;
   using pose = ConveyorPoseThread::pose;
 
-  friend class ConveyorPoseThread;
   RecognitionThread(ConveyorPoseThread *cp_thread);
 
   virtual void loop() override;
   virtual void init() override;
   void enable();
   void disable();
+  void restart();
 
 private:
   void restart_icp();
@@ -51,6 +51,7 @@ private:
 
   fawkes::WaitCondition wait_enabled_;
   std::atomic_bool enabled_;
+  std::atomic_bool do_restart_;
 
   fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_icp_odom_;
   Eigen::Matrix4f initial_tf_;

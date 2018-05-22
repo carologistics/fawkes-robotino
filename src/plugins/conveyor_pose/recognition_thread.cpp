@@ -29,6 +29,7 @@ RecognitionThread::RecognitionThread(ConveyorPoseThread *cp_thread)
   , TransformAspect(fawkes::TransformAspect::BOTH, "conveyor_pose_initial_guess")
   , main_thread_(cp_thread)
   , enabled_(false)
+  , do_restart_(false)
 {
   // Allow finalization while loop() is blocked
   set_prepfin_conc_loop(true);
@@ -43,6 +44,8 @@ void RecognitionThread::init()
 void RecognitionThread::restart_icp()
 {
   logger->log_info(name(), "Restarting ICP");
+
+  do_restart_ = false;
 
   //model_with_normals_.reset(new Cloud());
   //scene_with_normals_.reset(new Cloud());
@@ -112,10 +115,12 @@ void RecognitionThread::restart_icp()
 void RecognitionThread::loop()
 {
   if (!enabled_) {
-    logger->log_info(name(), "ICP stopped");
+    if (!do_restart_) {
+      logger->log_info(name(), "ICP stopped");
 
-    while (!enabled_)
-      wait_enabled_.wait();
+      while (!enabled_)
+        wait_enabled_.wait();
+    }
 
     restart_icp();
   }
@@ -243,5 +248,12 @@ void RecognitionThread::enable()
 
 void RecognitionThread::disable()
 { enabled_ = false; }
+
+
+void RecognitionThread::restart()
+{
+  disable();
+  do_restart_ = true;
+}
 
 
