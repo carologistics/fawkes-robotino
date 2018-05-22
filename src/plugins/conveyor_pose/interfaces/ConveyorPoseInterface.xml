@@ -42,18 +42,18 @@
      The sum of squared distances between all corresponding points between the
      input cloud and the transformed model.
    </field>
-   <field type="MPS_TYPE" name="current_MPS_type"> The current station to apply the conveyor pose on.
+   <field type="MPS_TYPE" name="current_mps_type"> The current station to apply the conveyor pose on.
    </field>
-   <field type="MPS_TARGET" name="current_MPS_target">
+   <field type="MPS_TARGET" name="current_mps_target">
      The current location on the mps.
    </field>
  </data>
  <message name="SetStation">
    <comment>Set which conveyor model the plugin should use</comment>
-   <field type="MPS_TYPE"  name="MPS_type_to_set">
+   <field type="MPS_TYPE"  name="mps_type_to_set">
      Station of the Machine defined in the MPSType enum.
    </field>
-   <field type="MPS_TARGET" name="MPS_target_to_set">
+   <field type="MPS_TARGET" name="mps_target_to_set">
      Target on the MPS
    </field>
  </message>
