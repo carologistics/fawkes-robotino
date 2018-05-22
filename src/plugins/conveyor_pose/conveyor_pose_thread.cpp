@@ -375,8 +375,8 @@ ConveyorPoseThread::init()
   bb_enable_switch_->write();
 
   bb_pose_ = blackboard->open_for_writing<ConveyorPoseInterface>((cfg_if_prefix_ + "status").c_str());
-  bb_pose_->set_current_MPS_type(bb_pose_->NO_STATION);
-  bb_pose_->set_current_MPS_target(bb_pose_->NO_LOCATION);
+  bb_pose_->set_current_mps_type(bb_pose_->NO_STATION);
+  bb_pose_->set_current_mps_target(bb_pose_->NO_LOCATION);
 
   bb_pose_->write();
 
@@ -412,7 +412,7 @@ ConveyorPoseThread::loop()
       ConveyorPoseInterface::SetStationMessage *msg =
           bb_pose_->msgq_first<ConveyorPoseInterface::SetStationMessage>();
       //set_set_current_station(msg->station());
-      update_station_information(msg->MPS_type_to_set(),msg->MPS_target_to_set());
+      update_station_information(msg->mps_type_to_set(),msg->mps_target_to_set());
       //bb_pose_->set_current_MPS_type(msg->MPS_type_to_set());
       //bb_pose_->set_current_MPS_target(msg->MPS_target_to_set());
       bb_pose_->write();
@@ -651,12 +651,12 @@ ConveyorPoseThread::record_model()
 void
 ConveyorPoseThread::update_station_information(ConveyorPoseInterface::MPS_TYPE mps_type, ConveyorPoseInterface::MPS_TARGET mps_target)
 {
-  if(mps_type != bb_pose_->current_MPS_type() || mps_target != bb_pose_->current_MPS_target()){
+  if(mps_type != bb_pose_->current_mps_type() || mps_target != bb_pose_->current_mps_target()){
     auto map_it = type_target_to_model_.find({mps_type,mps_target});
     if ( map_it == type_target_to_model_.end())
       logger->log_error(name(), "Invalid station type or target: %i,%i", mps_type, mps_target);
     else {
-      logger->log_info(name(), "Set Station type to : %i Set Station target to: %i", bb_pose_->current_MPS_type(),bb_pose_->current_MPS_target());
+      logger->log_info(name(), "Set Station type to : %i Set Station target to: %i", bb_pose_->current_mps_type(),bb_pose_->current_mps_target());
 
       MutexLocker locked(&cloud_mutex_);
       MutexLocker locked2(&bb_mutex_);
@@ -667,8 +667,8 @@ ConveyorPoseThread::update_station_information(ConveyorPoseInterface::MPS_TYPE m
 
       icp_cancelled_ = true;
       //bb_pose_->set_current_station(station.c_str());
-      bb_pose_->set_current_MPS_type(mps_type);
-      bb_pose_->set_current_MPS_target(mps_target);
+      bb_pose_->set_current_mps_type(mps_type);
+      bb_pose_->set_current_mps_target(mps_target);
       result_fitness_ = std::numeric_limits<double>::min();
       bb_pose_->set_euclidean_fitness(result_fitness_);
       bb_pose_->write();
