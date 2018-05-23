@@ -128,7 +128,6 @@ private:
   fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
   fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
 
-  //void set_current_station(const std::string &station);
   void update_station_information(fawkes::ConveyorPoseInterface::MPS_TYPE mps_type, fawkes::ConveyorPoseInterface::MPS_TARGET mps_target);
 
   //Mapping from {Type,Target} to its corresponding model path
@@ -173,7 +172,7 @@ private:
   std::atomic_bool cfg_icp_auto_restart_;
 
   std::atomic<float> cfg_voxel_grid_leaf_size_;
-  //std::map<std::string, std::array<std::atomic<float>, 3> > cfg_hint_;
+
   std::map<fawkes::ConveyorPoseInterface::MPS_TARGET, std::array<std::atomic<float>, 3>> cfg_target_hint_;
   std::map<fawkes::ConveyorPoseInterface::MPS_TYPE, std::array<std::atomic<float>, 3>> cfg_type_hint_;
 
