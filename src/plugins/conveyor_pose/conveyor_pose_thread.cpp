@@ -152,49 +152,6 @@ ConveyorPoseThread::init()
   cfg_type_hint_[ConveyorPoseInterface::NO_STATION][2] = 0;
 
 
-
-
-  /* TODO: Check if it can be removed
-  cfg_hint_["cap_station"][0] = config->get_float_or_default(
-        CFG_PREFIX "/icp/hint/cap_station/x", 0.f );
-  cfg_hint_["cap_station"][1] = config->get_float_or_default(
-        CFG_PREFIX "/icp/hint/cap_station/y", 0.f );
-  cfg_hint_["cap_station"][2] = config->get_float_or_default(
-        CFG_PREFIX "/icp/hint/cap_station/z", 0.f );
-
-  cfg_hint_["ring_station"][0] = config->get_float_or_default(
-        CFG_PREFIX "/icp/conveyor_offset/ring_station/x", 0.f );
-  cfg_hint_["ring_station"][1] = config->get_float_or_default(
-        CFG_PREFIX "/icp/conveyor_offset/ring_station/y", 0.f );
-  cfg_hint_["ring_station"][2] = config->get_float_or_default(
-        CFG_PREFIX "/icp/conveyor_offset/ring_station/z", 0.f );
-
-  cfg_hint_["base_station"][0] = config->get_float_or_default(
-        CFG_PREFIX "/icp/conveyor_offset/base_station/x", 0.f );
-  cfg_hint_["base_station"][1] = config->get_float_or_default(
-        CFG_PREFIX "/icp/conveyor_offset/base_station/y", 0.f );
-  cfg_hint_["base_station"][2] = config->get_float_or_default(
-        CFG_PREFIX "/icp/conveyor_offset/base_station/z", 0.f );
-
-  cfg_hint_["delivery_station"][0] = config->get_float_or_default(
-        CFG_PREFIX "/icp/conveyor_offset/delivery_station/x", 0.f );
-  cfg_hint_["delivery_station"][1] = config->get_float_or_default(
-        CFG_PREFIX "/icp/conveyor_offset/delivery_station/y", 0.f );
-  cfg_hint_["delivery_station"][2] = config->get_float_or_default(
-        CFG_PREFIX "/icp/conveyor_offset/delivery_station/z", 0.f );
-
-  cfg_hint_["storage_station"][0] = config->get_float_or_default(
-        CFG_PREFIX "/icp/conveyor_offset/storage_station/x", 0.f );
-  cfg_hint_["storage_station"][1] = config->get_float_or_default(
-        CFG_PREFIX "/icp/conveyor_offset/storage_station/y", 0.f );
-  cfg_hint_["storage_station"][2] = config->get_float_or_default(
-        CFG_PREFIX "/icp/conveyor_offset/storage_station/z", 0.f );
-
-  cfg_hint_["default"][0] = 0;
-  cfg_hint_["default"][1] = 0;
-  cfg_hint_["default"][2] = 0;
-  */
-
   cfg_enable_switch_          = config->get_bool( CFG_PREFIX "/switch_default" );
 
   cfg_gripper_y_min_          = config->get_float( CFG_PREFIX "/gripper/y_min" );
@@ -258,44 +215,6 @@ ConveyorPoseThread::init()
     }
   }
 
-
-  // Load all model paths, should be "default" if the default model path should be used
-
-  /* TODO: remove if it isn't needed
-  station_to_path_.insert({"default",cfg_model_path_});
-  station_to_path_.insert({"M-BS-I", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/M-BS-I")});
-  station_to_path_.insert({"M-BS-O", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/M-BS-O")});
-  station_to_path_.insert({"C-BS-I", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/C-BS-I")});
-  station_to_path_.insert({"C-BS-O", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/C-BS-O")});
-  station_to_path_.insert({"M-CS1-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-CS1-I")});
-  station_to_path_.insert({"M-CS1-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-CS1-O")});
-  station_to_path_.insert({"C-CS1-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-CS1-I")});
-  station_to_path_.insert({"C-CS1-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-CS1-O")});
-  station_to_path_.insert({"M-CS2-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-CS2-I")});
-  station_to_path_.insert({"M-CS2-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-CS2-O")});
-  station_to_path_.insert({"C-CS2-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-CS2-I")});
-  station_to_path_.insert({"C-CS2-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-CS2-O")});
-  station_to_path_.insert({"M-RS1-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-RS1-I")});
-  station_to_path_.insert({"M-RS1-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-RS1-O")});
-  station_to_path_.insert({"C-RS1-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-RS1-I")});
-  station_to_path_.insert({"C-RS1-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-RS1-O")});
-  station_to_path_.insert({"M-RS2-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-RS2-I")});
-  station_to_path_.insert({"M-RS2-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/M-RS2-O")});
-  station_to_path_.insert({"C-RS2-I", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-RS2-I")});
-  station_to_path_.insert({"C-RS2-O", CONFDIR "/" + config->get_string(CFG_PREFIX "/model_files/C-RS2-O")});
-  station_to_path_.insert({"M-DS-I", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/M-DS-I")});
-  station_to_path_.insert({"C-DS-I", CONFDIR "/" + config->get_string(CFG_PREFIX  "/model_files/C-DS-I")});
-  */
-
-  // set not set station_model_path to default model_path
-  /*
-  std::map<std::string,std::string>::iterator path_it;
-  for ( path_it = station_to_path_.begin(); path_it != station_to_path_.end(); path_it++ )
-  {
-    if( path_it->second == "default")
-      path_it->second = cfg_model_path_;
-  }*/
-
   trimmed_scene_.reset(new Cloud());
 
   cfg_model_origin_frame_ = config->get_string(CFG_PREFIX "/model_origin_frame");
@@ -347,14 +266,12 @@ ConveyorPoseThread::init()
     model_with_normals_ = default_model_;
 
     // Loading PCD file and calculation of model with normals for ALL! stations
-    // TODO: Redo with correct mapping
     for (const auto &pair : type_target_to_path_) {
       CloudPtr model(new Cloud());
       if ((errnum = pcl::io::loadPCDFile(pair.second, *model)) < 0)
         throw fawkes::CouldNotOpenFileException(pair.second.c_str(), errnum,
                                                 ("For station " )   ); //TODO:: print
 
-      // TODO: Do insert to correct map
       type_target_to_model_.insert({pair.first, model});
     }
 
@@ -410,14 +327,11 @@ ConveyorPoseThread::loop()
   while ( !bb_pose_->msgq_empty() ) {
     if (bb_pose_->msgq_first_is<ConveyorPoseInterface::SetStationMessage>() ) {
 
-      //Update Station
+      //Update station related information
       logger->log_info(name(), "Received SetStationMessage");
       ConveyorPoseInterface::SetStationMessage *msg =
           bb_pose_->msgq_first<ConveyorPoseInterface::SetStationMessage>();
-      //set_set_current_station(msg->station());
       update_station_information(msg->mps_type_to_set(),msg->mps_target_to_set());
-      //bb_pose_->set_current_MPS_type(msg->MPS_type_to_set());
-      //bb_pose_->set_current_MPS_target(msg->MPS_target_to_set());
       bb_pose_->write();
     }
     else {
@@ -511,38 +425,7 @@ ConveyorPoseThread::loop()
           if (have_laser_line_) {
 
             set_initial_tf_from_laserline(ll,current_mps_type_,current_mps_target_);
-            /* TODO: Rewrite to enums usage
-            if(current_station_.back() == 'L')
-              set_initial_tf_from_laserline(ll, "cap_station", "left_shelf");
-            else if(current_station_.back() == 'M')
-              set_initial_tf_from_laserline(ll, "cap_station","middle_shelf");
-            else if(current_station_.back() == 'R')
-              set_initial_tf_from_laserline(ll, "cap_station", "right_shelf");
-            else if(current_station_.back() == 'S')
-              set_initial_tf_from_laserline(ll, "ring_station","slide");
-            else if(current_station_.at(2) == 'C' && current_station_.back() == 'I') // Cap Station Input
-              set_initial_tf_from_laserline(ll,"cap_station","input");
-            else if(current_station_.at(2) == 'C' && current_station_.back() == 'O') // Cap Station Output
-              set_initial_tf_from_laserline(ll,"cap_station","output");
-            else if(current_station_.at(2) == 'R' && current_station_.back() == 'I') // Ring Station Input
-              set_initial_tf_from_laserline(ll,"ring_station","input");
-            else if(current_station_.at(2) == 'R' && current_station_.back() == 'O') // Ring Station Output
-              set_initial_tf_from_laserline(ll,"ring_station","output");
-            else if(current_station_.at(2) == 'B' && current_station_.back() == 'I') // Base Station Output
-              set_initial_tf_from_laserline(ll,"base_station","input");
-            else if(current_station_.at(2) == 'B' && current_station_.back() == 'O') // Base Station Output
-              set_initial_tf_from_laserline(ll,"base_station","output");
-            else if(current_station_.at(2) == 'D' && current_station_.back() == 'I') // Delivery Station Output
-              set_initial_tf_from_laserline(ll,"delivery_station","input");
-            else if(current_station_.at(2) == 'D' && current_station_.back() == 'O') // Delivery Station Output
-              set_initial_tf_from_laserline(ll,"delivery_station","output");
-            else if(current_station_.at(2) == 'S' && current_station_.back() == 'I') // Storage Station Output
-              set_initial_tf_from_laserline(ll,"storage_station","input");
-            else if(current_station_.at(2) == 'S' && current_station_.back() == 'O') // Storage Station Output
-              set_initial_tf_from_laserline(ll,"storage_station","output");
-            else
-              set_initial_tf_from_laserline(ll, "default","conveyor");
-              */
+
           }
 
           scene_with_normals_ = trimmed_scene_;
@@ -680,38 +563,6 @@ ConveyorPoseThread::update_station_information(ConveyorPoseInterface::MPS_TYPE m
     }
   }
 }
-
-/*
-TODO: Remove if it isnt needed
-//Sets current station in ConveyorPose Interface
-void
-ConveyorPoseThread::set_current_station(const std::string &station)
-{
-  if (station != bb_pose_->current_station()) {
-    auto map_it = station_to_model_.find(station);
-    if (map_it == station_to_model_.end())
-      logger->log_error(name(), "Invalid station name: %s", station.c_str());
-    else {
-      logger->log_info(name(), "Set Station to: %s", bb_pose_->current_station());
-
-      MutexLocker locked(&cloud_mutex_);
-      MutexLocker locked2(&bb_mutex_);
-
-      model_with_normals_ = map_it->second;
-      current_station_ = station;
-
-      // Disable/stop recognition thread. It gets re-enabled with the next ConveyorPoseThread::loop()
-      // if the switch interface is still enabled.
-      recognition_thread_->enabled_ = false;
-
-      bb_pose_->set_current_station(station.c_str());
-      result_fitness_ = std::numeric_limits<double>::min();
-      bb_pose_->set_euclidean_fitness(result_fitness_);
-      bb_pose_->write();
-    }
-  }
-}
-*/
 
 bool
 ConveyorPoseThread::update_input_cloud()
@@ -1077,7 +928,6 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         change_val(opt, cfg_icp_max_loops_, v->get_uint());
       else if (opt == "/auto_restart")
         change_val(opt, cfg_icp_auto_restart_, v->get_bool());
-
       else if (opt == "/hint/conveyor/x")
       {
         change_val(opt, cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][0], v->get_float());
