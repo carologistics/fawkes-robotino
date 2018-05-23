@@ -108,7 +108,7 @@ ConveyorPoseThread::init()
   cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][0]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/x" );
   cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][1]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/y" );
   cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][2]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/z" );
-  cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][0]   = -config->get_float( CFG_PREFIX "/icp/hint/conveyor/x");
+  cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][0]   = -config->get_float( CFG_PREFIX "/icp/hint/conveyor/x"); //negative, because it should be the opposite of the input conveyor
   cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][1]   = config->get_float( CFG_PREFIX "/icp/hint/conveyor/y");
   cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][2]   = config->get_float( CFG_PREFIX "/icp/hint/conveyor/z");
   cfg_target_hint_[ConveyorPoseInterface::SHELF_LEFT][0]  = config->get_float( CFG_PREFIX "/icp/hint/left_shelf/x" );
@@ -442,7 +442,6 @@ ConveyorPoseThread::loop()
   } // update_input_cloud()
 }
 
-//TODO: Change cfg_hint_
 void
 ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *line, ConveyorPoseInterface::MPS_TYPE mps_type, ConveyorPoseInterface::MPS_TARGET mps_target)
 {
@@ -464,9 +463,7 @@ ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *li
                                   double(cfg_target_hint_[mps_target][2]) } );
 
 
-
-  // Add distance offset for station (if output is used, the negative input offset is used)
-
+  // Add distance offset for station
   switch(mps_target)
   {
   case ConveyorPoseInterface::INPUT_CONVEYOR :
@@ -477,7 +474,7 @@ ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *li
     break;
   case ConveyorPoseInterface::OUTPUT_CONVEYOR:
     initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
-                              double(-cfg_type_hint_[mps_type][0]),  //negative, because it should be the negative of the input conveyor offset
+                              double(cfg_type_hint_[mps_type][0]),
                               double(cfg_type_hint_[mps_type][1]),
                               double(cfg_type_hint_[mps_type][2]) } );
   case ConveyorPoseInterface::SHELF_LEFT: //TODO: Add correct handlings
@@ -551,7 +548,6 @@ ConveyorPoseThread::update_station_information(ConveyorPoseInterface::MPS_TYPE m
       current_mps_type_ = mps_type;
       current_mps_target_ = mps_target;
 
-      //bb_pose_->set_current_station(station.c_str());
       bb_pose_->set_current_mps_type(mps_type);
       bb_pose_->set_current_mps_target(mps_target);
       result_fitness_ = std::numeric_limits<double>::min();
