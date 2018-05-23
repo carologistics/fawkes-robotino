@@ -117,7 +117,7 @@ private:
 
   std::atomic_bool icp_cancelled_;
 
-  CloudPtr default_model_;
+  CloudPtr record_model_;
   CloudPtr aligned_model_;
   CloudPtr trimmed_scene_;
 

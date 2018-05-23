@@ -33,44 +33,18 @@ plugins/conveyor_pose:
   model_file: "conveyor_pcls/default.pcd"
 
   # Paths to the default PCD models taking as reverence model in the conveyor pose model
-  reference_default_models:
-    with_cone: "conveyor_pcls/default_with_cone.pcd"
-    no_cone: "conveyor_pcls/default_no_cone.pcd"
-    shelf: "conveyor_pcls/default_puck.pcd"
-    slide: "conveyor_pcls/default_slide.pcd"
-
-  # Configurable PCD paths for every station containing the conveyor model
-  # If the value is "default", the model_file PCD is taken
-  model_files:
-    M-BS-I:  "conveyor_pcls/no_cone.pcd"
-    M-BS-O:  "conveyor_pcls/no_cone.pcd"
-    C-BS-I:  "conveyor_pcls/no_cone.pcd"
-    C-BS-O:  "conveyor_pcls/no_cone.pcd"
-    M-CS1-I: "conveyor_pcls/with_cone.pcd"
-    M-CS1-O: "conveyor_pcls/no_cone.pcd"
-    C-CS1-I: "conveyor_pcls/with_cone.pcd"
-    C-CS1-O: "conveyor_pcls/no_cone.pcd"
-    M-CS2-I: "conveyor_pcls/with_cone.pcd"
-    M-CS2-O: "conveyor_pcls/no_cone.pcd"
-    C-CS2-I: "conveyor_pcls/with_cone.pcd"
-    C-CS2-O: "conveyor_pcls/no_cone.pcd"
-    M-DS-I:  "conveyor_pcls/with_cone.pcd"
-    C-DS-I:  "conveyor_pcls/with_cone.pcd"
-    M-RS1-I: "conveyor_pcls/with_cone.pcd"
-    M-RS1-O: "conveyor_pcls/no_cone.pcd"
-    C-RS1-I: "conveyor_pcls/with_cone.pcd"
-    C-RS1-O: "conveyor_pcls/no_cone.pcd"
-    M-RS2-I: "conveyor_pcls/with_cone.pcd"
-    M-RS2-O: "conveyor_pcls/no_cone.pcd"
-    C-RS2-I: "conveyor_pcls/with_cone.pcd"
-    C-RS2-O: "conveyor_pcls/no_cone.pcd"
-    M-SS-I:  "conveyor_pcls/no_cone.pcd"
-    M-SS-O:  "conveyor_pcls/no_cone.pcd"
-    C-SS-I:  "conveyor_pcls/no_cone.pcd"
-    C-SS-O:  "conveyor_pcls/no_cone.pcd"
+  reference_model_paths:
+    default_with_cone: "conveyor_pcls/default_with_cone.pcd"
+    default_no_cone: "conveyor_pcls/default_no_cone.pcd"
+    default_shelf: "conveyor_pcls/default_puck.pcd"
+    default_slide: "conveyor_pcls/default_slide.pcd"
+ 
+  # ICP related parameter 
   icp:
+    # hints used for the initial estimate
     hint:
-      conveyor:
+      # The hint for the output_conveyor is calculated over hint for the input conveyor (since y should just be the negative offset)
+      input_conveyor:
         x: 0.015
         y: -0.02
         z: 0.6

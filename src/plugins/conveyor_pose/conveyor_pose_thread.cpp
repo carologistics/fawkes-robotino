@@ -90,12 +90,12 @@ ConveyorPoseThread::init()
   cfg_target_hint_[ConveyorPoseInterface::SHELF_MIDDLE];
   cfg_target_hint_[ConveyorPoseInterface::SLIDE];
 
-  cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][0]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/x" );
-  cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][1]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/y" );
-  cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][2]    = config->get_float( CFG_PREFIX "/icp/hint/conveyor/z" );
-  cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][0]   = -config->get_float( CFG_PREFIX "/icp/hint/conveyor/x");
-  cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][1]   = config->get_float( CFG_PREFIX "/icp/hint/conveyor/y");
-  cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][2]   = config->get_float( CFG_PREFIX "/icp/hint/conveyor/z");
+  cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][0]    = config->get_float( CFG_PREFIX "/icp/hint/input_conveyor/x" );
+  cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][1]    = config->get_float( CFG_PREFIX "/icp/hint/input_conveyor/y" );
+  cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][2]    = config->get_float( CFG_PREFIX "/icp/hint/input_conveyor/z" );
+  cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][0]   = -config->get_float( CFG_PREFIX "/icp/hint/input_conveyor/x"); //negative, because it shoulb be the opposite of the input
+  cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][1]   = config->get_float( CFG_PREFIX "/icp/hint/input_conveyor/y");
+  cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][2]   = config->get_float( CFG_PREFIX "/icp/hint/input_conveyor/z");
   cfg_target_hint_[ConveyorPoseInterface::SHELF_LEFT][0]  = config->get_float( CFG_PREFIX "/icp/hint/left_shelf/x" );
   cfg_target_hint_[ConveyorPoseInterface::SHELF_LEFT][1]  = config->get_float( CFG_PREFIX "/icp/hint/left_shelf/y" );
   cfg_target_hint_[ConveyorPoseInterface::SHELF_LEFT][2]  = config->get_float( CFG_PREFIX "/icp/hint/left_shelf/z" );
@@ -108,6 +108,9 @@ ConveyorPoseThread::init()
   cfg_target_hint_[ConveyorPoseInterface::SLIDE][0]       = config->get_float( CFG_PREFIX "/icp/hint/slide/x" );
   cfg_target_hint_[ConveyorPoseInterface::SLIDE][1]       = config->get_float( CFG_PREFIX "/icp/hint/slide/y" );
   cfg_target_hint_[ConveyorPoseInterface::SLIDE][2]       = config->get_float( CFG_PREFIX "/icp/hint/slide/z" );
+  cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][0] = 0.015;
+  cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][1] = 0;
+  cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][2] = 0.6;
 
   // Init of station type hints
 
@@ -170,22 +173,22 @@ ConveyorPoseThread::init()
       switch(mps_target)
       {
       case ConveyorPoseInterface::INPUT_CONVEYOR:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_default_models/with_cone");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_model_paths/default_with_cone");
         break;
       case ConveyorPoseInterface::OUTPUT_CONVEYOR:
-        type_target_to_path_[{mps_type,mps_target}] =CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_default_models/no_cone");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_model_paths/default_no_cone");
         break;
       case ConveyorPoseInterface::SHELF_LEFT:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_default_models/shelf");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_model_paths/default_shelf");
         break;
       case ConveyorPoseInterface::SHELF_MIDDLE:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_default_models/shelf");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_model_paths/default_shelf");
         break;
       case ConveyorPoseInterface::SHELF_RIGHT:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_default_models/shelf");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_model_paths/default_shelf");
         break;
       case ConveyorPoseInterface::SLIDE:
-        type_target_to_path_[{mps_type,mps_target}] =CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_default_models/slide");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_model_paths/default_slide");
         break;
       case ConveyorPoseInterface::NO_LOCATION:
         break;
@@ -197,10 +200,9 @@ ConveyorPoseThread::init()
 
 
   trimmed_scene_.reset(new Cloud());
-
   cfg_model_origin_frame_ = config->get_string(CFG_PREFIX "/model_origin_frame");
   cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
-  default_model_.reset(new Cloud());
+  record_model_.reset(new Cloud());
 
   // if recording is set, a pointcloud written to the the cfg_record_path_
   // else load pcd file for every station and calculate model with normals
@@ -240,14 +242,6 @@ ConveyorPoseThread::init()
     //Load default PCD file from model path and calculate model with normals for it
 
     int errnum;
-    if ((errnum = pcl::io::loadPCDFile(cfg_model_path_, *default_model_)) < 0)
-      throw fawkes::CouldNotOpenFileException(cfg_model_path_.c_str(), errnum,
-                                              "Set from " CFG_PREFIX "/model_file");
-
-    norm_est_.setInputCloud(default_model_);
-    model_with_normals_.reset(new pcl::PointCloud<pcl::PointNormal>());
-    norm_est_.compute(*model_with_normals_);
-    pcl::copyPointCloud(*default_model_, *model_with_normals_);
 
     // Loading PCD file and calculation of model with normals for ALL! stations
     // TODO: Redo with correct mapping
@@ -396,7 +390,7 @@ ConveyorPoseThread::loop()
 
     if (cfg_record_model_) {
       record_model();
-      cloud_publish(default_model_, cloud_out_model_);
+      cloud_publish(record_model_, cloud_out_model_);
     }
     else {
       if (bb_mutex_.try_lock()) {
@@ -512,17 +506,17 @@ ConveyorPoseThread::record_model()
   }
   tf_listener->transform_origin(cloud_in_->header.frame_id, cfg_model_origin_frame_, pose_cam);
   Eigen::Matrix4f tf_to_cam = pose_to_eigen(pose_cam);
-  pcl::transformPointCloud(*trimmed_scene_, *default_model_, tf_to_cam);
+  pcl::transformPointCloud(*trimmed_scene_, *record_model_, tf_to_cam);
 
   // Overwrite and atomically rename model so it can be copied at any time
   try {
-    int rv = pcl::io::savePCDFileASCII(cfg_record_path_, *default_model_);
+    int rv = pcl::io::savePCDFileASCII(cfg_record_path_, *record_model_);
     if (rv)
       logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_record_path_.c_str());
     else
       ::rename((cfg_record_path_ + ".pcd").c_str(), cfg_record_path_.c_str());
   } catch (pcl::IOException &e) {
-    logger->log_error(name(), "Exception saving point cloud to %s: %s", cfg_model_path_.c_str(), e.what());
+    logger->log_error(name(), "Exception saving point cloud to %s: %s", cfg_record_path_.c_str(), e.what());
   }
 }
 
