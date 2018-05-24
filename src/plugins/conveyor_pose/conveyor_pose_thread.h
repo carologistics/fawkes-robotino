@@ -119,8 +119,8 @@ private:
   CloudPtr default_model_;
   CloudPtr trimmed_scene_;
 
-  CloudPtr model_with_normals_;
-  CloudPtr scene_with_normals_;
+  CloudPtr model_;
+  CloudPtr scene_;
 
   fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_laser_odom_;
   std::atomic_bool have_laser_line_;
@@ -141,7 +141,7 @@ private:
   fawkes::Mutex config_mutex_;
 
   bool cfg_record_model_;
-  std::string cfg_model_path_;
+  std::string cfg_default_model_path_;
   std::string cfg_model_origin_frame_;
   std::string cfg_record_path_;
 

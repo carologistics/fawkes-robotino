@@ -53,9 +53,9 @@ void RecognitionThread::restart_icp()
 
   { fawkes::MutexLocker locked { &main_thread_->cloud_mutex_ };
     std::vector<int> tmp;
-    model_with_normals_ = main_thread_->model_with_normals_;
+    model_with_normals_ = main_thread_->model_;
     pcl::removeNaNFromPointCloud(*model_with_normals_, *model_with_normals_, tmp);
-    scene_with_normals_ = main_thread_->scene_with_normals_;
+    scene_with_normals_ = main_thread_->scene_;
     pcl::removeNaNFromPointCloud(*scene_with_normals_, *scene_with_normals_, tmp);
 
     try {
