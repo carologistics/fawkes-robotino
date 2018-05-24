@@ -456,40 +456,19 @@ ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *li
   // Halve that to get line center
   initial_guess.setOrigin(initial_guess.getOrigin() / 2);
 
-  // Add distance from line center to conveyor
+  // Add distance from from center to mps_target
   initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
-                                  double(cfg_target_hint_[mps_target][0]),
-                                  double(cfg_target_hint_[mps_target][1]),
-                                  double(cfg_target_hint_[mps_target][2]) } );
+                            double(cfg_target_hint_[mps_target][0]),
+                            double(cfg_target_hint_[mps_target][1]),
+                            double(cfg_target_hint_[mps_target][2])});
 
 
-  // Add distance offset for station
-  switch(mps_target)
-  {
-  case ConveyorPoseInterface::INPUT_CONVEYOR :
-    initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
-                              double(cfg_type_hint_[mps_type][0]),
-                              double(cfg_type_hint_[mps_type][1]),
-                              double(cfg_type_hint_[mps_type][2]) } );
-    break;
-  case ConveyorPoseInterface::OUTPUT_CONVEYOR:
-    initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
-                              double(cfg_type_hint_[mps_type][0]),
-                              double(cfg_type_hint_[mps_type][1]),
-                              double(cfg_type_hint_[mps_type][2]) } );
-  case ConveyorPoseInterface::SHELF_LEFT: //TODO: Add correct handlings
-    break;
-  case ConveyorPoseInterface::SHELF_MIDDLE:
-    break;
-  case ConveyorPoseInterface::SHELF_RIGHT:
-    break;
-  case ConveyorPoseInterface::SLIDE:
-    break;
-  case ConveyorPoseInterface::NO_LOCATION:
-    break;
-  case ConveyorPoseInterface::LAST_MPS_TARGET_ELEMENT:
-    break;
-  }
+  // Add distance offset for station type
+  initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
+                            double(cfg_type_hint_[mps_type][0]),
+                            double(cfg_type_hint_[mps_type][1]),
+                            double(cfg_type_hint_[mps_type][2])});
+
 
   initial_guess.setRotation(
         tf::Quaternion(tf::Vector3(0,1,0), -M_PI/2)
