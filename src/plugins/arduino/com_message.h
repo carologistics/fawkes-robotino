@@ -19,8 +19,8 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#ifndef __PLUGINS_ARDUINO_DIRECT_COM_MESSAGE_H_
-#define __PLUGINS_ARDUINO_DIRECT_COM_MESSAGE_H_
+#ifndef __PLUGINS_ARDUINO_COM_MESSAGE_H_
+#define __PLUGINS_ARDUINO_COM_MESSAGE_H_
 
 #include <cstdint>
 #include <boost/asio.hpp>
@@ -28,8 +28,6 @@
 class ArduinoComMessage
 {
  public:
-	/// shared pointer to direct com message
-	typedef std::shared_ptr<ArduinoComMessage> pointer;
 
 	/// @cond INTERNAL
 	typedef enum {
@@ -42,10 +40,6 @@ class ArduinoComMessage
 		CMD_QUERY_POS		=	6,
 	} command_id_t;
 
-	typedef enum {
-		READ,
-		WRITE
-	} mode_t;
 
 	static const char MSG_HEAD[3];
         static const int  NUM_STEPS_PER_MM = 100;

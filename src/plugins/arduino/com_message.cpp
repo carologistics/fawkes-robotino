@@ -29,15 +29,13 @@
 
 using namespace fawkes;
 
-/// @cond INTERNAL
 const char ArduinoComMessage::MSG_HEAD[] = {'A', 'T', ' '};
 
-// 5: 0xAA + payload_size/2 ... + checksum/2
-//const unsigned int ArduinoComMessage::MSG_METADATA_SIZE = 5;
-/// @endcond INTERNAL
-
-/** @class ArduinoComMessage "direct_com_message.h"
+/** @class ArduinoComMessage "com_message.h"
  * Arduino communication message.
+ *
+ * This object is used to create messages to be read by the Arduino
+ * flashed with fawkes_plugin_comm.ino.
  *
  * This object is used to create messages to send and parse messages
  * to read. It is designed to be generic, i.e., it provides methods to
@@ -61,7 +59,7 @@ const char ArduinoComMessage::MSG_HEAD[] = {'A', 'T', ' '};
  * - Command: a command field within a message, this is called tag
  *            and also command in OpenArduino. We chose the latter.
  *
- * @author Tim Niemueller
+ * @author Tim Niemueller, Nicolas Limpert
  */
 
 /** Constructor.
@@ -100,7 +98,11 @@ ArduinoComMessage::ctor()
     // always allocate 5 bytes, increase if necessary
     data_size_ = 5;
     data_ = (char *) malloc(data_size_);
+
+    // init buffer with zeros
     memset(data_, 0, data_size_);
+
+    // append header
     memcpy(data_, MSG_HEAD, 3);
 }
 
@@ -148,6 +150,10 @@ void ArduinoComMessage::set_msecs(unsigned int msecs)
     msecs_to_wait_ = msecs;
 }
 
+/** Get the number of msecs the associated action of this
+ * message is probably going to need to be executed
+ * @return msecs milliseconds
+ */
 unsigned int ArduinoComMessage::get_msecs()
 {
     return msecs_to_wait_;

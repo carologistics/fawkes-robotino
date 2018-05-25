@@ -27,7 +27,6 @@
 #include <utils/math/angle.h>
 #include <utils/time/wait.h>
 
-#include <interfaces/BatteryInterface.h>
 #include <interfaces/ArduinoInterface.h>
 
 #include <unistd.h>
@@ -39,7 +38,7 @@
 
 using namespace fawkes;
 
-/** @class ArduinoComThread "openarduino_com_thread.h"
+/** @class ArduinoComThread "com_thread.h"
  * Thread to communicate with an Arduino Uno via boost::asio
  * @author Tim Niemueller, Nicolas Limpert
  */
@@ -52,7 +51,6 @@ ArduinoComThread::ArduinoComThread(std::string &cfg_name,
         serial_(io_service_), deadline_(io_service_)
 {
     data_mutex_ = new Mutex();
-    new_data_ = false;
     cfg_prefix_ = cfg_prefix;
     cfg_name_ = cfg_name;
     set_coalesce_wakeups(false);
@@ -68,7 +66,6 @@ ArduinoComThread::init()
 {
     // -------------------------------------------------------------------------- //
     load_config();
-
 
     arduino_if_ =
             blackboard->open_for_writing<ArduinoInterface>("Arduino", cfg_name_.c_str());
@@ -235,8 +232,8 @@ ArduinoComThread::loop()
             logger->log_info(name(), "Connection re-established after %u tries", open_tries_ + 1);
         } catch (Exception &e) {
             open_tries_ += 1;
-            if (open_tries_ >= (1000 / cfg_sensor_update_cycle_time_)) {
-                logger->log_error(name(), "Connection problem to base persists");
+            if (open_tries_ >= 1000) {
+                logger->log_error(name(), "Connection problem to arduino. Tried 1000 reconnects - retrying...");
                 open_tries_ = 0;
             }
         }
@@ -389,9 +386,9 @@ ArduinoComThread::send_one_message()
         send_message(cur_msg);
 
         std::string s = read_packet(1000); // read receipt
-        logger->log_debug(name(), "Read receipt: %s'", s.c_str());
+        logger->log_debug(name(), "Read receipt: %s", s.c_str());
         s = read_packet(msecs_to_wait_); // read
-        logger->log_debug(name(), "Read status: %s'", s.c_str());
+        logger->log_debug(name(), "Read status: %s", s.c_str());
 
         return true;
     }
@@ -452,19 +449,27 @@ ArduinoComThread::read_packet(unsigned int timeout)
     deadline_.cancel();
 
     if (s.find("AT ") == std::string::npos) {
-        logger->log_error(name(), "Package error - bytes read: %zu", bytes_read_);
+        logger->log_error(name(), "Package error - bytes read: %zu, %s", bytes_read_, s.c_str());
+        // TODO: after re-opening the device it fails to be used again - fix this!
+        return "";
     }
     if (bytes_read_ > 4) {
         logger->log_debug(name(), "Package received: %s:", s.c_str());
         //        if (s.find("AT OK") == std::string::npos) {
         // Package is no receipt for the previous sent package
-        current_arduino_status = s.at(3);
+        current_arduino_status_ = s.at(3);
         //        }
     }
-    if (current_arduino_status == 'E') {
+    if (current_arduino_status_ == 'E') {
         logger->log_error(name(), "Arduino error: %s", s.substr(4).c_str());
-    } else if (current_arduino_status == 'I') {
-        current_z_position_ = stoi(s.substr(4)) / ArduinoComMessage::NUM_STEPS_PER_MM;
+    } else if (current_arduino_status_ == 'I') {
+      //TODO: setup absolute pose reporting!
+
+      std::stringstream ss(s.substr(4));
+      ss >> gripper_pose_[X] >> gripper_pose_[Y] >> gripper_pose_[Z] >> gripper_pose_[A];
+    } else {
+      // Probably something went wrong with communication
+      current_arduino_status_ = 'E';
     }
     //    read_pending_ = false;
     return s;
@@ -473,6 +478,7 @@ ArduinoComThread::read_packet(unsigned int timeout)
 void
 ArduinoComThread::load_config()
 {
+  // TODO: allow setting of stepper velocity from config!
     try {
         cfg_device_ = config->get_string(cfg_prefix_ + "/device");
         cfg_rpm_ = config->get_int(cfg_prefix_ + "/rpm");
@@ -486,7 +492,6 @@ ArduinoComThread::load_config()
         set_acceleration_pending_ = false;
 
         // 2mm / rotation
-        seconds_per_mm = (2. / cfg_rpm_) / 60.;
     } catch (Exception &e) {
     }
 }

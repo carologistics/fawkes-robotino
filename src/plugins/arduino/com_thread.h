@@ -64,7 +64,6 @@ public:
     virtual ~ArduinoComThread();
 
     virtual void init();
-    //	virtual void once();
     virtual void loop();
     virtual void finalize();
 
@@ -74,10 +73,6 @@ public:
     virtual bool bb_interface_message_received(fawkes::Interface *interface,
                                              fawkes::Message *message) throw();
 
-    /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
-protected:
-
-
 private:
     void open_device();
     void close_device();
@@ -86,17 +81,14 @@ private:
     bool sync_with_arduino();
     std::string read_packet(unsigned int timeout);
     void send_message(ArduinoComMessage &msg);
-    void process_message(ArduinoComMessage::pointer m);
 
     void handle_nodata(const boost::system::error_code &ec);
     bool send_one_message();
 
-private:
     std::string cfg_device_;
     unsigned int cfg_rpm_;
     unsigned int cfg_speed_;
     unsigned int cfg_accel_;
-    float seconds_per_mm;
     std::string cfg_hostname_;
     std::string cfg_prefix_;
     std::string cfg_name_;
@@ -108,7 +100,7 @@ private:
     unsigned int cfg_init_mm_;
     bool z_movement_pending_;
     fawkes::Time time_to_stop_z_align;
-    char current_arduino_status;
+    char current_arduino_status_;
 
     unsigned int msecs_to_wait_;
 
@@ -139,11 +131,6 @@ private:
 protected:
     /** Mutex to protect data_. Lock whenever accessing it. */
     fawkes::Mutex *data_mutex_;
-    /** Data struct that must be updated whenever new data is available. */
-    //        SensorData        data_;
-    /** Flag to indicate new data, set to true if data_ is modified. */
-    bool new_data_;
-
 
 };
 
