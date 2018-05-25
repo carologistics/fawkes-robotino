@@ -80,7 +80,7 @@ void
 ArduinoTFThread::loop()
 {
     boost::mutex::scoped_lock lock(data_mutex_);
-//    fawkes::Time now(clock);
+    fawkes::Time now(clock);
 
 //    float d_mm = current_end_z_pose_ - desired_end_z_pose_;
 //    double d_s = now - end_time_point_;
