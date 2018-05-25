@@ -143,7 +143,7 @@ fsm:define_states{ export_to=_M, closure={
    {"SEARCH_TAG_LINE",        SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_LINE", fail_to="CHECK_TAG"},
    {"ALIGN_FAST",             SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_AVG_LINE", fail_to="FAILED"},
    {"MATCH_AVG_LINE",         JumpState},
-   {"ALIGN_PRECISE",          SkillJumpState, skills={{"motor_move"}}, final_to="ALIGN_TURN", fail_to="ALIGN_FAST"},
+   --{"ALIGN_PRECISE",          SkillJumpState, skills={{"motor_move"}}, final_to="ALIGN_TURN", fail_to="ALIGN_FAST"},
    {"ALIGN_TURN",             SkillJumpState, skills={{"motor_move"}}, final_to="FINAL", fail_to="FAILED"}
 }
 
@@ -164,7 +164,7 @@ fsm:add_transitions{
    {"MATCH_LINE",   "ALIGN_FAST",       cond="vars.matched_line and tag_visible(MIN_VIS_HIST_TAG)"},
    {"MATCH_LINE",   "NO_LINE",          timeout=2, desc="lost line"},
 
-   {"MATCH_AVG_LINE", "ALIGN_PRECISE",  timeout=1},
+   {"MATCH_AVG_LINE", "ALIGN_TURN",  timeout=1},
 
    {"NO_LINE",       "FAILED",          cond="vars.approached_tag"},
    {"NO_LINE",       "SEARCH_TAG_LINE", cond=true},
@@ -369,14 +369,14 @@ function ALIGN_FAST:init()
    printf("center l: %f, %f, %f", center.x, center.y, center.ori)
    local center_bl = tfm.transform(center, "/base_laser", "/base_link")
    local p = llutils.point_in_front(center_bl, self.fsm.vars.x)
-   
+
    printf("p    : %f %f %f", p.x, p.y, p.ori)
 
    self.args["motor_move"] = {
       x = p.x,
       y = p.y + (self.fsm.vars.y or 0),
       ori = p.ori,
-      tolerance = { x=0.05, y=0.03, ori=0.03 }
+      tolerance = { x=0.05, y=0.03, ori=0.015 }
    }
 end
 
@@ -410,11 +410,11 @@ function MATCH_AVG_LINE:loop()
 end
 
 
-function ALIGN_PRECISE:init()
-   self.fsm.vars.align_attempts = self.fsm.vars.align_attempts + 1
-  
-   if self.fsm.vars.p_tag then
-      printf("p_tag: %f %f %f",
+--[[function ALIGN_PRECISE:init()
+--   self.fsm.vars.align_attempts = self.fsm.vars.align_attempts + 1
+
+--   if self.fsm.vars.p_tag then
+--      printf("p_tag: %f %f %f",
          self.fsm.vars.p_tag.x,
          self.fsm.vars.p_tag.y,
          fawkes.tf.get_yaw(self.fsm.vars.p_tag.ori))
@@ -430,12 +430,11 @@ function ALIGN_PRECISE:init()
       self.args["motor_move"].y = self.fsm.vars.y
    end
 end
-
+--]]
 
 function ALIGN_TURN:init()
    self.args["motor_move"] = {
       ori = self.fsm.vars.ori
+      tolerance = { x=0.05, y=0.03, ori=0.015 }
    }
 end
-
-
