@@ -42,56 +42,36 @@ plugins/static-transforms:
       trans_y: 0
       trans_z: 0.78
 
-    #from top plate middle to the mount_profile front at the bottom
-    mount_profile:
-      frame: !frame plate_top
-      child_frame: !frame mount_profile
-      trans_x: 0.065
-      trans_y: 0
-      trans_z: 0.03
-
-    cam_joint_1:
-      frame: !frame mount_profile
-      child_frame: !frame cam_joint_1
-      trans_x: -0.048
-      trans_y: 0.036
-      trans_z: 0.18
-      rot_pitch: 0
-      rot_yaw: 0.39
-      rot_roll: 0
-
-    cam_joint_2:
-      frame: !frame cam_joint_1
-      child_frame: !frame cam_joint_2
-      trans_x: 0
-      trans_y: 0.023
-      trans_z: 0.021
-      rot_pitch: 0.21
-      rot_yaw: 0
-      rot_roll: 0
-
-    cam_signal:
-      frame: !frame cam_joint_2
-      child_frame: !frame cam_signal
-      trans_x: 0.02
-      trans_y: 0.028
-      trans_z: 0.013
-
     #this system is located in the gripper where the puck should be held
-    gripper:
-      frame: !frame mount_profile
-      child_frame: !frame gripper
-      trans_x: 0.175
+    gripper_home:
+      frame: !frame plate_top
+      child_frame: !frame gripper_home
+      trans_x: 0.03
       trans_y: 0.0
-      trans_z: 0.1
+      trans_z: 0.17
+
+    # Move the gripper to (0,0,0) in this frame to calibrate conveyor_pose
+    conveyor_calib:
+      frame: !frame gripper_home
+      child_frame: !frame conveyor_calib
+      trans_x: 0.114
+      trans_y: 0
+      trans_z: -0.0
 
     cam_conveyor:
       frame: !frame gripper
       child_frame: !frame cam_conveyor
       trans_x: -0.01
-      trans_y: -0.023
+      trans_y: -0.027
       trans_z: -0.05
       rot_yaw: -1.57
       rot_pitch: 0
       rot_roll: -1.57
+
+    fingers:
+      frame: !frame cam_conveyor
+      child_frame: !frame gripper_fingers
+      trans_z: 0.118
+      trans_x: -0.027
+      trans_y: -0.015
 
