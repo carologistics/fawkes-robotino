@@ -23,13 +23,15 @@
   ; Number of retrying enter-field
   ; until succeeding it manually
   ?*ENTER-FIELD-RETRIES* = 10
-  ?*MAX-RETRIES-PICK* = 3
+  ?*MAX-RETRIES-PICK* = 2
+  ?*MAX-RETRIES-PUT-SLIDE* = 2
+
 
   ; production order priorities
   ?*PRIORITY-GO-WAIT-HACK* = 200
   ?*PRIORITY-FIND-MISSING-MPS* = 110
   ?*PRIORITY-DELIVER* = 100
-  ?*PRIORITY-RESET-MPS* = 98
+  ?*PRIORITY-RESET* = 98
   ?*PRIORITY-CLEAR-BS* = 97
   ?*PRIORITY-PRODUCE-CX* = 95
   ?*PRIORITY-PRODUCE-C0* = 90
@@ -450,13 +452,35 @@
                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
   =>
   (printout t "Goal " RESET-MPS " formulated" crlf)
-  (assert (goal (id RESET-MPS) (priority  ?*PRIORITY-RESET-MPS*)
+  (assert (goal (id RESET-MPS) (priority  ?*PRIORITY-RESET*)
                               (parent PRODUCTION-MAINTAIN)
                               (params r ?self
                                       m ?mps
                                       )))
   (retract ?t)
 )
+
+(defrule goal-reasoner-create-discard-failed-put-slide
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  ;To-Do: Model state IDLE
+  (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  (wm-fact (key domain fact mps-type args? m ?mps t RS))
+  ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-put-slide-cc m ?mps wp ?wp)
+                (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+  =>
+  (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
+  (assert (goal (id DISCARD-UNKNOWN) (priority ?*PRIORITY-RESET*)
+                                     (parent PRODUCTION-MAINTAIN)
+                                     (params robot ?robot
+                                             wp ?wp
+                                             )))
+  (retract ?t)
+  ; (assert (goal-already-tried DISCARD-UNKNOWN))
+)
+
 
 
 
@@ -537,6 +561,17 @@
 	(modify ?gm (num-tries ?num-tries) (max-tries ?*ENTER-FIELD-RETRIES*))
 	(modify ?g (mode EVALUATED))
   )
+)
+
+(defrule goal-reasoner-evaluate-production-maintain
+  ?g <- (goal (id PRODUCTION-MAINTAIN) (parent nil) (mode FINISHED) (outcome ?outcome))
+  ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
+  ?t <- (wm-fact (key monitoring action-retried args? r ?self a ?an m ?mps wp ?wp)
+                (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+  =>
+  (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
+  (retract ?t)
+  (modify ?g (mode EVALUATED))
 )
 
 (defrule goal-reasoner-evaluate-completed-subgoal-produce-c0
