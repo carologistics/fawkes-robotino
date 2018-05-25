@@ -610,44 +610,46 @@ ConveyorPoseThread::laserline_get_best_fit(fawkes::LaserLineInterface * &best_fi
 
   // get best line
   for (fawkes::LaserLineInterface * ll : laserlines_) {
-    // just with writer
     if ( ! ll->has_writer() )
       continue;
-    // just with history
     if ( ll->visibility_history() <= 2 )
       continue;
-    // just if not too far away
-    if ( ! tf_listener->can_transform(header_.frame_id, ll->frame_id(), fawkes::Time(0,0))) {
-      logger->log_error(name(), "Can't transform from %s to %s", ll->frame_id(), header_.frame_id.c_str());
-      continue;
+
+    try {
+      Eigen::Vector3f center = laserline_get_center_transformed(ll);
+      if ( std::sqrt( center(0) * center(0) + center(2) * center(2) ) > 0.8f )
+        continue;
+
+      // take with lowest angle
+      if ( fabs(best_fit->bearing()) > fabs(ll->bearing()) )
+        best_fit = ll;
+    } catch (fawkes::tf::TransformException &e) {
+      logger->log_error(name(), e);
     }
-    Eigen::Vector3f center = laserline_get_center_transformed(ll);
-
-    if ( std::sqrt( center(0) * center(0) + center(2) * center(2) ) > 0.8f )
-      continue;
-
-    // take with lowest angle
-    if ( fabs(best_fit->bearing()) > fabs(ll->bearing()) )
-      best_fit = ll;
   }
 
   if ( ! best_fit->has_writer() ) {
     logger->log_info(name(), "no writer for laser lines");
-    best_fit = NULL;
+    best_fit = nullptr;
     return false;
   }
   if ( best_fit->visibility_history() <= 2 ) {
-    best_fit = NULL;
+    best_fit = nullptr;
     return false;
   }
   if ( fabs(best_fit->bearing()) > 0.35f ) {
-    best_fit = NULL;
+    best_fit = nullptr;
     return false; // ~20 deg
   }
-  Eigen::Vector3f center = laserline_get_center_transformed(best_fit);
 
-  if ( std::sqrt( center(0) * center(0) + center(2) * center(2) ) > 0.8f ) {
-    best_fit = NULL;
+  try {
+    Eigen::Vector3f center = laserline_get_center_transformed(best_fit);
+    if ( std::sqrt( center(0) * center(0) + center(2) * center(2) ) > 0.8f ) {
+      best_fit = nullptr;
+      return false;
+    }
+  } catch (tf::TransformException &e) {
+    logger->log_error(name(), e);
     return false;
   }
 
@@ -665,7 +667,12 @@ ConveyorPoseThread::laserline_get_center_transformed(fawkes::LaserLineInterface 
   tf_in.setY( ll->end_point_2(1) + ( ll->end_point_1(1) - ll->end_point_2(1) ) / 2. );
   tf_in.setZ( ll->end_point_2(2) + ( ll->end_point_1(2) - ll->end_point_2(2) ) / 2. );
 
-  tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
+  try {
+    tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
+  } catch (tf::ExtrapolationException &) {
+    tf_in.stamp = Time(0,0);
+    tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
+  }
 
   Eigen::Vector3f out( tf_out.getX(), tf_out.getY(), tf_out.getZ() );
 
