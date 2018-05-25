@@ -22,3 +22,11 @@ arduino:
 
   # Interface ID for JoystickInterface to read data from
   joystick_interface_id: Joystick
+
+  gripper_frame_id: gripper_home
+  gripper_dyn_frame_id: gripper
+
+  # maximum space in x, y and z in meters
+  x_max: 0.115
+  y_max: 0.075
+  z_max: 0.057
