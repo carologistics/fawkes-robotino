@@ -114,17 +114,15 @@ plugins/static-transforms:
     cam_conveyor:
       trans_z: -0.056
 
-plugins/mongodb/clients:
-  robotmemory-synced:
-    active: false
-  robotmemory-synced-sim:
-    active: true
-    mode: connection
-    hostport: localhost:27021
-      
-plugins/robot-memory:
-  setup:
-    mongo-client-connection-distributed: "robotmemory-synced-sim"
-    replicated:
-      replica-set-members:
-        - localhost:27021
+plugins/mongodb:
+  clients:
+    default/enabled: true
+    arbiter/enabled: false
+    robot-memory-distributed-direct/hostport: localhost:27022
+    robot-memory-distributed/hosts:
+      - localhost:27022
+  replica-sets:
+    bootstrap-mongodb/client: default
+    managed-sets:
+      robot-memory-distributed/hosts:
+        - localhost:27022
