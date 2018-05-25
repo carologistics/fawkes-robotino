@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from_new"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"mps_align", "product_pick_new", "drive_to"}
+depends_skills     = {"mps_align", "drive_to"}
 depends_interfaces = {
 }
 
@@ -44,13 +44,13 @@ Parameters:
 skillenv.skill_module(_M)
 -- Constants
 --
--- Tunables 
-local x_Distance = 0.4 
-local y_Input = -0.3 
-local y_Output = 0.3 
-local y_Shelf_Left = 0.7
-local y_Shelf_Middle = 0.8
-local y_Shelf_Right = 0.9
+-- Tunables
+local x_Distance = 0.4
+local y_Input = 0
+local y_Output = 0
+local y_Shelf_Left = -0.09
+local y_Shelf_Middle = -0.18
+local y_Shelf_Right = -0.27
 
 function already_at_conveyor(self)
    return (self.fsm.vars.atmps == "CONVEYOR")
@@ -59,9 +59,9 @@ end
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
    {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
-   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"PRODUCT_PICK_NEW", SkillJumpState, skills={{product_pick_new}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
-   {"DECIDE_ENDSKILL", JumpState}, 
+   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="FINAL", fail_to="FAILED"},
+  -- {"PRODUCT_PICK_NEW", SkillJumpState, skills={{product_pick_new}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"DECIDE_ENDSKILL", JumpState},
 }
 
 fsm:add_transitions{
@@ -94,21 +94,13 @@ function MPS_ALIGN:init()
 
    if self.fsm.vars.side == "input" then
       self.args["mps_align"].y = y_Input
-   else if self.fsm.vars.side == "output" then  	
-      self.args["mps_align"].y = y_Output 
-   else if self.fsm.vars.shelf == "LEFT" then
-      self.args["mps_align"].y = y_Shelf_Left 
-   else if self.fsm.vars.shelf == "MIDDLE" then 
-      self.args["mps_align"].y = y_Shelf_Middle 
-   else if self.fsm.vars.shelf == "RIGHT" then 
+   elseif self.fsm.vars.side == "output" then
+      self.args["mps_align"].y = y_Output
+   elseif self.fsm.vars.shelf == "LEFT" then
+      self.args["mps_align"].y = y_Shelf_Left
+   elseif self.fsm.vars.shelf == "MIDDLE" then
+      self.args["mps_align"].y = y_Shelf_Middle
+   elseif self.fsm.vars.shelf == "RIGHT" then
       self.args["mps_align"].y = y_Shelf_Right
    end
 end
-
-function CONVEYOR_ALIGN:init()
-   if (self.fsm.vars.shelf == nil) then
-     self.args["conveyor_align"].disable_realsense_afterwards = false
-   end
-end
-
-

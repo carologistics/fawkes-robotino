@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "bring_product_to_new"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"mps_align","product_put_new", "drive_to","motor_move"}
+depends_skills     = {"mps_align", "drive_to","motor_move"}
 depends_interfaces = {
   {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"}
 }
@@ -45,10 +45,10 @@ Parameters:
 -- Initialize as skill module
 skillenv.skill_module(_M)
 -- Constants
--- Tunables 
+-- Tunables
 local x_distance = 0.4
-local y_input = 0 
-local y_slide = 0
+local y_input = 0
+local y_slide = 0.27
 
 function already_at_mps(self)
    return not (self.fsm.vars.atmps=="NO" or self.fsm.vars.atmps==nil)
@@ -61,8 +61,8 @@ end
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_if},
    {"INIT", JumpState},
    {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
-   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"PRODUCT_PUT", SkillJumpState, skills={{product_put_new}}, final_to="FINAL", fail_to="FAILED"},
+   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="FINAL", fail_to="FAILED"},
+   --{"PRODUCT_PUT", SkillJumpState, skills={{product_put_new}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -100,24 +100,16 @@ function MPS_ALIGN:init()
 
    if self.fsm.vars.side == "output" then
       self.args["mps_align"].y = y_output
-   else if self.fsm.vars.slide then  
+   elseif self.fsm.vars.slide then
       self.args["mps_align"].y = y_slide
    end
 end
 
-function CONVEYOR_ALIGN:init()
-    if (self.fsm.vars.slide == nil or self.fsm.vars.shelf == nil) then
-      self.args["conveyor_align"].disable_realsense_afterwards = false
-    end
-end
+--function SKILL_PRODUCT_PUT:init()
+--   self.args["product_put"].offset_x = 0
+--end
 
-
-
-function SKILL_PRODUCT_PUT:init()
-   self.args["product_put"].offset_x = 0 
-end
-
-function SKILL_SHELF_PUT:init()
+-- function SKILL_SHELF_PUT:init()
    -- Just hand through the Shelf position
-   self.args["shelf_put"].slot = self.fsm.vars.shelf
-end
+--   self.args["shelf_put"].slot = self.fsm.vars.shelf
+--end
