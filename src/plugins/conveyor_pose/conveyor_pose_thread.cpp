@@ -534,29 +534,27 @@ ConveyorPoseThread::record_model()
 void
 ConveyorPoseThread::update_station_information(ConveyorPoseInterface::MPS_TYPE mps_type, ConveyorPoseInterface::MPS_TARGET mps_target)
 {
-  if(mps_type != bb_pose_->current_mps_type() || mps_target != bb_pose_->current_mps_target()){
-    auto map_it = type_target_to_model_.find({mps_type,mps_target});
-    if ( map_it == type_target_to_model_.end())
-      logger->log_error(name(), "Invalid station type or target: %i,%i", mps_type, mps_target);
-    else {
-      logger->log_info(name(), "Set Station type to : %i Set Station target to: %i", bb_pose_->current_mps_type(),bb_pose_->current_mps_target());
+  auto map_it = type_target_to_model_.find({mps_type,mps_target});
+  if ( map_it == type_target_to_model_.end())
+    logger->log_error(name(), "Invalid station type or target: %i,%i", mps_type, mps_target);
+  else {
+    logger->log_info(name(), "Set Station type to : %i Set Station target to: %i", bb_pose_->current_mps_type(),bb_pose_->current_mps_target());
 
-      MutexLocker locked(&cloud_mutex_);
-      MutexLocker locked2(&bb_mutex_);
+    MutexLocker locked(&cloud_mutex_);
+    MutexLocker locked2(&bb_mutex_);
 
-      model_ = map_it->second;
-      current_mps_type_ = mps_type;
-      current_mps_target_ = mps_target;
+    model_ = map_it->second;
+    current_mps_type_ = mps_type;
+    current_mps_target_ = mps_target;
 
-      bb_pose_->set_current_mps_type(mps_type);
-      bb_pose_->set_current_mps_target(mps_target);
-      result_fitness_ = std::numeric_limits<double>::min();
-      bb_pose_->set_euclidean_fitness(result_fitness_);
-      bb_pose_->write();
+    bb_pose_->set_current_mps_type(mps_type);
+    bb_pose_->set_current_mps_target(mps_target);
+    result_fitness_ = std::numeric_limits<double>::min();
+    bb_pose_->set_euclidean_fitness(result_fitness_);
+    bb_pose_->write();
 
-      recognition_thread_->restart();
-      result_fitness_ = std::numeric_limits<double>::min();
-    }
+    recognition_thread_->restart();
+    result_fitness_ = std::numeric_limits<double>::min();
   }
 }
 
