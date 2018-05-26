@@ -163,6 +163,12 @@ ArduinoComThread::loop()
                 } catch (fawkes::tf::ConnectivityException &e) {
                   logger->log_debug(name(), "Connectivity exception: %s", e.what());
                   break;
+                } catch (fawkes::IllegalArgumentException &e) {
+                  logger->log_debug(name(), "IllegalArgumentException exception - did you set the frame_id?: %s", e.what());
+                  break;
+                } catch (fawkes::Exception &e) {
+                  logger->log_debug(name(), "Other exception: %s", e.what());
+                  break;
                 }
 
                 float goal_x = tf_pose_target.getOrigin().x() + msg->x();
