@@ -81,11 +81,13 @@ function COMMAND:init()
         x = self.fsm.vars.x or -1
         y = self.fsm.vars.y or -1
         z = self.fsm.vars.z or -1
+        target_frame = self.fsm.vars.target_frame or "gripper_home"
 
         move_abs_message = arduino.MoveXYZAbsMessage:new()
         move_abs_message:set_x(x)
         move_abs_message:set_y(y)
         move_abs_message:set_z(z)
+        move_abs_message:set_target_frame(target_frame)
         arduino:msgq_enqueue_copy(move_abs_message)
 
    elseif self.fsm.vars.command == "CALIBRATE" then
