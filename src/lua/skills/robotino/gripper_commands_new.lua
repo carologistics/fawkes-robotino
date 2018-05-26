@@ -28,7 +28,9 @@ name               = "gripper_commands_new"
 fsm                = SkillHSM:new{name=name, start="CHECK_WRITER", debug=false}
 depends_skills     = nil
 depends_interfaces = {
-    {v = "arduino", type = "ArduinoInterface", id="Arduino"}
+    {v = "arduino", type = "ArduinoInterface", id="Arduino"},
+    {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
+
 }
 
 documentation      = [==[
@@ -46,7 +48,7 @@ skillenv.skill_module(_M)
 -- States
 fsm:define_states{
    export_to=_M,
-   closure={gripper_if=gripper_if, right_fully_loaded=right_fully_loaded, left_fully_loaded=left_fully_loaded},
+   closure={arduino=arduino,gripper_if=gripper_if, right_fully_loaded=right_fully_loaded, left_fully_loaded=left_fully_loaded},
    {"CHECK_WRITER", JumpState},
    {"COMMAND", JumpState},
    {"WAIT_COMMAND", JumpState},
