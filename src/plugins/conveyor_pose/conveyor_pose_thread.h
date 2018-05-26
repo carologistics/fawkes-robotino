@@ -229,7 +229,7 @@ private:
  CloudPtr cloud_voxel_grid(CloudPtr in);
 
  void pose_write();
- void record_model();
+ void record_model(CloudPtr model_to_record);
 
  virtual void config_value_erased(const char *path) override;
  virtual void config_tag_changed(const char *new_tag) override;

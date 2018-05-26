@@ -304,12 +304,22 @@ ConveyorPoseThread::init()
     model_.reset(new Cloud());
   }
   else {
+    bool uncompressed_model = config->get_bool_or_default(CFG_PREFIX "/uncompressed_model", false);
     // Loading PCD file and calculation of model with normals for ALL! stations
     for (const auto &pair : type_target_to_path_) {
       CloudPtr model(new Cloud());
       if (pcl::io::loadPCDFile(pair.second, *model) < 0)
         throw fawkes::CouldNotOpenFileException(pair.second.c_str());
-
+      if(uncompressed_model){ //model is not compressed, so use voxel_grid now!
+        CloudPtr compressed_model(new Cloud());
+        size_t in_size = model->points.size();
+        compressed_model = cloud_voxel_grid(model);
+        size_t out_size = compressed_model->points.size();
+        if (in_size == out_size) {
+          logger->log_error(name(), "Voxel Grid failed at loading model %s!", pair.second.c_str());
+        }
+        model = compressed_model;
+      } 
       type_target_to_model_.insert({pair.first, model});
     }
 
@@ -477,7 +487,8 @@ ConveyorPoseThread::loop()
 
 
     if (cfg_record_model_) {
-      record_model();
+      CloudPtr trimmed_uncompressed_scene = cloud_trim(cloud_in, ll, have_laser_line_);
+      record_model(trimmed_uncompressed_scene);
       cloud_publish(model_, cloud_out_model_);
 
       tf::Stamped<tf::Pose> initial_pose_cam;
@@ -564,7 +575,7 @@ ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *li
 
 
 void
-ConveyorPoseThread::record_model()
+ConveyorPoseThread::record_model(CloudPtr model_to_record)
 {
   // Transform model
   tf::Stamped<tf::Pose> pose_cam;
@@ -576,7 +587,7 @@ ConveyorPoseThread::record_model()
   }
   tf_listener->transform_origin(cloud_in_->header.frame_id, cfg_model_origin_frame_, pose_cam);
   Eigen::Matrix4f tf_to_cam = pose_to_eigen(pose_cam);
-  pcl::transformPointCloud(*trimmed_scene_, *model_, tf_to_cam);
+  pcl::transformPointCloud(*model_to_record, *model_, tf_to_cam);
 
   // Overwrite and atomically rename model so it can be copied at any time
   try {
@@ -588,6 +599,9 @@ ConveyorPoseThread::record_model()
   } catch (pcl::IOException &e) {
     logger->log_error(name(), "Exception saving point cloud to %s: %s", cfg_record_path_.c_str(), e.what());
   }
+
+  pcl::transformPointCloud(*trimmed_scene_, *model_, tf_to_cam); // also transform the compressed scene for rviz
+
 }
 
 

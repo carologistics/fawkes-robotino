@@ -28,6 +28,11 @@ plugins/conveyor_pose:
   # a file is found that doesn't exist, yet.
   record_model: false
 
+  #To make voxel_grid/leaf_size changes possible after recording the model, those models 
+  #are now recorded uncompressed. This switch changes the behavior when loading the models,
+  #whether they get compress at load (true) or not (false, default)
+  uncompressed_model: false
+
   # If recording is enabled, a PCD file is written to CONFDIR "/" record path
   # (e.g.: conveyor_model_.pcd)
   record_path: "conveyor_model.pcd"
