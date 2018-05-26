@@ -587,11 +587,12 @@ ConveyorPoseThread::record_model(CloudPtr model_to_record)
   }
   tf_listener->transform_origin(cloud_in_->header.frame_id, cfg_model_origin_frame_, pose_cam);
   Eigen::Matrix4f tf_to_cam = pose_to_eigen(pose_cam);
-  pcl::transformPointCloud(*model_to_record, *model_, tf_to_cam);
+  CloudPtr transformed_model;
+  pcl::transformPointCloud(*model_to_record, *transformed_model, tf_to_cam);
 
   // Overwrite and atomically rename model so it can be copied at any time
   try {
-    int rv = pcl::io::savePCDFileASCII(cfg_record_path_, *model_);
+    int rv = pcl::io::savePCDFileASCII(cfg_record_path_, *transformed_model);
     if (rv)
       logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_record_path_.c_str());
     else
