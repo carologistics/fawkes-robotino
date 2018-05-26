@@ -130,7 +130,7 @@ function CLEANUP_FINAL:init()
    end
 end
 
-function CLEANUP_FAILED:init()d
+function CLEANUP_FAILED:init()
    if (self.fsm.vars.disable_realsense_afterwards == nil or self.fsm.vars.disable_realsense_afterwards) then
      if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
    end
