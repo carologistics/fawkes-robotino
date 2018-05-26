@@ -33,6 +33,8 @@ documentation      = [==[aligns the robot orthogonal to the conveyor by using th
                          conveyor vision
 Parameters:
        @param disable_realsense_afterwards   disable the realsense after aligning
+       @param mps_type   (the mps_type conveyor_align should align to)
+       @param mps_target (the mps target conveyor_align should align to)
 
 ]==]
 
@@ -111,7 +113,7 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-   if_conveyor_pose_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
+   if_conveyor_pose_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
    if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.SetStationMessage:new(if_conveyor_pose.BASE_STATION,if_conveyor_pose.INPUT_CONVEYOR))
 end
 
