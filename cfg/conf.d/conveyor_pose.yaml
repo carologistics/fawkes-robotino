@@ -35,10 +35,10 @@ plugins/conveyor_pose:
 
   # Paths to the default PCD models taking as reference model in the conveyor pose plugin
   reference_default_models:
-    with_cone: "conveyor_pcls/default_with_cone.pcd"
-    no_cone: "conveyor_pcls/default_no_cone.pcd"
-    shelf: "conveyor_pcls/default_puck.pcd"
-    slide: "conveyor_pcls/default_slide.pcd"
+    with_cone: "conveyor_pcls/with_cone.pcd"
+    no_cone: "conveyor_pcls/no_cone.pcd"
+    shelf: "conveyor_pcls/no_cone.pcd"
+    slide: "conveyor_pcls/no_cone.pcd"
 
   voxel_grid:
     # Downsample all point clouds to this resolution
