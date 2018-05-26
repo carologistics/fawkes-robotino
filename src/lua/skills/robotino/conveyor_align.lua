@@ -25,8 +25,8 @@ fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"motor_move", "gripper_commands_new"}
 depends_interfaces = {
    {v = "motor", type = "MotorInterface", id="Robotino" },
-   {v = "if_conveyor", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
-   {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
+   {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
+   {v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
 }
 
 documentation      = [==[aligns the robot orthogonal to the conveyor by using the
@@ -41,14 +41,11 @@ Parameters:
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
-if config:exists("/skills/conveyor_align/z_pos") then
-   z_pos = config:get_float("/skills/conveyor_align/z_pos")
-end
 
 local euclidean_fitness_tolerance = 50
-local TOLERANCE_Y = 50
-local TOLERANCE_X = 50
-local TOLERANCE_Z = 50
+local TOLERANCE_Y = 0.5
+local TOLERANCE_X = 0.5
+local TOLERANCE_Z = 0.5
 
 local cfg_frame_ = "gripper"
 
@@ -64,21 +61,21 @@ function tolerance_check(self)
 end
 
 function icp_fitness_check(self)
-     return if_conveyor:euclidean_fitness() > euclidean_fitness_tolerance
+     return if_conveyor_pose:euclidean_fitness() > euclidean_fitness_tolerance
 end
 
 function pose_offset(self)
 
-   local from = { x = if_conveyor:translation(0),
-                  y = if_conveyor:translation(1),
-                  z = if_conveyor:translation(2),
-                  ori = { x = if_conveyor:rotation(0),
-                          y = if_conveyor:rotation(1),
-                          z = if_conveyor:rotation(2),
-                          w = if_conveyor:rotation(3),
+   local from = { x = if_conveyor_pose:translation(0),
+                  y = if_conveyor_pose:translation(1),
+                  z = if_conveyor_pose:translation(2),
+                  ori = { x = if_conveyor_pose:rotation(0),
+                          y = if_conveyor_pose:rotation(1),
+                          z = if_conveyor_pose:rotation(2),
+                          w = if_conveyor_pose:rotation(3),
                         }
                 }
-   local cp = tfm.transform6D(from, if_conveyor:frame(), cfg_frame_)
+   local cp = tfm.transform6D(from, if_conveyor_pose:frame(), cfg_frame_)
 
    --local ori = fawkes.tf.get_yaw( fawkes.tf.Quaternion:new(cp.ori.x, cp.ori.y, cp.ori.z, cp.ori.w))
    print_info("Pose offset is x = %f, y = %f, z = %f", cp.x, cp.y, cp.z)
@@ -114,9 +111,8 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-   self.fsm.vars.counter = 0
-   conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
-   --if_conveyor:msgq_enqueue_copy(if_conveyor.SetStationMessage:new(self.fsm.vars.type,self.fsm.vars.target))
+   if_conveyor_pose_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
+   if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.SetStationMessage:new(if_conveyor_pose.BASE_STATION,if_conveyor_pose.INPUT_CONVEYOR))
 end
 
 function MOVE_GRIPPER:init()
@@ -130,12 +126,12 @@ end
 
 function CLEANUP_FINAL:init()
    if (self.fsm.vars.disable_realsense_afterwards == nil or self.fsm.vars.disable_realsense_afterwards) then
-     conveyor_switch:msgq_enqueue_copy(conveyor_switch.DisableSwitchMessage:new())
+     if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
    end
 end
 
-function CLEANUP_FAILED:init()
+function CLEANUP_FAILED:init()d
    if (self.fsm.vars.disable_realsense_afterwards == nil or self.fsm.vars.disable_realsense_afterwards) then
-     conveyor_switch:msgq_enqueue_copy(conveyor_switch.DisableSwitchMessage:new())
+     if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
    end
 end
