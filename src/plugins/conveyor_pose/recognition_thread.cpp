@@ -150,7 +150,7 @@ void RecognitionThread::loop()
   if (iterations_++ >= main_thread_->cfg_icp_min_loops_ || epsilon_reached) {
     // Perform hypothesis verification
     std::vector<Cloud::ConstPtr> icp_result_vector { icp_result_ };
-    //hypot_verif_.addCompleteModels(icp_result_vector);
+    hypot_verif_.setSceneCloud(scene_with_normals_);
     hypot_verif_.addModels(icp_result_vector, true);
 
     hypot_verif_.verify();
