@@ -121,7 +121,7 @@ end
 
 function MOVE_GRIPPER:init()
   print_info("Move gripper to %f,%f,%f", gripper_x, gripper_y, gripper_z)
-  --self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].command = "MOVEABS"
   self.args["gripper_commands_new"].x = gripper_x
   self.args["gripper_commands_new"].y = gripper_y
   self.args["gripper_commands_new"].z = gripper_z
