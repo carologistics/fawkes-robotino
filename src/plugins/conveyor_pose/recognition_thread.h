@@ -32,7 +32,6 @@ public:
   using Point = ConveyorPoseThread::Point;
   using Cloud = ConveyorPoseThread::Cloud;
   using CloudPtr = ConveyorPoseThread::CloudPtr;
-  using pose = ConveyorPoseThread::pose;
 
   RecognitionThread(ConveyorPoseThread *cp_thread);
 
@@ -41,6 +40,18 @@ public:
   void enable();
   void disable();
   void restart();
+
+  std::atomic<float> cfg_icp_max_corr_dist_;
+  std::atomic<double> cfg_icp_tf_epsilon_;
+  std::atomic<double> cfg_icp_refinement_factor_;
+  std::array<std::atomic<float>, 3> cfg_icp_conveyor_hint_;
+  std::atomic<int> cfg_icp_max_iterations_;
+  std::atomic<float> cfg_icp_hv_penalty_thresh_;
+  std::atomic<float> cfg_icp_hv_support_thresh_;
+  std::atomic<float> cfg_icp_hv_inlier_thresh_;
+  std::atomic<unsigned int> cfg_icp_min_loops_;
+  std::atomic<unsigned int> cfg_icp_max_loops_;
+  std::atomic_bool cfg_icp_auto_restart_;
 
 private:
   void restart_icp();
@@ -55,8 +66,8 @@ private:
 
   fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_icp_odom_;
   Eigen::Matrix4f initial_tf_;
-  CloudPtr model_with_normals_;
-  CloudPtr scene_with_normals_;
+  CloudPtr model_;
+  CloudPtr scene_;
 
   CustomICP icp_;
   pcl::PapazovHV<Point, Point> hypot_verif_;
