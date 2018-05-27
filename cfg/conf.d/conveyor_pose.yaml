@@ -95,9 +95,9 @@ plugins/conveyor_pose:
 
     hint:
       default:
-        x: 0.015
-        y: 0.02
-        z: 0.6
+        x: -0.007
+        y: 0.03
+        z: 0.65
       conveyor:
         x: 0.015
         y: -0.02
@@ -154,22 +154,45 @@ plugins/conveyor_pose:
   conveyor_frame_id: conveyor_pose
   switch_default: false
 
-  # the dimensions of the gripper in the point cloud (check rotation of actual tf)
+  # The point cloud is cut into a cube, such that all points outside the cube are removed.
+  # The cube is limited by the left, right, top, bottom, front and back_cut values.
+  # The namings are from the point of view of the realsense camera
+  #
+  # The gripper and without_ll values are given and applied
+  # in the frame of the conveyor cam.
+  # From the point of view of the realsense cam, the coordinate axes are:
+  # 
+  #             z (front, bottom)
+  #            /
+  #          /
+  #        /
+  #       *-------x (left, right)
+  #       |
+  #       |
+  #       |
+  #       |
+  #       y (top, bottom)
+  #
+  #
+  # The with_ll values are given and applied in the frame of the
+  # initial_tf guess. However, to minimize computational cost and 
+  # since rotation of initial_tf to conveyor_cam is small, rotation
+  # is NEGLECTED!
   gripper:
-    bottom: -0.015
+    bottom: -0.025 #this is the bottom of the gripper, so a top_cut in terms of the cutting cube
   without_ll:
-    left_cut: -0.1 
-    right_cut: 0.1
-    top_cut: -0.1
-    bottom_cut: 0.1
+    left_cut: -0.05
+    right_cut: 0.05
+    top_cut: -0.02
+    bottom_cut: 0.05
     front_cut: 0.01
     back_cut: 0.5
   with_ll:
-    left_cut: -0.1 
-    right_cut: 0.1
-    top_cut: -0.1
-    bottom_cut: 0.1
-    front_cut: 0.01
-    back_cut: 0.5
+    left_cut: -0.035
+    right_cut: 0.035
+    top_cut: -0.02
+    bottom_cut: 0.04
+    front_cut: -0.01
+    back_cut: 0.03
 
 
