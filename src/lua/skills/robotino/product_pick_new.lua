@@ -23,7 +23,7 @@
 module(..., skillenv.module_init)
 
 -- Crucial skill information
-name               = "product_pick_new"
+name               = "product_pick"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"gripper_commands_new", "motor_move"}
 depends_interfaces = {
