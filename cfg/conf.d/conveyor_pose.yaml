@@ -156,21 +156,20 @@ plugins/conveyor_pose:
 
   # the dimensions of the gripper in the point cloud (check rotation of actual tf)
   gripper:
-    y_min: -0.055
-    y_max: -0.015
-    z_max: 0.135
-    slice:
-      y_min: -0.04
-      y_max: 0.03
-  front:
-    # the distance that is not pruned at the front of the MPS
-    space: 0.6
-    # this should be a tf, but I did not get it work :(
-    offset: 0.005
-  left_right:
-    left_cut: 0.1
+    bottom: -0.015
+  without_ll:
+    left_cut: -0.1 
     right_cut: 0.1
-    left_cut_no_ll: 0.1
-    right_cut_no_ll: 0.1
+    top_cut: -0.1
+    bottom_cut: 0.1
+    front_cut: 0.01
+    back_cut: 0.5
+  with_ll:
+    left_cut: -0.1 
+    right_cut: 0.1
+    top_cut: -0.1
+    bottom_cut: 0.1
+    front_cut: 0.01
+    back_cut: 0.5
 
 
