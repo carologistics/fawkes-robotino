@@ -58,12 +58,12 @@ ConveyorPoseThread::ConveyorPoseThread()
   , BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS)
   , ConfigurationChangeHandler(CFG_PREFIX)
   , fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose")
+  , result_fitness_(std::numeric_limits<double>::min())
   , cloud_out_raw_name_("raw")
   , cloud_out_trimmed_name_("trimmed")
   , current_mps_type_(ConveyorPoseInterface::NO_STATION)
   , current_mps_target_(ConveyorPoseInterface::NO_LOCATION)
   , recognition_thread_(nullptr)
-  , result_fitness_(std::numeric_limits<double>::min())
   , realsense_switch_(nullptr)
 {}
 
@@ -85,17 +85,17 @@ ConveyorPoseThread::init()
 
   conveyor_frame_id_          = config->get_string( CFG_PREFIX "/conveyor_frame_id" );
 
-  cfg_icp_max_corr_dist_      = config->get_float( CFG_PREFIX "/icp/max_correspondence_dist" );
-  cfg_icp_max_iterations_     = config->get_int( CFG_PREFIX "/icp/max_iterations" );
-  cfg_icp_refinement_factor_  = double(config->get_float( CFG_PREFIX "/icp/refinement_factor" ));
-  cfg_icp_tf_epsilon_         = double(config->get_float( CFG_PREFIX "/icp/transformation_epsilon" ));
-  cfg_icp_min_loops_          = config->get_uint( CFG_PREFIX "/icp/min_loops" );
-  cfg_icp_max_loops_          = config->get_uint( CFG_PREFIX "/icp/max_loops" );
-  cfg_icp_auto_restart_       = config->get_bool( CFG_PREFIX "/icp/auto_restart" );
+  recognition_thread_->cfg_icp_max_corr_dist_     = config->get_float( CFG_PREFIX "/icp/max_correspondence_dist" );
+  recognition_thread_->cfg_icp_max_iterations_    = config->get_int( CFG_PREFIX "/icp/max_iterations" );
+  recognition_thread_->cfg_icp_refinement_factor_ = double(config->get_float( CFG_PREFIX "/icp/refinement_factor" ));
+  recognition_thread_->cfg_icp_tf_epsilon_        = double(config->get_float( CFG_PREFIX "/icp/transformation_epsilon" ));
+  recognition_thread_->cfg_icp_min_loops_         = config->get_uint( CFG_PREFIX "/icp/min_loops" );
+  recognition_thread_->cfg_icp_max_loops_         = config->get_uint( CFG_PREFIX "/icp/max_loops" );
+  recognition_thread_->cfg_icp_auto_restart_      = config->get_bool( CFG_PREFIX "/icp/auto_restart" );
 
-  cfg_icp_hv_inlier_thresh_   = config->get_float( CFG_PREFIX "/icp/hv_inlier_threshold" );
-  cfg_icp_hv_penalty_thresh_  = config->get_float( CFG_PREFIX "/icp/hv_penalty_threshold" );
-  cfg_icp_hv_support_thresh_  = config->get_float( CFG_PREFIX "/icp/hv_support_threshold" );
+  recognition_thread_->cfg_icp_hv_inlier_thresh_  = config->get_float( CFG_PREFIX "/icp/hv_inlier_threshold" );
+  recognition_thread_->cfg_icp_hv_penalty_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_penalty_threshold" );
+  recognition_thread_->cfg_icp_hv_support_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_support_threshold" );
 
   // Init of station target hints
   cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR];
@@ -910,25 +910,25 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         change_val(opt, cfg_right_cut_no_ll_, v->get_float());
     } else if (sub_prefix == "/icp") {
       if (opt == "/max_correspondence_dist")
-        change_val(opt, cfg_icp_max_corr_dist_, v->get_float());
+        change_val(opt, recognition_thread_->cfg_icp_max_corr_dist_, v->get_float());
       else if (opt == "/transformation_epsilon")
-        change_val(opt, cfg_icp_tf_epsilon_, double(v->get_float()));
+        change_val(opt, recognition_thread_->cfg_icp_tf_epsilon_, double(v->get_float()));
       else if (opt == "/refinement_factor")
-        change_val(opt, cfg_icp_refinement_factor_, double(v->get_float()));
+        change_val(opt, recognition_thread_->cfg_icp_refinement_factor_, double(v->get_float()));
       else if (opt == "/max_iterations")
-        change_val(opt, cfg_icp_max_iterations_, v->get_int());
+        change_val(opt, recognition_thread_->cfg_icp_max_iterations_, v->get_int());
       else if (opt == "/hv_penalty_threshold")
-        change_val(opt, cfg_icp_hv_penalty_thresh_, v->get_float());
+        change_val(opt, recognition_thread_->cfg_icp_hv_penalty_thresh_, v->get_float());
       else if (opt == "/hv_support_threshold")
-        change_val(opt, cfg_icp_hv_support_thresh_, v->get_float());
+        change_val(opt, recognition_thread_->cfg_icp_hv_support_thresh_, v->get_float());
       else if (opt == "/hv_inlier_threshold")
-        change_val(opt, cfg_icp_hv_inlier_thresh_, v->get_float());
+        change_val(opt, recognition_thread_->cfg_icp_hv_inlier_thresh_, v->get_float());
       else if (opt == "/min_loops")
-        change_val(opt, cfg_icp_min_loops_, v->get_uint());
+        change_val(opt, recognition_thread_->cfg_icp_min_loops_, v->get_uint());
       else if (opt == "/max_loops")
-        change_val(opt, cfg_icp_max_loops_, v->get_uint());
+        change_val(opt, recognition_thread_->cfg_icp_max_loops_, v->get_uint());
       else if (opt == "/auto_restart")
-        change_val(opt, cfg_icp_auto_restart_, v->get_bool());
+        change_val(opt, recognition_thread_->cfg_icp_auto_restart_, v->get_bool());
       else if (opt == "/hint/conveyor/x")
       {
         change_val(opt, cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][0], v->get_float());
@@ -1018,9 +1018,13 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         change_val(opt, cfg_type_hint_[ConveyorPoseInterface::NO_STATION][2], v->get_float());
     }
     MutexLocker locked2 { &cloud_mutex_ };
-    recognition_thread_->disable();
+    recognition_thread_->restart();
   }
 }
+
+
+float ConveyorPoseThread::cloud_resolution() const
+{ return cfg_voxel_grid_leaf_size_; }
 
 
 Eigen::Matrix4f pose_to_eigen(const fawkes::tf::Pose &pose)
