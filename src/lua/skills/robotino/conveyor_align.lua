@@ -33,9 +33,6 @@ documentation      = [==[aligns the robot orthogonal to the conveyor by using th
                          conveyor vision
 Parameters:
        @param disable_realsense_afterwards   disable the realsense after aligning
-       @param mps_type   (the mps_type conveyor_align should align to)
-       @param mps_target (the mps target conveyor_align should align to)
-
 ]==]
 
 -- Initialize as skill module
@@ -43,12 +40,14 @@ Parameters:
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
-local euclidean_fitness_tolerance = 50
-local tolerance_x = 0.5
-local gripper_x = 0
-local gripper_y = 0
-local gripper_z = 0
--- local cfg_frame_ = "gripper"
+-- Constants
+local euclidean_fitness_threshold = 300 -- threshold for euclidean fitness  (fitness should be higher)
+local tolerance_x = 0.5  -- x-tolerance according to conveyor pose
+local gripper_x = 0  -- gripper x-coordinate before the align
+local gripper_y = 0  -- gripper x-coordinate before the align
+local gripper_z = 0  -- gripper x-coordinate before the align
+local x_dist_to_mps = 0.2  -- x-distance the robot should have after the align
+local cfg_frame_ = "gripper"
 
 function no_writer()
    return not if_conveyor_pose:has_writer()
@@ -62,7 +61,7 @@ function tolerance_check(self)
 end
 
 function icp_fitness_check(self)
-     return if_conveyor_pose:euclidean_fitness() > euclidean_fitness_tolerance
+     return if_conveyor_pose:euclidean_fitness() > euclidean_fitness_threshold
 end
 
 function pose_offset(self)
@@ -76,18 +75,23 @@ function pose_offset(self)
                           w = if_conveyor_pose:rotation(3),
                         }
                 }
-   --local cp = tfm.transform6D(from, if_conveyor_pose:frame(), cfg_frame_)
 
-   --local ori = fawkes.tf.get_yaw( fawkes.tf.Quaternion:new(cp.ori.x, cp.ori.y, cp.ori.z, cp.ori.w))
-   --print_info("Pose offset is x = %f, y = %f, z = %f", cp.x, cp.y, cp.z)
-   --local ori = 0
+  print_info("Conveyor pose translation is x = %f, y = %f , z  = %f", from.x, from.y, from.z)
 
-   --return { x = cp.x,
-    --        y = cp.y,
-    --        z = cp.z,
-    --        ori = ori
-    --      }
-    return from
+  local cp = tfm.transform6D(from, if_conveyor_pose:frame(), cfg_frame_)
+
+   local ori = fawkes.tf.get_yaw( fawkes.tf.Quaternion:new(cp.ori.x, cp.ori.y, cp.ori.z, cp.ori.w))
+   print_info("Pose offset is x = %f, y = %f, z = %f", cp.x, cp.y, cp.z)
+   local ori = 0
+
+   -- Keep distance to mps
+   cp.x = cp.x - x_dist_to_mps
+
+   return { x = cp.x,
+            y = cp.y,
+            z = cp.z,
+            ori = ori
+          }
 end
 
 
@@ -120,7 +124,7 @@ end
 
 function MOVE_GRIPPER:init()
   print_info("Move gripper to %f,%f,%f", gripper_x, gripper_y, gripper_z)
---  self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].command = "MOVEABS"
   self.args["gripper_commands_new"].x = self.fsm.vars.gripper_x
   self.args["gripper_commands_new"].y = self.fsm.vars.gripper_y
   self.args["gripper_commands_new"].z = self.fsm.vars.gripper_z
