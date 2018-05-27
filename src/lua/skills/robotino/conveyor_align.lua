@@ -43,21 +43,20 @@ Parameters:
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
-
 local euclidean_fitness_tolerance = 50
-local TOLERANCE_Y = 0.5
-local TOLERANCE_X = 0.5
-local TOLERANCE_Z = 0.5
-
-local cfg_frame_ = "gripper"
+local tolerance_x = 0.5
+local gripper_x = 0
+local gripper_y = 0
+local gripper_z = 0
+-- local cfg_frame_ = "gripper"
 
 function no_writer()
-   return not if_conveyor:has_writer()
+   return not if_conveyor_pose:has_writer()
 end
 
 function tolerance_check(self)
    local pose = pose_offset(self)
-   if math.abs(pose.y) <= TOLERANCE_Y and math.abs(pose.z) <= TOLERANCE_Z and math.abs(pose.x) <= TOLERANCE_X then
+   if math.abs(pose.x) <= tolerance_x then
       return true
    end
 end
@@ -77,53 +76,62 @@ function pose_offset(self)
                           w = if_conveyor_pose:rotation(3),
                         }
                 }
-   local cp = tfm.transform6D(from, if_conveyor_pose:frame(), cfg_frame_)
+   --local cp = tfm.transform6D(from, if_conveyor_pose:frame(), cfg_frame_)
 
    --local ori = fawkes.tf.get_yaw( fawkes.tf.Quaternion:new(cp.ori.x, cp.ori.y, cp.ori.z, cp.ori.w))
-   print_info("Pose offset is x = %f, y = %f, z = %f", cp.x, cp.y, cp.z)
-   local ori = 0
+   --print_info("Pose offset is x = %f, y = %f, z = %f", cp.x, cp.y, cp.z)
+   --local ori = 0
 
-   return { x = cp.x,
-            y = cp.y,
-            z = cp.z,
-            ori = ori
-          }
+   --return { x = cp.x,
+    --        y = cp.y,
+    --        z = cp.z,
+    --        ori = ori
+    --      }
+    return from
 end
 
 
 fsm:define_states{ export_to=_M,
    closure={},
    {"INIT", JumpState},
+   {"MOVE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="CHECK_VISION", failed_to="CLEANUP_FAILED"},
    {"CHECK_VISION", JumpState},
-   {"MOVE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="CHECK_TOLERANCE", failed_to="CLEANUP_FAILED"},
+   {"DRIVE_FORWARD", SkillJumpState, skills={{motor_move}}, final_to="CHECK_TOLERANCE", failed_to="CLEANUP_FAILED"},
    {"CHECK_TOLERANCE", JumpState},
    {"CLEANUP_FINAL", JumpState},
    {"CLEANUP_FAILED", JumpState},
 }
 
 fsm:add_transitions{
-   {"INIT", "CHECK_VISION", cond=true},
-   {"CHECK_VISION", "CLEANUP_FAILED", timeout=20, desc="No vis_hist on conveyor vision"},
+   {"INIT", "MOVE_GRIPPER", cond=true},
+   {"CHECK_VISION", "CLEANUP_FAILED", timeout=20, desc = "Fitness threshold wasn't reached"},
    {"CHECK_VISION", "CLEANUP_FAILED", cond=no_writer, desc="No writer for conveyor vision"},
-   {"CHECK_VISION", "MOVE_GRIPPER", cond=icp_fitness_check, desc="Fitness threshold reached"},
+   {"CHECK_VISION", "DRIVE_FORWARD", cond=icp_fitness_check, desc="Fitness threshold reached"},
    {"CHECK_TOLERANCE", "CLEANUP_FINAL", cond=tolerance_check, desc="Pose tolerance ok"},
-   {"CHECK_TOLERANCE", "CHECK_VISION", cond=true, desc="Pose tolerance not ok"},
+   {"CHECK_TOLERANCE", "CHECK_VISION", cond = true, desc="Pose tolerance not ok"},
    {"CLEANUP_FINAL", "FINAL", cond=true, desc="Cleaning up after final"},
    {"CLEANUP_FAILED", "FAILED", cond=true, desc="Cleaning up after fail"},
 }
 
 function INIT:init()
-   if_conveyor_pose_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
+   if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
    if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.SetStationMessage:new(if_conveyor_pose.BASE_STATION,if_conveyor_pose.INPUT_CONVEYOR))
 end
 
 function MOVE_GRIPPER:init()
-  local pose = pose_des(self)
-  print_info("Move gripper to %f,%f,%f", pose.x, pose.y, pose.z)
-  self.args["gripper_commands_new"].command = "MOVEABS"
-  self.args["gripper_commands_new"].x = pose.x
-  self.args["gripper_commands_new"].y = pose.y
-  self.args["gripper_commands_new"].z = pose.z
+  print_info("Move gripper to %f,%f,%f", gripper_x, gripper_y, gripper_z)
+--  self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].x = self.fsm.vars.gripper_x
+  self.args["gripper_commands_new"].y = self.fsm.vars.gripper_y
+  self.args["gripper_commands_new"].z = self.fsm.vars.gripper_z
+end
+
+
+function DRIVE_FORWARD:init()
+  local pose = pose_offset(self)
+  print_info("Drive forward, x = %f , y = %f", pose.x, pose.y)
+  self.args["motor_move"].x = pose.x
+  self.args["motor_move"].y = pose.y
 end
 
 function CLEANUP_FINAL:init()
