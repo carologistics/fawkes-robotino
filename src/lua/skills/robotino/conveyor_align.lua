@@ -66,23 +66,20 @@ end
 
 function pose_offset(self)
 
-   local from = { x = if_conveyor_pose:translation(0),
-                  y = if_conveyor_pose:translation(1),
-                  z = if_conveyor_pose:translation(2),
-                  ori = { x = if_conveyor_pose:rotation(0),
-                          y = if_conveyor_pose:rotation(1),
-                          z = if_conveyor_pose:rotation(2),
-                          w = if_conveyor_pose:rotation(3),
-                        }
+  local from = { x = if_conveyor_pose:translation(0),
+                 y = if_conveyor_pose:translation(1),
+                 z = if_conveyor_pose:translation(2),
+                 ori = { x = if_conveyor_pose:rotation(0),
+                         y = if_conveyor_pose:rotation(1),
+                         z = if_conveyor_pose:rotation(2),
+                         w = if_conveyor_pose:rotation(3),
+                       }
                 }
 
   print_info("Conveyor pose translation is x = %f, y = %f , z  = %f", from.x, from.y, from.z)
-
   local cp = tfm.transform6D(from, if_conveyor_pose:frame(), cfg_frame_)
-
-   local ori = fawkes.tf.get_yaw( fawkes.tf.Quaternion:new(cp.ori.x, cp.ori.y, cp.ori.z, cp.ori.w))
-   print_info("Pose offset is x = %f, y = %f, z = %f", cp.x, cp.y, cp.z)
-   local ori = 0
+  print_info("Pose offset is x = %f, y = %f, z = %f", cp.x, cp.y, cp.z)
+  local ori = 0
 
    -- Keep distance to mps
    cp.x = cp.x - x_dist_to_mps
@@ -124,10 +121,10 @@ end
 
 function MOVE_GRIPPER:init()
   print_info("Move gripper to %f,%f,%f", gripper_x, gripper_y, gripper_z)
-  self.args["gripper_commands_new"].command = "MOVEABS"
-  self.args["gripper_commands_new"].x = self.fsm.vars.gripper_x
-  self.args["gripper_commands_new"].y = self.fsm.vars.gripper_y
-  self.args["gripper_commands_new"].z = self.fsm.vars.gripper_z
+  --self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].x = gripper_x
+  self.args["gripper_commands_new"].y = gripper_y
+  self.args["gripper_commands_new"].z = gripper_z
 end
 
 
