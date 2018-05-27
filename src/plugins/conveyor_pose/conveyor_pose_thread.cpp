@@ -183,19 +183,23 @@ ConveyorPoseThread::init()
 
   cfg_enable_switch_          = config->get_bool( CFG_PREFIX "/switch_default" );
 
-  cfg_gripper_y_min_          = config->get_float( CFG_PREFIX "/gripper/y_min" );
-  cfg_gripper_y_max_          = config->get_float( CFG_PREFIX "/gripper/y_max" );
-  cfg_gripper_z_max_          = config->get_float( CFG_PREFIX "/gripper/z_max" );
-  cfg_gripper_slice_y_min_    = config->get_float( CFG_PREFIX "/gripper/slice/y_min" );
-  cfg_gripper_slice_y_max_    = config->get_float( CFG_PREFIX "/gripper/slice/y_max" );
+  //cut information
 
-  cfg_front_space_            = config->get_float( CFG_PREFIX "/front/space" );
-  cfg_front_offset_           = config->get_float( CFG_PREFIX "/front/offset" );
+  cfg_left_cut_no_ll_         = config->get_float( CFG_PREFIX "/without_ll/left_cut" );
+  cfg_right_cut_no_ll_        = config->get_float( CFG_PREFIX "/without_ll/right_cut" );
+  cfg_top_cut_no_ll_          = config->get_float( CFG_PREFIX "/without_ll/top_cut" );
+  cfg_bottom_cut_no_ll_       = config->get_float( CFG_PREFIX "/without_ll/bottom_cut" );
+  cfg_front_cut_no_ll_        = config->get_float( CFG_PREFIX "/without_ll/front_cut" );
+  cfg_back_cut_no_ll_         = config->get_float( CFG_PREFIX "/without_ll/back_cut" );
 
-  cfg_left_cut_               = config->get_float( CFG_PREFIX "/left_right/left_cut" );
-  cfg_right_cut_              = config->get_float( CFG_PREFIX "/left_right/right_cut" );
-  cfg_left_cut_no_ll_         = config->get_float( CFG_PREFIX "/left_right/left_cut_no_ll" );
-  cfg_right_cut_no_ll_        = config->get_float( CFG_PREFIX "/left_right/right_cut_no_ll" );
+  cfg_left_cut_               = config->get_float( CFG_PREFIX "/with_ll/left_cut" );
+  cfg_right_cut_              = config->get_float( CFG_PREFIX "/with_ll/right_cut" );
+  cfg_top_cut_                = config->get_float( CFG_PREFIX "/with_ll/top_cut" );
+  cfg_bottom_cut_             = config->get_float( CFG_PREFIX "/with_ll/bottom_cut" );
+  cfg_front_cut_              = config->get_float( CFG_PREFIX "/with_ll/front_cut" );
+  cfg_back_cut_               = config->get_float( CFG_PREFIX "/with_ll/back_cut" );
+
+  cfg_gripper_bottom_         = config->get_float( CFG_PREFIX "/gripper/bottom" );  
 
   cfg_voxel_grid_leaf_size_  = config->get_float( CFG_PREFIX "/voxel_grid/leaf_size" );
 
@@ -420,6 +424,17 @@ ConveyorPoseThread::loop()
     if (cfg_record_model_ && !have_laser_line_)
       return;
 
+    if (cloud_mutex_.try_lock()) {
+        try {
+            if (have_laser_line_) {
+                set_initial_tf_from_laserline(ll,current_mps_type_,current_mps_target_);
+            }
+        } catch (std::exception &e) {
+            logger->log_error(name(), "Exception generating initial transform: %s", e.what());
+        }
+        cloud_mutex_.unlock();
+    } // cloud_mutex_.try_lock()
+
     CloudPtr cloud_in(new Cloud(**cloud_in_));
 
     size_t in_size = cloud_in->points.size();
@@ -429,10 +444,8 @@ ConveyorPoseThread::loop()
       logger->log_error(name(), "Voxel Grid failed, skipping loop!");
       return;
     }
-    CloudPtr cloud_gripper = cloud_remove_gripper(cloud_vg);
-    CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_gripper, ll, have_laser_line_);
 
-    trimmed_scene_ = cloud_remove_offset_to_left_right(cloud_front, ll, have_laser_line_);
+    trimmed_scene_ = cloud_trim(cloud_vg, ll, have_laser_line_);
 
     cloud_publish(cloud_in, cloud_out_raw_);
     cloud_publish(trimmed_scene_, cloud_out_trimmed_);
@@ -457,10 +470,6 @@ ConveyorPoseThread::loop()
       }
       if (cloud_mutex_.try_lock()) {
         try {
-          if (have_laser_line_) {
-            set_initial_tf_from_laserline(ll,current_mps_type_,current_mps_target_);
-          }
-
           scene_ = trimmed_scene_;
 
           syncpoint_clouds_ready->emit(name());
@@ -473,7 +482,6 @@ ConveyorPoseThread::loop()
     } // ! cfg_record_model_
   } // update_input_cloud()
 }
-
 
 void
 ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *line, ConveyorPoseInterface::MPS_TYPE mps_type, ConveyorPoseInterface::MPS_TARGET mps_target)
@@ -727,73 +735,6 @@ ConveyorPoseThread::is_inbetween(double a, double b, double val) {
 
 
 CloudPtr
-ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
-{
-  CloudPtr out(new Cloud);
-  for (Point p : *in) {
-    if ( !(is_inbetween(cfg_gripper_y_min_, cfg_gripper_y_max_, p.y) && p.z < cfg_gripper_z_max_) )  { // remove gripper
-      if (p.y < cfg_gripper_slice_y_max_ && p.y > cfg_gripper_slice_y_min_) { // leave just correct hight
-        out->push_back(p);
-      }
-    }
-  }
-  out->header = in->header;
-  return out;
-}
-
-
-CloudPtr
-ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
-{
-  double space = cfg_front_space_;
-  double z_min, z_max;
-  z_min = 0;	
-  if ( use_ll ) {
-    Eigen::Vector3f c = laserline_get_center_transformed(ll);
-    z_min = c(2) + cfg_front_offset_ - ( space / 2. );
-  }
-  z_max = z_min + space;
-
-  CloudPtr out(new Cloud);
-  for (Point p : *in) {
-    if ( p.z >= z_min && p.z <= z_max) {
-      out->push_back(p);
-    }
-  }
-
-  out->header = in->header;
-  return out;
-}
-
-
-CloudPtr
-ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
-{
-  CloudPtr out(new Cloud);
-
-  if (use_ll) {
-    Eigen::Vector3f c = laserline_get_center_transformed(ll);
-
-    double x_min = c(0) - cfg_left_cut_;
-    double x_max = c(0) + cfg_right_cut_;
-
-    for (Point p : *in)
-      if ( p.x >= x_min && p.x <= x_max )
-        out->push_back(p);
-
-  } else {
-    logger->log_info(name(), "-------------STOPPED USING LASERLINE-----------");
-    for (Point p : *in)
-      if ( p.x >= -cfg_left_cut_no_ll_ && p.x <= cfg_right_cut_no_ll_ )
-        out->push_back(p);
-  }
-
-  out->header = in->header;
-  return out;
-}
-
-
-CloudPtr
 ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
 {
   float ls = cfg_voxel_grid_leaf_size_;
@@ -898,30 +839,34 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
     std::string opt = path.substr(full_pfx.length());
 
     if (sub_prefix == "/gripper") {
-      if (opt == "/y_min")
-        change_val(opt, cfg_gripper_y_min_, v->get_float());
-      else if (opt == "/y_max")
-        change_val(opt, cfg_gripper_y_max_, v->get_float());
-      else if (opt == "/z_max")
-        change_val(opt, cfg_gripper_z_max_, v->get_float());
-      else if (opt == "/slice/y_min")
-        change_val(opt, cfg_gripper_slice_y_min_, v->get_float());
-      else if (opt == "/slice/y_max")
-        change_val(opt, cfg_gripper_slice_y_max_, v->get_float());
-    } else if (sub_prefix == "/front") {
-      if (opt == "/space")
-        change_val(opt, cfg_front_space_, v->get_float());
-      else if (opt == "/offset")
-        change_val(opt, cfg_front_offset_, v->get_float());
-    } else if (sub_prefix == "/left_right") {
+      if (opt == "/bottom")
+        change_val(opt, cfg_gripper_bottom_, v->get_float());
+    } else if(sub_prefix == "/without_ll") {
+      if (opt == "/left_cut")
+        change_val(opt, cfg_left_cut_no_ll_, v->get_float());
+      else if(opt == "/right_cut")
+        change_val(opt, cfg_right_cut_no_ll_, v->get_float());
+      else if(opt == "/top_cut")
+        change_val(opt, cfg_top_cut_no_ll_, v->get_float());
+      else if(opt == "/bottom_cut")
+        change_val(opt, cfg_bottom_cut_no_ll_, v->get_float());
+      else if(opt == "/front_cut")
+        change_val(opt, cfg_front_cut_no_ll_, v->get_float());
+      else if(opt == "/back_cut")
+        change_val(opt, cfg_back_cut_no_ll_, v->get_float());
+    } else if(sub_prefix == "/with_ll") {
       if (opt == "/left_cut")
         change_val(opt, cfg_left_cut_, v->get_float());
-      else if (opt == "/right_cut")
+      else if(opt == "/right_cut")
         change_val(opt, cfg_right_cut_, v->get_float());
-      else if (opt == "/left_cut_no_ll")
-        change_val(opt, cfg_left_cut_no_ll_, v->get_float());
-      else if (opt == "/right_cut_no_ll")
-        change_val(opt, cfg_right_cut_no_ll_, v->get_float());
+      else if(opt == "/top_cut")
+        change_val(opt, cfg_top_cut_, v->get_float());
+      else if(opt == "/bottom_cut")
+        change_val(opt, cfg_bottom_cut_, v->get_float());
+      else if(opt == "/front_cut")
+        change_val(opt, cfg_front_cut_, v->get_float());
+      else if(opt == "/back_cut")
+        change_val(opt, cfg_back_cut_, v->get_float());
     } else if (sub_prefix == "/icp") {
       if (opt == "/max_correspondence_dist")
         change_val(opt, recognition_thread_->cfg_icp_max_corr_dist_, v->get_float());
@@ -1072,4 +1017,76 @@ fawkes::tf::Pose eigen_to_pose(const Eigen::Matrix4f &m)
                  double(m(2,0)), double(m(2,1)), double(m(2,2))
                } );
   return rv;
+}
+
+/*
+ * This function trims the scene such that the gripper is not visible anymore.
+ * Further the scene is cut down to the center, so the amount of points to correspond
+ * becomes smaller.
+ * Last but not least the background (e.g. cables) is cut away, making the model more general.
+ *
+ * The trimming happens inside the frame of the conveyor cam frame.
+ *
+ * From the point of the cam the coordinate system is like:
+ *             z
+ *            /
+ *          /
+ *        /
+ *       *-------x
+ *       |
+ *       |
+ *       |
+ *       y
+ * */
+CloudPtr ConveyorPoseThread::cloud_trim(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll) {
+    float x_min = -FLT_MAX, x_max = FLT_MAX, 
+           y_min = -FLT_MAX, y_max = FLT_MAX, 
+           z_min = -FLT_MAX, z_max = FLT_MAX;
+
+    y_min = std::max((float) cfg_gripper_bottom_, y_min); // only points below the gripper
+
+    if(use_ll){
+        // get position of initial guess in conveyor cam frame
+        // rotation is ignored, since rotation values are small
+        tf::Stamped<tf::Pose> initial_guess_laser;
+        tf_listener->transform_pose(in->header.frame_id,
+                tf::Stamped<tf::Pose>(initial_guess_laser_odom_, Time(0,0), initial_guess_laser_odom_.frame_id),
+                initial_guess_laser);
+        float x_ini = initial_guess_laser.getOrigin()[0],
+               y_ini = initial_guess_laser.getOrigin()[1],
+               z_ini = initial_guess_laser.getOrigin()[2];
+
+        x_min = std::max(x_ini + (float) cfg_left_cut_, x_min);
+        x_max = std::min(x_ini + (float) cfg_right_cut_, x_max);
+
+        y_min = std::max(y_ini + (float) cfg_top_cut_, y_min);
+        y_max = std::min(y_ini + (float) cfg_bottom_cut_, y_max);
+
+        z_min = std::max(z_ini + (float) cfg_front_cut_, z_min);
+        z_max = std::min(z_ini + (float) cfg_back_cut_, z_max);
+
+    } else { //no laser line is equivalent to no usable initial tf guess
+        logger->log_info(name(), "--------------STOPPED USING LASERLINE-----------");
+
+        x_min = std::max((float) cfg_left_cut_no_ll_, x_min);
+        x_max = std::min((float) cfg_right_cut_no_ll_, x_max);
+
+        y_min = std::max((float) cfg_top_cut_no_ll_, y_min);
+        y_max = std::min((float) cfg_bottom_cut_no_ll_, y_max);
+
+        z_min = std::max((float) cfg_front_cut_no_ll_, z_min);
+        z_max = std::min((float) cfg_back_cut_no_ll_, z_max);
+    }
+
+    CloudPtr out(new Cloud);
+    for(Point p: *in) {
+        if(    p.x < x_max && p.x > x_min
+           &&  p.y < y_max && p.y > y_min
+           &&  p.z < z_max && p.z > z_min) {
+            out->push_back(p);
+        }
+    }
+
+    out->header = in->header;
+    return out;
 }
