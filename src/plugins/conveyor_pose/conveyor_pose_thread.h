@@ -72,41 +72,42 @@ class ConveyorPoseThread
   public fawkes::TransformAspect
 {
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   typedef pcl::PointXYZ Point;
   typedef pcl::PointCloud<Point> Cloud;
   typedef Cloud::Ptr CloudPtr;
   typedef Cloud::ConstPtr CloudConstPtr;
 
+  ConveyorPoseThread();
+
+  virtual void init() override;
+  virtual void loop() override ;
+  virtual void finalize() override;
+
+  float cloud_resolution() const;
+  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
+
+  void set_cg_thread(RecognitionThread *cg_thread);
+
+  CloudPtr model_;
+  CloudPtr scene_;
+
+  fawkes::Mutex cloud_mutex_;
+  fawkes::Mutex bb_mutex_;
+
+  std::atomic_bool have_laser_line_;
+
+  fawkes::RefPtr<Cloud> cloud_out_raw_;
+  fawkes::RefPtr<Cloud> cloud_out_trimmed_;
+  fawkes::RefPtr<Cloud> cloud_out_model_;
+
+  std::unique_ptr<fawkes::tf::Stamped<fawkes::tf::Pose>> result_pose_;
+  std::atomic<double> result_fitness_;
+
+  fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_laser_odom_;
+
 private:
-  friend class RecognitionThread;
-
-  class pose : public fawkes::tf::Pose {
-  public:
-    using fawkes::tf::Pose::Pose;
-    pose() = delete;
-    pose(bool valid, float quality = 0)
-      : fawkes::tf::Pose()
-      , valid(valid)
-      , quality(quality)
-    {}
-
-    bool operator == (const pose &other) const {
-      return this->getBasis() == other.getBasis()
-          && this->getOrigin() == other.getOrigin();
-    }
-
-    bool valid;
-    float quality;
-  };
-
-  struct compare_poses_by_quality {
-    bool operator () (const pose &lhs, const pose &rhs) const {
-      return lhs.quality >= rhs.quality;
-    }
-  };
-
-  //Visualisation * visualisation_;
-
   // cfg values
   std::string cfg_if_prefix_;
   std::string cloud_in_name_;
@@ -118,12 +119,6 @@ private:
 
   CloudPtr default_model_;
   CloudPtr trimmed_scene_;
-
-  CloudPtr model_;
-  CloudPtr scene_;
-
-  fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_laser_odom_;
-  std::atomic_bool have_laser_line_;
 
   fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
   fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
@@ -159,18 +154,6 @@ private:
   std::atomic<float> cfg_left_cut_no_ll_;
   std::atomic<float> cfg_right_cut_no_ll_;
 
-  std::atomic<float> cfg_icp_max_corr_dist_;
-  std::atomic<double> cfg_icp_tf_epsilon_;
-  std::atomic<double> cfg_icp_refinement_factor_;
-  std::array<std::atomic<float>, 3> cfg_icp_conveyor_hint_;
-  std::atomic<int> cfg_icp_max_iterations_;
-  std::atomic<float> cfg_icp_hv_penalty_thresh_;
-  std::atomic<float> cfg_icp_hv_support_thresh_;
-  std::atomic<float> cfg_icp_hv_inlier_thresh_;
-  std::atomic<unsigned int> cfg_icp_min_loops_;
-  std::atomic<unsigned int> cfg_icp_max_loops_;
-  std::atomic_bool cfg_icp_auto_restart_;
-
   std::atomic<float> cfg_voxel_grid_leaf_size_;
 
   std::map<fawkes::ConveyorPoseInterface::MPS_TARGET, std::array<std::atomic<float>, 3>> cfg_target_hint_;
@@ -182,15 +165,8 @@ private:
   bool cloud_in_registered_;
   pcl::PCLHeader header_;
 
-  //std::set<pose, compare_poses_by_quality> poses_;
-  std::unique_ptr<fawkes::tf::Stamped<fawkes::tf::Pose>> result_pose_;
-  std::atomic<double> result_fitness_;
-
   // point clouds from pcl_manager
   fawkes::RefPtr<const Cloud> cloud_in_;
-  fawkes::RefPtr<Cloud> cloud_out_raw_;
-  fawkes::RefPtr<Cloud> cloud_out_trimmed_;
-  fawkes::RefPtr<Cloud> cloud_out_model_;
 
   // interfaces write
   fawkes::SwitchInterface *bb_enable_switch_;
@@ -201,9 +177,6 @@ private:
   fawkes::SwitchInterface *realsense_switch_;
   fawkes::Time wait_start_;
   fawkes::Time wait_time_;
-
-  fawkes::Mutex bb_mutex_;
-  fawkes::Mutex cloud_mutex_;
 
 //  fawkes::Position3DInterface * bb_tag_;
 
@@ -227,8 +200,6 @@ private:
  CloudPtr cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll);
  boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
  CloudPtr cloud_voxel_grid(CloudPtr in);
-
- void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
 
  void pose_write();
  void record_model();
@@ -255,16 +226,6 @@ protected:
   void pose_publish_tf(const fawkes::tf::Pose &pose);
   void start_waiting();
   bool need_to_wait();
-
-public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  ConveyorPoseThread();
-
-  virtual void init() override;
-  virtual void loop() override ;
-  virtual void finalize() override;
-
-  void set_cg_thread(RecognitionThread *cg_thread);
 
 };
 
