@@ -28,12 +28,11 @@ depends_skills     = {"gripper_commands_new", "motor_move"}
 depends_interfaces = {
   {v = "motor", type = "MotorInterface", id="Robotino" },
   {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
-  {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
+  {v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
 }
 
 documentation      = [==[The robot needs to be aligned with the machine, then checks for pose of the conveyor_pose
   and adapts the gripper position if necessary. It then uses the gripper to actually pick the product.
-and opens the gripper
 ]==]
 
 
@@ -97,56 +96,75 @@ end
 
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"INIT", JumpState},
-   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="CHECK_VISION", fail_to="FAILED"},
+   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="CHECK_VISION", fail_to="CLEANUP_FAILED"},
    {"CHECK_VISION", JumpState},
-   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="CHECK_TOLERANCE",fail_to="FAILED"},
+   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="CHECK_TOLERANCE",fail_to="CLEANUP_FAILED"},
    {"CHECK_TOLERANCE",JumpState},
-   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_DOWN",fail_to="FAILED"},
-   {"MOVE_GRIPPER_DOWN", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER", fail_to="FAILED"},
-   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="FAILED"},
-   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "DRIVE_BACK", fail_to="FAILED"},
-   {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
+   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_DOWN",fail_to="CLEANUP_FAILED"},
+   {"MOVE_GRIPPER_DOWN", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER", fail_to="CLEANUP_FAILED"},
+   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="CLEANUP_FAILED"},
+   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "DRIVE_BACK", fail_to="CLEANUP_FAILED"},
+   {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CLEANUP_FINAL", fail_to="CLEANUP_FAILED"},
+   {"CLEANUP_FINAL", JumpState},
+   {"CLEANUP_FAILED", JumpState},
 }
 
 fsm:add_transitions{
    {"INIT", "OPEN_GRIPPER", true, desc="Start open gripper"},
-   {"CHECK_VISION", "FAILED", timeout=20, desc="Fitness threshold wasn't reached"},
-   {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
+   {"CHECK_VISION", "CLEANUP_FAILED", timeout=20, desc="Fitness threshold wasn't reached"},
+   {"CHECK_VISION", "CLEANUP_FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"CHECK_VISION", "GRIPPER_ALIGN", cond=icp_fitness_check, desc="Fitness threshold reached"},
    {"CHECK_TOLERANCE", "MOVE_GRIPPER_FORWARD", cond=tolerance_check, desc="Pose tolerance ok"},
    {"CHECK_TOLERANCE", "CHECK_VISION", cond = true, desc="Pose tolerance not ok"},
+   {"CLEANUP_FINAL", "FINAL", cond = true, desc="Cleaning up after final"},
+   {"CLEANUP_FAILED", "FAILED", cond = true, desc="Cleaning up after failed"},
 }
 
 
+function INIT:init()
+  if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
+  if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.SetStationMessage:new(if_conveyor_pose.BASE_STATION,if_conveyor_pose.INPUT_CONVEYOR))
+end
+
 function OPEN_GRIPPER:init()
-
   self.args["gripper_commands_new"].command = "OPEN"
-
 end
 
 function GRIPPER_ALIGN:init()
   local pose = pose_offset(self)
-  self.args["gripper_commands_new"].command = "MOVEABS"
+  --self.args["gripper_commands_new"].command = "MOVEABS"
   self.args["gripper_commands_new"].x = pose.x
   self.args["gripper_commands_new"].y = pose.y
   self.args["gripper_commands_new"].z = pose.z
 end
 
 function MOVE_GRIPPER_FORWARD:init()
-  self.args["gripper_commands_new"].command = "MOVEABS"
+  --self.args["gripper_commands_new"].command = "MOVEABS"
   self.args["gripper_commands_new"].x = gripper_forward_x
 end
 
 function MOVE_GRIPPER_DOWN:init()
-  self.args["gripper_commands_new"].command = "MOVEABS"
+  --self.args["gripper_commands_new"].command = "MOVEABS"
   self.args["gripper_commands_new"].z = gripper_down_z
 end
 
 function MOVE_GRIPPER_BACK:init()
-  self.args["gripper_commands_new"].command = "MOVEABS"
+  --self.args["gripper_commands_new"].command = "MOVEABS"
   self.args["gripper_commands_new"].x = gripper_back_x
 end
 
 function DRIVE_BACK:init()
   self.args["motor_move"].x = drive_back_x
+end
+
+function CLEANUP_FINAL:init()
+   if (self.fsm.vars.disable_realsense_afterwards == nil or self.fsm.vars.disable_realsense_afterwards) then
+     if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
+   end
+end
+
+function CLEANUP_FAILED:init()
+   if (self.fsm.vars.disable_realsense_afterwards == nil or self.fsm.vars.disable_realsense_afterwards) then
+     if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
+   end
 end
