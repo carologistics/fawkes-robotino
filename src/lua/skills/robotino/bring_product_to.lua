@@ -56,28 +56,18 @@ end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_if},
    {"INIT", JumpState},
-   {"DRIVE_TO", SkillJumpState, skills={{drive_to_local}}, final_to="MPS_ALIGN", fail_to="FAILED"},
-   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"RE_MPS_ALIGN", SkillJumpState, skills={{motor_move}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
-   {"DECIDE_ENDSKILL", JumpState},
-   {"SKILL_SHELF_PUT", SkillJumpState, skills={{shelf_put}}, final_to="FINAL", fail_to="FAILED"},
-   {"SKILL_SLIDE_PUT", SkillJumpState, skills={{slide_put}}, final_to="FINAL", fail_to="FAILED"},
-   {"SKILL_PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="FAILED"}
+   {"DRIVE_TO", SkillJumpState, skills={{drive_to_local}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PUT", fail_to="FAILED"},
+   {"PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not navgraph", desc="navgraph not available"},
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
-   {"INIT", "MPS_ALIGN", cond=already_at_conveyor, desc="At mps, skip drive_to_local"},
-   {"INIT", "RE_MPS_ALIGN", cond=already_at_mps, desc="At mps, skip DRIVE and ALIGN"},
+   {"INIT", "CONVEYOR_ALIGN", cond=already_at_conveyor, desc="At mps, skip drive_to_local"},
    {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"},
-   {"DRIVE_TO", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
-   {"MPS_ALIGN", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
-   {"RE_MPS_ALIGN", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
-   {"DECIDE_ENDSKILL", "SKILL_SHELF_PUT", cond="vars.shelf", desc="Put on shelf"},
-   {"DECIDE_ENDSKILL", "SKILL_SLIDE_PUT", cond="vars.slide", desc="Put on slide"},
-   {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PUT", cond=true, desc="Put on conveyor"}
+   --{"DRIVE_TO", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
+   --{"CONVEYOR_ALIGN", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
 }
 
 function INIT:init()
@@ -92,21 +82,7 @@ function DRIVE_TO:init()
    end
 end
 
-function MPS_ALIGN:init()
-   if self.fsm.vars.side == "output" then
-      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
-   else
-      self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
-   end
 
-   self.args["mps_align"].x = 0.4
-
-   if self.fsm.vars.side == "output" then
-      self.args["mps_align"].y = -0.03
-   else
-      self.args["mps_align"].y = 0.03
-   end
-end
 
 function CONVEYOR_ALIGN:init()
     if (self.fsm.vars.slide == nil or self.fsm.vars.shelf == nil) then
@@ -115,33 +91,6 @@ function CONVEYOR_ALIGN:init()
 end
 
 
-function RE_MPS_ALIGN:init()
-   local shelf_to_conveyor = 0.09 --TODO measure both values
-   local shelf_distance = 0.09
-   if self.fsm.vars.atmps == "LEFT" then
-      dest_y = shelf_to_conveyor
-   elseif self.fsm.vars.atmps == "MIDDLE" then
-      dest_y = shelf_to_conveyor + shelf_distance
-   elseif self.fsm.vars.atmps == "RIGHT" then
-      dest_y = shelf_to_conveyor + 2*shelf_distance
-   else
-      dest_y = 0
-      self.fsm:set_error("no shelf side set")
-      self.fsm.vars.error = true
-   end
-   
-   self.args["motor_move"] =
-			{ y = dest_y,
-				vel_trans = 0.2,
-				tolerance = { x=0.002, y=0.002, ori=0.01 }
-			}
-end
+function PRODUCT_PUT:init()
 
-function SKILL_PRODUCT_PUT:init()
-   self.args["product_put"].offset_x = 0 
-end
-
-function SKILL_SHELF_PUT:init()
-   -- Just hand through the Shelf position
-   self.args["shelf_put"].slot = self.fsm.vars.shelf
 end
