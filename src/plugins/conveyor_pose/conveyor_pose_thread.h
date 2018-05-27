@@ -148,19 +148,22 @@ private:
   std::string cfg_model_origin_frame_;
   std::string cfg_record_path_;
 
-  std::atomic<float> cfg_gripper_y_min_;
-  std::atomic<float> cfg_gripper_y_max_;
-  std::atomic<float> cfg_gripper_z_max_;
-  std::atomic<float> cfg_gripper_slice_y_min_;
-  std::atomic<float> cfg_gripper_slice_y_max_;
 
-  std::atomic<float> cfg_front_space_;
-  std::atomic<float> cfg_front_offset_;
+  std::atomic<float> cfg_gripper_bottom_;
 
   std::atomic<float> cfg_left_cut_;
   std::atomic<float> cfg_right_cut_;
+  std::atomic<float> cfg_top_cut_;
+  std::atomic<float> cfg_bottom_cut_;
+  std::atomic<float> cfg_front_cut_;
+  std::atomic<float> cfg_back_cut_;
+
   std::atomic<float> cfg_left_cut_no_ll_;
   std::atomic<float> cfg_right_cut_no_ll_;
+  std::atomic<float> cfg_top_cut_no_ll_;
+  std::atomic<float> cfg_bottom_cut_no_ll_;
+  std::atomic<float> cfg_front_cut_no_ll_;
+  std::atomic<float> cfg_back_cut_no_ll_;
 
   std::atomic<float> cfg_voxel_grid_leaf_size_;
 
@@ -201,10 +204,8 @@ private:
 
  bool is_inbetween(double a, double b, double val);
 
- CloudPtr cloud_remove_gripper(CloudPtr in);
- CloudPtr cloud_remove_offset_to_bottom(CloudPtr in);
- CloudPtr cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll = NULL, bool use_ll = false);
- CloudPtr cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll);
+ CloudPtr cloud_trim(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll);
+
  boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
  CloudPtr cloud_voxel_grid(CloudPtr in);
 
