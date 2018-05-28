@@ -244,30 +244,17 @@
 	; However, this also creates a tremendous number of options during search and
 	; hence is detrimental for planning performance.
 	;
-	(:action go-wait
-		:parameters (?r - robot ?to - mps ?from - mps)
-		:precondition (and (location-free ?to WAIT)
-							(or (at ?r START INPUT)
-								(at ?r ?from WAIT)
-							)
-						)
-		:effect (and
-					(not (at ?r START INPUT))
-					(not (at ?r ?from WAIT))
-					(location-free START INPUT)
-					(at ?r ?to WAIT))
-	)
 
-	(:action move
-		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
-		:precondition (and (at ?r ?from ?from-side)
-										(or (at ?r ?to ?to-side) (location-free ?to ?to-side)))
-		:effect (and (not (at ?r ?from ?from-side))
-								 (location-free ?from ?from-side)
-								 (not (location-free ?to ?to-side))
-								 (at ?r ?to ?to-side))
-	)
-
+	 (:action move
+	 	:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
+	 	:precondition (and (entered-field ?r)
+	 									(at ?r ?from ?from-side)
+	 									(location-free ?to ?to-side))
+	 	:effect (and (not (at ?r ?from ?from-side))
+	 							 (location-free ?from ?from-side)
+	 							 (not (location-free ?to ?to-side))
+	 							 (at ?r ?to ?to-side))
+	 )
 	; Move actions specific for the expected follow-up action.
 	; This models the move in two versions specific to the expected next action,
 	; either the retrieval or the delivery of a workpiece. While a more generic

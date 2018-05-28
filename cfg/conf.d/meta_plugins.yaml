@@ -9,7 +9,7 @@ fawkes/meta_plugins:
   m-bare: bbsync,static-transforms,webview
   m-fv: fvbase,fvfountain
   m-fv-vision: m-bare,m-fv,tag_vision,fvretriever
-  m-clips: clips,clips-motor-switch,clips-protobuf,clips-rest-api,clips-navgraph,clips-tf
+  m-clips: clips,clips-motor-switch,clips-protobuf,clips-rest-api,clips-navgraph,clips-tf,clips-smt
   m-clips-agent: m-clips,m-fv-vision,clips-agent
   m-robot-memory: mongodb,robot-memory
   m-no-agent: m-skiller,m-clips,clips-pddl-parser
@@ -26,7 +26,7 @@ fawkes/meta_plugins:
   gazsim-meta-robotino-vision-high-level: gazsim-tag-vision,gazsim-machine-signal
   gazsim-meta-robotino-vision-low-level: fvbase,gazsim-webcam,tag_vision,gazsim-machine-signal
   gazsim-organization: gazebo,gazsim-comm,gazsim-llsfrbcomm
-  gazsim-meta-clips: m-clips,clips-agent
+  gazsim-meta-clips: m-clips,clips-smt,clips-agent
   gazsim-meta-agent: gazsim-meta-clips
   gazsim-meta-clips-exec: m-clips,m-robot-memory,pddl-robot-memory,clips_robot_memory,clips-pddl-parser,pddl-planner,clips-executive,clips-executive-rest-api
  

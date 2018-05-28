@@ -45,6 +45,7 @@ import "Team.proto";
 import "Zone.proto";
 import "MachineInstructions.proto";
 import "MachineDescription.proto";
+import "OrderInfo.proto";
 
 option java_package = "org.robocup_logistics.llsf_msgs";
 option java_outer_classname = "MachineInfoProtos";
@@ -88,7 +89,7 @@ message Machine {
   // Correctly reported? (zone and type correct)
   optional bool      correctly_reported = 9;
   // Number of bases loaded
-  optional uint32    loaded_with = 13 [default = 0];
+  optional string    loaded_with = 13 [default = "ZERO"];
 
   repeated RingColor ring_colors = 14;
 
@@ -102,6 +103,9 @@ message Machine {
 	// more fine-grained exploration (only clients)
 	optional ExplorationState exploration_zone_state = 22;
 	optional ExplorationState exploration_rotation_state = 21;
+
+  optional Order wp = 23;
+  optional string cs_buffered = 24;
 
 }
 

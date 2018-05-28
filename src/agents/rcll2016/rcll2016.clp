@@ -43,6 +43,17 @@
   =>
   (printout t "Requesting motor-switch feature" crlf)
   (ff-feature-request "motor-switch")
+  )
+
+; Request clips-features
+(defrule enable-smt
+  "If smt feature is set load the smt, if it is not yet loaded."
+  (ff-feature smt)
+  (not (ff-feature-loaded smt))
+  =>
+  (printout t "Requesting smt feature" crlf)
+  (ff-feature-request "smt")
+  ;(path-load "rcll2016/production.clp")
 )
 
 (defrule enable-protobuf
@@ -108,6 +119,7 @@
   (ff-feature-loaded protobuf)
   (ff-feature-loaded tf)
   (ff-feature navgraph)
+  (ff-feature-loaded smt)
   =>
   (path-load  rcll2016/utils.clp)
   (path-load  rcll2016/worldmodel-synchronization.clp)

@@ -86,6 +86,13 @@ clips-executive:
           - name: navgraph
           - name: protobuf
           - name: tf
+# =======
+          - name: robmem-wait
+            feature-request: false
+            files: ["BATCH|robmem-wait-init.clp"]
+            wait-for: robmem-initialized
+          - name: robot_memory
+# >>>>>>> common/clips-executive-rcll-smt
         stage-3:
           - name: utils
             file: rcll2017/utils.clp
@@ -103,7 +110,7 @@ clips-executive:
           - name: goal-reasoner
             files: [rcll2017/goal-reasoner.clp, rcll2017/goal-production.clp, rcll2017/exploration.clp]
           - name: goal-expander
-            file: rcll2017/fixed-sequence.clp
+            files: [rcll2017/smt-planner.clp , fixed-sequence.clp ]
           - name: action-selection
             file: rcll2017/action-selection.clp
           - name: action-execution
@@ -116,8 +123,8 @@ clips-executive:
         enter-field: drive_into_field{team=?(team-color)S, wait=?(r|/R-1/0.0/|/R-2/10.0/|/R-3/20.0/)f}
         explore-zone: explore_zone{zone=?(z)s}
         move-node: goto{place=?(z)s} 
-        move: ppgoto{place="?(to)Y-I"}
         go-wait: ppgoto{place="?(to)Y"}
+        move: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
         move-wp-put: ppgoto{place="?(to)Y-I"}
         wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
         wp-put: bring_product_to{place=?(m)S}
