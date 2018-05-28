@@ -808,3 +808,44 @@
   (modify ?g (mode EVALUATED))
   (modify ?m (last-achieve ?now))
 )
+
+(defrule goal-reasoner-create-produce-garbage-c3
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  ;Robot CEs
+  (wm-fact (key domain fact self args?         r ?robot))
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
+  ;MPS-RS CEs
+  (wm-fact (key domain fact mps-type args?       m ?mps-rs1 t RS))
+  (wm-fact (key domain fact mps-state args?      m ?mps-rs1 s ~BROKEN))
+  (wm-fact (key domain fact mps-team args?       m ?mps-rs1 col ?team-color))
+
+  (wm-fact (key domain fact mps-type args?       m ?mps-rs2&:(not (eq ?mps-rs2 ?mps-rs1)) t RS))
+  (wm-fact (key domain fact mps-state args?      m ?mps-rs2 s ~BROKEN))
+  (wm-fact (key domain fact mps-team args?       m ?mps-rs2 col ?team-color))
+
+  (wm-fact (key domain fact rs-ring-spec args?   m ?mps-rs1 r ?ring1-color rn ZERO))
+  (wm-fact (key domain fact rs-ring-spec args?   m ?mps-rs2 r ?ring2-color rn ZERO))
+  ;MPS-BS CEs
+  (wm-fact (key domain fact mps-type args?  m ?mps-bs t BS))
+  (wm-fact (key domain fact mps-state args? m ?mps-bs s ~BROKEN))
+  (wm-fact (key domain fact mps-team args?  m ?mps-bs col ?team-color))
+  (not (wm-fact (key domain fact wp-at args? wp ?bs-wp m ?mps-bs side ?any-bs-side)))
+  (not (wm-fact (key domain fact rs-prepared-color args?  m ?mps-rs col ?some-col)))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp-rs m ?mps-rs side ?any-rs-side)))
+  =>
+  (printout t "Goal " PRODUCE-GARBAGE " formulated" crlf)
+  (assert (goal (id GARBAGE) (priority ?*PRIORITY-DELIVER*)
+                             (parent PRODUCTION-MAINTAIN)
+                             (params robot ?robot
+                                        bs ?mps-bs
+                                        rs1 ?mps-rs1
+                                        rs2 ?mps-rs2
+                                        ring1-color ?ring1-color
+                                        ring2-color ?ring2-color
+                                        )))
+  )
+
