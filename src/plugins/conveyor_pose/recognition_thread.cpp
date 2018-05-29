@@ -147,6 +147,9 @@ void RecognitionThread::loop()
   }
   prev_last_tf_ = icp_.getLastIncrementalTransformation();
 
+  if (main_thread_->cfg_debug_mode_)
+    publish_result();
+
   if (iterations_++ >= cfg_icp_min_loops_ || epsilon_reached) {
     // Perform hypothesis verification
     std::vector<Cloud::ConstPtr> icp_result_vector { icp_result_ };
@@ -162,7 +165,10 @@ void RecognitionThread::loop()
     if (hypot_mask[0] && icp_.getFitnessScore() < last_raw_fitness_) {
       // Match improved
       last_raw_fitness_ = icp_.getFitnessScore();
-      publish_result();
+
+      if (!main_thread_->cfg_debug_mode_)
+        publish_result();
+
       logger->log_info(name(), "FIT!");
     }
 
