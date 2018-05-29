@@ -262,3 +262,7 @@ void RecognitionThread::restart()
 }
 
 
+bool RecognitionThread::enabled()
+{ return enabled_; }
+
+
