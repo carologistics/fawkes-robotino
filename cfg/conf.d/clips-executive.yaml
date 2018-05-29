@@ -195,8 +195,7 @@ clips-executive:
           - name: state-estimation
             file: rcll-smt/state-estimation-init.clp
           - name: worldmodel
-            files: [
-                     rcll-smt/init-worldmodel.clp,
+            files: [ rcll-smt/init-worldmodel.clp,
                      rcll-smt/game-worldmodel.clp ]
           - name: communication
             files: [ rcll-smt/refbox-comm-init.clp,
@@ -206,7 +205,7 @@ clips-executive:
           - name: goal-reasoner
             files: [rcll-smt/goal-reasoner.clp, rcll-smt/goal-production.clp, rcll-smt/exploration.clp]
           - name: goal-expander
-            file: rcll-smt/smt-planner.clp
+            files: [rcll-smt/smt-planner.clp , rcll-smt/fixed-sequence.clp ]
           - name: action-selection
             file: rcll-smt/action-selection.clp
           - name: action-execution
