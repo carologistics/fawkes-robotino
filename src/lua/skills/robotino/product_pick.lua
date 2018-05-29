@@ -113,7 +113,7 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_DOWN_SECOND", fail_to="CLEANUP_FAILED"},
    {"MOVE_GRIPPER_DOWN_SECOND", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="CLEANUP_FAILED"},
    {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "HOME_GRIPPER", fail_to="CLEANUP_FAILED"},
-   {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="DRIVE_BACK"}
+   {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="DRIVE_BACK"},
    {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CLEANUP_FINAL", fail_to="CLEANUP_FAILED"},
    {"CLEANUP_FINAL", JumpState},
    {"CLEANUP_FAILED", JumpState},
