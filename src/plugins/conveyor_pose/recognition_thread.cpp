@@ -58,6 +58,8 @@ void RecognitionThread::restart_icp()
     scene_ = main_thread_->scene_;
     pcl::removeNaNFromPointCloud(*scene_, *scene_, tmp);
 
+    model_->header.frame_id = scene_->header.frame_id;
+
     try {
       if (!main_thread_->have_laser_line_) {
         tf_listener->transform_pose(
@@ -93,6 +95,7 @@ void RecognitionThread::restart_icp()
           initial_pose_cam.frame_id, "conveyor_pose_initial_guess"));
 
   icp_result_.reset(new Cloud());
+  icp_result_->header = model_->header;
 
   icp_ = CustomICP();
 
@@ -193,6 +196,7 @@ void RecognitionThread::publish_result()
 {
   CloudPtr aligned_model(new Cloud());
   pcl::copyPointCloud(*icp_result_, *aligned_model);
+  aligned_model->header = icp_result_->header;
   main_thread_->cloud_publish(aligned_model, main_thread_->cloud_out_model_);
 
   tf::Stamped<tf::Pose> result_pose {
