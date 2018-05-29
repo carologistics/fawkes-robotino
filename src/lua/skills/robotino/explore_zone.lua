@@ -280,9 +280,10 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not args_ok()", desc="invalid arguments"},
-   {"INIT", "TURN", cond="vars.line_center"},
-   {"INIT", "TURN", cond="local_bearing(vars.x, vars.y) > CAM_ANGLE"},
-   {"INIT", "WAIT_FOR_TAG", cond=true},
+   {"INIT", "PICK_VISTA_POINT", cond=true},
+--   {"INIT", "TURN", cond="vars.line_center"},
+--   {"INIT", "TURN", cond="local_bearing(vars.x, vars.y) > CAM_ANGLE"},
+--   {"INIT", "WAIT_FOR_TAG", cond=true},
    {"WAIT_FOR_TAG", "WAIT_AMCL", cond=found_tag, desc="found tag"},
    {"WAIT_FOR_TAG", "WAIT_FOR_SENORS", timeout=1},
    {"WAIT_FOR_SENORS", "WAIT_AMCL", cond=found_tag, desc="found tag"},
