@@ -142,11 +142,20 @@
 	(modify ?g (mode SELECTED))
 )
 
+(defrule action-selection-goal-complexity-only-finish-when-fullfiled
+	(plan (id ?plan-id) (goal-id ?goal-id))
+	?g <- (goal (id complexity) (mode DISPATCHED) (type ACHIEVE))
+	(not (plan-action (plan-id ?plan-id) (status ~FINAL)))
+	(plan-action (action-name fulfill-order-c0|fulfill-order-c1|fulfill-order-c2|fulfill-order-c3))
+	=>
+	(modify ?g (mode FINISHED) (outcome COMPLETED))
+)
+
 (defrule action-selection-done
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	?g <- (goal (id ?goal-id) (mode DISPATCHED) (type ACHIEVE))
 	(not (plan-action (plan-id ?plan-id) (status ~FINAL)))
-	(plan-action (action-name fulfill-order-c0|fulfill-order-c1|fulfill-order-c2|fulfill-order-c3))
+	(test (neq ?goal-id complexity))
 	=>
 	(modify ?g (mode FINISHED) (outcome COMPLETED))
 )
