@@ -19,14 +19,57 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
+
+
+;---------------------------------------------------------------------------
+;  Add plan action out of wm-facts plan after wm-fact sync
+;  TODO
+;    - Add filter for correct robot (compare ?action-specific-actor with own name) in order to add only own actions
+;    - Add filter for R-1 for exogenous actions
+;---------------------------------------------------------------------------
+
+(defrule goal-expander-action-send-beacon
+        ; If wm-fact plan move is found assert the corresponding plan-action move
+        (wm-fact
+                (key plan-action ?goal-id ?plan-id ?id action)
+                (values send-beacon)
+        )
+        =>
+        (assert
+                 (plan-action
+                        (id ?id)
+                        (plan-id ?plan-id)
+			(goal-id ?goal-id )
+                        (duration 4.0)
+                        (action-name send-beacon)
+                        )
+        )
+)
+
+
 (defrule goal-expander-send-beacon-signal
   ?p <- (goal (mode EXPANDED) (id ?parent-id))
   ?g <- (goal (mode SELECTED) (parent ?parent-id) (id BEACONACHIEVE))
 =>
+  (bind ?plan-id BEACONPLAN)
+  (bind ?goal-id BEACONACHIEVE)
+  (bind ?id 1)
   (assert
     (plan (id BEACONPLAN) (goal-id BEACONACHIEVE))
-    (plan-action (id 1) (plan-id BEACONPLAN) (goal-id BEACONACHIEVE)
-      (action-name send-beacon)))
+   ; (plan-action (id 1) (plan-id BEACONPLAN (goal-id BEACONACHIEVE)
+   ;  (action-name send-beacon)) 
+	
+	(wm-fact (key plan-action ?goal-id ?plan-id ?id  action)
+                 (is-list TRUE)
+                 (values send-beacon))
+	(wm-fact (key plan-action ?goal-id ?plan-id ?id dep))
+        (wm-fact (key plan-action ?goal-id ?plan-id ?id  status)
+                 (value FORMULATED))
+        (wm-fact (key plan-action ?goal-id ?plan-id ?id actor)
+                 (value R-1))
+
+  )
+
   (modify ?g (mode EXPANDED))
 )
 
