@@ -343,24 +343,6 @@ ConveyorPoseThread::finalize()
 void
 ConveyorPoseThread::loop()
 {
-
-  // Check for Messages in ConveyorPoseInterface and update informations if needed
-  while ( !bb_pose_->msgq_empty() ) {
-    if (bb_pose_->msgq_first_is<ConveyorPoseInterface::SetStationMessage>() ) {
-
-      //Update station related information
-      logger->log_info(name(), "Received SetStationMessage");
-      ConveyorPoseInterface::SetStationMessage *msg =
-          bb_pose_->msgq_first<ConveyorPoseInterface::SetStationMessage>();
-      update_station_information(msg->mps_type_to_set(),msg->mps_target_to_set());
-      bb_pose_->write();
-    }
-    else {
-      logger->log_warn(name(), "Unknown message received");
-    }
-    bb_pose_->msgq_pop();
-  }
-
   bb_update_switch();
   realsense_switch_->read();
 
@@ -399,7 +381,7 @@ ConveyorPoseThread::loop()
     recognition_thread_->disable();
   }
   else if (update_input_cloud()) {
-    fawkes::LaserLineInterface * ll = NULL;
+    fawkes::LaserLineInterface * ll = nullptr;
     have_laser_line_ = laserline_get_best_fit( ll );
 
     // No point in recording a model when there's no laser line
@@ -443,10 +425,28 @@ ConveyorPoseThread::loop()
       }
       if (cloud_mutex_.try_lock()) {
         try {
+          // Check for Messages in ConveyorPoseInterface and update informations if needed
+          while ( !bb_pose_->msgq_empty() ) {
+            if (bb_pose_->msgq_first_is<ConveyorPoseInterface::SetStationMessage>() ) {
+
+              //Update station related information
+              logger->log_info(name(), "Received SetStationMessage");
+              ConveyorPoseInterface::SetStationMessage *msg =
+                  bb_pose_->msgq_first<ConveyorPoseInterface::SetStationMessage>();
+              update_station_information(msg->mps_type_to_set(),msg->mps_target_to_set());
+              bb_pose_->write();
+
+              // Possibly cancel, and always wakeup recognition_thread_
+              recognition_thread_->restart();
+            }
+            else {
+              logger->log_warn(name(), "Unknown message received");
+            }
+            bb_pose_->msgq_pop();
+          }
+
           if (have_laser_line_) {
-
             set_initial_tf_from_laserline(ll,current_mps_type_,current_mps_target_);
-
           }
 
           scene_ = trimmed_scene_;
@@ -539,9 +539,10 @@ ConveyorPoseThread::update_station_information(ConveyorPoseInterface::MPS_TYPE m
   if ( map_it == type_target_to_model_.end())
     logger->log_error(name(), "Invalid station type or target: %i,%i", mps_type, mps_target);
   else {
-    logger->log_info(name(), "Set Station type to : %i Set Station target to: %i", bb_pose_->current_mps_type(),bb_pose_->current_mps_target());
+    logger->log_info(name(), "Setting Station to %s, %s",
+                     bb_pose_->enum_tostring("MPS_TYPE", mps_type),
+                     bb_pose_->enum_tostring("MPS_TARGET", mps_target));
 
-    MutexLocker locked(&cloud_mutex_);
     MutexLocker locked2(&bb_mutex_);
 
     model_ = map_it->second;
@@ -554,7 +555,6 @@ ConveyorPoseThread::update_station_information(ConveyorPoseInterface::MPS_TYPE m
     bb_pose_->set_euclidean_fitness(result_fitness_);
     bb_pose_->write();
 
-    recognition_thread_->restart();
     result_fitness_ = std::numeric_limits<double>::min();
   }
 }
