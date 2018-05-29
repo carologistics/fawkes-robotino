@@ -107,6 +107,7 @@ public:
 
   fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_laser_odom_;
 
+  bool cfg_debug_mode_;
 private:
   // cfg values
   std::string cfg_if_prefix_;
@@ -161,7 +162,6 @@ private:
 
   // state vars
   bool cfg_enable_switch_;
-  bool cfg_debug_mode_;
   bool cloud_in_registered_;
   pcl::PCLHeader header_;
 
