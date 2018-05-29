@@ -134,8 +134,6 @@ private:
 
   RecognitionThread *recognition_thread_;
 
-  fawkes::Mutex config_mutex_;
-
   bool cfg_record_model_;
   std::string cfg_default_model_path_;
   std::string cfg_model_origin_frame_;
