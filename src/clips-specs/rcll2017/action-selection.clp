@@ -64,6 +64,7 @@
 		(printout t "EXP Retry node" crlf)
 		(modify ?pa (status FORMULATED))
 	)
+)
 
 (deffunction parent-actions-finished (?goal-id ?plan-id $?actions-ids)
 	"check if all actions in the list of ids are finished successfully"

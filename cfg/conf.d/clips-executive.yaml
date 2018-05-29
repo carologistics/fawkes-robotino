@@ -86,6 +86,7 @@ clips-executive:
           - name: navgraph
           - name: protobuf
           - name: tf
+          - name: smt
 # =======
           - name: robmem-wait
             feature-request: false
@@ -99,8 +100,7 @@ clips-executive:
           - name: state-estimation
             file: rcll2017/state-estimation-init.clp
           - name: worldmodel
-            files: [
-                     rcll2017/init-worldmodel.clp,
+            files: [ rcll2017/init-worldmodel.clp,
                      rcll2017/game-worldmodel.clp ]
           - name: communication
             files: [ rcll2017/refbox-comm-init.clp,
@@ -110,7 +110,7 @@ clips-executive:
           - name: goal-reasoner
             files: [rcll2017/goal-reasoner.clp, rcll2017/goal-production.clp, rcll2017/exploration.clp]
           - name: goal-expander
-            files: [rcll2017/smt-planner.clp , fixed-sequence.clp ]
+            files: [rcll2017/smt-planner.clp , rcll2017/fixed-sequence.clp ]
           - name: action-selection
             file: rcll2017/action-selection.clp
           - name: action-execution
