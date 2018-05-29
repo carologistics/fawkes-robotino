@@ -56,7 +56,9 @@ local gripper_init_x = 0 -- initial x position of the gripper
 local gripper_init_y = 0 -- initial y position of the gripper
 local gripper_init_z = 0 -- initial z position of the gripper
 
-local align_target_frame = "gripper_home" -- the gripper align is made relative to this frame (according to gripper_commands_new)
+local align_target_frame = "gripper_home"      -- the gripper align is made relative to this frame (according to gripper_commands_new)
+local z_movement_target_frame = "gripper_home" -- the gripper z movement is made relative to this frame (according to gripper_commands_new)
+local x_movement_target_frame = "gripper_home" -- the gripper x movement is made relative to this frame (according to griper_commands_new)
 
 local cfg_frame_ = "gripper"
 
@@ -157,23 +159,27 @@ function GRIPPER_ALIGN:init()
 end
 
 function MOVE_GRIPPER_FORWARD:init()
-  --self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].command = "MOVEABS"
   self.args["gripper_commands_new"].x = gripper_forward_x
+  self.args["gripper_commands_new"].target_frame = x_movement_target_frame
 end
 
 function MOVE_GRIPPER_DOWN:init()
   self.args["gripper_commands_new"].command = "MOVEABS"
   self.args["gripper_commands_new"].z = gripper_down_z
+  self.args["gripper_commands_new"].target_frame = z_movement_target_frame
 end
 
 function MOVE_GRIPPER_DOWN_SECOND:init()
   self.args["gripper_commands_new"].z = gripper_down_second_z
+  self.args["gripper_commands_new"].target_frame = z_movement_target_frame
   self.args["gripper_commands_new"].command = "MOVEABS"
 end
 
 function MOVE_GRIPPER_BACK:init()
   self.args["gripper_commands_new"].command = "MOVEABS"
   self.args["gripper_commands_new"].x = gripper_back_x
+  self.args["gripper_commands_new"].command = x_movement_target_frame
 end
 
 
