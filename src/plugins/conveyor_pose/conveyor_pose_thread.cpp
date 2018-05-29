@@ -463,6 +463,7 @@ ConveyorPoseThread::loop()
   } // update_input_cloud()
 }
 
+
 void
 ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *line, ConveyorPoseInterface::MPS_TYPE mps_type, ConveyorPoseInterface::MPS_TARGET mps_target)
 {
@@ -881,8 +882,6 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
     std::string full_pfx = CFG_PREFIX + sub_prefix;
     std::string opt = path.substr(full_pfx.length());
 
-    fawkes::MutexLocker locked { &config_mutex_ };
-
     if (sub_prefix == "/gripper") {
       if (opt == "/y_min")
         change_val(opt, cfg_gripper_y_min_, v->get_float());
@@ -1017,8 +1016,8 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
       else if (opt == "/hint/mps_type_offset/default/z")
         change_val(opt, cfg_type_hint_[ConveyorPoseInterface::NO_STATION][2], v->get_float());
     }
-    MutexLocker locked2 { &cloud_mutex_ };
-    recognition_thread_->restart();
+    if (recognition_thread_->enabled())
+      recognition_thread_->restart();
   }
 }
 

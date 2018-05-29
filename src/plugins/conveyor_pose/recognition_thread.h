@@ -40,6 +40,7 @@ public:
   void enable();
   void disable();
   void restart();
+  bool enabled();
 
   std::atomic<float> cfg_icp_max_corr_dist_;
   std::atomic<double> cfg_icp_tf_epsilon_;
