@@ -278,14 +278,14 @@
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
   =>
-  (printout t "Goal " CLEAR-CS " formulated" crlf)
-  (assert (goal (id CLEAR-CS) (priority ?*PRIORITY-CLEAR-CS*)
+  (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
+  (assert (goal (id CLEAR-MPS) (priority ?*PRIORITY-CLEAR-CS*)
                               (parent PRODUCTION-MAINTAIN)
                               (params robot ?robot
                                       mps ?mps
                                       wp ?wp
                                       )))
-  ; (assert (goal-already-tried CLEAR-CS))
+  ; (assert (goal-already-tried CLEAR-MPS))
 )
 
 
@@ -309,8 +309,8 @@
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
     (value ?end&:(< ?end (nth$ 1 ?game-time))))
   =>
-  (printout t "Goal " CLEAR-CS " formulated" crlf)
-  (assert (goal (id CLEAR-CS) (priority ?*PRIORITY-CLEAR-CS*)
+  (printout t "Goal " CLEAR-MPS " (" ?mps ") formulated" crlf)
+  (assert (goal (id CLEAR-MPS) (priority ?*PRIORITY-CLEAR-CS*)
                               (parent PRODUCTION-MAINTAIN)
                               (params robot ?robot
                                       mps ?mps

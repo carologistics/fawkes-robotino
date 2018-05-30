@@ -148,9 +148,9 @@
     (modify ?g (mode EXPANDED))
 )
 
-(defrule goal-remove-empty-base-from-cs
+(defrule goal-remove-workpiece-from-mps
  ?p <- (goal (mode EXPANDED) (id ?parent))
- ?g <- (goal (mode SELECTED) (parent ?parent) (id CLEAR-CS)
+ ?g <- (goal (mode SELECTED) (parent ?parent) (id CLEAR-MPS)
                                              (params robot ?robot
                                                       mps ?mps
                                                       wp ?wp
@@ -158,12 +158,12 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
  (assert
-  (plan (id CLEAR-CS-PLAN) (goal-id CLEAR-CS))
-  (plan-action (id 1) (plan-id CLEAR-CS-PLAN) (goal-id CLEAR-CS)
+  (plan (id CLEAR-MPS-PLAN) (goal-id CLEAR-MPS))
+  (plan-action (id 1) (plan-id CLEAR-MPS-PLAN) (goal-id CLEAR-MPS)
         (action-name move)
         (param-names r from from-side to to-side)
         (param-values ?robot ?curr-location ?curr-side ?mps OUTPUT))
-  (plan-action (id 2) (plan-id CLEAR-CS-PLAN) (goal-id CLEAR-CS)
+  (plan-action (id 2) (plan-id CLEAR-MPS-PLAN) (goal-id CLEAR-MPS)
         (action-name wp-get)
         (param-names r wp m side)
         (param-values ?robot ?wp ?mps OUTPUT))
