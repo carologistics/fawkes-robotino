@@ -235,6 +235,65 @@
   (modify ?g (mode EXPANDED))
 )
 
+
+(defrule goal-expander-fill-rs-explicitly
+ ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?g <- (goal (mode SELECTED) (parent ?parent) (id FILL-RS-EXPLICITLY)
+                                             (params robot ?robot
+                                                      mps ?mps
+						      bs ?bs
+                                                      bs-side ?bs-side
+                                                      base-color ?base-color
+                                                      rs-before ?rs-before
+                                                      rs-after ?rs-after
+                                                      ))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  =>
+ (bind ?spawned-wp NA)
+ (do-for-fact ((?wp-spawned-by wm-fact))
+            (and (wm-key-prefix ?wp-spawned-by:key (create$ domain fact wp-spawned-by))
+                 (eq (wm-key-arg ?wp-spawned-by:key r) ?robot))
+   (bind ?spawned-wp (wm-key-arg ?wp-spawned-by:key wp))
+ )
+
+ (if (eq ?spawned-wp NA)
+  then
+   (printout t "No Spawned WP found for " ?robot " Failing goal" crlf)
+   (modify ?g (mode FINISHED) (outcome FAILED)
+              (message "Could not expand goal, No spawned WP found!!"))
+  else
+   (assert
+    (plan (id FILL-RS-EXPLICITLY-PLAN) (goal-id FILL-RS-EXPLICITLY))
+    (plan-action (id 1) (plan-id FILL-RS-EXPLICITLY-PLAN) (goal-id FILL-RS-EXPLICITLY)
+          (action-name move)
+          (param-names r from from-side to to-side )
+          (param-values ?robot ?curr-location ?curr-side ?bs ?bs-side))
+    (plan-action (id 2) (plan-id FILL-RS-EXPLICITLY-PLAN) (goal-id FILL-RS-EXPLICITLY)
+          (action-name prepare-bs)
+          (param-names m side bc)
+          (param-values ?bs ?bs-side ?base-color))
+    (plan-action (id 3) (plan-id  FILL-RS-EXPLICITLY-PLAN) (goal-id FILL-RS-EXPLICITLY)
+          (action-name bs-dispense)
+          (param-names r m side wp basecol)
+          (param-values ?robot ?bs ?bs-side ?spawned-wp ?base-color))
+    (plan-action (id 4) (plan-id  FILL-RS-EXPLICITLY-PLAN) (goal-id FILL-RS-EXPLICITLY)
+          (action-name wp-get)
+          (param-names r wp m side)
+          (param-values ?robot ?spawned-wp ?bs ?bs-side))
+     (plan-action (id 5) (plan-id FILL-RS-EXPLICITLY-PLAN) (goal-id FILL-RS-EXPLICITLY)
+                                    (action-name move)
+                                    (param-names r from from-side to to-side)
+                                    (param-values ?robot ?bs ?bs-side ?mps INPUT))
+    (plan-action (id 6) (plan-id FILL-RS-EXPLICITLY-PLAN) (goal-id FILL-RS-EXPLICITLY)
+          (action-name wp-put-slide-cc)
+          (param-names r wp m rs-before rs-after)
+          (param-values ?robot ?spawned-wp ?mps ?rs-before ?rs-after))
+  )
+  (modify ?g (mode EXPANDED))
+ )
+)
+
+
 (defrule goal-produce-c0
  ?p <- (goal (mode EXPANDED) (id ?parent))
  ?g <- (goal (mode SELECTED) (parent ?parent) (id PRODUCE-C0)
