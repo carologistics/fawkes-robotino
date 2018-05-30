@@ -368,6 +368,52 @@
   )
 )
 
+(defrule goal-mount-second-ring
+ ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?g <- (goal (mode SELECTED) (parent ?parent) (id MOUNT-SECOND-RING)
+                                             (params robot ?robot
+                                                      prev-rs ?prev-rs
+                                                      prev-rs-side ?prev-rs-side
+                                                      wp ?wp
+                                                      rs ?rs
+                                                      ring1-color ?ring1-color
+                                                      ring2-color ?ring2-color
+                                                      rs-before ?rs-before
+                                                      rs-after ?rs-after
+                                                      rs-req ?rs-req
+                                                      order ?order
+                                                      ))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+ =>
+    (assert
+      (plan (id MOUNT-SECOND-RING-PLAN) (goal-id MOUNT-SECOND-RING))
+      (plan-action (id 1) (plan-id MOUNT-SECOND-RING-PLAN) (goal-id MOUNT-SECOND-RING)
+            (action-name move)
+            (param-names r from from-side to to-side)
+            (param-values ?robot ?curr-location ?curr-side ?prev-rs ?prev-rs-side))
+      (plan-action (id 2) (plan-id MOUNT-SECOND-RING-PLAN) (goal-id MOUNT-SECOND-RING)
+            (action-name wp-get)
+            (param-names r wp m side)
+            (param-values ?robot ?wp ?prev-rs ?prev-rs-side))
+      (plan-action (id 3) (plan-id MOUNT-SECOND-RING-PLAN) (goal-id MOUNT-SECOND-RING)
+            (action-name move)
+            (param-names r from from-side to to-side )
+            (param-values ?robot ?prev-rs ?prev-rs-side ?rs INPUT))
+      (plan-action (id 4) (plan-id MOUNT-SECOND-RING-PLAN) (goal-id MOUNT-SECOND-RING)
+            (action-name wp-put)
+            (param-names r wp m)
+            (param-values ?robot ?wp ?rs))
+      (plan-action (id 5) (plan-id MOUNT-SECOND-RING-PLAN) (goal-id MOUNT-SECOND-RING)
+            (action-name prepare-rs)
+            (param-names m rc rs-before rs-after r-req)
+            (param-values ?rs ?ring2-color ?rs-before ?rs-after ?rs-req))
+       (plan-action (id 6) (plan-id MOUNT-SECOND-RING-PLAN) (goal-id MOUNT-SECOND-RING)
+            (action-name rs-mount-ring2)
+            (param-names m wp col col1 rs-before rs-after r-req)
+            (param-values ?rs ?wp ?ring2-color ?ring1-color ?rs-before ?rs-after ?rs-req))
+     )
+    (modify ?g (mode EXPANDED))
+)
 
 (defrule goal-produce-c1
  ?p <- (goal (mode EXPANDED) (id ?parent))
