@@ -14,16 +14,6 @@
 )
 
 
-;React to broken mps
-(defrule broken-mps-reject-goals
-  (declare (salience 1))
-  (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps))
-  ?g <- (goal (id ?goal-id) (mode FORMULATED|SELECTED|EXPANDED) (params $? ?mps $?))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  =>
-  (modify ?g (mode REJECTED))
-)
-
 (defrule reset-prepare-action-on-downed
   (declare (salience 1))
   (wm-fact (key domain fact mps-state args? m ?mps s DOWN))
@@ -40,6 +30,9 @@
   (retract ?ta ?ts)
 )
 
+
+
+;React to broken mps
 (defrule broken-mps-fail-goal
 ;TODO: Only Do When Goal Is Production Goal (when first put and then prepare)
   (declare (salience 1))
@@ -65,56 +58,64 @@
   (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
   (not (wm-fact (key monitoring fail-goal) (value ?goal-id)))
   =>
-  (assert (wm-fact (key monitoring fail-goal) (value ?goal-id)))
+  (assert (wm-fact (key monitoring fail-goal) (type UNKNOWN) (value ?goal-id)))
 )
 
-
-(defrule broken-mps-add-reset-flag
-  (declare (salience 1))
-  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
-  (not (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps)))
-  (not (wm-fact (key monitoring fail-goal) (type UNKNWON) (value ?mps)))
-  =>
-  (assert (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps)))
-)
+; (defrule broken-mps-add-reset-flag
+;   (declare (salience 1))
+;   (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
+;   (not (wm-fact (key monitoring mps-flush-fact) (type UNKNOWN) (value ?mps)))
+;   =>
+;   (assert (wm-fact (key monitoring mps-flush-facts) (type UNKNOWN) (value ?mps)))
+; )
 
 (defrule broken-mps-remove-facts
   (declare (salience 1))
-  ?flag <- (wm-fact (key monitoring mps-reset) (type UNKNOWN) (value ?mps))
-  (wm-fact (key domain fact mps-state args? m ?mps s ?s&~BROKEN))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
-  (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	(status ?status& : (and (neq ?status FINAL) (neq ?status FORMULATED) (neq ?status FAILED)))
-	(param-values $? ?mps $?)))
+  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
   (wm-fact (key domain fact mps-type args? m ?mps t ?type))
+  ; ?flag <- (wm-fact (key monitoring mps-flush-facts) (type UNKNOWN) (value ?mps))
+  ; (plan (id ?plan-id) (goal-id ?goal-id))
+  ; (goal (id ?goal-id) (mode DISPATCHED))
+  ; (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+  ;   status ~FORMULATED&~FAILED~FINAL&)))
+  ; (param-values $? ?mps $?)))
    =>
   (printout t "MPS " ?mps " was broken, cleaning up facts" crlf)
   (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?mps (wm-key-args ?wf:key)) FALSE)
-					 (or
-						(neq (member$ wp-at (wm-key-path ?wf:key)) FALSE)
-						(neq (member$ bs-prepared-color (wm-key-path ?wf:key)) FALSE)
-						(neq (member$ ds-prepared-gate (wm-key-path ?wf:key)) FALSE)
-						(neq (member$ bs-prepared-side (wm-key-path ?wf:key)) FALSE)
-						(neq (member$ cs-prepared-for (wm-key-path ?wf:key)) FALSE)
-						(neq (member$ cs-buffered (wm-key-path ?wf:key)) FALSE)
-						(neq (member$ cs-can-perform (wm-key-path ?wf:key)) FALSE)
-						(neq (member$ rs-filled-with (wm-key-path ?wf:key)) FALSE)
-						(neq (member$ rs-prepared-color (wm-key-path ?wf:key)) FALSE)
-					 )
-				    )
-		(retract ?wf)
-		(printout t "CLEANED: " ?wf:key crlf)
+           (or
+            (wm-key-prefix ?wf:key (create$ domain fact wp-at))
+            (wm-key-prefix ?wf:key (create$ domain fact bs-prepared-color))
+            (wm-key-prefix ?wf:key (create$ domain fact ds-prepared-gate))
+            (wm-key-prefix ?wf:key (create$ domain fact bs-prepared-side))
+            (wm-key-prefix ?wf:key (create$ domain fact cs-prepared-for))
+            (wm-key-prefix ?wf:key (create$ domain fact cs-buffered))
+            (wm-key-prefix ?wf:key (create$ domain fact cs-can-perform))
+            (wm-key-prefix ?wf:key (create$ domain fact rs-filled-with))
+            (wm-key-prefix ?wf:key (create$ domain fact rs-prepared-color))
+           )
+              )
+    (retract ?wf)
+    (printout t "Exec-Monotoring: Broken Machine " ?wf:key crlf " domain facts flushed!")
   )
   (switch ?type
-	(case CS then
-		(assert (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP)))
-	)
-	(case RS then
-		(assert (wm-fact (key domain fact rs-filled-with args? m ?mps n ZERO)))
-	)
+    (case CS then
+      (assert (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP) (value TRUE)))
+    )
+    (case RS then
+      (assert (wm-fact (key domain fact rs-filled-with args? m ?mps n ZERO) (value TRUE)))
+    )
   )
-  (retract ?flag)
+  ; (retract ?flag)
+)
+
+(defrule broken-mps-reject-goals
+  (declare (salience 1))
+  ; (wm-fact (key monitoring mps-flush-facts) (type UNKNOWN) (value ?mps))
+  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
+  ?g <- (goal (id ?goal-id) (mode FORMULATED|SELECTED|EXPANDED) (params $? ?mps $?))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  =>
+  (modify ?g (mode REJECTED))
 )
 
 
