@@ -470,10 +470,10 @@ ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *li
   tf::Stamped<tf::Pose> initial_guess;
 
   // Vector from end point 1 to end point 2
-  if (!tf_listener->transform_origin(line->end_point_2_frame_id(), line->end_point_1_frame_id(),
+  if (!tf_listener->transform_origin(line->end_point_frame_2(), line->end_point_frame_1(),
                                      initial_guess, Time(0,0)))
     throw fawkes::Exception("Failed to transform from %s to %s",
-                            line->end_point_2_frame_id(), line->end_point_1_frame_id());
+                            line->end_point_frame_2(), line->end_point_frame_1());
 
   // Halve that to get line center
   initial_guess.setOrigin(initial_guess.getOrigin() / 2);
