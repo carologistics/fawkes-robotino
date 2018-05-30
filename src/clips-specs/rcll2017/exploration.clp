@@ -690,7 +690,9 @@
 ;  (if ?zone then
     ;(synced-modify ?ze machine NONE times-searched (+ 1 ?times-searched)) TODO now wm-facts
 ;  )
+   (modify ?ze (machine NONE) (times-searched (+ 1 ?times-searched)))
 )
+
 
 
 (defrule exp-found-line
@@ -719,6 +721,7 @@
   )
 =>
   ;(synced-modify ?ze-f line-visibility ?vh) TODO now wm-fact
+  (modify ?ze-f (line-visibility ?vh))
   (printout warn "EXP found line: " ?zn " vh: " ?vh crlf)
 )
 
@@ -750,6 +753,7 @@
   )
 =>
   (printout t "EXP cluster ze-f: " ?ze-f crlf)
+  (modify ?ze-f (cluster-visibility (+ ?zn-vh 1)) (last-cluster-time (nth$ 1 ?game-time)))
   ;(synced-modify ?ze-f
   ;  cluster-visibility (+ ?zn-vh 1)
   ;  last-cluster-time (nth$ 1 ?game-time)
@@ -780,10 +784,12 @@
     (machine UNKNOWN)
     (line-visibility ?lv&:(< ?lv 2))
   )
+
   ;(not (locked-resource (resource ?r&:(eq ?r ?zn)))) TODO what about locks
   ?st-f <- (state ?)
 =>
   ;(synced-modify ?ze-f line-visibility (+ ?lv 1)) TODO now wm-fact
+  (modify ?ze-f (line-visibility (+ ?lv 1)))
 )
 
 
@@ -936,6 +942,9 @@
     ;  "(frame \"map\") (trans " (implode$ ?trans) ") "
     ;  "(rot " (implode$ ?rot) ") )")
     ;) TODO synced-assert
+
+    (modify ?ze (machine ?machine) (times-searched (+ 1 ?times-searched)))
+    (assert (found-tag (name ?machine) (side ?side)))
     (assert
       (exploration-result
         (machine ?machine) (zone ?zn2)
@@ -970,8 +979,10 @@
     (printout error "BUG in explore_zone skill: Result is FINAL but no MPS was found.")
   )
   (if (and (eq ?s NO) (eq ?machine UNKNOWN)) then
+    (modify ?ze (machine NONE) (times-searched (+ ?times-searched 1)))
     ;(synced-modify ?ze machine NONE times-searched (+ ?times-searched 1)) TODO now wm-facts
   else
+    (modify ?ze (line-visibility 0) (times-searched (+ ?times-searched 1)))
     ;(synced-modify ?ze line-visibility 0 times-searched (+ ?times-searched 1)) TODO now wm-facts
   )
   (assert
@@ -1072,6 +1083,7 @@
       (trans ?m-trans) (rot ?m-rot)
     )
   )
+  (modify ?ze2 (machine ?machine2) (times-searched ?times-searched))
   ;(synced-modify ?ze2 machine ?machine2 times-searched ?times-searched) TODO now wm-facts
 )
 
