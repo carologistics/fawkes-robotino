@@ -262,6 +262,36 @@
   ; (assert (goal-already-tried FILL-CAP))
 )
 
+(defrule goal-reasoner-create-clear-rs-from-expired-product
+  "Remove an unfinished product from RS"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  ;Maybe add a check for the base_color
+  (wm-fact (key domain fact mps-type args? m ?mps t RS))
+  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+  ;Order conditions
+  ;TODO: Discuss strategy, throwing away expired products is usually not desired.
+  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
+    (value ?end&:(< ?end (nth$ 1 ?game-time))))
+  =>
+  (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
+  (assert (goal (id CLEAR-MPS) (priority ?*PRIORITY-CLEAR-RS*)
+                              (parent PRODUCTION-MAINTAIN)
+                              (params robot ?robot
+                                      mps ?mps
+                                      wp ?wp
+                                      )))
+  ; (assert (goal-already-tried CLEAR-MPS))
+)
+
 
 
 (defrule goal-reasoner-create-clear-cs
