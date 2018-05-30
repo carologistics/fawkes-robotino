@@ -474,9 +474,9 @@
     (modify ?g (mode EXPANDED))
 )
 
-(defrule goal-produce-c1
+(defrule goal-produce-cx
  ?p <- (goal (mode EXPANDED) (id ?parent))
- ?g <- (goal (mode SELECTED) (parent ?parent) (id PRODUCE-C1)
+ ?g <- (goal (mode SELECTED) (parent ?parent) (id PRODUCE-CX)
                                               (params robot ?robot
                                                         wp ?wp
                                                         rs ?rs
@@ -487,28 +487,28 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
    (assert
-    (plan (id PRODUCE-C1-PLAN) (goal-id PRODUCE-C1))
-    (plan-action (id 1) (plan-id PRODUCE-C1-PLAN) (goal-id PRODUCE-C1)
+    (plan (id PRODUCE-CX-PLAN) (goal-id PRODUCE-CX))
+    (plan-action (id 1) (plan-id PRODUCE-CX-PLAN) (goal-id PRODUCE-CX)
           (action-name move)
           (param-names r from from-side to to-side )
           (param-values ?robot ?curr-location ?curr-side ?rs OUTPUT))
-    (plan-action (id 2) (plan-id PRODUCE-C1-PLAN) (goal-id PRODUCE-C1)
+    (plan-action (id 2) (plan-id PRODUCE-CX-PLAN) (goal-id PRODUCE-CX)
           (action-name wp-get)
           (param-names r wp m side)
           (param-values ?robot ?wp ?rs OUTPUT))
-    (plan-action (id 3) (plan-id PRODUCE-C1-PLAN) (goal-id PRODUCE-C1)
+    (plan-action (id 3) (plan-id PRODUCE-CX-PLAN) (goal-id PRODUCE-CX)
           (action-name move)
           (param-names r from from-side to to-side)
           (param-values ?robot ?rs OUTPUT ?mps INPUT))
-    (plan-action (id 4) (plan-id PRODUCE-C1-PLAN) (goal-id PRODUCE-C1)
+    (plan-action (id 4) (plan-id PRODUCE-CX-PLAN) (goal-id PRODUCE-CX)
           (action-name prepare-cs)
           (param-names m op)
           (param-values ?mps MOUNT_CAP))
-    (plan-action (id 5) (plan-id PRODUCE-C1-PLAN) (goal-id PRODUCE-C1)
+    (plan-action (id 5) (plan-id PRODUCE-CX-PLAN) (goal-id PRODUCE-CX)
           (action-name wp-put)
           (param-names r wp m)
           (param-values ?robot ?wp ?mps))
-     (plan-action (id 6) (plan-id PRODUCE-C1-PLAN) (goal-id PRODUCE-C1)
+     (plan-action (id 6) (plan-id PRODUCE-CX-PLAN) (goal-id PRODUCE-CX)
           (action-name cs-mount-cap)
           (param-names m wp capcol)
           (param-values ?mps ?wp ?cap-color))

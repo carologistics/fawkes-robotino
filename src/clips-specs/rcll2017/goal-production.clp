@@ -699,8 +699,8 @@
   ;   (in-production 0)
   ;   (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   =>
-  (printout t "Goal " PRODUCE-C1 " formulated" crlf)
-  (assert (goal (id PRODUCE-C1) (priority ?*PRIORITY-PRODUCE-CX*)
+  (printout t "Goal " PRODUCE-CX " (C1) formulated" crlf)
+  (assert (goal (id PRODUCE-CX) (priority ?*PRIORITY-PRODUCE-CX*)
                                 (parent PRODUCTION-MAINTAIN)
                                 (params robot ?robot
                                         wp ?wp
