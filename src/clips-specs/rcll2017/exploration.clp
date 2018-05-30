@@ -596,6 +596,7 @@
     (not (NavGraphWithMPSGeneratorInterface))
   )
 =>
+  (printout t "Goto next node " ?next-node crlf)
   (retract ?s)
   (assert
     (state EXP_GOTO_NEXT)
@@ -687,10 +688,10 @@
   )
 =>
   (bind ?zone (get-zone 0.07 ?trans))
-;  (if ?zone then
+  (if ?zone then
     ;(synced-modify ?ze machine NONE times-searched (+ 1 ?times-searched)) TODO now wm-facts
-;  )
    (modify ?ze (machine NONE) (times-searched (+ 1 ?times-searched)))
+  )
 )
 
 
@@ -790,6 +791,7 @@
 =>
   ;(synced-modify ?ze-f line-visibility (+ ?lv 1)) TODO now wm-fact
   (modify ?ze-f (line-visibility (+ ?lv 1)))
+  (printout t "Found tag in " ?zn crlf)
 )
 
 
@@ -817,12 +819,12 @@
 
   ; Locks for all closer zones with a line-visibility > 0 have been refused
   (Position3DInterface (id "Pose") (translation $?trans))
-  (not
-    (zone-exploration (machine UNKNOWN) (line-visibility ?vh2&:(> ?vh2 0))
-      (name ?zn2&:(< (distance-mf ?trans (zone-center ?zn2)) (distance-mf ?trans (zone-center ?zn))))
-    )
+  ;(not
+   ; (zone-exploration (machine UNKNOWN) (line-visibility ?vh2&:(> ?vh2 0))
+   ;   (name ?zn2&:(< (distance-mf ?trans (zone-center ?zn2)) (distance-mf ?trans (zone-center ?zn))))
+   ; )
     ;(lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn2))  TODO what about locks
-  )
+  ;)
 =>
   (printout t "EXP trying to lock zone " ?zn crlf)
   ;(assert
@@ -883,6 +885,7 @@
     (state EXP_STOPPING)
     (explore-zone-target (zone ?zn))
   )
+  (printout t "Stop to explore zone " ?zn crlf)
   (assert (plan-action (action-name stop) (param-values ?r) (plan-id ?plan-id) (goal-id EXPLORATION) (status PENDING)))
   ;(skill-call relgoto x y 0) TODO make this a plan action
 )
@@ -894,7 +897,7 @@
   ?srch-f <- (exp-searching)
   ?st-f <- (state EXP_STOPPING)
   (explore-zone-target (zone ?zn))
-  ?pa <- (plan-action (action-name stop) (status ?s))
+  ?pa <- (plan-action (action-name stop) (status FAILED|FINAL))
   ;?skill-f <- (skill-done (name "relgoto")) TODO this should be a plan action
   (MotorInterface (id "Robotino")
     (vx ?vx&:(< ?vx 0.01)) (vy ?vy&:(< ?vy 0.01)) (omega ?w&:(< ?w 0.01))
@@ -902,6 +905,7 @@
   (navigator-default-vmax (velocity ?trans-vmax) (rotation ?rot-vmax))
   (wm-fact (key domain fact self args? r ?r))
 =>
+  (printout t "Start exploring zone: " ?zn crlf)
   (retract ?st-f ?srch-f ?pa) ;?skill-f)
   (assert (state EXP_EXPLORE_ZONE))
   (navigator-set-speed ?trans-vmax ?rot-vmax)
@@ -957,6 +961,7 @@
         (team (mirror-team ?team-color))
       )
     )
+    (printout t "Exploration successfull. Found " ?machine " in " ?zn2 crlf)
   )
   (assert
     (exp-searching)
@@ -968,7 +973,7 @@
 (defrule exp-skill-explore-zone-failed
   (goal (id EXPLORATION) (mode DISPATCHED))
   ?st-f <- (state EXP_EXPLORE_ZONE)
-  ?pa <- (plan-action (action-name explore-zone) (status ?status))
+  ?pa <- (plan-action (action-name explore-zone) (status ?status&:(or (eq ?status FINAL) (eq ?status FAILED))))
   ;?skill-f <- (skill-done (name "explore_zone") (status ?status)) TODO this should be a skill
   ?exp-f <- (explore-zone-target (zone ?zn))
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str) (search_state ?s&:(neq ?s YES)))
@@ -995,14 +1000,15 @@
 
 (defrule exp-report-to-refbox
   (goal (id EXPLORATION) (mode DISPATCHED))
-  (team-color ?color)
+  (wm-fact (key refbox team-color) (value ?color))
+; (team-color ?color)
   (exploration-result (team ?color) (machine ?machine) (zone ?zone)
     (orientation ?orientation)
   )
   (time $?now)
   ?ws <- (timer (name send-machine-reports) (time $?t&:(timeout ?now ?t 1)) (seq ?seq))
   (wm-fact (key refbox game-time) (values $?game-time))
-  (wm-path (id "/config/rcll/latest-send-last-report-time")
+  (wm-fact (id "/config/rcll/latest-send-last-report-time")
     (value ?latest-report-time)
   )
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
@@ -1040,6 +1046,7 @@
   )
   (pb-broadcast ?peer ?mr)
   (modify ?ws (time ?now) (seq (+ ?seq 1)))
+  (printout t "Reported mps " ?er:machine " in " ?er:zone crlf)
 )
 
 
