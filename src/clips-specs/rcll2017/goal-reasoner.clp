@@ -104,7 +104,8 @@
 
 (defrule goal-reasoner-finish-parent-goal
   ?pg <- (goal (id ?pg-id) (mode DISPATCHED))
-  ?sg <- (goal (id ?sg-id) (parent ?pg-id) (mode EVALUATED) (outcome ?outcome))
+  ?sg <- (goal (id ?sg-id) (parent ?pg-id) (mode EVALUATED)
+               (outcome ?outcome&~REJECTED))
   (time $?now)
   =>
   (printout debug "Goal '" ?pg-id " finised and " ?outcome "cause " ?sg-id
@@ -117,7 +118,7 @@
 
 (defrule goal-reasoner-fail-parent-goal-if-subgoals-rejected
   ?pg <- (goal (id ?pg-id) (mode DISPATCHED))
-  (not (goal (id ?sg-id) (parent ?pg-id) (mode ~REJECTED)))
+  (not (goal (parent ?pg-id) (outcome ~REJECTED)))
   (goal (parent ?pg-id))
   (time $?now)
   =>
@@ -127,7 +128,7 @@
 
 (defrule goal-reasoner-cleanup-rejected-goal
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?g <- (goal (id ?goal-id) (mode REJECTED))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome REJECTED))
   =>
   (do-for-all-facts ((?plan plan)) (eq ?plan:goal-id ?goal-id)
     (do-for-all-facts

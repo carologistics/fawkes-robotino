@@ -91,6 +91,6 @@
   ?c <- (goal-commitment-pending ?goal-id)
   =>
   (printout warn "Released all locks for " ?goal-id " -> goal REJECTED" crlf)
-  (modify ?g (mode REJECTED))
+  (modify ?g (mode FINISHED) (outcome REJECTED))
   (retract ?c)
 )
