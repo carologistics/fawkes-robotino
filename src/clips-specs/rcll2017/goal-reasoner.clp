@@ -159,6 +159,7 @@
   =>
   (printout warn "Removing lock " ?name " of failed plan " ?plan-id
                  " of goal " ?goal-id crlf)
+  (assert (goal-reasoner-unlock-pending ?name))
   (mutex-unlock-async ?name)
 )
 
@@ -172,6 +173,7 @@
   =>
   ; TODO only unlock if we are at a safe distance
   (printout warn "Removing location lock " ?name " without moving away!" crlf)
+  (assert (goal-reasoner-unlock-pending ?name))
   (mutex-unlock-async ?name)
 )
 
@@ -181,12 +183,22 @@
   (foreach ?mutex (goal-to-lock ?goal-id ?params)
     (printout warn "Goal " ?goal-id " finished: Releasing " ?mutex crlf)
     (mutex-unlock-async ?mutex)
+    (assert (goal-reasoner-unlock-pending ?mutex))
   )
+)
+
+(defrule goal-reasoner-evaluate-pending-unlock
+  ?p <- (goal-reasoner-unlock-pending ?lock)
+  ?m <- (mutex (name ?lock) (request UNLOCK) (response UNLOCKED))
+  =>
+  (modify ?m (request NONE) (response NONE))
+  (retract ?p)
 )
 
 (defrule goal-reasoner-evaluate-common
   (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome ?outcome))
+  (not (goal-reasoner-unlock-pending ?))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
  ; (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
