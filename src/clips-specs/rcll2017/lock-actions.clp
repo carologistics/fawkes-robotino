@@ -10,8 +10,8 @@
 
 (defglobal
   ?*LOCK-ACTION-RETRY-PERIOD-SEC* = 2
-  ?*LOCK-ACTION-TIMEOUT-SEC* = 60
-  ?*UNLOCK-DISTANCE* = 0.5
+  ?*LOCK-ACTION-TIMEOUT-SEC* = 20
+  ?*UNLOCK-DISTANCE* = 0.3
 )
 
 (deftemplate lock-info
