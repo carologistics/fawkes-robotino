@@ -370,8 +370,8 @@
   (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring1-color rn ?ring-num&:(neq ?ring-num ?rs-before)))
   ;(TODO: make the mps-state  a precond of the put-slid to save traviling time)
   ;Order CEs
-  ;--There is a C1 order with a matching ring
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&:(eq ?complexity C1)))
+  ;--There is a CX order with a matching ring
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&:(neq ?complexity CX)))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
