@@ -122,6 +122,19 @@
   (modify ?pg (mode FINISHED) (outcome FAILED))
 )
 
+(defrule goal-reasoner-cleanup-rejected-goal
+  ?g <- (goal (id ?goal-id) (mode REJECTED))
+  =>
+  (do-for-all-facts ((?plan plan)) (eq ?plan:goal-id ?goal-id)
+    (do-for-all-facts
+      ((?action plan-action))
+      (and (eq ?action:goal-id ?goal-id) (eq ?action:plan-id ?plan:id))
+      (retract ?action)
+    )
+    (retract ?plan)
+  )
+)
+
 ; #  Goal Monitoring
 ; ## Goal Evaluation
 (defrule goal-reasoner-evaluate-subgoal-common
