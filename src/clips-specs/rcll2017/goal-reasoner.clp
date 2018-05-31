@@ -32,6 +32,9 @@
   ?*SALIENCE-GOAL-REJECT* = 400
   ?*SALIENCE-GOAL-EXPAND* = 300
   ?*SALIENCE-GOAL-SELECT* = 200
+  ; PRE-EVALUATE rules should do additional steps in EVALUATION but must not
+  ; set the goal to EVALUATED
+  ?*SALIENCE-GOAL-PRE-EVALUATE* = 1
   ; common evaluate rules should have
   ;   lower salience than case specific ones
   ?*SALIENCE-GOAL-EVALUTATE-GENERIC* = -1
@@ -123,6 +126,7 @@
 )
 
 (defrule goal-reasoner-cleanup-rejected-goal
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   ?g <- (goal (id ?goal-id) (mode REJECTED))
   =>
   (do-for-all-facts ((?plan plan)) (eq ?plan:goal-id ?goal-id)
@@ -151,6 +155,7 @@
 )
 
 (defrule goal-reasoner-evaluate-clean-locks
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
   ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
@@ -164,6 +169,7 @@
 )
 
 (defrule goal-reasoner-evaluate-clean-location-locks
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
   ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
@@ -178,6 +184,7 @@
 )
 
 (defrule goal-reasoner-evaluate-release-resource-locks
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (params $?params))
   =>
   (foreach ?mutex (goal-to-lock ?goal-id ?params)
@@ -188,6 +195,7 @@
 )
 
 (defrule goal-reasoner-evaluate-pending-unlock
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   ?p <- (goal-reasoner-unlock-pending ?lock)
   ?m <- (mutex (name ?lock) (request UNLOCK) (response UNLOCKED))
   =>
