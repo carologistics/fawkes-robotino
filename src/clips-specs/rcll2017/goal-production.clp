@@ -279,7 +279,7 @@
   ;Order conditions
   ;TODO: Discuss strategy, throwing away expired products is usually not desired.
   (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
+  (wm-fact (key refbox order ?order delivery-end) (type UINT)
     (value ?end&:(< ?end (nth$ 1 ?game-time))))
   =>
   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
