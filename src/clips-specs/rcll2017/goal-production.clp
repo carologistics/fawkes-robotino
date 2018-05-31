@@ -301,7 +301,7 @@
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;Order conditions
   (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
+  (wm-fact (key refbox order ?order delivery-end) (type UINT)
     (value ?end&:(< ?end (nth$ 1 ?game-time))))
   =>
   (printout t "Goal " CLEAR-CS " formulated" crlf)
