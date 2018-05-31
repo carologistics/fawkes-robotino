@@ -51,6 +51,10 @@
   ;TODO: Send Maintenance message
   (printout warn "Monitoring: MPS state IDLE but WP exists at output, Yet action " ?action-id " in Goal " ?goal-id
     "expected it!!" crlf)
+  (do-for-fact ((?wm wm-fact)) (and (neq (member$ ?wp (wm-key-args ?wm:key)) FALSE)
+			        (wm-key-prefix ?wm:key (create$ evaluated fact wp-for-order)))
+           (retract ?wm)
+  )
   (retract ?wpat)
   (printout warn "The WP has been retracted!!" crlf)
 )
@@ -134,6 +138,7 @@
             (wm-key-prefix ?wf:key (create$ domain fact cs-can-perform))
             (wm-key-prefix ?wf:key (create$ domain fact rs-filled-with))
             (wm-key-prefix ?wf:key (create$ domain fact rs-prepared-color))
+	    (wm-key-prefix ?wf:key (create$ evaluated fact wp-for-order))
            )
               )
     (retract ?wf)
@@ -240,6 +245,10 @@
   (if (eq ?holds FALSE)
       then
       (retract ?hold)
+      (do-for-fact ((?wm wm-fact)) (and (neq (member$ ?wp (wm-key-args ?wm:key)) FALSE)
+				        (wm-key-prefix ?wm:key (create$ evaluated fact wp-for-order)))
+            (retract ?wm)
+      )
       (assert (domain-fact (name can-hold) (param-values ?r)))
   )
   (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
