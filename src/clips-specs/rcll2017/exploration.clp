@@ -12,18 +12,7 @@
   ?*PRIORITY-WM*      =  200
   ?*EXP-ROUTE-IDX* = 1
   ?*EXP-MOVEMENT-COMPENSATION* = 0.0
-)
-
-
-; This deftemplate is only needed because do-for-all-facts doesn't
-; work for implied deftemplates
-;facts
-(deftemplate exp-next-node
-  (slot node (type STRING))
-)
-
-(deftemplate explore-zone-target
-  (slot zone (type SYMBOL))
+  ?*EXP-SEARCH-LIMIT* = 1
 )
 
 ; EXPLORATION
@@ -105,28 +94,6 @@
   (multislot trans (type FLOAT) (cardinality 3 3))
   (multislot rot (type FLOAT) (cardinality 4 4))
   (slot sync-id (type INTEGER) (default 0))
-)
-
-(deftemplate field-ground-truth
-  (slot machine (type SYMBOL))
-  (slot yaw (type FLOAT))
-  (slot orientation (type INTEGER))
-  (slot zone (type SYMBOL))
-  (slot mtype (type SYMBOL))
-)
-
-(deftemplate navgraph-added-for-mps
-  (slot name (type SYMBOL))
-)
-
-(deftemplate last-navgraph-compute-msg
-  (slot id (type INTEGER))
-  (slot final (type SYMBOL) (allowed-symbols TRUE FALSE) (default FALSE))
-)
-
-(deftemplate navigator-default-vmax
-  (slot velocity (type FLOAT))
-  (slot rotation (type FLOAT))
 )
 
 (defrule startup-exploration
@@ -305,15 +272,6 @@
   (return (distance (nth$ 1 ?p1) (nth$ 2 ?p1) (nth$ 1 ?p2) (nth$ 2 ?p2)))
 )
 
-(deffunction navigator-set-speed (?max-velocity ?max-rotation)
-  (bind ?msg (blackboard-create-msg "NavigatorInterface::Navigator" "SetMaxVelocityMessage"))
-  (blackboard-set-msg-field ?msg "max_velocity" ?max-velocity)
-  (blackboard-send-msg ?msg)
-  (bind ?msg (blackboard-create-msg "NavigatorInterface::Navigator" "SetMaxRotationMessage"))
-  (blackboard-set-msg-field ?msg "max_rotation" ?max-rotation)
-  (blackboard-send-msg ?msg)
-)
-
 (deffunction round-down (?x)
   (bind ?round (round ?x))
   (if (< ?x ?round) then
@@ -384,21 +342,7 @@
     (return (sym-cat "M-" ?zone))
   )
 )
-(deffunction mirror-trans ($?trans)
-  (return (create$
-    (- 0 (nth$ 1 ?trans))
-    (nth$ 2 ?trans)
-    (nth$ 3 ?trans)
-  ))
-)
 
-(deffunction translate-tag-x (?tag-yaw ?dx $?trans)
-  (return (create$
-    (+ (nth$ 1 ?trans) (* (cos ?tag-yaw) ?dx))
-    (+ (nth$ 2 ?trans) (* (sin ?tag-yaw) ?dx))
-    (nth$ 3 ?trans)
-  ))
-)
 (deffunction want-mirrored-rotation (?mtype ?zone)
 "According to the RCLL2017 rulebook, this is when a machine is mirrored"
   (bind ?zn (str-cat ?zone))
@@ -415,40 +359,6 @@
                    )
               )
   ))
-)
-
-
-(deffunction mirror-rot (?mtype ?zone $?rot)
-"Mirror rotation according to rules, $?rot is a quaternion"
-  (if (want-mirrored-rotation ?mtype ?zone) then
-    (bind ?yaw (tf-yaw-from-quat ?rot))
-    (bind ?yaw-mirror (+ (- 0 (- ?yaw ?*PI-HALF*)) ?*PI-HALF*))
-    (if (> ?yaw-mirror ?*PI*) then
-      (bind ?yaw-mirror (- ?yaw-mirror ?*2PI*)))
-    (if (< ?yaw-mirror (- 0 ?*PI*)) then
-      (bind ?yaw-mirror (+ ?yaw-mirror ?*2PI*)))
-    (return (tf-quat-from-yaw ?yaw-mirror))
-  else
-    (bind ?zn (str-cat ?zone))
-    (bind ?t (sub-string 1 1 ?zn))
-    (bind ?x (eval (sub-string 4 4 ?zn)))
-    (bind ?y (eval (sub-string 5 5 ?zn)))
-
-    (if (eq ?y 8) then
-      (return (tf-quat-from-yaw ?*PI*))
-    )
-    (if (or (eq ?y 1) (eq ?y 2)) then
-      (return (tf-quat-from-yaw 0.0))
-    )
-    (if (and (eq ?x 7) (eq ?t "M")) then  ; this is the other way around, because I compare with the team color of the originalting machine
-      (return (tf-quat-from-yaw ?*PI-HALF*))
-    )
-    (if (and (eq ?x 7) (eq ?t "C")) then
-      (return (tf-quat-from-yaw (- 0 ?*PI-HALF*)))
-    )
-    (printout error "error in rotation of machines, checked all possible cases, but nothing cateched" crlf)
-    (return ?rot)
-  )
 )
 
 (deffunction mirror-orientation (?mtype ?zone ?ori)
@@ -510,98 +420,10 @@
   (retract ?cv)
 )
 
-(defrule start-exploration-goal
-  (not (goal (id EXPLORATION)))
-  (wm-fact (key refbox phase) (type UNKNOWN) (value EXPLORATION))
-  (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
-  =>
-  (assert (goal (id EXPLORATION) (type ACHIEVE)))
-)
-
-(defrule expand-exploration-goal
-  ?g <- (goal (id EXPLORATION) (mode SELECTED))
-  =>
-  (modify ?g (mode EXPANDED))
-)
-
-;Read exploration rows from config
-(defrule exp-cfg-get-row
-  "Read configuration for exploration row order of machines"
-  (declare (salience ?*PRIORITY-WM*))
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  (wm-fact (key domain fact self args? r ?robot-name))
-  (wm-fact (key refbox team-color) (value ?team))
-  (wm-fact
-    (id ?id&:(eq ?id (str-cat "/config/rcll/route/" ?team "/" ?robot-name)))
-    (values $?route)
-  )
-=>
-  (assert (exp-route ?route)
-  )
-  (printout t "Exploration route: " ?route " " ?team " " ?robot-name crlf)
-)
-
-(defrule exp-start
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  (not (timer (name send-machine-reports)))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (NavigatorInterface (id "Navigator") (max_velocity ?max-velocity) (max_rotation ?max-rotation))
-=>
-  (assert (state EXP_IDLE)
-          (timer (name send-machine-reports))
-          (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
-          (exp-repeated-search-limit 4)
-  )
-  (if (eq ?team-color nil) then
-    (printout error "Ouch, starting exploration but I don't know my team color" crlf)
-  )
-  (printout t "Yippi ka yeah. I am in the exploration-phase." crlf)
-)
-
-
-(defrule exp-set-next-node
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  (exp-route $?route)
-  (state EXP_IDLE)
-=>
-  (do-for-all-facts ((?nn exp-next-node)) TRUE (retract ?nn))
-  (if (<= ?*EXP-ROUTE-IDX* (length$ ?route)) then
-    (assert (exp-next-node (node (nth$ ?*EXP-ROUTE-IDX* ?route))))
-  else
-    ; Currently unused
-    (assert (exp-do-clusters))
-  )
-)
-
-
-(defrule exp-goto-next
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  (wm-fact (key domain fact self args? r ?r))
-  ?s <- (state ?state&:(or (eq ?state EXP_START) (eq ?state EXP_IDLE)))
-  (exp-next-node (node ?next-node))
-  (navgraph-node (name ?next-node))
-  (exp-navigator-vmax ?max-velocity ?max-rotation)
-  (or
-    (NavGraphWithMPSGeneratorInterface (final TRUE))
-    (NavGraphWithMPSGeneratorInterface (msgid 0))
-    (not (NavGraphWithMPSGeneratorInterface))
-  )
-=>
-  (printout t "Goto next node " ?next-node crlf)
-  (retract ?s)
-  (assert
-    (state EXP_GOTO_NEXT)
-  )
-  (navigator-set-speed ?max-velocity ?max-rotation)
-  (bind ?skill-id (skill-call move-node (create$ r z) (create$ ?r ?next-node)))
-)
-
-
 (defrule exp-node-blocked
   (goal (id EXPLORATION) (mode DISPATCHED))
   (wm-fact (key domain fact self args? r ?r))
   ?s <- (state EXP_GOTO_NEXT)
-  (exp-next-node (node ?next-node))
   (navgraph-node (name ?next-node) (pos $?node-trans))
   (zone-exploration (name ?zn&:(eq ?zn (get-zone ?node-trans))) (machine ?machine&~UNKNOWN&~NONE))
   (Position3DInterface (id "Pose") (translation $?pose-trans))
@@ -622,44 +444,17 @@
   (assert (state EXP_IDLE))
 )
 
-
-(defrule exp-goto-next-failed
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  ?s <- (state EXP_GOTO_NEXT)
-  ?skill <- (skill (name move-node) (status S_FAILED))
-  (exp-next-node (node ?node))
-  (navgraph-node (name ?node) (pos $?node-trans))
-
-  (Position3DInterface (id "Pose") (translation $?trans))
-  (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
-=>
-  (if (< (distance-mf ?node-trans ?trans) 1.5) then
-    (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
-  )
-  (retract ?s ?skill)
-  (navigator-set-speed ?max-velocity ?max-rotation)
-  (assert
-    (exp-searching)
-    (state EXP_IDLE)
-  )
+(defrule goal-reasoner-create-exploration-goal
+  (not (goal (id EXPLORATION)))
+  (wm-fact (key domain fact entered-field args? r ?r))
+  (wm-fact (key domain fact self args? r ?r))
+  (wm-fact (key domain fact entered-field args? r ?r))
+  (wm-fact (key refbox phase) (type UNKNOWN) (value EXPLORATION))
+  (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
+  =>
+  (assert (timer (name send-machine-reports)))
+  (assert (goal (id EXPLORATION) (type ACHIEVE)))
 )
-
-
-(defrule exp-goto-next-final
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  ?s <- (state EXP_GOTO_NEXT)
-  ?skill <- (skill (name move-node) (status S_FINAL))
-  (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
-=>
-  (retract ?s ?skill)
-  (navigator-set-speed ?max-velocity ?max-rotation)
-  (bind ?*EXP-ROUTE-IDX* (+ 1 ?*EXP-ROUTE-IDX*))
-  (assert
-    (exp-searching)
-    (state EXP_IDLE)
-  )
-)
-
 
 (defrule exp-passed-through-quadrant
   "We're driving slowly through a certain quadrant: reason enough to believe there's no machine here."
@@ -753,7 +548,6 @@
 
 (defrule exp-found-tag
   (goal (id EXPLORATION) (mode DISPATCHED))
-  ?srch-f <- (exp-searching)
   (domain-fact (name tag-matching) (param-values ?machine ?side ?col ?tag))
   (not (found-tag (name ?machine)))
   (TagVisionInterface (id "/tag-vision/info")
@@ -772,9 +566,7 @@
     (machine UNKNOWN)
     (line-visibility ?lv&:(< ?lv 2))
   )
-
   ;(not (locked-resource (resource ?r&:(eq ?r ?zn)))) TODO locked-resource
-  ?st-f <- (state ?)
 =>
   ;(synced-modify ?ze-f line-visibility (+ ?lv 1)) TODO synced-modify
   (modify ?ze-f (line-visibility (+ ?lv 1)))
@@ -784,18 +576,16 @@
 
 (defrule exp-try-locking-line
   (goal (id EXPLORATION) (mode DISPATCHED))
-  (exp-searching)
-  (state EXP_GOTO_NEXT|EXP_IDLE)
+  (wm-fact (key domain fact self args? r ?r))
   ; Not currently locked/trying to lock anything
   ;(not (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))  TODO lock GET
-  (not (lock (type ACCEPT) (resource ?)))
+  ;(not (lock (type ACCEPT) (resource ?)))
   ; An explorable zone for which no lock was refused yet
-  (exp-repeated-search-limit ?search-limit)
   (zone-exploration
     (name ?zn)
     (machine UNKNOWN)
     (line-visibility ?vh&:(> ?vh 0))
-    (times-searched ?ts&:(<= ?ts ?search-limit))
+    (times-searched ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*))
   )
   ;(not (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn)))  TODO lock REFUSE
 
@@ -811,11 +601,23 @@
    ; )
     ;(lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn2))  TODO lock REFUSE
   ;)
-=>
-  (printout t "EXP trying to lock zone " ?zn crlf)
+  (plan (id ?plan-id&EXPLORATION-PLAN) (goal-id EXPLORATION))
+  (plan-action (id ?action-id) (action-name ?action-name) (plan-id ?plan-id) (status RUNNING))
+  (plan-action (id ?action-id2) (action-name ?action-name2) (plan-id ?plan-id) (status FINAL|FAILED))
+  ?skill <- (skill (id ?skill-id) (name ?action-name) (status S_RUNNING))
+  (zone-exploration (name ?zn))
+  (not (explore-flag))
+  =>
+  (modify ?skill (status S_FAILED))
+  (printout t "EXP formulating zone exploration plan " ?zn crlf)
   (assert
-    (lock (type ACCEPT) (resource ?zn))
+    (plan (id EXPLORE-ZONE) (goal-id EXPLORATION))
+    ;(plan-action (id 1) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name lock-resource))
+    (plan-action (id 2) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name stop) (param-names r) (param-values ?r))
+    (plan-action (id 3) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name explore-zone) (param-names r z) (param-values ?r ?zn))
+    ;(plan-action (id 4) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name release-resource))
   )
+  (assert (explore-flag))
 )
 
 
@@ -826,14 +628,13 @@
   (zone-exploration (machine UNKNOWN) (line-visibility ?vh&:(> ?vh 0)))
 
   ; ... but no zone may be searched according to the repeated-search-limit
-  ?sl-f <- (exp-repeated-search-limit ?search-limit)
   (not (zone-exploration
     (machine UNKNOWN)
     (line-visibility ?vh-tmp&:(> ?vh-tmp 0))
-    (times-searched ?ts&:(<= ?ts ?search-limit))
+    (times-searched ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*))
   ))
 =>
-  (modify ?sl-f (+ ?search-limit 1))
+  (modify ?*EXP-SEARCH-LIMIT* (+ ?*EXP-SEARCH-LIMIT* 1))
 )
 
 ;
@@ -853,54 +654,9 @@
 ;)
 
 
-(defrule exp-stop-to-investigate-zone
-  "Lock for an explorable zone was accepted"
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  (wm-fact (key domain fact self args? r ?r))
-  (exp-searching)
-  ?st-f <- (state EXP_GOTO_NEXT)
-
-  ?skill <- (skill (id ?skill-id) (status S_RUNNING))
-  (zone-exploration (name ?zn))
-  (lock (type ACCEPT) (resource ?zn))
-=>
-  (retract ?skill)
-  (printout t "EXP exploring zone " ?zn crlf)
-  (delayed-do-for-all-facts ((?exp-f explore-zone-target)) TRUE (retract ?exp-f))
-  (retract ?st-f)
-  (assert
-    (state EXP_STOPPING)
-    (explore-zone-target (zone ?zn))
-  )
-  (printout t "Stop to explore zone " ?zn crlf)
-  (skill-call stop (create$ r) (create$ ?r))
-)
-
-
-(defrule exp-skill-explore-zone
-  (goal (id EXPLORATION) (mode DISPATCHED))
-  ?srch-f <- (exp-searching)
-  ?st-f <- (state EXP_STOPPING)
-  (explore-zone-target (zone ?zn))
-  ?skill <- (skill (name stop) (status S_FINAL|S_FAILED))
-  (MotorInterface (id "Robotino")
-    (vx ?vx&:(< ?vx 0.01)) (vy ?vy&:(< ?vy 0.01)) (omega ?w&:(< ?w 0.01))
-  )
-  (navigator-default-vmax (velocity ?trans-vmax) (rotation ?rot-vmax))
-  (wm-fact (key domain fact self args? r ?r))
-=>
-  (printout t "Start exploring zone: " ?zn crlf)
-  (retract ?st-f ?srch-f ?skill)
-  (assert (state EXP_EXPLORE_ZONE))
-  (navigator-set-speed ?trans-vmax ?rot-vmax)
-  (skill-call explore-zone (create$ r z) (create$ ?r ?zn))
-)
-
-
 (defrule exp-skill-explore-zone-final
   (goal (id EXPLORATION) (mode DISPATCHED))
-  ?st-f <- (state EXP_EXPLORE_ZONE)
-  ?skill <- (skill (name explore-zone) (status S_FINAL))
+  (plan-action (action-name explore-zone) (status FINAL))
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str)
     (orientation ?orientation) (tag_id ?tag-id) (search_state YES)
   )
@@ -911,11 +667,10 @@
   (domain-fact (name tag-matching) (param-values ?machine ?side ?team-color ?tag-id))
   ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (times-searched ?times-searched))
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
-  ?exp-f <- (explore-zone-target (zone ?zn))
-  ?lock <- (lock (type ACCEPT) (resource ?r&:(eq ?r (sym-cat ?zn-str))))
-=>
-  (retract ?st-f ?exp-f ?skill)
-  (retract ?lock)
+  (not (exploration-result
+    (machine ?machine) (zone ?zn2)))
+  ?ef <- (explore-flag)
+  =>
  ; (assert
  ;   (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))
  ; ) TODO lock RELEASE
@@ -944,43 +699,31 @@
       )
     )
     (printout t "Exploration successfull. Found " ?machine " in " ?zn2 crlf)
-  )
-  (assert
-    (exp-searching)
-    (state EXP_IDLE)
+    (retract ?ef)
   )
 )
-
-
 (defrule exp-skill-explore-zone-failed
   (goal (id EXPLORATION) (mode DISPATCHED))
-  ?st-f <- (state EXP_EXPLORE_ZONE)
-  ?skill <- (skill (name explore-zone) (status ?status&S_FINAL|S_FAILED))
-  ?exp-f <- (explore-zone-target (zone ?zn))
+  ;?skill <- (skill (name explore-zone) (status ?status&S_FINAL|S_FAILED))
+  (plan (id EXPLORE-ZONE) (goal-id EXPLORATION))
+  (plan-action (action-name explore-zone) (plan-id EXPLORE-ZONE) (param-values ?r ?zn-str) (status FAILED))
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str) (search_state ?s&:(neq ?s YES)))
   ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (machine ?machine) (times-searched ?times-searched))
-  ?hold <- (lock (type ACCEPT) (resource ?r&:(eq ?r (sym-cat ?zn-str))))
+  ?ef <- (explore-flag)
 =>
-  (printout t "Exploration of " ?zn " failed" crlf)
-  (retract ?st-f ?exp-f ?skill)
-  (if (eq ?status S_FINAL) then
-    (printout error "BUG in explore_zone skill: Result is FINAL but no MPS was found.")
-  )
+  (printout t "Exploration of " ?zn-str " failed" crlf)
+  ;(retract ?st-f ?exp-f ?skill)
   (if (and (eq ?s NO) (eq ?machine UNKNOWN)) then
     (modify ?ze (machine NONE) (times-searched (+ ?times-searched 1)))
-    ;(synced-modify ?ze machine NONE times-searched (+ ?times-searched 1)) TODO synced-modify
-  else
+  ;(synced-modify ?ze machine NONE times-searched (+ ?times-searched 1)) TODO synced-modify
+    else
     (modify ?ze (line-visibility 0) (times-searched (+ ?times-searched 1)))
-    ;(synced-modify ?ze line-visibility 0 times-searched (+ ?times-searched 1)) TODO synced-modify
+  ;(synced-modify ?ze line-visibility 0 times-searched (+ ?times-searched 1)) TODO synced-modify
   )
-  (retract ?hold)
-  (assert
-    ;(lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str))) TODO lock RELEASE
-    (exp-searching)
-    (state EXP_IDLE)
+  (retract ?ef)
   )
-)
 
+; TODO RELEASE LOCKS IF action of subgoal fails
 
 (defrule exp-report-to-refbox
   (goal (id EXPLORATION) (mode DISPATCHED))
@@ -996,7 +739,6 @@
   )
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
   (wm-fact (key refbox comm peer-id public) (value ?peer))
-  (state ?s) ; TODO actually enter EXP_PREPARE_FOR_PRODUCTION_FINISHED state
 =>
   (bind ?mr (pb-create "llsf_msgs.MachineReport"))
   (pb-set-field ?mr "team_color" ?team-color)
@@ -1015,7 +757,6 @@
       (or
         (< ?n-explored (- ?n-zones 1))
         (>= (nth$ 1 ?game-time) ?latest-report-time)
-        (eq ?s EXP_PREPARE_FOR_PRODUCTION_FINISHED)
       )
     then
       (bind ?mre (pb-create "llsf_msgs.MachineReportEntry"))
@@ -1035,9 +776,8 @@
   ?g <- (goal (id EXPLORATION) (mode DISPATCHED))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
-
 =>
-  (delayed-do-for-all-facts ((?l lock)) (eq ?l:type REFUSE)
+  (delayed-do-for-all-facts ((?l tried-lock)) (eq ?l:result REJECT)
     (retract ?l)
   )
   (printout t "exploration phase ended, cleaning up" crlf)

@@ -140,6 +140,7 @@
   (assert (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE)))
 )
 
+
 ; ## Maintain production
 (defrule goal-reasoer-create-goal-production-maintain
   "The parent production goal. Allowes formulation of
