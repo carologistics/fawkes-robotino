@@ -175,6 +175,15 @@
   (mutex-unlock-async ?name)
 )
 
+(defrule goal-reasoner-evaluate-release-resource-locks
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (params $?params))
+  =>
+  (foreach ?mutex (goal-to-lock ?goal-id ?params)
+    (printout warn "Goal " ?goal-id " finished: Releasing " ?mutex crlf)
+    (mutex-unlock-async ?mutex)
+  )
+)
+
 (defrule goal-reasoner-evaluate-common
   (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome ?outcome))
