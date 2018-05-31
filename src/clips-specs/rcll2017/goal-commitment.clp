@@ -21,7 +21,7 @@
 
 (defrule goal-commitment-no-lock-required
   ?g <- (goal (mode EXPANDED) (id ?goal-id) (params $?params))
-  (not (goal-commitment-pending))
+  (not (goal-commitment-pending ?))
   (test (eq (nth$ 1 (goal-to-lock ?goal-id ?params)) nil))
   =>
   ;(printout t "Goal " ?goal-id " (params " ?params ")"
@@ -32,13 +32,13 @@
 (defrule goal-commitment-request
   ?g <- (goal (mode EXPANDED) (id ?goal-id) (params $?params))
   (test (neq (nth$ 1 (goal-to-lock ?goal-id ?params)) nil))
-  (not (goal-commitment-pending))
+  (not (goal-commitment-pending ?))
   =>
   (foreach ?lock (goal-to-lock ?goal-id ?params)
     (printout warn "Requesting " ?lock crlf)
     (mutex-try-lock-async ?lock ?*GOAL-COMMITMENT-AUTO-RENEW*)
   )
-  (assert (goal-commitment-pending))
+  (assert (goal-commitment-pending ?goal-id))
 )
 
 (defrule goal-commitment-commit
@@ -49,7 +49,7 @@
   ; All locks are acquired.
   (not (mutex (name ?name&:(member$ ?name (goal-to-lock ?goal-id ?params)))
               (request LOCK) (response ~ACQUIRED)))
-  ?c <- (goal-commitment-pending)
+  ?c <- (goal-commitment-pending ?goal-id)
   =>
   (printout warn "COMMITTING to " ?goal-id ", all locks acquired!" crlf)
   (delayed-do-for-all-facts ((?mutex mutex))
@@ -60,15 +60,15 @@
   (retract ?c)
 )
 
-(defrule goal-commitment-reject
+(defrule goal-commitment-reject-unlock
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
   ?g <- (goal (mode EXPANDED) (id ?goal-id) (params $?params))
   ?m <- (mutex (name ?name&:(member$ ?name (goal-to-lock ?goal-id ?params)))
                (request LOCK) (response REJECTED))
   (not (mutex (name ?name&:(member$ ?name (goal-to-lock ?goal-id ?params)))
-              (request LOCK) (response PENDING|NONE)))
-  ?c <- (goal-commitment-pending)
+              (request LOCK) (response PENDING)))
+  ?c <- (goal-commitment-pending ?goal-id)
   =>
-  (modify ?g (mode REJECTED))
   (printout warn "REJECTING " ?goal-id ", failed to acquire lock " ?name ", "
                  "releasing other locks" crlf)
   (delayed-do-for-all-facts ((?mutex mutex))
@@ -79,5 +79,18 @@
       (case REJECTED then (modify ?mutex (request NONE) (response NONE)))
     )
   )
+)
+
+(defrule goal-commitment-reject
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
+  ?g <- (goal (mode EXPANDED) (id ?goal-id) (params $?params))
+;  ?m <- (mutex (name ?name&:(member$ ?name (goal-to-lock ?goal-id ?params)))
+;               (request LOCK) (response REJECTED))
+  (not (mutex (name ?name&:(member$ ?name (goal-to-lock ?goal-id ?params)))
+              (request LOCK|UNLOCK)))
+  ?c <- (goal-commitment-pending ?goal-id)
+  =>
+  (printout warn "Released all locks for " ?goal-id " -> goal REJECTED" crlf)
+  (modify ?g (mode REJECTED))
   (retract ?c)
 )
