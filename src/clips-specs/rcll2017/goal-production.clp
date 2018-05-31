@@ -28,7 +28,7 @@
 
 
   ; production order priorities
-  ?*PRIORITY-GO-WAIT-HACK* = 200
+  ?*PRIORITY-GO-WAIT-HACK* = 10
   ?*PRIORITY-FIND-MISSING-MPS* = 110
   ?*PRIORITY-DELIVER* = 100
   ?*PRIORITY-RESET* = 98
