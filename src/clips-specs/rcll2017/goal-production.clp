@@ -389,6 +389,7 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
     (value ?qd&:(> ?qr ?qd)))
+  (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   ;--TODO: add time considrations to have a higher priority if it makes "sense"
   =>
   (printout warn "Goal " FILL-RS " formulated with higher priority because of Order: " ?order crlf)
@@ -429,6 +430,7 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
     (value ?qd&:(> ?qr ?qd)))
+  (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   ;--TODO: add time considrations to have a higher priority if it makes "sense"
   =>
   (printout warn "Goal " FILL-RS " formulated with higher priority because of Order: " ?order crlf)
@@ -489,6 +491,7 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
     (value ?qd&:(> ?qr ?qd)))
+  (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   ;--TODO: add time considrations to have a higher priority if it makes "sense"
   =>
   (printout warn "Goal " FILL-RS-EXPLICITLY " formulated with higher priority because of Order: " ?order crlf)
@@ -535,6 +538,7 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
     (value ?qd&:(> ?qr ?qd)))
+  (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   =>
   (printout warn "Goal " FILL-RS-EXPLICITLY " formulated." crlf)
   (assert (goal (id FILL-RS-EXPLICITLY) (priority ?*PRIORITY-PREFILL-RS*)
