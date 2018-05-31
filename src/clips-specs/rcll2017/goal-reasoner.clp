@@ -162,6 +162,19 @@
   (mutex-unlock-async ?name)
 )
 
+(defrule goal-reasoner-evaluate-clean-location-locks
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
+  ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
+                     (action-name location-lock) (param-values ?loc ?side))
+  (mutex (name ?name&:(eq ?name (sym-cat ?loc - ?side)))
+         (state LOCKED) (request NONE))
+  =>
+  ; TODO only unlock if we are at a safe distance
+  (printout warn "Removing location lock " ?name " without moving away!" crlf)
+  (mutex-unlock-async ?name)
+)
+
 (defrule goal-reasoner-evaluate-common
   (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome ?outcome))
