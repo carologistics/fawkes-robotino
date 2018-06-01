@@ -245,7 +245,7 @@
     )
   ;  (printout t "Goal '" ?sg:id "' (part of '" ?sg:parent
   ;     "') has, cleaning up" crlf)
-    (retract ?sg)
+    (modify ?sg (mode RETRACTED))
   )
 
   (if (or (eq ?goal-type MAINTAIN)
@@ -254,6 +254,13 @@
    ;   (printout t "Triggering re-expansion" crlf)
       (modify ?g (mode SELECTED) (outcome UNKNOWN))
     else
-      (retract ?g ?gm)
+      (modify ?g (mode RETRACTED))
     )
+)
+
+(defrule goal-reasoner-retract-goal
+  ?g <- (goal (id ?goal-id) (mode RETRACTED))
+  ?gm <- (goal-meta (goal-id ?goal-id))
+  =>
+  (retract ?g ?gm)
 )
