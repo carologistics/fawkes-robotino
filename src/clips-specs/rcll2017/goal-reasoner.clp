@@ -223,17 +223,6 @@
   (mutex-unlock-async ?name)
 )
 
-(defrule goal-reasoner-evaluate-release-resource-locks
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?g <- (goal (id ?goal-id) (mode RETRACTED) (params $?params))
-  =>
-  (foreach ?mutex (goal-to-lock ?goal-id ?params)
-    (printout warn "Goal " ?goal-id " finished: Releasing " ?mutex crlf)
-    (mutex-unlock-async ?mutex)
-    (assert (goal-reasoner-unlock-pending ?mutex))
-  )
-)
-
 (defrule goal-reasoner-evaluate-pending-unlock
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   ?p <- (goal-reasoner-unlock-pending ?lock)
