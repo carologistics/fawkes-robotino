@@ -48,6 +48,10 @@ void RecognitionThread::restart_icp()
 
   syncpoint_clouds_ready_->wait(name());
 
+  { fawkes::MutexLocker locked { &main_thread_->bb_mutex_ };
+    main_thread_->bb_set_busy(true);
+  }
+
   tf::Stamped<tf::Pose> initial_pose_cam;
 
   { fawkes::MutexLocker locked { &main_thread_->cloud_mutex_ };
@@ -118,6 +122,11 @@ void RecognitionThread::loop()
 {
   if (!enabled_) {
     logger->log_info(name(), "ICP stopped");
+
+    { MutexLocker locked { &main_thread_->bb_mutex_ };
+      main_thread_->bb_set_busy(false);
+    }
+
     while (!enabled_)
       syncpoint_clouds_ready_->wait(name());
   }
