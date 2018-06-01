@@ -64,57 +64,62 @@
 
 ; ## Maintain beacon sending
 (defrule goal-reasoner-create-beacon-maintain
-  (not (goal (id BEACONMAINTAIN)))
+  (not (goal (class BEACONMAINTAIN)))
   =>
-  (assert (goal (id BEACONMAINTAIN) (type MAINTAIN)))
+  (assert (goal (id (sym-cat BEACONMAINTAIN- (gensym*)))
+                (class BEACONMAINTAIN) (type MAINTAIN)))
 )
 
 (defrule goal-reasoner-create-beacon-achieve
-  ?g <- (goal (id BEACONMAINTAIN) (mode SELECTED))
-  (not (goal (id BEACONACHIEVE)))
+  ?g <- (goal (id ?maintain-id) (class BEACONMAINTAIN) (mode SELECTED))
+  (not (goal (class BEACONACHIEVE)))
   (time $?now)
   ; TODO: make interval a constant
-  (goal-meta (goal-id BEACONMAINTAIN)
+  (goal-meta (goal-id ?maintain-id)
     (last-achieve $?last&:(timeout ?now ?last 1)))
   =>
-  (assert (goal (id BEACONACHIEVE) (parent BEACONMAINTAIN)))
+  (assert (goal (id (sym-cat BEACONACHIEVE- (gensym*)))
+                (class BEACONACHIEVE) (parent ?maintain-id)))
 )
 
 
 ; ## Maintain wp-spawning
 (defrule goal-reasoner-create-wp-spawn-maintain
  (domain-facts-loaded)
- (not (goal (id WPSPAWN-MAINTAIN)))
+ (not (goal (class WPSPAWN-MAINTAIN)))
  =>
- (assert (goal (id WPSPAWN-MAINTAIN) (type MAINTAIN)))
+ (assert (goal (id (sym-cat WPSPAWN-MAINTAIN- (gensym*)))
+               (class WPSPAWN-MAINTAIN) (type MAINTAIN)))
 )
 
 (defrule goal-reasoner-create-wp-spawn-achieve
-  ?g <- (goal (id WPSPAWN-MAINTAIN) (mode SELECTED))
-  (not (goal (id WPSPAWN-ACHIEVE)))
+  ?g <- (goal (id ?maintain-id) (class WPSPAWN-MAINTAIN) (mode SELECTED))
+  (not (goal (class WPSPAWN-ACHIEVE)))
   (time $?now)
   ; TODO: make interval a constant
-  (goal-meta (goal-id WPSPAWN-MAINTAIN)
-  (last-achieve $?last&:(timeout ?now ?last 1)))
+  (goal-meta (goal-id ?maintain-id)
+    (last-achieve $?last&:(timeout ?now ?last 1)))
   (wm-fact (key domain fact self args? r ?robot))
   (not (and
     (domain-object (name ?wp) (type workpiece))
     (wm-fact (key domain fact wp-spawned-by args? wp ?wp r ?robot))))
   =>
-  (assert (goal (id WPSPAWN-ACHIEVE) (parent WPSPAWN-MAINTAIN)
-                                     (params robot ?robot)))
+  (assert (goal (id (sym-cat WPSPAWN-ACHIEVE- (gensym*)))
+                (class WPSPAWN-ACHIEVE) (parent ?maintain-id)
+                (params robot ?robot)))
 )
 
 (defrule goal-reasoner-create-refill-shelf-maintain
   (domain-facts-loaded)
-  (not (goal (id REFILL-SHELF-MAINTAIN)))
+  (not (goal (class REFILL-SHELF-MAINTAIN)))
   =>
-  (assert (goal (id REFILL-SHELF-MAINTAIN) (type MAINTAIN)))
+  (assert (goal (id (sym-cat REFILL-SHELF-MAINTAIN- (gensym*)))
+                (class REFILL-SHELF-MAINTAIN) (type MAINTAIN)))
 )
 
 (defrule goal-reasoner-create-refill-shelf-achieve
-  ?g <- (goal (id REFILL-SHELF-MAINTAIN) (mode SELECTED))
-  (not (goal (id REFILL-SHELF-ACHIEVE)))
+  ?g <- (goal (id ?maintain-id) (class REFILL-SHELF-MAINTAIN) (mode SELECTED))
+  (not (goal (class REFILL-SHELF-ACHIEVE)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -122,8 +127,9 @@
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
   =>
-  (assert (goal (id REFILL-SHELF-ACHIEVE)
-                (parent REFILL-SHELF-MAINTAIN)
+  (assert (goal (id (sym-cat REFILL-SHELF-ACHIEVE- (gensym*)))
+                (class REFILL-SHELF-ACHIEVE)
+                (parent ?maintain-id)
                 (params mps ?mps)
                 (required-resources ?mps)))
 )
@@ -150,7 +156,7 @@
   and domain loaded. Other production goals are
   formulated as sub-goals of this goal"
   (domain-facts-loaded)
-  (not (goal (id PRODUCTION-MAINTAIN)))
+  (not (goal (class PRODUCTION-MAINTAIN)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
   (wm-fact (key domain fact self args? r ?robot))
@@ -158,12 +164,13 @@
   (NavGraphWithMPSGeneratorInterface (final TRUE))
   (wm-fact (key navgraph waitzone generated))
   =>
-  (assert (goal (id PRODUCTION-MAINTAIN) (type MAINTAIN)))
+  (assert (goal (id (sym-cat PRODUCTION-MAINTAIN- (gensym*)))
+                (class PRODUCTION-MAINTAIN) (type MAINTAIN)))
 )
 
 (defrule goal-reasoner-create-go-wait-usless-stations
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key domain fact self args? r ?self))
   (or (wm-fact (key domain fact location-free args? l ?waitpoint&C-RS1|M-RS1|C-RS1|M-RS2 side ?side&OUTPUT))
       (wm-fact (key domain fact location-free args? l ?waitpoint&C-SS|M-SS side ?side&INPUT))
@@ -175,15 +182,16 @@
   ; (test (eq (sub-string 1 (str-length (str-cat ?waitpoint)) ?waitpoint) "WAIT-M"  ))
   =>
   (printout t "Goal " GO-WAIT " formulated" crlf)
-  (assert (goal (id GO-WAIT) (priority  ?*PRIORITY-GO-WAIT-HACK*)
-                              (parent PRODUCTION-MAINTAIN)
-                              (params r ?self
-                                      point ?waitpoint
-                                      point-side ?side
-                              )
-                              (required-resources ?waitpoint)
+  (assert (goal (id (sym-cat GO-WAIT- (gensym*)))
+                (class GO-WAIT)
+                (priority  ?*PRIORITY-GO-WAIT-HACK*)
+                (parent ?production-id)
+                (params r ?self
+                        point ?waitpoint
+                        point-side ?side
+                )
+                (required-resources ?waitpoint)
   ))
-  ; (assert (goal-already-tried FILL-CAP))
 )
 
 ; (defrule goal-reasoner-create-go-wait-hack-cyan
@@ -228,6 +236,7 @@
 
 (defrule goal-reasoner-create-enter-field
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (not (goal (class ENTER-FIELD-ACHIEVE)))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
   (wm-fact (key refbox state) (value RUNNING))
@@ -235,13 +244,14 @@
   ; (NavGraphGeneratorInterface (final TRUE))
   ; (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
-  (printout t "Goal " ENTER-FIELD-ACHIEVE " formulated" crlf)
-  (assert (goal (id ENTER-FIELD-ACHIEVE) ))
+  (printout t "Goal " ENTER-FIELD " formulated" crlf)
+  (assert (goal (id (sym-cat ENTER-FIELD-ACHIEVE- (gensym*)))
+                (class ENTER-FIELD-ACHIEVE)))
 )
 
 (defrule goal-reasoner-create-fill-cap-goal
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
@@ -254,21 +264,22 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
   =>
   (printout t "Goal " FILL-CAP " formulated" crlf)
-  (assert (goal (id FILL-CAP) (priority ?*PRIORITY-PREFILL-CS*)
-                              (parent PRODUCTION-MAINTAIN)
-                              (params robot ?robot
-                                      mps ?mps
-                                      cc ?cc
-                              )
-                              (required-resources ?mps)
+  (assert (goal (id (sym-cat FILL-CAP- (gensym*)))
+                (class FILL-CAP)
+                (priority ?*PRIORITY-PREFILL-CS*)
+                (parent ?production-id)
+                (params robot ?robot
+                        mps ?mps
+                        cc ?cc
+                )
+                (required-resources ?mps)
   ))
-  ; (assert (goal-already-tried FILL-CAP))
 )
 
 (defrule goal-reasoner-create-clear-cs
   "Remove an unknown base from CS after retrieving a cap from it."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
@@ -280,22 +291,23 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
   =>
   (printout t "Goal " CLEAR-CS " formulated" crlf)
-  (assert (goal (id CLEAR-CS) (priority ?*PRIORITY-CLEAR-CS*)
-                              (parent PRODUCTION-MAINTAIN)
-                              (params robot ?robot
-                                      mps ?mps
-                                      wp ?wp
-                              )
-                              (required-resources ?mps ?wp)
+  (assert (goal (id (sym-cat CLEAR-CS- (gensym*)))
+                (class CLEAR-CS)
+                (priority ?*PRIORITY-CLEAR-CS*)
+                (parent ?production-id)
+                (params robot ?robot
+                        mps ?mps
+                        wp ?wp
+                )
+                (required-resources ?mps ?wp)
   ))
-  ; (assert (goal-already-tried CLEAR-CS))
 )
 
 
 (defrule goal-reasoner-clear-cs-from-expired-product
   "Remove an unknown base from CS after retrieving a cap from it."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot Conditions
@@ -312,13 +324,15 @@
     (value ?end&:(< ?end (nth$ 1 ?game-time))))
   =>
   (printout t "Goal " CLEAR-CS " formulated" crlf)
-  (assert (goal (id CLEAR-CS) (priority ?*PRIORITY-CLEAR-CS*)
-                              (parent PRODUCTION-MAINTAIN)
-                              (params robot ?robot
-                                      mps ?mps
-                                      wp ?wp
-                              )
-                              (required-resources ?mps ?wp)
+  (assert (goal (id (sym-cat CLEAR-CS- (gensym*)))
+                (class CLEAR-CS)
+                (priority ?*PRIORITY-CLEAR-CS*)
+                (parent ?production-id)
+                (params robot ?robot
+                        mps ?mps
+                        wp ?wp
+                )
+                (required-resources ?mps ?wp)
   ))
 )
 
@@ -326,7 +340,7 @@
 (defrule goal-reasoner-create-prifill-ring-station
   "Insert a base with unknown color in a RS for preparation"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact wp-usable args? wp ?wp))
@@ -341,23 +355,24 @@
   ; (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color)))
   =>
   (printout t "Goal " FILL-RS " formulated" crlf)
-  (assert (goal (id FILL-RS) (priority ?*PRIORITY-PREFILL-RS*)
-                             (parent PRODUCTION-MAINTAIN)
-                             (params robot ?robot
-                                     mps ?mps
-                                     wp ?wp
-                                     rs-before ?rs-before
-                                     rs-after ?rs-after
-                             )
-                             (required-resources ?mps ?wp)
+  (assert (goal (id (sym-cat FILL-RS- (gensym*)))
+                (class FILL-RS)
+                (priority ?*PRIORITY-PREFILL-RS*)
+                (parent ?production-id)
+                (params robot ?robot
+                        mps ?mps
+                        wp ?wp
+                        rs-before ?rs-before
+                        rs-after ?rs-after
+                )
+                (required-resources ?mps ?wp)
   ))
-  ; (assert (goal-already-tried FILL-RS))
 )
 
 (defrule goal-reasoner-create-discard-unknown
   "Discard a base which is not needed if no RS can be pre-filled"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;To-Do: Model state IDLE
   (wm-fact (key domain fact self args? r ?robot))
@@ -370,19 +385,21 @@
   ;  reject it because its not useful
   =>
   (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
-  (assert (goal (id DISCARD-UNKNOWN) (priority ?*PRIORITY-DISCARD-UNKNOWN*)
-                                     (parent PRODUCTION-MAINTAIN)
-                                     (params robot ?robot
-                                             wp ?wp
-                                             )
-                                     (required-resources ?wp)
+  (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
+                (class DISCARD-UNKNOWN)
+                (priority ?*PRIORITY-DISCARD-UNKNOWN*)
+                (parent ?production-id)
+                (params robot ?robot
+                        wp ?wp
+                        )
+                (required-resources ?wp)
   ))
   ; (assert (goal-already-tried DISCARD-UNKNOWN))
 )
 
 (defrule goal-reasoner-create-produce-c0
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -419,19 +436,20 @@
   ; 	(in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   =>
   (printout t "Goal " PRODUCE-C0 " formulated" crlf)
-  (assert (goal (id PRODUCE-C0) (priority ?*PRIORITY-PRODUCE-C0*)
-                                (parent PRODUCTION-MAINTAIN)
-                                (params robot ?robot
-                                        bs ?bs
-                                        bs-side INPUT
-                                        bs-color ?base-color
-                                        mps ?mps
-                                        cs-color ?cap-color
-                                        order ?order
-                                )
-                                (required-resources ?mps ?order)
+  (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
+                (class PRODUCE-C0)
+                (priority ?*PRIORITY-PRODUCE-C0*)
+                (parent ?production-id)
+                (params robot ?robot
+                        bs ?bs
+                        bs-side INPUT
+                        bs-color ?base-color
+                        mps ?mps
+                        cs-color ?cap-color
+                        order ?order
+                )
+                (required-resources ?mps ?order)
   ))
-  ; (assert (goal-already-tried PRODUCE-C0))
 )
 
 
@@ -444,7 +462,7 @@
 
 (defrule goal-reasoner-create-mount-first-ring
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
 
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -489,42 +507,45 @@
   (wm-fact (key config rcll allowed-produce-complexity) (values ?complexity))
   =>
   (printout t "Goal " MOUNT-FIRST-RING " formulated" crlf)
-  (assert (goal (id MOUNT-FIRST-RING) (priority ?*PRIORITY-DELIVER*)
-                             (parent PRODUCTION-MAINTAIN)
-                             (params robot ?robot
-                                        bs ?mps-bs
-                                        bs-side OUTPUT
-                                        bs-color ?base-color
-                                        mps ?mps-rs
-                                        ring-color ?ring-color
-                                        rs-before ?bases-filled
-                                        rs-after ?bases-remain
-                                        rs-req ?bases-needed
-                                        order ?order
-                                        )))
+  (assert (goal (id (sym-cat MOUNT-FIRST-RING- (gensym*)))
+                (class MOUNT-FIRST-RING)
+                (priority ?*PRIORITY-DELIVER*)
+                (parent ?production-id)
+                (params robot ?robot
+                           bs ?mps-bs
+                           bs-side OUTPUT
+                           bs-color ?base-color
+                           mps ?mps-rs
+                           ring-color ?ring-color
+                           rs-before ?bases-filled
+                           rs-after ?bases-remain
+                           rs-req ?bases-needed
+                           order ?order
+                           )))
 )
 
 
 
 (defrule goal-reasoner-create-reset-mps
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key domain fact self args? r ?self))
   ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
   =>
   (printout t "Goal " RESET-MPS " formulated" crlf)
-  (assert (goal (id RESET-MPS) (priority  ?*PRIORITY-RESET*)
-                              (parent PRODUCTION-MAINTAIN)
-                              (params r ?self
-                                      m ?mps
-                                      )))
+  (assert (goal (id (sym-cat RESET-MPS- (gensym*)))
+                (class RESET-MPS) (priority  ?*PRIORITY-RESET*)
+                (parent ?production-id)
+                (params r ?self
+                        m ?mps
+                        )))
   (retract ?t)
 )
 
 (defrule goal-reasoner-create-discard-failed-put-slide
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;To-Do: Model state IDLE
   (wm-fact (key domain fact self args? r ?robot))
@@ -534,13 +555,14 @@
                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
   =>
   (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
-  (assert (goal (id DISCARD-UNKNOWN) (priority ?*PRIORITY-RESET*)
-                                     (parent PRODUCTION-MAINTAIN)
-                                     (params robot ?robot
-                                             wp ?wp
-                                             )))
+  (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
+                (class DISCARD-UNKNOWN)
+                (priority ?*PRIORITY-RESET*)
+                (parent ?production-id)
+                (params robot ?robot
+                        wp ?wp
+                        )))
   (retract ?t)
-  ; (assert (goal-already-tried DISCARD-UNKNOWN))
 )
 
 
@@ -548,7 +570,7 @@
 
 (defrule goal-reasoner-create-deliver
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   (wm-fact (key domain fact self args? r ?robot))
   ;CEs for MPS-DS
@@ -593,30 +615,32 @@
   ;Delete the evaluated wp-for-order
   =>
   (printout t "Goal " DELIVER " formulated" crlf)
-  (assert (goal (id DELIVER) (priority ?*PRIORITY-DELIVER*)
-                             (parent PRODUCTION-MAINTAIN)
-                             (params robot ?robot
-                                     mps ?mps
-                                     order ?order
-                                     wp ?wp
-                                     ds ?ds
-                                     ds-gate ?gate
-                                     base-color ?base-color
-                                     cap-color ?cap-color
-                              )
-                              ; TODO do we really need the DS?
-                              (required-resources ?order ?wp ?ds)
+  (assert (goal (id (sym-cat DELIVER- (gensym*)))
+                (class DELIVER)
+                (priority ?*PRIORITY-DELIVER*)
+                (parent ?production-id)
+                (params robot ?robot
+                        mps ?mps
+                        order ?order
+                        wp ?wp
+                        ds ?ds
+                        ds-gate ?gate
+                        base-color ?base-color
+                        cap-color ?cap-color
+                )
+                ; TODO do we really need the DS?
+                (required-resources ?order ?wp ?ds)
   ))
-  ; (assert (goal-already-tried DELIVER))
 )
 
 ; ## Goal Evaluation
  (defrule goal-reasoner-evaluate-failed-enter-field
-   ?g <- (goal (id ENTER-FIELD-ACHIEVE) (mode FINISHED) (outcome FAILED))
-  ?pa <- (plan-action (goal-id ENTER-FIELD-ACHIEVE) (status FAILED) (action-name enter-field))
-  ?gm <- (goal-meta (goal-id ENTER-FIELD-ACHIEVE) (num-tries ?num-tries))
+   ?g <- (goal (id ?gid) (class ENTER-FIELD-ACHIEVE)
+               (mode FINISHED) (outcome FAILED))
+  ?pa <- (plan-action (goal-id ?gid) (status FAILED) (action-name enter-field))
+  ?gm <- (goal-meta (goal-id ?gid) (num-tries ?num-tries))
   =>
-  (printout t "Goal '" ENTER-FIELD-ACHIEVE"' has failed, Evaluating" crlf)
+  (printout t "Goal '" ?gid "' has failed, evaluating" crlf)
 
   (if (= ?num-tries ?*ENTER-FIELD-RETRIES*) then
 	(modify ?pa (status EXECUTION-SUCCEEDED))
@@ -629,7 +653,8 @@
 )
 
 (defrule goal-reasoner-evaluate-production-maintain
-  ?g <- (goal (id PRODUCTION-MAINTAIN) (parent nil) (mode FINISHED) (outcome ?outcome))
+  ?g <- (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (parent nil)
+              (mode FINISHED) (outcome ?outcome))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   ?t <- (wm-fact (key monitoring action-retried args? r ?self a ?an m ?mps wp ?wp)
                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
@@ -640,12 +665,11 @@
 )
 
 (defrule goal-reasoner-evaluate-completed-subgoal-produce-c0
-  ?g <- (goal (id PRODUCE-C0) (parent ?parent-id)
+  ?g <- (goal (id ?goal-id) (class PRODUCE-C0) (parent ?parent-id)
               (mode FINISHED) (outcome COMPLETED)
               (params $?params))
  ?gm <- (goal-meta (goal-id ?parent-id))
- (plan (goal-id PRODUCE-C0)
-   (id ?plan-id))
+ (plan (goal-id ?goal-id) (id ?plan-id))
  ?p <-(plan-action
          (plan-id ?plan-id)
          (action-name bs-dispense)
@@ -655,17 +679,17 @@
  (wm-fact (key domain fact self args? r ?robot))
  =>
  (bind ?order (get-param-by-arg ?params order))
- (printout t "Goal '" PRODUCE-C0 "' has been completed, Evaluating" crlf)
+ (printout t "Goal '" ?goal-id "' has been completed, Evaluating" crlf)
  (assert (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (value TRUE)))
  (modify ?g (mode EVALUATED))
  (modify ?gm (last-achieve ?now))
 )
 
 (defrule goal-reasoner-evaluate-completed-subgoal-refill-shelf
-  ?g <- (goal (id REFILL-SHELF-ACHIEVE) (parent REFILL-SHELF-MAINTAIN)
+  ?g <- (goal (class REFILL-SHELF-ACHIEVE) (parent ?parent-id)
              (mode FINISHED) (outcome COMPLETED)
              (params mps ?mps))
-  ?p <- (goal(id REFILL-SHELF-MAINTAIN))
+  ?p <- (goal (id ?parent-id))
   (wm-fact (key domain fact cs-color args? m ?mps col ?col))
   =>
   (if (eq ?col CAP_GREY)
@@ -698,15 +722,15 @@
 
 
 (defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
-  ?g <- (goal (id WPSPAWN-ACHIEVE) (parent WPSPAWN-MAINTAIN)
+  ?g <- (goal (id ?goal-id) (class WPSPAWN-ACHIEVE) (parent ?parent-id)
             (mode FINISHED) (outcome COMPLETED)
             (params robot ?robot))
-  ?p <- (goal (id WPSPAWN-MAINTAIN))
-  ?m <- (goal-meta (goal-id WPSPAWN-MAINTAIN))
+  ?p <- (goal (id ?parent-id) (class WPSPAWN-MAINTAIN))
+  ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
   (wm-fact (key domain fact self args? r ?robot))
   =>
-  (printout debug "Goal '" WPSPAWN-ACHIEVE "' (part of '" WPSPAWN-MAINTAIN
+  (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
     "') has been completed, Evaluating" crlf)
      (bind ?wp-id (sym-cat WP (random-id)))
   (assert
