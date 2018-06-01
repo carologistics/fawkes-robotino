@@ -33,6 +33,8 @@
 #include <aspect/blackboard.h>
 #include <aspect/pointcloud.h>
 #include <aspect/tf.h>
+#include <aspect/syncpoint_manager.h>
+
 #include <interfaces/ConveyorPoseInterface.h>
 
 #include <config/change_handler.h>
@@ -69,7 +71,8 @@ class ConveyorPoseThread
   public fawkes::BlackBoardAspect,
   public fawkes::PointCloudAspect,
   public fawkes::ROSAspect,
-  public fawkes::TransformAspect
+  public fawkes::TransformAspect,
+  public fawkes::SyncPointManagerAspect
 {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -108,6 +111,9 @@ public:
   fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_laser_odom_;
 
   bool cfg_debug_mode_;
+
+  const std::string syncpoint_clouds_ready_name;
+
 private:
   // cfg values
   std::string cfg_if_prefix_;
@@ -117,6 +123,8 @@ private:
   std::string cfg_bb_realsense_switch_name_;
   std::string conveyor_frame_id_;
   std::vector<std::string> laserlines_names_;
+
+  fawkes::RefPtr<fawkes::SyncPoint> syncpoint_clouds_ready;
 
   CloudPtr default_model_;
   CloudPtr trimmed_scene_;
