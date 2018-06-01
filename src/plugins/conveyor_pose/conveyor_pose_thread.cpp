@@ -59,6 +59,7 @@ ConveyorPoseThread::ConveyorPoseThread()
   , ConfigurationChangeHandler(CFG_PREFIX)
   , fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose")
   , result_fitness_(std::numeric_limits<double>::min())
+  , syncpoint_clouds_ready_name("/perception/conveyor_pose/clouds_ready")
   , cloud_out_raw_name_("raw")
   , cloud_out_trimmed_name_("trimmed")
   , current_mps_type_(ConveyorPoseInterface::NO_STATION)
@@ -72,6 +73,8 @@ ConveyorPoseThread::init()
 {
   config->add_change_handler(this);
 
+  syncpoint_clouds_ready = syncpoint_manager->get_syncpoint(name(), syncpoint_clouds_ready_name);
+  syncpoint_clouds_ready->register_emitter(name());
 
   cfg_debug_mode_ = config->get_bool( CFG_PREFIX "/debug" );
   cloud_in_name_ = config->get_string( CFG_PREFIX "/cloud_in" );
@@ -322,6 +325,10 @@ ConveyorPoseThread::init()
   bb_pose_->write();
 
   realsense_switch_ = blackboard->open_for_reading<SwitchInterface>(cfg_bb_realsense_switch_name_.c_str());
+
+  if (cfg_debug_mode_)
+    recognition_thread_->enable();
+
 }
 
 
@@ -343,6 +350,26 @@ ConveyorPoseThread::finalize()
 void
 ConveyorPoseThread::loop()
 {
+  // Check for Messages in ConveyorPoseInterface and update informations if needed
+  while ( !bb_pose_->msgq_empty() ) {
+    if (bb_pose_->msgq_first_is<ConveyorPoseInterface::SetStationMessage>() ) {
+
+      //Update station related information
+      logger->log_info(name(), "Received SetStationMessage");
+      ConveyorPoseInterface::SetStationMessage *msg =
+          bb_pose_->msgq_first<ConveyorPoseInterface::SetStationMessage>();
+      update_station_information(msg->mps_type_to_set(),msg->mps_target_to_set());
+      bb_pose_->write();
+
+      // Schedule restart of recognition thread
+      recognition_thread_->restart();
+    }
+    else {
+      logger->log_warn(name(), "Unknown message received");
+    }
+    bb_pose_->msgq_pop();
+  }
+
   bb_update_switch();
   realsense_switch_->read();
 
@@ -361,8 +388,10 @@ ConveyorPoseThread::loop()
         cfg_bb_realsense_switch_name_.c_str());
       return;
     }
-  } else if (realsense_switch_->has_writer()
-      && realsense_switch_->is_enabled()) {
+  }
+  else if (realsense_switch_->has_writer()
+      && realsense_switch_->is_enabled())
+  {
     logger->log_info(name(), "Disabling %s",
       cfg_bb_realsense_switch_name_.c_str());
     realsense_switch_->msgq_enqueue(
@@ -425,34 +454,13 @@ ConveyorPoseThread::loop()
       }
       if (cloud_mutex_.try_lock()) {
         try {
-          // Check for Messages in ConveyorPoseInterface and update informations if needed
-          while ( !bb_pose_->msgq_empty() ) {
-            if (bb_pose_->msgq_first_is<ConveyorPoseInterface::SetStationMessage>() ) {
-
-              //Update station related information
-              logger->log_info(name(), "Received SetStationMessage");
-              ConveyorPoseInterface::SetStationMessage *msg =
-                  bb_pose_->msgq_first<ConveyorPoseInterface::SetStationMessage>();
-              update_station_information(msg->mps_type_to_set(),msg->mps_target_to_set());
-              bb_pose_->write();
-
-              // Possibly cancel, and always wakeup recognition_thread_
-              recognition_thread_->restart();
-            }
-            else {
-              logger->log_warn(name(), "Unknown message received");
-            }
-            bb_pose_->msgq_pop();
-          }
-
           if (have_laser_line_) {
             set_initial_tf_from_laserline(ll,current_mps_type_,current_mps_target_);
           }
 
           scene_ = trimmed_scene_;
 
-          if (cfg_debug_mode_)
-            recognition_thread_->enable();
+          syncpoint_clouds_ready->emit(name());
 
         } catch (std::exception &e) {
           logger->log_error(name(), "Exception preprocessing point clouds: %s", e.what());
