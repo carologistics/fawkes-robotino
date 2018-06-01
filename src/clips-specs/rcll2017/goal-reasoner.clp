@@ -186,7 +186,7 @@
 
 (defrule goal-reasoner-evaluate-release-resource-locks
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (params $?params))
+  ?g <- (goal (id ?goal-id) (mode RETRACTED) (params $?params))
   =>
   (foreach ?mutex (goal-to-lock ?goal-id ?params)
     (printout warn "Goal " ?goal-id " finished: Releasing " ?mutex crlf)
