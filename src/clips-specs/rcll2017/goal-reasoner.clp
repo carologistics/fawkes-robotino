@@ -131,6 +131,16 @@
 	(modify ?g (mode DISPATCHED))
 )
 
+(defrule goal-reasoner-reexpand
+  "The parent is committed or dispatched, but there is no child."
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?p <- (goal (id ?parent-id) (mode COMMITTED|DISPATCHED))
+  (goal (parent ?parent-id) (mode FORMULATED))
+  (not (goal (parent ?parent-id) (mode ~FORMULATED) (outcome ~REJECTED)))
+  =>
+  (modify ?p (mode EXPANDED))
+)
+
 (defrule goal-reasoner-finish-parent-goal
   ?pg <- (goal (id ?pg-id) (mode DISPATCHED))
   ?sg <- (goal (id ?sg-id) (parent ?pg-id) (mode EVALUATED)
