@@ -286,7 +286,14 @@
   ;     "') has, cleaning up" crlf)
     (modify ?sg (mode RETRACTED))
   )
+)
 
+(defrule goal-reasoner-reselect-parent-goal
+  ?g <- (goal (id ?goal-id) (parent nil) (type ?goal-type)
+          (mode EVALUATED) (outcome ?outcome))
+  ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries) (max-tries ?max-tries))
+  (not (goal (parent ?goal-id)))
+  =>
   (if (or (eq ?goal-type MAINTAIN)
           (and (eq ?outcome FAILED) (<= ?num-tries ?max-tries)))
     then
