@@ -5,6 +5,8 @@
 #include <core/threading/wait_condition.h>
 #include <aspect/logging.h>
 #include <aspect/tf.h>
+#include <aspect/syncpoint_manager.h>
+
 #include <atomic>
 
 #include <pcl/registration/icp_nl.h>
@@ -25,6 +27,7 @@ class RecognitionThread
     : public fawkes::Thread
     , public fawkes::LoggingAspect
     , public fawkes::TransformAspect
+    , public fawkes::SyncPointManagerAspect
 {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -61,7 +64,8 @@ private:
 
   ConveyorPoseThread *main_thread_;
 
-  fawkes::WaitCondition wait_enabled_;
+  fawkes::RefPtr<fawkes::SyncPoint> syncpoint_clouds_ready_;
+
   std::atomic_bool enabled_;
   std::atomic_bool do_restart_;
 
