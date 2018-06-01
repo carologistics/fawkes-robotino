@@ -29,7 +29,7 @@ RecognitionThread::RecognitionThread(ConveyorPoseThread *cp_thread)
   , TransformAspect(fawkes::TransformAspect::BOTH, "conveyor_pose_initial_guess")
   , main_thread_(cp_thread)
   , enabled_(false)
-  , do_restart_(false)
+  , do_restart_(true)
 {
   // Allow finalization while loop() is blocked
   set_prepfin_conc_loop(true);
@@ -38,6 +38,7 @@ RecognitionThread::RecognitionThread(ConveyorPoseThread *cp_thread)
 
 void RecognitionThread::init()
 {
+  syncpoint_clouds_ready_ = syncpoint_manager->get_syncpoint(name(), main_thread_->syncpoint_clouds_ready_name);
 }
 
 
@@ -45,10 +46,8 @@ void RecognitionThread::restart_icp()
 {
   logger->log_info(name(), "Restarting ICP");
 
-  do_restart_ = false;
+  syncpoint_clouds_ready_->wait(name());
 
-  //model_with_normals_.reset(new Cloud());
-  //scene_with_normals_.reset(new Cloud());
   tf::Stamped<tf::Pose> initial_pose_cam;
 
   { fawkes::MutexLocker locked { &main_thread_->cloud_mutex_ };
@@ -117,15 +116,15 @@ void RecognitionThread::restart_icp()
 
 void RecognitionThread::loop()
 {
-  if (!enabled_|| do_restart_) {
-    if (!do_restart_) {
-      logger->log_info(name(), "ICP stopped");
+  if (!enabled_) {
+    logger->log_info(name(), "ICP stopped");
+    while (!enabled_)
+      syncpoint_clouds_ready_->wait(name());
+  }
 
-      while (!enabled_)
-        wait_enabled_.wait();
-    }
-
+  if (do_restart_) {
     restart_icp();
+    do_restart_ = false;
   }
 
   if (!enabled_ || do_restart_) // cancel if disabled from ConveyorPoseThread
@@ -171,8 +170,6 @@ void RecognitionThread::loop()
 
       if (!main_thread_->cfg_debug_mode_)
         publish_result();
-
-      logger->log_info(name(), "FIT!");
     }
 
     if (iterations_ >= cfg_icp_max_loops_) {
@@ -251,10 +248,7 @@ void RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::t
 
 
 void RecognitionThread::enable()
-{
-  enabled_ = true;
-  wait_enabled_.wake_all();
-}
+{ enabled_ = true; }
 
 
 void RecognitionThread::disable()
