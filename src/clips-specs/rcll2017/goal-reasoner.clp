@@ -306,7 +306,7 @@
 
 (defrule goal-reasoner-retract-goal
   ?g <- (goal (id ?goal-id) (mode RETRACTED) (acquired-resources))
-  ?gm <- (goal-meta (goal-id ?goal-id))
   =>
-  (retract ?g ?gm)
+  (do-for-fact ((?gm goal-meta)) (eq ?gm:goal-id ?goal-id) (retract ?gm))
+  (retract ?g)
 )
