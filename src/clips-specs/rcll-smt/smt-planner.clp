@@ -609,7 +609,8 @@
 		 (plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
-			(duration 4.0)
+			(goal-id ?goal-id)
+                        (duration 4.0)
 			(action-name enter-field)
 			(param-names r team-color)
 			(param-values ?action-specific-actor ?team-color))
@@ -627,6 +628,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name move)
 			(param-names r from from-side to to-side)
@@ -646,6 +648,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name wp-get-shelf)
 			(param-names r cc m spot)
@@ -665,6 +668,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name wp-get)
 			(param-names r wp m side)
@@ -684,6 +688,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name wp-put)
 			(param-names r wp m)
@@ -703,6 +708,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name wp-put-slide-cc)
 			(param-names r wp m rs-before rs-after)
@@ -722,6 +728,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name wp-discard)
 			(param-names r cc)
@@ -741,6 +748,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name prepare-bs)
 			(param-names m side bc)
@@ -760,6 +768,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name bs-dispense)
 			(param-names m side wp basecol)
@@ -779,6 +788,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name prepare-ds)
 			(param-names m gate)
@@ -798,6 +808,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name fulfill-order-c0)
 			(param-names ord wp m g basecol capcol)
@@ -817,6 +828,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name fulfill-order-c1)
 			(param-names ord wp m g basecol capcol ring1col)
@@ -836,6 +848,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name fulfill-order-c2)
 			(param-names ord wp m g basecol capcol ring1col ring2col)
@@ -855,6 +868,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name fulfill-order-c3)
 			(param-names ord wp m g basecol capcol ring1col ring2col ring3col)
@@ -874,6 +888,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name prepare-cs)
 			(param-names m op)
@@ -893,6 +908,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name cs-retrieve-cap)
 			(param-names m cc capcol)
@@ -912,6 +928,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name cs-mount-cap)
 			(param-names m wp capcol)
@@ -931,6 +948,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name prepare-rs)
 			(param-names m rc rs-before rs-after r-req)
@@ -950,6 +968,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name rs-mount-ring1)
 			(param-names m wp col rs-before rs-after r-req)
@@ -969,6 +988,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name rs-mount-ring2)
 			(param-names m wp col col1 rs-before rs-after r-req)
@@ -988,6 +1008,7 @@
 		(plan-action
 			(id ?next-step-id)
 			(plan-id ?plan-id)
+			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name rs-mount-ring3)
 			(param-names m wp col col1 col2 rs-before rs-after r-req)
