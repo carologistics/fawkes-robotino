@@ -65,8 +65,8 @@
   (not (goal (parent ?parent-id)
              (mode SELECTED|EXPANDED|
                    COMMITTED|DISPATCHED|
-                   FINISHED|EVALUATED))
-  )
+                   FINISHED|RETRACTED)))
+  (not (goal (parent ?parent-id) (mode EVALUATED) (outcome ~REJECTED)))
 =>
   ;(printout t "Goal " ?subgoal-id " selected!" crlf)
   (modify ?g (mode SELECTED))
