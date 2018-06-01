@@ -92,6 +92,7 @@ public:
   void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
 
   void set_cg_thread(RecognitionThread *cg_thread);
+  void bb_set_busy(bool busy);
 
   CloudPtr model_;
   CloudPtr scene_;
@@ -132,7 +133,7 @@ private:
   fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
   fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
 
-  void update_station_information(fawkes::ConveyorPoseInterface::MPS_TYPE mps_type, fawkes::ConveyorPoseInterface::MPS_TARGET mps_target);
+  void update_station_information(fawkes::ConveyorPoseInterface::SetStationMessage &msg);
 
   //Mapping from {Type,Target} to its corresponding model path
   std::map<std::pair<fawkes::ConveyorPoseInterface::MPS_TYPE,fawkes::ConveyorPoseInterface::MPS_TARGET>, std::string> type_target_to_path_;
