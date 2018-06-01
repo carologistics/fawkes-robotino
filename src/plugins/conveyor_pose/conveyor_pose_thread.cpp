@@ -358,7 +358,7 @@ ConveyorPoseThread::loop()
       logger->log_info(name(), "Received SetStationMessage");
       ConveyorPoseInterface::SetStationMessage *msg =
           bb_pose_->msgq_first<ConveyorPoseInterface::SetStationMessage>();
-      update_station_information(msg->mps_type_to_set(),msg->mps_target_to_set());
+      update_station_information(*msg);
       bb_pose_->write();
 
       // Schedule restart of recognition thread
@@ -541,8 +541,11 @@ ConveyorPoseThread::record_model()
 
 
 void
-ConveyorPoseThread::update_station_information(ConveyorPoseInterface::MPS_TYPE mps_type, ConveyorPoseInterface::MPS_TARGET mps_target)
+ConveyorPoseThread::update_station_information(ConveyorPoseInterface::SetStationMessage &msg)
 {
+  ConveyorPoseInterface::MPS_TYPE mps_type = msg.mps_type_to_set();
+  ConveyorPoseInterface::MPS_TARGET mps_target = msg.mps_target_to_set();
+
   auto map_it = type_target_to_model_.find({mps_type,mps_target});
   if ( map_it == type_target_to_model_.end())
     logger->log_error(name(), "Invalid station type or target: %i,%i", mps_type, mps_target);
@@ -561,6 +564,7 @@ ConveyorPoseThread::update_station_information(ConveyorPoseInterface::MPS_TYPE m
     bb_pose_->set_current_mps_target(mps_target);
     result_fitness_ = std::numeric_limits<double>::min();
     bb_pose_->set_euclidean_fitness(result_fitness_);
+    bb_pose_->set_msgid(msg.id());
     bb_pose_->write();
 
     result_fitness_ = std::numeric_limits<double>::min();
@@ -1027,6 +1031,13 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
     if (recognition_thread_->enabled())
       recognition_thread_->restart();
   }
+}
+
+
+void ConveyorPoseThread::bb_set_busy(bool busy)
+{
+  bb_pose_->set_busy(busy);
+  bb_pose_->write();
 }
 
 
