@@ -122,8 +122,10 @@
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
   =>
-  (assert (goal (id REFILL-SHELF-ACHIEVE) (parent REFILL-SHELF-MAINTAIN) 
-                                        (params mps ?mps)))
+  (assert (goal (id REFILL-SHELF-ACHIEVE)
+                (parent REFILL-SHELF-MAINTAIN)
+                (params mps ?mps)
+                (required-resources ?mps)))
 )
 
 (defrule navgraph-compute-wait-positions-finished
@@ -178,8 +180,9 @@
                               (params r ?self
                                       point ?waitpoint
                                       point-side ?side
-
-                                      )))
+                              )
+                              (required-resources ?waitpoint)
+  ))
   ; (assert (goal-already-tried FILL-CAP))
 )
 
@@ -256,7 +259,9 @@
                               (params robot ?robot
                                       mps ?mps
                                       cc ?cc
-                                      )))
+                              )
+                              (required-resources ?mps)
+  ))
   ; (assert (goal-already-tried FILL-CAP))
 )
 
@@ -280,7 +285,9 @@
                               (params robot ?robot
                                       mps ?mps
                                       wp ?wp
-                                      )))
+                              )
+                              (required-resources ?mps ?wp)
+  ))
   ; (assert (goal-already-tried CLEAR-CS))
 )
 
@@ -310,7 +317,9 @@
                               (params robot ?robot
                                       mps ?mps
                                       wp ?wp
-                                      )))
+                              )
+                              (required-resources ?mps ?wp)
+  ))
 )
 
 
@@ -339,7 +348,9 @@
                                      wp ?wp
                                      rs-before ?rs-before
                                      rs-after ?rs-after
-                                     )))
+                             )
+                             (required-resources ?mps ?wp)
+  ))
   ; (assert (goal-already-tried FILL-RS))
 )
 
@@ -363,7 +374,9 @@
                                      (parent PRODUCTION-MAINTAIN)
                                      (params robot ?robot
                                              wp ?wp
-                                             )))
+                                             )
+                                     (required-resources ?wp)
+  ))
   ; (assert (goal-already-tried DISCARD-UNKNOWN))
 )
 
@@ -415,7 +428,9 @@
                                         mps ?mps
                                         cs-color ?cap-color
                                         order ?order
-                                        )))
+                                )
+                                (required-resources ?mps ?order)
+  ))
   ; (assert (goal-already-tried PRODUCE-C0))
 )
 
@@ -469,7 +484,7 @@
     ; (value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-CX-LATEST-TIME*))))
   ;TODO for multi-agent
   ; Model old agents constraints
-  ;  (in-production 0))
+  ;  (in-production 0)
   ;  (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   (wm-fact (key config rcll allowed-produce-complexity) (values ?complexity))
   =>
@@ -487,7 +502,7 @@
                                         rs-req ?bases-needed
                                         order ?order
                                         )))
-  )
+)
 
 
 
@@ -588,7 +603,10 @@
                                      ds-gate ?gate
                                      base-color ?base-color
                                      cap-color ?cap-color
-                                     )))
+                              )
+                              ; TODO do we really need the DS?
+                              (required-resources ?order ?wp ?ds)
+  ))
   ; (assert (goal-already-tried DELIVER))
 )
 

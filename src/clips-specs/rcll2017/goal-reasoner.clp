@@ -84,12 +84,11 @@
 )
 
 ; #  Commit to goal (we "intend" it)
-; Do not just commit to a goal, we first need to get all locks.
-;(defrule goal-reasoner-commit
-;  ?g <- (goal (mode EXPANDED))
-;  =>
-;  (modify ?g (mode COMMITTED))
-;)
+(defrule goal-reasoner-commit
+  ?g <- (goal (mode EXPANDED))
+  =>
+  (modify ?g (mode COMMITTED))
+)
 
 ; #  Dispatch goal (action selection and execution now kick in)
 ; Trigger execution of a plan. We may commit to multiple plans
@@ -97,9 +96,11 @@
 ; orders. It is then up to action selection and execution to determine
 ; what to do when.
 (defrule goal-reasoner-dispatch
-  ?g <- (goal (mode COMMITTED))
-  =>
-  (modify ?g (mode DISPATCHED))
+	?g <- (goal (mode COMMITTED)
+          (required-resources $?req)
+          (acquired-resources $?acq&:(subsetp ?req ?acq)))
+	=>
+	(modify ?g (mode DISPATCHED))
 )
 
 (defrule goal-reasoner-finish-parent-goal
@@ -259,7 +260,7 @@
 )
 
 (defrule goal-reasoner-retract-goal
-  ?g <- (goal (id ?goal-id) (mode RETRACTED))
+  ?g <- (goal (id ?goal-id) (mode RETRACTED) (acquired-resources))
   ?gm <- (goal-meta (goal-id ?goal-id))
   =>
   (retract ?g ?gm)
