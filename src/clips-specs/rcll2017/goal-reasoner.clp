@@ -84,8 +84,19 @@
 )
 
 ; #  Commit to goal (we "intend" it)
-(defrule goal-reasoner-commit
-  ?g <- (goal (mode EXPANDED))
+(defrule goal-reasoner-commit-root-goal
+  ?g <- (goal (id ?goal-id) (mode EXPANDED) (parent nil))
+  (or (not (goal (parent ?goal-id)))
+      (goal (parent ?goal-id) (mode COMMITTED)))
+  =>
+  (modify ?g (mode COMMITTED))
+)
+
+(defrule goal-reasoner-commit-child-goal
+  ?g <- (goal (id ?goal-id) (mode EXPANDED) (parent ?parent-id))
+  (goal (id ?parent-id) (mode EXPANDED))
+  (or (not (goal (parent ?goal-id)))
+      (goal (parent ?goal-id) (mode COMMITTED)))
   =>
   (modify ?g (mode COMMITTED))
 )
@@ -95,10 +106,27 @@
 ; (for different goals), e.g., one per robot, or for multiple
 ; orders. It is then up to action selection and execution to determine
 ; what to do when.
-(defrule goal-reasoner-dispatch
+(defrule goal-reasoner-dispatch-top-goal
 	?g <- (goal (mode COMMITTED)
+          (id ?goal-id)
+          (parent nil)
           (required-resources $?req)
           (acquired-resources $?acq&:(subsetp ?req ?acq)))
+  (or (not (goal (parent ?goal-id)))
+      (goal (parent ?goal-id) (mode DISPATCHED)))
+	=>
+	(modify ?g (mode DISPATCHED))
+)
+
+(defrule goal-reasoner-dispatch-child-goal
+	?g <- (goal (mode COMMITTED)
+          (id ?goal-id)
+          (parent ?parent-id)
+          (required-resources $?req)
+          (acquired-resources $?acq&:(subsetp ?req ?acq)))
+  (goal (id ?parent-id) (mode COMMITTED))
+  (or (not (goal (parent ?goal-id)))
+      (goal (parent ?goal-id) (mode DISPATCHED)))
 	=>
 	(modify ?g (mode DISPATCHED))
 )
