@@ -424,7 +424,8 @@ ConveyorPoseThread::loop()
     if (cfg_record_model_ && !have_laser_line_)
       return;
 
-    if (cloud_mutex_.try_lock()) {
+    { 
+        fawkes::MutexLocker locked(&cloud_mutex_);
         try {
             if (have_laser_line_) {
                 set_initial_tf_from_laserline(ll,current_mps_type_,current_mps_target_);
@@ -432,8 +433,7 @@ ConveyorPoseThread::loop()
         } catch (std::exception &e) {
             logger->log_error(name(), "Exception generating initial transform: %s", e.what());
         }
-        cloud_mutex_.unlock();
-    } // cloud_mutex_.try_lock()
+    } // cloud_mutex_ lock
 
     CloudPtr cloud_in(new Cloud(**cloud_in_));
 
