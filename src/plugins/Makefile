@@ -26,7 +26,6 @@ SUBDIRS	= clips-motor-switch \
 	  conveyor_pose \
 	  gazebo \
 	  marker_writer \
-	  conveyor_vision \
 	  motor-led \
 		laser_front_dist \
 		mps-laser-gen \
