@@ -23,6 +23,7 @@
 #include <core/plugin.h>
 
 #include "com_thread.h"
+#include "tf_thread.h"
 
 using namespace fawkes;
 
@@ -46,8 +47,10 @@ public:
 
         cfg_name = cfg_name.substr(0, cfg_name.find("/"));
 
-        ArduinoComThread *com_thread = new ArduinoComThread(cfg_name, cfg_prefix);
+        ArduinoTFThread *tf_thread = new ArduinoTFThread(cfg_name, cfg_prefix);
+        ArduinoComThread *com_thread = new ArduinoComThread(cfg_name, cfg_prefix, tf_thread);
 
+        thread_list.push_back(tf_thread);
         thread_list.push_back(com_thread);
     }
 };

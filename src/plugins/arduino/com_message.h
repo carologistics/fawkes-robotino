@@ -19,8 +19,8 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#ifndef __PLUGINS_ARDUINO_DIRECT_COM_MESSAGE_H_
-#define __PLUGINS_ARDUINO_DIRECT_COM_MESSAGE_H_
+#ifndef __PLUGINS_ARDUINO_COM_MESSAGE_H_
+#define __PLUGINS_ARDUINO_COM_MESSAGE_H_
 
 #include <cstdint>
 #include <boost/asio.hpp>
@@ -28,52 +28,44 @@
 class ArduinoComMessage
 {
  public:
-	/// shared pointer to direct com message
-	typedef std::shared_ptr<ArduinoComMessage> pointer;
+  enum class command_id_t : char{
+   CMD_CALIBRATE   = 'C',
+   CMD_X_NEW_POS   = 'X',
+   CMD_Y_NEW_POS   = 'Y',
+   CMD_Z_NEW_POS   = 'Z',
+   CMD_A_NEW_POS   = 'A'
+  };
 
-	/// @cond INTERNAL
-	typedef enum {
-		CMD_NONE                =       0,
-		CMD_STEP_UP		=	1,
-		CMD_STEP_DOWN		=	2,
-		CMD_TO_Z_0		=	3,
-		CMD_SET_ACCEL		=	4,
-		CMD_SET_SPEED		=	5,
-		CMD_QUERY_POS		=	6,
-	} command_id_t;
+  static const char MSG_HEAD[3];
 
-	typedef enum {
-		READ,
-		WRITE
-	} mode_t;
+  ArduinoComMessage();
+  ~ArduinoComMessage();
+  ArduinoComMessage(command_id_t cmdid, unsigned int value);
 
-	static const char MSG_HEAD[3];
-        static const int  NUM_STEPS_PER_MM = 100;
-	/// @endcond INTERNAL
-
-	ArduinoComMessage();
-	ArduinoComMessage(command_id_t cmdid);
-	ArduinoComMessage(const unsigned char *msg, size_t msg_size);
-
-	void set_command(command_id_t cmdid);
-
-        void set_number(unsigned int number);
+  bool add_command(command_id_t cmd, unsigned int number);
+  unsigned short get_data_size();
+  unsigned short get_cur_buffer_index();
 
 	boost::asio::const_buffer buffer();
 
-        void set_msecs(unsigned int msecs);
-        unsigned int get_msecs();
+  void set_msecs_if_lower(unsigned int msecs);
+  unsigned int get_msecs();
+
+  static inline unsigned short num_digits(unsigned int i)
+  {
+      return i > 0 ? (int) log10 ((double) i) + 1 : 1;
+  }
 
  private:
-	void ctor();
+  void ctor();
+  void dtor();
 
  private:
 	char *data_;
 	unsigned short data_size_;
+  unsigned short cur_buffer_index_; // index of next data field
 
-        unsigned int current_cmd_;
-
-        unsigned int msecs_to_wait_;
+  unsigned int msecs_to_wait_;
 
 
 };

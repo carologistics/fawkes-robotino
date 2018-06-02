@@ -29,15 +29,13 @@
 
 using namespace fawkes;
 
-/// @cond INTERNAL
 const char ArduinoComMessage::MSG_HEAD[] = {'A', 'T', ' '};
 
-// 5: 0xAA + payload_size/2 ... + checksum/2
-//const unsigned int ArduinoComMessage::MSG_METADATA_SIZE = 5;
-/// @endcond INTERNAL
-
-/** @class ArduinoComMessage "direct_com_message.h"
+/** @class ArduinoComMessage "com_message.h"
  * Arduino communication message.
+ *
+ * This object is used to create messages to be read by the Arduino
+ * flashed with fawkes_plugin_comm.ino.
  *
  * This object is used to create messages to send and parse messages
  * to read. It is designed to be generic, i.e., it provides methods to
@@ -61,7 +59,7 @@ const char ArduinoComMessage::MSG_HEAD[] = {'A', 'T', ' '};
  * - Command: a command field within a message, this is called tag
  *            and also command in OpenArduino. We chose the latter.
  *
- * @author Tim Niemueller
+ * @author Tim Niemueller, Nicolas Limpert
  */
 
 /** Constructor.
@@ -75,51 +73,105 @@ ArduinoComMessage::ArduinoComMessage()
 /** Constructor for initial command.
  * Create message for writing and add command for given message ID.
  * @param cmdid message ID of command to add
+ * @param value message value to be passed
  */
-ArduinoComMessage::ArduinoComMessage(command_id_t cmdid)
+ArduinoComMessage::ArduinoComMessage(command_id_t cmdid, unsigned int value)
 {
-    ctor();
-
-    set_command(cmdid);
+  ctor();
+  add_command(cmdid,  value);
 }
 
-/** Constructor for incoming message.
- * Create message for reading from incoming buffer.
- * @param msg the message of \p msg_size is expected to be escaped and to range from
- * the including 0xAA head byte to the checksum.
- * @param msg_size size of \p msg buffer
+/** Destructor.
  */
-ArduinoComMessage::ArduinoComMessage(const unsigned char *msg, size_t msg_size)
+ArduinoComMessage::~ArduinoComMessage()
 {
-    ctor();
+  dtor();
+}
+
+void
+ArduinoComMessage::dtor()
+{
+  free(data_);
 }
 
 void
 ArduinoComMessage::ctor()
 {
-    // always allocate 5 bytes, increase if necessary
-    data_size_ = 5;
+    // always allocate 128 bytes, increase if necessary
+    data_size_ = 128;
     data_ = (char *) malloc(data_size_);
+
+    // init buffer with zeros
     memset(data_, 0, data_size_);
+
+    // append header
     memcpy(data_, MSG_HEAD, 3);
+
+    // start first command after header
+    cur_buffer_index_ = 3;
+
+    // setup a minimum of 1 second to wait
+    msecs_to_wait_ = 1000;
 }
 
-/** Add a command header.
- * This only allocates the header. You must call the appropriate methods to
- * add the required data fields afterwards or the message will be
- * rejected/ignored by the Arduino.
- * @param cmdid command ID to add.
+/** Add a command.
+ * Given the command and its appropriate value, it will add it as a sequence as long as it is
+ * a valid command (in terms of defined in command_id_t). This method will return false
+ * when the command is invalid or another command with the same id was previously added.
+ * @param cmdid command to add - see command_id_t for reference
+ * @param value the value to the added command.
+ * @return true if command was successfully added
  */
-void
-ArduinoComMessage::set_command(command_id_t cmdid)
+bool
+ArduinoComMessage::add_command(command_id_t cmd, unsigned int value)
 {
-    data_[3] = 0xff & (cmdid + '0');
-    current_cmd_ = cmdid;
-}
+  // TODO: Test if "home" command also works if a "value" was accidentially appended!
+  bool valid_command = false;
+  char char_cmd = static_cast<char>(cmd);
 
-void ArduinoComMessage::set_number(unsigned int number)
-{
-    data_size_ += sprintf(data_+4,"%u", number);
+  if (cmd == command_id_t::CMD_CALIBRATE ||
+      cmd == command_id_t::CMD_X_NEW_POS ||
+      cmd == command_id_t::CMD_Y_NEW_POS ||
+      cmd == command_id_t::CMD_Z_NEW_POS ||
+      cmd == command_id_t::CMD_A_NEW_POS
+      )
+  {
+    valid_command = true;
+  }
+
+  if (valid_command == true)
+  {
+//    std::cout << "Buffer valid?: ";
+    // skip the AT header, therefore start at index 3
+    for (int i = 3; i < data_size_; i++)
+    {
+//      std::cout << (int) data_[i] << ' ';
+      // cancel when the command was already set
+      if (data_[i] == char_cmd)
+      {
+        valid_command = false;
+        break;
+      }
+    }
+  }
+//  std::cout << std::endl;
+
+  // check whether we're exceeding the data_size_
+  valid_command &= cur_buffer_index_ + 1 + num_digits(value) < data_size_ - 1;
+
+  if (valid_command == false)
+  {
+    return false;
+  }
+
+  data_[cur_buffer_index_] = char_cmd;
+  cur_buffer_index_++;
+
+  cur_buffer_index_ += sprintf(data_+cur_buffer_index_,"%u", value);
+  data_[cur_buffer_index_] = ' ';
+  cur_buffer_index_++;
+
+  return true;
 }
 
 /** Get access to buffer for sending.
@@ -131,24 +183,62 @@ void ArduinoComMessage::set_number(unsigned int number)
 boost::asio::const_buffer
 ArduinoComMessage::buffer()
 {
-    // Add terminator character to the end
-    data_[data_size_ - 1] = 'X';
+  // Add terminator character to the end
+  data_[data_size_ - 1] = '+';
 
-//    printf("Buffer: ");
-//    for (size_t i = 0; i < data_size_; ++i) {
-//        printf("%c", data_[i]);
-//    }
-//    printf("\n");
+#ifdef DEBUG
+  std::cout << "Buffer: ";
+//  printf("Buffer: ");
+  for (size_t i = 0; i < data_size_; ++i) {
+//      printf("%c", data_[i]);
+    std::cout << data_[i];
+  }
+  std::cout << std::endl;
+//  printf("\n");
+#endif
 
-    return boost::asio::buffer(data_, data_size_);
+  return boost::asio::buffer(data_, data_size_);
 }
 
-void ArduinoComMessage::set_msecs(unsigned int msecs)
+/** Set the number of msecs the associated action of this
+ * message is probably going to need to be executed (as
+ * long as the last value is smaller than the new value).
+ * @param msecs milliseconds
+ */
+void ArduinoComMessage::set_msecs_if_lower(unsigned int msecs)
 {
+  // TODO: Do we have to wait for each axis alone or just the longest running one?
+  if (msecs_to_wait_ < msecs)
+  {
     msecs_to_wait_ = msecs;
+  }
 }
 
+/** Get the number of msecs the associated action of this
+ * message is probably going to need to be executed
+ * @return msecs milliseconds
+ */
 unsigned int ArduinoComMessage::get_msecs()
 {
-    return msecs_to_wait_;
+  return msecs_to_wait_;
+}
+
+/** Get the data size of the message
+ * this is only used for error reporting
+ * @return data size of the message
+ */
+unsigned short
+ArduinoComMessage::get_data_size()
+{
+  return data_size_;
+}
+
+/** Get the current buffer index
+ * this is only used for error reporting
+ * @return current buffer index
+ */
+unsigned short
+ArduinoComMessage::get_cur_buffer_index()
+{
+  return cur_buffer_index_;
 }
