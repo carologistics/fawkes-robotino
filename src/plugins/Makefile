@@ -18,7 +18,6 @@ include $(BASEDIR)/etc/buildsys/config.mk
 
 SUBDIRS	= clips-motor-switch \
 	  voltagelogger \
-	  machine-signal \
 	  ax12_gripper \
 	  arduino \
 	  tag_vision \
