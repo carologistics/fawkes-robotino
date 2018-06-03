@@ -98,6 +98,23 @@
                                      (params robot ?robot)))
 )
 
+(defrule goal-reasoner-create-refill-shelf-maintain
+  (domain-facts-loaded)
+  (not (goal (id REFILL-SHELF-MAINTAIN)))
+  =>
+  (assert (goal (id REFILL-SHELF-MAINTAIN) (type MAINTAIN)))
+)
+
+(defrule goal-reasoner-create-refill-shelf-achieve
+  ?g <- (goal (id REFILL-SHELF-MAINTAIN) (mode SELECTED))
+  (not (goal (id REFILL-SHELF-ACHIEVE)))
+  (time $?now)
+  (wm-fact (key domain fact mps-type args? m ?mps t CS))
+  (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
+  =>
+  (assert (goal (id REFILL-SHELF-ACHIEVE) (parent REFILL-SHELF-MAINTAIN)
+                                          (params mps ?mps)))
+)
 
 ; ## Maintain production
 (defrule goal-reasoer-create-goal-production-maintain
@@ -136,6 +153,7 @@
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
   (not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side ?any-side)))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
   (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
   =>
@@ -144,6 +162,7 @@
                               (parent PRODUCTION-MAINTAIN)
                               (params robot ?robot
                                       mps ?mps
+                                      cc ?cc
                                       )))
   ; (assert (goal-already-tried FILL-CAP))
 )
@@ -449,6 +468,42 @@
  (modify ?g (mode EVALUATED))
  (modify ?gm (last-achieve ?now))
 )
+
+(defrule goal-reasoner-evaluate-completed-subgoal-refill-shelf
+  ?g <- (goal (id REFILL-SHELF-ACHIEVE) (parent REFILL-SHELF-MAINTAIN)
+             (mode FINISHED) (outcome COMPLETED)
+             (params mps ?mps))
+  ?p <- (goal(id REFILL-SHELF-MAINTAIN))
+  (wm-fact (key domain fact cs-color args? m ?mps col ?col))
+  =>
+  (if (eq ?col CAP_GREY)
+     then
+     (bind ?cc1 (sym-cat CCG (random-id)))
+     (bind ?cc2 (sym-cat CCG (random-id)))
+     (bind ?cc3 (sym-cat CCG (random-id)))
+     else
+     (bind ?cc1 (sym-cat CCB (random-id)))
+     (bind ?cc2 (sym-cat CCB (random-id)))
+     (bind ?cc3 (sym-cat CCB (random-id)))
+   )
+   (assert
+     (domain-object (name ?cc1) (type cap-carrier))
+     (domain-object (name ?cc2) (type cap-carrier))
+     (domain-object (name ?cc3) (type cap-carrier))
+     (wm-fact (key domain fact wp-unused args? wp ?cc1) (value TRUE))
+     (wm-fact (key domain fact wp-unused args? wp ?cc2) (value TRUE))
+     (wm-fact (key domain fact wp-unused args? wp ?cc3) (value TRUE))
+     (wm-fact (key domain fact wp-cap-color args? wp ?cc1 col ?col) (value TRUE))
+     (wm-fact (key domain fact wp-cap-color args? wp ?cc2 col ?col) (value TRUE))
+     (wm-fact (key domain fact wp-cap-color args? wp ?cc3 col ?col) (value TRUE))
+     (wm-fact (key domain fact wp-on-shelf args? wp ?cc1 m ?mps spot LEFT) (value TRUE))
+     (wm-fact (key domain fact wp-on-shelf args? wp ?cc2 m ?mps spot MIDDLE) (value TRUE))
+     (wm-fact (key domain fact wp-on-shelf args? wp ?cc3 m ?mps spot RIGHT) (value TRUE))
+   )
+   (modify ?g (mode EVALUATED))
+)
+
+
 
 (defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
   ?g <- (goal (id WPSPAWN-ACHIEVE) (parent WPSPAWN-MAINTAIN)
