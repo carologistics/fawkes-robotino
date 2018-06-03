@@ -114,12 +114,15 @@
     (domain-object (name O8) (type order))
     (domain-object (name O9) (type order))
 
+    (domain-fact (name wp-spawned-by) (param-values WP1 ?self))
     (domain-fact (name wp-base-color) (param-values WP1 BASE_NONE))
     (domain-fact (name wp-cap-color) (param-values WP1 CAP_NONE))
     (domain-fact (name wp-ring1-color) (param-values WP1 RING_NONE))
     (domain-fact (name wp-ring2-color) (param-values WP1 RING_NONE))
     (domain-fact (name wp-ring3-color) (param-values WP1 RING_NONE))
     (domain-fact (name wp-unused) (param-values WP1))
+ 
+    (domain-fact (name wp-spawned-by) (param-values WP2 ?self))
     (domain-fact (name wp-base-color) (param-values WP2 BASE_NONE))
     (domain-fact (name wp-cap-color) (param-values WP2 CAP_NONE))
     (domain-fact (name wp-ring1-color) (param-values WP2 RING_NONE))
