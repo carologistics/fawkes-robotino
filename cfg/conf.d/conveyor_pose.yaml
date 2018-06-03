@@ -9,6 +9,9 @@ plugins/conveyor_pose:
   # - the switch if is ignored, the plugin is always running
   debug: false
 
+  # forces ConveyorPosePlugin to think it's MPS_TARGET is a shelf
+  force_shelf: false
+
   # the point cloud that is used for detection (i.e. the scene)
   cloud_in: "/camera/depth/points"
 
@@ -207,5 +210,22 @@ plugins/conveyor_pose:
     bottom_cut: 0.055
     front_cut: 0.01
     back_cut: 0.5
+  shelf:
+    with_ll: # THESE VALUES IF LASERLINE IS AVAILABLE
+      left_cut: -0.035
+      right_cut: 0.035
+      top_cut: -0.02
+      bottom_cut: 0.04
+      front_cut: -0.01
+      back_cut: 0.03
+    without_ll: #THESE VALUES IF NOT
+      left_cut: -0.05
+      right_cut: 0.05
+      top_cut: -0.02
+      bottom_cut: 0.05
+      front_cut: 0.01
+      back_cut: 0.5
+
+
 
 
