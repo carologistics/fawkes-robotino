@@ -87,7 +87,7 @@ clips-executive:
       blackboard-preload: ["Position3DInterface"]
 
     rcll2017:
-      init: rcll2017/init.clp
+      init: ["rcll2017/init.clp" , "rcll2017/utils.clp" ]
       communication: ["rcll2017/refbox-comm-init.clp", "rcll2017/refbox-worldmodel.clp"]
       domain: rcll2017/domain.clp
       goal-reasoner: [ "rcll2017/goal-reasoner.clp" , "rcll2017/goal-production.clp" ]
