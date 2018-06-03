@@ -771,7 +771,7 @@
 	; If wm-fact plan bs-dispense is found assert the corresponding plan-action bs-dispense
 	(wm-fact
 		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values bs-dispense ?mps ?side ?wp ?goal-base-color)
+		(values bs-dispense ?action-specific-actor ?mps ?side ?wp ?goal-base-color)
 	)
 	=>
 	(assert
@@ -781,8 +781,8 @@
 			(goal-id ?goal-id)
 			(duration 4.0)
 			(action-name bs-dispense)
-			(param-names m side wp basecol)
-			(param-values ?mps ?side ?wp ?goal-base-color)
+			(param-names r m side wp basecol)
+			(param-values ?action-specific-actor ?mps ?side ?wp ?goal-base-color)
 		)
 	)
 )
@@ -1590,7 +1590,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
-								(values bs-dispense ?mps ?side ?wp ?goal-base-color)
+								(values bs-dispense ?action-specific-actor ?mps ?side ?wp ?goal-base-color)
 							)
 						)
 						(assert
