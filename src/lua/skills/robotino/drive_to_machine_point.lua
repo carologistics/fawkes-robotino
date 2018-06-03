@@ -232,6 +232,7 @@ fsm:define_states{ export_to=_M,
   -- DIRECT_MPS_ALIGN is to transit to a motion once the laser line of interest is seen.
 --  {"DIRECT_MPS_ALIGN",         SkillJumpState, skills={{motor_move}},       final_to="FINAL", fail_to="FAILED" },
   {"DIRECT_MPS_ALIGN",         SkillJumpState, skills={{motor_move}},       final_to="DIRECT_MPS_ALIGN", fail_to="FAILED" },
+  {"DIRECT_MPS_ALIGN_CORRECT_ORI",         SkillJumpState, skills={{motor_move}},       final_to="FINAL", fail_to="FAILED" },
 }
 
 fsm:add_transitions{
@@ -241,7 +242,9 @@ fsm:add_transitions{
   { "INIT",    "FAILED",                   timeout=5,  desc="timeout" }, -- ONLY FOR TESTING!
   { "INIT",    "SKILL_DRIVE_TO",           cond=true },
   { "SKILL_DRIVE_TO", "DIRECT_MPS_ALIGN",    cond="laser_line_found(self)" },
+  { "DIRECT_MPS_ALIGN", "DIRECT_MPS_ALIGN_CORRECT_ORI",    cond="vars.mps_align_tries > NUM_DIRECT_MPS_ALIGN_TRIES" },
   { "DIRECT_MPS_ALIGN", "FAILED",          cond="not laser_line_still_visible(self)" },
+  { "DIRECT_MPS_ALIGN_CORRECT_ORI", "FAILED",          cond="not laser_line_still_visible(self)" },
 }
 
 function INIT:init()
@@ -331,5 +334,21 @@ function DIRECT_MPS_ALIGN:init()
   end
 --  printf ("drive: " .. move_to_point.x .. " " .. move_to_point.y + self.fsm.vars.move_y .. " " .. line:bearing())
   self.args["motor_move"] = {x = move_to_point.x, y = move_to_point.y + self.fsm.vars.move_y, z = 0, ori=line:bearing(), vel_trans=MAX_VEL_MOTOR_MOVE, TOLERANCE =     { x=0.02, y=0.02, ori=0.01 }}
+  self.fsm.vars.mps_align_tries = self.fsm.vars.mps_align_tries + 1
+end
+
+function DIRECT_MPS_ALIGN_CORRECT_ORI:init()
+  -- TODO: We might lose the laser line at some point, make sure that we transit correctly according to a lost laserline!
+  local line = self.fsm.vars.lines[self.fsm.vars.matched_line:id()]
+
+  self.fsm.vars.line_point = llutils.point_in_front(llutils.center(line), self.fsm.vars.x_at_mps)
+
+  local move_to_point = tfm.transform6D(
+         { x=self.fsm.vars.line_point.x, y=self.fsm.vars.line_point.y, z=0,
+           ori=fawkes.tf.create_quaternion_from_yaw(self.fsm.vars.line_point.ori) },
+           "/base_laser", "/base_link")
+
+--  printf ("drive: " .. move_to_point.x .. " " .. move_to_point.y + self.fsm.vars.move_y .. " " .. line:bearing())
+  self.args["motor_move"] = {ori=line:bearing(), vel_trans=MAX_VEL_MOTOR_MOVE, TOLERANCE =     { x=0.02, y=0.02, ori=0.01 }}
   self.fsm.vars.mps_align_tries = self.fsm.vars.mps_align_tries + 1
 end
