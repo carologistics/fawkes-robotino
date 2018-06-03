@@ -257,8 +257,18 @@
 			
 			(bind ?cs_buffered (wm-key-arg ?wm-fact:key col))
 		)
-
 		(pb-set-field ?m "cs_buffered" ?cs_buffered)
+
+                (do-for-fact ((?wm-fact wm-fact))
+			(and
+				(wm-key-prefix ?wm-fact:key (create$ domain fact cs-color))
+				(eq ?name (wm-key-arg ?wm-fact:key m))
+			)
+			
+			(bind ?cs_color (wm-key-arg ?wm-fact:key col))
+		)
+		(pb-set-field ?m "cap_color" ?cs_color)
+
 	)
 
 	; Add information for machine with wp-at
