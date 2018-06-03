@@ -454,6 +454,19 @@ ConveyorPoseThread::loop()
     if (cfg_record_model_) {
       record_model();
       cloud_publish(default_model_, cloud_out_model_);
+
+      tf::Stamped<tf::Pose> initial_pose_cam;
+      try {
+        tf_listener->transform_pose(
+            trimmed_scene_->header.frame_id,
+            tf::Stamped<tf::Pose>(initial_guess_laser_odom_, Time(0,0), initial_guess_laser_odom_.frame_id),
+            initial_pose_cam);
+      } catch (tf::TransformException &e) {
+        logger->log_error(name(),e);
+        return;
+      }
+      tf_publisher->send_transform(
+            tf::StampedTransform(initial_pose_cam, initial_pose_cam.stamp, initial_pose_cam.frame_id, "conveyor_pose_initial_guess"));
     }
     else {
       if (bb_mutex_.try_lock()) {
