@@ -212,8 +212,18 @@ function laser_line_found(self)
   return self.fsm.vars.line_point ~= nil
 end
 
+function laser_line_still_visible(self)
+  if self.fsm.vars.matched_line ~= nil then
+    return self.fsm.vars.lines[self.fsm.vars.matched_line:id()]:visibility_history() >= MIN_VIS_HIST_LINE_SEARCH
+  else
+    return false
+  end
+end
+
 fsm:define_states{ export_to=_M,
-  closure={navgraph=navgraph, node_is_valid=node_is_valid, parameters_valid=parameters_valid, laser_line_found=laser_line_found, NUM_DIRECT_MPS_ALIGN_TRIES=NUM_DIRECT_MPS_ALIGN_TRIES},
+  closure={navgraph=navgraph, node_is_valid=node_is_valid, parameters_valid=parameters_valid,
+           laser_line_still_visible=laser_line_still_visible, laser_line_found=laser_line_found, NUM_DIRECT_MPS_ALIGN_TRIES=NUM_DIRECT_MPS_ALIGN_TRIES},
+
   {"INIT",                     JumpState},
 
   -- DRIVE_TO fails when the goal cannot be reached - should we still try to perform an MPS_ALIGN?
@@ -231,7 +241,7 @@ fsm:add_transitions{
   { "INIT",    "FAILED",                   timeout=5,  desc="timeout" }, -- ONLY FOR TESTING!
   { "INIT",    "SKILL_DRIVE_TO",           cond=true },
   { "SKILL_DRIVE_TO", "DIRECT_MPS_ALIGN",    cond="laser_line_found(self)" },
-  { "DIRECT_MPS_ALIGN", "FINAL",    cond="vars.mps_align_tries > NUM_DIRECT_MPS_ALIGN_TRIES" },
+  { "DIRECT_MPS_ALIGN", "FAILED",          cond="not laser_line_still_visible(self)" },
 }
 
 function INIT:init()
@@ -319,6 +329,7 @@ function DIRECT_MPS_ALIGN:init()
   if self.fsm.vars.mps_align_tries < NUM_DIRECT_MPS_ALIGN_TRIES - 2 then
     move_to_point.x = move_to_point.x / 2
   end
-  self.args["motor_move"] = {x = move_to_point.x, y = move_to_point.y + self.fsm.vars.move_y, z = 0, ori=line:bearing(), vel_trans=MAX_VEL_MOTOR_MOVE}
+--  printf ("drive: " .. move_to_point.x .. " " .. move_to_point.y + self.fsm.vars.move_y .. " " .. line:bearing())
+  self.args["motor_move"] = {x = move_to_point.x, y = move_to_point.y + self.fsm.vars.move_y, z = 0, ori=line:bearing(), vel_trans=MAX_VEL_MOTOR_MOVE, TOLERANCE =     { x=0.02, y=0.02, ori=0.01 }}
   self.fsm.vars.mps_align_tries = self.fsm.vars.mps_align_tries + 1
 end
