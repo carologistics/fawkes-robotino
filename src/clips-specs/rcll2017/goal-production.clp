@@ -310,43 +310,27 @@
   (assert (goal-already-tried DELIVER))
 )
 
-
 ; ## Goal Evaluation
 (defrule goal-reasoner-evaluate-completed-subgoal-produce-c0
   ?g <- (goal (id PRODUCE-C0) (parent ?parent-id)
               (mode FINISHED) (outcome COMPLETED)
-                              (params robot ?robot
-                                      bs ?bs
-                                      bs-side ?bs-side
-                                      bs-color ?base-color
-                                      mps ?mps
-                                      cs-color ?cap-color
-                                      order ?order
-                                      ))
+              (params $?params))
  ?gm <- (goal-meta (goal-id ?parent-id))
  (plan (goal-id PRODUCE-C0)
    (id ?plan-id))
  ?p <-(plan-action
-   (plan-id ?plan-id)
-   (action-name bs-dispense)
-   (param-names r m side wp basecol)
+         (plan-id ?plan-id)
+         (action-name bs-dispense)
+         (param-names r m side wp basecol)
          (param-values ?robot ?bs ?bs-side ?wp ?base-color))
  (time $?now)
  (wm-fact (key domain fact self args? r ?robot))
- ;ToDO:  Remove param from the matching. This is dangerouns if params changed
- ;ToDo: function support for processing goal params by arg
- ;ToDo: function support for processing action params by name
  =>
+ (bind ?order (get-param-by-arg ?params order))
  (printout t "Goal '" PRODUCE-C0 "' has been completed, Evaluating" crlf)
  (assert (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (value TRUE)))
  (modify ?g (mode EVALUATED))
  (modify ?gm (last-achieve ?now))
-)
-
-
-(deffunction random-id ()
-  "Return a random task id"
-  (return (random 0 1000000000))
 )
 
 (defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
