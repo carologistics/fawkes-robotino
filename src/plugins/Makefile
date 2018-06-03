@@ -33,4 +33,4 @@ SUBDIRS	= clips-motor-switch \
 
 include $(BUILDSYSDIR)/rules.mk
 
-gazebo: ax12_gripper tag_vision machine-signal arduino
+gazebo: ax12_gripper tag_vision arduino
