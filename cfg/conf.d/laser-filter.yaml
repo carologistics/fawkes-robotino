@@ -168,7 +168,7 @@ plugins/laser-filter:
         to: 125
 
   colli:
-    active: false
+    active: true
     # URG input interface
     in/urg: Laser360Interface::Laser urg-filtered
     in/map: Laser360Interface::Map Laser

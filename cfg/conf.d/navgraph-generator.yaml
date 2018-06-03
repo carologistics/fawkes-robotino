@@ -69,7 +69,7 @@ navgraph-generator-mps:
   # This may be either voronoi or grid.
   # For grid also see the specific parameters below.
   # For voronoi it is recommended to set add-corners-as-obstacles to false.
-  algorithm: grid
+  algorithm: voronoi
 
   # The width (length of narrow edge) of MPS stations; m
   mps-width: 0.3
@@ -89,7 +89,7 @@ navgraph-generator-mps:
   # Set to true to add the corners of an MPS as obstacles themselves.
   # Otherwise only the center point of the MPS is added as obstacles
   # (this is still added if corners are enabled).
-  add-corners-as-obstacles: true
+  add-corners-as-obstacles: false
 
   # The minimum distances edges must have from any occipied cell in the map; m
   map-cell-min-dist: 0.4

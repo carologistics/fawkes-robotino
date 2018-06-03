@@ -8,7 +8,7 @@ default-properties:
     # Max. distance between actual and target positions to deem the target
     # reached. This value is for intermediate nodes on a path; m
     # The value can be overwritten per node in the graph file.
-    - travel_tolerance: 1.5
+    - travel_tolerance: 0.7
 
     # Max. distance between actual and target positions to deem the target
     # reached. This value is for the last node on a path; m
@@ -104,27 +104,25 @@ nodes:
 # Cyan
   - !unconnected
     name: C-ins-out
-    pos: [4.75, 0.5]
+    pos: [3.3, -0.55]
     properties:
       - always-copy: true
   - !unconnected
     name: C-ins-in
-    pos: [4.75, 1.5]
+    pos: [3.3, 0.75]
     properties:
       - always-copy: true
-      - orientation: 1.5
 # Magenta
   - !unconnected
     name: M-ins-out
-    pos: [-4.75, 0.5]
+    pos: [-3.3, -0.55]
     properties:
       - always-copy: true
   - !unconnected
     name: M-ins-in
-    pos: [-4.75, 1.5]
+    pos: [-3.3, 0.75]
     properties:
       - always-copy: true
-      - orientation: 1.7
 
 # wait points
   - !unconnected

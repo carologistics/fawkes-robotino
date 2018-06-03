@@ -65,7 +65,7 @@ navgraph:
   visualization:
 
     # Set to true to enable visualization by publishing messages for rviz
-    enable: false
+    enable: true
 
     # The color for the cost factors (from constraints) of an edge is
     # scaled from red over orange to yellow (from 0.0 to 1.0). The
