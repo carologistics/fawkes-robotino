@@ -66,7 +66,7 @@
   (bind ?time (pb-field-value ?p "game_time"))
   (bind ?sec (pb-field-value ?time "sec"))
   (bind ?nsec (pb-field-value ?time "nsec"))
-  (assert (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec ?nsec)))
+  (assert (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec (/ ?nsec 1000))))
   (assert (wm-fact (id "/refbox/points/magenta") (type UINT) (value (pb-field-value ?p "points_magenta")) ))
   (assert (wm-fact (id "/refbox/points/cyan") (type UINT) (value (pb-field-value ?p "points_cyan")) ))
 )
@@ -129,24 +129,23 @@
   (retract ?pf)
 )
 
+
 (defrule refbox-recv-MachineInfo
   ?pb-msg <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   =>
   ; (printout t "***** Received MachineInfo *****" crlf)
-  (retract ?pb-msg)
   (foreach ?m (pb-field-list ?p "machines")
     (bind ?m-name (sym-cat (pb-field-value ?m "name")))
     (bind ?m-type (sym-cat (pb-field-value ?m "type")))
     (bind ?m-team (sym-cat (pb-field-value ?m "team_color")))
     (bind ?m-state (sym-cat (pb-field-value ?m "state")))
     (if (not (any-factp ((?wm-fact wm-fact)) 
-              (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-type)) 
+              (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-state))
                     (eq ?m-name (wm-key-arg ?wm-fact:key m)))))
       then
       (if (eq ?team-color ?m-team) then
-        (assert (wm-fact (key domain fact mps-type args? m ?m-name t ?m-type) (type BOOL) (value TRUE) ))
-        (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state) (type BOOL) (value TRUE) )) 
+        (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state) (type BOOL) (value TRUE) ))
       )
     ; set available rings for ring-stations
       (if (eq ?m-type RS) then
@@ -164,6 +163,59 @@
     )
    )
 )
+
+
+(defrule game-receive-field-layout-protobuf
+"At the end of the exploration phase, the Refbox sends the true field layout.
+ Assert a field-ground-truth fact for each machine the Refbox told us about."
+  ; (declare (salience ?*PRIORITY-LOW*))
+  (not (wm-fact (key refbox field-ground-truth complete) (value TRUE)))
+  ?msg <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
+=>
+  (bind ?rcv-ground-truth FALSE)
+  (bind ?incomplete-ground-truth FALSE)
+  (foreach ?machine (pb-field-list ?p "machines")
+    (bind ?name (sym-cat (pb-field-value ?machine "name")))
+    (bind ?rot  FALSE)
+    (bind ?zone FALSE)
+    (bind ?type FALSE)
+    (if (pb-has-field ?p "rotation") then
+      (bind ?rot  (pb-field-value ?machine "rotation"))
+    )
+    (if (pb-has-field ?p "zone") then
+      (bind ?zone (clips-name (pb-field-value ?machine "zone")))
+    )
+    (if (pb-has-field ?p "type") then
+      (bind ?type (sym-cat (pb-field-value ?machine "type")))
+    )
+
+    (if (and ?zone ?rot ?type) then
+       (printout t "Received ground-truth for Machine: " ?name
+        ", rot: " ?rot ", zone: " ?zone ", type: " ?type crlf)
+      (bind ?yaw (deg-to-rad ?rot))
+      (assert
+        (wm-fact (key refbox field-ground-truth name args? m ?name) (type BOOL) (value TRUE))
+        (wm-fact (key refbox field-ground-truth mtype args? m ?name) (type UNKNOWN) (value ?type))
+        (wm-fact (key refbox field-ground-truth zone args? m ?name) (type UNKNOWN) (value ?zone))
+        (wm-fact (key refbox field-ground-truth yaw args? m ?name) (type FLOAT) (value ?yaw))
+        (wm-fact (key refbox field-ground-truth orientation args? m ?name) (type FLOAT) (value ?rot))
+      )
+      (bind ?rcv-ground-truth TRUE)
+    else
+      (bind ?incomplete-ground-truth TRUE)
+      (printout t "Received incomplete ground-truth from refbox. Machine: " ?name
+        ", rot: " ?rot ", zone: " ?zone ", type: " ?type crlf)
+    )
+  )
+  (if (and ?rcv-ground-truth
+            (not ?incomplete-ground-truth))
+   then
+   (printout t "Received ground-truth complete"crlf)
+    (assert (wm-fact (key refbox field-ground-truth complete) (type BOOL) (value TRUE)))
+  )
+  ; (retract ?msg)
+)
+
 
 (defrule refbox-recv-RingInfo
   ?pf <- (protobuf-msg (type "llsf_msgs.RingInfo") (ptr ?p))

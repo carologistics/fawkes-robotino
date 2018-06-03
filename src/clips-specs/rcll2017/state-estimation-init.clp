@@ -14,3 +14,14 @@
   =>
   (blackboard-open-reading "Position3DInterface" "Pose")
 )
+
+(defrule state-estimation-open-pose-navgraph-realted-interfaces
+  "Open the Navgraph blackboard interfaces ."
+  (executive-init)
+  (ff-feature-loaded blackboard)
+  =>
+  (blackboard-open "NavGraphWithMPSGeneratorInterface" "/navgraph-generator-mps")
+  (blackboard-open "NavGraphGeneratorInterface" "/navgraph-generator")
+  (blackboard-open "NavigatorInterface" "Navigator")
+  ; (blackboard-open "MotorInterface" "Robotino")
+)

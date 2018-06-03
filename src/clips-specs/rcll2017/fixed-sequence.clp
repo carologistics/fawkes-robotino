@@ -42,8 +42,7 @@
 )
 
 (defrule goal-expander-enter-field
-  ?p <- (goal (mode EXPANDED) (id ?parent))
-  ?g <- (goal (mode SELECTED) (parent ?parent) (id ENTER-FIELD))
+  ?g <- (goal (mode SELECTED) (id ENTER-FIELD))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
 =>
