@@ -65,7 +65,7 @@
                    FINISHED|EVALUATED))
   )
 =>
-  (printout t "Goal " ?subgoal-id " selected!" crlf)
+  ;(printout t "Goal " ?subgoal-id " selected!" crlf)
   (modify ?g (mode SELECTED))
   (assert (goal-meta (goal-id ?subgoal-id)))
 )
@@ -120,7 +120,7 @@
   (goal (parent ?pg-id))
   (time $?now)
   =>
-  (printout debug "Goal '" ?pg-id " failed because all subgoald been REJECTED" crlf)
+;  (printout debug "Goal '" ?pg-id " failed because all subgoald been REJECTED" crlf)
   (modify ?pg (mode FINISHED) (outcome FAILED))
 )
 
@@ -133,8 +133,8 @@
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
   =>
-  (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
-    "') has been completed, Evaluating" crlf)
+;  (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
+;    "') has been completed, Evaluating" crlf)
   (modify ?g (mode EVALUATED))
   (modify ?m (last-achieve ?now))
 )
@@ -145,7 +145,7 @@
   ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome ?outcome))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
-  (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
+ ; (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
   (if (eq ?outcome FAILED)
     then
     (bind ?num-tries (+ ?num-tries 1))
@@ -161,7 +161,7 @@
           (mode EVALUATED) (outcome ?outcome))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries) (max-tries ?max-tries))
   =>
-  (printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
+ ; (printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
 
   ;Flush plans of this goal
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
@@ -178,15 +178,15 @@
      )
      (retract ?p)
     )
-    (printout t "Goal '" ?sg:id "' (part of '" ?sg:parent
-       "') has, cleaning up" crlf)
+  ;  (printout t "Goal '" ?sg:id "' (part of '" ?sg:parent
+  ;     "') has, cleaning up" crlf)
     (retract ?sg)
   )
 
   (if (or (eq ?goal-type MAINTAIN)
           (and (eq ?outcome FAILED) (<= ?num-tries ?max-tries)))
     then
-      (printout t "Triggering re-expansion" crlf)
+   ;   (printout t "Triggering re-expansion" crlf)
       (modify ?g (mode SELECTED) (outcome UNKNOWN))
     else
       (retract ?g ?gm)
