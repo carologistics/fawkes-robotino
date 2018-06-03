@@ -56,7 +56,7 @@ plugins/static-transforms:
       child_frame: !frame conveyor_calib
       trans_x: 0.114
       trans_y: 0
-      trans_z: 0
+      trans_z: 0.03
 
     cam_conveyor:
       frame: !frame gripper
