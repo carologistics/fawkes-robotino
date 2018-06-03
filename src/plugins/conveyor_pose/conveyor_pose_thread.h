@@ -133,6 +133,9 @@ private:
   fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
   fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
 
+  bool is_target_shelf();
+  bool cfg_force_shelf_;
+
   void update_station_information(fawkes::ConveyorPoseInterface::SetStationMessage &msg);
 
   //Mapping from {Type,Target} to its corresponding model path
@@ -162,6 +165,20 @@ private:
   std::atomic<float> cfg_bottom_cut_no_ll_;
   std::atomic<float> cfg_front_cut_no_ll_;
   std::atomic<float> cfg_back_cut_no_ll_;
+
+  std::atomic<float> cfg_shelf_left_cut_;
+  std::atomic<float> cfg_shelf_right_cut_;
+  std::atomic<float> cfg_shelf_top_cut_;
+  std::atomic<float> cfg_shelf_bottom_cut_;
+  std::atomic<float> cfg_shelf_front_cut_;
+  std::atomic<float> cfg_shelf_back_cut_;
+
+  std::atomic<float> cfg_shelf_left_cut_no_ll_;
+  std::atomic<float> cfg_shelf_right_cut_no_ll_;
+  std::atomic<float> cfg_shelf_top_cut_no_ll_;
+  std::atomic<float> cfg_shelf_bottom_cut_no_ll_;
+  std::atomic<float> cfg_shelf_front_cut_no_ll_;
+  std::atomic<float> cfg_shelf_back_cut_no_ll_;
 
   std::atomic<float> cfg_voxel_grid_leaf_size_;
 
