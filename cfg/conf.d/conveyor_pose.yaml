@@ -158,7 +158,7 @@ plugins/conveyor_pose:
   # The cube is limited by the left, right, top, bottom, front and back_cut values.
   # The namings are from the point of view of the realsense camera
   #
-  # The gripper and without_ll values are given and applied
+  # The without_ll values are given and applied
   # in the frame of the conveyor cam.
   # From the point of view of the realsense cam, the coordinate axes are:
   # 
@@ -178,8 +178,6 @@ plugins/conveyor_pose:
   # initial_tf guess. However, to minimize computational cost and 
   # since rotation of initial_tf to conveyor_cam is small, rotation
   # is NEGLECTED!
-  gripper:
-    bottom: -0.025 #this is the bottom of the gripper, so a top_cut in terms of the cutting cube
   without_ll:
     left_cut: -0.05
     right_cut: 0.05
