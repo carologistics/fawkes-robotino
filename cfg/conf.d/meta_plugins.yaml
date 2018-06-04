@@ -14,15 +14,15 @@ fawkes/meta_plugins:
   m-robot-memory: mongodb,robot-memory
   m-no-agent: m-skiller,m-clips,clips-pddl-parser
   m-clips-executive: m-no-agent,clips-executive,clips-executive-rest-api
-  m-skiller: ros,m-fv-vision,navgraph,navgraph-generator,navgraph-generator-mps,skiller,realsense,conveyor-pose,ros-pcl,skiller-rest-api,mps-laser-gen
+  m-skiller: ros,m-fv-vision,navgraph,navgraph-generator,navgraph-generator-mps,skiller,realsense,conveyor-pose,ros-pcl,skiller-rest-api #,mps-laser-gen
   m-full: m-clips-executive
 
   #
   # Gazebo stuff
   #
   gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,gazsim-gripper,gazsim-conveyor,laser_front_dist,webview
-  gazsim-meta-robotino-ros: gazsim-meta-robotino,ros,ros-clock,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,amcl,navgraph,navgraph-generator,navgraph-generator-mps,laser-lines,gazsim-vis-localization,skiller,mps-laser-gen,colli #,ros-cmdvel,ros-navigator
-  gazsim-meta-robotino-no-ros: gazsim-meta-robotino,amcl,navgraph,navgraph-generator,navgraph-generator-mps,laser-lines,colli,gazsim-vis-localization,skiller,mps-laser-gen
+  gazsim-meta-robotino-ros: gazsim-meta-robotino,ros,ros-clock,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,amcl,navgraph,navgraph-generator,navgraph-generator-mps,laser-lines,gazsim-vis-localization,skiller,colli,map-lasergen #,ros-cmdvel,ros-navigator,mps-laser-gen
+  gazsim-meta-robotino-no-ros: gazsim-meta-robotino,amcl,navgraph,navgraph-generator,navgraph-generator-mps,laser-lines,colli,gazsim-vis-localization,skiller,map-lasergen #,mps-laser-gen
   gazsim-meta-robotino-vision-high-level: gazsim-tag-vision,gazsim-machine-signal
   gazsim-meta-robotino-vision-low-level: fvbase,gazsim-webcam,tag_vision,gazsim-machine-signal
   gazsim-organization: gazebo,gazsim-comm,gazsim-llsfrbcomm
@@ -38,5 +38,5 @@ fawkes/meta_plugins:
   m-base-joy-safe: m-base-bare,laser,laser-filter,joystick,joystick-teleop
   m-base-gripper: arduino,dynamixel,ax12_gripper
   m-base-ros: ros,ros-pcl,ros-odometry,ros-tf,ros-laserscan #ros-cmdvel,ros-navigator
-  m-base-laser: laser,laser-filter,m-base-ros,laser-pointclouds,laser-cluster,laser-lines
+  m-base-laser: laser,laser-filter,m-base-ros,laser-pointclouds,laser-cluster,laser-lines,map-lasergen
   m-base-full: m-base-bare,m-base-laser,m-base-gripper,m-base-ros,amcl,m-base-joy,laser_front_dist,colli
