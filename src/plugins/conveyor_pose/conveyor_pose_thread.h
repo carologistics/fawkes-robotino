@@ -149,8 +149,6 @@ private:
   std::string cfg_record_path_;
 
 
-  std::atomic<float> cfg_gripper_bottom_;
-
   std::atomic<float> cfg_left_cut_;
   std::atomic<float> cfg_right_cut_;
   std::atomic<float> cfg_top_cut_;
