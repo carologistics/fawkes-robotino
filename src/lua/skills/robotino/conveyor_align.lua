@@ -21,51 +21,61 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "conveyor_align"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"motor_move", "ax12gripper"}
 depends_interfaces = { 
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "if_conveyor", type = "Position3DInterface", id="conveyor_pose/pose"},
    {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
+   {v = "conveyor_config", type = "ConveyorConfigInterface", id="conveyor_pose/config"},
    {v = "if_gripper", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 
 documentation      = [==[aligns the robot orthogonal to the conveyor by using the
                          conveyor vision
-Parameters:
-       @param disable_realsense_afterwards   disable the realsense after aligning
-
+                         @param product_present boolean If a product lies on the
+                                                conveyor. The new conveyor vision
+                                                needs this information in form of
+                                                an interface message.
 ]==]
 
 -- Initialize as skill module
+-- TODO Argument if there is a product on the conveyor
 
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
+local TOLERANCE_Y = 0.003
+local TOLERANCE_Z = 0.003
+local MAX_TRIES = 5
+local X_DEST_POS = 0.08
+local Z_DEST_POS = 0.048
+local Z_DEST_POS_WITH_PUCK = 0.052
+local cfg_frame_ = "gripper"
 
 function no_writer()
    return not if_conveyor:has_writer()
 end
 
 function see_conveyor()
-   return if_conveyor:visibility_history() > 10
+   return if_conveyor:visibility_history() > 3
 end
 
 function tolerances_ok(self)
    local pose = pose_des(self)
    print("pose_y = " .. pose.y)
-   if math.abs(pose.y) <= self.fsm.vars.TOLERANCE_Y and math.abs(pose.z) <= self.fsm.vars.TOLERANCE_Z and max_tries_not_reached(self) then
+   if math.abs(pose.y) <= TOLERANCE_Y and math.abs(pose.z) <= TOLERANCE_Z and max_tries_not_reached(self) then
       return true
    end
 end
 
 function max_tries_not_reached(self)
-   return (self.fsm.vars.counter < self.fsm.vars.MAX_TRIES)
+   return (self.fsm.vars.counter < MAX_TRIES)
 end
 
 function pose_offset(self)
-   if not if_gripper:is_holds_puck() then
-      self.fsm.vars.Z_DEST_POS = self.fsm.vars.Z_DEST_POS_PICK
+   if if_gripper:is_holds_puck() then
+      Z_DEST_POS = Z_DEST_POS_WITH_PUCK
    end
 
    local from = { x = if_conveyor:translation(0),
@@ -77,7 +87,7 @@ function pose_offset(self)
                           w = if_conveyor:rotation(3),
                         }
                 }
-   local cp = tfm.transform6D(from, if_conveyor:frame(), self.fsm.vars.cfg_frame_)
+   local cp = tfm.transform6D(from, if_conveyor:frame(), cfg_frame_)
 
    -- TODO check nil
 
@@ -86,7 +96,7 @@ function pose_offset(self)
    if math.abs(ori) > 0.7 then
       ori = 0
    end
-   print("z_pose intial: " .. cp.z)
+
    return { x = cp.x,
             y = cp.y,
             z = cp.z,
@@ -96,82 +106,35 @@ end
 
 function pose_des(self)
    local pose = pose_offset(self)
-   pose.x = pose.x - self.fsm.vars.X_DEST_POS
-   pose.y = pose.y - self.fsm.vars.Y_DEST_POS
-   pose.z = pose.z + self.fsm.vars.Z_DEST_POS
+   pose.x = pose.x - X_DEST_POS
+   pose.z = pose.z + Z_DEST_POS
    return pose
-end
-
-function round(x)
-  if x%2 ~= 0.5 then
-     return math.floor(x+0.5)
-  end
-  return x-0.5
 end
 
 fsm:define_states{ export_to=_M,
    closure={},
    {"INIT", JumpState},
-   {"RESET_GRIPPER_POS", SkillJumpState, skills={{ax12gripper}}, final_to="CHECK_VISION", fail_to="CLEANUP_FAILED"},
    {"CHECK_VISION", JumpState},
-   {"DRIVE", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="DECIDE_TRY", fail_to="CLEANUP_FAILED"},
+   {"DRIVE", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="DECIDE_TRY", fail_to="FAILED"},
    {"DECIDE_TRY", JumpState},
-   {"CLEANUP_FINAL", JumpState},
-   {"CLEANUP_FAILED", JumpState},
 }
 
 fsm:add_transitions{
-   {"INIT", "RESET_GRIPPER_POS", cond=true},
-   {"CHECK_VISION", "CLEANUP_FAILED", timeout=20, desc="No vis_hist on conveyor vision"},
-   {"CHECK_VISION", "CLEANUP_FAILED", cond=no_writer, desc="No writer for conveyor vision"},
+   {"INIT", "CHECK_VISION", cond=true},
+   {"CHECK_VISION", "FAILED", timeout=5, desc="No vis_hist on conveyor vision"},
+   {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"CHECK_VISION", "DRIVE", cond=see_conveyor},
-   {"DECIDE_TRY", "CLEANUP_FINAL", cond=tolerances_ok, desc="Robot is aligned"},
+   {"DECIDE_TRY", "FINAL", cond=tolerances_ok, desc="Robot is aligned"},
    {"DECIDE_TRY", "CHECK_VISION", cond=max_tries_not_reached, desc="Do another alignment"},
-   {"DECIDE_TRY", "CLEANUP_FAILED", cond=true, desc="Couldn't align within MAX_TRIES"},
-   {"CLEANUP_FINAL", "FINAL", cond=true, desc="Cleaning up after final"},
-   {"CLEANUP_FAILED", "FAILED", cond=true, desc="Cleaning up after fail"},
+   {"DECIDE_TRY", "FAILED", cond=true, desc="Couldn't align within MAX_TRIES"},
 }
 
 function INIT:init()
-   print_info("INIT: CONVEYOR_ALIGN")
-
-   self.fsm.vars.PICK_OFFSET = 0
-   if config:exists("/skills/conveyor_align/pick_offset") then
-      self.fsm.vars.PICK_OFFSET = config:get_float("/skills/conveyor_align/pick_offset")
-   end
-   self.fsm.vars.TOLERANCE_Y = 0.003
-   if config:exists("/skills/conveyor_align/tolerance_y") then
-      self.fsm.vars.TOLERANCE_Y = config:get_float("/skills/conveyor_align/tolerance_y")
-   end
-   self.fsm.vars.TOLERANCE_Z = 0.003
-   if config:exists("/skills/conveyor_align/tolerance_z") then
-      self.fsm.vars.TOLERANCE_Z = config:get_float("/skills/conveyor_align/tolerance_z")
-   end
-   self.fsm.vars.MAX_TRIES = 10
-   if config:exists("/skills/conveyor_align/max_tries") then
-      self.fsm.vars.MAX_TRIES = config:get_float("/skills/conveyor_align/max_tries")
-   end
-   self.fsm.vars.X_DEST_POS = 0.16
-   if config:exists("/skills/conveyor_align/x_dest_pos") then
-      self.fsm.vars.X_DEST_POS = config:get_float("/skills/conveyor_align/x_dest_pos")
-   end
-   self.fsm.vars.Y_DEST_POS = 0.005
-   if config:exists("/skills/conveyor_align/y_dest_pos") then
-      self.fsm.vars.Y_DEST_POS = config:get_float("/skills/conveyor_align/y_dest_pos")
-   end
-   self.fsm.vars.Z_DEST_POS = 0.048
-   if config:exists("/skills/conveyor_align/z_dest_pos") then
-      self.fsm.vars.Z_DEST_POS = config:get_float("/skills/conveyor_align/z_dest_pos")
-   end
-   self.fsm.vars.Z_DEST_POS_PICK = self.fsm.vars.Z_DEST_POS + self.fsm.vars.PICK_OFFSET
-   self.fsm.vars.cfg_frame_ = "gripper"
-
    self.fsm.vars.counter = 0
    conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
-end
-
-function RESET_GRIPPER_POS:init()
-   self.args["ax12gripper"] = {command="RESET_Z_POS"}
+   if self.fsm.vars.product_present then
+      conveyor_config:msgq_enqueue_copy(conveyor_config.EnableProductRemovalMessage:new())
+   end
 end
 
 function DECIDE_TRY:init()
@@ -181,25 +144,28 @@ end
 
 function DRIVE:init()
    local pose = pose_des(self)
-   self.args["motor_move"] = {x = pose.x, y = pose.y, tolerance = { x=0.002, y=0.002, ori=0.01 }, vel_trans = 0.05} --TODO set tolerances as defined in the global variable
-   local z_position = round(pose.z * 1000)
-   print("z_pose: " .. pose.z)
+
+   self.args["motor_move"] = {x = pose.x, y = pose.y, tolerance = { x=0.002, y=0.002, ori=0.01 }, vel_trans = 0.4} --TODO set tolerances as defined in the global variable
+   local z_position = pose.z * 1000
+   print("z_pose: " .. z_position)
    self.args["ax12gripper"].command = "RELGOTOZ"
-   if math.abs(pose.z) >= self.fsm.vars.TOLERANCE_Z then
+   if math.abs(pose.z) >= TOLERANCE_Z then
       self.args["ax12gripper"].z_position = z_position
    else
       self.args["ax12gripper"].z_position = 0
    end
 end
 
-function CLEANUP_FINAL:init()
-   if (self.fsm.vars.disable_realsense_afterwards == nil or self.fsm.vars.disable_realsense_afterwards) then
-     conveyor_switch:msgq_enqueue_copy(conveyor_switch.DisableSwitchMessage:new())
-   end
+function cleanup()
+   conveyor_switch:msgq_enqueue_copy(conveyor_switch.DisableSwitchMessage:new())
+   -- Disable the product removal flag by default
+   conveyor_config:msgq_enqueue_copy(conveyor_config.DisableProductRemovalMessage:new())
 end
 
-function CLEANUP_FAILED:init()
-   if (self.fsm.vars.disable_realsense_afterwards == nil or self.fsm.vars.disable_realsense_afterwards) then
-     conveyor_switch:msgq_enqueue_copy(conveyor_switch.DisableSwitchMessage:new())
-   end
+function FINAL:init()
+   cleanup()
+end
+
+function FAILED:init()
+   cleanup()
 end

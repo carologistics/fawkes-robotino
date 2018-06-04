@@ -23,9 +23,6 @@ module(..., fawkes.modinit.register_all);
 
 print("Initializing Lua skill space for Robotino")
 
--- Generic skills
-skillenv.use_skill("skills.generic.say")
-
 -- Robotino specific skills
 skillenv.use_skill("skills.robotino.relgoto")
 skillenv.use_skill("skills.robotino.motor_move")

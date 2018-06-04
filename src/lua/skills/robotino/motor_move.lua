@@ -47,7 +47,7 @@ depends_interfaces = {
 }
 
 documentation      = [==[Move on a (kind of) straight line to the given coordinates.
-@param x (Optional) The target X coordinate, relative to base_link or to the frame argument (if specified)
+@param x (Optional) The target X coordinate, relative to /base_link
 @param y (Optional) Dito
 @param ori (Optional) Rotation. -math.pi <= ori <= math.pi
 @param frame (Optional) Reference frame for input coordinates. Defaults to base_link.
@@ -65,7 +65,7 @@ local D_DECEL =       { x=0.035, y=0.035, ori=0.15 }    -- deceleration distance
 local ACCEL =         { x=0.06, y=0.06, ori=0.21 }   -- accelerate by this factor every loop
 local MONITOR_LEN     = 15   -- STUCK monitor: Watch distance moved over this many loops
 local STUCK_MAX       = 120  -- STUCK timeout: Fail after being stuck for this many loops
-local STUCK_THRESHOLD = 0.6  -- STUCK threshold: Consider ourselves stuck if we moved less than
+local STUCK_THRESHOLD = 0.8  -- STUCK threshold: Consider ourselves stuck if we moved less than
                              --                  this factor times V_MIN speed during the
                              --                  last MONITOR_LEN loops
 
@@ -179,12 +179,9 @@ function set_speed(self)
 
    if self.fsm.vars.frame and self.fsm.vars.target_frame ~= "/odom" then 
       -- save target in odom for fallback
-      local tgt_odom = tfm.transform6D(
+      self.fsm.vars.fallback_target_odom = tfm.transform6D(
          {x=self.fsm.vars.target.x, y=self.fsm.vars.target.y, z=self.fsm.vars.target.z, ori=self.fsm.vars.target.ori},
          self.fsm.vars.target_frame, "/odom")
-      if tgt_odom then
-         self.fsm.vars.fallback_target_odom = tgt_odom
-      end
    end
 
    
@@ -280,9 +277,6 @@ function INIT:init()
          { x=0, y=0, z=0, ori=fawkes.tf.create_quaternion_from_yaw(0) },
          "/base_link",
          self.fsm.vars.target_frame)
-      if not cur_pos then
-         print_error("Failed to transfrom base_link to " .. self.fsm.vars.target_frame)
-      end
       self.fsm.vars.x = self.fsm.vars.x or cur_pos.x
       self.fsm.vars.y = self.fsm.vars.y or cur_pos.y
       self.fsm.vars.z = self.fsm.vars.z or cur_pos.z
@@ -308,9 +302,6 @@ function INIT:init()
    self.fsm.vars.target = tfm.transform6D(
       { x=self.fsm.vars.x, y=self.fsm.vars.y, z=self.fsm.vars.z, ori=self.fsm.vars.qori },
       self.fsm.vars.arg_frame, self.fsm.vars.target_frame)
-   if not self.fsm.vars.target then
-      print_error("Failed to transfrom " .. self.fsm.vars.arg_frame .. " to " .. self.fsm.vars.target_frame)
-   end
    self.fsm.vars.last_dist_target = {
       x = self.fsm.vars.target.x,
       y = self.fsm.vars.target.y,
@@ -322,9 +313,6 @@ function INIT:init()
       self.fsm.vars.fallback_target_odom = tfm.transform6D(
          {x=self.fsm.vars.target.x, y=self.fsm.vars.target.y, z=self.fsm.vars.target.z, ori=self.fsm.vars.target.ori},
          self.fsm.vars.target_frame, "/odom")
-      if not self.fsm.vars.fallback_target_odom then
-         print_error("Failed to transfrom " .. self.fsm.vars.target_frame .. " to odom")
-      end
       self.fsm.vars.recover_target_frame = self.fsm.vars.target
       self.fsm.vars.last_dist_target = {
          x = self.fsm.vars.fallback_target_odom.x,

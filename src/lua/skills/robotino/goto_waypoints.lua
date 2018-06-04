@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "goto_waypoints"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"goto"}
 depends_interfaces = { }
 
@@ -50,7 +50,7 @@ fsm:add_transitions{
    {"GOTO", "FINAL",  cond=waypoints_done},
 }
 
-function INIT:init()
+function INIT:init() 
    fsm.vars.table_size = table.getn( self.fsm.vars.wp )         -- get list of targets
    fsm.vars.table_pos  = 0
 end

@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "bring_product_to"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"mps_align", "product_put", "drive_to_local","shelf_put","slide_put","conveyor_align","motor_move"}
+depends_skills     = {"mps_align", "product_put", "drive_to","shelf_put","slide_put","conveyor_align","motor_move"}
 depends_interfaces = {
   {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"}
 }
@@ -56,10 +56,10 @@ end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_if},
    {"INIT", JumpState},
-   {"DRIVE_TO", SkillJumpState, skills={{drive_to_local}}, final_to="MPS_ALIGN", fail_to="FAILED"},
-   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"RE_MPS_ALIGN", SkillJumpState, skills={{motor_move}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
+   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"RE_MPS_ALIGN", SkillJumpState, skills={{motor_move}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="DECIDE_ENDSKILL"}, --TODO proper handling
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_SHELF_PUT", SkillJumpState, skills={{shelf_put}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_SLIDE_PUT", SkillJumpState, skills={{slide_put}}, final_to="FINAL", fail_to="FAILED"},
@@ -69,12 +69,13 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_i
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not navgraph", desc="navgraph not available"},
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
-   {"INIT", "MPS_ALIGN", cond=already_at_conveyor, desc="At mps, skip drive_to_local"},
+   {"INIT", "MPS_ALIGN", cond=already_at_conveyor, desc="At mps, skip drive_to"},
    {"INIT", "RE_MPS_ALIGN", cond=already_at_mps, desc="At mps, skip DRIVE and ALIGN"},
    {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"},
    {"DRIVE_TO", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
    {"MPS_ALIGN", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
    {"RE_MPS_ALIGN", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
+   {"DECIDE_ENDSKILL", "MPS_ALIGN", cond="vars.counter <= 1", desc="Put on shelf"},
    {"DECIDE_ENDSKILL", "SKILL_SHELF_PUT", cond="vars.shelf", desc="Put on shelf"},
    {"DECIDE_ENDSKILL", "SKILL_SLIDE_PUT", cond="vars.slide", desc="Put on slide"},
    {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PUT", cond=true, desc="Put on conveyor"}
@@ -82,40 +83,41 @@ fsm:add_transitions{
 
 function INIT:init()
    self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
+   self.fsm.vars.counter = 0
 end
 
 function DRIVE_TO:init()
    if self.fsm.vars.side == "output" then
-      self.args["drive_to_local"] = {place = self.fsm.vars.place .. "-O"}
+      self.args["drive_to"] = {place = self.fsm.vars.place .. "-O"}
    else
-      self.args["drive_to_local"] = {place = self.fsm.vars.place .. "-I"}
+      self.args["drive_to"] = {place = self.fsm.vars.place .. "-I"}
    end
 end
 
 function MPS_ALIGN:init()
+   self.fsm.vars.counter = self.fsm.vars.counter + 1
+   -- align in front of the conveyor belt
+   self.args["mps_align"] = {x = navgraph:node(self.fsm.vars.place):property_as_float("align_distance")}
    if self.fsm.vars.side == "output" then
+      if navgraph:node(self.fsm.vars.place):has_property("output_offset_y") then
+         self.args["mps_align"].y = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_y")
+      else
+         self.args["mps_align"].y = 0
+      end
       self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
    else
+      if navgraph:node(self.fsm.vars.place):has_property("input_offset_y") then
+         self.args["mps_align"].y = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_y")
+      else
+         self.args["mps_align"].y = 0
+      end
       self.args["mps_align"].tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
    end
-
-   self.args["mps_align"].x = 0.4
-
-   if self.fsm.vars.side == "output" then
-      self.args["mps_align"].y = -0.03
-   else
-      self.args["mps_align"].y = 0.03
-   end
+   self.args["mps_align"].ori = 0
 end
-
-function CONVEYOR_ALIGN:init()
-    if (self.fsm.vars.slide == nil or self.fsm.vars.shelf == nil) then
-      self.args["conveyor_align"].disable_realsense_afterwards = false
-    end
-end
-
 
 function RE_MPS_ALIGN:init()
+   self.fsm.vars.counter = self.fsm.vars.counter + 1
    local shelf_to_conveyor = 0.09 --TODO measure both values
    local shelf_distance = 0.09
    if self.fsm.vars.atmps == "LEFT" then
@@ -138,7 +140,19 @@ function RE_MPS_ALIGN:init()
 end
 
 function SKILL_PRODUCT_PUT:init()
-   self.args["product_put"].offset_x = 0 
+   if self.fsm.vars.side == "output" then
+      if navgraph:node(self.fsm.vars.place):has_property("output_offset_x") then
+         self.args["product_put"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("output_offset_x")
+      else
+         self.args["product_put"].offset_x = 0 
+      end 
+   else
+      if navgraph:node(self.fsm.vars.place):has_property("input_offset_x") then
+         self.args["product_put"].offset_x = navgraph:node(self.fsm.vars.place):property_as_float("input_offset_x")
+      else
+         self.args["product_put"].offset_x = 0 
+      end 
+   end 
 end
 
 function SKILL_SHELF_PUT:init()

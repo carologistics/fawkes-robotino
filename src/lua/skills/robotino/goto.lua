@@ -1,9 +1,9 @@
 
 ----------------------------------------------------------------------------
---  goto.lua -
+--  goto.lua - 
 --
 --  Created: Thu Aug 14 14:32:47 2008
---  modified by Victor Mataré, David Schmidt
+--  modified by Victor Mataré
 --              2015  Tobias Neumann
 --
 ----------------------------------------------------------------------------
@@ -25,9 +25,10 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "goto"
-fsm                = SkillHSM:new{name=name, start="CHECK_NAVIGATOR", debug=true}
-depends_skills     = { }
+fsm                = SkillHSM:new{name=name, start="INIT"}
+depends_skills     = { "relgoto", "global_motor_move" }
 depends_interfaces = {
+   {v = "pose", type="Position3DInterface", id="Pose"},
    {v = "navigator", type="NavigatorInterface", id="Navigator"},
 }
 
@@ -44,103 +45,110 @@ if place is set, this will be used and x, y and ori will be ignored
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local tf_mod = require 'fawkes.tfutils'
+local tf_mod = require 'tf_module'
 
-function target_reached()
-   if navigator:is_final() and navigator:error_code() ~= 0 then
-      return false
-   end
-   return navigator:is_final()
+-- Tunables
+local REGION_TRANS=0.2
+
+function check_navgraph(self)
+  return self.fsm.vars.place ~= nil and not navgraph
 end
 
-function has_navigator()
-   return navigator:has_writer()
-end
+function reached_target_region(self)
+  local region_sqr = self.fsm.vars.region_trans * self.fsm.vars.region_trans
+  local rel_pos = tf_mod.transform({
+                      x = self.fsm.vars.x,
+                      y = self.fsm.vars.y,
+                      ori = self.fsm.vars.ori or 0}, 
+                      "/map", "/base_link")
+  local distance_region_sqr = rel_pos.x * rel_pos.x + rel_pos.y * rel_pos.y
 
-function has_target_coordinates(self)
-   return self.fsm.vars.x ~= nil and self.fsm.vars.y ~= nil and self.fsm.vars.ori ~= nil
-end
-
-function has_place(self)
-   return self.fsm.vars.place ~= nil
-end
-
-function target_unreachable()
-   if navigator:is_final() and navigator:error_code() ~= 0 then
-      return true
-   end
-   return false
-end
-
-fsm:define_states{ export_to=_M,
-  closure={has_navigator=has_navigator},
-  {"CHECK_NAVIGATOR",   JumpState},
-  {"COMPUTE_COORDINATES_BY_PLACE",       JumpState},
-  {"INIT",          JumpState},
-  {"MOVING",        JumpState},
-  {"TIMEOUT",       JumpState},
-}
-
-fsm:add_transitions{
-  {"CHECK_NAVIGATOR", "FAILED", cond="not has_navigator()", desc="Navigator not running"},
-  {"CHECK_NAVIGATOR", "MOVING", cond=has_target_coordinates},
-  {"CHECK_NAVIGATOR", "COMPUTE_COORDINATES_BY_PLACE", cond=has_place},
-  {"CHECK_NAVIGATOR", "FAILED", cond=true, desc="missing target information"},
-  {"COMPUTE_COORDINATES_BY_PLACE", "MOVING", cond=has_target_coordinates, desc="finished computing coordinates"},
-  {"COMPUTE_COORDINATES_BY_PLACE", "FAILED", timeout=10, desc="computation of coordinates by place failed"},
-  {"MOVING", "TIMEOUT",       timeout=2}, -- Give the interface some time to update
-  {"TIMEOUT", "FINAL",         cond=target_reached, desc="Target reached"},
-  {"TIMEOUT", "FAILED",        cond=target_unreachable, desc="Target unreachable"},
-}
-
-function CHECK_NAVIGATOR:init()
-   if self.fsm.vars.place == nil and (self.fsm.vars.x == nil or self.fsm.vars.y == nil or self.fsm.vars.ori == nil) then
-      print_error("Skill goto is missing arguments, either place or x, y, ori")
-   end
-end
-
-function COMPUTE_COORDINATES_BY_PLACE:loop()
-  if self.fsm.vars.place ~= nil then
-    if string.match(self.fsm.vars.place, "[MC][-]Z[1-7][1-8]") then
-      -- place argument is a zone, e.g. M-Z21
-      self.fsm.vars.zone = self.fsm.vars.place
-      self.fsm.vars.x = tonumber(string.sub(self.fsm.vars.place, 4, 4)) - 0.5
-      self.fsm.vars.y = tonumber(string.sub(self.fsm.vars.place, 5, 5)) - 0.5
-      if string.sub(self.fsm.vars.place, 1, 1) == "M" then
-        self.fsm.vars.x = 0 - self.fsm.vars.x
-      end
-    else
-      -- place argument is a navgraph point
-      local node = navgraph:node(self.fsm.vars.place)
-      if not node:is_valid() then
-        print_warn("Navgraph node is invalid. Navgraph computation probably still running!")
-        return
-      end
-      local cur_pose = tf_mod.transform({x=0, y=0, ori=0}, "base_link", "map")
-      if cur_pose == nil then
-        print_warn("Failed to load transform from 'base_link' to 'map'!")
-        return
-      end
-      self.fsm.vars.x = node:x()
-      self.fsm.vars.y = node:y()
-      if node:has_property("orientation") then
-        self.fsm.vars.ori = node:property_as_float("orientation");
-      else
-        self.fsm.vars.ori = cur_pose.ori
-      end
-    end
+  if distance_region_sqr > region_sqr then
+    return false
   else
-    print_error("Missing argument 'place'!")
+    return true
   end
 end
 
-function MOVING:init()
-   self.fsm.vars.msgid_timeout = os.time() + 1
+fsm:define_states{ export_to=_M,
+  closure={check_navgraph=check_navgraph, reached_target_region=reached_target_region, },
+  {"INIT",          JumpState},
+  {"SKILL_RELGOTO", SkillJumpState, skills={{relgoto}}, final_to="FINAL", fail_to="FAILED"},
+  {"REGION_REACHED_STOPPING", JumpState},
+  {"FINAL_ORIENTATION",       SkillJumpState, skills={{global_motor_move}}, final_to="FINAL", fail_to="FINAL"}, -- will be ok; trust me :=)
+}
 
-   local msg = navigator.CartesianGotoWithFrameMessage:new(
-      self.fsm.vars.x,
-      self.fsm.vars.y,
-      self.fsm.vars.ori,
-      "map")
-   fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
+fsm:add_transitions{
+  {"INIT",  "FAILED",         precond=check_navgraph, desc="no navgraph"},
+  {"INIT",  "FAILED",         cond="not vars.target_valid",                 desc="target invalid"},
+  {"INIT",  "SKILL_RELGOTO",  cond=true},
+  {"SKILL_RELGOTO", "INIT", timeout=1, desc="Recalculate target"},
+  {"SKILL_RELGOTO", "REGION_REACHED_STOPPING", cond=reached_target_region, desc="Reached target, stopping local-planner"},
+  {"REGION_REACHED_STOPPING", "FINAL_ORIENTATION", cond="vars.ori", desc="Stopped, do final orientation"},
+  {"REGION_REACHED_STOPPING", "FINAL",             cond="not vars.ori", desc="Stopped, and don't need to orientate => FINAL"},
+}
+
+function INIT:init()
+  self.fsm.vars.target_valid = true
+
+  -- if a place is given, get the point from the navgraph and use this instead of x, y, ori
+  if self.fsm.vars.place ~= nil then
+    self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
+    if self.fsm.vars.node:is_valid() then
+      self.fsm.vars.x = self.fsm.vars.node:x()
+      self.fsm.vars.y = self.fsm.vars.node:y()
+      if self.fsm.vars.node:has_property("orientation") then
+        self.fsm.vars.ori   = self.fsm.vars.node:property_as_float("orientation");
+      else
+        self.fsm.vars.ori   = nil   -- if orientation is not set, we don't care
+      end
+    else
+      self.fsm.vars.target_valid = false
+    end
+  end 
+
+  if self.fsm.vars.target_valid then
+    local rel_pos = tf_mod.transform({
+                      x = self.fsm.vars.x,
+                      y = self.fsm.vars.y,
+                      ori = self.fsm.vars.ori or 0},
+                      "/map", "/base_link")
+
+    -- sanity check *this is an error*, but where is it comming from???
+    if rel_pos.x <= 20 or rel_pos.y <= 20 then
+      self.fsm.vars.rel_x   = rel_pos.x
+      self.fsm.vars.rel_y   = rel_pos.y
+    else
+      self.fsm.vars.rel_x   = 0
+      self.fsm.vars.rel_y   = 0
+      print_error("GOTO ERROR!!!!!!!!!! place: " .. self.fsm.vars.place ..
+                                        " f_x: " .. self.fsm.vars.x ..
+                                        " f_y: " .. self.fsm.vars.y ..
+                                        " f_ori: " .. self.fsm.vars.ori ..
+                                        " t_x: " .. rel_pos.x ..
+                                        " t_y: " .. rel_pos.y ..
+                                        " t_ori: " .. rel_pos.ori)
+    end
+
+    if self.fsm.vars.ori == nil then
+      self.fsm.vars.rel_ori = nil
+    else
+      self.fsm.vars.rel_ori = rel_pos.ori
+    end
+  end
+
+  self.fsm.vars.region_trans = self.fsm.vars.region_trans or REGION_TRANS
+end
+
+function SKILL_RELGOTO:init()
+	 self.args["relgoto"] = { x = self.fsm.vars.rel_x, y = self.fsm.vars.rel_y, ori = self.fsm.vars.rel_ori }
+end
+
+function REGION_REACHED_STOPPING:init()
+  local msg = navigator.StopMessage:new( )
+  navigator:msgq_enqueue(msg)
+end
+
+function FINAL_ORIENTATION:init()
+  self.args["global_motor_move"] = {ori=self.fsm.vars.ori}
 end

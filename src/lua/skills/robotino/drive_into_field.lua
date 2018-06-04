@@ -24,9 +24,9 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "drive_into_field"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"goto_waypoints"}
+depends_skills     = {"goto"}
 depends_interfaces = {
-     {v = "pose",      type="Position3DInterface", id="Pose"}
+   {v = "pose",      type="Position3DInterface", id="Pose"}
 }
 
 documentation      = [==[Drives into field after given offset
@@ -41,14 +41,14 @@ skillenv.skill_module(_M)
 local TIMEOUT_UPPER_LIMIT = 60
 
 function is_in_field(x)
-   return pose:translation(1) > 1.0
+   return pose:translation(1) > 0.0
 end
 
 fsm:define_states{ export_to=_M,
    --closure={wait=fsm.vars.wait},
    {"INIT",             JumpState},
    {"WAIT",             JumpState},
-   {"DRIVE_INTO_FIELD", SkillJumpState, skills={{goto_waypoints}}, final_to="FINAL", fail_to="FAILED"},
+   {"DRIVE_INTO_FIELD", SkillJumpState, skills={{goto}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -59,9 +59,9 @@ fsm:add_transitions{
 
 function INIT:init()
    if self.fsm.vars.team == "CYAN" then
-      self.fsm.vars.waypoints = {"C-ins-out", "C-ins-in"}
+      self.fsm.vars.waypoints = "C-ins-in"
    else
-      self.fsm.vars.waypoints = {"M-ins-out", "M-ins-in"}
+      self.fsm.vars.waypoints = "M-ins-in"
    end
 end
 
@@ -70,5 +70,5 @@ function WAIT:init()
 end
 
 function DRIVE_INTO_FIELD:init()
-   self.args["goto_waypoints"] = {wp = self.fsm.vars.waypoints}
+   self.args["goto"] = {place = self.fsm.vars.waypoints}
 end

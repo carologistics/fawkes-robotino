@@ -39,9 +39,9 @@ documentation      = [==[ shelf_put
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
-local x_distance = 0.25
-if config:exists("/skills/approach_distance_laser/x") then
-      x_distance = config:get_float("/skills/approach_distance_laser/x") - 0.01
+local x_distance = 0.075
+if config:exists("/skills/align_distance_conveyor/x") then
+      x_distance = config:get_float("/skills/align_distance_conveyor/x") - 0.01
 end
 
 fsm:define_states{ export_to=_M,
@@ -51,9 +51,7 @@ fsm:define_states{ export_to=_M,
    --{"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAILED"},
    {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="WAIT_AFTER_GRAB"},
    {"WAIT_AFTER_GRAB", JumpState},
-   {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="CLOSE_GRIPPER", fail_to="CLOSE_GRIPPER"},
-   {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="RESET_Z_POS", fail_to="FAILED"},
-   {"RESET_Z_POS", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FAILED"},
+   {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -85,7 +83,6 @@ end
 
 function APPROACH_SHELF:init()
    self.args["approach_mps"].x = x_distance
-   self.args["approach_mps"].use_conveyor = false
 end
 
 function STORE_PRODUCT:init()
@@ -94,13 +91,4 @@ end
 
 function LEAVE_SHELF:init()
    self.args["motor_move"].x = -0.2
-end
-
-function CLOSE_GRIPPER:init()
-   self.args["ax12gripper"].command = "CLOSE"
-   printf("close gripper")
-end
-
-function RESET_Z_POS:init()
-   self.args["ax12gripper"].command = "RESET_Z_POS"
 end

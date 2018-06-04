@@ -134,7 +134,7 @@ function PPGOTO:init()
 	 self.fsm.vars.msgid = ppnavi:msgq_enqueue(m)
       end
    elseif self.fsm.vars.stop ~= nil then
-      local m = ppnavi.StopMessage:new(self.fsm.vars.msgid or 0)
+      local m = ppnavi.StopMessage:new()
       printf("Sending StopGotoMessage")
       self.fsm.vars.msgid = ppnavi:msgq_enqueue(m)
    else
@@ -150,7 +150,7 @@ end
 function PPGOTO:reset()
    if ppnavi:has_writer() and not ppnavi:is_final() then
       printf("ppgoto: sending stop");
-      ppnavi:msgq_enqueue(ppnavi.StopMessage:new(fsm.vars.msgid or 0))
+      ppnavi:msgq_enqueue(ppnavi.StopMessage:new())
    end
 end
 

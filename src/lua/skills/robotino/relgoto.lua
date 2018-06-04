@@ -102,7 +102,4 @@ function MOVING:init()
    fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
 end
 
-function MOVING:exit()
-   local msg = navigator.StopMessage:new(fsm.vars.goto_msgid or 0)
-   navigator:msgq_enqueue(msg)
-end
+

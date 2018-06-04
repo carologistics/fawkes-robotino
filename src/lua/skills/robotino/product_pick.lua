@@ -35,15 +35,13 @@ and opens the gripper
 @param offset_x the offset_x from the navgraph point
 ]==]
 
--- the angle to open the gripper after the first grasp
-OPENING_ANGLE = 0.1
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
 local tfm = require("tf_module")
-local x_distance = 0.315
-if config:exists("/skills/approach_distance_conveyor/x") then
-   x_distance = config:get_float("/skills/approach_distance_conveyor/x")
+local x_distance = 0.07
+if config:exists("/skills/align_distance_conveyor/x") then
+   x_distance = config:get_float("/skills/align_distance_conveyor/x")
 end
 
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
@@ -55,24 +53,13 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
       final_to="MOVE_BACK", fail_to="FAIL_SAFE"},
    {"WAIT_OPEN", JumpState},
    {"MOVE_BACK", SkillJumpState, skills={{motor_move}},
-      final_to="WAIT_FOR_GRIPPER", fail_to="FAILED"},
-   {"WAIT_FOR_GRIPPER", JumpState},
-   {"OPEN_GRIPPER_SECOND", SkillJumpState, skills={{ax12gripper}},
-      final_to="ADJUST_HEIGHT", fail_to="FAIL_SAFE"},
-   {"ADJUST_HEIGHT", SkillJumpState, skills={{ax12gripper}},
-      final_to="CLOSE_GRIPPER_SECOND", fail_to="FAIL_SAFE"},
+      final_to="CLOSE_GRIPPER_SECOND", fail_to="FAILED"},
    {"CLOSE_GRIPPER_SECOND", SkillJumpState, skills={{ax12gripper}},
-      final_to="WAIT_FOR_GRIPPER_SECOND", fail_to="FAIL_SAFE"},
-   {"WAIT_FOR_GRIPPER_SECOND", JumpState},
-   {"MOVE_UP_AFTER_PICK", SkillJumpState, skills={{ax12gripper}},
-      final_to="MOVE_BACK_SECOND", fail_to="MOVE_BACK_SECOND"},
+      final_to="MOVE_BACK_SECOND", fail_to="FAIL_SAFE"},
    {"MOVE_BACK_SECOND", SkillJumpState, skills={{motor_move}},
-      final_to="WAIT_FOR_INTERFACE", fail_to="FAILED"},
-   {"WAIT_FOR_INTERFACE", JumpState},
+      final_to="CHECK_PUCK", fail_to="FAILED"},
    {"CHECK_PUCK", JumpState},
    {"CENTER_GRIPPER", SkillJumpState, skills={{ax12gripper}},
-      final_to="RESET_Z_POS", fail_to="FAILED"},
-   {"RESET_Z_POS", SkillJumpState, skills={{ax12gripper}},
       final_to="FINAL", fail_to="FAILED"},
    {"FAIL_SAFE", SkillJumpState, skills={{motor_move}},
       final_to="FAILED", fail_to="FAILED"},
@@ -82,9 +69,6 @@ fsm:add_transitions{
    {"WAIT_OPEN", "DRIVE_FORWARD", timeout=1},
    {"CHECK_PUCK", "CENTER_GRIPPER", cond="gripper_if:is_holds_puck()", desc="Got a puck"},
    {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="GOT NO PUCK!"},
-   {"WAIT_FOR_INTERFACE", "CHECK_PUCK", timeout=2},
-   {"WAIT_FOR_GRIPPER", "OPEN_GRIPPER_SECOND", timeout=1},
-   {"WAIT_FOR_GRIPPER_SECOND", "MOVE_UP_AFTER_PICK", timeout=1},
 }
 
 function OPEN_GRIPPER:init()
@@ -94,15 +78,14 @@ end
 
 function DRIVE_FORWARD:init()
    self.args["approach_mps"].x = x_distance - self.fsm.vars.offset_x
-   self.args["approach_mps"].use_conveyor = true
 end
 
 function MOVE_BACK:init()
-   self.args["motor_move"] = {x = -0.0, vel_trans = 0.03, tolerance = { x=0.001, y=0.002, ori=0.01 } }
+   self.args["motor_move"] = {x = -0.02, vel_trans = 0.13, tolerance = { x=0.001, y=0.002, ori=0.01 } }
 end
 
 function MOVE_BACK_SECOND:init()
-   self.args["motor_move"] = {x = -0.195, vel_trans = 0.05}
+   self.args["motor_move"] = {x = -0.195}
 end
 
 function CLOSE_GRIPPER:init()
@@ -110,32 +93,9 @@ function CLOSE_GRIPPER:init()
    printf("close gripper")
 end
 
-function ADJUST_HEIGHT:init()
-   self.args["ax12gripper"].command = "RELGOTOZ"
-
-   if config:exists("/skills/product_pick/adjust_down") then
-      self.args["ax12gripper"].z_position = config:get_float("/skills/product_pick/adjust_down")
-   else
-      self.args["ax12gripper"].z_position = -6
-  end
-   printf("adjusting height")
-end
-
-function OPEN_GRIPPER_SECOND:init()
-   self.args["ax12gripper"].command = "MODIFY_OPENING_ANGLE"
-   self.args["ax12gripper"].angle_difference = OPENING_ANGLE
-   printf("open gripper")
-end
-
 function CLOSE_GRIPPER_SECOND:init()
-   self.args["ax12gripper"].command = "CLOSE_TIGHT"
+   self.args["ax12gripper"].command = "CLOSE"
    printf("close gripper")
-end
-
-function MOVE_UP_AFTER_PICK:init()
-   self.args["ax12gripper"].command = "RELGOTOZ"
-   self.args["ax12gripper"].z_position = 2
-   printf("adjusting height")
 end
 
 function CENTER_GRIPPER:init()
@@ -144,9 +104,5 @@ function CENTER_GRIPPER:init()
 end
 
 function FAIL_SAFE:init()
-   self.args["motor_move"].x = -0.1
-end
-
-function RESET_Z_POS:init()
-   self.args["ax12gripper"].command = "RESET_Z_POS"
+   self.args["ax12gripper"].x = -0.1
 end
