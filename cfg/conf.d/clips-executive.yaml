@@ -87,13 +87,11 @@ clips-executive:
           - name: protobuf
           - name: tf
           - name: smt
-# =======
           - name: robmem-wait
             feature-request: false
             files: ["BATCH|robmem-wait-init.clp"]
             wait-for: robmem-initialized
           - name: robot_memory
-# >>>>>>> common/clips-executive-rcll-smt
         stage-3:
           - name: utils
             file: rcll2017/utils.clp
