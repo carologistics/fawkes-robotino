@@ -135,11 +135,10 @@ void move_to_end_stop(int limit_pin, AccelStepper &motor, int dir) {
     }
   }
 
-  motor.setCurrentPosition(0L);
-
   // move out of the end stop
   // TODO: configure
-  motor.move(3000 * dir * -1);
+  motor.setCurrentPosition(0L);
+  motor.move(1000 * dir * -1);
   while (motor.distanceToGo() != 0) {
  //   motor.setSpeed(DEFAULT_MAX_SPEED);
     motor.run();
@@ -150,13 +149,16 @@ void move_to_end_stop(int limit_pin, AccelStepper &motor, int dir) {
 
 bool calibrate_axis(int limit_pin, AccelStepper &motor) {
   int button_state = digitalRead(limit_pin);
+
+  /*
   if (button_state == LOW) {
     //ERROR: We can't calibrate an axis when the end stop is already pressed!
     return false;
   }
+  */
   motor.enableOutputs();
 
-  move_to_end_stop(limit_pin, motor, -1);
+  move_to_end_stop(limit_pin, motor, 1);
 
   // we found the starting point - move to the other end of the axis to get
   // the number of steps to the other end.
