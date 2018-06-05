@@ -35,17 +35,17 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define CMD_Z_NEW_POS 'Z'
 #define CMD_A_NEW_POS 'A'
 
-#define DEFAULT_MAX_SPEED_X 10000
-#define DEFAULT_MAX_ACCEL_X 10000
+#define DEFAULT_MAX_SPEED_X 40000
+#define DEFAULT_MAX_ACCEL_X 50000
 
-#define DEFAULT_MAX_SPEED_Y 10000
+#define DEFAULT_MAX_SPEED_Y 20000
 #define DEFAULT_MAX_ACCEL_Y 50000
 
-#define DEFAULT_MAX_SPEED_Z 10000
+#define DEFAULT_MAX_SPEED_Z 20000
 #define DEFAULT_MAX_ACCEL_Z 50000
 
-#define DEFAULT_MAX_SPEED_A 1000
-#define DEFAULT_MAX_ACCEL_A 1000
+#define DEFAULT_MAX_SPEED_A 20000
+#define DEFAULT_MAX_ACCEL_A 50000
 
 //#define CMD_SET_ACCEL 7
 #define CMD_SET_SPEED 9
@@ -130,7 +130,7 @@ void move_to_end_stop(int limit_pin, AccelStepper &motor, int dir) {
       motor.setCurrentPosition(0L);
     } else {
       motor.moveTo(10000000 * dir);
-      motor.setSpeed(300);
+      motor.setSpeed(3000);
       motor.runSpeed();
     }
   }
