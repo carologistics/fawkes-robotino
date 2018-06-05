@@ -34,9 +34,9 @@ plugins/conveyor_pose:
   default_model: "conveyor_pcls/default.pcd"
 
   # Paths to the default PCD models taking as reference model in the conveyor pose plugin
-  reference_default_models:
-    with_cone: "conveyor_pcls/with_cone.pcd"
-    no_cone: "conveyor_pcls/no_cone.pcd"
+  reference_models:
+    input_conveyor: "conveyor_pcls/with_cone.pcd"
+    output_conveyor: "conveyor_pcls/no_cone.pcd"
     shelf: "conveyor_pcls/no_cone.pcd"
     slide: "conveyor_pcls/no_cone.pcd"
 
@@ -92,13 +92,25 @@ plugins/conveyor_pose:
 
 
     # Offset of interesting objects relative to the center of the laser line
-
+    # The coordinate frame is oriented like the left laser-line endpoint, with
+    # the Y axis pointing to the right endpoint and the X axis facing the robot.
+    #
+    #  ^
+    # z|
+    #  |    y
+    #  |----->
+    #  \
+    #   \ x
+    #    V
     hint:
       default:
         x: -0.007
         y: 0.03
         z: 0.65
-      conveyor:
+
+      # Configure the initial estimate for the INPUT side (uneven tag ID)
+      # On the OUTPUT side, the y value is multiplied by -1.
+      input_conveyor:
         x: 0.015
         y: -0.02
         z: 0.6
@@ -118,8 +130,8 @@ plugins/conveyor_pose:
         x: -0.01
         y: -0.32
         z: 0.6
-    
-    
+
+
     # Station-specific offset added to the hints configured above
     mps_type_offset:
       cap_station:
