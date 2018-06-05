@@ -196,11 +196,12 @@
 
 (defrule goal-reasoner-evaluate-clean-locks
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  (wm-fact (key cx identity) (value ?identity))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
   ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
                      (action-name lock) (param-values ?name))
-  (mutex (name ?name) (state LOCKED) (request NONE))
+  (mutex (name ?name) (state LOCKED) (request NONE) (locked-by ?identity))
   =>
   (printout warn "Removing lock " ?name " of failed plan " ?plan-id
                  " of goal " ?goal-id crlf)
@@ -210,12 +211,13 @@
 
 (defrule goal-reasoner-evaluate-clean-location-locks
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  (wm-fact (key cx identity) (value ?identity))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
   ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
                      (action-name location-lock) (param-values ?loc ?side))
   (mutex (name ?name&:(eq ?name (sym-cat ?loc - ?side)))
-         (state LOCKED) (request NONE))
+         (state LOCKED) (request NONE) (locked-by ?identity))
   =>
   ; TODO only unlock if we are at a safe distance
   (printout warn "Removing location lock " ?name " without moving away!" crlf)
