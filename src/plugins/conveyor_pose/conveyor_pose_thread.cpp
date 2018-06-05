@@ -199,8 +199,6 @@ ConveyorPoseThread::init()
   cfg_front_cut_              = config->get_float( CFG_PREFIX "/with_ll/front_cut" );
   cfg_back_cut_               = config->get_float( CFG_PREFIX "/with_ll/back_cut" );
 
-  cfg_gripper_bottom_         = config->get_float( CFG_PREFIX "/gripper/bottom" );  
-
   cfg_voxel_grid_leaf_size_  = config->get_float( CFG_PREFIX "/voxel_grid/leaf_size" );
 
   cfg_bb_realsense_switch_name_ = config->get_string_or_default(CFG_PREFIX "/realsense_switch", "realsense");
@@ -853,10 +851,7 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
     std::string full_pfx = CFG_PREFIX + sub_prefix;
     std::string opt = path.substr(full_pfx.length());
 
-    if (sub_prefix == "/gripper") {
-      if (opt == "/bottom")
-        change_val(opt, cfg_gripper_bottom_, v->get_float());
-    } else if(sub_prefix == "/without_ll") {
+    if(sub_prefix == "/without_ll") {
       if (opt == "/left_cut")
         change_val(opt, cfg_left_cut_no_ll_, v->get_float());
       else if(opt == "/right_cut")
@@ -1058,7 +1053,6 @@ CloudPtr ConveyorPoseThread::cloud_trim(CloudPtr in, fawkes::LaserLineInterface 
            y_min = -FLT_MAX, y_max = FLT_MAX, 
            z_min = -FLT_MAX, z_max = FLT_MAX;
 
-    y_min = std::max((float) cfg_gripper_bottom_, y_min); // only points below the gripper
 
     if(use_ll){
         // get position of initial guess in conveyor cam frame
