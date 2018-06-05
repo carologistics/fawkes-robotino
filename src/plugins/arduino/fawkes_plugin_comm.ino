@@ -88,11 +88,11 @@ void send_moving() {
 void send_idle() {
   Serial.print(AT);
   Serial.print("I ");
-  Serial.print(motor_X.currentPosition());
+  Serial.print(-motor_X.currentPosition());
   Serial.print(" ");
-  Serial.print(motor_Y.currentPosition());
+  Serial.print(-motor_Y.currentPosition());
   Serial.print(" ");
-  Serial.print(motor_Z.currentPosition());
+  Serial.print(-motor_Z.currentPosition());
   Serial.print(" ");
   Serial.print(motor_A.currentPosition());
   Serial.print("\r\n");
