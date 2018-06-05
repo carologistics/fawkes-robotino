@@ -469,7 +469,7 @@ ConveyorPoseThread::loop()
             tf::StampedTransform(initial_pose_cam, initial_pose_cam.stamp, initial_pose_cam.frame_id, "conveyor_pose_initial_guess"));
     }
     else {
-      if (bb_mutex_.try_lock()) {
+      { MutexLocker locked { &bb_mutex_ };
         try {
           if (result_pose_) {
             pose_write();
@@ -479,9 +479,8 @@ ConveyorPoseThread::loop()
         } catch (std::exception &e) {
           logger->log_error(name(), "Unexpected exception: %s", e.what());
         }
-        bb_mutex_.unlock();
       }
-      if (cloud_mutex_.try_lock()) {
+      { MutexLocker locked { &cloud_mutex_ };
         try {
           scene_ = trimmed_scene_;
 
@@ -490,8 +489,8 @@ ConveyorPoseThread::loop()
         } catch (std::exception &e) {
           logger->log_error(name(), "Exception preprocessing point clouds: %s", e.what());
         }
-        cloud_mutex_.unlock();
-      } // cloud_mutex_.try_lock()
+      }
+
     } // ! cfg_record_model_
   } // update_input_cloud()
 }
