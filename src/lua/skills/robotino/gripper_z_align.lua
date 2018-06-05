@@ -65,23 +65,13 @@ function COMMAND:init()
       max_mm = 1000 * config:get_float("/arduino/z_max")
    end
    if self.fsm.vars.command == "UP" then
-      if gripper_arduino_if:z_position() - self.fsm.vars.num_mm < 0 then
-         self.fsm:set_error("desired position out of bounds: " .. gripper_arduino_if:z_position() - self.fsm.vars.num_mm .. " < 0")
-	 self.fsm.vars.error = true
-      else
-         theMoveXYZRelMessage = gripper_arduino_if.MoveXYZRelMessage:new()
-         theMoveXYZRelMessage:set_z(-self.fsm.vars.num_mm or 0)
-         gripper_arduino_if:msgq_enqueue_copy(theMoveXYZRelMessage)
-      end
+      theMoveXYZRelMessage = gripper_arduino_if.MoveXYZRelMessage:new()
+      theMoveXYZRelMessage:set_z(-self.fsm.vars.num_mm or 0)
+      gripper_arduino_if:msgq_enqueue_copy(theMoveXYZRelMessage)
    elseif self.fsm.vars.command == "DOWN" then
-      if gripper_arduino_if:z_position() + self.fsm.vars.num_mm > max_mm then
-         self.fsm:set_error("desired position out of bounds: " .. gripper_arduino_if:z_position() + self.fsm.vars.num_mm .. " > " .. max_mm)
-	 self.fsm.vars.error = true
-      else
-         theMoveXYZRelMessage = gripper_arduino_if.MoveXYZRelMessage:new()
-         theMoveXYZRelMessage:set_z(self.fsm.vars.num_mm or 0)
-         gripper_arduino_if:msgq_enqueue_copy(theMoveXYZRelMessage)
-      end
+      theMoveXYZRelMessage = gripper_arduino_if.MoveXYZRelMessage:new()
+      theMoveXYZRelMessage:set_z(self.fsm.vars.num_mm or 0)
+      gripper_arduino_if:msgq_enqueue_copy(theMoveXYZRelMessage)
    elseif self.fsm.vars.command == "TO_UPPER_Z" then
       theToHomeMessage = gripper_arduino_if.ToHomeMessage:new()
       gripper_arduino_if:msgq_enqueue_copy(theToHomeMessage)
