@@ -238,13 +238,13 @@ void read_package() {
           switch (cur_cmd) {
 
             case CMD_X_NEW_POS:
-              set_new_pos(new_pos, motor_X);
+              set_new_pos(-new_pos, motor_X);
               break;
             case CMD_Y_NEW_POS:
-              set_new_pos(new_pos, motor_Y);
+              set_new_pos(-new_pos, motor_Y);
               break;
             case CMD_Z_NEW_POS:
-              set_new_pos(new_pos, motor_Z);
+              set_new_pos(-new_pos, motor_Z);
               break;
             case CMD_A_NEW_POS:
               set_new_pos(new_pos, motor_A);
