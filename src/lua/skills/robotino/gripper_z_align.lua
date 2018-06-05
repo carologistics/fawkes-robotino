@@ -69,26 +69,26 @@ function COMMAND:init()
          self.fsm:set_error("desired position out of bounds: " .. gripper_arduino_if:z_position() - self.fsm.vars.num_mm .. " < 0")
 	 self.fsm.vars.error = true
       else
-         theUpMessage = gripper_arduino_if.MoveUpwardsMessage:new()
-         theUpMessage:set_num_mm(self.fsm.vars.num_mm or 0)
-         gripper_arduino_if:msgq_enqueue_copy(theUpMessage)
+         theMoveXYZRelMessage = gripper_arduino_if.MoveXYZRelMessage:new()
+         theMoveXYZRelMessage:set_z(-self.fsm.vars.num_mm or 0)
+         gripper_arduino_if:msgq_enqueue_copy(theMoveXYZRelMessage)
       end
    elseif self.fsm.vars.command == "DOWN" then
       if gripper_arduino_if:z_position() + self.fsm.vars.num_mm > max_mm then
          self.fsm:set_error("desired position out of bounds: " .. gripper_arduino_if:z_position() + self.fsm.vars.num_mm .. " > " .. max_mm)
 	 self.fsm.vars.error = true
       else
-         theDownMessage = gripper_arduino_if.MoveDownwardsMessage:new()
-         theDownMessage:set_num_mm(self.fsm.vars.num_mm or 0)
-         gripper_arduino_if:msgq_enqueue_copy(theDownMessage)
+         theMoveXYZRelMessage = gripper_arduino_if.MoveXYZRelMessage:new()
+         theMoveXYZRelMessage:set_z(self.fsm.vars.num_mm or 0)
+         gripper_arduino_if:msgq_enqueue_copy(theMoveXYZRelMessage)
       end
    elseif self.fsm.vars.command == "TO_UPPER_Z" then
-      theToZ0Message = gripper_arduino_if.MoveToZ0Message:new()
-      gripper_arduino_if:msgq_enqueue_copy(theToZ0Message)
+      theToHomeMessage = gripper_arduino_if.ToHomeMessage:new()
+      gripper_arduino_if:msgq_enqueue_copy(theToHomeMessage)
    elseif self.fsm.vars.command == "RESET_Z_POS" then
       self.fsm.vars.restore = true
-      theResetZPosMessage = gripper_arduino_if.ResetZPosMessage:new()
-      gripper_arduino_if:msgq_enqueue_copy(theResetZPosMessage)
+      theCalibrateMessage = gripper_arduino_if.CalibrateMessage:new()
+      gripper_arduino_if:msgq_enqueue_copy(theCalibrateMessage)
    else
       self.fsm:set_error("No known command")
       self.fsm.vars.error = true
