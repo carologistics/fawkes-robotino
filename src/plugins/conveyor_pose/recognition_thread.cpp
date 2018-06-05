@@ -211,6 +211,8 @@ void RecognitionThread::publish_result()
     scene_->header.frame_id
   };
 
+  result_pose.setRotation(result_pose.getRotation() * tf::Quaternion({1,0,0}, M_PI_2) * tf::Quaternion({0,0,1}, M_PI_2));
+
   // constrainTransformToGround(result_pose);
 
   double new_fitness = (1 / icp_.getFitnessScore()) / 10000;
