@@ -39,7 +39,7 @@ documentation      = [==[Skill to modify the z position of the AX12 gripper by u
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local max_mm = 0
+local max_mm = 0.0
 
 -- States
 fsm:define_states{
@@ -61,34 +61,24 @@ fsm:add_transitions{
 }
 
 function COMMAND:init()
-   if config:exists("/arduino/max_mm") then
-      max_mm = config:get_uint("/arduino/max_mm")
+   if config:exists("/arduino/z_max") then
+      max_mm = 1000 * config:get_float("/arduino/z_max")
    end
    if self.fsm.vars.command == "UP" then
-      if gripper_arduino_if:z_position() - self.fsm.vars.num_mm < 0 then
-         self.fsm:set_error("desired position out of bounds: " .. gripper_arduino_if:z_position() - self.fsm.vars.num_mm .. " < 0")
-	 self.fsm.vars.error = true
-      else
-         theUpMessage = gripper_arduino_if.MoveUpwardsMessage:new()
-         theUpMessage:set_num_mm(self.fsm.vars.num_mm or 0)
-         gripper_arduino_if:msgq_enqueue_copy(theUpMessage)
-      end
+      theMoveXYZRelMessage = gripper_arduino_if.MoveXYZRelMessage:new()
+      theMoveXYZRelMessage:set_z(-self.fsm.vars.num_mm or 0)
+      gripper_arduino_if:msgq_enqueue_copy(theMoveXYZRelMessage)
    elseif self.fsm.vars.command == "DOWN" then
-      if gripper_arduino_if:z_position() + self.fsm.vars.num_mm > max_mm then
-         self.fsm:set_error("desired position out of bounds: " .. gripper_arduino_if:z_position() + self.fsm.vars.num_mm .. " > " .. max_mm)
-	 self.fsm.vars.error = true
-      else
-         theDownMessage = gripper_arduino_if.MoveDownwardsMessage:new()
-         theDownMessage:set_num_mm(self.fsm.vars.num_mm or 0)
-         gripper_arduino_if:msgq_enqueue_copy(theDownMessage)
-      end
+      theMoveXYZRelMessage = gripper_arduino_if.MoveXYZRelMessage:new()
+      theMoveXYZRelMessage:set_z(self.fsm.vars.num_mm or 0)
+      gripper_arduino_if:msgq_enqueue_copy(theMoveXYZRelMessage)
    elseif self.fsm.vars.command == "TO_UPPER_Z" then
-      theToZ0Message = gripper_arduino_if.MoveToZ0Message:new()
-      gripper_arduino_if:msgq_enqueue_copy(theToZ0Message)
+      theToHomeMessage = gripper_arduino_if.ToHomeMessage:new()
+      gripper_arduino_if:msgq_enqueue_copy(theToHomeMessage)
    elseif self.fsm.vars.command == "RESET_Z_POS" then
       self.fsm.vars.restore = true
-      theResetZPosMessage = gripper_arduino_if.ResetZPosMessage:new()
-      gripper_arduino_if:msgq_enqueue_copy(theResetZPosMessage)
+      theCalibrateMessage = gripper_arduino_if.CalibrateMessage:new()
+      gripper_arduino_if:msgq_enqueue_copy(theCalibrateMessage)
    else
       self.fsm:set_error("No known command")
       self.fsm.vars.error = true
