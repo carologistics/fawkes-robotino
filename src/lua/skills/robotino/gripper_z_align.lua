@@ -39,7 +39,7 @@ documentation      = [==[Skill to modify the z position of the AX12 gripper by u
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local max_mm = 0
+local max_mm = 0.0
 
 -- States
 fsm:define_states{
@@ -61,8 +61,8 @@ fsm:add_transitions{
 }
 
 function COMMAND:init()
-   if config:exists("/arduino/max_mm") then
-      max_mm = config:get_uint("/arduino/max_mm")
+   if config:exists("/arduino/z_max") then
+      max_mm = 1000 * config:get_float("/arduino/z_max")
    end
    if self.fsm.vars.command == "UP" then
       if gripper_arduino_if:z_position() - self.fsm.vars.num_mm < 0 then
