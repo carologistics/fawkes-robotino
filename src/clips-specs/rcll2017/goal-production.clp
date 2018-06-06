@@ -33,10 +33,13 @@
   ?*PRIORITY-DELIVER* = 100
   ?*PRIORITY-RESET* = 98
   ?*PRIORITY-CLEAR-BS* = 97
-  ?*PRIORITY-PRODUCE-CX* = 95
+  ?*PRIORITY-PRODUCE-C3* = 96
+  ?*PRIORITY-PRODUCE-C2* = 95
+  ?*PRIORITY-PRODUCE-C1* = 94
   ?*PRIORITY-PRODUCE-C0* = 90
-  ?*PRIORITY-ADD-ADDITIONAL-RING* = 85
-  ?*PRIORITY-ADD-FIRST-RING* = 80
+  ?*PRIORITY-MOUNT-THIRD-RING* = 93
+  ?*PRIORITY-MOUNT-SECOND-RING* = 92
+  ?*PRIORITY-MOUNT-FIRST-RING* = 91
   ?*PRIORITY-CLEAR-CS* = 70
   ?*PRIORITY-CLEAR-RS* = 55
   ?*PRIORITY-PREFILL-CS* = 50
@@ -717,7 +720,7 @@
   (test (neq ?complexity C0))
   =>
   (printout t "Goal " MOUNT-FIRST-RING " formulated" crlf)
-  (assert (goal (id MOUNT-FIRST-RING) (priority ?*PRIORITY-DELIVER*)
+  (assert (goal (id MOUNT-FIRST-RING) (priority ?*PRIORITY-MOUNT-FIRST-RING*)
                              (parent PRODUCTION-MAINTAIN)
                              (params robot ?robot
                                         bs ?mps-bs
@@ -787,7 +790,7 @@
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   =>
   (printout t "Goal " MOUNT-SECOND-RING " formulated" crlf)
-  (assert (goal (id MOUNT-SECOND-RING) (priority ?*PRIORITY-DELIVER*)
+  (assert (goal (id MOUNT-SECOND-RING) (priority ?*PRIORITY-MOUNT-SECOND-RING*)
                              (parent PRODUCTION-MAINTAIN)
                              (params robot ?robot
                                         prev-rs ?prev-rs
@@ -854,7 +857,7 @@
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   =>
   (printout t "Goal " MOUNT-THIRD-RING " formulated" crlf)
-  (assert (goal (id MOUNT-THIRD-RING) (priority ?*PRIORITY-DELIVER*)
+  (assert (goal (id MOUNT-THIRD-RING) (priority ?*PRIORITY-MOUNT-THIRD-RING*)
                              (parent PRODUCTION-MAINTAIN)
                              (params robot ?robot
                                         prev-rs ?prev-rs
@@ -915,7 +918,7 @@
   ;   (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   =>
   (printout t "Goal " PRODUCE-CX " (C1) formulated" crlf)
-  (assert (goal (id PRODUCE-CX) (priority ?*PRIORITY-PRODUCE-CX*)
+  (assert (goal (id PRODUCE-CX) (priority ?*PRIORITY-PRODUCE-C1*)
                                 (parent PRODUCTION-MAINTAIN)
                                 (params robot ?robot
                                         wp ?wp
@@ -974,7 +977,7 @@
   ;   (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   =>
   (printout t "Goal " PRODUCE-CX " (C2) formulated" crlf)
-  (assert (goal (id PRODUCE-CX) (priority ?*PRIORITY-PRODUCE-CX*)
+  (assert (goal (id PRODUCE-CX) (priority ?*PRIORITY-PRODUCE-C2*)
                                 (parent PRODUCTION-MAINTAIN)
                                 (params robot ?robot
                                         wp ?wp
@@ -1033,7 +1036,7 @@
   ;   (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   =>
   (printout t "Goal " PRODUCE-CX " (C3) formulated" crlf)
-  (assert (goal (id PRODUCE-CX) (priority ?*PRIORITY-PRODUCE-CX*)
+  (assert (goal (id PRODUCE-CX) (priority ?*PRIORITY-PRODUCE-C3*)
                                 (parent PRODUCTION-MAINTAIN)
                                 (params robot ?robot
                                         wp ?wp
