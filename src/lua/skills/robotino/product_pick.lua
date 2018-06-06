@@ -41,20 +41,24 @@ skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
 -- Constants
-local euclidean_fitness_threshold = 90  --threshold for euclidean fitness  (fitness should be higher)
+local euclidean_fitness_threshold = 8  --threshold for euclidean fitness  (fitness should be higher)
 local gripper_tolerance_x = 0.5 -- gripper x tolerance according to conveyor pose
 local gripper_tolerance_y = 0.5 -- gripper y tolerance according to conveyor pose
 local gripper_tolerance_z = 0.5 -- gripper z tolerance according to conveyor pose
 
-local gripper_forward_x = 0 -- distance to move gripper forward after align
-local gripper_down_z = 0    -- distance to move gripper down after driving over product
-local gripper_down_z = 0    -- distance to mover gripper down second time
-local gripper_back_x = 0    -- distance to move gripper back after closing gripper
-local drive_back_x = -0.2   -- distance to drive back after closing the gripper
+local gripper_forward_x = 0.02 -- distance to move gripper forward after align
+local gripper_down_z = 0.01    -- distance to move gripper down after driving over product
+local gripper_down_z = 0       -- distance to mover gripper down second time
+local gripper_back_x = 0.03    -- distance to move gripper back after closing gripper
+local drive_back_x = -0.2      -- distance to drive back after closing the gripper
 
-local gripper_init_x = 0 -- initial x position of the gripper
-local gripper_init_y = 0 -- initial y position of the gripper
-local gripper_init_z = 0 -- initial z position of the gripper
+local gripper_init_x = 0.04 -- initial x position of the gripper
+local gripper_init_y = 0    -- initial y position of the gripper
+local gripper_init_z = 0.03 -- initial z position of the gripper
+
+local gripper_pose_offset_x = 0.02  -- conveyor pose offset in x direction
+local gripper_pose_offset_y = 0     -- conveyor_pose offset in y direction
+local gripper_pose_offset_z = 0.02  -- conveyor_pose offset in z direction
 
 local align_target_frame = "gripper_home"      -- the gripper align is made relative to this frame (according to gripper_commands_new)
 local z_movement_target_frame = "gripper_home" -- the gripper z movement is made relative to this frame (according to gripper_commands_new)
@@ -80,26 +84,20 @@ end
 
 function pose_offset(self)
 
-  local from = { x = if_conveyor_pose:translation(0),
-                 y = if_conveyor_pose:translation(1),
-                 z = if_conveyor_pose:translation(2),
-                 ori = { x = if_conveyor_pose:rotation(0),
-                         y = if_conveyor_pose:rotation(1),
-                         z = if_conveyor_pose:rotation(2),
-                         w = if_conveyor_pose:rotation(3),
-                       }
-                }
+  local target_pos = { x = gripper_pose_offset_x,
+                       y = gripper_pose_offset_y,
+                       z = gripper_pose_offset_z,
+  }
 
-  print_info("Conveyor pose translation is x = %f, y = %f , z  = %f", from.x, from.y, from.z)
-  local cp = tfm.transform6D(from, if_conveyor_pose:frame(), cfg_frame_)
-  print_info("Pose offset is x = %f, y = %f, z = %f", cp.x, cp.y, cp.z)
-  local ori = 0
+  local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", "finger")
+  print_info("product_pick: target_pos is x = %f, y = %f, ori = %f", target_pos.x, target_pos.y, target_pos.ori)
+  print_info("product_pick: transformed_pos is x = %f, y = %f,ori = %f", transformed_pos.x, transformed_pos.y, transformed_pos.ori)
 
-   return { x = cp.x,
-            y = cp.y,
-            z = cp.z,
-            ori = ori
-          }
+  return { x = transformed_pos.x,
+           y = transformed_pos.y,
+           z = transformed_pos.z,
+  }
+
 end
 
 
@@ -151,10 +149,8 @@ end
 
 function GRIPPER_ALIGN:init()
   local pose = pose_offset(self)
+  self.args["gripper_commands_new"] = pose
   self.args["gripper_commands_new"].command = "MOVEABS"
-  self.args["gripper_commands_new"].x = pose.x
-  self.args["gripper_commands_new"].y = pose.y
-  self.args["gripper_commands_new"].z = pose.z
   self.args["gripper_commands_new"].target_frame  = align_target_frame
 end
 
