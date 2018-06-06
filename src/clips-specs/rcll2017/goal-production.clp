@@ -617,7 +617,6 @@
                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
   =>
   (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
-  (retract ?t)
   (modify ?g (mode EVALUATED))
 )
 
