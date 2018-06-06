@@ -89,7 +89,7 @@ function pose_offset(self)
                        z = gripper_pose_offset_z,
   }
 
-  local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", "finger")
+  local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper")
   print_info("product_pick: target_pos is x = %f, y = %f, ori = %f", target_pos.x, target_pos.y, target_pos.ori)
   print_info("product_pick: transformed_pos is x = %f, y = %f,ori = %f", transformed_pos.x, transformed_pos.y, transformed_pos.ori)
 
