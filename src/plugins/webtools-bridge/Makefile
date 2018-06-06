@@ -33,7 +33,8 @@ OBJS_webtools_bridge =  webtools_bridge_plugin.o webtools_bridge_thread.o \
 								
 
 OBJS_gui = $(OBJS_webtools_bridge)
-DISABLE_OBJS_all_WARNING = 1
+
+OBJS_all = $(OBJS_webtools_bridge)
 
 # ifneq ($(PKGCONFIG),)
 #   HAVE_WEBSOCKETPP = $(if $(shell $(PKGCONFIG) --exists 'libdc1394-2'; echo $${?/1/}),1,0)
