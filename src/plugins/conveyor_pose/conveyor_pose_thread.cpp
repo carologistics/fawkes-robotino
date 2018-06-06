@@ -1093,24 +1093,6 @@ CloudPtr ConveyorPoseThread::cloud_trim(CloudPtr in, fawkes::LaserLineInterface 
            y_min = -FLT_MAX, y_max = FLT_MAX, 
            z_min = -FLT_MAX, z_max = FLT_MAX;
 
-    y_min = std::max((float) cfg_gripper_bottom_, y_min); // only points below the gripper
-    float left_cut, right_cut, top_cut, bottom_cut, front_cut, back_cut;
-    if(is_target_shelf()){ //using shelf cut values
-        left_cut = cfg_shelf_left_cut_;
-        right_cut = cfg_shelf_right_cut_;
-        top_cut = cfg_shelf_top_cut_;
-        bottom_cut = cfg_shelf_bottom_cut_;
-        front_cut = cfg_shelf_front_cut_;
-        back_cut = cfg_shelf_back_cut_;
-    } else {                    //using general cut values
-        left_cut = cfg_left_cut_;
-        right_cut = cfg_right_cut_;
-        top_cut = cfg_top_cut_;
-        bottom_cut = cfg_bottom_cut_;
-        front_cut = cfg_front_cut_;
-        back_cut = cfg_back_cut_;
-    }
-
     if(use_ll){
         // get position of initial guess in conveyor cam frame
         // rotation is ignored, since rotation values are small
@@ -1122,24 +1104,47 @@ CloudPtr ConveyorPoseThread::cloud_trim(CloudPtr in, fawkes::LaserLineInterface 
                y_ini = initial_guess_laser.getOrigin()[1],
                z_ini = initial_guess_laser.getOrigin()[2];
 
-        x_min = std::max(x_ini + left_cut, x_min);
-        x_max = std::min(x_ini + right_cut, x_max);
+        if(is_target_shelf()){ //using shelf cut values
+          x_min = std::max(x_ini + (float) cfg_shelf_left_cut_, x_min);
+          x_max = std::min(x_ini + (float) cfg_shelf_right_cut_, x_max);
 
-        y_min = std::max(y_ini + top_cut, y_min);
-        y_max = std::min(y_ini + bottom_cut, y_max);
+          y_min = std::max(y_ini + (float) cfg_shelf_top_cut_, y_min);
+          y_max = std::min(y_ini + (float) cfg_shelf_bottom_cut_, y_max);
 
-        z_min = std::max(z_ini + front_cut, z_min);
-        z_max = std::min(z_ini + back_cut, z_max);
+          z_min = std::max(z_ini + (float) cfg_shelf_front_cut_, z_min);
+          z_max = std::min(z_ini + (float) cfg_shelf_back_cut_, z_max);
+        } else { //using general cut values
+          x_min = std::max(x_ini + (float) cfg_left_cut_, x_min);
+          x_max = std::min(x_ini + (float) cfg_right_cut_, x_max);
+
+          y_min = std::max(y_ini + (float) cfg_top_cut_, y_min);
+          y_max = std::min(y_ini + (float) cfg_bottom_cut_, y_max);
+
+          z_min = std::max(z_ini + (float) cfg_front_cut_, z_min);
+          z_max = std::min(z_ini + (float) cfg_back_cut_, z_max);
+        }
 
     } else { //no laser line is equivalent to no usable initial tf guess
-        x_min = std::max(left_cut, x_min);
-        x_max = std::min(right_cut, x_max);
+        if(is_target_shelf()){ //using shelf cut values
+          x_min = std::max((float) cfg_shelf_left_cut_no_ll_, x_min);
+          x_max = std::min((float) cfg_shelf_right_cut_no_ll_, x_max);
 
-        y_min = std::max(top_cut, y_min);
-        y_max = std::min(bottom_cut, y_max);
+          y_min = std::max((float) cfg_shelf_top_cut_no_ll_, y_min);
+          y_max = std::min((float) cfg_shelf_bottom_cut_no_ll_, y_max);
 
-        z_min = std::max(front_cut, z_min);
-        z_max = std::min(back_cut, z_max);
+          z_min = std::max((float) cfg_shelf_front_cut_no_ll_, z_min);
+          z_max = std::min((float) cfg_shelf_back_cut_no_ll_, z_max);
+        } else { //using general cut values
+          x_min = std::max((float) cfg_left_cut_no_ll_, x_min);
+          x_max = std::min((float) cfg_right_cut_no_ll_, x_max);
+
+          y_min = std::max((float) cfg_top_cut_no_ll_, y_min);
+          y_max = std::min((float) cfg_bottom_cut_no_ll_, y_max);
+
+          z_min = std::max((float) cfg_front_cut_no_ll_, z_min);
+          z_max = std::min((float) cfg_back_cut_no_ll_, z_max);
+        }
+
     }
 
     CloudPtr out(new Cloud);
