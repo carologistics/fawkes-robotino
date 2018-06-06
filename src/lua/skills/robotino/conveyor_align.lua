@@ -68,7 +68,7 @@ function pose_offset(self)
 
       local target_pos = { x = x_dist_to_mps,
                            y = 0,
-                           ori = math.pi,
+                           ori = math.pi/2,
       }
 
       local transformed_pos = tfm.transform(target_pos, "conveyor_pose", "base_link")
