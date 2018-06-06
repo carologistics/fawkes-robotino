@@ -60,8 +60,18 @@ function tolerance_check(self)
    end
 end
 
-function icp_fitness_check(self)
-     return if_conveyor_pose:euclidean_fitness() > euclidean_fitness_threshold
+function drive_ready_check(self)
+  local test_target_pos = { x = x_dist_to_mps,
+                       y = 0,
+                       ori = 0,
+  }
+
+  local test_transformed_pos = tfm.transform(target_pos, "conveyor_pose", "base_link")
+  if test_transformed_pos == nil then
+    return false
+  end
+
+  return if_conveyor_pose:euclidean_fitness() > euclidean_fitness_threshold
 end
 
 function pose_offset(self)
@@ -97,7 +107,7 @@ fsm:add_transitions{
    {"INIT", "MOVE_GRIPPER", cond=true},
    {"CHECK_VISION", "CLEANUP_FAILED", timeout=20, desc = "Fitness threshold wasn't reached"},
    {"CHECK_VISION", "CLEANUP_FAILED", cond=no_writer, desc="No writer for conveyor vision"},
-   {"CHECK_VISION", "DRIVE_FORWARD", cond=icp_fitness_check, desc="Fitness threshold reached"},
+   {"CHECK_VISION", "DRIVE_FORWARD", cond=drive_ready_check, desc="Fitness threshold reached"},
    {"CHECK_TOLERANCE", "CLEANUP_FINAL", cond=tolerance_check, desc="Pose tolerance ok"},
    {"CHECK_TOLERANCE", "CHECK_VISION", cond = true, desc="Pose tolerance not ok"},
    {"CLEANUP_FINAL", "FINAL", cond=true, desc="Cleaning up after final"},
