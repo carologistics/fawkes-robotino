@@ -193,19 +193,19 @@ plugins/conveyor_pose:
   # initial_tf guess. However, to minimize computational cost and 
   # since rotation of initial_tf to conveyor_cam is small, rotation
   # is NEGLECTED!
-  without_ll:
+  with_ll:  #THESE VALUES IF LASERLINE AVAILABLE
+    left_cut: -0.045
+    right_cut: 0.045
+    top_cut: -0.02
+    bottom_cut: 0.04
+    front_cut: -0.03
+    back_cut: 0.03
+  without_ll: #THESE VALUES IF LASERLINE NOT AVAILABLE
     left_cut: -0.05
     right_cut: 0.05
     top_cut: -0.02
     bottom_cut: 0.05
     front_cut: 0.01
     back_cut: 0.5
-  with_ll:
-    left_cut: -0.035
-    right_cut: 0.035
-    top_cut: -0.02
-    bottom_cut: 0.04
-    front_cut: -0.01
-    back_cut: 0.03
 
 
