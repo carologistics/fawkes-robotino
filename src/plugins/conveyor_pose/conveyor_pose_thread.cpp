@@ -368,6 +368,8 @@ ConveyorPoseThread::loop()
       update_station_information(*msg);
       bb_pose_->write();
 
+      result_pose_.release();
+
       // Schedule restart of recognition thread
       recognition_thread_->restart();
     }
@@ -415,6 +417,7 @@ ConveyorPoseThread::loop()
 
   if (!bb_enable_switch_->is_enabled()) {
     recognition_thread_->disable();
+    result_pose_.reset();
   }
   else if (update_input_cloud()) {
     fawkes::LaserLineInterface * ll = nullptr;
@@ -474,7 +477,6 @@ ConveyorPoseThread::loop()
           if (result_pose_) {
             pose_write();
             pose_publish_tf(*result_pose_);
-            result_pose_.release();
           }
         } catch (std::exception &e) {
           logger->log_error(name(), "Unexpected exception: %s", e.what());
