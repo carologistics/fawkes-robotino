@@ -44,12 +44,10 @@ fawkes/meta_plugins:
     - skiller
   gazsim-meta-robotino-vision-high-level:
     - gazsim-tag-vision
-    - gazsim-machine-signal
   gazsim-meta-robotino-vision-low-level:
     - fvbase
     - gazsim-webcam
     - tag_vision
-    - gazsim-machine-signal
   gazsim-organization:
     - gazebo
     - gazsim-comm
