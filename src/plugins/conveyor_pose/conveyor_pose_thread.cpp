@@ -1074,8 +1074,6 @@ CloudPtr ConveyorPoseThread::cloud_trim(CloudPtr in, fawkes::LaserLineInterface 
         z_max = std::min(z_ini + (float) cfg_back_cut_, z_max);
 
     } else { // there is no laser line matching tolerances, thus no initial tf guess
-        logger->log_info(name(), "--------------STOPPED USING LASERLINE-----------");
-
         x_min = std::max((float) cfg_left_cut_no_ll_, x_min);
         x_max = std::min((float) cfg_right_cut_no_ll_, x_max);
 
