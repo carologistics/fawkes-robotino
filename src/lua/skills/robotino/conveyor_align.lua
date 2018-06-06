@@ -66,12 +66,12 @@ end
 
 function pose_offset(self)
 
-      local target_pos = { x = -0.4,
-                           y =  0,
-                           ori = 0
+      local target_pos = { x = x_dist_to_mps,
+                           y = 0,
+                           ori = 0,
       }
 
-      local transformed_pos = tfm.transform(target_pos, "/cam_conveyor", "/base_link")
+      local transformed_pos = tfm.transform(target_pos, "/conveyor_pose", "/base_link")
       print_info("target_pos is x = %f, y = %f, ori = %f", target_pos.x, target_pos.y, target_pos.ori)
       print_info("transformed_pos is x = %f, y = %f,ori = %f", transformed_pos.x, transformed_pos.y, transformed_pos.ori)
 
