@@ -66,29 +66,19 @@ end
 
 function pose_offset(self)
 
-  local from = { x = if_conveyor_pose:translation(0),
-                 y = if_conveyor_pose:translation(1),
-                 z = if_conveyor_pose:translation(2),
-                 ori = { x = if_conveyor_pose:rotation(0),
-                         y = if_conveyor_pose:rotation(1),
-                         z = if_conveyor_pose:rotation(2),
-                         w = if_conveyor_pose:rotation(3),
-                       }
-                }
+      local target_pos = { x = -0.4,
+                           y =  0,
+                           ori = 0
+      }
 
-  print_info("Conveyor pose translation is x = %f, y = %f , z  = %f", from.x, from.y, from.z)
-  local cp = tfm.transform6D(from, if_conveyor_pose:frame(), cfg_frame_)
-  print_info("Pose offset is x = %f, y = %f, z = %f", cp.x, cp.y, cp.z)
-  local ori = 0
+      local transformed_pos = tfm.transform(target_pos, "/cam_conveyor", "/base_link")
+      print_info("target_pos is x = %f, y = %f, ori = %f", target_pos.x, target_pos.y, target_pos.ori)
+      print_info("transformed_pos is x = %f, y = %f,ori = %f", transformed_pos.x, transformed_pos.y, transformed_pos.ori)
 
-   -- Keep distance to mps
-   cp.x = cp.x - x_dist_to_mps
-
-   return { x = cp.x,
-            y = cp.y,
-            z = cp.z,
-            ori = ori
-          }
+      return { x = transformed_pos.x ,
+               y = transformed_pos.y,
+               ori = transformed_pos.ori,
+      }
 end
 
 
