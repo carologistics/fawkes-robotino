@@ -46,7 +46,7 @@ local tolerance_x = 0.5  -- x-tolerance according to conveyor pose
 local gripper_x = 0.04  -- gripper x-coordinate before the align
 local gripper_y = 0  -- gripper y-coordinate before the align
 local gripper_z = 0.03  -- gripper z-coordinate before the align
-local x_dist_to_mps = 0.4  -- x-distance the robot should have after the align
+local x_dist_to_mps = -0.3  -- x-distance the robot should have after the align
 local cfg_frame_ = "gripper"
 
 function no_writer()
@@ -71,7 +71,7 @@ function pose_offset(self)
                            ori = math.pi,
       }
 
-      local transformed_pos = tfm.transform(target_pos, "/conveyor_pose", "/base_link")
+      local transformed_pos = tfm.transform(target_pos, "conveyor_pose", "base_link")
       print_info("target_pos is x = %f, y = %f, ori = %f", target_pos.x, target_pos.y, target_pos.ori)
       print_info("transformed_pos is x = %f, y = %f,ori = %f", transformed_pos.x, transformed_pos.y, transformed_pos.ori)
 
