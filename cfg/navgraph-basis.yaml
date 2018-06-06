@@ -242,6 +242,40 @@ nodes:
       - tag_output: 50
       - input_offset_x: -0.02
 
+  - !unconnected
+    name: C-RS2-O-testing
+    pos: [0.219, 3.532]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation: 0.0
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+
+  - !unconnected
+    name: C-RS2-I-testing
+    pos: [2.247, 3.859]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation: -3.14
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)
 connections:
