@@ -68,7 +68,7 @@ function pose_offset(self)
 
       local target_pos = { x = x_dist_to_mps,
                            y = 0,
-                           ori = 0,
+                           ori = math.pi,
       }
 
       local transformed_pos = tfm.transform(target_pos, "/conveyor_pose", "/base_link")
@@ -121,8 +121,7 @@ end
 function DRIVE_FORWARD:init()
   local pose = pose_offset(self)
   print_info("Drive forward, x = %f , y = %f", pose.x, pose.y)
-  self.args["motor_move"].x = pose.x
-  self.args["motor_move"].y = pose.y
+  self.args["motor_move"] = pose
 end
 
 function CLEANUP_FINAL:init()
