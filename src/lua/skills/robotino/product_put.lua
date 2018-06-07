@@ -126,7 +126,7 @@ fsm:add_transitions{
 
 function INIT:init()
   if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
-  if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.SetStationMessage:new(if_conveyor_pose.BASE_STATION,if_conveyor_pose.OUTPUT_CONVEYOR))
+  if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.SetStationMessage:new(self.fsm.vars.mps_type,self.fsm.vars.mps_target))
 end
 
 function GRIPPER_ALIGN:init()

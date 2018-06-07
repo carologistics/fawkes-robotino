@@ -27,6 +27,7 @@ name               = "get_product_from"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"product_pick", "drive_to_local", "conveyor_align"}
 depends_interfaces = {
+  {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
 }
 
 documentation      = [==[
@@ -48,10 +49,10 @@ function already_at_conveyor(self)
    return (self.fsm.vars.atmps == "CONVEYOR")
 end
 
+
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
    {"DRIVE_TO", SkillJumpState, skills={{drive_to_local}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   --{"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PICK", fail_to="FAILED"},
    {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
 }
@@ -65,6 +66,32 @@ fsm:add_transitions{
 
 function INIT:init()
    self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
+   print_info("substring %s",string.sub(self.fsm.vars.place,3,3))
+   if string.sub(self.fsm.vars.place,3,3) == "B" then
+     self.fsm.vars.mps_type = if_conveyor_pose.BASE_STATION
+   end
+   if string.sub(self.fsm.vars.place,3,3) == "C" then
+     self.fsm.vars.mps_type = if_conveyor_pose.CAP_STATION
+   end
+   if string.sub(self.fsm.vars.place,3,3) == "R" then
+     self.fsm.vars.mps_type = if_conveyor_pose.RING_STATION
+   end
+   if string.sub(self.fsm.vars.place,3,3) == "S" then
+     self.fsm.vars.mps_type = if_conveyor_pose.STORAGE_STATION
+   end
+   if string.sub(self.fsm.vars.place,3,3) == "D" then
+     self.fsm.vars.mps_type = if_conveyor_pose.DELIVERY_STATION
+   end
+
+   if self.fsm.vars.side == "input" then
+     self.fsm.vars.mps_target = if_conveyor_pose.INPUT_CONVEYOR
+   else
+     self.fsm.vars.mps_target = if_conveyor_pose.OUTPUT_CONVEYOR
+   end
+
+   if self.fsm.vars.shelf == "LEFT" or self.fsm.vars.shelf == "MIDDLE" or self.fsm.vars.shelf == "RIGHT" then
+     self.fsm.vars.mps_target = if_conveyor_pose.SHELF
+   end
 end
 
 function DRIVE_TO:init()
@@ -75,9 +102,16 @@ function DRIVE_TO:init()
    end
 end
 
+function PRODUCT_PICK:init()
+  self.args["product_pick"].mps_type = self.fsm.vars.mps_type
+  self.args["product_pick"].mps_target = self.fsm.vars.mps_target
+end
 
 function CONVEYOR_ALIGN:init()
    if (self.fsm.vars.shelf == nil) then
      self.args["conveyor_align"].disable_realsense_afterwards = false
    end
+
+   self.args["conveyor_align"].mps_type = self.fsm.vars.mps_type
+   self.args["conveyor_align"].mps_target = self.fsm.vars.mps_target
 end
