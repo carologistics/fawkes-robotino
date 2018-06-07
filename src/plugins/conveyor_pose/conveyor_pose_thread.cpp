@@ -247,13 +247,13 @@ ConveyorPoseThread::init()
               CFG_PREFIX "/reference_models/output_conveyor");
         break;
       case ConveyorPoseInterface::SHELF_LEFT:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_left");
         break;
       case ConveyorPoseInterface::SHELF_MIDDLE:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_middle");
         break;
       case ConveyorPoseInterface::SHELF_RIGHT:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_right");
         break;
       case ConveyorPoseInterface::SLIDE:
         type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/slide");
