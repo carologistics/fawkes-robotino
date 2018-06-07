@@ -33,6 +33,7 @@ fawkes/meta_plugins:
     - laser-pointclouds
     - laser-cluster
     - laser-lines
+    - mps-laser-gen
   m-base-full:
     - m-base-bare
     - m-base-laser
