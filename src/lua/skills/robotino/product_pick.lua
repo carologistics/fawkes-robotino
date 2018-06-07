@@ -148,6 +148,11 @@ function OPEN_GRIPPER:init()
   self.args["gripper_commands_new"].command = "OPEN"
 end
 
+function CLOSE_GRIPPER:init()
+   self.args["gripper_commands_new"].command= "CLOSE"
+end
+
+
 function GRIPPER_ALIGN:init()
   local pose = pose_offset(self)
   self.args["gripper_commands_new"] = pose
@@ -176,7 +181,7 @@ end
 function MOVE_GRIPPER_BACK:init()
   self.args["gripper_commands_new"].command = "MOVEABS"
   self.args["gripper_commands_new"].x = gripper_back_x
-  self.args["gripper_commands_new"].command = x_movement_target_frame
+  self.args["gripper_commands_new"].target_frame = x_movement_target_frame
 end
 
 
