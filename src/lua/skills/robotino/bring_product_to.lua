@@ -89,9 +89,9 @@ function INIT:init()
      self.fsm.vars.mps_type = if_conveyor_pose.DELIVERY_STATION
    end
    if self.fsm.vars.side == "output" then
-     self.fsm.vars.mps_target = if_conveyor_pose.INPUT_CONVEYOR
-   else
      self.fsm.vars.mps_target = if_conveyor_pose.OUTPUT_CONVEYOR
+   else
+     self.fsm.vars.mps_target = if_conveyor_pose.INPUT_CONVEYOR
    end
 
    if self.fsm.vars.shelf == "LEFT" or self.fsm.vars.shelf == "MIDDLE" or self.fsm.vars.shelf == "RIGHT" then
