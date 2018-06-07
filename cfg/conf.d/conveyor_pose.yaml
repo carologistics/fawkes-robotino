@@ -122,9 +122,9 @@ plugins/conveyor_pose:
         y: -0.22
         z: 0.65
       middle_shelf:
-        x: -0.01
-        y: -0.27
-        z: 0.65
+        x: 0.005
+        y: 0.11
+        z: 0.63
       right_shelf:
         x: -0.01
         y: -0.32
@@ -212,12 +212,12 @@ plugins/conveyor_pose:
     back_cut: 0.5
   shelf:
     with_ll: # THESE VALUES IF LASERLINE IS AVAILABLE
-      left_cut: -0.035
-      right_cut: 0.035
+      left_cut: 0.035
+      right_cut: 0.30
       top_cut: -0.02
-      bottom_cut: 0.04
+      bottom_cut: 0.07
       front_cut: -0.01
-      back_cut: 0.03
+      back_cut: 0.10
     without_ll: #THESE VALUES IF NOT
       left_cut: -0.05
       right_cut: 0.05
