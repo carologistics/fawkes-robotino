@@ -66,7 +66,7 @@ function drive_ready_check(self)
                        ori = 0,
   }
 
-  local test_transformed_pos = tfm.transform(target_pos, "conveyor_pose", "base_link")
+  local test_transformed_pos = tfm.transform(test_target_pos, "conveyor_pose", "base_link")
   if test_transformed_pos == nil then
     return false
   end
