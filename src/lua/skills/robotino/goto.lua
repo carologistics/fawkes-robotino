@@ -153,3 +153,10 @@ function MOVING:init()
       "map")
    fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
 end
+
+function MOVING:reset()
+    if navigator:has_writer() and not navigator:is_final() then
+       printf("goto: sending stop");
+       navigator:msgq_enqueue(navigator.StopMessage:new(fsm.vars.msgid or 0))
+    end
+ end

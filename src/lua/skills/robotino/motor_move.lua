@@ -241,7 +241,7 @@ fsm:add_transitions{
    {"INIT", "DRIVE_CAM", cond="pos3d_iface(vars.frame)"},
    {"INIT", "DRIVE", cond=true},
 
-   {"STOP_NAVIGATOR", "INIT", timeout=1},
+   {"STOP_NAVIGATOR", "INIT", cond="navigator:is_final()"},
    
    {"DRIVE", "FAILED", cond="not motor:has_writer()", desc="No writer for motor"},
    {"DRIVE", "FAILED", cond="vars.tf_failed", desc="dist TF failed"},
