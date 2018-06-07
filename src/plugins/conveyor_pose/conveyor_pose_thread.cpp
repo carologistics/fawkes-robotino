@@ -214,6 +214,10 @@ ConveyorPoseThread::init()
   cfg_shelf_front_cut_              = config->get_float( CFG_PREFIX "/shelf/with_ll/front_cut" );
   cfg_shelf_back_cut_               = config->get_float( CFG_PREFIX "/shelf/with_ll/back_cut" );
 
+  cfg_shelf_left_off_               = config->get_float( CFG_PREFIX "/shelf/left_off" );
+  cfg_shelf_middle_off_             = config->get_float( CFG_PREFIX "/shelf/left_off" );
+  cfg_shelf_right_off_              = config->get_float( CFG_PREFIX "/shelf/left_off" );
+
 
   cfg_voxel_grid_leaf_size_  = config->get_float( CFG_PREFIX "/voxel_grid/leaf_size" );
 
@@ -917,6 +921,12 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         change_val(opt, cfg_shelf_front_cut_, v->get_float());
       else if(opt == "/with_ll/back_cut")
         change_val(opt, cfg_shelf_back_cut_, v->get_float());
+      else if(opt == "/left_off")
+        change_val(opt, cfg_shelf_left_off_, v->get_float());
+      else if(opt == "/middle_off")
+        change_val(opt, cfg_shelf_middle_off_, v->get_float());
+      else if(opt == "/right_off")
+        change_val(opt, cfg_shelf_right_off_, v->get_float());
     } else if (sub_prefix == "/icp") {
       if (opt == "/max_correspondence_dist")
         change_val(opt, recognition_thread_->cfg_icp_max_corr_dist_, v->get_float());
@@ -1105,8 +1115,26 @@ CloudPtr ConveyorPoseThread::cloud_trim(CloudPtr in, fawkes::LaserLineInterface 
                z_ini = initial_guess_laser.getOrigin()[2];
 
         if(is_target_shelf()){ //using shelf cut values
-          x_min = std::max(x_ini + (float) cfg_shelf_left_cut_, x_min);
-          x_max = std::min(x_ini + (float) cfg_shelf_right_cut_, x_max);
+          float x_min_temp = x_ini + (float) cfg_shelf_left_cut_,
+                x_max_temp = x_ini + (float) cfg_shelf_right_cut_;
+          switch(current_mps_type_) {
+            case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_LEFT:
+              x_min_temp += (float) cfg_shelf_left_off_;
+              x_max_temp += (float) cfg_shelf_left_off_;
+              break;
+            case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_MIDDLE:
+              x_min_temp += (float) cfg_shelf_middle_off_;
+              x_max_temp += (float) cfg_shelf_middle_off_;
+              break;
+            case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_RIGHT:
+              x_min_temp += (float) cfg_shelf_right_off_;
+              x_max_temp += (float) cfg_shelf_right_off_;
+              break;
+            default: //This should not happen
+              break;
+          }
+          x_min = std::max(x_min_temp, x_min);
+          x_max = std::min(x_max_temp, x_max);
 
           y_min = std::max(y_ini + (float) cfg_shelf_top_cut_, y_min);
           y_max = std::min(y_ini + (float) cfg_shelf_bottom_cut_, y_max);

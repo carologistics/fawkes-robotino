@@ -180,6 +180,11 @@ private:
   std::atomic<float> cfg_shelf_front_cut_no_ll_;
   std::atomic<float> cfg_shelf_back_cut_no_ll_;
 
+
+  std::atomic<float> cfg_shelf_left_off_;
+  std::atomic<float> cfg_shelf_middle_off_;
+  std::atomic<float> cfg_shelf_right_off_;
+
   std::atomic<float> cfg_voxel_grid_leaf_size_;
 
   std::map<fawkes::ConveyorPoseInterface::MPS_TARGET, std::array<std::atomic<float>, 3>> cfg_target_hint_;
