@@ -46,23 +46,23 @@ local gripper_tolerance_x = 0.5 -- gripper x tolerance according to conveyor pos
 local gripper_tolerance_y = 0.5 -- gripper y tolerance according to conveyor pose
 local gripper_tolerance_z = 0.5 -- gripper z tolerance according to conveyor pose
 
-local gripper_forward_x = 0.02 -- distance to move gripper forward after align
-local gripper_down_z = 0.01    -- distance to move gripper down after driving over product
-local gripper_down_z = 0       -- distance to mover gripper down second time
-local gripper_back_x = 0.03    -- distance to move gripper back after closing gripper
-local drive_back_x = -0.2      -- distance to drive back after closing the gripper
+  local gripper_forward_x = 0.05 -- distance to move gripper forward after align
+  local gripper_down_z = 0.025    -- distance to move gripper down after driving over product
+  local gripper_down_second_z = 0.022       -- distance to mover gripper down second time
+  local gripper_back_x = -0.07   -- distance to move gripper back after closing gripper
+  local drive_back_x = -0.1      -- distance to drive back after closing the gripper
 
 local gripper_init_x = 0.04 -- initial x position of the gripper
 local gripper_init_y = 0    -- initial y position of the gripper
 local gripper_init_z = 0.03 -- initial z position of the gripper
 
-local gripper_pose_offset_x = 0.02  -- conveyor pose offset in x direction
-local gripper_pose_offset_y = 0     -- conveyor_pose offset in y direction
-local gripper_pose_offset_z = 0.02  -- conveyor_pose offset in z direction
+  local gripper_pose_offset_x = 0.02  -- conveyor pose offset in x direction
+  local gripper_pose_offset_y = 0     -- conveyor_pose offset in y direction
+  local gripper_pose_offset_z = 0.04  -- conveyor_pose offset in z direction
 
-local align_target_frame = "gripper_home"      -- the gripper align is made relative to this frame (according to gripper_commands_new)
-local z_movement_target_frame = "gripper_home" -- the gripper z movement is made relative to this frame (according to gripper_commands_new)
-local x_movement_target_frame = "gripper_home" -- the gripper x movement is made relative to this frame (according to griper_commands_new)
+  local align_target_frame = "gripper"      -- the gripper align is made relative to this frame (according to gripper_commands_new)
+  local z_movement_target_frame = "gripper_home" -- the gripper z movement is made relative to this frame (according to gripper_commands_new)
+  local x_movement_target_frame = "gripper" -- the gripper x movement is made relative to this frame (according to griper_commands_new)
 
 local cfg_frame_ = "gripper"
 
@@ -85,19 +85,20 @@ end
 function pose_offset(self)
 
   local target_pos = { x = gripper_pose_offset_x,
-                       y = gripper_pose_offset_y,
-                       z = gripper_pose_offset_z,
+                        y = gripper_pose_offset_y,
+                        z = gripper_pose_offset_z,
+                        ori = { x=0, y = 0, z= 0, w= 0}
+
+   }
+
+   local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper")
+   print_info("product_pick: target_pos is x = %f, y = %f, z = %f", target_pos.x, target_pos.y, target_pos.z)
+   print_info("product_pick: transformed_pos is x = %f, y = %f,z = %f", transformed_pos.x, transformed_pos.y, transformed_pos.z)
+
+   return { x = transformed_pos.x,
+            y = transformed_pos.y,
+            z = transformed_pos.z,
   }
-
-  local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper")
-  print_info("product_pick: target_pos is x = %f, y = %f, ori = %f", target_pos.x, target_pos.y, target_pos.ori)
-  print_info("product_pick: transformed_pos is x = %f, y = %f,ori = %f", transformed_pos.x, transformed_pos.y, transformed_pos.ori)
-
-  return { x = transformed_pos.x,
-           y = transformed_pos.y,
-           z = transformed_pos.z,
-  }
-
 end
 
 
