@@ -151,9 +151,14 @@
 	;(mutex-unlock-async ?lock-name)
 )
 
-(defrule lock-actions-unlock-location-done
-  ?pa <- (plan-action (action-name location-unlock) (status RUNNING))
+(defrule lock-actions-unlock-location-pending
+  ?pa <- (plan-action (action-name location-unlock) (status RUNNING)
+                      (param-names $?param-names)
+                      (param-values $?param-values))
   =>
+  (assert (location-unlock-pending
+            (plan-action-arg location ?param-names ?param-values)
+            (plan-action-arg side ?param-names ?param-values)))
   (modify ?pa (status EXECUTION-SUCCEEDED))
 )
 
@@ -163,9 +168,9 @@
   (domain-object (name ?side))
   (domain-obj-is-of-type ?side mps-side)
   (wm-fact (key cx identity) (value ?self))
+  (location-unlock-pending ?loc ?side)
   ?mf <- (mutex (name ?lock-name&:(eq ?lock-name (sym-cat ?loc - ?side)))
                 (state LOCKED) (request NONE) (locked-by ?self))
-  (domain-pending-sensed-fact (name location-locked) (param-values ?loc ?side))
   (navgraph-node
     (name ?node&:(eq ?node
                      (str-cat ?loc (if (eq ?side INPUT) then -I else -O))))
@@ -176,4 +181,12 @@
   (printout warn "Unlocking " ?lock-name " based on distance ("
                  (distance-mf ?pose ?mps-pose) ")" crlf)
   (mutex-unlock-async ?lock-name)
+)
+
+(defrule lock-actions-unlock-location-done
+  ?l <- (location-unlock-pending ?loc ?side)
+  (mutex (name ?lock-name&:(eq ?lock-name (sym-cat ?loc - ?side)))
+         (state OPEN) (request NONE) (locked-by ?self))
+  =>
+  (retract ?l)
 )
