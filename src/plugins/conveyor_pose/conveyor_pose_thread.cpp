@@ -68,6 +68,40 @@ ConveyorPoseThread::ConveyorPoseThread()
   , realsense_switch_(nullptr)
 {}
 
+
+std::string
+ConveyorPoseThread::get_model_path(ConveyorPoseInterface *iface, ConveyorPoseInterface::MPS_TYPE type, ConveyorPoseInterface::MPS_TARGET target)
+{
+  std::string path = std::string(CFG_PREFIX "/reference_models/")
+      + iface->enum_tostring("MPS_TYPE", type) + "_" + iface->enum_tostring("MPS_TARGET", target);
+  if (config->exists(path))
+    return CONFDIR "/" + config->get_string(path);
+  else {
+    logger->log_info(name(), "No override for %s", path.c_str());
+    switch(target) {
+    case ConveyorPoseInterface::INPUT_CONVEYOR:
+      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/input_conveyor");
+    case ConveyorPoseInterface::OUTPUT_CONVEYOR:
+      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/output_conveyor");
+    case ConveyorPoseInterface::SHELF_LEFT:
+      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_left");
+    case ConveyorPoseInterface::SHELF_MIDDLE:
+      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_middle");
+    case ConveyorPoseInterface::SHELF_RIGHT:
+      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_right");
+    case ConveyorPoseInterface::SLIDE:
+      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/slide");
+    case ConveyorPoseInterface::NO_LOCATION:
+      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/default");
+    case ConveyorPoseInterface::LAST_MPS_TARGET_ELEMENT:
+      return "";
+    }
+  }
+
+  return "";
+}
+
+
 void
 ConveyorPoseThread::init()
 {
@@ -104,6 +138,12 @@ ConveyorPoseThread::init()
   recognition_thread_->cfg_icp_shelf_hv_inlier_thresh_  = config->get_float( CFG_PREFIX "/icp/hv_shelf_inlier_threshold" );
   recognition_thread_->cfg_icp_shelf_hv_penalty_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_shelf_penalty_threshold" );
   recognition_thread_->cfg_icp_shelf_hv_support_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_shelf_support_threshold" );
+
+  bb_pose_ = blackboard->open_for_writing<ConveyorPoseInterface>((cfg_if_prefix_ + "status").c_str());
+  bb_pose_->set_current_mps_type(bb_pose_->NO_STATION);
+  bb_pose_->set_current_mps_target(bb_pose_->NO_LOCATION);
+
+  bb_pose_->write();
 
   // Init of station target hints
   cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR];
@@ -235,33 +275,8 @@ ConveyorPoseThread::init()
     for (int j = ConveyorPoseInterface::NO_LOCATION; j != ConveyorPoseInterface::LAST_MPS_TARGET_ELEMENT; j++)
     {
       ConveyorPoseInterface::MPS_TARGET mps_target = static_cast<ConveyorPoseInterface::MPS_TARGET>(j);
-      switch(mps_target)
-      {
-      case ConveyorPoseInterface::INPUT_CONVEYOR:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(
-              CFG_PREFIX "/reference_models/input_conveyor");
-        break;
-      case ConveyorPoseInterface::OUTPUT_CONVEYOR:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(
-              CFG_PREFIX "/reference_models/output_conveyor");
-        break;
-      case ConveyorPoseInterface::SHELF_LEFT:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_left");
-        break;
-      case ConveyorPoseInterface::SHELF_MIDDLE:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_middle");
-        break;
-      case ConveyorPoseInterface::SHELF_RIGHT:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_right");
-        break;
-      case ConveyorPoseInterface::SLIDE:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/slide");
-        break;
-      case ConveyorPoseInterface::NO_LOCATION:
-        break;
-      case ConveyorPoseInterface::LAST_MPS_TARGET_ELEMENT:
-        break;
-      }
+
+      type_target_to_path_[{mps_type, mps_target}] = get_model_path(bb_pose_, mps_type, mps_target);
     }
   }
 
@@ -332,12 +347,6 @@ ConveyorPoseThread::init()
   bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>((cfg_if_prefix_ + "switch").c_str());
   bb_enable_switch_->set_enabled( cfg_debug_mode_ || cfg_enable_switch_); // ignore cfg_enable_switch_ and set to true if debug mode is used
   bb_enable_switch_->write();
-
-  bb_pose_ = blackboard->open_for_writing<ConveyorPoseInterface>((cfg_if_prefix_ + "status").c_str());
-  bb_pose_->set_current_mps_type(bb_pose_->NO_STATION);
-  bb_pose_->set_current_mps_target(bb_pose_->NO_LOCATION);
-
-  bb_pose_->write();
 
   realsense_switch_ = blackboard->open_for_reading<SwitchInterface>(cfg_bb_realsense_switch_name_.c_str());
 
