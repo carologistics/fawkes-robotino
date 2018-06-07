@@ -225,6 +225,13 @@ plugins/conveyor_pose:
       front_cut: 0.01
       back_cut: 0.5
 
+    #The following values describe the x offset of the cutbox, relative to the initial estimate.
+    #Eventhough the cutboxes used for shelf icp are of similar shape, they are at different x
+    #position. 
+    left_off: 0.0
+    middle_off: 0.0
+    right_off: 0.0
+
 
 
 
