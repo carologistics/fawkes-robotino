@@ -22,19 +22,17 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "conveyor_align"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"motor_move", "ax12gripper"}
-depends_interfaces = { 
+depends_skills     = {"motor_move", "gripper_commands_new"}
+depends_interfaces = {
    {v = "motor", type = "MotorInterface", id="Robotino" },
-   {v = "if_conveyor", type = "Position3DInterface", id="conveyor_pose/pose"},
-   {v = "conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
-   {v = "if_gripper", type = "AX12GripperInterface", id="Gripper AX12"},
+   {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
+   {v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
 }
 
 documentation      = [==[aligns the robot orthogonal to the conveyor by using the
                          conveyor vision
 Parameters:
        @param disable_realsense_afterwards   disable the realsense after aligning
-
 ]==]
 
 -- Initialize as skill module
@@ -42,145 +40,108 @@ Parameters:
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
-local z_pos = 0.048
-if config:exists("/skills/conveyor_align/z_pos") then
-   z_pos = config:get_float("/skills/conveyor_align/z_pos")
-end
-
-local pick_offset = 0
-if config:exists("/skills/conveyor_align/pick_offset") then
-   pick_offset = config:get_float("/skills/conveyor_align/pick_offset")
-end
-
-local TOLERANCE_Y = 0.002
-local TOLERANCE_Z = 0.002
-local MAX_TRIES = 20
---local X_DEST_POS = 0.08
-local X_DEST_POS = 0.16
-local Y_DEST_POS = 0.0
-local Z_DEST_POS = z_pos
-local Z_DEST_POS_PICK = z_pos + pick_offset
+-- Constants
+local euclidean_fitness_threshold = 8 -- threshold for euclidean fitness  (fitness should be higher)
+local tolerance_x = 0.5  -- x-tolerance according to conveyor pose
+local gripper_x = 0.04  -- gripper x-coordinate before the align
+local gripper_y = 0  -- gripper y-coordinate before the align
+local gripper_z = 0.03  -- gripper z-coordinate before the align
+local x_dist_to_mps = -0.31  -- x-distance the robot should have after the align
 local cfg_frame_ = "gripper"
 
 function no_writer()
-   return not if_conveyor:has_writer()
+   return not if_conveyor_pose:has_writer()
 end
 
-function see_conveyor()
-   return if_conveyor:visibility_history() > 10
-end
-
-function tolerances_ok(self)
-   local pose = pose_des(self)
-   print("pose_y = " .. pose.y)
-   if math.abs(pose.y) <= TOLERANCE_Y and math.abs(pose.z) <= TOLERANCE_Z and max_tries_not_reached(self) then
+function tolerance_check(self)
+   local pose = pose_offset(self)
+   if math.abs(pose.x) <= tolerance_x then
       return true
    end
 end
 
-function max_tries_not_reached(self)
-   return (self.fsm.vars.counter < MAX_TRIES)
+function drive_ready_check(self)
+  local test_target_pos = { x = x_dist_to_mps,
+                       y = 0,
+                       ori = 0,
+  }
+
+  local test_transformed_pos = tfm.transform(test_target_pos, "conveyor_pose", "base_link")
+  if test_transformed_pos == nil then
+    return false
+  end
+
+  return if_conveyor_pose:euclidean_fitness() > euclidean_fitness_threshold
 end
 
 function pose_offset(self)
-   if not if_gripper:is_holds_puck() then
-      Z_DEST_POS = Z_DEST_POS_PICK
-   end
 
-   local from = { x = if_conveyor:translation(0),
-                  y = if_conveyor:translation(1),
-                  z = if_conveyor:translation(2),
-                  ori = { x = if_conveyor:rotation(0),
-                          y = if_conveyor:rotation(1),
-                          z = if_conveyor:rotation(2),
-                          w = if_conveyor:rotation(3),
-                        }
-                }
-   local cp = tfm.transform6D(from, if_conveyor:frame(), cfg_frame_)
+      local target_pos = { x = x_dist_to_mps,
+                           y = 0,
+                           ori = 0,
+      }
 
-   -- TODO check nil
+      local transformed_pos = tfm.transform(target_pos, "conveyor_pose", "base_link")
+      print_info("target_pos is x = %f, y = %f, ori = %f", target_pos.x, target_pos.y, target_pos.ori)
+      print_info("transformed_pos is x = %f, y = %f,ori = %f", transformed_pos.x, transformed_pos.y, transformed_pos.ori)
 
-   local ori = fawkes.tf.get_yaw( fawkes.tf.Quaternion:new(cp.ori.x, cp.ori.y, cp.ori.z, cp.ori.w))
-   print("ori want: ".. ori)
-   if math.abs(ori) > 0.7 then
-      ori = 0
-   end
-   print("z_pose intial: " .. cp.z)
-   return { x = cp.x,
-            y = cp.y,
-            z = cp.z,
-            ori = ori
-          }
+      return { x = transformed_pos.x ,
+               y = transformed_pos.y,
+               ori = transformed_pos.ori,
+      }
 end
 
-function pose_des(self)
-   local pose = pose_offset(self)
-   pose.x = pose.x - X_DEST_POS
-   pose.y = pose.y - Y_DEST_POS
-   pose.z = pose.z + Z_DEST_POS
-   return pose
-end
-
-function round(x)
-  if x%2 ~= 0.5 then
-     return math.floor(x+0.5)
-  end
-  return x-0.5
-end
 
 fsm:define_states{ export_to=_M,
    closure={},
    {"INIT", JumpState},
+   {"MOVE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="CHECK_VISION", failed_to="CLEANUP_FAILED"},
    {"CHECK_VISION", JumpState},
-   {"DRIVE", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="DECIDE_TRY", fail_to="CLEANUP_FAILED"},
-   {"DECIDE_TRY", JumpState},
+   {"DRIVE_FORWARD", SkillJumpState, skills={{motor_move}}, final_to="CHECK_TOLERANCE", failed_to="CLEANUP_FAILED"},
+   {"CHECK_TOLERANCE", JumpState},
    {"CLEANUP_FINAL", JumpState},
    {"CLEANUP_FAILED", JumpState},
 }
 
 fsm:add_transitions{
-   {"INIT", "CHECK_VISION", cond=true},
-   {"CHECK_VISION", "CLEANUP_FAILED", timeout=20, desc="No vis_hist on conveyor vision"},
+   {"INIT", "MOVE_GRIPPER", cond=true},
+   {"CHECK_VISION", "CLEANUP_FAILED", timeout=20, desc = "Fitness threshold wasn't reached"},
    {"CHECK_VISION", "CLEANUP_FAILED", cond=no_writer, desc="No writer for conveyor vision"},
-   {"CHECK_VISION", "DRIVE", cond=see_conveyor},
-   {"DECIDE_TRY", "CLEANUP_FINAL", cond=tolerances_ok, desc="Robot is aligned"},
-   {"DECIDE_TRY", "CHECK_VISION", cond=max_tries_not_reached, desc="Do another alignment"},
-   {"DECIDE_TRY", "CLEANUP_FAILED", cond=true, desc="Couldn't align within MAX_TRIES"},
+   {"CHECK_VISION", "DRIVE_FORWARD", cond=drive_ready_check, desc="Fitness threshold reached"},
+   {"CHECK_TOLERANCE", "CLEANUP_FINAL", cond=tolerance_check, desc="Pose tolerance ok"},
+   {"CHECK_TOLERANCE", "CHECK_VISION", cond = true, desc="Pose tolerance not ok"},
    {"CLEANUP_FINAL", "FINAL", cond=true, desc="Cleaning up after final"},
    {"CLEANUP_FAILED", "FAILED", cond=true, desc="Cleaning up after fail"},
 }
 
 function INIT:init()
-   self.fsm.vars.counter = 0
-   conveyor_switch:msgq_enqueue_copy(conveyor_switch.EnableSwitchMessage:new())
+   if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
+   if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.SetStationMessage:new(self.fsm.vars.mps_type,self.fsm.vars.mps_target))
 end
 
-function DECIDE_TRY:init()
-   self.fsm.vars.counter = self.fsm.vars.counter + 1
-   print("Try number " .. self.fsm.vars.counter)
+function MOVE_GRIPPER:init()
+  print_info("Move gripper to %f,%f,%f", gripper_x, gripper_y, gripper_z)
+  self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].x = gripper_x
+  self.args["gripper_commands_new"].y = gripper_y
+  self.args["gripper_commands_new"].z = gripper_z
 end
 
-function DRIVE:init()
-   local pose = pose_des(self)
-   self.args["motor_move"] = {x = pose.x, y = pose.y, tolerance = { x=0.002, y=0.002, ori=0.01 }, vel_trans = 0.05} --TODO set tolerances as defined in the global variable
-   local z_position = round(pose.z * 1000)
-   print("z_pose: " .. pose.z)
-   self.args["ax12gripper"].command = "RELGOTOZ"
-   if math.abs(pose.z) >= TOLERANCE_Z then
-      self.args["ax12gripper"].z_position = z_position
-   else
-      self.args["ax12gripper"].z_position = 0
-   end
+
+function DRIVE_FORWARD:init()
+  local pose = pose_offset(self)
+  print_info("Drive forward, x = %f , y = %f", pose.x, pose.y)
+  self.args["motor_move"] = pose
 end
 
 function CLEANUP_FINAL:init()
    if (self.fsm.vars.disable_realsense_afterwards == nil or self.fsm.vars.disable_realsense_afterwards) then
-     conveyor_switch:msgq_enqueue_copy(conveyor_switch.DisableSwitchMessage:new())
+     if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
    end
 end
 
 function CLEANUP_FAILED:init()
    if (self.fsm.vars.disable_realsense_afterwards == nil or self.fsm.vars.disable_realsense_afterwards) then
-     conveyor_switch:msgq_enqueue_copy(conveyor_switch.DisableSwitchMessage:new())
+     if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
    end
 end
