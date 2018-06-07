@@ -80,26 +80,22 @@ end
 
 function pose_offset(self)
 
-  local from = { x = if_conveyor_pose:translation(0),
-                 y = if_conveyor_pose:translation(1),
-                 z = if_conveyor_pose:translation(2),
-                 ori = { x = if_conveyor_pose:rotation(0),
-                         y = if_conveyor_pose:rotation(1),
-                         z = if_conveyor_pose:rotation(2),
-                         w = if_conveyor_pose:rotation(3),
-                       }
-                }
+  local target_pos = { x = gripper_pose_offset_x,
+                       y = gripper_pose_offset_y,
+                       z = gripper_pose_offset_z,
+                       ori = { x=0, y = 0, z= 0, w= 0}
 
-  print_info("Conveyor pose translation is x = %f, y = %f , z  = %f", from.x, from.y, from.z)
-  local cp = tfm.transform6D(from, if_conveyor_pose:frame(), cfg_frame_)
-  print_info("Pose offset is x = %f, y = %f, z = %f", cp.x, cp.y, cp.z)
-  local ori = 0
+   }
 
-   return { x = cp.x,
-            y = cp.y,
-            z = cp.z,
-            ori = ori
-          }
+   local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper")
+   print_info("product_pick: target_pos is x = %f, y = %f, z = %f", target_pos.x, target_pos.y, target_pos.z)
+   print_info("product_pick: transformed_pos is x = %f, y = %f,z = %f", transformed_pos.x, transformed_pos.y, transformed_pos.z)
+
+   return { x = transformed_pos.x,
+            y = transformed_pos.y,
+            z = transformed_pos.z,
+  }
+
 end
 
 fsm:define_states{ export_to=_M,
@@ -111,7 +107,8 @@ fsm:define_states{ export_to=_M,
   {"MOVE_GRIPPER_DOWN", SkillJumpState, skills={{gripper_commands_new}}, final_to="OPEN_GRIPPER", fail_to="CLEANUP_FAILED"},
   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="CLEANUP_FAILED"},
   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "DRIVE_BACK", fail_to="CLEANUP_FAILED"},
-  {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CLEANUP_FINAL", fail_to="CLEANUP_FAILED"},
+  {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CLOSE_GRIPPER", fail_to="CLEANUP_FAILED"},
+  {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLEANUP_FINAL", fail_to="CLEANUP_FAILED"},
   {"CLEANUP_FINAL", JumpState},
   {"CLEANUP_FAILED", JumpState},
 }
@@ -134,29 +131,37 @@ end
 
 function GRIPPER_ALIGN:init()
   local pose = pose_offset(self)
-  --self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].command = "MOVEABS"
   self.args["gripper_commands_new"].x = pose.x
   self.args["gripper_commands_new"].y = pose.y
   self.args["gripper_commands_new"].z = pose.z
+  self.args["gripper_commands_new"].target_frame = align_target_frame
 end
 
 function MOVE_GRIPPER_FORWARD:init()
-  --self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].target_frame = x_movement_target_frame
   self.args["gripper_commands_new"].x = gripper_forward_x
 end
 
 function MOVE_GRIPPER_DOWN:init()
-  --self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].command = "MOVEABS"
   self.args["gripper_commands_new"].z = gripper_down_z
+  self.args["gripper_commands_new"].target_frame = z_movement_target_frame
 end
 
 function OPEN_GRIPPER:init()
   self.args["gripper_commands_new"].command = "OPEN"
 end
 
+function CLOSE_GRIPPER:init()
+  self.args["gripper_commands_new"].command = "CLOSE"
+end
+
 function MOVE_GRIPPER_BACK:init()
-  --self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].command = "MOVEABS"
   self.args["gripper_commands_new"].x = gripper_back_x
+  self.args["gripper_commands_new"].target_frame = x_movement_target_frame
 end
 
 function DRIVE_BACK:init()
