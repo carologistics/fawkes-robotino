@@ -43,9 +43,9 @@ local tfm = require("fawkes.tfutils")
 -- Constants
 local euclidean_fitness_threshold = 8 -- threshold for euclidean fitness  (fitness should be higher)
 local tolerance_x = 0.5  -- x-tolerance according to conveyor pose
-local gripper_x = 0.04  -- gripper x-coordinate before the align
+local gripper_x = 0.05  -- gripper x-coordinate before the align
 local gripper_y = 0  -- gripper y-coordinate before the align
-local gripper_z = 0.03  -- gripper z-coordinate before the align
+local gripper_z = 0.035  -- gripper z-coordinate before the align
 local x_dist_to_mps = -0.31  -- x-distance the robot should have after the align
 local cfg_frame_ = "gripper"
 
