@@ -38,7 +38,7 @@ plugins/conveyor_pose:
     input_conveyor: "conveyor_pcls/with_cone.pcd"
     output_conveyor: "conveyor_pcls/no_cone.pcd"
     shelf: "conveyor_pcls/no_cone.pcd"
-    slide: "conveyor_pcls/no_cone.pcd"
+    slide: "conveyor_pcls/slide.pcd"
 
   voxel_grid:
     # Downsample all point clouds to this resolution
