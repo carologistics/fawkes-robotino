@@ -47,6 +47,7 @@ fawkes/meta_plugins:
     - conveyor-pose
     - ros-pcl
     - skiller-rest-api
+    - mps-laser-gen
   m-robot-memory:
     - mongodb
     - robot-memory
