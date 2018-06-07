@@ -27,7 +27,8 @@ name               = "bring_product_to"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"mps_align", "product_put", "drive_to_local","shelf_put","slide_put","conveyor_align","motor_move"}
 depends_interfaces = {
-  {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"}
+  {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
+  {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
 }
 
 documentation      = [==[ 
@@ -72,6 +73,34 @@ fsm:add_transitions{
 
 function INIT:init()
    self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
+   if string.sub(self.fsm.vars.place,3,3) == "B" then
+     self.fsm.vars.mps_type = if_conveyor_pose.BASE_STATION
+   end
+   if string.sub(self.fsm.vars.place,3,3) == "C" then
+     self.fsm.vars.mps_type = if_conveyor_pose.CAP_STATION
+   end
+   if string.sub(self.fsm.vars.place,3,3) == "R" then
+     self.fsm.vars.mps_type = if_conveyor_pose.RING_STATION
+   end
+   if string.sub(self.fsm.vars.place,3,3) == "S" then
+     self.fsm.vars.mps_type = if_conveyor_pose.STORAGE_STATION
+   end
+   if string.sub(self.fsm.vars.place,3,3) == "D" then
+     self.fsm.vars.mps_type = if_conveyor_pose.DELIVERY_STATION
+   end
+   if self.fsm.vars.side == "output" then
+     self.fsm.vars.mps_target = if_conveyor_pose.INPUT_CONVEYOR
+   else
+     self.fsm.vars.mps_target = if_conveyor_pose.OUTPUT_CONVEYOR
+   end
+
+   if self.fsm.vars.shelf == "LEFT" or self.fsm.vars.shelf == "MIDDLE" or self.fsm.vars.shelf == "RIGHT" then
+     self.fsm.vars.mps_target = if_conveyor_pose.SHELF
+   end
+
+   if self.fsm.vars.slide then
+     self.fsm.vars.mps_target = if_conveyor_pose.SLIDE
+   end
 end
 
 function DRIVE_TO:init()
@@ -88,9 +117,13 @@ function CONVEYOR_ALIGN:init()
     if (self.fsm.vars.slide == nil or self.fsm.vars.shelf == nil) then
       self.args["conveyor_align"].disable_realsense_afterwards = false
     end
+
+    self.args["conveyor_align"].mps_type = self.fsm.vars.mps_type
+    self.args["conveyor_align"].mps_target = self.fsm.vars.mps_target
 end
 
 
 function PRODUCT_PUT:init()
-
+  self.args["product_put"].mps_type = self.fsm.vars.mps_type
+  self.args["product_put"].mps_target = self.fsm.vars.mps_target
 end
