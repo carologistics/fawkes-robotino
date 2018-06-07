@@ -159,8 +159,6 @@ clips-executive:
           crypto-key: randomkey
           cipher: "aes-128-cbc"
 
-          master: R-2
-
           waitpoint-in-cyan: R-1
           waitpoint-in-cyan: R-2
           waitpoint-in-magenta: R-3

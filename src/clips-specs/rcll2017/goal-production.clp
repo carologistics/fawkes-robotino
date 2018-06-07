@@ -177,7 +177,6 @@
   )
   ; (or (wm-fact (key domain fact at args? r ?self m ?another-point&:(neq ?waitpoint ?another-point) side WAIT))
   ;     (wm-fact (key domain fact at args? r ?self m START side INPUT)))
-  (wm-fact (key config rcll master) (value ?master&:(neq ?self (sym-cat ?master))))
   ; (wm-fact (key config rcll waitpoint-in-cyan) (value ?bot&:(neq ?self (sym-cat ?bot))))
   ; (test (eq (sub-string 1 (str-length (str-cat ?waitpoint)) ?waitpoint) "WAIT-M"  ))
   =>
@@ -201,7 +200,6 @@
 ;   (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
 ;   (or (wm-fact (key domain fact at args? r ?self m ?another-point&:(neq ?waitpoint ?another-point) side WAIT))
 ;       (wm-fact (key domain fact at args? r ?self m START side INPUT)))
-;   (wm-fact (key config rcll master) (value ?master&:(neq ?self (sym-cat ?master))))
 ;   (wm-fact (key config rcll waitpoint-in-cyan) (value ?bot&:(neq ?self (sym-cat ?bot))))
 ;   (test (eq (sub-string 1 (str-length (str-cat ?waitpoint)) ?waitpoint) "WAIT-M"  ))
 ;   =>
@@ -221,7 +219,6 @@
 ;   (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
 ;   (or (wm-fact (key domain fact at args? r ?self m ?another-point&:(neq ?waitpoint ?another-point) side WAIT))
 ;       (wm-fact (key domain fact at args? r ?self m START side INPUT)))
-;   (wm-fact (key config rcll master) (value ?master&:(neq ?self (sym-cat ?master))))
 ;   (wm-fact (key config rcll waitpoint-in-magenta) (value ?bot&:(neq ?self (sym-cat ?bot))))
 ;   (test (eq (sub-string 1 (str-length (str-cat ?waitpoint)) ?waitpoint) "WAIT-C"  ))
 ;   =>
