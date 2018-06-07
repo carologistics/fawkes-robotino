@@ -39,7 +39,9 @@ plugins/conveyor_pose:
     default: "conveyor_pcls/default.pcd"
     input_conveyor: "conveyor_pcls/with_cone.pcd"
     output_conveyor: "conveyor_pcls/no_cone.pcd"
-    shelf: "conveyor_pcls/no_cone.pcd"
+    shelf_left: "conveyor_pcls/no_cone.pcd"
+    shelf_middle: "conveyor_pcls/no_cone.pcd"
+    shelf_right: "conveyor_pcls/no_cone.pcd"
     slide: "conveyor_pcls/slide.pcd"
 
   voxel_grid:
