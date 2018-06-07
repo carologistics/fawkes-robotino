@@ -82,7 +82,7 @@ plugins/static-transforms:
       frame: !frame gripper
       child_frame: !frame shelf_record
       trans_x: 0.2
-      trans_y: -0.1
+      trans_y: 0.06
       trans_z: -0.04
       rot_yaw: -1.57
       rot_pitch: 0
