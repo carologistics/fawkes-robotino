@@ -411,6 +411,8 @@
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
+  (domain-object (name ?mps-side) (type mps-side))
+  (domain-fact (name location-free) (param-values ?bs ?mps-side))
   (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?mps side ?any-side)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN&~READY-AT-OUTPUT))
@@ -442,7 +444,7 @@
                 (parent ?production-id)
                 (params robot ?robot
                         bs ?bs
-                        bs-side INPUT
+                        bs-side ?mps-side
                         bs-color ?base-color
                         mps ?mps
                         cs-color ?cap-color
