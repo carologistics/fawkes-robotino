@@ -123,6 +123,8 @@ plugins/mongodb:
     robot-memory-local/enabled: false
     robot-memory-distributed/enabled: false
   replica-sets:
+    bootstrap-mongodb/client: robot-memory-local
+
     managed-sets:
       robot-memory-local/enabled: false
       robot-memory-distributed/enabled: false
