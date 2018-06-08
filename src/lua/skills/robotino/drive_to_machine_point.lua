@@ -100,6 +100,7 @@ local LINE_LENGTH_MIN=0.64          -- minimum laser line length
 local LINE_LENGTH_MAX=0.71          -- maximum laser line length
 local MAX_VEL_MOTOR_MOVE=0.1        -- maximum velocity for motor_move
 local NUM_DIRECT_MPS_ALIGN_TRIES=4  -- number of tries to correct the pose in front of the laser line
+local CONVEYOR_IN_OUT_OFFSET=0.03  -- number of tries to correct the pose in front of the laser line
 
 -- Offsets for points of interest at the MPS.
 -- Considered to be from the right of the MPS.
@@ -275,6 +276,11 @@ function INIT:init()
    self.fsm.vars.move_y = 0
    if self.fsm.vars.option == "CONVEYOR" then
      self.fsm.vars.move_y = OFFSET_CONVEYOR
+     if string.match(self.fsm.vars.place, 'I$') then
+        self.fsm.vars.move_y = self.fsm.vars.move_y + CONVEYOR_IN_OUT_OFFSET
+     elseif string.match(self.fsm.vars.place, 'O$') then
+        self.fsm.vars.move_y = self.fsm.vars.move_y - CONVEYOR_IN_OUT_OFFSET
+     end
    elseif self.fsm.vars.option == "SHELF_RIGHT" then
      self.fsm.vars.move_y = OFFSET_SHELF_RIGHT
    elseif self.fsm.vars.option == "SHELF_MIDDLE" then
