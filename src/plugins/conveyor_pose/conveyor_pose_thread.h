@@ -166,7 +166,7 @@ private:
   std::atomic<float> cfg_voxel_grid_leaf_size_;
 
   std::map<fawkes::ConveyorPoseInterface::MPS_TARGET, std::array<std::atomic<float>, 3>> cfg_target_hint_;
-  std::map<fawkes::ConveyorPoseInterface::MPS_TYPE, std::array<std::atomic<float>, 3>> cfg_type_hint_;
+  std::map<fawkes::ConveyorPoseInterface::MPS_TYPE, std::array<std::atomic<float>, 3>> cfg_type_offset_;
 
   // state vars
   bool cfg_enable_switch_;

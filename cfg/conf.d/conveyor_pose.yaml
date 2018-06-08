@@ -112,7 +112,7 @@ plugins/conveyor_pose:
       # On the OUTPUT side, the y value is multiplied by -1.
       input_conveyor:
         x: -0.005
-        y: 0
+        y: -0.025
         z: 0.65
       left_shelf:
         x: -0.01
@@ -132,21 +132,21 @@ plugins/conveyor_pose:
         z: 0.65
 
 
-    # Station-specific offset added to the hints configured above
+    # MPS-type-specific offset added to the input_conveyor hint configured above
     #
-    # As above:
+    # As above: Given value is used on the INPUT side.
     # On the OUTPUT side, the y value is multiplied by -1.
-    mps_type_offset:
+    conveyor_offset:
       cap_station:
-        y: -0.025
+        y: 0
       ring_station:
         y: 0
       delivery_station:
-        y: -0.025
+        y: 0
       base_station:
-        y: -0.025
+        y: 0
       storage_station:
-        y: -0.025
+        y: 0
 
   if:
     # the prefix used for all interfaces
