@@ -39,6 +39,7 @@ documentation      = [==[
 -- Initialize as skill module
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
+local pam = require("parse_module")
 
 -- Constants
 local euclidean_fitness_threshold = 8  --threshold for euclidean fitness  (fitness should be higher)
@@ -126,7 +127,8 @@ fsm:add_transitions{
 
 function INIT:init()
   if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
-  if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.SetStationMessage:new(self.fsm.vars.mps_type,self.fsm.vars.mps_target))
+  local parse_result = pam.parse_to_type_target(if_conveyor_pose,self.fsm.vars.place,self.fsm.vars.side,self.fsm.vars.shelf,self.fsm.vars.slide)
+  if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.SetStationMessage:new(parse_result.mps_type,parse_result.mps_target))
 end
 
 function GRIPPER_ALIGN:init()
