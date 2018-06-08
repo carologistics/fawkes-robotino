@@ -137,48 +137,48 @@ ConveyorPoseThread::init()
 
   // Init of station type hints
 
-  cfg_type_hint_[ConveyorPoseInterface::BASE_STATION];
-  cfg_type_hint_[ConveyorPoseInterface::CAP_STATION];
-  cfg_type_hint_[ConveyorPoseInterface::RING_STATION];
-  cfg_type_hint_[ConveyorPoseInterface::DELIVERY_STATION];
-  cfg_type_hint_[ConveyorPoseInterface::STORAGE_STATION];
+  cfg_type_offset_[ConveyorPoseInterface::BASE_STATION];
+  cfg_type_offset_[ConveyorPoseInterface::CAP_STATION];
+  cfg_type_offset_[ConveyorPoseInterface::RING_STATION];
+  cfg_type_offset_[ConveyorPoseInterface::DELIVERY_STATION];
+  cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION];
 
-  cfg_type_hint_[ConveyorPoseInterface::BASE_STATION][0] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/base_station/x", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::BASE_STATION][1] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/base_station/y", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::BASE_STATION][2] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/base_station/z", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::CAP_STATION][0] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/cap_station/x", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::CAP_STATION][1] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/cap_station/y", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::CAP_STATION][2] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/cap_station/z", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::RING_STATION][0] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/ring_station/x", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::RING_STATION][1] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/ring_station/y", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::RING_STATION][2] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/ring_station/z", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::DELIVERY_STATION][0] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/delivery_station/x", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::DELIVERY_STATION][1] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/delivery_station/y", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::DELIVERY_STATION][2] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/delivery_station/z", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::STORAGE_STATION][0] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/storage_station/x", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::STORAGE_STATION][1] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/storage_station/y", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::STORAGE_STATION][2] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/storage_station/z", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::NO_STATION][0] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/default/z", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::NO_STATION][1] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/default/z", 0.f );
-  cfg_type_hint_[ConveyorPoseInterface::NO_STATION][2] = config->get_float_or_default(
-        CFG_PREFIX "/icp/mps_type_offset/default/z", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::BASE_STATION][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/base_station/x", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::BASE_STATION][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/base_station/y", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::BASE_STATION][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/base_station/z", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::CAP_STATION][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/cap_station/x", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::CAP_STATION][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/cap_station/y", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::CAP_STATION][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/cap_station/z", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::RING_STATION][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/ring_station/x", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::RING_STATION][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/ring_station/y", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::RING_STATION][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/ring_station/z", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::DELIVERY_STATION][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/delivery_station/x", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::DELIVERY_STATION][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/delivery_station/y", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::DELIVERY_STATION][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/delivery_station/z", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/storage_station/x", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/storage_station/y", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/storage_station/z", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::NO_STATION][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/default/z", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::NO_STATION][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/default/z", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::NO_STATION][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/default/z", 0.f );
 
 
   cfg_enable_switch_          = config->get_bool( CFG_PREFIX "/switch_default" );
@@ -518,11 +518,19 @@ ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *li
                             double(cfg_target_hint_[mps_target][2])});
 
 
-  // Add distance offset for station type
-  initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
-                            double(cfg_type_hint_[mps_type][0]),
-                            double(cfg_type_hint_[mps_type][1]),
-                            double(cfg_type_hint_[mps_type][2])});
+  if (mps_target == ConveyorPoseInterface::MPS_TARGET::INPUT_CONVEYOR) {
+    // Add distance offset for station type
+    initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
+                              double(cfg_type_offset_[mps_type][0]),
+                              double(cfg_type_offset_[mps_type][1]),
+                              double(cfg_type_offset_[mps_type][2])});
+  } else if (mps_target == ConveyorPoseInterface::MPS_TARGET::OUTPUT_CONVEYOR) {
+    // Invert Y axis of the offset
+    initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
+                              double(cfg_type_offset_[mps_type][0]),
+                              double(-cfg_type_offset_[mps_type][1]),
+                              double(cfg_type_offset_[mps_type][2])});
+  }
 
 
   initial_guess.setRotation(
@@ -943,47 +951,47 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
       else if (opt == "/hint/default/z")
         change_val(opt, cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][2], v->get_float());
 
-      else if (opt == "/mps_type_offset/base_station/x")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::BASE_STATION][0], v->get_float());
-      else if (opt == "/mps_type_offset/base_station/y")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::BASE_STATION][1], v->get_float());
-      else if (opt == "/mps_type_offset/base_station/z")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::BASE_STATION][2], v->get_float());
+      else if (opt == "/conveyor_offset/base_station/x")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::BASE_STATION][0], v->get_float());
+      else if (opt == "/conveyor_offset/base_station/y")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::BASE_STATION][1], v->get_float());
+      else if (opt == "/conveyor_offset/base_station/z")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::BASE_STATION][2], v->get_float());
 
-      else if (opt == "/mps_type_offset/cap_station/x")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::CAP_STATION][0], v->get_float());
-      else if (opt == "/mps_type_offset/cap_station/y")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::CAP_STATION][1], v->get_float());
-      else if (opt == "/mps_type_offset/cap_station/z")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::CAP_STATION][2], v->get_float());
+      else if (opt == "/conveyor_offset/cap_station/x")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::CAP_STATION][0], v->get_float());
+      else if (opt == "/conveyor_offset/cap_station/y")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::CAP_STATION][1], v->get_float());
+      else if (opt == "/conveyor_offset/cap_station/z")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::CAP_STATION][2], v->get_float());
 
-      else if (opt == "/mps_type_offset/ring_station/x")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::RING_STATION][0], v->get_float());
-      else if (opt == "/mps_type_offset/ring_station/y")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::RING_STATION][1], v->get_float());
-      else if (opt == "/mps_type_offset/ring_station/z")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::RING_STATION][2], v->get_float());
+      else if (opt == "/conveyor_offset/ring_station/x")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::RING_STATION][0], v->get_float());
+      else if (opt == "/conveyor_offset/ring_station/y")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::RING_STATION][1], v->get_float());
+      else if (opt == "/conveyor_offset/ring_station/z")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::RING_STATION][2], v->get_float());
 
-      else if (opt == "/mps_type_offset/delivery_station/x")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::DELIVERY_STATION][0], v->get_float());
-      else if (opt == "/mps_type_offset/delivery_station/y")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::DELIVERY_STATION][1], v->get_float());
-      else if (opt == "/mps_type_offset/delivery_station/z")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::DELIVERY_STATION][2], v->get_float());
+      else if (opt == "/conveyor_offset/delivery_station/x")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::DELIVERY_STATION][0], v->get_float());
+      else if (opt == "/conveyor_offset/delivery_station/y")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::DELIVERY_STATION][1], v->get_float());
+      else if (opt == "/conveyor_offset/delivery_station/z")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::DELIVERY_STATION][2], v->get_float());
 
-      else if (opt == "/mps_type_offset/storage_station/x")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::STORAGE_STATION][0], v->get_float());
-      else if (opt == "/mps_type_offset/storage_station/y")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::STORAGE_STATION][1], v->get_float());
-      else if (opt == "/mps_type_offset/storage_station/z")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::STORAGE_STATION][2], v->get_float());
+      else if (opt == "/conveyor_offset/storage_station/x")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION][0], v->get_float());
+      else if (opt == "/conveyor_offset/storage_station/y")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION][1], v->get_float());
+      else if (opt == "/conveyor_offset/storage_station/z")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION][2], v->get_float());
 
-      else if (opt == "/mps_type_offset/default/x")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::NO_STATION][0], v->get_float());
-      else if (opt == "/mps_type_offset/default/y")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::NO_STATION][1], v->get_float());
-      else if (opt == "/mps_type_offset/default/z")
-        change_val(opt, cfg_type_hint_[ConveyorPoseInterface::NO_STATION][2], v->get_float());
+      else if (opt == "/conveyor_offset/default/x")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::NO_STATION][0], v->get_float());
+      else if (opt == "/conveyor_offset/default/y")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::NO_STATION][1], v->get_float());
+      else if (opt == "/conveyor_offset/default/z")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::NO_STATION][2], v->get_float());
     }
     if (recognition_thread_->enabled())
       recognition_thread_->restart();
