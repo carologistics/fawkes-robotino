@@ -36,7 +36,7 @@ function parse_to_type_target(if_conveyor_pose,place,side,shelf,slide)
     target = if_conveyor_pose.SHELF_RIGHT
   end
 
-  if shelf == LEFT then
+  if shelf == "LEFT" then
     target = if_conveyor_pose.SHELF_LEFT
   end
 
