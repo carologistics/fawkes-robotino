@@ -49,7 +49,7 @@ plugins/conveyor_pose:
 
     # Ignore model point if it doesn't have a scene correspondence within this radius
     # ATTENTION: this is very sensitive to the error of the initial estimate!
-    max_correspondence_dist: 0.01
+    max_correspondence_dist: 0.02
 
     # ICP stops iterating if the last transformation was shorter than this distance.
     # If this value is reached, max_correspondence_dist is multiplied by refinement_factor.
@@ -85,10 +85,10 @@ plugins/conveyor_pose:
     hv_inlier_threshold: 0.004
 
     # Max. proportion of penalized model points for a match
-    hv_penalty_threshold: 0.1
+    hv_penalty_threshold: 0.15
 
     # Min. proportion of supported model points for a match
-    hv_support_threshold: 0.7
+    hv_support_threshold: 0.65
 
 
     # Offset of interesting objects relative to the center of the laser line
