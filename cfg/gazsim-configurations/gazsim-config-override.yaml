@@ -114,15 +114,17 @@ plugins/static-transforms:
 
 plugins/mongodb:
   clients:
-    default/enabled: true
+    default/enabled: false
     arbiter/enabled: false
     robot-memory-distributed-direct/hostport: localhost:27022
     robot-memory-distributed/hosts:
       - localhost:27022
+  instances:
+    robot-memory-local/enabled: false
+    robot-memory-distributed/enabled: false
   replica-sets:
-    bootstrap-mongodb/client: default
     managed-sets:
-      robot-memory-distributed/hosts:
-        - localhost:27022
+      robot-memory-local/enabled: false
+      robot-memory-distributed/enabled: false
 
 clips-executive/specs/rcll2017/parameters/rcll/crypto-key: randomkey
