@@ -10,7 +10,12 @@ plugins/conveyor_pose:
   debug: false
 
   # forces ConveyorPosePlugin to think it's MPS_TARGET is a shelf
-  force_shelf: false
+  # This works only in debug mode
+  # 0 -> LEFT
+  # 1 -> MIDDLE
+  # 2 -> RIGHT
+  # everything else ineffective
+  force_shelf: -1
 
   # the point cloud that is used for detection (i.e. the scene)
   cloud_in: "/camera/depth/points"
