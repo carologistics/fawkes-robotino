@@ -43,6 +43,7 @@ Parameters:
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
+local pam = require("parse_module")
 -- Constants
 local X_AT_MPS = 0.4
 
@@ -67,32 +68,6 @@ fsm:add_transitions{
 
 function INIT:init()
    self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
-   print_info("substring %s",string.sub(self.fsm.vars.place,3,3))
-   if string.sub(self.fsm.vars.place,3,3) == "B" then
-     self.fsm.vars.mps_type = if_conveyor_pose.BASE_STATION
-   end
-   if string.sub(self.fsm.vars.place,3,3) == "C" then
-     self.fsm.vars.mps_type = if_conveyor_pose.CAP_STATION
-   end
-   if string.sub(self.fsm.vars.place,3,3) == "R" then
-     self.fsm.vars.mps_type = if_conveyor_pose.RING_STATION
-   end
-   if string.sub(self.fsm.vars.place,3,3) == "S" then
-     self.fsm.vars.mps_type = if_conveyor_pose.STORAGE_STATION
-   end
-   if string.sub(self.fsm.vars.place,3,3) == "D" then
-     self.fsm.vars.mps_type = if_conveyor_pose.DELIVERY_STATION
-   end
-
-   if self.fsm.vars.side == "input" then
-     self.fsm.vars.mps_target = if_conveyor_pose.INPUT_CONVEYOR
-   else
-     self.fsm.vars.mps_target = if_conveyor_pose.OUTPUT_CONVEYOR
-   end
-
-   if self.fsm.vars.shelf == "LEFT" or self.fsm.vars.shelf == "MIDDLE" or self.fsm.vars.shelf == "RIGHT" then
-     self.fsm.vars.mps_target = if_conveyor_pose.SHELF
-   end
 end
 
 function DRIVE_TO_MACHINE_POINT:init()
@@ -108,15 +83,18 @@ function DRIVE_TO_MACHINE_POINT:init()
 end
 
 function PRODUCT_PICK:init()
-  self.args["product_pick"].mps_type = self.fsm.vars.mps_type
-  self.args["product_pick"].mps_target = self.fsm.vars.mps_target
+  self.args["product_pick"].place = self.fsm.vars.place
+  self.args["product_pick"].side = self.fsm.vars.side
+  self.args["product_pick"].slide = self.fsm.vars.slide
+  self.args["product_pick"].shelf = self.fsm.vars.shelf
 end
 
 function CONVEYOR_ALIGN:init()
    if (self.fsm.vars.shelf == nil) then
      self.args["conveyor_align"].disable_realsense_afterwards = false
    end
-
-   self.args["conveyor_align"].mps_type = self.fsm.vars.mps_type
-   self.args["conveyor_align"].mps_target = self.fsm.vars.mps_target
+   self.args["conveyor_align"].place = self.fsm.vars.place
+   self.args["conveyor_align"].slide = self.fsm.vars.slide
+   self.args["conveyor_align"].shelf = self.fsm.shelf
+   self.args["conveyor_align"].side = self.fsm.vars.side
 end
