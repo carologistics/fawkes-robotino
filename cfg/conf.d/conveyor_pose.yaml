@@ -39,8 +39,9 @@ plugins/conveyor_pose:
   model_origin_frame: "gripper_fingers"
 
 
-  # Paths to the default PCD models taking as reference model in the conveyor pose plugin
-  # Paths are looked up in CONFDIR (e.g. fawkes-robotino/cfg)
+  # Paths to the reference models are looked up in CONFDIR (e.g. fawkes-robotino/cfg)
+  # Specific overrides can be added under <MPS_TYPE>_<MPS_TARGET> keys, e.g:
+  # reference_models/BASE_STATION_INPUT_CONVEYOR: "conveyor_pcls/pappteil.pcd"
   reference_models:
     default: "conveyor_pcls/default.pcd"
     input_conveyor: "conveyor_pcls/with_cone.pcd"
