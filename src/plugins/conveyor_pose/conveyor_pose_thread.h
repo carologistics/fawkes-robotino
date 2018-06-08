@@ -133,7 +133,7 @@ private:
   fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
 
   bool is_target_shelf();
-  bool cfg_force_shelf_;
+  int cfg_force_shelf_;
 
   void update_station_information(fawkes::ConveyorPoseInterface::SetStationMessage &msg);
 
