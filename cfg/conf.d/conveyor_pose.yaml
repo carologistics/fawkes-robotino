@@ -197,9 +197,9 @@ plugins/conveyor_pose:
     left_cut: -0.055
     right_cut: 0.055
     top_cut: -0.02
-    bottom_cut: 0.05
-    front_cut: -0.03
-    back_cut: 0.03
+    bottom_cut: 0.055
+    front_cut: -0.045
+    back_cut: 0.045
   without_ll: #THESE VALUES IF LASERLINE NOT AVAILABLE
     left_cut: -0.065
     right_cut: 0.065
