@@ -77,7 +77,7 @@ ConveyorPoseThread::init()
   syncpoint_clouds_ready->register_emitter(name());
 
   cfg_debug_mode_ = config->get_bool( CFG_PREFIX "/debug" );
-  cfg_force_shelf_ = config->get_bool_or_default( CFG_PREFIX "/force_shelf", false);
+  cfg_force_shelf_ = config->get_int_or_default( CFG_PREFIX "/force_shelf", -1);
   cloud_in_name_ = config->get_string( CFG_PREFIX "/cloud_in" );
 
   cfg_if_prefix_ = config->get_string( CFG_PREFIX "/if/prefix" );
@@ -215,8 +215,8 @@ ConveyorPoseThread::init()
   cfg_shelf_back_cut_               = config->get_float( CFG_PREFIX "/shelf/with_ll/back_cut" );
 
   cfg_shelf_left_off_               = config->get_float( CFG_PREFIX "/shelf/left_off" );
-  cfg_shelf_middle_off_             = config->get_float( CFG_PREFIX "/shelf/left_off" );
-  cfg_shelf_right_off_              = config->get_float( CFG_PREFIX "/shelf/left_off" );
+  cfg_shelf_middle_off_             = config->get_float( CFG_PREFIX "/shelf/middle_off" );
+  cfg_shelf_right_off_              = config->get_float( CFG_PREFIX "/shelf/right_off" );
 
 
   cfg_voxel_grid_leaf_size_  = config->get_float( CFG_PREFIX "/voxel_grid/leaf_size" );
@@ -337,8 +337,22 @@ ConveyorPoseThread::init()
 
   realsense_switch_ = blackboard->open_for_reading<SwitchInterface>(cfg_bb_realsense_switch_name_.c_str());
 
-  if (cfg_debug_mode_)
+  if (cfg_debug_mode_){
     recognition_thread_->enable();
+    switch(cfg_force_shelf_){
+      case 0:
+        current_mps_target_ = fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_LEFT;
+        break;
+      case 1:
+        current_mps_target_ = fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_MIDDLE;
+        break;
+      case 2:
+        current_mps_target_ = fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_RIGHT;
+        break;
+      default:
+        break;
+    }
+  }
 
 }
 
@@ -1104,7 +1118,7 @@ CloudPtr ConveyorPoseThread::cloud_trim(CloudPtr in, fawkes::LaserLineInterface 
         if(is_target_shelf()){ //using shelf cut values
           float x_min_temp = x_ini + (float) cfg_shelf_left_cut_,
                 x_max_temp = x_ini + (float) cfg_shelf_right_cut_;
-          switch(current_mps_type_) {
+          switch(current_mps_target_) {
             case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_LEFT:
               x_min_temp += (float) cfg_shelf_left_off_;
               x_max_temp += (float) cfg_shelf_left_off_;
@@ -1177,7 +1191,6 @@ CloudPtr ConveyorPoseThread::cloud_trim(CloudPtr in, fawkes::LaserLineInterface 
 
 bool ConveyorPoseThread::is_target_shelf()
 {
-    if(cfg_debug_mode_ && cfg_force_shelf_) return true;
     switch (current_mps_target_)
     {
         case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_LEFT:
