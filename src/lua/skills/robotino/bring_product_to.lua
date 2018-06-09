@@ -45,7 +45,7 @@ Parameters:
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
-local pam = require("parse_module")
+
 -- Constants
 local X_AT_MPS = 0.4
 
