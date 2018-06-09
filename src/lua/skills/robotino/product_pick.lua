@@ -56,10 +56,10 @@ local conveyor_gripper_down_z = -0.01    -- distance to move gripper down after 
 local conveyor_gripper_down_second_z = -0.005       -- distance to mover gripper down second time
 local conveyor_gripper_back_x = -0.07   -- distance to move gripper back after closing gripper
 
-local shelf_gripper_forward_x = 0  -- distance to move gripper forward after align to shelf
+local shelf_gripper_forward_x = 0.04  -- distance to move gripper forward after align to shelf
 local shelf_gripper_down_z = 0     -- distance to move gripper down after driving over shelf
 local shelf_gripper_down_second_z = 0 -- distance to move gripper down second time after driving over shelf
-local shelf_gripper_back_x = 0   -- distance to move gripper back after closing gripper over shelf
+local shelf_gripper_back_x = 0.04   -- distance to move gripper back after closing gripper over shelf
 
 local drive_back_x = -0.1      -- distance to drive back after closing the gripper
 
