@@ -21,47 +21,50 @@
 
 (defrule goal-expander-send-beacon-signal
   ?p <- (goal (mode EXPANDED) (id ?parent-id))
-  ?g <- (goal (mode SELECTED) (parent ?parent-id) (id BEACONACHIEVE))
+  ?g <- (goal (id ?goal-id) (class BEACONACHIEVE) (mode SELECTED)
+              (parent ?parent-id))
 =>
   (assert
-    (plan (id BEACONPLAN) (goal-id BEACONACHIEVE))
-    (plan-action (id 1) (plan-id BEACONPLAN) (goal-id BEACONACHIEVE)
+    (plan (id BEACONPLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id BEACONPLAN) (goal-id ?goal-id)
       (action-name send-beacon)))
   (modify ?g (mode EXPANDED))
 )
 
 (defrule goal-expander-wp-spawn
   ?p <- (goal (mode EXPANDED) (id ?parent-id))
-  ?g <- (goal (mode SELECTED) (parent ?parent-id) (id WPSPAWN-ACHIEVE))
+  ?g <- (goal (id ?goal-id) (class WPSPAWN-ACHIEVE) (mode SELECTED)
+              (parent ?parent-id))
 =>
   (assert
-    (plan (id SPAWNPLAN) (goal-id WPSPAWN-ACHIEVE))
-    (plan-action (id 1) (plan-id SPAWNPLAN) (goal-id WPSPAWN-ACHIEVE)
+    (plan (id SPAWNPLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id SPAWNPLAN) (goal-id ?goal-id)
       (action-name noop)))
   (modify ?g (mode EXPANDED))
 )
 
 (defrule goal-expander-refill-shelf
   ?p <- (goal (mode EXPANDED) (id ?parent-id))
-  ?g <- (goal (mode SELECTED) (parent ?parent-id) (id REFILL-SHELF-ACHIEVE))
+  ?g <- (goal (id ?goal-id) (class REFILL-SHELF-ACHIEVE) (mode SELECTED)
+              (parent ?parent-id))
   =>
   (assert
-     (plan (id REFILLPLAN) (goal-id REFILL-SHELF-ACHIEVE))
-     (plan-action (id 1) (plan-id REFILLPLAN) (goal-id REFILL-SHELF-ACHIEVE)
+     (plan (id REFILLPLAN) (goal-id ?goal-id))
+     (plan-action (id 1) (plan-id REFILLPLAN) (goal-id ?goal-id)
         (action-name noop)))
   (modify ?g (mode EXPANDED))
 )
 
 (defrule goal-expander-exploration
-  ?g <- (goal (mode SELECTED) (id EXPLORATION))
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class EXPLORATION))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact self args? r ?r))
   (wm-fact (id ?id&: (eq ?id (str-cat "/config/rcll/route/" ?team-color "/" ?r))) (values $?route))
   =>
-  (assert (plan (goal-id EXPLORATION) (id EXPLORATION-PLAN)))
+  (assert (plan (goal-id ?goal-id) (id EXPLORATION-PLAN)))
   (bind ?action-id 3)
   (foreach ?node ?route
-	(assert (plan-action (id ?action-id) (goal-id EXPLORATION) (plan-id EXPLORATION-PLAN) (action-name move-node) (param-values ?r ?node)))
+	(assert (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id EXPLORATION-PLAN) (action-name move-node) (param-values ?r ?node)))
 	(bind ?action-id (+ ?action-id 3))
   )
   (modify ?g (mode EXPANDED))
@@ -70,13 +73,13 @@
 
 
 (defrule goal-expander-enter-field
-  ?g <- (goal (mode SELECTED) (id ENTER-FIELD-ACHIEVE))
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD-ACHIEVE))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
 =>
   (assert
-    (plan (id ENTER-FIELD-PLAN) (goal-id ENTER-FIELD-ACHIEVE))
-    (plan-action (id 1) (plan-id ENTER-FIELD-PLAN) (goal-id ENTER-FIELD-ACHIEVE)
+    (plan (id ENTER-FIELD-PLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ENTER-FIELD-PLAN) (goal-id ?goal-id)
                                  (action-name enter-field)
                                  (param-names r team-color)
                                  (param-values ?robot ?team-color))
@@ -88,23 +91,23 @@
 (defrule goal-expander-go-wait
    "Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
-    ?p <- (goal (mode EXPANDED) (id ?parent))
-    ?g <- (goal (mode SELECTED) (parent ?parent) (id GO-WAIT)
-                                                (params r ?robot
-                                                  point ?waitpoint
-                                                  point-side ?waitpoint-side
-                                                        ))
-    (wm-fact (key domain fact self args? r ?robot))
-    (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-    =>
+   ?p <- (goal (mode EXPANDED) (id ?parent))
+   ?g <- (goal (id ?goal-id) (class GO-WAIT) (mode SELECTED) (parent ?parent)
+               (params r ?robot
+                 point ?waitpoint
+                 point-side ?waitpoint-side
+         ))
+   (wm-fact (key domain fact self args? r ?robot))
+   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+   =>
    (assert
-        (plan (id GO-WAIT-PLAN) (goal-id GO-WAIT))
-        (plan-action (id 1) (plan-id GO-WAIT-PLAN) (goal-id GO-WAIT)
-                                    (action-name move)
-                                    (param-names r from from-side to to-side)
-                                    (param-values ?robot ?curr-location ?curr-side ?waitpoint ?waitpoint-side))
-    )
-    (modify ?g (mode EXPANDED))
+        (plan (id GO-WAIT-PLAN) (goal-id ?goal-id))
+        (plan-action (id 1) (plan-id GO-WAIT-PLAN) (goal-id ?goal-id)
+                     (action-name move)
+                     (param-names r from from-side to to-side)
+                     (param-values ?robot ?curr-location ?curr-side ?waitpoint ?waitpoint-side))
+   )
+   (modify ?g (mode EXPANDED))
 )
 
 
@@ -112,37 +115,49 @@
    "Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
     ?p <- (goal (mode EXPANDED) (id ?parent))
-    ?g <- (goal (mode SELECTED) (parent ?parent) (id FILL-CAP)
-                                                (params robot ?robot
-                                                        mps ?mps
-                                                        cc ?cc
-                                                        ))
+    ?g <- (goal (id ?goal-id) (class FILL-CAP) (mode SELECTED) (parent ?parent)
+                (params robot ?robot
+                        mps ?mps
+                        cc ?cc
+                ))
     (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
     (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?shelf-spot))
     (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
     =>
    (assert
-        (plan (id FILL-CAP-PLAN) (goal-id FILL-CAP))
-        (plan-action (id 1) (plan-id FILL-CAP-PLAN) (goal-id FILL-CAP)
+        (plan (id FILL-CAP-PLAN) (goal-id ?goal-id))
+        (plan-action (id 1) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+                                    (action-name location-lock)
+                                    (param-values ?mps INPUT))
+        (plan-action (id 2) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name move)
                                     (param-names r from from-side to to-side)
                                     (param-values ?robot ?curr-location ?curr-side ?mps INPUT))
-        (plan-action (id 2) (plan-id FILL-CAP-PLAN) (goal-id FILL-CAP)
+        (plan-action (id 3) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+                                    (action-name lock)
+                                    (param-values ?mps))
+        (plan-action (id 4) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name wp-get-shelf)
                                     (param-names r cc m spot)
                                     (param-values ?robot ?cc ?mps ?shelf-spot))
-        (plan-action (id 3) (plan-id FILL-CAP-PLAN) (goal-id FILL-CAP)
+        (plan-action (id 5) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name wp-put)
                                     (param-names r wp m)
                                     (param-values ?robot ?cc ?mps))
-        (plan-action (id 4) (plan-id FILL-CAP-PLAN) (goal-id FILL-CAP)
+        (plan-action (id 6) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name prepare-cs)
                                     (param-names m op)
                                     (param-values ?mps RETRIEVE_CAP))
-        (plan-action (id 5) (plan-id FILL-CAP-PLAN) (goal-id FILL-CAP)
+        (plan-action (id 7) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name cs-retrieve-cap)
                                     (param-names m cc capcol)
                                     (param-values ?mps ?cc ?cap-color))
+        (plan-action (id 8) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+                                    (action-name unlock)
+                                    (param-values ?mps))
+        (plan-action (id 9) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+                                    (action-name location-unlock)
+                                    (param-values ?mps INPUT))
 
     )
     (modify ?g (mode EXPANDED))
@@ -150,24 +165,33 @@
 
 (defrule goal-remove-empty-base-from-cs
  ?p <- (goal (mode EXPANDED) (id ?parent))
- ?g <- (goal (mode SELECTED) (parent ?parent) (id CLEAR-CS)
-                                             (params robot ?robot
-                                                      mps ?mps
-                                                      wp ?wp
-                                                      ))
+ ?g <- (goal (id ?goal-id) (class CLEAR-CS) (mode SELECTED) (parent ?parent)
+             (params robot ?robot
+                      mps ?mps
+                      wp ?wp
+                      ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
  (assert
-  (plan (id CLEAR-CS-PLAN) (goal-id CLEAR-CS))
-  (plan-action (id 1) (plan-id CLEAR-CS-PLAN) (goal-id CLEAR-CS)
+  (plan (id CLEAR-CS-PLAN) (goal-id ?goal-id))
+  (plan-action (id 1) (plan-id CLEAR-CS-PLAN) (goal-id ?goal-id)
+        (action-name location-lock)
+        (param-values ?mps OUTPUT))
+  (plan-action (id 2) (plan-id CLEAR-CS-PLAN) (goal-id ?goal-id)
         (action-name move)
         (param-names r from from-side to to-side)
         (param-values ?robot ?curr-location ?curr-side ?mps OUTPUT))
-  (plan-action (id 2) (plan-id CLEAR-CS-PLAN) (goal-id CLEAR-CS)
+  (plan-action (id 3) (plan-id CLEAR-CS-PLAN) (goal-id ?goal-id)
+        (action-name lock) (param-values ?mps))
+  (plan-action (id 4) (plan-id CLEAR-CS-PLAN) (goal-id ?goal-id)
         (action-name wp-get)
         (param-names r wp m side)
         (param-values ?robot ?wp ?mps OUTPUT))
-
+  (plan-action (id 5) (plan-id CLEAR-CS-PLAN) (goal-id ?goal-id)
+        (action-name unlock) (param-values ?mps))
+  (plan-action (id 6) (plan-id CLEAR-CS-PLAN) (goal-id ?goal-id)
+                              (action-name location-unlock)
+                              (param-values ?mps OUTPUT))
  )
  (modify ?g (mode EXPANDED))
 )
@@ -194,14 +218,15 @@
 
 (defrule goal-expander-discard-unneeded-base
  ?p <- (goal (mode EXPANDED) (id ?parent))
- ?g <- (goal (mode SELECTED) (parent ?parent) (id DISCARD-UNKNOWN)
-                                             (params robot ?robot
-                                                    wp ?wp
-                                                    ))
+ ?g <- (goal (id ?goal-id) (class DISCARD-UNKNOWN) (mode SELECTED)
+             (parent ?parent)
+             (params robot ?robot
+                    wp ?wp
+             ))
   =>
   (assert
-    (plan (id DISCARD-UNKNOWN-PLAN) (goal-id DISCARD-UNKNOWN))
-    (plan-action (id 1) (plan-id DISCARD-UNKNOWN-PLAN) (goal-id DISCARD-UNKNOWN)
+    (plan (id DISCARD-UNKNOWN-PLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id DISCARD-UNKNOWN-PLAN) (goal-id ?goal-id)
           (action-name wp-discard)
           (param-names r cc )
           (param-values ?robot ?wp))
@@ -212,32 +237,42 @@
 
 (defrule goal-expander-fill-rs
  ?p <- (goal (mode EXPANDED) (id ?parent))
- ?g <- (goal (mode SELECTED) (parent ?parent) (id FILL-RS)
-                                             (params robot ?robot
-                                                      mps ?mps
-                                                      wp ?wp
-                                                      rs-before ?rs-before
-                                                      rs-after ?rs-after
-                                                      ))
+ ?g <- (goal (id ?goal-id) (class FILL-RS) (mode SELECTED) (parent ?parent)
+             (params robot ?robot
+                      mps ?mps
+                      wp ?wp
+                      rs-before ?rs-before
+                      rs-after ?rs-after
+             ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   =>
   (assert
-    (plan (id FILL-RS-PLAN) (goal-id FILL-RS))
-     (plan-action (id 1) (plan-id FILL-RS-PLAN) (goal-id FILL-RS)
+    (plan (id FILL-RS-PLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id FILL-RS-PLAN) (goal-id ?goal-id)
+                                    (action-name location-lock)
+                                    (param-values ?mps INPUT))
+    (plan-action (id 2) (plan-id FILL-RS-PLAN) (goal-id ?goal-id)
                                     (action-name move)
                                     (param-names r from from-side to to-side)
                                     (param-values ?robot ?curr-location ?curr-side ?mps INPUT))
-    (plan-action (id 2) (plan-id FILL-RS-PLAN) (goal-id FILL-RS)
+    (plan-action (id 3) (plan-id FILL-RS-PLAN) (goal-id ?goal-id)
+        (action-name lock) (param-values ?mps))
+    (plan-action (id 4) (plan-id FILL-RS-PLAN) (goal-id ?goal-id)
           (action-name wp-put-slide-cc)
           (param-names r wp m rs-before rs-after)
           (param-values ?robot ?wp ?mps ?rs-before ?rs-after))
+    (plan-action (id 5) (plan-id FILL-RS-PLAN) (goal-id ?goal-id)
+        (action-name unlock) (param-values ?mps))
+    (plan-action (id 6) (plan-id FILL-RS-PLAN) (goal-id ?goal-id)
+                                    (action-name location-unlock)
+                                    (param-values ?mps INPUT))
   )
   (modify ?g (mode EXPANDED))
 )
 
 (defrule goal-produce-c0
  ?p <- (goal (mode EXPANDED) (id ?parent))
- ?g <- (goal (mode SELECTED) (parent ?parent) (id PRODUCE-C0)
+ ?g <- (goal (id ?goal-id) (class PRODUCE-C0) (mode SELECTED) (parent ?parent)
                                              (params robot ?robot
                                                       bs ?bs
                                                       bs-side ?bs-side
@@ -262,39 +297,59 @@
               (message "Could not expand goal, No spawned WP found!!"))
   else
    (assert
-    (plan (id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0))
-    (plan-action (id 1) (plan-id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0)
+    (plan (id PRODUCE-C0-PLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
+          (action-name location-lock)
+          (param-values ?bs ?bs-side))
+    (plan-action (id 2) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
           (action-name move)
           (param-names r from from-side to to-side )
           (param-values ?robot ?curr-location ?curr-side ?bs ?bs-side))
-    (plan-action (id 2) (plan-id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0)
+    (plan-action (id 3) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
+          (action-name lock) (param-values ?bs))
+    (plan-action (id 4) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
           (action-name prepare-bs)
           (param-names m side bc)
           (param-values ?bs ?bs-side ?base-color))
-    (plan-action (id 3) (plan-id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0)
+    (plan-action (id 5) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
           (action-name bs-dispense)
           (param-names r m side wp basecol)
           (param-values ?robot ?bs ?bs-side ?spawned-wp ?base-color))
-    (plan-action (id 4) (plan-id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0)
+    (plan-action (id 6) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
           (action-name wp-get)
           (param-names r wp m side)
           (param-values ?robot ?spawned-wp ?bs ?bs-side))
-    (plan-action (id 5) (plan-id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0)
+    (plan-action (id 7) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
+          (action-name unlock) (param-values ?bs))
+    (plan-action (id 8) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
+          (action-name location-unlock)
+          (param-values ?bs ?bs-side))
+    (plan-action (id 9) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
+          (action-name location-lock)
+          (param-values ?mps INPUT))
+    (plan-action (id 10) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
           (action-name move)
           (param-names r from from-side to to-side)
           (param-values ?robot ?bs ?bs-side ?mps INPUT))
-    (plan-action (id 6) (plan-id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0)
-                (action-name wp-put)
-                (param-names r wp m)
-                (param-values ?robot ?spawned-wp ?mps))
-    (plan-action (id 7) (plan-id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0)
+    (plan-action (id 11) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
+          (action-name lock) (param-values ?mps))
+    (plan-action (id 12) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
+          (action-name wp-put)
+          (param-names r wp m)
+          (param-values ?robot ?spawned-wp ?mps))
+    (plan-action (id 13) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
           (action-name prepare-cs)
           (param-names m op)
           (param-values ?mps MOUNT_CAP))
-     (plan-action (id 8) (plan-id PRODUCE-C0-PLAN) (goal-id PRODUCE-C0)
+    (plan-action (id 14) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
           (action-name cs-mount-cap)
           (param-names m wp capcol)
           (param-values ?mps ?spawned-wp ?cap-color ))
+    (plan-action (id 15) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
+          (action-name unlock) (param-values ?mps))
+    (plan-action (id 16) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
+          (action-name location-unlock)
+          (param-values ?mps INPUT))
    )
   (modify ?g (mode EXPANDED))
   )
@@ -302,18 +357,19 @@
 
 (defrule goal-mount-first-ring
  ?p <- (goal (mode EXPANDED) (id ?parent))
- ?g <- (goal (mode SELECTED) (parent ?parent) (id MOUNT-FIRST-RING)
-                                             (params robot ?robot
-                                                      bs ?bs
-                                                      bs-side ?bs-side
-                                                      bs-color ?base-color
-                                                      mps ?mps
-                                                      ring-color ?ring-color
-                                                      rs-before ?rs-before
-                                                      rs-after ?rs-after
-                                                      rs-req ?rs-req
-                                                      order ?order
-                                                      ))
+ ?g <- (goal (id ?goal-id) (class MOUNT-FIRST-RING) (mode SELECTED)
+             (parent ?parent)
+             (params robot ?robot
+                      bs ?bs
+                      bs-side ?bs-side
+                      bs-color ?base-color
+                      mps ?mps
+                      ring-color ?ring-color
+                      rs-before ?rs-before
+                      rs-after ?rs-after
+                      rs-req ?rs-req
+                      order ?order
+             ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
  (bind ?spawned-wp NA)
@@ -330,39 +386,47 @@
               (message "Could not expand goal, No spawned WP found!!"))
   else
      (assert
-      (plan (id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING))
-      (plan-action (id 1) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+      (plan (id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id))
+      (plan-action (id 1) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
             (action-name move)
             (param-names r from from-side to to-side )
             (param-values ?robot ?curr-location ?curr-side ?bs ?bs-side))
-      (plan-action (id 2) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+      (plan-action (id 2) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
+            (action-name lock) (param-values ?bs))
+      (plan-action (id 3) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
             (action-name prepare-bs)
             (param-names m side bc)
             (param-values ?bs ?bs-side ?base-color))
-      (plan-action (id 3) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+      (plan-action (id 4) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
             (action-name bs-dispense)
             (param-names r m side wp basecol)
             (param-values ?robot ?bs ?bs-side ?spawned-wp ?base-color))
-      (plan-action (id 4) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+      (plan-action (id 5) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
             (action-name wp-get)
             (param-names r wp m side)
             (param-values ?robot ?spawned-wp ?bs ?bs-side))
-      (plan-action (id 5) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+      (plan-action (id 6) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
+            (action-name unlock) (param-values ?bs))
+      (plan-action (id 7) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
             (action-name move)
             (param-names r from from-side to to-side )
             (param-values ?robot ?bs ?bs-side ?mps INPUT))
-      (plan-action (id 6) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+      (plan-action (id 8) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
+            (action-name lock) (param-values ?mps))
+      (plan-action (id 9) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
             (action-name prepare-rs)
             (param-names m rc rs-before rs-after rs-req)
             (param-values ?mps ?ring-color ?rs-before ?rs-after ?rs-req))
-      (plan-action (id 7) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+      (plan-action (id 10) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
             (action-name wp-put)
             (param-names r wp m)
             (param-values ?robot ?spawned-wp ?mps))
-       (plan-action (id 8) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id MOUNT-FIRST-RING)
+       (plan-action (id 11) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
             (action-name rs-mount-ring1)
             (param-names m wp col rs-before rs-after rs-req)
             (param-values ?mps ?spawned-wp ?ring-color ?rs-before ?rs-after ?rs-req))
+      (plan-action (id 12) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
+            (action-name unlock) (param-values ?mps))
      )
     (modify ?g (mode EXPANDED))
   )
@@ -370,13 +434,13 @@
 
 (defrule goal-reset-mps
   ?p <- (goal (mode EXPANDED) (id ?parent))
-  ?g <- (goal (mode SELECTED) (parent ?parent) (id RESET-MPS)
-                                             (params r ?robot
-                                                      m ?mps))
+  ?g <- (goal (id ?goal-id) (class RESET-MPS) (mode SELECTED) (parent ?parent)
+              (params r ?robot
+                      m ?mps))
   =>
   (assert
-    (plan (id RESET-MPS-PLAN) (goal-id RESET-MPS))
-      (plan-action (id 1) (plan-id RESET-MPS-PLAN) (goal-id RESET-MPS)
+    (plan (id RESET-MPS-PLAN) (goal-id ?goal-id))
+      (plan-action (id 1) (plan-id RESET-MPS-PLAN) (goal-id ?goal-id)
         (action-name reset-mps)
         (param-names m)
         (param-values ?mps))
@@ -386,44 +450,64 @@
 
 (defrule goal-deliver
  ?p <- (goal (mode EXPANDED) (id ?parent))
- ?g <- (goal (mode SELECTED) (parent ?parent) (id DELIVER)
-                                             (params robot ?robot
-                                                          mps ?mps
-                                                          order ?order
-                                                          wp ?wp
-                                                          ds ?ds
-                                                          ds-gate ?gate
-                                                          base-color ?base-color
-                                                          cap-color ?cap-color
-                                                          ))
+ ?g <- (goal (id ?goal-id) (class DELIVER) (mode SELECTED) (parent ?parent)
+             (params robot ?robot
+                          mps ?mps
+                          order ?order
+                          wp ?wp
+                          ds ?ds
+                          ds-gate ?gate
+                          base-color ?base-color
+                          cap-color ?cap-color
+       ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
  (assert
-  (plan (id DELIVER-PLAN) (goal-id DELIVER))
-  (plan-action (id 1) (plan-id DELIVER-PLAN) (goal-id DELIVER)
+  (plan (id DELIVER-PLAN) (goal-id ?goal-id))
+  (plan-action (id 1) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
+        (action-name location-lock)
+        (param-values ?mps OUTPUT))
+  (plan-action (id 2) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
         (action-name move)
         (param-names r from from-side to to-side)
         (param-values ?robot ?curr-location ?curr-side ?mps OUTPUT))
-  (plan-action (id 2) (plan-id DELIVER-PLAN) (goal-id DELIVER)
+  (plan-action (id 3) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
+        (action-name lock) (param-values ?mps))
+  (plan-action (id 4) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
         (action-name wp-get)
         (param-names r wp m side)
         (param-values ?robot ?wp ?mps OUTPUT))
-  (plan-action (id 3) (plan-id DELIVER-PLAN) (goal-id DELIVER)
+  (plan-action (id 5) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
+        (action-name unlock) (param-values ?mps))
+  (plan-action (id 6) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
+        (action-name location-unlock)
+        (param-values ?mps OUTPUT))
+  (plan-action (id 7) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
+        (action-name location-lock)
+        (param-values ?ds INPUT))
+  (plan-action (id 8) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
         (action-name move)
         (param-names r from from-side to to-side)
         (param-values ?robot ?mps OUTPUT ?ds INPUT))
-  (plan-action (id 4) (plan-id DELIVER-PLAN) (goal-id DELIVER)
+  (plan-action (id 9) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
+        (action-name lock) (param-values ?ds))
+  (plan-action (id 10) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
         (action-name prepare-ds)
         (param-names m gate)
         (param-values ?ds ?gate))
-  (plan-action (id 5) (plan-id DELIVER-PLAN) (goal-id DELIVER)
+  (plan-action (id 11) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
         (action-name wp-put)
         (param-names r wp m)
         (param-values ?robot ?wp ?ds))
-  (plan-action (id 6) (plan-id DELIVER-PLAN) (goal-id DELIVER)
+  (plan-action (id 12) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
         (action-name fulfill-order-c0)
         (param-names ord wp m g basecol capcol)
         (param-values ?order ?wp ?ds ?gate ?base-color  ?cap-color))
+  (plan-action (id 13) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
+        (action-name unlock) (param-values ?ds))
+  (plan-action (id 14) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
+        (action-name location-unlock)
+        (param-values ?ds INPUT))
  )
  (modify ?g (mode EXPANDED))
 )

@@ -197,7 +197,7 @@
 )
 
 (defrule goal-reasoner-create-exploration-goal
-  (not (goal (id EXPLORATION)))
+  (not (goal (id ?goal-id) (class EXPLORATION)))
   (wm-fact (key domain fact entered-field args? r ?r))
   (wm-fact (key domain fact self args? r ?r))
   (wm-fact (key refbox phase) (type UNKNOWN) (value EXPLORATION))
@@ -206,12 +206,13 @@
   =>
   (assert (exp-zone-margin ?zone-margin))
   (assert (timer (name send-machine-reports)))
-  (assert (goal (id EXPLORATION) (type ACHIEVE)))
+  (assert (goal (id (sym-cat EXPLORATION- (gensym*))) (class EXPLORATION)
+                (type ACHIEVE)))
 )
 
 (defrule exp-passed-through-quadrant
   "We're driving slowly through a certain quadrant: reason enough to believe there's no machine here."
-  (goal (id EXPLORATION) (mode DISPATCHED))
+  (goal (class EXPLORATION) (mode DISPATCHED))
   (exp-navigator-vmax ?max-velocity ?max-rotation)
   (MotorInterface (id "Robotino")
     (vx ?vx&:(< ?vx ?max-velocity)) (vy ?vy&:(< ?vy ?max-velocity)) (omega ?w&:(< ?w ?max-rotation))
@@ -227,7 +228,7 @@
 
 (defrule exp-found-line
   "Found a line that is within an unexplored zone."
-  (goal (id EXPLORATION) (mode DISPATCHED))
+  (goal (class EXPLORATION) (mode DISPATCHED))
   (LaserLineInterface
     (visibility_history ?vh&:(>= ?vh 1))
     (time $?timestamp)
@@ -251,7 +252,7 @@
 
 
 (defrule exp-found-tag
-  (goal (id EXPLORATION) (mode DISPATCHED))
+  (goal (class EXPLORATION) (mode DISPATCHED))
   (domain-fact (name tag-matching) (param-values ?machine ?side ?col ?tag))
   (not (found-tag (name ?machine)))
   (TagVisionInterface (id "/tag-vision/info")
@@ -275,7 +276,7 @@
 
 
 (defrule exp-try-locking-line
-  (goal (id EXPLORATION) (mode DISPATCHED))
+  (goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
   (wm-fact (key domain fact self args? r ?r))
   (Position3DInterface (id "Pose") (translation $?trans))
   ?ze <- (wm-fact (key explore-zone ?zn args? machine ?machine team ?team)
@@ -303,7 +304,7 @@
   )
 
   (not (tried-lock (resource ?zn)))
-  (plan (id ?plan-id&EXPLORATION-PLAN) (goal-id EXPLORATION))
+  (plan (id ?plan-id&EXPLORATION-PLAN) (goal-id ?goal-id))
   (not (plan (id EXPLORE-ZONE)))
 
   (plan-action (id ?action-id) (action-name move-node) (plan-id ?plan-id) (status RUNNING))
@@ -319,18 +320,18 @@
   (modify ?skill (status S_FAILED))
   (printout t "EXP formulating zone exploration plan " ?zn " with line: " ?vh " and tag: " ?tv crlf)
   (assert
-    (plan (id EXPLORE-ZONE) (goal-id EXPLORATION))
-    ;(plan-action (id 1) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name lock-resource))
-    (plan-action (id 2) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name stop) (param-names r) (param-values ?r))
-    (plan-action (id 3) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name explore-zone) (param-names r z) (param-values ?r ?zn))
-    (plan-action (id 4) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name evaluation))
-    ;(plan-action (id 5) (plan-id EXPLORE-ZONE) (goal-id EXPLORATION) (action-name release-resource))
+    (plan (id EXPLORE-ZONE) (goal-id ?goal-id))
+    ;(plan-action (id 1) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name lock-resource))
+    (plan-action (id 2) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name stop) (param-names r) (param-values ?r))
+    (plan-action (id 3) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name explore-zone) (param-names r z) (param-values ?r ?zn))
+    (plan-action (id 4) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name evaluation))
+    ;(plan-action (id 5) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name release-resource))
   )
 )
 
 
 (defrule exp-increase-search-limit
-  (goal (id EXPLORATION) (mode DISPATCHED))
+  (goal (class EXPLORATION) (mode DISPATCHED))
 
   ; There is an explorable zone...
   (wm-fact (key explore-zone ?zn1 args? machine UNKNOWN team ?team1) (values line-vis ?vh tag-vis ?tv time-searched ?ts1))
@@ -358,9 +359,10 @@
 
 
 (defrule exp-skill-explore-zone-final
-  (goal (id EXPLORATION) (mode DISPATCHED))
+  (goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
   (plan-action (action-name explore-zone) (status FINAL))
-  ?pa <- (plan-action (action-name evaluation) (plan-id EXPLORE-ZONE) (status PENDING))
+  ?pa <- (plan-action (action-name evaluation) (goal-id ?goal-id)
+                      (plan-id EXPLORE-ZONE) (status PENDING))
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str)
     (orientation ?orientation) (tag_id ?tag-id) (search_state YES)
   )
@@ -407,7 +409,7 @@
 )
 
 (defrule exp-report-to-refbox
-  (goal (id EXPLORATION) (mode DISPATCHED))
+  (goal (class EXPLORATION) (mode DISPATCHED))
   (wm-fact (key refbox team-color) (value ?color))
   (exploration-result (team ?color) (machine ?machine) (zone ?zone)
     (orientation ?orientation)
@@ -437,7 +439,7 @@
 
 (defrule exp-exploration-ends-cleanup
   "Clean up lock refusal facts when exploration ends"
-  ?g <- (goal (id EXPLORATION) (mode DISPATCHED))
+  ?g <- (goal (class EXPLORATION) (mode DISPATCHED))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
 =>

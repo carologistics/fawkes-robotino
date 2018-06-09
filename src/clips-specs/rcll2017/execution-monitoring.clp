@@ -157,7 +157,7 @@
   ?g <- (goal (id ?goal-id) (mode FORMULATED|SELECTED|EXPANDED) (params $? ?mps $?))
   (plan (id ?plan-id) (goal-id ?goal-id))
   =>
-  (modify ?g (mode REJECTED))
+  (modify ?g (mode FINISHED) (outcome REJECTED))
 )
 
 
