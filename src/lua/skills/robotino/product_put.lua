@@ -33,6 +33,11 @@ depends_interfaces = {
 
 documentation      = [==[
 
+Parameters:
+      @param place   the name of the MPS (see navgraph e.g.: "M-BS" for base station of team magenta)
+      @param side    optional the side of the mps ("input" or "output")
+      @param slide   optional true if you want to put it on the slide
+
 ]==]
 
 
