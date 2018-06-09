@@ -69,20 +69,24 @@ function tolerance_ok(self)
       and math.abs(pose.ori) <= tolerance_ori
 end
 
-function drive_ready_check(self)
-  local test_target_pos = { x = x_dist_to_mps,
-                       y = 0,
-                       ori = 0,
-  }
+function result_ready(self)
+  if if_conveyor_pose:euclidean_fitness() < euclidean_fitness_threshold
+     or if_conveyor_pose:is_busy()
+     or if_conveyor_pose:msgid() ~= fsm.vars.msgid
+  then return false end
 
-  local test_transformed_pos = tfm.transform(test_target_pos, "conveyor_pose", "base_link")
-  if test_transformed_pos == nil then
+  local bb_stamp = fawkes.Time:new(if_conveyor_pose:input_timestamp(0), if_conveyor_pose:input_timestamp(1))
+  if not tf:can_transform("conveyor_pose", "base_link", bb_stamp) then
     return false
   end
 
-  return if_conveyor_pose:euclidean_fitness() > euclidean_fitness_threshold
-     and not if_conveyor_pose:is_busy()
-     and if_conveyor_pose:msgid() == fsm.vars.msgid
+  local transform = fawkes.tf.StampedTransform:new()
+  tf:lookup_transform("conveyor_pose", "base_link", transform)
+  if transform.stamp:in_usec() < bb_stamp:in_usec() then
+    return false
+  end
+  
+  return true
 end
 
 function pose_offset(self)
@@ -111,7 +115,7 @@ fsm:add_transitions{
    {"INIT", "MOVE_GRIPPER", cond=true},
    {"CHECK_VISION", "FAILED", timeout=20, desc = "Fitness threshold wasn't reached"},
    {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
-   {"CHECK_VISION", "DRIVE_FORWARD", cond=drive_ready_check, desc="Fitness threshold reached"},
+   {"CHECK_VISION", "DRIVE_FORWARD", cond=result_ready, desc="Fitness threshold reached"},
    {"CHECK_TOLERANCE", "FINAL", cond=tolerance_ok, desc="Pose tolerance ok"},
    {"CHECK_TOLERANCE", "CHECK_VISION", cond = true, desc="Pose tolerance not ok"},
 }
