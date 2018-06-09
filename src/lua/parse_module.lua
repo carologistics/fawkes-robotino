@@ -41,7 +41,7 @@ function parse_to_type_target(if_conveyor_pose,place,side,shelf,slide)
   end
 
   if slide then
-    type = if_conveyor_pose.SLIDE
+    target = if_conveyor_pose.SLIDE
   end
 
   return { mps_type = type, mps_target = target}
