@@ -49,17 +49,17 @@ local gripper_tolerance_z = 0.5 -- gripper z tolerance according to conveyor pos
 
 local gripper_pose_offset_x = 0.02  -- conveyor pose offset in x direction
 local gripper_pose_offset_y = 0     -- conveyor_pose offset in y direction
-local gripper_pose_offset_z = 0.04  -- conveyor_pose offset in z direction
+local gripper_pose_offset_z = 0.065  -- conveyor_pose offset in z direction
 
-local gripper_forward_x = 0.07 -- distance to move gripper forward after align
-local gripper_down_z = 0.025    -- distance to move gripper down after driving over product
+local gripper_forward_x = 0.04 -- distance to move gripper forward after align
+local gripper_down_z = 0.01    -- distance to move gripper down after driving over product
 local gripper_back_x = -0.06    -- distance to move gripper back after closing gripper
 local drive_back_x = -0.1   -- distance to drive back after closing the gripper
 
 local cfg_frame_ = "gripper"
 
 local align_target_frame = "gripper"      -- the gripper align is made relative to this frame (according to gripper_commands_new)
-local z_movement_target_frame = "gripper_home" -- the gripper z movement is made relative to this frame (according to gripper_commands_new)
+local z_movement_target_frame = "gripper" -- the gripper z movement is made relative to this frame (according to gripper_commands_new)
 local x_movement_target_frame = "gripper" -- the gripper x movement is made relative to this frame (according to griper_commands_new)
 
 
