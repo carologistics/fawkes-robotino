@@ -53,9 +53,11 @@ local x_dist_to_mps = -0.31  -- x-distance the robot should have after the align
 local cfg_frame_ = "gripper"
 
 local GRIPPER_POSES = {
-   {x=0.05, y=0.00, z=0.035},
-   {x=0.05, y=0.02, z=0.03},
-   {x=0.05, y=-0.02, z=0.03}
+  shelf_left={x=0.05, y=0.00, z=0.035},
+  shelf_middle={x=0.05, y=-0.03, z=0.035},
+  shelf_right={x=0.05, y=0.00, z=0.035},
+  slide={x=0.05,y=0.00,z=0.035},
+  conveyor={x=0.05, y=0.02,z=0.035},
 }
 
 function no_writer()
@@ -121,7 +123,6 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-   self.fsm.vars.gripper_pose_idx = 1
    if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
    local parse_result = pam.parse_to_type_target(if_conveyor_pose,self.fsm.vars.place,self.fsm.vars.side,self.fsm.vars.shelf,self.fsm.vars.slide)
    self.fsm.vars.mps_type = parse_result.mps_type
@@ -135,9 +136,19 @@ function CHECK_VISION:init()
 end
 
 function MOVE_GRIPPER:init()
-  self.args["gripper_commands_new"] = GRIPPER_POSES[self.fsm.vars.gripper_pose_idx]
+
+  if self.fsm.vars.shelf == "LEFT" then
+    self.args["gripper_commands_new"] = GRIPPER_POSES["shelf_left"]
+  elseif self.fsm.vars.shelf == "RIGHT" then
+    self.args["gripper_commands_new"] = GRIPPER_POSES["shelf_right"]
+  elseif self.fsm.vars.shelf == "MIDDLE" then
+    self.args["gripper_commands_new"] = GRIPPER_POSES["shelf_middle"]
+  elseif self.fsm.vars.slide then
+    self.args["gripper_commands_new"] = GRIPPER_POSES["slide"]
+  else
+    self.args["gripper_commands_new"] = GRIPPER_POSES["conveyor"]
+  end
   self.args["gripper_commands_new"].command = "MOVEABS"
-  self.fsm.vars.gripper_pose_idx = (self.fsm.vars.gripper_pose_idx + 1) % #GRIPPER_POSES
 end
 
 function DRIVE_FORWARD:init()
