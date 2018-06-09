@@ -210,7 +210,7 @@ private:
  void pose_write();
  void record_model();
 
- void pose_publish_tf(const fawkes::tf::Pose &pose);
+ void pose_publish_tf(const fawkes::tf::Stamped<fawkes::tf::Pose> &pose);
  void start_waiting();
  bool need_to_wait();
 
