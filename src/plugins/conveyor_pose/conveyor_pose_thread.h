@@ -229,7 +229,7 @@ protected:
   virtual void run() override
   { Thread::run(); }
 
-  void pose_publish_tf(const fawkes::tf::Pose &pose);
+  void pose_publish_tf(const fawkes::tf::Stamped<fawkes::tf::Pose> &pose);
   void start_waiting();
   bool need_to_wait();
 
