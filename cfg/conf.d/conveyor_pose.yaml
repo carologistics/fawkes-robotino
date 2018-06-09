@@ -35,6 +35,7 @@ plugins/conveyor_pose:
   # When recording a model (see above), transform the recorded model into this frame before
   # saving it. The robot should be positioned so that this frame is at the desired origin of
   # the conveyor (align the conveyor cloud & the TF in rviz)
+  # Normally this should be gripper_fingers, except for the middle shelf should be shelf_record
   model_origin_frame: "gripper_fingers"
 
 
@@ -44,9 +45,9 @@ plugins/conveyor_pose:
     default: "conveyor_pcls/default.pcd"
     input_conveyor: "conveyor_pcls/with_cone.pcd"
     output_conveyor: "conveyor_pcls/no_cone.pcd"
-    shelf_left: "conveyor_pcls/no_cone.pcd"
-    shelf_middle: "conveyor_pcls/no_cone.pcd"
-    shelf_right: "conveyor_pcls/no_cone.pcd"
+    shelf_left: "conveyor_pcls/shelf_left.pcd"
+    shelf_middle: "conveyor_pcls/shelf_middle.pcd"
+    shelf_right: "conveyor_pcls/shelf_right.pcd"
     slide: "conveyor_pcls/slide.pcd"
 
   voxel_grid:
@@ -125,16 +126,16 @@ plugins/conveyor_pose:
         z: 0.65
       left_shelf:
         x: -0.01
-        y: -0.22
-        z: 0.65
+        y: -0.01
+        z: 0.655
       middle_shelf:
-        x: 0.005
-        y: 0.11
-        z: 0.63
+        x: -0.01
+        y: 0.10
+        z: 0.655
       right_shelf:
         x: -0.01
-        y: -0.32
-        z: 0.65
+        y: 0.19
+        z: 0.655
       slide:
         x: 0.00
         y: 0.27
@@ -218,11 +219,11 @@ plugins/conveyor_pose:
     back_cut: 0.5
   shelf:
     with_ll: # THESE VALUES IF LASERLINE IS AVAILABLE
-      left_cut: 0.035
-      right_cut: 0.30
-      top_cut: -0.02
-      bottom_cut: 0.07
-      front_cut: -0.01
+      left_cut: -0.055 #-0.035
+      right_cut: 0.095 #0.065
+      top_cut: 0.005
+      bottom_cut: 0.09
+      front_cut: -0.02
       back_cut: 0.10
     without_ll: #THESE VALUES IF NOT
       left_cut: -0.05
@@ -235,8 +236,8 @@ plugins/conveyor_pose:
     #The following values describe the x offset of the cutbox, relative to the initial estimate.
     #Eventhough the cutboxes used for shelf icp are of similar shape, they are at different x
     #position. 
-    left_off: 0.0
-    middle_off: 0.0
+    left_off: -0.03
+    middle_off: 0.10
     right_off: 0.0
 
 
