@@ -33,8 +33,8 @@ documentation      = [==[aligns the robot orthogonal to the conveyor by using th
                          conveyor vision
 Parameters:
        @param disable_realsense_afterwards   disable the realsense after aligning
-       @param place   the name of the MPS (see navgraph)
-       @param side    optional the side of the mps (default is output give "input" to get from input)
+       @param place   the name of the MPS (see navgraph e.g.: "M-BS" for base station of team magenta)
+       @param side    optional the side of the mps
        @param shelf   optional position on shelf: ( LEFT | MIDDLE | RIGHT )
        @param slide   optional true if you want to put it on the slide
 ]==]
