@@ -665,7 +665,7 @@
 
 (defrule goal-reasoner-evaluate-completed-subgoal-produce-c0
   ?g <- (goal (id ?goal-id) (class PRODUCE-C0) (parent ?parent-id)
-              (mode FINISHED) (outcome COMPLETED)
+              (mode FINISHED) (outcome ?outcome)
               (params $?params))
  ?gm <- (goal-meta (goal-id ?parent-id))
  (plan (goal-id ?goal-id) (id ?plan-id))
@@ -675,6 +675,7 @@
          (param-names r m side wp basecol)
          (param-values ?robot ?bs ?bs-side ?wp ?base-color))
  (time $?now)
+ (wm-fact (key domain fact wp-usable args? wp ?wp))
  (wm-fact (key domain fact self args? r ?robot))
  =>
  (bind ?order (get-param-by-arg ?params order))
