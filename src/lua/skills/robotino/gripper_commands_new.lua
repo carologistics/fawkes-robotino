@@ -59,6 +59,7 @@ fsm:add_transitions{
    {"CHECK_WRITER", "FAILED", precond="not gripper_if:has_writer()", desc="No writer for gripper"},
    {"CHECK_WRITER", "COMMAND", cond=true, desc="Writer ok got to command"},
    {"COMMAND", "WAIT_COMMAND", timeout=1.0},
+   {"WAIT_COMMAND", "FINAL", cond="vars.wait ~= nil and not vars.wait"},
    {"WAIT_COMMAND", "FINAL", cond="vars.restore"},
    {"WAIT_COMMAND", "FINAL", cond="arduino:is_final()"},
    {"WAIT_COMMAND", "FAILED", cond="vars.error"},
