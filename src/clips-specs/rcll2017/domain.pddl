@@ -411,6 +411,7 @@
 											 (wp-ring1-color ?wp RING_NONE) (wp-ring2-color ?wp RING_NONE) (wp-ring3-color ?wp RING_NONE))
 		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT))
                  (not (ds-prepared-gate ?m ?g))
+                 (not (wp-usable ?wp))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
 	)
 
@@ -429,6 +430,7 @@
 											 (order-cap-color ?ord ?capcol) (wp-cap-color ?wp ?capcol))
 		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT))
                  (not (ds-prepared-gate ?m ?g))
+                 (not (wp-usable ?wp))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
 	)
 
@@ -471,6 +473,7 @@
 											 )
 		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT))
                  (not (ds-prepared-gate ?m ?g))
+                 (not (wp-usable ?wp))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
 	)
 

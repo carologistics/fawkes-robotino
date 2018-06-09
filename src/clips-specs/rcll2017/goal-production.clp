@@ -705,9 +705,6 @@
      (domain-object (name ?cc1) (type cap-carrier))
      (domain-object (name ?cc2) (type cap-carrier))
      (domain-object (name ?cc3) (type cap-carrier))
-     (wm-fact (key domain fact wp-unused args? wp ?cc1) (value TRUE))
-     (wm-fact (key domain fact wp-unused args? wp ?cc2) (value TRUE))
-     (wm-fact (key domain fact wp-unused args? wp ?cc3) (value TRUE))
      (wm-fact (key domain fact wp-cap-color args? wp ?cc1 col ?col) (value TRUE))
      (wm-fact (key domain fact wp-cap-color args? wp ?cc2 col ?col) (value TRUE))
      (wm-fact (key domain fact wp-cap-color args? wp ?cc3 col ?col) (value TRUE))
@@ -744,4 +741,12 @@
   )
   (modify ?g (mode EVALUATED))
   (modify ?m (last-achieve ?now))
+)
+
+(defrule goal-reasoner-evaluate-cleanup-evaluated-wp-for-order-facts
+  ?wp-for-order <- (wm-fact (key evaluated wp-for-order args? wp ?wp ord ?order) (value TRUE))
+  (not (wm-fact (key domain fact wp-usable ?args wp ?wp)))
+  =>
+  (retract ?wp-for-order)
+  (printout debug "WP " ?wp " no longer tied to Order " ?order " because it is not usable anymore" crlf)
 )
