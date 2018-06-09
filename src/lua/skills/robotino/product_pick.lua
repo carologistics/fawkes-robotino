@@ -34,8 +34,8 @@ depends_interfaces = {
 documentation      = [==[
 
 Parameters:
-      @param place   the name of the MPS (see navgraph)
-      @param side    optional the side of the mps (default is output give "input" to get from input)
+      @param place   the name of the MPS (see navgraph e.g.: "M-BS" for base station of team magenta)
+      @param side    optional the side of the mps ("input" or "output")
       @param shelf   optional position on shelf: ( LEFT | MIDDLE | RIGHT )
 ]==]
 
