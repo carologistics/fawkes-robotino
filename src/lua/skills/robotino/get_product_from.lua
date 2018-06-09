@@ -97,6 +97,6 @@ function CONVEYOR_ALIGN:init()
    end
    self.args["conveyor_align"].place = self.fsm.vars.place
    self.args["conveyor_align"].slide = self.fsm.vars.slide
-   self.args["conveyor_align"].shelf = self.fsm.shelf
+   self.args["conveyor_align"].shelf = self.fsm.vars.shelf
    self.args["conveyor_align"].side = self.fsm.vars.side
 end
