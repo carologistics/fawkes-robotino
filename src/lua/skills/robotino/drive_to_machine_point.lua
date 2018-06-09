@@ -192,7 +192,6 @@ function get_interesting_lines(self)
             self.fsm.vars.lines_visited[line:id()] < max_num_visited --and
          then
             table.insert(rv, line)
-            printf("interesting %s ori: %f", line:id(), ori)
          end
       end
    end
