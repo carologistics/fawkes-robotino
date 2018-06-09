@@ -1107,13 +1107,17 @@ CloudPtr ConveyorPoseThread::cloud_trim(CloudPtr in, fawkes::LaserLineInterface 
     if(use_ll){
         // get position of initial guess in conveyor cam frame
         // rotation is ignored, since rotation values are small
-        tf::Stamped<tf::Pose> initial_guess_laser;
+      tf::Stamped<tf::Pose> origin_pose;
+      if(cfg_record_model_){
+        tf_listener->transform_origin(cfg_model_origin_frame_, in->header.frame_id,  origin_pose);
+      } else {
         tf_listener->transform_pose(in->header.frame_id,
                 tf::Stamped<tf::Pose>(initial_guess_laser_odom_, Time(0,0), initial_guess_laser_odom_.frame_id),
-                initial_guess_laser);
-        float x_ini = initial_guess_laser.getOrigin()[0],
-               y_ini = initial_guess_laser.getOrigin()[1],
-               z_ini = initial_guess_laser.getOrigin()[2];
+                origin_pose);
+      }
+        float x_ini = origin_pose.getOrigin()[0],
+              y_ini = origin_pose.getOrigin()[1],
+              z_ini = origin_pose.getOrigin()[2];
 
         if(is_target_shelf()){ //using shelf cut values
           float x_min_temp = x_ini + (float) cfg_shelf_left_cut_,
