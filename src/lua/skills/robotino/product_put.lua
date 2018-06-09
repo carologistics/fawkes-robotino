@@ -51,10 +51,16 @@ local gripper_pose_offset_x = 0.02  -- conveyor pose offset in x direction
 local gripper_pose_offset_y = 0     -- conveyor_pose offset in y direction
 local gripper_pose_offset_z = 0.065  -- conveyor_pose offset in z direction
 
-local gripper_forward_x = 0.04 -- distance to move gripper forward after align
-local gripper_down_z = 0.01    -- distance to move gripper down after driving over product
-local gripper_back_x = -0.06    -- distance to move gripper back after closing gripper
-local drive_back_x = -0.1   -- distance to drive back after closing the gripper
+local conveyor_gripper_forward_x = 0.04 -- distance to move gripper forward after align
+local conveyor_gripper_down_z = 0.01    -- distance to move gripper down after driving over conveyor
+local conveyor_gripper_back_x = -0.06   -- distance to move gripper back after closing gripper
+
+local slide_gripper_forward_x = 0.04  -- distance to move gripper forward after align if the target is slide
+local slide_gripper_down_z = 0.01     -- distance to move gripper down after driving over slide
+local slide_gripper_back_x = -0.06    -- distance to move gripper back after closing the gripper if the target is slide
+
+local drive_back_x = -0.1      -- distance to drive back after closing the gripper
+
 
 local cfg_frame_ = "gripper"
 
@@ -143,12 +149,21 @@ end
 function MOVE_GRIPPER_FORWARD:init()
   self.args["gripper_commands_new"].command = "MOVEABS"
   self.args["gripper_commands_new"].target_frame = x_movement_target_frame
-  self.args["gripper_commands_new"].x = gripper_forward_x
+
+  if self.fsm.vars.slide then
+    self.args["gripper_commands_new"].x = slide_gripper_forward_x
+  else
+    self.args["gripper_commands_new"].x = conveyor_gripper_forward_x
+  end
 end
 
 function MOVE_GRIPPER_DOWN:init()
   self.args["gripper_commands_new"].command = "MOVEABS"
-  self.args["gripper_commands_new"].z = gripper_down_z
+  if self.fsm.vars.slide then
+    self.args["gripper_commands_new"].z = slide_gripper_down_z
+  else
+    self.args["gripper_commands_new"].z = conveyor_gripper_down_z
+  end
   self.args["gripper_commands_new"].target_frame = z_movement_target_frame
 end
 
@@ -162,7 +177,11 @@ end
 
 function MOVE_GRIPPER_BACK:init()
   self.args["gripper_commands_new"].command = "MOVEABS"
-  self.args["gripper_commands_new"].x = gripper_back_x
+  if self.fsm.vars.slide then
+    self.args["gripper_commands_new"].x = slide_gripper_back_x
+  else
+    self.args["gripper_commands_new"].x = conveyor_gripper_back_x
+  end
   self.args["gripper_commands_new"].target_frame = x_movement_target_frame
 end
 
