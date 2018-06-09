@@ -477,22 +477,18 @@ ConveyorPoseThread::loop()
           if (result_pose_) {
             pose_write();
             pose_publish_tf(*result_pose_);
+            result_pose_.reset();
           }
         } catch (std::exception &e) {
           logger->log_error(name(), "Unexpected exception: %s", e.what());
         }
       }
+
       { MutexLocker locked { &cloud_mutex_ };
-        try {
-          scene_ = trimmed_scene_;
 
-          syncpoint_clouds_ready->emit(name());
-
-        } catch (std::exception &e) {
-          logger->log_error(name(), "Exception preprocessing point clouds: %s", e.what());
-        }
+        scene_ = trimmed_scene_;
+        syncpoint_clouds_ready->emit(name());
       }
-
     } // ! cfg_record_model_
   } // update_input_cloud()
 }
@@ -801,15 +797,11 @@ ConveyorPoseThread::pose_write()
 
 
 void
-ConveyorPoseThread::pose_publish_tf(const tf::Pose &pose)
+ConveyorPoseThread::pose_publish_tf(const tf::Stamped<tf::Pose> &pose)
 {
   // transform data into gripper frame (this is better for later use)
-  tf::Stamped<tf::Pose> tf_pose_cam, tf_pose_gripper;
-  tf_pose_cam.stamp = fawkes::Time((long)header_.stamp / 1000);
-  tf_pose_cam.frame_id = header_.frame_id;
-  tf_pose_cam.setOrigin(pose.getOrigin());
-  tf_pose_cam.setRotation(pose.getRotation());
-  tf_listener->transform_pose("gripper", tf_pose_cam, tf_pose_gripper);
+  tf::Stamped<tf::Pose> tf_pose_gripper;
+  tf_listener->transform_pose("gripper", pose, tf_pose_gripper);
 
   // publish the transform from the gripper to the conveyor
   tf::Transform transform(
