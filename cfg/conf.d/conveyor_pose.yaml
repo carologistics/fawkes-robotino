@@ -127,8 +127,8 @@ plugins/conveyor_pose:
         y: -0.32
         z: 0.65
       slide:
-        x: -0.01
-        y: -0.32
+        x: 0.00
+        y: 0.27
         z: 0.65
 
 
@@ -194,15 +194,15 @@ plugins/conveyor_pose:
   # since rotation of initial_tf to conveyor_cam is small, rotation
   # is NEGLECTED!
   with_ll:  #THESE VALUES IF LASERLINE AVAILABLE
-    left_cut: -0.055
-    right_cut: 0.055
+    left_cut: -0.065
+    right_cut: 0.065
     top_cut: -0.02
     bottom_cut: 0.055
     front_cut: -0.045
     back_cut: 0.045
   without_ll: #THESE VALUES IF LASERLINE NOT AVAILABLE
-    left_cut: -0.065
-    right_cut: 0.065
+    left_cut: -0.075
+    right_cut: 0.075
     top_cut: -0.02
     bottom_cut: 0.055
     front_cut: 0.01
