@@ -270,7 +270,10 @@ void RecognitionThread::enable()
 
 
 void RecognitionThread::disable()
-{ enabled_ = false; }
+{
+  enabled_ = false;
+  initial_guess_icp_odom_ = fawkes::tf::Stamped<fawkes::tf::Pose>();
+}
 
 
 void RecognitionThread::restart()
