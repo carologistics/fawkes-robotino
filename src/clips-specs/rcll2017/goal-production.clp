@@ -344,7 +344,7 @@
 (defrule goal-reasoner-create-prefill-ring-station-high-priority
   "Insert a base with unknown color in a RS for preparation"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -369,15 +369,16 @@
   ;--TODO: add time considrations to have a higher priority if it makes "sense"
   =>
   (printout warn "Goal " FILL-RS " formulated with higher priority because of Order: " ?order crlf)
-  (assert (goal (id FILL-RS) (priority (+ 1 ?*PRIORITY-PREFILL-RS*))
-                             (parent PRODUCTION-MAINTAIN)
+  (assert (goal (id (sym-cat FILL-RS- (gensym*))) (class FILL-RS) (priority (+ 1 ?*PRIORITY-PREFILL-RS*))
+                             (parent ?maintain-id)
                              (params robot ?robot
                                      mps ?mps
                                      wp ?wp
                                      rs-before ?rs-before
                                      rs-after ?rs-after
-                                     )))
-  ; (assert (goal-already-tried FILL-RS))
+                                     )
+                            (required-resources ?mps ?wp)
+  ))
 )
 
 (defrule goal-reasoner-create-prefill-ring-station
@@ -570,7 +571,9 @@
                            rs-after ?bases-remain
                            rs-req ?bases-needed
                            order ?order
-                           )))
+                )
+                (required-resources ?mps-rs)
+  ))
 )
 
 (deffunction tac-ring-mount-time (?complexity ?rings)
@@ -585,7 +588,7 @@
 
 (defrule goal-reasoner-create-produce-c1
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -626,16 +629,18 @@
   ;   (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   =>
   (printout t "Goal " PRODUCE-C1 " formulated" crlf)
-  (assert (goal (id PRODUCE-C1) (priority ?*PRIORITY-PRODUCE-CX*)
-                                (parent PRODUCTION-MAINTAIN)
+  (assert (goal (id (sym-cat PRODUCE-C1- (gensym*))) (class PRODUCE-C1)
+                (priority ?*PRIORITY-PRODUCE-CX*)
+                                (parent ?maintain-id)
                                 (params robot ?robot
                                         wp ?wp
                                         rs ?rs
                                         mps ?mps
                                         cs-color ?cap-color
                                         order ?order
-                                        )))
-  ; (assert (goal-already-tried PRODUCE-C0))
+                                )
+                                (required-resources ?mps ?rs ?wp)
+  ))
 )
 
 

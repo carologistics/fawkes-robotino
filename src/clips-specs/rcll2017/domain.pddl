@@ -164,6 +164,7 @@
 								 (not (wp-at ?wp ?m INPUT)) (wp-at ?wp ?m OUTPUT)
 								 (not (wp-cap-color ?wp CAP_NONE)) (wp-cap-color ?wp ?capcol)
 								 (cs-can-perform ?m RETRIEVE_CAP)
+								 (not (cs-can-perform ?m MOUNT_CAP))
 								 (not (cs-prepared-for ?m MOUNT_CAP))
 								 (not (cs-buffered ?m ?capcol)))
 	)
