@@ -50,11 +50,13 @@ local euclidean_fitness_threshold = 8 -- threshold for euclidean fitness  (fitne
 local tolerance_trans = 0.015
 local tolerance_ori = 0.015
 local x_dist_to_mps = -0.31  -- x-distance the robot should have after the align
+local y_offset_shelf_middle = -0.015 -- y-offset the robot should have picking is done from shelf = "MIDDLE"
 local cfg_frame_ = "gripper"
 
+-- initial gripper poses depending on the target
 local GRIPPER_POSES = {
   shelf_left={x=0.05, y=0.00, z=0.035},
-  shelf_middle={x=0.05, y=-0.03, z=0.035},
+  shelf_middle={x=0.05, y=-0.035, z=0.035},
   shelf_right={x=0.05, y=0.00, z=0.035},
   slide={x=0.05,y=0.00,z=0.035},
   conveyor={x=0.05, y=0.02,z=0.035},
@@ -87,20 +89,22 @@ function result_ready(self)
   if transform.stamp:in_usec() < bb_stamp:in_usec() then
     return false
   end
-  
   return true
 end
 
 function pose_offset(self)
-      local target_pos = { x = x_dist_to_mps,
-                           y = 0,
-                           ori = 0,
-      }
-
-      local transformed_pos = tfm.transform(target_pos, "conveyor_pose", "base_link")
-      print_info("transformed_pos is x = %f, y = %f,ori = %f", transformed_pos.x, transformed_pos.y, transformed_pos.ori)
-
-      return transformed_pos
+  if self.fsm.vars.shelf == "MIDDLE" then
+    y_offset = y_offset_shelf_middle
+  else
+    y_offset = 0
+  end
+  local target_pos = { x = x_dist_to_mps,
+                       y = y_offset,
+                       ori = 0,
+  }
+  local transformed_pos = tfm.transform(target_pos, "conveyor_pose", "base_link")
+  print_info("transformed_pos is x = %f, y = %f,ori = %f", transformed_pos.x, transformed_pos.y, transformed_pos.ori)
+  return transformed_pos
 end
 
 
