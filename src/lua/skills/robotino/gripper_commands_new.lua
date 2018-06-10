@@ -58,8 +58,7 @@ fsm:define_states{
 fsm:add_transitions{
    {"CHECK_WRITER", "FAILED", precond="not gripper_if:has_writer()", desc="No writer for gripper"},
    {"CHECK_WRITER", "COMMAND", cond=true, desc="Writer ok got to command"},
-   {"COMMAND", "WAIT_COMMAND", timeout=0.2},
-   {"WAIT_COMMAND", "FINAL", cond="vars.wait ~= nil and not vars.wait"},
+   {"COMMAND", "WAIT_COMMAND", timeout=1.0},
    {"WAIT_COMMAND", "FINAL", cond="vars.restore"},
    {"WAIT_COMMAND", "FINAL", cond="arduino:is_final()"},
    {"WAIT_COMMAND", "FAILED", cond="vars.error"},
@@ -78,6 +77,16 @@ function COMMAND:init()
       torqueMessage = gripper_if.SetTorqueMessage:new()
       torqueMessage:set_torque(0)
       gripper_if:msgq_enqueue(torqueMessage)
+
+   elseif self.fsm.vars.command == "CENTER" then
+      self.fsm.vars.center = true
+      self.fsm.vars.center_timestamp = os.time()
+      torqueMessage = gripper_if.SetTorqueMessage:new()
+      torqueMessage:set_torque(1)
+      gripper_if:msgq_enqueue(torqueMessage)
+
+      theCenterMessage = gripper_if.CenterMessage:new()
+      gripper_if:msgq_enqueue(theCenterMessage)
 
    elseif self.fsm.vars.command == "MOVEABS" then
 
