@@ -86,9 +86,15 @@ void RecognitionThread::restart_icp()
 
   hypot_verif_.setSceneCloud(scene_);
   hypot_verif_.setResolution(main_thread_->cloud_resolution());
-  hypot_verif_.setInlierThreshold(cfg_icp_hv_inlier_thresh_);
-  hypot_verif_.setPenaltyThreshold(cfg_icp_hv_penalty_thresh_);
-  hypot_verif_.setSupportThreshold(cfg_icp_hv_support_thresh_);
+  if(main_thread_->is_target_shelf()){ //use shelf values
+    hypot_verif_.setInlierThreshold(cfg_icp_shelf_hv_inlier_thresh_);
+    hypot_verif_.setPenaltyThreshold(cfg_icp_shelf_hv_penalty_thresh_);
+    hypot_verif_.setSupportThreshold(cfg_icp_shelf_hv_support_thresh_);
+  } else { //use general values
+    hypot_verif_.setInlierThreshold(cfg_icp_hv_inlier_thresh_);
+    hypot_verif_.setPenaltyThreshold(cfg_icp_hv_penalty_thresh_);
+    hypot_verif_.setSupportThreshold(cfg_icp_hv_support_thresh_);
+  }
 
   initial_tf_ = pose_to_eigen(initial_pose_cam);
 

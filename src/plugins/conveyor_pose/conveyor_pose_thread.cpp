@@ -101,6 +101,10 @@ ConveyorPoseThread::init()
   recognition_thread_->cfg_icp_hv_penalty_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_penalty_threshold" );
   recognition_thread_->cfg_icp_hv_support_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_support_threshold" );
 
+  recognition_thread_->cfg_icp_shelf_hv_inlier_thresh_  = config->get_float( CFG_PREFIX "/icp/hv_shelf_inlier_threshold" );
+  recognition_thread_->cfg_icp_shelf_hv_penalty_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_shelf_penalty_threshold" );
+  recognition_thread_->cfg_icp_shelf_hv_support_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_shelf_support_threshold" );
+
   // Init of station target hints
   cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR];
   cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR];
@@ -956,6 +960,12 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         change_val(opt, recognition_thread_->cfg_icp_hv_support_thresh_, v->get_float());
       else if (opt == "/hv_inlier_threshold")
         change_val(opt, recognition_thread_->cfg_icp_hv_inlier_thresh_, v->get_float());
+      else if (opt == "/hv_shelf_penalty_threshold")
+        change_val(opt, recognition_thread_->cfg_icp_shelf_hv_penalty_thresh_, v->get_float());
+      else if (opt == "/hv_shelf_support_threshold")
+        change_val(opt, recognition_thread_->cfg_icp_shelf_hv_support_thresh_, v->get_float());
+      else if (opt == "/hv_shelf_inlier_threshold")
+        change_val(opt, recognition_thread_->cfg_icp_shelf_hv_inlier_thresh_, v->get_float());
       else if (opt == "/min_loops")
         change_val(opt, recognition_thread_->cfg_icp_min_loops_, v->get_uint());
       else if (opt == "/max_loops")

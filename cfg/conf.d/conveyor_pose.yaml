@@ -101,6 +101,16 @@ plugins/conveyor_pose:
     # Min. proportion of supported model points for a match
     hv_support_threshold: 0.65
 
+    # For the shelf recognition, hypothesis verifications needs to be lesst strict.
+    # The following values only apply for hv for shelf.
+    hv_shelf_inlier_threshold: 0.004
+
+    # Max. proportion of penalized model points for a match
+    hv_shelf_penalty_threshold: 0.15
+
+    # Min. proportion of supported model points for a match
+    hv_shelf_support_threshold: 0.65
+
 
     # Offset of interesting objects relative to the center of the laser line
     # The coordinate frame is oriented like the left laser-line endpoint, with
