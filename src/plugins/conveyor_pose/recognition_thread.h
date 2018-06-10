@@ -53,6 +53,9 @@ public:
   std::atomic<float> cfg_icp_hv_penalty_thresh_;
   std::atomic<float> cfg_icp_hv_support_thresh_;
   std::atomic<float> cfg_icp_hv_inlier_thresh_;
+  std::atomic<float> cfg_icp_shelf_hv_penalty_thresh_;
+  std::atomic<float> cfg_icp_shelf_hv_support_thresh_;
+  std::atomic<float> cfg_icp_shelf_hv_inlier_thresh_;
   std::atomic<unsigned int> cfg_icp_min_loops_;
   std::atomic<unsigned int> cfg_icp_max_loops_;
   std::atomic_bool cfg_icp_auto_restart_;
