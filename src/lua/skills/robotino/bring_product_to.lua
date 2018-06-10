@@ -60,8 +60,10 @@ end
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_if},
    {"INIT", JumpState},
    {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PUT", fail_to="FAILED"},
-   {"PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="FAILED"}
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"DECIDE_ENDSKILL", JumpState},
+   {"PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="FAILED"},
+   {"SLIDE_PUT", SkillJumpState, skills={{slide_put}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
@@ -69,6 +71,8 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
    {"INIT", "CONVEYOR_ALIGN", cond=already_at_conveyor, desc="At mps, skip drive_to_local"},
    {"INIT", "DRIVE_TO_MACHINE_POINT", cond=true, desc="Everything OK"},
+   {"DECIDE_ENDSKILL", "SLIDE_PUT", cond="vars.slide"},
+   {"DECIDE_ENDSKILL", "PRODUCT_PUT", cond=true},
    --{"DRIVE_TO_MACHINE_POINT", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
    --{"CONVEYOR_ALIGN", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
 }
@@ -79,12 +83,6 @@ end
 
 function DRIVE_TO_MACHINE_POINT:init()
    local option = "CONVEYOR"
-
-   if self.fsm.vars.slide then
-      option = "SLIDE"
-   elseif self.fsm.vars.shelf then
-     option = "SHELF_" .. self.fsm.vars.shelf
-   end
 
    if self.fsm.vars.side == "input" or self.fsm.vars.shelf or self.fsm.vars.slide then
       self.fsm.vars.tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
@@ -102,8 +100,6 @@ function CONVEYOR_ALIGN:init()
 
     self.args["conveyor_align"].side = self.fsm.vars.side
     self.args["conveyor_align"].place = self.fsm.vars.place
-    self.args["conveyor_align"].slide = self.fsm.vars.slide
-    self.args["conveyor_align"].shelf = self.fsm.vars.shelf
 end
 
 
