@@ -35,7 +35,7 @@
 
 (defrule action-selection-explorezone-done
 	(goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
-	?p <- (plan (id EXPLORE-ZONE) (goal-id EXPLORATION))
+	?p <- (plan (id EXPLORE-ZONE) (goal-id ?goal-id))
 	(or (not (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id ?goal-id)
                         (status ?s&~FINAL)))
       (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id ?goal-id)
@@ -102,7 +102,7 @@
 
 (defrule action-selection-failed
 	(plan (id ?plan-id) (goal-id ?goal-id))
-	?g <- (goal (id ?goal-id& :(neq ?goal-id EXPLORATION)) (mode DISPATCHED))
+	?g <- (goal (id ?goal-id) (class ?class& : (neq ?class EXPLORATION)) (mode DISPATCHED))
 	(plan-action (goal-id ?goal-id) (plan-id ?plan-id) (status FAILED))
 	=>
 	(modify ?g (mode FINISHED) (outcome FAILED))
