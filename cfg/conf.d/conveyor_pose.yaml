@@ -106,10 +106,10 @@ plugins/conveyor_pose:
     hv_shelf_inlier_threshold: 0.004
 
     # Max. proportion of penalized model points for a match
-    hv_shelf_penalty_threshold: 0.15
+    hv_shelf_penalty_threshold: 0.25
 
     # Min. proportion of supported model points for a match
-    hv_shelf_support_threshold: 0.65
+    hv_shelf_support_threshold: 0.55
 
 
     # Offset of interesting objects relative to the center of the laser line
