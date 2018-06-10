@@ -55,4 +55,7 @@
   (wm-robmem-sync-enable "/domain/fact/wp-spawned-by")
   (wm-robmem-sync-enable "/domain/fact/spot-free")
   (wm-robmem-sync-enable "/evaluated/fact/wp-for-order")
+  (wm-robmem-sync-enable "/exploration/fact/tag-vis")
+  (wm-robmem-sync-enable "/exploration/fact/line-vis")
+  (wm-robmem-sync-enable "/exploration/fact/time-searched")
 )

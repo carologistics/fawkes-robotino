@@ -58,135 +58,42 @@
 )
 
 (defrule startup-exploration
-    (not (wm-fact (key explore-zone ?zn args? line-vis ?vis machine ?machine team ?team time-searched ?ts)))
+    (not (wm-fact (key exploration zone ?zn args? machine ?machine team ?team)))
 =>
-  (assert
-    (wm-fact (key explore-zone C-Z11 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z21 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z31 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z41 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z12 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z22 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z32 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z42 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z62 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z72 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z13 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z23 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z33 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z43 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z53 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z63 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z73 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z62 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z73 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z14 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z24 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z34 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z44 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z54 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z64 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z74 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z64 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z74 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z15 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z25 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z35 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z45 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z55 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z65 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z75 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z65 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z75 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z16 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z26 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z36 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z46 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z56 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z66 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z76 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z66 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z76 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z17 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z27 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z37 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z47 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z57 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z67 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z77 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z67 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z77 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z18 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z28 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z38 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z48 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z58 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z68 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone C-Z78 args? machine UNKNOWN team CYAN) (values line-vis 0 tag-vis 0 time-searched 0))
+    (bind $?Czones (create$ 
 
-    (wm-fact (key explore-zone M-Z11 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z21 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z31 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z41 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z12 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z22 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z32 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z42 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z62 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z72 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z13 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z23 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z33 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z43 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z53 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z63 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z73 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z62 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z73 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z14 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z24 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z34 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z44 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z54 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z64 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z74 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z64 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z74 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z15 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z25 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z35 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z45 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z55 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z65 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z75 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z65 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z75 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z16 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z26 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z36 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z46 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z56 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z66 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z76 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z66 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z76 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z17 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z27 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z37 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z47 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z57 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z67 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z77 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z67 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z77 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z18 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z28 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z38 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z48 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z58 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z68 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-    (wm-fact (key explore-zone M-Z78 args? machine UNKNOWN team MAGENTA) (values line-vis 0 tag-vis 0 time-searched 0))
-  )
+      C-Z18 C-Z28 C-Z38 C-Z48 C-Z58 C-Z68 C-Z78
+      C-Z17 C-Z27 C-Z37 C-Z47 C-Z57 C-Z67 C-Z77
+      C-Z16 C-Z26 C-Z36 C-Z46 C-Z56 C-Z66 C-Z76
+      C-Z15 C-Z25 C-Z35 C-Z45 C-Z55 C-Z65 C-Z75
+      C-Z14 C-Z24 C-Z34 C-Z44 C-Z54 C-Z64 C-Z74
+      C-Z13 C-Z23 C-Z33 C-Z43 C-Z53 C-Z63 C-Z73
+      C-Z12 C-Z22 C-Z32 C-Z42 C-Z52 C-Z62 C-Z72
+      C-Z11 C-Z21 C-Z31 C-Z41))
+
+    (bind $?Mzones (create$ 	  M-Z78 M-Z68 M-Z58 M-Z48 M-Z38 M-Z28 M-Z18
+      M-Z77 M-Z67 M-Z57 M-Z47 M-Z37 M-Z27 M-Z17
+      M-Z76 M-Z66 M-Z56 M-Z46 M-Z36 M-Z26 M-Z16
+      M-Z75 M-Z65 M-Z55 M-Z45 M-Z35 M-Z25 M-Z15
+      M-Z74 M-Z64 M-Z54 M-Z44 M-Z34 M-Z24 M-Z14
+      M-Z73 M-Z63 M-Z53 M-Z43 M-Z33 M-Z23 M-Z13
+      M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12
+                        M-Z41 M-Z31 M-Z21 M-Z11))
+
+     (foreach ?zone ?Czones
+	(assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (is-list FALSE) )
+       		(wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (is-list FALSE) )
+    		(wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (is-list FALSE) )
+		(wm-fact (key exploration zone ?zone args? machine UNKNOWN team CYAN))
+	)
+     )
+     (foreach ?zone ?Mzones
+	(assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (is-list FALSE) )
+       		(wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (is-list FALSE) )
+    		(wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (is-list FALSE) )
+		(wm-fact (key exploration zone ?zone args? machine UNKNOWN team MAGENTA)))
+     )
+
 )
 
 (defrule conf-get-exp-vmax
@@ -218,11 +125,13 @@
     (vx ?vx&:(< ?vx ?max-velocity)) (vy ?vy&:(< ?vy ?max-velocity)) (omega ?w&:(< ?w ?max-rotation))
   )
   (Position3DInterface (id "Pose") (translation $?trans) (time $?timestamp) (visibility_history ?vh&:(>= ?vh 10)))
-  ?ze <- (wm-fact (key explore-zone ?zn&:(eq ?zn (get-zone 0.15 ?trans)) args? machine UNKNOWN team ?team) (values line-vis ?vis tag-vis ?tv time-searched ?time-searched))
+  ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn&:(eq ?zn (get-zone 0.15 ?trans))) (value ?time-searched))
+  ?zm <- (wm-fact (key exploration zone ?zn args? machine UNKNOWN team ?team))
 =>
   (bind ?zone (get-zone 0.07 ?trans))
   (if ?zone then
-    (modify ?ze (key explore-zone ?zn args? machine NONE team ?team) (values line-vis ?vis tag-vis ?tv time-searched (+ 1 ?time-searched)))
+    (modify ?ze (key exploration fact time-searched args? zone ?zn) (value (+ 1 ?time-searched)))
+    (modify ?zm (key exploration zone ?zn args? machine NONE team ?team))
   )
 )
 
@@ -238,15 +147,14 @@
   )
   (MotorInterface (id "Robotino") (vx ?vx) (vy ?vy))
   (exp-zone-margin ?zone-margin)
-  ?ze-f <- (wm-fact (key explore-zone ?zn&:(eq ?zn (get-zone ?zone-margin
+  ?ze-f <- (wm-fact (key exploration fact line-vis args? zone ?zn&:(eq ?zn (get-zone ?zone-margin
                                             (compensate-movement
                                               ?*EXP-MOVEMENT-COMPENSATION*
                                               (create$ ?vx ?vy)
                                               (laser-line-center-map ?ep1 ?ep2 ?frame ?timestamp)
-                                              ?timestamp)))
-                              args? machine UNKNOWN team ?team) (values line-vis ?zn-vh&:(< ?zn-vh 1) tag-vis ?tv time-searched ?ts))
+                                              ?timestamp)))) (value ?zn-vh&:(< ?zn-vh 1) ))
 =>
-  (modify ?ze-f (key explore-zone ?zn args? machine UNKNOWN team ?team) (values line-vis 1 tag-vis ?tv time-searched ?ts))
+  (modify ?ze-f (key exploration fact line-vis args? zone ?zn) (value 1 ))
   (printout warn "EXP found line: " ?zn " vh: " ?vh crlf)
 )
 
@@ -266,11 +174,10 @@
     (frame ?frame) (time $?timestamp)
   )
   (exp-zone-margin ?zone-margin)
-  ?ze-f <- (wm-fact (key explore-zone ?zn&:(eq ?zn (get-zone ?zone-margin
-                                                      (transform-safe "map" ?frame ?timestamp ?trans ?rot)))
-                                                  args? machine UNKNOWN team ?team) (values line-vis ?lv tag-vis ?tv&:(< ?tv 1) time-searched ?ts))
+  ?ze-f <- (wm-fact (key exploration fact tag-vis args? zone ?zn&:(eq ?zn (get-zone ?zone-margin
+                                                      (transform-safe "map" ?frame ?timestamp ?trans ?rot)))) (value ?tv&:(< ?tv 1) ))
 =>
-  (modify ?ze-f (values line-vis ?lv tag-vis 1 time-searched ?ts))
+  (modify ?ze-f (value 1 ))
   (printout t "Found tag in " ?zn crlf)
 )
 
@@ -279,26 +186,24 @@
   (goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
   (wm-fact (key domain fact self args? r ?r))
   (Position3DInterface (id "Pose") (translation $?trans))
-  ?ze <- (wm-fact (key explore-zone ?zn args? machine ?machine team ?team)
-		  (values line-vis ?vh tag-vis ?tv  time-searched ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
+  ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn) (value ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
+  (wm-fact (key exploration zone ?zn args? machine UNKNOWN team ?team))
+  (wm-fact (key exploration fact line-vis args? zone ?zn) (value ?vh))
+  (wm-fact (key exploration fact tag-vis args? zone ?zn) (value ?tv))
   (test (or (> ?tv 0) (> ?vh 0)))
 
   (or (test (> ?tv 0))
-      (not (and (wm-fact (key explore-zone ?zn2 args? machine ?mps2 team ?team2)
-			 (values line-vis ?vh2 tag-vis ?tv2&:(> ?tv2 0) time-searched ?ts2&:(<= ?ts2 ?*EXP-SEARCH-LIMIT*)))
+      (not (and (wm-fact (key exploration fact tag-vis args? zone ?zn2) (value ?tv2&:(> ?tv2 0)))
+		(wm-fact (key exploration fact time-searched args? zone ?zn2) (value ?ts2&:(<= ?ts2 ?*EXP-SEARCH-LIMIT*)))
+		(wm-fact (key exploration zone ?zn2 args? machine UNKNOWN team ?team2))
 	        (not (exploration-result (zone ?zn2)))
 	   )
       )
   )
-  (not (and (wm-fact (key
-		explore-zone ?zn3&:(< (distance-mf (zone-center ?zn3) ?trans) (distance-mf (zone-center ?zn) ?trans))
-		args? machine ?machine3 team ?team3)
-		(values line-vis ?vh3& : (not (and (= ?vh3 0) (= ?tv 0))) tag-vis ?tv3& : (not (and (> ?tv 0) (= ?tv3 0))) time-searched ?ts3&:(<= ?ts3 ?*EXP-SEARCH-LIMIT*)))
-	    ;(test (or (and (> ?tv 0) (> ?tv3 0))
-	    ;          (and (= ?tv 0) (> ?vh3 0))
-	    ;      )
-	    ;)
-	    ;(test (or (> ?vh3 0) (> ?tv3 0)))
+  (not (and (wm-fact (key exploration fact line-vis args? zone ?zn3&:(< (distance-mf (zone-center ?zn3) ?trans) (distance-mf (zone-center ?zn) ?trans))) (value ?vh3& : (not (and (= ?vh3 0) (= ?tv 0)))))
+	    (wm-fact (key exploration fact tag-vis args? zone ?zn3) (value ?tv3& : (not (and (> ?tv 0) (= ?tv3 0)))))
+	    (wm-fact (key exploration fact time-searched  args? zone ?zn3) (value ?ts3&:(<= ?ts3 ?*EXP-SEARCH-LIMIT*)))
+	    (wm-fact (key exploration zone ?zn3 args? machine UNKNOWN team ?team3))
             (not (exploration-result (zone ?zn3)))
 	)
   )
@@ -316,16 +221,16 @@
   =>
   (bind ?new-ts (+ 1 ?ts))
   (assert (tried-lock (resource ?zn) (result REJECT)))
-  (modify ?ze (values line-vis 0 tag-vis 0 time-searched ?new-ts))
+  (modify ?ze (value ?new-ts))
   (modify ?skill (status S_FAILED))
   (printout t "EXP formulating zone exploration plan " ?zn " with line: " ?vh " and tag: " ?tv crlf)
   (assert
     (plan (id EXPLORE-ZONE) (goal-id ?goal-id))
-    ;(plan-action (id 1) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name lock-resource))
+    (plan-action (id 1) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name one-time-lock) (param-names name) (param-values ?zn))
     (plan-action (id 2) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name stop) (param-names r) (param-values ?r))
     (plan-action (id 3) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name explore-zone) (param-names r z) (param-values ?r ?zn))
     (plan-action (id 4) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name evaluation))
-    ;(plan-action (id 5) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name release-resource))
+    (plan-action (id 5) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name unlock) (param-names name) (param-values ?zn) (executable TRUE))
   )
 )
 
@@ -334,29 +239,21 @@
   (goal (class EXPLORATION) (mode DISPATCHED))
 
   ; There is an explorable zone...
-  (wm-fact (key explore-zone ?zn1 args? machine UNKNOWN team ?team1) (values line-vis ?vh tag-vis ?tv time-searched ?ts1))
+  (wm-fact (key exploration fact line-vis args? zone ?zn1) (value ?vh))
+  (wm-fact (key exploration fact tag-vis args? zone ?zn1) (value ?tv))
+  (wm-fact (key exploration zone ?zn1 args machine UNKNOWN team ?team))
   (test (or (> ?tv 0) (> ?vh 0)))
 
   ; ... but no zone may be searched according to the repeated-search-limit
   (not (and
-	(wm-fact (key explore-zone ?zn2 args? machine UNKNOWN team ?team2) (values line-vis ?vh-tmp tag-vis ?tv-tmp time-searched ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
+	(wm-fact (key exploration fact line-vis args? zone ?zn2) (value ?vh-tmp)) 
+	(wm-fact (key exploration fact tag-vis args? zone ?zn2) (value ?tv-tmp))
+        (wm-fact (key exploration fact time-searched args? zone ?zn2) (value ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
+	(wm-fact (key exploration zone ?zn2 args? machine UNKNOWN team ?team2))
 	(test (or (> ?vh-tmp 0) (> ?tv-tmp 0)))))
 =>
   (modify ?*EXP-SEARCH-LIMIT* (+ ?*EXP-SEARCH-LIMIT* 1))
 )
-
-
-(defrule exp-tried-locking-all-zones
-  "There is at least one unexplored zone with a line, but locks have been denied for
-   ALL unexplored zones. So clear all REFUSEs and start requesting locks from the beginning."
-  (forall (wm-fact (key explore-zone ?zn args? machine ?machine team ?team)) (tried-lock (resource ?zn)))
-=>
-  (delayed-do-for-all-facts ((?l tried-lock)) (eq ?l:result REJECT)
-    (retract ?l)
-  )
-  (printout t "EXP Flushed tried-locks to restart on unsecure zones" crlf)
-)
-
 
 (defrule exp-skill-explore-zone-final
   (goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
@@ -372,8 +269,8 @@
   ?lock <- (tried-lock (resource ?zn-sym&:(eq ?zn-sym (sym-cat ?zn-str))))
   (domain-fact (name tag-matching) (param-values ?machine ?side ?team-color ?tag-id))
 
-  ?ze <-
-    (wm-fact (key explore-zone ?zn2&:(eq ?zn2 (sym-cat ?zn-str)) args? machine ?machine2 team ?team2) (values line-vis ?vis2 tag-vis ?tv time-searched ?times-searched))
+  ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (value ?times-searched))
+  ?zm <- (wm-fact (key exploration zone ?zn2 args? machine UNKNOWN team ?team2))
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
   (not (exploration-result (machine ?machine) (zone ?zn2)))
   =>
@@ -382,7 +279,8 @@
   (if (any-factp ((?ft found-tag)) (eq ?ft:name ?machine)) then
     (printout error "BUG: Tag for " ?machine " already found. Locking glitch or agent bug!" crlf)
   else
-    (modify ?ze (key explore-zone ?zn2 args? machine ?machine team ?team2) (values line-vis ?vis2 tag-vis ?tv time-searched (+ 1 ?times-searched)))
+    (modify ?ze (value (+ 1 ?times-searched)))
+    (modify ?zm (key exploration zone ?zn2 args? machine ?machine team ?team2))
     (assert (found-tag (name ?machine) (side ?side) (frame "map") (trans ?trans) (rot ?rot)))
     (assert
       (exploration-result
@@ -396,7 +294,7 @@
         (team (mirror-team ?team-color))
       )
     )
-    (printout t "EXP explore-zone successfull. Found " ?machine " in " ?zn2 crlf)
+    (printout t "EXP exploration fact zone successfull. Found " ?machine " in " ?zn2 crlf)
   )
 )
 
@@ -404,7 +302,7 @@
   (plan-action (action-name explore-zone) (status FAILED))
   ?p <- (plan-action (action-name evaluation) (status PENDING))
   =>
-  (printout t "EXP explore-zone fail, nothing to do for evaluation" crlf)
+  (printout t "EXP exploration fact zone fail, nothing to do for evaluation" crlf)
   (modify ?p (status FINAL))
 )
 
@@ -434,7 +332,6 @@
   )
   (pb-broadcast ?peer ?mr)
   (modify ?ws (time ?now) (seq (+ ?seq 1)))
-  (printout error "Reported mps : " (implode$ ?mr) crlf)
 )
 
 (defrule exp-exploration-ends-cleanup
