@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "shelf_pick"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"motor_move", "gripper_commands_new", "approach_mps"}
 depends_interfaces = {
    {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"}
