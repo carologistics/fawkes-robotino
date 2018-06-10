@@ -56,8 +56,8 @@ local conveyor_gripper_down_z = -0.01    -- distance to move gripper down after 
 local conveyor_gripper_down_second_z = -0.005       -- distance to mover gripper down second time
 local conveyor_gripper_back_x = -0.07   -- distance to move gripper back after closing gripper
 
-local shelf_gripper_forward_x = 0.04  -- distance to move gripper forward after align to shelf
-local shelf_gripper_down_z = 0     -- distance to move gripper down after driving over shelf
+local shelf_gripper_forward_x = 0.048  -- distance to move gripper forward after align to shelf
+local shelf_gripper_down_z = -0.01     -- distance to move gripper down after driving over shelf
 local shelf_gripper_down_second_z = 0 -- distance to move gripper down second time after driving over shelf
 local shelf_gripper_back_x = 0.04   -- distance to move gripper back after closing gripper over shelf
 
@@ -69,7 +69,7 @@ local gripper_init_z = 0.03 -- initial z position of the gripper
 
 local gripper_pose_offset_x = 0.02  -- conveyor pose offset in x direction
 local gripper_pose_offset_y = 0     -- conveyor_pose offset in y direction
-local gripper_pose_offset_z = 0.065  -- conveyor_pose offset in z direction
+local gripper_pose_offset_z = 0.05  -- conveyor_pose offset in z direction
 
 local align_target_frame = "gripper"      -- the gripper align is made relative to this frame (according to gripper_commands_new)
 local z_movement_target_frame = "gripper" -- the gripper z movement is made relative to this frame (according to gripper_commands_new)
@@ -77,6 +77,13 @@ local x_movement_target_frame = "gripper" -- the gripper x movement is made rela
 
 local cfg_frame_ = "gripper"
 
+-- initial gripper poses depending on the target
+local GRIPPER_POSES = {
+  shelf_left={x=0.05, y=0.00, z=0.035},
+  shelf_middle={x=0.05, y=-0.035, z=0.035},
+  shelf_right={x=0.05, y=0.00, z=0.035},
+  conveyor={x=0.05, y=0.00,z=0.035},
+}
 
 function no_writer()
    return not if_conveyor_pose:has_writer()
@@ -150,10 +157,16 @@ function INIT:init()
 end
 
 function INIT_GRIPPER:init()
+  if self.fsm.vars.shelf == "LEFT" then
+    self.args["gripper_commands_new"] = GRIPPER_POSES["shelf_left"]
+  elseif self.fsm.vars.shelf == "RIGHT" then
+    self.args["gripper_commands_new"] = GRIPPER_POSES["shelf_right"]
+  elseif self.fsm.vars.shelf == "MIDDLE" then
+    self.args["gripper_commands_new"] = GRIPPER_POSES["shelf_middle"]
+  else
+    self.args["gripper_commands_new"] = GRIPPER_POSES["conveyor"]
+  end
   self.args["gripper_commands_new"].command = "MOVEABS"
-  self.args["gripper_commands_new"].x = gripper_init_x
-  self.args["gripper_commands_new"].y = gripper_init_y
-  self.args["gripper_commands_new"].z = gripper_init_z
 end
 
 function OPEN_GRIPPER:init()
