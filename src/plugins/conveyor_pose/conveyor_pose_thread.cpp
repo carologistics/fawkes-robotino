@@ -77,6 +77,7 @@ ConveyorPoseThread::init()
   syncpoint_clouds_ready->register_emitter(name());
 
   cfg_debug_mode_ = config->get_bool( CFG_PREFIX "/debug" );
+  cfg_force_shelf_ = config->get_int_or_default( CFG_PREFIX "/force_shelf", -1);
   cloud_in_name_ = config->get_string( CFG_PREFIX "/cloud_in" );
 
   cfg_if_prefix_ = config->get_string( CFG_PREFIX "/if/prefix" );
@@ -99,6 +100,10 @@ ConveyorPoseThread::init()
   recognition_thread_->cfg_icp_hv_inlier_thresh_  = config->get_float( CFG_PREFIX "/icp/hv_inlier_threshold" );
   recognition_thread_->cfg_icp_hv_penalty_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_penalty_threshold" );
   recognition_thread_->cfg_icp_hv_support_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_support_threshold" );
+
+  recognition_thread_->cfg_icp_shelf_hv_inlier_thresh_  = config->get_float( CFG_PREFIX "/icp/hv_shelf_inlier_threshold" );
+  recognition_thread_->cfg_icp_shelf_hv_penalty_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_shelf_penalty_threshold" );
+  recognition_thread_->cfg_icp_shelf_hv_support_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_shelf_support_threshold" );
 
   // Init of station target hints
   cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR];
@@ -199,6 +204,25 @@ ConveyorPoseThread::init()
   cfg_front_cut_              = config->get_float( CFG_PREFIX "/with_ll/front_cut" );
   cfg_back_cut_               = config->get_float( CFG_PREFIX "/with_ll/back_cut" );
 
+  cfg_shelf_left_cut_no_ll_         = config->get_float( CFG_PREFIX "/shelf/without_ll/left_cut" );
+  cfg_shelf_right_cut_no_ll_        = config->get_float( CFG_PREFIX "/shelf/without_ll/right_cut" );
+  cfg_shelf_top_cut_no_ll_          = config->get_float( CFG_PREFIX "/shelf/without_ll/top_cut" );
+  cfg_shelf_bottom_cut_no_ll_       = config->get_float( CFG_PREFIX "/shelf/without_ll/bottom_cut" );
+  cfg_shelf_front_cut_no_ll_        = config->get_float( CFG_PREFIX "/shelf/without_ll/front_cut" );
+  cfg_shelf_back_cut_no_ll_         = config->get_float( CFG_PREFIX "/shelf/without_ll/back_cut" );
+
+  cfg_shelf_left_cut_               = config->get_float( CFG_PREFIX "/shelf/with_ll/left_cut" );
+  cfg_shelf_right_cut_              = config->get_float( CFG_PREFIX "/shelf/with_ll/right_cut" );
+  cfg_shelf_top_cut_                = config->get_float( CFG_PREFIX "/shelf/with_ll/top_cut" );
+  cfg_shelf_bottom_cut_             = config->get_float( CFG_PREFIX "/shelf/with_ll/bottom_cut" );
+  cfg_shelf_front_cut_              = config->get_float( CFG_PREFIX "/shelf/with_ll/front_cut" );
+  cfg_shelf_back_cut_               = config->get_float( CFG_PREFIX "/shelf/with_ll/back_cut" );
+
+  cfg_shelf_left_off_               = config->get_float( CFG_PREFIX "/shelf/left_off" );
+  cfg_shelf_middle_off_             = config->get_float( CFG_PREFIX "/shelf/middle_off" );
+  cfg_shelf_right_off_              = config->get_float( CFG_PREFIX "/shelf/right_off" );
+
+
   cfg_voxel_grid_leaf_size_  = config->get_float( CFG_PREFIX "/voxel_grid/leaf_size" );
 
   cfg_bb_realsense_switch_name_ = config->get_string_or_default(CFG_PREFIX "/realsense_switch", "realsense");
@@ -222,13 +246,13 @@ ConveyorPoseThread::init()
               CFG_PREFIX "/reference_models/output_conveyor");
         break;
       case ConveyorPoseInterface::SHELF_LEFT:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_left");
         break;
       case ConveyorPoseInterface::SHELF_MIDDLE:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_middle");
         break;
       case ConveyorPoseInterface::SHELF_RIGHT:
-        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf");
+        type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_right");
         break;
       case ConveyorPoseInterface::SLIDE:
         type_target_to_path_[{mps_type,mps_target}] = CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/slide");
@@ -317,8 +341,22 @@ ConveyorPoseThread::init()
 
   realsense_switch_ = blackboard->open_for_reading<SwitchInterface>(cfg_bb_realsense_switch_name_.c_str());
 
-  if (cfg_debug_mode_)
+  if (cfg_debug_mode_){
     recognition_thread_->enable();
+    switch(cfg_force_shelf_){
+      case 0:
+        current_mps_target_ = fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_LEFT;
+        break;
+      case 1:
+        current_mps_target_ = fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_MIDDLE;
+        break;
+      case 2:
+        current_mps_target_ = fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_RIGHT;
+        break;
+      default:
+        break;
+    }
+  }
 
 }
 
@@ -863,6 +901,37 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         change_val(opt, cfg_front_cut_, v->get_float());
       else if(opt == "/back_cut")
         change_val(opt, cfg_back_cut_, v->get_float());
+    } else if(sub_prefix == "/shelf") {
+      if (opt == "/without_ll/left_cut")
+        change_val(opt, cfg_shelf_left_cut_no_ll_, v->get_float());
+      else if(opt == "/without_ll/right_cut")
+        change_val(opt, cfg_shelf_right_cut_no_ll_, v->get_float());
+      else if(opt == "/without_ll/top_cut")
+        change_val(opt, cfg_shelf_top_cut_no_ll_, v->get_float());
+      else if(opt == "/without_ll/bottom_cut")
+        change_val(opt, cfg_shelf_bottom_cut_no_ll_, v->get_float());
+      else if(opt == "/without_ll/front_cut")
+        change_val(opt, cfg_shelf_front_cut_no_ll_, v->get_float());
+      else if(opt == "/without_ll/back_cut")
+        change_val(opt, cfg_shelf_back_cut_no_ll_, v->get_float());
+      else if (opt == "/with_ll/left_cut")
+        change_val(opt, cfg_shelf_left_cut_, v->get_float());
+      else if(opt == "/with_ll/right_cut")
+        change_val(opt, cfg_shelf_right_cut_, v->get_float());
+      else if(opt == "/with_ll/top_cut")
+        change_val(opt, cfg_shelf_top_cut_, v->get_float());
+      else if(opt == "/with_ll/bottom_cut")
+        change_val(opt, cfg_shelf_bottom_cut_, v->get_float());
+      else if(opt == "/with_ll/front_cut")
+        change_val(opt, cfg_shelf_front_cut_, v->get_float());
+      else if(opt == "/with_ll/back_cut")
+        change_val(opt, cfg_shelf_back_cut_, v->get_float());
+      else if(opt == "/left_off")
+        change_val(opt, cfg_shelf_left_off_, v->get_float());
+      else if(opt == "/middle_off")
+        change_val(opt, cfg_shelf_middle_off_, v->get_float());
+      else if(opt == "/right_off")
+        change_val(opt, cfg_shelf_right_off_, v->get_float());
     } else if (sub_prefix == "/icp") {
       if (opt == "/max_correspondence_dist")
         change_val(opt, recognition_thread_->cfg_icp_max_corr_dist_, v->get_float());
@@ -878,6 +947,12 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
         change_val(opt, recognition_thread_->cfg_icp_hv_support_thresh_, v->get_float());
       else if (opt == "/hv_inlier_threshold")
         change_val(opt, recognition_thread_->cfg_icp_hv_inlier_thresh_, v->get_float());
+      else if (opt == "/hv_shelf_penalty_threshold")
+        change_val(opt, recognition_thread_->cfg_icp_shelf_hv_penalty_thresh_, v->get_float());
+      else if (opt == "/hv_shelf_support_threshold")
+        change_val(opt, recognition_thread_->cfg_icp_shelf_hv_support_thresh_, v->get_float());
+      else if (opt == "/hv_shelf_inlier_threshold")
+        change_val(opt, recognition_thread_->cfg_icp_shelf_hv_inlier_thresh_, v->get_float());
       else if (opt == "/min_loops")
         change_val(opt, recognition_thread_->cfg_icp_min_loops_, v->get_uint());
       else if (opt == "/max_loops")
@@ -1039,36 +1114,80 @@ CloudPtr ConveyorPoseThread::cloud_trim(CloudPtr in, fawkes::LaserLineInterface 
            y_min = -FLT_MAX, y_max = FLT_MAX, 
            z_min = -FLT_MAX, z_max = FLT_MAX;
 
-
     if(use_ll){
         // get position of initial guess in conveyor cam frame
         // rotation is ignored, since rotation values are small
-        tf::Stamped<tf::Pose> initial_guess_laser;
+      tf::Stamped<tf::Pose> origin_pose;
+      if(cfg_record_model_){
+        tf_listener->transform_origin(cfg_model_origin_frame_, in->header.frame_id,  origin_pose);
+      } else {
         tf_listener->transform_pose(in->header.frame_id,
                 tf::Stamped<tf::Pose>(initial_guess_laser_odom_, Time(0,0), initial_guess_laser_odom_.frame_id),
-                initial_guess_laser);
-        float x_ini = initial_guess_laser.getOrigin()[0],
-               y_ini = initial_guess_laser.getOrigin()[1],
-               z_ini = initial_guess_laser.getOrigin()[2];
+                origin_pose);
+      }
+        float x_ini = origin_pose.getOrigin()[0],
+              y_ini = origin_pose.getOrigin()[1],
+              z_ini = origin_pose.getOrigin()[2];
 
-        x_min = std::max(x_ini + (float) cfg_left_cut_, x_min);
-        x_max = std::min(x_ini + (float) cfg_right_cut_, x_max);
+        if(is_target_shelf()){ //using shelf cut values
+          float x_min_temp = x_ini + (float) cfg_shelf_left_cut_,
+                x_max_temp = x_ini + (float) cfg_shelf_right_cut_;
+          switch(current_mps_target_) {
+            case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_LEFT:
+              x_min_temp += (float) cfg_shelf_left_off_;
+              x_max_temp += (float) cfg_shelf_left_off_;
+              break;
+            case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_MIDDLE:
+              x_min_temp += (float) cfg_shelf_middle_off_;
+              x_max_temp += (float) cfg_shelf_middle_off_;
+              break;
+            case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_RIGHT:
+              x_min_temp += (float) cfg_shelf_right_off_;
+              x_max_temp += (float) cfg_shelf_right_off_;
+              break;
+            default: //This should not happen
+              break;
+          }
+          x_min = std::max(x_min_temp, x_min);
+          x_max = std::min(x_max_temp, x_max);
 
-        y_min = std::max(y_ini + (float) cfg_top_cut_, y_min);
-        y_max = std::min(y_ini + (float) cfg_bottom_cut_, y_max);
+          y_min = std::max(y_ini + (float) cfg_shelf_top_cut_, y_min);
+          y_max = std::min(y_ini + (float) cfg_shelf_bottom_cut_, y_max);
 
-        z_min = std::max(z_ini + (float) cfg_front_cut_, z_min);
-        z_max = std::min(z_ini + (float) cfg_back_cut_, z_max);
+          z_min = std::max(z_ini + (float) cfg_shelf_front_cut_, z_min);
+          z_max = std::min(z_ini + (float) cfg_shelf_back_cut_, z_max);
+        } else { //using general cut values
+          x_min = std::max(x_ini + (float) cfg_left_cut_, x_min);
+          x_max = std::min(x_ini + (float) cfg_right_cut_, x_max);
+
+          y_min = std::max(y_ini + (float) cfg_top_cut_, y_min);
+          y_max = std::min(y_ini + (float) cfg_bottom_cut_, y_max);
+
+          z_min = std::max(z_ini + (float) cfg_front_cut_, z_min);
+          z_max = std::min(z_ini + (float) cfg_back_cut_, z_max);
+        }
 
     } else { //no laser line is equivalent to no usable initial tf guess
-        x_min = std::max((float) cfg_left_cut_no_ll_, x_min);
-        x_max = std::min((float) cfg_right_cut_no_ll_, x_max);
+        if(is_target_shelf()){ //using shelf cut values
+          x_min = std::max((float) cfg_shelf_left_cut_no_ll_, x_min);
+          x_max = std::min((float) cfg_shelf_right_cut_no_ll_, x_max);
 
-        y_min = std::max((float) cfg_top_cut_no_ll_, y_min);
-        y_max = std::min((float) cfg_bottom_cut_no_ll_, y_max);
+          y_min = std::max((float) cfg_shelf_top_cut_no_ll_, y_min);
+          y_max = std::min((float) cfg_shelf_bottom_cut_no_ll_, y_max);
 
-        z_min = std::max((float) cfg_front_cut_no_ll_, z_min);
-        z_max = std::min((float) cfg_back_cut_no_ll_, z_max);
+          z_min = std::max((float) cfg_shelf_front_cut_no_ll_, z_min);
+          z_max = std::min((float) cfg_shelf_back_cut_no_ll_, z_max);
+        } else { //using general cut values
+          x_min = std::max((float) cfg_left_cut_no_ll_, x_min);
+          x_max = std::min((float) cfg_right_cut_no_ll_, x_max);
+
+          y_min = std::max((float) cfg_top_cut_no_ll_, y_min);
+          y_max = std::min((float) cfg_bottom_cut_no_ll_, y_max);
+
+          z_min = std::max((float) cfg_front_cut_no_ll_, z_min);
+          z_max = std::min((float) cfg_back_cut_no_ll_, z_max);
+        }
+
     }
 
     CloudPtr out(new Cloud);
@@ -1082,4 +1201,17 @@ CloudPtr ConveyorPoseThread::cloud_trim(CloudPtr in, fawkes::LaserLineInterface 
 
     out->header = in->header;
     return out;
+}
+
+bool ConveyorPoseThread::is_target_shelf()
+{
+    switch (current_mps_target_)
+    {
+        case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_LEFT:
+        case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_MIDDLE:
+        case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_RIGHT:
+            return true;
+        default:
+            return false;
+    }
 }
