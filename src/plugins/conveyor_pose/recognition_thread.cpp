@@ -224,7 +224,6 @@ void RecognitionThread::publish_result()
     scene_->header.frame_id
   };
 
-  result_pose.setRotation(result_pose.getRotation() * tf::Quaternion({1,0,0}, M_PI_2) * tf::Quaternion({0,0,1}, M_PI_2));
 
   // constrainTransformToGround(result_pose);
 
@@ -235,6 +234,8 @@ void RecognitionThread::publish_result()
     if (enabled_) {
       main_thread_->result_fitness_ = new_fitness;
       main_thread_->result_pose_.reset(new tf::Stamped<tf::Pose> { result_pose });
+      main_thread_->result_pose_->setRotation(
+            main_thread_->result_pose_->getRotation() * tf::Quaternion({1,0,0}, M_PI_2) * tf::Quaternion({0,0,1}, M_PI_2));
 
       try {
         tf_listener->transform_pose(
