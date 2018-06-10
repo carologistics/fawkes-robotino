@@ -28,13 +28,13 @@
 
 (defrule lock-actions-lock-start
 	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
-                      (action-name ?action&lock|location-lock)
+                      (action-name ?action&lock|location-lock|one-time-lock)
                       (status PENDING) (executable TRUE)
                       (param-names $?param-names)
                       (param-values $?param-values))
   (time $?now)
 	=>
-  (if (eq ?action lock) then
+  (if (or (eq ?action lock) (eq ?action one-time-lock))  then
 	  (bind ?lock-name (plan-action-arg name ?param-names ?param-values))
   else
     (bind ?lock-name
@@ -51,7 +51,7 @@
 
 (defrule lock-actions-lock-acquired
 	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
-                      (action-name ?action-name&lock|location-lock)
+                      (action-name ?action-name&lock|location-lock|one-time-lock)
                       (param-values $?param-values)
                       (status RUNNING))
   ?mf <- (mutex (name ?name) (request LOCK) (response ACQUIRED))
@@ -59,7 +59,7 @@
                     (action-id ?id))
 	=>
   (printout warn "Successfully locked " ?name crlf)
-	(modify ?pa (status EXECUTION-SUCCEEDED))
+	(modify ?pa (status FINAL))
 	(modify ?mf (request NONE) (response NONE))
   (if (eq ?action-name location-lock) then
     (assert (domain-fact (name location-locked) (param-values $?param-values)))
@@ -79,6 +79,21 @@
 	(modify ?mf (request NONE) (response NONE) (error-msg ""))
   (modify ?li (status WAITING) (last-error ?error-msg))
 )
+
+(defrule lock-actions-one-time-lock-rejected
+	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
+                      (action-name one-time-lock) (status RUNNING))
+  ?mf <- (mutex (name ?name) (response REJECTED|ERROR)
+                (error-msg ?error-msg))
+  ?li <- (lock-info (name ?name) (goal-id ?goal-id) (plan-id ?plan-id)
+                    (action-id ?id))
+	=>
+  (printout warn "Lock " ?name " was rejected " crlf)
+	(modify ?mf (request NONE) (response NONE) (error-msg ""))
+  (retract ?li )
+  (modify ?pa (status FAILED) (error-msg ?error-msg))
+)
+
 
 (defrule lock-actions-lock-retry
 	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
@@ -102,7 +117,7 @@
   =>
   (printout warn "Failed to get lock " ?name " in " ?*LOCK-ACTION-TIMEOUT-SEC*
     "s, giving up" crlf)
-	(modify ?pa (status EXECUTION-FAILED) (error-msg ?error-msg))
+	(modify ?pa (status FAILED) (error-msg ?error-msg))
   (retract ?li)
 )
 
@@ -126,7 +141,8 @@
 	?mf <- (mutex (name ?name&:(eq ?name (plan-action-arg name ?param-names ?param-values)))
 								(request UNLOCK) (response UNLOCKED))
 	=>
-	(modify ?pa (status EXECUTION-SUCCEEDED))
+	(printout t "Unlock of " ?name " successfull" crlf)
+	(modify ?pa (status FINAL))
   ;(assert (domain-fact (name location-locked) (param-values $?param-values)))
 	(modify ?mf (request NONE) (response NONE))
 )
