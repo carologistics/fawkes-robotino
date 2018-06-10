@@ -73,7 +73,7 @@
         (bind ?rs1 C-RS1)
         (bind ?rs2 C-RS2)
         (bind ?ds C-DS)
-        (bind ?ss C-SS)
+        ;(bind ?ss C-SS)
     else
         (bind ?bs M-BS)
         (bind ?cs1 M-CS1)
@@ -81,7 +81,7 @@
         (bind ?rs1 M-RS1)
         (bind ?rs2 M-RS2)
         (bind ?ds M-DS)
-        (bind ?ss M-SS)
+        ;(bind ?ss M-SS)
   )
 
   (assert
@@ -101,7 +101,7 @@
     (domain-object (name ?ds) (type mps))
     (domain-object (name ?rs1) (type mps))
     (domain-object (name ?rs2) (type mps))
-    (domain-object (name ?ss) (type mps))
+    ;(domain-object (name ?ss) (type mps))
     (domain-object (name INPUT) (type mps-side))
     (domain-object (name OUTPUT) (type mps-side))
     (domain-object (name ?team-color) (type team-color))
@@ -146,11 +146,11 @@
     (domain-fact (name location-free) (param-values ?rs2 INPUT))
     (domain-fact (name location-free) (param-values ?rs2 OUTPUT))
 
-    (domain-fact (name location-free) (param-values ?ss INPUT))
+    ;(domain-fact (name location-free) (param-values ?ss INPUT))
     
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
-    (domain-fact (name mps-team) (param-values ?ss ?team-color))
+    ;(domain-fact (name mps-team) (param-values ?ss ?team-color))
     (domain-fact (name mps-team) (param-values ?cs1 ?team-color))
     (domain-fact (name mps-team) (param-values ?cs2 ?team-color))
     (domain-fact (name mps-team) (param-values ?rs1 ?team-color))
