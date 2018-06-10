@@ -74,10 +74,14 @@ ConveyorPoseThread::get_model_path(ConveyorPoseInterface *iface, ConveyorPoseInt
 {
   std::string path = std::string(CFG_PREFIX "/reference_models/")
       + iface->enum_tostring("MPS_TYPE", type) + "_" + iface->enum_tostring("MPS_TARGET", target);
-  if (config->exists(path))
+  if (config->exists(path)) {
+    logger->log_info(name(), "Override for %s_%s: %s",
+                     iface->enum_tostring("MPS_TYPE", type),
+                     iface->enum_tostring("MPS_TARGET", target),
+                     config->get_string(path).c_str());
     return CONFDIR "/" + config->get_string(path);
+  }
   else {
-    logger->log_info(name(), "No override for %s", path.c_str());
     switch(target) {
     case ConveyorPoseInterface::INPUT_CONVEYOR:
       return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/input_conveyor");
