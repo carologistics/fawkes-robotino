@@ -667,7 +667,7 @@ ConveyorPoseThread::bb_update_switch()
 bool
 ConveyorPoseThread::laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit)
 {
-  best_fit = laserlines_.front();
+  best_fit = nullptr;
 
   // get best line
   for (fawkes::LaserLineInterface * ll : laserlines_) {
@@ -682,12 +682,15 @@ ConveyorPoseThread::laserline_get_best_fit(fawkes::LaserLineInterface * &best_fi
         continue;
 
       // take with lowest angle
-      if ( fabs(best_fit->bearing()) > fabs(ll->bearing()) )
+      if (!best_fit || fabs(best_fit->bearing()) > fabs(ll->bearing()) )
         best_fit = ll;
     } catch (fawkes::tf::TransformException &e) {
       logger->log_error(name(), e);
     }
   }
+
+  if ( ! best_fit )
+    return false;
 
   if ( ! best_fit->has_writer() ) {
     logger->log_info(name(), "no writer for laser lines");
