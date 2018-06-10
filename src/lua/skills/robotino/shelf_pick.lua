@@ -116,7 +116,6 @@ function LEAVE_SHELF:init()
 end
 
 function CENTER_PUCK:init()
-   self.fsm:set_error("no shelf side set")
    self.args["gripper_commands_new"].command = "CENTER"
 end
 
