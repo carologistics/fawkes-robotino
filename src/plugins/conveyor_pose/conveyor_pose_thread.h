@@ -115,6 +115,8 @@ public:
 
   const std::string syncpoint_clouds_ready_name;
 
+  bool is_target_shelf();
+
 private:
   // cfg values
   std::string cfg_if_prefix_;
@@ -132,7 +134,6 @@ private:
   fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
   fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
 
-  bool is_target_shelf();
   int cfg_force_shelf_;
 
   void update_station_information(fawkes::ConveyorPoseInterface::SetStationMessage &msg);
