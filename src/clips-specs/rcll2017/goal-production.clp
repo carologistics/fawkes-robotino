@@ -376,8 +376,9 @@
                                      wp ?wp
                                      rs-before ?rs-before
                                      rs-after ?rs-after
-                                     )))
-  ; (assert (goal-already-tried FILL-RS))
+                                     )
+                            (required-resources ?mps ?wp)
+  ))
 )
 
 (defrule goal-reasoner-create-prefill-ring-station
@@ -570,7 +571,9 @@
                            rs-after ?bases-remain
                            rs-req ?bases-needed
                            order ?order
-                           )))
+                )
+                (required-resources ?mps-rs)
+  ))
 )
 
 (deffunction tac-ring-mount-time (?complexity ?rings)
@@ -635,8 +638,9 @@
                                         mps ?mps
                                         cs-color ?cap-color
                                         order ?order
-                                        )))
-  ; (assert (goal-already-tried PRODUCE-C0))
+                                )
+                                (required-resources ?mps ?rs ?wp)
+  ))
 )
 
 
