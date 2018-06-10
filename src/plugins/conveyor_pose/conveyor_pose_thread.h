@@ -127,7 +127,6 @@ private:
 
   fawkes::RefPtr<fawkes::SyncPoint> syncpoint_clouds_ready;
 
-  CloudPtr default_model_;
   CloudPtr trimmed_scene_;
 
   fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
@@ -147,7 +146,6 @@ private:
   RecognitionThread *recognition_thread_;
 
   bool cfg_record_model_;
-  std::string cfg_default_model_path_;
   std::string cfg_model_origin_frame_;
   std::string cfg_record_path_;
 

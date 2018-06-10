@@ -220,12 +220,7 @@ ConveyorPoseThread::init()
   cfg_bb_realsense_switch_name_ = config->get_string_or_default(CFG_PREFIX "/realsense_switch", "realsense");
   wait_time_ = Time(double(config->get_float_or_default(CFG_PREFIX "/realsense_wait_time", 1.0f)));
 
-  cfg_default_model_path_ = config->get_string(CFG_PREFIX "/default_model");
-  if (cfg_default_model_path_.substr(0, 1) != "/")
-    cfg_default_model_path_ = CONFDIR "/" + cfg_default_model_path_;
-
-  // Load default reference pcl for shelf, input belt (with cone), output belt (without cone) and slide
-
+  // Load reference pcl for shelf, input belt (with cone), output belt (without cone) and slide
   for ( int i = ConveyorPoseInterface::NO_STATION; i != ConveyorPoseInterface::LAST_MPS_TYPE_ELEMENT; i++ )
   {
     ConveyorPoseInterface::MPS_TYPE mps_type = static_cast<ConveyorPoseInterface::MPS_TYPE>(i);
@@ -266,7 +261,6 @@ ConveyorPoseThread::init()
 
   cfg_model_origin_frame_ = config->get_string(CFG_PREFIX "/model_origin_frame");
   cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
-  default_model_.reset(new Cloud());
 
   // if recording is set, a pointcloud written to the the cfg_record_path_
   // else load pcd file for every station and calculate model with normals
@@ -299,29 +293,19 @@ ConveyorPoseThread::init()
     cfg_record_path_= new_record_path;
 
     logger->log_info(name(), "Writing point cloud to %s", cfg_record_path_.c_str());
-
+    model_.reset(new Cloud());
   }
   else {
-
-    //Load default PCD file from model path and calculate model with normals for it
-
-    int errnum;
-    if ((errnum = pcl::io::loadPCDFile(cfg_default_model_path_, *default_model_)) < 0)
-      throw fawkes::CouldNotOpenFileException(cfg_default_model_path_.c_str(), errnum,
-                                              "Set from " CFG_PREFIX "/default_model");
-
-    model_ = default_model_;
-
     // Loading PCD file and calculation of model with normals for ALL! stations
     for (const auto &pair : type_target_to_path_) {
       CloudPtr model(new Cloud());
-      if ((errnum = pcl::io::loadPCDFile(pair.second, *model)) < 0)
-        throw fawkes::CouldNotOpenFileException(pair.second.c_str(), errnum,
-                                                ("For station " )   ); //TODO:: print
+      if (pcl::io::loadPCDFile(pair.second, *model) < 0)
+        throw fawkes::CouldNotOpenFileException(pair.second.c_str());
 
       type_target_to_model_.insert({pair.first, model});
     }
 
+    model_ = type_target_to_model_[{ConveyorPoseInterface::NO_STATION, ConveyorPoseInterface::NO_LOCATION}];
   }
 
   cloud_in_registered_ = false;
@@ -472,7 +456,7 @@ ConveyorPoseThread::loop()
 
     if (cfg_record_model_) {
       record_model();
-      cloud_publish(default_model_, cloud_out_model_);
+      cloud_publish(model_, cloud_out_model_);
 
       tf::Stamped<tf::Pose> initial_pose_cam;
       try {
@@ -570,17 +554,17 @@ ConveyorPoseThread::record_model()
   }
   tf_listener->transform_origin(cloud_in_->header.frame_id, cfg_model_origin_frame_, pose_cam);
   Eigen::Matrix4f tf_to_cam = pose_to_eigen(pose_cam);
-  pcl::transformPointCloud(*trimmed_scene_, *default_model_, tf_to_cam);
+  pcl::transformPointCloud(*trimmed_scene_, *model_, tf_to_cam);
 
   // Overwrite and atomically rename model so it can be copied at any time
   try {
-    int rv = pcl::io::savePCDFileASCII(cfg_record_path_, *default_model_);
+    int rv = pcl::io::savePCDFileASCII(cfg_record_path_, *model_);
     if (rv)
       logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_record_path_.c_str());
     else
       ::rename((cfg_record_path_ + ".pcd").c_str(), cfg_record_path_.c_str());
   } catch (pcl::IOException &e) {
-    logger->log_error(name(), "Exception saving point cloud to %s: %s", cfg_default_model_path_.c_str(), e.what());
+    logger->log_error(name(), "Exception saving point cloud to %s: %s", cfg_record_path_.c_str(), e.what());
   }
 }
 
