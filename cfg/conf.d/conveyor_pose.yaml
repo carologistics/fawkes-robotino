@@ -50,6 +50,12 @@ plugins/conveyor_pose:
     shelf_middle: "conveyor_pcls/shelf_middle.pcd"
     shelf_right: "conveyor_pcls/shelf_right.pcd"
     slide: "conveyor_pcls/slide.pcd"
+    RING_STATION_INPUT_CONVEYOR: "conveyor_pcl/pappteil.pcd"
+    RING_STATION_OUTPUT_CONVEYOR: "conveyor_pcl/pappteil.pcd"
+    BASE_STATION_INPUT_CONVEYOR: "conveyor_pcl/pappteil.pcd"
+    BASE_STATION_OUTPUT_CONVEYOR: "conveyor_pcl/pappteil.pcd"
+    DELIVERY_STATION_INPUT_CONVEYOR: "conveyor_pcl/pappteil.pcd"
+    DELIVERY_STATION_OUTPUT_CONVEYOR: "conveyor_pcl/pappteil.pcd"
 
   voxel_grid:
     # Downsample all point clouds to this resolution
