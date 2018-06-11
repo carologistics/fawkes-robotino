@@ -109,7 +109,7 @@ nodes:
       - always-copy: true
   - !unconnected
     name: C-ins-in
-    pos: [6.5, 0.5]
+    pos: [4.5, 1.0]
     properties:
       - always-copy: true
       - orientation: 1.5
