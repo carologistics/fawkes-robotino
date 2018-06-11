@@ -110,11 +110,13 @@
   (wm-fact (key refbox phase) (type UNKNOWN) (value EXPLORATION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
   ?cv <- (wm-fact (id "/config/rcll/exploration/zone-margin") (type FLOAT) (value ?zone-margin))
+  (exp-navigator-vmax ?vel ?rot)
   =>
   (assert (exp-zone-margin ?zone-margin))
   (assert (timer (name send-machine-reports)))
   (assert (goal (id (sym-cat EXPLORATION- (gensym*))) (class EXPLORATION)
                 (type ACHIEVE)))
+  (navigator-set-speed ?vel ?rot)
 )
 
 (defrule exp-passed-through-quadrant
