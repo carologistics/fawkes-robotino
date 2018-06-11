@@ -63,10 +63,6 @@ local shelf_gripper_back_x = 0.04   -- distance to move gripper back after closi
 
 local drive_back_x = -0.1      -- distance to drive back after closing the gripper
 
-local gripper_init_x = 0.04 -- initial x position of the gripper
-local gripper_init_y = 0    -- initial y position of the gripper
-local gripper_init_z = 0.03 -- initial z position of the gripper
-
 local gripper_pose_offset_x = 0.02  -- conveyor pose offset in x direction
 local gripper_pose_offset_y = 0     -- conveyor_pose offset in y direction
 local gripper_pose_offset_z = 0.05  -- conveyor_pose offset in z direction
