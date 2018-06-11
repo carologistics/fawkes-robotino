@@ -46,7 +46,8 @@ local tfm = require("fawkes.tfutils")
 local pam = require("parse_module")
 
 -- Constants
-local euclidean_fitness_threshold = 8 -- threshold for euclidean fitness  (fitness should be higher)
+local euclidean_fitness_threshold = 8 -- threshold for euclidean fitness for targets other than shelf
+local shelf_euclidean_fitness_threshold = 3 -- threshold for euclidean fitness if target is shelf
 local tolerance_trans = 0.035  -- tolerance in x and y direction after the align
 local tolerance_ori = 0.020   -- orientation tolerance after the align
 local x_dist_to_mps = -0.31  -- x-distance the robot should have after the align
@@ -74,7 +75,14 @@ function tolerance_ok(self)
 end
 
 function result_ready(self)
-  if if_conveyor_pose:euclidean_fitness() < euclidean_fitness_threshold
+  local local_fitness_threshold = 0
+  if self.fsm.vars.shelf ~= nil then
+    local_fitness_threshold = shelf_euclidean_fitness_threshold
+  else
+    local_fitness_threshold = euclidean_fitness_threshold
+  end
+
+  if if_conveyor_pose:euclidean_fitness() < local_fitness_threshold
      or if_conveyor_pose:is_busy()
      or if_conveyor_pose:msgid() ~= fsm.vars.msgid
   then return false end
