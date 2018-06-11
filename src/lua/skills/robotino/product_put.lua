@@ -48,15 +48,15 @@ local pam = require("parse_module")
 
 -- Constants
 local euclidean_fitness_threshold = 8  --threshold for euclidean fitness  (fitness should be higher)
-local gripper_tolerance_x = 0.03 -- gripper x tolerance according to conveyor pose
-local gripper_tolerance_y = 0.02 -- gripper y tolerance according to conveyor pose
-local gripper_tolerance_z = 0.03 -- gripper z tolerance according to conveyor pose
+local gripper_tolerance_x = 0.5 -- gripper x tolerance according to conveyor pose
+local gripper_tolerance_y = 0.5 -- gripper y tolerance according to conveyor pose
+local gripper_tolerance_z = 0.5 -- gripper z tolerance according to conveyor pose
 
-local gripper_pose_offset_x = 0.02  -- conveyor pose offset in x direction
+local gripper_pose_offset_x = 0.00  -- conveyor pose offset in x direction
 local gripper_pose_offset_y = 0     -- conveyor_pose offset in y direction
 local gripper_pose_offset_z = 0.065  -- conveyor_pose offset in z direction
 
-local conveyor_gripper_forward_x = 0.04 -- distance to move gripper forward after align
+local conveyor_gripper_forward_x = 0.07 -- distance to move gripper forward after align
 local conveyor_gripper_down_z = -0.01    -- distance to move gripper down after driving over conveyor
 local conveyor_gripper_back_x = -0.06   -- distance to move gripper back after opening gripper
 local conveyor_gripper_up_z = 0.01  -- distance to move gripper up after opening the gripper
@@ -71,7 +71,7 @@ local drive_back_x = -0.1      -- distance to drive back after closing the gripp
 
 local cfg_frame_ = "gripper"
 
-local align_target_frame = "gripper"      -- the gripper align is made relative to this frame (according to gripper_commands_new)
+local align_target_frame = "gripper_fingers"      -- the gripper align is made relative to this frame (according to gripper_commands_new)
 local z_movement_target_frame = "gripper" -- the gripper z movement is made relative to this frame (according to gripper_commands_new)
 local x_movement_target_frame = "gripper" -- the gripper x movement is made relative to this frame (according to griper_commands_new)
 
@@ -95,12 +95,12 @@ function result_ready(self)
   then return false end
 
   local bb_stamp = fawkes.Time:new(if_conveyor_pose:input_timestamp(0), if_conveyor_pose:input_timestamp(1))
-  if not tf:can_transform("conveyor_pose", "base_link", bb_stamp) then
+  if not tf:can_transform("conveyor_pose", "gripper_fingers", bb_stamp) then
     return false
   end
 
   local transform = fawkes.tf.StampedTransform:new()
-  tf:lookup_transform("conveyor_pose", "base_link", transform)
+  tf:lookup_transform("conveyor_pose", "gripper_fingers", transform)
   if transform.stamp:in_usec() < bb_stamp:in_usec() then
     return false
   end
@@ -116,7 +116,7 @@ function pose_offset(self)
 
    }
 
-   local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper")
+   local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper_fingers")
    print_info("product_pick: target_pos is x = %f, y = %f, z = %f", target_pos.x, target_pos.y, target_pos.z)
    print_info("product_pick: transformed_pos is x = %f, y = %f,z = %f", transformed_pos.x, transformed_pos.y, transformed_pos.z)
 
@@ -152,6 +152,14 @@ function INIT:init()
   if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
   local parse_result = pam.parse_to_type_target(if_conveyor_pose,self.fsm.vars.place,self.fsm.vars.side,self.fsm.vars.shelf,self.fsm.vars.slide)
   if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.SetStationMessage:new(parse_result.mps_type,parse_result.mps_target))
+  self.fsm.vars.mps_type = parse_result.mps_type
+  self.fsm.vars.mps_target = parse_result.mps_target
+end
+
+function CHECK_VISION:init()
+   local msg = if_conveyor_pose.SetStationMessage:new(self.fsm.vars.mps_type, self.fsm.vars.mps_target)
+   if_conveyor_pose:msgq_enqueue_copy(msg)
+   self.fsm.vars.msgid = msg:id()
 end
 
 function GRIPPER_ALIGN:init()
