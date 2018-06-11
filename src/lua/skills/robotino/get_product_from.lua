@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"shelf_pick", "product_pick", "drive_to_machine_point", "conveyor_align", "gripper_commands_new"}
+depends_skills     = {"shelf_pick", "product_pick", "drive_to_machine_point", "conveyor_align", "gripper_commands_new", "motor_move"}
 depends_interfaces = {
   {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
 }
@@ -57,9 +57,10 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="OPEN_GRIPPER", fail_to="FAILED"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="CONVEYOR_ALIGN", fail_to="CONVEYOR_ALIGN"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
-   {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
-   {"SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="FINAL", fail_to="FAILED"},
+   {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="MOVE_TO_CENTER_MACHINE", fail_to="FAILED"},
+   {"SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="MOVE_TO_CENTER_MACHINE", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
+   {"MOVE_TO_CENTER_MACHINE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
@@ -111,4 +112,14 @@ function CONVEYOR_ALIGN:init()
    end
    self.args["conveyor_align"].place = self.fsm.vars.place
    self.args["conveyor_align"].side = self.fsm.vars.side
+end
+
+function MOVE_TO_CENTER_MACHINE:init()
+  local move_y = 0
+  if self.fsm.vars.shelf then
+    move_y = 0.3
+  elseif self.fsm.vars.slide then
+    move_y = 0.3
+  end
+  self.args["motor_move"].y = move_y
 end
