@@ -57,11 +57,13 @@ local conveyor_gripper_forward_x = 0.075 -- distance to move gripper forward aft
 local conveyor_gripper_down_z = -0.01    -- distance to move gripper down after driving over product
 local conveyor_gripper_down_second_z = -0.005       -- distance to mover gripper down second time
 local conveyor_gripper_back_x = -0.07   -- distance to move gripper back after closing gripper
+local shelf_gripper_up_z = 0.05 -- distance to move gripper up after closing gripper
 
 local shelf_gripper_forward_x = 0.048  -- distance to move gripper forward after align to shelf
 local shelf_gripper_down_z = -0.01     -- distance to move gripper down after driving over shelf
 local shelf_gripper_down_second_z = 0 -- distance to move gripper down second time after driving over shelf
 local shelf_gripper_back_x = 0.04   -- distance to move gripper back after closing gripper over shelf
+local shelf_gripper_up_z = 0.05  -- distance to move gripper up after closing the gripper over shelf
 
 local drive_back_x = -0.1      -- distance to drive back after closing the gripper
 
@@ -147,10 +149,8 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"CHECK_VISION", JumpState},
    {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="CHECK_TOLERANCE",fail_to="CLEANUP_FAILED"},
    {"CHECK_TOLERANCE",JumpState},
-   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_DOWN",fail_to="CLEANUP_FAILED"},
-   {"MOVE_GRIPPER_DOWN", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER", fail_to="CLEANUP_FAILED"},
-   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_DOWN_SECOND", fail_to="CLEANUP_FAILED"},
-   {"MOVE_GRIPPER_DOWN_SECOND", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="CLEANUP_FAILED"},
+   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER",fail_to="CLEANUP_FAILED"},
+   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="CLEANUP_FAILED"},
    {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "HOME_GRIPPER", fail_to="CLEANUP_FAILED"},
    {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="DRIVE_BACK"},
    {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CLEANUP_FINAL", fail_to="CLEANUP_FAILED"},
@@ -210,30 +210,12 @@ function MOVE_GRIPPER_FORWARD:init()
   self.args["gripper_commands_new"].target_frame = x_movement_target_frame
   if self.fsm.vars.shelf ~= nil then
     self.args["gripper_commands_new"].x = shelf_gripper_forward_x
-  else
-    self.args["gripper_commands_new"].x = conveyor_gripper_forward_x
-  end
-
-end
-
-function MOVE_GRIPPER_DOWN:init()
-  self.args["gripper_commands_new"].command = "MOVEABS"
-  self.args["gripper_commands_new"].target_frame = z_movement_target_frame
-  if self.fsm.vars.shelf ~= nil then
     self.args["gripper_commands_new"].z = shelf_gripper_down_z
   else
-    self .args["gripper_commands_new"].z = conveyor_gripper_down_z
+    self.args["gripper_commands_new"].x = conveyor_gripper_forward_x
+    self.args["gripper_commands_new"].z = conveyor_gripper_down_z
   end
-end
 
-function MOVE_GRIPPER_DOWN_SECOND:init()
-  self.args["gripper_commands_new"].command = "MOVEABS"
-  self.args["gripper_commands_new"].target_frame = z_movement_target_frame
-  if self.fsm.vars.shelf ~= nil then
-    self.args["gripper_commands_new"].z = shelf_gripper_down_second_z
-  else
-    self.args["gripper_commands_new"].z = conveyor_gripper_down_second_z
-  end
 end
 
 function MOVE_GRIPPER_BACK:init()
@@ -241,8 +223,10 @@ function MOVE_GRIPPER_BACK:init()
   self.args["gripper_commands_new"].target_frame = x_movement_target_frame
   if self.fsm.vars.helf ~= nil then
     self.args["gripper_commands_new"].x = shelf_gripper_back_x
+    self.args["gripper_commands_new"].z = shelf_gripper_up_z
   else
     self.args["gripper_commands_new"].x = conveyor_gripper_back_x
+    self.args["gripper_commands_new"].z = conveyor_gripper_up_z
   end
 end
 
