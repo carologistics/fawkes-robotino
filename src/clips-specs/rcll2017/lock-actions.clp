@@ -59,7 +59,7 @@
                     (action-id ?id))
 	=>
   (printout warn "Successfully locked " ?name crlf)
-	(modify ?pa (status FINAL))
+	(modify ?pa (status EXECUTION-SUCCEEDED))
 	(modify ?mf (request NONE) (response NONE))
   (if (eq ?action-name location-lock) then
     (assert (domain-fact (name location-locked) (param-values $?param-values)))
@@ -91,7 +91,7 @@
   (printout warn "Lock " ?name " was rejected " crlf)
 	(modify ?mf (request NONE) (response NONE) (error-msg ""))
   (retract ?li )
-  (modify ?pa (status FAILED) (error-msg ?error-msg))
+  (modify ?pa (status EXECUTION-FAILED) (error-msg ?error-msg))
 )
 
 
@@ -117,7 +117,7 @@
   =>
   (printout warn "Failed to get lock " ?name " in " ?*LOCK-ACTION-TIMEOUT-SEC*
     "s, giving up" crlf)
-	(modify ?pa (status FAILED) (error-msg ?error-msg))
+	(modify ?pa (status EXECUTION-FAILED) (error-msg ?error-msg))
   (retract ?li)
 )
 
@@ -142,7 +142,7 @@
 								(request UNLOCK) (response UNLOCKED))
 	=>
 	(printout t "Unlock of " ?name " successfull" crlf)
-	(modify ?pa (status FINAL))
+	(modify ?pa (status EXECUTION-SUCCEEDED))
   ;(assert (domain-fact (name location-locked) (param-values $?param-values)))
 	(modify ?mf (request NONE) (response NONE))
 )
