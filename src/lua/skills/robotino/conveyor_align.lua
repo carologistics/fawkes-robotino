@@ -47,8 +47,8 @@ local pam = require("parse_module")
 
 -- Constants
 local euclidean_fitness_threshold = 8 -- threshold for euclidean fitness  (fitness should be higher)
-local tolerance_trans = 0.015
-local tolerance_ori = 0.015
+local tolerance_trans = 0.035  -- tolerance in x and y direction after the align
+local tolerance_ori = 0.020   -- orientation tolerance after the align
 local x_dist_to_mps = -0.31  -- x-distance the robot should have after the align
 local y_offset_shelf_middle = -0.015 -- y-offset the robot should have picking is done from shelf = "MIDDLE"
 local cfg_frame_ = "gripper"
