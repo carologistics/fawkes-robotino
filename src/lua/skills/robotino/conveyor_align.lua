@@ -59,7 +59,7 @@ local GRIPPER_POSES = {
   shelf_middle={x=0.05, y=-0.035, z=0.035},
   shelf_right={x=0.05, y=0.00, z=0.035},
   slide={x=0.05,y=0.00,z=0.035},
-  conveyor={x=0.05, y=0.02,z=0.035},
+  conveyor={x=0.05, y=0.00,z=0.035},
 }
 
 function no_writer()
