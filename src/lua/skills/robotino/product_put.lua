@@ -48,9 +48,9 @@ local pam = require("parse_module")
 
 -- Constants
 local euclidean_fitness_threshold = 8  --threshold for euclidean fitness  (fitness should be higher)
-local gripper_tolerance_x = 0.5 -- gripper x tolerance according to conveyor pose
-local gripper_tolerance_y = 0.5 -- gripper y tolerance according to conveyor pose
-local gripper_tolerance_z = 0.5 -- gripper z tolerance according to conveyor pose
+local gripper_tolerance_x = 0.03 -- gripper x tolerance according to conveyor pose
+local gripper_tolerance_y = 0.02 -- gripper y tolerance according to conveyor pose
+local gripper_tolerance_z = 0.03 -- gripper z tolerance according to conveyor pose
 
 local gripper_pose_offset_x = 0.02  -- conveyor pose offset in x direction
 local gripper_pose_offset_y = 0     -- conveyor_pose offset in y direction
