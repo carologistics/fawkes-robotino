@@ -154,19 +154,15 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "HOME_GRIPPER", fail_to="FAILED"},
    {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="DRIVE_BACK"},
    {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
-   {"CLEANUP_FINAL", JumpState},
-   {"CLEANUP_FAILED", JumpState},
 }
 
 fsm:add_transitions{
    {"INIT", "INIT_GRIPPER", true, desc="Init gripper for product_pick"},
-   {"CHECK_VISION", "CLEANUP_FAILED", timeout=20, desc="Fitness threshold wasn't reached"},
-   {"CHECK_VISION", "CLEANUP_FAILED", cond=no_writer, desc="No writer for conveyor vision"},
+   {"CHECK_VISION", "FAILED", timeout=20, desc="Fitness threshold wasn't reached"},
+   {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"CHECK_VISION", "GRIPPER_ALIGN", cond=result_ready, desc="Fitness threshold reached"},
    {"CHECK_TOLERANCE", "MOVE_GRIPPER_FORWARD", cond=tolerance_check, desc="Pose tolerance ok"},
    {"CHECK_TOLERANCE", "CHECK_VISION", cond = true, desc="Pose tolerance not ok"},
-   {"CLEANUP_FINAL", "FINAL", cond = true, desc="Cleaning up after final"},
-   {"CLEANUP_FAILED", "FAILED", cond = true, desc="Cleaning up after failed"},
 }
 
 
