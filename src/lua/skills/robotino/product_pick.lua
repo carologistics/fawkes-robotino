@@ -46,7 +46,9 @@ local tfm = require("fawkes.tfutils")
 local pam = require("parse_module")
 
 -- Constants
-local euclidean_fitness_threshold = 8  --threshold for euclidean fitness  (fitness should be higher)
+local euclidean_fitness_threshold = 8  --threshold for euclidean fitness for targets other than shelf
+local shelf_euclidean_fitness_threshold = 3 -- threshold for euclidean_fitness if target is shelf
+
 local gripper_tolerance_x = 0.5 -- gripper x tolerance according to conveyor pose
 local gripper_tolerance_y = 0.5 -- gripper y tolerance according to conveyor pose
 local gripper_tolerance_z = 0.5 -- gripper z tolerance according to conveyor pose
@@ -92,8 +94,30 @@ function tolerance_check(self)
    end
 end
 
-function icp_fitness_check(self)
-     return if_conveyor_pose:euclidean_fitness() > euclidean_fitness_threshold
+function result_ready(self)
+  local local_fitness_threshold = 0
+  if self.fsm.vars.shelf ~= nil then
+    local_fitness_threshold = shelf_euclidean_fitness_threshold
+  else
+    local_fitness_threshold = euclidean_fitness_threshold
+  end
+
+  if if_conveyor_pose:euclidean_fitness() < local_fitness_threshold
+     or if_conveyor_pose:is_busy()
+     or if_conveyor_pose:msgid() ~= fsm.vars.msgid
+  then return false end
+
+  local bb_stamp = fawkes.Time:new(if_conveyor_pose:input_timestamp(0), if_conveyor_pose:input_timestamp(1))
+  if not tf:can_transform("conveyor_pose", "base_link", bb_stamp) then
+    return false
+  end
+
+  local transform = fawkes.tf.StampedTransform:new()
+  tf:lookup_transform("conveyor_pose", "base_link", transform)
+  if transform.stamp:in_usec() < bb_stamp:in_usec() then
+    return false
+  end
+  return true
 end
 
 function pose_offset(self)
@@ -138,7 +162,7 @@ fsm:add_transitions{
    {"INIT", "INIT_GRIPPER", true, desc="Init gripper for product_pick"},
    {"CHECK_VISION", "CLEANUP_FAILED", timeout=20, desc="Fitness threshold wasn't reached"},
    {"CHECK_VISION", "CLEANUP_FAILED", cond=no_writer, desc="No writer for conveyor vision"},
-   {"CHECK_VISION", "GRIPPER_ALIGN", cond=icp_fitness_check, desc="Fitness threshold reached"},
+   {"CHECK_VISION", "GRIPPER_ALIGN", cond=result_ready, desc="Fitness threshold reached"},
    {"CHECK_TOLERANCE", "MOVE_GRIPPER_FORWARD", cond=tolerance_check, desc="Pose tolerance ok"},
    {"CHECK_TOLERANCE", "CHECK_VISION", cond = true, desc="Pose tolerance not ok"},
    {"CLEANUP_FINAL", "FINAL", cond = true, desc="Cleaning up after final"},
