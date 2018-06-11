@@ -62,8 +62,9 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_i
    {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
-   {"PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="FAILED"},
-   {"SLIDE_PUT", SkillJumpState, skills={{slide_put}}, final_to="FINAL", fail_to="FAILED"}
+   {"PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="MOVE_TO_CENTER_MACHINE", fail_to="FAILED"},
+   {"SLIDE_PUT", SkillJumpState, skills={{slide_put}}, final_to="MOVE_TO_CENTER_MACHINE", fail_to="FAILED"},
+   {"MOVE_TO_CENTER_MACHINE", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
@@ -112,4 +113,14 @@ function PRODUCT_PUT:init()
   self.args["product_put"].slide = self.fsm.vars.slide
   self.args["product_put"].shelf = self.fsm.shelf
   self.args["product_put"].side = self.fsm.vars.side
+end
+
+function MOVE_TO_CENTER_MACHINE:init()
+  local move_y = 0
+  if self.fsm.vars.shelf then
+    move_y = 0.1
+  elseif self.fsm.vars.slide then
+    move_y = 0.3
+  end
+  self.args["motor_move"].y = move_y
 end
