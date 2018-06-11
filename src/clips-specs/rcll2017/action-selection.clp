@@ -59,6 +59,8 @@
 	?p <- (plan (id EXPLORATION-PLAN) (goal-id ?goal-id))
 	?pa <- (plan-action (plan-id EXPLORATION-PLAN) (goal-id ?goal-id) (id ?id)
 			(action-name move-node) (param-values ?r ?node) (status FAILED))
+        (not (plan-action (plan-id EXPLORATION-PLAN) (goal-id ?goal-id) (id ?id2&:(> ?id2 ?id)) 
+			(action-name move-node) (param-values ?r ?node2) (status FAILED)))
 	(Position3DInterface (id "Pose") (translation $?r-pose))
 	(navgraph-node (name ?node) (pos $?node-pos))
 	(not (plan (id EXPLORE-ZONE) (goal-id ?goal-id)))
