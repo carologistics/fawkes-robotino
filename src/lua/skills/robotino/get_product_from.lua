@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align"}
+depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align", "gripper_commands_new"}
 depends_interfaces = {
   {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
 }
@@ -54,7 +54,8 @@ end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
-   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
+   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="OPEN_GRIPPER", fail_to="FAILED"},
+   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="CONVEYOR_ALIGN", fail_to="CONVEYOR_ALIGN"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PICK", fail_to="FAILED"},
    {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
 }
@@ -82,6 +83,11 @@ function DRIVE_TO_MACHINE_POINT:init()
       self.fsm.vars.tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
       self.args["drive_to_machine_point"] = {place = self.fsm.vars.place .. "-O", option = option, x_at_mps=X_AT_MPS, tag_id=self.fsm.vars.tag_id}
    end
+end
+
+function OPEN_GRIPPER:init()
+  self.args["gripper_commands_new"].command = "OPEN"
+  self.args["gripper_commands_new"].wait = false
 end
 
 function PRODUCT_PICK:init()
