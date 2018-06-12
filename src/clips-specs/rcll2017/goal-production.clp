@@ -281,7 +281,7 @@
 (defrule goal-reasoner-create-clear-rs-from-expired-product
   "Remove an unfinished product from RS"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact self args? r ?robot))
@@ -299,13 +299,14 @@
     (value ?end&:(< ?end (nth$ 1 ?game-time))))
   =>
   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
-  (assert (goal (id CLEAR-MPS) (priority ?*PRIORITY-CLEAR-RS*)
-                              (parent PRODUCTION-MAINTAIN)
+  (assert (goal (id (sym-cat CLEAR-MPS- (gensym*))) (class CLEAR-MPS)
+                (priority ?*PRIORITY-CLEAR-RS*)
+                              (parent ?maintain-id)
                               (params robot ?robot
                                       mps ?mps
                                       wp ?wp
-                                      )))
-  ; (assert (goal-already-tried CLEAR-MPS))
+                                      )
+  ))
 )
 
 
@@ -375,8 +376,8 @@
 (defrule goal-reasoner-create-prefill-rs-for-started-order-constraint
   "Prefilling a specific RS gets +2 priority if a started product waits for additional bases on it."
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  (not (goal (id FILL-RS|FILL-RS-EXPLICITLY) (mode FORMULATED)))
+  (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
+  (not (goal (class FILL-RS|FILL-RS-EXPLICITLY) (mode FORMULATED)))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   ;--Match ring to order [if still the order needs any]
@@ -603,7 +604,7 @@
   ; 	(in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   ;Active Order CEs
   (not (and (wm-fact (key evaluated fact wp-for-order args? wp ?ord-wp ord ?any-order))
-            (wm-fact (key doamin fact order-complexity args? ord ?any-order com ?other-complexity))
+            (wm-fact (key domain fact order-complexity args? ord ?any-order com ?other-complexity))
             (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
             (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
   (not (wm-fact (key evaluated fact wp-for-order args? wp ?any-ord-wp ord ?order)))
@@ -666,7 +667,7 @@
   (wm-fact (key refbox order ?order quantity-delivered ?team-color) (value ?qd&:(> ?qr ?qd)))
   ;Active Order CEs
   (not (and (wm-fact (key evaluated fact wp-for-order args? wp ?ord-wp ord ?any-order))
-            (wm-fact (key doamin fact order-complexity args? ord ?any-order com ?other-complexity))
+            (wm-fact (key domain fact order-complexity args? ord ?any-order com ?other-complexity))
             (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
             (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
   (not (wm-fact (key evaluated fact wp-for-order args? wp ?any-ord-wp ord ?order)))
@@ -710,7 +711,7 @@
 
 (defrule goal-reasoner-create-mount-second-ring
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
 
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -751,13 +752,15 @@
   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs&:(neq ?wp-rs ?wp) m ?mps-rs side ?any-rs-side)))
   ;TODO for multi-agent
   ; Model old agents constraints
-  ;  (in-production 0))
+  ;  (in-production 0)
   ;  (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   =>
   (printout t "Goal " MOUNT-SECOND-RING " formulated" crlf)
-  (assert (goal (id MOUNT-SECOND-RING) (priority ?*PRIORITY-MOUNT-SECOND-RING*)
-                             (parent PRODUCTION-MAINTAIN)
+  (assert (goal (id (sym-cat MOUNT-SECOND-RING- (gensym*)))
+                (class MOUNT-SECOND-RING)
+                (priority ?*PRIORITY-MOUNT-SECOND-RING*)
+                             (parent ?maintain-id)
                              (params robot ?robot
                                         prev-rs ?prev-rs
                                         prev-rs-side OUTPUT
@@ -770,13 +773,12 @@
                                         rs-req ?bases-needed
                                         order ?order
                                         )))
-  )
+)
 
 
 (defrule goal-reasoner-create-mount-third-ring
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-
+  (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
@@ -823,8 +825,9 @@
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   =>
   (printout t "Goal " MOUNT-THIRD-RING " formulated" crlf)
-  (assert (goal (id MOUNT-THIRD-RING) (priority ?*PRIORITY-MOUNT-THIRD-RING*)
-                             (parent PRODUCTION-MAINTAIN)
+  (assert (goal (id (sym-cat MOUNT-THIRD-RING- (gensym*)))
+                (class MOUNT-THIRD-RING) (priority ?*PRIORITY-MOUNT-THIRD-RING*)
+                             (parent ?maintain-id)
                              (params robot ?robot
                                         prev-rs ?prev-rs
                                         prev-rs-side OUTPUT
@@ -902,7 +905,7 @@
 
 (defrule goal-reasoner-create-produce-c2
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -945,8 +948,9 @@
   ;   (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   =>
   (printout t "Goal " PRODUCE-CX " (C2) formulated" crlf)
-  (assert (goal (id PRODUCE-CX) (priority ?*PRIORITY-PRODUCE-C2*)
-                                (parent PRODUCTION-MAINTAIN)
+  (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
+                (priority ?*PRIORITY-PRODUCE-C2*)
+                                (parent ?maintain-id)
                                 (params robot ?robot
                                         wp ?wp
                                         rs ?rs
@@ -959,7 +963,7 @@
 
 (defrule goal-reasoner-create-produce-c3
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -1004,8 +1008,9 @@
   ;   (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   =>
   (printout t "Goal " PRODUCE-CX " (C3) formulated" crlf)
-  (assert (goal (id PRODUCE-CX) (priority ?*PRIORITY-PRODUCE-C3*)
-                                (parent PRODUCTION-MAINTAIN)
+  (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
+                (priority ?*PRIORITY-PRODUCE-C3*)
+                                (parent ?maintain-id)
                                 (params robot ?robot
                                         wp ?wp
                                         rs ?rs
