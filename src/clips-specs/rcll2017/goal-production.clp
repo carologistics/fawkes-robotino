@@ -408,10 +408,16 @@
     (value ?qd&:(> ?qr ?qd)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   ;--TODO: add time considrations to have a higher priority if it makes "sense"
-  (not (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 2)))
   =>
   (printout warn "RS " ?mps " needs an additional base for " ?order " given " ?order-wp " (prio +2)" crlf)
-  (assert (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 2)))
+  (if (not (do-for-fact
+            ((?wmf wm-fact))
+            (eq ?wmf:key (create$ evaluated fact rs-fill-priority args? m ?mps))
+            (modify ?wmf (value 2))))
+    then
+      (assert
+        (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 2)))
+  )
 )
 
 (defrule goal-reasoner-create-prefill-rs-higher-priority-constraint
@@ -435,10 +441,17 @@
     (value ?qd&:(> ?qr ?qd)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   ;--TODO: add time considrations to have a higher priority if it makes "sense"
-  (not (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 1)))
+  (not (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 2)))
   =>
   (printout warn "RS " ?mps " needs an additional base for " ?order " (prio +1)" crlf)
-  (assert (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 1)))
+(if (not (do-for-fact
+            ((?wmf wm-fact))
+            (eq ?wmf:key (create$ evaluated fact rs-fill-priority args? m ?mps))
+            (modify ?wmf (value 1))))
+    then
+      (assert
+        (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 1)))
+  )
 )
 
 
