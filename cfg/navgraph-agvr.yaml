@@ -276,6 +276,40 @@ nodes:
       - target_tolerance: 0.7
       - travel_tolerance: 1.5
 
+  - !unconnected
+    name: C-CS2-O
+    pos: [1.5, 1.5]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation: 0.0
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+
+  - !unconnected
+    name: C-CS2-I
+    pos: [3.5, 1.5]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation: -3.14
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)
 connections:
