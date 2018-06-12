@@ -652,6 +652,12 @@
   ;	Model old agents constraints
   ; 	(in-production 0)
   ; 	(in-delivery ?id&:(> ?qr (+ ?qd ?id)))
+  ;Active Order CEs
+  (not (and (wm-fact (key evaluated fact wp-for-order args? wp ?ord-wp ord ?any-order))
+            (wm-fact (key doamin fact order-complexity args? ord ?any-order com ?other-complexity))
+            (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
+            (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
+  (not (wm-fact (key evaluated fact wp-for-order args? wp ?any-ord-wp ord ?order)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (eq ?complexity C0))
   =>
@@ -701,13 +707,17 @@
   (wm-fact (key domain fact mps-team args?  m ?mps-bs col ?team-color))
   (not (wm-fact (key domain fact wp-at args? wp ?bs-wp m ?mps-bs side ?any-bs-side)))
   ;Order CEs
-  (not (wm-fact (key evaluated fact wp-for-order args? wp ?ord-wp ord ?order)))
-
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color) (value ?qd&:(> ?qr ?qd)))
+  ;Active Order CEs
+  (not (and (wm-fact (key evaluated fact wp-for-order args? wp ?ord-wp ord ?any-order))
+            (wm-fact (key doamin fact order-complexity args? ord ?any-order com ?other-complexity))
+            (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
+            (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
+  (not (wm-fact (key evaluated fact wp-for-order args? wp ?any-ord-wp ord ?order)))
   ; (wm-fact (key refbox order ?order delivery-begin) (type UINT)
     ; (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) (tac-ring-mount-time ?complexity 0)))))
   ; (wm-fact (key refbox order ?order delivery-end) (type UINT)
