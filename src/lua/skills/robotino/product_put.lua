@@ -53,7 +53,7 @@ local gripper_tolerance_y = 0.015 -- gripper y tolerance according to conveyor p
 local gripper_tolerance_z = 0.015 -- gripper z tolerance according to conveyor pose
 
 local gripper_pose_offset_x = 0.00  -- conveyor pose offset in x direction
-local gripper_pose_offset_y = -0.01     -- conveyor_pose offset in y direction
+local gripper_pose_offset_y = -0.008     -- conveyor_pose offset in y direction
 local gripper_pose_offset_z = 0.065  -- conveyor_pose offset in z direction
 
 local conveyor_gripper_forward_x = 0.05 -- distance to move gripper forward after align
@@ -62,7 +62,7 @@ local conveyor_gripper_back_x = -0.06   -- distance to move gripper back after o
 local conveyor_gripper_up_z = 0.01  -- distance to move gripper up after opening the gripper
 
 local slide_gripper_forward_x = 0.04  -- distance to move gripper forward after align if the target is slide
-local slide_gripper_down_z = -0.01     -- distance to move gripper down after driving over slide
+local slide_gripper_down_z = -0.02     -- distance to move gripper down after driving over slide
 local slide_gripper_back_x = -0.06    -- distance to move gripper back after opening the gripper if the target is slide
 local slide_gripper_up_z = 0.01 --distance to move gripper up after opening the gripper if the target is slide
 
