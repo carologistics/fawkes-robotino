@@ -191,9 +191,7 @@ function DRIVE:init()
 end
 
 function cleanup()
-   if (fsm.vars.disable_realsense_afterwards == nil or fsm.vars.disable_realsense_afterwards) then
-     if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
-   end
+  if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
 end
 
 function FAILED:init()
@@ -201,6 +199,8 @@ function FAILED:init()
 end
 
 function FINAL:init()
-   cleanup()
+   if (fsm.vars.disable_realsense_afterwards == nil or fsm.vars.disable_realsense_afterwards) then
+      cleanup()
+   end
 end
 
