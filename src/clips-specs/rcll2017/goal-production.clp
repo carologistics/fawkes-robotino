@@ -352,19 +352,11 @@
 )
 
 
-(defrule goal-reasoner-create-prefill-ring-station-for-started-order
-  "Insert a base with unknown color in a RS for preparation"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+(defrule goal-reasoner-create-prefill-rs-for-started-order-constraint
+  "Prefilling a specific RS gets +2 priority if a started product waits for additional bases on it."
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact wp-usable args? wp ?wp))
-  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-  ;RS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  (not (goal (id FILL-RS|FILL-RS-EXPLICITLY) (mode FORMULATED)))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   ;--Match ring to order [if still the order needs any]
@@ -394,32 +386,18 @@
     (value ?qd&:(> ?qr ?qd)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   ;--TODO: add time considrations to have a higher priority if it makes "sense"
+  (not (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 2)))
   =>
-  (printout warn "Goal " FILL-RS " formulated with higher priority because of Order: " ?order crlf)
-  (assert (goal (id FILL-RS) (priority (+ 2 ?*PRIORITY-PREFILL-RS-WITH-HOLDING-BASE*))
-                             (parent PRODUCTION-MAINTAIN)
-                             (params robot ?robot
-                                     mps ?mps
-                                     wp ?wp
-                                     rs-before ?rs-before
-                                     rs-after ?rs-after
-                                     )))
-  ; (assert (goal-already-tried FILL-RS))
+  (printout warn "RS " ?mps " needs an additional base for " ?order " given " ?order-wp " (prio +2)" crlf)
+  (assert (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 2)))
 )
 
-(defrule goal-reasoner-create-prefill-ring-station-high-priority
-  "Insert a base with unknown color in a RS for preparation"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+(defrule goal-reasoner-create-prefill-rs-higher-priority-constraint
+  "Prefilling a specific RS gets +1 priority if a unselected order needs additional bases from it."
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact wp-usable args? wp ?wp))
-  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  (not (goal (id FILL-RS|FILL-RS-EXPLICITLY) (mode FORMULATED)))
   ;RS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   ;--Match ring to order [if still the order needs any]
@@ -435,79 +413,10 @@
     (value ?qd&:(> ?qr ?qd)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   ;--TODO: add time considrations to have a higher priority if it makes "sense"
+  (not (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 1)))
   =>
-  (printout warn "Goal " FILL-RS " formulated with higher priority because of Order: " ?order crlf)
-  (assert (goal (id FILL-RS) (priority (+ 1 ?*PRIORITY-PREFILL-RS*))
-                             (parent PRODUCTION-MAINTAIN)
-                             (params robot ?robot
-                                     mps ?mps
-                                     wp ?wp
-                                     rs-before ?rs-before
-                                     rs-after ?rs-after
-                                     )))
-  ; (assert (goal-already-tried FILL-RS))
-)
-
-
-(defrule goal-reasoner-create-prefill-ring-station-explicitly-for-started-order
-  "Insert a new base in a RS for preparation"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  ;RS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
-  ;MPS-BS CEs
-  (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?mps side ?any-side)))
-  (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN&~READY-AT-OUTPUT))
-  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
-  ;--Match ring to order [if still the order needs any]
-  (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?ring-num))
-  (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-diff))
-  ;(TODO: make the mps-state  a precond of the put-slid to save traviling time)
-
-  (wm-fact (key evaluated fact wp-for-order args? wp ?order-wp ord ?order))
-  ;Order CEs
-  ;--There is a CX order with a matching ring
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&:(neq ?complexity C0)))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (or (and (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color))
-           (wm-fact (key domain fact wp-ring1-color args? wp ?order-wp col RING_NONE))
-      )
-      (and (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring-color))
-           (wm-fact (key domain fact wp-ring1-color args? wp ?order-wp col ~RING_NONE))
-           (wm-fact (key domain fact wp-ring2-color args? wp ?order-wp col RING_NONE))
-      )
-      (and (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring-color))
-           (wm-fact (key domain fact wp-ring1-color args? wp ?order-wp col ~RING_NONE))
-           (wm-fact (key domain fact wp-ring2-color args? wp ?order-wp col ~RING_NONE))
-           (wm-fact (key domain fact wp-ring3-color args? wp ?order-wp col RING_NONE))
-      )
-  )
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
-    (value ?qd&:(> ?qr ?qd)))
-  (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
-  ;--TODO: add time considrations to have a higher priority if it makes "sense"
-  =>
-  (printout warn "Goal " FILL-RS-EXPLICITLY " formulated with higher priority because of Order: " ?order crlf)
-  (assert (goal (id FILL-RS-EXPLICITLY) (priority (+ 2 ?*PRIORITY-PREFILL-RS*))
-                             (parent PRODUCTION-MAINTAIN)
-                             (params robot ?robot
-                                     mps ?mps
-                                     bs ?bs
-                                     bs-side INPUT
-                                     base-color ?base-color
-                                     rs-before ?rs-before
-                                     rs-after ?rs-after
-                                     )))
+  (printout warn "RS " ?mps " needs an additional base for " ?order " (prio +1)" crlf)
+  (assert (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 1)))
 )
 
 
@@ -530,21 +439,19 @@
   (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?mps side ?any-side)))
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN&~READY-AT-OUTPUT))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
-  ;--Match ring to order [if still the order needs any]
-  (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?ring-num))
-  (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-diff))
-  ;Order CEs
-  ;--There is a CX order with a matching ring
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&:(neq ?complexity C0)))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
-    (value ?qd&:(> ?qr ?qd)))
-  (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+
+  (wm-fact (key domain fact order-base-color args? ord ?any-order col ?base-color))
   =>
-  (printout warn "Goal " FILL-RS-EXPLICITLY " formulated." crlf)
-  (assert (goal (id FILL-RS-EXPLICITLY) (priority ?*PRIORITY-PREFILL-RS*)
+  (bind ?priority-increase 0)
+  (do-for-all-facts ((?prio wm-fact)) (and (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
+                                        (eq (wm-key-arg ?prio:key m) ?mps))
+      (if (< ?priority-increase ?prio:value)
+         then
+          (bind ?priority-increase ?prio:value)
+      )
+   (retract ?prio))
+  (printout warn "Goal " FILL-RS-EXPLICITLY " formulated" crlf)
+  (assert (goal (id FILL-RS-EXPLICITLY) (priority (+ ?priority-increase ?*PRIORITY-PREFILL-RS*))
                              (parent PRODUCTION-MAINTAIN)
                              (params robot ?robot
                                      mps ?mps
@@ -555,6 +462,7 @@
                                      rs-after ?rs-after
                                      )))
 )
+
 
 (defrule goal-reasoner-create-prefill-ring-station
   "Insert a base with unknown color in a RS for preparation"
@@ -573,8 +481,16 @@
   ;CCs don't have a base color. Hence, models base with UNKOWN color
   ; (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color)))
   =>
+  (bind ?priority-increase 0)
+  (do-for-all-facts ((?prio wm-fact)) (and (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
+                                        (eq (wm-key-arg ?prio:key m) ?mps))
+      (if (< ?priority-increase ?prio:value)
+         then
+          (bind ?priority-increase ?prio:value)
+      )
+   (retract ?prio))
   (printout t "Goal " FILL-RS " formulated" crlf)
-  (assert (goal (id FILL-RS) (priority ?*PRIORITY-PREFILL-RS*)
+  (assert (goal (id FILL-RS) (priority (+ ?*PRIORITY-PREFILL-RS* ?priority-increase))
                              (parent PRODUCTION-MAINTAIN)
                              (params robot ?robot
                                      mps ?mps
