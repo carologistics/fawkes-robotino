@@ -301,11 +301,12 @@
   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*))) (class CLEAR-MPS)
                 (priority ?*PRIORITY-CLEAR-RS*)
-                              (parent ?maintain-id)
-                              (params robot ?robot
-                                      mps ?mps
-                                      wp ?wp
-                                      )
+                (parent ?maintain-id)
+                (params robot ?robot
+                        mps ?mps
+                        wp ?wp
+                )
+                (required-resources ?mps ?wp)
   ))
 )
 
@@ -760,19 +761,21 @@
   (assert (goal (id (sym-cat MOUNT-SECOND-RING- (gensym*)))
                 (class MOUNT-SECOND-RING)
                 (priority ?*PRIORITY-MOUNT-SECOND-RING*)
-                             (parent ?maintain-id)
-                             (params robot ?robot
-                                        prev-rs ?prev-rs
-                                        prev-rs-side OUTPUT
-                                        wp ?wp
-                                        rs ?mps-rs
-                                        ring1-color ?ring1-color
-                                        ring2-color ?ring2-color
-                                        rs-before ?bases-filled
-                                        rs-after ?bases-remain
-                                        rs-req ?bases-needed
-                                        order ?order
-                                        )))
+                (parent ?maintain-id)
+                (params robot ?robot
+                           prev-rs ?prev-rs
+                           prev-rs-side OUTPUT
+                           wp ?wp
+                           rs ?mps-rs
+                           ring1-color ?ring1-color
+                           ring2-color ?ring2-color
+                           rs-before ?bases-filled
+                           rs-after ?bases-remain
+                           rs-req ?bases-needed
+                           order ?order
+                )
+                (required-resources ?wp ?mps-rs)
+  ))
 )
 
 
@@ -820,28 +823,30 @@
   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs&:(neq ?wp-rs ?wp) m ?mps-rs side ?any-rs-side)))
   ;TODO for multi-agent
   ; Model old agents constraints
-  ;  (in-production 0))
+  ;  (in-production 0)
   ;  (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   =>
   (printout t "Goal " MOUNT-THIRD-RING " formulated" crlf)
   (assert (goal (id (sym-cat MOUNT-THIRD-RING- (gensym*)))
                 (class MOUNT-THIRD-RING) (priority ?*PRIORITY-MOUNT-THIRD-RING*)
-                             (parent ?maintain-id)
-                             (params robot ?robot
-                                        prev-rs ?prev-rs
-                                        prev-rs-side OUTPUT
-                                        wp ?wp
-                                        rs ?mps-rs
-                                        ring1-color ?ring1-color
-                                        ring2-color ?ring2-color
-                                        ring3-color ?ring3-color
-                                        rs-before ?bases-filled
-                                        rs-after ?bases-remain
-                                        rs-req ?bases-needed
-                                        order ?order
-                                        )))
-  )
+                (parent ?maintain-id)
+                (params robot ?robot
+                           prev-rs ?prev-rs
+                           prev-rs-side OUTPUT
+                           wp ?wp
+                           rs ?mps-rs
+                           ring1-color ?ring1-color
+                           ring2-color ?ring2-color
+                           ring3-color ?ring3-color
+                           rs-before ?bases-filled
+                           rs-after ?bases-remain
+                           rs-req ?bases-needed
+                           order ?order
+                )
+                (required-resources ?wp ?mps-rs)
+  ))
+)
 
 
 (defrule goal-reasoner-create-produce-c1
@@ -950,15 +955,17 @@
   (printout t "Goal " PRODUCE-CX " (C2) formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
                 (priority ?*PRIORITY-PRODUCE-C2*)
-                                (parent ?maintain-id)
-                                (params robot ?robot
-                                        wp ?wp
-                                        rs ?rs
-                                        mps ?mps
-                                        cs-color ?cap-color
-                                        order ?order
-                                        )))
-  ; (assert (goal-already-tried PRODUCE-C2))
+                (parent ?maintain-id)
+                (params robot ?robot
+                        wp ?wp
+                        rs ?rs
+                        mps ?mps
+                        cs-color ?cap-color
+                        order ?order
+                )
+                ; TODO: Do we really need the ?rs here?
+                (required-resources ?wp ?rs ?mps)
+  ))
 )
 
 (defrule goal-reasoner-create-produce-c3
@@ -1010,15 +1017,17 @@
   (printout t "Goal " PRODUCE-CX " (C3) formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
                 (priority ?*PRIORITY-PRODUCE-C3*)
-                                (parent ?maintain-id)
-                                (params robot ?robot
-                                        wp ?wp
-                                        rs ?rs
-                                        mps ?mps
-                                        cs-color ?cap-color
-                                        order ?order
-                                        )))
-  ; (assert (goal-already-tried PRODUCE-C2))
+                (parent ?maintain-id)
+                (params robot ?robot
+                        wp ?wp
+                        rs ?rs
+                        mps ?mps
+                        cs-color ?cap-color
+                        order ?order
+                )
+                ; TODO: Do we really need the ?rs here?
+                (required-resources ?wp ?rs ?mps)
+  ))
 )
 
 (defrule goal-reasoner-create-reset-mps
@@ -1034,7 +1043,9 @@
                 (parent ?production-id)
                 (params r ?self
                         m ?mps
-                        )))
+                )
+                (required-resources ?mps)
+  ))
   (retract ?t)
 )
 
@@ -1056,7 +1067,9 @@
                 (parent ?production-id)
                 (params robot ?robot
                         wp ?wp
-                        )))
+                )
+                (required-resources ?wp)
+  ))
   (retract ?t)
 )
 
