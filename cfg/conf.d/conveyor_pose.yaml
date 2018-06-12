@@ -36,7 +36,7 @@ plugins/conveyor_pose:
   # saving it. The robot should be positioned so that this frame is at the desired origin of
   # the conveyor (align the conveyor cloud & the TF in rviz)
   # Normally this should be gripper_fingers, except for the middle shelf should be shelf_record
-  model_origin_frame: "gripper_fingers"
+  model_origin_frame: "gripper_fingers_record"
 
 
   # Paths to the reference models are looked up in CONFDIR (e.g. fawkes-robotino/cfg)
