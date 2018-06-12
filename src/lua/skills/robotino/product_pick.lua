@@ -54,7 +54,7 @@ local gripper_tolerance_y = 0.5 -- gripper y tolerance according to conveyor pos
 local gripper_tolerance_z = 0.5 -- gripper z tolerance according to conveyor pose
 
 local conveyor_gripper_forward_x = 0.06 -- distance to move gripper forward after align
-local conveyor_gripper_down_z = -0.015    -- distance to move gripper down after driving over product
+local conveyor_gripper_down_z = -0.05    -- distance to move gripper down after driving over product
 local conveyor_gripper_down_second_z = -0.005       -- distance to mover gripper down second time
 local conveyor_gripper_back_x = -0.07   -- distance to move gripper back after closing gripper
 local shelf_gripper_up_z = 0.05 -- distance to move gripper up after closing gripper
@@ -75,8 +75,6 @@ local align_target_frame = "gripper_fingers"      -- the gripper align is made r
 local z_movement_target_frame = "gripper" -- the gripper z movement is made relative to this frame (according to gripper_commands_new)
 local x_movement_target_frame = "gripper" -- the gripper x movement is made relative to this frame (according to griper_commands_new)
 
-local cfg_frame_ = "gripper"
-
 -- initial gripper poses depending on the target
 local GRIPPER_POSES = {
   shelf_left={x=0.05, y=0.00, z=0.035},
@@ -85,28 +83,36 @@ local GRIPPER_POSES = {
   conveyor={x=0.05, y=0.00,z=0.035},
 }
 
+local MAX_RETRIES=2
+
 function no_writer()
    return not if_conveyor_pose:has_writer()
 end
 
-function tolerance_check(self)
-   local pose = pose_offset(self)
+function tolerance_ok()
+   local pose = pose_offset()
+   if if_conveyor_pose:is_busy() then 
+      return false
+   end 
+
    if math.abs(pose.x) <= gripper_tolerance_x and math.abs(pose.y) <= gripper_tolerance_y and math.abs(pose.z) <= gripper_tolerance_z then
       return true
    end
 end
 
-function result_ready(self)
+function fitness_ok()
   local local_fitness_threshold = 0
-  if self.fsm.vars.shelf ~= nil then
+  if fsm.vars.shelf ~= nil then
     local_fitness_threshold = shelf_euclidean_fitness_threshold
   else
     local_fitness_threshold = euclidean_fitness_threshold
   end
+  return if_conveyor_pose:euclidean_fitness() >= local_fitness_threshold
+end
 
-  if if_conveyor_pose:euclidean_fitness() < local_fitness_threshold
-     or if_conveyor_pose:is_busy()
-     or if_conveyor_pose:msgid() ~= fsm.vars.msgid
+function result_ready()
+  if if_conveyor_pose:is_busy()
+   or if_conveyor_pose:msgid() ~= fsm.vars.msgid
   then return false end
 
   local bb_stamp = fawkes.Time:new(if_conveyor_pose:input_timestamp(0), if_conveyor_pose:input_timestamp(1))
@@ -122,7 +128,7 @@ function result_ready(self)
   return true
 end
 
-function pose_offset(self)
+function pose_offset()
 
   local target_pos = { x = gripper_pose_offset_x,
                         y = gripper_pose_offset_y,
@@ -142,13 +148,14 @@ function pose_offset(self)
 end
 
 
-fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
+fsm:define_states{ export_to=_M,
+   closure={gripper_if=gripper_if, tolerance_ok=tolerance_ok, MAX_RETRIES=MAX_RETRIES, result_ready=result_ready, fitness_ok=fitness_ok},
    {"INIT", JumpState},
    {"INIT_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="OPEN_GRIPPER", fail_to="FAILED"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="CHECK_VISION", fail_to="FAILED"},
    {"CHECK_VISION", JumpState},
-   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="CHECK_TOLERANCE",fail_to="FAILED"},
-   {"CHECK_TOLERANCE",JumpState},
+   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="DECIDE_RETRY",fail_to="FAILED"},
+   {"DECIDE_RETRY", JumpState},
    {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER",fail_to="FAILED"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="FAILED"},
    {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "HOME_GRIPPER", fail_to="FAILED"},
@@ -158,11 +165,13 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
 
 fsm:add_transitions{
    {"INIT", "INIT_GRIPPER", true, desc="Init gripper for product_pick"},
-   {"CHECK_VISION", "FAILED", timeout=20, desc="Fitness threshold wasn't reached"},
+   {"CHECK_VISION", "FAILED", timeout=10, desc="Fitness threshold wasn't reached"},
    {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
-   {"CHECK_VISION", "GRIPPER_ALIGN", cond=result_ready, desc="Fitness threshold reached"},
-   {"CHECK_TOLERANCE", "MOVE_GRIPPER_FORWARD", cond=tolerance_check, desc="Pose tolerance ok"},
-   {"CHECK_TOLERANCE", "CHECK_VISION", cond = true, desc="Pose tolerance not ok"},
+   {"CHECK_VISION", "MOVE_GRIPPER_FORWARD", cond="result_ready() and fitness_ok() and tolerance_ok()"},
+   {"CHECK_VISION", "GRIPPER_ALIGN", cond="result_ready() and fitness_ok()", desc="Fitness threshold reached"},
+   {"CHECK_VISION", "CHECK_VISION", cond="result_ready() and not fitness_ok() and vars.vision_retries < 3"},
+   {"DECIDE_RETRY", "CHECK_VISION", cond="vars.retries <= MAX_RETRIES"},
+   {"DECIDE_RETRY", "MOVE_GRIPPER_FORWARD", cond=true}
 }
 
 
@@ -172,12 +181,15 @@ function INIT:init()
   --if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.SetStationMessage:new(parse_result.mps_type,parse_result.mps_target))
   self.fsm.vars.mps_type = parse_result.mps_type
   self.fsm.vars.mps_target = parse_result.mps_target
+  self.fsm.vars.retries = 0
+  self.fsm.vars.vision_retries = 0
 end
 
 function CHECK_VISION:init()
    local msg = if_conveyor_pose.SetStationMessage:new(self.fsm.vars.mps_type, self.fsm.vars.mps_target)
    if_conveyor_pose:msgq_enqueue_copy(msg)
    self.fsm.vars.msgid = msg:id()
+   self.fsm.vars.vision_retries = self.fsm.vars.vision_retries + 1
 end
 
 function INIT_GRIPPER:init()
@@ -203,10 +215,12 @@ end
 
 
 function GRIPPER_ALIGN:init()
+  self.fsm.vars.retries = self.fsm.vars.retries + 1
+  
   local pose = pose_offset(self)
   self.args["gripper_commands_new"] = pose
   self.args["gripper_commands_new"].command = "MOVEABS"
-  self.args["gripper_commands_new"].target_frame  = align_target_frame
+  self.args["gripper_commands_new"].target_frame  = "gripper"
 end
 
 function MOVE_GRIPPER_FORWARD:init()
