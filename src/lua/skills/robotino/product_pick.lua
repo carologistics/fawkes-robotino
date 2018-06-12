@@ -254,6 +254,7 @@ function HOME_GRIPPER:init()
   self.args["gripper_commands_new"].y = 0
   self.args["gripper_commands_new"].z = 0
   self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].wait = false
 end
 
 function DRIVE_BACK:init()
