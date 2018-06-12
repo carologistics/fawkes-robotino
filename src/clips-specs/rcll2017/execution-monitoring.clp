@@ -133,6 +133,7 @@
             (wm-key-prefix ?wf:key (create$ domain fact cs-can-perform))
             (wm-key-prefix ?wf:key (create$ domain fact rs-filled-with))
             (wm-key-prefix ?wf:key (create$ domain fact rs-prepared-color))
+	    (wm-key-prefix ?wf:key (create$ evaluated fact wp-for-order))
            )
               )
     (retract ?wf)
