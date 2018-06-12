@@ -181,6 +181,8 @@ function DRIVE:init()
    self.args["motor_move"].x = pose.x
    self.args["motor_move"].y = pose.y
    self.args["motor_move"].ori = pose.ori
+   self.args["motor_move"].vel_trans = 0.03
+   self.args["motor_move"].vel_rot = 0.06
    self.args["motor_move"].tolerance = {
       x = tolerance_trans * 0.9,
       y = tolerance_trans * 0.9,
