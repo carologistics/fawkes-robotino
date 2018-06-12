@@ -59,7 +59,8 @@ local GRIPPER_POSES = {
   shelf_middle={x=0.05, y=-0.035, z=0.035},
   shelf_right={x=0.05, y=0.00, z=0.035},
   slide={x=0.05,y=0.00,z=0.035},
-  conveyor={x=0.05, y=0.00,z=0.035},
+  output_conveyor={x=0.05, y=0.00,z=0.035},
+  input_conveyor={x=0.035, y=0.00,z=0.04},
 }
 
 local MAX_RETRIES=3
@@ -165,8 +166,10 @@ function MOVE_GRIPPER:init()
     self.args["gripper_commands_new"] = GRIPPER_POSES["shelf_middle"]
   elseif self.fsm.vars.slide then
     self.args["gripper_commands_new"] = GRIPPER_POSES["slide"]
-  else
-    self.args["gripper_commands_new"] = GRIPPER_POSES["conveyor"]
+  elseif self.fsm.vars.side == "input" then
+    self.args["gripper_commands_new"] = GRIPPER_POSES["input_conveyor"]
+  elseif self.fsm.vars.side == "output" then
+    self.args["gripper_commands_new"] = GRIPPER_POSES["output_conveyor"]
   end
   self.args["gripper_commands_new"].command = "MOVEABS"
 end
