@@ -48,11 +48,10 @@ local pam = require("parse_module")
 -- Constants
 local euclidean_fitness_threshold = 8 -- threshold for euclidean fitness for targets other than shelf
 local shelf_euclidean_fitness_threshold = 3 -- threshold for euclidean fitness if target is shelf
-local tolerance_trans = 0.035  -- tolerance in x and y direction after the align
-local tolerance_ori = 0.020   -- orientation tolerance after the align
+local tolerance_trans = 0.02  -- tolerance in x and y direction after the align
+local tolerance_ori = 0.02   -- orientation tolerance after the align
 local x_dist_to_mps = -0.31  -- x-distance the robot should have after the align
 local y_offset_shelf_middle = -0.015 -- y-offset the robot should have picking is done from shelf = "MIDDLE"
-local cfg_frame_ = "gripper"
 
 -- initial gripper poses depending on the target
 local GRIPPER_POSES = {
@@ -63,27 +62,32 @@ local GRIPPER_POSES = {
   conveyor={x=0.05, y=0.00,z=0.035},
 }
 
+local MAX_RETRIES=3
+
 function no_writer()
    return not if_conveyor_pose:has_writer()
 end
 
-function tolerance_ok(self)
-   local pose = pose_offset(self)
+function tolerance_ok()
+   local pose = pose_offset()
    return math.abs(pose.x) <= tolerance_trans
       and math.abs(pose.y) <= tolerance_trans
       and math.abs(pose.ori) <= tolerance_ori
 end
 
-function result_ready(self)
+function fitness_ok()
   local local_fitness_threshold = 0
-  if self.fsm.vars.shelf ~= nil then
+  if fsm.vars.shelf then
     local_fitness_threshold = shelf_euclidean_fitness_threshold
   else
     local_fitness_threshold = euclidean_fitness_threshold
   end
+  
+  return if_conveyor_pose:euclidean_fitness() >= local_fitness_threshold
+end
 
-  if if_conveyor_pose:euclidean_fitness() < local_fitness_threshold
-     or if_conveyor_pose:is_busy()
+function result_ready()
+  if if_conveyor_pose:is_busy()
      or if_conveyor_pose:msgid() ~= fsm.vars.msgid
   then return false end
 
@@ -100,8 +104,8 @@ function result_ready(self)
   return true
 end
 
-function pose_offset(self)
-  if self.fsm.vars.shelf == "MIDDLE" then
+function pose_offset()
+  if fsm.vars.shelf == "MIDDLE" then
     y_offset = y_offset_shelf_middle
   else
     y_offset = 0
@@ -117,21 +121,24 @@ end
 
 
 fsm:define_states{ export_to=_M,
-   closure={},
+   closure={ MAX_RETRIES=MAX_RETRIES, tolerance_ok=tolerance_ok,
+      result_ready=result_ready, fitness_ok=fitness_ok },
    {"INIT", JumpState},
    {"MOVE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="CHECK_VISION", failed_to="FAILED"},
    {"CHECK_VISION", JumpState},
-   {"DRIVE_FORWARD", SkillJumpState, skills={{motor_move}}, final_to="CHECK_TOLERANCE", failed_to="FAILED"},
-   {"CHECK_TOLERANCE", JumpState},
+   {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="CHECK_VISION", failed_to="FAILED"},
+   {"DECIDE_WHAT", JumpState},
 }
 
 fsm:add_transitions{
    {"INIT", "MOVE_GRIPPER", cond=true},
-   {"CHECK_VISION", "FAILED", timeout=20, desc = "Fitness threshold wasn't reached"},
+   {"CHECK_VISION", "FAILED", timeout=10, desc = "Fitness threshold wasn't reached"},
    {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
-   {"CHECK_VISION", "DRIVE_FORWARD", cond=result_ready, desc="Fitness threshold reached"},
-   {"CHECK_TOLERANCE", "FINAL", cond=tolerance_ok, desc="Pose tolerance ok"},
-   {"CHECK_TOLERANCE", "CHECK_VISION", cond = true, desc="Pose tolerance not ok"},
+   {"CHECK_VISION", "DECIDE_WHAT", cond=result_ready, desc="Fitness threshold reached"},
+   {"DECIDE_WHAT", "FINAL", cond="fitness_ok() and tolerance_ok()"},
+   {"DECIDE_WHAT", "DRIVE", cond="fitness_ok() and not tolerance_ok() and vars.retries <= MAX_RETRIES"},
+   {"DECIDE_WHAT", "FAILED", cond="fitness_ok() and not tolerance_ok()"},
+   {"DECIDE_WHAT", "CHECK_VISION", cond="not fitness_ok()"}
 }
 
 function INIT:init()
@@ -139,6 +146,7 @@ function INIT:init()
    local parse_result = pam.parse_to_type_target(if_conveyor_pose,self.fsm.vars.place,self.fsm.vars.side,self.fsm.vars.shelf,self.fsm.vars.slide)
    self.fsm.vars.mps_type = parse_result.mps_type
    self.fsm.vars.mps_target = parse_result.mps_target
+   self.fsm.vars.retries = 0
 end
 
 function CHECK_VISION:init()
@@ -163,7 +171,8 @@ function MOVE_GRIPPER:init()
   self.args["gripper_commands_new"].command = "MOVEABS"
 end
 
-function DRIVE_FORWARD:init()
+function DRIVE:init()
+   self.fsm.vars.retries = self.fsm.vars.retries + 1
    local pose = pose_offset(self)
    print_info("Drive forward, x = %f , y = %f", pose.x, pose.y)
    self.args["motor_move"].x = pose.x
