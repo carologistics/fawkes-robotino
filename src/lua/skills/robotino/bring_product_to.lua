@@ -75,6 +75,9 @@ fsm:add_transitions{
 
 function INIT:init()
    self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
+   if self.fsm.vars.side == nil then
+     self.fsm.vars.side = "input"
+   end
 end
 
 function DRIVE_TO_MACHINE_POINT:init()
