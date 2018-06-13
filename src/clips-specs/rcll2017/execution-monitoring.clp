@@ -37,23 +37,23 @@
   (printout warn "A WP has been Generated at the OUTPUT side" crlf)
 )
 
-(defrule execution-monitoring-incosistent-yet-exepected-mps-state-idle
-  (declare (salience 1))
-  (domain-pending-sensed-fact
-    (goal-id ?goal-id)
-    (action-id ?action-id)
-    (name mps-state)
-    (param-values ?mps IDLE)
-    (type POSITIVE))
-  (wm-fact (key domain fact mps-state args? m ?mps IDLE))
-  ?wpat <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-  =>
-  ;TODO: Send Maintenance message
-  (printout warn "Monitoring: MPS state IDLE but WP exists at output, Yet action " ?action-id " in Goal " ?goal-id
-    "expected it!!" crlf)
-  (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
-  (printout warn "The WP has been retracted!!" crlf)
-)
+;(defrule execution-monitoring-incosistent-yet-exepected-mps-state-idle
+;  (declare (salience 1))
+;  (domain-pending-sensed-fact
+;    (goal-id ?goal-id)
+;    (action-id ?action-id)
+;    (name mps-state)
+;    (param-values ?mps IDLE)
+;    (type POSITIVE))
+;  (wm-fact (key domain fact mps-state args? m ?mps IDLE))
+;  ?wpat <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+;  =>
+;  ;TODO: Send Maintenance message
+;  (printout warn "Monitoring: MPS state IDLE but WP exists at output, Yet action " ?action-id " in Goal " ?goal-id
+;    "expected it!!" crlf)
+;  (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
+;  (printout warn "The WP has been retracted!!" crlf)
+;)
 
 
 (defrule reset-prepare-action-on-downed
@@ -220,11 +220,11 @@
   (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~IDLE&~READY-AT-OUTPUT))
+  (wm-fact (key domain fact mps-state args? m ?mps s ?s&:(neq s IDLE|READY-AT-OUTPUT)))
   ?pt <- (pending-timer (plan-id ?plan-id) (action-id ?id) (start-time $?starttime) (timeout-time $?timeout))
   (test (< (nth$ 1 ?timeout) (+ (nth$ 1 ?starttime) ?*MPS-DOWN-TIMEOUT-DURATION* ?*COMMON-TIMEOUT-DURATION*)))
   =>
-  (printout t "Detected that " ?mps " is down while " ?action-name " is waiting for it. Enhance timeout-timer" crlf)
+  (printout t "Detected that " ?mps " is " ?s " while " ?action-name " is waiting for it. Enhance timeout-timer" crlf)
   (bind ?timeout-longer (create$ (+ (nth$ 1 ?timeout) ?*MPS-DOWN-TIMEOUT-DURATION*) (nth$ 2 ?timeout)))
   (modify ?pt (timeout-time ?timeout-longer))
 )
