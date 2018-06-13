@@ -56,7 +56,7 @@
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?p <- (goal (id ?parent-id) (mode EXPANDED))
   ?g <- (goal (parent ?parent-id) (mode FORMULATED)
-          (id ?subgoal-id) (priority ?priority))
+          (id ?subgoal-id) (class ?class) (priority ?priority))
   ;Select the formulated subgoal with the highest priority
   (not (goal (parent ?parent-id) (mode FORMULATED)
              (priority ?h-priority&:(> ?h-priority ?priority)))
@@ -68,7 +68,9 @@
                    FINISHED|RETRACTED)))
   (not (goal (parent ?parent-id) (mode EVALUATED) (outcome ~REJECTED)))
 =>
-  ;(printout t "Goal " ?subgoal-id " selected!" crlf)
+  (if (neq ?class BEACONACHIEVE) then
+    (printout t "Goal " ?subgoal-id " selected!" crlf)
+  )
   (modify ?g (mode SELECTED))
   (assert (goal-meta (goal-id ?subgoal-id)))
 )
@@ -93,11 +95,14 @@
 )
 
 (defrule goal-reasoner-commit-child-goal
-  ?g <- (goal (id ?goal-id) (mode EXPANDED) (parent ?parent-id))
+  ?g <- (goal (id ?goal-id) (class ?class) (mode EXPANDED) (parent ?parent-id))
   (goal (id ?parent-id) (mode EXPANDED))
   (or (not (goal (parent ?goal-id)))
       (goal (parent ?goal-id) (mode COMMITTED)))
   =>
+  (if (neq ?class BEACONACHIEVE) then
+    (printout t "Goal " ?goal-id " committed!" crlf)
+  )
   (modify ?g (mode COMMITTED))
 )
 
@@ -121,6 +126,7 @@
 (defrule goal-reasoner-dispatch-child-goal
 	?g <- (goal (mode COMMITTED)
           (id ?goal-id)
+          (class ?class)
           (parent ?parent-id)
           (required-resources $?req)
           (acquired-resources $?acq&:(subsetp ?req ?acq)))
@@ -128,6 +134,9 @@
   (or (not (goal (parent ?goal-id)))
       (goal (parent ?goal-id) (mode DISPATCHED)))
 	=>
+  (if (neq ?class BEACONACHIEVE) then
+    (printout t "Goal " ?goal-id " dispatched!" crlf)
+  )
 	(modify ?g (mode DISPATCHED))
 )
 

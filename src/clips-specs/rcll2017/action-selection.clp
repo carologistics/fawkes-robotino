@@ -84,11 +84,13 @@
                       (action-name ?action-name)
                       (param-values $?param-values))
 	(plan (id ?plan-id) (goal-id ?goal-id))
-	(goal (id ?goal-id) (mode DISPATCHED))
+	(goal (id ?goal-id) (class ?class) (mode DISPATCHED))
 	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (status PENDING|WAITING|RUNNING|FAILED)))
 	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (status FORMULATED) (id ?oid&:(< ?oid ?id))))
 	=>
-  (printout t "Selected next action " ?action-name ?param-values crlf)
+  (if (neq ?class BEACONACHIEVE) then
+    (printout t "Selected next action " ?action-name ?param-values crlf)
+  )
 	(modify ?pa (status PENDING))
 )
 
