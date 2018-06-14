@@ -253,6 +253,14 @@
   (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
   (not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side ?any-side)))
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
+  
+  ;Since the shelf align has problems with alligning to the middle spot, only try to pick from the middle, if we think, that it is the only position left
+  (or (test (not (eq ?spot MIDDLE)))
+      (and (test (eq ?spot MIDDLE))
+	   (not (wm-fact (key domain fact wp-on-shelf args? wp ?cc2 m ?mps spot ?spot2&:(neq ?spot ?spot2))))
+      )
+  )
+  
   (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
   =>
