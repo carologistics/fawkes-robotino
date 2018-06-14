@@ -381,6 +381,7 @@
            (or
             (wm-key-prefix ?wf:key (create$ domain fact wp-at))
             (wm-key-prefix ?wf:key (create$ domain fact wp-usable))
+	    (wm-key-prefix ?wf:key (create$ domain fact wp-on-shelf))
             (wm-key-prefix ?wf:key (create$ monitoring cleanup-wp))
            )
     )
