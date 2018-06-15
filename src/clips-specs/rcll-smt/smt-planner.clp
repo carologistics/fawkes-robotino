@@ -99,7 +99,7 @@
 
 		(bind ?holding-wp (wm-key-arg ?holding:key wp))
 		(if ; cap_carrier_grey
-			(or 
+			(or
 				(eq ?holding-wp CCG1)
 				(eq ?holding-wp CCG2)
 				(eq ?holding-wp CCG3)
@@ -109,7 +109,7 @@
 			(bind ?holding-base "BASE_RANDOM")
 		else
 			(if ; cap_carrier_black
-				(or 
+				(or
 					(eq ?holding-wp CCB1)
 					(eq ?holding-wp CCB2)
 					(eq ?holding-wp CCB3)
@@ -119,7 +119,7 @@
 				(bind ?holding-base "BASE_RANDOM")
 			else
 				(if ; WP1 (product) or WP2 (additional base)
-					(or 
+					(or
 						(eq ?holding-wp WP1)
 						(eq ?holding-wp WP2)
 					)
@@ -254,7 +254,7 @@
 				(wm-key-prefix ?wm-fact:key (create$ domain fact cs-buffered))
 				(eq ?name (wm-key-arg ?wm-fact:key m))
 			)
-			
+
 			(bind ?cs_buffered (wm-key-arg ?wm-fact:key col))
 		)
 		(pb-set-field ?m "cs_buffered" ?cs_buffered)
@@ -264,7 +264,7 @@
 				(wm-key-prefix ?wm-fact:key (create$ domain fact cs-color))
 				(eq ?name (wm-key-arg ?wm-fact:key m))
 			)
-			
+
 			(bind ?cs_color (wm-key-arg ?wm-fact:key col))
 		)
 		(pb-set-field ?m "cap_color" ?cs_color)
@@ -302,7 +302,7 @@
 
 		(bind ?wp-at-wp (wm-key-arg ?wp-at:key wp))
 		(if ; cap_carrier_grey
-			(or 
+			(or
 				(eq ?wp-at-wp CCG1)
 				(eq ?wp-at-wp CCG2)
 				(eq ?wp-at-wp CCG3)
@@ -312,7 +312,7 @@
 			(bind ?wp-at-base "BASE_RANDOM")
 		else
 			(if ; cap_carrier_black
-				(or 
+				(or
 					(eq ?wp-at-wp CCB1)
 					(eq ?wp-at-wp CCB2)
 					(eq ?wp-at-wp CCB3)
@@ -322,7 +322,7 @@
 				(bind ?wp-at-base "BASE_RANDOM")
 			else
 				(if ; WP1 (product) or WP2 (additional base)
-					(or 
+					(or
 						(eq ?wp-at-wp WP1)
 						(eq ?wp-at-wp WP2)
 					)
@@ -456,7 +456,7 @@
 			(eq C3 ?complexity)
 		)
 		then
-	
+
 		; order-ring1-color
 		(do-for-fact ((?wm-fact wm-fact))
 			(and
@@ -472,7 +472,7 @@
 			(eq C3 ?complexity)
 		)
 		then
-	
+
 		; order-ring2-color
 		(do-for-fact ((?wm-fact wm-fact))
 			(and
@@ -1039,7 +1039,7 @@
 	?plan-req <- (plan-requested ?goal-id)
 
 	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE)) ; TODO manage complexity here
 	=>
 	(printout t "SMT plan handle completed " ?handle  crlf)
 
@@ -1055,16 +1055,9 @@
 	; (printout t "Plan: " (pb-tostring ?plans) crlf)
 
 	; parent_id of 0 refers to already dependencies from the old plans
-	(assert (wm-fact (key plan-action ?goal-id ?plan-id (string-to-field "0") status) (value FINAL)) ) 
+	(assert (wm-fact (key plan-action ?goal-id ?plan-id (string-to-field "0") status) (value FINAL)) )
 
-	(do-for-fact ((?pf production-first)) TRUE 
-		(assert (wm-fact (key robot-position from R-1) (value START)) )
-		(assert (wm-fact (key robot-position from-side R-1) (value INPUT)) )
-		(assert (wm-fact (key robot-position from R-2) (value START)) )
-		(assert (wm-fact (key robot-position from-side R-2) (value INPUT)) )
-		(assert (wm-fact (key robot-position from R-3) (value START)) )
-		(assert (wm-fact (key robot-position from-side R-3) (value INPUT)) )
-
+	(do-for-fact ((?pf production-first)) TRUE
 
 		; TODO Exchange R-1 by own id and add enterfield for other robots
 		; Assert plan-action enter-field
@@ -1072,7 +1065,7 @@
 			(wm-fact
 				(key plan-action ?goal-id ?plan-id (string-to-field "99") action)
 				(is-list TRUE)
-				(values enter-field R-1 ?team-color) 
+				(values enter-field R-1 ?team-color)
 			)
 		)
 		(assert
@@ -1129,52 +1122,61 @@
 						)
 						(progn$ (?arg (pb-field-list ?a "params"))
 							(if (eq (pb-field-value ?arg "key") "to") then
-								(bind ?to (pb-field-value ?arg "value"))
-								(bind ?to-splitted (str-split ?to "-"))
+								(bind ?to-complete (pb-field-value ?arg "value"))
+								(bind ?to-splitted (str-split ?to-complete "-"))
 								(bind ?to (str-join "-" (subseq$ ?to-splitted 1 2)))
 								(bind ?to-side (if (eq (nth$ 3 ?to-splitted) "I") then INPUT else OUTPUT))
 								(bind ?to (string-to-field ?to))
 							else
-								(printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+								(if (eq (pb-field-value ?arg "key") "from") then
+									(bind ?from-complete (pb-field-value ?arg "value"))
+									(if (eq ?from-complete "START-I") then
+										(bind ?from START)
+										(bind ?from-side INPUT)
+										else
+											(bind ?from-splitted (str-split ?from-complete "-"))
+											(bind ?from (str-join "-" (subseq$ ?from-splitted 1 2)))
+											(bind ?from-side (if (eq (nth$ 3 ?from-splitted) "I") then INPUT else OUTPUT))
+											(bind ?from (string-to-field ?from))
+									)
+								else
+									(printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
+								)
 							)
 						)
 
-						(do-for-fact ((?wm-from wm-fact)) (wm-key-prefix ?wm-from:key (create$ robot-position from ?action-specific-actor))
-							(do-for-fact ((?wm-from-side wm-fact)) (wm-key-prefix ?wm-from-side:key (create$ robot-position from-side ?action-specific-actor))
-
-								(assert
-									(wm-fact
-										(key plan-action ?goal-id ?plan-id ?next-step-id action)
-										(is-list TRUE)
-										(values move ?action-specific-actor ?wm-from:value ?wm-from-side:value ?to ?to-side)
-									)
+						(if (not (eq ?from-complete ?to-complete)) then
+							(assert
+								(wm-fact
+									(key plan-action ?goal-id ?plan-id ?next-step-id action)
+									(is-list TRUE)
+									(values move ?action-specific-actor ?from ?from-side ?to ?to-side)
 								)
-								(assert
-									(wm-fact
-										(key plan-action ?goal-id ?plan-id ?next-step-id dep)
-										(is-list TRUE)
-										(values ?parents-ids)
-									)
-								)
-								(assert
-									(wm-fact
-										(key plan-action ?goal-id ?plan-id ?next-step-id status)
-										(value FORMULATED)
-									)
-								)
-								(assert
-									(wm-fact
-										(key plan-action ?goal-id ?plan-id ?next-step-id actor)
-										(value ?action-specific-actor)
-									)
-								)
-
-								(printout t "plan-action move added: " ?action-specific-actor " [" ?action-id  "] from: " ?wm-from:value " at: " ?wm-from-side:value " to: " ?to " at: " ?to-side crlf)
-
-								; Keep track from where a robot comes from
-								(modify ?wm-from (value ?to))
-								(modify ?wm-from-side (value ?to-side))
 							)
+							(assert
+								(wm-fact
+									(key plan-action ?goal-id ?plan-id ?next-step-id dep)
+									(is-list TRUE)
+									(values ?parents-ids)
+								)
+							)
+							(assert
+								(wm-fact
+									(key plan-action ?goal-id ?plan-id ?next-step-id status)
+									(value FORMULATED)
+								)
+							)
+							(assert
+								(wm-fact
+									(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+									(value ?action-specific-actor)
+								)
+							)
+
+							(printout t "plan-action move added: " ?action-specific-actor " [" ?action-id  "] from: " ?from " at: " ?from-side " to: " ?to " at: " ?to-side crlf)
+							else
+								(assert (wm-fact (key plan-action ?goal-id ?plan-id ?next-step-id status) (value FINAL)) )
+								(printout t "plan-action move added: " ?action-specific-actor " [" ?action-id  "] is not necessary and marked as final for parent dependencies" crlf)
 						)
 					)
 
