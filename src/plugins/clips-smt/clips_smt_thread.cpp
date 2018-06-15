@@ -362,10 +362,12 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 	uint32_t action_id=0;
 	std::string wp;
+	unsigned int j;
+	bool search_for_old_position;
 
 	for(unsigned int i=1; i<=model_actions.size(); ++i){
 		switch(model_actions[i]) {
-					
+
 			case 1:	// 1.Action: Retrieve cap_carrier_cap from CS-Shelf
 
 					++action_id;
@@ -377,6 +379,26 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
+					j=i-1;
+					search_for_old_position = true;
+					// Case that robot was already used
+					while(j>0 && search_for_old_position) {
+						if(model_robots[i]==model_robots[j]) {
+							param = action->add_params();
+							param->set_key("from");
+							param->set_value(node_names[model_positions[j]]);
+
+							search_for_old_position = false;
+						}
+						j--;
+					}
+					// Case that robot was not used yet or we are in the first action
+					if(search_for_old_position) {
+						param = action->add_params();
+						param->set_key("from");
+						param->set_value(node_names[world_initPos[model_robots[i]]]);
+					}
+
 
 					++action_id;
 					action = plan->add_actions();
@@ -395,7 +417,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_key("wp");
 					param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]+std::to_string(cap_carrier_index));
 
-					break; 
+					break;
 
 			case 2:	// 2.Action: Prepare and feed CS for RETRIEVE with cap_carrier
 
@@ -408,6 +430,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
+					j=i-1;
+					search_for_old_position = true;
+					// Case that robot was already used
+					while(j>0 && search_for_old_position) {
+						if(model_robots[i]==model_robots[j]) {
+							param = action->add_params();
+							param->set_key("from");
+							param->set_value(node_names[model_positions[j]]);
+
+							search_for_old_position = false;
+						}
+						j--;
+					}
+					// Case that robot was not used yet or we are in the first action
+					if(search_for_old_position) {
+						param = action->add_params();
+						param->set_key("from");
+						param->set_value(node_names[world_initPos[model_robots[i]]]);
+					}
 
 					++action_id;
 					action = plan->add_actions();
@@ -464,6 +505,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
+					j=i-1;
+					search_for_old_position = true;
+					// Case that robot was already used
+					while(j>0 && search_for_old_position) {
+						if(model_robots[i]==model_robots[j]) {
+							param = action->add_params();
+							param->set_key("from");
+							param->set_value(node_names[model_positions[j]]);
+
+							search_for_old_position = false;
+						}
+						j--;
+					}
+					// Case that robot was not used yet or we are in the first action
+					if(search_for_old_position) {
+						param = action->add_params();
+						param->set_key("from");
+						param->set_value(node_names[world_initPos[model_robots[i]]]);
+					}
 
 					if(model_outputA[i] == products["BR"]) {
 						++action_id;
@@ -554,6 +614,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[1]);
+					j=i-1;
+					search_for_old_position = true;
+					// Case that robot was already used
+					while(j>0 && search_for_old_position) {
+						if(model_robots[i]==model_robots[j]) {
+							param = action->add_params();
+							param->set_key("from");
+							param->set_value(node_names[model_positions[j]]);
+
+							search_for_old_position = false;
+						}
+						j--;
+					}
+					// Case that robot was not used yet or we are in the first action
+					if(search_for_old_position) {
+						param = action->add_params();
+						param->set_key("from");
+						param->set_value(node_names[world_initPos[model_robots[i]]]);
+					}
 
 					if(model_outputA[i] == products["nothing"]) {
 						++action_id;
@@ -633,6 +712,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
+					j=i-1;
+					search_for_old_position = true;
+					// Case that robot was already used
+					while(j>0 && search_for_old_position) {
+						if(model_robots[i]==model_robots[j]) {
+							param = action->add_params();
+							param->set_key("from");
+							param->set_value(node_names[model_positions[j]]);
+
+							search_for_old_position = false;
+						}
+						j--;
+					}
+					// Case that robot was not used yet or we are in the first action
+					if(search_for_old_position) {
+						param = action->add_params();
+						param->set_key("from");
+						param->set_value(node_names[world_initPos[model_robots[i]]]);
+					}
 
 					++action_id;
 					action = plan->add_actions();
@@ -695,6 +793,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[6]);
+					j=i-1;
+					search_for_old_position = true;
+					// Case that robot was already used
+					while(j>0 && search_for_old_position) {
+						if(model_robots[i]==model_robots[j]) {
+							param = action->add_params();
+							param->set_key("from");
+							param->set_value(node_names[model_positions[j]]);
+
+							search_for_old_position = false;
+						}
+						j--;
+					}
+					// Case that robot was not used yet or we are in the first action
+					if(search_for_old_position) {
+						param = action->add_params();
+						param->set_key("from");
+						param->set_value(node_names[world_initPos[model_robots[i]]]);
+					}
 
 					++action_id;
 					action = plan->add_actions();
@@ -726,7 +843,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					++action_id;
 					switch(data.orders(order_id).complexity()) {
-						case 0:	
+						case 0:
 								action = plan->add_actions();
 								action->set_name("fulfill-order-c0");
 								action->set_actor("R-"+std::to_string(model_robots[i]));
@@ -746,7 +863,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 								param->set_key("wp");
 								param->set_value("WP1");
 								break;
-						case 1:	
+						case 1:
 								action = plan->add_actions();
 								action->set_name("fulfill-order-c1");
 								action->set_actor("R-"+std::to_string(model_robots[i]));
@@ -769,7 +886,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 								param->set_key("wp");
 								param->set_value("WP1");
 								break;
-						case 2:	
+						case 2:
 								action = plan->add_actions();
 								action->set_name("fulfill-order-c2");
 								action->set_actor("R-"+std::to_string(model_robots[i]));
@@ -795,7 +912,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 								param->set_key("wp");
 								param->set_value("WP1");
 								break;
-						case 3:	
+						case 3:
 								action = plan->add_actions();
 								action->set_name("fulfill-order-c3");
 								action->set_actor("R-"+std::to_string(model_robots[i]));
@@ -857,6 +974,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
+					j=i-1;
+					search_for_old_position = true;
+					// Case that robot was already used
+					while(j>0 && search_for_old_position) {
+						if(model_robots[i]==model_robots[j]) {
+							param = action->add_params();
+							param->set_key("from");
+							param->set_value(node_names[model_positions[j]]);
+
+							search_for_old_position = false;
+						}
+						j--;
+					}
+					// Case that robot was not used yet or we are in the first action
+					if(search_for_old_position) {
+						param = action->add_params();
+						param->set_key("from");
+						param->set_value(node_names[world_initPos[model_robots[i]]]);
+					}
 
 					++action_id;
 					action = plan->add_actions();
@@ -939,6 +1075,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
+					j=i-1;
+					search_for_old_position = true;
+					// Case that robot was already used
+					while(j>0 && search_for_old_position) {
+						if(model_robots[i]==model_robots[j]) {
+							param = action->add_params();
+							param->set_key("from");
+							param->set_value(node_names[model_positions[j]]);
+
+							search_for_old_position = false;
+						}
+						j--;
+					}
+					// Case that robot was not used yet or we are in the first action
+					if(search_for_old_position) {
+						param = action->add_params();
+						param->set_key("from");
+						param->set_value(node_names[world_initPos[model_robots[i]]]);
+					}
 
 					++action_id;
 					action = plan->add_actions();
@@ -1044,6 +1199,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
+					j=i-1;
+					search_for_old_position = true;
+					// Case that robot was already used
+					while(j>0 && search_for_old_position) {
+						if(model_robots[i]==model_robots[j]) {
+							param = action->add_params();
+							param->set_key("from");
+							param->set_value(node_names[model_positions[j]]);
+
+							search_for_old_position = false;
+						}
+						j--;
+					}
+					// Case that robot was not used yet or we are in the first action
+					if(search_for_old_position) {
+						param = action->add_params();
+						param->set_key("from");
+						param->set_value(node_names[world_initPos[model_robots[i]]]);
+					}
 
 					++action_id;
 					action = plan->add_actions();
@@ -1105,6 +1279,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
+					j=i-1;
+					search_for_old_position = true;
+					// Case that robot was already used
+					while(j>0 && search_for_old_position) {
+						if(model_robots[i]==model_robots[j]) {
+							param = action->add_params();
+							param->set_key("from");
+							param->set_value(node_names[model_positions[j]]);
+
+							search_for_old_position = false;
+						}
+						j--;
+					}
+					// Case that robot was not used yet or we are in the first action
+					if(search_for_old_position) {
+						param = action->add_params();
+						param->set_key("from");
+						param->set_value(node_names[world_initPos[model_robots[i]]]);
+					}
 
 					++action_id;
 					action = plan->add_actions();
@@ -1218,6 +1411,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
+					j=i-1;
+					search_for_old_position = true;
+					// Case that robot was already used
+					while(j>0 && search_for_old_position) {
+						if(model_robots[i]==model_robots[j]) {
+							param = action->add_params();
+							param->set_key("from");
+							param->set_value(node_names[model_positions[j]]);
+
+							search_for_old_position = false;
+						}
+						j--;
+					}
+					// Case that robot was not used yet or we are in the first action
+					if(search_for_old_position) {
+						param = action->add_params();
+						param->set_key("from");
+						param->set_value(node_names[world_initPos[model_robots[i]]]);
+					}
 
 					++action_id;
 					action = plan->add_actions();
@@ -1274,6 +1486,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
+					j=i-1;
+					search_for_old_position = true;
+					// Case that robot was already used
+					while(j>0 && search_for_old_position) {
+						if(model_robots[i]==model_robots[j]) {
+							param = action->add_params();
+							param->set_key("from");
+							param->set_value(node_names[model_positions[j]]);
+
+							search_for_old_position = false;
+						}
+						j--;
+					}
+					// Case that robot was not used yet or we are in the first action
+					if(search_for_old_position) {
+						param = action->add_params();
+						param->set_key("from");
+						param->set_value(node_names[world_initPos[model_robots[i]]]);
+					}
 
 					++action_id;
 					action = plan->add_actions();
@@ -1390,6 +1621,25 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
+					j=i-1;
+					search_for_old_position = true;
+					// Case that robot was already used
+					while(j>0 && search_for_old_position) {
+						if(model_robots[i]==model_robots[j]) {
+							param = action->add_params();
+							param->set_key("from");
+							param->set_value(node_names[model_positions[j]]);
+
+							search_for_old_position = false;
+						}
+						j--;
+					}
+					// Case that robot was not used yet or we are in the first action
+					if(search_for_old_position) {
+						param = action->add_params();
+						param->set_key("from");
+						param->set_value(node_names[world_initPos[model_robots[i]]]);
+					}
 
 					++action_id;
 					action = plan->add_actions();
@@ -1639,7 +1889,7 @@ ClipsSmtThread::clips_smt_init_game()
 		std::string rs2_name = team+"-RS2";
 		std::string bs_name = team+"-BS";
 
-		// Extract add_bases of RS 
+		// Extract add_bases of RS
 		if(rs1_name.compare(data.machines(i).name()) == 0) {
 			world_initInside[1] = add_bases_description_inverted[data.machines(i).loaded_with()];
 			world_initOutside[1] = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
@@ -1648,7 +1898,7 @@ ClipsSmtThread::clips_smt_init_game()
 			world_initInside[2] = add_bases_description_inverted[data.machines(i).loaded_with()];
 			world_initOutside[2] = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
 		}
-		// Extract inside of CS 
+		// Extract inside of CS
 		else if(cs1_name.compare(data.machines(i).name()) == 0) {
 			world_initInside[3] = cap_colors[data.machines(i).cs_buffered()];
 			world_initOutside[3] = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
@@ -1684,7 +1934,7 @@ void
 ClipsSmtThread::clips_smt_init_navgraph()
 {
 	// Navgraph
-	node_names[0] = team+"-ins-in";
+	node_names[0] = "START-I"; // team+"-ins-in";
 	node_names[1] = team+"-BS-O";
 	node_names[2] = team+"-CS1-I";
 	node_names[3] = team+"-CS1-O";
@@ -1696,7 +1946,7 @@ ClipsSmtThread::clips_smt_init_navgraph()
 	node_names[9] = team+"-RS2-I";
 	node_names[10] = team+"-RS2-O";
 
-	node_names_inverted[team+"-ins-in"] = 0;
+	node_names_inverted["START-I"] = 0; // team+"-ins-in"] = 0;
 	node_names_inverted[team+"-BS-O"] = 1;
 	node_names_inverted[team+"-CS1-I"] = 2;
 	node_names_inverted[team+"-CS1-O"] = 3;
@@ -1713,7 +1963,7 @@ ClipsSmtThread::clips_smt_init_navgraph()
 	MutexLocker lock(navgraph.objmutex_ptr());
 
 	// Compute distances between unconnected C-ins-in and all other machines
-	NavGraphNode ins_node(navgraph->node(node_names[0]));
+	NavGraphNode ins_node(navgraph->node(team+"-ins-in"));
 	NavGraphNode from = navgraph->closest_node(ins_node.x(), ins_node.y());
 
 	for (unsigned int i = 1; i < node_names.size(); ++i) {
@@ -3558,7 +3808,7 @@ void ClipsSmtThread::clips_smt_clear_maps()
 int ClipsSmtThread::clips_smt_rewrite_product(int base, int ring1, int ring2, int ring3, int cap)
 {
 	std::string product_description = "nothing";
-	
+
 	// cap_carrier before and after retrieve
 	// BRC1
 	if (base == 5 && ring1 == 5 && ring2 == 5 && ring3 == 5 && cap == 4) {
