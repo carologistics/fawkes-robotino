@@ -28,7 +28,6 @@
 
 
   ; production order priorities
-  ?*PRIORITY-GO-WAIT-HACK* = 10
   ?*PRIORITY-FIND-MISSING-MPS* = 110
   ?*PRIORITY-DELIVER* = 100
   ?*PRIORITY-RESET* = 98
@@ -47,6 +46,7 @@
   ?*PRIORITY-PREFILL-RS* = 40
   ?*PRIORITY-ADD-ADDITIONAL-RING-WAITING* = 20
   ?*PRIORITY-DISCARD-UNKNOWN* = 10
+  ?*PRIORITY-GO-WAIT* = 1
   ?*PRIORITY-NOTHING-TO-DO* = -1
   ;ToDo:The proirites are copied from old agent
   ;     for the current moment. Filter out uneeded
@@ -143,7 +143,7 @@
   (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
   (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT-" ?waitzone:name)
     (assert
-      (domain-object (name ?waitzone:name) (type location))
+      (domain-object (name (sym-cat ?waitzone:name)) (type waitpoint))
       (domain-fact (name location-free) (param-values (sym-cat ?waitzone:name) WAIT))
       (wm-fact (key navgraph waitzone args? name (sym-cat ?waitzone:name)) (is-list TRUE) (type INT) (values (nth$ 1 ?waitzone:pos) (nth$ 2 ?waitzone:pos)))
     )
@@ -171,68 +171,24 @@
                 (class PRODUCTION-MAINTAIN) (type MAINTAIN)))
 )
 
-(defrule goal-reasoner-create-go-wait-usless-stations
+(defrule goal-reasoner-create-wait
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key domain fact self args? r ?self))
-  (or (wm-fact (key domain fact location-free args? l ?waitpoint&C-RS1|M-RS1|C-RS1|M-RS2 side ?side&OUTPUT))
-      (wm-fact (key domain fact location-free args? l ?waitpoint&C-SS|M-SS side ?side&INPUT))
-  )
-  ; (or (wm-fact (key domain fact at args? r ?self m ?another-point&:(neq ?waitpoint ?another-point) side WAIT))
-  ;     (wm-fact (key domain fact at args? r ?self m START side INPUT)))
-  ; (wm-fact (key config rcll waitpoint-in-cyan) (value ?bot&:(neq ?self (sym-cat ?bot))))
-  ; (test (eq (sub-string 1 (str-length (str-cat ?waitpoint)) ?waitpoint) "WAIT-M"  ))
+  (domain-object (type waitpoint) (name ?waitpoint))
+  (domain-fact (name location-free) (param-values ?waitpoint WAIT))
   =>
   (printout t "Goal " GO-WAIT " formulated" crlf)
   (assert (goal (id (sym-cat GO-WAIT- (gensym*)))
                 (class GO-WAIT)
-                (priority  ?*PRIORITY-GO-WAIT-HACK*)
+                (priority  ?*PRIORITY-GO-WAIT*)
                 (parent ?production-id)
                 (params r ?self
                         point ?waitpoint
-                        point-side ?side
                 )
                 (required-resources ?waitpoint)
   ))
 )
-
-; (defrule goal-reasoner-create-go-wait-hack-cyan
-;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-;   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-;   (wm-fact (key domain fact self args? r ?self))
-;   (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
-;   (or (wm-fact (key domain fact at args? r ?self m ?another-point&:(neq ?waitpoint ?another-point) side WAIT))
-;       (wm-fact (key domain fact at args? r ?self m START side INPUT)))
-;   (wm-fact (key config rcll waitpoint-in-cyan) (value ?bot&:(neq ?self (sym-cat ?bot))))
-;   (test (eq (sub-string 1 (str-length (str-cat ?waitpoint)) ?waitpoint) "WAIT-M"  ))
-;   =>
-;   (printout t "Goal " GO-WAIT " formulated" crlf)
-;   (assert (goal (id GO-WAIT) (priority  ?*PRIORITY-GO-WAIT-HACK*)
-;                               (parent PRODUCTION-MAINTAIN)
-;                               (params r ?self
-;                                       point ?waitpoint
-;                                       )))
-;   ; (assert (goal-already-tried FILL-CAP))
-; )
-
-; (defrule goal-reasoner-create-go-wait-hack-magenta
-;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-;   (goal (id PRODUCTION-MAINTAIN) (mode SELECTED))
-;   (wm-fact (key domain fact self args? r ?self))
-;   (wm-fact (key domain fact location-free args? l ?waitpoint side WAIT))
-;   (or (wm-fact (key domain fact at args? r ?self m ?another-point&:(neq ?waitpoint ?another-point) side WAIT))
-;       (wm-fact (key domain fact at args? r ?self m START side INPUT)))
-;   (wm-fact (key config rcll waitpoint-in-magenta) (value ?bot&:(neq ?self (sym-cat ?bot))))
-;   (test (eq (sub-string 1 (str-length (str-cat ?waitpoint)) ?waitpoint) "WAIT-C"  ))
-;   =>
-;   (printout t "Goal " GO-WAIT " formulated" crlf)
-;   (assert (goal (id GO-WAIT) (priority  ?*PRIORITY-GO-WAIT-HACK*)
-;                               (parent PRODUCTION-MAINTAIN)
-;                               (params r ?self
-;                                       point ?waitpoint
-;                                       )))
-;   ; (assert (goal-already-tried FILL-CAP))
-; )
 
 (defrule goal-reasoner-create-enter-field
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))

@@ -25,6 +25,7 @@
 		robot - object
 		team-color - object
 		location - object
+    waitpoint - location
 		mps - location
 		mps-typename - object
 		mps-statename - object
@@ -254,16 +255,13 @@
 	; hence is detrimental for planning performance.
 	;
 	(:action go-wait
-		:parameters (?r - robot ?to - mps ?from - mps)
-		:precondition (and (location-free ?to WAIT)
-							(or (at ?r START INPUT)
-								(at ?r ?from WAIT)
-							)
-						)
+		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - waitpoint)
+		:precondition (and (or (at ?r ?to WAIT) (location-free ?to WAIT))
+                       (at ?r ?from ?from-side))
 		:effect (and
-					(not (at ?r START INPUT))
-					(not (at ?r ?from WAIT))
-					(location-free START INPUT)
+					(not (at ?r ?from ?from-side))
+					(location-free ?from ?from-side)
+          (not (location-free ?to WAIT))
 					(at ?r ?to WAIT))
 	)
 
