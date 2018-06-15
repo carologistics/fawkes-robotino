@@ -46,6 +46,7 @@
   ?*PRIORITY-PREFILL-RS* = 40
   ?*PRIORITY-ADD-ADDITIONAL-RING-WAITING* = 20
   ?*PRIORITY-DISCARD-UNKNOWN* = 10
+  ?*PRIORITY-WAIT* = 2
   ?*PRIORITY-GO-WAIT* = 1
   ?*PRIORITY-NOTHING-TO-DO* = -1
   ;ToDo:The proirites are copied from old agent
@@ -172,6 +173,24 @@
 )
 
 (defrule goal-reasoner-create-wait
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (wm-fact (key domain fact self args? r ?self))
+  (domain-object (type waitpoint) (name ?waitpoint))
+  (wm-fact (key domain fact at args? r ?self m ?waitpoint side WAIT))
+  =>
+  (printout t "Goal " WAIT " formulated" crlf)
+  (assert (goal (id (sym-cat WAIT- (gensym*)))
+               (class WAIT)
+               (priority ?*PRIORITY-WAIT*)
+               (parent ?production-id)
+               (params r ?self
+                       point ?waitpoint)
+               (required-resources ?waitpoint)
+  ))
+)
+
+(defrule goal-reasoner-create-go-wait
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key domain fact self args? r ?self))

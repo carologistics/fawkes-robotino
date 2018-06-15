@@ -87,10 +87,26 @@
   (modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-wait
+  ?p <- (goal (mode EXPANDED) (id ?parent))
+  ?g <- (goal (id ?goal-id) (class WAIT) (parent ?parent) (mode SELECTED)
+              (params r ?robot
+                      point ?waitpoint))
+  =>
+  (assert
+    (plan (id WAIT-PLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id WAIT-PLAN) (goal-id ?goal-id)
+                 (action-name wait)
+                 (param-names r point)
+                 (param-values ?robot ?waitpoint)
+    )
+  )
+  (modify ?g (mode EXPANDED))
+)
+
 
 (defrule goal-expander-go-wait
-   "Feed a CS with a cap from its shelf so that afterwards
-   it can directly put the cap on a product."
+  "Move to a waiting position."
    ?p <- (goal (mode EXPANDED) (id ?parent))
    ?g <- (goal (id ?goal-id) (class GO-WAIT) (mode SELECTED) (parent ?parent)
                (params r ?robot
