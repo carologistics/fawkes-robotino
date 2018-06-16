@@ -64,6 +64,7 @@ local GRIPPER_POSES = {
 }
 
 local MAX_RETRIES=3
+local MAX_VISION_RETRIES=5
 
 function no_writer()
    return not if_conveyor_pose:has_writer()
@@ -122,8 +123,7 @@ end
 
 
 fsm:define_states{ export_to=_M,
-   closure={ MAX_RETRIES=MAX_RETRIES, tolerance_ok=tolerance_ok,
-      result_ready=result_ready, fitness_ok=fitness_ok },
+   closure={ MAX_VISION_RETRIES=MAX_VISION_RETRIES,MAX_RETRIES=MAX_RETRIES, tolerance_ok=tolerance_ok, result_ready=result_ready, fitness_ok=fitness_ok },
    {"INIT", JumpState},
    {"MOVE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="CHECK_VISION", failed_to="FAILED"},
    {"CHECK_VISION", JumpState},
@@ -135,11 +135,12 @@ fsm:add_transitions{
    {"INIT", "MOVE_GRIPPER", cond=true},
    {"CHECK_VISION", "FAILED", timeout=10, desc = "Fitness threshold wasn't reached"},
    {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
-   {"CHECK_VISION", "DECIDE_WHAT", cond=result_ready, desc="Fitness threshold reached"},
+   {"CHECK_VISION", "DECIDE_WHAT", cond="result_ready()"},
    {"DECIDE_WHAT", "FINAL", cond="fitness_ok() and tolerance_ok()"},
    {"DECIDE_WHAT", "DRIVE", cond="fitness_ok() and not tolerance_ok() and vars.retries <= MAX_RETRIES"},
    {"DECIDE_WHAT", "FAILED", cond="fitness_ok() and not tolerance_ok()"},
-   {"DECIDE_WHAT", "CHECK_VISION", cond="not fitness_ok()"}
+   {"DECIDE_WHAT", "CHECK_VISION", cond="not fitness_ok() and vars.vision_retries <= MAX_VISION_RETRIES"},
+   {"DECIDE_WHAT", "FAILED", cond=true},
 }
 
 function INIT:init()
@@ -148,9 +149,11 @@ function INIT:init()
    self.fsm.vars.mps_type = parse_result.mps_type
    self.fsm.vars.mps_target = parse_result.mps_target
    self.fsm.vars.retries = 0
+   self.fsm.vars.vision_retries = 0
 end
 
 function CHECK_VISION:init()
+   self.fsm.vars.vision_retries = self.fsm.vars.vision_retries + 1
    local msg = if_conveyor_pose.SetStationMessage:new(self.fsm.vars.mps_type, self.fsm.vars.mps_target)
    if_conveyor_pose:msgq_enqueue_copy(msg)
    self.fsm.vars.msgid = msg:id()
