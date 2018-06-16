@@ -309,22 +309,10 @@
                       base-color ?base-color
                       rs-before ?rs-before
                       rs-after ?rs-after
+                      wp ?spawned-wp
        ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-  =>
- (bind ?spawned-wp NA)
- (do-for-fact ((?wp-spawned-by wm-fact))
-            (and (wm-key-prefix ?wp-spawned-by:key (create$ domain fact wp-spawned-by))
-                 (eq (wm-key-arg ?wp-spawned-by:key r) ?robot))
-   (bind ?spawned-wp (wm-key-arg ?wp-spawned-by:key wp))
- )
-
- (if (eq ?spawned-wp NA)
-  then
-   (printout t "No Spawned WP found for " ?robot " Failing goal" crlf)
-   (modify ?g (mode FINISHED) (outcome FAILED)
-              (message "Could not expand goal, No spawned WP found!!"))
-  else
+ =>
    (assert
     (plan (id FILL-RS-FROM-BS-PLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id FILL-RS-FROM-BS-PLAN) (goal-id ?goal-id)
@@ -373,9 +361,8 @@
     (plan-action (id 14) (plan-id FILL-RS-FROM-BS-PLAN) (goal-id ?goal-id)
           (action-name location-unlock)
           (param-values ?mps INPUT))
-  )
+   )
   (modify ?g (mode EXPANDED))
- )
 )
 
 
@@ -448,22 +435,10 @@
                                                       mps ?mps
                                                       cs-color ?cap-color
                                                       order ?order
+                                                      wp ?spawned-wp
                                                       ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
- (bind ?spawned-wp NA)
- (do-for-fact ((?wp-spawned-by wm-fact))
-            (and (wm-key-prefix ?wp-spawned-by:key (create$ domain fact wp-spawned-by))
-                 (eq (wm-key-arg ?wp-spawned-by:key r) ?robot))
-   (bind ?spawned-wp (wm-key-arg ?wp-spawned-by:key wp))
- )
-
- (if (eq ?spawned-wp NA)
-  then
-   (printout t "No Spawned WP found for " ?robot " Failing goal" crlf)
-   (modify ?g (mode FINISHED) (outcome FAILED)
-              (message "Could not expand goal, No spawned WP found!!"))
-  else
    (assert
     (plan (id PRODUCE-C0-PLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
@@ -520,7 +495,6 @@
           (param-values ?mps INPUT))
    )
   (modify ?g (mode EXPANDED))
-  )
 )
 
 (defrule goal-mount-first-ring
@@ -537,22 +511,11 @@
                       rs-after ?rs-after
                       rs-req ?rs-req
                       order ?order
+                      wp ?spawned-wp
+
              ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
- (bind ?spawned-wp NA)
- (do-for-fact ((?wp-spawned-by wm-fact))
-            (and (wm-key-prefix ?wp-spawned-by:key (create$ domain fact wp-spawned-by))
-                 (eq (wm-key-arg ?wp-spawned-by:key r) ?robot))
-   (bind ?spawned-wp (wm-key-arg ?wp-spawned-by:key wp))
- )
-
- (if (eq ?spawned-wp NA)
-  then
-   (printout t "No Spawned WP found for " ?robot " Failing goal" crlf)
-   (modify ?g (mode FINISHED) (outcome FAILED)
-              (message "Could not expand goal, No spawned WP found!!"))
-  else
      (assert
       (plan (id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id))
       (plan-action (id 1) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
@@ -609,7 +572,6 @@
             (param-values ?mps INPUT))
      )
     (modify ?g (mode EXPANDED))
-  )
 )
 
 (defrule goal-mount-second-ring
