@@ -66,6 +66,18 @@
 
 )
 
+(defrule goal-reasoner-create-acquire-token-spawning-master
+  "If no one is spawn-master. Try to be the spawn master"
+ (domain-facts-loaded)
+ (domain-object (name SPAWNING-MASTER) (type master-token))
+ (not (goal (class ACQUIRE-TOKEN) (params token-name SPAWNING-MASTER)))
+ (not (mutex (name SPAWNING-MASTER) (state LOCKED)))
+ =>
+ (assert (goal (id (sym-cat ACQUIRE-TOKEN- (gensym*)))
+                     (class ACQUIRE-TOKEN) 
+                     (params token-name SPAWNING-MASTER)))
+)
+
 ; ## Maintain beacon sending
 (defrule goal-reasoner-create-beacon-maintain
   (not (goal (class BEACONMAINTAIN)))
@@ -89,14 +101,18 @@
 
 ; ## Maintain wp-spawning
 (defrule goal-reasoner-create-wp-spawn-maintain
+  "Maintain Spawning only if no one else is (ie, no one is spawn-master)"
  (domain-facts-loaded)
  (not (goal (class WPSPAWN-MAINTAIN)))
+ (wm-fact (key domain fact self args? r ?robot))
+ (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?self))
  =>
  (assert (goal (id (sym-cat WPSPAWN-MAINTAIN- (gensym*)))
                (class WPSPAWN-MAINTAIN) (type MAINTAIN)))
 )
 
 (defrule goal-reasoner-create-wp-spawn-achieve
+  "Only actually spawn if you are the spawn-master"
   ?g <- (goal (id ?maintain-id) (class WPSPAWN-MAINTAIN) (mode SELECTED))
   (not (goal (class WPSPAWN-ACHIEVE)))
   (time $?now)
@@ -353,7 +369,7 @@
   "Prefilling a specific RS gets +2 priority if a started product waits for additional bases on it."
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
   (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
-  (not (goal (class FILL-RS|FILL-RS-EXPLICITLY) (mode FORMULATED)))
+  (not (goal (class FILL-RS|FILL-RS-FROM-BS) (mode FORMULATED)))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   ;--Match ring to order [if still the order needs any]
@@ -399,7 +415,7 @@
   "Prefilling a specific RS gets +1 priority if a unselected order needs additional bases from it."
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
   (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
-  (not (goal (class FILL-RS|FILL-RS-EXPLICITLY) (mode FORMULATED)))
+  (not (goal (class FILL-RS|FILL-RS-FROM-BS) (mode FORMULATED)))
   ;RS CEs
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
@@ -430,7 +446,7 @@
 )
 
 
-(defrule goal-reasoner-create-prefill-ring-station-explicitly
+(defrule goal-reasoner-create-prefill-ring-station-from-base-station
   "Insert a new base in a RS for preparation"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
@@ -460,9 +476,9 @@
           (bind ?priority-increase ?prio:value)
       )
    (retract ?prio))
-  (printout warn "Goal " FILL-RS-EXPLICITLY " formulated" crlf)
-  (assert (goal (id (sym-cat FILL-RS-EXPLICITLY- (gensym*)))
-                (class FILL-RS-EXPLICITLY)
+  (printout warn "Goal " FILL-RS-FROM-BS " formulated" crlf)
+  (assert (goal (id (sym-cat FILL-RS-FROM-BS- (gensym*)))
+                (class FILL-RS-FROM-BS)
                 (priority (+ ?priority-increase ?*PRIORITY-PREFILL-RS*))
                 (parent ?maintain-id)
                              (params robot ?robot
@@ -470,6 +486,50 @@
                                      bs ?bs
                                      bs-side INPUT
                                      base-color ?base-color
+                                     rs-before ?rs-before
+                                     rs-after ?rs-after
+                                     )
+                            (required-resources ?mps)
+  ))
+)
+
+
+(defrule goal-reasoner-create-prefill-ring-station-from-shelf
+  "Insert a new base in a RS for preparation"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  ;Robot CEs
+  (wm-fact (key domain fact self args? r ?robot))
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+  ;RS CEs
+  (wm-fact (key domain fact mps-type args? m ?mps t RS))
+  (wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
+  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
+  ;MPS-CS CEs
+  (wm-fact (key domain fact mps-type args? m ?cs t CS))
+  (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?cs spot ?spot))
+  =>
+  (bind ?priority-increase 0)
+  (do-for-all-facts ((?prio wm-fact)) (and (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
+                                        (eq (wm-key-arg ?prio:key m) ?mps))
+      (if (< ?priority-increase ?prio:value)
+         then
+          (bind ?priority-increase ?prio:value)
+      ))
+  (printout warn "Goal " FILL-RS-FROM-SHELF " formulated" crlf)
+  (assert (goal (id (sym-cat FILL-RS-FROM-SHELF- (gensym*)))
+                (class FILL-RS-FROM-SHELF)
+                (priority (+ ?priority-increase ?*PRIORITY-PREFILL-RS*))
+                (parent ?maintain-id)
+                             (params robot ?robot
+                                     mps ?mps
+                                     cs ?cs
+                                     wp ?wp
+                                     spot ?spot
                                      rs-before ?rs-before
                                      rs-after ?rs-after
                                      )
@@ -501,8 +561,7 @@
       (if (< ?priority-increase ?prio:value)
          then
           (bind ?priority-increase ?prio:value)
-      )
-   (retract ?prio))
+      ))
   (printout t "Goal " FILL-RS " formulated" crlf)
   (assert (goal (id (sym-cat FILL-RS- (gensym*)))
                 (class FILL-RS)
@@ -1157,6 +1216,8 @@
   =>
   (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
   (retract ?t)
+  (do-for-all-facts ((?prio wm-fact)) (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
+   (retract ?prio))
   (modify ?g (mode EVALUATED))
 )
 
@@ -1241,6 +1302,7 @@
   (modify ?g (mode EVALUATED))
   (modify ?m (last-achieve ?now))
 )
+
 
 (defrule goal-reasoner-evaluate-cleanup-evaluated-wp-for-order-facts
   ?wp-for-order <- (wm-fact (key evaluated wp-for-order args? wp ?wp ord ?order) (value TRUE))
