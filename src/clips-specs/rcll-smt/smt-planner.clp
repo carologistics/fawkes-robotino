@@ -508,7 +508,7 @@
 	(do-for-fact ((?wm-fact wm-fact))
 		(and
 			(wm-key-prefix ?wm-fact:key (create$ domain fact order-complexity))
-			(eq C0 (wm-key-arg ?wm-fact:key com)) ; Desiered complexity is set here
+			(eq C3 (wm-key-arg ?wm-fact:key com)) ; Desiered complexity is set here
 		)
 
 		(do-for-fact ((?wm-fact2 wm-fact))
