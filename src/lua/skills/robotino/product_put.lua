@@ -71,6 +71,12 @@ local MAX_RETRIES = 3
 
 local cfg_frame_ = "gripper"
 
+-- initial gripper poses depending on the target
+local GRIPPER_POSES = {
+  slide={x=0.05, y=0.00, z=0.035},
+  conveyor={x=0.05, y=0.00,z=0.035},
+}
+
 local align_target_frame = "gripper_fingers" -- the gripper align is made relative to this frame (according to gripper_commands_new)
 local z_movement_target_frame = "gripper" -- the gripper z movement is made relative to this frame (according to gripper_commands_new)
 local x_movement_target_frame = "gripper" -- the gripper x movement is made relative to this frame (according to griper_commands_new)
@@ -137,6 +143,7 @@ end
 fsm:define_states{ export_to=_M,
    closure={MAX_VISION_RETRIES=MAX_VISION_RETRIES,MAX_RETRIES=MAX_RETRIES,tolerance_ok=tolerance_ok,result_ready=result_ready,fitness_ok=fitness_ok},
   {"INIT", JumpState},
+  {"INIT_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="CHECK_VISION", fail_to="FAILED"},
   {"CHECK_VISION", JumpState},
   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="DECIDE_RETRY",fail_to="FAILED"},
   {"DECIDE_RETRY",JumpState},
@@ -148,7 +155,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-  {"INIT", "CHECK_VISION", true, desc="Start check vision"},
+  {"INIT", "INIT_GRIPPER", true, desc="Init gripper for product_pick"},
   {"CHECK_VISION", "FAILED", timeout=20, desc="Fitness threshold wasn't reached"},
   {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
   {"CHECK_VISION","MOVE_GRIPPER_FORWARD", cond="result_ready() and fitness_ok() and tolerance_ok()"},
@@ -166,6 +173,16 @@ function INIT:init()
   self.fsm.vars.mps_target = parse_result.mps_target
   self.fsm.vars.retries = 0
   self.fsm.vars.vision_retries = 0
+end
+
+function INIT_GRIPPER:init()
+  if self.fsm.vars.slide then
+    self.args["gripper_commands_new"] = GRIPPER_POSES["slide"]
+  else
+    self.args["gripper_commands_new"] = GRIPPER_POSES["conveyor"]
+  end
+  self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].target_frame = "gripper_home"
 end
 
 function CHECK_VISION:init()
