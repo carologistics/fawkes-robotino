@@ -46,6 +46,7 @@ skillenv.use_skill("skills.robotino.gripper_z_align")
 skillenv.use_skill("skills.robotino.ax12gripper")
 skillenv.use_skill("skills.robotino.align_tag")
 skillenv.use_skill("skills.robotino.explore_zone")
+skillenv.use_skill("skills.robotino.gripper_commands_new")
 
 -- Skills for MPS interaction
 skillenv.use_skill("skills.robotino.check_tag")

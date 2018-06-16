@@ -24,97 +24,214 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "product_put"
-fsm                = SkillHSM:new{name=name, start="DRIVE_FORWARD", debug=false}
-depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
-depends_interfaces = { }
+fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+depends_skills     = {"gripper_commands_new","motor_move"}
+depends_interfaces = {
+  {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
+  {v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
+}
 
-documentation      = [==[The robot needs to be aligned with the machine, then just drives forward
-and opens the gripper
-@param offset_x the offset_x from the navgraph point
+documentation      = [==[
+
+Parameters:
+      @param place   the name of the MPS (see navgraph e.g.: "M-BS" for base station of team magenta)
+      @param side    optional the side of the mps ("input" or "output")
+      @param slide   optional true if you want to put it on the slide
+
 ]==]
 
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
-local tfm = require("tf_module")
-local x_distance = 0.315
-if config:exists("/skills/approach_distance_conveyor/x") then
-      x_distance = config:get_float("/skills/approach_distance_conveyor/x")
+local tfm = require("fawkes.tfutils")
+local pam = require("parse_module")
+
+-- Constants
+local euclidean_fitness_threshold = 8  --threshold for euclidean fitness  (fitness should be higher)
+local gripper_tolerance_x = 0.015-- gripper x tolerance according to conveyor pose
+local gripper_tolerance_y = 0.015 -- gripper y tolerance according to conveyor pose
+local gripper_tolerance_z = 0.015 -- gripper z tolerance according to conveyor pose
+
+local gripper_pose_offset_x = 0.00  -- conveyor pose offset in x direction
+local gripper_pose_offset_y = -0.008     -- conveyor_pose offset in y direction
+local gripper_pose_offset_z = 0.065  -- conveyor_pose offset in z direction
+
+local conveyor_gripper_forward_x = 0.05 -- distance to move gripper forward after align
+local conveyor_gripper_down_z = -0.01    -- distance to move gripper down after driving over conveyor
+local conveyor_gripper_back_x = -0.06   -- distance to move gripper back after opening gripper
+local conveyor_gripper_up_z = 0.01  -- distance to move gripper up after opening the gripper
+
+local slide_gripper_forward_x = 0.04  -- distance to move gripper forward after align if the target is slide
+local slide_gripper_down_z = -0.02     -- distance to move gripper down after driving over slide
+local slide_gripper_back_x = -0.06    -- distance to move gripper back after opening the gripper if the target is slide
+local slide_gripper_up_z = 0.01 --distance to move gripper up after opening the gripper if the target is slide
+
+local drive_back_x = -0.1      -- distance to drive back after closing the gripper
+local MAX_RETRIES = 3
+
+local cfg_frame_ = "gripper"
+
+local align_target_frame = "gripper_fingers" -- the gripper align is made relative to this frame (according to gripper_commands_new)
+local z_movement_target_frame = "gripper" -- the gripper z movement is made relative to this frame (according to gripper_commands_new)
+local x_movement_target_frame = "gripper" -- the gripper x movement is made relative to this frame (according to griper_commands_new)
+
+
+
+function no_writer()
+   return not if_conveyor_pose:has_writer()
 end
-x_distance= x_distance
+
+function fitness_ok()
+  return if_conveyor_pose:euclidean_fitness() >= euclidean_fitness_threshold
+end
+
+function tolerance_ok()
+   local pose = pose_offset()
+   if if_conveyor_pose:is_busy() then
+     return false
+   end
+
+   return math.abs(pose.x) <= gripper_tolerance_x
+      and math.abs(pose.y) <= gripper_tolerance_y
+      and math.abs(pose.z) <= gripper_tolerance_z
+end
+
+function result_ready()
+  if if_conveyor_pose:is_busy()
+     or if_conveyor_pose:msgid() ~= fsm.vars.msgid
+  then return false end
+
+  local bb_stamp = fawkes.Time:new(if_conveyor_pose:input_timestamp(0), if_conveyor_pose:input_timestamp(1))
+  if not tf:can_transform("conveyor_pose", "gripper_fingers", bb_stamp) then
+    return false
+  end
+
+  local transform = fawkes.tf.StampedTransform:new()
+  tf:lookup_transform("conveyor_pose", "gripper_fingers", transform)
+  if transform.stamp:in_usec() < bb_stamp:in_usec() then
+    return false
+  end
+  return true
+end
+
+function pose_offset()
+  local target_pos = { x = gripper_pose_offset_x,
+                       y = gripper_pose_offset_y,
+                       z = gripper_pose_offset_z,
+                       ori = { x=0, y = 0, z= 0, w= 0}
+
+   }
+
+   local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper_fingers")
+   print_info("product_pick: target_pos is x = %f, y = %f, z = %f", target_pos.x, target_pos.y, target_pos.z)
+   print_info("product_pick: transformed_pos is x = %f, y = %f,z = %f", transformed_pos.x, transformed_pos.y, transformed_pos.z)
+
+   return { x = transformed_pos.x,
+            y = transformed_pos.y,
+            z = transformed_pos.z,
+  }
+
+end
 
 fsm:define_states{ export_to=_M,
-   {"DRIVE_FORWARD", SkillJumpState, skills={{approach_mps}},
-      final_to="OPEN_GRIPPER", fail_to="FAILED"},
-   {"OPEN_GRIPPER", SkillJumpState, skills={{ax12gripper}},
-      final_to="WAIT", fail_to="MOVE_BACK_FAILED"},
-   {"WAIT", JumpState},
-   {"MOVE_BACK", SkillJumpState, skills={{motor_move}},
-      final_to="CLOSE_GRIPPER", fail_to="CLOSE_GRIPPER"},
-   {"MOVE_BACK_FAILED", SkillJumpState, skills={{motor_move}},
-      final_to="FAILED", fail_to="FAILED"},
-   {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}},
-      final_to="RESET_Z_POS", fail_to="RESET_Z_POS"},
-   {"SLAP_LEFT", SkillJumpState, skills={{ax12gripper}},
-      final_to="OPEN_FROM_SLAP_LEFT", fail_to="OPEN_FROM_SLAP_LEFT"},
-   {"WAIT_SLAP_LEFT", JumpState},
-   {"OPEN_FROM_SLAP_LEFT", SkillJumpState, skills={{ax12gripper}},
-      final_to="SLAP_RIGHT", fail_to="SLAP_RIGHT"},
-   {"SLAP_RIGHT", SkillJumpState, skills={{ax12gripper}},
-      final_to="OPEN_FROM_SLAP_RIGHT", fail_to="OPEN_FROM_SLAP_RIGHT"},
-   {"WAIT_SLAP_RIGHT", JumpState},
-   {"OPEN_FROM_SLAP_RIGHT", SkillJumpState, skills={{ax12gripper}},
-      final_to="WAIT_FOR_GRIPPER", fail_to="WAIT_FOR_GRIPPER"},
-   {"WAIT_FOR_GRIPPER", JumpState},
-   {"RESET_Z_POS", SkillJumpState, skills={{ax12gripper}},
-      final_to="FINAL", fail_to="FINAL"},
+   closure={MAX_RETRIES=MAX_RETRIES,tolerance_ok=tolerance_ok,result_ready=result_ready,fitness_ok=fitness_ok},
+  {"INIT", JumpState},
+  {"CHECK_VISION", JumpState},
+  {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="DECIDE_RETRY",fail_to="FAILED"},
+  {"DECIDE_RETRY",JumpState},
+  {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
+  {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="FAILED"},
+  {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "DRIVE_BACK", fail_to="FAILED"},
+  {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CLOSE_GRIPPER", fail_to="FAILED"},
+  {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
---   {"WAIT", "MOVE_BACK", timeout=0.5, desc="wait for gripper to open"}
-   {"WAIT", "SLAP_LEFT", timeout=0.5, desc="wait for gripper to open, then slap left"},
-   {"WAIT_FOR_GRIPPER", "MOVE_BACK", timeout=0.5}
+  {"INIT", "CHECK_VISION", true, desc="Start check vision"},
+  {"CHECK_VISION", "FAILED", timeout=20, desc="Fitness threshold wasn't reached"},
+  {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
+  {"CHECK_VISION","MOVE_GRIPPER_FORWARD", cond="result_ready() and fitness_ok() and tolerance_ok()"},
+  {"CHECK_VISION", "GRIPPER_ALIGN", cond="result_ready() and fitness_ok()"},
+  {"CHECK_VISION", "CHECK_VISION", cond="result_ready() and not fitness_ok()"},
+  {"DECIDE_RETRY", "CHECK_VISION", cond="vars.retries <= MAX_RETRIES"},
+  {"DECIDE_RETRY", "MOVE_GRIPPER_FORWARD", cond=true},
 }
 
-function DRIVE_FORWARD:init()
-   self.args["approach_mps"].x = x_distance - self.fsm.vars.offset_x
-   self.args["approach_mps"].use_conveyor = true
+function INIT:init()
+  if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
+  local parse_result = pam.parse_to_type_target(if_conveyor_pose,self.fsm.vars.place,self.fsm.vars.side,self.fsm.vars.shelf,self.fsm.vars.slide)
+  if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.SetStationMessage:new(parse_result.mps_type,parse_result.mps_target))
+  self.fsm.vars.mps_type = parse_result.mps_type
+  self.fsm.vars.mps_target = parse_result.mps_target
+  self.fsm.vars.retries = 0
+  self.fsm.vars.vision_retries = 0
+end
+
+function CHECK_VISION:init()
+  self.fsm.vars.vision_retries = self.fsm.vars.vision_retries + 1
+  local msg = if_conveyor_pose.SetStationMessage:new(self.fsm.vars.mps_type, self.fsm.vars.mps_target)
+  if_conveyor_pose:msgq_enqueue_copy(msg)
+  self.fsm.vars.msgid = msg:id()
+end
+
+function GRIPPER_ALIGN:init()
+  local pose = pose_offset(self)
+  self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].x = pose.x
+  self.args["gripper_commands_new"].y = pose.y
+  self.args["gripper_commands_new"].z = pose.z
+  self.args["gripper_commands_new"].target_frame = align_target_frame
+  self.fsm.vars.retries = self.fsm.vars.retries + 1
+end
+
+function MOVE_GRIPPER_FORWARD:init()
+  self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].target_frame = x_movement_target_frame
+
+  if self.fsm.vars.slide then
+    self.args["gripper_commands_new"].x = slide_gripper_forward_x
+    self.args["gripper_commands_new"].z = slide_gripper_down_z
+  else
+    self.args["gripper_commands_new"].x = conveyor_gripper_forward_x
+    self.args["gripper_commands_new"].z = conveyor_gripper_down_z
+  end
 end
 
 function OPEN_GRIPPER:init()
-   self.args["ax12gripper"].command = "OPEN"
-   printf("open gripper")
-end
-
-function MOVE_BACK:init()
-   self.args["motor_move"].x = -0.2
-end
-
-function MOVE_BACK_FAILED:init()
-   self.args["motor_move"].x = -0.2
+  self.args["gripper_commands_new"].command = "OPEN"
 end
 
 function CLOSE_GRIPPER:init()
-   self.args["ax12gripper"].command = "CLOSE"
-   printf("close gripper")
+  self.args["gripper_commands_new"].command = "CLOSE"
 end
 
-function RESET_Z_POS:init()
-   self.args["ax12gripper"].command = "RESET_Z_POS"
+function MOVE_GRIPPER_BACK:init()
+  self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].target_frame = x_movement_target_frame
+  if self.fsm.vars.slide then
+    self.args["gripper_commands_new"].x = slide_gripper_back_x
+    self.args["gripper_commands_new"].z = slide_gripper_up_z
+  else
+    self.args["gripper_commands_new"].x = conveyor_gripper_back_x
+    self.args["gripper_commands_new"].z = conveyor_gripper_up_z
+  end
+
 end
 
-function SLAP_LEFT:init()
-   self.args["ax12gripper"].command = "SLAP_LEFT"
+function DRIVE_BACK:init()
+  self.args["motor_move"].x = drive_back_x
 end
 
-function SLAP_RIGHT:init()
-   self.args["ax12gripper"].command = "SLAP_RIGHT"
+function cleanup()
+   if (fsm.vars.disable_realsense_afterwards == nil or fsm.vars.disable_realsense_afterwards) then
+     if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
+   end
 end
 
-function OPEN_FROM_SLAP_LEFT:init()
-   self.args["ax12gripper"].command = "OPEN"
+function FAILED:init()
+   cleanup()
 end
 
-function OPEN_FROM_SLAP_RIGHT:init()
-   self.args["ax12gripper"].command = "OPEN"
+function FINAL:init()
+   cleanup()
 end

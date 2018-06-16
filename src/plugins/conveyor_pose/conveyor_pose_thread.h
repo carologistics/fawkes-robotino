@@ -24,183 +24,240 @@
 #define _CONVEYOR_POSE_THREAD_
 
 #include <core/threading/thread.h>
+#include <core/threading/mutex.h>
+#include <core/threading/mutex_locker.h>
+
 #include <aspect/blocked_timing.h>
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
 #include <aspect/blackboard.h>
 #include <aspect/pointcloud.h>
 #include <aspect/tf.h>
+#include <aspect/syncpoint_manager.h>
+
+#include <interfaces/ConveyorPoseInterface.h>
+
+#include <config/change_handler.h>
 
 #include <plugins/ros/aspect/ros.h>
 
-#include <interfaces/SwitchInterface.h>
-#include <interfaces/Position3DInterface.h>
-#include <interfaces/LaserLineInterface.h>
-
-#include "visualisation.hpp"
+//#include <pcl/filters/uniform_sampling.h>
+#include <pcl/features/normal_3d_omp.h>
 
 #include <string>
 #include <map>
+#include <atomic>
+#include <set>
+#include <array>
 
-typedef pcl::PointXYZ Point;
-typedef pcl::PointCloud<Point> Cloud;
-typedef typename Cloud::Ptr CloudPtr;
-typedef typename Cloud::ConstPtr CloudConstPtr;
+
+
+#define CFG_PREFIX "/plugins/conveyor_pose"
+
+class RecognitionThread;
+
+namespace fawkes {
+    class ConveyorPoseInterface;
+    class SwitchInterface;
+    class LaserLineInterface;
+}
 
 class ConveyorPoseThread
 : public fawkes::Thread,
   public fawkes::BlockedTimingAspect,
   public fawkes::LoggingAspect,
   public fawkes::ConfigurableAspect,
+  public fawkes::ConfigurationChangeHandler,
   public fawkes::BlackBoardAspect,
   public fawkes::PointCloudAspect,
   public fawkes::ROSAspect,
-  public fawkes::TransformAspect
+  public fawkes::TransformAspect,
+  public fawkes::SyncPointManagerAspect
 {
-private:
-  class pose {
-  public:
-    bool valid = true;
-    fawkes::tf::Vector3 translation;
-    fawkes::tf::Quaternion rotation;
-    pose() {
-      translation.setX(0);
-      translation.setY(0);
-      translation.setZ(0);
-      rotation.setX(0);
-      rotation.setY(0);
-      rotation.setZ(0);
-      rotation.setW(0);
-    }
-  };
-  Visualisation * visualisation_;
+public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+  typedef pcl::PointXYZ Point;
+  typedef pcl::PointCloud<Point> Cloud;
+  typedef Cloud::Ptr CloudPtr;
+  typedef Cloud::ConstPtr CloudConstPtr;
+
+  ConveyorPoseThread();
+
+  virtual void init() override;
+  virtual void loop() override ;
+  virtual void finalize() override;
+
+  float cloud_resolution() const;
+  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
+
+  void set_cg_thread(RecognitionThread *cg_thread);
+  void bb_set_busy(bool busy);
+
+  CloudPtr model_;
+  CloudPtr scene_;
+
+  fawkes::Mutex cloud_mutex_;
+  fawkes::Mutex bb_mutex_;
+
+  std::atomic_bool have_laser_line_;
+
+  fawkes::RefPtr<Cloud> cloud_out_raw_;
+  fawkes::RefPtr<Cloud> cloud_out_trimmed_;
+  fawkes::RefPtr<Cloud> cloud_out_model_;
+
+  std::unique_ptr<fawkes::tf::Stamped<fawkes::tf::Pose>> result_pose_;
+  std::atomic<double> result_fitness_;
+
+  fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_laser_odom_;
+
+  bool cfg_debug_mode_;
+
+  const std::string syncpoint_clouds_ready_name;
+
+  bool is_target_shelf();
+
+private:
   // cfg values
+  std::string cfg_if_prefix_;
   std::string cloud_in_name_;
-  std::string cloud_out_inter_1_name_;
-  std::string cloud_out_result_name_;
-  std::string cfg_bb_conveyor_pose_name_;
-  std::string cfg_bb_switch_name_;
+  const std::string cloud_out_raw_name_;
+  const std::string cloud_out_trimmed_name_;
   std::string cfg_bb_realsense_switch_name_;
   std::string conveyor_frame_id_;
   std::vector<std::string> laserlines_names_;
 
-  bool cfg_pose_close_if_no_new_pointclouds_;
-//  std::string bb_tag_name_;
-  float cfg_pose_diff_;
-  float vis_hist_angle_diff_;
+  fawkes::RefPtr<fawkes::SyncPoint> syncpoint_clouds_ready;
 
-  float cfg_gripper_y_min_;
-  float cfg_gripper_y_max_;
-  float cfg_gripper_z_max_;
-  float cfg_gripper_slice_y_min_;
-  float cfg_gripper_slice_y_max_;
+  CloudPtr trimmed_scene_;
 
-  float cfg_front_space_;
-  float cfg_front_offset_;
+  fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
+  fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
 
-  float cfg_left_cut_;
-  float cfg_right_cut_;
-  float cfg_left_cut_no_ll_;
-  float cfg_right_cut_no_ll_;
+  int cfg_force_shelf_;
 
-  float cfg_plane_dist_threshold_;
+  void update_station_information(fawkes::ConveyorPoseInterface::SetStationMessage &msg);
+  std::string get_model_path(fawkes::ConveyorPoseInterface *iface, fawkes::ConveyorPoseInterface::MPS_TYPE, fawkes::ConveyorPoseInterface::MPS_TARGET);
 
-  float cfg_plane_height_minimum_;
-  float cfg_plane_width_minimum_;
-  float cfg_normal_z_minimum_;
+  //Mapping from {Type,Target} to its corresponding model path
+  std::map<std::pair<fawkes::ConveyorPoseInterface::MPS_TYPE,fawkes::ConveyorPoseInterface::MPS_TARGET>, std::string> type_target_to_path_;
 
-  float cfg_cluster_tolerance_;
-  float cfg_cluster_size_min_;
-  float cfg_cluster_size_max_;
+  // Mapping from station name to preprocessed pointcloud model
+  std::map<std::pair<fawkes::ConveyorPoseInterface::MPS_TYPE,fawkes::ConveyorPoseInterface::MPS_TARGET>, CloudPtr> type_target_to_model_;
 
-  float cfg_voxel_grid_leave_size_;
+  RecognitionThread *recognition_thread_;
 
-  uint cfg_allow_invalid_poses_;
+  bool cfg_record_model_;
+  std::string cfg_model_origin_frame_;
+  std::string cfg_record_path_;
+
+
+  std::atomic<float> cfg_left_cut_;
+  std::atomic<float> cfg_right_cut_;
+  std::atomic<float> cfg_top_cut_;
+  std::atomic<float> cfg_bottom_cut_;
+  std::atomic<float> cfg_front_cut_;
+  std::atomic<float> cfg_back_cut_;
+
+  std::atomic<float> cfg_left_cut_no_ll_;
+  std::atomic<float> cfg_right_cut_no_ll_;
+  std::atomic<float> cfg_top_cut_no_ll_;
+  std::atomic<float> cfg_bottom_cut_no_ll_;
+  std::atomic<float> cfg_front_cut_no_ll_;
+  std::atomic<float> cfg_back_cut_no_ll_;
+
+  std::atomic<float> cfg_shelf_left_cut_;
+  std::atomic<float> cfg_shelf_right_cut_;
+  std::atomic<float> cfg_shelf_top_cut_;
+  std::atomic<float> cfg_shelf_bottom_cut_;
+  std::atomic<float> cfg_shelf_front_cut_;
+  std::atomic<float> cfg_shelf_back_cut_;
+
+  std::atomic<float> cfg_shelf_left_cut_no_ll_;
+  std::atomic<float> cfg_shelf_right_cut_no_ll_;
+  std::atomic<float> cfg_shelf_top_cut_no_ll_;
+  std::atomic<float> cfg_shelf_bottom_cut_no_ll_;
+  std::atomic<float> cfg_shelf_front_cut_no_ll_;
+  std::atomic<float> cfg_shelf_back_cut_no_ll_;
+
+
+  std::atomic<float> cfg_shelf_left_off_;
+  std::atomic<float> cfg_shelf_middle_off_;
+  std::atomic<float> cfg_shelf_right_off_;
+
+  std::atomic<float> cfg_voxel_grid_leaf_size_;
+
+  std::map<fawkes::ConveyorPoseInterface::MPS_TARGET, std::array<std::atomic<float>, 3>> cfg_target_hint_;
+  std::map<fawkes::ConveyorPoseInterface::MPS_TYPE, std::array<std::atomic<float>, 3>> cfg_type_offset_;
 
   // state vars
-  bool enable_pose_;
   bool cfg_enable_switch_;
-  bool cfg_debug_mode_;
-  bool cfg_enable_product_removal_;
   bool cloud_in_registered_;
-  bool cfg_use_visualisation_;
   pcl::PCLHeader header_;
-  std::pair<fawkes::tf::Vector3, fawkes::tf::Quaternion> pose_;
-  int vis_hist_;
-
-  size_t cfg_pose_avg_hist_size_;
-  size_t cfg_pose_avg_min_;
-
-  std::list<pose> poses_;
 
   // point clouds from pcl_manager
   fawkes::RefPtr<const Cloud> cloud_in_;
-  fawkes::RefPtr<Cloud> cloud_out_inter_1_;
-  fawkes::RefPtr<Cloud> cloud_out_result_;
 
   // interfaces write
-  fawkes::SwitchInterface * bb_enable_switch_;
-  fawkes::Position3DInterface * bb_pose_;
+  fawkes::SwitchInterface *bb_enable_switch_;
+  fawkes::ConveyorPoseInterface *bb_pose_;
 
   // interfaces read
   std::vector<fawkes::LaserLineInterface * > laserlines_;
   fawkes::SwitchInterface *realsense_switch_;
   fawkes::Time wait_start_;
   fawkes::Time wait_time_;
+
 //  fawkes::Position3DInterface * bb_tag_;
 
  /**
   * check if the pointcloud is available
   */
- bool pc_in_check();
- void bb_pose_conditional_open();
- void bb_pose_conditional_close();
+ bool update_input_cloud();
 
- void pose_add_element(pose element);
- bool pose_get_avg(pose & out);
-
- void if_read();
+ void bb_update_switch();
  bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
  Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface * ll);
+ fawkes::tf::Stamped<fawkes::tf::Pose> laserline_get_center(fawkes::LaserLineInterface *ll);
+
+ void set_initial_tf_from_laserline(fawkes::LaserLineInterface *ll, fawkes::ConveyorPoseInterface::MPS_TYPE mps_type,fawkes::ConveyorPoseInterface::MPS_TARGET mps_target);
 
  bool is_inbetween(double a, double b, double val);
 
- CloudPtr cloud_remove_gripper(CloudPtr in);
- CloudPtr cloud_remove_offset_to_bottom(CloudPtr in);
- CloudPtr cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll = NULL, bool use_ll = false);
- CloudPtr cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll);
- CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);
+ CloudPtr cloud_trim(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll);
+
  boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
  CloudPtr cloud_voxel_grid(CloudPtr in);
 
- std::vector<CloudPtr> cluster_split(CloudPtr in, boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices);
- CloudPtr cluster_find_biggest(std::vector<CloudPtr> clouds_in, size_t & id);
+ void pose_write();
+ void record_model();
 
- void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
+ virtual void config_value_erased(const char *path) override;
+ virtual void config_tag_changed(const char *new_tag) override;
+ virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v) override;
+ virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v) override;
 
- pose calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal);
- void tf_send_from_pose_if(pose pose);
- void pose_write(pose pose);
- Eigen::Quaternion<float> averageQuaternion(Eigen::Vector4f &cumulative, Eigen::Quaternion<float> newRotation, Eigen::Quaternion<float> firstRotation, float addDet);
- Eigen::Quaternion<float> normalizeQuaternion(float x, float y, float z, float w);
- Eigen::Quaternion<float> inverseSignQuaternion(Eigen::Quaternion<float> q);
- bool areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quaternion<float> q2);
+ template<typename T>
+ inline void change_val(const std::string &setting, std::atomic<T> &var, const T& val)
+ {
+   if (var != val) {
+     logger->log_info(name(), "Changing %s from %s to %s",
+                      setting.c_str(), std::to_string(var).c_str(), std::to_string(val).c_str());
+     var = val;
+   }
+ }
 
 protected:
-  virtual void run() { Thread::run(); }
-  void pose_publish_tf(pose pose);
+  virtual void run() override
+  { Thread::run(); }
+
+  void pose_publish_tf(const fawkes::tf::Stamped<fawkes::tf::Pose> &pose);
   void start_waiting();
   bool need_to_wait();
 
-public:
-  ConveyorPoseThread();
-
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
-
 };
 
+Eigen::Matrix4f pose_to_eigen(const fawkes::tf::Pose &pose);
+fawkes::tf::Pose eigen_to_pose(const Eigen::Matrix4f &m);
 
 #endif

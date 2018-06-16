@@ -3,31 +3,178 @@
 ---
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
 ---
-conveyor_pose:
+plugins/conveyor_pose:
   # sets the debug mode within the plugin, which eases the debugging,
   # which results in the following:
-  # - the switch if is ignored, the plugin i running always
+  # - the switch if is ignored, the plugin is always running
   debug: false
-  # the point cloud that is used to detect the belt
+
+  # forces ConveyorPosePlugin to think it's MPS_TARGET is a shelf
+  # This works only in debug mode
+  # 0 -> LEFT
+  # 1 -> MIDDLE
+  # 2 -> RIGHT
+  # everything else ineffective
+  force_shelf: -1
+
+  # the point cloud that is used for detection (i.e. the scene)
   cloud_in: "/camera/depth/points"
+
+  # Write trimmed scene cloud into model_file (see options below for file name and
+  # trimming parameters)
+  # This completely changes the mode of operation to just record pointclouds,
+  # no recognition is done when this is enabled.
+  # If the target file already exists, an increasing integer is appended until
+  # a file is found that doesn't exist, yet.
+  record_model: false
+
+  # If recording is enabled, a PCD file is written to CONFDIR "/" record path
+  # (e.g.: conveyor_model_.pcd)
+  record_path: "conveyor_model.pcd"
+
+  # When recording a model (see above), transform the recorded model into this frame before
+  # saving it. The robot should be positioned so that this frame is at the desired origin of
+  # the conveyor (align the conveyor cloud & the TF in rviz)
+  # Normally this should be gripper_fingers, except for the middle shelf should be shelf_record
+  model_origin_frame: "gripper_fingers_record"
+
+
+  # Paths to the reference models are looked up in CONFDIR (e.g. fawkes-robotino/cfg)
+  # Specific overrides can be added under <MPS_TYPE>_<MPS_TARGET> keys, e.g:
+  # reference_models/BASE_STATION_INPUT_CONVEYOR: "conveyor_pcls/pappteil.pcd"
+  reference_models:
+    default: "conveyor_pcls/default.pcd"
+    input_conveyor: "conveyor_pcls/with_cone.pcd"
+    output_conveyor: "conveyor_pcls/no_cone.pcd"
+    shelf_left: "conveyor_pcls/shelf_left.pcd"
+    shelf_middle: "conveyor_pcls/shelf_middle.pcd"
+    shelf_right: "conveyor_pcls/shelf_right.pcd"
+    slide: "conveyor_pcls/slide.pcd"
+
+  voxel_grid:
+    # Downsample all point clouds to this resolution
+    leaf_size: 0.001
+
+  icp:
+    # Recognition parameters
+
+    # Ignore model point if it doesn't have a scene correspondence within this radius
+    # ATTENTION: this is very sensitive to the error of the initial estimate!
+    max_correspondence_dist: 0.03
+
+    # ICP stops iterating if the last transformation was shorter than this distance.
+    # If this value is reached, max_correspondence_dist is multiplied by refinement_factor.
+    transformation_epsilon: 0.001
+
+    # Multiply max_correspondence_dist by this factor if transformation_epsilon was reached.
+    # This is needed to be able to ignore model points that are invisible in the scene due to
+    # self-occlusion.
+    # Range: (0,1)
+    refinement_factor: 0.85
+
+    # Maximum number of (internal!) ICP iterations per recognition loop
+    max_iterations: 2
+
+    # Minimum number of recognition loops before the first hypothesis verification is performed
+    min_loops: 5
+
+    # Maximum number of recognition loops before either stopping or restarting with a new scene
+    max_loops: 30
+
+    # Restart with a new scene when max_loops have been run, even if a match has been found
+    # (i.e. run until the whole plugin is disable via the switch interface)
+    # If false, the recognition loop stops if a match has been found within max_loops.
+    auto_restart: false
+
+
+    # Hypothesis Verification
+
+    # Model points that have scene points within this radius are considered supported.
+    # Those that have none are penalized. See the support/penalty thresholds below.
+    # Pay attention to the voxel_grid/leaf_size value above. The closer this gets to the
+    # leaf size (i.e. the cloud resolution), the unlikelier it is to match anything.
+    hv_inlier_threshold: 0.004
+
+    # Max. proportion of penalized model points for a match
+    hv_penalty_threshold: 0.15
+
+    # Min. proportion of supported model points for a match
+    hv_support_threshold: 0.65
+
+    # For the shelf recognition, hypothesis verifications needs to be lesst strict.
+    # The following values only apply for hv for shelf.
+    hv_shelf_inlier_threshold: 0.004
+
+    # Max. proportion of penalized model points for a match
+    hv_shelf_penalty_threshold: 0.15
+
+    # Min. proportion of supported model points for a match
+    hv_shelf_support_threshold: 0.65
+
+
+    # Offset of interesting objects relative to the center of the laser line
+    # The coordinate frame is oriented like the left laser-line endpoint, with
+    # the Y axis pointing to the right endpoint and the X axis facing the robot.
+    #
+    #  ^
+    # z|
+    #  |    y
+    #  |----->
+    #  \
+    #   \ x
+    #    V
+    hint:
+      default:
+        x: -0.005
+        y: 0.03
+        z: 0.65
+
+      # Configure the initial estimate for the INPUT side (uneven tag ID)
+      # On the OUTPUT side, the y value is multiplied by -1.
+      input_conveyor:
+        x: -0.005
+        y: -0.025
+        z: 0.65
+      left_shelf:
+        x: -0.01
+        y: -0.01
+        z: 0.655
+      middle_shelf:
+        x: -0.01
+        y: 0.10
+        z: 0.655
+      right_shelf:
+        x: -0.01
+        y: 0.19
+        z: 0.655
+      slide:
+        x: 0.00
+        y: 0.27
+        z: 0.65
+
+
+    # MPS-type-specific offset added to the input_conveyor hint configured above
+    #
+    # As above: Given value is used on the INPUT side.
+    # On the OUTPUT side, the y value is multiplied by -1.
+    conveyor_offset:
+      cap_station:
+        y: 0
+      ring_station:
+        y: 0
+      delivery_station:
+        y: 0
+      base_station:
+        y: 0
+      storage_station:
+        y: 0
 
   if:
     # the prefix used for all interfaces
     prefix: conveyor_pose
 
-    # the output point clouds
-    cloud_out_intermediet: inter
-    cloud_out_result: result
-  
-    # the position 3d interface of the result
-    pose_of_beld: pose
-    # should the pose interface be closed if no new pointcloud is availabe.
-    # This would result that the if would have no writer after starup and at some ocasions during runtime.
-    pose_close_if_new_pc: false
     # the switch interface
     switch: switch
-    # the dynamic config interface
-    config: config
     # the laser lines, they don't use the prefix
     laser_lines: [
       "/laser-lines/1",
@@ -39,56 +186,71 @@ conveyor_pose:
       "/laser-lines/7",
       "/laser-lines/8"
     ]
-  
+
   conveyor_frame_id: conveyor_pose
   switch_default: false
-  product_removal_default: false
-  use_visualisation: false
+
+  # The point cloud is cut into a cube, such that all points outside the cube are removed.
+  # The cube is limited by the left, right, top, bottom, front and back_cut values.
+  # The namings are from the point of view of the realsense camera
+  #
+  # The without_ll values are given and applied
+  # in the frame of the conveyor cam.
+  # From the point of view of the realsense cam, the coordinate axes are:
+  # 
+  #             z (front, bottom)
+  #            /
+  #          /
+  #        /
+  #       *-------x (left, right)
+  #       |
+  #       |
+  #       |
+  #       |
+  #       y (top, bottom)
+  #
+  #
+  # The with_ll values are given and applied in the frame of the
+  # initial_tf guess. However, to minimize computational cost and 
+  # since rotation of initial_tf to conveyor_cam is small, rotation
+  # is NEGLECTED!
+  with_ll:  #THESE VALUES IF LASERLINE AVAILABLE
+    left_cut: -0.065
+    right_cut: 0.065
+    top_cut: -0.02
+    bottom_cut: 0.055
+    front_cut: -0.045
+    back_cut: 0.045
+  without_ll: #THESE VALUES IF LASERLINE NOT AVAILABLE
+    left_cut: -0.075
+    right_cut: 0.075
+    top_cut: -0.02
+    bottom_cut: 0.055
+    front_cut: 0.01
+    back_cut: 0.5
+  shelf:
+    with_ll: # THESE VALUES IF LASERLINE IS AVAILABLE
+      left_cut: -0.055 #-0.035
+      right_cut: 0.095 #0.065
+      top_cut: 0.005
+      bottom_cut: 0.09
+      front_cut: -0.02
+      back_cut: 0.10
+    without_ll: #THESE VALUES IF NOT
+      left_cut: -0.05
+      right_cut: 0.05
+      top_cut: -0.02
+      bottom_cut: 0.05
+      front_cut: 0.01
+      back_cut: 0.5
+
+    #The following values describe the x offset of the cutbox, relative to the initial estimate.
+    #Eventhough the cutboxes used for shelf icp are of similar shape, they are at different x
+    #position. 
+    left_off: -0.03
+    middle_off: 0.10
+    right_off: 0.0
 
 
-  # the maximum allowed distance that the vis_hist is not resetet
-  vis_hist:
-    # distance in x, y, z
-    diff_pose: 0.1
-    # distance in angle in rad
-    diff_angle: 0.2
-    average:
-      # number of used elements for avg calculation
-      size: 10
-      # the minimum of poses used for a successfull used average
-      used_min: 3
-    allow_invalid_poses: 3
 
-  # the dimensions of the gripper in the point cloud (check rotation of actual tf)
-  gripper:
-    y_min: -0.055
-    y_max: -0.015
-    z_max: 0.135
-    slice:
-      y_min: -0.025
-      y_max: 0.03
-  front:
-    # the distance that is not pruned at the front of the MPS
-    space: 0.6
-    # this should be a tf, but I did not get it work :(
-    offset: 0.005
-  bottom:
-    offset: 0.06
-  left_right:
-    left_cut: 0.1
-    right_cut: 0.1
-    left_cut_no_ll: 0.1
-    right_cut_no_ll: 0.1
-  plane:
-    # the allowed noise for a plane
-    dist_threshold: 0.0025
-    normal_z_minimum: 0.1
-    height_minimum: 0.025
-    width_minimum: 0.025
-  cluster:
-    tolerance: 0.0015
-    size_min: 100
-    size_max: 25000
-  voxel_grid:
-    leave_size: 0.001
 

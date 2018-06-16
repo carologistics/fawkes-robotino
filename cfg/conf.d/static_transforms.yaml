@@ -56,7 +56,7 @@ plugins/static-transforms:
       child_frame: !frame conveyor_calib
       trans_x: 0.114
       trans_y: 0
-      trans_z: 0
+      trans_z: 0.03
 
     cam_conveyor:
       frame: !frame gripper
@@ -68,10 +68,40 @@ plugins/static-transforms:
       rot_pitch: 0
       rot_roll: -1.57
 
+    # This frame can be used by conveyor_pose to align the recorded model
+    # using the gripper fingers
+    fingers_record:
+      frame: !frame gripper
+      child_frame: !frame gripper_fingers_record
+      trans_x: 0.2
+      trans_y: 0
+      trans_z: -0.04
+      rot_yaw: -1.57
+      rot_pitch: 0
+      rot_roll: -1.57
+
     fingers:
       frame: !frame gripper
       child_frame: !frame gripper_fingers
       trans_x: 0.2
       trans_y: 0
       trans_z: -0.04
+
+    # Pose of the fingers when the gripper is at gripper_home
+    fingers_home:
+      frame: !frame gripper_home
+      child_frame: !frame fingers_home
+      trans_x: 0.2
+      trans_y: 0
+      trans_z: -0.04
+
+    shelf_record:
+      frame: !frame gripper
+      child_frame: !frame shelf_record
+      trans_x: 0.2
+      trans_y: 0.06
+      trans_z: -0.04
+      rot_yaw: -1.57
+      rot_pitch: 0
+      rot_roll: -1.57
 

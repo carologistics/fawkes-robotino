@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="ConveyorPoseInterface" author="Victor Mataré" year="2018">
+<constants>
+ <enum name="MPS_TYPE">
+   <comment>The different types of machines.</comment>
+   <item name="NO_STATION">No station set.</item>
+   <item name="BASE_STATION">Base station.</item>
+   <item name="CAP_STATION">Cap station.</item>
+   <item name="DELIVERY_STATION">Delivery station.</item>
+   <item name="RING_STATION">Ring station.</item>
+   <item name="STORAGE_STATION">Storage Station.</item>
+   <item name="LAST_MPS_TYPE_ELEMENT">Marks last entry of this enum. </item>
+  </enum>
+  <enum name="MPS_TARGET">
+  <comment> The different possible targets of machines. </comment>
+   <item name="NO_LOCATION"> No location set. </item>
+   <item name="INPUT_CONVEYOR"> Conveyor on the input side of the mps </item>
+   <item name="OUTPUT_CONVEYOR"> Conveyor on the output side of the mps </item>
+   <item name="SHELF_LEFT"> Left shelf of the Cap Station </item>
+   <item name="SHELF_MIDDLE"> Middle shelf of the Cap Station </item>
+   <item name="SHELF_RIGHT"> Right shelf of the Cap Station </item>
+   <item name="SLIDE"> Slide of the Ring Station </item>
+   <item name="LAST_MPS_TARGET_ELEMENT"> Marks last entry of this enum </item>
+ </enum> 
+ </constants>
+ <data>
+   <comment> The last transformation computed by the conveyor-pose plugin </comment>
+   <field type="string" length="32" name="frame">
+     Reference coordinate frame for the data.
+   </field>
+   <field type="int64" length="2" name="input_timestamp">
+     Timestamp { sec, usec } of the input cloud used for this matching
+   </field>
+   <field type="uint32" name="msgid">
+     Last processed message ID
+   </field>
+   <field type="bool" name="busy">
+     Whether the plugin is currently working
+   </field>
+   <field type="double" length="4" name="rotation">
+    Rotation quaternion relative to reference frame, ordered as (x, y, z, w).
+   </field>
+   <field type="double" length="3" name="translation">
+     Translation vector from the reference frame's origin, ordered as (x, y, z).
+   </field>
+   <field type="double" name="euclidean_fitness">
+     The sum of squared distances between all corresponding points between the
+     input cloud and the transformed model.
+   </field>
+   <field type="MPS_TYPE" name="current_mps_type"> The current station to apply the conveyor pose on.
+   </field>
+   <field type="MPS_TARGET" name="current_mps_target">
+     The current location on the mps.
+   </field>
+ </data>
+ <message name="SetStation">
+   <comment>Set which conveyor model the plugin should use</comment>
+   <field type="MPS_TYPE"  name="mps_type_to_set">
+     Station of the Machine defined in the MPSType enum.
+   </field>
+   <field type="MPS_TARGET" name="mps_target_to_set">
+     Target on the MPS
+   </field>
+ </message>
+</interface>

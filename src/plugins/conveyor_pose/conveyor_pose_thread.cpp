@@ -19,44 +19,33 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include "conveyor_pose_thread.h"
-
-#include <pcl/ModelCoefficients.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/approximate_voxel_grid.h>
-#include <pcl/features/normal_3d.h>
-
-#include <pcl/ModelCoefficients.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/passthrough.h>
-#include <pcl/common/centroid.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/extract_clusters.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/surface/convex_hull.h>
-#include <pcl/kdtree/kdtree.h>
-#include <pcl/kdtree/kdtree_flann.h>
-#include <pcl/filters/project_inliers.h>
-#include <pcl/filters/conditional_removal.h>
-#include <pcl/common/centroid.h>
 #include <pcl/common/transforms.h>
 #include <pcl/common/distances.h>
-#include <pcl/registration/distances.h>
-#include <pcl/features/normal_3d_omp.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/conversions.h>
+#include <pcl/point_cloud.h>
+#include <pcl/filters/approximate_voxel_grid.h>
+
 
 #include <tf/types.h>
 #include <utils/math/angle.h>
 
+#include <core/exceptions/system.h>
+
+#include <interfaces/SwitchInterface.h>
+#include <interfaces/LaserLineInterface.h>
+#include <interfaces/ConveyorPoseInterface.h>
+
 #include <cmath>
+#include <cstdio>
+
+#include "conveyor_pose_thread.h"
+#include "recognition_thread.h"
 
 using namespace fawkes;
+
+using Cloud = ConveyorPoseThread::Cloud;
+using CloudPtr = ConveyorPoseThread::CloudPtr;
 
 /** @class ConveyorPoseThread "conveyor_pose_thread.cpp"
  * Plugin to detect the conveyor belt in a pointcloud (captured from Intel RealSense)
@@ -64,142 +53,368 @@ using namespace fawkes;
  */
 
 /** Constructor. */
-ConveyorPoseThread::ConveyorPoseThread() :
-		Thread("ConveyorPoseThread", Thread::OPMODE_WAITFORWAKEUP),
-		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS),
-		fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose"),
-		realsense_switch_(NULL)
-{
+ConveyorPoseThread::ConveyorPoseThread()
+  : Thread("ConveyorPoseThread", Thread::OPMODE_WAITFORWAKEUP)
+  , BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS)
+  , ConfigurationChangeHandler(CFG_PREFIX)
+  , fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose")
+  , result_fitness_(std::numeric_limits<double>::min())
+  , syncpoint_clouds_ready_name("/perception/conveyor_pose/clouds_ready")
+  , cloud_out_raw_name_("raw")
+  , cloud_out_trimmed_name_("trimmed")
+  , current_mps_type_(ConveyorPoseInterface::NO_STATION)
+  , current_mps_target_(ConveyorPoseInterface::NO_LOCATION)
+  , recognition_thread_(nullptr)
+  , realsense_switch_(nullptr)
+{}
 
+
+std::string
+ConveyorPoseThread::get_model_path(ConveyorPoseInterface *iface, ConveyorPoseInterface::MPS_TYPE type, ConveyorPoseInterface::MPS_TARGET target)
+{
+  std::string path = std::string(CFG_PREFIX "/reference_models/")
+      + iface->enum_tostring("MPS_TYPE", type) + "_" + iface->enum_tostring("MPS_TARGET", target);
+  if (config->exists(path)) {
+    logger->log_info(name(), "Override for %s_%s: %s",
+                     iface->enum_tostring("MPS_TYPE", type),
+                     iface->enum_tostring("MPS_TARGET", target),
+                     config->get_string(path).c_str());
+    return CONFDIR "/" + config->get_string(path);
+  }
+  else {
+    switch(target) {
+    case ConveyorPoseInterface::INPUT_CONVEYOR:
+      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/input_conveyor");
+    case ConveyorPoseInterface::OUTPUT_CONVEYOR:
+      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/output_conveyor");
+    case ConveyorPoseInterface::SHELF_LEFT:
+      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_left");
+    case ConveyorPoseInterface::SHELF_MIDDLE:
+      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_middle");
+    case ConveyorPoseInterface::SHELF_RIGHT:
+      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_right");
+    case ConveyorPoseInterface::SLIDE:
+      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/slide");
+    case ConveyorPoseInterface::NO_LOCATION:
+      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/default");
+    case ConveyorPoseInterface::LAST_MPS_TARGET_ELEMENT:
+      return "";
+    }
+  }
+
+  return "";
 }
+
 
 void
 ConveyorPoseThread::init()
 {
-  const std::string cfg_prefix = "/conveyor_pose/";
+  config->add_change_handler(this);
 
-  cfg_debug_mode_ = config->get_bool( (cfg_prefix + "debug").c_str() );
+  syncpoint_clouds_ready = syncpoint_manager->get_syncpoint(name(), syncpoint_clouds_ready_name);
+  syncpoint_clouds_ready->register_emitter(name());
 
-  cloud_in_name_ = config->get_string( (cfg_prefix + "cloud_in").c_str() );
+  cfg_debug_mode_ = config->get_bool( CFG_PREFIX "/debug" );
+  cfg_force_shelf_ = config->get_int_or_default( CFG_PREFIX "/force_shelf", -1);
+  cloud_in_name_ = config->get_string( CFG_PREFIX "/cloud_in" );
 
-  const std::string if_prefix = config->get_string( (cfg_prefix + "if/prefix").c_str() ) + "/";
+  cfg_if_prefix_ = config->get_string( CFG_PREFIX "/if/prefix" );
+  if (cfg_if_prefix_.back() != '/')
+    cfg_if_prefix_.append("/");
 
-  cloud_out_inter_1_name_     = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_intermediet").c_str() );
-  cloud_out_result_name_      = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_result").c_str() );
-  cfg_bb_conveyor_pose_name_  = if_prefix + config->get_string( (cfg_prefix + "if/pose_of_beld").c_str() );
-  cfg_bb_switch_name_         = if_prefix + config->get_string( (cfg_prefix + "if/switch").c_str() );
 
-  laserlines_names_       = config->get_strings( (cfg_prefix + "if/laser_lines").c_str() );
+  laserlines_names_       = config->get_strings( CFG_PREFIX "/if/laser_lines" );
 
-  cfg_pose_close_if_no_new_pointclouds_  = config->get_bool( (cfg_prefix + "if/pose_close_if_new_pc").c_str() );
+  conveyor_frame_id_          = config->get_string( CFG_PREFIX "/conveyor_frame_id" );
 
-  conveyor_frame_id_          = config->get_string( (cfg_prefix + "conveyor_frame_id").c_str() );
-  cfg_pose_diff_              = config->get_float( (cfg_prefix + "vis_hist/diff_pose").c_str() );
-  vis_hist_angle_diff_        = config->get_float( (cfg_prefix + "vis_hist/diff_angle").c_str() );
-  cfg_pose_avg_hist_size_     = config->get_uint( (cfg_prefix + "vis_hist/average/size").c_str() );
-  cfg_pose_avg_min_           = config->get_uint( (cfg_prefix + "vis_hist/average/used_min").c_str() );
-  cfg_allow_invalid_poses_    = config->get_uint( (cfg_prefix + "vis_hist/allow_invalid_poses").c_str() );
+  recognition_thread_->cfg_icp_max_corr_dist_     = config->get_float( CFG_PREFIX "/icp/max_correspondence_dist" );
+  recognition_thread_->cfg_icp_max_iterations_    = config->get_int( CFG_PREFIX "/icp/max_iterations" );
+  recognition_thread_->cfg_icp_refinement_factor_ = double(config->get_float( CFG_PREFIX "/icp/refinement_factor" ));
+  recognition_thread_->cfg_icp_tf_epsilon_        = double(config->get_float( CFG_PREFIX "/icp/transformation_epsilon" ));
+  recognition_thread_->cfg_icp_min_loops_         = config->get_uint( CFG_PREFIX "/icp/min_loops" );
+  recognition_thread_->cfg_icp_max_loops_         = config->get_uint( CFG_PREFIX "/icp/max_loops" );
+  recognition_thread_->cfg_icp_auto_restart_      = config->get_bool( CFG_PREFIX "/icp/auto_restart" );
 
-  cfg_enable_switch_          = config->get_bool( (cfg_prefix + "switch_default").c_str() );
-  cfg_use_visualisation_      = config->get_bool( (cfg_prefix + "use_visualisation").c_str() );
+  recognition_thread_->cfg_icp_hv_inlier_thresh_  = config->get_float( CFG_PREFIX "/icp/hv_inlier_threshold" );
+  recognition_thread_->cfg_icp_hv_penalty_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_penalty_threshold" );
+  recognition_thread_->cfg_icp_hv_support_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_support_threshold" );
 
-  cfg_gripper_y_min_          = config->get_float( (cfg_prefix + "gripper/y_min").c_str() );
-  cfg_gripper_y_max_          = config->get_float( (cfg_prefix + "gripper/y_max").c_str() );
-  cfg_gripper_z_max_          = config->get_float( (cfg_prefix + "gripper/z_max").c_str() );
-  cfg_gripper_slice_y_min_    = config->get_float( (cfg_prefix + "gripper/slice/y_min").c_str() );
-  cfg_gripper_slice_y_max_    = config->get_float( (cfg_prefix + "gripper/slice/y_max").c_str() );
+  recognition_thread_->cfg_icp_shelf_hv_inlier_thresh_  = config->get_float( CFG_PREFIX "/icp/hv_shelf_inlier_threshold" );
+  recognition_thread_->cfg_icp_shelf_hv_penalty_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_shelf_penalty_threshold" );
+  recognition_thread_->cfg_icp_shelf_hv_support_thresh_ = config->get_float( CFG_PREFIX "/icp/hv_shelf_support_threshold" );
 
-  cfg_front_space_            = config->get_float( (cfg_prefix + "front/space").c_str() );
-  cfg_front_offset_           = config->get_float( (cfg_prefix + "front/offset").c_str() );
+  bb_pose_ = blackboard->open_for_writing<ConveyorPoseInterface>((cfg_if_prefix_ + "status").c_str());
+  bb_pose_->set_current_mps_type(bb_pose_->NO_STATION);
+  bb_pose_->set_current_mps_target(bb_pose_->NO_LOCATION);
 
-  cfg_left_cut_               = config->get_float( (cfg_prefix + "left_right/left_cut").c_str() );
-  cfg_right_cut_              = config->get_float( (cfg_prefix + "left_right/right_cut").c_str() );
-  cfg_left_cut_no_ll_         = config->get_float( (cfg_prefix + "left_right/left_cut_no_ll").c_str() );
-  cfg_right_cut_no_ll_        = config->get_float( (cfg_prefix + "left_right/right_cut_no_ll").c_str() );
+  bb_pose_->write();
 
-  cfg_plane_dist_threshold_   = config->get_float( (cfg_prefix + "plane/dist_threshold").c_str() );
-  cfg_normal_z_minimum_       = config->get_float( (cfg_prefix + "plane/normal_z_minimum").c_str() );
-  cfg_plane_height_minimum_   = config->get_float( (cfg_prefix + "plane/height_minimum").c_str() );
-  cfg_plane_width_minimum_    = config->get_float( (cfg_prefix + "plane/width_minimum").c_str() );
+  // Init of station target hints
+  cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR];
+  cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR];
+  cfg_target_hint_[ConveyorPoseInterface::SHELF_LEFT];
+  cfg_target_hint_[ConveyorPoseInterface::SHELF_RIGHT];
+  cfg_target_hint_[ConveyorPoseInterface::SHELF_MIDDLE];
+  cfg_target_hint_[ConveyorPoseInterface::SLIDE];
+  cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION];
 
-  cfg_cluster_tolerance_      = config->get_float( (cfg_prefix + "cluster/tolerance").c_str() );
-  cfg_cluster_size_min_       = config->get_float( (cfg_prefix + "cluster/size_min").c_str() );
-  cfg_cluster_size_max_       = config->get_float( (cfg_prefix + "cluster/size_max").c_str() );
+  cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][0]    = config->get_float( CFG_PREFIX "/icp/hint/input_conveyor/x" );
+  cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][1]    = config->get_float( CFG_PREFIX "/icp/hint/input_conveyor/y" );
+  cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][2]    = config->get_float( CFG_PREFIX "/icp/hint/input_conveyor/z" );
 
-  cfg_voxel_grid_leave_size_  = config->get_float( (cfg_prefix + "voxel_grid/leave_size").c_str() );
+  cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][0]   = config->get_float( CFG_PREFIX "/icp/hint/input_conveyor/x");
+  // Y * -1, because it should be the opposite of the input conveyor
+  cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][1]   = -config->get_float( CFG_PREFIX "/icp/hint/input_conveyor/y");
+  cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][2]   = config->get_float( CFG_PREFIX "/icp/hint/input_conveyor/z");
 
-  cfg_bb_realsense_switch_name_ = "realsense";
-  try {
-    cfg_bb_realsense_switch_name_ = config->get_string((cfg_prefix+"realsense_switch").c_str());
-  } catch (Exception &e) {} // ignore, use default
-  try {
-    wait_time_ = Time(config->get_float((cfg_prefix+"realsense_wait_time").c_str()));
-  } catch (Exception &e) {
-    wait_time_ = Time(1.);
-  } // ignore, use default
+  cfg_target_hint_[ConveyorPoseInterface::SHELF_LEFT][0]  = config->get_float( CFG_PREFIX "/icp/hint/left_shelf/x" );
+  cfg_target_hint_[ConveyorPoseInterface::SHELF_LEFT][1]  = config->get_float( CFG_PREFIX "/icp/hint/left_shelf/y" );
+  cfg_target_hint_[ConveyorPoseInterface::SHELF_LEFT][2]  = config->get_float( CFG_PREFIX "/icp/hint/left_shelf/z" );
+  cfg_target_hint_[ConveyorPoseInterface::SHELF_MIDDLE][0]= config->get_float( CFG_PREFIX "/icp/hint/middle_shelf/x" );
+  cfg_target_hint_[ConveyorPoseInterface::SHELF_MIDDLE][1]= config->get_float( CFG_PREFIX "/icp/hint/middle_shelf/y" );
+  cfg_target_hint_[ConveyorPoseInterface::SHELF_MIDDLE][2]= config->get_float( CFG_PREFIX "/icp/hint/middle_shelf/z" );
+  cfg_target_hint_[ConveyorPoseInterface::SHELF_RIGHT][0] = config->get_float( CFG_PREFIX "/icp/hint/right_shelf/x" );
+  cfg_target_hint_[ConveyorPoseInterface::SHELF_RIGHT][1] = config->get_float( CFG_PREFIX "/icp/hint/right_shelf/y" );
+  cfg_target_hint_[ConveyorPoseInterface::SHELF_RIGHT][2] = config->get_float( CFG_PREFIX "/icp/hint/right_shelf/z" );
+  cfg_target_hint_[ConveyorPoseInterface::SLIDE][0]       = config->get_float( CFG_PREFIX "/icp/hint/slide/x" );
+  cfg_target_hint_[ConveyorPoseInterface::SLIDE][1]       = config->get_float( CFG_PREFIX "/icp/hint/slide/y" );
+  cfg_target_hint_[ConveyorPoseInterface::SLIDE][2]       = config->get_float( CFG_PREFIX "/icp/hint/slide/z" );
+
+  cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][0]  = config->get_float( CFG_PREFIX "/icp/hint/default/x" );
+  cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][1]  = config->get_float( CFG_PREFIX "/icp/hint/default/y" );
+  cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][2]  = config->get_float( CFG_PREFIX "/icp/hint/default/z" );
+
+  // Init of station type hints
+
+  cfg_type_offset_[ConveyorPoseInterface::BASE_STATION];
+  cfg_type_offset_[ConveyorPoseInterface::CAP_STATION];
+  cfg_type_offset_[ConveyorPoseInterface::RING_STATION];
+  cfg_type_offset_[ConveyorPoseInterface::DELIVERY_STATION];
+  cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION];
+
+  cfg_type_offset_[ConveyorPoseInterface::BASE_STATION][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/base_station/x", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::BASE_STATION][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/base_station/y", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::BASE_STATION][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/base_station/z", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::CAP_STATION][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/cap_station/x", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::CAP_STATION][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/cap_station/y", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::CAP_STATION][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/cap_station/z", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::RING_STATION][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/ring_station/x", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::RING_STATION][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/ring_station/y", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::RING_STATION][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/ring_station/z", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::DELIVERY_STATION][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/delivery_station/x", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::DELIVERY_STATION][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/delivery_station/y", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::DELIVERY_STATION][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/delivery_station/z", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/storage_station/x", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/storage_station/y", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/storage_station/z", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::NO_STATION][0] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/default/z", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::NO_STATION][1] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/default/z", 0.f );
+  cfg_type_offset_[ConveyorPoseInterface::NO_STATION][2] = config->get_float_or_default(
+        CFG_PREFIX "/icp/conveyor_offset/default/z", 0.f );
+
+
+  cfg_enable_switch_          = config->get_bool( CFG_PREFIX "/switch_default" );
+
+  //cut information
+
+  cfg_left_cut_no_ll_         = config->get_float( CFG_PREFIX "/without_ll/left_cut" );
+  cfg_right_cut_no_ll_        = config->get_float( CFG_PREFIX "/without_ll/right_cut" );
+  cfg_top_cut_no_ll_          = config->get_float( CFG_PREFIX "/without_ll/top_cut" );
+  cfg_bottom_cut_no_ll_       = config->get_float( CFG_PREFIX "/without_ll/bottom_cut" );
+  cfg_front_cut_no_ll_        = config->get_float( CFG_PREFIX "/without_ll/front_cut" );
+  cfg_back_cut_no_ll_         = config->get_float( CFG_PREFIX "/without_ll/back_cut" );
+
+  cfg_left_cut_               = config->get_float( CFG_PREFIX "/with_ll/left_cut" );
+  cfg_right_cut_              = config->get_float( CFG_PREFIX "/with_ll/right_cut" );
+  cfg_top_cut_                = config->get_float( CFG_PREFIX "/with_ll/top_cut" );
+  cfg_bottom_cut_             = config->get_float( CFG_PREFIX "/with_ll/bottom_cut" );
+  cfg_front_cut_              = config->get_float( CFG_PREFIX "/with_ll/front_cut" );
+  cfg_back_cut_               = config->get_float( CFG_PREFIX "/with_ll/back_cut" );
+
+  cfg_shelf_left_cut_no_ll_         = config->get_float( CFG_PREFIX "/shelf/without_ll/left_cut" );
+  cfg_shelf_right_cut_no_ll_        = config->get_float( CFG_PREFIX "/shelf/without_ll/right_cut" );
+  cfg_shelf_top_cut_no_ll_          = config->get_float( CFG_PREFIX "/shelf/without_ll/top_cut" );
+  cfg_shelf_bottom_cut_no_ll_       = config->get_float( CFG_PREFIX "/shelf/without_ll/bottom_cut" );
+  cfg_shelf_front_cut_no_ll_        = config->get_float( CFG_PREFIX "/shelf/without_ll/front_cut" );
+  cfg_shelf_back_cut_no_ll_         = config->get_float( CFG_PREFIX "/shelf/without_ll/back_cut" );
+
+  cfg_shelf_left_cut_               = config->get_float( CFG_PREFIX "/shelf/with_ll/left_cut" );
+  cfg_shelf_right_cut_              = config->get_float( CFG_PREFIX "/shelf/with_ll/right_cut" );
+  cfg_shelf_top_cut_                = config->get_float( CFG_PREFIX "/shelf/with_ll/top_cut" );
+  cfg_shelf_bottom_cut_             = config->get_float( CFG_PREFIX "/shelf/with_ll/bottom_cut" );
+  cfg_shelf_front_cut_              = config->get_float( CFG_PREFIX "/shelf/with_ll/front_cut" );
+  cfg_shelf_back_cut_               = config->get_float( CFG_PREFIX "/shelf/with_ll/back_cut" );
+
+  cfg_shelf_left_off_               = config->get_float( CFG_PREFIX "/shelf/left_off" );
+  cfg_shelf_middle_off_             = config->get_float( CFG_PREFIX "/shelf/middle_off" );
+  cfg_shelf_right_off_              = config->get_float( CFG_PREFIX "/shelf/right_off" );
+
+
+  cfg_voxel_grid_leaf_size_  = config->get_float( CFG_PREFIX "/voxel_grid/leaf_size" );
+
+  cfg_bb_realsense_switch_name_ = config->get_string_or_default(CFG_PREFIX "/realsense_switch", "realsense");
+  wait_time_ = Time(double(config->get_float_or_default(CFG_PREFIX "/realsense_wait_time", 1.0f)));
+
+  // Load reference pcl for shelf, input belt (with cone), output belt (without cone) and slide
+  for ( int i = ConveyorPoseInterface::NO_STATION; i != ConveyorPoseInterface::LAST_MPS_TYPE_ELEMENT; i++ )
+  {
+    ConveyorPoseInterface::MPS_TYPE mps_type = static_cast<ConveyorPoseInterface::MPS_TYPE>(i);
+    for (int j = ConveyorPoseInterface::NO_LOCATION; j != ConveyorPoseInterface::LAST_MPS_TARGET_ELEMENT; j++)
+    {
+      ConveyorPoseInterface::MPS_TARGET mps_target = static_cast<ConveyorPoseInterface::MPS_TARGET>(j);
+
+      type_target_to_path_[{mps_type, mps_target}] = get_model_path(bb_pose_, mps_type, mps_target);
+    }
+  }
+
+  trimmed_scene_.reset(new Cloud());
+
+  cfg_model_origin_frame_ = config->get_string(CFG_PREFIX "/model_origin_frame");
+  cfg_record_model_ = config->get_bool_or_default(CFG_PREFIX "/record_model", false);
+
+  // if recording is set, a pointcloud written to the the cfg_record_path_
+  // else load pcd file for every station and calculate model with normals
+
+  if (cfg_record_model_) {
+
+    std::string reference_station = config->get_string_or_default(CFG_PREFIX "/record_path","recorded_file.pcd");
+    cfg_record_path_ = CONFDIR   "/" + reference_station;
+    std::string new_record_path = cfg_record_path_;
+
+    bool exists;
+    FILE *tmp;
+    size_t count = 0;
+
+    do {
+      exists = false;
+      tmp = ::fopen(new_record_path.c_str(),"r");
+      if(tmp) {
+        exists = true;
+        ::fclose(tmp);
+        if(cfg_record_path_.substr(cfg_record_path_.length() - 4) == ".pcd")
+          new_record_path = cfg_record_path_.substr(0,cfg_record_path_.length()-4)
+              + std::to_string(count++) + ".pcd";
+        else
+          new_record_path = cfg_record_path_ + std::to_string(count++);
+
+      }
+    } while(exists);
+
+    cfg_record_path_= new_record_path;
+
+    logger->log_info(name(), "Writing point cloud to %s", cfg_record_path_.c_str());
+    model_.reset(new Cloud());
+  }
+  else {
+    // Loading PCD file and calculation of model with normals for ALL! stations
+    for (const auto &pair : type_target_to_path_) {
+      CloudPtr model(new Cloud());
+      if (pcl::io::loadPCDFile(pair.second, *model) < 0)
+        throw fawkes::CouldNotOpenFileException(pair.second.c_str());
+
+      type_target_to_model_.insert({pair.first, model});
+    }
+
+    model_ = type_target_to_model_[{ConveyorPoseInterface::NO_STATION, ConveyorPoseInterface::NO_LOCATION}];
+  }
 
   cloud_in_registered_ = false;
 
-  cloud_out_inter_1_ = new Cloud();
-  cloud_out_result_ = new Cloud();
-  pcl_manager->add_pointcloud(cloud_out_inter_1_name_.c_str(), cloud_out_inter_1_);
-  pcl_manager->add_pointcloud(cloud_out_result_name_.c_str(), cloud_out_result_);
+  cloud_out_raw_ = new Cloud();
+  cloud_out_trimmed_ = new Cloud();
+  cloud_out_model_ = new Cloud();
+  pcl_manager->add_pointcloud(cloud_out_raw_name_.c_str(), cloud_out_raw_);
+  pcl_manager->add_pointcloud(cloud_out_trimmed_name_.c_str(), cloud_out_trimmed_);
+  pcl_manager->add_pointcloud("model", cloud_out_model_);
 
   for (std::string ll : laserlines_names_) {
     laserlines_.push_back( blackboard->open_for_reading<fawkes::LaserLineInterface>(ll.c_str()) );
   }
 
-  enable_pose_ = false;
-  if ( ! cfg_pose_close_if_no_new_pointclouds_ ) {
-    bb_pose_conditional_open();
-  }
-
-  bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>(cfg_bb_switch_name_.c_str());
+  bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>((cfg_if_prefix_ + "switch").c_str());
   bb_enable_switch_->set_enabled( cfg_debug_mode_ || cfg_enable_switch_); // ignore cfg_enable_switch_ and set to true if debug mode is used
   bb_enable_switch_->write();
 
   realsense_switch_ = blackboard->open_for_reading<SwitchInterface>(cfg_bb_realsense_switch_name_.c_str());
 
-  visualisation_ = new Visualisation(rosnode);
+  if (cfg_debug_mode_){
+    recognition_thread_->enable();
+    switch(cfg_force_shelf_){
+      case 0:
+        current_mps_target_ = fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_LEFT;
+        break;
+      case 1:
+        current_mps_target_ = fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_MIDDLE;
+        break;
+      case 2:
+        current_mps_target_ = fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_RIGHT;
+        break;
+      default:
+        break;
+    }
+  }
+
 }
+
 
 void
 ConveyorPoseThread::finalize()
 {
-  pcl_manager->remove_pointcloud(cloud_out_inter_1_name_.c_str());
-  pcl_manager->remove_pointcloud(cloud_out_result_name_.c_str());
-  delete visualisation_;
+  pcl_manager->remove_pointcloud(cloud_out_raw_name_.c_str());
+  pcl_manager->remove_pointcloud(cloud_out_trimmed_name_.c_str());
+  pcl_manager->remove_pointcloud("model");
   blackboard->close(bb_enable_switch_);
   logger->log_info(name(), "Unloading, disabling %s",
-    cfg_bb_realsense_switch_name_.c_str());
+                   cfg_bb_realsense_switch_name_.c_str());
   realsense_switch_->msgq_enqueue(new SwitchInterface::DisableSwitchMessage());
   blackboard->close(realsense_switch_);
-  bb_pose_conditional_close();
+  blackboard->close(bb_pose_);
 }
 
-void
-ConveyorPoseThread::bb_pose_conditional_open()
-{
-  if ( ! enable_pose_ ) {
-    enable_pose_ = true;
-    bb_pose_ = blackboard->open_for_writing<fawkes::Position3DInterface>(cfg_bb_conveyor_pose_name_.c_str());
-  }
-}
-
-void
-ConveyorPoseThread::bb_pose_conditional_close()
-{
-  if ( enable_pose_ ) {
-    enable_pose_ = false;
-    blackboard->close(bb_pose_);
-  }
-}
 
 void
 ConveyorPoseThread::loop()
 {
-  if_read();
-  //logger->log_debug(name(),"CONVEYOR-POSE 1: Interface read");
+  // Check for Messages in ConveyorPoseInterface and update informations if needed
+  while ( !bb_pose_->msgq_empty() ) {
+    if (bb_pose_->msgq_first_is<ConveyorPoseInterface::SetStationMessage>() ) {
+
+      //Update station related information
+      logger->log_info(name(), "Received SetStationMessage");
+      ConveyorPoseInterface::SetStationMessage *msg =
+          bb_pose_->msgq_first<ConveyorPoseInterface::SetStationMessage>();
+      update_station_information(*msg);
+      bb_pose_->write();
+
+      result_pose_.release();
+
+      // Schedule restart of recognition thread
+      recognition_thread_->restart();
+    }
+    else {
+      logger->log_warn(name(), "Unknown message received");
+    }
+    bb_pose_->msgq_pop();
+  }
+
+  bb_update_switch();
   realsense_switch_->read();
 
   if (bb_enable_switch_->is_enabled()) {
@@ -217,26 +432,16 @@ ConveyorPoseThread::loop()
         cfg_bb_realsense_switch_name_.c_str());
       return;
     }
-  } else if (realsense_switch_->has_writer()
-      && realsense_switch_->is_enabled()) {
+  }
+  else if (realsense_switch_->has_writer()
+      && realsense_switch_->is_enabled())
+  {
     logger->log_info(name(), "Disabling %s",
       cfg_bb_realsense_switch_name_.c_str());
     realsense_switch_->msgq_enqueue(
       new SwitchInterface::DisableSwitchMessage());
   }
 
-  if ( ! pc_in_check() || ! bb_enable_switch_->is_enabled() ) {
-    if ( enable_pose_ ) {
-      vis_hist_ = -1;
-      pose trash;
-      trash.valid = false;
-      pose_write(trash);
-    }
-    if ( cfg_pose_close_if_no_new_pointclouds_ ) {
-      bb_pose_conditional_close();
-    }
-    return;
-  }
   if (need_to_wait()) {
     logger->log_debug(name(),
       "Waiting for %s for %f sec, still %f sec remaining",
@@ -244,163 +449,194 @@ ConveyorPoseThread::loop()
       wait_time_.in_sec(), (wait_start_ + wait_time_ - Time()).in_sec() );
     return;
   }
-  //logger->log_info(name(),"CONVEYOR-POSE 2: Added Trash if no point cloud or not enabled and pose enabled");
-  bb_pose_conditional_open();
 
-  pose pose_average;
-  bool pose_average_availabe = pose_get_avg(pose_average);
-  //logger->log_info(name(),"CONVEYOR-POSE 3: set average");
-  if (pose_average_availabe) {
-    vis_hist_ = std::max(1, vis_hist_ + 1);
-    pose_write(pose_average);
-
-    pose_publish_tf(pose_average);
-
-//    tf_send_from_pose_if(pose_current);
-    if (cfg_use_visualisation_) {
-      visualisation_->marker_draw(header_, pose_average.translation, pose_average.rotation);
-    }
-  } else {
-    vis_hist_ = -1;
-    pose trash;
-    trash.valid = false;
-    pose_write(trash);
+  if (!bb_enable_switch_->is_enabled()) {
+    recognition_thread_->disable();
+    result_pose_.reset();
   }
-// logger->log_debug(name(),"CONVEYOR-POSE 4: checked average");
-  fawkes::LaserLineInterface * ll = NULL;
-  bool use_laserline = laserline_get_best_fit( ll );
-// logger->log_debug(name(),"CONVEYOR-POSE 5: got laserline");
-  
-  CloudPtr cloud_in(new Cloud(**cloud_in_));
+  else if (update_input_cloud()) {
+    fawkes::LaserLineInterface * ll = nullptr;
+    have_laser_line_ = laserline_get_best_fit( ll );
 
-  uint in_size = cloud_in->points.size();
- // logger->log_debug(name(), "Size before voxel grid: %u", in_size);
-  CloudPtr cloud_vg = cloud_voxel_grid(cloud_in);
-  uint out_size = cloud_vg->points.size();
- // logger->log_debug(name(), "Size of voxel grid: %u", out_size);
-  if (in_size == out_size) {
-    logger->log_error(name(), "Voxel Grid failed, skipping loop!");
+    // No point in recording a model when there's no laser line
+    if (cfg_record_model_ && !have_laser_line_)
+      return;
+
+    { 
+        fawkes::MutexLocker locked(&cloud_mutex_);
+        try {
+            if (have_laser_line_) {
+                set_initial_tf_from_laserline(ll,current_mps_type_,current_mps_target_);
+            }
+        } catch (std::exception &e) {
+            logger->log_error(name(), "Exception generating initial transform: %s", e.what());
+        }
+    } // cloud_mutex_ lock
+
+    CloudPtr cloud_in(new Cloud(**cloud_in_));
+
+    size_t in_size = cloud_in->points.size();
+    CloudPtr cloud_vg = cloud_voxel_grid(cloud_in);
+    size_t out_size = cloud_vg->points.size();
+    if (in_size == out_size) {
+      logger->log_error(name(), "Voxel Grid failed, skipping loop!");
+      return;
+    }
+
+    trimmed_scene_ = cloud_trim(cloud_vg, ll, have_laser_line_);
+
+    cloud_publish(cloud_in, cloud_out_raw_);
+    cloud_publish(trimmed_scene_, cloud_out_trimmed_);
+
+
+    if (cfg_record_model_) {
+      record_model();
+      cloud_publish(model_, cloud_out_model_);
+
+      tf::Stamped<tf::Pose> initial_pose_cam;
+      try {
+        tf_listener->transform_pose(
+            trimmed_scene_->header.frame_id,
+            tf::Stamped<tf::Pose>(initial_guess_laser_odom_, Time(0,0), initial_guess_laser_odom_.frame_id),
+            initial_pose_cam);
+      } catch (tf::TransformException &e) {
+        logger->log_error(name(),e);
+        return;
+      }
+      tf_publisher->send_transform(
+            tf::StampedTransform(initial_pose_cam, initial_pose_cam.stamp, initial_pose_cam.frame_id, "conveyor_pose_initial_guess"));
+    }
+    else {
+      { MutexLocker locked { &bb_mutex_ };
+        try {
+          if (result_pose_) {
+            pose_write();
+            pose_publish_tf(*result_pose_);
+            result_pose_.reset();
+          }
+        } catch (std::exception &e) {
+          logger->log_error(name(), "Unexpected exception: %s", e.what());
+        }
+      }
+
+      { MutexLocker locked { &cloud_mutex_ };
+
+        scene_ = trimmed_scene_;
+        syncpoint_clouds_ready->emit(name());
+      }
+    } // ! cfg_record_model_
+  } // update_input_cloud()
+}
+
+void
+ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *line, ConveyorPoseInterface::MPS_TYPE mps_type, ConveyorPoseInterface::MPS_TARGET mps_target)
+{
+  tf::Stamped<tf::Pose> initial_guess;
+
+  // Vector from end point 1 to end point 2
+  if (!tf_listener->transform_origin(line->end_point_frame_2(), line->end_point_frame_1(),
+                                     initial_guess, Time(0,0)))
+    throw fawkes::Exception("Failed to transform from %s to %s",
+                            line->end_point_frame_2(), line->end_point_frame_1());
+
+  // Halve that to get line center
+  initial_guess.setOrigin(initial_guess.getOrigin() / 2);
+
+  // Add distance from from center to mps_target
+  initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
+                            double(cfg_target_hint_[mps_target][0]),
+                            double(cfg_target_hint_[mps_target][1]),
+                            double(cfg_target_hint_[mps_target][2])});
+
+
+  if (mps_target == ConveyorPoseInterface::MPS_TARGET::INPUT_CONVEYOR) {
+    // Add distance offset for station type
+    initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
+                              double(cfg_type_offset_[mps_type][0]),
+                              double(cfg_type_offset_[mps_type][1]),
+                              double(cfg_type_offset_[mps_type][2])});
+  } else if (mps_target == ConveyorPoseInterface::MPS_TARGET::OUTPUT_CONVEYOR) {
+    // Invert Y axis of the offset
+    initial_guess.setOrigin(initial_guess.getOrigin() + tf::Vector3 {
+                              double(cfg_type_offset_[mps_type][0]),
+                              double(-cfg_type_offset_[mps_type][1]),
+                              double(cfg_type_offset_[mps_type][2])});
+  }
+
+
+  initial_guess.setRotation(
+        tf::Quaternion(tf::Vector3(0,1,0), -M_PI/2)
+      * tf::Quaternion(tf::Vector3(0,0,1), M_PI/2));
+
+  // Transform with Time(0,0) to just get the latest transform
+  tf_listener->transform_pose(
+        "odom",
+        tf::Stamped<tf::Pose>(initial_guess, Time(0,0), initial_guess.frame_id),
+        initial_guess_laser_odom_);
+}
+
+
+void
+ConveyorPoseThread::record_model()
+{
+  // Transform model
+  tf::Stamped<tf::Pose> pose_cam;
+  if (!tf_listener->can_transform(cloud_in_->header.frame_id, cfg_model_origin_frame_,
+                                  fawkes::Time(0,0))) {
+    logger->log_error(name(), "Cannot transform from %s to %s",
+                      cloud_in_->header.frame_id.c_str(), cfg_model_origin_frame_.c_str());
     return;
   }
-  CloudPtr cloud_gripper = cloud_remove_gripper(cloud_vg);
-  CloudPtr cloud_front = cloud_remove_offset_to_front(cloud_gripper, ll, use_laserline);
- // logger->log_debug(name(),"CONVEYOR-POSE 6: intially filtered pointcloud");
+  tf_listener->transform_origin(cloud_in_->header.frame_id, cfg_model_origin_frame_, pose_cam);
+  Eigen::Matrix4f tf_to_cam = pose_to_eigen(pose_cam);
+  pcl::transformPointCloud(*trimmed_scene_, *model_, tf_to_cam);
 
-  CloudPtr cloud_front_side(new Cloud);
-    cloud_front_side = cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
-  
-// logger->log_debug(name(),"CONVEYOR-POSE 7: set cut off left and rigt");
+  // Overwrite and atomically rename model so it can be copied at any time
+  try {
+    int rv = pcl::io::savePCDFileASCII(cfg_record_path_, *model_);
+    if (rv)
+      logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_record_path_.c_str());
+    else
+      ::rename((cfg_record_path_ + ".pcd").c_str(), cfg_record_path_.c_str());
+  } catch (pcl::IOException &e) {
+    logger->log_error(name(), "Exception saving point cloud to %s: %s", cfg_record_path_.c_str(), e.what());
+  }
+}
 
-  cloud_publish(cloud_front_side, cloud_out_inter_1_);
 
-  // search for best plane
-  CloudPtr cloud_choosen;
-  pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
-  do {
-  //  logger->log_debug(name(), "In while loop");
-    CloudPtr cloud_plane = cloud_get_plane(cloud_front_side, coeff);
-  //  logger->log_debug(name(), "After getting plane");
-    if ( cloud_plane == NULL || ! cloud_plane ) {
-      pose trash;
-      trash.valid = false;
-      pose_add_element(trash);
-      return;
-    }
+void
+ConveyorPoseThread::update_station_information(ConveyorPoseInterface::SetStationMessage &msg)
+{
+  ConveyorPoseInterface::MPS_TYPE mps_type = msg.mps_type_to_set();
+  ConveyorPoseInterface::MPS_TARGET mps_target = msg.mps_target_to_set();
 
-    size_t id;
-  //  logger->log_debug(name(), "Before clustering");
-    boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices = cloud_cluster(cloud_plane);
-  //  logger->log_debug(name(), "After clustering");
-    if ( cluster_indices->size() <= 0 ) {
-      pose trash;
-      trash.valid = false;
-      pose_add_element(trash);
-      return;
-    }
-   // logger->log_debug(name(), "Before split");
-    std::vector<CloudPtr> clouds_cluster = cluster_split(cloud_plane, cluster_indices);
-   // logger->log_debug(name(), "Before finding biggest");
-    cloud_choosen = cluster_find_biggest(clouds_cluster, id);
-   // logger->log_debug(name(), "After finding biggest");
+  auto map_it = type_target_to_model_.find({mps_type,mps_target});
+  if ( map_it == type_target_to_model_.end())
+    logger->log_error(name(), "Invalid station type or target: %i,%i", mps_type, mps_target);
+  else {
+    logger->log_info(name(), "Setting Station to %s, %s",
+                     bb_pose_->enum_tostring("MPS_TYPE", mps_type),
+                     bb_pose_->enum_tostring("MPS_TARGET", mps_target));
 
-    // check if plane is ok, otherwise remove indicies
+    MutexLocker locked2(&bb_mutex_);
 
-    // check if the height is ok (remove shelfs)
-    float y_min = -200;
-    float y_max = 200;
-    for (Point p : *cloud_choosen ) {
-      if (p.y > y_min) {
-        y_min = p.y;
-      }
-      if (p.y < y_max) {
-        y_max = p.y;
-      }
-    }
+    model_ = map_it->second;
+    current_mps_type_ = mps_type;
+    current_mps_target_ = mps_target;
 
-    float height = y_min - y_max;
-    if (height < cfg_plane_height_minimum_) {
-      logger->log_info(name(), "Discard plane, because of height restriction. is: %f\tshould: %f", height, cfg_plane_height_minimum_);
-
-      boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
-      CloudPtr tmp(new Cloud);
-      pcl::ExtractIndices<Point> extract;
-      extract.setInputCloud (cloud_front_side);
-      extract.setIndices( extract_indicies );
-      extract.setNegative (true);
-      extract.filter (*tmp);
-      //logger->log_debug(name(), "After extraction");
-      *cloud_front_side = *tmp;
-    } else {
-      // height is ok
-      float x_min = -200;
-      float x_max = 200;
-      for (Point p : *cloud_choosen ) {
-        if (p.x > x_min) {
-          x_min = p.x;
-        }
-        if (p.x < x_max) {
-          x_max = p.x;
-        }
-      }
-    
-    float width = x_min - x_max;
-    if (width < cfg_plane_width_minimum_) {
-      logger->log_info(name(), "Discard plane, because of width restriction. is: %f\tshould: %f", width, cfg_plane_width_minimum_);      
-      boost::shared_ptr<pcl::PointIndices> extract_indicies( new pcl::PointIndices(cluster_indices->at(id)) );
-      CloudPtr tmp(new Cloud);
-      pcl::ExtractIndices<Point> extract;
-      extract.setInputCloud (cloud_front_side);
-      extract.setIndices( extract_indicies );
-      extract.setNegative (true);
-      extract.filter (*tmp);
-      *cloud_front_side = *tmp;
-
-    } else {
-    //height and width ok
-      break;
-    }
-   }
-  } while (true);
-  
- // logger->log_debug(name(),"CONVEYOR-POSE 9: left while true");
-  cloud_publish(cloud_choosen, cloud_out_result_);
-
-  // get centroid
-  Eigen::Vector4f centroid;
-  pcl::compute3DCentroid<Point, float>(*cloud_choosen, centroid);
-
-  Eigen::Vector3f normal;
-  normal(0) = coeff->values[0];
-  normal(1) = coeff->values[1];
-  normal(2) = coeff->values[2];
-  pose pose_current = calculate_pose(centroid, normal);;
-  pose_add_element(pose_current);
+    bb_pose_->set_current_mps_type(mps_type);
+    bb_pose_->set_current_mps_target(mps_target);
+    result_fitness_ = std::numeric_limits<double>::min();
+    bb_pose_->set_euclidean_fitness(result_fitness_);
+    bb_pose_->set_msgid(msg.id());
+    bb_pose_->write();
+  }
 }
 
 bool
-ConveyorPoseThread::pc_in_check()
+ConveyorPoseThread::update_input_cloud()
 {
-  if (pcl_manager->exists_pointcloud(cloud_in_name_.c_str())) {                // does the pc exists
+  if (pcl_manager->exists_pointcloud(cloud_in_name_.c_str())) {
     if ( ! cloud_in_registered_) {                                             // do I already have this pc
       cloud_in_ = pcl_manager->get_pointcloud<Point>(cloud_in_name_.c_str());
       if (cloud_in_->points.size() > 0) {
@@ -411,7 +647,7 @@ ConveyorPoseThread::pc_in_check()
     unsigned long time_old = header_.stamp;
     header_ = cloud_in_->header;
 
-    return time_old != header_.stamp;                                          // true, if there is a new cloud, false otherwise
+    return time_old != header_.stamp; // true, if there is a new cloud, false otherwise
 
   } else {
     logger->log_debug(name(), "can't get pointcloud %s", cloud_in_name_.c_str());
@@ -420,18 +656,25 @@ ConveyorPoseThread::pc_in_check()
   }
 }
 
+
 void
-ConveyorPoseThread::if_read()
+ConveyorPoseThread::bb_update_switch()
 {
   // enable switch
   bb_enable_switch_->read();
 
   bool rv = bb_enable_switch_->is_enabled();
   while ( ! bb_enable_switch_->msgq_empty() ) {
-    logger->log_info(name(),"RECIEVED SWITCH MESSAGE");
     if (bb_enable_switch_->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
+      logger->log_info(name(),"Received DisableSwitchMessage");
       rv = false;
+      { MutexLocker locked(&bb_mutex_);
+        result_fitness_ = std::numeric_limits<double>::min();
+        bb_pose_->set_euclidean_fitness(result_fitness_);
+        bb_pose_->write();
+      }
     } else if (bb_enable_switch_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
+      logger->log_info(name(),"Received EnableSwitchMessage");
       rv = true;
     }
 
@@ -454,148 +697,64 @@ ConveyorPoseThread::if_read()
   }
 }
 
-void
-ConveyorPoseThread::pose_add_element(pose element)
-{
-  //add element
-  poses_.push_front(element);
 
-  // if to full, remove oldest
-  while (poses_.size() > cfg_pose_avg_hist_size_) {
-    poses_.pop_back();
-  }
-}
-
-bool
-ConveyorPoseThread::pose_get_avg(pose & out)
-{
-  pose median;
-
-  // count invalid loops
-  unsigned int invalid = 0;
-  for (pose p : poses_) {
-    if ( ! p.valid ) {
-      invalid++;
-    }
-  }
-
-  if (invalid > cfg_allow_invalid_poses_) {
-    logger->log_warn(name(), "view unstable, got %u invalid frames", invalid);
-  }
-
-  // Weiszfeld's algorithm to find the geometric median
-  median.translation.setValue(0, 0, 0);
-  median.rotation.setEuler(0, 0, 0);
-  unsigned int iteraterions = 20;
-  for (unsigned int i = 0; i < iteraterions; ++i) {
-
-    fawkes::tf::Vector3 numerator(0, 0, 0);
-    double divisor = 0;
-
-    for (pose p : poses_) {
-      if ( p.valid ) {
-        double divisor_current = (p.translation - median.translation).norm();
-        divisor += ( 1 / divisor_current );
-        numerator += ( p.translation / divisor_current );
-//        logger->log_info(name(), "(%lf\t%lf\t%lf) /\t%lf", numerator.x(), numerator.y(), numerator.z(), divisor);
-      }
-    }
-    median.translation = numerator / divisor;
-
-  }
-
-  // remove outliers
-  std::list<pose> poses_used;
-  for (pose p : poses_) {
-    if ( p.valid ) {
-      double dist = (p.translation - median.translation).norm();
-
-//      logger->log_warn(name(), "(%f\t%f\t%f)\t(%f\t%f\t%f) => %lf",
-//          median.translation.x(), median.translation.y(), median.translation.z(),
-//          p.translation.x(), p.translation.y(), p.translation.z(),
-//          dist);
-      if (dist <= cfg_pose_diff_) {
-        poses_used.push_back(p);
-      }
-    }
-  }
-
-  if (poses_used.size() <= cfg_pose_avg_min_) {
-    logger->log_warn(name(), "not enough for average, got: %zu", poses_used.size());
-    return false;
-  }
-
-  // calculate average
-//  Eigen::Quaternion<float> avgRot;
-//  Eigen::Vector4f cumulative;
-//  Eigen::Quaternion<float> firstRotation(poses_used.front().rotation.x(), poses_used.front().rotation.y(), poses_used.front().rotation.z(), poses_used.front().rotation.w());
-//  float addDet = 1.0 / (float)poses_used.size();
-  for (pose p : poses_used) {
-//    Eigen::Quaternion<float> newRotation(p.rotation.x(), p.rotation.y(), p.rotation.z(), p.rotation.w());
-
-    out.translation.setX( out.translation.x() + p.translation.x() );
-    out.translation.setY( out.translation.y() + p.translation.y() );
-    out.translation.setZ( out.translation.z() + p.translation.z() );
-
-  //  fawkes::tf::Matrix3x3 m(p.rotation);
-  //  fawkes::tf::Scalar rc, pc, yc;
-  //  m.getEulerYPR(yc, pc, rc);
-  //  roll += fawkes::normalize_rad(rc);
-  //  pitch += fawkes::normalize_rad(pc);
-  //  yaw += fawkes::normalize_rad(yc);
-//    avgRot = averageQuaternion(cumulative, newRotation, firstRotation, addDet);
-  }
-
-  // normalize
-  out.translation.setX( out.translation.x() / poses_used.size() );
-  out.translation.setY( out.translation.y() / poses_used.size() );
-  out.translation.setZ( out.translation.z() / poses_used.size() );
-
-  //roll /= poses_used.size();
-  //pitch /= poses_used.size();
-  //yaw /= poses_used.size();
-  //out.rotation.setEuler(yaw, pitch, roll);
-
-//  logger->log_info(name(), "got %u for avg: (%f\t%f\t%f)\t(%f\t%f\t%f)", poses_used.size(),
-//      out.translation.x(), out.translation.y(), out.translation.z(),
-//      roll, pitch, yaw);
-
-  return true;
-}
 
 bool
 ConveyorPoseThread::laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit)
 {
-  best_fit = laserlines_.front();
+  best_fit = nullptr;
 
   // get best line
   for (fawkes::LaserLineInterface * ll : laserlines_) {
-    // just with writer
-    if ( ! ll->has_writer() ) { continue; }
-    // just with history
-    if ( ll->visibility_history() <= 2 ) { continue; }
-    // just if not too far away
-    Eigen::Vector3f center = laserline_get_center_transformed(ll);
+    if ( ! ll->has_writer() )
+      continue;
+    if ( ll->visibility_history() <= 2 )
+      continue;
 
-    if ( std::sqrt( center(0) * center(0) +
-                    center(2) * center(2) ) > 0.8 ) { continue; }
+    try {
+      Eigen::Vector3f center = laserline_get_center_transformed(ll);
+      if ( std::sqrt( center(0) * center(0) + center(2) * center(2) ) > 0.8f )
+        continue;
 
-    // take with lowest angle
-    if ( fabs(best_fit->bearing()) > fabs(ll->bearing()) ) {
-      best_fit = ll;
+      // take with lowest angle
+      if (!best_fit || fabs(best_fit->bearing()) > fabs(ll->bearing()) )
+        best_fit = ll;
+    } catch (fawkes::tf::TransformException &e) {
+      logger->log_error(name(), e);
     }
   }
 
-  if ( ! best_fit->has_writer() ) { logger->log_info(name(), "no writer for laser lines"); best_fit = NULL; return false; }
-  if ( best_fit->visibility_history() <= 2 ) { best_fit = NULL; return false;  }
-  if ( fabs(best_fit->bearing()) > 0.35 ) { best_fit = NULL; return false;  } // ~20 deg
-  Eigen::Vector3f center = laserline_get_center_transformed(best_fit);
+  if ( ! best_fit )
+    return false;
 
-  if ( std::sqrt( center(0) * center(0) +
-                  center(2) * center(2) ) > 0.8 ) { best_fit = NULL; return false;  }
+  if ( ! best_fit->has_writer() ) {
+    logger->log_info(name(), "no writer for laser lines");
+    best_fit = nullptr;
+    return false;
+  }
+  if ( best_fit->visibility_history() <= 2 ) {
+    best_fit = nullptr;
+    return false;
+  }
+  if ( fabs(best_fit->bearing()) > 0.35f ) {
+    best_fit = nullptr;
+    return false; // ~20 deg
+  }
+
+  try {
+    Eigen::Vector3f center = laserline_get_center_transformed(best_fit);
+    if ( std::sqrt( center(0) * center(0) + center(2) * center(2) ) > 0.8f ) {
+      best_fit = nullptr;
+      return false;
+    }
+  } catch (tf::TransformException &e) {
+    logger->log_error(name(), e);
+    return false;
+  }
 
   return true;
 }
+
 
 Eigen::Vector3f
 ConveyorPoseThread::laserline_get_center_transformed(fawkes::LaserLineInterface * ll)
@@ -607,193 +766,39 @@ ConveyorPoseThread::laserline_get_center_transformed(fawkes::LaserLineInterface 
   tf_in.setY( ll->end_point_2(1) + ( ll->end_point_1(1) - ll->end_point_2(1) ) / 2. );
   tf_in.setZ( ll->end_point_2(2) + ( ll->end_point_1(2) - ll->end_point_2(2) ) / 2. );
 
-  tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
+  try {
+    tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
+  } catch (tf::ExtrapolationException &) {
+    tf_in.stamp = Time(0,0);
+    tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
+  }
 
   Eigen::Vector3f out( tf_out.getX(), tf_out.getY(), tf_out.getZ() );
 
   return out;
 }
 
+
 bool
 ConveyorPoseThread::is_inbetween(double a, double b, double val) {
   double low = std::min(a, b);
   double up  = std::max(a, b);
 
-  if (val >= low && val <= up) {
-    return true;
-  } else {
-    return false;
-  }
+  return val >= low && val <= up;
 }
 
-CloudPtr
-ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
-{
-  CloudPtr out(new Cloud);
-  for (Point p : *in) {
-    if ( !(is_inbetween(cfg_gripper_y_min_, cfg_gripper_y_max_, p.y) && p.z < cfg_gripper_z_max_) )  { // remove gripper
-      if (p.y < cfg_gripper_slice_y_max_ && p.y > cfg_gripper_slice_y_min_) { // leave just correct hight
-        out->push_back(p);
-      }
-    }
-  }
-
-  return out;
-}
-
-CloudPtr
-ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
-{
-  double space = cfg_front_space_;
-  double z_min, z_max;
-  z_min = 0;	
-  if ( use_ll ) {
-    Eigen::Vector3f c = laserline_get_center_transformed(ll);
-    z_min = c(2) + cfg_front_offset_ - ( space / 2. );
-  }
-  z_max = z_min + space;
-
-  CloudPtr out(new Cloud);
-  for (Point p : *in) {
-    if ( p.z >= z_min && p.z <= z_max) {
-      out->push_back(p);
-    }
-  }
-
-  return out;
-}
-
-CloudPtr
-ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
-{
-  if (use_ll){
-    Eigen::Vector3f c = laserline_get_center_transformed(ll);
-
-    double x_min = c(0) - cfg_left_cut_;
-    double x_max = c(0) + cfg_right_cut_;
-
-    CloudPtr out(new Cloud);
-      for (Point p : *in) {
-        if ( p.x >= x_min && p.x <= x_max ) {
-          out->push_back(p);
-        }
-  }
-  return out;
-  }else{
-    logger->log_info(name(), "-------------STOPPED USING LASERLINE-----------");
-    CloudPtr out(new Cloud);
-    for (Point p : *in) {
-        if ( p.x >= -cfg_left_cut_no_ll_ && p.x <= cfg_right_cut_no_ll_ ) {
-        out->push_back(p);
-      }
-    }
-    return out;
-  }
-}
-
-CloudPtr
-ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff)
-{
-  CloudPtr out ( new Cloud(*in) );
-
-  // get planes
-  pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
-  // Create the segmentation object
-  pcl::SACSegmentation<pcl::PointXYZ> seg;
-  // Optional
-  seg.setOptimizeCoefficients (true);
-  // Mandatory
-  seg.setModelType (pcl::SACMODEL_PLANE);
-  seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setDistanceThreshold (cfg_plane_dist_threshold_);
-
-  seg.setInputCloud (out);
-  seg.segment (*inliers, *coeff);
-
-  if (inliers->indices.size () == 0) {
-    logger->log_error(name(), "Could not estimate a planar model for the given dataset.");
-    return CloudPtr();
-  }
-
-  // get inliers
-  CloudPtr tmp ( new Cloud );
-  pcl::ExtractIndices<Point> extract;
-  extract.setInputCloud (out);
-  extract.setIndices (inliers);
-  extract.setNegative (false);
-
-  extract.filter (*tmp);
-  *out = *tmp;
-
-  // check if cloud normal is ok
-  return out;
-}
-
-boost::shared_ptr<std::vector<pcl::PointIndices>>
-ConveyorPoseThread::cloud_cluster(CloudPtr in)
-{
-  //in = cloud_voxel_grid(in);
-  // Creating the KdTree object for the search method of the extraction
-  pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
-  tree->setInputCloud (in);
-
-  boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices(new std::vector<pcl::PointIndices>);
-  pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-  ec.setClusterTolerance (cfg_cluster_tolerance_);
-  ec.setMinClusterSize (cfg_cluster_size_min_);
-  ec.setMaxClusterSize (cfg_cluster_size_max_);
-  ec.setSearchMethod (tree);
-  ec.setInputCloud (in);
-  ec.extract (*cluster_indices);
-
-  return cluster_indices;
-}
-
-std::vector<CloudPtr>
-ConveyorPoseThread::cluster_split(CloudPtr in, boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices)
-{
-  std::vector<CloudPtr> clouds_out;
-  for (std::vector<pcl::PointIndices>::const_iterator c_it = cluster_indices->begin (); c_it != cluster_indices->end (); ++c_it) {
-    CloudPtr cloud_cluster (new Cloud);
-    for (std::vector<int>::const_iterator p_it = c_it->indices.begin (); p_it != c_it->indices.end (); ++p_it) {
-      cloud_cluster->points.push_back (in->points[*p_it]);
-    }
-    cloud_cluster->width = cloud_cluster->points.size ();
-    cloud_cluster->height = 1;
-    cloud_cluster->is_dense = true;
-
-    clouds_out.push_back(cloud_cluster);
-  }
-
-  return clouds_out;
-}
-
-CloudPtr
-ConveyorPoseThread::cluster_find_biggest(std::vector<CloudPtr> clouds_in, size_t & id)
-{
-  CloudPtr biggest(new Cloud);
-  size_t i = 0;
-  for (CloudPtr current : clouds_in) {
-    if ( biggest->size() < current->size() ) {
-      biggest = current;
-      id = i;
-    }
-    ++i;
-  }
-
-  return biggest;
-}
 
 CloudPtr
 ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
 {
-  float ls = cfg_voxel_grid_leave_size_;
+  float ls = cfg_voxel_grid_leaf_size_;
   pcl::ApproximateVoxelGrid<pcl::PointXYZ> vg;
   CloudPtr out (new Cloud);
   vg.setInputCloud (in);
  // logger->log_debug(name(), "voxel leaf size is %f", ls);
   vg.setLeafSize (ls, ls, ls);
   vg.filter (*out);
+  out->header = in->header;
   return out;
 }
 
@@ -804,151 +809,54 @@ ConveyorPoseThread::cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud
   cloud_out->header = header_;
 }
 
-ConveyorPoseThread::pose
-ConveyorPoseThread::calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal)
+
+void
+ConveyorPoseThread::pose_write()
 {
-  Eigen::Vector3f tangent0 = normal.cross(Eigen::Vector3f(1,0,0));
-  if (tangent0.dot(tangent0) < 0.0001){
-    tangent0 = normal.cross(Eigen::Vector3f(0,1,0));
+  if (!result_pose_) {
+    logger->log_error(name(), "BUG: calling pose_write() when result_pose_ is unset!");
+    return;
   }
-  tangent0.normalize();
-  Eigen::Vector3f tangent1 = normal.cross(tangent0);
-  tangent1.normalize();
-  Eigen::Matrix3f rotMatrix;
-  rotMatrix << tangent0, tangent1, normal;
-  Eigen::Quaternion<float> q(rotMatrix);
-  fawkes::tf::Vector3 origin(centroid(0), centroid(1), centroid(2));
-  fawkes::tf::Quaternion rot(q.x(), q.y(), q.z(), q.w());
+  bb_pose_->set_translation(0, result_pose_->getOrigin().getX());
+  bb_pose_->set_translation(1, result_pose_->getOrigin().getY());
+  bb_pose_->set_translation(2, result_pose_->getOrigin().getZ());
+  bb_pose_->set_rotation(0, result_pose_->getRotation().getX());
+  bb_pose_->set_rotation(1, result_pose_->getRotation().getY());
+  bb_pose_->set_rotation(2, result_pose_->getRotation().getZ());
+  bb_pose_->set_rotation(3, result_pose_->getRotation().getW());
 
-  pose ret;
-  ret.translation = origin;
-  ret.rotation = rot;
-
-  return ret;
-}
-
-void
-ConveyorPoseThread::tf_send_from_pose_if(pose pose)
-{
-  fawkes::tf::StampedTransform transform;
-
-  transform.frame_id = header_.frame_id;
-  transform.child_frame_id = conveyor_frame_id_;
-  // TODO use time of header, just don't works with bagfiles
-  fawkes::Time pt;
-  pt.set_time((long)header_.stamp / 1000);
-  transform.stamp = pt;
-
-  transform.setOrigin(pose.translation);
-  transform.setRotation(pose.rotation);
-
-  tf_publisher->send_transform(transform);
-}
-
-void
-ConveyorPoseThread::pose_write(pose pose)
-{
-  double translation[3], rotation[4];
-  translation[0] = pose.translation.x();
-  translation[1] = pose.translation.y();
-  translation[2] = pose.translation.z();
-  rotation[0] = pose.rotation.x();
-  rotation[1] = pose.rotation.y();
-  rotation[2] = pose.rotation.z();
-  rotation[3] = pose.rotation.w();
-  bb_pose_->set_translation(translation);
-  bb_pose_->set_rotation(rotation);
-
-  bb_pose_->set_frame(header_.frame_id.c_str());
-  fawkes::Time stamp((long)header_.stamp);
-  bb_pose_->set_visibility_history(vis_hist_);
+  bb_pose_->set_frame(result_pose_->frame_id.c_str());
+  bb_pose_->set_euclidean_fitness(result_fitness_);
+  long timestamp[2];
+  result_pose_->stamp.get_timestamp(timestamp[0], timestamp[1]);
+  bb_pose_->set_input_timestamp(timestamp);
   bb_pose_->write();
 }
 
+
 void
-ConveyorPoseThread::pose_publish_tf(pose pose)
+ConveyorPoseThread::pose_publish_tf(const tf::Stamped<tf::Pose> &pose)
 {
   // transform data into gripper frame (this is better for later use)
-  tf::Stamped<tf::Pose> tf_pose_cam, tf_pose_gripper;
-  tf_pose_cam.stamp = fawkes::Time((long)header_.stamp / 1000);
-  tf_pose_cam.frame_id = header_.frame_id;
-  tf_pose_cam.setOrigin(tf::Vector3( pose.translation.x(), pose.translation.y(), pose.translation.z() ));
-  tf_pose_cam.setRotation(tf::Quaternion( pose.rotation.x(), pose.rotation.y(), pose.rotation.z(), pose.rotation.w() ));
-  tf_listener->transform_pose("gripper", tf_pose_cam, tf_pose_gripper);
+  tf::Stamped<tf::Pose> tf_pose_gripper;
+  tf_listener->transform_pose("gripper", pose, tf_pose_gripper);
 
   // publish the transform from the gripper to the conveyor
   tf::Transform transform(
-                  tf::create_quaternion_from_yaw(M_PI),
+                  tf_pose_gripper.getRotation(),
                   tf_pose_gripper.getOrigin()
                 );
   tf::StampedTransform stamped_transform(transform, tf_pose_gripper.stamp, tf_pose_gripper.frame_id, conveyor_frame_id_);
   tf_publisher->send_transform(stamped_transform);
 }
+
+
 void
 ConveyorPoseThread::start_waiting()
 {
   wait_start_ = Time();
 }
 
-Eigen::Quaternion<float>
-ConveyorPoseThread::averageQuaternion(Eigen::Vector4f &cumulative, Eigen::Quaternion<float> newRotation, Eigen::Quaternion<float> firstRotation, float addDet){
-  
-  float w = 0.0;
-  float x = 0.0;
-  float y = 0.0;
-  float z = 0.0;	
-
-  if(!areQuaternionsClose(newRotation, firstRotation)){
-    newRotation = inverseSignQuaternion(newRotation);
-  }
-
-  cumulative.x() += newRotation.x();
-  x = cumulative.x() * addDet;
-  cumulative.y() += newRotation.y();
-  y = cumulative.y() * addDet;
-  cumulative.z() += newRotation.z();
-  z = cumulative.z() * addDet;
-  cumulative.w() += newRotation.w();
-  w = cumulative.w() * addDet;
-  
-  Eigen::Quaternion<float> result = normalizeQuaternion(x, y, z, w);
-  return result;
-}
-Eigen::Quaternion<float>
-ConveyorPoseThread::normalizeQuaternion(float x, float y, float z, float w){
-
-  float lengthD = 1.0 / (w*w + x*x + y*y + z*z);
-  w *= lengthD;
-  x *= lengthD;
-  y *= lengthD;
-  z *= lengthD;
-  
-  Eigen::Quaternion<float> result(x, y, z, w);
-  return result;
-}
- 
-//Changes the sign of the quaternion components. This is not the same as the inverse.
-Eigen::Quaternion<float>
-ConveyorPoseThread::inverseSignQuaternion(Eigen::Quaternion<float> q){
-  Eigen::Quaternion<float> result(-q.x(), -q.y(), -q.z(), -q.w());
-  return result;
-}
- 
-//Returns true if the two input quaternions are close to each other. This can
-//be used to check whether or not one of two quaternions which are supposed to
-//be very similar but has its component signs reversed (q has the same rotation as
-//-q)
-bool
-ConveyorPoseThread::areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quaternion<float> q2){
-  
-  float dot = q1.dot(q2);
-  if(dot < 0.0){ 
-    return false;					
-  } 
-  else{ 
-    return true;
-  }
-}
 
 bool
 ConveyorPoseThread::need_to_wait()
@@ -956,3 +864,367 @@ ConveyorPoseThread::need_to_wait()
   return Time() < wait_start_ + wait_time_;
 }
 
+
+void
+ConveyorPoseThread::set_cg_thread(RecognitionThread *cg_thread)
+{ recognition_thread_ = cg_thread; }
+
+
+void ConveyorPoseThread::config_value_erased(const char *path)
+{}
+
+void ConveyorPoseThread::config_tag_changed(const char *new_tag)
+{}
+
+void ConveyorPoseThread::config_comment_changed(const Configuration::ValueIterator *v)
+{}
+
+
+void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator *v) {
+  if (v->valid()) {
+    std::string path = v->path();
+    std::string sufx = path.substr(strlen(CFG_PREFIX));
+    std::string sub_prefix = sufx.substr(0, sufx.substr(1).find("/")+1);
+    std::string full_pfx = CFG_PREFIX + sub_prefix;
+    std::string opt = path.substr(full_pfx.length());
+
+    if(sub_prefix == "/without_ll") {
+      if (opt == "/left_cut")
+        change_val(opt, cfg_left_cut_no_ll_, v->get_float());
+      else if(opt == "/right_cut")
+        change_val(opt, cfg_right_cut_no_ll_, v->get_float());
+      else if(opt == "/top_cut")
+        change_val(opt, cfg_top_cut_no_ll_, v->get_float());
+      else if(opt == "/bottom_cut")
+        change_val(opt, cfg_bottom_cut_no_ll_, v->get_float());
+      else if(opt == "/front_cut")
+        change_val(opt, cfg_front_cut_no_ll_, v->get_float());
+      else if(opt == "/back_cut")
+        change_val(opt, cfg_back_cut_no_ll_, v->get_float());
+    } else if(sub_prefix == "/with_ll") {
+      if (opt == "/left_cut")
+        change_val(opt, cfg_left_cut_, v->get_float());
+      else if(opt == "/right_cut")
+        change_val(opt, cfg_right_cut_, v->get_float());
+      else if(opt == "/top_cut")
+        change_val(opt, cfg_top_cut_, v->get_float());
+      else if(opt == "/bottom_cut")
+        change_val(opt, cfg_bottom_cut_, v->get_float());
+      else if(opt == "/front_cut")
+        change_val(opt, cfg_front_cut_, v->get_float());
+      else if(opt == "/back_cut")
+        change_val(opt, cfg_back_cut_, v->get_float());
+    } else if(sub_prefix == "/shelf") {
+      if (opt == "/without_ll/left_cut")
+        change_val(opt, cfg_shelf_left_cut_no_ll_, v->get_float());
+      else if(opt == "/without_ll/right_cut")
+        change_val(opt, cfg_shelf_right_cut_no_ll_, v->get_float());
+      else if(opt == "/without_ll/top_cut")
+        change_val(opt, cfg_shelf_top_cut_no_ll_, v->get_float());
+      else if(opt == "/without_ll/bottom_cut")
+        change_val(opt, cfg_shelf_bottom_cut_no_ll_, v->get_float());
+      else if(opt == "/without_ll/front_cut")
+        change_val(opt, cfg_shelf_front_cut_no_ll_, v->get_float());
+      else if(opt == "/without_ll/back_cut")
+        change_val(opt, cfg_shelf_back_cut_no_ll_, v->get_float());
+      else if (opt == "/with_ll/left_cut")
+        change_val(opt, cfg_shelf_left_cut_, v->get_float());
+      else if(opt == "/with_ll/right_cut")
+        change_val(opt, cfg_shelf_right_cut_, v->get_float());
+      else if(opt == "/with_ll/top_cut")
+        change_val(opt, cfg_shelf_top_cut_, v->get_float());
+      else if(opt == "/with_ll/bottom_cut")
+        change_val(opt, cfg_shelf_bottom_cut_, v->get_float());
+      else if(opt == "/with_ll/front_cut")
+        change_val(opt, cfg_shelf_front_cut_, v->get_float());
+      else if(opt == "/with_ll/back_cut")
+        change_val(opt, cfg_shelf_back_cut_, v->get_float());
+      else if(opt == "/left_off")
+        change_val(opt, cfg_shelf_left_off_, v->get_float());
+      else if(opt == "/middle_off")
+        change_val(opt, cfg_shelf_middle_off_, v->get_float());
+      else if(opt == "/right_off")
+        change_val(opt, cfg_shelf_right_off_, v->get_float());
+    } else if (sub_prefix == "/icp") {
+      if (opt == "/max_correspondence_dist")
+        change_val(opt, recognition_thread_->cfg_icp_max_corr_dist_, v->get_float());
+      else if (opt == "/transformation_epsilon")
+        change_val(opt, recognition_thread_->cfg_icp_tf_epsilon_, double(v->get_float()));
+      else if (opt == "/refinement_factor")
+        change_val(opt, recognition_thread_->cfg_icp_refinement_factor_, double(v->get_float()));
+      else if (opt == "/max_iterations")
+        change_val(opt, recognition_thread_->cfg_icp_max_iterations_, v->get_int());
+      else if (opt == "/hv_penalty_threshold")
+        change_val(opt, recognition_thread_->cfg_icp_hv_penalty_thresh_, v->get_float());
+      else if (opt == "/hv_support_threshold")
+        change_val(opt, recognition_thread_->cfg_icp_hv_support_thresh_, v->get_float());
+      else if (opt == "/hv_inlier_threshold")
+        change_val(opt, recognition_thread_->cfg_icp_hv_inlier_thresh_, v->get_float());
+      else if (opt == "/hv_shelf_penalty_threshold")
+        change_val(opt, recognition_thread_->cfg_icp_shelf_hv_penalty_thresh_, v->get_float());
+      else if (opt == "/hv_shelf_support_threshold")
+        change_val(opt, recognition_thread_->cfg_icp_shelf_hv_support_thresh_, v->get_float());
+      else if (opt == "/hv_shelf_inlier_threshold")
+        change_val(opt, recognition_thread_->cfg_icp_shelf_hv_inlier_thresh_, v->get_float());
+      else if (opt == "/min_loops")
+        change_val(opt, recognition_thread_->cfg_icp_min_loops_, v->get_uint());
+      else if (opt == "/max_loops")
+        change_val(opt, recognition_thread_->cfg_icp_max_loops_, v->get_uint());
+      else if (opt == "/auto_restart")
+        change_val(opt, recognition_thread_->cfg_icp_auto_restart_, v->get_bool());
+      else if (opt == "/hint/input_conveyor/x")
+      {
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][0], v->get_float());
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][0], v->get_float());
+      }
+      else if (opt == "/hint/input_conveyor/y")
+      {
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][1], v->get_float());
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][1], -(v->get_float()));
+      }
+      else if (opt == "/hint/input_conveyor/z")
+      {
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][2], v->get_float());
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::OUTPUT_CONVEYOR][2], v->get_float());
+      }
+      else if (opt == "/hint/left_shelf/x")
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::SHELF_LEFT][0], v->get_float());
+      else if (opt == "/hint/left_shelf/y")
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::SHELF_LEFT][1], v->get_float());
+      else if (opt == "/hint/left_shelf/z")
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::SHELF_LEFT][2], v->get_float());
+      else if (opt == "/hint/middle_shelf/x")
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::SHELF_MIDDLE][0], v->get_float());
+      else if (opt == "/hint/middle_shelf/y")
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::SHELF_MIDDLE][1], v->get_float());
+      else if (opt == "/hint/middle_shelf/z")
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::SHELF_MIDDLE][2], v->get_float());
+      else if (opt == "/hint/right_shelf/x")
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::SHELF_RIGHT][0], v->get_float());
+      else if (opt == "/hint/right_shelf/y")
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::SHELF_RIGHT][1], v->get_float());
+      else if (opt == "/hint/right_shelf/z")
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::SHELF_RIGHT][2], v->get_float());
+      else if (opt == "/hint/slide/x")
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::SLIDE][0], v->get_float());
+      else if (opt == "/hint/slide/y")
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::SLIDE][1], v->get_float());
+      else if (opt == "/hint/slide/z")
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::SLIDE][2], v->get_float());
+      else if (opt == "/hint/default/x")
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][0], v->get_float());
+      else if (opt == "/hint/default/y")
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][1], v->get_float());
+      else if (opt == "/hint/default/z")
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][2], v->get_float());
+
+      else if (opt == "/conveyor_offset/base_station/x")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::BASE_STATION][0], v->get_float());
+      else if (opt == "/conveyor_offset/base_station/y")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::BASE_STATION][1], v->get_float());
+      else if (opt == "/conveyor_offset/base_station/z")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::BASE_STATION][2], v->get_float());
+
+      else if (opt == "/conveyor_offset/cap_station/x")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::CAP_STATION][0], v->get_float());
+      else if (opt == "/conveyor_offset/cap_station/y")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::CAP_STATION][1], v->get_float());
+      else if (opt == "/conveyor_offset/cap_station/z")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::CAP_STATION][2], v->get_float());
+
+      else if (opt == "/conveyor_offset/ring_station/x")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::RING_STATION][0], v->get_float());
+      else if (opt == "/conveyor_offset/ring_station/y")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::RING_STATION][1], v->get_float());
+      else if (opt == "/conveyor_offset/ring_station/z")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::RING_STATION][2], v->get_float());
+
+      else if (opt == "/conveyor_offset/delivery_station/x")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::DELIVERY_STATION][0], v->get_float());
+      else if (opt == "/conveyor_offset/delivery_station/y")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::DELIVERY_STATION][1], v->get_float());
+      else if (opt == "/conveyor_offset/delivery_station/z")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::DELIVERY_STATION][2], v->get_float());
+
+      else if (opt == "/conveyor_offset/storage_station/x")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION][0], v->get_float());
+      else if (opt == "/conveyor_offset/storage_station/y")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION][1], v->get_float());
+      else if (opt == "/conveyor_offset/storage_station/z")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION][2], v->get_float());
+
+      else if (opt == "/conveyor_offset/default/x")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::NO_STATION][0], v->get_float());
+      else if (opt == "/conveyor_offset/default/y")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::NO_STATION][1], v->get_float());
+      else if (opt == "/conveyor_offset/default/z")
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::NO_STATION][2], v->get_float());
+    }
+    if (recognition_thread_->enabled())
+      recognition_thread_->restart();
+  }
+}
+
+
+void ConveyorPoseThread::bb_set_busy(bool busy)
+{
+  bb_pose_->set_busy(busy);
+  bb_pose_->write();
+}
+
+
+float ConveyorPoseThread::cloud_resolution() const
+{ return cfg_voxel_grid_leaf_size_; }
+
+
+Eigen::Matrix4f pose_to_eigen(const fawkes::tf::Pose &pose)
+{
+  const tf::Matrix3x3 &rot = pose.getBasis();
+  const tf::Vector3 &trans = pose.getOrigin();
+  Eigen::Matrix4f rv(Eigen::Matrix4f::Identity());
+  rv.block<3,3>(0,0)
+      << float(rot[0][0]), float(rot[0][1]), float(rot[0][2]),
+         float(rot[1][0]), float(rot[1][1]), float(rot[1][2]),
+         float(rot[2][0]), float(rot[2][1]), float(rot[2][2]);
+  rv.block<3,1>(0,3) << float(trans[0]), float(trans[1]), float(trans[2]);
+  return rv;
+}
+
+
+fawkes::tf::Pose eigen_to_pose(const Eigen::Matrix4f &m)
+{
+  fawkes::tf::Pose rv;
+  rv.setOrigin( { double(m(0,3)), double(m(1,3)), double(m(2,3)) } );
+  rv.setBasis( {
+                 double(m(0,0)), double(m(0,1)), double(m(0,2)),
+                 double(m(1,0)), double(m(1,1)), double(m(1,2)),
+                 double(m(2,0)), double(m(2,1)), double(m(2,2))
+               } );
+  return rv;
+}
+
+/*
+ * This function trims the scene such that the gripper is not visible anymore.
+ * Further the scene is cut down to the center, so the amount of points to correspond
+ * becomes smaller.
+ * Last but not least the background (e.g. cables) is cut away, making the model more general.
+ *
+ * The trimming happens inside the frame of the conveyor cam frame.
+ *
+ * From the point of the cam the coordinate system is like:
+ *             z
+ *            /
+ *          /
+ *        /
+ *       *-------x
+ *       |
+ *       |
+ *       |
+ *       y
+ * */
+CloudPtr ConveyorPoseThread::cloud_trim(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll) {
+    float x_min = -FLT_MAX, x_max = FLT_MAX, 
+           y_min = -FLT_MAX, y_max = FLT_MAX, 
+           z_min = -FLT_MAX, z_max = FLT_MAX;
+
+    if(use_ll){
+        // get position of initial guess in conveyor cam frame
+        // rotation is ignored, since rotation values are small
+      tf::Stamped<tf::Pose> origin_pose;
+      if(cfg_record_model_){
+        tf_listener->transform_origin(cfg_model_origin_frame_, in->header.frame_id,  origin_pose);
+      } else {
+        tf_listener->transform_pose(in->header.frame_id,
+                tf::Stamped<tf::Pose>(initial_guess_laser_odom_, Time(0,0), initial_guess_laser_odom_.frame_id),
+                origin_pose);
+      }
+        float x_ini = origin_pose.getOrigin()[0],
+              y_ini = origin_pose.getOrigin()[1],
+              z_ini = origin_pose.getOrigin()[2];
+
+        if(is_target_shelf()){ //using shelf cut values
+          float x_min_temp = x_ini + (float) cfg_shelf_left_cut_,
+                x_max_temp = x_ini + (float) cfg_shelf_right_cut_;
+          switch(current_mps_target_) {
+            case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_LEFT:
+              x_min_temp += (float) cfg_shelf_left_off_;
+              x_max_temp += (float) cfg_shelf_left_off_;
+              break;
+            case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_MIDDLE:
+              x_min_temp += (float) cfg_shelf_middle_off_;
+              x_max_temp += (float) cfg_shelf_middle_off_;
+              break;
+            case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_RIGHT:
+              x_min_temp += (float) cfg_shelf_right_off_;
+              x_max_temp += (float) cfg_shelf_right_off_;
+              break;
+            default: //This should not happen
+              break;
+          }
+          x_min = std::max(x_min_temp, x_min);
+          x_max = std::min(x_max_temp, x_max);
+
+          y_min = std::max(y_ini + (float) cfg_shelf_top_cut_, y_min);
+          y_max = std::min(y_ini + (float) cfg_shelf_bottom_cut_, y_max);
+
+          z_min = std::max(z_ini + (float) cfg_shelf_front_cut_, z_min);
+          z_max = std::min(z_ini + (float) cfg_shelf_back_cut_, z_max);
+        } else { //using general cut values
+          x_min = std::max(x_ini + (float) cfg_left_cut_, x_min);
+          x_max = std::min(x_ini + (float) cfg_right_cut_, x_max);
+
+          y_min = std::max(y_ini + (float) cfg_top_cut_, y_min);
+          y_max = std::min(y_ini + (float) cfg_bottom_cut_, y_max);
+
+          z_min = std::max(z_ini + (float) cfg_front_cut_, z_min);
+          z_max = std::min(z_ini + (float) cfg_back_cut_, z_max);
+        }
+
+    } else { //no laser line is equivalent to no usable initial tf guess
+        if(is_target_shelf()){ //using shelf cut values
+          x_min = std::max((float) cfg_shelf_left_cut_no_ll_, x_min);
+          x_max = std::min((float) cfg_shelf_right_cut_no_ll_, x_max);
+
+          y_min = std::max((float) cfg_shelf_top_cut_no_ll_, y_min);
+          y_max = std::min((float) cfg_shelf_bottom_cut_no_ll_, y_max);
+
+          z_min = std::max((float) cfg_shelf_front_cut_no_ll_, z_min);
+          z_max = std::min((float) cfg_shelf_back_cut_no_ll_, z_max);
+        } else { //using general cut values
+          x_min = std::max((float) cfg_left_cut_no_ll_, x_min);
+          x_max = std::min((float) cfg_right_cut_no_ll_, x_max);
+
+          y_min = std::max((float) cfg_top_cut_no_ll_, y_min);
+          y_max = std::min((float) cfg_bottom_cut_no_ll_, y_max);
+
+          z_min = std::max((float) cfg_front_cut_no_ll_, z_min);
+          z_max = std::min((float) cfg_back_cut_no_ll_, z_max);
+        }
+
+    }
+
+    CloudPtr out(new Cloud);
+    for(Point p: *in) {
+        if(    p.x < x_max && p.x > x_min
+           &&  p.y < y_max && p.y > y_min
+           &&  p.z < z_max && p.z > z_min) {
+            out->push_back(p);
+        }
+    }
+
+    out->header = in->header;
+    return out;
+}
+
+bool ConveyorPoseThread::is_target_shelf()
+{
+    switch (current_mps_target_)
+    {
+        case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_LEFT:
+        case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_MIDDLE:
+        case fawkes::ConveyorPoseInterface::MPS_TARGET::SHELF_RIGHT:
+            return true;
+        default:
+            return false;
+    }
+}

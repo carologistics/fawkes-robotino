@@ -374,7 +374,7 @@ function ALIGN_FAST:init()
 
    self.args["motor_move"] = {
       x = p.x,
-      y = p.y + (self.fsm.vars.y or 0),
+      y = p.y,
       ori = p.ori,
       tolerance = { x=0.05, y=0.03, ori=0.03 }
    }
