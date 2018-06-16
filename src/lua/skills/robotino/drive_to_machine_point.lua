@@ -26,7 +26,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "drive_to_machine_point"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = { "goto","mps_align","motor_move" }
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
@@ -100,6 +100,7 @@ local LINE_LENGTH_MIN=0.64          -- minimum laser line length
 local LINE_LENGTH_MAX=0.71          -- maximum laser line length
 local MAX_VEL_MOTOR_MOVE=0.1        -- maximum velocity for motor_move
 local NUM_DIRECT_MPS_ALIGN_TRIES=4  -- number of tries to correct the pose in front of the laser line
+local CONVEYOR_IN_OUT_OFFSET=0.03  -- number of tries to correct the pose in front of the laser line
 
 -- Offsets for points of interest at the MPS.
 -- Considered to be from the right of the MPS.
@@ -191,7 +192,6 @@ function get_interesting_lines(self)
             self.fsm.vars.lines_visited[line:id()] < max_num_visited --and
          then
             table.insert(rv, line)
-            printf("interesting %s ori: %f", line:id(), ori)
          end
       end
    end
@@ -229,10 +229,6 @@ fsm:define_states{ export_to=_M,
   -- DRIVE_TO fails when the goal cannot be reached - should we still try to perform an MPS_ALIGN?
   {"SKILL_DRIVE_TO",           SkillJumpState, skills={{goto}},          final_to="SKILL_MPS_ALIGN", fail_to="FAILED"},
   {"SKILL_MPS_ALIGN",          SkillJumpState, skills={{mps_align}},         final_to="FINAL", fail_to="FAILED"},
-  -- DIRECT_MPS_ALIGN is to transit to a motion once the laser line of interest is seen.
---  {"DIRECT_MPS_ALIGN",         SkillJumpState, skills={{motor_move}},       final_to="FINAL", fail_to="FAILED" },
-  {"DIRECT_MPS_ALIGN",         SkillJumpState, skills={{motor_move}},       final_to="DIRECT_MPS_ALIGN", fail_to="FAILED" },
-  {"DIRECT_MPS_ALIGN_CORRECT_ORI",         SkillJumpState, skills={{motor_move}},       final_to="FINAL", fail_to="FAILED" },
 }
 
 fsm:add_transitions{
@@ -241,10 +237,7 @@ fsm:add_transitions{
   { "INIT",    "FAILED",                   cond="not parameters_valid(self)",  desc="parameters invalid" },
   { "INIT",    "FAILED",                   timeout=5,  desc="timeout" }, -- ONLY FOR TESTING!
   { "INIT",    "SKILL_DRIVE_TO",           cond=true },
-  { "SKILL_DRIVE_TO", "DIRECT_MPS_ALIGN",    cond="laser_line_found(self)" },
-  { "DIRECT_MPS_ALIGN", "DIRECT_MPS_ALIGN_CORRECT_ORI",    cond="vars.mps_align_tries > NUM_DIRECT_MPS_ALIGN_TRIES" },
-  { "DIRECT_MPS_ALIGN", "FAILED",          cond="not laser_line_still_visible(self)" },
-  { "DIRECT_MPS_ALIGN_CORRECT_ORI", "FAILED",          cond="not laser_line_still_visible(self)" },
+  { "SKILL_DRIVE_TO", "SKILL_MPS_ALIGN",    cond="laser_line_found(self)" },
 }
 
 function INIT:init()
@@ -275,6 +268,11 @@ function INIT:init()
    self.fsm.vars.move_y = 0
    if self.fsm.vars.option == "CONVEYOR" then
      self.fsm.vars.move_y = OFFSET_CONVEYOR
+     if string.match(self.fsm.vars.place, 'I$') then
+        self.fsm.vars.move_y = self.fsm.vars.move_y + CONVEYOR_IN_OUT_OFFSET
+     elseif string.match(self.fsm.vars.place, 'O$') then
+        self.fsm.vars.move_y = self.fsm.vars.move_y - CONVEYOR_IN_OUT_OFFSET
+     end
    elseif self.fsm.vars.option == "SHELF_RIGHT" then
      self.fsm.vars.move_y = OFFSET_SHELF_RIGHT
    elseif self.fsm.vars.option == "SHELF_MIDDLE" then
@@ -315,40 +313,4 @@ end
 
 function SKILL_MPS_ALIGN:init()
   self.args["mps_align"] = {tag_id =self.fsm.vars.tag_id, x = self.fsm.vars.x_at_mps, y = self.fsm.vars.move_y}
-end
-
-function DIRECT_MPS_ALIGN:init()
-  -- TODO: We might lose the laser line at some point, make sure that we transit correctly according to a lost laserline!
-  local line = self.fsm.vars.lines[self.fsm.vars.matched_line:id()]
-
-  self.fsm.vars.line_point = llutils.point_in_front(llutils.center(line), self.fsm.vars.x_at_mps)
-
-  local move_to_point = tfm.transform6D(
-         { x=self.fsm.vars.line_point.x, y=self.fsm.vars.line_point.y, z=0,
-           ori=fawkes.tf.create_quaternion_from_yaw(self.fsm.vars.line_point.ori) },
-           "/base_laser", "/base_link")
-
-  -- avoid approaching the MPS too close when we still have tries left
-  if self.fsm.vars.mps_align_tries < NUM_DIRECT_MPS_ALIGN_TRIES - 2 then
-    move_to_point.x = move_to_point.x / 2
-  end
---  printf ("drive: " .. move_to_point.x .. " " .. move_to_point.y + self.fsm.vars.move_y .. " " .. line:bearing())
-  self.args["motor_move"] = {x = move_to_point.x, y = move_to_point.y + self.fsm.vars.move_y, z = 0, ori=line:bearing(), vel_trans=MAX_VEL_MOTOR_MOVE, TOLERANCE =     { x=0.02, y=0.02, ori=0.01 }}
-  self.fsm.vars.mps_align_tries = self.fsm.vars.mps_align_tries + 1
-end
-
-function DIRECT_MPS_ALIGN_CORRECT_ORI:init()
-  -- TODO: We might lose the laser line at some point, make sure that we transit correctly according to a lost laserline!
-  local line = self.fsm.vars.lines[self.fsm.vars.matched_line:id()]
-
-  self.fsm.vars.line_point = llutils.point_in_front(llutils.center(line), self.fsm.vars.x_at_mps)
-
-  local move_to_point = tfm.transform6D(
-         { x=self.fsm.vars.line_point.x, y=self.fsm.vars.line_point.y, z=0,
-           ori=fawkes.tf.create_quaternion_from_yaw(self.fsm.vars.line_point.ori) },
-           "/base_laser", "/base_link")
-
---  printf ("drive: " .. move_to_point.x .. " " .. move_to_point.y + self.fsm.vars.move_y .. " " .. line:bearing())
-  self.args["motor_move"] = {ori=line:bearing(), vel_trans=MAX_VEL_MOTOR_MOVE, TOLERANCE =     { x=0.02, y=0.02, ori=0.01 }}
-  self.fsm.vars.mps_align_tries = self.fsm.vars.mps_align_tries + 1
 end
