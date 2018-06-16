@@ -91,9 +91,9 @@ end
 
 function tolerance_ok()
    local pose = pose_offset()
-   if if_conveyor_pose:is_busy() then 
+   if if_conveyor_pose:is_busy() then
       return false
-   end 
+   end
 
    if math.abs(pose.x) <= gripper_tolerance_x and math.abs(pose.y) <= gripper_tolerance_y and math.abs(pose.z) <= gripper_tolerance_z then
       return true
@@ -149,7 +149,7 @@ end
 
 
 fsm:define_states{ export_to=_M,
-   closure={gripper_if=gripper_if, tolerance_ok=tolerance_ok, MAX_RETRIES=MAX_RETRIES, result_ready=result_ready, fitness_ok=fitness_ok},
+   closure={MAX_VISION_RETRIES=MAX_VISION_RETRIES,gripper_if=gripper_if, tolerance_ok=tolerance_ok, MAX_RETRIES=MAX_RETRIES, result_ready=result_ready, fitness_ok=fitness_ok},
    {"INIT", JumpState},
    {"INIT_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="OPEN_GRIPPER", fail_to="FAILED"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="CHECK_VISION", fail_to="FAILED"},
@@ -169,7 +169,7 @@ fsm:add_transitions{
    {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"CHECK_VISION", "MOVE_GRIPPER_FORWARD", cond="result_ready() and fitness_ok() and tolerance_ok()"},
    {"CHECK_VISION", "GRIPPER_ALIGN", cond="result_ready() and fitness_ok()", desc="Fitness threshold reached"},
-   {"CHECK_VISION", "CHECK_VISION", cond="result_ready() and not fitness_ok() and vars.vision_retries < 3"},
+   {"CHECK_VISION", "CHECK_VISION", cond="result_ready() and not fitness_ok() and vars.vision_retries <= MAX_VISION_RETRIES"},
    {"DECIDE_RETRY", "CHECK_VISION", cond="vars.retries <= MAX_RETRIES"},
    {"DECIDE_RETRY", "MOVE_GRIPPER_FORWARD", cond=true}
 }
@@ -216,7 +216,7 @@ end
 
 function GRIPPER_ALIGN:init()
   self.fsm.vars.retries = self.fsm.vars.retries + 1
-  
+
   local pose = pose_offset(self)
   self.args["gripper_commands_new"] = pose
   self.args["gripper_commands_new"].command = "MOVEABS"
