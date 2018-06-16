@@ -222,7 +222,7 @@
   (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
-  (wm-fact (key domain fact mps-state args? m ?mps s ?s&:(neq s IDLE|READY-AT-OUTPUT)))
+  (wm-fact (key domain fact mps-state args? m ?mps s ?s&~IDLE&~READY-AT-OUTPUT))
   ?pt <- (pending-timer (plan-id ?plan-id) (action-id ?id) (start-time $?starttime) (timeout-time $?timeout))
   (test (< (nth$ 1 ?timeout) (+ (nth$ 1 ?starttime) ?*MPS-DOWN-TIMEOUT-DURATION* ?*COMMON-TIMEOUT-DURATION*)))
   =>
