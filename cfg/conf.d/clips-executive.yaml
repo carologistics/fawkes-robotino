@@ -126,6 +126,7 @@ clips-executive:
               - rcll2017/noop-actions.clp
               - rcll2017/refbox-actions.clp
               - rcll2017/lock-actions.clp
+              - rcll2017/wait-actions.clp
           - name: execution-monitoring
             file: rcll2017/execution-monitoring.clp
 
