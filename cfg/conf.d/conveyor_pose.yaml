@@ -96,10 +96,10 @@ plugins/conveyor_pose:
     hv_inlier_threshold: 0.004
 
     # Max. proportion of penalized model points for a match
-    hv_penalty_threshold: 0.15
+    hv_penalty_threshold: 0.25
 
     # Min. proportion of supported model points for a match
-    hv_support_threshold: 0.65
+    hv_support_threshold: 0.55
 
     # For the shelf recognition, hypothesis verifications needs to be lesst strict.
     # The following values only apply for hv for shelf.
