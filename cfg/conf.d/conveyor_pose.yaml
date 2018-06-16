@@ -42,6 +42,9 @@ plugins/conveyor_pose:
   # Paths to the reference models are looked up in CONFDIR (e.g. fawkes-robotino/cfg)
   # Specific overrides can be added under <MPS_TYPE>_<MPS_TARGET> keys, e.g:
   # reference_models/BASE_STATION_INPUT_CONVEYOR: "conveyor_pcls/pappteil.pcd"
+  #
+  # For MPS which output on both sides, output_conveyor model is used. However, further below 
+  # hints regarding input and output are applied as usual.
   reference_models:
     default: "conveyor_pcls/default.pcd"
     input_conveyor: "conveyor_pcls/with_cone.pcd"
