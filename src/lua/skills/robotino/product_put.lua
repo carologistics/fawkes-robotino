@@ -75,7 +75,8 @@ local align_target_frame = "gripper_fingers" -- the gripper align is made relati
 local z_movement_target_frame = "gripper" -- the gripper z movement is made relative to this frame (according to gripper_commands_new)
 local x_movement_target_frame = "gripper" -- the gripper x movement is made relative to this frame (according to griper_commands_new)
 
-
+local MAX_RETRIES=3
+local MAX_VISION_RETRIES=5
 
 function no_writer()
    return not if_conveyor_pose:has_writer()
@@ -134,7 +135,7 @@ function pose_offset()
 end
 
 fsm:define_states{ export_to=_M,
-   closure={MAX_RETRIES=MAX_RETRIES,tolerance_ok=tolerance_ok,result_ready=result_ready,fitness_ok=fitness_ok},
+   closure={MAX_VISION_RETRIES=MAX_VISION_RETRIES,MAX_RETRIES=MAX_RETRIES,tolerance_ok=tolerance_ok,result_ready=result_ready,fitness_ok=fitness_ok},
   {"INIT", JumpState},
   {"CHECK_VISION", JumpState},
   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="DECIDE_RETRY",fail_to="FAILED"},
@@ -152,7 +153,7 @@ fsm:add_transitions{
   {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
   {"CHECK_VISION","MOVE_GRIPPER_FORWARD", cond="result_ready() and fitness_ok() and tolerance_ok()"},
   {"CHECK_VISION", "GRIPPER_ALIGN", cond="result_ready() and fitness_ok()"},
-  {"CHECK_VISION", "CHECK_VISION", cond="result_ready() and not fitness_ok()"},
+  {"CHECK_VISION", "CHECK_VISION", cond="result_ready() and not fitness_ok() and vars.vision_retries <= MAX_VISION_RETRIES"},
   {"DECIDE_RETRY", "CHECK_VISION", cond="vars.retries <= MAX_RETRIES"},
   {"DECIDE_RETRY", "MOVE_GRIPPER_FORWARD", cond=true},
 }
