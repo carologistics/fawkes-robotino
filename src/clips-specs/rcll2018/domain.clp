@@ -89,6 +89,8 @@
     (domain-object (name R-2) (type robot))
     (domain-object (name R-3) (type robot))
 
+    (domain-object (name SPAWNING-MASTER) (type master-token))
+
     (domain-object (name CCB1) (type cap-carrier))
     (domain-object (name CCB2) (type cap-carrier))
     (domain-object (name CCB3) (type cap-carrier))
