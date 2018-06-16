@@ -113,6 +113,11 @@ local OFFSET_SLIDE=-0.3
 local MIN_VIS_HIST_LINE=5 --15
 local MIN_VIS_HIST_LINE_SEARCH=6 --15
 
+-- drive gripper to these poses depending on "gripper_home" frame (therefore abs values)
+local GRIPPER_POSES = {
+  align={x=0.05, y=0.00,z=0.035},
+}
+
 function node_is_valid(self)
   if self.fsm.vars.point_set then
     return self.fsm.vars.point_valid
@@ -228,7 +233,7 @@ fsm:define_states{ export_to=_M,
 
   -- DRIVE_TO fails when the goal cannot be reached - should we still try to perform an MPS_ALIGN?
   {"SKILL_DRIVE_TO",           SkillJumpState, skills={{goto}},          final_to="SKILL_MPS_ALIGN", fail_to="FAILED"},
-  {"SKILL_MPS_ALIGN",          SkillJumpState, skills={{mps_align}},         final_to="FINAL", fail_to="FAILED"},
+  {"SKILL_MPS_ALIGN",          SkillJumpState, skills={{mps_align,gripper_commands_new}},         final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -313,4 +318,9 @@ end
 
 function SKILL_MPS_ALIGN:init()
   self.args["mps_align"] = {tag_id =self.fsm.vars.tag_id, x = self.fsm.vars.x_at_mps, y = self.fsm.vars.move_y}
+
+  self.args["gripper_commands_new"] = GRIPPER_POSES["align"]
+  self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].target_frame = "gripper_home"
+  self.args["gripper_commands_new"].wait = false
 end
