@@ -353,7 +353,7 @@
   "Prefilling a specific RS gets +2 priority if a started product waits for additional bases on it."
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
   (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
-  (not (goal (class FILL-RS|FILL-RS-EXPLICITLY) (mode FORMULATED)))
+  (not (goal (class FILL-RS|FILL-RS-FROM-BS) (mode FORMULATED)))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   ;--Match ring to order [if still the order needs any]
@@ -399,7 +399,7 @@
   "Prefilling a specific RS gets +1 priority if a unselected order needs additional bases from it."
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
   (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
-  (not (goal (class FILL-RS|FILL-RS-EXPLICITLY) (mode FORMULATED)))
+  (not (goal (class FILL-RS|FILL-RS-FROM-BS) (mode FORMULATED)))
   ;RS CEs
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
@@ -430,7 +430,7 @@
 )
 
 
-(defrule goal-reasoner-create-prefill-ring-station-explicitly
+(defrule goal-reasoner-create-prefill-ring-station-from-base-station
   "Insert a new base in a RS for preparation"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
@@ -460,9 +460,9 @@
           (bind ?priority-increase ?prio:value)
       )
    (retract ?prio))
-  (printout warn "Goal " FILL-RS-EXPLICITLY " formulated" crlf)
-  (assert (goal (id (sym-cat FILL-RS-EXPLICITLY- (gensym*)))
-                (class FILL-RS-EXPLICITLY)
+  (printout warn "Goal " FILL-RS-FROM-BS " formulated" crlf)
+  (assert (goal (id (sym-cat FILL-RS-FROM-BS- (gensym*)))
+                (class FILL-RS-FROM-BS)
                 (priority (+ ?priority-increase ?*PRIORITY-PREFILL-RS*))
                 (parent ?maintain-id)
                              (params robot ?robot
