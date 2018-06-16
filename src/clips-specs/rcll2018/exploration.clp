@@ -81,16 +81,16 @@
                         M-Z41 M-Z31 M-Z21 M-Z11))
 
      (foreach ?zone ?Czones
-	(assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (is-list FALSE) )
-       		(wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (is-list FALSE) )
-    		(wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (is-list FALSE) )
+	(assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+       		(wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+    		(wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
 		(wm-fact (key exploration zone ?zone args? machine UNKNOWN team CYAN))
 	)
      )
      (foreach ?zone ?Mzones
-	(assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (is-list FALSE) )
-       		(wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (is-list FALSE) )
-    		(wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (is-list FALSE) )
+	(assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+       		(wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+    		(wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
 		(wm-fact (key exploration zone ?zone args? machine UNKNOWN team MAGENTA)))
      )
 
