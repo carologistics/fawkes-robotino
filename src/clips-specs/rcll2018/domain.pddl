@@ -43,6 +43,8 @@
 		shelf-spot - object
 		ring-num - object
 		zone - object
+		token - object
+		master-token - token
 	)
 
 	(:constants

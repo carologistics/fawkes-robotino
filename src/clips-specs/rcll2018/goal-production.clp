@@ -66,6 +66,18 @@
 
 )
 
+(defrule goal-reasoner-create-acquire-token-spawning-master
+  "If no one is spawn-master. Try to be the spawn master"
+ (domain-facts-loaded)
+ (domain-object (name SPAWNING-MASTER) (type master-token))
+ (not (goal (class ACQUIRE-TOKEN) (params token-name SPAWNING-MASTER)))
+ (not (mutex (name SPAWNING-MASTER) (state LOCKED)))
+ =>
+ (assert (goal (id (sym-cat ACQUIRE-TOKEN- (gensym*)))
+                     (class ACQUIRE-TOKEN) 
+                     (params token-name SPAWNING-MASTER)))
+)
+
 ; ## Maintain beacon sending
 (defrule goal-reasoner-create-beacon-maintain
   (not (goal (class BEACONMAINTAIN)))
