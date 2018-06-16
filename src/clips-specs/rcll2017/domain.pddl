@@ -372,7 +372,7 @@
 	(:action wp-get
 		:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side)
 		:precondition (and (at ?r ?m ?side) (can-hold ?r) (wp-at ?wp ?m ?side)
-                    (locked ?m) (mps-state ?m READY-AT-OUTPUT) (wp-usable ?wp))
+                    (locked ?m) (wp-usable ?wp))
 		:effect (and (not (wp-at ?wp ?m ?side)) (holding ?r ?wp) (not (can-hold ?r))
 								 (not (mps-state ?m READY-AT-OUTPUT)) (mps-state ?m IDLE))
 	)
