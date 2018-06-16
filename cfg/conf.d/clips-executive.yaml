@@ -48,7 +48,7 @@ clips-executive:
 
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  spec: rcll2017
+  spec: rcll2018
 
   specs:
     test:
@@ -78,7 +78,7 @@ clips-executive:
         visit: ppgoto{place=?(m)S}
       blackboard-preload: ["Position3DInterface"]
 
-    rcll2017:
+    rcll2018:
       init:
         stage-1:
           - name: pddl-parser
@@ -93,42 +93,42 @@ clips-executive:
           - name: robot_memory
         stage-3:
           - name: utils
-            file: rcll2017/utils.clp
+            file: rcll2018/utils.clp
           - name: coordination
             file: coordination-mutex.clp
           - name: state-estimation
-            file: rcll2017/state-estimation-init.clp
+            file: rcll2018/state-estimation-init.clp
           - name: worldmodel
             files:
               - wm-robmem-sync.clp
-              - rcll2017/init-wm-sync.clp
-              - rcll2017/init-worldmodel.clp
-              - rcll2017/game-worldmodel.clp
+              - rcll2018/init-wm-sync.clp
+              - rcll2018/init-worldmodel.clp
+              - rcll2018/game-worldmodel.clp
           - name: communication
-            files: [ rcll2017/refbox-comm-init.clp,
-                     rcll2017/refbox-worldmodel.clp ]
+            files: [ rcll2018/refbox-comm-init.clp,
+                     rcll2018/refbox-worldmodel.clp ]
           - name: domain
-            file: rcll2017/domain.clp
+            file: rcll2018/domain.clp
           - name: resource-locking
             file: resource-locks.clp
           - name: goal-reasoner
             files:
-              - rcll2017/goal-reasoner.clp
-              - rcll2017/goal-production.clp
-              - rcll2017/exploration.clp
+              - rcll2018/goal-reasoner.clp
+              - rcll2018/goal-production.clp
+              - rcll2018/exploration.clp
           - name: goal-expander
-            file: rcll2017/fixed-sequence.clp
+            file: rcll2018/fixed-sequence.clp
           - name: action-selection
-            file: rcll2017/action-selection.clp
+            file: rcll2018/action-selection.clp
           - name: action-execution
             files:
               - skills-actions.clp
-              - rcll2017/noop-actions.clp
-              - rcll2017/refbox-actions.clp
-              - rcll2017/lock-actions.clp
-              - rcll2017/wait-actions.clp
+              - rcll2018/noop-actions.clp
+              - rcll2018/refbox-actions.clp
+              - rcll2018/lock-actions.clp
+              - rcll2018/wait-actions.clp
           - name: execution-monitoring
-            file: rcll2017/execution-monitoring.clp
+            file: rcll2018/execution-monitoring.clp
 
       action-mapping:
         enter-field: drive_into_field{team=?(team-color)S, wait=?(r|/R-1/0.0/|/R-2/10.0/|/R-3/20.0/)f}
