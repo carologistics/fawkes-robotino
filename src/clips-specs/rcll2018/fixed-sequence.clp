@@ -367,6 +367,65 @@
 )
 
 
+(defrule goal-expander-fill-rs-from-shelf
+ ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?g <- (goal (mode SELECTED) (parent ?parent) (id ?goal-id)
+             (class FILL-RS-FROM-SHELF)
+             (params robot ?robot
+                      mps ?mps
+                      cs ?cs
+                      wp ?wp
+                      spot ?spot
+                      rs-before ?rs-before
+                      rs-after ?rs-after
+       ))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  =>
+ (assert
+    (plan (id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
+          (action-name location-lock)
+          (param-values ?cs INPUT))
+    (plan-action (id 2) (plan-id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
+          (action-name move)
+          (param-names r from from-side to to-side )
+          (param-values ?robot ?curr-location ?curr-side ?cs INPUT))
+    (plan-action (id 3) (plan-id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
+          (action-name lock) (param-values ?cs))
+    (plan-action (id 4) (plan-id  FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
+          (action-name wp-get-shelf)
+          (param-names r cc m spot)
+          (param-values ?robot ?wp ?cs ?spot))
+    (plan-action (id 5) (plan-id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
+          (action-name unlock) (param-values ?cs))
+    (plan-action (id 6) (plan-id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
+          (action-name location-unlock)
+          (param-values ?cs INPUT))
+    (plan-action (id 7) (plan-id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
+          (action-name location-lock)
+          (param-values ?mps INPUT))
+     (plan-action (id 8) (plan-id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
+                                    (action-name move)
+                                    (param-names r from from-side to to-side)
+                                    (param-values ?robot ?cs INPUT ?mps INPUT))
+    (plan-action (id 9) (plan-id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
+          (action-name lock)
+          (param-values ?mps))
+    (plan-action (id 10) (plan-id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
+          (action-name wp-put-slide-cc)
+          (param-names r wp m rs-before rs-after)
+          (param-values ?robot ?wp ?mps ?rs-before ?rs-after))
+    (plan-action (id 11) (plan-id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
+          (action-name unlock)
+          (param-values ?mps))
+    (plan-action (id 12) (plan-id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
+          (action-name location-unlock)
+          (param-values ?mps INPUT))
+  )
+  (modify ?g (mode EXPANDED))
+)
+
+
 (defrule goal-produce-c0
  ?p <- (goal (mode EXPANDED) (id ?parent))
  ?g <- (goal (id ?goal-id) (class PRODUCE-C0) (mode SELECTED) (parent ?parent)

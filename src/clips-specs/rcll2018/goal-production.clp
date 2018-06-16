@@ -478,6 +478,50 @@
 )
 
 
+(defrule goal-reasoner-create-prefill-ring-station-from-shelf
+  "Insert a new base in a RS for preparation"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  ;Robot CEs
+  (wm-fact (key domain fact self args? r ?robot))
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+  ;RS CEs
+  (wm-fact (key domain fact mps-type args? m ?mps t RS))
+  (wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
+  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
+  ;MPS-CS CEs
+  (wm-fact (key domain fact mps-type args? m ?cs t CS))
+  (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?cs spot ?spot))
+  =>
+  (bind ?priority-increase 0)
+  (do-for-all-facts ((?prio wm-fact)) (and (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
+                                        (eq (wm-key-arg ?prio:key m) ?mps))
+      (if (< ?priority-increase ?prio:value)
+         then
+          (bind ?priority-increase ?prio:value)
+      ))
+  (printout warn "Goal " FILL-RS-FROM-SHELF " formulated" crlf)
+  (assert (goal (id (sym-cat FILL-RS-FROM-SHELF- (gensym*)))
+                (class FILL-RS-FROM-SHELF)
+                (priority (+ ?priority-increase ?*PRIORITY-PREFILL-RS*))
+                (parent ?maintain-id)
+                             (params robot ?robot
+                                     mps ?mps
+                                     cs ?cs
+                                     wp ?wp
+                                     spot ?spot
+                                     rs-before ?rs-before
+                                     rs-after ?rs-after
+                                     )
+                            (required-resources ?mps)
+  ))
+)
+
+
 (defrule goal-reasoner-create-prefill-ring-station
   "Insert a base with unknown color in a RS for preparation"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
