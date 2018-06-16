@@ -37,23 +37,23 @@
   (printout warn "A WP has been Generated at the OUTPUT side" crlf)
 )
 
-(defrule execution-monitoring-incosistent-yet-exepected-mps-state-idle
-  (declare (salience 1))
-  (domain-pending-sensed-fact
-    (goal-id ?goal-id)
-    (action-id ?action-id)
-    (name mps-state)
-    (param-values ?mps IDLE)
-    (type POSITIVE))
-  (wm-fact (key domain fact mps-state args? m ?mps IDLE))
-  ?wpat <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-  =>
-  ;TODO: Send Maintenance message
-  (printout warn "Monitoring: MPS state IDLE but WP exists at output, Yet action " ?action-id " in Goal " ?goal-id
-    "expected it!!" crlf)
-  (retract ?wpat)
-  (printout warn "The WP has been retracted!!" crlf)
-)
+;(defrule execution-monitoring-incosistent-yet-exepected-mps-state-idle
+;  (declare (salience 1))
+;  (domain-pending-sensed-fact
+;    (goal-id ?goal-id)
+;    (action-id ?action-id)
+;    (name mps-state)
+;    (param-values ?mps IDLE)
+;    (type POSITIVE))
+;  (wm-fact (key domain fact mps-state args? m ?mps IDLE))
+;  ?wpat <- (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+;  =>
+;  ;TODO: Send Maintenance message
+;  (printout warn "Monitoring: MPS state IDLE but WP exists at output, Yet action " ?action-id " in Goal " ?goal-id
+;    "expected it!!" crlf)
+;  (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
+;  (printout warn "The WP has been retracted!!" crlf)
+;)
 
 
 (defrule reset-prepare-action-on-downed
@@ -125,7 +125,6 @@
   (printout t "MPS " ?mps " was broken, cleaning up facts" crlf)
   (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?mps (wm-key-args ?wf:key)) FALSE)
            (or
-            (wm-key-prefix ?wf:key (create$ domain fact wp-at))
             (wm-key-prefix ?wf:key (create$ domain fact bs-prepared-color))
             (wm-key-prefix ?wf:key (create$ domain fact ds-prepared-gate))
             (wm-key-prefix ?wf:key (create$ domain fact bs-prepared-side))
@@ -134,6 +133,7 @@
             (wm-key-prefix ?wf:key (create$ domain fact cs-can-perform))
             (wm-key-prefix ?wf:key (create$ domain fact rs-filled-with))
             (wm-key-prefix ?wf:key (create$ domain fact rs-prepared-color))
+	    (wm-key-prefix ?wf:key (create$ evaluated fact wp-for-order))
            )
               )
     (retract ?wf)
@@ -147,6 +147,11 @@
       (assert (wm-fact (key domain fact rs-filled-with args? m ?mps n ZERO) (value TRUE)))
     )
   )
+  (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?mps (wm-key-args ?wf:key)) FALSE)
+	   (wm-key-prefix ?wf:key (create$ domain fact wp-at))
+           )
+           (assert (wm-fact (key monitoring cleanup-wp args? wp (wm-key-arg ?wf:key wp))))
+  )
   ; (retract ?flag)
 )
 
@@ -157,7 +162,7 @@
   ?g <- (goal (id ?goal-id) (mode FORMULATED|SELECTED|EXPANDED) (params $? ?mps $?))
   (plan (id ?plan-id) (goal-id ?goal-id))
   =>
-  (modify ?g (mode REJECTED))
+  (modify ?g (mode FINISHED) (outcome REJECTED))
 )
 
 
@@ -187,6 +192,7 @@
 	(param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
+  (wm-fact (key game state) (value RUNNING))
   ?pt <- (pending-timer (plan-id ?plan-id) (status ?status) (action-id ?id) (timeout-time $?timeout))
   (time $?now)
   (test (and (> (nth$ 1 ?now) (nth$ 1 ?timeout)) (> (nth$ 2 ?now) (nth$ 2 ?timeout))))
@@ -216,11 +222,11 @@
   (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~IDLE&~READY-AT-OUTPUT))
+  (wm-fact (key domain fact mps-state args? m ?mps s ?s&~IDLE&~READY-AT-OUTPUT))
   ?pt <- (pending-timer (plan-id ?plan-id) (action-id ?id) (start-time $?starttime) (timeout-time $?timeout))
   (test (< (nth$ 1 ?timeout) (+ (nth$ 1 ?starttime) ?*MPS-DOWN-TIMEOUT-DURATION* ?*COMMON-TIMEOUT-DURATION*)))
   =>
-  (printout t "Detected that " ?mps " is down while " ?action-name " is waiting for it. Enhance timeout-timer" crlf)
+  (printout t "Detected that " ?mps " is " ?s " while " ?action-name " is waiting for it. Enhance timeout-timer" crlf)
   (bind ?timeout-longer (create$ (+ (nth$ 1 ?timeout) ?*MPS-DOWN-TIMEOUT-DURATION*) (nth$ 2 ?timeout)))
   (modify ?pt (timeout-time ?timeout-longer))
 )
@@ -240,6 +246,7 @@
   (if (eq ?holds FALSE)
       then
       (retract ?hold)
+      (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
       (assert (domain-fact (name can-hold) (param-values ?r)))
   )
   (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
@@ -258,7 +265,7 @@
   ?wp-s<- (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot))
   =>
   (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated" crlf)
-  (retract ?wp-s)
+  (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
   (modify ?g (mode EVALUATED))
 )
 
@@ -366,4 +373,22 @@
   (bind ?tries (+ 1 ?tries))
   (modify ?pa (status PENDING))
   (modify ?wm (value ?tries))
+)
+
+(defrule execution-monitoring-cleanup-wp-facts
+  ?cleanup <- (wm-fact (key monitoring cleanup-wp args? wp ?wp))
+  =>
+  (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?wp (wm-key-args ?wf:key)) FALSE)
+           (or
+            (wm-key-prefix ?wf:key (create$ domain fact wp-at))
+            (wm-key-prefix ?wf:key (create$ domain fact wp-usable))
+	    (wm-key-prefix ?wf:key (create$ domain fact wp-on-shelf))
+            (wm-key-prefix ?wf:key (create$ monitoring cleanup-wp))
+           )
+    )
+    (retract ?wf)
+    (printout t "WP-fact " ?wf:key crlf " domain fact flushed!"  crlf)
+  )
+  (assert (wm-fact (key wp-unused args? wp ?wp)))
+  (retract ?cleanup)
 )

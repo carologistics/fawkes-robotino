@@ -69,6 +69,7 @@
   ?gt-o <-(wm-fact (key refbox field-ground-truth orientation args? m ?mps) (value ?ori))
   (not (wm-fact (key game found-tag name args? m ?mps)))
 =>
+  (bind ?mirror-yaw (deg-to-rad (mirror-orientation ?mtype ?zone ?ori)))
   (assert
     (wm-fact (key game found-tag name args? m ?mps) (type BOOL) (value TRUE))
     (wm-fact (key game found-tag side args? m ?mps) (type UNKNOWN) (value INPUT))
@@ -76,6 +77,13 @@
     (wm-fact (key game found-tag trans args? m ?mps) (type FLOAT) (is-list TRUE) (values (tag-offset ?zone ?yaw 0.17)))
     (wm-fact (key game found-tag rot args? m ?mps) (type FLOAT) (is-list TRUE) (values (tf-quat-from-yaw ?yaw )))
     (wm-fact (key game found-tag zone args? m ?mps) (type UNKNOWN) (value ?zone))
+    ; add tags for the other team
+    (wm-fact (key game found-tag name args? m (mirror-name ?mps)) (type BOOL) (value TRUE))
+    (wm-fact (key game found-tag side args? m (mirror-name ?mps)) (type UNKNOWN) (value INPUT))
+    (wm-fact (key game found-tag frame args? m (mirror-name ?mps)) (type STRING) (value "map"))
+    (wm-fact (key game found-tag trans args? m (mirror-name ?mps)) (type FLOAT) (is-list TRUE) (values (tag-offset (mirror-name ?zone) ?mirror-yaw 0.17)))
+    (wm-fact (key game found-tag rot args? m (mirror-name ?mps)) (type FLOAT) (is-list TRUE) (values (tf-quat-from-yaw ?mirror-yaw )))
+    (wm-fact (key game found-tag zone args? m (mirror-name ?mps)) (type UNKNOWN) (value (mirror-name ?zone)))
   )
   (retract ?gt ?gt-t ?gt-z ?gt-y ?gt-o)
 )
@@ -83,9 +91,8 @@
 (defrule game-generate-navgraph-when-all-tages-found
   "Generate the navgraph when all the mps tags where found."
   (wm-fact (key refbox phase) (value PRODUCTION))
-  (wm-fact (key refbox team-color) (value ?team-color))
   (forall
-    (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+    (wm-fact (key domain fact mps-team args? m ?mps col ?any-team-color))
     (wm-fact (key game found-tag name args? m ?mps ))
   )
 =>

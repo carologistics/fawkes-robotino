@@ -32,6 +32,9 @@
   ?*SALIENCE-GOAL-REJECT* = 400
   ?*SALIENCE-GOAL-EXPAND* = 300
   ?*SALIENCE-GOAL-SELECT* = 200
+  ; PRE-EVALUATE rules should do additional steps in EVALUATION but must not
+  ; set the goal to EVALUATED
+  ?*SALIENCE-GOAL-PRE-EVALUATE* = 1
   ; common evaluate rules should have
   ;   lower salience than case specific ones
   ?*SALIENCE-GOAL-EVALUTATE-GENERIC* = -1
@@ -53,7 +56,7 @@
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
   ?p <- (goal (id ?parent-id) (mode EXPANDED))
   ?g <- (goal (parent ?parent-id) (mode FORMULATED)
-          (id ?subgoal-id) (priority ?priority))
+          (id ?subgoal-id) (class ?class) (priority ?priority))
   ;Select the formulated subgoal with the highest priority
   (not (goal (parent ?parent-id) (mode FORMULATED)
              (priority ?h-priority&:(> ?h-priority ?priority)))
@@ -62,10 +65,12 @@
   (not (goal (parent ?parent-id)
              (mode SELECTED|EXPANDED|
                    COMMITTED|DISPATCHED|
-                   FINISHED|EVALUATED))
-  )
+                   FINISHED|RETRACTED)))
+  (not (goal (parent ?parent-id) (mode EVALUATED) (outcome ~REJECTED)))
 =>
-  ;(printout t "Goal " ?subgoal-id " selected!" crlf)
+  (if (neq ?class BEACONACHIEVE) then
+    (printout t "Goal " ?subgoal-id " selected!" crlf)
+  )
   (modify ?g (mode SELECTED))
   (assert (goal-meta (goal-id ?subgoal-id)))
 )
@@ -81,12 +86,23 @@
 )
 
 ; #  Commit to goal (we "intend" it)
-; A goal might actually be expanded into multiple plans, e.g., by
-; different planners. This step would allow to commit one out of these
-; plans.
-(defrule goal-reasoner-commit
-  ?g <- (goal (mode EXPANDED))
+(defrule goal-reasoner-commit-root-goal
+  ?g <- (goal (id ?goal-id) (mode EXPANDED) (parent nil))
+  (or (not (goal (parent ?goal-id)))
+      (goal (parent ?goal-id) (mode COMMITTED)))
   =>
+  (modify ?g (mode COMMITTED))
+)
+
+(defrule goal-reasoner-commit-child-goal
+  ?g <- (goal (id ?goal-id) (class ?class) (mode EXPANDED) (parent ?parent-id))
+  (goal (id ?parent-id) (mode EXPANDED))
+  (or (not (goal (parent ?goal-id)))
+      (goal (parent ?goal-id) (mode COMMITTED)))
+  =>
+  (if (neq ?class BEACONACHIEVE) then
+    (printout t "Goal " ?goal-id " committed!" crlf)
+  )
   (modify ?g (mode COMMITTED))
 )
 
@@ -95,15 +111,49 @@
 ; (for different goals), e.g., one per robot, or for multiple
 ; orders. It is then up to action selection and execution to determine
 ; what to do when.
-(defrule goal-reasoner-dispatch
-  ?g <- (goal (mode COMMITTED))
+(defrule goal-reasoner-dispatch-top-goal
+	?g <- (goal (mode COMMITTED)
+          (id ?goal-id)
+          (parent nil)
+          (required-resources $?req)
+          (acquired-resources $?acq&:(subsetp ?req ?acq)))
+  (or (not (goal (parent ?goal-id)))
+      (goal (parent ?goal-id) (mode DISPATCHED)))
+	=>
+	(modify ?g (mode DISPATCHED))
+)
+
+(defrule goal-reasoner-dispatch-child-goal
+	?g <- (goal (mode COMMITTED)
+          (id ?goal-id)
+          (class ?class)
+          (parent ?parent-id)
+          (required-resources $?req)
+          (acquired-resources $?acq&:(subsetp ?req ?acq)))
+  (goal (id ?parent-id) (mode COMMITTED))
+  (or (not (goal (parent ?goal-id)))
+      (goal (parent ?goal-id) (mode DISPATCHED)))
+	=>
+  (if (neq ?class BEACONACHIEVE) then
+    (printout t "Goal " ?goal-id " dispatched!" crlf)
+  )
+	(modify ?g (mode DISPATCHED))
+)
+
+(defrule goal-reasoner-reexpand
+  "The parent is committed or dispatched, but there is no child."
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  ?p <- (goal (id ?parent-id) (mode COMMITTED|DISPATCHED))
+  (goal (parent ?parent-id) (mode FORMULATED))
+  (not (goal (parent ?parent-id) (mode ~FORMULATED) (outcome ~REJECTED)))
   =>
-  (modify ?g (mode DISPATCHED))
+  (modify ?p (mode EXPANDED))
 )
 
 (defrule goal-reasoner-finish-parent-goal
   ?pg <- (goal (id ?pg-id) (mode DISPATCHED))
-  ?sg <- (goal (id ?sg-id) (parent ?pg-id) (mode EVALUATED) (outcome ?outcome))
+  ?sg <- (goal (id ?sg-id) (parent ?pg-id) (mode EVALUATED)
+               (outcome ?outcome&~REJECTED))
   (time $?now)
   =>
   (printout debug "Goal '" ?pg-id " finised and " ?outcome "cause " ?sg-id
@@ -115,13 +165,26 @@
 )
 
 (defrule goal-reasoner-fail-parent-goal-if-subgoals-rejected
-  ?pg <- (goal (id ?pg-id) (mode DISPATCHED))
-  (not (goal (id ?sg-id) (parent ?pg-id) (mode ~REJECTED)))
+  ?pg <- (goal (id ?pg-id) (mode ~FINISHED))
+  (not (goal (parent ?pg-id) (outcome ~REJECTED)))
   (goal (parent ?pg-id))
-  (time $?now)
   =>
 ;  (printout debug "Goal '" ?pg-id " failed because all subgoald been REJECTED" crlf)
   (modify ?pg (mode FINISHED) (outcome FAILED))
+)
+
+(defrule goal-reasoner-cleanup-rejected-goal
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome REJECTED))
+  =>
+  (do-for-all-facts ((?plan plan)) (eq ?plan:goal-id ?goal-id)
+    (do-for-all-facts
+      ((?action plan-action))
+      (and (eq ?action:goal-id ?goal-id) (eq ?action:plan-id ?plan:id))
+      (retract ?action)
+    )
+    (retract ?plan)
+  )
 )
 
 ; #  Goal Monitoring
@@ -139,10 +202,50 @@
   (modify ?m (last-achieve ?now))
 )
 
+(defrule goal-reasoner-evaluate-clean-locks
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  (wm-fact (key cx identity) (value ?identity))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
+  ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
+                     (action-name lock) (param-values ?name))
+  (mutex (name ?name) (state LOCKED) (request NONE) (locked-by ?identity))
+  =>
+  (printout warn "Removing lock " ?name " of failed plan " ?plan-id
+                 " of goal " ?goal-id crlf)
+  (assert (goal-reasoner-unlock-pending ?name))
+  (mutex-unlock-async ?name)
+)
+
+(defrule goal-reasoner-evaluate-clean-location-locks
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  (wm-fact (key cx identity) (value ?identity))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
+  ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
+                     (action-name location-lock) (param-values ?loc ?side))
+  (mutex (name ?name&:(eq ?name (sym-cat ?loc - ?side)))
+         (state LOCKED) (request NONE) (locked-by ?identity))
+  =>
+  ; TODO only unlock if we are at a safe distance
+  (printout warn "Removing location lock " ?name " without moving away!" crlf)
+  (assert (goal-reasoner-unlock-pending ?name))
+  (mutex-unlock-async ?name)
+)
+
+(defrule goal-reasoner-evaluate-pending-unlock
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?p <- (goal-reasoner-unlock-pending ?lock)
+  ?m <- (mutex (name ?lock) (request UNLOCK) (response UNLOCKED))
+  =>
+  (modify ?m (request NONE) (response NONE))
+  (retract ?p)
+)
 
 (defrule goal-reasoner-evaluate-common
   (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome ?outcome))
+  (not (goal-reasoner-unlock-pending ?))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
  ; (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
@@ -180,15 +283,29 @@
     )
   ;  (printout t "Goal '" ?sg:id "' (part of '" ?sg:parent
   ;     "') has, cleaning up" crlf)
-    (retract ?sg)
+    (modify ?sg (mode RETRACTED))
   )
+)
 
+(defrule goal-reasoner-reselect-parent-goal
+  ?g <- (goal (id ?goal-id) (parent nil) (type ?goal-type)
+          (mode EVALUATED) (outcome ?outcome))
+  ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries) (max-tries ?max-tries))
+  (not (goal (parent ?goal-id)))
+  =>
   (if (or (eq ?goal-type MAINTAIN)
           (and (eq ?outcome FAILED) (<= ?num-tries ?max-tries)))
     then
    ;   (printout t "Triggering re-expansion" crlf)
       (modify ?g (mode SELECTED) (outcome UNKNOWN))
     else
-      (retract ?g ?gm)
+      (modify ?g (mode RETRACTED))
     )
+)
+
+(defrule goal-reasoner-retract-goal
+  ?g <- (goal (id ?goal-id) (mode RETRACTED) (acquired-resources))
+  =>
+  (do-for-fact ((?gm goal-meta)) (eq ?gm:goal-id ?goal-id) (retract ?gm))
+  (retract ?g)
 )

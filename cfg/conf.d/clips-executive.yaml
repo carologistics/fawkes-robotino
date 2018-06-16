@@ -48,7 +48,7 @@ clips-executive:
 
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  spec: rcll2017
+  spec: rcll2018
 
   specs:
     test:
@@ -78,7 +78,7 @@ clips-executive:
         visit: ppgoto{place=?(m)S}
       blackboard-preload: ["Position3DInterface"]
 
-    rcll2017:
+    rcll2018:
       init:
         stage-1:
           - name: pddl-parser
@@ -93,41 +93,54 @@ clips-executive:
           - name: robot_memory
         stage-3:
           - name: utils
-            file: rcll2017/utils.clp
+            file: rcll2018/utils.clp
+          - name: coordination
+            file: coordination-mutex.clp
           - name: state-estimation
-            file: rcll2017/state-estimation-init.clp
+            file: rcll2018/state-estimation-init.clp
           - name: worldmodel
-            files: [
-                     rcll2017/init-worldmodel.clp,
-                     rcll2017/game-worldmodel.clp ]
+            files:
+              - wm-robmem-sync.clp
+              - rcll2018/init-wm-sync.clp
+              - rcll2018/init-worldmodel.clp
+              - rcll2018/game-worldmodel.clp
           - name: communication
-            files: [ rcll2017/refbox-comm-init.clp,
-                     rcll2017/refbox-worldmodel.clp ]
+            files: [ rcll2018/refbox-comm-init.clp,
+                     rcll2018/refbox-worldmodel.clp ]
           - name: domain
-            file: rcll2017/domain.clp
+            file: rcll2018/domain.clp
+          - name: resource-locking
+            file: resource-locks.clp
           - name: goal-reasoner
-            files: [rcll2017/goal-reasoner.clp, rcll2017/goal-production.clp, rcll2017/exploration.clp]
+            files:
+              - rcll2018/goal-reasoner.clp
+              - rcll2018/goal-production.clp
+              - rcll2018/exploration.clp
           - name: goal-expander
-            file: rcll2017/fixed-sequence.clp
+            file: rcll2018/fixed-sequence.clp
           - name: action-selection
-            file: rcll2017/action-selection.clp
+            file: rcll2018/action-selection.clp
           - name: action-execution
-            files:  [ skills-actions.clp, rcll2017/noop-actions.clp,
-                      rcll2017/refbox-actions.clp ]
+            files:
+              - skills-actions.clp
+              - rcll2018/noop-actions.clp
+              - rcll2018/refbox-actions.clp
+              - rcll2018/lock-actions.clp
+              - rcll2018/wait-actions.clp
           - name: execution-monitoring
-            file: rcll2017/execution-monitoring.clp
+            file: rcll2018/execution-monitoring.clp
 
       action-mapping:
         enter-field: drive_into_field{team=?(team-color)S, wait=?(r|/R-1/0.0/|/R-2/10.0/|/R-3/20.0/)f}
         explore-zone: explore_zone{zone=?(z)s}
         move-node: goto{place=?(z)s}
-        move: ppgoto{place="?(to)Y-I"}
+        move: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        move-wp-get: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        move-wp-put: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
         go-wait: ppgoto{place="?(to)Y"}
-        move-wp-put: ppgoto{place="?(to)Y-I"}
         wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
         wp-put: bring_product_to{place=?(m)S}
         wp-put-slide-cc: bring_product_to{place=?(m)S, slide="TRUE"}
-        move-wp-get: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
         wp-get: get_product_from{place=?(m)S, side=?(side|/INPUT/input/|/OUTPUT/output/)s}
         wp-discard: ax12gripper{command="OPEN"}
         stop: relgoto{x=0, y=0}
@@ -146,8 +159,6 @@ clips-executive:
           team-name: Carologistics
           crypto-key: randomkey
           cipher: "aes-128-cbc"
-
-          master: R-2
 
           waitpoint-in-cyan: R-1
           waitpoint-in-cyan: R-2
@@ -173,3 +184,11 @@ clips-executive:
             zone-margin: 0.15
             latest-send-last-report-time: 210 # =3:30
 
+
+          master: R-2
+
+          waitpoint-in-cyan: R-1
+          waitpoint-in-cyan: R-2
+          waitpoint-in-magenta: R-3
+          allowed-complexities: ["C0" , "C1"]
+          exclusive-complexities: ["C2" , "C3"]
