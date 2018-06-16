@@ -629,6 +629,7 @@ ConveyorPoseThread::update_station_information(ConveyorPoseInterface::SetStation
     result_fitness_ = std::numeric_limits<double>::min();
     bb_pose_->set_euclidean_fitness(result_fitness_);
     bb_pose_->set_msgid(msg.id());
+    bb_pose_->set_busy(true);
     bb_pose_->write();
   }
 }
