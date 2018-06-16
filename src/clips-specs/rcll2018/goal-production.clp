@@ -237,13 +237,25 @@
   (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
   (not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side ?any-side)))
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
-  (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
+  (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
   =>
-  (printout t "Goal " FILL-CAP " formulated" crlf)
+  (bind ?priority-increase 0)
+  (if (any-factp ((?wp-for-order wm-fact) (?order-cap-color wm-fact))
+                 (and (wm-key-prefix ?wp-for-order:key (create$ evaluated fact wp-for-order))
+                      (wm-key-prefix ?order-cap-color:key (create$ domain fact order-cap-color))
+                      (eq (wm-key-arg ?wp-for-order:key ord) (wm-key-arg ?order-cap-color:key ord))
+                      (eq (wm-key-arg ?order-cap-color:key col) ?cap-color)))
+  then
+    (bind ?priority-increase 1)
+    (printout t "Goal " FILL-CAP " formulated with higher priority" crlf)
+  else
+    (printout t "Goal " FILL-CAP " formulated" crlf)
+  )
   (assert (goal (id (sym-cat FILL-CAP- (gensym*)))
                 (class FILL-CAP)
-                (priority ?*PRIORITY-PREFILL-CS*)
+                (priority (+ ?priority-increase ?*PRIORITY-PREFILL-CS*))
                 (parent ?production-id)
                 (params robot ?robot
                         mps ?mps
