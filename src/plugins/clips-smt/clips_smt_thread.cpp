@@ -69,13 +69,13 @@ ClipsSmtThread::init()
 	rings_colors["RING_NONE"] = 0;
 	rings_colors["RING_BLUE"] = 1;
 	rings_colors["RING_GREEN"] = 2;
-	rings_colors["RING_YELLOW"] = 3;
-	rings_colors["RING_ORANGE"] = 4;
+	rings_colors["RING_ORANGE"] = 3;
+	rings_colors["RING_YELLOW"] = 4;
 	rings_colors_inverted[0] = "RING_NONE";
 	rings_colors_inverted[1] = "RING_BLUE";
 	rings_colors_inverted[2] = "RING_GREEN";
-	rings_colors_inverted[3] = "RING_YELLOW";
-	rings_colors_inverted[4] = "RING_ORANGE";
+	rings_colors_inverted[3] = "RING_ORANGE";
+	rings_colors_inverted[4] = "RING_YELLOW";
 	cap_colors["CAP_NONE"] = 0;
 	cap_colors["CAP_BLACK"] = 1;
 	cap_colors["CAP_GREY"] = 2;
@@ -123,9 +123,9 @@ ClipsSmtThread::init()
 
 	// Products encodes the output of an station which can be any product (at the CS) and subproduct (at the BS and RS) OR the product a robot is holding
 	products["nothing"]=0;
-	products["BR"]=1;
-	products["BRC1"]=2;
-	products["BRC2"]=3;
+	products["BRC1"]=1;
+	products["BRC2"]=2;
+	products["BR"]=3;
 
 	unsigned ctr = 3;
 
@@ -2308,80 +2308,82 @@ ClipsSmtThread::clips_smt_encoder()
 		}
 	}
 
-	// // Constraint: every action depends on actions to happen before
-	// for(int i=1; i<plan_horizon+1; ++i) {
+	if(plan_horizon>=plan_horizon_max) {
+		// Constraint: every action depends on actions to happen before
+		for(int i=1; i<plan_horizon+1; ++i) {
 
-	//     // Action x appears
-	//     z3::expr constraint_dependency1(var_false);
-	//     z3::expr constraint_dependency2(var_false);
-	//     z3::expr constraint_dependency3(var_false);
-	//     z3::expr constraint_dependency4(var_false);
-	//     z3::expr constraint_dependency5(var_false);
-	//     z3::expr constraint_dependency6(var_false);
-	//     z3::expr constraint_dependency7(var_false);
-	//     z3::expr constraint_dependency8(var_false);
-	//     z3::expr constraint_dependency9(var_false);
-	//     z3::expr constraint_dependency10(var_false);
-	//     z3::expr constraint_dependency11(var_false);
-	//     z3::expr constraint_dependency12(var_false);
-	//     z3::expr constraint_dependency13(var_false);
+			// Action x appears
+			z3::expr constraint_dependency1(var_false);
+			z3::expr constraint_dependency2(var_false);
+			z3::expr constraint_dependency3(var_false);
+			z3::expr constraint_dependency4(var_false);
+			z3::expr constraint_dependency5(var_false);
+			z3::expr constraint_dependency6(var_false);
+			z3::expr constraint_dependency7(var_false);
+			z3::expr constraint_dependency8(var_false);
+			z3::expr constraint_dependency9(var_false);
+			z3::expr constraint_dependency10(var_false);
+			z3::expr constraint_dependency11(var_false);
+			z3::expr constraint_dependency12(var_false);
+			z3::expr constraint_dependency13(var_false);
 
-	//     for(int j=1; j<i; ++j) {
-	//         constraint_dependency1 = constraint_dependency1 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 1);
-	//         constraint_dependency2 = constraint_dependency2 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 2);
-	//         constraint_dependency3 = constraint_dependency3 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 3);
-	//         constraint_dependency4 = constraint_dependency4 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 4);
-	//         constraint_dependency5 = constraint_dependency5 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 5);
-	//         constraint_dependency6 = constraint_dependency6 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 6);
-	//         constraint_dependency7 = constraint_dependency7 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 7);
-	//         constraint_dependency8 = constraint_dependency8 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 8);
-	//         constraint_dependency9 = constraint_dependency9 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 9);
-	//         constraint_dependency10 = constraint_dependency10 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 10);
-	//         constraint_dependency11 = constraint_dependency11 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 11);
-	//         constraint_dependency12 = constraint_dependency12 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 12);
-	//         constraint_dependency13 = constraint_dependency13 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 13);
-	//     }
+			for(int j=1; j<i; ++j) {
+				constraint_dependency1 = constraint_dependency1 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 1);
+				constraint_dependency2 = constraint_dependency2 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 2);
+				constraint_dependency3 = constraint_dependency3 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 3);
+				constraint_dependency4 = constraint_dependency4 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 4);
+				constraint_dependency5 = constraint_dependency5 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 5);
+				constraint_dependency6 = constraint_dependency6 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 6);
+				constraint_dependency7 = constraint_dependency7 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 7);
+				constraint_dependency8 = constraint_dependency8 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 8);
+				constraint_dependency9 = constraint_dependency9 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 9);
+				constraint_dependency10 = constraint_dependency10 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 10);
+				constraint_dependency11 = constraint_dependency11 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 11);
+				constraint_dependency12 = constraint_dependency12 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 12);
+				constraint_dependency13 = constraint_dependency13 || ( getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(j)) == 13);
+			}
 
-	//     // Action y has dependency on actions x1,...,xn
-	//     z3::expr constraint_inter2(constraint_dependency1);
-	//     z3::expr constraint_inter3(constraint_dependency2);
-	//     z3::expr constraint_inter7(constraint_dependency4);
-	//     z3::expr constraint_inter8(constraint_dependency4);
-	//     z3::expr constraint_inter9(constraint_dependency8);
-	//     z3::expr constraint_inter10(constraint_dependency9);
-	//     z3::expr constraint_inter11(constraint_dependency10);
-	//     z3::expr constraint_inter12(constraint_dependency11);
-	//     z3::expr constraint_inter13(constraint_dependency12);
-	//     z3::expr constraint_inter5(constraint_dependency1 && constraint_dependency2 && constraint_dependency3);
-	//     switch (desired_complexity) {
-	//         case 0:
-	//                 constraint_inter5 = constraint_inter5 && constraint_dependency4;
-	//                 break;
-	//         case 1:
-	//                 constraint_inter5 = constraint_inter5 && constraint_dependency9;
-	//                 break;
-	//         case 2:
-	//                 constraint_inter5 = constraint_inter5 && constraint_dependency11;
-	//                 break;
-	//         case 3:
-	//                 constraint_inter5 = constraint_inter5 && constraint_dependency13;
-	//                 break;
-	//     }
-	//     z3::expr constraint_inter6(constraint_dependency5);
+			// Action y has dependency on actions x1,...,xn
+			z3::expr constraint_inter2(constraint_dependency1);
+			z3::expr constraint_inter3(constraint_dependency2);
+			z3::expr constraint_inter7(constraint_dependency4);
+			z3::expr constraint_inter8(constraint_dependency4);
+			z3::expr constraint_inter9(constraint_dependency8);
+			z3::expr constraint_inter10(constraint_dependency9);
+			z3::expr constraint_inter11(constraint_dependency10);
+			z3::expr constraint_inter12(constraint_dependency11);
+			z3::expr constraint_inter13(constraint_dependency12);
+			z3::expr constraint_inter5(constraint_dependency1 && constraint_dependency2 && constraint_dependency3);
+			switch (desired_complexity) {
+				case 0:
+						constraint_inter5 = constraint_inter5 && constraint_dependency4;
+						break;
+				case 1:
+						constraint_inter5 = constraint_inter5 && constraint_dependency9;
+						break;
+				case 2:
+						constraint_inter5 = constraint_inter5 && constraint_dependency11;
+						break;
+				case 3:
+						constraint_inter5 = constraint_inter5 && constraint_dependency13;
+						break;
+			}
+			z3::expr constraint_inter6(constraint_dependency5);
 
-	//     // Push constraint if action = y then dependencies of y must be fulfilled
-	//     constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 2) || constraint_inter2);
-	//     constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 3) || constraint_inter3);
-	//     constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 5) || constraint_inter5);
-	//     constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 6) || constraint_inter6);
-	//     constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 7) || constraint_inter7);
-	//     constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 8) || constraint_inter8);
-	//     constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 9) || constraint_inter9);
-	//     constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 10) || constraint_inter10);
-	//     constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 11) || constraint_inter11);
-	//     constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 12) || constraint_inter12);
-	//     constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 13) || constraint_inter13);
-	// }
+			// Push constraint if action = y then dependencies of y must be fulfilled
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 2) || constraint_inter2);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 3) || constraint_inter3);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 5) || constraint_inter5);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 6) || constraint_inter6);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 7) || constraint_inter7);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 8) || constraint_inter8);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 9) || constraint_inter9);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 10) || constraint_inter10);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 11) || constraint_inter11);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 12) || constraint_inter12);
+			constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == 13) || constraint_inter13);
+		}
+	}
 
 	// Constraint: every action is encoded for every order
 	// Save ids of order_colors as strings
@@ -2525,7 +2527,7 @@ ClipsSmtThread::clips_smt_encoder()
 									&& (getVar(var, "md_"+std::to_string(i)) == time_to_feed)
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS1"]) || getVar(var, "pos_"+std::to_string(i)) == 7)
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS2"]) || getVar(var, "pos_"+std::to_string(i)) == 9)
-									&& (getVar(var, "holdA_"+std::to_string(i)) > 0)
+									&& (getVar(var, "holdA_"+std::to_string(i)) > 2)
 									&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
 		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_7) || constraintaction7);
@@ -3255,7 +3257,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 									&& (getVar(var, "md_"+std::to_string(i)) == time_to_feed)
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS1"]) || getVar(var, "pos_"+std::to_string(i)) == 7)
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS2"]) || getVar(var, "pos_"+std::to_string(i)) == 9)
-									&& (getVar(var, "holdA_"+std::to_string(i)) > 0)
+									&& (getVar(var, "holdA_"+std::to_string(i)) > 2)
 									&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
 		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_7) || constraintaction7);
