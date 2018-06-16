@@ -501,8 +501,7 @@
       (if (< ?priority-increase ?prio:value)
          then
           (bind ?priority-increase ?prio:value)
-      )
-   (retract ?prio))
+      ))
   (printout t "Goal " FILL-RS " formulated" crlf)
   (assert (goal (id (sym-cat FILL-RS- (gensym*)))
                 (class FILL-RS)
@@ -1157,6 +1156,8 @@
   =>
   (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
   (retract ?t)
+  (do-for-all-facts ((?prio wm-fact)) (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
+   (retract ?prio))
   (modify ?g (mode EVALUATED))
 )
 
@@ -1241,6 +1242,7 @@
   (modify ?g (mode EVALUATED))
   (modify ?m (last-achieve ?now))
 )
+
 
 (defrule goal-reasoner-evaluate-cleanup-evaluated-wp-for-order-facts
   ?wp-for-order <- (wm-fact (key evaluated wp-for-order args? wp ?wp ord ?order) (value TRUE))
