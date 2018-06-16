@@ -27,7 +27,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "drive_to_machine_point"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = { "goto","mps_align","motor_move" }
+depends_skills     = { "goto","mps_align","motor_move","gripper_commands_new" }
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
    {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
