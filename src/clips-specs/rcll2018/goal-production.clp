@@ -101,14 +101,19 @@
 
 ; ## Maintain wp-spawning
 (defrule goal-reasoner-create-wp-spawn-maintain
+  "Maintain Spawning only if no one else is (ie, no one is spawn-master)"
  (domain-facts-loaded)
  (not (goal (class WPSPAWN-MAINTAIN)))
+ (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
+ (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
+ (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
  =>
  (assert (goal (id (sym-cat WPSPAWN-MAINTAIN- (gensym*)))
                (class WPSPAWN-MAINTAIN) (type MAINTAIN)))
 )
 
 (defrule goal-reasoner-create-wp-spawn-achieve
+  "Only actually spawn if you are the spawn-master"
   ?g <- (goal (id ?maintain-id) (class WPSPAWN-MAINTAIN) (mode SELECTED))
   (not (goal (class WPSPAWN-ACHIEVE)))
   (time $?now)
@@ -128,6 +133,9 @@
 (defrule goal-reasoner-create-refill-shelf-maintain
   (domain-facts-loaded)
   (not (goal (class REFILL-SHELF-MAINTAIN)))
+  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
+  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
+  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   =>
   (assert (goal (id (sym-cat REFILL-SHELF-MAINTAIN- (gensym*)))
                 (class REFILL-SHELF-MAINTAIN) (type MAINTAIN)))
