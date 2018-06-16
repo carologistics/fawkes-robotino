@@ -457,6 +457,7 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key domain fact wp-spawned-by args? wp ?spawned-wp r ?robot))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;RS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
@@ -492,6 +493,7 @@
                                      base-color ?base-color
                                      rs-before ?rs-before
                                      rs-after ?rs-after
+                                     wp ?spawned-wp
                                      )
                             (required-resources ?mps)
   ))
@@ -621,6 +623,7 @@
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key domain fact wp-spawned-by args? wp ?spawned-wp r ?robot))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~READY-AT-OUTPUT))
@@ -675,6 +678,7 @@
                         mps ?mps
                         cs-color ?cap-color
                         order ?order
+                        wp ?spawned-wp
                 )
                 (required-resources ?mps ?order)
   ))
@@ -691,6 +695,7 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args?         r ?robot))
+  (wm-fact (key domain fact wp-spawned-by args? wp ?spawned-wp r ?robot))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
@@ -749,6 +754,7 @@
                            rs-after ?bases-remain
                            rs-req ?bases-needed
                            order ?order
+                           wp ?spawned-wp
                 )
                 (required-resources ?mps-rs)
   ))
