@@ -101,14 +101,18 @@
 
 ; ## Maintain wp-spawning
 (defrule goal-reasoner-create-wp-spawn-maintain
+  "Maintain Spawning only if no one else is (ie, no one is spawn-master)"
  (domain-facts-loaded)
  (not (goal (class WPSPAWN-MAINTAIN)))
+ (wm-fact (key domain fact self args? r ?robot))
+ (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?self))
  =>
  (assert (goal (id (sym-cat WPSPAWN-MAINTAIN- (gensym*)))
                (class WPSPAWN-MAINTAIN) (type MAINTAIN)))
 )
 
 (defrule goal-reasoner-create-wp-spawn-achieve
+  "Only actually spawn if you are the spawn-master"
   ?g <- (goal (id ?maintain-id) (class WPSPAWN-MAINTAIN) (mode SELECTED))
   (not (goal (class WPSPAWN-ACHIEVE)))
   (time $?now)
