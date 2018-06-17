@@ -157,8 +157,7 @@
   (assert (goal (id (sym-cat REFILL-SHELF-ACHIEVE- (gensym*)))
                 (class REFILL-SHELF-ACHIEVE)
                 (parent ?maintain-id)
-                (params mps ?mps)
-                (required-resources ?mps)))
+                (params mps ?mps)))
 )
 
 (defrule navgraph-compute-wait-positions-finished
