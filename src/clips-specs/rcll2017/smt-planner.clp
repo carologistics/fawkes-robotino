@@ -502,13 +502,13 @@
   (return ?o)
 )
 
-(deffunction smt-create-orders (?team-color)
+(deffunction smt-create-orders (?team-color ?order-id)
 	(bind ?rv (create$))
 
 	(do-for-fact ((?wm-fact wm-fact))
 		(and
 			(wm-key-prefix ?wm-fact:key (create$ domain fact order-complexity))
-			(eq C3 (wm-key-arg ?wm-fact:key com)) ; Desiered complexity is set here
+			(eq ?order-id (wm-key-arg ?wm-fact:key ord))
 		)
 
 		(do-for-fact ((?wm-fact2 wm-fact))
@@ -583,14 +583,19 @@
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
 	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ZERO) (value TRUE))
+	(wm-fact (key refbox game-time) (values ?sec ?sec-2))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com C3) (value TRUE)) ; desired complexity is set here
+	(wm-fact (key refbox order ?order-id delivery-end) (value ?delivery-end&:(> ?delivery-end ?sec)))
+	(not (wm-fact (key domain fact order-fulfilled args? ord ?order-id) (value TRUE)))
 
-	(not (plan-requested ?goal-id))
+	(not (plan-requested ?goal-id ?order-id))
 =>
+	(printout t "SMT plan call " ?delivery-end " " ?sec crlf)
 	(bind ?p
 	  (smt-create-data
 			(smt-create-robots ?team-color)
 			(smt-create-machines ?team-color)
-			(smt-create-orders ?team-color)
+			(smt-create-orders ?team-color ?order-id)
 			(smt-create-rings ?team-color)
 			0 ; Strategy set here, 0 means MACRO and 1 WINDOW
 			5 ; Window size for strategy WINDOW
@@ -598,7 +603,7 @@
 	)
 
 	(smt-request "smt-plan" ?p)
-	(assert (plan-requested ?goal-id))
+	(assert (plan-requested ?goal-id ?order-id))
 )
 
 ;---------------------------------------------------------------------------
@@ -1036,10 +1041,9 @@
 	?spc <- (smt-plan-complete ?handle)
 
 	?g <- (goal (id ?goal-id) (mode SELECTED))
-	?plan-req <- (plan-requested ?goal-id)
+	?plan-req <- (plan-requested ?goal-id ?order-id)
 
 	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE)) ; TODO manage complexity here
 	=>
 	(printout t "SMT plan handle completed " ?handle  crlf)
 
