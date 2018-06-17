@@ -417,3 +417,31 @@
 	(modify ?p (param-values ?modified))
   )
 )
+(defrule execution-monitoring-last-failed-goal
+  (goal (id ?goal-id) (parent ?parent) (class ?goal-class) (type ACHIEVE) (mode EVALUATED) (outcome FAILED) (params $?params))
+  (not (wm-fact (key monitoring fact last-failed args? parent ?parent class ?goal-class) (params ?params)))
+  =>
+  (assert (wm-fact (key monitoring fact last-failed args? parent ?parent class ?goal-class) (values ?params)))
+)
+
+(defrule execution-monitoring-decrease-last-failed-priority
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?g <- (goal (id ?goal-id) (parent ?parent) (class ?goal-class) (type ACHIEVE) (mode FORMULATED) (params $?params)) 
+  (wm-fact (key monitoring fact last-failed args? parent ?parent class ?goal-class) (values ?params))
+  =>
+  (printout warning "Dont try " ?goal-class " with " ?params " twice -> Lower priority" crlf)
+  (modify ?g (priority (+ 1 ?*PRIORITY-GO-WAIT*)))
+) 
+
+(defrule execution-monitoring-remove-last-failed
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  (goal (id ?goal-id) (parent ?parent) (class ?goal-class) (type ACHIEVE) (mode FINISHED) (outcome COMPLETED))
+  ?wm <- (wm-fact (key monitoring fact last-failed args? parent ?parent class ?goal-class2))
+  =>
+  (do-for-all-facts ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ monitoring fact last-failed))
+					 (neq (member$ ?parent (wm-key-args ?wm:key)) FALSE)
+				    )
+	(retract ?wm)
+  )
+  (printout warning "Completed a goal, flush last failed" crlf)
+)
