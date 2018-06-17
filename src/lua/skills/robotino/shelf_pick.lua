@@ -47,10 +47,6 @@ local gripper_adjust_z_distance = -0.01
 local gripper_adjust_x_distance = 0.02
 local adjust_target_frame = "gripper"
 
--- Override values if host specific config value is set
-if config:exists("/skills/shelf_pick/gripper_adjust_z_distance") then
-    gripper_adjust_z_distance = config:get_float("/skills/shelf_pick/gripper_adjust_z_distance")
-end
 
 
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
@@ -72,6 +68,12 @@ fsm:add_transitions{
 
 function INIT:init()
    self.args["ax12gripper"].command = "OPEN"
+
+   -- Override values if host specific config value is set
+   if config:exists("/skills/shelf_pick/gripper_adjust_z_distance") then
+       gripper_adjust_z_distance = config:get_float("/skills/shelf_pick/gripper_adjust_z_distance")
+   end
+
 end
 
 function GOTO_SHELF:init()
