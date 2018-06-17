@@ -127,9 +127,13 @@
     (domain-object (name ?wp) (type workpiece))
     (wm-fact (key domain fact wp-spawned-for args? wp ?wp r ?robot)))
   )
+  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
+  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
+  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   =>
   (assert (goal (id (sym-cat WPSPAWN-ACHIEVE- (gensym*)))
                 (class WPSPAWN-ACHIEVE) (parent ?maintain-id)
+
                 (params robot ?robot)))
 )
 
@@ -153,6 +157,9 @@
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
+  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
+  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
+  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   =>
   (assert (goal (id (sym-cat REFILL-SHELF-ACHIEVE- (gensym*)))
                 (class REFILL-SHELF-ACHIEVE)
