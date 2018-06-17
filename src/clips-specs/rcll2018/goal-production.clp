@@ -1297,7 +1297,6 @@
   ?p <- (goal (id ?parent-id) (class WPSPAWN-MAINTAIN))
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
-  (wm-fact (key domain fact self args? r ?robot))
   =>
   (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
     "') has been completed, Evaluating" crlf)
