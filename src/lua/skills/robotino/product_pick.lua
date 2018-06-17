@@ -29,6 +29,7 @@ depends_interfaces = {
   {v = "motor", type = "MotorInterface", id="Robotino" },
   {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
   {v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
+  {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 
 documentation      = [==[
@@ -160,7 +161,8 @@ fsm:define_states{ export_to=_M,
    {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="FAILED"},
    {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "HOME_GRIPPER", fail_to="FAILED"},
    {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="DRIVE_BACK"},
-   {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
+   {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CHECK_PUCK", fail_to="FAILED"},
+   {"CHECK_PUCK", JumpState},
 }
 
 fsm:add_transitions{
@@ -171,7 +173,9 @@ fsm:add_transitions{
    {"CHECK_VISION", "GRIPPER_ALIGN", cond="result_ready() and fitness_ok()", desc="Fitness threshold reached"},
    {"CHECK_VISION", "CHECK_VISION", cond="result_ready() and not fitness_ok() and vars.vision_retries < 3"},
    {"DECIDE_RETRY", "CHECK_VISION", cond="vars.retries <= MAX_RETRIES"},
-   {"DECIDE_RETRY", "MOVE_GRIPPER_FORWARD", cond=true}
+   {"DECIDE_RETRY", "MOVE_GRIPPER_FORWARD", cond=true},
+   {"CHECK_PUCK", "FINAL", cond="gripper_if:is_holds_puck()", desc="Hold puck"},
+   {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Don't hold puck!"},
 }
 
 
