@@ -33,7 +33,6 @@
   (wm-robmem-sync-enable "/domain/objects-by-type/workpiece")
   (wm-robmem-sync-enable "/domain/objects-by-type/cap-carrier")
   (wm-robmem-sync-enable "/domain/fact/at")
-  (wm-robmem-sync-enable "/domain/fact/entered-field")
   (wm-robmem-sync-enable "/domain/fact/location-free")
   (wm-robmem-sync-enable "/domain/fact/bs-prepared-for")
   (wm-robmem-sync-enable "/domain/fact/bs-prepared-side")

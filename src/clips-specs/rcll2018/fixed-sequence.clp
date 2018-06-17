@@ -84,21 +84,6 @@
 
 
 
-(defrule goal-expander-enter-field
-  ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD-ACHIEVE))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact robot-waiting args? r ?robot))
-=>
-  (assert
-    (plan (id ENTER-FIELD-PLAN) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id ENTER-FIELD-PLAN) (goal-id ?goal-id)
-                                 (action-name enter-field)
-                                 (param-names r team-color)
-                                 (param-values ?robot ?team-color))
-    )
-  (modify ?g (mode EXPANDED))
-)
-
 (defrule goal-expander-wait
   ?p <- (goal (mode EXPANDED) (id ?parent))
   ?g <- (goal (id ?goal-id) (class WAIT) (parent ?parent) (mode SELECTED)
