@@ -60,11 +60,16 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph,shelf_set=shelf_set}
    {"INIT", JumpState},
    {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="OPEN_GRIPPER", fail_to="PRE_FAIL"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="CONVEYOR_ALIGN", fail_to="CONVEYOR_ALIGN"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="PRE_FAIL"},
+<<<<<<< HEAD
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
+   {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
+   {"SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="FINAL", fail_to="FAILED"},
+=======
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PICK", fail_to="PRE_FAIL"},
    {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="PRE_FAIL"},
-   {"SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="FINAL", fail_to="PRE_FAIL"},
    {"PRE_FAIL", SkillJumpState, skills={{gripper_commands_new}}, final_to="FAILED", fail_to="FAILED"},
+>>>>>>> origin/msonnet/close_gripper_at_fail_new
 }
 
 fsm:add_transitions{
