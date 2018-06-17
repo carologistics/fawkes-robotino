@@ -229,11 +229,15 @@
   (assert
     (plan (id EXPLORE-ZONE) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name one-time-lock) (param-names name) (param-values ?zn))
-    (plan-action (id 2) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name stop) (param-names r) (param-values ?r))
-    (plan-action (id 3) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name explore-zone) (param-names r z) (param-values ?r ?zn))
-    (plan-action (id 4) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name evaluation))
-    (plan-action (id 5) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name unlock) (param-names name) (param-values ?zn) (executable TRUE))
-  )
+  	(plan-action (id 2) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name one-time-lock) (param-names name) (param-values (mirror-name ?zn)))
+  	
+    (plan-action (id 3) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name stop) (param-names r) (param-values ?r))
+    (plan-action (id 4) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name explore-zone) (param-names r z) (param-values ?r ?zn))
+    (plan-action (id 5) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name evaluation))
+    (plan-action (id 6) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name unlock) (param-names name) (param-values ?zn) (executable TRUE))
+   (plan-action (id 7) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name unlock) (param-names name) (param-values (mirror-name ?zn)) (executable TRUE))
+ 
+)
 )
 
 
