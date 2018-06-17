@@ -106,7 +106,7 @@
  (domain-facts-loaded)
  (not (goal (class WPSPAWN-MAINTAIN)))
  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
- (wm-fact (key domain fact self args? r ?self&:(sym-cat ?locked-by)))
+ (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
  =>
  (assert (goal (id (sym-cat WPSPAWN-MAINTAIN- (gensym*)))
@@ -137,7 +137,7 @@
   (domain-facts-loaded)
   (not (goal (class REFILL-SHELF-MAINTAIN)))
   (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
-  (wm-fact (key domain fact self args? r ?self&:(sym-cat ?locked-by)))
+  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   =>
   (assert (goal (id (sym-cat REFILL-SHELF-MAINTAIN- (gensym*)))
