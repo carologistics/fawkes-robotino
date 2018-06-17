@@ -848,9 +848,9 @@
   ;Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C3))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?order-ring1-color))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?order-ring2-color))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?order-ring3-color))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color) (value ?qd&:(> ?qr ?qd)))
   ; (wm-fact (key refbox order ?order delivery-begin) (type UINT)
@@ -861,10 +861,15 @@
   (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?prev-rs side OUTPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
-  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
-  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
-  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-ring1-color))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-ring2-color))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-ring3-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  (test (or
+            (and (eq ?wp-ring1-color ?order-ring1-color)
+                 (eq ?wp-ring2-color ?order-ring2-color)
+                 (neq ?wp-ring3-color ?order-ring3-color)
+                 (eq ?next-ring-color ?order-ring3-color))))
   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs&:(neq ?wp-rs ?wp) m ?mps-rs side ?any-rs-side)))
   ;TODO for multi-agent
   ; Model old agents constraints
