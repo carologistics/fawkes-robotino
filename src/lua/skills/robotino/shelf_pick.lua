@@ -44,6 +44,7 @@ skillenv.skill_module(_M)
 
 local x_distance = 0.27
 local gripper_adjust_z_distance = -0.01
+local gripper_adjust_x_distance = 0.02
 local adjust_target_frame = "gripper"
 
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
@@ -91,6 +92,7 @@ end
 function ADJUST_HEIGHT:init()
    self.args["gripper_commands_new"].command = "MOVEABS"
    self.args["gripper_commands_new"].z = gripper_adjust_z_distance
+   self.args["gripper_commands_new"].x = gripper_adjust_x_distance
    self.args["gripper_commands_new"].target_frame = adjust_target_frame
 end
 

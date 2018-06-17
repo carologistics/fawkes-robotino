@@ -52,11 +52,11 @@ local gripper_tolerance_x = 0.015-- gripper x tolerance according to conveyor po
 local gripper_tolerance_y = 0.015 -- gripper y tolerance according to conveyor pose
 local gripper_tolerance_z = 0.015 -- gripper z tolerance according to conveyor pose
 
-local gripper_pose_offset_x = 0.00  -- conveyor pose offset in x direction
-local gripper_pose_offset_y = -0.008     -- conveyor_pose offset in y direction
-local gripper_pose_offset_z = 0.065  -- conveyor_pose offset in z direction
+local gripper_pose_offset_x = -0.02  -- conveyor pose offset in x direction
+local gripper_pose_offset_y = 0.00     -- conveyor_pose offset in y direction
+local gripper_pose_offset_z = 0.02  -- conveyor_pose offset in z direction
 
-local conveyor_gripper_forward_x = 0.05 -- distance to move gripper forward after align
+local conveyor_gripper_forward_x = 0.04 -- distance to move gripper forward after align
 local conveyor_gripper_down_z = -0.01    -- distance to move gripper down after driving over conveyor
 local conveyor_gripper_back_x = -0.06   -- distance to move gripper back after opening gripper
 local conveyor_gripper_up_z = 0.01  -- distance to move gripper up after opening the gripper
@@ -180,7 +180,7 @@ function GRIPPER_ALIGN:init()
   self.args["gripper_commands_new"].x = pose.x
   self.args["gripper_commands_new"].y = pose.y
   self.args["gripper_commands_new"].z = pose.z
-  self.args["gripper_commands_new"].target_frame = align_target_frame
+  self.args["gripper_commands_new"].target_frame = "gripper"
   self.fsm.vars.retries = self.fsm.vars.retries + 1
 end
 
