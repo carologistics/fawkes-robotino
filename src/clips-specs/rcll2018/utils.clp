@@ -312,6 +312,7 @@
    then
     (if (eq ?t "C")
      then
+      (bind ?m-ori 0)
       (do-for-fact ((?mo domain-fact)) (and (eq (nth$ 1 ?mo:param-values) ?ori) (eq ?mo:name mirror-orientation))
         (bind ?m-ori (nth$ 2 ?mo:param-values))
       )
