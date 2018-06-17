@@ -512,7 +512,7 @@
                                      rs-after ?rs-after
                                      wp ?spawned-wp
                                      )
-                            (required-resources ?mps)
+                            (required-resources ?mps ?spawned-wp)
   ))
 )
 
@@ -697,7 +697,7 @@
                         order ?order
                         wp ?spawned-wp
                 )
-                (required-resources ?mps ?order)
+                (required-resources ?mps ?order ?spawned-wp)
   ))
 )
 
@@ -773,7 +773,7 @@
                            order ?order
                            wp ?spawned-wp
                 )
-                (required-resources ?mps-rs)
+                (required-resources ?mps-rs ?spawned-wp)
   ))
 )
 
