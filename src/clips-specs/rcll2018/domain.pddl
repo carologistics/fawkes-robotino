@@ -531,4 +531,9 @@
     :precondition (location-locked ?location ?side)
     :effect (not (location-locked ?location ?side))
   )
+  (:action expire-locks
+    :parameters (?r - robot)
+    :precondition (self ?r)
+    :effect (self ?r)
+  )
 )
