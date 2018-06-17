@@ -63,6 +63,7 @@
   (domain-loaded)
   (wm-fact (key config rcll robot-name) (value ?robot-name))
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
+  (wm-fact (key refbox phase) (value SETUP))
   =>
   (bind ?self (sym-cat ?robot-name))
   (if (eq ?team-color CYAN)
@@ -248,5 +249,16 @@
 
  )
 
+  (assert (domain-facts-loaded))
+)
+
+(defrule domain-restore-worldmodel-after-maintenance
+  "Domain facts have not been loaded but the game is already running.
+   Restore the world model from the database."
+  (not (domain-facts-loaded))
+  (wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
+  =>
+  (printout warn "Restoring world model from the database" crlf)
+  (wm-robmem-sync-restore)
   (assert (domain-facts-loaded))
 )
