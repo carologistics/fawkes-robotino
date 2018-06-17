@@ -112,17 +112,19 @@
 )
 
 (defrule goal-reasoner-create-wp-spawn-achieve
-  "Only actually spawn if you are the spawn-master"
+  "Spawn a WP for each robot, if you are the spawn-master"
   ?g <- (goal (id ?maintain-id) (class WPSPAWN-MAINTAIN) (mode SELECTED))
   (not (goal (class WPSPAWN-ACHIEVE)))
   (time $?now)
   ; TODO: make interval a constant
   (goal-meta (goal-id ?maintain-id)
     (last-achieve $?last&:(timeout ?now ?last 1)))
-  (wm-fact (key domain fact self args? r ?robot))
-  (not (and
+  (domain-object (name ?robot) (type robot))
+  (not
+    (and
     (domain-object (name ?wp) (type workpiece))
-    (wm-fact (key domain fact wp-spawned-by args? wp ?wp r ?robot))))
+    (wm-fact (key domain fact wp-spawned-for args? wp ?wp r ?robot)))
+  )
   =>
   (assert (goal (id (sym-cat WPSPAWN-ACHIEVE- (gensym*)))
                 (class WPSPAWN-ACHIEVE) (parent ?maintain-id)
@@ -453,7 +455,7 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact wp-spawned-by args? wp ?spawned-wp r ?robot))
+  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;RS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
@@ -619,7 +621,7 @@
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact wp-spawned-by args? wp ?spawned-wp r ?robot))
+  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~READY-AT-OUTPUT))
@@ -691,7 +693,7 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args?         r ?robot))
-  (wm-fact (key domain fact wp-spawned-by args? wp ?spawned-wp r ?robot))
+  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
@@ -1303,7 +1305,7 @@
     (wm-fact (key domain fact wp-ring2-color args? wp ?wp-id col RING_NONE) (value TRUE))
     (wm-fact (key domain fact wp-ring3-color args? wp ?wp-id col RING_NONE) (value TRUE))
     (wm-fact (key domain fact wp-base-color args? wp ?wp-id col BASE_NONE) (value TRUE))
-    (wm-fact (key domain fact wp-spawned-by args? wp ?wp-id r ?robot) (value TRUE))
+    (wm-fact (key domain fact wp-spawned-for args? wp ?wp-id r ?robot) (value TRUE))
   )
   (modify ?g (mode EVALUATED))
   (modify ?m (last-achieve ?now))

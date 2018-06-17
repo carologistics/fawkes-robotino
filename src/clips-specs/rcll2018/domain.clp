@@ -131,7 +131,7 @@
     ; (domain-fact (name wp-ring2-color) (param-values WP1 RING_NONE))
     ; (domain-fact (name wp-ring3-color) (param-values WP1 RING_NONE))
     ; (domain-fact (name wp-unused) (param-values WP1))
-    ; (domain-fact (name wp-spawned-by) (param-values R-1 WP1))
+    ; (domain-fact (name wp-spawned-for) (param-values ?self WP1))
     (domain-fact (name self) (param-values ?self))
     (domain-fact (name at) (param-values ?self START INPUT))
     (domain-fact (name can-hold) (param-values ?self))
