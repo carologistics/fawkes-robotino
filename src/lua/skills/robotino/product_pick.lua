@@ -69,7 +69,7 @@ local drive_back_x = -0.1      -- distance to drive back after closing the gripp
 
 local gripper_pose_offset_x = -0.02  -- conveyor pose offset in x direction
 local gripper_pose_offset_y = 0.00     -- conveyor_pose offset in y direction
-local gripper_pose_offset_z = 0.04  -- conveyor_pose offset in z direction
+local gripper_pose_offset_z = 0.02  -- conveyor_pose offset in z direction
 
 local align_target_frame = "gripper_fingers"      -- the gripper align is made relative to this frame (according to gripper_commands_new)
 local z_movement_target_frame = "gripper" -- the gripper z movement is made relative to this frame (according to gripper_commands_new)
