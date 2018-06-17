@@ -52,9 +52,10 @@ fsm:define_states{ export_to=_M,
    {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_FOR_GRIPPER", fail_to="LEAVE_SLIDE_FAILED"},
    {"WAIT_FOR_GRIPPER", JumpState},
    {"LEAVE_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="CLOSE_GRIPPER", fail_to="CLOSE_GRIPPER"},
-   {"LEAVE_SLIDE_FAILED", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},
+   {"LEAVE_SLIDE_FAILED", SkillJumpState, skills={{motor_move}}, final_to="PRE_FAIL", fail_to="PRE_FAIL"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="RESET_Z_POS", fail_to="RESET_Z_POS"},
    {"RESET_Z_POS", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FINAL"},
+   {"PRE_FAIL", SkillJumpState, skills={{ax12gripper}}, final_to="FAILED", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -98,4 +99,8 @@ end
 
 function RESET_Z_POS:init()
    self.args["ax12gripper"].command = "RESET_Z_POS"
+end
+
+function PRE_FAIL:init()
+  self.args["ax12gripper"].command = "CLOSE"
 end
