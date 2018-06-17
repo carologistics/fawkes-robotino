@@ -400,6 +400,7 @@
 	(status RUNNING) 
 	(param-values ?bs ?side))
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
+  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name bs-dispense))
   ?li <- (lock-info (name ?name) (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id) (status WAITING))
   (test (eq ?name (sym-cat ?bs - ?side)))
   =>
