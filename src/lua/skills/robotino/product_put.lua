@@ -76,6 +76,17 @@ local z_movement_target_frame = "gripper" -- the gripper z movement is made rela
 local x_movement_target_frame = "gripper" -- the gripper x movement is made relative to this frame (according to griper_commands_new)
 
 
+-- Override values if host specific config value is set
+if config:exists("/skills/product_put/gripper_pose_offset_x") then
+    gripper_pose_offset_x = config:get_float("/skills/product_put/gripper_pose_offset_x")
+end
+if config:exists("/skills/product_put/gripper_pose_offset_y") then
+    gripper_pose_offset_y = config:get_float("/skills/product_put/gripper_pose_offset_y")
+end
+if config:exists("/skills/product_put/gripper_pose_offset_z") then
+    gripper_pose_offset_z = config:get_float("/skills/product_put/gripper_pose_offset_z")
+end
+
 
 function no_writer()
    return not if_conveyor_pose:has_writer()
