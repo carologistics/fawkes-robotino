@@ -54,10 +54,11 @@ end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
-   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="OPEN_GRIPPER", fail_to="FAILED"},
+   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="OPEN_GRIPPER", fail_to="PRE_FAIL"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="CONVEYOR_ALIGN", fail_to="CONVEYOR_ALIGN"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PICK", fail_to="FAILED"},
-   {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PICK", fail_to="PRE_FAIL"},
+   {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="PRE_FAIL"},
+   {"PRE_FAIL", SkillJumpState, skills={{gripper_commands_new}}, final_to="FAILED", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -108,4 +109,8 @@ function CONVEYOR_ALIGN:init()
    self.args["conveyor_align"].slide = self.fsm.vars.slide
    self.args["conveyor_align"].shelf = self.fsm.vars.shelf
    self.args["conveyor_align"].side = self.fsm.vars.side
+end
+
+function PRE_FAIL:init()
+  self.args["gripper_commands_new"].command = "CLOSE"
 end
