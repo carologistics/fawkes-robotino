@@ -70,6 +70,7 @@
   "If no one is spawn-master. Try to be the spawn master"
  (domain-facts-loaded)
  (domain-object (name SPAWNING-MASTER) (type master-token))
+ (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
  (not (goal (class ACQUIRE-TOKEN) (params token-name SPAWNING-MASTER)))
  (not (mutex (name SPAWNING-MASTER) (state LOCKED)))
  =>
@@ -106,6 +107,7 @@
  (not (goal (class WPSPAWN-MAINTAIN)))
  (wm-fact (key domain fact self args? r ?robot))
  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?self))
+ (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
  =>
  (assert (goal (id (sym-cat WPSPAWN-MAINTAIN- (gensym*)))
                (class WPSPAWN-MAINTAIN) (type MAINTAIN)))
