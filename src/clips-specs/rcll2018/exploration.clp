@@ -105,7 +105,6 @@
 
 (defrule goal-reasoner-create-exploration-goal
   (not (goal (id ?goal-id) (class EXPLORATION)))
-  (wm-fact (key domain fact entered-field args? r ?r))
   (wm-fact (key domain fact self args? r ?r))
   (wm-fact (key refbox phase) (type UNKNOWN) (value EXPLORATION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))

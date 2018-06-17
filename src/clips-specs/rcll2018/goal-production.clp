@@ -20,9 +20,6 @@
 ;
 
 (defglobal
-  ; Number of retrying enter-field
-  ; until succeeding it manually
-  ?*ENTER-FIELD-RETRIES* = 1
   ?*MAX-RETRIES-PICK* = 2
   ?*MAX-RETRIES-PUT-SLIDE* = 2
 
@@ -164,7 +161,6 @@
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
   (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact entered-field args? r ?robot))
   (NavGraphWithMPSGeneratorInterface (final TRUE))
   (wm-fact (key navgraph waitzone generated))
   =>
@@ -208,23 +204,6 @@
                 (required-resources ?waitpoint)
   ))
 )
-
-(defrule goal-reasoner-create-enter-field
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (goal (class ENTER-FIELD-ACHIEVE)))
-  (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact robot-waiting args? r ?robot))
-  (wm-fact (key refbox state) (value RUNNING))
-  (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
-  ; (NavGraphGeneratorInterface (final TRUE))
-  ; (not (wm-fact (key domain fact entered-field args? r ?robot)))
-  =>
-  (printout t "Goal " ENTER-FIELD " formulated" crlf)
-  (assert (goal (id (sym-cat ENTER-FIELD-ACHIEVE- (gensym*)))
-                (class ENTER-FIELD-ACHIEVE)))
-)
-
-
 
 (defrule goal-reasoner-create-fill-cap-goal
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -1127,25 +1106,6 @@
                 ; TODO do we really need the DS?
                 (required-resources ?order ?wp ?ds)
   ))
-)
-
-; ## Goal Evaluation
- (defrule goal-reasoner-evaluate-failed-enter-field
-   ?g <- (goal (id ?gid) (class ENTER-FIELD-ACHIEVE)
-               (mode FINISHED) (outcome FAILED))
-  ?pa <- (plan-action (goal-id ?gid) (status FAILED) (action-name enter-field))
-  ?gm <- (goal-meta (goal-id ?gid) (num-tries ?num-tries))
-  =>
-  (printout t "Goal '" ?gid "' has failed, evaluating" crlf)
-
-  (if (= ?num-tries ?*ENTER-FIELD-RETRIES*) then
-	(modify ?pa (status EXECUTION-SUCCEEDED))
-	(modify ?g (mode DISPATCHED) (outcome UNKNOWN))
-        else
-	(bind ?num-tries (+ 1 ?num-tries))
-	(modify ?gm (num-tries ?num-tries) (max-tries ?*ENTER-FIELD-RETRIES*))
-	(modify ?g (mode EVALUATED))
-  )
 )
 
 (defrule goal-reasoner-evaluate-production-maintain
