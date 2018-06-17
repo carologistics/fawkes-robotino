@@ -48,19 +48,20 @@ local gripper_adjust_x_distance = 0.02
 local adjust_target_frame = "gripper"
 
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
-   {"INIT",       SkillJumpState, skills={{ax12gripper}}, final_to="GOTO_SHELF", fail_to="FAILED" },
-   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="ADJUST_HEIGHT", fail_to="FAILED"},
-   {"ADJUST_HEIGHT",       SkillJumpState, skills={{gripper_commands_new}}, final_to="APPROACH_SHELF", fail_to="FAILED" },
-   {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="GRAB_PRODUCT", fail_to="FAILED"},
+   {"INIT",       SkillJumpState, skills={{ax12gripper}}, final_to="GOTO_SHELF", fail_to="PRE_FAIL" },
+   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="ADJUST_HEIGHT", fail_to="PRE_FAIL"},
+   {"ADJUST_HEIGHT",       SkillJumpState, skills={{gripper_commands_new}}, final_to="APPROACH_SHELF", fail_to="PRE_FAIL" },
+   {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="GRAB_PRODUCT", fail_to="PRE_FAIL"},
    {"GRAB_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAIL_SAFE"},
    {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="HOME_GRIPPER", fail_to="FAILED"},
    {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="FINAL", fail_to="FAILED"},
-   {"FAIL_SAFE", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},
+   {"FAIL_SAFE", SkillJumpState, skills={{motor_move}}, final_to="PRE_FAIL", fail_to="PRE_FAIL"},
    {"WAIT_AFTER_GRAB", JumpState},
+   {"PRE_FAIL", SkillJumpState, skills={{ax12gripper}}, final_to="FAILED", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
-   {"GOTO_SHELF", "FAILED", cond="vars.error"},
+   {"GOTO_SHELF", "PRE_FAIL", cond="vars.error"},
    {"WAIT_AFTER_GRAB", "LEAVE_SHELF", timeout=0.5},
 }
 
@@ -121,3 +122,9 @@ end
 function FAIL_SAFE:init()
    self.args["motor_move"].x = -0.1
 end
+
+function PRE_FAIL:init()
+  self.args["ax12gripper"].command = "CLOSE"
+end
+
+
