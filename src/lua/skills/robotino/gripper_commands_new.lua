@@ -81,15 +81,18 @@ function COMMAND:init()
 
    elseif self.fsm.vars.command == "MOVEABS" then
 
-        x = self.fsm.vars.x or -1
-        y = self.fsm.vars.y or -1
-        z = self.fsm.vars.z or -1
         target_frame = self.fsm.vars.target_frame or "gripper_home"
 
         move_abs_message = arduino.MoveXYZAbsMessage:new()
-        move_abs_message:set_x(x)
-        move_abs_message:set_y(y)
-        move_abs_message:set_z(z)
+        if self.fsm.vars.x ~= nil then
+          move_abs_message:set_x(self.fsm.vars.x)
+        end
+        if self.fsm.vars.y ~= nil then
+          move_abs_message:set_y(self.fsm.vars.y)
+        end
+        if self.fsm.vars.z ~= nil then
+          move_abs_message:set_z(self.fsm.vars.z)
+        end
         move_abs_message:set_target_frame(target_frame)
         arduino:msgq_enqueue_copy(move_abs_message)
 
