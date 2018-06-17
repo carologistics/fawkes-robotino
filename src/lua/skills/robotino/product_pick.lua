@@ -152,21 +152,22 @@ fsm:define_states{ export_to=_M,
    closure={gripper_if=gripper_if, tolerance_ok=tolerance_ok, MAX_RETRIES=MAX_RETRIES, result_ready=result_ready, fitness_ok=fitness_ok},
    {"INIT", JumpState},
    {"INIT_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="OPEN_GRIPPER", fail_to="FAILED"},
-   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="CHECK_VISION", fail_to="FAILED"},
+   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="CHECK_VISION", fail_to="PRE_FAIL"},
    {"CHECK_VISION", JumpState},
-   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="DECIDE_RETRY",fail_to="FAILED"},
+   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="DECIDE_RETRY",fail_to="PRE_FAIL"},
    {"DECIDE_RETRY", JumpState},
-   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER",fail_to="FAILED"},
-   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="FAILED"},
+   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER",fail_to="PRE_FAIL"},
+   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
    {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "HOME_GRIPPER", fail_to="FAILED"},
    {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="DRIVE_BACK"},
    {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
+   {"PRE_FAIL", SkillJumpState, skills={{gripper_commands_new}}, final_to="FAILED", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
    {"INIT", "INIT_GRIPPER", true, desc="Init gripper for product_pick"},
-   {"CHECK_VISION", "FAILED", timeout=10, desc="Fitness threshold wasn't reached"},
-   {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
+   {"CHECK_VISION", "PRE_FAIL", timeout=10, desc="Fitness threshold wasn't reached"},
+   {"CHECK_VISION", "PRE_FAIL", cond=no_writer, desc="No writer for conveyor vision"},
    {"CHECK_VISION", "MOVE_GRIPPER_FORWARD", cond="result_ready() and fitness_ok() and tolerance_ok()"},
    {"CHECK_VISION", "GRIPPER_ALIGN", cond="result_ready() and fitness_ok()", desc="Fitness threshold reached"},
    {"CHECK_VISION", "CHECK_VISION", cond="result_ready() and not fitness_ok() and vars.vision_retries < 3"},
@@ -260,6 +261,11 @@ end
 function DRIVE_BACK:init()
   self.args["motor_move"].x = drive_back_x
 end
+
+function PRE_FAIL:init()
+  self.args["gripper_commands_new"].command="CLOSE"
+end
+
 
 function cleanup()
    if (fsm.vars.disable_realsense_afterwards == nil or fsm.vars.disable_realsense_afterwards) then
