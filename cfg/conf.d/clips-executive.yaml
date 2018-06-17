@@ -172,6 +172,10 @@ clips-executive:
         - RobotinoLightInterface
 
       parameters:
+        coordination:
+          mutex:
+            renew-interval: 5
+            max-age-sec: 30
         rcll:
           # real-world-setup:
           peer-address: 172.26.255.255
