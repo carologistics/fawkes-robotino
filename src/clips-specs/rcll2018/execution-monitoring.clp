@@ -402,7 +402,7 @@
 
 (defrule execution-monitoring-decrease-last-failed-priority
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?g <- (goal (id ?goal-id) (parent ?parent) (class ?goal-class) (type ACHIEVE) (mode FORMULATED) (values $?params)) 
+  ?g <- (goal (id ?goal-id) (parent ?parent) (class ?goal-class) (type ACHIEVE) (mode FORMULATED) (params $?params)) 
   (wm-fact (key monitoring fact last-failed args? parent ?parent class ?goal-class) (values $?params))
   =>
   (printout warning "Dont try " ?goal-class " with " ?params " twice -> Lower priority" crlf)
