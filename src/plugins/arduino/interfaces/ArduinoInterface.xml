@@ -24,8 +24,8 @@
 
     <field type="bool" name="final">True, if the last move command has been finished</field>
 
-    <field type="uint32" name="msgid">The ID of the message that is currently being
-      processed, or 0 if no message is being processed.</field>
+    <field type="uint32" name="msgid">The ID of the msg the error_state refers to.</field>
+    <field type="uint32" name="errorstate"> The errorstate. </field>
 
     <field type="uint32" name="status">The current status indicated by the above constants.</field>
 
