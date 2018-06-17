@@ -603,7 +603,7 @@
 	)
 
 	(smt-request "smt-plan" ?p)
-	(assert (plan-requested ?goal-id))
+	(assert (plan-requested ?goal-id ?order-id))
 )
 
 ;---------------------------------------------------------------------------
@@ -1041,10 +1041,9 @@
 	?spc <- (smt-plan-complete ?handle)
 
 	?g <- (goal (id ?goal-id) (mode SELECTED))
-	?plan-req <- (plan-requested ?goal-id)
+	?plan-req <- (plan-requested ?goal-id ?order-id)
 
 	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE)) ; TODO manage complexity here
 	=>
 	(printout t "SMT plan handle completed " ?handle  crlf)
 
