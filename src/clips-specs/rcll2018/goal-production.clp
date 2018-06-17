@@ -105,8 +105,8 @@
   "Maintain Spawning only if no one else is (ie, no one is spawn-master)"
  (domain-facts-loaded)
  (not (goal (class WPSPAWN-MAINTAIN)))
- (wm-fact (key domain fact self args? r ?robot))
- (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?self))
+ (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
+ (wm-fact (key domain fact self args? r ?self&:(sym-cat ?locked-by)))
  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
  =>
  (assert (goal (id (sym-cat WPSPAWN-MAINTAIN- (gensym*)))
