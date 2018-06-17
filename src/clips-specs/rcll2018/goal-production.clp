@@ -814,7 +814,7 @@
   =>
   (bind ?ring-pos (member$ RING_NONE (create$ ?wp-ring1-color ?wp-ring2-color ?wp-ring3-color)))
   (bind ?curr-ring-color (nth$ ?ring-pos (create$ ?order-ring1-color ?order-ring2-color ?order-ring3-color)))
-  (printout t "Goal " MOUNT-NEXT-RING " formulated" crlf)
+  (printout t "Goal " MOUNT-NEXT-RING " formulated (Ring " ?ring-pos")" crlf)
   (assert (goal (id (sym-cat MOUNT-NEXT-RING- (gensym*)))
                 (class MOUNT-NEXT-RING) (priority (+ ?ring-pos ?*PRIORITY-MOUNT-NEXT-RING*))
                 (parent ?maintain-id)
