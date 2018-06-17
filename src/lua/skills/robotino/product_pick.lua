@@ -75,6 +75,19 @@ local align_target_frame = "gripper_fingers"      -- the gripper align is made r
 local z_movement_target_frame = "gripper" -- the gripper z movement is made relative to this frame (according to gripper_commands_new)
 local x_movement_target_frame = "gripper" -- the gripper x movement is made relative to this frame (according to griper_commands_new)
 
+
+-- Override values if host specific config value is set
+
+if config:exists("/skills/product_pick/gripper_pose_offset_x") then
+    gripper_pose_offset_x = config:get_float("/skills/product_pick/gripper_pose_offset_x")
+end
+if config:exists("/skills/product_pick/gripper_pose_offset_y") then
+    gripper_pose_offset_y = config:get_float("/skills/product_pick/gripper_pose_offset_y")
+end
+if config:exists("/skills/product_pick/gripper_pose_offset_z") then
+    gripper_pose_offset_z = config:get_float("/skills/product_pick/gripper_pose_offset_z")
+end
+
 -- initial gripper poses depending on the target
 local GRIPPER_POSES = {
   shelf_left={x=0.05, y=0.00, z=0.035},
