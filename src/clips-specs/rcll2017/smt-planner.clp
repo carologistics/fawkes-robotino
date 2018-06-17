@@ -588,7 +588,7 @@
 	(wm-fact (key refbox order ?order-id delivery-end) (value ?delivery-end&:(> ?delivery-end ?sec)))
 	(not (wm-fact (key domain fact order-fulfilled args? ord ?order-id) (value TRUE)))
 
-	(not (plan-requested ?goal-id))
+	(not (plan-requested ?goal-id ?order-id))
 =>
 	(printout t "SMT plan call " ?delivery-end " " ?sec crlf)
 	(bind ?p
