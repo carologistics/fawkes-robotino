@@ -70,6 +70,7 @@
   "If no one is spawn-master. Try to be the spawn master"
  (domain-facts-loaded)
  (domain-object (name SPAWNING-MASTER) (type master-token))
+ (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
  (not (goal (class ACQUIRE-TOKEN) (params token-name SPAWNING-MASTER)))
  (not (mutex (name SPAWNING-MASTER) (state LOCKED)))
  =>
@@ -104,25 +105,28 @@
   "Maintain Spawning only if no one else is (ie, no one is spawn-master)"
  (domain-facts-loaded)
  (not (goal (class WPSPAWN-MAINTAIN)))
- (wm-fact (key domain fact self args? r ?robot))
- (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?self))
+ (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
+ (wm-fact (key domain fact self args? r ?self&:(sym-cat ?locked-by)))
+ (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
  =>
  (assert (goal (id (sym-cat WPSPAWN-MAINTAIN- (gensym*)))
                (class WPSPAWN-MAINTAIN) (type MAINTAIN)))
 )
 
 (defrule goal-reasoner-create-wp-spawn-achieve
-  "Only actually spawn if you are the spawn-master"
+  "Spawn a WP for each robot, if you are the spawn-master"
   ?g <- (goal (id ?maintain-id) (class WPSPAWN-MAINTAIN) (mode SELECTED))
   (not (goal (class WPSPAWN-ACHIEVE)))
   (time $?now)
   ; TODO: make interval a constant
   (goal-meta (goal-id ?maintain-id)
     (last-achieve $?last&:(timeout ?now ?last 1)))
-  (wm-fact (key domain fact self args? r ?robot))
-  (not (and
+  (domain-object (name ?robot) (type robot))
+  (not
+    (and
     (domain-object (name ?wp) (type workpiece))
-    (wm-fact (key domain fact wp-spawned-by args? wp ?wp r ?robot))))
+    (wm-fact (key domain fact wp-spawned-for args? wp ?wp r ?robot)))
+  )
   =>
   (assert (goal (id (sym-cat WPSPAWN-ACHIEVE- (gensym*)))
                 (class WPSPAWN-ACHIEVE) (parent ?maintain-id)
@@ -475,6 +479,7 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;RS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
@@ -510,6 +515,7 @@
                                      base-color ?base-color
                                      rs-before ?rs-before
                                      rs-after ?rs-after
+                                     wp ?spawned-wp
                                      )
                             (required-resources ?mps)
   ))
@@ -639,6 +645,7 @@
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~READY-AT-OUTPUT))
@@ -693,6 +700,7 @@
                         mps ?mps
                         cs-color ?cap-color
                         order ?order
+                        wp ?spawned-wp
                 )
                 (required-resources ?mps ?order)
   ))
@@ -709,6 +717,7 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args?         r ?robot))
+  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
@@ -767,6 +776,7 @@
                            rs-after ?bases-remain
                            rs-req ?bases-needed
                            order ?order
+                           wp ?spawned-wp
                 )
                 (required-resources ?mps-rs)
   ))
@@ -1309,7 +1319,6 @@
   ?p <- (goal (id ?parent-id) (class WPSPAWN-MAINTAIN))
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
-  (wm-fact (key domain fact self args? r ?robot))
   =>
   (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
     "') has been completed, Evaluating" crlf)
@@ -1322,7 +1331,7 @@
     (wm-fact (key domain fact wp-ring2-color args? wp ?wp-id col RING_NONE) (value TRUE))
     (wm-fact (key domain fact wp-ring3-color args? wp ?wp-id col RING_NONE) (value TRUE))
     (wm-fact (key domain fact wp-base-color args? wp ?wp-id col BASE_NONE) (value TRUE))
-    (wm-fact (key domain fact wp-spawned-by args? wp ?wp-id r ?robot) (value TRUE))
+    (wm-fact (key domain fact wp-spawned-for args? wp ?wp-id r ?robot) (value TRUE))
   )
   (modify ?g (mode EVALUATED))
   (modify ?m (last-achieve ?now))
