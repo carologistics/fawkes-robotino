@@ -157,7 +157,7 @@ clips-executive:
 
 
           team-name: Carologistics
-          crypto-key: randomkey
+          crypto-key: eeg3Eis7hi
           cipher: "aes-128-cbc"
 
           waitpoint-in-cyan: R-1
