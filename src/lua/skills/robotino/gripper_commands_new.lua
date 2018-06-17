@@ -48,6 +48,13 @@ skillenv.skill_module(_M)
 
 
 function is_error()
+  msgid = arduino:msgid()
+  if msgid ~= nil then
+    return false
+  end
+  if msgid ~= self.fsm.vars.msgid then 
+    return false
+  end
   status = arduino:status()
   if status == 2 or status == 3 or status == 4 then
     return true
@@ -103,6 +110,7 @@ function COMMAND:init()
         move_abs_message:set_y(y)
         move_abs_message:set_z(z)
         move_abs_message:set_target_frame(target_frame)
+        self.fsm.vars.msgid = move_abs_message:id()
         arduino:msgq_enqueue_copy(move_abs_message)
 
    elseif self.fsm.vars.command == "CALIBRATE" then
