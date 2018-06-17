@@ -392,3 +392,28 @@
   (assert (wm-fact (key wp-unused args? wp ?wp)))
   (retract ?cleanup)
 )
+
+(defrule execution-monitoring-bs-switch-sides
+  ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) 
+	(id ?id) 
+	(action-name location-lock) 
+	(status RUNNING) 
+	(param-values ?bs ?side))
+  (wm-fact (key domain fact mps-type args? m ?bs t BS))
+  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name bs-dispense))
+  ?li <- (lock-info (name ?name) (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id) (status WAITING))
+  (test (eq ?name (sym-cat ?bs - ?side)))
+  =>
+  (retract ?li)
+  (modify ?pa (status PENDING))
+  (delayed-do-for-all-facts ((?p plan-action)) (and (eq ?p:goal-id ?goal-id) (eq ?p:plan-id ?plan-id) (neq FALSE (member$ ?bs ?p:param-values)) (neq FALSE (member$ ?side ?p:param-values)))
+ 	(printout t "Execution monitoring: Adapting " ?p:action-name crlf)
+	(bind $?modified ?p:param-values)
+	(if (eq ?side INPUT) then
+		(bind ?modified (replace$ ?modified (+ 1 (member$ ?bs ?p:param-values)) (+ 1 (member$ ?bs ?p:param-values)) OUTPUT))
+	else 
+		(bind ?modified (replace$ ?modified (+ 1 (member$ ?bs ?p:param-values)) (+ 1 (member$ ?bs ?p:param-values)) INPUT))
+	)
+	(modify ?p (param-values ?modified))
+  )
+)
