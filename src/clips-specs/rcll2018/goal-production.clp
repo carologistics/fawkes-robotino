@@ -70,6 +70,7 @@
   "If no one is spawn-master. Try to be the spawn master"
  (domain-facts-loaded)
  (domain-object (name SPAWNING-MASTER) (type master-token))
+ (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
  (not (goal (class ACQUIRE-TOKEN) (params token-name SPAWNING-MASTER)))
  (not (mutex (name SPAWNING-MASTER) (state LOCKED)))
  =>
