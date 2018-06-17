@@ -853,9 +853,14 @@
                           ds ?ds
                           ds-gate ?gate
                           base-color ?base-color
+                          ring1-color ?ring1-color
+                          ring2-color ?ring2-color
+                          ring3-color ?ring3-color
                           cap-color ?cap-color
        ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+ (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?ord))
+ (wm-fact (key domain fact order-complexity args? ord ?ord com ?complexity))
  =>
  (assert
   (plan (id DELIVER-PLAN) (goal-id ?goal-id))
@@ -893,16 +898,29 @@
   (plan-action (id 11) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
         (action-name wp-put)
         (param-names r wp m)
-        (param-values ?robot ?wp ?ds))
-  (plan-action (id 12) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
-        (action-name fulfill-order-c0)
-        (param-names ord wp m g basecol capcol)
-        (param-values ?order ?wp ?ds ?gate ?base-color  ?cap-color))
-  (plan-action (id 13) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
-        (action-name unlock) (param-values ?ds))
-  (plan-action (id 14) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
-        (action-name location-unlock)
-        (param-values ?ds INPUT))
+        (param-values ?robot ?wp ?ds)))
+ (bind ?param-names (create$ ord wp m g basecol capcol))
+ (bind ?param-values (create$ ?order ?wp ?ds ?gate ?base-color ?cap-color))
+ (switch ?complexity
+  (case C1 then
+      (bind ?param-names (create$ ord wp m g basecol capcol ring1col))
+      (bind ?param-values (create$ ?order ?wp ?ds ?gate ?base-color ?cap-color ?ring1-color)))
+  (case C2 then
+      (bind ?param-names (create$ ord wp m g basecol capcol ring1col ring2col))
+      (bind ?param-values (create$ ?order ?wp ?ds ?gate ?base-color ?cap-color ?ring1-color ?ring2-color)))
+  (case C3 then
+      (bind ?param-names (create$ ord wp m g basecol capcol ring1col ring2col ring3col))
+      (bind ?param-values (create$ ?order ?wp ?ds ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)))
  )
+ (assert
+   (plan-action (id 12) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
+        (action-name (sym-cat fulfill-order- (lowcase ?complexity)))
+        (param-names ?param-names)
+        (param-values ?param-values))
+   (plan-action (id 13) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
+        (action-name unlock) (param-values ?ds))
+   (plan-action (id 14) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
+        (action-name location-unlock)
+        (param-values ?ds INPUT)))
  (modify ?g (mode EXPANDED))
 )

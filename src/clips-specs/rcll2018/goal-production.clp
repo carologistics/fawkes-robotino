@@ -1189,10 +1189,13 @@
                         ds ?ds
                         ds-gate ?gate
                         base-color ?base-color
+                        ring1-color ?ring1-color
+                        ring2-color ?ring2-color
+                        ring3-color ?ring3-color
                         cap-color ?cap-color
                 )
                 ; TODO do we really need the DS?
-                (required-resources ?order ?wp ?ds)
+                (required-resources ?order ?wp)
   ))
 )
 
