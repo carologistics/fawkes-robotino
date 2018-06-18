@@ -278,7 +278,7 @@
                         mps ?mps
                         cc ?cc
                 )
-                (required-resources ?mps)
+                (required-resources ?mps ?cc)
   ))
 )
 
@@ -577,7 +577,7 @@
                                      rs-before ?rs-before
                                      rs-after ?rs-after
                                      )
-                            (required-resources ?mps)
+                            (required-resources ?mps ?wp)
   ))
 )
 

@@ -18,7 +18,7 @@
   (declare (salience 1))
   (time $?now)
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
-  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT)))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT|INPUT)))
   (not (timer (name ?name&:(eq ?name (sym-cat READY-AT-OUTPUT ?mps)))))
   =>
   ;TODO: Send Maintenance message
@@ -28,10 +28,13 @@
 
 (defrule execution-monitoring-unexpected-mps-state-ready-at-output-abort
   (declare (salience 1))
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+  (wm-fact (key domain fact mps-type args? m ?mps t ?type))
+  (or (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
+      (not (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT)))
+  )
   ?t <- (timer (name ?name&:(eq ?name (sym-cat READY-AT-OUTPUT ?mps))))
    =>
-  (printout warn "Monitoring: Unexpected READY-AT-OUTPUT, found a WP " ?wp " at output!" crlf)
+  (printout warn "Monitoring: Unexpected READY-AT-OUTPUT recovered!..aborting timer! " crlf)
   (retract ?t)
 )
 
@@ -40,17 +43,28 @@
   (time $?now)
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
   (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT)))
-  (timer (name ?name&:(eq ?name (sym-cat READY-AT-OUTPUT ?mps)))
+  ?t <- (timer (name ?name&:(eq ?name (sym-cat READY-AT-OUTPUT ?mps)))
     (time $?time&:(timeout ?now ?time ?*COMMON-TIMEOUT-DURATION*)))
    =>
-  (bind ?wp-gen  (sym-cat WP- (gensym)))
+  ;(bind ?wp-gen  (sym-cat WP- (gensym)))
   ;(assert (domain-object (name (sym-cat WP- (gensym))) (type workpiece))
   ;        (wm-fact (key domain fact wp-at args? wp ?wp-gen m ?mps side OUTPUT))
   ;        (wm-fact (key domain fact wp-usable args? wp ?wp-gen))
   ;        )
+  (retract ?t)
   (assert (wm-fact (key monitoring reset-mps args? m ?mps) (type BOOL) (value TRUE)))
-  (printout warn "Monitoring: Unexpected READY-AT-OUTPUT, Spawned " ?wp-gen " at output!" crlf)
 )
+
+(defrule execution-monitoring-reset-mps-on-unexpected-input
+  (declare (salience 1))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+  (not (mutex (name ?name&:(eq ?name (sym-cat resource- ?wp))) (state LOCKED)))
+  =>
+  ;TODO: Send Maintenance message
+  (assert (wm-fact (key monitoring reset-mps args? m ?mps) (type BOOL) (value TRUE)))
+  (printout warn "Monitoring: Unexpected input and no WP at output!" crlf)
+)
+
 
 ;(defrule execution-monitoring-incosistent-yet-exepected-mps-state-idle
 ;  (declare (salience 1))
