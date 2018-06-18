@@ -591,7 +591,11 @@
 	(wm-fact (key refbox order ?order-id delivery-end) (value ?delivery-end&:(> ?delivery-end ?sec)))
 	(not (wm-fact (key domain fact order-fulfilled args? ord ?order-id) (value TRUE)))
 
-	(not (plan-requested ?goal-id ?order-id))
+	(not (plan-requested ?goal-id))
+	(not (plan-requested-ord ?goal-id ?order-id))
+
+	; Only R-1 should run the planner
+	(wm-fact (key config rcll robot-name) (value "R-1"))
 =>
 	(printout t "SMT plan call " ?delivery-end " " ?sec crlf)
 	(bind ?p
@@ -606,434 +610,10 @@
 	)
 
 	(smt-request "smt-plan" ?p)
-	(assert (plan-requested ?goal-id ?order-id))
+	(assert (plan-requested ?goal-id))
+	(assert (plan-requested-ord ?goal-id ?order-id))
 )
 
-;---------------------------------------------------------------------------
-;  Add plan action out of wm-facts plan after wm-fact sync
-;  TODO
-;    - Add filter for correct robot (compare ?action-specific-actor with own name) in order to add only own actions
-;    - Add filter for R-1 for exogenous actions
-;---------------------------------------------------------------------------
-
-(defrule production-add-plan-action-enter-field
-	; If wm-fact plan move is found assert the corresponding plan-action move
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values enter-field ?action-specific-actor ?team-color)
-	)
-	=>
-	(assert
-		 (plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-                        (duration 4.0)
-			(action-name enter-field)
-			(param-names r team-color)
-			(param-values ?action-specific-actor ?team-color))
-	)
-)
-
-(defrule production-add-plan-action-move
-	; If wm-fact plan move is found assert the corresponding plan-action move
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values move ?action-specific-actor ?from ?from-side ?to ?to-side)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name move)
-			(param-names r from from-side to to-side)
-			(param-values ?action-specific-actor ?from ?from-side ?to ?to-side)
-		)
-	)
-)
-
-(defrule production-add-plan-action-wp-get-shelf
-	; If wm-fact plan wp-get-shelf is found assert the corresponding plan-action wp-get-shelf
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values wp-get-shelf ?action-specific-actor ?wp ?mps ?shelf)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name wp-get-shelf)
-			(param-names r cc m spot)
-			(param-values ?action-specific-actor ?wp ?mps ?shelf)
-		)
-	)
-)
-
-(defrule production-add-plan-action-wp-get
-	; If wm-fact plan wp-get is found assert the corresponding plan-action wp-get
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values wp-get ?action-specific-actor ?wp ?mps ?side)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name wp-get)
-			(param-names r wp m side)
-			(param-values ?action-specific-actor ?wp ?mps ?side)
-		)
-	)
-)
-
-(defrule production-add-plan-action-wp-put
-	; If wm-fact plan wp-put is found assert the corresponding plan-action wp-put
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values wp-put ?action-specific-actor ?wp ?mps)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name wp-put)
-			(param-names r wp m)
-			(param-values ?action-specific-actor ?wp ?mps)
-		)
-	)
-)
-
-(defrule production-add-plan-action-wp-put-slide-cc
-	; If wm-fact plan wp-put-slide-cc is found assert the corresponding plan-action wp-put-slide-cc
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values wp-put-slide-cc ?action-specific-actor ?wp ?mps ?rs-before ?rs-after)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name wp-put-slide-cc)
-			(param-names r wp m rs-before rs-after)
-			(param-values ?action-specific-actor ?wp ?mps ?rs-before ?rs-after )
-		)
-	)
-)
-
-(defrule production-add-plan-action-wp-discard
-	; If wm-fact plan wp-discard is found assert the corresponding plan-action wp-discard
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values wp-discard ?action-specific-actor ?wp)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name wp-discard)
-			(param-names r cc)
-			(param-values ?action-specific-actor ?wp)
-		)
-	)
-)
-
-(defrule production-add-plan-action-prepare-bs
-	; If wm-fact plan prepare-bs is found assert the corresponding plan-action prepare-bs
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values prepare-bs ?mps ?side ?goal-base-color)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name prepare-bs)
-			(param-names m side bc)
-			(param-values ?mps ?side ?goal-base-color)
-		)
-	)
-)
-
-(defrule production-add-plan-action-bs-dispense
-	; If wm-fact plan bs-dispense is found assert the corresponding plan-action bs-dispense
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values bs-dispense ?action-specific-actor ?mps ?side ?wp ?goal-base-color)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name bs-dispense)
-			(param-names r m side wp basecol)
-			(param-values ?action-specific-actor ?mps ?side ?wp ?goal-base-color)
-		)
-	)
-)
-
-(defrule production-add-plan-action-prepare-ds
-	; If wm-fact plan prepare-ds is found assert the corresponding plan-action prepare-ds
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values prepare-ds ?mps ?gate)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name prepare-ds)
-			(param-names m gate)
-			(param-values ?mps ?gate)
-		)
-	)
-)
-
-(defrule production-add-plan-action-fulfill-order-c0
-	; If wm-fact plan fulfill-order-c0 is found assert the corresponding plan-action fulfill-order-c0
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values fulfill-order-c0 ?order-id ?wp ?mps ?gate ?base-color ?cap-color)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name fulfill-order-c0)
-			(param-names ord wp m g basecol capcol)
-			(param-values ?order-id ?wp ?mps ?gate ?base-color ?cap-color)
-		)
-	)
-)
-
-(defrule production-add-plan-action-fulfill-order-c1
-	; If wm-fact plan fulfill-order-c1 is found assert the corresponding plan-action fulfill-order-c1
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values fulfill-order-c1 ?order-id ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name fulfill-order-c1)
-			(param-names ord wp m g basecol capcol ring1col)
-			(param-values ?order-id ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color)
-		)
-	)
-)
-
-(defrule production-add-plan-action-fulfill-order-c2
-	; If wm-fact plan fulfill-order-c2 is found assert the corresponding plan-action fulfill-order-c2
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values fulfill-order-c2 ?order-id ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name fulfill-order-c2)
-			(param-names ord wp m g basecol capcol ring1col ring2col)
-			(param-values ?order-id ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color)
-		)
-	)
-)
-
-(defrule production-add-plan-action-fulfill-order-c3
-	; If wm-fact plan fulfill-order-c3 is found assert the corresponding plan-action fulfill-order-c3
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values fulfill-order-c3 ?order-id ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name fulfill-order-c3)
-			(param-names ord wp m g basecol capcol ring1col ring2col ring3col)
-			(param-values ?order-id ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)
-		)
-	)
-)
-
-(defrule production-add-plan-action-prepare-cs
-	; If wm-fact plan prepare-cs is found assert the corresponding plan-action prepare-cs
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values prepare-cs ?mps ?operation)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name prepare-cs)
-			(param-names m op)
-			(param-values ?mps ?operation)
-		)
-	)
-)
-
-(defrule production-add-plan-action-cs-retrieve-cap
-	; If wm-fact plan cs-retrieve-cap is found assert the corresponding plan-action cs-retrieve-cap
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values cs-retrieve-cap ?mps ?wp ?cap-color)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name cs-retrieve-cap)
-			(param-names m cc capcol)
-			(param-values ?mps ?wp ?cap-color)
-		)
-	)
-)
-
-(defrule production-add-plan-action-cs-mount-cap
-	; If wm-fact plan cs-mount-cap is found assert the corresponding plan-action cs-mount-cap
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values cs-mount-cap ?mps ?wp ?cap-color)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name cs-mount-cap)
-			(param-names m wp capcol)
-			(param-values ?mps ?wp ?cap-color)
-		)
-	)
-)
-
-(defrule production-add-plan-action-prepare-rs
-	; If wm-fact plan prepare-rs is found assert the corresponding plan-action prepare-rs
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values prepare-rs ?mps ?goal-ring-color ?rs-before ?rs-after ?r-req)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name prepare-rs)
-			(param-names m rc rs-before rs-after r-req)
-			(param-values ?mps ?goal-ring-color ?rs-before ?rs-after ?r-req)
-		)
-	)
-)
-
-(defrule production-add-plan-action-rs-mount-ring1
-	; If wm-fact plan rs-mount-ring1 is found assert the corresponding plan-action rs-mount-ring1
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values rs-mount-ring1 ?mps ?wp ?ring-color ?rs-before ?rs-after ?r-req)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name rs-mount-ring1)
-			(param-names m wp col rs-before rs-after r-req)
-			(param-values ?mps ?wp ?ring-color ?rs-before ?rs-after ?r-req)
-		)
-	)
-)
-
-(defrule production-add-plan-action-rs-mount-ring2
-	; If wm-fact plan rs-mount-ring2 is found assert the corresponding plan-action rs-mount-ring2
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values rs-mount-ring2 ?mps ?wp ?ring-color ?col1 ?rs-before ?rs-after ?r-req)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name rs-mount-ring2)
-			(param-names m wp col col1 rs-before rs-after r-req)
-			(param-values ?mps ?wp ?ring-color ?col1 ?rs-before ?rs-after ?r-req )
-		)
-	)
-)
-
-(defrule production-add-plan-action-rs-mount-ring3
-	; If wm-fact plan rs-mount-ring3 is found assert the corresponding plan-action rs-mount-ring3
-	(wm-fact
-		(key plan-action ?goal-id ?plan-id ?next-step-id action)
-		(values rs-mount-ring3 ?mps ?wp ?ring-color ?col1 ?col2 ?rs-before ?rs-after ?r-req)
-	)
-	=>
-	(assert
-		(plan-action
-			(id ?next-step-id)
-			(plan-id ?plan-id)
-			(goal-id ?goal-id)
-			(duration 4.0)
-			(action-name rs-mount-ring3)
-			(param-names m wp col col1 col2 rs-before rs-after r-req)
-			(param-values ?mps ?wp ?ring-color ?col1 ?col2 ?rs-before ?rs-after ?r-req)
-		)
-	)
-)
 
 ;---------------------------------------------------------------------------
 ;  Extract plan generated by clips-smt from protobuf
@@ -1044,7 +624,8 @@
 	?spc <- (smt-plan-complete ?handle)
 
 	?g <- (goal (id ?goal-id) (mode SELECTED))
-	?plan-req <- (plan-requested ?goal-id ?order-id)
+	?plan-req <- (plan-requested ?goal-id)
+	?plan-req-ord <- (plan-requested-ord ?goal-id ?order-id)
 
 	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
 	=>
@@ -1070,9 +651,59 @@
 		; Assert plan-action enter-field
 		(assert
 			(wm-fact
+				(key plan-action ?goal-id ?plan-id (string-to-field "97") action)
+				(is-list TRUE)
+				(values enter-field "R-1" ?team-color)
+			)
+		)
+		(assert
+			(wm-fact
+				(key plan-action ?goal-id ?plan-id (string-to-field "97") dep)
+			)
+		)
+		(assert
+			(wm-fact
+				(key plan-action ?goal-id ?plan-id (string-to-field "97") status)
+				(value FORMULATED)
+			)
+		)
+		(assert
+			(wm-fact
+				(key plan-action ?goal-id ?plan-id (string-to-field "97") actor)
+				(value "R-1")
+			)
+		)
+
+		(assert
+			(wm-fact
+				(key plan-action ?goal-id ?plan-id (string-to-field "98") action)
+				(is-list TRUE)
+				(values enter-field "R-2" ?team-color)
+			)
+		)
+		(assert
+			(wm-fact
+				(key plan-action ?goal-id ?plan-id (string-to-field "98") dep)
+			)
+		)
+		(assert
+			(wm-fact
+				(key plan-action ?goal-id ?plan-id (string-to-field "98") status)
+				(value FORMULATED)
+			)
+		)
+		(assert
+			(wm-fact
+				(key plan-action ?goal-id ?plan-id (string-to-field "98") actor)
+				(value "R-2")
+			)
+		)
+
+		(assert
+			(wm-fact
 				(key plan-action ?goal-id ?plan-id (string-to-field "99") action)
 				(is-list TRUE)
-				(values enter-field R-1 ?team-color)
+				(values enter-field "R-3" ?team-color)
 			)
 		)
 		(assert
@@ -1089,7 +720,7 @@
 		(assert
 			(wm-fact
 				(key plan-action ?goal-id ?plan-id (string-to-field "99") actor)
-				(value R-1)
+				(value "R-3")
 			)
 		)
 		(retract ?pf)
@@ -1125,7 +756,7 @@
 						)
 						(if (pb-has-field ?a "actor")
 							then
-							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+							(bind ?action-specific-actor (pb-field-value ?a "actor"))
 						)
 						(progn$ (?arg (pb-field-list ?a "params"))
 							(if (eq (pb-field-value ?arg "key") "to") then
@@ -1198,7 +829,7 @@
 						)
 						(if (pb-has-field ?a "actor")
 							then
-							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+							(bind ?action-specific-actor (pb-field-value ?a "actor"))
 						)
 						(progn$ (?arg (pb-field-list ?a "params"))
 							(if (eq (pb-field-value ?arg "key") "mps") then
@@ -1262,7 +893,7 @@
 						)
 						(if (pb-has-field ?a "actor")
 							then
-							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+							(bind ?action-specific-actor (pb-field-value ?a "actor"))
 						)
 						(progn$ (?arg (pb-field-list ?a "params"))
 							(if (eq (pb-field-value ?arg "key") "mps") then
@@ -1322,7 +953,7 @@
 						(bind ?machine-feature CONVEYOR)
 						(if (pb-has-field ?a "actor")
 							then
-							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+							(bind ?action-specific-actor (pb-field-value ?a "actor"))
 						)
 						(progn$ (?arg (pb-field-list ?a "params"))
 							(if (eq (pb-field-value ?arg "key") "mps") then
@@ -1387,7 +1018,7 @@
 						(bind ?machine-feature CONVEYOR)
 						(if (pb-has-field ?a "actor")
 							then
-							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+							(bind ?action-specific-actor (pb-field-value ?a "actor"))
 						)
 						(progn$ (?arg (pb-field-list ?a "params"))
 							(if (eq (pb-field-value ?arg "key") "mps") then
@@ -1461,7 +1092,7 @@
 						)
 						(if (pb-has-field ?a "actor")
 							then
-							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+							(bind ?action-specific-actor (pb-field-value ?a "actor"))
 						)
 						(progn$ (?arg (pb-field-list ?a "params"))
 							(if (eq (pb-field-value ?arg "key") "wp") then
@@ -1512,7 +1143,7 @@
 						)
 						(if (pb-has-field ?a "actor")
 							then
-							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+							(bind ?action-specific-actor (pb-field-value ?a "actor"))
 						)
 						(progn$ (?arg (pb-field-list ?a "params"))
 							(if (eq (pb-field-value ?arg "key") "mps") then
@@ -1571,7 +1202,7 @@
 						)
 						(if (pb-has-field ?a "actor")
 							then
-							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+							(bind ?action-specific-actor (pb-field-value ?a "actor"))
 						)
 						(progn$ (?arg (pb-field-list ?a "params"))
 							(if (eq (pb-field-value ?arg "key") "mps") then
@@ -1634,7 +1265,7 @@
 						)
 						(if (pb-has-field ?a "actor")
 							then
-							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+							(bind ?action-specific-actor (pb-field-value ?a "actor"))
 						)
 						(progn$ (?arg (pb-field-list ?a "params"))
 							(if (eq (pb-field-value ?arg "key") "mps") then
@@ -2012,7 +1643,7 @@
 						)
 						(if (pb-has-field ?a "actor")
 							then
-							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+							(bind ?action-specific-actor (pb-field-value ?a "actor"))
 						)
 						(progn$ (?arg (pb-field-list ?a "params"))
 							(if (eq (pb-field-value ?arg "key") "mps") then
@@ -2183,7 +1814,7 @@
 						)
 						(if (pb-has-field ?a "actor")
 							then
-							(bind ?action-specific-actor (string-to-field (pb-field-value ?a "actor")))
+							(bind ?action-specific-actor (pb-field-value ?a "actor"))
 						)
 						(progn$ (?arg (pb-field-list ?a "params"))
 							(if (eq (pb-field-value ?arg "key") "mps") then
@@ -2495,4 +2126,5 @@
 	(pb-destroy ?plans)
 	(modify ?g (mode EXPANDED))
 	(retract ?plan-req)
+	(retract ?plan-req-ord)
 )
