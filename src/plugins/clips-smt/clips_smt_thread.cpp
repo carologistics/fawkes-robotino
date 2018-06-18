@@ -123,9 +123,9 @@ ClipsSmtThread::init()
 
 	// Products encodes the output of an station which can be any product (at the CS) and subproduct (at the BS and RS) OR the product a robot is holding
 	products["nothing"]=0;
-	products["BR"]=1;
-	products["BRC1"]=2;
-	products["BRC2"]=3;
+	products["BRC1"]=1;
+	products["BRC2"]=2;
+	products["BR"]=3;
 
 	unsigned ctr = 3;
 
@@ -2525,7 +2525,7 @@ ClipsSmtThread::clips_smt_encoder()
 									&& (getVar(var, "md_"+std::to_string(i)) == time_to_feed)
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS1"]) || getVar(var, "pos_"+std::to_string(i)) == 7)
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["RS2"]) || getVar(var, "pos_"+std::to_string(i)) == 9)
-									&& (getVar(var, "holdA_"+std::to_string(i)) > 0)
+									&& (getVar(var, "holdA_"+std::to_string(i)) > 2)
 									&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
 		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_7) || constraintaction7);
