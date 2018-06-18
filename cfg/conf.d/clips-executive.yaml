@@ -148,10 +148,6 @@ clips-executive:
       blackboard-preload: ["Position3DInterface", "NavGraphWithMPSGeneratorInterface" , "NavGraphGeneratorInterface" , "NavigatorInterface", "AX12GripperInterface", "MotorInterface", "LaserLineInterface", "TagVisionInterface", "ZoneInterface"]
 
       parameters:
-        coordination:
-          mutex:
-            renew-interval: 5
-            max-age-sec: 30
         rcll:
         #real-world-setup:
           peer-address: 172.26.255.255
