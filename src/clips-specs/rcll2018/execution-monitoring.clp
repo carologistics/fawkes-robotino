@@ -16,25 +16,39 @@
 ;Execution Monitoring MPS state
 (defrule execution-monitoring-unexpected-mps-state-ready-at-output-start
   (declare (salience 1))
+  (time $?now)
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
   (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT)))
-  (not (domain-pending-sensed-fact
-    (goal-id ?goal-id)
-    (action-id ?action-id)
-    (name mps-state)
-    (param-values ?mps READY-AT-OUTPUT)
-    (type POSITIVE))
-  )
+  (not (timer (name ?name&:(eq ?name (sym-cat READY-AT-OUTPUT ?mps)))))
   =>
   ;TODO: Send Maintenance message
-  (printout warn "Monitoring: MPS state READY-AT-OUTPUT but no WP at output!" crlf)
+  (assert (timer (name (sym-cat READY-AT-OUTPUT ?mps)) (time ?now) (seq 1)))
+  (printout warn "Monitoring: Unexpected READY-AT-OUTPUT and no WP at output!..starting timer!" crlf)
+)
+
+(defrule execution-monitoring-unexpected-mps-state-ready-at-output-abort
+  (declare (salience 1))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+  ?t <- (timer (name ?name&:(eq ?name (sym-cat READY-AT-OUTPUT ?mps))))
+   =>
+  (printout warn "Monitoring: Unexpected READY-AT-OUTPUT, found a WP " ?wp " at output!" crlf)
+  (retract ?t)
+)
+
+(defrule execution-monitoring-unexpected-mps-state-ready-at-output-end
+  (declare (salience 1))
+  (time $?now)
+  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT)))
+  (timer (name ?name&:(eq ?name (sym-cat READY-AT-OUTPUT ?mps)))
+    (time $?time&:(timeout ?now ?time ?*COMMON-TIMEOUT-DURATION*)))
+   =>
   (bind ?wp-gen  (sym-cat WP- (gensym)))
   (assert (domain-object (name (sym-cat WP- (gensym))) (type workpiece))
           (wm-fact (key domain fact wp-at args? wp ?wp-gen m ?mps side OUTPUT))
           (wm-fact (key domain fact wp-usable args? wp ?wp-gen))
           )
-  ;TODO..check if it exists somewhere that will pervent execusion
-  (printout warn "A WP has been Generated at the OUTPUT side" crlf)
+  (printout warn "Monitoring: Unexpected READY-AT-OUTPUT, Spawned " ?wp-gen " at output!" crlf)
 )
 
 ;(defrule execution-monitoring-incosistent-yet-exepected-mps-state-idle
