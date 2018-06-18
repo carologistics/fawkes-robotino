@@ -489,7 +489,7 @@
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?mps side ?any-side)))
+  (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?bs side ?any-side)))
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN&~READY-AT-OUTPUT))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
 
@@ -656,7 +656,7 @@
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (domain-object (name ?mps-side) (type mps-side))
   (domain-fact (name location-free) (param-values ?bs ?mps-side))
-  (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?mps side ?any-side)))
+  (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?bs side ?any-side)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN&~READY-AT-OUTPUT))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
