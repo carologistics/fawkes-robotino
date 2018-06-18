@@ -321,6 +321,7 @@
                 (params robot ?robot
                         mps ?mps
                         wp ?wp
+                        side OUTPUT
                 )
                 (required-resources ?mps ?wp)
   ))
@@ -362,7 +363,7 @@
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
   (wm-fact (key domain fact mps-type args? m ?mps t BS))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
@@ -376,6 +377,7 @@
                 (params robot ?robot
                         mps ?mps
                         wp ?wp
+                        side ?side
                 )
                 (required-resources ?mps ?wp)
   ))
@@ -409,6 +411,7 @@
                 (params robot ?robot
                         mps ?mps
                         wp ?wp
+                        side OUTPUT
                 )
                 (required-resources ?mps ?wp)
   ))
