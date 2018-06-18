@@ -848,6 +848,12 @@ ConveyorPoseThread::pose_publish_tf(const tf::Stamped<tf::Pose> &pose)
   tf::Stamped<tf::Pose> tf_pose_gripper;
   tf_listener->transform_pose("gripper", pose, tf_pose_gripper);
 
+  auto rotation = tf_pose_gripper.getRotation();
+  if(rotation.length2() < 0.1){
+    logger->log_info(name(), "Pose with length %f should not get published", rotation.length());
+    return;
+  }
+
   // publish the transform from the gripper to the conveyor
   tf::Transform transform(
                   tf_pose_gripper.getRotation(),
