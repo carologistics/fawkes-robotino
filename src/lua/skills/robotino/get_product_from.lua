@@ -28,6 +28,7 @@ fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align", "gripper_commands_new"}
 depends_interfaces = {
   {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
+  {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 
 documentation      = [==[
@@ -52,12 +53,14 @@ function already_at_conveyor(self)
 end
 
 
-fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
+fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_if},
    {"INIT", JumpState},
    {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="OPEN_GRIPPER", fail_to="FAILED"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="CONVEYOR_ALIGN", fail_to="CONVEYOR_ALIGN"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PICK", fail_to="FAILED"},
-   {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
+   {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="CHECK_PUCK", fail_to="FAILED"},
+   {"CHECK_PUCK", JumpState},
+
 }
 
 fsm:add_transitions{
@@ -65,6 +68,8 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
    {"INIT", "CONVEYOR_ALIGN", cond=already_at_conveyor, desc="Already in front of the mps, align"},
    {"INIT", "DRIVE_TO_MACHINE_POINT", cond=true, desc="Everything OK"},
+   {"CHECK_PUCK", "FINAL", cond="gripper_if:is_holds_puck()", desc="Hold puck"},
+   {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Don't hold puck!"},
 }
 
 function INIT:init()
