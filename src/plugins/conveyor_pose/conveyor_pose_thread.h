@@ -49,7 +49,6 @@
 #include <atomic>
 #include <set>
 #include <array>
-#include <tuple>
 
 
 
@@ -133,19 +132,18 @@ private:
   CloudPtr trimmed_scene_;
 
   fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
-  int current_mps_id_;
   fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
 
   int cfg_force_shelf_;
 
   void update_station_information(fawkes::ConveyorPoseInterface::SetStationMessage &msg);
-  std::string get_model_path(fawkes::ConveyorPoseInterface *iface, fawkes::ConveyorPoseInterface::MPS_TYPE, int id, fawkes::ConveyorPoseInterface::MPS_TARGET);
+  std::string get_model_path(fawkes::ConveyorPoseInterface *iface, fawkes::ConveyorPoseInterface::MPS_TYPE, fawkes::ConveyorPoseInterface::MPS_TARGET);
 
   //Mapping from {Type,Target} to its corresponding model path
-  std::map<std::tuple<fawkes::ConveyorPoseInterface::MPS_TYPE,int,fawkes::ConveyorPoseInterface::MPS_TARGET>, std::string> type_id_target_to_path_;
+  std::map<std::pair<fawkes::ConveyorPoseInterface::MPS_TYPE,fawkes::ConveyorPoseInterface::MPS_TARGET>, std::string> type_target_to_path_;
 
   // Mapping from station name to preprocessed pointcloud model
-  std::map<std::tuple<fawkes::ConveyorPoseInterface::MPS_TYPE,int,fawkes::ConveyorPoseInterface::MPS_TARGET>, CloudPtr> type_id_target_to_model_;
+  std::map<std::pair<fawkes::ConveyorPoseInterface::MPS_TYPE,fawkes::ConveyorPoseInterface::MPS_TARGET>, CloudPtr> type_target_to_model_;
 
   RecognitionThread *recognition_thread_;
 
