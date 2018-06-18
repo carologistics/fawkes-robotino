@@ -234,8 +234,12 @@ void RecognitionThread::publish_result()
     if (enabled_) {
       main_thread_->result_fitness_ = new_fitness;
       main_thread_->result_pose_.reset(new tf::Stamped<tf::Pose> { result_pose });
+      auto rotation = main_thread_->result_pose_->getRotation();
+      if(rotation.length2()<0.01){ //Quaternion is not normalized and not acceptable
+        rotation = tf::Quaternion::getIdentity(); //instead publish identity rotation
+      }
       main_thread_->result_pose_->setRotation(
-            main_thread_->result_pose_->getRotation() * tf::Quaternion({1,0,0}, M_PI_2) * tf::Quaternion({0,0,1}, M_PI_2));
+            rotation * tf::Quaternion({1,0,0}, M_PI_2) * tf::Quaternion({0,0,1}, M_PI_2));
 
       try {
         tf_listener->transform_pose(
