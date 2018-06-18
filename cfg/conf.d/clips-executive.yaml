@@ -189,7 +189,8 @@ clips-executive:
             zone-margin: 0.15
             latest-send-last-report-time: 210 # =3:30
 
-
+          max-velocity: 1.0
+          max-rotation: 1.0
           master: R-2
 
           waitpoint-in-cyan: R-1

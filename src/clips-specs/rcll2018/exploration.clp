@@ -344,12 +344,16 @@
   ?g <- (goal (class EXPLORATION) (mode DISPATCHED))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
+  (wm-fact (id "/config/rcll/max-velocity") (type FLOAT) (value ?max-velocity))
+  (wm-fact (id "/config/rcll/max-rotation") (type FLOAT) (value ?max-rotation))
+
 =>
   (delayed-do-for-all-facts ((?l tried-lock)) (eq ?l:result REJECT)
     (retract ?l)
   )
   (printout t "exploration phase ended, cleaning up" crlf)
   (modify ?g (mode FINISHED) (outcome COMPLETED))
+  (navigator-set-speed ?max-velocity ?max-rotation)
 )
 
 (deffunction get-mps-type-from-name (?mps)
