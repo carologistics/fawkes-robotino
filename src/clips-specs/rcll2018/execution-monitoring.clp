@@ -14,20 +14,20 @@
 )
 
 ;Execution Monitoring MPS state
-(defrule execution-monitoring-incosistent-yet-exepected-mps-state-ready-at-output
+(defrule execution-monitoring-unexpected-mps-state-ready-at-output-start
   (declare (salience 1))
-  (domain-pending-sensed-fact
+  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT)))
+  (not (domain-pending-sensed-fact
     (goal-id ?goal-id)
     (action-id ?action-id)
     (name mps-state)
     (param-values ?mps READY-AT-OUTPUT)
     (type POSITIVE))
-  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
-  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT)))
+  )
   =>
   ;TODO: Send Maintenance message
-  (printout warn "Monitoring: MPS state READY-AT-OUTPUT but no WP at output, Yet action " ?action-id " in Goal " ?goal-id
-    "expected it!" crlf)
+  (printout warn "Monitoring: MPS state READY-AT-OUTPUT but no WP at output!" crlf)
   (bind ?wp-gen  (sym-cat WP- (gensym)))
   (assert (domain-object (name (sym-cat WP- (gensym))) (type workpiece))
           (wm-fact (key domain fact wp-at args? wp ?wp-gen m ?mps side OUTPUT))
