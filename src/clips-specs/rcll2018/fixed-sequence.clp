@@ -181,6 +181,7 @@
              (params robot ?robot
                       mps ?mps
                       wp ?wp
+                      side ?side
                       ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
@@ -188,22 +189,22 @@
   (plan (id CLEAR-MPS-PLAN) (goal-id ?goal-id))
   (plan-action (id 1) (plan-id CLEAR-MPS-PLAN) (goal-id ?goal-id)
         (action-name location-lock)
-        (param-values ?mps OUTPUT))
+        (param-values ?mps ?side))
   (plan-action (id 2) (plan-id CLEAR-MPS-PLAN) (goal-id ?goal-id)
         (action-name move)
         (param-names r from from-side to to-side)
-        (param-values ?robot ?curr-location ?curr-side ?mps OUTPUT))
+        (param-values ?robot ?curr-location ?curr-side ?mps ?side))
   (plan-action (id 3) (plan-id CLEAR-MPS-PLAN) (goal-id ?goal-id)
         (action-name lock) (param-values ?mps))
   (plan-action (id 4) (plan-id CLEAR-MPS-PLAN) (goal-id ?goal-id)
         (action-name wp-get)
         (param-names r wp m side)
-        (param-values ?robot ?wp ?mps OUTPUT))
+        (param-values ?robot ?wp ?mps ?side))
   (plan-action (id 5) (plan-id CLEAR-MPS-PLAN) (goal-id ?goal-id)
         (action-name unlock) (param-values ?mps))
   (plan-action (id 6) (plan-id CLEAR-MPS-PLAN) (goal-id ?goal-id)
                               (action-name location-unlock)
-                              (param-values ?mps OUTPUT))
+                              (param-values ?mps ?side))
  )
  (modify ?g (mode EXPANDED))
 )

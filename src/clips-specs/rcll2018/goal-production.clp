@@ -293,7 +293,6 @@
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ;Maybe add a check for the base_color
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
   ;Order conditions
@@ -309,6 +308,7 @@
                 (params robot ?robot
                         mps ?mps
                         wp ?wp
+                        side OUTPUT
                 )
                 (required-resources ?mps ?wp)
   ))
@@ -316,7 +316,7 @@
 
 
 
-(defrule goal-reasoner-create-clear-cs
+(defrule goal-reasoner-create-clear-cs-for-capless-carriers
   "Remove an unknown base from CS after retrieving a cap from it."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
@@ -325,8 +325,7 @@
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ;Maybe add a check for the base_color
-  (wm-fact (key domain fact mps-type args? m ?mps t CS|BS))
-  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
+  (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
   =>
@@ -338,11 +337,38 @@
                 (params robot ?robot
                         mps ?mps
                         wp ?wp
+                        side OUTPUT
                 )
                 (required-resources ?mps ?wp)
   ))
 )
 
+
+(defrule goal-reasoner-create-clear-bs
+  "Remove a workpiece with high priority"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
+  (wm-fact (key domain fact mps-type args? m ?mps t BS))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+  =>
+  (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
+  (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
+                (class CLEAR-MPS)
+                (priority ?*PRIORITY-CLEAR-BS*)
+                (parent ?production-id)
+                (params robot ?robot
+                        mps ?mps
+                        wp ?wp
+                        side ?side
+                )
+                (required-resources ?mps ?wp)
+  ))
+)
 
 
 (defrule goal-reasoner-clear-cs-from-expired-product
@@ -372,6 +398,7 @@
                 (params robot ?robot
                         mps ?mps
                         wp ?wp
+                        side OUTPUT
                 )
                 (required-resources ?mps ?wp)
   ))
