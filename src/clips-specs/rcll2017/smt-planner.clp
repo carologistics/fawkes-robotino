@@ -588,9 +588,9 @@
 	(wm-fact (key refbox order ?order-id delivery-end) (value ?delivery-end&:(> ?delivery-end ?sec)))
 	(not (wm-fact (key domain fact order-fulfilled args? ord ?order-id) (value TRUE)))
 
-	(not (plan-requested ?goal-id ?order-id))
+	(not (plan-requested ?goal-id))
 =>
-	(printout t "SMT plan call " ?delivery-end " " ?sec crlf)
+	(printout t "SMT plan call for order " ?order-id " (deliver before " ?delivery-end ") TIME: " ?sec crlf)
 	(bind ?p
 	  (smt-create-data
 			(smt-create-robots ?team-color)
@@ -603,7 +603,8 @@
 	)
 
 	(smt-request "smt-plan" ?p)
-	(assert (plan-requested ?goal-id ?order-id))
+	(assert (plan-requested ?goal-id))
+	(assert (plan-requested-order ?goal-id ?order-id))
 )
 
 ;---------------------------------------------------------------------------
@@ -1041,7 +1042,8 @@
 	?spc <- (smt-plan-complete ?handle)
 
 	?g <- (goal (id ?goal-id) (mode SELECTED))
-	?plan-req <- (plan-requested ?goal-id ?order-id)
+	?plan-req <- (plan-requested ?goal-id)
+	?plan-req-ord <- (plan-requested-order ?goal-id ?order-id)
 
 	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
 	=>
@@ -2492,4 +2494,5 @@
 	(pb-destroy ?plans)
 	(modify ?g (mode EXPANDED))
 	(retract ?plan-req)
+	(retract ?plan-req-ord)
 )
