@@ -688,7 +688,15 @@
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (eq ?complexity C0))
   =>
-  (printout t "Goal " PRODUCE-C0 " formulated" crlf)
+  (bind ?required-resources ?mps ?order ?spawned-wp)
+  (if (any-factp ((?exclusive-complexities wm-fact))
+        (and (wm-key-prefix ?exclusive-complexities:key (create$ config rcll exclusive-complexities))
+             (neq FALSE (member$ (str-cat ?complexity) ?exclusive-complexities:values))))
+    then
+      (bind ?required-resources ?mps ?order ?spawned-wp PRODUCE-EXCLUSIVE-COMPLEXITY)
+      (printout t "Goal " PRODUCE-C0 " formulated, it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
+    else
+      (printout t "Goal " PRODUCE-C0 " formulated" crlf))
   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
                 (class PRODUCE-C0)
                 (priority ?*PRIORITY-PRODUCE-C0*)
@@ -702,7 +710,7 @@
                         order ?order
                         wp ?spawned-wp
                 )
-                (required-resources ?mps ?order ?spawned-wp)
+                (required-resources ?required-resources)
   ))
 )
 
@@ -761,7 +769,15 @@
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (neq ?complexity C0))
   =>
-  (printout t "Goal " MOUNT-FIRST-RING " formulated" crlf)
+  (bind ?required-resources ?mps-rs ?order ?spawned-wp)
+  (if (any-factp ((?exclusive-complexities wm-fact))
+        (and (wm-key-prefix ?exclusive-complexities:key (create$ config rcll exclusive-complexities))
+             (neq FALSE (member$ (str-cat ?complexity) ?exclusive-complexities:values))))
+    then
+      (bind ?required-resources ?mps-rs ?order ?spawned-wp PRODUCE-EXCLUSIVE-COMPLEXITY)
+      (printout t "Goal " MOUNT-FIRST-RING " formulated, it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
+    else
+      (printout t "Goal " MOUNT-FIRST-RING " formulated" crlf))
   (assert (goal (id (sym-cat MOUNT-FIRST-RING- (gensym*)))
                 (class MOUNT-FIRST-RING)
                 (priority ?*PRIORITY-MOUNT-FIRST-RING*)
@@ -778,7 +794,7 @@
                            order ?order
                            wp ?spawned-wp
                 )
-                (required-resources ?mps-rs ?spawned-wp)
+                (required-resources ?required-resources)
   ))
 )
 
