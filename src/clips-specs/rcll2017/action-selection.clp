@@ -127,20 +127,20 @@
 ;     (modify ?pa (status PENDING))
 ; )
 
-(defrule action-selection-continue
-	(plan (id ?plan-id) (goal-id ?goal-id))
-	?g <- (goal (id ?goal-id) (mode DISPATCHED) (type ACHIEVE))
-	(not (plan-action (plan-id ?plan-id) (status ~FINAL)))
-	(not (plan-action (action-name fulfill-order-c0|fulfill-order-c1|fulfill-order-c2|fulfill-order-c3)))
-	=>
-	(do-for-all-facts ((?wm-fact wm-fact)) (wm-key-prefix ?wm-fact:key (create$ plan-action ?goal-id ?plan-id))
-		(retract ?wm-fact)
-	)
-	(do-for-all-facts ((?pa plan-action)) (eq ?pa:plan-id ?plan-id)
-		(retract ?pa)
-	)
-	(modify ?g (mode SELECTED))
-)
+; (defrule action-selection-continue
+;     (plan (id ?plan-id) (goal-id ?goal-id))
+;     ?g <- (goal (id ?goal-id) (mode DISPATCHED) (type ACHIEVE))
+;     (not (plan-action (plan-id ?plan-id) (status ~FINAL)))
+;     (not (plan-action (action-name fulfill-order-c0|fulfill-order-c1|fulfill-order-c2|fulfill-order-c3)))
+;     =>
+;     (do-for-all-facts ((?wm-fact wm-fact)) (wm-key-prefix ?wm-fact:key (create$ plan-action ?goal-id ?plan-id))
+;         (retract ?wm-fact)
+;     )
+;     (do-for-all-facts ((?pa plan-action)) (eq ?pa:plan-id ?plan-id)
+;         (retract ?pa)
+;     )
+;     (modify ?g (mode SELECTED))
+; )
 
 (defrule action-selection-goal-complexity-only-finish-when-fullfiled
 	(plan (id ?plan-id) (goal-id ?goal-id))
