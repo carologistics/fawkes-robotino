@@ -51,15 +51,19 @@ end
 -- For magenta team however the ids are 1 and 2.
 function parse_to_type_id_target(if_conveyor_pose,place,side,shelf,slide)
   type_target = parse_to_type_target(if_conveyor_pose, place, side, shelf, slide)
+  id = -1
+  id_known = false
   if string.sub(place,5,5) == "1" then
     id = 1
+    id_known = true
   end
   if string.sub(place,5,5) == "2" then
     id = 2
+    id_known = true
   end
-  if string.sub(place,1,1) == "C" then
+  if id_known and string.sub(place,1,1) == "C" then
     id = id + 2
   end
 
-  return { mps_type = type_target.type, mps_target = type_target.target, mps_id = id}
+  return { mps_type = type_target.mps_type, mps_target = type_target.mps_target, mps_id = id}
 end
