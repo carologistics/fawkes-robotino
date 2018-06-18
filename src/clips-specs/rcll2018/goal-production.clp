@@ -323,7 +323,7 @@
                         mps ?mps
                         wp ?wp
                 )
-                (required-resources ?mps ?wp)
+                (required-resources ?wp)
   ))
 )
 
@@ -352,7 +352,7 @@
                         mps ?mps
                         wp ?wp
                 )
-                (required-resources ?mps ?wp)
+                (required-resources ?wp)
   ))
 )
 
@@ -386,7 +386,7 @@
                         mps ?mps
                         wp ?wp
                 )
-                (required-resources ?mps ?wp)
+                (required-resources ?wp)
   ))
 )
 
@@ -927,7 +927,7 @@
                                         cs-color ?cap-color
                                         order ?order
                                 )
-                                (required-resources ?mps ?rs ?wp)
+                                (required-resources ?mps ?wp)
   ))
 )
 
@@ -988,8 +988,7 @@
                         cs-color ?cap-color
                         order ?order
                 )
-                ; TODO: Do we really need the ?rs here?
-                (required-resources ?wp ?rs ?mps)
+                (required-resources ?mps ?wp)
   ))
 )
 
@@ -1050,8 +1049,7 @@
                         cs-color ?cap-color
                         order ?order
                 )
-                ; TODO: Do we really need the ?rs here?
-                (required-resources ?wp ?rs ?mps)
+                (required-resources ?wp ?mps)
   ))
 )
 
