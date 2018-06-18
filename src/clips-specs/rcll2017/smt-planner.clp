@@ -193,7 +193,10 @@
 	(do-for-all-facts ((?wm-fact wm-fact))
 		(wm-key-prefix ?wm-fact:key (create$ domain objects-by-type robot))
 
-		(bind ?rv (append$ ?rv (smt-create-robot R-1 ?team-color 0 0 0)))
+		(foreach ?robot ?wm-fact:values
+			(bind ?rv (append$ ?rv (smt-create-robot (string-to-field ?robot) ?team-color 0 0 0)))
+		)
+
 	)
 
 	(return ?rv)
