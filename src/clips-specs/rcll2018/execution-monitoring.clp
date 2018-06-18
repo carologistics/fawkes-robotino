@@ -44,10 +44,11 @@
     (time $?time&:(timeout ?now ?time ?*COMMON-TIMEOUT-DURATION*)))
    =>
   (bind ?wp-gen  (sym-cat WP- (gensym)))
-  (assert (domain-object (name (sym-cat WP- (gensym))) (type workpiece))
-          (wm-fact (key domain fact wp-at args? wp ?wp-gen m ?mps side OUTPUT))
-          (wm-fact (key domain fact wp-usable args? wp ?wp-gen))
-          )
+  ;(assert (domain-object (name (sym-cat WP- (gensym))) (type workpiece))
+  ;        (wm-fact (key domain fact wp-at args? wp ?wp-gen m ?mps side OUTPUT))
+  ;        (wm-fact (key domain fact wp-usable args? wp ?wp-gen))
+  ;        )
+  (assert (wm-fact (key monitoring reset-mps args? m ?mps) (type BOOL) (value TRUE)))
   (printout warn "Monitoring: Unexpected READY-AT-OUTPUT, Spawned " ?wp-gen " at output!" crlf)
 )
 
@@ -300,6 +301,13 @@
 ;  (retract ?hold)
 ;  (assert (wm-fact (key domain fact can-hold args? r ?r) (value TRUE)))
 ;)
+
+(defrule execution-monitoring-issue-reset-mps
+  ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
+                (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+  =>
+  (assert (wm-fact (key monitoring reset-mps args? m ?mps) (type BOOL) (value TRUE)))
+)
 
 (defrule execution-monitoring-start-retry-action-wp-get
   (declare (salience 1))
