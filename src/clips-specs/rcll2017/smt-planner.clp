@@ -587,7 +587,7 @@
 	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
 	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ZERO) (value TRUE))
 	(wm-fact (key refbox game-time) (values ?sec ?sec-2))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com C3) (value TRUE)) ; desired complexity is set here
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE)) ; desired complexity is set here
 	(wm-fact (key refbox order ?order-id delivery-end) (value ?delivery-end&:(> ?delivery-end ?sec)))
 	(not (wm-fact (key domain fact order-fulfilled args? ord ?order-id) (value TRUE)))
 
