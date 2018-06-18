@@ -49,9 +49,9 @@ local pam = require("parse_module")
 local euclidean_fitness_threshold = 8  --threshold for euclidean fitness for targets other than shelf
 local shelf_euclidean_fitness_threshold = 3 -- threshold for euclidean_fitness if target is shelf
 
-local gripper_tolerance_x = 0.01 -- gripper x tolerance according to conveyor pose
-local gripper_tolerance_y = 0.01 -- gripper y tolerance according to conveyor pose
-local gripper_tolerance_z = 0.01 -- gripper z tolerance according to conveyor pose
+local gripper_tolerance_x = 0.005 -- gripper x tolerance according to conveyor pose
+local gripper_tolerance_y = 0.005 -- gripper y tolerance according to conveyor pose
+local gripper_tolerance_z = 0.005 -- gripper z tolerance according to conveyor pose
 
 local conveyor_gripper_forward_x = 0.05 -- distance to move gripper forward after align
 local conveyor_gripper_down_z = -0.015    -- distance to move gripper down after driving over product
