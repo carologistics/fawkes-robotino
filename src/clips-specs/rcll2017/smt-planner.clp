@@ -417,8 +417,8 @@
 	; (printout t "Creating Data msgs:: Order with id " ?id  crlf)
 	(bind ?o (pb-create "llsf_msgs.Order"))
 
-	(pb-set-field ?o "id" 1) ; TODO Use or ommit real ?id
-	(pb-set-field ?o "delivery_gate" 1) ; TODO Use or ommit real ?gate
+	; (pb-set-field ?o "id" ?id) ; TODO In order to use change protobuf type to string (as we use O1-O7)
+	; (pb-set-field ?o "delivery_gate" 1) ; TODO In order to use change protobuf type to string (as we use GATE-1 - GATE-3)
 	(pb-set-field ?o "complexity" ?complexity)
 	(pb-set-field ?o "quantity_requested" ?q-req)
 	(if (eq ?team-color CYAN)
