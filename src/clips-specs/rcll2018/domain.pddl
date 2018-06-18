@@ -43,6 +43,8 @@
 		shelf-spot - object
 		ring-num - object
 		zone - object
+		token - object
+		master-token - token
 	)
 
 	(:constants
@@ -104,7 +106,7 @@
 		(wp-ring3-color ?wp - workpiece ?col - ring-color)
 		(wp-cap-color ?wp - workpiece ?col - cap-color)
 		(wp-on-shelf ?wp - workpiece ?m - mps ?spot - shelf-spot)
-		(wp-spawned-by ?wp - workpiece ?r - robot)
+		(wp-spawned-for ?wp - workpiece ?r - robot)
     (spot-free ?m - mps ?spot - shelf-spot)
 
     (locked ?name - object)
@@ -146,13 +148,13 @@
                        (locked ?m) (bs-prepared-color ?m ?basecol)
                        (bs-prepared-side ?m ?side)
 											 (wp-base-color ?wp BASE_NONE) (wp-unused ?wp)
-											 (wp-spawned-by ?wp ?r)
+											 (wp-spawned-for ?wp ?r)
 											 (self ?r))
 											 ;(not (wp-usable ?wp))
 		:effect (and (wp-at ?wp ?m ?side)
 								 (not (wp-base-color ?wp BASE_NONE)) (wp-base-color ?wp ?basecol)
 								 (not (wp-unused ?wp)) (wp-usable ?wp)
-								 (not (wp-spawned-by ?wp ?r)))
+								 (not (wp-spawned-for ?wp ?r)))
 	)
 
 	(:action cs-mount-cap

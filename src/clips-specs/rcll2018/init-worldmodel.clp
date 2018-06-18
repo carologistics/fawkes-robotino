@@ -52,7 +52,7 @@
   (wm-robmem-sync-enable "/domain/fact/wp-ring3-color")
   (wm-robmem-sync-enable "/domain/fact/wp-cap-color")
   (wm-robmem-sync-enable "/domain/fact/wp-on-shelf")
-  (wm-robmem-sync-enable "/domain/fact/wp-spawned-by")
+  (wm-robmem-sync-enable "/domain/fact/wp-spawned-for")
   (wm-robmem-sync-enable "/domain/fact/spot-free")
   (wm-robmem-sync-enable "/evaluated/fact/wp-for-order")
   (wm-robmem-sync-enable "/exploration/fact/tag-vis")
