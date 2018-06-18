@@ -191,5 +191,5 @@ clips-executive:
           waitpoint-in-cyan: R-1
           waitpoint-in-cyan: R-2
           waitpoint-in-magenta: R-3
-          allowed-complexities: ["C0" , "C1"]
+          allowed-complexities: ["C0" , "C1", "C2", "C3"]
           exclusive-complexities: ["C2" , "C3"]
