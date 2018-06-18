@@ -281,11 +281,12 @@
 
 
  (assert (domain-facts-loaded)
-	(domain-fact (name self) (param-values (sym-cat ?robot-name)))
-	(domain-object (name R-1) (type robot))
+	  (domain-fact (name self) (param-values (sym-cat ?robot-name)))
+	  (domain-object (name R-1) (type robot))
     (domain-object (name R-2) (type robot))
     (domain-object (name R-3) (type robot))
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
+    (domain-fact (name can-hold) (param-values (sym-cat ?robot-name)))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
     (domain-fact (name mps-team) (param-values ?ss ?team-color))
     (domain-fact (name mps-team) (param-values ?cs1 ?team-color))
