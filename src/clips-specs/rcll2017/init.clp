@@ -23,16 +23,22 @@
   "Finish Initialization"
   (wm-fact (key refbox comm private-peer-enabled) (value TRUE) )
   ?i <- (executive-init)
+	(wm-fact (key config rcll robot-name) (value ?robot-name))
   =>
   (printout t "Finished initialization" crlf)
-  (retract ?i)
+  ; (retract ?i)
+
+	(cx-identity-set ?robot-name)
+	(wm-robmem-sync-enable
+	"/plan-action/COMPLEXITY"
+	)
 )
 
-(defrule initialization-abort-on-finalize
-  "Abort initialization if we are in finalize"
-  (declare (salience 500))
-  (executive-finalize)
-  ?i <- (executive-init)
-  =>
-  (retract ?i)
-)
+; (defrule initialization-abort-on-finalize
+;   "Abort initialization if we are in finalize"
+;   (declare (salience 500))
+;   (executive-finalize)
+;   ?i <- (executive-init)
+;   =>
+;   (retract ?i)
+; )
