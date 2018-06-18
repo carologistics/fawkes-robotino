@@ -21,7 +21,7 @@
 
 (defrule initialization-done
   "Finish Initialization"
-  (wm-fact (key refbox comm private-peer-enabled) (value TRUE) )
+  (wm-fact (key refbox comm private-peer-enabled) (type BOOL) (value TRUE) )
   ?i <- (executive-init)
   =>
   (printout t "Finished initialization" crlf)
