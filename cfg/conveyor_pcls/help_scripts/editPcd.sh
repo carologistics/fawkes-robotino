@@ -10,5 +10,5 @@ path=$(dirname $path)
 
 cp $1 $1.orig
 $path/pcd2txt.sh $1 $1.txt
-CloudCompare $1.txt
+CloudCompare $1.txt || exit 1
 $path/txt2pcd.sh $1.txt $1
