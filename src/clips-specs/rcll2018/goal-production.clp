@@ -635,7 +635,7 @@
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;only discard if ring stations have at least two bases loaded
-  (wm-fact (key domain fact rs-filled-with args? m ?mps n TWO|THREE))
+  ;(wm-fact (key domain fact rs-filled-with args? m ?mps n TWO|THREE))
   ;question: or would be more correct to create it and later
   ;  reject it because its not useful
   =>

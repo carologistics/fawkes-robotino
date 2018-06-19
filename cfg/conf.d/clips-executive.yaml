@@ -146,7 +146,7 @@ clips-executive:
         wp-discard: ax12gripper{command="OPEN"}
         stop: relgoto{x=0, y=0}
 
-      blackboard-preload: ["Position3DInterface", "NavGraphWithMPSGeneratorInterface" , "NavGraphGeneratorInterface" , "NavigatorInterface", "AX12GripperInterface", "MotorInterface", "LaserLineInterface", "TagVisionInterface", "ZoneInterface"]
+      blackboard-preload: ["Position3DInterface", "NavGraphWithMPSGeneratorInterface" , "NavGraphGeneratorInterface" , "NavigatorInterface", "AX12GripperInterface", "MotorInterface", "LaserLineInterface", "TagVisionInterface", "ZoneInterface" , "RobotinoSensorInterface" , "RobotinoLightInterface" ]
 
       parameters:
         coordination:
