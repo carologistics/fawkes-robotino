@@ -120,7 +120,7 @@
   (declare (salience 1))
   (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
   ?g <- (goal (id ?goal-id) (mode DISPATCHED))
-  (plan (id ?plan-id) (goal-id ?goal-id))
+  (plan (id ?plan-id&~REFILLPLAN) (goal-id ?goal-id))
   (plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
      (status FORMULATED|PENDING)
      (param-values $? ?mps $?)
@@ -189,7 +189,7 @@
   ; (wm-fact (key monitoring mps-flush-facts) (type UNKNOWN) (value ?mps))
   (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
   ?g <- (goal (id ?goal-id) (mode FORMULATED|SELECTED|EXPANDED) (params $? ?mps $?))
-  (plan (id ?plan-id) (goal-id ?goal-id))
+  (plan (id ?plan-id&~REFILLPLAN) (goal-id ?goal-id))
   =>
   (modify ?g (mode FINISHED) (outcome REJECTED))
 )
