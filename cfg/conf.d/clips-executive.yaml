@@ -187,6 +187,7 @@ clips-executive:
           max-velocity: 1.0
           max-rotation: 1.0
           master: R-2
+          single-agent-mode: FALSE
 
           waitpoint-in-cyan: R-1
           waitpoint-in-cyan: R-2
