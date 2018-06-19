@@ -244,7 +244,7 @@
 	?md <- (metadata-prepare-mps ?mps $?date)
 	(not (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|PROCESSING|PREPARED)))
 	=>
-	(printout t "Action Prepare " ?mps " is Aborted" crlf)
+	(printout t "Action Prepare " ?mps " might have failed, we do not care" crlf)
 	(retract ?st ?md ?at)
-	(modify ?pa (status EXECUTION-FAILED))
+	(modify ?pa (status EXECUTION-SUCCEEDED))
 )
