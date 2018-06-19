@@ -42,7 +42,7 @@ documentation      = [==[ shelf_pick
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local x_distance = 0.27
+local x_distance = 0.29
 local gripper_adjust_z_distance = -0.01
 local gripper_adjust_x_distance = 0.02
 local adjust_target_frame = "gripper"
