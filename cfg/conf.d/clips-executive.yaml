@@ -192,6 +192,7 @@ clips-executive:
 
           master: R-2
           single-agent-mode: FALSE
+          wm-init-force: FALSE
 
           waitpoint-in-cyan: R-1
           waitpoint-in-cyan: R-2
