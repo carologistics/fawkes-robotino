@@ -138,7 +138,7 @@ plugins/conveyor_pose:
       input_conveyor:
         x: -0.005
         y: -0.025
-        z: 0.63
+        z: 0.64
       left_shelf:
         x: -0.01
         y: -0.01
