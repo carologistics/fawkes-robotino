@@ -1,0 +1,8 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+include:
+  # Reads the host-specific configuration file, no failure if missing
+  - config.yaml
+  - single-agent-overrides.yaml
+---

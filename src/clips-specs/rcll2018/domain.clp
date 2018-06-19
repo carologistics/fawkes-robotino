@@ -63,7 +63,11 @@
   (domain-loaded)
   (wm-fact (key config rcll robot-name) (value ?robot-name))
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
-  (wm-fact (key refbox phase) (value SETUP))
+  (or
+     (wm-fact (key refbox phase) (value SETUP))
+     (wm-fact (key config rcll single-agent-mode) (value TRUE))
+     (wm-fact (key config rcll wm-init-force) (value TRUE))
+  )
   =>
   (bind ?self (sym-cat ?robot-name))
   (if (eq ?team-color CYAN)
@@ -261,8 +265,9 @@
   (not (domain-facts-loaded))
   (wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
   (wm-fact (key config rcll robot-name) (value ?robot-name))
- (wm-fact (key refbox team-color) (value ?team-color&~nil))
- 
+  (wm-fact (key refbox team-color) (value ?team-color&~nil))
+  (wm-fact (key config rcll single-agent-mode) (value FALSE))
+  (wm-fact (key config rcll wm-init-force) (value FALSE))
  =>
   (printout warn "Restoring world model from the database" crlf)
  (if (eq ?team-color CYAN)
