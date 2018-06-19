@@ -116,6 +116,7 @@ clips-executive:
               - rcll2018/goal-reasoner.clp
               - rcll2018/goal-production.clp
               - rcll2018/exploration.clp
+              - rcll2018/goal-lock-expiration.clp
           - name: goal-expander
             file: rcll2018/fixed-sequence.clp
           - name: action-selection
