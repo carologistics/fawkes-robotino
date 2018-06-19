@@ -151,8 +151,8 @@ clips-executive:
       parameters:
         coordination:
           mutex:
-            renew-interval: 5
-            max-age-sec: 30
+            renew-interval: 15
+            max-age-sec: 60
         rcll:
         #real-world-setup:
           peer-address: 172.26.255.255

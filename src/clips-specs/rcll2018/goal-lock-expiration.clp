@@ -20,7 +20,7 @@
 ;
 
 (defglobal
-  ?*LOCK-EXPIRATION-PERIOD* = 5
+  ?*LOCK-EXPIRATION-PERIOD* = 15
 )
 
 (defrule goal-lock-expiration-create-maintain
