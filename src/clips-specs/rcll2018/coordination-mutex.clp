@@ -201,6 +201,7 @@
 	(executive-init)
 	(not (executive-finalize))
 	(not (mutex-global-data))
+	(wm-fact (key config rcll single-agent-mode) (value FALSE))
 	=>
 
 	; Instead of using the defglobal, we could also read this from the config
@@ -231,10 +232,15 @@
 
 (defrule mutex-lock-start
 	?mf <- (mutex (name ?name) (request LOCK) (response NONE) (state OPEN|UNKNOWN))
+	(wm-fact (key config rcll single-agent-mode) (value ?single-agent-mode))
 	=>
+	(if (eq ?single-agent-mode TRUE) then
+		(modify ?mf (response PENDING) (state LOCKED) (locked-by (cx-identity)))
+         else
+		(robmem-mutex-try-lock-async (str-cat ?name) (cx-identity))
+		(modify ?mf (response PENDING))
+	)
 	(printout t "Requesting lock " ?name crlf)
-	(robmem-mutex-try-lock-async (str-cat ?name) (cx-identity))
-	(modify ?mf (response PENDING))
 )
 
 (defrule mutex-lock-invalid
@@ -277,9 +283,14 @@
 (defrule mutex-renew-lock-start
 	?mf <- (mutex (name ?name) (request RENEW-LOCK) (response NONE)
 								(state LOCKED) (locked-by ?lb&:(eq ?lb (cx-identity))))
+	(wm-fact (key config rcll single-agent-mode) (value ?single-agent-mode))
 	=>
+	(if (eq ?single-agent-mode TRUE) then
+		(assert (mutex-op-feedback renew-lock-async OK ?name))
+	else
+		(robmem-mutex-renew-lock-async (str-cat ?name) (cx-identity))
+	)
 	(printout t "Renewing lock " ?name crlf)
-	(robmem-mutex-renew-lock-async (str-cat ?name) (cx-identity))
 	(modify ?mf (response PENDING))
 )
 
@@ -315,10 +326,15 @@
 (defrule mutex-unlock-start
 	?mf <- (mutex (name ?name) (request UNLOCK) (response NONE)
 								(state LOCKED) (locked-by ?lb&:(eq ?lb (cx-identity))))
+	(wm-fact (key config rcll single-agent-mode) (value ?single-agent-mode))
 	=>
+	(if (eq ?single-agent-mode TRUE) then
+		(modify ?mf (response PENDING) (state OPEN))
+	else
+		(robmem-mutex-unlock-async (str-cat ?name) (cx-identity))
+		(modify ?mf (response PENDING))
+	)
 	(printout t "Requesting unlock " ?name crlf)
-	(robmem-mutex-unlock-async (str-cat ?name) (cx-identity))
-	(modify ?mf (response PENDING))
 )
 
 (defrule mutex-unlock-invalid
@@ -345,6 +361,7 @@
 
 (defrule mutex-expire-locks-start
 	?mf <- (mutex-expire-task (task ?task) (state NONE) (max-age-sec ?max-age-sec))
+	(wm-fact (key config rcll single-agent-mode) (value FALSE))
 	=>
 	(printout t ?task " locks " crlf)
 	(robmem-mutex-expire-locks-async ?max-age-sec)
@@ -474,6 +491,7 @@
 (defrule mutex-trigger-event
 	(wm-fact (key cx identity) (value ?identity))
 	?rt <- (robmem-trigger (name "mutex-trigger") (ptr ?obj))
+	(wm-fact (key config rcll single-agent-mode) (value FALSE))
 	=>
 	(bind ?op (sym-cat (bson-get ?obj "op")))
 
