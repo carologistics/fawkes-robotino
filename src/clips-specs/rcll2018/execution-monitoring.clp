@@ -44,8 +44,9 @@
   (time $?now)
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
   (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT)))
+  (wm-fact (key config rcll reset-mps-unexpected-state-timeout) (value ?reset-mps-unexpected-state-timeout))
   ?t <- (timer (name ?name&:(eq ?name (sym-cat READY-AT-OUTPUT ?mps)))
-    (time $?time&:(timeout ?now ?time ?*COMMON-TIMEOUT-DURATION*)))
+   (time $?time&:(timeout ?now ?time ?reset-mps-unexpected-state-timeout)))
   (wm-fact (key config rcll reset-mps-unexpected) (value TRUE))
    =>
   ;(bind ?wp-gen  (sym-cat WP- (gensym)))

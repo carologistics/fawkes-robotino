@@ -194,3 +194,4 @@ clips-executive:
           exclusive-complexities: ["C2" , "C3"]
 
           reset-mps-unexpected-state: true
+          reset-mps-unexpected-state-timeout: 300
