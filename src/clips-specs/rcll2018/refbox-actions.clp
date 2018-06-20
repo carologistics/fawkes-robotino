@@ -25,7 +25,7 @@
   	(wm-fact (id "/config/rcll/robot-name")  (value ?robot-name) )
   	(wm-fact (id "/config/rcll/robot-number")  (value ?robot-number) )
   	(wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
-  	(wm-fact (id "/refbox/comm/peer-id/public") (value ?peer) (type INT))
+    (wm-fact (id "/refbox/comm/peer-id/private") (value ?peer) (type INT))
   	(Position3DInterface (id "Pose") (translation $?trans) (rotation $?ori) (time $?ptime))
   	=>
   (modify ?bs (value (+ ?seq 1)))
