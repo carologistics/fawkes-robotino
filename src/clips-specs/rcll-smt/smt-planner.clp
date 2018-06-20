@@ -659,6 +659,11 @@
 	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
 	=>
 	(printout t "SMT plan handle completed " ?handle  crlf)
+	(if (eq ?team-color CYAN) then
+		(bind ?team-color "CYAN")
+	else
+		(bind ?team-color "MAGENTA")
+	)
 
 	(retract ?spc)
 	; Create instance of plan
@@ -792,8 +797,8 @@
 								(bind ?to-complete (pb-field-value ?arg "value"))
 								(bind ?to-splitted (str-split ?to-complete "-"))
 								(bind ?to (str-join "-" (subseq$ ?to-splitted 1 2)))
-								(bind ?to-side (if (eq (nth$ 3 ?to-splitted) "I") then INPUT else OUTPUT))
-								(bind ?to (string-to-field ?to))
+								(bind ?to-side (if (eq (nth$ 3 ?to-splitted) "I") then "INPUT" else "OUTPUT"))
+								; (bind ?to (string-to-field ?to))
 							else
 								(if (eq (pb-field-value ?arg "key") "from") then
 									(bind ?from-complete (pb-field-value ?arg "value"))
@@ -803,8 +808,8 @@
 										else
 											(bind ?from-splitted (str-split ?from-complete "-"))
 											(bind ?from (str-join "-" (subseq$ ?from-splitted 1 2)))
-											(bind ?from-side (if (eq (nth$ 3 ?from-splitted) "I") then INPUT else OUTPUT))
-											(bind ?from (string-to-field ?from))
+											(bind ?from-side (if (eq (nth$ 3 ?from-splitted) "I") then "INPUT" else "OUTPUT"))
+											; (bind ?from (string-to-field ?from))
 									)
 								else
 									(printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
@@ -817,7 +822,7 @@
 								(wm-fact
 									(key plan-action ?goal-id ?plan-id ?next-step-id action)
 									(is-list TRUE)
-									(values move ?action-specific-actor ?from ?from-side ?to ?to-side)
+									(values "move" ?action-specific-actor ?from ?from-side ?to ?to-side)
 								)
 							)
 							(assert
@@ -886,7 +891,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
-								(values wp-get-shelf ?action-specific-actor ?wp ?mps ?shelf)
+								(values "wp-get-shelf" ?action-specific-actor ?wp ?mps ?shelf)
 							)
 						)
 						(assert
@@ -945,7 +950,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
-								(values wp-get ?action-specific-actor ?wp ?mps ?side)
+								(values "wp-get" ?action-specific-actor ?wp ?mps ?side)
 							)
 						)
 						(assert
@@ -1010,7 +1015,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
-								(values wp-put ?action-specific-actor ?wp ?mps)
+								(values "wp-put" ?action-specific-actor ?wp ?mps)
 							)
 						)
 						(assert
@@ -1085,7 +1090,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
-								(values wp-put-slide-cc ?action-specific-actor ?wp ?mps ?rs-before ?rs-after)
+								(values "wp-put-slide-cc" ?action-specific-actor ?wp ?mps ?rs-before ?rs-after)
 							)
 						)
 						(assert
@@ -1136,7 +1141,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
-								(values wp-discard ?action-specific-actor ?wp)
+								(values "wp-discard" ?action-specific-actor ?wp)
 							)
 						)
 						(assert
@@ -1195,7 +1200,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
-								(values prepare-bs ?mps ?side ?goal-base-color)
+								(values "prepare-bs" ?mps ?side ?goal-base-color)
 							)
 						)
 						(assert
@@ -1259,7 +1264,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
-								(values bs-dispense ?action-specific-actor ?mps ?side ?wp ?goal-base-color)
+								(values "bs-dispense" ?action-specific-actor ?mps ?side ?wp ?goal-base-color)
 							)
 						)
 						(assert
@@ -1318,7 +1323,7 @@
 								(wm-fact
 									(key plan-action ?goal-id ?plan-id ?next-step-id action)
 									(is-list TRUE)
-									(values prepare-ds ?mps (wm-key-arg ?wm-fact:key gate))
+									(values "prepare-ds" ?mps (wm-key-arg ?wm-fact:key gate))
 								)
 							)
 							(assert
@@ -1391,7 +1396,7 @@
 								(wm-fact
 									(key plan-action ?goal-id ?plan-id ?next-step-id action)
 									(is-list TRUE)
-									(values fulfill-order-c0 ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color)
+									(values "fulfill-order-c0" ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color)
 								)
 							)
 							(assert
@@ -1467,7 +1472,7 @@
 								(wm-fact
 									(key plan-action ?goal-id ?plan-id ?next-step-id action)
 									(is-list TRUE)
-									(values fulfill-order-c1 ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color ?ring1-color)
+									(values "fulfill-order-c1" ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color ?ring1-color)
 								)
 							)
 							(assert
@@ -1548,7 +1553,7 @@
 								(wm-fact
 									(key plan-action ?goal-id ?plan-id ?next-step-id action)
 									(is-list TRUE)
-									(values fulfill-order-c2 ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color ?ring1-color ?ring2-color)
+									(values "fulfill-order-c2" ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color ?ring1-color ?ring2-color)
 								)
 							)
 							(assert
@@ -1635,7 +1640,7 @@
 								(wm-fact
 									(key plan-action ?goal-id ?plan-id ?next-step-id action)
 									(is-list TRUE)
-									(values fulfill-order-c3 ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)
+									(values "fulfill-order-c3" ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)
 								)
 							)
 							(assert
@@ -1694,7 +1699,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
-								(values prepare-cs ?mps ?operation)
+								(values "prepare-cs" ?mps ?operation)
 							)
 						)
 						(assert
@@ -1748,7 +1753,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
-								(values cs-retrieve-cap ?mps ?wp ?cap-color)
+								(values "cs-retrieve-cap" ?mps ?wp ?cap-color)
 							)
 						)
 						(assert
@@ -1807,7 +1812,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
-								(values cs-mount-cap ?mps ?wp ?cap-color)
+								(values "cs-mount-cap" ?mps ?wp ?cap-color)
 							)
 						)
 						(assert
@@ -1880,7 +1885,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
-								(values prepare-rs ?mps ?goal-ring-color ?rs-before ?rs-after ?r-req)
+								(values "prepare-rs" ?mps ?goal-ring-color ?rs-before ?rs-after ?r-req)
 							)
 						)
 						(assert
@@ -1954,7 +1959,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
-								(values rs-mount-ring1 ?mps ?wp ?ring-color ?rs-before ?rs-after ?r-req)
+								(values "rs-mount-ring1" ?mps ?wp ?ring-color ?rs-before ?rs-after ?r-req)
 							)
 						)
 						(assert
@@ -2033,7 +2038,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
-								(values rs-mount-ring2 ?mps ?wp ?ring-color ?col1 ?rs-before ?rs-after ?r-req)
+								(values "rs-mount-ring2" ?mps ?wp ?ring-color ?col1 ?rs-before ?rs-after ?r-req)
 							)
 						)
 						(assert
@@ -2117,7 +2122,7 @@
 							(wm-fact
 								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
-								(values rs-mount-ring3 ?mps ?wp ?ring-color ?col1 ?col2 ?rs-before ?rs-after ?r-req)
+								(values "rs-mount-ring3" ?mps ?wp ?ring-color ?col1 ?col2 ?rs-before ?rs-after ?r-req)
 							)
 						)
 						(assert
