@@ -20,6 +20,7 @@
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
   (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT|INPUT)))
   (not (timer (name ?name&:(eq ?name (sym-cat READY-AT-OUTPUT ?mps)))))
+  (wm-fact (key config rcll reset-mps-unexpected-state) (value TRUE))
   =>
   ;TODO: Send Maintenance message
   (assert (timer (name (sym-cat READY-AT-OUTPUT ?mps)) (time ?now) (seq 1)))
@@ -30,7 +31,7 @@
   (declare (salience 1))
   (wm-fact (key domain fact mps-type args? m ?mps t ?type))
   (or (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
-      (not (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT)))
+      (wm-fact (key domain fact mps-state args? m ?mps s ~READY-AT-OUTPUT))
   )
   ?t <- (timer (name ?name&:(eq ?name (sym-cat READY-AT-OUTPUT ?mps))))
    =>
@@ -42,9 +43,13 @@
   (declare (salience 1))
   (time $?now)
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
-  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT)))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?any-side)))
+  (wm-fact (key config rcll reset-mps-unexpected-state-timeout) (value ?reset-mps-unexpected-state-timeout))
   ?t <- (timer (name ?name&:(eq ?name (sym-cat READY-AT-OUTPUT ?mps)))
-    (time $?time&:(timeout ?now ?time ?*COMMON-TIMEOUT-DURATION*)))
+   (time $?time&:(timeout ?now ?time ?reset-mps-unexpected-state-timeout)))
+  (wm-fact (key config rcll reset-mps-unexpected) (value TRUE))
+  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
+  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
    =>
   ;(bind ?wp-gen  (sym-cat WP- (gensym)))
   ;(assert (domain-object (name (sym-cat WP- (gensym))) (type workpiece))
@@ -55,15 +60,20 @@
   (assert (wm-fact (key monitoring reset-mps args? m ?mps) (type BOOL) (value TRUE)))
 )
 
-(defrule execution-monitoring-reset-mps-on-unexpected-input
-  (declare (salience 1))
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
-  (not (mutex (name ?name&:(eq ?name (sym-cat resource- ?wp))) (state LOCKED)))
-  =>
-  ;TODO: Send Maintenance message
-  (assert (wm-fact (key monitoring reset-mps args? m ?mps) (type BOOL) (value TRUE)))
-  (printout warn "Monitoring: Unexpected input and no WP at output!" crlf)
-)
+;reason of execlusion: one robot's absence of knowledg about if that wp has a mutex.
+;                      does not impley that no one other robot has that mutex.
+;                      (ie, it could easly be the case that R-1 has the WP mutex, yet
+;                           R-2 doesn not try to get it, hence does not know about it,
+;                           ..R-2 resets the machine)
+;(defrule execution-monitoring-reset-mps-on-unexpected-input
+;  (declare (salience 1))
+;  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+;  (not (mutex (name ?name&:(eq ?name (sym-cat resource- ?wp))) (state LOCKED)))
+;  =>
+;  ;TODO: Send Maintenance message
+;  (assert (wm-fact (key monitoring reset-mps args? m ?mps) (type BOOL) (value TRUE)))
+;  (printout warn "Monitoring: Unexpected input and no WP at output!" crlf)
+;)
 
 
 ;(defrule execution-monitoring-incosistent-yet-exepected-mps-state-idle
@@ -318,7 +328,7 @@
 
 (defrule execution-monitoring-issue-reset-mps
   ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
-                (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+                (value ?tried&:(> ?tried ?*MAX-RETRIES-PICK*)))
   =>
   (assert (wm-fact (key monitoring reset-mps args? m ?mps) (type BOOL) (value TRUE)))
 )
@@ -333,8 +343,17 @@
               (goal-id ?goal-id)
               (status FAILED)
               (param-values $? ?wp $? ?mps $?))
-  (domain-obj-is-of-type ?mps mps)
-  (domain-obj-is-of-type ?wp workpiece)
+  (plan-action
+             (action-name ?an)
+             (id ?id)
+             (plan-id ?plan-id)
+             (goal-id ?goal-id)
+             (param-names $?param-names)
+             (param-values $?param-values))
+  (test (eq ?wp (plan-action-arg wp ?param-names ?param-values)) )
+  (test (eq ?mps (plan-action-arg m ?param-names ?param-values)) )
+  ;(domain-obj-is-of-type ?mps mps)
+  ;(domain-obj-is-of-type ?wp workpiece)
   (wm-fact (key domain fact self args? r ?r))
   (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)))
   =>
@@ -352,15 +371,25 @@
   (goal (id ?goal-id) (mode DISPATCHED))
   ?pa <- (plan-action
               (action-name ?an&wp-get)
+              (id ?id)
               (plan-id ?plan-id)
               (goal-id ?goal-id)
               (status FAILED)
               (param-values $? ?wp $? ?mps $?))
-  (domain-obj-is-of-type ?mps mps)
-  (domain-obj-is-of-type ?wp workpiece)
+  (plan-action
+             (action-name ?an)
+             (id ?id)
+             (plan-id ?plan-id)
+             (goal-id ?goal-id)
+             (param-names $?param-names)
+             (param-values $?param-values))
+  (test (eq ?wp (plan-action-arg wp ?param-names ?param-values)) )
+  (test (eq ?mps (plan-action-arg m ?param-names ?param-values)) )
+  ;(domain-obj-is-of-type ?mps mps)
+  ;(domain-obj-is-of-type ?wp workpiece)
   (wm-fact (key domain fact self args? r ?r))
   ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)
-          (value ?tries&:(< ?tries ?*MAX-RETRIES-PICK*)))
+          (value ?tries&:(<= ?tries ?*MAX-RETRIES-PICK*)))
   =>
   (bind ?tries (+ 1 ?tries))
   (modify ?pa (status PENDING))
@@ -373,12 +402,22 @@
   (plan (id ?plan-id) (goal-id ?goal-id))
   ?pa <- (plan-action
             (action-name ?an&wp-put-slide-cc)
+              (id ?id)
               (plan-id ?plan-id)
               (goal-id ?goal-id)
               (status FAILED)
               (param-values $? ?wp $? ?mps $?))
-  (domain-obj-is-of-type ?mps mps)
-  (domain-obj-is-of-type ?wp workpiece)
+  (plan-action
+            (action-name ?an)
+            (id ?id)
+            (plan-id ?plan-id)
+            (goal-id ?goal-id)
+            (param-names $?param-names)
+            (param-values $?param-values))
+  (test (eq ?wp (plan-action-arg wp ?param-names ?param-values)) )
+  (test (eq ?mps (plan-action-arg m ?param-names ?param-values)) )
+  ;(domain-obj-is-of-type ?mps mps)
+  ;(domain-obj-is-of-type ?wp workpiece)
   (wm-fact (key domain fact self args? r ?r))
   (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)))
   =>
@@ -400,11 +439,20 @@
               (goal-id ?goal-id)
               (status FAILED)
               (param-values $? ?wp $? ?mps $?))
-  (domain-obj-is-of-type ?mps mps)
-  (domain-obj-is-of-type ?wp workpiece)
+  (plan-action
+             (action-name ?an)
+             (id ?id)
+             (plan-id ?plan-id)
+             (goal-id ?goal-id)
+             (param-names $?param-names)
+             (param-values $?param-values))
+  (test (eq ?wp (plan-action-arg wp ?param-names ?param-values)) )
+  (test (eq ?mps (plan-action-arg m ?param-names ?param-values)) )
+  ;(domain-obj-is-of-type ?mps mps)
+  ;(domain-obj-is-of-type ?wp workpiece)
   (wm-fact (key domain fact self args? r ?r))
   ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)
-          (value ?tries&:(< ?tries ?*MAX-RETRIES-PUT-SLIDE*)))
+          (value ?tries&:(<= ?tries ?*MAX-RETRIES-PUT-SLIDE*)))
   =>
   (bind ?tries (+ 1 ?tries))
   (modify ?pa (status PENDING))
