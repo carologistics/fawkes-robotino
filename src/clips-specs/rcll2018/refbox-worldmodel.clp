@@ -66,6 +66,8 @@
   (bind ?time (pb-field-value ?p "game_time"))
   (bind ?sec (pb-field-value ?time "sec"))
   (bind ?nsec (pb-field-value ?time "nsec"))
+  (printout t "Received GameState, state: " ?new-state ", phase: " ?new-phase
+               ", game time: " ?sec ":" ?nsec crlf)
   (assert (wm-fact (key refbox game-time) (is-list TRUE) (type UINT) (values ?sec (/ ?nsec 1000))))
   (assert (wm-fact (id "/refbox/points/magenta") (type UINT) (value (pb-field-value ?p "points_magenta")) ))
   (assert (wm-fact (id "/refbox/points/cyan") (type UINT) (value (pb-field-value ?p "points_cyan")) ))
