@@ -90,6 +90,8 @@ public:
   */
   void set_cg_thread(RecognitionThread *recog_thread);
 
+  bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
+
 private:
   friend RecognitionThread;
 
@@ -218,7 +220,6 @@ private:
  bool update_input_cloud();
 
  void bb_update_switch();
- bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
  Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface * ll);
  fawkes::tf::Stamped<fawkes::tf::Pose> laserline_get_center(fawkes::LaserLineInterface *ll);
 
