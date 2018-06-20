@@ -123,6 +123,6 @@ function COMMAND:init()
         move_gripper_abs_message = arduino.MoveGripperAbsMessage:new()
         a = self.fsm.vars.abs_gripper_pos or -1
         move_gripper_abs_message:set_a(a)
-        arduino:msgq_enqueue_copy(move_gripper_abs_message)
+        self.fsm.vars.msgid = arduino:msgq_enqueue_copy(move_gripper_abs_message)
    end
 end

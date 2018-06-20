@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "product_put"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"gripper_commands_new","motor_move"}
+depends_skills     = {"gripper_commands_new","motor_move","ax12gripper"}
 depends_interfaces = {
   {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
   {v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
@@ -136,11 +136,12 @@ end
 fsm:define_states{ export_to=_M,
    closure={MAX_RETRIES=MAX_RETRIES,tolerance_ok=tolerance_ok,result_ready=result_ready,fitness_ok=fitness_ok},
   {"INIT", JumpState},
-  {"CHECK_VISION", JumpState},
-  {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="DECIDE_RETRY",fail_to="FAILED"},
-  {"DECIDE_RETRY",JumpState},
+  {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="FAILED"},
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
-  {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
+  {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="SLAP_LEFT", fail_to="PRE_FAIL"},
+  {"SLAP_LEFT", SkillJumpState, skills={{ax12gripper}}, final_to="SLAP_RIGHT", fail_to="SLAP_RIGHT"},
+  {"SLAP_RIGHT", SkillJumpState, skills={{ax12gripper}}, final_to="OPEN_GRIPPER_SECOND", fail_to="OPEN_GRIPPER_SECOND"},
+  {"OPEN_GRIPPER_SECOND", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "DRIVE_BACK", fail_to="PRE_FAIL"},
   {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CLOSE_GRIPPER", fail_to="PRE_FAIL"},
   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="FINAL", fail_to="PRE_FAIL"},
@@ -148,14 +149,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-  {"INIT", "CHECK_VISION", true, desc="Start check vision"},
-  {"CHECK_VISION", "FAILED", timeout=20, desc="Fitness threshold wasn't reached"},
-  {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
-  {"CHECK_VISION","MOVE_GRIPPER_FORWARD", cond="result_ready() and fitness_ok() and tolerance_ok()"},
-  {"CHECK_VISION", "GRIPPER_ALIGN", cond="result_ready() and fitness_ok()"},
-  {"CHECK_VISION", "CHECK_VISION", cond="result_ready() and not fitness_ok()"},
-  {"DECIDE_RETRY", "CHECK_VISION", cond="vars.retries <= MAX_RETRIES"},
-  {"DECIDE_RETRY", "MOVE_GRIPPER_FORWARD", cond=true},
+  {"INIT", "GRIPPER_ALIGN", true, desc="Start aligning"},
 }
 
 function INIT:init()
@@ -178,13 +172,6 @@ function INIT:init()
   if config:exists("/skills/product_put/gripper_pose_offset_z") then
       gripper_pose_offset_z = config:get_float("/skills/product_put/gripper_pose_offset_z")
   end
-end
-
-function CHECK_VISION:init()
-  self.fsm.vars.vision_retries = self.fsm.vars.vision_retries + 1
-  local msg = if_conveyor_pose.SetStationMessage:new(self.fsm.vars.mps_type, self.fsm.vars.mps_id, self.fsm.vars.mps_target)
-  if_conveyor_pose:msgq_enqueue_copy(msg)
-  self.fsm.vars.msgid = msg:id()
 end
 
 function GRIPPER_ALIGN:init()
@@ -210,9 +197,21 @@ function MOVE_GRIPPER_FORWARD:init()
   end
 end
 
+function SLAP_LEFT:init()
+   self.args["ax12gripper"].command = "SLAP_LEFT"
+end
+
+function SLAP_RIGHT:init()
+   self.args["ax12gripper"].command = "SLAP_RIGHT"
+ end
+ 
 function OPEN_GRIPPER:init()
   self.args["gripper_commands_new"].command = "OPEN"
 end
+
+function OPEN_GRIPPER_SECOND:init()
+  self.args["gripper_commands_new"].command = "OPEN"
+end 
 
 function CLOSE_GRIPPER:init()
   self.args["gripper_commands_new"].command = "CLOSE"

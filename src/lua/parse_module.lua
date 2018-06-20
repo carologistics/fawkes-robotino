@@ -61,6 +61,10 @@ function parse_to_type_id_target(if_conveyor_pose,place,side,shelf,slide)
     id = 2
     id_known = true
   end
+  if type_target.mps_type == if_conveyor_pose.BASE_STATION or type_target.mps_type == if_conveyor_pose.STORAGE_STATION or type_target.mps_type == if_conveyor_pose.DELIVERY_STATION then
+    id = 1
+    id_known = true
+  end
   if id_known and string.sub(place,1,1) == "C" then
     id = id + 2
   end

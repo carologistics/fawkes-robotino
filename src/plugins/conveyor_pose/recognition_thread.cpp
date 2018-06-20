@@ -2,6 +2,8 @@
 #include <pcl/filters/filter.h>
 #include <pcl/recognition/impl/hv/hv_papazov.hpp>
 
+#include <interfaces/LaserLineInterface.h>
+
 #include "recognition_thread.h"
 #include "conveyor_pose_thread.h"
 
@@ -186,7 +188,44 @@ void RecognitionThread::loop()
     std::vector<bool> hypot_mask;
     hypot_verif_.getMask(hypot_mask);
 
-    if (hypot_mask[0] && icp_.getFitnessScore() < last_raw_fitness_) {
+    bool rotation_ok = false;
+
+    tf::Stamped<tf::Pose> result_pose {
+      eigen_to_pose(final_tf_),
+        Time { long(scene_->header.stamp) / 1000 },
+        scene_->header.frame_id
+    };
+
+    LaserLineInterface *best_ll;
+    main_thread_->laserline_get_best_fit(best_ll);
+
+    if(!best_ll){
+      rotation_ok = true;
+    } else {
+      try {
+        tf::Stamped<tf::Pose> pose_in_laser_base_link;
+        tf_listener->transform_pose(
+            "base_laser",
+            tf::Stamped<tf::Pose>(result_pose, Time(0,0), result_pose.frame_id),
+            pose_in_laser_base_link);
+        float pose_yaw = tf::get_yaw(pose_in_laser_base_link.getRotation());
+        float yaw_diff = pose_yaw - best_ll->bearing() + M_PI/2;
+        yaw_diff = std::abs(fmod(yaw_diff, M_PI));
+        yaw_diff = std::min(M_PI-yaw_diff,(double)yaw_diff);
+        
+        logger->log_info(name(),"Yaw of pose compared to laser line %f",yaw_diff);
+
+        rotation_ok = std::abs(yaw_diff) <= cfg_icp_rotation_threshold_/180.0*M_PI;
+
+
+      } catch(tf::TransformException &e) {
+        logger->log_error(name(), e);
+      }
+    }
+
+
+
+    if (hypot_mask[0] && icp_.getFitnessScore() < last_raw_fitness_ && rotation_ok) {
       // Match improved
       last_raw_fitness_ = icp_.getFitnessScore();
 

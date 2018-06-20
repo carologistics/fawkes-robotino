@@ -64,6 +64,7 @@ local GRIPPER_POSES = {
 }
 
 local MAX_RETRIES=3
+local MAX_VISION_RETRIES=3
 
 function no_writer()
    return not if_conveyor_pose:has_writer()
@@ -83,7 +84,7 @@ function fitness_ok()
   else
     local_fitness_threshold = euclidean_fitness_threshold
   end
-  
+
   return if_conveyor_pose:euclidean_fitness() >= local_fitness_threshold
 end
 
@@ -123,7 +124,7 @@ end
 
 fsm:define_states{ export_to=_M,
    closure={ MAX_RETRIES=MAX_RETRIES, tolerance_ok=tolerance_ok,
-      result_ready=result_ready, fitness_ok=fitness_ok },
+      result_ready=result_ready, fitness_ok=fitness_ok , MAX_VISION_RETRIES=MAX_VISION_RETRIES},
    {"INIT", JumpState},
    {"MOVE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="CHECK_VISION", failed_to="FAILED"},
    {"CHECK_VISION", JumpState},
@@ -138,8 +139,8 @@ fsm:add_transitions{
    {"CHECK_VISION", "DECIDE_WHAT", cond=result_ready, desc="Fitness threshold reached"},
    {"DECIDE_WHAT", "FINAL", cond="fitness_ok() and tolerance_ok()"},
    {"DECIDE_WHAT", "DRIVE", cond="fitness_ok() and not tolerance_ok() and vars.retries <= MAX_RETRIES"},
-   {"DECIDE_WHAT", "FAILED", cond="fitness_ok() and not tolerance_ok()"},
-   {"DECIDE_WHAT", "CHECK_VISION", cond="not fitness_ok()"}
+   {"DECIDE_WHAT", "FAILED", cond="vars.vision_retries >= MAX_VISION_RETRIES"},
+   {"DECIDE_WHAT", "CHECK_VISION", cond="not fitness_ok()"},
 }
 
 function INIT:init()
@@ -149,12 +150,14 @@ function INIT:init()
    self.fsm.vars.mps_target = parse_result.mps_target
    self.fsm.vars.mps_id = parse_result.mps_id
    self.fsm.vars.retries = 0
+   self.fsm.vars.vision_retries = 0
 end
 
 function CHECK_VISION:init()
    local msg = if_conveyor_pose.SetStationMessage:new(self.fsm.vars.mps_type, self.fsm.vars.mps_id, self.fsm.vars.mps_target)
    if_conveyor_pose:msgq_enqueue_copy(msg)
    self.fsm.vars.msgid = msg:id()
+   self.fsm.vars.vision_retries = self.fsm.vars.vision_retries + 1
 end
 
 function MOVE_GRIPPER:init()
@@ -204,4 +207,3 @@ function FINAL:init()
       cleanup()
    end
 end
-
