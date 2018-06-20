@@ -45,7 +45,6 @@
   (assert (goal (id COMPLEXITY)))
   (printout t "Detect goal " ?order-id " with complexity 0" crlf)
 	(assert (goal-already-tried COMPLEXITY))
-	(assert (production-first COMPLEXITY))
 )
 
 ; #  Goal Selection
