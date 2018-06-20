@@ -136,9 +136,7 @@ end
 fsm:define_states{ export_to=_M,
    closure={MAX_RETRIES=MAX_RETRIES,tolerance_ok=tolerance_ok,result_ready=result_ready,fitness_ok=fitness_ok},
   {"INIT", JumpState},
-  {"CHECK_VISION", JumpState},
-  {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="DECIDE_RETRY",fail_to="FAILED"},
-  {"DECIDE_RETRY",JumpState},
+  {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="FAILED"},
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "DRIVE_BACK", fail_to="PRE_FAIL"},
@@ -148,14 +146,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-  {"INIT", "CHECK_VISION", true, desc="Start check vision"},
-  {"CHECK_VISION", "FAILED", timeout=20, desc="Fitness threshold wasn't reached"},
-  {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
-  {"CHECK_VISION","MOVE_GRIPPER_FORWARD", cond="result_ready() and fitness_ok() and tolerance_ok()"},
-  {"CHECK_VISION", "GRIPPER_ALIGN", cond="result_ready() and fitness_ok()"},
-  {"CHECK_VISION", "CHECK_VISION", cond="result_ready() and not fitness_ok()"},
-  {"DECIDE_RETRY", "CHECK_VISION", cond="vars.retries <= MAX_RETRIES"},
-  {"DECIDE_RETRY", "MOVE_GRIPPER_FORWARD", cond=true},
+  {"INIT", "GRIPPER_ALIGN", true, desc="Start aligning"},
 }
 
 function INIT:init()
