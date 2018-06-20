@@ -318,7 +318,7 @@
 
 (defrule execution-monitoring-issue-reset-mps
   ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
-                (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+                (value ?tried&:(> ?tried ?*MAX-RETRIES-PICK*)))
   =>
   (assert (wm-fact (key monitoring reset-mps args? m ?mps) (type BOOL) (value TRUE)))
 )
