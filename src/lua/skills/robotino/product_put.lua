@@ -114,6 +114,22 @@ function result_ready()
   return true
 end
 
+function pose_not_exist()
+  local target_pos = { x = gripper_pose_offset_x,
+                       y = gripper_pose_offset_y,
+                       z = gripper_pose_offset_z,
+                       ori = { x=0, y = 0, z= 0, w= 0}
+
+   }
+
+   local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper_fingers")
+   if transformed_pos == nil then
+     return true
+   end
+   return false
+end
+
+
 function pose_offset()
   local target_pos = { x = gripper_pose_offset_x,
                        y = gripper_pose_offset_y,
@@ -134,7 +150,7 @@ function pose_offset()
 end
 
 fsm:define_states{ export_to=_M,
-   closure={MAX_RETRIES=MAX_RETRIES,tolerance_ok=tolerance_ok,result_ready=result_ready,fitness_ok=fitness_ok},
+   closure={MAX_RETRIES=MAX_RETRIES,tolerance_ok=tolerance_ok,result_ready=result_ready,fitness_ok=fitness_ok,pose_not_exist=pose_not_exist},
   {"INIT", JumpState},
   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="FAILED"},
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
@@ -149,6 +165,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
+  {"INIT", "FAILED", cond="pose_not_exist()"},
   {"INIT", "GRIPPER_ALIGN", true, desc="Start aligning"},
 }
 

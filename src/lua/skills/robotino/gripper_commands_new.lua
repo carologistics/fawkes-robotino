@@ -102,7 +102,7 @@ function COMMAND:init()
 
         target_frame = self.fsm.vars.target_frame or "gripper_home"
 
-        move_abs_message = arduino.MoveXYZAbsMessage:new()
+        move_abs_message = arduino.MoveXYZAbsClippedMessage:new()
         if self.fsm.vars.x ~= nil then
           move_abs_message:set_x(self.fsm.vars.x)
         end
