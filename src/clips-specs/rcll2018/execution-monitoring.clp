@@ -20,6 +20,7 @@
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
   (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT|INPUT)))
   (not (timer (name ?name&:(eq ?name (sym-cat READY-AT-OUTPUT ?mps)))))
+  (wm-fact (key config rcll reset-mps-unexpected-state) (value TRUE))
   =>
   ;TODO: Send Maintenance message
   (assert (timer (name (sym-cat READY-AT-OUTPUT ?mps)) (time ?now) (seq 1)))
@@ -30,7 +31,7 @@
   (declare (salience 1))
   (wm-fact (key domain fact mps-type args? m ?mps t ?type))
   (or (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
-      (not (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT)))
+      (wm-fact (key domain fact mps-state args? m ?mps s ~READY-AT-OUTPUT))
   )
   ?t <- (timer (name ?name&:(eq ?name (sym-cat READY-AT-OUTPUT ?mps))))
    =>
@@ -45,6 +46,7 @@
   (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT)))
   ?t <- (timer (name ?name&:(eq ?name (sym-cat READY-AT-OUTPUT ?mps)))
     (time $?time&:(timeout ?now ?time ?*COMMON-TIMEOUT-DURATION*)))
+  (wm-fact (key config rcll reset-mps-unexpected) (value TRUE))
    =>
   ;(bind ?wp-gen  (sym-cat WP- (gensym)))
   ;(assert (domain-object (name (sym-cat WP- (gensym))) (type workpiece))
