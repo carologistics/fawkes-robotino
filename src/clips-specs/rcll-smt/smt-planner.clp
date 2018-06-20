@@ -767,6 +767,7 @@
 							(printout t "plan-action move added: " ?action-specific-actor " [" ?action-id  "] from: " ?from " at: " ?from-side " to: " ?to " at: " ?to-side crlf)
 							else
 								(assert (wm-fact (key plan-action ?goal-id ?plan-id ?next-step-id status) (value FINAL)) )
+								(assert (wm-fact (key plan-action ?goal-id ?plan-id ?next-step-id dep-match)) )
 								(printout t "plan-action move added: " ?action-specific-actor " [" ?action-id  "] is not necessary and marked as final for parent dependencies" crlf)
 						)
 					)
