@@ -12,6 +12,8 @@ plugins/clips-executive:
 
           allowed-complexities: ["C0"]
 
+
+test: fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 plugins/mongodb:
   clients:
     default/enabled: true
@@ -29,3 +31,6 @@ plugins/mongodb:
       port: 27031
       data-path: /tmp/mongodb-robot-memory-distributed
       log/path: /tmp/mongodb-robot-memory-distributed.log
+
+
+test: TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
