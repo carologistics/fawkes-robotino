@@ -177,13 +177,6 @@ function INIT:init()
   self.fsm.vars.vision_retries = 0
 end
 
-function CHECK_VISION:init()
-   local msg = if_conveyor_pose.SetStationMessage:new(self.fsm.vars.mps_type, self.fsm.vars.mps_target)
-   if_conveyor_pose:msgq_enqueue_copy(msg)
-   self.fsm.vars.msgid = msg:id()
-   self.fsm.vars.vision_retries = self.fsm.vars.vision_retries + 1
-end
-
 function INIT_GRIPPER:init()
   if self.fsm.vars.shelf == "LEFT" then
     self.args["gripper_commands_new"] = GRIPPER_POSES["shelf_left"]

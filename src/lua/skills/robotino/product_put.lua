@@ -159,13 +159,6 @@ function INIT:init()
   self.fsm.vars.vision_retries = 0
 end
 
-function CHECK_VISION:init()
-  self.fsm.vars.vision_retries = self.fsm.vars.vision_retries + 1
-  local msg = if_conveyor_pose.SetStationMessage:new(self.fsm.vars.mps_type, self.fsm.vars.mps_target)
-  if_conveyor_pose:msgq_enqueue_copy(msg)
-  self.fsm.vars.msgid = msg:id()
-end
-
 function GRIPPER_ALIGN:init()
   local pose = pose_offset(self)
   self.args["gripper_commands_new"].command = "MOVEABS"
