@@ -70,35 +70,47 @@ ConveyorPoseThread::ConveyorPoseThread()
 
 
 std::string
-ConveyorPoseThread::get_model_path(ConveyorPoseInterface *iface, ConveyorPoseInterface::MPS_TYPE type, ConveyorPoseInterface::MPS_TARGET target)
+ConveyorPoseThread::get_model_path(ConveyorPoseInterface *iface, ConveyorPoseInterface::MPS_TYPE type, int id, ConveyorPoseInterface::MPS_TARGET target)
 {
   std::string path = std::string(CFG_PREFIX "/reference_models/")
-      + iface->enum_tostring("MPS_TYPE", type) + "_" + iface->enum_tostring("MPS_TARGET", target);
+      + iface->enum_tostring("MPS_TYPE", type) + "_" + std::to_string(id) + "_" + iface->enum_tostring("MPS_TARGET", target);
   if (config->exists(path)) {
-    logger->log_info(name(), "Override for %s_%s: %s",
+    logger->log_info(name(), "Override for %s_%d_%s: %s",
                      iface->enum_tostring("MPS_TYPE", type),
+                     id,
                      iface->enum_tostring("MPS_TARGET", target),
                      config->get_string(path).c_str());
     return CONFDIR "/" + config->get_string(path);
   }
   else {
-    switch(target) {
-    case ConveyorPoseInterface::INPUT_CONVEYOR:
-      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/input_conveyor");
-    case ConveyorPoseInterface::OUTPUT_CONVEYOR:
-      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/output_conveyor");
-    case ConveyorPoseInterface::SHELF_LEFT:
-      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_left");
-    case ConveyorPoseInterface::SHELF_MIDDLE:
-      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_middle");
-    case ConveyorPoseInterface::SHELF_RIGHT:
-      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_right");
-    case ConveyorPoseInterface::SLIDE:
-      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/slide");
-    case ConveyorPoseInterface::NO_LOCATION:
-      return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/default");
-    case ConveyorPoseInterface::LAST_MPS_TARGET_ELEMENT:
-      return "";
+    path = std::string(CFG_PREFIX "/reference_models/")
+        + iface->enum_tostring("MPS_TYPE", type) + "_" + iface->enum_tostring("MPS_TARGET", target);
+    if (config->exists(path)) {
+      logger->log_info(name(), "Override for %s_%s: %s",
+          iface->enum_tostring("MPS_TYPE", type),
+          iface->enum_tostring("MPS_TARGET", target),
+          config->get_string(path).c_str());
+      return CONFDIR "/" + config->get_string(path);
+    }
+    else {
+      switch(target) {
+        case ConveyorPoseInterface::INPUT_CONVEYOR:
+          return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/input_conveyor");
+        case ConveyorPoseInterface::OUTPUT_CONVEYOR:
+          return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/output_conveyor");
+        case ConveyorPoseInterface::SHELF_LEFT:
+          return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_left");
+        case ConveyorPoseInterface::SHELF_MIDDLE:
+          return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_middle");
+        case ConveyorPoseInterface::SHELF_RIGHT:
+          return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_right");
+        case ConveyorPoseInterface::SLIDE:
+          return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/slide");
+        case ConveyorPoseInterface::NO_LOCATION:
+          return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/default");
+        case ConveyorPoseInterface::LAST_MPS_TARGET_ELEMENT:
+          return "";
+      }
     }
   }
 
@@ -276,19 +288,37 @@ ConveyorPoseThread::init()
   for ( int i = ConveyorPoseInterface::NO_STATION; i != ConveyorPoseInterface::LAST_MPS_TYPE_ELEMENT; i++ )
   {
     ConveyorPoseInterface::MPS_TYPE mps_type = static_cast<ConveyorPoseInterface::MPS_TYPE>(i);
-    for (int j = ConveyorPoseInterface::NO_LOCATION; j != ConveyorPoseInterface::LAST_MPS_TARGET_ELEMENT; j++)
+    for(int id = 0; id < 5; id++)
     {
-      ConveyorPoseInterface::MPS_TARGET mps_target = static_cast<ConveyorPoseInterface::MPS_TARGET>(j);
 
-      type_target_to_path_[{mps_type, mps_target}] = get_model_path(bb_pose_, mps_type, mps_target);
+      for (int j = ConveyorPoseInterface::NO_LOCATION; j != ConveyorPoseInterface::LAST_MPS_TARGET_ELEMENT; j++)
+      {
+        ConveyorPoseInterface::MPS_TARGET mps_target = static_cast<ConveyorPoseInterface::MPS_TARGET>(j);
+
+        type_id_target_to_path_[{mps_type, id, mps_target}] = get_model_path(bb_pose_, mps_type, id, mps_target);
+      }
     }
   }
 
   // always use the output_conveyor model for Storage station and Base station
-  type_target_to_path_[{ConveyorPoseInterface::BASE_STATION, ConveyorPoseInterface::INPUT_CONVEYOR}]=
-    type_target_to_path_[{ConveyorPoseInterface::BASE_STATION, ConveyorPoseInterface::OUTPUT_CONVEYOR}];
-  type_target_to_path_[{ConveyorPoseInterface::STORAGE_STATION, ConveyorPoseInterface::INPUT_CONVEYOR}]=
-    type_target_to_path_[{ConveyorPoseInterface::STORAGE_STATION, ConveyorPoseInterface::OUTPUT_CONVEYOR}];
+  for(int id = 0; id <5; id++)
+  {
+    //BASE STATION
+    auto map_it = type_id_target_to_model_.find({ConveyorPoseInterface::BASE_STATION,id,ConveyorPoseInterface::INPUT_CONVEYOR});
+    if ( map_it != type_id_target_to_model_.end())
+    {
+      type_id_target_to_path_[{ConveyorPoseInterface::BASE_STATION, id, ConveyorPoseInterface::INPUT_CONVEYOR}]=
+        type_id_target_to_path_[{ConveyorPoseInterface::BASE_STATION, id, ConveyorPoseInterface::OUTPUT_CONVEYOR}];
+    }
+
+    //STORAGE_STATION
+    map_it = type_id_target_to_model_.find({ConveyorPoseInterface::STORAGE_STATION,id,ConveyorPoseInterface::INPUT_CONVEYOR});
+    if ( map_it != type_id_target_to_model_.end())
+    {
+      type_id_target_to_path_[{ConveyorPoseInterface::STORAGE_STATION, id, ConveyorPoseInterface::INPUT_CONVEYOR}]=
+        type_id_target_to_path_[{ConveyorPoseInterface::STORAGE_STATION, id, ConveyorPoseInterface::OUTPUT_CONVEYOR}];
+    }
+  }
 
   trimmed_scene_.reset(new Cloud());
 
@@ -330,15 +360,15 @@ ConveyorPoseThread::init()
   }
   else {
     // Loading PCD file and calculation of model with normals for ALL! stations
-    for (const auto &pair : type_target_to_path_) {
+    for (const auto &pair : type_id_target_to_path_) {
       CloudPtr model(new Cloud());
       if (pcl::io::loadPCDFile(pair.second, *model) < 0)
         throw fawkes::CouldNotOpenFileException(pair.second.c_str());
 
-      type_target_to_model_.insert({pair.first, model});
+      type_id_target_to_model_.insert({pair.first, model});
     }
 
-    model_ = type_target_to_model_[{ConveyorPoseInterface::NO_STATION, ConveyorPoseInterface::NO_LOCATION}];
+    model_ = type_id_target_to_model_[{ConveyorPoseInterface::NO_STATION, 0, ConveyorPoseInterface::NO_LOCATION}];
   }
 
   cloud_in_registered_ = false;
@@ -615,29 +645,46 @@ ConveyorPoseThread::update_station_information(ConveyorPoseInterface::SetStation
 {
   ConveyorPoseInterface::MPS_TYPE mps_type = msg.mps_type_to_set();
   ConveyorPoseInterface::MPS_TARGET mps_target = msg.mps_target_to_set();
+  int mps_id = msg.mps_id_to_set();
 
-  auto map_it = type_target_to_model_.find({mps_type,mps_target});
-  if ( map_it == type_target_to_model_.end())
-    logger->log_error(name(), "Invalid station type or target: %i,%i", mps_type, mps_target);
-  else {
-    logger->log_info(name(), "Setting Station to %s, %s",
-                     bb_pose_->enum_tostring("MPS_TYPE", mps_type),
-                     bb_pose_->enum_tostring("MPS_TARGET", mps_target));
-
-    MutexLocker locked2(&bb_mutex_);
-
-    model_ = map_it->second;
-    current_mps_type_ = mps_type;
-    current_mps_target_ = mps_target;
-
-    bb_pose_->set_current_mps_type(mps_type);
-    bb_pose_->set_current_mps_target(mps_target);
-    result_fitness_ = std::numeric_limits<double>::min();
-    bb_pose_->set_euclidean_fitness(result_fitness_);
-    bb_pose_->set_msgid(msg.id());
-    bb_pose_->set_busy(true);
-    bb_pose_->write();
+  auto map_it = type_id_target_to_model_.find({mps_type,mps_id,mps_target});
+  if ( map_it == type_id_target_to_model_.end())
+  {
+    //cannot find specific id in cloudptr map, search for general one
+    map_it = type_id_target_to_model_.find({mps_type,0,mps_target});
+    if ( map_it == type_id_target_to_model_.end()){
+      logger->log_error(name(), "Invalid station type or target: %i,%i", mps_type, mps_target);
+      return;
+    }
+    else {
+      logger->log_info(name(), "Setting Station to %s-general, %s",
+                       bb_pose_->enum_tostring("MPS_TYPE", mps_type),
+                       bb_pose_->enum_tostring("MPS_TARGET", mps_target));
+      mps_id = 0;
+    }
   }
+  else {
+    logger->log_info(name(), "Setting Station to %s-%d, %s",
+                     bb_pose_->enum_tostring("MPS_TYPE", mps_type),
+                     mps_id,
+                     bb_pose_->enum_tostring("MPS_TARGET", mps_target));
+  }
+
+  MutexLocker locked2(&bb_mutex_);
+
+  model_ = map_it->second;
+  current_mps_type_ = mps_type;
+  current_mps_target_ = mps_target;
+  current_mps_id_ = mps_id;
+
+  bb_pose_->set_current_mps_type(mps_type);
+  bb_pose_->set_current_mps_id(mps_id);
+  bb_pose_->set_current_mps_target(mps_target);
+  result_fitness_ = std::numeric_limits<double>::min();
+  bb_pose_->set_euclidean_fitness(result_fitness_);
+  bb_pose_->set_msgid(msg.id());
+  bb_pose_->set_busy(true);
+  bb_pose_->write();
 }
 
 bool

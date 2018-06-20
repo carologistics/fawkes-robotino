@@ -145,15 +145,16 @@ fsm:add_transitions{
 
 function INIT:init()
    if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
-   local parse_result = pam.parse_to_type_target(if_conveyor_pose,self.fsm.vars.place,self.fsm.vars.side,self.fsm.vars.shelf,self.fsm.vars.slide)
+   local parse_result = pam.parse_to_type_id_target(if_conveyor_pose,self.fsm.vars.place,self.fsm.vars.side,self.fsm.vars.shelf,self.fsm.vars.slide)
    self.fsm.vars.mps_type = parse_result.mps_type
    self.fsm.vars.mps_target = parse_result.mps_target
+   self.fsm.vars.mps_id = parse_result.mps_id
    self.fsm.vars.retries = 0
    self.fsm.vars.vision_retries = 0
 end
 
 function CHECK_VISION:init()
-   local msg = if_conveyor_pose.SetStationMessage:new(self.fsm.vars.mps_type, self.fsm.vars.mps_target)
+   local msg = if_conveyor_pose.SetStationMessage:new(self.fsm.vars.mps_type, self.fsm.vars.mps_id, self.fsm.vars.mps_target)
    if_conveyor_pose:msgq_enqueue_copy(msg)
    self.fsm.vars.msgid = msg:id()
    self.fsm.vars.vision_retries = self.fsm.vars.vision_retries + 1
