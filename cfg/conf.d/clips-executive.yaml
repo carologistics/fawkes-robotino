@@ -192,3 +192,5 @@ clips-executive:
           waitpoint-in-magenta: R-3
           allowed-complexities: ["C0" , "C1"]
           exclusive-complexities: ["C2" , "C3"]
+
+          reset-mps-unexpected-state: true
