@@ -48,9 +48,9 @@ local pam = require("parse_module")
 
 -- Constants
 local euclidean_fitness_threshold = 8  --threshold for euclidean fitness  (fitness should be higher)
-local gripper_tolerance_x = 0.015-- gripper x tolerance according to conveyor pose
-local gripper_tolerance_y = 0.015 -- gripper y tolerance according to conveyor pose
-local gripper_tolerance_z = 0.015 -- gripper z tolerance according to conveyor pose
+local gripper_tolerance_x = 0.005-- gripper x tolerance according to conveyor pose
+local gripper_tolerance_y = 0.005 -- gripper y tolerance according to conveyor pose
+local gripper_tolerance_z = 0.005 -- gripper z tolerance according to conveyor pose
 
 local gripper_pose_offset_x = -0.02  -- conveyor pose offset in x direction
 local gripper_pose_offset_y = 0.00     -- conveyor_pose offset in y direction
@@ -158,6 +158,17 @@ function INIT:init()
   self.fsm.vars.mps_id = parse_result.mps_id
   self.fsm.vars.retries = 0
   self.fsm.vars.vision_retries = 0
+
+  -- Override values if host specific config value is set
+  if config:exists("/skills/product_put/gripper_pose_offset_x") then
+      gripper_pose_offset_x = config:get_float("/skills/product_put/gripper_pose_offset_x")
+  end
+  if config:exists("/skills/product_put/gripper_pose_offset_y") then
+      gripper_pose_offset_y = config:get_float("/skills/product_put/gripper_pose_offset_y")
+  end
+  if config:exists("/skills/product_put/gripper_pose_offset_z") then
+      gripper_pose_offset_z = config:get_float("/skills/product_put/gripper_pose_offset_z")
+  end
 end
 
 function GRIPPER_ALIGN:init()

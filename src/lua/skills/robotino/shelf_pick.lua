@@ -47,6 +47,8 @@ local gripper_adjust_z_distance = -0.01
 local gripper_adjust_x_distance = 0.02
 local adjust_target_frame = "gripper"
 
+
+
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"INIT",       SkillJumpState, skills={{ax12gripper}}, final_to="GOTO_SHELF", fail_to="PRE_FAIL" },
    {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="ADJUST_HEIGHT", fail_to="PRE_FAIL"},
@@ -67,6 +69,12 @@ fsm:add_transitions{
 
 function INIT:init()
    self.args["ax12gripper"].command = "OPEN"
+
+   -- Override values if host specific config value is set
+   if config:exists("/skills/shelf_pick/gripper_adjust_z_distance") then
+       gripper_adjust_z_distance = config:get_float("/skills/shelf_pick/gripper_adjust_z_distance")
+   end
+
 end
 
 function GOTO_SHELF:init()

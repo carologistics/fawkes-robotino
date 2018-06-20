@@ -49,9 +49,9 @@ local pam = require("parse_module")
 local euclidean_fitness_threshold = 8  --threshold for euclidean fitness for targets other than shelf
 local shelf_euclidean_fitness_threshold = 3 -- threshold for euclidean_fitness if target is shelf
 
-local gripper_tolerance_x = 0.015 -- gripper x tolerance according to conveyor pose
-local gripper_tolerance_y = 0.015 -- gripper y tolerance according to conveyor pose
-local gripper_tolerance_z = 0.015 -- gripper z tolerance according to conveyor pose
+local gripper_tolerance_x = 0.005 -- gripper x tolerance according to conveyor pose
+local gripper_tolerance_y = 0.005 -- gripper y tolerance according to conveyor pose
+local gripper_tolerance_z = 0.005 -- gripper z tolerance according to conveyor pose
 
 local conveyor_gripper_forward_x = 0.05 -- distance to move gripper forward after align
 local conveyor_gripper_down_z = -0.015    -- distance to move gripper down after driving over product
@@ -75,6 +75,9 @@ local align_target_frame = "gripper_fingers"      -- the gripper align is made r
 local z_movement_target_frame = "gripper" -- the gripper z movement is made relative to this frame (according to gripper_commands_new)
 local x_movement_target_frame = "gripper" -- the gripper x movement is made relative to this frame (according to griper_commands_new)
 
+
+
+
 -- initial gripper poses depending on the target
 local GRIPPER_POSES = {
   shelf_left={x=0.05, y=0.00, z=0.035},
@@ -91,9 +94,9 @@ end
 
 function tolerance_ok()
    local pose = pose_offset()
-   if if_conveyor_pose:is_busy() then 
+   if if_conveyor_pose:is_busy() then
       return false
-   end 
+   end
 
    if math.abs(pose.x) <= gripper_tolerance_x and math.abs(pose.y) <= gripper_tolerance_y and math.abs(pose.z) <= gripper_tolerance_z then
       return true
@@ -176,6 +179,21 @@ function INIT:init()
   self.fsm.vars.mps_id = parse_result.mps_id
   self.fsm.vars.retries = 0
   self.fsm.vars.vision_retries = 0
+
+  -- Override values if host specific config value is set
+
+  if config:exists("/skills/product_pick/gripper_pose_offset_x") then
+      gripper_pose_offset_x = config:get_float("/skills/product_pick/gripper_pose_offset_x")
+  end
+  if config:exists("/skills/product_pick/gripper_pose_offset_y") then
+      gripper_pose_offset_y = config:get_float("/skills/product_pick/gripper_pose_offset_y")
+  end
+  if config:exists("/skills/product_pick/gripper_pose_offset_z") then
+      gripper_pose_offset_z = config:get_float("/skills/product_pick/gripper_pose_offset_z")
+  end
+  if config:exists("/skills/product_pick/conveyor_gripper_down_z") then
+      conveyor_gripper_down_z = config:get_float("/skills/product_pick/conveyor_gripper_down_z")
+  end
 end
 
 function INIT_GRIPPER:init()
@@ -202,7 +220,7 @@ end
 
 function GRIPPER_ALIGN:init()
   self.fsm.vars.retries = self.fsm.vars.retries + 1
-  
+
   local pose = pose_offset(self)
   self.args["gripper_commands_new"] = pose
   self.args["gripper_commands_new"].command = "MOVEABS"
