@@ -2630,18 +2630,18 @@ ClipsSmtThread::clips_smt_encoder()
 
 	// // Specify goal state for OMT
 	// for(int i=1; i<plan_horizon+1; ++i){
-	// 	if(i==1){
-	// 		constraints.push_back((getVar(var, "A_"+std::to_string(i)) == index_delivery_action
-	// 									&& getVar(var, "rew_"+std::to_string(i)) == (deadline-getVar(var, "t_"+std::to_string(i))-getVar(var, "md_"+std::to_string(i))))
-	// 								|| (!(getVar(var, "A_"+std::to_string(i)) == index_delivery_action)
-	// 									&& getVar(var, "rew_"+std::to_string(i))==0));
-	// 	}
-	// 	else {
-	// 		constraints.push_back((getVar(var, "A_"+std::to_string(i)) == index_delivery_action
-	// 									&& getVar(var, "rew_"+std::to_string(i)) == (getVar(var, "rew_"+std::to_string(i-1))+deadline-getVar(var, "t_"+std::to_string(i))-getVar(var, "md_"+std::to_string(i))))
-	// 								|| (!(getVar(var, "A_"+std::to_string(i)) == index_delivery_action)
-	// 									&& getVar(var, "rew_"+std::to_string(i))==getVar(var, "rew_"+std::to_string(i-1))));
-	// 	}
+	//     if(i==1){
+	//         constraints.push_back((getVar(var, "A_"+std::to_string(i)) == index_delivery_action
+	//                                     && getVar(var, "rew_"+std::to_string(i)) == (deadline-getVar(var, "t_"+std::to_string(i))-getVar(var, "md_"+std::to_string(i))))
+	//                                 || (!(getVar(var, "A_"+std::to_string(i)) == index_delivery_action)
+	//                                     && getVar(var, "rew_"+std::to_string(i))==0));
+	//     }
+	//     else {
+	//         constraints.push_back((getVar(var, "A_"+std::to_string(i)) == index_delivery_action
+	//                                     && getVar(var, "rew_"+std::to_string(i)) == (getVar(var, "rew_"+std::to_string(i-1))+deadline-getVar(var, "t_"+std::to_string(i))-getVar(var, "md_"+std::to_string(i))))
+	//                                 || (!(getVar(var, "A_"+std::to_string(i)) == index_delivery_action)
+	//                                     && getVar(var, "rew_"+std::to_string(i))==getVar(var, "rew_"+std::to_string(i-1))));
+	//     }
 	// }
 
 	// Constraints encoding that final_actions for each order have to be at least executed once for SMT
