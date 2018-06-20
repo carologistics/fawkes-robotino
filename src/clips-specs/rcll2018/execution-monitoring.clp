@@ -318,7 +318,7 @@
 
 (defrule execution-monitoring-issue-reset-mps
   ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
-                (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+                (value ?tried&:(> ?tried ?*MAX-RETRIES-PICK*)))
   =>
   (assert (wm-fact (key monitoring reset-mps args? m ?mps) (type BOOL) (value TRUE)))
 )
@@ -379,7 +379,7 @@
   ;(domain-obj-is-of-type ?wp workpiece)
   (wm-fact (key domain fact self args? r ?r))
   ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)
-          (value ?tries&:(< ?tries ?*MAX-RETRIES-PICK*)))
+          (value ?tries&:(<= ?tries ?*MAX-RETRIES-PICK*)))
   =>
   (bind ?tries (+ 1 ?tries))
   (modify ?pa (status PENDING))
@@ -442,7 +442,7 @@
   ;(domain-obj-is-of-type ?wp workpiece)
   (wm-fact (key domain fact self args? r ?r))
   ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)
-          (value ?tries&:(< ?tries ?*MAX-RETRIES-PUT-SLIDE*)))
+          (value ?tries&:(<= ?tries ?*MAX-RETRIES-PUT-SLIDE*)))
   =>
   (bind ?tries (+ 1 ?tries))
   (modify ?pa (status PENDING))
