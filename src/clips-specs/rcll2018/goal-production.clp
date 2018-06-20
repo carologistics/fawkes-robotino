@@ -32,6 +32,7 @@
   ?*PRIORITY-PRODUCE-C3* = 96
   ?*PRIORITY-PRODUCE-C2* = 95
   ?*PRIORITY-PRODUCE-C1* = 94
+  ?*PRIORITY-PRODUCE-CX* = 94
   ?*PRIORITY-PRODUCE-C0* = 90
   ?*PRIORITY-MOUNT-NEXT-RING* = 92
   ?*PRIORITY-MOUNT-FIRST-RING* = 91
@@ -844,7 +845,7 @@
   ; (incoming $?i&~:(member$ PROD_RING ?i))
   ; and what does it emply for the new locking
   ;Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C3))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?order-ring1-color))
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?order-ring2-color))
@@ -906,125 +907,91 @@
 )
 
 
-(defrule goal-reasoner-create-produce-c1
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
-  ;To-Do: Model state IDLE|wait-and-look-for-alternatives
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  ;MPS-CS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (not (wm-fact (key domain fact wp-at args wp ?wp-c m ?mps side ?side-cs)))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
-  (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
-  ;WP CEs
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT))
-  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
-  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
-  ;MPS-RS CEs
-  (wm-fact (key domain fact mps-type args? m ?rs t RS))
-  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
-  ;Order CEs
-  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact order-complexity args? ord ?order com C1))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-
-  (wm-fact (key refbox game-time) (values $?game-time))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
-  (value ?qd&:(> ?qr ?qd)))
-  ; (wm-fact (key refbox order ?order-id delivery-begin) (type UINT)
-  ; (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*))))
-  ; (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
-  ; (value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C1-LATEST-TIME*))))
-  ;TODO for multi-agent
-  ; Model old agents constraints
-  ;   (in-production 0)
-  ;   (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
-  =>
-  (printout t "Goal " PRODUCE-CX " formulated" crlf)
-  (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
-                (priority ?*PRIORITY-PRODUCE-C1*)
-                                (parent ?maintain-id)
-                                (params robot ?robot
-                                        wp ?wp
-                                        rs ?rs
-                                        mps ?mps
-                                        cs-color ?cap-color
-                                        order ?order
-                                )
-                                (required-resources ?mps ?wp)
-  ))
-)
-
-
-
-(defrule goal-reasoner-create-produce-c2
+(defrule goal-reasoner-create-mount-next-ring-while-holding
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
-  ;To-Do: Model state IDLE|wait-and-look-for-alternatives
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  ;MPS-CS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (not (wm-fact (key domain fact wp-at args? wp ?wp-cs m ?mps side ?side-cs)))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
-  (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
-  ;WP CEs
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT))
-  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
-  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
-  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
-  ;MPS-RS CEs
-  (wm-fact (key domain fact mps-type args? m ?rs t RS))
-  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
-  ;Order CEs
-  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact order-complexity args? ord ?order com C2))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox team-color) (value ?team-color))
+  ;Robot CEs
+  (wm-fact (key domain fact self args?         r ?robot))
+  ;MPS-RS CEs
+  (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
+  (wm-fact (key domain fact mps-state args?      m ?mps-rs s ~BROKEN))
+  (wm-fact (key domain fact mps-team args?       m ?mps-rs col ?team-color))
+  (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
+  (wm-fact (key domain fact rs-ring-spec args?   m ?mps-rs r ?next-ring-color rn ?bases-needed))
+  (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                  subtrahend ?bases-needed
+                                  difference ?bases-remain&ZERO|ONE|TWO|THREE))
+  (not (wm-fact (key domain fact rs-prepared-color args?  m ?mps-rs col ?some-col)))
+  ;TODO think a lot about the old CE
+  ; (incoming $?i&~:(member$ PROD_RING ?i))
+  ; and what does it emply for the new locking
+  ;Order CEs
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?order-ring1-color))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?order-ring2-color))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?order-ring3-color))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
-  (value ?qd&:(> ?qr ?qd)))
-  ; (wm-fact (key refbox order ?order-id delivery-begin) (type UINT)
-  ; (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*))))
-  ; (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
-  ; (value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C1-LATEST-TIME*))))
+  (wm-fact (key refbox order ?order quantity-delivered ?team-color) (value ?qd&:(> ?qr ?qd)))
+  ; (wm-fact (key refbox order ?order delivery-begin) (type UINT)
+    ; (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) (tac-ring-mount-time ?complexity 0)))))
+  ; (wm-fact (key refbox order ?order delivery-end) (type UINT)
+    ; (value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-CX-LATEST-TIME*))))
+  ;WP CEs
+  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-ring1-color))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-ring2-color))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-ring3-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  (test (or
+            (and (eq ?wp-ring1-color ?order-ring1-color)
+                 (eq ?wp-ring2-color ?order-ring2-color)
+                 (neq ?wp-ring3-color ?order-ring3-color)
+                 (eq ?next-ring-color ?order-ring3-color))
+            (and (eq ?wp-ring1-color ?order-ring1-color)
+                 (neq ?wp-ring2-color ?order-ring2-color)
+                 (eq ?next-ring-color ?order-ring2-color))
+            (and (neq ?wp-ring1-color ?order-ring1-color)
+                 (eq ?next-ring-color ?order-ring1-color))))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp-rs&:(neq ?wp-rs ?wp) m ?mps-rs side ?any-rs-side)))
   ;TODO for multi-agent
   ; Model old agents constraints
-  ;   (in-production 0)
-  ;   (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
+  ;  (in-production 0)
+  ;  (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
+  (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   =>
-  (printout t "Goal " PRODUCE-CX " (C2) formulated" crlf)
-  (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
-                (priority ?*PRIORITY-PRODUCE-C2*)
+  (bind ?ring-pos (member$ RING_NONE (create$ ?wp-ring1-color ?wp-ring2-color ?wp-ring3-color)))
+  (bind ?curr-ring-color (nth$ ?ring-pos (create$ ?order-ring1-color ?order-ring2-color ?order-ring3-color)))
+  (printout t "Goal " MOUNT-NEXT-RING " formulated (Ring " ?ring-pos")" crlf)
+  (assert (goal (id (sym-cat MOUNT-NEXT-RING- (gensym*)))
+                (class MOUNT-NEXT-RING) (priority (+ ?ring-pos ?*PRIORITY-MOUNT-NEXT-RING*))
                 (parent ?maintain-id)
                 (params robot ?robot
-                        wp ?wp
-                        rs ?rs
-                        mps ?mps
-                        cs-color ?cap-color
-                        order ?order
+                           prev-rs PARTIAL
+                           prev-rs-side PARTIAL
+                           wp ?wp
+                           rs ?mps-rs
+                           ring1-color ?order-ring1-color
+                           ring2-color ?order-ring2-color
+                           ring3-color ?order-ring3-color
+                           curr-ring-color ?curr-ring-color
+                           ring-pos ?ring-pos
+                           rs-before ?bases-filled
+                           rs-after ?bases-remain
+                           rs-req ?bases-needed
+                           order ?order
                 )
-                (required-resources ?mps ?wp)
+                (required-resources ?wp ?mps-rs)
   ))
 )
 
-(defrule goal-reasoner-create-produce-c3
+
+
+(defrule goal-reasoner-create-produce-cx
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
@@ -1049,7 +1016,7 @@
   (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
   ;Order CEs
   (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact order-complexity args? ord ?order com C3))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
@@ -1061,22 +1028,64 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
   (value ?qd&:(> ?qr ?qd)))
-  ; (wm-fact (key refbox order ?order-id delivery-begin) (type UINT)
-  ; (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*))))
-  ; (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
-  ; (value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C1-LATEST-TIME*))))
-  ;TODO for multi-agent
-  ; Model old agents constraints
-  ;   (in-production 0)
-  ;   (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   =>
-  (printout t "Goal " PRODUCE-CX " (C3) formulated" crlf)
+  (printout t "Goal " PRODUCE-CX " (" ?complexity ") formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
-                (priority ?*PRIORITY-PRODUCE-C3*)
+                (priority ?*PRIORITY-PRODUCE-CX*)
                 (parent ?maintain-id)
                 (params robot ?robot
                         wp ?wp
                         rs ?rs
+                        mps ?mps
+                        cs-color ?cap-color
+                        order ?order
+                )
+                (required-resources ?wp ?mps)
+  ))
+)
+
+
+(defrule goal-reasoner-create-produce-cx-while-holding
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
+  ;To-Do: Model state IDLE|wait-and-look-for-alternatives
+  ;Robot CEs
+  (wm-fact (key domain fact self args? r ?robot))
+  ;MPS-CS CEs
+  (wm-fact (key domain fact mps-type args? m ?mps t CS))
+  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp-cs m ?mps side ?side-cs)))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
+  (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
+  ;WP CEs
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+  ;Order CEs
+  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
+  (value ?qd&:(> ?qr ?qd)))
+  =>
+  (printout t "Goal " PRODUCE-CX " (" ?complexity ") formulated" crlf)
+  (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
+                (priority ?*PRIORITY-PRODUCE-CX*)
+                (parent ?maintain-id)
+                (params robot ?robot
+                        wp ?wp
+                        rs PARTIAL
                         mps ?mps
                         cs-color ?cap-color
                         order ?order
@@ -1195,6 +1204,91 @@
                 )
                 (required-resources ?order ?wp)
   ))
+)
+
+
+(defrule goal-reasoner-create-deliver-while-holding
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  ;To-Do: Model state IDLE|wait-and-look-for-alternatives
+  (wm-fact (key domain fact self args? r ?robot))
+  ;CEs for MPS-DS
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
+  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+  ;CEs for MPS-CS
+  (wm-fact (key domain fact mps-type args? m ?mps t CS))
+  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+
+  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
+
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  ;note: could be moved to rejected checks
+  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
+    (value ?qd&:(> ?qr ?qd)))
+  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
+    (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
+  ;TODO for multi-agent
+  ; Model old agents constraints
+  ;  (in-production ?ip&:(> ?ip 0))
+  ;  (in-delivery ?id)
+
+  ;On evaluation of delivery. Update the quanetities deliverd
+  ;Delete the evaluated wp-for-order
+  =>
+  (printout t "Goal " DELIVER " formulated" crlf)
+  (assert (goal (id (sym-cat DELIVER- (gensym*)))
+                (class DELIVER)
+                (priority ?*PRIORITY-DELIVER*)
+                (parent ?production-id)
+                (params robot ?robot
+                        mps PARTIAL
+                        order ?order
+                        wp ?wp
+                        ds ?ds
+                        ds-gate ?gate
+                        base-color ?base-color
+                        ring1-color ?ring1-color
+                        ring2-color ?ring2-color
+                        ring3-color ?ring3-color
+                        cap-color ?cap-color
+                )
+                (required-resources ?order ?wp)
+  ))
+)
+; ## Goal Evaluation
+ (defrule goal-reasoner-evaluate-failed-enter-field
+   ?g <- (goal (id ?gid) (class ENTER-FIELD-ACHIEVE)
+               (mode FINISHED) (outcome FAILED))
+  ?pa <- (plan-action (goal-id ?gid) (status FAILED) (action-name enter-field))
+  ?gm <- (goal-meta (goal-id ?gid) (num-tries ?num-tries))
+  =>
+  (printout t "Goal '" ?gid "' has failed, evaluating" crlf)
+
+  (if (= ?num-tries ?*ENTER-FIELD-RETRIES*) then
+	(modify ?pa (status EXECUTION-SUCCEEDED))
+	(modify ?g (mode DISPATCHED) (outcome UNKNOWN))
+        else
+	(bind ?num-tries (+ 1 ?num-tries))
+	(modify ?gm (num-tries ?num-tries) (max-tries ?*ENTER-FIELD-RETRIES*))
+	(modify ?g (mode EVALUATED))
+  )
 )
 
 (defrule goal-reasoner-evaluate-production-maintain
