@@ -237,7 +237,6 @@ fsm:add_transitions{
   { "INIT",    "FAILED",                   cond="not parameters_valid(self)",  desc="parameters invalid" },
   { "INIT",    "FAILED",                   timeout=5,  desc="timeout" }, -- ONLY FOR TESTING!
   { "INIT",    "SKILL_DRIVE_TO",           cond=true },
-  { "SKILL_DRIVE_TO", "SKILL_MPS_ALIGN",    cond="laser_line_found(self)" },
 }
 
 function INIT:init()
