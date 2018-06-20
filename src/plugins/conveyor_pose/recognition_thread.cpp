@@ -205,7 +205,7 @@ void RecognitionThread::loop()
       try {
         tf::Stamped<tf::Pose> pose_in_laser_base_link;
         tf_listener->transform_pose(
-            "laser_base_link",
+            "base_laser",
             tf::Stamped<tf::Pose>(result_pose, Time(0,0), result_pose.frame_id),
             pose_in_laser_base_link);
         float pose_yaw = tf::get_yaw(pose_in_laser_base_link.getRotation());
