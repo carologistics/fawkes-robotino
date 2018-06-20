@@ -857,7 +857,7 @@
   ; (incoming $?i&~:(member$ PROD_RING ?i))
   ; and what does it emply for the new locking
   ;Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C3))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?order-ring1-color))
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?order-ring2-color))
