@@ -156,10 +156,12 @@ fsm:define_states{ export_to=_M,
    {"CHECK_VISION", JumpState},
    {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="DECIDE_RETRY",fail_to="PRE_FAIL"},
    {"DECIDE_RETRY", JumpState},
+   {"WAIT_AFTER_CENTER",JumpState},
    {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER",fail_to="PRE_FAIL"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
    {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "CENTER_FINGERS", fail_to="FAILED"},
-   {"CENTER_FINGERS", SkillJumpState, skills={{ax12gripper}}, final_to="HOME_GRIPPER", fail_to="HOME_GRIPPER"},
+   {"CENTER_FINGERS", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_CENTER", fail_to="WAIT_AFTER_CENTER"},
+   {"CLOSE_AFTER_CENTER", SkillJumpState, skills={{gripper_commands_new}}, final_to="HOME_GRIPPER", fail_to="HOME_GRIPPER"},
    {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="DRIVE_BACK"},
    {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
    {"PRE_FAIL", SkillJumpState, skills={{gripper_commands_new}}, final_to="FAILED", fail_to="FAILED"},
@@ -173,7 +175,8 @@ fsm:add_transitions{
    {"CHECK_VISION", "GRIPPER_ALIGN", cond="result_ready() and fitness_ok()", desc="Fitness threshold reached"},
    {"CHECK_VISION", "CHECK_VISION", cond="result_ready() and not fitness_ok() and vars.vision_retries < 3"},
    {"DECIDE_RETRY", "CHECK_VISION", cond="vars.retries <= MAX_RETRIES"},
-   {"DECIDE_RETRY", "MOVE_GRIPPER_FORWARD", cond=true}
+   {"DECIDE_RETRY", "MOVE_GRIPPER_FORWARD", cond=true},
+   {"WAIT_AFTER_CENTER", "CLOSE_AFTER_CENTER", timeout=0.5},
 }
 
 
@@ -215,6 +218,9 @@ function CLOSE_GRIPPER:init()
    self.args["gripper_commands_new"].command= "CLOSE"
 end
 
+function CLOSE_AFTER_CENTER:init()
+  self.args["gripper_commands_new"].command = "CLOSE"
+end
 
 function GRIPPER_ALIGN:init()
   self.fsm.vars.retries = self.fsm.vars.retries + 1
