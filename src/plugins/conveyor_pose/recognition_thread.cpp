@@ -212,7 +212,7 @@ void RecognitionThread::loop()
         float yaw_diff = pose_yaw - best_ll->bearing();
         logger->log_info(name(),"Yaw of pose compared to laser line %f",yaw_diff);
 
-        rotation_ok = yaw_diff <= cfg_icp_rotation_threshold_/180.0*M_PI;
+        rotation_ok = std::abs(yaw_diff) <= cfg_icp_rotation_threshold_/180.0*M_PI;
 
 
       } catch(tf::TransformException &e) {
