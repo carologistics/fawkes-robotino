@@ -269,6 +269,8 @@
   (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+
+  (wm-fact (key config rcll allowed-to-operate ?allowed-mps&:(eq ?allowed-mps (sym-cat (sub-string 3 (str-length ?mps) ?mps))) INPUT) (value TRUE))
   =>
   (bind ?priority-increase 0)
   (if (any-factp ((?order-cap-color wm-fact))
@@ -314,6 +316,8 @@
   (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
     (value ?end&:(< ?end (nth$ 1 ?game-time))))
+
+  (wm-fact (key config rcll allowed-to-operate ?allowed-mps&:(eq ?allowed-mps (sym-cat (sub-string 3 (str-length ?mps) ?mps))) OUTPUT) (value TRUE))
   =>
   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*))) (class CLEAR-MPS)
@@ -343,6 +347,8 @@
 ;  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+
+  (wm-fact (key config rcll allowed-to-operate ?allowed-mps&:(eq ?allowed-mps (sym-cat (sub-string 3 (str-length ?mps) ?mps))) OUTPUT) (value TRUE))
   =>
   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
@@ -370,6 +376,8 @@
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+
+  (wm-fact (key config rcll allowed-to-operate ?allowed-mps&:(eq ?allowed-mps (sym-cat (sub-string 3 (str-length ?mps) ?mps))) ?side) (value TRUE))
   =>
   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
@@ -404,6 +412,8 @@
   (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
     (value ?end&:(< ?end (nth$ 1 ?game-time))))
+
+  (wm-fact (key config rcll allowed-to-operate ?allowed-mps&:(eq ?allowed-mps (sym-cat (sub-string 3 (str-length ?mps) ?mps))) OUTPUT) (value TRUE))
   =>
   (printout t "Goal " CLEAR-MPS " (" ?mps ") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
@@ -523,6 +533,9 @@
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
 
   (wm-fact (key domain fact order-base-color args? ord ?any-order col ?base-color))
+
+  (wm-fact (key config rcll allowed-to-operate ?allowed-mps&:(eq ?allowed-mps (sym-cat (sub-string 3 (str-length ?mps) ?mps))) INPUT) (value TRUE))
+  (wm-fact (key config rcll allowed-to-operate ?allowed-bs&:(eq ?allowed-bs (sym-cat (sub-string 3 (str-length ?bs) ?bs))) INPUT) (value TRUE))
   =>
   (bind ?priority-increase 0)
   (do-for-all-facts ((?prio wm-fact)) (and (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
@@ -569,6 +582,9 @@
   (wm-fact (key domain fact mps-type args? m ?cs t CS))
   (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
   (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?cs spot ?spot))
+
+  (wm-fact (key config rcll allowed-to-operate ?allowed-mps&:(eq ?allowed-mps (sym-cat (sub-string 3 (str-length ?mps) ?mps))) INPUT) (value TRUE))
+  (wm-fact (key config rcll allowed-to-operate ?allowed-cs&:(eq ?allowed-cs (sym-cat (sub-string 3 (str-length ?cs) ?cs))) INPUT) (value TRUE))
   =>
   (bind ?priority-increase 0)
   (do-for-all-facts ((?prio wm-fact)) (and (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
@@ -611,6 +627,8 @@
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   ;CCs don't have a base color. Hence, models base with UNKOWN color
   ; (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color)))
+
+  (wm-fact (key config rcll allowed-to-operate ?allowed-mps&:(eq ?allowed-mps (sym-cat (sub-string 3 (str-length ?mps) ?mps))) INPUT) (value TRUE))
   =>
   (bind ?priority-increase 0)
   (do-for-all-facts ((?prio wm-fact)) (and (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
@@ -685,7 +703,7 @@
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (domain-object (name ?mps-side) (type mps-side))
-  (domain-fact (name location-free) (param-values ?bs ?mps-side))
+  (domain-fact (name location-free) (param-values ?bs ?bs-side))
   (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?bs side ?any-side)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
@@ -717,6 +735,9 @@
   (not (wm-fact (key evaluated fact wp-for-order args? wp ?any-ord-wp ord ?order)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (eq ?complexity C0))
+
+  (wm-fact (key config rcll allowed-to-operate ?allowed-mps&:(eq ?allowed-mps (sym-cat (sub-string 3 (str-length ?mps) ?mps))) INPUT) (value TRUE))
+  (wm-fact (key config rcll allowed-to-operate ?allowed-bs&:(eq ?allowed-bs (sym-cat (sub-string 3 (str-length ?bs) ?bs))) ?bs-side) (value TRUE))
   =>
   (bind ?required-resources ?mps ?order ?spawned-wp)
   (if (any-factp ((?exclusive-complexities wm-fact))
@@ -733,7 +754,7 @@
                 (parent ?production-id)
                 (params robot ?robot
                         bs ?bs
-                        bs-side ?mps-side
+                        bs-side ?bs-side
                         bs-color ?base-color
                         mps ?mps
                         cs-color ?cap-color
@@ -798,6 +819,9 @@
   ;  (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (neq ?complexity C0))
+
+  (wm-fact (key config rcll allowed-to-operate ?allowed-mps&:(eq ?allowed-mps (sym-cat (sub-string 3 (str-length ?mps-rs) ?mps-rs))) INPUT) (value TRUE))
+  (wm-fact (key config rcll allowed-to-operate ?allowed-bs&:(eq ?allowed-bs (sym-cat (sub-string 3 (str-length ?mps-bs) ?mps-bs))) OUTPUT) (value TRUE))
   =>
   (bind ?required-resources ?mps-rs ?order ?spawned-wp)
   (if (any-factp ((?exclusive-complexities wm-fact))
@@ -892,6 +916,9 @@
   ;  (in-production 0)
   ;  (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+
+  (wm-fact (key config rcll allowed-to-operate ?allowed-mps&:(eq ?allowed-mps (sym-cat (sub-string 3 (str-length ?mps-rs) ?mps-rs))) INPUT) (value TRUE))
+  (wm-fact (key config rcll allowed-to-operate ?allowed-prev&:(eq ?allowed-prev (sym-cat (sub-string 3 (str-length ?prev-rs) ?prev-rs))) OUTPUT) (value TRUE))
   =>
   (bind ?ring-pos (member$ RING_NONE (create$ ?wp-ring1-color ?wp-ring2-color ?wp-ring3-color)))
   (bind ?curr-ring-color (nth$ ?ring-pos (create$ ?order-ring1-color ?order-ring2-color ?order-ring3-color)))
@@ -975,6 +1002,7 @@
   ;  (in-production 0)
   ;  (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+  (wm-fact (key config rcll allowed-to-operate ?allowed-mps&:(eq ?allowed-mps (sym-cat (sub-string 3 (str-length ?mps-rs) ?mps-rs))) INPUT) (value TRUE))
   =>
   (bind ?ring-pos (member$ RING_NONE (create$ ?wp-ring1-color ?wp-ring2-color ?wp-ring3-color)))
   (bind ?curr-ring-color (nth$ ?ring-pos (create$ ?order-ring1-color ?order-ring2-color ?order-ring3-color)))
@@ -1040,7 +1068,10 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
   (value ?qd&:(> ?qr ?qd)))
-  =>
+
+  (wm-fact (key config rcll allowed-to-operate ?allowed-mps&:(eq ?allowed-mps (sym-cat (sub-string 3 (str-length ?mps) ?mps))) INPUT) (value TRUE))
+  (wm-fact (key config rcll allowed-to-operate ?allowed-rs&:(eq ?allowed-rs (sym-cat (sub-string 3 (str-length ?rs) ?rs))) OUTPUT) (value TRUE))
+   =>
   (printout t "Goal " PRODUCE-CX " (" ?complexity ") formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
                 (priority ?*PRIORITY-PRODUCE-CX*)
@@ -1090,6 +1121,8 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
   (value ?qd&:(> ?qr ?qd)))
+
+  (wm-fact (key config rcll allowed-to-operate ?allowed-mps&:(eq ?allowed-mps (sym-cat (sub-string 3 (str-length ?mps) ?mps))) INPUT) (value TRUE))
   =>
   (printout t "Goal " PRODUCE-CX " (" ?complexity ") formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
@@ -1105,6 +1138,7 @@
                 (required-resources ?wp ?mps)
   ))
 )
+
 
 (defrule goal-reasoner-create-reset-mps
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -1197,6 +1231,9 @@
 
   ;On evaluation of delivery. Update the quanetities deliverd
   ;Delete the evaluated wp-for-order
+
+  (wm-fact (key config rcll allowed-to-operate ?allowed-mps&:(eq ?allowed-mps (sym-cat (sub-string 3 (str-length ?mps) ?mps))) OUTPUT) (value TRUE))
+  (wm-fact (key config rcll allowed-to-operate ?allowed-ds&:(eq ?allowed-ds (sym-cat (sub-string 3 (str-length ?ds) ?ds))) INPUT) (value TRUE))
   =>
   (printout t "Goal " DELIVER " formulated" crlf)
   (assert (goal (id (sym-cat DELIVER- (gensym*)))
@@ -1264,6 +1301,8 @@
 
   ;On evaluation of delivery. Update the quanetities deliverd
   ;Delete the evaluated wp-for-order
+
+  (wm-fact (key config rcll allowed-to-operate ?allowed-ds&:(eq ?allowed-ds (sym-cat (sub-string 3 (str-length ?ds) ?ds))) INPUT) (value TRUE))
   =>
   (printout t "Goal " DELIVER " formulated" crlf)
   (assert (goal (id (sym-cat DELIVER- (gensym*)))
