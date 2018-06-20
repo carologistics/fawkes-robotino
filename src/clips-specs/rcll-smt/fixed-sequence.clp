@@ -65,6 +65,7 @@
 	(wm-fact (key plan-action ?goal-id ?plan-id ?id dep))
         (wm-fact (key plan-action ?goal-id ?plan-id ?id  status)
                  (value FORMULATED))
+	(wm-fact (key plan-action ?goal-id ?plan-id ?id dep-match))
         (wm-fact (key plan-action ?goal-id ?plan-id ?id actor)
                  (value R-1))
 
@@ -117,12 +118,18 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
 =>
+  (bind ?plan-id ENTER-FIELD-PLAN)
+  (bind ?goal-id ENTER-FIELD-ACHIEVE)
+  (bind ?id 1)
   (assert
     (plan (id ENTER-FIELD-PLAN) (goal-id ENTER-FIELD-ACHIEVE))
     (plan-action (id 1) (plan-id ENTER-FIELD-PLAN) (goal-id ENTER-FIELD-ACHIEVE)
                                  (action-name enter-field)
                                  (param-names r team-color)
                                  (param-values ?robot ?team-color))
+	(wm-fact (key plan-action ?goal-id ?plan-id ?id dep))
+	(wm-fact (key plan-action ?goal-id ?plan-id ?id dep-match))
+	(wm-fact (key plan-action ?goal-id ?plan-id ?id status))
     )
   (modify ?g (mode EXPANDED))
 )
