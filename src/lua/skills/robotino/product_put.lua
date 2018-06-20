@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "product_put"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"gripper_commands_new","motor_move"}
+depends_skills     = {"gripper_commands_new","motor_move","ax12gripper"}
 depends_interfaces = {
   {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
   {v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
@@ -140,7 +140,9 @@ fsm:define_states{ export_to=_M,
   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="DECIDE_RETRY",fail_to="FAILED"},
   {"DECIDE_RETRY",JumpState},
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
-  {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
+  {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="SLAP_LEFT", fail_to="PRE_FAIL"},
+  {"SLAP_LEFT", SkillJumpState, skills={{ax12gripper}}, final_to="SLAP_RIGHT", fail_to="FAILED"},
+  {"SLAP_RIGHT", SkillJumpState, skills={{ax12gripper}}, final_to="MOVE_GRIPPER_BACK", fail_to="FAILED"},
   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "DRIVE_BACK", fail_to="PRE_FAIL"},
   {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CLOSE_GRIPPER", fail_to="PRE_FAIL"},
   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="FINAL", fail_to="PRE_FAIL"},
@@ -198,6 +200,14 @@ function MOVE_GRIPPER_FORWARD:init()
   end
 end
 
+function SLAP_LEFT:INIT()
+   self.args["ax12gripper"].command = "SLAP_LEFT"
+end
+
+function SLAP_RIGHT:init()
+   self.args["ax12gripper"].command = "SLAP_RIGHT"
+ end
+ 
 function OPEN_GRIPPER:init()
   self.args["gripper_commands_new"].command = "OPEN"
 end
