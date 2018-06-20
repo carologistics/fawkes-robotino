@@ -56,16 +56,6 @@ plugins/conveyor_pose:
     BASE_STATION_1_INPUT_CONVEYOR: "conveyor_pcls/mbsi.pcd"
     BASE_STATION_3_INPUT_CONVEYOR: "conveyor_pcls/cbsi.pcd"
 
-    CAP_STATION_1_INPUT_CONVEYOR: "conveyor_pcls/mcs1i.pcd"
-    CAP_STATION_2_INPUT_CONVEYOR: "conveyor_pcls/mcs2i.pcd"
-    CAP_STATION_3_INPUT_CONVEYOR: "conveyor_pcls/ccs1i.pcd"
-    CAP_STATION_4_INPUT_CONVEYOR: "conveyor_pcls/ccs2i.pcd"
-
-    RING_STATION_1_INPUT_CONVEYOR: "conveyor_pcls/mrs1i.pcd"
-    RING_STATION_2_INPUT_CONVEYOR: "conveyor_pcls/mrs2i.pcd"
-    RING_STATION_3_INPUT_CONVEYOR: "conveyor_pcls/crs1i.pcd"
-    RING_STATION_4_INPUT_CONVEYOR: "conveyor_pcls/crs2i.pcd"
-
     CAP_STATION_1_OUTPUT_CONVEYOR: "conveyor_pcls/mcs1o.pcd"
     CAP_STATION_2_OUTPUT_CONVEYOR: "conveyor_pcls/mcs2o.pcd"
     CAP_STATION_3_OUTPUT_CONVEYOR: "conveyor_pcls/ccs1o.pcd"
@@ -81,8 +71,6 @@ plugins/conveyor_pose:
     RING_STATION_3_SLIDE: "conveyor_pcls/slide_crs1.pcd"
     RING_STATION_4_SLIDE: "conveyor_pcls/slide_crs2.pcd"
 
-    DELIVERY_STATION_1_INPUT_CONVEYOR: "conveyor_pcls/mdsi.pcd"
-    DELIVERY_STATION_3_INPUT_CONVEYOR: "conveyor_pcls/cdsi.pcd"
 
   voxel_grid:
     # Downsample all point clouds to this resolution
