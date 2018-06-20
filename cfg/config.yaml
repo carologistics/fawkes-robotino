@@ -9,6 +9,7 @@ include:
   - !ignore-missing host.d/
   # Reads the host-specific configuration file, no failure if missing
   - !host-specific host.yaml
+  #- single-agent.yaml
 ---
 # Main configuration document
 
