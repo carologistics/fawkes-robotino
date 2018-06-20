@@ -251,7 +251,7 @@ function MOVE_GRIPPER_BACK:init()
 end
 
 function CENTER_FINGERS:init()
-  self.args["ax12grippers"].command = "CENTER"
+  self.args["ax12gripper"].command = "CENTER"
 end
 
 function HOME_GRIPPER:init()
