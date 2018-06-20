@@ -127,6 +127,7 @@ ConveyorPoseThread::init()
 
   conveyor_frame_id_          = config->get_string( CFG_PREFIX "/conveyor_frame_id" );
 
+  recognition_thread_->cfg_icp_rotation_threshold_ = config->get_float_or_default( CFG_PREFIX "/icp/rotation_threshold", 15.0 );
   recognition_thread_->cfg_icp_max_corr_dist_     = config->get_float( CFG_PREFIX "/icp/max_correspondence_dist" );
   recognition_thread_->cfg_icp_max_iterations_    = config->get_int( CFG_PREFIX "/icp/max_iterations" );
   recognition_thread_->cfg_icp_refinement_factor_ = double(config->get_float( CFG_PREFIX "/icp/refinement_factor" ));
@@ -955,6 +956,8 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
     } else if (sub_prefix == "/icp") {
       if (opt == "/max_correspondence_dist")
         change_val(opt, recognition_thread_->cfg_icp_max_corr_dist_, v->get_float());
+      else if (opt == "/rotation_threshold")
+        change_val(opt, recognition_thread_->cfg_icp_rotation_threshold_, v->get_float());
       else if (opt == "/transformation_epsilon")
         change_val(opt, recognition_thread_->cfg_icp_tf_epsilon_, double(v->get_float()));
       else if (opt == "/refinement_factor")
