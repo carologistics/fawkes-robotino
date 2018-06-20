@@ -295,7 +295,8 @@
     (domain-fact (name mps-team) (param-values ?cs2 ?team-color))
     (domain-fact (name mps-team) (param-values ?rs1 ?team-color))
     (domain-fact (name mps-team) (param-values ?rs2 ?team-color))
-    
+    (domain-fact (name at) (param-values (sym-cat ?robot-name) START INPUT))
+
     (domain-fact (name mps-type) (param-values C-BS BS))
     (domain-fact (name mps-type) (param-values C-DS DS))
     (domain-fact (name mps-type) (param-values C-SS SS))
