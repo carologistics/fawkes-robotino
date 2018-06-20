@@ -84,7 +84,7 @@ function fitness_ok()
   else
     local_fitness_threshold = euclidean_fitness_threshold
   end
-  
+
   return if_conveyor_pose:euclidean_fitness() >= local_fitness_threshold
 end
 
@@ -139,8 +139,8 @@ fsm:add_transitions{
    {"CHECK_VISION", "DECIDE_WHAT", cond=result_ready, desc="Fitness threshold reached"},
    {"DECIDE_WHAT", "FINAL", cond="fitness_ok() and tolerance_ok()"},
    {"DECIDE_WHAT", "DRIVE", cond="fitness_ok() and not tolerance_ok() and vars.retries <= MAX_RETRIES"},
-   {"DECIDE_WHAT", "FAILED", cond="fitness_ok() and not tolerance_ok()"},
-   {"DECIDE_WHAT", "CHECK_VISION", cond="not fitness_ok() and vars.vision_retries <= MAX_VISION_RETRIES"}
+   {"DECIDE_WHAT", "FAILED", cond="vars.vision_retries >= MAX_VISION_RETRIES"},
+   {"DECIDE_WHAT", "CHECK_VISION", cond="not fitness_ok()"},
 }
 
 function INIT:init()
@@ -206,4 +206,3 @@ function FINAL:init()
       cleanup()
    end
 end
-
