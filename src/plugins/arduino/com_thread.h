@@ -153,6 +153,7 @@ private:
                                 ArduinoComMessage::command_id_t command, unsigned int value);
 
     float inline round_to_2nd_dec(float f);
+    float inline clip_to(float f, float min, float max, bool &had_to_clip);
     void pose_publish_tf();
 
 protected:
