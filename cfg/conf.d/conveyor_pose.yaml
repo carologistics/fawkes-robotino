@@ -78,6 +78,10 @@ plugins/conveyor_pose:
 
   icp:
     # Recognition parameters
+    
+
+    # Yaw threshold
+    rotation_threshold: 15.0
 
     # Ignore model point if it doesn't have a scene correspondence within this radius
     # ATTENTION: this is very sensitive to the error of the initial estimate!
