@@ -32,6 +32,12 @@
 	(wm-robmem-sync-enable
 	"/plan-action/COMPLEXITY"
 	)
+	(wm-robmem-sync-enable
+	"/domain/fact/wp-usable"
+	)
+	(wm-robmem-sync-enable
+	"/domain/fact/wp-at"
+	)
 )
 
 ; (defrule initialization-abort-on-finalize
