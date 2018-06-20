@@ -213,7 +213,7 @@ void RecognitionThread::loop()
         yaw_diff = std::abs(fmod(yaw_diff, M_PI));
         yaw_diff = std::min(M_PI-yaw_diff,(double)yaw_diff);
         
-        logger->log_info(name(),"Yaw of pose compared to laser line %f",yaw_diff);
+        //logger->log_info(name(),"Yaw of pose compared to laser line %f",yaw_diff);
 
         rotation_ok = std::abs(yaw_diff) <= cfg_icp_rotation_threshold_/180.0*M_PI;
 
