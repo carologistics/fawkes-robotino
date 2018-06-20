@@ -717,18 +717,16 @@
 								(bind ?to-splitted (str-split ?to-complete "-"))
 								(bind ?to (str-join "-" (subseq$ ?to-splitted 1 2)))
 								(bind ?to-side (if (eq (nth$ 3 ?to-splitted) "I") then "INPUT" else "OUTPUT"))
-								; (bind ?to (string-to-field ?to))
 							else
 								(if (eq (pb-field-value ?arg "key") "from") then
 									(bind ?from-complete (pb-field-value ?arg "value"))
 									(if (eq ?from-complete "START-I") then
-										(bind ?from START)
-										(bind ?from-side INPUT)
+										(bind ?from "START")
+										(bind ?from-side "INPUT")
 										else
 											(bind ?from-splitted (str-split ?from-complete "-"))
 											(bind ?from (str-join "-" (subseq$ ?from-splitted 1 2)))
 											(bind ?from-side (if (eq (nth$ 3 ?from-splitted) "I") then "INPUT" else "OUTPUT"))
-											; (bind ?from (string-to-field ?from))
 									)
 								else
 									(printout warn "Unknown parameter " (pb-field-value ?arg "key") " for " ?actname crlf)
@@ -767,7 +765,6 @@
 							(printout t "plan-action move added: " ?action-specific-actor " [" ?action-id  "] from: " ?from " at: " ?from-side " to: " ?to " at: " ?to-side crlf)
 							else
 								(assert (wm-fact (key plan-action ?goal-id ?plan-id ?next-step-id status) (value FINAL)) )
-								(assert (wm-fact (key plan-action ?goal-id ?plan-id ?next-step-id dep-match)) )
 								(printout t "plan-action move added: " ?action-specific-actor " [" ?action-id  "] is not necessary and marked as final for parent dependencies" crlf)
 						)
 					)
@@ -791,14 +788,13 @@
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
 								(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "shelf") then
-									(bind ?shelf (string-to-field (pb-field-value ?arg "value")))
+									(bind ?shelf (pb-field-value ?arg "value"))
 
 								else
 									(if (eq (pb-field-value ?arg "key") "wp") then
-										(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+										(bind ?wp (pb-field-value ?arg "value"))
 
 									else
 										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -855,10 +851,9 @@
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
 								(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "wp") then
-									(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+									(bind ?wp (pb-field-value ?arg "value"))
 
 								else
 									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -915,14 +910,13 @@
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
 								(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "slide") then
 									(bind ?slide (pb-field-value ?arg "value"))
 									(bind ?machine-feature (if (eq ?slide "true") then SLIDE else CONVEYOR))
 								else
 									(if (eq (pb-field-value ?arg "key") "wp") then
-										(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+										(bind ?wp (pb-field-value ?arg "value"))
 
 									else
 										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -980,22 +974,21 @@
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
 								(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "slide") then
 								  (bind ?slide (pb-field-value ?arg "value"))
 								  (bind ?machine-feature (if (eq ?slide "true") then SLIDE else CONVEYOR))
 								else
 									(if (eq (pb-field-value ?arg "key") "rs-before") then
-										(bind ?rs-before (string-to-field (pb-field-value ?arg "value")))
+										(bind ?rs-before (pb-field-value ?arg "value"))
 
 									else
 										(if (eq (pb-field-value ?arg "key") "rs-after") then
-											(bind ?rs-after (string-to-field (pb-field-value ?arg "value")))
+											(bind ?rs-after (pb-field-value ?arg "value"))
 
 										else
 											(if (eq (pb-field-value ?arg "key") "wp") then
-												 (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+												 (bind ?wp (pb-field-value ?arg "value"))
 
 											else
 												(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1050,7 +1043,7 @@
 						)
 						(progn$ (?arg (pb-field-list ?a "params"))
 							(if (eq (pb-field-value ?arg "key") "wp") then
-								(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+								(bind ?wp (pb-field-value ?arg "value"))
 
 							else
 								(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1105,10 +1098,9 @@
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
 								(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "color") then
-									(bind ?goal-base-color (string-to-field (pb-field-value ?arg "value")))
+									(bind ?goal-base-color (pb-field-value ?arg "value"))
 
 								else
 									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1164,14 +1156,13 @@
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
 								(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
-								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "color") then
-									(bind ?goal-base-color (string-to-field (pb-field-value ?arg "value")))
+									(bind ?goal-base-color (pb-field-value ?arg "value"))
 
 								else
 									(if (eq (pb-field-value ?arg "key") "wp") then
-										(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+										(bind ?wp (pb-field-value ?arg "value"))
 
 									else
 										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1226,7 +1217,6 @@
 								(bind ?mps (pb-field-value ?arg "value"))
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-								(bind ?mps (string-to-field ?mps))
 
 							else
 								(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1282,19 +1272,18 @@
 								(bind ?mps (pb-field-value ?arg "value"))
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-								(bind ?mps (string-to-field ?mps))
 
 							else
 								(if (eq (pb-field-value ?arg "key") "base-color") then
-									(bind ?base-color (string-to-field (pb-field-value ?arg "value")))
+									(bind ?base-color (pb-field-value ?arg "value"))
 
 								else
 									(if (eq (pb-field-value ?arg "key") "cap-color") then
-										(bind ?cap-color (string-to-field (pb-field-value ?arg "value")))
+										(bind ?cap-color (pb-field-value ?arg "value"))
 
 									else
 										(if (eq (pb-field-value ?arg "key") "wp") then
-											(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+											(bind ?wp (pb-field-value ?arg "value"))
 
 										else
 											(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1356,22 +1345,21 @@
 								(bind ?mps (pb-field-value ?arg "value"))
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "base-color") then
-									(bind ?base-color (string-to-field (pb-field-value ?arg "value")))
+									(bind ?base-color (pb-field-value ?arg "value"))
 
 								else
 									(if (eq (pb-field-value ?arg "key") "ring1-color") then
-										(bind ?ring1-color (string-to-field (pb-field-value ?arg "value")))
+										(bind ?ring1-color (pb-field-value ?arg "value"))
 
 									else
 										(if (eq (pb-field-value ?arg "key") "cap-color") then
-											(bind ?cap-color (string-to-field (pb-field-value ?arg "value")))
+											(bind ?cap-color (pb-field-value ?arg "value"))
 
 										else
 											(if (eq (pb-field-value ?arg "key") "wp") then
-												(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+												(bind ?wp (pb-field-value ?arg "value"))
 
 											else
 												(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1432,26 +1420,25 @@
 								(bind ?mps (pb-field-value ?arg "value"))
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "base-color") then
-									(bind ?base-color (string-to-field (pb-field-value ?arg "value")))
+									(bind ?base-color (pb-field-value ?arg "value"))
 
 								else
 									(if (eq (pb-field-value ?arg "key") "ring1-color") then
-										(bind ?ring1-color (string-to-field (pb-field-value ?arg "value")))
+										(bind ?ring1-color (pb-field-value ?arg "value"))
 
 									else
 										(if (eq (pb-field-value ?arg "key") "ring2-color") then
-											(bind ?ring2-color (string-to-field (pb-field-value ?arg "value")))
+											(bind ?ring2-color (pb-field-value ?arg "value"))
 
 										else
 											(if (eq (pb-field-value ?arg "key") "cap-color") then
-												(bind ?cap-color (string-to-field (pb-field-value ?arg "value")))
+												(bind ?cap-color (pb-field-value ?arg "value"))
 
 											else
 												(if (eq (pb-field-value ?arg "key") "wp") then
-													(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+													(bind ?wp (pb-field-value ?arg "value"))
 
 												else
 													(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1513,31 +1500,30 @@
 								(bind ?mps (pb-field-value ?arg "value"))
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-								(bind ?mps (string-to-field ?mps))
 
 							 else
 								(if (eq (pb-field-value ?arg "key") "base-color") then
-								  (bind ?base-color (string-to-field (pb-field-value ?arg "value")))
+								  (bind ?base-color (pb-field-value ?arg "value"))
 
 								else
 									(if (eq (pb-field-value ?arg "key") "ring1-color") then
-									  (bind ?ring1-color (string-to-field (pb-field-value ?arg "value")))
+									  (bind ?ring1-color (pb-field-value ?arg "value"))
 
 									else
 										(if (eq (pb-field-value ?arg "key") "ring2-color") then
-										  (bind ?ring2-color (string-to-field (pb-field-value ?arg "value")))
+										  (bind ?ring2-color (pb-field-value ?arg "value"))
 
 										else
 											(if (eq (pb-field-value ?arg "key") "ring3-color") then
-											  (bind ?ring3-color (string-to-field (pb-field-value ?arg "value")))
+											  (bind ?ring3-color (pb-field-value ?arg "value"))
 
 											else
 												(if (eq (pb-field-value ?arg "key") "cap-color") then
-												  (bind ?cap-color (string-to-field (pb-field-value ?arg "value")))
+												  (bind ?cap-color (pb-field-value ?arg "value"))
 
 												else
 													(if (eq (pb-field-value ?arg "key") "wp") then
-													  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+													  (bind ?wp (pb-field-value ?arg "value"))
 
 													else
 														(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1604,10 +1590,9 @@
 								(bind ?mps (pb-field-value ?arg "value"))
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "operation") then
-									(bind ?operation (string-to-field (pb-field-value ?arg "value")))
+									(bind ?operation (pb-field-value ?arg "value"))
 
 								else
 									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1658,10 +1643,9 @@
 								(bind ?mps (pb-field-value ?arg "value"))
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "cap-color") then
-									(bind ?cap-color (string-to-field (pb-field-value ?arg "value")))
+									(bind ?cap-color (pb-field-value ?arg "value"))
 
 								else
 									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1712,14 +1696,13 @@
 								(bind ?mps (pb-field-value ?arg "value"))
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "cap-color") then
-									(bind ?cap-color (string-to-field (pb-field-value ?arg "value")))
+									(bind ?cap-color (pb-field-value ?arg "value"))
 
 								else
 									(if (eq (pb-field-value ?arg "key") "wp") then
-									  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+									  (bind ?wp (pb-field-value ?arg "value"))
 
 									else
 										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1775,22 +1758,21 @@
 								(bind ?mps (pb-field-value ?arg "value"))
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "ring_color") then
-										(bind ?goal-ring-color (string-to-field (pb-field-value ?arg "value")) ) ;temp: the color of the base of the goal is recognized here
+										(bind ?goal-ring-color (pb-field-value ?arg "value"))  ;temp: the color of the base of the goal is recognized here
 
 								else
 									(if (eq (pb-field-value ?arg "key") "rs-before") then
-									  (bind ?rs-before (string-to-field (pb-field-value ?arg "value")))
+									  (bind ?rs-before (pb-field-value ?arg "value"))
 
 									else
 										(if (eq (pb-field-value ?arg "key") "rs-after") then
-										  (bind ?rs-after (string-to-field (pb-field-value ?arg "value")))
+										  (bind ?rs-after (pb-field-value ?arg "value"))
 
 										else
 											(if (eq (pb-field-value ?arg "key") "r-req") then
-											  (bind ?r-req (string-to-field (pb-field-value ?arg "value")))
+											  (bind ?r-req (pb-field-value ?arg "value"))
 
 											else
 												(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1844,26 +1826,25 @@
 								(bind ?mps (pb-field-value ?arg "value"))
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "ring-color") then
-									(bind ?ring-color (string-to-field (pb-field-value ?arg "value")))
+									(bind ?ring-color (pb-field-value ?arg "value"))
 
 								else
 									(if (eq (pb-field-value ?arg "key") "rs-before") then
-									  (bind ?rs-before (string-to-field (pb-field-value ?arg "value")))
+									  (bind ?rs-before (pb-field-value ?arg "value"))
 
 									else
 										(if (eq (pb-field-value ?arg "key") "rs-after") then
-										  (bind ?rs-after (string-to-field (pb-field-value ?arg "value")))
+										  (bind ?rs-after (pb-field-value ?arg "value"))
 
 										else
 											(if (eq (pb-field-value ?arg "key") "r-req") then
-											  (bind ?r-req (string-to-field (pb-field-value ?arg "value")))
+											  (bind ?r-req (pb-field-value ?arg "value"))
 
 											else
 												(if (eq (pb-field-value ?arg "key") "wp") then
-												  (bind ?wp (string-to-field (pb-field-value ?arg "value")))
+												  (bind ?wp (pb-field-value ?arg "value"))
 
 												else
 													(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1918,30 +1899,29 @@
 								(bind ?mps (pb-field-value ?arg "value"))
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "ring-color") then
-								  (bind ?ring-color (string-to-field (pb-field-value ?arg "value")))
+								  (bind ?ring-color (pb-field-value ?arg "value"))
 
 								else
 									(if (eq (pb-field-value ?arg "key") "rs-before") then
-										(bind ?rs-before (string-to-field (pb-field-value ?arg "value")))
+										(bind ?rs-before (pb-field-value ?arg "value"))
 
 									else
 										(if (eq (pb-field-value ?arg "key") "rs-after") then
-											(bind ?rs-after (string-to-field (pb-field-value ?arg "value")))
+											(bind ?rs-after (pb-field-value ?arg "value"))
 
 										else
 											(if (eq (pb-field-value ?arg "key") "r-req") then
-												(bind ?r-req (string-to-field (pb-field-value ?arg "value")))
+												(bind ?r-req (pb-field-value ?arg "value"))
 
 											else
 												(if (eq (pb-field-value ?arg "key") "col1") then
-													(bind ?col1 (string-to-field (pb-field-value ?arg "value")))
+													(bind ?col1 (pb-field-value ?arg "value"))
 
 												else
 													(if (eq (pb-field-value ?arg "key") "wp") then
-														(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+														(bind ?wp (pb-field-value ?arg "value"))
 
 													else
 														(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1997,34 +1977,33 @@
 								(bind ?mps (pb-field-value ?arg "value"))
 								(bind ?mps-splitted (str-split ?mps "-"))
 								(bind ?mps (str-join "-" (subseq$ ?mps-splitted 1 2)))
-								(bind ?mps (string-to-field ?mps))
 							else
 								(if (eq (pb-field-value ?arg "key") "ring-color") then
-								  (bind ?ring-color (string-to-field (pb-field-value ?arg "value")))
+								  (bind ?ring-color (pb-field-value ?arg "value"))
 
 								else
 									(if (eq (pb-field-value ?arg "key") "rs-before") then
-										(bind ?rs-before (string-to-field (pb-field-value ?arg "value")))
+										(bind ?rs-before (pb-field-value ?arg "value"))
 
 									else
 										(if (eq (pb-field-value ?arg "key") "rs-after") then
-											(bind ?rs-after (string-to-field (pb-field-value ?arg "value")))
+											(bind ?rs-after (pb-field-value ?arg "value"))
 
 										else
 											(if (eq (pb-field-value ?arg "key") "r-req") then
-												(bind ?r-req (string-to-field (pb-field-value ?arg "value")))
+												(bind ?r-req (pb-field-value ?arg "value"))
 
 											else
 												(if (eq (pb-field-value ?arg "key") "col1") then
-													(bind ?col1 (string-to-field (pb-field-value ?arg "value")))
+													(bind ?col1 (pb-field-value ?arg "value"))
 
 												else
 													(if (eq (pb-field-value ?arg "key") "col2") then
-														(bind ?col2 (string-to-field (pb-field-value ?arg "value")))
+														(bind ?col2 (pb-field-value ?arg "value"))
 
 													else
 														(if (eq (pb-field-value ?arg "key") "wp") then
-															(bind ?wp (string-to-field (pb-field-value ?arg "value")))
+															(bind ?wp (pb-field-value ?arg "value"))
 
 														else
 															(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
