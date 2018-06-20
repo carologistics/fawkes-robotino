@@ -58,15 +58,20 @@
   (assert (wm-fact (key monitoring reset-mps args? m ?mps) (type BOOL) (value TRUE)))
 )
 
-(defrule execution-monitoring-reset-mps-on-unexpected-input
-  (declare (salience 1))
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
-  (not (mutex (name ?name&:(eq ?name (sym-cat resource- ?wp))) (state LOCKED)))
-  =>
-  ;TODO: Send Maintenance message
-  (assert (wm-fact (key monitoring reset-mps args? m ?mps) (type BOOL) (value TRUE)))
-  (printout warn "Monitoring: Unexpected input and no WP at output!" crlf)
-)
+;reason of execlusion: one robot's absence of knowledg about if that wp has a mutex.
+;                      does not impley that no one other robot has that mutex.
+;                      (ie, it could easly be the case that R-1 has the WP mutex, yet
+;                           R-2 doesn not try to get it, hence does not know about it,
+;                           ..R-2 resets the machine)
+;(defrule execution-monitoring-reset-mps-on-unexpected-input
+;  (declare (salience 1))
+;  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+;  (not (mutex (name ?name&:(eq ?name (sym-cat resource- ?wp))) (state LOCKED)))
+;  =>
+;  ;TODO: Send Maintenance message
+;  (assert (wm-fact (key monitoring reset-mps args? m ?mps) (type BOOL) (value TRUE)))
+;  (printout warn "Monitoring: Unexpected input and no WP at output!" crlf)
+;)
 
 
 ;(defrule execution-monitoring-incosistent-yet-exepected-mps-state-idle
