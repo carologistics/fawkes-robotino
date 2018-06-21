@@ -631,11 +631,6 @@
 	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
 	=>
 	(printout t "SMT plan handle completed " ?handle  crlf)
-	(if (eq ?team-color CYAN) then
-		(bind ?team-color "CYAN")
-	else
-		(bind ?team-color "MAGENTA")
-	)
 
 	(retract ?spc)
 	; Create instance of plan
@@ -735,9 +730,10 @@
 							)
 
 							(printout t "plan-action move added: " ?action-specific-actor " [" ?action-id  "] from: " ?from " at: " ?from-side " to: " ?to " at: " ?to-side crlf)
-							else
-								(assert (wm-fact (key plan-action ?goal-id ?plan-id ?next-step-id status) (value FINAL)) )
-								(printout t "plan-action move added: " ?action-specific-actor " [" ?action-id  "] is not necessary and marked as final for parent dependencies" crlf)
+
+						else
+							(assert (wm-fact (key plan-action ?goal-id ?plan-id ?next-step-id status) (value "FINAL")) )
+							(printout t "plan-action move added: " ?action-specific-actor " [" ?action-id  "] is not necessary and marked as final for parent dependencies"  crlf)
 						)
 					)
 
