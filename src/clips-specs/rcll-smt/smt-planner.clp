@@ -190,14 +190,18 @@
 (deffunction smt-create-robots (?team-color)
 	(bind ?rv (create$))
 
-	(do-for-all-facts ((?wm-fact wm-fact))
-		(wm-key-prefix ?wm-fact:key (create$ domain objects-by-type robot))
+	; (do-for-all-facts ((?wm-fact wm-fact))
+	;     (wm-key-prefix ?wm-fact:key (create$ domain objects-by-type robot))
 
-		(foreach ?robot ?wm-fact:values
-			(bind ?rv (append$ ?rv (smt-create-robot (string-to-field ?robot) ?team-color 0 0 0)))
-		)
+	;     (foreach ?robot ?wm-fact:values
+	;         (bind ?rv (append$ ?rv (smt-create-robot (string-to-field ?robot) ?team-color 0 0 0)))
+	;     )
 
-	)
+	; )
+
+	(bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-1") ?team-color 0 0 0)))
+	; (bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-2") ?team-color 0 0 0)))
+	; (bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-3") ?team-color 0 0 0)))
 
 	(return ?rv)
 )
@@ -416,22 +420,22 @@
 )
 
 ; Add order information from worldmodel to protobuf
-(deffunction smt-create-order (?id ?gate ?complexity ?q-req ?q-del ?begin ?end ?team-color)
+(deffunction smt-create-order (?id ?complexity ?team-color)
 	; (printout t "Creating Data msgs:: Order with id " ?id  crlf)
 	(bind ?o (pb-create "llsf_msgs.Order"))
 
 	(pb-set-field ?o "id" 1) ; TODO Use or ommit real ?id
 	(pb-set-field ?o "delivery_gate" 1) ; TODO Use or ommit real ?gate
-	(pb-set-field ?o "complexity" ?complexity)
-	(pb-set-field ?o "quantity_requested" ?q-req)
+   (pb-set-field ?o "complexity" ?complexity)
+	(pb-set-field ?o "quantity_requested" 1)
 	(if (eq ?team-color CYAN)
-		then
-			(pb-set-field ?o "quantity_delivered_cyan" ?q-del)
-		else
-			(pb-set-field ?o "quantity_delivered_magenta" ?q-del)
+	then
+		(pb-set-field ?o "quantity_delivered_cyan" 0)
+	else
+		(pb-set-field ?o "quantity_delivered_magenta" 0)
 	)
-	(pb-set-field ?o "delivery_period_begin" ?begin)
-	(pb-set-field ?o "delivery_period_end" ?end)
+	(pb-set-field ?o "delivery_period_begin" 1)
+	(pb-set-field ?o "delivery_period_end" 900)
 
 	; Extract order-base-color
 	(do-for-fact ((?wm-fact wm-fact))
@@ -505,44 +509,9 @@
   (return ?o)
 )
 
-(deffunction smt-create-orders (?team-color ?order-id)
+(deffunction smt-create-orders (?team-color ?order-id ?complexity)
 	(bind ?rv (create$))
-
-	(do-for-fact ((?wm-fact wm-fact))
-		(and
-			(wm-key-prefix ?wm-fact:key (create$ domain fact order-complexity))
-			(eq ?order-id (wm-key-arg ?wm-fact:key ord))
-		)
-
-		(do-for-fact ((?wm-fact2 wm-fact))
-			(and
-				(wm-key-prefix ?wm-fact2:key (create$ domain fact order-gate))
-				(eq (wm-key-arg ?wm-fact:key ord) (wm-key-arg ?wm-fact2:key ord))
-			)
-
-			(do-for-fact ((?wm-fact3 wm-fact)) (eq ?wm-fact3:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) quantity-requested))
-
-				(do-for-fact ((?wm-fact4 wm-fact)) (eq ?wm-fact4:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) quantity-delivered ?team-color))
-
-					(do-for-fact ((?wm-fact5 wm-fact)) (eq ?wm-fact5:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) delivery-begin))
-
-						(do-for-fact ((?wm-fact6 wm-fact)) (eq ?wm-fact6:key (create$ refbox order (wm-key-arg ?wm-fact:key ord) delivery-end))
-
-							(bind ?rv (append$ ?rv (smt-create-order
-														(wm-key-arg ?wm-fact:key ord) ; order-id
-														(wm-key-arg ?wm-fact2:key gate) ; TODO Add the correct gate information
-														(wm-key-arg ?wm-fact:key com)
-														?wm-fact3:value ; quantity-requested
-														?wm-fact4:value ; quantity-delivered
-														?wm-fact5:value ; begin
-														?wm-fact6:value ; end
-														?team-color)))
-						)
-					)
-				)
-			)
-		)
-	)
+	(bind ?rv (append$ ?rv (smt-create-order ?order-id ?complexity ?team-color)))
 	(return ?rv)
 )
 
@@ -582,27 +551,40 @@
 (defrule production-call-clips-smt
 	; Call plugin clips-smt
 	(goal (id ?goal-id&COMPLEXITY) (mode SELECTED))
-
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
-	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ZERO) (value TRUE))
-	(wm-fact (key refbox game-time) (values ?sec ?sec-2))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE)) ; desired complexity is set here
-	(wm-fact (key refbox order ?order-id delivery-end) (value ?delivery-end&:(> ?delivery-end ?sec)))
-	(not (wm-fact (key domain fact order-fulfilled args? ord ?order-id) (value TRUE)))
 
+	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ZERO) (value TRUE))
+
+	; Does an order of wanted complexity exists?
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?complexity&C3) (value TRUE)) ; desired complexity is set here
+
+	; Are all relevant details of this order available?
+	; (wm-fact (key domain fact order-base-color args? ord ?order-id col ?base-col) (value TRUE))
+	; (wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?base-col) (value TRUE))
+	; (wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?base-col) (value TRUE))
+	; (wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?base-col) (value TRUE))
+	; (wm-fact (key domain fact order-cap-color args? ord ?order-id col ?cap-col) (value TRUE))
+
+	; Was the order already fulfilled?
+	(not (wm-fact (key domain fact order-fulfilled args? ord ?order-id) (value TRUE)))
+	; Is the delivery-window in the future?
+	(wm-fact (key refbox game-time) (values ?sec ?sec-2))
+	(wm-fact (key refbox order ?order-id delivery-end) (value ?delivery-end&:(> ?delivery-end ?sec)))
+
+	; There was no plan for this goal requested yet?
 	(not (plan-requested ?goal-id))
 	(not (plan-requested-ord ?goal-id ?order-id))
 
 	; Only R-1 should run the planner
 	(wm-fact (key config rcll robot-name) (value "R-1"))
 =>
-	(printout t "SMT plan call " ?delivery-end " " ?sec crlf)
+	(printout t "SMT plan call for " ?order-id " with " ?delivery-end " " ?sec crlf)
 	(bind ?p
 	  (smt-create-data
 			(smt-create-robots ?team-color)
 			(smt-create-machines ?team-color)
-			(smt-create-orders ?team-color ?order-id)
+			(smt-create-orders ?team-color ?order-id ?complexity)
 			(smt-create-rings ?team-color)
 			0 ; Strategy set here, 0 means MACRO and 1 WINDOW
 			5 ; Window size for strategy WINDOW
@@ -2050,8 +2032,9 @@
 	)
 	(printout t "Amount of plan-actions added: " ?amount-plan-actions crlf)
 	(assert (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions) (value ?amount-plan-actions)))
-	(assert (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-2) (value 1)))
-	(assert (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-3) (value 1)))
+	(assert (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-2) (value 0)))
+	(assert (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-3) (value 0)))
+	(assert (wm-fact (key plan-action ?goal-id ?plan-id order) (value ?order-id)))
 	(pb-destroy ?plans)
 	(modify ?g (mode EXPANDED))
 	(retract ?plan-req)
@@ -2582,9 +2565,9 @@
 	(wm-fact (key plan-action ?goal-id ?plan-id ?id action))
 	(not (wm-fact (key plan-action ?goal-id ?plan-id ?id action-added-r-3)) )
 =>
+	(printout t "Collect action " ?id " for R-3" crlf)
 	(assert (wm-fact (key plan-action ?goal-id ?plan-id ?id action-added-r-3)) )
 	(modify ?apac (value (+ ?amount-plan-actions-collected 1)) )
-	(printout t "Collect action " ?id " for R-3" crlf)
 	(printout t "Amoutn of collected actions is " ?amount-plan-actions-collected " for R-3 /" ?amount-plan-actions crlf)
 )
 
