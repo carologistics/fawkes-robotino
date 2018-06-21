@@ -178,9 +178,9 @@
     (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
       (retract ?a)
     )
-    (delayed-do-for-all-facts ((?wf wm-fact)) (wm-key-prefix ?wf:key (create$ plan-action ?p:goal-id ?p:id))
-      (retract ?wf)
-    )
+    ; (delayed-do-for-all-facts ((?wf wm-fact)) (wm-key-prefix ?wf:key (create$ plan-action ?p:goal-id ?p:id))
+    ;   (retract ?wf)
+    ; )
     (retract ?p)
   )
 
