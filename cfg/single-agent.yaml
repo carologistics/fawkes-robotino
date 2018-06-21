@@ -4,8 +4,8 @@ include:
 clips-executive:
   specs:
     rcll2018:
-     rcll:
       parameters:
+       rcll:
           single-agent-mode: TRUE
           wm-init-force: TRUE
 
