@@ -87,10 +87,10 @@ clips-executive:
           - name: protobuf
           - name: tf
           - name: smt
-          #- name: robmem-wait
-          #  feature-request: false
-          #  files: ["BATCH|robmem-wait-init.clp"]
-          #  wait-for: robmem-initialized
+          - name: robmem-wait
+            feature-request: false
+            files: ["BATCH|robmem-wait-init.clp"]
+            wait-for: robmem-initialized
           - name: robot_memory
         stage-3:
           - name: utils
@@ -98,7 +98,9 @@ clips-executive:
           - name: state-estimation
             file: rcll2017/state-estimation-init.clp
           - name: worldmodel
-            files: [ rcll2017/init-worldmodel.clp,
+            files: [ wm-robmem-sync.clp,
+                     rcll2017/init-worldmodel.clp,
+                     rcll2017/init.clp,
                      rcll2017/game-worldmodel.clp ]
           - name: communication
             files: [ rcll2017/refbox-comm-init.clp,
@@ -121,6 +123,7 @@ clips-executive:
         enter-field: drive_into_field{team=?(team-color)S}
         explore-zone: explore_zone{zone=?(z)s}
         move-node: goto{place=?(z)s}
+        go-wait: ppgoto{place="?(to)Y"}
         move: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
         go-wait: ppgoto{place="?(to)Y"}
         move-wp-put: ppgoto{place="?(to)Y-I"}
@@ -174,7 +177,7 @@ clips-executive:
             latest-send-last-report-time: 210 # =3:30
 
           master: R-2
-          
+
           waitpoint-in-cyan: R-1
           waitpoint-in-cyan: R-2
           waitpoint-in-magenta: R-3
