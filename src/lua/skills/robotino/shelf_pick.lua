@@ -65,6 +65,7 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
 fsm:add_transitions{
    {"GOTO_SHELF", "PRE_FAIL", cond="vars.error"},
    {"WAIT_AFTER_GRAB", "LEAVE_SHELF", timeout=0.5},
+   {"GRAB_PRODUCT", "WAIT_AFTER_GRAB", timeout=0.5},
 }
 
 function INIT:init()
