@@ -1,11 +1,8 @@
-%YAML 1.2
-%TAG ! tag:fawkesrobotics.org,cfg/
----
 include:
-  # Reads the host-specific configuration file, no failure if missing
-  - config.yaml
-plugins/clips-executive:
-  spec:
+    - config.yaml
+
+clips-executive:
+  specs:
     rcll2018:
       parameters:
           single-agent-mode: TRUE
