@@ -653,6 +653,8 @@
 
 			(bind ?p (pb-field-value ?ap "sequential_plan"))
 			(bind ?actions (pb-field-list ?p "actions"))
+			(bind ?amount-plan-actions 0)
+
 
 			(loop-for-count (?ai (length$ ?actions))
 
@@ -728,6 +730,7 @@
 									(value ?action-specific-actor)
 								)
 							)
+							(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 							(printout t "plan-action move added: " ?action-specific-actor " [" ?action-id  "] from: " ?from " at: " ?from-side " to: " ?to " at: " ?to-side crlf)
 
@@ -797,6 +800,7 @@
 								(value ?action-specific-actor)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action wp-get-shelf added: " ?action-specific-actor " [" ?action-id  "] from: " ?mps " at: " ?side " shelf: " ?shelf crlf)
 					)
@@ -855,6 +859,7 @@
 								(value ?action-specific-actor)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action wp-get added: " ?action-specific-actor " [" ?action-id  "] from: " ?mps " side: " ?side crlf)
 					)
@@ -919,6 +924,7 @@
 								(value ?action-specific-actor)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action wp-put added: " ?action-specific-actor " [" ?action-id  "] to: " ?mps " at: " ?side crlf)
 					)
@@ -993,6 +999,7 @@
 								(value ?action-specific-actor)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action wp-put-slide-cc added: " ?action-specific-actor " [" ?action-id  "] to: " ?mps " at: " ?side " with before: " ?rs-before " and after: " ?rs-after crlf)
 					)
@@ -1044,6 +1051,7 @@
 								(value ?action-specific-actor)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action wp-discard added: " ?action-specific-actor " [" ?action-id  "]" crlf)
 					)
@@ -1102,6 +1110,7 @@
 								(value ?action-specific-actor)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action prepare-bs added: " ?action-specific-actor " [" ?action-id  "] with base-color: " ?goal-base-color " at: " ?side crlf)
 					)
@@ -1165,6 +1174,8 @@
 								(value ?action-specific-actor)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
+
 						(printout t "plan-action bs-dispense added: " ?action-specific-actor " [" ?action-id  "] with basecolor: " ?goal-base-color crlf)
 					)
 
@@ -1224,6 +1235,8 @@
 								)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
+
 						(printout t "plan-action prepare-ds added: " ?action-specific-actor " [" ?action-id  "]" crlf)
 					)
 
@@ -1296,6 +1309,7 @@
 								)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action fulfill-order-c0 added: " ?action-specific-actor " [" ?action-id  "] " ?order-id crlf)
 					)
@@ -1371,6 +1385,7 @@
 								)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action fulfill-order-c1 added: " ?action-specific-actor " [" ?action-id  "] " ?order-id crlf)
 					)
@@ -1451,6 +1466,7 @@
 								)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action fulfill-order-c2 added: " ?action-specific-actor " [" ?action-id  "] " ?order-id crlf)
 					)
@@ -1537,6 +1553,7 @@
 								)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action fulfill-order-c3 added: " ?action-specific-actor " [" ?action-id  "] " ?order-id crlf)
 				  )
@@ -1594,6 +1611,7 @@
 								(value ?action-specific-actor)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action prepare-cs added: " ?action-specific-actor " [" ?action-id  "] at: " ?mps " with " ?operation crlf)
 					)
@@ -1647,6 +1665,7 @@
 								(value ?action-specific-actor)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action cs-retrieve-cap added: " ?action-specific-actor " [" ?action-id  "] at: " ?mps crlf)
 					)
@@ -1705,6 +1724,7 @@
 								(value ?action-specific-actor)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action cs-mount-cap added: " ?action-specific-actor " [" ?action-id  "] at: " ?mps crlf)
 					)
@@ -1777,6 +1797,7 @@
 								(value ?action-specific-actor)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action prepare-rs added: " ?action-specific-actor " [" ?action-id  "] at: " ?mps " with ring-color: " ?goal-ring-color crlf)
 					  )
@@ -1850,6 +1871,7 @@
 								(value ?action-specific-actor)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action rs-mount-ring1 added: " ?action-specific-actor " [" ?action-id  "] at: " ?mps " with ring-color: " ?ring-color crlf)
 					)
@@ -1928,6 +1950,7 @@
 								(value ?action-specific-actor)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action rs-mount-ring2 added: " ?action-specific-actor " [" ?action-id  "] at: " ?mps " with ring-color: " ?ring-color crlf)
 					)
@@ -2011,6 +2034,7 @@
 								(value ?action-specific-actor)
 							)
 						)
+						(bind ?amount-plan-actions (+ ?amount-plan-actions 1))
 
 						(printout t "plan-action rs-mount-ring3 added: " ?action-specific-actor " [" ?action-id  "] at: " ?mps " with ring-color: " ?ring-color crlf)
 					)
