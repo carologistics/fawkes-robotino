@@ -68,7 +68,6 @@
 		(holding ?r - robot ?wp - workpiece)
 		(can-hold ?r - robot)
 		(entered-field ?r - robot)
-		(location-free ?l - location ?side - mps-side)
 		(robot-waiting ?r - robot)
 		(mps-type ?m - mps ?t - mps-typename)
 		(mps-state ?m - mps ?s - mps-statename)
@@ -258,12 +257,10 @@
 	;
 	(:action go-wait
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - waitpoint)
-		:precondition (and (or (at ?r ?to WAIT) (location-free ?to WAIT))
-                       (at ?r ?from ?from-side))
+		:precondition
+                       (at ?r ?from ?from-side)
 		:effect (and
 					(not (at ?r ?from ?from-side))
-					(location-free ?from ?from-side)
-          (not (location-free ?to WAIT))
 					(at ?r ?to WAIT))
 	)
 
@@ -275,11 +272,8 @@
 
 	(:action move
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
-		:precondition (and (at ?r ?from ?from-side)
-										(or (at ?r ?to ?to-side) (location-free ?to ?to-side)))
+		:precondition (at ?r ?from ?from-side)
 		:effect (and (not (at ?r ?from ?from-side))
-								 (location-free ?from ?from-side)
-								 (not (location-free ?to ?to-side))
 								 (at ?r ?to ?to-side))
 	)
 
@@ -291,33 +285,25 @@
 	(:action move-wp-put
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps)
 		:precondition (and (at ?r ?from ?from-side)
-										(or (location-free ?to INPUT) (at ?r ?to INPUT))
 										(mps-state ?to IDLE))
 		:effect (and (not (at ?r ?from ?from-side))
-								 (location-free ?from ?from-side)
-								 (not (location-free ?to INPUT))
 								 (at ?r ?to INPUT))
 	)
 
 	(:action move-wp-get
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
 		:precondition (and (at ?r ?from ?from-side)
-										(or (location-free ?to ?to-side) (at ?r ?to ?to-side))
 										(mps-state ?to READY-AT-OUTPUT)
 										(can-hold ?r))
 		:effect (and (not (at ?r ?from ?from-side))
-								 (location-free ?from ?from-side)
-								 (not (location-free ?to ?to-side))
 								 (at ?r ?to ?to-side))
 	)
 
 	(:action enter-field
 		:parameters (?r - robot ?team-color - team-color)
-		:precondition (and (or (location-free START INPUT) (at ?r START INPUT))
-										(robot-waiting ?r))
+		:precondition (robot-waiting ?r)
 		:effect (and (entered-field ?r)
 								 (at ?r START INPUT)
-								 (not (location-free START INPUT))
 								 (not (robot-waiting ?r)))
 	)
 
