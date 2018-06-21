@@ -132,19 +132,19 @@
 	;(bind ?rv (robmem-mutex-unlock (str-cat ?lock-name)))
 	;(modify ?pa (status (if ?rv then EXECUTION-SUCCEEDED else EXECUTION-FAILED)))
 	(mutex-unlock-async ?lock-name)
-	(modify ?pa (status RUNNING))
+  (assert (unlock-pending ?lock-name))
+	(modify ?pa (status EXECUTION-SUCCEEDED))
 )
 
 (defrule lock-actions-unlock-done
-  ?pa <- (plan-action (id ?id) (action-name unlock) (status RUNNING)
-                      (param-names $?param-names) (param-values $?param-values))
-	?mf <- (mutex (name ?name&:(eq ?name (plan-action-arg name ?param-names ?param-values)))
-								(request UNLOCK) (response UNLOCKED))
+  ?up <- (unlock-pending ?name)
+  ?mf <- (mutex (name ?name) (request UNLOCK) (response UNLOCKED))
 	=>
-	(printout t "Unlock of " ?name " successfull" crlf)
+	(printout t "Unlock of " ?name " successful" crlf)
 	(modify ?pa (status EXECUTION-SUCCEEDED))
   ;(assert (domain-fact (name location-locked) (param-values $?param-values)))
 	(modify ?mf (request NONE) (response NONE))
+  (retract ?up)
 )
 
 (defrule lock-actions-unlock-location
