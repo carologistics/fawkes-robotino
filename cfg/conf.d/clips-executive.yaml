@@ -198,3 +198,22 @@ clips-executive:
 
           reset-mps-unexpected-state: true
           reset-mps-unexpected-state-timeout: 300
+          allowed-to-operate:
+            CS1:
+              INPUT: true
+              OUTPUT: true
+            CS2:
+              INPUT: true
+              OUTPUT: true
+            DS:
+              INPUT: true
+              OUTPUT: true
+            BS:
+              INPUT: true
+              OUTPUT: true
+            RS1:
+              INPUT: true
+              OUTPUT: true
+            RS2:
+              INPUT: true
+              OUTPUT: true
