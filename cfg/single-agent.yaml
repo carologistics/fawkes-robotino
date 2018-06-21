@@ -4,6 +4,7 @@ include:
 clips-executive:
   specs:
     rcll2018:
+     rcll:
       parameters:
           single-agent-mode: TRUE
           wm-init-force: TRUE
@@ -28,3 +29,4 @@ plugins/mongodb:
       port: 27031
       data-path: /tmp/mongodb-robot-memory-distributed
       log/path: /tmp/mongodb-robot-memory-distributed.log
+
