@@ -1,10 +1,8 @@
-%YAML 1.2
-%TAG ! tag:fawkesrobotics.org,cfg/
----
-doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/singe-agent-overrides
----
-plugins/clips-executive:
-  spec:
+include:
+    - config.yaml
+
+clips-executive:
+  specs:
     rcll2018:
       parameters:
           single-agent-mode: TRUE
