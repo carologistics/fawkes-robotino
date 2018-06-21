@@ -195,7 +195,9 @@ clips-executive:
           - name: state-estimation
             file: rcll-smt/state-estimation-init.clp
           - name: worldmodel
-            files: [ rcll-smt/init-worldmodel.clp,
+            files: [ wm-robmem-sync.clp,
+                     rcll-smt/init-worldmodel.clp,
+                     rcll-smt/init.clp,
                      rcll-smt/game-worldmodel.clp ]
           - name: communication
             files: [ rcll-smt/refbox-comm-init.clp,
@@ -218,6 +220,7 @@ clips-executive:
         enter-field: drive_into_field{team=?(team-color)S}
         explore-zone: explore_zone{zone=?(z)s}
         move-node: goto{place=?(z)s}
+        go-wait: ppgoto{place="?(to)Y"}
         move: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
         go-wait: ppgoto{place="?(to)Y"}
         move-wp-put: ppgoto{place="?(to)Y-I"}
@@ -241,4 +244,3 @@ clips-executive:
           team-name: Caro-smt
           crypto-key: randomkey
           cipher: "aes-128-cbc"
-
