@@ -87,10 +87,10 @@ clips-executive:
           - name: protobuf
           - name: tf
           - name: smt
-          - name: robmem-wait
-            feature-request: false
-            files: ["BATCH|robmem-wait-init.clp"]
-            wait-for: robmem-initialized
+          #- name: robmem-wait
+          #  feature-request: false
+          #  files: ["BATCH|robmem-wait-init.clp"]
+          #  wait-for: robmem-initialized
           - name: robot_memory
         stage-3:
           - name: utils
