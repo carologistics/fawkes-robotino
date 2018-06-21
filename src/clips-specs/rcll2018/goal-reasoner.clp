@@ -238,6 +238,7 @@
   ?p <- (goal-reasoner-unlock-pending ?lock)
   ?m <- (mutex (name ?lock) (request UNLOCK) (response UNLOCKED))
   =>
+  (printout info "Unlocked " ?lock)
   (modify ?m (request NONE) (response NONE))
   (retract ?p)
 )
@@ -245,7 +246,7 @@
 (defrule goal-reasoner-evaluate-common
   (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome ?outcome))
-  (not (goal-reasoner-unlock-pending ?))
+  ;(not (goal-reasoner-unlock-pending ?))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   =>
  ; (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
