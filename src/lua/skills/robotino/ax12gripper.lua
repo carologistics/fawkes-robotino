@@ -126,7 +126,6 @@ function COMMAND:init()
       gripper_if:msgq_enqueue(torqueMessage)
 
    elseif self.fsm.vars.command == "CLOSE_TIGHT" then
-      self.fsm.vars.close_tight = true
       torqueMessage = gripper_if.SetTorqueMessage:new()
       torqueMessage:set_torque(1)
       gripper_if:msgq_enqueue(torqueMessage)
