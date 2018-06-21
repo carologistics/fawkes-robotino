@@ -29,15 +29,18 @@
   ; (retract ?i)
 
 	(cx-identity-set ?robot-name)
-	(wm-robmem-sync-enable
-	"/plan-action/COMPLEXITY"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/wp-usable"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/wp-at"
-	)
+	; (wm-robmem-sync-enable
+	; "/plan-action/COMPLEXITY"
+	; )
+	; (wm-robmem-sync-enable
+	; "/domain/fact/wp-usable"
+	; )
+	; (wm-robmem-sync-enable
+	; "/domain/fact/wp-at"
+	; )
+	; (wm-robmem-sync-enable
+	; "/domain/fact/cs-can-perform"
+	; )
 )
 
 ; (defrule initialization-abort-on-finalize
