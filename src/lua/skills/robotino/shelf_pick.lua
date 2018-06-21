@@ -112,7 +112,7 @@ function APPROACH_SHELF:init()
 end
 
 function GRAB_PRODUCT:init()
-   self.args["ax12gripper"].command = "CLOSE"
+   self.args["ax12gripper"].command = "CLOSE_TIGHT"
 end
 
 function LEAVE_SHELF:init()

@@ -238,7 +238,7 @@ function OPEN_GRIPPER:init()
 end
 
 function CLOSE_GRIPPER:init()
-   self.args["gripper_commands_new"].command= "CLOSE"
+   self.args["ax12gripper"].command= "CLOSE_TIGHT"
 end
 
 function CLOSE_AFTER_CENTER:init()
