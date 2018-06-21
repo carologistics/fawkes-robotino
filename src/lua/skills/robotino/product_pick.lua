@@ -175,7 +175,7 @@ fsm:define_states{ export_to=_M,
    {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="PRE_FAIL"},
    {"WAIT_AFTER_CENTER",JumpState},
    {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER",fail_to="PRE_FAIL"},
-   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
+   {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
    {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "CENTER_FINGERS", fail_to="FAILED"},
    {"CENTER_FINGERS", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_CENTER", fail_to="WAIT_AFTER_CENTER"},
    {"CLOSE_AFTER_CENTER", SkillJumpState, skills={{gripper_commands_new}}, final_to="HOME_GRIPPER", fail_to="HOME_GRIPPER"},
@@ -191,6 +191,7 @@ fsm:add_transitions{
    {"CHECK_PUCK", "FINAL", cond="gripper_if:is_holds_puck()", desc="Hold puck"},
    {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Don't hold puck!"},
    {"WAIT_AFTER_CENTER", "CLOSE_AFTER_CENTER", timeout=0.5},
+   {"CLOSE_GRIPPER", "MOVE_GRIPPER_BACK", timeout=1},
 }
 
 
@@ -238,7 +239,7 @@ function OPEN_GRIPPER:init()
 end
 
 function CLOSE_GRIPPER:init()
-   self.args["gripper_commands_new"].command= "CLOSE"
+   self.args["ax12gripper"].command= "CLOSE_TIGHT"
 end
 
 function CLOSE_AFTER_CENTER:init()
