@@ -118,10 +118,27 @@
 	)
 )
 
-(defrule action-selection-select-parallel
+(defrule action-selection-select-parallel-others
 	"select earliest action if no other is chosen and if all actions indicated by parents-ids are finished"
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status FORMULATED)
-					  (action-name ?action-name)
+					  (action-name ?action-name&send-beacon
+                        |enter-field
+                        |move
+						|wp-get
+						|wp-get-shelf
+						|wp-put
+						|wp-put-slide-cc
+						|prepare-bs
+						|prepare-ds
+						|prepare-cs
+						|bs-dispense
+						|cs-mount-cap
+						|cs-retrieve-cap
+						|cs-retrieve-cap
+						|prepare-rs
+						|rs-mount-ring1
+						|rs-mount-ring2
+                        |rs-mount-ring3)
 					  (param-values $?param-values))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	(goal (id ?goal-id) (mode DISPATCHED))
@@ -132,6 +149,30 @@
 	(wm-fact (key plan-action ?goal-id ?plan-id ?sym-id&:(eq (string-to-field (str-cat ?sym-id)) ?id) dep-match))
 	=>
 	(printout t "Select next action " ?action-name ?param-values " with id " ?sym-id crlf)
+	(modify ?pa (status PENDING))
+)
+
+(defrule action-selection-select-parallel-fulfill
+	"select earliest action if no other is chosen and if all actions indicated by parents-ids are finished"
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status FORMULATED)
+					  (action-name ?action-name&fulfill-order-c0
+                        |fulfill-order-c1
+                        |fulfill-order-c2
+                        |fulfill-order-c3)
+					  (param-values $?param-values))
+	(plan (id ?plan-id) (goal-id ?goal-id))
+	(goal (id ?goal-id) (mode DISPATCHED))
+
+	(not (plan-action (plan-id ?plan-id) (status PENDING|WAITING|RUNNING|FAILED)))
+	(not (plan-action (plan-id ?plan-id) (status FORMULATED) (id ?oid&:(< ?oid ?id))))
+
+	(wm-fact (key plan-action ?goal-id ?plan-id ?sym-id&:(eq (string-to-field (str-cat ?sym-id)) ?id) dep-match))
+
+	(wm-fact (key plan-action ?goal-id ?plan-id order) (value ?order-id))
+	(wm-fact (key refbox game-time) (values ?sec ?sec-2))
+	(wm-fact (key refbox order ?order-id delivery-begin) (value ?delivery-begin&:(< ?delivery-begin ?sec)))
+	=>
+	(printout t "Select next action " ?action-name ?param-values " with id " ?sym-id " in time [" ?sec "] with delivery window beginning at " ?delivery-begin crlf)
 	(modify ?pa (status PENDING))
 )
 
