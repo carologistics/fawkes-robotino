@@ -56,7 +56,8 @@ fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
    {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="GRAB_PRODUCT", fail_to="PRE_FAIL"},
    {"GRAB_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAIL_SAFE"},
    {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="HOME_GRIPPER", fail_to="FAILED"},
-   {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="FINAL", fail_to="FAILED"},
+   {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="RELAX_GRIPPER", fail_to="FAILED"},
+   {"RELAX_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FAILED"},
    {"FAIL_SAFE", SkillJumpState, skills={{motor_move}}, final_to="PRE_FAIL", fail_to="PRE_FAIL"},
    {"WAIT_AFTER_GRAB", JumpState},
    {"PRE_FAIL", SkillJumpState, skills={{ax12gripper}}, final_to="FAILED", fail_to="FAILED"},
@@ -76,6 +77,10 @@ function INIT:init()
        gripper_adjust_z_distance = config:get_float("/skills/shelf_pick/gripper_adjust_z_distance")
    end
 
+end
+
+function RELAX_GRIPPER:init()
+  self.args["ax12gripper"].command = "CLOSE"
 end
 
 function GOTO_SHELF:init()
