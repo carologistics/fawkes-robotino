@@ -190,7 +190,7 @@ fsm:add_transitions{
    {"INIT", "INIT_GRIPPER", true, desc="Init gripper for product_pick"},
    {"CHECK_PUCK", "FINAL", cond="gripper_if:is_holds_puck()", desc="Hold puck"},
    {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Don't hold puck!"},
-   {"WAIT_AFTER_CENTER", "CLOSE_AFTER_CENTER", timeout=0.5},
+   {"WAIT_AFTER_CENTER", "HOME_GRIPPER", timeout=0.5},
    {"CLOSE_GRIPPER", "MOVE_GRIPPER_BACK", timeout=1},
 }
 
