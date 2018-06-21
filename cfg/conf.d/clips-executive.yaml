@@ -87,10 +87,10 @@ clips-executive:
           - name: protobuf
           - name: tf
           - name: smt
-          #- name: robmem-wait
-          #  feature-request: false
-          #  files: ["BATCH|robmem-wait-init.clp"]
-          #  wait-for: robmem-initialized
+          - name: robmem-wait
+            feature-request: false
+            files: ["BATCH|robmem-wait-init.clp"]
+            wait-for: robmem-initialized
           - name: robot_memory
         stage-3:
           - name: utils
@@ -98,7 +98,9 @@ clips-executive:
           - name: state-estimation
             file: rcll2017/state-estimation-init.clp
           - name: worldmodel
-            files: [ rcll2017/init-worldmodel.clp,
+            files: [ wm-robmem-sync.clp,
+                     rcll2017/init-worldmodel.clp,
+                     rcll2017/init.clp,
                      rcll2017/game-worldmodel.clp ]
           - name: communication
             files: [ rcll2017/refbox-comm-init.clp,
@@ -120,7 +122,7 @@ clips-executive:
       action-mapping:
         enter-field: drive_into_field{team=?(team-color)S, wait=?(r|/R-1/0.0/|/R-2/10.0/|/R-3/20.0/)f}
         explore-zone: explore_zone{zone=?(z)s}
-        move-node: goto{place=?(z)s} 
+        move-node: goto{place=?(z)s}
         go-wait: ppgoto{place="?(to)Y"}
         move: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
         move-wp-put: ppgoto{place="?(to)Y-I"}
@@ -141,7 +143,7 @@ clips-executive:
           peer-port: 4444
           cyan-port: 4441
           magenta-port: 4442
-     
+
 
           team-name: Carologistics
           crypto-key: aeQu0ahCha
@@ -155,19 +157,19 @@ clips-executive:
               R-1: ["exp-11", "exp-12", "exp-21"]
               R-2: ["exp-22", "exp-21", "exp-32"]
               R-3: ["exp-32", "exp-31", "exp-22"]
-          
-          exploration:    
+
+          exploration:
             # Reduce navigator velocity while traveling the field so we can find laser-lines more reliably
             max-velocity: 0.4
             max-rotation: 0.5
             # Center of a laser-line must be this far from the zone border before we start
             # investigating it further (i.e. call the explore_zone skill on it)
 
-            zone-margin: 0.15 
+            zone-margin: 0.15
             latest-send-last-report-time: 210 # =3:30
 
           master: R-2
-          
+
           waitpoint-in-cyan: R-1
           waitpoint-in-cyan: R-2
           waitpoint-in-magenta: R-3
