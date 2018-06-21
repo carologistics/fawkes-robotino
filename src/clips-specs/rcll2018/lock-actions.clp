@@ -141,7 +141,6 @@
   ?mf <- (mutex (name ?name) (request UNLOCK) (response UNLOCKED))
 	=>
 	(printout t "Unlock of " ?name " successful" crlf)
-	(modify ?pa (status EXECUTION-SUCCEEDED))
   ;(assert (domain-fact (name location-locked) (param-values $?param-values)))
 	(modify ?mf (request NONE) (response NONE))
   (retract ?up)
