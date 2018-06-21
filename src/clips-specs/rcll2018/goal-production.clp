@@ -173,7 +173,6 @@
   (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT-" ?waitzone:name)
     (assert
       (domain-object (name (sym-cat ?waitzone:name)) (type waitpoint))
-      (domain-fact (name location-free) (param-values (sym-cat ?waitzone:name) WAIT))
       (wm-fact (key navgraph waitzone args? name (sym-cat ?waitzone:name)) (is-list TRUE) (type INT) (values (nth$ 1 ?waitzone:pos) (nth$ 2 ?waitzone:pos)))
     )
   )
@@ -223,7 +222,6 @@
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key domain fact self args? r ?self))
   (domain-object (type waitpoint) (name ?waitpoint))
-  (domain-fact (name location-free) (param-values ?waitpoint WAIT))
   =>
   (printout t "Goal " GO-WAIT " formulated" crlf)
   (assert (goal (id (sym-cat GO-WAIT- (gensym*)))
@@ -684,7 +682,6 @@
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (domain-object (name ?mps-side) (type mps-side))
-  (domain-fact (name location-free) (param-values ?bs ?mps-side))
   (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?bs side ?any-side)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))

@@ -136,22 +136,7 @@
     (domain-fact (name self) (param-values ?self))
     (domain-fact (name at) (param-values ?self START INPUT))
     (domain-fact (name can-hold) (param-values ?self))
-    (domain-fact (name location-free) (param-values START INPUT))
-    (domain-fact (name location-free) (param-values ?bs INPUT))
-    (domain-fact (name location-free) (param-values ?bs OUTPUT))
-    (domain-fact (name location-free) (param-values ?cs1 INPUT))
-    (domain-fact (name location-free) (param-values ?cs1 OUTPUT))
-    (domain-fact (name location-free) (param-values ?cs2 INPUT))
-    (domain-fact (name location-free) (param-values ?cs2 OUTPUT))
-    (domain-fact (name location-free) (param-values ?ds INPUT))
-    ; (domain-fact (name location-free) (param-values ?ds OUTPUT))
-    (domain-fact (name location-free) (param-values ?rs1 INPUT))
-    (domain-fact (name location-free) (param-values ?rs1 OUTPUT))
-    (domain-fact (name location-free) (param-values ?rs2 INPUT))
-    (domain-fact (name location-free) (param-values ?rs2 OUTPUT))
-
-    (domain-fact (name location-free) (param-values ?ss INPUT))
-    
+   
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
     (domain-fact (name mps-team) (param-values ?ss ?team-color))
