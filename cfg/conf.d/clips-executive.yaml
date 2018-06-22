@@ -99,7 +99,7 @@ clips-executive:
             file: rcll2017/state-estimation-init.clp
           - name: worldmodel
             files: [ rcll2017/init-worldmodel.clp,
-                     # wm-robmem-sync.clp,
+                     wm-robmem-sync.clp,
                      rcll2017/init.clp,
                      rcll2017/game-worldmodel.clp ]
           - name: communication
