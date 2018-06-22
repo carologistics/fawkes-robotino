@@ -200,7 +200,7 @@
 	; )
 
 	(bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-1") ?team-color 0 0 0)))
-	; (bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-2") ?team-color 0 0 0)))
+	(bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-2") ?team-color 0 0 0)))
 	; (bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-3") ?team-color 0 0 0)))
 
 	(return ?rv)
@@ -557,7 +557,7 @@
 	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ZERO) (value TRUE))
 
 	; Does an order of wanted complexity exists?
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?complexity&C3) (value TRUE)) ; desired complexity is set here
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?complexity&C0) (value TRUE)) ; desired complexity is set here
 
 	; Are all relevant details of this order available?
 	; (wm-fact (key domain fact order-base-color args? ord ?order-id col ?base-col) (value TRUE))
@@ -616,7 +616,7 @@
 
 	(retract ?spc)
 	; Create instance of plan
-	(bind ?plan-id SMT-PLAN) ; (string-to-field (str-cat SMT-PLAN (gensym)) ) )
+	(bind ?plan-id (string-to-field (str-cat SMT-PLAN (gensym)) ) )
 	(assert
 		(plan (id ?plan-id) (goal-id ?goal-id))
 	)
@@ -2032,8 +2032,8 @@
 	)
 	(printout t "Amount of plan-actions added: " ?amount-plan-actions crlf)
 	(assert (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions) (value ?amount-plan-actions)))
-	(assert (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-2) (value 0)))
-	(assert (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-3) (value 0)))
+	(assert (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-2) (value 1)))
+	(assert (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-3) (value 1)))
 	(assert (wm-fact (key plan-action ?goal-id ?plan-id order) (value ?order-id)))
 	(pb-destroy ?plans)
 	(modify ?g (mode EXPANDED))
@@ -2551,6 +2551,7 @@
 	?apac <- (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-2) (value ?amount-plan-actions-collected))
 	(wm-fact (key plan-action ?goal-id ?plan-id ?id action))
 	(not (wm-fact (key plan-action ?goal-id ?plan-id ?id action-added-r-2)) )
+	(not (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-2)) )
 =>
 	(assert (wm-fact (key plan-action ?goal-id ?plan-id ?id action-added-r-2)) )
 	(modify ?apac (value (+ ?amount-plan-actions-collected 1)) )
@@ -2564,6 +2565,7 @@
 	?apac <- (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-3) (value ?amount-plan-actions-collected))
 	(wm-fact (key plan-action ?goal-id ?plan-id ?id action))
 	(not (wm-fact (key plan-action ?goal-id ?plan-id ?id action-added-r-3)) )
+	(not (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-3)) )
 =>
 	(printout t "Collect action " ?id " for R-3" crlf)
 	(assert (wm-fact (key plan-action ?goal-id ?plan-id ?id action-added-r-3)) )
@@ -2573,6 +2575,7 @@
 
 (defrule production-no-call-clips-smt-r-2
 	?g <- (goal (id ?goal-id&COMPLEXITY) (mode SELECTED))
+	(not (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-2)) )
 
 	; R-2 should only mark the goal as expanded
 	(wm-fact (key config rcll robot-name) (value "R-2"))
@@ -2583,14 +2586,15 @@
 =>
 	(printout t "Expand for R-2 with " ?amount-plan-actions " and collected " ?amount-plan-actions-collected crlf)
 	(modify ?g (mode EXPANDED))
-	(bind ?plan-id SMT-PLAN)
 	(assert
 		(plan (id ?plan-id) (goal-id ?goal-id))
+		(wm-fact (key plan-action ?goal-id ?plan-id expanded-r-2))
 	)
 )
 
 (defrule production-no-call-clips-smt-r-3
 	?g <- (goal (id ?goal-id&COMPLEXITY) (mode SELECTED))
+	(not (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-3)) )
 
 	; R-3 should only mark the goal as expanded
 	(wm-fact (key config rcll robot-name) (value "R-3"))
@@ -2601,8 +2605,8 @@
 =>
 	(printout t "Expand for R-3 with " ?amount-plan-actions " and collected " ?amount-plan-actions-collected crlf)
 	(modify ?g (mode EXPANDED))
-	(bind ?plan-id SMT-PLAN)
 	(assert
 		(plan (id ?plan-id) (goal-id ?goal-id))
+		(wm-fact (key plan-action ?goal-id ?plan-id expanded-r-3))
 	)
 )
