@@ -102,7 +102,7 @@
 	(wm-fact (key config rcll robot-name) (value "R-1"))
 
 	(goal (id ?goal-id&COMPLEXITY) (mode DISPATCHED))
-	(plan (id ?plan-id&SMT-PLAN) (goal-id ?goal-id))
+	(plan (id ?plan-id) (goal-id ?goal-id))
 	(wm-fact (key plan-action ?goal-id ?plan-id ?id-o status))
 
 	(wm-fact (key plan-action ?goal-id ?plan-id ?id dep) (values $?parents-ids))
