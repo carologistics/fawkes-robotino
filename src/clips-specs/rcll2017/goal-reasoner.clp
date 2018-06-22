@@ -37,14 +37,14 @@
   ?*SALIENCE-GOAL-EVALUTATE-GENERIC* = -1
 )
 
-(defrule goal-reasoner-create-complexity-c3
+(defrule goal-reasoner-create-complexity-c0
 	(not (goal (id COMPLEXITY)))
-	(not (goal-already-tried COMPLEXITY))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com C3) (value TRUE))
+	; (not (goal-already-tried COMPLEXITY))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE))
 =>
-	(printout t "Detect goal " ?order-id " with complexity 3" crlf)
+	(printout t "Detect goal " ?order-id " with complexity 0" crlf)
 	(assert (goal (id COMPLEXITY)))
-	(assert (goal-already-tried COMPLEXITY))
+	; (assert (goal-already-tried COMPLEXITY))
 )
 
 ; #  Goal Selection
