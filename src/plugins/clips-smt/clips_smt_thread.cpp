@@ -1843,6 +1843,7 @@ ClipsSmtThread::clips_smt_init_game()
 
 	// Extract order details
 	for(int i=0; i<data.orders().size(); ++i) {
+		rings.clear();
 		desired_complexity = data.orders(i).complexity(); // Cover last given order
 		order_id = i;
 		base = data.orders(i).base_color();
@@ -2645,7 +2646,7 @@ ClipsSmtThread::clips_smt_encoder()
 	// }
 
 	// Constraints encoding that final_actions for each order have to be at least executed once for SMT
-	z3::expr constraint_goal(getVar(var, "A_"+std::to_string(plan_horizon)) == index_delivery_action && getVar(var, "R_"+std::to_string(plan_horizon)) == 1);
+	z3::expr constraint_goal(getVar(var, "A_"+std::to_string(plan_horizon)) == index_delivery_action); //  && getVar(var, "R_"+std::to_string(plan_horizon)) == 1);
 	if(consider_temporal_constraint){
 		constraints.push_back(!constraint_goal ||
 								(getVar(var, "t_"+std::to_string(plan_horizon)) < (int) delivery_period_end
