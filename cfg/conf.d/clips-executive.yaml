@@ -196,7 +196,7 @@ clips-executive:
             file: rcll-smt/state-estimation-init.clp
           - name: worldmodel
             files: [ rcll-smt/init-worldmodel.clp,
-                     # wm-robmem-sync.clp,
+                     wm-robmem-sync.clp,
                      rcll-smt/init.clp,
                      rcll-smt/game-worldmodel.clp ]
           - name: communication
