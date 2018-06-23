@@ -201,7 +201,7 @@
 
 	(bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-1") ?team-color 0 0 0)))
 	(bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-2") ?team-color 0 0 0)))
-	(bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-3") ?team-color 0 0 0)))
+	; (bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-3") ?team-color 0 0 0)))
 
 	(return ?rv)
 )
