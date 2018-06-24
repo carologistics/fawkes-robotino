@@ -2,7 +2,7 @@
 ;---------------------------------------------------------------------------
 ;  exploration.clp - Robotino agent for exploration phase
 ;
-;  Copyright  2017 Victor Mataré
+;  Copyright  2018 Daniel Habering
 ;
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
@@ -13,6 +13,8 @@
   ?*EXP-ROUTE-IDX* = 1
   ?*EXP-MOVEMENT-COMPENSATION* = 0.0
   ?*EXP-SEARCH-LIMIT* = 1
+  ?*EXP-ZONE-VISITS* = 5
+  ?*EXP-ZONE-PASS-MARGIN* = 0.15
 )
 
 ; EXPLORATION
@@ -124,16 +126,17 @@
   (goal (class EXPLORATION) (mode DISPATCHED))
   (exp-navigator-vmax ?max-velocity ?max-rotation)
   (MotorInterface (id "Robotino")
-    (vx ?vx&:(< ?vx ?max-velocity)) (vy ?vy&:(< ?vy ?max-velocity)) (omega ?w&:(< ?w ?max-rotation))
+    (vx ?vx&:(< ?vx ?max-velocity)) (vy ?vy&:(<= ?vy ?max-velocity)) (omega ?w&:(<= ?w ?max-rotation))
   )
-  (Position3DInterface (id "Pose") (translation $?trans) (time $?timestamp) (visibility_history ?vh&:(>= ?vh 10)))
-  ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn&:(eq ?zn (get-zone 0.15 ?trans))) (value ?time-searched))
+  (Position3DInterface (id "Pose") (translation $?trans) (time $?timestamp) (visibility_history ?vh&:(>= ?vh ?*EXP-ZONE-VISITS*)))
+  ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn&:(eq ?zn (get-zone ?*EXP-ZONE-PASS-MARGIN* ?trans))) (value ?time-searched))
   ?zm <- (wm-fact (key exploration zone ?zn args? machine UNKNOWN team ?team))
 =>
-  (bind ?zone (get-zone 0.07 ?trans))
+  (bind ?zone (get-zone ?*EXP-ZONE-PASS-MARGIN* ?trans))
   (if ?zone then
     (modify ?ze (key exploration fact time-searched args? zone ?zn) (value (+ 1 ?time-searched)))
     (modify ?zm (key exploration zone ?zn args? machine NONE team ?team))
+    (printout t "Passed throug " ?zn crlf)
   )
 )
 
