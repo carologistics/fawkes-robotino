@@ -186,7 +186,86 @@
   (printout t "Found tag in " ?zn crlf)
 )
 
+(deffunction zone-is-blocked (?mps-zone ?orientation ?zone)
+  (bind ?x (eval (sub-string 4 4 ?zone)))
+  (bind ?mps-x (eval (sub-string 4 4 ?mps-zone)))
+  (bind ?y (eval (sub-string 5 5 ?zone)))
+  (bind ?mps-y (eval (sub-string 5 5 ?mps-zone)))
+  (bind ?side (sub-string 1 1 ?mps-zone))
+  (if (eq ?side (sub-string 1 1 ?zone)) then
+	(return FALSE)
+  )
+  (if (eq ?orientation 270) then
+	(if (and (eq ?y (- ?mps-y 1)) (eq ?x ?mps-x)) then
+		(return TRUE)
+	)
+  )
+  (if (eq ?orientation 90) then
+	(if (and (eq ?y (+ ?mps-y 1)) (eq ?x ?mps-x)) then
+		(return TRUE)
+	)
+  )
 
+  (if (eq ?orientation 0) then
+		(if (and (eq ?x (+ ?mps-x 1)) (eq ?y ?mps-y)) then
+			(return TRUE)
+		)
+  )
+  (if (eq ?orientation 180) then
+		(if (and (eq ?x (- ?mps-x 1)) (eq ?y ?mps-y)) then
+			(return TRUE)
+		)
+  )
+  (if (eq ?orientation 315) then
+		(if (or (and (eq ?x (+ ?mps-x 1)) (eq ?y ?mps-y))
+			(and (eq ?x (+ ?mps-x 1)) (eq ?y (- ?mps-y 1)))
+			(and (eq ?x ?mps-x) (eq ?y (- ?mps-y 1)))) then
+			(return TRUE)
+		)
+  )
+  (if (eq ?orientation 45) then
+		(if (or (and (eq ?x (+ ?mps-x 1)) (eq ?y ?mps-y))
+			(and (eq ?x (+ ?mps-x 1)) (eq ?y (+ ?mps-y 1)))
+			(and (eq ?x ?mps-x) (eq ?y (+ ?mps-y 1)))) then
+			(return TRUE)
+		)
+  )
+  (if (eq ?orientation 135) then
+		(if (or (and (eq ?x (- ?mps-x 1)) (eq ?y ?mps-y))
+			(and (eq ?x (- ?mps-x 1)) (eq ?y (+ ?mps-y 1)))
+			(and (eq ?x ?mps-x) (eq ?y (+ ?mps-y 1)))) then
+			(return TRUE)
+		)
+  )
+  (if (eq ?orientation 225) then
+		(if (or (and (eq ?x (- ?mps-x 1)) (eq ?y ?mps-y))
+			(and (eq ?x (- ?mps-x 1)) (eq ?y (- ?mps-y 1)))
+			(and (eq ?x ?mps-x) (eq ?y (- ?mps-y 1)))) then
+			(return TRUE)
+		)
+  )
+
+
+  (return FALSE)
+)
+
+(defrule exp-sync-mirrored
+  ?wm <- (wm-fact (key exploration zone ?zn args? machine NONE team ?team))
+  ?we <- (wm-fact (key exploration zone ?zn2&:(eq ?zn2 (mirror-name ?zn)) args? machine ~NONE team ?team2))
+  =>
+  (modify ?we (key exploration zone ?zn2 args? machine NONE team ?team2))
+  (printout t "Synced zone: " ?zn2 crlf)
+)
+
+(defrule exp-exclude-zones
+  (exploration-result (zone ?zn) (machine ?machine) (orientation ?orientation) )
+  ?wm <- (wm-fact (key exploration zone ?zn2 args? machine ~NONE team ?team))
+  (test (eq TRUE (zone-is-blocked ?zn ?orientation ?zn2)))
+  =>
+  (modify ?wm (key exploration zone ?zn2 args? machine NONE team ?team))
+  (printout t "There is a machine in " ?zn " with orientation " ?orientation  " so block " ?zn2 crlf)
+)
+  
 (defrule exp-try-locking-line
   (goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
   (wm-fact (key domain fact self args? r ?r))
