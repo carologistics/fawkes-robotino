@@ -22,14 +22,26 @@
 #ifndef __PLUGINS_CLIPS_SMT_CLIPS_SMT_THREAD_H_
 #define __PLUGINS_CLIPS_SMT_CLIPS_SMT_THREAD_H_
 
-#include <core/threading/thread.h>
 #include <aspect/logging.h>
 #include <aspect/configurable.h>
-#include <plugins/clips/aspect/clips_feature.h>
+#include <core/threading/thread.h>
+#include <llsf_msgs/ClipsSmtData.pb.h>
 #include <navgraph/aspect/navgraph.h>
 #include <navgraph/navgraph.h>
+#include <plugins/clips/aspect/clips_feature.h>
 
 #include <clipsmm.h>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <math.h>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <boost/cerrno.hpp>
+#include <z3++.h>
+
 #ifdef TRUE
 #  undef TRUE
 #endif
@@ -37,35 +49,41 @@
 #  undef FALSE
 #endif
 
-#include <vector>
-#include <string>
-#include <map>
-#include <iostream>
-#include <fstream>
-#include <math.h>
-#include <memory>
-
-#include <llsf_msgs/ClipsSmtData.pb.h>
-
-#include <z3++.h>
-#include <boost/cerrno.hpp>
-
 /**
  * Constants
  */
-const int amount_machines = 10;
+
+// Amount of machines of one team
+// 1. START-I
+// 2. BS-O (We consider only one BS side) TODO Evaluate both BS sides while using OMT
+// 3. CS1-I
+// 4. CS1-O
+// 5. CS2-I
+// 6. CS2-O
+// 7. DS-I
+// 8. RS1-I
+// 9. RS1-O
+// 10. RS2-I
+// 11. RS2-O
+const int amount_machines = 10; // TODO Change amount_machines to 11 and remove '< amount_machines+1' to '< amount_machines'
 
 // Time
+// TODO Evaluate better approximations for times
+// TODO Use times to predict delivery time and return UNSAT if not
 const int deadline = 900;
 const int time_to_prep = 5;
 const int time_to_fetch = 5;
 const int time_to_feed = 5;
 const int time_to_disc = 5;
 const int time_to_del = 5;
-const float velocity_scaling_ = 1;
+const float time_to_scaling = 1;
 
 // Consider delivery window for orders
 const bool consider_temporal_constraint = false;
+
+/**
+ * Class
+ */
 
 namespace fawkes {
 	class NavGraphStaticListEdgeCostConstraint;
@@ -100,73 +118,33 @@ public:
 	protected: virtual void run() { Thread::run(); }
 
 private:
-	// Solver logic
-	z3::context _z3_context;
+
+	// General context for all z3 calls
+	z3::context z3_context;
+
+	/**
+	 * Encoder
+	 */
+
 	z3::expr_vector clips_smt_encoder();
-	z3::expr_vector clips_smt_encoder_window();
-	bool clips_smt_solve_formula(z3::expr_vector formula);
-	void clips_smt_optimize_formula(z3::expr_vector formula, std::string var);
-	void clips_smt_extract_plan_from_model(z3::model model);
-
-	// Init methods
-	bool init_game_once;
-	void clips_smt_init_game();
-	void clips_smt_init_navgraph();
-	void clips_smt_init_post();
-
-	// General
-	int amount_robots;
-	std::string team;
-
-	// Order
-	int desired_complexity = 0;
-	int order_id;
-	int base;
-	std::vector<int> rings;
-	int cap;
-	int delivery_period_begin;
-	int delivery_period_end;
-
-	// Navgraph
-	std::map<int, std::string> node_names;
-	std::map<std::string, int> node_names_inverted;
-	std::map<std::pair<std::string, std::string>, float> distances;
-
-	// Rings and Caps
-	std::map<std::string, std::string> station_colors;
-	std::map<std::string, int> base_colors;
-	std::map<int, std::string> base_colors_inverted;
-	std::map<std::string, int> rings_colors;
-	std::map<int, std::string> rings_colors_inverted;
-	std::map<std::string, int> cap_colors;
-	std::map<int, std::string> cap_colors_inverted;
-	std::map<int, std::string> add_bases_description;
-	std::map<std::string, int> add_bases_description_inverted;
-	std::map<std::string, std::string> cap_carrier_colors;
-	int cap_carrier_index;
-	// How many additional bases are required for rings
-	std::map<int, int> rings_req_add_bases;
-
-	// PlanHorizon
-	int plan_horizon;
-	int plan_horizon_max;
-	std::vector<int> amount_min_req_actions; // 6,8,10,12
-	std::vector<int> index_upper_bound_actions; // 6,9,11,13 -> 10,13,15,17
-	int amount_req_actions_add_bases; // 2
+	z3::expr_vector clips_smt_encoder_window(); // TODO Evaluate difference between macro and window encoder (possible merge with flag) and check overall necessity
 
 	// States of machines
+	// - inside_capstation indicates a cap station prepared for mount
+	// - add_bases_ringstation indicates the amount of add_bases in a ringstation
+	// - products lists all possible WPs
+	// - machine_groups lists all possible stations (without paying attention to the side)
+	// TODO Replace const min max by bounds of map after int
 	std::map<std::string, int> inside_capstation;
 	const int min_inside_capstation = 0, max_inside_capstation = 2;
 	const int min_add_bases_ringstation = 0, max_add_bases_ringstation = 3;
-
 	std::map<std::string, int> products;
 	std::map<int, std::string> products_inverted;
 	const int min_products = -1, max_products = 768;
-
 	std::map<std::string, int> machine_groups;
 	const int min_machine_groups = 0, max_machine_groups = 4;
 
-	// Score&Points
+	// Points
 	int points_scale = 100;
 	int points_penalty = 50;
 	int points_get_base = 0*points_scale;
@@ -181,6 +159,13 @@ private:
 	int points_mount_cap = 10*points_scale;
 	int points_deliver = 100*points_scale;
 	const int initial_points = 0;
+
+	// Solve/optimize a given formula
+	bool clips_smt_solve_formula(z3::expr_vector formula);
+	void clips_smt_optimize_formula(z3::expr_vector formula, std::string var);
+
+	// Extract the plan steps from a model in case of SAT
+	void clips_smt_extract_plan_from_model(z3::model model);
 
 	// Visualization of computed plan
 	int index_action_0 = 0;
@@ -220,7 +205,81 @@ private:
 	int world_points;
 	std::vector<int> world_machines_down;
 
-	// Communication with the agent API
+	/**
+	 * General
+	 */
+
+	// Description of team for correct set of machines
+	std::string team;
+
+	// Amount of robots available for planning
+	int amount_robots;
+
+	// Keep track of cap carriers on the shelf
+	int cap_carrier_index;
+
+	// Station color -- Map cap and ring colors to stations which produce these colors/have it on the shelf
+	std::map<std::string, std::string> station_colors;
+
+	// Amount of additional bases requried for rings
+	std::map<int, int> rings_req_add_bases;
+
+	// Init methods
+	bool init_game_once;
+	void clips_smt_init_game_pre();
+	void clips_smt_init_navgraph();
+	void clips_smt_init_game_pos();
+
+	// PlanHorizon
+	int plan_horizon;
+	int plan_horizon_max;
+	std::vector<int> amount_min_req_actions; // 6,8,10,12
+	std::vector<int> index_upper_bound_actions; // 6,9,11,13 -> 10,13,15,17
+	int amount_req_actions_add_bases; // 2
+
+	/**
+	 * Order
+	 */
+
+	// TODO Think about how to display mutli orders
+	int order_id;
+	int order_complexity = 0;
+	int base;
+	std::vector<int> rings;
+	int cap;
+	int delivery_period_begin;
+	int delivery_period_end;
+
+	/**
+	 * Descriptions
+	 */
+
+	// TODO Look for efficient ways how to invert maps
+	// Navgraph -- Map pairs of nodes to distances
+	std::map<int, std::string> node_names;
+	std::map<std::string, int> node_names_inverted;
+	std::map<std::pair<std::string, std::string>, float> distances;
+
+	// Colors -- Map color description to Integer
+	std::map<std::string, int> base_colors;
+	std::map<int, std::string> base_colors_inverted;
+	std::map<std::string, int> rings_colors;
+	std::map<int, std::string> rings_colors_inverted;
+	std::map<std::string, int> cap_colors;
+	std::map<int, std::string> cap_colors_inverted;
+
+	// Count for additional bases -- Map count description to Integer
+	std::map<int, std::string> add_bases_description;
+	std::map<std::string, int> add_bases_description_inverted;
+
+	// Cap carrier -- Map color description to cap carrier description
+	std::map<std::string, std::string> cap_carrier_colors;
+
+
+	/**
+	 * Communication with the agent API
+	 */
+
 	CLIPS::Value clips_smt_request(std::string env_name, std::string handle, void *msgptr);
 	CLIPS::Value clips_smt_get_plan(std::string env_name, std::string handle);
 	CLIPS::Value clips_smt_done(std::string env_name, std::string bar);
@@ -234,7 +293,10 @@ private:
 	std::string cfg_base_frame_;
 	std::string cfg_global_frame_;
 
-	// Help
+	/**
+	 * Help methods
+	 */
+
 	z3::expr getVar(std::map<std::string, z3::expr>& vars, std::string var_id);
 	std::vector<bool> shelf_position;
 	void initShelf();
