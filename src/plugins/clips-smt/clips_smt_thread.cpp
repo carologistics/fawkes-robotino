@@ -82,6 +82,7 @@ ClipsSmtThread::init()
 	cap_colors_inverted[0] = "CAP_NONE";
 	cap_colors_inverted[1] = "CAP_BLACK";
 	cap_colors_inverted[2] = "CAP_GREY";
+
 	add_bases_description[-1] = "ERROR";
 	add_bases_description[0] = "ZERO";
 	add_bases_description[1] = "ONE";
@@ -343,7 +344,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 	// Francesco Leofante's approach
 	std::vector<uint32_t> action_id_last;
 	action_id_last.clear();
-	for(int i=0; i<=index_upper_bound_actions[desired_complexity]; ++i){
+	for(int i=0; i<=index_upper_bound_actions[order_complexity]; ++i){
 		action_id_last.push_back(0);
 	}
 	std::vector<uint32_t> action_id_last_bs_robot;
@@ -692,7 +693,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					switch(desired_complexity) {
+					switch(order_complexity) {
 						case 0:
 								action->add_parent_id(action_id_last[4]);
 								break;
@@ -1706,11 +1707,11 @@ ClipsSmtThread::loop()
 
 	// Further initialization after init() depending on protobuf data
 	clips_smt_clear_maps();
-	clips_smt_init_game();
+	clips_smt_init_game_pre();
 
 	// Strategy MACRO
 	if(!data.strategy()){
-		clips_smt_init_post();
+		clips_smt_init_game_pos();
 		logger->log_info(name(), "Plan_horizon for macro approach is set to %i", plan_horizon_max);
 
 		bool solve = true;
@@ -1765,9 +1766,9 @@ ClipsSmtThread::loop()
  */
 
 void
-ClipsSmtThread::clips_smt_init_game()
+ClipsSmtThread::clips_smt_init_game_pre()
 {
-	logger->log_info(name(), "clips_smt_init_game");
+	logger->log_info(name(), "clips_smt_init_game_pre");
 
 	if(init_game_once) {
 		// Extract amount of robots
@@ -1844,22 +1845,22 @@ ClipsSmtThread::clips_smt_init_game()
 	// Extract order details
 	for(int i=0; i<data.orders().size(); ++i) {
 		rings.clear();
-		desired_complexity = data.orders(i).complexity(); // Cover last given order
+		order_complexity = data.orders(i).complexity(); // Cover last given order
 		order_id = i;
 		base = data.orders(i).base_color();
-		if(desired_complexity>0){
+		if(order_complexity>0){
 			rings.push_back(data.orders(i).ring_colors(0));
 		}
 		else {
 			rings.push_back(1); // DUMMY
 		}
-		if(desired_complexity>1){
+		if(order_complexity>1){
 			rings.push_back(data.orders(i).ring_colors(1));
 		}
 		else {
 			rings.push_back(1); // DUMMY
 		}
-		if(desired_complexity==3){
+		if(order_complexity==3){
 			rings.push_back(data.orders(i).ring_colors(2));
 		}
 		else {
@@ -1989,12 +1990,12 @@ ClipsSmtThread::clips_smt_init_navgraph()
 }
 
 void
-ClipsSmtThread::clips_smt_init_post()
+ClipsSmtThread::clips_smt_init_game_pos()
 {
-	logger->log_info(name(), "clips_smt_init_post");
+	logger->log_info(name(), "clips_smt_init_game_pos");
 
 	// Set PlanHorizon
-	switch(desired_complexity) {
+	switch(order_complexity) {
 		case 0:
 				plan_horizon_max = amount_min_req_actions[0];
 				break;
@@ -2017,7 +2018,7 @@ ClipsSmtThread::clips_smt_init_post()
 									- amount_req_actions_add_bases;
 				break;
 		default:
-				std::cout << "Wrong desired_complexity " << desired_complexity << " for determining plan_horizon" << std::endl;
+				std::cout << "Wrong order_complexity " << order_complexity << " for determining plan_horizon" << std::endl;
 				break;
 	}
 }
@@ -2047,11 +2048,11 @@ ClipsSmtThread::clips_smt_encoder()
 	// Map collecting all variables
 	std::map<std::string, z3::expr> var;
 	// Vector collecting all constraints
-	z3::expr_vector constraints(_z3_context);
+	z3::expr_vector constraints(z3_context);
 
 	// Init variable true and false
-	z3::expr var_false(_z3_context.bool_val(false));
-	z3::expr var_true(_z3_context.bool_val(true));
+	z3::expr var_false(z3_context.bool_val(false));
+	z3::expr var_true(z3_context.bool_val(true));
 
 
 	/*
@@ -2061,41 +2062,41 @@ ClipsSmtThread::clips_smt_encoder()
 	// Variables initDist_i_j
 	for(int i = 0; i < amount_machines+1; ++i){
 		for(int j = i+1; j < amount_machines+1; ++j) {
-			var.insert(std::make_pair("initDist_" + std::to_string(i) + "_" + std::to_string(j), _z3_context.real_const(("initDist_" + std::to_string(i) + "_" + std::to_string(j)).c_str())));
+			var.insert(std::make_pair("initDist_" + std::to_string(i) + "_" + std::to_string(j), z3_context.real_const(("initDist_" + std::to_string(i) + "_" + std::to_string(j)).c_str())));
 		}
 	}
 
 	// Variables initPos and initHold
 	for(int i = 1; i < amount_robots+1; ++i){
-		var.insert(std::make_pair("initPos_" + std::to_string(i), _z3_context.int_const(("initPos_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("initHold_" + std::to_string(i), _z3_context.int_const(("initHold_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("initPos_" + std::to_string(i), z3_context.int_const(("initPos_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("initHold_" + std::to_string(i), z3_context.int_const(("initHold_" + std::to_string(i)).c_str())));
 	}
 
 	// Variables initState1_i, initInside_i and initOutside_i
 	for(int i=min_machine_groups; i<max_machine_groups+1; ++i){
-		var.insert(std::make_pair("initInside_" + std::to_string(i), _z3_context.int_const(("initInside_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("initOutside_" + std::to_string(i), _z3_context.int_const(("initOutside_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("initInside_" + std::to_string(i), z3_context.int_const(("initInside_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("initOutside_" + std::to_string(i), z3_context.int_const(("initOutside_" + std::to_string(i)).c_str())));
 	}
 
 	// Variables depending on plan_horizon
 	for(int i=1; i<plan_horizon+1; ++i){
-		var.insert(std::make_pair("t_" + std::to_string(i), _z3_context.real_const(("t_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("rd_" + std::to_string(i), _z3_context.real_const(("rd_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("pos_" + std::to_string(i), _z3_context.int_const(("pos_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("t_" + std::to_string(i), z3_context.real_const(("t_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("rd_" + std::to_string(i), z3_context.real_const(("rd_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("pos_" + std::to_string(i), z3_context.int_const(("pos_" + std::to_string(i)).c_str())));
 		for(int r=1; r<amount_robots+1; ++r){
-			var.insert(std::make_pair("pos_" + std::to_string(r) + "_" + std::to_string(i), _z3_context.int_const(("pos_" + std::to_string(r) + "_" + std::to_string(i)).c_str())));
+			var.insert(std::make_pair("pos_" + std::to_string(r) + "_" + std::to_string(i), z3_context.int_const(("pos_" + std::to_string(r) + "_" + std::to_string(i)).c_str())));
 		}
-		var.insert(std::make_pair("md_" + std::to_string(i), _z3_context.real_const(("md_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("R_" + std::to_string(i), _z3_context.int_const(("R_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("A_" + std::to_string(i), _z3_context.int_const(("A_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("M_" + std::to_string(i), _z3_context.int_const(("M_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("holdA_" + std::to_string(i), _z3_context.int_const(("holdA_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("insideA_" + std::to_string(i), _z3_context.int_const(("insideA_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("outputA_" + std::to_string(i), _z3_context.int_const(("outputA_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("holdB_" + std::to_string(i), _z3_context.int_const(("holdB_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("insideB_" + std::to_string(i), _z3_context.int_const(("insideB_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("outputB_" + std::to_string(i), _z3_context.int_const(("outputB_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("rew_" + std::to_string(i), _z3_context.real_const(("rew_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("md_" + std::to_string(i), z3_context.real_const(("md_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("R_" + std::to_string(i), z3_context.int_const(("R_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("A_" + std::to_string(i), z3_context.int_const(("A_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("M_" + std::to_string(i), z3_context.int_const(("M_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("holdA_" + std::to_string(i), z3_context.int_const(("holdA_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("insideA_" + std::to_string(i), z3_context.int_const(("insideA_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("outputA_" + std::to_string(i), z3_context.int_const(("outputA_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("holdB_" + std::to_string(i), z3_context.int_const(("holdB_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("insideB_" + std::to_string(i), z3_context.int_const(("insideB_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("outputB_" + std::to_string(i), z3_context.int_const(("outputB_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("rew_" + std::to_string(i), z3_context.real_const(("rew_" + std::to_string(i)).c_str())));
 	}
 
 
@@ -2121,7 +2122,7 @@ ClipsSmtThread::clips_smt_encoder()
 		}
 		constraints.push_back(0 <= getVar(var, "md_"+std::to_string(i))); // VarMachineDuration
 		constraints.push_back(1 <= getVar(var, "R_"+std::to_string(i)) && getVar(var, "R_"+std::to_string(i)) <= amount_robots); // VarR
-		constraints.push_back(1 <= getVar(var, "A_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(i)) <= index_upper_bound_actions[desired_complexity]); // VarA
+		constraints.push_back(1 <= getVar(var, "A_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(i)) <= index_upper_bound_actions[order_complexity]); // VarA
 		constraints.push_back(min_machine_groups <= getVar(var, "M_"+std::to_string(i)) && getVar(var, "M_"+std::to_string(i)) <= max_machine_groups); // VarM
 
 		constraints.push_back(min_products <= getVar(var, "holdA_"+std::to_string(i)) && getVar(var, "holdA_"+std::to_string(i)) <= max_products); // VarHoldA
@@ -2355,7 +2356,7 @@ ClipsSmtThread::clips_smt_encoder()
 			z3::expr constraint_inter12(constraint_dependency11);
 			z3::expr constraint_inter13(constraint_dependency12);
 			z3::expr constraint_inter5(constraint_dependency1 && constraint_dependency2 && constraint_dependency3);
-			switch (desired_complexity) {
+			switch (order_complexity) {
 				case 0:
 						constraint_inter5 = constraint_inter5 && constraint_dependency4;
 						break;
@@ -2415,7 +2416,7 @@ ClipsSmtThread::clips_smt_encoder()
 
 	std::string sub_product;
 	std::string product;
-	switch(desired_complexity) {
+	switch(order_complexity) {
 		case 0:
 				sub_product = bi;
 				product = bi_ci;
@@ -2433,7 +2434,7 @@ ClipsSmtThread::clips_smt_encoder()
 				product = bi_r1i_r2i_r3i_ci;
 				break;
 		default:
-				std::cout << "Wrong desired_complexity " << desired_complexity << " to set sub_product and product" << std::endl;
+				std::cout << "Wrong order_complexity " << order_complexity << " to set sub_product and product" << std::endl;
 				break;
 	}
 
@@ -2538,7 +2539,7 @@ ClipsSmtThread::clips_smt_encoder()
 		 * Actions complexities 1,2 and 3 require
 		 * ----------------------------------------------------------------------------------------------------------------------------------------------
 		 */
-		if(desired_complexity > 0) {
+		if(order_complexity > 0) {
 
 
 			// 8.Action : Prepare and mount base with ring1 at RS
@@ -2570,7 +2571,7 @@ ClipsSmtThread::clips_smt_encoder()
 		 * Actions complexities 2 and 3 require
 		 * ----------------------------------------------------------------------------------------------------------------------------------------------
 		 */
-		if(desired_complexity > 1) {
+		if(order_complexity > 1) {
 
 			// 10.Action : Prepare and mount base_ring1 with ring2 at RS
 			z3::expr constraintaction10((getVar(var, "M_"+std::to_string(i)) == machine_groups[station_colors[r2i]])
@@ -2601,7 +2602,7 @@ ClipsSmtThread::clips_smt_encoder()
 		 * Actions complexity 3 requires
 		 * ----------------------------------------------------------------------------------------------------------------------------------------------
 		 */
-		if(desired_complexity == 3) {
+		if(order_complexity == 3) {
 
 			// 12.Action : Prepare and mount base_ring1_ring2 with ring3 at RS
 			z3::expr constraintaction12((getVar(var, "M_"+std::to_string(i)) == machine_groups[station_colors[r3i]])
@@ -2682,8 +2683,8 @@ ClipsSmtThread::clips_smt_encoder()
 	// Specify distances between machines
 	for(int k=0; k<amount_machines+1; ++k){
 		for(int l=k+1; l<amount_machines+1; ++l){
-			float distance = velocity_scaling_ * distances[std::make_pair(node_names[k], node_names[l])];
-			z3::expr distance_z3 = _z3_context.real_val((std::to_string(distance)).c_str());
+			float distance = time_to_scaling * distances[std::make_pair(node_names[k], node_names[l])];
+			z3::expr distance_z3 = z3_context.real_val((std::to_string(distance)).c_str());
 			constraints.push_back(getVar(var, "initDist_"+std::to_string(k)+"_"+std::to_string(l)) == distance_z3);
 		}
 	}
@@ -2707,11 +2708,11 @@ ClipsSmtThread::clips_smt_encoder_window()
 	// Map collecting all variables
 	std::map<std::string, z3::expr> var;
 	// Vector collecting all constraints
-	z3::expr_vector constraints(_z3_context);
+	z3::expr_vector constraints(z3_context);
 
 	// Init variable true and false
-	z3::expr var_false(_z3_context.bool_val(false));
-	z3::expr var_true(_z3_context.bool_val(true));
+	z3::expr var_false(z3_context.bool_val(false));
+	z3::expr var_true(z3_context.bool_val(true));
 
 
 	/*
@@ -2721,41 +2722,41 @@ ClipsSmtThread::clips_smt_encoder_window()
 	// Variables initDist_i_j
 	for(int i = 0; i < amount_machines+1; ++i){
 		for(int j = i+1; j < amount_machines+1; ++j) {
-			var.insert(std::make_pair("initDist_" + std::to_string(i) + "_" + std::to_string(j), _z3_context.real_const(("initDist_" + std::to_string(i) + "_" + std::to_string(j)).c_str())));
+			var.insert(std::make_pair("initDist_" + std::to_string(i) + "_" + std::to_string(j), z3_context.real_const(("initDist_" + std::to_string(i) + "_" + std::to_string(j)).c_str())));
 		}
 	}
 
 	// Variables initPos and initHold
 	for(int i = 1; i < amount_robots+1; ++i){
-		var.insert(std::make_pair("initPos_" + std::to_string(i), _z3_context.int_const(("initPos_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("initHold_" + std::to_string(i), _z3_context.int_const(("initHold_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("initPos_" + std::to_string(i), z3_context.int_const(("initPos_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("initHold_" + std::to_string(i), z3_context.int_const(("initHold_" + std::to_string(i)).c_str())));
 	}
 
 	// Variables initState1_i, initInside_i and initOutside_i
 	for(int i=min_machine_groups; i<max_machine_groups+1; ++i){
-		var.insert(std::make_pair("initInside_" + std::to_string(i), _z3_context.int_const(("initInside_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("initOutside_" + std::to_string(i), _z3_context.int_const(("initOutside_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("initInside_" + std::to_string(i), z3_context.int_const(("initInside_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("initOutside_" + std::to_string(i), z3_context.int_const(("initOutside_" + std::to_string(i)).c_str())));
 	}
 
 	// Variables depending on plan_horizon
 	for(int i=1; i<plan_horizon+1; ++i){
-		var.insert(std::make_pair("t_" + std::to_string(i), _z3_context.real_const(("t_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("rd_" + std::to_string(i), _z3_context.real_const(("rd_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("pos_" + std::to_string(i), _z3_context.int_const(("pos_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("t_" + std::to_string(i), z3_context.real_const(("t_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("rd_" + std::to_string(i), z3_context.real_const(("rd_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("pos_" + std::to_string(i), z3_context.int_const(("pos_" + std::to_string(i)).c_str())));
 		for(int r=1; r<amount_robots+1; ++r){
-			var.insert(std::make_pair("pos_" + std::to_string(r) + "_" + std::to_string(i), _z3_context.int_const(("pos_" + std::to_string(r) + "_" + std::to_string(i)).c_str())));
+			var.insert(std::make_pair("pos_" + std::to_string(r) + "_" + std::to_string(i), z3_context.int_const(("pos_" + std::to_string(r) + "_" + std::to_string(i)).c_str())));
 		}
-		var.insert(std::make_pair("md_" + std::to_string(i), _z3_context.real_const(("md_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("R_" + std::to_string(i), _z3_context.int_const(("R_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("A_" + std::to_string(i), _z3_context.int_const(("A_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("M_" + std::to_string(i), _z3_context.int_const(("M_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("holdA_" + std::to_string(i), _z3_context.int_const(("holdA_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("insideA_" + std::to_string(i), _z3_context.int_const(("insideA_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("outputA_" + std::to_string(i), _z3_context.int_const(("outputA_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("holdB_" + std::to_string(i), _z3_context.int_const(("holdB_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("insideB_" + std::to_string(i), _z3_context.int_const(("insideB_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("outputB_" + std::to_string(i), _z3_context.int_const(("outputB_" + std::to_string(i)).c_str())));
-		var.insert(std::make_pair("rew_" + std::to_string(i), _z3_context.real_const(("rew_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("md_" + std::to_string(i), z3_context.real_const(("md_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("R_" + std::to_string(i), z3_context.int_const(("R_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("A_" + std::to_string(i), z3_context.int_const(("A_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("M_" + std::to_string(i), z3_context.int_const(("M_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("holdA_" + std::to_string(i), z3_context.int_const(("holdA_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("insideA_" + std::to_string(i), z3_context.int_const(("insideA_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("outputA_" + std::to_string(i), z3_context.int_const(("outputA_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("holdB_" + std::to_string(i), z3_context.int_const(("holdB_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("insideB_" + std::to_string(i), z3_context.int_const(("insideB_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("outputB_" + std::to_string(i), z3_context.int_const(("outputB_" + std::to_string(i)).c_str())));
+		var.insert(std::make_pair("rew_" + std::to_string(i), z3_context.real_const(("rew_" + std::to_string(i)).c_str())));
 	}
 
 
@@ -2781,7 +2782,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 		}
 		constraints.push_back(0 <= getVar(var, "md_"+std::to_string(i))); // VarMachineDuration
 		constraints.push_back(1 <= getVar(var, "R_"+std::to_string(i)) && getVar(var, "R_"+std::to_string(i)) <= amount_robots); // VarR
-		constraints.push_back(0 <= getVar(var, "A_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(i)) <= index_upper_bound_actions[desired_complexity]); // VarA
+		constraints.push_back(0 <= getVar(var, "A_"+std::to_string(i)) && getVar(var, "A_"+std::to_string(i)) <= index_upper_bound_actions[order_complexity]); // VarA
 		constraints.push_back(min_machine_groups <= getVar(var, "M_"+std::to_string(i)) && getVar(var, "M_"+std::to_string(i)) <= max_machine_groups); // VarM
 
 		constraints.push_back(min_products <= getVar(var, "holdA_"+std::to_string(i)) && getVar(var, "holdA_"+std::to_string(i)) <= max_products); // VarHoldA
@@ -2967,7 +2968,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 		for(int j=1; j<i; ++j) {
 			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == index_action_1 && getVar(var, "A_"+std::to_string(i)) == index_action_2 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
 
-			switch (desired_complexity) {
+			switch (order_complexity) {
 				case 0:
 			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == index_action_4 && getVar(var, "A_"+std::to_string(i)) == index_action_5 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
 						break;
@@ -3077,7 +3078,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 	//     z3::expr constraint_inter12(constraint_dependency11);
 	//     z3::expr constraint_inter13(constraint_dependency12);
 	//     z3::expr constraint_inter5(constraint_dependency1 && constraint_dependency2 && constraint_dependency3);
-	//     switch (desired_complexity) {
+	//     switch (order_complexity) {
 	//         case 0:
 	//                 constraint_inter5 = constraint_inter5 && constraint_dependency4;
 	//                 break;
@@ -3136,7 +3137,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 
 	std::string sub_product;
 	std::string product;
-	switch(desired_complexity) {
+	switch(order_complexity) {
 		case 0:
 				sub_product = bi;
 				product = bi_ci;
@@ -3154,7 +3155,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 				product = bi_r1i_r2i_r3i_ci;
 				break;
 		default:
-				std::cout << "Wrong desired_complexity " << desired_complexity << " to set sub_product and product" << std::endl;
+				std::cout << "Wrong order_complexity " << order_complexity << " to set sub_product and product" << std::endl;
 				break;
 	}
 
@@ -3268,7 +3269,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 		 * Actions complexities 1,2 and 3 require
 		 * ----------------------------------------------------------------------------------------------------------------------------------------------
 		 */
-		if(desired_complexity > 0) {
+		if(order_complexity > 0) {
 
 
 			// 8.Action : Prepare and mount base with ring1 at RS
@@ -3300,7 +3301,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 		 * Actions complexities 2 and 3 require
 		 * ----------------------------------------------------------------------------------------------------------------------------------------------
 		 */
-		if(desired_complexity > 1) {
+		if(order_complexity > 1) {
 
 			// 10.Action : Prepare and mount base_ring1 with ring2 at RS
 			z3::expr constraintaction10((getVar(var, "M_"+std::to_string(i)) == machine_groups[station_colors[r2i]])
@@ -3331,7 +3332,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 		 * Actions complexity 3 requires
 		 * ----------------------------------------------------------------------------------------------------------------------------------------------
 		 */
-		if(desired_complexity == 3) {
+		if(order_complexity == 3) {
 
 			// 12.Action : Prepare and mount base_ring1_ring2 with ring3 at RS
 			z3::expr constraintaction12((getVar(var, "M_"+std::to_string(i)) == machine_groups[station_colors[r3i]])
@@ -3452,7 +3453,7 @@ ClipsSmtThread::clips_smt_encoder_window()
 		constraints.push_back(!(constraint_action_1_appeared) || getVar(var, "A_"+std::to_string(i)) != 1);
 		constraints.push_back(!(constraint_action_2_appeared) || getVar(var, "A_"+std::to_string(i)) != 2);
 		constraints.push_back(!(constraint_action_3_appeared) || getVar(var, "A_"+std::to_string(i)) != 3);
-		if(!desired_complexity) {
+		if(!order_complexity) {
 			constraints.push_back(!(constraint_action_4_appeared) || getVar(var, "A_"+std::to_string(i)) != 4);
 		}
 		constraints.push_back(!(constraint_action_8_appeared) || getVar(var, "A_"+std::to_string(i)) != 8);
@@ -3576,8 +3577,8 @@ ClipsSmtThread::clips_smt_encoder_window()
 	// Specify distances between machines
 	for(int k=0; k<amount_machines+1; ++k){
 		for(int l=k+1; l<amount_machines+1; ++l){
-			float distance = velocity_scaling_ * distances[std::make_pair(node_names[k], node_names[l])];
-			z3::expr distance_z3 = _z3_context.real_val((std::to_string(distance)).c_str());
+			float distance = time_to_scaling * distances[std::make_pair(node_names[k], node_names[l])];
+			z3::expr distance_z3 = z3_context.real_val((std::to_string(distance)).c_str());
 			constraints.push_back(getVar(var, "initDist_"+std::to_string(k)+"_"+std::to_string(l)) == distance_z3);
 		}
 	}
@@ -3599,7 +3600,7 @@ bool
 	logger->log_info(name(), "clips_smt_solve_formula");
 	bool result = true;
 
-	z3::solver z3Solver(_z3_context); // Use for solving
+	z3::solver z3Solver(z3_context); // Use for solving
 	for (unsigned i = 0; i < formula.size(); i++) {
 		z3Solver.add(formula[i]);
 	}
@@ -3635,13 +3636,13 @@ void
 {
 	logger->log_info(name(), "clips_smt_optimize_formula");
 
-	z3::optimize z3Optimizer(_z3_context); // Use for optimizing
+	z3::optimize z3Optimizer(z3_context); // Use for optimizing
 	for (unsigned i = 0; i < formula.size(); i++) {
 		z3Optimizer.add(formula[i]);
 	}
 
 	// Prepare optimizing
-	z3::expr rew_planhorizon = _z3_context.real_const((var.c_str()+std::to_string(plan_horizon)).c_str());
+	z3::expr rew_planhorizon = z3_context.real_const((var.c_str()+std::to_string(plan_horizon)).c_str());
 	z3Optimizer.maximize(rew_planhorizon);
 
 	// Begin measuring solving time
@@ -3678,7 +3679,7 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model)
 
 		std::string function_name = function.name().str();
 		z3::expr expr = model.get_const_interp(function);
-		float interp = std::stof(Z3_get_numeral_decimal_string(_z3_context, expr, 6));
+		float interp = std::stof(Z3_get_numeral_decimal_string(z3_context, expr, 6));
 
 		for(int j=1; j<plan_horizon+1; ++j){
 
@@ -3725,7 +3726,7 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model)
 	}
 
 	// Add plan specified by the model to stats
-	logger->log_info(name(), "Generate plan for order with complexity %i with components: B%iC%i", desired_complexity, base, cap);
+	logger->log_info(name(), "Generate plan for order with complexity %i with components: B%iC%i", order_complexity, base, cap);
 
 	for(int j=1; j<plan_horizon+1; ++j){
 		logger->log_info(name(), "%i. R-%i A%i hold[%i-%i] pos[%i] M%i input[%i-%i] output[%i-%i] time[%f] rew[%i]", j, model_robots[j], model_actions[j], model_holdA[j], model_holdB[j], model_positions[j], model_machines[j], model_insideA[j], model_insideB[j], model_outputA[j], model_outputB[j], model_times[j], model_rew[j]);
@@ -3760,7 +3761,7 @@ z3::expr ClipsSmtThread::getVar(std::map<std::string, z3::expr>& vars, std::stri
 	}
 
 	// Return default value false
-	return _z3_context.bool_val(false);
+	return z3_context.bool_val(false);
 }
 
 void ClipsSmtThread::initShelf()
