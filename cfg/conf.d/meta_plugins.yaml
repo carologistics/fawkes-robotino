@@ -6,7 +6,7 @@ fawkes/meta_plugins:
   #
   # Meta plugin with useful functionality for the robotino-laptop
   #
-  m-bare: bbsync,static-transforms,webview
+  m-bare: bbsync,static-transforms
   m-fv: fvbase,fvfountain
   m-fv-vision: m-bare,m-fv,tag_vision,fvretriever
   m-clips: clips,clips-motor-switch,clips-protobuf,clips-rest-api,clips-navgraph,clips-tf
@@ -18,7 +18,7 @@ fawkes/meta_plugins:
   #
   # Gazebo stuff
   #
-  gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,gazsim-gripper,gazsim-conveyor,laser_front_dist,webview
+  gazsim-meta-robotino: gazebo,static-transforms,gazsim-robotino,gazsim-laser,laser-filter,laser-pointclouds,laser-cluster,gazsim-timesource,gazsim-gripper,gazsim-conveyor,laser_front_dist
   gazsim-meta-robotino-ros: gazsim-meta-robotino,ros,ros-clock,robotino-ros-joints,ros-odometry,ros-tf,ros-laserscan,amcl,navgraph,navgraph-generator,navgraph-generator-mps,laser-lines,ros-cmdvel,ros-navigator,gazsim-vis-localization,skiller
   gazsim-meta-robotino-no-ros: gazsim-meta-robotino,amcl,navgraph,navgraph-generator,navgraph-generator-mps,laser-lines,colli,gazsim-vis-localization,skiller
   gazsim-meta-robotino-vision-high-level: gazsim-tag-vision,gazsim-machine-signal
@@ -30,7 +30,7 @@ fawkes/meta_plugins:
   #
   # Robotino base meta plugin
   #
-  m-base-bare: imu,robotino,webview,static-transforms,motor-led
+  m-base-bare: imu,robotino,static-transforms,motor-led
   m-base-joy: m-base-bare,joystick,joystick-teleop
   m-base-joy-safe: m-base-bare,laser,laser-filter,joystick,joystick-teleop
   m-base-gripper: arduino,dynamixel,ax12_gripper
