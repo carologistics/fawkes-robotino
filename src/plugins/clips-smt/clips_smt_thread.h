@@ -123,90 +123,7 @@ private:
 	z3::context z3_context;
 
 	/**
-	 * Encoder
-	 */
-
-	z3::expr_vector clips_smt_encoder();
-	z3::expr_vector clips_smt_encoder_window(); // TODO Evaluate difference between macro and window encoder (possible merge with flag) and check overall necessity
-
-	// States of machines
-	// - inside_capstation indicates a cap station prepared for mount
-	// - add_bases_ringstation indicates the amount of add_bases in a ringstation
-	// - products lists all possible WPs
-	// - machine_groups lists all possible stations (without paying attention to the side)
-	// TODO Replace const min max by bounds of map after int
-	std::map<std::string, int> inside_capstation;
-	const int min_inside_capstation = 0, max_inside_capstation = 2;
-	const int min_add_bases_ringstation = 0, max_add_bases_ringstation = 3;
-	std::map<std::string, int> products;
-	std::map<int, std::string> products_inverted;
-	const int min_products = -1, max_products = 768;
-	std::map<std::string, int> machine_groups;
-	const int min_machine_groups = 0, max_machine_groups = 4;
-
-	// Points
-	int points_scale = 100;
-	int points_penalty = 50;
-	int points_get_base = 0*points_scale;
-	int points_none = 5*points_scale;
-	int points_additional_base = 2*points_scale;
-	int points_mount_ring_0 = 5*points_scale;
-	int points_mount_ring_1 = 10*points_scale;
-	int points_mount_ring_2 = 20*points_scale;
-	int points_mount_ring1_last = 10*points_scale;
-	int points_mount_ring2_last = 30*points_scale;
-	int points_mount_ring3_last = 80*points_scale;
-	int points_mount_cap = 10*points_scale;
-	int points_deliver = 100*points_scale;
-	const int initial_points = 0;
-
-	// Solve/optimize a given formula
-	bool clips_smt_solve_formula(z3::expr_vector formula);
-	void clips_smt_optimize_formula(z3::expr_vector formula, std::string var);
-
-	// Extract the plan steps from a model in case of SAT
-	void clips_smt_extract_plan_from_model(z3::model model);
-
-	// Visualization of computed plan
-	int index_action_0 = 0;
-	int index_action_1 = 1;
-	int index_action_2 = 2;
-	int index_action_3 = 3;
-	int index_action_4 = 4;
-	int index_action_5 = 5;
-	int index_action_6 = 6;
-	int index_action_7 = 7;
-	int index_action_8 = 8;
-	int index_action_9 = 9;
-	int index_action_10 = 10;
-	int index_action_11 = 11;
-	int index_action_12 = 12;
-	int index_action_13 = 13;
-	const int index_delivery_action = index_action_6;
-	std::map<int, int> model_machines;
-	std::map<int, float> model_times;
-	std::map<int, int> model_positions;
-	std::map<int, int> model_robots;
-	std::map<int, int> model_actions;
-	std::map<int, int> model_holdA;
-	std::map<int, int> model_insideA;
-	std::map<int, int> model_outputA;
-	std::map<int, int> model_holdB;
-	std::map<int, int> model_insideB;
-	std::map<int, int> model_outputB;
-	std::map<int, int> model_rew;
-
-	// Visualization of world state
-	std::vector<int> world_initHold;
-	std::vector<int> world_initPos;
-	std::vector<int> world_initInside;
-	std::vector<int> world_initOutside;
-	std::vector<int> world_all_actions;
-	int world_points;
-	std::vector<int> world_machines_down;
-
-	/**
-	 * General
+	 * World state
 	 */
 
 	// Description of team for correct set of machines
@@ -237,10 +154,16 @@ private:
 	std::vector<int> index_upper_bound_actions; // 6,9,11,13 -> 10,13,15,17
 	int amount_req_actions_add_bases; // 2
 
-	/**
-	 * Order
-	 */
+	// Save information into vetors to make them easier accessible for encoder
+	std::vector<int> world_initHold;
+	std::vector<int> world_initPos;
+	std::vector<int> world_initInside;
+	std::vector<int> world_initOutside;
+	std::vector<int> world_all_actions;
+	int world_points;
+	std::vector<int> world_machines_down;
 
+	// Order
 	// TODO Think about how to display mutli orders
 	int order_id;
 	int order_complexity = 0;
@@ -275,6 +198,88 @@ private:
 	// Cap carrier -- Map color description to cap carrier description
 	std::map<std::string, std::string> cap_carrier_colors;
 
+	/**
+	 * Handle domain by a SMT formula
+	 */
+
+	// Encode the formula determined by a strategy
+	z3::expr_vector clips_smt_encoder();
+	z3::expr_vector clips_smt_encoder_window(); // TODO Evaluate difference between macro and window encoder (possible merge with flag) and check overall necessity
+
+	// States of machines
+	// - inside_capstation indicates a cap station prepared for mount
+	// - add_bases_ringstation indicates the amount of add_bases in a ringstation for inside
+	// - products lists all possible WPs for hold and outside
+	// - machine_groups lists all possible stations (without paying attention to the side)
+	// TODO Replace const min max by bounds of map after int
+	std::map<std::string, int> inside_capstation;
+	int min_inside_capstation = 0;
+	int max_inside_capstation = 2;
+	int min_add_bases_ringstation = 0;
+	int max_add_bases_ringstation = 3;
+
+	std::map<std::string, int> products;
+	std::map<int, std::string> products_inverted;
+	int min_products = -1;
+	int max_products = 768;
+
+	std::map<std::string, int> machine_groups;
+	int min_machine_groups = 0;
+	int max_machine_groups = 4;
+
+	// Map macro_actions to some id
+	int index_action_dummy = 0; // Dummy action requried for window approach
+	int index_action_retr_shelf = 1; // Retrieve cap_carrier_cap from CS-Shelf
+	int index_action_cs_retr = 2; // Prepare and feed cap-carrier at CS-Input for RETRIEVE_CAP
+	int index_action_retr_cs = 3; // Retrieve cap_carrier or product at CS-Output
+	int index_action_retr_bs = 4; // Prepare and retrieve base from BS-Output
+	int index_action_cs_mount = 5; // Prepare and feed sub_product with cap at CS-Input for MOUNT_CAP
+	int index_action_ds_deliver = 6; // Prepare and feed product at DS-Input for DELIVER
+	int index_action_rs_add = 7; // Feed additional base into RS-Input for payment and points
+	int index_action_rs_mount_r1 = 8; // Prepare and feed base at RS-Input for MOUNT_RING1
+	int index_action_retr_rs_r1 = 9; // Retrieve base_ring1 from RS-Output
+	int index_action_rs_mount_r2 = 10; // Prepare and feed base at RS-Input for MOUNT_RING2
+	int index_action_retr_rs_r2 = 11; // Retrieve base_ring1_ring2 from RS-Output
+	int index_action_rs_mount_r3 = 12; // Prepare and feed base at RS-Input for MOUNT_RING3
+	int index_action_retr_rs_r3 = 13; // Retrieve base_ring1_ring2_ring3 from RS-Output
+
+	// Points to determine score and to influence reward for window approach
+	// TODO Think about necessity of the window approach and if not if the points can be used by the agent to evaluate different plans...
+	int points_scale = 100;
+	int points_penalty = 50;
+	int points_get_base = 0*points_scale;
+	int points_none = 5*points_scale;
+	int points_additional_base = 2*points_scale;
+	int points_mount_ring_0 = 5*points_scale;
+	int points_mount_ring_1 = 10*points_scale;
+	int points_mount_ring_2 = 20*points_scale;
+	int points_mount_ring1_last = 10*points_scale;
+	int points_mount_ring2_last = 30*points_scale;
+	int points_mount_ring3_last = 80*points_scale;
+	int points_mount_cap = 10*points_scale;
+	int points_deliver = 100*points_scale;
+	int points_initial = 0;
+
+	// Solve/optimize a given formula
+	bool clips_smt_solve_formula(z3::expr_vector formula);
+	void clips_smt_optimize_formula(z3::expr_vector formula, std::string var);
+
+	// Extract the plan steps from a model in case of SAT
+	void clips_smt_extract_plan_from_model(z3::model model);
+
+	// Visualization of computed plan -- save assignments of variables in maps to make them easier accessible for plan extraction
+	std::map<int, int> model_machines;
+	std::map<int, float> model_times;
+	std::map<int, int> model_positions;
+	std::map<int, int> model_robots;
+	std::map<int, int> model_actions;
+	std::map<int, int> model_holdA;
+	std::map<int, int> model_insideA;
+	std::map<int, int> model_outputA;
+	std::map<int, int> model_holdB;
+	std::map<int, int> model_insideB;
+	std::map<int, int> model_outputB;
+	std::map<int, int> model_rew;
 
 	/**
 	 * Communication with the agent API
