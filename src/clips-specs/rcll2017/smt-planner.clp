@@ -37,6 +37,8 @@
 
 ; Add robot information from worldmodel to protobuf
 (deffunction smt-create-robot (?name ?team-color ?number ?pose-x ?pose-y)
+	(bind ?rSMT (pb-create "llsf_msgs.RobotSmt"))
+
 	(bind ?r (pb-create "llsf_msgs.Robot"))
 
 	(pb-set-field ?r "name" ?name)
@@ -50,9 +52,9 @@
 	(pb-set-field ?pose "ori" 0.0)
 	(pb-set-field ?r "pose" ?pose)
 
-	(bind ?location "C-ins")
+	(bind ?location "START")
 	(bind ?location-side "INPUT")
-	(bind ?location-side-short "-in")
+	(bind ?location-side-short "-I")
 	(do-for-fact ((?wm-fact wm-fact))
 		(and
 			(wm-key-prefix ?wm-fact:key (create$ domain fact at))
@@ -66,29 +68,17 @@
 			(bind ?location-side-short "-O")
 		)
 	)
-	(pb-set-field ?r "location" (str-cat ?location ?location-side-short))
+	(pb-set-field ?rSMT "location" (str-cat ?location ?location-side-short))
 
 	; Add information for robot holding wp
 	; Fill dummy information for required fields in llsf_msgs.Order as we are only interested in the colors of the wp
-	(bind ?o (pb-create "llsf_msgs.Order"))
-	(pb-set-field ?o "id" 1)
-	(pb-set-field ?o "delivery_gate" 1)
-	(pb-set-field ?o "complexity" 1)
-	(pb-set-field ?o "quantity_requested" 1)
-	(if (eq ?team-color CYAN)
-	 then
-	  (pb-set-field ?o "quantity_delivered_cyan" 0)
-	 else
-	  (pb-set-field ?o "quantity_delivered_magenta" 0)
-	)
-	(pb-set-field ?o "delivery_period_begin" 0)
-	(pb-set-field ?o "delivery_period_end" 900)
+	(bind ?wp (pb-create "llsf_msgs.Workpiece"))
 	; Prepare colors in case product is not completed or a cap carrier
-	(bind ?holding-cap "CAP_NONE")
-	(bind ?holding-ring1 "RING_NONE")
-	(bind ?holding-ring2 "RING_NONE")
-	(bind ?holding-ring3 "RING_NONE")
-	(bind ?holding-base "BASE_NONE")
+	(bind ?holding-cap "CAP_NONE_WP")
+	(bind ?holding-ring1 "RING_NONE_WP")
+	(bind ?holding-ring2 "RING_NONE_WP")
+	(bind ?holding-ring3 "RING_NONE_WP")
+	(bind ?holding-base "BASE_NONE_WP")
 
 	; Detect if some robot is currently holding wp
 	(do-for-fact ((?holding wm-fact))
@@ -105,8 +95,8 @@
 				(eq ?holding-wp CCG3)
 			)
 		then
-			(bind ?holding-cap "CAP_CARRIER_GREY")
-			(bind ?holding-base "BASE_RANDOM")
+			(bind ?holding-cap "CAP_GREY_WP")
+			(bind ?holding-base "BASE_RANDOM_WP")
 		else
 			(if ; cap_carrier_black
 				(or
@@ -115,8 +105,8 @@
 					(eq ?holding-wp CCB3)
 				)
 			then
-				(bind ?holding-cap "CAP_CARRIER_BLACK")
-				(bind ?holding-base "BASE_RANDOM")
+				(bind ?holding-cap "CAP_BLACK_WP")
+				(bind ?holding-base "BASE_RANDOM_WP")
 			else
 				(if ; WP1 (product) or WP2 (additional base)
 					(or
@@ -131,7 +121,8 @@
 							(eq ?holding-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?holding-base (wm-key-arg ?wm-fact:key col))
+						; TODO Needs to be tested, because this case only appears for replaining
+						(bind ?holding-base (str-cat (wm-key-arg ?wm-fact:key col) _WP))
 					)
 
 					; wp-cap-color
@@ -141,7 +132,7 @@
 							(eq ?holding-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?holding-cap (wm-key-arg ?wm-fact:key col))
+						(bind ?holding-cap (str-cat (wm-key-arg ?wm-fact:key col) _WP))
 					)
 
 					; wp-ring-color
@@ -151,7 +142,7 @@
 							(eq ?holding-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?holding-ring1 (wm-key-arg ?wm-fact:key col))
+						(bind ?holding-ring1 (str-cat (wm-key-arg ?wm-fact:key col) _WP))
 					)
 					(do-for-fact ((?wm-fact wm-fact))
 						(and
@@ -159,7 +150,7 @@
 							(eq ?holding-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?holding-ring2 (wm-key-arg ?wm-fact:key col))
+						(bind ?holding-ring2 (str-cat (wm-key-arg ?wm-fact:key col) _WP))
 					)
 					(do-for-fact ((?wm-fact wm-fact))
 						(and
@@ -167,7 +158,7 @@
 							(eq ?holding-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?holding-ring3 (wm-key-arg ?wm-fact:key col))
+						(bind ?holding-ring3 (str-cat (wm-key-arg ?wm-fact:key col) _WP))
 					)
 				else
 					(printout t "No known wp in holding" crlf)
@@ -176,15 +167,17 @@
 			)
 		)
 	)
-	(pb-set-field ?o "cap_color" ?holding-cap)
-	(pb-add-list ?o "ring_colors" ?holding-ring1)
-	(pb-add-list ?o "ring_colors" ?holding-ring2)
-	(pb-add-list ?o "ring_colors" ?holding-ring3)
-	(pb-set-field ?o "base_color" ?holding-base)
+	(pb-set-field ?wp "cap_color" ?holding-cap)
+	(pb-add-list ?wp "ring_colors" ?holding-ring1)
+	(pb-add-list ?wp "ring_colors" ?holding-ring2)
+	(pb-add-list ?wp "ring_colors" ?holding-ring3)
+	(pb-set-field ?wp "base_color" ?holding-base)
 
-	(pb-set-field ?r "wp" ?o)
+	(pb-set-field ?rSMT "wp" ?wp)
 
-	(return ?r)
+	(pb-set-field ?rSMT "robot" ?r)
+
+	(return ?rSMT)
 )
 
 (deffunction smt-create-robots (?team-color)
@@ -201,13 +194,15 @@
 
 	(bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-1") ?team-color 0 0 0)))
 	(bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-2") ?team-color 0 0 0)))
-	; (bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-3") ?team-color 0 0 0)))
+	(bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-3") ?team-color 0 0 0)))
 
 	(return ?rv)
 )
 
 ; Add machine information from worldmodel to protobuf
 (deffunction smt-create-machine (?name ?mtype ?state ?team-color ?pose-x ?pose-y)
+	(bind ?mSMT (pb-create "llsf_msgs.MachineSmt"))
+
 	(bind ?m (pb-create "llsf_msgs.Machine"))
 
 	(pb-set-field ?m "name" (str-cat ?name))
@@ -264,7 +259,7 @@
 
 			(bind ?cs_buffered (wm-key-arg ?wm-fact:key col))
 		)
-		(pb-set-field ?m "cs_buffered" ?cs_buffered)
+		(pb-set-field ?mSMT "cs_buffered" ?cs_buffered)
 
                 (do-for-fact ((?wm-fact wm-fact))
 			(and
@@ -274,31 +269,18 @@
 
 			(bind ?cs_color (wm-key-arg ?wm-fact:key col))
 		)
-		(pb-set-field ?m "cap_color" ?cs_color)
+		(pb-set-field ?mSMT "cap_color" ?cs_color)
 
 	)
 
 	; Add information for machine with wp-at
 	; Fill dummy information for required fields in llsf_msgs.Order as we are only interested in the colors of the wp
-	(bind ?o (pb-create "llsf_msgs.Order"))
-	(pb-set-field ?o "id" 1)
-	(pb-set-field ?o "delivery_gate" 1)
-	(pb-set-field ?o "complexity" 1)
-	(pb-set-field ?o "quantity_requested" 1)
-	(if (eq ?team-color CYAN)
-	 then
-	  (pb-set-field ?o "quantity_delivered_cyan" 0)
-	 else
-	  (pb-set-field ?o "quantity_delivered_magenta" 0)
-	)
-	(pb-set-field ?o "delivery_period_begin" 0)
-	(pb-set-field ?o "delivery_period_end" 900)
-	; Prepare colors in case product is not completed or a cap carrier
-	(bind ?wp-at-cap "CAP_NONE")
-	(bind ?wp-at-ring1 "RING_NONE")
-	(bind ?wp-at-ring2 "RING_NONE")
-	(bind ?wp-at-ring3 "RING_NONE")
-	(bind ?wp-at-base "BASE_NONE")
+	(bind ?wp (pb-create "llsf_msgs.Workpiece"))
+	(bind ?wp-at-cap "CAP_NONE_WP")
+	(bind ?wp-at-ring1 "RING_NONE_WP")
+	(bind ?wp-at-ring2 "RING_NONE_WP")
+	(bind ?wp-at-ring3 "RING_NONE_WP")
+	(bind ?wp-at-base "BASE_NONE_WP")
 
 	; Detect if some robot is currently wp-at wp
 	(do-for-fact ((?wp-at wm-fact))
@@ -315,8 +297,8 @@
 				(eq ?wp-at-wp CCG3)
 			)
 		then
-			(bind ?wp-at-cap "CAP_CARRIER_GREY")
-			(bind ?wp-at-base "BASE_RANDOM")
+			(bind ?wp-at-cap "CAP_GREY_WP")
+			(bind ?wp-at-base "BASE_RANDOM_WP")
 		else
 			(if ; cap_carrier_black
 				(or
@@ -325,8 +307,8 @@
 					(eq ?wp-at-wp CCB3)
 				)
 			then
-				(bind ?wp-at-cap "CAP_CARRIER_BLACK")
-				(bind ?wp-at-base "BASE_RANDOM")
+				(bind ?wp-at-cap "CAP_BLACK_WP")
+				(bind ?wp-at-base "BASE_RANDOM_WP")
 			else
 				(if ; WP1 (product) or WP2 (additional base)
 					(or
@@ -341,7 +323,7 @@
 							(eq ?wp-at-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?wp-at-base (wm-key-arg ?wm-fact:key col))
+						(bind ?wp-at-base (str-cat (wm-key-arg ?wm-fact:key col) _WP))
 					)
 
 					; wp-cap-color
@@ -351,7 +333,7 @@
 							(eq ?wp-at-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?wp-at-cap (wm-key-arg ?wm-fact:key col))
+						(bind ?wp-at-cap (str-cat (wm-key-arg ?wm-fact:key col) _WP))
 					)
 
 					; wp-ring-color
@@ -361,7 +343,7 @@
 							(eq ?wp-at-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?wp-at-ring1 (wm-key-arg ?wm-fact:key col))
+						(bind ?wp-at-ring1 (str-cat (wm-key-arg ?wm-fact:key col) _WP))
 					)
 					(do-for-fact ((?wm-fact wm-fact))
 						(and
@@ -369,7 +351,7 @@
 							(eq ?wp-at-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?wp-at-ring2 (wm-key-arg ?wm-fact:key col))
+						(bind ?wp-at-ring2 (str-cat (wm-key-arg ?wm-fact:key col) _WP))
 					)
 					(do-for-fact ((?wm-fact wm-fact))
 						(and
@@ -377,7 +359,7 @@
 							(eq ?wp-at-wp (wm-key-arg ?wm-fact:key wp))
 						)
 
-						(bind ?wp-at-ring3 (wm-key-arg ?wm-fact:key col))
+						(bind ?wp-at-ring3 (str-cat (wm-key-arg ?wm-fact:key col) _WP))
 					)
 				else
 					(printout t "No known wp in wp-at" crlf)
@@ -386,15 +368,16 @@
 			)
 		)
 	)
-	(pb-set-field ?o "cap_color" ?wp-at-cap)
-	(pb-add-list ?o "ring_colors" ?wp-at-ring1)
-	(pb-add-list ?o "ring_colors" ?wp-at-ring2)
-	(pb-add-list ?o "ring_colors" ?wp-at-ring3)
-	(pb-set-field ?o "base_color" ?wp-at-base)
+	(pb-set-field ?wp "cap_color" ?wp-at-cap)
+	(pb-add-list ?wp "ring_colors" ?wp-at-ring1)
+	(pb-add-list ?wp "ring_colors" ?wp-at-ring2)
+	(pb-add-list ?wp "ring_colors" ?wp-at-ring3)
+	(pb-set-field ?wp "base_color" ?wp-at-base)
 
-	(pb-set-field ?m "wp" ?o)
+	(pb-set-field ?mSMT "wp" ?wp)
+	(pb-set-field ?mSMT "machine" ?m)
 
-	(return ?m)
+	(return ?mSMT)
 )
 
 (deffunction smt-create-machines (?team-color)
