@@ -36,9 +36,6 @@
 	"/domain/fact/location-free"
 	)
 	(wm-robmem-sync-enable
-	"/domain/fact/mps-state"
-	)
-	(wm-robmem-sync-enable
 	"/domain/fact/bs-prepared-color"
 	)
 	(wm-robmem-sync-enable
