@@ -113,7 +113,7 @@
 	(test (parent-actions-finished ?goal-id ?plan-id ?parents-ids))
 =>
 	(printout t "Action with id " ?id " matches it's parents-ids" $?parents-ids crlf)
-	(assert 
+	(assert
 		(wm-fact (key plan-action ?goal-id ?plan-id ?id dep-match))
 	)
 )
@@ -170,7 +170,7 @@
 
 	(wm-fact (key plan-action ?goal-id ?plan-id order) (value ?order-id))
 	(wm-fact (key refbox game-time) (values ?sec ?sec-2))
-	(wm-fact (key refbox order ?order-id delivery-begin) (value ?delivery-begin&:(< ?delivery-begin ?sec)))
+	(wm-fact (key refbox order ?sym-order-id&:(eq (string-to-field (str-cat ?order-id)) ?sym-order-id) delivery-begin) (value ?delivery-begin&:(< ?delivery-begin ?sec)))
 	=>
 	(printout t "Select next action " ?action-name ?param-values " with id " ?sym-id " in time [" ?sec "] with delivery window beginning at " ?delivery-begin crlf)
 	(modify ?pa (status PENDING))
