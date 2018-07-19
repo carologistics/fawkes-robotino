@@ -1,9 +1,9 @@
 
 /***************************************************************************
- *  RobotInfo.proto - Robot information
+ *  Workpiece.proto - Workpiece Information for intermediate product
  *
- *  Created: Fri Feb 22 11:20:18 2013
- *  Copyright  2013  Tim Niemueller [www.niemueller.de]
+ *  Created: Fri Jul 13 11:45 2018
+ *  Copyright  2018 Igor Nicolai Bongartz
  ****************************************************************************/
 
 /*  Redistribution and use in source and binary forms, with or without
@@ -38,63 +38,49 @@ syntax = "proto2";
 
 package llsf_msgs;
 
-import "Time.proto";
-import "Pose2D.proto";
-import "Team.proto";
-import "OrderInfo.proto";
-
 option java_package = "org.robocup_logistics.llsf_msgs";
-option java_outer_classname = "RobotInfoProtos";
+option java_outer_classname = "OrderInfoProtos";
 
-enum RobotState {
-  ACTIVE       = 1;
-  MAINTENANCE  = 2;
-  DISQUALIFIED = 3;
+enum BaseColorWorkpiece {
+  BASE_RED_WP = 1;
+  BASE_BLACK_WP = 2;
+  BASE_SILVER_WP = 3;
+  BASE_NONE_WP = 4;
+  BASE_RANDOM_WP = 5;
 }
 
-message Robot {
-  enum CompType {
-    COMP_ID  = 2000;
-    MSG_TYPE = 31;
-  }
-
-  // Name, team, and number of the robot
-  // as it was announced by the robot in
-  // the BeaconSignal message.
-  required string name = 1;
-  required string team = 2;
-  required Team   team_color = 12;
-  required uint32 number = 7;
-  // Host from where the BeaconSignal
-  // was received
-  required string host = 3;
-  // Timestamp in UTC when a BeaconSignal
-  // was received last from this robot
-  required Time   last_seen = 4;
-
-  // Pose information (reported by robot)
-  optional Pose2D pose = 6;
-  // Pose information (reported by vision)
-  optional Pose2D vision_pose = 11;
-
-  // Current state of this robot
-  optional RobotState state = 8;
-
-  // Time in seconds remaining in current
-  // maintenance cycle, negative if overdue
-  optional float  maintenance_time_remaining = 9 [default = 0.0];
-  // number of times maintenance
-  // has been performed, including current
-  optional uint32 maintenance_cycles = 10;
-  
+enum RingColorWorkpiece {
+  RING_BLUE_WP   = 1;
+  RING_GREEN_WP  = 2;
+  RING_ORANGE_WP = 3;
+  RING_YELLOW_WP = 4;
+  RING_NONE_WP = 5;
 }
 
-message RobotInfo {
+enum CapColorWorkpiece {
+  CAP_BLACK_WP = 1;
+  CAP_GREY_WP  = 2;
+  CAP_NONE_WP = 3;
+}
+
+message Workpiece {
   enum CompType {
     COMP_ID  = 2000;
-    MSG_TYPE = 30;
+    MSG_TYPE = 46;
   }
 
-  // List of all known robots
-  repeated Robot robots = 1;
+  // Colors of workpiece
+  required BaseColorWorkpiece    base_color = 3;
+  repeated RingColorWorkpiece    ring_colors = 4;
+  required CapColorWorkpiece     cap_color = 5;
+}
+
+message WorkpieceInfo {
+  enum CompType {
+    COMP_ID  = 2000;
+    MSG_TYPE = 45;
+  }
+
+  // The current orders
+  repeated Workpiece workpieces = 1;
 }
