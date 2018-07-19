@@ -179,7 +179,7 @@
 (defrule action-selection-done
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	?g <- (goal (id ?goal-id) (mode DISPATCHED) (type ACHIEVE))
-	(not (plan-action (plan-id ?plan-id) (status ~FINAL)))
+	(not (wm-fact (key plan-action ?goal-id ?plan-id ?id status) (value ?status&:(neq (string-to-field (str-cat ?status)) FINAL)  ) ) )
 	=>
 	(modify ?g (mode FINISHED) (outcome COMPLETED))
 )
@@ -187,7 +187,7 @@
 (defrule action-selection-failed
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	?g <- (goal (id ?goal-id& :(neq ?goal-id EXPLORATION)) (mode DISPATCHED))
-	(plan-action (goal-id ?goal-id) (plan-id ?plan-id) (status FAILED))
+	(wm-fact (key plan-action ?goal-id ?plan-id ?id status) (value ?status&:(eq (string-to-field (str-cat ?status)) FAILED) ) )
 	=>
 	(modify ?g (mode FINISHED) (outcome FAILED))
 )
