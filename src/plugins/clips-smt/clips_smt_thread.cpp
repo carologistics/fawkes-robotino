@@ -1776,7 +1776,7 @@ ClipsSmtThread::clips_smt_init_game_pre()
 
 		// Extract team
 		team = "M";
-		if(data.robots(0).team_color() == 0){
+		if(data.robots(0).robot().team_color() == 0){
 			team = "C";
 		}
 
@@ -1789,26 +1789,26 @@ ClipsSmtThread::clips_smt_init_game_pre()
 		std::string cw_ringStation = team+"-RS1";
 		std::string cw_capStation = team+"-CS1";
 		for(int i=0; i<data.machines().size(); ++i) {
-			if(cw_ringStation.compare(data.machines(i).name()) == 0){
-				if(data.machines(i).ring_colors(0)==1 || data.machines(i).ring_colors(1)==1) {
+			if(cw_ringStation.compare(data.machines(i).machine().name()) == 0){
+				if(data.machines(i).machine().ring_colors(0)==1 || data.machines(i).machine().ring_colors(1)==1) {
 					station_colors["R1"] = "RS1";
 				}
 				else {
 					station_colors["R1"] = "RS2";
 				}
-				if(data.machines(i).ring_colors(0)==2 || data.machines(i).ring_colors(1)==2) {
+				if(data.machines(i).machine().ring_colors(0)==2 || data.machines(i).machine().ring_colors(1)==2) {
 					station_colors["R2"] = "RS1";
 				}
 				else {
 					station_colors["R2"] = "RS2";
 				}
-				if(data.machines(i).ring_colors(0)==3 || data.machines(i).ring_colors(1)==3) {
+				if(data.machines(i).machine().ring_colors(0)==3 || data.machines(i).machine().ring_colors(1)==3) {
 					station_colors["R3"] = "RS1";
 				}
 				else {
 					station_colors["R3"] = "RS2";
 				}
-				if(data.machines(i).ring_colors(0)==4 || data.machines(i).ring_colors(1)==4) {
+				if(data.machines(i).machine().ring_colors(0)==4 || data.machines(i).machine().ring_colors(1)==4) {
 					station_colors["R4"] = "RS1";
 				}
 				else {
@@ -1816,7 +1816,7 @@ ClipsSmtThread::clips_smt_init_game_pre()
 				}
 				// continue;
 			}
-			else if(cw_capStation.compare(data.machines(i).name()) == 0){
+			else if(cw_capStation.compare(data.machines(i).machine().name()) == 0){
 				if(data.machines(i).cap_color()==1) {
 					std::cout << "BLACK cap for CS1" << std::endl;
 					station_colors["C1"] = "CS1";
@@ -3815,11 +3815,11 @@ int ClipsSmtThread::clips_smt_rewrite_product(int base, int ring1, int ring2, in
 
 	// cap_carrier before and after retrieve
 	// BRC1
-	if (base == 5 && ring1 == 5 && ring2 == 5 && ring3 == 5 && cap == 4) {
+	if (base == 5 && ring1 == 5 && ring2 == 5 && ring3 == 5 && cap == 1) {
 		product_description = "BRC1";
 	}
 	// BRC2
-	else if (base == 5 && ring1 == 5 && ring2 == 5 && ring3 == 5 && cap == 5) {
+	else if (base == 5 && ring1 == 5 && ring2 == 5 && ring3 == 5 && cap == 2) {
 		product_description = "BRC2";
 	}
 	// BR
