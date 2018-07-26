@@ -35,16 +35,44 @@
   ; common evaluate rules should have
   ;   lower salience than case specific ones
   ?*SALIENCE-GOAL-EVALUTATE-GENERIC* = -1
+  ; complexity
+  ?*SALIENCE-COMPLEXITY* = 200
+  ?*SALIENCE-COMPLEXITY2* = 100
 )
 
 (defrule goal-reasoner-create-complexity
+  (declare (salience ?*SALIENCE-COMPLEXITY*))
 	(not (goal (id COMPLEXITY)))
 	(not (goal-already-tried COMPLEXITY))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com C3) (value TRUE))
+	(wm-fact (key config rcll robot-name) (value ?robot))
 =>
-	(printout t "Detect goal " ?order-id " with complexity 0" crlf)
+	(printout t "Detect goal " ?order-id " with complexity 3" crlf)
 	(assert (goal (id COMPLEXITY)))
 	(assert (goal-already-tried COMPLEXITY))
+  (if (eq ?robot "R-1") then
+  	(assert (wm-fact (key r-1-at COMPLEXITY update)))
+  	(assert (wm-fact (key r-2-at COMPLEXITY update)))
+  	(assert (wm-fact (key r-3-at COMPLEXITY update)))
+  )
+)
+
+(defrule goal-reasoner-create-complexity2
+  (declare (salience ?*SALIENCE-COMPLEXITY2*))
+	(not (goal (id COMPLEXITY)))
+	(not (goal (id COMPLEXITY2)))
+	(not (goal-already-tried COMPLEXITY2))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE))
+	(wm-fact (key config rcll robot-name) (value ?robot))
+=>
+	(printout t "Detect goal " ?order-id " with complexity 0" crlf)
+	(assert (goal (id COMPLEXITY2)))
+	(assert (goal-already-tried COMPLEXITY2))
+  (if (eq ?robot "R-1") then
+  	(assert (wm-fact (key r-1-at COMPLEXITY2 update)))
+  	(assert (wm-fact (key r-2-at COMPLEXITY2 update)))
+  	(assert (wm-fact (key r-3-at COMPLEXITY2 update)))
+  )
 )
 
 ; #  Goal Selection
