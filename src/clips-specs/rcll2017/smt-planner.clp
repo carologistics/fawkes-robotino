@@ -537,56 +537,60 @@
 ;  Call plugin clips-smt
 ;---------------------------------------------------------------------------
 
-; (defrule production-call-clips-smt-c0
-;     ; Call plugin clips-smt
-;     (goal (id ?goal-id&COMPLEXITY) (mode SELECTED))
-;     (wm-fact (key refbox phase) (value PRODUCTION))
-;     (wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
+(defrule production-call-clips-smt-c0
+	; Call plugin clips-smt
+	(goal (id ?goal-id&COMPLEXITY2) (mode SELECTED))
+	(wm-fact (key refbox phase) (value PRODUCTION))
+	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
 
-;     (not (complexity-c0-planned))
-;     (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ZERO) (value TRUE))
+	; (complexity-c0-planned)
+	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ZERO) (value TRUE))
 
-;     ; Does an order of wanted complexity exists?
-;     (wm-fact (key domain fact order-complexity args? ord ?order-id com ?complexity&C0) (value TRUE)) ; desired complexity is set here
+	; Does an order of wanted complexity exists?
+	(wm-fact (key domain fact order-complexity args? ord ?order-id&O1 com ?complexity&C0) (value TRUE)) ; desired complexity is set here
 
-;     ; Are all relevant details of this order available?
-;     ; (wm-fact (key domain fact order-base-color args? ord ?order-id col ?base-col) (value TRUE))
-;     ; (wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?base-col) (value TRUE))
-;     ; (wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?base-col) (value TRUE))
-;     ; (wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?base-col) (value TRUE))
-;     ; (wm-fact (key domain fact order-cap-color args? ord ?order-id col ?cap-col) (value TRUE))
+	; Are all relevant details of this order available?
+	; (wm-fact (key domain fact order-base-color args? ord ?order-id col ?base-col) (value TRUE))
+	; (wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?base-col) (value TRUE))
+	; (wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?base-col) (value TRUE))
+	; (wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?base-col) (value TRUE))
+	; (wm-fact (key domain fact order-cap-color args? ord ?order-id col ?cap-col) (value TRUE))
 
-;     ; Was the order already fulfilled?
-;     (not (wm-fact (key domain fact order-fulfilled args? ord ?order-id) (value TRUE)))
-;     ; Is the delivery-window in the future?
-;     (wm-fact (key refbox game-time) (values ?sec ?sec-2))
-;     (wm-fact (key refbox order ?order-id delivery-end) (value ?delivery-end&:(> ?delivery-end ?sec)))
+	; Was the order already fulfilled?
+	(not (wm-fact (key domain fact order-fulfilled args? ord ?order-id) (value TRUE)))
+	; Is the delivery-window in the future?
+	(wm-fact (key refbox game-time) (values ?sec ?sec-2))
+	(wm-fact (key refbox order ?order-id delivery-end) (value ?delivery-end&:(> ?delivery-end ?sec)) )
 
-;     ; There was no plan for this goal requested yet?
-;     (not (plan-requested ?goal-id))
-;     (not (plan-requested-ord ?goal-id ?order-id))
+	; There was no plan for this goal requested yet?
+	(not (plan-requested ?goal-id))
+	(not (plan-requested-ord ?goal-id ?order-id))
 
-;     ; Only R-1 should run the planner
-;     (wm-fact (key config rcll robot-name) (value "R-1"))
-; =>
-;     (printout t "SMT plan call for " ?order-id " with " ?delivery-end " " ?sec crlf)
-;     (bind ?p
-;       (smt-create-data
-;             (smt-create-robots ?team-color)
-;             (smt-create-machines ?team-color)
-;             (smt-create-orders ?team-color ?order-id ?complexity)
-;             (smt-create-rings ?team-color)
-;             0 ; Strategy set here, 0 means MACRO and 1 WINDOW
-;             5 ; Window size for strategy WINDOW
-;       )
-;     )
+	; Only R-1 should run the planner
+	(wm-fact (key config rcll robot-name) (value "R-1"))
 
-;     (smt-request "smt-plan" ?p)
-;     (assert (plan-requested ?goal-id))
-;     (assert (plan-requested-ord ?goal-id ?order-id))
-;     (assert (plan-requested-ord ?goal-id ?order-id))
-;     (assert (complexity-c0-planned))
-; )
+  ; No position update is open
+  (wm-fact (key r-1-at ?goal-id update-finished))
+  (wm-fact (key r-2-at ?goal-id update-finished))
+  (wm-fact (key r-3-at ?goal-id update-finished))
+=>
+	(printout t "SMT plan call for " ?order-id " with " ?delivery-end " " ?sec crlf)
+	(bind ?p
+	  (smt-create-data
+			(smt-create-robots ?team-color)
+			(smt-create-machines ?team-color)
+			(smt-create-orders ?team-color ?order-id ?complexity)
+			(smt-create-rings ?team-color)
+			0 ; Strategy set here, 0 means MACRO and 1 WINDOW
+			5 ; Window size for strategy WINDOW
+	  )
+	)
+
+	(smt-request "smt-plan" ?p)
+	(assert (plan-requested ?goal-id))
+	(assert (plan-requested-ord ?goal-id ?order-id))
+)
+
 
 
 (defrule production-call-clips-smt-c3
@@ -599,7 +603,7 @@
 	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ZERO) (value TRUE))
 
 	; Does an order of wanted complexity exists?
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com ?complexity&C3) (value TRUE)) ; desired complexity is set here
+	(wm-fact (key domain fact order-complexity args? ord ?order-id&O2|O3|O4|O5|O6|O7 com ?complexity&C3) (value TRUE)) ; desired complexity is set here
 
 	; Are all relevant details of this order available?
 	; (wm-fact (key domain fact order-base-color args? ord ?order-id col ?base-col) (value TRUE))
@@ -620,6 +624,10 @@
 
 	; Only R-1 should run the planner
 	(wm-fact (key config rcll robot-name) (value "R-1"))
+  ; No position update is open
+  (wm-fact (key r-1-at ?goal-id update-finished))
+  (wm-fact (key r-2-at ?goal-id update-finished))
+  (wm-fact (key r-3-at ?goal-id update-finished))
 =>
 	(printout t "SMT plan call for " ?order-id " with " ?delivery-end " " ?sec crlf)
 	(bind ?p
@@ -635,7 +643,6 @@
 
 	(smt-request "smt-plan" ?p)
 	(assert (plan-requested ?goal-id))
-	(assert (plan-requested-ord ?goal-id ?order-id))
 	(assert (plan-requested-ord ?goal-id ?order-id))
 )
 
@@ -2615,7 +2622,7 @@
 )
 
 (defrule production-no-call-clips-smt-r-2
-	?g <- (goal (id ?goal-id&COMPLEXITY) (mode SELECTED))
+	?g <- (goal (id ?goal-id&COMPLEXITY|COMPLEXITY2) (mode SELECTED))
 	(not (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-2)) )
 
 	; R-2 should only mark the goal as expanded
@@ -2623,7 +2630,7 @@
 	(wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-2) (value ?amount-plan-actions-collected))
 	(wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions) (value ?amount-plan-actions))
 	; (test (eq (string-to-field (str-cat (+ (length$ ?amount-plan-actions-collected) 1))) (string-to-field (str-cat ?amount-plan-actions)) ))
-	(test (= ?amount-plan-actions ?amount-plan-actions-collected))
+	(test (<= ?amount-plan-actions ?amount-plan-actions-collected))
 =>
 	(printout t "Expand for R-2 with " ?amount-plan-actions " and collected " ?amount-plan-actions-collected crlf)
 	(modify ?g (mode EXPANDED))
@@ -2634,7 +2641,7 @@
 )
 
 (defrule production-no-call-clips-smt-r-3
-	?g <- (goal (id ?goal-id&COMPLEXITY) (mode SELECTED))
+	?g <- (goal (id ?goal-id&COMPLEXITY|COMPLEXITY2) (mode SELECTED))
 	(not (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-3)) )
 
 	; R-3 should only mark the goal as expanded
@@ -2642,7 +2649,7 @@
 	(wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-3) (value ?amount-plan-actions-collected))
 	(wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions) (value ?amount-plan-actions))
 	; (test (eq (string-to-field (str-cat (+ (length$ ?amount-plan-actions-collected) 1))) (string-to-field (str-cat ?amount-plan-actions)) ))
-	(test (= ?amount-plan-actions ?amount-plan-actions-collected))
+	(test (<= ?amount-plan-actions ?amount-plan-actions-collected))
 =>
 	(printout t "Expand for R-3 with " ?amount-plan-actions " and collected " ?amount-plan-actions-collected crlf)
 	(modify ?g (mode EXPANDED))
