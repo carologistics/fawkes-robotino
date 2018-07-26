@@ -52,23 +52,29 @@
 	(pb-set-field ?pose "ori" 0.0)
 	(pb-set-field ?r "pose" ?pose)
 
-	(bind ?location "START")
-	(bind ?location-side "INPUT")
-	(bind ?location-side-short "-I")
-	(do-for-fact ((?wm-fact wm-fact))
-		(and
-			(wm-key-prefix ?wm-fact:key (create$ domain fact at))
-			(eq ?name (wm-key-arg ?wm-fact:key r))
+	(printout t "Look for positions of robots" crlf)
+	(bind ?location "START-I")
+	(if (eq ?name R-1) then
+		(do-for-fact ((?wm-fact wm-fact)) (wm-key-prefix ?wm-fact:key (create$ r-1-at position))
+			(printout t "Found position of R-1 " ?wm-fact:value crlf)
+			(bind ?location ?wm-fact:value)
 		)
-
-		(bind ?location (wm-key-arg ?wm-fact:key m))
-		(bind ?location-side (wm-key-arg ?wm-fact:key side))
-		(bind ?location-side-short "-I")
-		(if (eq ?location-side "OUTPUT") then
-			(bind ?location-side-short "-O")
+	else
+		(if (eq ?name R-2) then
+			(do-for-fact ((?wm-fact wm-fact)) (wm-key-prefix ?wm-fact:key (create$ r-2-at position))
+				(printout t "Found position of R-2 " ?wm-fact:value crlf)
+				(bind ?location ?wm-fact:value)
+			)
+		else
+			(if (eq ?name R-3) then
+				(do-for-fact ((?wm-fact wm-fact)) (wm-key-prefix ?wm-fact:key (create$ r-3-at position))
+					(printout t "Found position of R-3 " ?wm-fact:value crlf)
+					(bind ?location ?wm-fact:value)
+				)
+			)
 		)
 	)
-	(pb-set-field ?rSMT "location" (str-cat ?location ?location-side-short))
+	(pb-set-field ?rSMT "location" ?location)
 
 	; Add information for robot holding wp
 	; Fill dummy information for required fields in llsf_msgs.Order as we are only interested in the colors of the wp
