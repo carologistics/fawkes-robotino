@@ -2658,3 +2658,82 @@
 		(wm-fact (key plan-action ?goal-id ?plan-id expanded-r-3))
 	)
 )
+
+; Maintain position information of robots
+
+(defrule action-init-location-r-1
+	(wm-fact (key config rcll robot-name) (value "R-1"))
+	(not (wm-fact (key r-1-at position)))
+=>
+	(printout t "R-1 initialized its location" crlf)
+	(assert (wm-fact (key r-1-at position) (value "START-I")) )
+)
+
+(defrule action-init-location-r-2
+	(wm-fact (key config rcll robot-name) (value "R-2"))
+	(not (wm-fact (key r-2-at position)))
+=>
+	(printout t "R-2 initialized its location" crlf)
+	(assert (wm-fact (key r-2-at position) (value "START-I")) )
+)
+
+(defrule action-init-location-r-3
+	(wm-fact (key config rcll robot-name) (value "R-3"))
+	(not (wm-fact (key r-3-at position)))
+=>
+	(printout t "R-3 initialized its location" crlf)
+	(assert (wm-fact (key r-3-at position) (value "START-I")) )
+)
+
+(defrule action-update-location-r-1
+	"update information abount of robot R-1"
+	?update <- (wm-fact (key r-1-at ?goal update))
+	(wm-fact (key config rcll robot-name) (value "R-1"))
+	(wm-fact (key domain fact at ?args r ?r m ?at-m side ?side))
+	?wmf <- (wm-fact (key r-1-at position))
+=>
+	(bind ?at-side "-I")
+	(if (eq ?side "OUTPUT") then
+		(bind ?at-side "-O")
+	)
+	(bind ?at (str-cat ?at-m ?at-side))
+	(printout t "R-1 changed its location to m " ?at-m " at side " ?side ", short: " ?at crlf)
+	(modify ?wmf (value ?at))
+	(retract ?update)
+  (assert (wm-fact (key r-1-at ?goal update-finished)))
+)
+(defrule action-update-location-r-2
+	"update information abount of robot R-2"
+	?update <- (wm-fact (key r-2-at ?goal update))
+	(wm-fact (key config rcll robot-name) (value "R-2"))
+	(wm-fact (key domain fact at ?args r ?r m ?at-m side ?side))
+	?wmf <- (wm-fact (key r-2-at position))
+=>
+	(bind ?at-side "-I")
+	(if (eq ?side "OUTPUT") then
+		(bind ?at-side "-O")
+	)
+	(bind ?at (str-cat ?at-m ?at-side))
+	(printout t "R-2 changed its location to m " ?at-m " at side " ?side ", short: " ?at crlf)
+	(modify ?wmf (value ?at))
+	(retract ?update)
+  (assert (wm-fact (key r-2-at ?goal update-finished)))
+)
+
+(defrule action-update-location-r-3
+	"update information abount of robot R-3"
+	?update <- (wm-fact (key r-3-at ?goal update))
+	(wm-fact (key config rcll robot-name) (value "R-3"))
+	(wm-fact (key domain fact at ?args r ?r m ?at-m side ?side))
+	?wmf <- (wm-fact (key r-3-at position))
+=>
+	(bind ?at-side "-I")
+	(if (eq ?side "OUTPUT") then
+		(bind ?at-side "-O")
+	)
+	(bind ?at (str-cat ?at-m ?at-side))
+	(printout t "R-3 changed its location to m " ?at-m " at side " ?side ", short: " ?at crlf)
+	(modify ?wmf (value ?at))
+	(retract ?update)
+  (assert (wm-fact (key r-3-at ?goal update-finished)))
+)
