@@ -1887,34 +1887,40 @@ ClipsSmtThread::clips_smt_init_game_pre()
 
 		// std::string cs1_name = team+"-cs1";
 		// std::string cs2_name = team+"-cs2";
-		// std::string rs1_name = team+"-rs1";
-		// std::string rs2_name = team+"-rs2";
+		std::string rs1_name = team+"-rs1";
+		std::string rs2_name = team+"-rs2";
 		// std::string bs_name = team+"-bs";
 		//
-		// // extract add_bases of rs
-		// int initoutside = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
-		// int initinsidering = add_bases_description_inverted[data.machines(i).machine().loaded_with()];
-		// int initinsidecap = cap_colors[data.machines(i).cs_buffered()];
-		// if(rs1_name.compare(data.machines(i).machine().name()) == 0) {
-		// 	world_initinside[1] = initinsidering;
-		// 	world_initoutside[1] = initoutside;
-		// }
-		// else if(rs2_name.compare(data.machines(i).machine().name()) == 0) {
-		// 	world_initinside[2] = initinsidering;
-		// 	world_initoutside[2] = initoutside;
-		// }
+		// extract add_bases of rs
+		if(rs1_name.compare(data.machines(i).machine().name()) == 0) {
+			int initinsidering = add_bases_description_inverted[data.machines(i).machine().loaded_with()];
+			world_initInside[1] = initinsidering;
+			// int initoutside = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
+			// world_initOutside[1] = initoutside;
+		}
+		else if(rs2_name.compare(data.machines(i).machine().name()) == 0) {
+			int initinsidering = add_bases_description_inverted[data.machines(i).machine().loaded_with()];
+			world_initInside[2] = initinsidering;
+			// int initoutside = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
+			// world_initOutside[2] = initoutside;
+		}
 		// // extract inside of cs
 		// else if(cs1_name.compare(data.machines(i).machine().name()) == 0) {
-		// 	world_initinside[3] = initinsidecap;
-		// 	world_initoutside[3] = initoutside;
+		// 	int initinsidecap = cap_colors[data.machines(i).cs_buffered()];
+		// 	world_initInside[3] = initinsidecap;
+		// 	int initoutside = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
+		// 	world_initOutside[3] = initoutside;
 		// }
 		// else if(cs2_name.compare(data.machines(i).machine().name()) == 0) {
-		// 	world_initinside[4] = initinsidecap;
-		// 	world_initoutside[4] = initoutside;
+		// 	int initinsidecap = cap_colors[data.machines(i).cs_buffered()];
+		// 	world_initInside[4] = initinsidecap;
+		// 	int initoutside = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
+		// 	world_initOutside[4] = initoutside;
 		// }
 		// else if(bs_name.compare(data.machines(i).machine().name()) == 0) {
-		// 	world_initinside[0] = 0;
-		// 	world_initoutside[0] = initoutside;
+		// 	world_initInside[0] = 0;
+		// 	int initoutside = clips_smt_rewrite_product(data.machines(i).wp().base_color(), data.machines(i).wp().ring_colors(0), data.machines(i).wp().ring_colors(1), data.machines(i).wp().ring_colors(2), data.machines(i).wp().cap_color());
+		// 	world_initOutside[0] = initoutside;
 		// }
 	}
 
