@@ -33,6 +33,18 @@
 	"/plan-action/COMPLEXITY"
 	)
 	(wm-robmem-sync-enable
+	"/plan-action/COMPLEXITY2"
+	)
+	; (wm-robmem-sync-enable
+	; "/r-1-at"
+	; )
+	(wm-robmem-sync-enable
+	"/r-2-at"
+	)
+	(wm-robmem-sync-enable
+	"/r-3-at"
+	)
+	(wm-robmem-sync-enable
 	"/domain/fact/location-free"
 	)
 	(wm-robmem-sync-enable
