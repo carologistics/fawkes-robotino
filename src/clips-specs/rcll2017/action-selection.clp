@@ -101,7 +101,7 @@
 	; Only R-1 should run the evaluation
 	(wm-fact (key config rcll robot-name) (value "R-1"))
 
-	(goal (id ?goal-id&COMPLEXITY) (mode DISPATCHED))
+	(goal (id ?goal-id&COMPLEXITY|COMPLEXITY2) (mode DISPATCHED))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	(wm-fact (key plan-action ?goal-id ?plan-id ?id-o status))
 
