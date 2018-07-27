@@ -262,7 +262,7 @@ private:
 
 	// Solve/optimize a given formula
 	bool clips_smt_solve_formula(z3::expr_vector formula);
-	void clips_smt_optimize_formula(z3::expr_vector formula, std::string var);
+	bool clips_smt_optimize_formula(z3::expr_vector formula, std::string var);
 
 	// Extract the plan steps from a model in case of SAT
 	void clips_smt_extract_plan_from_model(z3::model model);
