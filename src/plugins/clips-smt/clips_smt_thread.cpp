@@ -1730,9 +1730,13 @@ ClipsSmtThread::loop()
 			z3::expr_vector formula = clips_smt_encoder();
 
 			// Pass it to z3 solver
-			if(clips_smt_solve_formula(formula)) {
+			if(data.orders(0).complexity() == 0 && clips_smt_optimize_formula(formula, "rew_")) {
 				solve = false;
 			}
+			else if(clips_smt_solve_formula(formula)) {
+				solve = false;
+			}
+
 			plan_horizon++;
 		}
 	}
@@ -3636,10 +3640,11 @@ bool
 	return result;
 }
 
-void
+bool
  ClipsSmtThread::clips_smt_optimize_formula(z3::expr_vector formula, std::string var)
 {
 	logger->log_info(name(), "clips_smt_optimize_formula");
+	bool result = true;
 
 	z3::optimize z3Optimizer(z3_context); // Use for optimizing
 	for (unsigned i = 0; i < formula.size(); i++) {
@@ -3665,6 +3670,7 @@ void
 		// End measuring solving time
 		end = std::chrono::high_resolution_clock::now();
 		logger->log_info(name(), "Formula is UNSAT");
+		result = false;
 	}
 
 	// Compute time for solving
@@ -3672,6 +3678,7 @@ void
 	double diff_m = (double) std::chrono::duration_cast<std::chrono::seconds> (end - begin).count()/60;
 
 	logger->log_info(name(), "Time used of optimizing is %f ms, %f m", diff_ms, diff_m); // Measure time in nanoseconds but display in milliseconds for convenience
+	return result;
 }
 
 void
