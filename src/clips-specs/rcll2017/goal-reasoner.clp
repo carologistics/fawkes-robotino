@@ -42,12 +42,13 @@
 
 (defrule goal-reasoner-create-complexity
   (declare (salience ?*SALIENCE-COMPLEXITY*))
+	(not (goal (id COMPLEXITY2)))
 	(not (goal (id COMPLEXITY)))
 	(not (goal-already-tried COMPLEXITY))
 	(wm-fact (key domain fact order-complexity args? ord ?order-id com C3) (value TRUE))
 	(wm-fact (key config rcll robot-name) (value ?robot))
 =>
-	(printout t "Detect goal " ?order-id " with complexity 3" crlf)
+	(printout t "Detect goal " ?order-id crlf)
 	(assert (goal (id COMPLEXITY)))
 	(assert (goal-already-tried COMPLEXITY))
   (if (eq ?robot "R-1") then
@@ -65,7 +66,7 @@
 	(wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE))
 	(wm-fact (key config rcll robot-name) (value ?robot))
 =>
-	(printout t "Detect goal " ?order-id " with complexity 0" crlf)
+	(printout t "Detect goal " ?order-id crlf)
 	(assert (goal (id COMPLEXITY2)))
 	(assert (goal-already-tried COMPLEXITY2))
   (if (eq ?robot "R-1") then
