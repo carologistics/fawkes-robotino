@@ -129,7 +129,6 @@
 						|wp-put
 						|wp-put-slide-cc
 						|prepare-bs
-						|prepare-ds
 						|prepare-cs
 						|bs-dispense
 						|cs-mount-cap
@@ -138,7 +137,11 @@
 						|prepare-rs
 						|rs-mount-ring1
 						|rs-mount-ring2
-                        |rs-mount-ring3)
+                        |rs-mount-ring3
+												|fulfill-order-c0
+                        |fulfill-order-c1
+                        |fulfill-order-c2
+                        |fulfill-order-c3)
 					  (param-values $?param-values))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	(goal (id ?goal-id) (mode DISPATCHED))
@@ -152,13 +155,10 @@
 	(modify ?pa (status PENDING))
 )
 
-(defrule action-selection-select-parallel-fulfill
+(defrule action-selection-select-parallel-prepare-ds
 	"select earliest action if no other is chosen and if all actions indicated by parents-ids are finished"
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status FORMULATED)
-					  (action-name ?action-name&fulfill-order-c0
-                        |fulfill-order-c1
-                        |fulfill-order-c2
-                        |fulfill-order-c3)
+					  (action-name ?action-name&prepare-ds)
 					  (param-values $?param-values))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	(goal (id ?goal-id) (mode DISPATCHED))
