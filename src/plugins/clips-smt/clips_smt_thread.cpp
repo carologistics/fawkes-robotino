@@ -2090,6 +2090,9 @@ ClipsSmtThread::clips_smt_encoder()
 	// Variables depending on plan_horizon
 	for(int i=1; i<plan_horizon+1; ++i){
 		var.insert(std::make_pair("t_" + std::to_string(i), z3_context.real_const(("t_" + std::to_string(i)).c_str())));
+		for(int r=1; r<amount_robots+1; ++r){
+			var.insert(std::make_pair("t_" + std::to_string(r) + "_" + std::to_string(i), z3_context.real_const(("t_" + std::to_string(r) + "_" + std::to_string(i)).c_str())));
+		}
 		var.insert(std::make_pair("rd_" + std::to_string(i), z3_context.real_const(("rd_" + std::to_string(i)).c_str())));
 		var.insert(std::make_pair("pos_" + std::to_string(i), z3_context.int_const(("pos_" + std::to_string(i)).c_str())));
 		for(int r=1; r<amount_robots+1; ++r){
@@ -2119,9 +2122,15 @@ ClipsSmtThread::clips_smt_encoder()
 		// VarStartTime
 		// General bound
 		constraints.push_back(0 <= getVar(var, "t_"+std::to_string(i)) && getVar(var, "t_"+std::to_string(i)) <= 900);
-		// Robot specifc bound
+		// Robot specifc bound is this unnecessary if we add the second constraints
 		for(int j = 1; j < i; ++j){
 			constraints.push_back(!(getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i))) || getVar(var, "t_"+std::to_string(j)) <= getVar(var, "t_"+std::to_string(i)));
+		}
+		for(int r=1; r<amount_robots+1; ++r){
+			constraints.push_back(0 <= getVar(var, "t_"+std::to_string(r)+"_"+std::to_string(i)) && getVar(var, "t_"+std::to_string(r)+"_"+std::to_string(i)) <= 900);
+			if(i>1) {
+				constraints.push_back(getVar(var, "t_"+std::to_string(r)+"_"+std::to_string(i-1)) <= getVar(var, "t_"+std::to_string(r)+"_"+std::to_string(i)));
+			}
 		}
 
 		constraints.push_back(0 <= getVar(var, "rd_"+std::to_string(i))); // VarRobotDuration
@@ -2226,6 +2235,30 @@ ClipsSmtThread::clips_smt_encoder()
 		}
 	}
 
+	// Constraint: follow the time for each robot
+	for(int i=1; i<plan_horizon+1; ++i){
+		for(int r=1; r<amount_robots+1; ++r){
+
+			// If robot r is acting in step i then set his position to the position in step i
+			z3::expr constraint_precondition( getVar(var, "R_"+std::to_string(i))==r );
+			z3::expr constraint_effect( getVar(var, "t_"+std::to_string(r)+"_"+std::to_string(i)) == getVar(var, "t_"+std::to_string(i)) );
+
+			for(int rp=1; rp<amount_robots+1; ++rp){
+				if(r!=rp){
+					if(i==1){
+						constraint_effect = constraint_effect && getVar(var, "t_"+std::to_string(rp)+"_"+std::to_string(i)) == 0;
+					}
+					else {
+						constraint_effect = constraint_effect && getVar(var, "t_"+std::to_string(rp)+"_"+std::to_string(i)) == getVar(var, "t_"+std::to_string(rp)+"_"+std::to_string(i-1));
+					}
+				}
+			}
+
+			constraints.push_back( !(constraint_precondition) || constraint_effect);
+
+		}
+	}
+
 	// Constraint: robots can not occupy the same position in the same action step
 	for(int i=1; i<plan_horizon+1; ++i){
 		for(int r=1; r<amount_robots+1; ++r){
@@ -2281,8 +2314,8 @@ ClipsSmtThread::clips_smt_encoder()
 				constraint1 = constraint1 || (getVar(var, "M_"+std::to_string(ipp)) == getVar(var, "M_"+std::to_string(i)));
 			}
 
-			z3::expr constraint2(getVar(var, "t_"+std::to_string(ip))>=getVar(var, "t_"+std::to_string(i))+getVar(var, "md_"+std::to_string(i))
-									&& getVar(var, "insideB_"+std::to_string(i))==getVar(var, "insideA_"+std::to_string(ip))
+			z3::expr constraint2(//getVar(var, "t_"+std::to_string(ip))>=getVar(var, "t_"+std::to_string(i))+getVar(var, "md_"+std::to_string(i))
+									getVar(var, "insideB_"+std::to_string(i))==getVar(var, "insideA_"+std::to_string(ip))
 									&& getVar(var, "outputB_"+std::to_string(i))==getVar(var, "outputA_"+std::to_string(ip)));
 
 			constraints.push_back(constraint1 || constraint2);
@@ -2639,7 +2672,7 @@ ClipsSmtThread::clips_smt_encoder()
 		}
 	}
 
-	// // Specify goal state for OMT
+	// Specify goal state for OMT
 	// for(int i=1; i<plan_horizon+1; ++i){
 	//     if(i==1){
 	//         constraints.push_back((getVar(var, "A_"+std::to_string(i)) == index_action_ds_deliver
@@ -2654,6 +2687,32 @@ ClipsSmtThread::clips_smt_encoder()
 	//                                     && getVar(var, "rew_"+std::to_string(i))==getVar(var, "rew_"+std::to_string(i-1))));
 	//     }
 	// }
+	// Different approach for OMT TODO actually now we cound the first e.g. movement more than one time, understand the impact
+	// for(int i=1; i<plan_horizon+1; ++i){
+	//     if(i==1){
+	//         constraints.push_back(getVar(var, "rew_"+std::to_string(i)) == (deadline-getVar(var, "t_"+std::to_string(i))-getVar(var, "md_"+std::to_string(i))) );
+	//     }
+	//     else {
+	//         constraints.push_back(getVar(var, "rew_"+std::to_string(i)) == (getVar(var, "rew_"+std::to_string(i-1))-getVar(var, "t_"+std::to_string(i))-getVar(var, "md_"+std::to_string(i))));
+	//     }
+	// }
+	// Different approach for OMT extened by t in the last step
+	for(int i=1; i<plan_horizon+1; ++i){
+	    if(i==1){
+	        constraints.push_back(getVar(var, "rew_1") == (deadline-getVar(var, "md_1")) );
+	    }
+	    else if(i>1 && i<plan_horizon){
+	        constraints.push_back(getVar(var, "rew_"+std::to_string(i)) == (getVar(var, "rew_"+std::to_string(i-1))-getVar(var, "md_"+std::to_string(i))));
+	    }
+			else if(i==plan_horizon){
+	        constraints.push_back(getVar(var, "rew_"+std::to_string(i)) == (getVar(var, "rew_"+std::to_string(i-1))
+						-getVar(var, "t_1_"+std::to_string(i))
+						-getVar(var, "t_2_"+std::to_string(i))
+						-getVar(var, "t_3_"+std::to_string(i))
+						-getVar(var, "md_"+std::to_string(i))));
+			}
+	}
+
 
 	// Constraints encoding that final_actions for each order have to be at least executed once for SMT
 	z3::expr constraint_goal(getVar(var, "A_"+std::to_string(plan_horizon)) == index_action_ds_deliver); //  && getVar(var, "R_"+std::to_string(plan_horizon)) == 1);
@@ -2677,17 +2736,17 @@ ClipsSmtThread::clips_smt_encoder()
 	}
 
 
-	// Specify positions which are down and therefore not useable
-	z3::expr constraint_world_machine_down(var_true);
-	for(int i=1; i<plan_horizon+1; ++i){
-
-		for(int world_machine_down: world_machines_down) {
-
-			// Distinguish between action 1 which operates on the input side but is still valid even if the corresponding cap station is down and other actions
-			constraint_world_machine_down = constraint_world_machine_down && ( getVar(var, "A_"+std::to_string(i)) == 1 || getVar(var, "pos_"+std::to_string(i)) != world_machine_down);
-		}
-	}
-	constraints.push_back(constraint_world_machine_down);
+	// // Specify positions which are down and therefore not useable
+	// z3::expr constraint_world_machine_down(var_true);
+	// for(int i=1; i<plan_horizon+1; ++i){
+	//
+	// 	for(int world_machine_down: world_machines_down) {
+	//
+	// 		// Distinguish between action 1 which operates on the input side but is still valid even if the corresponding cap station is down and other actions
+	// 		constraint_world_machine_down = constraint_world_machine_down && ( getVar(var, "A_"+std::to_string(i)) == 1 || getVar(var, "pos_"+std::to_string(i)) != world_machine_down);
+	// 	}
+	// }
+	// constraints.push_back(constraint_world_machine_down);
 
 	// Specify distances between machines
 	for(int k=0; k<amount_machines+1; ++k){
