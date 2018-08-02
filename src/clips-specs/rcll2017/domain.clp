@@ -88,8 +88,10 @@
     (domain-object (name R-1) (type robot))
     (domain-object (name R-2) (type robot))
     (domain-object (name R-3) (type robot))
-    (domain-object (name WP1) (type workpiece))
-    (domain-object (name WP2) (type workpiece))
+    (domain-object (name WP1COMPLEXITY) (type workpiece))
+    (domain-object (name WP2COMPLEXITY) (type workpiece))
+    (domain-object (name WP1COMPLEXITY2) (type workpiece))
+    (domain-object (name WP2COMPLEXITY2) (type workpiece))
     (domain-object (name CCB1) (type cap-carrier))
     (domain-object (name CCB2) (type cap-carrier))
     (domain-object (name CCB3) (type cap-carrier))
@@ -114,21 +116,37 @@
     (domain-object (name O8) (type order))
     (domain-object (name O9) (type order))
 
-    (domain-fact (name wp-spawned-by) (param-values WP1 ?self))
-    (domain-fact (name wp-base-color) (param-values WP1 BASE_NONE))
-    (domain-fact (name wp-cap-color) (param-values WP1 CAP_NONE))
-    (domain-fact (name wp-ring1-color) (param-values WP1 RING_NONE))
-    (domain-fact (name wp-ring2-color) (param-values WP1 RING_NONE))
-    (domain-fact (name wp-ring3-color) (param-values WP1 RING_NONE))
-    (domain-fact (name wp-unused) (param-values WP1))
- 
-    (domain-fact (name wp-spawned-by) (param-values WP2 ?self))
-    (domain-fact (name wp-base-color) (param-values WP2 BASE_NONE))
-    (domain-fact (name wp-cap-color) (param-values WP2 CAP_NONE))
-    (domain-fact (name wp-ring1-color) (param-values WP2 RING_NONE))
-    (domain-fact (name wp-ring2-color) (param-values WP2 RING_NONE))
-    (domain-fact (name wp-ring3-color) (param-values WP2 RING_NONE))
-    (domain-fact (name wp-unused) (param-values WP2))
+    (domain-fact (name wp-spawned-by) (param-values WP1COMPLEXITY ?self))
+    (domain-fact (name wp-base-color) (param-values WP1COMPLEXITY BASE_NONE))
+    (domain-fact (name wp-cap-color) (param-values WP1COMPLEXITY CAP_NONE))
+    (domain-fact (name wp-ring1-color) (param-values WP1COMPLEXITY RING_NONE))
+    (domain-fact (name wp-ring2-color) (param-values WP1COMPLEXITY RING_NONE))
+    (domain-fact (name wp-ring3-color) (param-values WP1COMPLEXITY RING_NONE))
+    (domain-fact (name wp-unused) (param-values WP1COMPLEXITY))
+
+    (domain-fact (name wp-spawned-by) (param-values WP2COMPLEXITY ?self))
+    (domain-fact (name wp-base-color) (param-values WP2COMPLEXITY BASE_NONE))
+    (domain-fact (name wp-cap-color) (param-values WP2COMPLEXITY CAP_NONE))
+    (domain-fact (name wp-ring1-color) (param-values WP2COMPLEXITY RING_NONE))
+    (domain-fact (name wp-ring2-color) (param-values WP2COMPLEXITY RING_NONE))
+    (domain-fact (name wp-ring3-color) (param-values WP2COMPLEXITY RING_NONE))
+    (domain-fact (name wp-unused) (param-values WP2COMPLEXITY))
+
+    (domain-fact (name wp-spawned-by) (param-values WP1COMPLEXITY2 ?self))
+    (domain-fact (name wp-base-color) (param-values WP1COMPLEXITY2 BASE_NONE))
+    (domain-fact (name wp-cap-color) (param-values WP1COMPLEXITY2 CAP_NONE))
+    (domain-fact (name wp-ring1-color) (param-values WP1COMPLEXITY2 RING_NONE))
+    (domain-fact (name wp-ring2-color) (param-values WP1COMPLEXITY2 RING_NONE))
+    (domain-fact (name wp-ring3-color) (param-values WP1COMPLEXITY2 RING_NONE))
+    (domain-fact (name wp-unused) (param-values WP1COMPLEXITY2))
+
+    (domain-fact (name wp-spawned-by) (param-values WP2COMPLEXITY2 ?self))
+    (domain-fact (name wp-base-color) (param-values WP2COMPLEXITY2 BASE_NONE))
+    (domain-fact (name wp-cap-color) (param-values WP2COMPLEXITY2 CAP_NONE))
+    (domain-fact (name wp-ring1-color) (param-values WP2COMPLEXITY2 RING_NONE))
+    (domain-fact (name wp-ring2-color) (param-values WP2COMPLEXITY2 RING_NONE))
+    (domain-fact (name wp-ring3-color) (param-values WP2COMPLEXITY2 RING_NONE))
+    (domain-fact (name wp-unused) (param-values WP2COMPLEXITY2))
 
     (domain-fact (name self) (param-values ?self))
 
@@ -150,7 +168,7 @@
     (domain-fact (name location-free) (param-values ?rs2 OUTPUT))
 
     (domain-fact (name location-free) (param-values ?ss INPUT))
-    
+
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
     (domain-fact (name mps-team) (param-values ?ss ?team-color))
@@ -158,7 +176,7 @@
     (domain-fact (name mps-team) (param-values ?cs2 ?team-color))
     (domain-fact (name mps-team) (param-values ?rs1 ?team-color))
     (domain-fact (name mps-team) (param-values ?rs2 ?team-color))
-    
+
     (domain-fact (name mps-type) (param-values C-BS BS))
     (domain-fact (name mps-type) (param-values C-DS DS))
     (domain-fact (name mps-type) (param-values C-SS SS))
