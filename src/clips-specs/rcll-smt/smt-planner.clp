@@ -116,8 +116,10 @@
 			else
 				(if ; WP1 (product) or WP2 (additional base)
 					(or
-						(eq ?holding-wp WP1)
-						(eq ?holding-wp WP2)
+						(eq ?holding-wp WP1COMPLEXITY)
+						(eq ?holding-wp WP2COMPLEXITY)
+						(eq ?holding-wp WP1COMPLEXITY2)
+						(eq ?holding-wp WP2COMPLEXITY2)
 					)
 				then
 					; wp-base-color
@@ -318,8 +320,10 @@
 			else
 				(if ; WP1 (product) or WP2 (additional base)
 					(or
-						(eq ?wp-at-wp WP1)
-						(eq ?wp-at-wp WP2)
+						(eq ?wp-at-wp WP1COMPLEXITY)
+						(eq ?wp-at-wp WP2COMPLEXITY)
+						(eq ?wp-at-wp WP1COMPLEXITY2)
+						(eq ?wp-at-wp WP2COMPLEXITY2)
 					)
 				then
 					; wp-base-color
@@ -603,7 +607,7 @@
 	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ZERO) (value TRUE))
 
 	; Does an order of wanted complexity exists?
-	(wm-fact (key domain fact order-complexity args? ord ?order-id&O2|O3|O4|O5|O6|O7 com ?complexity&C3) (value TRUE)) ; desired complexity is set here
+	(wm-fact (key domain fact order-complexity args? ord ?order-id&O2|O3|O4|O5|O6|O7 com ?complexity&C0|C1|C2) (value TRUE)) ; desired complexity is set here
 
 	; Are all relevant details of this order available?
 	; (wm-fact (key domain fact order-base-color args? ord ?order-id col ?base-col) (value TRUE))
@@ -795,7 +799,7 @@
 
 								else
 									(if (eq (pb-field-value ?arg "key") "wp") then
-										(bind ?wp (pb-field-value ?arg "value"))
+										(bind ?wp (pb-field-value ?arg "value") )
 
 									else
 										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -855,7 +859,11 @@
 								(bind ?side (if (eq (nth$ 3 ?mps-splitted) "I") then INPUT else OUTPUT))
 							else
 								(if (eq (pb-field-value ?arg "key") "wp") then
-									(bind ?wp (pb-field-value ?arg "value"))
+										(if (or (eq (pb-field-value ?arg "value") "WP1") (eq (pb-field-value ?arg "value") "WP2")) then
+											(bind ?wp (str-cat (pb-field-value ?arg "value") ?goal-id ))
+										else
+											(bind ?wp (pb-field-value ?arg "value"))
+										)
 
 								else
 									(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -919,7 +927,12 @@
 									(bind ?machine-feature (if (eq ?slide "true") then SLIDE else CONVEYOR))
 								else
 									(if (eq (pb-field-value ?arg "key") "wp") then
-										(bind ?wp (pb-field-value ?arg "value"))
+										(if (or (eq (pb-field-value ?arg "value") "WP1") (eq (pb-field-value ?arg "value") "WP2")) then
+											(bind ?wp (str-cat (pb-field-value ?arg "value") ?goal-id ))
+										else
+											(bind ?wp (pb-field-value ?arg "value"))
+										)
+
 
 									else
 										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -992,7 +1005,12 @@
 
 										else
 											(if (eq (pb-field-value ?arg "key") "wp") then
-												 (bind ?wp (pb-field-value ?arg "value"))
+										(if (or (eq (pb-field-value ?arg "value") "WP1") (eq (pb-field-value ?arg "value") "WP2")) then
+											(bind ?wp (str-cat (pb-field-value ?arg "value") ?goal-id ))
+										else
+											(bind ?wp (pb-field-value ?arg "value"))
+										)
+
 
 											else
 												(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1048,7 +1066,12 @@
 						)
 						(progn$ (?arg (pb-field-list ?a "params"))
 							(if (eq (pb-field-value ?arg "key") "wp") then
-								(bind ?wp (pb-field-value ?arg "value"))
+										(if (or (eq (pb-field-value ?arg "value") "WP1") (eq (pb-field-value ?arg "value") "WP2")) then
+											(bind ?wp (str-cat (pb-field-value ?arg "value") ?goal-id ))
+										else
+											(bind ?wp (pb-field-value ?arg "value"))
+										)
+
 
 							else
 								(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1169,7 +1192,12 @@
 
 								else
 									(if (eq (pb-field-value ?arg "key") "wp") then
-										(bind ?wp (pb-field-value ?arg "value"))
+										(if (or (eq (pb-field-value ?arg "value") "WP1") (eq (pb-field-value ?arg "value") "WP2")) then
+											(bind ?wp (str-cat (pb-field-value ?arg "value") ?goal-id ))
+										else
+											(bind ?wp (pb-field-value ?arg "value"))
+										)
+
 
 									else
 										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1294,7 +1322,12 @@
 
 									else
 										(if (eq (pb-field-value ?arg "key") "wp") then
+										(if (or (eq (pb-field-value ?arg "value") "WP1") (eq (pb-field-value ?arg "value") "WP2")) then
+											(bind ?wp (str-cat (pb-field-value ?arg "value") ?goal-id ))
+										else
 											(bind ?wp (pb-field-value ?arg "value"))
+										)
+
 
 										else
 											(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1371,7 +1404,12 @@
 
 										else
 											(if (eq (pb-field-value ?arg "key") "wp") then
-												(bind ?wp (pb-field-value ?arg "value"))
+										(if (or (eq (pb-field-value ?arg "value") "WP1") (eq (pb-field-value ?arg "value") "WP2")) then
+											(bind ?wp (str-cat (pb-field-value ?arg "value") ?goal-id ))
+										else
+											(bind ?wp (pb-field-value ?arg "value"))
+										)
+
 
 											else
 												(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1451,7 +1489,12 @@
 
 											else
 												(if (eq (pb-field-value ?arg "key") "wp") then
-													(bind ?wp (pb-field-value ?arg "value"))
+										(if (or (eq (pb-field-value ?arg "value") "WP1") (eq (pb-field-value ?arg "value") "WP2")) then
+											(bind ?wp (str-cat (pb-field-value ?arg "value") ?goal-id ))
+										else
+											(bind ?wp (pb-field-value ?arg "value"))
+										)
+
 
 												else
 													(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1537,7 +1580,12 @@
 
 												else
 													(if (eq (pb-field-value ?arg "key") "wp") then
-													  (bind ?wp (pb-field-value ?arg "value"))
+										(if (or (eq (pb-field-value ?arg "value") "WP1") (eq (pb-field-value ?arg "value") "WP2")) then
+											(bind ?wp (str-cat (pb-field-value ?arg "value") ?goal-id ))
+										else
+											(bind ?wp (pb-field-value ?arg "value"))
+										)
+
 
 													else
 														(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1719,7 +1767,12 @@
 
 								else
 									(if (eq (pb-field-value ?arg "key") "wp") then
-									  (bind ?wp (pb-field-value ?arg "value"))
+										(if (or (eq (pb-field-value ?arg "value") "WP1") (eq (pb-field-value ?arg "value") "WP2")) then
+											(bind ?wp (str-cat (pb-field-value ?arg "value") ?goal-id ))
+										else
+											(bind ?wp (pb-field-value ?arg "value"))
+										)
+
 
 									else
 										(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1863,7 +1916,12 @@
 
 											else
 												(if (eq (pb-field-value ?arg "key") "wp") then
-												  (bind ?wp (pb-field-value ?arg "value"))
+										(if (or (eq (pb-field-value ?arg "value") "WP1") (eq (pb-field-value ?arg "value") "WP2")) then
+											(bind ?wp (str-cat (pb-field-value ?arg "value") ?goal-id ))
+										else
+											(bind ?wp (pb-field-value ?arg "value"))
+										)
+
 
 												else
 													(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -1941,7 +1999,12 @@
 
 												else
 													(if (eq (pb-field-value ?arg "key") "wp") then
-														(bind ?wp (pb-field-value ?arg "value"))
+										(if (or (eq (pb-field-value ?arg "value") "WP1") (eq (pb-field-value ?arg "value") "WP2")) then
+											(bind ?wp (str-cat (pb-field-value ?arg "value") ?goal-id ))
+										else
+											(bind ?wp (pb-field-value ?arg "value"))
+										)
+
 
 													else
 														(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
@@ -2024,7 +2087,12 @@
 
 													else
 														(if (eq (pb-field-value ?arg "key") "wp") then
-															(bind ?wp (pb-field-value ?arg "value"))
+										(if (or (eq (pb-field-value ?arg "value") "WP1") (eq (pb-field-value ?arg "value") "WP2")) then
+											(bind ?wp (str-cat (pb-field-value ?arg "value") ?goal-id ))
+										else
+											(bind ?wp (pb-field-value ?arg "value"))
+										)
+
 
 														else
 															(printout warn "Unknown parameter " (pb-field-value ?arg "key") crlf)
