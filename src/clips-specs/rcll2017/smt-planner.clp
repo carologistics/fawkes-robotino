@@ -13,7 +13,7 @@
 ;---------------------------------------------------------------------------
 
 ; High level pb strucutre collecting data the plugin needs
-(deffunction smt-create-data (?robots ?machines ?orders ?rings ?strategy ?window)
+(deffunction smt-create-data (?robots ?machines ?orders ?rings ?gametime)
 	(bind ?p (pb-create "llsf_msgs.ClipsSmtData"))
 
 	(foreach ?r ?robots
@@ -28,8 +28,7 @@
 	(foreach ?ring ?rings
 		(pb-add-list ?p "rings" ?ring)
 	)
-	(pb-set-field ?p "strategy" ?strategy)
-	(pb-set-field ?p "window" ?window)
+	(pb-set-field ?p "gametime" ?gametime)
 
 	(printout t "Proto:" (pb-tostring ?p) crlf)
 	(return ?p)
@@ -131,6 +130,7 @@
 
 						; TODO Needs to be tested, because this case only appears for replaining
 						(bind ?holding-base (str-cat (wm-key-arg ?wm-fact:key col) _WP))
+						(printout t "holding base is " ?holding-base crlf)
 					)
 
 					; wp-cap-color
@@ -141,6 +141,7 @@
 						)
 
 						(bind ?holding-cap (str-cat (wm-key-arg ?wm-fact:key col) _WP))
+						(printout t "holding cap is " ?holding-cap crlf)
 					)
 
 					; wp-ring-color
@@ -188,21 +189,12 @@
 	(return ?rSMT)
 )
 
-(deffunction smt-create-robots (?team-color)
+(deffunction smt-create-robots (?team-color ?robots)
 	(bind ?rv (create$))
 
-	; (do-for-all-facts ((?wm-fact wm-fact))
-	;     (wm-key-prefix ?wm-fact:key (create$ domain objects-by-type robot))
-
-	;     (foreach ?robot ?wm-fact:values
-	;         (bind ?rv (append$ ?rv (smt-create-robot (string-to-field ?robot) ?team-color 0 0 0)))
-	;     )
-
-	; )
-
-	(bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-1") ?team-color 0 0 0)))
-	(bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-2") ?team-color 0 0 0)))
-	(bind ?rv (append$ ?rv (smt-create-robot (string-to-field "R-3") ?team-color 0 0 0)))
+	(foreach ?robot ?robots
+		(bind ?rv (append$ ?rv (smt-create-robot (string-to-field (str-cat ?robot)) ?team-color 0 0 0)))
+	)
 
 	(return ?rv)
 )
@@ -427,8 +419,17 @@
 	else
 		(pb-set-field ?o "quantity_delivered_magenta" 0)
 	)
-	(pb-set-field ?o "delivery_period_begin" 1)
-	(pb-set-field ?o "delivery_period_end" 900)
+	(do-for-fact ((?wm-fact wm-fact))
+		(wm-key-prefix ?wm-fact:key (create$ refbox order ?id delivery-begin))
+
+		(pb-set-field ?o "delivery_period_begin" ?wm-fact:value)
+	)
+
+	(do-for-fact ((?wm-fact wm-fact))
+		(wm-key-prefix ?wm-fact:key (create$ refbox order ?id delivery-end))
+
+		(pb-set-field ?o "delivery_period_end" ?wm-fact:value)
+	)
 
 	; Extract order-base-color
 	(do-for-fact ((?wm-fact wm-fact))
@@ -547,52 +548,42 @@
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
 
-	; (complexity-c0-planned)
-	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ZERO) (value TRUE))
-
 	; Does an order of wanted complexity exists?
-	(wm-fact (key domain fact order-complexity args? ord ?order-id&O1 com ?complexity&C0) (value TRUE)) ; desired complexity is set here
-
-	; Are all relevant details of this order available?
-	; (wm-fact (key domain fact order-base-color args? ord ?order-id col ?base-col) (value TRUE))
-	; (wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?base-col) (value TRUE))
-	; (wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?base-col) (value TRUE))
-	; (wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?base-col) (value TRUE))
-	; (wm-fact (key domain fact order-cap-color args? ord ?order-id col ?cap-col) (value TRUE))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id&O1 com ?complexity&C0) (value TRUE))
 
 	; Was the order already fulfilled?
 	(not (wm-fact (key domain fact order-fulfilled args? ord ?order-id) (value TRUE)))
+
 	; Is the delivery-window in the future?
 	(wm-fact (key refbox game-time) (values ?sec ?sec-2))
 	(wm-fact (key refbox order ?order-id delivery-end) (value ?delivery-end&:(> ?delivery-end ?sec)) )
 
 	; There was no plan for this goal requested yet?
-	(not (plan-requested ?goal-id))
-	(not (plan-requested-ord ?goal-id ?order-id))
+	(not (plan-requested ?goal-id ?order-id))
 
 	; Only R-1 should run the planner
 	(wm-fact (key config rcll robot-name) (value "R-1"))
 
-  ; No position update is open
-  (wm-fact (key r-1-at ?goal-id update-finished))
-  (wm-fact (key r-2-at ?goal-id update-finished))
-  (wm-fact (key r-3-at ?goal-id update-finished))
+  ; No position update-request is open
+	?u1 <- (wm-fact (key r-1-at ?goal-id update-request))
+	?u2 <- (wm-fact (key r-2-at ?goal-id update-request))
+  ?uf1 <- (wm-fact (key r-1-at ?goal-id update-finished))
+  ?uf2 <- (wm-fact (key r-2-at ?goal-id update-finished))
 =>
-	(printout t "SMT plan call for " ?order-id " with " ?delivery-end " " ?sec crlf)
+	(printout t "SMT plan call for " ?order-id crlf)
+	(bind ?robots (create$ R-1 R-2))
 	(bind ?p
 	  (smt-create-data
-			(smt-create-robots ?team-color)
+			(smt-create-robots ?team-color ?robots)
 			(smt-create-machines ?team-color)
 			(smt-create-orders ?team-color ?order-id ?complexity)
 			(smt-create-rings ?team-color)
-			0 ; Strategy set here, 0 means MACRO and 1 WINDOW
-			5 ; Window size for strategy WINDOW
+			?sec
 	  )
 	)
-
+	(retract ?u1 ?u2 ?uf1 ?uf2)
+	(assert (plan-requested ?goal-id ?order-id))
 	(smt-request "smt-plan" ?p)
-	(assert (plan-requested ?goal-id))
-	(assert (plan-requested-ord ?goal-id ?order-id))
 )
 
 
@@ -603,51 +594,46 @@
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
 
-	; (complexity-c0-planned)
 	(wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ZERO) (value TRUE))
 
 	; Does an order of wanted complexity exists?
-	(wm-fact (key domain fact order-complexity args? ord ?order-id&O2|O3|O4|O5|O6|O7 com ?complexity&C0|C1|C2) (value TRUE)) ; desired complexity is set here
-
-	; Are all relevant details of this order available?
-	; (wm-fact (key domain fact order-base-color args? ord ?order-id col ?base-col) (value TRUE))
-	; (wm-fact (key domain fact order-ring1-color args? ord ?order-id col ?base-col) (value TRUE))
-	; (wm-fact (key domain fact order-ring2-color args? ord ?order-id col ?base-col) (value TRUE))
-	; (wm-fact (key domain fact order-ring3-color args? ord ?order-id col ?base-col) (value TRUE))
-	; (wm-fact (key domain fact order-cap-color args? ord ?order-id col ?cap-col) (value TRUE))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id&O7 com ?complexity&C3) (value TRUE)) ; desired complexity is set here
 
 	; Was the order already fulfilled?
 	(not (wm-fact (key domain fact order-fulfilled args? ord ?order-id) (value TRUE)))
+
 	; Is the delivery-window in the future?
 	(wm-fact (key refbox game-time) (values ?sec ?sec-2))
 	(wm-fact (key refbox order ?order-id delivery-end) (value ?delivery-end&:(> ?delivery-end ?sec)))
 
 	; There was no plan for this goal requested yet?
-	(not (plan-requested ?goal-id))
-	(not (plan-requested-ord ?goal-id ?order-id))
+	(not (plan-requested ?goal-id ?order-id))
 
 	; Only R-1 should run the planner
 	(wm-fact (key config rcll robot-name) (value "R-1"))
-  ; No position update is open
-  (wm-fact (key r-1-at ?goal-id update-finished))
-  (wm-fact (key r-2-at ?goal-id update-finished))
-  (wm-fact (key r-3-at ?goal-id update-finished))
+
+  ; No position update-request is open
+	?u1 <- (wm-fact (key r-1-at ?goal-id update-request))
+	?u2 <- (wm-fact (key r-2-at ?goal-id update-request))
+	?u3 <- (wm-fact (key r-3-at ?goal-id update-request))
+  ?uf1 <- (wm-fact (key r-1-at ?goal-id update-finished))
+  ?uf2 <- (wm-fact (key r-2-at ?goal-id update-finished))
+  ?uf3 <- (wm-fact (key r-3-at ?goal-id update-finished))
 =>
 	(printout t "SMT plan call for " ?order-id " with " ?delivery-end " " ?sec crlf)
+	(bind ?robots (create$ R-1 R-2 R-3))
 	(bind ?p
 	  (smt-create-data
-			(smt-create-robots ?team-color)
+			(smt-create-robots ?team-color ?robots)
 			(smt-create-machines ?team-color)
 			(smt-create-orders ?team-color ?order-id ?complexity)
 			(smt-create-rings ?team-color)
-			0 ; Strategy set here, 0 means MACRO and 1 WINDOW
-			5 ; Window size for strategy WINDOW
+			?sec
 	  )
 	)
-
+	(retract ?u1 ?u2 ?u3 ?uf1 ?uf2 ?uf3)
+	(assert (plan-requested ?goal-id ?order-id))
 	(smt-request "smt-plan" ?p)
-	(assert (plan-requested ?goal-id))
-	(assert (plan-requested-ord ?goal-id ?order-id))
 )
 
 ;---------------------------------------------------------------------------
@@ -655,48 +641,39 @@
 ;---------------------------------------------------------------------------
 
 (defrule production-smt-plan-completed
-	; Call plugin clips-smt
-	?spc <- (smt-plan-complete ?handle)
-
 	?g <- (goal (id ?goal-id) (mode SELECTED))
-	?plan-req <- (plan-requested ?goal-id)
-	?plan-req-ord <- (plan-requested-ord ?goal-id ?order-id)
+	?spc <- (smt-plan-complete ?handle)
+	?pr <- (plan-requested ?goal-id ?order-id)
 
 	(wm-fact (key refbox team-color) (value ?team-color&CYAN|MAGENTA))
 	=>
 	(printout t "SMT plan handle completed " ?handle  crlf)
 
 	(retract ?spc)
+
 	; Create instance of plan
 	(bind ?plan-id (string-to-field (str-cat SMT-PLAN (gensym)) ) )
-	(assert
-		(plan (id ?plan-id) (goal-id ?goal-id))
-	)
+	(assert (plan (id ?plan-id) (goal-id ?goal-id)))
 
-	; Import plan generate by plugin clips-smt into ?plans and extract the plan-actions
+	; Import plan generated by plugin clips-smt into ?plans and extract the plan-actions
 	(bind ?plans (smt-get-plan ?handle))
 	; (printout t "Plan: " (pb-tostring ?plans) crlf)
 
-	; parent_id of 0 refers to already dependencies from the old plans
+	; parent_id of 0 refers to already dependencies from the old plans in case of replanning
 	(assert (wm-fact (key plan-action ?goal-id ?plan-id (string-to-field "0") status) (value FINAL)) )
 
 	; Extract actions inside ActorSpecificPlan -> SequentialPlan -> Actions
 	(progn$ (?ap (pb-field-list ?plans "plans"))
-
 		(if (pb-has-field ?ap "sequential_plan") then
-
 			(bind ?p (pb-field-value ?ap "sequential_plan"))
 			(bind ?actions (pb-field-list ?p "actions"))
 			(bind ?amount-plan-actions 0)
 
-
 			(loop-for-count (?ai (length$ ?actions))
-
 				(bind ?a (nth$ ?ai ?actions))
 				(bind ?actname (pb-field-value ?a "name"))
 
 				(switch ?actname
-
 					;ACTION:::::ENTER-FIELD:::::
 					(case "enter-field" then
 						(printout warn "Ignoring enter-field, done implicitly" crlf)
@@ -2146,22 +2123,22 @@
 			(printout warn "Sequential plan not set on ActorSpecificPlan" crlf)
 		)
 	)
-	(printout t "Amount of plan-actions added: " ?amount-plan-actions crlf)
+	(pb-destroy ?plans)
+	(printout t "plan " ?plan-id " of length " ?amount-plan-actions " addded for goal " ?goal-id crlf)
+
+	; Prepare plan expansion for robots R-2 and R-3
 	(assert (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions) (value ?amount-plan-actions)))
 	(assert (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-2) (value 1)))
 	(assert (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-3) (value 1)))
 	(assert (wm-fact (key plan-action ?goal-id ?plan-id order) (value ?order-id)))
-	(pb-destroy ?plans)
-	(modify ?g (mode EXPANDED))
-	(retract ?plan-req)
-	(retract ?plan-req-ord)
+
+	; R-1 planned, thus it does not need to collect the plan-actions
+	(assert (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-1)))
+	(retract ?pr)
 )
 
 ;---------------------------------------------------------------------------
 ;  Add plan action out of wm-facts plan after wm-fact sync
-;  TODO
-;    - Add filter for correct robot (compare ?action-specific-actor with own name) in order to add only own actions
-;    - Add filter for R-1 for exogenous actions
 ;---------------------------------------------------------------------------
 
 (defrule production-add-plan-action-enter-field
@@ -2657,51 +2634,53 @@
 )
 
 ;---------------------------------------------------------------------------
-; For every wm-fact plan-action ... action added append the id to a wm-fact plan-action ... amount-plan-actions-collected
-; if the amount of actions collected corresponds to the amount of overall plan-actions any robot (R-2 R-3) is ready for expansion
+; If the amount of actions collected corresponds to the amount of overall plan-actions any robot (R-2 R-3) is ready for expansion
 ;---------------------------------------------------------------------------
 
 (defrule production-add-plan-actions-collected-r-2
+	; Robot R-2 did not expanded goal ?goal-id yet
 	(wm-fact (key config rcll robot-name) (value "R-2"))
+	(not (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-2)) )
+
 	(wm-fact (key plan-action ?goal-id ?plan-id  amount-plan-actions) (value ?amount-plan-actions))
 	?apac <- (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-2) (value ?amount-plan-actions-collected))
+
+	; Some action exists which has not yet been added
 	(wm-fact (key plan-action ?goal-id ?plan-id ?id action))
 	(not (wm-fact (key plan-action ?goal-id ?plan-id ?id action-added-r-2)) )
-	(not (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-2)) )
 =>
 	(assert (wm-fact (key plan-action ?goal-id ?plan-id ?id action-added-r-2)) )
 	(modify ?apac (value (+ ?amount-plan-actions-collected 1)) )
-	(printout t "Collect action " ?id " for R-2" crlf)
-	(printout t "Amoutn of collected actions is " ?amount-plan-actions-collected " for R-2 /" ?amount-plan-actions crlf)
 )
 
 (defrule production-add-plan-actions-collected-r-3
+	; Robot R-3 did not expanded goal ?goal-id yet
 	(wm-fact (key config rcll robot-name) (value "R-3"))
+	(not (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-3)) )
+
 	(wm-fact (key plan-action ?goal-id ?plan-id  amount-plan-actions) (value ?amount-plan-actions))
 	?apac <- (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-3) (value ?amount-plan-actions-collected))
+
+	; Some action exists which has not yet been added
 	(wm-fact (key plan-action ?goal-id ?plan-id ?id action))
 	(not (wm-fact (key plan-action ?goal-id ?plan-id ?id action-added-r-3)) )
-	(not (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-3)) )
 =>
-	(printout t "Collect action " ?id " for R-3" crlf)
 	(assert (wm-fact (key plan-action ?goal-id ?plan-id ?id action-added-r-3)) )
 	(modify ?apac (value (+ ?amount-plan-actions-collected 1)) )
-	(printout t "Amoutn of collected actions is " ?amount-plan-actions-collected " for R-3 /" ?amount-plan-actions crlf)
 )
 
 (defrule production-no-call-clips-smt-r-2
+	; Robot R-2 did not expanded goal ?goal-id yet
 	?g <- (goal (id ?goal-id&COMPLEXITY|COMPLEXITY2) (mode SELECTED))
+	(wm-fact (key config rcll robot-name) (value "R-2"))
 	(not (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-2)) )
 
-	; R-2 should only mark the goal as expanded
-	(wm-fact (key config rcll robot-name) (value "R-2"))
-	(wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-2) (value ?amount-plan-actions-collected))
+	; Test that all actions have been added
 	(wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions) (value ?amount-plan-actions))
-	; (test (eq (string-to-field (str-cat (+ (length$ ?amount-plan-actions-collected) 1))) (string-to-field (str-cat ?amount-plan-actions)) ))
+	?apac <- (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-2) (value ?amount-plan-actions-collected))
 	(test (<= ?amount-plan-actions ?amount-plan-actions-collected))
 =>
-	(printout t "Expand for R-2 with " ?amount-plan-actions " and collected " ?amount-plan-actions-collected crlf)
-	(modify ?g (mode EXPANDED))
+	(retract ?apac)
 	(assert
 		(plan (id ?plan-id) (goal-id ?goal-id))
 		(wm-fact (key plan-action ?goal-id ?plan-id expanded-r-2))
@@ -2709,31 +2688,71 @@
 )
 
 (defrule production-no-call-clips-smt-r-3
+	; Robot R-3 did not expanded goal ?goal-id yet
 	?g <- (goal (id ?goal-id&COMPLEXITY|COMPLEXITY2) (mode SELECTED))
+	(wm-fact (key config rcll robot-name) (value "R-3"))
 	(not (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-3)) )
 
-	; R-3 should only mark the goal as expanded
-	(wm-fact (key config rcll robot-name) (value "R-3"))
-	(wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-3) (value ?amount-plan-actions-collected))
+	; Test that all actions have been added
 	(wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions) (value ?amount-plan-actions))
-	; (test (eq (string-to-field (str-cat (+ (length$ ?amount-plan-actions-collected) 1))) (string-to-field (str-cat ?amount-plan-actions)) ))
+	?apac <- (wm-fact (key plan-action ?goal-id ?plan-id amount-plan-actions-collected-r-3) (value ?amount-plan-actions-collected))
 	(test (<= ?amount-plan-actions ?amount-plan-actions-collected))
 =>
 	(printout t "Expand for R-3 with " ?amount-plan-actions " and collected " ?amount-plan-actions-collected crlf)
-	(modify ?g (mode EXPANDED))
+	(retract ?apac)
 	(assert
 		(plan (id ?plan-id) (goal-id ?goal-id))
 		(wm-fact (key plan-action ?goal-id ?plan-id expanded-r-3))
 	)
 )
 
+;---------------------------------------------------------------------------
+; Rules to determine a goal as EXPANDED
+;---------------------------------------------------------------------------
+
+(defrule production-expand-r-1
+	?g <- (goal (id ?goal-id&COMPLEXITY|COMPLEXITY2) (mode SELECTED))
+	(wm-fact (key config rcll robot-name) (value "R-1"))
+	?ex <- (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-1))
+	(plan-action)
+=>
+	(printout t "Expand plan " ?plan-id " for R-1" crlf)
+	(retract ?ex)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule production-expand-r-2
+	?g <- (goal (id ?goal-id&COMPLEXITY|COMPLEXITY2) (mode SELECTED))
+	(wm-fact (key config rcll robot-name) (value "R-2"))
+	?ex <- (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-2))
+	(plan-action)
+=>
+	(printout t "Expand plan " ?plan-id " for R-2" crlf)
+	(retract ?ex)
+	(modify ?g (mode EXPANDED))
+)
+
+(defrule production-expand-r-3
+	?g <- (goal (id ?goal-id&COMPLEXITY|COMPLEXITY2) (mode SELECTED))
+	(wm-fact (key config rcll robot-name) (value "R-3"))
+	?ex <- (wm-fact (key plan-action ?goal-id ?plan-id expanded-r-3))
+	(plan-action)
+=>
+	(printout t "Expand plan " ?plan-id " for R-3" crlf)
+	(retract ?ex)
+	(modify ?g (mode EXPANDED))
+)
+
+;---------------------------------------------------------------------------
 ; Maintain position information of robots
+; - First (if not already done) add position fact
+; - Update position if requested via update-request and return update-finished fact
+;---------------------------------------------------------------------------
 
 (defrule action-init-location-r-1
 	(wm-fact (key config rcll robot-name) (value "R-1"))
 	(not (wm-fact (key r-1-at position)))
 =>
-	(printout t "R-1 initialized its location" crlf)
 	(assert (wm-fact (key r-1-at position) (value "START-I")) )
 )
 
@@ -2741,7 +2760,6 @@
 	(wm-fact (key config rcll robot-name) (value "R-2"))
 	(not (wm-fact (key r-2-at position)))
 =>
-	(printout t "R-2 initialized its location" crlf)
 	(assert (wm-fact (key r-2-at position) (value "START-I")) )
 )
 
@@ -2749,16 +2767,16 @@
 	(wm-fact (key config rcll robot-name) (value "R-3"))
 	(not (wm-fact (key r-3-at position)))
 =>
-	(printout t "R-3 initialized its location" crlf)
 	(assert (wm-fact (key r-3-at position) (value "START-I")) )
 )
 
 (defrule action-update-location-r-1
-	"update information abount of robot R-1"
-	?update <- (wm-fact (key r-1-at ?goal update))
 	(wm-fact (key config rcll robot-name) (value "R-1"))
 	(wm-fact (key domain fact at ?args r ?r m ?at-m side ?side))
 	?wmf <- (wm-fact (key r-1-at position))
+
+	(wm-fact (key r-1-at ?goal update-request))
+	(not (wm-fact (key r-1-at ?goal update-finished)))
 =>
 	(bind ?at-side "-I")
 	(if (eq ?side "OUTPUT") then
@@ -2767,41 +2785,38 @@
 	(bind ?at (str-cat ?at-m ?at-side))
 	(printout t "R-1 changed its location to m " ?at-m " at side " ?side ", short: " ?at crlf)
 	(modify ?wmf (value ?at))
-	(retract ?update)
   (assert (wm-fact (key r-1-at ?goal update-finished)))
 )
 (defrule action-update-location-r-2
-	"update information abount of robot R-2"
-	?update <- (wm-fact (key r-2-at ?goal update))
 	(wm-fact (key config rcll robot-name) (value "R-2"))
 	(wm-fact (key domain fact at ?args r ?r m ?at-m side ?side))
 	?wmf <- (wm-fact (key r-2-at position))
+
+	(wm-fact (key r-2-at ?goal update-request))
+	(not (wm-fact (key r-2-at ?goal update-finished)))
 =>
 	(bind ?at-side "-I")
 	(if (eq ?side "OUTPUT") then
 		(bind ?at-side "-O")
 	)
 	(bind ?at (str-cat ?at-m ?at-side))
-	(printout t "R-2 changed its location to m " ?at-m " at side " ?side ", short: " ?at crlf)
 	(modify ?wmf (value ?at))
-	(retract ?update)
   (assert (wm-fact (key r-2-at ?goal update-finished)))
 )
 
 (defrule action-update-location-r-3
-	"update information abount of robot R-3"
-	?update <- (wm-fact (key r-3-at ?goal update))
 	(wm-fact (key config rcll robot-name) (value "R-3"))
 	(wm-fact (key domain fact at ?args r ?r m ?at-m side ?side))
 	?wmf <- (wm-fact (key r-3-at position))
+
+	(wm-fact (key r-3-at ?goal update-request))
+	(not (wm-fact (key r-3-at ?goal update-finished)))
 =>
 	(bind ?at-side "-I")
 	(if (eq ?side "OUTPUT") then
 		(bind ?at-side "-O")
 	)
 	(bind ?at (str-cat ?at-m ?at-side))
-	(printout t "R-3 changed its location to m " ?at-m " at side " ?side ", short: " ?at crlf)
 	(modify ?wmf (value ?at))
-	(retract ?update)
   (assert (wm-fact (key r-3-at ?goal update-finished)))
 )
