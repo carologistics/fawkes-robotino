@@ -93,8 +93,7 @@ message ClipsSmtData {
     // List of each ring color and its required payment material
     repeated Ring rings = 4;
 
-	required uint32 strategy = 5 [default=0];
-	required uint32 window = 6 [default=5];
+  required uint32 gametime = 5 [default=0];
 
 
     /*
