@@ -76,10 +76,10 @@ const int time_to_fetch = 5;
 const int time_to_feed = 5;
 const int time_to_disc = 5;
 const int time_to_del = 5;
-const float time_to_scaling = 1;
+const float time_to_scaling = 10;
 
 // Consider delivery window for orders
-const bool consider_temporal_constraint = false;
+const bool consider_temporal_constraint = true;
 
 /**
  * Class
@@ -154,7 +154,8 @@ private:
 	std::vector<int> index_upper_bound_actions; // 6,9,11,13 -> 10,13,15,17
 	int amount_req_actions_add_bases; // 2
 
-	// Save information into vetors to make them easier accessible for encoder
+	// Save information into vetors to make them easier accessible for encoder TODO rename variables into xxx_xxx_xxx
+	int world_initTime;
 	std::vector<int> world_initHold;
 	std::vector<int> world_initPos;
 	std::vector<int> world_initInside;
