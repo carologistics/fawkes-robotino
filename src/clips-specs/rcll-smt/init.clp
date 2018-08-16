@@ -35,9 +35,6 @@
 	(wm-robmem-sync-enable
 	"/plan-action/COMPLEXITY2"
 	)
-	; (wm-robmem-sync-enable
-	; "/r-1-at"
-	; )
 	(wm-robmem-sync-enable
 	"/r-2-at"
 	)
