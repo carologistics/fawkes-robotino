@@ -45,16 +45,17 @@
 	(not (goal (id COMPLEXITY2)))
 	(not (goal (id COMPLEXITY)))
 	(not (goal-already-tried COMPLEXITY))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com C3) (value TRUE))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id&O7 com C3) (value TRUE))
 	(wm-fact (key config rcll robot-name) (value ?robot))
 =>
-	(printout t "Detect goal " ?order-id crlf)
-	(assert (goal (id COMPLEXITY)))
-	(assert (goal-already-tried COMPLEXITY))
+  (bind ?goal-id COMPLEXITY)
+	(printout t "Create goal " ?goal-id " with order " ?order-id crlf)
+	(assert (goal (id ?goal-id)))
+	(assert (goal-already-tried ?goal-id))
   (if (eq ?robot "R-1") then
-  	(assert (wm-fact (key r-1-at COMPLEXITY update)))
-  	(assert (wm-fact (key r-2-at COMPLEXITY update)))
-  	(assert (wm-fact (key r-3-at COMPLEXITY update)))
+  	(assert (wm-fact (key r-1-at ?goal-id update-request)))
+]  	(assert (wm-fact (key r-2-at ?goal-id update-request)))
+  	(assert (wm-fact (key r-3-at ?goal-id update-request)))
   )
 )
 
@@ -63,16 +64,19 @@
 	(not (goal (id COMPLEXITY)))
 	(not (goal (id COMPLEXITY2)))
 	(not (goal-already-tried COMPLEXITY2))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id com C0) (value TRUE))
+	(wm-fact (key domain fact order-complexity args? ord ?order-id&O1 com C0) (value TRUE))
+  ; Two robots are free
+  (wm-fact (key plan-action COMPLEXITY ?plan-id r-1-done))
+  (wm-fact (key plan-action COMPLEXITY ?plan-id r-2-done))
 	(wm-fact (key config rcll robot-name) (value ?robot))
 =>
-	(printout t "Detect goal " ?order-id crlf)
-	(assert (goal (id COMPLEXITY2)))
-	(assert (goal-already-tried COMPLEXITY2))
+  (bind ?goal-id COMPLEXITY2)
+	(printout t "Create goal " ?goal-id " with order " ?order-id crlf)
+	(assert (goal (id ?goal-id)))
+	(assert (goal-already-tried ?goal-id))
   (if (eq ?robot "R-1") then
-  	(assert (wm-fact (key r-1-at COMPLEXITY2 update)))
-  	(assert (wm-fact (key r-2-at COMPLEXITY2 update)))
-  	(assert (wm-fact (key r-3-at COMPLEXITY2 update)))
+  	(assert (wm-fact (key r-1-at ?goal-id update-request)))
+  	(assert (wm-fact (key r-2-at ?goal-id update-request)))
   )
 )
 
@@ -189,9 +193,10 @@
     then
     (bind ?num-tries (+ ?num-tries 1))
     (modify ?gm (num-tries ?num-tries))
-  )
+    )
 
   (modify ?g (mode EVALUATED))
+
 )
 
 ; # Goal Clean up
@@ -199,6 +204,7 @@
   ?g <- (goal (id ?goal-id) (parent nil) (type ?goal-type)
           (mode EVALUATED) (outcome ?outcome))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries) (max-tries ?max-tries))
+	(wm-fact (key config rcll robot-name) (value ?robot))
   =>
  ; (printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
 
@@ -233,6 +239,21 @@
           (and (eq ?outcome FAILED) (<= ?num-tries ?max-tries)))
     then
    ;   (printout t "Triggering re-expansion" crlf)
+
+    (if (eq ?robot "R-1") then
+        (if (eq ?goal-id COMPLEXITY) then
+        	(assert (wm-fact (key r-1-at ?goal-id update-request)))
+        	(assert (wm-fact (key r-2-at ?goal-id update-request)))
+        	(assert (wm-fact (key r-3-at ?goal-id update-request)))
+        )
+
+        (if (eq ?goal-id COMPLEXITY2) then
+        	(assert (wm-fact (key r-1-at ?goal-id update-request)))
+        	(assert (wm-fact (key r-2-at ?goal-id update-request)))
+        )
+      )
+
+
       (modify ?g (mode SELECTED) (outcome UNKNOWN))
     else
       (retract ?g ?gm)
