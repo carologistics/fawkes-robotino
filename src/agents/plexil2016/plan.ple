@@ -27,8 +27,15 @@ Command log_info(...);
 Command log_warn(...);
 Command log_error(...);
 
-Boolean Command say(String text);
-Boolean Command goto(String place);
+Boolean Command config_exists(String path);
+String  Command config_get_string(String path);
+Integer Command config_get_int(String path);
+Real    Command config_get_real(String path);
+Boolean Command config_get_bool(String path);
+String  Command config_get_string_or_default(String path, String default);
+Integer Command config_get_int_or_default(String path, Integer default);
+Real    Command config_get_real_or_default(String path, Real default);
+Boolean Command config_get_bool_or_default(String path, Boolean default);
 
 Integer Command pb_peer_create_local(String address, Integer send_port, Integer recv_port);
 Integer Command pb_peer_create_local_crypto(String address, Integer send_port, Integer recv_port,
@@ -47,6 +54,10 @@ String[100] Command navgraph_get_nodes();
 Real    Command navgraph_cost_to(String target);
 Real    Command navgraph_cost_between(String from, String to);
 
+// ###  Skills  ###
+Boolean Command say(String text);
+Boolean Command goto(String place);
+
 // ###  State declarations ###
 Real    Lookup time;
 
@@ -56,13 +67,43 @@ RCLL:
 	Boolean continue = true;    // Repeat the HandleCommand node
 	Integer public_peer_id;
 	Integer private_peer_id;
+	String  peer_address;
 	String  team_name;
 	String  team_color;
+	String  robot_name;
+	Integer robot_number;
 
   Setup:
 	{
-		team_name = "Carologistics";
-	  public_peer_id = pb_peer_create_local("127.0.0.1", 4421, 4411);
+		Integer send_port;
+		Integer recv_port;
+		Boolean exists_send;
+		Boolean exists_recv;
+
+		peer_address = config_get_string("/plexil/rcll2016/params/peer-address");
+		team_name = config_get_string("/plexil/rcll2016/params/team-name");
+		robot_name = config_get_string("/plexil/rcll2016/params/robot-name");
+		robot_number = config_get_int("/plexil/rcll2016/params/robot-number");
+
+		exists_recv = config_exists("/plexil/rcll2016/params/peer-recv-port");
+		exists_send = config_exists("/plexil/rcll2016/params/peer-send-port");
+
+		if (exists_send && exists_recv)
+		{
+			send_port = config_get_int("/plexil/rcll2016/params/peer-send-port");
+			recv_port = config_get_int("/plexil/rcll2016/params/peer-recv-port");
+		}
+		else
+		{
+			send_port = config_get_int("/plexil/rcll2016/params/peer-port");
+			recv_port = send_port;
+		}
+		endif
+
+		print("Setting up public peer, address: ", peer_address,
+		      " send port: ", send_port, " recv_port: ", recv_port);
+
+	  public_peer_id = pb_peer_create_local(peer_address, send_port, recv_port);
 	}
 
 	Run:
@@ -86,25 +127,72 @@ RCLL:
 				{
 					String team_cyan;
 					String team_magenta;
+					Integer send_port;
+					Integer recv_port;
+
 					team_cyan = pb_get_string(msg_id, "team_cyan");
 					team_magenta = pb_get_string(msg_id, "team_magenta");
 
-					pprint("Received game state");
 					if (team_cyan == team_name)
 					{
+						Boolean exists_send;
+						Boolean exists_recv;
+						exists_recv = config_exists("/plexil/rcll2016/params/cyan-recv-port");
+						exists_send = config_exists("/plexil/rcll2016/params/cyan-send-port");
+
 						print("Detected team CYAN, creating peer");
 						team_color = "CYAN";
-						private_peer_id = pb_peer_create_local_crypto("127.0.0.1", 4471, 4451, "randomkey", "aes-128-cbc");
+
+						if (exists_send && exists_recv)
+						{
+							send_port = config_get_int("/plexil/rcll2016/params/cyan-send-port");
+							recv_port = config_get_int("/plexil/rcll2016/params/cyan-recv-port");
+						}
+						else
+						{
+							send_port = config_get_int("/plexil/rcll2016/params/cyan-port");
+							recv_port = send_port;
+						}
+						endif
 					}
 					elseif (team_magenta == team_name)
 					{
+						Boolean exists_send;
+						Boolean exists_recv;
+						exists_recv = config_exists("/plexil/rcll2016/params/magenta-recv-port");
+						exists_send = config_exists("/plexil/rcll2016/params/magenta-send-port");
+
 						print("Detected team MAGENTA, creating peer");
 						team_color = "MAGENTA";
-						private_peer_id = pb_peer_create_local_crypto("127.0.0.1", 4481, 4461, "randomkey", "aes-128-cbc");
+
+						if (exists_send && exists_recv)
+						{
+							send_port = config_get_int("/plexil/rcll2016/params/magenta-send-port");
+							recv_port = config_get_int("/plexil/rcll2016/params/magenta-recv-port");
+						}
+						else
+						{
+							send_port = config_get_int("/plexil/rcll2016/params/magenta-port");
+							recv_port = send_port;
+						}
+						endif
 					}
 					else
 					{
 						print("Neither cyan (", team_cyan, ") nor magenta (", team_magenta, ") name match");
+					}
+					endif
+
+					if (isKnown(team_color))
+					{
+						String crypto_key;
+						String cipher;
+						crypto_key = config_get_string("/plexil/rcll2016/params/crypto-key");
+						cipher = config_get_string("/plexil/rcll2016/params/cipher");
+						print("Setting up private peer, address: ", peer_address,
+						      " send port: ", send_port, " recv_port: ", recv_port);
+						private_peer_id = pb_peer_create_local_crypto(peer_address, send_port, recv_port,
+						                                              crypto_key, cipher);
 					}
 					endif
 				}
@@ -136,12 +224,12 @@ RCLL:
  				seq = seq + 1;
 
 				msgid = pb_create("llsf_msgs.BeaconSignal");
-				pb_set_value(msgid, "number", 1);
+				pb_set_value(msgid, "number", robot_number);
 				pb_set_value(msgid, "seq", seq);
 				pb_set_value(msgid, "time.sec", now_sec);
 				pb_set_value(msgid, "time.nsec", now_nsec);
 				pb_set_value(msgid, "team_name", team_name);
-				pb_set_value(msgid, "peer_name", "Plexil-1");
+				pb_set_value(msgid, "peer_name", robot_name);
 				pb_set_value(msgid, "team_color", team_color);
 				//msgstr = pb_tostring(msgid);
 				//pprint("Created message", msgid, msgstr);
