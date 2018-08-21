@@ -68,9 +68,15 @@ fawkes/meta_plugins:
     - clips-executive-rest-api
 
   rcll-sim-2016:
-    - gazsim-meta-agent
-    - colli
     - mps-laser-gen
     - map-lasergen
     - gazsim-navgraph-generator
+    - colli
 
+  clipsagent-sim-2016:
+    - rcll-sim-2016
+    - gazsim-meta-agent
+
+  plexil-sim-2016:
+    - rcll-sim-2016
+    - plexil
