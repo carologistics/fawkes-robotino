@@ -1,0 +1,159 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/plexil
+---
+plexil:
+
+  spec: rcll2016
+
+  rcll2016:
+    debug:
+      print-xml: true
+
+      enable: true
+      markers:
+        #- :Node:transition
+        #- :Node:outcome
+        #- :Node:clock
+        #- :Node:deactivatePair
+        #- :Node:activatePair
+        #- :Node:times
+        #- :Node:getDestState
+        #- :Node:createCommand
+        #- :Node:findVariable
+        #- :Node:createDeclaredVars
+        #- :Node:getVarsFromInterface
+        #- :Node
+
+        #- :AdapterFactory
+        #- :DynamicLoader
+        #- :ExecApplication
+        #- :ExecListenerFactory
+        #- :ExecListenerFilterFactory
+        #- :InterfaceManager
+        #- :InterfaceAdapter
+        #- :LuvListener
+        #- :UdpAdapter
+        - :ProtobufCommAdapter
+
+        #- :ExpressionFactory:registerFactory
+        #- :Expression
+        #- :IdTable
+        #- :ConstRealVariable
+        #- :RealVariable
+        #- :BinaryExpression
+        #- :Test
+        #- :StateCache
+        #- :InternalCondition
+
+        #- :PlexilExec
+        #- :PlexilExec:planVerbose
+        #- :PlexilExec:step
+        #- :PlexilExec:printPlan
+        #- :PlexilExec:cycle
+        #- :PlexilExec:handleConditionsChanged
+        #- :PlexilExec:addToResourceContention
+
+
+    # Adpater configuration
+    # This part is converted into the Plexil XML interface configuration file.
+    # It is a list of mapping nodes, each describing a single adapter.
+    # Adapter configuration example:
+    # - type: FooAdapter
+    #   attr:
+    #     HostName: localhost
+    #     Port: 3456
+    #   args:
+    #     name: bar
+    #   verbatim-args:
+    #     - tag: DefaultCommandAdapter
+    #     - tag: CustomTag
+    #       text: "some text to put in tag"
+    #       attr:
+    #         name: bar
+    #
+    # Explanation:
+    # type:
+    #   Each adapter must have a type, by which it is loaded.
+    # attr:
+    #   Enables to add XML attributes into the Adapter tag.
+    #   The example shows some viewer parameters for hostname and port.
+    # args:
+    #   Allow passing of parameters to the adapter. Will be added as <Parameter>
+    #   elements with an attribute key referencing the key and the value set as
+    #   the tags text.
+    # verbatim-args:
+    #   Enables directly adding XML tags through the YAML configuration.
+    #   It is a list of mappings, each mapping having the following entries.
+    #   - tag (required): the XML tag name
+    #   - text (optional): added to the text section of the tag
+    #   - attr: attributes added to the XML tag.
+    # verbatim-xml:
+    #   Partial XML document which will be inserted as children in the adapter tag.
+    adapters:
+      # Do not use Utility, use FawkesLogging instead!
+      # Do not use OSNativeTime, use FawkesTime instead!
+      - type: ThreadName
+        attr:
+          name: PlexilExecutive
+      - type: FawkesTimeAdapter
+      - type: FawkesLoggingAdapter
+      - type: BehaviorEngineAdapter
+      - type: ProtobufCommAdapter
+        attr:
+          protos: "@BASEDIR@/src/agents/plexil2016/msgs"
+      - type: NavGraphAdapter
+
+    # A Listener is an object that reports on node state transitions
+    # in the plan, and other execution events.
+    # cf. http://plexil.sourceforge.net/wiki/index.php/Interface_Configuration_File
+    # The configuration supports the same structure as above for adapters.
+    # Cf. there for possible values. Some examples are given below.
+    listeners:
+      # This enables using the Plexil viewer
+      - type: LuvListener
+        attr:
+          Port: 49100
+          HostName: 127.0.0.1
+          Blocking: true
+    #   # The PlanDebugListener outputs as "Node:clock", make sure to enable it in Debug.cfg
+    #   - type: PlanDebugListener
+
+    # The Behavior Engine adapter provides a generic skill_call, which can
+    # always be declared as skill_call(...) and which takes the skill name
+    # as the first parameter, and after that an even number of key/value pairs
+    # for the named arguments of the skill.
+    #
+    # However, it may be desirable to have more descriptive names. This is
+    # possible with the following configuration. Then, the adapter will register
+    # itself for commands with each of the given names and perform the appropriate
+    # mapping.
+    skills:
+      # Allows for a declaration as say(String text)
+      # Note that the order of the arguments is important and must match the order
+      # of the arguments in the Plexil declaration!
+      - name: say
+        args:
+          - type: String
+            name: text
+        template: say{text=?(text)s, wait=true}
+
+      - name: goto
+        args:
+          - type: String
+            name: place
+        template: ppgoto{place=?(place)s}
+
+    plan:
+      ple: "@BASEDIR@/src/agents/plexil2016/plan.ple"
+      # If plx is not configured and compilation is enabled, will
+      # replace ".ple" with ".plx" from ple and use that as plx.
+      #plx: "@BASEDIR@/src/agents/plexil2016/plan.plx"
+      compilation:
+        enable: true
+        # If compilation is enabled:
+        # Force a fresh compile on every startup. Otherwise, will only
+        # compile if PLX does exist or PLE has been modified after PLX.
+        force: false
+
