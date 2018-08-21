@@ -28,10 +28,11 @@ fawkes/meta_plugins:
     - navgraph-generator
     - navgraph-generator-mps
     - laser-lines
-    - ros-cmdvel
-    - ros-navigator
     - gazsim-vis-localization
     - skiller
+  gazsim-meta-robotino-ros-movebase:
+    - ros-cmdvel
+    - ros-navigator
   gazsim-meta-robotino-no-ros:
     - gazsim-meta-robotino
     - amcl
@@ -65,4 +66,11 @@ fawkes/meta_plugins:
     - clips-pddl-parser
     - clips-executive
     - clips-executive-rest-api
+
+  rcll-sim-2016:
+    - gazsim-meta-agent
+    - colli
+    - mps-laser-gen
+    - map-lasergen
+    - gazsim-navgraph-generator
 
