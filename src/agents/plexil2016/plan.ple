@@ -1,0 +1,156 @@
+
+/***************************************************************************
+ *  plan.ple -  PLEXIL plan for the RCLL2016 scenario
+ *
+ *  Created: Tue Aug 21 14:31:17 2018
+ *  Copyright  2006-2018  Tim Niemueller [www.niemueller.de]
+ ****************************************************************************/
+
+/*  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  Read the full text in the LICENSE.GPL file in the doc directory.
+ */
+
+// ###  Command declarations ###
+Command pprint(...);
+Command print(...);
+Command log_debug(...);
+Command log_info(...);
+Command log_warn(...);
+Command log_error(...);
+
+Boolean Command say(String text);
+Boolean Command goto(String place);
+
+Integer Command pb_peer_create_local(String address, Integer send_port, Integer recv_port);
+Integer Command pb_peer_create_local_crypto(String address, Integer send_port, Integer recv_port,
+                                            String crypto_key, String cipher);
+String  Command pb_create(String msg_type);
+        Command pb_set_value(String msg_id, String field, Any value);
+Integer Command pb_get_length(String msg_id, String field);
+Integer Command pb_get_int(String msg_id, String field);
+Real    Command pb_get_real(String msg_id, String field);
+Boolean Command pb_get_bool(String msg_id, String field);
+String  Command pb_get_string(String msg_id, String field);
+String  Command pb_tostring(String msg_id);
+        Command pb_broadcast(Integer peer_id, String msg_id);
+
+String[100] Command navgraph_get_nodes();
+Real    Command navgraph_cost_to(String target);
+Real    Command navgraph_cost_between(String from, String to);
+
+// ###  State declarations ###
+Real    Lookup time;
+
+RCLL:
+{
+  String places[6] = #("C-BS-I" "C-CS1-I" "C-CS2-I" "C-RS1-I" "C-RS2-I" "C-DS");
+	Boolean continue = true;    // Repeat the HandleCommand node
+	Integer public_peer_id;
+	Integer private_peer_id;
+	String  team_name;
+	String  team_color;
+
+  Setup:
+	{
+		team_name = "Carologistics";
+	  public_peer_id = pb_peer_create_local("127.0.0.1", 4421, 4411);
+	}
+
+	Run:
+	Concurrence
+	{
+		HandleIncomingMessages:
+		Concurrence
+		{
+			RepeatCondition continue;
+
+			ReceiveBeaconSignal:
+			OnCommand "llsf_msgs.BeaconSignal" (String msg_id, String from_host, Integer from_port, Real time_received)
+			{
+				pprint("Got", msg_id, from_host, from_port, time_received);
+			}
+
+			{
+				SkipCondition isKnown(private_peer_id);
+				ReceiveGameState:
+				OnCommand "llsf_msgs.GameState" (String msg_id, String from_host, Integer from_port, Real time_received)
+				{
+					String team_cyan;
+					String team_magenta;
+					team_cyan = pb_get_string(msg_id, "team_cyan");
+					team_magenta = pb_get_string(msg_id, "team_magenta");
+
+					pprint("Received game state");
+					if (team_cyan == team_name)
+					{
+						print("Detected team CYAN, creating peer");
+						team_color = "CYAN";
+						private_peer_id = pb_peer_create_local_crypto("127.0.0.1", 4471, 4451, "randomkey", "aes-128-cbc");
+					}
+					elseif (team_magenta == team_name)
+					{
+						print("Detected team MAGENTA, creating peer");
+						team_color = "MAGENTA";
+						private_peer_id = pb_peer_create_local_crypto("127.0.0.1", 4481, 4461, "randomkey", "aes-128-cbc");
+					}
+					else
+					{
+						print("Neither cyan (", team_cyan, ") nor magenta (", team_magenta, ") name match");
+					}
+					endif
+				}
+			}
+		}
+
+		BeaconSignalSend:
+		{
+			Integer seq = 0;
+
+			StartCondition  isKnown(private_peer_id) && isKnown(team_color);
+			RepeatCondition continue;
+
+			// Using the EndCondition would be an alternative to the Wait, but it's not as clear
+			//EndCondition Lookup(time, 1) >= SendBeacon.EXECUTING.START + 2;
+
+			BeaconSignalSendMessage:
+			{
+				String msgid;
+				//String msgstr;
+				Real now;
+				Integer num_val;
+				Integer now_sec;
+				Integer now_nsec;
+
+				now = Lookup(time, 1);
+				now_sec  = real_to_int(floor(now));
+				now_nsec = real_to_int(floor((now - now_sec) * 1000000000));
+ 				seq = seq + 1;
+
+				msgid = pb_create("llsf_msgs.BeaconSignal");
+				pb_set_value(msgid, "number", 1);
+				pb_set_value(msgid, "seq", seq);
+				pb_set_value(msgid, "time.sec", now_sec);
+				pb_set_value(msgid, "time.nsec", now_nsec);
+				pb_set_value(msgid, "team_name", team_name);
+				pb_set_value(msgid, "peer_name", "Plexil-1");
+				pb_set_value(msgid, "team_color", team_color);
+				//msgstr = pb_tostring(msgid);
+				//pprint("Created message", msgid, msgstr);
+
+				pb_broadcast(private_peer_id, msgid);
+			}
+
+			// Wait before we send it again
+			BeaconSignalWait: Wait 2.0;
+		}
+	}
+}
