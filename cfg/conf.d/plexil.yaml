@@ -99,6 +99,7 @@ plexil:
           name: PlexilExecutive
       - type: FawkesTimeAdapter
       - type: FawkesLoggingAdapter
+      - type: FawkesConfigurationAdapter
       - type: BehaviorEngineAdapter
       - type: ProtobufCommAdapter
         attr:
