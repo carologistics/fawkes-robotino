@@ -34,6 +34,8 @@ String  Command global_set_value(String name, Any value);
 
 Integer Lookup  private_peer_id;
 String  Lookup  team_color;
+String  Lookup  game_phase;
+String  Lookup  game_state;
 
 network_handler:
 {
@@ -95,7 +97,6 @@ network_handler:
 			}
 
 			{
-				SkipCondition isKnown(Lookup(private_peer_id));
 				ReceiveGameState:
 				OnCommand "llsf_msgs.GameState" (String msg_id, String from_host, Integer from_port, Real time_received)
 				{
@@ -104,77 +105,89 @@ network_handler:
 					Integer send_port;
 					Integer recv_port;
 					String  team_color;
+					String game_state;
+					String game_phase;
 
-					team_cyan = pb_get_string(msg_id, "team_cyan");
-					team_magenta = pb_get_string(msg_id, "team_magenta");
+					game_state = pb_get_string(msg_id, "state");
+					global_set_value("game_state", game_state);
+					game_phase = pb_get_string(msg_id, "phase");
+					global_set_value("game_phase", game_phase);
+					pprint("game state: ", game_state, ", game phase: ", game_phase);
 
-					if (team_cyan == team_name)
+					SetTeam:
 					{
-						Boolean exists_send;
-						Boolean exists_recv;
-						exists_recv = config_exists("/plexil/rcll2016/params/cyan-recv-port");
-						exists_send = config_exists("/plexil/rcll2016/params/cyan-send-port");
+						SkipCondition isKnown(Lookup(private_peer_id));
+						team_cyan = pb_get_string(msg_id, "team_cyan");
+						team_magenta = pb_get_string(msg_id, "team_magenta");
 
-						print("Detected team CYAN, creating peer");
-						team_color = "CYAN";
-
-						if (exists_send && exists_recv)
+						if (team_cyan == team_name)
 						{
-							send_port = config_get_int("/plexil/rcll2016/params/cyan-send-port");
-							recv_port = config_get_int("/plexil/rcll2016/params/cyan-recv-port");
+							Boolean exists_send;
+							Boolean exists_recv;
+							exists_recv = config_exists("/plexil/rcll2016/params/cyan-recv-port");
+							exists_send = config_exists("/plexil/rcll2016/params/cyan-send-port");
+
+							print("Detected team CYAN, creating peer");
+							team_color = "CYAN";
+
+							if (exists_send && exists_recv)
+							{
+								send_port = config_get_int("/plexil/rcll2016/params/cyan-send-port");
+								recv_port = config_get_int("/plexil/rcll2016/params/cyan-recv-port");
+							}
+							else
+							{
+								send_port = config_get_int("/plexil/rcll2016/params/cyan-port");
+								recv_port = send_port;
+							}
+							endif
+						}
+						elseif (team_magenta == team_name)
+						{
+							Boolean exists_send;
+							Boolean exists_recv;
+							exists_recv = config_exists("/plexil/rcll2016/params/magenta-recv-port");
+							exists_send = config_exists("/plexil/rcll2016/params/magenta-send-port");
+
+							print("Detected team MAGENTA, creating peer");
+							team_color = "MAGENTA";
+
+							if (exists_send && exists_recv)
+							{
+								send_port = config_get_int("/plexil/rcll2016/params/magenta-send-port");
+								recv_port = config_get_int("/plexil/rcll2016/params/magenta-recv-port");
+							}
+							else
+							{
+								send_port = config_get_int("/plexil/rcll2016/params/magenta-port");
+								recv_port = send_port;
+							}
+							endif
 						}
 						else
 						{
-							send_port = config_get_int("/plexil/rcll2016/params/cyan-port");
-							recv_port = send_port;
+							print("Neither cyan (", team_cyan, ") nor magenta (", team_magenta, ") name match");
+						}
+						endif
+
+						if (isKnown(team_color))
+						{
+							String crypto_key;
+							String cipher;
+							Integer peer_id;
+
+							crypto_key = config_get_string("/plexil/rcll2016/params/crypto-key");
+							cipher = config_get_string("/plexil/rcll2016/params/cipher");
+							print("Setting up private peer, address: ", peer_address,
+							      " send port: ", send_port, " recv_port: ", recv_port);
+							peer_id = pb_peer_create_local_crypto(peer_address, send_port, recv_port,
+							                                      crypto_key, cipher);
+
+							global_set_value("private_peer_id", peer_id);
+							global_set_value("team_color", team_color);
 						}
 						endif
 					}
-					elseif (team_magenta == team_name)
-					{
-						Boolean exists_send;
-						Boolean exists_recv;
-						exists_recv = config_exists("/plexil/rcll2016/params/magenta-recv-port");
-						exists_send = config_exists("/plexil/rcll2016/params/magenta-send-port");
-
-						print("Detected team MAGENTA, creating peer");
-						team_color = "MAGENTA";
-
-						if (exists_send && exists_recv)
-						{
-							send_port = config_get_int("/plexil/rcll2016/params/magenta-send-port");
-							recv_port = config_get_int("/plexil/rcll2016/params/magenta-recv-port");
-						}
-						else
-						{
-							send_port = config_get_int("/plexil/rcll2016/params/magenta-port");
-							recv_port = send_port;
-						}
-						endif
-					}
-					else
-					{
-						print("Neither cyan (", team_cyan, ") nor magenta (", team_magenta, ") name match");
-					}
-					endif
-
-					if (isKnown(team_color))
-					{
-						String crypto_key;
-						String cipher;
-						Integer peer_id;
-
-						crypto_key = config_get_string("/plexil/rcll2016/params/crypto-key");
-						cipher = config_get_string("/plexil/rcll2016/params/cipher");
-						print("Setting up private peer, address: ", peer_address,
-						      " send port: ", send_port, " recv_port: ", recv_port);
-						peer_id = pb_peer_create_local_crypto(peer_address, send_port, recv_port,
-						                                      crypto_key, cipher);
-
-						global_set_value("private_peer_id", peer_id);
-						global_set_value("team_color", team_color);
-					}
-					endif
 				}
 			}
 		}
