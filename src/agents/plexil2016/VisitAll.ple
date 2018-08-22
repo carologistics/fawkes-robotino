@@ -1,0 +1,95 @@
+// vim: noet:ci:pi:sts=0:sw=4:ts=4
+/***************************************************************************
+ *  VisitAll - Visit all MPSs
+ *
+ *  Created: Wed 22 Aug 2018 19:46:30 CEST 19:46
+ *  Copyright  2018  Till Hofmann <hofmann@kbsg.rwth-aachen.de>
+ ****************************************************************************/
+
+/*  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  Read the full text in the LICENSE.GPL file in the doc directory.
+ */
+
+// ###  Command declarations ###
+Command pprint(...);
+Command print(...);
+Command log_debug(...);
+Command log_info(...);
+Command log_warn(...);
+Command log_error(...);
+
+String[100] Command navgraph_get_nodes();
+Real    Command navgraph_cost_to(String target);
+Real    Command navgraph_cost_between(String from, String to);
+
+// ###  Skills  ###
+Boolean Command say(String text);
+Boolean Command goto(String place);
+
+// ###  State declarations ###
+Real    Lookup time;
+
+LibraryAction network_handler (In Boolean continue);
+
+RCLL:
+{
+	String places[6] = #("C-BS-I" "C-CS1-I" "C-CS2-I" "C-RS1-I" "C-RS2-I" "C-DS");
+	Integer num_visited = 0;
+	Boolean visited[6];
+	Boolean continue = true;
+	Boolean prepare_sent = false;
+
+	Run:
+	Concurrence
+	{
+		HandleIncoming:
+		LibraryCall network_handler (continue=continue);
+
+		VisitAll:
+		{
+			StartCondition isKnown(Lookup(team_color));
+			Wait 10.0;
+			//places = navgraph_get_nodes();
+			while num_visited < arraySize(places)
+			{
+				Integer next_index;
+				Real cost;
+				Real next_cost;
+				for (Integer i = 0; i < arraySize(places); i + 1)
+				{
+					cost = navgraph_cost_to(places[i]);
+					log_info("Checking node ", places[i], " with cost ", cost);
+					if (!isKnown(next_index) || cost < next_cost)
+						if (!isKnown(visited[i]) || !visited[i])
+						{
+							next_index = i;
+							next_cost = cost;
+						}
+						endif
+					endif
+				}
+				if ! isKnown(next_index)
+				{
+					log_error("Could not find a valid next place!");
+				}
+				else
+				{
+					GoTo: SynchronousCommand goto(places[next_index]);
+					visited[next_index] = true;
+					num_visited = 1 + num_visited;
+				}
+				endif
+			}
+			log_info("Visited all machines");
+	    }
+	}
+}
