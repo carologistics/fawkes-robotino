@@ -104,6 +104,7 @@ plexil:
       - type: ProtobufCommAdapter
         attr:
           protos: "@BASEDIR@/src/agents/plexil2016/msgs"
+      - type: GlobalState
       - type: NavGraphAdapter
 
     # A Listener is an object that reports on node state transitions
@@ -151,6 +152,7 @@ plexil:
       # If plx is not configured and compilation is enabled, will
       # replace ".ple" with ".plx" from ple and use that as plx.
       #plx: "@BASEDIR@/src/agents/plexil2016/plan.plx"
+      #lib-path: ["@BASEDIR@/src/agents/plexil2016"]
       compilation:
         enable: true
         # If compilation is enabled:
@@ -158,9 +160,19 @@ plexil:
         # compile if PLX does exist or PLE has been modified after PLX.
         force: false
 
+    global-states:
+      - name: private_peer_id
+        type: Integer
+      - name: team_name
+        type: String
+      - name: team_color
+        type: String
 
     params:
       team-name: Carologistics
+
+      crypto-key: randomkey
+      cipher: aes-128-cbc
 
       robot-name: R-1
       robot-number: 1
