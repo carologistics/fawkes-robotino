@@ -167,6 +167,10 @@ plexil:
         type: String
       - name: team_color
         type: String
+      - name: game_phase
+        type: String
+      - name: game_state
+        type: String
 
     params:
       team-name: Carologistics
