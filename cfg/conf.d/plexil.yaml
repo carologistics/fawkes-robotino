@@ -146,6 +146,39 @@ plexil:
           - type: String
             name: place
         template: ppgoto{place=?(place)s}
+      - name: pick_from_conveyor
+        args:
+          - type: String
+            name: mps
+          - type: String
+            name: side
+        template: get_product_from{place=?(mps)s, side=?(side)s}
+      - name: pick_from_shelf
+        args:
+          - type: String
+            name: mps
+          - type: String
+            name: shelf
+        template: get_product_from{place=?(mps)s, side="input", shelf=?(shelf)S}
+      - name: put_on_conveyor
+        args:
+          - type: String
+            name: mps
+          - type: String
+            name: side
+        template: bring_product_to{place=?(mps)s, side=?(side)s}
+      - name: put_on_shelf
+        args:
+          - type: String
+            name: mps
+          - type: String
+            name: shelf
+        template: bring_product_to{place=?(mps)s, shelf=?(shelf)S}
+      - name: put_on_slide
+        args:
+          - type: String
+            name: mps
+        template: bring_product_to{place=?(mps)s, slide=true}
 
     plan:
       ple: "@BASEDIR@/src/agents/plexil2016/plan.ple"
