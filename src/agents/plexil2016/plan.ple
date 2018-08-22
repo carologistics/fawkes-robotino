@@ -3,7 +3,8 @@
  *  plan.ple -  PLEXIL plan for the RCLL2016 scenario
  *
  *  Created: Tue Aug 21 14:31:17 2018
- *  Copyright  2006-2018  Tim Niemueller [www.niemueller.de]
+ *  Copyright  2018  Tim Niemueller [www.niemueller.de]
+ *             2018  Till Hofmann
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
