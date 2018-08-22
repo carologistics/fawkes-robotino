@@ -1,0 +1,31 @@
+
+
+Command pprint(...);
+
+String  Command pb_create(String msg_type);
+        Command pb_set_value(String msg_id, String field, Any value);
+        Command pb_broadcast(Integer peer_id, String msg_id);
+
+Integer Lookup  private_peer_id;
+String  Lookup  team_color;
+
+SendPrepareCS:
+{
+	In String  machine;
+	In String  operation;
+
+	PreCondition  isKnown(Lookup(private_peer_id));
+
+	PrepareCS_SendMessage:
+	{
+		String msgid;
+
+		msgid = pb_create("llsf_msgs.PrepareMachine");
+		pb_set_value(msgid, "team_color", Lookup(team_color));
+		pb_set_value(msgid, "machine", machine);
+		pb_set_value(msgid, "instruction_cs.operation", operation);
+
+		pprint("Sending prepare CS", machine, operation);
+		pb_broadcast(Lookup(private_peer_id), msgid);
+	}
+}

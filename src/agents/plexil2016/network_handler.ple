@@ -1,0 +1,225 @@
+
+// ###  Command declarations ###
+Command pprint(...);
+Command print(...);
+Command log_debug(...);
+Command log_info(...);
+Command log_warn(...);
+Command log_error(...);
+
+Boolean Command config_exists(String path);
+String  Command config_get_string(String path);
+Integer Command config_get_int(String path);
+Real    Command config_get_real(String path);
+Boolean Command config_get_bool(String path);
+String  Command config_get_string_or_default(String path, String default);
+Integer Command config_get_int_or_default(String path, Integer default);
+Real    Command config_get_real_or_default(String path, Real default);
+Boolean Command config_get_bool_or_default(String path, Boolean default);
+
+Integer Command pb_peer_create_local(String address, Integer send_port, Integer recv_port);
+Integer Command pb_peer_create_local_crypto(String address, Integer send_port, Integer recv_port,
+                                            String crypto_key, String cipher);
+String  Command pb_create(String msg_type);
+        Command pb_set_value(String msg_id, String field, Any value);
+Integer Command pb_get_length(String msg_id, String field);
+Integer Command pb_get_int(String msg_id, String field);
+Real    Command pb_get_real(String msg_id, String field);
+Boolean Command pb_get_bool(String msg_id, String field);
+String  Command pb_get_string(String msg_id, String field);
+String  Command pb_tostring(String msg_id);
+        Command pb_broadcast(Integer peer_id, String msg_id);
+
+String  Command global_set_value(String name, Any value);
+
+Integer Lookup  private_peer_id;
+String  Lookup  team_color;
+
+network_handler:
+{
+	In    Boolean continue;
+
+	Integer public_peer_id;
+	String  peer_address;
+	String  team_name;
+	String  robot_name;
+	Integer robot_number;
+
+	RepeatCondition continue;
+
+  Setup:
+	{
+		Integer send_port;
+		Integer recv_port;
+		Boolean exists_send;
+		Boolean exists_recv;
+
+		peer_address = config_get_string("/plexil/rcll2016/params/peer-address");
+		team_name = config_get_string("/plexil/rcll2016/params/team-name");
+		robot_name = config_get_string("/plexil/rcll2016/params/robot-name");
+		robot_number = config_get_int("/plexil/rcll2016/params/robot-number");
+
+		exists_recv = config_exists("/plexil/rcll2016/params/peer-recv-port");
+		exists_send = config_exists("/plexil/rcll2016/params/peer-send-port");
+
+		if (exists_send && exists_recv)
+		{
+			send_port = config_get_int("/plexil/rcll2016/params/peer-send-port");
+			recv_port = config_get_int("/plexil/rcll2016/params/peer-recv-port");
+		}
+		else
+		{
+			send_port = config_get_int("/plexil/rcll2016/params/peer-port");
+			recv_port = send_port;
+		}
+		endif
+
+		print("Setting up public peer, address: ", peer_address,
+		      " send port: ", send_port, " recv_port: ", recv_port);
+
+	  public_peer_id = pb_peer_create_local(peer_address, send_port, recv_port);
+	}
+
+	RunNetwork:
+	Concurrence
+	{
+		HandleIncomingMessages:
+		Concurrence
+		{
+			RepeatCondition continue;
+
+			ReceiveBeaconSignal:
+			OnCommand "llsf_msgs.BeaconSignal" (String msg_id, String from_host, Integer from_port, Real time_received)
+			{
+				pprint("Got", msg_id, from_host, from_port, time_received);
+			}
+
+			{
+				SkipCondition isKnown(Lookup(private_peer_id));
+				ReceiveGameState:
+				OnCommand "llsf_msgs.GameState" (String msg_id, String from_host, Integer from_port, Real time_received)
+				{
+					String  team_cyan;
+					String  team_magenta;
+					Integer send_port;
+					Integer recv_port;
+					String  team_color;
+
+					team_cyan = pb_get_string(msg_id, "team_cyan");
+					team_magenta = pb_get_string(msg_id, "team_magenta");
+
+					if (team_cyan == team_name)
+					{
+						Boolean exists_send;
+						Boolean exists_recv;
+						exists_recv = config_exists("/plexil/rcll2016/params/cyan-recv-port");
+						exists_send = config_exists("/plexil/rcll2016/params/cyan-send-port");
+
+						print("Detected team CYAN, creating peer");
+						team_color = "CYAN";
+
+						if (exists_send && exists_recv)
+						{
+							send_port = config_get_int("/plexil/rcll2016/params/cyan-send-port");
+							recv_port = config_get_int("/plexil/rcll2016/params/cyan-recv-port");
+						}
+						else
+						{
+							send_port = config_get_int("/plexil/rcll2016/params/cyan-port");
+							recv_port = send_port;
+						}
+						endif
+					}
+					elseif (team_magenta == team_name)
+					{
+						Boolean exists_send;
+						Boolean exists_recv;
+						exists_recv = config_exists("/plexil/rcll2016/params/magenta-recv-port");
+						exists_send = config_exists("/plexil/rcll2016/params/magenta-send-port");
+
+						print("Detected team MAGENTA, creating peer");
+						team_color = "MAGENTA";
+
+						if (exists_send && exists_recv)
+						{
+							send_port = config_get_int("/plexil/rcll2016/params/magenta-send-port");
+							recv_port = config_get_int("/plexil/rcll2016/params/magenta-recv-port");
+						}
+						else
+						{
+							send_port = config_get_int("/plexil/rcll2016/params/magenta-port");
+							recv_port = send_port;
+						}
+						endif
+					}
+					else
+					{
+						print("Neither cyan (", team_cyan, ") nor magenta (", team_magenta, ") name match");
+					}
+					endif
+
+					if (isKnown(team_color))
+					{
+						String crypto_key;
+						String cipher;
+						Integer peer_id;
+
+						crypto_key = config_get_string("/plexil/rcll2016/params/crypto-key");
+						cipher = config_get_string("/plexil/rcll2016/params/cipher");
+						print("Setting up private peer, address: ", peer_address,
+						      " send port: ", send_port, " recv_port: ", recv_port);
+						peer_id = pb_peer_create_local_crypto(peer_address, send_port, recv_port,
+						                                      crypto_key, cipher);
+
+						global_set_value("private_peer_id", peer_id);
+						global_set_value("team_color", team_color);
+					}
+					endif
+				}
+			}
+		}
+
+		BeaconSignalSend:
+		{
+			Integer seq = 0;
+
+			StartCondition  isKnown(Lookup(private_peer_id)) && isKnown(Lookup(team_color));
+			RepeatCondition continue;
+
+			// Using the EndCondition would be an alternative to the Wait, but it's not as clear
+			//EndCondition Lookup(time, 1) >= SendBeacon.EXECUTING.START + 2;
+
+			BeaconSignalSendMessage:
+			{
+				String msgid;
+				//String msgstr;
+				Real now;
+				Integer num_val;
+				Integer now_sec;
+				Integer now_nsec;
+
+				now = Lookup(time, 1);
+				now_sec  = real_to_int(floor(now));
+				now_nsec = real_to_int(floor((now - now_sec) * 1000000000));
+ 				seq = seq + 1;
+
+				msgid = pb_create("llsf_msgs.BeaconSignal");
+				pb_set_value(msgid, "number", robot_number);
+				pb_set_value(msgid, "seq", seq);
+				pb_set_value(msgid, "time.sec", now_sec);
+				pb_set_value(msgid, "time.nsec", now_nsec);
+				pb_set_value(msgid, "team_name", team_name);
+				pb_set_value(msgid, "peer_name", robot_name);
+				pb_set_value(msgid, "team_color", Lookup(team_color));
+				//msgstr = pb_tostring(msgid);
+				//pprint("Created message", msgid, msgstr);
+
+				print("Sending beacon");
+				pb_broadcast(Lookup(private_peer_id), msgid);
+			}
+
+			// Wait before we send it again
+			BeaconSignalWait: Wait 2.0;
+		}
+	}
+}
