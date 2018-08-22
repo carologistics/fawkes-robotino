@@ -14,6 +14,7 @@
 	<Adapter AdapterType="BehaviorEngineAdapter" LibPath="../../../lib/plexil/BehaviorEngineAdapter.so" />
 	<Adapter AdapterType="ProtobufCommAdapter" LibPath="../../../lib/plexil/ProtobufCommAdapter.so"
 	         protos="@BASEDIR@/src/agents/plexil2016/msgs" />
+	<Adapter AdapterType="GlobalState" LibPath="../../../lib/plexil/GlobalState.so" />
 	<Adapter AdapterType="NavGraphAdapter" LibPath="../../../lib/plexil/NavGraphAdapter.so" />
 	<Listener ListenerType="LuvListener" Blocking="false" HostName="127.0.0.1" Port="49100" />
 </Interfaces>
