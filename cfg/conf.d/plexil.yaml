@@ -105,6 +105,8 @@ plexil:
         attr:
           protos: "@BASEDIR@/src/agents/plexil2016/msgs"
       - type: GlobalState
+        verbatim-args:
+          - tag: DefaultLookupAdapter
       - type: NavGraphAdapter
 
     # A Listener is an object that reports on node state transitions
@@ -213,19 +215,19 @@ plexil:
         # Force a fresh compile on every startup (compilation must be enabled above)
         force: false
 
-    global-states:
-      - name: private_peer_id
-        type: Integer
-      - name: team_name
-        type: String
-      - name: team_color
-        type: String
-      - name: robot_name
-        type: String
-      - name: game_phase
-        type: String
-      - name: game_state
-        type: String
+    # global-states:
+    #   - name: private_peer_id
+    #     type: Integer
+    #   - name: team_name
+    #     type: String
+    #   - name: team_color
+    #     type: String
+    #   - name: robot_name
+    #     type: String
+    #   - name: game_phase
+    #     type: String
+    #   - name: game_state
+    #     type: String
 
     params:
       team-name: Carologistics
