@@ -197,6 +197,8 @@ plexil:
         - network_handler.ple
         - SendPrepareBS.ple
         - SendPrepareCS.ple
+        - SendPrepareDS.ple
+        - SendPrepareRS.ple
 
       # PLX to execute.
       plx: plan.plx
