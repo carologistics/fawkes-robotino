@@ -108,26 +108,30 @@ RCLL:
 
 		ProduceC0:
 		{
-			StartCondition Lookup(game_phase) == "PRODUCTION" && Lookup(game_state) == "RUNNING";
-			log_info("Now in PRODUCTION and RUNNING");
-			SynchronousCommand goto("C-CS1-I");
-			SynchronousCommand pick_from_shelf("C-CS1", "LEFT");
-			LibraryCall SendPrepareCS (machine="C-CS1", operation="RETRIEVE_CAP");
-			SynchronousCommand put_on_conveyor("C-CS1", "input");
-			SynchronousCommand goto("C-CS1-O");
-			SynchronousCommand pick_from_conveyor("C-CS1", "output");
-			SynchronousCommand goto("C-RS1-I");
-			SynchronousCommand put_on_slide("C-RS1");
-			SynchronousCommand goto("C-BS-I");
-			LibraryCall SendPrepareBS (machine="C-BS", side="INPUT", base_color="BASE_BLACK");
-			SynchronousCommand pick_from_conveyor("C-BS", "input");
-			SynchronousCommand goto("C-CS1-I");
-			SynchronousCommand put_on_conveyor("C-CS1", "input");
-			LibraryCall SendPrepareCS (machine="C-CS1", operation="MOUNT_CAP");
-			SynchronousCommand goto("C-CS1-O");
-			SynchronousCommand pick_from_conveyor("C-CS1", "output");
-			SynchronousCommand goto("C-DS");
-			SynchronousCommand put_on_conveyor("C-DS", "input");
+			StartCondition Lookup(game_phase) == "PRODUCTION" &&
+			               Lookup(game_state) == "RUNNING" &&
+			               EnterField.state == FINISHED;
+
+			log_info("Producing C0");
+			goto_cs_i:  SynchronousCommand goto("C-CS1-I");
+			pick_shelf: SynchronousCommand pick_from_shelf("C-CS1", "LEFT");
+			prep_cs_r:  LibraryCall SendPrepareCS (machine="C-CS1", operation="RETRIEVE_CAP");
+			put_cs:     SynchronousCommand put_on_conveyor("C-CS1", "input");
+			goto_cs_o:  SynchronousCommand goto("C-CS1-O");
+			pick_cs:    SynchronousCommand pick_from_conveyor("C-CS1", "output");
+			goto_rs_i:  SynchronousCommand goto("C-RS1-I");
+			put_rs:     SynchronousCommand put_on_slide("C-RS1");
+			goto_bs:    SynchronousCommand goto("C-BS-I");
+			prep_bs:    LibraryCall SendPrepareBS (machine="C-BS", side="INPUT", base_color="BASE_BLACK");
+			pick_bs:    SynchronousCommand pick_from_conveyor("C-BS", "input");
+			goto_cs_i2: SynchronousCommand goto("C-CS1-I");
+			pick_cs2:   SynchronousCommand put_on_conveyor("C-CS1", "input");
+			prep_cs_m:  LibraryCall SendPrepareCS (machine="C-CS1", operation="MOUNT_CAP");
+			goto_cs_o2: SynchronousCommand goto("C-CS1-O");
+			pick_cs3:   SynchronousCommand pick_from_conveyor("C-CS1", "output");
+			goto_ds:    SynchronousCommand goto("C-DS");
+			prep_ds:    LibraryCall SendPrepareDS (machine="C-DS", gate=1);
+			put_ds:     SynchronousCommand put_on_conveyor("C-DS", "input");
 		}
 	}
 }
