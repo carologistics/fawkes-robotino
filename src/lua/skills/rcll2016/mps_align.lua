@@ -28,7 +28,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "mps_align"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = { "motor_move" }
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
@@ -118,7 +118,7 @@ function tag_visible(vis_hist)
    end
 
    if tag_iface and tag_iface:visibility_history() > vis_hist then
-      print("Tag visible: " .. tag_iface:id())
+      --print("Tag visible: " .. tag_iface:id())
       return true
    end
    return false
@@ -231,7 +231,7 @@ function match_line(tag, lines)
          then
             min_dist = dist
             matched_line = line
-            printf("Line dist: %f", dist)
+            --printf("Line dist: %f", dist)
          end
       end
    end
@@ -414,10 +414,10 @@ function ALIGN_PRECISE:init()
    self.fsm.vars.align_attempts = self.fsm.vars.align_attempts + 1
   
    if self.fsm.vars.p_tag then
-      printf("p_tag: %f %f %f",
-         self.fsm.vars.p_tag.x,
-         self.fsm.vars.p_tag.y,
-         fawkes.tf.get_yaw(self.fsm.vars.p_tag.ori))
+      --printf("p_tag: %f %f %f",
+      --   self.fsm.vars.p_tag.x,
+      --   self.fsm.vars.p_tag.y,
+      --   fawkes.tf.get_yaw(self.fsm.vars.p_tag.ori))
 
       self.args["motor_move"] = { 
          x = self.fsm.vars.p_tag.x,
