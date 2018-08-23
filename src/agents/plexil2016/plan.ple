@@ -57,6 +57,7 @@ Real    Command navgraph_cost_between(String from, String to);
 
 // ###  Skills  ###
 Boolean Command say(String text);
+Boolean Command enter_field(String team_color, String robot_name);
 Boolean Command goto(String place);
 Boolean Command pick_from_conveyor(String mps, String side);
 Boolean Command pick_from_shelf(String mps, String shelf);
@@ -68,6 +69,8 @@ Boolean Command put_on_slide(String mps);
 Real    Lookup time;
 String  Lookup game_phase;
 String  Lookup game_state;
+String  Lookup team_color;
+String  Lookup robot_name;
 
 // ###  Library actions (check <action_name>.ple for content) ###
 LibraryAction network_handler (In Boolean continue);
@@ -85,6 +88,23 @@ RCLL:
 	{
 		HandleIncoming:
 		LibraryCall network_handler (continue=continue);
+
+		EnterField:
+		{
+			String team_color_arg;
+			String robot_name_arg;
+
+			StartCondition Lookup(game_phase) == "PRODUCTION" &&
+			               Lookup(game_state) == "RUNNING" &&
+			               isKnown(Lookup(team_color)) &&
+			               isKnown(Lookup(robot_name));
+
+			team_color_arg = Lookup(team_color);
+			robot_name_arg = Lookup(robot_name);
+
+			log_info("Now in PRODUCTION and RUNNING -- entering field");
+			enter_field: SynchronousCommand enter_field(team_color_arg, robot_name_arg);
+		}
 
 		ProduceC0:
 		{
