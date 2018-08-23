@@ -118,7 +118,7 @@ plexil:
         attr:
           Port: 49100
           HostName: 127.0.0.1
-          Blocking: true
+          Blocking: false
     #   # The PlanDebugListener outputs as "Node:clock", make sure to enable it in Debug.cfg
     #   - type: PlanDebugListener
 
