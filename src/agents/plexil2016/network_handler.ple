@@ -48,6 +48,7 @@ Integer Command pb_get_int(String msg_id, String field);
 Real    Command pb_get_real(String msg_id, String field);
 Boolean Command pb_get_bool(String msg_id, String field);
 String  Command pb_get_string(String msg_id, String field);
+Boolean Command pb_has_field(String msg_id, String field);
 String  Command pb_tostring(String msg_id);
         Command pb_broadcast(Integer peer_id, String msg_id);
 
@@ -57,6 +58,7 @@ Integer Lookup  private_peer_id;
 String  Lookup  team_color;
 String  Lookup  game_phase;
 String  Lookup  game_state;
+String  Lookup  robot_name;
 
 network_handler:
 {
@@ -65,7 +67,6 @@ network_handler:
 	Integer public_peer_id;
 	String  peer_address;
 	String  team_name;
-	String  robot_name;
 	Integer robot_number;
 
 	RepeatCondition continue;
@@ -76,14 +77,17 @@ network_handler:
 		Integer recv_port;
 		Boolean exists_send;
 		Boolean exists_recv;
+		String  cfg_robot_name;
 
 		peer_address = config_get_string("/plexil/rcll2016/params/peer-address");
 		team_name = config_get_string("/plexil/rcll2016/params/team-name");
-		robot_name = config_get_string("/plexil/rcll2016/params/robot-name");
+		cfg_robot_name = config_get_string("/plexil/rcll2016/params/robot-name");
 		robot_number = config_get_int("/plexil/rcll2016/params/robot-number");
 
 		exists_recv = config_exists("/plexil/rcll2016/params/peer-recv-port");
 		exists_send = config_exists("/plexil/rcll2016/params/peer-send-port");
+
+		global_set_value("robot_name", cfg_robot_name);
 
 		if (exists_send && exists_recv)
 		{
@@ -114,15 +118,13 @@ network_handler:
 			ReceiveBeaconSignal:
 			OnCommand "llsf_msgs.BeaconSignal" (String msg_id, String from_host, Integer from_port, Real time_received)
 			{
-				pprint("Got", msg_id, from_host, from_port, time_received);
+				//pprint("Got", msg_id, from_host, from_port, time_received);
 			}
 
 			{
 				ReceiveGameState:
 				OnCommand "llsf_msgs.GameState" (String msg_id, String from_host, Integer from_port, Real time_received)
 				{
-					String  team_cyan;
-					String  team_magenta;
 					Integer send_port;
 					Integer recv_port;
 					String  team_color;
@@ -146,57 +148,73 @@ network_handler:
 
 					SetTeam:
 					{
+						Boolean have_team_cyan;
+						Boolean have_team_magenta;
+
 						SkipCondition isKnown(Lookup(private_peer_id));
-						team_cyan = pb_get_string(msg_id, "team_cyan");
-						team_magenta = pb_get_string(msg_id, "team_magenta");
 
-						if (team_cyan == team_name)
+						have_team_cyan    = pb_has_field(msg_id, "team_cyan");
+						have_team_magenta = pb_has_field(msg_id, "team_magenta");
+
+						if have_team_cyan
 						{
-							Boolean exists_send;
-							Boolean exists_recv;
-							exists_recv = config_exists("/plexil/rcll2016/params/cyan-recv-port");
-							exists_send = config_exists("/plexil/rcll2016/params/cyan-send-port");
+							String team_cyan;
+							team_cyan = pb_get_string(msg_id, "team_cyan");
 
-							print("Detected team CYAN, creating peer");
-							team_color = "CYAN";
+							if (team_cyan == team_name)
+							{
+								Boolean exists_send;
+								Boolean exists_recv;
+								exists_recv = config_exists("/plexil/rcll2016/params/cyan-recv-port");
+								exists_send = config_exists("/plexil/rcll2016/params/cyan-send-port");
 
-							if (exists_send && exists_recv)
-							{
-								send_port = config_get_int("/plexil/rcll2016/params/cyan-send-port");
-								recv_port = config_get_int("/plexil/rcll2016/params/cyan-recv-port");
-							}
-							else
-							{
-								send_port = config_get_int("/plexil/rcll2016/params/cyan-port");
-								recv_port = send_port;
+								print("Detected team CYAN, creating peer");
+								team_color = "CYAN";
+
+								if (exists_send && exists_recv)
+								{
+									send_port = config_get_int("/plexil/rcll2016/params/cyan-send-port");
+									recv_port = config_get_int("/plexil/rcll2016/params/cyan-recv-port");
+								}
+								else
+								{
+									send_port = config_get_int("/plexil/rcll2016/params/cyan-port");
+									recv_port = send_port;
+								}
+								endif
 							}
 							endif
 						}
-						elseif (team_magenta == team_name)
+						endif
+						
+						if have_team_magenta
 						{
-							Boolean exists_send;
-							Boolean exists_recv;
-							exists_recv = config_exists("/plexil/rcll2016/params/magenta-recv-port");
-							exists_send = config_exists("/plexil/rcll2016/params/magenta-send-port");
+							String team_magenta;
+							team_magenta = pb_get_string(msg_id, "team_magenta");
 
-							print("Detected team MAGENTA, creating peer");
-							team_color = "MAGENTA";
+							if (team_magenta == team_name)
+							{
+								Boolean exists_send;
+								Boolean exists_recv;
+								exists_recv = config_exists("/plexil/rcll2016/params/magenta-recv-port");
+								exists_send = config_exists("/plexil/rcll2016/params/magenta-send-port");
 
-							if (exists_send && exists_recv)
-							{
-								send_port = config_get_int("/plexil/rcll2016/params/magenta-send-port");
-								recv_port = config_get_int("/plexil/rcll2016/params/magenta-recv-port");
-							}
-							else
-							{
-								send_port = config_get_int("/plexil/rcll2016/params/magenta-port");
-								recv_port = send_port;
+								print("Detected team MAGENTA, creating peer");
+								team_color = "MAGENTA";
+
+								if (exists_send && exists_recv)
+								{
+									send_port = config_get_int("/plexil/rcll2016/params/magenta-send-port");
+									recv_port = config_get_int("/plexil/rcll2016/params/magenta-recv-port");
+								}
+								else
+								{
+									send_port = config_get_int("/plexil/rcll2016/params/magenta-port");
+									recv_port = send_port;
+								}
+								endif
 							}
 							endif
-						}
-						else
-						{
-							print("Neither cyan (", team_cyan, ") nor magenta (", team_magenta, ") name match");
 						}
 						endif
 
@@ -226,7 +244,9 @@ network_handler:
 		{
 			Integer seq = 0;
 
-			StartCondition  isKnown(Lookup(private_peer_id)) && isKnown(Lookup(team_color));
+			StartCondition  isKnown(Lookup(private_peer_id)) &&
+			                isKnown(Lookup(team_color)) &&
+			                isKnown(Lookup(robot_name));
 			RepeatCondition continue;
 
 			// Using the EndCondition would be an alternative to the Wait, but it's not as clear
@@ -252,12 +272,12 @@ network_handler:
 				pb_set_value(msgid, "time.sec", now_sec);
 				pb_set_value(msgid, "time.nsec", now_nsec);
 				pb_set_value(msgid, "team_name", team_name);
-				pb_set_value(msgid, "peer_name", robot_name);
+				pb_set_value(msgid, "peer_name", Lookup(robot_name));
 				pb_set_value(msgid, "team_color", Lookup(team_color));
 				//msgstr = pb_tostring(msgid);
 				//pprint("Created message", msgid, msgstr);
 
-				print("Sending beacon");
+				//print("Sending beacon");
 				pb_broadcast(Lookup(private_peer_id), msgid);
 			}
 
