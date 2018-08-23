@@ -6,6 +6,7 @@
 *_tolua.pkg
 *.swp
 *.swo
+*.log
 
 # Specific paths, _ variants for cross compilation environments
 /bin/
