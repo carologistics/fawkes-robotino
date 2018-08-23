@@ -69,9 +69,12 @@ Real    Lookup time;
 String  Lookup game_phase;
 String  Lookup game_state;
 
+// ###  Library actions (check <action_name>.ple for content) ###
 LibraryAction network_handler (In Boolean continue);
 LibraryAction SendPrepareBS   (In String machine, In String side, In String base_color);
 LibraryAction SendPrepareCS   (In String machine, In String operation);
+LibraryAction SendPrepareDS   (In String machine, In Integer gate);
+LibraryAction SendPrepareRS   (In String machine, In String ring_color);
 
 RCLL:
 {

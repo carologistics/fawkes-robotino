@@ -1,0 +1,53 @@
+
+/***************************************************************************
+ *  SendPrepareRS.ple -  PLEXIL action to prepare an RS
+ *
+ *  Created: Thu Aug 23 14:42:08 2018
+ *  Copyright  2018  Tim Niemueller [www.niemueller.de]
+ ****************************************************************************/
+
+/*  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  Read the full text in the LICENSE.GPL file in the doc directory.
+ */
+
+
+Command pprint(...);
+
+String  Command pb_create(String msg_type);
+        Command pb_set_value(String msg_id, String field, Any value);
+        Command pb_broadcast(Integer peer_id, String msg_id);
+
+Integer Lookup  private_peer_id;
+String  Lookup  team_color;
+
+SendPrepareRS:
+{
+	In String  machine;
+	In String  ring_color;
+
+	PreCondition  isKnown(Lookup(private_peer_id));
+
+	PrepareRS_SendMessage:
+	{
+		String msgid;
+
+		msgid = pb_create("llsf_msgs.PrepareMachine");
+		pb_set_value(msgid, "team_color", Lookup(team_color));
+		pb_set_value(msgid, "machine", machine);
+		pb_set_value(msgid, "instruction_rs.ring_color", ring_color);
+
+		pprint("Sending prepare RS", machine, ring_color);
+		pb_broadcast(Lookup(private_peer_id), msgid);
+	}
+}
+
+// vim: noet:ci:pi:sts=0:sw=4:ts=4
