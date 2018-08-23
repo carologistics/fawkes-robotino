@@ -181,16 +181,27 @@ plexil:
         template: bring_product_to{place=?(mps)s, slide=true}
 
     plan:
-      ple: "@BASEDIR@/src/agents/plexil2016/plan.ple"
-      # If plx is not configured and compilation is enabled, will
-      # replace ".ple" with ".plx" from ple and use that as plx.
-      #plx: "@BASEDIR@/src/agents/plexil2016/plan.plx"
+      # If configured and non-empty, the basedir is prepended to all PLE and PLX
+      basedir: "@BASEDIR@/src/agents/plexil2016"
+
+      # List all PLE files which we should consider for compilation.
+      ple:
+        - plan.ple
+        - network_handler.ple
+        - SendPrepareBS.ple
+        - SendPrepareCS.ple
+
+      # PLX to execute.
+      plx: plan.plx
+
+      # Extra lib path to search for (Plexil) libraries
       #lib-path: ["@BASEDIR@/src/agents/plexil2016"]
+
       compilation:
+        # Enable automatic compilation on startup?
+        # If enabled, triggers compilation of PLX missing or older than PLE.
         enable: true
-        # If compilation is enabled:
-        # Force a fresh compile on every startup. Otherwise, will only
-        # compile if PLX does exist or PLE has been modified after PLX.
+        # Force a fresh compile on every startup (compilation must be enabled above)
         force: false
 
     global-states:
