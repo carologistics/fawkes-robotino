@@ -1,4 +1,4 @@
-// vim: noet:ci:pi:sts=0:sw=4:ts=4
+
 /***************************************************************************
  *  SendPrepareBS.ple -  PLEXIL action to prepare the BS
  *
@@ -51,3 +51,5 @@ SendPrepareBS:
 		pb_broadcast(Lookup(private_peer_id), msgid);
 	}
 }
+
+// vim: noet:ci:pi:sts=0:sw=4:ts=4

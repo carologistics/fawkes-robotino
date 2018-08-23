@@ -1,4 +1,4 @@
-// vim: noet:ci:pi:sts=0:sw=4:ts=4
+
 /***************************************************************************
  *  plan.ple -  PLEXIL plan for the RCLL2016 scenario
  *
@@ -108,3 +108,5 @@ RCLL:
 		}
 	}
 }
+
+// vim: noet:ci:pi:sts=0:sw=4:ts=4

@@ -1,4 +1,4 @@
-// vim: noet:ci:pi:sts=0:sw=4:ts=4
+
 /***************************************************************************
  *  network_handler.ple -  PLEXIL network handler for the RCLL
  *
@@ -266,3 +266,5 @@ network_handler:
 		}
 	}
 }
+
+// vim: noet:ci:pi:sts=0:sw=4:ts=4
