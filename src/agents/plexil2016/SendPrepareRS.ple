@@ -19,8 +19,12 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-
-Command pprint(...);
+        Command print(...);
+        Command pprint(...);
+        Command log_debug(...);
+        Command log_info(...);
+        Command log_warn(...);
+        Command log_error(...);
 
 String  Command pb_create(String msg_type);
         Command pb_set_value(String msg_id, String field, Any value);
@@ -28,25 +32,52 @@ String  Command pb_create(String msg_type);
 
 Integer Lookup  private_peer_id;
 String  Lookup  team_color;
+String  Lookup  mps_state (String);
+Date    Lookup  time;
 
 SendPrepareRS:
+Concurrence
 {
 	In String  machine;
 	In String  ring_color;
 
-	PreCondition  isKnown(Lookup(private_peer_id));
+	Boolean timeout_occurred;
 
-	PrepareRS_SendMessage:
+  EndCondition  Lookup(mps_state(machine)) != "IDLE" || timeout_occurred;
+
+	PreCondition  isKnown(Lookup(private_peer_id)) &&
+	              isKnown(Lookup(team_color)) &&
+	              isKnown(Lookup(mps_state(machine)));
+	PostCondition ! timeout_occurred;
+
+	SendMessage:
 	{
-		String msgid;
+		// we need to nest another sequence so we can repeat the inner node
+		// while the outer node is continuously running in parallel to the
+		// long duration action FailAfterTimeout
+		{
+			String msgid;
 
-		msgid = pb_create("llsf_msgs.PrepareMachine");
-		pb_set_value(msgid, "team_color", Lookup(team_color));
-		pb_set_value(msgid, "machine", machine);
-		pb_set_value(msgid, "instruction_rs.ring_color", ring_color);
+			RepeatCondition Lookup(mps_state(machine)) == "IDLE";
 
-		pprint("Sending prepare RS", machine, ring_color);
-		pb_broadcast(Lookup(private_peer_id), msgid);
+			msgid = pb_create("llsf_msgs.PrepareMachine");
+			pb_set_value(msgid, "team_color", Lookup(team_color));
+			pb_set_value(msgid, "machine", machine);
+			pb_set_value(msgid, "instruction_rs.ring_color", ring_color);
+
+			pprint("Sending prepare RS", machine, ring_color);
+			pb_broadcast(Lookup(private_peer_id), msgid);
+
+			Wait 1.0;
+		}
+	}
+
+	FailAfterTimeout:
+	{
+		StartCondition Lookup(time) >= SendPrepareRS.EXECUTING.START + Duration("PT10.0S");
+		SkipCondition  Lookup(mps_state(machine)) != "IDLE";
+		log_error("SendPrepareRS timeout");
+		timeout_occurred = true;
 	}
 }
 
