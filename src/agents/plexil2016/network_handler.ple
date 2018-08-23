@@ -132,14 +132,14 @@ network_handler:
 					game_state = pb_get_string(msg_id, "state");
 					if ! isKnown(Lookup(game_state)) || Lookup(game_state) != game_state
 					{
-						pprint("New game state: ", game_state);
+						print("New game state: ", game_state);
 						global_set_value("game_state", game_state);
 					}
 					endif
 					game_phase = pb_get_string(msg_id, "phase");
 					if ! isKnown(Lookup(game_phase)) || Lookup(game_phase) != game_phase
 					{
-						pprint("New game phase: ", game_phase);
+						print("New game phase: ", game_phase);
 						global_set_value("game_phase", game_phase);
 					}
 					endif
