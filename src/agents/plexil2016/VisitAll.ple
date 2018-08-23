@@ -37,6 +37,7 @@ Boolean Command goto(String place);
 
 // ###  State declarations ###
 Real    Lookup time;
+String  Lookup team_color;
 
 LibraryAction network_handler (In Boolean continue);
 
