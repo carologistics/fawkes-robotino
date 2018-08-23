@@ -141,6 +141,13 @@ plexil:
             name: text
         template: say{text=?(text)s, wait=true}
 
+      - name: enter_field
+        args:
+          - type: String
+            name: team_color
+          - type: String
+            name: r
+        template: drive_into_field{team=?(team_color)S, wait=?(r|/r-1/0.0/|/r-2/3.0/|/r-3/6.0/)f}
       - name: goto
         args:
           - type: String
