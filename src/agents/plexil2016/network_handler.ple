@@ -120,177 +120,189 @@ network_handler:
 		{
 			RepeatCondition continue;
 
-			ReceiveBeaconSignal:
-			OnCommand "llsf_msgs.BeaconSignal" (String msg_id, String from_host, Integer from_port, Real time_received)
 			{
-				//pprint("Got", msg_id, from_host, from_port, time_received);
+				RepeatCondition continue;
+
+				ReceiveBeaconSignal:
+				OnCommand "llsf_msgs.BeaconSignal" (String msg_id, String from_host, Integer from_port, Real time_received)
+				{
+					//pprint("Got", msg_id, from_host, from_port, time_received);
+				}
 			}
 
-			ReceiveGameState:
-			OnCommand "llsf_msgs.GameState" (String msg_id, String from_host, Integer from_port, Real time_received)
 			{
-				Integer send_port;
-				Integer recv_port;
-				String  team_color;
-				String game_state;
-				String game_phase;
+				RepeatCondition continue;
 
-				game_state = pb_get_string(msg_id, "state");
-				if ! isKnown(Lookup(game_state)) || Lookup(game_state) != game_state
+				ReceiveGameState:
+				OnCommand "llsf_msgs.GameState" (String msg_id, String from_host, Integer from_port, Real time_received)
 				{
-					print("New game state: ", game_state);
-					global_set_value("game_state", game_state);
-				}
-				endif
-				game_phase = pb_get_string(msg_id, "phase");
-				if ! isKnown(Lookup(game_phase)) || Lookup(game_phase) != game_phase
-				{
-					print("New game phase: ", game_phase);
-					global_set_value("game_phase", game_phase);
-				}
-				endif
+					Integer send_port;
+					Integer recv_port;
+					String  team_color;
+					String game_state;
+					String game_phase;
 
-				SetTeam:
-				{
-					Boolean have_team_cyan;
-					Boolean have_team_magenta;
-
-					SkipCondition isKnown(Lookup(private_peer_id));
-
-					have_team_cyan    = pb_has_field(msg_id, "team_cyan");
-					have_team_magenta = pb_has_field(msg_id, "team_magenta");
-
-					if have_team_cyan
+					game_state = pb_get_string(msg_id, "state");
+					if ! isKnown(Lookup(game_state)) || Lookup(game_state) != game_state
 					{
-						String team_cyan;
-						team_cyan = pb_get_string(msg_id, "team_cyan");
+						print("New game state: ", game_state);
+						global_set_value("game_state", game_state);
+					}
+					endif
+					game_phase = pb_get_string(msg_id, "phase");
+					if ! isKnown(Lookup(game_phase)) || Lookup(game_phase) != game_phase
+					{
+						print("New game phase: ", game_phase);
+						global_set_value("game_phase", game_phase);
+					}
+					endif
 
-						if (team_cyan == team_name)
+					SetTeam:
+					{
+						Boolean have_team_cyan;
+						Boolean have_team_magenta;
+
+						SkipCondition isKnown(Lookup(private_peer_id));
+
+						have_team_cyan    = pb_has_field(msg_id, "team_cyan");
+						have_team_magenta = pb_has_field(msg_id, "team_magenta");
+
+						if have_team_cyan
 						{
-							Boolean exists_send;
-							Boolean exists_recv;
-							exists_recv = config_exists("/plexil/rcll2016/params/cyan-recv-port");
-							exists_send = config_exists("/plexil/rcll2016/params/cyan-send-port");
+							String team_cyan;
+							team_cyan = pb_get_string(msg_id, "team_cyan");
 
-							print("Detected team CYAN, creating peer");
-							team_color = "CYAN";
+							if (team_cyan == team_name)
+							{
+								Boolean exists_send;
+								Boolean exists_recv;
+								exists_recv = config_exists("/plexil/rcll2016/params/cyan-recv-port");
+								exists_send = config_exists("/plexil/rcll2016/params/cyan-send-port");
 
-							if (exists_send && exists_recv)
-							{
-								send_port = config_get_int("/plexil/rcll2016/params/cyan-send-port");
-								recv_port = config_get_int("/plexil/rcll2016/params/cyan-recv-port");
-							}
-							else
-							{
-								send_port = config_get_int("/plexil/rcll2016/params/cyan-port");
-								recv_port = send_port;
+								print("Detected team CYAN, creating peer");
+								team_color = "CYAN";
+
+								if (exists_send && exists_recv)
+								{
+									send_port = config_get_int("/plexil/rcll2016/params/cyan-send-port");
+									recv_port = config_get_int("/plexil/rcll2016/params/cyan-recv-port");
+								}
+								else
+								{
+									send_port = config_get_int("/plexil/rcll2016/params/cyan-port");
+									recv_port = send_port;
+								}
+								endif
 							}
 							endif
 						}
 						endif
-					}
-					endif
 						
-					if have_team_magenta
-					{
-						String team_magenta;
-						team_magenta = pb_get_string(msg_id, "team_magenta");
-
-						if (team_magenta == team_name)
+						if have_team_magenta
 						{
-							Boolean exists_send;
-							Boolean exists_recv;
-							exists_recv = config_exists("/plexil/rcll2016/params/magenta-recv-port");
-							exists_send = config_exists("/plexil/rcll2016/params/magenta-send-port");
+							String team_magenta;
+							team_magenta = pb_get_string(msg_id, "team_magenta");
 
-							print("Detected team MAGENTA, creating peer");
-							team_color = "MAGENTA";
-
-							if (exists_send && exists_recv)
+							if (team_magenta == team_name)
 							{
-								send_port = config_get_int("/plexil/rcll2016/params/magenta-send-port");
-								recv_port = config_get_int("/plexil/rcll2016/params/magenta-recv-port");
+								Boolean exists_send;
+								Boolean exists_recv;
+								exists_recv = config_exists("/plexil/rcll2016/params/magenta-recv-port");
+								exists_send = config_exists("/plexil/rcll2016/params/magenta-send-port");
+
+								print("Detected team MAGENTA, creating peer");
+								team_color = "MAGENTA";
+
+								if (exists_send && exists_recv)
+								{
+									send_port = config_get_int("/plexil/rcll2016/params/magenta-send-port");
+									recv_port = config_get_int("/plexil/rcll2016/params/magenta-recv-port");
+								}
+								else
+								{
+									send_port = config_get_int("/plexil/rcll2016/params/magenta-port");
+									recv_port = send_port;
+								}
+								endif
 							}
-							else
+							endif
+						}
+						endif
+
+						if (isKnown(team_color))
+						{
+							String crypto_key;
+							String cipher;
+							Integer peer_id;
+
+							crypto_key = config_get_string("/plexil/rcll2016/params/crypto-key");
+							cipher = config_get_string("/plexil/rcll2016/params/cipher");
+							print("Setting up private peer, address: ", peer_address,
+							      " send port: ", send_port, " recv_port: ", recv_port);
+							peer_id = pb_peer_create_local_crypto(peer_address, send_port, recv_port,
+							                                      crypto_key, cipher);
+
+							global_set_value("private_peer_id", peer_id);
+							global_set_value("team_color", team_color);
+						}
+						endif
+					}
+				}
+			}
+
+			{
+				RepeatCondition continue;
+
+				ReceiveMachineInfo:
+				OnCommand "llsf_msgs.MachineInfo" (String msg_id, String from_host, Integer from_port, Real time_received)
+				{
+					Integer num_mps;
+					num_mps = pb_get_length(msg_id, "machines[]");
+
+					for (Integer i = 0; i < num_mps; i + 1)
+					{
+						String prefix;
+						String mps_name;
+						String mps_type;
+						String mps_state;
+						String index_str;
+
+						index_str = to_string(i);
+						prefix = "machines[" + index_str + "].";
+						mps_name = pb_get_string(msg_id, prefix + "name");
+						mps_type = pb_get_string(msg_id, prefix + "type");
+						if ! isKnown(Lookup(mps_type(mps_name)))
+						{
+							global_set_value("mps_type", mps_name, mps_type);
+						}
+						endif
+
+						mps_state = pb_get_string(msg_id, prefix + "state");
+						if ! isKnown(Lookup(mps_state(mps_name))) || Lookup(mps_state(mps_name)) != mps_state
+						{
+							global_set_value("mps_state", mps_name, mps_state);
+						}
+						endif
+
+						if mps_type == "DS" &&
+					     !isKnown(Lookup(mps_rs_ring1(mps_name))) &&
+					     !isKnown(Lookup(mps_rs_ring2(mps_name)))
+						{
+							Integer num_rings;
+							num_rings = pb_get_length(msg_id, prefix + "ring_colors[]");
+							if num_rings == 2
 							{
-								send_port = config_get_int("/plexil/rcll2016/params/magenta-port");
-								recv_port = send_port;
+								String ring_color_1;
+								String ring_color_2;
+								ring_color_1 = pb_get_string(msg_id, prefix + "ring_colors[0]");
+								ring_color_2 = pb_get_string(msg_id, prefix + "ring_colors[1]");
+								global_set_value("mps_rs_ring1", mps_name, ring_color_1);
+								global_set_value("mps_rs_ring2", mps_name, ring_color_1);
 							}
 							endif
 						}
 						endif
 					}
-					endif
-
-					if (isKnown(team_color))
-					{
-						String crypto_key;
-						String cipher;
-						Integer peer_id;
-
-						crypto_key = config_get_string("/plexil/rcll2016/params/crypto-key");
-						cipher = config_get_string("/plexil/rcll2016/params/cipher");
-						print("Setting up private peer, address: ", peer_address,
-						      " send port: ", send_port, " recv_port: ", recv_port);
-						peer_id = pb_peer_create_local_crypto(peer_address, send_port, recv_port,
-						                                      crypto_key, cipher);
-
-						global_set_value("private_peer_id", peer_id);
-						global_set_value("team_color", team_color);
-					}
-					endif
-				}
-			}
-
-			ReceiveMachineInfo:
-			OnCommand "llsf_msgs.MachineInfo" (String msg_id, String from_host, Integer from_port, Real time_received)
-			{
-				Integer num_mps;
-				num_mps = pb_get_length(msg_id, "machines[]");
-
-				for (Integer i = 0; i < num_mps; i + 1)
-				{
-					String prefix;
-					String mps_name;
-					String mps_type;
-					String mps_state;
-					String index_str;
-
-					index_str = to_string(i);
-					prefix = "machines[" + index_str + "].";
-					mps_name = pb_get_string(msg_id, prefix + "name");
-					mps_type = pb_get_string(msg_id, prefix + "type");
-					if ! isKnown(Lookup(mps_type(mps_name)))
-					{
-						global_set_value("mps_type", mps_name, mps_type);
-					}
-					endif
-
-					mps_state = pb_get_string(msg_id, prefix + "state");
-					if ! isKnown(Lookup(mps_state(mps_name))) || Lookup(mps_state(mps_name)) != mps_state
-					{
-						global_set_value("mps_state", mps_name, mps_state);
-					}
-					endif
-
-					if mps_type == "DS" &&
-					   !isKnown(Lookup(mps_rs_ring1(mps_name))) &&
-					   !isKnown(Lookup(mps_rs_ring2(mps_name)))
-					{
-						Integer num_rings;
-						num_rings = pb_get_length(msg_id, prefix + "ring_colors[]");
-						if num_rings == 2
-						{
-							String ring_color_1;
-							String ring_color_2;
-							ring_color_1 = pb_get_string(msg_id, prefix + "ring_colors[0]");
-							ring_color_2 = pb_get_string(msg_id, prefix + "ring_colors[1]");
-							global_set_value("mps_rs_ring1", mps_name, ring_color_1);
-							global_set_value("mps_rs_ring2", mps_name, ring_color_1);
-						}
-						endif
-					}
-					endif
 				}
 			}
 		}
