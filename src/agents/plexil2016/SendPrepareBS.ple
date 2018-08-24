@@ -44,7 +44,7 @@ Concurrence
 
 	Boolean timeout_occurred = false;
 
-  EndCondition  Lookup(mps_state(machine)) != "IDLE" || timeout_occurred;
+  EndCondition  Lookup(mps_state(machine)) == "READY-AT-OUTPUT" || timeout_occurred;
 
 	PreCondition  isKnown(Lookup(private_peer_id)) &&
 	              isKnown(Lookup(team_color)) &&

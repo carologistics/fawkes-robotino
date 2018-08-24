@@ -48,7 +48,7 @@ Concurrence
 	PreCondition  isKnown(Lookup(private_peer_id)) &&
 	              isKnown(Lookup(team_color)) &&
 	              isKnown(Lookup(mps_state(machine)));
-	PostCondition ! timeout_occurred;
+	PostCondition Lookup(mps_state(machine)) != "BROKEN" && ! timeout_occurred;
 
 	SendMessage:
 	{
@@ -58,7 +58,7 @@ Concurrence
 		{
 			String msgid;
 
-			RepeatCondition Lookup(mps_state(machine)) == "IDLE";
+			RepeatCondition Lookup(mps_state(machine)) == "IDLE" && !timeout_occurred;
 
 			msgid = pb_create("llsf_msgs.PrepareMachine");
 			pb_set_value(msgid, "team_color", Lookup(team_color));
