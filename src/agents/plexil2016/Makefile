@@ -1,5 +1,6 @@
 
 PLEXILC=plexilc
+#PLEXIL_EXEC=gdb -ex run --args plexil-universalExec
 PLEXIL_EXEC=plexil-universalExec
 INTERFACE_CONFIG=external.xml
 PLAN_PLX=plan.plx
