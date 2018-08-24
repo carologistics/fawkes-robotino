@@ -165,8 +165,8 @@ RCLL:
 			                                       base_color=Lookup(order_base_color("1")));
 			pick_bs:    SynchronousCommand pick_from_conveyor("C-BS", "input");
 			goto_cs_i2: SynchronousCommand goto(cs_input);
-			pick_cs2:   SynchronousCommand put_on_conveyor(cs_mps, "input");
 			prep_cs_m:  LibraryCall SendPrepareCS (machine=cs_mps, operation="MOUNT_CAP");
+			put_cs2:    SynchronousCommand put_on_conveyor(cs_mps, "input");
 			goto_cs_o2: SynchronousCommand goto(cs_output);
 			pick_cs3:   SynchronousCommand pick_from_conveyor(cs_mps, "output");
 			goto_ds:    SynchronousCommand goto("C-DS-I");
