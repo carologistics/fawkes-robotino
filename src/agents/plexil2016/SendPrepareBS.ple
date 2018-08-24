@@ -42,7 +42,7 @@ Concurrence
 	In String  side;
 	In String  base_color;
 
-	Boolean timeout_occurred;
+	Boolean timeout_occurred = false;
 
   EndCondition  Lookup(mps_state(machine)) != "IDLE" || timeout_occurred;
 
@@ -76,7 +76,7 @@ Concurrence
 
 	FailAfterTimeout:
 	{
-		StartCondition Lookup(time) >= SendPrepareBS.EXECUTING.START + Duration("PT10.0S");
+		StartCondition Lookup(time, Duration("PT1.0S")) >= SendPrepareBS.EXECUTING.START + Duration("PT10.0S");
 		SkipCondition  Lookup(mps_state(machine)) != "IDLE";
 		log_error("SendPrepareBS timeout");
 		timeout_occurred = true;

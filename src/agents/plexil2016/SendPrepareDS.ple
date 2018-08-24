@@ -41,7 +41,7 @@ Concurrence
 	In String  machine;
 	In Integer gate;
 
-	Boolean timeout_occurred;
+	Boolean timeout_occurred = false;
 
   EndCondition  Lookup(mps_state(machine)) != "IDLE" || timeout_occurred;
 
@@ -74,7 +74,7 @@ Concurrence
 
 	FailAfterTimeout:
 	{
-		StartCondition Lookup(time) >= SendPrepareDS.EXECUTING.START + Duration("PT10.0S");
+		StartCondition Lookup(time, Duration("PT1.0S")) >= SendPrepareDS.EXECUTING.START + Duration("PT10.0S");
 		SkipCondition  Lookup(mps_state(machine)) != "IDLE";
 		log_error("SendPrepareDS timeout");
 		timeout_occurred = true;
