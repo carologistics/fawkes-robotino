@@ -21,12 +21,13 @@
  */
 
 // ###  Command declarations ###
-Command pprint(...);
-Command print(...);
-Command log_debug(...);
-Command log_info(...);
-Command log_warn(...);
-Command log_error(...);
+        Command pprint(...);
+        Command print(...);
+        Command log_debug(...);
+        Command log_info(...);
+        Command log_warn(...);
+        Command log_error(...);
+String  Command to_string(...);
 
 Boolean Command config_exists(String path);
 String  Command config_get_string(String path);
@@ -55,6 +56,10 @@ String[100] Command navgraph_get_nodes();
 Real    Command navgraph_cost_to(String target);
 Real    Command navgraph_cost_between(String from, String to);
 
+
+String  Command global_set_value(...);
+        Command global_print_all();
+
 // ###  Skills  ###
 Boolean Command say(String text);
 Boolean Command enter_field(String team_color, String robot_name);
@@ -66,11 +71,23 @@ Boolean Command put_on_shelf(String mps, String shelf);
 Boolean Command put_on_slide(String mps);
 
 // ###  State declarations ###
-Real    Lookup time;
-String  Lookup game_phase;
-String  Lookup game_state;
-String  Lookup team_color;
-String  Lookup robot_name;
+Real    Lookup  time;
+String  Lookup  game_phase;
+String  Lookup  game_state;
+String  Lookup  team_color;
+String  Lookup  robot_name;
+String  Lookup  mps_state (String);
+String  Lookup  order_complexity (String);
+String  Lookup  order_base_color (String);
+String  Lookup  order_ring1_color (String);
+String  Lookup  order_ring2_color (String);
+String  Lookup  order_ring3_color (String);
+String  Lookup  order_cap_color (String);
+Integer Lookup  order_quantity_requested (String);
+Integer Lookup  order_quantity_delivered (String);
+Real    Lookup  order_delivery_period_begin (String);
+Real    Lookup  order_delivery_period_end (String);
+Integer Lookup  order_delivery_gate (String);
 
 // ###  Library actions (check <action_name>.ple for content) ###
 LibraryAction network_handler (In Boolean continue);
@@ -108,29 +125,53 @@ RCLL:
 
 		ProduceC0:
 		{
+			String  cs_mps;
+			String  cs_input;
+			String  cs_output;
+
 			StartCondition Lookup(game_phase) == "PRODUCTION" &&
 			               Lookup(game_state) == "RUNNING" &&
+										 isKnown(Lookup(order_base_color("1"))) &&
+										 isKnown(Lookup(order_cap_color("1"))) &&
+										 isKnown(Lookup(order_delivery_gate("1"))) &&
+										 ((Lookup(order_cap_color("1")) == "CAP_GREY" && isKnown(Lookup(mps_state("C-CS1")))) ||
+			                (Lookup(order_cap_color("1")) == "CAP_BLACK" && isKnown(Lookup(mps_state("C-CS2"))))) &&
 			               EnterField.state == FINISHED;
 
-			log_info("Producing C0");
-			goto_cs_i:  SynchronousCommand goto("C-CS1-I");
-			pick_shelf: SynchronousCommand pick_from_shelf("C-CS1", "LEFT");
-			prep_cs_r:  LibraryCall SendPrepareCS (machine="C-CS1", operation="RETRIEVE_CAP");
-			put_cs:     SynchronousCommand put_on_conveyor("C-CS1", "input");
-			goto_cs_o:  SynchronousCommand goto("C-CS1-O");
-			pick_cs:    SynchronousCommand pick_from_conveyor("C-CS1", "output");
+			if Lookup(order_cap_color("1")) == "CAP_GREY"
+			{
+				cs_mps = "C-CS1";
+			}
+			else
+			{
+				cs_mps = "C-CS2";
+			}
+			endif
+
+			cs_input      = cs_mps + "-I";
+			cs_output     = cs_mps + "-O";
+
+			log_info("Producing C0", cs_mps);
+			goto_cs_i:  SynchronousCommand goto(cs_input);
+			pick_shelf: SynchronousCommand pick_from_shelf(cs_mps, "LEFT");
+			prep_cs_r:  LibraryCall SendPrepareCS (machine=cs_mps, operation="RETRIEVE_CAP");
+			put_cs:     SynchronousCommand put_on_conveyor(cs_mps, "input");
+			goto_cs_o:  SynchronousCommand goto(cs_output);
+			pick_cs:    SynchronousCommand pick_from_conveyor(cs_mps, "output");
 			goto_rs_i:  SynchronousCommand goto("C-RS1-I");
 			put_rs:     SynchronousCommand put_on_slide("C-RS1");
 			goto_bs:    SynchronousCommand goto("C-BS-I");
-			prep_bs:    LibraryCall SendPrepareBS (machine="C-BS", side="INPUT", base_color="BASE_BLACK");
+			prep_bs:    LibraryCall SendPrepareBS (machine="C-BS", side="INPUT",
+			                                       base_color=Lookup(order_base_color("1")));
 			pick_bs:    SynchronousCommand pick_from_conveyor("C-BS", "input");
-			goto_cs_i2: SynchronousCommand goto("C-CS1-I");
-			pick_cs2:   SynchronousCommand put_on_conveyor("C-CS1", "input");
-			prep_cs_m:  LibraryCall SendPrepareCS (machine="C-CS1", operation="MOUNT_CAP");
-			goto_cs_o2: SynchronousCommand goto("C-CS1-O");
-			pick_cs3:   SynchronousCommand pick_from_conveyor("C-CS1", "output");
-			goto_ds:    SynchronousCommand goto("C-DS");
-			prep_ds:    LibraryCall SendPrepareDS (machine="C-DS", gate=1);
+			goto_cs_i2: SynchronousCommand goto(cs_input);
+			pick_cs2:   SynchronousCommand put_on_conveyor(cs_mps, "input");
+			prep_cs_m:  LibraryCall SendPrepareCS (machine=cs_mps, operation="MOUNT_CAP");
+			goto_cs_o2: SynchronousCommand goto(cs_output);
+			pick_cs3:   SynchronousCommand pick_from_conveyor(cs_mps, "output");
+			goto_ds:    SynchronousCommand goto("C-DS-I");
+			prep_ds:    LibraryCall SendPrepareDS (machine="C-DS",
+			                                       gate=Lookup(order_delivery_gate("1")));
 			put_ds:     SynchronousCommand put_on_conveyor("C-DS", "input");
 		}
 	}
