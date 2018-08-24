@@ -64,6 +64,17 @@ String  Lookup  mps_state (String);
 String  Lookup  mps_type  (String);
 String  Lookup  mps_rs_ring1 (String);
 String  Lookup  mps_rs_ring2 (String);
+String  Lookup  order_complexity (String);
+String  Lookup  order_base_color (String);
+String  Lookup  order_ring1_color (String);
+String  Lookup  order_ring2_color (String);
+String  Lookup  order_ring3_color (String);
+String  Lookup  order_cap_color (String);
+Integer Lookup  order_quantity_requested (String);
+Integer Lookup  order_quantity_delivered (String);
+Real    Lookup  order_delivery_period_begin (String);
+Real    Lookup  order_delivery_period_end (String);
+Integer Lookup  order_delivery_gate (String);
 
 network_handler:
 {
@@ -300,6 +311,97 @@ network_handler:
 								global_set_value("mps_rs_ring2", mps_name, ring_color_1);
 							}
 							endif
+						}
+						endif
+					}
+				}
+			}
+
+			{
+				RepeatCondition continue;
+
+				ReceiveOrderInfo:
+				OnCommand "llsf_msgs.OrderInfo" (String msg_id, String from_host, Integer from_port, Real time_received)
+				{
+					Integer num_orders;
+					num_orders = pb_get_length(msg_id, "orders[]");
+
+					for (Integer i = 0; i < num_orders; i + 1)
+					{
+						String  order_str;
+						Integer order_id_num;
+						String  order_id;
+						String  prefix;
+						String  complexity;
+						String  base_color;
+						Integer num_rings;
+						String  ring1;
+						String  ring2;
+						String  ring3;
+						String  cap_color;
+						Integer quantity_requested;
+						Integer quantity_delivered;
+						Real    delivery_period_begin;
+						Real    delivery_period_end;
+						Integer delivery_gate;
+
+						order_str = to_string(i);
+						prefix = "orders[" + order_str + "].";
+
+						order_id_num = pb_get_int(msg_id, prefix + "id");
+						order_id     = to_string(order_id_num);
+						complexity   = pb_get_string(msg_id, prefix + "complexity");
+						base_color   = pb_get_string(msg_id, prefix + "base_color");
+						num_rings    = pb_get_length(msg_id, prefix + "ring_colors[]");
+						if (num_rings >= 1)
+						{
+							ring1 = pb_get_string(msg_id, prefix + "ring_colors[0]");
+						}
+						endif
+						if (num_rings >= 2)
+						{
+							ring2 = pb_get_string(msg_id, prefix + "ring_colors[1]");
+						}
+						endif
+						if (num_rings >= 3)
+						{
+							ring3 = pb_get_string(msg_id, prefix + "ring_colors[2]");
+						}
+						endif
+						cap_color = pb_get_string(msg_id, prefix + "cap_color");
+
+						quantity_requested = pb_get_int(msg_id, prefix + "quantity_requested");
+						if Lookup(team_color) == "CYAN"
+						{
+							quantity_delivered = pb_get_int(msg_id, prefix + "quantity_delivered_cyan");
+						}
+						else
+						{
+							quantity_delivered = pb_get_int(msg_id, prefix + "quantity_delivered_magenta");
+						}
+						endif
+
+						delivery_period_begin = pb_get_int(msg_id, prefix + "delivery_period_begin");
+						delivery_period_end   = pb_get_int(msg_id, prefix + "delivery_period_end");
+						delivery_gate         = pb_get_int(msg_id, prefix + "delivery_gate");
+
+						if ! isKnown(Lookup(order_complexity(order_id)))
+						{
+							global_set_value("order_complexity", order_id, complexity);
+							global_set_value("order_base_color", order_id, base_color);
+							global_set_value("order_ring1_color", order_id, ring1);
+							global_set_value("order_ring2_color", order_id, ring2);
+							global_set_value("order_ring3_color", order_id, ring3);
+							global_set_value("order_cap_color", order_id, cap_color);
+							global_set_value("order_quantity_requested", order_id, quantity_requested);
+							global_set_value("order_quantity_delivered", order_id, quantity_delivered);
+							global_set_value("order_delivery_period_begin", order_id, delivery_period_begin);
+							global_set_value("order_delivery_period_end", order_id, delivery_period_end);
+							global_set_value("order_delivery_gate", order_id, delivery_gate);
+						}
+						elseif Lookup(order_quantity_delivered(order_id)) != quantity_delivered
+						{
+							global_set_value("order_quantity_delivered", order_id, quantity_delivered);
 						}
 						endif
 					}
