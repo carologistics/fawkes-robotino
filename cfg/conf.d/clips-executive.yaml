@@ -193,7 +193,7 @@ clips-executive:
           waitpoint-in-cyan: R-1
           waitpoint-in-cyan: R-2
           waitpoint-in-magenta: R-3
-          allowed-complexities: ["C0" , "C1"]
+          allowed-complexities: ["C0"]
           exclusive-complexities: ["C2" , "C3"]
 
           reset-mps-unexpected-state: true
@@ -203,8 +203,8 @@ clips-executive:
               INPUT: true
               OUTPUT: true
             CS2:
-              INPUT: true
-              OUTPUT: true
+              INPUT: false
+              OUTPUT: false
             DS:
               INPUT: true
               OUTPUT: true
@@ -212,8 +212,8 @@ clips-executive:
               INPUT: true
               OUTPUT: true
             RS1:
-              INPUT: true
-              OUTPUT: true
+              INPUT: false
+              OUTPUT: false
             RS2:
-              INPUT: true
-              OUTPUT: true
+              INPUT: false
+              OUTPUT: false
