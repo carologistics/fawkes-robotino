@@ -1317,23 +1317,23 @@
   ))
 )
 ; ## Goal Evaluation
- (defrule goal-reasoner-evaluate-failed-enter-field
-   ?g <- (goal (id ?gid) (class ENTER-FIELD-ACHIEVE)
-               (mode FINISHED) (outcome FAILED))
-  ?pa <- (plan-action (goal-id ?gid) (status FAILED) (action-name enter-field))
-  ?gm <- (goal-meta (goal-id ?gid) (num-tries ?num-tries))
-  =>
-  (printout t "Goal '" ?gid "' has failed, evaluating" crlf)
-
-  (if (= ?num-tries ?*ENTER-FIELD-RETRIES*) then
-	(modify ?pa (status EXECUTION-SUCCEEDED))
-	(modify ?g (mode DISPATCHED) (outcome UNKNOWN))
-        else
-	(bind ?num-tries (+ 1 ?num-tries))
-	(modify ?gm (num-tries ?num-tries) (max-tries ?*ENTER-FIELD-RETRIES*))
-	(modify ?g (mode EVALUATED))
-  )
-)
+; (defrule goal-reasoner-evaluate-failed-enter-field
+;   ?g <- (goal (id ?gid) (class ENTER-FIELD-ACHIEVE)
+;               (mode FINISHED) (outcome FAILED))
+;  ?pa <- (plan-action (goal-id ?gid) (status FAILED) (action-name enter-field))
+;  ?gm <- (goal-meta (goal-id ?gid) (num-tries ?num-tries))
+;  =>
+;  (printout t "Goal '" ?gid "' has failed, evaluating" crlf)
+;
+;  (if (= ?num-tries ?*ENTER-FIELD-RETRIES*) then
+;	(modify ?pa (status EXECUTION-SUCCEEDED))
+;	(modify ?g (mode DISPATCHED) (outcome UNKNOWN))
+;       else
+;	(bind ?num-tries (+ 1 ?num-tries))
+;	(modify ?gm (num-tries ?num-tries) (max-tries ?*ENTER-FIELD-RETRIES*))
+;	(modify ?g (mode EVALUATED))
+;  )
+;)
 
 (defrule goal-reasoner-evaluate-production-maintain
   ?g <- (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (parent nil)
