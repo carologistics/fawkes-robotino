@@ -246,6 +246,4 @@ nodes:
 # !bidir (bidirectional, default), !dir (directed)
 connections:
 # common
-:wq
-:wq
 
