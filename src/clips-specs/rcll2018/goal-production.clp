@@ -328,7 +328,7 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-  (wm-fact (key domain fact mps-state argsß m ?mps s READY-AT-OUTPUT))
+  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ;Maybe add a check for the base_color
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
