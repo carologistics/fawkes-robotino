@@ -64,7 +64,7 @@
   (wm-fact (key config rcll robot-name) (value ?robot-name))
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
   (or
-     (wm-fact (key refbox phase) (value SETUP))
+     (wm-fact (key refbox phase) (value SETUP|PRODUCTION))
      (wm-fact (key config rcll single-agent-mode) (value TRUE))
      (wm-fact (key config rcll wm-init-force) (value TRUE))
   )
