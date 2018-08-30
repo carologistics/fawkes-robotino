@@ -652,7 +652,7 @@
   ;To-Do: Model state IDLE
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-  (wm-fact (key domain fact mps-type args? m ?mps t RS))
+  ;(wm-fact (key domain fact mps-type args? m ?mps t RS))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;only discard if ring stations have at least two bases loaded
   ;(wm-fact (key domain fact rs-filled-with args? m ?mps n TWO|THREE))
