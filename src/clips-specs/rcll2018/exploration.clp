@@ -354,7 +354,7 @@
   (domain-fact (name tag-matching) (param-values ?machine ?side ?team-color ?tag-id))
 
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (value ?times-searched))
-  ?zm <- (wm-fact (key exploration zone ?zn2 args? machine UNKNOWN team ?team2))
+  ?zm <- (wm-fact (key exploration zone ?zn2 args? machine ?stat team ?team2))
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
   (not (exploration-result (machine ?machine) (zone ?zn2)))
   =>
