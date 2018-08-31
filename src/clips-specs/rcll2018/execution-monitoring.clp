@@ -326,14 +326,8 @@
 ;  (assert (wm-fact (key domain fact can-hold args? r ?r) (value TRUE)))
 ;)
 
-(defrule execution-monitoring-issue-reset-mps
-  ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
-                (value ?tried&:(> ?tried ?*MAX-RETRIES-PICK*)))
-  =>
-  (assert (wm-fact (key monitoring reset-mps args? m ?mps) (type BOOL) (value TRUE)))
-)
-
-(defrule execution-monitoring-start-retry-action-wp-get
+;=============================Retry Action WP-Get
+(defrule execution-monitoring-retry-action-wp-get-start
   (declare (salience 1))
   (goal (id ?goal-id) (mode DISPATCHED))
   (plan (id ?plan-id) (goal-id ?goal-id))
@@ -365,7 +359,7 @@
   )
 )
 
-(defrule execution-monitoring-finish-retry-action-wp-get
+(defrule execution-monitoring-retry-action-wp-get
   (declare (salience 1))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
@@ -395,6 +389,34 @@
   (modify ?pa (status PENDING))
   (modify ?wm (value ?tries))
 )
+
+(defrule execution-monitoring-retry-action-wp-get-failed-reset-mps
+  ?t <- (wm-fact (key monitoring action-retried args? r ?self a ?an&wp-get m ?mps wp ?wp)
+                (value ?tried&:(> ?tried ?*MAX-RETRIES-PICK*)))
+  ?pa <- (plan-action
+              (action-name ?an)
+              (plan-id ?plan-id)
+              (goal-id ?goal-id)
+              (status FAILED)
+              (param-values $? ?wp $? ?mps $?))
+  =>
+  (assert (wm-fact (key monitoring reset-mps args? m ?mps) (type BOOL) (value TRUE)))
+)
+
+(defrule execution-monitoring-retry-action-wp-get-final
+  ?t <- (wm-fact (key monitoring action-retried args? r ?self a ?an&wp-get m ?mps wp ?wp)
+                (value ?tried&:(> ?tried ?*MAX-RETRIES-PICK*)))
+  ?pa <- (plan-action
+              (action-name ?an)
+              (plan-id ?plan-id)
+              (goal-id ?goal-id)
+              (status FINAL)
+              (param-values $? ?wp $? ?mps $?))
+  =>
+ (retract ?t)
+)
+----------------------------------------------------
+
 
 (defrule execution-monitoring-start-retry-action-wp-put-slide-cc
   (declare (salience 1))
