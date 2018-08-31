@@ -129,7 +129,7 @@ nodes:
 # wait points
   - !unconnected
     name: WAIT1
-    pos : [0,4]
+    pos : [0,2]
     properties:
       - orientation: 1.57
       - always-copy: true
