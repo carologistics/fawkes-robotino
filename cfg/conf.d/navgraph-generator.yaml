@@ -99,7 +99,7 @@ navgraph-generator-mps:
   base-graph: navgraph-basis.yaml
 
   bounding-box:
-    p1: [-3.95,0]
+    p1: [-3.95,1]
     p2: [ 3.95,8]
 
   # Number of wait zones per half-field
