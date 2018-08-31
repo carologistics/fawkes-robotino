@@ -227,7 +227,7 @@ fsm:define_states{ export_to=_M,
   {"INIT",                     JumpState},
 
   -- DRIVE_TO fails when the goal cannot be reached - should we still try to perform an MPS_ALIGN?
-  {"SKILL_DRIVE_TO",           SkillJumpState, skills={{goto}},          final_to="SKILL_MPS_ALIGN", fail_to="FAILED"},
+  {"SKILL_DRIVE_TO",           SkillJumpState, skills={{goto}},          final_to="SKILL_MPS_ALIGN", fail_to="SKILL_MPS_ALIGN"}, --Maybe replace goto with ppgoto?
   {"SKILL_MPS_ALIGN",          SkillJumpState, skills={{mps_align}},         final_to="FINAL", fail_to="FAILED"},
 }
 

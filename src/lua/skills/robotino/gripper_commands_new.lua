@@ -81,7 +81,7 @@ fsm:add_transitions{
    {"WAIT_COMMAND", "FINAL", cond="vars.wait ~= nil and not vars.wait"},
    {"WAIT_COMMAND", "FINAL", cond="vars.restore"},
    {"WAIT_COMMAND", "FINAL", cond="arduino:is_final()"},
-   {"WAIT_COMMAND", "FAILED", cond="vars.error"},
+--   {"WAIT_COMMAND", "FAILED", cond="vars.error"},
 }
 
 function COMMAND:init()
