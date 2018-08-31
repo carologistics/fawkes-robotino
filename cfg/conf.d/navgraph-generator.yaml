@@ -104,7 +104,7 @@ navgraph-generator-mps:
 
   # Number of wait zones per half-field
   # i.e. generate X wait zones for x < 0 and X wait zones for x > 0
-  num-wait-zones: 3
+  num-wait-zones: 1
 
   # Grid algorithm specific parameters
   grid:
