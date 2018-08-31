@@ -246,5 +246,5 @@
 	=>
 	(printout t "Action Prepare " ?mps " might have failed, we do not care" crlf)
 	(retract ?st ?md ?at)
-	(modify ?pa (status EXECUTION-SUCCEEDED))
+	(modify ?pa (status EXECUTION-FAILED))
 )
