@@ -148,13 +148,14 @@
                        (bs-prepared-side ?m ?side)
 											 (wp-base-color ?wp BASE_NONE) (wp-unused ?wp)
 											 (wp-spawned-for ?wp ?r)
-											 (self ?r))
+											 (self ?r)
+											 (mps-state ?m READY-AT-OUTPUT))
 											 ;(not (wp-usable ?wp))
 		:effect (and (wp-at ?wp ?m ?side)
 								 (not (wp-base-color ?wp BASE_NONE)) (wp-base-color ?wp ?basecol)
 								 (not (wp-unused ?wp)) (wp-usable ?wp)
 								 (not (wp-spawned-for ?wp ?r))
-								 (mps-state ?m READY-AT-OUTPUT))
+								 )
 	)
 
 	(:action cs-mount-cap
@@ -162,7 +163,7 @@
 		:precondition (and (mps-type ?m CS) (locked ?m)
 										(cs-buffered ?m ?capcol) (cs-prepared-for ?m MOUNT_CAP)
 										(wp-usable ?wp) (wp-at ?wp ?m INPUT)
-										(wp-cap-color ?wp CAP_NONE))
+										(wp-cap-color ?wp CAP_NONE)(mps-state ?m READY-AT-OUTPUT))
 		:effect (and
 								 (not (wp-at ?wp ?m INPUT)) (wp-at ?wp ?m OUTPUT)
 								 (not (wp-cap-color ?wp CAP_NONE)) (wp-cap-color ?wp ?capcol)
@@ -170,20 +171,20 @@
 								 (not (cs-can-perform ?m MOUNT_CAP))
 								 (not (cs-prepared-for ?m MOUNT_CAP))
 								 (not (cs-buffered ?m ?capcol))
-								 (mps-state ?m READY-AT-OUTPUT))
+								 )
 	)
 
 	(:action cs-retrieve-cap
 		:parameters (?m - mps ?cc - cap-carrier ?capcol - cap-color)
 		:precondition (and (mps-type ?m CS)
                        (locked ?m) (cs-prepared-for ?m RETRIEVE_CAP)
-										(wp-at ?cc ?m INPUT)  (wp-cap-color ?cc ?capcol))
+										(wp-at ?cc ?m INPUT)  (wp-cap-color ?cc ?capcol)(mps-state ?m READY-AT-OUTPUT))
 		:effect (and
 								 (not (wp-at ?cc ?m INPUT)) (wp-at ?cc ?m OUTPUT)
 								 (not (wp-cap-color ?cc ?capcol)) (wp-cap-color ?cc CAP_NONE)
 								 (cs-buffered ?m ?capcol)(cs-can-perform ?m MOUNT_CAP)
 								 (not (cs-prepared-for ?m RETRIEVE_CAP))
-								 (mps-state ?m READY-AT-OUTPUT))
+								 )
 	)
 
 	(:action prepare-rs
