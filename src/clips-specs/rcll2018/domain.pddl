@@ -153,7 +153,8 @@
 		:effect (and (wp-at ?wp ?m ?side)
 								 (not (wp-base-color ?wp BASE_NONE)) (wp-base-color ?wp ?basecol)
 								 (not (wp-unused ?wp)) (wp-usable ?wp)
-								 (not (wp-spawned-for ?wp ?r)))
+								 (not (wp-spawned-for ?wp ?r))
+								 (mps-state ?m READY-AT-OUTPUT))
 	)
 
 	(:action cs-mount-cap
@@ -168,7 +169,8 @@
 								 (cs-can-perform ?m RETRIEVE_CAP)
 								 (not (cs-can-perform ?m MOUNT_CAP))
 								 (not (cs-prepared-for ?m MOUNT_CAP))
-								 (not (cs-buffered ?m ?capcol)))
+								 (not (cs-buffered ?m ?capcol))
+								 (mps-state ?m READY-AT-OUTPUT))
 	)
 
 	(:action cs-retrieve-cap
@@ -180,7 +182,8 @@
 								 (not (wp-at ?cc ?m INPUT)) (wp-at ?cc ?m OUTPUT)
 								 (not (wp-cap-color ?cc ?capcol)) (wp-cap-color ?cc CAP_NONE)
 								 (cs-buffered ?m ?capcol)(cs-can-perform ?m MOUNT_CAP)
-								 (not (cs-prepared-for ?m RETRIEVE_CAP)))
+								 (not (cs-prepared-for ?m RETRIEVE_CAP))
+								 (mps-state ?m READY-AT-OUTPUT))
 	)
 
 	(:action prepare-rs
