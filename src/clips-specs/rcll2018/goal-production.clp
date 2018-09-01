@@ -168,7 +168,7 @@
   (NavGraphWithMPSGeneratorInterface (final TRUE))
 =>
   (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
-  (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT1" ?waitzone:name)
+  (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT" ?waitzone:name)
     (assert
       (domain-object (name (sym-cat ?waitzone:name)) (type waitpoint))
       (wm-fact (key navgraph waitzone args? name (sym-cat ?waitzone:name)) (is-list TRUE) (type INT) (values (nth$ 1 ?waitzone:pos) (nth$ 2 ?waitzone:pos)))
