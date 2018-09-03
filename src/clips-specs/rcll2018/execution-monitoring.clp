@@ -14,6 +14,17 @@
 )
 
 ;Execution Monitoring MPS state
+;When a bot waits for an mps to be ready-at-output, and its idle, reason that it must have been ready at output in between
+;This is only reasonable, when the fact, that the bots waits for ready-at-output includes, that the mps actually was prepared correctly. Otherwise this will break things
+(defrule execution-monitoring-skipped-ready-at-output
+  (declare (salience 1))
+  ?dp <- (domain-pending-sensed-fact (action-id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id) (name mps-state) (values ?mps READY-AT-OUTPUT))
+  ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id) (state SENSED-EFFECTS-WAIT))
+  (wm-fact (key domain fact mps-state args m ?mps s IDLE))
+  =>
+  (retract ?dp)
+)
+
 (defrule execution-monitoring-unexpected-mps-state-ready-at-output-start
   (declare (salience 1))
   (time $?now)
