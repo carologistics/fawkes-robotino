@@ -60,6 +60,7 @@ String  Lookup  team_color;
 String  Lookup  game_phase;
 String  Lookup  game_state;
 String  Lookup  robot_name;
+String  Lookup  mps_prefix;
 String  Lookup  mps_state (String);
 String  Lookup  mps_type  (String);
 String  Lookup  mps_rs_ring1 (String);
@@ -150,8 +151,9 @@ network_handler:
 					Integer send_port;
 					Integer recv_port;
 					String  team_color;
-					String game_state;
-					String game_phase;
+					String  mps_prefix;
+					String  game_state;
+					String  game_phase;
 
 					game_state = pb_get_string(msg_id, "state");
 					if ! isKnown(Lookup(game_state)) || Lookup(game_state) != game_state
@@ -192,6 +194,7 @@ network_handler:
 
 								print("Detected team CYAN, creating peer");
 								team_color = "CYAN";
+								mps_prefix = "C-";
 
 								if (exists_send && exists_recv)
 								{
@@ -223,6 +226,7 @@ network_handler:
 
 								print("Detected team MAGENTA, creating peer");
 								team_color = "MAGENTA";
+								mps_prefix = "M-";
 
 								if (exists_send && exists_recv)
 								{
@@ -255,6 +259,7 @@ network_handler:
 
 							global_set_value("private_peer_id", peer_id);
 							global_set_value("team_color", team_color);
+							global_set_value("mps_prefix", mps_prefix);
 						}
 						endif
 					}
