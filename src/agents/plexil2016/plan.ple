@@ -76,6 +76,7 @@ String  Lookup  game_phase;
 String  Lookup  game_state;
 String  Lookup  team_color;
 String  Lookup  robot_name;
+String  Lookup  mps_prefix;
 String  Lookup  mps_state (String);
 String  Lookup  order_complexity (String);
 String  Lookup  order_base_color (String);
@@ -114,6 +115,7 @@ RCLL:
 			StartCondition Lookup(game_phase) == "PRODUCTION" &&
 			               Lookup(game_state) == "RUNNING" &&
 			               isKnown(Lookup(team_color)) &&
+			               isKnown(Lookup(mps_prefix)) &&
 			               isKnown(Lookup(robot_name));
 
 			team_color_arg = Lookup(team_color);
@@ -123,56 +125,15 @@ RCLL:
 			enter_field: SynchronousCommand enter_field(team_color_arg, robot_name_arg);
 		}
 
-		ProduceC0:
+		GoSomewhere:
 		{
-			String  cs_mps;
-			String  cs_input;
-			String  cs_output;
+			String mps_name;
+			StartCondition EnterField.state == FINISHED && isKnown(Lookup(mps_prefix));
 
-			StartCondition Lookup(game_phase) == "PRODUCTION" &&
-			               Lookup(game_state) == "RUNNING" &&
-										 isKnown(Lookup(order_base_color("1"))) &&
-										 isKnown(Lookup(order_cap_color("1"))) &&
-										 isKnown(Lookup(order_delivery_gate("1"))) &&
-										 ((Lookup(order_cap_color("1")) == "CAP_GREY" && isKnown(Lookup(mps_state("C-CS1")))) ||
-			                (Lookup(order_cap_color("1")) == "CAP_BLACK" && isKnown(Lookup(mps_state("C-CS2"))))) &&
-			               EnterField.state == FINISHED;
+			mps_name = Lookup(mps_prefix) + "BS-I";
 
-			if Lookup(order_cap_color("1")) == "CAP_GREY"
-			{
-				cs_mps = "C-CS1";
-			}
-			else
-			{
-				cs_mps = "C-CS2";
-			}
-			endif
-
-			cs_input      = cs_mps + "-I";
-			cs_output     = cs_mps + "-O";
-
-			log_info("Producing C0", cs_mps);
-			goto_cs_i:  SynchronousCommand goto(cs_input);
-			pick_shelf: SynchronousCommand pick_from_shelf(cs_mps, "LEFT");
-			prep_cs_r:  LibraryCall SendPrepareCS (machine=cs_mps, operation="RETRIEVE_CAP");
-			put_cs:     SynchronousCommand put_on_conveyor(cs_mps, "input");
-			goto_cs_o:  SynchronousCommand goto(cs_output);
-			pick_cs:    SynchronousCommand pick_from_conveyor(cs_mps, "output");
-			goto_rs_i:  SynchronousCommand goto("C-RS1-I");
-			put_rs:     SynchronousCommand put_on_slide("C-RS1");
-			goto_bs:    SynchronousCommand goto("C-BS-I");
-			prep_bs:    LibraryCall SendPrepareBS (machine="C-BS", side="INPUT",
-			                                       base_color=Lookup(order_base_color("1")));
-			pick_bs:    SynchronousCommand pick_from_conveyor("C-BS", "input");
-			goto_cs_i2: SynchronousCommand goto(cs_input);
-			prep_cs_m:  LibraryCall SendPrepareCS (machine=cs_mps, operation="MOUNT_CAP");
-			put_cs2:    SynchronousCommand put_on_conveyor(cs_mps, "input");
-			goto_cs_o2: SynchronousCommand goto(cs_output);
-			pick_cs3:   SynchronousCommand pick_from_conveyor(cs_mps, "output");
-			goto_ds:    SynchronousCommand goto("C-DS-I");
-			prep_ds:    LibraryCall SendPrepareDS (machine="C-DS",
-			                                       gate=Lookup(order_delivery_gate("1")));
-			put_ds:     SynchronousCommand put_on_conveyor("C-DS", "input");
+			log_info("Going to ", mps_name);
+			goto_bs_i:  SynchronousCommand goto(mps_name);
 		}
 	}
 }
