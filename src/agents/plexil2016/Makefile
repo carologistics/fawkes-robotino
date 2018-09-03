@@ -10,7 +10,10 @@ PLE=$(wildcard *.ple)
 all: $(patsubst %.ple,%.plx,$(PLE))
 
 %.plx: %.ple
-	plexilc $<
+	$(PLEXILC) $<
+
+%.epx: %.ple
+	java -classpath /usr/share/java/PlexilCompiler.jar:/usr/share/java/antlr3-runtime.jar:/usr/share/java/nanoxml.jar:/usr/share/java/saxon/saxon.jar plexil.Compiler -e $<
 
 .PHONY: all clean run
 clean:
