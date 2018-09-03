@@ -326,6 +326,12 @@
                  (spot-free ?m ?spot))
 	)
 
+	(:action gripper-close
+		:parameters (?r - robot)
+		:precondition (self ?r)
+		:effect (self ?r)
+	)
+
   (:action refill-shelf1
     :parameters (?m - mps ?spot - shelf-spot ?cc1 - cap-carrier
                  ?color - cap-color)

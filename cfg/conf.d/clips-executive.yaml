@@ -143,6 +143,7 @@ clips-executive:
         wp-put-slide-cc: bring_product_to{place=?(m)S, slide="TRUE"}
         wp-get: get_product_from{place=?(m)S, side=?(side|/INPUT/input/|/OUTPUT/output/)s}
         wp-discard: ax12gripper{command="OPEN"}
+        gripper-close: ax12gripper{command="CLOSE"}
         stop: relgoto{x=0, y=0}
 
       blackboard-preload: ["Position3DInterface", "NavGraphWithMPSGeneratorInterface" , "NavGraphGeneratorInterface" , "NavigatorInterface", "AX12GripperInterface", "MotorInterface", "LaserLineInterface", "TagVisionInterface", "ZoneInterface" , "RobotinoSensorInterface" , "RobotinoLightInterface" ]
