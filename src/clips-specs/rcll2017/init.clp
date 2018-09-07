@@ -28,79 +28,34 @@
   (printout t "Finished initialization" crlf)
   ; (retract ?i)
 
+  ; Set clips-executive identity
 	(cx-identity-set ?robot-name)
-	(wm-robmem-sync-enable
-	"/plan-action/COMPLEXITY"
-	)
-	(wm-robmem-sync-enable
-	"/plan-action/COMPLEXITY2"
-	)
-	(wm-robmem-sync-enable
-	"/r-2-at"
-	)
-	(wm-robmem-sync-enable
-	"/r-3-at"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/location-free"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/bs-prepared-color"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/bs-prepared-side"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/cs-can-perform"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/cs-buffered"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/cs-free"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/rs-prepared-color"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/rs-filled-with"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/ds-prepared-gate"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/order-fulfilled"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/wp-unused"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/wp-usable"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/wp-at"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/wp-base-color"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/wp-ring1-color"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/wp-ring2-color"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/wp-ring3-color"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/wp-cap-color"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/wp-on-shelf"
-	)
-	(wm-robmem-sync-enable
-	"/domain/fact/spot-free"
-	)
+
+  ; Enable robot memory sync
+	(wm-robmem-sync-enable "/plan-action/PRODUCE-C3" )
+	(wm-robmem-sync-enable "/plan-action/PRODUCE-C0"	)
+	(wm-robmem-sync-enable "/domain/fact/location-free"	)
+	(wm-robmem-sync-enable "/domain/fact/bs-prepared-color"	)
+	(wm-robmem-sync-enable "/domain/fact/bs-prepared-side" )
+	(wm-robmem-sync-enable "/domain/fact/cs-can-perform" )
+	(wm-robmem-sync-enable "/domain/fact/cs-buffered" )
+	(wm-robmem-sync-enable "/domain/fact/cs-free" )
+	(wm-robmem-sync-enable "/domain/fact/rs-prepared-color" )
+	(wm-robmem-sync-enable "/domain/fact/rs-filled-with" )
+	(wm-robmem-sync-enable "/domain/fact/ds-prepared-gate" )
+	(wm-robmem-sync-enable "/domain/fact/order-fulfilled" )
+	(wm-robmem-sync-enable "/domain/fact/wp-unused" )
+	(wm-robmem-sync-enable "/domain/fact/wp-usable" )
+	(wm-robmem-sync-enable "/domain/fact/wp-at" )
+	(wm-robmem-sync-enable "/domain/fact/wp-base-color" )
+	(wm-robmem-sync-enable "/domain/fact/wp-ring1-color" )
+	(wm-robmem-sync-enable "/domain/fact/wp-ring2-color" )
+	(wm-robmem-sync-enable "/domain/fact/wp-ring3-color" )
+	(wm-robmem-sync-enable "/domain/fact/wp-cap-color" )
+	(wm-robmem-sync-enable "/domain/fact/wp-on-shelf" )
+	(wm-robmem-sync-enable "/domain/fact/spot-free" )
+	(wm-robmem-sync-enable "/domain/fact/at" )
+	(wm-robmem-sync-enable "/domain/fact/holding" )
 )
 
 ; (defrule initialization-abort-on-finalize
