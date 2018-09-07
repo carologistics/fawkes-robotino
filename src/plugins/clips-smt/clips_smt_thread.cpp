@@ -114,6 +114,9 @@ ClipsSmtThread::init()
 	inside_capstation["nothing"]=0;
 	inside_capstation["has_C1"]=1;
 	inside_capstation["has_C2"]=2;
+	inside_capstation_inverted[0]="nothing";
+	inside_capstation_inverted[1]="has_C1";
+	inside_capstation_inverted[2]="has_C2";
 
 	// For each relevant machine we assign a group
 	machine_groups["BS"]=0;
@@ -124,9 +127,13 @@ ClipsSmtThread::init()
 
 	// Products encodes the output of an station which can be any product (at the CS) and subproduct (at the BS and RS) OR the product a robot is holding
 	products["nothing"]=0;
+	products_inverted[0] = "nothing";
 	products["BRC1"]=1;
+	products_inverted[1]="BRC1";
 	products["BRC2"]=2;
+	products_inverted[2]="BRC2";
 	products["BR"]=3;
+	products_inverted[3]="BR";
 
 	unsigned ctr = 3;
 
@@ -135,6 +142,7 @@ ClipsSmtThread::init()
 		std::string name = "B"+std::to_string(b);
 		ctr++;
 		products[name] = ctr;
+		products_inverted[ctr] = name;
 	}
 
 	// B1C1 ... B3C2
@@ -143,6 +151,7 @@ ClipsSmtThread::init()
 			std::string name = "B"+std::to_string(b)+"C"+std::to_string(c);
 			ctr++;
 			products[name] = ctr;
+			products_inverted[ctr] = name;
 		}
 	}
 
@@ -152,6 +161,7 @@ ClipsSmtThread::init()
 			std::string name = "B"+std::to_string(b)+"R"+std::to_string(r1);
 			ctr++;
 			products[name] = ctr;
+			products_inverted[ctr] = name;
 		}
 	}
 
@@ -162,6 +172,7 @@ ClipsSmtThread::init()
 				std::string name = "B"+std::to_string(b)+"R"+std::to_string(r1)+"C"+std::to_string(c);
 				ctr++;
 				products[name] = ctr;
+				products_inverted[ctr] = name;
 			}
 		}
 	}
@@ -173,6 +184,7 @@ ClipsSmtThread::init()
 				std::string name = "B"+std::to_string(b)+"R"+std::to_string(r1)+"R"+std::to_string(r2);
 				ctr++;
 				products[name] = ctr;
+				products_inverted[ctr] = name;
 			}
 		}
 	}
@@ -185,6 +197,7 @@ ClipsSmtThread::init()
 					std::string name = "B"+std::to_string(b)+"R"+std::to_string(r1)+"R"+std::to_string(r2)+"C"+std::to_string(c);
 					ctr++;
 					products[name] = ctr;
+					products_inverted[ctr] = name;
 				}
 			}
 		}
@@ -198,6 +211,7 @@ ClipsSmtThread::init()
 					std::string name = "B"+std::to_string(b)+"R"+std::to_string(r1)+"R"+std::to_string(r2)+"R"+std::to_string(r3);
 					ctr++;
 					products[name] = ctr;
+					products_inverted[ctr] = name;
 				}
 			}
 		}
@@ -212,6 +226,7 @@ ClipsSmtThread::init()
 						std::string name = "B"+std::to_string(b)+"R"+std::to_string(r1)+"R"+std::to_string(r2)+"R"+std::to_string(r3)+"C"+std::to_string(c);
 						ctr++;
 						products[name] = ctr;
+						products_inverted[ctr] = name;
 					}
 				}
 			}
@@ -827,9 +842,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[6]);
-					param = action->add_params();
-					param->set_key("gate");
-					param->set_value("GATE-"+std::to_string(data.orders(order_id).delivery_gate()));
+					// param = action->add_params();
+					// param->set_key("gate");
+					// param->set_value("GATE-"+std::to_string(data.orders(order_id).delivery_gate()));
 
 					++action_id;
 					action = plan->add_actions();
@@ -1712,6 +1727,7 @@ ClipsSmtThread::loop()
 	clips_smt_clear_maps();
 	clips_smt_init_game_pre();
 	clips_smt_init_game_pos();
+	clips_smt_print_worldstate();
 	logger->log_info(name(), "Upper bound for plan_horizon is set to %i", plan_horizon_max);
 
 	// Set plan_horizon depending on worldstate
@@ -1733,7 +1749,7 @@ ClipsSmtThread::loop()
 
 	// Increase plan_horizon up till bound or plan was found
 	bool solve = true;
-	while(solve && plan_horizon <= plan_horizon_max) {
+	while(solve && plan_horizon <= plan_horizon_max+2) {
 		logger->log_info(name(), "Try to generate %i-plan", plan_horizon);
 		z3::expr_vector formula = clips_smt_encoder();
 		if(clips_smt_solve_formula(formula)) {
@@ -1911,6 +1927,7 @@ ClipsSmtThread::clips_smt_init_game_pre()
 
 	// Extract holding and location information of robots
 	for(int i=0; i<data.robots().size(); ++i){
+		std::cout << "Copy position of R-" << i+1 << ": " << data.robots(i).location() << " to model" << std::endl;
 		world_initPos[i+1] = node_names_inverted[data.robots(i).location()];
 		world_initHold[i+1] = clips_smt_rewrite_product(data.robots(i).wp().base_color(), data.robots(i).wp().ring_colors(0), data.robots(i).wp().ring_colors(1), data.robots(i).wp().ring_colors(2), data.robots(i).wp().cap_color());
 	}
@@ -1939,6 +1956,7 @@ ClipsSmtThread::clips_smt_init_navgraph()
 	node_names[8] = team+"-RS1-O";
 	node_names[9] = team+"-RS2-I";
 	node_names[10] = team+"-RS2-O";
+	node_names[11] = team+"-BS-I";
 
 	node_names_inverted["START-I"] = 0; // team+"-ins-in"] = 0;
 	node_names_inverted[team+"-BS-O"] = 1;
@@ -1951,6 +1969,7 @@ ClipsSmtThread::clips_smt_init_navgraph()
 	node_names_inverted[team+"-RS1-O"] = 8;
 	node_names_inverted[team+"-RS2-I"] = 9;
 	node_names_inverted[team+"-RS2-O"] = 10;
+	node_names_inverted[team+"-BS-I"] = 11;
 
 	MutexLocker lock(navgraph.objmutex_ptr());
 
@@ -2324,7 +2343,7 @@ ClipsSmtThread::clips_smt_encoder()
 			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == 1 && getVar(var, "A_"+std::to_string(i)) == 2 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
 			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == 9 && getVar(var, "A_"+std::to_string(i)) == 10 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
 			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == 11 && getVar(var, "A_"+std::to_string(i)) == 12 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
-			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == 13 && getVar(var, "A_"+std::to_string(i)) == 4 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
+			constraints.push_back( !( getVar(var, "A_"+std::to_string(j)) == 13 && getVar(var, "A_"+std::to_string(i)) == 5 ) || getVar(var, "R_"+std::to_string(j)) == getVar(var, "R_"+std::to_string(i)) );
 		}
 	}
 
@@ -2526,8 +2545,10 @@ ClipsSmtThread::clips_smt_encoder()
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"]) || getVar(var, "pos_"+std::to_string(i)) == 4)
 									&& (getVar(var, "holdA_"+std::to_string(i)) == products[sub_product])
 									&& (getVar(var, "holdB_"+std::to_string(i)) == products["nothing"])
-									&& (getVar(var, "R_"+std::to_string(i)) != amount_robots) // Do not use R-3 for action 5
 									&& (getVar(var, "rd_"+std::to_string(i)) == 0));
+		if(amount_robots==3) {
+			constraintaction5 = constraintaction5 && (getVar(var, "R_"+std::to_string(i)) != amount_robots); // Do not use R-3 for action 5
+		}
 		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_cs_mount) || constraintaction5);
 
 		// 6.Action : Hold product and deliver at DS
@@ -2559,7 +2580,6 @@ ClipsSmtThread::clips_smt_encoder()
 		 * ----------------------------------------------------------------------------------------------------------------------------------------------
 		 */
 		if(order_complexity > 0) {
-
 
 			// 8.Action : Prepare and mount base with ring1 at RS
 			z3::expr constraintaction8((getVar(var, "M_"+std::to_string(i)) == machine_groups[station_colors[r1i]])
@@ -2719,7 +2739,10 @@ ClipsSmtThread::clips_smt_encoder()
 	}
 	constraints.push_back(constraint_goal);
 
-	constraints.push_back(getVar(var, "R_"+std::to_string(plan_horizon)) == amount_robots);
+	// Force "last" robot to deliver --- necessary for multi_c3c0 in order to plan c0 with R-1 and R-2
+	if(amount_robots==3) {
+		constraints.push_back(getVar(var, "R_"+std::to_string(plan_horizon)) == amount_robots);
+	}
 
 	// Specify initial situation for robots
 	for(int i=1; i<amount_robots+1; ++i){
@@ -2842,6 +2865,15 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model)
 				else if(function_name.compare("pos_"+std::to_string(j))==0) {
 					model_positions[j] = (int) interp;
 				}
+				else if(function_name.compare("pos_1_"+std::to_string(j))==0) {
+					model_positions_r1[j] = (int) interp;
+				}
+				else if(function_name.compare("pos_2_"+std::to_string(j))==0) {
+					model_positions_r2[j] = (int) interp;
+				}
+				else if(function_name.compare("pos_3_"+std::to_string(j))==0) {
+					model_positions_r3[j] = (int) interp;
+				}
 				else if(function_name.compare("R_"+std::to_string(j))==0) {
 					model_robots[j] = (int) interp;
 				}
@@ -2877,7 +2909,8 @@ ClipsSmtThread::clips_smt_extract_plan_from_model(z3::model model)
 	logger->log_info(name(), "Generate plan for order with complexity %i with components: B%iC%i", order_complexity, base, cap);
 
 	for(int j=1; j<plan_horizon+1; ++j){
-		logger->log_info(name(), "%i. R-%i A%i hold[%i-%i] pos[%i] M%i input[%i-%i] output[%i-%i] time[%f] rew[%i]", j, model_robots[j], model_actions[j], model_holdA[j], model_holdB[j], model_positions[j], model_machines[j], model_insideA[j], model_insideB[j], model_outputA[j], model_outputB[j], model_times[j], model_rew[j]);
+		logger->log_info(name(), "%i. R-%i A%i hold[%i-%i] pos[%i - %i%i%i] M%i input[%i-%i] output[%i-%i] time[%f] rew[%i]",
+		j, model_robots[j], model_actions[j], model_holdA[j], model_holdB[j], model_positions[j], model_positions_r1[j], model_positions_r2[j], model_positions_r3[j], model_machines[j], model_insideA[j], model_insideB[j], model_outputA[j], model_outputB[j], model_times[j], model_rew[j]);
 	}
 }
 
@@ -3014,4 +3047,26 @@ int ClipsSmtThread::clips_smt_rewrite_product(int base, int ring1, int ring2, in
 	}
 
 	return products[product_description];
+}
+
+void ClipsSmtThread::clips_smt_print_worldstate()
+{
+	// Initialize world state fix
+	std::cout << "robots: " << amount_robots << std::endl;
+	std::cout << "time: " << world_initTime << std::endl;
+	std::cout << "R-1 holds " << products_inverted[world_initHold[1]] << std::endl;
+	std::cout << "R-2 holds " << products_inverted[world_initHold[2]] << std::endl;
+	std::cout << "R-3 holds " << products_inverted[world_initHold[3]] << std::endl;
+	std::cout << "R-1 is at " << node_names[world_initPos[1]] << std::endl;
+	std::cout << "R-2 is at " << node_names[world_initPos[2]] << std::endl;
+	std::cout << "R-3 is at " << node_names[world_initPos[3]] << std::endl;
+	std::cout << "CS1 has inside " << inside_capstation_inverted[world_initInside[1]] << std::endl;
+	std::cout << "CS2 has inside " << inside_capstation_inverted[world_initInside[2]] << std::endl;
+	std::cout << "RS1 has inside " << world_initInside[3] << " many additional bases loaded" << std::endl;
+	std::cout << "RS2 has inside " << world_initInside[4] << " many additional bases loaded" << std::endl;
+	std::cout << "BS has outside " << products_inverted[world_initOutside[0]] << std::endl;
+	std::cout << "RS1 has outside " << products_inverted[world_initOutside[1]] << std::endl;
+	std::cout << "RS2 has outside " << products_inverted[world_initOutside[2]] << std::endl;
+	std::cout << "CS1 has outside " << products_inverted[world_initOutside[3]] << std::endl;
+	std::cout << "CS2 has outside " << products_inverted[world_initOutside[4]] << std::endl;
 }
