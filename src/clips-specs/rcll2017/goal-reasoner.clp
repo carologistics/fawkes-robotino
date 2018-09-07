@@ -35,49 +35,6 @@
   ; common evaluate rules should have
   ;   lower salience than case specific ones
   ?*SALIENCE-GOAL-EVALUTATE-GENERIC* = -1
-  ; complexity
-  ?*SALIENCE-COMPLEXITY* = 200
-  ?*SALIENCE-COMPLEXITY2* = 100
-)
-
-(defrule goal-reasoner-create-complexity
-  (declare (salience ?*SALIENCE-COMPLEXITY*))
-	(not (goal (id COMPLEXITY2)))
-	(not (goal (id COMPLEXITY)))
-	(not (goal-already-tried COMPLEXITY))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id&O7 com C3) (value TRUE))
-	(wm-fact (key config rcll robot-name) (value ?robot))
-=>
-  (bind ?goal-id COMPLEXITY)
-	(printout t "Create goal " ?goal-id " with order " ?order-id crlf)
-	(assert (goal (id ?goal-id)))
-	(assert (goal-already-tried ?goal-id))
-  (if (eq ?robot "R-1") then
-  	(assert (wm-fact (key r-1-at ?goal-id update-request)))
-]  	(assert (wm-fact (key r-2-at ?goal-id update-request)))
-  	(assert (wm-fact (key r-3-at ?goal-id update-request)))
-  )
-)
-
-(defrule goal-reasoner-create-complexity2
-  (declare (salience ?*SALIENCE-COMPLEXITY2*))
-	(not (goal (id COMPLEXITY)))
-	(not (goal (id COMPLEXITY2)))
-	(not (goal-already-tried COMPLEXITY2))
-	(wm-fact (key domain fact order-complexity args? ord ?order-id&O1 com C0) (value TRUE))
-  ; Two robots are free
-  (wm-fact (key plan-action COMPLEXITY ?plan-id r-1-done))
-  (wm-fact (key plan-action COMPLEXITY ?plan-id r-2-done))
-	(wm-fact (key config rcll robot-name) (value ?robot))
-=>
-  (bind ?goal-id COMPLEXITY2)
-	(printout t "Create goal " ?goal-id " with order " ?order-id crlf)
-	(assert (goal (id ?goal-id)))
-	(assert (goal-already-tried ?goal-id))
-  (if (eq ?robot "R-1") then
-  	(assert (wm-fact (key r-1-at ?goal-id update-request)))
-  	(assert (wm-fact (key r-2-at ?goal-id update-request)))
-  )
 )
 
 ; #  Goal Selection
@@ -193,7 +150,7 @@
     then
     (bind ?num-tries (+ ?num-tries 1))
     (modify ?gm (num-tries ?num-tries))
-    )
+  )
 
   (modify ?g (mode EVALUATED))
 
@@ -238,21 +195,7 @@
   (if (or (eq ?goal-type MAINTAIN)
           (and (eq ?outcome FAILED) (<= ?num-tries ?max-tries)))
     then
-   ;   (printout t "Triggering re-expansion" crlf)
-
-    (if (eq ?robot "R-1") then
-        (if (eq ?goal-id COMPLEXITY) then
-        	(assert (wm-fact (key r-1-at ?goal-id update-request)))
-        	(assert (wm-fact (key r-2-at ?goal-id update-request)))
-        	(assert (wm-fact (key r-3-at ?goal-id update-request)))
-        )
-
-        (if (eq ?goal-id COMPLEXITY2) then
-        	(assert (wm-fact (key r-1-at ?goal-id update-request)))
-        	(assert (wm-fact (key r-2-at ?goal-id update-request)))
-        )
-      )
-
+     ; (printout t "Triggering re-expansion" crlf)
 
       (modify ?g (mode SELECTED) (outcome UNKNOWN))
     else
