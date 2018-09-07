@@ -110,7 +110,8 @@ clips-executive:
           - name: goal-reasoner
             files: [rcll2017/goal-reasoner.clp, rcll2017/goal-production.clp, rcll2017/exploration.clp]
           - name: goal-expander
-            files: [rcll2017/smt-planner.clp , rcll2017/fixed-sequence.clp ]
+            #files: [rcll2017/goal-expander.clp , rcll2017/fixed-sequence.clp ]
+            files: [ rcll2017/fixed-sequence.clp ]
           - name: action-selection
             file: rcll2017/action-selection.clp
           - name: action-execution
@@ -118,6 +119,11 @@ clips-executive:
                       rcll2017/refbox-actions.clp ]
           - name: execution-monitoring
             file: rcll2017/execution-monitoring.clp
+          - name: smtstr-wait
+            feature-request: false
+            files: [ rcll2017/smtstr-wait-init.clp ]
+            wait-for: smtstr-initialized
+          - name: smtstr
 
       action-mapping:
         enter-field: drive_into_field{team=?(team-color)S, wait=?(r|/R-1/0.0/|/R-2/10.0/|/R-3/20.0/)f}
@@ -138,6 +144,8 @@ clips-executive:
 
       parameters:
         rcll:
+          smt_strategy: multi_c3c0
+          # single_c3, mutli_c3 or multi_c3c0
         #real-world-setup:
           peer-address: 172.26.255.255
           peer-port: 4444
