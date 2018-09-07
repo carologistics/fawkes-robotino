@@ -75,7 +75,8 @@
 					(wm-key-prefix ?wm-fact:key (create$ plan-action ?goal-id ?plan-id ?a status))
 					(eq (string-to-field (str-cat ?wm-fact:value)) FINAL)
 				)
-				(printout t "Dependency of action with id " ?a " was detected" crlf) ; TODO Why is this printout crucial for the correct execution?
+				(bind ?dummy ?wm-fact:value)
+				; (printout t "Dependency of action with id " ?a " was detected" crlf)
 			)
 		)
 		(if (not ?result) then
@@ -115,12 +116,12 @@
 	)
 )
 
-(defrule action-selection-select-parallel-others
+(defrule action-selection-select-others
 	"select earliest action if no other is chosen and if all actions indicated by parents-ids are finished"
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status FORMULATED)
 					  (action-name ?action-name&send-beacon
 	            |enter-field
-	            |move
+							|move
 							|wp-get
 							|wp-get-shelf
 							|wp-put
@@ -153,7 +154,7 @@
 	(modify ?pa (status PENDING))
 )
 
-(defrule action-selection-select-parallel-prepare-ds
+(defrule action-selection-select-prepare-ds
 	"select earliest action if no other is chosen and if all actions indicated by parents-ids are finished"
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status FORMULATED)
 					  (action-name ?action-name&prepare-ds)
@@ -177,37 +178,14 @@
 )
 
 ; Failure is noticed by all robots but finishing all plan-actions only affects single robots
-
-(defrule action-selection-done-r-1
+(defrule action-selection-done-r1
 	(wm-fact (key config rcll robot-name) (value "R-1"))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	?g <- (goal (id ?goal-id) (mode DISPATCHED) (type ACHIEVE))
 	(not (plan-action (plan-id ?plan-id) (status ~FINAL)))
 	=>
 	(printout t "Robot " (cx-identity) " has completed his plan-actions of " ?goal-id " " ?plan-id crlf)
-	(assert (wm-fact (key plan-action ?goal-id ?plan-id r-1-done) ) )
-	(modify ?g (mode FINISHED) (outcome COMPLETED))
-)
-
-(defrule action-selection-done-r-2
-	(wm-fact (key config rcll robot-name) (value "R-2"))
-	(plan (id ?plan-id) (goal-id ?goal-id))
-	?g <- (goal (id ?goal-id) (mode DISPATCHED) (type ACHIEVE))
-	(not (plan-action (plan-id ?plan-id) (status ~FINAL)))
-	=>
-	(printout t "Robot " (cx-identity) " has completed his plan-actions of " ?goal-id " " ?plan-id crlf)
-	(assert (wm-fact (key plan-action ?goal-id ?plan-id r-2-done) ) )
-	(modify ?g (mode FINISHED) (outcome COMPLETED))
-)
-
-(defrule action-selection-done-r-3
-	(wm-fact (key config rcll robot-name) (value "R-3"))
-	(plan (id ?plan-id) (goal-id ?goal-id))
-	?g <- (goal (id ?goal-id) (mode DISPATCHED) (type ACHIEVE))
-	(not (plan-action (plan-id ?plan-id) (status ~FINAL)))
-	=>
-	(printout t "Robot " (cx-identity) " has completed his plan-actions of " ?goal-id " " ?plan-id crlf)
-	(assert (wm-fact (key plan-action ?goal-id ?plan-id r-3-done) ) )
+	(assert (wm-fact (key plan-action ?goal-id ?plan-id done-r1) ) )
 	(modify ?g (mode FINISHED) (outcome COMPLETED))
 )
 
