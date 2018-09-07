@@ -144,7 +144,7 @@ clips-executive:
 
       parameters:
         rcll:
-          smt_strategy: multi_c3c0
+          smt_strategy: multi_c3
           # single_c3, mutli_c3 or multi_c3c0
         #real-world-setup:
           peer-address: 172.26.255.255
