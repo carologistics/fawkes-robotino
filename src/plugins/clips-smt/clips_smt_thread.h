@@ -65,7 +65,7 @@
 // 9. RS1-O
 // 10. RS2-I
 // 11. RS2-O
-const int amount_machines = 10; // TODO Change amount_machines to 11 and remove '< amount_machines+1' to '< amount_machines'
+const int amount_machines = 11; // TODO Change amount_machines to 11 and remove '< amount_machines+1' to '< amount_machines'
 
 // Time
 // TODO Evaluate better approximations for times
@@ -79,7 +79,7 @@ const int time_to_del = 5;
 const float time_to_scaling = 10;
 
 // Consider delivery window for orders
-const bool consider_temporal_constraint = true;
+const bool consider_temporal_constraint = false;
 
 /**
  * Class
@@ -214,6 +214,7 @@ private:
 	// - machine_groups lists all possible stations (without paying attention to the side)
 	// TODO Replace const min max by bounds of map after int
 	std::map<std::string, int> inside_capstation;
+	std::map<int, std::string> inside_capstation_inverted;
 	int min_inside_capstation = 0;
 	int max_inside_capstation = 2;
 	int min_add_bases_ringstation = 0;
@@ -272,6 +273,9 @@ private:
 	std::map<int, int> model_machines;
 	std::map<int, float> model_times;
 	std::map<int, int> model_positions;
+	std::map<int, int> model_positions_r1;
+	std::map<int, int> model_positions_r2;
+	std::map<int, int> model_positions_r3;
 	std::map<int, int> model_robots;
 	std::map<int, int> model_actions;
 	std::map<int, int> model_holdA;
@@ -309,6 +313,7 @@ private:
 	std::string getNextShelf();
 	void clips_smt_clear_maps();
 	int clips_smt_rewrite_product(int base, int ring1, int ring2, int ring3, int cap);
+	void clips_smt_print_worldstate();
 };
 
 #endif
