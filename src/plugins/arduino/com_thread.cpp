@@ -650,13 +650,15 @@ ArduinoComThread::read_packet(unsigned int timeout)
       std::stringstream ss(s.substr(4));
       ss >> gripper_pose_[X] >> gripper_pose_[Y] >> gripper_pose_[Z] >> gripper_pose_[A];
     } else if (current_arduino_status_ == 'G') {
-      if ( s.substr(4) == "OPEN"){
-	  arduino_if_->set_gripper_closed(false);
+      if ( s.substr(4) == "OPEN" || s.substr(4) == "CLOSED"){
+	  arduino_if_->set_holds_puck(false);
 	  arduino_if_->write();
-      } else if ( s.substr(4) == "CLOSED"){
-	  arduino_if_->set_gripper_closed(true);
+      } else if ( s.substr(4) == "GRABBED"){
+	  arduino_if_->set_holds_puck(true);
 	  arduino_if_->write();
       }
+      // Not sure about that...
+      current_arduino_status_ = 'I';
     }
     else {
       // Probably something went wrong with communication

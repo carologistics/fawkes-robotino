@@ -18,7 +18,7 @@
     <field type="float" name="y_position">Current y-position</field>
     <field type="float" name="z_position">Current z-position</field>
 
-    <field type="bool" name="gripper_closed">True is gripper is closed</field>
+    <field type="bool" name="holds_puck">True if something is gripped</field>
 
     <field type="float" name="x_max">Max len in x</field>
     <field type="float" name="y_max">Max len in y</field>
