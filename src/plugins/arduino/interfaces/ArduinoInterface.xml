@@ -18,6 +18,8 @@
     <field type="float" name="y_position">Current y-position</field>
     <field type="float" name="z_position">Current z-position</field>
 
+    <field type="bool" name="gripper_closed">True is gripper is closed</field>
+
     <field type="float" name="x_max">Max len in x</field>
     <field type="float" name="y_max">Max len in y</field>
     <field type="float" name="z_max">Max len in z</field>
@@ -52,13 +54,11 @@
     <field type="float" name="y">New position in Y</field>
     <field type="float" name="z">New position in Z</field>
   </message>
-  <message name="MoveGripperAbs">
-    <comment>Open or close gripper to desired absolute position.</comment>
-    <field type="float" name="a">New goal pose for gripper</field>
+  <message name="CloseGripper">
+    <comment>Close gripper</comment>
   </message>
-  <message name="MoveGripperRel">
-    <comment>Open or close gripper to desired relative position.</comment>
-    <field type="float" name="a">New goal pose for gripper</field>
+  <message name="OpenGripper">
+    <comment>Open gripper</comment>
   </message>
   <message name="ToHome">
     <comment>Move gripper to home position in all axes.</comment>

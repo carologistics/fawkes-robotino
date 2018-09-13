@@ -176,8 +176,7 @@ fsm:define_states{ export_to=_M,
    {"WAIT_AFTER_CENTER",JumpState},
    {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER",fail_to="PRE_FAIL"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
-   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "CENTER_FINGERS", fail_to="FAILED"},
-   {"CENTER_FINGERS", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_CENTER", fail_to="WAIT_AFTER_CENTER"},
+   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "WAIT_AFTER_CENTER", fail_to="FAILED"},
    {"CLOSE_AFTER_CENTER", SkillJumpState, skills={{gripper_commands_new}}, final_to="HOME_GRIPPER", fail_to="HOME_GRIPPER"},
    {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="DRIVE_BACK"},
    {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CHECK_PUCK", fail_to="PRE_FAIL"},
@@ -239,7 +238,7 @@ function OPEN_GRIPPER:init()
 end
 
 function CLOSE_GRIPPER:init()
-   self.args["ax12gripper"].command= "CLOSE_TIGHT"
+   self.args["gripper_commands_new"].command= "CLOSE"
 end
 
 function CLOSE_AFTER_CENTER:init()
@@ -278,10 +277,6 @@ function MOVE_GRIPPER_BACK:init()
     self.args["gripper_commands_new"].x = conveyor_gripper_back_x
     self.args["gripper_commands_new"].z = conveyor_gripper_up_z
   end
-end
-
-function CENTER_FINGERS:init()
-  self.args["ax12gripper"].command = "CENTER"
 end
 
 function HOME_GRIPPER:init()

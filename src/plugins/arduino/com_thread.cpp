@@ -314,18 +314,18 @@ ArduinoComThread::loop()
                 } else {
                   delete arduino_msg;
                 }
-            } else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveGripperAbsMessage>()) {
-              ArduinoInterface::MoveGripperAbsMessage *msg = arduino_if_->msgq_first(msg);
+            } else if (arduino_if_->msgq_first_is<ArduinoInterface::CloseGripperMessage>()) {
+              ArduinoInterface::CloseGripperMessage *msg = arduino_if_->msgq_first(msg);
 
-              int new_abs_a = round_to_2nd_dec(msg->a() * A_AXIS_STEPS_PER_MM);
+              logger->log_debug(name(), "Close gripper");
+              append_message_to_queue(ArduinoComMessage::command_id_t::CMD_CLOSE,0, 10000);
 
-              // calculate millseconds needed for this movement
-//              int d = new_abs_a - gripper_pose_[A];
-              logger->log_debug(name(), "Set new gripper a: %u", new_abs_a);
-              append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_NEW_POS, new_abs_a, 10000);
+            } else if (arduino_if_->msgq_first_is<ArduinoInterface::OpenGripperMessage>()) {
+		    ArduinoInterface::OpenGripperMessage *msg = arduino_if_->msgq_first(msg);
 
-            } else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveGripperRelMessage>()) {
-              // TODO
+              logger->log_debug(name(), "Open gripper");
+              append_message_to_queue(ArduinoComMessage::command_id_t::CMD_OPEN,0, 10000);
+
             } else if (arduino_if_->msgq_first_is<ArduinoInterface::ToHomeMessage>()) {
               home_pending_ = true;
             } else if (arduino_if_->msgq_first_is<ArduinoInterface::CalibrateMessage>()) {
@@ -649,7 +649,16 @@ ArduinoComThread::read_packet(unsigned int timeout)
 
       std::stringstream ss(s.substr(4));
       ss >> gripper_pose_[X] >> gripper_pose_[Y] >> gripper_pose_[Z] >> gripper_pose_[A];
-    } else {
+    } else if (current_arduino_status_ == 'G') {
+      if ( s.substr(4) == "OPEN"){
+	  arduino_if_->set_gripper_closed(false);
+	  arduino_if_->write();
+      } else if ( s.substr(4) == "CLOSED"){
+	  arduino_if_->set_gripper_closed(true);
+	  arduino_if_->write();
+      }
+    }
+    else {
       // Probably something went wrong with communication
       current_arduino_status_ = 'E';
     }

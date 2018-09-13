@@ -88,15 +88,13 @@ function COMMAND:init()
 
    if self.fsm.vars.command == "OPEN" then
       self.fsm.vars.open = true
-      theOpenMessage = gripper_if.OpenMessage:new()
-      theOpenMessage:set_offset(self.fsm.vars.offset or 0)
+      theOpenMessage = arduino_if.OpenGripperMessage:new()
       gripper_if:msgq_enqueue(theOpenMessage)
 
    elseif self.fsm.vars.command == "CLOSE" then
       self.fsm.vars.close = true
-      torqueMessage = gripper_if.SetTorqueMessage:new()
-      torqueMessage:set_torque(0)
-      gripper_if:msgq_enqueue(torqueMessage)
+      theCloseMessage = arduino_if.CloseGripperMessage:new()
+      gripper_if:msgq_enqueue(theCloseMessage)
 
    elseif self.fsm.vars.command == "MOVEABS" then
 
