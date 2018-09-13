@@ -19,9 +19,9 @@
 #define MOTOR_A_ENABLE_PIN 8
 #define MOTOR_A_STEP_PIN 12
 #define MOTOR_A_DIR_PIN 13
-#define MOTOR_A_BACKUP_DIST 30
-#define MOTOR_A_LIMIT_PIN A4
-#define MOTOR_A_SAFETY 4
+#define MOTOR_A_OPEN_LIMIT_PIN A4
+#define MOTOR_A_CLOSED_LIMIT_PIN A5
+
 
 AccelStepper motor_X(1, MOTOR_X_STEP_PIN, MOTOR_X_DIR_PIN);
 AccelStepper motor_Y(1, MOTOR_Y_STEP_PIN, MOTOR_Y_DIR_PIN);
@@ -36,7 +36,8 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define CMD_X_NEW_POS 'X'
 #define CMD_Y_NEW_POS 'Y'
 #define CMD_Z_NEW_POS 'Z'
-#define CMD_A_NEW_POS 'A'
+#define CMD_OPEN 'O'
+#define CMD_GRAB 'G'
 
 #define DEFAULT_MAX_SPEED_X 40000
 #define DEFAULT_MAX_ACCEL_X 50000
@@ -47,8 +48,8 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define DEFAULT_MAX_SPEED_Z 20000
 #define DEFAULT_MAX_ACCEL_Z 50000
 
-#define DEFAULT_MAX_SPEED_A 20000
-#define DEFAULT_MAX_ACCEL_A 50000
+#define DEFAULT_MAX_SPEED_A 10000
+#define DEFAULT_MAX_ACCEL_A 20000
 
 //#define CMD_SET_ACCEL 7
 #define CMD_SET_SPEED 9
@@ -57,7 +58,7 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define STATUS_IDLE 1
 #define STATUS_ERROR 2
 
-bool move_away = false;
+bool open_gripper = false;
 
 char status_array_[] = {'M', 'I', 'E'};
 
@@ -110,11 +111,32 @@ void send_error() {
   Serial.print("\r\n");
 }
 
+void send_gripper_status() {
+  Serial.print(AT);
+  Serial.print("G ");
+  int open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
+  int closed_button = digitalRead(MOTOR_A_CLOSED_LIMIT_PIN);
+  if(open_button == LOW && closed_button == HIGH){
+        Serial.print("OPEN");
+  }
+  if(open_button == HIGH && closed_button == LOW){
+        Serial.print("CLOSED");
+  }
+  if(open_button == HIGH && closed_button == HIGH){
+        Serial.print("GRABBED");
+  }
+  if(open_button == LOW && closed_button == LOW){
+        Serial.print("BROKEN");
+  }
+  Serial.print("\r\n");
+}
+
 void set_status(int status_) {
   if (cur_status != status_) {
     cur_status = status_;
     if (cur_status == STATUS_IDLE) {
       send_idle();
+      send_gripper_status();
     } else if (cur_status == STATUS_MOVING) {
       send_moving();
     } else if (cur_status == STATUS_ERROR) {
@@ -225,14 +247,12 @@ void read_package() {
       int cur_i_cmd = package_start;
       while (cur_i_cmd < len) {
         cur_cmd = buffer_[cur_i_cmd + 2];
-
         int new_pos = 0;
         int new_accel = 0;
         int new_speed = 0;
         if (cur_cmd == 'X' ||
             cur_cmd == 'Y' ||
-            cur_cmd == 'Z' ||
-            cur_cmd == 'A') {
+            cur_cmd == 'Z') {
           sscanf (buffer_ + (cur_i_cmd + 3),"%d",&new_pos);
           /*
           set_new_pos(new_pos, steppers[cur_cmd - 1]);
@@ -251,9 +271,11 @@ void read_package() {
             case CMD_Z_NEW_POS:
               set_new_pos(-new_pos, motor_Z);
               break;
-            case CMD_A_NEW_POS:
-              move_away = true;
-              set_new_pos(new_pos, motor_A);
+            case CMD_OPEN:
+              open_gripper = true;
+              break;
+            case CMD_GRAB:
+              open_gripper = false;
               break;
             case CMD_CALIBRATE:
               calibrate();
@@ -297,6 +319,8 @@ void setup() {
   pinMode(MOTOR_X_LIMIT_PIN, INPUT_PULLUP);
   pinMode(MOTOR_Y_LIMIT_PIN, INPUT_PULLUP);
   pinMode(MOTOR_Z_LIMIT_PIN, INPUT_PULLUP);
+  pinMode(MOTOR_A_OPEN_LIMIT_PIN, INPUT_PULLUP);
+  pinMode(MOTOR_A_CLOSED_LIMIT_PIN, INPUT_PULLUP);
 
   motor_X.setEnablePin(MOTOR_X_ENABLE_PIN);
   motor_X.setPinsInverted(false, false, true);
@@ -313,7 +337,7 @@ void setup() {
   motor_Z.setMaxSpeed(DEFAULT_MAX_SPEED_Z);
   motor_Z.setAcceleration(DEFAULT_MAX_ACCEL_Z);
 
-  //motor_A.setEnablePin(MOTOR_A_ENABLE_PIN);
+  motor_A.setEnablePin(MOTOR_A_ENABLE_PIN);
   motor_A.setPinsInverted(false, false, true);
   motor_A.setMaxSpeed(DEFAULT_MAX_SPEED_A);
   motor_A.setAcceleration(DEFAULT_MAX_ACCEL_A);
@@ -325,31 +349,52 @@ void setup() {
 
 
 void loop() {
+  int closed_button = digitalRead(MOTOR_A_CLOSED_LIMIT_PIN);
+  int open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
+  if(open_button == LOW){
+   //   Serial.print("OPEN PRESSED\n");
+  }
+  if(closed_button == LOW){
+   //   Serial.print("CLOSED PRESSED\n");
+  }
+  if(open_gripper && open_button == HIGH){
+  //   Serial.print("Update Pos\n");
+     set_new_pos(motor_A.currentPosition()-1,motor_A);
+     
+     motor_A.enableOutputs();
+  }
+  if(open_gripper && open_button == LOW){
+    // set_new_pos(motor_A.currentPosition(),motor_A);
+    motor_A.enableOutputs();
+  }
+  else{
+     if(!open_gripper){
+    //    Serial.print("DISABLED\n");
+          motor_A.disableOutputs();
+          send_gripper_status();
+     }
+  }
   if (motor_X.distanceToGo() != 0 ||
       motor_Y.distanceToGo() != 0 ||
       motor_Z.distanceToGo() != 0 ||
       motor_A.distanceToGo() != 0) {
+      //  Serial.print("RUN\n");
 
         motor_X.run();
         motor_Y.run();
         motor_Z.run();
-    	
-	int motor_a_analog_input = analogRead(MOTOR_A_ENABLE_PIN);
-	Serial.println(motor_a_analog_input);
-	if(motor_a_analog_input < MOTOR_A_SAFETY && !move_away){
-		motor_A.run();
-	}
+        motor_A.run();
 
-  if(motor_a_analog_input < MOTOR_A_SAFETY && move_away){
-    move_away = false;
-  }
+
+     
 
       } else if (cur_status == STATUS_MOVING) {
         // disable motors when we were still moving and send idle
         motor_X.disableOutputs();
         motor_Y.disableOutputs();
         motor_Z.disableOutputs();
-        motor_A.disableOutputs();
+        
+        //motor_A.disableOutputs();
         set_status(STATUS_IDLE);
       } else {
         read_package();
