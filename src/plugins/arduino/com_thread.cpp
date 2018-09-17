@@ -648,7 +648,18 @@ ArduinoComThread::read_packet(unsigned int timeout)
       //TODO: setup absolute pose reporting!
 
       std::stringstream ss(s.substr(4));
-      ss >> gripper_pose_[X] >> gripper_pose_[Y] >> gripper_pose_[Z] >> gripper_pose_[A];
+      std::string gripper_status;
+      ss >> gripper_pose_[X] >> gripper_pose_[Y] >> gripper_pose_[Z] >> gripper_pose_[A] >> gripper_status;
+      logger->log_error("ArduinoComThread","Gripper: %s",gripper_status.c_str());
+
+      if ( gripper_status == "GRABBED"){
+	  arduino_if_->set_holds_puck(true);
+	  arduino_if_->write();
+      }
+      else if ( gripper_status == "OPEN" || gripper_status == "CLOSED"){
+	  arduino_if_->set_holds_puck(false);
+	  arduino_if_->write();
+      }
     } else if (current_arduino_status_ == 'G') {
       if ( s.substr(4) == "OPEN" || s.substr(4) == "CLOSED"){
 	  arduino_if_->set_holds_puck(false);
