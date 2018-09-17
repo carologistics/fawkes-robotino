@@ -29,7 +29,6 @@ fsm                = SkillHSM:new{name=name, start="CHECK_WRITER", debug=false}
 depends_skills     = nil
 depends_interfaces = {
     {v = "arduino", type = "ArduinoInterface", id="Arduino"},
-    {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
 
 }
 
@@ -66,7 +65,7 @@ end
 -- States
 fsm:define_states{
    export_to=_M,
-   closure={arduino=arduino,gripper_if=gripper_if, right_fully_loaded=right_fully_loaded, left_fully_loaded=left_fully_loaded, is_error=is_error},
+   closure={arduino=arduino,right_fully_loaded=right_fully_loaded, left_fully_loaded=left_fully_loaded, is_error=is_error},
    {"CHECK_WRITER", JumpState},
    {"COMMAND", JumpState},
    {"WAIT_COMMAND", JumpState},
@@ -74,7 +73,7 @@ fsm:define_states{
 
 -- Transitions
 fsm:add_transitions{
-   {"CHECK_WRITER", "FAILED", precond="not gripper_if:has_writer()", desc="No writer for gripper"},
+   {"CHECK_WRITER", "FAILED", precond="not arduino:has_writer()", desc="No writer for gripper"},
    {"CHECK_WRITER", "COMMAND", cond=true, desc="Writer ok got to command"},
    {"COMMAND", "WAIT_COMMAND", timeout=0.2},
    {"WAIT_COMMAND", "FAILED", cond="is_error()"},
@@ -88,13 +87,13 @@ function COMMAND:init()
 
    if self.fsm.vars.command == "OPEN" then
       self.fsm.vars.open = true
-      theOpenMessage = arduino_if.OpenGripperMessage:new()
-      gripper_if:msgq_enqueue(theOpenMessage)
+      theOpenMessage = arduino.OpenGripperMessage:new()
+      arduino:msgq_enqueue(theOpenMessage)
 
    elseif self.fsm.vars.command == "CLOSE" then
       self.fsm.vars.close = true
-      theCloseMessage = arduino_if.CloseGripperMessage:new()
-      gripper_if:msgq_enqueue(theCloseMessage)
+      theCloseMessage = arduino.CloseGripperMessage:new()
+      arduino:msgq_enqueue(theCloseMessage)
 
    elseif self.fsm.vars.command == "MOVEABS" then
 
