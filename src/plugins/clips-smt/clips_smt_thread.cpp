@@ -1,9 +1,10 @@
 
 /***************************************************************************
- *clips_smt_thread.cpp -Smt feature for CLIPS
+ *  clips_smt_thread.h - Smt feature for CLIPS
  *
- *Created: Created on Fry Dec 16 14:48 2016 by Igor Nicolai Bongartz
- ****************************************************************************/
+ *  Created: Fry Dec 16 14:48
+ *  Copyright  2016 Igor Bongartz <bongartz@kbsg.rwth-aachen.de>
+ **************************************************************************/
 
 /*This program is free software; you can redistribute it and/or modify
  *it under the terms of the GNU General Public License as published by
@@ -54,8 +55,6 @@ void
 ClipsSmtThread::init()
 {
 	logger->log_info(name(), "clips_smt_init_pre");
-
-	// init_game_once = true;
 
 	// Order
 	base_colors["BASE_NONE"] = 0;
@@ -344,7 +343,6 @@ ClipsSmtThread::clips_smt_request(std::string env_name, std::string handle, void
 CLIPS::Value
 ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 {
-	// Just a simple demonstration, all robots would move to the same place...
 	std::shared_ptr<llsf_msgs::ActorGroupPlan> agplan(new llsf_msgs::ActorGroupPlan());
 
 	llsf_msgs::ActorSpecificPlan *actor_plan = agplan->add_plans();
@@ -352,47 +350,54 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 	llsf_msgs::SequentialPlan *plan = actor_plan->mutable_sequential_plan();
 	llsf_msgs::PlanAction *action;
 	llsf_msgs::PlanActionParameter *param;
-	// llsf_msgs::uint32 *uint32;
 
-	// action = plan->add_actions();
-	// action->set_name("enter-field");
+	/**
+	 * Add sequntial plan obtained by the satisfying model together with information enabling concurrent execution.
+	 */
 
-	// Francesco Leofante's approach
+	// Store the last skill id of each macro action last instace and init with 0 for each macro action
 	std::vector<uint32_t> action_id_last;
-	action_id_last.clear();
 	for(int i=0; i<=index_upper_bound_actions[order_complexity]; ++i){
 		action_id_last.push_back(0);
 	}
+
+	// Store the last skill id of macro action operate-bs-get depending on the robot
 	std::vector<uint32_t> action_id_last_bs_robot;
-	action_id_last_bs_robot.clear();
 	for(int i=0; i<=4; ++i){
 		action_id_last_bs_robot.push_back(0);
 	}
-	std::vector<uint32_t> action_id_last_rs1_pay;
-	action_id_last_rs1_pay.clear();
-	std::vector<uint32_t> action_id_last_rs2_pay;
-	action_id_last_rs2_pay.clear();
-	uint32_t action_id_last_rs1_feed=0;
-	uint32_t action_id_last_rs1_retr=0;
-	uint32_t action_id_last_rs2_feed=0;
-	uint32_t action_id_last_rs2_retr=0;
 
+	// Store the ids of all skills of macro action put-rs-additional-base
+	std::vector<uint32_t> action_id_last_rs1_add_base;
+	std::vector<uint32_t> action_id_last_rs2_add_base;
+
+	// Store the last skill ids of macro action operate-rs-put/get depending on the machine
+	uint32_t action_id_last_rs1_put=0;
+	uint32_t action_id_last_rs1_get=0;
+	uint32_t action_id_last_rs2_put=0;
+	uint32_t action_id_last_rs2_get=0;
+
+	// Counter for ids
 	uint32_t action_id=0;
+
+	// Keep track of current working piece
 	std::string wp;
+
+	// Help variables to detect from location for skill move
 	unsigned int j;
 	bool search_for_old_position;
 
+	// Go over all actions in the sequential plan, expanding macro actions to their pure actions
 	for(unsigned int i=1; i<=model_actions.size(); ++i){
-		switch(model_actions[i]) {
 
-			case 1:	// 1.Action: Retrieve cap_carrier_cap from CS-Shelf
+		switch(model_actions[i]) {
+			case 1:	// Retrieve cap_carrier_cap from CS-Shelf
 
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
@@ -416,14 +421,12 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 						param->set_value(node_names[world_initPos[model_robots[i]]]);
 					}
 
-
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("wp-get-shelf");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
@@ -436,14 +439,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					break;
 
-			case 2:	// 2.Action: Prepare and feed CS for RETRIEVE with cap_carrier
+			case 2:	// Prepare and feed CS for RETRIEVE with cap_carrier
 
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
@@ -473,7 +475,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
@@ -487,7 +488,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
@@ -501,7 +501,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
@@ -511,14 +510,13 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					break;
 
-			case 3:	// Action 3: Retrieve cap_carrier at CS
+			case 3:	// Retrieve cap_carrier or final product at CS
 
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
@@ -542,6 +540,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 						param->set_value(node_names[world_initPos[model_robots[i]]]);
 					}
 
+					// Get cap carrier
 					if(model_outputA[i] == products["BR"]) {
 						++action_id;
 						action = plan->add_actions();
@@ -550,7 +549,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 						action->set_id(action_id);
 						action->add_parent_id(action_id-1);
 						action->add_parent_id(action_id_last[2]);
-						action->set_goal_id(data.orders(order_id).id());
 						param = action->add_params();
 						param->set_key("mps");
 						param->set_value(node_names[model_positions[i]]);
@@ -558,8 +556,10 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 						param->set_key("wp");
 						param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]+std::to_string(cap_carrier_index));
 
+						// Store information that current robot holds a "base" even if it was not at the base station
 						action_id_last_bs_robot[model_robots[i]] = action_id;
 					}
+					// Get final product
 					else {
 						++action_id;
 						action = plan->add_actions();
@@ -568,7 +568,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 						action->set_id(action_id);
 						action->add_parent_id(action_id-1);
 						action->add_parent_id(action_id_last[5]);
-						action->set_goal_id(data.orders(order_id).id());
 						param = action->add_params();
 						param->set_key("mps");
 						param->set_value(node_names[model_positions[i]]);
@@ -579,57 +578,63 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					break;
 
-			case 4:	// 4.Action : Prepare and retrieve base from BS
+			case 4:	// Prepare and retrieve base from BS
 
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					// Only go to the base station if last robot which got a base (mentioned in our sequential plan) finishes its action
-					// if(action_id_last[3]) action->add_parent_id(action_id_last[3]);
-					// Only go to the base station if the base intended to be mounted comes after all the base retrievals which are intended as payment
-					// Look ahead to dermine if this instance of action 3 is the (!) one which requires additional parent_ids
-					wp = "WP2"; // TODO How to determine dummy
+
+					/**
+					 * If instance of this macroaction aims to get the base for the final product (WP1)
+					 * the robot needs to wait for all earlier instances of put-rs-additional-base
+					 * stored inside action_id_last_rs1/2_add_base depending on the station.
+					 * In the other case (WP2) no parent ids are required.
+					 */
+
+					// Look into the future to determine which intermediate working piece we are collecting
 					for(unsigned j=i+1; j<=model_actions.size(); ++j) {
 
-						// Check if action is an instance of action 8 and the current base retrieval is performed by the same robot
+						// Check if action is an instance of action 8 (complexity C1-C3)
+						// and the current base retrieval is performed by the same robot
 						if(model_actions[j] == 8 && model_robots[i] == model_robots[j]) {
 
+							// We are at RS1
 							if(model_positions[j]==7) {
-								for(unsigned int k=0; k<action_id_last_rs1_pay.size(); ++k) {
+								// Add as many instances of put-rs-additional-base as needed for ring1
+								for(unsigned int k=0; k<action_id_last_rs1_add_base.size(); ++k) {
 									if((int) k<rings_req_add_bases[rings[0]]) {
-										action->add_parent_id(action_id_last_rs1_pay[k]);
-									}
-									else {
-										std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 1." << std::endl;
+										action->add_parent_id(action_id_last_rs1_add_base[k]);
 									}
 								}
 							}
+							// We are at RS2
 							else if(model_positions[j]==9) {
-								for(unsigned int k=0; k<action_id_last_rs2_pay.size(); ++k) {
+								// Add as many instances of put-rs-additional-base as needed for ring1
+								for(unsigned int k=0; k<action_id_last_rs2_add_base.size(); ++k) {
 									if((int) k<rings_req_add_bases[rings[0]]) {
-										action->add_parent_id(action_id_last_rs2_pay[k]);
-									}
-									else {
-										std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 2." << std::endl;
+										action->add_parent_id(action_id_last_rs2_add_base[k]);
 									}
 								}
 							}
 							wp = "WP1";
 							break;
 						}
+						// Check if action is an instance of action 5 (complexity C0)
+						// and the current base retrieval is performed by the same robot
 						else if(model_actions[j] == 5 && model_robots[i] == model_robots[j]) {
 							wp = "WP1";
 							break;
 						}
+						// Check if action is an instance of action 7 (additional base for some higher complexity order)
+						// and the current base retrieval is performed by the same robot
 						else if(model_actions[j] == 7 && model_robots[i] == model_robots[j]) {
 							wp = "WP2";
 							break;
 						}
 
 					}
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[1]);
@@ -653,14 +658,17 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 						param->set_value(node_names[world_initPos[model_robots[i]]]);
 					}
 
+					// Nothing is at the output of BS and prepare, dispense is required
+					// If something would be already inside before applying the macroaction operate-bs-get
+					// the robot can simply collect the available base
 					if(model_outputA[i] == products["nothing"]) {
+
 						++action_id;
 						action = plan->add_actions();
 						action->set_name("prepare-bs");
 						action->set_actor("R-"+std::to_string(model_robots[i]));
 						action->set_id(action_id);
 						action->add_parent_id(action_id-1);
-						action->set_goal_id(data.orders(order_id).id());
 						param = action->add_params();
 						param->set_key("mps");
 						param->set_value(node_names[1]);
@@ -674,7 +682,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 						action->set_actor("R-"+std::to_string(model_robots[i]));
 						action->set_id(action_id);
 						action->add_parent_id(action_id-1);
-						action->set_goal_id(data.orders(order_id).id());
 						param = action->add_params();
 						param->set_key("mps");
 						param->set_value(node_names[1]);
@@ -692,7 +699,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[1]);
@@ -704,7 +710,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					break;
 
-			case 5: // 5.Action : Prepare and mount sub_product with cap at CS
+			case 5: // Prepare and mount sub_product with cap at CS
 
 					++action_id;
 					action = plan->add_actions();
@@ -727,7 +733,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 						default:
 								break;
 					}
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
@@ -759,8 +764,8 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[1]);
 					action->add_parent_id(action_id_last[2]);
+					// Note that the instance stored in action_id_last[3] is the one taking the cap carrier
 					action->add_parent_id(action_id_last[3]);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
@@ -774,7 +779,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
@@ -788,7 +792,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
@@ -800,15 +803,14 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value("WP1");
 
 					break;
-			case 6:	// 6.Action : Deliver at DS
+			case 6:	// Deliver at DS
 
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					action->add_parent_id(action_id_last[5]);
-					action->set_goal_id(data.orders(order_id).id());
+					action->add_parent_id(action_id_last[3]);
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[6]);
@@ -838,13 +840,9 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[6]);
-					// param = action->add_params();
-					// param->set_key("gate");
-					// param->set_value("GATE-"+std::to_string(data.orders(order_id).delivery_gate()));
 
 					++action_id;
 					action = plan->add_actions();
@@ -852,7 +850,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[6]);
@@ -868,7 +865,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 								action->set_actor("R-"+std::to_string(model_robots[i]));
 								action->set_id(action_id);
 								action->add_parent_id(action_id-1);
-								action->set_goal_id(data.orders(order_id).id());
 								param = action->add_params();
 								param->set_key("mps");
 								param->set_value(node_names[6]);
@@ -888,7 +884,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 								action->set_actor("R-"+std::to_string(model_robots[i]));
 								action->set_id(action_id);
 								action->add_parent_id(action_id-1);
-								action->set_goal_id(data.orders(order_id).id());
 								param = action->add_params();
 								param->set_key("mps");
 								param->set_value(node_names[6]);
@@ -911,7 +906,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 								action->set_actor("R-"+std::to_string(model_robots[i]));
 								action->set_id(action_id);
 								action->add_parent_id(action_id-1);
-								action->set_goal_id(data.orders(order_id).id());
 								param = action->add_params();
 								param->set_key("mps");
 								param->set_value(node_names[6]);
@@ -937,7 +931,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 								action->set_actor("R-"+std::to_string(model_robots[i]));
 								action->set_id(action_id);
 								action->add_parent_id(action_id-1);
-								action->set_goal_id(data.orders(order_id).id());
 								param = action->add_params();
 								param->set_key("mps");
 								param->set_value(node_names[6]);
@@ -973,23 +966,23 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					// Only go to ring station
-					// ...if the base was picked up (trivial because it is the same robot)
 					action->add_parent_id(action_id_last_bs_robot[model_robots[i]]);
-					// TODO Here we assume that a ring station is only used at maximum two times
-					// ...if the corresponding ring station is already filled with 3 bases, wait for the feed action to occur in order to empty.
+					// If the corresponding ring station is already filled with 3 bases, wait for the feed action to occur in order to empty.
 					// This feed action occurs due to the sequential form of the smt generated plan.
-					if(model_positions[i]==7 && action_id_last_rs1_feed) {
-						if(action_id_last_rs1_pay.size() >= 3) {
-							action->add_parent_id(action_id_last_rs1_feed);
+					// TODO Once the SMT planning approach is exented to more than one order it might happen to put more in the ring station
+					// Then the information has to be reseted.
+					// RS1
+					if(model_positions[i]==7 && action_id_last_rs1_put) {
+						if(action_id_last_rs1_add_base.size() >= 3) {
+							action->add_parent_id(action_id_last_rs1_put);
 						}
 					}
-					else if(model_positions[i]==9 && action_id_last_rs2_feed) {
-						if(action_id_last_rs2_pay.size() >= 3) {
-							action->add_parent_id(action_id_last_rs2_feed);
+					// RS2
+					else if(model_positions[i]==9 && action_id_last_rs2_put) {
+						if(action_id_last_rs2_add_base.size() >= 3) {
+							action->add_parent_id(action_id_last_rs2_put);
 						}
 					}
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
@@ -1019,7 +1012,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
@@ -1028,6 +1020,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value("true");
 					param = action->add_params();
 					param->set_key("wp");
+					// We add the cap-carrier as additional base to the ring stations
 					if(model_holdA[i]<=3) {
 						param->set_value(cap_carrier_colors[cap_colors_inverted[data.orders(order_id).cap_color()]]+std::to_string(cap_carrier_index));
 					}
@@ -1037,7 +1030,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					// Save action_id_last for feed at the correpsonding ring station
 					if(model_positions[i] == 7) {
-						action_id_last_rs1_pay.push_back(action_id);
+						action_id_last_rs1_add_base.push_back(action_id);
 
 						param = action->add_params();
 						param->set_key("rs-before");
@@ -1047,7 +1040,7 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 						param->set_value(add_bases_description[model_insideB[i]]);
 					}
 					else if(model_positions[i] == 9) {
-						action_id_last_rs2_pay.push_back(action_id);
+						action_id_last_rs2_add_base.push_back(action_id);
 
 						param = action->add_params();
 						param->set_key("rs-before");
@@ -1059,38 +1052,30 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 					break;
 
-			case 8: // Action prepare RS and feed base for first ring
+			case 8: // Prepare RS and feed base for first ring
 
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					// Go to the ring station
-					// ...if we picked up the base (trivial)
+					// Picked up the base
 					action->add_parent_id(action_id_last_bs_robot[model_robots[i]]);
-					// ...if the corresponding ring station is not blocked by any older necessary paying
+					// Wait for all macroactions putting additional bases needed for ring1 at the corresponding ring station.
 					if(model_positions[i]==7) {
-						for(unsigned int j=0; j<action_id_last_rs1_pay.size(); ++j) {
+						for(unsigned int j=0; j<action_id_last_rs1_add_base.size(); ++j) {
 							if((int) j<rings_req_add_bases[rings[0]]) {
-								action->add_parent_id(action_id_last_rs1_pay[j]);
-							}
-							else {
-								std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 1." << std::endl;
+								action->add_parent_id(action_id_last_rs1_add_base[j]);
 							}
 						}
 					}
 					else if(model_positions[i]==9) {
-						for(unsigned int j=0; j<action_id_last_rs2_pay.size(); ++j) {
+						for(unsigned int j=0; j<action_id_last_rs2_add_base.size(); ++j) {
 							if((int) j<rings_req_add_bases[rings[0]]) {
-								action->add_parent_id(action_id_last_rs2_pay[j]);
-							}
-							else {
-								std::cout << "We omit putting a payment action as a parent which is not necessary for some feed action at the ring station 2." << std::endl;
+								action->add_parent_id(action_id_last_rs2_add_base[j]);
 							}
 						}
 					}
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
@@ -1120,30 +1105,18 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
 					param = action->add_params();
 					param->set_key("ring_color");
 					param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(0)]);
-					if(model_positions[i] == 7) {
-						param = action->add_params();
-						param->set_key("rs-before");
-						param->set_value(add_bases_description[model_insideA[i]]);
-						param = action->add_params();
-						param->set_key("rs-after");
-						param->set_value(add_bases_description[model_insideB[i]]);
-					}
-					else if(model_positions[i] == 9) {
-						param = action->add_params();
-						param->set_key("rs-before");
-						param->set_value(add_bases_description[model_insideA[i]]);
-						param = action->add_params();
-						param->set_key("rs-after");
-						param->set_value(add_bases_description[model_insideB[i]]);
-					}
 					param = action->add_params();
+					param->set_key("rs-before");
+					param->set_value(add_bases_description[model_insideA[i]]);
+					param = action->add_params();
+					param->set_key("rs-after");
+					param->set_value(add_bases_description[model_insideB[i]]);
 					param->set_key("r-req");
 					param->set_value(add_bases_description[rings_req_add_bases[rings[0]]]);
 
@@ -1153,7 +1126,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
@@ -1167,29 +1139,18 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
 					param = action->add_params();
 					param->set_key("ring-color");
 					param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(0)]);
-					if(model_positions[i] == 7) {
-						param = action->add_params();
-						param->set_key("rs-before");
-						param->set_value(add_bases_description[model_insideA[i]]);
-						param = action->add_params();
-						param->set_key("rs-after");
-						param->set_value(add_bases_description[model_insideB[i]]);
-					}
-					else if(model_positions[i] == 9) {
-						param = action->add_params();
-						param->set_key("rs-before");
-						param->set_value(add_bases_description[model_insideA[i]]);
-						param = action->add_params();
-						param->set_key("rs-after");
-						param->set_value(add_bases_description[model_insideB[i]]);
-					}
+					param = action->add_params();
+					param->set_key("rs-before");
+					param->set_value(add_bases_description[model_insideA[i]]);
+					param = action->add_params();
+					param->set_key("rs-after");
+					param->set_value(add_bases_description[model_insideB[i]]);
 					param = action->add_params();
 					param->set_key("r-req");
 					param->set_value(add_bases_description[rings_req_add_bases[rings[0]]]);
@@ -1199,22 +1160,21 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 
 
 					if(model_positions[i]==7) {
-						action_id_last_rs1_feed = action_id;
+						action_id_last_rs1_put = action_id;
 					}
 					else if(model_positions[i]==9){
-						action_id_last_rs2_feed = action_id;
+						action_id_last_rs2_put = action_id;
 					}
 
 					break;
 
-			case 9: // Action retrieve base_ring at RS for first ring
+			case 9: // Retrieve base_ring at RS for first ring
 
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
@@ -1245,7 +1205,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[8]);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
@@ -1254,47 +1213,41 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value("WP1");
 
 					if(model_positions[i]==8) {
-						action_id_last_rs1_retr = action_id;
+						action_id_last_rs1_get = action_id;
 					}
 					else if(model_positions[i]==10){
-						action_id_last_rs2_retr = action_id;
+						action_id_last_rs2_get = action_id;
 					}
 
 					break;
 
-			case 10: // Action prepare RS and feed base for second ring
+			case 10: // Prepare RS and feed base for second ring
 
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					// Goto the ring station
-					// ...if the base mounted with the first ring was picked up (trivial)
+					// Picked up the base mounted with ring1
 					action->add_parent_id(action_id_last[9]);
-					// ...if the corresponding ring station is not blocked by feeding or any older paying
-					// TODO Here we assume that one ring station is only used twice,
-					// therefore it is sufficient to add all payment action ids here.
-					// The ones which belonged to the first ring at this ringstation have been executed already
-					// and ony the latest ones are important.
-					// We could ONLY add the latest one if we compare index j with j>nrb[ro[0]] and j<nrb[ro[1]].
+					// Wait for all macroactions putting additional bases needed for ring2 at the corresponding ring station
+					// and that putting some subproduct into the same ring station before
 					if(model_positions[i]==7){
-						for(unsigned int j=0; j<action_id_last_rs1_pay.size(); ++j) {
-							action->add_parent_id(action_id_last_rs1_pay[j]);
+						for(unsigned int j=0; j<action_id_last_rs1_add_base.size(); ++j) {
+							action->add_parent_id(action_id_last_rs1_add_base[j]);
 						}
-						if(action_id_last_rs1_feed) {
-							action->add_parent_id(action_id_last_rs1_feed);
+						if(action_id_last_rs1_put) {
+							action->add_parent_id(action_id_last_rs1_put);
 						}
 					}
 					else if(model_positions[i]==9){
-						for(unsigned int j=0; j<action_id_last_rs2_pay.size(); ++j) {
-							action->add_parent_id(action_id_last_rs2_pay[j]);
+						for(unsigned int j=0; j<action_id_last_rs2_add_base.size(); ++j) {
+							action->add_parent_id(action_id_last_rs2_add_base[j]);
 						}
-						if(action_id_last_rs2_feed) {
-							action->add_parent_id(action_id_last_rs2_feed);
+						if(action_id_last_rs2_put) {
+							action->add_parent_id(action_id_last_rs2_put);
 						}
 					}
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
@@ -1324,29 +1277,18 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
 					param = action->add_params();
 					param->set_key("ring_color");
 					param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(1)]);
-					if(model_positions[i] == 7) {
-						param = action->add_params();
-						param->set_key("rs-before");
-						param->set_value(add_bases_description[model_insideA[i]]);
-						param = action->add_params();
-						param->set_key("rs-after");
-						param->set_value(add_bases_description[model_insideB[i]]);
-					}
-					else if(model_positions[i] == 9) {
-						param = action->add_params();
-						param->set_key("rs-before");
-						param->set_value(add_bases_description[model_insideA[i]]);
-						param = action->add_params();
-						param->set_key("rs-after");
-						param->set_value(add_bases_description[model_insideB[i]]);
-					}
+					param = action->add_params();
+					param->set_key("rs-before");
+					param->set_value(add_bases_description[model_insideA[i]]);
+					param = action->add_params();
+					param->set_key("rs-after");
+					param->set_value(add_bases_description[model_insideB[i]]);
 					param = action->add_params();
 					param->set_key("r-req");
 					param->set_value(add_bases_description[rings_req_add_bases[rings[1]]]);
@@ -1357,7 +1299,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
@@ -1371,29 +1312,18 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
 					param = action->add_params();
 					param->set_key("ring-color");
 					param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(1)]);
-					if(model_positions[i] == 7) {
-						param = action->add_params();
-						param->set_key("rs-before");
-						param->set_value(add_bases_description[model_insideA[i]]);
-						param = action->add_params();
-						param->set_key("rs-after");
-						param->set_value(add_bases_description[model_insideB[i]]);
-					}
-					else if(model_positions[i] == 9) {
-						param = action->add_params();
-						param->set_key("rs-before");
-						param->set_value(add_bases_description[model_insideA[i]]);
-						param = action->add_params();
-						param->set_key("rs-after");
-						param->set_value(add_bases_description[model_insideB[i]]);
-					}
+					param = action->add_params();
+					param->set_key("rs-before");
+					param->set_value(add_bases_description[model_insideA[i]]);
+					param = action->add_params();
+					param->set_key("rs-after");
+					param->set_value(add_bases_description[model_insideB[i]]);
 					param = action->add_params();
 					param->set_key("r-req");
 					param->set_value(add_bases_description[rings_req_add_bases[rings[1]]]);
@@ -1405,28 +1335,27 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value("WP1");
 
 					if(model_positions[i]==7) {
-						action_id_last_rs1_feed = action_id;
+						action_id_last_rs1_put = action_id;
 					}
 					else if(model_positions[i]==9){
-						action_id_last_rs2_feed = action_id;
+						action_id_last_rs2_put = action_id;
 					}
 
 					break;
-			case 11: // Action retrieve base_ring at RS for second ring
+			case 11: // Retrieve base_ring at RS for second ring
 
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					// Go to the ring station output side if the corresponding ring station is not blocked by older retr
-					if(model_positions[i]==8 && action_id_last_rs1_retr) {
-						action->add_parent_id(action_id_last_rs1_retr);
+					// Go to the ring station output side if the corresponding ring station is not blocked by older get
+					if(model_positions[i]==8 && action_id_last_rs1_get) {
+						action->add_parent_id(action_id_last_rs1_get);
 					}
-					else if(model_positions[i]==10 && action_id_last_rs2_retr) {
-						action->add_parent_id(action_id_last_rs2_retr);
+					else if(model_positions[i]==10 && action_id_last_rs2_get) {
+						action->add_parent_id(action_id_last_rs2_get);
 					}
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
@@ -1457,7 +1386,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[10]);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
@@ -1466,42 +1394,41 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value("WP1");
 
 					if(model_positions[i]==8) {
-						action_id_last_rs1_retr = action_id;
+						action_id_last_rs1_get = action_id;
 					}
 					else if(model_positions[i]==10){
-						action_id_last_rs2_retr = action_id;
+						action_id_last_rs2_get = action_id;
 					}
 
 					break;
 
-			case 12: // Action prepare RS and feed base for third ring
+			case 12: // Prepare RS and feed base for third ring
 
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					// Goto the ring station
-					// ...if the base mounted with the first ring was picked up
+					// Picked up the base mounted with ring1
 					action->add_parent_id(action_id_last[11]);
-					// ...if the corresponding ring station is not blocked by feeding or any older paying
+					// Wait for all macroactions putting additional bases needed for ring3 at the corresponding ring station
+					// and that putting some subproduct into the same ring station before
 					if(model_positions[i]==7){
-						for(unsigned int j=0; j<action_id_last_rs1_pay.size(); ++j) {
-							action->add_parent_id(action_id_last_rs1_pay[j]);
+						for(unsigned int j=0; j<action_id_last_rs1_add_base.size(); ++j) {
+							action->add_parent_id(action_id_last_rs1_add_base[j]);
 						}
-						if(action_id_last_rs1_feed) {
-							action->add_parent_id(action_id_last_rs1_feed);
+						if(action_id_last_rs1_put) {
+							action->add_parent_id(action_id_last_rs1_put);
 						}
 					}
 					else if(model_positions[i]==9){
-						for(unsigned int j=0; j<action_id_last_rs2_pay.size(); ++j) {
-							action->add_parent_id(action_id_last_rs2_pay[j]);
+						for(unsigned int j=0; j<action_id_last_rs2_add_base.size(); ++j) {
+							action->add_parent_id(action_id_last_rs2_add_base[j]);
 						}
-						if(action_id_last_rs2_feed) {
-							action->add_parent_id(action_id_last_rs2_feed);
+						if(action_id_last_rs2_put) {
+							action->add_parent_id(action_id_last_rs2_put);
 						}
 					}
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
@@ -1531,29 +1458,18 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
 					param = action->add_params();
 					param->set_key("ring_color");
 					param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(2)]);
-					if(model_positions[i] == 7) {
-						param = action->add_params();
-						param->set_key("rs-before");
-						param->set_value(add_bases_description[model_insideA[i]]);
-						param = action->add_params();
-						param->set_key("rs-after");
-						param->set_value(add_bases_description[model_insideB[i]]);
-					}
-					else if(model_positions[i] == 9) {
-						param = action->add_params();
-						param->set_key("rs-before");
-						param->set_value(add_bases_description[model_insideA[i]]);
-						param = action->add_params();
-						param->set_key("rs-after");
-						param->set_value(add_bases_description[model_insideB[i]]);
-					}
+					param = action->add_params();
+					param->set_key("rs-before");
+					param->set_value(add_bases_description[model_insideA[i]]);
+					param = action->add_params();
+					param->set_key("rs-after");
+					param->set_value(add_bases_description[model_insideB[i]]);
 					param = action->add_params();
 					param->set_key("r-req");
 					param->set_value(add_bases_description[rings_req_add_bases[rings[2]]]);
@@ -1564,7 +1480,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
@@ -1578,29 +1493,18 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
 					param = action->add_params();
 					param->set_key("ring-color");
 					param->set_value(rings_colors_inverted[data.orders(order_id).ring_colors(2)]);
-					if(model_positions[i] == 7) {
-						param = action->add_params();
-						param->set_key("rs-before");
-						param->set_value(add_bases_description[model_insideA[i]]);
-						param = action->add_params();
-						param->set_key("rs-after");
-						param->set_value(add_bases_description[model_insideB[i]]);
-					}
-					else if(model_positions[i] == 9) {
-						param = action->add_params();
-						param->set_key("rs-before");
-						param->set_value(add_bases_description[model_insideA[i]]);
-						param = action->add_params();
-						param->set_key("rs-after");
-						param->set_value(add_bases_description[model_insideB[i]]);
-					}
+					param = action->add_params();
+					param->set_key("rs-before");
+					param->set_value(add_bases_description[model_insideA[i]]);
+					param = action->add_params();
+					param->set_key("rs-after");
+					param->set_value(add_bases_description[model_insideB[i]]);
 					param = action->add_params();
 					param->set_key("r-req");
 					param->set_value(add_bases_description[rings_req_add_bases[rings[2]]]);
@@ -1615,28 +1519,27 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value("WP1");
 
 					if(model_positions[i]==7) {
-						action_id_last_rs1_feed = action_id;
+						action_id_last_rs1_put = action_id;
 					}
 					else if(model_positions[i]==9){
-						action_id_last_rs2_feed = action_id;
+						action_id_last_rs2_put = action_id;
 					}
 
 					break;
-			case 13: // Action retrieve base_ring at RS for third ring
+			case 13: // Retrieve base_ring at RS for third ring
 
 					++action_id;
 					action = plan->add_actions();
 					action->set_name("move");
 					action->set_actor("R-"+std::to_string(model_robots[i]));
 					action->set_id(action_id);
-					// Go to the ring station output side if the corresponding ring station is not blocked by older retr
-					if(model_positions[i]==8 && action_id_last_rs1_retr) {
-						action->add_parent_id(action_id_last_rs1_retr);
+					// Go to the ring station output side if the corresponding ring station is not blocked by older get
+					if(model_positions[i]==8 && action_id_last_rs1_get) {
+						action->add_parent_id(action_id_last_rs1_get);
 					}
-					else if(model_positions[i]==10 && action_id_last_rs2_retr) {
-						action->add_parent_id(action_id_last_rs2_retr);
+					else if(model_positions[i]==10 && action_id_last_rs2_get) {
+						action->add_parent_id(action_id_last_rs2_get);
 					}
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("to");
 					param->set_value(node_names[model_positions[i]]);
@@ -1667,7 +1570,6 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					action->set_id(action_id);
 					action->add_parent_id(action_id-1);
 					action->add_parent_id(action_id_last[12]);
-					action->set_goal_id(data.orders(order_id).id());
 					param = action->add_params();
 					param->set_key("mps");
 					param->set_value(node_names[model_positions[i]]);
@@ -1676,10 +1578,10 @@ ClipsSmtThread::clips_smt_get_plan(std::string env_name, std::string handle)
 					param->set_value("WP1");
 
 					if(model_positions[i]==8) {
-						action_id_last_rs1_retr = action_id;
+						action_id_last_rs1_get = action_id;
 					}
 					else if(model_positions[i]==10){
-						action_id_last_rs2_retr = action_id;
+						action_id_last_rs2_get = action_id;
 					}
 
 					break;
@@ -1725,9 +1627,8 @@ ClipsSmtThread::loop()
 
 	// Further initialization after init() depending on protobuf data
 	clips_smt_clear_maps();
-	clips_smt_init_game_pre();
-	clips_smt_init_game_pos();
-	clips_smt_print_worldstate();
+	clips_smt_init_game();
+	// clips_smt_print_worldstate(); // Print world state for debug purposes
 	logger->log_info(name(), "Upper bound for plan_horizon is set to %i", plan_horizon_max);
 
 	// Set plan_horizon depending on worldstate
@@ -1741,9 +1642,11 @@ ClipsSmtThread::loop()
 			world_initOutside[2]==0 &&
 			world_initOutside[3]==0 &&
 			world_initOutside[4]==0	) {
+		// Worldstate requires a full plan
 		plan_horizon = plan_horizon_max;
 	}
 	else {
+		// Worldstate requires a partial plan
 		plan_horizon = 1;
 	}
 
@@ -1773,13 +1676,12 @@ ClipsSmtThread::loop()
  * ############################## INITIALIZATION ###############################
  * #############################################################################
  *
- * init_game() extracts game and order relevant information
+ * init_game() extracts game and order relevant information, compute plan horizon
  * init_navgraph() extracts the distances between machines
- * init_post() determines the plan_horizon
  */
 
 void
-ClipsSmtThread::clips_smt_init_game_pre()
+ClipsSmtThread::clips_smt_init_game()
 {
 	logger->log_info(name(), "clips_smt_init_game_pre");
 
@@ -1931,6 +1833,34 @@ ClipsSmtThread::clips_smt_init_game_pre()
 		world_initPos[i+1] = node_names_inverted[data.robots(i).location()];
 		world_initHold[i+1] = clips_smt_rewrite_product(data.robots(i).wp().base_color(), data.robots(i).wp().ring_colors(0), data.robots(i).wp().ring_colors(1), data.robots(i).wp().ring_colors(2), data.robots(i).wp().cap_color());
 	}
+
+	// Set upper boudn for plan_horizon
+	switch(order_complexity) {
+		case 0:
+				plan_horizon_max = amount_min_req_actions[0];
+				break;
+		case 1:
+				plan_horizon_max = amount_min_req_actions[1]
+									+ amount_req_actions_add_bases*rings_req_add_bases[rings[0]]
+									- amount_req_actions_add_bases;
+				break;
+		case 2:
+				plan_horizon_max = amount_min_req_actions[2]
+									+ amount_req_actions_add_bases*rings_req_add_bases[rings[0]]
+									+ amount_req_actions_add_bases*rings_req_add_bases[rings[1]]
+									- amount_req_actions_add_bases;
+				break;
+		case 3:
+				plan_horizon_max = amount_min_req_actions[3]
+									+ amount_req_actions_add_bases*rings_req_add_bases[rings[0]]
+									+ amount_req_actions_add_bases*rings_req_add_bases[rings[1]]
+									+ amount_req_actions_add_bases*rings_req_add_bases[rings[2]]
+									- amount_req_actions_add_bases;
+				break;
+		default:
+				logger->log_info(name(), "Unknown order_complexity %i", order_complexity);
+				break;
+	}
 }
 
 void
@@ -1945,7 +1875,7 @@ ClipsSmtThread::clips_smt_init_navgraph()
 	logger->log_info(name(), "clips_smt_init_navgraph");
 
 	// Navgraph
-	node_names[0] = "START-I"; // team+"-ins-in";
+	node_names[0] = "START-I";
 	node_names[1] = team+"-BS-O";
 	node_names[2] = team+"-CS1-I";
 	node_names[3] = team+"-CS1-O";
@@ -1958,7 +1888,7 @@ ClipsSmtThread::clips_smt_init_navgraph()
 	node_names[10] = team+"-RS2-O";
 	node_names[11] = team+"-BS-I";
 
-	node_names_inverted["START-I"] = 0; // team+"-ins-in"] = 0;
+	node_names_inverted["START-I"] = 0;
 	node_names_inverted[team+"-BS-O"] = 1;
 	node_names_inverted[team+"-CS1-I"] = 2;
 	node_names_inverted[team+"-CS1-O"] = 3;
@@ -1995,40 +1925,6 @@ ClipsSmtThread::clips_smt_init_navgraph()
 			NavGraphPath p = navgraph->search_path(node_names[i], node_names[j]);
 			distances[nodes_pair] = p.cost();
 		}
-	}
-}
-
-void
-ClipsSmtThread::clips_smt_init_game_pos()
-{
-	logger->log_info(name(), "clips_smt_init_game_pos");
-
-	// Set upper boudn for plan_horizon
-	switch(order_complexity) {
-		case 0:
-				plan_horizon_max = amount_min_req_actions[0];
-				break;
-		case 1:
-				plan_horizon_max = amount_min_req_actions[1]
-									+ amount_req_actions_add_bases*rings_req_add_bases[rings[0]]
-									- amount_req_actions_add_bases;
-				break;
-		case 2:
-				plan_horizon_max = amount_min_req_actions[2]
-									+ amount_req_actions_add_bases*rings_req_add_bases[rings[0]]
-									+ amount_req_actions_add_bases*rings_req_add_bases[rings[1]]
-									- amount_req_actions_add_bases;
-				break;
-		case 3:
-				plan_horizon_max = amount_min_req_actions[3]
-									+ amount_req_actions_add_bases*rings_req_add_bases[rings[0]]
-									+ amount_req_actions_add_bases*rings_req_add_bases[rings[1]]
-									+ amount_req_actions_add_bases*rings_req_add_bases[rings[2]]
-									- amount_req_actions_add_bases;
-				break;
-		default:
-				logger->log_info(name(), "Unknown order_complexity %i", order_complexity);
-				break;
 	}
 }
 
@@ -2540,7 +2436,7 @@ ClipsSmtThread::clips_smt_encoder()
 									&& (getVar(var, "insideB_"+std::to_string(i)) == inside_capstation["nothing"])
 									&& (getVar(var, "outputA_"+std::to_string(i)) == products["nothing"])
 									&& (getVar(var, "outputB_"+std::to_string(i)) == products[product])
-									&& (getVar(var, "md_"+std::to_string(i)) == time_to_prep+time_to_feed) // TODO adapt the time
+									&& (getVar(var, "md_"+std::to_string(i)) == time_to_prep+time_to_feed)
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS1"]) || getVar(var, "pos_"+std::to_string(i)) == 2)
 									&& (!(getVar(var, "M_"+std::to_string(i)) == machine_groups["CS2"]) || getVar(var, "pos_"+std::to_string(i)) == 4)
 									&& (getVar(var, "holdA_"+std::to_string(i)) == products[sub_product])
@@ -2552,7 +2448,7 @@ ClipsSmtThread::clips_smt_encoder()
 		constraints.push_back(!(getVar(var, "A_"+std::to_string(i)) == index_action_cs_mount) || constraintaction5);
 
 		// 6.Action : Hold product and deliver at DS
-		z3::expr constraintaction6((getVar(var, "M_"+std::to_string(i)) == machine_groups["BS"]) // TODO own group?
+		z3::expr constraintaction6((getVar(var, "M_"+std::to_string(i)) == machine_groups["BS"])
 									&& (getVar(var, "insideB_"+std::to_string(i)) == getVar(var, "insideA_"+std::to_string(i)))
 									&& (getVar(var, "outputB_"+std::to_string(i)) == getVar(var, "outputA_"+std::to_string(i)))
 									&& (getVar(var, "md_"+std::to_string(i)) == time_to_prep+time_to_feed)
@@ -2684,7 +2580,7 @@ ClipsSmtThread::clips_smt_encoder()
 	//                                     && getVar(var, "rew_"+std::to_string(i))==getVar(var, "rew_"+std::to_string(i-1))));
 	//     }
 	// }
-	// Different approach for OMT TODO actually now we cound the first e.g. movement more than one time, understand the impact
+	// Different approach for OMT
 	// for(int i=1; i<plan_horizon+1; ++i){
 	//     if(i==1){
 	//         constraints.push_back(getVar(var, "rew_"+std::to_string(i)) == (deadline-getVar(var, "t_"+std::to_string(i))-getVar(var, "md_"+std::to_string(i))) );
