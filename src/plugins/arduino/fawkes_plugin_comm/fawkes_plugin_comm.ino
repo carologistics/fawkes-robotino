@@ -101,19 +101,7 @@ void send_idle() {
   Serial.print(-motor_Z.currentPosition());
   Serial.print(" ");
   Serial.print(motor_A.currentPosition());
-  Serial.print("\r\n");
-}
-
-void send_error() {
-  Serial.print(AT);
-  Serial.print("E ");
-  Serial.print(errormessage);
-  Serial.print("\r\n");
-}
-
-void send_gripper_status() {
-  Serial.print(AT);
-  Serial.print("G ");
+  Serial.print(" ");
   int open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
   int closed_button = digitalRead(MOTOR_A_CLOSED_LIMIT_PIN);
   if(open_button == LOW && closed_button == HIGH){
@@ -131,12 +119,20 @@ void send_gripper_status() {
   Serial.print("\r\n");
 }
 
+void send_error() {
+  Serial.print(AT);
+  Serial.print("E ");
+  Serial.print(errormessage);
+  Serial.print("\r\n");
+}
+
+
 void set_status(int status_) {
   if (cur_status != status_) {
     cur_status = status_;
     if (cur_status == STATUS_IDLE) {
       send_idle();
-      send_gripper_status();
+
     } else if (cur_status == STATUS_MOVING) {
       send_moving();
     } else if (cur_status == STATUS_ERROR) {
@@ -272,10 +268,17 @@ void read_package() {
               set_new_pos(-new_pos, motor_Z);
               break;
             case CMD_OPEN:
-              open_gripper = true;
+              if(!open_gripper){
+                open_gripper = true;
+                set_status(STATUS_MOVING);
+              }
               break;
             case CMD_GRAB:
-              open_gripper = false;
+              if(open_gripper){
+                open_gripper = false;
+                set_new_pos(motor_A.currentPosition()+200,motor_A);
+                //set_status(STATUS_MOVING);
+              }
               break;
             case CMD_CALIBRATE:
               calibrate();
@@ -358,7 +361,6 @@ void loop() {
    //   Serial.print("CLOSED PRESSED\n");
   }
   if(open_gripper && open_button == HIGH){
-  //   Serial.print("Update Pos\n");
      set_new_pos(motor_A.currentPosition()-1,motor_A);
      
      motor_A.enableOutputs();
@@ -368,10 +370,12 @@ void loop() {
     motor_A.enableOutputs();
   }
   else{
-     if(!open_gripper){
-    //    Serial.print("DISABLED\n");
-          motor_A.disableOutputs();
-          send_gripper_status();
+     if(!open_gripper && open_button == LOW){
+//          Serial.print("DISABLED\n");
+ //         motor_A.disableOutputs();
+    //      delay(1000);
+ 
+          //set_status(STATUS_IDLE);
      }
   }
   if (motor_X.distanceToGo() != 0 ||
