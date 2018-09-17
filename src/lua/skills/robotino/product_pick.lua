@@ -170,7 +170,7 @@ end
 
 
 fsm:define_states{ export_to=_M,
-   closure={gripper_if=gripper_if, tolerance_ok=tolerance_ok, MAX_RETRIES=MAX_RETRIES, result_ready=result_ready, fitness_ok=fitness_ok,pose_not_exist=pose_not_exist},
+   closure={arduino_if=arduino_if, tolerance_ok=tolerance_ok, MAX_RETRIES=MAX_RETRIES, result_ready=result_ready, fitness_ok=fitness_ok,pose_not_exist=pose_not_exist},
    {"INIT", JumpState},
    {"INIT_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="OPEN_GRIPPER", fail_to="FAILED"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="GRIPPER_ALIGN", fail_to="PRE_FAIL"},
@@ -180,7 +180,7 @@ fsm:define_states{ export_to=_M,
    {"MOVE_GRIPPER_DOWN", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER",fail_to="PRE_FAIL"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_UP", fail_to="PRE_FAIL"},
    {"MOVE_GRIPPER_UP", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
-   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "WAIT_AFTER_CENTER", fail_to="FAILED"},
+   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "DRIVE_BACK", fail_to="FAILED"},
    {"CLOSE_AFTER_CENTER", SkillJumpState, skills={{gripper_commands_new}}, final_to="HOME_GRIPPER", fail_to="HOME_GRIPPER"},
    {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="DRIVE_BACK"},
    {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CHECK_PUCK", fail_to="PRE_FAIL"},
@@ -190,7 +190,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond="pose_not_exist()"},
-   {"INIT", "INIT_GRIPPER", true, desc="Init gripper for product_pick"},
+   {"INIT", "OPEN_GRIPPER", true, desc="Init gripper for product_pick"},
    {"CHECK_PUCK", "FINAL", cond="arduino_if:is_holds_puck()", desc="Hold puck"},
    {"CHECK_PUCK", "FAILED", cond="not arduino_if:is_holds_puck()", desc="Don't hold puck!"},
    {"WAIT_AFTER_CENTER", "CLOSE_AFTER_CENTER", timeout=0.5},
