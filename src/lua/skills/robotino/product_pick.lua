@@ -59,8 +59,8 @@ local conveyor_gripper_down_z = -0.015    -- distance to move gripper down after
 local conveyor_gripper_down_second_z = -0.005       -- distance to mover gripper down second time
 local conveyor_gripper_back_x = -0.07   -- distance to move gripper back after closing gripper
 local shelf_gripper_up_z = 0.05 -- distance to move gripper up after closing gripper
-local conveyor_gripper_down = -0.03
-local conveyor_gripper_up = 0.03
+local conveyor_gripper_down = -0.025
+local conveyor_gripper_up = 0.025
 
 local shelf_gripper_forward_x = 0.048  -- distance to move gripper forward after align to shelf
 local shelf_gripper_down_z = -0.01     -- distance to move gripper down after driving over shelf
@@ -191,10 +191,10 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    {"INIT", "FAILED", cond="pose_not_exist()"},
    {"INIT", "INIT_GRIPPER", true, desc="Init gripper for product_pick"},
-   {"CHECK_PUCK", "FINAL", cond="gripper_if:is_holds_puck()", desc="Hold puck"},
-   {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Don't hold puck!"},
+   {"CHECK_PUCK", "FINAL", cond="arduino_if:is_holds_puck()", desc="Hold puck"},
+   {"CHECK_PUCK", "FAILED", cond="not arduino_if:is_holds_puck()", desc="Don't hold puck!"},
    {"WAIT_AFTER_CENTER", "CLOSE_AFTER_CENTER", timeout=0.5},
-   {"CLOSE_GRIPPER", "MOVE_GRIPPER_BACK", timeout=1},
+   {"CLOSE_GRIPPER", "MOVE_GRIPPER_UP", timeout=1},
 }
 
 
