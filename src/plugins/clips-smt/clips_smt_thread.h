@@ -2,9 +2,9 @@
 /***************************************************************************
  *  clips_smt_thread.h - Smt feature for CLIPS
  *
- *  Created: Created on Fry Dec 16 14:44 2016 by Igor Nicolai Bongartz
- *
- ****************************************************************************/
+ *  Created: Fry Dec 16 14:44
+ *  Copyright  2016 Igor Bongartz <bongartz@kbsg.rwth-aachen.de>
+ **************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@
 
 // Amount of machines of one team
 // 1. START-I
-// 2. BS-O (We consider only one BS side) TODO Evaluate both BS sides while using OMT
+// 2. BS-O
 // 3. CS1-I
 // 4. CS1-O
 // 5. CS2-I
@@ -65,10 +65,18 @@
 // 9. RS1-O
 // 10. RS2-I
 // 11. RS2-O
-const int amount_machines = 11; // TODO Change amount_machines to 11 and remove '< amount_machines+1' to '< amount_machines'
+// 12. BS-I <- Special location
+
+/*
+ *  Note that the INPUTE side of the base station is not used in the solving process
+ *  and is used to ensure that the move skill is called with the correct initial position
+ */
+
+// TODO Change amount_machines to 11 and remove '< amount_machines+1' to '< amount_machines'
+const int amount_machines = 11;
 
 // Time
-// TODO Evaluate better approximations for times
+// TODO Develop better time model
 // TODO Use times to predict delivery time and return UNSAT if not
 const int deadline = 900;
 const int time_to_prep = 5;
@@ -143,9 +151,8 @@ private:
 
 	// Init methods
 	bool init_game_once;
-	void clips_smt_init_game_pre();
+	void clips_smt_init_game();
 	void clips_smt_init_navgraph();
-	void clips_smt_init_game_pos();
 
 	// PlanHorizon
 	int plan_horizon;
@@ -154,7 +161,8 @@ private:
 	std::vector<int> index_upper_bound_actions; // 6,9,11,13 -> 10,13,15,17
 	int amount_req_actions_add_bases; // 2
 
-	// Save information into vetors to make them easier accessible for encoder TODO rename variables into xxx_xxx_xxx
+	// Save information into vetors to make them easier accessible for encoder
+	// TODO rename variables into xxx_xxx_xxx
 	int world_initTime;
 	std::vector<int> world_initHold;
 	std::vector<int> world_initPos;
@@ -165,7 +173,6 @@ private:
 	std::vector<int> world_machines_down;
 
 	// Order
-	// TODO Think about how to display mutli orders
 	int order_id;
 	int order_complexity = 0;
 	int base;
@@ -178,7 +185,6 @@ private:
 	 * Descriptions
 	 */
 
-	// TODO Look for efficient ways how to invert maps
 	// Navgraph -- Map pairs of nodes to distances
 	std::map<int, std::string> node_names;
 	std::map<std::string, int> node_names_inverted;
@@ -205,7 +211,6 @@ private:
 
 	// Encode the formula determined by a strategy
 	z3::expr_vector clips_smt_encoder();
-	z3::expr_vector clips_smt_encoder_window(); // TODO Evaluate difference between macro and window encoder (possible merge with flag) and check overall necessity
 
 	// States of machines
 	// - inside_capstation indicates a cap station prepared for mount
@@ -244,23 +249,6 @@ private:
 	int index_action_retr_rs_r2 = 11; // Retrieve base_ring1_ring2 from RS-Output
 	int index_action_rs_mount_r3 = 12; // Prepare and feed base at RS-Input for MOUNT_RING3
 	int index_action_retr_rs_r3 = 13; // Retrieve base_ring1_ring2_ring3 from RS-Output
-
-	// Points to determine score and to influence reward for window approach
-	// TODO Think about necessity of the window approach and if not if the points can be used by the agent to evaluate different plans...
-	int points_scale = 100;
-	int points_penalty = 50;
-	int points_get_base = 0*points_scale;
-	int points_none = 5*points_scale;
-	int points_additional_base = 2*points_scale;
-	int points_mount_ring_0 = 5*points_scale;
-	int points_mount_ring_1 = 10*points_scale;
-	int points_mount_ring_2 = 20*points_scale;
-	int points_mount_ring1_last = 10*points_scale;
-	int points_mount_ring2_last = 30*points_scale;
-	int points_mount_ring3_last = 80*points_scale;
-	int points_mount_cap = 10*points_scale;
-	int points_deliver = 100*points_scale;
-	int points_initial = 0;
 
 	// Solve/optimize a given formula
 	bool clips_smt_solve_formula(z3::expr_vector formula);
