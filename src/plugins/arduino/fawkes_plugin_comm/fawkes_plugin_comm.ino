@@ -48,8 +48,8 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define DEFAULT_MAX_SPEED_Z 20000
 #define DEFAULT_MAX_ACCEL_Z 50000
 
-#define DEFAULT_MAX_SPEED_A 10000
-#define DEFAULT_MAX_ACCEL_A 20000
+#define DEFAULT_MAX_SPEED_A 40000
+#define DEFAULT_MAX_ACCEL_A 50000
 
 //#define CMD_SET_ACCEL 7
 #define CMD_SET_SPEED 9
@@ -276,7 +276,7 @@ void read_package() {
             case CMD_GRAB:
               if(open_gripper){
                 open_gripper = false;
-                set_new_pos(motor_A.currentPosition()+200,motor_A);
+                set_new_pos(motor_A.currentPosition()+400,motor_A);
                 //set_status(STATUS_MOVING);
               }
               break;
@@ -346,50 +346,34 @@ void setup() {
   motor_A.setAcceleration(DEFAULT_MAX_ACCEL_A);
 
   Serial.println("AT HELLO");
+ 
+  
   set_status(STATUS_IDLE);
 
 }
 
 
 void loop() {
-  int closed_button = digitalRead(MOTOR_A_CLOSED_LIMIT_PIN);
   int open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
-  if(open_button == LOW){
-   //   Serial.print("OPEN PRESSED\n");
-  }
-  if(closed_button == LOW){
-   //   Serial.print("CLOSED PRESSED\n");
-  }
+
   if(open_gripper && open_button == HIGH){
      set_new_pos(motor_A.currentPosition()-1,motor_A);
-     
      motor_A.enableOutputs();
   }
   if(open_gripper && open_button == LOW){
     // set_new_pos(motor_A.currentPosition(),motor_A);
     motor_A.enableOutputs();
   }
-  else{
-     if(!open_gripper && open_button == LOW){
-//          Serial.print("DISABLED\n");
- //         motor_A.disableOutputs();
-    //      delay(1000);
- 
-          //set_status(STATUS_IDLE);
-     }
-  }
   if (motor_X.distanceToGo() != 0 ||
       motor_Y.distanceToGo() != 0 ||
       motor_Z.distanceToGo() != 0 ||
       motor_A.distanceToGo() != 0) {
       //  Serial.print("RUN\n");
-
+        motor_X.enableOutputs();
         motor_X.run();
         motor_Y.run();
         motor_Z.run();
         motor_A.run();
-
-
      
 
       } else if (cur_status == STATUS_MOVING) {
@@ -397,8 +381,8 @@ void loop() {
         motor_X.disableOutputs();
         motor_Y.disableOutputs();
         motor_Z.disableOutputs();
-        
-        //motor_A.disableOutputs();
+   
+    //    motor_A.disableOutputs();
         set_status(STATUS_IDLE);
       } else {
         read_package();
