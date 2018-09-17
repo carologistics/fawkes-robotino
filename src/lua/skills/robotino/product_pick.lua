@@ -29,7 +29,7 @@ depends_interfaces = {
   {v = "motor", type = "MotorInterface", id="Robotino" },
   {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
   {v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
-  {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
+  {v = "arduino_if", type = "ArduinoInterface", id="Arduino"},
 }
 
 documentation      = [==[
@@ -59,6 +59,8 @@ local conveyor_gripper_down_z = -0.015    -- distance to move gripper down after
 local conveyor_gripper_down_second_z = -0.005       -- distance to mover gripper down second time
 local conveyor_gripper_back_x = -0.07   -- distance to move gripper back after closing gripper
 local shelf_gripper_up_z = 0.05 -- distance to move gripper up after closing gripper
+local conveyor_gripper_down = -0.03
+local conveyor_gripper_up = 0.03
 
 local shelf_gripper_forward_x = 0.048  -- distance to move gripper forward after align to shelf
 local shelf_gripper_down_z = -0.01     -- distance to move gripper down after driving over shelf
@@ -174,8 +176,10 @@ fsm:define_states{ export_to=_M,
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="GRIPPER_ALIGN", fail_to="PRE_FAIL"},
    {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="PRE_FAIL"},
    {"WAIT_AFTER_CENTER",JumpState},
-   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER",fail_to="PRE_FAIL"},
-   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
+   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_DOWN",fail_to="PRE_FAIL"},
+   {"MOVE_GRIPPER_DOWN", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER",fail_to="PRE_FAIL"},
+   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_UP", fail_to="PRE_FAIL"},
+   {"MOVE_GRIPPER_UP", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
    {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "WAIT_AFTER_CENTER", fail_to="FAILED"},
    {"CLOSE_AFTER_CENTER", SkillJumpState, skills={{gripper_commands_new}}, final_to="HOME_GRIPPER", fail_to="HOME_GRIPPER"},
    {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="DRIVE_BACK"},
@@ -276,6 +280,26 @@ function MOVE_GRIPPER_BACK:init()
   else
     self.args["gripper_commands_new"].x = conveyor_gripper_back_x
     self.args["gripper_commands_new"].z = conveyor_gripper_up_z
+  end
+end
+
+function MOVE_GRIPPER_DOWN:init()
+  self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].target_frame = x_movement_target_frame
+  if self.fsm.vars.helf ~= nil then
+    self.args["gripper_commands_new"].z = shelf_gripper_down
+  else
+    self.args["gripper_commands_new"].z = conveyor_gripper_down
+  end
+end
+
+function MOVE_GRIPPER_UP:init()
+  self.args["gripper_commands_new"].command = "MOVEABS"
+  self.args["gripper_commands_new"].target_frame = x_movement_target_frame
+  if self.fsm.vars.helf ~= nil then
+    self.args["gripper_commands_new"].z = shelf_gripper_up
+  else
+    self.args["gripper_commands_new"].z = conveyor_gripper_up
   end
 end
 
