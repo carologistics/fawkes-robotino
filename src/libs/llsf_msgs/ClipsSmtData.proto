@@ -90,7 +90,7 @@ message ClipsSmtData {
     // List of orders
     repeated Order orders = 3;
 
-    // List of each ring color and its required payment material
+    // List of each ring color and its required additional material
     repeated Ring rings = 4;
 
   required uint32 gametime = 5 [default=0];
