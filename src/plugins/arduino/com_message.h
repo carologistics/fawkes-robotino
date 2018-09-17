@@ -35,7 +35,8 @@ class ArduinoComMessage
    CMD_Z_NEW_POS   = 'Z',
    CMD_A_NEW_POS   = 'A',
    CMD_CLOSE = 'G',
-   CMD_OPEN = 'O'
+   CMD_OPEN = 'O',
+   CMD_STATUS_REQ = 'S'
   };
 
   static const char MSG_HEAD[3];

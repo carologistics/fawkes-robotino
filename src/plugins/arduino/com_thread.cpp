@@ -326,6 +326,12 @@ ArduinoComThread::loop()
               logger->log_debug(name(), "Open gripper");
               append_message_to_queue(ArduinoComMessage::command_id_t::CMD_OPEN,0, 10000);
 
+            } else if (arduino_if_->msgq_first_is<ArduinoInterface::StatusRequestMessage>()) {
+		    ArduinoInterface::StatusRequestMessage *msg = arduino_if_->msgq_first(msg);
+
+              logger->log_debug(name(), "Request Status");
+              append_message_to_queue(ArduinoComMessage::command_id_t::CMD_STATUS_REQ,0, 10000);
+
             } else if (arduino_if_->msgq_first_is<ArduinoInterface::ToHomeMessage>()) {
               home_pending_ = true;
             } else if (arduino_if_->msgq_first_is<ArduinoInterface::CalibrateMessage>()) {

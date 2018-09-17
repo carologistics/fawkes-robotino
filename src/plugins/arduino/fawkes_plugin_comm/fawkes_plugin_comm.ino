@@ -38,6 +38,7 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define CMD_Z_NEW_POS 'Z'
 #define CMD_OPEN 'O'
 #define CMD_GRAB 'G'
+#define CMD_STATUS_REQ 'S'
 
 #define DEFAULT_MAX_SPEED_X 40000
 #define DEFAULT_MAX_ACCEL_X 50000
@@ -280,6 +281,14 @@ void read_package() {
                 //set_status(STATUS_MOVING);
               }
               break;
+	    case CMD_STATUS_REQ:
+		if (cur_status == STATUS_IDLE) {
+		     send_idle();
+    		} else if (cur_status == STATUS_MOVING) {
+	      	     send_moving();
+		} else if (cur_status == STATUS_ERROR) {
+		     send_error();
+    		}	
             case CMD_CALIBRATE:
               calibrate();
               break;

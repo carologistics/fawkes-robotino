@@ -66,4 +66,7 @@
   <message name="Calibrate">
     <comment>Restore gripper's position to the initial position set in the configuration.</comment>
   </message>
+  <message name="StatusRequest">
+    <comment>Request a status message of the arduino.</comment>
+  </message>
 </interface>
