@@ -53,13 +53,13 @@ local gripper_tolerance_x = 0.005 -- gripper x tolerance according to conveyor p
 local gripper_tolerance_y = 0.005 -- gripper y tolerance according to conveyor pose
 local gripper_tolerance_z = 0.005 -- gripper z tolerance according to conveyor pose
 
-local conveyor_gripper_forward_x = 0.07 -- distance to move gripper forward after align
+local conveyor_gripper_forward_x = 0.068 -- distance to move gripper forward after align
 local conveyor_gripper_down_z = -0.015    -- distance to move gripper down after driving over product
 local conveyor_gripper_down_second_z = -0.005       -- distance to mover gripper down second time
 local conveyor_gripper_back_x = -0.07   -- distance to move gripper back after closing gripper
 local shelf_gripper_up_z = 0.05 -- distance to move gripper up after closing gripper
-local conveyor_gripper_down = -0.025
-local conveyor_gripper_up = 0.025
+local conveyor_gripper_down = -0.04
+local conveyor_gripper_up = 0.04
 
 local shelf_gripper_forward_x = 0.048  -- distance to move gripper forward after align to shelf
 local shelf_gripper_down_z = -0.01     -- distance to move gripper down after driving over shelf

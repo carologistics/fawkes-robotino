@@ -50,7 +50,7 @@ local euclidean_fitness_threshold = 4 -- threshold for euclidean fitness for tar
 local shelf_euclidean_fitness_threshold = 3 -- threshold for euclidean fitness if target is shelf
 local tolerance_trans = 0.02  -- tolerance in x and y direction after the align
 local tolerance_ori = 0.025   -- orientation tolerance after the align
-local x_dist_to_mps = -0.25  -- x-distance the robot should have after the align
+local x_dist_to_mps = -0.28  -- x-distance the robot should have after the align. Dont get too close, ICP will fail otherwise
 local y_offset_shelf_middle = -0.015 -- y-offset the robot should have picking is done from shelf = "MIDDLE"
 
 -- initial gripper poses depending on the target
@@ -161,7 +161,7 @@ function CHECK_VISION:init()
 end
 
 function MOVE_GRIPPER:init()
-
+  self.args["gripper_commands_new"].wait = true
   if self.fsm.vars.shelf == "LEFT" then
     self.args["gripper_commands_new"] = GRIPPER_POSES["shelf_left"]
   elseif self.fsm.vars.shelf == "RIGHT" then
