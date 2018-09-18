@@ -174,14 +174,11 @@ fsm:define_states{ export_to=_M,
    {"INIT_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="OPEN_GRIPPER", fail_to="FAILED"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}},final_to="GRIPPER_ALIGN", fail_to="PRE_FAIL"},
    {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="PRE_FAIL"},
-   {"WAIT_AFTER_CENTER",JumpState},
    {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_DOWN",fail_to="PRE_FAIL"},
    {"MOVE_GRIPPER_DOWN", SkillJumpState, skills={{gripper_commands_new}}, final_to="CLOSE_GRIPPER",fail_to="PRE_FAIL"},
    {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_UP", fail_to="PRE_FAIL"},
    {"MOVE_GRIPPER_UP", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
    {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "DRIVE_BACK", fail_to="FAILED"},
-   {"CLOSE_AFTER_CENTER", SkillJumpState, skills={{gripper_commands_new}}, final_to="HOME_GRIPPER", fail_to="HOME_GRIPPER"},
-   {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="DRIVE_BACK"},
    {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CHECK_PUCK", fail_to="PRE_FAIL"},
    {"CHECK_PUCK", JumpState},
    {"PRE_FAIL", SkillJumpState, skills={{gripper_commands_new}}, final_to="FAILED", fail_to="FAILED"},
@@ -192,8 +189,6 @@ fsm:add_transitions{
    {"INIT", "OPEN_GRIPPER", true, desc="Init gripper for product_pick"},
    {"CHECK_PUCK", "FINAL", cond="arduino_if:is_holds_puck()", desc="Hold puck"},
    {"CHECK_PUCK", "FAILED", cond="not arduino_if:is_holds_puck()", desc="Don't hold puck!"},
-   {"WAIT_AFTER_CENTER", "CLOSE_AFTER_CENTER", timeout=0.5},
-   {"CLOSE_GRIPPER", "MOVE_GRIPPER_UP", timeout=1},
 }
 
 
@@ -242,10 +237,6 @@ end
 
 function CLOSE_GRIPPER:init()
    self.args["gripper_commands_new"].command= "CLOSE"
-end
-
-function CLOSE_AFTER_CENTER:init()
-  self.args["gripper_commands_new"].command = "CLOSE"
 end
 
 function GRIPPER_ALIGN:init()
@@ -300,14 +291,6 @@ function MOVE_GRIPPER_UP:init()
   else
     self.args["gripper_commands_new"].z = conveyor_gripper_up
   end
-end
-
-function HOME_GRIPPER:init()
-  self.args["gripper_commands_new"].x = 0
-  self.args["gripper_commands_new"].y = 0
-  self.args["gripper_commands_new"].z = 0
-  self.args["gripper_commands_new"].command = "MOVEABS"
-  self.args["gripper_commands_new"].wait = false
 end
 
 function DRIVE_BACK:init()

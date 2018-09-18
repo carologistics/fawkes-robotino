@@ -56,10 +56,10 @@ local gripper_pose_offset_x = -0.02  -- conveyor pose offset in x direction
 local gripper_pose_offset_y = 0.00     -- conveyor_pose offset in y direction
 local gripper_pose_offset_z = 0.02  -- conveyor_pose offset in z direction
 
-local conveyor_gripper_forward_x = 0.065 -- distance to move gripper forward after align
-local conveyor_gripper_down_z = -0.01    -- distance to move gripper down after driving over conveyor
+local conveyor_gripper_forward_x = 0.055 -- distance to move gripper forward after align
+local conveyor_gripper_down_z = -0.035    -- distance to move gripper down after driving over conveyor
 local conveyor_gripper_back_x = -0.06   -- distance to move gripper back after opening gripper
-local conveyor_gripper_up_z = 0.04  -- distance to move gripper up after opening the gripper
+local conveyor_gripper_up_z = 0.035  -- distance to move gripper up after opening the gripper
 
 local slide_gripper_forward_x = 0.04  -- distance to move gripper forward after align if the target is slide
 local slide_gripper_down_z = -0.02     -- distance to move gripper down after driving over slide
@@ -155,9 +155,7 @@ fsm:define_states{ export_to=_M,
   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="FAILED"},
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands_new}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_UP", fail_to="PRE_FAIL"},
-  {"MOVE_GRIPPER_UP", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPBER_BACK", fail_to="PRE_FAIL"},
-  {"SLAP_LEFT", SkillJumpState, skills={{ax12gripper}}, final_to="SLAP_RIGHT", fail_to="SLAP_RIGHT"},
-  {"SLAP_RIGHT", SkillJumpState, skills={{ax12gripper}}, final_to="OPEN_GRIPPER_SECOND", fail_to="OPEN_GRIPPER_SECOND"},
+  {"MOVE_GRIPPER_UP", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
   {"OPEN_GRIPPER_SECOND", SkillJumpState, skills={{gripper_commands_new}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands_new}}, final_to = "DRIVE_BACK", fail_to="PRE_FAIL"},
   {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CLOSE_GRIPPER", fail_to="PRE_FAIL"},
@@ -215,14 +213,6 @@ function MOVE_GRIPPER_FORWARD:init()
   end
 end
 
-function SLAP_LEFT:init()
-   self.args["ax12gripper"].command = "SLAP_LEFT"
-end
-
-function SLAP_RIGHT:init()
-   self.args["ax12gripper"].command = "SLAP_RIGHT"
- end
- 
 function OPEN_GRIPPER:init()
   self.args["gripper_commands_new"].command = "OPEN"
 end
@@ -243,7 +233,7 @@ function MOVE_GRIPPER_UP:init()
   else
     self.args["gripper_commands_new"].z = conveyor_gripper_up_z
   end
-
+end
 
 
 function MOVE_GRIPPER_BACK:init()

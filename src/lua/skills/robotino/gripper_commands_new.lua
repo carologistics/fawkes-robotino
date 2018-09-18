@@ -62,13 +62,13 @@ function is_error()
 end
 
 function is_grab()
-  return self.vars.fsm.command == "GRAB"
+  return fsm.vars.command == "GRAB"
 end
 
 -- States
 fsm:define_states{
    export_to=_M,
-   closure={arduino=arduino, is_error=is_error},
+   closure={arduino=arduino, is_error=is_error,is_grab=is_grab},
    {"CHECK_WRITER", JumpState},
    {"COMMAND", JumpState},
    {"WAIT", JumpState},

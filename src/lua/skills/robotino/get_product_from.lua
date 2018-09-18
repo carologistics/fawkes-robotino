@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align","shelf_pick"}
+depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align","shelf_pick","gripper_commands_new"}
 depends_interfaces = {
 }
 
@@ -94,11 +94,6 @@ function DRIVE_TO_MACHINE_POINT:init()
       self.fsm.vars.tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
       self.args["drive_to_machine_point"] = {place = self.fsm.vars.place .. "-O", option = option, x_at_mps=X_AT_MPS, tag_id=self.fsm.vars.tag_id}
    end
-end
-
-function OPEN_GRIPPER:init()
-  self.args["gripper_commands_new"].command = "OPEN"
-  self.args["gripper_commands_new"].wait = false
 end
 
 function PRODUCT_PICK:init()
