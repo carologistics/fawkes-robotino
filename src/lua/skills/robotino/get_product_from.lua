@@ -60,10 +60,9 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph,shelf_set=shelf_set}
    {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="PRE_FAIL"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="PRE_FAIL"},
    {"DECIDE_ENDSKILL", JumpState},
-   {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="CHECK_PUCK", fail_to="PRE_FAIL"},
-   {"SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="CHECK_PUCK", fail_to="PRE_FAIL"},
+   {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="PRE_FAIL"},
+   {"SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="FINAL", fail_to="PRE_FAIL"},
    {"PRE_FAIL", SkillJumpState, skills={{gripper_commands_new}}, final_to="FAILED", fail_to="FAILED"},
-   {"CHECK_PUCK", JumpState},
 }
 
 fsm:add_transitions{
@@ -73,8 +72,6 @@ fsm:add_transitions{
    {"INIT", "DRIVE_TO_MACHINE_POINT", cond=true, desc="Everything OK"},
    {"DECIDE_ENDSKILL","SHELF_PICK", cond=shelf_set},
    {"DECIDE_ENDSKILL","PRODUCT_PICK", cond=true},
-   {"CHECK_PUCK", "FINAL", cond="gripper_if:is_holds_puck()", desc="Hold puck"},
-   {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Don't hold puck!"},
 }
 
 function INIT:init()
