@@ -271,6 +271,7 @@ function MOVE_GRIPPER_BACK:init()
     self.args["gripper_commands_new"].x = conveyor_gripper_back_x
     self.args["gripper_commands_new"].z = conveyor_gripper_up_z
   end
+  self.args["gripper_commands_new"].wait = false
 end
 
 function MOVE_GRIPPER_DOWN:init()

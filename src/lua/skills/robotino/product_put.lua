@@ -244,7 +244,7 @@ function MOVE_GRIPPER_BACK:init()
   else
     self.args["gripper_commands_new"].x = conveyor_gripper_back_x
   end
-
+  self.args["gripper_commands_new"].wait = false
 end
 
 function DRIVE_BACK:init()

@@ -37,6 +37,7 @@ documentation      = [==[
     @param x   absolute x position for gripper move
     @param y   absolute y position for gripper move
     @param z   absolute z position for gripper move
+    @param wait if the skill should wait for the movement to finish
 
 ]==]
 
