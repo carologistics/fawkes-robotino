@@ -24,9 +24,8 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "product_pick"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"gripper_commands_new", "motor_move","ax12gripper"}
+depends_skills     = {"gripper_commands_new", "motor_move"}
 depends_interfaces = {
-  {v = "motor", type = "MotorInterface", id="Robotino" },
   {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
   {v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
   {v = "arduino_if", type = "ArduinoInterface", id="Arduino"},

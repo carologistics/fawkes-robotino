@@ -25,10 +25,8 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align","shelf_pick", "gripper_commands_new"}
+depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align","shelf_pick"}
 depends_interfaces = {
-  {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
-  {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 
 documentation      = [==[
@@ -57,10 +55,9 @@ function shelf_set(self)
 end
 
 
-fsm:define_states{ export_to=_M, closure={navgraph=navgraph,shelf_set=shelf_set,gripper_if=gripper_if},
+fsm:define_states{ export_to=_M, closure={navgraph=navgraph,shelf_set=shelf_set},
    {"INIT", JumpState},
-   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="OPEN_GRIPPER", fail_to="PRE_FAIL"},
-   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands_new}}, final_to="CONVEYOR_ALIGN", fail_to="CONVEYOR_ALIGN"},
+   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="PRE_FAIL"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="PRE_FAIL"},
    {"DECIDE_ENDSKILL", JumpState},
    {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="CHECK_PUCK", fail_to="PRE_FAIL"},
