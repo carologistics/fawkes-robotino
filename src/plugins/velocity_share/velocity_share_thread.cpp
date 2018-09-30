@@ -158,7 +158,7 @@ VelocityShareThread::loop()
         cur_pose.pose.position.x = robot_path[i].number();
         cur_pose.pose.position.y = robot_path[i+1].number();
         vel_info.path.poses.push_back(cur_pose);
-      } catch (mongo::AssertionException ex)  {
+      } catch (mongo::AssertionException &ex)  {
         logger->log_error(name(), "Exception at line %i: %s", __LINE__, ex.what());
       }
     }
