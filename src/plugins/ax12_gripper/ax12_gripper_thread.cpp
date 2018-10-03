@@ -40,7 +40,7 @@
 
 using namespace fawkes;
 
-/** @class GripperAX12AThread "ax12a_thread.h"
+/** @class GripperAX12AThread "ax12_gripper_thread.h"
  * Gripper act thread for AX12A Gripper.
  * This thread integrates into the Fawkes main loop at the ACT_EXEC hook and
  * interacts with the controller of the AX12 Gripper.
@@ -48,8 +48,6 @@ using namespace fawkes;
  */
 /** Constructor.
  * @param gripper_cfg_prefix gripper plugin configuration prefix
- * @param ptu_cfg_prefix configuration prefix specific for the Gripper
- * @param ptu_name name of the Gripper configuration
  */
 
 GripperAX12AThread::GripperAX12AThread(std::string &gripper_cfg_prefix)
