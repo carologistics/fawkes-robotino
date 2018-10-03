@@ -26,7 +26,7 @@
 
 using namespace fawkes;
 
-/** @class GazsimNavgraphGeneratorThread "gazsim-navgraph-generator_thread.h"
+/** @class GazsimNavgraphGeneratorThread "gazsim_navgraph_generator_thread.h"
  * Thread for generating navgraph without exploration phase.
  * @author David Schmidt
  */
