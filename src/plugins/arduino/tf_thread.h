@@ -62,6 +62,12 @@ public fawkes::TransformAspect
 public:
 
     ArduinoTFThread();
+    /**
+     * @brief Constructor
+     *
+     * @param cfg_name Name of the config file
+     * @param cfg_prefix Tag prefixes of the arduino tf config values
+     */
     ArduinoTFThread(std::string &cfg_name, std::string &cfg_prefix);
     virtual ~ArduinoTFThread();
 
@@ -70,6 +76,13 @@ public:
     virtual void loop();
     virtual void finalize();
 
+    /**
+     * @brief Resets the current position to a given position
+     *
+     * @param new_x New X-coordinate
+     * @param new_y New Y-coordinate
+     * @param new_z New Z-coordinate
+     */
     void set_position(float new_x, float new_y, float new_z);
 
 private:
@@ -99,7 +112,6 @@ private:
 protected:
     /** Mutex to protect data_. Lock whenever accessing it. */
     boost::mutex data_mutex_;
-    ArduinoTFThread* tf_thread_;
 };
 
 
