@@ -16,6 +16,8 @@
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 
+PRESUBDIRS = msgs
+
 SUBDIRS	= gazsim-llsfrbcomm \
 	  gazsim-llsf-control \
 	  gazsim-gripper \
