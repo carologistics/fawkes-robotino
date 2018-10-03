@@ -25,14 +25,13 @@
 
 using namespace fawkes;
 
-/** @class MPSLaserGenPlugin "mps-laser-gen_plugin.cpp"
- * Plugin to generate virtual laser data based on known MPS positions.
+/** Plugin to generate virtual laser data based on known MPS positions.
  * @author Tim Niemueller
  */
 class MPSLaserGenPlugin : public fawkes::Plugin
 {
  public:
-  /* Constructor
+  /** Constructor
    * @param config Fakwes configuration
    */
   MPSLaserGenPlugin(Configuration *config)
