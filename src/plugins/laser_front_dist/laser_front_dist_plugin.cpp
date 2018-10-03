@@ -3,9 +3,7 @@
  *  laser_front_dist_plugin.cpp - laser_front_dist
  *
  *  Plugin created: Thu Jun 23 22:35:32 2016
-
  *  Copyright  2016  Frederik Zwilling
- *
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -27,14 +25,13 @@
 
 using namespace fawkes;
 
-/* @class LaserFrontDistPlugin "laser_front_dist_plugin.cpp"
- * Calculates distance to object in front with average of laser beams in front
+/**Calculates distance to object in front with average of laser beams in front.
  * @author Frederik Zwilling
  */
 class LaserFrontDistPlugin : public fawkes::Plugin
 {
  public:
-  /* Constructor
+  /** Constructor
    * @param config Fakwes configuration
    */
   LaserFrontDistPlugin(Configuration *config)
