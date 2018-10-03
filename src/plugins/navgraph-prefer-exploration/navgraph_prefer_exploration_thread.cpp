@@ -1,6 +1,6 @@
 
 /***************************************************************************
- *  navgraph_prefer_exploration_thread.cpp - prefer exploration sub-graph
+ *  navgraph_prefer_exploration_thread.h - prefer exploration sub-graph
  *
  *  Created: Thu Apr 09 16:55:05 2015
  *  Copyright  2015  Tim Niemueller [www.niemueller.de]
@@ -29,8 +29,8 @@
 
 using namespace fawkes;
 
-/** @class NavGraphGeneratorMPSThread "navgraph_generator_mps_thread.h"
- * Block navgraph paths based on laser clusters.
+/** @class NavGraphPreferExplorationThread "navgraph_prefer_exploration_thread.h"
+ * Increase costs on edges not in exploration base graph.
  * @author Tim Niemueller
  */
 
