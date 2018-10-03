@@ -35,6 +35,7 @@
  * Creates an std::vector for handling TagVisionInterfaces for the TagVision. The Interfaces are stored here and updated on the update_blackboard() method
  *
  * @param blackboard The blackboard used to publish on and to create / handle the interfaces
+ * @param tf_listener The transform listener
  * @param max_markers Maximum number of markers to detect at the same time
  * @param frame The frame of reference for the tag positions
  * @param thread_name Thread name for log information
