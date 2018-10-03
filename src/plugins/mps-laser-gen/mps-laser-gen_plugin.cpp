@@ -3,9 +3,7 @@
  *  mps-laser-gen_plugin.cpp - mps-laser-gen
  *
  *  Plugin created: Thu Jun 30 21:54:46 2016
-
  *  Copyright  2016  Tim Niemueller
- *
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -27,8 +25,8 @@
 
 using namespace fawkes;
 
-/* @class Mps-laser-genPlugin "mps-laser-gen_plugin.cpp"
- * Foo
+/** @class MPSLaserGenPlugin "mps-laser-gen_plugin.cpp"
+ * Plugin to generate virtual laser data based on known MPS positions.
  * @author Tim Niemueller
  */
 class MPSLaserGenPlugin : public fawkes::Plugin
@@ -44,5 +42,5 @@ class MPSLaserGenPlugin : public fawkes::Plugin
   }
 };
 
-PLUGIN_DESCRIPTION("Foo")
+PLUGIN_DESCRIPTION("Generate virtual laser data for known MPS")
 EXPORT_PLUGIN(MPSLaserGenPlugin)
