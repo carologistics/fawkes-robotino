@@ -33,7 +33,7 @@
 #include <string>
 
 /**
- * @class Visualization
+ * @class Visualisation
  * @brief Publish various markers as ROS messages to aid with visual debuggin in rviz
  */
 class Visualisation
