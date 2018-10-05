@@ -439,7 +439,7 @@ RosBridgeProxyProcessor::unsubscribe ( std::string id
 {
     std::string jsonMsg= Serializer::op_unsubscribe( subscription->get_topic_name() , id );
     //try catch
-     logger_->log_info("Processor:" , jsonMsg.c_str());
+     logger_->log_info("Processor:" , "%s", jsonMsg.c_str());
     process_request(web_session , jsonMsg);
     subscription->remove_request(id, web_session);   
 }
