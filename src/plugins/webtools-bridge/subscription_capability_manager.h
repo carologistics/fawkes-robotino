@@ -48,7 +48,7 @@ public:
 	void finalize();
 
 	void handle_message( rapidjson::Document &d 
-									, std::shared_ptr <WebSession>);
+									, std::shared_ptr <WebSession> session);
 
 	bool register_processor(std::shared_ptr <BridgeProcessor> processor);
 

@@ -50,7 +50,7 @@ class CapabilityManager
 		}
 
 		virtual void handle_message( rapidjson::Document &d 
-									, std::shared_ptr <WebSession>)
+									, std::shared_ptr <WebSession> session)
 		{}
 
 		virtual void init() 
