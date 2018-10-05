@@ -32,8 +32,19 @@
 
 using namespace fawkes;
 
-//=================================   Advertisment  ===================================
 
+/** @class Advertisment "advertisment_capability.h"
+ * A Advertisement instance tracks advertisement requests made from various sessions to 'a' topic.
+ * For a single topic name, It is responsible for book keeping and maintaining the sessions that
+ * wishes to advertise on that topic_name.
+ *
+ * @author Mostafa Gomaa
+ */
+
+/** Constructor.
+ * @param topic_name Full name of the topic, prefixed with the BridgeProcessor it targets
+ * @param prefix the prefix that identifies the BridgeProcessor
+ */
 Advertisment::Advertisment(std::string topic_name , std::string prefix)
 	:	active_status_(DORMANT)
 	, 	topic_name_(topic_name)
@@ -43,14 +54,14 @@ Advertisment::Advertisment(std::string topic_name , std::string prefix)
 	__mutex=new fawkes::Mutex();
 }
 
-
+/** Disstructor. */
 Advertisment::~Advertisment()
 {
 	advertisments_.clear();
 	delete __mutex;
 }
 
-//---------------------INSTACE OPERATIONS
+/** Finalize an advertisment before terminating the instance. */
 void
 Advertisment::finalize()
 {
@@ -80,6 +91,11 @@ Advertisment::finalize()
 	}
 }
 
+/** Activate the Advertisement instance
+* It Changes the status of the instance to ACTIVE, enabling the publish to be called.
+* When an advertisement is created, it is initially DORMANT.
+* The method will call Activate_impl() by default to execute any extended behaviours.
+*/
 void
 Advertisment::activate()
 {
@@ -89,6 +105,11 @@ Advertisment::activate()
 	}
 }
 
+/** Change Status into DORMANT
+* When a Subscription is DORMANT it can not publish and it could be subsumed by
+* * another ACTIVE subscription.
+* The method will call deactivate_impl() by default to execute any extended behaviours.
+*/
 void
 Advertisment::deactivate()
 {
@@ -98,62 +119,88 @@ Advertisment::deactivate()
 	}
 }
 
+
+/** @return True when its an ACTIVE instance */
 bool
 Advertisment::is_active()
 {
 	return (active_status_ == ACTIVE );
 }
 
+
+/** @return True when this instance has no session registered for topic advertisement*/
 bool
 Advertisment::empty()
 {
-	//This assumes that the clients removale and the removale of their subscribtions were done correctly
 	return advertisments_.empty();
 }
 
 
+/** @return topic name maintained by this advertisement instance */
 std::string
 Advertisment::get_topic_name()
 {
 	return topic_name_;
 }
 
+
+/** @return the processor prefix of that topic */
 std::string
 Advertisment::get_processor_prefix()
 {
 	return processor_prefix_;
 }
 
+
+/** Finalize extended behaviour
+ * This method will be called by default by Finalize()
+ * Extend this if you wish to add any operations upon finalizing of the your Subscription.
+ * After this the your instance should be ready to be terminated.
+*/
 void
 Advertisment::finalize_impl()
 {
-	//Override to extend behavior
+	//Override to extend behaviour
 }
 
+
+/** Activate extended behaviour
+ * This method will be called by default from Activate()
+ * Activate_impl() will be called right before the instance becomes active.
+ * Exemplary procedures to be done in Activate_impl(), are registering for events
+ * listener relevant to topics changes, Or prescribing when the publish should be
+ * triggered.
+*/
 void
 Advertisment::activate_impl()
 {
-	//Override to extend behavior
+	//Override to extend behaviour
 }
 
+
+/** Deactivate extended behaviour
+ * This method will be called by default from dectivate()
+ * any operation done to make the instance active "could be" undone here.
+ */
 void
 Advertisment::deactivate_impl()
 {
-	//Override to extend behavior
+	//Override to extend behaviour
 }
 
-/**Subsumes a DORMANT Advertisment instace into an ACTIVE one.
- * This is usually called when there is more than one Advertisment instance for the same topic.
+
+/** Subsumes a DORMANT Advertisement instance into an ACTIVE one.
+ * This is usually called when there is more than one Advertisement instance for the same topic.
  * The owning instance must be Active and the instance to be subsumed must to be Dormant
  * ie, ActiveInstance.Subsume(DormantInstance). After the call, the dormant instance could be safly deleted.
- * @param  The Dormant Advertisment Instance to subsume
+ * @param dormant_advertisment instance to be subsumed
  */
 void
 Advertisment::subsume(std::shared_ptr <Advertisment> dormant_advertisment)
 {
 
 	if (topic_name_ != dormant_advertisment->get_topic_name()){
-		//throw exceptoin that they dont belong to the same topic and cant be merged
+		//throw exception that they dont belong to the same topic and cant be merged
 		return;
 	}
 
@@ -163,7 +210,7 @@ Advertisment::subsume(std::shared_ptr <Advertisment> dormant_advertisment)
 	}
 
 	if (dormant_advertisment->is_active()){
-		//throw exceptoin that they dont belong to the same topic and cant be merged
+		//throw exception that they dont belong to the same topic and cant be merged
 		return;
 	}
 
@@ -184,9 +231,12 @@ Advertisment::subsume(std::shared_ptr <Advertisment> dormant_advertisment)
 		dormant_advertisment->finalize();
 }
 
-//---------------------REQUEST HANDLING
 
-/*this should be called by each subscribe() call to add the request and the requesting session*/
+/** Process a request by add an entry for the request mapped to it's session.
+* Usually called by advertise() at the capability manager.
+* @param id of the request generated by the capability manager.
+* @param session the session requesting to advertise the topic maintained by this instance.
+*/
 void
 Advertisment::add_request( std::string id , std::shared_ptr<WebSession> session)
 {
@@ -216,8 +266,13 @@ Advertisment::add_request( std::string id , std::shared_ptr<WebSession> session)
 	advertisments_[session].push_back(request);
 }
 
-/*
-this should be called by each unadvertive() to remove the request and posibly the requesting session
+
+/** Remove a request upon an unadvertise operation
+* Process a request to unadvertise by removing the corresponding entry.
+* Usually called by unadvertise() at the capability manager.
+* @param advertisment_id of the request to remove
+* @param session responsible for the request.
+*
 */
 void
 Advertisment::remove_request(std::string advertisment_id, std::shared_ptr <WebSession> session)
@@ -248,6 +303,7 @@ Advertisment::remove_request(std::string advertisment_id, std::shared_ptr <WebSe
 	}
 }
 
+
 void
 Advertisment::emitt_event(EventType event_type)
 {
@@ -259,6 +315,13 @@ Advertisment::emitt_event(EventType event_type)
 	}
 }
 
+
+/** Callback To Be Called On Events This Instance Is Registered To
+ * note that, Advertisement implements Callable interface and is notified when a Session
+ * is terminated. In turn, it removes all entries of that session from its registry.
+ * @param event_type of event responsible for this call
+ * @param event_emitter is a ptr to the instance that emitted that event
+*/
 void 
 Advertisment::callback(EventType event_type , std::shared_ptr<EventEmitter> event_emitter)
 {

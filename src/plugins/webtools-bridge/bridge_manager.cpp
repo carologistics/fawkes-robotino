@@ -55,7 +55,7 @@ BridgeManager::~BridgeManager()
 {	
 }
 
-
+/** Finlize the instance */
 void BridgeManager::finalize()
 {
 	while (!operation_cpm_map_.empty())
@@ -97,8 +97,11 @@ BridgeManager::incoming(std::string json,std::shared_ptr<WebSession> session)
 	}
 }
 
-
-//TODO:move into Util
+/** Parse the json strinf into a dom
+* @param jsonStr to parse
+* @param d Dom that the message date will be stored into
+* @return true if parsing succeeded
+*/
 bool 
 BridgeManager::deserialize(std::string jsonStr,Document &d)
 {
@@ -120,11 +123,12 @@ BridgeManager::deserialize(std::string jsonStr,Document &d)
  * To let your bridge provide certain capabilities, first they have to be registered to the operations they will provide.
  * This method keeps the mapping that indicates which CapabilityManager handles a certain operation (op ex, subscribe, call_service).
  * one CapabilityManager can handle more than one operation by being registered to each of them.
+ * @todo : The name of the operations provided by a capability should be stored and queried from in its CapabilityManager.
  * @param op_name The name of the operation to be matched with the "op" field of the JSON request (ex, subscribe, publish). 
  * @param cpm The CapabiliyManager instance that will handle the requests with this "op" field 
+ * @return true on sucess
  */
 
- //TODO : The name of the operations provided by a capability should be stored and queried from in its CapabilityManager.
  //Should only register the CapabilyManager with no Info about what they provide.
 bool
 BridgeManager::register_operation_handler(std::string op_name,std::shared_ptr <CapabilityManager> cpm)
@@ -147,6 +151,7 @@ BridgeManager::register_operation_handler(std::string op_name,std::shared_ptr <C
  * Its important to only start registering Processors, after all CapabilityManagers has been registered,
  * otherwise a some CapabilityManagers will not know about a Processor that they should.   
  * @param processor An instance of BridgeProcessor implementing one  Capability or more for a certain Fawkes component. 
+ * @return true on success
  */
 bool
 BridgeManager::register_processor(std::shared_ptr<BridgeProcessor> processor)

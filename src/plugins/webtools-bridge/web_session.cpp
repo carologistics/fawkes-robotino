@@ -26,60 +26,100 @@
 
 using namespace fawkes;
 
+/** @class WebSession
+* Intermediate more meaningful representation of a WebSockt Session.
+* Contains some of the members and handlers needed by websocketpp along
+* with some domain specific requirements.
+*
+* @author Mostafa Gomaa
+*/
+/** Constructor*/
 WebSession::WebSession()
 : EventEmitter()
 , status_("N/A")
 {
 }
 
+/** Destructor */
 WebSession::~WebSession()
 {
 }
 
 
+/** Set internal websocketpp connection handler
+* @param hdl websocket connection_hdl used to identify this session
+*/
 void
 WebSession::set_connection_hdl(websocketpp::connection_hdl hdl)
 {
 	hdl_=hdl;
 }
 
+
+/** Set internal websocketpp endpoint
+* @param endpoint_ptr websocket endpoint
+*/
 void 
 WebSession::set_endpoint(std::shared_ptr<server> endpoint_ptr)
 {
 	endpoint_ptr_=endpoint_ptr;
 }
 
+
+/** Set internal session id
+* @param id to set
+*/
 void
 WebSession::set_id(int id)
 {
 	session_id_=id;
 }
 
+
+/** Set internal session status
+* @param status to set
+*/
 void
 WebSession::set_status(std::string status)
 {
 	status_=status;
 }
 
+
+/** Get internal id
+* @return id of the session
+*/
 int 
 WebSession::get_id()
 {
 	return session_id_;
 }
 
+
+/** Get internal session status
+* @return status string
+*/
 std::string 
 WebSession::get_status()
 {
 	return status_;
 }
 
+
+/** Get internal websocketpp connection handler
+* @return the websocekctpp::connection_hdl of the session
+*/
 server::connection_ptr 
 WebSession::get_connection_ptr()
 {
 	return endpoint_ptr_->get_con_from_hdl(hdl_);
 }
 
-//TODO::catch exceptions and print in the log
+
+/**Send WebSocket message to a session
+* @param msg the JSON string that will be in the payload of the WebSocket message.
+* @return true on success
+*/
 bool 
 WebSession::send(std::string msg){
 
@@ -98,9 +138,10 @@ WebSession::send(std::string msg){
 }
 
 /** This session has been closed from the server
-. * This method is called whenever the session is closed by the server. 
- * It Notifies anyone that registered for the session termination by directly calling their resisted callback with the session ptr.
- */
+* This method is called whenever the session is closed by the server.
+* It Notifies anyone that registered for the session termination by directly
+* calling their resisted callback with the session ptr.
+*/
 void WebSession::on_terminate()
 {
     std::shared_ptr <WebSession> me= shared_from_this();
