@@ -40,10 +40,27 @@ class Subscription;
 class WebSession;
 class EventEmitter;
 
-//=================================   SubscribeCapability  ===================================
+/** @class SubscriptionCapability
+ * Abstract class, providing session the ability to un/subscribe for updates a some topic.
+ * The semantics of what a subscription means for some doamin, is up to the processor that
+ * implements this capability.
+ *
+ * @author Mostafa Gomaa
+ */
 class SubscriptionCapability
 {
 	public:
+		/** To be implemented by the bridge processor for domain specific semantics
+		* @param topic_name the session wishes to subscribe
+		* @param id provided in the JSON message of the rosbridge protocol
+		* @param type provided in the JSON message of the rosbridge protocol
+		* @param compression provided in the JSON message of the rosbridge protocol
+		* @param throttle_rate provided in the JSON message of the rosbridge protocol
+		* @param queue_length provided in the JSON message of the rosbridge protocol
+		* @param fragment_size provided in the JSON message of the rosbridge protocol
+		* @param session the session provided the advertise of the rosbridge protocol
+		* @return ptr to a newly created dormant subscription instance
+		*/
 		virtual std::shared_ptr<Subscription> 	subscribe 	( std::string topic_name 
 															, std::string id 
 															, std::string type 						
@@ -53,13 +70,18 @@ class SubscriptionCapability
 															, unsigned int fragment_size 	
 														   	, std::shared_ptr<WebSession> session) = 0 ;
 
+		/** To be implemented by the bridge processor for domain specific semantics
+		* @param id included in the JSON message
+		* @param subscription ptr to the instance that wish to unsubscribe from
+		* @param session the session initiating requesting
+		*/
 		virtual void 							unsubscribe	( std::string id
 															, std::shared_ptr<Subscription> subscription
 															, std::shared_ptr<WebSession> session ) = 0 ;
 };
 
 
-//=================================   Subscription   ===================================
+
 class Subscription
 :	public Callable
 ,	public EventEmitter
@@ -92,57 +114,61 @@ class Subscription
 		void 					remove_request(std::string id 
 												, std::shared_ptr<WebSession> session);
 
-								//Callable impl. will be called when session emitts events
 		void 					callback( EventType event_type , std::shared_ptr <EventEmitter> handler) ;
 
-								//EventEmitter implementation (emitt event to SubCapManager)
 		void					emitt_event (EventType event_type ) ;
 		
 		void 					publish();
 
 	protected:
-		virtual void 			finalize_impl();	//will be implicitly called from finalize()
-		virtual void 			activate_impl(); 	//will be implicitly called from activate()
-		virtual void 			deactivate_impl();	//will be implicitly called from deactive() 
+		virtual void 			finalize_impl();				/**< Implicitly called from finalize(), implement when need to extend finalization behaviour */
+		virtual void 			activate_impl(); 				/**< Implicitly called from  activate(), implement when need to extend activate behaviour  */
+		virtual void 			deactivate_impl();				/**< Implicitly called from deactivate(), implement when need to extend deactivat behaviour */
 		virtual std::string 	serialize(std::string op
 											, std::string topic
 											, std::string id);
 
-		fawkes::Mutex 			*__mutex;
+		fawkes::Mutex 			*__mutex;						/**< needed to lock the eternal registry */
 		
 	protected:
 		void 					add_new_session(std::shared_ptr<WebSession> session);	
 		void 					remove_session(std::shared_ptr<WebSession> session);
 
-
+		/** @brief the posible status of an instance. A DORMANT instance only keeps the data. */
 		enum 			Status { ACTIVE, DORMANT };
+
+		/** @brief a single Request mad by a session for subscription. A session
+		* can make multiple requests with different request parameters. */
 		struct 			Request
 						{
 							Request(): id("") ,compression("")	,throttle_rate(0) ,queue_length(1) ,fragment_size(0)
 							{}
 							~Request(){ last_published_time.reset();}
-							std::string		id;
-						   	std::string 	compression;
-						   	unsigned int 	throttle_rate;
-						   	unsigned int 	queue_length;
-						   	unsigned int 	fragment_size;
-						 	std::shared_ptr<fawkes::Time>	last_published_time;
+							std::string		id;										/**< specified in rosbridge protocol JSON request*/
+							std::string 	compression;							/**< specified in rosbridge protocol JSON request*/
+							unsigned int 	throttle_rate;							/**< specified in rosbridge protocol JSON request*/
+							unsigned int 	queue_length;							/**< specified in rosbridge protocol JSON request*/
+							unsigned int 	fragment_size;							/**< specified in rosbridge protocol JSON request*/
+							std::shared_ptr<fawkes::Time>	last_published_time;  	/**< specified in rosbridge protocol JSON request*/
 						};
 		
 
 
-		Status	 		active_status_;
-		std::string 	topic_name_;
-		std::string 	processor_prefix_;
+		Status	 		active_status_;						/**< Tracks the status of the instance */
+		std::string 	topic_name_;						/**< Topic name this instance is maintaining*/
+		std::string 	processor_prefix_;					/**< processor specific prefix included in that topic name*/
 		
-		fawkes::Clock	*clock_;
-		fawkes::Logger 	*logger_;
+		fawkes::Clock	*clock_;							/**< Fawkes clock needed for periodic publishing*/
+		fawkes::Logger 	*logger_;							/**< Fawkes logger*/
 
 
-		bool 			finalized_; //set to true if it was Object was finilazed berfore
+		bool 			finalized_;							/**< Is set to true if it was Object was finalized before */
 		
-		std::map <std::shared_ptr<WebSession> , std::list<Request>>    			subscriptions_; //maping of sessionTo requets list
+		///Contains mapping of session to request it made
+		std::map <std::shared_ptr<WebSession> , std::list<Request>>    			subscriptions_;
+		///Iterator for subsciption_map
 		std::map <std::shared_ptr<WebSession> , std::list<Request>>::iterator 	it_subscriptions_;
+		///Iterator for requests list
 		std::list< Request >::iterator											it_requests_;
 		
 		bool static compare_throttle_rate(Request first, Request second);

@@ -24,10 +24,23 @@
 
 using namespace fawkes;
 
+/** @class WebtoolsBridgePlugin
+* The plug-in implements a websocket server enabling sessions to make topic
+* subscription, advertisement, as well as, service calls to different Fawkes
+* components using rosbridge protocol JSON messages.
+* Implementation is done in similar way fashion to rosbridge server. In fact when the
+* requests are intended to ros, the plug-in acts merely as a proxy server and routes
+* the request to rosbridge server.
+*
+* @author Mostafa Gomaa
+*/
 class WebtoolsBridgePlugin : public fawkes::Plugin
 {
  public:
 
+/** Constructor.
+* @param config Fawkes configuration
+*/
  WebtoolsBridgePlugin(Configuration *config)
     : Plugin(config)
   {
