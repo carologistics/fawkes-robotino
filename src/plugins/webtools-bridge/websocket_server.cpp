@@ -35,6 +35,20 @@ using websocketpp::lib::bind;
 
 using namespace fawkes;
 
+/** @class WebSocketServer
+* Websocket server for webtools-bridge. Implementation based on websocketpp lib.
+* Implements the needed event handlers for sessions and wraps websocketpp session
+* into a more meaningful internal representation (ie, WebSession).
+* The server contains a 'bridge manager' instance where JSON messages are passed, along
+* with their initiating session, for further processing.
+*
+* @author Mostafa Gomaa
+*/
+
+/** Constructor
+* @param logger Fawkes logger
+* @param bridge_manager entry point to dispatching requests
+*/
 WebSocketServer::WebSocketServer(fawkes::Logger *logger , std::shared_ptr<BridgeManager> bridge_manager) 
 :m_next_sessionid(1) 
 ,finalized_(false)
@@ -53,7 +67,7 @@ WebSocketServer::WebSocketServer(fawkes::Logger *logger , std::shared_ptr<Bridge
     mutex_=new fawkes::Mutex();
   }
 
-
+/** Destructor */
 WebSocketServer::~WebSocketServer() 
 {
     
@@ -74,6 +88,9 @@ WebSocketServer::~WebSocketServer()
     m_server.reset();
 }
 
+
+/** Start listening for connection of some port
+* @param port to listen to*/
 void
 WebSocketServer::run(uint16_t port) {
     m_server->listen(port);
@@ -81,6 +98,7 @@ WebSocketServer::run(uint16_t port) {
     m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&server::run, m_server);
 }
 
+/** Finalize the server instance */
 void 
 WebSocketServer::finalize()
 {
@@ -115,6 +133,11 @@ WebSocketServer::finalize()
 
 }
 
+
+/** Called on when a connection is validated.
+* @param hdl websocket connection_hdl used to identify this session
+* @return true on succeeding
+*/
 bool
 WebSocketServer::on_validate(connection_hdl hdl){
 
@@ -128,6 +151,10 @@ WebSocketServer::on_validate(connection_hdl hdl){
     return true;
 }
 
+
+/** Called on establishment of a connection.
+* @param hdl websocket connection_hdl used to identify this session
+*/
 void
 WebSocketServer::on_open(connection_hdl hdl) 
 {
@@ -151,6 +178,10 @@ WebSocketServer::on_open(connection_hdl hdl)
     logger_->log_info("Webtools-Bridge:","on open");   
 }
 
+
+/** Called on closing of a connection.
+* @param hdl websocket connection_hdl used to identify this session
+*/
 void
 WebSocketServer::on_close(connection_hdl hdl) 
 {
@@ -179,9 +210,12 @@ WebSocketServer::on_close(connection_hdl hdl)
     hdl_ids_.erase(hdl);
 }
 
-/*Finds the reqeusting sessions by  its hdl. 
-*Extracts the pay load from the msg.
-*Forwards both to incoming of the bridge manger*/
+/** Finds the requesting sessions by its hdl.
+* Extracts the pay load from the msg.
+* Forwards both to incoming of the bridge manger.
+* @param hdl websocket connection_hdl used to identify this session
+* @param web_msg ptr to the message
+*/
 void
 WebSocketServer::on_message(connection_hdl hdl, websocketpp::server<websocketpp::config::asio>::message_ptr web_msg)
 {

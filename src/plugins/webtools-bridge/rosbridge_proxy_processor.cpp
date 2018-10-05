@@ -44,7 +44,7 @@ using websocketpp::lib::bind;
 using namespace fawkes;
 
 
-/** Class RosBridgeProxyProcessor "rosbridge_proxy_processor.h"
+/** @class RosBridgeProxyProcessor "rosbridge_proxy_processor.h"
  * This acts as a proxy server, creating and maintaining ProxySessions to RosBridge python server. 
  * When "WebSession" makes a request that targets RosBridge, a unique ProxySession to
  * "RosBridge Server" is created, encapsulating the "WebSession" (and acts a proxy forwarding 
@@ -64,7 +64,12 @@ using namespace fawkes;
 */
 
 
-/** Constructor */
+/** Constructor
+* @param prefix used to identify the BridgeProcessor
+* @param logger Fawkes logger
+* @param config Fawkes config
+* @param clock Fawkes clock
+*/
 RosBridgeProxyProcessor::RosBridgeProxyProcessor(std::string prefix , fawkes::Logger *logger , fawkes::Configuration *config , fawkes::Clock *clock)
 :   BridgeProcessor(prefix)
 ,   logger_(logger)
@@ -156,6 +161,11 @@ is that even possible....
 why not move the web_Session terminatoin to the finilization from the dytrctor....
 because u need to make sure the session was joined right!
 */
+
+/** Called on establishment of a connection.
+* @param web_session ptr that is established to the webtools server
+* @param hdl websocket connection_hdl used to identify this  proxy session
+*/
 void 
 RosBridgeProxyProcessor::on_open( std::shared_ptr<WebSession> web_session , connection_hdl hdl  ) 
 {
@@ -188,6 +198,10 @@ RosBridgeProxyProcessor::on_open( std::shared_ptr<WebSession> web_session , conn
 }
 
 
+
+/** Called on failure to establish a connection .
+* @param hdl websocket connection_hdl used to identify this session
+*/
 void
 RosBridgeProxyProcessor::on_fail(connection_hdl hdl) 
 {
@@ -197,6 +211,9 @@ RosBridgeProxyProcessor::on_fail(connection_hdl hdl)
 }
 
 
+/** Called on closing of a connection .
+* @param hdl websocket connection_hdl used to identify this session
+*/
 void
 RosBridgeProxyProcessor::on_close(connection_hdl hdl) 
 {
@@ -219,6 +236,9 @@ RosBridgeProxyProcessor::on_close(connection_hdl hdl)
 }
 
 
+/** Establish a connection to rosbridge.
+* @param web_session ptr
+*/
 //should only be called from within a Mutex
 void
 RosBridgeProxyProcessor::connect_to_rosbridge( std::shared_ptr <WebSession> web_session )
@@ -265,8 +285,11 @@ RosBridgeProxyProcessor::connect_to_rosbridge( std::shared_ptr <WebSession> web_
 }
 
 
-/*Forward the incoming request comming from the web_session to RosBridge using the corresponding proxy_session
- proxy_session exists only if a connection was established. If not  busy wait till timeout is reached */
+/** Forward the incoming request comming from the web_session to RosBridge using the corresponding proxy_session
+* proxy_session exists only if a connection was established. If not  busy wait till timeout is reached
+* @param web_session
+* @param jsonMsg
+*/
 void
 RosBridgeProxyProcessor::process_request(std::shared_ptr <WebSession> web_session , std::string jsonMsg)
 {
@@ -336,7 +359,6 @@ RosBridgeProxyProcessor::process_request(std::shared_ptr <WebSession> web_sessio
 }
 
 
-//Handles Session termination
 void
 RosBridgeProxyProcessor::callback  ( EventType event_type , std::shared_ptr <EventEmitter> event_emitter) 
 {
@@ -417,7 +439,7 @@ RosBridgeProxyProcessor::unsubscribe ( std::string id
 {
     std::string jsonMsg= Serializer::op_unsubscribe( subscription->get_topic_name() , id );
     //try catch
-     logger_->log_info("Processor:" , jsonMsg.c_str());
+     logger_->log_info("Processor:" , "%s", jsonMsg.c_str());
     process_request(web_session , jsonMsg);
     subscription->remove_request(id, web_session);   
 }

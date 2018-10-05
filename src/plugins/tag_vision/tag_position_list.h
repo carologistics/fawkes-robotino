@@ -45,11 +45,19 @@
 class TagPositionList : public std::vector<TagPositionInterfaceHelper*>
 {
 public:
-  /// Constructor
-  TagPositionList(fawkes::BlackBoard *blackboard, fawkes::tf::Transformer *tf_listener, u_int32_t max_markers, std::string frame, std::string thread_name, fawkes::Logger *logger_, fawkes::Clock *clock, fawkes::tf::TransformPublisher *tf_publisher);
+
+  TagPositionList(fawkes::BlackBoard *blackboard, fawkes::tf::Transformer *tf_listener, u_int32_t max_markers, std::string frame, std::string thread_name, fawkes::Logger *logger, fawkes::Clock *clock, fawkes::tf::TransformPublisher *tf_publisher);
   /// Destructor
   ~TagPositionList();
-  /// Update the blackboard with the stored data
+ 
+  /**
+   * @brief Assigns every marker found to an interface. The interface will stay the same for
+   * a marker as long as the marker is considered seen (visibility history > 0). It
+   * also updates the Marker IDs on the TagVision interface. 
+   *
+   * @param marker_list List of marker data
+   * @param laser_line_ifs List of laser_line interfaces
+   */
   void update_blackboard(std::vector<alvar::MarkerData> *marker_list, std::vector<fawkes::LaserLineInterface*> *laser_line_ifs);
 
 private:

@@ -40,7 +40,7 @@ else
   endif
 endif
 
-OBJS_all = $(OBJS_mps-laser-gen)
+OBJS_all = $(OBJS_mps_laser_gen)
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)

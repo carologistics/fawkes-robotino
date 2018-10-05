@@ -118,7 +118,7 @@ ArduinoComMessage::ctor()
  * Given the command and its appropriate value, it will add it as a sequence as long as it is
  * a valid command (in terms of defined in command_id_t). This method will return false
  * when the command is invalid or another command with the same id was previously added.
- * @param cmdid command to add - see command_id_t for reference
+ * @param cmd command to add - see command_id_t for reference
  * @param value the value to the added command.
  * @return true if command was successfully added
  */

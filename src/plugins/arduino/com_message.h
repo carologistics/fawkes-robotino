@@ -28,6 +28,9 @@
 class ArduinoComMessage
 {
  public:
+ /**
+  * @brief Mapping for all possible commands, that can be send to the arduino
+  */
   enum class command_id_t : char{
    CMD_CALIBRATE   = 'C',
    CMD_X_NEW_POS   = 'X',
@@ -36,6 +39,9 @@ class ArduinoComMessage
    CMD_A_NEW_POS   = 'A'
   };
 
+  /**
+   * @brief The prefix of each message to the arduino
+   */
   static const char MSG_HEAD[3];
 
   ArduinoComMessage();
@@ -51,6 +57,13 @@ class ArduinoComMessage
   void set_msecs_if_lower(unsigned int msecs);
   unsigned int get_msecs();
 
+  /**
+   * @brief Calculates the number of digits an integer consists of
+   *
+   * @param i The number of which the number of digits should be calculated
+   *
+   * @return The amount of digits i consists of
+   */
   static inline unsigned short num_digits(unsigned int i)
   {
       return i > 0 ? (int) log10 ((double) i) + 1 : 1;

@@ -1,0 +1,18 @@
+# If you want to add *additional* steps, then the following is an example
+# what this could look like.
+
+# Imagine the following being here from Fawkes' pipeline.yml,
+# this is why the indentation looks as below.
+# steps:
+  # wait for build steps to have completed
+  - wait
+
+  - label: :rocket: Run simulation
+    command: .buildkite/run
+    plugins:
+      <<: *merged-pr-plugin
+      docker#v1.4.0:
+        image: carologistics/cluster-runner:latest
+        always-pull: true
+        debug: true
+ 
