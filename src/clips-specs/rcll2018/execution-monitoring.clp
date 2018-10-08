@@ -62,13 +62,13 @@
   ?pa <- (plan-action (id ?id) (goal-id ?goal-id)
         (plan-id ?plan-id)
         (action-name prepare-cs|prepare-rs|prepare-ds|prepare-bs)
-        (status RUNNING)
+        (state RUNNING)
         (param-values $? ?mps $?)
         (executable TRUE))
   ?ta <- (timer (name prepare-mps-abort-timer))
   ?ts <- (timer (name prepare-mps-send-timer))
   =>
-  (modify ?pa (status FORMULATED) (executable FALSE))
+  (modify ?pa (state FORMULATED) (executable FALSE))
   (retract ?ta ?ts)
 )
 
@@ -80,7 +80,7 @@
   (declare (salience 1))
   ?fg <-(wm-fact (key monitoring fail-goal) (type UNKNOWN) (value ?goal-id))
   ?g <- (goal (id ?goal-id) (mode DISPATCHED))
-  (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (status ~FORMULATED&~PENDING&~FINAL&~FAILED)))
+  (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state ~FORMULATED&~PENDING&~FINAL&~FAILED)))
   =>
   (printout t "Fail goal " ?goal-id " because it is unsatisfiable" crlf)
   (retract ?fg)
@@ -93,7 +93,7 @@
   ?g <- (goal (id ?goal-id) (mode DISPATCHED))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
-     (status FORMULATED|PENDING)
+     (state FORMULATED|PENDING)
      (param-values $? ?mps $?)
      (action-name ?an))
   ;Is this enough for wp-put-slide-cc??
@@ -119,7 +119,7 @@
   ; (plan (id ?plan-id) (goal-id ?goal-id))
   ; (goal (id ?goal-id) (mode DISPATCHED))
   ; (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-  ;   status ~FORMULATED&~FAILED~FINAL&)))
+  ;   state ~FORMULATED&~FAILED~FINAL&)))
   ; (param-values $? ?mps $?)))
    =>
   (printout t "MPS " ?mps " was broken, cleaning up facts" crlf)
@@ -170,7 +170,7 @@
   (declare (salience 1))
   (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
       (id ?id)
-      (status ?status&~FORMULATED&~RUNNING&~FAILED&~FINAL)
+      (state ?status&~FORMULATED&~RUNNING&~FAILED&~FINAL)
       (action-name ?action-name)
       (param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
@@ -187,7 +187,7 @@
 
 (defrule detect-timeout
   ?p <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	(id ?id) (status ?status)
+	(id ?id) (state ?status)
 	(action-name ?action-name)
 	(param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
@@ -198,13 +198,13 @@
   (test (and (> (nth$ 1 ?now) (nth$ 1 ?timeout)) (> (nth$ 2 ?now) (nth$ 2 ?timeout))))
   =>
   (printout t "Action "  ?action-name " timedout after " ?status  crlf)
-  (modify ?p (status FAILED))
+  (modify ?p (state FAILED))
   (retract ?pt)
 )
 
 (defrule remove-timer
   (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	(id ?id) (status ?status)
+	(id ?id) (state ?status)
 	(action-name ?action-name)
 	(param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
@@ -216,7 +216,7 @@
 
 (defrule enhance-timer-on-mps-nonfinal-states
   (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	(id ?id) (status PENDING)
+	(id ?id) (state PENDING)
 	(action-name ?action-name)
 	(param-values $? ?mps $?))
   (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
@@ -237,7 +237,7 @@
 	(plan-id ?plan-id)
 	(action-name ?an&:(or (eq ?an wp-put) (eq ?an wp-put-slide-cc)))
 	(param-values ?r ?wp ?mps $?)
-	(status FAILED))
+	(state FAILED))
   (plan (id ?plan-id) (goal-id ?goal-id))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?hold <- (wm-fact (key domain fact holding args? r ?r wp ?wp))
@@ -259,7 +259,7 @@
 	(plan-id ?plan-id)
 	(action-name wp-get-shelf)
 	(param-values ?r ?wp ?mps ?spot)
-	(status FAILED))
+	(state FAILED))
   (plan (id ?plan-id) (goal-id ?goal-id))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?wp-s<- (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot))
@@ -276,7 +276,7 @@
 ;  (goal (id ?goal-id) (mode DISPATCHED))
 ;  (plan (id ?plan-id) (goal-id ?goal-id))
 ;  (plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
-;       (status FORMULATED)
+;       (state FORMULATED)
 ;       (action-name ?an)
 ;       (param-values $? ?wp $?))
 ;  (not (wm-fact (key monitoring fail-goal) (value ?goal-id)))
@@ -295,7 +295,7 @@
               (action-name ?an&wp-get)
               (plan-id ?plan-id)
               (goal-id ?goal-id)
-              (status FAILED)
+              (state FAILED)
               (param-values $? ?wp $? ?mps $?))
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
@@ -303,7 +303,7 @@
   (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)))
   =>
   (if (< 1 ?*MAX-RETRIES-PICK*) then
-    (modify ?pa (status PENDING))
+    (modify ?pa (state PENDING))
     (assert
       (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value 1))
     )
@@ -318,7 +318,7 @@
               (action-name ?an&wp-get)
               (plan-id ?plan-id)
               (goal-id ?goal-id)
-              (status FAILED)
+              (state FAILED)
               (param-values $? ?wp $? ?mps $?))
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
@@ -327,7 +327,7 @@
           (value ?tries&:(< ?tries ?*MAX-RETRIES-PICK*)))
   =>
   (bind ?tries (+ 1 ?tries))
-  (modify ?pa (status PENDING))
+  (modify ?pa (state PENDING))
   (modify ?wm (value ?tries))
 )
 
@@ -339,7 +339,7 @@
             (action-name ?an&wp-put-slide-cc)
               (plan-id ?plan-id)
               (goal-id ?goal-id)
-              (status FAILED)
+              (state FAILED)
               (param-values $? ?wp $? ?mps $?))
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
@@ -347,7 +347,7 @@
   (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)))
   =>
   (if (< 1 ?*MAX-RETRIES-PUT-SLIDE*) then
-    (modify ?pa (status PENDING))
+    (modify ?pa (state PENDING))
     (assert
       (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value 1))
     )
@@ -362,7 +362,7 @@
               (action-name ?an&wp-put-slide-cc)
               (plan-id ?plan-id)
               (goal-id ?goal-id)
-              (status FAILED)
+              (state FAILED)
               (param-values $? ?wp $? ?mps $?))
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
@@ -371,7 +371,7 @@
           (value ?tries&:(< ?tries ?*MAX-RETRIES-PUT-SLIDE*)))
   =>
   (bind ?tries (+ 1 ?tries))
-  (modify ?pa (status PENDING))
+  (modify ?pa (state PENDING))
   (modify ?wm (value ?tries))
 )
 
@@ -397,7 +397,7 @@
   ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) 
 	(id ?id) 
 	(action-name location-lock) 
-	(status RUNNING) 
+	(state RUNNING)
 	(param-values ?bs ?side))
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name bs-dispense))
@@ -405,7 +405,7 @@
   (test (eq ?name (sym-cat ?bs - ?side)))
   =>
   (retract ?li)
-  (modify ?pa (status PENDING))
+  (modify ?pa (state PENDING))
   (delayed-do-for-all-facts ((?p plan-action)) (and (eq ?p:goal-id ?goal-id) (eq ?p:plan-id ?plan-id) (neq FALSE (member$ ?bs ?p:param-values)) (neq FALSE (member$ ?side ?p:param-values)))
  	(printout t "Execution monitoring: Adapting " ?p:action-name crlf)
 	(bind $?modified ?p:param-values)
