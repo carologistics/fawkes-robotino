@@ -25,32 +25,32 @@
 
 (defrule action-start-execute-wait-action
   ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
-                      (action-name wait) (status PENDING) (executable TRUE))
+                      (action-name wait) (state PENDING) (executable TRUE))
   =>
   (printout info "Starting to wait" crlf)
   (assert (timer (name (sym-cat ?goal-id - ?plan-id - ?action-id))))
-  (modify ?pa (status RUNNING))
+  (modify ?pa (state RUNNING))
 )
 
 (defrule action-finish-execute-wait-action
   ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
-                      (action-name wait) (status RUNNING) (executable TRUE))
+                      (action-name wait) (state RUNNING) (executable TRUE))
   (time $?now)
   ?timer <- (timer (name ?name &: (sym-cat ?goal-id - ?plan-id - ?action-id))
                    (time $?t&:(timeout ?now ?t ?*WAIT-DURATION*)))
   =>
   (printout info "Finished waiting" crlf)
-  (modify ?pa (status EXECUTION-SUCCEEDED))
+  (modify ?pa (state EXECUTION-SUCCEEDED))
   (retract ?timer)
 )
 
 (defrule action-fail-execute-wait-action
   ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
-                      (action-name wait) (status RUNNING) (executable TRUE))
+                      (action-name wait) (state RUNNING) (executable TRUE))
   (not (timer (name ?name &: (sym-cat ?goal-id - ?plan-id - ?action-id))))
   =>
   (printout warn "Failed to wait, timer for action id " ?action-id
                  ", plan-id " ?plan-id ", goal-id " ?goal-id " does not exist"
                  crlf)
-  (modify ?pa (status EXECUTION-FAILED))
+  (modify ?pa (state EXECUTION-FAILED))
 )

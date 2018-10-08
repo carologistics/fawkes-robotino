@@ -61,6 +61,7 @@
   ?*DELIVER-LATEST-TIME* = 10
   ?*DELIVER-ABORT-TIMEOUT* = 30
 
+	?*ENTER-FIELD-RETRIES* = 3
 )
 
 (defrule goal-reasoner-create-acquire-token-spawning-master
@@ -1320,13 +1321,13 @@
  (defrule goal-reasoner-evaluate-failed-enter-field
    ?g <- (goal (id ?gid) (class ENTER-FIELD-ACHIEVE)
                (mode FINISHED) (outcome FAILED))
-  ?pa <- (plan-action (goal-id ?gid) (status FAILED) (action-name enter-field))
+  ?pa <- (plan-action (goal-id ?gid) (state FAILED) (action-name enter-field))
   ?gm <- (goal-meta (goal-id ?gid) (num-tries ?num-tries))
   =>
   (printout t "Goal '" ?gid "' has failed, evaluating" crlf)
 
   (if (= ?num-tries ?*ENTER-FIELD-RETRIES*) then
-	(modify ?pa (status EXECUTION-SUCCEEDED))
+	(modify ?pa (state EXECUTION-SUCCEEDED))
 	(modify ?g (mode DISPATCHED) (outcome UNKNOWN))
         else
 	(bind ?num-tries (+ 1 ?num-tries))

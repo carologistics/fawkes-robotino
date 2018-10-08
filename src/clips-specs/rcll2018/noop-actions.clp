@@ -20,7 +20,7 @@
 ;
 
 (defrule action-execute-exogenous-noops
-  ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status PENDING)
+  ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state PENDING)
                    (action-name ?action&bs-dispense|cs-retrieve-cap
                         |cs-mount-cap
                         |rs-mount-ring1
@@ -34,7 +34,7 @@
          (param-values $?param-values))
   =>
   (printout t "Executing " ?action ?param-values crlf)
-  (modify ?pa (status EXECUTION-SUCCEEDED))
+  (modify ?pa (state EXECUTION-SUCCEEDED))
 )
 
 (defrule action-execute-noop
@@ -42,10 +42,10 @@
   ?pa <- (plan-action  (action-name noop)
                          (plan-id ?plan-id)
                          (id ?id)
-                         (status PENDING)
+                         (state PENDING)
                          (executable TRUE))
   =>
   (printout t "Executing and Finalzing action 'noop' "crlf)
   ;Need to finalize directly since it has no effects to be aplied
-  (modify ?pa (status FINAL))
+  (modify ?pa (state FINAL))
 )

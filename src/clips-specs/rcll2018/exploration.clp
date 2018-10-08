@@ -213,8 +213,8 @@
   (plan (id ?plan-id&EXPLORATION-PLAN) (goal-id ?goal-id))
   (not (plan (id EXPLORE-ZONE)))
 
-  (plan-action (id ?action-id) (action-name move-node) (plan-id ?plan-id) (status RUNNING))
-  (plan-action (id ?action-id2) (action-name ?action-name2) (plan-id ?plan-id) (status FINAL|FAILED))
+  (plan-action (id ?action-id) (action-name move-node) (plan-id ?plan-id) (state RUNNING))
+  (plan-action (id ?action-id2) (action-name ?action-name2) (plan-id ?plan-id) (state FINAL|FAILED))
 
   ?skill <- (skill (id ?skill-id) (name ?action-name) (status S_RUNNING))
   (not (exploration-result (zone ?zn)))
@@ -259,9 +259,9 @@
 
 (defrule exp-skill-explore-zone-final
   (goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
-  (plan-action (action-name explore-zone) (status FINAL))
+  (plan-action (action-name explore-zone) (state FINAL))
   ?pa <- (plan-action (action-name evaluation) (goal-id ?goal-id)
-                      (plan-id EXPLORE-ZONE) (status PENDING))
+                      (plan-id EXPLORE-ZONE) (state PENDING))
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str)
     (orientation ?orientation) (tag_id ?tag-id) (search_state YES)
   )
@@ -277,7 +277,7 @@
   (not (exploration-result (machine ?machine) (zone ?zn2)))
   =>
   (modify ?lock (result ACCEPT))
-  (modify ?pa (status FINAL))
+  (modify ?pa (state FINAL))
   (if (any-factp ((?ft found-tag)) (eq ?ft:name ?machine)) then
     (printout error "BUG: Tag for " ?machine " already found. Locking glitch or agent bug!" crlf)
   else
@@ -301,11 +301,11 @@
 )
 
 (defrule exp-skill-explore-zone-failed
-  (plan-action (action-name explore-zone) (status FAILED))
-  ?p <- (plan-action (action-name evaluation) (status PENDING))
+  (plan-action (action-name explore-zone) (state FAILED))
+  ?p <- (plan-action (action-name evaluation) (state PENDING))
   =>
   (printout t "EXP exploration fact zone fail, nothing to do for evaluation" crlf)
-  (modify ?p (status FINAL))
+  (modify ?p (state FINAL))
 )
 
 (defrule exp-report-to-refbox
