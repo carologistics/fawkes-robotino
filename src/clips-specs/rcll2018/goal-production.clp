@@ -929,7 +929,7 @@
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (not (wm-fact (key domain fact wp-at args wp ?wp-c m ?mps side ?side-cs)))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp-c m ?mps side ?side-cs)))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
