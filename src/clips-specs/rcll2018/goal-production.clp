@@ -428,7 +428,7 @@
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   ;--Match ring to order [if still the order needs any]
-  (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?ring-num))
+  (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?ring-num&:(neq ?rs-before ?ring-num)))
   (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-diff))
   ;(TODO: make the mps-state  a precond of the put-slid to save traviling time)
 
