@@ -24,13 +24,13 @@
   (executive-init)
   (not (domain-loaded))
 =>
-  (parse-pddl-domain (path-resolve "rcll2017/domain.pddl"))
+  (parse-pddl-domain (path-resolve "rcll2018/domain.pddl"))
   (assert (domain-loaded))
 )
 
-(defrule test-domain-set-sensed-predicates
+(defrule domain-set-sensed-predicates
   (domain-loaded)
-  ?p <- (domain-predicate (name mps-state) (sensed FALSE))
+  ?p <- (domain-predicate (name mps-state|location-locked) (sensed FALSE))
 =>
   (modify ?p (sensed TRUE))
 )
@@ -41,9 +41,9 @@
   (modify ?p (value-predicate TRUE))
 )
 
-(defrule domain-wp-put-nowait
+(defrule domain-nowait-actions
   (domain-loaded)
-	?o <- (domain-operator (name wp-put|wp-get|prepare-bs|prepare-ds|prepare-cs) (wait-sensed ~FALSE))
+	?o <- (domain-operator (name wp-put|wp-get|prepare-bs|prepare-ds|prepare-cs|location-unlock) (wait-sensed ~FALSE))
 	=>
 	(modify ?o (wait-sensed FALSE))
 )
@@ -89,6 +89,9 @@
     (domain-object (name R-2) (type robot))
     (domain-object (name R-3) (type robot))
 
+    (domain-object (name SPAWNING-MASTER) (type master-token))
+    (domain-object (name PRODUCE-EXCLUSIVE-COMPLEXITY) (type token))
+
     (domain-object (name CCB1) (type cap-carrier))
     (domain-object (name CCB2) (type cap-carrier))
     (domain-object (name CCB3) (type cap-carrier))
@@ -102,6 +105,9 @@
     (domain-object (name ?rs1) (type mps))
     (domain-object (name ?rs2) (type mps))
     (domain-object (name ?ss) (type mps))
+    (domain-object (name INPUT) (type mps-side))
+    (domain-object (name OUTPUT) (type mps-side))
+    (domain-object (name WAIT) (type mps-side))
     (domain-object (name ?team-color) (type team-color))
     (domain-object (name O1) (type order))
     (domain-object (name O2) (type order))
@@ -126,7 +132,7 @@
     ; (domain-fact (name wp-ring2-color) (param-values WP1 RING_NONE))
     ; (domain-fact (name wp-ring3-color) (param-values WP1 RING_NONE))
     ; (domain-fact (name wp-unused) (param-values WP1))
-    ; (domain-fact (name wp-spawned-by) (param-values R-1 WP1))
+    ; (domain-fact (name wp-spawned-for) (param-values ?self WP1))
     (domain-fact (name self) (param-values ?self))
     (domain-fact (name at) (param-values ?self START INPUT))
     (domain-fact (name can-hold) (param-values ?self))
