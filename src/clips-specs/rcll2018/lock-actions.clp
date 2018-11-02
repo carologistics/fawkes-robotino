@@ -202,7 +202,7 @@
 (defrule lock-actions-unlock-location-done
   ?l <- (location-unlock-pending ?loc ?side)
   (mutex (name ?lock-name&:(eq ?lock-name (sym-cat ?loc - ?side)))
-         (state OPEN) (request NONE) (locked-by ?self))
+         (state OPEN) (request NONE))
   =>
   (retract ?l)
 )
