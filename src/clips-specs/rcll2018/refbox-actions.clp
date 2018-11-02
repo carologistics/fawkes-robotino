@@ -17,7 +17,7 @@
 (defrule action-send-beacon-signal
 	(time $?now)
   ?bs <- (wm-fact (key refbox beacon seq) (value ?seq))
-	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status PENDING)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state PENDING)
                       (action-name send-beacon) (executable TRUE)
                       (param-names $?param-names)
                       (param-values $?param-values))
@@ -52,13 +52,13 @@
 
 	(pb-broadcast ?peer ?beacon)
 	(pb-destroy ?beacon)
-	(modify ?pa (status FINAL))
+	(modify ?pa (state FINAL))
 )
 
 
 (defrule refbox-action-reset-mps-start
 	(time $?now)
-	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status PENDING)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state PENDING)
 	                      (action-name ?action&reset-mps)
 	                      (executable TRUE)
 	                      (param-names $?param-names)
@@ -72,13 +72,13 @@
 	(assert (metadata-reset-mps ?mps ?team-color ?peer-id ?instruction_info))
 	(assert (timer (name reset-mps-send-timer) (time ?now) (seq 1)))
 	(assert (timer (name reset-mps-abort-timer) (time ?now) (seq 1)))
-	(modify ?pa (status RUNNING))
+	(modify ?pa (state RUNNING))
 )
 
 
 (defrule refbox-action-prepare-mps-start
 	(time $?now)
-	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status PENDING)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state PENDING)
 	                      (action-name ?action&prepare-bs|prepare-cs|prepare-ds|prepare-rs)
 	                      (executable TRUE)
 	                      (param-names $?param-names)
@@ -92,7 +92,7 @@
 	(assert (metadata-prepare-mps ?mps ?team-color ?peer-id ?instruction_info))
 	(assert (timer (name prepare-mps-send-timer) (time ?now) (seq 1)))
 	(assert (timer (name prepare-mps-abort-timer) (time ?now) (seq 1)))
-	(modify ?pa (status RUNNING))
+	(modify ?pa (state RUNNING))
 )
 
 (defrule refbox-action-reset-mps-send-signal
@@ -100,7 +100,7 @@
 	?st <- (timer (name reset-mps-send-timer)
 					(time $?t&:(timeout ?now ?t ?*PREPARE-PERIOD*))
 					(seq ?seq))
-	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status RUNNING)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
 	                      (action-name reset-mps)
 	                      (executable TRUE)
 	                      (param-names $?param-names)
@@ -125,7 +125,7 @@
 	?st <- (timer (name prepare-mps-send-timer) 
 					(time $?t&:(timeout ?now ?t ?*PREPARE-PERIOD*))
 					(seq ?seq))
-	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status RUNNING)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
 	                      (action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs)
 	                      (executable TRUE)
 	                      (param-names $?param-names)
@@ -180,7 +180,7 @@
 (defrule refbox-action-reset-mps-final
 	"Finalize the prepare action if the desired machine state was reached"
 	(time $?now)
-	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status RUNNING)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
 	                      (action-name reset-mps)
 	                      (param-names $?param-names)
 	                      (param-values $? ?mps $?))
@@ -191,13 +191,13 @@
 	=>
 	(printout t "Action Reset " ?mps " is final" crlf)
 	(retract ?st ?at)
-	(modify ?pa (status EXECUTION-SUCCEEDED))
+	(modify ?pa (state EXECUTION-SUCCEEDED))
 )
 
 (defrule refbox-action-prepare-mps-final
 	"Finalize the prepare action if the desired machine state was reached"
 	(time $?now)
-	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status RUNNING)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
 	                      (action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs)
 	                      (param-names $?param-names)
 	                      (param-values $?param-values))
@@ -208,13 +208,13 @@
 	=>
 	(printout t "Action Prepare " ?mps " is final" crlf)
 	(retract ?st ?at ?md)
-	(modify ?pa (status EXECUTION-SUCCEEDED))
+	(modify ?pa (state EXECUTION-SUCCEEDED))
 )
 
 (defrule refbox-action-reset-mps-abort
 	"Abort preparing and fail the action if took too long"
 	(time $?now)
-	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status RUNNING)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
 				(action-name reset-mps)
 				(param-names $?param-names)
 				(param-values $? ?mps $?))
@@ -227,13 +227,13 @@
 	=>
 	(printout t "Action Reset " ?mps " is Aborted" crlf)
 	(retract ?st ?at);md
-	(modify ?pa (status EXECUTION-FAILED))
+	(modify ?pa (state EXECUTION-FAILED))
 )
 
 (defrule refbox-action-prepare-mps-abort
 	"Abort preparing and fail the action if took too long"
 	(time $?now)
-	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (status RUNNING)
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
 	                      	(action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs)
 	                      	(param-names $?param-names)
 	                      	(param-values $?param-values))
@@ -246,5 +246,5 @@
 	=>
 	(printout t "Action Prepare " ?mps " is Aborted" crlf)
 	(retract ?st ?md ?at)
-	(modify ?pa (status EXECUTION-FAILED))
+	(modify ?pa (state EXECUTION-FAILED))
 )

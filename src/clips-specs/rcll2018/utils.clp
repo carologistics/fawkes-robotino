@@ -349,3 +349,13 @@
     (return CYAN)
   )
 )
+
+(deffunction navigator-set-speed (?max-velocity ?max-rotation)
+  (bind ?msg (blackboard-create-msg "NavigatorInterface::Navigator" "SetMaxVelocityMessage"))
+  (blackboard-set-msg-field ?msg "max_velocity" ?max-velocity)
+  (blackboard-send-msg ?msg)
+  (bind ?msg (blackboard-create-msg "NavigatorInterface::Navigator" "SetMaxRotationMessage"))
+  (blackboard-set-msg-field ?msg "max_rotation" ?max-rotation)
+  (blackboard-send-msg ?msg)
+)
+

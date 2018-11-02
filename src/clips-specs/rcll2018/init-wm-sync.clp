@@ -1,7 +1,7 @@
 ;---------------------------------------------------------------------------
-;  init-worldmodel.clp - Initialize the world model
+;  init-wm-sync.clp - Initialize world model synchronization
 ;
-;  Created: Fri 12 Jan 2018 15:01:59 CET
+;  Created: Tue 24 Apr 2018 19:50:36 CEST
 ;  Copyright  2018  Till Hofmann <hofmann@kbsg.rwth-aachen.de>
 ;  Licensed under GPLv2+ license, cf. LICENSE file in the doc directory.
 ;---------------------------------------------------------------------------
@@ -18,3 +18,10 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
+
+(defrule init-wm-sync-flush-locks-during-setup
+  (wm-fact (key refbox phase) (value SETUP))
+  =>
+  (printout warn "Flushing all locks!" crlf)
+  (mutex-flush-locks-async)
+)
