@@ -38,7 +38,7 @@ RecognitionThread::RecognitionThread(ConveyorPoseThread *cp_thread)
 
 void RecognitionThread::init()
 {
-  syncpoint_clouds_ready_ = syncpoint_manager->get_syncpoint(name(), main_thread_->syncpoint_clouds_ready_name);
+  syncpoint_clouds_ready_ = syncpoint_manager->get_syncpoint(name(), main_thread_->syncpoint_clouds_ready_name_);
 }
 
 

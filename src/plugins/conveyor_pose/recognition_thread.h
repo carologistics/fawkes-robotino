@@ -15,14 +15,17 @@
 #include "conveyor_pose_thread.h"
 
 
+/** Derive from the ICP algorithm in case we want to override something */
 class CustomICP : public pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ> {
 public:
   using pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ>::IterativeClosestPointNonLinear;
 
+  /** @return A custom fitness measure of the computed fit */
   double getScaledFitness();
 };
 
 
+/** Run ICP, perform HypothesisVerification and publish the result */
 class RecognitionThread
     : public fawkes::Thread
     , public fawkes::LoggingAspect
@@ -32,38 +35,36 @@ class RecognitionThread
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  using Point = ConveyorPoseThread::Point;
-  using Cloud = ConveyorPoseThread::Cloud;
-  using CloudPtr = ConveyorPoseThread::CloudPtr;
-
+  /** RecognitionThread constructor
+   * @param cp_thread pointer back to the main thread
+   */
   RecognitionThread(ConveyorPoseThread *cp_thread);
 
   virtual void loop() override;
   virtual void init() override;
+
+  /** Continue running this thread */
   void enable();
+
+  /** Stop running this thread */
   void disable();
+
+  /** Re-initialize this thread, e.g. after a config change */
   void restart();
+
+  /** @return whether this thread is currently enabled (running) */
   bool enabled();
 
-  std::atomic<float> cfg_icp_max_corr_dist_;
-  std::atomic<double> cfg_icp_tf_epsilon_;
-  std::atomic<double> cfg_icp_refinement_factor_;
-  std::array<std::atomic<float>, 3> cfg_icp_conveyor_hint_;
-  std::atomic<int> cfg_icp_max_iterations_;
-  std::atomic<float> cfg_icp_hv_penalty_thresh_;
-  std::atomic<float> cfg_icp_hv_support_thresh_;
-  std::atomic<float> cfg_icp_hv_inlier_thresh_;
-  std::atomic<float> cfg_icp_shelf_hv_penalty_thresh_;
-  std::atomic<float> cfg_icp_shelf_hv_support_thresh_;
-  std::atomic<float> cfg_icp_shelf_hv_inlier_thresh_;
-  std::atomic<unsigned int> cfg_icp_min_loops_;
-  std::atomic<unsigned int> cfg_icp_max_loops_;
-  std::atomic_bool cfg_icp_auto_restart_;
-
 private:
+  friend ConveyorPoseThread;
+
   void restart_icp();
   void publish_result();
   void constrainTransformToGround(fawkes::tf::Stamped<fawkes::tf::Pose>& fittedPose_conv);
+
+  using Point = ConveyorPoseThread::Point;
+  using Cloud = ConveyorPoseThread::Cloud;
+  using CloudPtr = ConveyorPoseThread::CloudPtr;
 
   ConveyorPoseThread *main_thread_;
 
@@ -85,6 +86,21 @@ private:
 
   unsigned int iterations_;
   double last_raw_fitness_;
+
+  std::atomic<float> cfg_icp_max_corr_dist_;
+  std::atomic<double> cfg_icp_tf_epsilon_;
+  std::atomic<double> cfg_icp_refinement_factor_;
+  std::array<std::atomic<float>, 3> cfg_icp_conveyor_hint_;
+  std::atomic<int> cfg_icp_max_iterations_;
+  std::atomic<float> cfg_icp_hv_penalty_thresh_;
+  std::atomic<float> cfg_icp_hv_support_thresh_;
+  std::atomic<float> cfg_icp_hv_inlier_thresh_;
+  std::atomic<float> cfg_icp_shelf_hv_penalty_thresh_;
+  std::atomic<float> cfg_icp_shelf_hv_support_thresh_;
+  std::atomic<float> cfg_icp_shelf_hv_inlier_thresh_;
+  std::atomic<unsigned int> cfg_icp_min_loops_;
+  std::atomic<unsigned int> cfg_icp_max_loops_;
+  std::atomic_bool cfg_icp_auto_restart_;
 };
 
 
