@@ -44,9 +44,6 @@
 
 using namespace fawkes;
 
-using Cloud = ConveyorPoseThread::Cloud;
-using CloudPtr = ConveyorPoseThread::CloudPtr;
-
 /** @class ConveyorPoseThread "conveyor_pose_thread.cpp"
  * Plugin to detect the conveyor belt in a pointcloud (captured from Intel RealSense)
  * @author Tobias Neumann
@@ -59,7 +56,7 @@ ConveyorPoseThread::ConveyorPoseThread()
   , ConfigurationChangeHandler(CFG_PREFIX)
   , fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose")
   , result_fitness_(std::numeric_limits<double>::min())
-  , syncpoint_clouds_ready_name("/perception/conveyor_pose/clouds_ready")
+  , syncpoint_clouds_ready_name_("/perception/conveyor_pose/clouds_ready")
   , cloud_out_raw_name_("raw")
   , cloud_out_trimmed_name_("trimmed")
   , current_mps_type_(ConveyorPoseInterface::NO_STATION)
@@ -111,7 +108,7 @@ ConveyorPoseThread::init()
 {
   config->add_change_handler(this);
 
-  syncpoint_clouds_ready = syncpoint_manager->get_syncpoint(name(), syncpoint_clouds_ready_name);
+  syncpoint_clouds_ready = syncpoint_manager->get_syncpoint(name(), syncpoint_clouds_ready_name_);
   syncpoint_clouds_ready->register_emitter(name());
 
   cfg_debug_mode_ = config->get_bool( CFG_PREFIX "/debug" );
@@ -786,17 +783,8 @@ ConveyorPoseThread::laserline_get_center_transformed(fawkes::LaserLineInterface 
 }
 
 
-bool
-ConveyorPoseThread::is_inbetween(double a, double b, double val) {
-  double low = std::min(a, b);
-  double up  = std::max(a, b);
-
-  return val >= low && val <= up;
-}
-
-
-CloudPtr
-ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
+ConveyorPoseThread::CloudPtr
+ConveyorPoseThread::cloud_voxel_grid(ConveyorPoseThread::CloudPtr in)
 {
   float ls = cfg_voxel_grid_leaf_size_;
   pcl::ApproximateVoxelGrid<pcl::PointXYZ> vg;
@@ -809,8 +797,9 @@ ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
   return out;
 }
 
+
 void
-ConveyorPoseThread::cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out)
+ConveyorPoseThread::cloud_publish(ConveyorPoseThread::CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out)
 {
   **cloud_out = *cloud_in;
   cloud_out->header = header_;
@@ -1129,7 +1118,8 @@ fawkes::tf::Pose eigen_to_pose(const Eigen::Matrix4f &m)
  *       |
  *       y
  * */
-CloudPtr ConveyorPoseThread::cloud_trim(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll) {
+ConveyorPoseThread::CloudPtr
+ConveyorPoseThread::cloud_trim(ConveyorPoseThread::CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll) {
     float x_min = -FLT_MAX, x_max = FLT_MAX, 
            y_min = -FLT_MAX, y_max = FLT_MAX, 
            z_min = -FLT_MAX, z_max = FLT_MAX;
