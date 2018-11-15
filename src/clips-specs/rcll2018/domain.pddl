@@ -491,12 +491,6 @@
 			:effect (self ?r)
 	)
 
-	(:action stop
-			:parameters (?r - robot)
-			:precondition (self ?r)
-			:effect (self ?r)
-	)
-
 	(:action explore-zone
 			:parameters (?r - robot ?z - zone)
 			:precondition (self ?r)
