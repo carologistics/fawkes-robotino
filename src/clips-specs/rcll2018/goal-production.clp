@@ -1326,8 +1326,8 @@
 
 
 (defrule goal-reasoner-evaluate-cleanup-evaluated-wp-for-order-facts
-  ?wp-for-order <- (wm-fact (key evaluated wp-for-order args? wp ?wp ord ?order) (value TRUE))
-  (not (wm-fact (key domain fact wp-usable ?args wp ?wp)))
+  ?wp-for-order <- (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (value TRUE))
+  (not (wm-fact (key domain fact wp-usable args? wp ?wp)))
   =>
   (retract ?wp-for-order)
   (printout debug "WP " ?wp " no longer tied to Order " ?order " because it is not usable anymore" crlf)
