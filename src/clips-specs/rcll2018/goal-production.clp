@@ -428,7 +428,7 @@
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   ;--Match ring to order [if still the order needs any]
-  (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?ring-num))
+  (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?ring-num&:(< ?rs-before ?ring-num)))
   (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-diff))
   ;(TODO: make the mps-state  a precond of the put-slid to save traviling time)
 
@@ -645,8 +645,6 @@
   ;To-Do: Model state IDLE
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
-  (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;only discard if ring stations have at least two bases loaded
   ;(wm-fact (key domain fact rs-filled-with args? m ?mps n TWO|THREE))
   ;question: or would be more correct to create it and later
@@ -929,7 +927,7 @@
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (not (wm-fact (key domain fact wp-at args wp ?wp-c m ?mps side ?side-cs)))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp-c m ?mps side ?side-cs)))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
@@ -1327,8 +1325,8 @@
 
 
 (defrule goal-reasoner-evaluate-cleanup-evaluated-wp-for-order-facts
-  ?wp-for-order <- (wm-fact (key evaluated wp-for-order args? wp ?wp ord ?order) (value TRUE))
-  (not (wm-fact (key domain fact wp-usable ?args wp ?wp)))
+  ?wp-for-order <- (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (value TRUE))
+  (not (wm-fact (key domain fact wp-usable args? wp ?wp)))
   =>
   (retract ?wp-for-order)
   (printout debug "WP " ?wp " no longer tied to Order " ?order " because it is not usable anymore" crlf)
