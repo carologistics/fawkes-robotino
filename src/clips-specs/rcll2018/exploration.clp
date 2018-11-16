@@ -134,6 +134,7 @@
   (if ?zone then
     (modify ?ze (key exploration fact time-searched args? zone ?zn) (value (+ 1 ?time-searched)))
     (modify ?zm (key exploration zone ?zn args? machine NONE team ?team))
+    (printout t "Passed through " ?zn crlf)
   )
 )
 
@@ -158,6 +159,15 @@
 =>
   (modify ?ze-f (key exploration fact line-vis args? zone ?zn) (value 1 ))
   (printout warn "EXP found line: " ?zn " vh: " ?vh crlf)
+)
+
+
+(defrule exp-sync-mirrored
+  ?wm <- (wm-fact (key exploration zone ?zn args? machine NONE team ?))
+  ?we <- (wm-fact (key exploration zone ?zn2&:(eq ?zn2 (mirror-name ?zn)) args? machine UNKNOWN team ?team2))
+  =>
+  (modify ?we (key exploration zone ?zn2 args? machine NONE team ?team2))
+  (printout t "Synced zone: " ?zn2 crlf)
 )
 
 
@@ -229,9 +239,11 @@
   (assert
     (plan (id EXPLORE-ZONE) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name one-time-lock) (param-names name) (param-values ?zn))
-    (plan-action (id 2) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name explore-zone) (param-names r z) (param-values ?r ?zn))
-    (plan-action (id 3) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name evaluation))
-    (plan-action (id 4) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name unlock) (param-names name) (param-values ?zn) (executable TRUE))
+    (plan-action (id 2) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name one-time-lock) (param-names name) (param-values (mirror-name ?zn)))
+    (plan-action (id 3) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name explore-zone) (param-names r z) (param-values ?r ?zn))
+    (plan-action (id 4) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name evaluation))
+    (plan-action (id 5) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name unlock) (param-names name) (param-values (mirror-name ?zn)) (executable TRUE))
+    (plan-action (id 6) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name unlock) (param-names name) (param-values ?zn) (executable TRUE))
   )
 )
 
