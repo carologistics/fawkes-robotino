@@ -134,6 +134,7 @@
   (if ?zone then
     (modify ?ze (key exploration fact time-searched args? zone ?zn) (value (+ 1 ?time-searched)))
     (modify ?zm (key exploration zone ?zn args? machine NONE team ?team))
+    (printout t "Passed through " ?zn crlf)
   )
 )
 
@@ -158,6 +159,15 @@
 =>
   (modify ?ze-f (key exploration fact line-vis args? zone ?zn) (value 1 ))
   (printout warn "EXP found line: " ?zn " vh: " ?vh crlf)
+)
+
+
+(defrule exp-sync-mirrored
+  ?wm <- (wm-fact (key exploration zone ?zn args? machine NONE team ?))
+  ?we <- (wm-fact (key exploration zone ?zn2&:(eq ?zn2 (mirror-name ?zn)) args? machine UNKNOWN team ?team2))
+  =>
+  (modify ?we (key exploration zone ?zn2 args? machine NONE team ?team2))
+  (printout t "Synced zone: " ?zn2 crlf)
 )
 
 
