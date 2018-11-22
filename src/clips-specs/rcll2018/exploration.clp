@@ -284,7 +284,7 @@
 
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (value ?times-searched))
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
-  (?zm <- (wm-fact (key exploration zone ?zn2 args? machine ?prev-machine team ?team2))
+  ?zm <- (wm-fact (key exploration zone ?zn2 args? machine ?prev-machine team ?team2))
   (not (exploration-result (machine ?machine) (zone ?zn2)))
   =>
   (modify ?lock (result ACCEPT))
