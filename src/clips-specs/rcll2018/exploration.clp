@@ -2,23 +2,16 @@
 ;---------------------------------------------------------------------------
 ;  exploration.clp - Robotino agent for exploration phase
 ;
-;  Copyright  2017 Victor Mataré
+;  Copyright  2017-2018 Victor Mataré, Daniel Habering
 ;
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-;priorities.clp and gloabal.clp
 (defglobal
   ?*PRIORITY-WM*      =  200
   ?*EXP-ROUTE-IDX* = 1
   ?*EXP-MOVEMENT-COMPENSATION* = 0.0
   ?*EXP-SEARCH-LIMIT* = 1
-)
-
-; EXPLORATION
-(deftemplate tried-lock
-  (slot resource (type SYMBOL))
-  (slot result (type SYMBOL) (allowed-symbols ACCEPT REJECT))
 )
 
 (deftemplate exploration-result
@@ -220,7 +213,6 @@
 	)
   )
 
-  (not (tried-lock (resource ?zn)))
   (plan (id ?plan-id&EXPLORATION-PLAN) (goal-id ?goal-id))
   (not (plan (id EXPLORE-ZONE)))
 
@@ -232,7 +224,6 @@
 
   =>
   (bind ?new-ts (+ 1 ?ts))
-  (assert (tried-lock (resource ?zn) (result REJECT)))
   (modify ?ze (value ?new-ts))
   (modify ?skill (status S_FAILED))
   (printout t "EXP formulating zone exploration plan " ?zn " with line: " ?vh " and tag: " ?tv crlf)
@@ -279,7 +270,6 @@
   (Position3DInterface (id "/explore-zone/found-tag")
     (frame ?frame) (translation $?trans) (rotation $?rot)
   )
-  ?lock <- (tried-lock (resource ?zn-sym&:(eq ?zn-sym (sym-cat ?zn-str))))
   (domain-fact (name tag-matching) (param-values ?machine ?side ?team-color ?tag-id))
 
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (value ?times-searched))
@@ -287,7 +277,6 @@
   (?zm <- (wm-fact (key exploration zone ?zn2 args? machine ?prev-machine team ?team2))
   (not (exploration-result (machine ?machine) (zone ?zn2)))
   =>
-  (modify ?lock (result ACCEPT))
   (modify ?pa (state FINAL))
   (if (any-factp ((?ft found-tag)) (eq ?ft:name ?machine)) then
     (printout error "BUG: Tag for " ?machine " already found. Locking glitch or agent bug!" crlf)
@@ -356,9 +345,6 @@
   (wm-fact (id "/config/rcll/max-rotation") (type FLOAT) (value ?max-rotation))
 
 =>
-  (delayed-do-for-all-facts ((?l tried-lock)) (eq ?l:result REJECT)
-    (retract ?l)
-  )
   (printout t "exploration phase ended, cleaning up" crlf)
   (modify ?g (mode FINISHED) (outcome COMPLETED))
   (navigator-set-speed ?max-velocity ?max-rotation)
