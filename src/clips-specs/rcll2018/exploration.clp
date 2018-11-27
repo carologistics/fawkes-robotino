@@ -41,7 +41,7 @@
   (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
 )
 
-(defrule startup-exploration
+(defrule exp-startup
     (not (wm-fact (key exploration zone ?zn args? machine ?machine team ?team)))
 =>
     (bind $?Czones (create$ 
@@ -65,29 +65,29 @@
                         M-Z41 M-Z31 M-Z21 M-Z11))
 
      (foreach ?zone ?Czones
-	(assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-       		(wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-    		(wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-		(wm-fact (key exploration zone ?zone args? machine UNKNOWN team CYAN))
-	)
+       (assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+               (wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+               (wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+               (wm-fact (key exploration zone ?zone args? machine UNKNOWN team CYAN))
+       )
      )
      (foreach ?zone ?Mzones
-	(assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-       		(wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-    		(wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-		(wm-fact (key exploration zone ?zone args? machine UNKNOWN team MAGENTA)))
+       (assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+               (wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+               (wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+               (wm-fact (key exploration zone ?zone args? machine UNKNOWN team MAGENTA)))
      )
 
 )
 
-(defrule conf-get-exp-vmax
+(defrule exp-conf-get-vmax
   (wm-fact (id "/config/rcll/exploration/max-velocity") (type FLOAT) (value ?max-velocity))
   (wm-fact (id "/config/rcll/exploration/max-rotation") (type FLOAT) (value ?max-rotation))
   =>
   (assert (exp-navigator-vmax ?max-velocity ?max-rotation))
 )
 
-(defrule goal-reasoner-create-exploration-goal
+(defrule exp-create-exploration-goal
   (not (goal (id ?goal-id) (class EXPLORATION)))
   (wm-fact (key domain fact entered-field args? r ?r))
   (wm-fact (key domain fact self args? r ?r))
@@ -146,7 +146,7 @@
 )
 
 
-(defrule exp-sync-mirrored
+(defrule exp-sync-mirrored-zone
   ?wm <- (wm-fact (key exploration zone ?zn args? machine NONE team ?))
   ?we <- (wm-fact (key exploration zone ?zn2&:(eq ?zn2 (mirror-name ?zn)) args? machine UNKNOWN team ?team2))
   =>
@@ -178,7 +178,7 @@
 )
 
 
-(defrule exp-try-locking-line
+(defrule exp-start-zone-exploring
   (goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
   (wm-fact (key domain fact self args? r ?r))
   (Position3DInterface (id "Pose") (translation $?trans))
@@ -337,10 +337,6 @@
   (navigator-set-speed ?max-velocity ?max-rotation)
 )
 
-(deffunction get-mps-type-from-name (?mps)
-  (bind ?type (sym-cat (sub-string 3 4 (str-cat ?mps))))
-  (return ?type)
-)
 
 (defrule refbox-recv-ExploreInfo
   (declare (salience 1000))
