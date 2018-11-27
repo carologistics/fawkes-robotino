@@ -41,15 +41,6 @@
   (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
 )
 
-(deftemplate found-tag
-  (slot name (type SYMBOL))
-  (slot side (type SYMBOL) (allowed-values INPUT OUTPUT))
-  (slot frame (type STRING))
-  (multislot trans (type FLOAT) (cardinality 3 3))
-  (multislot rot (type FLOAT) (cardinality 4 4))
-  (slot sync-id (type INTEGER) (default 0))
-)
-
 (defrule startup-exploration
     (not (wm-fact (key exploration zone ?zn args? machine ?machine team ?team)))
 =>
@@ -167,7 +158,6 @@
 (defrule exp-found-tag
   (goal (class EXPLORATION) (mode DISPATCHED))
   (domain-fact (name tag-matching) (param-values ?machine ?side ?col ?tag))
-  (not (found-tag (name ?machine)))
   (TagVisionInterface (id "/tag-vision/info")
     (tags_visible ?num-tags&:(> ?num-tags 0))
     (tag_id $?tag-ids&:(member$ ?tag ?tag-ids))
@@ -181,6 +171,7 @@
   (exp-zone-margin ?zone-margin)
   ?ze-f <- (wm-fact (key exploration fact tag-vis args? zone ?zn&:(eq ?zn (get-zone ?zone-margin
                                                       (transform-safe "map" ?frame ?timestamp ?trans ?rot)))) (value ?tv&:(< ?tv 1) ))
+  (wm-fact (key exploration zone ?zn args? machine UNKNOWN team ?))
 =>
   (modify ?ze-f (value 1 ))
   (printout t "Found tag in " ?zn crlf)
@@ -278,26 +269,22 @@
   (not (exploration-result (machine ?machine) (zone ?zn2)))
   =>
   (modify ?pa (state FINAL))
-  (if (any-factp ((?ft found-tag)) (eq ?ft:name ?machine)) then
-    (printout error "BUG: Tag for " ?machine " already found. Locking glitch or agent bug!" crlf)
-  else
-    (modify ?ze (value (+ 1 ?times-searched)))
-    (modify ?zm (key exploration zone ?zn2 args? machine ?machine team ?team2))
-    (assert (found-tag (name ?machine) (side ?side) (frame "map") (trans ?trans) (rot ?rot)))
-    (assert
-      (exploration-result
-        (machine ?machine) (zone ?zn2)
-        (orientation ?orientation)
-        (team ?team-color)
-      )
-      (exploration-result
-        (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
-        (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
-        (team (mirror-team ?team-color))
-      )
+  (modify ?ze (value (+ 1 ?times-searched)))
+  (modify ?zm (key exploration zone ?zn2 args? machine ?machine team ?team2))
+  (assert
+    (exploration-result
+      (machine ?machine) (zone ?zn2)
+      (orientation ?orientation)
+      (team ?team-color)
     )
-    (printout t "EXP exploration fact zone successfull. Found " ?machine " in " ?zn2 crlf)
+    (exploration-result
+      (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
+      (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
+      (team (mirror-team ?team-color))
+    )
   )
+  (printout t "EXP exploration fact zone successfull. Found " ?machine " in " ?zn2 crlf)
+
 )
 
 (defrule exp-skill-explore-zone-failed
