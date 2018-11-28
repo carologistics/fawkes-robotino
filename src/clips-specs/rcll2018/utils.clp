@@ -187,6 +187,11 @@
   )
 )
 
+(deffunction get-mps-type-from-name (?mps)
+  (bind ?type (sym-cat (sub-string 3 4 (str-cat ?mps))))
+  (return ?type)
+)
+
 (deffunction compensate-movement (?factor ?v-odom ?p ?timestamp)
   (if (eq ?p FALSE) then
     (return FALSE)

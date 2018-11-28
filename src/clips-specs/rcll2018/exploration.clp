@@ -2,66 +2,38 @@
 ;---------------------------------------------------------------------------
 ;  exploration.clp - Robotino agent for exploration phase
 ;
-;  Copyright  2017 Victor Mataré
+;  Copyright  2017-2018 Victor Mataré, Daniel Habering
 ;
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
-;priorities.clp and gloabal.clp
 (defglobal
-  ?*PRIORITY-WM*      =  200
-  ?*EXP-ROUTE-IDX* = 1
   ?*EXP-MOVEMENT-COMPENSATION* = 0.0
   ?*EXP-SEARCH-LIMIT* = 1
 )
 
-; EXPLORATION
-(deftemplate tried-lock
-  (slot resource (type SYMBOL))
-  (slot result (type SYMBOL) (allowed-symbols ACCEPT REJECT))
-)
 
 (deftemplate exploration-result
+" Template for storing a exploration result. Stores the machine name, zone, orientation and the team this machine belongs to"
   (slot machine (type SYMBOL) (allowed-symbols C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS))
-  (slot zone (type SYMBOL)
-    (allowed-symbols
-      M-Z78 M-Z68 M-Z58 M-Z48 M-Z38 M-Z28 M-Z18
-      M-Z77 M-Z67 M-Z57 M-Z47 M-Z37 M-Z27 M-Z17
-      M-Z76 M-Z66 M-Z56 M-Z46 M-Z36 M-Z26 M-Z16
-      M-Z75 M-Z65 M-Z55 M-Z45 M-Z35 M-Z25 M-Z15
-      M-Z74 M-Z64 M-Z54 M-Z44 M-Z34 M-Z24 M-Z14
-      M-Z73 M-Z63 M-Z53 M-Z43 M-Z33 M-Z23 M-Z13
-      M-Z72 M-Z62 M-Z52 M-Z42 M-Z32 M-Z22 M-Z12
-                        M-Z41 M-Z31 M-Z21 M-Z11
-
-      C-Z18 C-Z28 C-Z38 C-Z48 C-Z58 C-Z68 C-Z78
-      C-Z17 C-Z27 C-Z37 C-Z47 C-Z57 C-Z67 C-Z77
-      C-Z16 C-Z26 C-Z36 C-Z46 C-Z56 C-Z66 C-Z76
-      C-Z15 C-Z25 C-Z35 C-Z45 C-Z55 C-Z65 C-Z75
-      C-Z14 C-Z24 C-Z34 C-Z44 C-Z54 C-Z64 C-Z74
-      C-Z13 C-Z23 C-Z33 C-Z43 C-Z53 C-Z63 C-Z73
-      C-Z12 C-Z22 C-Z32 C-Z42 C-Z52 C-Z62 C-Z72
-      C-Z11 C-Z21 C-Z31 C-Z41
-    )
-  )
+  (slot zone (type SYMBOL))
   (slot orientation (type INTEGER) (default -1))
   (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
 )
 
-(deftemplate found-tag
-  (slot name (type SYMBOL))
-  (slot side (type SYMBOL) (allowed-values INPUT OUTPUT))
-  (slot frame (type STRING))
-  (multislot trans (type FLOAT) (cardinality 3 3))
-  (multislot rot (type FLOAT) (cardinality 4 4))
-  (slot sync-id (type INTEGER) (default 0))
-)
 
-(defrule startup-exploration
+(defrule exp-startup
+" Asserts all needed wm-facts for the exploration phase
+  line-vis:      value is greater 0 if there was a line detected in the zone
+  tag-vis:       value is greater 0 if there was a tag detected in the zone
+  time-searched: Number of times this zone was activly explored
+  zone:          Which machine is in this zone. Initially every zone has an UNKNOWN machine.
+                 If there is reason to believe, that the zone is empty, machine is NONE
+                 If a machine was detected, this contains the name of the machine (eg C-CS1)
+"
     (not (wm-fact (key exploration zone ?zn args? machine ?machine team ?team)))
 =>
-    (bind $?Czones (create$ 
-
+    (bind $?Czones (create$
       C-Z18 C-Z28 C-Z38 C-Z48 C-Z58 C-Z68 C-Z78
       C-Z17 C-Z27 C-Z37 C-Z47 C-Z57 C-Z67 C-Z77
       C-Z16 C-Z26 C-Z36 C-Z46 C-Z56 C-Z66 C-Z76
@@ -71,7 +43,8 @@
       C-Z12 C-Z22 C-Z32 C-Z42 C-Z52 C-Z62 C-Z72
       C-Z11 C-Z21 C-Z31 C-Z41))
 
-    (bind $?Mzones (create$ 	  M-Z78 M-Z68 M-Z58 M-Z48 M-Z38 M-Z28 M-Z18
+    (bind $?Mzones (create$
+      M-Z78 M-Z68 M-Z58 M-Z48 M-Z38 M-Z28 M-Z18
       M-Z77 M-Z67 M-Z57 M-Z47 M-Z37 M-Z27 M-Z17
       M-Z76 M-Z66 M-Z56 M-Z46 M-Z36 M-Z26 M-Z16
       M-Z75 M-Z65 M-Z55 M-Z45 M-Z35 M-Z25 M-Z15
@@ -81,34 +54,46 @@
                         M-Z41 M-Z31 M-Z21 M-Z11))
 
      (foreach ?zone ?Czones
-	(assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-       		(wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-    		(wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-		(wm-fact (key exploration zone ?zone args? machine UNKNOWN team CYAN))
-	)
+       (assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+               (wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+               (wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+               (wm-fact (key exploration zone ?zone args? machine UNKNOWN team CYAN))
+       )
      )
      (foreach ?zone ?Mzones
-	(assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-       		(wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-    		(wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-		(wm-fact (key exploration zone ?zone args? machine UNKNOWN team MAGENTA)))
+       (assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+               (wm-fact (key exploration fact tag-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+               (wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+               (wm-fact (key exploration zone ?zone args? machine UNKNOWN team MAGENTA)))
      )
 
 )
 
-(defrule conf-get-exp-vmax
+
+(defrule exp-conf-get-vmax
+" Reads maximum values for rotating and velocity from the config and stores it as a fact
+"
+
   (wm-fact (id "/config/rcll/exploration/max-velocity") (type FLOAT) (value ?max-velocity))
   (wm-fact (id "/config/rcll/exploration/max-rotation") (type FLOAT) (value ?max-rotation))
   =>
   (assert (exp-navigator-vmax ?max-velocity ?max-rotation))
 )
 
-(defrule goal-reasoner-create-exploration-goal
+
+(defrule exp-create-exploration-goal
+" Initial goal creating
+  Refer to fixed-squence.clp for the expandation of the goal and the creation of the EXPLORATION-PLAN
+  The EXPLORATION-PLAN let the robot visit a number of configurable points. If a possible machine was detected, this plan is interrupted
+"
+
   (not (goal (id ?goal-id) (class EXPLORATION)))
+
   (wm-fact (key domain fact entered-field args? r ?r))
   (wm-fact (key domain fact self args? r ?r))
   (wm-fact (key refbox phase) (type UNKNOWN) (value EXPLORATION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
+
   ?cv <- (wm-fact (id "/config/rcll/exploration/zone-margin") (type FLOAT) (value ?zone-margin))
   (exp-navigator-vmax ?vel ?rot)
   =>
@@ -116,11 +101,15 @@
   (assert (timer (name send-machine-reports)))
   (assert (goal (id (sym-cat EXPLORATION- (gensym*))) (class EXPLORATION)
                 (type ACHIEVE)))
+  "Lower the speed, for a more robust line and tag detection"
   (navigator-set-speed ?vel ?rot)
 )
 
+
 (defrule exp-passed-through-quadrant
-  "We're driving slowly through a certain quadrant: reason enough to believe there's no machine here."
+" If the robot drove through a zone slow enough and passed the middle of the zone with a certain margin
+  we can conclude, that there is no machine in this zone
+"
   (goal (class EXPLORATION) (mode DISPATCHED))
   (exp-navigator-vmax ?max-velocity ?max-rotation)
   (MotorInterface (id "Robotino")
@@ -138,8 +127,11 @@
   )
 )
 
+
 (defrule exp-found-line
-  "Found a line that is within an unexplored zone."
+" If a laserline was found, that lies inside a zone with a certain margin,
+  update the line-vis fact of this zone
+"
   (goal (class EXPLORATION) (mode DISPATCHED))
   (LaserLineInterface
     (visibility_history ?vh&:(>= ?vh 1))
@@ -162,7 +154,10 @@
 )
 
 
-(defrule exp-sync-mirrored
+(defrule exp-sync-mirrored-zone
+" Every knowledge of a zone can be snyced to its counterpart on the other side of the field, since they are symmetrical
+  Only syncs NONE machine, since syncing of a found machine is handled in another rule
+"
   ?wm <- (wm-fact (key exploration zone ?zn args? machine NONE team ?))
   ?we <- (wm-fact (key exploration zone ?zn2&:(eq ?zn2 (mirror-name ?zn)) args? machine UNKNOWN team ?team2))
   =>
@@ -172,9 +167,10 @@
 
 
 (defrule exp-found-tag
+" If a tag was found in a zone that we dont have any information of, update the corresponding tag-vis fact
+"
   (goal (class EXPLORATION) (mode DISPATCHED))
   (domain-fact (name tag-matching) (param-values ?machine ?side ?col ?tag))
-  (not (found-tag (name ?machine)))
   (TagVisionInterface (id "/tag-vision/info")
     (tags_visible ?num-tags&:(> ?num-tags 0))
     (tag_id $?tag-ids&:(member$ ?tag ?tag-ids))
@@ -188,13 +184,16 @@
   (exp-zone-margin ?zone-margin)
   ?ze-f <- (wm-fact (key exploration fact tag-vis args? zone ?zn&:(eq ?zn (get-zone ?zone-margin
                                                       (transform-safe "map" ?frame ?timestamp ?trans ?rot)))) (value ?tv&:(< ?tv 1) ))
+  (wm-fact (key exploration zone ?zn args? machine UNKNOWN team ?))
 =>
   (modify ?ze-f (value 1 ))
   (printout t "Found tag in " ?zn crlf)
 )
 
 
-(defrule exp-try-locking-line
+(defrule exp-start-zone-exploring
+" If there is a zone, where we suspect a machine, interrupt the EXPLORATION-PLAN and start exploring the zone
+"
   (goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
   (wm-fact (key domain fact self args? r ?r))
   (Position3DInterface (id "Pose") (translation $?trans))
@@ -202,29 +201,37 @@
   (wm-fact (key exploration zone ?zn args? machine UNKNOWN team ?team))
   (wm-fact (key exploration fact line-vis args? zone ?zn) (value ?vh))
   (wm-fact (key exploration fact tag-vis args? zone ?zn) (value ?tv))
+
+  " Either a tag or a line was found in this zone"
   (test (or (> ?tv 0) (> ?vh 0)))
 
+  " Since the finding of a tag is a stronger indicator of a machine than a line, we prefer zones were a tag was found
+    Either tag-vis is greater 0 or there is no zone with tag-vis greater than 0 and a line was found in this zone"
   (or (test (> ?tv 0))
       (not (and (wm-fact (key exploration fact tag-vis args? zone ?zn2) (value ?tv2&:(> ?tv2 0)))
-		(wm-fact (key exploration fact time-searched args? zone ?zn2) (value ?ts2&:(<= ?ts2 ?*EXP-SEARCH-LIMIT*)))
-		(wm-fact (key exploration zone ?zn2 args? machine UNKNOWN team ?team2))
-	        (not (exploration-result (zone ?zn2)))
-	   )
+		            (wm-fact (key exploration fact time-searched args? zone ?zn2) (value ?ts2&:(<= ?ts2 ?*EXP-SEARCH-LIMIT*)))
+		            (wm-fact (key exploration zone ?zn2 args? machine UNKNOWN team ?team2))
+	              (not (exploration-result (zone ?zn2)))
+	         )
       )
   )
+
+  " Check that there is no zone with the same indicator of a machine (tag or line) that is closer"
   (not (and (wm-fact (key exploration fact line-vis args? zone ?zn3&:(< (distance-mf (zone-center ?zn3) ?trans) (distance-mf (zone-center ?zn) ?trans))) (value ?vh3& : (not (and (= ?vh3 0) (= ?tv 0)))))
-	    (wm-fact (key exploration fact tag-vis args? zone ?zn3) (value ?tv3& : (not (and (> ?tv 0) (= ?tv3 0)))))
-	    (wm-fact (key exploration fact time-searched  args? zone ?zn3) (value ?ts3&:(<= ?ts3 ?*EXP-SEARCH-LIMIT*)))
-	    (wm-fact (key exploration zone ?zn3 args? machine UNKNOWN team ?team3))
+	          (wm-fact (key exploration fact tag-vis args? zone ?zn3) (value ?tv3& : (not (and (> ?tv 0) (= ?tv3 0)))))
+	          (wm-fact (key exploration fact time-searched  args? zone ?zn3) (value ?ts3&:(<= ?ts3 ?*EXP-SEARCH-LIMIT*)))
+	          (wm-fact (key exploration zone ?zn3 args? machine UNKNOWN team ?team3))
             (not (exploration-result (zone ?zn3)))
-	)
+	     )
   )
 
-  (not (tried-lock (resource ?zn)))
   (plan (id ?plan-id&EXPLORATION-PLAN) (goal-id ?goal-id))
   (not (plan (id EXPLORE-ZONE)))
 
   (plan-action (id ?action-id) (action-name move-node) (plan-id ?plan-id) (state RUNNING))
+
+  " Only start interrupting the EXPLORATION-PLAN if the first move action was finished.
+    This prohibits, that all bots start exploring zones right in front of the insertion zone"
   (plan-action (id ?action-id2) (action-name ?action-name2) (plan-id ?plan-id) (state FINAL|FAILED))
 
   ?skill <- (skill (id ?skill-id) (name ?action-name) (status S_RUNNING))
@@ -232,7 +239,6 @@
 
   =>
   (bind ?new-ts (+ 1 ?ts))
-  (assert (tried-lock (resource ?zn) (result REJECT)))
   (modify ?ze (value ?new-ts))
   (modify ?skill (status S_FAILED))
   (printout t "EXP formulating zone exploration plan " ?zn " with line: " ?vh " and tag: " ?tv crlf)
@@ -249,26 +255,34 @@
 
 
 (defrule exp-increase-search-limit
+" There are zones with tag or line findings, but the search limit is reached
+  Then the search limit is incremented, to enable reexploration as a fallback solution
+"
   (goal (class EXPLORATION) (mode DISPATCHED))
 
-  ; There is an explorable zone...
+  " There is an explorable zone..."
   (wm-fact (key exploration fact line-vis args? zone ?zn1) (value ?vh))
   (wm-fact (key exploration fact tag-vis args? zone ?zn1) (value ?tv))
   (wm-fact (key exploration zone ?zn1 args machine UNKNOWN team ?team))
   (test (or (> ?tv 0) (> ?vh 0)))
 
-  ; ... but no zone may be searched according to the repeated-search-limit
+  " ... but no zone may be searched according to the search-limit"
   (not (and
-	(wm-fact (key exploration fact line-vis args? zone ?zn2) (value ?vh-tmp)) 
-	(wm-fact (key exploration fact tag-vis args? zone ?zn2) (value ?tv-tmp))
-        (wm-fact (key exploration fact time-searched args? zone ?zn2) (value ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
-	(wm-fact (key exploration zone ?zn2 args? machine UNKNOWN team ?team2))
-	(test (or (> ?vh-tmp 0) (> ?tv-tmp 0)))))
+	       (wm-fact (key exploration fact line-vis args? zone ?zn2) (value ?vh-tmp))
+	       (wm-fact (key exploration fact tag-vis args? zone ?zn2) (value ?tv-tmp))
+         (wm-fact (key exploration fact time-searched args? zone ?zn2) (value ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
+	       (wm-fact (key exploration zone ?zn2 args? machine UNKNOWN team ?team2))
+	       (test (or (> ?vh-tmp 0) (> ?tv-tmp 0)))
+	     )
+	)
 =>
   (modify ?*EXP-SEARCH-LIMIT* (+ ?*EXP-SEARCH-LIMIT* 1))
 )
 
+
 (defrule exp-skill-explore-zone-final
+" Exploration of a zone finished succesfully. Update zone wm-fact and assert exploration-result
+"
   (goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
   (plan-action (action-name explore-zone) (state FINAL))
   ?pa <- (plan-action (action-name evaluation) (goal-id ?goal-id)
@@ -276,42 +290,38 @@
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str)
     (orientation ?orientation) (tag_id ?tag-id) (search_state YES)
   )
-  (Position3DInterface (id "/explore-zone/found-tag")
-    (frame ?frame) (translation $?trans) (rotation $?rot)
-  )
-  ?lock <- (tried-lock (resource ?zn-sym&:(eq ?zn-sym (sym-cat ?zn-str))))
   (domain-fact (name tag-matching) (param-values ?machine ?side ?team-color ?tag-id))
+  (domain-fact (name mps-type) (param-values ?machine ?mtype))
 
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (value ?times-searched))
-  (domain-fact (name mps-type) (param-values ?machine ?mtype))
-  (?zm <- (wm-fact (key exploration zone ?zn2 args? machine ?prev-machine team ?team2))
+  ?zm <- (wm-fact (key exploration zone ?zn2 args? machine ? team ?team))
+  ?zm2 <- (wm-fact (key exploration zone ?zn3&:(eq (mirror-name ?zn2) ?zn3) args? machine ? team ?team2))
+
   (not (exploration-result (machine ?machine) (zone ?zn2)))
   =>
-  (modify ?lock (result ACCEPT))
   (modify ?pa (state FINAL))
-  (if (any-factp ((?ft found-tag)) (eq ?ft:name ?machine)) then
-    (printout error "BUG: Tag for " ?machine " already found. Locking glitch or agent bug!" crlf)
-  else
-    (modify ?ze (value (+ 1 ?times-searched)))
-    (modify ?zm (key exploration zone ?zn2 args? machine ?machine team ?team2))
-    (assert (found-tag (name ?machine) (side ?side) (frame "map") (trans ?trans) (rot ?rot)))
-    (assert
-      (exploration-result
-        (machine ?machine) (zone ?zn2)
-        (orientation ?orientation)
-        (team ?team-color)
-      )
-      (exploration-result
-        (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
-        (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
-        (team (mirror-team ?team-color))
-      )
+  (modify ?ze (value (+ 1 ?times-searched)))
+  (modify ?zm (key exploration zone ?zn2 args? machine ?machine team ?team))
+  (modify ?zm2 (key exploration zone ?zn3 args? machine (mirror-name ?machine) team ?team2))
+  (assert
+    (exploration-result
+      (machine ?machine) (zone ?zn2)
+      (orientation ?orientation)
+      (team ?team-color)
     )
-    (printout t "EXP exploration fact zone successfull. Found " ?machine " in " ?zn2 crlf)
+    (exploration-result
+      (machine (mirror-name ?machine)) (zone (mirror-name ?zn2))
+      (orientation (mirror-orientation ?mtype ?zn2 ?orientation))
+      (team (mirror-team ?team-color))
+    )
   )
+  (printout t "EXP exploration fact zone successfull. Found " ?machine " in " ?zn2 crlf)
+
 )
 
+
 (defrule exp-skill-explore-zone-failed
+" Exploration of a zone failed. Simply set the evaluation action to final to continue"
   (plan-action (action-name explore-zone) (state FAILED))
   ?p <- (plan-action (action-name evaluation) (state PENDING))
   =>
@@ -319,7 +329,9 @@
   (modify ?p (state FINAL))
 )
 
+
 (defrule exp-report-to-refbox
+" Regularly send all found machines to the refbox"
   (goal (class EXPLORATION) (mode DISPATCHED))
   (wm-fact (key refbox team-color) (value ?color))
   (exploration-result (team ?color) (machine ?machine) (zone ?zone)
@@ -347,8 +359,12 @@
   (modify ?ws (time ?now) (seq (+ ?seq 1)))
 )
 
+
 (defrule exp-exploration-ends-cleanup
-  "Clean up lock refusal facts when exploration ends"
+" As soon as the game phase switches to production, set the exploration goal to finished 
+  and reset the velocity
+
+"
   ?g <- (goal (class EXPLORATION) (mode DISPATCHED))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
@@ -356,20 +372,16 @@
   (wm-fact (id "/config/rcll/max-rotation") (type FLOAT) (value ?max-rotation))
 
 =>
-  (delayed-do-for-all-facts ((?l tried-lock)) (eq ?l:result REJECT)
-    (retract ?l)
-  )
   (printout t "exploration phase ended, cleaning up" crlf)
   (modify ?g (mode FINISHED) (outcome COMPLETED))
   (navigator-set-speed ?max-velocity ?max-rotation)
 )
 
-(deffunction get-mps-type-from-name (?mps)
-  (bind ?type (sym-cat (sub-string 3 4 (str-cat ?mps))))
-  (return ?type)
-)
 
 (defrule refbox-recv-ExploreInfo
+" Listen to the reports of other bots to the refbox. Update own facts, if there is new information contained
+  This is extremly useful if the syncing of wm-facts does not work. Thus, there is at least no zone explored twice
+"
   (declare (salience 1000))
   ?pb-msg <- (protobuf-msg (type "llsf_msgs.MachineReport") (ptr ?p))
   (wm-fact (id "/refbox/team-color") (value ?team-name&:(neq ?team-name nil)))
