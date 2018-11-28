@@ -290,9 +290,6 @@
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str)
     (orientation ?orientation) (tag_id ?tag-id) (search_state YES)
   )
-  (Position3DInterface (id "/explore-zone/found-tag")
-    (frame ?frame) (translation $?trans) (rotation $?rot)
-  )
   (domain-fact (name tag-matching) (param-values ?machine ?side ?team-color ?tag-id))
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
 
