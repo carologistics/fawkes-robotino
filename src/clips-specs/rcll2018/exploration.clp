@@ -294,13 +294,15 @@
   (domain-fact (name mps-type) (param-values ?machine ?mtype))
 
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (value ?times-searched))
-  ?zm <- (wm-fact (key exploration zone ?zn2 args? machine ?prev-machine team ?team2))
+  ?zm <- (wm-fact (key exploration zone ?zn2 args? machine ? team ?team))
+  ?zm2 <- (wm-fact (key exploration zone ?zn3&:(eq (mirror-name ?zn2) ?zn3) args? machine ? team ?team2))
 
   (not (exploration-result (machine ?machine) (zone ?zn2)))
   =>
   (modify ?pa (state FINAL))
   (modify ?ze (value (+ 1 ?times-searched)))
-  (modify ?zm (key exploration zone ?zn2 args? machine ?machine team ?team2))
+  (modify ?zm (key exploration zone ?zn2 args? machine ?machine team ?team))
+  (modify ?zm2 (key exploration zone ?zn3 args? machine (mirror-name ?machine) team ?team2))
   (assert
     (exploration-result
       (machine ?machine) (zone ?zn2)
