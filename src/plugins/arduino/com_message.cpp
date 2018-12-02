@@ -1,5 +1,5 @@
 /***************************************************************************
- *  direct_com_message.cpp - Message for ArduinoThread
+ *  com_message.cpp - Message for ArduinoThread
  *
  *  Created: Mon Apr 04 15:48:52 2016
  *  Copyright  2011-2016  Tim Niemueller [www.niemueller.de]

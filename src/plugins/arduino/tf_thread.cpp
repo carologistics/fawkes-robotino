@@ -1,6 +1,6 @@
 
 /***************************************************************************
- *  com_thread.cpp - Arduino com thread
+ *  tf_thread.cpp - Arduino tf thread
  *
  *  Created: Thu Sep 11 13:18:00 2014
  *  Copyright  2011-2014  Tim Niemueller [www.niemueller.de]
