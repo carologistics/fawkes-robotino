@@ -1,5 +1,5 @@
 /***************************************************************************
- *  direct_com_thread.h - Arduino com thread for direct communication
+ *  com_thread.h - Arduino com thread for direct communication
  *
  *  Created: Mon Apr 04 11:48:36 2016
  *  Copyright  2011-2016  Tim Niemueller [www.niemueller.de]

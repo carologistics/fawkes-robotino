@@ -1,6 +1,6 @@
 
 /***************************************************************************
- *  robotino_plugin.cpp - Plugin for Arduino platform support
+ *  arduino_plugin.cpp - Plugin for Arduino platform support
  *
  *  Created: Sun Nov 13 15:31:57 2011
  *  Copyright  2011  Tim Niemueller [www.niemueller.de]
