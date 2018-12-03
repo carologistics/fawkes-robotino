@@ -32,25 +32,36 @@ class ArduinoComMessage
 {
  public:
  /**
-  * @brief Mapping for all possible commands, that can be send to the arduino
+  * @brief All possible commands, that can be send to the arduino
   */
   enum class command_id_t {
     CMD_HOME,
     CMD_GETSETTINGS,
     CMD_GOTO_LINEAR,
+    //TODO: Add more commands
   };
+
+  /**
+   * @brief Mapping for all possible commands to its char representation
+   */
   const std::map<command_id_t, std::string> command_map {
     {command_id_t::CMD_HOME, "$H"},
     {command_id_t::CMD_GETSETTINGS, "$$"},
     {command_id_t::CMD_GOTO_LINEAR, "G01"},
   };
 
+  /**
+   * @brief Data Types of the different settings of Gribl
+   */
   enum class setting_type {
     SET_BOOL,
     SET_INT,
     SET_FLOAT
   };
 
+  /**
+   * @brief All possible Gribl settings
+   */
   enum class setting_id_t : unsigned short {
     SET_PULSE_LENGTH=0, // microseconds
     SET_IDLE_DELAY=1,   // milliseconds
@@ -88,6 +99,9 @@ class ArduinoComMessage
     SET_Z_MAX_TRAVEL=132, //millimeter
   };
 
+  /**
+   * @brief Mapping for all possible Gribl settings to their respective data type
+   */
   const std::map<setting_id_t,setting_type> setting_map {
     {setting_id_t::SET_PULSE_LENGTH,setting_type::SET_INT}, // microseconds
     {setting_id_t::SET_IDLE_DELAY,setting_type::SET_INT},   // milliseconds
@@ -134,14 +148,40 @@ class ArduinoComMessage
   bool add_command(command_id_t cmd, const std::map<char, float>& coordinates);
   template<class T> bool add_setting(setting_id_t setting, T value);
 
+  /**
+   * @brief Check whether the argument has correct data type
+   *
+   * @param type The expected data type
+   * @param value The variable to test
+   *
+   * @return True if the variable has correct type
+   */
   static inline bool check_type(setting_type type, bool value)
   {
     return type==setting_type::SET_BOOL;
   }
+
+  /**
+   * @brief Check whether the argument has correct data type
+   *
+   * @param type The expected data type
+   * @param value The variable to test
+   *
+   * @return True if the variable has correct type
+   */
   static inline bool check_type(setting_type type, float value)
   {
     return type==setting_type::SET_FLOAT;
   }
+
+  /**
+   * @brief Check whether the argument has correct data type
+   *
+   * @param type The expected data type
+   * @param value The variable to test
+   *
+   * @return True if the variable has correct type
+   */
   static inline bool check_type(setting_type type, unsigned int value)
   {
     return type==setting_type::SET_INT;
@@ -189,16 +229,39 @@ class ArduinoComMessage
       return i > 0 ? (int) log10 ((double) i) + 1 : 1;
   }
 
+  /** 
+   * @brief Converts the bool into its string representation for Grbl
+   *
+   * @param b The boolean value to convert
+   *
+   * @return The string representation of the boolean
+   */
   static std::string value_to_string(bool b)
   {
     return b?"1":"0";
   }
+
+  /** 
+   * @brief Converts float into its string representation for Grbl
+   *
+   * @param f The float value to convert
+   *
+   * @return The string representation of the float
+   */
   static std::string value_to_string(float f)
   {
     std::stringstream result_stream;
     result_stream << std::fixed << std::setprecision(1) << f;
     return result_stream.str();
   }
+
+  /** 
+   * @brief Converts an unsigned integer into its string representation for Grbl
+   *
+   * @param i The integer value to convert
+   *
+   * @return The string representation of the unsigned integer
+   */
   static std::string value_to_string(unsigned int i)
   {
     return std::to_string(i);
