@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <boost/asio.hpp>
+#include <map>
 #include <sstream>
 #include <iomanip>
 
@@ -33,20 +34,24 @@ class ArduinoComMessage
  /**
   * @brief Mapping for all possible commands, that can be send to the arduino
   */
-  enum class command_id_t : char{
-   CMD_CALIBRATE   = 'C',
-   CMD_X_NEW_POS   = 'X',
-   CMD_Y_NEW_POS   = 'Y',
-   CMD_Z_NEW_POS   = 'Z',
-   CMD_A_NEW_POS   = 'A'
+  enum class command_id_t {
+    CMD_HOME,
+    CMD_GETSETTINGS,
+    CMD_GOTO_LINEAR,
+  };
+  const std::map<command_id_t, std::string> command_map {
+    {command_id_t::CMD_HOME, "$H"},
+    {command_id_t::CMD_GETSETTINGS, "$$"},
+    {command_id_t::CMD_GOTO_LINEAR, "G01"},
   };
 
 
   ArduinoComMessage();
   ~ArduinoComMessage();
-  ArduinoComMessage(command_id_t cmdid, unsigned int value);
+  ArduinoComMessage(command_id_t cmdid, const std::map<char,float>& coordinates);
 
-  bool add_command(command_id_t cmd, unsigned int number);
+  bool add_command(command_id_t cmd, const std::map<char, float>& coordinates);
+
   unsigned short get_data_size();
   unsigned short get_cur_buffer_index();
 

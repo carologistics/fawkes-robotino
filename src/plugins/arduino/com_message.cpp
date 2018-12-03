@@ -71,12 +71,12 @@ ArduinoComMessage::ArduinoComMessage()
 /** Constructor for initial command.
  * Create message for writing and add command for given message ID.
  * @param cmdid message ID of command to add
- * @param value message value to be passed
+ * @param coordinates the coordinates to the added command
  */
-ArduinoComMessage::ArduinoComMessage(command_id_t cmdid, unsigned int value)
+ArduinoComMessage::ArduinoComMessage(command_id_t cmdid, const std::map<char, float>& coordinates)
 {
   ctor();
-  add_command(cmdid,  value);
+  add_command(cmdid,  coordinates);
 }
 
 /** Destructor.
@@ -111,60 +111,66 @@ ArduinoComMessage::ctor()
 
 /** Add a command.
  * Given the command and its appropriate value, it will add it as a sequence as long as it is
- * a valid command (in terms of defined in command_id_t). This method will return false
+ * a valid command (in terms of a key in command_map). This method will return false
  * when the command is invalid or another command with the same id was previously added.
- * @param cmd command to add - see command_id_t for reference
- * @param value the value to the added command.
+ * @param cmd command to add - see command_id_t and command_map for reference
+ * @param coordinates the coordinates to the added command.
  * @return true if command was successfully added
  */
 bool
-ArduinoComMessage::add_command(command_id_t cmd, unsigned int value)
+ArduinoComMessage::add_command(command_id_t cmd, const std::map<char, float>& coordinates)
 {
   // TODO: Test if "home" command also works if a "value" was accidentially appended!
   bool valid_command = false;
-  char char_cmd = static_cast<char>(cmd);
 
-  if (cmd == command_id_t::CMD_CALIBRATE ||
-      cmd == command_id_t::CMD_X_NEW_POS ||
-      cmd == command_id_t::CMD_Y_NEW_POS ||
-      cmd == command_id_t::CMD_Z_NEW_POS ||
-      cmd == command_id_t::CMD_A_NEW_POS
-      )
+  if (command_map.count(cmd)>0) // The command key exists
   {
     valid_command = true;
   }
 
   if (valid_command == true)
   {
-//    std::cout << "Buffer valid?: ";
-    // skip the AT header, therefore start at index 3
-    for (int i = 3; i < data_size_; i++)
+    if(cur_buffer_index_>0) // allow only one command in a message
     {
-//      std::cout << (int) data_[i] << ' ';
-      // cancel when the command was already set
-      if (data_[i] == char_cmd)
-      {
-        valid_command = false;
-        break;
-      }
+      valid_command = false;
     }
   }
-//  std::cout << std::endl;
 
-  // check whether we're exceeding the data_size_
-  valid_command &= cur_buffer_index_ + 1 + num_digits(value) < data_size_ - 1;
+  if (valid_command == true)
+  {
+    // check whether we're exceeding the data_size_
+    int length_cmd = command_map.at(cmd).length();
+    ++length_cmd;  //space before coordinates
+    for(const auto& coordinate: coordinates)
+    {
+      length_cmd += 1 + num_digits(coordinate.second) + 1; //coordinate specifier, coordinate value, space
+    }
+    --length_cmd; // remove the last space
+    length_cmd +=2; // for \r\n
+    valid_command &= cur_buffer_index_ + length_cmd < data_size_ - 1;
+  }
 
   if (valid_command == false)
   {
     return false;
   }
 
-  data_[cur_buffer_index_] = char_cmd;
-  cur_buffer_index_++;
+  std::strncpy(data_+cur_buffer_index_,command_map.at(cmd).c_str(),command_map.at(cmd).length());
+  cur_buffer_index_ += command_map.at(cmd).length();
 
-  cur_buffer_index_ += sprintf(data_+cur_buffer_index_,"%u", value);
-  data_[cur_buffer_index_] = ' ';
-  cur_buffer_index_++;
+  data_[cur_buffer_index_++] = ' ';
+
+  for(const auto& coordinate: coordinates)
+  {
+    data_[cur_buffer_index_++] = coordinate.first;
+    std::string coordinate_value = value_to_string(coordinate.second);
+    std::strncpy(data_+cur_buffer_index_,coordinate_value.c_str(),coordinate_value.length()); //can also use sprintf
+    cur_buffer_index_ += coordinate_value.length();
+    data_[cur_buffer_index_++] = ' ';
+  }
+
+  data_[cur_buffer_index_-1] = '\r';  //replace the last space
+  data_[cur_buffer_index_++] = '\n';
 
   return true;
 }
