@@ -39,10 +39,6 @@ class ArduinoComMessage
    CMD_A_NEW_POS   = 'A'
   };
 
-  /**
-   * @brief The prefix of each message to the arduino
-   */
-  static const char MSG_HEAD[3];
 
   ArduinoComMessage();
   ~ArduinoComMessage();

@@ -29,8 +29,6 @@
 
 using namespace fawkes;
 
-const char ArduinoComMessage::MSG_HEAD[] = {'A', 'T', ' '};
-
 /** @class ArduinoComMessage "com_message.h"
  * Arduino communication message.
  *
@@ -104,11 +102,8 @@ ArduinoComMessage::ctor()
     // init buffer with zeros
     memset(data_, 0, data_size_);
 
-    // append header
-    memcpy(data_, MSG_HEAD, 3);
-
-    // start first command after header
-    cur_buffer_index_ = 3;
+    // start first command directly at start
+    cur_buffer_index_ = 0;
 
     // setup a minimum of 1 second to wait
     msecs_to_wait_ = 1000;
