@@ -52,11 +52,77 @@ class ArduinoComMessage
   };
 
   enum class setting_id_t : unsigned short {
-    //TODO yet to do
+    SET_PULSE_LENGTH=0, // microseconds
+    SET_IDLE_DELAY=1,   // milliseconds
+    SET_STEP_PORT_INVERT=2, //mask
+    SET_DIR_PORT_INVERT=3, //mask
+    SET_STEP_ENA_INV=4, //bool
+    SET_LIMIT_PINS_INV=5, //bool
+    SET_PROBE_PINS_INV=6, //bool
+    SET_STATUS_REPORT=10, //mask
+    SET_JUNCTION_DEV=11, // millimeter
+    SET_ARC_TOL=12, //millimeter
+    SET_REPORT_INCHES=13, //bool
+    SET_SOFT_LIMS=20, //bool
+    SET_HARD_LIMS=21, //bool
+    SET_HOME_CYCLE=22, //bool
+    SET_HOME_DIR_INVERT=23, // mask
+    SET_HOME_FEED=24, // mm/min
+    SET_HOME_SEEK=25, // mm/min
+    SET_HOME_DEBOUNCE=26, // milliseconds
+    SET_HOME_PULL_OFF=27, // millimeters
+    SET_MAX_SPINDLE_SPEED=30, // RPM
+    SET_MIN_SPINDLE_SPEED=31, // RPM
+    SET_LASER_MODE=32, // bool
+    SET_X_STEPS=100, // steps/mm
+    SET_Y_STEPS=101, // steps/mm
+    SET_Z_STEPS=102, // steps/mm
+    SET_X_MAX_RATE=110, // mm/min
+    SET_Y_MAX_RATE=111, // mm/min
+    SET_Z_MAX_RATE=112, // mm/min
+    SET_X_ACC=120, //mm/s^2
+    SET_Y_ACC=121, //mm/s^2
+    SET_Z_ACC=122, //mm/s^2
+    SET_X_MAX_TRAVEL=130, //millimeter
+    SET_Y_MAX_TRAVEL=131, //millimeter
+    SET_Z_MAX_TRAVEL=132, //millimeter
   };
 
   const std::map<setting_id_t,setting_type> setting_map {
-    //TODO fill this
+    {setting_id_t::SET_PULSE_LENGTH,setting_type::SET_INT}, // microseconds
+    {setting_id_t::SET_IDLE_DELAY,setting_type::SET_INT},   // milliseconds
+    {setting_id_t::SET_STEP_PORT_INVERT,setting_type::SET_INT}, //mask
+    {setting_id_t::SET_DIR_PORT_INVERT,setting_type::SET_INT}, //mask
+    {setting_id_t::SET_STEP_ENA_INV,setting_type::SET_BOOL}, //bool
+    {setting_id_t::SET_LIMIT_PINS_INV,setting_type::SET_BOOL}, //bool
+    {setting_id_t::SET_PROBE_PINS_INV,setting_type::SET_BOOL}, //bool
+    {setting_id_t::SET_STATUS_REPORT,setting_type::SET_INT}, //mask
+    {setting_id_t::SET_JUNCTION_DEV,setting_type::SET_FLOAT}, // millimeter
+    {setting_id_t::SET_ARC_TOL,setting_type::SET_FLOAT}, //millimeter
+    {setting_id_t::SET_REPORT_INCHES,setting_type::SET_BOOL}, //bool
+    {setting_id_t::SET_SOFT_LIMS,setting_type::SET_BOOL}, //bool
+    {setting_id_t::SET_HARD_LIMS,setting_type::SET_BOOL}, //bool
+    {setting_id_t::SET_HOME_CYCLE,setting_type::SET_BOOL}, //bool
+    {setting_id_t::SET_HOME_DIR_INVERT,setting_type::SET_INT}, // mask
+    {setting_id_t::SET_HOME_FEED,setting_type::SET_FLOAT}, // mm/min
+    {setting_id_t::SET_HOME_SEEK,setting_type::SET_FLOAT}, // mm/min
+    {setting_id_t::SET_HOME_DEBOUNCE,setting_type::SET_INT}, // milliseconds
+    {setting_id_t::SET_HOME_PULL_OFF,setting_type::SET_FLOAT}, // millimeters
+    {setting_id_t::SET_MAX_SPINDLE_SPEED,setting_type::SET_FLOAT}, // RPM
+    {setting_id_t::SET_MIN_SPINDLE_SPEED,setting_type::SET_FLOAT}, // RPM
+    {setting_id_t::SET_LASER_MODE,setting_type::SET_BOOL}, // bool
+    {setting_id_t::SET_X_STEPS,setting_type::SET_FLOAT}, // steps/mm
+    {setting_id_t::SET_Y_STEPS,setting_type::SET_FLOAT}, // steps/mm
+    {setting_id_t::SET_Z_STEPS,setting_type::SET_FLOAT}, // steps/mm
+    {setting_id_t::SET_X_MAX_RATE,setting_type::SET_FLOAT}, // mm/min
+    {setting_id_t::SET_Y_MAX_RATE,setting_type::SET_FLOAT}, // mm/min
+    {setting_id_t::SET_Z_MAX_RATE,setting_type::SET_FLOAT}, // mm/min
+    {setting_id_t::SET_X_ACC,setting_type::SET_FLOAT}, //mm/s^2
+    {setting_id_t::SET_Y_ACC,setting_type::SET_FLOAT}, //mm/s^2
+    {setting_id_t::SET_Z_ACC,setting_type::SET_FLOAT}, //mm/s^2
+    {setting_id_t::SET_X_MAX_TRAVEL,setting_type::SET_FLOAT}, //millimeter
+    {setting_id_t::SET_Y_MAX_TRAVEL,setting_type::SET_FLOAT}, //millimeter
+    {setting_id_t::SET_Z_MAX_TRAVEL,setting_type::SET_FLOAT}, //millimeter
   };
 
 
