@@ -174,6 +174,62 @@ ArduinoComMessage::add_command(command_id_t cmd, const std::map<char, float>& co
   return true;
 }
 
+/** Add a configuration setting.
+ * Given the setting identifier and its appropriate value, the setting command will be added. 
+ * This method will return false when the setting is invalid.
+ * @param setting the id of the setting to set
+ * @param value the value of the chosen setting
+ * @return true if setting was successfully added
+ */
+template bool ArduinoComMessage::add_setting<bool>(setting_id_t setting, bool value);
+template bool ArduinoComMessage::add_setting<float>(setting_id_t setting, float value);
+template bool ArduinoComMessage::add_setting<unsigned int>(setting_id_t setting, unsigned int value);
+template<class T> bool
+ArduinoComMessage::add_setting(setting_id_t setting, T value)
+{
+  bool valid_setting = false;
+
+  if (setting_map.count(setting)>0) // The setting key exists
+  {
+    valid_setting = true;
+  }
+
+  //test whether type of value is correct
+  valid_setting &= check_type(setting_map.at(setting), value);
+
+  if (valid_setting == true)
+  {
+    if(cur_buffer_index_>0) // allow only one setting in a message
+    {
+      valid_setting = false;
+    }
+  }
+
+  if (valid_setting == true)
+  {
+    // check whether we're exceeding the data_size_
+    int length_setting = 1+num_digits(static_cast<unsigned int>(setting))+1+num_digits(value)+2; // $, setting_id, =, value, \r\n
+    valid_setting &= cur_buffer_index_ + length_setting < data_size_ - 1;
+  }
+
+  if (valid_setting == false)
+  {
+    return false;
+  }
+
+  data_[cur_buffer_index_++] = '$';
+  cur_buffer_index_+=sprintf(data_+cur_buffer_index_,"%u",static_cast<unsigned int>(setting));
+  data_[cur_buffer_index_++] = '=';
+
+  std::string string_value = value_to_string(value);
+  std::strncpy(data_+cur_buffer_index_,string_value.c_str(),string_value.length());
+  cur_buffer_index_ += string_value.length();
+
+  data_[cur_buffer_index_++] = '\r';
+  data_[cur_buffer_index_++] = '\n';
+
+  return true;
+}
 /** Get access to buffer for sending.
  * This implies packing. Note that after calling this methods later
  * modifications to the message will be ignored. The buffer is invalidated

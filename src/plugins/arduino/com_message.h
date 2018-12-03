@@ -45,12 +45,40 @@ class ArduinoComMessage
     {command_id_t::CMD_GOTO_LINEAR, "G01"},
   };
 
+  enum class setting_type {
+    SET_BOOL,
+    SET_INT,
+    SET_FLOAT
+  };
+
+  enum class setting_id_t : unsigned short {
+    //TODO yet to do
+  };
+
+  const std::map<setting_id_t,setting_type> setting_map {
+    //TODO fill this
+  };
+
 
   ArduinoComMessage();
   ~ArduinoComMessage();
   ArduinoComMessage(command_id_t cmdid, const std::map<char,float>& coordinates);
 
   bool add_command(command_id_t cmd, const std::map<char, float>& coordinates);
+  template<class T> bool add_setting(setting_id_t setting, T value);
+
+  static inline bool check_type(setting_type type, bool value)
+  {
+    return type==setting_type::SET_BOOL;
+  }
+  static inline bool check_type(setting_type type, float value)
+  {
+    return type==setting_type::SET_FLOAT;
+  }
+  static inline bool check_type(setting_type type, unsigned int value)
+  {
+    return type==setting_type::SET_INT;
+  }
 
   unsigned short get_data_size();
   unsigned short get_cur_buffer_index();
