@@ -63,6 +63,7 @@ class ArduinoComMessage
   ArduinoComMessage();
   ~ArduinoComMessage();
   ArduinoComMessage(command_id_t cmdid, const std::map<char,float>& coordinates);
+  template<class T> ArduinoComMessage(setting_id_t cmdid, T value);
 
   bool add_command(command_id_t cmd, const std::map<char, float>& coordinates);
   template<class T> bool add_setting(setting_id_t setting, T value);
