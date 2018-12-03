@@ -120,7 +120,6 @@ ArduinoComMessage::ctor()
 bool
 ArduinoComMessage::add_command(command_id_t cmd, const std::map<char, float>& coordinates)
 {
-  // TODO: Test if "home" command also works if a "value" was accidentially appended!
   bool valid_command = false;
 
   if (command_map.count(cmd)>0) // The command key exists
