@@ -178,9 +178,6 @@ ArduinoComMessage::add_command(command_id_t cmd, unsigned int value)
 boost::asio::const_buffer
 ArduinoComMessage::buffer()
 {
-  // Add terminator character to the end
-  data_[data_size_ - 1] = '+';
-
 #ifdef DEBUG
   std::cout << "Buffer: ";
 //  printf("Buffer: ");
