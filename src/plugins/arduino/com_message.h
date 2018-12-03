@@ -24,6 +24,8 @@
 
 #include <cstdint>
 #include <boost/asio.hpp>
+#include <sstream>
+#include <iomanip>
 
 class ArduinoComMessage
 {
@@ -54,6 +56,28 @@ class ArduinoComMessage
   unsigned int get_msecs();
 
   /**
+   * @brief Calculates the number of letters an boolean is represented for Grbl
+   *
+   * @param b The boolean of which the number of letters should be calculated
+   *
+   * @return The amount of letters b is represented by
+   */
+  static inline unsigned short num_digits(bool b)
+  {
+    return 1;
+  }
+  /**
+   * @brief Calculates the number of digits a float consists of
+   *
+   * @param f The number of which the number of digits should be calculated
+   *
+   * @return The amount of digits f consists of
+   */
+  static unsigned short num_digits(float f)
+  {
+    return value_to_string(f).length();
+  }
+  /**
    * @brief Calculates the number of digits an integer consists of
    *
    * @param i The number of which the number of digits should be calculated
@@ -64,6 +88,22 @@ class ArduinoComMessage
   {
       return i > 0 ? (int) log10 ((double) i) + 1 : 1;
   }
+
+  static std::string value_to_string(bool b)
+  {
+    return b?"1":"0";
+  }
+  static std::string value_to_string(float f)
+  {
+    std::stringstream result_stream;
+    result_stream << std::fixed << std::setprecision(1) << f;
+    return result_stream.str();
+  }
+  static std::string value_to_string(unsigned int i)
+  {
+    return std::to_string(i);
+  }
+
 
  private:
   void ctor();
