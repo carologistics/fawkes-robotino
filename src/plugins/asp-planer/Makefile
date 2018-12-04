@@ -16,6 +16,7 @@
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/boost.mk
+include $(FAWKES_BASEDIR)/src/plugins/asp/clingo.mk
 
 LIBS_asp_planer = fawkescore fawkesaspaspect fawkesaspects fawkesrobotmemory fawkesnavgraphaspect
 OBJS_asp_planer = asp_planer_plugin.o asp_planer_thread.o asp_planer_clingo.o asp_planer_plan.o\
@@ -25,16 +26,6 @@ OBJS_all = $(OBJS_asp_planer)
 
 REQ_BOOST_LIBS = 
 HAVE_BOOST_LIBS = $(call boost-have-libs,$(REQ_BOOST_LIBS))
-
-#TODO: export this in .mk and really check
-HAVE_CLINGO = 1
-CFLAGS_CLINGO = -DWITH_THREADS=1 \
-	-I /opt/clingo/libclasp \
-	-I /opt/clingo/libclingo \
-	-I /opt/clingo/libgringo \
-	-I /opt/clingo/liblp \
-	-I /opt/clingo/libprogram_opts
-LDFLAGS_CLINGO = -L/opt/clingo/build/bin/ -Wl,-rpath=/opt/clingo/build/bin/ -lclingo
 
 ifeq ($(HAVE_CPP14)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS),111)
   CFLAGS  += $(CFLAGS_CPP14) \
@@ -47,13 +38,13 @@ ifeq ($(HAVE_CPP14)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS),111)
   PLUGINS_all = $(PLUGINDIR)/asp-planer.$(SOEXT)
 else
   ifneq ($(HAVE_CPP14),1)
-	WARN_TARGETS += warning_cpp14
+		WARN_TARGETS += warning_cpp14
   endif
   ifneq ($(HAVE_CLINGO),1)
-	WARN_TARGETS += warning_clingo
+		WARN_TARGETS += warning_clingo
   endif
   ifneq ($(HAVE_BOOST_LIBS),1)
-	WARN_TARGETS_BOOST += $(foreach l,$(REQ_BOOST_LIBS),$(if $(call boost-have-lib,$l),, warning_boost_$l))
+		WARN_TARGETS_BOOST += $(foreach l,$(REQ_BOOST_LIBS),$(if $(call boost-have-lib,$l),, warning_boost_$l))
   endif
 endif
 
