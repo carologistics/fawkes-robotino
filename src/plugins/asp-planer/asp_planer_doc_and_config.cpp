@@ -508,7 +508,7 @@ AspPlanerThread::loadConfig(void)
 	std::strcpy(buffer + prefixLen, infixPlaner);
 
 	std::strcpy(suffix, "debug-level");
-	ClingoAcc->DebugLevel = static_cast<fawkes::ClingoAccess::DebugLevel_t>(config->get_int(buffer));
+	clingo->set_debug_level(static_cast<fawkes::ClingoAccess::DebugLevel_t>(config->get_int(buffer)));
 
 	std::strcpy(suffix, "max-orders");
 	MaxOrders = config->get_int(buffer);

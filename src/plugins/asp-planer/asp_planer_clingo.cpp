@@ -45,15 +45,16 @@ AspPlanerThread::initClingo(void)
 	navgraph->add_change_listener(this);
 	navgraphLocker.unlock();
 
-	MutexLocker locker(ClingoAcc.objmutex_ptr());
-	ClingoAcc->registerModelCallback(std::make_shared<std::function<bool(void)>>([this](void) { return newModel(); }));
-	ClingoAcc->registerFinishCallback(std::make_shared<std::function<void(Clingo::SolveResult)>>(
+	MutexLocker locker(clingo.objmutex_ptr());
+	clingo->register_model_callback(std::make_shared<std::function<bool(void)>>(
+	                                 [this](void) { return newModel(); }));
+	clingo->register_finish_callback(std::make_shared<std::function<void(Clingo::SolveResult)>>(
 		[this](const Clingo::SolveResult result)
 		{
 			solvingFinished(result);
 			return;
 		}));
-	ClingoAcc->setGroundCallback([this](auto... args) { this->groundFunctions(args...); return; });
+	clingo->set_ground_callback([this](auto... args) { this->groundFunctions(args...); return; });
 
 	constexpr auto infix = "planer/";
 	const auto prefixLen = std::strlen(ConfigPrefix);
@@ -72,16 +73,16 @@ AspPlanerThread::initClingo(void)
 	const auto threads = config->get_int(buffer);
 	std::strcpy(suffix, "use-splitting");
 	const auto splitting = config->get_bool(buffer);
-	ClingoAcc->setNumberOfThreads(threads, splitting);
+	clingo->set_num_threads(threads, splitting);
 
 	logger->log_info(LoggingComponent, "Loading program files from %s. Debug state: %d", path.c_str(),
-		ClingoAcc->DebugLevel.load());
+	                 clingo->debug_level());
 	for ( const auto& file : files )
 	{
-		ClingoAcc->loadFile(path + file);
+		clingo->load_file(path + file);
 	} //for ( const auto& file : files )
 
-	ClingoAcc->ground({{"base", {}}});
+	clingo->ground({{"base", {}}});
 
 	return;
 }
@@ -92,16 +93,16 @@ AspPlanerThread::initClingo(void)
 void
 AspPlanerThread::finalizeClingo(void)
 {
-	MutexLocker locker(ClingoAcc.objmutex_ptr());
-	if ( ClingoAcc->solving() )
+	MutexLocker locker(clingo.objmutex_ptr());
+	if ( clingo->solving() )
 	{
-		ClingoAcc->cancelSolving();
-		do //while ( ClingoAcc->solving() )
+		clingo->cancel_solving();
+		do //while ( clingo->solving() )
 		{
 			using namespace std::chrono_literals;
 			std::this_thread::sleep_for(20ms);
-		} while ( ClingoAcc->solving() );
-	} //if ( ClingoAcc->solving() )
+		} while ( clingo->solving() );
+	} //if ( clingo->solving() )
 	return;
 }
 
@@ -111,8 +112,8 @@ AspPlanerThread::finalizeClingo(void)
 void
 AspPlanerThread::loopClingo(void)
 {
-	MutexLocker aspLocker(ClingoAcc.objmutex_ptr());
-	//Locked: ClingoAcc
+	MutexLocker aspLocker(clingo.objmutex_ptr());
+	//Locked: clingo
 
 	if ( !ProgramGrounded )
 	{
@@ -123,27 +124,27 @@ AspPlanerThread::loopClingo(void)
 	const auto requests = GroundRequests.size() + ReleaseRequests.size() + AssignRequests.size();
 	reqLocker.unlock();
 
-	if ( ClingoAcc->solving() )
+	if ( clingo->solving() )
 	{
 		if ( shouldInterrupt() && !SentCancel )
 		{
 			logger->log_warn(LoggingComponent, "Cancel solving, new requests: %zu, interrupt level: %s, reason: %s",
 				requests, interruptString(Interrupt.load()), InterruptReason.load());
-			ClingoAcc->cancelSolving();
+			clingo->cancel_solving();
 			SentCancel = true;
 		} //if ( shouldInterrupt() && !SentCancel )
 		return;
-	} //if ( ClingoAcc->solving() )
+	} //if ( clingo->solving() )
 
 	MutexLocker navgraphLocker(&NavgraphDistanceMutex);
-	//Locked: ClingoAcc, NavgraphDistanceMutex
+	//Locked: clingo, NavgraphDistanceMutex
 	if ( UpdateNavgraphDistances )
 	{
 		const bool lastUpdate = NodesToFind.empty();
 		if ( lastUpdate )
 		{
 			MutexLocker worldLocker(&WorldMutex);
-			//Locked: ClingoAcc, NavgraphDistanceMutex, WorldMutex
+			//Locked: clingo, NavgraphDistanceMutex, WorldMutex
 			if ( ReceivedZonesToExplore )
 			{
 				for ( const auto& zone : ZonesToExplore )
@@ -160,16 +161,16 @@ AspPlanerThread::loopClingo(void)
 				} //for ( auto zone = 1; zone <= 24; ++zone )
 			} //else -> if ( ReceivedZonesToExplore )
 			navgraphLocker.unlock();
-			//Locked: ClingoAcc, WorldMutex
+			//Locked: clingo, WorldMutex
 			fillNavgraphNodesForASP(false);
 			navgraphLocker.relock();
-			//Locked: ClingoAcc, WorldMutex, NavgraphDistanceMutex
+			//Locked: clingo, WorldMutex, NavgraphDistanceMutex
 		} //if ( lastUpdate )
-		//Locked: ClingoAcc, NavgraphDistanceMutex
+		//Locked: clingo, NavgraphDistanceMutex
 
 		for ( const auto& external : NavgraphDistances )
 		{
-			ClingoAcc->assign_external(external, false);
+			clingo->assign_external(external, false);
 		} //for ( const auto& external : NavgraphDistances )
 
 		updateNavgraphDistances();
@@ -209,21 +210,21 @@ AspPlanerThread::loopClingo(void)
 		{
 			for ( const auto& external : NavgraphDistances )
 			{
-				ClingoAcc->assign_external(external, true);
+				clingo->assign_external(external, true);
 			} //for ( const auto& external : NavgraphDistances )
 		} //else -> if ( lastUpdate )
 	} //if ( UpdateNavgraphDistances )
 	else if ( requests == 0 && Interrupt == InterruptSolving::Not )
 	{
 		MutexLocker solvingLocker(&SolvingMutex);
-		//Locked: ClingoAcc, NavgraphDistanceMutex, SolvingMutex
+		//Locked: clingo, NavgraphDistanceMutex, SolvingMutex
 		if ( Clock::now() - SolvingStarted < std::chrono::seconds(15) )
 		{
 			//Nothing to do and last solving happened within the last fifteen seconds.
 			return;
 		} //if ( Clock::now() - SolvingStarted < std::chrono::seconds(15) )
 		MutexLocker worldLocker(&WorldMutex);
-		//Locked: ClingoAcc, NavgraphDistanceMutex, SolvingMutex, WorldMutex
+		//Locked: clingo, NavgraphDistanceMutex, SolvingMutex, WorldMutex
 		if ( StartSolvingGameTime == GameTime )
 		{
 			//Nothing to do and the time hasn't advanced. (Game is paused or still in setup.)
@@ -231,7 +232,7 @@ AspPlanerThread::loopClingo(void)
 		} //if ( StartSolvingGameTime == GameTime )
 	} //else if ( requests == 0 && Interrupt == InterruptSolving::Not )
 	navgraphLocker.unlock();
-	//Locked: ClingoAcc
+	//Locked: clingo
 
 	SentCancel = false;
 	Interrupt = InterruptSolving::Not;
@@ -241,7 +242,7 @@ AspPlanerThread::loopClingo(void)
 
 	for ( const auto& external : externals )
 	{
-		ClingoAcc->assign_external(external, false);
+		clingo->assign_external(external, false);
 	} //for ( const auto& external : externals )
 
 	externals.clear();
@@ -255,10 +256,10 @@ AspPlanerThread::loopClingo(void)
 		return;
 	} //if ( GameTime == -1 )
 
-	//Locked: ClingoAcc, WorldMutex
+	//Locked: clingo, WorldMutex
 	auto addExternal = [this](Clingo::Symbol&& external)
 		{
-			ClingoAcc->assign_external(external, true);
+			clingo->assign_external(external, true);
 			externals.push_back(std::move(external));
 			return;
 		};
@@ -270,7 +271,7 @@ AspPlanerThread::loopClingo(void)
 	{
 		const auto& name(pair.first);
 		const auto& robot(pair.second);
-		ClingoAcc->assign_external(robot.AliveExternal, robot.Alive);
+		clingo->assign_external(robot.AliveExternal, robot.Alive);
 
 		if ( !robot.Alive )
 		{
@@ -371,16 +372,16 @@ AspPlanerThread::loopClingo(void)
 		} //if ( !product.Cap.empty() )
 	} //for ( auto index = 0; index < static_cast<int>(Products.size()); ++index )
 	worldLocker.unlock();
-	//Locked: ClingoAcc
+	//Locked: clingo
 
 	reqLocker.relock();
-	//Locked: ClingoAcc, RequestMutex
+	//Locked: clingo, RequestMutex
 	//Copy the requests to release the lock especially before grounding!
 	auto groundRequests(std::move(GroundRequests));
 	auto releaseRequests(std::move(ReleaseRequests));
 	auto assignRequests(std::move(AssignRequests));
 	reqLocker.unlock();
-	//Locked: ClingoAcc
+	//Locked: clingo
 
 	if ( !groundRequests.empty() )
 	{
@@ -390,22 +391,22 @@ AspPlanerThread::loopClingo(void)
 		{
 			parts.emplace_back(request.first, request.second);
 		} //for ( const auto& request : groundRequests )
-		ClingoAcc->ground(parts);
+		clingo->ground(parts);
 	} //if ( !groundRequests.empty() )
 
 	for ( const auto& atom : releaseRequests )
 	{
-		ClingoAcc->release_external(atom);
+		clingo->release_external(atom);
 	} //for ( const auto& atom : releaseRequests )
 
 	for ( const auto& atom : assignRequests )
 	{
-		ClingoAcc->assign_external(atom, true);
+		clingo->assign_external(atom, true);
 	} //for ( const auto& atom : assignRequests )
 
 	MutexLocker solvingLokcer(&SolvingMutex);
 	worldLocker.relock();
-	//Locked: ClingoAcc, SolvingMutex, WorldMutex
+	//Locked: clingo, SolvingMutex, WorldMutex
 
 	auto currentTimeExternal = [](const int time)
 		{
@@ -415,29 +416,29 @@ AspPlanerThread::loopClingo(void)
 	if ( GameTime >= ExplorationTime && !ProductionStarted )
 	{
 		ProductionStarted = true;
-		ClingoAcc->ground({{"startProduction", {}}});
-		ClingoAcc->release_external(Clingo::Id("productionStarted"));
+		clingo->ground({{"startProduction", {}}});
+		clingo->release_external(Clingo::Id("productionStarted"));
 	} //if ( GameTime >= ExplorationTime && !ProductionStarted )
 
 	const auto aspGameTime = realGameTimeToAspGameTime(GameTime);
 	for ( auto gt = realGameTimeToAspGameTime(StartSolvingGameTime); gt < aspGameTime; ++gt )
 	{
-		ClingoAcc->release_external(currentTimeExternal(gt));
+		clingo->release_external(currentTimeExternal(gt));
 	} //for ( auto gt = realGameTimeToAspGameTime(StartSolvingGameTime); gt < aspGameTime; ++gt )
 	StartSolvingGameTime = GameTime;
 	worldLocker.unlock();
-	//Locked: ClingoAcc, SolvingMutex
-	ClingoAcc->assign_external(currentTimeExternal(aspGameTime), true);
+	//Locked: clingo, SolvingMutex
+	clingo->assign_external(currentTimeExternal(aspGameTime), true);
 	MutexLocker planLocker(&PlanMutex);
-	//Locked: ClingoAcc, SolvingMutex, PlanMutex
+	//Locked: clingo, SolvingMutex, PlanMutex
 	for ( auto& robotPlan : Plan )
 	{
 		robotPlan.second.FirstNotDoneOnSolveStart = robotPlan.second.FirstNotDone;
 	} //for ( auto& robotPlan : Plan )
 	planLocker.unlock();
-	//Locked: ClingoAcc, SolvingMutex
+	//Locked: clingo, SolvingMutex
 	SolvingStarted = Clock::now();
-	ClingoAcc->startSolving();
+	clingo->start_solving();
 	return;
 }
 
@@ -587,9 +588,9 @@ AspPlanerThread::shouldInterrupt(void)
 bool
 AspPlanerThread::newModel(void)
 {
-	MutexLocker aspLocker(ClingoAcc.objmutex_ptr());
+	MutexLocker aspLocker(clingo.objmutex_ptr());
 	MutexLocker locker(&SolvingMutex);
-	Symbols = ClingoAcc->modelSymbols();
+	Symbols = clingo->model_symbols();
 	NewSymbols = true;
 	LastModel = Clock::now();
 	return true;
@@ -626,7 +627,7 @@ void
 AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, const Clingo::SymbolSpan& arguments,
 		Clingo::SymbolSpanCallback& retFunction)
 {
-	if ( ClingoAcc->DebugLevel >= fawkes::ClingoAccess::All )
+	if (clingo->debug_level() >= fawkes::ClingoAccess::ASP_DBG_ALL)
 	{
 		std::stringstream functionCall;
 		functionCall<<name<<'(';
@@ -640,7 +641,7 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 
 		const auto functionCallStr(functionCall.str());
 		logger->log_warn(LoggingComponent, "Called %s.", functionCallStr.c_str());
-	} //if ( ClingoAcc->DebugLevel >= fawkes::ClingoAccess::All )
+	}
 
 	string_view view(name);
 
@@ -802,8 +803,8 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
 void
 AspPlanerThread::setTeam(void)
 {
-	MutexLocker aspLocker(ClingoAcc.objmutex_ptr());
-	ClingoAcc->ground({{"ourTeam", {Clingo::String(TeamColor)}}});
+	MutexLocker aspLocker(clingo.objmutex_ptr());
+	clingo->ground({{"ourTeam", {Clingo::String(TeamColor)}}});
 	ProgramGrounded = true;
 
 	fillNavgraphNodesForASP(true);
