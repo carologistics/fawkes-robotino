@@ -177,7 +177,7 @@
   (goal (id ?goal-id) (mode DISPATCHED))
   (test (neq ?goal-id BEACONACHIEVE))
   (not (pending-timer (plan-id ?plan-id) (action-id ?id) (status ?status)))
-  (time $?now)
+  (wm-fact (key refbox game-time) (value $?now))
   ;Maybe check for a DOWNED mps here?
   =>
   (bind ?sec (+ (nth$ 1 ?now) ?*COMMON-TIMEOUT-DURATION*))
@@ -194,7 +194,7 @@
   (goal (id ?goal-id) (mode DISPATCHED))
   (wm-fact (key game state) (value RUNNING))
   ?pt <- (pending-timer (plan-id ?plan-id) (status ?status) (action-id ?id) (timeout-time $?timeout))
-  (time $?now)
+  (wm-fact (key refbox game-time) (value $?now))
   (test (and (> (nth$ 1 ?now) (nth$ 1 ?timeout)) (> (nth$ 2 ?now) (nth$ 2 ?timeout))))
   =>
   (printout t "Action "  ?action-name " timedout after " ?status  crlf)
