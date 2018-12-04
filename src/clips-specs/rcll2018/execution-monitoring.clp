@@ -1,5 +1,5 @@
 ;A timeout for an action
-(deftemplate pending-timer
+(deftemplate action-timer
   (slot plan-id (type SYMBOL))
   (slot action-id(type NUMBER))
   (multislot timeout-time)
@@ -176,13 +176,13 @@
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
   (test (neq ?goal-id BEACONACHIEVE))
-  (not (pending-timer (plan-id ?plan-id) (action-id ?id) (status ?status)))
+  (not (action-timer (plan-id ?plan-id) (action-id ?id) (status ?status)))
   (wm-fact (key refbox game-time) (value $?now))
   ;Maybe check for a DOWNED mps here?
   =>
   (bind ?sec (+ (nth$ 1 ?now) ?*COMMON-TIMEOUT-DURATION*))
   (bind $?timeout (create$ ?sec (nth$ 2 ?now)))
-  (assert (pending-timer (plan-id ?plan-id) (action-id ?id) (timeout-time ?timeout) (status ?status) (start-time ?now)))
+  (assert (action-timer (plan-id ?plan-id) (action-id ?id) (timeout-time ?timeout) (status ?status) (start-time ?now)))
 )
 
 (defrule detect-timeout
@@ -193,7 +193,7 @@
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
   (wm-fact (key game state) (value RUNNING))
-  ?pt <- (pending-timer (plan-id ?plan-id) (status ?status) (action-id ?id) (timeout-time $?timeout))
+  ?pt <- (action-timer (plan-id ?plan-id) (status ?status) (action-id ?id) (timeout-time $?timeout))
   (wm-fact (key refbox game-time) (value $?now))
   (test (and (> (nth$ 1 ?now) (nth$ 1 ?timeout)) (> (nth$ 2 ?now) (nth$ 2 ?timeout))))
   =>
@@ -209,7 +209,7 @@
 	(param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
-  ?pt <- (pending-timer (plan-id ?plan-id) (action-id ?id) (status ?st& : (neq ?st ?status)) (timeout-time $?timeout))
+  ?pt <- (action-timer (plan-id ?plan-id) (action-id ?id) (status ?st& : (neq ?st ?status)) (timeout-time $?timeout))
   =>
   (retract ?pt)
 )
@@ -223,7 +223,7 @@
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
   (wm-fact (key domain fact mps-state args? m ?mps s ?s&~IDLE&~READY-AT-OUTPUT))
-  ?pt <- (pending-timer (plan-id ?plan-id) (action-id ?id) (start-time $?starttime) (timeout-time $?timeout))
+  ?pt <- (action-timer (plan-id ?plan-id) (action-id ?id) (start-time $?starttime) (timeout-time $?timeout))
   (test (< (nth$ 1 ?timeout) (+ (nth$ 1 ?starttime) ?*MPS-DOWN-TIMEOUT-DURATION* ?*COMMON-TIMEOUT-DURATION*)))
   =>
   (printout t "Detected that " ?mps " is " ?s " while " ?action-name " is waiting for it. Enhance timeout-timer" crlf)
