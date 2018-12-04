@@ -350,50 +350,6 @@
 )
 
 
-(defrule execution-monitoring-start-retry-action-wp-put-slide-cc
-  (declare (salience ?*MONITORING-SALIENCE*))
-  (goal (id ?goal-id) (mode DISPATCHED))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  ?pa <- (plan-action (action-name ?an&wp-put-slide-cc)
-              (plan-id ?plan-id)
-              (goal-id ?goal-id)
-              (state FAILED)
-              (param-values $? ?wp $? ?mps $?))
-  (domain-obj-is-of-type ?mps mps)
-  (domain-obj-is-of-type ?wp workpiece)
-  (wm-fact (key domain fact self args? r ?r))
-  (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)))
-  =>
-  (if (< 1 ?*MAX-RETRIES-PUT-SLIDE*) then
-    (modify ?pa (state PENDING))
-    (assert
-      (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value 1))
-    )
-  )
-)
-
-
-(defrule execution-monitoring-finish-retry-action-wp-put-slide-cc
-  (declare (salience ?*MONITORING-SALIENCE*))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
-  ?pa <- (plan-action
-              (action-name ?an&wp-put-slide-cc)
-              (plan-id ?plan-id)
-              (goal-id ?goal-id)
-              (state FAILED)
-              (param-values $? ?wp $? ?mps $?))
-  (domain-obj-is-of-type ?mps mps)
-  (domain-obj-is-of-type ?wp workpiece)
-  (wm-fact (key domain fact self args? r ?r))
-  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)
-          (value ?tries&:(< ?tries ?*MAX-RETRIES-PUT-SLIDE*)))
-  =>
-  (bind ?tries (+ 1 ?tries))
-  (modify ?pa (state PENDING))
-  (modify ?wm (value ?tries))
-)
-
 ;
 ;======================================Misc==============================
 ;
