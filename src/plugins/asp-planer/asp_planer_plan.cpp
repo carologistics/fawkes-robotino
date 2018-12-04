@@ -126,7 +126,10 @@ operator<(const IntermediatePlanElement& e1, const IntermediatePlanElement& e2)
  * @param[in] log Wrapper around the fawkes logger.
  */
 static inline void
-extractMapFromAnswerSet(const auto& symbols, auto& map, const int planGameTime, const auto& transform, const auto& log)
+extractMapFromAnswerSet(const Clingo::SymbolVector& symbols,
+                        std::unordered_map<std::string, std::vector<IntermediatePlanElement>>& map,
+                        const int planGameTime, const std::function<int(int)>& transform,
+                        fawkes::Logger *logger, const char *logging_component)
 {
 	for ( auto& pair : map )
 	{
@@ -162,7 +165,7 @@ extractMapFromAnswerSet(const auto& symbols, auto& map, const int planGameTime, 
 		return;
 	} //if ( !size )
 
-	log("Extracted plan size: %d Start GT: %d", size, planGameTime);
+	logger->log_info(logging_component, "Extracted plan size: %d Start GT: %d", size, planGameTime);
 	return;
 }
 
@@ -175,7 +178,10 @@ extractMapFromAnswerSet(const auto& symbols, auto& map, const int planGameTime, 
  * @param[in] log Wrapper around the fawkes logger.
  */
 static inline void
-assembleTemporaryPlan(auto& map, auto& tempPlan, const auto& plan, const auto& log)
+assembleTemporaryPlan(std::unordered_map<std::string, std::vector<IntermediatePlanElement>>& map,
+                      std::unordered_map<std::string, std::vector<BasicPlanElement>>& tempPlan,
+                      const std::unordered_map<std::string, RobotPlan>& plan,
+                      fawkes::Logger *logger, const char *logging_component)
 {
 	for ( auto& tempRobotPlan : tempPlan )
 	{
@@ -209,7 +215,7 @@ assembleTemporaryPlan(auto& map, auto& tempPlan, const auto& plan, const auto& l
 			} //for ( ; i < robotPlan.Tasks.size(); ++i )
 			iter->Begin = robotPlan.Tasks[i].Begin;
 
-			log("Plan element: (%s, %s, %d, %d)", robotNameCStr, iter->Task.c_str(), iter->Begin, iter->End);
+			logger->log_info(logging_component, "Plan element: (%s, %s, %d, %d)", robotNameCStr, iter->Task.c_str(), iter->Begin, iter->End);
 			robotTempPlan.emplace_back(std::move(*iter));
 			++iter;
 		} //if ( iter != end && iter->Begin == 0 )
@@ -224,7 +230,7 @@ assembleTemporaryPlan(auto& map, auto& tempPlan, const auto& plan, const auto& l
 				/* The task has only a begin time, i.e. it is started shortly before our lookahaed ends. So the end time
 				 * is out of the loohahaed. */
 
-				log("Plan element: (%s, %s, %d, 0)", robotNameCStr, iter->Task.c_str(), iter->Begin);
+				logger->log_info(logging_component, "Plan element: (%s, %s, %d, 0)", robotNameCStr, iter->Task.c_str(), iter->Begin);
 				robotTempPlan.emplace_back(BasicPlanElement{std::move(iter->Task), iter->Begin, 0});
 				break;
 			} //if ( next == end )
@@ -232,7 +238,7 @@ assembleTemporaryPlan(auto& map, auto& tempPlan, const auto& plan, const auto& l
 			assert(iter->Task == next->Task);
 			assert(next->Begin == 0);
 
-			log("Plan element: (%s, %s, %d, %d)", robotNameCStr, iter->Task.c_str(), iter->Begin, next->End);
+			logger->log_info(logging_component, "Plan element: (%s, %s, %d, %d)", robotNameCStr, iter->Task.c_str(), iter->Begin, next->End);
 			robotTempPlan.emplace_back(BasicPlanElement{std::move(iter->Task), iter->Begin, next->End});
 
 			iter += 2;
@@ -244,11 +250,11 @@ assembleTemporaryPlan(auto& map, auto& tempPlan, const auto& plan, const auto& l
 
 	if ( max == 0 )
 	{
-		log("No tasks in plan.");
+		logger->log_info(logging_component, "No tasks in plan.");
 	} //if ( max == 0 )
 	else
 	{
-		log("Min elements per robot: %zu, max: %zu", min, max);
+		logger->log_info(logging_component, "Min elements per robot: %zu, max: %zu", min, max);
 	} //else -> if ( max == 0 )
 	return;
 }
@@ -286,11 +292,10 @@ AspPlanerThread::loopPlan(void)
 	//Make this map static, so we do not release the needed memory everytime.
 	static std::unordered_map<std::string, std::vector<IntermediatePlanElement>> map;
 
-	auto logLambda = [this](const auto... args) { logger->log_info(LoggingComponent, args...); };
-
 	PlanGameTime = StartSolvingGameTime;
 	extractMapFromAnswerSet(Symbols, map, PlanGameTime,
-		[this](int gt) noexcept { return aspGameTimeToRealGameTime(gt); }, logLambda);
+	                        [this](int gt) noexcept { return aspGameTimeToRealGameTime(gt); },
+	                        logger, LoggingComponent);
 	NewSymbols = false;
 	solvingLocker.unlock();
 	LastPlan = Clock::now();
@@ -298,7 +303,7 @@ AspPlanerThread::loopPlan(void)
 	//Assemble a plan only based on the information from clingo.
 	static std::unordered_map<std::string, std::vector<BasicPlanElement>> tempPlan;
 
-	assembleTemporaryPlan(map, tempPlan, Plan, logLambda);
+	assembleTemporaryPlan(map, tempPlan, Plan, logger, LoggingComponent);
 
 	//Some helper functions to handle plan elements.
 	//If two plan elements refer to the same task.
