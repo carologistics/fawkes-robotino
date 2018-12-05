@@ -164,6 +164,7 @@ while true; do
 	     META_PLUGIN="-m gazsim-meta-clips-exec"
 	     ;;
 	 --asp)
+	     CONF="-c asp-planner"
 	     META_PLUGIN="-m asp-sim-2016"
 	     START_ASP_PLANER=true
 	     ;;
