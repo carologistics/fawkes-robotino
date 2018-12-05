@@ -164,11 +164,11 @@ while true; do
 	     META_PLUGIN="-m gazsim-meta-clips-exec"
 	     ;;
 	 --asp)
-	     META_PLUGIN="-m gazsim-meta-agent"
+	     META_PLUGIN="-m asp-sim-2016"
 	     START_ASP_PLANER=true
 	     ;;
 	 --asp-exec)
-	     META_PLUGIN="-m gazsim-meta-agent"
+	     META_PLUGIN="-m asp-sim-2016"
 	     ;;
 	 --asp-planer)
 	     START_ASP_PLANER=true
