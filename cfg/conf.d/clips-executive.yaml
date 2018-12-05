@@ -86,6 +86,7 @@ clips-executive:
           - name: navgraph
           - name: protobuf
           - name: tf
+          - name: smt
           - name: robmem-wait
             feature-request: false
             files: ["BATCH|robmem-wait-init.clp"]
