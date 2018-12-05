@@ -36,7 +36,7 @@ using namespace websocketpp;
 
 
 
-/** Class ProxySession "proxy_session.h"
+/** @class ProxySession "proxy_session.h"
  * An instance of ProxySession is created by RosBridgeProxyProcessor representing a WebSocket
  * session to the RosBridge Server.
  * Each ProxySession encapsulates the WebClientSession "WebSession" that issued a request 
@@ -74,7 +74,7 @@ ProxySession::~ProxySession()
  * ProxySession. Usually, this message is sent from RosBridge Server.
  * It forwards the payload of the WebSocket message (the RosBridge 
  * protocol JSON) to the client's "WebSession" the ProxySession tracks. 
- * @parem hdl websocketpp connection handler, a pointer used to identify this connection.
+ * @param hdl websocketpp connection handler, a pointer used to identify this connection.
  * @param msg a pointer to the WebSocket message sent 
 */
 void
@@ -94,10 +94,11 @@ ProxySession::on_message(websocketpp::connection_hdl hdl, websocketpp::client<we
 }
 
 
-/**Send A WebSocket message To RosBrirdge Server
- * @param msg the JSON string that will be in the payload of the WebSocket message.
+/** Send A WebSocket message To RosBrirdge Server.
+* @param msg the JSON string that will be in the payload of the WebSocket message.
+* @return true on succeeding
+* @todo catch exceptions and print in the log.
 */
-//TODO::catch exceptions and print in the log
 bool 
 ProxySession::send(std::string const & msg){
 
@@ -122,6 +123,9 @@ ProxySession::send(std::string const & msg){
 }
 
 
+/** Set internal session id.
+* @param id to set
+*/
 void
 ProxySession::set_id(int id)
 {
@@ -130,6 +134,9 @@ ProxySession::set_id(int id)
 }
 
 
+/** Set internal websocketpp connection handler
+* @param hdl websocket connection_hdl used to identify this session
+*/
 void
 ProxySession::set_connection_hdl(websocketpp::connection_hdl hdl)
 {
@@ -138,6 +145,9 @@ ProxySession::set_connection_hdl(websocketpp::connection_hdl hdl)
 }
 
 
+/** Set internal websocketpp endpoint
+* @param endpoint_ptr websocket endpoint
+*/
 void 
 ProxySession::set_endpoint(std::shared_ptr<Client> endpoint_ptr)
 {
@@ -146,6 +156,9 @@ ProxySession::set_endpoint(std::shared_ptr<Client> endpoint_ptr)
 }
 
 
+/** Set internal session status
+* @param status to set
+*/
 void
 ProxySession::set_status(std::string status)
 {
@@ -154,6 +167,9 @@ ProxySession::set_status(std::string status)
 }
 
 
+/** Get internal id
+* @return id of the session
+*/
 int 
 ProxySession::get_id()
 {
@@ -162,6 +178,9 @@ ProxySession::get_id()
 }
 
 
+/** Get internal session status
+* @return status string
+*/
 std::string 
 ProxySession::get_status()
 {
@@ -170,6 +189,9 @@ ProxySession::get_status()
 }
 
 
+/** Get internal websocketpp connection handler
+* @return the websocekctpp::connection_hdl of the session
+*/
 websocketpp::connection_hdl
 ProxySession::get_connection_hdl()
 {
@@ -178,6 +200,9 @@ ProxySession::get_connection_hdl()
 }
 
 
+/** Get the internal websession
+* @return websession ptr of the proxied session
+*/
 std::shared_ptr <WebSession>
 ProxySession::get_web_session()
 {
@@ -185,7 +210,8 @@ ProxySession::get_web_session()
     return web_session_;
 }
 
-
+/** set internal web session
+* @param web_session to register*/
 void 
 ProxySession::register_web_session( std::shared_ptr <WebSession> web_session )
 {
@@ -195,6 +221,7 @@ ProxySession::register_web_session( std::shared_ptr <WebSession> web_session )
 }
 
 
+/** unregister web session*/
 void
 ProxySession::unregister_web_session()
 {

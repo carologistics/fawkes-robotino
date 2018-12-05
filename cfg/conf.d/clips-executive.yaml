@@ -1,0 +1,194 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-executive
+---
+clips-executive:
+  # If true, will enable watching of facts and rules
+  debug:
+    enable: true
+    # debug level is a number of: 0 ~ none, 1 ~ minimal, 2 ~ more, 3 ~ maximum
+    level: 3
+
+    # If CLIPS debugging is enabled, certain rules and facts can be excluded
+    # from watching, e.g. if they are showing up at too high frequencies or
+    # are not of interest.
+    unwatch-facts: ["time"]
+    unwatch-rules: ["time-retract", "blackboard-read"]
+
+  # Currently not working in clips-executive!
+  #
+  # If true, simulate skills (assuming they always succeed) instead of
+  # actually executing the skills. The time indicates how long it should
+  # take to declare success on skill execution. Note that this cannot
+  # simulate side effects, like a called component writing to an interface
+  #skill-sim: true
+  #skill-sim-time: 2.0
+
+  # automatically pre-require redefine-warning feature? Enabling
+  # this in the plugin instead of in the initial code (init.clp) is
+  # beneficial because it already catches errors in said file.
+  request-redefine-warning-feature: true
+
+  # Automatically assert the (start) fact after successful initialization,
+  # otherwise wait until the an enable message has been received
+  # auto-start: true
+
+  # If set to true, will trigger the assertion of a (time (now)) fact in
+  # each loop. This can be used to trigger loop events in CLIPS.
+  assert-time-each-loop: true
+
+  # If set to true will force the acquisition of the skiller control.
+  # This is particularly useful to kick an SkillGUI which is holding
+  # the lock just due to an oversight.
+  steal-skiller-control: true
+
+  # Directory where to look for CLIPS files
+  clips-dirs: ["@BASEDIR@/src/clips-specs"]
+
+  # Agent name. On startup the clips-agent will try to resolve a file named
+  # <agent name>.clp. It must be in the CLIPS path directories.
+  spec: rcll2018
+
+  specs:
+    test:
+      domain: test-scenario/test-domain.clp
+      goal-reasoner: test-scenario/goal-reasoner.clp
+      goal-expander: test-scenario/fixed-sequence.clp
+      action-selection: test-scenario/action-selection.clp
+      #macro-expansion: test-scenario/action-selection.clp
+      action-execution: plan-exec.clp
+      execution-monitoring: test-scenario/execution-monitoring.clp
+
+      action-mapping:
+        say: say{text=?(text)s, wait=true}
+        say-hello: say{text="Hello ?(name)y", wait=true}
+        say-goodbye: say{text="Good bye", wait=true}
+    visitall:
+      domain: visit-all/visitall-domain.clp
+      goal-reasoner: visit-all/goal-reasoner.clp
+      goal-expander: visit-all/fixed-sequence.clp
+      action-selection: visit-all/action-selection.clp
+      #macro-expansion: visit-all/action-selection.clp
+      action-execution: plan-exec.clp
+      execution-monitoring: visit-all/execution-monitoring.clp
+      state-estimation: visit-all/state-estimation-init.clp
+
+      action-mapping:
+        visit: ppgoto{place=?(m)S}
+      blackboard-preload: ["Position3DInterface"]
+
+    rcll2018:
+      init:
+        stage-1:
+          - name: pddl-parser
+          - name: motor-switch
+          - name: navgraph
+          - name: protobuf
+          - name: tf
+          - name: robmem-wait
+            feature-request: false
+            files: ["BATCH|robmem-wait-init.clp"]
+            wait-for: robmem-initialized
+          - name: robot_memory
+        stage-3:
+          - name: utils
+            file: rcll2018/utils.clp
+          - name: coordination
+            file: coordination-mutex.clp
+          - name: state-estimation
+            file: rcll2018/state-estimation-init.clp
+          - name: worldmodel
+            files:
+              - wm-robmem-sync.clp
+              - rcll2018/init-wm-sync.clp
+              - rcll2018/init-worldmodel.clp
+              - rcll2018/game-worldmodel.clp
+          - name: communication
+            files: [ rcll2018/refbox-comm-init.clp,
+                     rcll2018/refbox-worldmodel.clp ]
+          - name: domain
+            file: rcll2018/domain.clp
+          - name: resource-locking
+            file: resource-locks.clp
+          - name: goal-reasoner
+            files:
+              - rcll2018/goal-reasoner.clp
+              - rcll2018/goal-production.clp
+              - rcll2018/exploration.clp
+          - name: goal-expander
+            file: rcll2018/fixed-sequence.clp
+          - name: action-selection
+            file: rcll2018/action-selection.clp
+          - name: action-execution
+            files:
+              - skills-actions.clp
+              - rcll2018/noop-actions.clp
+              - rcll2018/refbox-actions.clp
+              - rcll2018/lock-actions.clp
+              - rcll2018/wait-actions.clp
+          - name: execution-monitoring
+            file: rcll2018/execution-monitoring.clp
+
+      action-mapping:
+        enter-field: drive_into_field{team=?(team-color)S, wait=?(r|/R-1/0.0/|/R-2/10.0/|/R-3/20.0/)f}
+        explore-zone: explore_zone{zone=?(z)s}
+        move-node: goto{place=?(z)s}
+        move: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        move-wp-get: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        move-wp-put: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        go-wait: ppgoto{place="?(to)Y"}
+        wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
+        wp-put: bring_product_to{place=?(m)S}
+        wp-put-slide-cc: bring_product_to{place=?(m)S, slide="TRUE"}
+        wp-get: get_product_from{place=?(m)S, side=?(side|/INPUT/input/|/OUTPUT/output/)s}
+        wp-discard: ax12gripper{command="OPEN"}
+
+      blackboard-preload: ["Position3DInterface", "NavGraphWithMPSGeneratorInterface" , "NavGraphGeneratorInterface" , "NavigatorInterface", "AX12GripperInterface", "MotorInterface", "LaserLineInterface", "TagVisionInterface", "ZoneInterface" , "RobotinoSensorInterface" , "RobotinoLightInterface" ]
+
+      parameters:
+        rcll:
+        #real-world-setup:
+          peer-address: 172.26.255.255
+          peer-port: 4444
+          cyan-port: 4441
+          magenta-port: 4442
+
+
+          team-name: Carologistics
+          crypto-key: randomkey
+          cipher: "aes-128-cbc"
+
+          waitpoint-in-cyan: R-1
+          waitpoint-in-cyan: R-2
+          waitpoint-in-magenta: R-3
+
+          route:
+            CYAN:
+              R-1: ["exp-12", "exp-11", "exp-22"]
+              R-2: ["exp-22", "exp-23", "exp-31"]
+              R-3: ["exp-31", "exp-32", "exp-21"]
+            MAGENTA:
+              R-1: ["exp-11", "exp-12", "exp-21"]
+              R-2: ["exp-22", "exp-21", "exp-32"]
+              R-3: ["exp-32", "exp-31", "exp-22"]
+
+          exploration:
+            # Reduce navigator velocity while traveling the field so we can find laser-lines more reliably
+            max-velocity: 0.4
+            max-rotation: 0.5
+            # Center of a laser-line must be this far from the zone border before we start
+            # investigating it further (i.e. call the explore_zone skill on it)
+
+            zone-margin: 0.15
+            latest-send-last-report-time: 210 # =3:30
+
+          max-velocity: 1.0
+          max-rotation: 1.0
+          master: R-2
+
+          waitpoint-in-cyan: R-1
+          waitpoint-in-cyan: R-2
+          waitpoint-in-magenta: R-3
+          allowed-complexities: ["C0" , "C1"]
+          exclusive-complexities: ["C2" , "C3"]

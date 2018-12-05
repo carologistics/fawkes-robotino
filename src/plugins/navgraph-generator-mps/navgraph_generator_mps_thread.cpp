@@ -116,6 +116,7 @@ NavGraphGeneratorMPSThread::init()
 
   cfg_map_min_dist_      = config->get_float("/navgraph-generator-mps/map-cell-min-dist");
   cfg_map_point_max_dist_= config->get_float("/navgraph-generator-mps/map-point-max-dist");
+  cfg_num_wait_zones_    = size_t(config->get_uint("/navgraph-generator-mps/num-wait-zones"));
 
   std::string algorithm  = config->get_string("/navgraph-generator-mps/algorithm");
   if (algorithm == "voronoi") {
@@ -214,7 +215,51 @@ NavGraphGeneratorMPSThread::loop()
       }
 
     } else if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::GenerateWaitZonesMessage>() ) {
-      generate_wait_zones(5);
+      wait_zones_.clear();
+      std::vector<Eigen::Vector2i> blocked_zones;
+      for (auto &entry : stations_) {
+        blocked_zones.push_back(entry.second.zone);
+        blocked_zones.insert(blocked_zones.end(),
+                             entry.second.blocked_zones.begin(),
+                             entry.second.blocked_zones.end());
+      }
+
+      std::vector<Eigen::Vector2i> free_zones_left, free_zones_right;
+
+      int x_min, x_max, y_min, y_max;
+      if (cfg_bounding_box_p1_.x() < cfg_bounding_box_p2_.x()) {
+        x_min = int(cfg_bounding_box_p1_.x());
+        x_max = int(cfg_bounding_box_p2_.x());
+      } else {
+        x_min = int(cfg_bounding_box_p2_.x());
+        x_max = int(cfg_bounding_box_p1_.x());
+      }
+      if (cfg_bounding_box_p1_.y() < cfg_bounding_box_p2_.y()) {
+        y_min = int(cfg_bounding_box_p1_.y());
+        y_max = int(cfg_bounding_box_p2_.y());
+      } else {
+        y_min = int(cfg_bounding_box_p2_.y());
+        y_max = int(cfg_bounding_box_p1_.y());
+      }
+
+      for (int x = x_min; x <= x_max; ++x) {
+        for (int y = y_min; y <= y_max; ++y) {
+          if (x != 0 && y != 0) {
+            Eigen::Vector2i zn = {x, y};
+            if (std::find(reserved_zones_.begin(), reserved_zones_.end(), zn) == reserved_zones_.end()
+                && std::find(blocked_zones.begin(), blocked_zones.end(), zn) == blocked_zones.end()) {
+              // Zone is not reserved or blocked
+              if (x < 0)
+                free_zones_left.push_back(zn);
+              else
+                free_zones_right.push_back(zn);
+            }
+          }
+        }
+      }
+
+      generate_wait_zones(cfg_num_wait_zones_, free_zones_left);
+      generate_wait_zones(cfg_num_wait_zones_, free_zones_right);
     } else if ( navgen_mps_if_->msgq_first_is<NavGraphWithMPSGeneratorInterface::ComputeMessage>() ) {
       NavGraphWithMPSGeneratorInterface::ComputeMessage *m =
 	navgen_mps_if_->msgq_first<NavGraphWithMPSGeneratorInterface::ComputeMessage>();
@@ -232,53 +277,10 @@ NavGraphGeneratorMPSThread::loop()
 }
 
 
-void NavGraphGeneratorMPSThread::generate_wait_zones(int count)
+void NavGraphGeneratorMPSThread::generate_wait_zones(size_t count, std::vector<Eigen::Vector2i> &free_zones)
 {
-  wait_zones_.clear();
-  std::vector<Eigen::Vector2i> blocked_zones;
-  for (auto &entry : stations_) {
-    blocked_zones.push_back(entry.second.zone);
-    blocked_zones.insert(blocked_zones.end(),
-                         entry.second.blocked_zones.begin(),
-                         entry.second.blocked_zones.end());
-  }
-
-  std::vector<Eigen::Vector2i> free_zones;
-
-  int x_min, x_max, y_min, y_max;
-  if (cfg_bounding_box_p1_.x() < cfg_bounding_box_p2_.x()) {
-    x_min = int(cfg_bounding_box_p1_.x());
-    x_max = int(cfg_bounding_box_p2_.x());
-  } else {
-    x_min = int(cfg_bounding_box_p2_.x());
-    x_max = int(cfg_bounding_box_p1_.x());
-  }
-  if (cfg_bounding_box_p1_.y() < cfg_bounding_box_p2_.y()) {
-    y_min = int(cfg_bounding_box_p1_.y());
-    y_max = int(cfg_bounding_box_p2_.y());
-  } else {
-    y_min = int(cfg_bounding_box_p2_.y());
-    y_max = int(cfg_bounding_box_p1_.y());
-  }
-
-  for (int x = x_min; x <= x_max; ++x) {
-    for (int y = y_min; y <= y_max; ++y) {
-      if (x != 0 && y != 0) {
-        Eigen::Vector2i zn = {x, y};
-        if (std::find(reserved_zones_.begin(), reserved_zones_.end(), zn) == reserved_zones_.end()
-            && std::find(blocked_zones.begin(), blocked_zones.end(), zn) == blocked_zones.end()) {
-          // Zone is not reserved or blocked
-          free_zones.push_back(zn);
-        }
-      }
-    }
-  }
-
-  logger->log_info(name(), "Free zones: %zu", free_zones.size());
-
   std::sort(free_zones.begin(), free_zones.end(),
             [this] (const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) {
-    //double d_lhs_avg = 0, d_rhs_avg = 0;
     double d_lhs_min = std::numeric_limits<double>::max();
     double d_rhs_min = std::numeric_limits<double>::max();
     for (auto &entry : this->stations_) {
@@ -295,7 +297,7 @@ void NavGraphGeneratorMPSThread::generate_wait_zones(int count)
     return d_lhs_min > d_rhs_min;
   });
 
-  for (auto it = free_zones.begin(); it <= free_zones.begin() + count && it < free_zones.end(); ++it) {
+  for (auto it = free_zones.begin(); it < free_zones.begin() + count && it < free_zones.end(); ++it) {
     wait_zones_.push_back(*it);
   }
 }

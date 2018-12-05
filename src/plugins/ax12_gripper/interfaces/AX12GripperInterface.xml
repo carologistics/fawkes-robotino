@@ -24,6 +24,11 @@
     <constant type="uint32" value="8" name="ERROR_RIGHT_OUTOFRANGE">
       Desired right is out of range.
     </constant>
+    <enum name="SlapMode">
+      <comment>Either close the gripper only on the left or on the right side.</comment>
+      <item name="LEFT" value="0">Slap left</item>
+      <item name="RIGHT" value="1">Slap right</item>
+    </enum>
   </constants>
   <data>
     <comment>
@@ -87,6 +92,12 @@
     <comment>Open gripper.</comment>
     <ref>offset</ref>
   </message>
+  <message name="ModifyOpeningAngleBy">
+    <comment>Modify opening angle only by a slight amount.</comment>
+    <field type="float" name="angle_difference">
+	    Angle by which to modify the opening angle of the gripper.
+    </field>
+  </message>
   <message name="RelGotoZ">
     <comment>Move the gripper to a desired Z Position relative to the current z position</comment>
     <field type="int32" name="rel_z">New z relative to the current z, in mm.</field>
@@ -147,5 +158,9 @@
   <message name="SetTorque">
     <comment>Set max servo's torque in a range of 0 - 1.</comment>
     <field type="float" name="torque">torque</field>
+  </message>
+  <message name="Slap">
+    <comment>Open the gripper and release the servo given in the 'side' field. Side is either "LEFT" or "RIGHT"</comment>
+    <field type="uint8" name="slapmode">Either 0 for left, 1 for right.</field>
   </message>
 </interface>

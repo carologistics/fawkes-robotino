@@ -2,10 +2,8 @@
 ;---------------------------------------------------------------------------
 ;  exploration.clp - Robotino agent for exploration phase
 ;
-;  Created: Fri Apr 26 18:38:18 2013 (Magdeburg)
-;  Copyright  2013  Frederik Zwilling
-;             2013  Alexander von Wirth 
-;             2013  Tim Niemueller [www.niemueller.de]
+;  Copyright  2017 Victor Mataré
+;
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
@@ -27,7 +25,6 @@
 )
 
 (defrule exp-start
-  "Set up the state. There are two rounds. In the first the robotino drives to each machine in a defined cycle. After the first round the robotino drives to unrecognized machines again."
   (phase EXPLORATION)
   ?st <- (exploration-start)
   (team-color ?team-color)
@@ -37,6 +34,7 @@
   (assert (state EXP_IDLE)
           (timer (name send-machine-reports))
           (navigator-default-vmax (velocity ?max-velocity) (rotation ?max-rotation))
+          (exp-repeated-search-limit 0)
   )
   (if (eq ?team-color nil) then
     (printout error "Ouch, starting exploration but I don't know my team color" crlf)
@@ -54,6 +52,7 @@
   (if (<= ?*EXP-ROUTE-IDX* (length$ ?route)) then
     (assert (exp-next-node (node (nth$ ?*EXP-ROUTE-IDX* ?route))))
   else
+    ; Currently unused
     (assert (exp-do-clusters))
   )
 )
@@ -262,11 +261,13 @@
   (not (lock (type GET) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))
   (not (lock (type ACCEPT) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?)))
 
-  ; A zone for which no lock was refused yet
+  ; An explorable zone for which no lock was refused yet
+  (exp-repeated-search-limit ?search-limit)
   (zone-exploration
     (name ?zn)
     (machine UNKNOWN)
     (line-visibility ?vh&:(> ?vh 0))
+    (times-searched ?ts&:(<= ?ts ?search-limit))
   )
   (not (lock (type REFUSE) (agent ?a&:(eq ?a ?*ROBOT-NAME*)) (resource ?zn)))
 
@@ -287,6 +288,24 @@
   (assert
     (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?zn))
   )
+)
+
+
+(defrule exp-increase-search-limit
+  (phase EXPLORATION)
+
+  ; There is an explorable zone...
+  (zone-exploration (machine UNKNOWN) (line-visibility ?vh&:(> ?vh 0)))
+
+  ; ... but no zone may be searched according to the repeated-search-limit
+  ?sl-f <- (exp-repeated-search-limit ?search-limit)
+  (not (zone-exploration
+    (machine UNKNOWN)
+    (line-visibility ?vh-tmp&:(> ?vh-tmp 0))
+    (times-searched ?ts&:(<= ?ts ?search-limit))
+  ))
+=>
+  (modify ?sl-f (+ ?search-limit 1))
 )
 
 
@@ -398,16 +417,16 @@
   ?skill-f <- (skill-done (name "explore_zone") (status ?status))
   ?exp-f <- (explore-zone-target (zone ?zn))
   (ZoneInterface (id "/explore-zone/info") (zone ?zn-str) (search_state ?s&:(neq ?s YES)))
-  ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (machine ?machine))
+  ?ze <- (zone-exploration (name ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (machine ?machine) (times-searched ?times-searched))
 =>
   (retract ?st-f ?skill-f ?exp-f)
   (if (eq ?status FINAL) then
     (printout error "BUG in explore_zone skill: Result is FINAL but no MPS was found.")
   )
   (if (and (eq ?s NO) (eq ?machine UNKNOWN)) then
-    (synced-modify ?ze machine NONE)
+    (synced-modify ?ze machine NONE times-searched (+ ?times-searched 1))
   else
-    (synced-modify ?ze line-visibility -1)
+    (synced-modify ?ze line-visibility 0 times-searched (+ ?times-searched 1))
   )
   (assert
     (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource (sym-cat ?zn-str)))

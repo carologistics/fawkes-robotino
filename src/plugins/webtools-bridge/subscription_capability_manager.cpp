@@ -123,6 +123,8 @@ SubscriptionCapabilityManager::finalize()
  * If the BridgeProcessor provides a SubscriptionCapability,this method registers the processor with a key indicating its prefix.
  * Each Processor has a unique prefix that will be included in the topic_name of the requests intended for this Processor.
  * Usually you do not need to call this method.
+ * @param processor
+ * @return true on sucess
  */
 bool
 SubscriptionCapabilityManager::register_processor(std::shared_ptr <BridgeProcessor> processor )
@@ -154,7 +156,7 @@ SubscriptionCapabilityManager::register_processor(std::shared_ptr <BridgeProcess
  * Then it forwards the extracted request parameters necessary for the operation and forwards 
  * them to the internal method that will process the operation. 
  * @param d The Dom object containing the deserialized JSON request
- * @param session The session that made the request and where the replies should be sent
+ * @param session that made the request and where the replies should be sent.
  */
 void
 SubscriptionCapabilityManager::handle_message(Document &d
@@ -425,6 +427,7 @@ SubscriptionCapabilityManager::unsubscribe	( std::string bridge_prefix
 
 }
 
+/** Publish periodically */
 //TODO:: this will be replaced with a more proper Publishing mechanism
 void 
 SubscriptionCapabilityManager::publish_loop()

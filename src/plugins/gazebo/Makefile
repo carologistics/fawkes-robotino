@@ -16,9 +16,11 @@
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 
-SUBDIRS	= gazsim-light-front gazsim-llsfrbcomm gazsim-puck-detection \
-	  gazsim-llsf-control gazsim-llsf-statistics \
-	  gazsim-machine-signal gazsim-gripper \
+PRESUBDIRS = msgs
+
+SUBDIRS	= gazsim-llsfrbcomm \
+	  gazsim-llsf-control \
+	  gazsim-gripper \
 	  gazsim-conveyor gazsim-tag-vision \
 	  gazsim-navgraph-generator
 

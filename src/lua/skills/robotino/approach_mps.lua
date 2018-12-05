@@ -89,7 +89,7 @@ function laser_lines_ready(self)
   if if_front_dist:visibility_history() > 0 and self.fsm.vars.ll_dist < 1.0 then
     return true
   else
-    printf("mps_approach failed: visibility history is %f, dist to object in front is %f. I don't drive with this visibility history or this far without collision avoidance", if_front_dist:visibility_history(), x_to_drive)
+    printf("mps_approach failed: visibility history is %f, dist to object in front is %f. I don't drive with this visibility history or this far without collision avoidance", if_front_dist:visibility_history(), self.fsm.vars.ll_dist)
   return false
   end
 end

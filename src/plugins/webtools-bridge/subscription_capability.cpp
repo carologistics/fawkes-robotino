@@ -65,21 +65,21 @@ using namespace fawkes;
  * How and when to use:. 
  * Derive this class and extend its virtual method to prescribe the following, WRT your domain: 
  * - Any details necessary for your Subscription to have access to the topic's data.
- * - Any details used to know when to publish (when Activated). 			[ In ::activate_impl() ]
- * - How to access a topic's data and serialize it, in order to publish . 	[ In ::serialize() ]
+ * - Any details used to know when to publish (when Activated). 			[ In activate_impl() ]
+ * - How to access a topic's data and serialize it, in order to publish . 	[ In serialize() ]
  * - When should the publish() be called.
  * I.e, when extending this class, add any details or include any objects necessary to access the topics 
  * data during publishing. The idea is that a Subscription should be self contained, It knows when it needs 
  * to publish, how to serialize the publish message, to which sessions the publishing should be done and 
  * with which publish rate. When extending this class you only have to take care of implementing how to 
  * serialize the topic's data and what triggers the publish() calls. The publishing itself is simply done
- * by calling ::publish(). It handles the publishing to each of the sessions assuming serialize() returns 
+ * by calling publish(). It handles the publishing to each of the sessions assuming serialize() returns
  * the correct JSON (look into the Rosbridge Protocol 'publish' msg and the exemplary serialize() 
  * implementation included here) 
  *
  * Which classes will use it:
  * To keep consistency with our approach. A Subscription should be created by a BridgeProcessor that provides 
- * SusbcriptionCapabilty. The Subscription instance is created within its ::subscribe() method. The subscribe()
+ * SusbcriptionCapabilty. The Subscription instance is created within its subscribe() method. The subscribe()
  * method is usually called by the handlers of SubscriptionCapbilityManager when they process a msg with "subscribe" 
  * opcode. After creation, the Subscription instance is then returned to the SubscriptionCapabilityManager, which
  * works on maintaining the book keeping of Subscriptions to different topics.
@@ -89,7 +89,7 @@ using namespace fawkes;
  * Subscription. Only ACTIVE subscriptions can publish to sessions or subsume other DORMANT Subscription
  * instances targeted to the same topic (for flattening for example, keeping only one instance per topic).
  * If you wish to do any procedures that are required before you can serialize or publish the topic's data,
- * it is a good approach to do them the implementation of the ::Activate_impl() virtual method. Activate_impl()
+ * it is a good approach to do them the implementation of the SActivate_impl() virtual method. Activate_impl()
  * will be called whenever the Subscription becomes active. Exemplary procedures to be done in Activate_impl(),
  * are registering for events listener relevant to topics changes, Or prescribing when the publish should be 
  * triggered.
@@ -110,6 +110,8 @@ using namespace fawkes;
 /** Constructor.
  * @param topic_name Full name of the topic, prefixed with the BridgeProcessor it targets
  * @param prefix the prefix that identifies the BridgeProcessor
+ * @param logger Fawkes logger
+ * @param clock Fawkes clock
  */
 Subscription::Subscription(std::string topic_name , std::string prefix ,  fawkes::Logger * logger , fawkes::Clock * clock)
 	:	active_status_(DORMANT)
@@ -122,6 +124,7 @@ Subscription::Subscription(std::string topic_name , std::string prefix ,  fawkes
 	__mutex=new fawkes::Mutex();
 }
 
+
 /** Destructor */
 Subscription::~Subscription()
 {
@@ -130,6 +133,8 @@ Subscription::~Subscription()
 	delete __mutex;
 }
 
+
+/** Finalize a subscription before terminating the instance. */
 void
 Subscription::finalize()
 {
@@ -190,6 +195,7 @@ Subscription::deactivate()
 }
 
 
+/** @return True when its an ACTIVE instance */
 bool
 Subscription::is_active()
 {
@@ -199,6 +205,7 @@ Subscription::is_active()
 
 /** Is the Subscription Empty ?
  * A subscription is empty if it has no sessions that own any requests.
+ * @return true if subscribtion has no sessions registered
 */
 bool
 Subscription::empty()
@@ -208,6 +215,7 @@ Subscription::empty()
 }
 
 
+/** @return topic name maintained by this advertisement instance */
 std::string
 Subscription::get_topic_name()
 {
@@ -215,6 +223,7 @@ Subscription::get_topic_name()
 }
 
 
+/** @return the processor prefix of that topic */
 std::string
 Subscription::get_processor_prefix()
 {
@@ -257,6 +266,7 @@ Subscription::deactivate_impl()
 {
 	//Override to extend behaviour
 }
+
 
 /**Subsumes a DORMANT Subscription instance into an ACTIVE one.
  * This is usually called when there is more than one Subscription instance for the same topic.
@@ -311,6 +321,7 @@ Subscription::subsume(std::shared_ptr <Subscription> dormant_subscription)
 }
 
 
+
 /** Add A Subscription Request to A Session
  * Each time a session requests to "subscribe" to the 
  * topic the Subscription is tracking, the parameters 
@@ -318,6 +329,12 @@ Subscription::subsume(std::shared_ptr <Subscription> dormant_subscription)
  * session. The request with the least Throttle_rate is always on the 
  * top of that listing.This should be called each time "subscribe" 
  * request is received to store the request parameters.
+ * @param id included in the JSON request
+ * @param compression included in the JSON request
+ * @param throttle_rate included in the JSON request
+ * @param queue_length included in the JSON request
+ * @param fragment_size included in the JSON request
+ * @param session the session requesting to advertise the topic maintained by this instance.
 */
 void
 Subscription::add_request( std::string id 		
@@ -369,7 +386,7 @@ Subscription::add_request( std::string id
  * This removes the request with the ID included in the "Unsubscribe" request. 
  * This should be called by each unsubscribe() operation.
  * @param subscription_id ID of the request to be removed
- * @param The requesting session 
+ * @param session that initiated the request
 */
 void
 Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSession> session)
@@ -405,12 +422,6 @@ Subscription::remove_request(std::string subscription_id, std::shared_ptr <WebSe
 }
 
 
-/** Call the callbacks of the Callable Objects 
- * By calling this method with an Event type all callbacks 
- * of Callabs registered to that event will be called.
- * Used to emulates signal emitting.
- * @param event_type what ever event you would like to signal (ex, TERMINATE)
-*/
 void
 Subscription::emitt_event(EventType event_type)
 {
@@ -424,11 +435,13 @@ Subscription::emitt_event(EventType event_type)
 
 
 
-/** Callback To Be Called On Events The Subscription Instance Is Resisted To
+/** Callback To Be Called On Events The Subscription Instance Is Registered To
  * Subscription implements Callable interface and is notified when a Session 
  * is terminated. It removes the session from its entries with all of its requests.  
+ * @param event_type of event responsible for this call
+ * @param event_emitter is a ptr to the instance that emitted that event
 */
-void 
+ void
 Subscription::callback(EventType event_type , std::shared_ptr<EventEmitter> event_emitter)
 {
 	//sub_list_mutex_->lock();
@@ -487,7 +500,9 @@ Subscription::callback(EventType event_type , std::shared_ptr<EventEmitter> even
 }
 
 
-
+/** Register the session to recive callbacks on emmited Termination Events
+* @param session
+*/
 void 
 Subscription::add_new_session(std::shared_ptr<WebSession> session)
 {
@@ -497,7 +512,9 @@ Subscription::add_new_session(std::shared_ptr<WebSession> session)
 }
 
 
-
+/** Unregister the session from receiving callbacks on emmited Termination Events
+* @param session
+*/
 void 
 Subscription::remove_session(std::shared_ptr<WebSession> session)
 {
@@ -507,7 +524,7 @@ Subscription::remove_session(std::shared_ptr<WebSession> session)
 }
 
 
-/* Publish A Topic Data To The Sessions.
+/** Publish A Topic Data To The Sessions.
  * This should be called whenever you want to publish.
  * Events that could trigger a publish, like a periodic clock 
  * or an event listener, should make calls to this method, in order to, perform 
@@ -574,17 +591,23 @@ Subscription::publish()
 }
 
 
-/**Serialize the Topic's Data in a "Publish" message
+/** Serialize the Topic's Data in a "Publish" message
 * This is a simple exemplary implementation of what the serialize should look like.
 * This has to be implemented and filled with the topic's data, depending on your domain,
-* to be used by ::publish(). in this example, we just constructs a publish message 
+* to be used by publish(). in this example, we just constructs a publish message
 * without any topic data in the msg field. Usually, msg field should contain a JSON 
 * that holds the topic data. This is the message that will be sent to sessions.
 * Add the topic data to the JSON in similar fashion.
 * This is called from the Publish method of the Subscription instance when a 
 * publish event is due (whenever that is).
+* @param op name of the operation according to rosbridge protocol
+* @param topic_name name of the topic to be serialized
+* @param id
+* @return the serialized json string
+*
+* @todo
+* Serialization could be moved later to a Protocol handling utility.
 */
-//TODO::Serialization could be moved later to a Protocol handling utility.
 std::string
 Subscription::serialize(std::string op
 						, std::string topic_name
@@ -622,7 +645,13 @@ Subscription::serialize(std::string op
 
 //-------------To be removed
 
-//TODO:replace by a lambda function
+/** compares throttle rate of tow requests
+* @param first
+* @param second
+* @return true if throttle rates of both requests is the same
+* @todo
+* replace by a lambda function
+*/
 bool
 Subscription::compare_throttle_rate(Request first, Request second)
 {

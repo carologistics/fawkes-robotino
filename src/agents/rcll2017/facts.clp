@@ -231,8 +231,8 @@
   (slot name (type SYMBOL) (allowed-symbols fill-cap produce-c0 produce-cx add-first-ring add-additional-ring deliver fill-rs discard-unknown exploration-catch-up clear-bs clear-cs clear-rs))
   (slot state (type SYMBOL) (allowed-symbols proposed asked rejected ordered running finished failed)
         (default proposed))
-  (slot priority (type INTEGER) (default 0))
-  ;a task consists of multiple steps
+  (slot priority (type INTEGER) (default 0))	  
+;a task consists of multiple steps
   (slot current-step (type INTEGER) (default 0))
   (multislot steps (type INTEGER)) ;in chronological order refers to the ids of the steps
 )
@@ -310,6 +310,11 @@
   (slot waitpoint (type SYMBOL))
 )
 
+(deftemplate place-needing-waitpoint
+  (slot name (type SYMBOL))
+  (multislot pos (type INTEGER))
+)
+
 (deftemplate puck-storage
   (slot name (type SYMBOL))
   (slot puck (type INTEGER) (default 0))
@@ -346,6 +351,19 @@
   (slot gate (type INTEGER) (allowed-values 1 2 3))
   (slot cs-operation (type SYMBOL) (allowed-symbols MOUNT_CAP RETRIEVE_CAP))
   (slot side (type SYMBOL) (allowed-symbols INPUT OUTPUT))
+)
+
+(deftemplate mps-reset
+ (slot machine (type SYMBOL) (allowed-symbols
+    C-BS C-CS1 C-CS2 C-RS1 C-RS2 C-DS C-SS
+    M-BS M-CS1 M-CS2 M-RS1 M-RS2 M-DS M-SS
+  ))
+ (multislot timer (type INTEGER) (cardinality 2 2) (default (create$ 0 0)))
+ ; lock that the robot needs before sending the instruction
+ ; (NONE for no needed lock)
+ (slot lock (type SYMBOL) (default NONE))
+ ;times sent
+ (slot seq (type INTEGER) (default 0))
 )
 
 (deftemplate exp-current-zone
@@ -578,4 +596,17 @@
   (mirror-orientation (cyan 225) (magenta 315))
   (mirror-orientation (cyan 270) (magenta 270))
   (mirror-orientation (cyan 315) (magenta 225))
+
+  (produce-complexity C0)
+  (produce-complexity C1)
+  (produce-complexity C2)
+  (produce-complexity C3)
+
+  (insertion-zone M-Z51)
+  (insertion-zone M-Z61)
+  (insertion-zone M-Z71)
+
+  (insertion-zone C-Z51)
+  (insertion-zone C-Z61)
+  (insertion-zone C-Z71)
 )

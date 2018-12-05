@@ -18,16 +18,13 @@ include $(BASEDIR)/etc/buildsys/config.mk
 
 SUBDIRS	= clips-motor-switch \
 	  voltagelogger \
-	  machine-signal \
 	  ax12_gripper \
 	  arduino \
       navgraph_broker \
 	  navgraph-generator-mps \
 	  conveyor_pose \
 	  gazebo \
-	  agent-monitor \
 	  marker_writer \
-	  conveyor_vision \
 	  motor-led \
 		laser_front_dist \
 		mps-laser-gen \
@@ -36,4 +33,4 @@ SUBDIRS	= clips-motor-switch \
 
 include $(BUILDSYSDIR)/rules.mk
 
-gazebo: ax12_gripper tag_vision machine-signal arduino
+gazebo: ax12_gripper tag_vision arduino

@@ -48,7 +48,7 @@ class BridgeManager
 
 		void incoming(std::string JsonMsg ,std::shared_ptr <WebSession> session);
 
-		bool deserialize(std::string jsonSt , rapidjson::Document &d);
+		bool deserialize(std::string jsonStr , rapidjson::Document &d);
 
 		bool register_operation_handler(std::string operation_name , std::shared_ptr <CapabilityManager> cpm);
 

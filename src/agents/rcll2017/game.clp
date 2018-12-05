@@ -14,6 +14,10 @@
   "Changes game state"
   ?cf <- (change-phase ?phase)
   ?pf <- (phase ?old)
+  (or
+    (change-phase ~PRODUCTION)
+    (waitpoints-done)
+  )
   =>
   (retract ?cf ?pf)
   (assert (phase ?phase))
@@ -59,7 +63,8 @@
   (time $?now)
   (pose (x ?px) (y ?py))
   (not (and
-    (active-robot (name ?name) (x ?x) (y ?y&:(and (< ?y 1) (< (abs ?x) (abs ?px)))))
+    (active-robot (name ?name) (x ?x&:(< (abs ?x) (abs ?px))) (y ?y))
+    (insertion-zone ?z&:(eq ?z (get-zone 0 (create$ ?x ?y))))
     (team-robot ?name)
   ))
   =>
@@ -160,7 +165,6 @@
   (declare (salience ?*PRIORITY-LOW*))
   (not (received-field-layout))
   ?msg <- (protobuf-msg (type "llsf_msgs.MachineInfo") (ptr ?p))
-  (phase PRODUCTION)
 =>
   (foreach ?machine (pb-field-list ?p "machines")
     (bind ?name (sym-cat (pb-field-value ?machine "name")))
@@ -187,12 +191,12 @@
           (mtype ?type)
         )
       )
+      (assert (received-field-layout))
     else
       (printout t "Received incomplete ground-truth from refbox. Machine: " ?name
         ", rot: " ?rot ", zone: " ?zone ", type: " ?type crlf)
     )
   )
-  (assert (received-field-layout))
   (retract ?msg)
 )
 

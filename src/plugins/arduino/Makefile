@@ -29,7 +29,10 @@ LIBS_arduino = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 		fawkesblackboard fawkesinterface ArduinoInterface \
                 JoystickInterface
 		
-OBJS_arduino = arduino_plugin.o com_thread.o com_message.o
+OBJS_arduino = arduino_plugin.o com_thread.o tf_thread.o com_message.o
+
+CFLAGS += $(CFLAGS_TF)
+LDFLAGS += $(LDFLAGS_TF)
 
 ifeq ($(HAVE_CPP11),1)
 
@@ -39,6 +42,18 @@ else
     WARN_TARGETS += warning_cpp11
   endif
 endif
+
+ifeq ($(HAVE_TF),1)
+
+  CFLAGS += $(CFLAGS_TF)
+  LDFLAGS += $(LDFLAGS_TF)
+
+else
+  ifneq ($(HAVE_TF),1)
+    WARN_TARGETS += warning_tf
+  endif
+endif
+
 
 OBJS_all = $(OBJS_arduino)
 PLUGINS_all = $(PLUGINDIR)/arduino.$(SOEXT)
@@ -50,6 +65,9 @@ all: $(WARN_TARGETS)
 .PHONY: warning_libudev warning_cpp11
 warning_cpp11:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TYELLOW)Omitting Arduino commnunication support$(TNORMAL) (C++11 support required)"
+warning_tf:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TYELLOW)Omitting Arduino commnunication support$(TNORMAL) (tf required)"
+
 endif
 
 

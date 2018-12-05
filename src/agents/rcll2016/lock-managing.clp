@@ -92,6 +92,7 @@
         (assert (lock-role SLAVE))
       )
   )
+  (pb-destroy ?p)
 )
 
 (defrule lock-getting-master
@@ -150,7 +151,6 @@
   (bind ?a (str-cat (pb-field-value ?p "agent")))
   (bind ?r (sym-cat (pb-field-value ?p "resource")))
   ;(printout t "Received lock message with type " ?type " of " ?r " from " ?a crlf)
-  (retract ?msg)
   (if (eq ?role MASTER)
     then
     (if (or (eq ?type GET) (eq ?type RELEASE)) then
@@ -177,6 +177,8 @@
       )
     )
   )
+  (retract ?msg)
+  (pb-destroy ?p)
 )
 
 (defrule lock-send-status-of-all-locks-to-slaves
@@ -217,6 +219,7 @@
     (assert (locked-resource (agent ?a) (resource ?r)))
   )
   (retract ?msg)
+  (pb-destroy ?p)
 )
 
 ;;;;;; accepting, releasing and refusing locks ;;;;;;;
@@ -456,4 +459,5 @@
   (wm-remove-incoming-by-agent (sym-cat ?agent))
 
   (retract ?msg)
+  (pb-destroy ?p)
 )
