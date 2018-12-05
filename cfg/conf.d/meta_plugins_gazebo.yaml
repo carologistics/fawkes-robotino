@@ -28,10 +28,11 @@ fawkes/meta_plugins:
     - navgraph-generator
     - navgraph-generator-mps
     - laser-lines
-    - ros-cmdvel
-    - ros-navigator
     - gazsim-vis-localization
     - skiller
+  gazsim-meta-robotino-ros-movebase:
+    - ros-cmdvel
+    - ros-navigator
   gazsim-meta-robotino-no-ros:
     - gazsim-meta-robotino
     - amcl
@@ -58,6 +59,8 @@ fawkes/meta_plugins:
   gazsim-meta-agent:
     - gazsim-meta-clips
   gazsim-meta-clips-exec:
+    - gazsim-meta-robotino-ros
+    - gazsim-meta-robotino-ros-movebase
     - m-clips
     - m-robot-memory
     - pddl-robot-memory
@@ -66,3 +69,25 @@ fawkes/meta_plugins:
     - clips-executive
     - clips-executive-rest-api
 
+  rcll-sim-2016:
+    - mps-laser-gen
+    - map-lasergen
+    - gazsim-navgraph-generator
+    - colli
+
+  asp-sim-2016:
+    - rcll-sim-2016
+    - gazsim-meta-agent
+
+  asp-planner-sim-2016:
+    - ros
+    - navgraph
+    - navgraph-generator
+    - navgraph-generator-mps
+    - static-transforms
+    - gazebo
+    - m-robot-memory
+    - m-clips
+    - clips-agent
+    - asp
+    - asp-planer
