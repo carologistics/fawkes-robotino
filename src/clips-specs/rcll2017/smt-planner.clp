@@ -476,10 +476,28 @@
 ;    - Add filter for R-1 for exogenous actions
 ;---------------------------------------------------------------------------
 
+(defrule production-add-plan-action-enter-field
+	; If wm-fact plan move is found assert the corresponding plan-action move
+	(wm-fact
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
+		(values enter-field ?action-specific-actor ?team-color)
+	)
+	=>
+	(assert
+		 (plan-action
+			(id ?next-step-id)
+			(plan-id ?plan-id)
+			(duration 4.0)
+			(action-name enter-field)
+			(param-names r team-color)
+			(param-values ?action-specific-actor ?team-color))
+	)
+)
+
 (defrule production-add-plan-action-move
 	; If wm-fact plan move is found assert the corresponding plan-action move
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values move ?action-specific-actor ?from ?from-side ?to ?to-side)
 	)
 	=>
@@ -498,7 +516,7 @@
 (defrule production-add-plan-action-wp-get-shelf
 	; If wm-fact plan wp-get-shelf is found assert the corresponding plan-action wp-get-shelf
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values wp-get-shelf ?action-specific-actor ?wp ?mps ?shelf)
 	)
 	=>
@@ -517,7 +535,7 @@
 (defrule production-add-plan-action-wp-get
 	; If wm-fact plan wp-get is found assert the corresponding plan-action wp-get
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values wp-get ?action-specific-actor ?wp ?mps ?side)
 	)
 	=>
@@ -536,7 +554,7 @@
 (defrule production-add-plan-action-wp-put
 	; If wm-fact plan wp-put is found assert the corresponding plan-action wp-put
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values wp-put ?action-specific-actor ?wp ?mps)
 	)
 	=>
@@ -555,7 +573,7 @@
 (defrule production-add-plan-action-wp-put-slide-cc
 	; If wm-fact plan wp-put-slide-cc is found assert the corresponding plan-action wp-put-slide-cc
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values wp-put-slide-cc ?action-specific-actor ?wp ?mps ?rs-before ?rs-after)
 	)
 	=>
@@ -574,7 +592,7 @@
 (defrule production-add-plan-action-wp-discard
 	; If wm-fact plan wp-discard is found assert the corresponding plan-action wp-discard
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values wp-discard ?action-specific-actor ?wp)
 	)
 	=>
@@ -593,7 +611,7 @@
 (defrule production-add-plan-action-prepare-bs
 	; If wm-fact plan prepare-bs is found assert the corresponding plan-action prepare-bs
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values prepare-bs ?mps ?side ?goal-base-color)
 	)
 	=>
@@ -612,7 +630,7 @@
 (defrule production-add-plan-action-bs-dispense
 	; If wm-fact plan bs-dispense is found assert the corresponding plan-action bs-dispense
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values bs-dispense ?mps ?side ?wp ?goal-base-color)
 	)
 	=>
@@ -631,7 +649,7 @@
 (defrule production-add-plan-action-prepare-ds
 	; If wm-fact plan prepare-ds is found assert the corresponding plan-action prepare-ds
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values prepare-ds ?mps ?gate)
 	)
 	=>
@@ -650,7 +668,7 @@
 (defrule production-add-plan-action-fulfill-order-c0
 	; If wm-fact plan fulfill-order-c0 is found assert the corresponding plan-action fulfill-order-c0
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values fulfill-order-c0 ?order-id ?wp ?mps ?gate ?base-color ?cap-color)
 	)
 	=>
@@ -669,7 +687,7 @@
 (defrule production-add-plan-action-fulfill-order-c1
 	; If wm-fact plan fulfill-order-c1 is found assert the corresponding plan-action fulfill-order-c1
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values fulfill-order-c1 ?order-id ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color)
 	)
 	=>
@@ -688,7 +706,7 @@
 (defrule production-add-plan-action-fulfill-order-c2
 	; If wm-fact plan fulfill-order-c2 is found assert the corresponding plan-action fulfill-order-c2
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values fulfill-order-c2 ?order-id ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color)
 	)
 	=>
@@ -707,7 +725,7 @@
 (defrule production-add-plan-action-fulfill-order-c3
 	; If wm-fact plan fulfill-order-c3 is found assert the corresponding plan-action fulfill-order-c3
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values fulfill-order-c3 ?order-id ?wp ?mps ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)
 	)
 	=>
@@ -726,7 +744,7 @@
 (defrule production-add-plan-action-prepare-cs
 	; If wm-fact plan prepare-cs is found assert the corresponding plan-action prepare-cs
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values prepare-cs ?mps ?operation)
 	)
 	=>
@@ -745,7 +763,7 @@
 (defrule production-add-plan-action-cs-retrieve-cap
 	; If wm-fact plan cs-retrieve-cap is found assert the corresponding plan-action cs-retrieve-cap
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values cs-retrieve-cap ?mps ?wp ?cap-color)
 	)
 	=>
@@ -764,7 +782,7 @@
 (defrule production-add-plan-action-cs-mount-cap
 	; If wm-fact plan cs-mount-cap is found assert the corresponding plan-action cs-mount-cap
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values cs-mount-cap ?mps ?wp ?cap-color)
 	)
 	=>
@@ -783,7 +801,7 @@
 (defrule production-add-plan-action-prepare-rs
 	; If wm-fact plan prepare-rs is found assert the corresponding plan-action prepare-rs
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values prepare-rs ?mps ?goal-ring-color ?rs-before ?rs-after ?r-req)
 	)
 	=>
@@ -802,7 +820,7 @@
 (defrule production-add-plan-action-rs-mount-ring1
 	; If wm-fact plan rs-mount-ring1 is found assert the corresponding plan-action rs-mount-ring1
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values rs-mount-ring1 ?mps ?wp ?ring-color ?rs-before ?rs-after ?r-req)
 	)
 	=>
@@ -821,7 +839,7 @@
 (defrule production-add-plan-action-rs-mount-ring2
 	; If wm-fact plan rs-mount-ring2 is found assert the corresponding plan-action rs-mount-ring2
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values rs-mount-ring2 ?mps ?wp ?ring-color ?col1 ?rs-before ?rs-after ?r-req)
 	)
 	=>
@@ -840,7 +858,7 @@
 (defrule production-add-plan-action-rs-mount-ring3
 	; If wm-fact plan rs-mount-ring3 is found assert the corresponding plan-action rs-mount-ring3
 	(wm-fact
-		(key plan ?plan-id ?goal-id ?next-step-id)
+		(key plan-action ?goal-id ?plan-id ?next-step-id action)
 		(values rs-mount-ring3 ?mps ?wp ?ring-color ?col1 ?col2 ?rs-before ?rs-after ?r-req)
 	)
 	=>
@@ -887,10 +905,30 @@
 	(bind ?from-side INPUT)
 
 	; Assert plan-action enter-field
+	; TODO Exchange R-1 by own id and add enterfield for other robots
 	(assert
-		 (plan-action (id 99) (plan-id ?plan-id) (duration 4.0)
-									(action-name enter-field)
-									(param-names r team-color) (param-values R-1 ?team-color))
+		(wm-fact
+			(key plan-action ?goal-id ?plan-id (string-to-field "99") action)
+			(is-list TRUE)
+			(values enter-field R-1 ?team-color) 
+		)
+	)
+	(assert
+		(wm-fact
+			(key plan-action ?goal-id ?plan-id (string-to-field "99") dep)
+		)
+	)
+	(assert
+		(wm-fact
+			(key plan-action ?goal-id ?plan-id (string-to-field "99") status)
+			(value FORMULATED)
+		)
+	)
+	(assert
+		(wm-fact
+			(key plan-action ?goal-id ?plan-id (string-to-field "99") actor)
+			(value R-1)
+		)
 	)
 
 	; Extract actions inside ActorSpecificPlan -> SequentialPlan -> Actions
@@ -939,16 +977,28 @@
 
 						(assert
 							(wm-fact
-								(key plan ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
 								(values move ?action-specific-actor ?from ?from-side ?to ?to-side)
 							)
 						)
 						(assert
 							(wm-fact
-								(key plandep ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
-								(values ?parents-ids)
+								(values 99 ?parents-ids)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id status)
+								(value FORMULATED)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+								(value ?action-specific-actor)
 							)
 						)
 
@@ -996,16 +1046,28 @@
 
 						(assert
 							(wm-fact
-								(key plan ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
 								(values wp-get-shelf ?action-specific-actor ?wp ?mps ?shelf)
 							)
 						)
 						(assert
 							(wm-fact
-								(key plandep ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
 								(values ?parents-ids)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id status)
+								(value FORMULATED)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+								(value ?action-specific-actor)
 							)
 						)
 
@@ -1043,16 +1105,28 @@
 
 						(assert
 							(wm-fact
-								(key plan ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
 								(values wp-get ?action-specific-actor ?wp ?mps ?side)
 							)
 						)
 						(assert
 							(wm-fact
-								(key plandep ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
 								(values ?parents-ids)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id status)
+								(value FORMULATED)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+								(value ?action-specific-actor)
 							)
 						)
 
@@ -1096,16 +1170,28 @@
 
 						(assert
 							(wm-fact
-								(key plan ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
 								(values wp-put ?action-specific-actor ?wp ?mps)
 							)
 						)
 						(assert
 							(wm-fact
-								(key plandep ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
 								(values ?parents-ids)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id status)
+								(value FORMULATED)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+								(value ?action-specific-actor)
 							)
 						)
 
@@ -1159,16 +1245,28 @@
 
 						(assert
 							(wm-fact
-								(key plan ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
 								(values wp-put-slide-cc ?action-specific-actor ?wp ?mps ?rs-before ?rs-after)
 							)
 						)
 						(assert
 							(wm-fact
-								(key plandep ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
 								(values ?parents-ids)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id status)
+								(value FORMULATED)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+								(value ?action-specific-actor)
 							)
 						)
 
@@ -1198,16 +1296,28 @@
 
 						(assert
 							(wm-fact
-								(key plan ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
 								(values wp-discard ?action-specific-actor ?wp)
 							)
 						)
 						(assert
 							(wm-fact
-								(key plandep ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
 								(values ?parents-ids)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id status)
+								(value FORMULATED)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+								(value ?action-specific-actor)
 							)
 						)
 
@@ -1245,16 +1355,28 @@
 
 						(assert
 							(wm-fact
-								(key plan ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
 								(values prepare-bs ?mps ?side ?goal-base-color)
 							)
 						)
 						(assert
 							(wm-fact
-								(key plandep ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
 								(values ?parents-ids)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id status)
+								(value FORMULATED)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+								(value ?action-specific-actor)
 							)
 						)
 
@@ -1297,16 +1419,28 @@
 
 						(assert
 							(wm-fact
-								(key plan ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
 								(values bs-dispense ?mps ?side ?wp ?goal-base-color)
 							)
 						)
 						(assert
 							(wm-fact
-								(key plandep ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
 								(values ?parents-ids)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id status)
+								(value FORMULATED)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+								(value ?action-specific-actor)
 							)
 						)
 						(printout t "plan-action bs-dispense added: " ?action-specific-actor " [" ?action-id  "] with basecolor: " ?goal-base-color crlf)
@@ -1344,16 +1478,28 @@
 
 							(assert
 								(wm-fact
-									(key plan ?plan-id ?goal-id ?next-step-id)
+									(key plan-action ?goal-id ?plan-id ?next-step-id action)
 									(is-list TRUE)
 									(values prepare-ds ?mps (wm-key-arg ?wm-fact:key gate))
 								)
 							)
 							(assert
 								(wm-fact
-									(key plandep ?plan-id ?goal-id ?next-step-id)
+									(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 									(is-list TRUE)
 									(values ?parents-ids)
+								)
+							)
+							(assert
+								(wm-fact
+									(key plan-action ?goal-id ?plan-id ?next-step-id status)
+									(value FORMULATED)
+								)
+							)
+							(assert
+								(wm-fact
+									(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+									(value ?action-specific-actor)
 								)
 							)
 						)
@@ -1405,16 +1551,28 @@
 
 							(assert
 								(wm-fact
-									(key plan ?plan-id ?goal-id ?next-step-id)
+									(key plan-action ?goal-id ?plan-id ?next-step-id action)
 									(is-list TRUE)
 									(values fulfill-order-c0 ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color)
 								)
 							)
 							(assert
 								(wm-fact
-									(key plandep ?plan-id ?goal-id ?next-step-id)
+									(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 									(is-list TRUE)
 									(values ?parents-ids)
+								)
+							)
+							(assert
+								(wm-fact
+									(key plan-action ?goal-id ?plan-id ?next-step-id status)
+									(value FORMULATED)
+								)
+							)
+							(assert
+								(wm-fact
+									(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+									(value ?action-specific-actor)
 								)
 							)
 						)
@@ -1469,16 +1627,28 @@
 
 							(assert
 								(wm-fact
-									(key plan ?plan-id ?goal-id ?next-step-id)
+									(key plan-action ?goal-id ?plan-id ?next-step-id action)
 									(is-list TRUE)
 									(values fulfill-order-c1 ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color ?ring1-color)
 								)
 							)
 							(assert
 								(wm-fact
-									(key plandep ?plan-id ?goal-id ?next-step-id)
+									(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 									(is-list TRUE)
 									(values ?parents-ids)
+								)
+							)
+							(assert
+								(wm-fact
+									(key plan-action ?goal-id ?plan-id ?next-step-id status)
+									(value FORMULATED)
+								)
+							)
+							(assert
+								(wm-fact
+									(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+									(value ?action-specific-actor)
 								)
 							)
 						)
@@ -1538,16 +1708,28 @@
 
 							(assert
 								(wm-fact
-									(key plan ?plan-id ?goal-id ?next-step-id)
+									(key plan-action ?goal-id ?plan-id ?next-step-id action)
 									(is-list TRUE)
 									(values fulfill-order-c2 ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color ?ring1-color ?ring2-color)
 								)
 							)
 							(assert
 								(wm-fact
-									(key plandep ?plan-id ?goal-id ?next-step-id)
+									(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 									(is-list TRUE)
 									(values ?parents-ids)
+								)
+							)
+							(assert
+								(wm-fact
+									(key plan-action ?goal-id ?plan-id ?next-step-id status)
+									(value FORMULATED)
+								)
+							)
+							(assert
+								(wm-fact
+									(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+									(value ?action-specific-actor)
 								)
 							)
 						)
@@ -1613,16 +1795,28 @@
 
 							(assert
 								(wm-fact
-									(key plan ?plan-id ?goal-id ?next-step-id)
+									(key plan-action ?goal-id ?plan-id ?next-step-id action)
 									(is-list TRUE)
 									(values fulfill-order-c3 ?order-id ?wp ?mps (wm-key-arg ?wm-fact:key gate) ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)
 								)
 							)
 							(assert
 								(wm-fact
-									(key plandep ?plan-id ?goal-id ?next-step-id)
+									(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 									(is-list TRUE)
 									(values ?parents-ids)
+								)
+							)
+							(assert
+								(wm-fact
+									(key plan-action ?goal-id ?plan-id ?next-step-id status)
+									(value FORMULATED)
+								)
+							)
+							(assert
+								(wm-fact
+									(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+									(value ?action-specific-actor)
 								)
 							)
 						)
@@ -1660,16 +1854,28 @@
 
 						(assert
 							(wm-fact
-								(key plan ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
 								(values prepare-cs ?mps ?operation)
 							)
 						)
 						(assert
 							(wm-fact
-								(key plandep ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
 								(values ?parents-ids)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id status)
+								(value FORMULATED)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+								(value ?action-specific-actor)
 							)
 						)
 
@@ -1702,16 +1908,28 @@
 
 						(assert
 							(wm-fact
-								(key plan ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
 								(values cs-retrieve-cap ?mps ?wp ?cap-color)
 							)
 						)
 						(assert
 							(wm-fact
-								(key plandep ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
 								(values ?parents-ids)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id status)
+								(value FORMULATED)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+								(value ?action-specific-actor)
 							)
 						)
 
@@ -1749,16 +1967,28 @@
 
 						(assert
 							(wm-fact
-								(key plan ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
 								(values cs-mount-cap ?mps ?wp ?cap-color)
 							)
 						)
 						(assert
 							(wm-fact
-								(key plandep ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
 								(values ?parents-ids)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id status)
+								(value FORMULATED)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+								(value ?action-specific-actor)
 							)
 						)
 
@@ -1810,16 +2040,28 @@
 
 						(assert
 							(wm-fact
-								(key plan ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
 								(values prepare-rs ?mps ?goal-ring-color ?rs-before ?rs-after ?r-req)
 							)
 						)
 						(assert
 							(wm-fact
-								(key plandep ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
 								(values ?parents-ids)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id status)
+								(value FORMULATED)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+								(value ?action-specific-actor)
 							)
 						)
 
@@ -1872,16 +2114,28 @@
 
 						(assert
 							(wm-fact
-								(key plan ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
 								(values rs-mount-ring1 ?mps ?wp ?ring-color ?rs-before ?rs-after ?r-req)
 							)
 						)
 						(assert
 							(wm-fact
-								(key plandep ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
 								(values ?parents-ids)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id status)
+								(value FORMULATED)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+								(value ?action-specific-actor)
 							)
 						)
 
@@ -1939,16 +2193,28 @@
 
 						(assert
 							(wm-fact
-								(key plan ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
 								(values rs-mount-ring2 ?mps ?wp ?ring-color ?col1 ?rs-before ?rs-after ?r-req)
 							)
 						)
 						(assert
 							(wm-fact
-								(key plandep ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
 								(values ?parents-ids)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id status)
+								(value FORMULATED)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+								(value ?action-specific-actor)
 							)
 						)
 
@@ -2011,16 +2277,28 @@
 
 						(assert
 							(wm-fact
-								(key plan ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id action)
 								(is-list TRUE)
 								(values rs-mount-ring3 ?mps ?wp ?ring-color ?col1 ?col2 ?rs-before ?rs-after ?r-req)
 							)
 						)
 						(assert
 							(wm-fact
-								(key plandep ?plan-id ?goal-id ?next-step-id)
+								(key plan-action ?goal-id ?plan-id ?next-step-id dep)
 								(is-list TRUE)
 								(values ?parents-ids)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id status)
+								(value FORMULATED)
+							)
+						)
+						(assert
+							(wm-fact
+								(key plan-action ?goal-id ?plan-id ?next-step-id actor)
+								(value ?action-specific-actor)
 							)
 						)
 
