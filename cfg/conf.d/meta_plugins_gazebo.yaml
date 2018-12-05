@@ -68,5 +68,6 @@ fawkes/meta_plugins:
     - pddl-planner
     - clips-executive
   gazsim-meta-clips-smt:
-    - gazsim-meta-clips-exec
+    - m-clips
     - clips-smt
+    - gazsim-meta-clips-exec
