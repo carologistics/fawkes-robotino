@@ -26,9 +26,19 @@
 
 #include <string>
 
+/** @class BridgeProcessor
+* Abstract class, defines the core functionalities needed by a BridgeProcessor
+* Conceptually, a bridge processor contains domain specific implementations to
+* the capabilities it has.
+*
+* @author Mostafa Gomaa
+*/
 class BridgeProcessor{
 
 public:
+	/** Constructor
+	* @param prefix used to identity this processor and to rout requests to it.
+	*/
 	BridgeProcessor(std::string prefix)
 	:	prefix_(prefix)
 	,	initialized_(false)
@@ -36,8 +46,10 @@ public:
 	{
 	}
 	
+	/** Destructor */
 	virtual ~BridgeProcessor(){}
 
+	/** Initialize the BridgeProcessor instance. */
 	virtual void init()	
 	{
 		if(!initialized_)
@@ -46,6 +58,7 @@ public:
 		}
 	}
 
+	/** finalize the BridgeProcessor instance. */
 	virtual void finalize()	
 	{
 		if(!finalized_)
@@ -54,16 +67,18 @@ public:
 		}
 	}
 
-
+	/** Get the internal prefix identifying this BridgeProcessor
+	* @return the internal prefix that is used to identify this processor
+	*/
 	std::string get_prefix()
 	{
 		return prefix_;
 	}
 
 protected:
-	std::string prefix_;
-	bool initialized_;
-	bool finalized_;
+	std::string prefix_;					/**< Internal name of the bridge processor used as topics prefix to refer to this processor */
+	bool initialized_;						/**< Initialization status */
+	bool finalized_;						/**< Finalization status */
 
 };
 

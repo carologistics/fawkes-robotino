@@ -87,12 +87,16 @@ plugins/amcl:
   map-lasergen/origin_y: -1.1
 
 plugins/laser-filter:
-  robot-front/active: false
-  robot-back/active: false
+  front-downsample/active: false
+  front-360to360/active: false
+  filter-front-360/active: false
+  filter-front-1080/active: false
+  back-downsample/active: false
+  back-360to360/active: false
+  filter-back-360/active: false
+  filter-back-1080/active: false
   robot-merged/active: false
-  sick-downsample/active: false
   simulation/active: true
-  robot-front-1080/active: false
 
 laser-lines/input_cloud: urg-filtered
 
@@ -109,18 +113,27 @@ plugins/static-transforms:
       rot_roll: 0
     cam_conveyor:
       trans_z: -0.056
+    gazsim_gripper:
+      frame: !frame gripper_home
+      child_frame: !frame gripper
+      trans_x: 0.08
+      trans_y: 0.0
+      trans_z: 0.0
 
-plugins/mongodb/clients:
-  robotmemory-synced:
-    active: false
-  robotmemory-synced-sim:
-    active: true
-    mode: connection
-    hostport: localhost:27081
-      
-plugins/robot-memory:
-  setup:
-    mongo-client-connection-distributed: "robotmemory-synced-sim"
-    replicated:
-      replica-set-members:
-        - localhost:27021
+plugins/mongodb:
+  clients:
+    default/enabled: true
+    arbiter/enabled: false
+    robot-memory-distributed/hosts:
+      - localhost:27031
+    robot-memory-distributed-direct/hostport: localhost:27031
+  replica-sets:
+    bootstrap-mongodb/client: default
+    managed-sets:
+      robot-memory-distributed/hosts:
+        - localhost:27031
+  instances:
+    robot-memory-distributed:
+      port: 27031
+      data-path: /tmp/mongodb-robot-memory-distributed
+      log/path: /tmp/mongodb-robot-memory-distributed.log

@@ -43,7 +43,7 @@
   =>
   (assert (lock (type GET) (agent ?*ROBOT-NAME*) (resource ?res)))
   ; Retract all lock releases for ?res that gets the lock
-  (do-for-all-facts ((?release lock)) (and (eq ?release:agent ?*ROBOT-NAME*)
+  (delayed-do-for-all-facts ((?release lock)) (and (eq ?release:agent ?*ROBOT-NAME*)
                                            (eq ?release:resource ?res)
                                            (eq ?release:type RELEASE))
     (retract ?release)
@@ -92,7 +92,7 @@
   (assert (state IDLE));look for next task
   (modify ?pt (state rejected))
   ;cleanup asks for locks
-  (do-for-all-facts ((?ntl needed-task-lock) (?l lock)) (and (eq ?l:agent ?*ROBOT-NAME*)(eq ?l:resource ?ntl:resource))
+  (delayed-do-for-all-facts ((?ntl needed-task-lock) (?l lock)) (and (eq ?l:agent ?*ROBOT-NAME*)(eq ?l:resource ?ntl:resource))
     (retract ?ntl ?l)
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?l:resource)))
   )  
@@ -102,19 +102,24 @@
   "Function to remove all previously rejected tasks and their steps"
   (bind $?step-ids-to-remove (create$))
   ;remove prevoiusly rejected proposals
-  (do-for-all-facts ((?prp task)) (eq ?prp:state rejected)
+  (delayed-do-for-all-facts ((?prp task)) (eq ?prp:state rejected)
     (retract ?prp)
     ;remember ids to remove the steps of this task
     (bind ?step-ids-to-remove (insert$ ?step-ids-to-remove 1 ?prp:steps))
   )
   ;remove steps
-  (do-for-all-facts ((?step task)) (member$ ?step:id ?step-ids-to-remove)
+  (delayed-do-for-all-facts ((?step step)) (member$ ?step:id ?step-ids-to-remove)
     (retract ?step)
   )
 )
 
 (deffunction coordination-release-all-subgoal-locks ()
   ;release all locks for subtask goals
+  (do-for-all-facts ((?step step)) (and (or (eq ?step:state finished) (eq ?step:state failed))
+                                        (neq ?step:lock NONE)
+                                   )
+    (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?step:lock)))
+  )
   (delayed-do-for-all-facts ((?ntl needed-task-lock)) TRUE
     (assert (lock (type RELEASE) (agent ?*ROBOT-NAME*) (resource ?ntl:resource)))
     (bind ?fact-ptr (coordination-get-fact-address-of-place ?ntl:place))
@@ -132,7 +137,7 @@
   =>
   (coordination-release-all-subgoal-locks)
   ;remove all steps of the task
-  (do-for-all-facts ((?step step)) (member$ ?step:id ?steps)
+  (delayed-do-for-all-facts ((?step step)) (member$ ?step:id ?steps)
     (retract ?step)
   )
   (retract ?s ?t)

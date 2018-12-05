@@ -32,6 +32,10 @@
 
 #include <string>
 
+/**
+ * @class Visualisation
+ * @brief Publish various markers as ROS messages to aid with visual debuggin in rviz
+ */
 class Visualisation
 {
 private:
@@ -125,6 +129,12 @@ private:
 
 public:
 
+  /**
+   * @brief marker_draw generate a marker and publish it to ROS
+   * @param header header of the source cloud, used as header for the marker
+   * @param centroid the plane's centnroid
+   * @param rotation the plane's rotation
+   */
   void marker_draw(pcl::PCLHeader header, fawkes::tf::Vector3 centroid, fawkes::tf::Quaternion rotation)
   {
     // just viz stuff from here
@@ -138,6 +148,10 @@ public:
     pub_markers_.publish(ma);
   }
 
+  /**
+   * @brief Visualisation constructor
+   * @param rosnode Node that should advertise the visualization marker array
+   */
   Visualisation(fawkes::LockPtr<ros::NodeHandle> rosnode)
   {
     pub_markers_ = rosnode->advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);

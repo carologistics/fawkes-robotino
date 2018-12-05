@@ -28,7 +28,6 @@
 
 //class WebSession;
 class EventEmitter;
-
 class Callable
 {
 	public:

@@ -32,7 +32,7 @@
 using namespace fawkes;
 using namespace rapidjson;
 
-/** Class AdvertismentCapabilityManager "advertisment_capability_manager.h"
+/** @class AdvertismentCapabilityManager "advertisment_capability_manager.h"
 * Handles requests with rosbridge protocol opcodes ["advertise" , "unadvertise" , "publish"] and 
 * dispatches them to the targeted BridgeProcessor (ex, BlackBoard, clips, Ros) p 
 */
@@ -48,12 +48,14 @@ AdvertismentCapabilityManager::~AdvertismentCapabilityManager()
 	topic_Advertisment_.clear();
 }
 
+/** Initialize the Capability Manager */
 void 
 AdvertismentCapabilityManager::init()
 {
 	initialized_ = true;
 }
 
+/** Finalize the Capability Manager */
 void
 AdvertismentCapabilityManager::finalize()
 {
@@ -72,11 +74,6 @@ AdvertismentCapabilityManager::finalize()
 	}
 }
 
-/** Register BridgeProcessors
-* Keeps track of the BridgeProcessor, if it provides AdvertismentCapabilities
-* and maps it to its unique prefix.
-* @param processor BridgeProcessor to map
-*/
 bool
 AdvertismentCapabilityManager::register_processor(std::shared_ptr <BridgeProcessor> processor )
 {
@@ -99,13 +96,6 @@ AdvertismentCapabilityManager::register_processor(std::shared_ptr <BridgeProcess
 	
 	return true;
 }
-
-/** Handles And Dispatches The JSON request
-* processes the JSON dom and calls the correct operation, according to the 
-* opcode, on the targeted BridgeProcessor
-* @param d The Dom object containg the JSON message
-* @param session The session that issued the request.
-*/
 
 void
 //TODO::remnam it (DispatchtoCapability)
@@ -202,6 +192,12 @@ AdvertismentCapabilityManager::handle_message(Document &d
 
 }
 
+/** Callback To Be Called On Events This Instance Is Registered To
+ * note that, AdvertisementCM implements Callable interface is notified when an Advertisement
+ * instance is terminated. In turn, it removes all entries of that instance from its registry.
+ * @param event_type of event responsible for this call
+ * @param event_emitter is a ptr to the instance that emitted that event
+*/
 void
 AdvertismentCapabilityManager::callback(EventType event_type , std::shared_ptr <EventEmitter> event_emitter)
 {
@@ -318,6 +314,7 @@ AdvertismentCapabilityManager::unadvertise	( std::string bridge_prefix
 	//throw exception that topic was not found
 
 }
+
 
 void
 AdvertismentCapabilityManager::publish	( std::string bridge_prefix

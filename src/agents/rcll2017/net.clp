@@ -155,7 +155,7 @@
   (time $?now)
   =>
   (bind ?beacon-name (pb-field-value ?p "peer_name"))
-  (do-for-all-facts ((?active-robot active-robot)) (eq ?active-robot:name (sym-cat ?beacon-name))
+  (delayed-do-for-all-facts ((?active-robot active-robot)) (eq ?active-robot:name (sym-cat ?beacon-name))
       ;no modify because the active-robot-fact may not be there before
       (retract ?active-robot)
   )

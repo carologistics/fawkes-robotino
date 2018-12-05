@@ -82,6 +82,7 @@ class NavGraphGeneratorMPSThread
   std::map<std::string, std::string>         cfg_algo_params_;
   Eigen::Vector2f                            cfg_bounding_box_p1_;
   Eigen::Vector2f                            cfg_bounding_box_p2_;
+  size_t                                     cfg_num_wait_zones_;
   
   unsigned int                               last_id_;
   fawkes::NavGraphGeneratorInterface        *navgen_if_;
@@ -131,7 +132,7 @@ class NavGraphGeneratorMPSThread
   void update_station(std::string id, bool input, std::string frame,
                       double tag_pos[3], double tag_ori[4], Eigen::Vector2i zone);
   static inline std::vector<Eigen::Vector2i> blocked_zones(Eigen::Vector2i zone, uint16_t discrete_ori);
-  void generate_wait_zones(int count);
+  void generate_wait_zones(size_t count, std::vector<Eigen::Vector2i> &free_zones);
 };
 
 #endif

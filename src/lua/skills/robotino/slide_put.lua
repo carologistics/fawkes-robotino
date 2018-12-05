@@ -40,31 +40,38 @@ documentation      = [==[ slide_put
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local x_distance = 0.25
+local x_distance = 0.26
 if config:exists("/skills/approach_distance_laser/x") then
    x_distance = config:get_float("/skills/approach_distance_laser/x")
 end
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
-   {"GOTO_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SLIDE", fail_to="FAILED"},
+   {"GOTO_SLIDE", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="APPROACH_SLIDE", fail_to="FAILED"},
    {"APPROACH_SLIDE", SkillJumpState, skills={{approach_mps}}, final_to="STORE_PRODUCT", fail_to="FAILED"},
-   {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="LEAVE_SLIDE", fail_to="FAILED"},
+   {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_FOR_GRIPPER", fail_to="LEAVE_SLIDE_FAILED"},
+   {"WAIT_FOR_GRIPPER", JumpState},
    {"LEAVE_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="CLOSE_GRIPPER", fail_to="CLOSE_GRIPPER"},
-   {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FAILED"},
+   {"LEAVE_SLIDE_FAILED", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},
+   {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="RESET_Z_POS", fail_to="RESET_Z_POS"},
+   {"RESET_Z_POS", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FINAL"},
 }
 
 fsm:add_transitions{
    {"INIT", "GOTO_SLIDE", cond=true},
+   {"WAIT_FOR_GRIPPER", "LEAVE_SLIDE", timeout=1},
 }
 
 
 function GOTO_SLIDE:init()
    self.args["motor_move"] =
-			{ y = -0.275, --TODO measure exact value
+			{ y = -0.284,
 				vel_trans = 0.2,
-				tolerance = { x=0.002, y=0.002, ori=0.01 }
+				-- high ori tolerance, because corrections make things worse
+				tolerance = { x=0.002, y=0.002, ori=0.1 }
 			}
+   self.args["ax12gripper"].command = "RELGOTOZ"
+   self.args["ax12gripper"].z_position = -8
 end
 
 function APPROACH_SLIDE:init()
@@ -80,7 +87,15 @@ function LEAVE_SLIDE:init()
    self.args["motor_move"].x = -0.1
 end
 
+function LEAVE_SLIDE_FAILED:init()
+   self.args["motor_move"].x = -0.1
+end
+
 function CLOSE_GRIPPER:init()
    self.args["ax12gripper"].command = "CLOSE"
    printf("close gripper")
+end
+
+function RESET_Z_POS:init()
+   self.args["ax12gripper"].command = "RESET_Z_POS"
 end

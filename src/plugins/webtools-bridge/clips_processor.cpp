@@ -44,11 +44,7 @@
 using namespace fawkes ;
 using namespace rapidjson ;
 
-
-
-
-
-/** Class ClipsSubscription "clips_processor"
+/** @class ClipsSubscription "clips_processor.h"
 * Implements "Susbscription" object with clips facts in mind as a topic. 
 * It holds objects and environments necessary to access the clips fact when publishing, and implements
 * Serialize(), that prescribes how to get a CLIPS fact's data and serializes in a publish JSON message
@@ -57,8 +53,10 @@ using namespace rapidjson ;
 
 
 /** Consturctor
-* @paramt topic_name the full name of topic that will be subscribed to (including the "clips/" prefix) 
+* @param topic_name the full name of topic that will be subscribed to (including the "clips/" prefix)
 * @param processor_prefix the "clips/" prefix 
+* @param logger Fawkes logger
+* @param clock Fawkes clock
 * @param clips the clips environment, necessary access the fact data 
 * @param clips_env_mgr the clips environment manager, necessary access the fact data
 */
@@ -103,9 +101,12 @@ ClipsSubscription::finalize_impl()
 * This method is derived from Subscription, it prescribes how to get a 
 * CLIPS fact's data and serialzes in a JSON message with a rosbridge "publish" opcode
 * ready to published.
-
 * This is called from by the publish() method of the Subscription whenever
-* the subscription wants to publish. 
+* the subscription wants to publish.
+* @param op name of the operation according to rosbridge protocol
+* @param topic_name name of the topic to be serialized
+* @param id
+* @return the serialized json string
  */
 std::string
 ClipsSubscription::serialize(std::string op
@@ -293,10 +294,17 @@ ClipsSubscription::serialize(std::string op
 //=================================   Processor  ===================================
 
 
-/** Class ClipsProcessor "clips_processor.h"
-  Derives from different Capability classes and provides those Capabilities for Clips FActs
+/** @class ClipsProcessor "clips_processor.h"
+* Derives from different Capability classes and provides those Capabilities for Clips FActs
 */
 
+/** Constructor
+* @param prefix The Processor's unique
+* @param logger Fawkes logger
+* @param config Fawkes config
+* @param clock Fawkes clock
+* @param clips_env_mgr the clips enviorment manager
+*/
 ClipsProcessor::ClipsProcessor(std::string prefix 
                               , fawkes::Logger *logger
                               , fawkes::Configuration *config
@@ -315,6 +323,7 @@ ClipsProcessor::ClipsProcessor(std::string prefix
   //TODO set the env_name
 }
 
+/** Destructor. */
 ClipsProcessor::~ClipsProcessor()
 {
 

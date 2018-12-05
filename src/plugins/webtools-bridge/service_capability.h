@@ -23,9 +23,21 @@
 
 #include <memory>
 
+
+/** @class ServiceCapability
+ * Abstract class, providing session the ability to make service calls.
+ * The symantics of what a service call means, is up to the processor
+ * that implements this capability.
+ *
+ * @author Mostafa Gomaa
+ */
 class ServiceCapability
 {
 	public:
+		/** To be implemented by the bridge processor for domain specific semantics
+		* @param srv_call_json
+		* @param session the session requesting the advertise
+		*/
 		virtual void call_service( std::string srv_call_json , std::shared_ptr<WebSession> session ) = 0 ;
 };
 

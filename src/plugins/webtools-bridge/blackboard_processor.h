@@ -64,7 +64,7 @@ class BlackBoardSubscription
 
     void activate_impl();
     void deactivate_impl();
-    void finalize_impl();// finalize oper and listeners interfaces 
+    void finalize_impl();
     std::string   serialize(std::string op
                           , std::string topic
                           , std::string id);
@@ -72,8 +72,8 @@ class BlackBoardSubscription
     void bb_interface_data_changed(fawkes::Interface *interface) throw();
 
   private:
-    fawkes::BlackBoard         *blackboard_;
-    fawkes::Interface          *interface_;
+    fawkes::BlackBoard         *blackboard_;            /**< Fawkes blackboard */
+    fawkes::Interface          *interface_;             /**< Fawkes interface */
 };
 
 
@@ -125,12 +125,12 @@ class BridgeBlackBoardProcessor
                               , std::shared_ptr<WebSession> session )  ;
 
 private:
-  fawkes::Logger         *logger_;
-  fawkes::Configuration  *config_;
-  fawkes::BlackBoard     *blackboard_;
-  fawkes::Clock          *clock_;
+  fawkes::Logger         *logger_;                            /**< Fawkes logger */
+  fawkes::Configuration  *config_;                            /**< Fawkes config */
+  fawkes::BlackBoard     *blackboard_;                        /**< Fawkes blackboard */
+  fawkes::Clock          *clock_;                             /**< Fawkes clock */
 
-  std::map<std::string, fawkes::Interface *>::iterator ifi_;
+  std::map<std::string, fawkes::Interface *>::iterator ifi_;  /**< Iterator for Fawkes Interface list */
 
 };
 

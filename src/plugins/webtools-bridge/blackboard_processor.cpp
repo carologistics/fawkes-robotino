@@ -50,9 +50,17 @@ using namespace rapidjson;
 
 
 
-/** Class BridgeBlackBoardProcessor "blackboard_processor.h"
+/** @class BridgeBlackBoardProcessor "blackboard_processor.h"
 * Derives from several Capability classes to provide those capabilities for to BlackBoard Interface.
 * 
+*/
+
+/** Constructor
+* @param prefix used to identify the BridgeProcessor
+* @param logger Fawkes logger
+* @param config Fawkes config
+* @param blackboard Fawkes blackboard
+* @param clock Fawkes clock
 */
 BridgeBlackBoardProcessor::BridgeBlackBoardProcessor(std::string prefix
                                                     , fawkes::Logger *logger
@@ -80,7 +88,14 @@ BridgeBlackBoardProcessor::~BridgeBlackBoardProcessor()
 
 /** Perform a Subscription to a Blackboard Topic (handling a "subscribe" opcode)
  * checks if topic exists in the BlackBoard. If so, create a new BlackBoardSubscription instance 
- * with the bb_interface information and the request and return it.   
+ * with the bb_interface information and the request and return it.
+ * @param prefixed_topic_name the session wishes to advertise
+ * @param id provided in the JSON message of the rosbridge protocol
+ * @param type provided in the JSON message of the rosbridge protocol
+ * @param compression provided in the JSON message of the rosbridge protocol
+ * @param throttle_rate provided in the JSON message of the rosbridge protocol
+ * @param queue_length provided in the JSON message of the rosbridge protocol
+ * @param fragment_size provided in the JSON message of the rosbridge protocol
  * @param session The session that issued the request and that expects a publish on change of topic data
  * @return BlackboardSubscription
  */
@@ -220,8 +235,10 @@ BridgeBlackBoardProcessor::unsubscribe( std::string id
   * This is the implementation of the publish operation of the AdvertismentCapability.
   * It will be called when a session wants to publish a topic (writing the data to the bb_interface).
   * Usually this comes after an "advertise" message allowing the session to change the topic data.
+  * @param  id specified in rosbirdge protocol
+  * @param  latch specified in rosbirdge protocol
   * @param  msg_in_json The topic data to update
-  * @oaram advertisement The Advertisment instance created to update this topic 
+  * @param advertisment The Advertisement instance created to update this topic
   * @param session The session that will do the publishing
   */
   void            
@@ -238,7 +255,7 @@ BridgeBlackBoardProcessor::unsubscribe( std::string id
 
 //====================================  Subscription ===========================================
 
-/** Class BlackBoardSubscription "blackboard_processor.h"
+/** @class BlackBoardSubscription "blackboard_processor.h"
  * Derives from Subscription class and extends its behaviour to enable publishing of BlackBoard topics.
  * Derives from BlackBoardInterfaceListener to listen to changes made on a topic and publishes when needed. 
 */
@@ -246,7 +263,9 @@ BridgeBlackBoardProcessor::unsubscribe( std::string id
 /** Constructor 
 * @param topic_name Full topic name, Including the "blackboard/" prefix
 * @param processor_prefix The Processor's unique
-* @param blackboard blackboad where the topic lives
+*@param logger Fawkes logger
+* @param clock Fawkes clock
+* @param blackboard blackboard where the topic lives
 * @param interface interface to access the topic from blackboard
 */
 BlackBoardSubscription::BlackBoardSubscription(std::string topic_name 
@@ -273,18 +292,13 @@ BlackBoardSubscription::~BlackBoardSubscription()
   // }
 }
 
-
+/** @return the internal interface ptr */
 fawkes::Interface*
 BlackBoardSubscription::get_interface_ptr()
 {
   return  interface_;
 }
 
-/**Activate() extended behaviour
-* this will be called by default from Subscription::Activate().
-* procedures done here are necessary for the blackboard listener 
-* to notify on changes. 
-*/
 void
 BlackBoardSubscription::activate_impl()
 {
@@ -293,9 +307,6 @@ BlackBoardSubscription::activate_impl()
 }
 
 
-/**Deactivate() extended behaviour
-* this will be called by default from Subscription::deactivate().
-*/
 void
 BlackBoardSubscription::deactivate_impl()
 {
@@ -314,6 +325,10 @@ BlackBoardSubscription::finalize_impl()
 /**Creates a "publish" rosbridge protocol JSON Message
 * serializes the blackboard topic data into the "msg:" field of 
 * the rosbridge protocol, "publish" opcode, JSON message 
+* @param op name of the operation according to rosbridge protocol
+* @param topic_name name of the topic to be serialized
+* @param id
+* @return the serialized JSON string
 */
 std::string  
 BlackBoardSubscription::serialize(std::string op

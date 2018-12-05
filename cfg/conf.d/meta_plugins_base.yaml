@@ -1,0 +1,47 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+fawkes/meta_plugins:
+  m-base-bare:
+    - imu
+    - robotino
+    - static-transforms
+    - motor-led
+  m-base-joy:
+    - m-base-bare
+    - joystick
+    - joystick-teleop
+  m-base-joy-safe:
+    - m-base-bare
+    - laser
+    - laser-filter
+    - joystick
+    - joystick-teleop
+  m-base-gripper:
+    - arduino
+    - dynamixel
+    - ax12_gripper
+  m-base-ros:
+    - ros
+    - ros-pcl
+    - ros-odometry
+    - ros-tf
+    - ros-laserscan
+    - ros-cmdvel
+    - ros-navigator
+  m-base-laser:
+    - laser
+    - laser-filter
+    - m-base-ros
+    - laser-pointclouds
+    - laser-cluster
+    - laser-lines
+  m-base-full:
+    - m-base-bare
+    - m-base-laser
+    - m-base-gripper
+    - m-base-ros
+    - amcl
+    - m-base-joy
+    - laser_front_dist
+

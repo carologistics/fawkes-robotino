@@ -90,7 +90,10 @@ GazsimGripperThread::init()
 
   cfg_prefix_ = "/arduino/";
   arduino_if_ = blackboard->open_for_writing<ArduinoInterface>(arduino_if_name_.c_str());
-  arduino_if_->set_z_position( config->get_uint(cfg_prefix_ + "/init_mm") );
+  arduino_if_->set_x_position(0);
+  arduino_if_->set_y_position(arduino_if_->y_max() / 2.);
+  arduino_if_->set_y_position(0);
+
   arduino_if_->set_final(true);
   arduino_if_->write();
 }
@@ -171,20 +174,26 @@ GazsimGripperThread::loop()
   }
   
   while (! arduino_if_->msgq_empty() ) {
-    if ( arduino_if_->msgq_first_is<ArduinoInterface::MoveToZ0Message>() ) {
-      arduino_if_->set_z_position(0);
-    } else if ( arduino_if_->msgq_first_is<ArduinoInterface::MoveDownwardsMessage>() ) {
-      ArduinoInterface::MoveDownwardsMessage *msg = arduino_if_->msgq_first(msg);
-      arduino_if_->set_z_position( arduino_if_->z_position() + msg->num_mm() );
+    if ( arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZAbsMessage>() ) {
+      ArduinoInterface::MoveXYZAbsMessage *msg = arduino_if_->msgq_first(msg);
+      arduino_if_->set_x_position(msg->x());
+      arduino_if_->set_y_position(msg->y());
+      arduino_if_->set_z_position(msg->z());
+    } else if ( arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZRelMessage>() ) {
+      ArduinoInterface::MoveXYZRelMessage *msg = arduino_if_->msgq_first(msg);
+      arduino_if_->set_x_position( arduino_if_->x_position() + msg->x() );
+      arduino_if_->set_y_position( arduino_if_->y_position() + msg->y() );
+      arduino_if_->set_z_position( arduino_if_->z_position() + msg->z() );
+
       msgs::Int s;
-      s.set_data( + msg->num_mm() );
+      s.set_data( arduino_if_->z_position() + msg->z() );
       set_conveyor_pub_->Publish( s );
-    } else if ( arduino_if_->msgq_first_is<ArduinoInterface::MoveUpwardsMessage>() ) {
-      ArduinoInterface::MoveUpwardsMessage *msg = arduino_if_->msgq_first(msg);
-      arduino_if_->set_z_position( arduino_if_->z_position() - msg->num_mm() );
-      msgs::Int s;
-      s.set_data( - msg->num_mm() );
-      set_conveyor_pub_->Publish( s );
+//    } else if ( arduino_if_->msgq_first_is<ArduinoInterface::MoveUpwardsMessage>() ) {
+//      ArduinoInterface::MoveUpwardsMessage *msg = arduino_if_->msgq_first(msg);
+//      arduino_if_->set_z_position( arduino_if_->z_position() - msg->num_mm() );
+//      msgs::Int s;
+//      s.set_data( - msg->num_mm() );
+//      set_conveyor_pub_->Publish( s );
     } else {
       logger->log_warn(name(), "Unknown Arduino message received");
     }

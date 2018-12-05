@@ -148,7 +148,9 @@ class GripperAX12AThread
   fawkes::Time time_to_stop_z_align;
   
   float        cur_torque_;
-  fawkes::Time torque_0_timestamp_;
+  fawkes::Time motion_start_timestamp_;
+  bool         slap_left_pending_;
+  bool         slap_right_pending_;
 
 #ifdef HAVE_TF
   std::string  __cfg_base_frame;
@@ -177,6 +179,8 @@ class GripperAX12AThread
   void get_loads(unsigned int &left, unsigned int &right);
   void set_margins(float left_margin, float right_margin);
   void set_torque(float torque);
+  void set_torque_left(unsigned int torque);
+  void set_torque_right(unsigned int torque);
   bool is_final();
   bool is_enabled();
   void set_enabled(bool enabled);

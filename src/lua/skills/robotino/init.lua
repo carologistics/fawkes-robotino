@@ -23,6 +23,9 @@ module(..., fawkes.modinit.register_all);
 
 print("Initializing Lua skill space for Robotino")
 
+-- Generic skills
+skillenv.use_skill("skills.generic.say")
+
 -- Robotino specific skills
 skillenv.use_skill("skills.robotino.relgoto")
 skillenv.use_skill("skills.robotino.motor_move")
@@ -47,7 +50,6 @@ skillenv.use_skill("skills.robotino.explore_zone")
 -- Skills for MPS interaction
 skillenv.use_skill("skills.robotino.check_tag")
 skillenv.use_skill("skills.robotino.mps_align")
-skillenv.use_skill("skills.robotino.mps_detect_signal")
 skillenv.use_skill("skills.robotino.conveyor_align")
 skillenv.use_skill("skills.robotino.approach_mps")
 skillenv.use_skill("skills.robotino.shelf_pick")
@@ -55,6 +57,7 @@ skillenv.use_skill("skills.robotino.slide_put")
 skillenv.use_skill("skills.robotino.shelf_put")
 skillenv.use_skill("skills.robotino.product_pick")
 skillenv.use_skill("skills.robotino.product_put")
+skillenv.use_skill("skills.robotino.drive_to_machine_point")
 skillenv.use_skill("skills.robotino.bring_product_to")
 skillenv.use_skill("skills.robotino.get_product_from")
 skillenv.use_skill("skills.robotino.approach_test")

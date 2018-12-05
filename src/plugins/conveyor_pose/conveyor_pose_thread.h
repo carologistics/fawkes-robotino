@@ -187,11 +187,12 @@ private:
  Eigen::Quaternion<float> inverseSignQuaternion(Eigen::Quaternion<float> q);
  bool areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quaternion<float> q2);
 
+ void pose_publish_tf(pose pose);
+ void start_waiting();
+ bool need_to_wait();
+
 protected:
   virtual void run() { Thread::run(); }
-  void pose_publish_tf(pose pose);
-  void start_waiting();
-  bool need_to_wait();
 
 public:
   ConveyorPoseThread();

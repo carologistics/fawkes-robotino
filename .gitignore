@@ -33,3 +33,10 @@
 
 # vim mergetool files
 *.orig
+
+# Generated interfaces
+/src/**/interfaces/*.cpp
+/src/**/interfaces/*.h
+/src/**/interfaces/*.h_ext
+/src/**/interfaces/*.tolua
+

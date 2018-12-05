@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"mps_align", "product_pick", "drive_to","shelf_pick", "conveyor_align"}
+depends_skills     = {"mps_align", "product_pick", "drive_to_local","shelf_pick", "conveyor_align"}
 depends_interfaces = {
 }
 
@@ -50,7 +50,7 @@ end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
-   {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
+   {"DRIVE_TO", SkillJumpState, skills={{drive_to_local}}, final_to="MPS_ALIGN", fail_to="FAILED"},
    {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
@@ -73,9 +73,9 @@ end
 
 function DRIVE_TO:init()
    if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
-      self.args["drive_to"] = {place = self.fsm.vars.place .. "-I"}
+      self.args["drive_to_local"] = {place = self.fsm.vars.place .. "-I"}
    else --if no side is given drive to output
-      self.args["drive_to"] = {place = self.fsm.vars.place .. "-O"}
+      self.args["drive_to_local"] = {place = self.fsm.vars.place .. "-O"}
    end
 end
 

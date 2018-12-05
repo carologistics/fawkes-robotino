@@ -36,7 +36,13 @@
 
 using namespace fawkes;
 
+/** @class WebtoolsBridgeThread "webtools_bridge_thread.h"
+ * A fawkes based impelentation of rosbridge server/proxy
+ *
+ * @author Mostafa Gomaa
+ */
 
+/** Constructor. */
 WebtoolsBridgeThread::WebtoolsBridgeThread()
   : Thread("BridgeThread", Thread::OPMODE_WAITFORWAKEUP),
     BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_WORLDSTATE)

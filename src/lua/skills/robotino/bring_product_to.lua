@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "bring_product_to"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"mps_align", "product_put", "drive_to","shelf_put","slide_put","conveyor_align","motor_move"}
+depends_skills     = {"mps_align", "product_put", "drive_to_local","shelf_put","slide_put","conveyor_align","motor_move"}
 depends_interfaces = {
   {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"}
 }
@@ -56,7 +56,7 @@ end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_if},
    {"INIT", JumpState},
-   {"DRIVE_TO", SkillJumpState, skills={{drive_to}}, final_to="MPS_ALIGN", fail_to="FAILED"},
+   {"DRIVE_TO", SkillJumpState, skills={{drive_to_local}}, final_to="MPS_ALIGN", fail_to="FAILED"},
    {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"RE_MPS_ALIGN", SkillJumpState, skills={{motor_move}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
@@ -69,7 +69,7 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_i
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not navgraph", desc="navgraph not available"},
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
-   {"INIT", "MPS_ALIGN", cond=already_at_conveyor, desc="At mps, skip drive_to"},
+   {"INIT", "MPS_ALIGN", cond=already_at_conveyor, desc="At mps, skip drive_to_local"},
    {"INIT", "RE_MPS_ALIGN", cond=already_at_mps, desc="At mps, skip DRIVE and ALIGN"},
    {"INIT", "DRIVE_TO", cond=true, desc="Everything OK"},
    {"DRIVE_TO", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
@@ -86,9 +86,9 @@ end
 
 function DRIVE_TO:init()
    if self.fsm.vars.side == "output" then
-      self.args["drive_to"] = {place = self.fsm.vars.place .. "-O"}
+      self.args["drive_to_local"] = {place = self.fsm.vars.place .. "-O"}
    else
-      self.args["drive_to"] = {place = self.fsm.vars.place .. "-I"}
+      self.args["drive_to_local"] = {place = self.fsm.vars.place .. "-I"}
    end
 end
 
