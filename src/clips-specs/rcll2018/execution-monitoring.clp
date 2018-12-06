@@ -1,3 +1,13 @@
+;---------------------------------------------------------------------------
+;  exploration.clp - Robotino agent for exploration phase
+;
+;  Copyright  2018 Mostafa Gooma, Tarik Viehmann, Daniel Habering
+;
+;  Licensed under GPLv2+ license, cf. LICENSE file
+;---------------------------------------------------------------------------
+
+
+
 ;A timeout for an action
 (deftemplate action-timer
   (slot plan-id (type SYMBOL))
