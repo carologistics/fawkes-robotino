@@ -90,6 +90,11 @@ case "$TERMINAL" in
         SUBTERM_PREFIX="gnome-terminal --tab -- "
         SUBTERM_SUFFIX=" ; "
         ;;
+    screen)
+        TERM_COMMAND="screen -A -d -m -S gazsim /usr/bin/sleep 1 ; "
+        SUBTERM_PREFIX="screen -S gazsim -X screen "
+        SUBTERM_SUFFIX=" ; "
+        ;;
     tmux)
         if [[ -n $TMUX ]] ; then
             TERM_COMMAND=""
