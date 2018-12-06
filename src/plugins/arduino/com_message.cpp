@@ -309,3 +309,47 @@ ArduinoComMessage::get_cur_buffer_index()
 {
   return cur_buffer_index_;
 }
+
+
+const std::map<ArduinoComMessage::command_id_t, std::string> ArduinoComMessage::command_map {
+  {command_id_t::CMD_HOME, "$H"},
+  {command_id_t::CMD_GETSETTINGS, "$$"},
+  {command_id_t::CMD_GOTO_LINEAR, "G01"},
+};
+
+const std::map<ArduinoComMessage::setting_id_t,ArduinoComMessage::setting_type> ArduinoComMessage::setting_map {
+  {setting_id_t::SET_PULSE_LENGTH,setting_type::SET_INT}, // microseconds
+  {setting_id_t::SET_IDLE_DELAY,setting_type::SET_INT},   // milliseconds
+  {setting_id_t::SET_STEP_PORT_INVERT,setting_type::SET_INT}, //mask
+  {setting_id_t::SET_DIR_PORT_INVERT,setting_type::SET_INT}, //mask
+  {setting_id_t::SET_STEP_ENA_INV,setting_type::SET_BOOL}, //bool
+  {setting_id_t::SET_LIMIT_PINS_INV,setting_type::SET_BOOL}, //bool
+  {setting_id_t::SET_PROBE_PINS_INV,setting_type::SET_BOOL}, //bool
+  {setting_id_t::SET_STATUS_REPORT,setting_type::SET_INT}, //mask
+  {setting_id_t::SET_JUNCTION_DEV,setting_type::SET_FLOAT}, // millimeter
+  {setting_id_t::SET_ARC_TOL,setting_type::SET_FLOAT}, //millimeter
+  {setting_id_t::SET_REPORT_INCHES,setting_type::SET_BOOL}, //bool
+  {setting_id_t::SET_SOFT_LIMS,setting_type::SET_BOOL}, //bool
+  {setting_id_t::SET_HARD_LIMS,setting_type::SET_BOOL}, //bool
+  {setting_id_t::SET_HOME_CYCLE,setting_type::SET_BOOL}, //bool
+  {setting_id_t::SET_HOME_DIR_INVERT,setting_type::SET_INT}, // mask
+  {setting_id_t::SET_HOME_FEED,setting_type::SET_FLOAT}, // mm/min
+  {setting_id_t::SET_HOME_SEEK,setting_type::SET_FLOAT}, // mm/min
+  {setting_id_t::SET_HOME_DEBOUNCE,setting_type::SET_INT}, // milliseconds
+  {setting_id_t::SET_HOME_PULL_OFF,setting_type::SET_FLOAT}, // millimeters
+  {setting_id_t::SET_MAX_SPINDLE_SPEED,setting_type::SET_FLOAT}, // RPM
+  {setting_id_t::SET_MIN_SPINDLE_SPEED,setting_type::SET_FLOAT}, // RPM
+  {setting_id_t::SET_LASER_MODE,setting_type::SET_BOOL}, // bool
+  {setting_id_t::SET_X_STEPS,setting_type::SET_FLOAT}, // steps/mm
+  {setting_id_t::SET_Y_STEPS,setting_type::SET_FLOAT}, // steps/mm
+  {setting_id_t::SET_Z_STEPS,setting_type::SET_FLOAT}, // steps/mm
+  {setting_id_t::SET_X_MAX_RATE,setting_type::SET_FLOAT}, // mm/min
+  {setting_id_t::SET_Y_MAX_RATE,setting_type::SET_FLOAT}, // mm/min
+  {setting_id_t::SET_Z_MAX_RATE,setting_type::SET_FLOAT}, // mm/min
+  {setting_id_t::SET_X_ACC,setting_type::SET_FLOAT}, //mm/s^2
+  {setting_id_t::SET_Y_ACC,setting_type::SET_FLOAT}, //mm/s^2
+  {setting_id_t::SET_Z_ACC,setting_type::SET_FLOAT}, //mm/s^2
+  {setting_id_t::SET_X_MAX_TRAVEL,setting_type::SET_FLOAT}, //millimeter
+  {setting_id_t::SET_Y_MAX_TRAVEL,setting_type::SET_FLOAT}, //millimeter
+  {setting_id_t::SET_Z_MAX_TRAVEL,setting_type::SET_FLOAT}, //millimeter
+};
