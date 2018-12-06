@@ -67,21 +67,21 @@
 )
 
 (defrule goal-reasoner-create-acquire-token-spawning-master
-"If no one is spawning master. Try to become the spawning master
+" If no one is spawning master. Try to become the spawning master
 
- The spawning master creates the facts for new workpieces anyd capcarriers.
- Those can be introduced to the world during the game e.g. through dispensing
- at the base station or refilling of a shelf.
+  The spawning master creates the facts for new workpieces anyd capcarriers.
+  Those can be introduced to the world during the game e.g. through dispensing
+  at the base station or refilling of a shelf.
 "
- (domain-facts-loaded)
- (domain-object (name SPAWNING-MASTER) (type master-token))
- (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
- (not (goal (class ACQUIRE-TOKEN) (params token-name SPAWNING-MASTER)))
- (not (mutex (name SPAWNING-MASTER) (state LOCKED)))
- =>
- (assert (goal (id (sym-cat ACQUIRE-TOKEN- (gensym*)))
-                     (class ACQUIRE-TOKEN) 
-                     (params token-name SPAWNING-MASTER)))
+  (domain-facts-loaded)
+  (domain-object (name SPAWNING-MASTER) (type master-token))
+  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
+  (not (goal (class ACQUIRE-TOKEN) (params token-name SPAWNING-MASTER)))
+  (not (mutex (name SPAWNING-MASTER) (state LOCKED)))
+  =>
+  (assert (goal (id (sym-cat ACQUIRE-TOKEN- (gensym*)))
+                    (class ACQUIRE-TOKEN)
+		    (params token-name SPAWNING-MASTER)))
 )
 
 ; ## Maintain beacon sending
@@ -96,15 +96,15 @@
 )
 
 (defrule goal-reasoner-create-beacon-achieve
-  " Send a beacon signal whenever at least one second has elapsed since it
-    last one got sent.
-  "
+" Send a beacon signal whenever at least one second has elapsed since it
+  last one got sent.
+"
   ?g <- (goal (id ?maintain-id) (class BEACONMAINTAIN) (mode SELECTED))
   (not (goal (class BEACONACHIEVE)))
   (time $?now)
   ; TODO: make interval a constant
   (goal-meta (goal-id ?maintain-id)
-    (last-achieve $?last&:(timeout ?now ?last 1)))
+             (last-achieve $?last&:(timeout ?now ?last 1)))
   =>
   (assert (goal (id (sym-cat BEACONACHIEVE- (gensym*)))
                 (class BEACONACHIEVE) (parent ?maintain-id)))
@@ -114,7 +114,7 @@
 ; ## Maintain wp-spawning
 (defrule goal-reasoner-create-wp-spawn-maintain
   "Maintain Spawning if the spawning-master token is held"
- (domain-facts-loaded)
+  (domain-facts-loaded)
  (not (goal (class WPSPAWN-MAINTAIN)))
  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
@@ -131,7 +131,7 @@
   (time $?now)
   ; TODO: make interval a constant
   (goal-meta (goal-id ?maintain-id)
-    (last-achieve $?last&:(timeout ?now ?last 1)))
+             (last-achieve $?last&:(timeout ?now ?last 1)))
   (domain-object (name ?robot) (type robot))
   (not
     (and
@@ -428,7 +428,7 @@
   ;Order conditions
   (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
-    (value ?end&:(< ?end (nth$ 1 ?game-time))))
+           (value ?end&:(< ?end (nth$ 1 ?game-time))))
   =>
   (printout t "Goal " CLEAR-MPS " (" ?mps ") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
@@ -517,16 +517,16 @@
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
-    (value ?qd&:(> ?qr ?qd)))
+           (value ?qd&:(> ?qr ?qd)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   ;--TODO: add time considrations to have a higher priority if it makes "sense"
   (not (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 2)))
   =>
   (printout warn "RS " ?mps " needs an additional base for " ?order " (prio +1)" crlf)
-(if (not (do-for-fact
+  (if (not (do-for-fact
             ((?wmf wm-fact))
             (eq ?wmf:key (create$ evaluated fact rs-fill-priority args? m ?mps))
-            (modify ?wmf (value 1))))
+      (modify ?wmf (value 1))))
     then
       (assert
         (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 1)))
@@ -564,7 +564,7 @@
          then
           (bind ?priority-increase ?prio:value)
       )
-   (retract ?prio))
+      (retract ?prio))
   (printout warn "Goal " FILL-RS-FROM-BS " formulated" crlf)
   (assert (goal (id (sym-cat FILL-RS-FROM-BS- (gensym*)))
                 (class FILL-RS-FROM-BS)
@@ -605,7 +605,7 @@
   =>
   (bind ?priority-increase 0)
   (do-for-all-facts ((?prio wm-fact)) (and (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
-                                        (eq (wm-key-arg ?prio:key m) ?mps))
+                                           (eq (wm-key-arg ?prio:key m) ?mps))
       (if (< ?priority-increase ?prio:value)
          then
           (bind ?priority-increase ?prio:value)
@@ -623,7 +623,7 @@
                                      rs-before ?rs-before
                                      rs-after ?rs-after
                                      )
-                            (required-resources ?mps)
+                             (required-resources ?mps)
   ))
 )
 
@@ -647,7 +647,7 @@
   =>
   (bind ?priority-increase 0)
   (do-for-all-facts ((?prio wm-fact)) (and (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
-                                        (eq (wm-key-arg ?prio:key m) ?mps))
+                                           (eq (wm-key-arg ?prio:key m) ?mps))
       (if (< ?priority-increase ?prio:value)
          then
           (bind ?priority-increase ?prio:value)
@@ -690,14 +690,11 @@
                 (parent ?production-id)
                 (params robot ?robot
                         wp ?wp
-                        )
+                )
                 (required-resources ?wp)
   ))
   ; (assert (goal-already-tried DISCARD-UNKNOWN))
 )
-
-
-
 
 (defrule goal-reasoner-create-produce-c0
 " Produce a C0 product: Get the correct base and mount the right cap on it.
@@ -803,8 +800,8 @@
   (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
   (wm-fact (key domain fact rs-ring-spec args?   m ?mps-rs r ?ring1-color rn ?bases-needed))
   (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
-                                  subtrahend ?bases-needed
-                                  difference ?bases-remain&ZERO|ONE|TWO|THREE))
+                                         subtrahend ?bases-needed
+                                         difference ?bases-remain&ZERO|ONE|TWO|THREE))
   (not (wm-fact (key domain fact rs-prepared-color args?  m ?mps-rs col ?some-col)))
   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs m ?mps-rs side ?any-rs-side)))
   ;TODO think a lot about the old CE
@@ -852,16 +849,16 @@
                 (priority ?*PRIORITY-MOUNT-FIRST-RING*)
                 (parent ?production-id)
                 (params robot ?robot
-                           bs ?mps-bs
-                           bs-side OUTPUT
-                           bs-color ?base-color
-                           mps ?mps-rs
-                           ring-color ?ring1-color
-                           rs-before ?bases-filled
-                           rs-after ?bases-remain
-                           rs-req ?bases-needed
-                           order ?order
-                           wp ?spawned-wp
+                        bs ?mps-bs
+                        bs-side OUTPUT
+                        bs-color ?base-color
+                        mps ?mps-rs
+                        ring-color ?ring1-color
+                        rs-before ?bases-filled
+                        rs-after ?bases-remain
+                        rs-req ?bases-needed
+                        order ?order
+                        wp ?spawned-wp
                 )
                 (required-resources ?required-resources)
   ))
@@ -895,8 +892,8 @@
   (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
   (wm-fact (key domain fact rs-ring-spec args?   m ?mps-rs r ?next-ring-color rn ?bases-needed))
   (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
-                                  subtrahend ?bases-needed
-                                  difference ?bases-remain&ZERO|ONE|TWO|THREE))
+                                         subtrahend ?bases-needed
+                                         difference ?bases-remain&ZERO|ONE|TWO|THREE))
   (not (wm-fact (key domain fact rs-prepared-color args?  m ?mps-rs col ?some-col)))
   ;TODO think a lot about the old CE
   ; (incoming $?i&~:(member$ PROD_RING ?i))
@@ -945,19 +942,19 @@
                 (class MOUNT-NEXT-RING) (priority (+ ?ring-pos ?*PRIORITY-MOUNT-NEXT-RING*))
                 (parent ?maintain-id)
                 (params robot ?robot
-                           prev-rs ?prev-rs
-                           prev-rs-side OUTPUT
-                           wp ?wp
-                           rs ?mps-rs
-                           ring1-color ?order-ring1-color
-                           ring2-color ?order-ring2-color
-                           ring3-color ?order-ring3-color
-                           curr-ring-color ?curr-ring-color
-                           ring-pos ?ring-pos
-                           rs-before ?bases-filled
-                           rs-after ?bases-remain
-                           rs-req ?bases-needed
-                           order ?order
+                        prev-rs ?prev-rs
+                        prev-rs-side OUTPUT
+                        wp ?wp
+                        rs ?mps-rs
+                        ring1-color ?order-ring1-color
+                        ring2-color ?order-ring2-color
+                        ring3-color ?order-ring3-color
+                        curr-ring-color ?curr-ring-color
+                        ring-pos ?ring-pos
+                        rs-before ?bases-filled
+                        rs-after ?bases-remain
+                        rs-req ?bases-needed
+                        order ?order
                 )
                 (required-resources ?wp ?mps-rs)
   ))
@@ -1006,15 +1003,7 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
-  (value ?qd&:(> ?qr ?qd)))
-  ; (wm-fact (key refbox order ?order-id delivery-begin) (type UINT)
-  ; (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*))))
-  ; (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
-  ; (value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C1-LATEST-TIME*))))
-  ;TODO for multi-agent
-  ; Model old agents constraints
-  ;   (in-production 0)
-  ;   (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
+           (value ?qd&:(> ?qr ?qd)))
   =>
   (printout t "Goal " PRODUCE-CX " formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
@@ -1072,15 +1061,7 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
-  (value ?qd&:(> ?qr ?qd)))
-  ; (wm-fact (key refbox order ?order-id delivery-begin) (type UINT)
-  ; (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*))))
-  ; (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
-  ; (value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C1-LATEST-TIME*))))
-  ;TODO for multi-agent
-  ; Model old agents constraints
-  ;   (in-production 0)
-  ;   (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
+           (value ?qd&:(> ?qr ?qd)))
   =>
   (printout t "Goal " PRODUCE-CX " (C2) formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
@@ -1251,16 +1232,9 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   ;note: could be moved to rejected checks
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
-    (value ?qd&:(> ?qr ?qd)))
+           (value ?qd&:(> ?qr ?qd)))
   (wm-fact (key refbox order ?order delivery-begin) (type UINT)
-    (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
-  ;TODO for multi-agent
-  ; Model old agents constraints
-  ;  (in-production ?ip&:(> ?ip 0))
-  ;  (in-delivery ?id)
-
-  ;On evaluation of delivery. Update the quanetities deliverd
-  ;Delete the evaluated wp-for-order
+           (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
   =>
   (printout t "Goal " DELIVER " formulated" crlf)
   (assert (goal (id (sym-cat DELIVER- (gensym*)))
@@ -1310,7 +1284,7 @@
               (mode FINISHED) (outcome ?outcome))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
   ?t <- (wm-fact (key monitoring action-retried args? r ?self a ?an m ?mps wp ?wp)
-                (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
   =>
   (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
   (retract ?t)
@@ -1353,8 +1327,8 @@
   capcarriers when the REFILL-SHELF-ACHIEVE goal finishes successfully.
 "
   ?g <- (goal (class REFILL-SHELF-ACHIEVE) (parent ?parent-id)
-             (mode FINISHED) (outcome COMPLETED)
-             (params mps ?mps))
+              (mode FINISHED) (outcome COMPLETED)
+              (params mps ?mps))
   ?p <- (goal (id ?parent-id))
   (wm-fact (key domain fact cs-color args? m ?mps col ?col))
   =>
@@ -1382,22 +1356,20 @@
    (modify ?g (mode EVALUATED))
 )
 
-
-
 (defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
 " Create the domain objects and wm-facts corresponding to the freshly spawned
   workpieces when the WP-SPAWN-ACHIEVE goal finishes successfully.
 "
   ?g <- (goal (id ?goal-id) (class WPSPAWN-ACHIEVE) (parent ?parent-id)
-            (mode FINISHED) (outcome COMPLETED)
-            (params robot ?robot))
+              (mode FINISHED) (outcome COMPLETED)
+              (params robot ?robot))
   ?p <- (goal (id ?parent-id) (class WPSPAWN-MAINTAIN))
   ?m <- (goal-meta (goal-id ?parent-id))
   (time $?now)
   =>
   (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
     "') has been completed, Evaluating" crlf)
-     (bind ?wp-id (sym-cat WP (random-id)))
+  (bind ?wp-id (sym-cat WP (random-id)))
   (assert
     (domain-object (name ?wp-id) (type workpiece))
     (wm-fact (key domain fact wp-unused args? wp ?wp-id) (type BOOL) (value TRUE))
