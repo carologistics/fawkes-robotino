@@ -166,6 +166,18 @@
 )
 
 
+(defrule exp-exclude-zones
+" Mark a zone as empty if there can not be a machine according to the rules
+"
+  (exploration-result (zone ?zn) (machine ?machine) (orientation ?orientation) )
+  ?wm <- (wm-fact (key exploration zone ?zn2 args? machine UNKNOWN team ?team))
+  (test (eq TRUE (zone-is-blocked ?zn ?orientation ?zn2 ?machine)))
+  =>
+  (modify ?wm (key exploration zone ?zn2 args? machine NONE team ?team))
+  (printout t "There is a machine in " ?zn " with orientation " ?orientation  " so block " ?zn2 crlf)
+)
+
+
 (defrule exp-found-tag
 " If a tag was found in a zone that we dont have any information of, update the corresponding tag-vis fact
 "
