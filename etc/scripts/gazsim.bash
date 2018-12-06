@@ -85,9 +85,10 @@ fi
 
 case "$TERMINAL" in
     gnome-terminal)
-        TERM_COMMAND="gnome-terminal --geometry=$TERM_GEOMETRY"
-        SUBTERM_PREFIX="--tab --command "
-        SUBTERM_SUFFIX=""
+        TERM_COMMAND="gnome-terminal --window --geometry=$TERM_GEOMETRY -- bash -i -c '"
+        TERM_COMMAND_END="'"
+        SUBTERM_PREFIX="gnome-terminal --tab -- "
+        SUBTERM_SUFFIX=" ; "
         ;;
     tmux)
         if [[ -n $TMUX ]] ; then
@@ -95,6 +96,7 @@ case "$TERMINAL" in
         else
             TERM_COMMAND="tmux new-session -d;"
         fi
+        TERM_COMMAND_END=""
         SUBTERM_PREFIX="tmux new-window "
         SUBTERM_SUFFIX=";"
         ;;
@@ -302,28 +304,28 @@ if [  $COMMAND  == start ]; then
 	#start gazebo
 	if [[ -z $HEADLESS ]]
 	then
-        COMMANDS+=("'bash -i -c \"$startup_script_location -x gazebo $REPLAY $KEEP $@\"'")
+        COMMANDS+=("bash -i -c \"$startup_script_location -x gazebo $REPLAY $KEEP $@\"")
 	else
 	    #run headless
-        COMMANDS+=("'bash -i -c \"$startup_script_location -x gzserver $REPLAY $KEEP $@\"'")
+        COMMANDS+=("bash -i -c \"$startup_script_location -x gzserver $REPLAY $KEEP $@\"")
 	fi
     fi
 
     if [  "$ROS"  == "-r" ]; then
     	#start roscores
 	# main roscore (non-robot)
-    COMMANDS+=("'bash -i -c \"$startup_script_location -x roscore -p $ROS_MASTER_PORT $KEEP $@\"'")
+    COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p $ROS_MASTER_PORT $KEEP $@\"")
 	if [ -n "$ROS_LAUNCH_MAIN" ]; then
-		COMMANDS+=("'bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_MAIN -p $ROS_MASTER_PORT $KEEP $@\"'")
+		COMMANDS+=("bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_MAIN -p $ROS_MASTER_PORT $KEEP $@\"")
 	fi
     	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     	do
 	    # robot roscore
-	    COMMANDS+=("'bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"'")
+	    COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"")
             # move_base
-	    COMMANDS+=("'bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"'")
+	    COMMANDS+=("bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"")
 	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
-	    COMMANDS+=("'bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_PORT $KEEP $@\"'")
+	    COMMANDS+=("bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_PORT $KEEP $@\"")
 	fi
     	done
     fi
@@ -331,28 +333,28 @@ if [  $COMMAND  == start ]; then
     if $START_GAZEBO
     then
 	    #start refbox
-	    COMMANDS+=("'bash -i -c \"$startup_script_location -x refbox $KEEP $@\"'")
+	    COMMANDS+=("bash -i -c \"$startup_script_location -x refbox $KEEP $@\"")
     	#start refbox shell
-        COMMANDS+=("'bash -i -c \"$startup_script_location -x refbox-shell $KEEP $@\"'")
+        COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-shell $KEEP $@\"")
     fi
 
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-	COMMANDS+=("'bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"'")
+	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
 	FAWKES_USED=true
     done
 
     if $START_GAZEBO
     then
     	#start fawkes for communication, llsfrbcomm and eventually statistics
-	COMMANDS+=("'bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm $KEEP $SHUTDOWN $@\"'")
+	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm $KEEP $SHUTDOWN $@\"")
     fi
 
     PREFIXED_COMMANDS=("${COMMANDS[@]/#/${SUBTERM_PREFIX}}")
     SUFFIXED_COMMANDS=("${PREFIXED_COMMANDS[@]/%/${SUBTERM_SUFFIX}}")
-    echo "Executing $TERM_COMMAND ${SUFFIXED_COMMANDS[@]}"
-    eval "$TERM_COMMAND ${SUFFIXED_COMMANDS[@]}"
+    echo "Executing $TERM_COMMAND ${SUFFIXED_COMMANDS[@]} ${TERM_COMMAND_END}"
+    eval "$TERM_COMMAND ${SUFFIXED_COMMANDS[@]} ${TERM_COMMAND_END}"
 
     if $FAWKES_USED
     then
