@@ -597,7 +597,7 @@
          then
           (bind ?priority-increase ?prio:value)
       )
-      (retract ?prio))
+  )
   (printout warn "Goal " FILL-RS-FROM-BS " formulated" crlf)
   (assert (goal (id (sym-cat FILL-RS-FROM-BS- (gensym*)))
                 (class FILL-RS-FROM-BS)
