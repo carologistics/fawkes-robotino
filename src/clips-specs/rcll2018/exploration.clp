@@ -202,11 +202,11 @@
   (wm-fact (key exploration fact line-vis args? zone ?zn) (value ?vh))
   (wm-fact (key exploration fact tag-vis args? zone ?zn) (value ?tv))
 
-  " Either a tag or a line was found in this zone"
+  ; Either a tag or a line was found in this zone"
   (test (or (> ?tv 0) (> ?vh 0)))
 
-  " Since the finding of a tag is a stronger indicator of a machine than a line, we prefer zones were a tag was found
-    Either tag-vis is greater 0 or there is no zone with tag-vis greater than 0 and a line was found in this zone"
+  ; Since the finding of a tag is a stronger indicator of a machine than a line, we prefer zones were a tag was found
+  ; Either tag-vis is greater 0 or there is no zone with tag-vis greater than 0 and a line was found in this zone
   (or (test (> ?tv 0))
       (not (and (wm-fact (key exploration fact tag-vis args? zone ?zn2) (value ?tv2&:(> ?tv2 0)))
 		            (wm-fact (key exploration fact time-searched args? zone ?zn2) (value ?ts2&:(<= ?ts2 ?*EXP-SEARCH-LIMIT*)))
@@ -216,7 +216,7 @@
       )
   )
 
-  " Check that there is no zone with the same indicator of a machine (tag or line) that is closer"
+  ; Check that there is no zone with the same indicator of a machine (tag or line) that is closer
   (not (and (wm-fact (key exploration fact line-vis args? zone ?zn3&:(< (distance-mf (zone-center ?zn3) ?trans) (distance-mf (zone-center ?zn) ?trans))) (value ?vh3& : (not (and (= ?vh3 0) (= ?tv 0)))))
 	          (wm-fact (key exploration fact tag-vis args? zone ?zn3) (value ?tv3& : (not (and (> ?tv 0) (= ?tv3 0)))))
 	          (wm-fact (key exploration fact time-searched  args? zone ?zn3) (value ?ts3&:(<= ?ts3 ?*EXP-SEARCH-LIMIT*)))
@@ -230,8 +230,8 @@
 
   (plan-action (id ?action-id) (action-name move-node) (plan-id ?plan-id) (state RUNNING))
 
-  " Only start interrupting the EXPLORATION-PLAN if the first move action was finished.
-    This prohibits, that all bots start exploring zones right in front of the insertion zone"
+  ; Only start interrupting the EXPLORATION-PLAN if the first move action was finished.
+  ; This prohibits, that all bots start exploring zones right in front of the insertion zone
   (plan-action (id ?action-id2) (action-name ?action-name2) (plan-id ?plan-id) (state FINAL|FAILED))
 
   ?skill <- (skill (id ?skill-id) (name ?action-name) (status S_RUNNING))
@@ -260,13 +260,11 @@
 "
   (goal (class EXPLORATION) (mode DISPATCHED))
 
-  " There is an explorable zone..."
   (wm-fact (key exploration fact line-vis args? zone ?zn1) (value ?vh))
   (wm-fact (key exploration fact tag-vis args? zone ?zn1) (value ?tv))
   (wm-fact (key exploration zone ?zn1 args machine UNKNOWN team ?team))
   (test (or (> ?tv 0) (> ?vh 0)))
 
-  " ... but no zone may be searched according to the search-limit"
   (not (and
 	       (wm-fact (key exploration fact line-vis args? zone ?zn2) (value ?vh-tmp))
 	       (wm-fact (key exploration fact tag-vis args? zone ?zn2) (value ?tv-tmp))
