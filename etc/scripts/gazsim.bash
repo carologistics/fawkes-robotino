@@ -75,14 +75,29 @@ START_GAME=
 TEAM_CYAN=
 TEAM_MAGENTA=
 
-if [[ -n $TMUX ]]; then
-	# if $TMUX is set we're inside a tmux session
-	TERM_COMMAND=":"
-	SUBTERM_ARGS="; tmux new-window"
-else
-	TERM_COMMAND="gnome-terminal --geometry=$TERM_GEOMETRY"
-	SUBTERM_ARGS="--tab -e"
+if [ -z $TERMINAL ] ; then
+    if [[ -n $TMUX ]] ; then
+        TERMINAL=tmux
+    else
+        TERMINAL=gnome-terminal
+    fi
 fi
+
+case "$TERMINAL" in
+    gnome-terminal)
+        TERM_COMMAND="gnome-terminal --geometry=$TERM_GEOMETRY"
+        SUBTERM_ARGS="--tab -e"
+        ;;
+    tmux)
+        TERM_COMMAND=":"
+        SUBTERM_ARGS="; tmux new-window"
+        ;;
+    *)
+        >&2 echo "Unknown terminal $TERMINAL"
+        exit 1
+esac
+
+
 
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
