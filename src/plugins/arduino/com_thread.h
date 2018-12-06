@@ -129,9 +129,6 @@ private:
     std::string cfg_ifid_joystick_;
     std::string cfg_gripper_frame_id_;
     std::string cfg_gripper_dyn_frame_id_;
-    float cfg_x_max_;
-    float cfg_y_max_;
-    float cfg_z_max_;
     bool movement_pending_;
     bool calibrated_;
     char current_arduino_status_;

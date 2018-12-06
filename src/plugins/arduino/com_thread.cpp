@@ -633,10 +633,6 @@ ArduinoComThread::load_config()
         cfg_gripper_frame_id_ = config->get_string(cfg_prefix_ + "/gripper_frame_id");
         cfg_gripper_dyn_frame_id_ = config->get_string(cfg_prefix_ + "/gripper_dyn_frame_id");
 
-        cfg_x_max_ = config->get_float(cfg_prefix_ + "/x_max");
-        cfg_y_max_ = config->get_float(cfg_prefix_ + "/y_max");
-        cfg_z_max_ = config->get_float(cfg_prefix_ + "/z_max");
-
         set_speed_pending_ = false;
         set_acceleration_pending_ = false;
 
