@@ -75,14 +75,42 @@ START_GAME=
 TEAM_CYAN=
 TEAM_MAGENTA=
 
-if [[ -n $TMUX ]]; then
-	# if $TMUX is set we're inside a tmux session
-	TERM_COMMAND=":"
-	SUBTERM_ARGS="; tmux new-window"
-else
-	TERM_COMMAND="gnome-terminal --geometry=$TERM_GEOMETRY"
-	SUBTERM_ARGS="--tab -e"
+if [ -z $TERMINAL ] ; then
+    if [[ -n $TMUX ]] ; then
+        TERMINAL=tmux
+    else
+        TERMINAL=gnome-terminal
+    fi
 fi
+
+case "$TERMINAL" in
+    gnome-terminal)
+        TERM_COMMAND="gnome-terminal --window --geometry=$TERM_GEOMETRY -- bash -i -c '"
+        TERM_COMMAND_END="'"
+        SUBTERM_PREFIX="gnome-terminal --tab -- "
+        SUBTERM_SUFFIX=" ; "
+        ;;
+    screen)
+        TERM_COMMAND="screen -A -d -m -S gazsim /usr/bin/sleep 1 ; "
+        SUBTERM_PREFIX="screen -S gazsim -X screen "
+        SUBTERM_SUFFIX=" ; "
+        ;;
+    tmux)
+        if [[ -n $TMUX ]] ; then
+            TERM_COMMAND=""
+        else
+            TERM_COMMAND="tmux new-session -d;"
+        fi
+        TERM_COMMAND_END=""
+        SUBTERM_PREFIX="tmux new-window "
+        SUBTERM_SUFFIX=";"
+        ;;
+    *)
+        >&2 echo "Unknown terminal $TERMINAL"
+        exit 1
+esac
+
+echo "Using $TERMINAL"
 
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
@@ -274,62 +302,64 @@ if [  $COMMAND  == start ]; then
     #construct command to open everything in one terminal window with multiple tabs instead of 10.000 windows
 
     OPEN_COMMAND="$TERM_COMMAND"
+    COMMANDS=()
 
     if $START_GAZEBO
     then
 	#start gazebo
 	if [[ -z $HEADLESS ]]
 	then
-	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x gazebo $REPLAY $KEEP $@\"'"
+        COMMANDS+=("bash -i -c \"$startup_script_location -x gazebo $REPLAY $KEEP $@\"")
 	else
 	    #run headless
-	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x gzserver $REPLAY $KEEP $@\"'"
+        COMMANDS+=("bash -i -c \"$startup_script_location -x gzserver $REPLAY $KEEP $@\"")
 	fi
     fi
 
     if [  "$ROS"  == "-r" ]; then
     	#start roscores
 	# main roscore (non-robot)
-	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roscore -p $ROS_MASTER_PORT $KEEP $@\"'"
+    COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p $ROS_MASTER_PORT $KEEP $@\"")
 	if [ -n "$ROS_LAUNCH_MAIN" ]; then
-		OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_MAIN -p $ROS_MASTER_PORT $KEEP $@\"'"
+		COMMANDS+=("bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_MAIN -p $ROS_MASTER_PORT $KEEP $@\"")
 	fi
     	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     	do
 	    # robot roscore
-	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"'"
+	    COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"")
             # move_base
-	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"'"
+	    COMMANDS+=("bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"")
 	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
-	    OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_PORT $KEEP $@\"'"
+	    COMMANDS+=("bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_PORT $KEEP $@\"")
 	fi
     	done
     fi
 
     if $START_GAZEBO
     then
-	#start refbox
-	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x refbox $KEEP $@\"'"
+	    #start refbox
+	    COMMANDS+=("bash -i -c \"$startup_script_location -x refbox $KEEP $@\"")
     	#start refbox shell
-    	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"$startup_script_location -x refbox-shell $KEEP $@\"'"
+        COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-shell $KEEP $@\"")
     fi
 
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"'"
+	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
 	FAWKES_USED=true
     done
 
     if $START_GAZEBO
     then
     	#start fawkes for communication, llsfrbcomm and eventually statistics
-	OPEN_COMMAND="$OPEN_COMMAND $SUBTERM_ARGS 'bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm $KEEP $SHUTDOWN $@\"'"
+	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm $KEEP $SHUTDOWN $@\"")
     fi
 
-    # open windows
-    echo "executing $OPEN_COMMAND"
-    eval $OPEN_COMMAND
+    PREFIXED_COMMANDS=("${COMMANDS[@]/#/${SUBTERM_PREFIX}}")
+    SUFFIXED_COMMANDS=("${PREFIXED_COMMANDS[@]/%/${SUBTERM_SUFFIX}}")
+    echo "Executing $TERM_COMMAND ${SUFFIXED_COMMANDS[@]} ${TERM_COMMAND_END}"
+    eval "$TERM_COMMAND ${SUFFIXED_COMMANDS[@]} ${TERM_COMMAND_END}"
 
     if $FAWKES_USED
     then
@@ -353,3 +383,5 @@ if [  $COMMAND  == start ]; then
     else
     usage
 fi
+
+# vim:et:sw=4:ts=4
