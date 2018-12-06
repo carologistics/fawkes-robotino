@@ -2,7 +2,7 @@
 ;  util.clp - utilities needed for executive rcll agent
 ;
 ;  Created: Tue 19 Apr 2018 17:03:31 CET
-;  Copyright  2018  Mostafa Gomaa <gomaa@kbsg.rwth-aachen.de>
+;  Copyright  2018  Mostafa Gomaa <gomaa@kbsg.rwth-aachen.de>, Daniel Habering
 ;  Licensed under GPLv2+ license, cf. LICENSE file in the doc directory.
 ;---------------------------------------------------------------------------
 
@@ -29,6 +29,7 @@
   (return (random 0 1000000000))
 )
 
+
 (deffunction get-param-by-arg (?params ?arg)
 	"Extract the argument named in ?arg.
    @param ?params the paramter list
@@ -48,13 +49,25 @@
 	(return nil)
 )
 
+
 (deffunction clips-name (?zone)
+  "Replaces the 2nd character of any string with '-' and returns it as symbol
+  @param ?zone name of the zone
+
+  @return returns the input as string with the second character replaced by a '-'
+  "
   (return
     (sym-cat (sub-string 1 1 ?zone) "-" (sub-string 3 99 ?zone))
   )
 )
 
+
 (deffunction deg-to-rad (?deg)
+  "Converts an angle in degree to radiant
+  @param ?deg angle in degree
+
+  @return angle in radiant
+  "
   (bind ?bigrad (* (/ ?deg 360) ?*2PI*))
   (if (> ?bigrad ?*PI*) then
     (return (* -1 (- ?*2PI* ?bigrad)))
@@ -63,7 +76,13 @@
   )
 )
 
+
 (deffunction zone-center (?zn)
+  "Calculates the coordinates of the center of a zone
+  @param ?zn name of the zone (eg. M-Z34)
+
+  @return coordinates of the zone as multifield (eg (3.5 4.5))
+  "
   (bind ?x (eval (sub-string 4 4 ?zn)))
   (bind ?y (eval (sub-string 5 5 ?zn)))
   (if (eq (sub-string 1 1 ?zn) "M") then
@@ -77,6 +96,11 @@
 
 
 (deffunction zone-coords (?zn)
+  "Extracts the coordinates of the zone
+  @param ?zn id of the zone (eg M-Z34)
+
+  @return coordinates of the zone as multifield (eg (3 4))
+  "
   (bind ?x (eval (sub-string 4 4 ?zn)))
   (bind ?y (eval (sub-string 5 5 ?zn)))
   (if (eq (sub-string 1 1 ?zn) "M") then
@@ -85,7 +109,15 @@
   (return (create$ ?x ?y))
 )
 
+
 (deffunction tag-offset (?zone ?yaw ?width)
+  "Calculates the offset of the position of a tag inside a zone
+  @param ?zone id of the zone (eg M-Z33)
+  @param ?yaw rotation of the machine in this zone
+  @param ?width width of the tag
+
+  @return coordinates of the tag as multifield
+  "
   (bind ?c (zone-center ?zone))
   (bind ?x (nth$ 1 ?c))
   (bind ?y (nth$ 2 ?c))
@@ -96,7 +128,7 @@
 
 
 (deffunction navgraph-add-all-new-tags ()
-  "send all new tags to the navgraph generator"
+  "Send all new tags to the navgraph generator"
   (bind ?any-tag-to-add FALSE)
 
   (delayed-do-for-all-facts ((?ft-n wm-fact))
@@ -158,19 +190,42 @@
   )
 )
 
+
 ;---------------Exploration-Phase functions--------------------------
+
 (deffunction distance (?x ?y ?x2 ?y2)
-  "Returns the distance of two points in the x,y-plane."
+  "Returns the distance of two points in the x,y-plane.
+  @param ?x ?y coordinates of one point
+  @param ?x2 ?y2 coordinates of the other point
+
+  @return euclidean distance of the two points
+  "
   (return (float (sqrt (float(+ (* (- ?x ?x2) (- ?x ?x2)) (* (- ?y ?y2) (- ?y ?y2)))))))
 )
 
+
 (deffunction protobuf-name (?zone)
+  "Replaces the 2nd character of a zone name with '_'
+  @param ?zone id of the zone (eg M-Z22)
+
+  @return the input string with 2nd character replaced with '_'
+  "
   (return
     (str-cat (sub-string 1 1 ?zone) "_" (sub-string 3 99 ?zone))
   )
 )
 
+
 (deffunction transform-safe (?to-frame ?from-frame ?timestamp ?trans ?rot)
+  " Transforms a position and  rotation of one frame into the other
+  @param ?to-frame target frame to which the ouput should be relative to
+  @param ?from-frame origin frame to which the input coordinates are relative to
+  @param ?timestamp timestamp of the input coordinates
+  @param ?trans coordinates that should be transformed
+  @param ?rot rotation in deg that should be transformed
+
+  @return coordinates and rotation relative to the target frame if possible. FALSE otherwise
+  "
   (if (tf-can-transform ?to-frame ?from-frame ?timestamp) then
     (bind ?rv (tf-transform-pose ?to-frame ?from-frame ?timestamp ?trans ?rot))
   else
@@ -187,12 +242,27 @@
   )
 )
 
+
 (deffunction get-mps-type-from-name (?mps)
+  " Extracts the type of mps out of the name
+  @param ?mps name of the mps (eg M-CS1)
+
+  @return type of the mps as symbol (eg CS)
+  "
   (bind ?type (sym-cat (sub-string 3 4 (str-cat ?mps))))
   (return ?type)
 )
 
+
 (deffunction compensate-movement (?factor ?v-odom ?p ?timestamp)
+  " Uses measured velocity to relocate a given point according to a given factor
+  @param ?factor used to adapt the amount of compensation
+  @param ?v-odom measured translation and rotation velocity
+  @param ?p point to be adapted
+  @param ?timestamp timestamp of the measurement
+
+  @return point that got compensated by the error probable introduced through the moving
+  "
   (if (eq ?p FALSE) then
     (return FALSE)
   )
@@ -218,11 +288,19 @@
   (return ?rv)
 )
 
+
 (deffunction distance-mf (?p1 ?p2)
+  "Calculates distance between two points"
   (return (distance (nth$ 1 ?p1) (nth$ 2 ?p1) (nth$ 1 ?p2) (nth$ 2 ?p2)))
 )
 
+
 (deffunction round-down (?x)
+  "Rounds a given numer down to the next natural number
+  @param ?x number to round
+
+  @return next lowest natural number
+  "
   (bind ?round (round ?x))
   (if (< ?x ?round) then
     (return (- ?round 1))
@@ -230,13 +308,21 @@
   (return ?round)
 )
 
+
 (deffunction round-up (?x)
+  "Rounds a given number up to the next natural number
+  @param ?x number to round
+
+  @return next highest natural number
+  "
   (bind ?round (round ?x))
   (if (> ?x ?round) then
     (return (+ ?round 1))
   )
   (return ?round)
 )
+
+
 (deffunction get-zone (?margin $?vector)
   "Return the zone name for a given map coordinate $?vector if its
    distance from the zone borders is greater or equal than ?margin."
@@ -273,16 +359,32 @@
   (bind ?xr (round-up ?x))
   (return (sym-cat ?rv ?xr ?yr))
 )
-(deffunction utils-get-2d-center (?x1 ?y1 ?x2 ?y2)
+
+
+(deffunction get-2d-center (?x1 ?y1 ?x2 ?y2)
+  "Calculates the point in the middle of two given points
+  @param ?x1 ?y1 coordinates of the first point
+  @param ?x2 ?y2 coordinates of the second point
+
+  @return the point exactly in the middle of the two points
+  "
   (return (create$ (/ (+ ?x1 ?x2) 2) (/ (+ ?y1 ?y2) 2)))
 )
+
+
 (deffunction laser-line-center-map (?ep1 ?ep2 ?frame ?timestamp)
-  (bind ?c (utils-get-2d-center (nth$ 1 ?ep1) (nth$ 2 ?ep1) (nth$ 1 ?ep2) (nth$ 2 ?ep2)))
+  (bind ?c (get-2d-center (nth$ 1 ?ep1) (nth$ 2 ?ep1) (nth$ 1 ?ep2) (nth$ 2 ?ep2)))
   (bind ?c3 (nth$ 1 ?c) (nth$ 2 ?c) 0)
   (return (transform-safe "map" ?frame ?timestamp ?c3 (create$ 0 0 0 1)))
 )
 
+
 (deffunction mirror-name (?zn)
+  "Gets the name of a zone or mps on the other half on the field
+  @param ?zn name of a zone or machine (eg M-CS1 or M-Z22)
+
+  @return name of the corresponding zone on the other half of the field
+  "
   (bind ?team (sub-string 1 1 ?zn))
   (bind ?zone (sub-string 3 99 ?zn))
   (if (eq ?team "M") then
@@ -292,8 +394,14 @@
   )
 )
 
+
 (deffunction want-mirrored-rotation (?mtype ?zone)
-"According to the RCLL2017 rulebook, this is when a machine is mirrored"
+  "Checks if a machine has to be mirrored according to the rulebook
+  @param ?mtype type of the machine
+  @param ?zone zone the machine stands in
+
+  @return TRUE if the rotation of the machine has to be mirrored
+  "
   (bind ?zn (str-cat ?zone))
   (bind ?x (eval (sub-string 4 4 ?zn)))
   (bind ?y (eval (sub-string 5 5 ?zn)))
@@ -307,10 +415,19 @@
                        )
                    )
               )
-  ))
+          )
+  )
 )
 
+
 (deffunction mirror-orientation (?mtype ?zone ?ori)
+  "Calculates the rotation of a mps on the other half of the field
+  @param ?mtype type of the mps
+  @param ?zone zone in which the mps is located
+  @param ?ori orientation of the mps in that zone
+
+  @return orientation of the given mps on the other half of the field
+  "
   (bind ?zn (str-cat ?zone))
   (bind ?t (sub-string 1 1 ?zn))
   (if (want-mirrored-rotation ?mtype ?zone)
@@ -347,7 +464,13 @@
   )
 )
 
+
 (deffunction mirror-team (?team)
+  "Returns the opposite team
+  @param ?team the one team
+
+  @return the other team
+  "
   (if (eq (sym-cat ?team) CYAN) then
     (return MAGENTA)
   else
@@ -355,7 +478,9 @@
   )
 )
 
+
 (deffunction navigator-set-speed (?max-velocity ?max-rotation)
+  "Uses the NavigatorInterface to set the max velocity and speed"
   (bind ?msg (blackboard-create-msg "NavigatorInterface::Navigator" "SetMaxVelocityMessage"))
   (blackboard-set-msg-field ?msg "max_velocity" ?max-velocity)
   (blackboard-send-msg ?msg)
