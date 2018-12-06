@@ -203,6 +203,17 @@
 )
 
 
+(defrule exp-sync-tag-finding
+" Sync finding of a tag to the other field size
+"
+  ?wm <- (wm-fact (key exploration fact tag-vis args? zone ?zn) (value ?tv))
+  ?we <- (wm-fact (key exploration fact tag-vis args? zone ?zn2&:(eq ?zn2 (mirror-name ?zn))) (value ?tv2&: (< ?tv2 ?tv)))
+  =>
+  (modify ?we (value ?tv))
+  (printout t "Synced tag-finding: " ?zn2 crlf)
+)
+
+
 (defrule exp-start-zone-exploring
 " If there is a zone, where we suspect a machine, interrupt the EXPLORATION-PLAN and start exploring the zone
 "
