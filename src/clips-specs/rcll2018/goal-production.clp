@@ -40,9 +40,9 @@
   ?*PRIORITY-MOUNT-FIRST-RING* = 91
   ?*PRIORITY-CLEAR-CS* = 70
   ?*PRIORITY-CLEAR-RS* = 55
-  ?*PRIORITY-PREFILL-RS-WITH-HOLDING-BASE* = 45
   ?*PRIORITY-PREFILL-CS* = 50 ;This priority can be increased by +1
   ?*PRIORITY-PREFILL-RS* = 40 ;This priority can be increased by up to +2
+  ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* = 30
   ?*PRIORITY-ADD-ADDITIONAL-RING-WAITING* = 20
   ?*PRIORITY-DISCARD-UNKNOWN* = 10
   ?*PRIORITY-WAIT* = 2
@@ -595,7 +595,7 @@
   (printout warn "Goal " FILL-RS-FROM-BS " formulated" crlf)
   (assert (goal (id (sym-cat FILL-RS-FROM-BS- (gensym*)))
                 (class FILL-RS-FROM-BS)
-                (priority (+ ?priority-increase ?*PRIORITY-PREFILL-RS*))
+                (priority (+ ?priority-increase ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE*))
                 (parent ?maintain-id)
                              (params robot ?robot
                                      mps ?mps
