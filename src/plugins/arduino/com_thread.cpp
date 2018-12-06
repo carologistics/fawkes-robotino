@@ -640,6 +640,25 @@ ArduinoComThread::load_config()
         set_speed_pending_ = false;
         set_acceleration_pending_ = false;
 
+        cfg_step_pulse_ = config->get_int(cfg_prefix_ + "/grbl_config/step_pulse");
+        cfg_step_idle_delay_ = config->get_int(cfg_prefix_ + "/grbl_config/step_idle_delay");
+        cfg_homing_dir_invert_ = config->get_int(cfg_prefix_ + "/grbl_config/homing_dir_invert");
+        cfg_homing_feed_ = config->get_float(cfg_prefix_ + "/grbl_config/homing_feed");
+        cfg_homing_seek_ = config->get_float(cfg_prefix_ + "/grbl_config/homing_seek");
+        cfg_homing_pulloff_ = config->get_float(cfg_prefix_ + "/grbl_config/homing_pulloff");
+        cfg_x_steps_ = config->get_float(cfg_prefix_ + "/grbl_config/x_steps");
+        cfg_y_steps_ = config->get_float(cfg_prefix_ + "/grbl_config/y_steps");
+        cfg_z_steps_ = config->get_float(cfg_prefix_ + "/grbl_config/z_steps");
+        cfg_x_max_rate_ = config->get_float(cfg_prefix_ + "/grbl_config/x_max_rate");
+        cfg_y_max_rate_ = config->get_float(cfg_prefix_ + "/grbl_config/y_max_rate");
+        cfg_z_max_rate_ = config->get_float(cfg_prefix_ + "/grbl_config/z_max_rate");
+        cfg_x_acc_ = config->get_float(cfg_prefix_ + "/grbl_config/x_acc");
+        cfg_y_acc_ = config->get_float(cfg_prefix_ + "/grbl_config/y_acc");
+        cfg_z_acc_ = config->get_float(cfg_prefix_ + "/grbl_config/z_acc");
+        cfg_x_max_ = config->get_float(cfg_prefix_ + "/grbl_config/x_max");
+        cfg_y_max_ = config->get_float(cfg_prefix_ + "/grbl_config/y_max");
+        cfg_z_max_ = config->get_float(cfg_prefix_ + "/grbl_config/z_max");
+
         // 2mm / rotation
     } catch (Exception &e) {
     }

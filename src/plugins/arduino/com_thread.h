@@ -136,6 +136,25 @@ private:
     bool calibrated_;
     char current_arduino_status_;
 
+    int cfg_step_pulse_;
+    int cfg_step_idle_delay_;
+    int cfg_homing_dir_invert_;
+    float cfg_homing_feed_;
+    float cfg_homing_seek_;
+    float cfg_homing_pulloff_;
+    int cfg_x_steps_;
+    int cfg_y_steps_;
+    int cfg_z_steps_;
+    int cfg_x_max_rate_;
+    int cfg_y_max_rate_;
+    int cfg_z_max_rate_;
+    int cfg_x_acc_;
+    int cfg_y_acc_;
+    int cfg_z_acc_;
+    int cfg_x_max_;
+    int cfg_y_max_;
+    int cfg_z_max_;
+
     unsigned int msecs_to_wait_;
 
     // gripper pose to be stored in X, Y, Z
