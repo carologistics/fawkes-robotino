@@ -67,7 +67,12 @@
 )
 
 (defrule goal-reasoner-create-acquire-token-spawning-master
-  "If no one is spawn-master. Try to be the spawn master"
+"If no one is spawning master. Try to become the spawning master
+
+ The spawning master creates the facts for new workpieces anyd capcarriers.
+ Those can be introduced to the world during the game e.g. through dispensing
+ at the base station or refilling of a shelf.
+"
  (domain-facts-loaded)
  (domain-object (name SPAWNING-MASTER) (type master-token))
  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
@@ -81,6 +86,9 @@
 
 ; ## Maintain beacon sending
 (defrule goal-reasoner-create-beacon-maintain
+" The parent goal for beacon signals. Allows formulation of
+  goals that periodically communicate with the refbox.
+"
   (not (goal (class BEACONMAINTAIN)))
   =>
   (assert (goal (id (sym-cat BEACONMAINTAIN- (gensym*)))
@@ -88,6 +96,9 @@
 )
 
 (defrule goal-reasoner-create-beacon-achieve
+  " Send a beacon signal whenever at least one second has elapsed since it
+    last one got sent.
+  "
   ?g <- (goal (id ?maintain-id) (class BEACONMAINTAIN) (mode SELECTED))
   (not (goal (class BEACONACHIEVE)))
   (time $?now)
@@ -102,7 +113,7 @@
 
 ; ## Maintain wp-spawning
 (defrule goal-reasoner-create-wp-spawn-maintain
-  "Maintain Spawning only if no one else is (ie, no one is spawn-master)"
+  "Maintain Spawning if the spawning-master token is held"
  (domain-facts-loaded)
  (not (goal (class WPSPAWN-MAINTAIN)))
  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
@@ -138,6 +149,10 @@
 )
 
 (defrule goal-reasoner-create-refill-shelf-maintain
+" The parent goal to refill a shelf. Allows formulation of goals to refill
+  a shelf only if the game is in the production phase and the domain is loaded.
+  Only the spawning-master is in charge of handling shelf refills.
+"
   (domain-facts-loaded)
   (not (goal (class REFILL-SHELF-MAINTAIN)))
   (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
@@ -149,6 +164,7 @@
 )
 
 (defrule goal-reasoner-create-refill-shelf-achieve
+  "Refill a shelf whenever it is empty."
   ?g <- (goal (id ?maintain-id) (class REFILL-SHELF-MAINTAIN) (mode SELECTED))
   (not (goal (class REFILL-SHELF-ACHIEVE)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
@@ -168,6 +184,7 @@
 )
 
 (defrule navgraph-compute-wait-positions-finished
+  "Add the waiting points to the domain once their generation is finished."
   (NavGraphWithMPSGeneratorInterface (final TRUE))
 =>
   (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
@@ -184,10 +201,11 @@
 
 ; ## Maintain production
 (defrule goal-reasoer-create-goal-production-maintain
-  "The parent production goal. Allowes formulation of
-  production goals only if proper game state selected
-  and domain loaded. Other production goals are
-  formulated as sub-goals of this goal"
+" The parent production goal. Allows formulation of
+  production goals only if the proper game state selected
+  and the domain got loaded. Other production goals are
+  formulated as sub-goals of this goal.
+"
   (domain-facts-loaded)
   (not (goal (class PRODUCTION-MAINTAIN)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
@@ -202,6 +220,7 @@
 )
 
 (defrule goal-reasoner-create-wait
+  "Keep waiting at one of the waiting positions."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key domain fact self args? r ?self))
@@ -220,6 +239,7 @@
 )
 
 (defrule goal-reasoner-create-go-wait
+  "Drive to a waiting position and wait there."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key domain fact self args? r ?self))
@@ -239,6 +259,7 @@
 )
 
 (defrule goal-reasoner-create-enter-field
+  "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (not (goal (class ENTER-FIELD-ACHIEVE)))
   (wm-fact (key domain fact self args? r ?robot))
@@ -256,6 +277,8 @@
 
 
 (defrule goal-reasoner-create-fill-cap-goal
+" Fill a cap into a cap station.
+  Use a capcarrier from the corresponding shelf to feed it into a cap station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -297,7 +320,7 @@
 )
 
 (defrule goal-reasoner-create-clear-rs-from-expired-product
-  "Remove an unfinished product from RS"
+  "Remove an unfinished product from the output of a ring station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
   (wm-fact (key refbox game-time) (values $?game-time))
@@ -331,7 +354,9 @@
 
 
 (defrule goal-reasoner-create-clear-cs-for-capless-carriers
-  "Remove an unknown base from CS after retrieving a cap from it."
+" Remove a capless capcarrier from the output of a cap station after
+  retrieving a cap from it.
+"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -360,7 +385,7 @@
 
 
 (defrule goal-reasoner-create-clear-bs
-  "Remove a workpiece with high priority"
+  "Remove a workpiece from the base station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -387,7 +412,7 @@
 
 
 (defrule goal-reasoner-clear-cs-from-expired-product
-  "Remove an unknown base from CS after retrieving a cap from it."
+  "Remove a finished product from a cap station after it's deadline passed."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox game-time) (values $?game-time))
@@ -421,7 +446,10 @@
 
 
 (defrule goal-reasoner-create-prefill-rs-for-started-order-constraint
-  "Prefilling a specific RS gets +2 priority if a started product waits for additional bases on it."
+" Add a priority increase of +2 for goals that pre-fill a ring station which
+  requires additional bases such that the production of a started product
+  can be continued.
+"
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
   (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
   (not (goal (class FILL-RS|FILL-RS-FROM-BS) (mode FORMULATED)))
@@ -467,7 +495,12 @@
 )
 
 (defrule goal-reasoner-create-prefill-rs-higher-priority-constraint
-  "Prefilling a specific RS gets +1 priority if a unselected order needs additional bases from it."
+" Add a priority increase of +1 for goals that pre-fill a ring station which
+  requires additional bases such that an available order (that was not started
+  yet) can use them for the first ring.
+  The second and third rings of available orders are not considered as
+  priority increases for those can be computed once the order is started.
+"
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
   (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (not (goal (class FILL-RS|FILL-RS-FROM-BS) (mode FORMULATED)))
@@ -502,7 +535,7 @@
 
 
 (defrule goal-reasoner-create-prefill-ring-station-from-base-station
-  "Insert a new base in a RS for preparation"
+  "Fill the ring station with a fresh base from the base station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -552,7 +585,7 @@
 
 
 (defrule goal-reasoner-create-prefill-ring-station-from-shelf
-  "Insert a new base in a RS for preparation"
+  "Fill a ring station with a capcarrier from a shelf."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -596,7 +629,7 @@
 
 
 (defrule goal-reasoner-create-prefill-ring-station
-  "Insert a base with unknown color in a RS for preparation"
+  "Fill a ring station with the currently holding workpiece."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -638,7 +671,7 @@
 
 
 (defrule goal-reasoner-create-discard-unknown
-  "Discard a base which is not needed if no RS can be pre-filled"
+  "Discard a base which is not needed."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -667,6 +700,10 @@
 
 
 (defrule goal-reasoner-create-produce-c0
+" Produce a C0 product: Get the correct base and mount the right cap on it.
+  The produced workpiece stays in the output of the used cap station after
+  successfully executing this goal.
+"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
@@ -746,6 +783,10 @@
 
 
 (defrule goal-reasoner-create-mount-first-ring
+" Start a higher order product by getting the base and mounting the first ring.
+  The workpiece remains in the output of the used ring station after
+  successfully finishing this goal.
+"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
 
@@ -834,6 +875,12 @@
 
 
 (defrule goal-reasoner-create-mount-next-ring
+" Mount the next ring on a CX product:
+   - Take the started workpiece from the ring station output.
+   - Bring it to the ring station that can mount the next ring.
+  The workpiece remains in the output of the used ring station after
+  successfully finishing this goal.
+"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
   (wm-fact (key refbox game-time) (values $?game-time))
@@ -918,6 +965,16 @@
 
 
 (defrule goal-reasoner-create-produce-c1
+" Produce a C1 product: Get the workpiece with the mounted ring and mount
+  a cap on it.
+  The produced workpiece stays in the output of the used cap station after
+  successfully executing this goal.
+
+  Note that the produce-c1, produce-c2, produce-c3 goal creation is
+  deliberately split into separate rules. This is done for readability and
+  to leave the option open to customize the strategy for CX products in
+  the future.
+"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
@@ -977,6 +1034,11 @@
 
 
 (defrule goal-reasoner-create-produce-c2
+" Produce a C2 product: Get the workpiece with the mounted ring and mount
+  a cap on it.
+  The produced workpiece stays in the output of the used cap station after
+  successfully executing this goal.
+"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
@@ -1036,6 +1098,11 @@
 )
 
 (defrule goal-reasoner-create-produce-c3
+" Produce a C3 product: Get the workpiece with the mounted ring and mount
+  a cap on it.
+  The produced workpiece stays in the output of the used cap station after
+  successfully executing this goal.
+"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
@@ -1097,6 +1164,9 @@
 )
 
 (defrule goal-reasoner-create-reset-mps
+" Reset an mps to restore a consistent world model after getting a workpiece
+  from it failed too often.
+"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key domain fact self args? r ?self))
@@ -1116,6 +1186,9 @@
 )
 
 (defrule goal-reasoner-create-discard-failed-put-slide
+" Discard the currently held workpiece after filling it to a ring station
+  failed too often
+"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -1143,6 +1216,7 @@
 
 
 (defrule goal-reasoner-create-deliver
+  "Deliver a fully produced workpiece."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
@@ -1211,6 +1285,7 @@
 
 ; ## Goal Evaluation
  (defrule goal-reasoner-evaluate-failed-enter-field
+  "HACK: Stop trying to enter the field when it failed a few times."
    ?g <- (goal (id ?gid) (class ENTER-FIELD-ACHIEVE)
                (mode FINISHED) (outcome FAILED))
   ?pa <- (plan-action (goal-id ?gid) (state FAILED) (action-name enter-field))
@@ -1229,6 +1304,8 @@
 )
 
 (defrule goal-reasoner-evaluate-production-maintain
+  "Clean up all rs-fill-priorities facts when the production maintenance goal
+   fails."
   ?g <- (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (parent nil)
               (mode FINISHED) (outcome ?outcome))
   ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
@@ -1243,6 +1320,12 @@
 )
 
 (defrule goal-reasoner-evaluate-completed-subgoals-produce-c0--mount-first-ring
+" Bind a workpiece to the order it belongs to.
+
+  Workpieces that got dispensed during PRODUCE-C0 and MOUNT-FIRST-RING get
+  tied to their order independent of the goal outcome as long as they are
+  still usable.
+"
   ?g <- (goal (id ?goal-id) (class PRODUCE-C0|MOUNT-FIRST-RING)
               (parent ?parent-id)
               (mode FINISHED) (outcome ?outcome)
@@ -1266,6 +1349,9 @@
 )
 
 (defrule goal-reasoner-evaluate-completed-subgoal-refill-shelf
+" Create the domain objects and wm-facts corresponding to the freshly spawned
+  capcarriers when the REFILL-SHELF-ACHIEVE goal finishes successfully.
+"
   ?g <- (goal (class REFILL-SHELF-ACHIEVE) (parent ?parent-id)
              (mode FINISHED) (outcome COMPLETED)
              (params mps ?mps))
@@ -1299,6 +1385,9 @@
 
 
 (defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
+" Create the domain objects and wm-facts corresponding to the freshly spawned
+  workpieces when the WP-SPAWN-ACHIEVE goal finishes successfully.
+"
   ?g <- (goal (id ?goal-id) (class WPSPAWN-ACHIEVE) (parent ?parent-id)
             (mode FINISHED) (outcome COMPLETED)
             (params robot ?robot))
@@ -1325,6 +1414,7 @@
 
 
 (defrule goal-reasoner-evaluate-cleanup-evaluated-wp-for-order-facts
+  "Unbind a workpiece from it's order when it can not be used anymore."
   ?wp-for-order <- (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (value TRUE))
   (not (wm-fact (key domain fact wp-usable args? wp ?wp)))
   =>
