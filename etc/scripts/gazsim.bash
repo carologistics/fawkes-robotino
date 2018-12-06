@@ -93,7 +93,7 @@ case "$TERMINAL" in
         if [[ -n $TMUX ]] ; then
             TERM_COMMAND=""
         else
-            TERM_COMMAND="tmux"
+            TERM_COMMAND="tmux new-session -d;"
         fi
         SUBTERM_PREFIX="tmux new-window "
         SUBTERM_SUFFIX=";"
