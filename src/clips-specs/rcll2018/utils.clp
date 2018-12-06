@@ -364,3 +364,229 @@
   (blackboard-send-msg ?msg)
 )
 
+
+(deffunction zone-is-blocked (?mps-zone ?orientation ?zone ?mps)
+  (bind ?type (eval (sub-string 3 4 ?mps)))
+  (bind ?x (eval (sub-string 4 4 ?zone)))
+  (bind ?mps-x (eval (sub-string 4 4 ?mps-zone)))
+  (bind ?y (eval (sub-string 5 5 ?zone)))
+  (bind ?mps-y (eval (sub-string 5 5 ?mps-zone)))
+  (bind ?side (sub-string 1 1 ?mps-zone))
+  (if (eq ?side (sub-string 1 1 ?zone)) then
+	  (return FALSE)
+  )
+  (if (eq (str-compare ?side "C") 0) then
+    (if (eq ?orientation 270) then
+      (if (and (eq ?y (- ?mps-y 1)) (eq ?x ?mps-x)) then
+        (return TRUE)
+      )
+    )
+    (if (eq ?orientation 90) then
+      (if (and (eq ?y (+ ?mps-y 1)) (eq ?x ?mps-x)) then
+        (return TRUE)
+      )
+    )
+
+    (if (eq ?orientation 0) then
+      (if (and (eq ?x (+ ?mps-x 1)) (eq ?y ?mps-y)) then
+        (return TRUE)
+      )
+    )
+    (if (eq ?orientation 180) then
+      (if (and (eq ?x (- ?mps-x 1)) (eq ?y ?mps-y)) then
+        (return TRUE)
+      )
+    )
+    (if (eq ?orientation 315) then
+      (if (or (and (eq ?x (+ ?mps-x 1)) (eq ?y ?mps-y))
+              (and (eq ?x (+ ?mps-x 1)) (eq ?y (- ?mps-y 1)))
+              (and (eq ?x ?mps-x) (eq ?y (- ?mps-y 1)))) then
+        (return TRUE)
+      )
+    )
+    (if (eq ?orientation 45) then
+      (if (or (and (eq ?x (+ ?mps-x 1)) (eq ?y ?mps-y))
+              (and (eq ?x (+ ?mps-x 1)) (eq ?y (+ ?mps-y 1)))
+              (and (eq ?x ?mps-x) (eq ?y (+ ?mps-y 1)))) then
+        (return TRUE)
+      )
+    )
+    (if (eq ?orientation 135) then
+      (if (or (and (eq ?x (- ?mps-x 1)) (eq ?y ?mps-y))
+              (and (eq ?x (- ?mps-x 1)) (eq ?y (+ ?mps-y 1)))
+              (and (eq ?x ?mps-x) (eq ?y (+ ?mps-y 1)))) then
+        (return TRUE)
+      )
+    )
+    (if (eq ?orientation 225) then
+      (if (or (and (eq ?x (- ?mps-x 1)) (eq ?y ?mps-y))
+              (and (eq ?x (- ?mps-x 1)) (eq ?y (- ?mps-y 1)))
+              (and (eq ?x ?mps-x) (eq ?y (- ?mps-y 1)))) then
+        (return TRUE)
+      )
+    )
+    (if (or (eq (str-compare ?type "BS") 0)
+            (eq (str-compare ?type "CS") 0)
+            (eq (str-compare ?type "RS") 0)) then
+      (if (eq ?orientation 270) then
+        (if (and (eq ?y (+ ?mps-y 1)) (eq ?x ?mps-x)) then
+          (return TRUE)
+        )
+      )
+      (if (eq ?orientation 90) then
+        (if (and (eq ?y (- ?mps-y 1)) (eq ?x ?mps-x)) then
+          (return TRUE)
+        )
+      )
+
+      (if (eq ?orientation 0) then
+        (if (and (eq ?x (- ?mps-x 1)) (eq ?y ?mps-y)) then
+          (return TRUE)
+        )
+      )
+      (if (eq ?orientation 180) then
+        (if (and (eq ?x (+ ?mps-x 1)) (eq ?y ?mps-y)) then
+          (return TRUE)
+        )
+      )
+      (if (eq ?orientation 315) then
+        (if (or (and (eq ?x (- ?mps-x 1)) (eq ?y ?mps-y))
+                (and (eq ?x (- ?mps-x 1)) (eq ?y (- ?mps-y 1)))
+                (and (eq ?x ?mps-x) (eq ?y (+ ?mps-y 1)))) then
+          (return TRUE)
+        )
+      )
+      (if (eq ?orientation 45) then
+        (if (or (and (eq ?x (- ?mps-x 1)) (eq ?y ?mps-y))
+                (and (eq ?x (- ?mps-x 1)) (eq ?y (+ ?mps-y 1)))
+                (and (eq ?x ?mps-x) (eq ?y (- ?mps-y 1)))) then
+          (return TRUE)
+        )
+      )
+      (if (eq ?orientation 135) then
+        (if (or (and (eq ?x (+ ?mps-x 1)) (eq ?y ?mps-y))
+                (and (eq ?x (+ ?mps-x 1)) (eq ?y (+ ?mps-y 1)))
+                (and (eq ?x ?mps-x) (eq ?y (- ?mps-y 1)))) then
+          (return TRUE)
+        )
+      )
+      (if (eq ?orientation 225) then
+        (if (or (and (eq ?x (+ ?mps-x 1)) (eq ?y ?mps-y))
+                (and (eq ?x (+ ?mps-x 1)) (eq ?y (- ?mps-y 1)))
+                (and (eq ?x ?mps-x) (eq ?y (+ ?mps-y 1)))) then
+          (return TRUE)
+        )
+      )
+
+    )
+
+  else
+    (if (eq ?orientation 270) then
+      (if (and (eq ?y (- ?mps-y 1)) (eq ?x ?mps-x)) then
+        (return TRUE)
+      )
+    )
+    (if (eq ?orientation 90) then
+      (if (and (eq ?y (+ ?mps-y 1)) (eq ?x ?mps-x)) then
+        (return TRUE)
+      )
+    )
+
+    (if (eq ?orientation 0) then
+      (if (and (eq ?x (- ?mps-x 1)) (eq ?y ?mps-y)) then
+        (return TRUE)
+      )
+    )
+    (if (eq ?orientation 180) then
+      (if (and (eq ?x (+ ?mps-x 1)) (eq ?y ?mps-y)) then
+        (return TRUE)
+      )
+    )
+    (if (eq ?orientation 315) then
+      (if (or (and (eq ?x (- ?mps-x 1)) (eq ?y ?mps-y))
+              (and (eq ?x (- ?mps-x 1)) (eq ?y (- ?mps-y 1)))
+              (and (eq ?x ?mps-x) (eq ?y (- ?mps-y 1)))) then
+        (return TRUE)
+      )
+    )
+    (if (eq ?orientation 45) then
+      (if (or (and (eq ?x (- ?mps-x 1)) (eq ?y ?mps-y))
+              (and (eq ?x (- ?mps-x 1)) (eq ?y (+ ?mps-y 1)))
+              (and (eq ?x ?mps-x) (eq ?y (+ ?mps-y 1)))) then
+        (return TRUE)
+      )
+    )
+    (if (eq ?orientation 135) then
+      (if (or (and (eq ?x (+ ?mps-x 1)) (eq ?y ?mps-y))
+              (and (eq ?x (+ ?mps-x 1)) (eq ?y (+ ?mps-y 1)))
+              (and (eq ?x ?mps-x) (eq ?y (+ ?mps-y 1)))) then
+        (return TRUE)
+      )
+    )
+    (if (eq ?orientation 225) then
+      (if (or (and (eq ?x (+ ?mps-x 1)) (eq ?y ?mps-y))
+              (and (eq ?x (+ ?mps-x 1)) (eq ?y (- ?mps-y 1)))
+              (and (eq ?x ?mps-x) (eq ?y (- ?mps-y 1)))) then
+        (return TRUE)
+      )
+    )
+    (if (or (eq (str-compare ?type "BS") 0)
+            (eq (str-compare ?type "CS") 0)
+            (eq (str-compare ?type "RS") 0)) then
+
+      (if (eq ?orientation 270) then
+        (if (and (eq ?y (+ ?mps-y 1)) (eq ?x ?mps-x)) then
+          (return TRUE)
+        )
+      )
+      (if (eq ?orientation 90) then
+        (if (and (eq ?y (- ?mps-y 1)) (eq ?x ?mps-x)) then
+          (return TRUE)
+        )
+      )
+
+      (if (eq ?orientation 0) then
+        (if (and (eq ?x (+ ?mps-x 1)) (eq ?y ?mps-y)) then
+          (return TRUE)
+        )
+      )
+      (if (eq ?orientation 180) then
+        (if (and (eq ?x (- ?mps-x 1)) (eq ?y ?mps-y)) then
+          (return TRUE)
+        )
+      )
+      (if (eq ?orientation 315) then
+        (if (or (and (eq ?x (+ ?mps-x 1)) (eq ?y ?mps-y))
+                (and (eq ?x (+ ?mps-x 1)) (eq ?y (- ?mps-y 1)))
+                (and (eq ?x ?mps-x) (eq ?y (+ ?mps-y 1)))) then
+          (return TRUE)
+        )
+      )
+      (if (eq ?orientation 45) then
+        (if (or (and (eq ?x (+ ?mps-x 1)) (eq ?y ?mps-y))
+                (and (eq ?x (+ ?mps-x 1)) (eq ?y (+ ?mps-y 1)))
+                (and (eq ?x ?mps-x) (eq ?y (- ?mps-y 1)))) then
+          (return TRUE)
+        )
+      )
+      (if (eq ?orientation 135) then
+        (if (or (and (eq ?x (- ?mps-x 1)) (eq ?y ?mps-y))
+                (and (eq ?x (- ?mps-x 1)) (eq ?y (+ ?mps-y 1)))
+                (and (eq ?x ?mps-x) (eq ?y (- ?mps-y 1)))) then
+          (return TRUE)
+        )
+      )
+      (if (eq ?orientation 225) then
+        (if (or (and (eq ?x (- ?mps-x 1)) (eq ?y ?mps-y))
+                (and (eq ?x (- ?mps-x 1)) (eq ?y (- ?mps-y 1)))
+                (and (eq ?x ?mps-x) (eq ?y (+ ?mps-y 1)))) then
+          (return TRUE)
+        )
+      )
+
+    )
+  ) 
+  (return FALSE)
+)
+
+
