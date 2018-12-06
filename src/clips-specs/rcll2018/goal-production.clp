@@ -66,6 +66,7 @@
 	?*ENTER-FIELD-RETRIES* = 3
 )
 
+
 (defrule goal-reasoner-create-acquire-token-spawning-master
 " If no one is spawning master. Try to become the spawning master
 
@@ -84,7 +85,7 @@
 		    (params token-name SPAWNING-MASTER)))
 )
 
-; ## Maintain beacon sending
+
 (defrule goal-reasoner-create-beacon-maintain
 " The parent goal for beacon signals. Allows formulation of
   goals that periodically communicate with the refbox.
@@ -94,6 +95,7 @@
   (assert (goal (id (sym-cat BEACONMAINTAIN- (gensym*)))
                 (class BEACONMAINTAIN) (type MAINTAIN)))
 )
+
 
 (defrule goal-reasoner-create-beacon-achieve
 " Send a beacon signal whenever at least one second has elapsed since it
@@ -111,7 +113,6 @@
 )
 
 
-; ## Maintain wp-spawning
 (defrule goal-reasoner-create-wp-spawn-maintain
   "Maintain Spawning if the spawning-master token is held"
   (domain-facts-loaded)
@@ -123,6 +124,7 @@
  (assert (goal (id (sym-cat WPSPAWN-MAINTAIN- (gensym*)))
                (class WPSPAWN-MAINTAIN) (type MAINTAIN)))
 )
+
 
 (defrule goal-reasoner-create-wp-spawn-achieve
   "Spawn a WP for each robot, if you are the spawn-master"
@@ -144,9 +146,9 @@
   =>
   (assert (goal (id (sym-cat WPSPAWN-ACHIEVE- (gensym*)))
                 (class WPSPAWN-ACHIEVE) (parent ?maintain-id)
-
                 (params robot ?robot)))
 )
+
 
 (defrule goal-reasoner-create-refill-shelf-maintain
 " The parent goal to refill a shelf. Allows formulation of goals to refill
@@ -162,6 +164,7 @@
   (assert (goal (id (sym-cat REFILL-SHELF-MAINTAIN- (gensym*)))
                 (class REFILL-SHELF-MAINTAIN) (type MAINTAIN)))
 )
+
 
 (defrule goal-reasoner-create-refill-shelf-achieve
   "Refill a shelf whenever it is empty."
@@ -183,7 +186,8 @@
                 (params mps ?mps)))
 )
 
-(defrule navgraph-compute-wait-positions-finished
+
+(defrule goal-reasoner-navgraph-compute-wait-positions-finished
   "Add the waiting points to the domain once their generation is finished."
   (NavGraphWithMPSGeneratorInterface (final TRUE))
 =>
@@ -199,8 +203,7 @@
 )
 
 
-; ## Maintain production
-(defrule goal-reasoer-create-goal-production-maintain
+(defrule goal-reasoner-create-goal-production-maintain
 " The parent production goal. Allows formulation of
   production goals only if the proper game state selected
   and the domain got loaded. Other production goals are
@@ -218,6 +221,7 @@
   (assert (goal (id (sym-cat PRODUCTION-MAINTAIN- (gensym*)))
                 (class PRODUCTION-MAINTAIN) (type MAINTAIN)))
 )
+
 
 (defrule goal-reasoner-create-wait
   "Keep waiting at one of the waiting positions."
@@ -237,6 +241,7 @@
                (required-resources ?waitpoint)
   ))
 )
+
 
 (defrule goal-reasoner-create-go-wait
   "Drive to a waiting position and wait there."
@@ -258,6 +263,7 @@
   ))
 )
 
+
 (defrule goal-reasoner-create-enter-field
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -275,8 +281,7 @@
 )
 
 
-
-(defrule goal-reasoner-create-fill-cap-goal
+(defrule goal-reasoner-create-fill-cap
 " Fill a cap into a cap station.
   Use a capcarrier from the corresponding shelf to feed it into a cap station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -327,6 +332,7 @@
   ))
 )
 
+
 (defrule goal-reasoner-create-clear-rs-from-expired-product
   "Remove an unfinished product from the output of a ring station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -360,7 +366,6 @@
                 (required-resources ?wp)
   ))
 )
-
 
 
 (defrule goal-reasoner-create-clear-cs-for-capless-carriers
@@ -462,7 +467,7 @@
 )
 
 
-(defrule goal-reasoner-create-prefill-rs-for-started-order-constraint
+(defrule goal-reasoner-increase-priority-to-prefill-rs-for-started-order
 " Add a priority increase of +2 for goals that pre-fill a ring station which
   requires additional bases such that the production of a started product
   can be continued.
@@ -517,7 +522,8 @@
   )
 )
 
-(defrule goal-reasoner-create-prefill-rs-higher-priority-constraint
+
+(defrule goal-reasoner-increase-priority-to-prefill-rs-for-unstarted-order
 " Add a priority increase of +1 for goals that pre-fill a ring station which
   requires additional bases such that an available order (that was not started
   yet) can use them for the first ring.
@@ -698,8 +704,6 @@
 )
 
 
-
-
 (defrule goal-reasoner-create-discard-unknown
   "Discard a base which is not needed."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -725,6 +729,7 @@
   ))
   ; (assert (goal-already-tried DISCARD-UNKNOWN))
 )
+
 
 (defrule goal-reasoner-create-produce-c0
 " Produce a C0 product: Get the correct base and mount the right cap on it.
@@ -813,8 +818,6 @@
 )
 
 
-
-
 (defrule goal-reasoner-create-mount-first-ring
 " Start a higher order product by getting the base and mounting the first ring.
   The workpiece remains in the output of the used ring station after
@@ -898,12 +901,14 @@
   ))
 )
 
+
 ;TODO: Do we need this?
 (deffunction trac-ring-mount-time (?complexity ?rings)
   "Determine time to mount the remaining rings plus cap"
   (bind ?max-rings (eval (sub-string 2 3 (str-cat ?complexity))))
   (return (+ (* (- ?max-rings ?rings) ?*PRODUCE-RING-AHEAD-TIME*) ?*PRODUCE-CAP-AHEAD-TIME*))
 )
+
 
 (defrule goal-reasoner-create-mount-next-ring
 " Mount the next ring on a CX product:
@@ -1045,7 +1050,6 @@
 )
 
 
-
 (defrule goal-reasoner-create-produce-c2
 " Produce a C2 product: Get the workpiece with the mounted ring and mount
   a cap on it.
@@ -1101,6 +1105,7 @@
                 (required-resources ?mps ?wp)
   ))
 )
+
 
 (defrule goal-reasoner-create-produce-c3
 " Produce a C3 product: Get the workpiece with the mounted ring and mount
@@ -1160,6 +1165,7 @@
   ))
 )
 
+
 (defrule goal-reasoner-create-reset-mps
 " Reset an mps to restore a consistent world model after getting a workpiece
   from it failed too often.
@@ -1181,6 +1187,7 @@
   ))
   (retract ?t)
 )
+
 
 (defrule goal-reasoner-create-discard-failed-put-slide
 " Discard the currently held workpiece after filling it to a ring station
@@ -1208,8 +1215,6 @@
   ))
   (retract ?t)
 )
-
-
 
 
 (defrule goal-reasoner-create-deliver
@@ -1273,8 +1278,8 @@
   ))
 )
 
-; ## Goal Evaluation
- (defrule goal-reasoner-evaluate-failed-enter-field
+
+(defrule goal-reasoner-evaluate-failed-enter-field
   "HACK: Stop trying to enter the field when it failed a few times."
    ?g <- (goal (id ?gid) (class ENTER-FIELD-ACHIEVE)
                (mode FINISHED) (outcome FAILED))
@@ -1293,6 +1298,7 @@
   )
 )
 
+
 (defrule goal-reasoner-evaluate-production-maintain
   "Clean up all rs-fill-priorities facts when the production maintenance goal
    fails."
@@ -1309,7 +1315,8 @@
   (modify ?g (mode EVALUATED))
 )
 
-(defrule goal-reasoner-evaluate-completed-subgoals-produce-c0--mount-first-ring
+
+(defrule goal-reasoner-evaluate-completed-produce-c0-and-mount-first-ring
 " Bind a workpiece to the order it belongs to.
 
   Workpieces that got dispensed during PRODUCE-C0 and MOUNT-FIRST-RING get
@@ -1337,6 +1344,7 @@
  (modify ?g (mode EVALUATED))
  (modify ?gm (last-achieve ?now))
 )
+
 
 (defrule goal-reasoner-evaluate-completed-subgoal-refill-shelf
 " Create the domain objects and wm-facts corresponding to the freshly spawned
@@ -1371,6 +1379,7 @@
    )
    (modify ?g (mode EVALUATED))
 )
+
 
 (defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
 " Create the domain objects and wm-facts corresponding to the freshly spawned
