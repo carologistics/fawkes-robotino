@@ -90,7 +90,7 @@ fi
 case "$TERMINAL" in
     gnome-terminal)
         TERM_COMMAND="gnome-terminal --window --geometry=$TERM_GEOMETRY -- bash -i -c '"
-        TERM_COMMAND_END="'"
+        TERM_COMMAND_END=" echo -e \"\n\n\nAll commands started. This tab may now be closed.\"'"
         SUBTERM_PREFIX="gnome-terminal --tab -- "
         SUBTERM_SUFFIX=" ; "
         ;;
