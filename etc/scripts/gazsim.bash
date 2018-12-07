@@ -56,6 +56,7 @@ HEADLESS=
 ROS=
 ROS_LAUNCH_MAIN=
 ROS_LAUNCH_ROBOT=
+ROS_LAUNCH_MOVEBASE=
 AGENT=
 DETAILED=
 KEEP=
@@ -148,7 +149,8 @@ while true; do
 	     KEEP=-k
              ;;
          -r)
-	     ROS=-r
+           ROS=-r
+           ROS_LAUNCH_MOVE_BASE=yes
              ;;
          -g)
 	     if [ -n "$GDB" ]; then
@@ -193,6 +195,7 @@ while true; do
 	     CONF="-c asp-planner"
 	     META_PLUGIN="-m asp-sim-2016"
 	     START_ASP_PLANER=true
+       ROS_LAUNCH_MOVE_BASE=
 	     ;;
 	 -o)
 	     START_GAZEBO=false
@@ -331,10 +334,12 @@ if [  $COMMAND  == start ]; then
 	fi
     	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     	do
-	    # robot roscore
-	    COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"")
-            # move_base
-	    COMMANDS+=("bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"")
+				# robot roscore
+				COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"")
+        # move_base
+				if [ -n "$ROS_LAUNCH_MOVE_BASE" ]; then
+					COMMANDS+=("bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"")
+				fi
 	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
 	    COMMANDS+=("bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_PORT $KEEP $@\"")
 	fi
