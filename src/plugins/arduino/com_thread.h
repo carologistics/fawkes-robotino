@@ -43,6 +43,9 @@
 
 #define NEMA_STEPS_PER_REVOLUTION 200.0 * 4.0
 
+// Each axis has an individual thread diameter.
+// As such each axis has its own value for a
+// number of steps required to move one millimeter.
 #define X_AXIS_STEPS_PER_MM      260.869565217
 #define Y_AXIS_STEPS_PER_MM      393.333333333
 #define Z_AXIS_STEPS_PER_MM      531.25
