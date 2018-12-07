@@ -477,7 +477,11 @@ ArduinoComThread::flush_device()
 void
 ArduinoComThread::send_message(ArduinoComMessage &msg)
 {
+  try {
     boost::asio::write(serial_, boost::asio::const_buffers_1(msg.buffer()));
+  } catch (boost::system::system_error &e) {
+    logger->log_error(name(), "ERROR on send message! %s", e.what());
+  }
 }
 
 bool
