@@ -44,8 +44,6 @@ OPTIONS:
                       to set the phase explicitly)
                      Typically requires at least --team-cyan.
    --asp             Run with ASP agent and global planer
-   --asp-exec        Run the ASP executive for the robots
-   --asp-planer      Start the ASP planner
 EOF
 }
 
@@ -119,7 +117,7 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,asp,asp-exec,asp-planer" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,asp" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -195,16 +193,6 @@ while true; do
 	     CONF="-c asp-planner"
 	     META_PLUGIN="-m asp-sim-2016"
 	     START_ASP_PLANER=true
-	     ;;
-	 --asp-exec)
-	     META_PLUGIN="-m asp-sim-2016"
-	     ;;
-	 --asp-planer)
-	     START_ASP_PLANER=true
-	     START_GAZEBO=false
-	     NUM_ROBOTINOS=0
-	     NUM_CYAN=0
-	     NUM_MAGENTA=0
 	     ;;
 	 -o)
 	     START_GAZEBO=false
