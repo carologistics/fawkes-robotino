@@ -35,17 +35,17 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define CMD_Z_NEW_POS 'Z'
 #define CMD_A_NEW_POS 'A'
 
-#define DEFAULT_MAX_SPEED_X 10000
-#define DEFAULT_MAX_ACCEL_X 10000
+#define DEFAULT_MAX_SPEED_X 40000
+#define DEFAULT_MAX_ACCEL_X 50000
 
-#define DEFAULT_MAX_SPEED_Y 10000
+#define DEFAULT_MAX_SPEED_Y 20000
 #define DEFAULT_MAX_ACCEL_Y 50000
 
-#define DEFAULT_MAX_SPEED_Z 10000
+#define DEFAULT_MAX_SPEED_Z 20000
 #define DEFAULT_MAX_ACCEL_Z 50000
 
-#define DEFAULT_MAX_SPEED_A 1000
-#define DEFAULT_MAX_ACCEL_A 1000
+#define DEFAULT_MAX_SPEED_A 20000
+#define DEFAULT_MAX_ACCEL_A 50000
 
 //#define CMD_SET_ACCEL 7
 #define CMD_SET_SPEED 9
@@ -88,11 +88,11 @@ void send_moving() {
 void send_idle() {
   Serial.print(AT);
   Serial.print("I ");
-  Serial.print(motor_X.currentPosition());
+  Serial.print(-motor_X.currentPosition());
   Serial.print(" ");
-  Serial.print(motor_Y.currentPosition());
+  Serial.print(-motor_Y.currentPosition());
   Serial.print(" ");
-  Serial.print(motor_Z.currentPosition());
+  Serial.print(-motor_Z.currentPosition());
   Serial.print(" ");
   Serial.print(motor_A.currentPosition());
   Serial.print("\r\n");
@@ -130,16 +130,15 @@ void move_to_end_stop(int limit_pin, AccelStepper &motor, int dir) {
       motor.setCurrentPosition(0L);
     } else {
       motor.moveTo(10000000 * dir);
-      motor.setSpeed(300);
+      motor.setSpeed(3000);
       motor.runSpeed();
     }
   }
 
-  motor.setCurrentPosition(0L);
-
   // move out of the end stop
   // TODO: configure
-  motor.move(3000 * dir * -1);
+  motor.setCurrentPosition(0L);
+  motor.move(1000 * dir * -1);
   while (motor.distanceToGo() != 0) {
  //   motor.setSpeed(DEFAULT_MAX_SPEED);
     motor.run();
@@ -150,13 +149,16 @@ void move_to_end_stop(int limit_pin, AccelStepper &motor, int dir) {
 
 bool calibrate_axis(int limit_pin, AccelStepper &motor) {
   int button_state = digitalRead(limit_pin);
+
+  /*
   if (button_state == LOW) {
     //ERROR: We can't calibrate an axis when the end stop is already pressed!
     return false;
   }
+  */
   motor.enableOutputs();
 
-  move_to_end_stop(limit_pin, motor, -1);
+  move_to_end_stop(limit_pin, motor, 1);
 
   // we found the starting point - move to the other end of the axis to get
   // the number of steps to the other end.
@@ -236,13 +238,13 @@ void read_package() {
           switch (cur_cmd) {
 
             case CMD_X_NEW_POS:
-              set_new_pos(new_pos, motor_X);
+              set_new_pos(-new_pos, motor_X);
               break;
             case CMD_Y_NEW_POS:
-              set_new_pos(new_pos, motor_Y);
+              set_new_pos(-new_pos, motor_Y);
               break;
             case CMD_Z_NEW_POS:
-              set_new_pos(new_pos, motor_Z);
+              set_new_pos(-new_pos, motor_Z);
               break;
             case CMD_A_NEW_POS:
               set_new_pos(new_pos, motor_A);
