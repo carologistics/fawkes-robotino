@@ -388,7 +388,7 @@ if [  $COMMAND  == start ]; then
     then
 	# publish initial poses
 	echo "publish initial poses"
-	$initial_pose_script_location -c $NUM_CYAN -m $NUM_MAGENTA -d
+	$initial_pose_script_location $CONF -C $NUM_CYAN -M $NUM_MAGENTA -d
     else
 	echo "Skipped publishing poses"
   sleep 10

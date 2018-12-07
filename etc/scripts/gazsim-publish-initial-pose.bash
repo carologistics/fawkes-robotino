@@ -15,8 +15,10 @@ OPTIONS:
    -p arg              Fawkes remote as port 
    -o arg arg arg arg  Initial orientation (quaternion)
    -d                  Publish default initial localization for all three robots
-   -c N                Assume N available robots of team cyan (default: 3)
-   -m N                Assume N available robots of team magenta (default: 0)
+                       This is retrieved from the config, e.g., /initial-pose/C-R1/x
+   -c CONF             Configuration base dir
+   -C N                Assume N available robots of team cyan (default: 3)
+   -M N                Assume N available robots of team magenta (default: 0)
 EOF
 }
 
@@ -46,7 +48,9 @@ O2=0.0
 O3=1.0
 CN=3
 MN=0
-while getopts “hx:y:p:o:dc:m:” OPTION
+CONF=
+DEFAULT_POS=
+while getopts “hx:y:p:o:dc:C:M:” OPTION
 do
      case $OPTION in
          h)
@@ -60,9 +64,12 @@ do
 	     Y=$OPTARG
 	     ;;
 	 c)
+	     CONF=gazsim-configurations/$OPTARG
+	     ;;
+	 C)
 	     CN=$OPTARG
 	     ;;
-	 m)
+	 M)
 	     MN=$OPTARG
 	     ;;
 	 o)
@@ -85,33 +92,7 @@ do
 	     PORT=$OPTARG
 	     ;;
 	 d)
-	     script_path=$FAWKES_DIR/bin
-	     set_pose=$script_path/ffset_pose
-       if (( $CN >= 1 )); then
-         wait_for_amcl localhost:1921
-			   $set_pose -r localhost:1921 -t 2.0 --  4.5  0.5 0.0  0.0 0.0 0.7 0.7
-	     fi
-       if (( $CN >= 2 )); then
-         wait_for_amcl localhost:1922
-		     $set_pose -r localhost:1922 -t 2.0 --  5.5 0.5 0.0  0.0 0.0 0.7 0.7
-	     fi
-       if (( $CN >= 3 )); then
-         wait_for_amcl localhost:1923
-		     $set_pose -r localhost:1923 -t 2.0 --  6.5  0.5 0.0  0.0 0.0 0.7 0.7
-	     fi
-       if (( $MN >= 1 )); then
-         wait_for_amcl localhost:1924
-		     $set_pose -r localhost:1924 -t 2.0 -- -4.5  0.5 0.0  0.0 0.0 0.7 0.7
-	     fi
-       if (( $MN >= 2 )); then
-         wait_for_amcl localhost:1925
-		     $set_pose -r localhost:1925 -t 2.0 -- -5.5 0.5 0.0  0.0 0.0 0.7 0.7
-	     fi
-       if (( $MN >= 3 )); then
-         wait_for_amcl localhost:1926
-		     $set_pose -r localhost:1926 -t 2.0 -- -6.5  0.5 0.0  0.0 0.0 0.7 0.7
-	     fi
-	     exit 0
+		 DEFAULT_POS=true
 	     ;;
          ?)
              usage
@@ -125,11 +106,34 @@ do
      fi
 done
 
-if [[ -z $X ]] || [[ -z $Y ]]
-then
-     usage
-     exit 1
+if [ -n "$DEFAULT_POS" ]; then
+	for i in $(seq 1 $CN) $(seq 4 $((MN + 3))); do
+		if [ -z "$CONF" ]; then
+			config_file=config.yaml
+		else
+			config_file=$CONF/robotino$i.yaml
+		fi
+		r=C-R$i
+		if (( i > 3 )); then
+			r=M-R$(( i - 3 ))
+		fi
+		h=$($FAWKES_DIR/bin/ffconfig -f $config_file -q get /initial-pose/$r/host)
+		x=$($FAWKES_DIR/bin/ffconfig -f $config_file -q get /initial-pose/$r/x)
+		y=$($FAWKES_DIR/bin/ffconfig -f $config_file -q get /initial-pose/$r/y)
+		z=$($FAWKES_DIR/bin/ffconfig -f $config_file -q get /initial-pose/$r/z)
+		mapfile -t ori < <($FAWKES_DIR/bin/ffconfig -f $config_file -q get /initial-pose/$r/ori)
+		if [[ -z "$h" || -z "$x" || -z "$y" || -z "$z" || -z "$ori" ]]; then
+			echo "Some value not found for $p-R$i"
+			exit 2
+		fi
+    wait_for_amcl $h
+		$FAWKES_DIR/bin/ffset_pose -r $h -t 2.0 --  $x $y $z $ori
+	done
+else
+	if [[ -z $X ]] || [[ -z $Y ]]
+	then
+    usage
+    exit 1
+	fi
+	$FAWKES_DIR/bin/ffset_pose -r localhost:${PORT} $X $Y 0.0 $O0 $O1 $O2 $O3
 fi
-
-$FAWKES_DIR/bin/ffset_pose -r localhost:${PORT} $X $Y 0.0 $O0 $O1 $O2 $O3
-
