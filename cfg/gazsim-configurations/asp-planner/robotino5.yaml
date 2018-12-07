@@ -1,19 +1,14 @@
 %YAML 1.2
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
-#start fawkes with this configuration file if you want to control robotino 1 in the simulation
-
-#include main config file
 include:
   - !ignore-missing conf.d/
-  #concrete configuration in an other file because I could not override config values when using a single file
   - gazsim-configurations/gazsim-config-override.yaml
+  - gazsim-configurations/rcll-sim-2016.yaml
   - !host-specific gazsim-configurations/asp-planner/host_robotino_5.yaml
 ---
 
 fawkes:
-
-  # Main app relevant settings
   mainapp:
     loggers: console;file/debug:debug5.log
 
