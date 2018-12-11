@@ -9,28 +9,28 @@
 
 (defglobal
 	?*CX-SMT-SINGLE-C3-FILES* = (create$
-                                "rcll2017/goal-reasoner-produce-c3.clp"
-																"rcll2017/goal-expander.clp"
-                                "rcll2017/goal-expander-call-single-c3.clp")
+                                "rcll-smt/goal-reasoner-produce-c3.clp"
+																"rcll-smt/goal-expander.clp"
+                                "rcll-smt/goal-expander-call-single-c3.clp")
 	?*CX-SMT-MULTI-C3-FILES* = (create$
-                                "rcll2017/goal-reasoner-produce-c3.clp"
-																"rcll2017/goal-expander.clp"
-                                "rcll2017/goal-expander-call-multi-c3.clp"
-                                "rcll2017/goal-expander-collect-plan-r2-r3.clp")
+                                "rcll-smt/goal-reasoner-produce-c3.clp"
+																"rcll-smt/goal-expander.clp"
+                                "rcll-smt/goal-expander-call-multi-c3.clp"
+                                "rcll-smt/goal-expander-collect-plan-r2-r3.clp")
 	?*CX-SMT-MULTI-C3C0-FILES* = (create$
-                                "rcll2017/goal-reasoner-produce-c3.clp"
-                                "rcll2017/goal-reasoner-produce-c0.clp"
-																"rcll2017/goal-expander.clp"
-                                "rcll2017/goal-expander-call-multi-c3.clp"
-                                "rcll2017/goal-expander-call-multi-c0.clp"
-                                "rcll2017/goal-expander-collect-plan-r2-r3.clp"
-                                "rcll2017/action-selection-done-r2-r3.clp")
+                                "rcll-smt/goal-reasoner-produce-c3.clp"
+                                "rcll-smt/goal-reasoner-produce-c0.clp"
+																"rcll-smt/goal-expander.clp"
+                                "rcll-smt/goal-expander-call-multi-c3.clp"
+                                "rcll-smt/goal-expander-call-multi-c0.clp"
+                                "rcll-smt/goal-expander-collect-plan-r2-r3.clp"
+                                "rcll-smt/action-selection-done-r2-r3.clp")
 )
 
 (defrule smtstr-wait-init-single-c3-ok
 	"Load files for smt_strategy single_c3"
 	(not (executive-init-signal (id smtstr-initialized)))
-  (confval (path "/clips-executive/specs/rcll2017/parameters/rcll/smt_strategy") (type STRING) (value ?smtstr))
+  (confval (path "/clips-executive/specs/rcll-smt/parameters/rcll/smt_strategy") (type STRING) (value ?smtstr))
   (test (eq ?smtstr (str-cat single_c3)))
 	=>
 	(cx-assert-init-requests ?smtstr STAGE-3 TRUE)
@@ -43,7 +43,7 @@
 (defrule smtstr-wait-init-multi-c3-ok
 	"Load files for smt_strategy multi_c3"
 	(not (executive-init-signal (id smtstr-initialized)))
-  (confval (path "/clips-executive/specs/rcll2017/parameters/rcll/smt_strategy") (type STRING) (value ?smtstr))
+  (confval (path "/clips-executive/specs/rcll-smt/parameters/rcll/smt_strategy") (type STRING) (value ?smtstr))
   (test (eq ?smtstr (str-cat multi_c3)))
 	=>
 	(cx-assert-init-requests ?smtstr STAGE-3 TRUE)
@@ -56,7 +56,7 @@
 (defrule smtstr-wait-init-multi-c3c0-ok
 	"Load files for smt_strategy multi_c3c0"
 	(not (executive-init-signal (id smtstr-initialized)))
-  (confval (path "/clips-executive/specs/rcll2017/parameters/rcll/smt_strategy") (type STRING) (value ?smtstr))
+  (confval (path "/clips-executive/specs/rcll-smt/parameters/rcll/smt_strategy") (type STRING) (value ?smtstr))
   (test (eq ?smtstr (str-cat multi_c3c0)))
 	=>
 	(cx-assert-init-requests ?smtstr STAGE-3 TRUE)
