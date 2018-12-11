@@ -1,0 +1,379 @@
+Note on old clips agent (rcll2017) migration into clips-executive
+
+
+Migration Road Map:
+    1- Translate old agents Steps and their corresponding worldmodel effects into Actions
+        Map into existing Action / Create new Actions if needed
+    2- Translate Tasks into Plans
+    3- Create Goals
+    4- static goal sequence for testing
+    5- Dynamic Goal Reasoning
+    6- Multiple Agents Coordination
+    7- WorldModel Sync across agents
+
+=============================================================TASKS
+Task names:
+    clear-bs
+    clear-cs
+    clear-rs
+    fill-cap
+    fill-rs
+    produce-c0
+    produce-cx
+    add-first-ring
+    add-additional-ring
+    deliver
+    discard-unknown
+    exploration-catch-up
+
+
+Tasks Life Cycle:
+    proposed
+        Rules of production.clp suggest tasks based on the
+        state of the world model and the priorities of the task.
+        The proposed task wont have a robot specified explicitly.
+        Yet, each robot is responsible of their proposed tasks. (A
+        task could only be executed on the robot it was proposed on)
+
+        Binding of the parameters is also done here and the Task
+        is given a name, local-id and the "needed-task-lock"s
+        that could later be used for coordination are asserted.
+
+        During proposal, the needed-task-lock is asserted with an Action and a Place.
+        The combination of those names "action~place"  will be used as resource for
+        coordination and task locking.
+        Possible Actions in production.clp:
+            Action FILL_CAP         in TASK [fill-cap]          place: ?cs          IN
+
+            Action GET-PROD         in TASK [clear-cs]          place: ?cs          out
+                                            [clear-rs]          place: ?rs
+                                            [deliver]           place: ?cs
+
+            Action PREFILL-RS       in TASK [fill-rs]           place: ?rs
+
+            Action PROD_CAP         in TASK [produce-c0]            place: ?cs          OUT
+                                            [produce-cx]            place: ?cs
+
+            Action PROD_RING        in TASK [add-first-ring]        place: ?rs
+                                            [add-additional-ring]   place: ?rs
+            Action DELIVER          in TASK [deliver]               place: ?ds
+
+    asked
+        Needed resources are requested from the lock master and waiting for acceptance||refusal
+    rejected
+        If any of the locks were refused for that robot (while robot is in state TASK-PROPSED-ASKED)
+    ordered
+        All needed locks are accepted
+    running
+
+    finished
+
+    failed
+
+
+=============================================================STEPS
+Steps Names:
+    get-from-shelf
+    insert
+    get-output
+    get-base
+    find-tag
+    instruct-mps
+    discard
+    drive-to wait-for-rs
+    wait-for-output
+    acquire-lock
+    release-lock
+
+
+
+Mapping: From Steps to Actions
+    *Step drive to          --> (:action  move-wp-get
+                            Or
+                            --> (:action  move-wp-put
+
+        Those actions u need to to/from locations to be an mps and its side
+        Be careful, To be able to go to any random location or a waiting point
+        something else needs to come in moiled.
+
+
+
+    *Step get-from-shelf    --> (:action wp-get-shelf
+                                    (?r - robot ?cc - cap-carrier ?m - mps ?spot - shelf-spot)
+
+        BEHAVIOR: The main difference in behaviour is that the step includes in it the calculation of which
+        shelf position should be used.. so it is more dynamic. While the Action needs this information
+        to be determined before calling the action.
+        Also the workpeice id in the Action needs to be there before the action calling. Whereas in
+        the step a 'product' with random id is generated upon completion
+
+
+    *Step-get                           --> (:action wp-get
+
+    *Step-insert-start                  1-> (:action wp-put
+                                                (?r - robot ?from - location ?from-side - mps-side ?to - mps)
+
+        BEHAVIOR: of being already at the mps (for example when picking up from shelf) is left out.
+        I can have another action for that later on or a pass it as a parameter.
+        (ie, driving smoothly in a sliding move from the shelf to the input field)
+
+        In the old agent, depending on the Task that this 'Insert' Step was part of, effects to the world model would
+        differ. Those are models by the following exogenous actions.
+        [TASK: fill-cap]                2-> (:action cs-retrieve-cap
+        [TASK: add-first-ring           2-> (:action rs-mount-ring1
+            |add-additional-ring]       2-> (:action rs-mount-ring2
+                                            &&  (:action rs-mount-ring3
+                What is still missing in the modelling here is that checking and consuming of
+                the bases needed for that ring. Need to do this soon. But for a first C0
+                production that is enough
+
+        [TASK produce-c0|produce-cx]    2-> (:action cs-mount-cap
+        [TASK deliver]                  2-> (:action  fulfill-order-c0
+                                        2-> (:action  fulfill-order-c1
+                                        2-> (:action  fulfill-order-c2
+                                        2-> (:action  fulfill-order-c3
+
+    *Step-discard                       --> (:action wp-discard
+
+    *Step-insert-slide                  --> (:action wp-put-slide-cc
+
+
+
+
+
+============================================================PRODUCTION RULES
+
+List of rules in rcll2017/production.clp (in the order they are write):
+    (defrule prod-propose-task-idle
+    (defrule prod-change-to-more-important-task-when-waiting-for-lock
+    (defrule prod-remove-proposed-tasks
+    (defrule prod-prefill-cap-station
+    (defrule prod-remove-empty-base-from-cs
+    (defrule prod-prefill-ring-station
+    (defrule insert-unknown-base-to-rs
+    (defrule insert-unintentionally-holding-base-to-rs
+    (defrule discard-unneeded-base
+    (defrule prod-produce-c0
+    (defrule prod-add-first-ring
+    (defrule prod-add-additional-ring
+    (defrule prod-add-additional-ring-with-waiting
+    (defrule prod-produce-cx
+    (defrule prod-deliver
+    (defrule prod-remove-product-with-expired-order-from-rs
+    (defrule prod-reset-mps-with-inconsistent-state
+    (defrule prod-nothing-to-do-save-factbase
+    (defrule prod-remove-nothing-to-do-fact
+    (defrule prod-remove-rejected-tasks-after-timeout
+
+
+PRODUCTION ORDER PROIROTES
+    ?*PRIORITY-FIND-MISSING-MPS* = 110
+    ?*PRIORITY-DELIVER* = 100
+    ?*PRIORITY-RESET-MPS* = 98
+    ?*PRIORITY-CLEAR-BS* = 97
+    ?*PRIORITY-PRODUCE-CX* = 95
+    ?*PRIORITY-PRODUCE-C0* = 90
+    ?*PRIORITY-ADD-ADDITIONAL-RING* = 85
+    ?*PRIORITY-ADD-FIRST-RING* = 80
+    ?*PRIORITY-CLEAR-CS* = 70
+    ?*PRIORITY-PREFILL-CS* = 50
+    ?*PRIORITY-CLEAR-RS* = 55
+    ?*PRIORITY-PREFILL-RS-WITH-HOLDING-BASE* = 45
+    ?*PRIORITY-PREFILL-RS* = 40
+    ?*PRIORITY-ADD-ADDITIONAL-RING-WAITING* = 20
+    ?*PRIORITY-DISCARD-UNKNOWN* = 10
+    ?*PRIORITY-NOTHING-TO-DO* = -1
+
+
+
+=============================================================LOCKS ANALYSIS
+
+Based-on-production-rules:
+    (defrule prod-prefill-ring-station
+    (defrule insert-unknown-base-to-rs
+    (defrule insert-unintentionally-holding-base-to-rs
+
+
+=============================================================TODO
+
+- Account  for Base-Active and Failed side
+    currently the reasoning about the active or the failed sides of the BS is left out.
+    It is spread across rules. Get the gets of it and find a proper way to model it.
+    Ideas, Maintenance goals, Execution monitoring. Use it in the reasoning to assigen the parameters.
+    How are we going to use it in the locks. As a resouce of what
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------
+
+So now I have the problem of which parameters should be passed to the goal expander and how would they be passed.
+To Preform the reasoning in clips that fires a certain rule. Also automatically gives u the binding for the variables
+needed in that rule..My question now is how am I able to do that from 2 separate places. One that reasons about the
+goal and decides what it would be. There should be a minimal set of parameters passed with the goal to uniquely identifies
+the rest of the bindings done in the plan expansion. Some of the LHS parts of the clips agent would be just to bind the right value.
+
+->The Answer to that problem:  Is that whatever binding that will be expected to be done with planner should be done by the expander.
+So for example the goal to prefill-the-cap-station Should have its parameters as the mps but not the shelf spot of the cc needed.
+That should be set by the planner/goal-expander. I have a doubt that this separation would always be clear since for example to
+know which shelf position to use. U need to choose one of the free ones...there is something here I am not completely clear on.
+But lets see.
+
+I have bound the shelf-spot with a do fact from the within the plan-expansion rule for that goal. But wont that be in risk of another
+Robot to bind to the same spot for example with another plan. Say if it wants to use the same cc for a ring payment. More over, wont
+this fact alone make it harder to perform execution monitoring of this task in case the grabing failed for example
+
+
+ Questions I have now?
+  -who is going to create the unused wps .. CC or WP
+  -Shouldn't refill-shelf be just a maintenance goal and gets removed from the domain.
+    Dont we run the risk here of planning with this action in mind.
+    Why are we initializing the spots-free in the domain.clp if we expect them to have CCs
+
+ Whats the use of CS free here
+
+
+ -In general. Where should inconsistency be checked. Rules like u cant have a free spot that has something on
+ the shelf OR a CS that can perform both tasks
+
+
+[DONE] -I need to lay out the task transitions to be able to for see what could go wrong                                                                                [DONE]
+
+
+-shouldn't the objects in the world also be synced...the robots, wp
+
+-How do i get what robot now is assigend to which task. If the Idea is the same as the old agent then
+    there should be a config about what robot am I
+
+-INCOMING: there is a part of the reasoning responsible for the PROPOSAL of TASKS also takes care that the task wont
+            be proposed if there was something similar INCOMING to that machine. How does this work exsaclty is still
+            not very clear to me..But will see
+
+
+
+
+
+Am I Going to use the goal params to lock the goal. If so, Then Would something like the Shelf-position/ Work-piece / payment-in-slide need also to be passed.
+That would make the formulation wrong since I dont want to lock for the same stuff. HMM...not sure now...lets see in a moment
+
+
+Shouldn't  we have a state that is rejection check before the selection...So that we make sure that the things that were selected were not rejected..Ot should
+it just be controlled with the silence
+
+
+
+
+
+
+Problem: We don't have a model to bind a WP to an order
+
+    Triggering Scenario:
+         Not all Production rules have no goal. Some of them have a notion of a goal. Some of them reason about the orders (a goal) and some others
+         reason about both the order and the progressed (WP), how much of that order is already done (like deliver when caps are mounted or mount a
+         second/third ring) is important in partial planning. We don't have a model to bind a WP to an order.
+
+
+         Discussed with Tim punch of solutions:
+
+         Sol 1 : Just have it in the bs-dispense as a world model fact
+
+         Sol 2 : An extra Evaluated state of the goal
+                    To have a state after the goal was completed that evaluates that goal and applies the implication
+                    This will have the power to monitor some plan-actions during goal evaluation and add wm-facts that
+                    is needed to make any conclusions. (in this scenario, Check what WP did we dispense and bind it to
+                    the order in the goal parameters as a wm-fact)
+
+
+                    A draw baq here would be that if i only react on the whole goal in this scenario, At some point I
+                    would have the WP Dispensed, pick it and go to the CS, mount the cap..And STILL no idea that this belongs
+                    This WP belongs to some order. If we failed the goal also something need to be done about that i suppose.
+                    I am not sure if this will effect anything in the future. But it defiantly looks like there is a missing
+                    representation.
+
+         Sol 3 : Model it in PDDL
+                Maybe in the dispense by adding a reason already.
+                Maybe a separate action
+
+            + One more benefit to that is the consistency with what we been doing so fare
+            - could increase planning time
+            - Tim said something about how this information then should be stated in the goal
+                statement somehow which we do not have a clear way to do now..I want to give this
+                a shot.
+
+
+
+
+PDDL modification to be done
+    -predicate for the ring info tracking
+    -switch the put and prepare order
+        -the put has to have a new predicate to be able to model a precond [Nothing at input/output]
+    - (re-)add the general move action
+    - add the ring stuff
+    - trace the unused-wp usable-wp relation. I think it is flawed currently. is it used vs unsed OR usable vs unusable
+        what is clear now is that the discarded CC could be used again in the plan since they just become unused
+
+
+
+
+
+
+PDDL related predicates
+    spot-free vs wp-on-shelf
+    wp-unused vs wp-usable
+
+
+
+
+
+Encountered issues that are hidden:
+    -a discarded wp was selected for production when the becasue it was un-usable and the check was only on the usablilty
+        of course later the plan halted since the CC had not base_none
+
+
+
+
+
+
+
+======================================================================================================================
+Things I would like to talk about:
+
+-Control flow for the goals.
+    we need to make sure all goal Formulation rules fired before all Rejection rules (which should always be allowed to fire before commited)
+    Once something is selected. We wana flush all other formulated rules (coz u doent want to select something. spend time on trying to commit
+     to it. Then pick again from the same pool of Formulated goals. It is most likely outdated)
+     Expand is in direct relation to selected..So the order is ensured (yet rejected should)
+
+     Once committed we expected to finish (no rejection is allowed here)
+
+
+-MPS-dispenses: I would like to find a modelling that allows for spawning the WP in the bs-dipense action.
+        Reason for that is that it currently depends on where we put the actual spawning of the work-pieces
+
+    ..So We are going to model it as a maintenance goal that would spawn when there is no more worpieces spawned for
+    that robot. The robot separation serves 2 purposes. One being the indicator if there is a spawned wp.
+    more importantly is to make it specific to that robot so no other robot is allowed to spawn it.
+
+    ..The questions are now ,
+        -What kind of plan should I give to that goal when it is expanded (in order to keep
+        consistent with the model that goals expand to actions, and the finalization of all
+        actions FINISHES the goal).
+        -And where do we make the actual assertion to the wp facts.
+    The way I see the declensions, Either have a plan with noop action and assert the wp
+    in Evaluation of the goal. I will do that for now
+    OR let that action 'spawn-wp' for example make the assertions
+
+    A thing to consider here is that we would create another action that is not defined in
+    out pddl domain. A thing to be considered is that the send beacon action also has the
+    same proprieties and yet we model it as a none pddl action that magically does stuff
+
+
+
+
+-is the Value True important to check with the Wm-fact
+
+
+-
