@@ -90,6 +90,10 @@ public:
   */
   void set_cg_thread(RecognitionThread *recog_thread);
 
+  /** Used by the plugin to generate a initial estimate for the following ICP run.
+   * @param best_fit pointer to the obtained best fit, nullptr if no best fit found
+   * @return true if a best fit has been found, false if not
+   */
   bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
 
 private:
