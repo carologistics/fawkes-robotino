@@ -43,9 +43,12 @@
 
 #define NEMA_STEPS_PER_REVOLUTION 200.0 * 4.0
 
+// Each axis has an individual thread diameter.
+// As such each axis has its own value for a
+// number of steps required to move one millimeter.
 #define X_AXIS_STEPS_PER_MM      260.869565217
 #define Y_AXIS_STEPS_PER_MM      393.333333333
-#define Z_AXIS_STEPS_PER_MM      500.0
+#define Z_AXIS_STEPS_PER_MM      531.25
 #define A_AXIS_STEPS_PER_MM      1.0 // TODO: configure!
 
 class ArduinoComMessage;
@@ -71,6 +74,13 @@ public fawkes::TransformAspect
 public:
 
     ArduinoComThread();
+    /**
+     * @brief Constructor for the arduino communication thread
+     *
+     * @param cfg_name Name of the config file
+     * @param cfg_prefix Prefix tags to arduino config
+     * @param tf_thread Pointer to transform thread
+     */
     ArduinoComThread(std::string &cfg_name, std::string &cfg_prefix, ArduinoTFThread *tf_thread);
     virtual ~ArduinoComThread();
 
@@ -78,12 +88,22 @@ public:
     virtual void loop();
     virtual void finalize();
 
+    /**
+     * @brief Checks if the serial connection is open
+     *
+     * @return True if the serial connection is open
+     */
     virtual bool is_connected();
 
     // For BlackBoardInterfaceListener
     virtual bool bb_interface_message_received(fawkes::Interface *interface,
                                              fawkes::Message *message) throw();
 
+    /**
+     * @brief All variables that define the position of the gripper
+     * X,Y,Z position of the axis
+     * A position of the motor, that controls the gripper
+     */
     typedef enum {
       X, Y, Z, A
     } gripper_pose_t;

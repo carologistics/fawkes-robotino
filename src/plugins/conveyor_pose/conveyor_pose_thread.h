@@ -4,6 +4,7 @@
  *
  *  Created: Thr 12. April 16:28:00 CEST 2016
  *  Copyright  2016 Tobias Neumann
+ *             2018 Victor Mataré
  *
  ****************************************************************************/
 
@@ -77,41 +78,28 @@ class ConveyorPoseThread
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  typedef pcl::PointXYZ Point;
-  typedef pcl::PointCloud<Point> Cloud;
-  typedef Cloud::Ptr CloudPtr;
-  typedef Cloud::ConstPtr CloudConstPtr;
-
   ConveyorPoseThread();
 
   virtual void init() override;
   virtual void loop() override ;
   virtual void finalize() override;
 
-  float cloud_resolution() const;
-  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
+  /** Used by the plugin constructor to enable data exchange between the two threads
+   * @param recog_thread pointer to the thread that does the actual pose recognition
+  */
+  void set_cg_thread(RecognitionThread *recog_thread);
 
-  void set_cg_thread(RecognitionThread *cg_thread);
-  void bb_set_busy(bool busy);
+private:
+  friend RecognitionThread;
 
-  CloudPtr model_;
-  CloudPtr scene_;
+  typedef pcl::PointXYZ Point;
+  typedef pcl::PointCloud<Point> Cloud;
+  typedef Cloud::Ptr CloudPtr;
+  typedef Cloud::ConstPtr CloudConstPtr;
 
-  fawkes::Mutex cloud_mutex_;
-  fawkes::Mutex bb_mutex_;
-
-  std::atomic_bool have_laser_line_;
-
-  fawkes::RefPtr<Cloud> cloud_out_raw_;
-  fawkes::RefPtr<Cloud> cloud_out_trimmed_;
-  fawkes::RefPtr<Cloud> cloud_out_model_;
-
-  std::unique_ptr<fawkes::tf::Stamped<fawkes::tf::Pose>> result_pose_;
   std::atomic<double> result_fitness_;
-
-  fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_laser_odom_;
-
-  bool cfg_debug_mode_;
+  const std::string syncpoint_clouds_ready_name_;
+  fawkes::RefPtr<fawkes::SyncPoint> syncpoint_clouds_ready;
 
   const std::string syncpoint_clouds_ready_name;
 
@@ -127,7 +115,6 @@ private:
   std::string conveyor_frame_id_;
   std::vector<std::string> laserlines_names_;
 
-  fawkes::RefPtr<fawkes::SyncPoint> syncpoint_clouds_ready;
 
   CloudPtr trimmed_scene_;
 
@@ -208,11 +195,30 @@ private:
   fawkes::Time wait_start_;
   fawkes::Time wait_time_;
 
-//  fawkes::Position3DInterface * bb_tag_;
+  float cloud_resolution() const;
+  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
 
- /**
-  * check if the pointcloud is available
-  */
+  void bb_set_busy(bool busy);
+
+  CloudPtr model_;
+  CloudPtr scene_;
+
+  fawkes::Mutex cloud_mutex_;
+  fawkes::Mutex bb_mutex_;
+
+  std::atomic_bool have_laser_line_;
+
+  fawkes::RefPtr<Cloud> cloud_out_raw_;
+  fawkes::RefPtr<Cloud> cloud_out_trimmed_;
+  fawkes::RefPtr<Cloud> cloud_out_model_;
+
+  std::unique_ptr<fawkes::tf::Stamped<fawkes::tf::Pose>> result_pose_;
+
+  fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_laser_odom_;
+
+  bool cfg_debug_mode_;
+
+
  bool update_input_cloud();
 
  void bb_update_switch();
@@ -222,15 +228,19 @@ private:
 
  void set_initial_tf_from_laserline(fawkes::LaserLineInterface *ll, fawkes::ConveyorPoseInterface::MPS_TYPE mps_type,fawkes::ConveyorPoseInterface::MPS_TARGET mps_target);
 
- bool is_inbetween(double a, double b, double val);
-
  CloudPtr cloud_trim(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll);
 
  boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
  CloudPtr cloud_voxel_grid(CloudPtr in);
 
+ bool is_target_shelf();
+
  void pose_write();
  void record_model();
+
+ void pose_publish_tf(const fawkes::tf::Stamped<fawkes::tf::Pose> &pose);
+ void start_waiting();
+ bool need_to_wait();
 
  virtual void config_value_erased(const char *path) override;
  virtual void config_tag_changed(const char *new_tag) override;
@@ -250,10 +260,6 @@ private:
 protected:
   virtual void run() override
   { Thread::run(); }
-
-  void pose_publish_tf(const fawkes::tf::Stamped<fawkes::tf::Pose> &pose);
-  void start_waiting();
-  bool need_to_wait();
 
 };
 

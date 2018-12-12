@@ -63,6 +63,6 @@ fawkes/meta_plugins:
     - pddl-robot-memory
     - clips_robot_memory
     - clips-pddl-parser
-    - pddl-planner
     - clips-executive
+    - clips-executive-rest-api
 

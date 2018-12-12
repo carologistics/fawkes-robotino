@@ -27,7 +27,7 @@
 
 using namespace rapidjson;
 
-/** Class Serializer "serlializer.h"
+/** @class Serializer "serializer.h"
  * This class is used to serilze the differnt JSON messages of 
  * the Rosbridge protocol  
 */
@@ -36,15 +36,25 @@ using namespace rapidjson;
 /** Create an subscribe message
 * This creates a RosBridge "subscribe" JSON message (Ex, 
 * message formate:
- { "op": "subscribe",
-  (optional) "id": <string>,
-  "topic": <string>,
-  (optional) "type": <string>,
-  (optional) "throttle_rate": <int>,
-  (optional) "queue_length": <int>,
-  (optional) "fragment_size": <int>,
-  (optional) "compression": <string>
-}
+* @code
+* { "op": "subscribe",
+*  (optional) "id": <string>,
+*  "topic": <string>,
+*  (optional) "type": <string>,
+*  (optional) "throttle_rate": <int>,
+*  (optional) "queue_length": <int>,
+*  (optional) "fragment_size": <int>,
+*  (optional) "compression": <string>
+* }
+* @endcode
+* @param prefixed_topic_name
+* @param id provided in the JSON message of the rosbridge protocol
+* @param type provided in the JSON message of the rosbridge protocol
+* @param compression provided in the JSON message of the rosbridge protocol
+* @param throttle_rate provided in the JSON message of the rosbridge protocol
+* @param queue_length provided in the JSON message of the rosbridge protocol
+* @param fragment_size provided in the JSON message of the rosbridge protocol
+* @return serialized json string corresponding to rosbridge protocol message
 */
 std::string  
 Serializer::op_subscribe(std::string prefixed_topic_name 
@@ -102,10 +112,15 @@ Serializer::op_subscribe(std::string prefixed_topic_name
 /** Create an unsubscribe message
 * This creates a RosBridge "unsubscribe" JSON message (Ex, 
 * message formate:
- { "op": "unsubscribe",
-  (optional) "id": <string>,
-  "topic": <string>
-}
+* @code
+* { "op": "unsubscribe",
+* (optional) "id": <string>,
+*  "topic": <string>
+* }
+* @endcode
+* @param prefixed_topic_name
+* @param id
+* @return serialized json string corresponding to rosbridge protocol message
 */
 std::string  
 Serializer::op_unsubscribe(std::string prefixed_topic_name 
@@ -137,11 +152,17 @@ Serializer::op_unsubscribe(std::string prefixed_topic_name
 /** Create an advertise message
 * This creates a RosBridge "advertise" JSON message (Ex, 
 * message formate:
- { "op": "advertise",
-  (optional) "id": <string>,
-  "topic": <string>,
-  "type": <string>
-}
+* @code
+* { "op": "advertise",
+*  (optional) "id": <string>,
+*  "topic": <string>,
+*  "type": <string>
+* }
+* @endcode
+* @param prefixed_topic_name the session wishes to advertise
+* @param id specified in the JSON message
+* @param type  specified in the  JSON message
+* @return serialized json string corresponding to rosbridge protocol message
 */
 std::string
 Serializer::op_advertise( std::string prefixed_topic_name , std::string id , std::string type )
@@ -182,10 +203,15 @@ Serializer::op_advertise( std::string prefixed_topic_name , std::string id , std
 /** Create an unadvertise message
 * This creates a JSON message with a RosBridge "unadvertise"  opcode 
 * message formate:
- { "op": "unadvertise",
-  (optional) "id": <string>,
-  "topic": <string>
-}
+* @code
+* { "op": "unadvertise",
+*  (optional) "id": <string>,
+*  "topic": <string>
+* }
+* @endcode
+* @param prefixed_topic_name
+* @param id
+* @return serialized json string corresponding to rosbridge protocol message
 */
 std::string
 Serializer::op_unadvertise( std::string prefixed_topic_name , std::string id )
@@ -217,13 +243,18 @@ Serializer::op_unadvertise( std::string prefixed_topic_name , std::string id )
 /** Create an publish message
 * This creates a JSON message with a RosBridge "publish"  opcode 
 * message formate:
-{ "op": "publish",
-  (optional) "id": <string>,
-  "topic": <string>,
-  "msg": <json>
-}
-
- @param msg_in_json The topic data in JSON
+* @code
+*{ "op": "publish",
+*  (optional) "id": <string>,
+*  "topic": <string>,
+*  "msg": <json>
+*}
+* @endcode
+* @param prefixed_topic_name
+* @param id
+* @param latch
+* @param msg_in_json The topic data in JSON
+* @return serialized json string corresponding to rosbridge protocol message
 */
 std::string
 Serializer::op_publish( std::string prefixed_topic_name , std::string id 
@@ -282,6 +313,8 @@ Serializer::op_publish( std::string prefixed_topic_name , std::string id
 
 
 /** Serialize a Clips Fact as a JSON msg
+* @param fact clips fact to serialize
+* @return serialized json string corresponding to rosbridge protocol message
 */
 std::string
 Serializer::serialize(CLIPS::Fact::pointer fact)

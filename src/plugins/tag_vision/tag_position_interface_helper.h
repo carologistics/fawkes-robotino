@@ -80,16 +80,28 @@ public:
   /// Write the interface on the blackboard
   void write();
 
-  /// Get the marker id
+  /**
+   * @brief Returns the id of the marker this interface belongs to 
+   *
+   * @return The marker-id of the interface
+   */
   u_int32_t marker_id() {return this->marker_id_;}
 
   /// Set the marker id
   void set_marker_id(u_int32_t new_id);
 
-  /// Get the interface
+  /**
+   * @brief Returns the Position3D interface of this plugin
+   *
+   * @return The interface
+   */
   fawkes::Position3DInterface *interface() { return this->interface_; }
 
-  /// Get the vector position
+  /**
+   * @brief Returns the position of this interface in the TagPositionList, or any other enumeration 
+   *
+   * @return The position of this interface of the list
+   */
   u_int32_t vector_position(){ return this->vector_position_; }
 
 private:

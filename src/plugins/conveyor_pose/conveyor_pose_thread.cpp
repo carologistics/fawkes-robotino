@@ -3,6 +3,7 @@
  *
  *  Created: Thr 12. April 16:28:00 CEST 2016
  *  Copyright  2016 Tobias Neumann
+ *             2018 Victor Mataré
  *
  ****************************************************************************/
 
@@ -59,7 +60,7 @@ ConveyorPoseThread::ConveyorPoseThread()
   , ConfigurationChangeHandler(CFG_PREFIX)
   , fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose")
   , result_fitness_(std::numeric_limits<double>::min())
-  , syncpoint_clouds_ready_name("/perception/conveyor_pose/clouds_ready")
+  , syncpoint_clouds_ready_name_("/perception/conveyor_pose/clouds_ready")
   , cloud_out_raw_name_("raw")
   , cloud_out_trimmed_name_("trimmed")
   , current_mps_type_(ConveyorPoseInterface::NO_STATION)
@@ -111,7 +112,7 @@ ConveyorPoseThread::init()
 {
   config->add_change_handler(this);
 
-  syncpoint_clouds_ready = syncpoint_manager->get_syncpoint(name(), syncpoint_clouds_ready_name);
+  syncpoint_clouds_ready = syncpoint_manager->get_syncpoint(name(), syncpoint_clouds_ready_name_);
   syncpoint_clouds_ready->register_emitter(name());
 
   cfg_debug_mode_ = config->get_bool( CFG_PREFIX "/debug" );
@@ -272,7 +273,7 @@ ConveyorPoseThread::init()
   cfg_bb_realsense_switch_name_ = config->get_string_or_default(CFG_PREFIX "/realsense_switch", "realsense");
   wait_time_ = Time(double(config->get_float_or_default(CFG_PREFIX "/realsense_wait_time", 1.0f)));
 
-  // Load reference pcl for shelf, input belt (with cone), output belt (without cone) and slide
+  // Load reference pcl for shelf, input belt (with cone for input -> output machines, without cone for output <- -> output machines), output belt (without cone) and slide
   for ( int i = ConveyorPoseInterface::NO_STATION; i != ConveyorPoseInterface::LAST_MPS_TYPE_ELEMENT; i++ )
   {
     ConveyorPoseInterface::MPS_TYPE mps_type = static_cast<ConveyorPoseInterface::MPS_TYPE>(i);
@@ -283,6 +284,12 @@ ConveyorPoseThread::init()
       type_target_to_path_[{mps_type, mps_target}] = get_model_path(bb_pose_, mps_type, mps_target);
     }
   }
+
+  // always use the output_conveyor model for Storage station and Base station
+  type_target_to_path_[{ConveyorPoseInterface::BASE_STATION, ConveyorPoseInterface::INPUT_CONVEYOR}]=
+    type_target_to_path_[{ConveyorPoseInterface::BASE_STATION, ConveyorPoseInterface::OUTPUT_CONVEYOR}];
+  type_target_to_path_[{ConveyorPoseInterface::STORAGE_STATION, ConveyorPoseInterface::INPUT_CONVEYOR}]=
+    type_target_to_path_[{ConveyorPoseInterface::STORAGE_STATION, ConveyorPoseInterface::OUTPUT_CONVEYOR}];
 
   trimmed_scene_.reset(new Cloud());
 
@@ -629,6 +636,7 @@ ConveyorPoseThread::update_station_information(ConveyorPoseInterface::SetStation
     result_fitness_ = std::numeric_limits<double>::min();
     bb_pose_->set_euclidean_fitness(result_fitness_);
     bb_pose_->set_msgid(msg.id());
+    bb_pose_->set_busy(true);
     bb_pose_->write();
   }
 }
@@ -779,17 +787,8 @@ ConveyorPoseThread::laserline_get_center_transformed(fawkes::LaserLineInterface 
 }
 
 
-bool
-ConveyorPoseThread::is_inbetween(double a, double b, double val) {
-  double low = std::min(a, b);
-  double up  = std::max(a, b);
-
-  return val >= low && val <= up;
-}
-
-
-CloudPtr
-ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
+ConveyorPoseThread::CloudPtr
+ConveyorPoseThread::cloud_voxel_grid(ConveyorPoseThread::CloudPtr in)
 {
   float ls = cfg_voxel_grid_leaf_size_;
   pcl::ApproximateVoxelGrid<pcl::PointXYZ> vg;
@@ -802,8 +801,9 @@ ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
   return out;
 }
 
+
 void
-ConveyorPoseThread::cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out)
+ConveyorPoseThread::cloud_publish(ConveyorPoseThread::CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out)
 {
   **cloud_out = *cloud_in;
   cloud_out->header = header_;
@@ -1122,7 +1122,8 @@ fawkes::tf::Pose eigen_to_pose(const Eigen::Matrix4f &m)
  *       |
  *       y
  * */
-CloudPtr ConveyorPoseThread::cloud_trim(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll) {
+ConveyorPoseThread::CloudPtr
+ConveyorPoseThread::cloud_trim(ConveyorPoseThread::CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll) {
     float x_min = -FLT_MAX, x_max = FLT_MAX, 
            y_min = -FLT_MAX, y_max = FLT_MAX, 
            z_min = -FLT_MAX, z_max = FLT_MAX;

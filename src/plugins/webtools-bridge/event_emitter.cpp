@@ -30,18 +30,35 @@
 
 using namespace fawkes;
 
+/** @class EventEmitter "event_emitter.h"
+ * Implantation of an Event Emitter.
+ * Callable classes can register to be notified for certain expected events.
+ * The EventEmitter can emitt_events, calling the callbacks of callable classes
+ * registered for this event type.
+ *
+ * @author Mostafa Gomaa
+ */
+
+/** Constructor. */
 EventEmitter::EventEmitter()
 {
 	mutex_ = new fawkes::Mutex();
 
 }
 
+/** Destructor. */
 EventEmitter::~EventEmitter()
 {
 	callbacks_.clear();
 	delete mutex_;
 }
 
+/** Call the callbacks of the Callable Objects
+* By calling this method with an Event type all callbacks
+* of Callables registered to that event will be called.
+* Used to emulates signal emitting.
+* @param event_type what ever event you would like to signal (ex, TERMINATE)
+*/
 void
 EventEmitter::emitt_event(EventType event_type)
 {
@@ -56,7 +73,10 @@ EventEmitter::emitt_event(EventType event_type)
 	//do_on_event(event_type);
 }
 
-
+/** Register a callable to be called on some event type
+* @param event_type to receive a callback for
+* @param callable the class with the callback that handles the event.
+*/
 void 
 EventEmitter::register_callback  ( EventType event_type , std::shared_ptr <Callable> callable )
 {
@@ -65,6 +85,11 @@ EventEmitter::register_callback  ( EventType event_type , std::shared_ptr <Calla
 	callbacks_ [event_type].push_back(callable);
 }
 
+
+/** Unregister a callable from emitter entries
+* @param event_type that the callable was registered to
+* @param callable to the class that wants to unregister.
+*/
 void
 EventEmitter::unregister_callback( EventType event_type , std::shared_ptr <Callable> callable )
 {
