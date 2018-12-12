@@ -243,6 +243,13 @@ class ArduinoComMessage
 
 };
 
+extern template ArduinoComMessage::ArduinoComMessage<bool>(setting_id_t setting, bool value);
+extern template ArduinoComMessage::ArduinoComMessage<float>(setting_id_t setting, float value);
+extern template ArduinoComMessage::ArduinoComMessage<unsigned int>(setting_id_t setting, unsigned int value);
+extern template bool ArduinoComMessage::add_setting<bool>(setting_id_t setting, bool value);
+extern template bool ArduinoComMessage::add_setting<float>(setting_id_t setting, float value);
+extern template bool ArduinoComMessage::add_setting<unsigned int>(setting_id_t setting, unsigned int value);
+
 
 #endif
 
