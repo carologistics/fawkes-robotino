@@ -79,20 +79,6 @@ ArduinoComMessage::ArduinoComMessage(command_id_t cmdid, const std::map<char, fl
   add_command(cmdid,  coordinates);
 }
 
-template ArduinoComMessage::ArduinoComMessage<bool>(setting_id_t setting, bool value);
-template ArduinoComMessage::ArduinoComMessage<float>(setting_id_t setting, float value);
-template ArduinoComMessage::ArduinoComMessage<unsigned int>(setting_id_t setting, unsigned int value);
-/** Constructor for setting message.
- * Create message for writing and add setting
- * @param setting setting to set
- * @param value the value to set for this setting
- */
-template <class T> ArduinoComMessage::ArduinoComMessage(setting_id_t setting, T value)
-{
-  ctor();
-  add_setting(setting,  value);
-}
-
 /** Destructor.
  */
 ArduinoComMessage::~ArduinoComMessage()
