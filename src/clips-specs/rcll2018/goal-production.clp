@@ -511,7 +511,7 @@
 
   ;TODO: add time considerations to only add a higher priority if it makes sense
   =>
-  (printout warn "RS " ?mps " needs an additional base for " ?order " given " ?order-wp " (prio +2)" crlf)
+  (printout debug "RS " ?mps " needs an additional base for " ?order " given " ?order-wp " (prio +2)" crlf)
   (if (not (do-for-fact
             ((?wmf wm-fact))
             (eq ?wmf:key (create$ evaluated fact rs-fill-priority args? m ?mps))
@@ -554,7 +554,7 @@
   (not (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 2)))
   ;TODO: add time considerations to only add a higher priority if it makes sense
   =>
-  (printout warn "RS " ?mps " needs an additional base for " ?order " (prio +1)" crlf)
+  (printout debug "RS " ?mps " needs an additional base for " ?order " (prio +1)" crlf)
   (if (not (do-for-fact
             ((?wmf wm-fact))
             (eq ?wmf:key (create$ evaluated fact rs-fill-priority args? m ?mps))
@@ -598,7 +598,7 @@
           (bind ?priority-increase ?prio:value)
       )
   )
-  (printout warn "Goal " FILL-RS-FROM-BS " formulated" crlf)
+  (printout t "Goal " FILL-RS-FROM-BS " formulated" crlf)
   (assert (goal (id (sym-cat FILL-RS-FROM-BS- (gensym*)))
                 (class FILL-RS-FROM-BS)
                 (priority (+ ?priority-increase ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE*))
@@ -644,7 +644,7 @@
          then
           (bind ?priority-increase ?prio:value)
       ))
-  (printout warn "Goal " FILL-RS-FROM-SHELF " formulated" crlf)
+  (printout t "Goal " FILL-RS-FROM-SHELF " formulated" crlf)
   (assert (goal (id (sym-cat FILL-RS-FROM-SHELF- (gensym*)))
                 (class FILL-RS-FROM-SHELF)
                 (priority (+ ?priority-increase ?*PRIORITY-PREFILL-RS*))
