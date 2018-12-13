@@ -60,6 +60,7 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define STATUS_ERROR 2
 
 bool open_gripper = false;
+bool closed_gripper = false;
 
 char status_array_[] = {'M', 'I', 'E'};
 
@@ -228,6 +229,8 @@ void set_new_pos(long new_pos, AccelStepper &motor) {
 
 void read_package() {
     int len = Serial.readBytesUntil(TERMINATOR, buffer_, 128);
+    int open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
+    int closed_button = digitalRead(MOTOR_A_CLOSED_LIMIT_PIN);
     // Skip too short packages
     if (len < 4) return;
 
@@ -269,14 +272,17 @@ void read_package() {
               set_new_pos(-new_pos, motor_Z);
               break;
             case CMD_OPEN:
-              if(!open_gripper){
+              if(!open_gripper && closed_button == LOW){
                 open_gripper = true;
-                set_status(STATUS_MOVING);
+                closed_gripper = false;
+                set_new_pos(motor_A.currentPosition()-400,motor_A);
+                //set_status(STATUS_MOVING);
               }
               break;
             case CMD_GRAB:
-              if(open_gripper){
+              if(open_button == LOW && !closed_gripper){
                 open_gripper = false;
+                closed_gripper = true;
                 set_new_pos(motor_A.currentPosition()+400,motor_A);
                 //set_status(STATUS_MOVING);
               }
@@ -363,16 +369,16 @@ void setup() {
 
 
 void loop() {
-  int open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
-
-  if(open_gripper && open_button == HIGH){
-     set_new_pos(motor_A.currentPosition()-1,motor_A);
-     motor_A.enableOutputs();
-  }
-  if(open_gripper && open_button == LOW){
-    // set_new_pos(motor_A.currentPosition(),motor_A);
-    motor_A.enableOutputs();
-  }
+  //int open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
+  //int closed_button = digitalRead(MOTOR_A_CLOSED_LIMIT_PIN);
+  //if(open_gripper && open_button!=LOW){ //open the gripper
+  //   set_new_pos(motor_A.currentPosition()-1,motor_A);
+  //   motor_A.enableOutputs();
+  //}
+  //if(closed_gripper && closed_button!=LOW){ //close the gripper
+  //  set_new_pos(motor_A.currentPosition(),motor_A);
+  //  motor_A.enableOutputs();
+  //}
   if (motor_X.distanceToGo() != 0 ||
       motor_Y.distanceToGo() != 0 ||
       motor_Z.distanceToGo() != 0 ||
