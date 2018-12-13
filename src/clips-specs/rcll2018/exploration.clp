@@ -166,6 +166,18 @@
 )
 
 
+(defrule exp-exclude-zones
+" Mark a zone as empty if there can not be a machine according to the rules
+"
+  (exploration-result (zone ?zn) (machine ?machine) (orientation ?orientation) )
+  ?wm <- (wm-fact (key exploration zone ?zn2 args? machine UNKNOWN team ?team))
+  (test (eq TRUE (zone-is-blocked ?zn ?orientation ?zn2 ?machine)))
+  =>
+  (modify ?wm (key exploration zone ?zn2 args? machine NONE team ?team))
+  (printout t "There is a machine in " ?zn " with orientation " ?orientation  " so block " ?zn2 crlf)
+)
+
+
 (defrule exp-found-tag
 " If a tag was found in a zone that we dont have any information of, update the corresponding tag-vis fact
 "
@@ -188,6 +200,17 @@
 =>
   (modify ?ze-f (value 1 ))
   (printout t "Found tag in " ?zn crlf)
+)
+
+
+(defrule exp-sync-tag-finding
+" Sync finding of a tag to the other field size
+"
+  ?wm <- (wm-fact (key exploration fact tag-vis args? zone ?zn) (value ?tv))
+  ?we <- (wm-fact (key exploration fact tag-vis args? zone ?zn2&:(eq ?zn2 (mirror-name ?zn))) (value ?tv2&: (< ?tv2 ?tv)))
+  =>
+  (modify ?we (value ?tv))
+  (printout t "Synced tag-finding: " ?zn2 crlf)
 )
 
 
