@@ -67,7 +67,7 @@
 )
 
 
-(defrule goal-reasoner-create-acquire-token-spawning-master
+(defrule goal-production-create-acquire-token-spawning-master
 " If no one is spawning master. Try to become the spawning master
 
   The spawning master creates the facts for new workpieces anyd capcarriers.
@@ -86,7 +86,7 @@
 )
 
 
-(defrule goal-reasoner-create-beacon-maintain
+(defrule goal-production-create-beacon-maintain
 " The parent goal for beacon signals. Allows formulation of
   goals that periodically communicate with the refbox.
 "
@@ -97,7 +97,7 @@
 )
 
 
-(defrule goal-reasoner-create-beacon-achieve
+(defrule goal-production-create-beacon-achieve
 " Send a beacon signal whenever at least one second has elapsed since it
   last one got sent.
 "
@@ -113,7 +113,7 @@
 )
 
 
-(defrule goal-reasoner-create-wp-spawn-maintain
+(defrule goal-production-create-wp-spawn-maintain
   "Maintain Spawning if the spawning-master token is held"
   (domain-facts-loaded)
  (not (goal (class WPSPAWN-MAINTAIN)))
@@ -126,7 +126,7 @@
 )
 
 
-(defrule goal-reasoner-create-wp-spawn-achieve
+(defrule goal-production-create-wp-spawn-achieve
   "Spawn a WP for each robot, if you are the spawn-master"
   ?g <- (goal (id ?maintain-id) (class WPSPAWN-MAINTAIN) (mode SELECTED))
   (not (goal (class WPSPAWN-ACHIEVE)))
@@ -150,7 +150,7 @@
 )
 
 
-(defrule goal-reasoner-create-refill-shelf-maintain
+(defrule goal-production-create-refill-shelf-maintain
 " The parent goal to refill a shelf. Allows formulation of goals to refill
   a shelf only if the game is in the production phase and the domain is loaded.
   Only the spawning-master is in charge of handling shelf refills.
@@ -166,7 +166,7 @@
 )
 
 
-(defrule goal-reasoner-create-refill-shelf-achieve
+(defrule goal-production-create-refill-shelf-achieve
   "Refill a shelf whenever it is empty."
   ?g <- (goal (id ?maintain-id) (class REFILL-SHELF-MAINTAIN) (mode SELECTED))
   (not (goal (class REFILL-SHELF-ACHIEVE)))
@@ -187,7 +187,7 @@
 )
 
 
-(defrule goal-reasoner-navgraph-compute-wait-positions-finished
+(defrule goal-production-navgraph-compute-wait-positions-finished
   "Add the waiting points to the domain once their generation is finished."
   (NavGraphWithMPSGeneratorInterface (final TRUE))
 =>
@@ -203,7 +203,7 @@
 )
 
 
-(defrule goal-reasoner-create-goal-production-maintain
+(defrule goal-production-create-production-maintain
 " The parent production goal. Allows formulation of
   production goals only if the proper game state selected
   and the domain got loaded. Other production goals are
@@ -223,7 +223,7 @@
 )
 
 
-(defrule goal-reasoner-create-wait
+(defrule goal-production-create-wait
   "Keep waiting at one of the waiting positions."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
@@ -243,7 +243,7 @@
 )
 
 
-(defrule goal-reasoner-create-go-wait
+(defrule goal-production-create-go-wait
   "Drive to a waiting position and wait there."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
@@ -264,7 +264,7 @@
 )
 
 
-(defrule goal-reasoner-create-enter-field
+(defrule goal-production-create-enter-field
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (not (goal (class ENTER-FIELD-ACHIEVE)))
@@ -281,7 +281,7 @@
 )
 
 
-(defrule goal-reasoner-create-fill-cap
+(defrule goal-production-create-fill-cap
 " Fill a cap into a cap station.
   Use a capcarrier from the corresponding shelf to feed it into a cap station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -333,7 +333,7 @@
 )
 
 
-(defrule goal-reasoner-create-clear-rs-from-expired-product
+(defrule goal-production-create-clear-rs-from-expired-product
   "Remove an unfinished product from the output of a ring station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
@@ -368,7 +368,7 @@
 )
 
 
-(defrule goal-reasoner-create-clear-cs-for-capless-carriers
+(defrule goal-production-create-clear-cs-for-capless-carriers
 " Remove a capless capcarrier from the output of a cap station after
   retrieving a cap from it.
 "
@@ -402,7 +402,7 @@
 )
 
 
-(defrule goal-reasoner-create-clear-bs
+(defrule goal-production-create-clear-bs
   "Remove a workpiece from the base station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
@@ -432,7 +432,7 @@
 )
 
 
-(defrule goal-reasoner-clear-cs-from-expired-product
+(defrule goal-production-clear-cs-from-expired-product
   "Remove a finished product from a cap station after it's deadline passed."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
@@ -467,7 +467,7 @@
 )
 
 
-(defrule goal-reasoner-increase-priority-to-prefill-rs-for-started-order
+(defrule goal-production-increase-priority-to-prefill-rs-for-started-order
 " Add a priority increase of +2 for goals that pre-fill a ring station which
   requires additional bases such that the production of a started product
   can be continued.
@@ -523,7 +523,7 @@
 )
 
 
-(defrule goal-reasoner-increase-priority-to-prefill-rs-for-unstarted-order
+(defrule goal-production-increase-priority-to-prefill-rs-for-unstarted-order
 " Add a priority increase of +1 for goals that pre-fill a ring station which
   requires additional bases such that an available order (that was not started
   yet) can use them for the first ring.
@@ -566,7 +566,7 @@
 )
 
 
-(defrule goal-reasoner-create-prefill-ring-station-from-base-station
+(defrule goal-production-create-prefill-ring-station-from-base-station
   "Fill the ring station with a fresh base from the base station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
@@ -617,7 +617,7 @@
 )
 
 
-(defrule goal-reasoner-create-prefill-ring-station-from-shelf
+(defrule goal-production-create-prefill-ring-station-from-shelf
   "Fill a ring station with a capcarrier from a shelf."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
@@ -662,7 +662,7 @@
 )
 
 
-(defrule goal-reasoner-create-prefill-ring-station
+(defrule goal-production-create-prefill-ring-station
   ;Fill a ring station with the currently holding workpiece.
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
@@ -704,7 +704,7 @@
 )
 
 
-(defrule goal-reasoner-create-discard-unknown
+(defrule goal-production-create-discard-unknown
   "Discard a base which is not needed."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
@@ -731,7 +731,7 @@
 )
 
 
-(defrule goal-reasoner-create-produce-c0
+(defrule goal-production-create-produce-c0
 " Produce a C0 product: Get the correct base and mount the right cap on it.
   The produced workpiece stays in the output of the used cap station after
   successfully executing this goal.
@@ -818,7 +818,7 @@
 )
 
 
-(defrule goal-reasoner-create-mount-first-ring
+(defrule goal-production-create-mount-first-ring
 " Start a higher order product by getting the base and mounting the first ring.
   The workpiece remains in the output of the used ring station after
   successfully finishing this goal.
@@ -910,7 +910,7 @@
 )
 
 
-(defrule goal-reasoner-create-mount-next-ring
+(defrule goal-production-create-mount-next-ring
 " Mount the next ring on a CX product:
    - Take the started workpiece from the ring station output.
    - Bring it to the ring station that can mount the next ring.
@@ -991,7 +991,7 @@
 )
 
 
-(defrule goal-reasoner-create-produce-c1
+(defrule goal-production-create-produce-c1
 " Produce a C1 product: Get the workpiece with the mounted ring and mount
   a cap on it.
   The produced workpiece stays in the output of the used cap station after
@@ -1051,7 +1051,7 @@
 )
 
 
-(defrule goal-reasoner-create-produce-c2
+(defrule goal-production-create-produce-c2
 " Produce a C2 product: Get the workpiece with the mounted ring and mount
   a cap on it.
   The produced workpiece stays in the output of the used cap station after
@@ -1108,7 +1108,7 @@
 )
 
 
-(defrule goal-reasoner-create-produce-c3
+(defrule goal-production-create-produce-c3
 " Produce a C3 product: Get the workpiece with the mounted ring and mount
   a cap on it.
   The produced workpiece stays in the output of the used cap station after
@@ -1167,7 +1167,7 @@
 )
 
 
-(defrule goal-reasoner-create-reset-mps
+(defrule goal-production-create-reset-mps
 " Reset an mps to restore a consistent world model after getting a workpiece
   from it failed too often.
 "
@@ -1190,7 +1190,7 @@
 )
 
 
-(defrule goal-reasoner-create-discard-failed-put-slide
+(defrule goal-production-create-discard-failed-put-slide
 " Discard the currently held workpiece after filling it to a ring station
   failed too often
 "
@@ -1218,7 +1218,7 @@
 )
 
 
-(defrule goal-reasoner-create-deliver
+(defrule goal-production-create-deliver
   "Deliver a fully produced workpiece."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
@@ -1280,7 +1280,7 @@
 )
 
 
-(defrule goal-reasoner-evaluate-failed-enter-field
+(defrule goal-production-evaluate-failed-enter-field
   "HACK: Stop trying to enter the field when it failed a few times."
    ?g <- (goal (id ?gid) (class ENTER-FIELD-ACHIEVE)
                (mode FINISHED) (outcome FAILED))
@@ -1300,7 +1300,7 @@
 )
 
 
-(defrule goal-reasoner-evaluate-production-maintain
+(defrule goal-production-evaluate-production-maintain
   "Clean up all rs-fill-priorities facts when the production maintenance goal
    fails."
   ?g <- (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (parent nil)
@@ -1317,7 +1317,7 @@
 )
 
 
-(defrule goal-reasoner-evaluate-completed-produce-c0-and-mount-first-ring
+(defrule goal-production-evaluate-completed-produce-c0-and-mount-first-ring
 " Bind a workpiece to the order it belongs to.
 
   Workpieces that got dispensed during PRODUCE-C0 and MOUNT-FIRST-RING get
@@ -1347,7 +1347,7 @@
 )
 
 
-(defrule goal-reasoner-evaluate-completed-subgoal-refill-shelf
+(defrule goal-production-evaluate-completed-subgoal-refill-shelf
 " Create the domain objects and wm-facts corresponding to the freshly spawned
   capcarriers when the REFILL-SHELF-ACHIEVE goal finishes successfully.
 "
@@ -1382,7 +1382,7 @@
 )
 
 
-(defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
+(defrule goal-production-evaluate-completed-subgoal-wp-spawn
 " Create the domain objects and wm-facts corresponding to the freshly spawned
   workpieces when the WP-SPAWN-ACHIEVE goal finishes successfully.
 "
@@ -1411,7 +1411,7 @@
 )
 
 
-(defrule goal-reasoner-evaluate-cleanup-evaluated-wp-for-order-facts
+(defrule goal-production-evaluate-cleanup-evaluated-wp-for-order-facts
   "Unbind a workpiece from it's order when it can not be used anymore."
   ?wp-for-order <- (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (value TRUE))
   (not (wm-fact (key domain fact wp-usable args? wp ?wp)))
