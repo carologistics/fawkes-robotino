@@ -620,6 +620,26 @@ ArduinoComThread::read_packet(unsigned int timeout)
     return s;
 }
 
+void ArduinoComThread::load_hardcoded_config()
+{
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_STEP_PORT_INVERT] = 0u;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_DIR_PORT_INVERT] = 0u;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_STEP_ENA_INV] = false;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_LIMIT_PINS_INV] = false;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_PROBE_PINS_INV] = false;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_STATUS_REPORT] = 0u;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_JUNCTION_DEV] = 0.0f;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_ARC_TOL] = 0.0f;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_REPORT_INCHES] = false;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_SOFT_LIMS] = false;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_HARD_LIMS] = true;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_HOME_CYCLE] = true;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_HOME_DEBOUNCE] = 0u;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_MAX_SPINDLE_SPEED] = 0.0f;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_MIN_SPINDLE_SPEED] = 0.0f;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_LASER_MODE] = false;
+}
+
 void
 ArduinoComThread::load_config()
 {
@@ -636,26 +656,46 @@ ArduinoComThread::load_config()
         set_speed_pending_ = false;
         set_acceleration_pending_ = false;
 
-        cfg_step_pulse_ = config->get_int(cfg_prefix_ + "/grbl_config/step_pulse");
-        cfg_step_idle_delay_ = config->get_int(cfg_prefix_ + "/grbl_config/step_idle_delay");
-        cfg_homing_dir_invert_ = config->get_int(cfg_prefix_ + "/grbl_config/homing_dir_invert");
-        cfg_homing_feed_ = config->get_float(cfg_prefix_ + "/grbl_config/homing_feed");
-        cfg_homing_seek_ = config->get_float(cfg_prefix_ + "/grbl_config/homing_seek");
-        cfg_homing_pulloff_ = config->get_float(cfg_prefix_ + "/grbl_config/homing_pulloff");
-        cfg_x_steps_ = config->get_float(cfg_prefix_ + "/grbl_config/x_steps");
-        cfg_y_steps_ = config->get_float(cfg_prefix_ + "/grbl_config/y_steps");
-        cfg_z_steps_ = config->get_float(cfg_prefix_ + "/grbl_config/z_steps");
-        cfg_x_max_rate_ = config->get_float(cfg_prefix_ + "/grbl_config/x_max_rate");
-        cfg_y_max_rate_ = config->get_float(cfg_prefix_ + "/grbl_config/y_max_rate");
-        cfg_z_max_rate_ = config->get_float(cfg_prefix_ + "/grbl_config/z_max_rate");
-        cfg_x_acc_ = config->get_float(cfg_prefix_ + "/grbl_config/x_acc");
-        cfg_y_acc_ = config->get_float(cfg_prefix_ + "/grbl_config/y_acc");
-        cfg_z_acc_ = config->get_float(cfg_prefix_ + "/grbl_config/z_acc");
-        cfg_x_max_ = config->get_float(cfg_prefix_ + "/grbl_config/x_max");
-        cfg_y_max_ = config->get_float(cfg_prefix_ + "/grbl_config/y_max");
-        cfg_z_max_ = config->get_float(cfg_prefix_ + "/grbl_config/z_max");
+        if(cfg_grbl_settings_.empty()) load_hardcoded_config(); //only do this once
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_PULSE_LENGTH]
+          = config->get_uint(cfg_prefix_ + "/grbl_config/step_pulse");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_IDLE_DELAY]
+          = config->get_uint(cfg_prefix_ + "/grbl_config/step_idle_delay");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_HOME_DIR_INVERT]
+          = config->get_uint(cfg_prefix_ + "/grbl_config/homing_dir_invert");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_HOME_FEED]
+          = config->get_float(cfg_prefix_ + "/grbl_config/homing_feed");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_HOME_SEEK]
+          = config->get_float(cfg_prefix_ + "/grbl_config/homing_seek");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_HOME_PULL_OFF]
+          = config->get_float(cfg_prefix_ + "/grbl_config/homing_pulloff");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_X_STEPS]
+          = config->get_float(cfg_prefix_ + "/grbl_config/x_steps");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Y_STEPS]
+          = config->get_float(cfg_prefix_ + "/grbl_config/y_steps");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Z_STEPS]
+          = config->get_float(cfg_prefix_ + "/grbl_config/z_steps");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_X_MAX_RATE]
+          = config->get_float(cfg_prefix_ + "/grbl_config/x_max_rate");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Y_MAX_RATE]
+          = config->get_float(cfg_prefix_ + "/grbl_config/y_max_rate");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Z_MAX_RATE]
+          = config->get_float(cfg_prefix_ + "/grbl_config/z_max_rate");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_X_ACC]
+          = config->get_float(cfg_prefix_ + "/grbl_config/x_acc");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Y_ACC]
+          = config->get_float(cfg_prefix_ + "/grbl_config/y_acc");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Z_ACC]
+          = config->get_float(cfg_prefix_ + "/grbl_config/z_acc");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_X_MAX_TRAVEL]
+          = config->get_float(cfg_prefix_ + "/grbl_config/x_max");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Y_MAX_TRAVEL]
+          = config->get_float(cfg_prefix_ + "/grbl_config/y_max");
+        cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Z_MAX_TRAVEL]
+          = config->get_float(cfg_prefix_ + "/grbl_config/z_max");
 
-        // 2mm / rotation
+
+
     } catch (Exception &e) {
     }
 }
