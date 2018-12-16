@@ -743,6 +743,50 @@ class is_equal_comparator : public boost::static_visitor<bool>
     }
 };
 
+bool 
+ArduinoComThread::check_config(std::vector<ArduinoComMessage::setting_id_t>& incorrect_settings)
+{
+  incorrect_settings.clear(); 
+  bool all_correct = true;
+  //ask for all settings, send $$
+  auto msg = new ArduinoComMessage(ArduinoComMessage::command_id_t::CMD_GETSETTINGS,{});
+  send_message(*msg);
+  delete msg;
+
+  for(const auto& setting: ArduinoComMessage::setting_map)
+  {
+    std::string setting_string = read_packet(1000);
+    unsigned int read_id;
+    do {
+      sscanf(setting_string.c_str(),"%u",&read_id);
+    } while(read_id != static_cast<unsigned int>(setting.first)); // ignore unused settings and other bullshit on the line
+
+    boost::variant<unsigned int, bool, float> read_value;
+    switch(setting.second) {
+      case ArduinoComMessage::setting_type::SET_BOOL:
+        unsigned int temp_read_bool;
+        sscanf(setting_string.c_str(),"%*u=%u",&temp_read_bool);
+        read_value = static_cast<bool>(temp_read_bool);
+        break;
+      case ArduinoComMessage::setting_type::SET_INT:
+        read_value=0u;
+        sscanf(setting_string.c_str(),"%*u=%u",&boost::get<unsigned int>(read_value));
+        break;
+      case ArduinoComMessage::setting_type::SET_FLOAT:
+        read_value=0.0f;
+        sscanf(setting_string.c_str(),"%*u=%f",&boost::get<float>(read_value));
+        break;
+    }
+    if(boost::apply_visitor(is_equal_comparator(),read_value,cfg_grbl_settings_[setting.first])){
+      all_correct = false;
+      incorrect_settings.push_back(setting.first);
+    }
+  }
+
+  //get value for every setting
+  return all_correct;
+}
+
 bool
 ArduinoComThread::bb_interface_message_received(Interface *interface,
         Message *message) throw()
