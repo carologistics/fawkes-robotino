@@ -757,9 +757,15 @@ ArduinoComThread::check_config(std::vector<ArduinoComMessage::setting_id_t>& inc
   {
     std::string setting_string = read_packet(1000);
     unsigned int read_id;
+    unsigned int tries=10;
     do {
       sscanf(setting_string.c_str(),"%u",&read_id);
-    } while(read_id != static_cast<unsigned int>(setting.first)); // ignore unused settings and other bullshit on the line
+    } while(read_id != static_cast<unsigned int>(setting.first) && tries>0); // ignore unused settings and other bullshit on the line
+    if(tries == 0) // could not get all the settings
+    {
+      logger->log_error(name(), "Error in reading the settings");
+      return false;
+    }
 
     boost::variant<unsigned int, bool, float> read_value;
     switch(setting.second) {
