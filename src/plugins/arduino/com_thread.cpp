@@ -700,6 +700,49 @@ ArduinoComThread::load_config()
     }
 }
 
+/**
+ * @brief boost Visitor to compare two setting_values
+ */
+class is_equal_comparator : public boost::static_visitor<bool>
+{
+  public:
+    /**
+     * Visitor function for uneven types
+     * @param operand1 First value
+     * @param operand2 Second value
+     * @return Always false, as types are different
+     */
+    template<class T, class U>
+    bool operator()(const T & operand1, const U & operand2) const
+    {
+      return false;
+    }
+    /**
+     * Visitor function for even types (only bool and int)
+     * @param operand1 First value
+     * @param operand2 Second value
+     * @return True if same, False if not
+     */
+    template<class T>
+    bool operator()(const T & operand1, const T & operand2) const
+    {
+      return operand1 == operand2;
+    }
+    /**
+     * Visitor function for float types. Since float values are only given with 3 digits from grbl,
+     * values are equal if their difference is smaller than 0.0005.
+     * @param operand1 First value
+     * @param operand2 Second value
+     * @return True if same, False if not
+     */
+    bool operator()(const float & operand1, const float & operand2) const
+    {
+      float diff = operand1-operand2;
+      if(diff<0.0) diff *= -1;
+      return diff < 0.0005; //settings are displayed with 3 digits
+    }
+};
+
 bool
 ArduinoComThread::bb_interface_message_received(Interface *interface,
         Message *message) throw()
