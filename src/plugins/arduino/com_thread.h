@@ -167,6 +167,7 @@ private:
     void load_hardcoded_config();
     void load_config();
     bool check_config(std::vector<ArduinoComMessage::setting_id_t>& incorrect_settings);
+    bool write_config(const std::vector<ArduinoComMessage::setting_id_t>& incorrect_settings);
 
     void append_message_to_queue(ArduinoComMessage::command_id_t cmd, unsigned int value = 0,
                                  unsigned int timeout = 1000);

@@ -793,6 +793,46 @@ ArduinoComThread::check_config(std::vector<ArduinoComMessage::setting_id_t>& inc
   return all_correct;
 }
 
+
+/**
+ * @brief boost Visitor to create ArduinoComMessages with to set setting
+ */
+class send_setting_visitor : public boost::static_visitor<ArduinoComMessage*>
+{
+  public:
+    /**
+     * Constructor of the visitor to handover non variant arguments
+     * @param setting The id of the setting to set
+     */
+    explicit send_setting_visitor(const ArduinoComMessage::setting_id_t setting) : setting(setting) {}
+
+    /**
+     * visitor function
+     * @param setting_value The value to set
+     * @return ArduinoComMessage with the setting
+     */
+    template<typename T>
+    ArduinoComMessage* operator()(const T& setting_value) const
+    {
+      return new ArduinoComMessage(setting, setting_value);
+    }
+  private:
+    ArduinoComMessage::setting_id_t setting;
+};
+
+bool 
+ArduinoComThread::write_config(const std::vector<ArduinoComMessage::setting_id_t>& incorrect_settings)
+{
+  for(const auto& incorrect_setting:incorrect_settings)
+  {
+    auto msg = boost::apply_visitor(send_setting_visitor(incorrect_setting),cfg_grbl_settings_[incorrect_setting]);
+    send_message(*msg);
+    delete msg;
+    //check for ok?
+  }
+  return true;
+}
+
 bool
 ArduinoComThread::bb_interface_message_received(Interface *interface,
         Message *message) throw()
