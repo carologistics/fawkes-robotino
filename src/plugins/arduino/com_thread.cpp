@@ -505,7 +505,7 @@ ArduinoComThread::sync_with_arduino()
         return false;
     }
     if (found == std::string::npos) {
-        logger->log_error(name(), "Synchronization with Arduino failed, HELLO-Package not located");
+        logger->log_error(name(), "Synchronization with Arduino failed, Bootup-message not located");
         return false;
     } else {
         logger->log_info(name(), "Synchronization with Arduino successful");
