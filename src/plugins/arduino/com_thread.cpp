@@ -748,6 +748,67 @@ class is_equal_comparator : public boost::static_visitor<bool>
     }
 };
 
+/**
+ * @brief boost Visitor for reporting diverging values to log
+ */
+class write_wrong_value_to_debug : public boost::static_visitor<>
+{
+  public:
+    /**
+     * Constructor to hand over non variant arguments
+     * @param arduino_thread The calling ArduinoComThread
+     * @param setting_id The id of the diverging setting
+     */
+    explicit write_wrong_value_to_debug(ArduinoComThread* arduino_thread,const ArduinoComMessage::setting_id_t& setting_id)
+      : arduino_thread(arduino_thread) 
+    {this->setting_id = static_cast<unsigned short>(setting_id);}
+
+    /**
+     * Reporter when types ares uneven
+     * @param expected The expected value
+     * @param got The read value from the arduino
+     */
+    template<class T, class U>
+    void operator()(const T & expected, const U & got) const
+    {
+      //Should never come here
+      arduino_thread->logger->log_debug(arduino_thread->name(),"expected and got datatype diverged. Check code.");
+    }
+
+    /**
+     * Reporter for float type settings
+     * @param expected The expected value
+     * @param got The read value from the arduino
+     */
+    void operator()(const float & expected, const float & got) const
+    {
+      arduino_thread->logger->log_debug(arduino_thread->name(),"Setting $%u diverged. expected %f got %f",setting_id,expected,got);
+    }
+
+    /**
+     * Reporter for bool type settings
+     * @param expected The expected value
+     * @param got The read value from the arduino
+     */
+    void operator()(const bool & expected, const bool & got) const
+    {
+      arduino_thread->logger->log_debug(arduino_thread->name(),"Setting $%u diverged. expected %s got %s",setting_id,expected?"true":"false",got?"true":"false");
+    }
+
+    /**
+     * Reporter for int type settings
+     * @param expected The expected value
+     * @param got The read value from the arduino
+     */
+    void operator()(const unsigned int & expected, const unsigned int & got) const
+    {
+      arduino_thread->logger->log_debug(arduino_thread->name(),"Setting $%u diverged. expected %u got %u",setting_id,expected,got);
+    }
+  private:
+    unsigned short setting_id;
+    ArduinoComThread* arduino_thread;
+};
+
 bool 
 ArduinoComThread::check_config(std::vector<ArduinoComMessage::setting_id_t>& incorrect_settings)
 {
@@ -790,6 +851,7 @@ ArduinoComThread::check_config(std::vector<ArduinoComMessage::setting_id_t>& inc
         break;
     }
     if(boost::apply_visitor(is_equal_comparator(),read_value,cfg_grbl_settings_[setting.first])){
+      boost::apply_visitor(write_wrong_value_to_debug(this,setting.first),read_value,cfg_grbl_settings_[setting.first]);
       all_correct = false;
       incorrect_settings.push_back(setting.first);
     }

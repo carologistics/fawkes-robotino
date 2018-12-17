@@ -53,6 +53,7 @@
 #define A_AXIS_STEPS_PER_MM      1.0 // TODO: configure!
 
 class ArduinoComMessage;
+class write_wrong_value_to_debug;
 
 namespace fawkes {
     class Mutex;
@@ -73,6 +74,10 @@ public fawkes::BlackBoardInterfaceListener,
 public fawkes::TransformAspect
 {
 public:
+    /**
+     * @brief boost visitor to report diverging settings to log
+     */
+    friend write_wrong_value_to_debug;
 
     ArduinoComThread();
     /**
