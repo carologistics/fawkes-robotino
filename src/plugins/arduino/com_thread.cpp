@@ -693,9 +693,10 @@ ArduinoComThread::load_config()
           = config->get_float(cfg_prefix_ + "/grbl_config/y_max");
         cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Z_MAX_TRAVEL]
           = config->get_float(cfg_prefix_ + "/grbl_config/z_max");
-
-
-
+        //now fill the easy access copies
+        cfg_x_max_ = boost::get<float>(cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_X_MAX_TRAVEL]);
+        cfg_y_max_ = boost::get<float>(cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Y_MAX_TRAVEL]);
+        cfg_z_max_ = boost::get<float>(cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Z_MAX_TRAVEL]);
     } catch (Exception &e) {
     }
 }

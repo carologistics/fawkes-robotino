@@ -135,6 +135,11 @@ private:
     char current_arduino_status_;
 
     std::map<ArduinoComMessage::setting_id_t,boost::variant<unsigned int, bool, float> > cfg_grbl_settings_;
+    //the following are just copies for easy access
+    float cfg_x_max_;
+    float cfg_y_max_;
+    float cfg_z_max_;
+
 
     unsigned int msecs_to_wait_;
 
