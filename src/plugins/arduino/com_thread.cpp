@@ -104,6 +104,16 @@ ArduinoComThread::init()
     std::vector<ArduinoComMessage::setting_id_t> incorrect_settings;
     if(!check_config(incorrect_settings))
       write_config(incorrect_settings); //if some settings diverged, correct them
+
+    go_home();
+}
+
+void ArduinoComThread::go_home()
+{
+  boost::mutex::scoped_lock lock(io_mutex_);
+  auto msg = new ArduinoComMessage(ArduinoComMessage::command_id_t::CMD_HOME,{});
+  send_message(*msg);
+  delete msg;
 }
 
 void

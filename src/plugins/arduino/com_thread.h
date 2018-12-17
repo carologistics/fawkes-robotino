@@ -120,6 +120,8 @@ private:
     void close_device();
     void flush_device();
 
+    void go_home();
+
     bool sync_with_arduino();
     std::string read_packet(unsigned int timeout);
     void send_message(ArduinoComMessage &msg);
