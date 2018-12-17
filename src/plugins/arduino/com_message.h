@@ -28,9 +28,12 @@
 #include <sstream>
 #include <iomanip>
 
+#include <boost/variant.hpp>
+
 class ArduinoComMessage
 {
  public:
+
  /**
   * @brief All possible commands, that can be send to the arduino
   */
@@ -54,6 +57,11 @@ class ArduinoComMessage
     SET_INT,
     SET_FLOAT
   };
+
+  /**
+   * @brief Typedef of the general used datatype for setting values
+   */
+  typedef boost::variant<bool, unsigned int, float> set_val_type;
 
   /**
    * @brief All possible Gribl settings
@@ -104,59 +112,11 @@ class ArduinoComMessage
   ArduinoComMessage();
   ~ArduinoComMessage();
   ArduinoComMessage(command_id_t cmdid, const std::map<char,float>& coordinates);
-  /** Constructor for setting message.
-   * Create message for writing and add setting
-   * @param setting setting to set
-   * @param value the value to set for this setting
-   */
-  template <class T> ArduinoComMessage(setting_id_t setting, T value)
-  {
-    ctor();
-    add_setting(setting,  value);
-  }
+  ArduinoComMessage(setting_id_t cmdid, set_val_type value);
 
 
   bool add_command(command_id_t cmd, const std::map<char, float>& coordinates);
-  template<class T> bool add_setting(setting_id_t setting, T value);
-
-  /**
-   * @brief Check whether the argument has correct data type
-   *
-   * @param type The expected data type
-   * @param value The variable to test
-   *
-   * @return True if the variable has correct type
-   */
-  static inline bool check_type(setting_type type, bool value)
-  {
-    return type==setting_type::SET_BOOL;
-  }
-
-  /**
-   * @brief Check whether the argument has correct data type
-   *
-   * @param type The expected data type
-   * @param value The variable to test
-   *
-   * @return True if the variable has correct type
-   */
-  static inline bool check_type(setting_type type, float value)
-  {
-    return type==setting_type::SET_FLOAT;
-  }
-
-  /**
-   * @brief Check whether the argument has correct data type
-   *
-   * @param type The expected data type
-   * @param value The variable to test
-   *
-   * @return True if the variable has correct type
-   */
-  static inline bool check_type(setting_type type, unsigned int value)
-  {
-    return type==setting_type::SET_INT;
-  }
+  bool add_setting(setting_id_t setting, set_val_type value);
 
   unsigned short get_data_size();
   unsigned short get_cur_buffer_index();
@@ -166,28 +126,6 @@ class ArduinoComMessage
   void set_msecs_if_lower(unsigned int msecs);
   unsigned int get_msecs();
 
-  /**
-   * @brief Calculates the number of letters an boolean is represented for Grbl
-   *
-   * @param b The boolean of which the number of letters should be calculated
-   *
-   * @return The amount of letters b is represented by
-   */
-  static inline unsigned short num_digits(bool b)
-  {
-    return 1;
-  }
-  /**
-   * @brief Calculates the number of digits a float consists of
-   *
-   * @param f The number of which the number of digits should be calculated
-   *
-   * @return The amount of digits f consists of
-   */
-  static unsigned short num_digits(float f)
-  {
-    return value_to_string(f).length();
-  }
   /**
    * @brief Calculates the number of digits an integer consists of
    *
@@ -238,10 +176,22 @@ class ArduinoComMessage
     return std::to_string(i);
   }
 
+  /**
+   * @brief Converts a general settingvalue into its string representation for Grbl
+   *
+   * @param value The value to convert
+   *
+   * @return The string representation of the setting value
+   */
+  static std::string value_to_string(set_val_type value);
+
+
 
  private:
   void ctor();
   void dtor();
+
+  unsigned short num_digits(set_val_type value);
 
  private:
 	char *data_;
@@ -249,13 +199,7 @@ class ArduinoComMessage
   unsigned short cur_buffer_index_; // index of next data field
 
   unsigned int msecs_to_wait_;
-
-
 };
-
-extern template bool ArduinoComMessage::add_setting<bool>(setting_id_t setting, bool value);
-extern template bool ArduinoComMessage::add_setting<float>(setting_id_t setting, float value);
-extern template bool ArduinoComMessage::add_setting<unsigned int>(setting_id_t setting, unsigned int value);
 
 
 #endif

@@ -60,6 +60,23 @@ using namespace fawkes;
  * @author Tim Niemueller, Nicolas Limpert
  */
 
+class get_type : public boost::static_visitor<ArduinoComMessage::setting_type>
+{
+  public:
+    ArduinoComMessage::setting_type operator()(const bool & to_test) const
+    {
+      return ArduinoComMessage::setting_type::SET_BOOL;
+    }
+    ArduinoComMessage::setting_type operator()(const unsigned int & to_test) const
+    {
+      return ArduinoComMessage::setting_type::SET_INT;
+    }
+    ArduinoComMessage::setting_type operator()(const float & to_test) const
+    {
+      return ArduinoComMessage::setting_type::SET_FLOAT;
+    }
+};
+
 /** Constructor.
  * Create empty message for writing.
  */
@@ -77,6 +94,17 @@ ArduinoComMessage::ArduinoComMessage(command_id_t cmdid, const std::map<char, fl
 {
   ctor();
   add_command(cmdid,  coordinates);
+}
+
+/** Constructor for setting message.
+ * Create message for writing and add setting
+ * @param setting setting to set
+ * @param value the value to set for this setting
+ */
+ArduinoComMessage::ArduinoComMessage(setting_id_t setting, set_val_type value)
+{
+  ctor();
+  add_setting(setting,  value);
 }
 
 /** Destructor.
@@ -174,6 +202,48 @@ ArduinoComMessage::add_command(command_id_t cmd, const std::map<char, float>& co
   return true;
 }
 
+
+unsigned short ArduinoComMessage::num_digits(set_val_type value)
+{
+  class num_digits_visitor : public boost::static_visitor<unsigned short>
+  {
+    public:
+      unsigned short operator()(unsigned int i) const
+      {
+        return i > 0 ? (int) log10 ((double) i) + 1 : 1;
+      }
+      unsigned short operator()(float f)
+      {
+        return ArduinoComMessage::value_to_string(f).length();
+      }
+      unsigned short operator()(bool b)
+      {
+        return 1;
+      }
+  };
+  return boost::apply_visitor(num_digits_visitor(),value);
+}
+
+/**
+ * @brief boost visitor to transform setting value into string
+ */
+class value_to_string_visitor : public boost::static_visitor<std::string>
+{
+  public:
+    /**
+     * @param value The value to be transformed
+     * @return The value as std::string
+     */
+    template<class T> std::string operator()(T& value) const
+    {
+      return ArduinoComMessage::value_to_string(value);
+    }
+};
+std::string  ArduinoComMessage::value_to_string(set_val_type value)
+{
+  return boost::apply_visitor(value_to_string_visitor(),value);
+}
+
 /** Add a configuration setting.
  * Given the setting identifier and its appropriate value, the setting command will be added. 
  * This method will return false when the setting is invalid.
@@ -181,11 +251,8 @@ ArduinoComMessage::add_command(command_id_t cmd, const std::map<char, float>& co
  * @param value the value of the chosen setting
  * @return true if setting was successfully added
  */
-template bool ArduinoComMessage::add_setting<bool>(setting_id_t setting, bool value);
-template bool ArduinoComMessage::add_setting<float>(setting_id_t setting, float value);
-template bool ArduinoComMessage::add_setting<unsigned int>(setting_id_t setting, unsigned int value);
-template<class T> bool
-ArduinoComMessage::add_setting(setting_id_t setting, T value)
+bool
+ArduinoComMessage::add_setting(setting_id_t setting, set_val_type value)
 {
   bool valid_setting = false;
 
@@ -195,7 +262,7 @@ ArduinoComMessage::add_setting(setting_id_t setting, T value)
   }
 
   //test whether type of value is correct
-  valid_setting &= check_type(setting_map.at(setting), value);
+  valid_setting &= setting_map.at(setting) == boost::apply_visitor(get_type(), value);
 
   if (valid_setting == true)
   {

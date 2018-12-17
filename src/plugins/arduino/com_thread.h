@@ -141,7 +141,7 @@ private:
     bool calibrated_;
     char current_arduino_status_;
 
-    std::map<ArduinoComMessage::setting_id_t,boost::variant<unsigned int, bool, float> > cfg_grbl_settings_;
+    std::map<ArduinoComMessage::setting_id_t,ArduinoComMessage::set_val_type> cfg_grbl_settings_;
     //the following are just copies for easy access
     float cfg_x_max_;
     float cfg_y_max_;
