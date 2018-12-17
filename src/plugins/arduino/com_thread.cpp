@@ -127,32 +127,9 @@ ArduinoComThread::finalize()
 }
 
 void
-ArduinoComThread::append_message_to_queue(ArduinoComMessage::command_id_t cmd,
-                                          unsigned int value, unsigned int timeout)
-{
-  ArduinoComMessage* msg = new ArduinoComMessage(cmd, value);
-  msg->set_msecs_if_lower(timeout);
-  append_message_to_queue(msg);
-}
-
-void
 ArduinoComThread::append_message_to_queue(ArduinoComMessage* msg)
 {
   messages_.push(msg);
-}
-
-bool
-ArduinoComThread::add_command_to_message(ArduinoComMessage* msg, ArduinoComMessage::command_id_t command, unsigned int value)
-{
-  // TODO: Check if consistency for sending values is kept - is it always unsigned int?
-  if (!msg->add_command(command, value))
-  {
-    logger->log_error(name(), "Faulty command! id: %c value: %u size: %u msg_len: %u, index: %u",
-                      static_cast<char>(command), value, msg->get_data_size(),
-                      ArduinoComMessage::num_digits(value) + 1, msg->get_cur_buffer_index());
-    return false;
-  }
-  return true;
 }
 
 void
@@ -918,10 +895,4 @@ ArduinoComThread::bb_interface_message_received(Interface *interface,
 {
     wakeup();
     return true;
-}
-
-float inline
-ArduinoComThread::round_to_2nd_dec(float f)
-{
-  return round(f * 100.) / 100.;
 }

@@ -181,13 +181,8 @@ private:
     bool check_config(std::vector<ArduinoComMessage::setting_id_t>& incorrect_settings);
     bool write_config(const std::vector<ArduinoComMessage::setting_id_t>& incorrect_settings);
 
-    void append_message_to_queue(ArduinoComMessage::command_id_t cmd, unsigned int value = 0,
-                                 unsigned int timeout = 1000);
     void append_message_to_queue(ArduinoComMessage *msg);
-    bool add_command_to_message(ArduinoComMessage* msg,
-                                ArduinoComMessage::command_id_t command, unsigned int value);
 
-    float inline round_to_2nd_dec(float f);
     void pose_publish_tf();
 
 protected:
