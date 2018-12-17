@@ -751,6 +751,7 @@ class is_equal_comparator : public boost::static_visitor<bool>
 bool 
 ArduinoComThread::check_config(std::vector<ArduinoComMessage::setting_id_t>& incorrect_settings)
 {
+  boost::mutex::scoped_lock lock(io_mutex_);
   incorrect_settings.clear(); 
   bool all_correct = true;
   //ask for all settings, send $$
@@ -827,7 +828,8 @@ class send_setting_visitor : public boost::static_visitor<ArduinoComMessage*>
 
 bool 
 ArduinoComThread::write_config(const std::vector<ArduinoComMessage::setting_id_t>& incorrect_settings)
-{
+{ 
+  boost::mutex::scoped_lock lock(io_mutex_);
   for(const auto& incorrect_setting:incorrect_settings)
   {
     auto msg = boost::apply_visitor(send_setting_visitor(incorrect_setting),cfg_grbl_settings_[incorrect_setting]);
