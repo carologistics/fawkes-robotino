@@ -100,6 +100,10 @@ ArduinoComThread::init()
     arduino_if_->set_status(ArduinoInterface::IDLE);
     arduino_if_->write();
     wakeup();
+
+    std::vector<ArduinoComMessage::setting_id_t> incorrect_settings;
+    if(!check_config(incorrect_settings))
+      write_config(incorrect_settings); //if some settings diverged, correct them
 }
 
 void
