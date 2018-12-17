@@ -191,6 +191,8 @@ ArduinoComThread::loop()
                 append_message_to_queue(arduino_msg);
 
             } else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZRelMessage>()) {
+              /* 
+                //TODO
                 ArduinoInterface::MoveXYZRelMessage *msg = arduino_if_->msgq_first(msg);
                 ArduinoComMessage* arduino_msg = new ArduinoComMessage();
 
@@ -236,7 +238,10 @@ ArduinoComThread::loop()
                 } else {
                   delete arduino_msg;
                 }
+                */
             } else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveGripperAbsMessage>()) {
+              /*
+              //TODO
               ArduinoInterface::MoveGripperAbsMessage *msg = arduino_if_->msgq_first(msg);
 
               int new_abs_a = round_to_2nd_dec(msg->a() * A_AXIS_STEPS_PER_MM);
@@ -244,8 +249,9 @@ ArduinoComThread::loop()
               // calculate millseconds needed for this movement
 //              int d = new_abs_a - gripper_pose_[A];
               logger->log_debug(name(), "Set new gripper a: %u", new_abs_a);
-              append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_NEW_POS, new_abs_a, 10000);
+              //append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_NEW_POS, new_abs_a, 10000);
 
+              */
             } else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveGripperRelMessage>()) {
               // TODO
             } else if (arduino_if_->msgq_first_is<ArduinoInterface::ToHomeMessage>()) {
