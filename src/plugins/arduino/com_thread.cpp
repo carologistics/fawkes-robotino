@@ -142,7 +142,6 @@ ArduinoComThread::loop()
             if (arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZAbsMessage>()) {
                 ArduinoInterface::MoveXYZAbsMessage *msg = arduino_if_->msgq_first(msg);
 
-                ArduinoComMessage* arduino_msg = new ArduinoComMessage();
 
                 fawkes::tf::StampedTransform tf_pose_target;
 
@@ -163,64 +162,33 @@ ArduinoComThread::loop()
                 }
 
                 float goal_x = tf_pose_target.getOrigin().x() + msg->x();
-                float goal_y = tf_pose_target.getOrigin().y() + msg->y() + cfg_y_max_ / 2.;
+                float goal_y = tf_pose_target.getOrigin().y() + msg->y();
                 float goal_z = tf_pose_target.getOrigin().z() + msg->z();
 
-                bool msg_has_data = false;
 
-                if (goal_x >= 0. && goal_x < arduino_if_->x_max()) {
-                  int new_abs_x = round_to_2nd_dec(goal_x * X_AXIS_STEPS_PER_MM * 1000.0);
-                  logger->log_debug(name(), "Set new X: %u", new_abs_x);
-                  add_command_to_message(arduino_msg, ArduinoComMessage::command_id_t::CMD_X_NEW_POS, new_abs_x);
-
-                  // calculate millseconds needed for this movement
-                  int d = new_abs_x - gripper_pose_[X];
-                  arduino_msg->set_msecs_if_lower(abs(d) * cfg_speed_);
-                  msg_has_data = true;
+                if (goal_x >= 0. && goal_x < cfg_x_max_) {
+                  logger->log_debug(name(), "Set new X: %f", goal_x);
                 } else {
-                  logger->log_error(name(), "Motion exceeds X dimension: %f", goal_x);
-//                } else {
-//                  arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_X);
-//                  arduino_if_->write();
-//                  break;
+                  logger->log_error(name(), "Motion exceeds X dimension: %f, range is 0.0 to %f", goal_x,cfg_x_max_);
+                  goal_x = std::max(0.0f,std::min(goal_x,cfg_x_max_)); //Always do the best you can!
                 }
 
-                if (goal_y >= 0. && goal_y < arduino_if_->y_max()) {
-                  int new_abs_y = round_to_2nd_dec(goal_y * Y_AXIS_STEPS_PER_MM * 1000.0);
-                  logger->log_debug(name(), "Set new Y: %u", new_abs_y);
-                  add_command_to_message(arduino_msg, ArduinoComMessage::command_id_t::CMD_Y_NEW_POS, new_abs_y);
-
-                  // calculate millseconds needed for this movement
-                  int d = new_abs_y - gripper_pose_[Y];
-                  arduino_msg->set_msecs_if_lower(abs(d) * cfg_speed_);
-                  msg_has_data = true;
+                if (goal_y >= 0. && goal_y < cfg_y_max_) {
+                  logger->log_debug(name(), "Set new Y: %f", goal_y);
                 } else {
-                  logger->log_error(name(), "Motion exceeds Y dimension: %f", goal_y);
-//                  arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_Y);
-//                  arduino_if_->write();
-//                  break;
+                  logger->log_error(name(), "Motion exceeds Y dimension: %f, range is 0.0 to %f", goal_y,cfg_y_max_);
+                  goal_y = std::max(0.0f,std::min(goal_y,cfg_y_max_)); //Always do the best you can!
                 }
-                if (goal_z >= 0. && goal_z < arduino_if_->z_max()) {
-                  int new_abs_z = round_to_2nd_dec(goal_z * Z_AXIS_STEPS_PER_MM * 1000.0);
-                  logger->log_debug(name(), "Set new Z: %u", new_abs_z);
-                  add_command_to_message(arduino_msg, ArduinoComMessage::command_id_t::CMD_Z_NEW_POS, new_abs_z);
-
-                  // calculate millseconds needed for this movement
-                  int d = new_abs_z - gripper_pose_[Z];
-                  arduino_msg->set_msecs_if_lower(abs(d) * cfg_speed_);
-                  msg_has_data = true;
+                if (goal_z >= 0. && goal_z < cfg_z_max_) {
+                  logger->log_debug(name(), "Set new Z: %f", goal_z);
                 } else {
-                  logger->log_error(name(), "Motion exceeds Z dimension: %f", goal_z);
-//                  arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_Z);
-//                  arduino_if_->write();
-//                  break;
+                  logger->log_error(name(), "Motion exceeds Z dimension: %f, range is 0.0 to %f", goal_z,cfg_z_max_);
+                  goal_z = std::max(0.0f,std::min(goal_z,cfg_z_max_)); //Always do the best you can!
                 }
 
-                if (msg_has_data == true) {
-                  append_message_to_queue(arduino_msg);
-                } else {
-                  delete arduino_msg;
-                }
+                auto arduino_msg = new ArduinoComMessage();
+                arduino_msg->add_command(ArduinoComMessage::command_id_t::CMD_GOTO_LINEAR,{{'X',goal_x},{'Y',goal_y},{'Z',goal_z}});
+                append_message_to_queue(arduino_msg);
 
             } else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZRelMessage>()) {
                 ArduinoInterface::MoveXYZRelMessage *msg = arduino_if_->msgq_first(msg);
