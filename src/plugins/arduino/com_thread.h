@@ -74,11 +74,6 @@ public fawkes::BlackBoardInterfaceListener,
 public fawkes::TransformAspect
 {
 public:
-    /**
-     * @brief boost visitor to report diverging settings to log
-     */
-    friend write_wrong_value_to_debug;
-
     ArduinoComThread();
     /**
      * @brief Constructor for the arduino communication thread
