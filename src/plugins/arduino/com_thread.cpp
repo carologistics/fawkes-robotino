@@ -98,6 +98,11 @@ ArduinoComThread::init()
     arduino_if_->set_final(true);
 
     arduino_if_->set_status(ArduinoInterface::IDLE);
+
+    arduino_if_->set_x_max(cfg_x_max_);
+    arduino_if_->set_y_max(cfg_y_max_);
+    arduino_if_->set_z_max(cfg_z_max_);
+
     arduino_if_->write();
     wakeup();
 
