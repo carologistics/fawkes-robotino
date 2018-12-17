@@ -271,39 +271,6 @@ ArduinoComThread::loop()
 
 //        joystick_if_->read();
 
-        if (calibrated_ == true) {
-
-          if (home_pending_ == true) {
-            logger->log_info(name(), "home pending");
-            ArduinoComMessage* arduino_msg = new ArduinoComMessage();
-
-            int new_abs_x = 0;
-            int new_abs_y = round_to_2nd_dec(arduino_if_->y_max() * Y_AXIS_STEPS_PER_MM * 1000. / 2.);
-            int new_abs_z = 0;
-            add_command_to_message(arduino_msg, ArduinoComMessage::command_id_t::CMD_X_NEW_POS,
-                                   new_abs_x);
-            add_command_to_message(arduino_msg, ArduinoComMessage::command_id_t::CMD_Y_NEW_POS,
-                                   new_abs_y);
-            add_command_to_message(arduino_msg, ArduinoComMessage::command_id_t::CMD_Z_NEW_POS,
-                                   new_abs_z);
-
-            // simply wait for 10 seconds for a timeout.
-            arduino_msg->set_msecs_if_lower(50000);
-            append_message_to_queue(arduino_msg);
-            home_pending_ = false;
-          }
-
-          tf_thread_->set_position(gripper_pose_[X] / X_AXIS_STEPS_PER_MM / 1000.,
-                                  gripper_pose_[Y] / Y_AXIS_STEPS_PER_MM / 1000.,
-                                  gripper_pose_[Z] / Z_AXIS_STEPS_PER_MM / 1000.);
-
-        } else {
-          logger->log_warn(name(), "Calibrate pending");
-          append_message_to_queue(ArduinoComMessage::command_id_t::CMD_CALIBRATE, 0, 50000);
-        }
-
-
-
     } else {
         try {
             open_device();
@@ -333,15 +300,6 @@ ArduinoComThread::loop()
           arduino_if_->set_status(ArduinoInterface::IDLE);
           arduino_if_->write();
 
-          if (calibrated_ == false) {
-            arduino_if_->set_x_max(cfg_x_max_);
-            arduino_if_->set_y_max(cfg_y_max_);
-            arduino_if_->set_z_max(cfg_z_max_);
-            calibrated_ = true;
-            if (home_pending_ == true) {
-              wakeup();
-            }
-          }
         }
         arduino_if_->set_x_position(gripper_pose_[X] / X_AXIS_STEPS_PER_MM / 1000.);
         arduino_if_->set_y_position(gripper_pose_[Y] / Y_AXIS_STEPS_PER_MM / 1000.);
