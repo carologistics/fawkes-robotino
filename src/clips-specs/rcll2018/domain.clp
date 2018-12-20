@@ -290,6 +290,7 @@
 	(domain-object (name R-1) (type robot))
     (domain-object (name R-2) (type robot))
     (domain-object (name R-3) (type robot))
+    (domain-fact (name robot-waiting) (param-values (sym-cat ?robot-name)))
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
     (domain-fact (name can-hold) (param-values (sym-cat ?robot-name)))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
@@ -298,7 +299,6 @@
     (domain-fact (name mps-team) (param-values ?cs2 ?team-color))
     (domain-fact (name mps-team) (param-values ?rs1 ?team-color))
     (domain-fact (name mps-team) (param-values ?rs2 ?team-color))
-    
     (domain-fact (name mps-type) (param-values C-BS BS))
     (domain-fact (name mps-type) (param-values C-DS DS))
     (domain-fact (name mps-type) (param-values C-SS SS))
