@@ -869,18 +869,23 @@ ConveyorPoseThread::set_cg_thread(RecognitionThread *cg_thread)
 { recognition_thread_ = cg_thread; }
 
 
-void ConveyorPoseThread::config_value_erased(const char *path)
+void
+ConveyorPoseThread::config_value_erased(const char *path)
 {}
 
-void ConveyorPoseThread::config_tag_changed(const char *new_tag)
+void
+ConveyorPoseThread::config_tag_changed(const char *new_tag)
 {}
 
 
-void ConveyorPoseThread::config_comment_changed(const Configuration::ValueIterator *v)
+void
+ConveyorPoseThread::config_comment_changed(const Configuration::ValueIterator *v)
 {}
 
 
-void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator *v) {
+void
+ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator *v)
+{
   if (v->valid()) {
     std::string path = v->path();
     std::string sufx = path.substr(strlen(CFG_PREFIX));
@@ -1066,18 +1071,23 @@ void ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator
 }
 
 
-void ConveyorPoseThread::bb_set_busy(bool busy)
+void
+ConveyorPoseThread::bb_set_busy(bool busy)
 {
   bb_pose_->set_busy(busy);
   bb_pose_->write();
 }
 
 
-float ConveyorPoseThread::cloud_resolution() const
-{ return cfg_voxel_grid_leaf_size_; }
+float
+ConveyorPoseThread::cloud_resolution() const
+{
+  return cfg_voxel_grid_leaf_size_;
+}
 
 
-Eigen::Matrix4f pose_to_eigen(const fawkes::tf::Pose &pose)
+Eigen::Matrix4f
+pose_to_eigen(const fawkes::tf::Pose &pose)
 {
   const tf::Matrix3x3 &rot = pose.getBasis();
   const tf::Vector3 &trans = pose.getOrigin();
@@ -1091,7 +1101,8 @@ Eigen::Matrix4f pose_to_eigen(const fawkes::tf::Pose &pose)
 }
 
 
-fawkes::tf::Pose eigen_to_pose(const Eigen::Matrix4f &m)
+fawkes::tf::Pose
+eigen_to_pose(const Eigen::Matrix4f &m)
 {
   fawkes::tf::Pose rv;
   rv.setOrigin( { double(m(0,3)), double(m(1,3)), double(m(2,3)) } );
@@ -1124,7 +1135,8 @@ fawkes::tf::Pose eigen_to_pose(const Eigen::Matrix4f &m)
  *       y
  * */
 ConveyorPoseThread::CloudPtr
-ConveyorPoseThread::cloud_trim(ConveyorPoseThread::CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll) {
+ConveyorPoseThread::cloud_trim(ConveyorPoseThread::CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
+{
     float x_min = -FLT_MAX, x_max = FLT_MAX, 
            y_min = -FLT_MAX, y_max = FLT_MAX, 
            z_min = -FLT_MAX, z_max = FLT_MAX;
@@ -1219,7 +1231,8 @@ ConveyorPoseThread::cloud_trim(ConveyorPoseThread::CloudPtr in, fawkes::LaserLin
 }
 
 
-bool ConveyorPoseThread::is_target_shelf()
+bool
+ConveyorPoseThread::is_target_shelf()
 {
     switch (current_mps_target_)
     {
