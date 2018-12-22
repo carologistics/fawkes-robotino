@@ -213,43 +213,43 @@ private:
   bool cfg_debug_mode_;
 
 
- bool update_input_cloud();
+  bool update_input_cloud();
 
- void bb_update_switch();
- bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
- Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface * ll);
- fawkes::tf::Stamped<fawkes::tf::Pose> laserline_get_center(fawkes::LaserLineInterface *ll);
+  void bb_update_switch();
+  bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
+  Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface * ll);
+  fawkes::tf::Stamped<fawkes::tf::Pose> laserline_get_center(fawkes::LaserLineInterface *ll);
 
- void set_initial_tf_from_laserline(fawkes::LaserLineInterface *ll, fawkes::ConveyorPoseInterface::MPS_TYPE mps_type,fawkes::ConveyorPoseInterface::MPS_TARGET mps_target);
+  void set_initial_tf_from_laserline(fawkes::LaserLineInterface *ll, fawkes::ConveyorPoseInterface::MPS_TYPE mps_type,fawkes::ConveyorPoseInterface::MPS_TARGET mps_target);
 
- CloudPtr cloud_trim(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll);
+  CloudPtr cloud_trim(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll);
 
- boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
- CloudPtr cloud_voxel_grid(CloudPtr in);
+  boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
+  CloudPtr cloud_voxel_grid(CloudPtr in);
 
- bool is_target_shelf();
+  bool is_target_shelf();
 
- void pose_write();
- void record_model();
+  void pose_write();
+  void record_model();
 
- void pose_publish_tf(const fawkes::tf::Stamped<fawkes::tf::Pose> &pose);
- void start_waiting();
- bool need_to_wait();
+  void pose_publish_tf(const fawkes::tf::Stamped<fawkes::tf::Pose> &pose);
+  void start_waiting();
+  bool need_to_wait();
 
- virtual void config_value_erased(const char *path) override;
- virtual void config_tag_changed(const char *new_tag) override;
- virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v) override;
- virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v) override;
+  virtual void config_value_erased(const char *path) override;
+  virtual void config_tag_changed(const char *new_tag) override;
+  virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v) override;
+  virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v) override;
 
- template<typename T>
- inline void change_val(const std::string &setting, std::atomic<T> &var, const T& val)
- {
-   if (var != val) {
-     logger->log_info(name(), "Changing %s from %s to %s",
-                      setting.c_str(), std::to_string(var).c_str(), std::to_string(val).c_str());
-     var = val;
-   }
- }
+  template<typename T>
+    inline void change_val(const std::string &setting, std::atomic<T> &var, const T& val)
+    {
+      if (var != val) {
+        logger->log_info(name(), "Changing %s from %s to %s",
+            setting.c_str(), std::to_string(var).c_str(), std::to_string(val).c_str());
+        var = val;
+      }
+    }
 
 protected:
   virtual void run() override
