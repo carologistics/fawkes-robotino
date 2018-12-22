@@ -271,6 +271,9 @@ ConveyorPoseThread::init()
   cfg_bb_realsense_switch_name_ = config->get_string_or_default(CFG_PREFIX "/realsense_switch", "realsense");
   wait_time_ = Time(double(config->get_float_or_default(CFG_PREFIX "/realsense_wait_time", 1.0f)));
 
+  // laserline bearing threshold
+  cfg_ll_bearing_thresh_ = config->get_float( CFG_PREFIX "/ll/bearing_threshold" );
+
   // Load reference pcl for shelf, input belt (with cone for input -> output machines, without cone for output <- -> output machines), output belt (without cone) and slide
   for ( int i = ConveyorPoseInterface::NO_STATION; i != ConveyorPoseInterface::LAST_MPS_TYPE_ELEMENT; i++ )
   {
@@ -743,7 +746,7 @@ ConveyorPoseThread::laserline_get_best_fit(fawkes::LaserLineInterface * &best_fi
     best_fit = nullptr;
     return false;
   }
-  if ( fabs(best_fit->bearing()) > 0.35f ) {
+  if ( fabs(best_fit->bearing()) > cfg_ll_bearing_thresh_ ) {
     best_fit = nullptr;
     return false; // ~20 deg
   }
@@ -1064,6 +1067,9 @@ ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator *v)
         change_val(opt, cfg_type_offset_[ConveyorPoseInterface::NO_STATION][1], v->get_float());
       else if (opt == "/conveyor_offset/default/z")
         change_val(opt, cfg_type_offset_[ConveyorPoseInterface::NO_STATION][2], v->get_float());
+    } else if(sub_prefix == "/ll") {
+      if (opt == "/bearing_threshold")
+        change_val(opt, cfg_ll_bearing_thresh_, v->get_float());
     }
     if (recognition_thread_->enabled())
       recognition_thread_->restart();

@@ -171,6 +171,8 @@ private:
   std::map<fawkes::ConveyorPoseInterface::MPS_TARGET, std::array<std::atomic<float>, 3>> cfg_target_hint_;
   std::map<fawkes::ConveyorPoseInterface::MPS_TYPE, std::array<std::atomic<float>, 3>> cfg_type_offset_;
 
+  std::atomic<float> cfg_ll_bearing_thresh_;
+
   // state vars
   bool cfg_enable_switch_;
   bool cloud_in_registered_;

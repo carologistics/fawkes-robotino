@@ -259,6 +259,10 @@ plugins/conveyor_pose:
     middle_off: 0.10
     right_off: 0.0
 
+  # Laserline specific configurations
+  ll:
+    # The maximum bearing to allow a laser line
+    bearing_threshold: 0.35
 
 
 
