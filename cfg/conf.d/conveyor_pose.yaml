@@ -93,28 +93,29 @@ plugins/conveyor_pose:
 
 
     # Hypothesis Verification
+    hv:
 
-    # Model points that have scene points within this radius are considered supported.
-    # Those that have none are penalized. See the support/penalty thresholds below.
-    # Pay attention to the voxel_grid/leaf_size value above. The closer this gets to the
-    # leaf size (i.e. the cloud resolution), the unlikelier it is to match anything.
-    hv_inlier_threshold: 0.004
+      # Model points that have scene points within this radius are considered supported.
+      # Those that have none are penalized. See the support/penalty thresholds below.
+      # Pay attention to the voxel_grid/leaf_size value above. The closer this gets to the
+      # leaf size (i.e. the cloud resolution), the unlikelier it is to match anything.
+      inlier_threshold: 0.004
 
-    # Max. proportion of penalized model points for a match
-    hv_penalty_threshold: 0.25
+      # Max. proportion of penalized model points for a match
+      penalty_threshold: 0.25
 
-    # Min. proportion of supported model points for a match
-    hv_support_threshold: 0.55
+      # Min. proportion of supported model points for a match
+      support_threshold: 0.55
 
-    # For the shelf recognition, hypothesis verifications needs to be lesst strict.
-    # The following values only apply for hv for shelf.
-    hv_shelf_inlier_threshold: 0.004
+      # For the shelf recognition, hypothesis verifications needs to be lesst strict.
+      # The following values only apply for hv for shelf.
+      shelf_inlier_threshold: 0.004
 
-    # Max. proportion of penalized model points for a match
-    hv_shelf_penalty_threshold: 0.15
+      # Max. proportion of penalized model points for a match
+      shelf_penalty_threshold: 0.15
 
-    # Min. proportion of supported model points for a match
-    hv_shelf_support_threshold: 0.65
+      # Min. proportion of supported model points for a match
+      shelf_support_threshold: 0.65
 
 
     # Offset of interesting objects relative to the center of the laser line
