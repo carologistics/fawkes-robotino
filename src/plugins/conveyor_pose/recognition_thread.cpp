@@ -180,18 +180,21 @@ RecognitionThread::loop()
   icp_.setInputSource(icp_result_);
   icp_.align(*icp_result_);
 
-  //accumulate transformation between each Iteration
+  // accumulate transformation between each Iteration
   final_tf_ = icp_.getFinalTransformation() * final_tf_;
 
   if (!enabled_ || do_restart_) // cancel if disabled from ConveyorPoseThread
     return;
 
-  //if the difference between this transformation and the previous one
-  //is smaller than the threshold, refine the process by reducing
-  //the maximal correspondence distance
+  // if the difference between this transformation and the previous one
+  // is smaller than the threshold, refine the process by reducing
+  // the maximal correspondence distance
   bool epsilon_reached = false;
-  if (double(std::abs((icp_.getLastIncrementalTransformation() - prev_last_tf_).sum())) < icp_.getTransformationEpsilon()) {
-    icp_.setMaxCorrespondenceDistance(icp_.getMaxCorrespondenceDistance () * cfg_icp_refinement_factor_);
+  if (double(std::abs((icp_.getLastIncrementalTransformation() - prev_last_tf_).sum()))
+      < icp_.getTransformationEpsilon())
+  {
+    icp_.setMaxCorrespondenceDistance(icp_.getMaxCorrespondenceDistance ()
+                                      * cfg_icp_refinement_factor_);
     epsilon_reached = true;
   }
   prev_last_tf_ = icp_.getLastIncrementalTransformation();
