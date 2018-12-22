@@ -533,6 +533,7 @@ ConveyorPoseThread::loop()
   } // update_input_cloud()
 }
 
+
 void
 ConveyorPoseThread::set_initial_tf_from_laserline(fawkes::LaserLineInterface *line, ConveyorPoseInterface::MPS_TYPE mps_type, ConveyorPoseInterface::MPS_TARGET mps_target)
 {
@@ -639,6 +640,7 @@ ConveyorPoseThread::update_station_information(ConveyorPoseInterface::SetStation
   }
 }
 
+
 bool
 ConveyorPoseThread::update_input_cloud()
 {
@@ -702,7 +704,6 @@ ConveyorPoseThread::bb_update_switch()
     ll->read();
   }
 }
-
 
 
 bool
@@ -873,6 +874,7 @@ void ConveyorPoseThread::config_value_erased(const char *path)
 
 void ConveyorPoseThread::config_tag_changed(const char *new_tag)
 {}
+
 
 void ConveyorPoseThread::config_comment_changed(const Configuration::ValueIterator *v)
 {}
@@ -1101,6 +1103,7 @@ fawkes::tf::Pose eigen_to_pose(const Eigen::Matrix4f &m)
   return rv;
 }
 
+
 /*
  * This function trims the scene such that the gripper is not visible anymore.
  * Further the scene is cut down to the center, so the amount of points to correspond
@@ -1214,6 +1217,7 @@ ConveyorPoseThread::cloud_trim(ConveyorPoseThread::CloudPtr in, fawkes::LaserLin
     out->header = in->header;
     return out;
 }
+
 
 bool ConveyorPoseThread::is_target_shelf()
 {

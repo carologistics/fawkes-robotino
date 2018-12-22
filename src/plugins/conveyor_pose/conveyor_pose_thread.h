@@ -52,8 +52,6 @@
 #include <set>
 #include <array>
 
-
-
 #define CFG_PREFIX "/plugins/conveyor_pose"
 
 class RecognitionThread;
