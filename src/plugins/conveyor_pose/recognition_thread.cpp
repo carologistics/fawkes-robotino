@@ -32,7 +32,8 @@
 using namespace fawkes;
 
 
-double CustomICP::getScaledFitness()
+double
+CustomICP::getScaledFitness()
 {
   double sum_dists = 0;
   for (const pcl::Correspondence &corr : *correspondences_) {
@@ -56,13 +57,15 @@ RecognitionThread::RecognitionThread(ConveyorPoseThread *cp_thread)
 }
 
 
-void RecognitionThread::init()
+void
+RecognitionThread::init()
 {
   syncpoint_clouds_ready_ = syncpoint_manager->get_syncpoint(name(), main_thread_->syncpoint_clouds_ready_name_);
 }
 
 
-void RecognitionThread::restart_icp()
+void
+RecognitionThread::restart_icp()
 {
   logger->log_info(name(), "Restarting ICP");
 
@@ -152,7 +155,8 @@ void RecognitionThread::restart_icp()
 }
 
 
-void RecognitionThread::loop()
+void
+RecognitionThread::loop()
 {
   if (!enabled_) {
     logger->log_info(name(), "ICP stopped");
@@ -232,7 +236,8 @@ void RecognitionThread::loop()
 }
 
 
-void RecognitionThread::publish_result()
+void
+RecognitionThread::publish_result()
 {
   CloudPtr aligned_model(new Cloud());
   pcl::copyPointCloud(*icp_result_, *aligned_model);
@@ -269,7 +274,9 @@ void RecognitionThread::publish_result()
 }
 
 
-fawkes::tf::Quaternion constrainYtoNegZ(fawkes::tf::Quaternion rotation){
+fawkes::tf::Quaternion
+constrainYtoNegZ(fawkes::tf::Quaternion rotation)
+{
   fawkes::tf::Transform pose;
   pose.setRotation(rotation);
   fawkes::tf::Matrix3x3 basis = pose.getBasis();
@@ -284,7 +291,9 @@ fawkes::tf::Quaternion constrainYtoNegZ(fawkes::tf::Quaternion rotation){
 }
 
 
-void RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::tf::Pose>& fittedPose_conv){
+void
+RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::tf::Pose>& fittedPose_conv)
+{
   fawkes::tf::Stamped<fawkes::tf::Pose> fittedPose_base;
   tf_listener->transform_pose("base_link", fittedPose_conv, fittedPose_base);
   fittedPose_base.setRotation(constrainYtoNegZ(fittedPose_base.getRotation()));
@@ -292,23 +301,31 @@ void RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::t
 }
 
 
-void RecognitionThread::enable()
-{ enabled_ = true; }
+void
+RecognitionThread::enable()
+{
+  enabled_ = true;
+}
 
 
-void RecognitionThread::disable()
+void
+RecognitionThread::disable()
 {
   enabled_ = false;
   initial_guess_icp_odom_ = fawkes::tf::Stamped<fawkes::tf::Pose>();
 }
 
 
-void RecognitionThread::restart()
+void
+RecognitionThread::restart()
 {
   do_restart_ = true;
   enable();
 }
 
 
-bool RecognitionThread::enabled()
-{ return enabled_; }
+bool
+RecognitionThread::enabled()
+{
+  return enabled_;
+}
