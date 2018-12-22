@@ -54,6 +54,10 @@
 
 #define CFG_PREFIX "/plugins/conveyor_pose"
 
+#define X_DIR 0
+#define Y_DIR 1
+#define Z_DIR 2
+
 class RecognitionThread;
 
 namespace fawkes {
