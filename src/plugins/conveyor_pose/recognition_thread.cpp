@@ -245,9 +245,6 @@ void RecognitionThread::publish_result()
     scene_->header.frame_id
   };
 
-
-  // constrainTransformToGround(result_pose);
-
   double new_fitness = (1 / icp_.getFitnessScore()) / 10000;
 
   { MutexLocker locked2(&main_thread_->bb_mutex_);
@@ -271,6 +268,7 @@ void RecognitionThread::publish_result()
   } // MutexLocker
 }
 
+
 fawkes::tf::Quaternion constrainYtoNegZ(fawkes::tf::Quaternion rotation){
   fawkes::tf::Transform pose;
   pose.setRotation(rotation);
@@ -284,6 +282,7 @@ fawkes::tf::Quaternion constrainYtoNegZ(fawkes::tf::Quaternion rotation){
   resultRotation *= rotation;
   return resultRotation;
 }
+
 
 void RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::tf::Pose>& fittedPose_conv){
   fawkes::tf::Stamped<fawkes::tf::Pose> fittedPose_base;
@@ -313,5 +312,3 @@ void RecognitionThread::restart()
 
 bool RecognitionThread::enabled()
 { return enabled_; }
-
-
