@@ -36,12 +36,26 @@ class ArduinoComMessage
 
  /**
   * @brief All possible commands, that can be send to the arduino
+  *
+  * Here only commands with enter are noted.
   */
   enum class command_id_t {
     CMD_HOME,
     CMD_GETSETTINGS,
     CMD_GOTO_LINEAR,
     //TODO: Add more commands
+  };
+
+  /**
+   * @brief Real time commands
+   *
+   * As these are single character commands, no map is necessary
+   */
+  enum class fast_command_id_t : char {
+    CMD_SOFT_RESET = 0x18,
+    CMD_STAT_QUERY = '?',
+    CMD_CYCLE_START = '~',
+    CMD_FEED_HOLD = '!',
   };
 
   /**
@@ -112,10 +126,12 @@ class ArduinoComMessage
   ArduinoComMessage();
   ~ArduinoComMessage();
   ArduinoComMessage(command_id_t cmdid, const std::map<char,float>& coordinates);
+  ArduinoComMessage(fast_command_id_t fastcmdid);
   ArduinoComMessage(setting_id_t cmdid, set_val_type value);
 
 
   bool add_command(command_id_t cmd, const std::map<char, float>& coordinates);
+  bool add_fast_command(fast_command_id_t fastcmd);
   bool add_setting(setting_id_t setting, set_val_type value);
 
   unsigned short get_data_size();

@@ -96,6 +96,16 @@ ArduinoComMessage::ArduinoComMessage(command_id_t cmdid, const std::map<char, fl
   add_command(cmdid,  coordinates);
 }
 
+/** Constructor for a fast command message.
+ * Create message for writing and add command for given message ID.
+ * @param fastcmdid message ID of command to add
+ */
+ArduinoComMessage::ArduinoComMessage(fast_command_id_t fastcmdid)
+{
+  ctor();
+  add_fast_command(fastcmdid);
+}
+
 /** Constructor for setting message.
  * Create message for writing and add setting
  * @param setting setting to set
@@ -202,6 +212,21 @@ ArduinoComMessage::add_command(command_id_t cmd, const std::map<char, float>& co
   return true;
 }
 
+/** Add a fast command.
+ * Given the fast command, it will add it as a sequence.
+ * @param fastcmd command to add - see fast_command_id_t for reference
+ * @return true if command was successfully added
+ */
+bool
+ArduinoComMessage::add_fast_command(fast_command_id_t fastcmd)
+{
+  // command is valid if it is of right datatype
+  // command is always one char only, thus data_size_ is never exceeded
+  if(cur_buffer_index_ != 0) return false; // real time command always alone
+
+  data_[cur_buffer_index_++] = static_cast<char>(fastcmd);
+  return true;
+}
 
 unsigned short ArduinoComMessage::num_digits(set_val_type value)
 {
