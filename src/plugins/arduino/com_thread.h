@@ -202,6 +202,9 @@ private:
 
     void flush_buffer(std::deque<ArduinoComMessage*> & buffer);
 
+    const static std::map<unsigned int,std::string> alarm_states;
+    const static std::map<unsigned int,std::string> error_states;
+
 protected:
     /** Mutex to protect data_. Lock whenever accessing it. */
     fawkes::Mutex *data_mutex_;
