@@ -527,17 +527,13 @@ ArduinoComThread::read_packet(std::string &s, unsigned int timeout = 100)
   //analyze
   
   if(s.find("ok") != std::string::npos) {
-    ArduinoComMessage *responsible_message = sent_messages_.front();
-    sent_messages_.pop_front(); // Drop this message
-    delete responsible_message;
+    drop_sent_message();
     return ResponseType::RESP_OK;
   }
 
   if(s.find("error") != std::string::npos) {
-    ArduinoComMessage *responsible_message = sent_messages_.front();
-    sent_messages_.pop_front(); // Drop this message
-    delete responsible_message;
-    logger->log_error(name(), "Error at command: %s", responsible_message->get_data());
+    std::string responsible_command = drop_sent_message();
+    logger->log_error(name(), "Error at command: %s", responsible_command.c_str());
     unsigned int error_id;
     if(sscanf(s.c_str(),"error:%u",&error_id)){
       if(error_states.count(error_id)){
@@ -728,6 +724,21 @@ class is_equal_comparator : public boost::static_visitor<bool>
       return diff < 0.0005; //settings are displayed with 3 digits
     }
 };
+
+std::string
+ArduinoComThread::drop_sent_message()
+{
+  if(sent_messages_.empty())
+  {
+    logger->log_error(name(),"No sent message to drop");
+    return "";
+  }
+  ArduinoComMessage *message_to_drop = sent_messages_.front();
+  sent_messages_.pop_front();
+  std::string s = message_to_drop->get_data();
+  delete message_to_drop;
+  return s;
+}
 
 bool 
 ArduinoComThread::check_config(std::vector<ArduinoComMessage::setting_id_t>& incorrect_settings)
