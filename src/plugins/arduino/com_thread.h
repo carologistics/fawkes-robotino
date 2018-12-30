@@ -159,6 +159,7 @@ private:
     unsigned int open_tries_;
 
     std::deque<ArduinoComMessage*> messages_;
+    std::deque<ArduinoComMessage*> sent_messages_;
 
     boost::asio::io_service io_service_;
     boost::asio::serial_port serial_;

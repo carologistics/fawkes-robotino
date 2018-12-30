@@ -456,25 +456,17 @@ ArduinoComThread::sync_with_arduino()
 bool
 ArduinoComThread::send_one_message()
 {
+  if(messages_.empty()) return false; //if there are no elements to send
+
   boost::mutex::scoped_lock lock(io_mutex_);
-  if (messages_.size() > 0) {
-    ArduinoComMessage* cur_msg = messages_.front();
-    messages_.pop_front();
-    msecs_to_wait_ = cur_msg->get_msecs();
-    send_message(*cur_msg);
+  ArduinoComMessage *cur_msg = messages_.front();
+  if(!arduino_enough_buffer(cur_msg)) return false; //if there are elements, but prevent buffer overflow
 
-    delete cur_msg;
+  messages_.pop_front();
+  send_message(*cur_msg);
+  sent_messages_.push_back(cur_msg);
 
-    std::string s = read_packet(1000); // read receipt
-    logger->log_debug(name(), "Read receipt: %s", s.c_str());
-    s = read_packet(msecs_to_wait_); // read
-    logger->log_debug(name(), "Read status: %s", s.c_str());
-
-    return true;
-  }
-  else {
-    return false;
-  }
+  return true;
 }
 
 void
