@@ -355,6 +355,8 @@ ArduinoComThread::open_device()
 
       opened_ = sync_with_arduino();
 
+      flush_device(); // clean start
+
     } catch (boost::system::system_error &e) {
       throw Exception("Arduino failed I/O: %s", e.what());
     }
