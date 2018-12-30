@@ -429,25 +429,19 @@ ArduinoComThread::send_message(ArduinoComMessage &msg)
 bool
 ArduinoComThread::sync_with_arduino()
 {
-  std::string s;
-  std::size_t found;
+  bool found = false;
   fawkes::Time start_time;
   fawkes::Time now;
 
   logger->log_debug(name(), "sync with arduino");
   do {
-    read_packet(s,6000);
-    logger->log_debug(name(), "Read '%s'", s.c_str());
-    found = s.find("Grbl");
+    std::string dummy;
+    found = (ResponseType::RESP_BOOTUP == read_packet(dummy,1000));
     now = fawkes::Time();
-  } while (found == std::string::npos && (now - start_time < 3.));
+  } while (!found && (now - start_time < 3.));
 
-  if (now - start_time >= 3.) {
+  if (!found) {
     logger->log_error(name(), "Timeout reached trying to sync with arduino");
-    return false;
-  }
-  if (found == std::string::npos) {
-    logger->log_error(name(), "Synchronization with Arduino failed, Bootup-message not located");
     return false;
   } else {
     logger->log_info(name(), "Synchronization with Arduino successful");
@@ -553,12 +547,12 @@ ArduinoComThread::read_packet(std::string &s, unsigned int timeout = 100)
     return ResponseType::RESP_ERROR;
   }
 
-  if(s.find("<") == std::string::npos) {
+  if(s.find("<") != std::string::npos) {
     logger->log_debug(name(), "Status message grbl received: %s", s.c_str());
     return ResponseType::RESP_STATUS;
   }
 
-  if (s.find("Grbl ") == std::string::npos) {
+  if (s.find("Grbl ") != std::string::npos) {
     logger->log_info(name(), "Found the GRBL startup message");
     return ResponseType::RESP_BOOTUP;
   }
