@@ -133,8 +133,8 @@ ArduinoComMessage::dtor()
 void
 ArduinoComMessage::ctor()
 {
-    // always allocate 256 bytes, increase if necessary
-    data_size_ = 256;
+    // always allocate 128 bytes, increase if necessary
+    data_size_ = 128;
     data_ = (char *) malloc(data_size_);
 
     // init buffer with zeros
