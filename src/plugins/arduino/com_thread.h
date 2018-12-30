@@ -180,6 +180,8 @@ private:
 
     void pose_publish_tf();
 
+    void flush_buffer(std::queue<ArduinoComMessage*> & buffer);
+
 protected:
     /** Mutex to protect data_. Lock whenever accessing it. */
     fawkes::Mutex *data_mutex_;

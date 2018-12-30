@@ -371,6 +371,17 @@ ArduinoComThread::close_device()
 }
 
 void
+ArduinoComThread::flush_buffer(std::queue<ArduinoComMessage*> & buffer)
+{
+  while(!buffer.empty())
+  {
+    auto* cur_msg = buffer.front();
+    buffer.pop();
+    delete cur_msg;
+  }
+}
+
+void
 ArduinoComThread::flush_device()
 {
   if (serial_.is_open()) {
