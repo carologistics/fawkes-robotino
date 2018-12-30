@@ -384,6 +384,7 @@ ArduinoComThread::flush_buffer(std::queue<ArduinoComMessage*> & buffer)
 void
 ArduinoComThread::flush_device()
 {
+  flush_buffer(sent_messages_);
   if (serial_.is_open()) {
     try {
       boost::system::error_code ec = boost::asio::error::would_block;
