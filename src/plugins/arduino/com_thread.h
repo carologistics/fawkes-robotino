@@ -135,7 +135,7 @@ private:
     void go_home();
 
     bool sync_with_arduino();
-    std::string read_packet(unsigned int timeout);
+    ResponseType read_packet(std::string &s, unsigned int timeout);
     void send_message(ArduinoComMessage &msg);
 
     void handle_nodata(const boost::system::error_code &ec);
