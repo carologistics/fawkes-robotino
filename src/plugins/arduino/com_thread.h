@@ -180,6 +180,8 @@ private:
 
     void pose_publish_tf();
 
+    bool arduino_enough_buffer(ArduinoComMessage *msg);
+
     void flush_buffer(std::queue<ArduinoComMessage*> & buffer);
 
 protected:

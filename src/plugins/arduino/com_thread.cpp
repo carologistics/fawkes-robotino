@@ -758,3 +758,14 @@ ArduinoComThread::bb_interface_message_received(Interface *interface,
   wakeup();
   return true;
 }
+
+bool
+ArduinoComThread::arduino_enough_buffer(ArduinoComMessage *msg)
+{
+  unsigned int complete_size = msg->get_cur_buffer_index();
+  for(const auto& sent_message: sent_messages_)
+  {
+    complete_size += sent_message->get_cur_buffer_index();
+  }
+  return complete_size < 128; // this is the maximum size of the arduino serial buffer
+}
