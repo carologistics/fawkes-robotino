@@ -134,7 +134,7 @@ ArduinoComThread::finalize()
 void
 ArduinoComThread::append_message_to_queue(ArduinoComMessage* msg)
 {
-  messages_.push(msg);
+  messages_.push_back(msg);
 }
 
 void
@@ -371,12 +371,12 @@ ArduinoComThread::close_device()
 }
 
 void
-ArduinoComThread::flush_buffer(std::queue<ArduinoComMessage*> & buffer)
+ArduinoComThread::flush_buffer(std::deque<ArduinoComMessage*> & buffer)
 {
   while(!buffer.empty())
   {
     auto* cur_msg = buffer.front();
-    buffer.pop();
+    buffer.pop_front();
     delete cur_msg;
   }
 }
@@ -459,7 +459,7 @@ ArduinoComThread::send_one_message()
   boost::mutex::scoped_lock lock(io_mutex_);
   if (messages_.size() > 0) {
     ArduinoComMessage* cur_msg = messages_.front();
-    messages_.pop();
+    messages_.pop_front();
     msecs_to_wait_ = cur_msg->get_msecs();
     send_message(*cur_msg);
 

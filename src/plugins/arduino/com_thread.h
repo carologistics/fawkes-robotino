@@ -158,7 +158,7 @@ private:
     bool opened_;
     unsigned int open_tries_;
 
-    std::queue<ArduinoComMessage*> messages_;
+    std::deque<ArduinoComMessage*> messages_;
 
     boost::asio::io_service io_service_;
     boost::asio::serial_port serial_;
@@ -182,7 +182,7 @@ private:
 
     bool arduino_enough_buffer(ArduinoComMessage *msg);
 
-    void flush_buffer(std::queue<ArduinoComMessage*> & buffer);
+    void flush_buffer(std::deque<ArduinoComMessage*> & buffer);
 
 protected:
     /** Mutex to protect data_. Lock whenever accessing it. */
