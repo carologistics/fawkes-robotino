@@ -342,7 +342,7 @@ ArduinoComMessage::buffer()
 //  printf("\n");
 #endif
 
-  return boost::asio::buffer(data_, data_size_);
+  return boost::asio::buffer(data_, cur_buffer_index_);
 }
 
 /** Set the number of msecs the associated action of this
