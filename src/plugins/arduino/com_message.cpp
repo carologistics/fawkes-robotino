@@ -388,6 +388,12 @@ ArduinoComMessage::get_cur_buffer_index()
   return cur_buffer_index_;
 }
 
+const char*
+ArduinoComMessage::get_data()
+{
+  return data_;
+}
+
 
 const std::map<ArduinoComMessage::command_id_t, std::string> ArduinoComMessage::command_map {
   {command_id_t::CMD_HOME, "$H"},

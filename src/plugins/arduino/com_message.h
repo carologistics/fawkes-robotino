@@ -203,6 +203,8 @@ class ArduinoComMessage
 
 
 
+  const char* get_data();
+
  private:
   void ctor();
   void dtor();
