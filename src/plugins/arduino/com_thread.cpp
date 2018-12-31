@@ -138,6 +138,12 @@ ArduinoComThread::append_message_to_queue(ArduinoComMessage* msg)
 }
 
 void
+ArduinoComThread::priorized_append_message_to_queue(ArduinoComMessage* msg)
+{
+  messages_.push_front(msg);
+}
+
+void
 ArduinoComThread::loop()
 {
   if (opened_) {

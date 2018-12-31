@@ -195,6 +195,7 @@ private:
     bool write_config(const std::vector<ArduinoComMessage::setting_id_t>& incorrect_settings);
 
     void append_message_to_queue(ArduinoComMessage *msg);
+    void priorized_append_message_to_queue(ArduinoComMessage *msg);
 
     void pose_publish_tf();
 
