@@ -183,7 +183,7 @@ ArduinoComMessage::add_command(command_id_t cmd, const std::map<char, float>& co
       length_cmd += 1 + num_digits(coordinate.second) + 1; //coordinate specifier, coordinate value, space
     }
     --length_cmd; // remove the last space
-    length_cmd +=2; // for \r\n
+    length_cmd +=1; // for \n
     valid_command &= cur_buffer_index_ + length_cmd < data_size_ - 1;
   }
 
@@ -206,8 +206,7 @@ ArduinoComMessage::add_command(command_id_t cmd, const std::map<char, float>& co
     data_[cur_buffer_index_++] = ' ';
   }
 
-  data_[cur_buffer_index_-1] = '\r';  //replace the last space
-  data_[cur_buffer_index_++] = '\n';
+  data_[cur_buffer_index_-1] = '\n';  //replace the last space
 
   return true;
 }
@@ -300,7 +299,7 @@ ArduinoComMessage::add_setting(setting_id_t setting, set_val_type value)
   if (valid_setting == true)
   {
     // check whether we're exceeding the data_size_
-    int length_setting = 1+num_digits(static_cast<unsigned int>(setting))+1+num_digits(value)+2; // $, setting_id, =, value, \r\n
+    int length_setting = 1+num_digits(static_cast<unsigned int>(setting))+1+num_digits(value)+1; // $, setting_id, =, value, \n
     valid_setting &= cur_buffer_index_ + length_setting < data_size_ - 1;
   }
 
@@ -317,7 +316,6 @@ ArduinoComMessage::add_setting(setting_id_t setting, set_val_type value)
   std::strncpy(data_+cur_buffer_index_,string_value.c_str(),string_value.length());
   cur_buffer_index_ += string_value.length();
 
-  data_[cur_buffer_index_++] = '\r';
   data_[cur_buffer_index_++] = '\n';
 
   return true;
