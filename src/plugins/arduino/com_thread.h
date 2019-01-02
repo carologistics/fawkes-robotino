@@ -185,6 +185,7 @@ private:
     boost::asio::serial_port serial_;
     boost::asio::deadline_timer deadline_;
     boost::asio::streambuf input_buffer_;
+    boost::asio::io_service::work work_;
 
     boost::mutex io_mutex_;
     fawkes::ArduinoInterface *arduino_if_;

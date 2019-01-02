@@ -49,7 +49,9 @@ ArduinoComThread::ArduinoComThread(std::string &cfg_name,
         Thread("ArduinoComThread", Thread::OPMODE_WAITFORWAKEUP),
         BlackBoardInterfaceListener("ArduinoThread(%s)", cfg_name.c_str()),
         fawkes::TransformAspect(),
-        serial_(io_service_), deadline_(io_service_), tf_thread_(tf_thread)
+        serial_(io_service_), deadline_(io_service_), 
+        work_(io_service_), // this work object is necessary to prevent the io_service from stopping itself
+        tf_thread_(tf_thread)
 {
   data_mutex_ = new Mutex();
   cfg_prefix_ = cfg_prefix;
@@ -74,7 +76,6 @@ ArduinoComThread::init()
   joystick_if_ =
     blackboard->open_for_reading<JoystickInterface>("Joystick", cfg_ifid_joystick_.c_str());
 
-  deadline_.expires_at(boost::posix_time::pos_infin);
   opened_ = false;
 
   open_device();
@@ -416,19 +417,25 @@ ArduinoComThread::flush_device()
         bytes_read_ = 0;
 
         deadline_.expires_from_now(boost::posix_time::milliseconds(200));
+        deadline_.async_wait(boost::bind(&ArduinoComThread::handle_nodata_while_flushing, this, boost::asio::placeholders::error));
         boost::asio::async_read(serial_, input_buffer_,
             boost::asio::transfer_at_least(1),
             (boost::lambda::var(ec) = boost::lambda::_1,
              boost::lambda::var(bytes_read_) = boost::lambda::_2));
 
-        do io_service_.run_one(); while (ec == boost::asio::error::would_block);
+        do {
+          io_service_.poll();
+          if (ec == boost::asio::error::would_block) {
+            usleep(10000);
+          }
+        } while (ec == boost::asio::error::would_block);
 
         if (bytes_read_ > 0) {
           logger->log_warn(name(), "Flushing %zu bytes\n", bytes_read_);
         }
 
       } while (bytes_read_ > 0);
-        deadline_.expires_from_now(boost::posix_time::pos_infin);
+      deadline_.cancel();
     } catch (boost::system::system_error &e) {
       // ignore, just assume done, if there really is an error we'll
       // catch it later on
@@ -524,11 +531,15 @@ ArduinoComThread::read_packet(std::string &s, unsigned int timeout = 100)
   //    do io_service_.run_one(); while (ec == boost::asio::error::would_block);
 
   do {
-    io_service_.run_one();
+    io_service_.poll();
     if (ec == boost::asio::error::would_block) {
       usleep(10000);
     }
   } while (ec == boost::asio::error::would_block);
+
+  //received something, cancel the deadline
+  deadline_.cancel();
+  io_service_.poll();
 
   if (ec) {
     if (ec.value() == boost::system::errc::operation_canceled) {
@@ -542,7 +553,6 @@ ArduinoComThread::read_packet(std::string &s, unsigned int timeout = 100)
   //Package received - analyze package
   s = std::string(boost::asio::buffer_cast<const char*>(input_buffer_.data()), bytes_read_);
   input_buffer_.consume(bytes_read_);
-  deadline_.cancel();
 
   //analyze
   
