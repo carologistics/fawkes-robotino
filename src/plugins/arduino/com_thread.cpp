@@ -390,6 +390,20 @@ ArduinoComThread::flush_buffer(std::deque<ArduinoComMessage*> & buffer)
 }
 
 void
+ArduinoComThread::handle_nodata_while_flushing(const boost::system::error_code &ec)
+{
+  // ec may be set if the timer is cancelled, i.e., updated
+  if (! ec) {
+    serial_.cancel();
+    logger->log_info(name(), "No data received while flushing. Flushing is done");
+    logger->log_debug(name(), "BufSize: %zu\n", input_buffer_.size());
+    std::string s(boost::asio::buffer_cast<const char*>(input_buffer_.data()), input_buffer_.size());
+    logger->log_debug(name(), "Received: %zu  %s\n", s.size(), s.c_str());
+    input_buffer_.consume(input_buffer_.size());
+  }
+}
+
+void
 ArduinoComThread::flush_device()
 {
   flush_buffer(sent_messages_);
