@@ -374,9 +374,10 @@ void
 ArduinoComThread::close_device()
 {
   boost::mutex::scoped_lock lock(io_mutex_);
-  serial_.cancel();
-  serial_.close();
-  opened_ = false;
+  if(is_connected()){
+    serial_.cancel();
+    serial_.close();
+  }
 }
 
 void
