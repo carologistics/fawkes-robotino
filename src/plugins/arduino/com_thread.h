@@ -128,6 +128,8 @@ private:
       RESP_NO,
     };
 
+    unsigned int cfg_max_open_tries_;
+
     void open_device();
     void close_device();
     void flush_device();

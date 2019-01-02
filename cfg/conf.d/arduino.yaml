@@ -50,3 +50,5 @@ arduino:
     x_max: 200.0
     y_max: 200.0
     z_max: 200.0
+
+  max_open_tries: 1000
