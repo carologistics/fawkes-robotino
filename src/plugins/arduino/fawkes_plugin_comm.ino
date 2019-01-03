@@ -278,6 +278,9 @@ void read_package() {
                 set_new_pos(motor_A.currentPosition()-400,motor_A);
                 //set_status(STATUS_MOVING);
               }
+              else {
+                send_idle();
+              }
               break;
             case CMD_GRAB:
               if(open_button == LOW && !closed_gripper){
@@ -285,6 +288,9 @@ void read_package() {
                 closed_gripper = true;
                 set_new_pos(motor_A.currentPosition()+400,motor_A);
                 //set_status(STATUS_MOVING);
+              }
+              else{
+                send_idle();
               }
               break;
 	    case CMD_STATUS_REQ:
