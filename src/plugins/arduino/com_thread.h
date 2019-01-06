@@ -127,6 +127,20 @@ private:
       NONSENSE,
       NO,
     };
+    enum class DeviceStatus {
+      SETTING_UP,
+      IDLE,
+      RUN,
+      HOLD,
+      JOG,
+      ALARM,
+      DOOR,
+      CHECK,
+      HOME,
+      SLEEP,
+    };
+
+    DeviceStatus device_status_;
 
     bool open_pending_; // opening includes resetting
 
@@ -214,6 +228,8 @@ private:
     bool arduino_enough_buffer(ArduinoComMessage *msg);
 
     void flush_buffer(std::deque<ArduinoComMessage*> & buffer);
+
+    void analyze_status(const char* status_string);
 
     const static std::map<unsigned int,std::string> alarm_states;
     const static std::map<unsigned int,std::string> error_states;

@@ -421,6 +421,7 @@ ArduinoComThread::read_packet(std::string &s, unsigned int timeout /*= 100*/, bo
 
   if(s.find("<") != std::string::npos) {
     logger->log_debug(name(), "Status message grbl received: %s", s.c_str());
+    analyze_status(s.c_str());
     return ResponseType::STATUS;
   }
 
@@ -707,6 +708,45 @@ ArduinoComThread::arduino_enough_buffer(ArduinoComMessage *msg)
     complete_size += sent_message->get_cur_buffer_index();
   }
   return complete_size < 128; // this is the maximum size of the arduino serial buffer
+}
+
+void
+ArduinoComThread::analyze_status(const char* status_string)
+{
+  //get status
+  if(strstr(status_string,"Idle")){
+    device_status_ = DeviceStatus::IDLE;
+  } else if(strstr(status_string,"Run")) {
+    device_status_ = DeviceStatus::RUN;
+  } else if(strstr(status_string,"Hold")) {
+    device_status_ = DeviceStatus::HOLD;
+  } else if(strstr(status_string,"Jog")) {
+    device_status_ = DeviceStatus::JOG;
+  } else if(strstr(status_string,"Alarm")) {
+    device_status_ = DeviceStatus::ALARM;
+  } else if(strstr(status_string,"Door")) {
+    device_status_ = DeviceStatus::DOOR;
+  } else if(strstr(status_string,"Check")) {
+    device_status_ = DeviceStatus::CHECK;
+  } else if(strstr(status_string,"Home")) {
+    device_status_ = DeviceStatus::HOME;
+  } else if(strstr(status_string,"Sleep")) {
+    device_status_ = DeviceStatus::SLEEP;
+  } else {
+    logger->log_error(name(),"Could not identify status from status message: %s", status_string);
+  }
+  //TODO: update blackboard
+  
+  //now get the position
+  const char * position;
+  if((position=strstr(status_string,"WPos:"))) {
+    float pos_x,pos_y,pos_z;
+    sscanf(position,"WPos:%f,%f,%f",&pos_x,&pos_y,&pos_z);
+    logger->log_info(name(),"The device is at position %f, %f, %f",pos_x,pos_y,pos_z);
+  } else {
+    logger->log_error(name(), "Could not extract the position from status message: %s", status_string);
+  }
+  //TODO: update blackboard and publish new transform
 }
 
 const std::map<unsigned int, std::string> ArduinoComThread::alarm_states {
