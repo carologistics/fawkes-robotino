@@ -419,6 +419,7 @@ ArduinoComThread::handle_nodata(const boost::system::error_code &ec, bool expect
     logger->log_debug(name(), "Received: %zu  %s\n", s.size(), s.c_str());
 
     if(expected){
+      open_pending_ = true; // if something was expected but did not arrive force restart
     }
   }
 }
