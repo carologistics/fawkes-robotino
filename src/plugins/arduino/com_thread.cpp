@@ -722,26 +722,31 @@ ArduinoComThread::check_config(std::vector<ArduinoComMessage::setting_id_t>& inc
     switch(setting.second) {
       case ArduinoComMessage::setting_type::SET_BOOL:
         unsigned int temp_read_bool;
-        sscanf(setting_string.c_str(),"%*u=%u",&temp_read_bool);
+        sscanf(setting_string.c_str(),"$%*u=%u",&temp_read_bool);
         read_value = static_cast<bool>(temp_read_bool);
         break;
       case ArduinoComMessage::setting_type::SET_INT:
         read_value=0u;
-        sscanf(setting_string.c_str(),"%*u=%u",&boost::get<unsigned int>(read_value));
+        sscanf(setting_string.c_str(),"$%*u=%u",&boost::get<unsigned int>(read_value));
         break;
       case ArduinoComMessage::setting_type::SET_FLOAT:
         read_value=0.0f;
-        sscanf(setting_string.c_str(),"%*u=%f",&boost::get<float>(read_value));
+        sscanf(setting_string.c_str(),"$%*u=%f",&boost::get<float>(read_value));
         break;
     }
-    if(boost::apply_visitor(is_equal_comparator(),read_value,cfg_grbl_settings_[setting.first])){
-      logger->log_debug(name(), "Setting %u diverged: expected %s, got %s",static_cast<unsigned int>(setting.first),ArduinoComMessage::value_to_string(read_value).c_str(),ArduinoComMessage::value_to_string(cfg_grbl_settings_[setting.first]).c_str());
+    if(!boost::apply_visitor(is_equal_comparator(),read_value,cfg_grbl_settings_[setting.first])){
+      logger->log_debug(name()
+          , "Setting %u diverged: expected %s, got %s"
+          ,static_cast<unsigned int>(setting.first)
+          ,ArduinoComMessage::value_to_string(read_value).c_str()
+          ,ArduinoComMessage::value_to_string(cfg_grbl_settings_[setting.first]).c_str());
       all_correct = false;
       incorrect_settings.push_back(setting.first);
     }
   }
 
   //get value for every setting
+  logger->log_info(name(),"all_correct: %s", all_correct?"true":"false");
   return all_correct;
 }
 
