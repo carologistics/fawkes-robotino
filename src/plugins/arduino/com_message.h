@@ -176,7 +176,7 @@ class ArduinoComMessage
   static std::string value_to_string(float f)
   {
     std::stringstream result_stream;
-    result_stream << std::fixed << std::setprecision(1) << f;
+    result_stream << std::fixed << std::setprecision(3) << f;
     return result_stream.str();
   }
 
