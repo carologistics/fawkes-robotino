@@ -509,7 +509,10 @@ ArduinoComThread::read_packet(std::string &s, unsigned int timeout /*= 100*/, bo
   }
 
   if(s.find("$") == 0) {
-    logger->log_debug(name(), "Setting x has value v");
+    unsigned int setting_id;
+    char value[10];
+    sscanf(s.c_str(),"$%u=%s",&setting_id, value);
+    logger->log_debug(name(), "Setting %u has value %s", setting_id, value);
     return ResponseType::SETTING;
   }
 
