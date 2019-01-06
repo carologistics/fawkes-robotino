@@ -761,6 +761,7 @@ ArduinoComThread::write_config(const std::vector<ArduinoComMessage::setting_id_t
     send_message(*msg);
     delete msg;
     //check for ok?
+    usleep(10000); // do not write settings to fast, otherwise grbl will hick up
   }
   return true;
 }
