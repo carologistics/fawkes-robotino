@@ -636,13 +636,15 @@ ArduinoComThread::check_config(std::vector<ArduinoComMessage::setting_id_t>& inc
   for(const auto& setting: ArduinoComMessage::setting_map)
   {
     std::string setting_string;
-    read_packet(setting_string, 1000);
 
     unsigned int read_id;
-    unsigned int tries=10;
+    unsigned int tries=100;
     do {
-      sscanf(setting_string.c_str(),"%u",&read_id);
-    } while(read_id != static_cast<unsigned int>(setting.first) && tries>0); // ignore unused settings and other bullshit on the line
+      if(read_packet(setting_string, 1000) == ResponseType::SETTING){
+        sscanf(setting_string.c_str(),"$%u",&read_id);
+        logger->log_info(name(), "Read the setting %u", read_id);
+      }
+    } while(read_id != static_cast<unsigned int>(setting.first) && --tries>0); // ignore unused settings and other bullshit on the line
     if(tries == 0) // could not get all the settings
     {
       logger->log_error(name(), "Error in reading the settings");
