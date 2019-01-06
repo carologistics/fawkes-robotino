@@ -150,6 +150,9 @@ private:
 
     void handle_nodata(const boost::system::error_code &ec);
     void handle_nodata_while_flushing(const boost::system::error_code &ec);
+    void handle_failed_to_home(const boost::system::error_code &ec);
+    void went_home_fail();
+    void went_home_success();
     bool send_one_message();
 
     std::string cfg_device_;
@@ -188,6 +191,7 @@ private:
     boost::asio::io_service io_service_;
     boost::asio::serial_port serial_;
     boost::asio::deadline_timer deadline_;
+    boost::asio::deadline_timer deadline_homing_;
     boost::asio::streambuf input_buffer_;
     boost::asio::io_service::work work_;
 
