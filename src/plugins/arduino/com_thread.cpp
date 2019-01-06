@@ -173,8 +173,9 @@ ArduinoComThread::is_connected()
 void
 ArduinoComThread::open_device()
 {
-  if (!opened_) {
+  if (open_pending_){
     logger->log_debug(name(), "Open device");
+    home_pending_ = true;
     try {
       input_buffer_.consume(input_buffer_.size());
 
@@ -204,9 +205,12 @@ ArduinoComThread::open_device()
         } // else: BANG, cannot set VMIN/VTIME, fail
       }
 
-      opened_ = sync_with_arduino();
+      ArduinoComMessage reset_msg(ArduinoComMessage::fast_command_id_t::CMD_SOFT_RESET);
+      send_message(reset_msg);
 
-      flush_device(); // clean start
+      open_pending_ = !sync_with_arduino();
+
+      if(!open_pending_) flush_device(); // clean start
 
     } catch (boost::system::system_error &e) {
       throw Exception("Arduino failed I/O: %s", e.what());
