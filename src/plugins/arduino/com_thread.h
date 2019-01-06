@@ -112,20 +112,20 @@ public:
 
 private:
     enum class ResponseType {
-      RESP_OK,
-      RESP_ERROR,
-      RESP_STATUS,
-      RESP_BOOTUP,
-      RESP_ALARM,
-      RESP_SETTING,
-      RESP_FEEDBACK_MSG,
-      RESP_GCODE_STATE,
-      RESP_HELP,
-      RESP_PARAMETER,
-      RESP_VERSION,
-      RESP_ECHO,
-      RESP_NONSENSE,
-      RESP_NO,
+      OK,
+      ERROR,
+      STATUS,
+      BOOTUP,
+      ALARM,
+      SETTING,
+      FEEDBACK_MSG,
+      GCODE_STATE,
+      HELP,
+      PARAMETER,
+      VERSION,
+      RECHO,
+      NONSENSE,
+      NO,
     };
 
     unsigned int cfg_max_open_tries_;

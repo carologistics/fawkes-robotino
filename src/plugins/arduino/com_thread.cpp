@@ -464,7 +464,7 @@ ArduinoComThread::sync_with_arduino()
   logger->log_debug(name(), "sync with arduino");
   do {
     std::string dummy;
-    found = (ResponseType::RESP_BOOTUP == read_packet(dummy,1000));
+    found = (ResponseType::BOOTUP == read_packet(dummy,1000));
     now = fawkes::Time();
   } while (!found && (now - start_time < 3.));
 
@@ -545,10 +545,10 @@ ArduinoComThread::read_packet(std::string &s, unsigned int timeout = 100)
   if (ec) {
     if (ec.value() == boost::system::errc::operation_canceled) {
       logger->log_error(name(), "Arduino read operation cancelled: %s", ec.message().c_str());
-      return ResponseType::RESP_NO;
+      return ResponseType::NO;
     }
   }
-  if(bytes_read_ == 0) return ResponseType::RESP_NO;
+  if(bytes_read_ == 0) return ResponseType::NO;
 
 
   //Package received - analyze package
@@ -559,7 +559,7 @@ ArduinoComThread::read_packet(std::string &s, unsigned int timeout = 100)
   
   if(s.find("ok") != std::string::npos) {
     drop_sent_message();
-    return ResponseType::RESP_OK;
+    return ResponseType::OK;
   }
 
   if(s.find("error") != std::string::npos) {
@@ -571,17 +571,17 @@ ArduinoComThread::read_packet(std::string &s, unsigned int timeout = 100)
         logger->log_error(name(), "Error description: %s", error_states.at(error_id).c_str()); 
       }
     }
-    return ResponseType::RESP_ERROR;
+    return ResponseType::ERROR;
   }
 
   if(s.find("<") != std::string::npos) {
     logger->log_debug(name(), "Status message grbl received: %s", s.c_str());
-    return ResponseType::RESP_STATUS;
+    return ResponseType::STATUS;
   }
 
   if (s.find("Grbl ") != std::string::npos) {
     logger->log_info(name(), "Found the GRBL startup message");
-    return ResponseType::RESP_BOOTUP;
+    return ResponseType::BOOTUP;
   }
 
   if(s.find("ALARM") != std::string::npos) {
@@ -592,44 +592,44 @@ ArduinoComThread::read_packet(std::string &s, unsigned int timeout = 100)
         logger->log_error(name(), "Alarm description: %s", alarm_states.at(alarm_id).c_str()); 
       }
     }
-    return ResponseType::RESP_ALARM;
+    return ResponseType::ALARM;
     //TODO: React on alarm state properly
   }
 
   if(s.find("$") == 0) {
     logger->log_debug(name(), "Setting x has value v");
-    return ResponseType::RESP_SETTING;
+    return ResponseType::SETTING;
   }
 
   if(s.find("[") == 0) {
     if(s.find("MSG") != std::string::npos) {
       logger->log_debug(name(), "Non queried feedback message: %s", s.c_str());
-      return ResponseType::RESP_FEEDBACK_MSG;
+      return ResponseType::FEEDBACK_MSG;
     }
     if(s.find("GC") != std::string::npos) {
       logger->log_debug(name(), "g-code state: %s", s.c_str());
-      return ResponseType::RESP_GCODE_STATE;
+      return ResponseType::GCODE_STATE;
     }
     if(s.find("HLP") != std::string::npos) {
       logger->log_debug(name(), "help message: %s", s.c_str());
-      return ResponseType::RESP_HELP;
+      return ResponseType::HELP;
     }
     if(s.find("G") == 1 or s.find("TLO") == 1 or s.find("PRB") == 1) {
       logger->log_debug(name(), "parameter printout: %s", s.c_str());
-      return ResponseType::RESP_PARAMETER;
+      return ResponseType::PARAMETER;
     }
     if(s.find("VER") != std::string::npos) {
       logger->log_debug(name(), "Version: %s", s.c_str());
-      return ResponseType::RESP_VERSION;
+      return ResponseType::VERSION;
     }
     if(s.find("echo") != std::string::npos) {
       logger->log_debug(name(), "automated line echo: %s", s.c_str());
-      return ResponseType::RESP_ECHO;
+      return ResponseType::RECHO;
     }
   }
 
   logger->log_debug(name(), "cannot categorize the response");
-  return ResponseType::RESP_NONSENSE; // is not categorizable
+  return ResponseType::NONSENSE; // is not categorizable
 }
 
 void ArduinoComThread::load_hardcoded_config()
