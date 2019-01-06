@@ -162,6 +162,71 @@ ArduinoComThread::priorized_append_message_to_queue(ArduinoComMessage* msg)
 
 void
 ArduinoComThread::loop()
+{ 
+  logger->log_info(name(), "Loop it");
+  if(open_pending_)
+  {
+    if(++open_tries_ >= cfg_max_open_tries_) {
+      logger->log_error(name(), "Tried %u times to open device. Giving up.", cfg_max_open_tries_);
+      return; 
+    }
+    logger->log_info(name(), "Trying the %u of %u times to open the device.", open_tries_, cfg_max_open_tries_);
+    close_device();
+    open_device();
+    if(!open_pending_) { // succeeded!
+      open_tries_ = 0; 
+    } else {
+      return;
+    }
+  }
+
+  // device is open now
+
+  if(config_check_pending_)
+  {
+    if(config_check_failed_final_) return;
+    logger->log_info(name(),"Should check those config values now");
+    std::vector<ArduinoComMessage::setting_id_t> incorrect_settings;
+    if(!check_config(incorrect_settings)){
+      write_config(incorrect_settings); //if some settings diverged, correct them
+      if(check_config(incorrect_settings)){ // check whether they are really correct now
+        config_check_pending_ = false; // do not need to check them again
+      } else {
+        logger->log_error(name(), "After writing settings, read settings were different.\n To not break EEPROM memory, no further tries will happen. FIX IT!");
+        config_check_failed_final_ = true;
+        return;
+      }
+    } else {
+      config_check_pending_ = false;
+    }
+    flush_device();
+  }
+
+  // device open and config values checked
+
+  /* Only after the config values are checked, the device is ready to use. 
+   * 
+   */
+
+  if(home_pending_) {
+    go_home();
+    home_pending_ = false; // if errors happen during homing they will be noticed later.
+  }
+
+  if(!homed_) { // Do not do anything more until homing is done!
+    std::string dummy;
+    ResponseType reply = read_packet(dummy, 20, false);
+    switch (reply) {
+      case ResponseType::OK :
+        went_home_success();
+        break;
+      case ResponseType::ERROR :
+      case ResponseType::ALARM :
+        went_home_fail();
+      default:
+        return;
+    }
+  }
 }
 
 bool
