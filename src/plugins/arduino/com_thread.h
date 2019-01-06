@@ -128,6 +128,14 @@ private:
       NO,
     };
 
+    bool open_pending_; // opening includes resetting
+
+    bool home_pending_; // this triggers sending a homing message
+    bool homed_; // this confirms that homing is actually done.
+    unsigned int open_tries_;
+    bool config_check_pending_;
+    bool config_check_failed_final_;
+
     unsigned int cfg_max_open_tries_;
 
     void open_device();
@@ -153,7 +161,6 @@ private:
     std::string cfg_gripper_frame_id_;
     std::string cfg_gripper_dyn_frame_id_;
     bool movement_pending_;
-    bool calibrated_;
     char current_arduino_status_;
 
     std::map<ArduinoComMessage::setting_id_t,ArduinoComMessage::set_val_type> cfg_grbl_settings_;
@@ -173,10 +180,7 @@ private:
     bool read_pending_;
     bool set_speed_pending_;
     bool set_acceleration_pending_;
-    bool home_pending_;
 
-    bool opened_;
-    unsigned int open_tries_;
 
     std::deque<ArduinoComMessage*> messages_;
     std::deque<ArduinoComMessage*> sent_messages_;

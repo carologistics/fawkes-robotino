@@ -76,22 +76,16 @@ ArduinoComThread::init()
   joystick_if_ =
     blackboard->open_for_reading<JoystickInterface>("Joystick", cfg_ifid_joystick_.c_str());
 
-  opened_ = false;
-
-  open_device();
-
+  open_pending_ = true;
   open_tries_ = 0;
-  movement_pending_ = false;
-
-  // initially calibrate the gripper on startup
-  calibrated_ = false;
-
-  // move to home position on startup
-
   home_pending_ = true;
+  config_check_pending_ = true;
+  config_check_failed_final_ = false;
+  device_status_ = DeviceStatus::SETTING_UP;
 
-  set_acceleration_pending_ = false;
-  msecs_to_wait_ = 0;
+
+
+
 
   bbil_add_message_interface(arduino_if_);
 
@@ -107,11 +101,7 @@ ArduinoComThread::init()
   arduino_if_->write();
   wakeup();
 
-  std::vector<ArduinoComMessage::setting_id_t> incorrect_settings;
-  if(!check_config(incorrect_settings))
-    write_config(incorrect_settings); //if some settings diverged, correct them
 
-  go_home();
 }
 
 void ArduinoComThread::go_home()
