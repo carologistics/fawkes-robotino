@@ -342,7 +342,7 @@ ArduinoComThread::send_one_message()
 }
 
 void
-ArduinoComThread::handle_nodata(const boost::system::error_code &ec)
+ArduinoComThread::handle_nodata(const boost::system::error_code &ec, bool expected)
 {
   // ec may be set if the timer is cancelled, i.e., updated
   if (! ec) {
@@ -353,16 +353,13 @@ ArduinoComThread::handle_nodata(const boost::system::error_code &ec)
     std::string s(boost::asio::buffer_cast<const char*>(input_buffer_.data()), input_buffer_.size());
     logger->log_debug(name(), "Received: %zu  %s\n", s.size(), s.c_str());
 
-    io_mutex_.unlock();
-
-    close_device();
-    sleep(1);
-    open_device();
+    if(expected){
+    }
   }
 }
 
 ArduinoComThread::ResponseType
-ArduinoComThread::read_packet(std::string &s, unsigned int timeout = 100)
+ArduinoComThread::read_packet(std::string &s, unsigned int timeout /*= 100*/, bool expected /*= true*/)
 {
 
   boost::system::error_code ec = boost::asio::error::would_block;
@@ -371,7 +368,7 @@ ArduinoComThread::read_packet(std::string &s, unsigned int timeout = 100)
   logger->log_debug(name(), "read_packet with timeout: %u", timeout);
 
   deadline_.expires_from_now(boost::posix_time::milliseconds(timeout));
-  deadline_.async_wait(boost::bind(&ArduinoComThread::handle_nodata, this, boost::asio::placeholders::error));
+  deadline_.async_wait(boost::bind(&ArduinoComThread::handle_nodata, this, boost::asio::placeholders::error, expected));
 
   boost::asio::async_read_until(serial_, input_buffer_, "\r\n",
       (boost::lambda::var(ec) = boost::lambda::_1,

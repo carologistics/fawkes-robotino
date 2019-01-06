@@ -145,10 +145,10 @@ private:
     void go_home();
 
     bool sync_with_arduino();
-    ResponseType read_packet(std::string &s, unsigned int timeout);
+    ResponseType read_packet(std::string &s, unsigned int timeout = 100, bool expected = true);
     void send_message(ArduinoComMessage &msg);
 
-    void handle_nodata(const boost::system::error_code &ec);
+    void handle_nodata(const boost::system::error_code &ec, bool expected);
     void handle_nodata_while_flushing(const boost::system::error_code &ec);
     void handle_failed_to_home(const boost::system::error_code &ec);
     void went_home_fail();
