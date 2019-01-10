@@ -182,31 +182,9 @@ ArduinoComThread::convert_commands()
       if (arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZAbsMessage>()) {
         ArduinoInterface::MoveXYZAbsMessage *msg = arduino_if_->msgq_first(msg);
 
-/*
-        fawkes::tf::StampedTransform tf_pose_target;
 
-        try {
-          tf_listener->lookup_transform(cfg_gripper_frame_id_, msg->target_frame(), tf_pose_target);
-        } catch (fawkes::tf::ExtrapolationException &e) {
-          logger->log_debug(name(), "Extrapolation error");
-          break;
-        } catch (fawkes::tf::ConnectivityException &e) {
-          logger->log_debug(name(), "Connectivity exception: %s", e.what());
-          break;
-        } catch (fawkes::IllegalArgumentException &e) {
-          logger->log_debug(name(), "IllegalArgumentException exception - did you set the frame_id?: %s", e.what());
-          break;
-        } catch (fawkes::Exception &e) {
-          logger->log_debug(name(), "Other exception: %s", e.what());
-          break;
-        }
-        */
-
-        float goal_x = msg->x(); //tf_pose_target.getOrigin().x() + msg->x();
-        float goal_y = msg->y(); //tf_pose_target.getOrigin().x() + msg->x();
-        float goal_z = msg->z(); //tf_pose_target.getOrigin().x() + msg->x();
-        //float goal_y = tf_pose_target.getOrigin().y() + msg->y();
-        //float goal_z = tf_pose_target.getOrigin().z() + msg->z();
+        float goal_x, goal_y, goal_z;
+        if(!translate_position(msg->target_frame(),msg->x(),msg->y(),msg->z(),goal_x,goal_y,goal_z)) break;
 
 
         if (goal_x >= 0. && goal_x < cfg_x_max_) {
@@ -986,6 +964,37 @@ ArduinoComThread::analyze_status(const char* status_string)
     logger->log_error(name(), "Could not extract the position from status message: %s", status_string);
   }
   //TODO: update blackboard and publish new transform
+}
+
+bool
+ArduinoComThread::translate_position(std::string target_frame_id, float old_x, float old_y, float old_z, float &new_x, float &new_y, float &new_z)
+{
+  fawkes::tf::StampedTransform tf_pose_target;
+
+  try {
+    tf_listener->lookup_transform(cfg_gripper_frame_id_, target_frame_id, tf_pose_target);
+  } catch (fawkes::tf::ExtrapolationException &e) {
+    logger->log_debug(name(), "Extrapolation error");
+    return false;
+  } catch (fawkes::tf::ConnectivityException &e) {
+    logger->log_debug(name(), "Connectivity exception: %s", e.what());
+    return false;
+  } catch (fawkes::IllegalArgumentException &e) {
+    logger->log_debug(name(), "IllegalArgumentException exception - did you set the frame_id?: %s", e.what());
+    return false;
+  } catch (fawkes::Exception &e) {
+    logger->log_debug(name(), "Other exception: %s", e.what());
+    return false;
+  }
+
+  new_x = tf_pose_target.getOrigin().x() + old_x;
+  new_y = tf_pose_target.getOrigin().y() + old_y;
+  new_z = tf_pose_target.getOrigin().z() + old_z;
+
+  new_x = new_x*1000; // from meters to mm
+  new_y = new_y*1000+75/2;
+  new_z = new_z*1000;
+  return true;
 }
 
 const std::map<unsigned int, std::string> ArduinoComThread::alarm_states {

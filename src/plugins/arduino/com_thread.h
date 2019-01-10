@@ -238,6 +238,8 @@ private:
 
     float position_[3]={0,0,0}; // this is the position in grbl kind coordinates
 
+    bool translate_position(std::string target_frame_id, float, float, float, float &, float &, float &);
+
 protected:
     /** Mutex to protect data_. Lock whenever accessing it. */
     fawkes::Mutex *data_mutex_;
