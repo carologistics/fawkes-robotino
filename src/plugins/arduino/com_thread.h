@@ -142,6 +142,8 @@ private:
 
     DeviceStatus device_status_;
 
+    unsigned int comm_problem_cnt_;
+
     bool open_pending_; // opening includes resetting
 
     bool home_pending_; // this triggers sending a homing message

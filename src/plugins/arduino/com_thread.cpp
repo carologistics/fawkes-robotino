@@ -563,9 +563,12 @@ ArduinoComThread::handle_nodata(const boost::system::error_code &ec, bool expect
     std::string s(boost::asio::buffer_cast<const char*>(input_buffer_.data()), input_buffer_.size());
     logger->log_debug(name(), "Received: %zu  %s\n", s.size(), s.c_str());
 
-    if(expected){
-      open_pending_ = true; // if something was expected but did not arrive force restart
+    if(expected && ++comm_problem_cnt_>3){ 
+      if(!reset_device()) given_up_ = true; // if something was expected but did not arrive, reset the device
+                                            // if reset is not working give up.
     }
+  } else {
+    comm_problem_cnt_=0; // only consecutive problems with communication
   }
 }
 
