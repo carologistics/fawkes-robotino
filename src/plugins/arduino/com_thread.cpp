@@ -957,6 +957,17 @@ ArduinoComThread::analyze_status(const char* status_string)
   } else {
     logger->log_error(name(),"Could not identify status from status message: %s", status_string);
   }
+  switch(device_status_){
+    case DeviceStatus::IDLE:
+      arduino_if_->set_status(ArduinoInterface::IDLE);
+      arduino_if_->set_final(true);
+      break;
+    default:
+      arduino_if_->set_status(ArduinoInterface::MOVING);
+      arduino_if_->set_final(false);
+      break;
+  }
+  arduino_if_->write();
   //TODO: update blackboard
   
   //now get the position
