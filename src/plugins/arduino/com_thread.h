@@ -216,6 +216,7 @@ private:
     ArduinoTFThread* tf_thread_;
 
     bool reset_device();
+    void convert_commands();
 
     void load_hardcoded_config();
     void load_config();

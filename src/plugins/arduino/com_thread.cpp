@@ -175,6 +175,139 @@ ArduinoComThread::reset_device()
 }
 
 void
+ArduinoComThread::convert_commands()
+{
+    while (!arduino_if_->msgq_empty() && arduino_if_->is_final()) { //while there are open commands, create grbl messages from them
+      if (arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZAbsMessage>()) {
+        ArduinoInterface::MoveXYZAbsMessage *msg = arduino_if_->msgq_first(msg);
+
+/*
+        fawkes::tf::StampedTransform tf_pose_target;
+
+        try {
+          tf_listener->lookup_transform(cfg_gripper_frame_id_, msg->target_frame(), tf_pose_target);
+        } catch (fawkes::tf::ExtrapolationException &e) {
+          logger->log_debug(name(), "Extrapolation error");
+          break;
+        } catch (fawkes::tf::ConnectivityException &e) {
+          logger->log_debug(name(), "Connectivity exception: %s", e.what());
+          break;
+        } catch (fawkes::IllegalArgumentException &e) {
+          logger->log_debug(name(), "IllegalArgumentException exception - did you set the frame_id?: %s", e.what());
+          break;
+        } catch (fawkes::Exception &e) {
+          logger->log_debug(name(), "Other exception: %s", e.what());
+          break;
+        }
+        */
+
+        float goal_x = msg->x(); //tf_pose_target.getOrigin().x() + msg->x();
+        float goal_y = msg->y(); //tf_pose_target.getOrigin().x() + msg->x();
+        float goal_z = msg->z(); //tf_pose_target.getOrigin().x() + msg->x();
+        //float goal_y = tf_pose_target.getOrigin().y() + msg->y();
+        //float goal_z = tf_pose_target.getOrigin().z() + msg->z();
+
+
+        if (goal_x >= 0. && goal_x < cfg_x_max_) {
+          logger->log_debug(name(), "Set new X: %f", goal_x);
+        } else {
+          logger->log_error(name(), "Motion exceeds X dimension: %f, range is 0.0 to %f", goal_x,cfg_x_max_);
+          goal_x = std::max(0.0f,std::min(goal_x,cfg_x_max_)); //Always do the best you can!
+        }
+
+        if (goal_y >= 0. && goal_y < cfg_y_max_) {
+          logger->log_debug(name(), "Set new Y: %f", goal_y);
+        } else {
+          logger->log_error(name(), "Motion exceeds Y dimension: %f, range is 0.0 to %f", goal_y,cfg_y_max_);
+          goal_y = std::max(0.0f,std::min(goal_y,cfg_y_max_)); //Always do the best you can!
+        }
+        if (goal_z >= 0. && goal_z < cfg_z_max_) {
+          logger->log_debug(name(), "Set new Z: %f", goal_z);
+        } else {
+          logger->log_error(name(), "Motion exceeds Z dimension: %f, range is 0.0 to %f", goal_z,cfg_z_max_);
+          goal_z = std::max(0.0f,std::min(goal_z,cfg_z_max_)); //Always do the best you can!
+        }
+
+        auto arduino_msg = new ArduinoComMessage();
+        arduino_msg->add_command(ArduinoComMessage::command_id_t::CMD_GOTO_LINEAR,{{'X',-goal_x},{'Y',-goal_y},{'Z',-goal_z},{'F',500}});
+        append_message_to_queue(arduino_msg);
+
+      } else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZRelMessage>()) {
+        /* 
+        //TODO
+        ArduinoInterface::MoveXYZRelMessage *msg = arduino_if_->msgq_first(msg);
+        ArduinoComMessage* arduino_msg = new ArduinoComMessage();
+
+        bool msg_has_data = false;
+
+        float cur_x = gripper_pose_[X] / X_AXIS_STEPS_PER_MM / 1000.;
+        float cur_y = gripper_pose_[Y] / Y_AXIS_STEPS_PER_MM / 1000.;
+        float cur_z = gripper_pose_[Z] / Z_AXIS_STEPS_PER_MM / 1000.;
+        logger->log_debug(name(), "Move rel: %f %f %f cur pose: %f %f %f", msg->x(), msg->y(), msg->z(), cur_x, cur_y, cur_z);
+        if (msg->x() + cur_x >= 0. && msg->x() + cur_x < arduino_if_->x_max()) {
+        int new_abs_x = round_to_2nd_dec((msg->x() + cur_x) * X_AXIS_STEPS_PER_MM * 1000.0);
+        logger->log_debug(name(), "Set new X: %u", new_abs_x);
+        add_command_to_message(arduino_msg, ArduinoComMessage::command_id_t::CMD_X_NEW_POS, new_abs_x);
+
+        // calculate millseconds needed for this movement
+        int d = new_abs_x - gripper_pose_[X];
+        arduino_msg->set_msecs_if_lower(abs(d) * cfg_speed_);
+        msg_has_data = true;
+        }
+        if (msg->y() + cur_y >= 0. && msg->y() + cur_y < arduino_if_->y_max()) {
+        int new_abs_y = round_to_2nd_dec((msg->y() + cur_y) * Y_AXIS_STEPS_PER_MM * 1000.0);
+        logger->log_debug(name(), "Set new Y: %u", new_abs_y);
+        add_command_to_message(arduino_msg, ArduinoComMessage::command_id_t::CMD_Y_NEW_POS, new_abs_y);
+
+        // calculate millseconds needed for this movement
+        int d = new_abs_y - gripper_pose_[Y];
+        arduino_msg->set_msecs_if_lower(abs(d) * cfg_speed_);
+        msg_has_data = true;
+        }
+        if (msg->z() + cur_z >= 0. && msg->z() + cur_z < arduino_if_->z_max()) {
+        int new_abs_z = round_to_2nd_dec((msg->z() + cur_z) * Z_AXIS_STEPS_PER_MM * 1000.0);
+        logger->log_debug(name(), "Set new Z: %u", new_abs_z);
+        add_command_to_message(arduino_msg, ArduinoComMessage::command_id_t::CMD_Z_NEW_POS, new_abs_z);
+
+        // calculate millseconds needed for this movement
+        int d = new_abs_z - gripper_pose_[Z];
+        arduino_msg->set_msecs_if_lower(abs(d) * cfg_speed_);
+        msg_has_data = true;
+        }
+
+        if (msg_has_data == true) {
+        append_message_to_queue(arduino_msg);
+        } else {
+        delete arduino_msg;
+        }
+        */
+      /* } else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveGripperAbsMessage>()) { */
+        
+      /*   //TODO */
+      /*   ArduinoInterface::MoveGripperAbsMessage *msg = arduino_if_->msgq_first(msg); */
+
+      /*   int new_abs_a = round_to_2nd_dec(msg->a() * A_AXIS_STEPS_PER_MM); */
+
+      /*   // calculate millseconds needed for this movement */
+      /*   //              int d = new_abs_a - gripper_pose_[A]; */
+      /*   logger->log_debug(name(), "Set new gripper a: %u", new_abs_a); */
+      /*   //append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_NEW_POS, new_abs_a, 10000); */
+
+
+      /* } else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveGripperRelMessage>()) { */
+      /*   // TODO */
+      /* } else if (arduino_if_->msgq_first_is<ArduinoInterface::ToHomeMessage>()) { */
+      /*   home_pending_ = true; */
+      /* } else if (arduino_if_->msgq_first_is<ArduinoInterface::CalibrateMessage>()) { */
+      /*   calibrated_ = false; */
+      /*   // TODO */
+      }
+
+      arduino_if_->msgq_pop();
+    }
+}
+
+void
 ArduinoComThread::loop()
 { 
   logger->log_info(name(), "Loop it");
