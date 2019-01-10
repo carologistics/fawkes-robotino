@@ -38,9 +38,9 @@ arduino:
     homing_feed: 25.0
     homing_seek: 500.0
     homing_pulloff: 1.0
-    x_steps: 500.0
-    y_steps: 500.0
-    z_steps: 500.0
+    x_steps: 260.869565217
+    y_steps: 393.333333333
+    z_steps: 531.250
     x_max_rate: 500.0
     y_max_rate: 500.0
     z_max_rate: 500.0
