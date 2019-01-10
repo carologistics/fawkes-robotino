@@ -49,7 +49,7 @@ ArduinoComThread::ArduinoComThread(std::string &cfg_name,
         Thread("ArduinoComThread", Thread::OPMODE_WAITFORWAKEUP),
         BlackBoardInterfaceListener("ArduinoThread(%s)", cfg_name.c_str()),
         fawkes::TransformAspect(),
-        serial_(io_service_), deadline_(io_service_), deadline_homing_(io_service_),
+        serial_(io_service_), deadline_(io_service_),
         work_(io_service_), // this work object is necessary to prevent the io_service from stopping itself
         tf_thread_(tf_thread)
 {
@@ -106,37 +106,10 @@ ArduinoComThread::init()
 
 void ArduinoComThread::go_home()
 {
-  homed_ = false;
-  deadline_homing_.expires_from_now(boost::posix_time::seconds(10)); // TODO: Make this configurable
-  deadline_homing_.async_wait(boost::bind(&ArduinoComThread::handle_failed_to_home, this, boost::asio::placeholders::error));
   ArduinoComMessage msg(ArduinoComMessage::command_id_t::CMD_HOME,{});
   send_message(msg);
 }
 
-void
-ArduinoComThread::went_home_success()
-{
-  homed_ = true;
-  deadline_homing_.cancel();
-  device_status_ = DeviceStatus::IDLE;
-}
-
-void
-ArduinoComThread::went_home_fail()
-{
-  open_pending_ = true; //trigger reset of the device
-  deadline_homing_.cancel(); // we know it failed, do not need to wait anymore
-  logger->log_error(name(), "Homing failed");
-}
-
-void
-ArduinoComThread::handle_failed_to_home(const boost::system::error_code &ec)
-{
-  if (! ec) { //only if the handle is triggered due to timer done
-    logger->log_error(name(), "Homing failed due to timeout, will reset the device");
-    open_pending_ = true; // trigger restart of connection
-  }
-}
 
 void
 ArduinoComThread::finalize()

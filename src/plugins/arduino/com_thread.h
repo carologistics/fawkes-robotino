@@ -205,7 +205,6 @@ private:
     boost::asio::io_service io_service_;
     boost::asio::serial_port serial_;
     boost::asio::deadline_timer deadline_;
-    boost::asio::deadline_timer deadline_homing_;
     boost::asio::streambuf input_buffer_;
     boost::asio::io_service::work work_;
 
