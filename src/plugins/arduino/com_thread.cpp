@@ -133,27 +133,68 @@ ArduinoComThread::priorized_append_message_to_queue(ArduinoComMessage* msg)
   messages_.push_front(msg);
 }
 
+/* 
+ * @brief Try to connect to the device until the max number of connection retries is reached.
+ * @return True if successful, false if not
+ */
+bool
+ArduinoComThread::reset_device()
+{
+  do{
+    logger->log_info(name(), "Trying the %u of %u times to open the device.", open_tries_, cfg_max_open_tries_);
+    close_device();
+    open_device();
+  } while(open_pending_ && open_tries_ < cfg_max_open_tries_);
+
+  if(open_tries_ >= cfg_max_open_tries_ || open_pending_) {
+    logger->log_error(name(), "Tried %u times to open device. Giving up.", cfg_max_open_tries_);
+    return false; 
+  }
+  //Device is open now, need to check config values now
+
+  if(config_check_failed_final_) return false;
+  logger->log_info(name(),"Should check those config values now");
+  std::vector<ArduinoComMessage::setting_id_t> incorrect_settings;
+  if(!check_config(incorrect_settings)){
+    write_config(incorrect_settings); //if some settings diverged, correct them
+    if(!check_config(incorrect_settings)){ // check whether they are really correct now
+      logger->log_error(name(), "After writing settings, read settings were different.\n To not break EEPROM memory, no further tries will happen. FIX IT!");
+      config_check_failed_final_ = true;
+      return false;
+    }
+  }
+  flush_device();
+
+  // device open and cfg values are checked, time to go home
+
+  go_home();
+  std::string dummy;
+  if(ResponseType::OK != read_packet(dummy, 20*1000, true)) return false;
+
+  return true;
+}
+
 void
 ArduinoComThread::loop()
 { 
   logger->log_info(name(), "Loop it");
+  if(given_up_) {
+    logger->log_error(name(), "Arduino plugin has given up communication");
+    return;
+  }
   if(open_pending_)
   {
-    if(++open_tries_ >= cfg_max_open_tries_) {
-      logger->log_error(name(), "Tried %u times to open device. Giving up.", cfg_max_open_tries_);
-      return; 
-    }
-    logger->log_info(name(), "Trying the %u of %u times to open the device.", open_tries_, cfg_max_open_tries_);
-    close_device();
-    open_device();
-    if(!open_pending_) { // succeeded!
-      open_tries_ = 0; 
-    } else {
-      return;
+    if(!reset_device()){
+      given_up_ = true;
+      return; // if resetting was not successful, give up
     }
   }
+  device_status_ = DeviceStatus::IDLE;
 
-  // device is open now
+  // device is ready to use now
+
+  // now the fun starts
+  //
 
   if(config_check_pending_)
   {

@@ -149,6 +149,7 @@ private:
     unsigned int open_tries_;
     bool config_check_pending_;
     bool config_check_failed_final_;
+    bool given_up_;
 
     unsigned int cfg_max_open_tries_;
 
@@ -213,6 +214,8 @@ private:
     fawkes::JoystickInterface *joystick_if_;
 
     ArduinoTFThread* tf_thread_;
+
+    bool reset_device();
 
     void load_hardcoded_config();
     void load_config();
