@@ -35,9 +35,9 @@ arduino:
     step_pulse: 10
     step_idle_delay: 25
     homing_dir_invert: 0
-    homing_feed: 25.0
+    homing_feed: 50.0
     homing_seek: 500.0
-    homing_pulloff: 1.0
+    homing_pulloff: 2.0
     x_steps: 260.869565217
     y_steps: 393.333333333
     z_steps: 531.250
