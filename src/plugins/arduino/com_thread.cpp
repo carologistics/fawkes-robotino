@@ -952,18 +952,32 @@ ArduinoComThread::analyze_status(const char* status_string)
   //now get the position
   const char * position;
   if((position=strstr(status_string,"WPos:"))) {
-    float pos_x,pos_y,pos_z;
-    sscanf(position,"WPos:%f,%f,%f",&pos_x,&pos_y,&pos_z);
-    logger->log_info(name(),"The device is at position %f, %f, %f",pos_x,pos_y,pos_z);
-    tf_thread_->set_position(pos_x,pos_y,pos_z);
-    arduino_if_->set_x_position(pos_x);
-    arduino_if_->set_y_position(pos_y);
-    arduino_if_->set_z_position(pos_z);
-    arduino_if_->write();
+    sscanf(position,"WPos:%f,%f,%f",&position_[0],&position_[1],&position_[2]);
+
+    position_[0] *= -1;
+    position_[1] *= -1;
+    position_[2] *= -1;
+
+    logger->log_info(name(),"The device is at position %f, %f, %f",position_[0],position_[1],position_[2]);
+    forward_position();
   } else {
     logger->log_error(name(), "Could not extract the position from status message: %s", status_string);
   }
   //TODO: update blackboard and publish new transform
+}
+
+void
+ArduinoComThread::forward_position()
+{
+  float pos_x = position_[0]*0.001;
+  float pos_y = (position_[1]-75/2)*0.001;
+  float pos_z = position_[2]*0.001;
+
+  tf_thread_->set_position(pos_x,pos_y,pos_z);
+  arduino_if_->set_x_position(pos_x);
+  arduino_if_->set_y_position(pos_y);
+  arduino_if_->set_z_position(pos_z);
+  arduino_if_->write();
 }
 
 bool

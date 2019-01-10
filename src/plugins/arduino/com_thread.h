@@ -238,6 +238,8 @@ private:
 
     float position_[3]={0,0,0}; // this is the position in grbl kind coordinates
 
+    void forward_position(); // this saves the position into the interface and forwards it to the tf_thread
+
     bool translate_position(std::string target_frame_id, float, float, float, float &, float &, float &);
 
 protected:
