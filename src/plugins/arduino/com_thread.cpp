@@ -522,7 +522,7 @@ ArduinoComThread::sync_with_arduino()
   logger->log_debug(name(), "sync with arduino");
   do {
     std::string dummy;
-    found = (ResponseType::BOOTUP == read_packet(dummy,1000));
+    found = (ResponseType::BOOTUP == read_packet(dummy,1000,false)); // actually something is expected but reset shall not be triggered here
     now = fawkes::Time();
   } while (!found && (now - start_time < 3.));
 
