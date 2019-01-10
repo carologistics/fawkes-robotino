@@ -47,8 +47,8 @@ arduino:
     x_acc: 10.0
     y_acc: 10.0
     z_acc: 10.0
-    x_max: 200.0
-    y_max: 200.0
-    z_max: 200.0
+    x_max: 115
+    y_max: 75
+    z_max: 57
 
   max_open_tries: 1000
