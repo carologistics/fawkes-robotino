@@ -972,7 +972,7 @@ void
 ArduinoComThread::forward_position()
 {
   float pos_x = position_[0]*0.001;
-  float pos_y = (position_[1]-75/2)*0.001;
+  float pos_y = (position_[1]-cfg_y_max_/2)*0.001;
   float pos_z = position_[2]*0.001;
 
   tf_thread_->set_position(pos_x,pos_y,pos_z);
@@ -1008,7 +1008,7 @@ ArduinoComThread::translate_position(std::string target_frame_id, float old_x, f
   new_z = tf_pose_target.getOrigin().z() + old_z;
 
   new_x = new_x*1000; // from meters to mm
-  new_y = new_y*1000+75/2;
+  new_y = new_y*1000+cfg_y_max_/2;
   new_z = new_z*1000;
   return true;
 }
