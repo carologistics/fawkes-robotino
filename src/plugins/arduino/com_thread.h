@@ -147,7 +147,6 @@ private:
     bool home_pending_; // this triggers sending a homing message
     bool homed_; // this confirms that homing is actually done.
     unsigned int open_tries_;
-    bool config_check_pending_;
     bool config_check_failed_final_;
     bool given_up_;
 

@@ -328,52 +328,44 @@ ArduinoComThread::loop()
 
   // now the fun starts
   //
-
-  if(config_check_pending_)
-  {
-    if(config_check_failed_final_) return;
-    logger->log_info(name(),"Should check those config values now");
-    std::vector<ArduinoComMessage::setting_id_t> incorrect_settings;
-    if(!check_config(incorrect_settings)){
-      write_config(incorrect_settings); //if some settings diverged, correct them
-      if(check_config(incorrect_settings)){ // check whether they are really correct now
-        config_check_pending_ = false; // do not need to check them again
-      } else {
-        logger->log_error(name(), "After writing settings, read settings were different.\n To not break EEPROM memory, no further tries will happen. FIX IT!");
-        config_check_failed_final_ = true;
-        return;
-      }
-    } else {
-      config_check_pending_ = false;
-    }
-    flush_device();
-  }
-
-  // device open and config values checked
-
-  /* Only after the config values are checked, the device is ready to use. 
-   * 
-   */
-
-  if(home_pending_) {
-    go_home();
-    home_pending_ = false; // if errors happen during homing they will be noticed later.
-  }
-
-  if(!homed_) { // Do not do anything more until homing is done!
+  
+  const unsigned int status_timer_reset = 10;
+  unsigned int status_timer = status_timer_reset; //do not check status every cycle
+  arduino_if_->read();
+  do{
     std::string dummy;
-    ResponseType reply = read_packet(dummy, 20, false);
-    switch (reply) {
-      case ResponseType::OK :
-        went_home_success();
-        break;
-      case ResponseType::ERROR :
-      case ResponseType::ALARM :
-        went_home_fail();
-      default:
-        return;
+    ResponseType reply;
+    convert_commands(); // generate messages if there are any //takes no time
+    if(!messages_.empty()) { // seems like there is work to do 
+      arduino_if_->set_status(ArduinoInterface::MOVING);
+      arduino_if_->set_final(false);
+      arduino_if_->write();
+      device_status_ = DeviceStatus::RUN;
     }
-  }
+
+    bool should_continue; // false if either message queue is empty or buffer would overflow with next message
+    do {
+      should_continue = send_one_message();
+    } while(should_continue); // send messages until either buffer would overflow or no messages left
+
+    if(status_timer-- == 0) {
+      ArduinoComMessage check_status_msg(ArduinoComMessage::fast_command_id_t::CMD_STAT_QUERY);
+      send_message(check_status_msg); 
+      do {
+        reply = read_packet(dummy, 300, true);
+        if(given_up_) return;
+      } while(reply!=ResponseType::STATUS);
+      status_timer = status_timer_reset;
+    }
+
+    do {
+      reply = read_packet(dummy, 10, false);
+      if(given_up_) return;
+    } while(reply != ResponseType::NO); // read until there are no replies anymore
+
+    usleep(10000); // wait for 10 ms
+    arduino_if_->read();
+  } while(!arduino_if_->msgq_empty() || device_status_!=DeviceStatus::IDLE); 
 }
 
 bool
