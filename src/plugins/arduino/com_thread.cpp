@@ -977,6 +977,11 @@ ArduinoComThread::analyze_status(const char* status_string)
     float pos_x,pos_y,pos_z;
     sscanf(position,"WPos:%f,%f,%f",&pos_x,&pos_y,&pos_z);
     logger->log_info(name(),"The device is at position %f, %f, %f",pos_x,pos_y,pos_z);
+    tf_thread_->set_position(pos_x,pos_y,pos_z);
+    arduino_if_->set_x_position(pos_x);
+    arduino_if_->set_y_position(pos_y);
+    arduino_if_->set_z_position(pos_z);
+    arduino_if_->write();
   } else {
     logger->log_error(name(), "Could not extract the position from status message: %s", status_string);
   }
