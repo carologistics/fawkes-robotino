@@ -36,6 +36,7 @@ documentation      = [==[Skill to test the new Grbl Arduino Combination
 @param x          The x position to go to
 @param y          The y position to go to
 @param z          The z position to go to
+@param frame_id   The frame_id in which the position is given
 ]==]
 
 -- Initialize as skill module

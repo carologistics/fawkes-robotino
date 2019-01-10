@@ -87,7 +87,7 @@ ArduinoTFThread::loop()
 
     tf::Quaternion q(0.0, 0.0, 0.0);
     tf::Vector3 v(cur_x_,
-                  (cur_y_ - cfg_y_max_ / 2.),
+                  cur_y_,
                   cur_z_);
 
     tf::Transform tf_pose_gripper(q, v);
