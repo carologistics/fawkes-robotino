@@ -191,10 +191,6 @@ private:
 
     unsigned int msecs_to_wait_;
 
-    // gripper pose to be stored in X, Y, Z
-    // TODO: setup proper values!
-    int gripper_pose_[3] = { 100000, 100000, 100000 };
-
     size_t bytes_read_;
     bool read_pending_;
     bool set_speed_pending_;
@@ -239,6 +235,8 @@ private:
     const static std::map<unsigned int,std::string> error_states;
 
     std::string drop_sent_message();
+
+    float position_[3]={0,0,0}; // this is the position in grbl kind coordinates
 
 protected:
     /** Mutex to protect data_. Lock whenever accessing it. */
