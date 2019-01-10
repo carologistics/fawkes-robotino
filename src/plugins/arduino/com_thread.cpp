@@ -697,7 +697,7 @@ ArduinoComThread::read_packet(std::string &s, unsigned int timeout /*= 100*/, bo
 void ArduinoComThread::load_hardcoded_config()
 {
   cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_STEP_PORT_INVERT] = 0u;
-  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_DIR_PORT_INVERT] = 0u;
+  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_DIR_PORT_INVERT] = 7u;
   cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_STEP_ENA_INV] = false;
   cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_LIMIT_PINS_INV] = false;
   cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_PROBE_PINS_INV] = false;
