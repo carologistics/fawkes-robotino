@@ -64,6 +64,7 @@ function COMMAND:init()
      theMoveXYZAbsMessage:set_x(self.fsm.vars.x or 1.0)
      theMoveXYZAbsMessage:set_y(self.fsm.vars.y or 1.0)
      theMoveXYZAbsMessage:set_z(self.fsm.vars.z or 1.0)
+     theMoveXYZAbsMessage:set_target_frame(self.fsm.vars.frame_id)
      gripper_arduino_if:msgq_enqueue_copy(theMoveXYZAbsMessage)
    else
      self.fsm:set_error("No known command")
