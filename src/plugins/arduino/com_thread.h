@@ -188,6 +188,8 @@ private:
     float cfg_y_max_;
     float cfg_z_max_;
 
+    float cfg_safe_distance_;
+
 
     unsigned int msecs_to_wait_;
 

@@ -187,28 +187,29 @@ ArduinoComThread::convert_commands()
         if(!translate_position(msg->target_frame(),msg->x(),msg->y(),msg->z(),goal_x,goal_y,goal_z)) break;
 
 
-        if (goal_x >= 0. && goal_x < cfg_x_max_) {
+        if (goal_x >= cfg_safe_distance_ && goal_x < cfg_x_max_ - cfg_safe_distance_) {
           logger->log_debug(name(), "Set new X: %f", goal_x);
         } else {
-          logger->log_error(name(), "Motion exceeds X dimension: %f, range is 0.0 to %f", goal_x,cfg_x_max_);
-          goal_x = std::max(0.0f,std::min(goal_x,cfg_x_max_)); //Always do the best you can!
+          logger->log_error(name(), "Motion exceeds X dimension: %f, range is %f to %f", goal_x,cfg_safe_distance_,cfg_x_max_);
+          goal_x = std::max(cfg_safe_distance_,std::min(goal_x,cfg_x_max_ - cfg_safe_distance_)); //Always do the best you can!
         }
 
-        if (goal_y >= 0. && goal_y < cfg_y_max_) {
+        if (goal_y >= cfg_safe_distance_ && goal_y < cfg_y_max_ - cfg_safe_distance_) {
           logger->log_debug(name(), "Set new Y: %f", goal_y);
         } else {
-          logger->log_error(name(), "Motion exceeds Y dimension: %f, range is 0.0 to %f", goal_y,cfg_y_max_);
-          goal_y = std::max(0.0f,std::min(goal_y,cfg_y_max_)); //Always do the best you can!
+          logger->log_error(name(), "Motion exceeds Y dimension: %f, range is %f to %f", goal_y,cfg_safe_distance_,cfg_y_max_);
+          goal_y = std::max(cfg_safe_distance_,std::min(goal_y,cfg_y_max_ - cfg_safe_distance_)); //Always do the best you can!
         }
-        if (goal_z >= 0. && goal_z < cfg_z_max_) {
+        if (goal_z >= cfg_safe_distance_ && goal_z < cfg_z_max_ - cfg_safe_distance_) {
           logger->log_debug(name(), "Set new Z: %f", goal_z);
         } else {
-          logger->log_error(name(), "Motion exceeds Z dimension: %f, range is 0.0 to %f", goal_z,cfg_z_max_);
-          goal_z = std::max(0.0f,std::min(goal_z,cfg_z_max_)); //Always do the best you can!
+          logger->log_error(name(), "Motion exceeds Z dimension: %f, range is %f to %f", goal_z,cfg_safe_distance_,cfg_z_max_);
+          goal_z = std::max(cfg_safe_distance_,std::min(goal_z,cfg_z_max_ - cfg_safe_distance_)); //Always do the best you can!
         }
 
         auto arduino_msg = new ArduinoComMessage();
         arduino_msg->add_command(ArduinoComMessage::command_id_t::CMD_GOTO_LINEAR,{{'X',-goal_x},{'Y',-goal_y},{'Z',-goal_z},{'F',500}});
+        logger->log_info(name(), "Commmand to go to %f, %f, %f", -goal_x, -goal_y, -goal_z);
         append_message_to_queue(arduino_msg);
 
       } else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZRelMessage>()) {
@@ -753,6 +754,7 @@ ArduinoComThread::load_config()
 
     cfg_max_open_tries_
       = config->get_int(cfg_prefix_ + "max_open_tries");
+    cfg_safe_distance_ = config->get_float(cfg_prefix_ + "safe_distance");
   } catch (Exception &e) {
   }
 }

@@ -30,6 +30,8 @@ arduino:
   y_max: 0.075
   z_max: 0.057
 
+  # the distance to keep from the maximum values
+  safe_distance: 2
 
   grbl_config:
     step_pulse: 10
