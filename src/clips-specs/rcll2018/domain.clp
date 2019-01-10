@@ -28,12 +28,17 @@
   (assert (domain-loaded))
 )
 
+
 (defrule domain-set-sensed-predicates
+  " Mark some predicates as sensed predicates.
+    That means, the truth value of these predicates can be changed not directly but by some external trigger
+  "
   (domain-loaded)
   ?p <- (domain-predicate (name mps-state|location-locked) (sensed FALSE))
 =>
   (modify ?p (sensed TRUE))
 )
+
 
 (defrule domain-set-value-predicates
   ?p <- (domain-predicate (name mps-state) (value-predicate FALSE))
@@ -41,29 +46,35 @@
   (modify ?p (value-predicate TRUE))
 )
 
+
 (defrule domain-nowait-actions
+  " Mark some actions that have a sensed effect as non-waiting. That means the effect is applied without sensing for it "
   (domain-loaded)
 	?o <- (domain-operator (name wp-put|wp-get|prepare-bs|prepare-rs|prepare-ds|prepare-cs|location-unlock) (wait-sensed ~FALSE))
-	=>
+=>
 	(modify ?o (wait-sensed FALSE))
 )
 
+
 (defrule domain-exogenous-actions
+  "Mark all actions, that model state changes of the machines, as exogenous"
   ?op <- (domain-operator
     (name bs-dispense | cs-mount-cap | cs-retrieve-cap | rs-mount-ring1 |
           rs-mount-ring2 | rs-mount-ring3 | fulfill-order-c0 |
           fulfill-order-c1 | fulfill-order-c2 | fulfill-order-c3)
     (exogenous FALSE)
   )
-  =>
+=>
   (modify ?op (exogenous TRUE))
 )
 
+
 (defrule domain-load-initial-facts
+" Load all initial domain facts on startup of the game "
   (domain-loaded)
   (wm-fact (key config rcll robot-name) (value ?robot-name))
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
-  =>
+=>
   (bind ?self (sym-cat ?robot-name))
   (if (eq ?team-color CYAN)
     then
@@ -98,6 +109,7 @@
     (domain-object (name CCG1) (type cap-carrier))
     (domain-object (name CCG2) (type cap-carrier))
     (domain-object (name CCG3) (type cap-carrier))
+
     (domain-object (name ?bs) (type mps))
     (domain-object (name ?cs1) (type mps))
     (domain-object (name ?cs2) (type mps))
@@ -105,10 +117,13 @@
     (domain-object (name ?rs1) (type mps))
     (domain-object (name ?rs2) (type mps))
     (domain-object (name ?ss) (type mps))
+
     (domain-object (name INPUT) (type mps-side))
     (domain-object (name OUTPUT) (type mps-side))
     (domain-object (name WAIT) (type mps-side))
+
     (domain-object (name ?team-color) (type team-color))
+
     (domain-object (name O1) (type order))
     (domain-object (name O2) (type order))
     (domain-object (name O3) (type order))
@@ -118,24 +133,18 @@
     (domain-object (name O7) (type order))
     (domain-object (name O8) (type order))
     (domain-object (name O9) (type order))
+
     (domain-fact (name wp-base-color) (param-values WP1 BASE_NONE))
     (domain-fact (name wp-cap-color) (param-values WP1 CAP_NONE))
     (domain-fact (name wp-ring1-color) (param-values WP1 RING_NONE))
     (domain-fact (name wp-ring2-color) (param-values WP1 RING_NONE))
     (domain-fact (name wp-ring3-color) (param-values WP1 RING_NONE))
     (domain-fact (name wp-unused) (param-values WP1))
-    ; (domain-object (name WP1) (type workpiece))
 
-    ; (domain-fact (name wp-base-color) (param-values WP1 BASE_NONE))
-    ; (domain-fact (name wp-cap-color) (param-values WP1 CAP_NONE))
-    ; (domain-fact (name wp-ring1-color) (param-values WP1 RING_NONE))
-    ; (domain-fact (name wp-ring2-color) (param-values WP1 RING_NONE))
-    ; (domain-fact (name wp-ring3-color) (param-values WP1 RING_NONE))
-    ; (domain-fact (name wp-unused) (param-values WP1))
-    ; (domain-fact (name wp-spawned-for) (param-values ?self WP1))
     (domain-fact (name self) (param-values ?self))
     (domain-fact (name at) (param-values ?self START INPUT))
     (domain-fact (name can-hold) (param-values ?self))
+
     (domain-fact (name location-free) (param-values START INPUT))
     (domain-fact (name location-free) (param-values ?bs INPUT))
     (domain-fact (name location-free) (param-values ?bs OUTPUT))
@@ -144,14 +153,12 @@
     (domain-fact (name location-free) (param-values ?cs2 INPUT))
     (domain-fact (name location-free) (param-values ?cs2 OUTPUT))
     (domain-fact (name location-free) (param-values ?ds INPUT))
-    ; (domain-fact (name location-free) (param-values ?ds OUTPUT))
     (domain-fact (name location-free) (param-values ?rs1 INPUT))
     (domain-fact (name location-free) (param-values ?rs1 OUTPUT))
     (domain-fact (name location-free) (param-values ?rs2 INPUT))
     (domain-fact (name location-free) (param-values ?rs2 OUTPUT))
-
     (domain-fact (name location-free) (param-values ?ss INPUT))
-    
+
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
     (domain-fact (name mps-team) (param-values ?ss ?team-color))
@@ -159,7 +166,7 @@
     (domain-fact (name mps-team) (param-values ?cs2 ?team-color))
     (domain-fact (name mps-team) (param-values ?rs1 ?team-color))
     (domain-fact (name mps-team) (param-values ?rs2 ?team-color))
-    
+
     (domain-fact (name mps-type) (param-values C-BS BS))
     (domain-fact (name mps-type) (param-values C-DS DS))
     (domain-fact (name mps-type) (param-values C-SS SS))
@@ -182,6 +189,7 @@
     (domain-fact (name cs-free) (param-values ?cs2))
     (domain-fact (name cs-color) (param-values ?cs1 CAP_GREY))
     (domain-fact (name cs-color) (param-values ?cs2 CAP_BLACK))
+
     (domain-fact (name wp-cap-color) (param-values CCB1 CAP_BLACK))
     (domain-fact (name wp-cap-color) (param-values CCB2 CAP_BLACK))
     (domain-fact (name wp-cap-color) (param-values CCB3 CAP_BLACK))
@@ -194,7 +202,9 @@
     (domain-fact (name wp-on-shelf) (param-values CCG1 ?cs1 LEFT))
     (domain-fact (name wp-on-shelf) (param-values CCG2 ?cs1 MIDDLE))
     (domain-fact (name wp-on-shelf) (param-values CCG3 ?cs1 RIGHT))
+
     (domain-fact (name robot-waiting) (param-values ?self))
+
     (domain-fact (name rs-sub) (param-values THREE TWO ONE))
     (domain-fact (name rs-sub) (param-values THREE ONE TWO))
     (domain-fact (name rs-sub) (param-values THREE ZERO THREE))
@@ -209,6 +219,7 @@
     (domain-fact (name rs-inc) (param-values TWO THREE))
     (domain-fact (name rs-filled-with) (param-values ?rs1 ZERO))
     (domain-fact (name rs-filled-with) (param-values ?rs2 ZERO))
+
     (domain-fact (name tag-matching) (param-values C-BS INPUT CYAN 65))
     (domain-fact (name tag-matching) (param-values C-CS1 INPUT CYAN 1))
     (domain-fact (name tag-matching) (param-values C-CS2 INPUT CYAN 17))
@@ -239,17 +250,15 @@
     (domain-fact (name tag-matching) (param-values M-DS OUTPUT MAGENTA 50))
     (domain-fact (name tag-matching) (param-values M-SS OUTPUT MAGENTA 210))
 
-   (domain-fact (name mirror-orientation) (param-values 0 180))
-   (domain-fact (name mirror-orientation) (param-values 45 135))
-   (domain-fact (name mirror-orientation) (param-values 90 90))
-   (domain-fact (name mirror-orientation) (param-values 135 45))
-   (domain-fact (name mirror-orientation) (param-values 180 0))
-   (domain-fact (name mirror-orientation) (param-values 225 315))
-   (domain-fact (name mirror-orientation) (param-values 270 270))
-   (domain-fact (name mirror-orientation) (param-values 315 225))
-
-
- )
+    (domain-fact (name mirror-orientation) (param-values 0 180))
+    (domain-fact (name mirror-orientation) (param-values 45 135))
+    (domain-fact (name mirror-orientation) (param-values 90 90))
+    (domain-fact (name mirror-orientation) (param-values 135 45))
+    (domain-fact (name mirror-orientation) (param-values 180 0))
+    (domain-fact (name mirror-orientation) (param-values 225 315))
+    (domain-fact (name mirror-orientation) (param-values 270 270))
+    (domain-fact (name mirror-orientation) (param-values 315 225))
+  )
 
   (assert (domain-facts-loaded))
 )
