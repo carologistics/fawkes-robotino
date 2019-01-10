@@ -415,7 +415,12 @@ ArduinoComThread::open_device()
 
       open_pending_ = !sync_with_arduino();
 
-      if(!open_pending_) flush_device(); // clean start
+      if(!open_pending_){
+        flush_device(); // clean start
+        open_tries_ = 0;
+      } else {
+        open_tries_ ++;
+      }
 
     } catch (boost::system::system_error &e) {
       throw Exception("Arduino failed I/O: %s", e.what());
