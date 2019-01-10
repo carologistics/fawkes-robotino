@@ -929,7 +929,7 @@ ArduinoComThread::arduino_enough_buffer(ArduinoComMessage *msg)
   {
     complete_size += sent_message->get_cur_buffer_index();
   }
-  return complete_size < 128; // this is the maximum size of the arduino serial buffer
+  return complete_size < 127; // this is the maximum size of the arduino serial buffer-1 (leave one for status request
 }
 
 void
