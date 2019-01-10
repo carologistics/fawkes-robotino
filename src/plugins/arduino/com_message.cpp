@@ -60,17 +60,35 @@ using namespace fawkes;
  * @author Tim Niemueller, Nicolas Limpert
  */
 
+/**
+ * @brief Boost visitor to obtain type
+ */
 class get_type : public boost::static_visitor<ArduinoComMessage::setting_type>
 {
   public:
+    /**
+     * @brief called for boolean
+     * @param to_test variable whose type shall be determined
+     * @return bool id
+     */
     ArduinoComMessage::setting_type operator()(const bool & to_test) const
     {
       return ArduinoComMessage::setting_type::SET_BOOL;
     }
+    /**
+     * @brief called for unsigned integer
+     * @param to_test variable whose type shall be determined
+     * @return int id
+     */
     ArduinoComMessage::setting_type operator()(const unsigned int & to_test) const
     {
       return ArduinoComMessage::setting_type::SET_INT;
     }
+    /**
+     * @brief called for float
+     * @param to_test variable whose type shall be determined
+     * @return float id
+     */
     ArduinoComMessage::setting_type operator()(const float & to_test) const
     {
       return ArduinoComMessage::setting_type::SET_FLOAT;

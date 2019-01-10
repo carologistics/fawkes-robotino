@@ -203,6 +203,11 @@ class ArduinoComMessage
 
 
 
+  /**
+   * @brief Return a pointer to the data of this message
+   *
+   * @return The data of this message
+   */
   const char* get_data();
 
  private:
