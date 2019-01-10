@@ -185,12 +185,12 @@
   (not (action-timer (plan-id ?plan-id) (action-id ?id) (status ?status)))
   (wm-fact (key refbox game-time) (values $?now))
   =>
-  (bind ?sec (+ (nth$ 1 ?now) ?*COMMON-TIMEOUT-DURATION*))
-  (bind $?timeout (create$ ?sec (nth$ 2 ?now)))
-  (assert (action-timer (plan-id ?plan-id) (action-id ?id)
-             (timeout-time ?timeout)
-             (status ?status)
-             (start-time ?now)))
+  (bind ?timeout (create$ (+ (nth$ 1 ?now) ?*COMMON-TIMEOUT-DURATION*) (nth$ 2 ?now)))
+  (assert (action-timer (plan-id ?plan-id)
+              (action-id ?id)
+              (timeout-time ?timeout)
+              (status ?status)
+              (start-time ?now)))
 )
 
 
@@ -209,7 +209,7 @@
   ?pt <- (action-timer (plan-id ?plan-id) (status ?status)
             (action-id ?id)
             (timeout-time $?timeout))
-  (test (and (> (nth$ 1 ?now) (nth$ 1 ?timeout)) (> (nth$ 2 ?now) (nth$ 2 ?timeout))))
+  (test (> (time-diff-sec ?now ?timeout) 0))
   =>
   (printout t "Action "  ?action-name " timedout after " ?status  crlf)
   (modify ?p (state FAILED))
@@ -227,7 +227,7 @@
 	   (param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
-  ?pt <- (action-timer (plan-id ?plan-id) (action-id ?id) (status ?st& : (neq ?st ?status)) (timeout-time $?timeout))
+  ?pt <- (action-timer (plan-id ?plan-id) (action-id ?id) (status ?st& : (neq ?st ?status)))
   =>
   (retract ?pt)
 )
@@ -252,8 +252,9 @@
   (test (< (nth$ 1 ?timeout) (+ (nth$ 1 ?starttime) ?*MPS-DOWN-TIMEOUT-DURATION* ?*COMMON-TIMEOUT-DURATION*)))
   =>
   (printout t "Detected that " ?mps " is " ?s " while " ?action-name " is waiting for it. Enhance timeout-timer" crlf)
-  (bind ?timeout-longer (create$ (+ (nth$ 1 ?timeout) ?*MPS-DOWN-TIMEOUT-DURATION*) (nth$ 2 ?timeout)))
-  (modify ?pt (timeout-time ?timeout-longer))
+  (bind ?timeout-longer (+ (nth$ 1 ?timeout) ?*MPS-DOWN-TIMEOUT-DURATION*))
+  (bind ?timeout-new (create$ ?timeout-longer (nth$ 2 ?timeout)))
+  (modify ?pt (timeout-time ?timeout-new))
 )
 
 ;
