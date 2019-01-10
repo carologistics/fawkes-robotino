@@ -79,9 +79,10 @@ ArduinoComThread::init()
   open_pending_ = true;
   open_tries_ = 0;
   home_pending_ = true;
-  config_check_pending_ = true;
   config_check_failed_final_ = false;
   device_status_ = DeviceStatus::SETTING_UP;
+  comm_problem_cnt_ = 0;
+  given_up_ = false;
 
 
 
