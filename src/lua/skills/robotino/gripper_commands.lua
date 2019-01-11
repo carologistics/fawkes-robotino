@@ -41,14 +41,25 @@ documentation      = [==[
 
 ]==]
 
+
+
 -- Initialize as skill module
 skillenv.skill_module(_M)
+
+
+function is_error()
+  status = arduino:get_status()
+  if status == 2 or status == 3 or status == 4 then
+    return true
+  end
+  return false
+end
 
 
 -- States
 fsm:define_states{
    export_to=_M,
-   closure={arduino=arduino,gripper_if=gripper_if, right_fully_loaded=right_fully_loaded, left_fully_loaded=left_fully_loaded},
+   closure={arduino=arduino,gripper_if=gripper_if, right_fully_loaded=right_fully_loaded, left_fully_loaded=left_fully_loaded, is_error=is_error},
    {"CHECK_WRITER", JumpState},
    {"COMMAND", JumpState},
    {"WAIT_COMMAND", JumpState},
@@ -62,6 +73,7 @@ fsm:add_transitions{
    {"WAIT_COMMAND", "FINAL", cond="vars.wait ~= nil and not vars.wait"},
    {"WAIT_COMMAND", "FINAL", cond="vars.restore"},
    {"WAIT_COMMAND", "FINAL", cond="arduino:is_final()"},
+   {"WAIT_COMMAND", "FAILED", cond="is_error"},
    {"WAIT_COMMAND", "FAILED", cond="vars.error"},
 }
 
