@@ -49,14 +49,14 @@ skillenv.skill_module(_M)
 
 function is_error()
   msgid = arduino:msgid()
-  if msgid ~= nil then
+  if msgid == nil then
     return false
   end
-  if msgid ~= self.fsm.vars.msgid then 
+  if msgid ~= fsm.vars.msgid then 
     return false
   end
-  status = arduino:status()
-  if status == 2 or status == 3 or status == 4 then
+  errorstate = arduino:errorstate()
+  if errorstate == 2 or errorstate == 3 or errorstate == 4 then
     return true
   end
   return false
@@ -77,10 +77,10 @@ fsm:add_transitions{
    {"CHECK_WRITER", "FAILED", precond="not gripper_if:has_writer()", desc="No writer for gripper"},
    {"CHECK_WRITER", "COMMAND", cond=true, desc="Writer ok got to command"},
    {"COMMAND", "WAIT_COMMAND", timeout=0.2},
+   {"WAIT_COMMAND", "FAILED", cond="is_error()"},
    {"WAIT_COMMAND", "FINAL", cond="vars.wait ~= nil and not vars.wait"},
    {"WAIT_COMMAND", "FINAL", cond="vars.restore"},
    {"WAIT_COMMAND", "FINAL", cond="arduino:is_final()"},
-   {"WAIT_COMMAND", "FAILED", cond="is_error()"},
    {"WAIT_COMMAND", "FAILED", cond="vars.error"},
 }
 
@@ -110,8 +110,7 @@ function COMMAND:init()
         move_abs_message:set_y(y)
         move_abs_message:set_z(z)
         move_abs_message:set_target_frame(target_frame)
-        self.fsm.vars.msgid = move_abs_message:id()
-        arduino:msgq_enqueue_copy(move_abs_message)
+        self.fsm.vars.msgid = arduino:msgq_enqueue_copy(move_abs_message)
 
    elseif self.fsm.vars.command == "CALIBRATE" then
         calibrate_message = arduino.CalibrateMessage:new()
