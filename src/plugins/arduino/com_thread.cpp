@@ -188,9 +188,8 @@ ArduinoComThread::loop()
                   msg_has_data = true;
                 } else {
                   logger->log_error(name(), "Motion exceeds X dimension: %f", goal_x);
-//                } else {
-//                  arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_X);
-//                  arduino_if_->write();
+                  arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_X);
+                  arduino_if_->write();
 //                  break;
                 }
 
@@ -205,8 +204,8 @@ ArduinoComThread::loop()
                   msg_has_data = true;
                 } else {
                   logger->log_error(name(), "Motion exceeds Y dimension: %f", goal_y);
-//                  arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_Y);
-//                  arduino_if_->write();
+                  arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_Y);
+                  arduino_if_->write();
 //                  break;
                 }
                 if (goal_z >= 0. && goal_z < arduino_if_->z_max()) {
@@ -220,8 +219,8 @@ ArduinoComThread::loop()
                   msg_has_data = true;
                 } else {
                   logger->log_error(name(), "Motion exceeds Z dimension: %f", goal_z);
-//                  arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_Z);
-//                  arduino_if_->write();
+                  arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_Z);
+                  arduino_if_->write();
 //                  break;
                 }
 
