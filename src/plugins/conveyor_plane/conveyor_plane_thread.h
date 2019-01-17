@@ -1,6 +1,6 @@
 
 /***************************************************************************
- *  conveyor_pose_thread.h - conveyor_pose
+ *  conveyor_plane_thread.h - conveyor_plane
  *
  *  Created: Thr 12. April 16:28:00 CEST 2016
  *  Copyright  2016 Tobias Neumann
@@ -20,8 +20,8 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#ifndef _CONVEYOR_POSE_THREAD_
-#define _CONVEYOR_POSE_THREAD_
+#ifndef _CONVEYOR_PLANE_THREAD_
+#define _CONVEYOR_PLANE_THREAD_
 
 #include <core/threading/thread.h>
 #include <aspect/blocked_timing.h>
@@ -47,7 +47,7 @@ typedef pcl::PointCloud<Point> Cloud;
 typedef typename Cloud::Ptr CloudPtr;
 typedef typename Cloud::ConstPtr CloudConstPtr;
 
-class ConveyorPoseThread
+class ConveyorPlaneThread
 : public fawkes::Thread,
   public fawkes::BlockedTimingAspect,
   public fawkes::LoggingAspect,
@@ -79,7 +79,7 @@ private:
   std::string cloud_in_name_;
   std::string cloud_out_inter_1_name_;
   std::string cloud_out_result_name_;
-  std::string cfg_bb_conveyor_pose_name_;
+  std::string cfg_bb_conveyor_plane_name_;
   std::string cfg_bb_switch_name_;
   std::string cfg_bb_realsense_switch_name_;
   std::string conveyor_frame_id_;
@@ -195,7 +195,7 @@ protected:
   virtual void run() { Thread::run(); }
 
 public:
-  ConveyorPoseThread();
+  ConveyorPlaneThread();
 
   virtual void init();
   virtual void loop();

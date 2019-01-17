@@ -3,7 +3,7 @@
 ---
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/webview
 ---
-conveyor_pose:
+conveyor_plane:
   # sets the debug mode within the plugin, which eases the debugging,
   # which results in the following:
   # - the switch if is ignored, the plugin i running always
@@ -13,7 +13,7 @@ conveyor_pose:
 
   if:
     # the prefix used for all interfaces
-    prefix: conveyor_pose
+    prefix: conveyor_plane
 
     # the output point clouds
     cloud_out_intermediet: inter
@@ -40,7 +40,7 @@ conveyor_pose:
       "/laser-lines/8"
     ]
   
-  conveyor_frame_id: conveyor_pose
+  conveyor_frame_id: conveyor_plane
   switch_default: false
   product_removal_default: false
   use_visualisation: false

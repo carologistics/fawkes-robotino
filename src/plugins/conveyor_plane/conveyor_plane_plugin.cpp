@@ -1,6 +1,6 @@
 
 /***************************************************************************
- *  conveyor_pose_plugin.cpp -
+ *  conveyor_plane_plugin.cpp -
  *
  *  Created: Thr 12. April 16:28:00 CEST 2016
  *  Copyright  2016 Tobias Neumann
@@ -22,25 +22,25 @@
 
 #include <core/plugin.h>
 
-#include "conveyor_pose_thread.h"
+#include "conveyor_plane_thread.h"
 
 using namespace fawkes;
 
 /** Conveyor pose, calculates the pose of the conveyor from a pointcloud (from intel real sense)
  * @author Tobias Neumann
  */
-class ConveyorPosePlugin : public fawkes::Plugin
+class ConveyorPlanePlugin : public fawkes::Plugin
 {
  public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  ConveyorPosePlugin(Configuration *config)
+  ConveyorPlanePlugin(Configuration *config)
     : Plugin(config)
   {
-    thread_list.push_back(new ConveyorPoseThread());
+    thread_list.push_back(new ConveyorPlaneThread());
   }
 };
 
 PLUGIN_DESCRIPTION("Plugin to detec the conveyor beld from a pointcloud")
-EXPORT_PLUGIN(ConveyorPosePlugin)
+EXPORT_PLUGIN(ConveyorPlanePlugin)
