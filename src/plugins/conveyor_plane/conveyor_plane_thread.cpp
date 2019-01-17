@@ -1,5 +1,5 @@
 /***************************************************************************
- *  conveyor_pose_thread.cpp - conveyor_pose thread
+ *  conveyor_plane_thread.cpp - conveyor_plane thread
  *
  *  Created: Thr 12. April 16:28:00 CEST 2016
  *  Copyright  2016 Tobias Neumann
@@ -19,7 +19,7 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include "conveyor_pose_thread.h"
+#include "conveyor_plane_thread.h"
 
 #include <pcl/ModelCoefficients.h>
 #include <pcl/sample_consensus/method_types.h>
@@ -58,25 +58,25 @@
 
 using namespace fawkes;
 
-/** @class ConveyorPoseThread "conveyor_pose_thread.cpp"
+/** @class ConveyorPlaneThread "conveyor_plane_thread.cpp"
  * Plugin to detect the conveyor belt in a pointcloud (captured from Intel RealSense)
  * @author Tobias Neumann
  */
 
 /** Constructor. */
-ConveyorPoseThread::ConveyorPoseThread() :
-		Thread("ConveyorPoseThread", Thread::OPMODE_WAITFORWAKEUP),
+ConveyorPlaneThread::ConveyorPlaneThread() :
+		Thread("ConveyorPlaneThread", Thread::OPMODE_WAITFORWAKEUP),
 		BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS),
-		fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_pose"),
+		fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"conveyor_plane"),
 		realsense_switch_(NULL)
 {
 
 }
 
 void
-ConveyorPoseThread::init()
+ConveyorPlaneThread::init()
 {
-  const std::string cfg_prefix = "/conveyor_pose/";
+  const std::string cfg_prefix = "/conveyor_plane/";
 
   cfg_debug_mode_ = config->get_bool( (cfg_prefix + "debug").c_str() );
 
@@ -86,7 +86,7 @@ ConveyorPoseThread::init()
 
   cloud_out_inter_1_name_     = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_intermediet").c_str() );
   cloud_out_result_name_      = if_prefix + config->get_string( (cfg_prefix + "if/cloud_out_result").c_str() );
-  cfg_bb_conveyor_pose_name_  = if_prefix + config->get_string( (cfg_prefix + "if/pose_of_beld").c_str() );
+  cfg_bb_conveyor_plane_name_  = if_prefix + config->get_string( (cfg_prefix + "if/pose_of_beld").c_str() );
   cfg_bb_switch_name_         = if_prefix + config->get_string( (cfg_prefix + "if/switch").c_str() );
 
   laserlines_names_       = config->get_strings( (cfg_prefix + "if/laser_lines").c_str() );
@@ -164,7 +164,7 @@ ConveyorPoseThread::init()
 }
 
 void
-ConveyorPoseThread::finalize()
+ConveyorPlaneThread::finalize()
 {
   pcl_manager->remove_pointcloud(cloud_out_inter_1_name_.c_str());
   pcl_manager->remove_pointcloud(cloud_out_result_name_.c_str());
@@ -178,16 +178,16 @@ ConveyorPoseThread::finalize()
 }
 
 void
-ConveyorPoseThread::bb_pose_conditional_open()
+ConveyorPlaneThread::bb_pose_conditional_open()
 {
   if ( ! enable_pose_ ) {
     enable_pose_ = true;
-    bb_pose_ = blackboard->open_for_writing<fawkes::Position3DInterface>(cfg_bb_conveyor_pose_name_.c_str());
+    bb_pose_ = blackboard->open_for_writing<fawkes::Position3DInterface>(cfg_bb_conveyor_plane_name_.c_str());
   }
 }
 
 void
-ConveyorPoseThread::bb_pose_conditional_close()
+ConveyorPlaneThread::bb_pose_conditional_close()
 {
   if ( enable_pose_ ) {
     enable_pose_ = false;
@@ -196,7 +196,7 @@ ConveyorPoseThread::bb_pose_conditional_close()
 }
 
 void
-ConveyorPoseThread::loop()
+ConveyorPlaneThread::loop()
 {
   if_read();
   //logger->log_debug(name(),"CONVEYOR-POSE 1: Interface read");
@@ -398,7 +398,7 @@ ConveyorPoseThread::loop()
 }
 
 bool
-ConveyorPoseThread::pc_in_check()
+ConveyorPlaneThread::pc_in_check()
 {
   if (pcl_manager->exists_pointcloud(cloud_in_name_.c_str())) {                // does the pc exists
     if ( ! cloud_in_registered_) {                                             // do I already have this pc
@@ -421,7 +421,7 @@ ConveyorPoseThread::pc_in_check()
 }
 
 void
-ConveyorPoseThread::if_read()
+ConveyorPlaneThread::if_read()
 {
   // enable switch
   bb_enable_switch_->read();
@@ -455,7 +455,7 @@ ConveyorPoseThread::if_read()
 }
 
 void
-ConveyorPoseThread::pose_add_element(pose element)
+ConveyorPlaneThread::pose_add_element(pose element)
 {
   //add element
   poses_.push_front(element);
@@ -467,7 +467,7 @@ ConveyorPoseThread::pose_add_element(pose element)
 }
 
 bool
-ConveyorPoseThread::pose_get_avg(pose & out)
+ConveyorPlaneThread::pose_get_avg(pose & out)
 {
   pose median;
 
@@ -564,7 +564,7 @@ ConveyorPoseThread::pose_get_avg(pose & out)
 }
 
 bool
-ConveyorPoseThread::laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit)
+ConveyorPlaneThread::laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit)
 {
   best_fit = laserlines_.front();
 
@@ -598,7 +598,7 @@ ConveyorPoseThread::laserline_get_best_fit(fawkes::LaserLineInterface * &best_fi
 }
 
 Eigen::Vector3f
-ConveyorPoseThread::laserline_get_center_transformed(fawkes::LaserLineInterface * ll)
+ConveyorPlaneThread::laserline_get_center_transformed(fawkes::LaserLineInterface * ll)
 {
   fawkes::tf::Stamped<fawkes::tf::Point> tf_in, tf_out;
   tf_in.stamp = ll->timestamp();
@@ -615,7 +615,7 @@ ConveyorPoseThread::laserline_get_center_transformed(fawkes::LaserLineInterface 
 }
 
 bool
-ConveyorPoseThread::is_inbetween(double a, double b, double val) {
+ConveyorPlaneThread::is_inbetween(double a, double b, double val) {
   double low = std::min(a, b);
   double up  = std::max(a, b);
 
@@ -627,7 +627,7 @@ ConveyorPoseThread::is_inbetween(double a, double b, double val) {
 }
 
 CloudPtr
-ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
+ConveyorPlaneThread::cloud_remove_gripper(CloudPtr in)
 {
   CloudPtr out(new Cloud);
   for (Point p : *in) {
@@ -642,7 +642,7 @@ ConveyorPoseThread::cloud_remove_gripper(CloudPtr in)
 }
 
 CloudPtr
-ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
+ConveyorPlaneThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
 {
   double space = cfg_front_space_;
   double z_min, z_max;
@@ -664,7 +664,7 @@ ConveyorPoseThread::cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineI
 }
 
 CloudPtr
-ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
+ConveyorPlaneThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll)
 {
   if (use_ll){
     Eigen::Vector3f c = laserline_get_center_transformed(ll);
@@ -692,7 +692,7 @@ ConveyorPoseThread::cloud_remove_offset_to_left_right(CloudPtr in, fawkes::Laser
 }
 
 CloudPtr
-ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff)
+ConveyorPlaneThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff)
 {
   CloudPtr out ( new Cloud(*in) );
 
@@ -730,7 +730,7 @@ ConveyorPoseThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coe
 }
 
 boost::shared_ptr<std::vector<pcl::PointIndices>>
-ConveyorPoseThread::cloud_cluster(CloudPtr in)
+ConveyorPlaneThread::cloud_cluster(CloudPtr in)
 {
   //in = cloud_voxel_grid(in);
   // Creating the KdTree object for the search method of the extraction
@@ -750,7 +750,7 @@ ConveyorPoseThread::cloud_cluster(CloudPtr in)
 }
 
 std::vector<CloudPtr>
-ConveyorPoseThread::cluster_split(CloudPtr in, boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices)
+ConveyorPlaneThread::cluster_split(CloudPtr in, boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices)
 {
   std::vector<CloudPtr> clouds_out;
   for (std::vector<pcl::PointIndices>::const_iterator c_it = cluster_indices->begin (); c_it != cluster_indices->end (); ++c_it) {
@@ -769,7 +769,7 @@ ConveyorPoseThread::cluster_split(CloudPtr in, boost::shared_ptr<std::vector<pcl
 }
 
 CloudPtr
-ConveyorPoseThread::cluster_find_biggest(std::vector<CloudPtr> clouds_in, size_t & id)
+ConveyorPlaneThread::cluster_find_biggest(std::vector<CloudPtr> clouds_in, size_t & id)
 {
   CloudPtr biggest(new Cloud);
   size_t i = 0;
@@ -785,7 +785,7 @@ ConveyorPoseThread::cluster_find_biggest(std::vector<CloudPtr> clouds_in, size_t
 }
 
 CloudPtr
-ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
+ConveyorPlaneThread::cloud_voxel_grid(CloudPtr in)
 {
   float ls = cfg_voxel_grid_leave_size_;
   pcl::ApproximateVoxelGrid<pcl::PointXYZ> vg;
@@ -798,14 +798,14 @@ ConveyorPoseThread::cloud_voxel_grid(CloudPtr in)
 }
 
 void
-ConveyorPoseThread::cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out)
+ConveyorPlaneThread::cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out)
 {
   **cloud_out = *cloud_in;
   cloud_out->header = header_;
 }
 
-ConveyorPoseThread::pose
-ConveyorPoseThread::calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal)
+ConveyorPlaneThread::pose
+ConveyorPlaneThread::calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal)
 {
   Eigen::Vector3f tangent0 = normal.cross(Eigen::Vector3f(1,0,0));
   if (tangent0.dot(tangent0) < 0.0001){
@@ -828,7 +828,7 @@ ConveyorPoseThread::calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f nor
 }
 
 void
-ConveyorPoseThread::tf_send_from_pose_if(pose pose)
+ConveyorPlaneThread::tf_send_from_pose_if(pose pose)
 {
   fawkes::tf::StampedTransform transform;
 
@@ -846,7 +846,7 @@ ConveyorPoseThread::tf_send_from_pose_if(pose pose)
 }
 
 void
-ConveyorPoseThread::pose_write(pose pose)
+ConveyorPlaneThread::pose_write(pose pose)
 {
   double translation[3], rotation[4];
   translation[0] = pose.translation.x();
@@ -866,7 +866,7 @@ ConveyorPoseThread::pose_write(pose pose)
 }
 
 void
-ConveyorPoseThread::pose_publish_tf(pose pose)
+ConveyorPlaneThread::pose_publish_tf(pose pose)
 {
   // transform data into gripper frame (this is better for later use)
   tf::Stamped<tf::Pose> tf_pose_cam, tf_pose_gripper;
@@ -885,13 +885,13 @@ ConveyorPoseThread::pose_publish_tf(pose pose)
   tf_publisher->send_transform(stamped_transform);
 }
 void
-ConveyorPoseThread::start_waiting()
+ConveyorPlaneThread::start_waiting()
 {
   wait_start_ = Time();
 }
 
 Eigen::Quaternion<float>
-ConveyorPoseThread::averageQuaternion(Eigen::Vector4f &cumulative, Eigen::Quaternion<float> newRotation, Eigen::Quaternion<float> firstRotation, float addDet){
+ConveyorPlaneThread::averageQuaternion(Eigen::Vector4f &cumulative, Eigen::Quaternion<float> newRotation, Eigen::Quaternion<float> firstRotation, float addDet){
   
   float w = 0.0;
   float x = 0.0;
@@ -915,7 +915,7 @@ ConveyorPoseThread::averageQuaternion(Eigen::Vector4f &cumulative, Eigen::Quater
   return result;
 }
 Eigen::Quaternion<float>
-ConveyorPoseThread::normalizeQuaternion(float x, float y, float z, float w){
+ConveyorPlaneThread::normalizeQuaternion(float x, float y, float z, float w){
 
   float lengthD = 1.0 / (w*w + x*x + y*y + z*z);
   w *= lengthD;
@@ -929,7 +929,7 @@ ConveyorPoseThread::normalizeQuaternion(float x, float y, float z, float w){
  
 //Changes the sign of the quaternion components. This is not the same as the inverse.
 Eigen::Quaternion<float>
-ConveyorPoseThread::inverseSignQuaternion(Eigen::Quaternion<float> q){
+ConveyorPlaneThread::inverseSignQuaternion(Eigen::Quaternion<float> q){
   Eigen::Quaternion<float> result(-q.x(), -q.y(), -q.z(), -q.w());
   return result;
 }
@@ -939,7 +939,7 @@ ConveyorPoseThread::inverseSignQuaternion(Eigen::Quaternion<float> q){
 //be very similar but has its component signs reversed (q has the same rotation as
 //-q)
 bool
-ConveyorPoseThread::areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quaternion<float> q2){
+ConveyorPlaneThread::areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quaternion<float> q2){
   
   float dot = q1.dot(q2);
   if(dot < 0.0){ 
@@ -951,7 +951,7 @@ ConveyorPoseThread::areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quat
 }
 
 bool
-ConveyorPoseThread::need_to_wait()
+ConveyorPlaneThread::need_to_wait()
 {
   return Time() < wait_start_ + wait_time_;
 }
