@@ -44,6 +44,9 @@ plugins/conveyor_pose:
   # Specific overrides can be added under <MPS_TYPE>_<MPS_TARGET> keys, e.g:
   # reference_models/BASE_STATION_INPUT_CONVEYOR: "conveyor_pcls/pappteil.pcd"
   #
+  # Look up possible values for MPS_TYPE and MPS_TARGET in the interface definition in:
+  # src/plugins/conveyor_pose/interfaces/ConveyorPoseInterface.xml
+  #
   # For MPS which output on both sides, output_conveyor model is used. However, further below 
   # hints regarding input and output are applied as usual.
   reference_models:
