@@ -590,18 +590,12 @@ ConveyorPoseThread::record_model()
 {
   // Transform model
   tf::Stamped<tf::Pose> pose_cam;
-  if (!tf_listener->can_transform(cloud_in_->header.frame_id, cfg_model_origin_frame_,
-                                  fawkes::Time(0,0))) {
-    logger->log_error(name(), "Cannot transform from %s to %s",
-                      cloud_in_->header.frame_id.c_str(), cfg_model_origin_frame_.c_str());
-    return;
-  }
-  tf_listener->transform_origin(cloud_in_->header.frame_id, cfg_model_origin_frame_, pose_cam);
-  Eigen::Matrix4f tf_to_cam = pose_to_eigen(pose_cam);
-  pcl::transformPointCloud(*trimmed_scene_, *model_, tf_to_cam);
-
-  // Overwrite and atomically rename model so it can be copied at any time
   try {
+    tf_listener->transform_origin(cloud_in_->header.frame_id, cfg_model_origin_frame_, pose_cam);
+    Eigen::Matrix4f tf_to_cam = pose_to_eigen(pose_cam);
+    pcl::transformPointCloud(*trimmed_scene_, *model_, tf_to_cam);
+
+    // Overwrite and atomically rename model so it can be copied at any time
     int rv = pcl::io::savePCDFileASCII(cfg_record_path_, *model_);
     if (rv)
       logger->log_error(name(), "Error %d saving point cloud to %s", rv, cfg_record_path_.c_str());
@@ -609,6 +603,8 @@ ConveyorPoseThread::record_model()
       ::rename((cfg_record_path_ + ".pcd").c_str(), cfg_record_path_.c_str());
   } catch (pcl::IOException &e) {
     logger->log_error(name(), "Exception saving point cloud to %s: %s", cfg_record_path_.c_str(), e.what());
+  } catch (tf::TransformException &e) {
+    logger->log_error(name(), "Exception recording point cloud: %s", e.what());
   }
 }
 
