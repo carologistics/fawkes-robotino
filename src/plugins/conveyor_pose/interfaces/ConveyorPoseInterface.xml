@@ -4,7 +4,7 @@
   <constants>
     <enum name="MPS_TYPE">
       <comment>The different types of machines.</comment>
-      <item name="NO_STATION">No station set.</item>
+      <item name="DEFAULT_TYPE">No station set.</item>
       <item name="BASE_STATION">Base station.</item>
       <item name="CAP_STATION">Cap station.</item>
       <item name="DELIVERY_STATION">Delivery station.</item>
@@ -14,7 +14,7 @@
     </enum>
     <enum name="MPS_TARGET">
       <comment>The different possible targets of machines.</comment>
-      <item name="NO_LOCATION">No location set.</item>
+      <item name="DEFAULT_TARGET">No location set.</item>
       <item name="INPUT_CONVEYOR">Conveyor on the input side of the MPS.</item>
       <item name="OUTPUT_CONVEYOR">Conveyor on the output side of the MPS.</item>
       <item name="SHELF_LEFT">Left shelf of the Cap Station.</item>
