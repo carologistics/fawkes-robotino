@@ -95,7 +95,9 @@ plugins/conveyor_pose:
     auto_restart: false
 
 
-    # Hypothesis Verification
+    # Hypothesis Verification:
+    # ICP results for which these thresholds aren't met are considered "bad" fits and
+    # will be skipped. I.e. they are not published and the ICP restarts.
     hv:
 
       # Model points that have scene points within this radius are considered supported.
