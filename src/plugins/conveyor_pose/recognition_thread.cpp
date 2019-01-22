@@ -203,7 +203,9 @@ RecognitionThread::loop()
     publish_result();
 
   if (iterations_++ >= cfg_icp_min_loops_ || epsilon_reached) {
-    // Perform hypothesis verification
+    // Perform hypothesis verification, i.e. skip results that don't match
+    // closely enough according to certain thresholds. See the config file for
+    // an explanation of the individual parameters.
     std::vector<Cloud::ConstPtr> icp_result_vector { icp_result_ };
 
     // This resets the result vectors (see hypot_mask below) so we only ever verify the last ICP result
@@ -215,9 +217,10 @@ RecognitionThread::loop()
     hypot_verif_.getMask(hypot_mask);
 
     if (hypot_mask[0] && icp_.getFitnessScore() < last_raw_fitness_) {
-      // Match improved
+      // Hypothesis verification was successful and and the match improved
       last_raw_fitness_ = icp_.getFitnessScore();
 
+      // In debug mode, publish_result has already been called (see above)
       if (!main_thread_->cfg_debug_mode_)
         publish_result();
     }
