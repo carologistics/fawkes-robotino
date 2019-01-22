@@ -50,7 +50,7 @@ RecognitionThread::RecognitionThread(ConveyorPoseThread *cp_thread)
   , TransformAspect(fawkes::TransformAspect::BOTH, "conveyor_pose_initial_guess")
   , main_thread_(cp_thread)
   , enabled_(false)
-  , do_restart_(true)
+  , restart_pending_(true)
 {
   // Allow finalization while loop() is blocked
   set_prepfin_conc_loop(true);
@@ -90,7 +90,7 @@ RecognitionThread::restart_icp()
       if (!main_thread_->have_laser_line_) {
         if (initial_guess_icp_odom_.frame_id == "NO_ID_STAMPED_DEFAULT_CONSTRUCTION") {
           logger->log_error(name(), "Cannot get initial estimate: No laser-line and no previous result!");
-          do_restart_ = true;
+          restart_pending_ = true;
           return;
         }
         tf_listener->transform_pose(
@@ -108,7 +108,7 @@ RecognitionThread::restart_icp()
     } catch (tf::TransformException &e) {
       logger->log_error(name(), "Cannot get initial estimate - laserline was %savailable: %s",
                                   !main_thread_->have_laser_line_ ? "not " : "", e.what());
-      do_restart_ = true;
+      restart_pending_ = true;
       return;
     }
   }
@@ -151,7 +151,7 @@ RecognitionThread::restart_icp()
   iterations_ = 0;
   last_raw_fitness_ = std::numeric_limits<double>::max();
 
-  do_restart_ = false;
+  restart_pending_ = false;
 }
 
 
@@ -169,12 +169,12 @@ RecognitionThread::loop()
       syncpoint_clouds_ready_->wait(name());
   }
 
-  if (do_restart_) {
+  if (restart_pending_) {
     restart_icp();
     return;
   }
 
-  if (!enabled_ || do_restart_) // cancel if disabled from ConveyorPoseThread
+  if (!enabled_ || restart_pending_) // cancel if disabled from ConveyorPoseThread
     return;
 
   icp_.setInputSource(icp_result_);
@@ -183,7 +183,7 @@ RecognitionThread::loop()
   // accumulate transformation between each Iteration
   final_tf_ = icp_.getFinalTransformation() * final_tf_;
 
-  if (!enabled_ || do_restart_) // cancel if disabled from ConveyorPoseThread
+  if (!enabled_ || restart_pending_) // cancel if disabled from ConveyorPoseThread
     return;
 
   // if the difference between this transformation and the previous one
@@ -322,7 +322,7 @@ RecognitionThread::disable()
 void
 RecognitionThread::restart()
 {
-  do_restart_ = true;
+  restart_pending_ = true;
   enable();
 }
 

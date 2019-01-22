@@ -93,7 +93,7 @@ private:
   fawkes::RefPtr<fawkes::SyncPoint> syncpoint_clouds_ready_;
 
   std::atomic_bool enabled_;
-  std::atomic_bool do_restart_;
+  std::atomic_bool restart_pending_;
 
   fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_icp_odom_;
   Eigen::Matrix4f initial_tf_;
