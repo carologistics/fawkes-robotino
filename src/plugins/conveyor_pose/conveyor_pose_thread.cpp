@@ -61,8 +61,8 @@ ConveyorPoseThread::ConveyorPoseThread()
   , syncpoint_clouds_ready_name_("/perception/conveyor_pose/clouds_ready")
   , cloud_out_raw_name_("raw")
   , cloud_out_trimmed_name_("trimmed")
-  , current_mps_type_(ConveyorPoseInterface::NO_STATION)
-  , current_mps_target_(ConveyorPoseInterface::NO_LOCATION)
+  , current_mps_type_(ConveyorPoseInterface::DEFAULT_TYPE)
+  , current_mps_target_(ConveyorPoseInterface::DEFAULT_TARGET)
   , recognition_thread_(nullptr)
   , realsense_switch_(nullptr)
 {}
@@ -94,7 +94,7 @@ ConveyorPoseThread::get_model_path(ConveyorPoseInterface *iface, ConveyorPoseInt
       return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/shelf_right");
     case ConveyorPoseInterface::SLIDE:
       return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/slide");
-    case ConveyorPoseInterface::NO_LOCATION:
+    case ConveyorPoseInterface::DEFAULT_TARGET:
       return CONFDIR "/" + config->get_string(CFG_PREFIX "/reference_models/default");
     case ConveyorPoseInterface::LAST_MPS_TARGET_ELEMENT:
       return "";
@@ -143,8 +143,8 @@ ConveyorPoseThread::init()
   recognition_thread_->cfg_icp_shelf_hv_support_thresh_ = config->get_float( CFG_PREFIX "/icp/hv/shelf_support_threshold" );
 
   bb_pose_ = blackboard->open_for_writing<ConveyorPoseInterface>((cfg_if_prefix_ + "status").c_str());
-  bb_pose_->set_current_mps_type(bb_pose_->NO_STATION);
-  bb_pose_->set_current_mps_target(bb_pose_->NO_LOCATION);
+  bb_pose_->set_current_mps_type(bb_pose_->DEFAULT_TYPE);
+  bb_pose_->set_current_mps_target(bb_pose_->DEFAULT_TARGET);
 
   bb_pose_->write();
 
@@ -155,7 +155,7 @@ ConveyorPoseThread::init()
   cfg_target_hint_[ConveyorPoseInterface::SHELF_RIGHT];
   cfg_target_hint_[ConveyorPoseInterface::SHELF_MIDDLE];
   cfg_target_hint_[ConveyorPoseInterface::SLIDE];
-  cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION];
+  cfg_target_hint_[ConveyorPoseInterface::DEFAULT_TARGET];
 
   cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][X_DIR]    = config->get_float( CFG_PREFIX "/icp/hint/input_conveyor/x" );
   cfg_target_hint_[ConveyorPoseInterface::INPUT_CONVEYOR][Y_DIR]    = config->get_float( CFG_PREFIX "/icp/hint/input_conveyor/y" );
@@ -179,9 +179,9 @@ ConveyorPoseThread::init()
   cfg_target_hint_[ConveyorPoseInterface::SLIDE][Y_DIR]       = config->get_float( CFG_PREFIX "/icp/hint/slide/y" );
   cfg_target_hint_[ConveyorPoseInterface::SLIDE][Z_DIR]       = config->get_float( CFG_PREFIX "/icp/hint/slide/z" );
 
-  cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][X_DIR]  = config->get_float( CFG_PREFIX "/icp/hint/default/x" );
-  cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][Y_DIR]  = config->get_float( CFG_PREFIX "/icp/hint/default/y" );
-  cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][Z_DIR]  = config->get_float( CFG_PREFIX "/icp/hint/default/z" );
+  cfg_target_hint_[ConveyorPoseInterface::DEFAULT_TARGET][X_DIR]  = config->get_float( CFG_PREFIX "/icp/hint/default/x" );
+  cfg_target_hint_[ConveyorPoseInterface::DEFAULT_TARGET][Y_DIR]  = config->get_float( CFG_PREFIX "/icp/hint/default/y" );
+  cfg_target_hint_[ConveyorPoseInterface::DEFAULT_TARGET][Z_DIR]  = config->get_float( CFG_PREFIX "/icp/hint/default/z" );
 
   // Init of station type hints
 
@@ -221,11 +221,11 @@ ConveyorPoseThread::init()
         CFG_PREFIX "/icp/conveyor_offset/storage_station/y", 0.f );
   cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION][Z_DIR] = config->get_float_or_default(
         CFG_PREFIX "/icp/conveyor_offset/storage_station/z", 0.f );
-  cfg_type_offset_[ConveyorPoseInterface::NO_STATION][X_DIR] = config->get_float_or_default(
+  cfg_type_offset_[ConveyorPoseInterface::DEFAULT_TYPE][X_DIR] = config->get_float_or_default(
         CFG_PREFIX "/icp/conveyor_offset/default/z", 0.f );
-  cfg_type_offset_[ConveyorPoseInterface::NO_STATION][Y_DIR] = config->get_float_or_default(
+  cfg_type_offset_[ConveyorPoseInterface::DEFAULT_TYPE][Y_DIR] = config->get_float_or_default(
         CFG_PREFIX "/icp/conveyor_offset/default/z", 0.f );
-  cfg_type_offset_[ConveyorPoseInterface::NO_STATION][Z_DIR] = config->get_float_or_default(
+  cfg_type_offset_[ConveyorPoseInterface::DEFAULT_TYPE][Z_DIR] = config->get_float_or_default(
         CFG_PREFIX "/icp/conveyor_offset/default/z", 0.f );
 
 
@@ -275,10 +275,10 @@ ConveyorPoseThread::init()
   cfg_ll_bearing_thresh_ = config->get_float( CFG_PREFIX "/ll/bearing_threshold" );
 
   // Load reference pcl for shelf, input belt (with cone for input -> output machines, without cone for output <- -> output machines), output belt (without cone) and slide
-  for ( int i = ConveyorPoseInterface::NO_STATION; i != ConveyorPoseInterface::LAST_MPS_TYPE_ELEMENT; i++ )
+  for ( int i = ConveyorPoseInterface::DEFAULT_TYPE; i != ConveyorPoseInterface::LAST_MPS_TYPE_ELEMENT; i++ )
   {
     ConveyorPoseInterface::MPS_TYPE mps_type = static_cast<ConveyorPoseInterface::MPS_TYPE>(i);
-    for (int j = ConveyorPoseInterface::NO_LOCATION; j != ConveyorPoseInterface::LAST_MPS_TARGET_ELEMENT; j++)
+    for (int j = ConveyorPoseInterface::DEFAULT_TARGET; j != ConveyorPoseInterface::LAST_MPS_TARGET_ELEMENT; j++)
     {
       ConveyorPoseInterface::MPS_TARGET mps_target = static_cast<ConveyorPoseInterface::MPS_TARGET>(j);
 
@@ -340,7 +340,7 @@ ConveyorPoseThread::init()
       type_target_to_model_.insert({pair.first, model});
     }
 
-    model_ = type_target_to_model_[{ConveyorPoseInterface::NO_STATION, ConveyorPoseInterface::NO_LOCATION}];
+    model_ = type_target_to_model_[{ConveyorPoseInterface::DEFAULT_TYPE, ConveyorPoseInterface::DEFAULT_TARGET}];
   }
 
   cloud_in_registered_ = false;
@@ -1020,11 +1020,11 @@ ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator *v)
       else if (opt == "/hint/slide/z")
         change_val(opt, cfg_target_hint_[ConveyorPoseInterface::SLIDE][Z_DIR], v->get_float());
       else if (opt == "/hint/default/x")
-        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][X_DIR], v->get_float());
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::DEFAULT_TARGET][X_DIR], v->get_float());
       else if (opt == "/hint/default/y")
-        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][Y_DIR], v->get_float());
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::DEFAULT_TARGET][Y_DIR], v->get_float());
       else if (opt == "/hint/default/z")
-        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::NO_LOCATION][Z_DIR], v->get_float());
+        change_val(opt, cfg_target_hint_[ConveyorPoseInterface::DEFAULT_TARGET][Z_DIR], v->get_float());
 
       else if (opt == "/conveyor_offset/base_station/x")
         change_val(opt, cfg_type_offset_[ConveyorPoseInterface::BASE_STATION][X_DIR], v->get_float());
@@ -1062,11 +1062,11 @@ ConveyorPoseThread::config_value_changed(const Configuration::ValueIterator *v)
         change_val(opt, cfg_type_offset_[ConveyorPoseInterface::STORAGE_STATION][Z_DIR], v->get_float());
 
       else if (opt == "/conveyor_offset/default/x")
-        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::NO_STATION][X_DIR], v->get_float());
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::DEFAULT_TYPE][X_DIR], v->get_float());
       else if (opt == "/conveyor_offset/default/y")
-        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::NO_STATION][Y_DIR], v->get_float());
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::DEFAULT_TYPE][Y_DIR], v->get_float());
       else if (opt == "/conveyor_offset/default/z")
-        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::NO_STATION][Z_DIR], v->get_float());
+        change_val(opt, cfg_type_offset_[ConveyorPoseInterface::DEFAULT_TYPE][Z_DIR], v->get_float());
     } else if(sub_prefix == "/ll") {
       if (opt == "/bearing_threshold")
         change_val(opt, cfg_ll_bearing_thresh_, v->get_float());
