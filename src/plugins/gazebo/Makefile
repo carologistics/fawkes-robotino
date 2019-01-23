@@ -19,9 +19,9 @@ include $(BASEDIR)/etc/buildsys/config.mk
 PRESUBDIRS = msgs
 
 SUBDIRS	= gazsim-llsfrbcomm \
-	  gazsim-llsf-control \
-	  gazsim-gripper \
-	  gazsim-conveyor gazsim-tag-vision \
-	  gazsim-navgraph-generator
+          gazsim-llsf-control \
+          gazsim-gripper \
+          gazsim-conveyor gazsim-tag-vision \
+          gazsim-navgraph-generator
 
 include $(BUILDSYSDIR)/rules.mk
