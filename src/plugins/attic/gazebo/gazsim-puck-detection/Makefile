@@ -23,21 +23,23 @@ include $(BUILDSYSDIR)/protobuf.mk
 # include $(BASEDIR)/fawkes/src/plugins/gazebo/protobuf.mk
 
 LIBS_gazsim_puck_detection = fawkescore fawkesutils fawkesaspects fvutils \
-	       fawkestf fawkesinterface fawkesblackboard llsf_msgs\
-	       Position3DInterface TransformInterface \
-	       SwitchInterface RobotinoLightInterface \
-	       fawkesgazeboaspect
+                             fawkestf fawkesinterface fawkesblackboard llsf_msgs\
+                             Position3DInterface TransformInterface \
+                             SwitchInterface RobotinoLightInterface \
+                             fawkesgazeboaspect
 OBJS_gazsim_puck_detection = gazsim_puck_detection_plugin.o gazsim_puck_detection_thread.o
 
 OBJS_all    = $(OBJS_gazsim_puck_detection)
+PLUGINS_all = $(PLUGINDIR)/gazsim-puck-detection.so
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
   CFLAGS  += $(CFLAGS_TF)
   LDFLAGS += $(LDFLAGS_TF)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
-  LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) -lm $(call boost-libs-ldflags,system) -lboost_system
+  LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) \
+             -lm $(call boost-libs-ldflags,system) -lboost_system
 
-  PLUGINS_all = $(PLUGINDIR)/gazsim-puck-detection.so
+  PLUGINS_build = $(PLUGINS_all)
 else
   ifneq ($(HAVE_GAZEBO),1)
     WARN_TARGETS += warning_gazebo
