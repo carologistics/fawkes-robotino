@@ -3,7 +3,8 @@
 #         Makefile Build System for Fawkes: Robotino Light Plugin
 #                            -------------------
 #   Created on Wed Feb 27 14:21:44 2013
-#   Copyright (C) 2013 by Florian Nolden & Tobias Neumann, Carologistics RoboCup Team
+#   Copyright (C) 2013 by Florian Nolden, Carologistics RoboCup Team
+#                 2013 by  Tobias Neumann, Carologistics RoboCup Team
 #
 #*****************************************************************************
 #
@@ -13,15 +14,11 @@
 #   (at your option) any later version.
 #
 #*****************************************************************************
-# 
-#
-#
 
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDSYSDIR)/fvconf.mk
-
 
 CFLAGS  += $(CFLAGS_TF)
 LDFLAGS += $(LDFLAGS_TF)
@@ -32,16 +29,15 @@ INCDIRS  += $(VISION_INCDIRS)
 LIBDIRS  += $(VISION_LIBDIRS)
 LIBS     += $(VISION_LIBS)
 
-#The necessary libraries your plugin needs.
 LIBS_light_compass = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-		fawkesblackboard fawkesinterface fvutils fvcams fvmodels fvclassifiers fawkestf fawkesgeometry Position3DInterface fvfilters
-#binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
+                     fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
+                     fvclassifiers fawkestf fawkesgeometry fvfilters \
+                     Position3DInterface
 OBJS_light_compass = light_compass.o light_compass_thread.o ColorModelRange.o
 
-#names of the plugins you want to build
+OBJS_all    = $(OBJS_light_compass)
 PLUGINS_all = $(PLUGINDIR)/light_compass.$(SOEXT)
-
-OBJS_all = $(OBJS_light_compass)
+PLUGINS_build = $(PLUGINS_all)
 
 ifeq ($(OBJSSUBMAKE),1)
   ifneq ($(WARN_TARGETS),)
