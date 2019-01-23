@@ -21,27 +21,24 @@ include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDSYSDIR)/fvconf.mk
 include $(BUILDSYSDIR)/boost.mk
 
- 
 CFLAGS   += $(VISION_CFLAGS)
 LDFLAGS  += $(VISION_LDFLAGS)
 INCDIRS  += $(VISION_INCDIRS)
 LIBDIRS  += $(VISION_LIBDIRS)
 LIBS     += $(VISION_LIBS)
 
-# compile against and link against opencv
 CFLAGS	 += $(CFLAGS_OPENCV)
 LDFLAGS  += $(LDFLAGS_OPENCV)
 
-#The necessary libraries your plugin needs.
 LIBS_tag_vision = fawkescore fawkesutils fawkesaspects fvutils \
-	        fawkestf fawkesinterface fawkesblackboard \
-		   	Position3DInterface LaserLineInterface fvcams fvmodels fvclassifiers fvfilters \
-            fawkesconfig TagVisionInterface
-			#binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
-OBJS_tag_vision = tag_vision_plugin.o tag_vision_thread.o tag_position_list.o tag_position_interface_helper.o
+                  fawkestf fawkesinterface fawkesblackboard \
+                  Position3DInterface LaserLineInterface fvcams fvmodels fvclassifiers fvfilters \
+                  fawkesconfig TagVisionInterface
+OBJS_tag_vision = tag_vision_plugin.o tag_vision_thread.o \
+                  tag_position_list.o tag_position_interface_helper.o
 
-
-OBJS_all = $(OBJS_tag_vision)
+OBJS_all    = $(OBJS_tag_vision)
+PLUGINS_all = $(PLUGINDIR)/tag_vision.$(SOEXT)
 
 ifneq ($(wildcard $(SYSROOT)/usr/include/alvar),)
   ifneq ($(wildcard $(SYSROOT)/usr/lib$(LIB_SUFFIX)/libalvar200.so),)
@@ -77,7 +74,7 @@ ifeq ($(HAVE_TF)$(HAVE_ALVAR)$(HAVE_CPP11),111)
   CFLAGS  += $(CFLAGS_ALVAR)  $(CFLAGS_TF) $(CFLAGS_CPP11)
   LDFLAGS += $(LDFLAGS_ALVAR) $(LDFLAGS_TF)
   LIBS_tag_vision += $(LIBS_ALVAR)
-  PLUGINS_all = $(PLUGINDIR)/tag_vision.$(SOEXT)
+  PLUGINS_build = $(PLUGINS_all)
 else
   ifneq ($(HAVE_ALVAR),1)
     WARN_TARGETS += warning_alvar
