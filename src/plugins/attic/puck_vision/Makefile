@@ -27,28 +27,28 @@ ifeq ($(CC),gcc)
   endif
 endif
 
+CFLAGS   += $(VISION_CFLAGS)
+LDFLAGS  += $(VISION_LDFLAGS)
+INCDIRS  += $(VISION_INCDIRS)
+LIBDIRS  += $(VISION_LIBDIRS)
+LIBS     += $(VISION_LIBS)
+
+LIBS_puck_vision = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
+                   fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
+                   fvclassifiers fawkesconfig fvfilters fawkestf \
+                   TransformInterface RobotinoLightInterface \
+                   PuckVisionInterface Position3DInterface 
+OBJS_puck_vision = puck_vision.o puck_vision_thread.o
+
+OBJS_all    = $(OBJS_puck_vision)
+PLUGINS_all = $(PLUGINDIR)/puck_vision.$(SOEXT)
+
+
 ifeq ($(HAVE_TF)$(GCC_OK),11)
   CFLAGS  += $(CFLAGS_TF)
   LDFLAGS += $(LDFLAGS_TF)
-  
-  CFLAGS   += $(VISION_CFLAGS)
-  LDFLAGS  += $(VISION_LDFLAGS)
-  INCDIRS  += $(VISION_INCDIRS)
-  LIBDIRS  += $(VISION_LIBDIRS)
-  LIBS     += $(VISION_LIBS)
 
-  #The necessary libraries your plugin needs.
-  LIBS_puck_vision = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
-		fvclassifiers fawkesconfig fvfilters TransformInterface \
-		fawkestf RobotinoLightInterface PuckVisionInterface Position3DInterface 
-  #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
-  OBJS_puck_vision = puck_vision.o puck_vision_thread.o
-
-  PLUGINS_all = $(PLUGINDIR)/puck_vision.$(SOEXT)
-
-  OBJS_all = $(OBJS_puck_vision)
-
+  PLUGINS_build = $(PLUGINS_all)
 else
   ifneq ($(HAVE_TF),1)
     WARN_TARGETS += warning_tf
