@@ -21,21 +21,23 @@ include $(BASEDIR)/fawkes/src/plugins/gazebo/gazebo.mk
 include $(BUILDSYSDIR)/protobuf.mk
 
 LIBS_gazsim_tag_vision = fawkescore fawkesutils fawkesaspects fvutils \
-	       fawkestf fawkesinterface fawkesblackboard llsf_msgs\
-	       Position3DInterface TransformInterface \
-	       SwitchInterface RobotinoLightInterface \
-	       fawkesgazeboaspect
+                         fawkestf fawkesinterface fawkesblackboard llsf_msgs\
+                         Position3DInterface TransformInterface \
+                         SwitchInterface RobotinoLightInterface \
+                         fawkesgazeboaspect
 OBJS_gazsim_tag_vision = gazsim_tag_vision_plugin.o gazsim_tag_vision_thread.o
 
 OBJS_all    = $(OBJS_gazsim_tag_vision)
+PLUGINS_all = $(PLUGINDIR)/gazsim-tag-vision.so
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
   CFLAGS  += $(CFLAGS_TF)
   LDFLAGS += $(LDFLAGS_TF)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
-  LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) -lm $(call boost-libs-ldflags,system) -lboost_system
+  LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) \
+             -lm $(call boost-libs-ldflags,system) -lboost_system
 
-  PLUGINS_all = $(PLUGINDIR)/gazsim-tag-vision.so
+  PLUGINS_build = $(PLUGINS_all)
 else
   ifneq ($(HAVE_GAZEBO),1)
     WARN_TARGETS += warning_gazebo
