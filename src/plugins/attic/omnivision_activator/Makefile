@@ -23,12 +23,14 @@ INCDIRS  += $(VISION_INCDIRS)
 LIBDIRS  += $(VISION_LIBDIRS)
 LIBS     += $(VISION_LIBS)
 
-LIBS_robotino_omnivision_activator = m \
-	fawkescore fawkesutils fawkesaspects fawkesinterface fawkesblackboard \
-	Position3DInterface SwitchInterface
-OBJS_robotino_omnivision_activator = omnivision_activator_plugin.o omnivision_activator_thread.o
+LIBS_robotino_omnivision_activator = m fawkescore fawkesutils fawkesaspects \
+                                     fawkesinterface fawkesblackboard \
+                                     Position3DInterface SwitchInterface
+OBJS_robotino_omnivision_activator = omnivision_activator_plugin.o \
+                                     omnivision_activator_thread.o
 
 OBJS_all    = $(OBJS_robotino_omnivision_activator)
 PLUGINS_all = $(PLUGINDIR)/robotino-omnivision-activator.$(SOEXT)
+PLUGINS_build = $(PLUGINS_all)
 
 include $(BUILDSYSDIR)/base.mk
