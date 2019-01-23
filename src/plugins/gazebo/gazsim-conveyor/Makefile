@@ -21,10 +21,13 @@ include $(BUILDSYSDIR)/protobuf.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
 LIBS_gazsim_conveyor = m fawkescore fawkesutils fawkesaspects fawkesblackboard \
-		fawkesinterface fawkesconfig gazsim_msgs \
-		fawkesgazeboaspect \
-		llsf_msgs fawkestf
+                       fawkesinterface fawkesconfig gazsim_msgs \
+                       fawkesgazeboaspect \
+                       llsf_msgs fawkestf
 OBJS_gazsim_conveyor = gazsim_conveyor_plugin.o gazsim_conveyor_thread.o
+
+OBJS_all    = $(OBJS_gazsim_conveyor)
+PLUGINS_all = $(PLUGINDIR)/gazsim-conveyor.so
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF),11)
   CFLAGS  += $(CFLAGS_TF)
@@ -32,7 +35,7 @@ ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF),11)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
   LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) -lm $(call boost-libs-ldflags,system) -lboost_system
 
-  PLUGINS_all = $(PLUGINDIR)/gazsim-conveyor.so
+  PLUGINS_build = $(PLUGINS_all)
 else
   ifneq ($(HAVE_GAZEBO),1)
     WARN_TARGETS += warning_gazebo
@@ -52,8 +55,6 @@ warning_protobuf:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-conveyor Plugin$(TNORMAL) " \
 		"(protobuf[-devel] not installed)"
 endif
-
-OBJS_all = $(OBJS_gazsim_conveyor)
 
 include $(BUILDSYSDIR)/base.mk
 
