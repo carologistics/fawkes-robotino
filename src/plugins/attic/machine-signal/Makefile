@@ -13,9 +13,6 @@
 #   (at your option) any later version.
 #
 #*****************************************************************************
-# JUST REPLACE ALL OCCURENCES OF plugin-template AND REPLACE THEM ACCORDING TO YOUR NEEDS
-#
-#
 
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
@@ -36,21 +33,21 @@ endif
 
 PRESUBDIRS = interfaces
 
-#The necessary libraries your plugin needs.
 LIBS_machine_signal = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
-		fvfilters fvclassifiers fawkesconfig RobotinoLightInterface SwitchInterface \
-		Position3DInterface SignalHintInterface LaserLineInterface fawkestf fvmodels
-#binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
+                      fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
+                      fvfilters fvclassifiers fawkesconfig fawkestf fvmodels \
+                      RobotinoLightInterface SwitchInterface \
+                      Position3DInterface SignalHintInterface LaserLineInterface 
 OBJS_machine_signal = custom_rois.o plugin.o state.o pipeline_thread.o sensor_thread.o
 
+OBJS_all    = $(OBJS_machine_signal)
+PLUGINS_all = $(PLUGINDIR)/machine-signal.$(SOEXT)
+
 ifneq ($(GCC_TOO_OLD),1)
-  PLUGINS_all = $(PLUGINDIR)/machine-signal.$(SOEXT)
+  PLUGINS_build = $(PLUGINS_all)
 else
   WARN_TARGETS += warning_old_gcc
 endif
-
-OBJS_all = $(OBJS_machine_signal)
 
 ifeq ($(OBJSSUBMAKE),1)
   ifneq ($(WARN_TARGETS),)
