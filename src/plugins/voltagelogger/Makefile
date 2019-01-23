@@ -13,28 +13,18 @@
 #   (at your option) any later version.
 #
 #*****************************************************************************
-#
-#
 
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
 LIBS_voltagelogger = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-		fawkesblackboard fawkesinterface BatteryInterface fawkeslogging
+                     fawkesblackboard fawkesinterface fawkeslogging \
+                     BatteryInterface
 OBJS_voltagelogger = voltagelogger_plugin.o voltagelogger_thread.o
 
+OBJS_all    = $(OBJS_voltagelogger)
 PLUGINS_all = $(PLUGINDIR)/voltagelogger.$(SOEXT)
-
-OBJS_all = $(OBJS_voltagelogger)
-
-ifeq ($(OBJSSUBMAKE),1)
-  ifneq ($(WARN_TARGETS),)
-all: $(WARN_TARGETS)
-  endif
-.PHONY: warning_somewarning
-warning_somewarning:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TBROWN)Omitting Robotino Navigator plugin$(TNORMAL) (reason)"
-endif
+PLUGINS_build = $(PLUGINS_all)
 
 include $(BUILDSYSDIR)/base.mk
