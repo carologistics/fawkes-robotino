@@ -21,17 +21,18 @@ include $(BUILDCONFDIR)/webview/webview.mk
 CFLAGS += $(CFLAGS_CPP11)
 
 LIBS_webview_refbox = fawkescore fawkesutils fawkesaspects fawkeswebview \
-		      fawkesmongodbaspect
+                      fawkesmongodbaspect
 OBJS_webview_refbox = webview-refbox-thread.o webview-refbox-processor.o \
-		      webview-refbox-plugin.o
+                      webview-refbox-plugin.o
 
-OBJS_all = $(OBJS_webview_refbox)
+OBJS_all    = $(OBJS_webview_refbox)
+PLUGINS_all = $(PLUGINDIR)/webview-refbox.$(SOEXT)
 
 ifeq ($(HAVE_WEBVIEW)$(HAVE_MONGODB),11)
   CFLAGS  += $(CFLAGS_WEBVIEW)  $(CFLAGS_MONGODB)
   LDFLAGS += $(LDFLAGS_WEBVIEW) $(LDFLAGS_MONGODB)
 
-  PLUGINS_all = $(PLUGINDIR)/webview-refbox.$(SOEXT)
+  PLUGINS_build = $(PLUGINS_all)
 else
   ifneq ($(HAVE_WEBVIEW),1)
     WARN_TARGETS += warning_webview
