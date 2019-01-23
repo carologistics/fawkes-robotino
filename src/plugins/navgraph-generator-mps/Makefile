@@ -23,17 +23,20 @@ include $(BUILDCONFDIR)/navgraph/navgraph.mk
 PRESUBDIRS=interfaces
 
 LIBS_navgraph_generator_mps = fawkescore fawkesutils fawkesaspects fawkesinterface \
-		fawkesblackboard fawkestf fawkesnavgraph \
-		Position3DInterface NavGraphGeneratorInterface \
-		NavGraphWithMPSGeneratorInterface
-OBJS_navgraph_generator_mps = navgraph_generator_mps_plugin.o navgraph_generator_mps_thread.o
+                              fawkesblackboard fawkestf fawkesnavgraph \
+                              Position3DInterface NavGraphGeneratorInterface \
+                              NavGraphWithMPSGeneratorInterface
+OBJS_navgraph_generator_mps = navgraph_generator_mps_plugin.o \
+                              navgraph_generator_mps_thread.o
+
 OBJS_all    = $(OBJS_navgraph_generator_mps)
+PLUGINS_all = $(PLUGINDIR)/navgraph-generator-mps.$(SOEXT)
 
 ifeq ($(HAVE_NAVGRAPH)$(HAVE_EIGEN3)$(HAVE_TF)$(HAVE_CGAL),1111)
   CFLAGS  += $(CFLAGS_NAVGRAPH)  $(CFLAGS_EIGEN3)  $(CFLAGS_TF)
   LDFLAGS += $(LDFLAGS_NAVGRAPH) $(LDFLAGS_EIGEN3) $(LDFLAGS_TF)
 
-  PLUGINS_all = $(PLUGINDIR)/navgraph-generator-mps.$(SOEXT)
+  PLUGINS_build = $(PLUGINS_all)
 else
   # navgraph.mk warns already
   ifneq ($(HAVE_EIGEN3),1)
