@@ -18,10 +18,11 @@ BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 
 LIBS_gamectrl = m fawkescore fawkesutils  \
-		fawkesblackboard fawkesinterface SwitchInterface
+                fawkesblackboard fawkesinterface SwitchInterface
 OBJS_gamectrl = gamectrl.o
 
-BINS_all = $(BINDIR)/gamectrl
-OBJS_all = $(OBJS_gamectrl)
+OBJS_all   = $(OBJS_gamectrl)
+BINS_all   = $(BINDIR)/gamectrl
+BINS_build = $(BINS_all)
 
 include $(BUILDSYSDIR)/base.mk
