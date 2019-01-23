@@ -19,16 +19,16 @@
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
-#The necessary libraries your plugin needs.
+
 LIBS_robotino_wm_tester = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-		fawkesblackboard fawkesinterface RobotinoWorldModelInterface
-#binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
-OBJS_robotino_wm_tester = robotino_wm_tester_plugin.o robotino_wm_tester_thread.o 
+                          fawkesblackboard fawkesinterface \
+                          RobotinoWorldModelInterface
+OBJS_robotino_wm_tester = robotino_wm_tester_plugin.o \
+                          robotino_wm_tester_thread.o 
 
-#names of the plugins you want to build
+OBJS_all    = $(OBJS_robotino_wm-tester)
 PLUGINS_all = $(PLUGINDIR)/robotino-wm-tester.$(SOEXT)
-
-OBJS_all = $(OBJS_robotino_wm-tester)
+PLUGINS_build = $(PLUGINS_all)
 
 ifeq ($(OBJSSUBMAKE),1)
   ifneq ($(WARN_TARGETS),)
