@@ -18,13 +18,14 @@ BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 
 LIBS_motor_led = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-		fawkesblackboard fawkesinterface MotorInterface RobotinoSensorInterface
+                 fawkesblackboard fawkesinterface \
+                 MotorInterface RobotinoSensorInterface
 OBJS_motor_led = motor_led_plugin.o motor_led_thread.o
-
-OBJS_all = $(OBJS_motor_led)
 
 CFLAGS += $(CFLAGS_CPP11)
 
+OBJS_all    = $(OBJS_motor_led)
 PLUGINS_all = $(PLUGINDIR)/motor-led.so
+PLUGINS_build = $(PLUGINS_all)
 
 include $(BUILDSYSDIR)/base.mk
