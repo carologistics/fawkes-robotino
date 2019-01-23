@@ -25,15 +25,15 @@ LIBS_laser_front_dist = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 OBJS_laser_front_dist = laser_front_dist_plugin.o laser_front_dist_thread.o
 
 
-OBJS_all = $(OBJS_laser_front_dist)
+OBJS_all    = $(OBJS_laser_front_dist)
+PLUGINS_all = $(PLUGINDIR)/laser_front_dist.$(SOEXT)
 
 ifeq ($(HAVE_TF),1)
   CFLAGS  += $(CFLAGS_TF)
   LDFLAGS += $(LDFLAGS_TF)
 
-  PLUGINS_all = $(PLUGINDIR)/laser_front_dist.$(SOEXT)
+  PLUGINS_build = $(PLUGINS_all)
 else
-
   ifneq ($(HAVE_TF),1)
     WARN_TARGETS += warning_tf
   endif
