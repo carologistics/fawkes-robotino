@@ -4,9 +4,9 @@ set -e
 function usage() {
 cat << EOF
 USAGE:
-  ./rcll_netemulation setup <interface>
-  ./rcll_netemulation clear <interface>
-  ./rcll_netemulation show  <interface>
+  rcll_netemulation.sh setup <interface>
+  rcll_netemulation.sh clear <interface>
+  rcll_netemulation.sh show  <interface>
 EOF
 }
 
@@ -21,11 +21,19 @@ function setup_rules() {
    # x:2| class 2
    # x:3| class 3 lowest priority
 
-   # netem minimum limit calculation:
+    tc qdisc add dev $1 root handle 1: prio
+
+   # netem minimum limit buffer calculation:
    # <bandwith> / <MTU Size> * delay * 1.5
    # 1 Gbps / 1500 bytes MTU * 100 ms * 1.5 = 12500.
 
-    tc qdisc add dev $1 root handle 1: prio
+   # netem delay <delay in ms> <+- random uniform distribution> <correlation>
+   # netem loss <value in %> <correlation>
+   # netem corrupt <value in %>
+   # netem duplicate <value in %>
+
+   # here a delay of 2000ms with a random uniform distribution of +- 200ms with correlation of 25% and a package loss of 20% with correlation of 25%
+   # this rule is active for all rules that have a parent of 1:
     tc qdisc add dev $1 parent 1:1 handle 10:  netem limit 100000 delay 2000ms 200ms 25% loss 20% 25%
 
    # Protocol ID's
@@ -40,10 +48,12 @@ function setup_rules() {
    # match each icmp package that is encapsulated by an ip packet
     tc filter add dev $1 protocol ip parent 1: prio 1 u32 match ip protocol 1 0xff flowid 1:1
 
-   # match all udp packages with destination port 5001
    # in order to filter out udp packages use "ip dport" instead of "udp dst" due to "implicit" nexthdr not forwarded into the queue
    # 0xffff is the mask that has to be applied in order to match the udp and tcp headers
-    tc filter add dev $1 protocol ip parent 1: prio 1 u32 match ip protocol 17 0xff match ip dport 5001 0xffff flowid 1:1
+   # match all tcp packages that go to tcp dport 27017, 27021 and 27031
+   tc filter add dev $1 protocol ip parent 1: prio 1 u32 match ip protocol 6 0xff match ip dport 27017 0xffff flowid 1:1
+    tc filter add dev $1 protocol ip parent 1: prio 1 u32 match ip protocol 6 0xff match ip dport 27021 0xffff flowid 1:1
+    tc filter add dev $1 protocol ip parent 1: prio 1 u32 match ip protocol 6 0xff match ip dport 27031 0xffff flowid 1:1
 }
 
 function clear_rules() {
