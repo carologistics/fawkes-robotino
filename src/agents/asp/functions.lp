@@ -1,3 +1,8 @@
+%---------------------------------------------------------------------------
+%  Copyright  2016-2017  Bjoern Schaepers
+%  Licensed under GPLv2+ license, cf. LICENSE file
+%---------------------------------------------------------------------------
+
 #script (python)
 
 # The functions for the instances, which are normally provided by the C++ part.

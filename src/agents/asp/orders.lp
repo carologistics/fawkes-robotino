@@ -1,3 +1,7 @@
+%---------------------------------------------------------------------------
+%  Copyright  2016-2017  Bjoern Schaepers
+%  Licensed under GPLv2+ license, cf. LICENSE file
+%---------------------------------------------------------------------------
 % Defined programs:
 % newOrder(o, q, b, c, r1, r2,   A new order has arrived, its number is o, its quantity q. The ordered products are of
 %          r3, delBegin,         the form (b, r1, r2, r3, c), but the rs can be "none". The order is posted at gt and

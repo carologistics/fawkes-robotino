@@ -1,3 +1,7 @@
+%---------------------------------------------------------------------------
+%  Copyright  2016-2017  Bjoern Schaepers
+%  Licensed under GPLv2+ license, cf. LICENSE file
+%---------------------------------------------------------------------------
 % In this file defined predicates:
 % availableRobot(R)              The robot R is available for planning.
 % holding(R, P, GT)              Robot R holds product P at GT.

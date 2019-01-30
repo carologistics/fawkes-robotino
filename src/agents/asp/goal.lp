@@ -1,3 +1,7 @@
+%---------------------------------------------------------------------------
+%  Copyright  2016-2017  Bjoern Schaepers
+%  Licensed under GPLv2+ license, cf. LICENSE file
+%---------------------------------------------------------------------------
 % Contains the optimization goal.
 
 #program ourTeam(t).

@@ -1,3 +1,7 @@
+%---------------------------------------------------------------------------
+%  Copyright  2016-2017  Bjoern Schaepers
+%  Licensed under GPLv2+ license, cf. LICENSE file
+%---------------------------------------------------------------------------
 #include "exploration.lp".
 #include "script.lp".
 

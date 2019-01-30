@@ -1,3 +1,7 @@
+%---------------------------------------------------------------------------
+%  Copyright  2016-2017  Bjoern Schaepers
+%  Licensed under GPLv2+ license, cf. LICENSE file
+%---------------------------------------------------------------------------
 % Defined programs:
 % ourTeam(t)                     Setup the prepare cs tasks, that are possible, as soon as we know the special
 %                                locations.
