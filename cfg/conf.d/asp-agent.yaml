@@ -6,42 +6,65 @@ asp-agent:
     debug-level: 20
 
     program-path: ../src/agents/asp/
-    program-files: [exploration.lp, facts.lp, goal.lp, machines.lp, orders.lp, products.lp, robots.lp, state.lp, taskDeliver.lp, taskFeedRS.lp, taskGetBase.lp, taskGetProduct.lp, taskGoto.lp, taskMountCap.lp, taskMountRing.lp, taskPrepareCS.lp]
+    program-files:
+      - exploration.lp
+      - facts.lp
+      - goal.lp
+      - machines.lp
+      - orders.lp
+      - products.lp
+      - robots.lp
+      - state.lp
+      - taskDeliver.lp
+      - taskFeedRS.lp
+      - taskGetBase.lp
+      - taskGetProduct.lp
+      - taskGoto.lp
+      - taskMountCap.lp
+      - taskMountRing.lp
+      - taskPrepareCS.lp
 
-    #Look ahead in real time seconds.
+    # Look ahead in real time seconds.
     look-ahead: 180
-    #How many real time seconds should be one time unit for the ASP solver.
+    # How many real time seconds should be one time unit for the ASP solver.
     time-resolution: 10
-    #Names of possible used robots.
-    robots: [Tuvok,T'Pol,Spock]
+    # Names of possible used robots.
+    robots: ["Tuvok", "T'Pol", "Spock"]
     robot-timeout: 10
 
-    #How many threads clingo should use for solving.
+    # How many threads clingo should use for solving.
     threads: 2
-    #Wether splitting instead of competing for multiple threads by clingo should be used.
+
+    # Wether splitting instead of competing for multiple threads by clingo
+    # should be used.
     use-splitting: true
 
     max-orders: 7
     max-quantity: 1
     max-products: 6
 
-    #How long, given in milliseconds, the planer will wait to extract a (new) plan from a model.
-    #Because clingo produces very fast the first few models, each new one with more tasks for the robots directly extracting a plan would be inefficient.
+    # How long, given in milliseconds, the planer will wait to extract a (new)
+    # plan from a model. Because clingo produces very fast the first few
+    # models, each new one with more tasks for the robots directly extracting a
+    # plan would be inefficient.
     plan-extraction-delay: 500
 
-  #The threshold, given in seconds, the planer will interrupt clingo for new information, based on the criticalness of the information.
+  # The threshold, given in seconds, the planer will interrupt clingo for new
+  # information, based on the criticalness of the information.
   interrupt-thresholds:
     just-started: 2
     normal: 10
     high: 5
 
-    #The interval to check if a robot is behind schedule.
+    # The interval to check if a robot is behind schedule.
     robot-task-check: 10
     robot-task-behind: 20
 
-    #The percent values relate to the time-resolution
-    #The real value used for interrupting is the minimum of the absolute value and the percent, so don't set any value to zero!
-    #If one of the lower severity values are higher, they will not be checked, so ensure critical > high > normal > started.
+    # The percent values relate to the time-resolution.
+    # The real value used for interrupting is the minimum of the absolute value
+    # and the percent, so don't set any value to zero! If one of the lower
+    # severity values are higher, they will not be checked, so ensure critical >
+    # high > normal > started.
     offset-critical-percent: 300
     offset-critical-absolute: 30
     offset-high-percent: 200
@@ -52,34 +75,39 @@ asp-agent:
     offset-started-absolute: 10
 
   exec:
-    #How many seconds a task may be started before the time stated by the planer.
-    #The concrete value will be calculated by the time-resolution / 2 + given tolerance.
+    # How many seconds a task may be started before the time stated by the
+    # planer.  The concrete value will be calculated by the time-resolution / 2
+    # + given tolerance.
     task-begin-tolerance: 1
 
-    #If our new estimation diverts more than this value in seconds we send an update.
+    # If our new estimation diverts more than this value in seconds we send an
+    # update.
     update-threshold: 3
 
-  #Time estimations for tasks, given in real time seconds.
+  # Time estimations for tasks, given in real time seconds.
   time-estimations:
     explore-zone: 5
     fetch-product: 23
     deliver-product: 23
-    prepare-cs: 38 #Fetch a product from the shelf and put in into the machine.
+    # Fetch a product from the shelf and put in into the machine.
+    prepare-cs: 38
 
     read-mps-light: 10
 
     max-drive-duration: 30
 
-  #How long each machine type takes to finish it's working on a product.
+  # How long each machine type takes to finish it's working on a product.
   working-durations:
-    cap-station: 5 #20 In the moment all machines work as fast as they can.
-    ring-station: 5 #50
-    delivery-station: 5 #30
+    # At the moment, machines work at maximum speed. If production
+    # delays were introduced, the values would need to be adjusted.
+    cap-station: 5
+    ring-station: 5
+    delivery-station: 5
     base-station: 5
 
     broken: 45
 
-  #real-world-setup:
+  # real-world-setup:
   peer-address: 172.26.255.255
   peer-port: 4444
   cyan-port: 4441
@@ -92,11 +120,11 @@ asp-agent:
   exploration-time: 240
   production-end: 900
 
-  #which cap station shelf is filled (by us) with GREY and which with BLACK caps?
+  # which cap station shelf is filled (by us) with GREY and which with BLACK
+  # caps?
   cap-station:
     assigned-color:
       C-CS1: GREY
       C-CS2: BLACK
       M-CS1: GREY
       M-CS2: BLACK
-
