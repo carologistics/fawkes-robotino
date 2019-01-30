@@ -126,14 +126,14 @@ if [ -n "$DEFAULT_POS" ]; then
 			echo "Some value not found for $p-R$i"
 			exit 2
 		fi
-    wait_for_amcl $h
+		wait_for_amcl $h
 		$FAWKES_DIR/bin/ffset_pose -r $h -t 2.0 --  $x $y $z $ori
 	done
 else
 	if [[ -z $X ]] || [[ -z $Y ]]
 	then
-    usage
-    exit 1
+		usage
+		exit 1
 	fi
 	$FAWKES_DIR/bin/ffset_pose -r localhost:${PORT} $X $Y 0.0 $O0 $O1 $O2 $O3
 fi
