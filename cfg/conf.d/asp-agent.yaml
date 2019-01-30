@@ -8,8 +8,8 @@ asp-agent:
     program-path: ../src/agents/asp/
     program-files: [exploration.lp, facts.lp, goal.lp, machines.lp, orders.lp, products.lp, robots.lp, state.lp, taskDeliver.lp, taskFeedRS.lp, taskGetBase.lp, taskGetProduct.lp, taskGoto.lp, taskMountCap.lp, taskMountRing.lp, taskPrepareCS.lp]
 
-    #Look ahaed in real time seconds.
-    look-ahaed: 180
+    #Look ahead in real time seconds.
+    look-ahead: 180
     #How many real time seconds should be one time unit for the ASP solver.
     time-resolution: 10
     #Names of possible used robots.
