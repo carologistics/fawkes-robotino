@@ -516,7 +516,7 @@ AspPlanerThread::loadConfig(void)
 	MaxProducts = config->get_int(buffer);
 	std::strcpy(suffix, "max-quantity");
 	MaxQuantity = config->get_int(buffer);
-	std::strcpy(suffix, "look-ahaed");
+	std::strcpy(suffix, "look-ahead");
 	LookAhaed = config->get_int(buffer);
 	std::strcpy(suffix, "time-resolution");
 	TimeResolution = config->get_int(buffer);

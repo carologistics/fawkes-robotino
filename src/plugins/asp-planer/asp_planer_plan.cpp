@@ -227,8 +227,8 @@ assembleTemporaryPlan(std::unordered_map<std::string, std::vector<IntermediatePl
 
 			if ( next == end )
 			{
-				/* The task has only a begin time, i.e. it is started shortly before our lookahaed ends. So the end time
-				 * is out of the loohahaed. */
+				/* The task has only a begin time, i.e. it is started shortly before our lookahead ends. So the end time
+				 * is out of the loohahead. */
 
 				logger->log_info(logging_component, "Plan element: (%s, %s, %d, 0)", robotNameCStr, iter->Task.c_str(), iter->Begin);
 				robotTempPlan.emplace_back(BasicPlanElement{std::move(iter->Task), iter->Begin, 0});
