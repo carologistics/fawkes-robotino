@@ -1,5 +1,5 @@
 /***************************************************************************
- *  asp_planer_graph.cpp - ASP-based planer plugin interaction with the navgraph
+ *  asp_planner_graph.cpp - ASP-based planner plugin interaction with the navgraph
  *
  *  Created on Fri Dec 16 18:03:02 2016
  *  Copyright (C) 2016 by Björn Schäpers
@@ -19,7 +19,7 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include "asp_planer_thread.h"
+#include "asp_planner_thread.h"
 
 #include <core/threading/mutex_locker.h>
 

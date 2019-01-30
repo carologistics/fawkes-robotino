@@ -1,5 +1,5 @@
 /***************************************************************************
- *  asp_planer_externals.h - ASP-based planer externals
+ *  asp_planner_externals.h - ASP-based planner externals
  *
  *  Created on Fri Dec 16 17:00:02 2016
  *  Copyright (C) 2016 by Björn Schäpers

@@ -1,5 +1,5 @@
 /***************************************************************************
- *  asp_planer_clingo.cpp - ASP-based planer plugin clingo interface
+ *  asp_planner_clingo.cpp - ASP-based planner plugin clingo interface
  *
  *  Created on Tue Aug 23 13:57:02 2016
  *  Copyright (C) 2016 by Björn Schäpers
@@ -19,8 +19,8 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include "asp_planer_thread.h"
-#include "asp_planer_externals.h"
+#include "asp_planner_thread.h"
+#include "asp_planner_externals.h"
 
 #include <algorithm>
 #include <cctype>
@@ -56,7 +56,7 @@ AspPlanerThread::initClingo(void)
 		}));
 	clingo->set_ground_callback([this](auto... args) { this->groundFunctions(args...); return; });
 
-	constexpr auto infix = "planer/";
+	constexpr auto infix = "planner/";
 	const auto prefixLen = std::strlen(ConfigPrefix);
 	constexpr auto infixLen = std::strlen(infix);
 	char buffer[prefixLen + infixLen + 20];

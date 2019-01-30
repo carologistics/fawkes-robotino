@@ -1,6 +1,6 @@
 
 /***************************************************************************
- *  asp_planer_thread.h - ASP-based planer plugin
+ *  asp_planner_thread.h - ASP-based planner plugin
  *
  *  Created on Thu Aug 18 04:20:02 2016
  *  Copyright (C) 2016 by Björn Schäpers
@@ -32,7 +32,7 @@
 #include <plugins/asp/aspect/asp.h>
 #include <plugins/robot-memory/aspect/robot_memory_aspect.h>
 
-#include "asp_planer_types.h"
+#include "asp_planner_types.h"
 
 #include <atomic>
 #include <unordered_set>

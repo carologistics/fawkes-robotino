@@ -18,11 +18,11 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/boost.mk
 include $(FAWKES_BASEDIR)/src/plugins/asp/clingo.mk
 
-LIBS_asp_planer = fawkescore fawkesaspaspect fawkesaspects fawkesrobotmemory fawkesnavgraphaspect
-OBJS_asp_planer = asp_planer_plugin.o asp_planer_thread.o asp_planer_clingo.o asp_planer_plan.o\
-				  asp_planer_doc_and_config.o asp_planer_externals.o asp_planer_graph.o
+LIBS_asp_planner = fawkescore fawkesaspaspect fawkesaspects fawkesrobotmemory fawkesnavgraphaspect
+OBJS_asp_planner = asp_planner_plugin.o asp_planner_thread.o asp_planner_clingo.o asp_planner_plan.o\
+				  asp_planner_doc_and_config.o asp_planner_externals.o asp_planner_graph.o
 
-OBJS_all = $(OBJS_asp_planer)
+OBJS_all = $(OBJS_asp_planner)
 
 REQ_BOOST_LIBS = 
 HAVE_BOOST_LIBS = $(call boost-have-libs,$(REQ_BOOST_LIBS))
@@ -35,7 +35,7 @@ ifeq ($(HAVE_CPP14)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS),111)
   LDFLAGS += $(call boost-libs-ldflags,$(REQ_BOOST_LIBS)) \
 		 $(LDFLAGS_CLINGO)
 
-  PLUGINS_all = $(PLUGINDIR)/asp-planer.$(SOEXT)
+  PLUGINS_all = $(PLUGINDIR)/asp-planner.$(SOEXT)
 else
   ifneq ($(HAVE_CPP14),1)
 		WARN_TARGETS += warning_cpp14
@@ -52,12 +52,12 @@ ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
 .PHONY: warning_clingo warning_cpp11
 warning_clingo:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planer plugin$(TNORMAL) ($(CLINGO_ERROR))"
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planner plugin$(TNORMAL) ($(CLINGO_ERROR))"
 warning_cpp14:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planer plugin$(TNORMAL) (C++14 not supported)"
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planner plugin$(TNORMAL) (C++14 not supported)"
 
 $(WARN_TARGETS_BOOST): warning_boost_%:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planer plugin$(TNORMAL) (Boost library $* not found)"
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planner plugin$(TNORMAL) (Boost library $* not found)"
 endif
 
 include $(BUILDSYSDIR)/base.mk
