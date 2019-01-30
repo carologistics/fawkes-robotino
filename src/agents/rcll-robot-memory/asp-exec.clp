@@ -1,3 +1,8 @@
+;---------------------------------------------------------------------------
+;  Copyright  2016-2017  Bjoern Schaepers
+;  Licensed under GPLv2+ license
+;---------------------------------------------------------------------------
+
 (deftemplate planElement
   (slot index (type INTEGER))
   (slot task (type STRING))

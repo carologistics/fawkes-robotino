@@ -1,3 +1,7 @@
+;---------------------------------------------------------------------------
+;  Copyright  2016-2017  Bjoern Schaepers
+;  Licensed under GPLv2+ license
+;---------------------------------------------------------------------------
 
 (defrule asp-remove-exp-tactic
   "Remove every exp-tactic fact, so the exploration reasoning doesn't start."
