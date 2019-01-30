@@ -1,3 +1,8 @@
+;---------------------------------------------------------------------------
+;  Copyright  2016-2017  Bjoern Schaepers
+;  Licensed under GPLv2+ license
+;---------------------------------------------------------------------------
+
 (deffacts asp-planner-helper
   "Facts we need to use the old rules."
   (simulation-is-running) ;To disable the motor enable calls, we have no motor!
