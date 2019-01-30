@@ -180,11 +180,11 @@
     (path-load  rcll-robot-memory/asp-common.clp)
     (if
       (any-factp ((?conf confval))
-        (and (eq ?conf:path "/asp-agent/load-planer")
+        (and (eq ?conf:path "/asp-agent/load-planner")
              (eq ?conf:type BOOL) (eq ?conf:value TRUE)))
     then
       (printout t "Loading Planer rules" crlf)
-      (path-load  rcll-robot-memory/asp-planer.clp)
+      (path-load  rcll-robot-memory/asp-planner.clp)
     else
       (printout t "Loading ASP Executive rules" crlf)
       (path-load  rcll-robot-memory/asp-exec.clp)

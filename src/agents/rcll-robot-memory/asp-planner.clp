@@ -1,4 +1,4 @@
-(deffacts asp-planer-helper
+(deffacts asp-planner-helper
   "Facts we need to use the old rules."
   (simulation-is-running) ;To disable the motor enable calls, we have no motor!
 )
@@ -11,7 +11,7 @@
   (assert (asp-synced ?name ?ls-m ?ls-s))
   (bind ?doc (rm-structured-fact-to-bson ?ar))
   (bind ?query-for-sync-id (str-cat "{\"relation\": \"active-robot\", \"name\": \"" ?name "\"}"))
-  (robmem-upsert "robmem.planer" ?doc ?query-for-sync-id)
+  (robmem-upsert "robmem.planner" ?doc ?query-for-sync-id)
   (bson-destroy ?doc)
 )
 
@@ -29,7 +29,7 @@
   (retract ?old)
   (assert (asp-synced tc ?tc))
   (bind ?doc (rm-ordered-fact-to-bson ?new))
-  (robmem-upsert "robmem.planer" ?doc  "{\"relation\": \"team-color\"}")
+  (robmem-upsert "robmem.planner" ?doc  "{\"relation\": \"team-color\"}")
   (bson-destroy ?doc)
 )
 
@@ -44,7 +44,7 @@
   (bson-append ?doc "relation" game-time)
   (bson-append ?doc "time" ?t)
   (bson-append ?doc "phase" ?p)
-  (robmem-upsert "robmem.planer" ?doc "{\"relation\": \"game-time\"}")
+  (robmem-upsert "robmem.planner" ?doc "{\"relation\": \"game-time\"}")
   (bson-destroy ?doc)
 )
 
@@ -70,7 +70,7 @@
   (bind ?doc (bson-create))
   (bson-append ?doc "relation" zones)
   (bson-append-array ?doc "zones" $?zones)
-  (robmem-insert "robmem.planer" ?doc)
+  (robmem-insert "robmem.planner" ?doc)
   (bson-destroy ?doc)
 )
 
@@ -86,7 +86,7 @@
   (bson-append ?doc "color" ?color)
   (bson-append ?doc "cost" ?cost)
   (bson-append ?doc "machine" ?machine)
-  (robmem-insert "robmem.planer" ?doc)
+  (robmem-insert "robmem.planner" ?doc)
   (bson-destroy ?doc)
 )
 
@@ -106,7 +106,7 @@
   (bson-append ?doc "base" ?base)
   (bson-append ?doc "cap" ?cap)
   (bson-append-array ?doc "rings" $?rings)
-  (robmem-insert "robmem.planer" ?doc)
+  (robmem-insert "robmem.planner" ?doc)
   (bson-destroy ?doc)
 )
 
@@ -119,7 +119,7 @@
   (bson-append ?doc "relation" machine)
   (bson-append ?doc "machine" ?machine)
   (bson-append ?doc "state" ?state)
-  (robmem-upsert "robmem.planer" ?doc (str-cat "{\"relation\": \"machine\", \"machine\": \"" ?machine "\"}"))
+  (robmem-upsert "robmem.planner" ?doc (str-cat "{\"relation\": \"machine\", \"machine\": \"" ?machine "\"}"))
   (bson-destroy ?doc)
 )
 
