@@ -1,5 +1,5 @@
 /***************************************************************************
- *  asp_planer_externals.cpp - ASP-based planer externals
+ *  asp_planner_externals.cpp - ASP-based planner externals
  *
  *  Created on Fri Dec 16 17:00:02 2016
  *  Copyright (C) 2016 by Björn Schäpers
@@ -19,8 +19,8 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include "asp_planer_externals.h"
-#include "asp_planer_types.h"
+#include "asp_planner_externals.h"
+#include "asp_planner_types.h"
 
 #include <clingo.hh>
 

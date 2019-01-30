@@ -1,5 +1,5 @@
 /***************************************************************************
- *  asp_planer_doc_and_config.cpp - ASP-based planer plugin documentation
+ *  asp_planner_doc_and_config.cpp - ASP-based planner plugin documentation
  *
  *  Created on Fri Dec 16 10:47:02 2016
  *  Copyright (C) 2016 by Björn Schäpers
@@ -19,7 +19,7 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include "asp_planer_thread.h"
+#include "asp_planner_thread.h"
 
 #include <plugins/asp/aspect/clingo_access.h>
 
@@ -265,8 +265,8 @@
  * @return The value represented as string.
  */
 
-/** @class AspPlanerThread "asp_planer_thread.h"
- * The thread to start and control the ASP planer.
+/** @class AspPlanerThread "asp_planner_thread.h"
+ * The thread to start and control the ASP planner.
  *
  * @property AspPlanerThread::LoggingComponent
  * @brief The component name for the logging facility.
@@ -296,7 +296,7 @@
  * @brief How many seconds it will take a robot to get a product from a machine.
  *
  * @property AspPlanerThread::LookAhaed
- * @brief How many seconds the planer should look into the future.
+ * @brief How many seconds the planner should look into the future.
  *
  * @property AspPlanerThread::MaxDriveDuration
  * @brief An upper bound for the time (in seconds) the robot has to drive between two locations.
@@ -481,7 +481,7 @@
 void
 AspPlanerThread::loadConfig(void)
 {
-	constexpr auto infixPlaner = "planer/";
+	constexpr auto infixPlaner = "planner/";
 	constexpr auto infixTime = "time-estimations/";
 	constexpr auto infixCapStation = "cap-station/assigned-color/";
 	constexpr auto infixWorkingDuration = "working-durations/";
@@ -503,7 +503,7 @@ AspPlanerThread::loadConfig(void)
 	std::strcpy(suffix, "production-end");
 	ProductionEnd = ExplorationTime + config->get_int(buffer);
 
-	//The planer part.
+	//The planner part.
 	suffix = buffer + prefixLen + infixPlanerLen;
 	std::strcpy(buffer + prefixLen, infixPlaner);
 

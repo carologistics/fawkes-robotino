@@ -1,5 +1,5 @@
 /***************************************************************************
- *  asp_planer_types.h - ASP-based planer plugin
+ *  asp_planner_types.h - ASP-based planner plugin
  *
  *  Header for extra types, not in the thread.h for a better overview.
  *

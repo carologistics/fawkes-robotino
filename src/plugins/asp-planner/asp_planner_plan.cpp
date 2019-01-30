@@ -1,5 +1,5 @@
 /***************************************************************************
- *  asp_planer_plan.cpp - ASP-based planer plugin plan composition
+ *  asp_planner_plan.cpp - ASP-based planner plugin plan composition
  *
  *  Created on Mon Dec 05 19:32:02 2016
  *  Copyright (C) 2016 by Björn Schäpers
@@ -19,7 +19,7 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include "asp_planer_thread.h"
+#include "asp_planner_thread.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -272,7 +272,7 @@ AspPlanerThread::loopPlan(void)
 		return;
 	} //if ( !NewSymbols )
 
-	static const std::chrono::milliseconds planThreshold(config->get_int("/asp-agent/planer/plan-extraction-delay"));
+	static const std::chrono::milliseconds planThreshold(config->get_int("/asp-agent/planner/plan-extraction-delay"));
 	if ( Clock::now() - LastModel < planThreshold )
 	{
 		//The last model is fresh, maybe there is a new and better in the next loop, wait a short time.

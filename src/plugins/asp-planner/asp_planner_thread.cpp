@@ -1,6 +1,6 @@
 
 /***************************************************************************
- *  aps_planer_thread.cpp -  ASP-based planer main thread
+ *  asp_planner_thread.cpp -  ASP-based planner main thread
  *
  *  Created on Thu Aug 18 04:20:02 2016
  *  Copyright (C) 2016 by Björn Schäpers
@@ -19,8 +19,8 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include "asp_planer_thread.h"
-#include "asp_planer_externals.h"
+#include "asp_planner_thread.h"
+#include "asp_planner_externals.h"
 
 #include <core/threading/mutex_locker.h>
 
@@ -456,31 +456,31 @@ AspPlanerThread::init(void)
 	RobotMemoryCallbacks.reserve(8);
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-		mongo::Query(R"({"relation": "active-robot", "name": {$ne: "RefBox"}})"), "robmem.planer",
+		mongo::Query(R"({"relation": "active-robot", "name": {$ne: "RefBox"}})"), "robmem.planner",
 		&AspPlanerThread::beaconCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-		mongo::Query(R"({"relation": "game-time"})"), "robmem.planer",
+		mongo::Query(R"({"relation": "game-time"})"), "robmem.planner",
 		&AspPlanerThread::gameTimeCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-		mongo::Query(R"({"relation": "machine"})"), "robmem.planer",
+		mongo::Query(R"({"relation": "machine"})"), "robmem.planner",
 		&AspPlanerThread::machineCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-		mongo::Query(R"({"relation": "order"})"), "robmem.planer",
+		mongo::Query(R"({"relation": "order"})"), "robmem.planner",
 		&AspPlanerThread::orderCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-		mongo::Query(R"({"relation": "ring"})"), "robmem.planer",
+		mongo::Query(R"({"relation": "ring"})"), "robmem.planner",
 		&AspPlanerThread::ringColorCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-		mongo::Query(R"({"relation": "team-color"})"), "robmem.planer",
+		mongo::Query(R"({"relation": "team-color"})"), "robmem.planner",
 		&AspPlanerThread::teamColorCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-		mongo::Query(R"({"relation": "zones"})"), "robmem.planer",
+		mongo::Query(R"({"relation": "zones"})"), "robmem.planner",
 		&AspPlanerThread::zonesCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
@@ -512,7 +512,7 @@ AspPlanerThread::loop(void)
 	{
 		MutexLocker locker(&WorldMutex);
 		const auto now(Clock::now());
-		static const std::chrono::seconds timeOut(config->get_int(ConfigPrefix + std::string("planer/robot-timeout")));
+		static const std::chrono::seconds timeOut(config->get_int(ConfigPrefix + std::string("planner/robot-timeout")));
 		for ( auto& pair : Robots )
 		{
 			auto& info(pair.second);
