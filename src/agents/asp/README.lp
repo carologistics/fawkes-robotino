@@ -1,5 +1,9 @@
-% This file doesn't contain any program code, but just documentation on how to use the test script and what are the
-% files for.
+%---------------------------------------------------------------------------
+%  Copyright  2016-2017  Bjoern Schaepers
+%  Licensed under GPLv2+ license, cf. LICENSE file
+%---------------------------------------------------------------------------
+% This file doesn't contain any program code, but just documentation on how to
+% use the test script and what are the files for.
 %
 % TL;DR: Just run clingo <instance-file>.
 %

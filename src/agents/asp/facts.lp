@@ -1,3 +1,7 @@
+%---------------------------------------------------------------------------
+%  Copyright  2016-2017  Bjoern Schaepers
+%  Licensed under GPLv2+ license, cf. LICENSE file
+%---------------------------------------------------------------------------
 % Defined programs:
 % base                           The static facts.
 % setDriveDuration(l1, l2, d)    Sets driveDuration, see there for parameters.

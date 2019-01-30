@@ -1,3 +1,7 @@
+%---------------------------------------------------------------------------
+%  Copyright  2016-2017  Bjoern Schaepers
+%  Licensed under GPLv2+ license, cf. LICENSE file
+%---------------------------------------------------------------------------
 % In this file defined predicates:
 % location(z(Z))                 The location of a zone, only needed if we have to explore the zone.
 % points(expore(Z), P)           The points for exploring zone Z, basicly a huge value to ensure machines are explored,

@@ -1,3 +1,7 @@
+%---------------------------------------------------------------------------
+%  Copyright  2016-2017  Bjoern Schaepers
+%  Licensed under GPLv2+ license, cf. LICENSE file
+%---------------------------------------------------------------------------
 % In this file defined predicates:
 % begin(R, T, GT)                The execution of task T by robot R starts in GT.
 % doing(R, T, D, GT)             The remaining estimation for the execution of task T by robot R at GT is D.
