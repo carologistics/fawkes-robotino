@@ -90,4 +90,4 @@ fawkes/meta_plugins:
     - m-clips
     - clips-agent
     - asp
-    - asp-planer
+    - asp-planner
