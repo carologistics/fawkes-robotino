@@ -20,6 +20,7 @@ SUBDIRS	= clips-motor-switch \
 	  voltagelogger \
 	  ax12_gripper \
 	  arduino \
+		tag_vision \
       navgraph_broker \
 	  navgraph-generator-mps \
 	  conveyor_pose \
