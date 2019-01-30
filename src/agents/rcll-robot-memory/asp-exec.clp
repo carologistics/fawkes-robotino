@@ -59,7 +59,7 @@
 )
 
 (defrule asp-bind-task-begin-tolerance
-  (confval (path "/asp-agent/planer/time-resolution") (type UINT) (value ?res))
+  (confval (path "/asp-agent/planner/time-resolution") (type UINT) (value ?res))
   (confval (path "/asp-agent/exec/task-begin-tolerance") (type UINT) (value ?tol))
   =>
   (bind ?*ASP-TASK-BEGIN-TOLERANCE* (+ ?tol (round (/ ?res 2) )))
@@ -562,7 +562,7 @@
 )
 
 (defrule asp-task-success
-  "Inform the planer about success."
+  "Inform the planner about success."
   ?doing <- (asp-doing (index ?idx))
   ?state <- (state TASK-FINISHED)
   ?pE <- (planElement (index ?idx) (task ?task))
@@ -594,7 +594,7 @@
 )
 
 (defrule asp-task-failure
-  "Inform the planer about failure."
+  "Inform the planner about failure."
   ?doing <- (asp-doing (index ?idx))
   ?state <- (state TASK-FAILED)
   ?pE <- (planElement (index ?idx) (task ?task))
