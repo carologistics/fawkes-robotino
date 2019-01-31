@@ -30,7 +30,7 @@ LIBS_gazsim_puck_detection = fawkescore fawkesutils fawkesaspects fvutils \
 OBJS_gazsim_puck_detection = gazsim_puck_detection_plugin.o gazsim_puck_detection_thread.o
 
 OBJS_all    = $(OBJS_gazsim_puck_detection)
-PLUGINS_all = $(PLUGINDIR)/gazsim-puck-detection.so
+PLUGINS_all = $(PLUGINDIR)/gazsim-puck-detection.$(SOEXT)
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
   CFLAGS  += $(CFLAGS_TF)
