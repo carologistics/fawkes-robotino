@@ -25,7 +25,7 @@ OBJS_motor_led = motor_led_plugin.o motor_led_thread.o
 CFLAGS += $(CFLAGS_CPP11)
 
 OBJS_all    = $(OBJS_motor_led)
-PLUGINS_all = $(PLUGINDIR)/motor-led.so
+PLUGINS_all = $(PLUGINDIR)/motor-led.$(SOEXT)
 PLUGINS_build = $(PLUGINS_all)
 
 include $(BUILDSYSDIR)/base.mk
