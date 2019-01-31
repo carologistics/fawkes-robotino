@@ -33,7 +33,7 @@ LIBS_ax12_gripper = m fawkescore fawkesutils fawkesaspects fawkesblackboard \
 OBJS_ax12_gripper = $(patsubst %.cpp,%.o,$(subst $(SRCDIR)/,,$(wildcard $(SRCDIR)/*.cpp)))
 
 OBJS_all    = $(OBJS_ax12_gripper)
-PLUGINS_all = $(PLUGINDIR)/ax12_gripper.so
+PLUGINS_all = $(PLUGINDIR)/ax12_gripper.$(SOEXT)
 PLUGINS_build = $(PLUGINS_all)
 
 include $(BUILDSYSDIR)/base.mk
