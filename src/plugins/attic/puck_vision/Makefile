@@ -27,6 +27,8 @@ ifeq ($(CC),gcc)
   endif
 endif
 
+PRESUBDIRS = interfaces
+
 CFLAGS   += $(VISION_CFLAGS)
 LDFLAGS  += $(VISION_LDFLAGS)
 INCDIRS  += $(VISION_INCDIRS)
