@@ -29,6 +29,8 @@ LIBS_robotino_ampelvar = m fawkescore fawkesutils fawkesaspects \
                          SwitchInterface Position3DInterface
 OBJS_robotino_ampelvar = robotino_ampelvar_plugin.o pipeline_thread.o
 
+PRESUBDIRS = interfaces
+
 OBJS_all    = $(OBJS_robotino_ampelvar)
 PLUGINS_all = $(PLUGINDIR)/robotino-ampelvar.$(SOEXT)
 PLUGINS_build = $(PLUGINS_all)
