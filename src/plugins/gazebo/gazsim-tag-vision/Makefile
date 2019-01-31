@@ -28,7 +28,7 @@ LIBS_gazsim_tag_vision = fawkescore fawkesutils fawkesaspects fvutils \
 OBJS_gazsim_tag_vision = gazsim_tag_vision_plugin.o gazsim_tag_vision_thread.o
 
 OBJS_all    = $(OBJS_gazsim_tag_vision)
-PLUGINS_all = $(PLUGINDIR)/gazsim-tag-vision.so
+PLUGINS_all = $(PLUGINDIR)/gazsim-tag-vision.$(SOEXT)
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
   CFLAGS  += $(CFLAGS_TF)
