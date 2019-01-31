@@ -536,15 +536,16 @@ ArduinoComThread::handle_nodata(const boost::system::error_code &ec, bool expect
   // ec may be set if the timer is cancelled, i.e., updated
   if (! ec) {
     serial_.cancel();
-    logger->log_error(name(), "No data received for too long, re-establishing connection");
-    //        printf("No data received for too long, re-establishing connection\n");
-    logger->log_debug(name(), "BufSize: %zu\n", input_buffer_.size());
-    std::string s(boost::asio::buffer_cast<const char*>(input_buffer_.data()), input_buffer_.size());
-    logger->log_debug(name(), "Received: %zu  %s\n", s.size(), s.c_str());
-
-    if(expected && ++comm_problem_cnt_>3){ 
-      if(!reset_device()) given_up_ = true; // if something was expected but did not arrive, reset the device
-                                            // if reset is not working give up.
+    if(expected){
+      logger->log_error(name(), "No data received for too long, re-establishing connection");
+      //        printf("No data received for too long, re-establishing connection\n");
+      logger->log_debug(name(), "BufSize: %zu\n", input_buffer_.size());
+      std::string s(boost::asio::buffer_cast<const char*>(input_buffer_.data()), input_buffer_.size());
+      logger->log_debug(name(), "Received: %zu  %s\n", s.size(), s.c_str());
+      if(++comm_problem_cnt_>3){ 
+        if(!reset_device()) given_up_ = true; // if something was expected but did not arrive, reset the device
+                                              // if reset is not working give up.
+      }
     }
   } else {
     comm_problem_cnt_=0; // only consecutive problems with communication
