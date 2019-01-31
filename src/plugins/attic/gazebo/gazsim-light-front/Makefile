@@ -31,7 +31,7 @@ OBJS_gazsim_light_front = gazsim_light_front_plugin.o \
                           gazsim_light_front_thread.o
 
 OBJS_all    = $(OBJS_gazsim_light_front)
-PLUGINS_all = $(PLUGINDIR)/gazsim-light-front.so
+PLUGINS_all = $(PLUGINDIR)/gazsim-light-front.$(SOEXT)
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
   CFLAGS  += $(CFLAGS_TF) -mno-avx
