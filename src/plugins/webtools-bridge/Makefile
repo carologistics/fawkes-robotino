@@ -1,5 +1,5 @@
 #*****************************************************************************
-#               Makefile Build System for Fawkes: WebtooslBridge Plugin
+#               Makefile Build System for Fawkes: WebtoolsBridge Plugin
 #
 #   Created on Thu Sep 27 14:23:00 2012
 #   Copyright (C) 2011 by Tim Niemueller, AllemaniACs RoboCup Team
