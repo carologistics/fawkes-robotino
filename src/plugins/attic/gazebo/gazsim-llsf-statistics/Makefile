@@ -32,7 +32,7 @@ OBJS_gazsim_llsf_statistics = gazsim_llsf_statistics_plugin.o \
                               gazsim_llsf_statistics_thread.o
 
 OBJS_all    = $(OBJS_gazsim_llsf_statistics)
-PLUGINS_all = $(PLUGINDIR)/gazsim-llsf-statistics.so
+PLUGINS_all = $(PLUGINDIR)/gazsim-llsf-statistics.$(SOEXT)
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF)$(HAVE_MONGODB),1111)
   CFLAGS  += $(CFLAGS_TF) $(CFLAGS_MONGODB)
