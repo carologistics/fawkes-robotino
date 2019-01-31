@@ -29,7 +29,7 @@ LIBS_gazsim_llsfrbcomm = fawkescore fawkesutils fawkesaspects fawkes_protobuf_co
 OBJS_gazsim_llsfrbcomm = gazsim_llsfrbcomm_plugin.o gazsim_llsfrbcomm_thread.o
 
 OBJS_all    = $(OBJS_gazsim_llsfrbcomm)
-PLUGINS_all = $(PLUGINDIR)/gazsim-llsfrbcomm.so
+PLUGINS_all = $(PLUGINDIR)/gazsim-llsfrbcomm.$(SOEXT)
 
 REQ_BOOST_LIBS = system
 HAVE_BOOST_LIBS = $(call boost-have-libs,$(REQ_BOOST_LIBS))
