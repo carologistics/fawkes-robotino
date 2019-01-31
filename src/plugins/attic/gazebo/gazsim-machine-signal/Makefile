@@ -30,7 +30,7 @@ OBJS_gazsim_machine_signal = gazsim_machine_signal_plugin.o \
                              gazsim_machine_signal_thread.o
 
 OBJS_all    = $(OBJS_gazsim_machine_signal)
-PLUGINS_all = $(PLUGINDIR)/gazsim-machine-signal.so
+PLUGINS_all = $(PLUGINDIR)/gazsim-machine-signal.$(SOEXT)
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
   CFLAGS  += $(CFLAGS_TF)
