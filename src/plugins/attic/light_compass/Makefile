@@ -4,7 +4,7 @@
 #                            -------------------
 #   Created on Wed Feb 27 14:21:44 2013
 #   Copyright (C) 2013 by Florian Nolden, Carologistics RoboCup Team
-#                 2013 by  Tobias Neumann, Carologistics RoboCup Team
+#                 2013 by Tobias Neumann, Carologistics RoboCup Team
 #
 #*****************************************************************************
 #
