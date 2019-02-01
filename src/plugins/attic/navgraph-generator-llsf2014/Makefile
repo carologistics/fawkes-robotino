@@ -19,16 +19,18 @@ include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDCONFDIR)/navgraph/navgraph.mk
 
 LIBS_navgraph_generator_2014 = fawkescore fawkesutils fawkesaspects fawkesinterface \
-		fawkesblackboard fawkestf fawkesnavgraph \
-		Position3DInterface NavGraphGeneratorInterface
+                               fawkesblackboard fawkestf fawkesnavgraph \
+                               Position3DInterface NavGraphGeneratorInterface
 OBJS_navgraph_generator_2014 = navgraph_generator_llsf2014_plugin.o navgraph_generator_llsf2014_thread.o
+
 OBJS_all    = $(OBJS_navgraph_generator_2014)
+PLUGINS_all = $(PLUGINDIR)/navgraph-generator-2014.$(SOEXT)
 
 ifeq ($(HAVE_NAVGRAPH),1)
   CFLAGS  += $(CFLAGS_NAVGRAPH)
   LDFLAGS += $(LDFLAGS_NAVGRAPH)
 
-  PLUGINS_all = $(PLUGINDIR)/navgraph-generator-2014.$(SOEXT)
+  PLUGINS_build = $(PLUGINS_all)
 else
   # navgraph.mk warns already
 endif

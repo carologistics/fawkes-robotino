@@ -40,3 +40,7 @@
 /src/**/interfaces/*.h_ext
 /src/**/interfaces/*.tolua
 
+# Log and stats files
+*.log
+/buildstats.db
+

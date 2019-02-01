@@ -1,5 +1,5 @@
 #*****************************************************************************
-#        Makefile Build System for Fawkes : flitePromt
+#                Makefile Build System for Fawkes : position faker
 #                            -------------------
 #   Created on Sat Mar 15 13:54:37 2008
 #   Copyright (C) 2006-2008 by Tim Niemueller, AllemaniACs RoboCup Team
@@ -15,18 +15,19 @@
 
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
-#include $(BASEDIR)/src/plugins/flite/flite.mk
+include $(FAWKES_BASEDIR)/src/plugins/skiller/skiller.mk
 
 LIBS_3dpositionFaker = stdc++ fawkescore fawkesutils fawkesnetcomm fawkesblackboard \
-		fawkesinterface \
-		readline history $(if $(HAVE_TERMCAP),termcap) \
-		Position3DInterface
+                       fawkesinterface \
+                       readline history $(if $(HAVE_TERMCAP),termcap) \
+                       Position3DInterface
 OBJS_3dpositionFaker = 3dpositionFaker.o
 
-OBJS_all =	$(OBJS_3dpositionFaker)
+OBJS_all = $(OBJS_3dpositionFaker)
+BINS_all = $(BINDIR)/3dpositionFaker
 
-ifeq (1,1)
-  BINS_all =	$(BINDIR)/3dpositionFaker
+ifeq ($(HAVE_READLINE),1)
+  BINS_build = $(BINS_all)
   MANPAGES_all = $(MANDIR)/man1/3dpositionFaker.1
 else
   WARN_TARGETS += warning_readline

@@ -1,5 +1,5 @@
-  #*****************************************************************************
-#               Makefile Build System for Fawkes: WebtooslBridge Plugin
+#*****************************************************************************
+#               Makefile Build System for Fawkes: WebtoolsBridge Plugin
 #
 #   Created on Thu Sep 27 14:23:00 2012
 #   Copyright (C) 2011 by Tim Niemueller, AllemaniACs RoboCup Team
@@ -15,29 +15,23 @@
 
 BASEDIR = ../../..
 
-
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDSYSDIR)/clips.mk
 include $(BUILDSYSDIR)/boost.mk
 
 LIBS_webtools_bridge = fawkescore fawkesutils fawkesaspects fvutils \
-	       fawkestf fawkesinterface fawkesblackboard 
-OBJS_webtools_bridge =  webtools_bridge_plugin.o webtools_bridge_thread.o \
-						event_emitter.o callable.o serializer.o \
-						websocket_server.o web_session.o proxy_session.o bridge_manager.o \
-						blackboard_processor.o rosbridge_proxy_processor.o clips_processor.o \
-						subscription_capability_manager.o subscription_capability.o \
-					 	advertisment_capability_manager.o advertisment_capability.o	\
-					 	service_capability_manager.o 
-								
+                       fawkestf fawkesinterface fawkesblackboard 
+OBJS_webtools_bridge = webtools_bridge_plugin.o webtools_bridge_thread.o \
+                       event_emitter.o callable.o serializer.o \
+                       websocket_server.o web_session.o proxy_session.o bridge_manager.o \
+                       blackboard_processor.o rosbridge_proxy_processor.o clips_processor.o \
+                       subscription_capability_manager.o subscription_capability.o \
+                       advertisment_capability_manager.o advertisment_capability.o	\
+                       service_capability_manager.o 
 
-OBJS_gui = $(OBJS_webtools_bridge)
-
-OBJS_all = $(OBJS_webtools_bridge)
-
-# ifneq ($(PKGCONFIG),)
-#   HAVE_WEBSOCKETPP = $(if $(shell $(PKGCONFIG) --exists 'libdc1394-2'; echo $${?/1/}),1,0)
+OBJS_all    = $(OBJS_webtools_bridge)
+PLUGINS_all = $(PLUGINDIR)/webtools-bridge.$(SOEXT)
 
 ifneq ($(wildcard $(SYSROOT)/usr/include/websocketpp/version.hpp),)
 	HAVE_WEBSOCKETPP:=1
@@ -57,7 +51,7 @@ ifeq ($(HAVE_TF)$(HAVE_CLIPS)$(HAVE_CPP11)$(HAVE_WEBSOCKETPP)$(HAVE_RAPIDJSON),1
   CFLAGS  += $(CFLAGS_TF) $(CFLAGS_CLIPS) $(CFLAGS_CPP11) 
   LDFLAGS += $(LDFLAGS_TF) 
 
-  PLUGINS_gui = $(PLUGINDIR)/webtools-bridge.$(SOEXT)
+  PLUGINS_gui = $(PLUGINS_all)
 else
   ifneq ($(HAVE_CPP11),1)
     WARN_TARGETS += warning_cpp11
@@ -92,12 +86,4 @@ warning_rapidjson:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Cannot build webtools-bridge plugin$(TNORMAL) ($(RAPIDJSON_ERROR))"
 endif
 
-
-##===>Stupid temp..find another way to do it
-#$(TARGET).so: .objs_fawkes/$(TARGET).o
-
 include $(BUILDSYSDIR)/base.mk
-
-
-#$(TARGET).so: .objs_fawkes/$(TARGET).o
-	# g++ -shared -Wl,--export-dynamic .objs_fawkes/$(TARGET).o $(LDFLAGS) -o $(TARGET).so

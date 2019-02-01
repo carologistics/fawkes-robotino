@@ -24,13 +24,15 @@ INCDIRS  += $(VISION_INCDIRS)
 LIBDIRS  += $(VISION_LIBDIRS)
 LIBS     += $(VISION_LIBS)
 
-LIBS_omnivision_pucks = m \
-	fawkescore fawkesutils fawkesaspects fawkesinterface fawkesblackboard \
-	fawkesgeometry fvutils fvcams fvmodels fvclassifiers fvfilters \
-	Position3DInterface SwitchInterface fawkestf 
-OBJS_omnivision_pucks = omnivision_pucks_plugin.o pipeline_thread.o sensor_thread.o
+LIBS_omnivision_pucks = m fawkescore fawkesutils fawkesaspects fawkesinterface \
+                        fawkesblackboard fawkesgeometry fvutils fvcams \
+                        fvmodels fvclassifiers fvfilters fawkestf \
+                        Position3DInterface SwitchInterface
+OBJS_omnivision_pucks = omnivision_pucks_plugin.o \
+                        pipeline_thread.o sensor_thread.o
 
 OBJS_all    = $(OBJS_omnivision_pucks)
+PLUGINS_all = $(PLUGINDIR)/omnivision-pucks.$(SOEXT)
 
 ifeq ($(CC),gcc)
   ifneq ($(call gcc_atleast_version,4,6),1)
@@ -43,7 +45,7 @@ ifneq ($(GCC_TOO_OLD),1)
     CFLAGS  += $(CFLAGS_TF) $(CFLAGS_CPP11)
     LDFLAGS += $(LDFLAGS_TF)
 
-    PLUGINS_all = $(PLUGINDIR)/omnivision-pucks.$(SOEXT)
+    PLUGINS_build = $(PLUGINS_all)
   else
     WARN_TARGETS += warning_tf
   endif
@@ -61,6 +63,5 @@ warning_old_gcc:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting CLIPS Plugins$(TNORMAL) (GCC too old, have $(GCC_VERSION), required 4.6)"
 
 endif
-
 
 include $(BUILDSYSDIR)/base.mk
