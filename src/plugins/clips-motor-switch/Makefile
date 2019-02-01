@@ -23,7 +23,7 @@ LIBS_clips_motor_switch = \
 OBJS_clips_motor_switch = clips-motor-switch-plugin.o clips-motor-switch-thread.o
 
 OBJS_all    = $(OBJS_clips_motor_switch)
-PLUGINS_all = $(PLUGINDIR)/clips-motor-switch.so
+PLUGINS_all = $(PLUGINDIR)/clips-motor-switch.$(SOEXT)
 
 ifeq ($(HAVE_CLIPS),1)
   CFLAGS  += $(CFLAGS_CLIPS)
