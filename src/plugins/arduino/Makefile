@@ -26,16 +26,18 @@ PRESUBDIRS = interfaces
 #CFLAGS += -DUSE_TIMETRACKER
 
 LIBS_arduino = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-		fawkesblackboard fawkesinterface ArduinoInterface \
-                JoystickInterface
-		
+               fawkesblackboard fawkesinterface ArduinoInterface \
+               JoystickInterface
 OBJS_arduino = arduino_plugin.o com_thread.o tf_thread.o com_message.o
 
 CFLAGS += $(CFLAGS_TF)
 LDFLAGS += $(LDFLAGS_TF)
 
-ifeq ($(HAVE_CPP11),1)
+OBJS_all      = $(OBJS_arduino)
+PLUGINS_all   = $(PLUGINDIR)/arduino.$(SOEXT)
+PLUGINS_build = $(PLUGINS_all)
 
+ifeq ($(HAVE_CPP11),1)
   CFLAGS += $(CFLAGS_CPP11)
 else
   ifneq ($(HAVE_CPP11),1)
@@ -44,19 +46,13 @@ else
 endif
 
 ifeq ($(HAVE_TF),1)
-
   CFLAGS += $(CFLAGS_TF)
   LDFLAGS += $(LDFLAGS_TF)
-
 else
   ifneq ($(HAVE_TF),1)
     WARN_TARGETS += warning_tf
   endif
 endif
-
-
-OBJS_all = $(OBJS_arduino)
-PLUGINS_all = $(PLUGINDIR)/arduino.$(SOEXT)
 
 ifeq ($(OBJSSUBMAKE),1)
   ifneq ($(WARN_TARGETS),)

@@ -22,23 +22,25 @@ include $(BUILDSYSDIR)/ros.mk
 
 CFLAGS += $(CFLAGS_CPP11)
 
-LIBS_navgraph_broker = fawkescore fawkesutils fawkesaspects fawkesinterface fawkesnavgraphaspect \
-			fawkesnavgraph fawkesblackboard NavPathInterface  \
-			fawkes_protobuf_comm fawkesgossip fawkesgossipaspect navgraph_broker_msgs
+LIBS_navgraph_broker = fawkescore fawkesutils fawkesaspects fawkesinterface \
+                       fawkesnavgraphaspect fawkesnavgraph fawkesblackboard \
+                       fawkes_protobuf_comm fawkesgossip fawkesgossipaspect \
+                       navgraph_broker_msgs NavPathInterface
 OBJS_navgraph_broker = navgraph_broker_plugin.o navgraph_broker_thread.o
 
-OBJS_all = $(OBJS_navgraph_broker)
+OBJS_all    = $(OBJS_navgraph_broker)
+PLUGINS_all = $(PLUGINDIR)/navgraph-broker.$(SOEXT)
 
 REQ_BOOST_LIBS = system signals2
 HAVE_BOOST_LIBS = $(call boost-have-libs,$(REQ_BOOST_LIBS))
 
 ifeq ($(HAVE_CPP11)$(HAVE_PROTOBUF)$(HAVE_BOOST_LIBS),111)
   CFLAGS  += $(CFLAGS_PROTOBUF) $(CFLAGS_CPP11) \
-	     $(call boost-libs-cflags,$(REQ_BOOST_LIBS))
+             $(call boost-libs-cflags,$(REQ_BOOST_LIBS))
   LDFLAGS += $(LDFLAGS_PROTOBUF) \
-	     $(call boost-libs-ldflags,$(REQ_BOOST_LIBS))
+             $(call boost-libs-ldflags,$(REQ_BOOST_LIBS))
 
-  PLUGINS_all = $(PLUGINDIR)/navgraph-broker.$(SOEXT)
+  PLUGINS_build = $(PLUGINS_all)
 else
   ifneq ($(HAVE_CPP11),1)
     WARN_TARGETS += warning_cpp11

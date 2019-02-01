@@ -36,9 +36,8 @@ ros:
 
   navigator:
     dynreconf:
-      path: "/move_base/TebLocalPlannerROS"
-      x_vel_name: "max_vel_x"
-      y_vel_name: "max_vel_y"
+      path: "/safety_controller"
+      trans_vel_name: "max_vel_trans"
       rot_vel_name: "max_vel_theta"
 
     fixed_frame: "map"

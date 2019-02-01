@@ -22,13 +22,15 @@ include $(BUILDSYSDIR)/protobuf.mk
 # include $(BASEDIR)/fawkes/src/plugins/gazebo/protobuf.mk
 
 LIBS_gazsim_machine_signal = fawkescore fawkesutils fawkesaspects fvutils \
-	       fawkestf fawkesinterface fawkesblackboard llsf_msgs\
-	       Position3DInterface TransformInterface \
-	       SwitchInterface RobotinoLightInterface SignalHintInterface\
-	       fawkesgazeboaspect gazsim_msgs
-OBJS_gazsim_machine_signal = gazsim_machine_signal_plugin.o gazsim_machine_signal_thread.o
+                             fawkestf fawkesinterface fawkesblackboard llsf_msgs \
+                             Position3DInterface TransformInterface \
+                             SwitchInterface RobotinoLightInterface SignalHintInterface \
+                             fawkesgazeboaspect gazsim_msgs
+OBJS_gazsim_machine_signal = gazsim_machine_signal_plugin.o \
+                             gazsim_machine_signal_thread.o
 
 OBJS_all    = $(OBJS_gazsim_machine_signal)
+PLUGINS_all = $(PLUGINDIR)/gazsim-machine-signal.$(SOEXT)
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
   CFLAGS  += $(CFLAGS_TF)
@@ -36,7 +38,7 @@ ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
   LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) -lm $(call boost-libs-ldflags,system) -lboost_system
 
-  PLUGINS_all = $(PLUGINDIR)/gazsim-machine-signal.so
+  PLUGINS_build = $(PLUGINS_all)
 else
   ifneq ($(HAVE_GAZEBO),1)
     WARN_TARGETS += warning_gazebo

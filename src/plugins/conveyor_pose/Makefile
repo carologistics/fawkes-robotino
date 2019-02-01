@@ -26,23 +26,24 @@ include $(BUILDCONFDIR)/tf/tf.mk
 
 HAVE_BULLET_VERSION = $(if $(shell $(PKGCONFIG) --atleast-version=2.82 'bullet'; echo $${?/1/}),1,0)
 
-REQUIRED_PCL_LIBS = sample_consensus segmentation filters surface features
+REQUIRED_PCL_LIBS = filters kdtree recognition
 
-#The necessary libraries your plugin needs.
+PRESUBDIRS = interfaces
+
 LIBS_conveyor_pose = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
                      fawkestf fawkesblackboard fawkesinterface fawkespcl_utils fawkesrosaspect \
-                     SwitchInterface Position3DInterface LaserLineInterface
-#binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
-OBJS_conveyor_pose = conveyor_pose_plugin.o conveyor_pose_thread.o
+                     SwitchInterface ConveyorPoseInterface LaserLineInterface
+OBJS_conveyor_pose = conveyor_pose_plugin.o conveyor_pose_thread.o recognition_thread.o
 
-OBJS_all = $(OBJS_conveyor_pose)
+OBJS_all    = $(OBJS_conveyor_pose)
+PLUGINS_all = $(PLUGINDIR)/conveyor-pose.$(SOEXT)
 
 CFLAGS  += $(CFLAGS_TF) $(CFLAGS_PCL) $(CFLAGS_ROS) $(CFLAGS_conveyor_pose) $(call pcl-libs-cflags,$(REQUIRED_PCL_LIBS))
 LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_PCL) $(call pcl-libs-ldflags,$(REQUIRED_PCL_LIBS))
 
 ifeq ($(HAVE_ROS),1)
   ifeq ($(HAVE_BULLET_VERSION),1)
-    PLUGINS_all = $(PLUGINDIR)/conveyor-pose.$(SOEXT)
+    PLUGINS_build = $(PLUGINS_all)
   else
     WARN_TARGETS += warning_bullet
   endif

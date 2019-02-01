@@ -20,16 +20,16 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 include $(BASEDIR)/fawkes/src/plugins/gazebo/gazebo.mk
 include $(BUILDSYSDIR)/protobuf.mk
-# include $(BASEDIR)/fawkes/src/plugins/gazebo/protobuf.mk
 
 LIBS_gazsim_llsf_control = fawkescore fawkesutils fawkesaspects fvutils \
-	       fawkestf fawkesinterface fawkesblackboard llsf_msgs\
-	       Position3DInterface TransformInterface \
-	       SwitchInterface RobotinoLightInterface \
-	       fawkesgazeboaspect
+                           fawkestf fawkesinterface fawkesblackboard llsf_msgs\
+                           Position3DInterface TransformInterface \
+                           SwitchInterface RobotinoLightInterface \
+                           fawkesgazeboaspect
 OBJS_gazsim_llsf_control = gazsim_llsf_control_plugin.o gazsim_llsf_control_thread.o
 
 OBJS_all    = $(OBJS_gazsim_llsf_control)
+PLUGINS_all = $(PLUGINDIR)/gazsim-llsf-control.$(SOEXT)
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
   CFLAGS  += $(CFLAGS_TF)
@@ -37,7 +37,7 @@ ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
   LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) -lm $(call boost-libs-ldflags,system) -lboost_system
 
-  PLUGINS_all = $(PLUGINDIR)/gazsim-llsf-control.so
+  PLUGINS_build = $(PLUGINS_all)
 else
   ifneq ($(HAVE_GAZEBO),1)
     WARN_TARGETS += warning_gazebo

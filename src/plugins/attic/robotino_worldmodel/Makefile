@@ -22,16 +22,15 @@ include $(BUILDCONFDIR)/tf/tf.mk
 
 PRESUBDIRS = interfaces
 
-#The necessary libraries your plugin needs.
 LIBS_robotino_worldmodel = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-		fawkesblackboard fawkesinterface RobotinoWorldModelInterface
-#binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
-OBJS_robotino_worldmodel = robotino_worldmodel_plugin.o robotino_worldmodel_thread.o WmState.o
+                           fawkesblackboard fawkesinterface \
+                           RobotinoWorldModelInterface
+OBJS_robotino_worldmodel = robotino_worldmodel_plugin.o \
+                           robotino_worldmodel_thread.o WmState.o
 
-#names of the plugins you want to build
+OBJS_all    = $(OBJS_robotino_worldmodel)
 PLUGINS_all = $(PLUGINDIR)/robotino-worldmodel.$(SOEXT)
-
-OBJS_all = $(OBJS_robotino_worldmodel)
+PLUGINS_build = $(PLUGINS_all)
 
 ifeq ($(OBJSSUBMAKE),1)
   ifneq ($(WARN_TARGETS),)

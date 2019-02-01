@@ -21,21 +21,24 @@ include $(BASEDIR)/fawkes/src/plugins/gazebo/gazebo.mk
 include $(BUILDSYSDIR)/protobuf.mk
 
 LIBS_gazsim_navgraph_generator = fawkescore fawkesutils fawkesaspects fvutils \
-	       fawkestf fawkesinterface fawkesblackboard \
-	       Position3DInterface fawkesgazeboaspect \
-	       TransformInterface SwitchInterface \
-	       RobotinoLightInterface llsf_msgs
-OBJS_gazsim_navgraph_generator = gazsim_navgraph_generator_plugin.o gazsim_navgraph_generator_thread.o
+                                 fawkestf fawkesinterface fawkesblackboard \
+                                 Position3DInterface fawkesgazeboaspect \
+                                 TransformInterface SwitchInterface \
+                                 RobotinoLightInterface llsf_msgs
+OBJS_gazsim_navgraph_generator = gazsim_navgraph_generator_plugin.o \
+                                 gazsim_navgraph_generator_thread.o
 
 OBJS_all    = $(OBJS_gazsim_navgraph_generator)
+PLUGINS_all = $(PLUGINDIR)/gazsim-navgraph-generator.$(SOEXT)
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
   CFLAGS  += $(CFLAGS_TF)
   LDFLAGS += $(LDFLAGS_TF)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
-  LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) -lm $(call boost-lbis-ldflags,system) -lboost_system
+  LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) \
+             -lm $(call boost-lbis-ldflags,system) -lboost_system
 
-  PLUGINS_all = $(PLUGINDIR)/gazsim-navgraph-generator.$(SOEXT)
+  PLUGINS_build = $(PLUGINS_all)
 else
   WARN_TARGETS += warning_tf
 endif

@@ -4,6 +4,7 @@
  *
  *  Created: Thr 12. April 16:28:00 CEST 2016
  *  Copyright  2016 Tobias Neumann
+ *             2018 Victor Mataré
  *
  ****************************************************************************/
 
@@ -23,6 +24,7 @@
 #include <core/plugin.h>
 
 #include "conveyor_pose_thread.h"
+#include "recognition_thread.h"
 
 using namespace fawkes;
 
@@ -38,9 +40,13 @@ class ConveyorPosePlugin : public fawkes::Plugin
   ConveyorPosePlugin(Configuration *config)
     : Plugin(config)
   {
-    thread_list.push_back(new ConveyorPoseThread());
+    ConveyorPoseThread *pose_thread = new ConveyorPoseThread();
+    RecognitionThread *cg_thread = new RecognitionThread(pose_thread);
+    pose_thread->set_cg_thread(cg_thread);
+    thread_list.push_back(pose_thread);
+    thread_list.push_back(cg_thread);
   }
 };
 
-PLUGIN_DESCRIPTION("Plugin to detec the conveyor beld from a pointcloud")
+PLUGIN_DESCRIPTION("Detect the conveyor belt in a pointcloud")
 EXPORT_PLUGIN(ConveyorPosePlugin)
