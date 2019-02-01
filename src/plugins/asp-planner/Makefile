@@ -18,24 +18,25 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/boost.mk
 include $(FAWKES_BASEDIR)/src/plugins/asp/clingo.mk
 
-LIBS_asp_planner = fawkescore fawkesaspaspect fawkesaspects fawkesrobotmemory fawkesnavgraphaspect
-OBJS_asp_planner = asp_planner_plugin.o asp_planner_thread.o asp_planner_clingo.o asp_planner_plan.o\
-				  asp_planner_doc_and_config.o asp_planner_externals.o asp_planner_graph.o
+LIBS_asp_planner = fawkescore fawkesaspaspect fawkesaspects \
+                   fawkesrobotmemory fawkesnavgraphaspect
+OBJS_asp_planner = asp_planner_plugin.o asp_planner_thread.o \
+                   asp_planner_clingo.o asp_planner_plan.o \
+                   asp_planner_doc_and_config.o \
+                   asp_planner_externals.o asp_planner_graph.o
 
-OBJS_all = $(OBJS_asp_planner)
+OBJS_all    = $(OBJS_asp_planner)
+PLUGINS_all = $(PLUGINDIR)/asp-planner.$(SOEXT)
 
 REQ_BOOST_LIBS = 
 HAVE_BOOST_LIBS = $(call boost-have-libs,$(REQ_BOOST_LIBS))
 
 ifeq ($(HAVE_CPP14)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS),111)
-  CFLAGS  += $(CFLAGS_CPP14) \
-		 $(call boost-libs-cflags,$(REQ_BOOST_LIBS)) \
-		 $(CFLAGS_CLINGO)
-		 #-DNDEBUG
-  LDFLAGS += $(call boost-libs-ldflags,$(REQ_BOOST_LIBS)) \
-		 $(LDFLAGS_CLINGO)
-
-  PLUGINS_all = $(PLUGINDIR)/asp-planner.$(SOEXT)
+  CFLAGS  += $(CFLAGS_CPP14) $(CFLAGS_CLINGO) \
+             $(call boost-libs-cflags,$(REQ_BOOST_LIBS))
+  LDFLAGS += $(LDFLAGS_CLINGO) \
+             $(call boost-libs-ldflags,$(REQ_BOOST_LIBS))
+  PLUGINS_build = $(PLUGINS_all)
 else
   ifneq ($(HAVE_CPP14),1)
 		WARN_TARGETS += warning_cpp14
