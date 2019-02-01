@@ -23,13 +23,15 @@ include $(BUILDSYSDIR)/protobuf.mk
 # include $(BASEDIR)/fawkes/src/plugins/gazebo/protobuf.mk
 
 LIBS_gazsim_light_front = fawkescore fawkesutils fawkesaspects fvutils \
-	       fawkestf fawkesinterface fawkesblackboard llsf_msgs\
-	       Position3DInterface TransformInterface \
-	       SwitchInterface RobotinoLightInterface \
-	       fawkesgazeboaspect
-OBJS_gazsim_light_front = gazsim_light_front_plugin.o gazsim_light_front_thread.o
+                          fawkestf fawkesinterface fawkesblackboard llsf_msgs \
+                          Position3DInterface TransformInterface \
+                          SwitchInterface RobotinoLightInterface \
+                          fawkesgazeboaspect
+OBJS_gazsim_light_front = gazsim_light_front_plugin.o \
+                          gazsim_light_front_thread.o
 
 OBJS_all    = $(OBJS_gazsim_light_front)
+PLUGINS_all = $(PLUGINDIR)/gazsim-light-front.$(SOEXT)
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
   CFLAGS  += $(CFLAGS_TF) -mno-avx
@@ -37,7 +39,7 @@ ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
   LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) -lm $(call boost-libs-ldflags,system) -lboost_system
 
-  PLUGINS_all = $(PLUGINDIR)/gazsim-light-front.so
+  PLUGINS_build = $(PLUGINS_all)
 else
   ifneq ($(HAVE_GAZEBO),1)
     WARN_TARGETS += warning_gazebo

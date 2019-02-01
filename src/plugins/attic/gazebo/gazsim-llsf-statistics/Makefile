@@ -24,13 +24,15 @@ include $(BUILDSYSDIR)/protobuf.mk
 include $(BASEDIR)/fawkes/src/plugins/mongodb/mongodb.mk
 
 LIBS_gazsim_llsf_statistics = fawkescore fawkesutils fawkesaspects fvutils \
-	       fawkestf fawkesinterface fawkesblackboard llsf_msgs\
-	       Position3DInterface TransformInterface \
-	       SwitchInterface RobotinoLightInterface \
-	       fawkesgazeboaspect fawkesmongodbaspect
-OBJS_gazsim_llsf_statistics = gazsim_llsf_statistics_plugin.o gazsim_llsf_statistics_thread.o
+                              fawkestf fawkesinterface fawkesblackboard llsf_msgs\
+                              Position3DInterface TransformInterface \
+                              SwitchInterface RobotinoLightInterface \
+                              fawkesgazeboaspect fawkesmongodbaspect
+OBJS_gazsim_llsf_statistics = gazsim_llsf_statistics_plugin.o \
+                              gazsim_llsf_statistics_thread.o
 
 OBJS_all    = $(OBJS_gazsim_llsf_statistics)
+PLUGINS_all = $(PLUGINDIR)/gazsim-llsf-statistics.$(SOEXT)
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF)$(HAVE_MONGODB),1111)
   CFLAGS  += $(CFLAGS_TF) $(CFLAGS_MONGODB)
@@ -38,7 +40,7 @@ ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF)$(HAVE_MONGODB),1111)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
   LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) -lm $(call boost-libs-ldflags,system) -lboost_system
 
-  PLUGINS_all = $(PLUGINDIR)/gazsim-llsf-statistics.so
+  PLUGINS_build = $(PLUGINS_all)
 else
   ifneq ($(HAVE_GAZEBO),1)
     WARN_TARGETS += warning_gazebo

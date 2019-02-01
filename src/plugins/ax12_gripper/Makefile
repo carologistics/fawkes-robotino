@@ -20,23 +20,21 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
 PRESUBDIRS = interfaces
-#SUBDIRS = tool
 
 ifeq ($(HAVE_TF),1)
   CFLAGS  += $(CFLAGS_TF)
   LDFLAGS += $(LDFLAGS_TF)
 endif
 
-# Sub directory name that contain Robotis drivers
-#DRIVERS = robotis
-
 LIBS_ax12_gripper = m fawkescore fawkesutils fawkesaspects fawkesblackboard \
-	       fawkesinterface fawkesconfig AX12GripperInterface LedInterface JointInterface \
-               DynamixelServoInterface JoystickInterface
-OBJS_ax12_gripper = $(patsubst %.cpp,%.o,$(patsubst qa/%,,$(subst $(SRCDIR)/,,$(wildcard $(SRCDIR)/*.cpp $(foreach d,$(DRIVERS),$(SRCDIR)/$d/*.cpp )))))
+                    fawkesinterface fawkesconfig \
+                    AX12GripperInterface LedInterface JointInterface \
+                    DynamixelServoInterface JoystickInterface
+OBJS_ax12_gripper = $(patsubst %.cpp,%.o,$(subst $(SRCDIR)/,,$(wildcard $(SRCDIR)/*.cpp)))
 
-PLUGINS_all = $(PLUGINDIR)/ax12_gripper.so
-OBJS_all = $(OBJS_ax12_gripper)
+OBJS_all    = $(OBJS_ax12_gripper)
+PLUGINS_all = $(PLUGINDIR)/ax12_gripper.$(SOEXT)
+PLUGINS_build = $(PLUGINS_all)
 
 include $(BUILDSYSDIR)/base.mk
 

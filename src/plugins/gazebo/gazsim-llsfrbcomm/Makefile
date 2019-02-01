@@ -28,20 +28,21 @@ CFLAGS += $(CFLAGS_CPP11)
 LIBS_gazsim_llsfrbcomm = fawkescore fawkesutils fawkesaspects fawkes_protobuf_comm llsf_msgs fawkesgazeboaspect gazsim_msgs
 OBJS_gazsim_llsfrbcomm = gazsim_llsfrbcomm_plugin.o gazsim_llsfrbcomm_thread.o
 
-OBJS_all = $(OBJS_gazsim_llsfrbcomm)
+OBJS_all    = $(OBJS_gazsim_llsfrbcomm)
+PLUGINS_all = $(PLUGINDIR)/gazsim-llsfrbcomm.$(SOEXT)
 
 REQ_BOOST_LIBS = system
 HAVE_BOOST_LIBS = $(call boost-have-libs,$(REQ_BOOST_LIBS))
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_BOOST_LIBS),111)
   CFLAGS  += $(CFLAGS_PROTOBUF) \
-	     $(call boost-libs-cflags,$(REQ_BOOST_LIBS)) \
-	     $(CFLAGS_GAZEBO)
+             $(call boost-libs-cflags,$(REQ_BOOST_LIBS)) \
+             $(CFLAGS_GAZEBO)
   LDFLAGS += $(LDFLAGS_PROTOBUF) \
-	     $(call boost-libs-ldflags,$(REQ_BOOST_LIBS)) \
-	     $(LDFLAGS_GAZEBO)
+             $(call boost-libs-ldflags,$(REQ_BOOST_LIBS)) \
+             $(LDFLAGS_GAZEBO)
 
-  PLUGINS_all = $(PLUGINDIR)/gazsim-llsfrbcomm.so
+  PLUGINS_build = $(PLUGINS_all)
 else
   ifneq ($(HAVE_GAZEBO),1)
     WARN_TARGETS += warning_gazebo

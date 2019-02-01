@@ -35,14 +35,17 @@ LIBS_conveyor_plane = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
 #binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
 OBJS_conveyor_plane = conveyor_plane_plugin.o conveyor_plane_thread.o
 
-OBJS_all = $(OBJS_conveyor_plane)
+OBJS_all    = $(OBJS_conveyor_plane)
+PLUGINS_all = $(PLUGINDIR)/conveyor-plane.$(SOEXT)
 
-CFLAGS  += $(CFLAGS_TF) $(CFLAGS_PCL) $(CFLAGS_ROS) $(CFLAGS_conveyor_plane) $(call pcl-libs-cflags,$(REQUIRED_PCL_LIBS))
-LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_PCL) $(call pcl-libs-ldflags,$(REQUIRED_PCL_LIBS))
+CFLAGS  += $(CFLAGS_TF) $(CFLAGS_PCL) $(CFLAGS_ROS) \
+           $(call pcl-libs-cflags,$(REQUIRED_PCL_LIBS))
+LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_PCL) $(LDFLAGS_ROS) \
+           $(call pcl-libs-ldflags,$(REQUIRED_PCL_LIBS))
 
-ifeq ($(HAVE_ROS),1)
+ifeq ($(HAVE_ROS)$(HAVE_TF)$(HAVE_PCL)$(call pcl-have-libs,$(REQUIRED_PCL_LIBS)),1111)
   ifeq ($(HAVE_BULLET_VERSION),1)
-    PLUGINS_all = $(PLUGINDIR)/conveyor-plane.$(SOEXT)
+    PLUGINS_build = $(PLUGINS_all)
   else
     WARN_TARGETS += warning_bullet
   endif

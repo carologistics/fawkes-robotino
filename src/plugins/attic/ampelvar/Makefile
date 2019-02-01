@@ -23,13 +23,14 @@ INCDIRS  += $(VISION_INCDIRS)
 LIBDIRS  += $(VISION_LIBDIRS)
 LIBS     += $(VISION_LIBS)
 
-LIBS_robotino_ampelvar = m \
-	fawkescore fawkesutils fawkesaspects fawkesinterface fawkesblackboard \
-	fawkesgeometry fvutils fvcams fvmodels fvclassifiers \
-	SwitchInterface Position3DInterface
+LIBS_robotino_ampelvar = m fawkescore fawkesutils fawkesaspects \
+                         fawkesinterface fawkesblackboard \
+                         fawkesgeometry fvutils fvcams fvmodels fvclassifiers \
+                         SwitchInterface Position3DInterface
 OBJS_robotino_ampelvar = robotino_ampelvar_plugin.o pipeline_thread.o
 
 OBJS_all    = $(OBJS_robotino_ampelvar)
 PLUGINS_all = $(PLUGINDIR)/robotino-ampelvar.$(SOEXT)
+PLUGINS_build = $(PLUGINS_all)
 
 include $(BUILDSYSDIR)/base.mk
