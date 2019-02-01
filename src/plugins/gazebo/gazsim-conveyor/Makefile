@@ -23,7 +23,7 @@ include $(BUILDCONFDIR)/tf/tf.mk
 LIBS_gazsim_conveyor = m fawkescore fawkesutils fawkesaspects fawkesblackboard \
                        fawkesinterface fawkesconfig gazsim_msgs \
                        fawkesgazeboaspect \
-                       llsf_msgs fawkestf
+                       llsf_msgs fawkestf ConveyorPoseInterface
 OBJS_gazsim_conveyor = gazsim_conveyor_plugin.o gazsim_conveyor_thread.o
 
 OBJS_all    = $(OBJS_gazsim_conveyor)

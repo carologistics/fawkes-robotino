@@ -26,24 +26,23 @@ include $(BUILDCONFDIR)/tf/tf.mk
 
 HAVE_BULLET_VERSION = $(if $(shell $(PKGCONFIG) --atleast-version=2.82 'bullet'; echo $${?/1/}),1,0)
 
-REQUIRED_PCL_LIBS = filters kdtree recognition
+REQUIRED_PCL_LIBS = sample_consensus segmentation filters surface features
 
-PRESUBDIRS = interfaces
-
-LIBS_conveyor_pose = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
+#The necessary libraries your plugin needs.
+LIBS_conveyor_plane = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
                      fawkestf fawkesblackboard fawkesinterface fawkespcl_utils fawkesrosaspect \
-                     SwitchInterface ConveyorPoseInterface LaserLineInterface
-OBJS_conveyor_pose = conveyor_pose_plugin.o conveyor_pose_thread.o recognition_thread.o
+                     SwitchInterface Position3DInterface LaserLineInterface
+#binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
+OBJS_conveyor_plane = conveyor_plane_plugin.o conveyor_plane_thread.o
 
-OBJS_all    = $(OBJS_conveyor_pose)
-PLUGINS_all = $(PLUGINDIR)/conveyor-pose.$(SOEXT)
+OBJS_all = $(OBJS_conveyor_plane)
 
-CFLAGS  += $(CFLAGS_TF) $(CFLAGS_PCL) $(CFLAGS_ROS) $(CFLAGS_conveyor_pose) $(call pcl-libs-cflags,$(REQUIRED_PCL_LIBS))
+CFLAGS  += $(CFLAGS_TF) $(CFLAGS_PCL) $(CFLAGS_ROS) $(CFLAGS_conveyor_plane) $(call pcl-libs-cflags,$(REQUIRED_PCL_LIBS))
 LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_PCL) $(call pcl-libs-ldflags,$(REQUIRED_PCL_LIBS))
 
 ifeq ($(HAVE_ROS),1)
   ifeq ($(HAVE_BULLET_VERSION),1)
-    PLUGINS_build = $(PLUGINS_all)
+    PLUGINS_all = $(PLUGINDIR)/conveyor-plane.$(SOEXT)
   else
     WARN_TARGETS += warning_bullet
   endif
@@ -57,9 +56,9 @@ all: $(WARN_TARGETS)
   endif
 .PHONY: warning_bullet warning_ros
 warning_bullet:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting conveyor_pose Plugin$(TNORMAL) (bullet version < 2.82)"
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting conveyor_plane Plugin$(TNORMAL) (bullet version < 2.82)"
 warning_ros:
-	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting conveyor_pose Plugin$(TNORMAL) (ROS not found)"
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting conveyor_plane Plugin$(TNORMAL) (ROS not found)"
 endif
 
 include $(BUILDSYSDIR)/base.mk
