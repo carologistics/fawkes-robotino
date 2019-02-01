@@ -23,13 +23,17 @@ INCDIRS  += $(VISION_INCDIRS)
 LIBDIRS  += $(VISION_LIBDIRS)
 LIBS     += $(VISION_LIBS)
 
-LIBS_robotino_machinedetection = m \
-	fawkescore fawkesutils fawkesaspects fawkesinterface fawkesblackboard \
-	fawkesgeometry fvutils fvcams fvmodels fvclassifiers fvwidgets fvfilters\
-	SwitchInterface Position3DInterface
-OBJS_robotino_machinedetection = machinedetection_plugin.o machinedetection_thread.o Blob.o BlobFarm.o
+LIBS_robotino_machinedetection = m fawkescore fawkesutils fawkesaspects \
+                                 fawkesinterface fawkesblackboard \
+                                 fawkesgeometry fvutils fvcams fvmodels \
+                                 fvclassifiers fvwidgets fvfilters \
+                                 SwitchInterface Position3DInterface
+OBJS_robotino_machinedetection = machinedetection_plugin.o \
+                                 machinedetection_thread.o \
+                                 Blob.o BlobFarm.o
 
 OBJS_all    = $(OBJS_robotino_machinedetection)
 PLUGINS_all = $(PLUGINDIR)/robotino-machinedetection.$(SOEXT)
+PLUGINS_build = $(PLUGINS_all)
 
 include $(BUILDSYSDIR)/base.mk

@@ -21,18 +21,22 @@ include $(BUILDSYSDIR)/protobuf.mk
 
 
 LIBS_gazsim_gripper = m fawkescore fawkesutils fawkesaspects fawkesblackboard \
-		fawkesinterface fawkesconfig AX12GripperInterface LedInterface \
-	       	JointInterface DynamixelServoInterface gazsim_msgs \
-		fawkesgazeboaspect ArduinoInterface
+                      fawkesinterface fawkesconfig AX12GripperInterface LedInterface \
+                      JointInterface DynamixelServoInterface gazsim_msgs \
+                      fawkesgazeboaspect ArduinoInterface
 OBJS_gazsim_gripper = gazsim_gripper_plugin.o gazsim_gripper_thread.o
+
+OBJS_all    = $(OBJS_gazsim_gripper)
+PLUGINS_all = $(PLUGINDIR)/gazsim-gripper.$(SOEXT)
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF),11)
   CFLAGS  += $(CFLAGS_TF)
   LDFLAGS += $(LDFLAGS_TF)
   CFLAGS  += $(CFLAGS_GAZEBO) $(CFLAGS_PROTOBUF)
-  LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) -lm $(call boost-libs-ldflags,system) -lboost_system
+  LDFLAGS += $(LDFLAGS_GAZEBO) $(LDFLAGS_PROTOBUF) \
+             -lm $(call boost-libs-ldflags,system) -lboost_system
 
-  PLUGINS_all = $(PLUGINDIR)/gazsim-gripper.so
+  PLUGINS_build = $(PLUGINS_all)
 else
   ifneq ($(HAVE_GAZEBO),1)
     WARN_TARGETS += warning_gazebo
@@ -52,8 +56,6 @@ warning_protobuf:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting gazsim-gripper Plugin$(TNORMAL) " \
 		"(protobuf[-devel] not installed)"
 endif
-
-OBJS_all = $(OBJS_gazsim_gripper)
 
 include $(BUILDSYSDIR)/base.mk
 

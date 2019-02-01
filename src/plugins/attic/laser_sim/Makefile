@@ -13,23 +13,19 @@
 #   (at your option) any later version.
 #
 #*****************************************************************************
-# JUST REPLACE ALL OCCURENCES OF lasersim AND REPLACE THEM ACCORDING TO YOUR NEEDS
-#
-#
 
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
-#The necessary libraries your plugin needs.
+
 LIBS_lasersim = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-		fawkesblackboard fawkesinterface MotorInterface Laser360Interface Position3DInterface
-#binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
+                fawkesblackboard fawkesinterface \
+                MotorInterface Laser360Interface Position3DInterface
 OBJS_lasersim = laser_sim_plugin.o laser_sim_thread.o 
 
-#names of the plugins you want to build
+OBJS_all    = $(OBJS_lasersim)
 PLUGINS_all = $(PLUGINDIR)/lasersim.$(SOEXT)
-
-OBJS_all = $(OBJS_lasersim)
+PLUGINS_build = $(PLUGINS_all)
 
 ifeq ($(OBJSSUBMAKE),1)
   ifneq ($(WARN_TARGETS),)

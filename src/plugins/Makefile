@@ -24,6 +24,7 @@ SUBDIRS	= clips-motor-switch \
       navgraph_broker \
 	  navgraph-generator-mps \
 	  conveyor_pose \
+	  conveyor_plane \
 	  gazebo \
 	  marker_writer \
 	  motor-led \

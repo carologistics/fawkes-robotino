@@ -3,7 +3,8 @@
 #         Makefile Build System for Fawkes: Robotino Front Light Plugin
 #                            -------------------
 #   Created on Wed May 23 18:31:45 2012
-#   Copyright (C) 2013 by Tobias Neumann & Florian Nolden, Carologistics RoboCup Team
+#   Copyright (C) 2013 Tobias Neumann, Carologistics RoboCup Team
+#                 2013 Florian Nolden, Carologistics RoboCup Team
 #
 #*****************************************************************************
 #
@@ -13,7 +14,6 @@
 #   (at your option) any later version.
 #
 #*****************************************************************************
-#
 
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
@@ -21,29 +21,26 @@ include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDSYSDIR)/fvconf.mk
 include $(BUILDSYSDIR)/boost.mk
 
-ifeq ($(HAVE_TF),1)
-  CFLAGS  += $(CFLAGS_TF)
-  LDFLAGS += $(LDFLAGS_TF)
-  
 CFLAGS   += $(VISION_CFLAGS)
 LDFLAGS  += $(VISION_LDFLAGS)
 INCDIRS  += $(VISION_INCDIRS)
 LIBDIRS  += $(VISION_LIBDIRS)
 LIBS     += $(VISION_LIBS)
 
-#The necessary libraries your plugin needs.
 LIBS_light_front = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
-		fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
-		fvclassifiers fvfilters TransformInterface \
-		fawkestf RobotinoLightInterface Position3DInterface SwitchInterface
-#binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
+                   fawkesblackboard fawkesinterface fvutils fvcams fvmodels \
+                   fvclassifiers fvfilters fawkestf TransformInterface \
+                   RobotinoLightInterface Position3DInterface SwitchInterface
 OBJS_light_front = light_front.o light_front_thread.o
 
-#names of the plugins you want to build
+OBJS_all    = $(OBJS_light_front)
 PLUGINS_all = $(PLUGINDIR)/light_front.$(SOEXT)
 
-OBJS_all = $(OBJS_light_front)
+ifeq ($(HAVE_TF),1)
+  CFLAGS  += $(CFLAGS_TF)
+  LDFLAGS += $(LDFLAGS_TF)
 
+  PLUGINS_build = $(PLUGINS_all)
 else
   WARN_TARGETS += warning_tf
 endif

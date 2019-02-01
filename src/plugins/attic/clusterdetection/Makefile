@@ -1,4 +1,3 @@
-
 #*****************************************************************************
 #         Makefile Build System for Fawkes: laserclusterdetector plugin
 #                            -------------------
@@ -13,36 +12,28 @@
 #   (at your option) any later version.
 #
 #*****************************************************************************
-# JUST REPLACE ALL OCCURENCES OF laserclusterdetector AND REPLACE THEM ACCORDING TO YOUR NEEDS
-#
-#
 
 BASEDIR = ../../..
 
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
+LIBS_laserclusterdetector = m fawkescore fawkesutils fawkestf fawkesaspects \
+                            fawkesbaseapp fawkesblackboard fawkesinterface \
+                            Laser360Interface TransformInterface Position3DInterface
+OBJS_laserclusterdetector = laser_cluster_detector_plugin.o laser_cluster_detector_thread.o
+
+OBJS_all    = $(OBJS_laserclusterdetector)
+PLUGINS_all = $(PLUGINDIR)/laserclusterdetector.$(SOEXT)
+
 ifeq ($(HAVE_TF),1)
   CFLAGS  += $(CFLAGS_TF)
   LDFLAGS += $(LDFLAGS_TF)
-  
-#The necessary libraries your plugin needs.
-LIBS_laserclusterdetector = m fawkescore fawkesutils fawkestf\
-		fawkesaspects fawkesbaseapp fawkesblackboard fawkesinterface\
-		Laser360Interface TransformInterface Position3DInterface\
-#binaries that are needed for the given plugin (all your cpp-files, but with an o-ending :-) ).
-OBJS_laserclusterdetector = laser_cluster_detector_plugin.o laser_cluster_detector_thread.o
 
-#names of the plugins you want to build
-PLUGINS_all = $(PLUGINDIR)/laserclusterdetector.$(SOEXT)
-
-OBJS_all = $(OBJS_laserclusterdetector)
-
+  PLUGINS_build = $(PLUGINS_all)
 else
   WARN_TARGETS += warning_tf
 endif
-
-
 
 ifeq ($(OBJSSUBMAKE),1)
   ifneq ($(WARN_TARGETS),)

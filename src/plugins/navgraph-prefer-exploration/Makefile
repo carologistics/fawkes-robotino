@@ -20,16 +20,18 @@ include $(BUILDCONFDIR)/tf/tf.mk
 include $(BUILDCONFDIR)/navgraph/navgraph.mk
 
 LIBS_navgraph_prefer_exploration = fawkescore fawkesutils fawkesaspects fawkesinterface \
-		fawkesblackboard fawkestf fawkesnavgraph fawkesnavgraphaspect
+                                   fawkesblackboard fawkestf fawkesnavgraph \
+                                   fawkesnavgraphaspect
 OBJS_navgraph_prefer_exploration = navgraph_prefer_exploration_plugin.o \
-				navgraph_prefer_exploration_thread.o
+                                   navgraph_prefer_exploration_thread.o
 OBJS_all    = $(OBJS_navgraph_prefer_exploration)
+PLUGINS_all = $(PLUGINDIR)/navgraph-prefer-exploration.$(SOEXT)
 
 ifeq ($(HAVE_NAVGRAPH),1)
   CFLAGS  += $(CFLAGS_NAVGRAPH)
   LDFLAGS += $(LDFLAGS_NAVGRAPH)
 
-  PLUGINS_all = $(PLUGINDIR)/navgraph-prefer-exploration.$(SOEXT)
+  PLUGINS_build = $(PLUGINS_all)
 else
   # navgraph.mk warns already
 endif
