@@ -29,7 +29,7 @@ LIBS_gazsim_llsf_control = fawkescore fawkesutils fawkesaspects fvutils \
 OBJS_gazsim_llsf_control = gazsim_llsf_control_plugin.o gazsim_llsf_control_thread.o
 
 OBJS_all    = $(OBJS_gazsim_llsf_control)
-PLUGINS_all = $(PLUGINDIR)/gazsim-llsf-control.so
+PLUGINS_all = $(PLUGINDIR)/gazsim-llsf-control.$(SOEXT)
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF)$(HAVE_TF),111)
   CFLAGS  += $(CFLAGS_TF)
