@@ -27,7 +27,7 @@ LIBS_gazsim_gripper = m fawkescore fawkesutils fawkesaspects fawkesblackboard \
 OBJS_gazsim_gripper = gazsim_gripper_plugin.o gazsim_gripper_thread.o
 
 OBJS_all    = $(OBJS_gazsim_gripper)
-PLUGINS_all = $(PLUGINDIR)/gazsim-gripper.so
+PLUGINS_all = $(PLUGINDIR)/gazsim-gripper.$(SOEXT)
 
 ifeq ($(HAVE_GAZEBO)$(HAVE_PROTOBUF),11)
   CFLAGS  += $(CFLAGS_TF)
