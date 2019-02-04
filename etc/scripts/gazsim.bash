@@ -43,7 +43,7 @@ OPTIONS:
                       optionally, "--start-game=PHASE" may be given
                       to set the phase explicitly)
                      Typically requires at least --team-cyan.
-   --asp             Run with ASP agent and global planer
+   --asp             Run with ASP agent and global planner
 EOF
 }
 

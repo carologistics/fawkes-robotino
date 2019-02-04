@@ -192,7 +192,7 @@ case $COMMAND in
 	ulimit -c unlimited
 	export ROS_MASTER_URI=http://localhost:$PORT
 	robotino_plugins=asp-planner-sim-2016$SKIP_EXPLORATION
-	$GDB $FAWKES_BIN/fawkes -c $CONF/asp-planer.yaml -p $robotino_plugins
+	$GDB $FAWKES_BIN/fawkes -c $CONF/asp-planner.yaml -p $robotino_plugins
 	if [ -n "$GDB" ]; then
 		echo Fawkes exited, press return to close shell
 		read
