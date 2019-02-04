@@ -1,23 +1,19 @@
 %YAML 1.2
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
-#include main config file
 include:
   - !ignore-missing conf.d/
-  #concrete configuration in an other file because I could not override config values when using a single file
   - gazsim-configurations/gazsim-config-override.yaml
-  - !host-specific gazsim-configurations/asp-planner/host_asp_planer.yaml
+  - !host-specific gazsim-configurations/asp-planner/host_asp_planner.yaml
 ---
-
 fawkes:
-
   # Main app relevant settings
   mainapp:
     loggers: console;file/debug:debug8.log
 
     net:
       tcp_port: !tcp-port 1928
-      service_name: "Fawkes on ASP global planer"
+      service_name: "Fawkes on ASP global planner"
 
 plugins/static-transforms:
   transforms:

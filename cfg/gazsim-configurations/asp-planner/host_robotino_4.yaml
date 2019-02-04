@@ -31,7 +31,6 @@ plugins/light_front:
   shm_image_id: "robotino4/light_front"
   
 asp-agent:
-  team-name: "CaroASP"
   robot-name: Tuvok
   robot-number: 4
 
@@ -44,21 +43,10 @@ asp-agent:
   magenta-send-port: 4484
 
 clips-agent:
-  agent: rcll-robot-memory/rcll2016
   rcll2016:
-    #agent-role:
-    use-asp: false
-    
-    exploration:      
+    exploration:
       row: HIGH
 
-    dynamic-role-change/enabled: true
-    
-    play-exploration-without-refbox: false
-    # uncomment following line ONLY if you are playing without refbox
-    # unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]
-
-    team-name: Carologistics
     robot-name: R-4
     robot-number: 4
 
@@ -69,7 +57,6 @@ clips-agent:
     magenta-recv-port: 4464
     cyan-send-port: 4474
     magenta-send-port: 4484
-
         
 plugins/tag_vision:
   shm_image_id: "tag_vision_robotino_4"
