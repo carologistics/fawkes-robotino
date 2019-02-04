@@ -1,0 +1,20 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/asp-planner
+---
+asp-agent:
+  team-name: "CaroASP"
+
+clips-agent:
+  agent: rcll-robot-memory/rcll2016
+  rcll2016:
+    team-name: Carologistics
+    use-asp: true
+    load-reasoner: false
+
+    dynamic-role-change/enabled: true
+    
+    play-exploration-without-refbox: false
+    # uncomment following line ONLY if you are playing without refbox
+    # unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]
