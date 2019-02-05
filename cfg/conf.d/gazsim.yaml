@@ -6,14 +6,15 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
 gazsim:
   proto-dirs: ["@BASEDIR@/src/libs/llsf_msgs"]
   world-name: "LLSF"
-  #default robot name
+  # default robot name
   robot-name: "carologistics-robotino"
 
   topics:
     gps: "~/gazsim/gps/"
     laser: "~/carologistics-robotino-3/sick_laser/link/laser/scan"
     gyro: "~/RobotinoSim/Gyro/"
-    infrared-puck-sensor: "~/carologistics-robotino-3/infrared_sensor/link/infrared_puck_sensor/scan"
+    infrared-puck-sensor: >
+      ~/carologistics-robotino-3/infrared_sensor/link/infrared_puck_sensor/scan
     gripper-laser-left: "~/RobotinoSim/GripperLaserSensor/Left/"
     gripper-laser-right: "~/RobotinoSim/GripperLaserSensor/Right/"
     motor-move: "~/RobotinoSim/MotorMove/"
@@ -32,7 +33,7 @@ gazsim:
     conveyor: "~/RobotinoSim/SetConveyor/"
     gripper-has-puck: "~/RobotinoSim/GripperHasPuck/"
     tag-vision: "~/tag-vision"
-  
+
   llsf-rb-comm:
     refbox-host: "127.0.0.1"
     refbox-port: 4444
@@ -41,14 +42,16 @@ gazsim:
     max_range: 9.5
     interface-id: "Laser tim55x"
     frame-id: !frame base_laser
- 
+
   webcam:
     # list of ids for all cameras to simulate
-    # for each id you need to add entries to the following fields 
+    # for each id you need to add entries to the following fields
     shm-image-ids: ["gazsim_tag", "gazsim_puck"]
     topic-suffixes:
-      gazsim_tag: "/carologistics-robotino-3/webcam_tag/link/webcam_sensor/image"
-      gazsim_puck: "/carologistics-robotino-3/webcam_puck/link/webcam_sensor/image"
+      gazsim_tag: >
+        /carologistics-robotino-3/webcam_tag/link/webcam_sensor/image
+      gazsim_puck: >
+        /carologistics-robotino-3/webcam_puck/link/webcam_sensor/image
     widths:
       gazsim_tag: 320
       gazsim_puck: 320
@@ -58,7 +61,7 @@ gazsim:
     frames:
       gazsim_tag: !frame cam_front
       gazsim_puck: !frame cam_front
-    
+
   light-front:
     max-distance: 0.3
     success-visibility-history: 300
@@ -96,7 +99,7 @@ gazsim:
     gyro-delay: 0.1
     infrared-sensor-index: 0
 
-    motor:    
+    motor:
       # does the odometry change if the robotino drives against an obstacle?
       slippery-wheels-enabled: true
       slippery-wheels-threshold: 0.5
@@ -105,16 +108,17 @@ gazsim:
 
     imu:
       frame: !frame imu
-      
+
   comm:
     package-loss: 0.0
-    #all peers which need the comm plugin
+    # all peers which need the comm plugin
     # write down as follows:
     # adrresses:  ["address_1", "address_2", ...]
     # send-ports: [send_port_1, send_port_2, ...]
     # revc-ports: [recv_port_1, recv_port_2, ...]
     # refbox, robotino1, robotino2, robotino3
-    addresses:  ["127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1"]
+    addresses: ["127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1",
+                "127.0.0.1", "127.0.0.1", "127.0.0.1"]
     send-ports: [4445, 4411, 4412, 4413, 4414, 4415, 4416]
     recv-ports: [4444, 4421, 4422, 4423, 4424, 4425, 4426]
     use-crypto1: true
@@ -129,9 +133,9 @@ gazsim:
     location-textures: "model://label/materials/textures"
     label-arrow-name: "label/arrowredup"
     localization:
-      #parent model::link to attach visuals on
+      # parent model::link to attach visuals on
       parent-name: "ground_plane::link"
-      update-rate: 5.0 #in Hz
+      update-rate: 5.0  # in Hz
       label-size: 0.3
       label-height: 0.9
 
@@ -143,12 +147,13 @@ gazsim:
     time-to-wait-before-start: 90.0
     simulation-shutdown-after-game: true
     time-to-wait-before-shutdown: 5.0
-    fawkes-path: "~/fawkes-robotino/" #TODO: find it in cpp source
+    fawkes-path: "~/fawkes-robotino/"  # TODO: find it in cpp source
     simulation-shutdown-script: "bin/gazsim.bash -x kill"
 
   llsf-statistics:
-    get-refbox-summary-script: "@BASEDIR@/etc/scripts/gazsim-get-refbox-summary.bash"
-    #these fields can be overridden by the gazsim-schedule script
+    get-refbox-summary-script: >
+      @BASEDIR@/etc/scripts/gazsim-get-refbox-summary.bash
+    # these fields can be overridden by the gazsim-schedule script
     db-name: "gazsim-runs"
     collection: "test_14_06_16_22_00"
     configuration-name: "default"
@@ -173,6 +178,32 @@ gazsim:
     frame: !frame gazsim_tag_vision
 
   navgraph-generator:
-    all-active-tags: ["~/tag_65/gazsim/gps/","~/tag_01/gazsim/gps/","~/tag_17/gazsim/gps/","~/tag_33/gazsim/gps/","~/tag_177/gazsim/gps/","~/tag_81/gazsim/gps/","~/tag_161/gazsim/gps/","~/tag_97/gazsim/gps/","~/tag_113/gazsim/gps/","~/tag_129/gazsim/gps/","~/tag_145/gazsim/gps/","~/tag_49/gazsim/gps/"]
-    related-mps: ["C-BS","C-CS1","C-CS2","C-RS1","C-RS2","C-DS","M-BS","M-CS1","M-CS2","M-RS1","M-RS2","M-DS"]
+    all-active-tags:
+      - "~/tag_65/gazsim/gps/"
+      - "~/tag_01/gazsim/gps/"
+      - "~/tag_17/gazsim/gps/"
+      - "~/tag_33/gazsim/gps/"
+      - "~/tag_177/gazsim/gps/"
+      - "~/tag_81/gazsim/gps/"
+      - "~/tag_161/gazsim/gps/"
+      - "~/tag_97/gazsim/gps/"
+      - "~/tag_113/gazsim/gps/"
+      - "~/tag_129/gazsim/gps/"
+      - "~/tag_145/gazsim/gps/"
+      - "~/tag_49/gazsim/gps/"
+
+    related-mps:
+      - C-BS
+      - C-CS1
+      - C-CS2
+      - C-RS1
+      - C-RS2
+      - C-DS
+      - M-BS
+      - M-CS1
+      - M-CS2
+      - M-RS1
+      - M-RS2
+      - M-DS
+
     nav-gen-if-name: "/navgraph-generator-mps"

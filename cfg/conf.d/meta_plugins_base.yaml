@@ -44,4 +44,3 @@ fawkes/meta_plugins:
     - amcl
     - m-base-joy
     - laser_front_dist
-

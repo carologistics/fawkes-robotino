@@ -6,4 +6,3 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-agent
 clips-motor-switch:
   # Interface it of MotorInterface to enable/disable
   interface-id: Robotino
-
