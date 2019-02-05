@@ -26,11 +26,11 @@ hardware/laser:
     type: TiM55x-USB
 
     # robotino1:
-    #serial: 15300204
+    # serial: 15300204
     # robotino2:
-    #serial: 16380081
+    # serial: 16380081
     # robotino3:
-    #serial: 15170145
+    # serial: 15170145
 
     # Frame ID
     frame: !frame base_laser
@@ -47,11 +47,11 @@ hardware/laser:
     type: TiM55x-USB
 
     # robotino1:
-    #serial: 14200190
+    # serial: 14200190
     # robotino2:
-    #serial: 14200191
-    # robotino1:
-    #serial: 14190279
+    # serial: 14200191
+    # robotino3:
+    # serial: 14190279
 
     # Frame ID
     frame: !frame back_laser

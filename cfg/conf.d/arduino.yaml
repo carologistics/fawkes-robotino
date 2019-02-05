@@ -10,7 +10,7 @@ arduino:
   device: /dev/arduino
 
   # RPM value of the stepper motor in use.
-  # This value is used to determine the time needed to 
+  # This value is used to determine the time needed to
   # perform movements since we cannot read from the arduino yet.
   rpm: 80
   speed: 800

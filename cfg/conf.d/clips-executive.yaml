@@ -22,8 +22,8 @@ clips-executive:
   # actually executing the skills. The time indicates how long it should
   # take to declare success on skill execution. Note that this cannot
   # simulate side effects, like a called component writing to an interface
-  #skill-sim: true
-  #skill-sim-time: 2.0
+  # skill-sim: true
+  # skill-sim-time: 2.0
 
   # automatically pre-require redefine-warning feature? Enabling
   # this in the plugin instead of in the initial code (init.clp) is
@@ -56,7 +56,7 @@ clips-executive:
       goal-reasoner: test-scenario/goal-reasoner.clp
       goal-expander: test-scenario/fixed-sequence.clp
       action-selection: test-scenario/action-selection.clp
-      #macro-expansion: test-scenario/action-selection.clp
+      # macro-expansion: test-scenario/action-selection.clp
       action-execution: plan-exec.clp
       execution-monitoring: test-scenario/execution-monitoring.clp
 
@@ -69,7 +69,7 @@ clips-executive:
       goal-reasoner: visit-all/goal-reasoner.clp
       goal-expander: visit-all/fixed-sequence.clp
       action-selection: visit-all/action-selection.clp
-      #macro-expansion: visit-all/action-selection.clp
+      # macro-expansion: visit-all/action-selection.clp
       action-execution: plan-exec.clp
       execution-monitoring: visit-all/execution-monitoring.clp
       state-estimation: visit-all/state-estimation-init.clp
@@ -105,8 +105,9 @@ clips-executive:
               - rcll2018/init-worldmodel.clp
               - rcll2018/game-worldmodel.clp
           - name: communication
-            files: [ rcll2018/refbox-comm-init.clp,
-                     rcll2018/refbox-worldmodel.clp ]
+            files:
+              - rcll2018/refbox-comm-init.clp
+              - rcll2018/refbox-worldmodel.clp
           - name: domain
             file: rcll2018/domain.clp
           - name: resource-locking
@@ -131,7 +132,9 @@ clips-executive:
             file: rcll2018/execution-monitoring.clp
 
       action-mapping:
-        enter-field: drive_into_field{team=?(team-color)S, wait=?(r|/R-1/0.0/|/R-2/10.0/|/R-3/20.0/)f}
+        enter-field: >
+          drive_into_field{team=?(team-color)S,
+                           wait=?(r|/R-1/0.0/|/R-2/10.0/|/R-3/20.0/)f}
         explore-zone: explore_zone{zone=?(z)s}
         move-node: goto{place=?(z)s}
         move: ppgoto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
@@ -141,26 +144,37 @@ clips-executive:
         wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
         wp-put: bring_product_to{place=?(m)S}
         wp-put-slide-cc: bring_product_to{place=?(m)S, slide="TRUE"}
-        wp-get: get_product_from{place=?(m)S, side=?(side|/INPUT/input/|/OUTPUT/output/)s}
+        wp-get: >
+          get_product_from{place=?(m)S,
+                           side=?(side|/INPUT/input/|/OUTPUT/output/)s}
         wp-discard: ax12gripper{command="OPEN"}
 
-      blackboard-preload: ["Position3DInterface", "NavGraphWithMPSGeneratorInterface" , "NavGraphGeneratorInterface" , "NavigatorInterface", "AX12GripperInterface", "MotorInterface", "LaserLineInterface", "TagVisionInterface", "ZoneInterface" , "RobotinoSensorInterface" , "RobotinoLightInterface" ]
+      blackboard-preload:
+        - Position3DInterface
+        - NavGraphWithMPSGeneratorInterface
+        - NavGraphGeneratorInterface
+        - NavigatorInterface
+        - AX12GripperInterface
+        - MotorInterface
+        - LaserLineInterface
+        - TagVisionInterface
+        - ZoneInterface
+        - RobotinoSensorInterface
+        - RobotinoLightInterface
 
       parameters:
         rcll:
-        #real-world-setup:
+          # real-world-setup:
           peer-address: 172.26.255.255
           peer-port: 4444
           cyan-port: 4441
           magenta-port: 4442
-
 
           team-name: Carologistics
           crypto-key: randomkey
           cipher: "aes-128-cbc"
 
           waitpoint-in-cyan: R-1
-          waitpoint-in-cyan: R-2
           waitpoint-in-magenta: R-3
 
           route:
@@ -174,21 +188,21 @@ clips-executive:
               R-3: ["exp-32", "exp-31", "exp-22"]
 
           exploration:
-            # Reduce navigator velocity while traveling the field so we can find laser-lines more reliably
+            # Reduce navigator velocity while traveling the field so we can find
+            # laser-lines more reliably
             max-velocity: 0.4
             max-rotation: 0.5
-            # Center of a laser-line must be this far from the zone border before we start
-            # investigating it further (i.e. call the explore_zone skill on it)
+
+            # Center of a laser-line must be this far from the zone border
+            # before we start investigating it further (i.e. call the
+            # explore_zone skill on it)
 
             zone-margin: 0.15
-            latest-send-last-report-time: 210 # =3:30
+            latest-send-last-report-time: 210  # =3:30
 
           max-velocity: 1.0
           max-rotation: 1.0
           master: R-2
 
-          waitpoint-in-cyan: R-1
-          waitpoint-in-cyan: R-2
-          waitpoint-in-magenta: R-3
-          allowed-complexities: ["C0" , "C1"]
-          exclusive-complexities: ["C2" , "C3"]
+          allowed-complexities: ["C0", "C1"]
+          exclusive-complexities: ["C2", "C3"]
