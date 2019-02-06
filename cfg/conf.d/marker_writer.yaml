@@ -1,10 +1,9 @@
 %YAML 1.2
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
-doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/marker_writer	
-
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/marker_writer
+---
 plugins/markerwriter:
-  
   # pattern to identify the Position3DInterfaces to display
   wildcard_pattern: "*"
 
@@ -13,4 +12,3 @@ plugins/markerwriter:
 
   # display also Position3DInterfaces with negative visibility history
   ignore_visibility_history: false
-  

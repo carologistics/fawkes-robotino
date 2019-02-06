@@ -1,3 +1,7 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/clips-tf
+---
 plugins/clips-tf:
   debug: false
-

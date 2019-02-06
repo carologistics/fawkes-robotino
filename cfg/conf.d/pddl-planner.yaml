@@ -18,7 +18,10 @@ plugins/pddl-planner:
   result-file: results.txt
 
   # optional search options for fd planner
-  fd-search-opts: --heuristic "hff=ff()" --heuristic "hcea=cea()" --search "lazy_greedy([hff, hcea], preferred=[hff, hcea])"
+  fd-search-opts: >
+    --heuristic "hff=ff()"
+    --heuristic "hcea=cea()"
+    --search "lazy_greedy([hff, hcea], preferred=[hff, hcea])"
 
   # mongodb collection for robot-memory
   collection: robmem.pddl-plan
