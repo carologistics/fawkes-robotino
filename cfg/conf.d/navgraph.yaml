@@ -16,7 +16,7 @@ navgraph:
 
   # Graph file to use for path planning
   graph_file: navgraph-basis.yaml
- 
+
   # Interval in which the resend the goto command; sec
   resend_interval: 1
 
@@ -32,15 +32,16 @@ navgraph:
   # if it is at most as expensive as the current plan. When setting this to
   # 2.0, the new plan may be up to twice as expensive as the current plan
   # to switch.
-  replan_cost_factor: 1.5                
+  replan_cost_factor: 1.5
 
-  # Update the visualization at this interval. This will trigger a compuation
-  # of all constraints and if any change occurs the graph will be published
-  # again. This is done whether the robot is currently driving or standing still.
-  visualization_interval: 0.5      
-  
+  # Update the visualization at this interval. This will trigger a compuation of
+  # all constraints and if any change occurs the graph will be published
+  # again. This is done whether the robot is currently driving or standing
+  # still.
+  visualization_interval: 0.5
+
   # Time to keep moving after the target tolerance has been reached; sec
-  target_time: 2.0 #0.6
+  target_time: 2.0  # 0.6
 
   # Monitor graph file and automatically reload on changes?
   monitor_file: true
@@ -55,9 +56,6 @@ navgraph:
   # error because none is reported. It is recommended to set this to false
   # only if you really know what you are doing.
   abort_on_error: true
-
-  # Monitor graph file and automatically reload on changes?
-  monitor_file: true
 
   # Write graph information to log on (re-)loading?
   log_graph: false
