@@ -90,22 +90,44 @@ struct PlanElement : public BasicPlanElement
 	bool Done = false;
 	bool Failed = false;
 
-	//Construct from base class.
+	/** Construct from base class.
+	 * @param b basic plan element
+	 */
 	inline PlanElement(const BasicPlanElement& b) noexcept : BasicPlanElement(b)
 	{
 		return;
 	}
+
+	/** Construct from base class.
+	 * @param b basic plan element
+	 */
 	inline PlanElement(BasicPlanElement&& b) noexcept : BasicPlanElement(std::move(b))
 	{
 		return;
 	}
 
-	//Reactivate default copy constructors and assignment operators.
+	/** Copy ctor.
+	 * @param e plan element to copy
+	 */
 	inline PlanElement(const PlanElement& e) = default;
+	/** Move ctor.
+	 * @param e plan element to move
+	 */
 	inline PlanElement(PlanElement&& e) noexcept = default;
+	/** Copying assignment operator.
+	 * @param e plan element to copy from
+	 * @return reference to this instance
+	 */
 	inline PlanElement& operator=(const PlanElement& e) = default;
+	/** Moving assignment operator.
+	 * @param e plan element to move
+	 * @return reference to this instance
+	 */
 	inline PlanElement& operator=(PlanElement&& e) noexcept = default;
 
+	/** Update time to that of the given element.
+	 * @param e plan element to copy time from
+	 */
 	inline void
 	updateTime(const BasicPlanElement& e) noexcept
 	{
@@ -117,6 +139,9 @@ struct PlanElement : public BasicPlanElement
 		return;
 	}
 
+	/** Update time and task to that of another element.
+	 * @param e plan element to copy from
+	 */
 	inline void
 	updateTimeAndTask(const BasicPlanElement& e)
 		noexcept(noexcept(std::is_nothrow_copy_assignable<decltype(e.Task)>::value))
@@ -127,12 +152,22 @@ struct PlanElement : public BasicPlanElement
 	}
 };
 
+/** Check equality of two plan elements.
+ * @param e1 first plan element
+ * @param e2 second plan element
+ * @return true if plan elements are the same, false otherwise
+ */
 inline bool operator==(const PlanElement& e1, const PlanElement& e2) noexcept
 {
 	return static_cast<BasicPlanElement>(e1) == static_cast<BasicPlanElement>(e2) && e1.Done == e2.Done &&
 		e1.Begun == e2.Begun;
 }
 
+/** Check inequality of two plan elements.
+ * @param e1 first plan element
+ * @param e2 second plan element
+ * @return true if plan elements are not the same, false otherwise
+ */
 inline bool operator!=(const PlanElement& e1, const PlanElement& e2) noexcept
 {
 	return !(e1 == e2);
@@ -150,6 +185,9 @@ struct ProductIdentifier
 {
 	int ID = -1;
 
+	/** Check if ID is valid.
+	 * @return true if ID is valid, i.e. it is not -1.
+	 */
 	inline bool
 	isValid(void) const noexcept
 	{
@@ -167,6 +205,7 @@ struct Product
 
 struct TaskDescription
 {
+	/** Possible types. */
 	enum
 	{
 		None,
@@ -179,15 +218,21 @@ struct TaskDescription
 		MountRing,
 		PrepareCS
 	} Type = None;
+	
 	Clingo::Symbol TaskSymbol;
 	int EstimatedEnd = -1;
 
+	/** Check if type is valid.
+	 * @return true if type is not None */
 	inline bool
 	isValid(void) const noexcept
 	{
 		return Type != None;
 	}
 
+	/** Get location for task.
+	 * @return symbol representing location.
+	 **/
 	inline Clingo::Symbol
 	location(void) const
 	{
@@ -258,6 +303,10 @@ namespace std {
 template<typename T1, typename T2>
 struct hash<pair<T1, T2>>
 {
+	/** Calculate hash.
+	 * @param pair elements to create hash for
+	 * @return hash value
+	 */
 	auto operator()(const pair<T1, T2>& pair) const
 		noexcept(noexcept(hash<T1>{}(pair.first) && noexcept(hash<T2>{}(pair.second))))
 	{

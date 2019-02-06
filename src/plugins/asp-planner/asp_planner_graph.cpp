@@ -60,7 +60,7 @@ calculateZoneCoords(void) noexcept
  *        the ASP encoding.
  */
 void
-AspPlanerThread::graph_changed(void) noexcept
+AspPlannerThread::graph_changed(void) noexcept
 {
 	MutexLocker navgraphLocker(navgraph.objmutex_ptr());
 	MutexLocker distanceLocker(&NavgraphDistanceMutex);
@@ -85,7 +85,7 @@ AspPlanerThread::graph_changed(void) noexcept
  * @param[in] lockWorldMutex If the world mutex should be locked.
  */
 void
-AspPlanerThread::fillNavgraphNodesForASP(const bool lockWorldMutex)
+AspPlannerThread::fillNavgraphNodesForASP(const bool lockWorldMutex)
 {
 	MutexLocker locker(&NavgraphDistanceMutex);
 	NavgraphNodesForASP.clear();
@@ -143,7 +143,7 @@ AspPlanerThread::fillNavgraphNodesForASP(const bool lockWorldMutex)
  * @note Assumes, that NavgraphDistanceMutex is locked.
  */
 void
-AspPlanerThread::updateNavgraphDistances(void)
+AspPlannerThread::updateNavgraphDistances(void)
 {
 	static bool done = false;
 
@@ -213,7 +213,7 @@ AspPlanerThread::updateNavgraphDistances(void)
  * @return The atom of the location.
  */
 Clingo::Symbol
-AspPlanerThread::nearestLocation(const float x, const float y)
+AspPlannerThread::nearestLocation(const float x, const float y)
 {
 	MutexLocker navgraphLocker(navgraph.objmutex_ptr());
 	MutexLocker durationLocker(&NavgraphDistanceMutex);
