@@ -7,13 +7,13 @@ plugins/pddl-robot-memory:
 
   # Which collection contains the worldmodel
   collection: "robmem.clipswm"
-  # Where is the problem file to use as teplate (in src/agents) 
+  # Where is the problem file to use as teplate (in src/agents)
   input-problem-description: clips-executive/rcll2017/problem-template.pddl
-  # Where to put the generated problem file (in src/agents) 
+  # Where to put the generated problem file (in src/agents)
   output-problem-description: clips-executive/rcll2017/problem.pddl
-  
+
   # Interface used to start generation with message and show when its final
   interface-name: "pddl-gen"
-  
-  #do you want to generate the pddl when the plugin is initialized?
+
+  # do you want to generate the pddl when the plugin is initialized?
   generate-on-init: false

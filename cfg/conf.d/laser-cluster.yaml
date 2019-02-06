@@ -19,31 +19,33 @@ laser-cluster:
     switch_tolerance: 0.2
 
     # How to select the best cluster?
-    # min-angle: minimum angle between forward direction and direction to cluster
+    # min-angle: minimum angle between forward direction and direction to
+    #            cluster
     # min-dist: minimum distance from sensor to cluster centroid
     cluster_selection_mode: min-angle
 
     # The maximum number of clusters to publish on the blackboard
     # The interfaces will be named "Laser Cluster N" for N=1..max_num_clusters
     max_num_clusters: 5
-  
+
     # The frame in which the result should be published; frame
     result_frame: base_link
 
     line_removal:
       enable: false
-  
+
       # Maximum number of iterations to perform for line segmentation
       segmentation_max_iterations: 200
 
       # Segmentation distance threshold; m
       segmentation_distance_threshold: 0.15
 
-      # Minimum size of fraction of points that must be inliers to consider a table; 0.0..1.0
+      # Minimum size of fraction of points that must be inliers to consider a
+      # table; 0.0..1.0
       segmentation_min_inliers: 30
 
-      # Maximum distance between samples drawn from the cloud
-      # This distance is important for the separation of lines if they are close.
+      # Maximum distance between samples drawn from the cloud. This distance is
+      # important for the separation of lines if they are close.
       segmentation_sample_max_dist: 0.08
 
       # Minimum length of line to remove it
@@ -61,10 +63,10 @@ laser-cluster:
 
     bounding-box:
       # note that these values are in the sensor frame!
-      min_x:  0.02
-      max_x:  0.8
+      min_x: 0.02
+      max_x: 0.8
       min_y: -0.7
-      max_y:  0.7
+      max_y: 0.7
 
     # transpose the x-position of the detected cluster by the given offset
     offsets:
@@ -87,31 +89,34 @@ laser-cluster:
     switch_tolerance: 0.2
 
     # How to select the best cluster?
-    # min-angle: minimum angle between forward direction and direction to cluster
+    # min-angle: minimum angle between forward direction and direction to
+    # cluster
     # min-dist: minimum distance from sensor to cluster centroid
     cluster_selection_mode: min-dist
 
     # The maximum number of clusters to publish on the blackboard
     # The interfaces will be named "Laser Cluster N" for N=1..max_num_clusters
     max_num_clusters: 10
-  
+
     # The frame in which the result should be published; frame
     result_frame: base_link
 
     line_removal:
       enable: true
-  
+
       # Maximum number of iterations to perform for line segmentation
       segmentation_max_iterations: 200
 
       # Segmentation distance threshold; m
       segmentation_distance_threshold: 0.05
 
-      # Minimum size of fraction of points that must be inliers to consider a table; 0.0..1.0
+      # Minimum size of fraction of points that must be inliers to consider a
+      # table; 0.0..1.0
       segmentation_min_inliers: 30
 
       # Maximum distance between samples drawn from the cloud
-      # This distance is important for the separation of lines if they are close.
+      # This distance is important for the separation of lines if they are
+      # close.
       segmentation_sample_max_dist: 0.08
 
       # Minimum length of line to remove it
@@ -132,4 +137,3 @@ laser-cluster:
       x: 0.0
       y: 0.0
       z: 0.0
-

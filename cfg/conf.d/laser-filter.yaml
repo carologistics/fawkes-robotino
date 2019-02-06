@@ -53,7 +53,8 @@ plugins/laser-filter:
     filters:
 
       1-min:
-        # Threshold for minimum value to get rid of erroneous beams on most black surfaces
+        # Threshold for minimum value to get rid of erroneous beams on most
+        # black surfaces
         type: min_circle
         # Radius of minimum length; m
         radius: 0.04
@@ -69,7 +70,8 @@ plugins/laser-filter:
     out/filtered: Laser360Interface::Laser back-filtered
     filters:
       1-min:
-        # Threshold for minimum value to get rid of erroneous beams on most black surfaces
+        # Threshold for minimum value to get rid of erroneous beams on most
+        # black surfaces
         type: min_circle
         # Radius of minimum length; m
         radius: 0.04
@@ -97,13 +99,14 @@ plugins/laser-filter:
   filter-front-1080:
     active: true
     # URG input interface
-    #in/urg: Laser360Interface::Laser urg
+    # in/urg: Laser360Interface::Laser urg
     in/sick-tim55x: Laser1080Interface::Laser front
     # URG filtered output interface
     out/filtered: Laser1080Interface::Laser front-filtered-1080
     filters:
       1-min:
-        # Threshold for minimum value to get rid of erroneous beams on most black surfaces
+        # Threshold for minimum value to get rid of erroneous beams on most
+        # black surfaces
         type: min_circle
         # Radius of minimum length; m
         radius: 0.04
@@ -119,7 +122,8 @@ plugins/laser-filter:
     out/filtered: Laser360Interface::Laser back-filtered-1080
     filters:
       1-min:
-        # Threshold for minimum value to get rid of erroneous beams on most black surfaces
+        # Threshold for minimum value to get rid of erroneous beams on most
+        # black surfaces
         type: min_circle
         # Radius of minimum length; m
         radius: 0.04
@@ -178,4 +182,3 @@ plugins/laser-filter:
       1-mix:
         type: min_merge
         timestamp_selection: first
-
