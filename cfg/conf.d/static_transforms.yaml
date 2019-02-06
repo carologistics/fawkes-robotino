@@ -11,7 +11,7 @@ plugins/static-transforms:
     base_laser:
       frame: !frame base_link
       child_frame: !frame base_laser
-      trans_x: 0.17 # 0.1 for hackathon setup
+      trans_x: 0.17  # 0.1 for hackathon setup
       trans_y: 0.0
       trans_z: 0.26
 
@@ -31,9 +31,9 @@ plugins/static-transforms:
       trans_x: 0.1
       trans_y: 0.0
       trans_z: 0.44
-      rot_pitch: 0 
-      rot_yaw: -1.57079632679 # -90°
-      rot_roll: -1.57079632679 # -90°
+      rot_pitch: 0
+      rot_yaw: -1.57079632679  # -90°
+      rot_roll: -1.57079632679  # -90°
 
     plate_top:
       frame: !frame base_link
@@ -42,7 +42,7 @@ plugins/static-transforms:
       trans_y: 0
       trans_z: 0.78
 
-    #this system is located in the gripper where the puck should be held
+    # this system is located in the gripper where the puck should be held
     gripper_home:
       frame: !frame plate_top
       child_frame: !frame gripper_home
@@ -68,7 +68,7 @@ plugins/static-transforms:
       rot_pitch: 0
       rot_roll: -1.57
 
-    # This frame can be used by the conveyor_pose plugin 
+    # This frame can be used by the conveyor_pose plugin
     # to align the recorded model using the gripper fingers
     fingers_record:
       frame: !frame gripper
@@ -104,4 +104,3 @@ plugins/static-transforms:
       rot_yaw: -1.57
       rot_pitch: 0
       rot_roll: -1.57
-

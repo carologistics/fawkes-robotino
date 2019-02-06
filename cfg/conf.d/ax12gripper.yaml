@@ -5,7 +5,7 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
 ---
 /hardware/ax12_gripper:
     # Type of PTU; one of RX27 EviD100P and DirectedPerceptionASCII
-#    type: RX28
+    # type: RX28
 
     # Is this PTU active?
     active: true
@@ -15,7 +15,7 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
 
     # Driver prefix used by dynamixel-plugin
     driver_prefix: /dynamixel/ax12gripper
-   
+
     # Read timeout for RX28 PTU
     read_timeout_ms: 300
 
@@ -44,15 +44,15 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
     gripper_z_upwards_real_vel: 6.05
 
     # Pan offset for RX28 PTU; deg
-#    pan_offset: 24.05
+    # pan_offset: 24.05
     # Tilt zero offset for RX28 PTU; deg
-#    tilt_offset: 3.56
+    # tilt_offset: 3.56
 
     # Turn off AX12 Gripper when unloading the plugin?
     turn_off: true
     # Move AX12 gripper to given position on start?
     goto_zero_start: true
-    
+
     # Left open angle in rad
     left_open: -0.35  # -45 degrees
     # Right open angle in rad
@@ -60,12 +60,12 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
     # Left close angle in rad
     left_close: 0.3  # 10 degrees
     # Right close angle in rad
-    right_close: -0.3 # -10 degrees
+    right_close: -0.3  # -10 degrees
 
     # Left close angle with max load in rad
     left_close_load: 0.2  # 10 degrees
     # Right close angle with max load in rad
-    right_close_load: -0.2 # -10 degrees
+    right_close_load: -0.2  # -10 degrees
 
     # Left minimum angle in rad
     left_min: -2.1  # 50 degrees
@@ -74,7 +74,7 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
     # Left maximum angle in rad
     left_max: 1.1  # 180 degrees
     # Right maximum angle in rad
-    right_max: 2.1 # 250 degrees
+    right_max: 2.1  # 250 degrees
 
     # Left servo default start; rad
     left_start: 0.2
@@ -105,32 +105,35 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
     angle_for_holds_puck_min: -0.15
     angle_for_holds_puck_max: 0.1
 
-    # A value to be substracted from the destination opening angle on center command
-    # This is needed because the gripper tends to open a little on each center command otherwise
+    # A value to be substracted from the destination opening angle on center
+    # command This is needed because the gripper tends to open a little on each
+    # center command otherwise
     center_angle_correction_amount: 0.1
 
     # Clockwise compliance margin for RX28 PTU
-#    cw_compl_margin: 0
+    # cw_compl_margin: 0
     # Counter-clockwise compliance margin for RX28 PTU
-#    ccw_compl_margin: 0
+    # ccw_compl_margin: 0
     # Clockwise compliance slope for RX28 PTU
-#    cw_compl_slope: 96
+    # cw_compl_slope: 96
     # Counter-clockwise compliance slope for RX28 PTU
-#    ccw_compl_slope: 96
+    # ccw_compl_slope: 96
 
     # Minimum pan for RX28 PTU
-#    pan_min: -2.2
+    # pan_min: -2.2
     # Maximum pan for RX28 PTU
-#    pan_max: 2.2
+    # pan_max: 2.2
 
     # Minimum tilt for RX28 PTU
-#    tilt_min: -1.6
+    # tilt_min: -1.6
     # Maximum tilt for RX28 PTU
-#    tilt_max: 1.6
+    # tilt_max: 1.6
 
-    # Tolerance between desired and actual pan value to consider RX28 PTU motion finished; rad
+    # Tolerance between desired and actual pan value to consider RX28 PTU motion
+    # finished; rad
     left_margin: 0.1
-    # Tolerance between desired and actual tilt value to consider RX28 PTU motion finished; rad
+    # Tolerance between desired and actual tilt value to consider RX28 PTU
+    # motion finished; rad
     right_margin: 0.1
 
     # Frame ID base string; will be prefixed by / if missing;
@@ -138,17 +141,17 @@ doc-url: !url https://trac.fawkesrobotics.org/wiki/Plugins/ax12gripper
     frame_id_prefix: !frame ax12_gripper
 
     # PAN servo base to joint translation X; m
-#    pan_trans_x: -0.002
+    # pan_trans_x: -0.002
     # PAN servo base to joint translation Y; m
-#    pan_trans_y: 0.0
+    # pan_trans_y: 0.0
     # PAN servo base to joint translation Z; m
-#    pan_trans_z: 0.042
+    # pan_trans_z: 0.042
     # TILT servo base to joint translation X; m
-#    tilt_trans_x: 0.0
+    # tilt_trans_x: 0.0
     # TILT servo base to joint translation Y; m
-#    tilt_trans_y: 0.0
+    # tilt_trans_y: 0.0
     # TILT servo base to joint translation Z; m
-#    tilt_trans_z: 0.039
+    # tilt_trans_z: 0.039
     # whether transforms should be published
     publish_transforms: true
 
