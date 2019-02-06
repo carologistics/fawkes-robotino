@@ -43,6 +43,7 @@ OPTIONS:
                       optionally, "--start-game=PHASE" may be given
                       to set the phase explicitly)
                      Typically requires at least --team-cyan.
+   --asp             Run with ASP agent and global planner
 EOF
 }
 
@@ -55,6 +56,7 @@ HEADLESS=
 ROS=
 ROS_LAUNCH_MAIN=
 ROS_LAUNCH_ROBOT=
+ROS_LAUNCH_MOVEBASE=
 AGENT=
 DETAILED=
 KEEP=
@@ -74,6 +76,7 @@ FAWKES_USED=false
 START_GAME=
 TEAM_CYAN=
 TEAM_MAGENTA=
+START_ASP_PLANER=false
 
 if [ -z $TERMINAL ] ; then
     if [[ -n $TMUX ]] ; then
@@ -86,7 +89,7 @@ fi
 case "$TERMINAL" in
     gnome-terminal)
         TERM_COMMAND="gnome-terminal --window --geometry=$TERM_GEOMETRY -- bash -i -c '"
-        TERM_COMMAND_END="'"
+        TERM_COMMAND_END=" echo -e \"\n\n\nAll commands started. This tab may now be closed.\"'"
         SUBTERM_PREFIX="gnome-terminal --tab -- "
         SUBTERM_SUFFIX=" ; "
         ;;
@@ -115,7 +118,7 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,asp" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -146,7 +149,8 @@ while true; do
 	     KEEP=-k
              ;;
          -r)
-	     ROS=-r
+           ROS=-r
+           ROS_LAUNCH_MOVE_BASE=yes
              ;;
          -g)
 	     if [ -n "$GDB" ]; then
@@ -186,6 +190,12 @@ while true; do
 	     ;;
 	 -a)
 	     META_PLUGIN="-m gazsim-meta-clips-exec"
+	     ;;
+	 --asp)
+	     CONF="-c asp-planner"
+	     META_PLUGIN="-m asp-sim-2016"
+	     START_ASP_PLANER=true
+       ROS_LAUNCH_MOVE_BASE=
 	     ;;
 	 -o)
 	     START_GAZEBO=false
@@ -301,7 +311,6 @@ if [  $COMMAND  == start ]; then
 
     #construct command to open everything in one terminal window with multiple tabs instead of 10.000 windows
 
-    OPEN_COMMAND="$TERM_COMMAND"
     COMMANDS=()
 
     if $START_GAZEBO
@@ -325,10 +334,12 @@ if [  $COMMAND  == start ]; then
 	fi
     	for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     	do
-	    # robot roscore
-	    COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"")
-            # move_base
-	    COMMANDS+=("bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"")
+				# robot roscore
+				COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"")
+        # move_base
+				if [ -n "$ROS_LAUNCH_MOVE_BASE" ]; then
+					COMMANDS+=("bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"")
+				fi
 	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
 	    COMMANDS+=("bash -i -c \"$startup_script_location -x roslaunch $ROS_LAUNCH_ROBOT -p $ROS_MASTER_PORT $KEEP $@\"")
 	fi
@@ -350,6 +361,11 @@ if [  $COMMAND  == start ]; then
 	FAWKES_USED=true
     done
 
+    if $START_ASP_PLANER
+    then
+	COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x asp -p ${ROS_MASTER_URI##*:} $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+    fi
+
     if $START_GAZEBO
     then
     	#start fawkes for communication, llsfrbcomm and eventually statistics
@@ -365,7 +381,7 @@ if [  $COMMAND  == start ]; then
     then
 	# publish initial poses
 	echo "publish initial poses"
-	$initial_pose_script_location -c $NUM_CYAN -m $NUM_MAGENTA -d
+	$initial_pose_script_location $CONF -C $NUM_CYAN -M $NUM_MAGENTA -d
     else
 	echo "Skipped publishing poses"
   sleep 10

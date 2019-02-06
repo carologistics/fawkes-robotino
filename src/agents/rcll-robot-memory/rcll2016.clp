@@ -7,6 +7,28 @@
 ;  Licensed under GPLv2+ license, cf. LICENSE file
 ;---------------------------------------------------------------------------
 
+(defrule use-asp
+  "Checks if we use the asp configuration."
+  (declare (salience 750))
+  (confval (path "/clips-agent/rcll2016/use-asp") (value TRUE))
+  (not (asp-checked))
+  =>
+  (assert (use-asp))
+  (assert (asp-checked))
+  (printout t "Use ASP" crlf)
+  (config-load "/asp-agent")
+)
+
+(defrule use-no-asp
+  "Also checks if we use the asp configuration."
+  (declare (salience 750))
+  (confval (path "/clips-agent/rcll2016/use-asp") (value FALSE))
+  (not (asp-checked))
+  =>
+  (assert (asp-checked))
+  (printout t "Use no ASP" crlf)
+)
+
 (path-load  rcll-robot-memory/priorities.clp)
 (path-load  rcll-robot-memory/globals.clp)
 (path-load  rcll-robot-memory/facts.clp)
@@ -16,6 +38,7 @@
   (init)
   =>
   (config-load "/clips-agent")
+  (config-load "/asp-agent")
   (config-load "/hardware/robotino")
 )
 
@@ -109,6 +132,7 @@
   "Actual initialization rule. Loads the need rule-files for skills and inter-robot communication."
   ;when all clips features are available and the init file is loaded
   (declare (salience ?*PRIORITY-HIGH*))
+  (asp-checked)
   (agent-init)
   (ff-feature-loaded blackboard)
   (loaded interfaces)
@@ -139,10 +163,33 @@
   (path-load  rcll-robot-memory/tactical-help.clp)
   (path-load  rcll-robot-memory/task.clp)
   (path-load  rcll-robot-memory/steps.clp)
-  (path-load  rcll-robot-memory/coordination.clp)
-  (path-load  rcll-robot-memory/production.clp)
+  (if
+    (not (any-factp ((?conf confval))
+      (and (eq ?conf:path "/clips-agent/rcll2016/load-reasoner")
+        (eq ?conf:type BOOL) (eq ?conf:value FALSE))))
+  then
+    (path-load  rcll-robot-memory/coordination.clp)
+    (path-load  rcll-robot-memory/production.clp)
+  else
+    (printout t "Not loading the reasoner" crlf)
+  )
   (path-load  rcll-robot-memory/exploration.clp)
   (path-load  rcll-robot-memory/config.clp)
+  (if (any-factp ((?f use-asp)) (eq 1 1))
+  then
+    (path-load  rcll-robot-memory/asp-common.clp)
+    (if
+      (any-factp ((?conf confval))
+        (and (eq ?conf:path "/asp-agent/load-planner")
+             (eq ?conf:type BOOL) (eq ?conf:value TRUE)))
+    then
+      (printout t "Loading Planer rules" crlf)
+      (path-load  rcll-robot-memory/asp-planner.clp)
+    else
+      (printout t "Loading ASP Executive rules" crlf)
+      (path-load  rcll-robot-memory/asp-exec.clp)
+    )
+  )
   (reset)
   ;(facts)
 

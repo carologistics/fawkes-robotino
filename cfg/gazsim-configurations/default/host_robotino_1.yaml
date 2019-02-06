@@ -33,6 +33,9 @@ plugins/light_front:
 clips-agent:
   rcll2016:
     #agent-role:
+    use-asp: false
+    load-reasoner: false
+    move-into-field-waittime: 0
     
     exploration:      
       row: LOW

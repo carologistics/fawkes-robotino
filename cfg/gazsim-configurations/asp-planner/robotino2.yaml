@@ -1,0 +1,15 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+include:
+  - !ignore-missing conf.d/
+  - gazsim-configurations/gazsim-config-override.yaml
+  - gazsim-configurations/rcll-sim-2016.yaml
+  - gazsim-configurations/asp-planner/asp-agent.yaml
+  - !host-specific gazsim-configurations/asp-planner/host_robotino_2.yaml
+---
+
+fawkes:
+  mainapp:
+    loggers: console;file/debug:debug2_$time.log
+

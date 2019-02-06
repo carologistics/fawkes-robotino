@@ -9,6 +9,7 @@
 
 (defrule net-enable-local-public
   "Enable local peer connection to the unencrypted refbox channel"
+  (not (use-asp))
   (confval (path "/clips-agent/rcll2016/peer-address") (value ?peer-address))
   (confval (path "/clips-agent/rcll2016/peer-send-port") (value ?peer-send-port))
   (confval (path "/clips-agent/rcll2016/peer-recv-port") (value ?peer-recv-port))
@@ -20,8 +21,23 @@
 	  (peer-id public ?peer-id))
 )
 
+(defrule net-enable-local-public-asp
+  "Enable local peer connection to the unencrypted refbox channel"
+  (use-asp)
+  (confval (path "/asp-agent/peer-address") (value ?peer-address))
+  (confval (path "/asp-agent/peer-send-port") (value ?peer-send-port))
+  (confval (path "/asp-agent/peer-recv-port") (value ?peer-recv-port))
+  (not (peer-enabled))
+  =>
+  (printout t "Enabling local peer (public)" crlf)
+  (bind ?peer-id (pb-peer-create-local ?peer-address ?peer-send-port ?peer-recv-port))
+  (assert (peer-enabled)
+    (peer-id public ?peer-id))
+)
+
 (defrule net-enable-public
   "Enable peer connection to the unencrypted refbox channel"
+  (not (use-asp))
   (confval (path "/clips-agent/rcll2016/peer-address") (value ?peer-address))
   (confval (path "/clips-agent/rcll2016/peer-port") (value ?peer-port))
   (not (peer-enabled))
@@ -30,6 +46,19 @@
   (bind ?peer-id (pb-peer-create ?peer-address ?peer-port))
   (assert (peer-enabled)
 	  (peer-id public ?peer-id))
+)
+
+(defrule net-enable-public-asp
+  "Enable peer connection to the unencrypted refbox channel"
+  (use-asp)
+  (confval (path "/asp-agent/peer-address") (value ?peer-address))
+  (confval (path "/asp-agent/peer-port") (value ?peer-port))
+  (not (peer-enabled))
+  =>
+  (printout t "Enabling remote peer (public)" crlf)
+  (bind ?peer-id (pb-peer-create ?peer-address ?peer-port))
+  (assert (peer-enabled)
+    (peer-id public ?peer-id))
 )
 
 (defrule net-enable-local-team-private
