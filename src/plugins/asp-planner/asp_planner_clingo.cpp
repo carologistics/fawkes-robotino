@@ -39,7 +39,7 @@ using fawkes::MutexLocker;
  * @brief Takes care of everything regarding clingo interface in init().
  */
 void
-AspPlanerThread::initClingo(void)
+AspPlannerThread::initClingo(void)
 {
 	MutexLocker navgraphLocker(navgraph.objmutex_ptr());
 	navgraph->add_change_listener(this);
@@ -91,7 +91,7 @@ AspPlanerThread::initClingo(void)
  * @brief Takes care of everything regarding clingo interface in finalize().
  */
 void
-AspPlanerThread::finalizeClingo(void)
+AspPlannerThread::finalizeClingo(void)
 {
 	MutexLocker locker(clingo.objmutex_ptr());
 	if ( clingo->solving() )
@@ -110,7 +110,7 @@ AspPlanerThread::finalizeClingo(void)
  * @brief Handles the loop concerning the solving process.
  */
 void
-AspPlanerThread::loopClingo(void)
+AspPlannerThread::loopClingo(void)
 {
 	MutexLocker aspLocker(clingo.objmutex_ptr());
 	//Locked: clingo
@@ -449,7 +449,7 @@ AspPlanerThread::loopClingo(void)
  * @param[in] interrupt Which level of interrupt is requested.
  */
 void
-AspPlanerThread::queueGround(GroundRequest&& request, const char *reason, const InterruptSolving interrupt)
+AspPlannerThread::queueGround(GroundRequest&& request, const char *reason, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
 	GroundRequests.push_back(std::move(request));
@@ -464,7 +464,7 @@ AspPlanerThread::queueGround(GroundRequest&& request, const char *reason, const 
  * @param[in] interrupt Which level of interrupt is requested.
  */
 void
-AspPlanerThread::queueRelease(Clingo::Symbol&& atom, const char *reason, const InterruptSolving interrupt)
+AspPlannerThread::queueRelease(Clingo::Symbol&& atom, const char *reason, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
 	ReleaseRequests.push_back(std::move(atom));
@@ -479,7 +479,7 @@ AspPlanerThread::queueRelease(Clingo::Symbol&& atom, const char *reason, const I
  * @param[in] interrupt Which level of interrupt is requested.
  */
 void
-AspPlanerThread::queueAssign(Clingo::Symbol&& atom, const char *reason, const InterruptSolving interrupt)
+AspPlannerThread::queueAssign(Clingo::Symbol&& atom, const char *reason, const InterruptSolving interrupt)
 {
 	MutexLocker locker(&RequestMutex);
 	AssignRequests.push_back(std::move(atom));
@@ -493,7 +493,7 @@ AspPlanerThread::queueAssign(Clingo::Symbol&& atom, const char *reason, const In
  * @param[in] reason The reason of the interrupt.
  */
 void
-AspPlanerThread::setInterrupt(const InterruptSolving interrupt, const char* reason)
+AspPlannerThread::setInterrupt(const InterruptSolving interrupt, const char* reason)
 {
 	if ( static_cast<short>(interrupt) > static_cast<short>(Interrupt.load()) )
 	{
@@ -508,7 +508,7 @@ AspPlanerThread::setInterrupt(const InterruptSolving interrupt, const char* reas
  * @return If the solving should be interrupted.
  */
 bool
-AspPlanerThread::shouldInterrupt(void)
+AspPlannerThread::shouldInterrupt(void)
 {
 	const auto now(Clock::now());
 	switch ( Interrupt )
@@ -586,7 +586,7 @@ AspPlanerThread::shouldInterrupt(void)
  * @return If the solver should search for additional models.
  */
 bool
-AspPlanerThread::newModel(void)
+AspPlannerThread::newModel(void)
 {
 	MutexLocker aspLocker(clingo.objmutex_ptr());
 	MutexLocker locker(&SolvingMutex);
@@ -602,7 +602,7 @@ AspPlanerThread::newModel(void)
  * @param[in] result Contains the information what condition has been met.
  */
 void
-AspPlanerThread::solvingFinished(const Clingo::SolveResult& result)
+AspPlannerThread::solvingFinished(const Clingo::SolveResult& result)
 {
 	if ( result.is_unsatisfiable() )
 	{
@@ -624,7 +624,7 @@ AspPlanerThread::solvingFinished(const Clingo::SolveResult& result)
  * @param[in] retFunction The function used to return the calculated value.
  */
 void
-AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, const Clingo::SymbolSpan& arguments,
+AspPlannerThread::groundFunctions(const Clingo::Location& loc, const char *name, const Clingo::SymbolSpan& arguments,
 		Clingo::SymbolSpanCallback& retFunction)
 {
 	if (clingo->debug_level() >= fawkes::ClingoAccess::ASP_DBG_ALL)
@@ -801,7 +801,7 @@ AspPlanerThread::groundFunctions(const Clingo::Location& loc, const char *name, 
  * @brief Sets the team for the solver.
  */
 void
-AspPlanerThread::setTeam(void)
+AspPlannerThread::setTeam(void)
 {
 	MutexLocker aspLocker(clingo.objmutex_ptr());
 	clingo->ground({{"ourTeam", {Clingo::String(TeamColor)}}});
@@ -829,7 +829,7 @@ AspPlanerThread::setTeam(void)
  * @brief Unsets the team color, we have to restart all over again.
  */
 void
-AspPlanerThread::unsetTeam(void)
+AspPlannerThread::unsetTeam(void)
 {
 	//TODO: I think it is clear what to do.
 	throw fawkes::Exception("Should unset the team, but this is not implemented!");
@@ -842,7 +842,7 @@ AspPlanerThread::unsetTeam(void)
  * @note Assumes the world mutex is locked!
  */
 void
-AspPlanerThread::addOrderToASP(const OrderInformation& order)
+AspPlannerThread::addOrderToASP(const OrderInformation& order)
 {
 	Clingo::SymbolVector params = {Clingo::Number(order.Number), Clingo::Number(order.Quantity),
 		Clingo::String(order.Base), Clingo::String(order.Cap), Clingo::String(order.Rings[1]),
@@ -946,7 +946,7 @@ AspPlanerThread::addOrderToASP(const OrderInformation& order)
  * @param[in] info The info.
  */
 void
-AspPlanerThread::addRingColorToASP(const RingColorInformation& info)
+AspPlannerThread::addRingColorToASP(const RingColorInformation& info)
 {
 	const auto color(Clingo::String(info.Color));
 	constexpr const char *reason = "Ring color";
@@ -969,7 +969,7 @@ AspPlanerThread::addRingColorToASP(const RingColorInformation& info)
  * @param[in] zone The zone number.
  */
 void
-AspPlanerThread::addZoneToExplore(const int zone)
+AspPlannerThread::addZoneToExplore(const int zone)
 {
 	assert(zone >= 1 && zone <= 24);
 	queueAssign(generateExploreLocationExternal(zone), "Zone added");
@@ -984,7 +984,7 @@ AspPlanerThread::addZoneToExplore(const int zone)
  *                               fillNavgraphNodesForASP() should be called.
  */
 void
-AspPlanerThread::releaseZone(const int zone, const bool removeAndFillNodes)
+AspPlannerThread::releaseZone(const int zone, const bool removeAndFillNodes)
 {
 	assert(zone >= 1 && zone <= 24);
 	if ( removeAndFillNodes )
@@ -1131,7 +1131,7 @@ createTaskDescription(const std::string& task, const int end)
  * @param[in] offset The offset.
  */
 void
-AspPlanerThread::checkForInterruptBasedOnTimeOffset(int offset)
+AspPlannerThread::checkForInterruptBasedOnTimeOffset(int offset)
 {
 	auto getOffset = [this](const char *severity)
 		{
@@ -1175,7 +1175,7 @@ AspPlanerThread::checkForInterruptBasedOnTimeOffset(int offset)
  * @param[in] end At which point in time the task will end.
  */
 void
-AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string& task, const int begin, const int end)
+AspPlannerThread::robotBegunWithTask(const std::string& robot, const std::string& task, const int begin, const int end)
 {
 	MutexLocker worldLocker(&WorldMutex);
 	MutexLocker planLocker(&PlanMutex);
@@ -1242,7 +1242,7 @@ AspPlanerThread::robotBegunWithTask(const std::string& robot, const std::string&
  * @param[in] end The new estimated end time.
  */
 void
-AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task, const int end)
+AspPlannerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const std::string& task, const int end)
 {
 	MutexLocker worldLocker(&WorldMutex);
 	MutexLocker planLocker(&PlanMutex);
@@ -1274,7 +1274,7 @@ AspPlanerThread::robotUpdatesTaskTimeEstimation(const std::string& robot, const 
  * @param[in] success If the task was executed succesful.
  */
 void
-AspPlanerThread::robotFinishedTask(const std::string& robot, const std::string& task, const int end, const bool success)
+AspPlannerThread::robotFinishedTask(const std::string& robot, const std::string& task, const int end, const bool success)
 {
 	MutexLocker worldLocker(&WorldMutex);
 	MutexLocker planLocker(&PlanMutex);

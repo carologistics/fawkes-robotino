@@ -36,7 +36,7 @@ using fawkes::MutexLocker;
  * @brief Initalized plan elements.
  */
 void
-AspPlanerThread::initPlan(void)
+AspPlannerThread::initPlan(void)
 {
 	//Clear old plan, if in db.
 	robot_memory->drop_collection("syncedrobmem.plan");
@@ -63,7 +63,11 @@ struct IntermediatePlanElement : public BasicPlanElement {
 	int *CompareTime;
 
 	IntermediatePlanElement(void) = delete;
-	IntermediatePlanElement(const IntermediatePlanElement&) = delete;
+
+	/** Deleted dtor.
+	 * @param pe plan element
+	 */
+	IntermediatePlanElement(const IntermediatePlanElement& pe) = delete;
 
 	/**
 	 * @brief Move Constructor.
@@ -91,7 +95,7 @@ struct IntermediatePlanElement : public BasicPlanElement {
 
 	/**
 	 * @brief Move Assignment.
-	 * @param[in, out] that Moved element.
+	 * @param [in, out] that Moved element.
 	 * @return This.
 	 */
 	IntermediatePlanElement& operator=(IntermediatePlanElement&& that) {
@@ -263,7 +267,7 @@ assembleTemporaryPlan(std::unordered_map<std::string, std::vector<IntermediatePl
  * @brief Handles everything concerning the plan in the loop.
  */
 void
-AspPlanerThread::loopPlan(void)
+AspPlannerThread::loopPlan(void)
 {
 	MutexLocker solvingLocker(&SolvingMutex);
 	if ( !NewSymbols )
@@ -587,7 +591,7 @@ createObject(const std::string& robot, const int elementIndex, const PlanElement
  * @param[in] element The element.
  */
 void
-AspPlanerThread::insertPlanElement(const std::string& robot, const int elementIndex, const PlanElement& element)
+AspPlannerThread::insertPlanElement(const std::string& robot, const int elementIndex, const PlanElement& element)
 {
 	robot_memory->insert(createObject(robot, elementIndex, element), "syncedrobmem.plan");
 	return;
@@ -600,7 +604,7 @@ AspPlanerThread::insertPlanElement(const std::string& robot, const int elementIn
  * @param[in] element The element.
  */
 void
-AspPlanerThread::updatePlan(const std::string& robot, const int elementIndex, const PlanElement& element)
+AspPlannerThread::updatePlan(const std::string& robot, const int elementIndex, const PlanElement& element)
 {
 	robot_memory->update(createQuery(robot, elementIndex), createObject(robot, elementIndex, element),
 		"syncedrobmem.plan", true);
@@ -614,7 +618,7 @@ AspPlanerThread::updatePlan(const std::string& robot, const int elementIndex, co
  * @param[in] element The element.
  */
 void
-AspPlanerThread::updatePlanTiming(const std::string& robot, const int elementIndex, const PlanElement& element)
+AspPlannerThread::updatePlanTiming(const std::string& robot, const int elementIndex, const PlanElement& element)
 {
 	/* The idea was only to update the time, but this either don't work, or my query wasn't good enough, so call the
 	 * general update method. */
@@ -628,7 +632,7 @@ AspPlanerThread::updatePlanTiming(const std::string& robot, const int elementInd
  * @param[in] element The element.
  */
 void
-AspPlanerThread::removeFromPlanDB(const std::string& robot, const int elementIndex)
+AspPlannerThread::removeFromPlanDB(const std::string& robot, const int elementIndex)
 {
 	robot_memory->remove(createQuery(robot, elementIndex), "syncedrobmem.plan");
 	return;
@@ -640,7 +644,7 @@ AspPlanerThread::removeFromPlanDB(const std::string& robot, const int elementInd
  * @note The plan lock has to be hold.
  */
 void
-AspPlanerThread::tellRobotToStop(const std::string& robot)
+AspPlannerThread::tellRobotToStop(const std::string& robot)
 {
 	mongo::BSONObjBuilder builder;
 	builder.append("robot", robot).append("stop", true);
@@ -660,7 +664,7 @@ AspPlanerThread::tellRobotToStop(const std::string& robot)
  * @param[in] document The document with the feedback.
  */
 void
-AspPlanerThread::planFeedbackCallback(const mongo::BSONObj document)
+AspPlannerThread::planFeedbackCallback(const mongo::BSONObj document)
 {
 	try
 	{

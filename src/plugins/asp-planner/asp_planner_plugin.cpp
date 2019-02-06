@@ -1,6 +1,6 @@
 
 /***************************************************************************
- *  asp_planner_plugin.cpp - Planer plugin to schedule commands given to the
+ *  asp_planner_plugin.cpp - Planner plugin to schedule commands given to the
  *                          asp agent
  *
  *  Created on Thu Aug 18 04:20:02 2016
@@ -26,19 +26,19 @@
 
 /** ASP planner plugin.
  */
-class AspPlanerPlugin : public fawkes::Plugin
+class AspPlannerPlugin : public fawkes::Plugin
 {
 	public:
 	/** Constructor.
 	* @param config Fawkes configuration
 	*/
-	AspPlanerPlugin(fawkes::Configuration *config) : Plugin(config)
+	AspPlannerPlugin(fawkes::Configuration *config) : Plugin(config)
 	{
-		thread_list.push_back(new AspPlanerThread);
+		thread_list.push_back(new AspPlannerThread);
 		return;
 	}
 };
 
 
 PLUGIN_DESCRIPTION("ASP-based planner plugin")
-EXPORT_PLUGIN(AspPlanerPlugin)
+EXPORT_PLUGIN(AspPlannerPlugin)

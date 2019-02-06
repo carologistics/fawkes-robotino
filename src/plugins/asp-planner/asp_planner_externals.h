@@ -19,8 +19,8 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#ifndef __PLUGINS_ASP_PLANER_EXTERNALS_H_
-#define __PLUGINS_ASP_PLANER_EXTERNALS_H_
+#ifndef __PLUGINS_ASP_PLANNER_EXTERNALS_H_
+#define __PLUGINS_ASP_PLANNER_EXTERNALS_H_
 
 #include <string>
 

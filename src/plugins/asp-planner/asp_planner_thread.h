@@ -37,7 +37,7 @@
 #include <atomic>
 #include <unordered_set>
 
-class AspPlanerThread
+class AspPlannerThread
 : public fawkes::Thread,
   public fawkes::ConfigurableAspect,
   public fawkes::LoggingAspect,
@@ -182,8 +182,8 @@ class AspPlanerThread
 	void zonesCallback(const mongo::BSONObj document);
 
 	public:
-	AspPlanerThread(void);
-	~AspPlanerThread(void);
+	AspPlannerThread(void);
+	~AspPlannerThread(void);
 
 	void init(void) override;
 	void loop(void) override;

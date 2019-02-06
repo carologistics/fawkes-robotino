@@ -36,7 +36,7 @@ using fawkes::MutexLocker;
  * @return The ASP time units.
  */
 int
-AspPlanerThread::realGameTimeToAspGameTime(const int realGameTime) const noexcept
+AspPlannerThread::realGameTimeToAspGameTime(const int realGameTime) const noexcept
 {
 	if ( realGameTime == 0 )
 	{
@@ -51,7 +51,7 @@ AspPlanerThread::realGameTimeToAspGameTime(const int realGameTime) const noexcep
  * @return The real game time in seconds.
  */
 int
-AspPlanerThread::aspGameTimeToRealGameTime(const int aspGameTime) const noexcept
+AspPlannerThread::aspGameTimeToRealGameTime(const int aspGameTime) const noexcept
 {
 	return aspGameTime * TimeResolution;
 }
@@ -61,7 +61,7 @@ AspPlanerThread::aspGameTimeToRealGameTime(const int aspGameTime) const noexcept
  * @param[in] document The DB document.
  */
 void
-AspPlanerThread::beaconCallback(const mongo::BSONObj document)
+AspPlannerThread::beaconCallback(const mongo::BSONObj document)
 {
 	try
 	{
@@ -99,7 +99,7 @@ AspPlanerThread::beaconCallback(const mongo::BSONObj document)
  * @param[in] document The DB document.
  */
 void
-AspPlanerThread::gameTimeCallback(const mongo::BSONObj document)
+AspPlannerThread::gameTimeCallback(const mongo::BSONObj document)
 {
 	try
 	{
@@ -138,7 +138,7 @@ AspPlanerThread::gameTimeCallback(const mongo::BSONObj document)
  * @param[in] document The information about the machine.
  */
 void
-AspPlanerThread::machineCallback(const mongo::BSONObj document)
+AspPlannerThread::machineCallback(const mongo::BSONObj document)
 {
 	try
 	{
@@ -211,7 +211,7 @@ AspPlanerThread::machineCallback(const mongo::BSONObj document)
  * @param[in] document The information about the order.
  */
 void
-AspPlanerThread::orderCallback(const mongo::BSONObj document)
+AspPlannerThread::orderCallback(const mongo::BSONObj document)
 {
 	try
 	{
@@ -266,7 +266,7 @@ AspPlanerThread::orderCallback(const mongo::BSONObj document)
  * @param[in] document The information about the color.
  */
 void
-AspPlanerThread::ringColorCallback(const mongo::BSONObj document)
+AspPlannerThread::ringColorCallback(const mongo::BSONObj document)
 {
 	try
 	{
@@ -307,7 +307,7 @@ AspPlanerThread::ringColorCallback(const mongo::BSONObj document)
  * @param[in] document The document with the new color.
  */
 void
-AspPlanerThread::teamColorCallback(const mongo::BSONObj document)
+AspPlannerThread::teamColorCallback(const mongo::BSONObj document)
 {
 	try
 	{
@@ -355,7 +355,7 @@ AspPlanerThread::teamColorCallback(const mongo::BSONObj document)
  * @param[in] document The document with the zones.
  */
 void
-AspPlanerThread::zonesCallback(const mongo::BSONObj document)
+AspPlannerThread::zonesCallback(const mongo::BSONObj document)
 {
 	try
 	{
@@ -406,9 +406,9 @@ AspPlanerThread::zonesCallback(const mongo::BSONObj document)
 /**
  * @brief Constructor.
  */
-AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMODE_CONTINUOUS),
-		ASPAspect("ASPPlaner", "ASP-Planer"),
-		LoggingComponent("ASP-Planer-Thread"), ConfigPrefix("/asp-agent/"), TeamColor(nullptr),
+AspPlannerThread::AspPlannerThread(void) : Thread("AspPlannerThread", Thread::OPMODE_CONTINUOUS),
+		ASPAspect("ASPPlanner", "ASP-Planner"),
+		LoggingComponent("ASP-Planner-Thread"), ConfigPrefix("/asp-agent/"), TeamColor(nullptr),
 		Unsat(0),
 		//Config
 		ExplorationTime(0), DeliverProductTaskDuration(0), FetchProductTaskDuration(0), LookAhaed(0),
@@ -433,7 +433,7 @@ AspPlanerThread::AspPlanerThread(void) : Thread("AspPlanerThread", Thread::OPMOD
 /**
  * @brief Destructor.
  */
-AspPlanerThread::~AspPlanerThread(void)
+AspPlannerThread::~AspPlannerThread(void)
 {
 	return;
 }
@@ -442,9 +442,9 @@ AspPlanerThread::~AspPlanerThread(void)
  * @brief Initliaizes the robmem callbacks and world model. Also calls the specialized inits.
  */
 void
-AspPlanerThread::init(void)
+AspPlannerThread::init(void)
 {
-	logger->log_info(LoggingComponent, "Initialize ASP Planer");
+	logger->log_info(LoggingComponent, "Initialize ASP Planner");
 	loadConfig();
 	Orders.reserve(MaxOrders);
 	OrderTaskMap.reserve(MaxOrders * MaxQuantity);
@@ -457,34 +457,34 @@ AspPlanerThread::init(void)
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "active-robot", "name": {$ne: "RefBox"}})"), "robmem.planner",
-		&AspPlanerThread::beaconCallback, this));
+		&AspPlannerThread::beaconCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "game-time"})"), "robmem.planner",
-		&AspPlanerThread::gameTimeCallback, this));
+		&AspPlannerThread::gameTimeCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "machine"})"), "robmem.planner",
-		&AspPlanerThread::machineCallback, this));
+		&AspPlannerThread::machineCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "order"})"), "robmem.planner",
-		&AspPlanerThread::orderCallback, this));
+		&AspPlannerThread::orderCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "ring"})"), "robmem.planner",
-		&AspPlanerThread::ringColorCallback, this));
+		&AspPlannerThread::ringColorCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "team-color"})"), "robmem.planner",
-		&AspPlanerThread::teamColorCallback, this));
+		&AspPlannerThread::teamColorCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
 		mongo::Query(R"({"relation": "zones"})"), "robmem.planner",
-		&AspPlanerThread::zonesCallback, this));
+		&AspPlannerThread::zonesCallback, this));
 
 	RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-		mongo::Query(), "syncedrobmem.planFeedback", &AspPlanerThread::planFeedbackCallback, this));
+		mongo::Query(), "syncedrobmem.planFeedback", &AspPlannerThread::planFeedbackCallback, this));
 
 	initPlan();
 	initClingo();
@@ -502,7 +502,7 @@ constexprStrLen(const char *str) {
 }
 
 void
-AspPlanerThread::loop(void)
+AspPlannerThread::loop(void)
 {
 	if ( Unsat >= 8 )
 	{
@@ -654,16 +654,16 @@ AspPlanerThread::loop(void)
 }
 
 void
-AspPlanerThread::finalize(void)
+AspPlannerThread::finalize(void)
 {
-	logger->log_info(LoggingComponent, "Finalize ASP Planer");
+	logger->log_info(LoggingComponent, "Finalize ASP Planner");
 	for ( const auto& callback : RobotMemoryCallbacks )
 	{
 		robot_memory->remove_trigger(callback);
 	} //for ( const auto& callback : RobotMemoryCallbacks )
 	RobotMemoryCallbacks.clear();
 	finalizeClingo();
-	logger->log_info(LoggingComponent, "ASP Planer finalized");
+	logger->log_info(LoggingComponent, "ASP Planner finalized");
 	return;
 }
 

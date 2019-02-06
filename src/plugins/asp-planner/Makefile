@@ -1,5 +1,5 @@
 #*****************************************************************************
-#           Makefile Build System for Fawkes: ASP Planer Plugin
+#           Makefile Build System for Fawkes: ASP Planner Plugin
 #                            -------------------
 #   Created on Thu Aug 18 04:20:02 2016
 #   Copyright (C) 2016 by Björn Schäpers

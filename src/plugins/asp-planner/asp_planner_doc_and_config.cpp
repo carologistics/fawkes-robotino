@@ -265,213 +265,213 @@
  * @return The value represented as string.
  */
 
-/** @class AspPlanerThread "asp_planner_thread.h"
+/** @class AspPlannerThread "asp_planner_thread.h"
  * The thread to start and control the ASP planner.
  *
- * @property AspPlanerThread::LoggingComponent
+ * @property AspPlannerThread::LoggingComponent
  * @brief The component name for the logging facility.
  *
- * @property AspPlanerThread::ConfigPrefix
+ * @property AspPlannerThread::ConfigPrefix
  * @brief The prefix for the config access.
  *
- * @property AspPlanerThread::RobotMemoryCallbacks
+ * @property AspPlannerThread::RobotMemoryCallbacks
  * @brief Contains all registered callbacks in the robot memory.
  *
- * @property AspPlanerThread::TeamColor
+ * @property AspPlannerThread::TeamColor
  * @brief The team color for us as string, either "C" or "M".
  */
 
 /**
- * @property AspPlanerThread::Unsat
+ * @property AspPlannerThread::Unsat
  * @brief How often we were told the program was unsatisfiable in a row. If it gets to high we have to take recovering
  *        actions.
  *
- * @property AspPlanerThread::ExplorationTime
+ * @property AspPlannerThread::ExplorationTime
  * @brief The time for the exploration phase, in seconds.
  *
- * @property AspPlanerThread::DeliverProductTaskDuration
+ * @property AspPlannerThread::DeliverProductTaskDuration
  * @brief How many seconds it will take a robot to put a product in a machine.
  *
- * @property AspPlanerThread::FetchProductTaskDuration
+ * @property AspPlannerThread::FetchProductTaskDuration
  * @brief How many seconds it will take a robot to get a product from a machine.
  *
- * @property AspPlanerThread::LookAhaed
+ * @property AspPlannerThread::LookAhaed
  * @brief How many seconds the planner should look into the future.
  *
- * @property AspPlanerThread::MaxDriveDuration
+ * @property AspPlannerThread::MaxDriveDuration
  * @brief An upper bound for the time (in seconds) the robot has to drive between two locations.
  *
- * @property AspPlanerThread::MaxOrders
+ * @property AspPlannerThread::MaxOrders
  * @brief The maximum amount of orders we expect.
  *
- * @property AspPlanerThread::MaxProducts
+ * @property AspPlannerThread::MaxProducts
  * @brief The maximum amount of procuts which can be alive at any given point in time.
  *
- * @property AspPlanerThread::MaxQuantity
+ * @property AspPlannerThread::MaxQuantity
  * @brief The maximum quantity for an order we expect.
  *
- * @property AspPlanerThread::MaxTaskDuration
+ * @property AspPlannerThread::MaxTaskDuration
  * @brief An upper bound on the time (in seconds) for the execution of a task.
  *
- * @property AspPlanerThread::MaxWorkingDuration
+ * @property AspPlannerThread::MaxWorkingDuration
  * @brief The longest working duration of the machines.
  *
- * @property AspPlanerThread::PossibleRobots
+ * @property AspPlannerThread::PossibleRobots
  * @brief The names of the robots we may have.
  *
- * @property AspPlanerThread::PrepareCSTaskDuration
+ * @property AspPlannerThread::PrepareCSTaskDuration
  * @brief How many seconds it will take a robot to prepare a cap station.
  *
- * @property AspPlanerThread::ProductionEnd
+ * @property AspPlannerThread::ProductionEnd
  * @brief At which time point the production phase will end.
  *
- * @property AspPlanerThread::TimeResolution
+ * @property AspPlannerThread::TimeResolution
  * @brief How many real time seconds will be one asp time step.
  *
- * @property AspPlanerThread::WorkingDuration
+ * @property AspPlannerThread::WorkingDurations
  * @brief The mapping from machine type to its working duration.
  */
 
 /**
- * @property AspPlanerThread::BaseColors
+ * @property AspPlannerThread::BaseColors
  * @brief All available base colors.
  *
- * @property AspPlanerThread::SpecialBaseColor
+ * @property AspPlannerThread::SpecialBaseColor
  * @brief The base color, for the dummy products on the cap stations shelf.
  *
- * @property AspPlanerThread::CapColors
+ * @property AspPlannerThread::CapColors
  * @brief The cap colors and their machine matching.
  *
- * @property AspPlanerThread::WorldMutex
+ * @property AspPlannerThread::WorldMutex
  * @brief The mutex for the world model, including the robot informations.
  *
- * @property AspPlanerThread::GameTime
+ * @property AspPlannerThread::GameTime
  * @brief The current game time (as reported by the refbox) in (floored) seconds.
  *
- * @property AspPlanerThread::Orders
+ * @property AspPlannerThread::Orders
  * @brief The information about the orders.
  *
- * @property AspPlanerThread::RingColors
+ * @property AspPlannerThread::RingColors
  * @brief The information about the ring colors.
  *
- * @property AspPlanerThread::Robots
+ * @property AspPlannerThread::Robots
  * @brief The robot information in a lookup table.
  *
- * @property AspPlanerThread::Machines
+ * @property AspPlannerThread::Machines
  * @brief The machine information in a lookup table.
  *
- * @property AspPlanerThread::Products
+ * @property AspPlannerThread::Products
  * @brief The products currently used.
  *
- * @property AspPlanerThread::ReceivedZonesToExplore
+ * @property AspPlannerThread::ReceivedZonesToExplore
  * @brief If we have received the info which zones we have to explore.
  *
- * @property AspPlanerThread::ZonesToExplore
+ * @property AspPlannerThread::ZonesToExplore
  * @brief Which zones we have to explore.
  *
- * @property AspPlanerThread::OrderTaskMap
+ * @property AspPlannerThread::OrderTaskMap
  * @brief The mapping of (order #, quantitiy #) to the task external.
  */
 
 /**
- * @property AspPlanerThread::NodePropertyASP
+ * @property AspPlannerThread::NodePropertyASP
  * @brief The string for the asp node property. All nodes we export to ASP are marked with this.
  *
- * @property AspPlanerThread::NavgraphDistanceMutex
+ * @property AspPlannerThread::NavgraphDistanceMutex
  * @brief The mutex for all distance stuff.
  *
- * @property AspPlanerThread::NavgraphNodesForASP
+ * @property AspPlannerThread::NavgraphNodesForASP
  * @brief A mapping from the navgraph node name to its asp atom.
  *
- * @property AspPlanerThread::NodesToFind
+ * @property AspPlannerThread::NodesToFind
  * @brief The navgraph nodes we still have to find. If we found all we can release the driveDruation externals.
  *
- * @property AspPlanerThread::UpdateNavgraphDistances.
+ * @property AspPlannerThread::UpdateNavgraphDistances.
  * @brief If the distances have to be updated.
  *
- * @property AspPlanerThread::NavgraphDistances.
+ * @property AspPlannerThread::NavgraphDistances.
  * @brief The externals with the distance, we export to ASP.
  */
 
 /**
- * @property AspPlanerThread::DeliveryLocation
+ * @property AspPlannerThread::DeliveryLocation
  * @brief The location where a delivery may take place.
  *
- * @property AspPlanerThread::CapLocations
+ * @property AspPlannerThread::CapLocations
  * @brief The locations where a mount cap task may take place.
  *
- * @property AspPlanerThread::RingLocation
+ * @property AspPlannerThread::RingLocations
  * @brief The locations where a mount ring task may take place.
  */
 
 /**
- * @typedef AspPlanerThread::GroundRequest
+ * @typedef AspPlannerThread::GroundRequest
  * @brief Holds the information to build a Clingo::Part.
  *
- * @property AspPlanerThread::Interrupt
+ * @property AspPlannerThread::Interrupt
  * @brief The current interrupt state.
  *
- * @property AspPlanerThread::InterruptReason
+ * @property AspPlannerThread::InterruptReason
  * @brief The last set reason for the interrupt.
  *
- * @property AspPlanerThread::RequestMutex
+ * @property AspPlannerThread::RequestMutex
  * @brief The mutex for the requests and interupt handling.
  *
- * @property AspPlanerThread::SentCancel
+ * @property AspPlannerThread::SentCancel
  * @brief If a cancel was sent to the solver.
  *
- * @property AspPlanerThread::GroundRequests
+ * @property AspPlannerThread::GroundRequests
  * @brief Requests for new groundings.
  *
- * @property AspPlanterThread::ReleaseRequests
+ * @property AspPlannerThread::ReleaseRequests
  * @brief Requests for releasing externals.
  *
- * @property AspPlanterThread::AssignRequests
+ * @property AspPlannerThread::AssignRequests
  * @brief Requests for assigning true to externals.
  */
 
 /**
- * @property AspPlanerThread::ProgramGrounded
+ * @property AspPlannerThread::ProgramGrounded
  * @brief If we have grounded our program.
  *
- * @property AspPlanerThread::ProductionStarted
+ * @property AspPlannerThread::ProductionStarted
  * @brief If the production phase has started.
  */
 
 /**
- * @property AspPlanerThread::SolvingMutex
+ * @property AspPlannerThread::SolvingMutex
  * @brief Mutex for some solving related values.
  *
- * @property AspPlanerThread::LastModel
+ * @property AspPlannerThread::LastModel
  * @brief When we received the last model.
  *
- * @property AspPlanerThread::SolvingStarted
+ * @property AspPlannerThread::SolvingStarted
  * @brief When we started with the solving.
  *
- * @property AspPlanerThread::NewSymbols
+ * @property AspPlannerThread::NewSymbols
  * @brief Denotes if there are new (unprocessed) symbols.
  *
- * @property AspPlanerThread::Symbols
+ * @property AspPlannerThread::Symbols
  * @brief The symbols from the last model.
  *
- * @property AspPlanerThread::StartSolvingGameTime
+ * @property AspPlannerThread::StartSolvingGameTime
  * @brief The game time, when the solving was started.
  */
 
 /**
- * @property AspPlanerThread::PlanMutex
+ * @property AspPlannerThread::PlanMutex
  * @brief The mutex for the plan.
  *
- * @property AspPlanerThread::LastPlan
+ * @property AspPlannerThread::LastPlan
  * @brief When we extracted the last plan.
  *
- * @property AspPlanerThread::PlanGameTime
+ * @property AspPlannerThread::PlanGameTime
  * @brief The game time, when the model was read.
  *
- * @property AspPlanerThread::Plan
+ * @property AspPlannerThread::Plan
  * @brief The plan currently deployed.
  *
- * @property AspPlanerThread::LocationInUse
+ * @property AspPlannerThread::LocationInUse
  * @brief Mapping from a location to the robot which uses it, to detect errors in the plan.
  */
 
@@ -479,20 +479,20 @@
  * @brief Reads the config and fills the members.
  */
 void
-AspPlanerThread::loadConfig(void)
+AspPlannerThread::loadConfig(void)
 {
-	constexpr auto infixPlaner = "planner/";
+	constexpr auto infixPlanner = "planner/";
 	constexpr auto infixTime = "time-estimations/";
 	constexpr auto infixCapStation = "cap-station/assigned-color/";
 	constexpr auto infixWorkingDuration = "working-durations/";
 
-	constexpr auto infixPlanerLen = std::strlen(infixPlaner), infixTimeLen = std::strlen(infixTime);
+	constexpr auto infixPlannerLen = std::strlen(infixPlanner), infixTimeLen = std::strlen(infixTime);
 	constexpr auto infixCapStationLen = std::strlen(infixCapStation);
 	constexpr auto infixWorkingDurationLen = std::strlen(infixWorkingDuration);
 	const auto prefixLen = std::strlen(ConfigPrefix);
 
 	char buffer[prefixLen +
-		std::max<size_t>({infixPlanerLen, infixTimeLen, infixCapStationLen, infixWorkingDurationLen}) + 20];
+		std::max<size_t>({infixPlannerLen, infixTimeLen, infixCapStationLen, infixWorkingDurationLen}) + 20];
 	std::strcpy(buffer, ConfigPrefix);
 
 	//The plain part.
@@ -504,8 +504,8 @@ AspPlanerThread::loadConfig(void)
 	ProductionEnd = ExplorationTime + config->get_int(buffer);
 
 	//The planner part.
-	suffix = buffer + prefixLen + infixPlanerLen;
-	std::strcpy(buffer + prefixLen, infixPlaner);
+	suffix = buffer + prefixLen + infixPlannerLen;
+	std::strcpy(buffer + prefixLen, infixPlanner);
 
 	std::strcpy(suffix, "debug-level");
 	clingo->set_debug_level(static_cast<fawkes::ClingoAccess::DebugLevel_t>(config->get_int(buffer)));
