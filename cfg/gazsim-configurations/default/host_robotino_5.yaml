@@ -33,6 +33,7 @@ plugins/light_front:
 clips-agent:
   rcll2016:
     #agent-role:
+    use-asp: false
     
     exploration:      
       row: MID
@@ -43,7 +44,7 @@ clips-agent:
     # uncomment following line ONLY if you are playing without refbox
     # unwatch-rules: [sim-recv-MachineInfo, sim-recv-PuckInfo]
 
-    team-name: Carologistics-2
+    team-name: Carologistics
     robot-name: R-5
     robot-number: 5
 

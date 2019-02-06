@@ -20,7 +20,7 @@ SUBDIRS	= clips-motor-switch \
 	  voltagelogger \
 	  ax12_gripper \
 	  arduino \
-	  tag_vision \
+		tag_vision \
       navgraph_broker \
 	  navgraph-generator-mps \
 	  conveyor_pose \
@@ -31,6 +31,7 @@ SUBDIRS	= clips-motor-switch \
 		laser_front_dist \
 		mps-laser-gen \
 		webtools-bridge \
+		asp-planner
 
 include $(BUILDSYSDIR)/rules.mk
 
