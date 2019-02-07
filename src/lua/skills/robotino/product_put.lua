@@ -67,52 +67,11 @@ local slide_gripper_back_x = -0.06    -- distance to move gripper back after ope
 local slide_gripper_up_z = 0.01 --distance to move gripper up after opening the gripper if the target is slide
 
 local drive_back_x = -0.1      -- distance to drive back after closing the gripper
-local MAX_RETRIES = 3
-
-local cfg_frame_ = "gripper"
 
 local align_target_frame = "gripper_fingers" -- the gripper align is made relative to this frame (according to gripper_commands)
 local z_movement_target_frame = "gripper" -- the gripper z movement is made relative to this frame (according to gripper_commands)
 local x_movement_target_frame = "gripper" -- the gripper x movement is made relative to this frame (according to griper_commands_new)
 
-
-
-function no_writer()
-   return not if_conveyor_pose:has_writer()
-end
-
-function fitness_ok()
-  return if_conveyor_pose:euclidean_fitness() >= euclidean_fitness_threshold
-end
-
-function tolerance_ok()
-   local pose = pose_offset()
-   if if_conveyor_pose:is_busy() then
-     return false
-   end
-
-   return math.abs(pose.x) <= gripper_tolerance_x
-      and math.abs(pose.y) <= gripper_tolerance_y
-      and math.abs(pose.z) <= gripper_tolerance_z
-end
-
-function result_ready()
-  if if_conveyor_pose:is_busy()
-     or if_conveyor_pose:msgid() ~= fsm.vars.msgid
-  then return false end
-
-  local bb_stamp = fawkes.Time:new(if_conveyor_pose:input_timestamp(0), if_conveyor_pose:input_timestamp(1))
-  if not tf:can_transform("conveyor_pose", "gripper_fingers", bb_stamp) then
-    return false
-  end
-
-  local transform = fawkes.tf.StampedTransform:new()
-  tf:lookup_transform("conveyor_pose", "gripper_fingers", transform)
-  if transform.stamp:in_usec() < bb_stamp:in_usec() then
-    return false
-  end
-  return true
-end
 
 function pose_not_exist()
   local target_pos = { x = gripper_pose_offset_x,
@@ -150,7 +109,7 @@ function pose_offset()
 end
 
 fsm:define_states{ export_to=_M,
-   closure={MAX_RETRIES=MAX_RETRIES,tolerance_ok=tolerance_ok,result_ready=result_ready,fitness_ok=fitness_ok,pose_not_exist=pose_not_exist},
+   closure={pose_not_exist=pose_not_exist},
   {"INIT", JumpState},
   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="FAILED"},
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
