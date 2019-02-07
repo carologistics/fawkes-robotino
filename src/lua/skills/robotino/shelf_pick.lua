@@ -26,7 +26,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "shelf_pick"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
+depends_skills     = {"motor_move", "ax12gripper", "approach_mps","gripper_commands"}
 depends_interfaces = {
    {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"}
 }
@@ -43,35 +43,44 @@ documentation      = [==[ shelf_pick
 skillenv.skill_module(_M)
 
 local x_distance = 0.27
-if config:exists("/skills/approach_distance_laser/x") then
-   x_distance = config:get_float("/skills/approach_distance_laser/x")
-end
+local gripper_adjust_z_distance = -0.01
+local gripper_adjust_x_distance = 0.02
+local adjust_target_frame = "gripper"
+
+
 
 fsm:define_states{ export_to=_M, closure={gripper_if=gripper_if},
-   {"INIT",       SkillJumpState, skills={{ax12gripper}}, final_to="GOTO_SHELF", fail_to="FAILED" },
-   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="ADJUST_HEIGHT", fail_to="FAILED"},
-   {"ADJUST_HEIGHT",       SkillJumpState, skills={{ax12gripper}}, final_to="APPROACH_SHELF", fail_to="FAILED" },
-   {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="GRAB_PRODUCT", fail_to="FAILED"},
+   {"INIT",       SkillJumpState, skills={{ax12gripper}}, final_to="GOTO_SHELF", fail_to="PRE_FAIL" },
+   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="ADJUST_HEIGHT", fail_to="PRE_FAIL"},
+   {"ADJUST_HEIGHT",       SkillJumpState, skills={{gripper_commands}}, final_to="APPROACH_SHELF", fail_to="PRE_FAIL" },
+   {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="GRAB_PRODUCT", fail_to="PRE_FAIL"},
    {"GRAB_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_GRAB", fail_to="FAIL_SAFE"},
-   {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_INTERFACE", fail_to="FAILED"},
-   {"CENTER_PUCK", SkillJumpState, skills={{ax12gripper}}, final_to="RESET_Z_POS", fail_to="FAILED"},
-   {"RESET_Z_POS", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FAILED"},
-   {"FAIL_SAFE", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},
+   {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="HOME_GRIPPER", fail_to="FAILED"},
+   {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="FINAL", fail_to="FAILED"},
+   {"RELAX_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FAILED"},
+   {"FAIL_SAFE", SkillJumpState, skills={{motor_move}}, final_to="PRE_FAIL", fail_to="PRE_FAIL"},
    {"WAIT_AFTER_GRAB", JumpState},
-   {"WAIT_FOR_INTERFACE", JumpState},
-   {"CHECK_PUCK", JumpState},
+   {"PRE_FAIL", SkillJumpState, skills={{ax12gripper}}, final_to="FAILED", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
-   {"GOTO_SHELF", "FAILED", cond="vars.error"},
+   {"GOTO_SHELF", "PRE_FAIL", cond="vars.error"},
    {"WAIT_AFTER_GRAB", "LEAVE_SHELF", timeout=0.5},
-   {"WAIT_FOR_INTERFACE", "CHECK_PUCK", timeout=2},
-   {"CHECK_PUCK", "CENTER_PUCK", cond="gripper_if:is_holds_puck()", desc="Got a puck"},
-   {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="GOT NO PUCK!"},
+   {"GRAB_PRODUCT", "WAIT_AFTER_GRAB", timeout=0.5},
 }
 
 function INIT:init()
    self.args["ax12gripper"].command = "OPEN"
+
+   -- Override values if host specific config value is set
+   if config:exists("/skills/shelf_pick/gripper_adjust_z_distance") then
+       gripper_adjust_z_distance = config:get_float("/skills/shelf_pick/gripper_adjust_z_distance")
+   end
+
+end
+
+function RELAX_GRIPPER:init()
+  self.args["ax12gripper"].command = "CLOSE"
 end
 
 function GOTO_SHELF:init()
@@ -96,9 +105,10 @@ function GOTO_SHELF:init()
 end
 
 function ADJUST_HEIGHT:init()
-   self.args["ax12gripper"].command = "RELGOTOZ"
-   self.args["ax12gripper"].z_position = -4
-   printf("adjusting height")
+   self.args["gripper_commands"].command = "MOVEABS"
+   self.args["gripper_commands"].z = gripper_adjust_z_distance
+   self.args["gripper_commands"].x = gripper_adjust_x_distance
+   self.args["gripper_commands"].target_frame = adjust_target_frame
 end
 
 
@@ -108,21 +118,27 @@ function APPROACH_SHELF:init()
 end
 
 function GRAB_PRODUCT:init()
-   self.args["ax12gripper"].command = "CLOSE"
+   self.args["ax12gripper"].command = "CLOSE_TIGHT"
 end
 
 function LEAVE_SHELF:init()
    self.args["motor_move"].x = -0.2
 end
 
-function CENTER_PUCK:init()
-   self.args["ax12gripper"].command = "CENTER"
+function HOME_GRIPPER:init()
+  self.args["gripper_commands"].x = 0
+  self.args["gripper_commands"].y = 0
+  self.args["gripper_commands"].z = 0
+  self.args["gripper_commands"].target_frame = "gripper_home"
+  self.args["gripper_commands"].command = "MOVEABS"
+  self.args["gripper_commands"].wait = false
 end
-
-function RESET_Z_POS:init()
-   self.args["ax12gripper"].command = "RESET_Z_POS"
-end
-
 function FAIL_SAFE:init()
    self.args["motor_move"].x = -0.1
 end
+
+function PRE_FAIL:init()
+  self.args["ax12gripper"].command = "CLOSE"
+end
+
+
