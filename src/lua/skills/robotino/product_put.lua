@@ -27,8 +27,6 @@ name               = "product_put"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"gripper_commands","motor_move","ax12gripper"}
 depends_interfaces = {
-  {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
-  {v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
 }
 
 documentation      = [==[
@@ -44,7 +42,6 @@ Parameters:
 -- Initialize as skill module
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
-local pam = require("parse_module")
 
 -- Constants
 local euclidean_fitness_threshold = 8  --threshold for euclidean fitness  (fitness should be higher)
@@ -129,14 +126,6 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-  if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
-  local parse_result = pam.parse_to_type_target(if_conveyor_pose,self.fsm.vars.place,self.fsm.vars.side,self.fsm.vars.shelf,self.fsm.vars.slide)
-  if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.RunICPMessage:new(parse_result.mps_type,parse_result.mps_target))
-  self.fsm.vars.mps_type = parse_result.mps_type
-  self.fsm.vars.mps_target = parse_result.mps_target
-  self.fsm.vars.retries = 0
-  self.fsm.vars.vision_retries = 0
-
   -- Override values if host specific config value is set
   if config:exists("/skills/product_put/gripper_pose_offset_x") then
       gripper_pose_offset_x = config:get_float("/skills/product_put/gripper_pose_offset_x")
@@ -156,7 +145,6 @@ function GRIPPER_ALIGN:init()
   self.args["gripper_commands"].y = pose.y
   self.args["gripper_commands"].z = pose.z
   self.args["gripper_commands"].target_frame = "gripper"
-  self.fsm.vars.retries = self.fsm.vars.retries + 1
 end
 
 function MOVE_GRIPPER_FORWARD:init()
@@ -202,27 +190,12 @@ function MOVE_GRIPPER_BACK:init()
     self.args["gripper_commands"].x = conveyor_gripper_back_x
     self.args["gripper_commands"].z = conveyor_gripper_up_z
   end
-
 end
 
 function DRIVE_BACK:init()
   self.args["motor_move"].x = drive_back_x
 end
 
-function cleanup()
-   if (fsm.vars.disable_realsense_afterwards == nil or fsm.vars.disable_realsense_afterwards) then
-     if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
-   end
-end
-
 function PRE_FAIL:init()
   self.args["gripper_commands"].command="CLOSE"
-end
-
-function FAILED:init()
-   cleanup()
-end
-
-function FINAL:init()
-   cleanup()
 end
