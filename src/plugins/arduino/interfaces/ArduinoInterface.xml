@@ -67,4 +67,7 @@
   <message name="OpenGripper">
     <comment>Open Gripper</comment>
   </message>
+  <message name="StatusRequest">
+    <comment>Request a status of the arduino</comment>
+  </message>
 </interface>
