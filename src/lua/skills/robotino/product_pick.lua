@@ -47,13 +47,6 @@ local tfm = require("fawkes.tfutils")
 local pam = require("parse_module")
 
 -- Constants
-local euclidean_fitness_threshold = 8  --threshold for euclidean fitness for targets other than shelf
-local shelf_euclidean_fitness_threshold = 3 -- threshold for euclidean_fitness if target is shelf
-
-local gripper_tolerance_x = 0.005 -- gripper x tolerance according to conveyor pose
-local gripper_tolerance_y = 0.005 -- gripper y tolerance according to conveyor pose
-local gripper_tolerance_z = 0.005 -- gripper z tolerance according to conveyor pose
-
 local conveyor_gripper_forward_x = 0.05 -- distance to move gripper forward after align
 local conveyor_gripper_down_z = -0.015    -- distance to move gripper down after driving over product
 local conveyor_gripper_down_second_z = -0.005       -- distance to mover gripper down second time
@@ -86,51 +79,6 @@ local GRIPPER_POSES = {
   shelf_right={x=0.05, y=0.00, z=0.035},
   conveyor={x=0.05, y=0.00,z=0.035},
 }
-
-local MAX_RETRIES=2
-
-function no_writer()
-   return not if_conveyor_pose:has_writer()
-end
-
-function tolerance_ok()
-   local pose = pose_offset()
-   if if_conveyor_pose:is_busy() then
-      return false
-   end
-
-   if math.abs(pose.x) <= gripper_tolerance_x and math.abs(pose.y) <= gripper_tolerance_y and math.abs(pose.z) <= gripper_tolerance_z then
-      return true
-   end
-end
-
-function fitness_ok()
-  local local_fitness_threshold = 0
-  if fsm.vars.shelf ~= nil then
-    local_fitness_threshold = shelf_euclidean_fitness_threshold
-  else
-    local_fitness_threshold = euclidean_fitness_threshold
-  end
-  return if_conveyor_pose:euclidean_fitness() >= local_fitness_threshold
-end
-
-function result_ready()
-  if if_conveyor_pose:is_busy()
-   or if_conveyor_pose:msgid() ~= fsm.vars.msgid
-  then return false end
-
-  local bb_stamp = fawkes.Time:new(if_conveyor_pose:input_timestamp(0), if_conveyor_pose:input_timestamp(1))
-  if not tf:can_transform("conveyor_pose", "gripper_fingers", bb_stamp) then
-    return false
-  end
-
-  local transform = fawkes.tf.StampedTransform:new()
-  tf:lookup_transform("conveyor_pose", "gripper_fingers", transform)
-  if transform.stamp:in_usec() < bb_stamp:in_usec() then
-    return false
-  end
-  return true
-end
 
 function pose_not_exist()
   local target_pos = { x = gripper_pose_offset_x,
@@ -168,7 +116,7 @@ end
 
 
 fsm:define_states{ export_to=_M,
-   closure={gripper_if=gripper_if, tolerance_ok=tolerance_ok, MAX_RETRIES=MAX_RETRIES, result_ready=result_ready, fitness_ok=fitness_ok,pose_not_exist=pose_not_exist},
+   closure={gripper_if=gripper_if, pose_not_exist=pose_not_exist},
    {"INIT", JumpState},
    {"INIT_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="OPEN_GRIPPER", fail_to="FAILED"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}},final_to="GRIPPER_ALIGN", fail_to="PRE_FAIL"},
