@@ -30,6 +30,7 @@ depends_interfaces = {
 }
 
 documentation      = [==[
+Skill to put a product onto the conveyor or the slide.
 
 Parameters:
       @param place   the name of the MPS (see navgraph e.g.: "M-BS" for base station of team magenta)
