@@ -61,8 +61,7 @@ local slide_gripper_up_z = 0.01 --distance to move gripper up after opening the 
 local drive_back_x = -0.1      -- distance to drive back after closing the gripper
 
 local align_target_frame = "gripper_fingers" -- the gripper align is made relative to this frame (according to gripper_commands)
-local z_movement_target_frame = "gripper" -- the gripper z movement is made relative to this frame (according to gripper_commands)
-local x_movement_target_frame = "gripper" -- the gripper x movement is made relative to this frame (according to griper_commands_new)
+local movement_target_frame = "gripper" -- the gripper z movement is made relative to this frame (according to gripper_commands)
 
 
 function pose_not_exist()
@@ -73,7 +72,7 @@ function pose_not_exist()
 
    }
 
-   local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper_fingers")
+   local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", align_target_frame)
    if transformed_pos == nil then
      return true
    end
@@ -89,7 +88,7 @@ function pose_offset()
 
    }
 
-   local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper_fingers")
+   local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", align_target_frame)
    print_info("product_pick: target_pos is x = %f, y = %f, z = %f", target_pos.x, target_pos.y, target_pos.z)
    print_info("product_pick: transformed_pos is x = %f, y = %f,z = %f", transformed_pos.x, transformed_pos.y, transformed_pos.z)
 
@@ -139,12 +138,12 @@ function GRIPPER_ALIGN:init()
   self.args["gripper_commands"].x = pose.x
   self.args["gripper_commands"].y = pose.y
   self.args["gripper_commands"].z = pose.z
-  self.args["gripper_commands"].target_frame = "gripper"
+  self.args["gripper_commands"].target_frame = movement_target_frame
 end
 
 function MOVE_GRIPPER_FORWARD:init()
   self.args["gripper_commands"].command = "MOVEABS"
-  self.args["gripper_commands"].target_frame = x_movement_target_frame
+  self.args["gripper_commands"].target_frame = movement_target_frame
 
   if self.fsm.vars.slide then
     self.args["gripper_commands"].x = slide_gripper_forward_x
@@ -177,7 +176,7 @@ end
 
 function MOVE_GRIPPER_BACK:init()
   self.args["gripper_commands"].command = "MOVEABS"
-  self.args["gripper_commands"].target_frame = x_movement_target_frame
+  self.args["gripper_commands"].target_frame = movement_target_frame
   if self.fsm.vars.slide then
     self.args["gripper_commands"].x = slide_gripper_back_x
     self.args["gripper_commands"].z = slide_gripper_up_z
