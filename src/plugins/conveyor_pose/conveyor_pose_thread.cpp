@@ -402,12 +402,12 @@ ConveyorPoseThread::loop()
 {
   // Check for Messages in ConveyorPoseInterface and update information if needed
   while ( !bb_pose_->msgq_empty() ) {
-    if (bb_pose_->msgq_first_is<ConveyorPoseInterface::SetStationMessage>() ) {
+    if (bb_pose_->msgq_first_is<ConveyorPoseInterface::RunICPMessage>() ) {
 
       //Update station related information
-      logger->log_info(name(), "Received SetStationMessage");
-      ConveyorPoseInterface::SetStationMessage *msg =
-          bb_pose_->msgq_first<ConveyorPoseInterface::SetStationMessage>();
+      logger->log_info(name(), "Received RunICPMessage");
+      ConveyorPoseInterface::RunICPMessage *msg =
+          bb_pose_->msgq_first<ConveyorPoseInterface::RunICPMessage>();
       update_station_information(*msg);
       bb_pose_->write();
 
@@ -610,7 +610,7 @@ ConveyorPoseThread::record_model()
 
 
 void
-ConveyorPoseThread::update_station_information(ConveyorPoseInterface::SetStationMessage &msg)
+ConveyorPoseThread::update_station_information(ConveyorPoseInterface::RunICPMessage &msg)
 {
   ConveyorPoseInterface::MPS_TYPE mps_type = msg.mps_type_to_set();
   ConveyorPoseInterface::MPS_TARGET mps_target = msg.mps_target_to_set();
