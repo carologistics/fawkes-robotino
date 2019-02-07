@@ -198,7 +198,7 @@ fsm:add_transitions{
 function INIT:init()
   if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
   local parse_result = pam.parse_to_type_target(if_conveyor_pose,self.fsm.vars.place,self.fsm.vars.side,self.fsm.vars.shelf,self.fsm.vars.slide)
-  --if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.SetStationMessage:new(parse_result.mps_type,parse_result.mps_target))
+  --if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.RunICPMessage:new(parse_result.mps_type,parse_result.mps_target))
   self.fsm.vars.mps_type = parse_result.mps_type
   self.fsm.vars.mps_target = parse_result.mps_target
   self.fsm.vars.retries = 0
