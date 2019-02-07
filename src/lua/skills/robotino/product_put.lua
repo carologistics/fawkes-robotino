@@ -44,11 +44,6 @@ skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
 -- Constants
-local euclidean_fitness_threshold = 8  --threshold for euclidean fitness  (fitness should be higher)
-local gripper_tolerance_x = 0.005-- gripper x tolerance according to conveyor pose
-local gripper_tolerance_y = 0.005 -- gripper y tolerance according to conveyor pose
-local gripper_tolerance_z = 0.005 -- gripper z tolerance according to conveyor pose
-
 local gripper_pose_offset_x = -0.02  -- conveyor pose offset in x direction
 local gripper_pose_offset_y = 0.00     -- conveyor_pose offset in y direction
 local gripper_pose_offset_z = 0.02  -- conveyor_pose offset in z direction
