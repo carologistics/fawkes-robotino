@@ -319,6 +319,27 @@ void ArduinoComThread::loop() {
                      ->msgq_first_is<ArduinoInterface::CalibrateMessage>()) {
         calibrated_ = false;
         // TODO
+      } else if (arduino_if_
+                     ->msgq_first_is<ArduinoInterface::CloseGripperMessage>()) {
+        ArduinoInterface::CloseGripperMessage *msg =
+            arduino_if_->msgq_first(msg);
+        logger->log_debug(name(), "Close Gripper");
+        append_message_to_queue(ArduinoComMessage::command_id_t::CMD_GRAB, 0,
+                                10000);
+      } else if (arduino_if_
+                     ->msgq_first_is<ArduinoInterface::OpenGripperMessage>()) {
+        ArduinoInterface::OpenGripperMessage *msg =
+            arduino_if_->msgq_first(msg);
+        logger->log_debug(name(), "Open Gripper");
+        append_message_to_queue(ArduinoComMessage::command_id_t::CMD_OPEN, 0,
+                                10000);
+      } else if (arduino_if_->msgq_first_is<
+                     ArduinoInterface::StatusUpdateMessage>()) {
+        ArduinoInterface::StatusUpdateMessage *msg =
+            arduino_if_->msgq_first(msg);
+        logger->log_debug(name(), "Request Status");
+        append_message_to_queue(ArduinoComMessage::command_id_t::CMD_STATUS_REQ,
+                                0, 10000);
       }
 
       arduino_if_->msgq_pop();
@@ -635,8 +656,16 @@ std::string ArduinoComThread::read_packet(unsigned int timeout) {
     // TODO: setup absolute pose reporting!
 
     std::stringstream ss(s.substr(4));
+    std::string gripper_status;
     ss >> gripper_pose_[X] >> gripper_pose_[Y] >> gripper_pose_[Z] >>
-        gripper_pose_[A];
+        gripper_pose_[A] >> gripper_status;
+    if (gripper_status == "CLOSED") {
+      arduino_if_->set_gripper_closed(true);
+      arduino_if_->write();
+    } else if (gripper_status == "OPEN") {
+      arduino_if_->set_gripper_closed(false);
+      arduino_if_->write();
+    }
   } else {
     // Probably something went wrong with communication
     current_arduino_status_ = 'E';

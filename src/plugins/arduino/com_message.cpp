@@ -120,7 +120,8 @@ bool ArduinoComMessage::add_command(command_id_t cmd, unsigned int value) {
       cmd == command_id_t::CMD_X_NEW_POS ||
       cmd == command_id_t::CMD_Y_NEW_POS ||
       cmd == command_id_t::CMD_Z_NEW_POS ||
-      cmd == command_id_t::CMD_A_NEW_POS) {
+      cmd == command_id_t::CMD_A_NEW_POS || cmd == command_id_t::CMD_OPEN ||
+      cmd == command_id_t::CMD_GRAB || cmd == command_id_t::CMD_STATUS_REQ) {
     valid_command = true;
   }
 
