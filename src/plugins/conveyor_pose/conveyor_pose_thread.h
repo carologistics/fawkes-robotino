@@ -121,7 +121,7 @@ private:
 
   int cfg_force_shelf_;
 
-  void update_station_information(fawkes::ConveyorPoseInterface::SetStationMessage &msg);
+  void update_station_information(fawkes::ConveyorPoseInterface::RunICPMessage &msg);
   std::string get_model_path(fawkes::ConveyorPoseInterface *iface, fawkes::ConveyorPoseInterface::MPS_TYPE, fawkes::ConveyorPoseInterface::MPS_TARGET);
 
   //Mapping from {Type,Target} to its corresponding model path

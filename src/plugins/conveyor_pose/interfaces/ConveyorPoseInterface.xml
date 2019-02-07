@@ -55,8 +55,8 @@
       The current location on the MPS.
     </field>
   </data>
-  <message name="SetStation">
-    <comment>Set which conveyor model the plugin should use.</comment>
+  <message name="RunICP">
+    <comment>Set which conveyor model the plugin should use and run ICP.</comment>
     <field type="MPS_TYPE"  name="mps_type_to_set">
       Station of the Machine defined in the MPSType enum.
     </field>
