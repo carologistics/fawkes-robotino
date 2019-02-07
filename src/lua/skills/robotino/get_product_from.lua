@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align","shelf_pick"}
+depends_skills     = {"gripper_commands","product_pick", "drive_to_machine_point", "conveyor_align","shelf_pick"}
 depends_interfaces = {
 }
 
