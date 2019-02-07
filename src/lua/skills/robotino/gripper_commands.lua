@@ -38,6 +38,7 @@ documentation      = [==[
     @param x   absolute x position for gripper move
     @param y   absolute y position for gripper move
     @param z   absolute z position for gripper move
+    @param wait (optional, default: true) force the skill to wait on arduino plugin
 
 ]==]
 
@@ -79,9 +80,8 @@ fsm:add_transitions{
    {"COMMAND", "WAIT_COMMAND", timeout=0.2},
    {"WAIT_COMMAND", "FAILED", cond="is_error()"},
    {"WAIT_COMMAND", "FINAL", cond="vars.wait ~= nil and not vars.wait"},
-   {"WAIT_COMMAND", "FINAL", cond="vars.restore"},
    {"WAIT_COMMAND", "FINAL", cond="arduino:is_final()"},
-   {"WAIT_COMMAND", "FAILED", cond="vars.error"},
+   {"WAIT_COMMAND", "FAILED", timeout=5},
 }
 
 function COMMAND:init()
