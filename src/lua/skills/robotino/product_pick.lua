@@ -69,14 +69,6 @@ local movement_target_frame = "gripper" -- the gripper movement is made relative
 
 
 
--- initial gripper poses depending on the target
-local GRIPPER_POSES = {
-  shelf_left={x=0.05, y=0.00, z=0.035},
-  shelf_middle={x=0.05, y=-0.035, z=0.035},
-  shelf_right={x=0.05, y=0.00, z=0.035},
-  conveyor={x=0.05, y=0.00,z=0.035},
-}
-
 function pose_not_exist()
   local target_pos = { x = gripper_pose_offset_x,
                        y = gripper_pose_offset_y,
@@ -115,7 +107,6 @@ end
 fsm:define_states{ export_to=_M,
    closure={gripper_if=gripper_if, pose_not_exist=pose_not_exist},
    {"INIT", JumpState},
-   {"INIT_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="OPEN_GRIPPER", fail_to="FAILED"},
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}},final_to="GRIPPER_ALIGN", fail_to="PRE_FAIL"},
    {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="PRE_FAIL"},
    {"WAIT_AFTER_CENTER",JumpState},
@@ -132,7 +123,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond="pose_not_exist()"},
-   {"INIT", "INIT_GRIPPER", true, desc="Init gripper for product_pick"},
+   {"INIT", "OPEN_GRIPPER", true, desc="Open gripper for product_pick"},
    {"CHECK_PUCK", "FINAL", cond="gripper_if:is_holds_puck()", desc="Hold puck"},
    {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Don't hold puck!"},
    {"WAIT_AFTER_CENTER", "HOME_GRIPPER", timeout=0.5},
@@ -155,19 +146,6 @@ function INIT:init()
   if config:exists("/skills/product_pick/conveyor_gripper_down_z") then
       conveyor_gripper_down_z = config:get_float("/skills/product_pick/conveyor_gripper_down_z")
   end
-end
-
-function INIT_GRIPPER:init()
-  if self.fsm.vars.shelf == "LEFT" then
-    self.args["gripper_commands"] = GRIPPER_POSES["shelf_left"]
-  elseif self.fsm.vars.shelf == "RIGHT" then
-    self.args["gripper_commands"] = GRIPPER_POSES["shelf_right"]
-  elseif self.fsm.vars.shelf == "MIDDLE" then
-    self.args["gripper_commands"] = GRIPPER_POSES["shelf_middle"]
-  else
-    self.args["gripper_commands"] = GRIPPER_POSES["conveyor"]
-  end
-  self.args["gripper_commands"].command = "MOVEABS"
 end
 
 function OPEN_GRIPPER:init()
