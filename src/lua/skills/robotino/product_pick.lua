@@ -27,8 +27,6 @@ fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"gripper_commands", "motor_move","ax12gripper"}
 depends_interfaces = {
   {v = "motor", type = "MotorInterface", id="Robotino" },
-  {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
-  {v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
   {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 
@@ -44,7 +42,6 @@ Parameters:
 -- Initialize as skill module
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
-local pam = require("parse_module")
 
 -- Constants
 local conveyor_gripper_forward_x = 0.05 -- distance to move gripper forward after align
@@ -143,14 +140,6 @@ fsm:add_transitions{
 
 
 function INIT:init()
-  if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
-  local parse_result = pam.parse_to_type_target(if_conveyor_pose,self.fsm.vars.place,self.fsm.vars.side,self.fsm.vars.shelf,self.fsm.vars.slide)
-  --if_conveyor_pose:msgq_enqueue_copy(if_conveyor_pose.RunICPMessage:new(parse_result.mps_type,parse_result.mps_target))
-  self.fsm.vars.mps_type = parse_result.mps_type
-  self.fsm.vars.mps_target = parse_result.mps_target
-  self.fsm.vars.retries = 0
-  self.fsm.vars.vision_retries = 0
-
   -- Override values if host specific config value is set
 
   if config:exists("/skills/product_pick/gripper_pose_offset_x") then
@@ -193,8 +182,6 @@ function CLOSE_AFTER_CENTER:init()
 end
 
 function GRIPPER_ALIGN:init()
-  self.fsm.vars.retries = self.fsm.vars.retries + 1
-
   local pose = pose_offset(self)
   self.args["gripper_commands"] = pose
   self.args["gripper_commands"].command = "MOVEABS"
@@ -244,19 +231,4 @@ end
 
 function PRE_FAIL:init()
   self.args["gripper_commands"].command="CLOSE"
-end
-
-
-function cleanup()
-   if (fsm.vars.disable_realsense_afterwards == nil or fsm.vars.disable_realsense_afterwards) then
-     if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
-   end
-end
-
-function FAILED:init()
-   cleanup()
-end
-
-function FINAL:init()
-   cleanup()
 end
