@@ -437,8 +437,6 @@ const std::map<ArduinoComMessage::setting_id_t,ArduinoComMessage::setting_type> 
   {setting_id_t::SET_HOME_SEEK,setting_type::SET_FLOAT}, // mm/min
   {setting_id_t::SET_HOME_DEBOUNCE,setting_type::SET_INT}, // milliseconds
   {setting_id_t::SET_HOME_PULL_OFF,setting_type::SET_FLOAT}, // millimeters
-  {setting_id_t::SET_MAX_SPINDLE_SPEED,setting_type::SET_FLOAT}, // RPM
-  {setting_id_t::SET_MIN_SPINDLE_SPEED,setting_type::SET_FLOAT}, // RPM
   {setting_id_t::SET_LASER_MODE,setting_type::SET_BOOL}, // bool
   {setting_id_t::SET_X_STEPS,setting_type::SET_FLOAT}, // steps/mm
   {setting_id_t::SET_Y_STEPS,setting_type::SET_FLOAT}, // steps/mm

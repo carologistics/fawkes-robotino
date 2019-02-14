@@ -690,8 +690,6 @@ void ArduinoComThread::load_hardcoded_config()
   cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_HARD_LIMS] = true;
   cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_HOME_CYCLE] = true;
   cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_HOME_DEBOUNCE] = 0u;
-  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_MAX_SPINDLE_SPEED] = 0.0f;
-  cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_MIN_SPINDLE_SPEED] = 0.0f;
   cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_LASER_MODE] = false;
 }
 

@@ -100,8 +100,6 @@ class ArduinoComMessage
     SET_HOME_SEEK=25, // mm/min
     SET_HOME_DEBOUNCE=26, // milliseconds
     SET_HOME_PULL_OFF=27, // millimeters
-    SET_MAX_SPINDLE_SPEED=30, // RPM
-    SET_MIN_SPINDLE_SPEED=31, // RPM
     SET_LASER_MODE=32, // bool
     SET_X_STEPS=100, // steps/mm
     SET_Y_STEPS=101, // steps/mm
