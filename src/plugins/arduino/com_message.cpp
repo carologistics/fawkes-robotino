@@ -441,13 +441,17 @@ const std::map<ArduinoComMessage::setting_id_t,ArduinoComMessage::setting_type> 
   {setting_id_t::SET_X_STEPS,setting_type::SET_FLOAT}, // steps/mm
   {setting_id_t::SET_Y_STEPS,setting_type::SET_FLOAT}, // steps/mm
   {setting_id_t::SET_Z_STEPS,setting_type::SET_FLOAT}, // steps/mm
+  {setting_id_t::SET_A_STEPS,setting_type::SET_FLOAT}, // steps/mm
   {setting_id_t::SET_X_MAX_RATE,setting_type::SET_FLOAT}, // mm/min
   {setting_id_t::SET_Y_MAX_RATE,setting_type::SET_FLOAT}, // mm/min
   {setting_id_t::SET_Z_MAX_RATE,setting_type::SET_FLOAT}, // mm/min
+  {setting_id_t::SET_A_MAX_RATE,setting_type::SET_FLOAT}, // mm/min
   {setting_id_t::SET_X_ACC,setting_type::SET_FLOAT}, //mm/s^2
   {setting_id_t::SET_Y_ACC,setting_type::SET_FLOAT}, //mm/s^2
   {setting_id_t::SET_Z_ACC,setting_type::SET_FLOAT}, //mm/s^2
+  {setting_id_t::SET_A_ACC,setting_type::SET_FLOAT}, //mm/s^2
   {setting_id_t::SET_X_MAX_TRAVEL,setting_type::SET_FLOAT}, //millimeter
   {setting_id_t::SET_Y_MAX_TRAVEL,setting_type::SET_FLOAT}, //millimeter
   {setting_id_t::SET_Z_MAX_TRAVEL,setting_type::SET_FLOAT}, //millimeter
+  {setting_id_t::SET_A_MAX_TRAVEL,setting_type::SET_FLOAT}, //millimeter
 };

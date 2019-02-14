@@ -43,14 +43,18 @@ arduino:
     x_steps: 260.869565217
     y_steps: 393.333333333
     z_steps: 531.250
+    a_steps: 531.250
     x_max_rate: 500.0
     y_max_rate: 500.0
     z_max_rate: 500.0
+    a_max_rate: 500.0
     x_acc: 10.0
     y_acc: 10.0
     z_acc: 10.0
+    a_acc: 10.0
     x_max: 115
     y_max: 75
     z_max: 57
+    a_max: 57
 
   max_open_tries: 1000

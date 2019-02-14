@@ -104,15 +104,19 @@ class ArduinoComMessage
     SET_X_STEPS=100, // steps/mm
     SET_Y_STEPS=101, // steps/mm
     SET_Z_STEPS=102, // steps/mm
+    SET_A_STEPS=103, // steps/mm
     SET_X_MAX_RATE=110, // mm/min
     SET_Y_MAX_RATE=111, // mm/min
     SET_Z_MAX_RATE=112, // mm/min
+    SET_A_MAX_RATE=113, // mm/min
     SET_X_ACC=120, //mm/s^2
     SET_Y_ACC=121, //mm/s^2
     SET_Z_ACC=122, //mm/s^2
+    SET_A_ACC=123, //mm/s^2
     SET_X_MAX_TRAVEL=130, //millimeter
     SET_Y_MAX_TRAVEL=131, //millimeter
     SET_Z_MAX_TRAVEL=132, //millimeter
+    SET_A_MAX_TRAVEL=133, //millimeter
   };
 
   /**

@@ -728,28 +728,37 @@ ArduinoComThread::load_config()
       = config->get_float(cfg_prefix_ + "/grbl_config/y_steps");
     cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Z_STEPS]
       = config->get_float(cfg_prefix_ + "/grbl_config/z_steps");
+    cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_A_STEPS]
+      = config->get_float(cfg_prefix_ + "/grbl_config/a_steps");
     cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_X_MAX_RATE]
       = config->get_float(cfg_prefix_ + "/grbl_config/x_max_rate");
     cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Y_MAX_RATE]
       = config->get_float(cfg_prefix_ + "/grbl_config/y_max_rate");
     cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Z_MAX_RATE]
       = config->get_float(cfg_prefix_ + "/grbl_config/z_max_rate");
+    cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_A_MAX_RATE]
+      = config->get_float(cfg_prefix_ + "/grbl_config/a_max_rate");
     cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_X_ACC]
       = config->get_float(cfg_prefix_ + "/grbl_config/x_acc");
     cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Y_ACC]
       = config->get_float(cfg_prefix_ + "/grbl_config/y_acc");
     cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Z_ACC]
       = config->get_float(cfg_prefix_ + "/grbl_config/z_acc");
+    cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_A_ACC]
+      = config->get_float(cfg_prefix_ + "/grbl_config/a_acc");
     cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_X_MAX_TRAVEL]
       = config->get_float(cfg_prefix_ + "/grbl_config/x_max");
     cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Y_MAX_TRAVEL]
       = config->get_float(cfg_prefix_ + "/grbl_config/y_max");
     cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Z_MAX_TRAVEL]
       = config->get_float(cfg_prefix_ + "/grbl_config/z_max");
+    cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_A_MAX_TRAVEL]
+      = config->get_float(cfg_prefix_ + "/grbl_config/a_max");
     //now fill the easy access copies
     cfg_x_max_ = boost::get<float>(cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_X_MAX_TRAVEL]);
     cfg_y_max_ = boost::get<float>(cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Y_MAX_TRAVEL]);
     cfg_z_max_ = boost::get<float>(cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_Z_MAX_TRAVEL]);
+    cfg_a_max_ = boost::get<float>(cfg_grbl_settings_[ArduinoComMessage::setting_id_t::SET_A_MAX_TRAVEL]);
 
     cfg_max_open_tries_
       = config->get_int(cfg_prefix_ + "max_open_tries");

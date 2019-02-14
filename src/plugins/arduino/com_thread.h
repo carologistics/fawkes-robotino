@@ -187,6 +187,7 @@ private:
     float cfg_x_max_;
     float cfg_y_max_;
     float cfg_z_max_;
+    float cfg_a_max_;
 
     float cfg_safe_distance_;
 
