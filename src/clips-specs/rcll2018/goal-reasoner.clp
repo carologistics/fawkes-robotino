@@ -253,7 +253,7 @@
 
 
 (defrule goal-reasoner-evaluate-unlock-done
-" React to a successfull unlock by removeing the pending fact and resetting the mutex"
+" React to a successful unlock by removing the pending fact and resetting the mutex"
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   ?p <- (goal-reasoner-unlock-pending ?lock)
   ?m <- (mutex (name ?lock) (request UNLOCK) (response UNLOCKED))
