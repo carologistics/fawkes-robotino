@@ -154,6 +154,10 @@ private:
 
     unsigned int cfg_max_open_tries_;
 
+    float cfg_gripper_open_value_;
+    float cfg_gripper_close_value_;
+
+
     void open_device();
     void close_device();
     void flush_device();

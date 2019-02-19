@@ -763,6 +763,9 @@ ArduinoComThread::load_config()
     cfg_max_open_tries_
       = config->get_int(cfg_prefix_ + "max_open_tries");
     cfg_safe_distance_ = config->get_float(cfg_prefix_ + "safe_distance");
+
+    cfg_gripper_open_value_ = config->get_float(cfg_prefix_ + "gripper/open_value");
+    cfg_gripper_close_value_ = config->get_float(cfg_prefix_ + "gripper/close_value");
   } catch (Exception &e) {
   }
 }
