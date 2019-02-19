@@ -59,4 +59,10 @@
   <message name="Calibrate">
     <comment>Restore gripper's position to the initial position set in the configuration.</comment>
   </message>
+  <message name="Open">
+    <comment>Open the gripper.</comment>
+  </message>
+  <message name="Close">
+    <comment>Close the gripper.</comment>
+  </message>
 </interface>
