@@ -59,3 +59,8 @@ arduino:
     a_max: 57
 
   max_open_tries: 1000
+
+  # config values specific for the gripper (exclusive the XYZ movement system)
+  gripper:
+    open_value: 100 # CAREFUL: THIS VALUE IS NOT TESTED YET
+    close_value: 100 # CAREFUL: THIS VALUE IS NOT TESTED YET
