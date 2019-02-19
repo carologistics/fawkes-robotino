@@ -33,6 +33,7 @@ arduino:
   # the distance to keep from the maximum values
   safe_distance: 2
 
+  # config values for the Grbl software
   grbl_config:
     step_pulse: 10
     step_idle_delay: 25
