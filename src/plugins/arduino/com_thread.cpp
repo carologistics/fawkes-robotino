@@ -281,6 +281,18 @@ ArduinoComThread::convert_commands()
       /* } else if (arduino_if_->msgq_first_is<ArduinoInterface::CalibrateMessage>()) { */
       /*   calibrated_ = false; */
       /*   // TODO */
+      } else if (arduino_if_->msgq_first_is<ArduinoInterface::CloseMessage>()) {
+        ArduinoInterface::CloseMessage *msg = arduino_if_->msgq_first(msg);
+        auto arduino_msg = new ArduinoComMessage();
+        arduino_msg->add_command(ArduinoComMessage::command_id_t::CMD_GOTO_LINEAR,{{'A',cfg_gripper_close_value_}});
+        logger->log_info(name(), "Commmand to go to A=%f", cfg_gripper_close_value_);
+        append_message_to_queue(arduino_msg);
+      } else if (arduino_if_->msgq_first_is<ArduinoInterface::OpenMessage>()) {
+        ArduinoInterface::OpenMessage *msg = arduino_if_->msgq_first(msg);
+        auto arduino_msg = new ArduinoComMessage();
+        arduino_msg->add_command(ArduinoComMessage::command_id_t::CMD_GOTO_LINEAR,{{'A',cfg_gripper_open_value_}});
+        logger->log_info(name(), "Commmand to go to A=%f", cfg_gripper_open_value_);
+        append_message_to_queue(arduino_msg);
       }
 
       arduino_if_->msgq_pop();
