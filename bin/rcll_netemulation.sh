@@ -1,12 +1,23 @@
 #!/bin/bash
 set -e
+# TODO GET Ports from config file
+PORTS=(27017 27021 27022 27023 27031 27032 27033)
+DEBUG=false
 
 function usage() {
 cat << EOF
-USAGE:
-  rcll_netemulation.sh setup <interface>
-  rcll_netemulation.sh clear <interface>
-  rcll_netemulation.sh show  <interface>
+usage:
+
+  $0 setup <network interface> OPTIONS
+  $0 clear <network interface>
+  $0 show  <network interface>
+
+OPTIONS:
+   -h|--help
+   -d|--delay <delay in ms> <random uniform distribution in ms> <correlation in %>
+   -c|--corruption <value in %>
+   --duplicate <value in %>
+   -D|--Debug        Apply rules also to icmp. ping 127.0.0.1 to test setup
 EOF
 }
 
@@ -20,21 +31,46 @@ function setup_rules() {
    # x:1| class 1 highest priority
    # x:2| class 2
    # x:3| class 3 lowest priority
-
-    tc qdisc add dev $1 root handle 1: prio
+    echo "setup rules for device $DEVICE"
+    tc qdisc add dev $DEVICE root handle 1: prio
 
    # netem minimum limit buffer calculation:
    # <bandwith> / <MTU Size> * delay * 1.5
    # 1 Gbps / 1500 bytes MTU * 100 ms * 1.5 = 12500.
 
-   # netem delay <delay in ms> <+- random uniform distribution> <correlation>
-   # netem loss <value in %> <correlation>
-   # netem corrupt <value in %>
-   # netem duplicate <value in %>
-
-   # here a delay of 2000ms with a random uniform distribution of +- 200ms with correlation of 25% and a package loss of 20% with correlation of 25%
+      # here a delay of 2000ms with a random uniform distribution of +- 200ms with correlation of 25% and a package loss of 20% with correlation of 25%
    # this rule is active for all rules that have a parent of 1:
-    tc qdisc add dev $1 parent 1:1 handle 10:  netem limit 100000 delay 2000ms 200ms 25% loss 20% 25%
+
+   filter="tc qdisc add dev $DEVICE parent 1:1 handle 10:  netem limit 100000 "
+
+if [ ! -z $DELAY ];
+then
+	echo "delay: $DELAY"
+       	echo "delay distribution: $DELAY_DISTRIBUTION"
+	echo "delay correlation: $DELAY_CORRELATION"
+	filter+="delay $DELAY $DELAY_DISTRIBUTION $DELAY_CORRELATION "
+fi
+
+if [ ! -z $LOSS ];
+then
+    echo "packet loss: $LOSS"
+    echo "loss correlation: $LOSS_CORRELATION"
+    filter+="loss $LOSS $LOSS_CORRELATION "
+fi
+
+if [ ! -z $CORRUPTION ];
+then
+    echo "packet corruption $CORRUPTION"
+    filter+="corrupt $CORRUPTION "
+fi
+
+if [ ! -z $DUPLICATE ];
+then
+    echo "duplicates: $DUPLICATE"
+    filter+="duplicate $DUPLICATE"
+fi
+
+#    tc qdisc add dev $DEVICE parent 1:1 handle 10:  netem limit 100000 delay $DELAY $DELAY_DISTRIBUTION $DELAY_CORRELATION loss $LOSS $LOSS_CORRELATION corrupt $CORRUPTION duplicate $DUPLICATE
 
    # Protocol ID's
    # icmp 1
@@ -46,14 +82,21 @@ function setup_rules() {
    # Matching Rules:
    # Each of these filters are traversed with Logical OR
    # match each icmp package that is encapsulated by an ip packet
-    tc filter add dev $1 protocol ip parent 1: prio 1 u32 match ip protocol 1 0xff flowid 1:1
-
+   if [ "$DEBUG" = true ] ; then
+	echo "Debug enabled. Apply filter on icmp protocol"
+   	tc filter add dev $DEVICE protocol ip parent 1: prio 1 u32 match ip protocol 1 0xff flowid 1:1
+   fi
    # in order to filter out udp packages use "ip dport" instead of "udp dst" due to "implicit" nexthdr not forwarded into the queue
    # 0xffff is the mask that has to be applied in order to match the udp and tcp headers
    # match all tcp packages that go to tcp dport 27017, 27021 and 27031
-   tc filter add dev $1 protocol ip parent 1: prio 1 u32 match ip protocol 6 0xff match ip dport 27017 0xffff flowid 1:1
-    tc filter add dev $1 protocol ip parent 1: prio 1 u32 match ip protocol 6 0xff match ip dport 27021 0xffff flowid 1:1
-    tc filter add dev $1 protocol ip parent 1: prio 1 u32 match ip protocol 6 0xff match ip dport 27031 0xffff flowid 1:1
+
+    echo setup rules for ports:
+    for i in "${PORTS[@]}"
+    do
+	echo $i
+        tc filter add dev $DEVICE protocol ip parent 1: prio 1 u32 match ip protocol 6 0xff match ip dport $i 0xffff flowid 1:1
+    done
+
 }
 
 function clear_rules() {
@@ -62,11 +105,11 @@ function clear_rules() {
 
 function show_rules() {
     echo 'QDiscs:'
-    tc qdisc show dev $1
+    tc -p qdisc show dev $1
     echo 'Classes:'
-    tc class show dev $1
+    tc -p class show dev $1
     echo 'Filters:'
-    tc filter show dev $1
+    tc -p filter show dev $1
 }
 
 function main() {
@@ -75,7 +118,47 @@ function main() {
             show_rules $2
         ;;
         setup)
-            setup_rules $2 $3
+	    DEVICE=$2
+	    while [[ $# -gt 2 ]]
+	    do
+	     	arg="$3"
+	    	case $arg in
+    		    -d|--delay)
+		    DELAY="$4"
+		    DELAY_DISTRIBUTION="$5"
+		    DELAY_CORRELATION="$6"
+		    shift # argument
+		    shift # value
+		    shift # value
+		    shift # value
+		    ;;
+    		    -l|--loss)
+		    LOSS="$4"
+		    LOSS_CORRELATION="$5"
+		    shift #argument
+		    shift #value
+		    shift #value
+		    ;;
+		    -c|--corruption)
+		    CORRUPTION=$4
+		    shift #argument
+		    shift #value
+		    ;;
+	            --duplicate)
+		    DUPLICATE=$4
+		    shift # argument
+		    shift # value
+		    ;;
+		    -D|--Debug)
+		    DEBUG=true
+		    shift #argument
+		    shift #value
+		    ;;
+		    -h|--help)
+		    usage
+		esac
+    	    done
+            setup_rules
         ;;
         clear)
             clear_rules $2
