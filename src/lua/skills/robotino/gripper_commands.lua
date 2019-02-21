@@ -62,13 +62,13 @@ function is_error()
 end
 
 function is_close()
-  return self.vars.fsm.command == "CLOSE"
+  return fsm.command == "CLOSE"
 end
 
 -- States
 fsm:define_states{
    export_to=_M,
-   closure={arduino=arduino, is_error=is_error},
+   closure={arduino=arduino, is_error=is_error, is_close=is_close},
    {"CHECK_WRITER", JumpState},
    {"COMMAND", JumpState},
    {"WAIT", JumpState},
@@ -90,12 +90,12 @@ function COMMAND:init()
 
    if self.fsm.vars.command == "OPEN" then
       self.fsm.vars.open = true
-      theOpenMessage = arduino_if.OpenMessage:new()
+      theOpenMessage = arduino.OpenGripperMessage:new()
       arduino:msgq_enqueue(theOpenMessage)
 
    elseif self.fsm.vars.command == "CLOSE" then
       self.fsm.vars.close = true
-      theCloseMessage = arduino_if.CloseMessage:new()
+      theCloseMessage = arduino.CloseGripperMessage:new()
       arduino:msgq_enqueue(theCloseMessage)
 
    elseif self.fsm.vars.command == "MOVEABS" then
