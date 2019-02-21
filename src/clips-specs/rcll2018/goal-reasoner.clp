@@ -67,7 +67,7 @@
 
 
 (defrule goal-reasoner-commit-parent-goal
-" Commit an expanded parent goal, if it has a committed subgoal or no subgoal at all"
+" Commit an expanded parent goal, if it has no subgoal at all but a plan"
   ?g <- (goal (id ?goal-id) (mode EXPANDED) (parent nil))
   (not (goal (parent ?goal-id)))
   (plan (id ?plan-id) (goal-id ?goal-id))
@@ -103,7 +103,7 @@
 
 (defrule goal-reasoner-commit-subgoal
 " Commit to a plan an expanded subgoal if the parent is expanded and the is no subgoal to this goal.
-  Assumes, that there is only one plan per goal "
+  Assumes, that there is only one plan per goal. Commit to parent goal as well "
   ?g <- (goal (id ?goal-id) (class ?class) (mode EXPANDED) (parent ?parent-id))
   ?pg <- (goal (id ?parent-id) (mode EXPANDED))
   (plan (id ?plan-id) (goal-id ?goal-id))
@@ -126,7 +126,7 @@
 
 
 (defrule goal-reasoner-dispatch-parent-goal
-" Dispatch a parent goal if all resources where acquired and a subgoal is dispatched"
+" Dispatch a parent goal if all resources where acquired and it has no subgoal."
 	?g <- (goal (mode COMMITTED)
           (id ?goal-id)
           (parent nil)
@@ -139,7 +139,8 @@
 
 
 (defrule goal-reasoner-dispatch-subgoal
-" Dispatch a subgoal if all resources where acquired and its parent goal is committed."
+" Dispatch a subgoal if all resources where acquired and its parent goal is committed.
+  Dispatch the parent goal as well."
   ?g <- (goal (mode COMMITTED)
           (id ?goal-id)
           (class ?class)
