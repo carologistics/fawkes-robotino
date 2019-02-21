@@ -23,7 +23,7 @@
                             (params token-name ?token-name))
 =>
   (assert
-    (plan (id ACQUIRE-TOKEN-PLAN) (goal-id ?goal-id))
+    (plan (type SEQUENTIAL) (id ACQUIRE-TOKEN-PLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id ACQUIRE-TOKEN-PLAN) (goal-id ?goal-id)
                     (action-name lock)
                     (param-values ?token-name)))
@@ -36,7 +36,7 @@
               (parent ?parent-id))
 =>
   (assert
-    (plan (id BEACONPLAN) (goal-id ?goal-id))
+    (plan (type SEQUENTIAL) (id BEACONPLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id BEACONPLAN) (goal-id ?goal-id)
       (action-name send-beacon)))
   (modify ?g (mode EXPANDED))
@@ -49,7 +49,7 @@
               (parent ?parent-id))
 =>
   (assert
-    (plan (id SPAWNPLAN) (goal-id ?goal-id))
+    (plan (type SEQUENTIAL) (id SPAWNPLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id SPAWNPLAN) (goal-id ?goal-id)
       (action-name noop)))
   (modify ?g (mode EXPANDED))
@@ -61,7 +61,7 @@
               (parent ?parent-id))
   =>
   (assert
-     (plan (id REFILLPLAN) (goal-id ?goal-id))
+     (plan (type SEQUENTIAL) (id REFILLPLAN) (goal-id ?goal-id))
      (plan-action (id 1) (plan-id REFILLPLAN) (goal-id ?goal-id)
         (action-name noop)))
   (modify ?g (mode EXPANDED))
@@ -73,7 +73,7 @@
   (wm-fact (key domain fact self args? r ?r))
   (wm-fact (id ?id&: (eq ?id (str-cat "/config/rcll/route/" ?team-color "/" ?r))) (values $?route))
   =>
-  (assert (plan (goal-id ?goal-id) (id EXPLORATION-PLAN)))
+  (assert (plan (goal-id ?goal-id) (id EXPLORATION-PLAN) (type SEQUENTIAL)))
   (bind ?action-id 1)
   (foreach ?node ?route
 	(assert (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id EXPLORATION-PLAN) (action-name move-node) (param-values ?r ?node)))
@@ -90,7 +90,7 @@
   (wm-fact (key domain fact robot-waiting args? r ?robot))
 =>
   (assert
-    (plan (id ENTER-FIELD-PLAN) (goal-id ?goal-id))
+    (plan (type SEQUENTIAL) (id ENTER-FIELD-PLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id ENTER-FIELD-PLAN) (goal-id ?goal-id)
                                  (action-name enter-field)
                                  (param-names r team-color)
@@ -106,7 +106,7 @@
                       point ?waitpoint))
   =>
   (assert
-    (plan (id WAIT-PLAN) (goal-id ?goal-id))
+    (plan (type SEQUENTIAL) (id WAIT-PLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id WAIT-PLAN) (goal-id ?goal-id)
                  (action-name wait)
                  (param-names r point)
@@ -128,7 +128,7 @@
    (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
    =>
    (assert
-        (plan (id GO-WAIT-PLAN) (goal-id ?goal-id))
+        (plan (type SEQUENTIAL) (id GO-WAIT-PLAN) (goal-id ?goal-id))
         (plan-action (id 1) (plan-id GO-WAIT-PLAN) (goal-id ?goal-id)
                      (action-name go-wait)
                      (param-names r from from-side to)
@@ -152,7 +152,7 @@
     (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
     =>
    (assert
-        (plan (id FILL-CAP-PLAN) (goal-id ?goal-id))
+        (plan (type SEQUENTIAL) (id FILL-CAP-PLAN) (goal-id ?goal-id))
         (plan-action (id 1) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name location-lock)
                                     (param-values ?mps INPUT))
@@ -201,7 +201,7 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
  (assert
-  (plan (id CLEAR-MPS-PLAN) (goal-id ?goal-id))
+  (plan (type SEQUENTIAL) (id CLEAR-MPS-PLAN) (goal-id ?goal-id))
   (plan-action (id 1) (plan-id CLEAR-MPS-PLAN) (goal-id ?goal-id)
         (action-name location-lock)
         (param-values ?mps ?side))
@@ -235,7 +235,7 @@
 ;                                                       ))
 ;   =>
 ;   (assert
-;     (plan (id RESET-MPS-PLAN) (goal-id CLEAR-CS))
+;     (plan (type SEQUENTIAL) (id RESET-MPS-PLAN) (goal-id CLEAR-CS))
 ;     (plan-action (id 1) (plan-id RESET-MPS-PLAN) (goal-id CLEAR-CS)
 ;           (action-name reset-mps)
 ;           (param-names r m)
@@ -253,7 +253,7 @@
              ))
   =>
   (assert
-    (plan (id DISCARD-UNKNOWN-PLAN) (goal-id ?goal-id))
+    (plan (type SEQUENTIAL) (id DISCARD-UNKNOWN-PLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id DISCARD-UNKNOWN-PLAN) (goal-id ?goal-id)
           (action-name wp-discard)
           (param-names r cc )
@@ -275,7 +275,7 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   =>
   (assert
-    (plan (id FILL-RS-PLAN) (goal-id ?goal-id))
+    (plan (type SEQUENTIAL) (id FILL-RS-PLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id FILL-RS-PLAN) (goal-id ?goal-id)
                                     (action-name location-lock)
                                     (param-values ?mps INPUT))
@@ -315,7 +315,7 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
  (assert
-  (plan (id FILL-RS-FROM-BS-PLAN) (goal-id ?goal-id))
+  (plan (type SEQUENTIAL) (id FILL-RS-FROM-BS-PLAN) (goal-id ?goal-id))
   (plan-action (id 1) (plan-id FILL-RS-FROM-BS-PLAN) (goal-id ?goal-id)
         (action-name location-lock)
         (param-values ?bs ?bs-side))
@@ -329,11 +329,11 @@
         (action-name prepare-bs)
         (param-names m side bc)
         (param-values ?bs ?bs-side ?base-color))
-  (plan-action (id 5) (plan-id  FILL-RS-FROM-BS-PLAN) (goal-id ?goal-id)
+  (plan-action (id 5) (plan-id FILL-RS-FROM-BS-PLAN) (goal-id ?goal-id)
         (action-name bs-dispense)
         (param-names r m side wp basecol)
         (param-values ?robot ?bs ?bs-side ?spawned-wp ?base-color))
-  (plan-action (id 6) (plan-id  FILL-RS-FROM-BS-PLAN) (goal-id ?goal-id)
+  (plan-action (id 6) (plan-id FILL-RS-FROM-BS-PLAN) (goal-id ?goal-id)
         (action-name wp-get)
         (param-names r wp m side)
         (param-values ?robot ?spawned-wp ?bs ?bs-side))
@@ -382,7 +382,7 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   =>
  (assert
-    (plan (id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id))
+    (plan (type SEQUENTIAL) (id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
           (action-name location-lock)
           (param-values ?cs INPUT))
@@ -392,7 +392,7 @@
           (param-values ?robot ?curr-location ?curr-side ?cs INPUT))
     (plan-action (id 3) (plan-id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
           (action-name lock) (param-values ?cs))
-    (plan-action (id 4) (plan-id  FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
+    (plan-action (id 4) (plan-id FILL-RS-FROM-SHELF-PLAN) (goal-id ?goal-id)
           (action-name wp-get-shelf)
           (param-names r cc m spot)
           (param-values ?robot ?wp ?cs ?spot))
@@ -441,7 +441,7 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
  (assert
-  (plan (id PRODUCE-C0-PLAN) (goal-id ?goal-id))
+  (plan (type SEQUENTIAL) (id PRODUCE-C0-PLAN) (goal-id ?goal-id))
   (plan-action (id 1) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
         (action-name location-lock)
         (param-values ?bs ?bs-side))
@@ -518,7 +518,7 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
  (assert
-  (plan (id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id))
+  (plan (type SEQUENTIAL) (id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id))
   (plan-action (id 1) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
         (action-name location-lock)
         (param-values ?bs ?bs-side))
@@ -611,7 +611,7 @@
      (default
         (printout t "ERROR, goal params of MOUNT-NEXT-RING are wrong" crlf)))
     (assert
-      (plan (id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id))
+      (plan (type SEQUENTIAL) (id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id))
       (plan-action (id 1) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name location-lock)
             (param-values ?prev-rs ?prev-rs-side))
@@ -678,7 +678,7 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
    (assert
-    (plan (id PRODUCE-CX-PLAN) (goal-id ?goal-id))
+    (plan (type SEQUENTIAL) (id PRODUCE-CX-PLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id PRODUCE-CX-PLAN) (goal-id ?goal-id)
           (action-name location-lock)
           (param-values ?rs OUTPUT))
@@ -740,7 +740,7 @@
                       m ?mps))
   =>
   (assert
-    (plan (id RESET-MPS-PLAN) (goal-id ?goal-id))
+    (plan (type SEQUENTIAL) (id RESET-MPS-PLAN) (goal-id ?goal-id))
       (plan-action (id 1) (plan-id RESET-MPS-PLAN) (goal-id ?goal-id)
         (action-name reset-mps)
         (param-names m)
@@ -769,7 +769,7 @@
  (wm-fact (key domain fact order-complexity args? ord ?ord com ?complexity))
  =>
  (assert
-  (plan (id DELIVER-PLAN) (goal-id ?goal-id))
+  (plan (type SEQUENTIAL) (id DELIVER-PLAN) (goal-id ?goal-id))
   (plan-action (id 1) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
         (action-name location-lock)
         (param-values ?mps OUTPUT))

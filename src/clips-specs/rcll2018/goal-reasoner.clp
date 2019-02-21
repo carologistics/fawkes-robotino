@@ -69,10 +69,10 @@
 (defrule goal-reasoner-commit-parent-goal
 " Commit an expanded parent goal, if it has a committed subgoal or no subgoal at all"
   ?g <- (goal (id ?goal-id) (mode EXPANDED) (parent nil))
-  (or (not (goal (parent ?goal-id)))
-      (goal (parent ?goal-id) (mode COMMITTED)))
+  (not (goal (parent ?goal-id)))
+  (plan (id ?plan-id) (goal-id ?goal-id))
 =>
-  (modify ?g (mode COMMITTED))
+  (modify ?g (mode COMMITTED) (committed-to ?plan-id))
 )
 
 
@@ -102,16 +102,19 @@
 
 
 (defrule goal-reasoner-commit-subgoal
-" Commit an expanded subgoal if the parent is expanded and the is no subgoal to this goal"
+" Commit to a plan an expanded subgoal if the parent is expanded and the is no subgoal to this goal.
+  Assumes, that there is only one plan per goal "
   ?g <- (goal (id ?goal-id) (class ?class) (mode EXPANDED) (parent ?parent-id))
-  (goal (id ?parent-id) (mode EXPANDED))
+  ?pg <- (goal (id ?parent-id) (mode EXPANDED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
   (or (not (goal (parent ?goal-id)))
       (goal (parent ?goal-id) (mode COMMITTED)))
 =>
   (if (neq ?class BEACONACHIEVE) then
     (printout t "Goal " ?goal-id " committed!" crlf)
   )
-  (modify ?g (mode COMMITTED))
+  (modify ?g (mode COMMITTED) (committed-to ?plan-id))
+  (modify ?pg (mode COMMITTED))
 )
 
 
@@ -129,8 +132,7 @@
           (parent nil)
           (required-resources $?req)
           (acquired-resources $?acq&:(subsetp ?req ?acq)))
-  (or (not (goal (parent ?goal-id)))
-      (goal (parent ?goal-id) (mode DISPATCHED)))
+  (not (goal (parent ?goal-id)))
 =>
 	(modify ?g (mode DISPATCHED))
 )
@@ -144,7 +146,7 @@
           (parent ?parent-id)
           (required-resources $?req)
           (acquired-resources $?acq&:(subsetp ?req ?acq)))
-  (goal (id ?parent-id) (mode COMMITTED))
+  ?pg <- (goal (id ?parent-id) (mode COMMITTED))
   (or (not (goal (parent ?goal-id)))
       (goal (parent ?goal-id) (mode DISPATCHED)))
 =>
@@ -152,6 +154,7 @@
     (printout t "Goal " ?goal-id " dispatched!" crlf)
   )
 	(modify ?g (mode DISPATCHED))
+	(modify ?pg (mode DISPATCHED))
 )
 
 

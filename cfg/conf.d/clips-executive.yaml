@@ -120,7 +120,10 @@ clips-executive:
           - name: goal-expander
             file: rcll2018/fixed-sequence.clp
           - name: action-selection
-            file: rcll2018/action-selection.clp
+            files:
+              - rcll2018/action-selection.clp
+              - action-selection/sequential.clp
+              - action-selection/temporal.clp
           - name: action-execution
             files:
               - skills-actions.clp
