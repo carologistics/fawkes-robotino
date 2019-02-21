@@ -157,7 +157,7 @@ void move_to_end_stop(int limit_pin, AccelStepper &motor, int dir) {
       motor.setCurrentPosition(0L);
     } else {
       motor.moveTo(10000000 * dir);
-      motor.setSpeed(3000);
+      motor.setSpeed(3000 * dir);
       motor.runSpeed();
     }
   }
@@ -174,7 +174,7 @@ void move_to_end_stop(int limit_pin, AccelStepper &motor, int dir) {
 //  motor.setMaxSpeed(motor_speed);
 }
 
-bool calibrate_axis(int limit_pin, AccelStepper &motor) {
+bool calibrate_axis(int limit_pin, AccelStepper &motor, int dir) {
   int button_state = digitalRead(limit_pin);
 
   /*
@@ -185,7 +185,7 @@ bool calibrate_axis(int limit_pin, AccelStepper &motor) {
   */
   motor.enableOutputs();
 
-  move_to_end_stop(limit_pin, motor, 1);
+  move_to_end_stop(limit_pin, motor, dir);
 
   // we found the starting point - move to the other end of the axis to get
   // the number of steps to the other end.
@@ -200,17 +200,17 @@ bool calibrate_axis(int limit_pin, AccelStepper &motor) {
 void calibrate() {
   set_status(STATUS_MOVING);
 
-  if (!calibrate_axis(MOTOR_X_LIMIT_PIN, motor_X)) {
+  if (!calibrate_axis(MOTOR_X_LIMIT_PIN, motor_X, 1)) {
     errormessage = "Can't calibrate axis X - end stop pressed!";
     set_status(STATUS_ERROR);
     return;
   }
-  if (!calibrate_axis(MOTOR_Y_LIMIT_PIN, motor_Y)) {
+  if (!calibrate_axis(MOTOR_Y_LIMIT_PIN, motor_Y, 1)) {
     errormessage = "Can't calibrate axis Y - end stop pressed!";
     set_status(STATUS_ERROR);
     return;
   }
-  if (!calibrate_axis(MOTOR_Z_LIMIT_PIN, motor_Z)) {
+  if (!calibrate_axis(MOTOR_Z_LIMIT_PIN, motor_Z, -1)) {
     errormessage = "Can't calibrate axis Z - end stop pressed!";
     set_status(STATUS_ERROR);
     return;
@@ -272,7 +272,7 @@ void read_package() {
               set_new_pos(-new_pos, motor_Y);
               break;
             case CMD_Z_NEW_POS:
-              set_new_pos(-new_pos, motor_Z);
+              set_new_pos(new_pos, motor_Z);
               break;
             case CMD_OPEN:
               if(!open_gripper && closed_button == LOW){
