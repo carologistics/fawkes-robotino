@@ -19,40 +19,38 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
-(defrule change-state-ignore
+(defrule game-change-state-ignore
   "State changes are only allowed during play"
   (wm-fact (key refbox phase) (value ~PRODUCTION&~EXPLORATION&~POST_GAME))
   (wm-fact (key refbox state) (value ?refbox-state))
   (not (wm-fact (key game state) (value ?refbox-state)))
-  =>
+=>
   (printout warn "***** Ignoring state change *****" crlf)
 )
 
-(defrule enable-motor-on-start
+
+(defrule game-enable-motor-on-start
   "Enables the motor on game start. Motor is not started in clips-simulation."
   (wm-fact (key refbox phase) (value  EXPLORATION|PRODUCTION))
   (wm-fact (key refbox state) (value RUNNING))
   ?sf <- (wm-fact (key game state) (value ~RUNNING))
-  =>
+=>
   (printout warn "***** Enabling motor *****" crlf)
-  (retract ?sf)
-  (assert (wm-fact (key game state) (type UNKNOWN) (value RUNNING)))
-  ; (motor-enable)
+  (modify ?sf (value RUNNING))
   (bind ?msg (blackboard-create-msg "MotorInterface::Robotino" "SetMotorStateMessage"))
   (blackboard-set-msg-field ?msg "motor_state" 0)
   (blackboard-send-msg ?msg)
 )
 
-(defrule pause
+
+(defrule game-paused
   "If game state is something in the middle of the game (not PAUSED or WAIT_START) and the requested change state is not RUNNING change states to PAUSED. The motor is disabled. Rule is not applied in clips-simulation."
   (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION|POST_GAME))
   (wm-fact (key refbox state) (value ?refbox-state&~RUNNING))
   ?sf <- (wm-fact (key game state) (value ?game-state&~PAUSED&~WAIT_START))
-  =>
+=>
   (printout warn "***** Paused, Disabling motor *****" crlf)
-  (retract ?sf)
-  (assert  (wm-fact (key game state) (type UNKNOWN) (value PAUSED)))
-;  (motor-disable)
+  (modify ?sf (value PAUSED))
   (bind ?msg (blackboard-create-msg "MotorInterface::Robotino" "SetMotorStateMessage"))
   (blackboard-set-msg-field ?msg "motor_state" 1)
   (blackboard-send-msg ?msg)
@@ -60,7 +58,7 @@
 )
 
 
-(defrule game-complete-found-tags-with-ground-truth
+(defrule game-add-ground-truth-for-tags
   "Integrate incoming field-ground-truth facts into our world model."
   ?gt <-  (wm-fact (key refbox field-ground-truth name args? m ?mps))
   ?gt-y <-(wm-fact (key refbox field-ground-truth yaw args? m ?mps) (value ?yaw))
@@ -87,6 +85,7 @@
   )
   (retract ?gt ?gt-t ?gt-z ?gt-y ?gt-o)
 )
+
 
 (defrule game-generate-navgraph-when-all-tages-found
   "Generate the navgraph when all the mps tags where found."
