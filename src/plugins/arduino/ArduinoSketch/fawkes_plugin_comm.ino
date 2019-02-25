@@ -74,7 +74,9 @@ int cur_cmd = 0;
 
 int cur_status = STATUS_IDLE;
 
-char buffer_[128];
+#define BUFFER_SIZE 128
+char buffer_[BUFFER_SIZE];
+int buf_i_ = 0;
 String errormessage;
 
 int button_x_state = 0; // limit_x status
@@ -240,115 +242,133 @@ void set_new_acc(long new_acc) {
 }
 
 void read_package() {
-    int len = Serial.readBytesUntil(TERMINATOR, buffer_, 128);
-    // Skip too short packages
-    if (len < 4) return;
+  int next_char;
+  while(true) 
+  {
+    next_char = Serial.read();
+    if(next_char == TERMINATOR){ // if we find the terminator character we can analyze the package now
+      buffer_[buf_i_] = 0; // Set null character to get no trouble with sscanf //buf_i_ points now onto 0
+      break;
+    } else if(next_char == -1) { //if no serial data is available anymore, but package terminator not found yet:
+      return;                    // cannot do anything now
+    }
+    buffer_[buf_i_++] = next_char; // other characters are added to the buffer
+    if(buf_i_ >= BUFFER_SIZE){ // Buffer overflow. Strategy: flush buffer and start new. (This should not happen normally)
+      buf_i_ = 0;
+      return;
+    }
+  }
 
-    int package_start = 0;
-    bool package_located = false;
+  Serial.print(buffer_);
 
-    for (package_start = 0; package_start < len - 2 && !package_located; package_start++) {
-      if (buffer_[package_start] == 'A' && buffer_[package_start + 1] == 'T' && buffer_[package_start + 2] == ' ') {
-        package_located = true;
+  // this point is only reached when a Terminator symbol was reached
+  if(buf_i_<4){buf_i_ = 0; return;} // skip too small packages //buffer flush 
+
+  int package_start = 0;
+  bool package_located = false;
+
+  for (package_start = 0; package_start < buf_i_ - 2 && !package_located; package_start++) {
+    if (buffer_[package_start] == 'A' && buffer_[package_start + 1] == 'T' && buffer_[package_start + 2] == ' ') {
+      package_located = true;
+      break; // explicitly break, otherwise package_start++ is executed once again
+    }
+  }
+
+  if(!package_located){ // terminator symbol was reached but no package was located
+    buf_i_ = 0;  // flush buffer
+    return;
+  }
+
+  Serial.print(buffer_);
+
+  // this point is only reached when package was successfully located
+  
+  int cur_i_cmd = package_start + 3;
+  while (cur_i_cmd < buf_i_) {
+    cur_cmd = buffer_[cur_i_cmd];
+Serial.print(" ");
+Serial.print(cur_cmd);
+Serial.print(" ");
+    long new_value = 0;
+    if (cur_cmd == CMD_X_NEW_POS ||
+        cur_cmd == CMD_Y_NEW_POS ||
+        cur_cmd == CMD_Z_NEW_POS ||
+        cur_cmd == CMD_SET_SPEED ||
+        cur_cmd == CMD_SET_ACCEL) {
+      if(sscanf (buffer_ + (cur_i_cmd + 1),"%ld",&new_value)<=0){buf_i_ = 0; return;} // flush and return if parsing error
+    }
+    switch (cur_cmd) {
+      case CMD_X_NEW_POS:
+        set_new_pos(-new_value, motor_X);
+        break;
+      case CMD_Y_NEW_POS:
+        set_new_pos(-new_value, motor_Y);
+        break;
+      case CMD_Z_NEW_POS:
+        set_new_pos(-new_value, motor_Z);
+        break;
+      case CMD_OPEN:
+        if(!open_gripper){
+          open_gripper = true;
+          closed_gripper = false;
+          set_new_pos(motor_A.currentPosition()+120,motor_A);
+        } else {
+          send_idle();
+          send_idle();
+        }
+        break;
+      case CMD_CLOSE:
+        if(!closed_gripper){
+          open_gripper = false;
+          closed_gripper = true;
+          set_new_pos(motor_A.currentPosition()-120,motor_A);
+        } else {
+          send_idle();
+          send_idle();
+        }
+        break;
+      case CMD_STATUS_REQ:
+        if (cur_status == STATUS_IDLE) {
+             send_idle();
+        } else if (cur_status == STATUS_MOVING) {
+             send_moving();
+        } else if (cur_status == STATUS_ERROR) {
+             send_error();
+        }
+        break;
+      case CMD_CALIBRATE:
+        calibrate();
+        break;
+      case CMD_SET_SPEED:
+        set_new_speed(new_value);
+        break;
+      case CMD_SET_ACCEL:
+        set_new_acc(new_value);
+        break;
+      default:
+        //#ifdef DEBUG
+           send_packet(STATUS_ERROR, 15);
+        //#endif
+        break;
+    }
+
+    // move to next command
+    while (cur_i_cmd < buf_i_) {
+      ++cur_i_cmd;
+      if (buffer_[cur_i_cmd] == ' ') {
+        ++cur_i_cmd;
+        break;
       }
     }
-    if (package_located) {
-      len = len - package_start; // setup index to match starting of commands
-      int cur_i_cmd = package_start;
-      while (cur_i_cmd < len) {
-        cur_cmd = buffer_[cur_i_cmd + 2];
-        int new_pos = 0;
-        int new_accel = 0;
-        int new_speed = 0;
-        if (cur_cmd == 'X' ||
-            cur_cmd == 'Y' ||
-            cur_cmd == 'Z') {
-          sscanf (buffer_ + (cur_i_cmd + 3),"%d",&new_pos);
-          /*
-          set_new_pos(new_pos, steppers[cur_cmd - 1]);
-          Serial.print("read command: ");
-          Serial.println(cur_cmd);
-          */
-        }
-          switch (cur_cmd) {
-
-            case CMD_X_NEW_POS:
-              set_new_pos(-new_pos, motor_X);
-              break;
-            case CMD_Y_NEW_POS:
-              set_new_pos(-new_pos, motor_Y);
-              break;
-            case CMD_Z_NEW_POS:
-              set_new_pos(-new_pos, motor_Z);
-              break;
-            case CMD_OPEN:
-              if(!open_gripper){
-                open_gripper = true;
-                closed_gripper = false;
-                set_new_pos(motor_A.currentPosition()+120,motor_A);
-              }
-              else {
-                send_idle();
-                send_idle();
-              }
-              break;
-            case CMD_CLOSE:
-              if(!closed_gripper){
-                open_gripper = false;
-                closed_gripper = true;
-                set_new_pos(motor_A.currentPosition()-120,motor_A);
-              }
-              else{
-                send_idle();
-                send_idle();
-              }
-              break;
-	          case CMD_STATUS_REQ:
-              if (cur_status == STATUS_IDLE) {
-                send_idle();
-              } else if (cur_status == STATUS_MOVING) {
-                send_moving();
-              } else if (cur_status == STATUS_ERROR) {
-                send_error();
-              }
-              break;
-            case CMD_CALIBRATE:
-              calibrate();
-              break;
-            case CMD_SET_SPEED:
-              sscanf (buffer_ + (cur_i_cmd + 3),"%d",&new_speed);
-              motor_X.setMaxSpeed(new_speed);
-              motor_Y.setMaxSpeed(new_speed);
-              motor_Z.setMaxSpeed(new_speed);
-              motor_A.setMaxSpeed(new_speed);
-              break;
-            default:
-              #ifdef DEBUG
-                 send_packet(STATUS_ERROR, "unknown command", 15);
-              #endif
-              break;
-          }
-
-        // move to next command
-        while (cur_i_cmd < len) {
-          cur_i_cmd += 1;
-          if (buffer_[cur_i_cmd + 2] == ' ') {
-            cur_i_cmd += 1;
-            break;
-          }
-        }
-      }
-
-//      cur_cmd = buffer_[package_start + 2] - '0';
-
-    }
-    memset(buffer_, 0, 128);
-    Serial.flush();
+  }
+  
+  // sucked everything out of this package, flush it
+  buf_i_ = 0;
 }
 
 void setup() {
   Serial.begin(115200);
-  Serial.setTimeout(10);
+  //Serial.setTimeout(0);
 
   // initialize the LIMIT_PIN as an input per motor:
   pinMode(MOTOR_X_LIMIT_PIN, INPUT_PULLUP);
