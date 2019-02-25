@@ -58,6 +58,8 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define STATUS_IDLE 1
 #define STATUS_ERROR 2
 
+bool movement_done_flag = false;
+
 bool open_gripper = false;
 bool closed_gripper = false;
 
@@ -356,27 +358,31 @@ void setup() {
 
   Serial.println("AT HELLO");
   set_status(STATUS_IDLE);
+
+  TIMSK2 = (TIMSK2 & B11111110) | 0x01;  //enable interrupt of timer overflow
+  TCCR2B = (TCCR2B & B11111000) | 0x02;  // set prescaler for Timer 2 to 32 -> 2us per cnt, 512us per overflow //TODO: LOWER THIS
+
+  interrupts();
+
 }
 
 void loop() {
-   if (motor_X.distanceToGo() != 0 ||
-      motor_Y.distanceToGo() != 0 ||
-      motor_Z.distanceToGo() != 0 ||
-      motor_A.distanceToGo() != 0) {
-        motor_X.enableOutputs();
-        motor_X.run();
-        motor_Y.run();
-        motor_Z.run();
-        motor_A.run();
+  if(movement_done_flag) {
+    motor_X.disableOutputs(); // Since all motors share the enable pin, disabling one is sufficient
+    movement_done_flag = false;
+    set_status(STATUS_IDLE);
+  }
+  read_package();
+}
 
-
-      } else if (cur_status == STATUS_MOVING) {
-        // disable motors when we were still moving and send idle
-        // Since all motors share the enable pin, disabling one is sufficient
-        motor_X.disableOutputs();
-
-        set_status(STATUS_IDLE);
-      } else {
-        read_package();
-      }
+ISR(TIMER2_OVF_vect) // this is called every overflow of the timer 2
+{
+  if (cur_status == STATUS_MOVING) {
+        bool movement_done = true;
+        movement_done &= !motor_X.run();
+        movement_done &= !motor_Y.run();
+        movement_done &= !motor_Z.run();
+        movement_done &= !motor_A.run();
+        movement_done_flag = movement_done;
+  }
 }
