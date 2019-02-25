@@ -215,8 +215,28 @@ void calibrate() {
 void set_new_pos(long new_pos, AccelStepper &motor) {
   motor.enableOutputs();
 //  steps_pending_identifier = abs(steps);
+  noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
   motor.moveTo(new_pos);
-  set_status(STATUS_MOVING);
+  interrupts(); // activate interrupts again
+  set_status(STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
+}
+
+void set_new_speed(long new_speed) {
+  noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
+  motor_X.setMaxSpeed(new_speed);
+  motor_Y.setMaxSpeed(new_speed);
+  motor_Z.setMaxSpeed(new_speed);
+  motor_A.setMaxSpeed(new_speed);
+  interrupts(); // activate interrupts again
+}
+
+void set_new_acc(long new_acc) {
+  noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
+  motor_X.setAcceleration(new_acc);
+  motor_Y.setAcceleration(new_acc);
+  motor_Z.setAcceleration(new_acc);
+  motor_A.setAcceleration(new_acc);
+  interrupts(); // activate interrupts again
 }
 
 void read_package() {
