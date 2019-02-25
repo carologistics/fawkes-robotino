@@ -38,6 +38,8 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define CMD_OPEN 'O'
 #define CMD_CLOSE 'G'
 #define CMD_STATUS_REQ 'S'
+#define CMD_SET_ACCEL '7'
+#define CMD_SET_SPEED '9'
 
 #define DEFAULT_MAX_SPEED_X 1500
 #define DEFAULT_MAX_ACCEL_X 2000
@@ -51,8 +53,6 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define DEFAULT_MAX_SPEED_A 4000
 #define DEFAULT_MAX_ACCEL_A 5000
 
-//#define CMD_SET_ACCEL 7
-#define CMD_SET_SPEED 9
 
 #define STATUS_MOVING 0
 #define STATUS_IDLE 1
