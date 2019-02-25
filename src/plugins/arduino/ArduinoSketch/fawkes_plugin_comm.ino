@@ -417,6 +417,10 @@ void loop() {
 
 ISR(TIMER2_OVF_vect) // this is called every overflow of the timer 2
 {
+  static bool occupied = false;
+  if(occupied) return; //this interrupt is already called
+  occupied = true;
+  interrupts(); // we need interrupts here to catch all the incoming serial data
   if (cur_status == STATUS_MOVING) {
         bool movement_done = true;
         movement_done &= !motor_X.run();
@@ -425,4 +429,5 @@ ISR(TIMER2_OVF_vect) // this is called every overflow of the timer 2
         movement_done &= !motor_A.run();
         movement_done_flag = movement_done;
   }
+  occupied = false;
 }
