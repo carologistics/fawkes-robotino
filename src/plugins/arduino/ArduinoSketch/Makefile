@@ -1,13 +1,28 @@
-.PHONY: build flash clean
+.PHONY: build flash clean accstepper cleanall
 
-build: Compiled/fawkes_plugin_comm.ino.hex
+build: accstepper Compiled/fawkes_plugin_comm.ino.hex
+
+accstepper: libraries/AccelStepper
+	cd libraries/AccelStepper;\
+	 	git fetch;\
+	 	git diff-index --quiet HEAD -- || export LOCAL_CHANGES=1;\
+	 	[ -z "$$LOCAL_CHANGES" ] || git stash;\
+	 	git reset --hard origin/master;\
+	 	[ -z "$$LOCAL_CHANGES" ] || git stash pop;
+
+libraries/AccelStepper:
+	mkdir -p libraries
+	git clone git@github.com:momoson/AccelStepper.git libraries/AccelStepper
 
 Compiled/fawkes_plugin_comm.ino.hex: fawkes_plugin_comm.ino
 	mkdir -p Compiled
-	arduino-builder -hardware=/usr/share/arduino/hardware -tools=/usr/bin -fqbn=arduino:avr:uno -libraries /home/$(shell whoami)/Arduino/libraries -verbose=true -build-path=/home/momo/fawkes-robotino/src/plugins/arduino/ArduinoSketch/Compiled fawkes_plugin_comm.ino
+	arduino-builder -hardware=/usr/share/arduino/hardware -tools=/usr/bin -fqbn=arduino:avr:uno -libraries libraries -verbose=true -build-path=/home/momo/fawkes-robotino/src/plugins/arduino/ArduinoSketch/Compiled fawkes_plugin_comm.ino && rm $@
 
 flash: Compiled/fawkes_plugin_comm.ino.hex build
 	avrdude  -patmega328p -carduino -P/dev/arduino -B 10 -F -Uflash:w:$<:i
 
 clean:
 	rm -rf Compiled
+
+cleanall: clean
+	rm -rf libraries
