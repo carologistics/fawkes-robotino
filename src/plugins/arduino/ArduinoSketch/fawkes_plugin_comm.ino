@@ -225,20 +225,28 @@ void set_new_pos(long new_pos, AccelStepper &motor) {
 
 void set_new_speed(long new_speed) {
   noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
-  motor_X.setMaxSpeed(new_speed);
-  motor_Y.setMaxSpeed(new_speed);
-  motor_Z.setMaxSpeed(new_speed);
-  motor_A.setMaxSpeed(new_speed);
+  set_new_speed(new_speed, motor_X);
+  set_new_speed(new_speed, motor_Y);
+  set_new_speed(new_speed, motor_Z);
+  set_new_speed(new_speed, motor_A);
   interrupts(); // activate interrupts again
+}
+
+inline void set_new_speed(long new_speed, AccelStepper &motor) {
+  motor.setMaxSpeed(new_speed);
 }
 
 void set_new_acc(long new_acc) {
   noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
-  motor_X.setAcceleration(new_acc);
-  motor_Y.setAcceleration(new_acc);
-  motor_Z.setAcceleration(new_acc);
-  motor_A.setAcceleration(new_acc);
+  set_new_acc(new_acc,motor_X);
+  set_new_acc(new_acc,motor_Y);
+  set_new_acc(new_acc,motor_Z);
+  set_new_acc(new_acc,motor_A);
   interrupts(); // activate interrupts again
+}
+
+inline void set_new_acc(long new_acc, AccelStepper &motor) {
+  motor.setAcceleration(new_acc);
 }
 
 void read_package() {
@@ -378,23 +386,23 @@ void setup() {
 
   motor_X.setEnablePin(MOTOR_X_ENABLE_PIN);
   motor_X.setPinsInverted(false, false, true);
-  motor_X.setMaxSpeed(DEFAULT_MAX_SPEED_X);
-  motor_X.setAcceleration(DEFAULT_MAX_ACCEL_X);
+  set_new_speed(DEFAULT_MAX_SPEED_X, motor_X);
+  set_new_acc(DEFAULT_MAX_ACCEL_X, motor_X);
 
   motor_Y.setEnablePin(MOTOR_Y_ENABLE_PIN);
   motor_Y.setPinsInverted(false, false, true);
-  motor_Y.setMaxSpeed(DEFAULT_MAX_SPEED_Y);
-  motor_Y.setAcceleration(DEFAULT_MAX_ACCEL_Y);
+  set_new_speed(DEFAULT_MAX_SPEED_Y, motor_Y);
+  set_new_acc(DEFAULT_MAX_ACCEL_Y, motor_Y);
 
   motor_Z.setEnablePin(MOTOR_Z_ENABLE_PIN);
   motor_Z.setPinsInverted(false, false, true);
-  motor_Z.setMaxSpeed(DEFAULT_MAX_SPEED_Z);
-  motor_Z.setAcceleration(DEFAULT_MAX_ACCEL_Z);
+  set_new_speed(DEFAULT_MAX_SPEED_Z, motor_Z);
+  set_new_acc(DEFAULT_MAX_ACCEL_Z, motor_Z);
 
   motor_A.setEnablePin(MOTOR_A_ENABLE_PIN);
   motor_A.setPinsInverted(false, false, true);
-  motor_A.setMaxSpeed(DEFAULT_MAX_SPEED_A);
-  motor_A.setAcceleration(DEFAULT_MAX_ACCEL_A);
+  set_new_speed(DEFAULT_MAX_SPEED_A, motor_A);
+  set_new_acc(DEFAULT_MAX_ACCEL_A, motor_A);
 
   Serial.println("AT HELLO");
   set_status(STATUS_IDLE);
