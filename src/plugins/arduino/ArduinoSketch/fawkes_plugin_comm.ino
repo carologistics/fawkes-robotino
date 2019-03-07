@@ -85,6 +85,15 @@ int button_x_state = 0; // limit_x status
 int button_y_state = 0; // limit_y status
 int button_z_state = 0; // limit_z status
 
+void enable_step_interrupt() {
+  TIMSK2 = (TIMSK2 & B11111110) | 0x01;  //enable interrupt of timer overflow
+}
+
+void disable_step_interrupt() {
+  TIMSK2 &= ~0x01;  //disable interrupt of timer overflow
+}
+
+
 void send_packet(int status_, int value_to_send) {
     Serial.print(AT);
     Serial.print(status_array_[status_]);
@@ -192,6 +201,7 @@ bool calibrate_axis(int limit_pin, AccelStepper &motor, int dir) {
 
 // maybe change this to home all 3 axis simultaneously
 void calibrate() {
+  disable_step_interrupt(); // do steps manually here //cannot deactivate global interrupts, because micros() depend on it
   set_status(STATUS_MOVING);
 
   if (!calibrate_axis(MOTOR_X_LIMIT_PIN, motor_X, 1)) {
@@ -213,6 +223,7 @@ void calibrate() {
 //move_to_home(MOTOR_X_LIMIT_PIN, motor_A); // maybe enable home position via X limit Pin?
 
   set_status(STATUS_IDLE);
+  enable_step_interrupt(); // enable automatic stepping again.
 }
 
 //void set_motor_move(long steps, int &steps_pending_identifier, AccelStepper &motor) {
@@ -449,8 +460,8 @@ void setup() {
 
   Serial.println("AT HELLO");
   set_status(STATUS_IDLE);
-
-  TIMSK2 = (TIMSK2 & B11111110) | 0x01;  //enable interrupt of timer overflow
+ 
+  enable_step_interrupt();
   TCCR2B = (TCCR2B & B11111000) | 0x02;  // set prescaler for Timer 2 to 32 -> 2us per cnt, 512us per overflow //TODO: LOWER THIS
 
   interrupts();
