@@ -287,7 +287,7 @@ void fast_stop_all() {
   slow_stop_all(); // this will also enable interrupts, thus stepping starts again
   // all motors are stopped now
   movement_done_flag = false; // this flag could have been raised during parsing time.
-  while(!movement_done_flag)Serial.write("uggu"); // wait until stopping movement is done.
+  while(!movement_done_flag); // wait until stopping movement is done.
   noInterrupts();
   set_new_acc(accs[0],motor_X);
   set_new_acc(accs[1],motor_Y);
@@ -315,8 +315,6 @@ void read_package() {
     }
   }
 
-  Serial.print(buffer_);
-
   // this point is only reached when a Terminator symbol was reached
   if(buf_i_<4){buf_i_ = 0; return;} // skip too small packages //buffer flush 
 
@@ -335,16 +333,11 @@ void read_package() {
     return;
   }
 
-  Serial.print(buffer_);
-
   // this point is only reached when package was successfully located
   
   int cur_i_cmd = package_start + 3;
   while (cur_i_cmd < buf_i_) {
     cur_cmd = buffer_[cur_i_cmd];
-Serial.print(" ");
-Serial.print(cur_cmd);
-Serial.print(" ");
     long new_value = 0;
     if (cur_cmd == CMD_X_NEW_POS ||
         cur_cmd == CMD_Y_NEW_POS ||
@@ -408,9 +401,9 @@ Serial.print(" ");
         fast_stop_all();
         break;
       default:
-        //#ifdef DEBUG
+        #ifdef DEBUG
            send_packet(STATUS_ERROR, 15);
-        //#endif
+        #endif
         break;
     }
 
