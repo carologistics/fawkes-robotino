@@ -1,5 +1,7 @@
 .PHONY: build flash clean accstepper cleanall
 
+mkfile_path := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
 build: accstepper Compiled/fawkes_plugin_comm.ino.hex
 
 accstepper: libraries/AccelStepper
@@ -16,7 +18,7 @@ libraries/AccelStepper:
 
 Compiled/fawkes_plugin_comm.ino.hex: fawkes_plugin_comm.ino
 	mkdir -p Compiled
-	arduino-builder -hardware=/usr/share/arduino/hardware -tools=/usr/bin -fqbn=arduino:avr:uno -libraries libraries -verbose=true -build-path=/home/momo/fawkes-robotino/src/plugins/arduino/ArduinoSketch/Compiled fawkes_plugin_comm.ino
+	arduino-builder -hardware=/usr/share/arduino/hardware -tools=/usr/bin -fqbn=arduino:avr:uno -libraries libraries -verbose=true -build-path=$(mkfile_path)/Compiled fawkes_plugin_comm.ino
 
 flash: Compiled/fawkes_plugin_comm.ino.hex
 	avrdude  -patmega328p -carduino -P/dev/arduino -B 10 -F -Uflash:w:$<:i
