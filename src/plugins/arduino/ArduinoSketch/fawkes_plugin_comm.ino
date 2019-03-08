@@ -101,23 +101,28 @@ void send_packet(int status_, int value_to_send) {
     Serial.print("\r\n");
 }
 
-void send_moving() {
+void send_status() {
   Serial.print(AT);
-  Serial.print("M");
+  Serial.print(status_array_[cur_status]);
+  Serial.print(" ");
+  if(cur_status == STATUS_ERROR){
+    Serial.print(errormessage);
+  } else { // send all the information while moving and while idle
+    Serial.print(-motor_X.currentPosition());
+    Serial.print(" ");
+    Serial.print(-motor_Y.currentPosition());
+    Serial.print(" ");
+    Serial.print(-motor_Z.currentPosition());
+    Serial.print(" ");
+    Serial.print(motor_A.currentPosition());
+    Serial.print(" ");
+    send_gripper_status();
+  }
   Serial.print("\r\n");
 }
 
-void send_idle() {
-  Serial.print(AT);
-  Serial.print("I ");
-  Serial.print(-motor_X.currentPosition());
-  Serial.print(" ");
-  Serial.print(-motor_Y.currentPosition());
-  Serial.print(" ");
-  Serial.print(-motor_Z.currentPosition());
-  Serial.print(" ");
-  Serial.print(motor_A.currentPosition());
-  Serial.print(" ");
+void send_gripper_status()
+{
   int open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
   if(open_button == LOW){
         Serial.print("OPEN");
@@ -125,27 +130,12 @@ void send_idle() {
   if(open_button == HIGH){
         Serial.print("CLOSED");
   }
-
-  Serial.print("\r\n");
-}
-
-void send_error() {
-  Serial.print(AT);
-  Serial.print("E ");
-  Serial.print(errormessage);
-  Serial.print("\r\n");
 }
 
 void set_status(int status_) {
   if (cur_status != status_) {
     cur_status = status_;
-    if (cur_status == STATUS_IDLE) {
-      send_idle();
-    } else if (cur_status == STATUS_MOVING) {
-      send_moving();
-    } else if (cur_status == STATUS_ERROR) {
-      send_error();
-    }
+    send_status();
   }
 }
 
@@ -362,8 +352,8 @@ void read_package() {
           closed_gripper = false;
           set_new_pos(motor_A.currentPosition()+120,motor_A);
         } else {
-          send_idle();
-          send_idle();
+          send_status();
+          send_status();
         }
         break;
       case CMD_CLOSE:
@@ -372,18 +362,12 @@ void read_package() {
           closed_gripper = true;
           set_new_pos(motor_A.currentPosition()-120,motor_A);
         } else {
-          send_idle();
-          send_idle();
+          send_status();
+          send_status();
         }
         break;
       case CMD_STATUS_REQ:
-        if (cur_status == STATUS_IDLE) {
-             send_idle();
-        } else if (cur_status == STATUS_MOVING) {
-             send_moving();
-        } else if (cur_status == STATUS_ERROR) {
-             send_error();
-        }
+        send_status();
         break;
       case CMD_CALIBRATE:
         calibrate();
