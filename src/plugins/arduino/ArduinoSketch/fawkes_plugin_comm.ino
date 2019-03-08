@@ -311,7 +311,7 @@ void read_package() {
   int package_start = 0;
   bool package_located = false;
 
-  for (package_start = 0; package_start < buf_i_ - 2 && !package_located; package_start++) {
+  for (package_start = 0; package_start < buf_i_ - 2; package_start++) {
     if (buffer_[package_start] == 'A' && buffer_[package_start + 1] == 'T' && buffer_[package_start + 2] == ' ') {
       package_located = true;
       break; // explicitly break, otherwise package_start++ is executed once again
