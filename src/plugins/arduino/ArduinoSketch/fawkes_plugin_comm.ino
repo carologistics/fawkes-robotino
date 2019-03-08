@@ -1,6 +1,25 @@
 #include <Wire.h>
 #include <AccelStepper.h>
 
+#define MOTOR_XYZ_STEP_OUT PORTD
+#define MOTOR_XYZ_DIR_OUT PORTD
+#define MOTOR_A_STEP_OUT PORTB
+#define MOTOR_A_DIR_OUT PORTB
+
+#define MOTOR_X_STEP_SHIFT 2
+#define MOTOR_Y_STEP_SHIFT 3
+#define MOTOR_Z_STEP_SHIFT 4
+
+#define MOTOR_X_DIR_SHIFT 5
+#define MOTOR_Y_DIR_SHIFT 6
+#define MOTOR_Z_DIR_SHIFT 7
+
+#define MOTOR_A_STEP_SHIFT 4
+#define MOTOR_A_DIR_SHIFT 5
+
+#define MOTOR_XYZ_DIR_INV_MASK ~((1 << MOTOR_X_DIR_SHIFT)|(1 << MOTOR_Y_DIR_SHIFT)|(1 << MOTOR_Z_DIR_SHIFT))
+#define MOTOR_A_DIR_INV_MASK ~(1 << MOTOR_A_DIR_SHIFT)
+
 #define MOTOR_X_ENABLE_PIN 8
 #define MOTOR_X_STEP_PIN 2
 #define MOTOR_X_DIR_PIN 5
@@ -22,10 +41,10 @@
 #define MOTOR_A_OPEN_LIMIT_PIN A4
 
 
-AccelStepper motor_X(1, MOTOR_X_STEP_PIN, MOTOR_X_DIR_PIN);
-AccelStepper motor_Y(1, MOTOR_Y_STEP_PIN, MOTOR_Y_DIR_PIN);
-AccelStepper motor_Z(1, MOTOR_Z_STEP_PIN, MOTOR_Z_DIR_PIN);
-AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
+AccelStepper motor_X(MOTOR_X_STEP_SHIFT, MOTOR_X_DIR_SHIFT);
+AccelStepper motor_Y(MOTOR_Y_STEP_SHIFT, MOTOR_Y_DIR_SHIFT);
+AccelStepper motor_Z(MOTOR_Z_STEP_SHIFT, MOTOR_Z_DIR_SHIFT);
+AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 
 #define AT "AT "
 #define TERMINATOR '+'
@@ -142,30 +161,30 @@ void set_status(int status_) {
 
 // move motor to according end stop - dir is direction, (1 or -1)
 void move_to_end_stop(int limit_pin, AccelStepper &motor, int dir) {
-//  float motor_speed = motor.maxSpeed();
-//  motor.setMaxSpeed( motor.maxSpeed() / 2.0);
-  int button_state = digitalRead(limit_pin);
-
-  while (button_state == HIGH) {
-    button_state = digitalRead(limit_pin);
-    if (button_state == LOW) {
-      motor.setCurrentPosition(0L);
-    } else {
-      motor.move(1000 * dir);
-      motor.run();
+  bool button_state;
+  movement_done_flag = false; 
+  noInterrupts();
+  motor.move(1000000 * dir);
+  interrupts();
+  while ((button_state = digitalRead(limit_pin)) == HIGH) {
+    if(movement_done_flag) // movement is done, but button not yet pressed, continue searching
+    {
+      movement_done_flag = false;
+      noInterrupts();
+      motor.move(10000000 * dir);
+      interrupts();
     }
   }
+  // now the button is pressed
+  disable_step_interrupt(); // no steps anymore
+  movement_done_flag = false;
+  motor.setCurrentPosition(0L); // this also resets speed
 
   // move out of the end stop
   // TODO: configure
-  motor.setCurrentPosition(0L);
-  motor.move(250 * dir * -1);
-  while (motor.distanceToGo() != 0) {
- //   motor.setSpeed(DEFAULT_MAX_SPEED);
-    motor.run();
-  }
-
-//  motor.setMaxSpeed(motor_speed);
+  motor.move(1000 * dir * -1);
+  enable_step_interrupt();
+  while(!movement_done_flag); // wait until movement done
 }
 
 bool calibrate_axis(int limit_pin, AccelStepper &motor, int dir) {
@@ -192,7 +211,6 @@ bool calibrate_axis(int limit_pin, AccelStepper &motor, int dir) {
 
 // maybe change this to home all 3 axis simultaneously
 void calibrate() {
-  disable_step_interrupt(); // do steps manually here //cannot deactivate global interrupts, because micros() depend on it
   set_status(STATUS_MOVING);
 
   if (!calibrate_axis(MOTOR_X_LIMIT_PIN, motor_X, 1)) {
@@ -211,10 +229,7 @@ void calibrate() {
     return;
   }
 
-//move_to_home(MOTOR_X_LIMIT_PIN, motor_A); // maybe enable home position via X limit Pin?
-
   set_status(STATUS_IDLE);
-  enable_step_interrupt(); // enable automatic stepping again.
 }
 
 //void set_motor_move(long steps, int &steps_pending_identifier, AccelStepper &motor) {
@@ -430,28 +445,42 @@ void setup() {
   pinMode(MOTOR_Z_LIMIT_PIN, INPUT_PULLUP);
   pinMode(MOTOR_A_OPEN_LIMIT_PIN, INPUT_PULLUP);
 
-  motor_X.setEnablePin(MOTOR_X_ENABLE_PIN);
-  motor_X.setPinsInverted(false, false, true);
+  pinMode(MOTOR_X_STEP_PIN, OUTPUT);
+  pinMode(MOTOR_Y_STEP_PIN, OUTPUT);
+  pinMode(MOTOR_Z_STEP_PIN, OUTPUT);
+  pinMode(MOTOR_A_STEP_PIN, OUTPUT);
+
+  motor_X.setEnablePin(MOTOR_X_ENABLE_PIN, true);
   set_new_speed(DEFAULT_MAX_SPEED_X, motor_X);
   set_new_acc(DEFAULT_MAX_ACCEL_X, motor_X);
 
-  motor_Y.setEnablePin(MOTOR_Y_ENABLE_PIN);
-  motor_Y.setPinsInverted(false, false, true);
+  motor_Y.setEnablePin(MOTOR_Y_ENABLE_PIN, true);
   set_new_speed(DEFAULT_MAX_SPEED_Y, motor_Y);
   set_new_acc(DEFAULT_MAX_ACCEL_Y, motor_Y);
 
-  motor_Z.setEnablePin(MOTOR_Z_ENABLE_PIN);
-  motor_Z.setPinsInverted(false, false, true);
+  motor_Z.setEnablePin(MOTOR_Z_ENABLE_PIN, true);
   set_new_speed(DEFAULT_MAX_SPEED_Z, motor_Z);
   set_new_acc(DEFAULT_MAX_ACCEL_Z, motor_Z);
 
-  motor_A.setEnablePin(MOTOR_A_ENABLE_PIN);
-  motor_A.setPinsInverted(false, false, true);
+  motor_A.setEnablePin(MOTOR_A_ENABLE_PIN, true);
   set_new_speed(DEFAULT_MAX_SPEED_A, motor_A);
   set_new_acc(DEFAULT_MAX_ACCEL_A, motor_A);
 
   Serial.println("AT HELLO");
   set_status(STATUS_IDLE);
+  motor_X.disableOutputs();
+
+  // configure the pulse interrupt
+
+  TCCR2A = 0x1; // just normal mode
+  TCCR2B = 0x0; //no clock source, activate with TCCR2B=0x1; just direct io clock
+  TCNT2 = 0; // reset counter
+  OCR2A = 15; // start pulse, should be at least 650ns after setting direction 
+  OCR2B = 50; // end pulse, should be at least 1.9us after starting pulse
+  TIFR2 = 0x7; // clear already set flags
+  TIMSK2 = 0x6; // activate both compare interrupts
+
+  // configure the step interrupt
  
   TCCR0A = 0x2; // CTC mode
   TCCR0B = 0x2; // 0.5us per cnt, prescaler is 8
@@ -474,19 +503,57 @@ void loop() {
   read_package();
 }
 
+volatile byte step_bits_xyz = 0;
+volatile byte step_bits_a = 0;
+volatile bool pulse_done = true;
+
+
 ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 2
 {
   static bool occupied = false;
   if(occupied) return; //this interrupt is already called
   occupied = true;
-  interrupts(); // we need interrupts here to catch all the incoming serial data
+  interrupts(); // we need interrupts here to catch all the incoming serial data and finish the pulse
   if (cur_status == STATUS_MOVING) {
-        bool movement_done = true;
-        movement_done &= !motor_X.run();
-        movement_done &= !motor_Y.run();
-        movement_done &= !motor_Z.run();
-        movement_done &= !motor_A.run();
-        movement_done_flag = movement_done;
-  }
+    byte dir=0, step=0, step_a=0, dir_a=0; // using these allows for more efficient code, compared to using the above volatile corresponding step_bits_*
+    motor_X.get_step(step, dir);
+    motor_Y.get_step(step, dir);
+    motor_Z.get_step(step, dir);
+    motor_A.get_step(step_a, dir_a);
+    
+    if(step | step_a){ // only step if really necessary
+      while(!pulse_done); // wait until the previous pulse is done // TODO:: remove after ensuring pulse is surely done here EVERY TIME!
+      //Serial.println(dir,BIN);
+      MOTOR_XYZ_DIR_OUT = (MOTOR_XYZ_DIR_OUT & MOTOR_XYZ_DIR_INV_MASK) | dir; // set the direction pins right
+      MOTOR_A_DIR_OUT = (MOTOR_A_DIR_OUT & MOTOR_A_DIR_INV_MASK) | dir_a; // set the direction pins right
+      step_bits_xyz = step;
+      step_bits_a = step_a;
+
+      pulse_done = false;
+      TCCR2B=0x1; // activate pulse interrupts // GO GO GO
+    }
+
+    bool
+    movement_done = motor_X.update_speed();
+    movement_done &= motor_Y.update_speed();
+    movement_done &= motor_Z.update_speed();
+    movement_done &= motor_A.update_speed();
+    movement_done_flag = movement_done;
+  } 
   occupied = false;
+}
+
+ISR(TIMER2_COMPA_vect) // start of pulse
+{
+  MOTOR_XYZ_STEP_OUT |= step_bits_xyz;
+  MOTOR_A_STEP_OUT |= step_bits_a;
+}
+
+ISR(TIMER2_COMPB_vect) // end of pulse
+{
+  MOTOR_XYZ_STEP_OUT &= ~step_bits_xyz; // stopping the pulse has higher priority than turning off the timer
+  MOTOR_A_STEP_OUT &= ~step_bits_a;
+  TCCR2B = 0x0;  // stop timer
+  TCNT2 = 0;  // reset cnt value
+  pulse_done = true;
 }
