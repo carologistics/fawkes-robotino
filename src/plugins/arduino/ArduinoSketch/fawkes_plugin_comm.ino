@@ -79,7 +79,7 @@ int cur_status = STATUS_IDLE;
 
 #define BUFFER_SIZE 128
 char buffer_[BUFFER_SIZE];
-int buf_i_ = 0;
+byte buf_i_ = 0;
 String errormessage;
 
 int button_x_state = 0; // limit_x status
@@ -124,7 +124,7 @@ void send_status() {
 
 void send_gripper_status()
 {
-  int open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
+  byte open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
   if(open_button == LOW){
         Serial.print("OPEN");
   }
@@ -289,7 +289,7 @@ void fast_stop_all() {
 }
 
 void read_package() {
-  int next_char;
+  char next_char;
   while(true) 
   {
     next_char = Serial.read();
@@ -309,7 +309,7 @@ void read_package() {
   // this point is only reached when a Terminator symbol was reached
   if(buf_i_<4){buf_i_ = 0; return;} // skip too small packages //buffer flush 
 
-  int package_start = 0;
+  byte package_start = 0;
   bool package_located = false;
 
   for (package_start = 0; package_start < buf_i_ - 2; package_start++) {
@@ -326,9 +326,9 @@ void read_package() {
 
   // this point is only reached when package was successfully located
   
-  int cur_i_cmd = package_start + 3;
+  byte cur_i_cmd = package_start + 3;
   while (cur_i_cmd < buf_i_) {
-    cur_cmd = buffer_[cur_i_cmd];
+    char cur_cmd = buffer_[cur_i_cmd];
     long new_value = 0;
     if (cur_cmd == CMD_X_NEW_POS ||
         cur_cmd == CMD_Y_NEW_POS ||
