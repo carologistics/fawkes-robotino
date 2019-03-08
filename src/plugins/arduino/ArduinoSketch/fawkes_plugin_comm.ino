@@ -87,23 +87,12 @@ bool movement_done_flag = false;
 bool open_gripper = false;
 bool closed_gripper = false;
 
-int steps_pending_X = 0;
-int steps_pending_Y = 0;
-int steps_pending_Z = 0;
-int steps_pending_A = 0;
-
-int cur_cmd = 0;
-
 int cur_status = STATUS_IDLE;
 
 #define BUFFER_SIZE 128
 char buffer_[BUFFER_SIZE];
 byte buf_i_ = 0;
 String errormessage;
-
-int button_x_state = 0; // limit_x status
-int button_y_state = 0; // limit_y status
-int button_z_state = 0; // limit_z status
 
 void enable_step_interrupt() {
   TIMSK0 = 0x02;  //enable interrupt of timer overflow
@@ -112,7 +101,6 @@ void enable_step_interrupt() {
 void disable_step_interrupt() {
   TIMSK0 = 0x0;  //disable interrupt of timer overflow
 }
-
 
 void send_packet(int status_, int value_to_send) {
     Serial.print(AT);
@@ -232,10 +220,8 @@ void calibrate() {
   set_status(STATUS_IDLE);
 }
 
-//void set_motor_move(long steps, int &steps_pending_identifier, AccelStepper &motor) {
 void set_new_pos(long new_pos, AccelStepper &motor) {
   motor.enableOutputs();
-//  steps_pending_identifier = abs(steps);
   noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
   motor.moveTo(new_pos);
   interrupts(); // activate interrupts again
