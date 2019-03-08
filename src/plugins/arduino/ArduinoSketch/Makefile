@@ -1,5 +1,6 @@
 .PHONY: build flash clean accstepper cleanall
 
+# important immediate assignment (only if other makefiles are somehow included)
 mkfile_path := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 build: accstepper Compiled/fawkes_plugin_comm.ino.hex
