@@ -82,7 +82,7 @@ AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 
 char status_array_[] = {'M', 'I', 'E'};
 
-bool movement_done_flag = false;
+volatile bool movement_done_flag = false;
 
 bool open_gripper = false;
 bool closed_gripper = false;
@@ -266,6 +266,7 @@ void slow_stop_all() {
 
 // crank up the acceleration values before stopping. Also block until stopping is done (should be normally be reasonable fast)
 void fast_stop_all() {
+  if(cur_status != STATUS_MOVING) return; // this only works when we are moving
   noInterrupts(); // stop stepping!
   float accs[4] = { motor_X.getAcceleration(),
                     motor_Y.getAcceleration(),
