@@ -30,6 +30,7 @@ fawkes/meta_plugins:
     - m-clips
     - m-robot-memory
     - clips_robot_memory
+    - pddl-planner
     - clips-pddl-parser
     - clips-executive
     - clips-executive-rest-api

@@ -6,12 +6,12 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/pddl-planner
 plugins/pddl-planner:
 
   # PDDL planner to be used
-  # Possible values: ff, fd
-  planner: ff
+  # Possible values: ff, fd, kstar
+  planner: kstar
 
   # Domain and problem description and location
   # Folder path needs a trailing /
-  description-folder: "@BASEDIR@/src/agents/clips-executive/rcll2017/"
+  description-folder: "@BASEDIR@/src/clips-specs/rcll2018/"
   domain-description: domain.pddl
   problem-description: problem.pddl
   # File for intermediate results from planners
@@ -22,6 +22,10 @@ plugins/pddl-planner:
     --heuristic "hff=ff()"
     --heuristic "hcea=cea()"
     --search "lazy_greedy([hff, hcea], preferred=[hff, hcea])"
+
+  # optional search options for kstar planner
+  kstar-search-opts: >
+    --search "kstar(blind(),30,bound=3)"
 
   # mongodb collection for robot-memory
   collection: robmem.pddl-plan
