@@ -86,11 +86,11 @@ int button_y_state = 0; // limit_y status
 int button_z_state = 0; // limit_z status
 
 void enable_step_interrupt() {
-  TIMSK2 = (TIMSK2 & B11111110) | 0x01;  //enable interrupt of timer overflow
+  TIMSK0 = 0x02;  //enable interrupt of timer overflow
 }
 
 void disable_step_interrupt() {
-  TIMSK2 &= ~0x01;  //disable interrupt of timer overflow
+  TIMSK0 = 0x0;  //disable interrupt of timer overflow
 }
 
 
@@ -409,6 +409,12 @@ void setup() {
   Serial.begin(115200);
   //Serial.setTimeout(0);
 
+  TIMSK0 = 0; // turn off interrupts on Timer 0. micros() will thus NOT work anymore!
+  /* Why use timer 0 for the step interrupt?
+  *  Why use timer 2 for the pule interrupts?
+  *  By this procedure it's made sure that the pulse interrupts fire BEFORE a new step interrupt is called, in case both are pending
+  */
+
   TCCR1A = 0x0;
   TCCR1B = 0x3; // use 64 prescaler -> 4 us per cnt
   TIMSK1 = 0x0; //deactivate all interrupts with this timer
@@ -442,8 +448,13 @@ void setup() {
   Serial.println("AT HELLO");
   set_status(STATUS_IDLE);
  
+  TCCR0A = 0x2; // CTC mode
+  TCCR0B = 0x2; // 0.5us per cnt, prescaler is 8
+  OCR0A = 250; // 125us per step
+  TCNT0 = 0;
+  TIMSK0 = 0; // start new
+  TIFR0 = 0x7; // clear all interrupt flags
   enable_step_interrupt();
-  TCCR2B = (TCCR2B & B11111000) | 0x02;  // set prescaler for Timer 2 to 32 -> 2us per cnt, 512us per overflow //TODO: LOWER THIS
 
   interrupts();
 
@@ -458,7 +469,7 @@ void loop() {
   read_package();
 }
 
-ISR(TIMER2_OVF_vect) // this is called every overflow of the timer 2
+ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 2
 {
   static bool occupied = false;
   if(occupied) return; //this interrupt is already called
