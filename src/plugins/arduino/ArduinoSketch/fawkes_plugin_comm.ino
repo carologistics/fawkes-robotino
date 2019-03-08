@@ -60,12 +60,12 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define STATUS_IDLE 1
 #define STATUS_ERROR 2
 
+char status_array_[] = {'M', 'I', 'E'};
+
 bool movement_done_flag = false;
 
 bool open_gripper = false;
 bool closed_gripper = false;
-
-char status_array_[] = {'M', 'I', 'E'};
 
 int steps_pending_X = 0;
 int steps_pending_Y = 0;
