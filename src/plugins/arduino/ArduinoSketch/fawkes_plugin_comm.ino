@@ -409,6 +409,10 @@ void setup() {
   Serial.begin(115200);
   //Serial.setTimeout(0);
 
+  TCCR1A = 0x0;
+  TCCR1B = 0x3; // use 64 prescaler -> 4 us per cnt
+  TIMSK1 = 0x0; //deactivate all interrupts with this timer
+
   // initialize the LIMIT_PIN as an input per motor:
   pinMode(MOTOR_X_LIMIT_PIN, INPUT_PULLUP);
   pinMode(MOTOR_Y_LIMIT_PIN, INPUT_PULLUP);
