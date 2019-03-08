@@ -35,6 +35,7 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define CMD_X_NEW_POS 'X'
 #define CMD_Y_NEW_POS 'Y'
 #define CMD_Z_NEW_POS 'Z'
+#define CMD_A_NEW_POS 'A'
 #define CMD_OPEN 'O'
 #define CMD_CLOSE 'G'
 #define CMD_STATUS_REQ 'S'
@@ -332,6 +333,7 @@ void read_package() {
     if (cur_cmd == CMD_X_NEW_POS ||
         cur_cmd == CMD_Y_NEW_POS ||
         cur_cmd == CMD_Z_NEW_POS ||
+        cur_cmd == CMD_A_NEW_POS ||
         cur_cmd == CMD_SET_SPEED ||
         cur_cmd == CMD_SET_ACCEL) {
       if(sscanf (buffer_ + (cur_i_cmd + 1),"%ld",&new_value)<=0){buf_i_ = 0; return;} // flush and return if parsing error
@@ -345,6 +347,9 @@ void read_package() {
         break;
       case CMD_Z_NEW_POS:
         set_new_pos(-new_value, motor_Z);
+        break;
+      case CMD_A_NEW_POS:
+        set_new_pos(new_value, motor_A);
         break;
       case CMD_OPEN:
         if(!open_gripper){
