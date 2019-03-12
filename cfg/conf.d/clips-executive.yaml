@@ -96,6 +96,8 @@ clips-executive:
             file: rcll2018/utils.clp
           - name: coordination
             file: coordination-mutex.clp
+          - name: pddl
+            file: pddl-init.clp
           - name: state-estimation
             file: rcll2018/state-estimation-init.clp
           - name: worldmodel
