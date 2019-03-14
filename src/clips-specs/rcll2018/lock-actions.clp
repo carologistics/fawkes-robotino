@@ -107,19 +107,6 @@
   (modify ?li (status REQUESTED) (last-try ?now))
 )
 
-(defrule lock-actions-lock-failed
-	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
-                      (action-name lock|location-lock) (state RUNNING))
-  ?li <- (lock-info (name ?name) (goal-id ?goal-id) (plan-id ?plan-id)
-                    (action-id ?id) (status WAITING) (start-time $?start)
-                    (last-error ?error-msg))
-  (time $?now&:(timeout ?now ?start ?*LOCK-ACTION-TIMEOUT-SEC*))
-  =>
-  (printout warn "Failed to get lock " ?name " in " ?*LOCK-ACTION-TIMEOUT-SEC*
-    "s, giving up" crlf)
-	(modify ?pa (state EXECUTION-FAILED) (error-msg ?error-msg))
-  (retract ?li)
-)
 
 (defrule lock-actions-unlock-start
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state PENDING)
@@ -134,6 +121,7 @@
 	(mutex-unlock-async ?lock-name)
 	(modify ?pa (state RUNNING))
 )
+
 
 (defrule lock-actions-unlock-done
   ?pa <- (plan-action (id ?id) (action-name unlock) (state RUNNING)
