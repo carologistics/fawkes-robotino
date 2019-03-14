@@ -355,7 +355,9 @@
           (value ?tries&:(< ?tries ?*MAX-RETRIES-PICK*)))
   =>
   (bind ?tries (+ 1 ?tries))
-  (modify ?pa (state PENDING))
+  (if (<= ?tries ?*MAX-RETRIES-PICK*) then
+    (modify ?pa (state PENDING))
+  )
   (modify ?wm (value ?tries))
 )
 
