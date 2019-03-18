@@ -31,6 +31,7 @@ fawkes/meta_plugins:
     - gazsim-vis-localization
     - skiller
     - mps-laser-gen
+    - gazsim-meta-robotino-ros-movebase
   gazsim-meta-robotino-ros-movebase:
     - ros-cmdvel
     - ros-navigator
@@ -64,7 +65,6 @@ fawkes/meta_plugins:
 
   gazsim-meta-clips-exec:
     - gazsim-meta-robotino-ros
-    - gazsim-meta-robotino-ros-movebase
     - m-clips-executive
 
   m-skill-sim-clips-exec:
