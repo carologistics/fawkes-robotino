@@ -12,7 +12,7 @@
 (deftemplate action-timer
   (slot plan-id (type SYMBOL))
   (slot action-id(type NUMBER))
-  (multislot timeout-time)
+  (slot timeout-duration)
   (multislot start-time)
   (slot status)
 )
@@ -185,10 +185,9 @@
   (not (action-timer (plan-id ?plan-id) (action-id ?id) (status ?status)))
   (wm-fact (key refbox game-time) (values $?now))
   =>
-  (bind ?timeout (create$ (+ (nth$ 1 ?now) ?*COMMON-TIMEOUT-DURATION*) (nth$ 2 ?now)))
   (assert (action-timer (plan-id ?plan-id)
               (action-id ?id)
-              (timeout-time ?timeout)
+              (timeout-duration ?*COMMON-TIMEOUT-DURATION*)
               (status ?status)
               (start-time ?now)))
 )
@@ -208,8 +207,8 @@
   (wm-fact (key refbox game-time) (values $?now))
   ?pt <- (action-timer (plan-id ?plan-id) (status ?status)
             (action-id ?id)
-            (timeout-time $?timeout))
-  (test (> (time-diff-sec ?now ?timeout) 0))
+            (start-time $?st)
+            (timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
   =>
   (printout t "Action "  ?action-name " timedout after " ?status  crlf)
   (modify ?p (state FAILED))
@@ -248,13 +247,10 @@
   ?pt <- (action-timer (plan-id ?plan-id)
             (action-id ?id)
             (start-time $?starttime)
-            (timeout-time $?timeout))
-  (test (< (nth$ 1 ?timeout) (+ (nth$ 1 ?starttime) ?*MPS-DOWN-TIMEOUT-DURATION* ?*COMMON-TIMEOUT-DURATION*)))
+            (timeout-duration ?timeout&:(neq ?timeout ?*MPS-DOWN-TIMEOUT-DURATION*)))
   =>
   (printout t "Detected that " ?mps " is " ?s " while " ?action-name " is waiting for it. Enhance timeout-timer" crlf)
-  (bind ?timeout-longer (+ (nth$ 1 ?timeout) ?*MPS-DOWN-TIMEOUT-DURATION*))
-  (bind ?timeout-new (create$ ?timeout-longer (nth$ 2 ?timeout)))
-  (modify ?pt (timeout-time ?timeout-new))
+  (modify ?pt (timeout-duration ?*MPS-DOWN-TIMEOUT-DURATION*))
 )
 
 ;
