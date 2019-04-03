@@ -146,8 +146,8 @@ plugins/conveyor_pose:
     hint:
       default:
         x: -0.005
-        y: 0.03
-        z: 0.65
+        y: 0.01
+        z: 0.64
 
       # Configure the initial estimate for the INPUT side (uneven tag ID)
       # On the OUTPUT side, the y value is multiplied by -1.
