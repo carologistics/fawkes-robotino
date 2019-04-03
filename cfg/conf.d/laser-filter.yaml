@@ -11,9 +11,30 @@ plugins/laser-filter:
   # Enable the filter-{front,back}-1080 filter if you need a filtered 1080
   # laser.
 
-  front-downsample:
+  front-rotate:
     active: true
     in/sick-tim55x: Laser1080Interface::Laser front
+    out/filtered: Laser1080Interface::Laser front base
+    filters:
+      1-min:
+        # Threshold for minimum value to get rid of erroneous beams on most
+        # black surfaces
+        type: min_circle
+        # Radius of minimum length; m
+        radius: 0.04
+      2-projection:
+        type: projection
+        target_frame: !frame base_laser
+        not_from_x: 0.0
+        not_to_x: 0.0
+        not_from_y: 0.0
+        not_to_y: 0.0
+        only_from_z: -10.0
+        only_to_z: 10.0
+
+  front-downsample:
+    active: true
+    in/sick-tim55x: Laser1080Interface::Laser front base
     out/filtered: Laser360Interface::Laser front 360
     filters:
       1-min:
@@ -22,7 +43,7 @@ plugins/laser-filter:
   front-360to360:
     # Do nothing, just rename so we can always use the same name.
     active: false
-    in/sick-tim55x: Laser360Interface::Laser front
+    in/sick-tim55x: Laser360Interface::Laser front base
     out/filtered: Laser360Interface::Laser front 360
     filters:
       1-copy:
@@ -100,7 +121,7 @@ plugins/laser-filter:
     active: true
     # URG input interface
     # in/urg: Laser360Interface::Laser urg
-    in/sick-tim55x: Laser1080Interface::Laser front
+    in/sick-tim55x: Laser1080Interface::Laser front base
     # URG filtered output interface
     out/filtered: Laser1080Interface::Laser front-filtered-1080
     filters:

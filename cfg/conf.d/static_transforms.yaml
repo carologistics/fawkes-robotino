@@ -8,12 +8,22 @@ plugins/static-transforms:
   update-interval: 1.0
 
   transforms:
+    front_laser:
+      frame: !frame base_link
+      child_frame: !frame front_laser
+      trans_x: 0.0876  # 0.1 for hackathon setup
+      trans_y: 0.0
+      trans_z: 0.2590
+      rot_pitch: 0.0
+      rot_roll: 3.1415
+      rot_yaw: 0.0
+
     base_laser:
       frame: !frame base_link
       child_frame: !frame base_laser
-      trans_x: 0.17  # 0.1 for hackathon setup
+      trans_x: 0.0876  # 0.1 for hackathon setup
       trans_y: 0.0
-      trans_z: 0.26
+      trans_z: 0.2590
 
     back_laser:
       frame: !frame base_link
@@ -28,9 +38,9 @@ plugins/static-transforms:
     cam_tag:
       frame: !frame base_link
       child_frame: !frame cam_tag
-      trans_x: 0.1
+      trans_x: 0.0546
       trans_y: 0.0
-      trans_z: 0.44
+      trans_z: 0.4675
       rot_pitch: 0
       rot_yaw: -1.57079632679  # -90°
       rot_roll: -1.57079632679  # -90°
@@ -40,7 +50,7 @@ plugins/static-transforms:
       child_frame: !frame plate_top
       trans_x: 0
       trans_y: 0
-      trans_z: 0.78
+      trans_z: 0.768
 
     # this system is located in the gripper where the puck should be held
     gripper_home:
@@ -52,30 +62,81 @@ plugins/static-transforms:
 
     # Move the gripper to (0,0,0) in this frame to calibrate conveyor_pose
     conveyor_calib:
-      frame: !frame gripper_home
+      frame: !frame gripper_base
       child_frame: !frame conveyor_calib
       trans_x: 0.114
       trans_y: 0
       trans_z: 0.03
 
-    cam_conveyor:
-      frame: !frame gripper
-      child_frame: !frame cam_conveyor
-      trans_x: 0.103
-      trans_y: -0.027
-      trans_z: -0.067
+    # this system is located in the gripper where the puck should be held
+    gripper_base:
+      frame: !frame plate_top
+      child_frame: !frame gripper_base
+      trans_x: 0.04
+      trans_y: 0.0
+      trans_z: 0.147
+
+    # Offset from plate_top to the topmost middle point of the
+    # X axis'(metal) carriage, when the gripper is at its home position.
+    gripper_x_origin:
+      frame: !frame plate_top
+      child_frame: !frame gripper_x_origin
+      trans_x: 0.034
+      trans_y: 0.0
+      trans_z: 0.0492
+
+    # Offset from the X axis' moving carriage middle point to the topmost
+    # middle point of the Y axis' carriage, when the gripper
+    # is at its home position.
+    gripper_y_origin:
+      frame: !frame gripper_x_dyn
+      child_frame: !frame gripper_y_origin
+      trans_x: -0.0135
+      trans_y: 0.0
+      trans_z: 0.034
+
+    # Offset from the Y axis' moving carriage middle point to the topmost
+    # middle point of the Z axis' carriage, when the gripper
+    # is at its home position.
+    gripper_z_origin:
+      frame: !frame gripper_y_dyn
+      child_frame: !frame gripper_z_origin
+      trans_x: 0.0245
+      trans_y: 0.0
+      trans_z: 0.0985
+
+    gripper:
+      frame: !frame gripper_z_dyn
+      child_frame: !frame gripper
+      trans_x: 0.152
+      trans_y: 0.0
+      trans_z: -0.0437
+
+    cam_base:
+      frame: !frame gripper_y_dyn
+      child_frame: !frame cam_base
+      trans_x: 0.10181
+      trans_y: -0.025
+      trans_z: -0.0074
       rot_yaw: -1.57
-      rot_pitch: 0
-      rot_roll: -1.57
+      rot_pitch: 0.0
+      rot_roll: -1.38
+
+    cam_conveyor:
+      frame: !frame cam_base
+      child_frame: !frame cam_conveyor
+      trans_x: 0.0
+      trans_y: 0.0
+      trans_z: 0.015
 
     # This frame can be used by the conveyor_pose plugin
     # to align the recorded model using the gripper fingers
     fingers_record:
       frame: !frame gripper
       child_frame: !frame gripper_fingers_record
-      trans_x: 0.2
+      trans_x: 0.06
       trans_y: 0
-      trans_z: -0.04
+      trans_z: 0.0
       rot_yaw: -1.57
       rot_pitch: 0
       rot_roll: -1.57
