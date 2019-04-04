@@ -30,13 +30,14 @@ OBJS_velocity_share = velocity_share_plugin.o velocity_share_thread.o
 
 OBJS_all = $(OBJS_velocity_share)
 
+PLUGINS_all = $(PLUGINDIR)/velocity_share.$(SOEXT)
 ifeq ($(HAVE_ROBOT_MEMORY)$(HAVE_ROS)$(HAVE_TF),111)
   ifeq ($(call ros-have-pkg,velocity_share_msgs),1)
 
     CFLAGS  += $(CFLAGS_TF) $(CFLAGS_ROS) $(call ros-pkg-cflags,velocity_share_msgs)
     LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_ROS) $(call ros-pkg-lflags,velocity_share_msgs)
   
-    PLUGINS_all = $(PLUGINDIR)/velocity_share.$(SOEXT)
+    PLUGINS_build = $(PLUGINS_all)
   else
     WARN_TARGETS+= warning_velocity_msgs
   endif
@@ -54,7 +55,7 @@ endif
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
-.PHONY: warning_ros warning_tf warning_robot_memory
+.PHONY: warning_ros warning_tf warning_robot_memory warning_velocity_msgs
 warning_ros:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting velocity_share plugin" \
 			"$(TNORMAL) (ros not available)"
