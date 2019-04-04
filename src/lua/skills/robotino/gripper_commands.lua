@@ -45,6 +45,21 @@ documentation      = [==[
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
+function input_ok()
+  if self.fsm.vars.command == "OPEN" or self.fsm.vars.command == "CLOSE" then
+    return true
+  end
+  if self.fsm.vars.command == "MOVEABS" then
+    if not fsm.vars.x or not fsm.vars.y or not fsm.vars.z then
+      return false
+    end
+  end
+
+  if self.fsm.vars.command == "CALIBRATE" then
+    return true
+  end
+  return false
+end
 
 function is_error()
   msgid = arduino:msgid()
@@ -64,7 +79,7 @@ end
 -- States
 fsm:define_states{
    export_to=_M,
-   closure={arduino=arduino, is_error=is_error},
+   closure={arduino=arduino, is_error=is_error, input_ok = input_ok},
    {"CHECK_WRITER", JumpState},
    {"COMMAND", JumpState},
    {"WAIT", JumpState},
@@ -93,9 +108,9 @@ function COMMAND:init()
 
    elseif self.fsm.vars.command == "MOVEABS" then
 
-        x = self.fsm.vars.x or -1
-        y = self.fsm.vars.y or -1
-        z = self.fsm.vars.z or -1
+        x = self.fsm.vars.x
+        y = self.fsm.vars.y
+        z = self.fsm.vars.z
         target_frame = self.fsm.vars.target_frame or "gripper_home"
 
         move_abs_message = arduino.MoveXYZAbsMessage:new()
