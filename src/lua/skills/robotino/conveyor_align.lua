@@ -55,12 +55,12 @@ local y_offset_shelf_middle = -0.015 -- y-offset the robot should have picking i
 
 -- initial gripper poses depending on the target
 local GRIPPER_POSES = {
-  shelf_left={x=0.05, y=0.00, z=0.035},
-  shelf_middle={x=0.05, y=-0.035, z=0.035},
-  shelf_right={x=0.05, y=0.00, z=0.035},
-  slide={x=0.05,y=0.00,z=0.035},
-  output_conveyor={x=0.05, y=0.00,z=0.045},
-  input_conveyor={x=0.035, y=0.00,z=0.045},
+  shelf_left={x=0.05, y=0.00, z=0.0},
+  shelf_middle={x=0.05, y=-0.035, z=0.0},
+  shelf_right={x=0.05, y=0.00, z=0.0},
+  slide={x=0.05,y=0.00,z=0.0},
+  output_conveyor={x=0.05, y=0.00,z=0.0},
+  input_conveyor={x=0.035, y=0.00,z=0.0},
 }
 
 local MAX_RETRIES=3
