@@ -32,7 +32,7 @@ depends_interfaces = {
 }
 
 documentation      = [==[
-    @param command    can be : ( OPEN | CLOSE | MOVEABS | CALIBRATE | MOVEGRIPPERABS ) or DOWN (UP or DOWN require the desired number of millimeters)
+    @param command    can be : ( OPEN | CLOSE | MOVEABS | CALIBRATE )
     @param x   absolute x position for gripper move
     @param y   absolute y position for gripper move
     @param z   absolute z position for gripper move
@@ -61,10 +61,6 @@ function is_error()
   return false
 end
 
-function is_close()
-  return self.vars.fsm.command == "CLOSE"
-end
-
 -- States
 fsm:define_states{
    export_to=_M,
@@ -80,21 +76,18 @@ fsm:add_transitions{
    {"CHECK_WRITER", "COMMAND", cond=true, desc="Writer ok got to command"},
    {"COMMAND", "WAIT", timeout=0.2},
    {"WAIT", "FAILED", cond="is_error()"},
-   {"WAIT", "FINAL", cond="is_close() and arduino:gripper_closed() and arduino_final()"},
    {"WAIT", "FINAL", cond="vars.wait ~= nil and not vars.wait"},
-   {"WAIT", "FINAL", cond="arduino:is_final() and not is_close()"},
-   {"WAIT", "FAILED", timeout=5},
+   {"WAIT", "FINAL", cond="arduino:is_final()"},
+   {"WAIT", "FAILED", timeout=15},
 }
 
 function COMMAND:init()
 
    if self.fsm.vars.command == "OPEN" then
-      self.fsm.vars.open = true
       theOpenMessage = arduino_if.OpenMessage:new()
       arduino:msgq_enqueue(theOpenMessage)
 
    elseif self.fsm.vars.command == "CLOSE" then
-      self.fsm.vars.close = true
       theCloseMessage = arduino_if.CloseMessage:new()
       arduino:msgq_enqueue(theCloseMessage)
 
@@ -115,11 +108,5 @@ function COMMAND:init()
    elseif self.fsm.vars.command == "CALIBRATE" then
         calibrate_message = arduino.CalibrateMessage:new()
         arduino:msgq_enqueue_copy(calibrate_message)
-
-   elseif self.fsm.vars.command == "MOVEGRIPPERABS" then
-        move_gripper_abs_message = arduino.MoveGripperAbsMessage:new()
-        a = self.fsm.vars.abs_gripper_pos or -1
-        move_gripper_abs_message:set_a(a)
-        self.fsm.vars.msgid = arduino:msgq_enqueue_copy(move_gripper_abs_message)
    end
 end
