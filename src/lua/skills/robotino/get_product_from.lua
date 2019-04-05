@@ -83,7 +83,6 @@ end
 function DRIVE_TO_MACHINE_POINT:init()
    local option = "CONVEYOR"
    if self.fsm.vars.shelf ~= nil then
-     --option = "SHELF_" .. self.fsm.vars.shelf
      self.fsm.vars.side = "input"
    end
    if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
@@ -93,13 +92,6 @@ function DRIVE_TO_MACHINE_POINT:init()
       self.fsm.vars.tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
       self.args["drive_to_machine_point"] = {place = self.fsm.vars.place .. "-O", option = option, x_at_mps=X_AT_MPS, tag_id=self.fsm.vars.tag_id}
    end
-end
-
-function PRODUCT_PICK:init()
-  self.args["product_pick"].place = self.fsm.vars.place
-  self.args["product_pick"].side = self.fsm.vars.side
-  self.args["product_pick"].slide = self.fsm.vars.slide
-  self.args["product_pick"].shelf = self.fsm.vars.shelf
 end
 
 function SHELF_PICK:init()
