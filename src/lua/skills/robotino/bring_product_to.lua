@@ -37,7 +37,6 @@ from the navgraph
 Parameters:
       @param place   the name of the MPS (see navgraph)
       @param side    optional the side of the mps, default is input (give "output" to bring to output)
-      @param shelf   optional position on shelf: ( LEFT | MIDDLE | RIGHT )
       @param slide   optional true if you want to put it on the slide
       @param atmps   optional position at mps shelf, default NO (not at mps at all) : ( NO | LEFT | MIDDLE | RIGHT | CONVEYOR )
 ]==]
@@ -81,8 +80,6 @@ function DRIVE_TO_MACHINE_POINT:init()
 
    if self.fsm.vars.slide then
       option = "SLIDE"
-   elseif self.fsm.vars.shelf then
-      option = "SHELF_" .. self.fsm.vars.shelf
    end
 
    if self.fsm.vars.side == "output" then
@@ -95,20 +92,18 @@ function DRIVE_TO_MACHINE_POINT:init()
 end
 
 function CONVEYOR_ALIGN:init()
-    if (self.fsm.vars.slide == nil or self.fsm.vars.shelf == nil) then
+    if (self.fsm.vars.slide == nil) then
       self.args["conveyor_align"].disable_realsense_afterwards = false
     end
 
     self.args["conveyor_align"].side = self.fsm.vars.side
     self.args["conveyor_align"].place = self.fsm.vars.place
     self.args["conveyor_align"].slide = self.fsm.vars.slide
-    self.args["conveyor_align"].shelf = self.fsm.vars.shelf
 end
 
 
 function PRODUCT_PUT:init()
   self.args["product_put"].place = self.fsm.vars.place
   self.args["product_put"].slide = self.fsm.vars.slide
-  self.args["product_put"].shelf = self.fsm.shelf
   self.args["product_put"].side = self.fsm.vars.side
 end
