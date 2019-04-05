@@ -32,10 +32,11 @@ depends_interfaces = {
 }
 
 documentation      = [==[
-    @param command    can be : ( OPEN | CLOSE | MOVEABS | CALIBRATE )
-    @param x   absolute x position for gripper move
-    @param y   absolute y position for gripper move
-    @param z   absolute z position for gripper move
+    @param command    can be : ( OPEN | CLOSE | MOVEABS | MOVEREL | CALIBRATE )
+    @param x   x position for gripper move
+    @param y   y position for gripper move
+    @param z   z position for gripper move
+    @param target_frame   target frame of absolute coordinates
     @param wait (optional, default: true) force the skill to wait on arduino plugin
 
 ]==]
@@ -49,7 +50,7 @@ function input_ok()
   if self.fsm.vars.command == "OPEN" or self.fsm.vars.command == "CLOSE" then
     return true
   end
-  if self.fsm.vars.command == "MOVEABS" then
+  if self.fsm.vars.command == "MOVEABS" or self.fsm.vars.command == "MOVEREL" then
     if not fsm.vars.x or not fsm.vars.y or not fsm.vars.z then
       return false
     end
@@ -119,6 +120,17 @@ function COMMAND:init()
         move_abs_message:set_z(z)
         move_abs_message:set_target_frame(target_frame)
         self.fsm.vars.msgid = arduino:msgq_enqueue_copy(move_abs_message)
+
+   elseif self.fsm.vars.command == "MOVEREL" then
+        x = self.fsm.vars.x
+        y = self.fsm.vars.y
+        z = self.fsm.vars.z
+        move_rel_message = arduino.MoveXYZRelMessage:new()
+        move_rel_message:set_x(x)
+        move_rel_message:set_y(y)
+        move_rel_message:set_z(z)
+        move_rel_message:set_target_frame(target_frame)
+        self.fsm.vars.msgid = arduino:msgq_enqueue_copy(move_rel_message)
 
    elseif self.fsm.vars.command == "CALIBRATE" then
         calibrate_message = arduino.CalibrateMessage:new()
