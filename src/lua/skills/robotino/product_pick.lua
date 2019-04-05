@@ -33,7 +33,6 @@ documentation      = [==[
 Skill to pick a product from the conveyor.
 
 Parameters:
-      @param shelf   optional position on shelf: ( LEFT | MIDDLE | RIGHT )
 ]==]
 
 
@@ -47,12 +46,6 @@ local conveyor_gripper_down_z = -0.00    -- distance to move gripper down after 
 
 local conveyor_gripper_back_x = -0.11   -- distance to move gripper back after closing gripper
 local conveyor_gripper_up_z = 0.05 -- distance to move gripper up after closing gripper
-
-local shelf_gripper_forward_x = 0.048  -- distance to move gripper forward after align to shelf
-local shelf_gripper_down_z = -0.01     -- distance to move gripper down after driving over shelf
-
-local shelf_gripper_back_x = 0.04   -- distance to move gripper back after closing gripper over shelf
-local shelf_gripper_up_z = 0.05  -- distance to move gripper up after closing the gripper over shelf
 
 local drive_back_x = -0.1      -- distance to drive back after closing the gripper
 
@@ -181,12 +174,8 @@ end
 
 function MOVE_GRIPPER_FORWARD:init()
   local pose = {}
-  if self.fsm.vars.shelf ~= nil then
-    pose = pose_gripper_offset(shelf_gripper_forward_x, 0, shelf_gripper_down_z)
+  pose = pose_gripper_offset(conveyor_gripper_forward_x, 0, conveyor_gripper_forward_z)
 
-  else
-    pose = pose_gripper_offset(conveyor_gripper_forward_x, 0, conveyor_gripper_forward_z)
-  end
   self.args["gripper_commands"] = pose
   self.args["gripper_commands"].command = "MOVEABS"
   self.args["gripper_commands"].target_frame = "gripper_home"
@@ -194,11 +183,8 @@ end
 
 function MOVE_GRIPPER_BACK:init()
   local pose = {}
-  if self.fsm.vars.shelf ~= nil then
-    pose = pose_gripper_offset(shelf_gripper_back_x, 0, shelf_gripper_up_z)
-  else
-    pose = pose_gripper_offset(conveyor_gripper_back_x, 0, conveyor_gripper_up_z)
-  end
+  pose = pose_gripper_offset(conveyor_gripper_back_x, 0, conveyor_gripper_up_z)
+
   self.args["gripper_commands"] = pose
   self.args["gripper_commands"].command = "MOVEABS"
   self.args["gripper_commands"].target_frame = "gripper_home"
