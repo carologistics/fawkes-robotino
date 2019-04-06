@@ -100,7 +100,7 @@
 )
 
 (defrule goal-expander-wait
-  ?p <- (goal (mode EXPANDED) (id ?parent))
+  ?p <- (goal (mode DISPATCHED) (id ?parent))
   ?g <- (goal (id ?goal-id) (class WAIT) (parent ?parent) (mode SELECTED)
               (params r ?robot
                       point ?waitpoint))
@@ -119,7 +119,7 @@
 
 (defrule goal-expander-go-wait
   "Move to a waiting position."
-   ?p <- (goal (mode EXPANDED) (id ?parent))
+   ?p <- (goal (mode DISPATCHED) (id ?parent))
    ?g <- (goal (id ?goal-id) (class GO-WAIT) (mode SELECTED) (parent ?parent)
                (params r ?robot
                  point ?waitpoint
@@ -141,7 +141,7 @@
 (defrule goal-expander-prefill-cap-station
    "Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
-    ?p <- (goal (mode EXPANDED) (id ?parent))
+    ?p <- (goal (mode DISPATCHED) (id ?parent))
     ?g <- (goal (id ?goal-id) (class FILL-CAP) (mode SELECTED) (parent ?parent)
                 (params robot ?robot
                         mps ?mps
@@ -191,7 +191,7 @@
 )
 
 (defrule goal-remove-workpiece-from-mps
- ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (class CLEAR-MPS) (mode SELECTED) (parent ?parent)
              (params robot ?robot
                       mps ?mps
@@ -245,7 +245,7 @@
 ; )
 
 (defrule goal-expander-discard-unneeded-base
- ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (class DISCARD-UNKNOWN) (mode SELECTED)
              (parent ?parent)
              (params robot ?robot
@@ -264,7 +264,7 @@
 
 
 (defrule goal-expander-fill-rs
- ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (class FILL-RS) (mode SELECTED) (parent ?parent)
              (params robot ?robot
                       mps ?mps
@@ -300,7 +300,7 @@
 
 
 (defrule goal-expander-fill-rs-from-bs
- ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (mode SELECTED) (parent ?parent) (id ?goal-id)
              (class FILL-RS-FROM-BS)
              (params robot ?robot
@@ -368,7 +368,7 @@
 
 
 (defrule goal-expander-fill-rs-from-shelf
- ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (mode SELECTED) (parent ?parent) (id ?goal-id)
              (class FILL-RS-FROM-SHELF)
              (params robot ?robot
@@ -427,7 +427,7 @@
 
 
 (defrule goal-produce-c0
- ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (class PRODUCE-C0) (mode SELECTED) (parent ?parent)
                                              (params robot ?robot
                                                       bs ?bs
@@ -499,7 +499,7 @@
 )
 
 (defrule goal-mount-first-ring
- ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (class MOUNT-FIRST-RING) (mode SELECTED)
              (parent ?parent)
              (params robot ?robot
@@ -577,7 +577,7 @@
 
 
 (defrule goal-mount-next-ring
- ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (mode SELECTED) (parent ?parent) (id ?goal-id)
              (class MOUNT-NEXT-RING)
                                              (params robot ?robot
@@ -666,7 +666,7 @@
 
 
 (defrule goal-produce-cx
- ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (mode SELECTED) (parent ?parent) (id ?goal-id) (class PRODUCE-CX)
                                               (params robot ?robot
                                                         wp ?wp
@@ -734,7 +734,7 @@
 
 
 (defrule goal-reset-mps
-  ?p <- (goal (mode EXPANDED) (id ?parent))
+  ?p <- (goal (mode DISPATCHED) (id ?parent))
   ?g <- (goal (id ?goal-id) (class RESET-MPS) (mode SELECTED) (parent ?parent)
               (params r ?robot
                       m ?mps))
@@ -750,7 +750,7 @@
 )
 
 (defrule goal-deliver
- ?p <- (goal (mode EXPANDED) (id ?parent))
+ ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (class DELIVER) (mode SELECTED) (parent ?parent)
              (params robot ?robot
                           mps ?mps
