@@ -90,7 +90,7 @@
 	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state PENDING|WAITING|RUNNING|FAILED)))
 	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state FORMULATED) (id ?oid&:(< ?oid ?id))))
 	=>
-  (if (neq ?class BEACONACHIEVE) then
+  (if (neq ?class SEND-BEACON) then
     (printout t "Selected next action " ?action-name ?param-values crlf)
   )
 	(modify ?pa (state PENDING))

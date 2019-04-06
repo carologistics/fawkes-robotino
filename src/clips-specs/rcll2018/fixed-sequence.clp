@@ -31,8 +31,8 @@
 )
 
 (defrule goal-expander-send-beacon-signal
-  ?p <- (goal (mode EXPANDED) (id ?parent-id))
-  ?g <- (goal (id ?goal-id) (class BEACONACHIEVE) (mode SELECTED)
+  ?p <- (goal (mode DISPATCHED) (id ?parent-id))
+  ?g <- (goal (id ?goal-id) (class SEND-BEACON) (mode SELECTED)
               (parent ?parent-id))
 =>
   (assert
@@ -44,8 +44,8 @@
 
 
 (defrule goal-expander-wp-spawn
-  ?p <- (goal (mode EXPANDED) (id ?parent-id))
-  ?g <- (goal (id ?goal-id) (class WPSPAWN-ACHIEVE) (mode SELECTED)
+  ?p <- (goal (mode DISPATCHED) (id ?parent-id))
+  ?g <- (goal (id ?goal-id) (class SPAWN-WP) (mode SELECTED)
               (parent ?parent-id))
 =>
   (assert
@@ -56,8 +56,8 @@
 )
 
 (defrule goal-expander-refill-shelf
-  ?p <- (goal (mode EXPANDED) (id ?parent-id))
-  ?g <- (goal (id ?goal-id) (class REFILL-SHELF-ACHIEVE) (mode SELECTED)
+  ?p <- (goal (mode DISPATCHED) (id ?parent-id))
+  ?g <- (goal (id ?goal-id) (class REFILL-SHELF) (mode SELECTED)
               (parent ?parent-id))
   =>
   (assert
@@ -85,7 +85,7 @@
 
 
 (defrule goal-expander-enter-field
-  ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD-ACHIEVE))
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
 =>
