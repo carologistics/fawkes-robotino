@@ -72,6 +72,7 @@
   Those can be introduced to the world during the game e.g. through dispensing
   at the base station or refilling of a shelf.
 "
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
   (domain-object (name SPAWNING-MASTER) (type master-token))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
@@ -88,6 +89,7 @@
 " The parent goal for beacon signals. Allows formulation of
   goals that periodically communicate with the refbox.
 "
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (not (goal (class BEACON-MAINTAIN)))
   =>
   (goal-tree-assert-run-endless BEACON-MAINTAIN 1)
@@ -98,6 +100,7 @@
 " Send a beacon signal whenever at least one second has elapsed since it
   last one got sent.
 "
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (time $?now)
   ?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED)
         (meta last-formulated $?last))
@@ -110,6 +113,7 @@
 
 (defrule goal-production-create-wp-spawn-maintain
   "Maintain Spawning if the spawning-master token is held"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
@@ -122,6 +126,7 @@
 
 (defrule goal-production-create-wp-spawn-achieve
   "Spawn a WP for each robot, if you are the spawn-master"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (time $?now)
   ?g <- (goal (id ?maintain-id) (class WP-SPAWN-MAINTAIN) (mode SELECTED)
               (meta  last-formulated $?last&:(timeout ?now ?last 1)))
@@ -148,6 +153,7 @@
   a shelf only if the game is in the production phase and the domain is loaded.
   Only the spawning-master is in charge of handling shelf refills.
 "
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
   (not (goal (class REFILL-SHELF-MAINTAIN)))
   (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
@@ -160,6 +166,7 @@
 
 (defrule goal-production-create-refill-shelf-achieve
   "Refill a shelf whenever it is empty."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?g <- (goal (id ?maintain-id) (class REFILL-SHELF-MAINTAIN) (mode SELECTED))
   (not (goal (class REFILL-SHELF)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
@@ -200,6 +207,7 @@
   and the domain got loaded. Other production goals are
   formulated as sub-goals of this goal.
 "
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
   (not (goal (class PRODUCTION-MAINTAIN)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
