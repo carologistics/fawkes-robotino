@@ -103,7 +103,7 @@
   (assert (exp-zone-margin ?zone-margin))
   (assert (timer (name send-machine-reports)))
   (assert (goal (id (sym-cat EXPLORATION- (gensym*))) (class EXPLORATION)
-                (type ACHIEVE)))
+                (type ACHIEVE) (sub-type SIMPLE)))
   "Lower the speed, for a more robust line and tag detection"
   (navigator-set-speed ?vel ?rot)
 )
