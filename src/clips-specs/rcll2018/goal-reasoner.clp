@@ -47,6 +47,40 @@
 )
 
 
+(deffunction production-leaf-goal (?goal-class)
+  (return (or (eq ?goal-class FILL-RS-FROM-BS)
+              (eq ?goal-class FILL-RS-FROM-SHELF)
+              (eq ?goal-class FILL-CAP)
+              (eq ?goal-class DISCARD-UNKNOWN)
+              (eq ?goal-class PRODUCE-C0)
+              (eq ?goal-class PRODUCE-CX)
+              (eq ?goal-class MOUNT-FIRST-RING)
+              (eq ?goal-class MOUNT-NEXT-RING)
+              (eq ?goal-class DELIVER)
+              (eq ?goal-class WAIT)
+              (eq ?goal-class GO-WAIT)))
+)
+
+
+(deffunction production-tree-goal (?goal-class)
+  (return (or (eq ?goal-class URGENT)
+              (eq ?goal-class FULFILL-ORDERS)
+              (eq ?goal-class DELIVER-PRODUCTS)
+              (eq ?goal-class INTERMEDEATE-STEPS)
+              (eq ?goal-class CLEAR)
+              (eq ?goal-class PREPARE-RESOURCES)
+              (eq ?goal-class PREPARE-CAPS)
+              (eq ?goal-class PREPARE-RINGS)
+              (eq ?goal-class NO-PROGRESS)))
+)
+
+
+(deffunction production-goal (?goal-class)
+  (return (or (production-tree-goal ?goal-class)
+              (production-leaf-goal ?goal-class)))
+)
+
+
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
         (bind ?id (sym-cat MAINTAIN- ?class - (gensym*)))
         (bind ?goal (assert (goal (id ?id) (class ?class) (type MAINTAIN)
@@ -77,6 +111,26 @@
 )
 
 
+(defrule goal-reasoner-expand-production-tree
+"  Populate the tree structure of the production tree. The priority of subgoals
+   is determined by the order they are asserted. Sub-goals that are asserted
+   earlier get a higher priority.
+"
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (not (goal (parent ?goal-id)))
+=>
+  (goal-tree-assert-subtree ?goal-id
+    (goal-tree-assert-run-one URGENT)
+      (goal-tree-assert-run-one FULFILL-ORDERS
+        (goal-tree-assert-run-one DELIVER-PRODUCTS)
+        (goal-tree-assert-run-one INTERMEDEATE-STEPS))
+      (goal-tree-assert-run-one PREPARE-RESOURCES
+        (goal-tree-assert-run-one CLEAR)
+        (goal-tree-assert-run-one PREPARE-CAPS)
+        (goal-tree-assert-run-one PREPARE-RINGS))
+      (goal-tree-assert-run-one NO-PROGRESS))
+)
 
 (defrule goal-reasoner-expand-goal-with-sub-type
 " Expand a goal with sub-type, if it has a child."
@@ -221,12 +275,55 @@
   (modify ?g (mode RETRACTED))
 )
 
-(defrule goal-reasoner-remove-retracted-goal
+(defrule goal-reasoner-remove-retracted-goal-common
 " Remove a retracted goal once all acquired resources are freed."
-  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-  ?g <- (goal (id ?goal-id) (mode RETRACTED) (acquired-resources))
+  ?g <- (goal (id ?goal-id) (class ?class&:(not (production-goal ?class)))
+        (mode RETRACTED) (acquired-resources))
 =>
   (retract ?g)
 )
 
 
+(defrule goal-reasoner-remove-retracted-goal-from-production-tree
+" Remove a retracted production goal once all acquired resources are freed and
+  the production maintain goal has finished. RETRACTED tree goals should not be
+  deleted earlier. This allows parent goals further reasoning when there are no
+  suitable sub-goals to chose from (this could either be because all sub-goals
+  were rejected or because there were no formulated subgoals in the first
+  place).
+"
+  ?g <- (goal (id ?goal-id) (parent ?parent) (acquired-resources)
+              (class ?class&:(production-goal ?class)) (mode RETRACTED))
+  (goal (class PRODUCTION-MAINTAIN) (mode EVALUATED))
+=>
+  (retract ?g)
+)
+
+
+(defrule goal-reasoner-reject-production-tree-goal-missing-subgoal
+" Retract a formulated sub-goal of the production tree if it requires a
+  sub-goal but there is none formulated.
+"
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
+  ?g <- (goal (id ?goal) (parent ?parent) (type ACHIEVE)
+              (sub-type ?sub-type&:(requires-subgoal ?sub-type))
+              (class ?class&:(production-goal ?class)) (mode FORMULATED))
+  (not (goal (parent ?goal) (mode FORMULATED)))
+=>
+  (modify ?g (mode RETRACTED) (outcome REJECTED))
+)
+
+
+(defrule goal-reasoner-reject-production-tree-goal-other-goal-dispatched
+" Retract a formulated sub-goal of the production tree once a production leaf
+  goal is dispatched.
+"
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
+  ?g <- (goal (id ?goal) (parent ?parent) (type ACHIEVE)
+              (sub-type ?sub-type) (class ?class&:(production-goal ?class))
+              (mode FORMULATED))
+  (goal (id ?some-leaf) (class ?some-class&:(production-goal ?some-class))
+        (sub-type SIMPLE) (mode DISPATCHED))
+=>
+  (modify ?g (mode RETRACTED) (outcome REJECTED))
+)
