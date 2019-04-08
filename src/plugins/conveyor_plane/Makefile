@@ -43,6 +43,8 @@ CFLAGS  += $(CFLAGS_TF) $(CFLAGS_PCL) $(CFLAGS_ROS) \
 LDFLAGS += $(LDFLAGS_TF) $(LDFLAGS_PCL) $(LDFLAGS_ROS) \
            $(call pcl-libs-ldflags,$(REQUIRED_PCL_LIBS))
 
+PRESUBDIRS = interfaces
+
 ifeq ($(HAVE_ROS)$(HAVE_TF)$(HAVE_PCL)$(call pcl-have-libs,$(REQUIRED_PCL_LIBS)),1111)
   ifeq ($(HAVE_BULLET_VERSION),1)
     PLUGINS_build = $(PLUGINS_all)
