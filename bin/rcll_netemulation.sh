@@ -49,6 +49,7 @@ then
        	echo "delay distribution: $DELAY_DISTRIBUTION"
 	echo "delay correlation: $DELAY_CORRELATION"
 	filter+="delay $DELAY $DELAY_DISTRIBUTION $DELAY_CORRELATION "
+	echo $filter
 fi
 
 if [ ! -z $LOSS ];
@@ -56,19 +57,26 @@ then
     echo "packet loss: $LOSS"
     echo "loss correlation: $LOSS_CORRELATION"
     filter+="loss $LOSS $LOSS_CORRELATION "
-fi
+    echo $filter
+    fi
 
 if [ ! -z $CORRUPTION ];
 then
     echo "packet corruption $CORRUPTION"
     filter+="corrupt $CORRUPTION "
+    echo $filter
+
 fi
 
 if [ ! -z $DUPLICATE ];
 then
     echo "duplicates: $DUPLICATE"
     filter+="duplicate $DUPLICATE"
+    echo $filter
+
 fi
+
+eval $filter
 
 #    tc qdisc add dev $DEVICE parent 1:1 handle 10:  netem limit 100000 delay $DELAY $DELAY_DISTRIBUTION $DELAY_CORRELATION loss $LOSS $LOSS_CORRELATION corrupt $CORRUPTION duplicate $DUPLICATE
 
