@@ -18,6 +18,11 @@ OPTIONS:
    -c|--corruption <value in %>
    --duplicate <value in %>
    -D|--Debug        Apply rules also to icmp. ping 127.0.0.1 to test setup
+
+e.g.
+
+$0 setup lo -c 60% -d 800ms 50ms 25% --duplicate 10% -D
+
 EOF
 }
 
@@ -91,7 +96,7 @@ eval $filter
    # Each of these filters are traversed with Logical OR
    # match each icmp package that is encapsulated by an ip packet
    if [ "$DEBUG" = true ] ; then
-	echo "Debug enabled. Apply filter on icmp protocol"
+	echo "Debug enabled. Apply filter on icmp protocol. ping 127.0.0.1 to test your setup"
    	tc filter add dev $DEVICE protocol ip parent 1: prio 1 u32 match ip protocol 1 0xff flowid 1:1
    fi
    # in order to filter out udp packages use "ip dport" instead of "udp dst" due to "implicit" nexthdr not forwarded into the queue
