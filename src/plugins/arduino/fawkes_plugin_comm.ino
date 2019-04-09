@@ -40,17 +40,17 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define CMD_GRAB 'G'
 #define CMD_STATUS_REQ 'S'
 
-#define DEFAULT_MAX_SPEED_X 40000
-#define DEFAULT_MAX_ACCEL_X 50000
+#define DEFAULT_MAX_SPEED_X 1500
+#define DEFAULT_MAX_ACCEL_X 2000
 
-#define DEFAULT_MAX_SPEED_Y 20000
-#define DEFAULT_MAX_ACCEL_Y 50000
+#define DEFAULT_MAX_SPEED_Y 2000
+#define DEFAULT_MAX_ACCEL_Y 3500
 
-#define DEFAULT_MAX_SPEED_Z 20000
-#define DEFAULT_MAX_ACCEL_Z 50000
+#define DEFAULT_MAX_SPEED_Z 2000
+#define DEFAULT_MAX_ACCEL_Z 3500
 
-#define DEFAULT_MAX_SPEED_A 40000
-#define DEFAULT_MAX_ACCEL_A 50000
+#define DEFAULT_MAX_SPEED_A 4000
+#define DEFAULT_MAX_ACCEL_A 5000
 
 //#define CMD_SET_ACCEL 7
 #define CMD_SET_SPEED 9
@@ -105,19 +105,13 @@ void send_idle() {
   Serial.print(motor_A.currentPosition());
   Serial.print(" ");
   int open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
-  int closed_button = digitalRead(MOTOR_A_CLOSED_LIMIT_PIN);
-  if(open_button == LOW && closed_button == HIGH){
+  if(open_button == LOW){
         Serial.print("OPEN");
   }
-  if(open_button == HIGH && closed_button == LOW){
+  if(open_button == HIGH){
         Serial.print("CLOSED");
   }
-  if(open_button == HIGH && closed_button == HIGH){
-        Serial.print("GRABBED");
-  }
-  if(open_button == LOW && closed_button == LOW){
-        Serial.print("BROKEN");
-  }
+
   Serial.print("\r\n");
 }
 
@@ -162,7 +156,7 @@ void move_to_end_stop(int limit_pin, AccelStepper &motor, int dir) {
   // move out of the end stop
   // TODO: configure
   motor.setCurrentPosition(0L);
-  motor.move(1000 * dir * -1);
+  motor.move(250 * dir * -1);
   while (motor.distanceToGo() != 0) {
  //   motor.setSpeed(DEFAULT_MAX_SPEED);
     motor.run();
@@ -207,7 +201,7 @@ void calibrate() {
     set_status(STATUS_ERROR);
     return;
   }
-  if (!calibrate_axis(MOTOR_Z_LIMIT_PIN, motor_Z, 1)) {
+  if (!calibrate_axis(MOTOR_Z_LIMIT_PIN, motor_Z, -1)) {
     errormessage = "Can't calibrate axis Z - end stop pressed!";
     set_status(STATUS_ERROR);
     return;
@@ -229,7 +223,6 @@ void set_new_pos(long new_pos, AccelStepper &motor) {
 void read_package() {
     int len = Serial.readBytesUntil(TERMINATOR, buffer_, 128);
     int open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
-    int closed_button = digitalRead(MOTOR_A_CLOSED_LIMIT_PIN);
     // Skip too short packages
     if (len < 4) return;
 
@@ -271,10 +264,10 @@ void read_package() {
               set_new_pos(-new_pos, motor_Z);
               break;
             case CMD_OPEN:
-              if(!open_gripper && closed_button == LOW){
+              if(!open_gripper){
                 open_gripper = true;
                 closed_gripper = false;
-                set_new_pos(motor_A.currentPosition()-400,motor_A);
+                set_new_pos(motor_A.currentPosition()+120,motor_A);
                 //set_status(STATUS_MOVING);
               }
               else {
@@ -283,10 +276,10 @@ void read_package() {
               }
               break;
             case CMD_GRAB:
-              if(open_button == LOW && !closed_gripper){
+              if(/*open_button == LOW && */!closed_gripper){
                 open_gripper = false;
                 closed_gripper = true;
-                set_new_pos(motor_A.currentPosition()+400,motor_A);
+                set_new_pos(motor_A.currentPosition()-120,motor_A);
                 //set_status(STATUS_MOVING);
               }
               else{
