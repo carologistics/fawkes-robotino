@@ -6,10 +6,12 @@ DEBUG=false
 
 function usage() {
 cat << EOF
+Allows to modify network Traffic. Based on 'tc' tool
+
 usage:
 
   $0 setup <network interface> OPTIONS
-  $0 clear <network interface>
+  $0 clear <network interface> 
   $0 show  <network interface>
 
 OPTIONS:
@@ -17,7 +19,7 @@ OPTIONS:
    -d|--delay <delay in ms> <random uniform distribution in ms> <correlation in %>
    -c|--corruption <value in %>
    --duplicate <value in %>
-   -D|--Debug        Apply rules also to icmp. ping 127.0.0.1 to test setup
+   -D|--Debug        Apply rules also to icmp. Use ping to test setup
 
 e.g.
 
@@ -28,25 +30,23 @@ EOF
 
 function setup_rules() {
 
-   # The classless netem qdisc does not allow use of filters.
-   # In order to apply filters to netem qdisc it has to be encapsulated into a classfull qdisc like prio
+# The classless netem qdisc does not allow use of filters.
+# In order to apply filters to netem qdisc it has to be encapsulated into a classfull qdisc like prio
 
-   # prio creates 3 classes:
-   # x:0| qdisc itself
-   # x:1| class 1 highest priority
-   # x:2| class 2
-   # x:3| class 3 lowest priority
+# prio creates 3 classes:
+# x:0| qdisc itself
+# x:1| class 1 highest priority
+# x:2| class 2
+# x:3| class 3 lowest priority
     echo "setup rules for device $DEVICE"
     tc qdisc add dev $DEVICE root handle 1: prio
 
-   # netem minimum limit buffer calculation:
-   # <bandwith> / <MTU Size> * delay * 1.5
-   # 1 Gbps / 1500 bytes MTU * 100 ms * 1.5 = 12500.
+# netem minimum limit buffer calculation:
+# <bandwith> / <MTU Size> * delay * 1.5
+# 1 Gbps / 1500 bytes MTU * 100 ms * 1.5 = 12500.
 
-      # here a delay of 2000ms with a random uniform distribution of +- 200ms with correlation of 25% and a package loss of 20% with correlation of 25%
-   # this rule is active for all rules that have a parent of 1:
 
-   filter="tc qdisc add dev $DEVICE parent 1:1 handle 10:  netem limit 100000 "
+filter="tc qdisc add dev $DEVICE parent 1:1 handle 10:  netem limit 100000 "
 
 if [ ! -z $DELAY ];
 then
@@ -83,32 +83,23 @@ fi
 
 eval $filter
 
-#    tc qdisc add dev $DEVICE parent 1:1 handle 10:  netem limit 100000 delay $DELAY $DELAY_DISTRIBUTION $DELAY_CORRELATION loss $LOSS $LOSS_CORRELATION corrupt $CORRUPTION duplicate $DUPLICATE
-
-   # Protocol ID's
-   # icmp 1
-   # tcp  6
-   # udp  17
-
-   # flowid redirects packet to the corresponding class
-
-   # Matching Rules:
-   # Each of these filters are traversed with Logical OR
-   # match each icmp package that is encapsulated by an ip packet
-   if [ "$DEBUG" = true ] ; then
-	echo "Debug enabled. Apply filter on icmp protocol. ping 127.0.0.1 to test your setup"
+# Matching Rules:
+# Each of these filters are traversed with Logical OR
+# match each icmp package that is encapsulated by an ip packet
+if [ "$DEBUG" = true ] ; then
+	echo "Debug enabled. Apply filter on icmp protocol. use ping to test your setup"
    	tc filter add dev $DEVICE protocol ip parent 1: prio 1 u32 match ip protocol 1 0xff flowid 1:1
-   fi
-   # in order to filter out udp packages use "ip dport" instead of "udp dst" due to "implicit" nexthdr not forwarded into the queue
-   # 0xffff is the mask that has to be applied in order to match the udp and tcp headers
-   # match all tcp packages that go to tcp dport 27017, 27021 and 27031
+fi
+# in order to filter out udp packages use "ip dport" instead of "udp dst" due to "implicit" nexthdr not forwarded into the queue
+# 0xffff is the mask that has to be applied in order to match the udp and tcp headers
 
-    echo setup rules for ports:
-    for i in "${PORTS[@]}"
-    do
+# match all tcp packages that go to tcp dport 27017, 27021 and 27031
+echo setup rules for ports:
+for i in "${PORTS[@]}"
+do
 	echo $i
         tc filter add dev $DEVICE protocol ip parent 1: prio 1 u32 match ip protocol 6 0xff match ip dport $i 0xffff flowid 1:1
-    done
+done
 
 }
 
