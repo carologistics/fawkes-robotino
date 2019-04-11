@@ -118,7 +118,8 @@ fsm:define_states{ export_to=_M,
   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="FAILED"},
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="DRIVE_BACK", fail_to="FAILED"},
-  {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands}}, final_to = "DRIVE_BACK", fail_to="FAILED"},
+  {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands}}, final_to = "GRIPPER_HOME", fail_to="FAILED"},
+  {"GRIPPER_HOME", SkillJumpState, skills={{gripper_commands}}, final_to = "DRIVE_BACK", fail_to="FAILED"},
   {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CLOSE_GRIPPER", fail_to="FAILED"},
   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="FINAL", fail_to="FAILED"},
 }
@@ -191,8 +192,16 @@ function MOVE_GRIPPER_BACK:init()
   self.args["gripper_commands"] = pose
   self.args["gripper_commands"].command = "MOVEABS"
   self.args["gripper_commands"].target_frame = "gripper_home"
-  self.args["gripper_commands"].wait = false
 end
+
+function GRIPPER_HOME:init()
+  self.args["gripper_commands"].x = 0
+  self.args["gripper_commands"].y = 0
+  self.args["gripper_commands"].z = 0.03
+  self.args["gripper_commands"].wait = false
+  self.args["gripper_commands"].command = "MOVEABS"
+end
+
 
 function DRIVE_BACK:init()
   self.args["motor_move"].x = drive_back_x
