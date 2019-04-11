@@ -112,7 +112,7 @@ function pose_gripper_offset(x,y,z)
 
    -- Clip to axis limits
    return { x = math.max(0,math.min(gripper_home_rel.x,x_max)),
-            y = math.max(0,math.min(gripper_home_rel.y,y_max)),
+            y = math.max(-y_max/2,math.min(gripper_home_rel.y,y_max/2)),
             z = math.max(0,math.min(gripper_home_rel.z,z_max))}
 end
 
