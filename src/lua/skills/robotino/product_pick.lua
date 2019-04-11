@@ -56,7 +56,10 @@ local gripper_pose_offset_z = 0.03  -- conveyor_pose offset in z direction
 
 -- function to evaluate sensor data
 function is_grabbed()
- if robotino_sensor.digital_out(0) == false and robotino_sensor.digital_out(1) == true then -- white cable on DI1 and black on DI2
+ if not robotino_sensor:has_writer() then
+   return true
+ end
+ if robotino_sensor:is_digital_in(0) == false and robotino_sensor.is_digital_in(1) == true then -- white cable on DI1 and black on DI2
     return true
  else
     return false
@@ -129,7 +132,7 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    {"INIT", "FAILED", cond="pose_not_exist()"},
    {"INIT", "OPEN_GRIPPER", true, desc="Open gripper for product_pick"},
-   {"CHECK_PUCK", "FAILED", cond="robotino_sensor:has_writer() and not is_grabbed()", desc="Don't hold puck!"},  -- add or not is_grabbed() 
+   {"CHECK_PUCK", "FAILED", cond="not is_grabbed()", desc="Don't hold puck!"},  -- add or not is_grabbed() 
    {"CHECK_PUCK", "FINAL", cond=true},
    {"CLOSE_GRIPPER", "MOVE_GRIPPER_BACK", timeout=0.5},
 }
