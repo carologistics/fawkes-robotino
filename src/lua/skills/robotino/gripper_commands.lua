@@ -62,6 +62,28 @@ function input_ok()
   return false
 end
 
+function tf_ready()
+-- Checks if the tf tree of the gripper is complete and up to date after moving
+-- This is done by checking if the latest transform update is newer than the
+-- arduino interface timestamp
+  if arduino:is_busy()
+     or arduino:msgid() ~= fsm.vars.msgid
+  then return false end
+
+  local bb_stamp = fawkes.Time:new(arduino:input_timestamp(0), arduino:input_timestamp(1))
+  if not tf:can_transform("gripper", "gripper_home", bb_stamp) then
+    return false
+  end
+
+  local transform = fawkes.tf.StampedTransform:new()
+  tf:lookup_transform("gripper", "gripper_home", transform)
+  if transform.stamp:in_usec() < bb_stamp:in_usec() then
+    return false
+  end
+  return true
+end
+
+
 function is_error()
   msgid = arduino:msgid()
   if msgid == nil then
@@ -80,7 +102,7 @@ end
 -- States
 fsm:define_states{
    export_to=_M,
-   closure={arduino=arduino, is_error=is_error, input_ok = input_ok},
+   closure={arduino=arduino, is_error=is_error, input_ok = input_ok, tf_ready=tf_ready},
    {"CHECK_WRITER", JumpState},
    {"COMMAND", JumpState},
    {"WAIT", JumpState},
@@ -93,7 +115,7 @@ fsm:add_transitions{
    {"COMMAND", "WAIT", timeout=0.2},
    {"WAIT", "FAILED", cond="is_error()"},
    {"WAIT", "FINAL", cond="vars.wait ~= nil and not vars.wait"},
-   {"WAIT", "FINAL", cond="arduino:is_final()"},
+   {"WAIT", "FINAL", cond="arduino:is_final() and tf_ready()"},
    {"WAIT", "FAILED", timeout=15},
 }
 
