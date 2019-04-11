@@ -35,7 +35,36 @@
 )
 
 
-; ============================  Goal Selection ===============================
+; ========================== Goal-Tree-Functions ============================
+
+
+(deffunction requires-subgoal (?goal-type)
+  (return (or (eq ?goal-type TRY-ONE-OF-SUBGOALS)
+              (eq ?goal-type TIMEOUT-SUBGOAL)
+              (eq ?goal-type RUN-ONE-OF-SUBGOALS)
+              (eq ?goal-type RETRY-SUBGOAL)
+              (eq ?goal-type RUN-ENDLESS)))
+)
+
+
+(deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
+        (bind ?id (sym-cat MAINTAIN- ?class - (gensym*)))
+        (bind ?goal (assert (goal (id ?id) (class ?class) (type MAINTAIN)
+                            (sub-type RUN-ENDLESS) (params frequency ?frequency)
+                            (meta last-formulated (now)))))
+        (foreach ?f ?fact-addresses
+                (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+        (return ?goal)
+)
+
+
+(deffunction goal-tree-assert-subtree (?id $?fact-addresses)
+        (foreach ?f ?fact-addresses
+                (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+)
+
+
+; ============================= Goal Selection ===============================
 
 
 (defrule goal-reasoner-select-root
