@@ -31,7 +31,7 @@
   ?*SALIENCE-GOAL-PRE-EVALUATE* = 1
   ; common evaluate rules should have
   ;   lower salience than case specific ones
-  ?*SALIENCE-GOAL-EVALUTATE-GENERIC* = -1
+  ?*SALIENCE-GOAL-EVALUATE-GENERIC* = -1
 )
 
 
@@ -250,7 +250,7 @@
 " Finally set a finished goal to evaluated.
   All pre evaluation steps should have been executed, enforced by the higher priority
 "
-  (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
+  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
 =>
   ;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
@@ -372,7 +372,6 @@
 " After a failed wp-put, check if the gripper interface indicates, that the workpiece is still in the gripper.
   If this is not the case, the workpiece is lost and the corresponding facts are marked for clean-up
 "
-  (declare (salience ?*MONITORING-SALIENCE*))
   (plan-action (id ?id) (goal-id ?goal-id)
 	(plan-id ?plan-id) (action-name ?an&:(or (eq ?an wp-put) (eq ?an wp-put-slide-cc)))
 	   (param-values ?r ?wp ?mps $?)
@@ -398,7 +397,6 @@
   and mark the corresponding facts for cleanup.
   By this, the next time a different spot will be tried
 "
-  (declare (salience ?*MONITORING-SALIENCE*))
   (plan-action (id ?id) (goal-id ?goal-id)
 	   (plan-id ?plan-id)
 	   (action-name wp-get-shelf)
