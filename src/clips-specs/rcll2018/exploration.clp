@@ -74,10 +74,13 @@
 " Reads maximum values for rotating and velocity from the config and stores it as a fact
 "
 
+  (wm-fact (id "/config/rcll/exploration/low-velocity") (type FLOAT) (value ?low-velocity))
+  (wm-fact (id "/config/rcll/exploration/low-rotation") (type FLOAT) (value ?low-rotation))
   (wm-fact (id "/config/rcll/exploration/max-velocity") (type FLOAT) (value ?max-velocity))
   (wm-fact (id "/config/rcll/exploration/max-rotation") (type FLOAT) (value ?max-rotation))
   =>
   (assert (exp-navigator-vmax ?max-velocity ?max-rotation))
+  (assert (exp-navigator-vlow ?low-velocity ?low-rotation))
 )
 
 
@@ -95,7 +98,7 @@
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
 
   ?cv <- (wm-fact (id "/config/rcll/exploration/zone-margin") (type FLOAT) (value ?zone-margin))
-  (exp-navigator-vmax ?vel ?rot)
+  (exp-navigator-vlow ?vel ?rot)
   =>
   (assert (exp-zone-margin ?zone-margin))
   (assert (timer (name send-machine-reports)))
@@ -111,7 +114,7 @@
   we can conclude, that there is no machine in this zone
 "
   (goal (class EXPLORATION) (mode DISPATCHED))
-  (exp-navigator-vmax ?max-velocity ?max-rotation)
+  (exp-navigator-vlow ?max-velocity ?max-rotation)
   (MotorInterface (id "Robotino")
     (vx ?vx&:(< ?vx ?max-velocity)) (vy ?vy&:(< ?vy ?max-velocity)) (omega ?w&:(< ?w ?max-rotation))
   )
@@ -260,7 +263,9 @@
   ?skill <- (skill (id ?skill-id) (name ?action-name) (status S_RUNNING))
   (not (exploration-result (zone ?zn)))
 
+  (exp-navigator-vmax ?vel ?rot)
   =>
+  (navigator-set-speed ?vel ?rot)
   (bind ?new-ts (+ 1 ?ts))
   (modify ?ze (value ?new-ts))
   (modify ?skill (status S_FAILED))
@@ -319,7 +324,9 @@
   ?zm2 <- (wm-fact (key exploration zone ?zn3&:(eq (mirror-name ?zn2) ?zn3) args? machine ? team ?team2))
 
   (not (exploration-result (machine ?machine) (zone ?zn2)))
+  (exp-navigator-vlow ?vel ?rot)
   =>
+  (navigator-set-speed ?vel ?rot)
   (modify ?pa (state FINAL))
   (modify ?ze (value (+ 1 ?times-searched)))
   (modify ?zm (key exploration zone ?zn2 args? machine ?machine team ?team))
@@ -345,7 +352,9 @@
 " Exploration of a zone failed. Simply set the evaluation action to final to continue"
   (plan-action (action-name explore-zone) (state FAILED))
   ?p <- (plan-action (action-name evaluation) (state PENDING))
+  (exp-navigator-vlow ?vel ?rot)
   =>
+  (navigator-set-speed ?vel ?rot)
   (printout t "EXP exploration fact zone fail, nothing to do for evaluation" crlf)
   (modify ?p (state FINAL))
 )
