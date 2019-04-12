@@ -168,6 +168,7 @@
   ;  "') has been completed, Evaluating" crlf)
   (modify ?g (mode EVALUATED))
 )
+; ------------------------- PRE EVALUATION -----------------------------------
 
 
 (defrule goal-reasoner-evaluate-clean-locks
@@ -250,6 +251,161 @@
   ;     "') has, cleaning up" crlf)
     (modify ?sg (mode FINISHED))
   )
+)
+
+
+; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
+
+
+(defrule goal-reasoner-evaluate-production-maintain
+  "Clean up all rs-fill-priorities facts when the production maintenance goal
+   fails."
+  ?g <- (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (parent nil)
+              (mode FINISHED) (outcome ?outcome))
+  ?t <- (wm-fact (key monitoring action-retried args? r ?self a ?an m ?mps wp ?wp)
+                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+  =>
+  (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
+  (retract ?t)
+  (do-for-all-facts ((?prio wm-fact)) (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
+   (retract ?prio))
+  (modify ?g (mode EVALUATED))
+)
+
+
+(defrule goal-reasoner-evaluate-completed-produce-c0-and-mount-first-ring
+" Bind a workpiece to the order it belongs to.
+
+  Workpieces that got dispensed during PRODUCE-C0 and MOUNT-FIRST-RING get
+  tied to their order independent of the goal outcome as long as they are
+  still usable.
+"
+  ?g <- (goal (id ?goal-id) (class PRODUCE-C0|MOUNT-FIRST-RING)
+              (parent ?parent-id)
+              (mode FINISHED) (outcome ?outcome)
+              (params $?params))
+ (plan (goal-id ?goal-id) (id ?plan-id))
+ ?p <-(plan-action
+         (plan-id ?plan-id)
+         (action-name bs-dispense)
+         (param-names r m side wp basecol)
+         (param-values ?robot ?bs ?bs-side ?wp ?base-color))
+ (time $?now)
+ (wm-fact (key domain fact wp-usable args? wp ?wp))
+ (wm-fact (key domain fact self args? r ?robot))
+ =>
+ (bind ?order (get-param-by-arg ?params order))
+ (printout t "Goal '" ?goal-id "' has been completed, Evaluating" crlf)
+ (assert (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE)))
+ (modify ?g (mode EVALUATED))
+)
+
+
+(defrule goal-reasoner-evaluate-completed-subgoal-refill-shelf
+" Create the domain objects and wm-facts corresponding to the freshly spawned
+  capcarriers when the REFILL-SHELF-ACHIEVE goal finishes successfully.
+"
+  ?g <- (goal (class REFILL-SHELF) (parent ?parent-id)
+              (mode FINISHED) (outcome COMPLETED)
+              (params mps ?mps))
+  ?p <- (goal (id ?parent-id))
+  (wm-fact (key domain fact cs-color args? m ?mps col ?col))
+  =>
+  (if (eq ?col CAP_GREY)
+     then
+     (bind ?cc1 (sym-cat CCG (random-id)))
+     (bind ?cc2 (sym-cat CCG (random-id)))
+     (bind ?cc3 (sym-cat CCG (random-id)))
+     else
+     (bind ?cc1 (sym-cat CCB (random-id)))
+     (bind ?cc2 (sym-cat CCB (random-id)))
+     (bind ?cc3 (sym-cat CCB (random-id)))
+   )
+   (assert
+     (domain-object (name ?cc1) (type cap-carrier))
+     (domain-object (name ?cc2) (type cap-carrier))
+     (domain-object (name ?cc3) (type cap-carrier))
+     (wm-fact (key domain fact wp-cap-color args? wp ?cc1 col ?col) (type BOOL) (value TRUE))
+     (wm-fact (key domain fact wp-cap-color args? wp ?cc2 col ?col) (type BOOL) (value TRUE))
+     (wm-fact (key domain fact wp-cap-color args? wp ?cc3 col ?col) (type BOOL) (value TRUE))
+     (wm-fact (key domain fact wp-on-shelf args? wp ?cc1 m ?mps spot LEFT) (type BOOL) (value TRUE))
+     (wm-fact (key domain fact wp-on-shelf args? wp ?cc2 m ?mps spot MIDDLE) (type BOOL) (value TRUE))
+     (wm-fact (key domain fact wp-on-shelf args? wp ?cc3 m ?mps spot RIGHT) (type BOOL) (value TRUE))
+   )
+   (modify ?g (mode EVALUATED))
+)
+
+
+(defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
+" Create the domain objects and wm-facts corresponding to the freshly spawned
+  workpieces when the WP-SPAWN-ACHIEVE goal finishes successfully.
+"
+  ?g <- (goal (id ?goal-id) (class SPAWN-WP) (parent ?parent-id)
+              (mode FINISHED) (outcome COMPLETED)
+              (params robot ?robot))
+  ?p <- (goal (id ?parent-id) (class WP-SPAWN-MAINTAIN))
+  (time $?now)
+  =>
+  (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
+    "') has been completed, Evaluating" crlf)
+  (bind ?wp-id (sym-cat WP (random-id)))
+  (assert
+    (domain-object (name ?wp-id) (type workpiece))
+    (wm-fact (key domain fact wp-unused args? wp ?wp-id) (type BOOL) (value TRUE))
+    (wm-fact (key domain fact wp-cap-color args? wp ?wp-id col CAP_NONE) (type BOOL) (value TRUE))
+    (wm-fact (key domain fact wp-ring1-color args? wp ?wp-id col RING_NONE) (type BOOL) (value TRUE))
+    (wm-fact (key domain fact wp-ring2-color args? wp ?wp-id col RING_NONE) (type BOOL) (value TRUE))
+    (wm-fact (key domain fact wp-ring3-color args? wp ?wp-id col RING_NONE) (type BOOL) (value TRUE))
+    (wm-fact (key domain fact wp-base-color args? wp ?wp-id col BASE_NONE) (type BOOL) (value TRUE))
+    (wm-fact (key domain fact wp-spawned-for args? wp ?wp-id r ?robot) (type BOOL) (value TRUE))
+  )
+  (modify ?g (mode EVALUATED))
+)
+
+
+(defrule goal-reasoner-evaluate-failed-wp-put
+" After a failed wp-put, check if the gripper interface indicates, that the workpiece is still in the gripper.
+  If this is not the case, the workpiece is lost and the corresponding facts are marked for clean-up
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (plan-action (id ?id) (goal-id ?goal-id)
+	(plan-id ?plan-id) (action-name ?an&:(or (eq ?an wp-put) (eq ?an wp-put-slide-cc)))
+	   (param-values ?r ?wp ?mps $?)
+	   (state FAILED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?hold <- (wm-fact (key domain fact holding args? r ?r wp ?wp))
+  (AX12GripperInterface (holds_puck ?holds))
+  =>
+  (if (eq ?holds FALSE)
+      then
+      (retract ?hold)
+      (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
+      (assert (domain-fact (name can-hold) (param-values ?r)))
+  )
+  (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
+  (modify ?g (mode EVALUATED))
+)
+
+
+(defrule goal-reasoner-evaluate-get-shelf-failed
+" After a failed wp-get-shelf, assume that the workpiece is not there
+  and mark the corresponding facts for cleanup.
+  By this, the next time a different spot will be tried
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (plan-action (id ?id) (goal-id ?goal-id)
+	   (plan-id ?plan-id)
+	   (action-name wp-get-shelf)
+	   (param-values ?r ?wp ?mps ?spot)
+	   (state FAILED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?wp-s<- (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot))
+  =>
+  (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated" crlf)
+  (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
+  (modify ?g (mode EVALUATED))
 )
 
 

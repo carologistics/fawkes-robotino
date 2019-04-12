@@ -274,55 +274,6 @@
 )
 
 ;
-;===============================Failed goal evaluation========================
-;
-
-(defrule execution-monitoring-evaluate-failed-wp-put
-" After a failed wp-put, check if the gripper interface indicates, that the workpiece is still in the gripper.
-  If this is not the case, the workpiece is lost and the corresponding facts are marked for clean-up
-"
-  (declare (salience ?*MONITORING-SALIENCE*))
-  (plan-action (id ?id) (goal-id ?goal-id)
-	(plan-id ?plan-id) (action-name ?an&:(or (eq ?an wp-put) (eq ?an wp-put-slide-cc)))
-	   (param-values ?r ?wp ?mps $?)
-	   (state FAILED))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
-  ?hold <- (wm-fact (key domain fact holding args? r ?r wp ?wp))
-  (AX12GripperInterface (holds_puck ?holds))
-  =>
-  (if (eq ?holds FALSE)
-      then
-      (retract ?hold)
-      (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
-      (assert (domain-fact (name can-hold) (param-values ?r)))
-  )
-  (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
-  (modify ?g (mode EVALUATED))
-)
-
-
-(defrule execution-monitoring-evaluate-get-shelf-failed
-" After a failed wp-get-shelf, assume that the workpiece is not there
-  and mark the corresponding facts for cleanup.
-  By this, the next time a different spot will be tried
-"
-  (declare (salience ?*MONITORING-SALIENCE*))
-  (plan-action (id ?id) (goal-id ?goal-id)
-	   (plan-id ?plan-id)
-	   (action-name wp-get-shelf)
-	   (param-values ?r ?wp ?mps ?spot)
-	   (state FAILED))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
-  ?wp-s<- (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot))
-  =>
-  (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated" crlf)
-  (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
-  (modify ?g (mode EVALUATED))
-)
-
-;
 ;======================================Retries=========================================
 ;
 
