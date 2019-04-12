@@ -47,18 +47,22 @@ documentation      = [==[
 skillenv.skill_module(_M)
 
 function input_ok()
-  if self.fsm.vars.command == "OPEN" or self.fsm.vars.command == "CLOSE" then
+  if fsm.vars.command == "OPEN" or fsm.vars.command == "CLOSE" then
     return true
   end
-  if self.fsm.vars.command == "MOVEABS" or self.fsm.vars.command == "MOVEREL" then
+  if fsm.vars.command == "MOVEABS" or fsm.vars.command == "MOVEREL" then
     if not fsm.vars.x or not fsm.vars.y or not fsm.vars.z then
+      print("Missing coordinates " .. fsm.vars.x .. " " .. fsm.vars.y .. " " ..fsm.vars.z)
       return false
+    else 
+      return true
     end
   end
 
-  if self.fsm.vars.command == "CALIBRATE" then
+  if fsm.vars.command == "CALIBRATE" then
     return true
   end
+  print("Unknown command: " .. fsm.vars.command)
   return false
 end
 
@@ -70,7 +74,7 @@ function tf_ready()
      or arduino:msgid() ~= fsm.vars.msgid
   then return false end
 
-  local bb_stamp = fawkes.Time:new(arduino:input_timestamp(0), arduino:input_timestamp(1))
+  local bb_stamp = arduino:timestamp()
   if not tf:can_transform("gripper", "gripper_home", bb_stamp) then
     return false
   end
@@ -110,6 +114,7 @@ fsm:define_states{
 
 -- Transitions
 fsm:add_transitions{
+   {"CHECK_WRITER", "FAILED", cond="not input_ok()", desc="Input not correct"},
    {"CHECK_WRITER", "FAILED", precond="not arduino:has_writer()", desc="No writer for gripper"},
    {"CHECK_WRITER", "COMMAND", cond=true, desc="Writer ok got to command"},
    {"COMMAND", "WAIT", timeout=0.2},
@@ -122,11 +127,11 @@ fsm:add_transitions{
 function COMMAND:init()
 
    if self.fsm.vars.command == "OPEN" then
-      theOpenMessage = arduino_if.OpenMessage:new()
+      theOpenMessage = arduino.OpenGripperMessage:new()
       arduino:msgq_enqueue(theOpenMessage)
 
    elseif self.fsm.vars.command == "CLOSE" then
-      theCloseMessage = arduino_if.CloseMessage:new()
+      theCloseMessage = arduino.CloseGripperMessage:new()
       arduino:msgq_enqueue(theCloseMessage)
 
    elseif self.fsm.vars.command == "MOVEABS" then
