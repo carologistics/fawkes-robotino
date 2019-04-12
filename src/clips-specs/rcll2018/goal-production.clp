@@ -115,9 +115,9 @@
   "Maintain Spawning if the spawning-master token is held"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
- (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
- (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
- (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
+  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
+  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
+  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (not (goal (class WP-SPAWN-MAINTAIN)))
  =>
   (goal-tree-assert-run-endless WP-SPAWN-MAINTAIN 1)
