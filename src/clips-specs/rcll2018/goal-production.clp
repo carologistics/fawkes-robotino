@@ -20,13 +20,6 @@
 ;
 
 (defglobal
-  ; Number of retrying enter-field
-  ; until succeeding it manually
-  ?*ENTER-FIELD-RETRIES* = 1
-  ?*MAX-RETRIES-PICK* = 2
-  ?*MAX-RETRIES-PUT-SLIDE* = 2
-
-
   ; production order priorities
   ?*PRIORITY-FIND-MISSING-MPS* = 110
   ?*PRIORITY-DELIVER* = 100
