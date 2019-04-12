@@ -42,16 +42,16 @@ local tfm = require("fawkes.tfutils")
 
 -- Constant
 local conveyor_gripper_forward_x = 0.10 -- distance to move gripper forward after align
-local conveyor_gripper_down_z = -0.05    -- distance to move gripper down after driving over product
+local conveyor_gripper_down_z = -0.01    -- distance to move gripper down after driving over product
 
-local conveyor_gripper_back_x = -0.11   -- distance to move gripper back after closing gripper
+local conveyor_gripper_back_x = -0.03   -- distance to move gripper back after closing gripper
 local conveyor_gripper_up_z = 0.02 -- distance to move gripper up after closing gripper
 
 local drive_back_x = -0.1      -- distance to drive back after closing the gripper
 
 local gripper_pose_offset_x = 0.02  -- conveyor pose offset in x direction
 local gripper_pose_offset_y = 0.00     -- conveyor_pose offset in y direction
-local gripper_pose_offset_z = 0.03  -- conveyor_pose offset in z direction
+local gripper_pose_offset_z = 0.035  -- conveyor_pose offset in z direction
 
 
 -- function to evaluate sensor data
@@ -59,7 +59,7 @@ function is_grabbed()
  if not robotino_sensor:has_writer() then
    return true
  end
- if robotino_sensor:is_digital_in(0) == false and robotino_sensor.is_digital_in(1) == true then -- white cable on DI1 and black on DI2
+ if robotino_sensor:is_digital_in(0) == false and robotino_sensor:is_digital_in(1) == true then -- white cable on DI1 and black on DI2
     return true
  else
     return false
