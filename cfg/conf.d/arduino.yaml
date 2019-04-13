@@ -23,7 +23,13 @@ arduino:
   joystick_interface_id: Joystick
 
   gripper_frame_id: gripper_home
-  gripper_dyn_frame_id: gripper
+  gripper_base_frame_id: gripper_base
+  gripper_origin_x_frame_id: gripper_x_origin
+  gripper_origin_y_frame_id: gripper_y_origin
+  gripper_origin_z_frame_id: gripper_z_origin
+  gripper_dyn_x_frame_id: gripper_x_dyn
+  gripper_dyn_y_frame_id: gripper_y_dyn
+  gripper_dyn_z_frame_id: gripper_z_dyn
 
   # maximum space in x, y and z in meters
   x_max: 0.115
