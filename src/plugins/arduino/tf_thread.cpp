@@ -48,7 +48,7 @@ using namespace fawkes;
 ArduinoTFThread::ArduinoTFThread(std::string &cfg_name, std::string &cfg_prefix)
     : Thread("ArduinoTFThread", Thread::OPMODE_WAITFORWAKEUP),
       BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PREPARE),
-      TransformAspect(TransformAspect::ONLY_PUBLISHER, "gripper") {
+      TransformAspect(TransformAspect::ONLY_PUBLISHER, "gripper_") {
   cfg_prefix_ = cfg_prefix;
   cfg_name_ = cfg_name;
 }
@@ -75,14 +75,29 @@ void ArduinoTFThread::loop() {
   //    double d_s = now - end_time_point_;
 
   tf::Quaternion q(0.0, 0.0, 0.0);
-  tf::Vector3 v(cur_x_, (cur_y_ - cfg_y_max_ / 2.), cur_z_);
 
-  tf::Transform tf_pose_gripper(q, v);
+  tf::Vector3 v_x(cur_x_, 0.0, 0.0);
 
-  tf::StampedTransform stamped_transform(tf_pose_gripper, now.stamp(),
-                                         cfg_gripper_frame_id_,
-                                         cfg_gripper_dyn_frame_id_);
-  tf_publisher->send_transform(stamped_transform);
+  tf::Vector3 v_y(0.0, (cur_y_ - cfg_y_max_ / 2.), 0.0);
+
+  tf::Vector3 v_z(0.0, 0.0, cur_z_);
+
+  tf::Transform tf_pose_gripper_x(q, v_x);
+  tf::Transform tf_pose_gripper_y(q, v_y);
+  tf::Transform tf_pose_gripper_z(q, v_z);
+
+  tf::StampedTransform stamped_transform_x(tf_pose_gripper_x, now.stamp(),
+                                           cfg_gripper_origin_x_frame_id_,
+                                           cfg_gripper_dyn_x_frame_id_);
+  tf::StampedTransform stamped_transform_y(tf_pose_gripper_y, now.stamp(),
+                                           cfg_gripper_origin_y_frame_id_,
+                                           cfg_gripper_dyn_y_frame_id_);
+  tf::StampedTransform stamped_transform_z(tf_pose_gripper_z, now.stamp(),
+                                           cfg_gripper_origin_z_frame_id_,
+                                           cfg_gripper_dyn_z_frame_id_);
+  tf_publisher->send_transform(stamped_transform_x);
+  tf_publisher->send_transform(stamped_transform_y);
+  tf_publisher->send_transform(stamped_transform_z);
 }
 
 //// interpolate the current z position based on an assumption of where the
@@ -108,12 +123,25 @@ void ArduinoTFThread::set_position(float new_x_pos, float new_y_pos,
   cur_x_ = new_x_pos;
   cur_y_ = new_y_pos;
   cur_z_ = new_z_pos;
+  wakeup();
 }
 
 void ArduinoTFThread::load_config() {
   cfg_gripper_frame_id_ = config->get_string(cfg_prefix_ + "/gripper_frame_id");
-  cfg_gripper_dyn_frame_id_ =
-      config->get_string(cfg_prefix_ + "/gripper_dyn_frame_id");
+  cfg_gripper_origin_x_frame_id_ =
+      config->get_string(cfg_prefix_ + "/gripper_origin_x_frame_id");
+  cfg_gripper_origin_y_frame_id_ =
+      config->get_string(cfg_prefix_ + "/gripper_origin_y_frame_id");
+  cfg_gripper_origin_z_frame_id_ =
+      config->get_string(cfg_prefix_ + "/gripper_origin_z_frame_id");
+
+  cfg_gripper_dyn_x_frame_id_ =
+      config->get_string(cfg_prefix_ + "/gripper_dyn_x_frame_id");
+  cfg_gripper_dyn_y_frame_id_ =
+      config->get_string(cfg_prefix_ + "/gripper_dyn_y_frame_id");
+  cfg_gripper_dyn_z_frame_id_ =
+      config->get_string(cfg_prefix_ + "/gripper_dyn_z_frame_id");
+
   cfg_x_max_ = config->get_float(cfg_prefix_ + "/x_max");
   cfg_y_max_ = config->get_float(cfg_prefix_ + "/y_max");
   cfg_z_max_ = config->get_float(cfg_prefix_ + "/z_max");

@@ -46,9 +46,9 @@
 // Each axis has an individual thread diameter.
 // As such each axis has its own value for a
 // number of steps required to move one millimeter.
-#define X_AXIS_STEPS_PER_MM 260.869565217
-#define Y_AXIS_STEPS_PER_MM 393.333333333
-#define Z_AXIS_STEPS_PER_MM 531.25
+#define X_AXIS_STEPS_PER_MM (200 * 1 / 3.0)
+#define Y_AXIS_STEPS_PER_MM (200 * 1 / 2.0)
+#define Z_AXIS_STEPS_PER_MM (-200 * 1 / 1.5)
 #define A_AXIS_STEPS_PER_MM 1.0 // TODO: configure!
 
 class ArduinoComMessage;
@@ -123,7 +123,9 @@ private:
   std::string cfg_name_;
   std::string cfg_ifid_joystick_;
   std::string cfg_gripper_frame_id_;
-  std::string cfg_gripper_dyn_frame_id_;
+  std::string cfg_gripper_dyn_x_frame_id_;
+  std::string cfg_gripper_dyn_y_frame_id_;
+  std::string cfg_gripper_dyn_z_frame_id_;
   float cfg_x_max_;
   float cfg_y_max_;
   float cfg_z_max_;
