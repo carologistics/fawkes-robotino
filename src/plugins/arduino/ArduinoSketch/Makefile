@@ -3,6 +3,9 @@
 # important immediate assignment (only if other makefiles are somehow included)
 mkfile_path := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
+DEV_ARDUINO ?= /dev/arduino
+
+
 build: accstepper Compiled/fawkes_plugin_comm.ino.hex
 
 accstepper: libraries/AccelStepper
@@ -22,7 +25,7 @@ Compiled/fawkes_plugin_comm.ino.hex: fawkes_plugin_comm.ino
 	arduino-builder -hardware=/usr/share/arduino/hardware -tools=/usr/bin -fqbn=arduino:avr:uno -libraries libraries -verbose=true -build-path=$(mkfile_path)/Compiled fawkes_plugin_comm.ino
 
 flash: Compiled/fawkes_plugin_comm.ino.hex
-	avrdude  -patmega328p -carduino -P/dev/arduino -B 10 -F -Uflash:w:$<:i
+	avrdude  -patmega328p -carduino -P$(DEV_ARDUINO) -B 10 -F -Uflash:w:$<:i
 
 clean:
 	rm -rf Compiled
