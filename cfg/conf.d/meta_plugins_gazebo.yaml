@@ -65,6 +65,8 @@ fawkes/meta_plugins:
     - m-clips
     - m-robot-memory
     - pddl-robot-memory
+    - hardware-models
+    - pddl-diagnosis
     - pddl-planner
     - clips_robot_memory
     - clips-pddl-parser

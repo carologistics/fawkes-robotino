@@ -142,6 +142,10 @@ clips-executive:
               - rcll2018/wait-actions.clp
           - name: execution-monitoring
             file: rcll2018/execution-monitoring.clp
+            #- name: diagnosis
+            #files:
+          - name: hardware-models
+            file: rcll2018/hardware-models.clp
 
       action-mapping:
         enter-field: >

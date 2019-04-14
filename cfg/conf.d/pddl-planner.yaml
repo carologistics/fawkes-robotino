@@ -12,8 +12,8 @@ plugins/pddl-planner:
   # Domain and problem description and location
   # Folder path needs a trailing /
   description-folder: "@BASEDIR@/src/clips-specs/rcll2018/"
-  domain-description: domain.pddl
-  problem-description: problem.pddl
+  domain-description: diagnosis-domain.pddl
+  problem-description: diagnosis-problem.pddl
   # File for intermediate results from planners
   result-file: results.txt
 

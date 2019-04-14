@@ -30,6 +30,9 @@
   (executive-init)
   (wm-fact (key cx identity))
   =>
+  (wm-robmem-sync-enable "/diagnosis/plan-action")
+  (wm-robmem-sync-enable "/hardware/component")
+  (wm-robmem-sync-enable "/hardware/edge")
   (wm-robmem-sync-enable "/domain/objects-by-type/workpiece")
   (wm-robmem-sync-enable "/domain/objects-by-type/cap-carrier")
   (wm-robmem-sync-enable "/domain/fact/at")
