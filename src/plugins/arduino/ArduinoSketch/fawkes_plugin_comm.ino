@@ -390,6 +390,11 @@ void setup() {
   pinMode(MOTOR_Z_STEP_PIN, OUTPUT);
   pinMode(MOTOR_A_STEP_PIN, OUTPUT);
 
+  pinMode(MOTOR_X_DIR_PIN, OUTPUT);
+  pinMode(MOTOR_Y_DIR_PIN, OUTPUT);
+  pinMode(MOTOR_Z_DIR_PIN, OUTPUT);
+  pinMode(MOTOR_A_DIR_PIN, OUTPUT);
+
   motor_X.setEnablePin(MOTOR_X_ENABLE_PIN, true);
   set_new_speed(DEFAULT_MAX_SPEED_X, motor_X);
   set_new_acc(DEFAULT_MAX_ACCEL_X, motor_X);
