@@ -40,6 +40,9 @@
 #define MOTOR_A_DIR_PIN 13
 #define MOTOR_A_OPEN_LIMIT_PIN A4
 
+#define CUR_TIME (TCNT1L | (unsigned int)((TCNT1H << 8)));
+
+
 
 AccelStepper motor_X(MOTOR_X_STEP_SHIFT, MOTOR_X_DIR_SHIFT);
 AccelStepper motor_Y(MOTOR_Y_STEP_SHIFT, MOTOR_Y_DIR_SHIFT);
