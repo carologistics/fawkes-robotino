@@ -150,77 +150,27 @@ void set_status(int status_) {
   }
 }
 
-// move motor to according end stop - dir is direction, (1 or -1)
-void move_to_end_stop(int limit_pin, AccelStepper &motor, int dir) {
-  bool button_state;
-  movement_done_flag = false; 
-  noInterrupts();
-  motor.move(1000000 * dir);
-  interrupts();
-  while ((button_state = digitalRead(limit_pin)) == HIGH) {
-    if(movement_done_flag) // movement is done, but button not yet pressed, continue searching
-    {
-      movement_done_flag = false;
-      noInterrupts();
-      motor.move(10000000 * dir);
-      interrupts();
-    }
+void calibrate()
+{
+  bool x_done=false, y_done=false, z_done=false;
+  motor_X.enableOutputs();
+  motor_X.move(1000000L);
+  motor_Y.move(1000000L);
+  motor_Z.move(1000000L);
+  //due to high step count, reaching end stops is guaranteed!
+  set_status(STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
+  while(!x_done || !y_done || !z_done){
+    if(!x_done && digitalRead(MOTOR_X_LIMIT_PIN)==LOW){ x_done=true; reach_end_handle(motor_X);}
+    if(!y_done && digitalRead(MOTOR_Y_LIMIT_PIN)==LOW){ y_done=true; reach_end_handle(motor_Y);}
+    if(!z_done && digitalRead(MOTOR_Z_LIMIT_PIN)==LOW){ z_done=true; reach_end_handle(motor_Z);}
   }
-  // now the button is pressed
-  disable_step_interrupt(); // no steps anymore
   movement_done_flag = false;
-  motor.setCurrentPosition(0L); // this also resets speed
-
-  // move out of the end stop
-  // TODO: configure
-  motor.move(1000 * dir * -1);
-  enable_step_interrupt();
-  while(!movement_done_flag); // wait until movement done
 }
 
-bool calibrate_axis(int limit_pin, AccelStepper &motor, int dir) {
-  int button_state = digitalRead(limit_pin);
-
-  /*
-  if (button_state == LOW) {
-    //ERROR: We can't calibrate an axis when the end stop is already pressed!
-    return false;
-  }
-  */
-  motor.enableOutputs();
-
-  move_to_end_stop(limit_pin, motor, dir);
-
-  // we found the starting point - move to the other end of the axis to get
-  // the number of steps to the other end.
-
-  //move_to_end_stop(limit_pin, motor, 1);
-  motor.disableOutputs();
-  return true;
-}
-
-
-// maybe change this to home all 3 axis simultaneously
-void calibrate() {
-  set_status(STATUS_MOVING);
-
-  if (!calibrate_axis(MOTOR_X_LIMIT_PIN, motor_X, 1)) {
-    errormessage = "Can't calibrate axis X - end stop pressed!";
-    set_status(STATUS_ERROR);
-    return;
-  }
-  if (!calibrate_axis(MOTOR_Y_LIMIT_PIN, motor_Y, 1)) {
-    errormessage = "Can't calibrate axis Y - end stop pressed!";
-    set_status(STATUS_ERROR);
-    return;
-  }
-  if (!calibrate_axis(MOTOR_Z_LIMIT_PIN, motor_Z, -1)) {
-    errormessage = "Can't calibrate axis Z - end stop pressed!";
-    set_status(STATUS_ERROR);
-    return;
-  }
-
-  set_status(STATUS_IDLE);
+void reach_end_handle(AccelStepper &motor){
+  motor.hard_stop();
+  motor.setCurrentPosition(0L); 
+  motor.move(-1000);
 }
 
 void set_new_pos(long new_pos, AccelStepper &motor) {
