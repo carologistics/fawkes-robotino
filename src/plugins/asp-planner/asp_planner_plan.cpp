@@ -30,6 +30,9 @@
 #include <core/threading/mutex_locker.h>
 #include <plugins/robot-memory/robot_memory.h>
 
+#include <bsoncxx/builder/basic/document.hpp>
+#include <bsoncxx/document/value.hpp>
+
 using fawkes::MutexLocker;
 
 /**
@@ -553,13 +556,12 @@ static std::string taskCLIPStoASP(std::string string) {
  * @param[in] elementIndex The index of the element.
  * @return The MongoDB query.
  */
-static mongo::BSONObj createQuery(const std::string &robot,
-                                  const int elementIndex) {
-  mongo::BSONObjBuilder builder;
-  builder.append("relation", "planElement")
-      .append("robot", robot)
-      .append("index", elementIndex);
-  return builder.obj();
+static bsoncxx::document::value createQuery(const std::string &robot,
+                                            const int elementIndex) {
+  using namespace bsoncxx::builder;
+  return basic::make_document(basic::kvp("relation", "planElement"),
+                              basic::kvp("robot", robot),
+                              basic::kvp("index", elementIndex));
 }
 
 /**
@@ -570,19 +572,21 @@ static mongo::BSONObj createQuery(const std::string &robot,
  * @param[in] element The element.
  * @return The object.
  */
-static mongo::BSONObj createObject(const std::string &robot,
-                                   const int elementIndex,
-                                   const PlanElement &element) {
-  mongo::BSONObjBuilder builder;
-  builder.append("relation", "planElement")
-      .append("robot", robot)
-      .append("task", "\"" + taskASPtoCLIPS(element.Task) + "\"")
-      .append("begin", element.Begin)
-      .append("end", element.End);
+static bsoncxx::document::value createObject(const std::string &robot,
+                                             const int elementIndex,
+                                             const PlanElement &element) {
+
+  using namespace bsoncxx::builder;
+  basic::document doc;
+  doc.append(basic::kvp("relation", "planElement"));
+  doc.append(basic::kvp("robot", robot));
+  doc.append(basic::kvp("task", "\"" + taskASPtoCLIPS(element.Task) + "\""));
+  doc.append(basic::kvp("begin", element.Begin));
+  doc.append(basic::kvp("end", element.End));
   if (elementIndex >= 0) {
-    builder.append("index", elementIndex);
+    doc.append(basic::kvp("index", elementIndex));
   } // if ( elementIndex >= 0 )
-  return builder.obj();
+  return doc.extract();
 }
 
 /**
@@ -650,9 +654,11 @@ void AspPlannerThread::removeFromPlanDB(const std::string &robot,
  * @note The plan lock has to be hold.
  */
 void AspPlannerThread::tellRobotToStop(const std::string &robot) {
-  mongo::BSONObjBuilder builder;
-  builder.append("robot", robot).append("stop", true);
-  robot_memory->insert(builder.obj(), "syncedrobmem.stopPlan");
+  using namespace bsoncxx::builder;
+  basic::document doc;
+  doc.append(basic::kvp("robot", robot));
+  doc.append(basic::kvp("stop", true));
+  robot_memory->insert(doc.extract(), "syncedrobmem.stopPlan");
 
   auto &robotPlan(Plan[robot]);
   for (auto index = robotPlan.FirstNotDone; index < robotPlan.Tasks.size();
@@ -669,12 +675,14 @@ void AspPlannerThread::tellRobotToStop(const std::string &robot) {
  * @brief Gets called if there is feedback from one of the robots.
  * @param[in] document The document with the feedback.
  */
-void AspPlannerThread::planFeedbackCallback(const mongo::BSONObj document) {
+void AspPlannerThread::planFeedbackCallback(
+    const bsoncxx::document::view &document) {
   try {
-    const auto object(document.getField("o"));
-    const auto action(object["action"].String());
-    const auto robot(object["robot"].String());
-    const auto task(taskCLIPStoASP(object["task"].String()));
+    const auto object(document["o"]);
+    const auto action(object["action"].get_utf8().value.to_string());
+    const auto robot(object["robot"].get_utf8().value.to_string());
+    const auto task(
+        taskCLIPStoASP(object["task"].get_utf8().value.to_string()));
 
     MutexLocker planLocker(&PlanMutex);
     auto &robotPlan(Plan[robot]);
@@ -688,17 +696,18 @@ void AspPlannerThread::planFeedbackCallback(const mongo::BSONObj document) {
     // string handling.
     switch (action[0]) {
     case 'b': {
-      robotBegunWithTask(robot, task, object["begin"].Long(),
-                         object["end"].Long());
+      robotBegunWithTask(robot, task, object["begin"].get_int64(),
+                         object["end"].get_int64());
       break;
     } // case 'b'
     case 'u': {
-      robotUpdatesTaskTimeEstimation(robot, task, object["end"].Long());
+      robotUpdatesTaskTimeEstimation(robot, task, object["end"].get_int64());
       break;
     } // case 'u'
     case 'e': {
-      robotFinishedTask(robot, task, object["end"].Long(),
-                        object["success"].String() == "TRUE");
+      robotFinishedTask(robot, task, object["end"].get_int64(),
+                        object["success"].get_utf8().value.to_string() ==
+                            "TRUE");
       break;
     } // case 'e'
     default:
@@ -708,12 +717,12 @@ void AspPlannerThread::planFeedbackCallback(const mongo::BSONObj document) {
   catch (const std::exception &e) {
     logger->log_error(LoggingComponent,
                       "Exception while extracting plan feedback: %s\n%s",
-                      e.what(), document.toString().c_str());
+                      e.what(), bsoncxx::to_json(document).c_str());
   } // catch ( const std::exception& e )
   catch (...) {
     logger->log_error(LoggingComponent,
                       "Exception while extracting plan feedback.\n%s",
-                      document.toString().c_str());
+                      bsoncxx::to_json(document).c_str());
   } // catch ( ... )
   return;
 }
