@@ -29,19 +29,16 @@ using namespace fawkes;
 
 /** Robotino Machinedetection Plugin.
  * Plugin for processing front-cam images to detect a ampel's location
- * The camera must be calibrated accordingly, so that a shining ampel is the brightest spot!
+ * The camera must be calibrated accordingly, so that a shining ampel is the
+ * brightest spot!
  * @author Daniel Ewert
  */
-class RobotinoMachineDetectionPlugin : public fawkes::Plugin
-{
- public:
-
+class RobotinoMachineDetectionPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  RobotinoMachineDetectionPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  RobotinoMachineDetectionPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new RobotinoMachineDetectionThread());
   }
 };
