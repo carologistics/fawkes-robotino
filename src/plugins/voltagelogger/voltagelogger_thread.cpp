@@ -2,7 +2,7 @@
  *  plugin_template_thread.cpp - template thread
  *
  *  Created: Mi 23. Mai 17:44:14 CEST 2012
- *  Copyright  2012 Daniel Ewert 
+ *  Copyright  2012 Daniel Ewert
  *
  ****************************************************************************/
 
@@ -36,35 +36,30 @@ using namespace fawkes;
  */
 
 /** Constructor. */
-VoltageLoggerThread::VoltageLoggerThread() :
-		Thread("PluginTemplateThread", Thread::OPMODE_WAITFORWAKEUP), BlockedTimingAspect(
-				BlockedTimingAspect::WAKEUP_HOOK_SKILL) {
-	flogger_ = new FileLogger(FILENAME, Logger::LL_DEBUG);
+VoltageLoggerThread::VoltageLoggerThread()
+    : Thread("PluginTemplateThread", Thread::OPMODE_WAITFORWAKEUP),
+      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SKILL) {
+  flogger_ = new FileLogger(FILENAME, Logger::LL_DEBUG);
 }
 
 void VoltageLoggerThread::init() {
 
-	logger->log_info(name(), "Plugin Template starts up");
-	bat_if_ = blackboard->open_for_reading<BatteryInterface>("Robotino");
-	last_measure_ = clock->now();
+  logger->log_info(name(), "Plugin Template starts up");
+  bat_if_ = blackboard->open_for_reading<BatteryInterface>("Robotino");
+  last_measure_ = clock->now();
 }
 
-bool VoltageLoggerThread::prepare_finalize_user() {
-	return true;
-}
+bool VoltageLoggerThread::prepare_finalize_user() { return true; }
 
 void VoltageLoggerThread::finalize() {
-	blackboard->close(bat_if_);
-	delete flogger_;
+  blackboard->close(bat_if_);
+  delete flogger_;
 }
 
 void VoltageLoggerThread::loop() {
-	if (clock->elapsed(&last_measure_) > INTERVAL) {
-		last_measure_ = clock->now();
-		bat_if_->read();
-		flogger_->log_info(name(), "voltage[V]: %f",
-				(bat_if_->voltage() / 1000.f));
-	}
-
+  if (clock->elapsed(&last_measure_) > INTERVAL) {
+    last_measure_ = clock->now();
+    bat_if_->read();
+    flogger_->log_info(name(), "voltage[V]: %f", (bat_if_->voltage() / 1000.f));
+  }
 }
-
