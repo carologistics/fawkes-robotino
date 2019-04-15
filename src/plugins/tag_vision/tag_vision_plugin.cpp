@@ -29,15 +29,12 @@ using namespace fawkes;
 /**
  * @author Nicolas Limpert & Randolph Maaßen
  */
-class TagVision : public fawkes::Plugin
-{
- public:
+class TagVision : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  TagVision(Configuration *config)
-    : Plugin(config)
-  {
+  TagVision(Configuration *config) : Plugin(config) {
     thread_list.push_back(new TagVisionThread());
   }
 };
