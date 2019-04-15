@@ -44,7 +44,7 @@ Parameters:
 skillenv.skill_module(_M)
 local pam = require("parse_module")
 -- Constants
-local X_AT_MPS = 0.4 -- x distance to laserline
+local X_AT_MPS = 0.3 -- x distance to laserline
 
 function already_at_conveyor(self)
    return (self.fsm.vars.atmps == "CONVEYOR")

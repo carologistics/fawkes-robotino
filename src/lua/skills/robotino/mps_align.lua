@@ -29,7 +29,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "mps_align"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = { "motor_move" }
+depends_skills     = { "motor_move" ,"gripper_commands"}
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
    {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
@@ -73,6 +73,8 @@ documentation      = [==[Align precisely at the given coordinates, relative to t
 @param x X offset, i.e. distance from the MPS in meters.
 @param y (optional) Y offset from the center of the MPS. Defaults to 0.
 ]==]
+
+local pre_conveyor_pose = { x = 0.05, y = 0.0, z = 0.03 }
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -134,6 +136,7 @@ fsm:define_states{ export_to=_M, closure={
       pose_error=pose_error, tag_visible=tag_visible, MIN_VIS_HIST_TAG=MIN_VIS_HIST_TAG,
       want_search=want_search, line_visible=line_visible },
    {"INIT",                   JumpState},
+   {"GRIPPER_PRE_CONVEYOR",   SkillJumpState, skills={{"gripper_commands"}}, final_to="CHECK_TAG", fail_to="CHECK_TAG"},
    {"CHECK_TAG",              JumpState},
    {"FIND_TAG",               JumpState},
    {"SEARCH_LINES",           SkillJumpState, skills={{"motor_move"}}, final_to="CHECK_TAG", fail_to="FAILED"},
@@ -149,7 +152,7 @@ fsm:define_states{ export_to=_M, closure={
 
 fsm:add_transitions{
    {"INIT",          "FAILED",          precond="not vars.x", desc="x argument missing"},
-   {"INIT",          "CHECK_TAG",       cond=true},
+   {"INIT",          "GRIPPER_PRE_CONVEYOR",       cond=true},
 
    {"CHECK_TAG",     "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
    {"CHECK_TAG",     "FIND_TAG",        timeout=1, desc="no tag"},
@@ -358,10 +361,17 @@ function SEARCH_TAG_LINE:init()
    else
       -- This should never happen since we had the frame in the previous state
       -- and we didn't move. So let's fail miserably if it does happen.
+      --
       self.args["motor_move"] = {
          frame = "LOST_TAG_FRAME"
       }
    end
+end
+
+function GRIPPER_PRE_CONVEYOR:init()
+  self.args["gripper_commands"] = pre_conveyor_pose
+  self.args["gripper_commands"].command = "MOVEABS"
+  self.args["gripper_commands"].wait = false
 end
 
 function ALIGN_FAST:init()
