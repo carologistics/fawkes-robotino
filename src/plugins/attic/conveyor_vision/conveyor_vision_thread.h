@@ -21,15 +21,15 @@
 #ifndef __PLUGINS_CONVEYOR_VISION_TAG_VISION_THREAD_H_
 #define __PLUGINS_CONVEYOR_VISION_TAG_VISION_THREAD_H_
 
-#include <core/threading/thread.h>
-#include <core/threading/mutex.h>
+#include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
-#include <aspect/blackboard.h>
-#include <aspect/blocked_timing.h>
-#include <aspect/vision.h>
 #include <aspect/tf.h>
+#include <aspect/vision.h>
+#include <core/threading/mutex.h>
+#include <core/threading/thread.h>
 
 // config handling
 #include <config/change_handler.h>
@@ -41,43 +41,40 @@
 
 // firevision camera
 #include <fvcams/camera.h>
-#include <fvutils/base/roi.h>
-#include <fvutils/ipc/shm_image.h>
-#include <fvutils/color/conversions.h>
 #include <fvclassifiers/simple.h>
+#include <fvutils/base/roi.h>
+#include <fvutils/color/conversions.h>
+#include <fvutils/ipc/shm_image.h>
 
 #include <fvutils/adapters/iplimage.h>
-#include <opencv2/objdetect/objdetect.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/objdetect/objdetect.hpp>
 
-//interface
+// interface
 #include <interfaces/TagVisionInterface.h>
 #include <iostream>
 #include <stdio.h>
 
-
 #define MAX_MARKERS 16
 
 namespace fawkes {
-  class Position3DInterface;
+class Position3DInterface;
 }
 
 namespace firevision {
-    class Camera;
-    class SharedMemoryImageBuffer;
-}
+class Camera;
+class SharedMemoryImageBuffer;
+} // namespace firevision
 
-class ConveyorVisionThread
-: public fawkes::Thread,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::VisionAspect,
-  public fawkes::ConfigurationChangeHandler,
-  public fawkes::ClockAspect,
-  public fawkes::TransformAspect
-{
- public:
+class ConveyorVisionThread : public fawkes::Thread,
+                             public fawkes::LoggingAspect,
+                             public fawkes::ConfigurableAspect,
+                             public fawkes::BlackBoardAspect,
+                             public fawkes::VisionAspect,
+                             public fawkes::ConfigurationChangeHandler,
+                             public fawkes::ClockAspect,
+                             public fawkes::TransformAspect {
+public:
   ConveyorVisionThread();
   // marker size accasors
   // thread functions
@@ -85,23 +82,23 @@ class ConveyorVisionThread
   virtual void loop();
   virtual void finalize();
 
- private:
+private:
   /// load config from file
   void load_config();
   /// function to get the markers from an image
   void get_marker();
   /// store the alvar markers, containing the poses
-//  std::vector<alvar::MarkerData> *markers_;
+  //  std::vector<alvar::MarkerData> *markers_;
   /// maximum markers to detect, size for the markers array
   size_t max_marker;
 
   /// mutex for config access
   fawkes::Mutex cfg_mutex;
-//  String mps_cascade_name = "data/cascade.xml";
+  //  String mps_cascade_name = "data/cascade.xml";
   cv::Mat frame;
   cv::CascadeClassifier mps_cascade;
- 
-  fawkes::Position3DInterface* mps_conveyor_if_;
+
+  fawkes::Position3DInterface *mps_conveyor_if_;
 
   /// firevision camera
   firevision::Camera *fv_cam;
@@ -141,26 +138,26 @@ class ConveyorVisionThread
   float conveyor_realworld_distance;
   float conveyor_realworld_pixels;
   float conveyor_realworld_width;
-  
 
   // config handling
   virtual void config_value_erased(const char *path);
   virtual void config_tag_changed(const char *new_tag);
-  virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v);
-  virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v);
+  virtual void
+  config_comment_changed(const fawkes::Configuration::ValueIterator *v);
+  virtual void
+  config_value_changed(const fawkes::Configuration::ValueIterator *v);
 
   void detect();
   /// cv image
   IplImage *ipl;
 
   /// blackboard communication
-//  TagPositionList *tag_interfaces;
+  //  TagPositionList *tag_interfaces;
 
   /// Width of the image
   unsigned int img_width;
   /// Height of the image
   unsigned int img_height;
-
 };
 
 #endif
