@@ -32,7 +32,7 @@ PLUGINS_all = $(PLUGINDIR)/asp-planner.$(SOEXT)
 REQ_BOOST_LIBS = 
 HAVE_BOOST_LIBS = $(call boost-have-libs,$(REQ_BOOST_LIBS))
 
-ifeq ($(HAVE_CPP14)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS),111)
+ifeq ($(HAVE_CPP14)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS)$(HAVE_ROBOT_MEMORY),1111)
   CFLAGS  += $(CFLAGS_CPP14) $(CFLAGS_CLINGO) $(CFLAGS_ROBOT_MEMORY) \
              $(call boost-libs-cflags,$(REQ_BOOST_LIBS))
   LDFLAGS += $(LDFLAGS_CLINGO) $(LDFLAGS_ROBOT_MEMORY) \
@@ -45,18 +45,23 @@ else
   ifneq ($(HAVE_CLINGO),1)
 		WARN_TARGETS += warning_clingo
   endif
+  ifneq ($(HAVE_ROBOT_MEMORY),1)
+		WARN_TARGETS += warning_robot_memory
+  endif
   ifneq ($(HAVE_BOOST_LIBS),1)
-		WARN_TARGETS_BOOST += $(foreach l,$(REQ_BOOST_LIBS),$(if $(call boost-have-lib,$l),, warning_boost_$l))
+		WARN_TARGETS += $(foreach l,$(REQ_BOOST_LIBS),$(if $(call boost-have-lib,$l),, warning_boost_$l))
   endif
 endif
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
-.PHONY: warning_clingo warning_cpp11
+.PHONY: $(WARN_TARGETS)
 warning_clingo:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planner plugin$(TNORMAL) ($(CLINGO_ERROR))"
 warning_cpp14:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planner plugin$(TNORMAL) (C++14 not supported)"
+warning_robot_memory:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planner plugin$(TNORMAL) (Robot Memory not available)"
 
 $(WARN_TARGETS_BOOST): warning_boost_%:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting ASP planner plugin$(TNORMAL) (Boost library $* not found)"
