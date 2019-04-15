@@ -29,16 +29,12 @@ using namespace fawkes;
  *
  * @author Frederik Zwilling
  */
-class GazsimTagVisionPlugin : public fawkes::Plugin
-{
- public:
-
+class GazsimTagVisionPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimTagVisionPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  GazsimTagVisionPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new TagVisionSimThread());
   }
 };

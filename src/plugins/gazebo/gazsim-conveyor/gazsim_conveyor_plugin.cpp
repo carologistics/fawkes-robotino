@@ -29,18 +29,14 @@ using namespace fawkes;
 /** Plugin to simulate conveyor
  * @author Frederik Zwilling
  */
-class GazsimConveyorPlugin : public fawkes::Plugin
-{
-  public:
-    /** Constructor.
-     * @param config Fawkes configuration
-     */
-    GazsimConveyorPlugin(Configuration *config)
-      : Plugin(config)
-    {
-      thread_list.push_back(new GazsimConveyorThread());
-    }
-
+class GazsimConveyorPlugin : public fawkes::Plugin {
+public:
+  /** Constructor.
+   * @param config Fawkes configuration
+   */
+  GazsimConveyorPlugin(Configuration *config) : Plugin(config) {
+    thread_list.push_back(new GazsimConveyorThread());
+  }
 };
 
 PLUGIN_DESCRIPTION("Simulation of a Conveyor")
