@@ -28,6 +28,9 @@
 #include <cstdlib>
 #include <string>
 
+#include <bsoncxx/builder/basic/document.hpp>
+#include <bsoncxx/json.hpp>
+
 using fawkes::MutexLocker;
 
 /**
@@ -59,10 +62,10 @@ int AspPlannerThread::aspGameTimeToRealGameTime(const int aspGameTime) const
  * @brief Gets called, when a beacon is received, updates the robot information.
  * @param[in] document The DB document.
  */
-void AspPlannerThread::beaconCallback(const mongo::BSONObj document) {
+void AspPlannerThread::beaconCallback(const bsoncxx::document::view &document) {
   try {
-    const auto object(document.getField("o"));
-    const std::string name(object["name"].String());
+    const auto object(document["o"]);
+    const std::string name(object["name"].get_utf8().value.to_string());
     MutexLocker locker(&WorldMutex);
     auto &info = Robots[name];
 
@@ -74,18 +77,18 @@ void AspPlannerThread::beaconCallback(const mongo::BSONObj document) {
     } // if ( !info.Alive )
     info.LastSeen = Clock::now();
     info.Alive = true;
-    info.X = static_cast<float>(object["x"].Double());
-    info.Y = static_cast<float>(object["y"].Double());
+    info.X = static_cast<float>(object["x"].get_double());
+    info.Y = static_cast<float>(object["y"].get_double());
   } // try
   catch (const std::exception &e) {
     logger->log_error(LoggingComponent,
                       "Exception while updating robot information: %s\n%s",
-                      e.what(), document.toString().c_str());
+                      e.what(), bsoncxx::to_json(document).c_str());
   } // catch ( const std::exception& e )
   catch (...) {
     logger->log_error(LoggingComponent,
                       "Exception while updating robot information.\n%s",
-                      document.toString().c_str());
+                      bsoncxx::to_json(document).c_str());
   } // catch ( ... )
   return;
 }
@@ -95,11 +98,12 @@ void AspPlannerThread::beaconCallback(const mongo::BSONObj document) {
  * game-time.
  * @param[in] document The DB document.
  */
-void AspPlannerThread::gameTimeCallback(const mongo::BSONObj document) {
+void AspPlannerThread::gameTimeCallback(
+    const bsoncxx::document::view &document) {
   try {
-    const auto object(document.getField("o"));
-    const std::string phase(object["phase"].String());
-    const int gameTime(object["time"].Long());
+    const auto object(document["o"]);
+    const std::string phase(object["phase"].get_utf8().value.to_string());
+    const int gameTime(object["time"].get_int64());
     MutexLocker locker(&WorldMutex);
     if (phase == "EXPLORATION") {
       GameTime = gameTime;
@@ -114,12 +118,12 @@ void AspPlannerThread::gameTimeCallback(const mongo::BSONObj document) {
   catch (const std::exception &e) {
     logger->log_error(LoggingComponent,
                       "Exception while updating game time: %s\n%s", e.what(),
-                      document.toString().c_str());
+                      bsoncxx::to_json(document).c_str());
   } // catch ( const std::exception& e )
   catch (...) {
     logger->log_error(LoggingComponent,
                       "Exception while updating game time.\n%s",
-                      document.toString().c_str());
+                      bsoncxx::to_json(document).c_str());
   } // catch ( ... )
   return;
 }
@@ -129,13 +133,15 @@ void AspPlannerThread::gameTimeCallback(const mongo::BSONObj document) {
  * refbox.
  * @param[in] document The information about the machine.
  */
-void AspPlannerThread::machineCallback(const mongo::BSONObj document) {
+void AspPlannerThread::machineCallback(
+    const bsoncxx::document::view &document) {
   try {
-    const auto object(document.getField("o"));
+    const auto object(document["o"]);
     // Remove the first 2 letters, because this is the team color and the dash.
     // We identify by "BS" not "C-BS".
-    const std::string machine(object["machine"].String().substr(2));
-    const std::string state(object["state"].String());
+    const std::string machine(
+        object["machine"].get_utf8().value.to_string().substr(2));
+    const std::string state(object["state"].get_utf8().value.to_string());
     MutexLocker locker(&WorldMutex);
     auto &info(Machines[machine]);
     if (state != info.State) {
@@ -181,12 +187,12 @@ void AspPlannerThread::machineCallback(const mongo::BSONObj document) {
   catch (const std::exception &e) {
     logger->log_error(LoggingComponent,
                       "Exception while extracting machine info: %s\n%s",
-                      e.what(), document.toString().c_str());
+                      e.what(), bsoncxx::to_json(document).c_str());
   } // catch ( const std::exception& e )
   catch (...) {
     logger->log_error(LoggingComponent,
                       "Exception while extracting machine info.\n%s",
-                      document.toString().c_str());
+                      bsoncxx::to_json(document).c_str());
   } // catch ( ... )
   return;
 }
@@ -195,19 +201,23 @@ void AspPlannerThread::machineCallback(const mongo::BSONObj document) {
  * @brief Gets called if we got a new order.
  * @param[in] document The information about the order.
  */
-void AspPlannerThread::orderCallback(const mongo::BSONObj document) {
+void AspPlannerThread::orderCallback(const bsoncxx::document::view &document) {
   try {
-    const auto object(document.getField("o"));
-    const int number(object["number"].Long());
-    const int quantity(object["quantity"].Long());
-    const std::string base(object["base"].String());
-    const std::string cap(object["cap"].String());
-    const auto rings(object["rings"].Array());
-    const std::string ring1(rings.size() >= 1 ? rings[0].String() : "none");
-    const std::string ring2(rings.size() >= 2 ? rings[1].String() : "none");
-    const std::string ring3(rings.size() >= 3 ? rings[2].String() : "none");
-    const int delBegin(object["begin"].Long() + ExplorationTime);
-    const int delEnd(object["end"].Long() + ExplorationTime);
+    const auto object(document["o"]);
+    const int number(object["number"].get_int64());
+    const int quantity(object["quantity"].get_int64());
+    const std::string base(object["base"].get_utf8().value.to_string());
+    const std::string cap(object["cap"].get_utf8().value.to_string());
+    const bsoncxx::array::view rings{object["rings"].get_array()};
+    const int num_rings = std::distance(rings.begin(), rings.end());
+    const std::string ring1(
+        num_rings >= 1 ? rings[0].get_utf8().value.to_string() : "none");
+    const std::string ring2(
+        num_rings >= 2 ? rings[1].get_utf8().value.to_string() : "none");
+    const std::string ring3(
+        num_rings >= 3 ? rings[2].get_utf8().value.to_string() : "none");
+    const int delBegin(object["begin"].get_int64() + ExplorationTime);
+    const int delEnd(object["end"].get_int64() + ExplorationTime);
 
     MutexLocker locker(&WorldMutex);
     Orders.insert(
@@ -237,12 +247,12 @@ void AspPlannerThread::orderCallback(const mongo::BSONObj document) {
   catch (const std::exception &e) {
     logger->log_error(LoggingComponent,
                       "Exception while extracting an order: %s\n%s", e.what(),
-                      document.toString().c_str());
+                      bsoncxx::to_json(document).c_str());
   } // catch ( const std::exception& e )
   catch (...) {
     logger->log_error(LoggingComponent,
                       "Exception while extracting an order.\n%s",
-                      document.toString().c_str());
+                      bsoncxx::to_json(document).c_str());
   } // catch ( ... )
   return;
 }
@@ -251,12 +261,14 @@ void AspPlannerThread::orderCallback(const mongo::BSONObj document) {
  * @brief Gets called if we know all we need to know about a ring color.
  * @param[in] document The information about the color.
  */
-void AspPlannerThread::ringColorCallback(const mongo::BSONObj document) {
+void AspPlannerThread::ringColorCallback(
+    const bsoncxx::document::view &document) {
   try {
-    const auto object(document.getField("o"));
-    const std::string color(object["color"].String());
-    const int cost(object["cost"].Long());
-    const std::string machine(object["machine"].String().substr(2));
+    const auto object(document["o"]);
+    const std::string color(object["color"].get_utf8().value.to_string());
+    const int cost(object["cost"].get_int64());
+    const std::string machine(
+        object["machine"].get_utf8().value.to_string().substr(2));
 
     MutexLocker locker(&WorldMutex);
     RingColors.emplace_back(RingColorInformation{color, machine, cost});
@@ -273,12 +285,12 @@ void AspPlannerThread::ringColorCallback(const mongo::BSONObj document) {
   catch (const std::exception &e) {
     logger->log_error(LoggingComponent,
                       "Exception while setting ring color: %s\n%s", e.what(),
-                      document.toString().c_str());
+                      bsoncxx::to_json(document).c_str());
   } // catch ( const std::exception& e )
   catch (...) {
     logger->log_error(LoggingComponent,
                       "Exception while setting ring color.\n%s",
-                      document.toString().c_str());
+                      bsoncxx::to_json(document).c_str());
   } // catch ( ... )
   return;
 }
@@ -287,10 +299,12 @@ void AspPlannerThread::ringColorCallback(const mongo::BSONObj document) {
  * @brief Gets called, when the team color is changed.
  * @param[in] document The document with the new color.
  */
-void AspPlannerThread::teamColorCallback(const mongo::BSONObj document) {
+void AspPlannerThread::teamColorCallback(
+    const bsoncxx::document::view &document) {
   try {
-    const auto object(document.getField("o"));
-    const std::string color(object["values"].Array().at(0).String());
+    const auto object(document["o"]);
+    bsoncxx::array::view values{object["values"].get_array()};
+    const std::string color(values[0].get_utf8().value.to_string());
     if (TeamColor) {
       if (color == "nil") {
         TeamColor = nullptr;
@@ -315,12 +329,12 @@ void AspPlannerThread::teamColorCallback(const mongo::BSONObj document) {
   catch (const std::exception &e) {
     logger->log_error(LoggingComponent,
                       "Exception while updating the team color: %s\n%s",
-                      e.what(), document.toString().c_str());
+                      e.what(), bsoncxx::to_json(document).c_str());
   } // catch ( const std::exception& e )
   catch (...) {
     logger->log_error(LoggingComponent,
                       "Exception while updating the team color.\n%s",
-                      document.toString().c_str());
+                      bsoncxx::to_json(document).c_str());
   } // catch ( ... )
   return;
 }
@@ -329,17 +343,17 @@ void AspPlannerThread::teamColorCallback(const mongo::BSONObj document) {
  * @brief Gets called, when the zones to explore are set.
  * @param[in] document The document with the zones.
  */
-void AspPlannerThread::zonesCallback(const mongo::BSONObj document) {
+void AspPlannerThread::zonesCallback(const bsoncxx::document::view &document) {
   try {
-    const auto object(document.getField("o"));
-    const auto zonesArray(object["zones"].Array());
+    const auto object(document["o"]);
+    const bsoncxx::array::view zonesArray{object["zones"].get_array()};
     std::vector<int> zones;
-    zones.reserve(zonesArray.size());
-    std::transform(std::begin(zonesArray), std::end(zonesArray),
-                   std::back_inserter(zones),
-                   [](const mongo::BSONElement &zone) {
-                     return std::stoi(zone.String().substr(1));
-                   });
+    zones.reserve(std::distance(zonesArray.begin(), zonesArray.end()));
+    std::transform(
+        std::begin(zonesArray), std::end(zonesArray), std::back_inserter(zones),
+        [](const bsoncxx::array::element &zone) {
+          return std::stoi(zone.get_utf8().value.to_string().substr(1));
+        });
     const auto begin = zones.begin();
     auto end = zones.end();
     MutexLocker locker(&WorldMutex);
@@ -362,12 +376,12 @@ void AspPlannerThread::zonesCallback(const mongo::BSONObj document) {
   catch (const std::exception &e) {
     logger->log_error(LoggingComponent,
                       "Exception while extracting the zones to explore: %s\n%s",
-                      e.what(), document.toString().c_str());
+                      e.what(), bsoncxx::to_json(document).c_str());
   } // catch ( const std::exception& e )
   catch (...) {
     logger->log_error(LoggingComponent,
                       "Exception while extracting the zones to explore.\n%s",
-                      document.toString().c_str());
+                      bsoncxx::to_json(document).c_str());
   } // catch ( ... )
   return;
 }
@@ -421,36 +435,42 @@ void AspPlannerThread::init(void) {
 
   RobotMemoryCallbacks.reserve(8);
 
+  using namespace bsoncxx::builder;
   RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-      mongo::Query(R"({"relation": "active-robot", "name": {$ne: "RefBox"}})"),
+      basic::make_document(basic::kvp("relation", "active-robot"),
+                           basic::kvp("name",
+                                      [](basic::sub_document subdoc) {
+                                        subdoc.append(
+                                            basic::kvp("$ne", "RefBox"));
+                                      })),
       "robmem.planner", &AspPlannerThread::beaconCallback, this));
 
   RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-      mongo::Query(R"({"relation": "game-time"})"), "robmem.planner",
-      &AspPlannerThread::gameTimeCallback, this));
+      basic::make_document(basic::kvp("relation", "game-time")),
+      "robmem.planner", &AspPlannerThread::gameTimeCallback, this));
 
   RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-      mongo::Query(R"({"relation": "machine"})"), "robmem.planner",
+      basic::make_document(basic::kvp("relation", "machine")), "robmem.planner",
       &AspPlannerThread::machineCallback, this));
 
   RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-      mongo::Query(R"({"relation": "order"})"), "robmem.planner",
+      basic::make_document(basic::kvp("relation", "order")), "robmem.planner",
       &AspPlannerThread::orderCallback, this));
 
   RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-      mongo::Query(R"({"relation": "ring"})"), "robmem.planner",
+      basic::make_document(basic::kvp("relation", "ring")), "robmem.planner",
       &AspPlannerThread::ringColorCallback, this));
 
   RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-      mongo::Query(R"({"relation": "team-color"})"), "robmem.planner",
-      &AspPlannerThread::teamColorCallback, this));
+      basic::make_document(basic::kvp("relation", "team-color")),
+      "robmem.planner", &AspPlannerThread::teamColorCallback, this));
 
   RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-      mongo::Query(R"({"relation": "zones"})"), "robmem.planner",
+      basic::make_document(basic::kvp("relation", "zones")), "robmem.planner",
       &AspPlannerThread::zonesCallback, this));
 
   RobotMemoryCallbacks.emplace_back(robot_memory->register_trigger(
-      mongo::Query(), "syncedrobmem.planFeedback",
+      basic::make_document(), "syncedrobmem.planFeedback",
       &AspPlannerThread::planFeedbackCallback, this));
 
   initPlan();

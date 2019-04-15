@@ -17,6 +17,7 @@ BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/boost.mk
 include $(FAWKES_BASEDIR)/src/plugins/asp/clingo.mk
+include $(FAWKES_BASEDIR)/src/plugins/robot-memory/robot_memory.mk
 
 LIBS_asp_planner = fawkescore fawkesaspaspect fawkesaspects \
                    fawkesrobotmemory fawkesnavgraphaspect
@@ -32,9 +33,9 @@ REQ_BOOST_LIBS =
 HAVE_BOOST_LIBS = $(call boost-have-libs,$(REQ_BOOST_LIBS))
 
 ifeq ($(HAVE_CPP14)$(HAVE_CLINGO)$(HAVE_BOOST_LIBS),111)
-  CFLAGS  += $(CFLAGS_CPP14) $(CFLAGS_CLINGO) \
+  CFLAGS  += $(CFLAGS_CPP14) $(CFLAGS_CLINGO) $(CFLAGS_ROBOT_MEMORY) \
              $(call boost-libs-cflags,$(REQ_BOOST_LIBS))
-  LDFLAGS += $(LDFLAGS_CLINGO) \
+  LDFLAGS += $(LDFLAGS_CLINGO) $(LDFLAGS_ROBOT_MEMORY) \
              $(call boost-libs-ldflags,$(REQ_BOOST_LIBS))
   PLUGINS_build = $(PLUGINS_all)
 else
