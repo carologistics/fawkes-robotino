@@ -3,7 +3,7 @@
  *  plugin_template_thread.h - empty example
  *
  *  Created: Mi 23. Mai 17:44:14 CEST 2012
- *  Copyright  2012 Daniel Ewert 
+ *  Copyright  2012 Daniel Ewert
  *
  ****************************************************************************/
 
@@ -23,27 +23,25 @@
 #ifndef __PLUGINS_PLUGIN_TEMPLATE_THREAD_H_
 #define __PLUGINS_PLUGIN_TEMPLATE_THREAD_H_
 
-#include <core/threading/thread.h>
-#include <aspect/blocked_timing.h>
-#include <aspect/logging.h>
-#include <aspect/configurable.h>
 #include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
+#include <aspect/configurable.h>
+#include <aspect/logging.h>
+#include <core/threading/thread.h>
 
 #include <string>
 
 namespace fawkes {
-  class MotorInterface;
+class MotorInterface;
 }
 
-class PluginTemplateThread
-: public fawkes::Thread,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect
-{
+class PluginTemplateThread : public fawkes::Thread,
+                             public fawkes::BlockedTimingAspect,
+                             public fawkes::LoggingAspect,
+                             public fawkes::ConfigurableAspect,
+                             public fawkes::BlackBoardAspect {
 
- public:
+public:
   PluginTemplateThread();
 
   virtual void init();
@@ -51,17 +49,16 @@ class PluginTemplateThread
   virtual bool prepare_finalize_user();
   virtual void finalize();
 
- /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
- protected: virtual void run() { Thread::run(); }
+  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+protected:
+  virtual void run() { Thread::run(); }
 
- private:
+private:
   void stop();
   void send_transrot(float vx, float vy, float omega);
 
- private:
-  fawkes::MotorInterface     *motor_if_;
-  
+private:
+  fawkes::MotorInterface *motor_if_;
 };
-
 
 #endif
