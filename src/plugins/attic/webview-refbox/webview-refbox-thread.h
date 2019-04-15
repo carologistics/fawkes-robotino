@@ -22,24 +22,22 @@
 #ifndef __PLUGINS_WEBVIEW_REFBOX_WEBVIEW_REFBOX_THREAD_H_
 #define __PLUGINS_WEBVIEW_REFBOX_WEBVIEW_REFBOX_THREAD_H_
 
-#include <core/threading/thread.h>
-#include <aspect/logging.h>
 #include <aspect/clock.h>
-#include <aspect/webview.h>
 #include <aspect/configurable.h>
+#include <aspect/logging.h>
+#include <aspect/webview.h>
+#include <core/threading/thread.h>
 #include <plugins/mongodb/aspect/mongodb.h>
 
 class WebviewRCLLRefBoxRequestProcessor;
 
-class WebviewRCLLRefBoxThread
-: public fawkes::Thread,
-  public fawkes::LoggingAspect,
-  public fawkes::ClockAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::MongoDBAspect,
-  public fawkes::WebviewAspect
-{
- public:
+class WebviewRCLLRefBoxThread : public fawkes::Thread,
+                                public fawkes::LoggingAspect,
+                                public fawkes::ClockAspect,
+                                public fawkes::ConfigurableAspect,
+                                public fawkes::MongoDBAspect,
+                                public fawkes::WebviewAspect {
+public:
   WebviewRCLLRefBoxThread();
   virtual ~WebviewRCLLRefBoxThread();
 
@@ -47,10 +45,11 @@ class WebviewRCLLRefBoxThread
   virtual void loop();
   virtual void finalize();
 
- /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
- protected: virtual void run() { Thread::run(); }
+  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+protected:
+  virtual void run() { Thread::run(); }
 
- private:
+private:
   WebviewRCLLRefBoxRequestProcessor *web_proc_;
 };
 
