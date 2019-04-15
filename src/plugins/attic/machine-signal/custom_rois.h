@@ -25,29 +25,26 @@
 #include <fvutils/base/roi.h>
 #include <tf/types.h>
 
-namespace firevision
-{
+namespace firevision {
 
-class HistoricSmoothROI :
-  public ROI
-{
-  private:
-    HistoricSmoothROI();
-    boost::circular_buffer<ROI> history_;
-  public:
-    HistoricSmoothROI(unsigned int history_length);
-    HistoricSmoothROI(ROI const &other, unsigned int history_length = 0);
-    HistoricSmoothROI(HistoricSmoothROI const &other);
-    HistoricSmoothROI &operator=(HistoricSmoothROI const &other);
-    void update(ROI const &next_roi);
+class HistoricSmoothROI : public ROI {
+private:
+  HistoricSmoothROI();
+  boost::circular_buffer<ROI> history_;
+
+public:
+  HistoricSmoothROI(unsigned int history_length);
+  HistoricSmoothROI(ROI const &other, unsigned int history_length = 0);
+  HistoricSmoothROI(HistoricSmoothROI const &other);
+  HistoricSmoothROI &operator=(HistoricSmoothROI const &other);
+  void update(ROI const &next_roi);
 };
 
 class WorldROI : public firevision::ROI {
-  public:
-    std::shared_ptr<fawkes::tf::Stamped<fawkes::tf::Point>> world_pos;
-    WorldROI() : ROI() {}
+public:
+  std::shared_ptr<fawkes::tf::Stamped<fawkes::tf::Point>> world_pos;
+  WorldROI() : ROI() {}
 };
-
 
 } /* namespace firevision */
 
