@@ -1,5 +1,5 @@
 /***************************************************************************
- *  gazsim_machine_signal_plugin.cpp - Plugin provides 
+ *  gazsim_machine_signal_plugin.cpp - Plugin provides
  *     the detected light signals of the llsf-machines
  *
  *  Created: Thu Apr 02 14:43:42 2015
@@ -30,16 +30,12 @@ using namespace fawkes;
  *
  * @author Frederik Zwilling
  */
-class GazsimMachineSignalPlugin : public fawkes::Plugin
-{
- public:
-
+class GazsimMachineSignalPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimMachineSignalPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  GazsimMachineSignalPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new MachineSignalSimThread());
   }
 };
