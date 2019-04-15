@@ -29,19 +29,16 @@ using namespace fawkes;
 /** Plugin to indicate motor status by LED.
  * @author Tim Niemueller
  */
-class MotorLedPlugin : public fawkes::Plugin
-{
+class MotorLedPlugin : public fawkes::Plugin {
 public:
-	/** Constructor.
-	 * @param config Fawkes configuration
-	 */
-	MotorLedPlugin(Configuration *config)
-		: Plugin(config)
-	{
-		std::string cfg_driver = config->get_string("/hardware/robotino/driver");
-	  
-		thread_list.push_back(new MotorLedThread());
-	}
+  /** Constructor.
+   * @param config Fawkes configuration
+   */
+  MotorLedPlugin(Configuration *config) : Plugin(config) {
+    std::string cfg_driver = config->get_string("/hardware/robotino/driver");
+
+    thread_list.push_back(new MotorLedThread());
+  }
 };
 
 PLUGIN_DESCRIPTION("Indicate motor status through LED")
