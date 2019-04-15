@@ -30,16 +30,12 @@ using namespace fawkes;
  *
  * @author Frederik Zwilling
  */
-class GazsimLlsfStatisticsPlugin : public fawkes::Plugin
-{
- public:
-
+class GazsimLlsfStatisticsPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimLlsfStatisticsPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  GazsimLlsfStatisticsPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new LlsfStatisticsSimThread());
   }
 };

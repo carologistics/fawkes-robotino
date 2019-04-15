@@ -1,5 +1,5 @@
 /***************************************************************************
- *  gazsim_puck_detection_plugin.cpp - Plugin provides 
+ *  gazsim_puck_detection_plugin.cpp - Plugin provides
  *     the positions of llsf_pucks
  *
  *  Created: Thu Aug 29 11:43:06 2013
@@ -22,63 +22,61 @@
 #ifndef __PLUGINS_GAZSIM_PUCK_DETECTION_THREAD_H_
 #define __PLUGINS_GAZSIM_LIGHT_FRONT_THREAD_H_
 
-#include <core/threading/thread.h>
+#include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
-#include <aspect/blackboard.h>
-#include <aspect/blocked_timing.h>
-#include <map>
-#include <plugins/gazebo/aspect/gazebo.h>
+#include <core/threading/thread.h>
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/SwitchInterface.h>
 #include <llsf_msgs/PuckDetectionResult.pb.h>
+#include <map>
+#include <plugins/gazebo/aspect/gazebo.h>
 
-//from Gazebo
-#include <gazebo/transport/TransportTypes.hh>
+// from Gazebo
 #include <gazebo/msgs/MessageTypes.hh>
+#include <gazebo/transport/TransportTypes.hh>
 #include <gazebo/transport/transport.hh>
 
-
-typedef const boost::shared_ptr<llsf_msgs::PuckDetectionResult const> ConstPuckDetectionResultPtr;
+typedef const boost::shared_ptr<llsf_msgs::PuckDetectionResult const>
+    ConstPuckDetectionResultPtr;
 
 namespace fawkes {
-  class Position3DInterface;
+class Position3DInterface;
 }
 
-class PuckDetectionSimThread
-: public fawkes::Thread,
-  public fawkes::ClockAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::GazeboAspect
-{
- public:
+class PuckDetectionSimThread : public fawkes::Thread,
+                               public fawkes::ClockAspect,
+                               public fawkes::LoggingAspect,
+                               public fawkes::ConfigurableAspect,
+                               public fawkes::BlackBoardAspect,
+                               public fawkes::BlockedTimingAspect,
+                               public fawkes::GazeboAspect {
+public:
   PuckDetectionSimThread();
 
   virtual void init();
   virtual void loop();
   virtual void finalize();
 
- private:
-  //Subscriber to receive puck positions from gazebo
+private:
+  // Subscriber to receive puck positions from gazebo
   gazebo::transport::SubscriberPtr puck_positions_sub_;
 
-  //interfaces to publish the positions
-  std::map<int, fawkes::Position3DInterface*> map_pos_if_;
-  //switch interface for enableing/disableing
+  // interfaces to publish the positions
+  std::map<int, fawkes::Position3DInterface *> map_pos_if_;
+  // switch interface for enableing/disableing
   fawkes::SwitchInterface *switch_if_;
 
-  //handler function for incoming messages about the machine light signals
+  // handler function for incoming messages about the machine light signals
   void on_puck_positions_msg(ConstPuckDetectionResultPtr &msg);
 
-  //can the position of the puck be recognized by the sensor?
+  // can the position of the puck be recognized by the sensor?
   bool is_in_perception_area(float x, float y);
 
-  //config values:
-  //maximal distance before the plugin says it can not detect the puck
+  // config values:
+  // maximal distance before the plugin says it can not detect the puck
   double max_distance_;
   int success_visibility_history_;
   int fail_visibility_history_;
@@ -88,7 +86,7 @@ class PuckDetectionSimThread
   bool is_omni_directional_;
   float max_fov_angle_;
 
-  //copy of last msg to write the interface in the next loop
+  // copy of last msg to write the interface in the next loop
   llsf_msgs::PuckDetectionResult last_msg_;
   bool new_data_;
 };
