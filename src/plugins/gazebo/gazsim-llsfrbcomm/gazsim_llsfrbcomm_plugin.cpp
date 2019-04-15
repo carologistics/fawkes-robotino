@@ -1,13 +1,13 @@
 
 /***************************************************************************
- *  llsfrbcomm_plugin.cpp - Plugin is a adapter between 
- *       Protobuf Refbox communication and 
+ *  llsfrbcomm_plugin.cpp - Plugin is a adapter between
+ *       Protobuf Refbox communication and
  *       Protobuf communication over the gazebo node
  *
  *  Created: Wed Aug 21 15:18:27 2013
  *  Copyright  2013  Frederik Zwilling
  *                   Tim Niemueller [www.niemueller.de]
- *                   
+ *
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -28,23 +28,20 @@
 
 using namespace fawkes;
 
-/** Plugin is a adapter between 
- *       Protobuf Refbox communication and 
+/** Plugin is a adapter between
+ *       Protobuf Refbox communication and
  *       Protobuf communication over the gazebo node
  * @author Frederik Zwilling, Tim Niemueller
  */
-class GazsimLLSFRbCommPlugin : public fawkes::Plugin
-{
- public:
+class GazsimLLSFRbCommPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimLLSFRbCommPlugin(Configuration *config) : Plugin(config)
-  {
+  GazsimLLSFRbCommPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new GazsimLLSFRbCommThread());
   }
 };
-
 
 PLUGIN_DESCRIPTION("Adapter PB Refbox Comm - PB Gazebo Comm")
 EXPORT_PLUGIN(GazsimLLSFRbCommPlugin)

@@ -21,62 +21,60 @@
 #ifndef __PLUGINS_GAZSIM_TAG_VISION_THREAD_H_
 #define __PLUGINS_GAZSIM_TAG_VISION_THREAD_H_
 
-#include <core/threading/thread.h>
+#include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
-#include <aspect/blackboard.h>
-#include <aspect/blocked_timing.h>
-#include <vector>
-#include <map>
-#include <plugins/gazebo/aspect/gazebo.h>
+#include <aspect/tf.h>
+#include <core/threading/thread.h>
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/TagVisionInterface.h>
-#include <aspect/tf.h>
+#include <map>
+#include <plugins/gazebo/aspect/gazebo.h>
+#include <vector>
 
-//from Gazebo
-#include <gazebo/transport/TransportTypes.hh>
+// from Gazebo
 #include <gazebo/msgs/MessageTypes.hh>
+#include <gazebo/transport/TransportTypes.hh>
 #include <gazebo/transport/transport.hh>
 
 namespace fawkes {
-  class Position3DInterface;
+class Position3DInterface;
 }
 
-class TagVisionSimThread
-: public fawkes::Thread,
-  public fawkes::ClockAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::GazeboAspect,
-  public fawkes::TransformAspect
-{
- public:
+class TagVisionSimThread : public fawkes::Thread,
+                           public fawkes::ClockAspect,
+                           public fawkes::LoggingAspect,
+                           public fawkes::ConfigurableAspect,
+                           public fawkes::BlackBoardAspect,
+                           public fawkes::BlockedTimingAspect,
+                           public fawkes::GazeboAspect,
+                           public fawkes::TransformAspect {
+public:
   TagVisionSimThread();
 
   virtual void init();
   virtual void loop();
   virtual void finalize();
 
- private:
-  //Subscriber to receive tag positions from gazebo
+private:
+  // Subscriber to receive tag positions from gazebo
   gazebo::transport::SubscriberPtr tag_vision_sub_;
 
-  //interfaces to publish the positions
-  std::map<int, fawkes::Position3DInterface*> tag_pos_ifs_;
-  //switch interface for enableing/disableing
+  // interfaces to publish the positions
+  std::map<int, fawkes::Position3DInterface *> tag_pos_ifs_;
+  // switch interface for enableing/disableing
   fawkes::TagVisionInterface *info_if_;
 
-  //handler function for incoming messages about the machine light signals
+  // handler function for incoming messages about the machine light signals
   void on_tag_vision_msg(ConstPosesStampedPtr &msg);
 
-  //copy of last msg to write the interface in the next loop
+  // copy of last msg to write the interface in the next loop
   gazebo::msgs::PosesStamped last_msg_;
   bool new_data_;
 
-  //config values
+  // config values
   std::string gazebo_topic_;
   std::string tag_if_name_prefix_;
   std::string info_if_name_;
@@ -84,8 +82,8 @@ class TagVisionSimThread
   std::string frame_name_;
   int number_interfaces_;
   int visibility_history_increase_per_update_;
-  
-  //assignment tag-id to interface-index
+
+  // assignment tag-id to interface-index
   std::map<int, int> map_id_if_;
 };
 
