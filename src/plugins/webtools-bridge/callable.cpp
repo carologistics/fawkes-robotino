@@ -3,7 +3,7 @@
  * callable.cpp - Interface For The Callbacks To Be Called By The EventEmitter
  *
  *  Created: Mon April 11 2016
- *  Copyright  21016 Mostafa Gomaa 
+ *  Copyright  21016 Mostafa Gomaa
  *
  ****************************************************************************/
 
@@ -20,24 +20,23 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-
-
 #include "callable.h"
 #include "event_emitter.h"
 
 /** @class Callable "callable.h"
- * Abstract class, allowing parents implementing it to get callbacks when events they
- * registered for are triggered
+ * Abstract class, allowing parents implementing it to get callbacks when events
+ * they registered for are triggered
  *
  * @author Mostafa Gomaa
  */
 
 /** Callback to Handle Events.
- * @param event_type type of the event that caused this callback method to be called.
+ * @param event_type type of the event that caused this callback method to be
+ * called.
  * @param handler the object instance initiated the callback method call.
  */
-void
-Callable::callback( EventType event_type ,std::shared_ptr <EventEmitter> handler)
-{
-	//the event_type with dynamic_casting for the event_emitter should be enough to uniquily tell you what you want to do
+void Callable::callback(EventType event_type,
+                        std::shared_ptr<EventEmitter> handler) {
+  // the event_type with dynamic_casting for the event_emitter should be enough
+  // to uniquily tell you what you want to do
 }

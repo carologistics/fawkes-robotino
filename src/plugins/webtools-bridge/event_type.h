@@ -20,10 +20,9 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
- 
 #ifndef _EVENT_TYPE_H
 #define _EVENT_TYPE_H
 
-  enum class EventType { TERMINATE , PUBLISH } ;
+enum class EventType { TERMINATE, PUBLISH };
 
 #endif

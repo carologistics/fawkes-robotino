@@ -3,7 +3,7 @@
  * callable.h - Interface For The Callbacks To Be Called By The EventEmitter
  *
  *  Created: Mon April 11 2016
- *  Copyright  21016 Mostafa Gomaa 
+ *  Copyright  21016 Mostafa Gomaa
  *
  ****************************************************************************/
 
@@ -26,14 +26,12 @@
 #include "event_type.h"
 #include <memory>
 
-//class WebSession;
+// class WebSession;
 class EventEmitter;
-class Callable
-{
-	public:
-
-		virtual void  callback	( EventType event_type , std::shared_ptr <EventEmitter> handler) ; 
-  
+class Callable {
+public:
+  virtual void callback(EventType event_type,
+                        std::shared_ptr<EventEmitter> handler);
 };
 
 #endif
