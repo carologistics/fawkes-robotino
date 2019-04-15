@@ -550,9 +550,11 @@
         (return TRUE)
       )
     )
+    " Block output side as well "
     (if (or (eq (str-compare ?type "BS") 0)
             (eq (str-compare ?type "CS") 0)
-            (eq (str-compare ?type "RS") 0)) then
+            (eq (str-compare ?type "RS") 0)
+            (eq (str-compare ?type "SS") 0)) then
       (if (eq ?orientation 270) then
         (if (and (eq ?y (+ ?mps-y 1)) (eq ?x ?mps-x)) then
           (return TRUE)
