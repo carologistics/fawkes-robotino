@@ -33,16 +33,12 @@ using namespace fawkes;
  * puck and colored field positions relative to the robot.
  * @author Tim Niemueller
  */
-class OmniVisionPucksPlugin : public fawkes::Plugin
-{
- public:
-
+class OmniVisionPucksPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  OmniVisionPucksPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  OmniVisionPucksPlugin(Configuration *config) : Plugin(config) {
     OmniVisionPucksPipelineThread *t = new OmniVisionPucksPipelineThread();
     thread_list.push_back(t);
     thread_list.push_back(new OmniVisionPucksSensorThread(t));
