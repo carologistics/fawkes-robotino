@@ -28,7 +28,8 @@
 
 /**
  * @typedef Clock
- * @brief The used clock for real time measurment. In contrast to simulated time.
+ * @brief The used clock for real time measurment. In contrast to simulated
+ * time.
  *
  * @typedef TimePoint
  * @brief The with the clock assoziated type to identify time points.
@@ -45,7 +46,8 @@
  * @brief The game time on which the task should start.
  *
  * @property BasicPlanElement::End
- * @brief The estimated end time for the task, if available. If not it is set to zero.
+ * @brief The estimated end time for the task, if available. If not it is set to
+ * zero.
  */
 
 /**
@@ -73,7 +75,8 @@
  * @brief The index in the plan for the first task which is not done.
  *
  * @property RobotPlan::FirstNotDoneOnSolveStart
- * @brief The index in the plan for the first task which was not done, when the solving started.
+ * @brief The index in the plan for the first task which was not done, when the
+ * solving started.
  *
  * @property RobotPlan::CurrentTask
  * @brief The task, the robot should be doing currently.
@@ -158,8 +161,8 @@
  * @brief Until when do we think the machine is broken.
  *
  * @property MachineInformation::WorkingUntil
- * @brief Until when do we think the machine will work. If BrokenUntil is set we save the duration we add after the
- *        machne is not longer broken.
+ * @brief Until when do we think the machine will work. If BrokenUntil is set we
+ * save the duration we add after the machne is not longer broken.
  *
  * @property MachineInformation::Storing
  * @brief The product which the machine processes or stores on the output side.
@@ -236,7 +239,8 @@
  * @brief The task for the cap.
  *
  * @property OrderTasks::DeliverTasks
- * @brief The task for the delivery, the first is the normal and the second is the late delivery.
+ * @brief The task for the delivery, the first is the normal and the second is
+ * the late delivery.
  */
 
 /**
@@ -245,7 +249,8 @@
  * @note Sort by priority. We use operator> when setting the value.
  *
  * @var InterruptSolving::Not
- * @brief Do not interrupt. But when a robot is too much behind schedule increase interrupt level and check again.
+ * @brief Do not interrupt. But when a robot is too much behind schedule
+ * increase interrupt level and check again.
  *
  * @var InterruptSolving::JustStarted
  * @brief Only interrupt if the solving was just started.
@@ -283,8 +288,8 @@
 
 /**
  * @property AspPlannerThread::Unsat
- * @brief How often we were told the program was unsatisfiable in a row. If it gets to high we have to take recovering
- *        actions.
+ * @brief How often we were told the program was unsatisfiable in a row. If it
+ * gets to high we have to take recovering actions.
  *
  * @property AspPlannerThread::ExplorationTime
  * @brief The time for the exploration phase, in seconds.
@@ -299,13 +304,15 @@
  * @brief How many seconds the planner should look into the future.
  *
  * @property AspPlannerThread::MaxDriveDuration
- * @brief An upper bound for the time (in seconds) the robot has to drive between two locations.
+ * @brief An upper bound for the time (in seconds) the robot has to drive
+ * between two locations.
  *
  * @property AspPlannerThread::MaxOrders
  * @brief The maximum amount of orders we expect.
  *
  * @property AspPlannerThread::MaxProducts
- * @brief The maximum amount of procuts which can be alive at any given point in time.
+ * @brief The maximum amount of procuts which can be alive at any given point in
+ * time.
  *
  * @property AspPlannerThread::MaxQuantity
  * @brief The maximum quantity for an order we expect.
@@ -346,7 +353,8 @@
  * @brief The mutex for the world model, including the robot informations.
  *
  * @property AspPlannerThread::GameTime
- * @brief The current game time (as reported by the refbox) in (floored) seconds.
+ * @brief The current game time (as reported by the refbox) in (floored)
+ * seconds.
  *
  * @property AspPlannerThread::Orders
  * @brief The information about the orders.
@@ -375,7 +383,8 @@
 
 /**
  * @property AspPlannerThread::NodePropertyASP
- * @brief The string for the asp node property. All nodes we export to ASP are marked with this.
+ * @brief The string for the asp node property. All nodes we export to ASP are
+ * marked with this.
  *
  * @property AspPlannerThread::NavgraphDistanceMutex
  * @brief The mutex for all distance stuff.
@@ -384,7 +393,8 @@
  * @brief A mapping from the navgraph node name to its asp atom.
  *
  * @property AspPlannerThread::NodesToFind
- * @brief The navgraph nodes we still have to find. If we found all we can release the driveDruation externals.
+ * @brief The navgraph nodes we still have to find. If we found all we can
+ * release the driveDruation externals.
  *
  * @property AspPlannerThread::UpdateNavgraphDistances.
  * @brief If the distances have to be updated.
@@ -472,102 +482,107 @@
  * @brief The plan currently deployed.
  *
  * @property AspPlannerThread::LocationInUse
- * @brief Mapping from a location to the robot which uses it, to detect errors in the plan.
+ * @brief Mapping from a location to the robot which uses it, to detect errors
+ * in the plan.
  */
 
 /**
  * @brief Reads the config and fills the members.
  */
-void
-AspPlannerThread::loadConfig(void)
-{
-	constexpr auto infixPlanner = "planner/";
-	constexpr auto infixTime = "time-estimations/";
-	constexpr auto infixCapStation = "cap-station/assigned-color/";
-	constexpr auto infixWorkingDuration = "working-durations/";
+void AspPlannerThread::loadConfig(void) {
+  constexpr auto infixPlanner = "planner/";
+  constexpr auto infixTime = "time-estimations/";
+  constexpr auto infixCapStation = "cap-station/assigned-color/";
+  constexpr auto infixWorkingDuration = "working-durations/";
 
-	constexpr auto infixPlannerLen = std::strlen(infixPlanner), infixTimeLen = std::strlen(infixTime);
-	constexpr auto infixCapStationLen = std::strlen(infixCapStation);
-	constexpr auto infixWorkingDurationLen = std::strlen(infixWorkingDuration);
-	const auto prefixLen = std::strlen(ConfigPrefix);
+  constexpr auto infixPlannerLen = std::strlen(infixPlanner),
+                 infixTimeLen = std::strlen(infixTime);
+  constexpr auto infixCapStationLen = std::strlen(infixCapStation);
+  constexpr auto infixWorkingDurationLen = std::strlen(infixWorkingDuration);
+  const auto prefixLen = std::strlen(ConfigPrefix);
 
-	char buffer[prefixLen +
-		std::max<size_t>({infixPlannerLen, infixTimeLen, infixCapStationLen, infixWorkingDurationLen}) + 20];
-	std::strcpy(buffer, ConfigPrefix);
+  char buffer[prefixLen +
+              std::max<size_t>({infixPlannerLen, infixTimeLen,
+                                infixCapStationLen, infixWorkingDurationLen}) +
+              20];
+  std::strcpy(buffer, ConfigPrefix);
 
-	//The plain part.
-	auto suffix = buffer + prefixLen;
-	std::strcpy(suffix, "exploration-time");
-	ExplorationTime = config->get_int(buffer);
+  // The plain part.
+  auto suffix = buffer + prefixLen;
+  std::strcpy(suffix, "exploration-time");
+  ExplorationTime = config->get_int(buffer);
 
-	std::strcpy(suffix, "production-end");
-	ProductionEnd = ExplorationTime + config->get_int(buffer);
+  std::strcpy(suffix, "production-end");
+  ProductionEnd = ExplorationTime + config->get_int(buffer);
 
-	//The planner part.
-	suffix = buffer + prefixLen + infixPlannerLen;
-	std::strcpy(buffer + prefixLen, infixPlanner);
+  // The planner part.
+  suffix = buffer + prefixLen + infixPlannerLen;
+  std::strcpy(buffer + prefixLen, infixPlanner);
 
-	std::strcpy(suffix, "debug-level");
-	clingo->set_debug_level(static_cast<fawkes::ClingoAccess::DebugLevel_t>(config->get_int(buffer)));
+  std::strcpy(suffix, "debug-level");
+  clingo->set_debug_level(
+      static_cast<fawkes::ClingoAccess::DebugLevel_t>(config->get_int(buffer)));
 
-	std::strcpy(suffix, "max-orders");
-	MaxOrders = config->get_int(buffer);
-	std::strcpy(suffix, "max-products");
-	MaxProducts = config->get_int(buffer);
-	std::strcpy(suffix, "max-quantity");
-	MaxQuantity = config->get_int(buffer);
-	std::strcpy(suffix, "look-ahead");
-	LookAhaed = config->get_int(buffer);
-	std::strcpy(suffix, "time-resolution");
-	TimeResolution = config->get_int(buffer);
-	std::strcpy(suffix, "robots");
-	PossibleRobots = config->get_strings(buffer);
+  std::strcpy(suffix, "max-orders");
+  MaxOrders = config->get_int(buffer);
+  std::strcpy(suffix, "max-products");
+  MaxProducts = config->get_int(buffer);
+  std::strcpy(suffix, "max-quantity");
+  MaxQuantity = config->get_int(buffer);
+  std::strcpy(suffix, "look-ahead");
+  LookAhaed = config->get_int(buffer);
+  std::strcpy(suffix, "time-resolution");
+  TimeResolution = config->get_int(buffer);
+  std::strcpy(suffix, "robots");
+  PossibleRobots = config->get_strings(buffer);
 
-	//The time-estimation part.
-	suffix = buffer + prefixLen + infixTimeLen;
-	std::strcpy(buffer + prefixLen, infixTime);
+  // The time-estimation part.
+  suffix = buffer + prefixLen + infixTimeLen;
+  std::strcpy(buffer + prefixLen, infixTime);
 
-	std::strcpy(suffix, "deliver-product");
-	DeliverProductTaskDuration = config->get_int(buffer);
-	std::strcpy(suffix, "fetch-product");
-	FetchProductTaskDuration = config->get_int(buffer);
-	std::strcpy(suffix, "max-drive-duration");
-	MaxDriveDuration = config->get_int(buffer);
-	std::strcpy(suffix, "prepare-cs");
-	PrepareCSTaskDuration = config->get_int(buffer);
+  std::strcpy(suffix, "deliver-product");
+  DeliverProductTaskDuration = config->get_int(buffer);
+  std::strcpy(suffix, "fetch-product");
+  FetchProductTaskDuration = config->get_int(buffer);
+  std::strcpy(suffix, "max-drive-duration");
+  MaxDriveDuration = config->get_int(buffer);
+  std::strcpy(suffix, "prepare-cs");
+  PrepareCSTaskDuration = config->get_int(buffer);
 
-	MaxTaskDuration = std::max({DeliverProductTaskDuration, FetchProductTaskDuration, PrepareCSTaskDuration});
+  MaxTaskDuration = std::max({DeliverProductTaskDuration,
+                              FetchProductTaskDuration, PrepareCSTaskDuration});
 
-	//The cap-station part.
-	suffix = buffer + prefixLen + infixCapStationLen;
-	std::strcpy(buffer + prefixLen, infixCapStation);
+  // The cap-station part.
+  suffix = buffer + prefixLen + infixCapStationLen;
+  std::strcpy(buffer + prefixLen, infixCapStation);
 
-	CapColors.reserve(2);
-	//We assume the distribution is the same, for CYAN and MAGENTA.
-	std::strcpy(suffix, "C-CS1");
-	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "CS1"});
-	std::strcpy(suffix, "C-CS2");
-	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "CS2"});
+  CapColors.reserve(2);
+  // We assume the distribution is the same, for CYAN and MAGENTA.
+  std::strcpy(suffix, "C-CS1");
+  CapColors.emplace_back(
+      CapColorInformation{config->get_string(buffer), "CS1"});
+  std::strcpy(suffix, "C-CS2");
+  CapColors.emplace_back(
+      CapColorInformation{config->get_string(buffer), "CS2"});
 
-	//The working-duration part.
-	suffix = buffer + prefixLen + infixWorkingDurationLen;
-	std::strcpy(buffer + prefixLen, infixWorkingDuration);
+  // The working-duration part.
+  suffix = buffer + prefixLen + infixWorkingDurationLen;
+  std::strcpy(buffer + prefixLen, infixWorkingDuration);
 
-	WorkingDurations.reserve(6);
-	std::strcpy(suffix, "base-station");
-	WorkingDurations.insert({"BS", config->get_int(buffer)});
-	std::strcpy(suffix, "cap-station");
-	WorkingDurations.insert({"CS1", config->get_int(buffer)});
-	WorkingDurations.insert({"CS2", config->get_int(buffer)});
-	std::strcpy(suffix, "delivery-station");
-	WorkingDurations.insert({"DS", config->get_int(buffer)});
-	std::strcpy(suffix, "ring-station");
-	WorkingDurations.insert({"RS1", config->get_int(buffer)});
-	WorkingDurations.insert({"RS2", config->get_int(buffer)});
+  WorkingDurations.reserve(6);
+  std::strcpy(suffix, "base-station");
+  WorkingDurations.insert({"BS", config->get_int(buffer)});
+  std::strcpy(suffix, "cap-station");
+  WorkingDurations.insert({"CS1", config->get_int(buffer)});
+  WorkingDurations.insert({"CS2", config->get_int(buffer)});
+  std::strcpy(suffix, "delivery-station");
+  WorkingDurations.insert({"DS", config->get_int(buffer)});
+  std::strcpy(suffix, "ring-station");
+  WorkingDurations.insert({"RS1", config->get_int(buffer)});
+  WorkingDurations.insert({"RS2", config->get_int(buffer)});
 
-	for ( const auto& pair : WorkingDurations )
-	{
-		MaxWorkingDuration = std::max(MaxWorkingDuration, pair.second);
-	} //for ( const auto& pair : WorkingDurations )
-	return;
+  for (const auto &pair : WorkingDurations) {
+    MaxWorkingDuration = std::max(MaxWorkingDuration, pair.second);
+  } // for ( const auto& pair : WorkingDurations )
+  return;
 }

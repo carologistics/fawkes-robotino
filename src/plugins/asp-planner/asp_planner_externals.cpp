@@ -29,10 +29,8 @@
  * @param[in] product The product.
  * @return The symbol.
  */
-static inline Clingo::Symbol
-productName(const ProductIdentifier& product)
-{
-	return Clingo::Function("product", {Clingo::Number(product.ID)});
+static inline Clingo::Symbol productName(const ProductIdentifier &product) {
+  return Clingo::Function("product", {Clingo::Number(product.ID)});
 }
 
 /**
@@ -40,10 +38,8 @@ productName(const ProductIdentifier& product)
  * @param[in] robotName The name of the robot.
  * @return The atom for the external.
  */
-Clingo::Symbol
-generateAliveExternal(const std::string& robotName)
-{
-	return Clingo::Function("availableRobot", {Clingo::String(robotName)});
+Clingo::Symbol generateAliveExternal(const std::string &robotName) {
+  return Clingo::Function("availableRobot", {Clingo::String(robotName)});
 }
 
 /**
@@ -52,10 +48,10 @@ generateAliveExternal(const std::string& robotName)
  * @param[in] location Its location.
  * @return The external atom.
  */
-Clingo::Symbol
-generateRobotLocationExternal(const std::string& robotName, const Clingo::Symbol& location)
-{
-	return Clingo::Function("robotLocation", {Clingo::String(robotName), location, Clingo::Number(0)});
+Clingo::Symbol generateRobotLocationExternal(const std::string &robotName,
+                                             const Clingo::Symbol &location) {
+  return Clingo::Function("robotLocation", {Clingo::String(robotName), location,
+                                            Clingo::Number(0)});
 }
 
 /**
@@ -64,10 +60,10 @@ generateRobotLocationExternal(const std::string& robotName, const Clingo::Symbol
  * @param[in] product The product.
  * @return The external atom.
  */
-Clingo::Symbol
-generateHoldingExternal(const std::string& robotName, const ProductIdentifier& product)
-{
-	return Clingo::Function("holding", {Clingo::String(robotName), productName(product), Clingo::Number(0)});
+Clingo::Symbol generateHoldingExternal(const std::string &robotName,
+                                       const ProductIdentifier &product) {
+  return Clingo::Function("holding", {Clingo::String(robotName),
+                                      productName(product), Clingo::Number(0)});
 }
 
 /**
@@ -77,11 +73,13 @@ generateHoldingExternal(const std::string& robotName, const ProductIdentifier& p
  * @param[in] duration The remaining duration of the doing.
  * @return The external atom.
  */
-Clingo::Symbol
-generateDoingExternal(const std::string& robotName, const TaskDescription& task, const int duration)
-{
-	assert(duration > 0);
-	return Clingo::Function("robotDoing", {Clingo::String(robotName), task.TaskSymbol, Clingo::Number(duration)});
+Clingo::Symbol generateDoingExternal(const std::string &robotName,
+                                     const TaskDescription &task,
+                                     const int duration) {
+  assert(duration > 0);
+  return Clingo::Function(
+      "robotDoing",
+      {Clingo::String(robotName), task.TaskSymbol, Clingo::Number(duration)});
 }
 
 /**
@@ -89,10 +87,9 @@ generateDoingExternal(const std::string& robotName, const TaskDescription& task,
  * @param[in] zone The zone number.
  * @return The external atom.
  */
-Clingo::Symbol
-generateExploreLocationExternal(const int zone)
-{
-	return Clingo::Function("location", {Clingo::Function("z", {Clingo::Number(zone)})});
+Clingo::Symbol generateExploreLocationExternal(const int zone) {
+  return Clingo::Function("location",
+                          {Clingo::Function("z", {Clingo::Number(zone)})});
 }
 
 /**
@@ -100,10 +97,10 @@ generateExploreLocationExternal(const int zone)
  * @param[in] zone The zone number.
  * @return The external atom.
  */
-Clingo::Symbol
-generateExploreTaskExternal(const int zone)
-{
-	return Clingo::Function("toBeDone", {Clingo::Function("explore", {Clingo::Number(zone)}), Clingo::Number(0)});
+Clingo::Symbol generateExploreTaskExternal(const int zone) {
+  return Clingo::Function(
+      "toBeDone",
+      {Clingo::Function("explore", {Clingo::Number(zone)}), Clingo::Number(0)});
 }
 
 /**
@@ -111,10 +108,8 @@ generateExploreTaskExternal(const int zone)
  * @param[in] product The product..
  * @return The external atom.
  */
-Clingo::Symbol
-generateProductExternal(const ProductIdentifier& product)
-{
-	return Clingo::Function("product", {productName(product)});
+Clingo::Symbol generateProductExternal(const ProductIdentifier &product) {
+  return Clingo::Function("product", {productName(product)});
 }
 
 /**
@@ -123,10 +118,10 @@ generateProductExternal(const ProductIdentifier& product)
  * @param[in] base The base color.
  * @return The external atom.
  */
-Clingo::Symbol
-generateProductBaseExternal(const ProductIdentifier& product, const std::string& base)
-{
-	return Clingo::Function("productBase", {productName(product), Clingo::String(base)});
+Clingo::Symbol generateProductBaseExternal(const ProductIdentifier &product,
+                                           const std::string &base) {
+  return Clingo::Function("productBase",
+                          {productName(product), Clingo::String(base)});
 }
 
 /**
@@ -136,11 +131,12 @@ generateProductBaseExternal(const ProductIdentifier& product, const std::string&
  * @param[in] color The ring color.
  * @return The external atom.
  */
-Clingo::Symbol
-generateProductRingExternal(const ProductIdentifier& product, const int ringNumber, const std::string& color)
-{
-	return Clingo::Function("productRing", {productName(product), Clingo::Number(ringNumber), Clingo::String(color),
-		Clingo::Number(0)});
+Clingo::Symbol generateProductRingExternal(const ProductIdentifier &product,
+                                           const int ringNumber,
+                                           const std::string &color) {
+  return Clingo::Function("productRing",
+                          {productName(product), Clingo::Number(ringNumber),
+                           Clingo::String(color), Clingo::Number(0)});
 }
 
 /**
@@ -149,10 +145,11 @@ generateProductRingExternal(const ProductIdentifier& product, const int ringNumb
  * @param[in] cap The cap color.
  * @return The external atom.
  */
-Clingo::Symbol
-generateProductCapExternal(const ProductIdentifier& product, const std::string& cap)
-{
-	return Clingo::Function("productCap", {productName(product), Clingo::String(cap), Clingo::Number(0)});
+Clingo::Symbol generateProductCapExternal(const ProductIdentifier &product,
+                                          const std::string &cap) {
+  return Clingo::Function(
+      "productCap",
+      {productName(product), Clingo::String(cap), Clingo::Number(0)});
 }
 
 /**
@@ -161,10 +158,11 @@ generateProductCapExternal(const ProductIdentifier& product, const std::string& 
  * @param[in] duration How long the machine is broken.
  * @return The external atom.
  */
-Clingo::Symbol
-generateMachineBrokenExternal(const std::string& machineName, const int duration)
-{
-	return Clingo::Function("broken", {Clingo::String(machineName), Clingo::Number(duration), Clingo::Number(0)});
+Clingo::Symbol generateMachineBrokenExternal(const std::string &machineName,
+                                             const int duration) {
+  return Clingo::Function("broken",
+                          {Clingo::String(machineName),
+                           Clingo::Number(duration), Clingo::Number(0)});
 }
 
 /**
@@ -175,10 +173,12 @@ generateMachineBrokenExternal(const std::string& machineName, const int duration
  * @return The external atom.
  */
 Clingo::Symbol
-generateMachineWorkingExternal(const std::string& machineName, const int duration, const ProductIdentifier& product)
-{
-	return Clingo::Function("processing", {Clingo::String(machineName), productName(product), Clingo::Number(duration),
-		Clingo::Number(0)});
+generateMachineWorkingExternal(const std::string &machineName,
+                               const int duration,
+                               const ProductIdentifier &product) {
+  return Clingo::Function("processing",
+                          {Clingo::String(machineName), productName(product),
+                           Clingo::Number(duration), Clingo::Number(0)});
 }
 
 /**
@@ -188,9 +188,10 @@ generateMachineWorkingExternal(const std::string& machineName, const int duratio
  * @return The external atom.
  */
 Clingo::Symbol
-generateMachineStoringExternal(const std::string& machineName, const ProductIdentifier& product)
-{
-	return Clingo::Function("storing", {Clingo::String(machineName), productName(product), Clingo::Number(0)});
+generateMachineStoringExternal(const std::string &machineName,
+                               const ProductIdentifier &product) {
+  return Clingo::Function("storing", {Clingo::String(machineName),
+                                      productName(product), Clingo::Number(0)});
 }
 
 /**
@@ -198,10 +199,9 @@ generateMachineStoringExternal(const std::string& machineName, const ProductIden
  * @param[in] machineName The name of the machine.
  * @return The external atom.
  */
-Clingo::Symbol
-generatePreparedExternal(const std::string& machineName)
-{
-	return Clingo::Function("csPrepared", {Clingo::String(machineName), Clingo::Number(0)});
+Clingo::Symbol generatePreparedExternal(const std::string &machineName) {
+  return Clingo::Function("csPrepared",
+                          {Clingo::String(machineName), Clingo::Number(0)});
 }
 
 /**
@@ -210,10 +210,11 @@ generatePreparedExternal(const std::string& machineName)
  * @param[in] fillState The fill state.
  * @return The external atom.
  */
-Clingo::Symbol
-generateFillStateExternal(const std::string& machineName, const int fillState)
-{
-	return Clingo::Function("rsFillState", {Clingo::String(machineName), Clingo::Number(fillState), Clingo::Number(0)});
+Clingo::Symbol generateFillStateExternal(const std::string &machineName,
+                                         const int fillState) {
+  return Clingo::Function("rsFillState",
+                          {Clingo::String(machineName),
+                           Clingo::Number(fillState), Clingo::Number(0)});
 }
 
 /**
@@ -223,10 +224,10 @@ generateFillStateExternal(const std::string& machineName, const int fillState)
  * @param[in] side The side of the machine.
  * @return The external atom.
  */
-Clingo::Symbol
-generateLocationExternal(const char *teamColor, const char *machine, const char *side)
-{
-	return Clingo::Function("m", {Clingo::String(teamColor), Clingo::String(machine), Clingo::String(side)});
+Clingo::Symbol generateLocationExternal(const char *teamColor,
+                                        const char *machine, const char *side) {
+  return Clingo::Function("m", {Clingo::String(teamColor),
+                                Clingo::String(machine), Clingo::String(side)});
 }
 
 /**
@@ -234,10 +235,8 @@ generateLocationExternal(const char *teamColor, const char *machine, const char 
  * @param[in] task The task.
  * @return The external atom.
  */
-static inline Clingo::Symbol
-toBeDoneExternal(const Clingo::Symbol& task)
-{
-	return Clingo::Function("toBeDone", {task, Clingo::Number(0)});
+static inline Clingo::Symbol toBeDoneExternal(const Clingo::Symbol &task) {
+  return Clingo::Function("toBeDone", {task, Clingo::Number(0)});
 }
 
 /**
@@ -248,11 +247,12 @@ toBeDoneExternal(const Clingo::Symbol& task)
  * @param[in] ring The ring number of the task.
  * @return The external atom.
  */
-Clingo::Symbol
-generateMountRingExternal(const Clingo::Symbol& location, const int orderNumber, const int qty, const int ring)
-{
-	return toBeDoneExternal(Clingo::Function("mountRing",
-		{location, Clingo::Number(orderNumber), Clingo::Number(qty), Clingo::Number(ring)}));
+Clingo::Symbol generateMountRingExternal(const Clingo::Symbol &location,
+                                         const int orderNumber, const int qty,
+                                         const int ring) {
+  return toBeDoneExternal(Clingo::Function(
+      "mountRing", {location, Clingo::Number(orderNumber), Clingo::Number(qty),
+                    Clingo::Number(ring)}));
 }
 
 /**
@@ -262,10 +262,11 @@ generateMountRingExternal(const Clingo::Symbol& location, const int orderNumber,
  * @param[in] qty The quantity number of the task.
  * @return The external atom.
  */
-Clingo::Symbol
-generateMountCapExternal(const Clingo::Symbol& location, const int orderNumber, const int qty)
-{
-	return toBeDoneExternal(Clingo::Function("mountCap", {location, Clingo::Number(orderNumber), Clingo::Number(qty)}));
+Clingo::Symbol generateMountCapExternal(const Clingo::Symbol &location,
+                                        const int orderNumber, const int qty) {
+  return toBeDoneExternal(
+      Clingo::Function("mountCap", {location, Clingo::Number(orderNumber),
+                                    Clingo::Number(qty)}));
 }
 
 /**
@@ -275,10 +276,10 @@ generateMountCapExternal(const Clingo::Symbol& location, const int orderNumber, 
  * @param[in] qty The quantity number of the task.
  * @return The external atom.
  */
-Clingo::Symbol
-generateDeliverExternal(const Clingo::Symbol& location, const int orderNumber, const int qty)
-{
-	return toBeDoneExternal(Clingo::Function("deliver", {location, Clingo::Number(orderNumber), Clingo::Number(qty)}));
+Clingo::Symbol generateDeliverExternal(const Clingo::Symbol &location,
+                                       const int orderNumber, const int qty) {
+  return toBeDoneExternal(Clingo::Function(
+      "deliver", {location, Clingo::Number(orderNumber), Clingo::Number(qty)}));
 }
 
 /**
@@ -288,10 +289,10 @@ generateDeliverExternal(const Clingo::Symbol& location, const int orderNumber, c
  * @param[in] qty The quantity number of the task.
  * @return The external atom.
  */
-Clingo::Symbol
-generateLateDeliverExternal(const Clingo::Symbol& location, const int orderNumber, const int qty)
-{
-	return toBeDoneExternal(Clingo::Function("lateDeliver",
-		{location, Clingo::Number(orderNumber), Clingo::Number(qty)}));
+Clingo::Symbol generateLateDeliverExternal(const Clingo::Symbol &location,
+                                           const int orderNumber,
+                                           const int qty) {
+  return toBeDoneExternal(
+      Clingo::Function("lateDeliver", {location, Clingo::Number(orderNumber),
+                                       Clingo::Number(qty)}));
 }
-
