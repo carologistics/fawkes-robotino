@@ -23,40 +23,38 @@
 #ifndef _CONVEYOR_PLANE_THREAD_
 #define _CONVEYOR_PLANE_THREAD_
 
-#include <core/threading/thread.h>
-#include <aspect/blocked_timing.h>
-#include <aspect/logging.h>
-#include <aspect/configurable.h>
 #include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
+#include <aspect/configurable.h>
+#include <aspect/logging.h>
 #include <aspect/pointcloud.h>
 #include <aspect/tf.h>
+#include <core/threading/thread.h>
 
 #include <plugins/ros/aspect/ros.h>
 
-#include <interfaces/SwitchInterface.h>
-#include <interfaces/Position3DInterface.h>
 #include <interfaces/LaserLineInterface.h>
+#include <interfaces/Position3DInterface.h>
+#include <interfaces/SwitchInterface.h>
 
 #include "visualisation.hpp"
 
-#include <string>
 #include <map>
+#include <string>
 
 typedef pcl::PointXYZ Point;
 typedef pcl::PointCloud<Point> Cloud;
 typedef typename Cloud::Ptr CloudPtr;
 typedef typename Cloud::ConstPtr CloudConstPtr;
 
-class ConveyorPlaneThread
-: public fawkes::Thread,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::PointCloudAspect,
-  public fawkes::ROSAspect,
-  public fawkes::TransformAspect
-{
+class ConveyorPlaneThread : public fawkes::Thread,
+                            public fawkes::BlockedTimingAspect,
+                            public fawkes::LoggingAspect,
+                            public fawkes::ConfigurableAspect,
+                            public fawkes::BlackBoardAspect,
+                            public fawkes::PointCloudAspect,
+                            public fawkes::ROSAspect,
+                            public fawkes::TransformAspect {
 private:
   class pose {
   public:
@@ -73,7 +71,7 @@ private:
       rotation.setW(0);
     }
   };
-  Visualisation * visualisation_;
+  Visualisation *visualisation_;
 
   // cfg values
   std::string cloud_in_name_;
@@ -86,7 +84,7 @@ private:
   std::vector<std::string> laserlines_names_;
 
   bool cfg_pose_close_if_no_new_pointclouds_;
-//  std::string bb_tag_name_;
+  //  std::string bb_tag_name_;
   float cfg_pose_diff_;
   float vis_hist_angle_diff_;
 
@@ -140,56 +138,68 @@ private:
   fawkes::RefPtr<Cloud> cloud_out_result_;
 
   // interfaces write
-  fawkes::SwitchInterface * bb_enable_switch_;
-  fawkes::Position3DInterface * bb_pose_;
+  fawkes::SwitchInterface *bb_enable_switch_;
+  fawkes::Position3DInterface *bb_pose_;
 
   // interfaces read
-  std::vector<fawkes::LaserLineInterface * > laserlines_;
+  std::vector<fawkes::LaserLineInterface *> laserlines_;
   fawkes::SwitchInterface *realsense_switch_;
   fawkes::Time wait_start_;
   fawkes::Time wait_time_;
-//  fawkes::Position3DInterface * bb_tag_;
+  //  fawkes::Position3DInterface * bb_tag_;
 
- /**
-  * check if the pointcloud is available
-  */
- bool pc_in_check();
- void bb_pose_conditional_open();
- void bb_pose_conditional_close();
+  /**
+   * check if the pointcloud is available
+   */
+  bool pc_in_check();
+  void bb_pose_conditional_open();
+  void bb_pose_conditional_close();
 
- void pose_add_element(pose element);
- bool pose_get_avg(pose & out);
+  void pose_add_element(pose element);
+  bool pose_get_avg(pose &out);
 
- void if_read();
- bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
- Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface * ll);
+  void if_read();
+  bool laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit);
+  Eigen::Vector3f
+  laserline_get_center_transformed(fawkes::LaserLineInterface *ll);
 
- bool is_inbetween(double a, double b, double val);
+  bool is_inbetween(double a, double b, double val);
 
- CloudPtr cloud_remove_gripper(CloudPtr in);
- CloudPtr cloud_remove_offset_to_bottom(CloudPtr in);
- CloudPtr cloud_remove_offset_to_front(CloudPtr in, fawkes::LaserLineInterface * ll = NULL, bool use_ll = false);
- CloudPtr cloud_remove_offset_to_left_right(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll);
- CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);
- boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
- CloudPtr cloud_voxel_grid(CloudPtr in);
+  CloudPtr cloud_remove_gripper(CloudPtr in);
+  CloudPtr cloud_remove_offset_to_bottom(CloudPtr in);
+  CloudPtr cloud_remove_offset_to_front(CloudPtr in,
+                                        fawkes::LaserLineInterface *ll = NULL,
+                                        bool use_ll = false);
+  CloudPtr cloud_remove_offset_to_left_right(CloudPtr in,
+                                             fawkes::LaserLineInterface *ll,
+                                             bool use_ll);
+  CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);
+  boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
+  CloudPtr cloud_voxel_grid(CloudPtr in);
 
- std::vector<CloudPtr> cluster_split(CloudPtr in, boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices);
- CloudPtr cluster_find_biggest(std::vector<CloudPtr> clouds_in, size_t & id);
+  std::vector<CloudPtr> cluster_split(
+      CloudPtr in,
+      boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices);
+  CloudPtr cluster_find_biggest(std::vector<CloudPtr> clouds_in, size_t &id);
 
- void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
+  void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
 
- pose calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal);
- void tf_send_from_pose_if(pose pose);
- void pose_write(pose pose);
- Eigen::Quaternion<float> averageQuaternion(Eigen::Vector4f &cumulative, Eigen::Quaternion<float> newRotation, Eigen::Quaternion<float> firstRotation, float addDet);
- Eigen::Quaternion<float> normalizeQuaternion(float x, float y, float z, float w);
- Eigen::Quaternion<float> inverseSignQuaternion(Eigen::Quaternion<float> q);
- bool areQuaternionsClose(Eigen::Quaternion<float> q1, Eigen::Quaternion<float> q2);
+  pose calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal);
+  void tf_send_from_pose_if(pose pose);
+  void pose_write(pose pose);
+  Eigen::Quaternion<float>
+  averageQuaternion(Eigen::Vector4f &cumulative,
+                    Eigen::Quaternion<float> newRotation,
+                    Eigen::Quaternion<float> firstRotation, float addDet);
+  Eigen::Quaternion<float> normalizeQuaternion(float x, float y, float z,
+                                               float w);
+  Eigen::Quaternion<float> inverseSignQuaternion(Eigen::Quaternion<float> q);
+  bool areQuaternionsClose(Eigen::Quaternion<float> q1,
+                           Eigen::Quaternion<float> q2);
 
- void pose_publish_tf(pose pose);
- void start_waiting();
- bool need_to_wait();
+  void pose_publish_tf(pose pose);
+  void start_waiting();
+  bool need_to_wait();
 
 protected:
   virtual void run() { Thread::run(); }
@@ -200,8 +210,6 @@ public:
   virtual void init();
   virtual void loop();
   virtual void finalize();
-
 };
-
 
 #endif
