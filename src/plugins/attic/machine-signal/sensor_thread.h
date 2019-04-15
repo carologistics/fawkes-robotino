@@ -24,14 +24,14 @@
 #ifndef __PLUGINS_MACHINE_SIGNAL_SENSOR_THREAD_H_
 #define __PLUGINS_MACHINE_SIGNAL_SENSOR_THREAD_H_
 
-#include <core/threading/thread.h>
-#include <aspect/blocked_timing.h>
-#include <aspect/logging.h>
-#include <aspect/configurable.h>
 #include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
+#include <aspect/configurable.h>
+#include <aspect/logging.h>
+#include <core/threading/thread.h>
 
-#include <string>
 #include "pipeline_thread.h"
+#include <string>
 
 namespace fawkes {
 class Position3DInterface;
@@ -40,30 +40,26 @@ namespace firevision {
 class Camera;
 }
 
+class MachineSignalSensorThread : public fawkes::Thread,
+                                  public fawkes::BlockedTimingAspect,
+                                  public fawkes::LoggingAspect,
+                                  public fawkes::ConfigurableAspect,
+                                  public fawkes::BlackBoardAspect {
+public:
+  MachineSignalSensorThread(MachineSignalPipelineThread *pipeline_thread);
 
-class MachineSignalSensorThread :
-  public fawkes::Thread,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect
-{
-  public:
-    MachineSignalSensorThread(MachineSignalPipelineThread *pipeline_thread);
+  virtual void init();
+  virtual void finalize();
+  virtual void loop();
 
-    virtual void init();
-    virtual void finalize();
-    virtual void loop();
+protected:
+  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+  virtual void run() { Thread::run(); }
 
-  protected:
-    /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
-    virtual void run() { Thread::run(); }
-
-  private:
-    std::vector<fawkes::RobotinoLightInterface *> bb_signal_states_;
-    fawkes::RobotinoLightInterface * bb_signal_compat_;
-    MachineSignalPipelineThread *pipeline_thread_;
+private:
+  std::vector<fawkes::RobotinoLightInterface *> bb_signal_states_;
+  fawkes::RobotinoLightInterface *bb_signal_compat_;
+  MachineSignalPipelineThread *pipeline_thread_;
 };
-
 
 #endif /* __PLUGINS_MACHINE_SIGNAL_SENSOR_THREAD_H_ */
