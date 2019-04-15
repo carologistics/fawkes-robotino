@@ -29,15 +29,12 @@ using namespace fawkes;
 /** Visualize selected Position3dInterfaces in RVIZ
  * @author Daniel Ewert
  */
-class MarkerWriterPlugin : public fawkes::Plugin
-{
- public:
+class MarkerWriterPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-	MarkerWriterPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  MarkerWriterPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new MarkerWriterThread());
   }
 };

@@ -22,11 +22,11 @@
 #ifndef __PLUGINS_PLUGIN_TEMPLATE_THREAD_H_
 #define __PLUGINS_PLUGIN_TEMPLATE_THREAD_H_
 
-#include <core/threading/thread.h>
-#include <aspect/blocked_timing.h>
-#include <aspect/logging.h>
-#include <aspect/configurable.h>
 #include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
+#include <aspect/configurable.h>
+#include <aspect/logging.h>
+#include <core/threading/thread.h>
 #include <plugins/ros/aspect/ros.h>
 
 #include <string>
@@ -40,33 +40,31 @@ namespace ros {
 class Publisher;
 }
 
-class MarkerWriterThread: public fawkes::Thread,
-		public fawkes::BlockedTimingAspect,
-		public fawkes::LoggingAspect,
-		public fawkes::ConfigurableAspect,
-		public fawkes::BlackBoardAspect,
-		public fawkes::ROSAspect {
+class MarkerWriterThread : public fawkes::Thread,
+                           public fawkes::BlockedTimingAspect,
+                           public fawkes::LoggingAspect,
+                           public fawkes::ConfigurableAspect,
+                           public fawkes::BlackBoardAspect,
+                           public fawkes::ROSAspect {
 
 public:
-	MarkerWriterThread();
+  MarkerWriterThread();
 
-	virtual void init();
-	virtual void loop();
-	virtual bool prepare_finalize_user();
-	virtual void finalize();
+  virtual void init();
+  virtual void loop();
+  virtual bool prepare_finalize_user();
+  virtual void finalize();
 
-	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-	virtual void run() {
-		Thread::run();
-	}
+  virtual void run() { Thread::run(); }
 
 private:
-	std::list<fawkes::Position3DInterface*> pos_ifs_;
+  std::list<fawkes::Position3DInterface *> pos_ifs_;
 
-	ros::Publisher* pub_;
-	float cfg_duration_;
-	bool cfg_ignore_visibillity_;
+  ros::Publisher *pub_;
+  float cfg_duration_;
+  bool cfg_ignore_visibillity_;
 };
 
 #endif
