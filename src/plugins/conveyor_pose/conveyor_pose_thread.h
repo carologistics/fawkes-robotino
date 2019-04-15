@@ -25,17 +25,17 @@
 #ifndef _CONVEYOR_POSE_THREAD_
 #define _CONVEYOR_POSE_THREAD_
 
-#include <core/threading/thread.h>
 #include <core/threading/mutex.h>
 #include <core/threading/mutex_locker.h>
+#include <core/threading/thread.h>
 
-#include <aspect/blocked_timing.h>
-#include <aspect/logging.h>
-#include <aspect/configurable.h>
 #include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
+#include <aspect/configurable.h>
+#include <aspect/logging.h>
 #include <aspect/pointcloud.h>
-#include <aspect/tf.h>
 #include <aspect/syncpoint_manager.h>
+#include <aspect/tf.h>
 
 #include <interfaces/ConveyorPoseInterface.h>
 
@@ -46,11 +46,11 @@
 //#include <pcl/filters/uniform_sampling.h>
 #include <pcl/features/normal_3d_omp.h>
 
-#include <string>
-#include <map>
-#include <atomic>
-#include <set>
 #include <array>
+#include <atomic>
+#include <map>
+#include <set>
+#include <string>
 
 #define CFG_PREFIX "/plugins/conveyor_pose"
 
@@ -61,35 +61,35 @@
 class RecognitionThread;
 
 namespace fawkes {
-    class ConveyorPoseInterface;
-    class SwitchInterface;
-    class LaserLineInterface;
-}
+class ConveyorPoseInterface;
+class SwitchInterface;
+class LaserLineInterface;
+} // namespace fawkes
 
-class ConveyorPoseThread
-: public fawkes::Thread,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::ConfigurationChangeHandler,
-  public fawkes::BlackBoardAspect,
-  public fawkes::PointCloudAspect,
-  public fawkes::ROSAspect,
-  public fawkes::TransformAspect,
-  public fawkes::SyncPointManagerAspect
-{
+class ConveyorPoseThread : public fawkes::Thread,
+                           public fawkes::BlockedTimingAspect,
+                           public fawkes::LoggingAspect,
+                           public fawkes::ConfigurableAspect,
+                           public fawkes::ConfigurationChangeHandler,
+                           public fawkes::BlackBoardAspect,
+                           public fawkes::PointCloudAspect,
+                           public fawkes::ROSAspect,
+                           public fawkes::TransformAspect,
+                           public fawkes::SyncPointManagerAspect {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   ConveyorPoseThread();
 
   virtual void init() override;
-  virtual void loop() override ;
+  virtual void loop() override;
   virtual void finalize() override;
 
-  /** Used by the plugin constructor to enable data exchange between the two threads
-   * @param recog_thread pointer to the thread that does the actual pose recognition
-  */
+  /** Used by the plugin constructor to enable data exchange between the two
+   * threads
+   * @param recog_thread pointer to the thread that does the actual pose
+   * recognition
+   */
   void set_cg_thread(RecognitionThread *recog_thread);
 
 private:
@@ -113,7 +113,6 @@ private:
   std::string conveyor_frame_id_;
   std::vector<std::string> laserlines_names_;
 
-
   CloudPtr trimmed_scene_;
 
   fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
@@ -121,21 +120,29 @@ private:
 
   int cfg_force_shelf_;
 
-  void update_station_information(fawkes::ConveyorPoseInterface::RunICPMessage &msg);
-  std::string get_model_path(fawkes::ConveyorPoseInterface *iface, fawkes::ConveyorPoseInterface::MPS_TYPE, fawkes::ConveyorPoseInterface::MPS_TARGET);
+  void
+  update_station_information(fawkes::ConveyorPoseInterface::RunICPMessage &msg);
+  std::string get_model_path(fawkes::ConveyorPoseInterface *iface,
+                             fawkes::ConveyorPoseInterface::MPS_TYPE,
+                             fawkes::ConveyorPoseInterface::MPS_TARGET);
 
-  //Mapping from {Type,Target} to its corresponding model path
-  std::map<std::pair<fawkes::ConveyorPoseInterface::MPS_TYPE,fawkes::ConveyorPoseInterface::MPS_TARGET>, std::string> type_target_to_path_;
+  // Mapping from {Type,Target} to its corresponding model path
+  std::map<std::pair<fawkes::ConveyorPoseInterface::MPS_TYPE,
+                     fawkes::ConveyorPoseInterface::MPS_TARGET>,
+           std::string>
+      type_target_to_path_;
 
   // Mapping from station name to preprocessed pointcloud model
-  std::map<std::pair<fawkes::ConveyorPoseInterface::MPS_TYPE,fawkes::ConveyorPoseInterface::MPS_TARGET>, CloudPtr> type_target_to_model_;
+  std::map<std::pair<fawkes::ConveyorPoseInterface::MPS_TYPE,
+                     fawkes::ConveyorPoseInterface::MPS_TARGET>,
+           CloudPtr>
+      type_target_to_model_;
 
   RecognitionThread *recognition_thread_;
 
   bool cfg_record_model_;
   std::string cfg_model_origin_frame_;
   std::string cfg_record_path_;
-
 
   std::atomic<float> cfg_left_cut_;
   std::atomic<float> cfg_right_cut_;
@@ -165,15 +172,18 @@ private:
   std::atomic<float> cfg_shelf_front_cut_no_ll_;
   std::atomic<float> cfg_shelf_back_cut_no_ll_;
 
-
   std::atomic<float> cfg_shelf_left_off_;
   std::atomic<float> cfg_shelf_middle_off_;
   std::atomic<float> cfg_shelf_right_off_;
 
   std::atomic<float> cfg_voxel_grid_leaf_size_;
 
-  std::map<fawkes::ConveyorPoseInterface::MPS_TARGET, std::array<std::atomic<float>, 3>> cfg_target_hint_;
-  std::map<fawkes::ConveyorPoseInterface::MPS_TYPE, std::array<std::atomic<float>, 3>> cfg_type_offset_;
+  std::map<fawkes::ConveyorPoseInterface::MPS_TARGET,
+           std::array<std::atomic<float>, 3>>
+      cfg_target_hint_;
+  std::map<fawkes::ConveyorPoseInterface::MPS_TYPE,
+           std::array<std::atomic<float>, 3>>
+      cfg_type_offset_;
 
   std::atomic<float> cfg_ll_bearing_thresh_;
 
@@ -190,7 +200,7 @@ private:
   fawkes::ConveyorPoseInterface *bb_pose_;
 
   // interfaces read
-  std::vector<fawkes::LaserLineInterface * > laserlines_;
+  std::vector<fawkes::LaserLineInterface *> laserlines_;
   fawkes::SwitchInterface *realsense_switch_;
   fawkes::Time wait_start_;
   fawkes::Time wait_time_;
@@ -218,17 +228,21 @@ private:
 
   bool cfg_debug_mode_;
 
-
   bool update_input_cloud();
 
   void bb_update_switch();
-  bool laserline_get_best_fit(fawkes::LaserLineInterface * &best_fit);
-  Eigen::Vector3f laserline_get_center_transformed(fawkes::LaserLineInterface * ll);
-  fawkes::tf::Stamped<fawkes::tf::Pose> laserline_get_center(fawkes::LaserLineInterface *ll);
+  bool laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit);
+  Eigen::Vector3f
+  laserline_get_center_transformed(fawkes::LaserLineInterface *ll);
+  fawkes::tf::Stamped<fawkes::tf::Pose>
+  laserline_get_center(fawkes::LaserLineInterface *ll);
 
-  void set_initial_tf_from_laserline(fawkes::LaserLineInterface *ll, fawkes::ConveyorPoseInterface::MPS_TYPE mps_type,fawkes::ConveyorPoseInterface::MPS_TARGET mps_target);
+  void set_initial_tf_from_laserline(
+      fawkes::LaserLineInterface *ll,
+      fawkes::ConveyorPoseInterface::MPS_TYPE mps_type,
+      fawkes::ConveyorPoseInterface::MPS_TARGET mps_target);
 
-  CloudPtr cloud_trim(CloudPtr in, fawkes::LaserLineInterface * ll, bool use_ll);
+  CloudPtr cloud_trim(CloudPtr in, fawkes::LaserLineInterface *ll, bool use_ll);
 
   boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
   CloudPtr cloud_voxel_grid(CloudPtr in);
@@ -244,23 +258,24 @@ private:
 
   virtual void config_value_erased(const char *path) override;
   virtual void config_tag_changed(const char *new_tag) override;
-  virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v) override;
-  virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v) override;
+  virtual void config_comment_changed(
+      const fawkes::Configuration::ValueIterator *v) override;
+  virtual void
+  config_value_changed(const fawkes::Configuration::ValueIterator *v) override;
 
-  template<typename T>
-    inline void change_val(const std::string &setting, std::atomic<T> &var, const T& val)
-    {
-      if (var != val) {
-        logger->log_info(name(), "Changing %s from %s to %s",
-            setting.c_str(), std::to_string(var).c_str(), std::to_string(val).c_str());
-        var = val;
-      }
+  template <typename T>
+  inline void change_val(const std::string &setting, std::atomic<T> &var,
+                         const T &val) {
+    if (var != val) {
+      logger->log_info(name(), "Changing %s from %s to %s", setting.c_str(),
+                       std::to_string(var).c_str(),
+                       std::to_string(val).c_str());
+      var = val;
     }
+  }
 
 protected:
-  virtual void run() override
-  { Thread::run(); }
-
+  virtual void run() override { Thread::run(); }
 };
 
 Eigen::Matrix4f pose_to_eigen(const fawkes::tf::Pose &pose);
