@@ -26,14 +26,14 @@
 
 #include <core/threading/thread.h>
 
+#include <aspect/blackboard.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <aspect/vision.h>
-#include <aspect/blackboard.h>
 
-#include <fvutils/color/colorspaces.h>
-#include <fvutils/base/types.h>
 #include <fvutils/base/roi.h>
+#include <fvutils/base/types.h>
+#include <fvutils/color/colorspaces.h>
 #include <utils/math/types.h>
 
 #include <aspect/clock.h>
@@ -41,26 +41,24 @@
 #include <string>
 
 namespace firevision {
-  class Camera;
-  class ScanlineModel;
-  class Bulb;
-  class SharedMemoryImageBuffer;
-  class Drawer;
-}
+class Camera;
+class ScanlineModel;
+class Bulb;
+class SharedMemoryImageBuffer;
+class Drawer;
+} // namespace firevision
 namespace fawkes {
-  class SwitchInterface;
-  class Position3DInterface;
-}
+class SwitchInterface;
+class Position3DInterface;
+} // namespace fawkes
 
-class RobotinoAmpelVarPipelineThread
-: public fawkes::Thread,
-  public fawkes::LoggingAspect,
-  public fawkes::VisionAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::ClockAspect
-{
- public:
+class RobotinoAmpelVarPipelineThread : public fawkes::Thread,
+                                       public fawkes::LoggingAspect,
+                                       public fawkes::VisionAspect,
+                                       public fawkes::ConfigurableAspect,
+                                       public fawkes::BlackBoardAspect,
+                                       public fawkes::ClockAspect {
+public:
   RobotinoAmpelVarPipelineThread();
   virtual ~RobotinoAmpelVarPipelineThread();
 
@@ -68,10 +66,10 @@ class RobotinoAmpelVarPipelineThread
   virtual void finalize();
   virtual void loop();
 
- private:
-  firevision::Camera                  *cam_;
-  firevision::ScanlineModel           *scanline_;
-  firevision::Bulb		              *mirror_;
+private:
+  firevision::Camera *cam_;
+  firevision::ScanlineModel *scanline_;
+  firevision::Bulb *mirror_;
   firevision::SharedMemoryImageBuffer *shm_buffer_;
 
   unsigned char *buffer_;
@@ -85,16 +83,16 @@ class RobotinoAmpelVarPipelineThread
   fawkes::SwitchInterface *ampel_red_if_;
   fawkes::SwitchInterface *ampel_orange_if_;
   fawkes::SwitchInterface *ampel_green_if_;
-  
+
   fawkes::Position3DInterface *laser_pos_if_;
 
   fawkes::SwitchInterface *ampel_switch_if_;
 
   fawkes::polar_coord_2d_t pol_l;
   fawkes::polar_coord_2d_t pol_r;
-  const fawkes::polar_coord_2d_t * map;
+  const fawkes::polar_coord_2d_t *map;
 
-  std::list< firevision::ROI > *rois_;
+  std::list<firevision::ROI> *rois_;
 
   std::string cfg_prefix_;
   std::string cfg_camera_;
@@ -149,7 +147,7 @@ class RobotinoAmpelVarPipelineThread
 
   unsigned int w;
   unsigned int h;
- 
+
   bool is_red;
   bool is_orange;
   bool is_green;
@@ -160,17 +158,16 @@ class RobotinoAmpelVarPipelineThread
   float delta_r_next;
 
   unsigned int bucket[64];
-  unsigned int luminance; //Y in YUV
+  unsigned int luminance; // Y in YUV
   unsigned int luminance_threshold;
 
   /*
    *  ROI_colors enthaelt die Regionen der Ampelfarben
    */
-  firevision::ROI * ROI_colors[3]; //0 == red, 1 == orange, 3 == green
+  firevision::ROI *ROI_colors[3]; // 0 == red, 1 == orange, 3 == green
 
   fawkes::point_t center;
   fawkes::Time starttime;
-
 
   firevision::Drawer *drawer_;
 };
