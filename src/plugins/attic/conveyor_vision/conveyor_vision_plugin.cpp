@@ -29,15 +29,12 @@ using namespace fawkes;
 /**
  * @author Nicolas Limpert & Randolph Maaßen
  */
-class ConveyorVision : public fawkes::Plugin
-{
- public:
+class ConveyorVision : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  ConveyorVision(Configuration *config)
-    : Plugin(config)
-  {
+  ConveyorVision(Configuration *config) : Plugin(config) {
     thread_list.push_back(new ConveyorVisionThread());
   }
 };
