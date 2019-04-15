@@ -33,53 +33,44 @@ using namespace fawkes;
 
 /** Constructor. */
 MotorLedThread::MotorLedThread()
-	: Thread("MotorLedThread", Thread::OPMODE_WAITFORWAKEUP),
-	  BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT)
-{
+    : Thread("MotorLedThread", Thread::OPMODE_WAITFORWAKEUP),
+      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT) {}
+
+void MotorLedThread::init() {
+  cfg_motor_ifid_ = config->get_string("/motor-led/motor-interface-id");
+  cfg_rsens_ifid_ = config->get_string("/motor-led/sensor-interface-id");
+  cfg_digital_out_ = config->get_uint("/motor-led/digital-out");
+
+  motor_if_ =
+      blackboard->open_for_reading<MotorInterface>(cfg_motor_ifid_.c_str());
+  rsens_if_ = blackboard->open_for_reading<RobotinoSensorInterface>(
+      cfg_rsens_ifid_.c_str());
 }
 
-
-void
-MotorLedThread::init()
-{
-	cfg_motor_ifid_    = config->get_string("/motor-led/motor-interface-id");
-	cfg_rsens_ifid_    = config->get_string("/motor-led/sensor-interface-id");
-	cfg_digital_out_   = config->get_uint("/motor-led/digital-out");
-
-	motor_if_ = blackboard->open_for_reading<MotorInterface>(cfg_motor_ifid_.c_str());
-	rsens_if_ = blackboard->open_for_reading<RobotinoSensorInterface>(cfg_rsens_ifid_.c_str());
+void MotorLedThread::finalize() {
+  blackboard->close(motor_if_);
+  blackboard->close(rsens_if_);
 }
 
+void MotorLedThread::loop() {
+  if (rsens_if_->has_writer()) {
+    motor_if_->read();
+    rsens_if_->read();
 
-void
-MotorLedThread::finalize()
-{
-	blackboard->close(motor_if_);
-	blackboard->close(rsens_if_);
-}
+    // -1: to map port names to interface positions
 
-
-void
-MotorLedThread::loop()
-{
-	if (rsens_if_->has_writer()) {
-		motor_if_->read();
-		rsens_if_->read();
-
-		// -1: to map port names to interface positions
-
-		if (motor_if_->motor_state() == MotorInterface::MOTOR_DISABLED &&
-		    ! rsens_if_->is_digital_out(cfg_digital_out_ - 1))
-		{
-			RobotinoSensorInterface::SetDigitalOutputMessage *msg =
-				new RobotinoSensorInterface::SetDigitalOutputMessage(cfg_digital_out_, true);
-			rsens_if_->msgq_enqueue(msg);
-		} else if (motor_if_->motor_state() == MotorInterface::MOTOR_ENABLED &&
-		           rsens_if_->is_digital_out(cfg_digital_out_ - 1))
-		{
-			RobotinoSensorInterface::SetDigitalOutputMessage *msg =
-				new RobotinoSensorInterface::SetDigitalOutputMessage(cfg_digital_out_, false);
-			rsens_if_->msgq_enqueue(msg);
-		}
-	}
+    if (motor_if_->motor_state() == MotorInterface::MOTOR_DISABLED &&
+        !rsens_if_->is_digital_out(cfg_digital_out_ - 1)) {
+      RobotinoSensorInterface::SetDigitalOutputMessage *msg =
+          new RobotinoSensorInterface::SetDigitalOutputMessage(cfg_digital_out_,
+                                                               true);
+      rsens_if_->msgq_enqueue(msg);
+    } else if (motor_if_->motor_state() == MotorInterface::MOTOR_ENABLED &&
+               rsens_if_->is_digital_out(cfg_digital_out_ - 1)) {
+      RobotinoSensorInterface::SetDigitalOutputMessage *msg =
+          new RobotinoSensorInterface::SetDigitalOutputMessage(cfg_digital_out_,
+                                                               false);
+      rsens_if_->msgq_enqueue(msg);
+    }
+  }
 }
