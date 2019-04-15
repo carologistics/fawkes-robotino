@@ -1,7 +1,7 @@
 /***************************************************************************
- *  service_capability.h - Service Capabiliy Interface 
- *  Created: 2016 
- *  Copyright  2016 Mostafa Gomaa 
+ *  service_capability.h - Service Capabiliy Interface
+ *  Created: 2016
+ *  Copyright  2016 Mostafa Gomaa
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -17,12 +17,10 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-
 #ifndef __SERVICE_CAPABILITY_H_
 #define __SERVICE_CAPABILITY_H_
 
 #include <memory>
-
 
 /** @class ServiceCapability
  * Abstract class, providing session the ability to make service calls.
@@ -31,14 +29,14 @@
  *
  * @author Mostafa Gomaa
  */
-class ServiceCapability
-{
-	public:
-		/** To be implemented by the bridge processor for domain specific semantics
-		* @param srv_call_json
-		* @param session the session requesting the advertise
-		*/
-		virtual void call_service( std::string srv_call_json , std::shared_ptr<WebSession> session ) = 0 ;
+class ServiceCapability {
+public:
+  /** To be implemented by the bridge processor for domain specific semantics
+   * @param srv_call_json
+   * @param session the session requesting the advertise
+   */
+  virtual void call_service(std::string srv_call_json,
+                            std::shared_ptr<WebSession> session) = 0;
 };
 
 #endif
