@@ -28,18 +28,16 @@
 
 using namespace fawkes;
 
-/** Conveyor pose, calculates the pose of the conveyor from a pointcloud (from intel real sense)
+/** Conveyor pose, calculates the pose of the conveyor from a pointcloud (from
+ * intel real sense)
  * @author Tobias Neumann
  */
-class ConveyorPosePlugin : public fawkes::Plugin
-{
- public:
+class ConveyorPosePlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  ConveyorPosePlugin(Configuration *config)
-    : Plugin(config)
-  {
+  ConveyorPosePlugin(Configuration *config) : Plugin(config) {
     ConveyorPoseThread *pose_thread = new ConveyorPoseThread();
     RecognitionThread *cg_thread = new RecognitionThread(pose_thread);
     pose_thread->set_cg_thread(cg_thread);
