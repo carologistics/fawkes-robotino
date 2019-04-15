@@ -2,7 +2,7 @@
  *  plugin_template_thread.cpp - template thread
  *
  *  Created: Mi 23. Mai 17:44:14 CEST 2012
- *  Copyright  2012 Daniel Ewert 
+ *  Copyright  2012 Daniel Ewert
  *
  ****************************************************************************/
 
@@ -31,25 +31,25 @@ using namespace fawkes;
  */
 
 /** Constructor. */
-OmnivisionActivatorThread::OmnivisionActivatorThread() :
-		Thread("OmnivisionActivatorThread", Thread::OPMODE_WAITFORWAKEUP), BlockedTimingAspect(
-				BlockedTimingAspect::WAKEUP_HOOK_SKILL) {
-}
+OmnivisionActivatorThread::OmnivisionActivatorThread()
+    : Thread("OmnivisionActivatorThread", Thread::OPMODE_WAITFORWAKEUP),
+      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SKILL) {}
 
 void OmnivisionActivatorThread::init() {
-	switch_if_ = blackboard->open_for_reading<SwitchInterface>("omnivisionSwitch");
-	SwitchInterface::EnableSwitchMessage *msg = new SwitchInterface::EnableSwitchMessage();
-	switch_if_->msgq_enqueue(msg);
-	logger->log_info(name(), "Activating Omnivision");
+  switch_if_ =
+      blackboard->open_for_reading<SwitchInterface>("omnivisionSwitch");
+  SwitchInterface::EnableSwitchMessage *msg =
+      new SwitchInterface::EnableSwitchMessage();
+  switch_if_->msgq_enqueue(msg);
+  logger->log_info(name(), "Activating Omnivision");
 }
 
 void OmnivisionActivatorThread::finalize() {
-	SwitchInterface::DisableSwitchMessage *msg = new SwitchInterface::DisableSwitchMessage();
-		switch_if_->msgq_enqueue(msg);
+  SwitchInterface::DisableSwitchMessage *msg =
+      new SwitchInterface::DisableSwitchMessage();
+  switch_if_->msgq_enqueue(msg);
 
-	blackboard->close(switch_if_);
+  blackboard->close(switch_if_);
 }
 
-void OmnivisionActivatorThread::loop() {
-}
-
+void OmnivisionActivatorThread::loop() {}
