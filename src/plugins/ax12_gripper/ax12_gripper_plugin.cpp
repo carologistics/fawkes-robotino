@@ -1,5 +1,5 @@
 /***************************************************************************
- *  ax12_gripper_plugin.cpp - Plugin used to control a gripper 
+ *  ax12_gripper_plugin.cpp - Plugin used to control a gripper
  *  using Robotis AX12A - servos
  *
  *  Created: Mon Feb 09 20:28:20 2015
@@ -31,29 +31,26 @@ using namespace fawkes;
 /** Plugin to control gripper using Robotis servos
  * @author Nicolas Limpert
  */
-class AX12GripperPlugin : public fawkes::Plugin
-{
- public:
+class AX12GripperPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  AX12GripperPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  AX12GripperPlugin(Configuration *config) : Plugin(config) {
     std::string prefix = "/hardware/ax12_gripper/";
     bool active = true;
     try {
       active = config->get_bool((prefix + "active").c_str());
-    } catch (Exception &e) {} // ignored, assume enabled
+    } catch (Exception &e) {
+    } // ignored, assume enabled
 
-    if (active)
-      {
-	// GripperAX12AThread * act_thread = new GripperAX12AThread(prefix);
-	// GripperSensorThread * sensor_thread = new GripperSensorThread();
-	// sensor_thread->add_act_thread(act_thread);
-	thread_list.push_back(new GripperAX12AThread(prefix));
-	// thread_list.push_back(sensor_thread);	
-      }
+    if (active) {
+      // GripperAX12AThread * act_thread = new GripperAX12AThread(prefix);
+      // GripperSensorThread * sensor_thread = new GripperSensorThread();
+      // sensor_thread->add_act_thread(act_thread);
+      thread_list.push_back(new GripperAX12AThread(prefix));
+      // thread_list.push_back(sensor_thread);
+    }
   }
 };
 
