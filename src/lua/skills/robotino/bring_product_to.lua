@@ -44,7 +44,7 @@ Parameters:
 skillenv.skill_module(_M)
 
 -- Constants
-local X_AT_MPS = 0.4
+local X_AT_MPS = 0.3
 
 function already_at_mps(self)
    return not (self.fsm.vars.atmps=="NO" or self.fsm.vars.atmps==nil)
