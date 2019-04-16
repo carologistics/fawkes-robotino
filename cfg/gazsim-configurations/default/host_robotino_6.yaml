@@ -84,6 +84,9 @@ plugins/mongodb:
   clients:
     default/enabled: true
     arbiter/enabled: false
+    robot-memory-local/hosts:
+      - localhost:27026
+    robot-memory-local-direct/hostport: localhost:27026
     robot-memory-distributed/hosts:
       - localhost:27034
       - localhost:27035
@@ -92,11 +95,17 @@ plugins/mongodb:
   replica-sets:
     bootstrap-mongodb/client: default
     managed-sets:
+      robot-memory-local/hosts:
+        - localhost:27026
       robot-memory-distributed/hosts:
         - localhost:27034
         - localhost:27035
         - localhost:27036
   instances:
+    robot-memory-local:
+      port: 27026
+      data-path: /tmp/mongodb-robot-memory-local-6
+      log/path: /tmp/mongodb-robot-memory-local-6.log
     robot-memory-distributed:
       port: 27036
       data-path: /tmp/mongodb-robot-memory-distributed-6
