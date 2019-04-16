@@ -28,7 +28,11 @@ fawkes/bbsync:
       reading:
         motor: MotorInterface::Robotino
         sensor: RobotinoSensorInterface::Robotino
-        tfGripper: TransformInterface::/tf/gripper
+
+        # Wildcard: sync every TransformInterface that starts with /tf/gripper_,
+        # but not /tf/gripper itself.
+        tfGripper: TransformInterface::/tf/gripper_
+
         tfOdom: TransformInterface::/tf/Robotino Odometry
         tfAmcl: TransformInterface::/tf/odom
         line1_e1: TransformInterface::/tf/laser_line_1_e1
