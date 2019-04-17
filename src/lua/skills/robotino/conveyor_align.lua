@@ -71,13 +71,13 @@ function no_writer()
 end
 
 function input_ok()
-  if self.fsm.vars.shelf == "LEFT" or self.fsm.vars.shelf == "RIGHT" or self.fsm.vars.shelf == "MIDDLE" then
+  if fsm.vars.shelf == "LEFT" or fsm.vars.shelf == "RIGHT" or fsm.vars.shelf == "MIDDLE" then
     return true
   end
-  if self.fsm.vars.slide then
+  if fsm.vars.slide then
     return true
   end
-  if self.fsm.vars.side == "input" or self.fsm.vars.side == "output" then
+  if fsm.vars.side == "input" or fsm.vars.side == "output" then
     return true
   end
   return false
@@ -137,7 +137,7 @@ end
 
 
 fsm:define_states{ export_to=_M,
-   closure={ MAX_RETRIES=MAX_RETRIES, tolerance_ok=tolerance_ok,input_ok,input_ok
+   closure={ MAX_RETRIES=MAX_RETRIES, tolerance_ok=tolerance_ok,input_ok=input_ok,
       result_ready=result_ready, fitness_ok=fitness_ok , MAX_VISION_RETRIES=MAX_VISION_RETRIES},
    {"INIT", JumpState},
    {"MOVE_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="CHECK_VISION", failed_to="FAILED"},
