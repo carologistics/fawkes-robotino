@@ -100,6 +100,10 @@ GazsimConveyorThread::loop()
       // write to interface
     //swap the axis' because the cam_conveyor frame has the z-axis facing foward
     double trans[] = {-last_msg_.positions().y(), -last_msg_.positions().z(), last_msg_.positions().x()};
+    if (strcmp(pos_if_->tostring_MPS_TARGET(msg->mps_target_to_set()),"SLIDE") == 0) {
+      trans[0] += 0.295;
+    } else {
+    }
     double rot[] = {last_msg_.positions().ori_x(), last_msg_.positions().ori_y(), last_msg_.positions().ori_z(), last_msg_.positions().ori_w()};
     pos_if_->set_translation(trans);
     pos_if_->set_rotation(rot);
