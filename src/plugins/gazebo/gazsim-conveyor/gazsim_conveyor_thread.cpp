@@ -87,8 +87,12 @@ void GazsimConveyorThread::finalize() {
 void GazsimConveyorThread::loop() {
 
   pos_if_->set_frame(frame_name_.c_str());
-  if (new_data_) {
+  if (new_data_ &&
+      pos_if_->msgq_first_is<ConveyorPoseInterface::RunICPMessage>()) {
     new_data_ = false;
+
+    ConveyorPoseInterface::RunICPMessage *msg =
+        pos_if_->msgq_first<ConveyorPoseInterface::RunICPMessage>();
 
     // write to interface
     // swap the axis' because the cam_conveyor frame has the z-axis facing
@@ -98,9 +102,11 @@ void GazsimConveyorThread::loop() {
     double rot[] = {
         last_msg_.positions().ori_x(), last_msg_.positions().ori_y(),
         last_msg_.positions().ori_z(), last_msg_.positions().ori_w()};
+
     pos_if_->set_translation(trans);
     pos_if_->set_rotation(rot);
     pos_if_->set_euclidean_fitness(rand() % 100);
+    pos_if_->set_msgid(msg->id());
     pos_if_->write();
 
     // publishe tf
@@ -112,10 +118,11 @@ void GazsimConveyorThread::loop() {
 
     transform.setOrigin(fawkes::tf::Vector3(trans[0], trans[1], trans[2]));
     fawkes::tf::Quaternion q /*(rot[0], rot[1], rot[2], rot[3])*/;
-    q.setEuler(M_PI_2, M_PI_2, 0);
+    q.setEuler(M_PI_2, M_PI_2, M_PI);
     transform.setRotation(q);
 
     tf_publisher->send_transform(transform);
+    pos_if_->msgq_pop();
   }
 
   loopcount_++;
@@ -124,5 +131,7 @@ void GazsimConveyorThread::loop() {
 void GazsimConveyorThread::on_conveyor_vision_msg(
     ConstConveyorVisionResultPtr &msg) {
   last_msg_.CopyFrom(*msg);
+
+  logger->log_debug(name(), "Got ConveyorVisionResult");
   new_data_ = true;
 }
