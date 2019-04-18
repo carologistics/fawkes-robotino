@@ -180,7 +180,7 @@ void ArduinoComThread::loop() {
 
         bool msg_has_data = false;
         int d = 0;
-        if (goal_x >= 0. && goal_x < arduino_if_->x_max()) {
+        if (goal_x >= 0. && goal_x <= arduino_if_->x_max()) {
           int new_abs_x =
               round_to_2nd_dec(goal_x * X_AXIS_STEPS_PER_MM * 1000.0);
           logger->log_debug(name(), "Set new X: %u", new_abs_x);
@@ -198,7 +198,7 @@ void ArduinoComThread::loop() {
           arduino_if_->write();
         }
 
-        if (goal_y >= 0. && goal_y < arduino_if_->y_max()) {
+        if (goal_y >= 0. && goal_y <= arduino_if_->y_max()) {
           int new_abs_y =
               round_to_2nd_dec(goal_y * Y_AXIS_STEPS_PER_MM * 1000.0);
           logger->log_debug(name(), "Set new Y: %u", new_abs_y);
@@ -215,7 +215,7 @@ void ArduinoComThread::loop() {
           arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_Y);
           arduino_if_->write();
         }
-        if (goal_z >= 0. && goal_z < arduino_if_->z_max()) {
+        if (goal_z >= 0. && goal_z <= arduino_if_->z_max()) {
           int new_abs_z =
               round_to_2nd_dec(goal_z * Z_AXIS_STEPS_PER_MM * 1000.0);
           logger->log_debug(name(), "Set new Z: %u", new_abs_z);
@@ -251,7 +251,7 @@ void ArduinoComThread::loop() {
         float cur_z = gripper_pose_[Z] / Z_AXIS_STEPS_PER_MM / 1000.;
         logger->log_debug(name(), "Move rel: %f %f %f cur pose: %f %f %f",
                           msg->x(), msg->y(), msg->z(), cur_x, cur_y, cur_z);
-        if (msg->x() + cur_x >= 0. && msg->x() + cur_x < arduino_if_->x_max()) {
+        if (msg->x() + cur_x >= 0. && msg->x() + cur_x <= arduino_if_->x_max()) {
           int new_abs_x = round_to_2nd_dec((msg->x() + cur_x) *
                                            X_AXIS_STEPS_PER_MM * 1000.0);
           logger->log_debug(name(), "Set new X: %u", new_abs_x);
@@ -270,7 +270,7 @@ void ArduinoComThread::loop() {
           arduino_if_->write();
         }
 
-        if (msg->y() + cur_y >= 0. && msg->y() + cur_y < arduino_if_->y_max()) {
+        if (msg->y() + cur_y >= 0. && msg->y() + cur_y <= arduino_if_->y_max()) {
           int new_abs_y = round_to_2nd_dec((msg->y() + cur_y) *
                                            Y_AXIS_STEPS_PER_MM * 1000.0);
           logger->log_debug(name(), "Set new Y: %u", new_abs_y);
@@ -288,7 +288,7 @@ void ArduinoComThread::loop() {
           arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_Y);
           arduino_if_->write();
         }
-        if (msg->z() + cur_z >= 0. && msg->z() + cur_z < arduino_if_->z_max()) {
+        if (msg->z() + cur_z >= 0. && msg->z() + cur_z <= arduino_if_->z_max()) {
           int new_abs_z = round_to_2nd_dec((msg->z() + cur_z) *
                                            Z_AXIS_STEPS_PER_MM * 1000.0);
           logger->log_debug(name(), "Set new Z: %u", new_abs_z);
