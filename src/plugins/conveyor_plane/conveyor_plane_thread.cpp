@@ -623,7 +623,7 @@ bool ConveyorPlaneThread::laserline_get_best_fit(
 Eigen::Vector3f ConveyorPlaneThread::laserline_get_center_transformed(
     fawkes::LaserLineInterface *ll) {
   fawkes::tf::Stamped<fawkes::tf::Point> tf_in, tf_out;
-  tf_in.stamp = fawkes::Time(0.); //ll->timestamp();
+  tf_in.stamp = fawkes::Time(0.); // ll->timestamp();
   tf_in.frame_id = ll->frame_id();
   tf_in.setX(ll->end_point_2(0) +
              (ll->end_point_1(0) - ll->end_point_2(0)) / 2.);
@@ -831,15 +831,13 @@ void ConveyorPlaneThread::cloud_publish(CloudPtr cloud_in,
 ConveyorPlaneThread::pose
 ConveyorPlaneThread::calculate_pose(Eigen::Vector4f centroid,
                                     Eigen::Vector3f normal) {
-  Eigen::Vector3f tangent0 = normal.cross(Eigen::Vector3f(1, 0, 0));
-  if (tangent0.dot(tangent0) < 0.0001) {
-    tangent0 = normal.cross(Eigen::Vector3f(0, 1, 0));
-  }
-  tangent0.normalize();
-  Eigen::Vector3f tangent1 = normal.cross(tangent0);
-  tangent1.normalize();
+  Eigen::Vector3f z = normal.normalized();
+  Eigen::Vector3f x;
+  x << normal(0), normal(2), normal(1);
+  Eigen::Vector3f y = x.cross(z);
+
   Eigen::Matrix3f rotMatrix;
-  rotMatrix << tangent0, tangent1, normal;
+  rotMatrix << x, y, z;
   Eigen::Quaternion<float> q(rotMatrix);
   fawkes::tf::Vector3 origin(centroid(0), centroid(1), centroid(2));
   fawkes::tf::Quaternion rot(q.x(), q.y(), q.z(), q.w());
@@ -888,7 +886,8 @@ void ConveyorPlaneThread::pose_write(pose pose) {
 void ConveyorPlaneThread::pose_publish_tf(pose pose) {
   // transform data into gripper frame (this is better for later use)
   tf::Stamped<tf::Pose> tf_pose_cam, tf_pose_gripper;
-  tf_pose_cam.stamp = fawkes::Time(0.); // fawkes::Time((long)header_.stamp / 1000);
+  tf_pose_cam.stamp =
+      fawkes::Time(0.); // fawkes::Time((long)header_.stamp / 1000);
   tf_pose_cam.frame_id = header_.frame_id;
   tf_pose_cam.setOrigin(tf::Vector3(pose.translation.x(), pose.translation.y(),
                                     pose.translation.z()));
