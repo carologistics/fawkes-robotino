@@ -78,27 +78,25 @@ void RecognitionThread::restart_icp() {
     model_->header.frame_id = scene_->header.frame_id;
 
     try {
-      if (!main_thread_->have_laser_line_) {
-        if (initial_guess_icp_odom_.frame_id ==
-            "NO_ID_STAMPED_DEFAULT_CONSTRUCTION") {
-          logger->log_error(name(), "Cannot get initial estimate: No "
-                                    "laser-line and no previous result!");
-          restart_pending_ = true;
-          return;
-        }
-        tf_listener->transform_pose(
-            scene_->header.frame_id,
-            tf::Stamped<tf::Pose>(initial_guess_icp_odom_, Time(0, 0),
-                                  initial_guess_icp_odom_.frame_id),
-            initial_pose_cam);
-      } else {
-        tf_listener->transform_pose(
-            scene_->header.frame_id,
-            tf::Stamped<tf::Pose>(
-                main_thread_->initial_guess_laser_odom_, Time(0, 0),
-                main_thread_->initial_guess_laser_odom_.frame_id),
-            initial_pose_cam);
-      }
+      // if (!main_thread_->have_laser_line_) {
+      //  if (initial_guess_icp_odom_.frame_id ==
+      //  "NO_ID_STAMPED_DEFAULT_CONSTRUCTION") {
+      //    logger->log_error(name(), "Cannot get initial estimate: No
+      //    laser-line and no previous result!"); restart_pending_ = true;
+      //    return;
+      //  }
+      //  tf_listener->transform_pose(
+      //        scene_->header.frame_id,
+      //        tf::Stamped<tf::Pose>(initial_guess_icp_odom_, Time(0,0),
+      //        initial_guess_icp_odom_.frame_id), initial_pose_cam);
+      //}
+      // else {
+      tf_listener->transform_pose(
+          scene_->header.frame_id,
+          tf::Stamped<tf::Pose>(main_thread_->initial_guess_odom_, Time(0, 0),
+                                main_thread_->initial_guess_odom_.frame_id),
+          initial_pose_cam);
+      //}
     } catch (tf::TransformException &e) {
       logger->log_error(
           name(), "Cannot get initial estimate - laserline was %savailable: %s",
