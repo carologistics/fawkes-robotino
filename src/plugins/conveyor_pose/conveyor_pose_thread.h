@@ -119,7 +119,9 @@ private:
   fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
   fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
 
+  fawkes::Time first_time_waited_for_external_;
   fawkes::Position3DInterface *external_initial_guess_;
+  bool external_timeout_reached_;
 
   int cfg_force_shelf_;
 
@@ -181,6 +183,9 @@ private:
 
   std::atomic<float> cfg_voxel_grid_leaf_size_;
 
+  std::atomic<float> cfg_max_timediff_external_pc_;
+  float cfg_external_timeout_;
+
   std::map<fawkes::ConveyorPoseInterface::MPS_TARGET,
            std::array<std::atomic<float>, 3>>
       cfg_target_hint_;
@@ -193,7 +198,7 @@ private:
   // state vars
   bool cfg_enable_switch_;
   bool cloud_in_registered_;
-  pcl::PCLHeader header_;
+  pcl::PCLHeader input_pc_header_;
 
   // point clouds from pcl_manager
   fawkes::RefPtr<const Cloud> cloud_in_;
