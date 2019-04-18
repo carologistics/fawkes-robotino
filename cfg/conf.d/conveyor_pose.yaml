@@ -56,7 +56,7 @@ plugins/conveyor_pose:
   reference_models:
     default: "conveyor_pcls/default.pcd"
     input_conveyor: "conveyor_pcls/with_cone.pcd"
-    output_conveyor: "conveyor_pcls/no_cone.pcd"
+    output_conveyor: "conveyor_pcls/default.pcd" #"conveyor_pcls/no_cone.pcd"
     shelf_left: "conveyor_pcls/shelf_left.pcd"
     shelf_middle: "conveyor_pcls/shelf_middle.pcd"
     shelf_right: "conveyor_pcls/shelf_right.pcd"
@@ -149,8 +149,8 @@ plugins/conveyor_pose:
     hint:
       default:
         x: -0.005
-        y: 0.03
-        z: 0.65
+        y: 0.01
+        z: 0.64
 
       # Configure the initial estimate for the INPUT side (uneven tag ID)
       # On the OUTPUT side, the y value is multiplied by -1.
@@ -199,7 +199,8 @@ plugins/conveyor_pose:
     prefix: conveyor_pose
 
     # the switch interface
-    switch: switch
+    # switch: switch # remove? bb_switch_if was remove from plugin
+
     # the laser lines, they don't use the prefix
     laser_lines: [
       "/laser-lines/1",
@@ -213,7 +214,7 @@ plugins/conveyor_pose:
     ]
 
   conveyor_frame_id: conveyor_pose
-  switch_default: false
+  switch_default: false 
 
   # The point cloud is cut into a cube, such that all points outside the cube
   # are removed.  The cube is limited by the left, right, top, bottom, front and
@@ -245,8 +246,8 @@ plugins/conveyor_pose:
     right_cut: 0.065
     top_cut: -0.02
     bottom_cut: 0.055
-    front_cut: -0.055
-    back_cut: 0.045
+    front_cut: -0.070
+    back_cut: 0.06
   without_ll:  # THESE VALUES IF LASERLINE IS NOT AVAILABLE
     left_cut: -0.075
     right_cut: 0.075

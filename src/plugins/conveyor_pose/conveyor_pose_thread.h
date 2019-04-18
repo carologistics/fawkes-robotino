@@ -199,7 +199,6 @@ private:
   fawkes::RefPtr<const Cloud> cloud_in_;
 
   // interfaces write
-  fawkes::SwitchInterface *bb_enable_switch_;
   fawkes::ConveyorPoseInterface *bb_pose_;
 
   // interfaces read
@@ -227,13 +226,12 @@ private:
 
   std::unique_ptr<fawkes::tf::Stamped<fawkes::tf::Pose>> result_pose_;
 
-  fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_laser_odom_;
+  fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_odom_;
 
   bool cfg_debug_mode_;
 
   bool update_input_cloud();
 
-  void bb_update_switch();
   bool laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit);
   Eigen::Vector3f
   laserline_get_center_transformed(fawkes::LaserLineInterface *ll);

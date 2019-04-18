@@ -26,7 +26,7 @@ depends_skills     = {"motor_move", "gripper_commands"}
 depends_interfaces = {
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
-   {v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
+   --{v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
 }
 
 documentation      = [==[aligns the robot orthogonal to the conveyor by using the
@@ -49,18 +49,18 @@ local pam = require("parse_module")
 local euclidean_fitness_threshold = 4 -- threshold for euclidean fitness for targets other than shelf
 local shelf_euclidean_fitness_threshold = 3 -- threshold for euclidean fitness if target is shelf
 local tolerance_trans = 0.02  -- tolerance in x and y direction after the align
-local tolerance_ori = 0.025   -- orientation tolerance after the align
-local x_dist_to_mps = -0.31  -- x-distance the robot should have after the align
+local tolerance_ori = 0.02   -- orientation tolerance after the align
+local x_dist_to_mps = -0.27  -- x-distance the robot should have after the align
 local y_offset_shelf_middle = -0.015 -- y-offset the robot should have picking is done from shelf = "MIDDLE"
 
 -- initial gripper poses depending on the target
 local GRIPPER_POSES = {
-  shelf_left={x=0.05, y=0.00, z=0.035},
-  shelf_middle={x=0.05, y=-0.035, z=0.035},
-  shelf_right={x=0.05, y=0.00, z=0.035},
-  slide={x=0.05,y=0.00,z=0.035},
-  output_conveyor={x=0.05, y=0.00,z=0.045},
-  input_conveyor={x=0.035, y=0.00,z=0.045},
+  shelf_left={x=0.05, y=0.00, z=0.0},
+  shelf_middle={x=0.05, y=-0.035, z=0.0},
+  shelf_right={x=0.05, y=0.00, z=0.0},
+  slide={x=0.05,y=0.00,z=0.0},
+  output_conveyor={x=0.05, y=0.00,z=0.01},
+  input_conveyor={x=0.035, y=0.00,z=0.01},
 }
 
 local MAX_RETRIES=3
@@ -144,7 +144,7 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-   if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
+   --if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
    local parse_result = pam.parse_to_type_target(if_conveyor_pose,self.fsm.vars.place,self.fsm.vars.side,self.fsm.vars.shelf,self.fsm.vars.slide)
    self.fsm.vars.mps_type = parse_result.mps_type
    self.fsm.vars.mps_target = parse_result.mps_target
@@ -184,7 +184,7 @@ function DRIVE:init()
    self.args["motor_move"].x = pose.x
    self.args["motor_move"].y = pose.y
    self.args["motor_move"].ori = pose.ori
-   self.args["motor_move"].vel_trans = 0.03
+   self.args["motor_move"].vel_trans = 0.045
    self.args["motor_move"].vel_rot = 0.06
    self.args["motor_move"].tolerance = {
       x = tolerance_trans * 0.9,
@@ -194,7 +194,7 @@ function DRIVE:init()
 end
 
 function cleanup()
-  if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
+  --if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
 end
 
 function FAILED:init()
