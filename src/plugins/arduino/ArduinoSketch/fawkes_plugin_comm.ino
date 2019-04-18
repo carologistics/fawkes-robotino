@@ -435,8 +435,8 @@ void setup() {
   TCCR2A = 0x1; // just normal mode
   TCCR2B = 0x0; //no clock source, activate with TCCR2B=0x1; just direct io clock
   TCNT2 = 0; // reset counter
-  OCR2A = 15; // start pulse, should be at least 650ns after setting direction 
-  OCR2B = 50; // end pulse, should be at least 1.9us after starting pulse
+  OCR2A = 3;//15; // start pulse, should be at least 650ns after setting direction 
+  OCR2B = 254; // end pulse, should be at least 1.9us after starting pulse
   TIFR2 = 0x7; // clear already set flags
   TIMSK2 = 0x6; // activate both compare interrupts
 
