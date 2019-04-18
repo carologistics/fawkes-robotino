@@ -623,7 +623,7 @@ bool ConveyorPlaneThread::laserline_get_best_fit(
 Eigen::Vector3f ConveyorPlaneThread::laserline_get_center_transformed(
     fawkes::LaserLineInterface *ll) {
   fawkes::tf::Stamped<fawkes::tf::Point> tf_in, tf_out;
-  tf_in.stamp = ll->timestamp();
+  tf_in.stamp = fawkes::Time(0.); //ll->timestamp();
   tf_in.frame_id = ll->frame_id();
   tf_in.setX(ll->end_point_2(0) +
              (ll->end_point_1(0) - ll->end_point_2(0)) / 2.);
@@ -888,7 +888,7 @@ void ConveyorPlaneThread::pose_write(pose pose) {
 void ConveyorPlaneThread::pose_publish_tf(pose pose) {
   // transform data into gripper frame (this is better for later use)
   tf::Stamped<tf::Pose> tf_pose_cam, tf_pose_gripper;
-  tf_pose_cam.stamp = fawkes::Time((long)header_.stamp / 1000);
+  tf_pose_cam.stamp = fawkes::Time(0.); // fawkes::Time((long)header_.stamp / 1000);
   tf_pose_cam.frame_id = header_.frame_id;
   tf_pose_cam.setOrigin(tf::Vector3(pose.translation.x(), pose.translation.y(),
                                     pose.translation.z()));
