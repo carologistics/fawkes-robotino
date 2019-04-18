@@ -550,8 +550,8 @@ bool ConveyorPlaneThread::pose_get_avg(pose &out) {
   }
 
   if (planes_used.size() < cfg_pose_avg_min_) {
-    logger->log_warn(name(), "not enough for average, got: %zu",
-                     planes_used.size());
+    logger->log_debug(name(), "not enough for average, got: %zu",
+                      planes_used.size());
     return false;
   }
 
@@ -734,7 +734,7 @@ ConveyorPlaneThread::cloud_get_plane(CloudPtr in,
   seg.segment(*inliers, *coeff);
 
   if (inliers->indices.size() == 0) {
-    logger->log_error(
+    logger->log_debug(
         name(), "Could not estimate a planar model for the given dataset.");
     return CloudPtr();
   }
