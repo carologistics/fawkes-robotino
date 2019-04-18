@@ -283,6 +283,13 @@ void ConveyorPoseThread::init() {
       config->get_float_or_default(CFG_PREFIX "/icp/conveyor_offset/default/z",
                                    0.f);
 
+  //-- initial guess source
+  std::string cfg_bb_initial_guess_topic =
+      config->get_string(CFG_PREFIX "/icp/init_guess_interface_id");
+  external_initial_guess_ =
+      blackboard->open_for_reading<fawkes::Position3DInterface>(
+          cfg_bb_initial_guess_topic.c_str());
+
   cfg_enable_switch_ = config->get_bool(CFG_PREFIX "/switch_default");
 
   // cut information
@@ -476,6 +483,7 @@ void ConveyorPoseThread::finalize() {
   pcl_manager->remove_pointcloud(cloud_out_trimmed_name_.c_str());
   pcl_manager->remove_pointcloud("model");
   blackboard->close(bb_enable_switch_);
+  blackboard->close(external_initial_guess_);
   logger->log_info(name(), "Unloading, disabling %s",
                    cfg_bb_realsense_switch_name_.c_str());
   realsense_switch_->msgq_enqueue(new SwitchInterface::DisableSwitchMessage());
@@ -553,15 +561,8 @@ void ConveyorPoseThread::loop() {
 
     {
       fawkes::MutexLocker locked(&cloud_mutex_);
-      try {
-        if (have_laser_line_) {
-          set_initial_tf_from_laserline(ll, current_mps_type_,
-                                        current_mps_target_);
-        }
-      } catch (std::exception &e) {
-        logger->log_error(name(), "Exception generating initial transform: %s",
-                          e.what());
-      }
+      set_initial_tf(ll);
+
     } // cloud_mutex_ lock
 
     CloudPtr cloud_in(new Cloud(**cloud_in_));
@@ -668,6 +669,64 @@ void ConveyorPoseThread::set_initial_tf_from_laserline(
       "odom",
       tf::Stamped<tf::Pose>(initial_guess, Time(0, 0), initial_guess.frame_id),
       initial_guess_laser_odom_);
+}
+
+void ConveyorPoseThread::set_initial_tf(
+    fawkes::LaserLineInterface *fallback_line) {
+  bool external_init_failed = false;
+
+  //-- try to set read pose to initial guess, iff it was valid
+  if (blackboard->is_alive() &&
+      external_initial_guess_->visibility_history() > 0) {
+    //-- compose translational part
+    btVector3 init_origin;
+    double *blackboard_origin = external_initial_guess_->translation();
+    init_origin.setX(static_cast<float>(blackboard_origin[0]));
+    init_origin.setY(static_cast<float>(blackboard_origin[1]));
+    init_origin.setZ(static_cast<float>(blackboard_origin[2]));
+
+    //-- compose orientation
+    btMatrix3x3 init_basis;
+    double *blackboard_orientation = external_initial_guess_->rotation();
+    btQuaternion init_orientation(
+        static_cast<float>(blackboard_orientation[0]) //-- x
+        ,
+        static_cast<float>(blackboard_orientation[1]) //-- y
+        ,
+        static_cast<float>(blackboard_orientation[2]) //-- z
+        ,
+        static_cast<float>(blackboard_orientation[3])); //-- w
+    init_basis.setRotation(init_orientation);
+
+    //-- compose pose in original frame
+    tf::Stamped<tf::Pose> pose_orig_frame;
+    pose_orig_frame.setOrigin(init_origin);
+    pose_orig_frame.setBasis(init_basis);
+    pose_orig_frame.frame_id = external_initial_guess_->frame();
+
+    //-- transform external pose to odom fram
+    tf_listener->transform_pose("odom",
+                                tf::Stamped<tf::Pose>(pose_orig_frame,
+                                                      Time(0, 0),
+                                                      pose_orig_frame.frame_id),
+                                initial_guess_laser_odom_);
+
+  } else {
+    external_init_failed = true;
+  }
+
+  //-- use laser_line initial guess if external failed or cannot be read
+  if (external_init_failed) {
+    try {
+      if (have_laser_line_) {
+        set_initial_tf_from_laserline(fallback_line, current_mps_type_,
+                                      current_mps_target_);
+      }
+    } catch (std::exception &e) {
+      logger->log_error(name(), "Exception generating initial transform: %s",
+                        e.what());
+    }
+  }
 }
 
 void ConveyorPoseThread::record_model() {

@@ -67,6 +67,9 @@ plugins/conveyor_pose:
     leaf_size: 0.001
 
   icp:
+    # Interface ID of external initial guess
+    init_guess_interface_id: "conveyor_plane/pose"
+
     # Recognition parameters
 
     # Ignore model point if it doesn't have a scene correspondence within this
