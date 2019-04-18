@@ -373,7 +373,7 @@ void ConveyorPlaneThread::loop() {
 
     float height = y_min - y_max;
     if (height < cfg_plane_height_minimum_) {
-      logger->log_info(
+      logger->log_debug(
           name(),
           "Discard plane, because of height restriction. is: %f\tshould: %f",
           height, cfg_plane_height_minimum_);
@@ -403,7 +403,7 @@ void ConveyorPlaneThread::loop() {
 
       float width = x_min - x_max;
       if (width < cfg_plane_width_minimum_) {
-        logger->log_info(
+        logger->log_debug(
             name(),
             "Discard plane, because of width restriction. is: %f\tshould: %f",
             width, cfg_plane_width_minimum_);
