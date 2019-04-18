@@ -65,14 +65,25 @@ void RecognitionThread::restart_icp() {
     main_thread_->bb_set_busy(true);
   }
 
-  if (main_thread_->initial_guess_odom_.getRotation().length() != 1.f) {
-    logger->log_debug(name(), "initial_guess_odom invalid (%f)",
-                      main_thread_->initial_guess_odom_.getRotation().length());
+  //-- break aligning if initial guess is invalid
+  const btVector3 &translation = main_thread_->initial_guess_odom_.getOrigin();
+  const btQuaternion &orientation =
+      main_thread_->initial_guess_odom_.getRotation();
+  if (!std::isnan(translation.getX()) && !std::isinf(translation.getX()) &&
+      !std::isnan(translation.getY()) && !std::isinf(translation.getY()) &&
+      !std::isnan(translation.getZ()) && !std::isinf(translation.getZ()) &&
+      orientation.length() != 1.f) {
 
-    // restart_pending_ = true;
+    logger->log_warn(name(), "initial_guess_odom invalid (%f)",
+                     main_thread_->initial_guess_odom_.getRotation().length());
+
+    restart_pending_.store(cfg_icp_auto_restart_);
+    enabled_.store(cfg_icp_auto_restart_);
     return;
   }
 
+  //-- transform initial guess to odom frame for later comparision with the
+  // model
   tf::Stamped<tf::Pose> initial_pose_cam = main_thread_->initial_guess_odom_;
 
   {
@@ -93,17 +104,22 @@ void RecognitionThread::restart_icp() {
           initial_pose_cam);
 
     } catch (tf::TransformException &e) {
+      //-- exit alignment if transformation is not possile
+
       logger->log_error(name(),
                         "Cannot get initial estimate - laserline was "
                         "%savailable (frame = %s): %s",
                         main_thread_->initial_guess_odom_.frame_id.c_str(),
                         !main_thread_->have_laser_line_ ? "not " : "",
                         e.what());
-      restart_pending_ = true;
+
+      restart_pending_.store(cfg_icp_auto_restart_);
+      enabled_.store(cfg_icp_auto_restart_);
       return;
     }
   }
 
+  //-- rate initial guess quality
   hypot_verif_.setSceneCloud(scene_);
   hypot_verif_.setResolution(main_thread_->cloud_resolution());
   if (main_thread_->is_target_shelf()) { // use shelf values
@@ -141,10 +157,14 @@ void RecognitionThread::restart_icp() {
   iterations_ = 0;
   last_raw_fitness_ = std::numeric_limits<double>::max();
 
+  //-- never restart icp if this initialization procedure was successful
   restart_pending_ = false;
 }
 
 void RecognitionThread::loop() {
+  //--
+  //-- prepare iteration
+  //--
   if (!enabled_) {
     logger->log_info(name(), "ICP stopped");
 
@@ -166,6 +186,9 @@ void RecognitionThread::loop() {
       restart_pending_) // cancel if disabled from ConveyorPoseThread
     return;
 
+  //--
+  //-- performe ICP
+  //--
   icp_.setInputSource(icp_result_);
   icp_.align(*icp_result_);
 
@@ -192,37 +215,43 @@ void RecognitionThread::loop() {
   if (main_thread_->cfg_debug_mode_)
     publish_result();
 
-  if (iterations_++ >= cfg_icp_min_loops_ || epsilon_reached) {
-    // Perform hypothesis verification, i.e. skip results that don't match
-    // closely enough according to certain thresholds. See the config file for
-    // an explanation of the individual parameters.
-    std::vector<Cloud::ConstPtr> icp_result_vector{icp_result_};
+  //--
+  //-- rate ICP result quality
+  //--
 
-    // This resets the result vectors (see hypot_mask below) so we only ever
-    // verify the last ICP result
-    hypot_verif_.setSceneCloud(scene_);
-    hypot_verif_.addModels(icp_result_vector, true);
+  // Perform hypothesis verification, i.e. skip results that don't match
+  // closely enough according to certain thresholds. See the config file for
+  // an explanation of the individual parameters.
+  std::vector<Cloud::ConstPtr> icp_result_vector{icp_result_};
 
-    hypot_verif_.verify();
-    std::vector<bool> hypot_mask;
-    hypot_verif_.getMask(hypot_mask);
+  // This resets the result vectors (see hypot_mask below) so we only ever
+  // verify the last ICP result
+  hypot_verif_.setSceneCloud(scene_);
+  hypot_verif_.addModels(icp_result_vector, true);
 
-    if (hypot_mask[0] && icp_.getFitnessScore() < last_raw_fitness_) {
-      // Hypothesis verification was successful and and the match improved
-      last_raw_fitness_ = icp_.getFitnessScore();
+  hypot_verif_.verify();
+  std::vector<bool> hypot_mask;
+  hypot_verif_.getMask(hypot_mask);
 
-      // In debug mode, publish_result has already been called (see above)
-      if (!main_thread_->cfg_debug_mode_)
-        publish_result();
-    }
-
-    if (iterations_ >= cfg_icp_max_loops_) {
-      if (cfg_icp_auto_restart_)
-        restart_icp();
-      else
-        enabled_ = false;
-    }
+  if (hypot_mask[0] && icp_.getFitnessScore() < last_raw_fitness_) {
+    // Hypothesis verification was successful and and the match improved
+    last_raw_fitness_ = icp_.getFitnessScore();
   }
+
+  //--
+  //-- convergence
+  //--
+  if (iterations_ >= cfg_icp_max_loops_ ||
+      (iterations_ >= cfg_icp_min_loops_ && epsilon_reached)) {
+    logger->log_info(name(), "ICP finished");
+
+    publish_result();
+
+    restart_pending_.store(cfg_icp_auto_restart_);
+    enabled_.store(cfg_icp_auto_restart_);
+  }
+
+  iterations_++;
 }
 
 void RecognitionThread::publish_result() {
@@ -234,7 +263,8 @@ void RecognitionThread::publish_result() {
   tf::Stamped<tf::Pose> result_pose{
       eigen_to_pose(final_tf_),
       // Time { long(scene_->header.stamp) / 1000 },
-      main_thread_->initial_guess_odom_.stamp, scene_->header.frame_id};
+      // main_thread_->initial_guess_odom_.stamp,
+      fawkes::Time(0.), scene_->header.frame_id};
 
   double new_fitness = (1 / icp_.getFitnessScore()) / 10000;
 
