@@ -38,6 +38,7 @@
 #include <aspect/tf.h>
 
 #include <interfaces/ConveyorPoseInterface.h>
+#include <interfaces/Position3DInterface.h>
 
 #include <config/change_handler.h>
 
@@ -117,6 +118,8 @@ private:
 
   fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
   fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
+
+  fawkes::Position3DInterface *external_initial_guess_;
 
   int cfg_force_shelf_;
 
@@ -241,6 +244,7 @@ private:
       fawkes::LaserLineInterface *ll,
       fawkes::ConveyorPoseInterface::MPS_TYPE mps_type,
       fawkes::ConveyorPoseInterface::MPS_TARGET mps_target);
+  void set_initial_tf(fawkes::LaserLineInterface *fallback_line);
 
   CloudPtr cloud_trim(CloudPtr in, fawkes::LaserLineInterface *ll, bool use_ll);
 
