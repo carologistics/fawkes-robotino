@@ -470,7 +470,7 @@ volatile bool pulse_done = true;
 
 ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 2
 {
-  static bool occupied = false;
+  static volatile bool occupied = false;
   if(occupied) return; //this interrupt is already called
   occupied = true;
   interrupts(); // we need interrupts here to catch all the incoming serial data and finish the pulse
