@@ -476,11 +476,15 @@ ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 2
   interrupts(); // we need interrupts here to catch all the incoming serial data and finish the pulse
   if (cur_status == STATUS_MOVING) {
     byte dir=0, step=0, step_a=0, dir_a=0; // using these allows for more efficient code, compared to using the above volatile corresponding step_bits_*
-    motor_X.get_step(step, dir);
-    motor_Y.get_step(step, dir);
-    motor_Z.get_step(step, dir);
-    motor_A.get_step(step_a, dir_a);
-    
+    bool movement_done;
+
+
+    unsigned int time = CUR_TIME;
+    movement_done = motor_X.get_step(step, dir, time);
+    movement_done &= motor_Y.get_step(step, dir, time);
+    movement_done &= motor_Z.get_step(step, dir, time);
+    movement_done &= motor_A.get_step(step_a, dir_a, time);
+    movement_done_flag = movement_done;
     if(step | step_a){ // only step if really necessary
       while(!pulse_done); // wait until the previous pulse is done // TODO:: remove after ensuring pulse is surely done here EVERY TIME!
       //Serial.println(dir,BIN);
@@ -493,13 +497,7 @@ ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 2
       TCCR2B=0x1; // activate pulse interrupts // GO GO GO
     }
 
-    bool
-    movement_done = motor_X.update_speed();
-    movement_done &= motor_Y.update_speed();
-    movement_done &= motor_Z.update_speed();
-    movement_done &= motor_A.update_speed();
-    movement_done_flag = movement_done;
-  } 
+  }
   occupied = false;
 }
 
