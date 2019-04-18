@@ -19,8 +19,6 @@ fawkes/meta_plugins:
     - joystick-teleop
   m-base-gripper:
     - arduino
-    - dynamixel
-    - ax12_gripper
   m-base-ros:
     - ros
     - ros-pcl
