@@ -70,6 +70,11 @@ plugins/conveyor_pose:
     # Interface ID of external initial guess
     init_guess_interface_id: "conveyor_plane/pose"
 
+    # seconds to wait for the external initial guess before switching back to laserline
+    # NOTE: this is to prevent the use of too old initial guesses potentially based on old dynamic transformations
+    cfg_max_timediff_external_pc: 0.33
+    cfg_external_timeout: 0.66
+
     # Recognition parameters
 
     # Ignore model point if it doesn't have a scene correspondence within this

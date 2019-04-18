@@ -290,6 +290,12 @@ void ConveyorPoseThread::init() {
       blackboard->open_for_reading<fawkes::Position3DInterface>(
           cfg_bb_initial_guess_topic.c_str());
 
+  cfg_max_timediff_external_pc_ =
+      config->get_float(CFG_PREFIX "/icp/max_timediff_external_pc");
+  cfg_external_timeout_ = config->get_float(CFG_PREFIX "/icp/external_timeout");
+  first_time_waited_for_external_ = fawkes::TIME_MIN;
+  external_timeout_reached_ = false;
+
   cfg_enable_switch_ = config->get_bool(CFG_PREFIX "/switch_default");
 
   // cut information
@@ -526,6 +532,43 @@ void ConveyorPoseThread::loop() {
     if (cfg_record_model_ && !have_laser_line_)
       return;
 
+    //-- dont do anything if pointcloud is much older than the last external
+    // init guess
+    //-- => check on divergence of timespan between pointcloud and external
+    // initial guess
+    external_initial_guess_->read();
+    fawkes::Time last_external = *external_initial_guess_->timestamp();
+    fawkes::Time last_pc = fawkes::Time(input_pc_header_.stamp, 0l);
+
+    external_timeout_reached_ =
+        (first_time_waited_for_external_ != fawkes::TIME_MIN &&
+         (fawkes::Time(0.) - &first_time_waited_for_external_) >
+             cfg_external_timeout_);
+
+    if (external_timeout_reached_)
+      logger->log_warn(name(), "ext. init. guess reached timeout");
+
+    bool wait_for_external =
+        //-- external init guess is ok,
+        (blackboard->is_alive() &&
+         external_initial_guess_->visibility_history() > 0)
+        //-- but is too old
+        && (last_external - &last_pc) > cfg_max_timediff_external_pc_
+        //-- and timeout was not exceeded
+        && !external_timeout_reached_;
+
+    if (wait_for_external) {
+      //-- if there was no need to wait init first time to wait
+      if (first_time_waited_for_external_ == fawkes::TIME_MIN)
+        first_time_waited_for_external_ = fawkes::Time(0.);
+
+      return;
+
+    } else {
+      first_time_waited_for_external_ = fawkes::TIME_MIN;
+    }
+
+    //-- obtain initial guess
     {
       fawkes::MutexLocker locked(&cloud_mutex_);
       set_initial_tf(ll);
@@ -571,6 +614,9 @@ void ConveyorPoseThread::loop() {
         try {
           if (result_pose_) {
             pose_write();
+            //-- using last broadcasted TF is legitimated by a previous check of
+            //-- the divergence of timespan between input scene and last TF
+            result_pose_->stamp = fawkes::Time(0.);
             pose_publish_tf(*result_pose_);
             result_pose_.reset();
           }
@@ -645,7 +691,8 @@ void ConveyorPoseThread::set_initial_tf(
   //-- try to set read pose to initial guess, iff it was valid
   external_initial_guess_->read();
   if (blackboard->is_alive() &&
-      external_initial_guess_->visibility_history() > 0) {
+      external_initial_guess_->visibility_history() > 0 &&
+      !external_timeout_reached_) {
     //-- compose translational part
     btVector3 init_origin;
     double *blackboard_origin = external_initial_guess_->translation();
@@ -761,11 +808,12 @@ bool ConveyorPoseThread::update_input_cloud() {
       }
     }
 
-    unsigned long time_old = header_.stamp;
-    header_ = cloud_in_->header;
+    unsigned long time_old = input_pc_header_.stamp;
+    input_pc_header_ = cloud_in_->header;
 
     return time_old !=
-           header_.stamp; // true, if there is a new cloud, false otherwise
+           input_pc_header_
+               .stamp; // true, if there is a new cloud, false otherwise
 
   } else {
     logger->log_debug(name(), "can't get pointcloud %s",
@@ -843,10 +891,10 @@ Eigen::Vector3f ConveyorPoseThread::laserline_get_center_transformed(
              (ll->end_point_1(2) - ll->end_point_2(2)) / 2.);
 
   try {
-    tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
+    tf_listener->transform_point(input_pc_header_.frame_id, tf_in, tf_out);
   } catch (tf::ExtrapolationException &) {
     tf_in.stamp = Time(0, 0);
-    tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
+    tf_listener->transform_point(input_pc_header_.frame_id, tf_in, tf_out);
   }
 
   Eigen::Vector3f out(tf_out.getX(), tf_out.getY(), tf_out.getZ());
@@ -870,7 +918,7 @@ ConveyorPoseThread::cloud_voxel_grid(ConveyorPoseThread::CloudPtr in) {
 void ConveyorPoseThread::cloud_publish(ConveyorPoseThread::CloudPtr cloud_in,
                                        fawkes::RefPtr<Cloud> cloud_out) {
   **cloud_out = *cloud_in;
-  cloud_out->header = header_;
+  cloud_out->header = input_pc_header_;
 }
 
 void ConveyorPoseThread::pose_write() {
