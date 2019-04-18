@@ -65,7 +65,15 @@ void RecognitionThread::restart_icp() {
     main_thread_->bb_set_busy(true);
   }
 
-  tf::Stamped<tf::Pose> initial_pose_cam;
+  if (main_thread_->initial_guess_odom_.getRotation().length() != 1.f) {
+    logger->log_warn(name(), "initial_guess_odom invalid (%f)",
+                     main_thread_->initial_guess_odom_.getRotation().length());
+
+    restart_pending_ = true;
+    return;
+  }
+
+  tf::Stamped<tf::Pose> initial_pose_cam = main_thread_->initial_guess_odom_;
 
   {
     fawkes::MutexLocker locked{&main_thread_->cloud_mutex_};
@@ -78,29 +86,19 @@ void RecognitionThread::restart_icp() {
     model_->header.frame_id = scene_->header.frame_id;
 
     try {
-      // if (!main_thread_->have_laser_line_) {
-      //  if (initial_guess_icp_odom_.frame_id ==
-      //  "NO_ID_STAMPED_DEFAULT_CONSTRUCTION") {
-      //    logger->log_error(name(), "Cannot get initial estimate: No
-      //    laser-line and no previous result!"); restart_pending_ = true;
-      //    return;
-      //  }
-      //  tf_listener->transform_pose(
-      //        scene_->header.frame_id,
-      //        tf::Stamped<tf::Pose>(initial_guess_icp_odom_, Time(0,0),
-      //        initial_guess_icp_odom_.frame_id), initial_pose_cam);
-      //}
-      // else {
       tf_listener->transform_pose(
           scene_->header.frame_id,
           tf::Stamped<tf::Pose>(main_thread_->initial_guess_odom_, Time(0, 0),
                                 main_thread_->initial_guess_odom_.frame_id),
           initial_pose_cam);
-      //}
+
     } catch (tf::TransformException &e) {
-      logger->log_error(
-          name(), "Cannot get initial estimate - laserline was %savailable: %s",
-          !main_thread_->have_laser_line_ ? "not " : "", e.what());
+      logger->log_error(name(),
+                        "Cannot get initial estimate - laserline was "
+                        "%savailable (frame = %s): %s",
+                        main_thread_->initial_guess_odom_.frame_id.c_str(),
+                        !main_thread_->have_laser_line_ ? "not " : "",
+                        e.what());
       restart_pending_ = true;
       return;
     }
@@ -223,6 +221,7 @@ void RecognitionThread::loop() {
         logger->log_warn(name(), "No acceptable fit after %u iterations",
                          iterations_);
         restart_icp();
+
       } else {
         if (cfg_icp_auto_restart_)
           restart_icp();
@@ -239,9 +238,10 @@ void RecognitionThread::publish_result() {
   aligned_model->header = icp_result_->header;
   main_thread_->cloud_publish(aligned_model, main_thread_->cloud_out_model_);
 
-  tf::Stamped<tf::Pose> result_pose{eigen_to_pose(final_tf_),
-                                    Time{long(scene_->header.stamp) / 1000},
-                                    scene_->header.frame_id};
+  tf::Stamped<tf::Pose> result_pose{
+      eigen_to_pose(final_tf_),
+      // Time { long(scene_->header.stamp) / 1000 },
+      main_thread_->initial_guess_odom_.stamp, scene_->header.frame_id};
 
   double new_fitness = (1 / icp_.getFitnessScore()) / 10000;
 
