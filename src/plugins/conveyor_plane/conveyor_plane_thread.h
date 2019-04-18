@@ -130,7 +130,7 @@ private:
   size_t cfg_pose_avg_hist_size_;
   size_t cfg_pose_avg_min_;
 
-  std::list<pose> poses_;
+  std::list<std::pair<Eigen::Vector4f, Eigen::Vector3f>> poses_;
 
   // point clouds from pcl_manager
   fawkes::RefPtr<const Cloud> cloud_in_;
@@ -155,7 +155,8 @@ private:
   void bb_pose_conditional_open();
   void bb_pose_conditional_close();
 
-  void pose_add_element(pose element);
+  void pose_add_element(const Eigen::Vector4f &centroid,
+                        const Eigen::Vector3f &normal);
   bool pose_get_avg(pose &out);
 
   void if_read();
