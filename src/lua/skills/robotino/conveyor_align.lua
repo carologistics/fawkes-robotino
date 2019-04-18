@@ -26,7 +26,7 @@ depends_skills     = {"motor_move", "gripper_commands"}
 depends_interfaces = {
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
-   --{v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
+   {v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_plane/switch"},
 }
 
 documentation      = [==[aligns the robot orthogonal to the conveyor by using the
@@ -144,7 +144,7 @@ fsm:add_transitions{
 }
 
 function INIT:init()
-   --if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
+   if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
    local parse_result = pam.parse_to_type_target(if_conveyor_pose,self.fsm.vars.place,self.fsm.vars.side,self.fsm.vars.shelf,self.fsm.vars.slide)
    self.fsm.vars.mps_type = parse_result.mps_type
    self.fsm.vars.mps_target = parse_result.mps_target
@@ -194,7 +194,7 @@ function DRIVE:init()
 end
 
 function cleanup()
-  --if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
+  if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
 end
 
 function FAILED:init()
