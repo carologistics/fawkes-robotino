@@ -702,7 +702,8 @@ CloudPtr ConveyorPlaneThread::cloud_remove_offset_to_left_right(
     }
     return out;
   } else {
-    logger->log_info(name(), "-------------STOPPED USING LASERLINE-----------");
+    logger->log_debug(name(),
+                      "-------------STOPPED USING LASERLINE-----------");
     CloudPtr out(new Cloud);
     for (Point p : *in) {
       if (p.x >= -cfg_left_cut_no_ll_ && p.x <= cfg_right_cut_no_ll_) {
