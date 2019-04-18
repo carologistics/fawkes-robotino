@@ -66,10 +66,10 @@ void RecognitionThread::restart_icp() {
   }
 
   if (main_thread_->initial_guess_odom_.getRotation().length() != 1.f) {
-    logger->log_warn(name(), "initial_guess_odom invalid (%f)",
-                     main_thread_->initial_guess_odom_.getRotation().length());
+    logger->log_debug(name(), "initial_guess_odom invalid (%f)",
+                      main_thread_->initial_guess_odom_.getRotation().length());
 
-    restart_pending_ = true;
+    // restart_pending_ = true;
     return;
   }
 
