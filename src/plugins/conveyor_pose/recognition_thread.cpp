@@ -217,17 +217,10 @@ void RecognitionThread::loop() {
     }
 
     if (iterations_ >= cfg_icp_max_loops_) {
-      if (last_raw_fitness_ >= std::numeric_limits<double>::max() - 1) {
-        logger->log_warn(name(), "No acceptable fit after %u iterations",
-                         iterations_);
+      if (cfg_icp_auto_restart_)
         restart_icp();
-
-      } else {
-        if (cfg_icp_auto_restart_)
-          restart_icp();
-        else
-          enabled_ = false;
-      }
+      else
+        enabled_ = false;
     }
   }
 }
