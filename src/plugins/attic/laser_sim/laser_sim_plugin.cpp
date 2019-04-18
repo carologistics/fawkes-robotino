@@ -29,15 +29,12 @@ using namespace fawkes;
 /** Template! Makes the robotino move forward for 3 seconds
  * @author Daniel Ewert
  */
-class LaserSimPlugin : public fawkes::Plugin
-{
- public:
+class LaserSimPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  LaserSimPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  LaserSimPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new LaserSim());
   }
 };

@@ -29,15 +29,12 @@ using namespace fawkes;
 /** Template! Makes the robotino move forward for 3 seconds
  * @author Daniel Ewert
  */
-class RobotinoWorldModelPlugin : public fawkes::Plugin
-{
- public:
+class RobotinoWorldModelPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  RobotinoWorldModelPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  RobotinoWorldModelPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new RobotinoWorldModelThread());
   }
 };

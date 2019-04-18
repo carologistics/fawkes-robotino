@@ -25,19 +25,19 @@
 #include "pipeline_thread.h"
 
 #include <fvutils/color/conversions.h>
-#include <fvutils/ipc/shm_image.h>
 #include <fvutils/draw/drawer.h>
+#include <fvutils/ipc/shm_image.h>
 
+#include <fvmodels/color/lookuptable.h>
+#include <fvmodels/global_position/omni_global.h>
+#include <fvmodels/mirror/bulb.h>
 #include <fvmodels/mirror/mirrormodel.h>
 #include <fvmodels/relative_position/omni_relative.h>
-#include <fvmodels/global_position/omni_global.h>
 #include <fvmodels/scanlines/grid.h>
-#include <fvmodels/color/lookuptable.h>
-#include <fvmodels/mirror/bulb.h>
 
+#include <fvcams/camera.h>
 #include <fvclassifiers/simple.h>
 #include <fvfilters/roidraw.h>
-#include <fvcams/camera.h>
 #include <interfaces/Position3DInterface.h>
 #include <utils/system/hostinfo.h>
 
@@ -47,9 +47,9 @@
 
 #include <utils/hungarian_method/hungarian.h>
 
-#include <stdlib.h>
-#include <cstdio>
 #include <cmath>
+#include <cstdio>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include <string>
@@ -71,9 +71,8 @@ using namespace firevision;
 
 /** Constructor. */
 OmniVisionPucksPipelineThread::OmniVisionPucksPipelineThread()
-  : Thread("RobotinoOmniVisionThread", Thread::OPMODE_CONTINUOUS),
-    VisionAspect(VisionAspect::CONTINUOUS)
-{
+    : Thread("RobotinoOmniVisionThread", Thread::OPMODE_CONTINUOUS),
+      VisionAspect(VisionAspect::CONTINUOUS) {
   scanline_ = NULL;
   cm_ = NULL;
   mirror_ = NULL;
@@ -90,8 +89,7 @@ OmniVisionPucksPipelineThread::OmniVisionPucksPipelineThread()
 }
 
 /** Destructor. */
-OmniVisionPucksPipelineThread::~OmniVisionPucksPipelineThread() {
-}
+OmniVisionPucksPipelineThread::~OmniVisionPucksPipelineThread() {}
 
 /** Initialize the pipeline thread.
  * Camera is requested, config parameters are obtained from the config db, and
@@ -101,16 +99,16 @@ void OmniVisionPucksPipelineThread::init() {
   cfg_prefix_ = "/hardware/robotino/omnivision/";
   cfg_camera_ = config->get_string((cfg_prefix_ + "camera").c_str());
   cfg_frame_ = config->get_string((cfg_prefix_ + "frame").c_str());
-  cfg_cam_height_ = config->get_float(
-				      (cfg_prefix_ + "camera_height").c_str());
+  cfg_cam_height_ = config->get_float((cfg_prefix_ + "camera_height").c_str());
   cfg_puck_radius_ = config->get_float((cfg_prefix_ + "puck_radius").c_str());
-  cfg_mirror_file_ = std::string(CONFDIR) + "/"
-    + config->get_string((cfg_prefix_ + "mirror_file").c_str());
-  cfg_colormap_file_ = std::string(CONFDIR) + "/"
-    + config->get_string((cfg_prefix_ + "colormap_file").c_str());
+  cfg_mirror_file_ = std::string(CONFDIR) + "/" +
+                     config->get_string((cfg_prefix_ + "mirror_file").c_str());
+  cfg_colormap_file_ =
+      std::string(CONFDIR) + "/" +
+      config->get_string((cfg_prefix_ + "colormap_file").c_str());
   cfg_neighbors = config->get_float((cfg_prefix_ + "neighbors").c_str());
-  cfg_basic_roi_size = config->get_float(
-					 (cfg_prefix_ + "basic_roi_size").c_str());
+  cfg_basic_roi_size =
+      config->get_float((cfg_prefix_ + "basic_roi_size").c_str());
 
   // camera
   cam_ = vision_master->register_for_camera(cfg_camera_.c_str(), this);
@@ -123,13 +121,12 @@ void OmniVisionPucksPipelineThread::init() {
       Position3DInterface *puckif;
       char *omni_name;
       if (asprintf(&omni_name, "OmniPuck%d", i) != -1) {
-	puckif = blackboard->open_for_writing<Position3DInterface>(
-								   omni_name);
-	puckif->set_frame(cfg_frame_.c_str());
-	puckif->set_visibility_history(-1);
-    puckif->write();
-	free(omni_name);
-	puck_ifs_.push_back(puckif);
+        puckif = blackboard->open_for_writing<Position3DInterface>(omni_name);
+        puckif->set_frame(cfg_frame_.c_str());
+        puckif->set_visibility_history(-1);
+        puckif->write();
+        free(omni_name);
+        puck_ifs_.push_back(puckif);
       }
     }
   } catch (Exception &e) {
@@ -138,8 +135,8 @@ void OmniVisionPucksPipelineThread::init() {
   }
 
   try {
-    switchInterface = blackboard->open_for_writing<SwitchInterface>(
-								    "omnivisionSwitch");
+    switchInterface =
+        blackboard->open_for_writing<SwitchInterface>("omnivisionSwitch");
   } catch (Exception &e) {
     e.append("Opening switch interface for writing failed");
     throw;
@@ -154,22 +151,22 @@ void OmniVisionPucksPipelineThread::init() {
   try {
     // mirror calibration
     mirror_ = new Bulb(cfg_mirror_file_.c_str(), "omni-mirror",
-		       true /* destroy on delete */);
+                       true /* destroy on delete */);
 
     // colormodel
-    cm_ = new ColorModelLookupTable(cfg_colormap_file_.c_str(),
-				    "omni-colormap", true /* destroy on delete */);
+    cm_ = new ColorModelLookupTable(cfg_colormap_file_.c_str(), "omni-colormap",
+                                    true /* destroy on delete */);
 
     // SHM image buffer
     shm_buffer_ = new SharedMemoryImageBuffer("omni-processed", cspace_to_,
-					      img_width_, img_height_);
+                                              img_width_, img_height_);
     if (!shm_buffer_->is_valid()) {
       throw Exception("Shared memory segment not valid");
     }
     shm_buffer_->set_frame_id(cfg_frame_.c_str());
     buffer_ = shm_buffer_->buffer();
 
-  } catch (Exception& e) {
+  } catch (Exception &e) {
     delete mirror_;
     mirror_ = NULL;
     delete cm_;
@@ -188,17 +185,18 @@ void OmniVisionPucksPipelineThread::init() {
   rel_pos_ = new OmniRelative(mirror_);
 
   // classifier
-  classifier_ = new SimpleColorClassifier(scanline_, cm_, 0,
-					  cfg_basic_roi_size, false, cfg_neighbors, 4);
+  classifier_ = new SimpleColorClassifier(scanline_, cm_, 0, cfg_basic_roi_size,
+                                          false, cfg_neighbors, 4);
   /** Constructor.
    * @param scanline_model scanline model
    * @param color_model color model
    * @param min_num_points minimum number of points in ROI to be considered
    * @param box_extent basic extent of a new ROI
-   * @param upward set to true if you have an upward scanline model, this means that
-   * points are traversed from the bottom to the top. In this case the ROIs are initially
-   * extended towards the top instead of the bottom.
-   * @param neighbourhood_min_match minimum number of object pixels to grow neighbourhood
+   * @param upward set to true if you have an upward scanline model, this means
+   * that points are traversed from the bottom to the top. In this case the ROIs
+   * are initially extended towards the top instead of the bottom.
+   * @param neighbourhood_min_match minimum number of object pixels to grow
+   * neighbourhood
    * @param grow_by grow region by that many pixels
    * @param color color to look for
    */
@@ -223,7 +221,7 @@ void OmniVisionPucksPipelineThread::finalize() {
   delete cam_;
 
   try {
-    std::list<fawkes::Position3DInterface*>::iterator puck;
+    std::list<fawkes::Position3DInterface *>::iterator puck;
     puck = puck_ifs_.begin();
     for (puck = puck_ifs_.begin(); puck != puck_ifs_.end(); puck++) {
       (*puck)->set_visibility_history(0);
@@ -232,7 +230,7 @@ void OmniVisionPucksPipelineThread::finalize() {
 
     blackboard->close(switchInterface);
 
-  } catch (Exception& e) {
+  } catch (Exception &e) {
     logger->log_error(name(), "Closing interface failed!");
     logger->log_error(name(), e);
     throw;
@@ -249,11 +247,11 @@ void OmniVisionPucksPipelineThread::loop() {
   // check if there is a msg in the msg-queue
   while (!switchInterface->msgq_empty()) {
     if (SwitchInterface::DisableSwitchMessage *msg =
-	switchInterface->msgq_first_safe(msg)) {
+            switchInterface->msgq_first_safe(msg)) {
       logger->log_info(name(), "Switch disable message received");
       switchInterface->set_enabled(false);
     } else if (SwitchInterface::EnableSwitchMessage *msg =
-	       switchInterface->msgq_first_safe(msg)) {
+                   switchInterface->msgq_first_safe(msg)) {
       logger->log_info(name(), "Switch enable message received");
       switchInterface->set_enabled(true);
     }
@@ -262,7 +260,7 @@ void OmniVisionPucksPipelineThread::loop() {
   }
 
   if (!switchInterface->is_enabled()) {
-    std::list<fawkes::Position3DInterface*>::iterator puck;
+    std::list<fawkes::Position3DInterface *>::iterator puck;
     puck = puck_ifs_.begin();
     for (puck = puck_ifs_.begin(); puck != puck_ifs_.end(); puck++) {
       (*puck)->set_visibility_history(0);
@@ -274,7 +272,7 @@ void OmniVisionPucksPipelineThread::loop() {
 
   cam_->capture();
   convert(cspace_from_, cspace_to_, cam_->buffer(), buffer_, img_width_,
-	  img_height_);
+          img_height_);
   puck_visible_ = false;
 
   // run classifier
@@ -307,17 +305,16 @@ void OmniVisionPucksPipelineThread::loop() {
       f->set_dst_buffer(buffer_, &(*r));
       f->set_style(FilterROIDraw::DASHED_HINT);
       f->apply();
-      if (roicounter > PUCK_AMOUNT
-	  || rel_pos_->get_distance() > min_dist_) {
-	r = rois_->erase(r);
-	continue;
+      if (roicounter > PUCK_AMOUNT || rel_pos_->get_distance() > min_dist_) {
+        r = rois_->erase(r);
+        continue;
       }
       r++;
       roicounter++;
     }
   }
   // pucks has now same length or is longer than rois_
-  std::list<Position3DInterface*>::iterator puckif_it;
+  std::list<Position3DInterface *>::iterator puckif_it;
   puckif_it = puck_ifs_.begin();
   _data_mutex->lock();
   current_pucks_.clear();
@@ -329,26 +326,25 @@ void OmniVisionPucksPipelineThread::loop() {
       drawer_->draw_circle(mass_point_.x, mass_point_.y, 6);
       if (rel_pos_->is_pos_valid()) {
 
-	rel_pos_->calc();
+        rel_pos_->calc();
 
-	Point3d puck_relative;
-	puck_relative.setX(rel_pos_->get_x());
-	puck_relative.setY(rel_pos_->get_y());
-	Point3d puck_absolute = apply_tf_to_global(puck_relative);
-	current_pucks_.push_back(puck_absolute);
-	relPositions_[puck_absolute]=puck_relative;
-	//logger->log_debug(name(),
-	//		"transformation applied: (%f|%f)->(%f|%f)",
-	//		puck_relative.getX(), puck_relative.getY(),
-	//		current_pucks_.back().getX(),
-	//		current_pucks_.back().getY());
+        Point3d puck_relative;
+        puck_relative.setX(rel_pos_->get_x());
+        puck_relative.setY(rel_pos_->get_y());
+        Point3d puck_absolute = apply_tf_to_global(puck_relative);
+        current_pucks_.push_back(puck_absolute);
+        relPositions_[puck_absolute] = puck_relative;
+        // logger->log_debug(name(),
+        //		"transformation applied: (%f|%f)->(%f|%f)",
+        //		puck_relative.getX(), puck_relative.getY(),
+        //		current_pucks_.back().getX(),
+        //		current_pucks_.back().getY());
       }
     }
   }
   associate_pucks_with_ifs();
   _new_data = true;
   _data_mutex->unlock();
-
 }
 
 void OmniVisionPucksPipelineThread::associate_pucks_with_ifs() {
@@ -356,102 +352,99 @@ void OmniVisionPucksPipelineThread::associate_pucks_with_ifs() {
   hungarian_problem_t cost_matrix;
   cost_matrix.num_rows = old_pucks_.size();
   cost_matrix.num_cols = current_pucks_.size();
-  cost_matrix.cost = (int**) calloc(cost_matrix.num_rows, sizeof(int*));
+  cost_matrix.cost = (int **)calloc(cost_matrix.num_rows, sizeof(int *));
   for (int i = 0; i < cost_matrix.num_rows; ++i) {
-    cost_matrix.cost[i] = (int*) calloc(cost_matrix.num_cols, sizeof(int*));
+    cost_matrix.cost[i] = (int *)calloc(cost_matrix.num_cols, sizeof(int *));
   }
-  for (unsigned int index_old = 0; index_old < old_pucks_.size();
-       ++index_old) {
-    for (unsigned int index_current = 0;
-	 index_current < current_pucks_.size(); ++index_current) {
-      //hungarian method takes int, so we transform our floats to suitable ints
-      //e.g.: 0.015 -> 15
-      int dist_in_int = (int) old_pucks_[index_old].distance(
-							     current_pucks_[index_current]) * 1000;
+  for (unsigned int index_old = 0; index_old < old_pucks_.size(); ++index_old) {
+    for (unsigned int index_current = 0; index_current < current_pucks_.size();
+         ++index_current) {
+      // hungarian method takes int, so we transform our floats to suitable ints
+      // e.g.: 0.015 -> 15
+      int dist_in_int =
+          (int)old_pucks_[index_old].distance(current_pucks_[index_current]) *
+          1000;
       // take the square distance
       cost_matrix.cost[index_old][index_current] = dist_in_int * dist_in_int;
-
-
     }
   }
   HungarianMethod hSolver;
   hSolver.init(cost_matrix.cost, cost_matrix.num_rows, cost_matrix.num_cols,
-	       HUNGARIAN_MODE_MINIMIZE_COST);
+               HUNGARIAN_MODE_MINIMIZE_COST);
   hSolver.solve();
 
   int size_assignment;
-  int* assignment = hSolver.get_assignment(size_assignment);
+  int *assignment = hSolver.get_assignment(size_assignment);
 
-  list<Position3DInterface*> unused_ifs(puck_ifs_);
+  list<Position3DInterface *> unused_ifs(puck_ifs_);
   list<Point3d> new_pucks;
-  PuckIfMap* if_puck_map_current = new PuckIfMap();
+  PuckIfMap *if_puck_map_current = new PuckIfMap();
 
   for (int i = 0; i < size_assignment; ++i) {
-    if ((unsigned int) i >= old_pucks_.size()) {
-      //new puck detected, no match to old
+    if ((unsigned int)i >= old_pucks_.size()) {
+      // new puck detected, no match to old
       new_pucks.push_back(current_pucks_[assignment[i]]);
-    } else if ((unsigned int) assignment[i] >= current_pucks_.size()) {
+    } else if ((unsigned int)assignment[i] >= current_pucks_.size()) {
       // puck has been lost
       continue;
     } else {
-      Point3d& old_puck = old_pucks_[i];
-      Point3d& new_puck = current_pucks_[assignment[i]];
-      //logger->log_debug(name(), "Old: (%f|%f) matches New: (%f|%f)",
+      Point3d &old_puck = old_pucks_[i];
+      Point3d &new_puck = current_pucks_[assignment[i]];
+      // logger->log_debug(name(), "Old: (%f|%f) matches New: (%f|%f)",
       //		old_puck.getX(), old_puck.getY(), new_puck.getX(),
       //		new_puck.getY());
-      map<Point3d, Position3DInterface*>::iterator old_if =
-	if_puck_map_->find(old_puck);
+      map<Point3d, Position3DInterface *>::iterator old_if =
+          if_puck_map_->find(old_puck);
       if (old_if != if_puck_map_->end()) {
-	//logger->log_debug(name(), "Gets old if %s",
-	//		old_if->second->id());
-	unused_ifs.remove(old_if->second);
-	(*if_puck_map_current)[new_puck] = old_if->second;
-	old_if->second->set_visibility_history(
-					       old_if->second->visibility_history() + 1);
+        // logger->log_debug(name(), "Gets old if %s",
+        //		old_if->second->id());
+        unused_ifs.remove(old_if->second);
+        (*if_puck_map_current)[new_puck] = old_if->second;
+        old_if->second->set_visibility_history(
+            old_if->second->visibility_history() + 1);
       } else {
-	new_pucks.push_back(new_puck);
+        new_pucks.push_back(new_puck);
       }
     }
   }
   // assign new pucks
-  for (Point3d& new_puck : new_pucks) {
+  for (Point3d &new_puck : new_pucks) {
     if (unused_ifs.size() == 0) {
       break;
     }
-    Position3DInterface* pos_if = unused_ifs.front();
+    Position3DInterface *pos_if = unused_ifs.front();
     unused_ifs.pop_front();
     pos_if->set_visibility_history(1);
     (*if_puck_map_current)[new_puck] = pos_if;
-    //logger->log_debug(name(), "Puck at (%f|%f) gets if %s", new_puck.getX(),
+    // logger->log_debug(name(), "Puck at (%f|%f) gets if %s", new_puck.getX(),
     //		new_puck.getY(), pos_if->id());
   }
 
-  //count down visibility of unseen pucks
-  for (Position3DInterface* unused_if: unused_ifs){
-    int vis = min(-1,unused_if->visibility_history()-1);
+  // count down visibility of unseen pucks
+  for (Position3DInterface *unused_if : unused_ifs) {
+    int vis = min(-1, unused_if->visibility_history() - 1);
     unused_if->set_visibility_history(vis);
     unused_if->write();
   }
 
   delete if_puck_map_;
   if_puck_map_ = if_puck_map_current;
-  for (auto& p : *if_puck_map_) {
+  for (auto &p : *if_puck_map_) {
 
-    Position3DInterface* pos_if = p.second;
+    Position3DInterface *pos_if = p.second;
     Point3d relpos = relPositions_[p.first];
     pos_if->set_translation(0, relpos.getX());
     pos_if->set_translation(1, relpos.getY());
   }
-
 }
 
-OmniVisionPucksPipelineThread::Point3d OmniVisionPucksPipelineThread::apply_tf_to_global(
-											 Point3d src) {
+OmniVisionPucksPipelineThread::Point3d
+OmniVisionPucksPipelineThread::apply_tf_to_global(Point3d src) {
 
-  const char* source_frame = "/base_link";
-  const char* target_frame = "/map";
+  const char *source_frame = "/base_link";
+  const char *target_frame = "/map";
 
-  src.stamp = Time(0,0);
+  src.stamp = Time(0, 0);
   Point3d targetPoint;
   targetPoint.frame_id = target_frame;
 
@@ -460,8 +453,8 @@ OmniVisionPucksPipelineThread::Point3d OmniVisionPucksPipelineThread::apply_tf_t
 
   if (!link_frame_exists || !laser_frame_exists) {
     logger->log_warn(name(), "Frame missing: %s %s   %s %s", source_frame,
-		     link_frame_exists ? "exists" : "missing", target_frame,
-		     laser_frame_exists ? "exists" : "missing");
+                     link_frame_exists ? "exists" : "missing", target_frame,
+                     laser_frame_exists ? "exists" : "missing");
   } else {
     src.frame_id = source_frame;
     try {
@@ -481,18 +474,15 @@ OmniVisionPucksPipelineThread::Point3d OmniVisionPucksPipelineThread::apply_tf_t
     }
 
     return targetPoint;
-
   }
   return src;
 }
 
 OmniVisionPucksPipelineThread::sortFunctor::sortFunctor(
-							firevision::RelativePositionModel * rp,
-							firevision::SimpleColorClassifier * c) :
-  relpos(rp), classifier(c) {
-}
-bool OmniVisionPucksPipelineThread::sortFunctor::operator()(
-							    firevision::ROI i, firevision::ROI j) {
+    firevision::RelativePositionModel *rp, firevision::SimpleColorClassifier *c)
+    : relpos(rp), classifier(c) {}
+bool OmniVisionPucksPipelineThread::sortFunctor::operator()(firevision::ROI i,
+                                                            firevision::ROI j) {
   float leftdist, rightdist;
   fawkes::upoint_t mass_point_comp;
   classifier->get_mass_point_of_color(&i, &mass_point_comp);
@@ -524,4 +514,3 @@ void OmniVisionPucksPipelineThread::unlock() {
   _new_data = false;
   _data_mutex->unlock();
 }
-

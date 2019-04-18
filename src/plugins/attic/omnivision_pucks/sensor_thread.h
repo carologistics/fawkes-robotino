@@ -23,44 +23,42 @@
 #ifndef __PLUGINS_OMNIVISION_SENSOR_THREAD_H_
 #define __PLUGINS_OMNIVISION_SENSOR_THREAD_H_
 
-#include <core/threading/thread.h>
-#include <aspect/blocked_timing.h>
-#include <aspect/logging.h>
-#include <aspect/configurable.h>
 #include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
+#include <aspect/configurable.h>
+#include <aspect/logging.h>
+#include <core/threading/thread.h>
 
-#include <string>
 #include "pipeline_thread.h"
+#include <string>
 
 namespace fawkes {
-  class Position3DInterface;
+class Position3DInterface;
 }
 namespace firevision {
-  class Camera;
+class Camera;
 }
 
-
-class OmniVisionPucksSensorThread: public fawkes::Thread,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect
-{
- public:
+class OmniVisionPucksSensorThread : public fawkes::Thread,
+                                    public fawkes::BlockedTimingAspect,
+                                    public fawkes::LoggingAspect,
+                                    public fawkes::ConfigurableAspect,
+                                    public fawkes::BlackBoardAspect {
+public:
   OmniVisionPucksSensorThread(OmniVisionPucksPipelineThread *aqt);
 
   virtual void init();
   virtual void finalize();
   virtual void loop();
 
- /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
- protected: virtual void run() { Thread::run(); }
+  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+protected:
+  virtual void run() { Thread::run(); }
 
- private:
-  std::string            cfg_frame_;
+private:
+  std::string cfg_frame_;
 
   OmniVisionPucksPipelineThread *__aqt;
 };
-
 
 #endif

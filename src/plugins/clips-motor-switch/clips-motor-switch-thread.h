@@ -22,28 +22,26 @@
 #ifndef __PLUGINS_CLIPS_MOTOR_SWITCH_CLIPS_MOTOR_SWITCH_THREAD_H_
 #define __PLUGINS_CLIPS_MOTOR_SWITCH_CLIPS_MOTOR_SWITCH_THREAD_H_
 
-#include <core/threading/thread.h>
-#include <aspect/logging.h>
-#include <aspect/configurable.h>
 #include <aspect/blackboard.h>
+#include <aspect/configurable.h>
+#include <aspect/logging.h>
+#include <core/threading/thread.h>
 #include <plugins/clips/aspect/clips_feature.h>
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace fawkes {
-  class MotorInterface;
+class MotorInterface;
 }
 
-class ClipsMotorSwitchThread
-: public fawkes::Thread,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::CLIPSFeature,
-  public fawkes::CLIPSFeatureAspect
-{
- public:
+class ClipsMotorSwitchThread : public fawkes::Thread,
+                               public fawkes::LoggingAspect,
+                               public fawkes::ConfigurableAspect,
+                               public fawkes::BlackBoardAspect,
+                               public fawkes::CLIPSFeature,
+                               public fawkes::CLIPSFeatureAspect {
+public:
   ClipsMotorSwitchThread();
   virtual ~ClipsMotorSwitchThread();
 
@@ -53,22 +51,22 @@ class ClipsMotorSwitchThread
 
   // for CLIPSFeature
   virtual void clips_context_init(const std::string &env_name,
-				  fawkes::LockPtr<CLIPS::Environment> &clips);
+                                  fawkes::LockPtr<CLIPS::Environment> &clips);
   virtual void clips_context_destroyed(const std::string &env_name);
 
- /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
- protected: virtual void run() { Thread::run(); }
+  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+protected:
+  virtual void run() { Thread::run(); }
 
- private:
+private:
   void clips_motor_enable(std::string env_name);
   void clips_motor_disable(std::string env_name);
 
-  std::map<std::string, fawkes::LockPtr<CLIPS::Environment> >  envs_;
+  std::map<std::string, fawkes::LockPtr<CLIPS::Environment>> envs_;
 
- private:
-  std::string               cfg_iface_id_;
-  fawkes::MotorInterface   *motor_if_;
-
+private:
+  std::string cfg_iface_id_;
+  fawkes::MotorInterface *motor_if_;
 };
 
 #endif

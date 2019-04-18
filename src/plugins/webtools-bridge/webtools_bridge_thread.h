@@ -1,8 +1,9 @@
 /***************************************************************************
- *  webtools_bridge_thread.h -  Gives Websocket access ,by mimicking the rosbridge protocol, to different Fawkes components
+ *  webtools_bridge_thread.h -  Gives Websocket access ,by mimicking the
+ *rosbridge protocol, to different Fawkes components
  *
- *  Created: Wed Jan 13 16:33:00 2016 
- *  Copyright  2016 Mostafa Gomaa 
+ *  Created: Wed Jan 13 16:33:00 2016
+ *  Copyright  2016 Mostafa Gomaa
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -18,40 +19,36 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-
 #ifndef __PLUGINS_WEBTOOLS_BRIDGE_THREAD_H_
 #define __PLUGINS_WEBTOOLS_BRIDGE_THREAD_H_
 
-#include <core/threading/thread.h>
+#include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
-#include <aspect/blackboard.h>
-#include <aspect/blocked_timing.h>
+#include <core/threading/thread.h>
 #include <plugins/clips/aspect/clips_manager.h>
 
-#include <vector>
 #include <string>
-
+#include <vector>
 
 namespace fawkes {
-  class Position3DInterface;
+class Position3DInterface;
 }
 
 class BridgeManager;
 
 class WebSocketServer;
 
-class WebtoolsBridgeThread
-: public fawkes::Thread,
-  public fawkes::ClockAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::CLIPSManagerAspect
-{
- public:
+class WebtoolsBridgeThread : public fawkes::Thread,
+                             public fawkes::ClockAspect,
+                             public fawkes::LoggingAspect,
+                             public fawkes::ConfigurableAspect,
+                             public fawkes::BlackBoardAspect,
+                             public fawkes::BlockedTimingAspect,
+                             public fawkes::CLIPSManagerAspect {
+public:
   WebtoolsBridgeThread();
   virtual ~WebtoolsBridgeThread();
 
@@ -59,10 +56,9 @@ class WebtoolsBridgeThread
   virtual void loop();
   virtual void finalize();
 
- private:
-  std::shared_ptr<BridgeManager>              bridge_manager_;
-  std::shared_ptr<WebSocketServer>                 web_server_;
-
+private:
+  std::shared_ptr<BridgeManager> bridge_manager_;
+  std::shared_ptr<WebSocketServer> web_server_;
 };
 
 #endif

@@ -20,21 +20,18 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <pcl/registration/transforms.h>
 #include <pcl/filters/filter.h>
 #include <pcl/recognition/impl/hv/hv_papazov.hpp>
+#include <pcl/registration/transforms.h>
 
-#include "recognition_thread.h"
 #include "conveyor_pose_thread.h"
+#include "recognition_thread.h"
 
 #include <utils/time/clock.h>
 
 using namespace fawkes;
 
-
-double
-CustomICP::getScaledFitness()
-{
+double CustomICP::getScaledFitness() {
   double sum_dists = 0;
   for (const pcl::Correspondence &corr : *correspondences_) {
     if (corr.index_match >= 0) {
@@ -44,40 +41,34 @@ CustomICP::getScaledFitness()
   return sum_dists;
 }
 
-
 RecognitionThread::RecognitionThread(ConveyorPoseThread *cp_thread)
-  : Thread("ICPThread", Thread::OPMODE_CONTINUOUS)
-  , TransformAspect(fawkes::TransformAspect::BOTH, "conveyor_pose_initial_guess")
-  , main_thread_(cp_thread)
-  , enabled_(false)
-  , restart_pending_(true)
-{
+    : Thread("ICPThread", Thread::OPMODE_CONTINUOUS),
+      TransformAspect(fawkes::TransformAspect::BOTH,
+                      "conveyor_pose_initial_guess"),
+      main_thread_(cp_thread), enabled_(false), restart_pending_(true) {
   // Allow finalization while loop() is blocked
   set_prepfin_conc_loop(true);
 }
 
-
-void
-RecognitionThread::init()
-{
-  syncpoint_clouds_ready_ = syncpoint_manager->get_syncpoint(name(), main_thread_->syncpoint_clouds_ready_name_);
+void RecognitionThread::init() {
+  syncpoint_clouds_ready_ = syncpoint_manager->get_syncpoint(
+      name(), main_thread_->syncpoint_clouds_ready_name_);
 }
 
-
-void
-RecognitionThread::restart_icp()
-{
+void RecognitionThread::restart_icp() {
   logger->log_info(name(), "Restarting ICP");
 
   syncpoint_clouds_ready_->wait(name());
 
-  { fawkes::MutexLocker locked { &main_thread_->bb_mutex_ };
+  {
+    fawkes::MutexLocker locked{&main_thread_->bb_mutex_};
     main_thread_->bb_set_busy(true);
   }
 
   tf::Stamped<tf::Pose> initial_pose_cam;
 
-  { fawkes::MutexLocker locked { &main_thread_->cloud_mutex_ };
+  {
+    fawkes::MutexLocker locked{&main_thread_->cloud_mutex_};
     std::vector<int> tmp;
     model_ = main_thread_->model_;
     pcl::removeNaNFromPointCloud(*model_, *model_, tmp);
@@ -88,26 +79,30 @@ RecognitionThread::restart_icp()
 
     try {
       if (!main_thread_->have_laser_line_) {
-        if (initial_guess_icp_odom_.frame_id == "NO_ID_STAMPED_DEFAULT_CONSTRUCTION") {
-          logger->log_error(name(), "Cannot get initial estimate: No laser-line and no previous result!");
+        if (initial_guess_icp_odom_.frame_id ==
+            "NO_ID_STAMPED_DEFAULT_CONSTRUCTION") {
+          logger->log_error(name(), "Cannot get initial estimate: No "
+                                    "laser-line and no previous result!");
           restart_pending_ = true;
           return;
         }
         tf_listener->transform_pose(
-              scene_->header.frame_id,
-              tf::Stamped<tf::Pose>(initial_guess_icp_odom_, Time(0,0), initial_guess_icp_odom_.frame_id),
-              initial_pose_cam);
-      }
-      else {
+            scene_->header.frame_id,
+            tf::Stamped<tf::Pose>(initial_guess_icp_odom_, Time(0, 0),
+                                  initial_guess_icp_odom_.frame_id),
+            initial_pose_cam);
+      } else {
         tf_listener->transform_pose(
-              scene_->header.frame_id,
-              tf::Stamped<tf::Pose>(main_thread_->initial_guess_laser_odom_, Time(0,0),
-                                    main_thread_->initial_guess_laser_odom_.frame_id),
-              initial_pose_cam);
+            scene_->header.frame_id,
+            tf::Stamped<tf::Pose>(
+                main_thread_->initial_guess_laser_odom_, Time(0, 0),
+                main_thread_->initial_guess_laser_odom_.frame_id),
+            initial_pose_cam);
       }
     } catch (tf::TransformException &e) {
-      logger->log_error(name(), "Cannot get initial estimate - laserline was %savailable: %s",
-                                  !main_thread_->have_laser_line_ ? "not " : "", e.what());
+      logger->log_error(
+          name(), "Cannot get initial estimate - laserline was %savailable: %s",
+          !main_thread_->have_laser_line_ ? "not " : "", e.what());
       restart_pending_ = true;
       return;
     }
@@ -115,11 +110,11 @@ RecognitionThread::restart_icp()
 
   hypot_verif_.setSceneCloud(scene_);
   hypot_verif_.setResolution(main_thread_->cloud_resolution());
-  if(main_thread_->is_target_shelf()){ //use shelf values
+  if (main_thread_->is_target_shelf()) { // use shelf values
     hypot_verif_.setInlierThreshold(cfg_icp_shelf_hv_inlier_thresh_);
     hypot_verif_.setPenaltyThreshold(cfg_icp_shelf_hv_penalty_thresh_);
     hypot_verif_.setSupportThreshold(cfg_icp_shelf_hv_support_thresh_);
-  } else { //use general values
+  } else { // use general values
     hypot_verif_.setInlierThreshold(cfg_icp_hv_inlier_thresh_);
     hypot_verif_.setPenaltyThreshold(cfg_icp_hv_penalty_thresh_);
     hypot_verif_.setSupportThreshold(cfg_icp_hv_support_thresh_);
@@ -127,10 +122,9 @@ RecognitionThread::restart_icp()
 
   initial_tf_ = pose_to_eigen(initial_pose_cam);
 
-  tf_publisher->send_transform(
-        tf::StampedTransform(
-          initial_pose_cam, initial_pose_cam.stamp,
-          initial_pose_cam.frame_id, "conveyor_pose_initial_guess"));
+  tf_publisher->send_transform(tf::StampedTransform(
+      initial_pose_cam, initial_pose_cam.stamp, initial_pose_cam.frame_id,
+      "conveyor_pose_initial_guess"));
 
   icp_result_.reset(new Cloud());
   icp_result_->header = model_->header;
@@ -154,14 +148,12 @@ RecognitionThread::restart_icp()
   restart_pending_ = false;
 }
 
-
-void
-RecognitionThread::loop()
-{
+void RecognitionThread::loop() {
   if (!enabled_) {
     logger->log_info(name(), "ICP stopped");
 
-    { MutexLocker locked { &main_thread_->bb_mutex_ };
+    {
+      MutexLocker locked{&main_thread_->bb_mutex_};
       main_thread_->bb_set_busy(false);
     }
 
@@ -174,7 +166,8 @@ RecognitionThread::loop()
     return;
   }
 
-  if (!enabled_ || restart_pending_) // cancel if disabled from ConveyorPoseThread
+  if (!enabled_ ||
+      restart_pending_) // cancel if disabled from ConveyorPoseThread
     return;
 
   icp_.setInputSource(icp_result_);
@@ -183,18 +176,19 @@ RecognitionThread::loop()
   // accumulate transformation between each Iteration
   final_tf_ = icp_.getFinalTransformation() * final_tf_;
 
-  if (!enabled_ || restart_pending_) // cancel if disabled from ConveyorPoseThread
+  if (!enabled_ ||
+      restart_pending_) // cancel if disabled from ConveyorPoseThread
     return;
 
   // if the difference between this transformation and the previous one
   // is smaller than the threshold, refine the process by reducing
   // the maximal correspondence distance
   bool epsilon_reached = false;
-  if (double(std::abs((icp_.getLastIncrementalTransformation() - prev_last_tf_).sum()))
-      < icp_.getTransformationEpsilon())
-  {
-    icp_.setMaxCorrespondenceDistance(icp_.getMaxCorrespondenceDistance ()
-                                      * cfg_icp_refinement_factor_);
+  if (double(std::abs(
+          (icp_.getLastIncrementalTransformation() - prev_last_tf_).sum())) <
+      icp_.getTransformationEpsilon()) {
+    icp_.setMaxCorrespondenceDistance(icp_.getMaxCorrespondenceDistance() *
+                                      cfg_icp_refinement_factor_);
     epsilon_reached = true;
   }
   prev_last_tf_ = icp_.getLastIncrementalTransformation();
@@ -206,9 +200,10 @@ RecognitionThread::loop()
     // Perform hypothesis verification, i.e. skip results that don't match
     // closely enough according to certain thresholds. See the config file for
     // an explanation of the individual parameters.
-    std::vector<Cloud::ConstPtr> icp_result_vector { icp_result_ };
+    std::vector<Cloud::ConstPtr> icp_result_vector{icp_result_};
 
-    // This resets the result vectors (see hypot_mask below) so we only ever verify the last ICP result
+    // This resets the result vectors (see hypot_mask below) so we only ever
+    // verify the last ICP result
     hypot_verif_.setSceneCloud(scene_);
     hypot_verif_.addModels(icp_result_vector, true);
 
@@ -227,10 +222,10 @@ RecognitionThread::loop()
 
     if (iterations_ >= cfg_icp_max_loops_) {
       if (last_raw_fitness_ >= std::numeric_limits<double>::max() - 1) {
-        logger->log_warn(name(), "No acceptable fit after %u iterations", iterations_);
+        logger->log_warn(name(), "No acceptable fit after %u iterations",
+                         iterations_);
         restart_icp();
-      }
-      else {
+      } else {
         if (cfg_icp_auto_restart_)
           restart_icp();
         else
@@ -238,51 +233,46 @@ RecognitionThread::loop()
       }
     }
   }
-
 }
 
-
-void
-RecognitionThread::publish_result()
-{
+void RecognitionThread::publish_result() {
   CloudPtr aligned_model(new Cloud());
   pcl::copyPointCloud(*icp_result_, *aligned_model);
   aligned_model->header = icp_result_->header;
   main_thread_->cloud_publish(aligned_model, main_thread_->cloud_out_model_);
 
-  tf::Stamped<tf::Pose> result_pose {
-    eigen_to_pose(final_tf_),
-    Time { long(scene_->header.stamp) / 1000 },
-    scene_->header.frame_id
-  };
+  tf::Stamped<tf::Pose> result_pose{eigen_to_pose(final_tf_),
+                                    Time{long(scene_->header.stamp) / 1000},
+                                    scene_->header.frame_id};
 
   double new_fitness = (1 / icp_.getFitnessScore()) / 10000;
 
-  { MutexLocker locked2(&main_thread_->bb_mutex_);
+  {
+    MutexLocker locked2(&main_thread_->bb_mutex_);
 
     if (enabled_) {
       main_thread_->result_fitness_ = new_fitness;
-      main_thread_->result_pose_.reset(new tf::Stamped<tf::Pose> { result_pose });
+      main_thread_->result_pose_.reset(new tf::Stamped<tf::Pose>{result_pose});
       main_thread_->result_pose_->setRotation(
-            main_thread_->result_pose_->getRotation() * tf::Quaternion({1,0,0}, M_PI_2) * tf::Quaternion({0,0,1}, M_PI_2));
+          main_thread_->result_pose_->getRotation() *
+          tf::Quaternion({1, 0, 0}, M_PI_2) *
+          tf::Quaternion({0, 0, 1}, M_PI_2));
 
       try {
-        tf_listener->transform_pose(
-              "odom",
-              tf::Stamped<tf::Pose>(result_pose, Time(0,0), result_pose.frame_id),
-              initial_guess_icp_odom_);
+        tf_listener->transform_pose("odom",
+                                    tf::Stamped<tf::Pose>(result_pose,
+                                                          Time(0, 0),
+                                                          result_pose.frame_id),
+                                    initial_guess_icp_odom_);
 
-      } catch(tf::TransformException &e) {
+      } catch (tf::TransformException &e) {
         logger->log_error(name(), e);
       }
     }
   } // MutexLocker
 }
 
-
-fawkes::tf::Quaternion
-constrainYtoNegZ(fawkes::tf::Quaternion rotation)
-{
+fawkes::tf::Quaternion constrainYtoNegZ(fawkes::tf::Quaternion rotation) {
   fawkes::tf::Transform pose;
   pose.setRotation(rotation);
   fawkes::tf::Matrix3x3 basis = pose.getBasis();
@@ -296,42 +286,25 @@ constrainYtoNegZ(fawkes::tf::Quaternion rotation)
   return resultRotation;
 }
 
-
-void
-RecognitionThread::constrainTransformToGround(fawkes::tf::Stamped<fawkes::tf::Pose>& fittedPose_conv)
-{
+void RecognitionThread::constrainTransformToGround(
+    fawkes::tf::Stamped<fawkes::tf::Pose> &fittedPose_conv) {
   fawkes::tf::Stamped<fawkes::tf::Pose> fittedPose_base;
   tf_listener->transform_pose("base_link", fittedPose_conv, fittedPose_base);
   fittedPose_base.setRotation(constrainYtoNegZ(fittedPose_base.getRotation()));
-  tf_listener->transform_pose(fittedPose_conv.frame_id, fittedPose_base, fittedPose_conv);
+  tf_listener->transform_pose(fittedPose_conv.frame_id, fittedPose_base,
+                              fittedPose_conv);
 }
 
+void RecognitionThread::enable() { enabled_ = true; }
 
-void
-RecognitionThread::enable()
-{
-  enabled_ = true;
-}
-
-
-void
-RecognitionThread::disable()
-{
+void RecognitionThread::disable() {
   enabled_ = false;
   initial_guess_icp_odom_ = fawkes::tf::Stamped<fawkes::tf::Pose>();
 }
 
-
-void
-RecognitionThread::restart()
-{
+void RecognitionThread::restart() {
   restart_pending_ = true;
   enable();
 }
 
-
-bool
-RecognitionThread::enabled()
-{
-  return enabled_;
-}
+bool RecognitionThread::enabled() { return enabled_; }

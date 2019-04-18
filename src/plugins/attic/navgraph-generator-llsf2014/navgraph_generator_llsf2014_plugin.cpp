@@ -29,15 +29,12 @@ using namespace fawkes;
 /** Automatically generate navgraph for LLSF2014
  * @author Tim Niemueller
  */
-class NavGraphGenerator2014Plugin : public fawkes::Plugin
-{
- public:
+class NavGraphGenerator2014Plugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  NavGraphGenerator2014Plugin(Configuration *config)
-    : Plugin(config)
-  {
+  NavGraphGenerator2014Plugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new NavGraphGenerator2014Thread());
   }
 };

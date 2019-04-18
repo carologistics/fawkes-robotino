@@ -29,15 +29,12 @@ using namespace fawkes;
 /**
  * @author Florian Nolden & Johannes Rothe
  */
-class PuckVision : public fawkes::Plugin
-{
- public:
+class PuckVision : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  PuckVision(Configuration *config)
-    : Plugin(config)
-  {
+  PuckVision(Configuration *config) : Plugin(config) {
     thread_list.push_back(new PuckVisionThread());
   }
 };

@@ -28,26 +28,22 @@
 
 #include <interfaces/SwitchInterface.h>
 
-#include <string>
-#include <cstdlib>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
+#include <string>
 #include <unistd.h>
 
 using namespace fawkes;
 
-static void
-print_usage(const char *progname)
-{
+static void print_usage(const char *progname) {
   printf("Usage: %s -r remote start|stop\n", progname);
 }
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   ArgumentParser argp(argc, argv, "hr:");
 
-  if ( argp.has_arg("h") || argp.num_items() == 0 ) {
+  if (argp.has_arg("h") || argp.num_items() == 0) {
     print_usage(argp.program_name());
     exit(0);
   }
@@ -56,13 +52,13 @@ main(int argc, char **argv)
 
   std::string host = "localhost";
   unsigned short int port = 1910;
-  if ( argp.has_arg("r") ) {
+  if (argp.has_arg("r")) {
     argp.parse_hostport("r", host, port);
   }
 
   BlackBoard *remote_bb = new RemoteBlackBoard(host.c_str(), port);
   SwitchInterface *gamectrl_if =
-    remote_bb->open_for_writing<SwitchInterface>("Clips Agent Start");
+      remote_bb->open_for_writing<SwitchInterface>("Clips Agent Start");
 
   if (strcmp(argp.items()[0], "start") == 0) {
     printf("Sending START to robot %s\n", host.c_str());

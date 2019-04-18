@@ -22,42 +22,40 @@
 #ifndef __PLUGINS_MOTOR_LED_MOTOR_LED_THREAD_H_
 #define __PLUGINS_MOTOR_LED_MOTOR_LED_THREAD_H_
 
-#include <core/threading/thread.h>
-#include <aspect/blocked_timing.h>
-#include <aspect/logging.h>
-#include <aspect/configurable.h>
 #include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
+#include <aspect/configurable.h>
+#include <aspect/logging.h>
+#include <core/threading/thread.h>
 
 namespace fawkes {
-	class MotorInterface;
-	class RobotinoSensorInterface;
-}
+class MotorInterface;
+class RobotinoSensorInterface;
+} // namespace fawkes
 
-class MotorLedThread
-: public fawkes::Thread,
-	public fawkes::LoggingAspect,
-	public fawkes::ConfigurableAspect,
-	public fawkes::BlockedTimingAspect,
-	public fawkes::BlackBoardAspect
-{
- public:
-	MotorLedThread();
+class MotorLedThread : public fawkes::Thread,
+                       public fawkes::LoggingAspect,
+                       public fawkes::ConfigurableAspect,
+                       public fawkes::BlockedTimingAspect,
+                       public fawkes::BlackBoardAspect {
+public:
+  MotorLedThread();
 
-	virtual void init();
-	virtual void loop();
-	virtual void finalize();
+  virtual void init();
+  virtual void loop();
+  virtual void finalize();
 
-	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
- protected: virtual void run() { Thread::run(); }
+  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+protected:
+  virtual void run() { Thread::run(); }
 
- private:
-	std::string  cfg_motor_ifid_;
-	std::string  cfg_rsens_ifid_;
-	unsigned int cfg_digital_out_;
+private:
+  std::string cfg_motor_ifid_;
+  std::string cfg_rsens_ifid_;
+  unsigned int cfg_digital_out_;
 
-	fawkes::MotorInterface          *motor_if_;
-	fawkes::RobotinoSensorInterface *rsens_if_;
+  fawkes::MotorInterface *motor_if_;
+  fawkes::RobotinoSensorInterface *rsens_if_;
 };
-
 
 #endif

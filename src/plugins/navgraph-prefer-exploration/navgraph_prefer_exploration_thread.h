@@ -21,32 +21,31 @@
 #ifndef __PLUGINS_NAVGRAPH_PREFER_EXPLORATION_NAVGRAPH_PREFER_EXPLORATION_THREAD_H_
 #define __PLUGINS_NAVGRAPH_PREFER_EXPLORATION_NAVGRAPH_PREFER_EXPLORATION_THREAD_H_
 
-#include <core/threading/thread.h>
-#include <core/utils/lock_list.h>
+#include <aspect/blackboard.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
-#include <aspect/blackboard.h>
+#include <core/threading/thread.h>
+#include <core/utils/lock_list.h>
 #include <navgraph/aspect/navgraph.h>
 #include <navgraph/navgraph.h>
 
-#include <string>
 #include <map>
+#include <string>
 
 namespace fawkes {
-  class NavGraphStaticListEdgeCostConstraint;
+class NavGraphStaticListEdgeCostConstraint;
 }
 
 class NavGraphPreferExplorationThread
-: public fawkes::Thread,
-  public fawkes::ClockAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::NavGraphAspect,
-  public fawkes::NavGraph::ChangeListener
-{
- public:
+    : public fawkes::Thread,
+      public fawkes::ClockAspect,
+      public fawkes::LoggingAspect,
+      public fawkes::ConfigurableAspect,
+      public fawkes::BlackBoardAspect,
+      public fawkes::NavGraphAspect,
+      public fawkes::NavGraph::ChangeListener {
+public:
   NavGraphPreferExplorationThread();
   virtual ~NavGraphPreferExplorationThread();
 
@@ -57,12 +56,12 @@ class NavGraphPreferExplorationThread
   virtual void graph_changed() throw();
 
   /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
- protected: virtual void run() { Thread::run();}
+protected:
+  virtual void run() { Thread::run(); }
 
- private:
-  float        cfg_cost_factor_;
+private:
+  float cfg_cost_factor_;
   fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
-
 };
 
 #endif

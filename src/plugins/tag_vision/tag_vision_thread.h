@@ -21,15 +21,15 @@
 #ifndef __PLUGINS_TAG_VISION_TAG_VISION_THREAD_H_
 #define __PLUGINS_TAG_VISION_TAG_VISION_THREAD_H_
 
-#include <core/threading/thread.h>
-#include <core/threading/mutex.h>
+#include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
-#include <aspect/blackboard.h>
-#include <aspect/blocked_timing.h>
-#include <aspect/vision.h>
 #include <aspect/tf.h>
+#include <aspect/vision.h>
+#include <core/threading/mutex.h>
+#include <core/threading/thread.h>
 
 #include <vector>
 
@@ -40,48 +40,46 @@
 #include <cv.h>
 // alvar marker detection to get poses
 #ifdef HAVE_AR_TRACK_ALVAR
-#  include <ar_track_alvar/MarkerDetector.h>
+#include <ar_track_alvar/MarkerDetector.h>
 #else
-#  include <alvar/MarkerDetector.h>
+#include <alvar/MarkerDetector.h>
 #endif
 
 // firevision camera
 #include <fvcams/camera.h>
-#include <fvutils/base/roi.h>
-#include <fvutils/ipc/shm_image.h>
-#include <fvutils/color/conversions.h>
 #include <fvclassifiers/simple.h>
+#include <fvutils/base/roi.h>
+#include <fvutils/color/conversions.h>
+#include <fvutils/ipc/shm_image.h>
 
 #include <fvutils/adapters/iplimage.h>
 
-//interface
-#include <interfaces/TagVisionInterface.h>
+// interface
 #include <interfaces/LaserLineInterface.h>
+#include <interfaces/TagVisionInterface.h>
 
 #include "tag_position_list.h"
 
 #define MAX_MARKERS 16
 
 namespace fawkes {
-  class Position3DInterface;
+class Position3DInterface;
 }
 
 namespace firevision {
-    class Camera;
-    class SharedMemoryImageBuffer;
-}
+class Camera;
+class SharedMemoryImageBuffer;
+} // namespace firevision
 
-class TagVisionThread
-: public fawkes::Thread,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::VisionAspect,
-  public fawkes::ConfigurationChangeHandler,
-  public fawkes::ClockAspect,
-  public fawkes::TransformAspect
-{
- public:
+class TagVisionThread : public fawkes::Thread,
+                        public fawkes::LoggingAspect,
+                        public fawkes::ConfigurableAspect,
+                        public fawkes::BlackBoardAspect,
+                        public fawkes::VisionAspect,
+                        public fawkes::ConfigurationChangeHandler,
+                        public fawkes::ClockAspect,
+                        public fawkes::TransformAspect {
+public:
   TagVisionThread();
   // marker size accasors
   // thread functions
@@ -89,7 +87,7 @@ class TagVisionThread
   virtual void loop();
   virtual void finalize();
 
- private:
+private:
   /// load config from file
   void loadConfig();
   /// the marker detector in alvar
@@ -119,21 +117,22 @@ class TagVisionThread
   // config handling
   virtual void config_value_erased(const char *path);
   virtual void config_tag_changed(const char *new_tag);
-  virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v);
-  virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v);
+  virtual void
+  config_comment_changed(const fawkes::Configuration::ValueIterator *v);
+  virtual void
+  config_value_changed(const fawkes::Configuration::ValueIterator *v);
 
   /// cv image
   IplImage *ipl;
 
   /// blackboard communication
   TagPositionList *tag_interfaces;
-  std::vector<fawkes::LaserLineInterface*> *laser_line_ifs_;
+  std::vector<fawkes::LaserLineInterface *> *laser_line_ifs_;
 
   /// Width of the image
   unsigned int img_width;
   /// Height of the image
   unsigned int img_height;
-
 };
 
 #endif

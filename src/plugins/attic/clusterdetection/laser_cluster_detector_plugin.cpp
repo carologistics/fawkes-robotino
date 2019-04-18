@@ -29,15 +29,12 @@ using namespace fawkes;
 /** Template! Makes the robotino move forward for 3 seconds
  * @author Daniel Ewert
  */
-class LaserClusterDetectorPlugin : public fawkes::Plugin
-{
- public:
+class LaserClusterDetectorPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  LaserClusterDetectorPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  LaserClusterDetectorPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new LaserClusterDetector());
   }
 };

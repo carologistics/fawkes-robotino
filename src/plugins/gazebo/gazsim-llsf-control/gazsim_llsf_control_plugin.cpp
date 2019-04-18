@@ -24,21 +24,17 @@
 
 using namespace fawkes;
 
-/** 
+/**
  *Plugin controls the llsf simulation
  *
  * @author Frederik Zwilling
  */
-class GazsimLlsfControlPlugin : public fawkes::Plugin
-{
- public:
-
+class GazsimLlsfControlPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimLlsfControlPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  GazsimLlsfControlPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new LlsfControlSimThread());
   }
 };

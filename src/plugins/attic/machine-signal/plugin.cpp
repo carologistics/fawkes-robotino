@@ -27,20 +27,17 @@
 
 using namespace fawkes;
 
-class MachineSignalPlugin :
-    public fawkes::Plugin
-{
-  public:
-    /** Constructor.
-     * @param config Fawkes configuration
-     */
-    MachineSignalPlugin(Configuration *config) :
-      Plugin(config)
-    {
-      MachineSignalPipelineThread *pipeline_thread = new MachineSignalPipelineThread();
-      thread_list.push_back(pipeline_thread);
-      thread_list.push_back(new MachineSignalSensorThread(pipeline_thread));
-    }
+class MachineSignalPlugin : public fawkes::Plugin {
+public:
+  /** Constructor.
+   * @param config Fawkes configuration
+   */
+  MachineSignalPlugin(Configuration *config) : Plugin(config) {
+    MachineSignalPipelineThread *pipeline_thread =
+        new MachineSignalPipelineThread();
+    thread_list.push_back(pipeline_thread);
+    thread_list.push_back(new MachineSignalSensorThread(pipeline_thread));
+  }
 };
 
 PLUGIN_DESCRIPTION("Detect signals using color thresholds")

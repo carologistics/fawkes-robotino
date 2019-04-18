@@ -28,18 +28,15 @@ using namespace fawkes;
 /** NavGraph Broker plugin.
  * @author Sebastian Reuter
  */
-class NavGraphBrokerPlugin : public fawkes::Plugin
-{
- public:
+class NavGraphBrokerPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-	NavGraphBrokerPlugin(Configuration *config) : Plugin(config)
-  {
+  NavGraphBrokerPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new NavgraphBrokerThread());
   }
 };
-
 
 PLUGIN_DESCRIPTION("NavGraph Broker")
 EXPORT_PLUGIN(NavGraphBrokerPlugin)

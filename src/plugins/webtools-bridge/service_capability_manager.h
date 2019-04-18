@@ -1,7 +1,7 @@
 /***************************************************************************
- *  service_capability_manager.h - Service Requests Dispatcher  
- *  Created: 2016 
- *  Copyright  2016 Mostafa Gomaa 
+ *  service_capability_manager.h - Service Requests Dispatcher
+ *  Created: 2016
+ *  Copyright  2016 Mostafa Gomaa
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -21,17 +21,13 @@
 
 class ServiceCapability;
 
-class ServiceCapabilityManager
-: public CapabilityManager
-{
+class ServiceCapabilityManager : public CapabilityManager {
 public:
-	ServiceCapabilityManager();
-	~ServiceCapabilityManager();
+  ServiceCapabilityManager();
+  ~ServiceCapabilityManager();
 
-	void handle_message( rapidjson::Document &d 
-									, std::shared_ptr <WebSession> session);
+  void handle_message(rapidjson::Document &d,
+                      std::shared_ptr<WebSession> session);
 
-	bool register_processor(std::shared_ptr <BridgeProcessor> processor);
-
-
+  bool register_processor(std::shared_ptr<BridgeProcessor> processor);
 };

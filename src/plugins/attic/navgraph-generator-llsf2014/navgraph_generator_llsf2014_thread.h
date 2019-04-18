@@ -21,14 +21,14 @@
 #ifndef __PLUGINS_NAVGRAPH_CLUSTERS_NAVGRAPH_CLUSTERS_THREAD_H_
 #define __PLUGINS_NAVGRAPH_CLUSTERS_NAVGRAPH_CLUSTERS_THREAD_H_
 
-#include <core/threading/thread.h>
-#include <core/utils/lock_list.h>
+#include <aspect/blackboard.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
-#include <aspect/blackboard.h>
 #include <blackboard/interface_listener.h>
 #include <blackboard/interface_observer.h>
+#include <core/threading/thread.h>
+#include <core/utils/lock_list.h>
 
 #include <navgraph/navgraph_node.h>
 
@@ -37,21 +37,19 @@
 #include <tuple>
 
 namespace fawkes {
-  class Position3DInterface;
-  class Time;
-  class NavGraphEdgeConstraint;
-  class NavGraphEdgeCostConstraint;
-  class NavGraphGeneratorInterface;
-}
+class Position3DInterface;
+class Time;
+class NavGraphEdgeConstraint;
+class NavGraphEdgeCostConstraint;
+class NavGraphGeneratorInterface;
+} // namespace fawkes
 
-class NavGraphGenerator2014Thread
-: public fawkes::Thread,
-  public fawkes::ClockAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect
-{
- public:
+class NavGraphGenerator2014Thread : public fawkes::Thread,
+                                    public fawkes::ClockAspect,
+                                    public fawkes::LoggingAspect,
+                                    public fawkes::ConfigurableAspect,
+                                    public fawkes::BlackBoardAspect {
+public:
   NavGraphGenerator2014Thread();
   virtual ~NavGraphGenerator2014Thread();
 
@@ -60,15 +58,16 @@ class NavGraphGenerator2014Thread
   virtual void finalize();
 
   /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
- protected: virtual void run() { Thread::run();}
+protected:
+  virtual void run() { Thread::run(); }
 
- private:
+private:
   void add_node_edge(const fawkes::NavGraphNode &n);
   void add_node_node(const fawkes::NavGraphNode &n);
   std::string gen_id();
 
- private:
-  unsigned int                        last_id_;
+private:
+  unsigned int last_id_;
   fawkes::NavGraphGeneratorInterface *navgen_if_;
 };
 

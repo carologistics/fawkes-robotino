@@ -23,37 +23,35 @@
 #ifndef CORRESPONDENCE_GROUPING_THREAD_H
 #define CORRESPONDENCE_GROUPING_THREAD_H
 
+#include <aspect/logging.h>
+#include <aspect/syncpoint_manager.h>
+#include <aspect/tf.h>
 #include <core/threading/thread.h>
 #include <core/threading/wait_condition.h>
-#include <aspect/logging.h>
-#include <aspect/tf.h>
-#include <aspect/syncpoint_manager.h>
 
 #include <atomic>
 
-#include <pcl/registration/icp_nl.h>
 #include <pcl/recognition/hv/hv_papazov.h>
+#include <pcl/registration/icp_nl.h>
 
 #include "conveyor_pose_thread.h"
 
-
 /** Derive from the ICP algorithm in case we want to override something */
-class CustomICP : public pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ> {
+class CustomICP
+    : public pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ> {
 public:
-  using pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ>::IterativeClosestPointNonLinear;
+  using pcl::IterativeClosestPointNonLinear<
+      pcl::PointXYZ, pcl::PointXYZ>::IterativeClosestPointNonLinear;
 
   /** @return A custom fitness measure of the computed fit */
   double getScaledFitness();
 };
 
-
 /** Run ICP, perform HypothesisVerification and publish the result */
-class RecognitionThread
-    : public fawkes::Thread
-    , public fawkes::LoggingAspect
-    , public fawkes::TransformAspect
-    , public fawkes::SyncPointManagerAspect
-{
+class RecognitionThread : public fawkes::Thread,
+                          public fawkes::LoggingAspect,
+                          public fawkes::TransformAspect,
+                          public fawkes::SyncPointManagerAspect {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -82,7 +80,8 @@ private:
 
   void restart_icp();
   void publish_result();
-  void constrainTransformToGround(fawkes::tf::Stamped<fawkes::tf::Pose>& fittedPose_conv);
+  void constrainTransformToGround(
+      fawkes::tf::Stamped<fawkes::tf::Pose> &fittedPose_conv);
 
   using Point = ConveyorPoseThread::Point;
   using Cloud = ConveyorPoseThread::Cloud;
@@ -124,6 +123,5 @@ private:
   std::atomic<unsigned int> cfg_icp_max_loops_;
   std::atomic_bool cfg_icp_auto_restart_;
 };
-
 
 #endif // CORRESPONDENCE_GROUPING_THREAD_H

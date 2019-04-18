@@ -3,7 +3,7 @@
  * clips_processor.h - Processor for Bridge Requests Targeted for Clips Facts
  *
  *  Created: Mon April 11 2016
- *  Copyright  21016 Mostafa Gomaa 
+ *  Copyright  21016 Mostafa Gomaa
  *
  ****************************************************************************/
 
@@ -33,92 +33,74 @@
 #include "subscription_capability.h"
 
 namespace fawkes {
-  class Clock;
-  class Logger;
-  class CLIPSEnvManager;
-  class Mutex;
-}
+class Clock;
+class Logger;
+class CLIPSEnvManager;
+class Mutex;
+} // namespace fawkes
 
 namespace CLIPS {
-  class Environment;
+class Environment;
 }
 
 class WebSession;
 
-//=================================   Subscription  ===================================
+//=================================   Subscription
+//===================================
 
-class ClipsSubscription
-: public Subscription 
-{
-  public:
-    ClipsSubscription(std::string topic_name 
-                          , std::string processor_prefix 
-                          , fawkes::Logger *logger
-                          , fawkes::Clock *clock
-                          , fawkes::LockPtr<CLIPS::Environment> &clips
-                          ,fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr);
+class ClipsSubscription : public Subscription {
+public:
+  ClipsSubscription(std::string topic_name, std::string processor_prefix,
+                    fawkes::Logger *logger, fawkes::Clock *clock,
+                    fawkes::LockPtr<CLIPS::Environment> &clips,
+                    fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr);
 
-    ~ClipsSubscription();
+  ~ClipsSubscription();
 
-    void activate_impl();
-    void deactivate_impl();
-    void finalize_impl();
+  void activate_impl();
+  void deactivate_impl();
+  void finalize_impl();
 
-    // void publish_loop();
+  // void publish_loop();
 
+  std::string serialize(std::string op, std::string topic, std::string id);
 
-    std::string   serialize(std::string op
-                          , std::string topic
-                          , std::string id);
-
-  private:
+private:
   fawkes::LockPtr<CLIPS::Environment> clips_;
   fawkes::LockPtr<fawkes::CLIPSEnvManager> clips_env_mgr_;
-
 };
 
+//=================================   Processor
+//===================================
 
-//=================================   Processor  ===================================
+class ClipsProcessor : public BridgeProcessor, public SubscriptionCapability {
+public:
+  ClipsProcessor(std::string prefix, fawkes::Logger *logger,
+                 fawkes::Configuration *config, fawkes::Clock *clock,
+                 fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr);
 
-class ClipsProcessor
-: public BridgeProcessor,
-  public SubscriptionCapability
-{
- public:
-  ClipsProcessor(std::string prefix 
-                          , fawkes::Logger *logger
-                          , fawkes::Configuration *config
-                          , fawkes::Clock *clock
-                          , fawkes::LockPtr<fawkes::CLIPSEnvManager> &clips_env_mgr);
-
-  virtual ~ClipsProcessor();//why did i leave this virtual. does it make sense
+  virtual ~ClipsProcessor(); // why did i leave this virtual. does it make sense
 
   void init();
 
-  std::shared_ptr<Subscription>  subscribe   ( std::string topic_name 
-                                              , std::string id    
-                                              , std::string type    
-                                              , std::string compression
-                                              , unsigned int throttle_rate  
-                                              , unsigned int queue_length   
-                                              , unsigned int fragment_size  
-                                              , std::shared_ptr<WebSession> session);
+  std::shared_ptr<Subscription>
+  subscribe(std::string topic_name, std::string id, std::string type,
+            std::string compression, unsigned int throttle_rate,
+            unsigned int queue_length, unsigned int fragment_size,
+            std::shared_ptr<WebSession> session);
 
-  void  unsubscribe ( std::string id
-                    , std::shared_ptr<Subscription> subscription
-                    , std::shared_ptr<WebSession> session ) ; 
+  void unsubscribe(std::string id, std::shared_ptr<Subscription> subscription,
+                   std::shared_ptr<WebSession> session);
 
 private:
-  fawkes::Logger         *logger_;
-  fawkes::Configuration  *config_;
-  fawkes::Clock          *clock_;
+  fawkes::Logger *logger_;
+  fawkes::Configuration *config_;
+  fawkes::Clock *clock_;
 
   fawkes::LockPtr<fawkes::CLIPSEnvManager> clips_env_mgr_;
-  fawkes::LockPtr<CLIPS::Environment>      clips_;
+  fawkes::LockPtr<CLIPS::Environment> clips_;
 
   std::string env_name_;
 };
-
-
 
 #endif

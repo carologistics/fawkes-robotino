@@ -30,15 +30,12 @@ using namespace fawkes;
 /** Activates the Omnivison
  * @author Johannes Rothe
  */
-class OmnivisionActivatorPlugin : public fawkes::Plugin
-{
- public:
+class OmnivisionActivatorPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  OmnivisionActivatorPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  OmnivisionActivatorPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new OmnivisionActivatorThread());
   }
 };

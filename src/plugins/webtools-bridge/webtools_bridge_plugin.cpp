@@ -1,8 +1,9 @@
 /***************************************************************************
- *  webtools_bridge_plugin.cpp -  Gives Websocket access ,by mimicking the rosbridge protocol, to different Fawkes components
+ *  webtools_bridge_plugin.cpp -  Gives Websocket access ,by mimicking the
+ *rosbridge protocol, to different Fawkes components
  *
- *  Created: Wed Jan 13 16:33:00 2016 
- *  Copyright  2016 Mostafa Gomaa 
+ *  Created: Wed Jan 13 16:33:00 2016
+ *  Copyright  2016 Mostafa Gomaa
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -25,25 +26,21 @@
 using namespace fawkes;
 
 /** @class WebtoolsBridgePlugin
-* The plug-in implements a websocket server enabling sessions to make topic
-* subscription, advertisement, as well as, service calls to different Fawkes
-* components using rosbridge protocol JSON messages.
-* Implementation is done in similar way fashion to rosbridge server. In fact when the
-* requests are intended to ros, the plug-in acts merely as a proxy server and routes
-* the request to rosbridge server.
-*
-* @author Mostafa Gomaa
-*/
-class WebtoolsBridgePlugin : public fawkes::Plugin
-{
- public:
-
-/** Constructor.
-* @param config Fawkes configuration
-*/
- WebtoolsBridgePlugin(Configuration *config)
-    : Plugin(config)
-  {
+ * The plug-in implements a websocket server enabling sessions to make topic
+ * subscription, advertisement, as well as, service calls to different Fawkes
+ * components using rosbridge protocol JSON messages.
+ * Implementation is done in similar way fashion to rosbridge server. In fact
+ * when the requests are intended to ros, the plug-in acts merely as a proxy
+ * server and routes the request to rosbridge server.
+ *
+ * @author Mostafa Gomaa
+ */
+class WebtoolsBridgePlugin : public fawkes::Plugin {
+public:
+  /** Constructor.
+   * @param config Fawkes configuration
+   */
+  WebtoolsBridgePlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new WebtoolsBridgeThread());
   }
 };

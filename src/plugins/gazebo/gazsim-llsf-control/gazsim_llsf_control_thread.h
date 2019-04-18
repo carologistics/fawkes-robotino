@@ -5,7 +5,6 @@
  *  Copyright  2013 Frederik Zwilling
  ****************************************************************************/
 
-
 /*  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -22,60 +21,61 @@
 #ifndef __PLUGINS_GAZSIM_LLSF_CONTROL_THREAD_H_
 #define __PLUGINS_GAZSIM_LLSF_CONTROL_THREAD_H_
 
-#include <core/threading/thread.h>
+#include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
-#include <aspect/blackboard.h>
-#include <aspect/blocked_timing.h>
-#include <plugins/gazebo/aspect/gazebo.h>
+#include <core/threading/thread.h>
 #include <interfaces/Position3DInterface.h>
-#include <llsf_msgs/GameState.pb.h>
 #include <llsf_msgs/GameInfo.pb.h>
+#include <llsf_msgs/GameState.pb.h>
 #include <llsf_msgs/Team.pb.h>
-#include <utils/time/time.h>
+#include <plugins/gazebo/aspect/gazebo.h>
 #include <string.h>
+#include <utils/time/time.h>
 
-//from Gazebo
-#include <gazebo/transport/TransportTypes.hh>
+// from Gazebo
 #include <gazebo/msgs/MessageTypes.hh>
+#include <gazebo/transport/TransportTypes.hh>
 #include <gazebo/transport/transport.hh>
 
-
 namespace fawkes {
-  class Position3DInterface;
+class Position3DInterface;
 }
 
 typedef const boost::shared_ptr<llsf_msgs::GameState const> ConstGameStatePtr;
-typedef const boost::shared_ptr<llsf_msgs::SetGameState const> ConstSetGameStatePtr;
-typedef const boost::shared_ptr<llsf_msgs::SetGamePhase const> ConstSetGamePhasePtr;
-typedef const boost::shared_ptr<llsf_msgs::SetTeamName const> ConstSetTeamNamePtr;
+typedef const boost::shared_ptr<llsf_msgs::SetGameState const>
+    ConstSetGameStatePtr;
+typedef const boost::shared_ptr<llsf_msgs::SetGamePhase const>
+    ConstSetGamePhasePtr;
+typedef const boost::shared_ptr<llsf_msgs::SetTeamName const>
+    ConstSetTeamNamePtr;
 
-class LlsfControlSimThread
-: public fawkes::Thread,
-  public fawkes::ClockAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::GazeboAspect
-{
- public:
+class LlsfControlSimThread : public fawkes::Thread,
+                             public fawkes::ClockAspect,
+                             public fawkes::LoggingAspect,
+                             public fawkes::ConfigurableAspect,
+                             public fawkes::BlackBoardAspect,
+                             public fawkes::BlockedTimingAspect,
+                             public fawkes::GazeboAspect {
+public:
   LlsfControlSimThread();
 
   virtual void init();
   virtual void loop();
   virtual void finalize();
 
- private:
-  //suscribers for gazebo nodes (refbox messages forwarded by gazsim-llsfrbcomm)
+private:
+  // suscribers for gazebo nodes (refbox messages forwarded by
+  // gazsim-llsfrbcomm)
   gazebo::transport::SubscriberPtr game_state_sub_;
-  //Publisher to start the refbox
+  // Publisher to start the refbox
   gazebo::transport::PublisherPtr set_game_state_pub_;
   gazebo::transport::PublisherPtr set_game_phase_pub_;
   gazebo::transport::PublisherPtr set_team_name_pub_;
 
-  //config values
+  // config values
   bool start_game_automatically_;
   float time_to_wait_before_start_;
   float time_to_wait_before_set_team_;
@@ -85,11 +85,11 @@ class LlsfControlSimThread
   std::string simulation_shutdown_script_;
   std::string team_cyan_name_;
   std::string team_magenta_name_;
-  
-  //handler functions
+
+  // handler functions
   void on_game_state_msg(ConstGameStatePtr &msg);
 
-  //helper variables
+  // helper variables
   fawkes::Time start_time_;
   fawkes::Time shutdown_initiated_time_;
   bool team_sent_;
