@@ -1,4 +1,4 @@
-.PHONY: build flash clean accstepper cleanall
+.PHONY: build flash clean accstepper cleanall comm
 
 # important immediate assignment (only if other makefiles are somehow included)
 mkfile_path := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -32,3 +32,6 @@ clean:
 
 cleanall: clean
 	rm -rf libraries
+
+comm: 
+	minicom -D $(DEV_ARDUINO)
