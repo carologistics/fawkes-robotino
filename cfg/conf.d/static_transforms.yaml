@@ -115,12 +115,12 @@ plugins/static-transforms:
     cam_base:
       frame: !frame gripper_y_dyn
       child_frame: !frame cam_base
-      trans_x: 0.10181
-      trans_y: -0.025
-      trans_z: -0.0074
-      rot_yaw: -1.57
+      trans_x: 0.075
+      trans_y: 0.025
+      trans_z: 0.004
+      rot_yaw: 1.57
       rot_pitch: 0.0
-      rot_roll: -1.38
+      rot_roll: 1.38
 
     cam_conveyor:
       frame: !frame cam_base
