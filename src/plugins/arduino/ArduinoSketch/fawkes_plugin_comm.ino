@@ -444,7 +444,7 @@ void setup() {
  
   TCCR0A = 0x2; // CTC mode
   TCCR0B = 0x2; // 0.5us per cnt, prescaler is 8
-  OCR0A = 250; // 125us per step
+  OCR0A = 70; // 35us per step
   TCNT0 = 0;
   TIMSK0 = 0; // start new
   TIFR0 = 0x7; // clear all interrupt flags
