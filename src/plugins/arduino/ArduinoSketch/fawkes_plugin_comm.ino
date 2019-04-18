@@ -488,6 +488,7 @@ ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 2
     if(step | step_a){ // only step if really necessary
       while(!pulse_done); // wait until the previous pulse is done // TODO:: remove after ensuring pulse is surely done here EVERY TIME!
       //Serial.println(dir,BIN);
+      dir ^= 1 << MOTOR_Z_DIR_SHIFT; // TODO CHANGE IN HARDWARE
       MOTOR_XYZ_DIR_OUT = (MOTOR_XYZ_DIR_OUT & MOTOR_XYZ_DIR_INV_MASK) | dir; // set the direction pins right
       MOTOR_A_DIR_OUT = (MOTOR_A_DIR_OUT & MOTOR_A_DIR_INV_MASK) | dir_a; // set the direction pins right
       step_bits_xyz = step;
