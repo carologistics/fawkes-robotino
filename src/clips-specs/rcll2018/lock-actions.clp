@@ -190,7 +190,12 @@
 (defrule lock-actions-unlock-location-done
   ?l <- (location-unlock-pending ?loc ?side)
   (mutex (name ?lock-name&:(eq ?lock-name (sym-cat ?loc - ?side)))
-         (state OPEN) (request NONE))
+         (state OPEN) (request UNLOCK) (response UNLOCKED))
   =>
+  (do-for-fact ((?wm-fact wm-fact)) (eq ?wm-fact:key (create$ domain fact
+                                        location-locked args? m ?loc s ?side))
+     (retract ?wm-fact)
+  )
   (retract ?l)
+  (modify ?m (request NONE) (response NONE))
 )
