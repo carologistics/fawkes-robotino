@@ -181,30 +181,27 @@ void set_new_pos(long new_pos, AccelStepper &motor) {
   set_status(STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
 }
 
-void set_new_speed(long new_speed) {
+void set_new_speed(float new_speed) {
   noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
-  set_new_speed(new_speed, motor_X);
-  set_new_speed(new_speed, motor_Y);
-  set_new_speed(new_speed, motor_Z);
-  set_new_speed(new_speed, motor_A);
+  set_new_speed_acc(new_speed, -1, motor_X);
+  set_new_speed_acc(new_speed, -1, motor_Y);
+  set_new_speed_acc(new_speed, -1, motor_Z);
+  set_new_speed_acc(new_speed, -1, motor_A);
   interrupts(); // activate interrupts again
 }
 
-inline void set_new_speed(long new_speed, AccelStepper &motor) {
-  motor.setMaxSpeed(new_speed);
-}
-
-void set_new_acc(long new_acc) {
+void set_new_acc(float new_acc) {
   noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
-  set_new_acc(new_acc,motor_X);
-  set_new_acc(new_acc,motor_Y);
-  set_new_acc(new_acc,motor_Z);
-  set_new_acc(new_acc,motor_A);
+  set_new_speed_acc(-1, new_acc,motor_X);
+  set_new_speed_acc(-1, new_acc,motor_Y);
+  set_new_speed_acc(-1, new_acc,motor_Z);
+  set_new_speed_acc(-1, new_acc,motor_A);
   interrupts(); // activate interrupts again
 }
 
-inline void set_new_acc(long new_acc, AccelStepper &motor) {
-  motor.setAcceleration(new_acc);
+inline void set_new_speed_acc(float new_speed, float new_acc, AccelStepper &motor)
+{
+   motor.setMaxSpeedAcc(new_speed, new_acc);
 }
 
 // stop all the motors using the most recent acceleration values
@@ -396,20 +393,16 @@ void setup() {
   pinMode(MOTOR_A_DIR_PIN, OUTPUT);
 
   motor_X.setEnablePin(MOTOR_X_ENABLE_PIN, true);
-  set_new_speed(DEFAULT_MAX_SPEED_X, motor_X);
-  set_new_acc(DEFAULT_MAX_ACCEL_X, motor_X);
-
   motor_Y.setEnablePin(MOTOR_Y_ENABLE_PIN, true);
-  set_new_speed(DEFAULT_MAX_SPEED_Y, motor_Y);
-  set_new_acc(DEFAULT_MAX_ACCEL_Y, motor_Y);
-
   motor_Z.setEnablePin(MOTOR_Z_ENABLE_PIN, true);
-  set_new_speed(DEFAULT_MAX_SPEED_Z, motor_Z);
-  set_new_acc(DEFAULT_MAX_ACCEL_Z, motor_Z);
-
   motor_A.setEnablePin(MOTOR_A_ENABLE_PIN, true);
-  set_new_speed(DEFAULT_MAX_SPEED_A, motor_A);
-  set_new_acc(DEFAULT_MAX_ACCEL_A, motor_A);
+  motor_X.disableOutputs(); // same pin for all of them
+
+  set_new_speed_acc(DEFAULT_MAX_SPEED_X, DEFAULT_MAX_ACCEL_X, motor_X);
+  set_new_speed_acc(DEFAULT_MAX_SPEED_Y, DEFAULT_MAX_ACCEL_Y, motor_Y);
+  set_new_speed_acc(DEFAULT_MAX_SPEED_Z, DEFAULT_MAX_ACCEL_Z, motor_Z);
+  set_new_speed_acc(DEFAULT_MAX_SPEED_A, DEFAULT_MAX_ACCEL_A, motor_A);
+
 
   Serial.println("AT HELLO");
   set_status(STATUS_IDLE);
