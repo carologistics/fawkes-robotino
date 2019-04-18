@@ -21,24 +21,21 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
 #include "asp_planner_thread.h"
+#include <core/plugin.h>
 
 /** ASP planner plugin.
  */
-class AspPlannerPlugin : public fawkes::Plugin
-{
-	public:
-	/** Constructor.
-	* @param config Fawkes configuration
-	*/
-	AspPlannerPlugin(fawkes::Configuration *config) : Plugin(config)
-	{
-		thread_list.push_back(new AspPlannerThread);
-		return;
-	}
+class AspPlannerPlugin : public fawkes::Plugin {
+public:
+  /** Constructor.
+   * @param config Fawkes configuration
+   */
+  AspPlannerPlugin(fawkes::Configuration *config) : Plugin(config) {
+    thread_list.push_back(new AspPlannerThread);
+    return;
+  }
 };
-
 
 PLUGIN_DESCRIPTION("ASP-based planner plugin")
 EXPORT_PLUGIN(AspPlannerPlugin)

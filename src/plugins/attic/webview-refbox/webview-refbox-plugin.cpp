@@ -28,18 +28,15 @@ using namespace fawkes;
 /** RCLL refbox webview plugin.
  * @author Tim Niemueller
  */
-class WebviewRCLLRefBoxPlugin : public fawkes::Plugin
-{
- public:
+class WebviewRCLLRefBoxPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  WebviewRCLLRefBoxPlugin(Configuration *config) : Plugin(config)
-  {
+  WebviewRCLLRefBoxPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new WebviewRCLLRefBoxThread());
   }
 };
-
 
 PLUGIN_DESCRIPTION("RCLL refbox log data")
 EXPORT_PLUGIN(WebviewRCLLRefBoxPlugin)

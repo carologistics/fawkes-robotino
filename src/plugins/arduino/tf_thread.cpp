@@ -27,15 +27,15 @@
 #include <utils/math/angle.h>
 #include <utils/time/wait.h>
 
-#include <interfaces/BatteryInterface.h>
 #include <interfaces/ArduinoInterface.h>
+#include <interfaces/BatteryInterface.h>
 
 #include <unistd.h>
 
-#include <libudev.h>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/thread/thread.hpp>
+#include <libudev.h>
 
 using namespace fawkes;
 
@@ -45,60 +45,51 @@ using namespace fawkes;
  */
 
 /** Constructor. */
-ArduinoTFThread::ArduinoTFThread(std::string &cfg_name,
-        std::string &cfg_prefix)
-: Thread("ArduinoTFThread", Thread::OPMODE_WAITFORWAKEUP),
-        BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PREPARE),
-        TransformAspect(TransformAspect::ONLY_PUBLISHER, "gripper")
-{
-    cfg_prefix_ = cfg_prefix;
-    cfg_name_ = cfg_name;
+ArduinoTFThread::ArduinoTFThread(std::string &cfg_name, std::string &cfg_prefix)
+    : Thread("ArduinoTFThread", Thread::OPMODE_WAITFORWAKEUP),
+      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PREPARE),
+      TransformAspect(TransformAspect::ONLY_PUBLISHER, "gripper") {
+  cfg_prefix_ = cfg_prefix;
+  cfg_name_ = cfg_name;
 }
 
 /** Destructor. */
-ArduinoTFThread::~ArduinoTFThread()
-{
+ArduinoTFThread::~ArduinoTFThread() {}
+
+void ArduinoTFThread::init() {
+  load_config();
+  //    last_official_z_position_ = 0.;
+  //    desired_end_z_pose_ = 0.;
+  cur_x_ = 0.0;
+  cur_y_ = 0.0;
+  cur_z_ = 0.0;
 }
 
-void
-ArduinoTFThread::init()
-{
-    load_config();
-//    last_official_z_position_ = 0.;
-//    desired_end_z_pose_ = 0.;
-   cur_x_ = 0.0;
-   cur_y_ = 0.0;
-   cur_z_ = 0.0;
+void ArduinoTFThread::finalize() {}
+
+void ArduinoTFThread::loop() {
+  boost::mutex::scoped_lock lock(data_mutex_);
+  fawkes::Time now(clock);
+
+  //    float d_mm = current_end_z_pose_ - desired_end_z_pose_;
+  //    double d_s = now - end_time_point_;
+
+  tf::Quaternion q(0.0, 0.0, 0.0);
+  tf::Vector3 v(cur_x_, (cur_y_ - cfg_y_max_ / 2.), cur_z_);
+
+  tf::Transform tf_pose_gripper(q, v);
+
+  tf::StampedTransform stamped_transform(tf_pose_gripper, now.stamp(),
+                                         cfg_gripper_frame_id_,
+                                         cfg_gripper_dyn_frame_id_);
+  tf_publisher->send_transform(stamped_transform);
 }
 
-void
-ArduinoTFThread::finalize()
-{
-}
-
-void
-ArduinoTFThread::loop()
-{
-    boost::mutex::scoped_lock lock(data_mutex_);
-    fawkes::Time now(clock);
-
-//    float d_mm = current_end_z_pose_ - desired_end_z_pose_;
-//    double d_s = now - end_time_point_;
-
-    tf::Quaternion q(0.0, 0.0, 0.0);
-    tf::Vector3 v(cur_x_,
-                  (cur_y_ - cfg_y_max_ / 2.),
-                  cur_z_);
-
-    tf::Transform tf_pose_gripper(q, v);
-
-    tf::StampedTransform stamped_transform(tf_pose_gripper, now.stamp(), cfg_gripper_frame_id_, cfg_gripper_dyn_frame_id_);
-    tf_publisher->send_transform(stamped_transform);
-}
-
-//// interpolate the current z position based on an assumption of where the gripper should be given a timeframe and a length
-//void
-//ArduinoTFThread::set_interpolation_interval(fawkes::Time &end_time_point, float desired_end_z_pose)
+//// interpolate the current z position based on an assumption of where the
+/// gripper should be given a timeframe and a length
+// void
+// ArduinoTFThread::set_interpolation_interval(fawkes::Time &end_time_point,
+// float desired_end_z_pose)
 //{
 //    boost::mutex::scoped_lock lock(data_mutex_);
 //    end_time_point_ = end_time_point;
@@ -111,21 +102,19 @@ ArduinoTFThread::loop()
 //
 //}
 
-void
-ArduinoTFThread::set_position(float new_x_pos, float new_y_pos, float new_z_pos)
-{
-    boost::mutex::scoped_lock lock(data_mutex_);
-    cur_x_ = new_x_pos;
-    cur_y_ = new_y_pos;
-    cur_z_ = new_z_pos;
+void ArduinoTFThread::set_position(float new_x_pos, float new_y_pos,
+                                   float new_z_pos) {
+  boost::mutex::scoped_lock lock(data_mutex_);
+  cur_x_ = new_x_pos;
+  cur_y_ = new_y_pos;
+  cur_z_ = new_z_pos;
 }
 
-void
-ArduinoTFThread::load_config()
-{
-    cfg_gripper_frame_id_ = config->get_string(cfg_prefix_ + "/gripper_frame_id");
-    cfg_gripper_dyn_frame_id_ = config->get_string(cfg_prefix_ + "/gripper_dyn_frame_id");
-    cfg_x_max_ = config->get_float(cfg_prefix_ + "/x_max");
-    cfg_y_max_ = config->get_float(cfg_prefix_ + "/y_max");
-    cfg_z_max_ = config->get_float(cfg_prefix_ + "/z_max");
+void ArduinoTFThread::load_config() {
+  cfg_gripper_frame_id_ = config->get_string(cfg_prefix_ + "/gripper_frame_id");
+  cfg_gripper_dyn_frame_id_ =
+      config->get_string(cfg_prefix_ + "/gripper_dyn_frame_id");
+  cfg_x_max_ = config->get_float(cfg_prefix_ + "/x_max");
+  cfg_y_max_ = config->get_float(cfg_prefix_ + "/y_max");
+  cfg_z_max_ = config->get_float(cfg_prefix_ + "/z_max");
 }

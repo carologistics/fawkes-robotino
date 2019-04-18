@@ -26,58 +26,55 @@
 
 #include <core/threading/thread.h>
 
+#include <aspect/blackboard.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <aspect/vision.h>
-#include <aspect/blackboard.h>
 
-#include <fvutils/color/colorspaces.h>
-#include <fvutils/base/types.h>
 #include <fvutils/base/roi.h>
+#include <fvutils/base/types.h>
+#include <fvutils/color/colorspaces.h>
 
-#include <interfaces/SwitchInterface.h>
 #include <aspect/tf.h>
-#include <tf/types.h>
+#include <interfaces/SwitchInterface.h>
 #include <tf/transform_listener.h>
+#include <tf/types.h>
 
 #include <string>
 
-
 namespace firevision {
-  class Camera;
-  class ScanlineModel;
-  class ColorModel;
-  class MirrorModel;
-  class SimpleColorClassifier;
-  class RelativePositionModel;
-  class SharedMemoryImageBuffer;
-  class Drawer;
-}
+class Camera;
+class ScanlineModel;
+class ColorModel;
+class MirrorModel;
+class SimpleColorClassifier;
+class RelativePositionModel;
+class SharedMemoryImageBuffer;
+class Drawer;
+} // namespace firevision
 namespace fawkes {
-  class Position3DInterface;
-  class SwitchInterface;
-}
+class Position3DInterface;
+class SwitchInterface;
+} // namespace fawkes
 
-class OmniVisionPucksPipelineThread: public fawkes::Thread,
-  public fawkes::LoggingAspect,
-  public fawkes::VisionAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::TransformAspect
-{
+class OmniVisionPucksPipelineThread : public fawkes::Thread,
+                                      public fawkes::LoggingAspect,
+                                      public fawkes::VisionAspect,
+                                      public fawkes::ConfigurableAspect,
+                                      public fawkes::BlackBoardAspect,
+                                      public fawkes::TransformAspect {
 
   // sort functor for sorting ROI Lists
 
-
- public:
+public:
   typedef fawkes::tf::Stamped<fawkes::tf::Point> Point3d;
 
-
   struct sortFunctor {
-    sortFunctor(firevision::RelativePositionModel* rp,firevision::SimpleColorClassifier* c);
+    sortFunctor(firevision::RelativePositionModel *rp,
+                firevision::SimpleColorClassifier *c);
     bool operator()(firevision::ROI i, firevision::ROI j);
-    firevision::RelativePositionModel* relpos;
-    firevision::SimpleColorClassifier* classifier;
+    firevision::RelativePositionModel *relpos;
+    firevision::SimpleColorClassifier *classifier;
   };
   OmniVisionPucksPipelineThread();
   virtual ~OmniVisionPucksPipelineThread();
@@ -89,28 +86,27 @@ class OmniVisionPucksPipelineThread: public fawkes::Thread,
   bool lock_if_new_data();
   void unlock();
 
+  std::list<fawkes::Position3DInterface *> puck_ifs_;
 
-  std::list<fawkes::Position3DInterface*> puck_ifs_;
- private:
-
+private:
   struct cmpByLocation {
-    bool operator()(const Point3d& a, const Point3d& b) const {
-      return a.getX() + a.getY()*10 < b.getX()+ b.getY()*10;
+    bool operator()(const Point3d &a, const Point3d &b) const {
+      return a.getX() + a.getY() * 10 < b.getX() + b.getY() * 10;
     }
   };
-  typedef std::map<Point3d,fawkes::Position3DInterface*,cmpByLocation> PuckIfMap;
+  typedef std::map<Point3d, fawkes::Position3DInterface *, cmpByLocation>
+      PuckIfMap;
 
-  typedef std::map<Point3d,Point3d,cmpByLocation> PuckPuckMap;
+  typedef std::map<Point3d, Point3d, cmpByLocation> PuckPuckMap;
 
   PuckPuckMap relPositions_;
 
-  PuckIfMap* if_puck_map_;
+  PuckIfMap *if_puck_map_;
   std::vector<Point3d> current_pucks_;
   std::vector<Point3d> old_pucks_;
   void associate_pucks_with_ifs();
 
   Point3d apply_tf_to_global(Point3d src);
-
 
   firevision::Camera *cam_;
   firevision::ScanlineModel *scanline_;
@@ -120,7 +116,7 @@ class OmniVisionPucksPipelineThread: public fawkes::Thread,
   firevision::SimpleColorClassifier *classifier_;
   firevision::SharedMemoryImageBuffer *shm_buffer_;
 
-  fawkes::tf::TransformListener* tf_listener_;
+  fawkes::tf::TransformListener *tf_listener_;
 
   fawkes::SwitchInterface *switchInterface;
 
@@ -138,7 +134,6 @@ class OmniVisionPucksPipelineThread: public fawkes::Thread,
   fawkes::upoint_t mass_point_;
   float min_dist_;
 
-
   std::list<firevision::ROI> *rois_;
 
   std::string cfg_prefix_;
@@ -153,8 +148,8 @@ class OmniVisionPucksPipelineThread: public fawkes::Thread,
 
   firevision::Drawer *drawer_;
 
- protected:
-  fawkes::Mutex    *_data_mutex;
+protected:
+  fawkes::Mutex *_data_mutex;
   bool _new_data;
 };
 

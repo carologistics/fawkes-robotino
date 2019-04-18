@@ -23,56 +23,55 @@
 #ifndef __PLUGINS_GAZSIM_GRIPPER_THREAD_H_
 #define __PLUGINS_GAZSIM_GRIPPER_THREAD_H_
 
-#include <core/threading/thread.h>
-#include <aspect/blocked_timing.h>
-#include <aspect/logging.h>
-#include <aspect/configurable.h>
 #include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
 #include <aspect/clock.h>
+#include <aspect/configurable.h>
+#include <aspect/logging.h>
 #include <blackboard/interface_listener.h>
+#include <core/threading/thread.h>
 #include <interfaces/DynamixelServoInterface.h>
-#include <utils/time/time.h>
 #include <plugins/gazebo/aspect/gazebo.h>
+#include <utils/time/time.h>
 
-//from Gazebo
-#include <gazebo/transport/TransportTypes.hh>
+// from Gazebo
 #include <gazebo/msgs/MessageTypes.hh>
+#include <gazebo/transport/TransportTypes.hh>
 #include <gazebo/transport/transport.hh>
 
 namespace fawkes {
-  class AX12GripperInterface;
-  class ArduinoInterface;
-  class LedInterface;
-  class JointInterface;
-}
+class AX12GripperInterface;
+class ArduinoInterface;
+class LedInterface;
+class JointInterface;
+} // namespace fawkes
 
-class GazsimGripperThread
-: public fawkes::Thread,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::GazeboAspect
-{
- public:
+class GazsimGripperThread : public fawkes::Thread,
+                            public fawkes::BlockedTimingAspect,
+                            public fawkes::LoggingAspect,
+                            public fawkes::ConfigurableAspect,
+                            public fawkes::BlackBoardAspect,
+                            public fawkes::GazeboAspect {
+public:
   GazsimGripperThread();
 
   virtual void init();
   virtual void finalize();
   virtual void loop();
 
- /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
- protected: virtual void run() { Thread::run(); }
+  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+protected:
+  virtual void run() { Thread::run(); }
 
- private:
+private:
   fawkes::AX12GripperInterface *gripper_if_;
   fawkes::ArduinoInterface *arduino_if_;
 
-  std::string  gripper_if_name_;
-  std::string  arduino_if_name_;
-  std::string  cfg_prefix_;
+  std::string gripper_if_name_;
+  std::string arduino_if_name_;
+  std::string cfg_prefix_;
 
-  //Publisher to sent msgs to gazebo
+  // Publisher to sent msgs to gazebo
   gazebo::transport::PublisherPtr set_gripper_pub_;
   gazebo::transport::PublisherPtr set_conveyor_pub_;
   gazebo::transport::SubscriberPtr gripper_has_puck_sub_;

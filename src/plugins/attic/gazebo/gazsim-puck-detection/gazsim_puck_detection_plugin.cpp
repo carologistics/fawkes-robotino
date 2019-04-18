@@ -1,5 +1,5 @@
 /***************************************************************************
- *  gazsim_puck_detection_plugin.cpp - Plugin provides 
+ *  gazsim_puck_detection_plugin.cpp - Plugin provides
  *     the positions of llsf-pucks
  *
  *  Created: Thu Aug 29 11:40:51 2013
@@ -30,16 +30,12 @@ using namespace fawkes;
  *
  * @author Frederik Zwilling
  */
-class GazsimPuckDetectionPlugin : public fawkes::Plugin
-{
- public:
-
+class GazsimPuckDetectionPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimPuckDetectionPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  GazsimPuckDetectionPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new PuckDetectionSimThread());
   }
 };

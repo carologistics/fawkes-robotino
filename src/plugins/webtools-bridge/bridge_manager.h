@@ -1,7 +1,6 @@
 /***************************************************************************
- *  bridge_manager.h - Single access point for sessions to the bridge's capabilities.
- *  Created: 2016 
- *  Copyright  2016 Mostafa Gomaa 
+ *  bridge_manager.h - Single access point for sessions to the bridge's
+ *capabilities. Created: 2016 Copyright  2016 Mostafa Gomaa
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -20,52 +19,52 @@
 #ifndef _BRIDGE_MANAGER_H
 #define _BRIDGE_MANAGER_H
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include <rapidjson/document.h>
-#include <rapidjson/error/en.h>//TODO:: move to the cpp
+#include <rapidjson/error/en.h> //TODO:: move to the cpp
 
 #include "bridge_processor.h"
 #include "capability_manager.h"
 #include "web_session.h"
 
-
 /*TODO:Change the name of this class suggestions
-	* CapabiltiesDispatcher
-	* BridgeMother
-	* Bridge
-*/
+ * CapabiltiesDispatcher
+ * BridgeMother
+ * Bridge
+ */
 
-class BridgeManager 
+class BridgeManager
 //:  public std::enable_shared_from_this<BridgeManager>
 {
-	public:
-		BridgeManager();
-		~BridgeManager();
+public:
+  BridgeManager();
+  ~BridgeManager();
 
-		void finalize();
+  void finalize();
 
-		void incoming(std::string JsonMsg ,std::shared_ptr <WebSession> session);
+  void incoming(std::string JsonMsg, std::shared_ptr<WebSession> session);
 
-		bool deserialize(std::string jsonStr , rapidjson::Document &d);
+  bool deserialize(std::string jsonStr, rapidjson::Document &d);
 
-		bool register_operation_handler(std::string operation_name , std::shared_ptr <CapabilityManager> cpm);
+  bool register_operation_handler(std::string operation_name,
+                                  std::shared_ptr<CapabilityManager> cpm);
 
-		bool register_processor(std::shared_ptr <BridgeProcessor> processor);
+  bool register_processor(std::shared_ptr<BridgeProcessor> processor);
 
-		//bool unregister_operation_handler(std::string operation_name);
+  // bool unregister_operation_handler(std::string operation_name);
 
-		//bool unregister_processor(std::shared_ptr <BridgeProcessor> processor);
-		
-	private:
-		std::map< std::string , std::shared_ptr <CapabilityManager> >	 		operation_cpm_map_;
-		//std::map <std::string, WebSessison> 									clients_;			
+  // bool unregister_processor(std::shared_ptr <BridgeProcessor> processor);
 
-		/*TO_BE_REFACTOR:register Cpability managers (not operations) and pull the
-		 provided operations list from the cpm  itself
-		 Each cpm should store what operations it provides*/
+private:
+  std::map<std::string, std::shared_ptr<CapabilityManager>> operation_cpm_map_;
+  // std::map <std::string, WebSessison>
+  // clients_;
+
+  /*TO_BE_REFACTOR:register Cpability managers (not operations) and pull the
+   provided operations list from the cpm  itself
+   Each cpm should store what operations it provides*/
 };
-
 
 #endif

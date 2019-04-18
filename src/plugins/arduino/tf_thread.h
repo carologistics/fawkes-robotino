@@ -24,96 +24,92 @@
 
 #include "com_message.h"
 
-#include <core/threading/thread.h>
-#include <aspect/logging.h>
+#include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
-#include <aspect/blackboard.h>
+#include <aspect/logging.h>
 #include <aspect/tf.h>
 #include <blackboard/interface_listener.h>
-#include <aspect/blocked_timing.h>
+#include <core/threading/thread.h>
 #include <interfaces/JoystickInterface.h>
 #include <tf/types.h>
 
 #include <utils/time/time.h>
 
-#include <memory>
 #include <boost/asio.hpp>
 #include <boost/thread/mutex.hpp>
+#include <memory>
 
 namespace fawkes {
-    class Mutex;
-    class Clock;
-    class TimeWait;
+class Mutex;
+class Clock;
+class TimeWait;
 
-    class ArduinoInterface;
-}
+class ArduinoInterface;
+} // namespace fawkes
 
-class ArduinoTFThread
-: public fawkes::Thread,
-public fawkes::LoggingAspect,
-public fawkes::ConfigurableAspect,
-public fawkes::BlockedTimingAspect,
-public fawkes::BlackBoardAspect,
-public fawkes::ClockAspect,
-public fawkes::TransformAspect
+class ArduinoTFThread : public fawkes::Thread,
+                        public fawkes::LoggingAspect,
+                        public fawkes::ConfigurableAspect,
+                        public fawkes::BlockedTimingAspect,
+                        public fawkes::BlackBoardAspect,
+                        public fawkes::ClockAspect,
+                        public fawkes::TransformAspect
 
 {
 public:
+  ArduinoTFThread();
+  /**
+   * @brief Constructor
+   *
+   * @param cfg_name Name of the config file
+   * @param cfg_prefix Tag prefixes of the arduino tf config values
+   */
+  ArduinoTFThread(std::string &cfg_name, std::string &cfg_prefix);
+  virtual ~ArduinoTFThread();
 
-    ArduinoTFThread();
-    /**
-     * @brief Constructor
-     *
-     * @param cfg_name Name of the config file
-     * @param cfg_prefix Tag prefixes of the arduino tf config values
-     */
-    ArduinoTFThread(std::string &cfg_name, std::string &cfg_prefix);
-    virtual ~ArduinoTFThread();
+  virtual void init();
+  //	virtual void once();
+  virtual void loop();
+  virtual void finalize();
 
-    virtual void init();
-    //	virtual void once();
-    virtual void loop();
-    virtual void finalize();
-
-    /**
-     * @brief Resets the current position to a given position
-     *
-     * @param new_x New X-coordinate
-     * @param new_y New Y-coordinate
-     * @param new_z New Z-coordinate
-     */
-    void set_position(float new_x, float new_y, float new_z);
+  /**
+   * @brief Resets the current position to a given position
+   *
+   * @param new_x New X-coordinate
+   * @param new_y New Y-coordinate
+   * @param new_z New Z-coordinate
+   */
+  void set_position(float new_x, float new_y, float new_z);
 
 private:
-    std::string cfg_gripper_frame_id_;
-    std::string cfg_gripper_dyn_frame_id_;
-    std::string cfg_prefix_;
-    std::string cfg_name_;
+  std::string cfg_gripper_frame_id_;
+  std::string cfg_gripper_dyn_frame_id_;
+  std::string cfg_prefix_;
+  std::string cfg_name_;
 
-    float cfg_static_tf_x_home_;
-    float cfg_static_tf_y_home_;
-    float cfg_static_tf_z_home_;
-    float cfg_x_max_;
-    float cfg_y_max_;
-    float cfg_z_max_;
+  float cfg_static_tf_x_home_;
+  float cfg_static_tf_y_home_;
+  float cfg_static_tf_z_home_;
+  float cfg_x_max_;
+  float cfg_y_max_;
+  float cfg_z_max_;
 
-    void load_config();
+  void load_config();
 
-    fawkes::Time end_time_point_;
-    float desired_end_z_pose_;
-    float current_end_z_pose_;
+  fawkes::Time end_time_point_;
+  float desired_end_z_pose_;
+  float current_end_z_pose_;
 
-    float cur_step_d_;
-    float cur_x_;
-    float cur_y_;
-    float cur_z_;
+  float cur_step_d_;
+  float cur_x_;
+  float cur_y_;
+  float cur_z_;
 
 protected:
-    /** Mutex to protect data_. Lock whenever accessing it. */
-    boost::mutex data_mutex_;
+  /** Mutex to protect data_. Lock whenever accessing it. */
+  boost::mutex data_mutex_;
 };
 
-
 #endif
-

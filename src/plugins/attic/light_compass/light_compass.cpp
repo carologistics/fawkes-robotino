@@ -26,18 +26,16 @@
 
 using namespace fawkes;
 
-/** Detects a light over brithness threashold, offers distance and direction to the nearest light
+/** Detects a light over brithness threashold, offers distance and direction to
+ * the nearest light
  * @author Florian Nolden & Tobias Neumann
  */
-class LightCompassPlugin : public fawkes::Plugin
-{
- public:
+class LightCompassPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  LightCompassPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  LightCompassPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new LightCompassThread());
   }
 };

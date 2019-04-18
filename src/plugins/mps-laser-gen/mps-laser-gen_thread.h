@@ -24,35 +24,32 @@
 #ifndef __PLUGINS_MPS_LASER_GEN_THREAD_H_
 #define __PLUGINS_MPS_LASER_GEN_THREAD_H_
 
-#include <core/threading/thread.h>
-#include <aspect/blocked_timing.h>
-#include <aspect/logging.h>
 #include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
 #include <aspect/configurable.h>
+#include <aspect/logging.h>
+#include <aspect/tf.h>
+#include <core/threading/thread.h>
 #include <navgraph/aspect/navgraph.h>
 #include <plugins/ros/aspect/ros.h>
-#include <aspect/tf.h>
 
 #include <string>
 
 #include <interfaces/Laser360Interface.h>
 #include <ros/publisher.h>
 
-namespace fawkes {
-}
+namespace fawkes {}
 
-class MPSLaserGenThread 
-: public fawkes::Thread,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-	public fawkes::BlackBoardAspect,
-	public fawkes::NavGraphAspect,
-	public fawkes::ROSAspect,
-	public fawkes::TransformAspect
-{
+class MPSLaserGenThread : public fawkes::Thread,
+                          public fawkes::BlockedTimingAspect,
+                          public fawkes::LoggingAspect,
+                          public fawkes::ConfigurableAspect,
+                          public fawkes::BlackBoardAspect,
+                          public fawkes::NavGraphAspect,
+                          public fawkes::ROSAspect,
+                          public fawkes::TransformAspect {
 
- public:
+public:
   MPSLaserGenThread();
 
   virtual void init();
@@ -60,13 +57,12 @@ class MPSLaserGenThread
   virtual void loop();
 
   /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
-  protected: virtual void run() { Thread::run(); }
+protected:
+  virtual void run() { Thread::run(); }
 
- private:
-  fawkes::Laser360Interface* laser_if_;
+private:
+  fawkes::Laser360Interface *laser_if_;
   ros::Publisher vispub_;
-
 };
-
 
 #endif

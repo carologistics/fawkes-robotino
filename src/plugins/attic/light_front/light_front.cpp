@@ -29,15 +29,12 @@ using namespace fawkes;
 /** Light Detection with front cam and Laser
  * @author Florian Nolden & Tobias Neumann
  */
-class LightFront : public fawkes::Plugin
-{
- public:
+class LightFront : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  LightFront(Configuration *config)
-    : Plugin(config)
-  {
+  LightFront(Configuration *config) : Plugin(config) {
     thread_list.push_back(new LightFrontThread());
   }
 };

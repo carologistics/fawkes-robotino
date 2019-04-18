@@ -23,69 +23,69 @@
 #ifndef __PLUGINS_GAZSIM_CONVEYOR_THREAD_H_
 #define __PLUGINS_GAZSIM_CONVEYOR_THREAD_H_
 
-#include <core/threading/thread.h>
-#include <aspect/blocked_timing.h>
-#include <aspect/logging.h>
-#include <aspect/configurable.h>
 #include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
 #include <aspect/clock.h>
+#include <aspect/configurable.h>
+#include <aspect/logging.h>
 #include <aspect/tf.h>
 #include <blackboard/interface_listener.h>
+#include <core/threading/thread.h>
 //#include <interfaces/Position3DInterface.h>
 #include <interfaces/ConveyorPoseInterface.h>
 #include <interfaces/SwitchInterface.h>
-#include <utils/time/time.h>
 #include <plugins/gazebo/aspect/gazebo.h>
+#include <utils/time/time.h>
 
 #include <llsf_msgs/ConveyorVisionResult.pb.h>
 
-//from Gazebo
-#include <gazebo/transport/TransportTypes.hh>
+// from Gazebo
 #include <gazebo/msgs/MessageTypes.hh>
+#include <gazebo/transport/TransportTypes.hh>
 #include <gazebo/transport/transport.hh>
 
 #define MAX_LOOP_COUNT_TO_INVISIBLE 5
 #define CFG_PREFIX "/plugins/conveyor_pose"
 
-typedef const boost::shared_ptr<llsf_msgs::ConveyorVisionResult const> ConstConveyorVisionResultPtr;
+typedef const boost::shared_ptr<llsf_msgs::ConveyorVisionResult const>
+    ConstConveyorVisionResultPtr;
 
-class GazsimConveyorThread
-: public fawkes::Thread,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::GazeboAspect,
-  public fawkes::TransformAspect
-{
- public:
+class GazsimConveyorThread : public fawkes::Thread,
+                             public fawkes::BlockedTimingAspect,
+                             public fawkes::LoggingAspect,
+                             public fawkes::ConfigurableAspect,
+                             public fawkes::BlackBoardAspect,
+                             public fawkes::GazeboAspect,
+                             public fawkes::TransformAspect {
+public:
   GazsimConveyorThread();
 
   virtual void init();
   virtual void finalize();
   virtual void loop();
 
- /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
- protected: virtual void run() { Thread::run(); }
+  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+protected:
+  virtual void run() { Thread::run(); }
 
- private:
+private:
   fawkes::ConveyorPoseInterface *pos_if_;
   fawkes::SwitchInterface *switch_if_;
-  //fawkes::ConveyorConfigInterface *conv_config_if_;
+  // fawkes::ConveyorConfigInterface *conv_config_if_;
 
-  std::string  conveyor_if_name_;
-  std::string  frame_name_;
-  std::string  cfg_if_prefix_;
-  std::string  conveyor_frame_id_;
+  std::string conveyor_if_name_;
+  std::string frame_name_;
+  std::string cfg_if_prefix_;
+  std::string conveyor_frame_id_;
 
   gazebo::transport::SubscriberPtr conveyor_vision_sub_;
   void on_conveyor_vision_msg(ConstConveyorVisionResultPtr &msg);
-  
+
   int32_t loopcount_;
-  
-  //copy of last msg to write the interface in the next loop
+
+  // copy of last msg to write the interface in the next loop
   llsf_msgs::ConveyorVisionResult last_msg_;
-  bool new_data_; 
+  bool new_data_;
 };
 
 #endif

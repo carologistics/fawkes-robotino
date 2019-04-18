@@ -3,7 +3,7 @@
  *  plugin_template_thread.h - empty example
  *
  *  Created: Mi 23. Mai 17:44:14 CEST 2012
- *  Copyright  2012 Daniel Ewert 
+ *  Copyright  2012 Daniel Ewert
  *
  ****************************************************************************/
 
@@ -23,31 +23,28 @@
 #ifndef __PLUGINS_PLUGIN_TEMPLATE_THREAD_H_
 #define __PLUGINS_PLUGIN_TEMPLATE_THREAD_H_
 
-#include <core/threading/thread.h>
+#include <aspect/blackboard.h>
 #include <aspect/blocked_timing.h>
-#include <aspect/logging.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
-#include <aspect/blackboard.h>
+#include <aspect/logging.h>
+#include <core/threading/thread.h>
 #include <logging/file.h>
-
 
 #include <string>
 
 namespace fawkes {
-  class BatteryInterface;
+class BatteryInterface;
 }
 
-class VoltageLoggerThread
-: public fawkes::Thread,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::ClockAspect
-{
+class VoltageLoggerThread : public fawkes::Thread,
+                            public fawkes::BlockedTimingAspect,
+                            public fawkes::LoggingAspect,
+                            public fawkes::ConfigurableAspect,
+                            public fawkes::BlackBoardAspect,
+                            public fawkes::ClockAspect {
 
- public:
+public:
   VoltageLoggerThread();
 
   virtual void init();
@@ -55,17 +52,15 @@ class VoltageLoggerThread
   virtual bool prepare_finalize_user();
   virtual void finalize();
 
- /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
- protected: virtual void run() { Thread::run(); }
+  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+protected:
+  virtual void run() { Thread::run(); }
 
- private:
-
- private:
- fawkes::BatteryInterface* bat_if_;
- fawkes::FileLogger* flogger_;
- fawkes::Time last_measure_;
-  
+private:
+private:
+  fawkes::BatteryInterface *bat_if_;
+  fawkes::FileLogger *flogger_;
+  fawkes::Time last_measure_;
 };
-
 
 #endif

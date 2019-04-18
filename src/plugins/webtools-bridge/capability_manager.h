@@ -3,7 +3,7 @@
  * capability_manager.h - Interface For Capability Managers
  *
  *  Created:  2016
- *  Copyright  21016 Mostafa Gomaa 
+ *  Copyright  21016 Mostafa Gomaa
  *
  ****************************************************************************/
 
@@ -24,100 +24,90 @@
 #define _CAPABILTY_MANAGER_H
 
 #include "bridge_processor.h"
-#include <rapidjson/document.h>//todo:move to the cpps
+#include <rapidjson/document.h> //todo:move to the cpps
 
-#include <string>
 #include <map>
 #include <memory>
+#include <string>
 
 using rapidjson::Document;
 
-class WebSession; 
+class WebSession;
 
 /** @class CapabilityManager
-* Base class defining the basic functionality of a CapabilityManager.
-*
-* @author Mostafa Gomaa
-*/
-class CapabilityManager
-{
-	public:
+ * Base class defining the basic functionality of a CapabilityManager.
+ *
+ * @author Mostafa Gomaa
+ */
+class CapabilityManager {
+public:
+  /** Constructor
+   * @param capability_name the manager is intended to handle*/
+  CapabilityManager(std::string capability_name)
+      : capability_name_(capability_name), initialized_(false),
+        finalized_(false) {}
 
-		/** Constructor
-		* @param capability_name the manager is intended to handle*/
-		CapabilityManager(std::string capability_name)
-			: capability_name_(capability_name)
-			, initialized_(false)
-			, finalized_(false)
-		{
-		}
-		
-		/** Destructor */
-		~CapabilityManager()
-		{
-		}
+  /** Destructor */
+  ~CapabilityManager() {}
 
-		/** Implantation done by the extending classes.
-		* Decode the JSON message and dispatches the request to the
-		* intended operation provided by the intended BridgeProcessor
-		* (the intended operation is encoded in the 'opcode' of the JSON
-			message. the intended BridgeProcessor is denoted by the prefix
-			of the topic_name of the JSON message)
-		* @param d the Dom object containg the JSON message
-		* @param session the session issuing the request.
-		*/
-		virtual void handle_message( rapidjson::Document &d 
-									, std::shared_ptr <WebSession> session)
-		{}
+  /** Implantation done by the extending classes.
+  * Decode the JSON message and dispatches the request to the
+  * intended operation provided by the intended BridgeProcessor
+  * (the intended operation is encoded in the 'opcode' of the JSON
+          message. the intended BridgeProcessor is denoted by the prefix
+          of the topic_name of the JSON message)
+  * @param d the Dom object containg the JSON message
+  * @param session the session issuing the request.
+  */
+  virtual void handle_message(rapidjson::Document &d,
+                              std::shared_ptr<WebSession> session) {}
 
-		/** Initialize the capability manager */
-		virtual void init() 
-		{
-			if(!initialized_)
-			{
-				initialized_ = true ; 
-			}
+  /** Initialize the capability manager */
+  virtual void init() {
+    if (!initialized_) {
+      initialized_ = true;
+    }
+  }
 
-		}
-		
-		/** Initialize the capability manager */
-		virtual void finalize()
-		{
-			if(!finalized_)
-			{
-				while (!processores_.empty())
-				{
-					processores_.begin()-> second ->finalize();
-					processores_.erase(processores_.begin());
-				}
+  /** Initialize the capability manager */
+  virtual void finalize() {
+    if (!finalized_) {
+      while (!processores_.empty()) {
+        processores_.begin()->second->finalize();
+        processores_.erase(processores_.begin());
+      }
 
-				finalized_=true;
-			}
-		}
+      finalized_ = true;
+    }
+  }
 
-		/** Implantation done by the extending classes.
-		* Register a BridgeProcessor that extends the capability managed
-		* by this capability manager, by creating a registry entry of the processor
-		* mapped to its prefix.
-		* @param processor ptr to the BridgeProcessor to register
-		* @return true if the capability class was implemented by the processor
-		*/
-		virtual bool register_processor(std::shared_ptr <BridgeProcessor> processor)
-		{return false;}
+  /** Implantation done by the extending classes.
+   * Register a BridgeProcessor that extends the capability managed
+   * by this capability manager, by creating a registry entry of the processor
+   * mapped to its prefix.
+   * @param processor ptr to the BridgeProcessor to register
+   * @return true if the capability class was implemented by the processor
+   */
+  virtual bool register_processor(std::shared_ptr<BridgeProcessor> processor) {
+    return false;
+  }
 
-		/** Get the name of the capability managed by this CapabilityManager
-		* @return the internal name of the capability.
-		*/
-		std::string get_name()	{return capability_name_;}
+  /** Get the name of the capability managed by this CapabilityManager
+   * @return the internal name of the capability.
+   */
+  std::string get_name() { return capability_name_; }
 
-	protected:
-		///ProcessorMap is a map type, mapping Prefixes of BidgeProcessor to their instances ptrs
-		typedef std::map< std::string , std::shared_ptr<BridgeProcessor> > 	ProcessorMap;
-		
-		ProcessorMap 	processores_;				/**< Registry to keep track or all processors and the prefixes used to identify them */
-		std::string 	capability_name_;			/**< Internal name of the capability managed by this CapabilityManager */
-		bool initialized_;							/**< Initialization status */
-		bool finalized_;							/**< Finalization status */
+protected:
+  /// ProcessorMap is a map type, mapping Prefixes of BidgeProcessor to their
+  /// instances ptrs
+  typedef std::map<std::string, std::shared_ptr<BridgeProcessor>> ProcessorMap;
+
+  ProcessorMap processores_; /**< Registry to keep track or all processors and
+                                the prefixes used to identify them */
+  std::string capability_name_; /**< Internal name of the capability managed by
+                                   this CapabilityManager */
+  bool initialized_;            /**< Initialization status */
+  bool finalized_;              /**< Finalization status */
 };
 
 #endif

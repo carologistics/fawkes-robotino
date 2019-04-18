@@ -28,18 +28,15 @@ using namespace fawkes;
 /** CLIPS motor switching plugin.
  * @author Tim Niemueller
  */
-class ClipsMotorSwitchPlugin : public fawkes::Plugin
-{
- public:
+class ClipsMotorSwitchPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  ClipsMotorSwitchPlugin(Configuration *config) : Plugin(config)
-  {
+  ClipsMotorSwitchPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new ClipsMotorSwitchThread());
   }
 };
-
 
 PLUGIN_DESCRIPTION("Motor switching from CLIPS")
 EXPORT_PLUGIN(ClipsMotorSwitchPlugin)

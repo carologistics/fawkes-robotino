@@ -29,15 +29,12 @@ using namespace fawkes;
 /** Automatically generate navgraph for MPS
  * @author Tim Niemueller
  */
-class NavGraphGeneratorMPSPlugin : public fawkes::Plugin
-{
- public:
+class NavGraphGeneratorMPSPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  NavGraphGeneratorMPSPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  NavGraphGeneratorMPSPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new NavGraphGeneratorMPSThread());
   }
 };

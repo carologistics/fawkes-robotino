@@ -24,32 +24,30 @@
 #ifndef __PLUGINS_LASER_FRONT_DISTTHREAD_H_
 #define __PLUGINS_LASER_FRONT_DISTTHREAD_H_
 
-#include <core/threading/thread.h>
-#include <aspect/blocked_timing.h>
-#include <aspect/logging.h>
 #include <aspect/blackboard.h>
-#include <aspect/configurable.h>
-#include <aspect/tf.h>
+#include <aspect/blocked_timing.h>
 #include <aspect/clock.h>
+#include <aspect/configurable.h>
+#include <aspect/logging.h>
+#include <aspect/tf.h>
+#include <core/threading/thread.h>
 
 #include <string>
 
 namespace fawkes {
-	class Laser360Interface;
-	class Position3DInterface;
-}
+class Laser360Interface;
+class Position3DInterface;
+} // namespace fawkes
 
-class LaserFrontDistThread 
-: public fawkes::Thread,
-  public fawkes::BlockedTimingAspect,
-  public fawkes::LoggingAspect,
-  public fawkes::ClockAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::TransformAspect
-{
+class LaserFrontDistThread : public fawkes::Thread,
+                             public fawkes::BlockedTimingAspect,
+                             public fawkes::LoggingAspect,
+                             public fawkes::ClockAspect,
+                             public fawkes::ConfigurableAspect,
+                             public fawkes::BlackBoardAspect,
+                             public fawkes::TransformAspect {
 
- public:
+public:
   LaserFrontDistThread();
 
   virtual void init();
@@ -57,16 +55,16 @@ class LaserFrontDistThread
   virtual void loop();
 
   /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
-  protected: virtual void run() { Thread::run(); }
+protected:
+  virtual void run() { Thread::run(); }
 
- private:
-  //Define class member variables here
-  fawkes::Laser360Interface* if_laser_;
-  fawkes::Position3DInterface* if_result_;
+private:
+  // Define class member variables here
+  fawkes::Laser360Interface *if_laser_;
+  fawkes::Position3DInterface *if_result_;
   std::string frame_;
   int beams_used_;
   std::string target_frame_;
 };
-
 
 #endif

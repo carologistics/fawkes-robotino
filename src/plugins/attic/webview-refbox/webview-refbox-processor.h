@@ -24,30 +24,30 @@
 
 #include <webview/request_processor.h>
 
+#include <map>
 #include <string>
 #include <tuple>
-#include <map>
 
 namespace mongo {
-  class DBClientBase;
-  class BSONObj;
-}
+class DBClientBase;
+class BSONObj;
+} // namespace mongo
 
-class WebviewRCLLRefBoxRequestProcessor : public fawkes::WebRequestProcessor
-{
- public:
-  WebviewRCLLRefBoxRequestProcessor(std::string base_url, mongo::DBClientBase *mongodb_client);
+class WebviewRCLLRefBoxRequestProcessor : public fawkes::WebRequestProcessor {
+public:
+  WebviewRCLLRefBoxRequestProcessor(std::string base_url,
+                                    mongo::DBClientBase *mongodb_client);
   virtual ~WebviewRCLLRefBoxRequestProcessor();
 
-  virtual fawkes::WebReply * process_request(const fawkes::WebRequest *request);
+  virtual fawkes::WebReply *process_request(const fawkes::WebRequest *request);
 
- private:
+private:
   std::string gen_orders_table(const mongo::BSONObj *doc);
 
-	private:
+private:
   mongo::DBClientBase *mongodb_;
 
-  std::string           baseurl_;
+  std::string baseurl_;
 };
 
 #endif

@@ -2,7 +2,7 @@
  *  plugin_template_thread.cpp - template thread
  *
  *  Created: Mi 23. Mai 17:44:14 CEST 2012
- *  Copyright  2012 Daniel Ewert 
+ *  Copyright  2012 Daniel Ewert
  *
  ****************************************************************************/
 
@@ -32,44 +32,39 @@
 using namespace fawkes;
 
 /** @class PluginTemplateThread "plugin_template_thread.h"
- * Introductional example thread which makes the robotino drive along a 8-shaped course
+ * Introductional example thread which makes the robotino drive along a 8-shaped
+ * course
  * @author Daniel Ewert
  */
 
 /** Constructor. */
-PluginTemplateThread::PluginTemplateThread() :
-		Thread("PluginTemplateThread", Thread::OPMODE_WAITFORWAKEUP), BlockedTimingAspect(
-				BlockedTimingAspect::WAKEUP_HOOK_SKILL) {
-}
+PluginTemplateThread::PluginTemplateThread()
+    : Thread("PluginTemplateThread", Thread::OPMODE_WAITFORWAKEUP),
+      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SKILL) {}
 
 void PluginTemplateThread::init() {
 
-	logger->log_info(name(), "Plugin Template starts up");
-	motor_if_ = blackboard->open_for_reading<MotorInterface>("Robotino");
+  logger->log_info(name(), "Plugin Template starts up");
+  motor_if_ = blackboard->open_for_reading<MotorInterface>("Robotino");
 }
 
 bool PluginTemplateThread::prepare_finalize_user() {
-	stop();
-	return true;
+  stop();
+  return true;
 }
 
-void PluginTemplateThread::finalize() {
-	blackboard->close(motor_if_);
-}
+void PluginTemplateThread::finalize() { blackboard->close(motor_if_); }
 
 void PluginTemplateThread::send_transrot(float vx, float vy, float omega) {
-	MotorInterface::TransRotMessage *msg = new MotorInterface::TransRotMessage(
-			vx, vy, omega);
-	motor_if_->msgq_enqueue(msg);
+  MotorInterface::TransRotMessage *msg =
+      new MotorInterface::TransRotMessage(vx, vy, omega);
+  motor_if_->msgq_enqueue(msg);
 }
 
-void PluginTemplateThread::stop() {
-	send_transrot(0., 0., 0.);
-}
+void PluginTemplateThread::stop() { send_transrot(0., 0., 0.); }
 
 void PluginTemplateThread::loop() {
 
-	send_transrot(FORWARD_SPEED, SIDEWARD_SPEED, ROTATIONAL_SPEED);
-	logger->log_info(name(),"Driving madly!!");
+  send_transrot(FORWARD_SPEED, SIDEWARD_SPEED, ROTATIONAL_SPEED);
+  logger->log_info(name(), "Driving madly!!");
 }
-

@@ -20,11 +20,11 @@
 
 #include "tag_vision_thread.h"
 
-#include <tf/types.h>
 #include <interfaces/Position3DInterface.h>
+#include <tf/types.h>
 
-#include <opencv/cv.h>
 #include <math.h>
+#include <opencv/cv.h>
 #include <string>
 
 #define CFG_PREFIX "/plugins/tag_vision/"
@@ -41,113 +41,108 @@ using namespace std;
 
 /** Constructor. */
 TagVisionThread::TagVisionThread()
-  : Thread("TagVisionThread", Thread::OPMODE_WAITFORWAKEUP),
-    VisionAspect(VisionAspect::CYCLIC),
-    ConfigurationChangeHandler(CFG_PREFIX),
-    fawkes::TransformAspect(fawkes::TransformAspect::BOTH,"tags")
-{
+    : Thread("TagVisionThread", Thread::OPMODE_WAITFORWAKEUP),
+      VisionAspect(VisionAspect::CYCLIC),
+      ConfigurationChangeHandler(CFG_PREFIX), fawkes::TransformAspect(
+                                                  fawkes::TransformAspect::BOTH,
+                                                  "tags") {
+  fv_cam = NULL;
+  shm_buffer = NULL;
+  image_buffer = NULL;
+  ipl = NULL;
+  this->markers_ = NULL;
+}
+
+void TagVisionThread::init() {
+  config->add_change_handler(this);
+  // load config
+  // config prefix in string for concatinating
+  std::string prefix = CFG_PREFIX;
+  // log, that we open load the config
+  logger->log_info(name(), "loading config");
+  // load alvar camera calibration
+  if (!alvar_cam.SetCalib(
+          config->get_string((prefix + "alvar_camera_calib_file").c_str())
+              .c_str(),
+          0, 0, FILE_FORMAT_DEFAULT)) {
+    this->logger->log_warn(this->name(), "Faild to load calibration file");
+  }
+  // load marker size and apply it
+  marker_size = config->get_uint((prefix + "marker_size").c_str());
+  detector.SetMarkerSize(marker_size);
+
+  // Image Buffer ID
+  shm_id = config->get_string((prefix + "shm_image_id").c_str());
+
+  // init firevision camera
+  // CAM swapping not working (??)
+  if (fv_cam != NULL) {
+    // free the camera
+    fv_cam->stop();
+    fv_cam->flush();
+    fv_cam->dispose_buffer();
+    fv_cam->close();
+    delete fv_cam;
     fv_cam = NULL;
+  }
+  if (fv_cam == NULL) {
+    std::string connection =
+        this->config->get_string((prefix + "camera").c_str());
+    fv_cam = vision_master->register_for_camera(connection.c_str(), this);
+    fv_cam->start();
+    fv_cam->open();
+    this->img_width = fv_cam->pixel_width();
+    this->img_height = fv_cam->pixel_height();
+  }
+
+  // set camera resolution
+  alvar_cam.SetRes(this->img_width, this->img_height);
+
+  // SHM image buffer
+  if (shm_buffer != NULL) {
+    delete shm_buffer;
     shm_buffer = NULL;
     image_buffer = NULL;
-    ipl = NULL;
-    this->markers_ = NULL;
+  }
+
+  shm_buffer = new firevision::SharedMemoryImageBuffer(
+      shm_id.c_str(), firevision::YUV422_PLANAR, this->img_width,
+      this->img_height);
+  if (!shm_buffer->is_valid()) {
+    delete shm_buffer;
+    delete fv_cam;
+    shm_buffer = NULL;
+    fv_cam = NULL;
+    throw fawkes::Exception("Shared memory segment not valid");
+  }
+  std::string frame = this->config->get_string((prefix + "frame").c_str());
+  shm_buffer->set_frame_id(frame.c_str());
+
+  image_buffer = shm_buffer->buffer();
+  ipl = cvCreateImage(cvSize(this->img_width, this->img_height), IPL_DEPTH_8U,
+                      IMAGE_CAHNNELS);
+
+  // set up marker
+  max_marker = 16;
+  this->markers_ = new std::vector<alvar::MarkerData>();
+
+  this->tag_interfaces = new TagPositionList(
+      this->blackboard, tf_listener, this->max_marker, frame, this->name(),
+      this->logger, this->clock, this->tf_publisher);
+  // get laser-line interfaces
+  laser_line_ifs_ = new std::vector<fawkes::LaserLineInterface *>();
+  for (int i = 1; i <= 8; i++) {
+    // std::string if_name = "/laser-lines/" + i;
+    std::string if_name = "/laser-lines/" + std::to_string(i);
+
+    fawkes::LaserLineInterface *ll_if =
+        blackboard->open_for_reading<fawkes::LaserLineInterface>(
+            if_name.c_str());
+    laser_line_ifs_->push_back(ll_if);
+  }
 }
 
-void
-TagVisionThread::init()
-{
-    config->add_change_handler(this);
-    // load config
-    // config prefix in string for concatinating
-    std::string prefix = CFG_PREFIX;
-    // log, that we open load the config
-    logger->log_info(name(),"loading config");
-    // load alvar camera calibration
-    if(!alvar_cam.SetCalib(config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),0,0,FILE_FORMAT_DEFAULT))
-    {
-      this->logger->log_warn(this->name(),"Faild to load calibration file");
-    }
-    // load marker size and apply it
-    marker_size = config->get_uint((prefix + "marker_size").c_str());
-    detector.SetMarkerSize(marker_size);
-
-    //Image Buffer ID
-    shm_id = config->get_string((prefix + "shm_image_id").c_str());
-
-    // init firevision camera
-    // CAM swapping not working (??)
-    if(fv_cam != NULL){
-        // free the camera
-        fv_cam->stop();
-        fv_cam->flush();
-        fv_cam->dispose_buffer();
-        fv_cam->close();
-        delete fv_cam;
-        fv_cam = NULL;
-    }
-    if(fv_cam == NULL){
-      std::string connection = this->config->get_string((prefix + "camera").c_str());
-        fv_cam = vision_master->register_for_camera(connection.c_str(), this);
-        fv_cam->start();
-        fv_cam->open();
-        this->img_width = fv_cam->pixel_width();
-        this->img_height = fv_cam->pixel_height();
-    }
-
-    //set camera resolution
-    alvar_cam.SetRes(this->img_width, this->img_height);
-
-    // SHM image buffer
-    if(shm_buffer != NULL) {
-        delete shm_buffer;
-        shm_buffer = NULL;
-        image_buffer = NULL;
-    }
-
-    shm_buffer = new firevision::SharedMemoryImageBuffer(
-                shm_id.c_str(),
-                firevision::YUV422_PLANAR,
-                this->img_width,
-                this->img_height
-                );
-    if(!shm_buffer->is_valid()){
-        delete shm_buffer;
-        delete fv_cam;
-        shm_buffer = NULL;
-        fv_cam = NULL;
-        throw fawkes::Exception("Shared memory segment not valid");
-    }
-    std::string frame = this->config->get_string((prefix + "frame").c_str());
-    shm_buffer->set_frame_id(frame.c_str());
-
-    image_buffer = shm_buffer->buffer();
-    ipl =  cvCreateImage(
-                cvSize(this->img_width,this->img_height),
-                IPL_DEPTH_8U,IMAGE_CAHNNELS);
-
-
-    // set up marker
-    max_marker = 16;
-    this->markers_ = new std::vector<alvar::MarkerData>();
-
-    this->tag_interfaces =
-      new TagPositionList(this->blackboard, tf_listener, this->max_marker, frame,
-			  this->name(),this->logger, this->clock,
-			  this->tf_publisher);
-    // get laser-line interfaces
-    laser_line_ifs_ = new std::vector<fawkes::LaserLineInterface*>();
-    for (int i = 1; i <= 8; i++) {
-      //std::string if_name = "/laser-lines/" + i;
-      std::string if_name = "/laser-lines/" + std::to_string(i);
-
-      fawkes::LaserLineInterface *ll_if = blackboard->open_for_reading<fawkes::LaserLineInterface>(if_name.c_str());
-      laser_line_ifs_->push_back(ll_if);
-    }
-}
-
-void
-TagVisionThread::finalize()
-{
+void TagVisionThread::finalize() {
   vision_master->unregister_thread(this);
   config->rem_change_handler(this);
   // free the markers
@@ -156,91 +151,87 @@ TagVisionThread::finalize()
   delete fv_cam;
   fv_cam = NULL;
   delete shm_buffer;
-  shm_buffer= NULL;
+  shm_buffer = NULL;
   image_buffer = NULL;
   cvReleaseImage(&ipl);
   ipl = NULL;
   delete this->tag_interfaces;
 
-  while( ! laser_line_ifs_->empty() ) {
-    blackboard->close( laser_line_ifs_->back() );
+  while (!laser_line_ifs_->empty()) {
+    blackboard->close(laser_line_ifs_->back());
     laser_line_ifs_->pop_back();
   }
   delete laser_line_ifs_;
 }
 
-void
-TagVisionThread::loop()
-{
-    if(!cfg_mutex.try_lock()){
-        //logger->log_info(name(),"Skipping loop");
-        return;
-    }
-    if(fv_cam == NULL || !fv_cam->ready()){
-        logger->log_info(name(),"Camera not ready");
-        init();
-        return;
-    }
-    //logger->log_info(name(),"entering loop");
-    //get img form fv
-    fv_cam->capture();
-    firevision::convert(fv_cam->colorspace(),
-                        firevision::YUV422_PLANAR,
-                        fv_cam->buffer(),
-                        image_buffer,
-                        this->img_width,
-                        this->img_height);
-    fv_cam->dispose_buffer();
-    //convert img
-    firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
-    //get marker from img
-    get_marker();
+void TagVisionThread::loop() {
+  if (!cfg_mutex.try_lock()) {
+    // logger->log_info(name(),"Skipping loop");
+    return;
+  }
+  if (fv_cam == NULL || !fv_cam->ready()) {
+    logger->log_info(name(), "Camera not ready");
+    init();
+    return;
+  }
+  // logger->log_info(name(),"entering loop");
+  // get img form fv
+  fv_cam->capture();
+  firevision::convert(fv_cam->colorspace(), firevision::YUV422_PLANAR,
+                      fv_cam->buffer(), image_buffer, this->img_width,
+                      this->img_height);
+  fv_cam->dispose_buffer();
+  // convert img
+  firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
+  // get marker from img
+  get_marker();
 
-    this->tag_interfaces->update_blackboard(this->markers_, laser_line_ifs_);
+  this->tag_interfaces->update_blackboard(this->markers_, laser_line_ifs_);
 
-    cfg_mutex.unlock();
+  cfg_mutex.unlock();
 }
 
-void
-TagVisionThread::get_marker()
-{
-    // detect makres on image
-    detector.Detect(ipl,&alvar_cam);
-    // reset currently saved markers
-    this->markers_->clear();
-    // fill output array
-    for(alvar::MarkerData &tmp_marker: *(this->detector.markers))
-    {
-        Pose tmp_pose = tmp_marker.pose;
-        //skip the marker, if the pose is directly on the camera (error)
-        if(tmp_pose.translation[0]<1 && tmp_pose.translation[1]<1 && tmp_pose.translation[2]<1){
-            continue;
-        }
-        this->markers_->push_back(tmp_marker);
-        // add up to markers
-        tmp_marker.Visualize(ipl,&alvar_cam);
+void TagVisionThread::get_marker() {
+  // detect makres on image
+  detector.Detect(ipl, &alvar_cam);
+  // reset currently saved markers
+  this->markers_->clear();
+  // fill output array
+  for (alvar::MarkerData &tmp_marker : *(this->detector.markers)) {
+    Pose tmp_pose = tmp_marker.pose;
+    // skip the marker, if the pose is directly on the camera (error)
+    if (tmp_pose.translation[0] < 1 && tmp_pose.translation[1] < 1 &&
+        tmp_pose.translation[2] < 1) {
+      continue;
     }
-    firevision::IplImageAdapter::convert_image_yuv422_planar(ipl,image_buffer);
+    this->markers_->push_back(tmp_marker);
+    // add up to markers
+    tmp_marker.Visualize(ipl, &alvar_cam);
+  }
+  firevision::IplImageAdapter::convert_image_yuv422_planar(ipl, image_buffer);
 }
 
 // config handling
-void TagVisionThread::config_value_erased(const char *path) {};
-void TagVisionThread::config_tag_changed(const char *new_tag) {};
-void TagVisionThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v) {};
-void TagVisionThread::config_value_changed(const fawkes::Configuration::ValueIterator *v)
-{
-  if(cfg_mutex.try_lock()){
-    try{
+void TagVisionThread::config_value_erased(const char *path){};
+void TagVisionThread::config_tag_changed(const char *new_tag){};
+void TagVisionThread::config_comment_changed(
+    const fawkes::Configuration::ValueIterator *v){};
+void TagVisionThread::config_value_changed(
+    const fawkes::Configuration::ValueIterator *v) {
+  if (cfg_mutex.try_lock()) {
+    try {
       std::string prefix = CFG_PREFIX;
       // log, that we open load the config
-      logger->log_info(name(),"loading config");
+      logger->log_info(name(), "loading config");
       // load alvar camera calibration
-      alvar_cam.SetCalib(config->get_string((prefix + "alvar_camera_calib_file").c_str()).c_str(),0,0,FILE_FORMAT_DEFAULT);
+      alvar_cam.SetCalib(
+          config->get_string((prefix + "alvar_camera_calib_file").c_str())
+              .c_str(),
+          0, 0, FILE_FORMAT_DEFAULT);
       // load marker size and apply it
       marker_size = config->get_uint((prefix + "marker_size").c_str());
       detector.SetMarkerSize(marker_size);
-    }
-    catch(fawkes::Exception &e){
+    } catch (fawkes::Exception &e) {
       logger->log_error(name(), e);
     }
   }

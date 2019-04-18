@@ -1,5 +1,5 @@
 /***************************************************************************
- *  gazsim_light_front_plugin.cpp - Plugin provides 
+ *  gazsim_light_front_plugin.cpp - Plugin provides
  *     the detected light signals of the llsf-machines
  *
  *  Created: Tue Aug 20 22:32:26 2013
@@ -30,16 +30,12 @@ using namespace fawkes;
  *
  * @author Frederik Zwilling
  */
-class GazsimLightFrontPlugin : public fawkes::Plugin
-{
- public:
-
+class GazsimLightFrontPlugin : public fawkes::Plugin {
+public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimLightFrontPlugin(Configuration *config)
-    : Plugin(config)
-  {
+  GazsimLightFrontPlugin(Configuration *config) : Plugin(config) {
     thread_list.push_back(new LightFrontSimThread());
   }
 };
