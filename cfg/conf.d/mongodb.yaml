@@ -41,6 +41,7 @@ plugins/mongodb:
         - robotino-laptop-1:27022
         - robotino-laptop-2:27022
         - robotino-laptop-3:27022
+      read-preference: nearest
 
   # The following defines the mongod instances you want
   # the mongodb plugin to run
