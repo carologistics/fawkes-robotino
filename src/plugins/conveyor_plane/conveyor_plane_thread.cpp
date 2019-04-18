@@ -270,7 +270,7 @@ void ConveyorPlaneThread::loop() {
 
   pose pose_average;
   bool pose_average_availabe = pose_get_avg(pose_average);
-  // logger->log_info(name(),"CONVEYOR-POSE 3: set average");
+
   if (pose_average_availabe) {
     vis_hist_ = std::max(1, vis_hist_ + 1);
     pose_write(pose_average);
@@ -288,10 +288,12 @@ void ConveyorPlaneThread::loop() {
     trash.valid = false;
     pose_write(trash);
   }
-  // logger->log_debug(name(),"CONVEYOR-POSE 4: checked average");
+
+  if (vis_hist_ < 0)
+    poses_.clear();
+
   fawkes::LaserLineInterface *ll = NULL;
   bool use_laserline = laserline_get_best_fit(ll);
-  // logger->log_debug(name(),"CONVEYOR-POSE 5: got laserline");
 
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
@@ -325,9 +327,12 @@ void ConveyorPlaneThread::loop() {
     CloudPtr cloud_plane = cloud_get_plane(cloud_front_side, coeff);
     //  logger->log_debug(name(), "After getting plane");
     if (cloud_plane == NULL || !cloud_plane) {
-      pose trash;
-      trash.valid = false;
-      pose_add_element(trash);
+      //-- add as invalid plane
+      Eigen::Vector4f invalid(std::numeric_limits<float>::quiet_NaN(),
+                              std::numeric_limits<float>::quiet_NaN(),
+                              std::numeric_limits<float>::quiet_NaN(),
+                              std::numeric_limits<float>::quiet_NaN());
+      pose_add_element(invalid, invalid.head<3>());
       return;
     }
 
@@ -337,9 +342,12 @@ void ConveyorPlaneThread::loop() {
         cloud_cluster(cloud_plane);
     //  logger->log_debug(name(), "After clustering");
     if (cluster_indices->size() <= 0) {
-      pose trash;
-      trash.valid = false;
-      pose_add_element(trash);
+      //-- add as invalid plane
+      Eigen::Vector4f invalid(std::numeric_limits<float>::quiet_NaN(),
+                              std::numeric_limits<float>::quiet_NaN(),
+                              std::numeric_limits<float>::quiet_NaN(),
+                              std::numeric_limits<float>::quiet_NaN());
+      pose_add_element(invalid, invalid.head<3>());
       return;
     }
     // logger->log_debug(name(), "Before split");
@@ -427,9 +435,8 @@ void ConveyorPlaneThread::loop() {
   normal(0) = coeff->values[0];
   normal(1) = coeff->values[1];
   normal(2) = coeff->values[2];
-  pose pose_current = calculate_pose(centroid, normal);
-  ;
-  pose_add_element(pose_current);
+
+  pose_add_element(centroid, normal);
 }
 
 bool ConveyorPlaneThread::pc_in_check() {
@@ -493,9 +500,10 @@ void ConveyorPlaneThread::if_read() {
   }
 }
 
-void ConveyorPlaneThread::pose_add_element(pose element) {
+void ConveyorPlaneThread::pose_add_element(const Eigen::Vector4f &centroid,
+                                           const Eigen::Vector3f &normal) {
   // add element
-  poses_.push_front(element);
+  poses_.push_front(std::make_pair(centroid, normal));
 
   // if to full, remove oldest
   while (poses_.size() > cfg_pose_avg_hist_size_) {
@@ -504,102 +512,59 @@ void ConveyorPlaneThread::pose_add_element(pose element) {
 }
 
 bool ConveyorPlaneThread::pose_get_avg(pose &out) {
-  pose median;
-
   // count invalid loops
   unsigned int invalid = 0;
-  for (pose p : poses_) {
-    if (!p.valid) {
-      invalid++;
+  std::list<std::pair<Eigen::Vector4f, Eigen::Vector3f>> valid_planes;
+  for (const std::pair<Eigen::Vector4f, Eigen::Vector3f> &p : poses_) {
+    //-- keep plane if valid
+    if (!std::isnan(p.first(0))) {
+      valid_planes.push_back(p);
+
+    } else {
+      ++invalid;
     }
   }
 
   if (invalid > cfg_allow_invalid_poses_) {
     logger->log_warn(name(), "view unstable, got %u invalid frames", invalid);
-  }
-
-  // Weiszfeld's algorithm to find the geometric median
-  median.translation.setValue(0, 0, 0);
-  median.rotation.setEuler(0, 0, 0);
-  unsigned int iteraterions = 20;
-  for (unsigned int i = 0; i < iteraterions; ++i) {
-
-    fawkes::tf::Vector3 numerator(0, 0, 0);
-    double divisor = 0;
-
-    for (pose p : poses_) {
-      if (p.valid) {
-        double divisor_current = (p.translation - median.translation).norm();
-        divisor += (1 / divisor_current);
-        numerator += (p.translation / divisor_current);
-        //        logger->log_info(name(), "(%lf\t%lf\t%lf) /\t%lf",
-        //        numerator.x(), numerator.y(), numerator.z(), divisor);
-      }
-    }
-    median.translation = numerator / divisor;
-  }
-
-  // remove outliers
-  std::list<pose> poses_used;
-  for (pose p : poses_) {
-    if (p.valid) {
-      double dist = (p.translation - median.translation).norm();
-
-      //      logger->log_warn(name(), "(%f\t%f\t%f)\t(%f\t%f\t%f) => %lf",
-      //          median.translation.x(), median.translation.y(),
-      //          median.translation.z(), p.translation.x(), p.translation.y(),
-      //          p.translation.z(), dist);
-      if (dist <= cfg_pose_diff_) {
-        poses_used.push_back(p);
-      }
-    }
-  }
-
-  if (poses_used.size() <= cfg_pose_avg_min_) {
-    logger->log_warn(name(), "not enough for average, got: %zu",
-                     poses_used.size());
     return false;
   }
 
-  // calculate average
-  //  Eigen::Quaternion<float> avgRot;
-  //  Eigen::Vector4f cumulative;
-  //  Eigen::Quaternion<float> firstRotation(poses_used.front().rotation.x(),
-  //  poses_used.front().rotation.y(), poses_used.front().rotation.z(),
-  //  poses_used.front().rotation.w()); float addDet = 1.0 /
-  //  (float)poses_used.size();
-  for (pose p : poses_used) {
-    //    Eigen::Quaternion<float> newRotation(p.rotation.x(), p.rotation.y(),
-    //    p.rotation.z(), p.rotation.w());
-
-    out.translation.setX(out.translation.x() + p.translation.x());
-    out.translation.setY(out.translation.y() + p.translation.y());
-    out.translation.setZ(out.translation.z() + p.translation.z());
-
-    //  fawkes::tf::Matrix3x3 m(p.rotation);
-    //  fawkes::tf::Scalar rc, pc, yc;
-    //  m.getEulerYPR(yc, pc, rc);
-    //  roll += fawkes::normalize_rad(rc);
-    //  pitch += fawkes::normalize_rad(pc);
-    //  yaw += fawkes::normalize_rad(yc);
-    //    avgRot = averageQuaternion(cumulative, newRotation, firstRotation,
-    //    addDet);
+  //-- averaging planes
+  Eigen::Vector4f median_centroid(0, 0, 0, 0);
+  Eigen::Vector3f median_normal(0, 0, 0);
+  float invN = 1.f / static_cast<float>(valid_planes.size());
+  for (const std::pair<Eigen::Vector4f, Eigen::Vector3f> &p : valid_planes) {
+    median_centroid += p.first * invN;
+    median_normal += p.second * invN;
   }
 
-  // normalize
-  out.translation.setX(out.translation.x() / poses_used.size());
-  out.translation.setY(out.translation.y() / poses_used.size());
-  out.translation.setZ(out.translation.z() / poses_used.size());
+  // remove outliers
+  std::list<std::pair<Eigen::Vector4f, Eigen::Vector3f>> planes_used;
+  for (const std::pair<Eigen::Vector4f, Eigen::Vector3f> &p : valid_planes) {
+    float dist = (p.first - median_centroid).norm();
 
-  // roll /= poses_used.size();
-  // pitch /= poses_used.size();
-  // yaw /= poses_used.size();
-  // out.rotation.setEuler(yaw, pitch, roll);
+    if (dist <= cfg_pose_diff_) {
+      planes_used.push_back(p);
+    }
+  }
 
-  //  logger->log_info(name(), "got %u for avg: (%f\t%f\t%f)\t(%f\t%f\t%f)",
-  //  poses_used.size(),
-  //      out.translation.x(), out.translation.y(), out.translation.z(),
-  //      roll, pitch, yaw);
+  if (planes_used.size() < cfg_pose_avg_min_) {
+    logger->log_warn(name(), "not enough for average, got: %zu",
+                     planes_used.size());
+    return false;
+  }
+
+  //-- recalculate average using valid inliers
+  median_centroid = Eigen::Vector4f(0, 0, 0, 0);
+  median_normal = Eigen::Vector3f(0, 0, 0);
+  invN = 1.f / static_cast<float>(planes_used.size());
+  for (const std::pair<Eigen::Vector4f, Eigen::Vector3f> &p : planes_used) {
+    median_centroid += p.first * invN;
+    median_normal += p.second * invN;
+  }
+
+  out = calculate_pose(median_centroid, median_normal);
 
   return true;
 }
@@ -621,7 +586,8 @@ bool ConveyorPlaneThread::laserline_get_best_fit(
     // just if not too far away
     Eigen::Vector3f center = laserline_get_center_transformed(ll);
 
-    if (std::sqrt(center(0) * center(0) + center(2) * center(2)) > 0.8) {
+    if (std::sqrt(static_cast<float>(center(0) * center(0) +
+                                     center(2) * center(2))) > 0.8) {
       continue;
     }
 
