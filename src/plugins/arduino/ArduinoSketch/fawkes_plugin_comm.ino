@@ -216,38 +216,18 @@ inline void set_new_speed_acc(float new_speed, float new_acc, AccelStepper &moto
 
 // stop all the motors using the most recent acceleration values
 void slow_stop_all() {
-  noInterrupts();
   motor_X.stop();
   motor_Y.stop();
   motor_Z.stop();
   motor_A.stop();
-  interrupts();
 }
 
-// crank up the acceleration values before stopping. Also block until stopping is done (should be normally be reasonable fast)
+// stop all motors with infinite acceleration. Do not use if step counter should still be correct afterwards.
 void fast_stop_all() {
-  if(cur_status != STATUS_MOVING) return; // this only works when we are moving
-  noInterrupts(); // stop stepping!
-  float accs[4] = { motor_X.getAcceleration(),
-                    motor_Y.getAcceleration(),
-                    motor_Z.getAcceleration(),
-                    motor_A.getAcceleration()};
-  // now pimp the acceleration
-  set_new_acc(DEFAULT_MAX_ACCEL_X,motor_X);
-  set_new_acc(DEFAULT_MAX_ACCEL_Y,motor_Y);
-  set_new_acc(DEFAULT_MAX_ACCEL_Z,motor_Z);
-  set_new_acc(DEFAULT_MAX_ACCEL_A,motor_A);
-  slow_stop_all(); // this will also enable interrupts, thus stepping starts again
-  // all motors are stopped now
-  movement_done_flag = false; // this flag could have been raised during parsing time.
-  while(!movement_done_flag); // wait until stopping movement is done.
-  noInterrupts();
-  set_new_acc(accs[0],motor_X);
-  set_new_acc(accs[1],motor_Y);
-  set_new_acc(accs[2],motor_Z);
-  set_new_acc(accs[3],motor_A);
-  interrupts();
-  //go on like nothin' happened
+  motor_X.hard_stop();
+  motor_Y.hard_stop();
+  motor_Z.hard_stop();
+  motor_A.hard_stop();
 }
 
 void read_package() {
