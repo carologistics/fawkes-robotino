@@ -59,7 +59,7 @@ ConveyorPoseThread::ConveyorPoseThread()
                                                   fawkes::TransformAspect::BOTH,
                                                   "conveyor_pose"),
       result_fitness_(std::numeric_limits<double>::min()),
-      syncpoint_clouds_ready_name_("/perception/conveyor_pose/clouds_ready"),
+      syncpoint_ready_for_icp_name_("/perception/conveyor_pose/clouds_ready"),
       cloud_out_raw_name_("raw"), cloud_out_trimmed_name_("trimmed"),
       current_mps_type_(ConveyorPoseInterface::DEFAULT_TYPE),
       current_mps_target_(ConveyorPoseInterface::DEFAULT_TARGET),
@@ -112,9 +112,9 @@ ConveyorPoseThread::get_model_path(ConveyorPoseInterface *iface,
 void ConveyorPoseThread::init() {
   config->add_change_handler(this);
 
-  syncpoint_clouds_ready =
-      syncpoint_manager->get_syncpoint(name(), syncpoint_clouds_ready_name_);
-  syncpoint_clouds_ready->register_emitter(name());
+  syncpoint_ready_for_icp_ =
+      syncpoint_manager->get_syncpoint(name(), syncpoint_ready_for_icp_name_);
+  syncpoint_ready_for_icp_->register_emitter(name());
 
   cfg_debug_mode_ = config->get_bool(CFG_PREFIX "/debug");
   cfg_force_shelf_ = config->get_int_or_default(CFG_PREFIX "/force_shelf", -1);
@@ -286,7 +286,7 @@ void ConveyorPoseThread::init() {
   //-- initial guess source
   std::string cfg_bb_initial_guess_topic =
       config->get_string(CFG_PREFIX "/icp/init_guess_interface_id");
-  external_initial_guess_ =
+  bb_init_guess_pose_ =
       blackboard->open_for_reading<fawkes::Position3DInterface>(
           cfg_bb_initial_guess_topic.c_str());
 
@@ -480,7 +480,7 @@ void ConveyorPoseThread::finalize() {
   pcl_manager->remove_pointcloud(cloud_out_raw_name_.c_str());
   pcl_manager->remove_pointcloud(cloud_out_trimmed_name_.c_str());
   pcl_manager->remove_pointcloud("model");
-  blackboard->close(external_initial_guess_);
+  blackboard->close(bb_init_guess_pose_);
   blackboard->close(realsense_switch_);
   blackboard->close(bb_pose_);
 }
@@ -490,7 +490,7 @@ void ConveyorPoseThread::loop() {
   realsense_switch_->read();
   if (!realsense_switch_->is_enabled()) {
     logger->log_warn(
-        name(), "camera is disables. I'll idle and wait for camera input. cya");
+        name(), "Waiting for RealSense camera to be enabled");
     return;
   }
 
@@ -509,7 +509,7 @@ void ConveyorPoseThread::loop() {
       result_pose_.release();
 
       // Schedule restart of recognition thread
-      recognition_thread_->restart();
+      recognition_thread_->schedule_restart();
     } else {
       logger->log_warn(name(), "Unknown message received");
     }
@@ -523,58 +523,8 @@ void ConveyorPoseThread::loop() {
         (wait_start_ + wait_time_ - Time()).in_sec());
     return;
   }
-
-  if (update_input_cloud()) {
-    fawkes::LaserLineInterface *ll = nullptr;
-    have_laser_line_ = laserline_get_best_fit(ll);
-
-    // No point in recording a model when there's no laser line
-    if (cfg_record_model_ && !have_laser_line_)
-      return;
-
-    //-- dont do anything if pointcloud is much older than the last external
-    // init guess
-    //-- => check on divergence of timespan between pointcloud and external
-    // initial guess
-    external_initial_guess_->read();
-    fawkes::Time last_external = *external_initial_guess_->timestamp();
-    fawkes::Time last_pc = fawkes::Time(input_pc_header_.stamp, 0l);
-
-    external_timeout_reached_ =
-        (first_time_waited_for_external_ != fawkes::TIME_MIN &&
-         (fawkes::Time(0.) - &first_time_waited_for_external_) >
-             cfg_external_timeout_);
-
-    if (external_timeout_reached_)
-      logger->log_warn(name(), "ext. init. guess reached timeout");
-
-    bool wait_for_external =
-        //-- external init guess is ok,
-        (blackboard->is_alive() &&
-         external_initial_guess_->visibility_history() > 0)
-        //-- but is too old
-        && (last_external - &last_pc) > cfg_max_timediff_external_pc_
-        //-- and timeout was not exceeded
-        && !external_timeout_reached_;
-
-    if (wait_for_external) {
-      //-- if there was no need to wait init first time to wait
-      if (first_time_waited_for_external_ == fawkes::TIME_MIN)
-        first_time_waited_for_external_ = fawkes::Time(0.);
-
-      return;
-
-    } else {
-      first_time_waited_for_external_ = fawkes::TIME_MIN;
-    }
-
-    //-- obtain initial guess
-    {
-      fawkes::MutexLocker locked(&cloud_mutex_);
-      set_initial_tf(ll);
-
-    } // cloud_mutex_ lock
-
+  
+  if (update_input_cloud() && get_initial_guess()) {
     CloudPtr cloud_in(new Cloud(**cloud_in_));
 
     size_t in_size = cloud_in->points.size();
@@ -585,7 +535,7 @@ void ConveyorPoseThread::loop() {
       return;
     }
 
-    trimmed_scene_ = cloud_trim(cloud_vg, ll, have_laser_line_);
+    trimmed_scene_ = cloud_trim(cloud_vg);
 
     cloud_publish(cloud_in, cloud_out_raw_);
     cloud_publish(trimmed_scene_, cloud_out_trimmed_);
@@ -629,10 +579,58 @@ void ConveyorPoseThread::loop() {
         MutexLocker locked{&cloud_mutex_};
 
         scene_ = trimmed_scene_;
-        syncpoint_clouds_ready->emit(name());
+        syncpoint_ready_for_icp_->emit(name());
       }
     } // ! cfg_record_model_
-  }   // update_input_cloud()
+  }   // update_input_cloud() && get_initial_guess()
+}
+
+
+bool ConveyorPoseThread::get_initial_guess() {
+  //-- dont do anything if pointcloud is much older than the last external
+  // init guess
+  //-- => check on divergence of timespan between pointcloud and external
+  // initial guess
+  bb_init_guess_pose_->read();
+  fawkes::Time last_external = *bb_init_guess_pose_->timestamp();
+  fawkes::Time last_pc = fawkes::Time(input_pc_header_.stamp, 0l);
+
+  external_timeout_reached_ =
+      (first_time_waited_for_external_ != fawkes::TIME_MIN &&
+       (fawkes::Time(0.) - &first_time_waited_for_external_) >
+           cfg_external_timeout_);
+
+  if (external_timeout_reached_)
+    logger->log_warn(name(), "ext. init. guess reached timeout");
+
+  bool wait_for_external =
+      //-- external init guess is ok,
+      (blackboard->is_alive() &&
+       bb_init_guess_pose_->visibility_history() > 0)
+      //-- but is too old
+      && (last_external - &last_pc) > cfg_max_timediff_external_pc_
+      //-- and timeout was not exceeded
+      && !external_timeout_reached_;
+
+  if (wait_for_external) {
+    //-- if there was no need to wait init first time to wait
+    if (first_time_waited_for_external_ == fawkes::TIME_MIN)
+      first_time_waited_for_external_ = fawkes::Time(0.);
+
+    return false;
+
+  } else {
+    first_time_waited_for_external_ = fawkes::TIME_MIN;
+
+    fawkes::LaserLineInterface *ll = nullptr;
+    if (laserline_get_best_fit(ll)) {
+      fawkes::MutexLocker locked(&cloud_mutex_);
+      set_initial_tf(ll);
+      return true;
+    }
+    else
+      return false;
+  }
 }
 
 void ConveyorPoseThread::set_initial_tf_from_laserline(
@@ -684,25 +682,26 @@ void ConveyorPoseThread::set_initial_tf_from_laserline(
       initial_guess_odom_);
 }
 
+
 void ConveyorPoseThread::set_initial_tf(
     fawkes::LaserLineInterface *fallback_line) {
   bool external_init_failed = false;
 
   //-- try to set read pose to initial guess, iff it was valid
-  external_initial_guess_->read();
+  bb_init_guess_pose_->read();
   if (blackboard->is_alive() &&
-      external_initial_guess_->visibility_history() > 0 &&
+      bb_init_guess_pose_->visibility_history() > 0 &&
       !external_timeout_reached_) {
     //-- compose translational part
     btVector3 init_origin;
-    double *blackboard_origin = external_initial_guess_->translation();
+    double *blackboard_origin = bb_init_guess_pose_->translation();
     init_origin.setX(static_cast<float>(blackboard_origin[0]));
     init_origin.setY(static_cast<float>(blackboard_origin[1]));
     init_origin.setZ(static_cast<float>(blackboard_origin[2]));
 
     //-- compose orientation
     btMatrix3x3 init_basis;
-    double *blackboard_orientation = external_initial_guess_->rotation();
+    double *blackboard_orientation = bb_init_guess_pose_->rotation();
     btQuaternion init_orientation(
         static_cast<float>(blackboard_orientation[0]) //-- x
         ,
@@ -718,7 +717,7 @@ void ConveyorPoseThread::set_initial_tf(
     tf::Stamped<tf::Pose> pose_orig_frame;
     pose_orig_frame.setOrigin(init_origin);
     pose_orig_frame.setBasis(init_basis);
-    pose_orig_frame.frame_id = external_initial_guess_->frame();
+    pose_orig_frame.frame_id = bb_init_guess_pose_->frame();
 
     //-- transform external pose to odom fram
     tf_listener->transform_pose("odom",
@@ -734,7 +733,7 @@ void ConveyorPoseThread::set_initial_tf(
   //-- use laser_line initial guess if external failed or cannot be read
   if (external_init_failed) {
     try {
-      if (have_laser_line_) {
+      if (fallback_line) {
         set_initial_tf_from_laserline(fallback_line, current_mps_type_,
                                       current_mps_target_);
       }
@@ -744,6 +743,7 @@ void ConveyorPoseThread::set_initial_tf(
     }
   }
 }
+
 
 void ConveyorPoseThread::record_model() {
   // Transform model
@@ -1248,7 +1248,7 @@ void ConveyorPoseThread::config_value_changed(
         change_val(opt, cfg_ll_bearing_thresh_, v->get_float());
     }
     if (recognition_thread_->enabled())
-      recognition_thread_->restart();
+      recognition_thread_->schedule_restart();
   }
 }
 
@@ -1302,12 +1302,11 @@ fawkes::tf::Pose eigen_to_pose(const Eigen::Matrix4f &m) {
  *       y
  * */
 ConveyorPoseThread::CloudPtr
-ConveyorPoseThread::cloud_trim(ConveyorPoseThread::CloudPtr in,
-                               fawkes::LaserLineInterface *ll, bool use_ll) {
+ConveyorPoseThread::cloud_trim(ConveyorPoseThread::CloudPtr in) {
   float x_min = -FLT_MAX, x_max = FLT_MAX, y_min = -FLT_MAX, y_max = FLT_MAX,
         z_min = -FLT_MAX, z_max = FLT_MAX;
 
-  if (use_ll) {
+  {
     // get position of initial guess in conveyor cam frame
     // rotation is ignored, since rotation values are small
     tf::Stamped<tf::Pose> origin_pose;
@@ -1363,27 +1362,6 @@ ConveyorPoseThread::cloud_trim(ConveyorPoseThread::CloudPtr in,
       z_max = std::min(z_ini + (float)cfg_back_cut_, z_max);
     }
 
-  } else { // there is no laser line matching tolerances, thus no initial tf
-           // guess
-    if (is_target_shelf()) { // using shelf cut values
-      x_min = std::max((float)cfg_shelf_left_cut_no_ll_, x_min);
-      x_max = std::min((float)cfg_shelf_right_cut_no_ll_, x_max);
-
-      y_min = std::max((float)cfg_shelf_top_cut_no_ll_, y_min);
-      y_max = std::min((float)cfg_shelf_bottom_cut_no_ll_, y_max);
-
-      z_min = std::max((float)cfg_shelf_front_cut_no_ll_, z_min);
-      z_max = std::min((float)cfg_shelf_back_cut_no_ll_, z_max);
-    } else { // using general cut values
-      x_min = std::max((float)cfg_left_cut_no_ll_, x_min);
-      x_max = std::min((float)cfg_right_cut_no_ll_, x_max);
-
-      y_min = std::max((float)cfg_top_cut_no_ll_, y_min);
-      y_max = std::min((float)cfg_bottom_cut_no_ll_, y_max);
-
-      z_min = std::max((float)cfg_front_cut_no_ll_, z_min);
-      z_max = std::min((float)cfg_back_cut_no_ll_, z_max);
-    }
   }
 
   CloudPtr out(new Cloud);

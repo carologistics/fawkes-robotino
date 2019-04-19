@@ -51,14 +51,14 @@ RecognitionThread::RecognitionThread(ConveyorPoseThread *cp_thread)
 }
 
 void RecognitionThread::init() {
-  syncpoint_clouds_ready_ = syncpoint_manager->get_syncpoint(
-      name(), main_thread_->syncpoint_clouds_ready_name_);
+  syncpoint_ready_for_icp_ = syncpoint_manager->get_syncpoint(
+      name(), main_thread_->syncpoint_ready_for_icp_name_);
 }
 
 void RecognitionThread::restart_icp() {
   logger->log_info(name(), "Restarting ICP");
 
-  syncpoint_clouds_ready_->wait(name());
+  syncpoint_ready_for_icp_->wait(name());
 
   {
     fawkes::MutexLocker locked{&main_thread_->bb_mutex_};
@@ -93,12 +93,11 @@ void RecognitionThread::restart_icp() {
           initial_pose_cam);
 
     } catch (tf::TransformException &e) {
-      logger->log_error(name(),
-                        "Cannot get initial estimate - laserline was "
-                        "%savailable (frame = %s): %s",
+      //-- exit alignment if transformation is not possile
+      logger->log_error(name(), "Failed to transform initial guess from %s to %s",
                         main_thread_->initial_guess_odom_.frame_id.c_str(),
-                        !main_thread_->have_laser_line_ ? "not " : "",
-                        e.what());
+                        scene_->header.frame_id.c_str());
+      logger->log_error(name(), e);
       restart_pending_ = true;
       return;
     }
@@ -154,7 +153,7 @@ void RecognitionThread::loop() {
     }
 
     while (!enabled_)
-      syncpoint_clouds_ready_->wait(name());
+      syncpoint_ready_for_icp_->wait(name());
   }
 
   if (restart_pending_) {
@@ -300,7 +299,7 @@ void RecognitionThread::disable() {
   initial_guess_icp_odom_ = fawkes::tf::Stamped<fawkes::tf::Pose>();
 }
 
-void RecognitionThread::restart() {
+void RecognitionThread::schedule_restart() {
   restart_pending_ = true;
   enable();
 }
