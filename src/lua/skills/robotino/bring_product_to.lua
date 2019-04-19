@@ -25,10 +25,8 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "bring_product_to"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"mps_align", "product_put", "drive_to_machine_point","shelf_put","slide_put","conveyor_align","motor_move"}
+depends_skills     = {"product_put", "drive_to_machine_point", "conveyor_align"}
 depends_interfaces = {
-  {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
-  {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
 }
 
 documentation      = [==[ 
@@ -57,7 +55,7 @@ function already_at_conveyor(self)
    return (self.fsm.vars.atmps == "CONVEYOR")
 end
 
-fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_if},
+fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
    {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PUT", fail_to="FAILED"},
