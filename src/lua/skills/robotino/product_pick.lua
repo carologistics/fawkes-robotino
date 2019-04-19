@@ -24,10 +24,8 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "product_pick"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"gripper_commands", "motor_move","ax12gripper"}
+depends_skills     = {"gripper_commands", "motor_move"}
 depends_interfaces = {
-  {v = "motor", type = "MotorInterface", id="Robotino" },
-  {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 
 documentation      = [==[
@@ -105,15 +103,13 @@ end
 
 
 fsm:define_states{ export_to=_M,
-   closure={gripper_if=gripper_if, pose_not_exist=pose_not_exist},
+   closure={arduino_if=arduino_if, pose_not_exist=pose_not_exist},
    {"INIT", JumpState},
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}},final_to="GRIPPER_ALIGN", fail_to="PRE_FAIL"},
    {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="PRE_FAIL"},
-   {"WAIT_AFTER_CENTER",JumpState},
    {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="CLOSE_GRIPPER",fail_to="PRE_FAIL"},
-   {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
-   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands}}, final_to = "CENTER_FINGERS", fail_to="FAILED"},
-   {"CENTER_FINGERS", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_AFTER_CENTER", fail_to="WAIT_AFTER_CENTER"},
+   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
+   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands}}, final_to = "DRIVE_BACK", fail_to="FAILED"},
    {"CLOSE_AFTER_CENTER", SkillJumpState, skills={{gripper_commands}}, final_to="HOME_GRIPPER", fail_to="HOME_GRIPPER"},
    {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="DRIVE_BACK"},
    {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CHECK_PUCK", fail_to="FAILED"},
@@ -124,9 +120,8 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    {"INIT", "FAILED", cond="pose_not_exist()"},
    {"INIT", "OPEN_GRIPPER", true, desc="Open gripper for product_pick"},
-   {"CHECK_PUCK", "FINAL", cond="gripper_if:is_holds_puck()", desc="Hold puck"},
-   {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Don't hold puck!"},
-   {"WAIT_AFTER_CENTER", "HOME_GRIPPER", timeout=0.5},
+   {"CHECK_PUCK", "FINAL", cond="gripper_if:gripper_closed()", desc="Hold puck"},
+   {"CHECK_PUCK", "FAILED", cond="not gripper_if:gripper_closed()", desc="Don't hold puck!"},
    {"CLOSE_GRIPPER", "MOVE_GRIPPER_BACK", timeout=1},
 }
 
@@ -153,11 +148,7 @@ function OPEN_GRIPPER:init()
 end
 
 function CLOSE_GRIPPER:init()
-   self.args["ax12gripper"].command= "CLOSE_TIGHT"
-end
-
-function CLOSE_AFTER_CENTER:init()
-  self.args["gripper_commands"].command = "CLOSE"
+   self.args["gripper_commands"].command= "CLOSE"
 end
 
 function GRIPPER_ALIGN:init()
@@ -190,10 +181,6 @@ function MOVE_GRIPPER_BACK:init()
     self.args["gripper_commands"].x = conveyor_gripper_back_x
     self.args["gripper_commands"].z = conveyor_gripper_up_z
   end
-end
-
-function CENTER_FINGERS:init()
-  self.args["ax12gripper"].command = "CENTER"
 end
 
 function HOME_GRIPPER:init()
