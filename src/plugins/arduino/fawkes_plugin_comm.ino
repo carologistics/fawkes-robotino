@@ -20,7 +20,6 @@
 #define MOTOR_A_STEP_PIN 12
 #define MOTOR_A_DIR_PIN 13
 #define MOTOR_A_OPEN_LIMIT_PIN A4
-#define MOTOR_A_CLOSED_LIMIT_PIN A5
 
 
 AccelStepper motor_X(1, MOTOR_X_STEP_PIN, MOTOR_X_DIR_PIN);
@@ -37,7 +36,7 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define CMD_Y_NEW_POS 'Y'
 #define CMD_Z_NEW_POS 'Z'
 #define CMD_OPEN 'O'
-#define CMD_GRAB 'C'
+#define CMD_CLOSE 'G'
 #define CMD_STATUS_REQ 'S'
 
 #define DEFAULT_MAX_SPEED_X 1500
@@ -220,7 +219,6 @@ void set_new_pos(long new_pos, AccelStepper &motor) {
 
 void read_package() {
     int len = Serial.readBytesUntil(TERMINATOR, buffer_, 128);
-    int open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
     // Skip too short packages
     if (len < 4) return;
 
@@ -266,26 +264,24 @@ void read_package() {
                 open_gripper = true;
                 closed_gripper = false;
                 set_new_pos(motor_A.currentPosition()+120,motor_A);
-                //set_status(STATUS_MOVING);
               }
               else {
                 send_idle();
                 send_idle();
               }
               break;
-            case CMD_GRAB:
-              if(/*open_button == LOW && */!closed_gripper){
+            case CMD_CLOSE:
+              if(!closed_gripper){
                 open_gripper = false;
                 closed_gripper = true;
                 set_new_pos(motor_A.currentPosition()-120,motor_A);
-                //set_status(STATUS_MOVING);
               }
               else{
                 send_idle();
                 send_idle();
               }
               break;
-	    case CMD_STATUS_REQ:
+	          case CMD_STATUS_REQ:
               if (cur_status == STATUS_IDLE) {
                 send_idle();
               } else if (cur_status == STATUS_MOVING) {
@@ -293,6 +289,7 @@ void read_package() {
               } else if (cur_status == STATUS_ERROR) {
                 send_error();
               }
+              break;
             case CMD_CALIBRATE:
               calibrate();
               break;
@@ -336,7 +333,6 @@ void setup() {
   pinMode(MOTOR_Y_LIMIT_PIN, INPUT_PULLUP);
   pinMode(MOTOR_Z_LIMIT_PIN, INPUT_PULLUP);
   pinMode(MOTOR_A_OPEN_LIMIT_PIN, INPUT_PULLUP);
-  pinMode(MOTOR_A_CLOSED_LIMIT_PIN, INPUT_PULLUP);
 
   motor_X.setEnablePin(MOTOR_X_ENABLE_PIN);
   motor_X.setPinsInverted(false, false, true);
@@ -359,29 +355,14 @@ void setup() {
   motor_A.setAcceleration(DEFAULT_MAX_ACCEL_A);
 
   Serial.println("AT HELLO");
-
-
   set_status(STATUS_IDLE);
-
 }
 
-
 void loop() {
-  //int open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
-  //int closed_button = digitalRead(MOTOR_A_CLOSED_LIMIT_PIN);
-  //if(open_gripper && open_button!=LOW){ //open the gripper
-  //   set_new_pos(motor_A.currentPosition()-1,motor_A);
-  //   motor_A.enableOutputs();
-  //}
-  //if(closed_gripper && closed_button!=LOW){ //close the gripper
-  //  set_new_pos(motor_A.currentPosition(),motor_A);
-  //  motor_A.enableOutputs();
-  //}
-  if (motor_X.distanceToGo() != 0 ||
+   if (motor_X.distanceToGo() != 0 ||
       motor_Y.distanceToGo() != 0 ||
       motor_Z.distanceToGo() != 0 ||
       motor_A.distanceToGo() != 0) {
-      //  Serial.print("RUN\n");
         motor_X.enableOutputs();
         motor_X.run();
         motor_Y.run();
@@ -391,11 +372,9 @@ void loop() {
 
       } else if (cur_status == STATUS_MOVING) {
         // disable motors when we were still moving and send idle
+        // Since all motors share the enable pin, disabling one is sufficient
         motor_X.disableOutputs();
-        motor_Y.disableOutputs();
-        motor_Z.disableOutputs();
 
-    //    motor_A.disableOutputs();
         set_status(STATUS_IDLE);
       } else {
         read_package();
