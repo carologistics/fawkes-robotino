@@ -102,8 +102,8 @@ private:
   typedef Cloud::ConstPtr CloudConstPtr;
 
   std::atomic<double> result_fitness_;
-  const std::string syncpoint_clouds_ready_name_;
-  fawkes::RefPtr<fawkes::SyncPoint> syncpoint_clouds_ready;
+  const std::string syncpoint_ready_for_icp_name_;
+  fawkes::RefPtr<fawkes::SyncPoint> syncpoint_ready_for_icp_;
 
   // cfg values
   std::string cfg_if_prefix_;
@@ -120,7 +120,7 @@ private:
   fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
 
   fawkes::Time first_time_waited_for_external_;
-  fawkes::Position3DInterface *external_initial_guess_;
+  fawkes::Position3DInterface *bb_init_guess_pose_;
   bool external_timeout_reached_;
 
   int cfg_force_shelf_;
@@ -223,8 +223,6 @@ private:
   fawkes::Mutex cloud_mutex_;
   fawkes::Mutex bb_mutex_;
 
-  std::atomic_bool have_laser_line_;
-
   fawkes::RefPtr<Cloud> cloud_out_raw_;
   fawkes::RefPtr<Cloud> cloud_out_trimmed_;
   fawkes::RefPtr<Cloud> cloud_out_model_;
@@ -249,7 +247,7 @@ private:
       fawkes::ConveyorPoseInterface::MPS_TARGET mps_target);
   void set_initial_tf(fawkes::LaserLineInterface *fallback_line);
 
-  CloudPtr cloud_trim(CloudPtr in, fawkes::LaserLineInterface *ll, bool use_ll);
+  CloudPtr cloud_trim(CloudPtr in);
 
   boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
   CloudPtr cloud_voxel_grid(CloudPtr in);
@@ -262,6 +260,8 @@ private:
   void pose_publish_tf(const fawkes::tf::Stamped<fawkes::tf::Pose> &pose);
   void start_waiting();
   bool need_to_wait();
+  
+  bool get_initial_guess();
 
   virtual void config_value_erased(const char *path) override;
   virtual void config_tag_changed(const char *new_tag) override;
