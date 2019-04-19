@@ -70,7 +70,7 @@ public:
   void disable();
 
   /** Re-initialize this thread, e.g. after a config change */
-  void restart();
+  void schedule_restart();
 
   /** @return whether this thread is currently enabled (running) */
   bool enabled();
@@ -89,7 +89,7 @@ private:
 
   ConveyorPoseThread *main_thread_;
 
-  fawkes::RefPtr<fawkes::SyncPoint> syncpoint_clouds_ready_;
+  fawkes::RefPtr<fawkes::SyncPoint> syncpoint_ready_for_icp_;
 
   std::atomic_bool enabled_;
   std::atomic_bool restart_pending_;
