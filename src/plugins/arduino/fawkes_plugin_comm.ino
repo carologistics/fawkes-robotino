@@ -37,7 +37,7 @@ AccelStepper motor_A(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 #define CMD_Y_NEW_POS 'Y'
 #define CMD_Z_NEW_POS 'Z'
 #define CMD_OPEN 'O'
-#define CMD_GRAB 'G'
+#define CMD_GRAB 'C'
 #define CMD_STATUS_REQ 'S'
 
 #define DEFAULT_MAX_SPEED_X 1500
@@ -122,13 +122,11 @@ void send_error() {
   Serial.print("\r\n");
 }
 
-
 void set_status(int status_) {
   if (cur_status != status_) {
     cur_status = status_;
     if (cur_status == STATUS_IDLE) {
       send_idle();
-
     } else if (cur_status == STATUS_MOVING) {
       send_moving();
     } else if (cur_status == STATUS_ERROR) {
