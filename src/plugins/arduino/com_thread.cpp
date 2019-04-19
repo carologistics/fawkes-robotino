@@ -340,7 +340,7 @@ void ArduinoComThread::loop() {
         ArduinoInterface::CloseGripperMessage *msg =
             arduino_if_->msgq_first(msg);
         logger->log_debug(name(), "Close Gripper");
-        append_message_to_queue(ArduinoComMessage::command_id_t::CMD_GRAB, 0,
+        append_message_to_queue(ArduinoComMessage::command_id_t::CMD_CLOSE, 0,
                                 10000);
       } else if (arduino_if_
                      ->msgq_first_is<ArduinoInterface::OpenGripperMessage>()) {
