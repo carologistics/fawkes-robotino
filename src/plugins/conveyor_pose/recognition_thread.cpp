@@ -129,6 +129,7 @@ void RecognitionThread::restart_icp() {
       initial_pose_cam, initial_pose_cam.stamp, initial_pose_cam.frame_id,
       "conveyor_pose_initial_guess"));
 
+  
   icp_result_.reset(new Cloud());
   icp_result_->header = model_->header;
 
@@ -260,19 +261,8 @@ void RecognitionThread::publish_result() {
       main_thread_->result_pose_.reset(new tf::Stamped<tf::Pose>{result_pose});
       main_thread_->result_pose_->setRotation(
           main_thread_->result_pose_->getRotation() *
-          tf::Quaternion({1, 0, 0}, M_PI_2) *
-          tf::Quaternion({0, 0, 1}, M_PI_2));
-
-      try {
-        tf_listener->transform_pose("odom",
-                                    tf::Stamped<tf::Pose>(result_pose,
-                                                          Time(0, 0),
-                                                          result_pose.frame_id),
-                                    initial_guess_icp_odom_);
-
-      } catch (tf::TransformException &e) {
-        logger->log_error(name(), e);
-      }
+          tf::Quaternion({1, 0, 0}, -M_PI_2) *
+          tf::Quaternion({0, 0, 1}, -M_PI_2));
     }
   } // MutexLocker
 }
@@ -304,7 +294,6 @@ void RecognitionThread::enable() { enabled_ = true; }
 
 void RecognitionThread::disable() {
   enabled_ = false;
-  initial_guess_icp_odom_ = fawkes::tf::Stamped<fawkes::tf::Pose>();
 }
 
 void RecognitionThread::schedule_restart() {
