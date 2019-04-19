@@ -29,8 +29,6 @@ fsm                = SkillHSM:new{name=name, start="CHECK_WRITER", debug=false}
 depends_skills     = nil
 depends_interfaces = {
     {v = "arduino", type = "ArduinoInterface", id="Arduino"},
-    {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
-
 }
 
 documentation      = [==[
@@ -63,40 +61,42 @@ function is_error()
   return false
 end
 
+function is_close()
+  return self.vars.fsm.command == "CLOSE"
+end
 
 -- States
 fsm:define_states{
    export_to=_M,
-   closure={arduino=arduino,gripper_if=gripper_if, right_fully_loaded=right_fully_loaded, left_fully_loaded=left_fully_loaded, is_error=is_error},
+   closure={arduino=arduino, is_error=is_error},
    {"CHECK_WRITER", JumpState},
    {"COMMAND", JumpState},
-   {"WAIT_COMMAND", JumpState},
+   {"WAIT", JumpState},
 }
 
 -- Transitions
 fsm:add_transitions{
-   {"CHECK_WRITER", "FAILED", precond="not gripper_if:has_writer()", desc="No writer for gripper"},
+   {"CHECK_WRITER", "FAILED", precond="not arduino:has_writer()", desc="No writer for gripper"},
    {"CHECK_WRITER", "COMMAND", cond=true, desc="Writer ok got to command"},
-   {"COMMAND", "WAIT_COMMAND", timeout=0.2},
-   {"WAIT_COMMAND", "FAILED", cond="is_error()"},
-   {"WAIT_COMMAND", "FINAL", cond="vars.wait ~= nil and not vars.wait"},
-   {"WAIT_COMMAND", "FINAL", cond="arduino:is_final()"},
-   {"WAIT_COMMAND", "FAILED", timeout=5},
+   {"COMMAND", "WAIT", timeout=0.2},
+   {"WAIT", "FAILED", cond="is_error()"},
+   {"WAIT", "FINAL", cond="is_close() and arduino:gripper_closed() and arduino_final()"},
+   {"WAIT", "FINAL", cond="vars.wait ~= nil and not vars.wait"},
+   {"WAIT", "FINAL", cond="arduino:is_final() and not is_close()"},
+   {"WAIT", "FAILED", timeout=5},
 }
 
 function COMMAND:init()
 
    if self.fsm.vars.command == "OPEN" then
       self.fsm.vars.open = true
-      theOpenMessage = gripper_if.OpenMessage:new()
-      theOpenMessage:set_offset(self.fsm.vars.offset or 0)
-      gripper_if:msgq_enqueue(theOpenMessage)
+      theOpenMessage = arduino_if.OpenMessage:new()
+      arduino:msgq_enqueue(theOpenMessage)
 
    elseif self.fsm.vars.command == "CLOSE" then
       self.fsm.vars.close = true
-      torqueMessage = gripper_if.SetTorqueMessage:new()
-      torqueMessage:set_torque(0)
-      gripper_if:msgq_enqueue(torqueMessage)
+      theCloseMessage = arduino_if.CloseMessage:new()
+      arduino:msgq_enqueue(theCloseMessage)
 
    elseif self.fsm.vars.command == "MOVEABS" then
 
