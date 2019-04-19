@@ -685,7 +685,6 @@ void ConveyorPoseThread::set_initial_tf_from_laserline(
 
 void ConveyorPoseThread::set_initial_tf(
     fawkes::LaserLineInterface *fallback_line) {
-  bool external_init_failed = false;
 
   //-- try to set read pose to initial guess, iff it was valid
   bb_init_guess_pose_->read();
@@ -727,11 +726,7 @@ void ConveyorPoseThread::set_initial_tf(
                                 initial_guess_odom_);
 
   } else {
-    external_init_failed = true;
-  }
-
-  //-- use laser_line initial guess if external failed or cannot be read
-  if (external_init_failed) {
+    //-- use laser_line initial guess if external failed or cannot be read
     try {
       if (fallback_line) {
         set_initial_tf_from_laserline(fallback_line, current_mps_type_,
