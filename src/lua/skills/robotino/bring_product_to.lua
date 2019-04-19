@@ -67,8 +67,6 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
    {"INIT", "CONVEYOR_ALIGN", cond=already_at_conveyor, desc="At mps, skip drive_to_local"},
    {"INIT", "DRIVE_TO_MACHINE_POINT", cond=true, desc="Everything OK"},
-   --{"DRIVE_TO_MACHINE_POINT", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
-   --{"CONVEYOR_ALIGN", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
 }
 
 function INIT:init()
