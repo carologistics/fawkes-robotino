@@ -633,55 +633,6 @@ bool ConveyorPoseThread::get_initial_guess() {
   }
 }
 
-void ConveyorPoseThread::set_initial_tf_from_laserline(
-    fawkes::LaserLineInterface *line, ConveyorPoseInterface::MPS_TYPE mps_type,
-    ConveyorPoseInterface::MPS_TARGET mps_target) {
-  tf::Stamped<tf::Pose> initial_guess;
-
-  // Vector from end point 1 to end point 2
-  if (!tf_listener->transform_origin(line->end_point_frame_2(),
-                                     line->end_point_frame_1(), initial_guess,
-                                     Time(0, 0)))
-    throw fawkes::Exception("Failed to transform from %s to %s",
-                            line->end_point_frame_2(),
-                            line->end_point_frame_1());
-
-  // Halve that to get line center
-  initial_guess.setOrigin(initial_guess.getOrigin() / 2);
-
-  // Add distance from center to mps_target
-  initial_guess.setOrigin(
-      initial_guess.getOrigin() +
-      tf::Vector3{double(cfg_target_hint_[mps_target][X_DIR]),
-                  double(cfg_target_hint_[mps_target][Y_DIR]),
-                  double(cfg_target_hint_[mps_target][Z_DIR])});
-
-  if (mps_target == ConveyorPoseInterface::MPS_TARGET::INPUT_CONVEYOR) {
-    // Add distance offset for station type
-    initial_guess.setOrigin(
-        initial_guess.getOrigin() +
-        tf::Vector3{double(cfg_type_offset_[mps_type][X_DIR]),
-                    double(cfg_type_offset_[mps_type][Y_DIR]),
-                    double(cfg_type_offset_[mps_type][Z_DIR])});
-  } else if (mps_target == ConveyorPoseInterface::MPS_TARGET::OUTPUT_CONVEYOR) {
-    // Invert Y axis of the offset
-    initial_guess.setOrigin(
-        initial_guess.getOrigin() +
-        tf::Vector3{double(cfg_type_offset_[mps_type][X_DIR]),
-                    double(-cfg_type_offset_[mps_type][Y_DIR]),
-                    double(cfg_type_offset_[mps_type][Z_DIR])});
-  }
-
-  initial_guess.setRotation(tf::Quaternion(tf::Vector3(0, 1, 0), -M_PI / 2) *
-                            tf::Quaternion(tf::Vector3(0, 0, 1), M_PI / 2));
-
-  // Transform with Time(0,0) to just get the latest transform
-  tf_listener->transform_pose(
-      "odom",
-      tf::Stamped<tf::Pose>(initial_guess, Time(0, 0), initial_guess.frame_id),
-      initial_guess_odom_);
-}
-
 
 void ConveyorPoseThread::set_initial_tf(
     fawkes::LaserLineInterface *fallback_line) {
@@ -737,6 +688,56 @@ void ConveyorPoseThread::set_initial_tf(
                         e.what());
     }
   }
+}
+
+
+void ConveyorPoseThread::set_initial_tf_from_laserline(
+    fawkes::LaserLineInterface *line, ConveyorPoseInterface::MPS_TYPE mps_type,
+    ConveyorPoseInterface::MPS_TARGET mps_target) {
+  tf::Stamped<tf::Pose> initial_guess;
+
+  // Vector from end point 1 to end point 2
+  if (!tf_listener->transform_origin(line->end_point_frame_2(),
+                                     line->end_point_frame_1(), initial_guess,
+                                     Time(0, 0)))
+    throw fawkes::Exception("Failed to transform from %s to %s",
+                            line->end_point_frame_2(),
+                            line->end_point_frame_1());
+
+  // Halve that to get line center
+  initial_guess.setOrigin(initial_guess.getOrigin() / 2);
+
+  // Add distance from center to mps_target
+  initial_guess.setOrigin(
+      initial_guess.getOrigin() +
+      tf::Vector3{double(cfg_target_hint_[mps_target][X_DIR]),
+                  double(cfg_target_hint_[mps_target][Y_DIR]),
+                  double(cfg_target_hint_[mps_target][Z_DIR])});
+
+  if (mps_target == ConveyorPoseInterface::MPS_TARGET::INPUT_CONVEYOR) {
+    // Add distance offset for station type
+    initial_guess.setOrigin(
+        initial_guess.getOrigin() +
+        tf::Vector3{double(cfg_type_offset_[mps_type][X_DIR]),
+                    double(cfg_type_offset_[mps_type][Y_DIR]),
+                    double(cfg_type_offset_[mps_type][Z_DIR])});
+  } else if (mps_target == ConveyorPoseInterface::MPS_TARGET::OUTPUT_CONVEYOR) {
+    // Invert Y axis of the offset
+    initial_guess.setOrigin(
+        initial_guess.getOrigin() +
+        tf::Vector3{double(cfg_type_offset_[mps_type][X_DIR]),
+                    double(-cfg_type_offset_[mps_type][Y_DIR]),
+                    double(cfg_type_offset_[mps_type][Z_DIR])});
+  }
+
+  initial_guess.setRotation(tf::Quaternion(tf::Vector3(0, 1, 0), -M_PI / 2) *
+                            tf::Quaternion(tf::Vector3(0, 0, 1), M_PI / 2));
+
+  // Transform with Time(0,0) to just get the latest transform
+  tf_listener->transform_pose(
+      "odom",
+      tf::Stamped<tf::Pose>(initial_guess, Time(0, 0), initial_guess.frame_id),
+      initial_guess_odom_);
 }
 
 
