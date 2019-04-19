@@ -26,7 +26,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "slide_put"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"motor_move", "ax12gripper", "approach_mps"}
+depends_skills     = {"motor_move", "gripper_commands", "approach_mps"}
 depends_interfaces = {}
 
 documentation      = [==[ slide_put
@@ -47,20 +47,16 @@ end
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
-   {"GOTO_SLIDE", SkillJumpState, skills={{motor_move}, {ax12gripper}}, final_to="APPROACH_SLIDE", fail_to="FAILED"},
+   {"GOTO_SLIDE", SkillJumpState, skills={{motor_move}, {gripper_commands}}, final_to="APPROACH_SLIDE", fail_to="FAILED"},
    {"APPROACH_SLIDE", SkillJumpState, skills={{approach_mps}}, final_to="STORE_PRODUCT", fail_to="FAILED"},
-   {"STORE_PRODUCT", SkillJumpState, skills={{ax12gripper}}, final_to="WAIT_FOR_GRIPPER", fail_to="LEAVE_SLIDE_FAILED"},
-   {"WAIT_FOR_GRIPPER", JumpState},
+   {"STORE_PRODUCT", SkillJumpState, skills={{gripper_commands}}, final_to="LEAVE_SLIDE", fail_to="LEAVE_SLIDE_FAILED"},
    {"LEAVE_SLIDE", SkillJumpState, skills={{motor_move}}, final_to="CLOSE_GRIPPER", fail_to="CLOSE_GRIPPER"},
-   {"LEAVE_SLIDE_FAILED", SkillJumpState, skills={{motor_move}}, final_to="PRE_FAIL", fail_to="PRE_FAIL"},
-   {"CLOSE_GRIPPER", SkillJumpState, skills={{ax12gripper}}, final_to="RESET_Z_POS", fail_to="RESET_Z_POS"},
-   {"RESET_Z_POS", SkillJumpState, skills={{ax12gripper}}, final_to="FINAL", fail_to="FINAL"},
-   {"PRE_FAIL", SkillJumpState, skills={{ax12gripper}}, final_to="FAILED", fail_to="FAILED"},
+   {"LEAVE_SLIDE_FAILED", SkillJumpState, skills={{motor_move}}, final_to="FAILED", fail_to="FAILED"},
+   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
    {"INIT", "GOTO_SLIDE", cond=true},
-   {"WAIT_FOR_GRIPPER", "LEAVE_SLIDE", timeout=1},
 }
 
 
@@ -71,8 +67,8 @@ function GOTO_SLIDE:init()
 				-- high ori tolerance, because corrections make things worse
 				tolerance = { x=0.002, y=0.002, ori=0.1 }
 			}
-   self.args["ax12gripper"].command = "RELGOTOZ"
-   self.args["ax12gripper"].z_position = -8
+   self.args["gripper_commands"].command = "RELGOTOZ"
+   self.args["gripper_commands"].z_position = -8
 end
 
 function APPROACH_SLIDE:init()
@@ -81,7 +77,7 @@ function APPROACH_SLIDE:init()
 end
 
 function STORE_PRODUCT:init()
-   self.args["ax12gripper"].command = "OPEN"
+   self.args["gripper_commands"].command = "OPEN"
 end
 
 function LEAVE_SLIDE:init()
@@ -93,14 +89,6 @@ function LEAVE_SLIDE_FAILED:init()
 end
 
 function CLOSE_GRIPPER:init()
-   self.args["ax12gripper"].command = "CLOSE"
+   self.args["gripper_commands"].command = "CLOSE"
    printf("close gripper")
-end
-
-function RESET_Z_POS:init()
-   self.args["ax12gripper"].command = "RESET_Z_POS"
-end
-
-function PRE_FAIL:init()
-  self.args["ax12gripper"].command = "CLOSE"
 end
