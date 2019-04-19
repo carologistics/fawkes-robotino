@@ -36,6 +36,7 @@
 #include <aspect/pointcloud.h>
 #include <aspect/syncpoint_manager.h>
 #include <aspect/tf.h>
+#include <aspect/clock.h>
 
 #include <interfaces/ConveyorPoseInterface.h>
 #include <interfaces/Position3DInterface.h>
@@ -76,7 +77,8 @@ class ConveyorPoseThread : public fawkes::Thread,
                            public fawkes::PointCloudAspect,
                            public fawkes::ROSAspect,
                            public fawkes::TransformAspect,
-                           public fawkes::SyncPointManagerAspect {
+                           public fawkes::SyncPointManagerAspect,
+                           public fawkes::ClockAspect {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -119,9 +121,8 @@ private:
   fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
   fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
 
-  fawkes::Time first_time_waited_for_external_;
+  fawkes::Time next_initial_guess_timeout_;
   fawkes::Position3DInterface *bb_init_guess_pose_;
-  bool external_timeout_reached_;
 
   int cfg_force_shelf_;
 
@@ -183,8 +184,8 @@ private:
 
   std::atomic<float> cfg_voxel_grid_leaf_size_;
 
-  std::atomic<float> cfg_max_timediff_external_pc_;
-  float cfg_external_timeout_;
+  std::atomic<double> cfg_max_timediff_external_pc_;
+  std::atomic<double> cfg_external_timeout_;
 
   std::map<fawkes::ConveyorPoseInterface::MPS_TARGET,
            std::array<std::atomic<float>, 3>>
@@ -230,22 +231,20 @@ private:
   std::unique_ptr<fawkes::tf::Stamped<fawkes::tf::Pose>> result_pose_;
 
   fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_odom_;
+  fawkes::LaserLineInterface *best_laser_line_;
 
   bool cfg_debug_mode_;
 
   bool update_input_cloud();
 
-  bool laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit);
+  fawkes::LaserLineInterface *laserline_get_best_fit();
   Eigen::Vector3f
   laserline_get_center_transformed(fawkes::LaserLineInterface *ll);
   fawkes::tf::Stamped<fawkes::tf::Pose>
   laserline_get_center(fawkes::LaserLineInterface *ll);
 
-  void set_initial_tf_from_laserline(
-      fawkes::LaserLineInterface *ll,
-      fawkes::ConveyorPoseInterface::MPS_TYPE mps_type,
-      fawkes::ConveyorPoseInterface::MPS_TARGET mps_target);
-  void set_initial_tf(fawkes::LaserLineInterface *fallback_line);
+  void set_laserline_initial_tf();
+  void set_external_initial_tf();
 
   CloudPtr cloud_trim(CloudPtr in);
 

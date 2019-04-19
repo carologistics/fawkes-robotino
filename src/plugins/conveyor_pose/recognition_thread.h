@@ -26,6 +26,7 @@
 #include <aspect/logging.h>
 #include <aspect/syncpoint_manager.h>
 #include <aspect/tf.h>
+#include <aspect/clock.h>
 #include <core/threading/thread.h>
 #include <core/threading/wait_condition.h>
 
@@ -51,7 +52,8 @@ public:
 class RecognitionThread : public fawkes::Thread,
                           public fawkes::LoggingAspect,
                           public fawkes::TransformAspect,
-                          public fawkes::SyncPointManagerAspect {
+                          public fawkes::SyncPointManagerAspect,
+                          public fawkes::ClockAspect {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -94,7 +96,6 @@ private:
   std::atomic_bool enabled_;
   std::atomic_bool restart_pending_;
 
-  fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_icp_odom_;
   Eigen::Matrix4f initial_tf_;
   CloudPtr model_;
   CloudPtr scene_;

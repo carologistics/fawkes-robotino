@@ -30,6 +30,7 @@
 
 #include <tf/types.h>
 #include <utils/math/angle.h>
+#include <utils/time/clock.h>
 
 #include <core/exceptions/system.h>
 
@@ -290,11 +291,10 @@ void ConveyorPoseThread::init() {
       blackboard->open_for_reading<fawkes::Position3DInterface>(
           cfg_bb_initial_guess_topic.c_str());
 
-  cfg_max_timediff_external_pc_ =
-      config->get_float(CFG_PREFIX "/icp/max_timediff_external_pc");
-  cfg_external_timeout_ = config->get_float(CFG_PREFIX "/icp/external_timeout");
-  first_time_waited_for_external_ = fawkes::TIME_MIN;
-  external_timeout_reached_ = false;
+  cfg_max_timediff_external_pc_ = static_cast<double>(
+      config->get_float(CFG_PREFIX "/icp/max_timediff_external_pc"));
+  cfg_external_timeout_ = static_cast<double>(
+      config->get_float(CFG_PREFIX "/icp/external_timeout"));
 
   cfg_enable_switch_ = config->get_bool(CFG_PREFIX "/switch_default");
 
@@ -507,9 +507,14 @@ void ConveyorPoseThread::loop() {
       bb_pose_->write();
 
       result_pose_.release();
+      
+      best_laser_line_ = nullptr;
 
       // Schedule restart of recognition thread
       recognition_thread_->schedule_restart();
+      
+      // Always set new timeout on incoming message!
+      next_initial_guess_timeout_ = clock->now() + cfg_external_timeout_;
     } else {
       logger->log_warn(name(), "Unknown message received");
     }
@@ -524,7 +529,18 @@ void ConveyorPoseThread::loop() {
     return;
   }
   
-  if (update_input_cloud() && get_initial_guess()) {
+  if (!recognition_thread_->enabled())
+    return;
+  
+  if (update_input_cloud()) {
+    if (!get_initial_guess()) {
+      if (clock->now() > next_initial_guess_timeout_) {
+        logger->log_error(name(), "TIMEOUT. Stopping because no initial guess could be found.");
+        recognition_thread_->disable();
+      }
+      return;
+    }
+    
     CloudPtr cloud_in(new Cloud(**cloud_in_));
 
     size_t in_size = cloud_in->points.size();
@@ -587,122 +603,94 @@ void ConveyorPoseThread::loop() {
 
 
 bool ConveyorPoseThread::get_initial_guess() {
-  //-- dont do anything if pointcloud is much older than the last external
-  // init guess
-  //-- => check on divergence of timespan between pointcloud and external
-  // initial guess
   bb_init_guess_pose_->read();
   fawkes::Time last_external = *bb_init_guess_pose_->timestamp();
-  fawkes::Time last_pc = fawkes::Time(input_pc_header_.stamp, 0l);
-
-  external_timeout_reached_ =
-      (first_time_waited_for_external_ != fawkes::TIME_MIN &&
-       (fawkes::Time(0.) - &first_time_waited_for_external_) >
-           cfg_external_timeout_);
-
-  if (external_timeout_reached_)
-    logger->log_warn(name(), "ext. init. guess reached timeout");
-
-  bool wait_for_external =
-      //-- external init guess is ok,
-      (blackboard->is_alive() &&
-       bb_init_guess_pose_->visibility_history() > 0)
-      //-- but is too old
-      && (last_external - &last_pc) > cfg_max_timediff_external_pc_
-      //-- and timeout was not exceeded
-      && !external_timeout_reached_;
-
-  if (wait_for_external) {
-    //-- if there was no need to wait init first time to wait
-    if (first_time_waited_for_external_ == fawkes::TIME_MIN)
-      first_time_waited_for_external_ = fawkes::Time(0.);
-
-    return false;
-
-  } else {
-    first_time_waited_for_external_ = fawkes::TIME_MIN;
-
-    fawkes::LaserLineInterface *ll = nullptr;
-    if (laserline_get_best_fit(ll)) {
-      fawkes::MutexLocker locked(&cloud_mutex_);
-      set_initial_tf(ll);
-      return true;
-    }
-    else
-      return false;
+  
+  // Definition of PCL timestamp: Epoch + usec:
+  fawkes::Time last_pc = fawkes::Time(0, 0) + static_cast<long int>(input_pc_header_.stamp);
+  
+  if (!best_laser_line_)
+    best_laser_line_ = laserline_get_best_fit();
+  
+  if (std::abs(last_pc - &last_external) < cfg_max_timediff_external_pc_
+      && bb_init_guess_pose_->visibility_history() > 0) {
+    fawkes::MutexLocker locked(&cloud_mutex_);
+    set_external_initial_tf();
+    return true;
   }
+  else {
+    if (clock->now() < next_initial_guess_timeout_)
+      // Timeout not yet reached, maybe init. guess will be ready next time...
+      return false;
+    else {
+      // Timeout reached, try laser line instead.
+      if (best_laser_line_) {
+        fawkes::MutexLocker locked(&cloud_mutex_);
+        set_laserline_initial_tf();
+        return true;
+      }
+      else {
+        return false;
+      }
+    }
+  }    
 }
 
 
-void ConveyorPoseThread::set_initial_tf(
-    fawkes::LaserLineInterface *fallback_line) {
-
+void ConveyorPoseThread::set_external_initial_tf() {
   //-- try to set read pose to initial guess, iff it was valid
   bb_init_guess_pose_->read();
-  if (blackboard->is_alive() &&
-      bb_init_guess_pose_->visibility_history() > 0 &&
-      !external_timeout_reached_) {
-    //-- compose translational part
-    btVector3 init_origin;
-    double *blackboard_origin = bb_init_guess_pose_->translation();
-    init_origin.setX(static_cast<float>(blackboard_origin[0]));
-    init_origin.setY(static_cast<float>(blackboard_origin[1]));
-    init_origin.setZ(static_cast<float>(blackboard_origin[2]));
+  //-- compose translational part
+  btVector3 init_origin;
+  double *blackboard_origin = bb_init_guess_pose_->translation();
+  init_origin.setX(static_cast<float>(blackboard_origin[0]));
+  init_origin.setY(static_cast<float>(blackboard_origin[1]));
+  init_origin.setZ(static_cast<float>(blackboard_origin[2]));
+  
+  logger->log_info(name(), "Using external initial guess: (%f,%f,%f)",
+                   init_origin.getX(),
+                   init_origin.getY(),
+                   init_origin.getZ());
 
-    //-- compose orientation
-    btMatrix3x3 init_basis;
-    double *blackboard_orientation = bb_init_guess_pose_->rotation();
-    btQuaternion init_orientation(
+  //-- compose orientation
+  btMatrix3x3 init_basis;
+  double *blackboard_orientation = bb_init_guess_pose_->rotation();
+  btQuaternion init_orientation(
         static_cast<float>(blackboard_orientation[0]) //-- x
-        ,
-        static_cast<float>(blackboard_orientation[1]) //-- y
-        ,
-        static_cast<float>(blackboard_orientation[2]) //-- z
-        ,
-        static_cast<float>(blackboard_orientation[3])); //-- w
-
-    init_basis.setRotation(init_orientation);
-
-    //-- compose pose in original frame
-    tf::Stamped<tf::Pose> pose_orig_frame;
-    pose_orig_frame.setOrigin(init_origin);
-    pose_orig_frame.setBasis(init_basis);
-    pose_orig_frame.frame_id = bb_init_guess_pose_->frame();
-
-    //-- transform external pose to odom fram
-    tf_listener->transform_pose("odom",
-                                tf::Stamped<tf::Pose>(pose_orig_frame,
-                                                      Time(0, 0),
-                                                      pose_orig_frame.frame_id),
-                                initial_guess_odom_);
-
-  } else {
-    //-- use laser_line initial guess if external failed or cannot be read
-    try {
-      if (fallback_line) {
-        set_initial_tf_from_laserline(fallback_line, current_mps_type_,
-                                      current_mps_target_);
-      }
-    } catch (std::exception &e) {
-      logger->log_error(name(), "Exception generating initial transform: %s",
-                        e.what());
-    }
-  }
+      ,
+      static_cast<float>(blackboard_orientation[1]) //-- y
+      ,
+      static_cast<float>(blackboard_orientation[2]) //-- z
+      ,
+      static_cast<float>(blackboard_orientation[3])); //-- w
+  
+  init_basis.setRotation(init_orientation);
+  
+  //-- compose pose in original frame
+  tf::Stamped<tf::Pose> pose_orig_frame;
+  pose_orig_frame.setOrigin(init_origin);
+  pose_orig_frame.setBasis(init_basis);
+  pose_orig_frame.frame_id = bb_init_guess_pose_->frame();
+  
+  //-- transform external pose to odom fram
+  tf_listener->transform_pose("odom",
+                              tf::Stamped<tf::Pose>(pose_orig_frame,
+                                                    Time(0, 0),
+                                                    pose_orig_frame.frame_id),
+                              initial_guess_odom_);
 }
 
 
-void ConveyorPoseThread::set_initial_tf_from_laserline(
-    fawkes::LaserLineInterface *line, ConveyorPoseInterface::MPS_TYPE mps_type,
-    ConveyorPoseInterface::MPS_TARGET mps_target) {
+void ConveyorPoseThread::set_laserline_initial_tf() {
   tf::Stamped<tf::Pose> initial_guess;
 
   // Vector from end point 1 to end point 2
-  if (!tf_listener->transform_origin(line->end_point_frame_2(),
-                                     line->end_point_frame_1(), initial_guess,
+  if (!tf_listener->transform_origin(best_laser_line_->end_point_frame_2(),
+                                     best_laser_line_->end_point_frame_1(), initial_guess,
                                      Time(0, 0)))
     throw fawkes::Exception("Failed to transform from %s to %s",
-                            line->end_point_frame_2(),
-                            line->end_point_frame_1());
+                            best_laser_line_->end_point_frame_2(),
+                            best_laser_line_->end_point_frame_1());
 
   // Halve that to get line center
   initial_guess.setOrigin(initial_guess.getOrigin() / 2);
@@ -710,28 +698,39 @@ void ConveyorPoseThread::set_initial_tf_from_laserline(
   // Add distance from center to mps_target
   initial_guess.setOrigin(
       initial_guess.getOrigin() +
-      tf::Vector3{double(cfg_target_hint_[mps_target][X_DIR]),
-                  double(cfg_target_hint_[mps_target][Y_DIR]),
-                  double(cfg_target_hint_[mps_target][Z_DIR])});
+      tf::Vector3{double(cfg_target_hint_[current_mps_target_][X_DIR]),
+                  double(cfg_target_hint_[current_mps_target_][Y_DIR]),
+                  double(cfg_target_hint_[current_mps_target_][Z_DIR])});
 
-  if (mps_target == ConveyorPoseInterface::MPS_TARGET::INPUT_CONVEYOR) {
+  if (current_mps_target_ == ConveyorPoseInterface::MPS_TARGET::INPUT_CONVEYOR) {
     // Add distance offset for station type
     initial_guess.setOrigin(
         initial_guess.getOrigin() +
-        tf::Vector3{double(cfg_type_offset_[mps_type][X_DIR]),
-                    double(cfg_type_offset_[mps_type][Y_DIR]),
-                    double(cfg_type_offset_[mps_type][Z_DIR])});
-  } else if (mps_target == ConveyorPoseInterface::MPS_TARGET::OUTPUT_CONVEYOR) {
+        tf::Vector3{double(cfg_type_offset_[current_mps_type_][X_DIR]),
+                    double(cfg_type_offset_[current_mps_type_][Y_DIR]),
+                    double(cfg_type_offset_[current_mps_type_][Z_DIR])});
+  } else if (current_mps_target_ == ConveyorPoseInterface::MPS_TARGET::OUTPUT_CONVEYOR) {
     // Invert Y axis of the offset
     initial_guess.setOrigin(
         initial_guess.getOrigin() +
-        tf::Vector3{double(cfg_type_offset_[mps_type][X_DIR]),
-                    double(-cfg_type_offset_[mps_type][Y_DIR]),
-                    double(cfg_type_offset_[mps_type][Z_DIR])});
+        tf::Vector3{double(cfg_type_offset_[current_mps_type_][X_DIR]),
+                    double(-cfg_type_offset_[current_mps_type_][Y_DIR]),
+                    double(cfg_type_offset_[current_mps_type_][Z_DIR])});
   }
 
   initial_guess.setRotation(tf::Quaternion(tf::Vector3(0, 1, 0), -M_PI / 2) *
-                            tf::Quaternion(tf::Vector3(0, 0, 1), M_PI / 2));
+                            tf::Quaternion(tf::Vector3(0, 0, 1), -M_PI / 2));
+  
+  logger->log_info(name(), "Using external laser-line initial guess: (%f, %f, %f)",
+                   initial_guess.getOrigin().getX(),
+                   initial_guess.getOrigin().getY(),
+                   initial_guess.getOrigin().getZ());
+  
+  tf_publisher->send_transform(tf::StampedTransform(
+      initial_guess, initial_guess.stamp, initial_guess.frame_id,
+      "conveyor_pose_initial_guess"));
+
+  
 
   // Transform with Time(0,0) to just get the latest transform
   tf_listener->transform_pose(
@@ -819,12 +818,12 @@ bool ConveyorPoseThread::update_input_cloud() {
   }
 }
 
-bool ConveyorPoseThread::laserline_get_best_fit(
-    fawkes::LaserLineInterface *&best_fit) {
-  best_fit = nullptr;
+fawkes::LaserLineInterface *ConveyorPoseThread::laserline_get_best_fit() {
+  fawkes::LaserLineInterface *best_fit = nullptr;
 
   // get best line
   for (fawkes::LaserLineInterface *ll : laserlines_) {
+    ll->read();
     if (!ll->has_writer())
       continue;
     if (ll->visibility_history() <= 2)
@@ -844,34 +843,34 @@ bool ConveyorPoseThread::laserline_get_best_fit(
   }
 
   if (!best_fit)
-    return false;
+    return nullptr;
 
   if (!best_fit->has_writer()) {
     logger->log_info(name(), "no writer for laser lines");
     best_fit = nullptr;
-    return false;
+    return nullptr;
   }
   if (best_fit->visibility_history() <= 2) {
     best_fit = nullptr;
-    return false;
+    return nullptr;
   }
   if (fabs(best_fit->bearing()) > cfg_ll_bearing_thresh_) {
     best_fit = nullptr;
-    return false; // ~20 deg
+    return nullptr; // ~20 deg
   }
 
   try {
     Eigen::Vector3f center = laserline_get_center_transformed(best_fit);
     if (std::sqrt(center(0) * center(0) + center(2) * center(2)) > 0.8f) {
       best_fit = nullptr;
-      return false;
+      return nullptr;
     }
   } catch (tf::TransformException &e) {
     logger->log_error(name(), e);
-    return false;
+    return nullptr;
   }
 
-  return true;
+  return best_fit;
 }
 
 Eigen::Vector3f ConveyorPoseThread::laserline_get_center_transformed(
