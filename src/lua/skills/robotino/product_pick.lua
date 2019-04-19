@@ -105,15 +105,12 @@ end
 fsm:define_states{ export_to=_M,
    closure={arduino_if=arduino_if, pose_not_exist=pose_not_exist},
    {"INIT", JumpState},
-   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}},final_to="GRIPPER_ALIGN", fail_to="PRE_FAIL"},
-   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="PRE_FAIL"},
-   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="CLOSE_GRIPPER",fail_to="PRE_FAIL"},
-   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_BACK", fail_to="PRE_FAIL"},
+   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}},final_to="GRIPPER_ALIGN", fail_to="FAILED"},
+   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="FAILED"},
+   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="CLOSE_GRIPPER",fail_to="FAILED"},
+   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_BACK", fail_to="FAILED"},
    {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands}}, final_to = "DRIVE_BACK", fail_to="FAILED"},
-   {"CLOSE_AFTER_CENTER", SkillJumpState, skills={{gripper_commands}}, final_to="HOME_GRIPPER", fail_to="HOME_GRIPPER"},
-   {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="DRIVE_BACK"},
    {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CHECK_PUCK", fail_to="FAILED"},
-   {"PRE_FAIL", SkillJumpState, skills={{gripper_commands}}, final_to="FAILED", fail_to="FAILED"},
    {"CHECK_PUCK", JumpState},
 }
 
@@ -183,18 +180,6 @@ function MOVE_GRIPPER_BACK:init()
   end
 end
 
-function HOME_GRIPPER:init()
-  self.args["gripper_commands"].x = 0
-  self.args["gripper_commands"].y = 0
-  self.args["gripper_commands"].z = 0
-  self.args["gripper_commands"].command = "MOVEABS"
-  self.args["gripper_commands"].wait = false
-end
-
 function DRIVE_BACK:init()
   self.args["motor_move"].x = drive_back_x
-end
-
-function PRE_FAIL:init()
-  self.args["gripper_commands"].command="CLOSE"
 end
