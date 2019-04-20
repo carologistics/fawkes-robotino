@@ -134,7 +134,5 @@ void GazsimConveyorThread::loop() {
 void GazsimConveyorThread::on_conveyor_vision_msg(
     ConstConveyorVisionResultPtr &msg) {
   last_msg_.CopyFrom(*msg);
-
-  logger->log_debug(name(), "Got ConveyorVisionResult");
   new_data_ = true;
 }
