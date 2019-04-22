@@ -39,10 +39,22 @@ syntax = "proto2";
 package llsf_msgs;
 
 import "Team.proto";
+import "Time.proto";
 import "ProductColor.proto";
 
 option java_package = "org.robocup_logistics.llsf_msgs";
 option java_outer_classname = "OrderInfoProtos";
+
+message UnconfirmedDelivery {
+  enum CompType {
+    COMP_ID  = 2000;
+    MSG_TYPE = 45;
+  }
+
+  required uint32 id            = 1;
+  required Team   team          = 2;
+  required Time   delivery_time = 3;
+}
 
 message Order {
   enum CompType {
@@ -80,6 +92,9 @@ message Order {
   // (non-defunct, i.e. non-red light) gate
   required uint32 delivery_gate = 11;
 
+  repeated UnconfirmedDelivery unconfirmed_deliveries = 12;
+
+  required bool competitive = 13;
 }
 
 message OrderInfo {
@@ -92,29 +107,22 @@ message OrderInfo {
   repeated Order orders = 1;
 }
 
-
 message SetOrderDelivered {
   enum CompType {
     COMP_ID  = 2000;
     MSG_TYPE = 43;
   }
 
-  required Team team_color = 1;
-  required uint32 order_id = 2;
+  required Team   team_color = 1;
+  required uint32 order_id   = 2;
 }
 
-
-message SetOrderDeliveredByColor {
+message ConfirmDelivery {
   enum CompType {
     COMP_ID  = 2000;
-    MSG_TYPE = 44;
+    MSG_TYPE = 46;
   }
 
-  required Team         team_color = 1;
-
-	/** Colors of delivered product. Zero,
-	 * or more rings orderd from bottom to top */
-  required BaseColor    base_color = 3;
-  repeated RingColor    ring_colors = 4;
-  required CapColor     cap_color = 5;
+  required uint32 delivery_id = 1;
+  required bool   correct     = 2;
 }
