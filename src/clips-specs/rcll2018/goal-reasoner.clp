@@ -157,17 +157,6 @@
 ; goal outcomes or plan and action status.
 
 
-(defrule goal-reasoner-evaluate-common
-" Finally set a finished goal to evaluated.
-  All pre evaluation steps should have been executed, enforced by the higher priority
-"
-  (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
-=>
-  ;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
-  ;  "') has been completed, Evaluating" crlf)
-  (modify ?g (mode EVALUATED))
-)
 ; ------------------------- PRE EVALUATION -----------------------------------
 
 
@@ -251,6 +240,22 @@
   ;     "') has, cleaning up" crlf)
     (modify ?sg (mode FINISHED))
   )
+)
+
+
+; ----------------------- EVALUATE COMMON ------------------------------------
+
+
+(defrule goal-reasoner-evaluate-common
+" Finally set a finished goal to evaluated.
+  All pre evaluation steps should have been executed, enforced by the higher priority
+"
+  (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
+=>
+  ;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
+  ;  "') has been completed, Evaluating" crlf)
+  (modify ?g (mode EVALUATED))
 )
 
 
