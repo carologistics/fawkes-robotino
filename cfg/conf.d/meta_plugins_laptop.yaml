@@ -42,6 +42,7 @@ fawkes/meta_plugins:
     - navgraph-generator-mps
     - skiller
     - realsense
+    - conveyor-plane
     - conveyor-pose
     - ros-pcl
     - skiller-rest-api
