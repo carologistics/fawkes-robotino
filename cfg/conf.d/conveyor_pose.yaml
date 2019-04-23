@@ -67,13 +67,22 @@ plugins/conveyor_pose:
     leaf_size: 0.001
 
   icp:
-    # Interface ID of external initial guess
+    # ID of a Position3DInterface that supplies an initial guess.
+    # We call this an "external" initial guess, as opposed to the one
+    # internally generated from the laser line.
     init_guess_interface_id: "conveyor_plane/pose"
 
-    # seconds to wait for the external initial guess before switching back to laserline
-    # NOTE: this is to prevent the use of too old initial guesses potentially based on old dynamic transformations
-    max_timediff_external_pc: 0.33
-    external_timeout: 0.66
+    # Timeout (in seconds) for the external initial estimate taken from the
+    # Position3DInterface above.
+    # We fall back to laser-line init. guess if this is exceeded.
+    external_timeout: 1.0
+
+    # Maximum time difference between external initial guess and input
+    # pointcloud.  This is needed to ensure they actually refer to the same
+    # situation in the world, because the blackboard is not synced to the
+    # PointCloudManager
+    max_timediff_external_pc: 0.066
+
 
     # Recognition parameters
 
