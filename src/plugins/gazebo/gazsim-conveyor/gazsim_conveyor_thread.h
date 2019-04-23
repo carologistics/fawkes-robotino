@@ -86,6 +86,7 @@ private:
   // copy of last msg to write the interface in the next loop
   llsf_msgs::ConveyorVisionResult last_msg_;
   bool new_data_;
+  const double shelf_offset_x = 0.295;
 };
 
 #endif
