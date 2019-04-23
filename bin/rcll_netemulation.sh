@@ -21,7 +21,6 @@ OPTIONS:
    --duplicate <value in %>
    -r|--rate limit bandwith <value in kbit or Mbit>
    -D|--Debug        Apply rules also to icmp. Use ping to test setup
-
 e.g.
 
 $0 setup lo -c 60% -d 800ms 50ms 25% --duplicate 10% -r 2Mbit -D
@@ -30,6 +29,8 @@ EOF
 }
 
 function setup_rules() {
+
+clear_rules $DEVICE
 
 # The classless netem qdisc does not allow use of filters.
 # In order to apply filters to netem qdisc it has to be encapsulated into a classfull qdisc like prio
@@ -55,7 +56,6 @@ then
        	echo "delay distribution: $DELAY_DISTRIBUTION"
 	echo "delay correlation: $DELAY_CORRELATION"
 	filter+="delay $DELAY $DELAY_DISTRIBUTION $DELAY_CORRELATION "
-	echo $filter
 fi
 
 if [ ! -z $LOSS ];
@@ -63,14 +63,13 @@ then
     echo "packet loss: $LOSS"
     echo "loss correlation: $LOSS_CORRELATION"
     filter+="loss $LOSS $LOSS_CORRELATION "
-    echo $filter
-    fi
+fi
 
 if [ ! -z $CORRUPTION ];
 then
-    echo "packet corruption $CORRUPTION"
+    echo "packet corruption: $CORRUPTION"
     filter+="corrupt $CORRUPTION "
-    echo $filter
+fi
 
 if [ ! -z $RATE ];
 then
@@ -82,8 +81,6 @@ if [ ! -z $DUPLICATE ];
 then
     echo "duplicates: $DUPLICATE"
     filter+="duplicate $DUPLICATE"
-    echo $filter
-
 fi
 
 eval $filter
@@ -109,7 +106,8 @@ done
 }
 
 function clear_rules() {
-    sudo tc qdisc del dev $1 root
+echo "clear rules on dev $1"
+sudo tc qdisc del dev $1 root
 }
 
 function show_rules() {
@@ -163,7 +161,7 @@ function main() {
 		    shift # argument
 		    shift # value
 		    ;;
-	    -D|--Debug)
+                    -D|--Debug)
 		    DEBUG=true
 		    shift #argument
 		    shift #value
