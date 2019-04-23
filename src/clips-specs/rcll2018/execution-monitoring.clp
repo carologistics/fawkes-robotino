@@ -52,6 +52,26 @@
   (printout warn "A WP has been Generated at the OUTPUT side" crlf)
 )
 
+(defrule execution-monitoring-skipped-ready-at-output
+" Execution Monitoring MPS state
+  When a bot waits for an mps to be ready-at-output, and its idle, reason that it must have been ready at output in between
+  This is only reasonable, when the fact, that the bots waits for ready-at-output includes, that the mps actually was prepared correctly. Otherwise this will break things
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?dp <- (domain-pending-sensed-fact (action-id ?action-id)
+            (plan-id ?plan-id)
+            (goal-id ?goal-id)
+            (name mps-state)
+            (param-values ?mps READY-AT-OUTPUT))
+  ?pa <- (plan-action (id ?action-id)
+            (plan-id ?plan-id)
+            (goal-id ?goal-id)
+            (state SENSED-EFFECTS-WAIT))
+  (wm-fact (key domain fact mps-state args m ?mps s IDLE))
+  =>
+  (printout warn "Monitoring: Waited for READY-AT-OUTPUT at " ?mps " and detected IDLE. Remove pending-sensed fact" crlf)
+  (retract ?dp)
+)
 
 (defrule execution-monitoring-reset-prepare-action-on-downed
 " If a machine is down while trying to prepare it, reset depending timers
