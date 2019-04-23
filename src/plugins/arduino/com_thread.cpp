@@ -313,19 +313,6 @@ void ArduinoComThread::loop() {
           delete arduino_msg;
         }
       } else if (arduino_if_->msgq_first_is<
-                     ArduinoInterface::MoveGripperAbsMessage>()) {
-        ArduinoInterface::MoveGripperAbsMessage *msg =
-            arduino_if_->msgq_first(msg);
-
-        int new_abs_a = round_to_2nd_dec(msg->a() * A_AXIS_STEPS_PER_MM);
-
-        // calculate millseconds needed for this movement
-        //              int d = new_abs_a - gripper_pose_[A];
-        logger->log_debug(name(), "Set new gripper a: %u", new_abs_a);
-        append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_NEW_POS,
-                                new_abs_a, 10000);
-
-      } else if (arduino_if_->msgq_first_is<
                      ArduinoInterface::MoveGripperRelMessage>()) {
         // TODO
       } else if (arduino_if_
