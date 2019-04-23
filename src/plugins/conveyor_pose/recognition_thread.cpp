@@ -261,8 +261,8 @@ void RecognitionThread::publish_result() {
       main_thread_->result_pose_.reset(new tf::Stamped<tf::Pose>{result_pose});
       main_thread_->result_pose_->setRotation(
           main_thread_->result_pose_->getRotation() *
-          tf::Quaternion({1, 0, 0}, -M_PI_2) *
-          tf::Quaternion({0, 0, 1}, -M_PI_2));
+          tf::Quaternion({1, 0, 0}, M_PI_2) *
+          tf::Quaternion({0, 0, 1}, M_PI_2));
     }
   } // MutexLocker
 }
