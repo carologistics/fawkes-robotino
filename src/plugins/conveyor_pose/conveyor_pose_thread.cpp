@@ -726,12 +726,6 @@ void ConveyorPoseThread::set_laserline_initial_tf() {
                    initial_guess.getOrigin().getY(),
                    initial_guess.getOrigin().getZ());
   
-  tf_publisher->send_transform(tf::StampedTransform(
-      initial_guess, initial_guess.stamp, initial_guess.frame_id,
-      "conveyor_pose_initial_guess"));
-
-  
-
   // Transform with Time(0,0) to just get the latest transform
   tf_listener->transform_pose(
       "odom",
