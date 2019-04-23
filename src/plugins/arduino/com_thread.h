@@ -49,7 +49,6 @@
 #define X_AXIS_STEPS_PER_MM (200 * 1 / 3.0)
 #define Y_AXIS_STEPS_PER_MM (200 * 1 / 2.0)
 #define Z_AXIS_STEPS_PER_MM (-200 * 1 / 1.5)
-#define A_AXIS_STEPS_PER_MM 1.0 // TODO: configure!
 
 class ArduinoComMessage;
 
