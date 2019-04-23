@@ -446,14 +446,6 @@ void ConveyorPoseThread::init() {
         blackboard->open_for_reading<fawkes::LaserLineInterface>(ll.c_str()));
   }
 
-  bb_enable_switch_ = blackboard->open_for_writing<SwitchInterface>(
-      (cfg_if_prefix_ + "switch").c_str());
-  bb_enable_switch_->set_enabled(
-      cfg_debug_mode_ ||
-      cfg_enable_switch_); // ignore cfg_enable_switch_ and set to true if debug
-                           // mode is used
-  bb_enable_switch_->write();
-
   realsense_switch_ = blackboard->open_for_reading<SwitchInterface>(
       cfg_bb_realsense_switch_name_.c_str());
 
@@ -482,16 +474,20 @@ void ConveyorPoseThread::finalize() {
   pcl_manager->remove_pointcloud(cloud_out_raw_name_.c_str());
   pcl_manager->remove_pointcloud(cloud_out_trimmed_name_.c_str());
   pcl_manager->remove_pointcloud("model");
-  blackboard->close(bb_enable_switch_);
   blackboard->close(external_initial_guess_);
-  logger->log_info(name(), "Unloading, disabling %s",
-                   cfg_bb_realsense_switch_name_.c_str());
-  realsense_switch_->msgq_enqueue(new SwitchInterface::DisableSwitchMessage());
   blackboard->close(realsense_switch_);
   blackboard->close(bb_pose_);
 }
 
 void ConveyorPoseThread::loop() {
+  //-- skip processing if camera is not enabled
+  realsense_switch_->read();
+  if (!realsense_switch_->is_enabled()) {
+    logger->log_warn(
+        name(), "camera is disables. I'll idle and wait for camera input. cya");
+    return;
+  }
+
   // Check for Messages in ConveyorPoseInterface and update information if
   // needed
   while (!bb_pose_->msgq_empty()) {
@@ -514,32 +510,6 @@ void ConveyorPoseThread::loop() {
     bb_pose_->msgq_pop();
   }
 
-  bb_update_switch();
-  realsense_switch_->read();
-
-  if (bb_enable_switch_->is_enabled()) {
-    if (realsense_switch_->has_writer()) {
-      if (!realsense_switch_->is_enabled()) {
-        logger->log_info(name(), "Camera %s is disabled, enabling",
-                         cfg_bb_realsense_switch_name_.c_str());
-        realsense_switch_->msgq_enqueue(
-            new SwitchInterface::EnableSwitchMessage());
-        start_waiting();
-        return;
-      }
-    } else {
-      logger->log_error(name(), "No writer for camera %s",
-                        cfg_bb_realsense_switch_name_.c_str());
-      return;
-    }
-  } else if (realsense_switch_->has_writer() &&
-             realsense_switch_->is_enabled()) {
-    logger->log_info(name(), "Disabling %s",
-                     cfg_bb_realsense_switch_name_.c_str());
-    realsense_switch_->msgq_enqueue(
-        new SwitchInterface::DisableSwitchMessage());
-  }
-
   if (need_to_wait()) {
     logger->log_debug(
         name(), "Waiting for %s for %f sec, still %f sec remaining",
@@ -548,10 +518,7 @@ void ConveyorPoseThread::loop() {
     return;
   }
 
-  if (!bb_enable_switch_->is_enabled()) {
-    recognition_thread_->disable();
-    result_pose_.reset();
-  } else if (update_input_cloud()) {
+  if (update_input_cloud()) {
     fawkes::LaserLineInterface *ll = nullptr;
     have_laser_line_ = laserline_get_best_fit(ll);
 
@@ -588,8 +555,8 @@ void ConveyorPoseThread::loop() {
       try {
         tf_listener->transform_pose(
             trimmed_scene_->header.frame_id,
-            tf::Stamped<tf::Pose>(initial_guess_laser_odom_, Time(0, 0),
-                                  initial_guess_laser_odom_.frame_id),
+            tf::Stamped<tf::Pose>(initial_guess_odom_, Time(0, 0),
+                                  initial_guess_odom_.frame_id),
             initial_pose_cam);
       } catch (tf::TransformException &e) {
         logger->log_error(name(), e);
@@ -668,7 +635,7 @@ void ConveyorPoseThread::set_initial_tf_from_laserline(
   tf_listener->transform_pose(
       "odom",
       tf::Stamped<tf::Pose>(initial_guess, Time(0, 0), initial_guess.frame_id),
-      initial_guess_laser_odom_);
+      initial_guess_odom_);
 }
 
 void ConveyorPoseThread::set_initial_tf(
@@ -676,6 +643,7 @@ void ConveyorPoseThread::set_initial_tf(
   bool external_init_failed = false;
 
   //-- try to set read pose to initial guess, iff it was valid
+  external_initial_guess_->read();
   if (blackboard->is_alive() &&
       external_initial_guess_->visibility_history() > 0) {
     //-- compose translational part
@@ -696,6 +664,7 @@ void ConveyorPoseThread::set_initial_tf(
         static_cast<float>(blackboard_orientation[2]) //-- z
         ,
         static_cast<float>(blackboard_orientation[3])); //-- w
+
     init_basis.setRotation(init_orientation);
 
     //-- compose pose in original frame
@@ -709,7 +678,7 @@ void ConveyorPoseThread::set_initial_tf(
                                 tf::Stamped<tf::Pose>(pose_orig_frame,
                                                       Time(0, 0),
                                                       pose_orig_frame.frame_id),
-                                initial_guess_laser_odom_);
+                                initial_guess_odom_);
 
   } else {
     external_init_failed = true;
@@ -803,50 +772,6 @@ bool ConveyorPoseThread::update_input_cloud() {
                       cloud_in_name_.c_str());
     cloud_in_registered_ = false;
     return false;
-  }
-}
-
-void ConveyorPoseThread::bb_update_switch() {
-  // enable switch
-  bb_enable_switch_->read();
-
-  bool rv = bb_enable_switch_->is_enabled();
-  while (!bb_enable_switch_->msgq_empty()) {
-    if (bb_enable_switch_
-            ->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
-      logger->log_info(name(), "Received DisableSwitchMessage");
-      rv = false;
-      {
-        MutexLocker locked(&bb_mutex_);
-        result_fitness_ = std::numeric_limits<double>::min();
-        bb_pose_->set_euclidean_fitness(result_fitness_);
-        bb_pose_->write();
-      }
-    } else if (bb_enable_switch_
-                   ->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
-      logger->log_info(name(), "Received EnableSwitchMessage");
-      rv = true;
-    }
-
-    bb_enable_switch_->msgq_pop();
-  }
-  if (rv != bb_enable_switch_->is_enabled()) {
-    if (!cfg_debug_mode_) {
-      logger->log_info(name(), "*** enabled: %s", rv ? "yes" : "no");
-      bb_enable_switch_->set_enabled(rv);
-    } else {
-      logger->log_warn(
-          name(),
-          "*** enabled: %s, ignored because of DEBUG MODE, if will be ENABLED",
-          rv ? "yes" : "no");
-      bb_enable_switch_->set_enabled(true);
-    }
-    bb_enable_switch_->write();
-  }
-
-  // laser lines
-  for (fawkes::LaserLineInterface *ll : laserlines_) {
-    ll->read();
   }
 }
 
@@ -1344,8 +1269,8 @@ ConveyorPoseThread::cloud_trim(ConveyorPoseThread::CloudPtr in,
     } else {
       tf_listener->transform_pose(
           in->header.frame_id,
-          tf::Stamped<tf::Pose>(initial_guess_laser_odom_, Time(0, 0),
-                                initial_guess_laser_odom_.frame_id),
+          tf::Stamped<tf::Pose>(initial_guess_odom_, Time(0, 0),
+                                initial_guess_odom_.frame_id),
           origin_pose);
     }
     float x_ini = origin_pose.getOrigin()[X_DIR],
