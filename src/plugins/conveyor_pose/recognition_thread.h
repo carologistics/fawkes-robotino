@@ -23,10 +23,10 @@
 #ifndef CORRESPONDENCE_GROUPING_THREAD_H
 #define CORRESPONDENCE_GROUPING_THREAD_H
 
+#include <aspect/clock.h>
 #include <aspect/logging.h>
 #include <aspect/syncpoint_manager.h>
 #include <aspect/tf.h>
-#include <aspect/clock.h>
 #include <core/threading/thread.h>
 #include <core/threading/wait_condition.h>
 

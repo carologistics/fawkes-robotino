@@ -31,12 +31,12 @@
 
 #include <aspect/blackboard.h>
 #include <aspect/blocked_timing.h>
+#include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <aspect/pointcloud.h>
 #include <aspect/syncpoint_manager.h>
 #include <aspect/tf.h>
-#include <aspect/clock.h>
 
 #include <interfaces/ConveyorPoseInterface.h>
 #include <interfaces/Position3DInterface.h>
@@ -259,7 +259,7 @@ private:
   void pose_publish_tf(const fawkes::tf::Stamped<fawkes::tf::Pose> &pose);
   void start_waiting();
   bool need_to_wait();
-  
+
   bool get_initial_guess();
 
   virtual void config_value_erased(const char *path) override;
