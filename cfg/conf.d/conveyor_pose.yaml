@@ -203,9 +203,6 @@ plugins/conveyor_pose:
     # the prefix used for all interfaces
     prefix: conveyor_pose
 
-    # the switch interface
-    # switch: switch # remove? bb_switch_if was remove from plugin
-
     # the laser lines, they don't use the prefix
     laser_lines: [
       "/laser-lines/1",
