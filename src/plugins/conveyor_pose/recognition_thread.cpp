@@ -102,7 +102,8 @@ void RecognitionThread::restart_icp() {
 
     } catch (tf::TransformException &e) {
       //-- exit alignment if transformation is not possile
-      logger->log_error(name(), "Failed to transform initial guess from %s to %s",
+      logger->log_error(name(),
+                        "Failed to transform initial guess from %s to %s",
                         main_thread_->initial_guess_odom_.frame_id.c_str(),
                         scene_->header.frame_id.c_str());
       logger->log_error(name(), e);
@@ -129,7 +130,6 @@ void RecognitionThread::restart_icp() {
       initial_pose_cam, initial_pose_cam.stamp, initial_pose_cam.frame_id,
       "conveyor_pose_initial_guess"));
 
-  
   icp_result_.reset(new Cloud());
   icp_result_->header = model_->header;
 
@@ -246,11 +246,10 @@ void RecognitionThread::publish_result() {
   aligned_model->header = icp_result_->header;
   main_thread_->cloud_publish(aligned_model, main_thread_->cloud_out_model_);
 
-  tf::Stamped<tf::Pose> result_pose {
+  tf::Stamped<tf::Pose> result_pose{
       eigen_to_pose(final_tf_),
       fawkes::Time(0, 0) + static_cast<long int>(scene_->header.stamp),
-      scene_->header.frame_id
-  };
+      scene_->header.frame_id};
 
   double new_fitness = (1 / icp_.getFitnessScore()) / 10000;
 
@@ -293,9 +292,7 @@ void RecognitionThread::constrainTransformToGround(
 
 void RecognitionThread::enable() { enabled_ = true; }
 
-void RecognitionThread::disable() {
-  enabled_ = false;
-}
+void RecognitionThread::disable() { enabled_ = false; }
 
 void RecognitionThread::schedule_restart() {
   restart_pending_ = true;
