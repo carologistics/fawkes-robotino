@@ -72,8 +72,8 @@ plugins/conveyor_pose:
 
     # seconds to wait for the external initial guess before switching back to laserline
     # NOTE: this is to prevent the use of too old initial guesses potentially based on old dynamic transformations
-    cfg_max_timediff_external_pc: 0.33
-    cfg_external_timeout: 0.66
+    max_timediff_external_pc: 0.33
+    external_timeout: 0.66
 
     # Recognition parameters
 
