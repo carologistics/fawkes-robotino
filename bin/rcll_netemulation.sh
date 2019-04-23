@@ -19,11 +19,12 @@ OPTIONS:
    -d|--delay <delay in ms> <random uniform distribution in ms> <correlation in %>
    -c|--corruption <value in %>
    --duplicate <value in %>
+   -r|--rate limit bandwith <value in kbit or Mbit>
    -D|--Debug        Apply rules also to icmp. Use ping to test setup
 
 e.g.
 
-$0 setup lo -c 60% -d 800ms 50ms 25% --duplicate 10% -D
+$0 setup lo -c 60% -d 800ms 50ms 25% --duplicate 10% -r 2Mbit -D
 
 EOF
 }
@@ -71,6 +72,10 @@ then
     filter+="corrupt $CORRUPTION "
     echo $filter
 
+if [ ! -z $RATE ];
+then
+    echo "bandwith: $RATE"
+    filter+="rate $RATE "
 fi
 
 if [ ! -z $DUPLICATE ];
@@ -153,7 +158,12 @@ function main() {
 		    shift # argument
 		    shift # value
 		    ;;
-		    -D|--Debug)
+	            -r|--rate)
+		    RATE=$4
+		    shift # argument
+		    shift # value
+		    ;;
+	    -D|--Debug)
 		    DEBUG=true
 		    shift #argument
 		    shift #value
