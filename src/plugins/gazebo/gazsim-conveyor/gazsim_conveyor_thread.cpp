@@ -100,7 +100,7 @@ void GazsimConveyorThread::loop() {
                       last_msg_.positions().x()};
     if (strcmp(pos_if_->tostring_MPS_TARGET(msg->mps_target_to_set()),
                "SLIDE") == 0) {
-      trans[0] += 0.295;
+      trans[0] += shelf_offset_x;
     }
     double rot[] = {
         last_msg_.positions().ori_x(), last_msg_.positions().ori_y(),
