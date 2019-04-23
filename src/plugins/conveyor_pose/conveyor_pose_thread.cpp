@@ -611,29 +611,34 @@ bool ConveyorPoseThread::get_initial_guess() {
   
   if (!best_laser_line_)
     best_laser_line_ = laserline_get_best_fit();
-  
+
   if (std::abs(last_pc - &last_external) < cfg_max_timediff_external_pc_
       && bb_init_guess_pose_->visibility_history() > 0) {
     fawkes::MutexLocker locked(&cloud_mutex_);
-    set_external_initial_tf();
-    return true;
-  }
-  else {
-    if (clock->now() < next_initial_guess_timeout_)
-      // Timeout not yet reached, maybe init. guess will be ready next time...
-      return false;
-    else {
-      // Timeout reached, try laser line instead.
-      if (best_laser_line_) {
-        fawkes::MutexLocker locked(&cloud_mutex_);
-        set_laserline_initial_tf();
+
+    try {
+        set_external_initial_tf();
         return true;
-      }
-      else {
-        return false;
-      }
+
+    } catch (fawkes::tf::TransformException& ex) {
+        logger->log_warn(name(), "External initial guess could not be transformed to odom-frame: %s", ex.what_no_backtrace());
     }
-  }    
+  }
+
+  if (clock->now() < next_initial_guess_timeout_)
+    // Timeout not yet reached, maybe init. guess will be ready next time...
+    return false;
+  else {
+    // Timeout reached, try laser line instead.
+    if (best_laser_line_) {
+      fawkes::MutexLocker locked(&cloud_mutex_);
+      set_laserline_initial_tf();
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
 }
 
 
@@ -671,7 +676,7 @@ void ConveyorPoseThread::set_external_initial_tf() {
   pose_orig_frame.setOrigin(init_origin);
   pose_orig_frame.setBasis(init_basis);
   pose_orig_frame.frame_id = bb_init_guess_pose_->frame();
-  
+
   //-- transform external pose to odom fram
   tf_listener->transform_pose("odom",
                               tf::Stamped<tf::Pose>(pose_orig_frame,
