@@ -246,10 +246,11 @@ void RecognitionThread::publish_result() {
   aligned_model->header = icp_result_->header;
   main_thread_->cloud_publish(aligned_model, main_thread_->cloud_out_model_);
 
-  tf::Stamped<tf::Pose> result_pose{
+  tf::Stamped<tf::Pose> result_pose {
       eigen_to_pose(final_tf_),
-      // Time { long(scene_->header.stamp) / 1000 },
-      main_thread_->initial_guess_odom_.stamp, scene_->header.frame_id};
+      fawkes::Time(0, 0) + static_cast<long int>(scene_->header.stamp),
+      scene_->header.frame_id
+  };
 
   double new_fitness = (1 / icp_.getFitnessScore()) / 10000;
 
