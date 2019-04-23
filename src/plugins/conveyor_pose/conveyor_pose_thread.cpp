@@ -719,7 +719,7 @@ void ConveyorPoseThread::set_laserline_initial_tf() {
   }
 
   initial_guess.setRotation(tf::Quaternion(tf::Vector3(0, 1, 0), -M_PI / 2) *
-                            tf::Quaternion(tf::Vector3(0, 0, 1), -M_PI / 2));
+                            tf::Quaternion(tf::Vector3(0, 0, 1), M_PI / 2));
   
   logger->log_info(name(), "Using external laser-line initial guess: (%f, %f, %f)",
                    initial_guess.getOrigin().getX(),
