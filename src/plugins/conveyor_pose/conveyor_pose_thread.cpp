@@ -721,7 +721,7 @@ void ConveyorPoseThread::set_laserline_initial_tf() {
   }
 
   initial_guess.setRotation(tf::Quaternion(tf::Vector3(0, 1, 0), -M_PI / 2) *
-                            tf::Quaternion(tf::Vector3(0, 0, 1), M_PI / 2));
+                            tf::Quaternion(tf::Vector3(0, 0, 1), -M_PI / 2));
 
   // Transform with Time(0,0) to just get the latest transform
   tf_listener->transform_pose(
