@@ -290,10 +290,8 @@ void ConveyorPlaneThread::loop() {
     pose trash;
     trash.valid = false;
     pose_write(trash);
-  }
-
-  if (vis_hist_ < 0)
     poses_.clear();
+  }
 
   fawkes::LaserLineInterface *ll = NULL;
   bool use_laserline = laserline_get_best_fit(ll);
@@ -553,9 +551,8 @@ bool ConveyorPlaneThread::pose_get_avg(pose &out) {
   }
 
   if (planes_used.size() < cfg_pose_avg_min_) {
-    logger->log_debug(name(), "not enough for average, got: %zu",
-                      planes_used.size());
-    return false;
+    logger->log_warn(name(), "not enough for average, got: %zu",
+                     planes_used.size());
   }
 
   //-- recalculate average using valid inliers
