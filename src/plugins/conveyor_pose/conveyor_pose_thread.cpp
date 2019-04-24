@@ -528,12 +528,12 @@ void ConveyorPoseThread::loop() {
     return;
   }
 
-  if (!recognition_thread_->enabled())
+  if (!cfg_record_model_ && !recognition_thread_->enabled())
     return;
 
   if (update_input_cloud()) {
     if (!get_initial_guess()) {
-      if (clock->now() > next_initial_guess_timeout_) {
+      if (!cfg_record_model_ && clock->now() > next_initial_guess_timeout_) {
         logger->log_error(
             name(),
             "TIMEOUT. Stopping because no initial guess could be found.");
@@ -629,7 +629,7 @@ bool ConveyorPoseThread::get_initial_guess() {
     }
   }
 
-  if (clock->now() < next_initial_guess_timeout_)
+  if (!cfg_record_model_ && clock->now() < next_initial_guess_timeout_)
     // Timeout not yet reached, maybe init. guess will be ready next time...
     return false;
   else {
