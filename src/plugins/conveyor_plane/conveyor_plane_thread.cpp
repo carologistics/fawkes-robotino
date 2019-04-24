@@ -209,6 +209,9 @@ void ConveyorPlaneThread::finalize() {
   pcl_manager->remove_pointcloud(cloud_out_result_name_.c_str());
   delete visualisation_;
   blackboard->close(bb_enable_switch_);
+  logger->log_info(name(), "Unloading, disabling %s",
+                   cfg_bb_realsense_switch_name_.c_str());
+  realsense_switch_->msgq_enqueue(new SwitchInterface::DisableSwitchMessage());
   blackboard->close(realsense_switch_);
   bb_pose_conditional_close();
 }
@@ -229,20 +232,31 @@ void ConveyorPlaneThread::bb_pose_conditional_close() {
 }
 
 void ConveyorPlaneThread::loop() {
-
-  //-- skip processing if plugin or camera are not enabled
-  bb_enable_switch_->read();
-  if (!bb_enable_switch_->is_enabled()) {
-    //-- maybe sleep a littel wihle
-    return;
-  }
-
+  if_read();
+  // logger->log_debug(name(),"CONVEYOR-POSE 1: Interface read");
   realsense_switch_->read();
-  if (!realsense_switch_->is_enabled()) {
-    logger->log_warn(
-        name(), "camera is disables. I'll idle and wait for camera input. cya");
-    //-- maybe sleep a littel wihle
-    return;
+
+  if (bb_enable_switch_->is_enabled()) {
+    if (realsense_switch_->has_writer()) {
+      if (!realsense_switch_->is_enabled()) {
+        logger->log_info(name(), "Camera %s is disabled, enabling",
+                         cfg_bb_realsense_switch_name_.c_str());
+        realsense_switch_->msgq_enqueue(
+            new SwitchInterface::EnableSwitchMessage());
+        start_waiting();
+        return;
+      }
+    } else {
+      logger->log_error(name(), "No writer for camera %s",
+                        cfg_bb_realsense_switch_name_.c_str());
+      return;
+    }
+  } else if (realsense_switch_->has_writer() &&
+             realsense_switch_->is_enabled()) {
+    logger->log_info(name(), "Disabling %s",
+                     cfg_bb_realsense_switch_name_.c_str());
+    realsense_switch_->msgq_enqueue(
+        new SwitchInterface::DisableSwitchMessage());
   }
 
   if (!pc_in_check() || !bb_enable_switch_->is_enabled()) {
