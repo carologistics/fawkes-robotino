@@ -443,25 +443,22 @@
 )
 
 (defrule goal-reasoner-remove-retracted-goal-common
-" Remove a retracted goal once all acquired resources are freed."
-  ?g <- (goal (id ?goal-id) (class ?class&:(not (production-goal ?class)))
+" Remove a retracted goal if it has no parent (anymore).
+  Goal trees are retracted recursively from top to bottom.
+"
+  ?g <- (goal (id ?goal-id) (class ?class) (parent ?parent)
         (mode RETRACTED) (acquired-resources))
+  (not (goal (id ?parent)))
 =>
   (retract ?g)
 )
 
 
-(defrule goal-reasoner-remove-retracted-goal-from-production-tree
-" Remove a retracted production goal once all acquired resources are freed and
-  the production maintain goal has finished. RETRACTED tree goals should not be
-  deleted earlier. This allows parent goals further reasoning when there are no
-  suitable sub-goals to chose from (this could either be because all sub-goals
-  were rejected or because there were no formulated subgoals in the first
-  place).
-"
+(defrule goal-reasoner-remove-retracted-subgoal-of-maintain-goal
+" Remove a retracted sub-goal of a maintain goal once the parent is EVALUATED."
   ?g <- (goal (id ?goal-id) (parent ?parent) (acquired-resources)
-              (class ?class&:(production-goal ?class)) (mode RETRACTED))
-  (goal (class PRODUCTION-MAINTAIN) (mode EVALUATED))
+              (class ?class) (mode RETRACTED))
+  (goal (id ?parent) (type MAINTAIN) (mode EVALUATED))
 =>
   (retract ?g)
 )
