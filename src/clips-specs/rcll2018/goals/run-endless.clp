@@ -24,11 +24,12 @@
 ; Succeed: if sub-goal succeeds within given time
 ; Fail:    if sub-goal fails or all subgoals are rejected
 ;
-; A RUN-ENDLESS goal has to be populated with subgoals by the user. It executes
-; the subgoal having the highest priority and is reformulated independent from
-; the outcome if at least T seconds have passed since it was last formulated.
-; Upon reformulation the user has to formulate fresh sub-goals. RUN-ENDLESS
-; goals also save the time when they are reformulated in the meta with the
+; A RUN-ENDLESS goal has to be populated exactly one subgoal by the user.
+; It executes that sub-goal and finishes then with the same outcome.
+; Then, if at least T seconds have passed since it was last formulated, the
+; goal is reformulated.
+; Upon reformulation the user has to formulate a fresh sub-goal. RUN-ENDLESS
+; goals save the time when they are reformulated in the meta with the
 ; last-formulated key.
 ;
 ; Interactions:
@@ -56,6 +57,18 @@
 )
 
 
+(defrule run-endless-goal-failed-many-subgoals
+  ?gf <- (goal (id ?id) (type ACHIEVE) (sub-type RETRY-SUBGOAL)
+               (mode EXPANDED))
+  (goal (id ?id1) (type ACHIEVE) (parent ?id))
+  (goal (id ?id2&~?id1) (type ACHIEVE) (parent ?id))
+=>
+  (modify ?gf (mode FINISHED) (outcome FAILED) (error TOO-MANY-SUBGOALS)
+              (message (str-cat "More than one sub-goal for RUN-ENDLESS goal '"
+                                ?id "'")))
+)
+
+
 (defrule run-endless-goal-failed-invalid-params
   ?gf <- (goal (id ?id) (type MAINTAIN) (sub-type RUN-ENDLESS) (mode EXPANDED)
                (params $?params&~:(member$ frequency ?params)|
@@ -72,8 +85,6 @@
               (parent nil))
   (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode FORMULATED)
         (priority ?priority))
-  (not (goal (id ~?sub-goal) (parent ?id) (type ACHIEVE) (mode FORMULATED)
-       (priority ?priority2&:(> ?priority2 ?priority))))
 =>
   (modify ?g (mode COMMITTED) (committed-to ?sub-goal))
 )
@@ -107,17 +118,6 @@
   (not (goal (parent ?pg-id) (outcome ~REJECTED)))
 =>
   (modify ?pg (mode FINISHED) (outcome FAILED))
-)
-
-
-(defrule run-endless-goal-expand-after-subgoal-rejected
-  ?pg <- (goal (id ?pg-id) (type MAINTAIN) (sub-type RUN-ENDLESS)
-               (mode EXPANDED|COMMITTED|DISPATCHED) (committed-to ?sg-id))
-  ?sg <- (goal (id ?sg-id) (parent ?pg-id) (mode RETRACTED) (outcome REJECTED)
-               (acquired-resources))
-  (goal (id ~?sg-id) (parent ?pg-id) (mode FORMULATED) (outcome ~REJECTED))
-=>
-  (modify ?pg (mode EXPANDED) (committed-to nil))
 )
 
 

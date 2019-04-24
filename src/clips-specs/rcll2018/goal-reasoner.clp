@@ -69,7 +69,8 @@
 
 
 (deffunction production-tree-goal (?goal-class)
-  (return (or (eq ?goal-class URGENT)
+  (return (or (eq ?goal-class PRODUCTION-SELECTOR)
+              (eq ?goal-class URGENT)
               (eq ?goal-class FULFILL-ORDERS)
               (eq ?goal-class DELIVER-PRODUCTS)
               (eq ?goal-class INTERMEDEATE-STEPS)
@@ -127,15 +128,16 @@
   (not (goal (parent ?goal-id)))
 =>
   (goal-tree-assert-subtree ?goal-id
-    (goal-tree-assert-run-one URGENT)
-      (goal-tree-assert-run-one FULFILL-ORDERS
-        (goal-tree-assert-run-one DELIVER-PRODUCTS)
-        (goal-tree-assert-run-one INTERMEDEATE-STEPS))
-      (goal-tree-assert-run-one PREPARE-RESOURCES
-        (goal-tree-assert-run-one CLEAR)
-        (goal-tree-assert-run-one PREPARE-CAPS)
-        (goal-tree-assert-run-one PREPARE-RINGS))
-      (goal-tree-assert-run-one NO-PROGRESS))
+    (goal-tree-assert-run-one PRODUCTION-SELECTOR
+      (goal-tree-assert-run-one URGENT)
+        (goal-tree-assert-run-one FULFILL-ORDERS
+          (goal-tree-assert-run-one DELIVER-PRODUCTS)
+          (goal-tree-assert-run-one INTERMEDEATE-STEPS))
+        (goal-tree-assert-run-one PREPARE-RESOURCES
+          (goal-tree-assert-run-one CLEAR)
+          (goal-tree-assert-run-one PREPARE-CAPS)
+          (goal-tree-assert-run-one PREPARE-RINGS))
+        (goal-tree-assert-run-one NO-PROGRESS)))
 )
 
 (defrule goal-reasoner-expand-goal-with-sub-type
