@@ -1,6 +1,8 @@
 #include <Wire.h>
 #include <AccelStepper.h>
 
+//#define DEBUG_MODE
+
 #define MOTOR_XYZ_STEP_OUT PORTD
 #define MOTOR_XYZ_DIR_OUT PORTD
 #define MOTOR_A_STEP_OUT PORTB
@@ -57,7 +59,9 @@ AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 #define CMD_X_NEW_POS 'X'
 #define CMD_Y_NEW_POS 'Y'
 #define CMD_Z_NEW_POS 'Z'
-#define CMD_A_NEW_POS 'A'
+#ifdef DEBUG_MODE
+  #define CMD_A_NEW_POS 'A'
+#endif
 #define CMD_OPEN 'O'
 #define CMD_CLOSE 'G'
 #define CMD_STATUS_REQ 'S'
@@ -66,15 +70,17 @@ AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 #define CMD_STOP '.'
 #define CMD_FAST_STOP ':'
 
-#define CMD_X_NEW_SPEED 'x'
-#define CMD_Y_NEW_SPEED 'y'
-#define CMD_Z_NEW_SPEED 'z'
-#define CMD_A_NEW_SPEED 'a'
-
-#define CMD_X_NEW_ACC 'm'
-#define CMD_Y_NEW_ACC 'n'
-#define CMD_Z_NEW_ACC 'o'
-#define CMD_A_NEW_ACC 'p'
+#ifdef DEBUG_MODE
+  #define CMD_X_NEW_SPEED 'x'
+  #define CMD_Y_NEW_SPEED 'y'
+  #define CMD_Z_NEW_SPEED 'z'
+  #define CMD_A_NEW_SPEED 'a'
+  
+  #define CMD_X_NEW_ACC 'm'
+  #define CMD_Y_NEW_ACC 'n'
+  #define CMD_Z_NEW_ACC 'o'
+  #define CMD_A_NEW_ACC 'p'
+#endif
 
 #define DEFAULT_MAX_SPEED_X 2000
 #define DEFAULT_MAX_ACCEL_X 5000
@@ -275,6 +281,7 @@ void read_package() {
     if (cur_cmd == CMD_X_NEW_POS ||
         cur_cmd == CMD_Y_NEW_POS ||
         cur_cmd == CMD_Z_NEW_POS ||
+#ifdef DEBUG_MODE
         cur_cmd == CMD_A_NEW_POS ||
         cur_cmd == CMD_X_NEW_SPEED ||
         cur_cmd == CMD_Y_NEW_SPEED ||
@@ -284,6 +291,7 @@ void read_package() {
         cur_cmd == CMD_Y_NEW_ACC ||
         cur_cmd == CMD_Z_NEW_ACC ||
         cur_cmd == CMD_A_NEW_ACC ||
+#endif
         cur_cmd == CMD_SET_SPEED ||
         cur_cmd == CMD_SET_ACCEL) {
       if(sscanf (buffer_ + (cur_i_cmd + 1),"%ld",&new_value)<=0){buf_i_ = 0; return;} // flush and return if parsing error
@@ -298,6 +306,7 @@ void read_package() {
       case CMD_Z_NEW_POS:
         set_new_pos(-new_value, motor_Z);
         break;
+#ifdef DEBUG_MODE
       case CMD_A_NEW_POS:
         set_new_pos(new_value, motor_A);
         break;
@@ -325,6 +334,7 @@ void read_package() {
       case CMD_A_NEW_ACC:
         set_new_speed_acc(0.0, new_value, motor_A);
         break;
+#endif
       case CMD_OPEN:
         if(!open_gripper){
           open_gripper = true;
