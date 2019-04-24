@@ -211,7 +211,6 @@ void ConveyorPlaneThread::finalize() {
   blackboard->close(bb_enable_switch_);
   logger->log_info(name(), "Unloading, disabling %s",
                    cfg_bb_realsense_switch_name_.c_str());
-  realsense_switch_->msgq_enqueue(new SwitchInterface::DisableSwitchMessage());
   blackboard->close(realsense_switch_);
   bb_pose_conditional_close();
 }
@@ -232,31 +231,21 @@ void ConveyorPlaneThread::bb_pose_conditional_close() {
 }
 
 void ConveyorPlaneThread::loop() {
-  if_read();
-  // logger->log_debug(name(),"CONVEYOR-POSE 1: Interface read");
-  realsense_switch_->read();
+  //-- reads message queue and performs en- and disablings
+  if_read(); //-- if_read also reads the laserlines
 
-  if (bb_enable_switch_->is_enabled()) {
-    if (realsense_switch_->has_writer()) {
-      if (!realsense_switch_->is_enabled()) {
-        logger->log_info(name(), "Camera %s is disabled, enabling",
-                         cfg_bb_realsense_switch_name_.c_str());
-        realsense_switch_->msgq_enqueue(
-            new SwitchInterface::EnableSwitchMessage());
-        start_waiting();
-        return;
-      }
-    } else {
-      logger->log_error(name(), "No writer for camera %s",
-                        cfg_bb_realsense_switch_name_.c_str());
-      return;
-    }
-  } else if (realsense_switch_->has_writer() &&
-             realsense_switch_->is_enabled()) {
-    logger->log_info(name(), "Disabling %s",
+  //-- skip processing if conveyor plane is disabled
+  if (!bb_enable_switch_->is_enabled()) {
+    return;
+  }
+
+  //-- skip processing if camera is not enabled
+  realsense_switch_->read();
+  if (!realsense_switch_->is_enabled()) {
+    logger->log_info(name(), "Camera %s is disabled",
                      cfg_bb_realsense_switch_name_.c_str());
-    realsense_switch_->msgq_enqueue(
-        new SwitchInterface::DisableSwitchMessage());
+    start_waiting();
+    return;
   }
 
   if (!pc_in_check() || !bb_enable_switch_->is_enabled()) {
