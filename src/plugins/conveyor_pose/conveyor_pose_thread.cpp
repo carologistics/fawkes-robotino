@@ -654,9 +654,6 @@ void ConveyorPoseThread::set_external_initial_tf() {
   init_origin.setY(static_cast<float>(blackboard_origin[1]));
   init_origin.setZ(static_cast<float>(blackboard_origin[2]));
 
-  logger->log_info(name(), "Using external initial guess: (%f,%f,%f)",
-                   init_origin.getX(), init_origin.getY(), init_origin.getZ());
-
   //-- compose orientation
   btMatrix3x3 init_basis;
   double *blackboard_orientation = bb_init_guess_pose_->rotation();
@@ -725,11 +722,6 @@ void ConveyorPoseThread::set_laserline_initial_tf() {
 
   initial_guess.setRotation(tf::Quaternion(tf::Vector3(0, 1, 0), -M_PI / 2) *
                             tf::Quaternion(tf::Vector3(0, 0, 1), M_PI / 2));
-
-  logger->log_info(
-      name(), "Using external laser-line initial guess: (%f, %f, %f)",
-      initial_guess.getOrigin().getX(), initial_guess.getOrigin().getY(),
-      initial_guess.getOrigin().getZ());
 
   // Transform with Time(0,0) to just get the latest transform
   tf_listener->transform_pose(
