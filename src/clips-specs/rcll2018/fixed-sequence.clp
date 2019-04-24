@@ -803,8 +803,8 @@
         (param-values ?robot ?wp ?ds))
   (plan-action (id 11) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
         (action-name prepare-ds)
-        (param-names m gate)
-        (param-values ?ds ?gate)))
+        (param-names m ord)
+        (param-values ?ds ?order)))
 
  (bind ?param-names (create$ ord wp m g basecol capcol))
  (bind ?param-values (create$ ?order ?wp ?ds ?gate ?base-color ?cap-color))

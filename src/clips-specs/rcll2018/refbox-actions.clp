@@ -154,12 +154,9 @@
     (case DS
       then
     	(bind ?ds-inst (pb-create "llsf_msgs.PrepareInstructionDS"))
-  		(bind ?gate-sym (nth$ 1 ?instruction_info))
-  		(if (eq ?gate-sym GATE-0) then (bind ?gate 0) )
-  		(if (eq ?gate-sym GATE-1) then (bind ?gate 1) )
-  		(if (eq ?gate-sym GATE-2) then (bind ?gate 2) )
-  		(if (eq ?gate-sym GATE-3) then (bind ?gate 3) )
-  		(pb-set-field ?ds-inst "gate" ?gate)
+  		(bind ?order (nth$ 1 ?instruction_info))
+  		(bind ?order-id (float (string-to-field (sub-string 2 (length$ (str-cat ?order)) (str-cat ?order)))))
+  		(pb-set-field ?ds-inst "order_id" ?order-id)
   		(pb-set-field ?machine-instruction "instruction_ds" ?ds-inst)
   		)
     (case RS
