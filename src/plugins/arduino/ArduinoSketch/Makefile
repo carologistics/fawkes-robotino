@@ -6,7 +6,7 @@ mkfile_path := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 DEV_ARDUINO ?= /dev/arduino
 
 
-build: accstepper Compiled/fawkes_plugin_comm.ino.hex
+build: Compiled/fawkes_plugin_comm.ino.hex
 
 accstepper: libraries/AccelStepper
 	cd libraries/AccelStepper;\
@@ -20,7 +20,7 @@ libraries/AccelStepper:
 	mkdir -p libraries
 	git clone git@github.com:momoson/AccelStepper.git libraries/AccelStepper
 
-Compiled/fawkes_plugin_comm.ino.hex: fawkes_plugin_comm.ino
+Compiled/fawkes_plugin_comm.ino.hex: fawkes_plugin_comm.ino accstepper
 	mkdir -p Compiled
 	arduino-builder -hardware=/usr/share/arduino/hardware -tools=/usr/bin -fqbn=arduino:avr:uno -libraries libraries -verbose=true -build-path=$(mkfile_path)/Compiled fawkes_plugin_comm.ino
 
