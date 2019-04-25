@@ -18,6 +18,8 @@
     <field type="float" name="y_position">Current y-position</field>
     <field type="float" name="z_position">Current z-position</field>
 
+    <field type="bool"  name="gripper_closed">True if gripper is closed</field>
+
     <field type="float" name="x_max">Max len in x</field>
     <field type="float" name="y_max">Max len in y</field>
     <field type="float" name="z_max">Max len in z</field>
@@ -58,5 +60,14 @@
   </message>
   <message name="Calibrate">
     <comment>Restore gripper's position to the initial position set in the configuration.</comment>
+  </message>
+  <message name="CloseGripper">
+    <comment>Close Gripper</comment>
+  </message>
+  <message name="OpenGripper">
+    <comment>Open Gripper</comment>
+  </message>
+  <message name="StatusUpdate">
+    <comment>Request a status of the arduino</comment>
   </message>
 </interface>
