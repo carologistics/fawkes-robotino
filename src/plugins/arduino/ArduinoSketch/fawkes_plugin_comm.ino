@@ -19,6 +19,13 @@
 #define MOTOR_A_STEP_SHIFT 4
 #define MOTOR_A_DIR_SHIFT 5
 
+/*
+ * the following defines are for convenience only.
+ * As different kinds of pins (e.g. step/dir/enable) are on the same port
+ * every operation needs to make sure that only the used pins are changed.
+ * For this purpose, the following masks can be logical anded with the previous state
+ * leaving all other pins unchanged.
+*/
 #define MOTOR_XYZ_DIR_INV_MASK ~((1 << MOTOR_X_DIR_SHIFT)|(1 << MOTOR_Y_DIR_SHIFT)|(1 << MOTOR_Z_DIR_SHIFT))
 #define MOTOR_A_DIR_INV_MASK ~(1 << MOTOR_A_DIR_SHIFT)
 
@@ -42,6 +49,14 @@
 #define MOTOR_A_DIR_PIN 13
 #define MOTOR_A_OPEN_LIMIT_PIN A4
 
+/*
+ * The current time tick is extracted from the TCNT1 register.
+ * As this is a two byte register, but the data bus is only one byte wide
+ * correct read is not trivial.
+ * However, the timer peripheral implements a shadow register for the high byte
+ * which is written when the low byte is read.
+ * It is thus important, that the low byte is read before the high byte, so the shadow register is properly loaded.
+*/
 #define CUR_TIME (TCNT1L | (unsigned int)((TCNT1H << 8)));
 
 
@@ -475,7 +490,7 @@ volatile byte step_bits_a = 0;
 volatile bool pulse_done = true;
 
 
-ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 2
+ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 0
 {
   static volatile bool occupied = false;
   if(occupied) return; // this interrupt is already called
