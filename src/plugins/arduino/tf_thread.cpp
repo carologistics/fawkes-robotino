@@ -48,7 +48,8 @@ using namespace fawkes;
 ArduinoTFThread::ArduinoTFThread(std::string &cfg_name, std::string &cfg_prefix)
     : Thread("ArduinoTFThread", Thread::OPMODE_WAITFORWAKEUP),
       BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PREPARE),
-      TransformAspect(TransformAspect::ONLY_PUBLISHER, "gripper_") {
+      TransformAspect(TransformAspect::DEFER_PUBLISHER), dyn_x_pub(nullptr),
+      dyn_y_pub(nullptr), dyn_z_pub(nullptr) {
   cfg_prefix_ = cfg_prefix;
   cfg_name_ = cfg_name;
 }
@@ -63,6 +64,16 @@ void ArduinoTFThread::init() {
   cur_x_ = 0.0;
   cur_y_ = 0.0;
   cur_z_ = 0.0;
+
+  //-- initialize publisher objects
+  tf_add_publisher(cfg_gripper_dyn_x_frame_id_.c_str());
+  dyn_x_pub = tf_publishers[cfg_gripper_dyn_x_frame_id_];
+
+  tf_add_publisher(cfg_gripper_dyn_y_frame_id_.c_str());
+  dyn_y_pub = tf_publishers[cfg_gripper_dyn_y_frame_id_];
+
+  tf_add_publisher(cfg_gripper_dyn_z_frame_id_.c_str());
+  dyn_z_pub = tf_publishers[cfg_gripper_dyn_z_frame_id_];
 }
 
 void ArduinoTFThread::finalize() {}
@@ -95,9 +106,9 @@ void ArduinoTFThread::loop() {
   tf::StampedTransform stamped_transform_z(tf_pose_gripper_z, now.stamp(),
                                            cfg_gripper_origin_z_frame_id_,
                                            cfg_gripper_dyn_z_frame_id_);
-  tf_publisher->send_transform(stamped_transform_x);
-  tf_publisher->send_transform(stamped_transform_y);
-  tf_publisher->send_transform(stamped_transform_z);
+  dyn_x_pub->send_transform(stamped_transform_x);
+  dyn_y_pub->send_transform(stamped_transform_y);
+  dyn_z_pub->send_transform(stamped_transform_z);
 }
 
 //// interpolate the current z position based on an assumption of where the

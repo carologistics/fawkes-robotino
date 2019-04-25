@@ -96,6 +96,10 @@ private:
   std::string cfg_prefix_;
   std::string cfg_name_;
 
+  fawkes::tf::TransformPublisher *dyn_x_pub;
+  fawkes::tf::TransformPublisher *dyn_y_pub;
+  fawkes::tf::TransformPublisher *dyn_z_pub;
+
   float cfg_static_tf_x_home_;
   float cfg_static_tf_y_home_;
   float cfg_static_tf_z_home_;
