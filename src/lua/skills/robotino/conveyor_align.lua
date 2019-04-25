@@ -48,9 +48,9 @@ local pam = require("parse_module")
 -- Constants
 local euclidean_fitness_threshold = 4 -- threshold for euclidean fitness for targets other than shelf
 local shelf_euclidean_fitness_threshold = 3 -- threshold for euclidean fitness if target is shelf
-local tolerance_trans = 0.02  -- tolerance in x and y direction after the align
+local tolerance_trans = 0.04  -- tolerance in x and y direction after the align
 local tolerance_ori = 0.025   -- orientation tolerance after the align
-local x_dist_to_mps = -0.31  -- x-distance the robot should have after the align
+local x_dist_to_mps = -0.28  -- x-distance the robot should have after the align
 local y_offset_shelf_middle = -0.015 -- y-offset the robot should have picking is done from shelf = "MIDDLE"
 
 -- initial gripper poses depending on the target
@@ -59,8 +59,8 @@ local GRIPPER_POSES = {
   shelf_middle={x=0.05, y=-0.035, z=0.0},
   shelf_right={x=0.05, y=0.00, z=0.0},
   slide={x=0.05,y=0.00,z=0.0},
-  output_conveyor={x=0.05, y=0.00,z=0.01},
-  input_conveyor={x=0.035, y=0.00,z=0.01},
+  output_conveyor={x=0.05, y=0.00,z=0.02},
+  input_conveyor={x=0.035, y=0.00,z=0.02},
 }
 
 local MAX_RETRIES=3
