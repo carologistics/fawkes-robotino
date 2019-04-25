@@ -412,7 +412,7 @@
   =>
   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
-                (class CLEAR-MPS)
+                (class CLEAR-MPS) (sub-type SIMPLE)
                 (priority ?*PRIORITY-CLEAR-BS*)
                 (parent ?production-id)
                 (params robot ?robot
@@ -1172,7 +1172,7 @@
   (printout t "Goal " RESET-MPS " formulated" crlf)
   (assert (goal (id (sym-cat RESET-MPS- (gensym*)))
                 (class RESET-MPS) (priority  ?*PRIORITY-RESET*)
-                (parent ?production-id)
+                (parent ?production-id) (sub-type SIMPLE)
                 (params r ?self
                         m ?mps
                 )
