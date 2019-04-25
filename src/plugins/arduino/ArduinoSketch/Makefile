@@ -1,4 +1,4 @@
-.PHONY: build flash clean accstepper cleanall comm
+.PHONY: build flash clean accstepper cleanall comm verify safe_flash
 
 # important immediate assignment (only if other makefiles are somehow included)
 mkfile_path := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -35,3 +35,10 @@ cleanall: clean
 
 comm: 
 	minicom -D $(DEV_ARDUINO)
+
+verify: Compiled/fawkes_plugin_comm.ino.hex
+	avrdude  -patmega328p -carduino -P$(DEV_ARDUINO) -B 10 -F -Uflash:v:$<:i
+
+safe_flash: Compiled/fawkes_plugin_comm.ino.hex # flash only if verify goes wrong
+	avrdude  -patmega328p -carduino -P$(DEV_ARDUINO) -B 10 -F -Uflash:v:$<:i || avrdude  -patmega328p -carduino -P$(DEV_ARDUINO) -B 10 -F -Uflash:w:$<:i
+
