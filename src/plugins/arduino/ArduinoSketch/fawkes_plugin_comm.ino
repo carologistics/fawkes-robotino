@@ -1,7 +1,7 @@
 #include <Wire.h>
 #include <AccelStepper.h>
 
-//#define DEBUG_MODE
+// #define DEBUG_MODE
 
 #define MOTOR_XYZ_STEP_OUT PORTD
 #define MOTOR_XYZ_DIR_OUT PORTD
@@ -113,11 +113,11 @@ byte buf_i_ = 0;
 String errormessage;
 
 void enable_step_interrupt() {
-  TIMSK0 = 0x02;  //enable interrupt of timer overflow
+  TIMSK0 = 0x02;  // enable interrupt of timer overflow
 }
 
 void disable_step_interrupt() {
-  TIMSK0 = 0x0;  //disable interrupt of timer overflow
+  TIMSK0 = 0x0;  // disable interrupt of timer overflow
 }
 
 void send_packet(int status_, int value_to_send) {
@@ -172,7 +172,7 @@ void calibrate()
   motor_X.move(1000000L);
   motor_Y.move(1000000L);
   motor_Z.move(1000000L);
-  //due to high step count, reaching end stops is guaranteed!
+  // due to high step count, reaching end stops is guaranteed!
   set_status(STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
   while(!x_done || !y_done || !z_done){
     if(!x_done && digitalRead(MOTOR_X_LIMIT_PIN)==LOW){ x_done=true; reach_end_handle(motor_X);}
@@ -184,7 +184,7 @@ void calibrate()
 
 void reach_end_handle(AccelStepper &motor){
   motor.hard_stop();
-  motor.setCurrentPosition(0L); 
+  motor.setCurrentPosition(0L);
   motor.move(-1000);
 }
 
@@ -241,9 +241,9 @@ void read_package() {
   {
     next_char = Serial.read();
     if(next_char == TERMINATOR){ // if we find the terminator character we can analyze the package now
-      buffer_[buf_i_] = 0; // Set null character to get no trouble with sscanf //buf_i_ points now onto 0
+      buffer_[buf_i_] = 0; // Set null character to get no trouble with sscanf // buf_i_ points now onto 0
       break;
-    } else if(next_char == -1) { //if no serial data is available anymore, but package terminator not found yet:
+    } else if(next_char == -1) { // if no serial data is available anymore, but package terminator not found yet:
       return;                    // cannot do anything now
     }
     buffer_[buf_i_++] = next_char; // other characters are added to the buffer
@@ -254,7 +254,7 @@ void read_package() {
   }
 
   // this point is only reached when a Terminator symbol was reached
-  if(buf_i_<4){buf_i_ = 0; return;} // skip too small packages //buffer flush 
+  if(buf_i_<4){buf_i_ = 0; return;} // skip too small packages // buffer flush 
 
   byte package_start = 0;
   bool package_located = false;
@@ -393,7 +393,7 @@ void read_package() {
 
 void setup() {
   Serial.begin(115200);
-  //Serial.setTimeout(0);
+  // Serial.setTimeout(0);
 
   TIMSK0 = 0; // turn off interrupts on Timer 0. micros() will thus NOT work anymore!
   /* Why use timer 0 for the step interrupt?
@@ -403,7 +403,7 @@ void setup() {
 
   TCCR1A = 0x0;
   TCCR1B = 0x3; // use 64 prescaler -> 4 us per cnt
-  TIMSK1 = 0x0; //deactivate all interrupts with this timer
+  TIMSK1 = 0x0; // deactivate all interrupts with this timer
 
   // initialize the LIMIT_PIN as an input per motor:
   pinMode(MOTOR_X_LIMIT_PIN, INPUT_PULLUP);
@@ -478,7 +478,7 @@ volatile bool pulse_done = true;
 ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 2
 {
   static volatile bool occupied = false;
-  if(occupied) return; //this interrupt is already called
+  if(occupied) return; // this interrupt is already called
   occupied = true;
   interrupts(); // we need interrupts here to catch all the incoming serial data and finish the pulse
   if (cur_status == STATUS_MOVING) {
@@ -494,7 +494,7 @@ ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 2
     movement_done_flag = movement_done;
     if(step | step_a){ // only step if really necessary
       while(!pulse_done); // wait until the previous pulse is done // TODO:: remove after ensuring pulse is surely done here EVERY TIME!
-      //Serial.println(dir,BIN);
+      // Serial.println(dir,BIN);
       dir ^= 1 << MOTOR_Z_DIR_SHIFT; // TODO CHANGE IN HARDWARE
       MOTOR_XYZ_DIR_OUT = (MOTOR_XYZ_DIR_OUT & MOTOR_XYZ_DIR_INV_MASK) | dir; // set the direction pins right
       MOTOR_A_DIR_OUT = (MOTOR_A_DIR_OUT & MOTOR_A_DIR_INV_MASK) | dir_a; // set the direction pins right
