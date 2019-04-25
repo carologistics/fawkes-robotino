@@ -104,7 +104,6 @@ char status_array_[] = {'M', 'I', 'E'};
 volatile bool movement_done_flag = false;
 
 bool open_gripper = false;
-bool closed_gripper = false;
 
 int cur_status = STATUS_IDLE;
 
@@ -338,7 +337,6 @@ void read_package() {
       case CMD_OPEN:
         if(!open_gripper){
           open_gripper = true;
-          closed_gripper = false;
           set_new_pos(motor_A.currentPosition()+120,motor_A);
         } else {
           send_status();
@@ -346,9 +344,8 @@ void read_package() {
         }
         break;
       case CMD_CLOSE:
-        if(!closed_gripper){
+        if(open_gripper){
           open_gripper = false;
-          closed_gripper = true;
           set_new_pos(motor_A.currentPosition()-120,motor_A);
         } else {
           send_status();
