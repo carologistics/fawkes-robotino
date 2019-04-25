@@ -61,11 +61,6 @@ local slide_gripper_up_z = 0.01 --distance to move gripper up after opening the 
 
 local drive_back_x = -0.1      -- distance to drive back after closing the gripper
 
-local x_max = 0.114
-local y_max = 0.074
-local z_max = 0.056
-
-
 
 function pose_not_exist()
   local target_pos = { x = gripper_pose_offset_x,
@@ -107,9 +102,9 @@ function pose_gripper_offset(x,y,z)
    local gripper_home_rel = tfm.transform6D(gripper_rel,"gripper","gripper_home")
 
    -- Clip to axis limits
-   return { x = math.max(0,math.min(gripper_home_rel.x,x_max)),
-            y = math.max(-y_max/2,math.min(gripper_home_rel.y,y_max/2)),
-            z = math.max(0,math.min(gripper_home_rel.z,z_max))}
+   return { x = math.max(0,math.min(gripper_home_rel.x,fsm.vars.x_max)),
+            y = math.max(-fsm.vars.y_max/2,math.min(gripper_home_rel.y,fsm.vars.y_max/2)),
+            z = math.max(0,math.min(gripper_home_rel.z,fsm.vars.z_max))}
 end
 
 fsm:define_states{ export_to=_M,
@@ -132,14 +127,20 @@ fsm:add_transitions{
 function INIT:init()
   -- Override values if host specific config value is set
 
-  if config:exists("/skills/arduino/x_max") then
-      x_max = config:get_float("/skills/arduino/max_x")
+  if config:exists("/arduino/x_max") then
+      self.fsm.vars.x_max = config:get_float("/arduino/x_max")
+  else
+      self.fsm.vars.x_max = 0.114
   end
-  if config:exists("/skills/arduino/y_max") then
-      y_max = config:get_float("/skills/arduino/y_max")
+  if config:exists("/arduino/y_max") then
+      self.fsm.vars.y_max = config:get_float("/arduino/y_max")
+  else
+      self.fsm.vars.y_max = 0.038
   end
-  if config:exists("/skills/arduino/max_z") then
-      z_max = config:get_float("/skills/arduino/z_max")
+  if config:exists("/arduino/max_z") then
+      self.fsm.vars.z_max = config:get_float("/arduino/z_max")
+  else
+      self.fsm.vars.z_max = 0.057
   end
 end
 
