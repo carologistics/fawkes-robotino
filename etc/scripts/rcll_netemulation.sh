@@ -29,9 +29,9 @@ EOF
 }
 
 function setup_rules() {
-
+set +e
 clear_rules $DEVICE
-
+set -e
 # The classless netem qdisc does not allow use of filters.
 # In order to apply filters to netem qdisc it has to be encapsulated into a classfull qdisc like prio
 
