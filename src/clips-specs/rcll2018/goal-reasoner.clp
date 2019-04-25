@@ -18,7 +18,40 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
-
+; Goal reasoner for goals with sub-types. Goals without sub-types are NOT
+; handled.
+;
+; Basic functionalities:
+;  - Select MAINTAIN goals
+;  - Finish sub-goals of finished parent goals to ensure proper cleanup
+;  - Expand goals that are inner nodes of a goal tree
+;    (the other goals are expanded in the goal-expander)
+;  - Automatically evaluate all goals with low priority
+;    Special evaluation for specific goals with default priority
+;  - Clean up and remove executed goals
+;    Reject formulated inner production tree goals if no suitable sub-goal
+;    could be formulated
+;  - Reject formulated production tree goals once some leaf goal is dispatched
+;
+;
+; The intended goal life-cycle of the production tree (assuming no goal gets
+; rejected due to resource locks) can be summarized to:
+;  - Formulate inner tree nodes to expand the root
+;  - Formulate all currently achievable production goals
+;  - Reject all inner tree nodes that have no sub-goal
+;  - Recursively dispatch inner goals until a leaf goal is dispatched
+;  - Reject all tree nodes that are not dispatched
+;  - Once a leaf goal is finished and evaluated, the outcome is recursively
+;    handed back to the root
+;  - After the root is evaluated all other tree goals (by the time in mode
+;    RETRACTED) are deleted
+;  - The root gets reformulated and selected
+;
+; If a leaf goal has to be rejected, the parent goal dispatches another
+; leaf goal instead. If this is not possible then the parent is rejected and
+; recursively another goal is tried until either one leaf can be dispatched or
+; all goals are rejected (this should never happen, since we have WAIT goals),
+; leading the root to be rejected and reformulated.
 
 (defglobal
   ; Number of retrying enter-field
