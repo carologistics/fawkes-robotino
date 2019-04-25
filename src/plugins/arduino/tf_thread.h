@@ -85,7 +85,14 @@ public:
 
 private:
   std::string cfg_gripper_frame_id_;
-  std::string cfg_gripper_dyn_frame_id_;
+  std::string cfg_gripper_dyn_x_frame_id_;
+  std::string cfg_gripper_dyn_y_frame_id_;
+  std::string cfg_gripper_dyn_z_frame_id_;
+
+  std::string cfg_gripper_origin_x_frame_id_;
+  std::string cfg_gripper_origin_y_frame_id_;
+  std::string cfg_gripper_origin_z_frame_id_;
+
   std::string cfg_prefix_;
   std::string cfg_name_;
 

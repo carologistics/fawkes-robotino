@@ -35,7 +35,9 @@ public:
     CMD_X_NEW_POS = 'X',
     CMD_Y_NEW_POS = 'Y',
     CMD_Z_NEW_POS = 'Z',
-    CMD_A_NEW_POS = 'A'
+    CMD_CLOSE = 'G',
+    CMD_OPEN = 'O',
+    CMD_STATUS_REQ = 'S'
   };
 
   /**
