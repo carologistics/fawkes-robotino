@@ -44,14 +44,14 @@ local tfm = require("fawkes.tfutils")
 
 -- Constants
 local gripper_pose_offset_x = 0.02  -- conveyor pose offset in x direction
-local gripper_pose_offset_y = 0.00     -- conveyor_pose offset in y direction
+local gripper_pose_offset_y = 0.00  -- conveyor_pose offset in y direction
 local gripper_pose_offset_z = 0.03  -- conveyor_pose offset in z direction
 
 local conveyor_gripper_forward_x = 0.07 -- distance to move gripper forward after align
-local conveyor_gripper_down_z = -0.0175    -- distance to move gripper down after driving over conveyor
+local conveyor_gripper_down_z = -0.0175 -- distance to move gripper down after driving over conveyor
 
-local conveyor_gripper_back_x = -0.02   -- distance to move gripper back after opening gripper
-local conveyor_gripper_up_z = 0.01  -- distance to move gripper up after opening the gripper
+local conveyor_gripper_back_x = -0.02 -- distance to move gripper back after opening gripper
+local conveyor_gripper_up_z = 0.01    -- distance to move gripper up after opening the gripper
 
 local slide_gripper_forward_x = 0.04  -- distance to move gripper forward after align if the target is slide
 local slide_gripper_down_z = -0.02     -- distance to move gripper down after driving over slide
@@ -79,9 +79,9 @@ end
 
 function pose_gripper_offset(x,y,z)
   local target_pos = { x = x,
-                        y = y,
-                        z = z,
-                        ori = { x = 0, y = 0, z = 0, w = 0}
+                       y = y,
+                       z = z,
+                       ori = { x = 0, y = 0, z = 0, w = 0}
 
    }
    local tmp = { x = 0,
@@ -148,7 +148,7 @@ function GRIPPER_ALIGN:init()
   local target_pos = { x = gripper_pose_offset_x,
                        y = gripper_pose_offset_y,
                        z = gripper_pose_offset_z,
-                       ori = { x=0, y = 0, z= 0, w= 0}
+                       ori = { x = 0, y = 0, z = 0, w = 0}
   }
 
   local grip_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper")
