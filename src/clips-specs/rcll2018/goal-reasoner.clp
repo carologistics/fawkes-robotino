@@ -491,3 +491,14 @@
 =>
   (modify ?g (mode RETRACTED) (outcome REJECTED))
 )
+
+
+(defrule goal-reasoner-error-goal-without-sub-type-detected
+" This goal reasoner only deals with goals that have a sub-type. Other goals
+  are not supported.
+"
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
+  (goal (id ?goal) (class ?class) (sub-type nil))
+=>
+  (printout error ?goal " of class " ?class " has no sub-type" crlf)
+)
