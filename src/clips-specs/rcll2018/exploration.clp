@@ -32,6 +32,7 @@
                  If a machine was detected, this contains the name of the machine (eg C-CS1)
 "
     (not (wm-fact (key exploration zone ?zn args? machine ?machine team ?team)))
+    (wm-fact (key refbox phase) (value EXPLORATION))
 =>
     (bind $?Czones (create$
       C-Z18 C-Z28 C-Z38 C-Z48 C-Z58 C-Z68 C-Z78
