@@ -156,26 +156,26 @@ function INIT:init()
 end
 
 function OPEN_GRIPPER:init()
-   self.args["gripper_commands"].command = "OPEN"
+  self.args["gripper_commands"].command = "OPEN"
 end
 
 function CLOSE_GRIPPER:init()
-   self.args["gripper_commands"].command= "CLOSE"
+  self.args["gripper_commands"].command= "CLOSE"
 end
 
 function GRIPPER_ALIGN:init()
   local target_pos = { x = gripper_pose_offset_x,
                        y = gripper_pose_offset_y,
                        z = gripper_pose_offset_z,
-                       ori = { x=0, y = 0, z= 0, w= 0}
+                       ori = { x = 0, y = 0, z = 0, w = 0}
   }
 
   local grip_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper")
 
-  local pose =  pose_gripper_offset(grip_pos.x,grip_pos.y,grip_pos.z)
+  local pose = pose_gripper_offset(grip_pos.x,grip_pos.y,grip_pos.z)
   self.args["gripper_commands"] = pose
   self.args["gripper_commands"].command = "MOVEABS"
-  self.args["gripper_commands"].target_frame  = "gripper_home"
+  self.args["gripper_commands"].target_frame = "gripper_home"
 end
 
 function MOVE_GRIPPER_FORWARD:init()
