@@ -49,19 +49,12 @@ local pam = require("parse_module")
 local euclidean_fitness_threshold = 4 -- threshold for euclidean fitness for targets other than shelf
 local shelf_euclidean_fitness_threshold = 3 -- threshold for euclidean fitness if target is shelf
 local tolerance_trans = 0.04  -- tolerance in x and y direction after the align
-local tolerance_ori = 0.025   -- orientation tolerance after the align
+local tolerance_ori = 0.05   -- orientation tolerance after the align
 local x_dist_to_mps = -0.255  -- x-distance the robot should have after the align
 local y_offset_shelf_middle = -0.015 -- y-offset the robot should have picking is done from shelf = "MIDDLE"
 
 -- initial gripper poses depending on the target
-local GRIPPER_POSES = {
-  shelf_left={x=0.05, y=0.00, z=0.0},
-  shelf_middle={x=0.05, y=-0.035, z=0.0},
-  shelf_right={x=0.05, y=0.00, z=0.0},
-  slide={x=0.05,y=0.00,z=0.0},
-  output_conveyor={x=0.05, y=0.00,z=0.02},
-  input_conveyor={x=0.05, y=0.00,z=0.02},
-}
+local gripper_pose = { x= 0.05, y = 0.00, z = 0.03}
 
 local MAX_RETRIES=3
 local MAX_VISION_RETRIES=3
@@ -175,20 +168,7 @@ function CHECK_VISION:init()
 end
 
 function MOVE_GRIPPER:init()
-
-  if self.fsm.vars.shelf == "LEFT" then
-    self.args["gripper_commands"] = GRIPPER_POSES["shelf_left"]
-  elseif self.fsm.vars.shelf == "RIGHT" then
-    self.args["gripper_commands"] = GRIPPER_POSES["shelf_right"]
-  elseif self.fsm.vars.shelf == "MIDDLE" then
-    self.args["gripper_commands"] = GRIPPER_POSES["shelf_middle"]
-  elseif self.fsm.vars.slide then
-    self.args["gripper_commands"] = GRIPPER_POSES["slide"]
-  elseif self.fsm.vars.side == "input" then
-    self.args["gripper_commands"] = GRIPPER_POSES["input_conveyor"]
-  elseif self.fsm.vars.side == "output" then
-    self.args["gripper_commands"] = GRIPPER_POSES["output_conveyor"]
-  end
+  self.args["gripper_commands"] = gripper_pose
   self.args["gripper_commands"].command = "MOVEABS"
 end
 
