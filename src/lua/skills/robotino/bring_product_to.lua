@@ -40,11 +40,14 @@ Parameters:
       @param slide   optional true if you want to put it on the slide
       @param atmps   optional position at mps shelf, default NO (not at mps at all) : ( NO | LEFT | MIDDLE | RIGHT | CONVEYOR )
 ]==]
+
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
 -- Constants
-local X_AT_MPS = 0.3
+-- If this matches the desired x distance of conveyor align, conveyor align has the chance
+-- of not needing to move at all.
+local X_AT_MPS = 0.28
 
 function already_at_mps(self)
    return not (self.fsm.vars.atmps=="NO" or self.fsm.vars.atmps==nil)
