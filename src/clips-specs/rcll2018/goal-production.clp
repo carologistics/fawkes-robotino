@@ -271,6 +271,49 @@
 )
 
 
+(defrule goal-production-create-fill-cap-for-competitive-order
+" Fill a cap into a cap station.
+  Use a capcarrier from the corresponding shelf to feed it into a cap station."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?production-id) (class URGENT) (mode FORMULATED))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  ;Robot CEs
+  (wm-fact (key domain fact self args? r ?robot))
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
+  ;MPS CEs
+  (wm-fact (key domain fact mps-type args? m ?mps t CS))
+  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
+  (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side ?any-side)))
+  ;Capcarrier CEs
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+  ;Order CEs
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key order meta competitive args? ord ?order) (value TRUE))
+  (wm-fact (key config rcll competitive-order-priority) (value "HIGH"))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
+           (value ?qd&:(> ?qr ?qd)))
+  (wm-fact (key refbox order ?order delivery-end) (type UINT)
+           (value ?end&:(> ?end (nth$ 1 ?game-time))))
+  =>
+  (printout t "Goal " FILL-CAP " formulated for competitive order " ?order
+              crlf)
+  (assert (goal (id (sym-cat FILL-CAP- (gensym*)))
+                (class FILL-CAP) (sub-type SIMPLE)
+                (priority  ?*PRIORITY-PREFILL-CS*)
+                (parent ?production-id)
+                (params robot ?robot
+                        mps ?mps
+                        cc ?cc
+                )
+                (required-resources ?mps)))
+)
+
 (defrule goal-production-create-fill-cap
 " Fill a cap into a cap station.
   Use a capcarrier from the corresponding shelf to feed it into a cap station."
@@ -729,6 +772,7 @@
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
+  (goal (id ?urgent) (class URGENT) (mode FORMULATED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -752,6 +796,10 @@
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key order meta competitive args? ord ?order)
+           (value ?competitive))
+
+  (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
 
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key refbox game-time) (values $?game-time))
@@ -790,10 +838,18 @@
       (printout t "Goal " PRODUCE-C0 " formulated, it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
     else
       (printout t "Goal " PRODUCE-C0 " formulated" crlf))
+  (bind ?parent ?production-id)
+  (bind ?priority-decrease 0)
+  (if (and (eq ?comp-prio "HIGH") ?competitive)
+    then
+     (bind ?parent ?urgent))
+  (if (eq ?comp-prio "LOW")
+    then
+      (bind ?priority-decrease 1))
   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
                 (class PRODUCE-C0) (sub-type SIMPLE)
-                (priority ?*PRIORITY-PRODUCE-C0*)
-                (parent ?production-id)
+                (priority (- ?*PRIORITY-PRODUCE-C0* ?priority-decrease))
+                (parent ?parent)
                 (params robot ?robot
                         bs ?bs
                         bs-side ?bs-side
@@ -1212,6 +1268,7 @@
   "Deliver a fully produced workpiece."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class DELIVER-PRODUCTS) (mode FORMULATED))
+  (goal (id ?urgent) (class URGENT) (mode FORMULATED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key refbox game-time) (values $?game-time))
@@ -1247,12 +1304,23 @@
            (value ?qd&:(> ?qr ?qd)))
   (wm-fact (key refbox order ?order delivery-begin) (type UINT)
            (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
+
+  (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
+  (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
   =>
   (printout t "Goal " DELIVER " formulated" crlf)
+  (bind ?parent ?production-id)
+  (bind ?priority-decrease 0)
+  (if (and (eq ?comp-prio "HIGH") ?competitive)
+    then
+      (bind ?parent ?urgent))
+  (if (eq ?comp-prio "LOW")
+    then
+      (bind ?priority-decrease 1))
   (assert (goal (id (sym-cat DELIVER- (gensym*)))
                 (class DELIVER) (sub-type SIMPLE)
-                (priority ?*PRIORITY-DELIVER*)
-                (parent ?production-id)
+                (priority (- ?*PRIORITY-DELIVER* ?priority-decrease))
+                (parent ?parent)
                 (params robot ?robot
                         mps ?mps
                         order ?order
