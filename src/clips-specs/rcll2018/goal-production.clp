@@ -20,13 +20,6 @@
 ;
 
 (defglobal
-  ; Number of retrying enter-field
-  ; until succeeding it manually
-  ?*ENTER-FIELD-RETRIES* = 1
-  ?*MAX-RETRIES-PICK* = 2
-  ?*MAX-RETRIES-PUT-SLIDE* = 2
-
-
   ; production order priorities
   ?*PRIORITY-FIND-MISSING-MPS* = 110
   ?*PRIORITY-DELIVER* = 100
@@ -72,6 +65,7 @@
   Those can be introduced to the world during the game e.g. through dispensing
   at the base station or refilling of a shelf.
 "
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
   (domain-object (name SPAWNING-MASTER) (type master-token))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
@@ -79,7 +73,7 @@
   (not (mutex (name SPAWNING-MASTER) (state LOCKED)))
   =>
   (assert (goal (id (sym-cat ACQUIRE-TOKEN- (gensym*)))
-                    (class ACQUIRE-TOKEN)
+                    (class ACQUIRE-TOKEN) (sub-type SIMPLE)
 		    (params token-name SPAWNING-MASTER)))
 )
 
@@ -88,10 +82,10 @@
 " The parent goal for beacon signals. Allows formulation of
   goals that periodically communicate with the refbox.
 "
-  (not (goal (class BEACONMAINTAIN)))
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (not (goal (class BEACON-MAINTAIN)))
   =>
-  (assert (goal (id (sym-cat BEACONMAINTAIN- (gensym*)))
-                (class BEACONMAINTAIN) (type MAINTAIN)))
+  (goal-tree-assert-run-endless BEACON-MAINTAIN 1)
 )
 
 
@@ -99,39 +93,38 @@
 " Send a beacon signal whenever at least one second has elapsed since it
   last one got sent.
 "
-  ?g <- (goal (id ?maintain-id) (class BEACONMAINTAIN) (mode SELECTED))
-  (not (goal (class BEACONACHIEVE)))
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (time $?now)
+  ?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED)
+        (meta last-formulated $?last))
   ; TODO: make interval a constant
-  (goal-meta (goal-id ?maintain-id)
-             (last-achieve $?last&:(timeout ?now ?last 1)))
   =>
-  (assert (goal (id (sym-cat BEACONACHIEVE- (gensym*)))
-                (class BEACONACHIEVE) (parent ?maintain-id)))
+  (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
+                (class SEND-BEACON) (parent ?maintain-id)))
 )
 
 
 (defrule goal-production-create-wp-spawn-maintain
   "Maintain Spawning if the spawning-master token is held"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
- (not (goal (class WPSPAWN-MAINTAIN)))
- (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
- (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
- (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
+  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
+  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
+  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
+  (not (goal (class WP-SPAWN-MAINTAIN)))
  =>
- (assert (goal (id (sym-cat WPSPAWN-MAINTAIN- (gensym*)))
-               (class WPSPAWN-MAINTAIN) (type MAINTAIN)))
+  (goal-tree-assert-run-endless WP-SPAWN-MAINTAIN 1)
 )
 
 
 (defrule goal-production-create-wp-spawn-achieve
   "Spawn a WP for each robot, if you are the spawn-master"
-  ?g <- (goal (id ?maintain-id) (class WPSPAWN-MAINTAIN) (mode SELECTED))
-  (not (goal (class WPSPAWN-ACHIEVE)))
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (time $?now)
+  ?g <- (goal (id ?maintain-id) (class WP-SPAWN-MAINTAIN) (mode SELECTED)
+              (meta  last-formulated $?last&:(timeout ?now ?last 1)))
+  (not (goal (class SPAWN-WP)))
   ; TODO: make interval a constant
-  (goal-meta (goal-id ?maintain-id)
-             (last-achieve $?last&:(timeout ?now ?last 1)))
   (domain-object (name ?robot) (type robot))
   (not
     (and
@@ -142,8 +135,8 @@
   (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   =>
-  (assert (goal (id (sym-cat WPSPAWN-ACHIEVE- (gensym*)))
-                (class WPSPAWN-ACHIEVE) (parent ?maintain-id)
+  (assert (goal (id (sym-cat SPAWN-WP- (gensym*))) (sub-type SIMPLE)
+                (class SPAWN-WP) (parent ?maintain-id)
                 (params robot ?robot)))
 )
 
@@ -153,21 +146,22 @@
   a shelf only if the game is in the production phase and the domain is loaded.
   Only the spawning-master is in charge of handling shelf refills.
 "
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
   (not (goal (class REFILL-SHELF-MAINTAIN)))
   (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
   (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   =>
-  (assert (goal (id (sym-cat REFILL-SHELF-MAINTAIN- (gensym*)))
-                (class REFILL-SHELF-MAINTAIN) (type MAINTAIN)))
+  (goal-tree-assert-run-endless REFILL-SHELF-MAINTAIN 1)
 )
 
 
 (defrule goal-production-create-refill-shelf-achieve
   "Refill a shelf whenever it is empty."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?g <- (goal (id ?maintain-id) (class REFILL-SHELF-MAINTAIN) (mode SELECTED))
-  (not (goal (class REFILL-SHELF-ACHIEVE)))
+  (not (goal (class REFILL-SHELF)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -178,8 +172,8 @@
   (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   =>
-  (assert (goal (id (sym-cat REFILL-SHELF-ACHIEVE- (gensym*)))
-                (class REFILL-SHELF-ACHIEVE)
+  (assert (goal (id (sym-cat REFILL-SHELF- (gensym*)))
+                (class REFILL-SHELF) (sub-type SIMPLE)
                 (parent ?maintain-id)
                 (params mps ?mps)))
 )
@@ -206,6 +200,7 @@
   and the domain got loaded. Other production goals are
   formulated as sub-goals of this goal.
 "
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
   (not (goal (class PRODUCTION-MAINTAIN)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
@@ -215,22 +210,21 @@
   (NavGraphWithMPSGeneratorInterface (final TRUE))
   (wm-fact (key navgraph waitzone generated))
   =>
-  (assert (goal (id (sym-cat PRODUCTION-MAINTAIN- (gensym*)))
-                (class PRODUCTION-MAINTAIN) (type MAINTAIN)))
+  (goal-tree-assert-run-endless PRODUCTION-MAINTAIN 1)
 )
 
 
 (defrule goal-production-create-wait
   "Keep waiting at one of the waiting positions."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class NO-PROGRESS) (mode FORMULATED))
   (wm-fact (key domain fact self args? r ?self))
   (domain-object (type waitpoint) (name ?waitpoint))
   (wm-fact (key domain fact at args? r ?self m ?waitpoint side WAIT))
   =>
   (printout t "Goal " WAIT " formulated" crlf)
   (assert (goal (id (sym-cat WAIT- (gensym*)))
-               (class WAIT)
+               (class WAIT) (sub-type SIMPLE)
                (priority ?*PRIORITY-WAIT*)
                (parent ?production-id)
                (params r ?self
@@ -243,13 +237,13 @@
 (defrule goal-production-create-go-wait
   "Drive to a waiting position and wait there."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class NO-PROGRESS) (mode FORMULATED))
   (wm-fact (key domain fact self args? r ?self))
   (domain-object (type waitpoint) (name ?waitpoint))
   =>
   (printout t "Goal " GO-WAIT " formulated" crlf)
   (assert (goal (id (sym-cat GO-WAIT- (gensym*)))
-                (class GO-WAIT)
+                (class GO-WAIT) (sub-type SIMPLE)
                 (priority  ?*PRIORITY-GO-WAIT*)
                 (parent ?production-id)
                 (params r ?self
@@ -263,7 +257,7 @@
 (defrule goal-production-create-enter-field
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (goal (class ENTER-FIELD-ACHIEVE)))
+  (not (goal (class ENTER-FIELD)))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
   (wm-fact (key refbox state) (value RUNNING))
@@ -272,8 +266,8 @@
   ; (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
-  (assert (goal (id (sym-cat ENTER-FIELD-ACHIEVE- (gensym*)))
-                (class ENTER-FIELD-ACHIEVE)))
+  (assert (goal (id (sym-cat ENTER-FIELD- (gensym*)))
+                (class ENTER-FIELD) (sub-type SIMPLE)))
 )
 
 
@@ -281,7 +275,7 @@
 " Fill a cap into a cap station.
   Use a capcarrier from the corresponding shelf to feed it into a cap station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class PREPARE-CAPS) (mode FORMULATED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -317,7 +311,7 @@
     (printout t "Goal " FILL-CAP " formulated" crlf)
   )
   (assert (goal (id (sym-cat FILL-CAP- (gensym*)))
-                (class FILL-CAP)
+                (class FILL-CAP) (sub-type SIMPLE)
                 (priority (+ ?priority-increase ?*PRIORITY-PREFILL-CS*))
                 (parent ?production-id)
                 (params robot ?robot
@@ -332,7 +326,7 @@
 (defrule goal-production-create-clear-rs-from-expired-product
   "Remove an unfinished product from the output of a ring station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
+  (goal (class CLEAR) (id ?maintain-id) (mode FORMULATED))
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
@@ -352,6 +346,7 @@
   =>
   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*))) (class CLEAR-MPS)
+                (sub-type SIMPLE)
                 (priority ?*PRIORITY-CLEAR-RS*)
                 (parent ?maintain-id)
                 (params robot ?robot
@@ -369,7 +364,7 @@
   retrieving a cap from it.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class CLEAR) (mode FORMULATED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -385,7 +380,7 @@
   =>
   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
-                (class CLEAR-MPS)
+                (class CLEAR-MPS) (sub-type SIMPLE)
                 (priority ?*PRIORITY-CLEAR-CS*)
                 (parent ?production-id)
                 (params robot ?robot
@@ -401,7 +396,7 @@
 (defrule goal-production-create-clear-bs
   "Remove a workpiece from the base station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class CLEAR) (mode FORMULATED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -415,7 +410,7 @@
   =>
   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
-                (class CLEAR-MPS)
+                (class CLEAR-MPS) (sub-type SIMPLE)
                 (priority ?*PRIORITY-CLEAR-BS*)
                 (parent ?production-id)
                 (params robot ?robot
@@ -431,7 +426,7 @@
 (defrule goal-production-clear-cs-from-expired-product
   "Remove a finished product from a cap station after it's deadline passed."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class CLEAR) (mode FORMULATED))
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
@@ -450,7 +445,7 @@
   =>
   (printout t "Goal " CLEAR-MPS " (" ?mps ") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
-                (class CLEAR-MPS)
+                (class CLEAR-MPS) (sub-type SIMPLE)
                 (priority ?*PRIORITY-CLEAR-CS*)
                 (parent ?production-id)
                 (params robot ?robot
@@ -565,7 +560,7 @@
 (defrule goal-production-create-prefill-ring-station-from-base-station
   "Fill the ring station with a fresh base from the base station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -598,7 +593,7 @@
   (assert (goal (id (sym-cat FILL-RS-FROM-BS- (gensym*)))
                 (class FILL-RS-FROM-BS)
                 (priority (+ ?priority-increase ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE*))
-                (parent ?maintain-id)
+                (parent ?maintain-id) (sub-type SIMPLE)
                              (params robot ?robot
                                      mps ?mps
                                      bs ?bs
@@ -616,7 +611,7 @@
 (defrule goal-production-create-prefill-ring-station-from-shelf
   "Fill a ring station with a capcarrier from a shelf."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -644,7 +639,7 @@
   (assert (goal (id (sym-cat FILL-RS-FROM-SHELF- (gensym*)))
                 (class FILL-RS-FROM-SHELF)
                 (priority (+ ?priority-increase ?*PRIORITY-PREFILL-RS*))
-                (parent ?maintain-id)
+                (parent ?maintain-id) (sub-type SIMPLE)
                              (params robot ?robot
                                      mps ?mps
                                      cs ?cs
@@ -661,7 +656,7 @@
 (defrule goal-production-create-prefill-ring-station
   ;Fill a ring station with the currently holding workpiece.
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class PREPARE-RINGS) (mode FORMULATED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -686,7 +681,7 @@
       ))
   (printout t "Goal " FILL-RS " formulated" crlf)
   (assert (goal (id (sym-cat FILL-RS- (gensym*)))
-                (class FILL-RS)
+                (class FILL-RS) (sub-type SIMPLE)
                 (priority (+ ?*PRIORITY-PREFILL-RS* ?priority-increase))
                 (parent ?production-id)
                 (params robot ?robot
@@ -703,7 +698,7 @@
 (defrule goal-production-create-discard-unknown
   "Discard a base which is not needed."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class NO-PROGRESS) (mode FORMULATED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;TODO: Model state IDLE
   (wm-fact (key domain fact self args? r ?robot))
@@ -715,7 +710,7 @@
   =>
   (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
   (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
-                (class DISCARD-UNKNOWN)
+                (class DISCARD-UNKNOWN) (sub-type SIMPLE)
                 (priority ?*PRIORITY-DISCARD-UNKNOWN*)
                 (parent ?production-id)
                 (params robot ?robot
@@ -733,7 +728,7 @@
   successfully executing this goal.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -796,7 +791,7 @@
     else
       (printout t "Goal " PRODUCE-C0 " formulated" crlf))
   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-                (class PRODUCE-C0)
+                (class PRODUCE-C0) (sub-type SIMPLE)
                 (priority ?*PRIORITY-PRODUCE-C0*)
                 (parent ?production-id)
                 (params robot ?robot
@@ -819,7 +814,7 @@
   successfully finishing this goal.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
 
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -877,7 +872,7 @@
     else
       (printout t "Goal " MOUNT-FIRST-RING " formulated" crlf))
   (assert (goal (id (sym-cat MOUNT-FIRST-RING- (gensym*)))
-                (class MOUNT-FIRST-RING)
+                (class MOUNT-FIRST-RING) (sub-type SIMPLE)
                 (priority ?*PRIORITY-MOUNT-FIRST-RING*)
                 (parent ?production-id)
                 (params robot ?robot
@@ -913,7 +908,7 @@
   successfully finishing this goal.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
+  (goal (class INTERMEDEATE-STEPS) (id ?maintain-id) (mode FORMULATED))
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
@@ -965,7 +960,7 @@
   (printout t "Goal " MOUNT-NEXT-RING " formulated (Ring " ?ring-pos")" crlf)
   (assert (goal (id (sym-cat MOUNT-NEXT-RING- (gensym*)))
                 (class MOUNT-NEXT-RING) (priority (+ ?ring-pos ?*PRIORITY-MOUNT-NEXT-RING*))
-                (parent ?maintain-id)
+                (parent ?maintain-id) (sub-type SIMPLE)
                 (params robot ?robot
                         prev-rs ?prev-rs
                         prev-rs-side OUTPUT
@@ -998,7 +993,7 @@
   the future.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?maintain-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -1032,7 +1027,7 @@
   =>
   (printout t "Goal " PRODUCE-CX " formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
-                (priority ?*PRIORITY-PRODUCE-C1*)
+                (priority ?*PRIORITY-PRODUCE-C1*) (sub-type SIMPLE)
                                 (parent ?maintain-id)
                                 (params robot ?robot
                                         wp ?wp
@@ -1053,7 +1048,7 @@
   successfully executing this goal.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
+  (goal (class INTERMEDEATE-STEPS) (id ?maintain-id) (mode FORMULATED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -1089,7 +1084,7 @@
   =>
   (printout t "Goal " PRODUCE-CX " (C2) formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
-                (priority ?*PRIORITY-PRODUCE-C2*)
+                (priority ?*PRIORITY-PRODUCE-C2*) (sub-type SIMPLE)
                 (parent ?maintain-id)
                 (params robot ?robot
                         wp ?wp
@@ -1110,7 +1105,7 @@
   successfully executing this goal.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
+  (goal (class INTERMEDEATE-STEPS) (id ?maintain-id) (mode FORMULATED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -1148,7 +1143,7 @@
   =>
   (printout t "Goal " PRODUCE-CX " (C3) formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
-                (priority ?*PRIORITY-PRODUCE-C3*)
+                (priority ?*PRIORITY-PRODUCE-C3*) (sub-type SIMPLE)
                 (parent ?maintain-id)
                 (params robot ?robot
                         wp ?wp
@@ -1167,7 +1162,7 @@
   from it failed too often.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class URGENT) (mode FORMULATED))
   (wm-fact (key domain fact self args? r ?self))
   ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
                 (value ?tried&:(> ?tried ?*MAX-RETRIES-PICK*)))
@@ -1175,7 +1170,7 @@
   (printout t "Goal " RESET-MPS " formulated" crlf)
   (assert (goal (id (sym-cat RESET-MPS- (gensym*)))
                 (class RESET-MPS) (priority  ?*PRIORITY-RESET*)
-                (parent ?production-id)
+                (parent ?production-id) (sub-type SIMPLE)
                 (params r ?self
                         m ?mps
                 )
@@ -1190,7 +1185,7 @@
   failed too often
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class NO-PROGRESS) (mode FORMULATED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;To-Do: Model state IDLE
   (wm-fact (key domain fact self args? r ?robot))
@@ -1201,7 +1196,7 @@
   =>
   (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
   (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
-                (class DISCARD-UNKNOWN)
+                (class DISCARD-UNKNOWN) (sub-type SIMPLE)
                 (priority ?*PRIORITY-RESET*)
                 (parent ?production-id)
                 (params robot ?robot
@@ -1216,7 +1211,7 @@
 (defrule goal-production-create-deliver
   "Deliver a fully produced workpiece."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (goal (id ?production-id) (class DELIVER-PRODUCTS) (mode FORMULATED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key refbox game-time) (values $?game-time))
@@ -1255,7 +1250,7 @@
   =>
   (printout t "Goal " DELIVER " formulated" crlf)
   (assert (goal (id (sym-cat DELIVER- (gensym*)))
-                (class DELIVER)
+                (class DELIVER) (sub-type SIMPLE)
                 (priority ?*PRIORITY-DELIVER*)
                 (parent ?production-id)
                 (params robot ?robot
@@ -1275,134 +1270,16 @@
 )
 
 
-(defrule goal-production-evaluate-failed-enter-field
+(defrule goal-production-hack-failed-enter-field
   "HACK: Stop trying to enter the field when it failed a few times."
-   ?g <- (goal (id ?gid) (class ENTER-FIELD-ACHIEVE)
+  ; TODO-GM: this was after 3 tries, now its instantly
+  ?g <- (goal (id ?gid) (class ENTER-FIELD)
                (mode FINISHED) (outcome FAILED))
   ?pa <- (plan-action (goal-id ?gid) (state FAILED) (action-name enter-field))
-  ?gm <- (goal-meta (goal-id ?gid) (num-tries ?num-tries))
   =>
   (printout t "Goal '" ?gid "' has failed, evaluating" crlf)
-
-  (if (= ?num-tries ?*ENTER-FIELD-RETRIES*) then
-	(modify ?pa (state EXECUTION-SUCCEEDED))
-	(modify ?g (mode DISPATCHED) (outcome UNKNOWN))
-        else
-	(bind ?num-tries (+ 1 ?num-tries))
-	(modify ?gm (num-tries ?num-tries) (max-tries ?*ENTER-FIELD-RETRIES*))
-	(modify ?g (mode EVALUATED))
-  )
-)
-
-
-(defrule goal-production-evaluate-production-maintain
-  "Clean up all rs-fill-priorities facts when the production maintenance goal
-   fails."
-  ?g <- (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (parent nil)
-              (mode FINISHED) (outcome ?outcome))
-  ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
-  ?t <- (wm-fact (key monitoring action-retried args? r ?self a ?an m ?mps wp ?wp)
-                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
-  =>
-  (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
-  (retract ?t)
-  (do-for-all-facts ((?prio wm-fact)) (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
-   (retract ?prio))
-  (modify ?g (mode EVALUATED))
-)
-
-
-(defrule goal-production-evaluate-completed-produce-c0-and-mount-first-ring
-" Bind a workpiece to the order it belongs to.
-
-  Workpieces that got dispensed during PRODUCE-C0 and MOUNT-FIRST-RING get
-  tied to their order independent of the goal outcome as long as they are
-  still usable.
-"
-  ?g <- (goal (id ?goal-id) (class PRODUCE-C0|MOUNT-FIRST-RING)
-              (parent ?parent-id)
-              (mode FINISHED) (outcome ?outcome)
-              (params $?params))
- ?gm <- (goal-meta (goal-id ?parent-id))
- (plan (goal-id ?goal-id) (id ?plan-id))
- ?p <-(plan-action
-         (plan-id ?plan-id)
-         (action-name bs-dispense)
-         (param-names r m side wp basecol)
-         (param-values ?robot ?bs ?bs-side ?wp ?base-color))
- (time $?now)
- (wm-fact (key domain fact wp-usable args? wp ?wp))
- (wm-fact (key domain fact self args? r ?robot))
- =>
- (bind ?order (get-param-by-arg ?params order))
- (printout t "Goal '" ?goal-id "' has been completed, Evaluating" crlf)
- (assert (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE)))
- (modify ?g (mode EVALUATED))
- (modify ?gm (last-achieve ?now))
-)
-
-
-(defrule goal-production-evaluate-completed-subgoal-refill-shelf
-" Create the domain objects and wm-facts corresponding to the freshly spawned
-  capcarriers when the REFILL-SHELF-ACHIEVE goal finishes successfully.
-"
-  ?g <- (goal (class REFILL-SHELF-ACHIEVE) (parent ?parent-id)
-              (mode FINISHED) (outcome COMPLETED)
-              (params mps ?mps))
-  ?p <- (goal (id ?parent-id))
-  (wm-fact (key domain fact cs-color args? m ?mps col ?col))
-  =>
-  (if (eq ?col CAP_GREY)
-     then
-     (bind ?cc1 (sym-cat CCG (random-id)))
-     (bind ?cc2 (sym-cat CCG (random-id)))
-     (bind ?cc3 (sym-cat CCG (random-id)))
-     else
-     (bind ?cc1 (sym-cat CCB (random-id)))
-     (bind ?cc2 (sym-cat CCB (random-id)))
-     (bind ?cc3 (sym-cat CCB (random-id)))
-   )
-   (assert
-     (domain-object (name ?cc1) (type cap-carrier))
-     (domain-object (name ?cc2) (type cap-carrier))
-     (domain-object (name ?cc3) (type cap-carrier))
-     (wm-fact (key domain fact wp-cap-color args? wp ?cc1 col ?col) (type BOOL) (value TRUE))
-     (wm-fact (key domain fact wp-cap-color args? wp ?cc2 col ?col) (type BOOL) (value TRUE))
-     (wm-fact (key domain fact wp-cap-color args? wp ?cc3 col ?col) (type BOOL) (value TRUE))
-     (wm-fact (key domain fact wp-on-shelf args? wp ?cc1 m ?mps spot LEFT) (type BOOL) (value TRUE))
-     (wm-fact (key domain fact wp-on-shelf args? wp ?cc2 m ?mps spot MIDDLE) (type BOOL) (value TRUE))
-     (wm-fact (key domain fact wp-on-shelf args? wp ?cc3 m ?mps spot RIGHT) (type BOOL) (value TRUE))
-   )
-   (modify ?g (mode EVALUATED))
-)
-
-
-(defrule goal-production-evaluate-completed-subgoal-wp-spawn
-" Create the domain objects and wm-facts corresponding to the freshly spawned
-  workpieces when the WP-SPAWN-ACHIEVE goal finishes successfully.
-"
-  ?g <- (goal (id ?goal-id) (class WPSPAWN-ACHIEVE) (parent ?parent-id)
-              (mode FINISHED) (outcome COMPLETED)
-              (params robot ?robot))
-  ?p <- (goal (id ?parent-id) (class WPSPAWN-MAINTAIN))
-  ?m <- (goal-meta (goal-id ?parent-id))
-  (time $?now)
-  =>
-  (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
-    "') has been completed, Evaluating" crlf)
-  (bind ?wp-id (sym-cat WP (random-id)))
-  (assert
-    (domain-object (name ?wp-id) (type workpiece))
-    (wm-fact (key domain fact wp-unused args? wp ?wp-id) (type BOOL) (value TRUE))
-    (wm-fact (key domain fact wp-cap-color args? wp ?wp-id col CAP_NONE) (type BOOL) (value TRUE))
-    (wm-fact (key domain fact wp-ring1-color args? wp ?wp-id col RING_NONE) (type BOOL) (value TRUE))
-    (wm-fact (key domain fact wp-ring2-color args? wp ?wp-id col RING_NONE) (type BOOL) (value TRUE))
-    (wm-fact (key domain fact wp-ring3-color args? wp ?wp-id col RING_NONE) (type BOOL) (value TRUE))
-    (wm-fact (key domain fact wp-base-color args? wp ?wp-id col BASE_NONE) (type BOOL) (value TRUE))
-    (wm-fact (key domain fact wp-spawned-for args? wp ?wp-id r ?robot) (type BOOL) (value TRUE))
-  )
-  (modify ?g (mode EVALUATED))
-  (modify ?m (last-achieve ?now))
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+  (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
 )
 
 

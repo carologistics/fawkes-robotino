@@ -114,6 +114,14 @@ clips-executive:
             file: resource-locks.clp
           - name: goal-reasoner
             files:
+              - goals/retry.clp
+              - goals/run-all.clp
+              - goals/run-one.clp
+              - goals/timeout.clp
+              - goals/try-all.clp
+              - goal-tree.clp
+              - rcll2018/goals/run-endless.clp
+              - rcll2018/goals/simple.clp
               - rcll2018/goal-reasoner.clp
               - rcll2018/goal-production.clp
               - rcll2018/exploration.clp
