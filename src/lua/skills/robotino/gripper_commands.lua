@@ -156,7 +156,6 @@ function COMMAND:init()
         move_rel_message:set_x(x)
         move_rel_message:set_y(y)
         move_rel_message:set_z(z)
-        move_rel_message:set_target_frame(target_frame)
         self.fsm.vars.msgid = arduino:msgq_enqueue_copy(move_rel_message)
 
    elseif self.fsm.vars.command == "CALIBRATE" then
