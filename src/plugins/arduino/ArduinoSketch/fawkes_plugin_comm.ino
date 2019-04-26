@@ -69,7 +69,8 @@ AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 #define AT "AT "
 #define TERMINATOR '+'
 
-#define CMD_CALIBRATE 'C'
+#define CMD_CALIBRATE 'c'
+#define CMD_DOUBLE_CALIBRATE 'C'
 
 #define CMD_X_NEW_POS 'X'
 #define CMD_Y_NEW_POS 'Y'
@@ -108,6 +109,9 @@ AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 
 #define DEFAULT_MAX_SPEED_A 4000
 #define DEFAULT_MAX_ACCEL_A 5000
+
+#define SECOND_CAL_MAX_SPEED 500
+#define SECOND_CAL_MAX_ACC 1000
 
 
 #define STATUS_MOVING 0
@@ -180,6 +184,26 @@ void set_status(int status_) {
   }
 }
 
+void double_calibrate()
+{
+  // first fast calibration run
+  calibrate();
+  while(!movement_done_flag);
+  movement_done_flag = false;
+  // reduce speed to a minimum
+  set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC,motor_X);
+  set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC,motor_Y);
+  set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC,motor_Z);
+  // calibrate a second time
+  calibrate();
+  while(!movement_done_flag);
+  movement_done_flag = false;
+  // after calibration the default speed and acc values are used again.
+  set_new_speed_acc(DEFAULT_MAX_SPEED_X, DEFAULT_MAX_ACCEL_X, motor_X);
+  set_new_speed_acc(DEFAULT_MAX_SPEED_Y, DEFAULT_MAX_ACCEL_Y, motor_Y);
+  set_new_speed_acc(DEFAULT_MAX_SPEED_Z, DEFAULT_MAX_ACCEL_Z, motor_Z);
+}
+
 void calibrate()
 {
   bool x_done=false, y_done=false, z_done=false;
@@ -189,18 +213,26 @@ void calibrate()
   motor_Z.move(1000000L);
   // due to high step count, reaching end stops is guaranteed!
   set_status(STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
+  // This while loop controls permanently the state of the respective end stops and handles crashing into them
+  // When all end stops are triggered simulatenously, additional latency is introduced.
+  // The latency is maily due to the planning of the back movement.
+  // One work around is to calibrate twice, the first time fast and the second time slowly.
+  // (again inspired from grbl)
+  // Additionally, the backwards movement should use different numbers of steps
+  // to ensure that the end stops will not be triggerend simulatenously at the second calibration.
   while(!x_done || !y_done || !z_done){
-    if(!x_done && digitalRead(MOTOR_X_LIMIT_PIN)==LOW){ x_done=true; reach_end_handle(motor_X);}
-    if(!y_done && digitalRead(MOTOR_Y_LIMIT_PIN)==LOW){ y_done=true; reach_end_handle(motor_Y);}
-    if(!z_done && digitalRead(MOTOR_Z_LIMIT_PIN)==LOW){ z_done=true; reach_end_handle(motor_Z);}
+    if(!x_done && digitalRead(MOTOR_X_LIMIT_PIN)==LOW){ x_done=true; reach_end_handle(motor_X,0);}
+    if(!y_done && digitalRead(MOTOR_Y_LIMIT_PIN)==LOW){ y_done=true; reach_end_handle(motor_Y,100);}
+    if(!z_done && digitalRead(MOTOR_Z_LIMIT_PIN)==LOW){ z_done=true; reach_end_handle(motor_Z,200);}
   }
   movement_done_flag = false;
 }
 
-void reach_end_handle(AccelStepper &motor){
+
+void reach_end_handle(AccelStepper &motor, byte extra){
   motor.hard_stop();
   motor.setCurrentPosition(0L);
-  motor.move(-1000);
+  motor.move(-400-extra);
 }
 
 void set_new_pos(long new_pos, AccelStepper &motor) {
@@ -372,6 +404,9 @@ void read_package() {
         break;
       case CMD_CALIBRATE:
         calibrate();
+        break;
+      case CMD_DOUBLE_CALIBRATE:
+        double_calibrate();
         break;
       case CMD_SET_SPEED:
         set_new_speed(new_value);
