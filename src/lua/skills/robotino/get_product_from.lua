@@ -40,11 +40,18 @@ Parameters:
       @param shelf   optional position on shelf: ( LEFT | MIDDLE | RIGHT )
       @param atmps   optional if already standing at the mps: ( CONVEYOR )
 ]==]
+
 -- Initialize as skill module
 skillenv.skill_module(_M)
 local pam = require("parse_module")
+
 -- Constants
-local X_AT_MPS = 0.3 -- x distance to laserline
+
+-- If this matches the desired x distance of conveyor align, conveyor align has the chance
+-- of not needing to move at all.
+-- x distance to laserline
+local X_AT_MPS = 0.28
+
 
 function already_at_conveyor(self)
    return (self.fsm.vars.atmps == "CONVEYOR")
