@@ -308,11 +308,8 @@
    fails."
   ?g <- (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (parent nil)
               (mode FINISHED) (outcome ?outcome))
-  ?t <- (wm-fact (key monitoring action-retried args? r ?self a ?an m ?mps wp ?wp)
-                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
   =>
   (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
-  (retract ?t)
   (do-for-all-facts ((?prio wm-fact)) (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
    (retract ?prio))
   (modify ?g (mode EVALUATED))
