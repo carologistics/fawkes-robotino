@@ -330,6 +330,18 @@
 )
 
 
+(defrule execution-monitoring-retry-action-wp-get-final
+  (plan-action
+        (action-name ?an&wp-get)
+        (state FINAL)
+        (param-values $? ?wp $? ?mps $?))
+  (domain-obj-is-of-type ?mps mps)
+  (domain-obj-is-of-type ?wp workpiece)
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp))
+  =>
+  (retract ?wm)
+)
+
 ;
 ;======================================Misc==============================
 ;
