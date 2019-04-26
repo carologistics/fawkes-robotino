@@ -88,7 +88,7 @@
 
 (deffunction production-leaf-goal (?goal-class)
   (return (or (eq ?goal-class GET-BASE-TO-FILL-RS)
-              (eq ?goal-class FILL-RS-FROM-SHELF)
+              (eq ?goal-class GET-SHELF-TO-FILL-RS)
               (eq ?goal-class FILL-CAP)
               (eq ?goal-class DISCARD-UNKNOWN)
               (eq ?goal-class PRODUCE-C0)
