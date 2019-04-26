@@ -18,16 +18,49 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
-
-(deftemplate goal-meta
-  (slot goal-id (type SYMBOL))
-  (slot num-tries (type INTEGER))
-  (slot max-tries (type INTEGER))
-  (multislot last-achieve (type INTEGER) (cardinality 2 2) (default 0 0))
-)
+; Goal reasoner for goals with sub-types. Goals without sub-types are NOT
+; handled.
+;
+; Basic functionalities:
+;  - Select MAINTAIN goals
+;  - Finish sub-goals of finished parent goals to ensure proper cleanup
+;  - Expand goals that are inner nodes of a goal tree
+;    (the other goals are expanded in the goal-expander)
+;  - Automatically evaluate all goals with low priority
+;    Special evaluation for specific goals with default priority
+;  - Clean up and remove executed goals
+;    Reject formulated inner production tree goals if no suitable sub-goal
+;    could be formulated
+;  - Reject formulated production tree goals once some leaf goal is dispatched
+;
+;
+; The intended goal life-cycle of the production tree (assuming no goal gets
+; rejected due to resource locks) can be summarized to:
+;  - Formulate inner tree nodes to expand the root
+;  - Formulate all currently achievable production goals
+;  - Reject all inner tree nodes that have no sub-goal
+;  - Recursively dispatch inner goals until a leaf goal is dispatched
+;  - Reject all tree nodes that are not dispatched
+;  - Once a leaf goal is finished and evaluated, the outcome is recursively
+;    handed back to the root
+;  - After the root is evaluated all other tree goals (by the time in mode
+;    RETRACTED) are deleted
+;  - The root gets reformulated and selected
+;
+; If a leaf goal has to be rejected, the parent goal dispatches another
+; leaf goal instead. If this is not possible then the parent is rejected and
+; recursively another goal is tried until either one leaf can be dispatched or
+; all goals are rejected (this should never happen, since we have WAIT goals),
+; leading the root to be rejected and reformulated.
 
 (defglobal
+  ; Number of retrying enter-field
+  ; until succeeding it manually
+  ?*ENTER-FIELD-RETRIES* = 1
+  ?*MAX-RETRIES-PICK* = 2
+  ?*MAX-RETRIES-PUT-SLIDE* = 2
   ?*GOAL-MAX-TRIES* = 3
+
   ?*SALIENCE-GOAL-FORMULATE* = 500
   ?*SALIENCE-GOAL-REJECT* = 400
   ?*SALIENCE-GOAL-EXPAND* = 300
@@ -37,184 +70,135 @@
   ?*SALIENCE-GOAL-PRE-EVALUATE* = 1
   ; common evaluate rules should have
   ;   lower salience than case specific ones
-  ?*SALIENCE-GOAL-EVALUTATE-GENERIC* = -1
+  ?*SALIENCE-GOAL-EVALUATE-GENERIC* = -1
 )
 
 
-; ============================================  Goal Selection ======================================
+; ========================== Goal-Tree-Functions ============================
 
 
-(defrule goal-reasoner-select-parent-goal
-" We can choose one or more goals for expansion.
-  Select all parent goals in order to expand them
-"
+(deffunction requires-subgoal (?goal-type)
+  (return (or (eq ?goal-type TRY-ONE-OF-SUBGOALS)
+              (eq ?goal-type TIMEOUT-SUBGOAL)
+              (eq ?goal-type RUN-ONE-OF-SUBGOALS)
+              (eq ?goal-type RETRY-SUBGOAL)
+              (eq ?goal-type RUN-ENDLESS)))
+)
+
+
+(deffunction production-leaf-goal (?goal-class)
+  (return (or (eq ?goal-class FILL-RS-FROM-BS)
+              (eq ?goal-class FILL-RS-FROM-SHELF)
+              (eq ?goal-class FILL-CAP)
+              (eq ?goal-class DISCARD-UNKNOWN)
+              (eq ?goal-class PRODUCE-C0)
+              (eq ?goal-class PRODUCE-CX)
+              (eq ?goal-class MOUNT-FIRST-RING)
+              (eq ?goal-class MOUNT-NEXT-RING)
+              (eq ?goal-class DELIVER)
+              (eq ?goal-class WAIT)
+              (eq ?goal-class GO-WAIT)))
+)
+
+
+(deffunction production-tree-goal (?goal-class)
+  (return (or (eq ?goal-class PRODUCTION-SELECTOR)
+              (eq ?goal-class URGENT)
+              (eq ?goal-class FULFILL-ORDERS)
+              (eq ?goal-class DELIVER-PRODUCTS)
+              (eq ?goal-class INTERMEDEATE-STEPS)
+              (eq ?goal-class CLEAR)
+              (eq ?goal-class PREPARE-RESOURCES)
+              (eq ?goal-class PREPARE-CAPS)
+              (eq ?goal-class PREPARE-RINGS)
+              (eq ?goal-class NO-PROGRESS)))
+)
+
+
+(deffunction production-goal (?goal-class)
+  (return (or (production-tree-goal ?goal-class)
+              (production-leaf-goal ?goal-class)))
+)
+
+
+(deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
+        (bind ?id (sym-cat MAINTAIN- ?class - (gensym*)))
+        (bind ?goal (assert (goal (id ?id) (class ?class) (type MAINTAIN)
+                            (sub-type RUN-ENDLESS) (params frequency ?frequency)
+                            (meta last-formulated (now)))))
+        (foreach ?f ?fact-addresses
+                (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+        (return ?goal)
+)
+
+
+(deffunction goal-tree-assert-subtree (?id $?fact-addresses)
+        (foreach ?f ?fact-addresses
+                (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
+)
+
+
+; ============================= Goal Selection ===============================
+
+
+(defrule goal-reasoner-select-root
+"  Select all root goals (having no parent) in order to expand them."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (id ?goal-id) (mode FORMULATED))
+  ?g <- (goal (parent nil) (type ACHIEVE|MAINTAIN) (sub-type ~nil) (id ?goal-id) (mode FORMULATED))
+  (not (goal (parent ?goal-id)))
 =>
   (modify ?g (mode SELECTED))
-  (assert (goal-meta (goal-id ?goal-id) (max-tries ?*GOAL-MAX-TRIES*)))
 )
 
 
-(defrule goal-reasoner-expand-parent-goal
-" Expand a parent goal if it has some formulated subgoals"
+(defrule goal-reasoner-expand-production-tree
+"  Populate the tree structure of the production tree. The priority of subgoals
+   is determined by the order they are asserted. Sub-goals that are asserted
+   earlier get a higher priority.
+"
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
-  ?p <- (goal (id ?parent-id) (mode SELECTED))
+  (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (not (goal (parent ?goal-id)))
+=>
+  (goal-tree-assert-subtree ?goal-id
+    (goal-tree-assert-run-one PRODUCTION-SELECTOR
+      (goal-tree-assert-run-one URGENT)
+        (goal-tree-assert-run-one FULFILL-ORDERS
+          (goal-tree-assert-run-one DELIVER-PRODUCTS)
+          (goal-tree-assert-run-one INTERMEDEATE-STEPS))
+        (goal-tree-assert-run-one PREPARE-RESOURCES
+          (goal-tree-assert-run-one CLEAR)
+          (goal-tree-assert-run-one PREPARE-CAPS)
+          (goal-tree-assert-run-one PREPARE-RINGS))
+        (goal-tree-assert-run-one NO-PROGRESS)))
+)
+
+(defrule goal-reasoner-expand-goal-with-sub-type
+" Expand a goal with sub-type, if it has a child."
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  ?p <- (goal (id ?parent-id) (type ACHIEVE|MAINTAIN)
+              (sub-type ?sub-type&:(requires-subgoal ?sub-type)) (mode SELECTED))
   ?g <- (goal (parent ?parent-id) (mode FORMULATED))
 =>
   (modify ?p (mode EXPANDED))
 )
 
 
-(defrule goal-reasoner-commit-parent-goal
-" Commit an expanded parent goal, if it has a committed subgoal or no subgoal at all"
-  ?g <- (goal (id ?goal-id) (mode EXPANDED) (parent nil))
-  (or (not (goal (parent ?goal-id)))
-      (goal (parent ?goal-id) (mode COMMITTED)))
-=>
-  (modify ?g (mode COMMITTED))
-)
-
-
-(defrule goal-reasoner-select-subgoal
-" Select the subgoal with the highes priority, if the parent goal is expanded"
-  (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?p <- (goal (id ?parent-id) (mode EXPANDED))
-  ?g <- (goal (parent ?parent-id) (mode FORMULATED)
-          (id ?subgoal-id) (class ?class) (priority ?priority))
-  ;Select the formulated subgoal with the highest priority
-  (not (goal (parent ?parent-id) (mode FORMULATED)
-             (priority ?h-priority&:(> ?h-priority ?priority)))
-  )
-  ;No other subgoal being processed
-  (not (goal (parent ?parent-id)
-             (mode SELECTED|EXPANDED|
-                   COMMITTED|DISPATCHED|
-                   FINISHED|RETRACTED)))
-  (not (goal (parent ?parent-id) (mode EVALUATED) (outcome ~REJECTED)))
-=>
-  (if (neq ?class BEACONACHIEVE) then
-    (printout t "Goal " ?subgoal-id " selected!" crlf)
-  )
-  (modify ?g (mode SELECTED))
-  (assert (goal-meta (goal-id ?subgoal-id)))
-)
-
-
-(defrule goal-reasoner-commit-subgoal
-" Commit an expanded subgoal if the parent is expanded and the is no subgoal to this goal"
-  ?g <- (goal (id ?goal-id) (class ?class) (mode EXPANDED) (parent ?parent-id))
-  (goal (id ?parent-id) (mode EXPANDED))
-  (or (not (goal (parent ?goal-id)))
-      (goal (parent ?goal-id) (mode COMMITTED)))
-=>
-  (if (neq ?class BEACONACHIEVE) then
-    (printout t "Goal " ?goal-id " committed!" crlf)
-  )
-  (modify ?g (mode COMMITTED))
-)
-
-
-; ======================================== Goal Dispatching ============================
+; ========================= Goal Dispatching =================================
 ; Trigger execution of a plan. We may commit to multiple plans
 ; (for different goals), e.g., one per robot, or for multiple
 ; orders. It is then up to action selection and execution to determine
 ; what to do when.
 
 
-(defrule goal-reasoner-dispatch-parent-goal
-" Dispatch a parent goal if all resources where acquired and a subgoal is dispatched"
-	?g <- (goal (mode COMMITTED)
-          (id ?goal-id)
-          (parent nil)
-          (required-resources $?req)
-          (acquired-resources $?acq&:(subsetp ?req ?acq)))
-  (or (not (goal (parent ?goal-id)))
-      (goal (parent ?goal-id) (mode DISPATCHED)))
-=>
-	(modify ?g (mode DISPATCHED))
-)
-
-
-(defrule goal-reasoner-dispatch-subgoal
-" Dispatch a subgoal if all resources where acquired and its parent goal is committed."
-  ?g <- (goal (mode COMMITTED)
-          (id ?goal-id)
-          (class ?class)
-          (parent ?parent-id)
-          (required-resources $?req)
-          (acquired-resources $?acq&:(subsetp ?req ?acq)))
-  (goal (id ?parent-id) (mode COMMITTED))
-  (or (not (goal (parent ?goal-id)))
-      (goal (parent ?goal-id) (mode DISPATCHED)))
-=>
-  (if (neq ?class BEACONACHIEVE) then
-    (printout t "Goal " ?goal-id " dispatched!" crlf)
-  )
-	(modify ?g (mode DISPATCHED))
-)
-
-
-(defrule goal-reasoner-reexpand-parent-goal
-"The parent is committed or dispatched, but all subgoals are formulated and there is no active subgoal
- Reset the parent goal to the expanded state then.
-"
-  (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?p <- (goal (id ?parent-id) (mode COMMITTED|DISPATCHED))
-  (goal (parent ?parent-id) (mode FORMULATED))
-  (not (goal (parent ?parent-id) (mode ~FORMULATED) (outcome ~REJECTED)))
-=>
-  (modify ?p (mode EXPANDED))
-)
-
-
-(defrule goal-reasoner-finish-parent-goal
-" If subgoal is evaluated, set the parent goal to finished."
-  ?pg <- (goal (id ?pg-id) (mode DISPATCHED))
-  ?sg <- (goal (id ?sg-id) (parent ?pg-id) (mode EVALUATED)
-               (outcome ?outcome&~REJECTED))
-  (time $?now)
-=>
-  (printout debug "Goal '" ?pg-id " finised and " ?outcome "cause " ?sg-id
-    "' has been Evaluated" crlf)
-  ;Finish the parent goal with the same outcome
-  ;Could be extended later for custom behavior
-  ;in case we want to try something else to achive that goal
-  (modify ?pg (mode FINISHED) (outcome ?outcome))
-)
-
-
-(defrule goal-reasoner-fail-parent-goal-if-subgoals-rejected
-" Fail a parent goal if all subgoals are rejected. "
-  ?pg <- (goal (id ?pg-id) (mode ~FINISHED))
-  (not (goal (parent ?pg-id) (outcome ~REJECTED)))
-  (goal (parent ?pg-id))
-=>
-  ;(printout debug "Goal '" ?pg-id " failed because all subgoald been REJECTED" crlf)
-  (modify ?pg (mode FINISHED) (outcome FAILED))
-)
-
-
-; ============================================ Goal Evaluation ==================================
+; ========================= Goal Evaluation ==================================
 ; A finished goal has to be evaluated.
-; In this step all necessary actions before removing the goal are executed, e.g unlock resources etc
+; In this step all necessary actions before removing the goal are executed,
+; such as unlocking resources or adapting the world model and strategy based on
+; goal outcomes or plan and action status.
 
 
-(defrule goal-reasoner-evaluate-subgoal-common
-" Finally set a finished goal to evaluated.
-  All pre evaluation steps should have been executed, enforced by the higher priority
-"
-  (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
-  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome ?outcome))
-  ?pg <- (goal (id ?parent-id))
-  ?m <- (goal-meta (goal-id ?parent-id))
-  (time $?now)
-=>
-  ;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
-  ;  "') has been completed, Evaluating" crlf)
-  (modify ?g (mode EVALUATED))
-  (modify ?m (last-achieve ?now))
-)
+; ------------------------- PRE EVALUATION -----------------------------------
 
 
 (defrule goal-reasoner-evaluate-clean-locks
@@ -280,50 +264,205 @@
 )
 
 
-(defrule goal-reasoner-evaluate-common-parent-goal
-" Evaluate a parent goal. If it was failed, increase the retry counter."
-  (declare (salience ?*SALIENCE-GOAL-EVALUTATE-GENERIC*))
-  ?g <- (goal (id ?goal-id) (parent nil) (mode FINISHED) (outcome ?outcome))
-  (not (goal-reasoner-unlock-pending ?))
-  ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries))
+(defrule goal-reasoner-finish-sub-goals-of-finished-parent
+" Evaluate any sub-goal of a parent such that they can be cleaned up.
+  This allows to recursively evaluate the sub-tree of an evaluated goal
+  which is necessary to ensure a proper clean up of any related plans.
+"
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
+  (goal (id ?sub-goal) (parent ?goal-id) (mode ~FINISHED&~EVALUATED&~RETRACTED))
 =>
-  ;(printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
-  (if (eq ?outcome FAILED)
-    then
-    (bind ?num-tries (+ ?num-tries 1))
-    (modify ?gm (num-tries ?num-tries))
+  (delayed-do-for-all-facts ((?sg goal))
+    (and (eq ?sg:parent ?goal-id) (neq ?sg:mode FINISHED)
+                                  (neq ?sg:mode EVALUATED)
+                                  (neq ?sg:mode RETRACTED))
+  ; (printout t "Goal '" ?sg:id "' (part of '" ?sg:parent
+  ;     "') has, cleaning up" crlf)
+    (modify ?sg (mode FINISHED))
   )
+)
 
+
+; ----------------------- EVALUATE COMMON ------------------------------------
+
+
+(defrule goal-reasoner-evaluate-common
+" Finally set a finished goal to evaluated.
+  All pre evaluation steps should have been executed, enforced by the higher priority
+"
+  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
+=>
+  ;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
+  ;  "') has been completed, Evaluating" crlf)
   (modify ?g (mode EVALUATED))
 )
 
 
-; ================================= Goal Clean up =======================================
+; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
 
-(defrule goal-reasoner-cleanup-rejected-goal
-" If a goal is rejected, remove all belonging plans and plan-actions."
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome REJECTED))
-=>
-  (do-for-all-facts ((?plan plan)) (eq ?plan:goal-id ?goal-id)
-    (do-for-all-facts
-      ((?action plan-action))
-      (and (eq ?action:goal-id ?goal-id) (eq ?action:plan-id ?plan:id))
-      (retract ?action)
-    )
-    (retract ?plan)
-  )
+(defrule goal-reasoner-evaluate-production-maintain
+  "Clean up all rs-fill-priorities facts when the production maintenance goal
+   fails."
+  ?g <- (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (parent nil)
+              (mode FINISHED) (outcome ?outcome))
+  ?t <- (wm-fact (key monitoring action-retried args? r ?self a ?an m ?mps wp ?wp)
+                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+  =>
+  (printout t "Goal '" ?goal-id "' has been " ?outcome ", evaluating" crlf)
+  (retract ?t)
+  (do-for-all-facts ((?prio wm-fact)) (wm-key-prefix ?prio:key (create$ evaluated fact rs-fill-priority))
+   (retract ?prio))
+  (modify ?g (mode EVALUATED))
 )
 
 
-(defrule goal-reasoner-cleanup-common-parent-goal
-" Clean up all plans and plan-actions of an evaluated parent goal. 
-  Retract all subgoals.
+(defrule goal-reasoner-evaluate-completed-produce-c0-and-mount-first-ring
+" Bind a workpiece to the order it belongs to.
+
+  Workpieces that got dispensed during PRODUCE-C0 and MOUNT-FIRST-RING get
+  tied to their order independent of the goal outcome as long as they are
+  still usable.
 "
-  ?g <- (goal (id ?goal-id) (parent nil) (type ?goal-type)
-          (mode EVALUATED) (outcome ?outcome))
-  ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries) (max-tries ?max-tries))
+  ?g <- (goal (id ?goal-id) (class PRODUCE-C0|MOUNT-FIRST-RING)
+              (parent ?parent-id)
+              (mode FINISHED) (outcome ?outcome)
+              (params $?params))
+ (plan (goal-id ?goal-id) (id ?plan-id))
+ ?p <-(plan-action
+         (plan-id ?plan-id)
+         (action-name bs-dispense)
+         (param-names r m side wp basecol)
+         (param-values ?robot ?bs ?bs-side ?wp ?base-color))
+ (time $?now)
+ (wm-fact (key domain fact wp-usable args? wp ?wp))
+ (wm-fact (key domain fact self args? r ?robot))
+ =>
+ (bind ?order (get-param-by-arg ?params order))
+ (printout t "Goal '" ?goal-id "' has been completed, Evaluating" crlf)
+ (assert (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE)))
+ (modify ?g (mode EVALUATED))
+)
+
+
+(defrule goal-reasoner-evaluate-completed-subgoal-refill-shelf
+" Create the domain objects and wm-facts corresponding to the freshly spawned
+  capcarriers when the REFILL-SHELF-ACHIEVE goal finishes successfully.
+"
+  ?g <- (goal (class REFILL-SHELF) (parent ?parent-id)
+              (mode FINISHED) (outcome COMPLETED)
+              (params mps ?mps))
+  ?p <- (goal (id ?parent-id))
+  (wm-fact (key domain fact cs-color args? m ?mps col ?col))
+  =>
+  (if (eq ?col CAP_GREY)
+     then
+     (bind ?cc1 (sym-cat CCG (random-id)))
+     (bind ?cc2 (sym-cat CCG (random-id)))
+     (bind ?cc3 (sym-cat CCG (random-id)))
+     else
+     (bind ?cc1 (sym-cat CCB (random-id)))
+     (bind ?cc2 (sym-cat CCB (random-id)))
+     (bind ?cc3 (sym-cat CCB (random-id)))
+   )
+   (assert
+     (domain-object (name ?cc1) (type cap-carrier))
+     (domain-object (name ?cc2) (type cap-carrier))
+     (domain-object (name ?cc3) (type cap-carrier))
+     (wm-fact (key domain fact wp-cap-color args? wp ?cc1 col ?col) (type BOOL) (value TRUE))
+     (wm-fact (key domain fact wp-cap-color args? wp ?cc2 col ?col) (type BOOL) (value TRUE))
+     (wm-fact (key domain fact wp-cap-color args? wp ?cc3 col ?col) (type BOOL) (value TRUE))
+     (wm-fact (key domain fact wp-on-shelf args? wp ?cc1 m ?mps spot LEFT) (type BOOL) (value TRUE))
+     (wm-fact (key domain fact wp-on-shelf args? wp ?cc2 m ?mps spot MIDDLE) (type BOOL) (value TRUE))
+     (wm-fact (key domain fact wp-on-shelf args? wp ?cc3 m ?mps spot RIGHT) (type BOOL) (value TRUE))
+   )
+   (modify ?g (mode EVALUATED))
+)
+
+
+(defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
+" Create the domain objects and wm-facts corresponding to the freshly spawned
+  workpieces when the WP-SPAWN-ACHIEVE goal finishes successfully.
+"
+  ?g <- (goal (id ?goal-id) (class SPAWN-WP) (parent ?parent-id)
+              (mode FINISHED) (outcome COMPLETED)
+              (params robot ?robot))
+  ?p <- (goal (id ?parent-id) (class WP-SPAWN-MAINTAIN))
+  (time $?now)
+  =>
+  (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
+    "') has been completed, Evaluating" crlf)
+  (bind ?wp-id (sym-cat WP (random-id)))
+  (assert
+    (domain-object (name ?wp-id) (type workpiece))
+    (wm-fact (key domain fact wp-unused args? wp ?wp-id) (type BOOL) (value TRUE))
+    (wm-fact (key domain fact wp-cap-color args? wp ?wp-id col CAP_NONE) (type BOOL) (value TRUE))
+    (wm-fact (key domain fact wp-ring1-color args? wp ?wp-id col RING_NONE) (type BOOL) (value TRUE))
+    (wm-fact (key domain fact wp-ring2-color args? wp ?wp-id col RING_NONE) (type BOOL) (value TRUE))
+    (wm-fact (key domain fact wp-ring3-color args? wp ?wp-id col RING_NONE) (type BOOL) (value TRUE))
+    (wm-fact (key domain fact wp-base-color args? wp ?wp-id col BASE_NONE) (type BOOL) (value TRUE))
+    (wm-fact (key domain fact wp-spawned-for args? wp ?wp-id r ?robot) (type BOOL) (value TRUE))
+  )
+  (modify ?g (mode EVALUATED))
+)
+
+
+(defrule goal-reasoner-evaluate-failed-wp-put
+" After a failed wp-put, check if the gripper interface indicates, that the workpiece is still in the gripper.
+  If this is not the case, the workpiece is lost and the corresponding facts are marked for clean-up
+"
+  (plan-action (id ?id) (goal-id ?goal-id)
+	(plan-id ?plan-id) (action-name ?an&:(or (eq ?an wp-put) (eq ?an wp-put-slide-cc)))
+	   (param-values ?r ?wp ?mps $?)
+	   (state FAILED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?hold <- (wm-fact (key domain fact holding args? r ?r wp ?wp))
+  (AX12GripperInterface (holds_puck ?holds))
+  =>
+  (if (eq ?holds FALSE)
+      then
+      (retract ?hold)
+      (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
+      (assert (domain-fact (name can-hold) (param-values ?r)))
+  )
+  (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
+  (modify ?g (mode EVALUATED))
+)
+
+
+(defrule goal-reasoner-evaluate-get-shelf-failed
+" After a failed wp-get-shelf, assume that the workpiece is not there
+  and mark the corresponding facts for cleanup.
+  By this, the next time a different spot will be tried
+"
+  (plan-action (id ?id) (goal-id ?goal-id)
+	   (plan-id ?plan-id)
+	   (action-name wp-get-shelf)
+	   (param-values ?r ?wp ?mps ?spot)
+	   (state FAILED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?wp-s<- (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot))
+  =>
+  (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated" crlf)
+  (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
+  (modify ?g (mode EVALUATED))
+)
+
+
+; ================================= Goal Clean up ============================
+
+
+(defrule goal-reasoner-retract-achieve
+" Retract a goal if all sub-goals are retracted. Clean up any plans and plan
+  actions attached to it.
+"
+  ?g <-(goal (id ?goal-id) (type ACHIEVE) (mode EVALUATED)
+             (acquired-resources))
+  (not (goal (parent ?goal-id) (mode ?mode&~RETRACTED)))
 =>
   ;(printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
   ;Flush plans of this goal
@@ -333,47 +472,66 @@
     )
     (retract ?p)
   )
-
-  (delayed-do-for-all-facts ((?sg goal)) (eq ?sg:parent ?goal-id)
-    (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?sg:id)
-     (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
-      (retract ?a)
-     )
-     (retract ?p)
-    )
-  ; (printout t "Goal '" ?sg:id "' (part of '" ?sg:parent
-  ;     "') has, cleaning up" crlf)
-    (modify ?sg (mode RETRACTED))
-  )
+  (modify ?g (mode RETRACTED))
 )
 
-
-(defrule goal-reasoner-reselect-parent-goal
-" Reselect a parent goal if it was failed and the maximum number of retries was not reached,
-  or if it is a maintain goal.
+(defrule goal-reasoner-remove-retracted-goal-common
+" Remove a retracted goal if it has no parent (anymore).
+  Goal trees are retracted recursively from top to bottom.
 "
-  ?g <- (goal (id ?goal-id) (parent nil) (type ?goal-type)
-          (mode EVALUATED) (outcome ?outcome))
-  ?gm <- (goal-meta (goal-id ?goal-id) (num-tries ?num-tries) (max-tries ?max-tries))
-  (not (goal (parent ?goal-id)))
+  ?g <- (goal (id ?goal-id) (class ?class) (parent ?parent)
+        (mode RETRACTED) (acquired-resources))
+  (not (goal (id ?parent)))
 =>
-  (if (or (eq ?goal-type MAINTAIN)
-          (and (eq ?outcome FAILED) (<= ?num-tries ?max-tries)))
-    then
-   ;   (printout t "Triggering re-expansion" crlf)
-      (modify ?g (mode SELECTED) (outcome UNKNOWN))
-    else
-      (modify ?g (mode RETRACTED))
-    )
+  (retract ?g)
 )
 
 
-(defrule goal-reasoner-remove-goalmeta-of-retracted-goals
-" Remove retracted goals and the belonging goal-meta facts."
-  ?g <- (goal (id ?goal-id) (mode RETRACTED) (acquired-resources))
+(defrule goal-reasoner-remove-retracted-subgoal-of-maintain-goal
+" Remove a retracted sub-goal of a maintain goal once the parent is EVALUATED."
+  ?g <- (goal (id ?goal-id) (parent ?parent) (acquired-resources)
+              (class ?class) (mode RETRACTED))
+  (goal (id ?parent) (type MAINTAIN) (mode EVALUATED))
 =>
-  (do-for-fact ((?gm goal-meta)) (eq ?gm:goal-id ?goal-id)
-    (retract ?gm)
-  )
   (retract ?g)
+)
+
+
+(defrule goal-reasoner-reject-production-tree-goal-missing-subgoal
+" Retract a formulated sub-goal of the production tree if it requires a
+  sub-goal but there is none formulated.
+"
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
+  ?g <- (goal (id ?goal) (parent ?parent) (type ACHIEVE)
+              (sub-type ?sub-type&:(requires-subgoal ?sub-type))
+              (class ?class&:(production-goal ?class)) (mode FORMULATED))
+  (not (goal (parent ?goal) (mode FORMULATED)))
+=>
+  (modify ?g (mode RETRACTED) (outcome REJECTED))
+)
+
+
+(defrule goal-reasoner-reject-production-tree-goal-other-goal-dispatched
+" Retract a formulated sub-goal of the production tree once a production leaf
+  goal is dispatched.
+"
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
+  ?g <- (goal (id ?goal) (parent ?parent) (type ACHIEVE)
+              (sub-type ?sub-type) (class ?class&:(production-goal ?class))
+              (mode FORMULATED))
+  (goal (id ?some-leaf) (class ?some-class&:(production-goal ?some-class))
+        (sub-type SIMPLE) (mode DISPATCHED))
+=>
+  (modify ?g (mode RETRACTED) (outcome REJECTED))
+)
+
+
+(defrule goal-reasoner-error-goal-without-sub-type-detected
+" This goal reasoner only deals with goals that have a sub-type. Other goals
+  are not supported.
+"
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
+  (goal (id ?goal) (class ?class) (sub-type nil))
+=>
+  (printout error ?goal " of class " ?class " has no sub-type" crlf)
 )
