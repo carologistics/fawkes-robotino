@@ -74,7 +74,7 @@ documentation      = [==[Align precisely at the given coordinates, relative to t
 @param y (optional) Y offset from the center of the MPS. Defaults to 0.
 ]==]
 
-local pre_conveyor_pose = { x = 0.05, y = 0.0, z = 0.03 }
+local pre_conveyor_pose = { x = 0.05, y = 0.0, z = 0.02 }
 
 -- Initialize as skill module
 skillenv.skill_module(_M)

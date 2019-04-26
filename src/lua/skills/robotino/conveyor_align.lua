@@ -60,7 +60,7 @@ local GRIPPER_POSES = {
   shelf_right={x=0.05, y=0.00, z=0.0},
   slide={x=0.05,y=0.00,z=0.0},
   output_conveyor={x=0.05, y=0.00,z=0.02},
-  input_conveyor={x=0.035, y=0.00,z=0.02},
+  input_conveyor={x=0.05, y=0.00,z=0.02},
 }
 
 local MAX_RETRIES=3
