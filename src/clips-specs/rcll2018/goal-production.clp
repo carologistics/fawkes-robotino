@@ -210,8 +210,6 @@
   (NavGraphWithMPSGeneratorInterface (final TRUE))
   (wm-fact (key navgraph waitzone generated))
   =>
-  ;(assert (goal (id (sym-cat PRODUCTION-MAINTAIN- (gensym*)))
-  ;              (class PRODUCTION-MAINTAIN) (type MAINTAIN)))
   (goal-tree-assert-run-endless PRODUCTION-MAINTAIN 1)
 )
 
