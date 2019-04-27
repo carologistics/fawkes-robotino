@@ -1165,7 +1165,7 @@
   (goal (id ?production-id) (class URGENT) (mode FORMULATED))
   (wm-fact (key domain fact self args? r ?self))
   ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
-                (value ?tried&:(> ?tried ?*MAX-RETRIES-PICK*)))
+                (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
   =>
   (printout t "Goal " RESET-MPS " formulated" crlf)
   (assert (goal (id (sym-cat RESET-MPS- (gensym*)))
