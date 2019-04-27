@@ -677,7 +677,7 @@ Eigen::Vector3f ConveyorPlaneThread::laserline_get_center_transformed(
   return out;
 }
 
-Eigen::Vector3f ConveyorPlaneThread::laserline_center_transformed(
+Eigen::Vector3f ConveyorPlaneThread::get_conveyor_estimate(
     fawkes::LaserLineInterface *laser_line, const std::string &target_frame,
     const fawkes::Time &desired_stamp) {
   btVector3 endpt_1(laser_line->end_point_1(0), laser_line->end_point_1(1),
@@ -686,30 +686,24 @@ Eigen::Vector3f ConveyorPlaneThread::laserline_center_transformed(
                     laser_line->end_point_2(2));
   btVector3 center = endpt_2 + (endpt_1 - endpt_2) * 0.5;
 
-  fawkes::tf::Stamped<fawkes::tf::Point> centerpoint_source;
-  centerpoint_source.stamp = desired_stamp; // laser_line->timestamp();
-  centerpoint_source.frame_id = std::string(laser_line->frame_id());
-  centerpoint_source.set_data(center);
+  fawkes::tf::Stamped<fawkes::tf::Point> estimate_source;
+  estimate_source.stamp = desired_stamp; // laser_line->timestamp();
+  estimate_source.frame_id = std::string(laser_line->frame_id());
+  estimate_source.set_data(center);
+  estimate_source += {0, 0, double(cfg_mps_top_offset)};
 
-  fawkes::tf::Stamped<fawkes::tf::Point> center_target;
+  fawkes::tf::Stamped<fawkes::tf::Point> estimate_target;
   try {
-    tf_listener->transform_point(target_frame, centerpoint_source,
-                                 center_target);
-
+    tf_listener->transform_point(target_frame, estimate_source,
+                                 estimate_target);
   } catch (tf::ExtrapolationException &) {
-    centerpoint_source.stamp = Time(0, 0);
-    tf_listener->transform_point(target_frame, centerpoint_source,
-                                 center_target);
+    estimate_source.stamp = Time(0, 0);
+    tf_listener->transform_point(target_frame, estimate_source,
+                                 estimate_target);
   }
 
-  logger->log_info(name(), "%s: (%f, %f, %f) -> %s: (%f, %f, %f)",
-                   laser_line->frame_id(), center.getX(), center.getY(),
-                   center.getZ(), center_target.frame_id.c_str(),
-                   center_target.getX(), center_target.getY(),
-                   center_target.getZ());
-
-  return Eigen::Vector3f(center_target.getX(), center_target.getY(),
-                         center_target.getZ());
+  return Eigen::Vector3f(estimate_target.getX(), estimate_target.getY(),
+                         estimate_target.getZ());
 }
 
 bool ConveyorPlaneThread::is_inbetween(double a, double b, double val) {
@@ -733,12 +727,8 @@ CloudPtr ConveyorPlaneThread::crop_cloud(CloudPtr in_cloud,
 
   if (use_laserline) {
     std::string target_frame = header_.frame_id;
-    Eigen::Vector3f offset(0.f, cfg_mps_top_offset, 0.f);
-    Eigen::Vector3f linecenter = laserline_center_transformed(
-        laser_line, target_frame,
-        fawkes::Time(0, 0)); // fawkes::Time(header_.stamp, 0));
-
-    Eigen::Vector3f cropbox_reference = linecenter + offset;
+    Eigen::Vector3f cropbox_reference =
+        get_conveyor_estimate(laser_line, target_frame, fawkes::Time(0, 0));
 
     logger->log_info(name(), "ll cropbox_reference = (%f, %f, %f) in %s",
                      cropbox_reference[0], cropbox_reference[1],
