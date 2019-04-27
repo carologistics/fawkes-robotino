@@ -129,7 +129,7 @@ done
 
 function clear_rules() {
 echo "clear rules on dev $1"
-sudo tc qdisc del dev $1 root
+tc qdisc del dev $1 root
 }
 
 function show_rules() {
