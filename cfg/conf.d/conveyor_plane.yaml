@@ -60,6 +60,28 @@ conveyor_plane:
       used_min: 3
     allow_invalid_poses: 3
 
+  # define cropbox in camera frame to cut out the aera containing the plane
+  # min point - the right bottom cropbox corner in camera frame
+  # max point - the left upper cropbox corner in camera frame
+  crop:
+    # cropbox relative to the laserline center point + (0,0,mps_top_offset)
+    laserline:
+      mps_top_offset: 0.8
+      x_min: -0.05
+      y_min: -0.05
+      z_min: -0.05
+      x_max: 0.05
+      y_max: 0.05
+      z_max: 0.05
+    # cropbox relative to the camera
+    cam:
+      x_min: -0.1
+      y_min: -0.1
+      z_min: 0.14
+      x_max: 0.1
+      y_max: 0.01
+      z_max: 0.5
+
   # the dimensions of the gripper in the point cloud (check rotation of actual
   # tf)
   gripper:
