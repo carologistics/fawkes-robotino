@@ -48,20 +48,13 @@ local pam = require("parse_module")
 -- Constants
 local euclidean_fitness_threshold = 4 -- threshold for euclidean fitness for targets other than shelf
 local shelf_euclidean_fitness_threshold = 3 -- threshold for euclidean fitness if target is shelf
-local tolerance_trans = 0.02  -- tolerance in x and y direction after the align
-local tolerance_ori = 0.025   -- orientation tolerance after the align
-local x_dist_to_mps = -0.31  -- x-distance the robot should have after the align
+local tolerance_trans = 0.04  -- tolerance in x and y direction after the align
+local tolerance_ori = 0.05   -- orientation tolerance after the align
+local x_dist_to_mps = -0.255  -- x-distance the robot should have after the align
 local y_offset_shelf_middle = -0.015 -- y-offset the robot should have picking is done from shelf = "MIDDLE"
 
 -- initial gripper poses depending on the target
-local GRIPPER_POSES = {
-  shelf_left={x=0.05, y=0.00, z=0.035},
-  shelf_middle={x=0.05, y=-0.035, z=0.035},
-  shelf_right={x=0.05, y=0.00, z=0.035},
-  slide={x=0.05,y=0.00,z=0.035},
-  output_conveyor={x=0.05, y=0.00,z=0.045},
-  input_conveyor={x=0.035, y=0.00,z=0.045},
-}
+local gripper_pose = { x= 0.05, y = 0.00, z = 0.03}
 
 local MAX_RETRIES=3
 local MAX_VISION_RETRIES=3
@@ -69,6 +62,20 @@ local MAX_VISION_RETRIES=3
 function no_writer()
    return not if_conveyor_pose:has_writer()
 end
+
+function input_ok()
+  if fsm.vars.shelf == "LEFT" or fsm.vars.shelf == "RIGHT" or fsm.vars.shelf == "MIDDLE" then
+    return true
+  end
+  if fsm.vars.slide then
+    return true
+  end
+  if fsm.vars.side == "input" or fsm.vars.side == "output" then
+    return true
+  end
+  return false
+end
+
 
 function tolerance_ok()
    local pose = pose_offset()
@@ -123,7 +130,7 @@ end
 
 
 fsm:define_states{ export_to=_M,
-   closure={ MAX_RETRIES=MAX_RETRIES, tolerance_ok=tolerance_ok,
+   closure={ MAX_RETRIES=MAX_RETRIES, tolerance_ok=tolerance_ok,input_ok=input_ok,
       result_ready=result_ready, fitness_ok=fitness_ok , MAX_VISION_RETRIES=MAX_VISION_RETRIES},
    {"INIT", JumpState},
    {"MOVE_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="CHECK_VISION", failed_to="FAILED"},
@@ -133,6 +140,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
+   {"INIT", "FAILED", cond="not input_ok()", desc = "Wrong input format"},
    {"INIT", "MOVE_GRIPPER", cond=true},
    {"CHECK_VISION", "FAILED", timeout=10, desc = "Fitness threshold wasn't reached"},
    {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
@@ -160,20 +168,7 @@ function CHECK_VISION:init()
 end
 
 function MOVE_GRIPPER:init()
-
-  if self.fsm.vars.shelf == "LEFT" then
-    self.args["gripper_commands"] = GRIPPER_POSES["shelf_left"]
-  elseif self.fsm.vars.shelf == "RIGHT" then
-    self.args["gripper_commands"] = GRIPPER_POSES["shelf_right"]
-  elseif self.fsm.vars.shelf == "MIDDLE" then
-    self.args["gripper_commands"] = GRIPPER_POSES["shelf_middle"]
-  elseif self.fsm.vars.slide then
-    self.args["gripper_commands"] = GRIPPER_POSES["slide"]
-  elseif self.fsm.vars.side == "input" then
-    self.args["gripper_commands"] = GRIPPER_POSES["input_conveyor"]
-  elseif self.fsm.vars.side == "output" then
-    self.args["gripper_commands"] = GRIPPER_POSES["output_conveyor"]
-  end
+  self.args["gripper_commands"] = gripper_pose
   self.args["gripper_commands"].command = "MOVEABS"
 end
 

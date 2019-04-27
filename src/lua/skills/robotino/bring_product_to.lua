@@ -25,10 +25,8 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "bring_product_to"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"mps_align", "product_put", "drive_to_machine_point","shelf_put","slide_put","conveyor_align","motor_move"}
+depends_skills     = {"product_put", "drive_to_machine_point", "conveyor_align"}
 depends_interfaces = {
-  {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
-  {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
 }
 
 documentation      = [==[ 
@@ -39,15 +37,17 @@ from the navgraph
 Parameters:
       @param place   the name of the MPS (see navgraph)
       @param side    optional the side of the mps, default is input (give "output" to bring to output)
-      @param shelf   optional position on shelf: ( LEFT | MIDDLE | RIGHT )
       @param slide   optional true if you want to put it on the slide
       @param atmps   optional position at mps shelf, default NO (not at mps at all) : ( NO | LEFT | MIDDLE | RIGHT | CONVEYOR )
 ]==]
+
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
 -- Constants
-local X_AT_MPS = 0.4
+-- If this matches the desired x distance of conveyor align, conveyor align has the chance
+-- of not needing to move at all.
+local X_AT_MPS = 0.28
 
 function already_at_mps(self)
    return not (self.fsm.vars.atmps=="NO" or self.fsm.vars.atmps==nil)
@@ -57,7 +57,7 @@ function already_at_conveyor(self)
    return (self.fsm.vars.atmps == "CONVEYOR")
 end
 
-fsm:define_states{ export_to=_M, closure={navgraph=navgraph,gripper_if=gripper_if},
+fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
    {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PUT", fail_to="FAILED"},
@@ -69,8 +69,6 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
    {"INIT", "CONVEYOR_ALIGN", cond=already_at_conveyor, desc="At mps, skip drive_to_local"},
    {"INIT", "DRIVE_TO_MACHINE_POINT", cond=true, desc="Everything OK"},
-   --{"DRIVE_TO_MACHINE_POINT", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
-   --{"CONVEYOR_ALIGN", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Abort if base is lost"},
 }
 
 function INIT:init()
@@ -85,8 +83,6 @@ function DRIVE_TO_MACHINE_POINT:init()
 
    if self.fsm.vars.slide then
       option = "SLIDE"
-   elseif self.fsm.vars.shelf then
-      option = "SHELF_" .. self.fsm.vars.shelf
    end
 
    if self.fsm.vars.side == "output" then
@@ -99,20 +95,18 @@ function DRIVE_TO_MACHINE_POINT:init()
 end
 
 function CONVEYOR_ALIGN:init()
-    if (self.fsm.vars.slide == nil or self.fsm.vars.shelf == nil) then
+    if (self.fsm.vars.slide == nil) then
       self.args["conveyor_align"].disable_realsense_afterwards = false
     end
 
     self.args["conveyor_align"].side = self.fsm.vars.side
     self.args["conveyor_align"].place = self.fsm.vars.place
     self.args["conveyor_align"].slide = self.fsm.vars.slide
-    self.args["conveyor_align"].shelf = self.fsm.vars.shelf
 end
 
 
 function PRODUCT_PUT:init()
   self.args["product_put"].place = self.fsm.vars.place
   self.args["product_put"].slide = self.fsm.vars.slide
-  self.args["product_put"].shelf = self.fsm.shelf
   self.args["product_put"].side = self.fsm.vars.side
 end

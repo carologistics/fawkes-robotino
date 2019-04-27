@@ -25,10 +25,8 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align","shelf_pick", "gripper_commands"}
+depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align","shelf_pick"}
 depends_interfaces = {
-  {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
-  {v = "gripper_if", type = "AX12GripperInterface", id="Gripper AX12"},
 }
 
 documentation      = [==[
@@ -42,11 +40,18 @@ Parameters:
       @param shelf   optional position on shelf: ( LEFT | MIDDLE | RIGHT )
       @param atmps   optional if already standing at the mps: ( CONVEYOR )
 ]==]
+
 -- Initialize as skill module
 skillenv.skill_module(_M)
 local pam = require("parse_module")
+
 -- Constants
-local X_AT_MPS = 0.4 -- x distance to laserline
+
+-- If this matches the desired x distance of conveyor align, conveyor align has the chance
+-- of not needing to move at all.
+-- x distance to laserline
+local X_AT_MPS = 0.28
+
 
 function already_at_conveyor(self)
    return (self.fsm.vars.atmps == "CONVEYOR")
@@ -57,16 +62,13 @@ function shelf_set(self)
 end
 
 
-fsm:define_states{ export_to=_M, closure={navgraph=navgraph,shelf_set=shelf_set,gripper_if=gripper_if},
+fsm:define_states{ export_to=_M, closure={navgraph=navgraph,shelf_set=shelf_set},
    {"INIT", JumpState},
-   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="OPEN_GRIPPER", fail_to="PRE_FAIL"},
-   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="CONVEYOR_ALIGN", fail_to="CONVEYOR_ALIGN"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="PRE_FAIL"},
+   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
-   {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="CHECK_PUCK", fail_to="PRE_FAIL"},
-   {"SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="CHECK_PUCK", fail_to="PRE_FAIL"},
-   {"PRE_FAIL", SkillJumpState, skills={{gripper_commands}}, final_to="FAILED", fail_to="FAILED"},
-   {"CHECK_PUCK", JumpState},
+   {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
+   {"SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -76,8 +78,6 @@ fsm:add_transitions{
    {"INIT", "DRIVE_TO_MACHINE_POINT", cond=true, desc="Everything OK"},
    {"DECIDE_ENDSKILL","SHELF_PICK", cond=shelf_set},
    {"DECIDE_ENDSKILL","PRODUCT_PICK", cond=true},
-   {"CHECK_PUCK", "FINAL", cond="gripper_if:is_holds_puck()", desc="Hold puck"},
-   {"CHECK_PUCK", "FAILED", cond="not gripper_if:is_holds_puck()", desc="Don't hold puck!"},
 }
 
 function INIT:init()
@@ -90,7 +90,6 @@ end
 function DRIVE_TO_MACHINE_POINT:init()
    local option = "CONVEYOR"
    if self.fsm.vars.shelf ~= nil then
-     --option = "SHELF_" .. self.fsm.vars.shelf
      self.fsm.vars.side = "input"
    end
    if self.fsm.vars.side == "input" or self.fsm.vars.shelf then
@@ -100,18 +99,6 @@ function DRIVE_TO_MACHINE_POINT:init()
       self.fsm.vars.tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
       self.args["drive_to_machine_point"] = {place = self.fsm.vars.place .. "-O", option = option, x_at_mps=X_AT_MPS, tag_id=self.fsm.vars.tag_id}
    end
-end
-
-function OPEN_GRIPPER:init()
-  self.args["gripper_commands"].command = "OPEN"
-  self.args["gripper_commands"].wait = false
-end
-
-function PRODUCT_PICK:init()
-  self.args["product_pick"].place = self.fsm.vars.place
-  self.args["product_pick"].side = self.fsm.vars.side
-  self.args["product_pick"].slide = self.fsm.vars.slide
-  self.args["product_pick"].shelf = self.fsm.vars.shelf
 end
 
 function SHELF_PICK:init()
@@ -133,8 +120,4 @@ function CONVEYOR_ALIGN:init()
      self.args["conveyor_align"].slide = self.fsm.vars.slide
    end
 
-end
-
-function PRE_FAIL:init()
-  self.args["gripper_commands"].command = "CLOSE"
 end
