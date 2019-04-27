@@ -45,6 +45,7 @@ class AX12GripperInterface;
 class ArduinoInterface;
 class LedInterface;
 class JointInterface;
+class RobotinoSensorInterface;
 } // namespace fawkes
 
 class GazsimGripperThread : public fawkes::Thread,
@@ -68,9 +69,11 @@ protected:
 private:
   fawkes::AX12GripperInterface *gripper_if_;
   fawkes::ArduinoInterface *arduino_if_;
+  fawkes::RobotinoSensorInterface *robotino_sensor_if_;
 
   std::string gripper_if_name_;
   std::string arduino_if_name_;
+  std::string robotino_sensor_if_name_;
   std::string cfg_prefix_;
 
   // Publisher to sent msgs to gazebo

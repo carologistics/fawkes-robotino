@@ -31,6 +31,7 @@
 #include <interfaces/ArduinoInterface.h>
 #include <interfaces/JointInterface.h>
 #include <interfaces/LedInterface.h>
+#include <interfaces/RobotinoSensorInterface.h>
 #include <utils/math/angle.h>
 
 #include <cmath>
@@ -62,6 +63,7 @@ void GazsimGripperThread::init() {
 
   gripper_if_name_ = config->get_string("/gazsim/gripper/if-name");
   arduino_if_name_ = config->get_string("/gazsim/gripper/arduino-if-name");
+  robotino_sensor_if_name_ = config->get_string("/gazsim/gripper/robotino-sensor-if-name");
   cfg_prefix_ = config->get_string("/gazsim/gripper/cfg-prefix");
 
   set_gripper_pub_ = gazebonode->Advertise<msgs::Int>(
@@ -99,9 +101,15 @@ void GazsimGripperThread::init() {
 
   arduino_if_->set_final(true);
   arduino_if_->write();
+
+  //setup robotino sensor interface for HavePuck detection
+  robotino_sensor_if_ =
+          blackboard->open_for_writing<RobotinoSensorInterface>(robotino_sensor_if_name_.c_str());
 }
 
-void GazsimGripperThread::finalize() { blackboard->close(gripper_if_); }
+void GazsimGripperThread::finalize() { blackboard->close(gripper_if_);
+                                       blackboard->close(arduino_if_);
+                                       blackboard->close(robotino_sensor_if_);}
 
 void GazsimGripperThread::loop() {
   // gripper_if_->set_final(__servo_if_left->is_final() &&
