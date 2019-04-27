@@ -120,3 +120,21 @@ plugins/static-transforms:
       trans_x: 0.08
       trans_y: 0.0
       trans_z: 0.0
+
+plugins/mongodb:
+  clients:
+    default/enabled: true
+    arbiter/enabled: false
+    robot-memory-distributed/hosts:
+      - localhost:27031
+    robot-memory-distributed-direct/hostport: localhost:27031
+  replica-sets:
+    bootstrap-mongodb/client: default
+    managed-sets:
+      robot-memory-distributed/hosts:
+        - localhost:27031
+  instances:
+    robot-memory-distributed:
+      port: 27031
+      data-path: /tmp/mongodb-robot-memory-distributed
+      log/path: /tmp/mongodb-robot-memory-distributed.log

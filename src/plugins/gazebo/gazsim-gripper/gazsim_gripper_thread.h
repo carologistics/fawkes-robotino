@@ -28,6 +28,7 @@
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
+#include <aspect/tf.h>
 #include <blackboard/interface_listener.h>
 #include <core/threading/thread.h>
 #include <interfaces/DynamixelServoInterface.h>
@@ -51,7 +52,8 @@ class GazsimGripperThread : public fawkes::Thread,
                             public fawkes::LoggingAspect,
                             public fawkes::ConfigurableAspect,
                             public fawkes::BlackBoardAspect,
-                            public fawkes::GazeboAspect {
+                            public fawkes::GazeboAspect,
+                            public fawkes::TransformAspect {
 public:
   GazsimGripperThread();
 

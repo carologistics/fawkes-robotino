@@ -50,7 +50,9 @@ using namespace gazebo;
 
 GazsimGripperThread::GazsimGripperThread()
     : Thread("GazsimGripperThread", Thread::OPMODE_WAITFORWAKEUP),
-      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT_EXEC) {
+      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT_EXEC),
+      TransformAspect(TransformAspect::BOTH, "gripper_x_dyn")
+{
   set_name("GazsimGripperThread()");
 }
 
@@ -211,12 +213,48 @@ void GazsimGripperThread::loop() {
       //      arduino_if_->z_position() - msg->num_mm() ); msgs::Int s;
       //      s.set_data( - msg->num_mm() );
       //      set_conveyor_pub_->Publish( s );
-    } else {
+    }  else if (arduino_if_
+                ->msgq_first_is<ArduinoInterface::OpenGripperMessage>()) {
+                send_gripper_msg(1);
+   }   else if (arduino_if_
+                ->msgq_first_is<ArduinoInterface::CloseGripperMessage>()) {
+                send_gripper_msg(0);
+                gripper_if_->set_holds_puck(true);
+   } else {
       logger->log_warn(name(), "Unknown Arduino message received");
     }
     arduino_if_->msgq_pop();
     arduino_if_->write();
+
   }
+
+  logger->log_debug(name(),
+                    "publish dyn TF");
+
+  //publish tf
+  fawkes::tf::StampedTransform transform;
+
+  transform.frame_id = "gripper_x_origin";
+  transform.child_frame_id = "gripper_x_dyn";
+  transform.stamp = fawkes::Time();
+
+  transform.setOrigin( fawkes::tf::Vector3( 0, 0, 0 ) );
+  fawkes::tf::Quaternion q;
+  q.setEuler(M_PI_2, M_PI_2, 0);
+  transform.setRotation( q );
+
+  tf_publisher->send_transform(transform);
+
+//  transform.frame_id = "gripper_y_origin";
+//  transform.child_frame_id = "gripper_y_dyn";
+
+//  tf_publisher->send_transform(transform);
+
+//  transform.frame_id = "gripper_z_origin";
+//  transform.child_frame_id = "gripper_z_dyn";
+
+//  tf_publisher->send_transform(transform);
+
 }
 
 void GazsimGripperThread::send_gripper_msg(int value) {
