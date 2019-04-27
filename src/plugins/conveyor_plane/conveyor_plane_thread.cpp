@@ -24,6 +24,7 @@
 #include <pcl/ModelCoefficients.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/approximate_voxel_grid.h>
+#include <pcl/filters/crop_box.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
@@ -138,6 +139,33 @@ void ConveyorPlaneThread::init() {
       config->get_float((cfg_prefix + "left_right/left_cut_no_ll").c_str());
   cfg_right_cut_no_ll_ =
       config->get_float((cfg_prefix + "left_right/right_cut_no_ll").c_str());
+
+  cfg_crop_cam_x_min =
+      config->get_float((cfg_prefix + "crop/cam/x_min").c_str());
+  cfg_crop_cam_x_max =
+      config->get_float((cfg_prefix + "crop/cam/x_max").c_str());
+  cfg_crop_cam_y_min =
+      config->get_float((cfg_prefix + "crop/cam/y_min").c_str());
+  cfg_crop_cam_y_max =
+      config->get_float((cfg_prefix + "crop/cam/y_max").c_str());
+  cfg_crop_cam_z_min =
+      config->get_float((cfg_prefix + "crop/cam/z_min").c_str());
+  cfg_crop_cam_z_max =
+      config->get_float((cfg_prefix + "crop/cam/z_max").c_str());
+  cfg_mps_top_offset =
+      config->get_float((cfg_prefix + "crop/laserline/mps_top_offset").c_str());
+  cfg_crop_laserline_x_min =
+      config->get_float((cfg_prefix + "crop/laserline/x_min").c_str());
+  cfg_crop_laserline_x_max =
+      config->get_float((cfg_prefix + "crop/laserline/x_max").c_str());
+  cfg_crop_laserline_y_min =
+      config->get_float((cfg_prefix + "crop/laserline/y_min").c_str());
+  cfg_crop_laserline_y_max =
+      config->get_float((cfg_prefix + "crop/laserline/y_max").c_str());
+  cfg_crop_laserline_z_min =
+      config->get_float((cfg_prefix + "crop/laserline/z_min").c_str());
+  cfg_crop_laserline_z_max =
+      config->get_float((cfg_prefix + "crop/laserline/z_max").c_str());
 
   cfg_plane_dist_threshold_ =
       config->get_float((cfg_prefix + "plane/dist_threshold").c_str());
@@ -298,37 +326,42 @@ void ConveyorPlaneThread::loop() {
 
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
+  //-- apply voxelgrid filter
   uint in_size = cloud_in->points.size();
-  // logger->log_debug(name(), "Size before voxel grid: %u", in_size);
+
   CloudPtr cloud_vg = cloud_voxel_grid(cloud_in);
   uint out_size = cloud_vg->points.size();
-  // logger->log_debug(name(), "Size of voxel grid: %u", out_size);
+
   if (in_size == out_size) {
     logger->log_error(name(), "Voxel Grid failed, skipping loop!");
     return;
   }
+
+  //-- crop pointcloud
+  CloudPtr cloud_cropped(new Cloud);
+  cloud_cropped = crop_cloud(cloud_vg, ll, use_laserline);
+  /*
   CloudPtr cloud_gripper = cloud_remove_gripper(cloud_vg);
   CloudPtr cloud_front =
       cloud_remove_offset_to_front(cloud_gripper, ll, use_laserline);
-  // logger->log_debug(name(),"CONVEYOR-POSE 6: intially filtered pointcloud");
 
-  CloudPtr cloud_front_side(new Cloud);
-  cloud_front_side =
+  CloudPtr cloud_cropped(new Cloud);
+  cloud_cropped =
       cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
+  */
 
-  // logger->log_debug(name(),"CONVEYOR-POSE 7: set cut off left and rigt");
-
-  cloud_publish(cloud_front_side, cloud_out_inter_1_);
+  //-- publish filter result
+  cloud_publish(cloud_cropped, cloud_out_inter_1_);
 
   // search for best plane
   CloudPtr cloud_choosen;
   pcl::ModelCoefficients::Ptr coeff(new pcl::ModelCoefficients);
   do {
-    //  logger->log_debug(name(), "In while loop");
-    CloudPtr cloud_plane = cloud_get_plane(cloud_front_side, coeff);
-    //  logger->log_debug(name(), "After getting plane");
+    CloudPtr cloud_plane = cloud_get_plane(cloud_cropped, coeff);
+
+    //-- if there was no suffitient planar patch found ...
     if (cloud_plane == NULL || !cloud_plane) {
-      //-- add as invalid plane
+      //-- ... add as invalid plane
       Eigen::Vector4f invalid(std::numeric_limits<float>::quiet_NaN(),
                               std::numeric_limits<float>::quiet_NaN(),
                               std::numeric_limits<float>::quiet_NaN(),
@@ -337,13 +370,15 @@ void ConveyorPlaneThread::loop() {
       return;
     }
 
+    //-- separate connected components laying in the plane
     size_t id;
-    //  logger->log_debug(name(), "Before clustering");
     boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices =
         cloud_cluster(cloud_plane);
-    //  logger->log_debug(name(), "After clustering");
+
+    //-- if even there were no sufficient connected components on the found
+    // surface ...
     if (cluster_indices->size() <= 0) {
-      //-- add as invalid plane
+      //-- ... add as invalid plane
       Eigen::Vector4f invalid(std::numeric_limits<float>::quiet_NaN(),
                               std::numeric_limits<float>::quiet_NaN(),
                               std::numeric_limits<float>::quiet_NaN(),
@@ -351,14 +386,12 @@ void ConveyorPlaneThread::loop() {
       pose_add_element(invalid, invalid.head<3>());
       return;
     }
-    // logger->log_debug(name(), "Before split");
+
+    //-- get biggest connected planar component
     std::vector<CloudPtr> clouds_cluster =
         cluster_split(cloud_plane, cluster_indices);
-    // logger->log_debug(name(), "Before finding biggest");
-    cloud_choosen = cluster_find_biggest(clouds_cluster, id);
-    // logger->log_debug(name(), "After finding biggest");
 
-    // check if plane is ok, otherwise remove indicies
+    cloud_choosen = cluster_find_biggest(clouds_cluster, id);
 
     // check if the height is ok (remove shelfs)
     float y_min = -200;
@@ -383,12 +416,12 @@ void ConveyorPlaneThread::loop() {
           new pcl::PointIndices(cluster_indices->at(id)));
       CloudPtr tmp(new Cloud);
       pcl::ExtractIndices<Point> extract;
-      extract.setInputCloud(cloud_front_side);
+      extract.setInputCloud(cloud_cropped);
       extract.setIndices(extract_indicies);
       extract.setNegative(true);
       extract.filter(*tmp);
       // logger->log_debug(name(), "After extraction");
-      *cloud_front_side = *tmp;
+      *cloud_cropped = *tmp;
     } else {
       // height is ok
       float x_min = -200;
@@ -412,11 +445,11 @@ void ConveyorPlaneThread::loop() {
             new pcl::PointIndices(cluster_indices->at(id)));
         CloudPtr tmp(new Cloud);
         pcl::ExtractIndices<Point> extract;
-        extract.setInputCloud(cloud_front_side);
+        extract.setInputCloud(cloud_cropped);
         extract.setIndices(extract_indicies);
         extract.setNegative(true);
         extract.filter(*tmp);
-        *cloud_front_side = *tmp;
+        *cloud_cropped = *tmp;
 
       } else {
         // height and width ok
@@ -632,11 +665,51 @@ Eigen::Vector3f ConveyorPlaneThread::laserline_get_center_transformed(
   tf_in.setZ(ll->end_point_2(2) +
              (ll->end_point_1(2) - ll->end_point_2(2)) / 2.);
 
-  tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
+  try {
+    tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
+  } catch (tf::ExtrapolationException &) {
+    tf_in.stamp = Time(0, 0);
+    tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
+  }
 
   Eigen::Vector3f out(tf_out.getX(), tf_out.getY(), tf_out.getZ());
 
   return out;
+}
+
+Eigen::Vector3f ConveyorPlaneThread::laserline_center_transformed(
+    fawkes::LaserLineInterface *laser_line, const std::string &target_frame,
+    const fawkes::Time &desired_stamp) {
+  btVector3 endpt_1(laser_line->end_point_1(0), laser_line->end_point_1(1),
+                    laser_line->end_point_1(2));
+  btVector3 endpt_2(laser_line->end_point_2(0), laser_line->end_point_2(1),
+                    laser_line->end_point_2(2));
+  btVector3 center = endpt_2 + (endpt_1 - endpt_2) * 0.5;
+
+  fawkes::tf::Stamped<fawkes::tf::Point> centerpoint_source;
+  centerpoint_source.stamp = desired_stamp; // laser_line->timestamp();
+  centerpoint_source.frame_id = std::string(laser_line->frame_id());
+  centerpoint_source.set_data(center);
+
+  fawkes::tf::Stamped<fawkes::tf::Point> center_target;
+  try {
+    tf_listener->transform_point(target_frame, centerpoint_source,
+                                 center_target);
+
+  } catch (tf::ExtrapolationException &) {
+    centerpoint_source.stamp = Time(0, 0);
+    tf_listener->transform_point(target_frame, centerpoint_source,
+                                 center_target);
+  }
+
+  logger->log_info(name(), "%s: (%f, %f, %f) -> %s: (%f, %f, %f)",
+                   laser_line->frame_id(), center.getX(), center.getY(),
+                   center.getZ(), center_target.frame_id.c_str(),
+                   center_target.getX(), center_target.getY(),
+                   center_target.getZ());
+
+  return Eigen::Vector3f(center_target.getX(), center_target.getY(),
+                         center_target.getZ());
 }
 
 bool ConveyorPlaneThread::is_inbetween(double a, double b, double val) {
@@ -648,6 +721,53 @@ bool ConveyorPlaneThread::is_inbetween(double a, double b, double val) {
   } else {
     return false;
   }
+}
+
+CloudPtr ConveyorPlaneThread::crop_cloud(CloudPtr in_cloud,
+                                         fawkes::LaserLineInterface *laser_line,
+                                         bool use_laserline) {
+  CloudPtr cropped_cloud(new Cloud);
+
+  Eigen::Vector3f min(1.f, 1.f, 1.f);
+  Eigen::Vector3f max(1.f, 1.f, 1.f);
+
+  if (use_laserline) {
+    std::string target_frame = header_.frame_id;
+    Eigen::Vector3f offset(0.f, cfg_mps_top_offset, 0.f);
+    Eigen::Vector3f linecenter = laserline_center_transformed(
+        laser_line, target_frame,
+        fawkes::Time(0, 0)); // fawkes::Time(header_.stamp, 0));
+
+    Eigen::Vector3f cropbox_reference = linecenter + offset;
+
+    logger->log_info(name(), "ll cropbox_reference = (%f, %f, %f) in %s",
+                     cropbox_reference[0], cropbox_reference[1],
+                     cropbox_reference[2], target_frame.c_str());
+
+    min = Eigen::Vector3f(cfg_crop_laserline_x_min, cfg_crop_laserline_y_min,
+                          cfg_crop_laserline_z_min) +
+          cropbox_reference;
+    max = Eigen::Vector3f(cfg_crop_laserline_x_max, cfg_crop_laserline_y_max,
+                          cfg_crop_laserline_z_max) +
+          cropbox_reference;
+
+  } else {
+    min = Eigen::Vector3f(cfg_crop_cam_x_min, cfg_crop_cam_y_min,
+                          cfg_crop_cam_z_min);
+    max = Eigen::Vector3f(cfg_crop_cam_x_max, cfg_crop_cam_y_max,
+                          cfg_crop_cam_z_max);
+  }
+
+  for (const Point &pt : *in_cloud) {
+    if (pcl::isFinite<Point>(pt) && pt.x >= min[0] && pt.x <= max[0] &&
+        pt.y >= min[1] && pt.y <= max[1] && pt.z >= min[2] && pt.z <= max[2])
+      cropped_cloud->push_back(pt);
+  }
+  cropped_cloud->width = static_cast<uint32_t>(cropped_cloud->size());
+  cropped_cloud->height = 1;
+  cropped_cloud->is_dense = true;
+
+  return cropped_cloud;
 }
 
 CloudPtr ConveyorPlaneThread::cloud_remove_gripper(CloudPtr in) {

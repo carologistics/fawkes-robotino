@@ -102,6 +102,20 @@ private:
   float cfg_left_cut_no_ll_;
   float cfg_right_cut_no_ll_;
 
+  float cfg_crop_cam_x_min;
+  float cfg_crop_cam_x_max;
+  float cfg_crop_cam_y_min;
+  float cfg_crop_cam_y_max;
+  float cfg_crop_cam_z_min;
+  float cfg_crop_cam_z_max;
+  float cfg_mps_top_offset;
+  float cfg_crop_laserline_x_min;
+  float cfg_crop_laserline_x_max;
+  float cfg_crop_laserline_y_min;
+  float cfg_crop_laserline_y_max;
+  float cfg_crop_laserline_z_min;
+  float cfg_crop_laserline_z_max;
+
   float cfg_plane_dist_threshold_;
 
   float cfg_plane_height_minimum_;
@@ -163,9 +177,16 @@ private:
   bool laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit);
   Eigen::Vector3f
   laserline_get_center_transformed(fawkes::LaserLineInterface *ll);
+  Eigen::Vector3f
+  laserline_center_transformed(fawkes::LaserLineInterface *laser_line,
+                               const std::string &target_frame,
+                               const fawkes::Time &stamp);
 
   bool is_inbetween(double a, double b, double val);
 
+  CloudPtr crop_cloud(CloudPtr in_cloud,
+                      fawkes::LaserLineInterface *ll = nullptr,
+                      bool use_laserline = false);
   CloudPtr cloud_remove_gripper(CloudPtr in);
   CloudPtr cloud_remove_offset_to_bottom(CloudPtr in);
   CloudPtr cloud_remove_offset_to_front(CloudPtr in,
