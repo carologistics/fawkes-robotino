@@ -177,10 +177,9 @@ private:
   bool laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit);
   Eigen::Vector3f
   laserline_get_center_transformed(fawkes::LaserLineInterface *ll);
-  Eigen::Vector3f
-  laserline_center_transformed(fawkes::LaserLineInterface *laser_line,
-                               const std::string &target_frame,
-                               const fawkes::Time &stamp);
+  Eigen::Vector3f get_conveyor_estimate(fawkes::LaserLineInterface *laser_line,
+                                        const std::string &target_frame,
+                                        const fawkes::Time &stamp);
 
   bool is_inbetween(double a, double b, double val);
 
