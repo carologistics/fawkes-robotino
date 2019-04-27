@@ -20,9 +20,9 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "omnivision_activator_thread.h"
+
+#include <core/plugin.h>
 #include <interfaces/SwitchInterface.h>
 
 using namespace fawkes;
@@ -30,14 +30,16 @@ using namespace fawkes;
 /** Activates the Omnivison
  * @author Johannes Rothe
  */
-class OmnivisionActivatorPlugin : public fawkes::Plugin {
+class OmnivisionActivatorPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  OmnivisionActivatorPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new OmnivisionActivatorThread());
-  }
+	OmnivisionActivatorPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new OmnivisionActivatorThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Activates the Omnivision Thread")

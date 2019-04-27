@@ -24,6 +24,7 @@
  */
 
 #include "gazsim_llsfrbcomm_thread.h"
+
 #include <core/plugin.h>
 
 using namespace fawkes;
@@ -33,14 +34,16 @@ using namespace fawkes;
  *       Protobuf communication over the gazebo node
  * @author Frederik Zwilling, Tim Niemueller
  */
-class GazsimLLSFRbCommPlugin : public fawkes::Plugin {
+class GazsimLLSFRbCommPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimLLSFRbCommPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new GazsimLLSFRbCommThread());
-  }
+	GazsimLLSFRbCommPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new GazsimLLSFRbCommThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Adapter PB Refbox Comm - PB Gazebo Comm")

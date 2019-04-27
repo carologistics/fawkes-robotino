@@ -20,23 +20,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "conveyor_vision_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /**
  * @author Nicolas Limpert & Randolph Maaßen
  */
-class ConveyorVision : public fawkes::Plugin {
+class ConveyorVision : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  ConveyorVision(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new ConveyorVisionThread());
-  }
+	ConveyorVision(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new ConveyorVisionThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Conveyor Vision plugin")

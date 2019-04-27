@@ -55,17 +55,23 @@ using namespace rapidjson;
  */
 
 /** Constructor. */
-BridgeManager::BridgeManager() {}
+BridgeManager::BridgeManager()
+{
+}
 
 /** Destructor. */
-BridgeManager::~BridgeManager() {}
+BridgeManager::~BridgeManager()
+{
+}
 
 /** Finlize the instance */
-void BridgeManager::finalize() {
-  while (!operation_cpm_map_.empty()) {
-    operation_cpm_map_.begin()->second->finalize();
-    operation_cpm_map_.erase(operation_cpm_map_.begin());
-  }
+void
+BridgeManager::finalize()
+{
+	while (!operation_cpm_map_.empty()) {
+		operation_cpm_map_.begin()->second->finalize();
+		operation_cpm_map_.erase(operation_cpm_map_.begin());
+	}
 }
 
 /** Processes incoming requests .
@@ -75,28 +81,28 @@ void BridgeManager::finalize() {
  * @param session The websocket session that made that request, and the
  * destination for the replies
  */
-void BridgeManager::incoming(std::string json,
-                             std::shared_ptr<WebSession> session) {
-  Document d;
-  deserialize(json, d);
+void
+BridgeManager::incoming(std::string json, std::shared_ptr<WebSession> session)
+{
+	Document d;
+	deserialize(json, d);
 
-  if (!d.HasMember("op")) {
-    throw fawkes::MissingParameterException(
-        "BridgeManager: wrong json!, 'Op' field is missing!");
-  }
+	if (!d.HasMember("op")) {
+		throw fawkes::MissingParameterException("BridgeManager: wrong json!, 'Op' field is missing!");
+	}
 
-  std::string op_name = std::string(d["op"].GetString());
-  if (operation_cpm_map_.find(op_name) == operation_cpm_map_.end()) {
-    throw fawkes::UnknownTypeException("BridgeManager: There is no handler "
-                                       "registered for the given operation ");
-  }
-  try {
-    operation_cpm_map_[op_name]->handle_message(d, session);
-  }
+	std::string op_name = std::string(d["op"].GetString());
+	if (operation_cpm_map_.find(op_name) == operation_cpm_map_.end()) {
+		throw fawkes::UnknownTypeException("BridgeManager: There is no handler "
+		                                   "registered for the given operation ");
+	}
+	try {
+		operation_cpm_map_[op_name]->handle_message(d, session);
+	}
 
-  catch (fawkes::Exception &e) {
-    throw e;
-  }
+	catch (fawkes::Exception &e) {
+		throw e;
+	}
 }
 
 /** Parse the json strinf into a dom
@@ -104,17 +110,19 @@ void BridgeManager::incoming(std::string json,
  * @param d Dom that the message date will be stored into
  * @return true if parsing succeeded
  */
-bool BridgeManager::deserialize(std::string jsonStr, Document &d) {
-  const char *json = jsonStr.c_str();
+bool
+BridgeManager::deserialize(std::string jsonStr, Document &d)
+{
+	const char *json = jsonStr.c_str();
 
-  d.Parse(json);
+	d.Parse(json);
 
-  if (d.Parse(json).HasParseError()) {
-    // std::cout<< GetParseError_En(d.GetParseError());
-    return false;
-  }
+	if (d.Parse(json).HasParseError()) {
+		// std::cout<< GetParseError_En(d.GetParseError());
+		return false;
+	}
 
-  return true;
+	return true;
 }
 
 /** Register the Operations Your Bridge Will Provide and Their Handlers.
@@ -134,17 +142,19 @@ bool BridgeManager::deserialize(std::string jsonStr, Document &d) {
 
 // Should only register the CapabilyManager with no Info about what they
 // provide.
-bool BridgeManager::register_operation_handler(
-    std::string op_name, std::shared_ptr<CapabilityManager> cpm) {
-  if (operation_cpm_map_.find(op_name) == operation_cpm_map_.end()) {
-    operation_cpm_map_[op_name] = cpm;
-    operation_cpm_map_[op_name]->init();
-    return true;
-  }
+bool
+BridgeManager::register_operation_handler(std::string                        op_name,
+                                          std::shared_ptr<CapabilityManager> cpm)
+{
+	if (operation_cpm_map_.find(op_name) == operation_cpm_map_.end()) {
+		operation_cpm_map_[op_name] = cpm;
+		operation_cpm_map_[op_name]->init();
+		return true;
+	}
 
-  // throw fawkes::IllegalArgumentException("BridgeManager: Operation '" +
-  // op_name.c_str()+ "' was already registered");
-  return false;
+	// throw fawkes::IllegalArgumentException("BridgeManager: Operation '" +
+	// op_name.c_str()+ "' was already registered");
+	return false;
 }
 
 /** Register a processor that implements a Capability or more for a Fawkes
@@ -158,14 +168,16 @@ bool BridgeManager::register_operation_handler(
  * or more for a certain Fawkes component.
  * @return true on success
  */
-bool BridgeManager::register_processor(
-    std::shared_ptr<BridgeProcessor> processor) {
-  for (std::map<std::string, std::shared_ptr<CapabilityManager>>::iterator it =
-           operation_cpm_map_.begin();
-       it != operation_cpm_map_.end(); ++it) {
-    it->second->register_processor(processor);
-  }
-  processor->init();
+bool
+BridgeManager::register_processor(std::shared_ptr<BridgeProcessor> processor)
+{
+	for (std::map<std::string, std::shared_ptr<CapabilityManager>>::iterator it =
+	       operation_cpm_map_.begin();
+	     it != operation_cpm_map_.end();
+	     ++it) {
+		it->second->register_processor(processor);
+	}
+	processor->init();
 
-  return true;
+	return true;
 }

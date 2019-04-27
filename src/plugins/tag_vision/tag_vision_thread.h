@@ -40,25 +40,24 @@
 #include <cv.h>
 // alvar marker detection to get poses
 #ifdef HAVE_AR_TRACK_ALVAR
-#include <ar_track_alvar/MarkerDetector.h>
+#	include <ar_track_alvar/MarkerDetector.h>
 #else
-#include <alvar/MarkerDetector.h>
+#	include <alvar/MarkerDetector.h>
 #endif
 
 // firevision camera
 #include <fvcams/camera.h>
 #include <fvclassifiers/simple.h>
+#include <fvutils/adapters/iplimage.h>
 #include <fvutils/base/roi.h>
 #include <fvutils/color/conversions.h>
 #include <fvutils/ipc/shm_image.h>
 
-#include <fvutils/adapters/iplimage.h>
-
 // interface
+#include "tag_position_list.h"
+
 #include <interfaces/LaserLineInterface.h>
 #include <interfaces/TagVisionInterface.h>
-
-#include "tag_position_list.h"
 
 #define MAX_MARKERS 16
 
@@ -78,61 +77,60 @@ class TagVisionThread : public fawkes::Thread,
                         public fawkes::VisionAspect,
                         public fawkes::ConfigurationChangeHandler,
                         public fawkes::ClockAspect,
-                        public fawkes::TransformAspect {
+                        public fawkes::TransformAspect
+{
 public:
-  TagVisionThread();
-  // marker size accasors
-  // thread functions
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+	TagVisionThread();
+	// marker size accasors
+	// thread functions
+	virtual void init();
+	virtual void loop();
+	virtual void finalize();
 
 private:
-  /// load config from file
-  void loadConfig();
-  /// the marker detector in alvar
-  alvar::MarkerDetector<alvar::MarkerData> detector;
-  /// the camera the detector uses
-  alvar::Camera alvar_cam;
-  /// the size of a marker in millimeter
-  uint marker_size;
-  /// function to get the markers from an image
-  void get_marker();
-  /// store the alvar markers, containing the poses
-  std::vector<alvar::MarkerData> *markers_;
-  /// maximum markers to detect, size for the markers array
-  size_t max_marker;
+	/// load config from file
+	void loadConfig();
+	/// the marker detector in alvar
+	alvar::MarkerDetector<alvar::MarkerData> detector;
+	/// the camera the detector uses
+	alvar::Camera alvar_cam;
+	/// the size of a marker in millimeter
+	uint marker_size;
+	/// function to get the markers from an image
+	void get_marker();
+	/// store the alvar markers, containing the poses
+	std::vector<alvar::MarkerData> *markers_;
+	/// maximum markers to detect, size for the markers array
+	size_t max_marker;
 
-  /// mutex for config access
-  fawkes::Mutex cfg_mutex;
+	/// mutex for config access
+	fawkes::Mutex cfg_mutex;
 
-  /// firevision camera
-  firevision::Camera *fv_cam;
-  /// firevision image buffer
-  firevision::SharedMemoryImageBuffer *shm_buffer;
-  unsigned char *image_buffer;
-  /// Image Buffer Id
-  std::string shm_id;
+	/// firevision camera
+	firevision::Camera *fv_cam;
+	/// firevision image buffer
+	firevision::SharedMemoryImageBuffer *shm_buffer;
+	unsigned char *                      image_buffer;
+	/// Image Buffer Id
+	std::string shm_id;
 
-  // config handling
-  virtual void config_value_erased(const char *path);
-  virtual void config_tag_changed(const char *new_tag);
-  virtual void
-  config_comment_changed(const fawkes::Configuration::ValueIterator *v);
-  virtual void
-  config_value_changed(const fawkes::Configuration::ValueIterator *v);
+	// config handling
+	virtual void config_value_erased(const char *path);
+	virtual void config_tag_changed(const char *new_tag);
+	virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v);
+	virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v);
 
-  /// cv image
-  IplImage *ipl;
+	/// cv image
+	IplImage *ipl;
 
-  /// blackboard communication
-  TagPositionList *tag_interfaces;
-  std::vector<fawkes::LaserLineInterface *> *laser_line_ifs_;
+	/// blackboard communication
+	TagPositionList *                          tag_interfaces;
+	std::vector<fawkes::LaserLineInterface *> *laser_line_ifs_;
 
-  /// Width of the image
-  unsigned int img_width;
-  /// Height of the image
-  unsigned int img_height;
+	/// Width of the image
+	unsigned int img_width;
+	/// Height of the image
+	unsigned int img_height;
 };
 
 #endif

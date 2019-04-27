@@ -21,13 +21,13 @@
 
 class ServiceCapability;
 
-class ServiceCapabilityManager : public CapabilityManager {
+class ServiceCapabilityManager : public CapabilityManager
+{
 public:
-  ServiceCapabilityManager();
-  ~ServiceCapabilityManager();
+	ServiceCapabilityManager();
+	~ServiceCapabilityManager();
 
-  void handle_message(rapidjson::Document &d,
-                      std::shared_ptr<WebSession> session);
+	void handle_message(rapidjson::Document &d, std::shared_ptr<WebSession> session);
 
-  bool register_processor(std::shared_ptr<BridgeProcessor> processor);
+	bool register_processor(std::shared_ptr<BridgeProcessor> processor);
 };

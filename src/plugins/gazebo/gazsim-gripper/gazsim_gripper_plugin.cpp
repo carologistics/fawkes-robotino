@@ -29,14 +29,16 @@ using namespace fawkes;
 /** Plugin to simulate gripper
  * @author Frederik Zwilling
  */
-class GazsimGripperPlugin : public fawkes::Plugin {
+class GazsimGripperPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimGripperPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new GazsimGripperThread());
-  }
+	GazsimGripperPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new GazsimGripperThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Simulation of a Gripper")

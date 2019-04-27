@@ -42,27 +42,30 @@
  * @param frame The frame of reference for the transforms published
  */
 TagPositionInterfaceHelper::TagPositionInterfaceHelper(
-    fawkes::Position3DInterface *position_interface, u_int32_t vector_position,
-    fawkes::Clock *clock, fawkes::tf::TransformPublisher *tf_publisher,
-    std::string frame) {
-  this->interface_ = position_interface;
-  this->vector_position_ = vector_position;
-  this->visibility_history_ = 0;
-  this->marker_id_ = 0;
-  this->touched_ = false;
-  this->clock_ = clock;
+  fawkes::Position3DInterface *   position_interface,
+  u_int32_t                       vector_position,
+  fawkes::Clock *                 clock,
+  fawkes::tf::TransformPublisher *tf_publisher,
+  std::string                     frame)
+{
+	this->interface_          = position_interface;
+	this->vector_position_    = vector_position;
+	this->visibility_history_ = 0;
+	this->marker_id_          = 0;
+	this->touched_            = false;
+	this->clock_              = clock;
 
-  this->frame_ = frame;
-  this->child_frame_ =
-      std::string(CHILD_FRAME) + std::to_string(vector_position);
-  this->tf_publisher_ = tf_publisher;
+	this->frame_        = frame;
+	this->child_frame_  = std::string(CHILD_FRAME) + std::to_string(vector_position);
+	this->tf_publisher_ = tf_publisher;
 }
 
 /**
  *
  */
-TagPositionInterfaceHelper::~TagPositionInterfaceHelper() {
-  // no need to clear/free the interface, the TagPositionList takes care of it
+TagPositionInterfaceHelper::~TagPositionInterfaceHelper()
+{
+	// no need to clear/free the interface, the TagPositionList takes care of it
 }
 
 /**
@@ -74,51 +77,53 @@ TagPositionInterfaceHelper::~TagPositionInterfaceHelper() {
  *
  * @param new_pose The new Position of the marker, as got from alvar::MarkerData
  */
-void TagPositionInterfaceHelper::set_pose(alvar::Pose new_pose) {
-  // temp mat to get cv data
-  CvMat mat;
-  // angles in quaternion
-  double rot[4];
-  // create the mat
-  cvInitMatHeader(&mat, 4, 1, CV_64F, rot);
-  // get the angles in euler
-  new_pose.GetQuaternion(&mat);
-  // get the temporary quaternion in wxyz
-  rot[0] = CV_MAT_ELEM(mat, double, 0, 0);
-  rot[1] = CV_MAT_ELEM(mat, double, 1, 0);
-  rot[2] = CV_MAT_ELEM(mat, double, 2, 0);
-  rot[3] = CV_MAT_ELEM(mat, double, 3, 0);
-  // create a quaternion on the angles.
-  fawkes::tf::Quaternion tag_rot(rot[ALVAR_ROT::A_X], rot[ALVAR_ROT::A_Y],
-                                 rot[ALVAR_ROT::A_Z], rot[ALVAR_ROT::A_W]);
-  fawkes::tf::Quaternion fix_tag_orientation(
-      0, -M_PI_2, -M_PI_2); // yaw: 0° pitch: 90° roll: -90°
-  fawkes::tf::Quaternion result = tag_rot * fix_tag_orientation;
+void
+TagPositionInterfaceHelper::set_pose(alvar::Pose new_pose)
+{
+	// temp mat to get cv data
+	CvMat mat;
+	// angles in quaternion
+	double rot[4];
+	// create the mat
+	cvInitMatHeader(&mat, 4, 1, CV_64F, rot);
+	// get the angles in euler
+	new_pose.GetQuaternion(&mat);
+	// get the temporary quaternion in wxyz
+	rot[0] = CV_MAT_ELEM(mat, double, 0, 0);
+	rot[1] = CV_MAT_ELEM(mat, double, 1, 0);
+	rot[2] = CV_MAT_ELEM(mat, double, 2, 0);
+	rot[3] = CV_MAT_ELEM(mat, double, 3, 0);
+	// create a quaternion on the angles.
+	fawkes::tf::Quaternion tag_rot(rot[ALVAR_ROT::A_X],
+	                               rot[ALVAR_ROT::A_Y],
+	                               rot[ALVAR_ROT::A_Z],
+	                               rot[ALVAR_ROT::A_W]);
+	fawkes::tf::Quaternion fix_tag_orientation(0, -M_PI_2, -M_PI_2); // yaw: 0° pitch: 90° roll: -90°
+	fawkes::tf::Quaternion result = tag_rot * fix_tag_orientation;
 
-  // publish the quaternion
-  this->interface_->set_rotation(ROT::X, result.getX());
-  this->interface_->set_rotation(ROT::Y, result.getY());
-  this->interface_->set_rotation(ROT::Z, result.getZ());
-  this->interface_->set_rotation(ROT::W, result.getW());
-  // publish the translation
-  this->interface_->set_translation(
-      TRANS::T_X /*1*/, new_pose.translation[TRANS::T_X /*0*/] / 1000);
-  this->interface_->set_translation(
-      TRANS::T_Y /*2*/, new_pose.translation[TRANS::T_Y /*1*/] / 1000);
-  this->interface_->set_translation(
-      TRANS::T_Z /*0*/, new_pose.translation[TRANS::T_Z /*2*/] / 1000);
+	// publish the quaternion
+	this->interface_->set_rotation(ROT::X, result.getX());
+	this->interface_->set_rotation(ROT::Y, result.getY());
+	this->interface_->set_rotation(ROT::Z, result.getZ());
+	this->interface_->set_rotation(ROT::W, result.getW());
+	// publish the translation
+	this->interface_->set_translation(TRANS::T_X /*1*/,
+	                                  new_pose.translation[TRANS::T_X /*0*/] / 1000);
+	this->interface_->set_translation(TRANS::T_Y /*2*/,
+	                                  new_pose.translation[TRANS::T_Y /*1*/] / 1000);
+	this->interface_->set_translation(TRANS::T_Z /*0*/,
+	                                  new_pose.translation[TRANS::T_Z /*2*/] / 1000);
 
-  this->touched_ = true;
+	this->touched_ = true;
 
-  // publish the transform
-  fawkes::tf::Transform transform(
-      result, fawkes::tf::Vector3(new_pose.translation[0] / 1000,
-                                  new_pose.translation[1] / 1000,
-                                  new_pose.translation[2] / 1000));
-  fawkes::Time time(this->clock_);
-  fawkes::tf::StampedTransform stamped_transform(transform, time, this->frame_,
-                                                 this->child_frame_);
-  this->tf_publisher_->send_transform(stamped_transform);
+	// publish the transform
+	fawkes::tf::Transform        transform(result,
+                                  fawkes::tf::Vector3(new_pose.translation[0] / 1000,
+                                                      new_pose.translation[1] / 1000,
+                                                      new_pose.translation[2] / 1000));
+	fawkes::Time                 time(this->clock_);
+	fawkes::tf::StampedTransform stamped_transform(transform, time, this->frame_, this->child_frame_);
+	this->tf_publisher_->send_transform(stamped_transform);
 }
 
 /**
@@ -127,11 +132,13 @@ void TagPositionInterfaceHelper::set_pose(alvar::Pose new_pose) {
  *
  * @param new_id the new ID to set
  */
-void TagPositionInterfaceHelper::set_marker_id(u_int32_t new_id) {
-  // apply the new id
-  this->marker_id_ = new_id;
-  // reset the interface, the visibility history is 0
-  this->visibility_history_ = 0;
+void
+TagPositionInterfaceHelper::set_marker_id(u_int32_t new_id)
+{
+	// apply the new id
+	this->marker_id_ = new_id;
+	// reset the interface, the visibility history is 0
+	this->visibility_history_ = 0;
 }
 
 /**
@@ -143,28 +150,30 @@ void TagPositionInterfaceHelper::set_marker_id(u_int32_t new_id) {
  * visibility_history will be reset to 0 and start counting directly. If the
  * visibility history is less than -1000, the interface is considered empty.
  */
-void TagPositionInterfaceHelper::write() {
-  // when the tag becomes visible or invisible reset the visibility history
-  if ((this->touched_ && this->visibility_history_ < 0) ||
-      (!this->touched_ && this->visibility_history_ > 0)) {
-    this->visibility_history_ = 0;
-  }
-  // update the visibility history according to the marker, weather this
-  // interface got a new pose
-  if (this->touched_) {
-    this->visibility_history_++;
-  } else {
-    this->visibility_history_--;
-  }
-  // empty marker id if the tag is to long not visible
-  if (this->marker_id_ != EMPTY_INTERFACE_MARKER_ID &&
-      this->visibility_history_ < INTERFACE_UNSEEN_BOUND) {
-    this->marker_id_ = EMPTY_INTERFACE_MARKER_ID;
-  }
-  // set the new visibility history
-  this->interface_->set_visibility_history(this->visibility_history_);
-  // write out the interface
-  this->interface_->write();
-  // reset the update marker
-  this->touched_ = false;
+void
+TagPositionInterfaceHelper::write()
+{
+	// when the tag becomes visible or invisible reset the visibility history
+	if ((this->touched_ && this->visibility_history_ < 0)
+	    || (!this->touched_ && this->visibility_history_ > 0)) {
+		this->visibility_history_ = 0;
+	}
+	// update the visibility history according to the marker, weather this
+	// interface got a new pose
+	if (this->touched_) {
+		this->visibility_history_++;
+	} else {
+		this->visibility_history_--;
+	}
+	// empty marker id if the tag is to long not visible
+	if (this->marker_id_ != EMPTY_INTERFACE_MARKER_ID
+	    && this->visibility_history_ < INTERFACE_UNSEEN_BOUND) {
+		this->marker_id_ = EMPTY_INTERFACE_MARKER_ID;
+	}
+	// set the new visibility history
+	this->interface_->set_visibility_history(this->visibility_history_);
+	// write out the interface
+	this->interface_->write();
+	// reset the update marker
+	this->touched_ = false;
 }

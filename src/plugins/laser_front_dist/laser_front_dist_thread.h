@@ -45,26 +45,30 @@ class LaserFrontDistThread : public fawkes::Thread,
                              public fawkes::ClockAspect,
                              public fawkes::ConfigurableAspect,
                              public fawkes::BlackBoardAspect,
-                             public fawkes::TransformAspect {
-
+                             public fawkes::TransformAspect
+{
 public:
-  LaserFrontDistThread();
+	LaserFrontDistThread();
 
-  virtual void init();
-  virtual void finalize();
-  virtual void loop();
+	virtual void init();
+	virtual void finalize();
+	virtual void loop();
 
-  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() { Thread::run(); }
+	virtual void
+	run()
+	{
+		Thread::run();
+	}
 
 private:
-  // Define class member variables here
-  fawkes::Laser360Interface *if_laser_;
-  fawkes::Position3DInterface *if_result_;
-  std::string frame_;
-  int beams_used_;
-  std::string target_frame_;
+	// Define class member variables here
+	fawkes::Laser360Interface *  if_laser_;
+	fawkes::Position3DInterface *if_result_;
+	std::string                  frame_;
+	int                          beams_used_;
+	std::string                  target_frame_;
 };
 
 #endif

@@ -20,23 +20,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "puck_vision_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /**
  * @author Florian Nolden & Johannes Rothe
  */
-class PuckVision : public fawkes::Plugin {
+class PuckVision : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  PuckVision(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new PuckVisionThread());
-  }
+	PuckVision(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new PuckVisionThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("puck detection using a front looking camera")

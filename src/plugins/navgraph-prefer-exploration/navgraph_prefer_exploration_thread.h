@@ -37,31 +37,35 @@ namespace fawkes {
 class NavGraphStaticListEdgeCostConstraint;
 }
 
-class NavGraphPreferExplorationThread
-    : public fawkes::Thread,
-      public fawkes::ClockAspect,
-      public fawkes::LoggingAspect,
-      public fawkes::ConfigurableAspect,
-      public fawkes::BlackBoardAspect,
-      public fawkes::NavGraphAspect,
-      public fawkes::NavGraph::ChangeListener {
+class NavGraphPreferExplorationThread : public fawkes::Thread,
+                                        public fawkes::ClockAspect,
+                                        public fawkes::LoggingAspect,
+                                        public fawkes::ConfigurableAspect,
+                                        public fawkes::BlackBoardAspect,
+                                        public fawkes::NavGraphAspect,
+                                        public fawkes::NavGraph::ChangeListener
+{
 public:
-  NavGraphPreferExplorationThread();
-  virtual ~NavGraphPreferExplorationThread();
+	NavGraphPreferExplorationThread();
+	virtual ~NavGraphPreferExplorationThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual void finalize();
 
-  virtual void graph_changed() throw();
+	virtual void graph_changed() throw();
 
-  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() { Thread::run(); }
+	virtual void
+	run()
+	{
+		Thread::run();
+	}
 
 private:
-  float cfg_cost_factor_;
-  fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
+	float                                         cfg_cost_factor_;
+	fawkes::NavGraphStaticListEdgeCostConstraint *edge_cost_constraint_;
 };
 
 #endif

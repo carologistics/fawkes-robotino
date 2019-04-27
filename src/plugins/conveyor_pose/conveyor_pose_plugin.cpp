@@ -21,10 +21,10 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "conveyor_pose_thread.h"
 #include "recognition_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
@@ -32,18 +32,20 @@ using namespace fawkes;
  * intel real sense)
  * @author Tobias Neumann
  */
-class ConveyorPosePlugin : public fawkes::Plugin {
+class ConveyorPosePlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  ConveyorPosePlugin(Configuration *config) : Plugin(config) {
-    ConveyorPoseThread *pose_thread = new ConveyorPoseThread();
-    RecognitionThread *cg_thread = new RecognitionThread(pose_thread);
-    pose_thread->set_cg_thread(cg_thread);
-    thread_list.push_back(pose_thread);
-    thread_list.push_back(cg_thread);
-  }
+	ConveyorPosePlugin(Configuration *config) : Plugin(config)
+	{
+		ConveyorPoseThread *pose_thread = new ConveyorPoseThread();
+		RecognitionThread * cg_thread   = new RecognitionThread(pose_thread);
+		pose_thread->set_cg_thread(cg_thread);
+		thread_list.push_back(pose_thread);
+		thread_list.push_back(cg_thread);
+	}
 };
 
 PLUGIN_DESCRIPTION("Detect the conveyor belt in a pointcloud")

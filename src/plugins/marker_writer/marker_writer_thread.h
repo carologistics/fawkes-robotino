@@ -45,26 +45,30 @@ class MarkerWriterThread : public fawkes::Thread,
                            public fawkes::LoggingAspect,
                            public fawkes::ConfigurableAspect,
                            public fawkes::BlackBoardAspect,
-                           public fawkes::ROSAspect {
-
+                           public fawkes::ROSAspect
+{
 public:
-  MarkerWriterThread();
+	MarkerWriterThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual bool prepare_finalize_user();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual bool prepare_finalize_user();
+	virtual void finalize();
 
-  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() { Thread::run(); }
+	virtual void
+	run()
+	{
+		Thread::run();
+	}
 
 private:
-  std::list<fawkes::Position3DInterface *> pos_ifs_;
+	std::list<fawkes::Position3DInterface *> pos_ifs_;
 
-  ros::Publisher *pub_;
-  float cfg_duration_;
-  bool cfg_ignore_visibillity_;
+	ros::Publisher *pub_;
+	float           cfg_duration_;
+	bool            cfg_ignore_visibillity_;
 };
 
 #endif

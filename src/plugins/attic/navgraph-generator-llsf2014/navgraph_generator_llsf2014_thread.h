@@ -29,7 +29,6 @@
 #include <blackboard/interface_observer.h>
 #include <core/threading/thread.h>
 #include <core/utils/lock_list.h>
-
 #include <navgraph/navgraph_node.h>
 
 #include <list>
@@ -48,27 +47,32 @@ class NavGraphGenerator2014Thread : public fawkes::Thread,
                                     public fawkes::ClockAspect,
                                     public fawkes::LoggingAspect,
                                     public fawkes::ConfigurableAspect,
-                                    public fawkes::BlackBoardAspect {
+                                    public fawkes::BlackBoardAspect
+{
 public:
-  NavGraphGenerator2014Thread();
-  virtual ~NavGraphGenerator2014Thread();
+	NavGraphGenerator2014Thread();
+	virtual ~NavGraphGenerator2014Thread();
 
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual void finalize();
 
-  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() { Thread::run(); }
+	virtual void
+	run()
+	{
+		Thread::run();
+	}
 
 private:
-  void add_node_edge(const fawkes::NavGraphNode &n);
-  void add_node_node(const fawkes::NavGraphNode &n);
-  std::string gen_id();
+	void        add_node_edge(const fawkes::NavGraphNode &n);
+	void        add_node_node(const fawkes::NavGraphNode &n);
+	std::string gen_id();
 
 private:
-  unsigned int last_id_;
-  fawkes::NavGraphGeneratorInterface *navgen_if_;
+	unsigned int                        last_id_;
+	fawkes::NavGraphGeneratorInterface *navgen_if_;
 };
 
 #endif

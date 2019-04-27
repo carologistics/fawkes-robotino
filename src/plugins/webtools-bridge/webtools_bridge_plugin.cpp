@@ -19,9 +19,9 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "webtools_bridge_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
@@ -35,14 +35,16 @@ using namespace fawkes;
  *
  * @author Mostafa Gomaa
  */
-class WebtoolsBridgePlugin : public fawkes::Plugin {
+class WebtoolsBridgePlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  WebtoolsBridgePlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new WebtoolsBridgeThread());
-  }
+	WebtoolsBridgePlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new WebtoolsBridgeThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("webtools-bridge")

@@ -19,23 +19,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "laser_front_dist_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /**Calculates distance to object in front with average of laser beams in front.
  * @author Frederik Zwilling
  */
-class LaserFrontDistPlugin : public fawkes::Plugin {
+class LaserFrontDistPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor
+	/** Constructor
    * @param config Fakwes configuration
    */
-  LaserFrontDistPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new LaserFrontDistThread());
-  }
+	LaserFrontDistPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new LaserFrontDistThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Calculates distance to object in front with average of "

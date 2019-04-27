@@ -23,12 +23,12 @@
 #ifndef _EVENT_HANDLER_H
 #define _EVENT_HANDLER_H
 
+#include "event_type.h"
+
 #include <algorithm>
 #include <list>
 #include <map>
 #include <memory>
-
-#include "event_type.h"
 
 class Callable;
 
@@ -36,30 +36,28 @@ namespace fawkes {
 class Mutex;
 }
 
-class EventEmitter {
+class EventEmitter
+{
 public:
-  EventEmitter();
-  virtual ~EventEmitter(); // To make it polymorfic (enabling casting from
-                           // Derived to Base )
+	EventEmitter();
+	virtual ~EventEmitter(); // To make it polymorfic (enabling casting from
+	                         // Derived to Base )
 
-  virtual void emitt_event(EventType event_type) = 0;
+	virtual void emitt_event(EventType event_type) = 0;
 
-  void register_callback(EventType event_type,
-                         std::shared_ptr<Callable> callable);
-  void unregister_callback(EventType event_type,
-                           std::shared_ptr<Callable> callable);
+	void register_callback(EventType event_type, std::shared_ptr<Callable> callable);
+	void unregister_callback(EventType event_type, std::shared_ptr<Callable> callable);
 
 protected:
-  /// Registry for each EventType and the a coresponding list of classes
-  /// registered for it
-  std::map<EventType, std::list<std::shared_ptr<Callable>>> callbacks_;
-  /// Iterator for the registry
-  std::map<EventType, std::list<std::shared_ptr<Callable>>>::iterator
-      it_events_;
-  /// Iterator for list of callables
-  std::list<std::shared_ptr<Callable>>::iterator it_callables_;
-  /// Mutex to lock the registry during operations
-  fawkes::Mutex *mutex_;
+	/// Registry for each EventType and the a coresponding list of classes
+	/// registered for it
+	std::map<EventType, std::list<std::shared_ptr<Callable>>> callbacks_;
+	/// Iterator for the registry
+	std::map<EventType, std::list<std::shared_ptr<Callable>>>::iterator it_events_;
+	/// Iterator for list of callables
+	std::list<std::shared_ptr<Callable>>::iterator it_callables_;
+	/// Mutex to lock the registry during operations
+	fawkes::Mutex *mutex_;
 };
 
 #endif

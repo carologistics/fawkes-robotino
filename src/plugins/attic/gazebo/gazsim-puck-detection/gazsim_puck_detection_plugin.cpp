@@ -19,9 +19,9 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "gazsim_puck_detection_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
@@ -30,14 +30,16 @@ using namespace fawkes;
  *
  * @author Frederik Zwilling
  */
-class GazsimPuckDetectionPlugin : public fawkes::Plugin {
+class GazsimPuckDetectionPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimPuckDetectionPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new PuckDetectionSimThread());
-  }
+	GazsimPuckDetectionPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new PuckDetectionSimThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Simulation of the Omnivision Puck Detection Results")

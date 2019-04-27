@@ -21,6 +21,7 @@
  */
 
 #include "clips-motor-switch-thread.h"
+
 #include <core/plugin.h>
 
 using namespace fawkes;
@@ -28,14 +29,16 @@ using namespace fawkes;
 /** CLIPS motor switching plugin.
  * @author Tim Niemueller
  */
-class ClipsMotorSwitchPlugin : public fawkes::Plugin {
+class ClipsMotorSwitchPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  ClipsMotorSwitchPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new ClipsMotorSwitchThread());
-  }
+	ClipsMotorSwitchPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new ClipsMotorSwitchThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Motor switching from CLIPS")

@@ -26,31 +26,35 @@
 #include <blackboard/blackboard.h>
 #include <blackboard/exceptions.h>
 #include <interfaces/TagVisionInterface.h>
+
 #include <string>
 #include <vector>
 #ifdef HAVE_AR_TRACK_ALVAR
-#include <ar_track_alvar/Marker.h>
+#	include <ar_track_alvar/Marker.h>
 #else
-#include <alvar/Marker.h>
+#	include <alvar/Marker.h>
 #endif
-#include <aspect/tf.h>
-#include <logging/logger.h>
-
-#include <interfaces/LaserLineInterface.h>
-
 #include "tag_position_interface_helper.h"
 
-class TagPositionList : public std::vector<TagPositionInterfaceHelper *> {
-public:
-  TagPositionList(fawkes::BlackBoard *blackboard,
-                  fawkes::tf::Transformer *tf_listener, u_int32_t max_markers,
-                  std::string frame, std::string thread_name,
-                  fawkes::Logger *logger, fawkes::Clock *clock,
-                  fawkes::tf::TransformPublisher *tf_publisher);
-  /// Destructor
-  ~TagPositionList();
+#include <aspect/tf.h>
+#include <interfaces/LaserLineInterface.h>
+#include <logging/logger.h>
 
-  /**
+class TagPositionList : public std::vector<TagPositionInterfaceHelper *>
+{
+public:
+	TagPositionList(fawkes::BlackBoard *            blackboard,
+	                fawkes::tf::Transformer *       tf_listener,
+	                u_int32_t                       max_markers,
+	                std::string                     frame,
+	                std::string                     thread_name,
+	                fawkes::Logger *                logger,
+	                fawkes::Clock *                 clock,
+	                fawkes::tf::TransformPublisher *tf_publisher);
+	/// Destructor
+	~TagPositionList();
+
+	/**
    * @brief Assigns every marker found to an interface. The interface will stay
    * the same for a marker as long as the marker is considered seen (visibility
    * history > 0). It also updates the Marker IDs on the TagVision interface.
@@ -58,33 +62,32 @@ public:
    * @param marker_list List of marker data
    * @param laser_line_ifs List of laser_line interfaces
    */
-  void
-  update_blackboard(std::vector<alvar::MarkerData> *marker_list,
-                    std::vector<fawkes::LaserLineInterface *> *laser_line_ifs);
+	void update_blackboard(std::vector<alvar::MarkerData> *           marker_list,
+	                       std::vector<fawkes::LaserLineInterface *> *laser_line_ifs);
 
 private:
-  /// How many markers can be detected at the same time
-  u_int32_t max_markers_;
-  /// The blackboard to publish on
-  fawkes::BlackBoard *blackboard_;
-  /// Tag vision inforamtion interface
-  fawkes::TagVisionInterface *tag_vision_interface_;
-  /// Name of the calling thread
-  std::string thread_name_;
-  /// Logger for logging
-  fawkes::Logger *logger_;
-  /// The clock for the StampedTransforms
-  fawkes::Clock *clock_;
-  /// Publisher for the transforms
-  fawkes::tf::TransformPublisher *tf_publisher_;
+	/// How many markers can be detected at the same time
+	u_int32_t max_markers_;
+	/// The blackboard to publish on
+	fawkes::BlackBoard *blackboard_;
+	/// Tag vision inforamtion interface
+	fawkes::TagVisionInterface *tag_vision_interface_;
+	/// Name of the calling thread
+	std::string thread_name_;
+	/// Logger for logging
+	fawkes::Logger *logger_;
+	/// The clock for the StampedTransforms
+	fawkes::Clock *clock_;
+	/// Publisher for the transforms
+	fawkes::tf::TransformPublisher *tf_publisher_;
 
-  std::string frame_;
-  fawkes::tf::Transformer *tf_listener;
+	std::string              frame_;
+	fawkes::tf::Transformer *tf_listener;
 
-  alvar::Pose get_laser_line_pose(fawkes::LaserLineInterface *laser_line_if);
-  alvar::Pose get_nearest_laser_line_pose(
-      alvar::Pose tag_pose,
-      std::vector<fawkes::LaserLineInterface *> *laser_line_ifs);
+	alvar::Pose get_laser_line_pose(fawkes::LaserLineInterface *laser_line_if);
+	alvar::Pose
+	get_nearest_laser_line_pose(alvar::Pose                                tag_pose,
+	                            std::vector<fawkes::LaserLineInterface *> *laser_line_ifs);
 };
 
 #endif // TAG_POSITION_LIST_H

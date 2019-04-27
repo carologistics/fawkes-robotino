@@ -23,27 +23,23 @@
 #ifndef __PLUGINS_NAVGRAPH_BROKER_THREAD_H_
 #define __PLUGINS_NAVGRAPH_BROKER_THREAD_H_
 
+#include "NavigationMessage.pb.h"
+
 #include <aspect/blackboard.h>
 #include <aspect/blocked_timing.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
+#include <blackboard/interface_listener.h>
 #include <core/threading/thread.h>
-
-#include <plugins/gossip/aspect/gossip.h>
-#include <plugins/gossip/gossip/gossip_group.h>
-
+#include <interfaces/NavPathInterface.h>
 #include <navgraph/aspect/navgraph.h>
 #include <navgraph/constraints/constraint_repo.h>
-
 #include <navgraph/constraints/timed_reservation_list_edge_constraint.h>
 #include <navgraph/constraints/timed_reservation_list_node_constraint.h>
 #include <navgraph/navgraph.h>
-
-#include <blackboard/interface_listener.h>
-#include <interfaces/NavPathInterface.h>
-
-#include "NavigationMessage.pb.h"
+#include <plugins/gossip/aspect/gossip.h>
+#include <plugins/gossip/gossip/gossip_group.h>
 
 #include <queue>
 #include <string>
@@ -67,70 +63,70 @@ class NavgraphBrokerThread : public fawkes::Thread,
                              public fawkes::ConfigurableAspect,
                              public fawkes::BlockedTimingAspect,
                              public fawkes::BlackBoardInterfaceListener,
-                             public fawkes::GossipAspect {
+                             public fawkes::GossipAspect
+{
 public:
-  NavgraphBrokerThread();
-  virtual ~NavgraphBrokerThread();
+	NavgraphBrokerThread();
+	virtual ~NavgraphBrokerThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual void finalize();
 
-  // For BlackBoardInterfaceListener
-  virtual void bb_interface_data_changed(fawkes::Interface *interface) throw();
+	// For BlackBoardInterfaceListener
+	virtual void bb_interface_data_changed(fawkes::Interface *interface) throw();
 
-  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() { Thread::run(); }
+	virtual void
+	run()
+	{
+		Thread::run();
+	}
 
 private: // methods
-  void reserve_nodes(
-      std::string constraint_name,
-      std::vector<std::pair<fawkes::NavGraphNode, fawkes::Time>> timed_path);
-  void reserve_edges(
-      std::string constraint_name,
-      std::vector<std::pair<fawkes::NavGraphNode, fawkes::Time>> timed_path);
-  void add_edges_to_edge_constraint(
-      fawkes::NavGraphTimedReservationListEdgeConstraint *edge_constraint,
-      std::vector<fawkes::NavGraphNode> path);
-  std::vector<fawkes::NavGraphNode> get_nodes_from_string(std::string path);
-  std::vector<std::string> get_path_from_interface_as_vector();
-  void send_msg();
+	void reserve_nodes(std::string                                                constraint_name,
+	                   std::vector<std::pair<fawkes::NavGraphNode, fawkes::Time>> timed_path);
+	void reserve_edges(std::string                                                constraint_name,
+	                   std::vector<std::pair<fawkes::NavGraphNode, fawkes::Time>> timed_path);
+	void
+	                                  add_edges_to_edge_constraint(fawkes::NavGraphTimedReservationListEdgeConstraint *edge_constraint,
+	                                                               std::vector<fawkes::NavGraphNode>                   path);
+	std::vector<fawkes::NavGraphNode> get_nodes_from_string(std::string path);
+	std::vector<std::string>          get_path_from_interface_as_vector();
+	void                              send_msg();
 
-  void handle_peer_msg(boost::asio::ip::udp::endpoint &endpoint,
-                       uint16_t component_id, uint16_t msg_type,
-                       std::shared_ptr<google::protobuf::Message> msg);
-  void handle_peer_recv_error(boost::asio::ip::udp::endpoint &endpoint,
-                              std::string msg);
-  void handle_peer_send_error(std::string msg);
+	void handle_peer_msg(boost::asio::ip::udp::endpoint &           endpoint,
+	                     uint16_t                                   component_id,
+	                     uint16_t                                   msg_type,
+	                     std::shared_ptr<google::protobuf::Message> msg);
+	void handle_peer_recv_error(boost::asio::ip::udp::endpoint &endpoint, std::string msg);
+	void handle_peer_send_error(std::string msg);
 
-  void log_node_constraint(
-      fawkes::NavGraphTimedReservationListNodeConstraint *node_constraint);
-  void log_edge_constraint(
-      fawkes::NavGraphTimedReservationListEdgeConstraint *edge_constraint);
+	void log_node_constraint(fawkes::NavGraphTimedReservationListNodeConstraint *node_constraint);
+	void log_edge_constraint(fawkes::NavGraphTimedReservationListEdgeConstraint *edge_constraint);
 
 private:
-  boost::signals2::connection sig_rcvd_conn_;
-  boost::signals2::connection sig_recv_error_conn_;
-  boost::signals2::connection sig_send_error_conn_;
+	boost::signals2::connection sig_rcvd_conn_;
+	boost::signals2::connection sig_recv_error_conn_;
+	boost::signals2::connection sig_send_error_conn_;
 
 private:
-  fawkes::NavPathInterface *path_if_;
-  std::vector<std::string> path_;
-  std::queue<std::shared_ptr<navgraph_broker::NavigationMessage>>
-      reservation_messages_;
-  std::string robotname_;
+	fawkes::NavPathInterface *                                      path_if_;
+	std::vector<std::string>                                        path_;
+	std::queue<std::shared_ptr<navgraph_broker::NavigationMessage>> reservation_messages_;
+	std::string                                                     robotname_;
 
-  navgraph_broker::NavigationMessage *m_;
-  fawkes::Mutex *m_mutex_;
-  int last_message_time_sec_;
-  int last_message_time_nsec_;
+	navgraph_broker::NavigationMessage *m_;
+	fawkes::Mutex *                     m_mutex_;
+	int                                 last_message_time_sec_;
+	int                                 last_message_time_nsec_;
 
-  fawkes::Time time_of_plan_chg;
-  fawkes::Time *time_;
-  double repeat_send_duration_;
-  bool use_node_constraints_;
-  long int max_reservation_duration_;
+	fawkes::Time  time_of_plan_chg;
+	fawkes::Time *time_;
+	double        repeat_send_duration_;
+	bool          use_node_constraints_;
+	long int      max_reservation_duration_;
 };
 
 #endif

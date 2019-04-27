@@ -61,126 +61,129 @@ calculateZoneCoords(void) noexcept
  * @brief Will be called if the navgraph is changed. Will add the property
  * "ASP-Location" to all nodes which are used by the ASP encoding.
  */
-void AspPlannerThread::graph_changed(void) noexcept {
-  MutexLocker navgraphLocker(navgraph.objmutex_ptr());
-  MutexLocker distanceLocker(&NavgraphDistanceMutex);
-  logger->log_error(LoggingComponent, "Navgraph update!");
-  for (auto node : navgraph->nodes()) {
-    if (!node.has_property(NodePropertyASP) &&
-        NavgraphNodesForASP.count(node.name())) {
-      node.set_property(NodePropertyASP, true);
-      navgraph->update_node(node);
-      logger->log_warn(LoggingComponent,
-                       "Setting UpdateNavgraphDistance from %s to true. %s",
-                       UpdateNavgraphDistances ? "true" : "false", __func__);
-      UpdateNavgraphDistances = true;
-      NodesToFind.erase(node.name());
-      logger->log_info(LoggingComponent, "graph_changed: %s",
-                       node.name().c_str());
-    } // if ( !node.has_property(NodePropertyASP) &&
-      // NavgraphNodesForASP.count(node.name()) )
-  }   // for ( auto node : navgraph->nodes() )
-  return;
+void
+AspPlannerThread::graph_changed(void) noexcept
+{
+	MutexLocker navgraphLocker(navgraph.objmutex_ptr());
+	MutexLocker distanceLocker(&NavgraphDistanceMutex);
+	logger->log_error(LoggingComponent, "Navgraph update!");
+	for (auto node : navgraph->nodes()) {
+		if (!node.has_property(NodePropertyASP) && NavgraphNodesForASP.count(node.name())) {
+			node.set_property(NodePropertyASP, true);
+			navgraph->update_node(node);
+			logger->log_warn(LoggingComponent,
+			                 "Setting UpdateNavgraphDistance from %s to true. %s",
+			                 UpdateNavgraphDistances ? "true" : "false",
+			                 __func__);
+			UpdateNavgraphDistances = true;
+			NodesToFind.erase(node.name());
+			logger->log_info(LoggingComponent, "graph_changed: %s", node.name().c_str());
+		} // if ( !node.has_property(NodePropertyASP) &&
+		  // NavgraphNodesForASP.count(node.name()) )
+	}   // for ( auto node : navgraph->nodes() )
+	return;
 }
 
 /**
  * @brief Fill the NavgraphNodesForASP with the nodes we export to ASP.
  * @param[in] lockWorldMutex If the world mutex should be locked.
  */
-void AspPlannerThread::fillNavgraphNodesForASP(const bool lockWorldMutex) {
-  MutexLocker locker(&NavgraphDistanceMutex);
-  NavgraphNodesForASP.clear();
-  // Maschinen * Seiten + Zonen
-  NavgraphNodesForASP.reserve(6 * 2 + 12 + 1);
+void
+AspPlannerThread::fillNavgraphNodesForASP(const bool lockWorldMutex)
+{
+	MutexLocker locker(&NavgraphDistanceMutex);
+	NavgraphNodesForASP.clear();
+	// Maschinen * Seiten + Zonen
+	NavgraphNodesForASP.reserve(6 * 2 + 12 + 1);
 
-  // The machines.
-  std::string name;
-  name.reserve(7);
+	// The machines.
+	std::string name;
+	name.reserve(7);
 
-  Clingo::Symbol arguments[3];
-  assert(TeamColor);
-  arguments[0] = Clingo::String(TeamColor);
-  decltype(NavgraphNodesForASP.begin()) lastInsertion;
-  for (const auto &machine : {"BS", "CS1", "CS2", "RS1", "RS2", "DS"}) {
-    name = TeamColor;
-    name += "-";
-    name += machine;
-    name += "-S";
+	Clingo::Symbol arguments[3];
+	assert(TeamColor);
+	arguments[0] = Clingo::String(TeamColor);
+	decltype(NavgraphNodesForASP.begin()) lastInsertion;
+	for (const auto &machine : {"BS", "CS1", "CS2", "RS1", "RS2", "DS"}) {
+		name = TeamColor;
+		name += "-";
+		name += machine;
+		name += "-S";
 
-    arguments[1] = Clingo::String(machine);
+		arguments[1] = Clingo::String(machine);
 
-    for (const auto &side : {"I", "O"}) {
-      name.back() = side[0];
-      arguments[2] = Clingo::String(side);
-      lastInsertion = NavgraphNodesForASP.insert(
-          {name, Clingo::Function("m", {arguments, 3})});
-    } // for ( const auto& side : {"I", "O"} )
-  }   // for ( const auto& machine : {"BS", "CS1", "CS2", "RS1", "RS2", "DS"} )
+		for (const auto &side : {"I", "O"}) {
+			name.back()   = side[0];
+			arguments[2]  = Clingo::String(side);
+			lastInsertion = NavgraphNodesForASP.insert({name, Clingo::Function("m", {arguments, 3})});
+		} // for ( const auto& side : {"I", "O"} )
+	}   // for ( const auto& machine : {"BS", "CS1", "CS2", "RS1", "RS2", "DS"} )
 
-  // Remove the output side of the DS.
-  assert(lastInsertion->first == std::string(TeamColor) + "-DS-O");
-  NavgraphNodesForASP.erase(lastInsertion);
-  NavgraphNodesForASP.insert(
-      {std::string(TeamColor) + "-ins-out", Clingo::String("ins-out")});
+	// Remove the output side of the DS.
+	assert(lastInsertion->first == std::string(TeamColor) + "-DS-O");
+	NavgraphNodesForASP.erase(lastInsertion);
+	NavgraphNodesForASP.insert({std::string(TeamColor) + "-ins-out", Clingo::String("ins-out")});
 
-  //! @todo Do we need nodes for the zones? (I think yes.)
-  const auto dummyNode = std::string(TeamColor) + "-ins-in";
-  //	static const auto zones(calculateZoneCoords());
-  //	MutexLocker locker(navgraph.objmutex_ptr());
-  MutexLocker worldLocker(&WorldMutex, lockWorldMutex);
-  for (auto zone : ZonesToExplore) {
-    NavgraphNodesForASP.insert(
-        {dummyNode, Clingo::Function("z", {Clingo::Number(zone)})});
-    //		const auto node = navgraph->closest_node(zones[zone][0],
-    // zones[zone][1], false, NodePropertyASP);
-  } // for ( auto zone : ZonesToExplore )
+	//! @todo Do we need nodes for the zones? (I think yes.)
+	const auto dummyNode = std::string(TeamColor) + "-ins-in";
+	//	static const auto zones(calculateZoneCoords());
+	//	MutexLocker locker(navgraph.objmutex_ptr());
+	MutexLocker worldLocker(&WorldMutex, lockWorldMutex);
+	for (auto zone : ZonesToExplore) {
+		NavgraphNodesForASP.insert({dummyNode, Clingo::Function("z", {Clingo::Number(zone)})});
+		//		const auto node = navgraph->closest_node(zones[zone][0],
+		// zones[zone][1], false, NodePropertyASP);
+	} // for ( auto zone : ZonesToExplore )
 
-  logger->log_warn(LoggingComponent,
-                   "Setting UpdateNavgraphDistance from %s to true. %s",
-                   UpdateNavgraphDistances ? "true" : "false", __func__);
-  UpdateNavgraphDistances = true;
-  return;
+	logger->log_warn(LoggingComponent,
+	                 "Setting UpdateNavgraphDistance from %s to true. %s",
+	                 UpdateNavgraphDistances ? "true" : "false",
+	                 __func__);
+	UpdateNavgraphDistances = true;
+	return;
 }
 
 /**
  * @brief Updates the navgraph distances.
  * @note Assumes, that NavgraphDistanceMutex is locked.
  */
-void AspPlannerThread::updateNavgraphDistances(void) {
-  static bool done = false;
+void
+AspPlannerThread::updateNavgraphDistances(void)
+{
+	static bool done = false;
 
-  logger->log_warn(LoggingComponent,
-                   "Setting UpdateNavgraphDistance from %s to false. %s",
-                   UpdateNavgraphDistances ? "true" : "false", __func__);
-  UpdateNavgraphDistances = false;
+	logger->log_warn(LoggingComponent,
+	                 "Setting UpdateNavgraphDistance from %s to false. %s",
+	                 UpdateNavgraphDistances ? "true" : "false",
+	                 __func__);
+	UpdateNavgraphDistances = false;
 
-  if (done) {
-    logger->log_error(LoggingComponent, "updateNavgraphDistances called, but "
-                                        "we already released the externals!");
-    return;
-  } // if ( done )
+	if (done) {
+		logger->log_error(LoggingComponent,
+		                  "updateNavgraphDistances called, but "
+		                  "we already released the externals!");
+		return;
+	} // if ( done )
 
-  NavgraphDistances.clear();
-  NavgraphDistances.reserve(NavgraphNodesForASP.size() *
-                            NavgraphNodesForASP.size());
+	NavgraphDistances.clear();
+	NavgraphDistances.reserve(NavgraphNodesForASP.size() * NavgraphNodesForASP.size());
 
-  MutexLocker navgraphLocker(navgraph.objmutex_ptr());
+	MutexLocker navgraphLocker(navgraph.objmutex_ptr());
 
-  auto distanceToDuration = [this](const float distance) noexcept {
-    constexpr float constantCosts = 2.16988;
-    constexpr float costPerDistance = 1.55322;
-    return std::min(
-        static_cast<int>(constantCosts + distance * costPerDistance),
-        MaxDriveDuration);
-  };
+	auto distanceToDuration = [this](const float distance) noexcept
+	{
+		constexpr float constantCosts   = 2.16988;
+		constexpr float costPerDistance = 1.55322;
+		return std::min(static_cast<int>(constantCosts + distance * costPerDistance), MaxDriveDuration);
+	};
 
-  const auto end = NavgraphNodesForASP.end();
-  for (auto from = NavgraphNodesForASP.begin(); from != end; ++from) {
-    const auto &fromNode = navgraph->node(from->first);
-    for (auto to = from; ++to != end;) {
-      const auto &toNode = navgraph->node(to->first);
+	const auto end = NavgraphNodesForASP.end();
+	for (auto from = NavgraphNodesForASP.begin(); from != end; ++from) {
+		const auto &fromNode = navgraph->node(from->first);
+		for (auto to = from; ++to != end;) {
+			const auto &toNode = navgraph->node(to->first);
 
-      /* If we use invalid nodes or don't find a path take a big number for the
+			/* If we use invalid nodes or don't find a path take a big number for the
        * duration. This is done because initally the nav graph is not connected
        * and we wouldn't set durations. By that the ASP solver wouldn't assign
        * tasks, because it could not calculate the estimated time for the tasks.
@@ -188,28 +191,26 @@ void AspPlannerThread::updateNavgraphDistances(void) {
        * robot would take without mobile obstacles, i.e. drive from one end of
        * the field to the other side, possibly around machines, but there
        * is no replanning because of other robots. */
-      auto findDuration = [this, &toNode, &fromNode, distanceToDuration](void) {
-        if (fromNode.is_valid() && toNode.is_valid()) {
-          const auto path = navgraph->search_path(fromNode, toNode);
-          if (!path.empty()) {
-            return distanceToDuration(path.cost());
-          } // if ( !path.empty() )
-        }   // if ( fromNode.is_valid() && toNode.is_valid() )
-        return MaxDriveDuration;
-      };
+			auto findDuration = [this, &toNode, &fromNode, distanceToDuration](void) {
+				if (fromNode.is_valid() && toNode.is_valid()) {
+					const auto path = navgraph->search_path(fromNode, toNode);
+					if (!path.empty()) {
+						return distanceToDuration(path.cost());
+					} // if ( !path.empty() )
+				}   // if ( fromNode.is_valid() && toNode.is_valid() )
+				return MaxDriveDuration;
+			};
 
-      const auto duration = realGameTimeToAspGameTime(findDuration());
+			const auto duration = realGameTimeToAspGameTime(findDuration());
 
-      Clingo::Symbol arguments[3] = {from->second, to->second,
-                                     Clingo::Number(duration)};
+			Clingo::Symbol arguments[3] = {from->second, to->second, Clingo::Number(duration)};
 
-      NavgraphDistances.emplace_back(
-          Clingo::Function("setDriveDuration", {arguments, 3}));
-    } // for ( auto to = from; ++to != end; )
-  }   // for ( auto from = NavgraphDistances.begin(); from != end; ++from )
+			NavgraphDistances.emplace_back(Clingo::Function("setDriveDuration", {arguments, 3}));
+		} // for ( auto to = from; ++to != end; )
+	}   // for ( auto from = NavgraphDistances.begin(); from != end; ++from )
 
-  done = NodesToFind.empty();
-  return;
+	done = NodesToFind.empty();
+	return;
 }
 
 /**
@@ -218,13 +219,15 @@ void AspPlannerThread::updateNavgraphDistances(void) {
  * @param[in] y The y coordination.
  * @return The atom of the location.
  */
-Clingo::Symbol AspPlannerThread::nearestLocation(const float x, const float y) {
-  MutexLocker navgraphLocker(navgraph.objmutex_ptr());
-  MutexLocker durationLocker(&NavgraphDistanceMutex);
-  auto node = navgraph->closest_node(x, y, false, NodePropertyASP);
-  if (!node.is_valid()) {
-    throw fawkes::Exception("No ASP-NavGraph-Node for (%f, %f) found!", x, y);
-  } // if ( !node.is_valid() )
+Clingo::Symbol
+AspPlannerThread::nearestLocation(const float x, const float y)
+{
+	MutexLocker navgraphLocker(navgraph.objmutex_ptr());
+	MutexLocker durationLocker(&NavgraphDistanceMutex);
+	auto        node = navgraph->closest_node(x, y, false, NodePropertyASP);
+	if (!node.is_valid()) {
+		throw fawkes::Exception("No ASP-NavGraph-Node for (%f, %f) found!", x, y);
+	} // if ( !node.is_valid() )
 
-  return NavgraphNodesForASP.find(node.name())->second;
+	return NavgraphNodesForASP.find(node.name())->second;
 }

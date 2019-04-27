@@ -36,21 +36,26 @@ class WebviewRCLLRefBoxThread : public fawkes::Thread,
                                 public fawkes::ClockAspect,
                                 public fawkes::ConfigurableAspect,
                                 public fawkes::MongoDBAspect,
-                                public fawkes::WebviewAspect {
+                                public fawkes::WebviewAspect
+{
 public:
-  WebviewRCLLRefBoxThread();
-  virtual ~WebviewRCLLRefBoxThread();
+	WebviewRCLLRefBoxThread();
+	virtual ~WebviewRCLLRefBoxThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual void finalize();
 
-  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() { Thread::run(); }
+	virtual void
+	run()
+	{
+		Thread::run();
+	}
 
 private:
-  WebviewRCLLRefBoxRequestProcessor *web_proc_;
+	WebviewRCLLRefBoxRequestProcessor *web_proc_;
 };
 
 #endif

@@ -28,8 +28,8 @@
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <core/threading/thread.h>
-
 #include <interfaces/RobotinoWorldModelInterface.h>
+
 #include <map>
 #include <string>
 #include <vector>
@@ -39,31 +39,35 @@ class RobotinoWMTesterThread : public fawkes::Thread,
                                public fawkes::LoggingAspect,
                                public fawkes::ConfigurableAspect,
                                public fawkes::BlackBoardAspect,
-                               public fawkes::ClockAspect {
-
+                               public fawkes::ClockAspect
+{
 public:
-  RobotinoWMTesterThread();
+	RobotinoWMTesterThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual bool prepare_finalize_user();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual bool prepare_finalize_user();
+	virtual void finalize();
 
-  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() { Thread::run(); }
+	virtual void
+	run()
+	{
+		Thread::run();
+	}
 
 private:
-  void apply_random_change();
+	void apply_random_change();
 
 private:
-  fawkes::RobotinoWorldModelInterface *wm_if_;
-  fawkes::RobotinoWorldModelInterface *wm_ext1_if_;
-  fawkes::RobotinoWorldModelInterface *wm_ext2_if_;
+	fawkes::RobotinoWorldModelInterface *wm_if_;
+	fawkes::RobotinoWorldModelInterface *wm_ext1_if_;
+	fawkes::RobotinoWorldModelInterface *wm_ext2_if_;
 
-  fawkes::Time time_;
-  int state_;
-  int type_;
+	fawkes::Time time_;
+	int          state_;
+	int          type_;
 };
 
 #endif

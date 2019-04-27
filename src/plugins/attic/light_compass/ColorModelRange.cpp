@@ -22,9 +22,9 @@
  *  Read the full text in the LICENSE.GPL_WRE file in the doc directory.
  */
 
-#include <iostream>
-
 #include "ColorModelRange.h"
+
+#include <iostream>
 
 using namespace std;
 
@@ -38,38 +38,48 @@ namespace firevision {
  * just for initial development of color models.
  */
 
-ColorModelRange::ColorModelRange(unsigned int y_min, unsigned int y_max,
-                                 unsigned int u_min, unsigned int u_max,
-                                 unsigned int v_min, unsigned int v_max) {
-  threshold_y_low_ = y_min;
-  threshold_y_high_ = y_max;
-  threshold_u_low_ = u_min;
-  threshold_v_low_ = u_max;
-  threshold_u_high_ = v_min;
-  threshold_v_high_ = v_max;
+ColorModelRange::ColorModelRange(unsigned int y_min,
+                                 unsigned int y_max,
+                                 unsigned int u_min,
+                                 unsigned int u_max,
+                                 unsigned int v_min,
+                                 unsigned int v_max)
+{
+	threshold_y_low_  = y_min;
+	threshold_y_high_ = y_max;
+	threshold_u_low_  = u_min;
+	threshold_v_low_  = u_max;
+	threshold_u_high_ = v_min;
+	threshold_v_high_ = v_max;
 }
 
-color_t ColorModelRange::determine(unsigned int y, unsigned int u,
-                                   unsigned int v) const {
-  if (y >= threshold_y_low_ && y <= threshold_y_high_ &&
-      u >= threshold_u_low_ && u <= threshold_u_high_ &&
-      v >= threshold_v_low_ && v <= threshold_v_high_) {
-    return C_WHITE;
-  } else {
-    return C_OTHER;
-  }
+color_t
+ColorModelRange::determine(unsigned int y, unsigned int u, unsigned int v) const
+{
+	if (y >= threshold_y_low_ && y <= threshold_y_high_ && u >= threshold_u_low_
+	    && u <= threshold_u_high_ && v >= threshold_v_low_ && v <= threshold_v_high_) {
+		return C_WHITE;
+	} else {
+		return C_OTHER;
+	}
 }
 
-const char *ColorModelRange::get_name() { return "ColorModelRange"; }
+const char *
+ColorModelRange::get_name()
+{
+	return "ColorModelRange";
+}
 
 /** Print the thresholds to stdout.
  */
-void ColorModelRange::print_thresholds() {
-  cout << get_name() << endl
-       << "==========================================================" << endl
-       << "y: " << threshold_y_low_ << " - " << threshold_y_high_
-       << "u: " << threshold_y_low_ << " - " << threshold_y_high_
-       << "v: " << threshold_y_low_ << " - " << threshold_y_high_ << endl;
+void
+ColorModelRange::print_thresholds()
+{
+	cout << get_name() << endl
+	     << "==========================================================" << endl
+	     << "y: " << threshold_y_low_ << " - " << threshold_y_high_ << "u: " << threshold_y_low_
+	     << " - " << threshold_y_high_ << "v: " << threshold_y_low_ << " - " << threshold_y_high_
+	     << endl;
 }
 
 } // end namespace firevision

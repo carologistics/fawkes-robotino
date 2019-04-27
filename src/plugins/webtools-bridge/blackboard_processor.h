@@ -23,15 +23,15 @@
 #ifndef __PLUGINS_BLACKBOARD_PROCESSOR_H_
 #define __PLUGINS_BLACKBOARD_PROCESSOR_H_
 
-#include <map>
-#include <string>
+#include "advertisment_capability.h"
+#include "bridge_processor.h"
+#include "subscription_capability.h"
 
 #include <blackboard/interface_listener.h>
 #include <config/config.h>
 
-#include "advertisment_capability.h"
-#include "bridge_processor.h"
-#include "subscription_capability.h"
+#include <map>
+#include <string>
 
 namespace fawkes {
 class Clock;
@@ -47,28 +47,30 @@ class WebSession;
 //=================================   Subscription
 //===================================
 
-class BlackBoardSubscription : public Subscription,
-                               public fawkes::BlackBoardInterfaceListener {
+class BlackBoardSubscription : public Subscription, public fawkes::BlackBoardInterfaceListener
+{
 public:
-  BlackBoardSubscription(std::string topic_name, std::string processor_prefix,
-                         fawkes::Logger *logger, fawkes::Clock *clock,
-                         fawkes::BlackBoard *blackboard,
-                         fawkes::Interface *interface);
+	BlackBoardSubscription(std::string         topic_name,
+	                       std::string         processor_prefix,
+	                       fawkes::Logger *    logger,
+	                       fawkes::Clock *     clock,
+	                       fawkes::BlackBoard *blackboard,
+	                       fawkes::Interface * interface);
 
-  ~BlackBoardSubscription();
+	~BlackBoardSubscription();
 
-  fawkes::Interface *get_interface_ptr();
+	fawkes::Interface *get_interface_ptr();
 
-  void activate_impl();
-  void deactivate_impl();
-  void finalize_impl();
-  std::string serialize(std::string op, std::string topic, std::string id);
+	void        activate_impl();
+	void        deactivate_impl();
+	void        finalize_impl();
+	std::string serialize(std::string op, std::string topic, std::string id);
 
-  void bb_interface_data_changed(fawkes::Interface *interface) throw();
+	void bb_interface_data_changed(fawkes::Interface *interface) throw();
 
 private:
-  fawkes::BlackBoard *blackboard_; /**< Fawkes blackboard */
-  fawkes::Interface *interface_;   /**< Fawkes interface */
+	fawkes::BlackBoard *blackboard_; /**< Fawkes blackboard */
+	fawkes::Interface * interface_;  /**< Fawkes interface */
 };
 
 //=================================   Processor
@@ -80,46 +82,53 @@ class BridgeBlackBoardProcessor : public BridgeProcessor,
 
 {
 public:
-  BridgeBlackBoardProcessor(std::string prefix, fawkes::Logger *logger,
-                            fawkes::Configuration *config,
-                            fawkes::BlackBoard *blackboard,
-                            fawkes::Clock *clock);
+	BridgeBlackBoardProcessor(std::string            prefix,
+	                          fawkes::Logger *       logger,
+	                          fawkes::Configuration *config,
+	                          fawkes::BlackBoard *   blackboard,
+	                          fawkes::Clock *        clock);
 
-  virtual ~BridgeBlackBoardProcessor();
+	virtual ~BridgeBlackBoardProcessor();
 
-  std::shared_ptr<Subscription>
-  subscribe(std::string topic_name, std::string id, std::string type,
-            std::string compression, unsigned int throttle_rate,
-            unsigned int queue_length, unsigned int fragment_size,
-            std::shared_ptr<WebSession> session);
+	std::shared_ptr<Subscription> subscribe(std::string                 topic_name,
+	                                        std::string                 id,
+	                                        std::string                 type,
+	                                        std::string                 compression,
+	                                        unsigned int                throttle_rate,
+	                                        unsigned int                queue_length,
+	                                        unsigned int                fragment_size,
+	                                        std::shared_ptr<WebSession> session);
 
-  void unsubscribe(std::string id, std::shared_ptr<Subscription> subscription,
-                   std::shared_ptr<WebSession> session);
+	void unsubscribe(std::string                   id,
+	                 std::shared_ptr<Subscription> subscription,
+	                 std::shared_ptr<WebSession>   session);
 
-  std::shared_ptr<Advertisment> advertise(std::string topic_name,
-                                          std::string id, std::string type,
-                                          std::shared_ptr<WebSession> session);
+	std::shared_ptr<Advertisment> advertise(std::string                 topic_name,
+	                                        std::string                 id,
+	                                        std::string                 type,
+	                                        std::shared_ptr<WebSession> session);
 
-  void unadvertise(std::string id, std::shared_ptr<Advertisment> advertisment,
-                   std::shared_ptr<WebSession> session);
+	void unadvertise(std::string                   id,
+	                 std::shared_ptr<Advertisment> advertisment,
+	                 std::shared_ptr<WebSession>   session);
 
-  void
-  publish(std::string id, bool latch,
-          std::string msg_in_json // TODO:: figure out a clever way to keep
-                                  // track of msgs types and content without
-                                  // the need to have the info before hands
-          ,
-          std::shared_ptr<Advertisment> advertisment,
-          std::shared_ptr<WebSession> session);
+	void publish(std::string id,
+	             bool        latch,
+	             std::string msg_in_json // TODO:: figure out a clever way to keep
+	                                     // track of msgs types and content without
+	                                     // the need to have the info before hands
+	             ,
+	             std::shared_ptr<Advertisment> advertisment,
+	             std::shared_ptr<WebSession>   session);
 
 private:
-  fawkes::Logger *logger_;         /**< Fawkes logger */
-  fawkes::Configuration *config_;  /**< Fawkes config */
-  fawkes::BlackBoard *blackboard_; /**< Fawkes blackboard */
-  fawkes::Clock *clock_;           /**< Fawkes clock */
+	fawkes::Logger *       logger_;     /**< Fawkes logger */
+	fawkes::Configuration *config_;     /**< Fawkes config */
+	fawkes::BlackBoard *   blackboard_; /**< Fawkes blackboard */
+	fawkes::Clock *        clock_;      /**< Fawkes clock */
 
-  std::map<std::string, fawkes::Interface *>::iterator
-      ifi_; /**< Iterator for Fawkes Interface list */
+	std::map<std::string, fawkes::Interface *>::iterator
+	  ifi_; /**< Iterator for Fawkes Interface list */
 };
 
 #endif

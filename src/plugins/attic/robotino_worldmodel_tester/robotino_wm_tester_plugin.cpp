@@ -20,23 +20,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "robotino_wm_tester_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /** Template! Makes the robotino move forward for 3 seconds
  * @author Daniel Ewert
  */
-class RobotinoWMTesterPlugin : public fawkes::Plugin {
+class RobotinoWMTesterPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  RobotinoWMTesterPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new RobotinoWMTesterThread());
-  }
+	RobotinoWMTesterPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new RobotinoWMTesterThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Robotino World Model Tester")

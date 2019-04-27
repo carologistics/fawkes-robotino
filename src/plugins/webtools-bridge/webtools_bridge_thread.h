@@ -47,18 +47,19 @@ class WebtoolsBridgeThread : public fawkes::Thread,
                              public fawkes::ConfigurableAspect,
                              public fawkes::BlackBoardAspect,
                              public fawkes::BlockedTimingAspect,
-                             public fawkes::CLIPSManagerAspect {
+                             public fawkes::CLIPSManagerAspect
+{
 public:
-  WebtoolsBridgeThread();
-  virtual ~WebtoolsBridgeThread();
+	WebtoolsBridgeThread();
+	virtual ~WebtoolsBridgeThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual void finalize();
 
 private:
-  std::shared_ptr<BridgeManager> bridge_manager_;
-  std::shared_ptr<WebSocketServer> web_server_;
+	std::shared_ptr<BridgeManager>   bridge_manager_;
+	std::shared_ptr<WebSocketServer> web_server_;
 };
 
 #endif

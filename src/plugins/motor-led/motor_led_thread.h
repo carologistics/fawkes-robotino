@@ -37,25 +37,30 @@ class MotorLedThread : public fawkes::Thread,
                        public fawkes::LoggingAspect,
                        public fawkes::ConfigurableAspect,
                        public fawkes::BlockedTimingAspect,
-                       public fawkes::BlackBoardAspect {
+                       public fawkes::BlackBoardAspect
+{
 public:
-  MotorLedThread();
+	MotorLedThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual void finalize();
 
-  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() { Thread::run(); }
+	virtual void
+	run()
+	{
+		Thread::run();
+	}
 
 private:
-  std::string cfg_motor_ifid_;
-  std::string cfg_rsens_ifid_;
-  unsigned int cfg_digital_out_;
+	std::string  cfg_motor_ifid_;
+	std::string  cfg_rsens_ifid_;
+	unsigned int cfg_digital_out_;
 
-  fawkes::MotorInterface *motor_if_;
-  fawkes::RobotinoSensorInterface *rsens_if_;
+	fawkes::MotorInterface *         motor_if_;
+	fawkes::RobotinoSensorInterface *rsens_if_;
 };
 
 #endif

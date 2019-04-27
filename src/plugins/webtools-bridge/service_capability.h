@@ -29,14 +29,14 @@
  *
  * @author Mostafa Gomaa
  */
-class ServiceCapability {
+class ServiceCapability
+{
 public:
-  /** To be implemented by the bridge processor for domain specific semantics
+	/** To be implemented by the bridge processor for domain specific semantics
    * @param srv_call_json
    * @param session the session requesting the advertise
    */
-  virtual void call_service(std::string srv_call_json,
-                            std::shared_ptr<WebSession> session) = 0;
+	virtual void call_service(std::string srv_call_json, std::shared_ptr<WebSession> session) = 0;
 };
 
 #endif

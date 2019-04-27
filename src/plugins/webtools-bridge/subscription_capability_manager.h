@@ -32,43 +32,48 @@ class Mutex;
 }
 
 class SubscriptionCapabilityManager
-    : public CapabilityManager,
-      public EventEmitter,
-      public Callable,
-      public std::enable_shared_from_this<SubscriptionCapabilityManager> {
+: public CapabilityManager,
+  public EventEmitter,
+  public Callable,
+  public std::enable_shared_from_this<SubscriptionCapabilityManager>
+{
 public:
-  SubscriptionCapabilityManager();
-  ~SubscriptionCapabilityManager();
+	SubscriptionCapabilityManager();
+	~SubscriptionCapabilityManager();
 
-  void init();
-  void finalize();
+	void init();
+	void finalize();
 
-  void handle_message(rapidjson::Document &d,
-                      std::shared_ptr<WebSession> session);
+	void handle_message(rapidjson::Document &d, std::shared_ptr<WebSession> session);
 
-  bool register_processor(std::shared_ptr<BridgeProcessor> processor);
+	bool register_processor(std::shared_ptr<BridgeProcessor> processor);
 
-  void callback(EventType event_type,
-                std::shared_ptr<EventEmitter> event_emitter);
+	void callback(EventType event_type, std::shared_ptr<EventEmitter> event_emitter);
 
-  void publish_loop();
+	void publish_loop();
 
-  void emitt_event(EventType event_type);
+	void emitt_event(EventType event_type);
 
 private:
-  void subscribe(std::string bridge_prefix, std::string topic_name,
-                 std::string id, std::string type, std::string compression,
-                 unsigned int throttle_rate, unsigned int queue_length,
-                 unsigned int fragment_size,
-                 std::shared_ptr<WebSession> session);
+	void subscribe(std::string                 bridge_prefix,
+	               std::string                 topic_name,
+	               std::string                 id,
+	               std::string                 type,
+	               std::string                 compression,
+	               unsigned int                throttle_rate,
+	               unsigned int                queue_length,
+	               unsigned int                fragment_size,
+	               std::shared_ptr<WebSession> session);
 
-  void unsubscribe(std::string bridge_prefix, std::string topic_name,
-                   std::string id, std::shared_ptr<WebSession> session);
+	void unsubscribe(std::string                 bridge_prefix,
+	                 std::string                 topic_name,
+	                 std::string                 id,
+	                 std::shared_ptr<WebSession> session);
 
-  std::map<std::string, std::shared_ptr<Subscription>> topic_Subscription_;
-  std::shared_ptr<std::thread> publisher_thread;
-  bool run_publish_loop;
+	std::map<std::string, std::shared_ptr<Subscription>> topic_Subscription_;
+	std::shared_ptr<std::thread>                         publisher_thread;
+	bool                                                 run_publish_loop;
 
-  fawkes::Mutex *__mutex;
-  fawkes::Mutex *__publish_mutex;
+	fawkes::Mutex *__mutex;
+	fawkes::Mutex *__publish_mutex;
 };

@@ -41,29 +41,33 @@ class LaserSim : public fawkes::Thread,
                  public fawkes::BlockedTimingAspect,
                  public fawkes::LoggingAspect,
                  public fawkes::ConfigurableAspect,
-                 public fawkes::BlackBoardAspect {
-
+                 public fawkes::BlackBoardAspect
+{
 public:
-  LaserSim();
+	LaserSim();
 
-  virtual void init();
-  virtual void loop();
-  virtual bool prepare_finalize_user();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual bool prepare_finalize_user();
+	virtual void finalize();
 
-  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() { Thread::run(); }
+	virtual void
+	run()
+	{
+		Thread::run();
+	}
 
 private:
-  void add_cluster_at(unsigned int angle, unsigned int size, float distance);
-  float add_noise(float base);
+	void  add_cluster_at(unsigned int angle, unsigned int size, float distance);
+	float add_noise(float base);
 
 private:
-  fawkes::Laser360Interface *laser_if_;
+	fawkes::Laser360Interface *laser_if_;
 
-  float laser_scan_[360];
-  unsigned int num_scans_;
+	float        laser_scan_[360];
+	unsigned int num_scans_;
 };
 
 #endif

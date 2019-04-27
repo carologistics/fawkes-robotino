@@ -33,21 +33,21 @@ class DBClientBase;
 class BSONObj;
 } // namespace mongo
 
-class WebviewRCLLRefBoxRequestProcessor : public fawkes::WebRequestProcessor {
+class WebviewRCLLRefBoxRequestProcessor : public fawkes::WebRequestProcessor
+{
 public:
-  WebviewRCLLRefBoxRequestProcessor(std::string base_url,
-                                    mongo::DBClientBase *mongodb_client);
-  virtual ~WebviewRCLLRefBoxRequestProcessor();
+	WebviewRCLLRefBoxRequestProcessor(std::string base_url, mongo::DBClientBase *mongodb_client);
+	virtual ~WebviewRCLLRefBoxRequestProcessor();
 
-  virtual fawkes::WebReply *process_request(const fawkes::WebRequest *request);
-
-private:
-  std::string gen_orders_table(const mongo::BSONObj *doc);
+	virtual fawkes::WebReply *process_request(const fawkes::WebRequest *request);
 
 private:
-  mongo::DBClientBase *mongodb_;
+	std::string gen_orders_table(const mongo::BSONObj *doc);
 
-  std::string baseurl_;
+private:
+	mongo::DBClientBase *mongodb_;
+
+	std::string baseurl_;
 };
 
 #endif

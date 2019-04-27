@@ -18,9 +18,9 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "gazsim_tag_vision_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
@@ -29,14 +29,16 @@ using namespace fawkes;
  *
  * @author Frederik Zwilling
  */
-class GazsimTagVisionPlugin : public fawkes::Plugin {
+class GazsimTagVisionPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimTagVisionPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new TagVisionSimThread());
-  }
+	GazsimTagVisionPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new TagVisionSimThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Simulation of the TagVision results")

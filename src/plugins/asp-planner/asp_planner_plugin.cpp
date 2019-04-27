@@ -22,19 +22,22 @@
  */
 
 #include "asp_planner_thread.h"
+
 #include <core/plugin.h>
 
 /** ASP planner plugin.
  */
-class AspPlannerPlugin : public fawkes::Plugin {
+class AspPlannerPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  AspPlannerPlugin(fawkes::Configuration *config) : Plugin(config) {
-    thread_list.push_back(new AspPlannerThread);
-    return;
-  }
+	AspPlannerPlugin(fawkes::Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new AspPlannerThread);
+		return;
+	}
 };
 
 PLUGIN_DESCRIPTION("ASP-based planner plugin")

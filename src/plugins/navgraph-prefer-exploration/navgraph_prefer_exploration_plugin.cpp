@@ -19,23 +19,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "navgraph_prefer_exploration_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /** Automatically generate navgraph for MPS
  * @author Tim Niemueller
  */
-class NavGraphPreferExplorationPlugin : public fawkes::Plugin {
+class NavGraphPreferExplorationPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  NavGraphPreferExplorationPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new NavGraphPreferExplorationThread());
-  }
+	NavGraphPreferExplorationPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new NavGraphPreferExplorationThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Increase cost of non-exploration graph parts")

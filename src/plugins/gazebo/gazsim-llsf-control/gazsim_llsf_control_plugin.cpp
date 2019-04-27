@@ -18,9 +18,9 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "gazsim_llsf_control_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
@@ -29,14 +29,16 @@ using namespace fawkes;
  *
  * @author Frederik Zwilling
  */
-class GazsimLlsfControlPlugin : public fawkes::Plugin {
+class GazsimLlsfControlPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimLlsfControlPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new LlsfControlSimThread());
-  }
+	GazsimLlsfControlPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new LlsfControlSimThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Makes control of a llsf game in gazebo")
