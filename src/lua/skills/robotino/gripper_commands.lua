@@ -70,9 +70,9 @@ function tf_ready()
 -- Checks if the tf tree of the gripper is complete and up to date after moving
 -- This is done by checking if the latest transform update is newer than the
 -- arduino interface timestamp
-  if arduino:is_busy()
-     or arduino:msgid() ~= fsm.vars.msgid
-  then return false end
+  if not arduino:is_final() then
+    return false
+  end
 
   local bb_stamp = arduino:timestamp()
   if not tf:can_transform("gripper", "gripper_home", bb_stamp) then
