@@ -1,0 +1,331 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,navgraph/
+---
+graph-name: LLSF
+root: SW
+
+default-properties:
+    # Max. distance between actual and target positions to deem the target
+    # reached. This value is for intermediate nodes on a path; m
+    # The value can be overwritten per node in the graph file.
+    - travel_tolerance: 1.5
+
+    # Max. distance between actual and target positions to deem the target
+    # reached. This value is for the last node on a path; m
+    # The value can be overwritten per node in the graph file.
+    - target_tolerance: 0.7
+
+    # Max. distance between actual and target orientation to deem the target
+    # reached. This value is for the last node on a path; rad
+    - orientation_tolerance: 0.6
+
+    # When following a plan the robot will check all upcoming nodes if they
+    # are close to the robot within this tolerance. If so, they take a shortcut
+    # and will go to the node in the plan after the shortcut node.
+    # This is potentially dangerous depending on the graph and navigator as it
+    # might violate the typical graph constraint of only having direct-line-of-tavel
+    # connections. The value can be overidden with a node property of the same name; m
+    - shortcut_tolerance: 1.2
+
+    # Distance from base_link to the MPS to align
+    - align_distance: 0.45
+
+    # Signal position on the table. Z is the table height above ground.
+    - signal_hint_x: 0.035
+    - signal_hint_y: -0.1
+    - signal_hint_z: 0.78
+
+    # Offset for aligning in front of the conveyor using the laser line
+    - input_offset_y: 0.025
+    - output_offset_y: -0.025
+
+
+nodes:
+
+# Default point, used only for mps_detect_signal when no or an invalid place= is given
+  - !unconnected
+    name: place-default
+    pos: [1, 1]
+    properties:
+      - only-copy-properties
+#
+# Exploration points
+#
+  # High (far) row
+  #
+  - !unconnected
+    name: exp-11
+    pos: [5, 6]
+    properties:
+      - orientation: 0.2
+      - always-copy: true
+  - !unconnected
+    name: exp-12
+    pos: [-5.0, 6]
+    properties:
+      - orientation: 2.9
+      - always-copy: true
+
+  # Middle row
+  #
+  - !unconnected
+    name: exp-21
+    pos: [5, 4]
+    properties:
+      - orientation: 0.7
+      - always-copy: true
+  - !unconnected
+    name: exp-22
+    pos: [0, 4]
+    properties:
+      - orientation: 2.9
+      - always-copy: true
+  - !unconnected
+    name: exp-23
+    pos: [-5.0, 4]
+    properties:
+      - orientation: 0.85
+      - always-copy: true
+  
+  # Low (near) row
+  #
+  - !unconnected
+    name: exp-31
+    pos: [4, 2]
+    properties:
+      - orientation: 3.14
+  - !unconnected
+    name: exp-32
+    pos: [-4.0, 2]
+    properties:
+      - orientation: 0
+
+# drive into field points
+# Cyan
+  - !unconnected
+    name: C-ins-out
+    pos: [4.5, 0.5]
+    properties:
+      - always-copy: true
+  - !unconnected
+    name: C-ins-in
+    pos: [4.5, 1.5]
+    properties:
+      - always-copy: true
+      - orientation: 1.5
+# Magenta
+  - !unconnected
+    name: M-ins-out
+    pos: [-4.5, 0.5]
+    properties:
+      - always-copy: true
+  - !unconnected
+    name: M-ins-in
+    pos: [-4.5, 1.5]
+    properties:
+      - always-copy: true
+      - orientation: 1.7
+
+# wait points
+  - !unconnected
+    name: WAIT1
+    pos : [0,1]
+    properties:
+      - orientation: 1.57
+      - always-copy: true
+      - target_tolerance: 1.5
+
+# Machine points for property generation
+# Positions will be written by the generator
+# Cyan
+
+  - !unconnected
+    name: C-CS1
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - tag_input: 1
+      - tag_output: 2
+      - output_offset_x: -0.003
+  - !unconnected
+    name: C-CS2
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - tag_input: 17
+      - tag_output: 18
+      - input_offset_x: 0.0
+      - output_offset_x: 0.0
+  - !unconnected
+    name: C-RS1
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - tag_input: 33
+      - tag_output: 34
+      - input_offset_y: 0.02
+  - !unconnected
+    name: C-RS2
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - tag_input: 177
+      - tag_output: 178
+      - input_offset_x: -0.01
+      - input_offset_y: 0.02
+      - output_offset_x: 0.005
+  - !unconnected
+    name: C-BS
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - tag_input: 65
+      - tag_output: 66
+      - output_offset_x: -0.015 #the gripper should be 2mm higher in z
+  - !unconnected
+    name: C-DS
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - tag_input: 81
+      - tag_output: 82
+      - input_offset_x: 0.02
+
+  - name: C-CS1-I
+    pos: [-3.283, -4.902]
+    properties:
+      - only-copy-properties
+      - orientation: 2.391
+  - name: C-CS1-O
+    pos: [-4.290, -3.989]
+    properties:
+      - only-copy-properties
+      - orientation: -0.692
+
+  - name: C-CS2-I
+    pos: [-4.416, -6.075]
+    properties:
+      - only-copy-properties
+      - orientation: 2.675
+  - name: C-CS2-O
+    pos: [-5.675, -5.462]
+    properties:
+      - only-copy-properties
+      - orientation: -0.388
+
+  - name: C-RS1-I
+    pos: [-2.66, -5.51]
+    properties:
+      - only-copy-properties
+      - orientation: -2.816
+  - name: C-RS1-O
+    pos: [-4.177, -6.254]
+    properties:
+      - only-copy-properties
+      - orientation: 0.433
+
+  - name: C-RS2-I
+    pos: [-4.644, -7.577]
+    properties:
+      - only-copy-properties
+      - orientation: 2.539
+  - name: C-RS2-O
+    pos: [-5.665, -6.687]
+    properties:
+      - only-copy-properties
+      - orientation: -0.851
+
+  - name: C-BS-I
+    pos: [-7.396, -6.166]
+    properties:
+      - only-copy-properties
+      - orientation: 0.682
+  - name: C-BS-O
+    pos: [-6.186, -5.451]
+    properties:
+      - only-copy-properties
+      - orientation: -2.595
+
+  - name: C-DS-I
+    pos: [-5.762, -4.235]
+    properties:
+      - only-copy-properties
+      - orientation: 1.871
+  - name: C-DS-O
+    pos: [-5.762, -4.235]
+    properties:
+      - only-copy-properties
+      - orientation: 1.871
+
+
+#Magenta
+  - !unconnected
+    name: M-CS1
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - tag_input: 97
+      - tag_output: 98
+      - output_offset_y: -0.015
+  - !unconnected
+    name: M-CS2
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - tag_input: 113
+      - tag_output: 114
+      - output_offset_x: -0.005
+  - !unconnected
+    name: M-RS1
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - tag_input: 129
+      - tag_output: 130
+  - !unconnected
+    name: M-RS2
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - tag_input: 145
+      - tag_output: 146
+      - output_offset_x: -0.005
+      - input_offset_x: -0.02
+  - !unconnected
+    name: M-BS
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - tag_input: 161
+      - tag_output: 162
+      - input_offset_x: -0.01
+      - input_offset_y: 0.025
+      - output_offset_x: -0.015
+      - output_offset_y: -0.035
+  - !unconnected
+    name: M-DS
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - tag_input: 49
+      - tag_output: 50
+      - input_offset_x: -0.02
+
+# Possible directional tags:
+# !bidir (bidirectional, default), !dir (directed)
+connections:
+# common
+  - [C-DS-I, C-DS-O]
+  - [C-DS-I, C-CS1-O]
+  - [C-CS1-O, C-CS1-I]
+  - [C-CS1-I, C-RS1-I]
+  - [C-RS1-I, C-RS1-O]
+  - [C-RS1-O, C-CS2-I]
+  - [C-CS2-I, C-RS2-I]
+  - [C-CS2-I, C-CS2-O]
+  - [C-RS2-I, C-RS2-O]
+  - [C-RS2-O, C-CS2-O]
+  - [C-CS2-O, C-BS-O]
+  - [C-BS-O, C-BS-I]
+  - [C-BS-O, C-DS-I]
+
