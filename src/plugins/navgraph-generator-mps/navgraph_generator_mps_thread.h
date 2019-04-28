@@ -96,6 +96,7 @@ private:
 
   unsigned int compute_msgid_;
   std::vector<Eigen::Vector2i> wait_zones_;
+  std::map<std::string,Eigen::Vector2i > mps_wait_zones_;
 
   typedef struct {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -135,6 +136,8 @@ private:
   static inline std::vector<Eigen::Vector2i>
   blocked_zones(Eigen::Vector2i zone, uint16_t discrete_ori);
   void generate_wait_zones(size_t count,
+                           std::vector<Eigen::Vector2i> &free_zones);
+  void generate_mps_wait_zones(
                            std::vector<Eigen::Vector2i> &free_zones);
 };
 
