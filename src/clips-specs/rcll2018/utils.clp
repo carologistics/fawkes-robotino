@@ -712,8 +712,79 @@
       )
 
     )
-  ) 
+  )
   (return FALSE)
 )
 
 
+(deffunction sym-to-int (?sym)
+" @param ?sym domain representation of a number (ZERO|ONE|TWO|THREE)
+
+  @return Integer value described in ?sym, or 0 if ?sym is not recognized
+"
+  (if (eq ?sym ZERO) then (return 0))
+  (if (eq ?sym ONE) then (return 1))
+  (if (eq ?sym TWO) then (return 2))
+  (if (eq ?sym THREE) then (return 3))
+  (return 0)
+)
+
+
+(deffunction bool-to-int (?bool)
+" @param ?bool boolean
+
+  @return Integer 1 if ?bool is true, else 0
+"
+  (if (eq ?bool TRUE) then (return 1) else (return 0))
+)
+
+
+(deffunction last-ring-points (?com)
+" @param ?com complexity of an order
+
+  @return returns points awarded for mounting the last ring of an order with
+          complexity ?com
+"
+  (if (eq ?com C1) then (return 10))
+  (if (eq ?com C2) then (return 30))
+  (if (eq ?com C3) then (return 80))
+  (return 0)
+)
+
+
+(deffunction color-req-bases (?col ?req-blue ?req-green
+                                   ?req-orange ?req-yellow)
+" @param ?col ring color
+  @param ?req-blue number of additional bases needed to mount a blue ring
+  @param ?req-green number of additional bases needed to mount a green ring
+  @param ?req-orange number of additional bases needed to mount an orange ring
+  @param ?req-yellow number of additional bases needed to mount a yellow ring
+
+  @return number (as symbol) of required bases to mount a ring of color ?col
+"
+  (bind ?req ZERO)
+  (if (eq ?col RING_BLUE) then (bind ?req ?req-blue))
+  (if (eq ?col RING_GREEN) then (bind ?req ?req-green))
+  (if (eq ?col RING_ORANGE) then (bind ?req ?req-orange))
+  (if (eq ?col RING_YELLOW) then (bind ?req ?req-yellow))
+  (return ?req)
+)
+
+
+(deffunction color-req-points (?col ?req-blue ?req-green
+                                    ?req-orange ?req-yellow)
+" @param ?col ring color
+  @param ?req-blue number of additional bases needed to mount a blue ring
+  @param ?req-green number of additional bases needed to mount a green ring
+  @param ?req-orange number of additional bases needed to mount an orange ring
+  @param ?req-yellow number of additional bases needed to mount a yellow ring
+
+  @return points awarded for mounting a ring of color ?col
+"
+  (bind ?req (color-req-bases ?col ?req-blue ?req-green
+                                   ?req-orange ?req-yellow))
+  (if (eq ?req ZERO) then (return 5))
+  (if (eq ?req ONE) then (return 10))
+  (if (eq ?req TWO) then (return 20))
+  (return 0)
+)
