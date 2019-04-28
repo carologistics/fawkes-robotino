@@ -95,6 +95,13 @@ function DRIVE_TO_MACHINE_POINT:init()
    end
 end
 
+function DRIVE_TO_MACHINE_POINT:exit()
+  local dtmp_fsm = skillenv.get_skill_fsm("drive_to_machine_point")
+  if dtmp_fsm.current == dtmp_fsm.states[dtmp_fsm.fail_state] then
+    self.fsm:set_error("Drive To Machine Point Failed")
+  end
+end
+
 function CONVEYOR_ALIGN:init()
     if (self.fsm.vars.slide == nil) then
       self.args["conveyor_align"].disable_realsense_afterwards = false
@@ -105,6 +112,12 @@ function CONVEYOR_ALIGN:init()
     self.args["conveyor_align"].slide = self.fsm.vars.slide
 end
 
+function CONVEYOR_ALIGN:exit()
+  local cv_fsm = skillenv.get_skill_fsm("conveyor_align")
+  if cv_fsm.current == cv_fsm.states[cv_fsm.fail_state] then
+    self.fsm:set_error("Conveyor Align Failed")
+  end
+end
 
 function PRODUCT_PUT:init()
   self.args["product_put"].place = self.fsm.vars.place
@@ -118,4 +131,11 @@ end
 
 function FAILED:init()
   laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
+end
+
+function PRODUCT_PUT:exit()
+  local pp_fsm = skillenv.get_skill_fsm("product_put")
+  if pp_fsm.current == pp_fsm.states[pp_fsm.fail_state] then
+    self.fsm:set_error("Product Put Failed")
+  end
 end
