@@ -581,9 +581,6 @@ void ConveyorPoseThread::loop() {
         try {
           if (result_pose_) {
             pose_write();
-            //-- using last broadcasted TF is legitimated by a previous check of
-            //-- the divergence of timespan between input scene and last TF
-            result_pose_->stamp = fawkes::Time(0.);
             pose_publish_tf(*result_pose_);
             result_pose_.reset();
           }
