@@ -186,14 +186,6 @@ private:
   CloudPtr crop_cloud(CloudPtr in_cloud,
                       fawkes::LaserLineInterface *ll = nullptr,
                       bool use_laserline = false);
-  CloudPtr cloud_remove_gripper(CloudPtr in);
-  CloudPtr cloud_remove_offset_to_bottom(CloudPtr in);
-  CloudPtr cloud_remove_offset_to_front(CloudPtr in,
-                                        fawkes::LaserLineInterface *ll = NULL,
-                                        bool use_ll = false);
-  CloudPtr cloud_remove_offset_to_left_right(CloudPtr in,
-                                             fawkes::LaserLineInterface *ll,
-                                             bool use_ll);
   CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);
   boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
   CloudPtr cloud_voxel_grid(CloudPtr in);
@@ -208,15 +200,6 @@ private:
   pose calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal);
   void tf_send_from_pose_if(pose pose);
   void pose_write(pose pose);
-  Eigen::Quaternion<float>
-  averageQuaternion(Eigen::Vector4f &cumulative,
-                    Eigen::Quaternion<float> newRotation,
-                    Eigen::Quaternion<float> firstRotation, float addDet);
-  Eigen::Quaternion<float> normalizeQuaternion(float x, float y, float z,
-                                               float w);
-  Eigen::Quaternion<float> inverseSignQuaternion(Eigen::Quaternion<float> q);
-  bool areQuaternionsClose(Eigen::Quaternion<float> q1,
-                           Eigen::Quaternion<float> q2);
 
   void pose_publish_tf(pose pose);
   void start_waiting();

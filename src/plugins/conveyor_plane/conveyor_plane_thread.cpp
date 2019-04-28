@@ -750,69 +750,6 @@ CloudPtr ConveyorPlaneThread::crop_cloud(CloudPtr in_cloud,
   return cropped_cloud;
 }
 
-CloudPtr ConveyorPlaneThread::cloud_remove_gripper(CloudPtr in) {
-  CloudPtr out(new Cloud);
-  for (Point p : *in) {
-    if (!(is_inbetween(cfg_gripper_y_min_, cfg_gripper_y_max_, p.y) &&
-          p.z < cfg_gripper_z_max_)) { // remove gripper
-      if (p.y < cfg_gripper_slice_y_max_ &&
-          p.y > cfg_gripper_slice_y_min_) { // leave just correct hight
-        out->push_back(p);
-      }
-    }
-  }
-
-  return out;
-}
-
-CloudPtr ConveyorPlaneThread::cloud_remove_offset_to_front(
-    CloudPtr in, fawkes::LaserLineInterface *ll, bool use_ll) {
-  double space = cfg_front_space_;
-  double z_min, z_max;
-  z_min = 0;
-  if (use_ll) {
-    Eigen::Vector3f c = laserline_get_center_transformed(ll);
-    z_min = c(2) + cfg_front_offset_ - (space / 2.);
-  }
-  z_max = z_min + space;
-
-  CloudPtr out(new Cloud);
-  for (Point p : *in) {
-    if (p.z >= z_min && p.z <= z_max) {
-      out->push_back(p);
-    }
-  }
-
-  return out;
-}
-
-CloudPtr ConveyorPlaneThread::cloud_remove_offset_to_left_right(
-    CloudPtr in, fawkes::LaserLineInterface *ll, bool use_ll) {
-  if (use_ll) {
-    Eigen::Vector3f c = laserline_get_center_transformed(ll);
-
-    double x_min = c(0) - cfg_left_cut_;
-    double x_max = c(0) + cfg_right_cut_;
-
-    CloudPtr out(new Cloud);
-    for (Point p : *in) {
-      if (p.x >= x_min && p.x <= x_max) {
-        out->push_back(p);
-      }
-    }
-    return out;
-  } else {
-    logger->log_debug(name(),
-                      "-------------STOPPED USING LASERLINE-----------");
-    CloudPtr out(new Cloud);
-    for (Point p : *in) {
-      if (p.x >= -cfg_left_cut_no_ll_ && p.x <= cfg_right_cut_no_ll_) {
-        out->push_back(p);
-      }
-    }
-    return out;
-  }
-}
 
 CloudPtr
 ConveyorPlaneThread::cloud_get_plane(CloudPtr in,
@@ -1006,66 +943,6 @@ void ConveyorPlaneThread::pose_publish_tf(pose pose) {
 }
 void ConveyorPlaneThread::start_waiting() { wait_start_ = Time(); }
 
-Eigen::Quaternion<float> ConveyorPlaneThread::averageQuaternion(
-    Eigen::Vector4f &cumulative, Eigen::Quaternion<float> newRotation,
-    Eigen::Quaternion<float> firstRotation, float addDet) {
-
-  float w = 0.0;
-  float x = 0.0;
-  float y = 0.0;
-  float z = 0.0;
-
-  if (!areQuaternionsClose(newRotation, firstRotation)) {
-    newRotation = inverseSignQuaternion(newRotation);
-  }
-
-  cumulative.x() += newRotation.x();
-  x = cumulative.x() * addDet;
-  cumulative.y() += newRotation.y();
-  y = cumulative.y() * addDet;
-  cumulative.z() += newRotation.z();
-  z = cumulative.z() * addDet;
-  cumulative.w() += newRotation.w();
-  w = cumulative.w() * addDet;
-
-  Eigen::Quaternion<float> result = normalizeQuaternion(x, y, z, w);
-  return result;
-}
-Eigen::Quaternion<float>
-ConveyorPlaneThread::normalizeQuaternion(float x, float y, float z, float w) {
-
-  float lengthD = 1.0 / (w * w + x * x + y * y + z * z);
-  w *= lengthD;
-  x *= lengthD;
-  y *= lengthD;
-  z *= lengthD;
-
-  Eigen::Quaternion<float> result(x, y, z, w);
-  return result;
-}
-
-// Changes the sign of the quaternion components. This is not the same as the
-// inverse.
-Eigen::Quaternion<float>
-ConveyorPlaneThread::inverseSignQuaternion(Eigen::Quaternion<float> q) {
-  Eigen::Quaternion<float> result(-q.x(), -q.y(), -q.z(), -q.w());
-  return result;
-}
-
-// Returns true if the two input quaternions are close to each other. This can
-// be used to check whether or not one of two quaternions which are supposed to
-// be very similar but has its component signs reversed (q has the same rotation
-// as -q)
-bool ConveyorPlaneThread::areQuaternionsClose(Eigen::Quaternion<float> q1,
-                                              Eigen::Quaternion<float> q2) {
-
-  float dot = q1.dot(q2);
-  if (dot < 0.0) {
-    return false;
-  } else {
-    return true;
-  }
-}
 
 bool ConveyorPlaneThread::need_to_wait() {
   return Time() < wait_start_ + wait_time_;
