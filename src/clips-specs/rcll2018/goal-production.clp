@@ -271,27 +271,20 @@
 )
 
 
-(defrule goal-production-create-fill-cap-for-competitive-order
+(defrule goal-production-detect-fill-cap-for-competitive-order
 " Fill a cap into a cap station.
   Use a capcarrier from the corresponding shelf to feed it into a cap station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class URGENT) (mode FORMULATED))
+  (goal (id ?urgent) (class URGENT) (mode FORMULATED))
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
-  ;MPS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
-  (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
-  (not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side ?any-side)))
-  ;Capcarrier CEs
-  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
+  ?g <- (goal (class FILL-CAP) (mode FORMULATED) (parent ~?urgent)
+              (params robot ?robot
+                        mps ?mps
+                         cc ?cc))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-  ;Order CEs
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   (wm-fact (key order meta competitive args? ord ?order) (value TRUE))
   (wm-fact (key config rcll competitive-order-priority) (value "HIGH"))
@@ -301,18 +294,11 @@
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
            (value ?end&:(> ?end (nth$ 1 ?game-time))))
   =>
-  (printout t "Goal " FILL-CAP " formulated for competitive order " ?order
-              crlf)
-  (assert (goal (id (sym-cat FILL-CAP- (gensym*)))
-                (class FILL-CAP) (sub-type SIMPLE)
-                (priority  ?*PRIORITY-PREFILL-CS*)
-                (parent ?production-id)
-                (params robot ?robot
-                        mps ?mps
-                        cc ?cc
-                )
-                (required-resources ?mps)))
+  (printout t "Goal " FILL-CAP " for competitive order " ?order
+              " is urgent." crlf)
+  (modify ?g (parent ?urgent))
 )
+
 
 (defrule goal-production-create-fill-cap
 " Fill a cap into a cap station.
