@@ -107,29 +107,6 @@ void ConveyorPlaneThread::init() {
   cfg_use_visualisation_ =
       config->get_bool((cfg_prefix + "use_visualisation").c_str());
 
-  cfg_gripper_y_min_ =
-      config->get_float((cfg_prefix + "gripper/y_min").c_str());
-  cfg_gripper_y_max_ =
-      config->get_float((cfg_prefix + "gripper/y_max").c_str());
-  cfg_gripper_z_max_ =
-      config->get_float((cfg_prefix + "gripper/z_max").c_str());
-  cfg_gripper_slice_y_min_ =
-      config->get_float((cfg_prefix + "gripper/slice/y_min").c_str());
-  cfg_gripper_slice_y_max_ =
-      config->get_float((cfg_prefix + "gripper/slice/y_max").c_str());
-
-  cfg_front_space_ = config->get_float((cfg_prefix + "front/space").c_str());
-  cfg_front_offset_ = config->get_float((cfg_prefix + "front/offset").c_str());
-
-  cfg_left_cut_ =
-      config->get_float((cfg_prefix + "left_right/left_cut").c_str());
-  cfg_right_cut_ =
-      config->get_float((cfg_prefix + "left_right/right_cut").c_str());
-  cfg_left_cut_no_ll_ =
-      config->get_float((cfg_prefix + "left_right/left_cut_no_ll").c_str());
-  cfg_right_cut_no_ll_ =
-      config->get_float((cfg_prefix + "left_right/right_cut_no_ll").c_str());
-
   cfg_crop_cam_x_min =
       config->get_float((cfg_prefix + "crop/cam/x_min").c_str());
   cfg_crop_cam_x_max =

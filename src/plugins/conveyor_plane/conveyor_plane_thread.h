@@ -88,20 +88,6 @@ private:
   float cfg_pose_diff_;
   float vis_hist_angle_diff_;
 
-  float cfg_gripper_y_min_;
-  float cfg_gripper_y_max_;
-  float cfg_gripper_z_max_;
-  float cfg_gripper_slice_y_min_;
-  float cfg_gripper_slice_y_max_;
-
-  float cfg_front_space_;
-  float cfg_front_offset_;
-
-  float cfg_left_cut_;
-  float cfg_right_cut_;
-  float cfg_left_cut_no_ll_;
-  float cfg_right_cut_no_ll_;
-
   float cfg_crop_cam_x_min;
   float cfg_crop_cam_x_max;
   float cfg_crop_cam_y_min;
