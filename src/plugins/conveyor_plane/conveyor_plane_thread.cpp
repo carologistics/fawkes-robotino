@@ -688,7 +688,7 @@ CloudPtr ConveyorPlaneThread::crop_cloud(CloudPtr in_cloud,
     Eigen::Vector3f cropbox_reference =
         get_conveyor_estimate(laser_line, target_frame, fawkes::Time(0, 0));
 
-    logger->log_info(name(), "ll cropbox_reference = (%f, %f, %f) in %s",
+    logger->log_debug(name(), "ll cropbox_reference = (%f, %f, %f) in %s",
                      cropbox_reference[0], cropbox_reference[1],
                      cropbox_reference[2], target_frame.c_str());
 
