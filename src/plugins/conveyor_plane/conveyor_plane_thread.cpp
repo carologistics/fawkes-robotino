@@ -307,15 +307,6 @@ void ConveyorPlaneThread::loop() {
   //-- crop pointcloud
   CloudPtr cloud_cropped(new Cloud);
   cloud_cropped = crop_cloud(cloud_vg, ll, use_laserline);
-  /*
-  CloudPtr cloud_gripper = cloud_remove_gripper(cloud_vg);
-  CloudPtr cloud_front =
-      cloud_remove_offset_to_front(cloud_gripper, ll, use_laserline);
-
-  CloudPtr cloud_cropped(new Cloud);
-  cloud_cropped =
-      cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
-  */
 
   //-- publish filter result
   cloud_publish(cloud_cropped, cloud_out_inter_1_);
