@@ -717,3 +717,6 @@
 )
 
 
+(deffunction wait-pos (?mps ?side)
+  (return (sym-cat WAIT- ?mps - ?side))
+)
