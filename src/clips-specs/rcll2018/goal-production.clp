@@ -571,7 +571,6 @@
   (wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
-  (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?bs side ?any-side)))
@@ -616,7 +615,6 @@
   (wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
-  (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?cs t CS))
   (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
