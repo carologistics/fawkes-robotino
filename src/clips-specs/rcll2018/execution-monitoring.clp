@@ -300,6 +300,7 @@
   (assert
     (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value 0))
   )
+  (modify ?pa (action-name (sym-cat ?an -retry)))
 )
 
 

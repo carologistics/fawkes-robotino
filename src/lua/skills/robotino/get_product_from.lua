@@ -38,7 +38,7 @@ Parameters:
       @param place   the name of the MPS (see navgraph)
       @param side    optional the side of the mps (default is output give "input" to get from input)
       @param shelf   optional position on shelf: ( LEFT | MIDDLE | RIGHT )
-      @param atmps   optional if already standing at the mps: ( CONVEYOR )
+      @param atmps   optional if already standing at the mps: ( CONVEYOR|SHELF )
 ]==]
 
 -- Initialize as skill module
@@ -52,9 +52,8 @@ local pam = require("parse_module")
 -- x distance to laserline
 local X_AT_MPS = 0.28
 
-
-function already_at_conveyor(self)
-   return (self.fsm.vars.atmps == "CONVEYOR")
+function already_at_mps(self)
+   return not (self.fsm.vars.atmps=="NO" or self.fsm.vars.atmps==nil)
 end
 
 function shelf_set(self)
@@ -62,8 +61,9 @@ function shelf_set(self)
 end
 
 
-fsm:define_states{ export_to=_M, closure={navgraph=navgraph,shelf_set=shelf_set},
+fsm:define_states{ export_to=_M, closure={navgraph=navgraph,shelf_set=shelf_set},already_at_mps=already_at_mps
    {"INIT", JumpState},
+   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
@@ -74,7 +74,7 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph,shelf_set=shelf_set}
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not navgraph", desc="navgraph not available"},
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
-   {"INIT", "CONVEYOR_ALIGN", cond=already_at_conveyor, desc="Already in front of the mps, align"},
+   {"INIT", "CONVEYOR_ALIGN", cond=already_at_mps, desc="Already in front of the mps, align"},
    {"INIT", "DRIVE_TO_MACHINE_POINT", cond=true, desc="Everything OK"},
    {"DECIDE_ENDSKILL","SHELF_PICK", cond=shelf_set},
    {"DECIDE_ENDSKILL","PRODUCT_PICK", cond=true},
@@ -85,6 +85,16 @@ function INIT:init()
    if self.fsm.vars.side == nil then
      self.fsm.vars.side = "output"
    end
+end
+
+function MPS_ALIGN:init()
+   if self.fsm.vars.side == "input" then
+      self.fsm.vars.tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
+   else --if no side is given drive to output
+      self.fsm.vars.tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
+   end
+   self.args["mps_align"].x = X_AT_MPS
+   self.args["mps_align"].tag_id = self.fsm.vars.tag_id
 end
 
 function DRIVE_TO_MACHINE_POINT:init()

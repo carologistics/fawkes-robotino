@@ -321,6 +321,14 @@
                  (spot-free ?m ?spot))
 	)
 
+	(:action wp-get-shelf-retry
+		:parameters (?r - robot ?cc - cap-carrier ?m - mps ?spot - shelf-spot)
+		:precondition (and (at ?r ?m INPUT) (wp-on-shelf ?cc ?m ?spot) (can-hold ?r))
+		:effect (and (holding ?r ?cc) (not (can-hold ?r))
+								 (not (wp-on-shelf ?cc ?m ?spot)) (wp-usable ?cc)
+                 (spot-free ?m ?spot))
+	)
+
   (:action refill-shelf1
     :parameters (?m - mps ?spot - shelf-spot ?cc1 - cap-carrier
                  ?color - cap-color)
@@ -368,7 +376,23 @@
 								 (not (mps-state ?m READY-AT-OUTPUT)) (mps-state ?m IDLE))
 	)
 
+	(:action wp-get-retry
+		:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side)
+		:precondition (and (at ?r ?m ?side) (can-hold ?r) (wp-at ?wp ?m ?side)
+                    (locked ?m) (wp-usable ?wp))
+		:effect (and (not (wp-at ?wp ?m ?side)) (holding ?r ?wp) (not (can-hold ?r))
+								 (not (mps-state ?m READY-AT-OUTPUT)) (mps-state ?m IDLE))
+	)
+
+
 	(:action wp-put
+		:parameters (?r - robot ?wp - workpiece ?m - mps)
+		:precondition (and (at ?r ?m INPUT) (mps-state ?m IDLE) (locked ?m)
+										(wp-usable ?wp) (holding ?r ?wp))
+		:effect (and (wp-at ?wp ?m INPUT) (not (holding ?r ?wp)) (can-hold ?r))
+	)
+
+	(:action wp-put-retry
 		:parameters (?r - robot ?wp - workpiece ?m - mps)
 		:precondition (and (at ?r ?m INPUT) (mps-state ?m IDLE) (locked ?m)
 										(wp-usable ?wp) (holding ?r ?wp))
@@ -389,6 +413,22 @@
 					(not (rs-filled-with ?m ?rs-before))
 					(rs-filled-with ?m ?rs-after))
 	)
+
+	(:action wp-put-slide-cc-retry
+		:parameters (?r - robot ?wp - cap-carrier ?m - mps ?rs-before - ring-num ?rs-after - ring-num)
+		:precondition (and (mps-type ?m RS) (locked ?m)
+							(at ?r ?m INPUT)
+							(wp-usable ?wp)
+							(holding ?r ?wp)
+							(rs-filled-with ?m ?rs-before)
+							(rs-inc ?rs-before ?rs-after))
+		:effect (and (not (wp-usable ?wp))
+					(not (holding ?r ?wp))
+					(can-hold ?r)
+					(not (rs-filled-with ?m ?rs-before))
+					(rs-filled-with ?m ?rs-after))
+	)
+
 
 	(:action fulfill-order-c0
 		:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate

@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "bring_product_to"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"product_put", "drive_to_machine_point", "conveyor_align"}
+depends_skills     = {"product_put", "drive_to_machine_point", "conveyor_align", "mps_align"}
 depends_interfaces = {
 }
 
@@ -53,13 +53,10 @@ function already_at_mps(self)
    return not (self.fsm.vars.atmps=="NO" or self.fsm.vars.atmps==nil)
 end
 
-function already_at_conveyor(self)
-   return (self.fsm.vars.atmps == "CONVEYOR")
-end
-
-fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
+fsm:define_states{ export_to=_M, closure={navgraph=navgraph}, already_at_mps = already_at_mps
    {"INIT", JumpState},
    {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
+   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PUT", fail_to="FAILED"},
    {"PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="FAILED"}
 }
@@ -67,7 +64,7 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not navgraph", desc="navgraph not available"},
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
-   {"INIT", "CONVEYOR_ALIGN", cond=already_at_conveyor, desc="At mps, skip drive_to_local"},
+   {"INIT", "MPS_ALIGN", cond=already_at_mps, desc="At mps, skip drive_to_local"},
    {"INIT", "DRIVE_TO_MACHINE_POINT", cond=true, desc="Everything OK"},
 }
 
@@ -76,6 +73,16 @@ function INIT:init()
    if self.fsm.vars.side == nil then
      self.fsm.vars.side = "input"
    end
+end
+
+function MPS_ALIGN:init()
+   if self.fsm.vars.side == "output" then
+      self.fsm.vars.tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_output")
+   else --if no side is given drive to output
+      self.fsm.vars.tag_id = navgraph:node(self.fsm.vars.place):property_as_float("tag_input")
+   end
+   self.args["mps_align"].x = X_AT_MPS
+   self.args["mps_align"].tag_id = self.fsm.vars.tag_id
 end
 
 function DRIVE_TO_MACHINE_POINT:init()
