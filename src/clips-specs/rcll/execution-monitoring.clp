@@ -302,44 +302,44 @@
 ;======================================Retries=========================================
 ;
 
-(defrule execution-monitoring-start-retry-action-wp-get
-" Since wp-get is shaky sometimes, we want to retry it several times before actually failing it
-  Retries a maximum of ?*MAX-RETRIES-PICK* times
+(defrule execution-monitoring-start-retry-action
+" For some actions it can be feasible to retry them in case of a failure, e.g. if
+  the align failed. If an action failed and the error-msg inquires, that we should
+  retry, add a action-retried counter and set the action to FORMULATED
 "
   (declare (salience ?*MONITORING-SALIENCE*))
   (goal (id ?goal-id) (mode DISPATCHED))
   (plan (id ?plan-id) (goal-id ?goal-id))
   ?pa <- (plan-action
-              (action-name ?an&wp-get)
+              (action-name ?an&(or (eq ?an wp-get) (eq ?an wp-get-shelf)))
               (plan-id ?plan-id)
               (goal-id ?goal-id)
               (state FAILED)
+              (error-msg ?error&: (or (eq ?error "Conveyor Align Failed") (eq ?error "Drive To Machine Point Failed")))
               (param-values $? ?wp $? ?mps $?))
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
   (wm-fact (key domain fact self args? r ?r))
   (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)))
   =>
-  (if (< 1 ?*MAX-RETRIES-PICK*) then
-    (modify ?pa (state PENDING))
-    (assert
-      (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value 1))
-    )
+  (assert
+    (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value 0))
   )
 )
 
 
-(defrule execution-monitoring-retry-action-wp-get
-" If the retry of a failed wp-get is failed again, increment the counter and restart the action
+(defrule execution-monitoring-retry-action
+" If the retry of an action is failed again, increment the counter and restart the action
 "
   (declare (salience ?*MONITORING-SALIENCE*))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
   ?pa <- (plan-action
-              (action-name ?an&wp-get)
+              (action-name ?an)
               (plan-id ?plan-id)
               (goal-id ?goal-id)
               (state FAILED)
+              (error-msg ?error&: (or (eq ?error "Conveyor Align Failed") (eq ?error "Drive To Machine Point Failed")))
               (param-values $? ?wp $? ?mps $?))
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
@@ -349,15 +349,43 @@
   =>
   (bind ?tries (+ 1 ?tries))
   (if (<= ?tries ?*MAX-RETRIES-PICK*) then
-    (modify ?pa (state PENDING))
+    (modify ?pa (state FORMULATED))
   )
   (modify ?wm (value ?tries))
 )
 
+(defrule execution-monitoring-retry-action-abort
+" The retried action failed with a different error where we dont want to retry"
+ (declare (salience ?*MONITORING-SALIENCE*))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  ?pa <- (plan-action
+              (action-name ?an)
+              (plan-id ?plan-id)
+              (goal-id ?goal-id)
+              (state FAILED)
+              (error-msg ?error&: (not (or (eq ?error "Conveyor Align Failed") (eq ?error "Drive To Machine Point Failed"))))
+              (param-values $? ?wp $? ?mps $?))
+  (domain-obj-is-of-type ?mps mps)
+  (domain-obj-is-of-type ?wp workpiece)
+  (wm-fact (key domain fact self args? r ?r))
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp))
+  =>
+  (retract ?wm)
+  (if (eq ?an wp-get)
+    (assert
+      (wm-fact (key evaluated reset-mps args? m ?mps))
+    )
+  )
+)
 
-(defrule execution-monitoring-retry-action-wp-get-final
+(defrule execution-monitoring-retry-action-final
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
   (plan-action
-        (action-name ?an&wp-get)
+        (plan-id ?plan-id)
+        (action-name ?an)
         (state FINAL)
         (param-values $? ?wp $? ?mps $?))
   (domain-obj-is-of-type ?mps mps)
@@ -367,9 +395,56 @@
   (retract ?wm)
 )
 
+(defrule execution-monitoring-retry-action-failed
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  (plan-action
+        (plan-id ?plan-id)
+        (action-name ?an)
+        (state FINAL)
+        (param-values $? ?wp $? ?mps $?)
+        (error-msg ?error))
+  (domain-obj-is-of-type ?mps mps)
+  (domain-obj-is-of-type ?wp workpiece)
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)
+                (value ?tries&:(= ?tries ?*MAX-RETRIES-PICK*)))
+  =>
+  (retract ?wm)
+  (if (and (eq ?an wp-get)
+           (not (or (eq ?error "Conveyor Align Failed") (eq ?error "Drive To Machine Point"))))
+    (assert
+      (wm-fact (key evaluated reset-mps args? m ?mps))
+    )
+  )
+)
+
 ;
 ;======================================Misc==============================
 ;
+
+(defrule execution-monitoring-wp-get-failed-reset-mps
+" If a wp-get failed, we have to reset the mps to make sure, that there is no workpiece
+  pushed into the mps
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  (plan-action
+        (plan-id ?plan-id)
+        (action-name wp-get)
+        (state FAILED)
+        (param-values $? ?wp $? ?mps $?)
+        (error-msg ?error))
+  (or (not (or (eq ?error "Conveyor Align Failed") (eq ?error "Drive To Machine Point Failed")))
+      ?ar <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value ?tries&:(= ?tries ?*MAX-RETRIES-PICK*)))
+  )
+  =>
+  (retract ?ar)
+  (assert
+    (wm-fact (key evaluated reset-mps args? m ?mps))
+  )
+)
 
 (defrule execution-monitoring-cleanup-wp-facts
 "If a workpiece is lost, it is marked for cleanup.
