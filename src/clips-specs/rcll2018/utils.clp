@@ -727,6 +727,11 @@
 )
 
 
+(deffunction wait-pos (?mps ?side)
+  (return (sym-cat WAIT- ?mps - ?side))
+)
+
+
 (deffunction sym-to-int (?sym)
 " @param ?sym domain representation of a number (ZERO|ONE|TWO|THREE)
 
