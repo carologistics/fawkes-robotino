@@ -107,6 +107,7 @@ private:
   Eigen::Matrix4f final_tf_;
 
   unsigned int iterations_;
+  unsigned int retries_;
   double last_raw_fitness_;
 
   std::atomic<float> cfg_icp_max_corr_dist_;
@@ -122,6 +123,7 @@ private:
   std::atomic<float> cfg_icp_shelf_hv_inlier_thresh_;
   std::atomic<unsigned int> cfg_icp_min_loops_;
   std::atomic<unsigned int> cfg_icp_max_loops_;
+  std::atomic<unsigned int> cfg_icp_max_retries_;
   std::atomic_bool cfg_icp_auto_restart_;
 };
 

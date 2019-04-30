@@ -113,6 +113,9 @@ plugins/conveyor_pose:
     # with a new scene
     max_loops: 30
 
+    # Try with a new initial estimate this many times
+    max_retries: 3
+
     # Restart with a new scene when max_loops have been run, even if a match has
     # been found (i.e. run until the whole plugin is disabled via the switch
     # interface) If false, the recognition loop stops if a match has been found

@@ -228,8 +228,12 @@ void RecognitionThread::loop() {
       if (last_raw_fitness_ >= std::numeric_limits<double>::max() - 1) {
         logger->log_warn(name(), "No acceptable fit after %u iterations",
                          iterations_);
-        restart_icp();
-
+        if (cfg_icp_auto_restart_ || retries_++ <= cfg_icp_max_retries_)
+          restart_icp();
+        else {
+          logger->log_warn(name(), "Giving up after %d retries", retries_);
+          disable();
+        }
       } else {
         if (cfg_icp_auto_restart_)
           restart_icp();
