@@ -103,7 +103,7 @@
 (defrule production-strategy-current-points-for-started-order
 " Calculates the point value of an intermediate product."
   ; WP CEs
-  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-col-r1))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-col-r2))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-col-r3))
@@ -161,7 +161,7 @@
   This does not take the consumption of additional bases used within other
   orders into account.
 "
-  (not (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order)))
+  (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order)))
   ; Order CEs
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
@@ -198,7 +198,7 @@
   orders into account.
 "
   ; WP CEs
-  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-col-r1))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-col-r2))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-col-r3))
@@ -246,7 +246,7 @@
   an intermediate product for an order.
 "
   ; WP CEs
-  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-col-r1))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-col-r2))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-col-r3))

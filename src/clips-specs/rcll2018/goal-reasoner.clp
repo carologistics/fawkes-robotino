@@ -354,7 +354,7 @@
  (wm-fact (key order meta rings-missing args? ord ?order) (value ?rm))
  =>
  (printout t "Goal '" ?goal-id "' has been completed, Evaluating" crlf)
- (assert (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE)))
+ (assert (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE)))
  (printout t "Started producing order " ?order " which potentially yields "
              ?total " points" crlf)
  (if (> ?rm 0)
