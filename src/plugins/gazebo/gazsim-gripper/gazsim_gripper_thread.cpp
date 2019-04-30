@@ -232,6 +232,15 @@ void GazsimGripperThread::send_gripper_msg(int value) {
 
 void GazsimGripperThread::on_has_puck_msg(ConstIntPtr &msg) {
   // 1 means the gripper has a puck 0 not
+    if (msg->data() > 0){
+        robotino_sensor_if_->set_digital_in(0,false);
+        robotino_sensor_if_->set_digital_in(1,true);
+    }else{
+        robotino_sensor_if_->set_digital_in(0,false);
+        robotino_sensor_if_->set_digital_in(1,false);
+    }
+    robotino_sensor_if_->write();
+
   gripper_if_->set_holds_puck(msg->data() > 0);
   gripper_if_->write();
 }
