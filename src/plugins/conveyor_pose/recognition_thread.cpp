@@ -208,7 +208,8 @@ void RecognitionThread::loop() {
         publish_result();
     }
 
-    if (iterations_ >= cfg_icp_max_loops_) {
+    if (icp_.getMaxCorrespondenceDistance() < cfg_icp_min_corr_dist_
+        || iterations_ >= cfg_icp_max_loops_) {
       if (last_raw_fitness_ >= std::numeric_limits<double>::max() - 1) {
         logger->log_warn(name(), "No acceptable fit after %u iterations",
                          iterations_);
