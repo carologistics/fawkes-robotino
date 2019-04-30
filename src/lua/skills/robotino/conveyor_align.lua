@@ -29,6 +29,7 @@ depends_interfaces = {
    {v = "if_plane_switch", type = "SwitchInterface", id="conveyor_plane/switch"},
    {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
    {v = "realsense_switch", type = "SwitchInterface", id="realsense2"},
+   {v = "if_picture_taker", type = "PictureTakerInterface", id="PictureTaker"},
 }
 
 documentation      = [==[aligns the robot orthogonal to the conveyor by using the
@@ -251,6 +252,8 @@ function INIT:init()
    else
       self.fsm.vars.target = "conveyor"
    end
+   local msg = if_picture_taker.TakeAPictureMessage:new()
+   if_picture_taker:mgsq_enqueue_copy(msg)
 end
 
 function LOOK:init()
