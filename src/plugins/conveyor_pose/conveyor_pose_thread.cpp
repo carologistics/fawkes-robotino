@@ -141,6 +141,8 @@ void ConveyorPoseThread::init() {
       config->get_uint(CFG_PREFIX "/icp/min_loops");
   recognition_thread_->cfg_icp_max_loops_ =
       config->get_uint(CFG_PREFIX "/icp/max_loops");
+  recognition_thread_->cfg_icp_max_retries_ =
+      config->get_uint(CFG_PREFIX "/icp/max_retries");
   recognition_thread_->cfg_icp_auto_restart_ =
       config->get_bool(CFG_PREFIX "/icp/auto_restart");
 
@@ -510,6 +512,7 @@ void ConveyorPoseThread::loop() {
       best_laser_line_ = nullptr;
 
       // Schedule restart of recognition thread
+      recognition_thread_->retries_ = 0;
       recognition_thread_->schedule_restart();
 
       // Always set new timeout on incoming message!
@@ -1056,6 +1059,8 @@ void ConveyorPoseThread::config_value_changed(
         change_val(opt, recognition_thread_->cfg_icp_min_loops_, v->get_uint());
       else if (opt == "/max_loops")
         change_val(opt, recognition_thread_->cfg_icp_max_loops_, v->get_uint());
+      else if (opt == "/max_retries")
+        change_val(opt, recognition_thread_->cfg_icp_max_retries_, v->get_uint());
       else if (opt == "/auto_restart")
         change_val(opt, recognition_thread_->cfg_icp_auto_restart_,
                    v->get_bool());
