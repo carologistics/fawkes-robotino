@@ -243,8 +243,8 @@ private:
   fawkes::tf::Stamped<fawkes::tf::Pose>
   laserline_get_center(fawkes::LaserLineInterface *ll);
 
-  void set_laserline_initial_tf();
-  void set_external_initial_tf();
+  bool set_laserline_initial_tf(fawkes::tf::Stamped<fawkes::tf::Pose> &);
+  bool set_external_initial_tf(fawkes::tf::Stamped<fawkes::tf::Pose> &);
 
   CloudPtr cloud_trim(CloudPtr in);
 
