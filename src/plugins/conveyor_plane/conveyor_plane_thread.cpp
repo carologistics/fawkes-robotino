@@ -465,6 +465,8 @@ void ConveyorPlaneThread::if_read() {
     if (bb_enable_switch_
             ->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
       rv = false;
+      bb_pose_->set_visibility_history(-1);
+      bb_pose_->write();
     } else if (bb_enable_switch_
                    ->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
       rv = true;
