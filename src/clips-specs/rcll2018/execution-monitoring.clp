@@ -323,7 +323,7 @@
   (goal (id ?goal-id) (mode DISPATCHED))
   (plan (id ?plan-id) (goal-id ?goal-id))
   ?pa <- (plan-action
-              (action-name ?an&(or (eq ?an wp-get) (eq ?an wp-get-shelf)))
+              (action-name ?an&:(or (eq ?an wp-get) (eq ?an wp-get-shelf)))
               (plan-id ?plan-id)
               (goal-id ?goal-id)
               (state FAILED)
@@ -337,6 +337,7 @@
   (assert
     (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value 0))
   )
+  (printout error "Start retrying" crlf)
 )
 
 
@@ -362,6 +363,7 @@
   (bind ?tries (+ 1 ?tries))
   (if (<= ?tries ?*MAX-RETRIES-PICK*) then
     (modify ?pa (state FORMULATED))
+    (printout error "Restarted: " ?tries crlf)
   )
   (modify ?wm (value ?tries))
 )
@@ -384,11 +386,7 @@
   ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp))
   =>
   (retract ?wm)
-  (if (eq ?an wp-get)
-    (assert
-      (wm-fact (key evaluated reset-mps args? m ?mps))
-    )
-  )
+  (printout error "Abort retrying " ?an crlf)
 )
 
 (defrule execution-monitoring-retry-action-final
@@ -404,6 +402,7 @@
   (domain-obj-is-of-type ?wp workpiece)
   ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp))
   =>
+  (printout error "Retrying was successful" crlf)
   (retract ?wm)
 )
 
@@ -414,7 +413,7 @@
   (plan-action
         (plan-id ?plan-id)
         (action-name ?an)
-        (state FINAL)
+        (state FAILED)
         (param-values $? ?wp $? ?mps $?)
         (error-msg ?error))
   (domain-obj-is-of-type ?mps mps)
@@ -423,12 +422,7 @@
                 (value ?tries&:(= ?tries ?*MAX-RETRIES-PICK*)))
   =>
   (retract ?wm)
-  (if (and (eq ?an wp-get)
-           (not (or (eq ?error "Conveyor Align Failed") (eq ?error "Drive To Machine Point"))))
-    (assert
-      (wm-fact (key evaluated reset-mps args? m ?mps))
-    )
-  )
+  (printout error "Reached max retries" crlf)
 )
 
 ;
@@ -448,11 +442,18 @@
         (state FAILED)
         (param-values $? ?wp $? ?mps $?)
         (error-msg ?error))
+  (domain-obj-is-of-type ?mps mps)
+  (domain-obj-is-of-type ?wp workpiece)
+
   (or (not (or (eq ?error "Conveyor Align Failed") (eq ?error "Drive To Machine Point Failed")))
-      ?ar <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value ?tries&:(= ?tries ?*MAX-RETRIES-PICK*)))
+      (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value ?tries&:(= ?tries ?*MAX-RETRIES-PICK*)))
   )
   =>
-  (retract ?ar)
+  (printout error "wp-get failed not by aligning: reset " ?mps crlf)
+  (do-for-all-facts ((?wf wm-fact)) (and (wm-key-prefix ?wf:key (create$ monitoring action-retried))
+                                    (member$ ?an (wm-key-args ?wf:key)))
+    (retract ?wf)
+  )
   (assert
     (wm-fact (key evaluated reset-mps args? m ?mps))
   )
