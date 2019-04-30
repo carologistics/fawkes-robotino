@@ -46,7 +46,15 @@
   (wm-fact (key domain fact rs-ring-spec
             args? m ?mps4 r RING_YELLOW rn ?req4&:(neq ?req4 NA)))
   ; Order Meta CEs
+  (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
   (not (wm-fact (key order meta points-total args? ord ?order)))
+  ; Refbox CEs
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
+           (value ?qd-us))
+  (wm-fact (key refbox order ?order quantity-delivered ~?team-color)
+           (value ?qd-them))
 =>
   (bind ?rings-needed (string-to-field (sub-string 2 2 (str-cat ?com))))
   (bind ?points-ring1 (+ (* (color-req-points ?col-r1 ?req1 ?req2 ?req3 ?req4)
@@ -71,6 +79,7 @@
                                                               ?req3 ?req4))))
   (bind ?res (+ ?points-ring1 ?points-ring2 ?points-ring3 ?points-cap
                ?points-delivery))
+  (bind ?res (finalize-points ?res ?competitive ?qr ?qd-us ?qd-them))
   (printout t "Order " ?order " gives " ?res " points in total." crlf)
   (if (> ?rings-needed 0)
     then
@@ -106,30 +115,40 @@
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
-  ; Time CEs
+  ; Refbox CEs
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
+           (value ?qd-us))
+  (wm-fact (key refbox order ?order quantity-delivered ~?team-color)
+           (value ?qd-them))
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
-           (value ?end))
+           (value ?end&:(> ?end (nth 1 ?game-time))))
   ; Order Meta CEs
   (wm-fact (key order meta points-steps args? ord ?order)
            (values ?p-r1 ?p-r2 ?p-r3 ?p-cap $?))
+  (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
   ?pc <- (wm-fact (key order meta points-current args? ord ?order)
                   ; the current points have changed and the deadline has not
                   ; been met yet
-                  (value ?p-curr&:(< ?p-curr
-                    (* (bool-to-int (> ?end (nth$ 1 ?game-time)))
+                  (value ?p-curr&:(neq ?p-curr
+                    (finalize-points
                        (+ (* (bool-to-int (eq ?wp-col-r1 ?col-r1)) ?p-r1)
                           (* (bool-to-int (eq ?wp-col-r2 ?col-r2)) ?p-r2)
                           (* (bool-to-int (eq ?wp-col-r3 ?col-r3)) ?p-r3)
                           (* (bool-to-int (eq ?wp-cap-col ?cap-col))
-                             ?p-cap)))))
-         )
+                          ?p-cap))
+                       ?competitive ?qr ?qd-us ?qd-them))))
 =>
-  (modify ?pc (value
-                (+ (* (bool-to-int (eq ?wp-col-r1 ?col-r1)) ?p-r1)
-                   (* (bool-to-int (eq ?wp-col-r2 ?col-r2)) ?p-r2)
-                   (* (bool-to-int (eq ?wp-col-r3 ?col-r3)) ?p-r3)
-                   (* (bool-to-int (eq ?wp-cap-col ?cap-col)) ?p-cap))))
+  (bind ?res (finalize-points
+               (+ (* (bool-to-int (eq ?wp-col-r1 ?col-r1)) ?p-r1)
+                  (* (bool-to-int (eq ?wp-col-r2 ?col-r2)) ?p-r2)
+                  (* (bool-to-int (eq ?wp-col-r3 ?col-r3)) ?p-r3)
+                  (* (bool-to-int (eq ?wp-cap-col ?cap-col))
+                  ?p-cap))
+                ?competitive ?qr ?qd-us ?qd-them))
+  (modify ?pc (value ?res))
   (printout t "WP " ?wp " for order " ?order " yields " ?res
               " points if it can be finished." crlf)
 )
