@@ -48,8 +48,9 @@ ArduinoComThread::ArduinoComThread(std::string &cfg_name,
                                    std::string &cfg_prefix,
                                    ArduinoTFThread *tf_thread)
     : Thread("ArduinoComThread", Thread::OPMODE_WAITFORWAKEUP),
-      BlackBoardInterfaceListener("ArduinoThread(%s)", cfg_name.c_str()),
-      fawkes::TransformAspect(), serial_(io_service_), deadline_(io_service_),
+      BlackBoardInterfaceListener("ArduinoThread(%s)", cfg_prefix.c_str()),
+      fawkes::TransformAspect(), ConfigurationChangeHandler(cfg_prefix.c_str()),
+      serial_(io_service_), deadline_(io_service_),
       tf_thread_(tf_thread) {
   data_mutex_ = new Mutex();
   cfg_prefix_ = cfg_prefix;
@@ -695,7 +696,7 @@ std::string ArduinoComThread::read_packet(unsigned int timeout) {
 }
 
 void ArduinoComThread::load_config() {
-  // TODO: allow setting of stepper velocity from config!
+  config->add_change_handler(this);
   try {
     logger->log_info(name(), "load_config");
     cfg_device_ = config->get_string(cfg_prefix_ + "/device");
@@ -736,3 +737,11 @@ bool ArduinoComThread::bb_interface_message_received(Interface *interface,
 float inline ArduinoComThread::round_to_2nd_dec(float f) {
   return round(f * 100.) / 100.;
 }
+
+void ArduinoComThread::config_value_changed(
+    const Configuration::ValueIterator *v) {
+}
+
+void ArduinoComThread::config_value_erased(const char *path) {}
+void ArduinoComThread::config_tag_changed(const char *new_tag) {}
+void ArduinoComThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v) {}
