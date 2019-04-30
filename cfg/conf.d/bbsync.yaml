@@ -31,7 +31,9 @@ fawkes/bbsync:
 
         # Wildcard: sync every TransformInterface that starts with /tf/gripper_,
         # but not /tf/gripper itself.
-        tfGripper: TransformInterface::/tf/gripper_
+        tfGripper_x_dyn: TransformInterface::/tf/gripper_x_dyn
+        tfGripper_y_dyn: TransformInterface::/tf/gripper_y_dyn
+        tfGripper_z_dyn: TransformInterface::/tf/gripper_z_dyn
 
         tfOdom: TransformInterface::/tf/Robotino Odometry
         tfAmcl: TransformInterface::/tf/odom
