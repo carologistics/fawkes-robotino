@@ -52,7 +52,7 @@ using namespace gazebo;
 GazsimGripperThread::GazsimGripperThread()
     : Thread("GazsimGripperThread", Thread::OPMODE_WAITFORWAKEUP),
       BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT_EXEC),
-      TransformAspect(TransformAspect::BOTH, "gripper_x_dyn")
+      TransformAspect(TransformAspect::DEFER_PUBLISHER)
 {
   set_name("GazsimGripperThread()");
 }
@@ -105,6 +105,15 @@ void GazsimGripperThread::init() {
   //setup robotino sensor interface for HavePuck detection
   robotino_sensor_if_ =
           blackboard->open_for_writing<RobotinoSensorInterface>(robotino_sensor_if_name_.c_str());
+
+  tf_add_publisher("gripper_x_dyn");
+  tf_add_publisher("gripper_y_dyn");
+  tf_add_publisher("gripper_z_dyn");
+
+  update_gripper_tfs(0,0,0);
+
+  gripper_move_duration_ = 1;
+  is_busy = false;
 }
 
 void GazsimGripperThread::finalize() { blackboard->close(gripper_if_);
@@ -115,97 +124,36 @@ void GazsimGripperThread::loop() {
   // gripper_if_->set_final(__servo_if_left->is_final() &&
   // __servo_if_right->is_final());
 
-  // process interface messages
-  while (!gripper_if_->msgq_empty()) {
-    if (gripper_if_->msgq_first_is<AX12GripperInterface::CalibrateMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::GotoMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::TimedGotoMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::ParkMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::SetEnabledMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
-    } else if (gripper_if_->msgq_first_is<
-                   AX12GripperInterface::SetVelocityMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::OpenMessage>()) {
-      send_gripper_msg(1);
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::CloseMessage>()) {
-      send_gripper_msg(0);
-      gripper_if_->set_holds_puck(false);
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::SetTorqueMessage>()) {
-      AX12GripperInterface::SetTorqueMessage *msg =
-          gripper_if_->msgq_first(msg);
-      if (msg->torque() < 0.2) {
-        send_gripper_msg(0);
-        gripper_if_->set_holds_puck(false);
-      }
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::CloseLoadMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::Open_AngleMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::SetMarginMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::CenterMessage>()) {
-      // nothing to do here, the puck is always centered in the simulation
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::StopLeftMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::StopRightMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::StopMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::FlushMessage>()) {
-      logger->log_warn(name(), "%s is not implemented in the simulation.",
-                       gripper_if_->msgq_first()->type());
-    } else if (gripper_if_
-                   ->msgq_first_is<AX12GripperInterface::RelGotoZMessage>()) {
-      // nothing to do
-    } else {
-      logger->log_warn(name(), "Unknown AX12 message received");
+    // initialize wait timer of movement of gripper is necessary
+    if ( arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZAbsMessage>() ||
+        arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZRelMessage>() ){
+        if (!is_busy){
+            //logger->log_info(name(), "INIT WAIT FOR GRIPPER");
+            gripper_cmd_start_time_ = fawkes::Time().in_sec();
+            is_busy = true;
+            return;
+            // gripper movement in progress
+        }else if (fawkes::Time().get_sec() - gripper_cmd_start_time_.get_sec() < gripper_move_duration_){
+            //logger->log_info(name(), "WAITING FOR MOVEMENT %ld",fawkes::Time().get_sec() - gripper_cmd_start_time_.get_sec());
+            return;
+    // gripper movement finished
+        } else { is_busy = false;}
     }
 
-    gripper_if_->msgq_pop();
-    gripper_if_->write();
-  }
 
   while (!arduino_if_->msgq_empty()) {
     if (arduino_if_->msgq_first_is<ArduinoInterface::MoveXYZAbsMessage>()) {
       ArduinoInterface::MoveXYZAbsMessage *msg = arduino_if_->msgq_first(msg);
+      update_gripper_tfs(msg->x(), msg->y(), msg->z());
       arduino_if_->set_x_position(msg->x());
       arduino_if_->set_y_position(msg->y());
       arduino_if_->set_z_position(msg->z());
     } else if (arduino_if_
                    ->msgq_first_is<ArduinoInterface::MoveXYZRelMessage>()) {
       ArduinoInterface::MoveXYZRelMessage *msg = arduino_if_->msgq_first(msg);
+      update_gripper_tfs(arduino_if_->x_position() + msg->x(),
+                         arduino_if_->y_position() + msg->y(),
+                         arduino_if_->z_position() + msg->z());
       arduino_if_->set_x_position(arduino_if_->x_position() + msg->x());
       arduino_if_->set_y_position(arduino_if_->y_position() + msg->y());
       arduino_if_->set_z_position(arduino_if_->z_position() + msg->z());
@@ -265,9 +213,18 @@ void GazsimGripperThread::loop() {
 
 }
 
+void GazsimGripperThread::update_gripper_tfs(float x, float y, float z){
+
+    tf::Transform t(tf::Quaternion(tf::Vector3(0, 0, 1), 0), tf::Vector3(x, y, z));
+    tf_publishers["gripper_x_dyn"]->send_transform(t, fawkes::Time(), "gripper_x_origin", "gripper_x_dyn");
+    tf_publishers["gripper_y_dyn"]->send_transform(t, fawkes::Time(), "gripper_y_origin", "gripper_y_dyn");
+    tf_publishers["gripper_z_dyn"]->send_transform(t, fawkes::Time(), "gripper_z_origin", "gripper_z_dyn");
+
+}
+
 void GazsimGripperThread::send_gripper_msg(int value) {
   // send message to gazebo
-  // 0 means close and 1 open
+  // 0 close, 1 open, 2 move
   msgs::Int msg;
   msg.set_data(value);
   set_gripper_pub_->Publish(msg);

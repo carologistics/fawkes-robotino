@@ -81,7 +81,12 @@ private:
   gazebo::transport::PublisherPtr set_conveyor_pub_;
   gazebo::transport::SubscriberPtr gripper_has_puck_sub_;
 
+  fawkes::Time gripper_cmd_start_time_;
+  long int gripper_move_duration_;
+  bool is_busy;
+
   void send_gripper_msg(int value);
+  void update_gripper_tfs(float x, float y, float z);
   void on_has_puck_msg(ConstIntPtr &msg);
 };
 
