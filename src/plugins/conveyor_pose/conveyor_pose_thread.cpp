@@ -131,6 +131,8 @@ void ConveyorPoseThread::init() {
 
   recognition_thread_->cfg_icp_max_corr_dist_ =
       config->get_float(CFG_PREFIX "/icp/max_correspondence_dist");
+  recognition_thread_->cfg_icp_min_corr_dist_ =
+      double(config->get_float(CFG_PREFIX "/icp/min_correspondence_dist"));
   recognition_thread_->cfg_icp_max_iterations_ =
       config->get_int(CFG_PREFIX "/icp/max_iterations");
   recognition_thread_->cfg_icp_refinement_factor_ =
@@ -1102,6 +1104,9 @@ void ConveyorPoseThread::config_value_changed(
       if (opt == "/max_correspondence_dist")
         change_val(opt, recognition_thread_->cfg_icp_max_corr_dist_,
                    v->get_float());
+      else if (opt == "/min_correspondence_dist")
+        change_val(opt, recognition_thread_->cfg_icp_min_corr_dist_,
+                   double(v->get_float()));
       else if (opt == "/transformation_epsilon")
         change_val(opt, recognition_thread_->cfg_icp_tf_epsilon_,
                    double(v->get_float()));

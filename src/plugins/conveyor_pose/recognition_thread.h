@@ -111,6 +111,7 @@ private:
   double last_raw_fitness_;
 
   std::atomic<float> cfg_icp_max_corr_dist_;
+  std::atomic<double> cfg_icp_min_corr_dist_;
   std::atomic<double> cfg_icp_tf_epsilon_;
   std::atomic<double> cfg_icp_refinement_factor_;
   std::array<std::atomic<float>, 3> cfg_icp_conveyor_hint_;

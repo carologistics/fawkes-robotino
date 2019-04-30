@@ -102,6 +102,10 @@ plugins/conveyor_pose:
     # Range: (0,1)
     refinement_factor: 0.85
 
+    # Stop ICP if we have reduced the maximum correspondence distance to this
+    # value.
+    min_correspondence_dist: 0.0005
+
     # Maximum number of (internal!) ICP iterations per recognition loop
     max_iterations: 2
 
