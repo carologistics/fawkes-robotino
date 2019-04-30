@@ -384,6 +384,23 @@ void ArduinoComThread::loop() {
       logger->log_warn(name(), "Calibrate pending");
       append_message_to_queue(ArduinoComMessage::command_id_t::CMD_CALIBRATE, 0,
                               50000);
+      //after calibration set all speeds and accs
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_X_NEW_SPEED, cfg_speeds_[0],
+                              1000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Y_NEW_SPEED, cfg_speeds_[1],
+                              1000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Z_NEW_SPEED, cfg_speeds_[2],
+                              1000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_NEW_SPEED, cfg_speeds_[3],
+                              1000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_X_NEW_ACC, cfg_accs_[0],
+                              1000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Y_NEW_ACC, cfg_accs_[1],
+                              1000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Z_NEW_ACC, cfg_accs_[2],
+                              1000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_NEW_ACC, cfg_accs_[3],
+                              1000);
     }
 
   } else {
@@ -692,6 +709,15 @@ void ArduinoComThread::load_config() {
     cfg_x_max_ = config->get_float(cfg_prefix_ + "/x_max");
     cfg_y_max_ = config->get_float(cfg_prefix_ + "/y_max");
     cfg_z_max_ = config->get_float(cfg_prefix_ + "/z_max");
+
+    cfg_speeds_[0] = config->get_float(cfg_prefix_ + "/firmware_settings/speed_x");
+    cfg_speeds_[1] = config->get_float(cfg_prefix_ + "/firmware_settings/speed_y");
+    cfg_speeds_[2] = config->get_float(cfg_prefix_ + "/firmware_settings/speed_z");
+    cfg_speeds_[3] = config->get_float(cfg_prefix_ + "/firmware_settings/speed_a");
+    cfg_accs_[0] = config->get_float(cfg_prefix_ + "/firmware_settings/acc_x");
+    cfg_accs_[1] = config->get_float(cfg_prefix_ + "/firmware_settings/acc_y");
+    cfg_accs_[2] = config->get_float(cfg_prefix_ + "/firmware_settings/acc_z");
+    cfg_accs_[3] = config->get_float(cfg_prefix_ + "/firmware_settings/acc_a");
 
     set_speed_pending_ = false;
     set_acceleration_pending_ = false;

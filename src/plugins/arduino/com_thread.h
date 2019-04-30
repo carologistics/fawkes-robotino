@@ -128,6 +128,10 @@ private:
   float cfg_x_max_;
   float cfg_y_max_;
   float cfg_z_max_;
+
+  unsigned int cfg_speeds_[4];
+  unsigned int cfg_accs_[4];
+
   bool movement_pending_;
   bool calibrated_;
   char current_arduino_status_;
