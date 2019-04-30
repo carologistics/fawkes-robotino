@@ -24,29 +24,27 @@
 )
 
 (defrule goal-lock-expiration-create-maintain
-  (not (goal (class LOCKEXPIRE)))
+  (not (goal (class LOCKEXPIRE-MAINTAIN)))
   (wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
   =>
-  (assert (goal (id (sym-cat LOCKEXPIRE-MAINTAIN- (gensym*)))
-                (type MAINTAIN) (class LOCKEXPIRE-MAINTAIN)))
+  (goal-tree-assert-run-endless LOCKEXPIRE-MAINTAIN ?*LOCK-EXPIRATION-PERIOD*)
 )
 
 (defrule goal-lock-expiration-create-achieve
-  ?g <- (goal (id ?maintain-id) (class LOCKEXPIRE-MAINTAIN) (mode SELECTED))
-  (not (goal (class LOCKEXPIRE-ACHIEVE)))
-  (time $?now)
-  (goal-meta (goal-id ?maintain-id)
-    (last-achieve $?last&:(timeout ?now ?last ?*LOCK-EXPIRATION-PERIOD*)))
+  ?g <- (goal (id ?maintain-id) (class LOCKEXPIRE-MAINTAIN) (mode SELECTED)
+              (meta last-formulated $?last))
+  (not (goal (class EXPIRE-LOCKS)))
   =>
-  (assert (goal (id (sym-cat LOCKEXPIRE-ACHIEVE- (gensym*)))
-                (class LOCKEXPIRE-ACHIEVE) (parent ?maintain-id)))
+  (assert (goal (id (sym-cat EXPIRE-LOCKS- (gensym*)))
+                (class EXPIRE-LOCKS) (sub-type SIMPLE)
+                (parent ?maintain-id)))
 )
 
 (defrule goal-lock-expiration-create-plan
   (wm-fact (key cx identity) (value ?self))
-  ?p <- (goal (id ?parent-id) (class LOCKEXPIRE-MAINTAIN) (mode EXPANDED))
+  ?p <- (goal (id ?parent-id) (class LOCKEXPIRE-MAINTAIN) (mode DISPATCHED))
   ?g <- (goal (id ?goal-id) (parent ?parent-id)
-              (class LOCKEXPIRE-ACHIEVE) (mode SELECTED))
+              (class EXPIRE-LOCKS) (mode SELECTED))
   =>
   (assert
     (plan (id LOCKEXPIRE-PLAN) (goal-id ?goal-id))
