@@ -711,14 +711,14 @@ void ArduinoComThread::load_config() {
     cfg_y_max_ = config->get_float(cfg_prefix_ + "/y_max");
     cfg_z_max_ = config->get_float(cfg_prefix_ + "/z_max");
 
-    cfg_speeds_[0] = config->get_float(cfg_prefix_ + "/firmware_settings/speed_x");
-    cfg_speeds_[1] = config->get_float(cfg_prefix_ + "/firmware_settings/speed_y");
-    cfg_speeds_[2] = config->get_float(cfg_prefix_ + "/firmware_settings/speed_z");
-    cfg_speeds_[3] = config->get_float(cfg_prefix_ + "/firmware_settings/speed_a");
-    cfg_accs_[0] = config->get_float(cfg_prefix_ + "/firmware_settings/acc_x");
-    cfg_accs_[1] = config->get_float(cfg_prefix_ + "/firmware_settings/acc_y");
-    cfg_accs_[2] = config->get_float(cfg_prefix_ + "/firmware_settings/acc_z");
-    cfg_accs_[3] = config->get_float(cfg_prefix_ + "/firmware_settings/acc_a");
+    cfg_speeds_[0] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/speed_x").c_str(),0.f);
+    cfg_speeds_[1] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/speed_y").c_str(),0.f);
+    cfg_speeds_[2] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/speed_z").c_str(),0.f);
+    cfg_speeds_[3] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/speed_a").c_str(),0.f);
+    cfg_accs_[0] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/acc_x").c_str(),0.f);
+    cfg_accs_[1] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/acc_y").c_str(),0.f);
+    cfg_accs_[2] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/acc_z").c_str(),0.f);
+    cfg_accs_[3] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/acc_a").c_str(),0.f);
 
     set_speed_pending_ = false;
     set_acceleration_pending_ = false;
