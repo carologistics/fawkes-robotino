@@ -69,7 +69,7 @@ public:
 private:
   void readImage();
   void setupCamera();
-  void takePictureFromFVcamera();
+  void takePictureFromFVcamera(std::string name, std::string side);
 
   fawkes::PictureTakerInterface *p_t_if_;
 
@@ -93,13 +93,10 @@ private:
 
   // cv::Mat frame;
   cv::Mat visionMat;
-  cv::Mat depthMat;
 
   std::string vframe;
-  std::string dframe;
 
   std::string vpath;
-  std::string dpath;
 };
 
 #endif

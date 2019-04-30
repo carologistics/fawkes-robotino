@@ -252,8 +252,8 @@ function INIT:init()
    else
       self.fsm.vars.target = "conveyor"
    end
-   local msg = if_picture_taker.TakeAPictureMessage:new()
-   if_picture_taker:mgsq_enqueue_copy(msg)
+   local msg = if_picture_taker.TakePictureMessage:new(self.fsm.vars.place,self.fsm.vars.side)
+   if_picture_taker:msgq_enqueue_copy(msg)
 end
 
 function LOOK:init()
