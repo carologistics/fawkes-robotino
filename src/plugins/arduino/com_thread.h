@@ -37,6 +37,8 @@
 #include <tf/types.h>
 #include <utils/time/time.h>
 
+#include <config/change_handler.h>
+
 #include <boost/asio.hpp>
 #include <boost/thread/mutex.hpp>
 #include <memory>
@@ -67,7 +69,8 @@ class ArduinoComThread : public fawkes::Thread,
                          public fawkes::ClockAspect,
                          public fawkes::BlackBoardAspect,
                          public fawkes::BlackBoardInterfaceListener,
-                         public fawkes::TransformAspect {
+                         public fawkes::TransformAspect,
+                         public fawkes::ConfigurationChangeHandler {
 public:
   ArduinoComThread();
   /**
@@ -95,6 +98,12 @@ public:
   // For BlackBoardInterfaceListener
   virtual bool bb_interface_message_received(fawkes::Interface *interface,
                                              fawkes::Message *message) throw();
+
+  virtual void config_value_erased(const char *path) override;
+  virtual void config_tag_changed(const char *new_tag) override;
+  virtual void config_comment_changed(
+      const fawkes::Configuration::ValueIterator *v) override;
+  virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v) override;
 
   /**
    * @brief All variables that define the position of the gripper
