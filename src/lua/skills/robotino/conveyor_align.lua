@@ -27,6 +27,7 @@ depends_interfaces = {
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
    {v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
+   {v = "if_picture_taker", type = "PictureTakerInterface", id="PictureTaker"},
 }
 
 documentation      = [==[aligns the robot orthogonal to the conveyor by using the
@@ -158,6 +159,8 @@ function INIT:init()
    self.fsm.vars.mps_target = parse_result.mps_target
    self.fsm.vars.retries = 0
    self.fsm.vars.vision_retries = 0
+   local msg = if_picture_taker.TakeAPictureMessage:new()
+   if_picture_taker:mgsq_enqueue_copy(msg)
 end
 
 function CHECK_VISION:init()
