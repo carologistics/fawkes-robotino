@@ -377,7 +377,7 @@
 
 	(:action wp-put-slide-cc
 		:parameters (?r - robot ?wp - cap-carrier ?m - mps ?rs-before - ring-num ?rs-after - ring-num)
-		:precondition (and (mps-type ?m RS) (locked ?m)
+		:precondition (and (mps-type ?m RS) (locked ?m) (not (mps-state BROKEN))
 							(at ?r ?m INPUT)
 							(wp-usable ?wp)
 							(holding ?r ?wp)
