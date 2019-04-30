@@ -36,12 +36,15 @@ arduino:
   y_max: 0.075
   z_max: 0.057
 
-  firmware_settings:
-    speed_x: 2000
-    speed_y: 2000
-    speed_z: 2000
-    speed_a: 2000
-    acc_x: 2000
-    acc_y: 2000
-    acc_z: 2000
-    acc_a: 2000
+  # These values changed the speed and the acceleration
+  # in steps/s and steps/s/s of the differen stepper motors.
+  # Please use these tags in the hostspecific host.yaml
+  #  firmware_settings:
+  #    speed_x: 2000
+  #    speed_y: 2000
+  #    speed_z: 2000
+  #    speed_a: 2000
+  #    acc_x: 2000
+  #    acc_y: 2000
+  #    acc_z: 2000
+  #    acc_a: 2000
