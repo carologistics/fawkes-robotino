@@ -536,7 +536,7 @@ void ConveyorPoseThread::loop() {
 
   if (update_input_cloud()) {
     if (!get_initial_guess()) {
-      if (!cfg_record_model_ && clock->now() > next_initial_guess_timeout_) {
+      if (!cfg_debug_mode_ && !cfg_record_model_ && clock->now() > next_initial_guess_timeout_) {
         logger->log_error(
             name(),
             "TIMEOUT. Stopping because no initial guess could be found.");
