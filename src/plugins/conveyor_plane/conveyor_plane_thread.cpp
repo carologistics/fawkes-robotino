@@ -691,8 +691,8 @@ CloudPtr ConveyorPlaneThread::crop_cloud(CloudPtr in_cloud,
         get_conveyor_estimate(laser_line, target_frame, fawkes::Time(0, 0));
 
     logger->log_debug(name(), "ll cropbox_reference = (%f, %f, %f) in %s",
-                     cropbox_reference[0], cropbox_reference[1],
-                     cropbox_reference[2], target_frame.c_str());
+                      cropbox_reference[0], cropbox_reference[1],
+                      cropbox_reference[2], target_frame.c_str());
 
     min = Eigen::Vector3f(cfg_crop_laserline_x_min, cfg_crop_laserline_y_min,
                           cfg_crop_laserline_z_min) +
@@ -719,7 +719,6 @@ CloudPtr ConveyorPlaneThread::crop_cloud(CloudPtr in_cloud,
 
   return cropped_cloud;
 }
-
 
 CloudPtr
 ConveyorPlaneThread::cloud_get_plane(CloudPtr in,
@@ -912,7 +911,6 @@ void ConveyorPlaneThread::pose_publish_tf(pose pose) {
   tf_publisher->send_transform(stamped_transform);
 }
 void ConveyorPlaneThread::start_waiting() { wait_start_ = Time(); }
-
 
 bool ConveyorPlaneThread::need_to_wait() {
   return Time() < wait_start_ + wait_time_;

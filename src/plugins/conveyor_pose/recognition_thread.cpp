@@ -65,22 +65,6 @@ void RecognitionThread::restart_icp() {
     main_thread_->bb_set_busy(true);
   }
 
-  //-- break aligning if initial guess is invalid
-  const btVector3 &translation = main_thread_->initial_guess_odom_.getOrigin();
-  const btQuaternion &orientation =
-      main_thread_->initial_guess_odom_.getRotation();
-  if (std::isnan(translation.getX()) || std::isinf(translation.getX()) ||
-      std::isnan(translation.getY()) || std::isinf(translation.getY()) ||
-      std::isnan(translation.getZ()) || std::isinf(translation.getZ()) ||
-      orientation.length() != 1.) {
-
-    logger->log_warn(name(), "initial_guess_odom invalid (%f)",
-                     main_thread_->initial_guess_odom_.getRotation().length());
-
-    restart_pending_ = true;
-    return;
-  }
-
   tf::Stamped<tf::Pose> initial_pose_cam = main_thread_->initial_guess_odom_;
 
   {
