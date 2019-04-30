@@ -50,8 +50,7 @@ ArduinoComThread::ArduinoComThread(std::string &cfg_name,
     : Thread("ArduinoComThread", Thread::OPMODE_WAITFORWAKEUP),
       BlackBoardInterfaceListener("ArduinoThread(%s)", cfg_prefix.c_str()),
       fawkes::TransformAspect(), ConfigurationChangeHandler(cfg_prefix.c_str()),
-      serial_(io_service_), deadline_(io_service_),
-      tf_thread_(tf_thread) {
+      serial_(io_service_), deadline_(io_service_), tf_thread_(tf_thread) {
   data_mutex_ = new Mutex();
   cfg_prefix_ = cfg_prefix;
   cfg_name_ = cfg_name;
@@ -151,8 +150,8 @@ void ArduinoComThread::loop() {
         fawkes::tf::StampedTransform tf_pose_target;
 
         try {
-          tf_listener->lookup_transform(cfg_gripper_frame_id_, msg->target_frame(),
-                                        tf_pose_target);
+          tf_listener->lookup_transform(cfg_gripper_frame_id_,
+                                        msg->target_frame(), tf_pose_target);
         } catch (fawkes::tf::ExtrapolationException &e) {
           logger->log_error(name(), "Extrapolation error");
           break;
@@ -252,7 +251,8 @@ void ArduinoComThread::loop() {
         float cur_z = gripper_pose_[Z] / Z_AXIS_STEPS_PER_MM / 1000.;
         logger->log_debug(name(), "Move rel: %f %f %f cur pose: %f %f %f",
                           msg->x(), msg->y(), msg->z(), cur_x, cur_y, cur_z);
-        if (msg->x() + cur_x >= 0. && msg->x() + cur_x <= arduino_if_->x_max()) {
+        if (msg->x() + cur_x >= 0. &&
+            msg->x() + cur_x <= arduino_if_->x_max()) {
           int new_abs_x = round_to_2nd_dec((msg->x() + cur_x) *
                                            X_AXIS_STEPS_PER_MM * 1000.0);
           logger->log_debug(name(), "Set new X: %u", new_abs_x);
@@ -271,7 +271,8 @@ void ArduinoComThread::loop() {
           arduino_if_->write();
         }
 
-        if (msg->y() + cur_y >= 0. && msg->y() + cur_y <= arduino_if_->y_max()) {
+        if (msg->y() + cur_y >= 0. &&
+            msg->y() + cur_y <= arduino_if_->y_max()) {
           int new_abs_y = round_to_2nd_dec((msg->y() + cur_y) *
                                            Y_AXIS_STEPS_PER_MM * 1000.0);
           logger->log_debug(name(), "Set new Y: %u", new_abs_y);
@@ -289,7 +290,8 @@ void ArduinoComThread::loop() {
           arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_Y);
           arduino_if_->write();
         }
-        if (msg->z() + cur_z >= 0. && msg->z() + cur_z <= arduino_if_->z_max()) {
+        if (msg->z() + cur_z >= 0. &&
+            msg->z() + cur_z <= arduino_if_->z_max()) {
           int new_abs_z = round_to_2nd_dec((msg->z() + cur_z) *
                                            Z_AXIS_STEPS_PER_MM * 1000.0);
           logger->log_debug(name(), "Set new Z: %u", new_abs_z);
@@ -337,8 +339,8 @@ void ArduinoComThread::loop() {
         logger->log_debug(name(), "Open Gripper");
         append_message_to_queue(ArduinoComMessage::command_id_t::CMD_OPEN, 0,
                                 10000);
-      } else if (arduino_if_->msgq_first_is<
-                     ArduinoInterface::StatusUpdateMessage>()) {
+      } else if (arduino_if_
+                     ->msgq_first_is<ArduinoInterface::StatusUpdateMessage>()) {
         ArduinoInterface::StatusUpdateMessage *msg =
             arduino_if_->msgq_first(msg);
         logger->log_debug(name(), "Request Status");
@@ -383,23 +385,23 @@ void ArduinoComThread::loop() {
 
     } else {
       logger->log_warn(name(), "Calibrate pending");
-      //before calibration set all speeds and accs
-      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_X_NEW_SPEED, cfg_speeds_[0],
-                              1000);
-      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Y_NEW_SPEED, cfg_speeds_[1],
-                              1000);
-      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Z_NEW_SPEED, cfg_speeds_[2],
-                              1000);
-      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_NEW_SPEED, cfg_speeds_[3],
-                              1000);
-      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_X_NEW_ACC, cfg_accs_[0],
-                              1000);
-      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Y_NEW_ACC, cfg_accs_[1],
-                              1000);
-      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Z_NEW_ACC, cfg_accs_[2],
-                              1000);
-      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_NEW_ACC, cfg_accs_[3],
-                              1000);
+      // before calibration set all speeds and accs
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_X_NEW_SPEED,
+                              cfg_speeds_[0], 1000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Y_NEW_SPEED,
+                              cfg_speeds_[1], 1000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Z_NEW_SPEED,
+                              cfg_speeds_[2], 1000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_NEW_SPEED,
+                              cfg_speeds_[3], 1000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_X_NEW_ACC,
+                              cfg_accs_[0], 1000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Y_NEW_ACC,
+                              cfg_accs_[1], 1000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Z_NEW_ACC,
+                              cfg_accs_[2], 1000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_NEW_ACC,
+                              cfg_accs_[3], 1000);
       append_message_to_queue(ArduinoComMessage::command_id_t::CMD_CALIBRATE, 0,
                               50000);
     }
@@ -711,14 +713,22 @@ void ArduinoComThread::load_config() {
     cfg_y_max_ = config->get_float(cfg_prefix_ + "/y_max");
     cfg_z_max_ = config->get_float(cfg_prefix_ + "/z_max");
 
-    cfg_speeds_[0] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/speed_x").c_str(),0.f);
-    cfg_speeds_[1] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/speed_y").c_str(),0.f);
-    cfg_speeds_[2] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/speed_z").c_str(),0.f);
-    cfg_speeds_[3] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/speed_a").c_str(),0.f);
-    cfg_accs_[0] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/acc_x").c_str(),0.f);
-    cfg_accs_[1] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/acc_y").c_str(),0.f);
-    cfg_accs_[2] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/acc_z").c_str(),0.f);
-    cfg_accs_[3] = config->get_float_or_default((cfg_prefix_ + "/firmware_settings/acc_a").c_str(),0.f);
+    cfg_speeds_[0] = config->get_float_or_default(
+        (cfg_prefix_ + "/firmware_settings/speed_x").c_str(), 0.f);
+    cfg_speeds_[1] = config->get_float_or_default(
+        (cfg_prefix_ + "/firmware_settings/speed_y").c_str(), 0.f);
+    cfg_speeds_[2] = config->get_float_or_default(
+        (cfg_prefix_ + "/firmware_settings/speed_z").c_str(), 0.f);
+    cfg_speeds_[3] = config->get_float_or_default(
+        (cfg_prefix_ + "/firmware_settings/speed_a").c_str(), 0.f);
+    cfg_accs_[0] = config->get_float_or_default(
+        (cfg_prefix_ + "/firmware_settings/acc_x").c_str(), 0.f);
+    cfg_accs_[1] = config->get_float_or_default(
+        (cfg_prefix_ + "/firmware_settings/acc_y").c_str(), 0.f);
+    cfg_accs_[2] = config->get_float_or_default(
+        (cfg_prefix_ + "/firmware_settings/acc_z").c_str(), 0.f);
+    cfg_accs_[3] = config->get_float_or_default(
+        (cfg_prefix_ + "/firmware_settings/acc_a").c_str(), 0.f);
 
     set_speed_pending_ = false;
     set_acceleration_pending_ = false;
@@ -740,72 +750,74 @@ float inline ArduinoComThread::round_to_2nd_dec(float f) {
 
 void ArduinoComThread::config_value_changed(
     const Configuration::ValueIterator *v) {
-  if(v->valid()) {
+  if (v->valid()) {
     std::string path = v->path();
     std::string sufx = path.substr(strlen(cfg_prefix_.c_str()));
     std::string sub_prefix = sufx.substr(0, sufx.substr(1).find("/") + 1);
     std::string full_pfx = cfg_prefix_.c_str() + sub_prefix;
     std::string opt = path.substr(full_pfx.length());
-    if(sub_prefix == "firmware_settings"){
+    if (sub_prefix == "firmware_settings") {
       ArduinoComMessage *arduino_msg = new ArduinoComMessage();
       bool msg_has_data = false;
-      if(opt == "/speed_x"){
+      if (opt == "/speed_x") {
         cfg_speeds_[0] = v->get_uint();
-        add_command_to_message(arduino_msg, 
-              ArduinoComMessage::command_id_t::CMD_X_NEW_SPEED,
-              cfg_speeds_[0]);
+        add_command_to_message(arduino_msg,
+                               ArduinoComMessage::command_id_t::CMD_X_NEW_SPEED,
+                               cfg_speeds_[0]);
         msg_has_data = true;
-      } else if(opt == "/speed_y"){
+      } else if (opt == "/speed_y") {
         cfg_speeds_[1] = v->get_uint();
-        add_command_to_message(arduino_msg, 
-              ArduinoComMessage::command_id_t::CMD_Y_NEW_SPEED,
-              cfg_speeds_[1]);
+        add_command_to_message(arduino_msg,
+                               ArduinoComMessage::command_id_t::CMD_Y_NEW_SPEED,
+                               cfg_speeds_[1]);
         msg_has_data = true;
-      } else if(opt == "/speed_z"){
+      } else if (opt == "/speed_z") {
         cfg_speeds_[2] = v->get_uint();
-        add_command_to_message(arduino_msg, 
-              ArduinoComMessage::command_id_t::CMD_Z_NEW_SPEED,
-              cfg_speeds_[2]);
+        add_command_to_message(arduino_msg,
+                               ArduinoComMessage::command_id_t::CMD_Z_NEW_SPEED,
+                               cfg_speeds_[2]);
         msg_has_data = true;
-      } else if(opt == "/speed_a"){
+      } else if (opt == "/speed_a") {
         cfg_speeds_[3] = v->get_uint();
-        add_command_to_message(arduino_msg, 
-              ArduinoComMessage::command_id_t::CMD_A_NEW_SPEED,
-              cfg_speeds_[3]);
+        add_command_to_message(arduino_msg,
+                               ArduinoComMessage::command_id_t::CMD_A_NEW_SPEED,
+                               cfg_speeds_[3]);
         msg_has_data = true;
-      } else if(opt == "/acc_x"){
+      } else if (opt == "/acc_x") {
         cfg_accs_[0] = v->get_uint();
-        add_command_to_message(arduino_msg, 
-              ArduinoComMessage::command_id_t::CMD_X_NEW_ACC,
-              cfg_accs_[0]);
+        add_command_to_message(arduino_msg,
+                               ArduinoComMessage::command_id_t::CMD_X_NEW_ACC,
+                               cfg_accs_[0]);
         msg_has_data = true;
-      } else if(opt == "/acc_y"){
+      } else if (opt == "/acc_y") {
         cfg_accs_[1] = v->get_uint();
-        add_command_to_message(arduino_msg, 
-              ArduinoComMessage::command_id_t::CMD_Y_NEW_ACC,
-              cfg_accs_[1]);
+        add_command_to_message(arduino_msg,
+                               ArduinoComMessage::command_id_t::CMD_Y_NEW_ACC,
+                               cfg_accs_[1]);
         msg_has_data = true;
-      } else if(opt == "/acc_z"){
+      } else if (opt == "/acc_z") {
         cfg_accs_[2] = v->get_uint();
-        add_command_to_message(arduino_msg, 
-              ArduinoComMessage::command_id_t::CMD_Z_NEW_ACC,
-              cfg_accs_[2]);
+        add_command_to_message(arduino_msg,
+                               ArduinoComMessage::command_id_t::CMD_Z_NEW_ACC,
+                               cfg_accs_[2]);
         msg_has_data = true;
-      } else if(opt == "/acc_a"){
+      } else if (opt == "/acc_a") {
         cfg_accs_[3] = v->get_uint();
-        add_command_to_message(arduino_msg, 
-              ArduinoComMessage::command_id_t::CMD_A_NEW_ACC,
-              cfg_accs_[3]);
+        add_command_to_message(arduino_msg,
+                               ArduinoComMessage::command_id_t::CMD_A_NEW_ACC,
+                               cfg_accs_[3]);
         msg_has_data = true;
       }
-      if(msg_has_data){
+      if (msg_has_data) {
         append_message_to_queue(arduino_msg);
         wakeup();
-      } else delete arduino_msg;
+      } else
+        delete arduino_msg;
     }
   }
 }
 
 void ArduinoComThread::config_value_erased(const char *path) {}
 void ArduinoComThread::config_tag_changed(const char *new_tag) {}
-void ArduinoComThread::config_comment_changed(const fawkes::Configuration::ValueIterator *v) {}
+void ArduinoComThread::config_comment_changed(
+    const fawkes::Configuration::ValueIterator *v) {}
