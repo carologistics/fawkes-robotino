@@ -127,8 +127,7 @@ fsm:define_states{ export_to=_M,
   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="FAILED"},
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_BACK", fail_to="FAILED"},
-  {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands}}, final_to = "CLOSE_GRIPPER", fail_to="FAILED"},
-  {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="GRIPPER_HOME", fail_to="FAILED"},
+  {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands}}, final_to = "GRIPPER_HOME", fail_to="FAILED"},
   {"GRIPPER_HOME", SkillJumpState, skills={{gripper_commands}}, final_to = "DRIVE_BACK", fail_to="FAILED"},
   {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
@@ -193,10 +192,6 @@ end
 
 function OPEN_GRIPPER:init()
   self.args["gripper_commands"].command = "OPEN"
-end
-
-function CLOSE_GRIPPER:init()
-  self.args["gripper_commands"].command = "CLOSE"
 end
 
 function MOVE_GRIPPER_BACK:init()
