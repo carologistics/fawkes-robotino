@@ -536,7 +536,8 @@ void ConveyorPoseThread::loop() {
 
   if (update_input_cloud()) {
     if (!get_initial_guess()) {
-      if (!cfg_debug_mode_ && !cfg_record_model_ && clock->now() > next_initial_guess_timeout_) {
+      if (!cfg_debug_mode_ && !cfg_record_model_ &&
+          clock->now() > next_initial_guess_timeout_) {
         logger->log_error(
             name(),
             "TIMEOUT. Stopping because no initial guess could be found.");
@@ -603,6 +604,8 @@ void ConveyorPoseThread::loop() {
 }
 
 bool ConveyorPoseThread::get_initial_guess() {
+  bool initial_guess_success = false;
+
   bb_init_guess_pose_->read();
   fawkes::Time last_external = *bb_init_guess_pose_->timestamp();
 
@@ -614,13 +617,13 @@ bool ConveyorPoseThread::get_initial_guess() {
   if (ll)
     best_laser_line_ = ll;
 
+  //-- try to aquire external initial guess (e.g. conveyor_plane)
   if (std::abs(last_pc - &last_external) < cfg_max_timediff_external_pc_ &&
       bb_init_guess_pose_->visibility_history() > 0) {
     fawkes::MutexLocker locked(&cloud_mutex_);
 
     try {
-      set_external_initial_tf();
-      return true;
+      initial_guess_success = set_external_initial_tf(initial_guess_odom_);
 
     } catch (fawkes::tf::TransformException &ex) {
       logger->log_warn(
@@ -630,24 +633,39 @@ bool ConveyorPoseThread::get_initial_guess() {
     }
   }
 
-  if (!cfg_record_model_ && clock->now() < next_initial_guess_timeout_)
+  //-- return when external init successed
+  if (initial_guess_success) {
+    return true;
+  }
+
+  //-- try to aquire initial guess from laser_line as fallback
+  if (!cfg_record_model_ && clock->now() < next_initial_guess_timeout_) {
     // Timeout not yet reached, maybe init. guess will be ready next time...
-    return false;
-  else {
+    initial_guess_success = false;
+
+  } else {
     // Timeout reached, try laser line instead.
     const Time *laserline_time = best_laser_line_->timestamp();
     if (std::abs(last_pc - laserline_time) < cfg_max_timediff_external_pc_ &&
         best_laser_line_) {
       fawkes::MutexLocker locked(&cloud_mutex_);
-      set_laserline_initial_tf();
-      return true;
-    } else {
-      return false;
+      try {
+        initial_guess_success = set_laserline_initial_tf(initial_guess_odom_);
+
+      } catch (fawkes::tf::TransformException &ex) {
+        logger->log_warn(name(),
+                         "Laserline initial guess could not be transformed to "
+                         "odom-frame: %s",
+                         ex.what_no_backtrace());
+      }
     }
   }
+
+  return initial_guess_success;
 }
 
-void ConveyorPoseThread::set_external_initial_tf() {
+bool ConveyorPoseThread::set_external_initial_tf(
+    fawkes::tf::Stamped<fawkes::tf::Pose> &out_guess) {
   //-- try to set read pose to initial guess, iff it was valid
   bb_init_guess_pose_->read();
   //-- compose translational part
@@ -677,14 +695,41 @@ void ConveyorPoseThread::set_external_initial_tf() {
   pose_orig_frame.setBasis(init_basis);
   pose_orig_frame.frame_id = bb_init_guess_pose_->frame();
 
-  //-- transform external pose to odom fram
+  //-- transform external pose to odom frame (throws an exception handled at the
+  // calling code)
+  fawkes::tf::Stamped<fawkes::tf::Pose> pose_orig_frame_transformed;
   tf_listener->transform_pose("odom",
                               tf::Stamped<tf::Pose>(pose_orig_frame, Time(0, 0),
                                                     pose_orig_frame.frame_id),
-                              initial_guess_odom_);
+                              pose_orig_frame_transformed);
+
+  //-- check if initial guess would get invalid is invalid
+  const btVector3 &translation = pose_orig_frame_transformed.getOrigin();
+  const btQuaternion &orientation = pose_orig_frame_transformed.getRotation();
+  if (std::isnan(translation.getX()) || std::isinf(translation.getX()) ||
+      std::isnan(translation.getY()) || std::isinf(translation.getY()) ||
+      std::isnan(translation.getZ()) || std::isinf(translation.getZ()) ||
+      std::abs(orientation.length() - 1.f) >
+          std::numeric_limits<float>::epsilon()) {
+
+    logger->log_warn(
+        name(),
+        "External initial_guess_odom invalid [||R|| = %.10e, t = (%f, %f, %f)]",
+        static_cast<double>(orientation.length()),
+        static_cast<double>(translation.getX()),
+        static_cast<double>(translation.getY()),
+        static_cast<double>(translation.getZ()));
+    return false;
+  }
+
+  //-- set the final init guess only the all steps success
+  out_guess = pose_orig_frame_transformed;
+
+  return true;
 }
 
-void ConveyorPoseThread::set_laserline_initial_tf() {
+bool ConveyorPoseThread::set_laserline_initial_tf(
+    fawkes::tf::Stamped<fawkes::tf::Pose> &out_guess) {
   tf::Stamped<tf::Pose> initial_guess;
 
   // Vector from end point 1 to end point 2
@@ -726,11 +771,37 @@ void ConveyorPoseThread::set_laserline_initial_tf() {
   initial_guess.setRotation(tf::Quaternion(tf::Vector3(0, 1, 0), -M_PI / 2) *
                             tf::Quaternion(tf::Vector3(0, 0, 1), -M_PI / 2));
 
-  // Transform with Time(0,0) to just get the latest transform
+  // Transform with Time(0,0) to just get the latest transform (throws an
+  // exception handled at the calling code)
+  tf::Stamped<tf::Pose> initial_guess_transdormed;
   tf_listener->transform_pose(
       "odom",
       tf::Stamped<tf::Pose>(initial_guess, Time(0, 0), initial_guess.frame_id),
-      initial_guess_odom_);
+      initial_guess_transdormed);
+
+  //-- check if initial guess would get invalid is invalid
+  const btVector3 &translation = initial_guess_transdormed.getOrigin();
+  const btQuaternion &orientation = initial_guess_transdormed.getRotation();
+  if (std::isnan(translation.getX()) || std::isinf(translation.getX()) ||
+      std::isnan(translation.getY()) || std::isinf(translation.getY()) ||
+      std::isnan(translation.getZ()) || std::isinf(translation.getZ()) ||
+      std::abs(orientation.length() - 1.f) >
+          std::numeric_limits<float>::epsilon()) {
+
+    logger->log_warn(name(),
+                     "Laserline initial_guess_odom invalid [||R|| = %.10e, t = "
+                     "(%f, %f, %f)]",
+                     static_cast<double>(orientation.length()),
+                     static_cast<double>(translation.getX()),
+                     static_cast<double>(translation.getY()),
+                     static_cast<double>(translation.getZ()));
+    return false;
+  }
+
+  //-- set the final init guess only the all steps success
+  out_guess = initial_guess_transdormed;
+
+  return true;
 }
 
 void ConveyorPoseThread::record_model() {
@@ -1063,7 +1134,8 @@ void ConveyorPoseThread::config_value_changed(
       else if (opt == "/max_loops")
         change_val(opt, recognition_thread_->cfg_icp_max_loops_, v->get_uint());
       else if (opt == "/max_retries")
-        change_val(opt, recognition_thread_->cfg_icp_max_retries_, v->get_uint());
+        change_val(opt, recognition_thread_->cfg_icp_max_retries_,
+                   v->get_uint());
       else if (opt == "/auto_restart")
         change_val(opt, recognition_thread_->cfg_icp_auto_restart_,
                    v->get_bool());
