@@ -15,5 +15,11 @@
     <comment>
       TakeAPicture
     </comment>
+    <field type="string" length="1024" name="mps_name">
+        Name of the mps the robot is currently facing
+    </field>
+    <field type="string" length="1024" name="mps_side">
+        Side of the mps the robot is currently facing
+    </field>
   </message>
 </interface>
