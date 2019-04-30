@@ -35,6 +35,7 @@
 #include "asp_planner_types.h"
 
 #include <atomic>
+#include <bsoncxx/document/view.hpp>
 #include <unordered_set>
 
 class AspPlannerThread : public fawkes::Thread,
@@ -176,18 +177,18 @@ private:
   void removeFromPlanDB(const std::string &robot, const int elementIndex);
   void tellRobotToStop(const std::string &robot);
 
-  void planFeedbackCallback(const mongo::BSONObj document);
+  void planFeedbackCallback(const bsoncxx::document::view &document);
 
   int realGameTimeToAspGameTime(const int realGameTime) const noexcept;
   int aspGameTimeToRealGameTime(const int aspGameTime) const noexcept;
 
-  void beaconCallback(const mongo::BSONObj document);
-  void gameTimeCallback(const mongo::BSONObj document);
-  void machineCallback(const mongo::BSONObj document);
-  void orderCallback(const mongo::BSONObj document);
-  void ringColorCallback(const mongo::BSONObj document);
-  void teamColorCallback(const mongo::BSONObj document);
-  void zonesCallback(const mongo::BSONObj document);
+  void beaconCallback(const bsoncxx::document::view &document);
+  void gameTimeCallback(const bsoncxx::document::view &document);
+  void machineCallback(const bsoncxx::document::view &document);
+  void orderCallback(const bsoncxx::document::view &document);
+  void ringColorCallback(const bsoncxx::document::view &document);
+  void teamColorCallback(const bsoncxx::document::view &document);
+  void zonesCallback(const bsoncxx::document::view &document);
 
 public:
   AspPlannerThread(void);
