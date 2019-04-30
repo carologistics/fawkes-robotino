@@ -740,6 +740,70 @@ float inline ArduinoComThread::round_to_2nd_dec(float f) {
 
 void ArduinoComThread::config_value_changed(
     const Configuration::ValueIterator *v) {
+  if(v->valid()) {
+    std::string path = v->path();
+    std::string sufx = path.substr(strlen(cfg_prefix_.c_str()));
+    std::string sub_prefix = sufx.substr(0, sufx.substr(1).find("/") + 1);
+    std::string full_pfx = cfg_prefix_.c_str() + sub_prefix;
+    std::string opt = path.substr(full_pfx.length());
+    if(sub_prefix == "firmware_settings"){
+      ArduinoComMessage *arduino_msg = new ArduinoComMessage();
+      bool msg_has_data = false;
+      if(opt == "/speed_x"){
+        cfg_speeds_[0] = v->get_uint();
+        add_command_to_message(arduino_msg, 
+              ArduinoComMessage::command_id_t::CMD_X_NEW_SPEED,
+              cfg_speeds_[0]);
+        msg_has_data = true;
+      } else if(opt == "/speed_y"){
+        cfg_speeds_[1] = v->get_uint();
+        add_command_to_message(arduino_msg, 
+              ArduinoComMessage::command_id_t::CMD_Y_NEW_SPEED,
+              cfg_speeds_[1]);
+        msg_has_data = true;
+      } else if(opt == "/speed_z"){
+        cfg_speeds_[2] = v->get_uint();
+        add_command_to_message(arduino_msg, 
+              ArduinoComMessage::command_id_t::CMD_Z_NEW_SPEED,
+              cfg_speeds_[2]);
+        msg_has_data = true;
+      } else if(opt == "/speed_a"){
+        cfg_speeds_[3] = v->get_uint();
+        add_command_to_message(arduino_msg, 
+              ArduinoComMessage::command_id_t::CMD_A_NEW_SPEED,
+              cfg_speeds_[3]);
+        msg_has_data = true;
+      } else if(opt == "/acc_x"){
+        cfg_accs_[0] = v->get_uint();
+        add_command_to_message(arduino_msg, 
+              ArduinoComMessage::command_id_t::CMD_X_NEW_ACC,
+              cfg_accs_[0]);
+        msg_has_data = true;
+      } else if(opt == "/acc_y"){
+        cfg_accs_[1] = v->get_uint();
+        add_command_to_message(arduino_msg, 
+              ArduinoComMessage::command_id_t::CMD_Y_NEW_ACC,
+              cfg_accs_[1]);
+        msg_has_data = true;
+      } else if(opt == "/acc_z"){
+        cfg_accs_[2] = v->get_uint();
+        add_command_to_message(arduino_msg, 
+              ArduinoComMessage::command_id_t::CMD_Z_NEW_ACC,
+              cfg_accs_[2]);
+        msg_has_data = true;
+      } else if(opt == "/acc_a"){
+        cfg_accs_[3] = v->get_uint();
+        add_command_to_message(arduino_msg, 
+              ArduinoComMessage::command_id_t::CMD_A_NEW_ACC,
+              cfg_accs_[3]);
+        msg_has_data = true;
+      }
+      if(msg_has_data){
+        append_message_to_queue(arduino_msg);
+        wakeup();
+      } else delete arduino_msg;
+    }
+  }
 }
 
 void ArduinoComThread::config_value_erased(const char *path) {}
