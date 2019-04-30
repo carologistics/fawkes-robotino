@@ -404,6 +404,8 @@ void ArduinoComThread::loop() {
                               cfg_accs_[A], 1000);
       append_message_to_queue(ArduinoComMessage::command_id_t::CMD_CALIBRATE, 0,
                               50000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_SET_A_TOGGLE_STEPS, cfg_a_toggle_steps_,
+                              1000);
     }
 
   } else {
@@ -747,6 +749,7 @@ void ArduinoComThread::load_config() {
     cfg_steps_per_mm_[Y] = 200.0 * cfg_y_microstep / 2.0;
     cfg_steps_per_mm_[Z] = 200.0 * cfg_z_microstep / 1.5;
 
+    cfg_a_toggle_steps_ = config->get_int(cfg_prefix_ + "/hardware_settings/a_toggle_steps");
 
     set_speed_pending_ = false;
     set_acceleration_pending_ = false;

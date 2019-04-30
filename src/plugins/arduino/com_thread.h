@@ -137,6 +137,8 @@ private:
 
   float cfg_steps_per_mm_[3];
 
+  unsigned int cfg_a_toggle_steps_;
+
   bool movement_pending_;
   bool calibrated_;
   char current_arduino_status_;
