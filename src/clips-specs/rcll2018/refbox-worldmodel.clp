@@ -86,6 +86,7 @@
                                                   ; (eq ?order-id (nth$ (+ (member$ order ?wm-fact:key) 1) ?wm-fact:key))
         then
           (bind ?complexity (pb-field-value ?o "complexity"))
+          (bind ?competitive (pb-field-value ?o "competitive"))
           (bind ?delivery-gate (pb-field-value ?o "delivery_gate"))
           (bind ?quantity-requested (pb-field-value ?o "quantity_requested"))
           (bind ?begin (pb-field-value ?o "delivery_period_begin"))
@@ -113,6 +114,8 @@
             (wm-fact (key refbox order ?order-id delivery-begin) (type UINT) (value ?begin) )
             (wm-fact (key refbox order ?order-id delivery-end) (type UINT) (value ?end) )
             )
+          (assert (wm-fact (key order meta competitive args? ord ?order-id)
+                           (type BOOL) (is-list FALSE) (value ?competitive)))
           (printout t "Added order " ?id " with " (pb-field-value ?o "cap_color") crlf)
       else
           (if (eq ?team-color CYAN) then
