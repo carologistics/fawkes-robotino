@@ -788,3 +788,31 @@
   (if (eq ?req TWO) then (return 20))
   (return 0)
 )
+
+
+(deffunction finalize-points (?points ?competitive ?qr ?qd-us ?qd-them)
+" @param ?points points before considering delivered quantities and complexity
+                 rules
+  @param ?competitive bool indicating whether competitive point changes should
+                      be applied
+  @param ?qr quantities-requested of the order in question
+  @param ?qd-us quantities-delivered of our team
+  @param ?qd-them quantities-delivered of the opposing team
+
+  @return adjusted points (apply competitive rules if needed, 0 points if
+          the requested quantites are already delivered)
+"
+  (if (not (> ?qr ?qd-us))
+    then
+      (return 0))
+  (if ?competitive
+    then
+      (if (> ?qd-them ?qd-us)
+        then
+          (return (max 0 (- ?points 10)))
+        else
+          (return (+ ?points 10)))
+    else
+      (return ?points)
+  )
+)
