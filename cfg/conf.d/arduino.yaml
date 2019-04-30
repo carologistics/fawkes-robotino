@@ -36,6 +36,7 @@ arduino:
   y_max: 0.075
   z_max: 0.057
 
+
   # These values changed the speed and the acceleration
   # in steps/s and steps/s/s of the differen stepper motors.
   # Please use these tags in the hostspecific host.yaml
@@ -48,3 +49,11 @@ arduino:
   #    acc_y: 2000
   #    acc_z: 2000
   #    acc_a: 2000
+
+  hardware_settings:
+    # the micro stepping mode.
+    # e.g. 4 for 4 microsteps per step
+    x_micro_stepping: 1
+    y_micro_stepping: 1
+    z_micro_stepping: 1
+

@@ -182,7 +182,7 @@ void ArduinoComThread::loop() {
         int d = 0;
         if (goal_x >= 0. && goal_x <= arduino_if_->x_max()) {
           int new_abs_x =
-              round_to_2nd_dec(goal_x * X_AXIS_STEPS_PER_MM * 1000.0);
+              round_to_2nd_dec(goal_x * cfg_steps_per_mm_[X] * 1000.0);
           logger->log_debug(name(), "Set new X: %u", new_abs_x);
           add_command_to_message(arduino_msg,
                                  ArduinoComMessage::command_id_t::CMD_X_NEW_POS,
@@ -200,7 +200,7 @@ void ArduinoComThread::loop() {
 
         if (goal_y >= 0. && goal_y <= arduino_if_->y_max()) {
           int new_abs_y =
-              round_to_2nd_dec(goal_y * Y_AXIS_STEPS_PER_MM * 1000.0);
+              round_to_2nd_dec(goal_y * cfg_steps_per_mm_[Y] * 1000.0);
           logger->log_debug(name(), "Set new Y: %u", new_abs_y);
           add_command_to_message(arduino_msg,
                                  ArduinoComMessage::command_id_t::CMD_Y_NEW_POS,
@@ -217,7 +217,7 @@ void ArduinoComThread::loop() {
         }
         if (goal_z >= 0. && goal_z <= arduino_if_->z_max()) {
           int new_abs_z =
-              round_to_2nd_dec(goal_z * Z_AXIS_STEPS_PER_MM * 1000.0);
+              round_to_2nd_dec(goal_z * cfg_steps_per_mm_[Z] * 1000.0);
           logger->log_debug(name(), "Set new Z: %u", new_abs_z);
           add_command_to_message(arduino_msg,
                                  ArduinoComMessage::command_id_t::CMD_Z_NEW_POS,
@@ -246,15 +246,15 @@ void ArduinoComThread::loop() {
 
         bool msg_has_data = false;
 
-        float cur_x = gripper_pose_[X] / X_AXIS_STEPS_PER_MM / 1000.;
-        float cur_y = gripper_pose_[Y] / Y_AXIS_STEPS_PER_MM / 1000.;
-        float cur_z = gripper_pose_[Z] / Z_AXIS_STEPS_PER_MM / 1000.;
+        float cur_x = gripper_pose_[X] / cfg_steps_per_mm_[X] / 1000.;
+        float cur_y = gripper_pose_[Y] / cfg_steps_per_mm_[Y] / 1000.;
+        float cur_z = gripper_pose_[Z] / cfg_steps_per_mm_[Z] / 1000.;
         logger->log_debug(name(), "Move rel: %f %f %f cur pose: %f %f %f",
                           msg->x(), msg->y(), msg->z(), cur_x, cur_y, cur_z);
         if (msg->x() + cur_x >= 0. &&
             msg->x() + cur_x <= arduino_if_->x_max()) {
           int new_abs_x = round_to_2nd_dec((msg->x() + cur_x) *
-                                           X_AXIS_STEPS_PER_MM * 1000.0);
+                                           cfg_steps_per_mm_[X] * 1000.0);
           logger->log_debug(name(), "Set new X: %u", new_abs_x);
           add_command_to_message(arduino_msg,
                                  ArduinoComMessage::command_id_t::CMD_X_NEW_POS,
@@ -274,7 +274,7 @@ void ArduinoComThread::loop() {
         if (msg->y() + cur_y >= 0. &&
             msg->y() + cur_y <= arduino_if_->y_max()) {
           int new_abs_y = round_to_2nd_dec((msg->y() + cur_y) *
-                                           Y_AXIS_STEPS_PER_MM * 1000.0);
+                                           cfg_steps_per_mm_[Y] * 1000.0);
           logger->log_debug(name(), "Set new Y: %u", new_abs_y);
           add_command_to_message(arduino_msg,
                                  ArduinoComMessage::command_id_t::CMD_Y_NEW_POS,
@@ -293,7 +293,7 @@ void ArduinoComThread::loop() {
         if (msg->z() + cur_z >= 0. &&
             msg->z() + cur_z <= arduino_if_->z_max()) {
           int new_abs_z = round_to_2nd_dec((msg->z() + cur_z) *
-                                           Z_AXIS_STEPS_PER_MM * 1000.0);
+                                           cfg_steps_per_mm_[Z] * 1000.0);
           logger->log_debug(name(), "Set new Z: %u", new_abs_z);
           add_command_to_message(arduino_msg,
                                  ArduinoComMessage::command_id_t::CMD_Z_NEW_POS,
@@ -361,7 +361,7 @@ void ArduinoComThread::loop() {
 
         int new_abs_x = 0;
         int new_abs_y = round_to_2nd_dec(arduino_if_->y_max() *
-                                         Y_AXIS_STEPS_PER_MM * 1000. / 2.);
+                                         cfg_steps_per_mm_[Y] * 1000. / 2.);
         int new_abs_z = 0;
         add_command_to_message(arduino_msg,
                                ArduinoComMessage::command_id_t::CMD_X_NEW_POS,
@@ -379,9 +379,9 @@ void ArduinoComThread::loop() {
         home_pending_ = false;
       }
 
-      tf_thread_->set_position(gripper_pose_[X] / X_AXIS_STEPS_PER_MM / 1000.,
-                               gripper_pose_[Y] / Y_AXIS_STEPS_PER_MM / 1000.,
-                               gripper_pose_[Z] / Z_AXIS_STEPS_PER_MM / 1000.);
+      tf_thread_->set_position(gripper_pose_[X] / cfg_steps_per_mm_[X] / 1000.,
+                               gripper_pose_[Y] / cfg_steps_per_mm_[Y] / 1000.,
+                               gripper_pose_[Z] / cfg_steps_per_mm_[Z] / 1000.);
 
     } else {
       logger->log_warn(name(), "Calibrate pending");
@@ -447,9 +447,12 @@ void ArduinoComThread::loop() {
         }
       }
     }
-    arduino_if_->set_x_position(gripper_pose_[X] / X_AXIS_STEPS_PER_MM / 1000.);
-    arduino_if_->set_y_position(gripper_pose_[Y] / Y_AXIS_STEPS_PER_MM / 1000.);
-    arduino_if_->set_z_position(gripper_pose_[Z] / Z_AXIS_STEPS_PER_MM / 1000.);
+    arduino_if_->set_x_position(gripper_pose_[X] / cfg_steps_per_mm_[X] /
+                                1000.);
+    arduino_if_->set_y_position(gripper_pose_[Y] / cfg_steps_per_mm_[Y] /
+                                1000.);
+    arduino_if_->set_z_position(gripper_pose_[Z] / cfg_steps_per_mm_[Z] /
+                                1000.);
     arduino_if_->set_final(!movement_pending_);
     arduino_if_->write();
 
@@ -729,6 +732,21 @@ void ArduinoComThread::load_config() {
         (cfg_prefix_ + "/firmware_settings/acc_z").c_str(), 0.f);
     cfg_accs_[A] = config->get_float_or_default(
         (cfg_prefix_ + "/firmware_settings/acc_a").c_str(), 0.f);
+
+
+    int cfg_x_microstep =
+        config->get_int(cfg_prefix_ + "/hardware_settings/x_micro_stepping");
+    int cfg_y_microstep =
+        config->get_int(cfg_prefix_ + "/hardware_settings/y_micro_stepping");
+    int cfg_z_microstep =
+        config->get_int(cfg_prefix_ + "/hardware_settings/z_micro_stepping");
+
+    // the factor the microstepping mode needs to be multiplied with
+    // depends on the individual thread diameter and slope.
+    cfg_steps_per_mm_[X] = 200.0 * cfg_x_microstep / 3.0;
+    cfg_steps_per_mm_[Y] = 200.0 * cfg_y_microstep / 2.0;
+    cfg_steps_per_mm_[Z] = 200.0 * cfg_z_microstep / 1.5;
+
 
     set_speed_pending_ = false;
     set_acceleration_pending_ = false;
