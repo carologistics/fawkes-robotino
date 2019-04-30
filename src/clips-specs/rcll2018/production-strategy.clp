@@ -130,6 +130,8 @@
                    (* (bool-to-int (eq ?wp-col-r2 ?col-r2)) ?p-r2)
                    (* (bool-to-int (eq ?wp-col-r3 ?col-r3)) ?p-r3)
                    (* (bool-to-int (eq ?wp-cap-col ?cap-col)) ?p-cap))))
+  (printout t "WP " ?wp " for order " ?order " yields " ?res
+              " points if it can be finished." crlf)
 )
 
 
@@ -208,12 +210,15 @@
                               (* (sym-to-int ?diff3)
                                  (bool-to-int (neq ?wp-col-r3 ?col-r3)))))))
 =>
-  (modify ?om (value (+ (* (sym-to-int ?diff1)
-                           (bool-to-int (neq ?wp-col-r1 ?col-r1)))
-                        (* (sym-to-int ?diff2)
-                           (bool-to-int (neq ?wp-col-r2 ?col-r2)))
-                        (* (sym-to-int ?diff3)
-                           (bool-to-int (neq ?wp-col-r3 ?col-r3))))))
+  (bind ?res (+ (* (sym-to-int ?diff1)
+                   (bool-to-int (neq ?wp-col-r1 ?col-r1)))
+                (* (sym-to-int ?diff2)
+                   (bool-to-int (neq ?wp-col-r2 ?col-r2)))
+                (* (sym-to-int ?diff3)
+                   (bool-to-int (neq ?wp-col-r3 ?col-r3)))))
+  (modify ?om (value ?res))
+  (printout t "WP " ?wp " for order " ?order " requires " ?res
+              " additional base(s) to pay for the remaining ring(s)." crlf)
 )
 
 
@@ -237,7 +242,15 @@
                        (bool-to-int (neq ?wp-col-r2 ?col-r2))
                        (bool-to-int (neq ?wp-col-r3 ?col-r3))))))
 =>
-  (modify ?om (value (+ (bool-to-int (neq ?wp-col-r1 ?col-r1))
-                        (bool-to-int (neq ?wp-col-r2 ?col-r2))
-                        (bool-to-int (neq ?wp-col-r3 ?col-r3)))))
+  (bind ?res (+ (bool-to-int (neq ?wp-col-r1 ?col-r1))
+                (bool-to-int (neq ?wp-col-r2 ?col-r2))
+                (bool-to-int (neq ?wp-col-r3 ?col-r3))))
+  (modify ?om (value ?res))
+  (if (> ?res 0)
+    then
+      (printout t "WP " ?wp " for order " ?order " needs " ?res
+                  " more ring(s)." crlf)
+    else
+      (printout t "WP " ?wp " for order " ?order " has all rings now." crlf)
+  )
 )
