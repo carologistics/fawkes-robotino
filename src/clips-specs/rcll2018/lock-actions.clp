@@ -199,3 +199,37 @@
   (retract ?l)
   (modify ?m (request NONE) (response NONE))
 )
+
+(defrule lock-actions-expire-locks-start
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state PENDING)
+                      (action-name expire-locks))
+	=>
+	(mutex-expire-locks-async)
+	(modify ?pa (state RUNNING))
+)
+
+(defrule lock-actions-expire-locks-succeeded
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id)
+                      (action-name expire-locks) (state RUNNING))
+	?mf <- (mutex-expire-task (task EXPIRE) (state COMPLETED))
+	=>
+	(modify ?pa (state EXECUTION-SUCCEEDED))
+	(retract ?mf)
+)
+
+(defrule lock-actions-expire-locks-fail-if-no-task
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id)
+                      (action-name expire-locks) (state RUNNING))
+	(not (mutex-expire-task (task EXPIRE)))
+  =>
+  (modify ?pa (state EXECUTION-FAILED))
+)
+
+(defrule lock-actions-expire-locks-failed
+	?pa <- (plan-action (plan-id ?plan-id) (id ?id)
+                      (action-name expire-locks) (state RUNNING))
+	?mf <- (mutex-expire-task (task EXPIRE) (state FAILED))
+	=>
+	(modify ?pa (state EXECUTION-FAILED))
+	(retract ?mf)
+)

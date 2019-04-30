@@ -25,3 +25,17 @@
   (printout warn "Flushing all locks!" crlf)
   (mutex-flush-locks-async)
 )
+
+(defrule init-wm-flush-done
+  ?t <- (mutex-expire-task (task FLUSH) (state COMPLETED))
+  =>
+  (printout info "Flushing done" crlf)
+  (retract ?t)
+)
+
+(defrule init-wm-flush-failed
+  ?t <- (mutex-expire-task (task FLUSH) (state FAILED))
+  =>
+  (printout error "Flushing failed!" crlf)
+  (retract ?t)
+)
