@@ -218,3 +218,10 @@ clips-executive:
 
           allowed-complexities: ["C0", "C1"]
           exclusive-complexities: ["C2", "C3"]
+
+          # Priority to pursue competitive orders.
+          # HIGH: Produce it as fast as possible.
+          # DEFAULT: Treat competitive order just like normal ones
+          # LOW: Try to avoid producing competitive orders
+
+          competitive-order-priority: DEFAULT
