@@ -35,3 +35,13 @@ arduino:
   x_max: 0.115
   y_max: 0.075
   z_max: 0.057
+
+  firmware_settings:
+    speed_x: 2000
+    speed_y: 2000
+    speed_z: 2000
+    speed_a: 2000
+    acc_x: 2000
+    acc_y: 2000
+    acc_z: 2000
+    acc_a: 2000
