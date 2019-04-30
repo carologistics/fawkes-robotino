@@ -17,67 +17,61 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-
 #ifndef __PLUGINS_PICTURE_TAKER_THREAD_H_
 #define __PLUGINS_PICTURE_TAKER_THREAD_H_
 
-#include <core/threading/thread.h>
-#include <core/threading/mutex.h>
+#include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
-#include <aspect/blackboard.h>
-#include <aspect/blocked_timing.h>
 #include <aspect/vision.h>
+#include <core/threading/mutex.h>
+#include <core/threading/thread.h>
 #include <string>
 
 // firevision camera
 #include <fvcams/camera.h>
-#include <fvutils/base/roi.h>
-#include <fvutils/ipc/shm_image.h>
-#include <fvutils/color/conversions.h>
 #include <fvclassifiers/simple.h>
+#include <fvutils/base/roi.h>
+#include <fvutils/color/conversions.h>
+#include <fvutils/ipc/shm_image.h>
 
 #include <fvutils/adapters/iplimage.h>
-#include <opencv2/objdetect/objdetect.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/objdetect/objdetect.hpp>
 
 #include <iostream>
 #include <stdio.h>
 
-
 namespace fawkes {
-  class PictureTakerInterface;
+class PictureTakerInterface;
 }
 
 namespace firevision {
-    class Camera;
-    class SharedMemoryImageBuffer;
-}
+class Camera;
+class SharedMemoryImageBuffer;
+} // namespace firevision
 
-class PictureTakerThread
-: public fawkes::Thread,
-  public fawkes::LoggingAspect,
-  public fawkes::ConfigurableAspect,
-  public fawkes::BlackBoardAspect,
-  public fawkes::VisionAspect,
-  public fawkes::ClockAspect
-{
+class PictureTakerThread : public fawkes::Thread,
+                           public fawkes::LoggingAspect,
+                           public fawkes::ConfigurableAspect,
+                           public fawkes::BlackBoardAspect,
+                           public fawkes::VisionAspect,
+                           public fawkes::ClockAspect {
 public:
   PictureTakerThread();
 
   virtual void init();
   virtual void loop();
   virtual void finalize();
- private:
 
-
+private:
   void readImage();
   void setupCamera();
   void takePictureFromFVcamera();
 
   fawkes::PictureTakerInterface *p_t_if_;
-
 
   // firevision camera
   firevision::Camera *fv_cam;
@@ -90,23 +84,22 @@ public:
   std::string shm_id;
 
   // cv image
-   IplImage *ipl;
+  IplImage *ipl;
 
   // Width of the image
   unsigned int img_width;
   // Height of the image
   unsigned int img_height;
 
-  //cv::Mat frame;
+  // cv::Mat frame;
   cv::Mat visionMat;
-  cv::Mat depthMat; 
+  cv::Mat depthMat;
 
-  std::string vframe; 
-  std::string dframe;  
+  std::string vframe;
+  std::string dframe;
 
-  std::string vpath; 
-  std::string dpath; 
-
+  std::string vpath;
+  std::string dpath;
 };
 
 #endif

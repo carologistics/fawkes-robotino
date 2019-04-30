@@ -14,7 +14,8 @@
  *         *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *          *  GNU Library General Public License for more details.
  *           *
- *            *  Read the full text in the LICENSE.GPL file in the doc directory.
+ *            *  Read the full text in the LICENSE.GPL file in the doc
+ * directory.
  *             */
 
 #include <core/plugin.h>
@@ -26,19 +27,15 @@ using namespace fawkes;
 /** Plugin to ...
  *  * @author Daniel Habering, Sebastian Schoenitz, Carsten Stoffels
  *   */
-class PictureTakerPlugin : public fawkes::Plugin
-{
-	 public:
-	   /** Constructor.
-	   *    * @param config Fawkes configuration
-	   *       */
-	    PictureTakerPlugin(Configuration *config)
-	     : Plugin(config)
-	    {
-	       thread_list.push_back(new PictureTakerThread());
-	    }
+class PictureTakerPlugin : public fawkes::Plugin {
+public:
+  /** Constructor.
+   *    * @param config Fawkes configuration
+   *       */
+  PictureTakerPlugin(Configuration *config) : Plugin(config) {
+    thread_list.push_back(new PictureTakerThread());
+  }
 };
 
 PLUGIN_DESCRIPTION("Plugin to take and store pictures")
 EXPORT_PLUGIN(PictureTakerPlugin)
-	
