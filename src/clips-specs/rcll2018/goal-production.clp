@@ -568,7 +568,6 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-RS CEs (a cap carrier can be used to fill a RS later)
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   ;MPS-BS CEs
@@ -612,7 +611,6 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-RS CEs (a cap carrier can be used to fill a RS later)
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   ;MPS-CS CEs
