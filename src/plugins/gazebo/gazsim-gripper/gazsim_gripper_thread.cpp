@@ -184,33 +184,7 @@ void GazsimGripperThread::loop() {
 
   }
 
-  logger->log_debug(name(),
-                    "publish dyn TF");
-
-  //publish tf
-  fawkes::tf::StampedTransform transform;
-
-  transform.frame_id = "gripper_x_origin";
-  transform.child_frame_id = "gripper_x_dyn";
-  transform.stamp = fawkes::Time();
-
-  transform.setOrigin( fawkes::tf::Vector3( 0, 0, 0 ) );
-  fawkes::tf::Quaternion q;
-  q.setEuler(M_PI_2, M_PI_2, 0);
-  transform.setRotation( q );
-
-  tf_publisher->send_transform(transform);
-
-//  transform.frame_id = "gripper_y_origin";
-//  transform.child_frame_id = "gripper_y_dyn";
-
-//  tf_publisher->send_transform(transform);
-
-//  transform.frame_id = "gripper_z_origin";
-//  transform.child_frame_id = "gripper_z_dyn";
-
-//  tf_publisher->send_transform(transform);
-
+  update_gripper_tfs(0,0,0);
 }
 
 void GazsimGripperThread::update_gripper_tfs(float x, float y, float z){
