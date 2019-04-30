@@ -34,7 +34,7 @@
   ?*PRIORITY-CLEAR-CS* = 70
   ?*PRIORITY-CLEAR-RS* = 55
   ?*PRIORITY-PREFILL-CS* = 50 ;This priority can be increased by +1
-  ?*PRIORITY-PREFILL-RS* = 40 ;This priority can be increased by up to +2
+  ?*PRIORITY-PREFILL-RS* = 40 ;This priority can be increased by up to +4
   ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* = 30
   ?*PRIORITY-ADD-ADDITIONAL-RING-WAITING* = 20
   ?*PRIORITY-DISCARD-UNKNOWN* = 10
@@ -509,7 +509,7 @@
             (modify ?wmf (value 2))))
     then
       (assert
-        (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 2)))
+        (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 4)))
   )
 )
 
@@ -525,7 +525,7 @@
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
 
   (goal (id ?maintain-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
-  (not (goal (class FILL-RS|FILL-RS-FROM-BS) (mode FORMULATED)))
+  (not (goal (class FILL-RS) (mode FORMULATED)))
   ;MPS CEs
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
@@ -552,7 +552,7 @@
       (modify ?wmf (value 1))))
     then
       (assert
-        (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 1)))
+        (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 2)))
   )
 )
 
@@ -649,7 +649,7 @@
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+  (wm-fact (key domain fact mps-state args? m ?mps s ?state&~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
@@ -664,6 +664,11 @@
          then
           (bind ?priority-increase ?prio:value)
       ))
+  ;
+  (if (eq ?state DOWN)
+    then
+      (bind ?priority-increase (- ?priority-increase 1))
+  )
   (printout t "Goal " FILL-RS " formulated" crlf)
   (assert (goal (id (sym-cat FILL-RS- (gensym*)))
                 (class FILL-RS) (sub-type SIMPLE)
