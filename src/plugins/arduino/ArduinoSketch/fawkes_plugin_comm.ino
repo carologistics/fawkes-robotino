@@ -243,6 +243,14 @@ void set_new_pos(long new_pos, AccelStepper &motor) {
   set_status(STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
 }
 
+void set_new_rel_pos(long new_rel_pos, AccelStepper &motor) {
+  motor.enableOutputs();
+  noInterrupts();
+  motor.move(new_rel_pos);
+  interrupts();
+  set_status(STATUS_MOVING);
+}
+
 void set_new_speed(float new_speed) {
   noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
   set_new_speed_acc(new_speed, -1, motor_X);
@@ -400,7 +408,7 @@ void read_package() {
       case CMD_OPEN:
         if(!open_gripper){
           open_gripper = true;
-          set_new_pos(motor_A.currentPosition()+120,motor_A);
+          set_new_rel_pos(120,motor_A);
         } else {
           send_status();
           send_status();
@@ -409,7 +417,7 @@ void read_package() {
       case CMD_CLOSE:
         if(open_gripper){
           open_gripper = false;
-          set_new_pos(motor_A.currentPosition()-120,motor_A);
+          set_new_rel_pos(-120,motor_A);
         } else {
           send_status();
           send_status();
