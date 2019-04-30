@@ -41,9 +41,10 @@ skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
 local x_distance = 0.27
-local gripper_adjust_z_distance = -0.01
+local gripper_adjust_z_distance = 0.025
 local gripper_adjust_x_distance = 0.015
 local adjust_target_frame = "gripper_home"
+local gripper_down_to_puck = -0.035
 
 function pose_gripper_offset(x,y,z)
   local target_pos = { x = x,
@@ -78,7 +79,8 @@ end
 
 fsm:define_states{ export_to=_M, closure={},
    {"INIT", SkillJumpState, skills={{gripper_commands}}, final_to="GOTO_SHELF", fail_to="FAILED" },
-   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="ADJUST_HEIGHT", fail_to="FAILED"},
+   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="MOVE_ABOVE_PUCK", fail_to="FAILED"},
+   {"MOVE_ABOVE_PUCK", SkillJumpState, skills={{gripper_commands}}, final_to="ADJUST_HEIGHT", fail_to="FAILED" },
    {"ADJUST_HEIGHT", SkillJumpState, skills={{gripper_commands}}, final_to="APPROACH_SHELF", fail_to="FAILED" },
    {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="GRAB_PRODUCT", fail_to="FAILED"},
    {"GRAB_PRODUCT", SkillJumpState, skills={{gripper_commands}}, final_to="LEAVE_SHELF", fail_to="FAILED"},
@@ -137,7 +139,7 @@ function GOTO_SHELF:init()
 			}
 end
 
-function ADJUST_HEIGHT:init()
+function MOVE_ABOVE_PUCK:init()
    local target_pos = { x = gripper_adjust_x_distance,
                        y = 0,
                        z = gripper_adjust_z_distance,
@@ -153,6 +155,14 @@ function ADJUST_HEIGHT:init()
 
 end
 
+function ADJUST_HEIGHT:init()
+
+  local pose = { x = 0, y = 0, z = gripper_down_to_puck }
+  self.args["gripper_commands"] = pose
+  self.args["gripper_commands"].command = "MOVEREL"
+  self.args["gripper_commands"].target_frame = "gripper_home"
+
+end
 
 function APPROACH_SHELF:init()
    self.args["approach_mps"].x = x_distance
