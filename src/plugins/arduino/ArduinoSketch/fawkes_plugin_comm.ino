@@ -189,6 +189,8 @@ void double_calibrate()
   while(!movement_done_flag);
   movement_done_flag = false;
   // reduce speed to a minimum
+  float speeds[3] = {motor_X.get_speed(), motor_Y.get_speed(), motor_Z.get_speed()};
+  float accs[3] = {motor_X.get_acc(), motor_Y.get_acc(), motor_Z.get_acc()};
   set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC,motor_X);
   set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC,motor_Y);
   set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC,motor_Z);
@@ -196,10 +198,10 @@ void double_calibrate()
   calibrate();
   while(!movement_done_flag);
   movement_done_flag = false;
-  // after calibration the default speed and acc values are used again.
-  set_new_speed_acc(DEFAULT_MAX_SPEED_X, DEFAULT_MAX_ACCEL_X, motor_X);
-  set_new_speed_acc(DEFAULT_MAX_SPEED_Y, DEFAULT_MAX_ACCEL_Y, motor_Y);
-  set_new_speed_acc(DEFAULT_MAX_SPEED_Z, DEFAULT_MAX_ACCEL_Z, motor_Z);
+  // after calibration the old speed and acc values are used
+  set_new_speed_acc(speeds[0], accs[0], motor_X);
+  set_new_speed_acc(speeds[1], accs[1], motor_Y);
+  set_new_speed_acc(speeds[2], accs[2], motor_Z);
 }
 
 void calibrate()
