@@ -610,8 +610,9 @@ bool ConveyorPoseThread::get_initial_guess() {
   fawkes::Time last_pc =
       fawkes::Time(0, 0) + static_cast<long int>(input_pc_header_.stamp);
 
-  if (!best_laser_line_)
-    best_laser_line_ = laserline_get_best_fit();
+  LaserLineInterface *ll = laserline_get_best_fit();
+  if (ll)
+    best_laser_line_ = ll;
 
   if (std::abs(last_pc - &last_external) < cfg_max_timediff_external_pc_ &&
       bb_init_guess_pose_->visibility_history() > 0) {
@@ -634,7 +635,9 @@ bool ConveyorPoseThread::get_initial_guess() {
     return false;
   else {
     // Timeout reached, try laser line instead.
-    if (best_laser_line_) {
+    const Time *laserline_time = best_laser_line_->timestamp();
+    if (std::abs(last_pc - laserline_time) < cfg_max_timediff_external_pc_ &&
+        best_laser_line_) {
       fawkes::MutexLocker locked(&cloud_mutex_);
       set_laserline_initial_tf();
       return true;
