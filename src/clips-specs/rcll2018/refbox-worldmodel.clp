@@ -111,6 +111,10 @@
             (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?cap) (type BOOL) (value TRUE) )
             (wm-fact (key domain fact order-gate  args? ord ?order-id gate (sym-cat GATE- ?delivery-gate)) (type BOOL) (value TRUE) )
             (wm-fact (key refbox order ?order-id quantity-requested) (type UINT) (value ?quantity-requested) )
+            (wm-fact (key refbox order ?order-id quantity-delivered CYAN)
+                     (type UINT) (value 0))
+            (wm-fact (key refbox order ?order-id quantity-delivered MAGENTA)
+                     (type UINT) (value 0))
             (wm-fact (key refbox order ?order-id delivery-begin) (type UINT) (value ?begin) )
             (wm-fact (key refbox order ?order-id delivery-end) (type UINT) (value ?end) )
             )
@@ -119,14 +123,26 @@
           (printout t "Added order " ?id " with " (pb-field-value ?o "cap_color") crlf)
       else
           (if (eq ?team-color CYAN) then
-            (bind ?quantity-delivered (pb-field-value ?o "quantity_delivered_cyan"))
+            (bind ?qd (pb-field-value ?o "quantity_delivered_cyan"))
+            (bind ?qd-them (pb-field-value ?o "quantity_delivered_magenta"))
           else
-            (bind ?quantity-delivered (pb-field-value ?o "quantity_delivered_magenta"))
-          )      
-          (do-for-fact ((?old-deliverd-fact wm-fact)) (wm-key-prefix ?old-deliverd-fact:key (create$ refbox order ?order-id quantity-delivered ?team-color)) 
-              (retract ?old-deliverd-fact)
+            (bind ?qd (pb-field-value ?o "quantity_delivered_magenta"))
+            (bind ?qd-them (pb-field-value ?o "quantity_delivered_cyan"))
           )
-          (assert (wm-fact (key refbox order ?order-id quantity-delivered ?team-color) (type UINT) (value ?quantity-delivered) ))
+          (do-for-fact ((?old-qd wm-fact))
+            (and (wm-key-prefix ?old-qd:key
+                   (create$ refbox order ?order-id
+                    quantity-delivered ?team-color))
+                 (neq ?old-qd:value ?qd))
+              (modify ?old-qd (value ?qd))
+          )
+          (do-for-fact ((?old-qd-them wm-fact))
+            (and (wm-key-prefix ?old-qd-them:key
+                   (create$ refbox order ?order-id
+                    quantity-delivered (mirror-team ?team-color)))
+                 (neq ?old-qd-them:value ?qd-them))
+              (modify ?old-qd-them (value ?qd-them))
+          )
     )
   )
   (retract ?pf)
