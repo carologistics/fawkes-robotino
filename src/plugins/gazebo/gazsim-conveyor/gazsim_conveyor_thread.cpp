@@ -120,7 +120,7 @@ void GazsimConveyorThread::loop() {
     transform.stamp = fawkes::Time();
 
     transform.setOrigin(fawkes::tf::Vector3(trans[0], trans[1], trans[2]));
-    fawkes::tf::Quaternion q (rot[0], rot[1], rot[2], rot[3]);
+    fawkes::tf::Quaternion q(rot[0], rot[1], rot[2], rot[3]);
     transform.setRotation(q);
 
     tf_publisher->send_transform(transform);
