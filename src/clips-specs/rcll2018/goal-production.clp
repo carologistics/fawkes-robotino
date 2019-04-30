@@ -649,7 +649,7 @@
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~DOWN&~BROKEN))
+  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
