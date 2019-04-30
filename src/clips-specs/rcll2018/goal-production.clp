@@ -1327,7 +1327,7 @@
 )
 
 
-(defrule goal-production-evaluate-cleanup-evaluated-wp-for-order-facts
+(defrule goal-production-cleanup-wp-for-order-facts
   "Unbind a workpiece from it's order when it can not be used anymore."
   ?wp-for-order <- (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (value TRUE))
   (not (wm-fact (key domain fact wp-usable args? wp ?wp)))
