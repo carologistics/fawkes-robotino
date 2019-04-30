@@ -383,9 +383,7 @@ void ArduinoComThread::loop() {
 
     } else {
       logger->log_warn(name(), "Calibrate pending");
-      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_CALIBRATE, 0,
-                              50000);
-      //after calibration set all speeds and accs
+      //before calibration set all speeds and accs
       append_message_to_queue(ArduinoComMessage::command_id_t::CMD_X_NEW_SPEED, cfg_speeds_[0],
                               1000);
       append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Y_NEW_SPEED, cfg_speeds_[1],
@@ -402,6 +400,8 @@ void ArduinoComThread::loop() {
                               1000);
       append_message_to_queue(ArduinoComMessage::command_id_t::CMD_A_NEW_ACC, cfg_accs_[3],
                               1000);
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_CALIBRATE, 0,
+                              50000);
     }
 
   } else {
