@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align","shelf_pick"}
+depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align","shelf_pick","mps_align"}
 depends_interfaces = {
 }
 
@@ -61,7 +61,7 @@ function shelf_set(self)
 end
 
 
-fsm:define_states{ export_to=_M, closure={navgraph=navgraph,shelf_set=shelf_set},already_at_mps=already_at_mps
+fsm:define_states{ export_to=_M, closure={navgraph=navgraph,shelf_set=shelf_set,already_at_mps=already_at_mps},
    {"INIT", JumpState},
    {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},

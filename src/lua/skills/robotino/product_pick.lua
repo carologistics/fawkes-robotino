@@ -128,7 +128,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-   {"INIT", "FAILED", cond="pose_not_exist()"},
+   {"INIT", "FAILED", cond="pose_not_exist() or not vars.shelf"},
    {"INIT", "OPEN_GRIPPER", true, desc="Open gripper for product_pick"},
    {"CHECK_PUCK", "FAILED", cond="not is_grabbed()", desc="Don't hold puck!"},  -- add or not is_grabbed() 
    {"CHECK_PUCK", "FINAL", cond=true},

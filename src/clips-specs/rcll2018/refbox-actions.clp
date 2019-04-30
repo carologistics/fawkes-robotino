@@ -102,7 +102,6 @@
 					(seq ?seq))
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
 	                      (action-name reset-mps)
-	                      (executable TRUE)
 	                      (param-names $?param-names)
 	                      (param-values $? ?mps $?))
 	(domain-obj-is-of-type ?mps mps)

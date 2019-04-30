@@ -53,7 +53,7 @@ function already_at_mps(self)
    return not (self.fsm.vars.atmps=="NO" or self.fsm.vars.atmps==nil)
 end
 
-fsm:define_states{ export_to=_M, closure={navgraph=navgraph}, already_at_mps = already_at_mps
+fsm:define_states{ export_to=_M, closure={navgraph=navgraph, already_at_mps = already_at_mps},
    {"INIT", JumpState},
    {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
