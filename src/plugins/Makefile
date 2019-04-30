@@ -32,6 +32,7 @@ SUBDIRS	= clips-motor-switch \
 		webtools-bridge \
 		skiller_motor_state \
 		asp-planner
+		picture_taker
 
 include $(BUILDSYSDIR)/rules.mk
 
