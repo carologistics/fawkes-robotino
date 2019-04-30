@@ -117,14 +117,7 @@ void PictureTakerThread::loop() {
     return;
   }
   while (!p_t_if_->msgq_empty()) {
-    if (p_t_if_->msgq_first_is<PictureTakerInterface::TakeAPictureMessage>()) {
-
-      logger->log_info(name(), "Taking Picture");
-      // MPSRecognitionInterface::TakeDataMessage *m =
-      // p_t_if_->msgq_first<MPSRecognitionInterface::TakeDataMessage>();
-      // p_t_if_->set_msgid(m->id());
-
-      logger->log_info(name(), "Start Recognition");
+    if (p_t_if_->msgq_first_is<PictureTakerInterface::TakePictureMessage>()) {
       takePictureFromFVcamera();
     } else {
       logger->log_warn(name(), "Unknown message received");

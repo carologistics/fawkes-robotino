@@ -159,8 +159,8 @@ function INIT:init()
    self.fsm.vars.mps_target = parse_result.mps_target
    self.fsm.vars.retries = 0
    self.fsm.vars.vision_retries = 0
-   local msg = if_picture_taker.TakeAPictureMessage:new()
-   if_picture_taker:mgsq_enqueue_copy(msg)
+   local msg = if_picture_taker.TakePictureMessage:new()
+   if_picture_taker:msgq_enqueue_copy(msg)
 end
 
 function CHECK_VISION:init()
