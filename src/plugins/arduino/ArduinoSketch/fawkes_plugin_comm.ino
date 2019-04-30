@@ -357,27 +357,43 @@ void read_package() {
 #endif
       case CMD_X_NEW_SPEED:
         set_new_speed_acc(new_value, 0.0, motor_X);
+        send_status();
+        send_status();
         break;
       case CMD_Y_NEW_SPEED:
         set_new_speed_acc(new_value, 0.0, motor_Y);
+        send_status();
+        send_status();
         break;
       case CMD_Z_NEW_SPEED:
         set_new_speed_acc(new_value, 0.0, motor_Z);
+        send_status();
+        send_status();
         break;
       case CMD_A_NEW_SPEED:
         set_new_speed_acc(new_value, 0.0, motor_A);
+        send_status();
+        send_status();
         break;
       case CMD_X_NEW_ACC:
         set_new_speed_acc(0.0, new_value, motor_X);
+        send_status();
+        send_status();
         break;
       case CMD_Y_NEW_ACC:
         set_new_speed_acc(0.0, new_value, motor_Y);
+        send_status();
+        send_status();
         break;
       case CMD_Z_NEW_ACC:
         set_new_speed_acc(0.0, new_value, motor_Z);
+        send_status();
+        send_status();
         break;
       case CMD_A_NEW_ACC:
         set_new_speed_acc(0.0, new_value, motor_A);
+        send_status();
+        send_status();
         break;
       case CMD_OPEN:
         if(!open_gripper){
@@ -408,9 +424,13 @@ void read_package() {
         break;
       case CMD_SET_SPEED:
         set_new_speed(new_value);
+        send_status();
+        send_status();
         break;
       case CMD_SET_ACCEL:
         set_new_acc(new_value);
+        send_status();
+        send_status();
         break;
       case CMD_STOP:
         slow_stop_all();
