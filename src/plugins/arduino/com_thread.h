@@ -103,7 +103,8 @@ public:
   virtual void config_tag_changed(const char *new_tag) override;
   virtual void config_comment_changed(
       const fawkes::Configuration::ValueIterator *v) override;
-  virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v) override;
+  virtual void
+  config_value_changed(const fawkes::Configuration::ValueIterator *v) override;
 
   /**
    * @brief All variables that define the position of the gripper
