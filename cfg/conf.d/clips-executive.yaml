@@ -124,6 +124,7 @@ clips-executive:
               - rcll2018/goals/simple.clp
               - rcll2018/goal-reasoner.clp
               - rcll2018/goal-production.clp
+              - rcll2018/production-strategy.clp
               - rcll2018/exploration.clp
               - rcll2018/goal-lock-expiration.clp
           - name: goal-expander
