@@ -86,17 +86,15 @@ AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 #define CMD_STOP '.'
 #define CMD_FAST_STOP ':'
 
-#ifdef DEBUG_MODE
-  #define CMD_X_NEW_SPEED 'x'
-  #define CMD_Y_NEW_SPEED 'y'
-  #define CMD_Z_NEW_SPEED 'z'
-  #define CMD_A_NEW_SPEED 'a'
-  
-  #define CMD_X_NEW_ACC 'm'
-  #define CMD_Y_NEW_ACC 'n'
-  #define CMD_Z_NEW_ACC 'o'
-  #define CMD_A_NEW_ACC 'p'
-#endif
+#define CMD_X_NEW_SPEED 'x'
+#define CMD_Y_NEW_SPEED 'y'
+#define CMD_Z_NEW_SPEED 'z'
+#define CMD_A_NEW_SPEED 'a'
+
+#define CMD_X_NEW_ACC 'm'
+#define CMD_Y_NEW_ACC 'n'
+#define CMD_Z_NEW_ACC 'o'
+#define CMD_A_NEW_ACC 'p'
 
 #define DEFAULT_MAX_SPEED_X 2000
 #define DEFAULT_MAX_ACCEL_X 5000
@@ -329,6 +327,7 @@ void read_package() {
         cur_cmd == CMD_Z_NEW_POS ||
 #ifdef DEBUG_MODE
         cur_cmd == CMD_A_NEW_POS ||
+#endif
         cur_cmd == CMD_X_NEW_SPEED ||
         cur_cmd == CMD_Y_NEW_SPEED ||
         cur_cmd == CMD_Z_NEW_SPEED ||
@@ -337,7 +336,6 @@ void read_package() {
         cur_cmd == CMD_Y_NEW_ACC ||
         cur_cmd == CMD_Z_NEW_ACC ||
         cur_cmd == CMD_A_NEW_ACC ||
-#endif
         cur_cmd == CMD_SET_SPEED ||
         cur_cmd == CMD_SET_ACCEL) {
       if(sscanf (buffer_ + (cur_i_cmd + 1),"%ld",&new_value)<=0){buf_i_ = 0; return;} // flush and return if parsing error
@@ -356,6 +354,7 @@ void read_package() {
       case CMD_A_NEW_POS:
         set_new_pos(new_value, motor_A);
         break;
+#endif
       case CMD_X_NEW_SPEED:
         set_new_speed_acc(new_value, 0.0, motor_X);
         break;
@@ -380,7 +379,6 @@ void read_package() {
       case CMD_A_NEW_ACC:
         set_new_speed_acc(0.0, new_value, motor_A);
         break;
-#endif
       case CMD_OPEN:
         if(!open_gripper){
           open_gripper = true;
@@ -421,7 +419,7 @@ void read_package() {
         fast_stop_all();
         break;
       default:
-        #ifdef DEBUG
+        #ifdef DEBUG_MODE
            send_packet(STATUS_ERROR, 15);
         #endif
         break;
