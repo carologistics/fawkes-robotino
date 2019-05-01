@@ -42,56 +42,61 @@ void PictureTakerThread::finalize() {
 }
 
 void PictureTakerThread::init() {
-  p_t_if_ = blackboard->open_for_writing<PictureTakerInterface>("PictureTaker");
+  try{
+    p_t_if_ = blackboard->open_for_writing<PictureTakerInterface>("PictureTaker");
 
-  std::string prefix = CFG_PREFIX;
-  vpath = this->config->get_string((prefix + "vpath").c_str());
+    std::string prefix = CFG_PREFIX;
+    vpath = this->config->get_string((prefix + "vpath").c_str());
 
-  // init firevision camera
-  // CAM swapping not working (??)
-  if (fv_cam != NULL) {
-    // free the camera
-    fv_cam->stop();
-    fv_cam->flush();
-    fv_cam->dispose_buffer();
-    fv_cam->close();
-    delete fv_cam;
-    fv_cam = NULL;
+    // init firevision camera
+    // CAM swapping not working (??)
+    if (fv_cam != NULL) {
+      // free the camera
+      fv_cam->stop();
+      fv_cam->flush();
+      fv_cam->dispose_buffer();
+      fv_cam->close();
+      delete fv_cam;
+      fv_cam = NULL;
+    }
+    if (fv_cam == NULL) {
+      std::string connection =
+          this->config->get_string((prefix + "camera").c_str());
+      fv_cam = vision_master->register_for_camera(connection.c_str(), this);
+      fv_cam->start();
+      fv_cam->open();
+      this->img_width = fv_cam->pixel_width();
+      this->img_height = fv_cam->pixel_height();
+    }
+
+    // SHM image buffer
+    if (shm_buffer != NULL) {
+      delete shm_buffer;
+      shm_buffer = NULL;
+      image_buffer = NULL;
+    }
+
+    shm_buffer = new firevision::SharedMemoryImageBuffer(
+        shm_id.c_str(), firevision::YUV422_PLANAR, this->img_width,
+        this->img_height);
+    if (!shm_buffer->is_valid()) {
+      delete shm_buffer;
+      delete fv_cam;
+      shm_buffer = NULL;
+      fv_cam = NULL;
+      throw fawkes::Exception("Shared memory segment not valid");
+    }
+
+    std::string vframe = this->config->get_string((prefix + "vframe").c_str());
+    shm_buffer->set_frame_id(vframe.c_str());
+
+    image_buffer = shm_buffer->buffer();
+    ipl = cvCreateImage(cvSize(this->img_width, this->img_height), IPL_DEPTH_8U,
+                        IMAGE_CHANNELS);
+
+  } catch ( ... ) {
+    // Do nothing to not fail anything important
   }
-  if (fv_cam == NULL) {
-    std::string connection =
-        this->config->get_string((prefix + "camera").c_str());
-    fv_cam = vision_master->register_for_camera(connection.c_str(), this);
-    fv_cam->start();
-    fv_cam->open();
-    this->img_width = fv_cam->pixel_width();
-    this->img_height = fv_cam->pixel_height();
-  }
-
-  // SHM image buffer
-  if (shm_buffer != NULL) {
-    delete shm_buffer;
-    shm_buffer = NULL;
-    image_buffer = NULL;
-  }
-
-  shm_buffer = new firevision::SharedMemoryImageBuffer(
-      shm_id.c_str(), firevision::YUV422_PLANAR, this->img_width,
-      this->img_height);
-  if (!shm_buffer->is_valid()) {
-    delete shm_buffer;
-    delete fv_cam;
-    shm_buffer = NULL;
-    fv_cam = NULL;
-    throw fawkes::Exception("Shared memory segment not valid");
-  }
-
-  std::string vframe = this->config->get_string((prefix + "vframe").c_str());
-  shm_buffer->set_frame_id(vframe.c_str());
-
-  image_buffer = shm_buffer->buffer();
-  ipl = cvCreateImage(cvSize(this->img_width, this->img_height), IPL_DEPTH_8U,
-                      IMAGE_CHANNELS);
 }
 
 void PictureTakerThread::takePictureFromFVcamera(std::string name,
