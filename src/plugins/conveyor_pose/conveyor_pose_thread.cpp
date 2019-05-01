@@ -702,6 +702,10 @@ bool ConveyorPoseThread::set_external_initial_tf(
   if (std::isnan(translation.getX()) || std::isinf(translation.getX()) ||
       std::isnan(translation.getY()) || std::isinf(translation.getY()) ||
       std::isnan(translation.getZ()) || std::isinf(translation.getZ()) ||
+      std::isnan(orientation.getX()) || std::isinf(orientation.getX()) ||
+      std::isnan(orientation.getY()) || std::isinf(orientation.getY()) ||
+      std::isnan(orientation.getZ()) || std::isinf(orientation.getZ()) ||
+      std::isnan(orientation.getW()) || std::isinf(orientation.getW()) ||
       std::abs(orientation.length() - 1.f) >
           std::numeric_limits<float>::epsilon()) {
 
