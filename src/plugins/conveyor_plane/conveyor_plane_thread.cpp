@@ -262,31 +262,35 @@ void ConveyorPlaneThread::loop() {
         (wait_start_ + wait_time_ - Time()).in_sec());
     return;
   }
-  // logger->log_info(name(),"CONVEYOR-POSE 2: Added Trash if no point cloud or
-  // not enabled and pose enabled");
-  bb_pose_conditional_open();
 
-  pose pose_average;
-  bool pose_average_availabe = pose_get_avg(pose_average);
 
-  if (pose_average_availabe) {
-    vis_hist_ = std::max(1, vis_hist_ + 1);
-    pose_write(pose_average);
+  //-- if it are enough planes collected to decide whether the avg is valid or not...
+  if(poses_.size() >= cfg_allow_invalid_poses_) {
+      bb_pose_conditional_open();
 
-    pose_publish_tf(pose_average);
+      pose pose_average;
+      bool pose_average_availabe = pose_get_avg(pose_average);
 
-    //    tf_send_from_pose_if(pose_current);
-    if (cfg_use_visualisation_) {
-      visualisation_->marker_draw(header_, pose_average.translation,
-                                  pose_average.rotation);
-    }
-  } else {
-    vis_hist_ = -1;
-    pose trash;
-    trash.valid = false;
-    pose_write(trash);
-    poses_.clear();
+      if (pose_average_availabe) {
+        vis_hist_ = std::max(1, vis_hist_ + 1);
+        pose_write(pose_average);
+
+        pose_publish_tf(pose_average);
+
+        //    tf_send_from_pose_if(pose_current);
+        if (cfg_use_visualisation_) {
+          visualisation_->marker_draw(header_, pose_average.translation,
+                                      pose_average.rotation);
+        }
+      } else {
+        vis_hist_ = -1;
+        pose trash;
+        trash.valid = false;
+        pose_write(trash);
+        poses_.clear();
+      }
   }
+
 
   fawkes::LaserLineInterface *ll = NULL;
   bool use_laserline = laserline_get_best_fit(ll);
@@ -519,7 +523,11 @@ bool ConveyorPlaneThread::pose_get_avg(pose &out) {
     }
   }
 
-  if (invalid > cfg_allow_invalid_poses_) {
+  if(valid_planes.size() <= 0) {
+    logger->log_warn(name(), "no valid planes to average");
+    return false;
+
+  } else if (invalid > cfg_allow_invalid_poses_) {
     logger->log_warn(name(), "view unstable, got %u invalid frames", invalid);
     return false;
   }
@@ -548,13 +556,17 @@ bool ConveyorPlaneThread::pose_get_avg(pose &out) {
                      planes_used.size());
   }
 
-  //-- recalculate average using valid inliers
-  median_centroid = Eigen::Vector4f(0, 0, 0, 0);
-  median_normal = Eigen::Vector3f(0, 0, 0);
-  invN = 1.f / static_cast<float>(planes_used.size());
-  for (const std::pair<Eigen::Vector4f, Eigen::Vector3f> &p : planes_used) {
-    median_centroid += p.first * invN;
-    median_normal += p.second * invN;
+  //-- if there are any inliers kept, due to the outlier removal ...
+  if(planes_used.size() > 0) {
+      //-- ... recalculate average using valid inliers
+      median_centroid = Eigen::Vector4f(0, 0, 0, 0);
+      median_normal = Eigen::Vector3f(0, 0, 0);
+      invN = 1.f / static_cast<float>(planes_used.size());
+
+      for (const std::pair<Eigen::Vector4f, Eigen::Vector3f> &p : planes_used) {
+        median_centroid += p.first * invN;
+        median_normal += p.second * invN;
+      }
   }
 
   out = calculate_pose(median_centroid, median_normal);
