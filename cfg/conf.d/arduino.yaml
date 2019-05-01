@@ -59,5 +59,6 @@ arduino:
 
     # the number of steps to move to open/close the gripper
     # CAREFUL! setting this too high can also make open not working
-    # a good starting value is 120*a where a is the microstepping mode of the A motor
+    # a good starting value is 120*a where a
+    # is the microstepping mode of the A motor
     a_toggle_steps: 120
