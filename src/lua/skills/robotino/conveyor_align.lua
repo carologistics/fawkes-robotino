@@ -172,7 +172,7 @@ fsm:add_transitions{
    {"CHECK_VISION", "DECIDE_WHAT", cond=result_ready, desc="conveyor_pose result ready"},
    {"DECIDE_WHAT", "FINAL", cond="fitness_ok() and tolerance_ok()"},
    {"DECIDE_WHAT", "DRIVE", cond="fitness_ok() and not tolerance_ok() and vars.retries <= MAX_RETRIES"},
-   {"DECIDE_WHAT", "FAILED", cond="vars.vision_retries >= MAX_VISION_RETRIES"},
+   {"DECIDE_WHAT", "FAILED", cond="vars.vision_retries > MAX_VISION_RETRIES"},
    {"DECIDE_WHAT", "CHECK_VISION", cond="not fitness_ok()"},
 }
 
