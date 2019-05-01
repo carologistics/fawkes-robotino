@@ -167,7 +167,7 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not input_ok()", desc = "Wrong input format"},
    {"INIT", "MOVE_GRIPPER", cond=true},
-   {"CHECK_VISION", "FAILED", timeout=10, desc = "Fitness threshold wasn't reached"},
+   {"CHECK_VISION", "FAILED", timeout=15, desc = "Fitness threshold wasn't reached"},
    {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"CHECK_VISION", "DECIDE_WHAT", cond=result_ready, desc="Fitness threshold reached"},
    {"DECIDE_WHAT", "FINAL", cond="fitness_ok() and tolerance_ok()"},
