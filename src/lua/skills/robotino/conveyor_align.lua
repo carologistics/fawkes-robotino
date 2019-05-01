@@ -54,7 +54,7 @@ local x_dist_to_mps = -0.255  -- x-distance the robot should have after the alig
 local y_offset_shelf_middle = -0.015 -- y-offset the robot should have picking is done from shelf = "MIDDLE"
 
 -- initial gripper poses depending on the target
-local gripper_pose = { x= 0.05, y = 0.00, z = 0.03}
+local gripper_pose = { x= 0.05, y = 0.00, z = 0.05}
 
 local MAX_RETRIES=3
 local MAX_VISION_RETRIES=3
