@@ -54,7 +54,7 @@ plugins/conveyor_pose:
   # For MPS which output on both sides, output_conveyor model is used. However,
   # further below hints regarding input and output are applied as usual.
   reference_models:
-    default: "conveyor_pcls/default.pcd"
+    default: "conveyor_pcls/no_cone.pcd"
     input_conveyor: "conveyor_pcls/with_cone.pcd"
     output_conveyor: "conveyor_pcls/no_cone.pcd"
     shelf_left: "conveyor_pcls/shelf_left.pcd"
