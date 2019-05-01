@@ -539,16 +539,7 @@ void ConveyorPoseThread::loop() {
   if (!cfg_record_model_ && !recognition_thread_->enabled())
     return;
 
-  if (update_input_cloud()) {
-    if (!get_initial_guess()) {
-      if (initial_guess_deadline_reached()) {
-        logger->log_error(
-            name(),
-            "TIMEOUT. Stopping because no initial guess could be found.");
-        recognition_thread_->disable();
-      }
-      return;
-    }
+  if (update_input_cloud() && get_initial_guess()) {
 
     CloudPtr cloud_in(new Cloud(**cloud_in_));
 
