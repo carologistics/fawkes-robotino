@@ -137,8 +137,7 @@ private:
   blocked_zones(Eigen::Vector2i zone, uint16_t discrete_ori);
   void generate_wait_zones(size_t count,
                            std::vector<Eigen::Vector2i> &free_zones);
-  void generate_mps_wait_zones(
-                           std::vector<Eigen::Vector2i> &free_zones);
+  void generate_mps_wait_zones(std::vector<Eigen::Vector2i> &free_zones);
 };
 
 #endif
