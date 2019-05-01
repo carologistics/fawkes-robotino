@@ -209,8 +209,8 @@
   ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
   ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
                      (action-name lock) (param-values ?name))
-  (mutex (name ?name) (state LOCKED) (request ~UNLOCK) (locked-by ?identity))
-         (pending-requests $?pending&(not (member$ UNLOCK ?pending))))
+  (mutex (name ?name) (state LOCKED) (request ~UNLOCK) (locked-by ?identity)
+         (pending-requests $?pending&:(not (member$ UNLOCK ?pending))))
 =>
   (printout warn "Removing lock " ?name " of failed plan " ?plan-id
                  " of goal " ?goal-id crlf)
@@ -229,7 +229,7 @@
                      (action-name location-lock) (param-values ?loc ?side))
   (mutex (name ?name&:(eq ?name (sym-cat ?loc - ?side)))
          (state LOCKED) (request ~UNLOCK) (locked-by ?identity)
-         (pending-requests $?pending&(not (member$ UNLOCK ?pending))))
+         (pending-requests $?pending&:(not (member$ UNLOCK ?pending))))
 =>
   ; TODO only unlock if we are at a safe distance
   (printout warn "Removing location lock " ?name " without moving away!" crlf)
