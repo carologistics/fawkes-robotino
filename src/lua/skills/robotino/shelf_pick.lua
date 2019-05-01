@@ -142,14 +142,16 @@ end
 function MOVE_ABOVE_PUCK:init()
    local target_pos = { x = gripper_adjust_x_distance,
                        y = 0,
-                       z = gripper_adjust_z_distance,
+                       z = 0,
                        ori = { x = 0, y = 0, z = 0, w = 0}
    }
 
   local grip_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper")
 
   local pose = pose_gripper_offset(grip_pos.x,grip_pos.y,grip_pos.z)
-  self.args["gripper_commands"] = pose
+  self.args["gripper_commands"].x = pose.x
+  self.args["gripper_commands"].y = pose.y
+  self.args["gripper_commands"].z = gripper_adjust_z_distance
   self.args["gripper_commands"].command = "MOVEABS"
   self.args["gripper_commands"].target_frame = "gripper_home"
 
