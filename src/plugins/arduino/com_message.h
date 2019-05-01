@@ -37,7 +37,15 @@ public:
     CMD_Z_NEW_POS = 'Z',
     CMD_CLOSE = 'G',
     CMD_OPEN = 'O',
-    CMD_STATUS_REQ = 'S'
+    CMD_STATUS_REQ = 'S',
+    CMD_X_NEW_SPEED = 'x',
+    CMD_Y_NEW_SPEED = 'y',
+    CMD_Z_NEW_SPEED = 'z',
+    CMD_A_NEW_SPEED = 'a',
+    CMD_X_NEW_ACC = 'm',
+    CMD_Y_NEW_ACC = 'n',
+    CMD_Z_NEW_ACC = 'o',
+    CMD_A_NEW_ACC = 'p'
   };
 
   /**
