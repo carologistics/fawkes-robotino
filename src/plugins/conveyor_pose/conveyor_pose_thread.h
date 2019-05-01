@@ -233,7 +233,7 @@ private:
   fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_odom_;
   fawkes::LaserLineInterface *best_laser_line_;
 
-  bool cfg_debug_mode_;
+  std::atomic<bool> cfg_debug_mode_;
 
   bool update_input_cloud();
 
