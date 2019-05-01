@@ -96,7 +96,7 @@ private:
 
   unsigned int compute_msgid_;
   std::vector<Eigen::Vector2i> wait_zones_;
-  std::map<std::string,Eigen::Vector2i > mps_wait_zones_;
+  std::map<std::string, std::pair<Eigen::Vector2i, float>> mps_wait_zones_;
 
   typedef struct {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
