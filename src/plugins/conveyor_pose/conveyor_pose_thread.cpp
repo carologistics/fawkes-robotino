@@ -1056,6 +1056,9 @@ void ConveyorPoseThread::config_value_changed(
         change_val(opt, cfg_front_cut_no_ll_, v->get_float());
       else if (opt == "/back_cut")
         change_val(opt, cfg_back_cut_no_ll_, v->get_float());
+    } else if (sub_prefix == "") {
+      if (opt == "/debug")
+        change_val(opt, cfg_debug_mode_, v->get_bool());
     } else if (sub_prefix == "/with_ll") {
       if (opt == "/left_cut")
         change_val(opt, cfg_left_cut_, v->get_float());
