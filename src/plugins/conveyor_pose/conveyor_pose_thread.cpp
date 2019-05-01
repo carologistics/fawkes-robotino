@@ -521,7 +521,8 @@ void ConveyorPoseThread::loop() {
         // Set new timeout on incoming message!
         initial_guess_deadline_.reset(
               new Time(clock->now() + cfg_external_timeout_));
-
+    } else if (bb_pose_->msgq_first_is<ConveyorPoseInterface::StopICPMessage>()) {
+      recognition_thread_->disable();
     } else {
       logger->log_warn(name(), "Unknown message received");
     }
