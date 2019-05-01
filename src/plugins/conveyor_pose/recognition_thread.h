@@ -102,7 +102,6 @@ private:
 
   CustomICP icp_;
   pcl::PapazovHV<Point, Point> hypot_verif_;
-  Eigen::Matrix4f prev_last_tf_;
   CloudPtr icp_result_;
   Eigen::Matrix4f final_tf_;
 
