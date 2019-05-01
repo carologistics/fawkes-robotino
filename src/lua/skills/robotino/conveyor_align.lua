@@ -192,6 +192,11 @@ function CHECK_VISION:init()
    self.fsm.vars.vision_retries = self.fsm.vars.vision_retries + 1
 end
 
+function CHECK_VISION:exit()
+   local msg = if_conveyor_pose.StopICPMessage:new()
+   if_conveyor_pose:msgq_enqueue_copy(msg)
+end
+
 function MOVE_GRIPPER:init()
   self.args["gripper_commands"] = gripper_pose
   self.args["gripper_commands"].command = "MOVEABS"
