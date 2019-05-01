@@ -168,7 +168,7 @@ function MOVING:init()
         "map",
         self.fsm.vars.trans_tolerance,
         self.fsm.vars.ori_tolerance)
-
+   end
    fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
 end
 
