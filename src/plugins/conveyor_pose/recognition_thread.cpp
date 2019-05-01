@@ -183,7 +183,7 @@ void RecognitionThread::loop() {
   else
     logger->log_info(name(), "last_tf_len: %.9f", last_tf_len);
 
-  if (main_thread_->cfg_debug_mode_)
+  if (enabled_ && main_thread_->cfg_debug_mode_)
     publish_result();
 
   if (iterations_++ >= cfg_icp_min_loops_ || epsilon_reached) {
@@ -206,7 +206,7 @@ void RecognitionThread::loop() {
       last_raw_fitness_ = icp_.getFitnessScore();
 
       // In debug mode, publish_result has already been called (see above)
-      if (!main_thread_->cfg_debug_mode_)
+      if (enabled_ && !main_thread_->cfg_debug_mode_)
         publish_result();
     }
 
