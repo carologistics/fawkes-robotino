@@ -75,7 +75,7 @@ plugins/conveyor_pose:
     # Timeout (in seconds) for the external initial estimate taken from the
     # Position3DInterface above.
     # We fall back to laser-line init. guess if this is exceeded.
-    external_timeout: 1.0
+    external_timeout: 2.0
 
     # Maximum time difference between external initial guess and input
     # pointcloud.  This is needed to ensure they actually refer to the same
