@@ -174,7 +174,8 @@
   (wm-fact (key cx identity) (value ?self))
   (location-unlock-pending ?loc ?side)
   ?mf <- (mutex (name ?lock-name&:(eq ?lock-name (sym-cat ?loc - ?side)))
-                (state LOCKED) (request NONE) (locked-by ?self))
+                (state LOCKED) (request ~UNLOCK) (locked-by ?self)
+                (pending-requests $?pending&:(not (member$ UNLOCK ?pending))))
   (navgraph-node
     (name ?node&:(eq ?node
                      (str-cat ?loc (if (eq ?side INPUT) then -I else -O))))
