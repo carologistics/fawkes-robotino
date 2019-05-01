@@ -86,17 +86,15 @@ AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 #define CMD_STOP '.'
 #define CMD_FAST_STOP ':'
 
-#ifdef DEBUG_MODE
-  #define CMD_X_NEW_SPEED 'x'
-  #define CMD_Y_NEW_SPEED 'y'
-  #define CMD_Z_NEW_SPEED 'z'
-  #define CMD_A_NEW_SPEED 'a'
-  
-  #define CMD_X_NEW_ACC 'm'
-  #define CMD_Y_NEW_ACC 'n'
-  #define CMD_Z_NEW_ACC 'o'
-  #define CMD_A_NEW_ACC 'p'
-#endif
+#define CMD_X_NEW_SPEED 'x'
+#define CMD_Y_NEW_SPEED 'y'
+#define CMD_Z_NEW_SPEED 'z'
+#define CMD_A_NEW_SPEED 'a'
+
+#define CMD_X_NEW_ACC 'm'
+#define CMD_Y_NEW_ACC 'n'
+#define CMD_Z_NEW_ACC 'o'
+#define CMD_A_NEW_ACC 'p'
 
 #define DEFAULT_MAX_SPEED_X 2000
 #define DEFAULT_MAX_ACCEL_X 5000
@@ -191,6 +189,8 @@ void double_calibrate()
   while(!movement_done_flag);
   movement_done_flag = false;
   // reduce speed to a minimum
+  float speeds[3] = {motor_X.get_speed(), motor_Y.get_speed(), motor_Z.get_speed()};
+  float accs[3] = {motor_X.get_acc(), motor_Y.get_acc(), motor_Z.get_acc()};
   set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC,motor_X);
   set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC,motor_Y);
   set_new_speed_acc(SECOND_CAL_MAX_SPEED, SECOND_CAL_MAX_ACC,motor_Z);
@@ -198,10 +198,10 @@ void double_calibrate()
   calibrate();
   while(!movement_done_flag);
   movement_done_flag = false;
-  // after calibration the default speed and acc values are used again.
-  set_new_speed_acc(DEFAULT_MAX_SPEED_X, DEFAULT_MAX_ACCEL_X, motor_X);
-  set_new_speed_acc(DEFAULT_MAX_SPEED_Y, DEFAULT_MAX_ACCEL_Y, motor_Y);
-  set_new_speed_acc(DEFAULT_MAX_SPEED_Z, DEFAULT_MAX_ACCEL_Z, motor_Z);
+  // after calibration the old speed and acc values are used
+  set_new_speed_acc(speeds[0], accs[0], motor_X);
+  set_new_speed_acc(speeds[1], accs[1], motor_Y);
+  set_new_speed_acc(speeds[2], accs[2], motor_Z);
 }
 
 void calibrate()
@@ -329,6 +329,7 @@ void read_package() {
         cur_cmd == CMD_Z_NEW_POS ||
 #ifdef DEBUG_MODE
         cur_cmd == CMD_A_NEW_POS ||
+#endif
         cur_cmd == CMD_X_NEW_SPEED ||
         cur_cmd == CMD_Y_NEW_SPEED ||
         cur_cmd == CMD_Z_NEW_SPEED ||
@@ -337,7 +338,6 @@ void read_package() {
         cur_cmd == CMD_Y_NEW_ACC ||
         cur_cmd == CMD_Z_NEW_ACC ||
         cur_cmd == CMD_A_NEW_ACC ||
-#endif
         cur_cmd == CMD_SET_SPEED ||
         cur_cmd == CMD_SET_ACCEL) {
       if(sscanf (buffer_ + (cur_i_cmd + 1),"%ld",&new_value)<=0){buf_i_ = 0; return;} // flush and return if parsing error
@@ -356,31 +356,47 @@ void read_package() {
       case CMD_A_NEW_POS:
         set_new_pos(new_value, motor_A);
         break;
+#endif
       case CMD_X_NEW_SPEED:
         set_new_speed_acc(new_value, 0.0, motor_X);
+        send_status();
+        send_status();
         break;
       case CMD_Y_NEW_SPEED:
         set_new_speed_acc(new_value, 0.0, motor_Y);
+        send_status();
+        send_status();
         break;
       case CMD_Z_NEW_SPEED:
         set_new_speed_acc(new_value, 0.0, motor_Z);
+        send_status();
+        send_status();
         break;
       case CMD_A_NEW_SPEED:
         set_new_speed_acc(new_value, 0.0, motor_A);
+        send_status();
+        send_status();
         break;
       case CMD_X_NEW_ACC:
         set_new_speed_acc(0.0, new_value, motor_X);
+        send_status();
+        send_status();
         break;
       case CMD_Y_NEW_ACC:
         set_new_speed_acc(0.0, new_value, motor_Y);
+        send_status();
+        send_status();
         break;
       case CMD_Z_NEW_ACC:
         set_new_speed_acc(0.0, new_value, motor_Z);
+        send_status();
+        send_status();
         break;
       case CMD_A_NEW_ACC:
         set_new_speed_acc(0.0, new_value, motor_A);
+        send_status();
+        send_status();
         break;
-#endif
       case CMD_OPEN:
         if(!open_gripper){
           open_gripper = true;
@@ -410,9 +426,13 @@ void read_package() {
         break;
       case CMD_SET_SPEED:
         set_new_speed(new_value);
+        send_status();
+        send_status();
         break;
       case CMD_SET_ACCEL:
         set_new_acc(new_value);
+        send_status();
+        send_status();
         break;
       case CMD_STOP:
         slow_stop_all();
@@ -421,7 +441,7 @@ void read_package() {
         fast_stop_all();
         break;
       default:
-        #ifdef DEBUG
+        #ifdef DEBUG_MODE
            send_packet(STATUS_ERROR, 15);
         #endif
         break;
