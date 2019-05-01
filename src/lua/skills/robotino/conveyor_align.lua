@@ -227,7 +227,5 @@ function FAILED:init()
 end
 
 function FINAL:init()
-   if (fsm.vars.disable_realsense_afterwards == nil or fsm.vars.disable_realsense_afterwards) then
-      cleanup()
-   end
+   cleanup()
 end
