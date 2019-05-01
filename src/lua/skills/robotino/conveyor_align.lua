@@ -104,6 +104,8 @@ function fitness_ok()
     local_fitness_threshold = euclidean_fitness_threshold
   end
 
+  print_info("conveyor_pose fitness: %f", if_conveyor_pose:euclidean_fitness())
+
   return if_conveyor_pose:euclidean_fitness() >= local_fitness_threshold
 end
 
@@ -135,8 +137,19 @@ function pose_offset()
                        y = y_offset,
                        ori = 0,
   }
+
+  local conv_odom_tf = tfm.transform(target_pos, "conveyor_pose", "odom")
+  local conv_odom_tf_age = tfm.tf_age("conveyor_pose", "odom")
+  local odom_base_tf = tfm.transform(conv_odom_tf, "odom", "base_link")
+  local odom_base_tf_age = tfm.tf_age( "odom", "base_link")
+
   local transformed_pos = tfm.transform(target_pos, "conveyor_pose", "base_link")
-  print_info("transformed_pos is x = %f, y = %f,ori = %f", transformed_pos.x, transformed_pos.y, transformed_pos.ori)
+  local transformed_pos_age = tfm.tf_age("conveyor_pose", "base_link")
+
+  print_info("conv_odom_tf is x = %f, y = %f,ori = %f, age = %f", conv_odom_tf.x, conv_odom_tf.y, conv_odom_tf.ori, conv_odom_tf_age)
+  print_info("odom_base_tf is x = %f, y = %f,ori = %f, age = %f", odom_base_tf.x, odom_base_tf.y, odom_base_tf.ori, odom_base_tf_age)
+  print_info("transformed_pos  is x = %f, y = %f,ori = %f, age = %f", transformed_pos.x, transformed_pos.y, transformed_pos.ori, transformed_pos_age)
+
   return transformed_pos
 end
 
