@@ -43,6 +43,7 @@ fawkes/meta_plugins:
     - skiller
     - realsense
     - conveyor-pose
+    - picture_taker
     - ros-pcl
     - skiller-rest-api
   m-robot-memory:
