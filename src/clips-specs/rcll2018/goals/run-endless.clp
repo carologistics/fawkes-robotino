@@ -41,10 +41,11 @@
 ; - Automatic: DISPATCH committed sub-goal by SELECTING it
 ; - User handles sub-goal expanding committing and dispatching
 ; - Automatic: when sub-goal is EVALUATED, goal either fails or succeeds
-; - AUTOMATIC: when sub-goal is REJECTED, goal selects another one if possibe,
+; - Automatic: when sub-goal is REJECTED, goal selects another one if possibe,
 ;              else fails
-; - User EVALUATES goal and deletes all sub-goals
-; - AUTOMATIC: re-FORMULATE goal once at least T seconds have passed since it
+; - User EVALUATES goal and deletes sub-goal
+; - Automatic: retract evaluated sub-goal
+; - Automatic: re-FORMULATE goal once at least T seconds have passed since it
 ;              was formulated last
 
 
@@ -118,6 +119,15 @@
   (not (goal (parent ?pg-id) (outcome ~REJECTED)))
 =>
   (modify ?pg (mode FINISHED) (outcome FAILED))
+)
+
+
+(defrule run-endless-goal-subgoal-evaluated
+  ?gf <- (goal (id ?id) (type MAINTAIN) (sub-type RUN-ENDLESS)
+               (mode DISPATCHED) (committed-to ?sub-goal))
+  ?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode EVALUATED))
+=>
+  (modify ?sg (mode RETRACTED))
 )
 
 
