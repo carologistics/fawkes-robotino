@@ -94,7 +94,8 @@ void PictureTakerThread::init() {
                       IMAGE_CHANNELS);
 }
 
-void PictureTakerThread::takePictureFromFVcamera(std::string name, std::string side) {
+void PictureTakerThread::takePictureFromFVcamera(std::string name,
+                                                 std::string side) {
   fv_cam->capture();
   firevision::convert(fv_cam->colorspace(), firevision::YUV422_PLANAR,
                       fv_cam->buffer(), image_buffer, this->img_width,
@@ -104,24 +105,30 @@ void PictureTakerThread::takePictureFromFVcamera(std::string name, std::string s
   firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
   visionMat = cvarrToMat(ipl);
   fawkes::Time now = fawkes::Time();
-  std::string image_path = vpath + "_" + name + "_" + side + "_" + std::to_string(now.in_sec()) + ".jpg";
+  std::string image_path = vpath + "_" + name + "_" + side + "_" +
+                           std::to_string(now.in_sec()) + ".jpg";
   imwrite(image_path.c_str(), visionMat);
 }
 
 void PictureTakerThread::loop() {
-  if (fv_cam == NULL || !fv_cam->ready()) {
-    logger->log_info(name(), "Camera not ready");
-    init();
-    return;
-  }
-  while (!p_t_if_->msgq_empty()) {
-    if (p_t_if_->msgq_first_is<PictureTakerInterface::TakePictureMessage>()) {
-      PictureTakerInterface::TakePictureMessage *msg =
-        p_t_if_->msgq_first<PictureTakerInterface::TakePictureMessage>();
-      takePictureFromFVcamera(std::string(msg->mps_name()),std::string(msg->mps_side()));
-    } else {
-      logger->log_warn(name(), "Unknown message received");
+  try {
+    if (fv_cam == NULL || !fv_cam->ready()) {
+      logger->log_info(name(), "Camera not ready");
+      init();
+      return;
     }
-    p_t_if_->msgq_pop();
+    while (!p_t_if_->msgq_empty()) {
+      if (p_t_if_->msgq_first_is<PictureTakerInterface::TakePictureMessage>()) {
+        PictureTakerInterface::TakePictureMessage *msg =
+            p_t_if_->msgq_first<PictureTakerInterface::TakePictureMessage>();
+        takePictureFromFVcamera(std::string(msg->mps_name()),
+                                std::string(msg->mps_side()));
+      } else {
+        logger->log_warn(name(), "Unknown message received");
+      }
+      p_t_if_->msgq_pop();
+    }
+  } catch (...) {
+    // Catch everything in order to not crash anything important
   }
 }
