@@ -45,6 +45,7 @@
 ;              else fails
 ; - User EVALUATES goal and deletes all sub-goals
 ; - AUTOMATIC: re-FORMULATE goal once at least T seconds have passed since it
+; - Automatic: retract evaluated sub-goal
 ;              was formulated last
 
 
@@ -118,6 +119,15 @@
   (not (goal (parent ?pg-id) (outcome ~REJECTED)))
 =>
   (modify ?pg (mode FINISHED) (outcome FAILED))
+)
+
+
+(defrule run-endless-goal-subgoal-evaluated
+  ?gf <- (goal (id ?id) (type MAINTAIN) (sub-type RUN-ENDLESS)
+               (mode DISPATCHED) (committed-to ?sub-goal))
+  ?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode EVALUATED))
+=>
+  (modify ?sg (mode RETRACTED))
 )
 
 

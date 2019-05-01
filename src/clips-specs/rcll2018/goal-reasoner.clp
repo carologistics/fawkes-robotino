@@ -462,15 +462,9 @@
   (not (goal (parent ?goal-id) (mode ?mode&~RETRACTED)))
 =>
   ;(printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
-  ;Flush plans of this goal
-  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-    (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
-      (retract ?a)
-    )
-    (retract ?p)
-  )
   (modify ?g (mode RETRACTED))
 )
+
 
 (defrule goal-reasoner-remove-retracted-goal-common
 " Remove a retracted goal if it has no parent (anymore).
@@ -480,6 +474,12 @@
         (mode RETRACTED) (acquired-resources))
   (not (goal (id ?parent)))
 =>
+  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+    (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
+      (retract ?a)
+    )
+    (retract ?p)
+  )
   (retract ?g)
 )
 
