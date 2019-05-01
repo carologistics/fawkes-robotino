@@ -41,10 +41,10 @@ skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
 local x_distance = 0.27
-local gripper_adjust_z_distance = 0.025
+local gripper_adjust_z_distance = 0.03
 local gripper_adjust_x_distance = 0.015
 local adjust_target_frame = "gripper_home"
-local gripper_down_to_puck = -0.035
+local gripper_down_to_puck = -0.025
 
 function pose_gripper_offset(x,y,z)
   local target_pos = { x = x,
