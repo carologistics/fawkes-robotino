@@ -517,8 +517,11 @@ void ConveyorPoseThread::loop() {
       recognition_thread_->retries_ = 0;
       recognition_thread_->schedule_restart();
 
-      // Always set new timeout on incoming message!
-      next_initial_guess_timeout_ = clock->now() + cfg_external_timeout_;
+      if (!cfg_debug_mode_ && !cfg_record_model_)
+        // Set new timeout on incoming message!
+        initial_guess_deadline_.reset(
+              new Time(clock->now() + cfg_external_timeout_));
+
     } else {
       logger->log_warn(name(), "Unknown message received");
     }
@@ -538,8 +541,7 @@ void ConveyorPoseThread::loop() {
 
   if (update_input_cloud()) {
     if (!get_initial_guess()) {
-      if (!cfg_debug_mode_ && !cfg_record_model_ &&
-          clock->now() > next_initial_guess_timeout_) {
+      if (initial_guess_deadline_reached()) {
         logger->log_error(
             name(),
             "TIMEOUT. Stopping because no initial guess could be found.");
@@ -602,12 +604,15 @@ void ConveyorPoseThread::loop() {
         syncpoint_ready_for_icp_->emit(name());
       }
     } // ! cfg_record_model_
-  }   // update_input_cloud() && get_initial_guess()
+  }   // update_input_cloud()
+}
+
+bool ConveyorPoseThread::initial_guess_deadline_reached() {
+  return initial_guess_deadline_
+      && clock->now() > *initial_guess_deadline_;
 }
 
 bool ConveyorPoseThread::get_initial_guess() {
-  bool initial_guess_success = false;
-
   bb_init_guess_pose_->read();
   fawkes::Time last_external = *bb_init_guess_pose_->timestamp();
 
@@ -619,13 +624,14 @@ bool ConveyorPoseThread::get_initial_guess() {
   if (ll)
     best_laser_line_ = ll;
 
-  //-- try to aquire external initial guess (e.g. conveyor_plane)
   if (std::abs(last_pc - &last_external) < cfg_max_timediff_external_pc_ &&
       bb_init_guess_pose_->visibility_history() > 0) {
+    //-- try to aquire external initial guess (e.g. conveyor_plane)
     fawkes::MutexLocker locked(&cloud_mutex_);
 
     try {
-      initial_guess_success = set_external_initial_tf(initial_guess_odom_);
+      if(set_external_initial_tf(initial_guess_odom_))
+        return true;
 
     } catch (fawkes::tf::TransformException &ex) {
       logger->log_warn(
@@ -635,24 +641,18 @@ bool ConveyorPoseThread::get_initial_guess() {
     }
   }
 
-  //-- return when external init successed
-  if (initial_guess_success) {
-    return true;
-  }
-
-  //-- try to aquire initial guess from laser_line as fallback
-  if (!cfg_record_model_ && clock->now() < next_initial_guess_timeout_) {
-    // Timeout not yet reached, maybe init. guess will be ready next time...
-    initial_guess_success = false;
-
-  } else {
-    // Timeout reached, try laser line instead.
+  if (best_laser_line_ &&
+      (!initial_guess_deadline_ || initial_guess_deadline_reached())) {
+    //-- try to aquire initial guess from laser_line as fallback
     const Time *laserline_time = best_laser_line_->timestamp();
     if (std::abs(last_pc - laserline_time) < cfg_max_timediff_external_pc_ &&
         best_laser_line_) {
       fawkes::MutexLocker locked(&cloud_mutex_);
       try {
-        initial_guess_success = set_laserline_initial_tf(initial_guess_odom_);
+        if(set_laserline_initial_tf(initial_guess_odom_)) {
+          initial_guess_deadline_ = nullptr;
+          return true;
+        }
 
       } catch (fawkes::tf::TransformException &ex) {
         logger->log_warn(name(),
@@ -663,7 +663,7 @@ bool ConveyorPoseThread::get_initial_guess() {
     }
   }
 
-  return initial_guess_success;
+  return false;
 }
 
 bool ConveyorPoseThread::set_external_initial_tf(

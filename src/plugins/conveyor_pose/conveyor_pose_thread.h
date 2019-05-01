@@ -121,7 +121,7 @@ private:
   fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
   fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
 
-  fawkes::Time next_initial_guess_timeout_;
+  std::unique_ptr<fawkes::Time> initial_guess_deadline_;
   fawkes::Position3DInterface *bb_init_guess_pose_;
 
   int cfg_force_shelf_;
@@ -260,6 +260,7 @@ private:
   void start_waiting();
   bool need_to_wait();
 
+  bool initial_guess_deadline_reached();
   bool get_initial_guess();
 
   virtual void config_value_erased(const char *path) override;
