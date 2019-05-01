@@ -172,14 +172,16 @@ void RecognitionThread::loop() {
   // is smaller than the threshold, refine the process by reducing
   // the maximal correspondence distance
   bool epsilon_reached = false;
-  if (double(std::abs(
-          (icp_.getLastIncrementalTransformation() - prev_last_tf_).sum())) <
-      icp_.getTransformationEpsilon()) {
+  double last_tf_len = eigen_to_pose(icp_.getFinalTransformation()).getOrigin().length();
+  if (last_tf_len * last_tf_len < icp_.getTransformationEpsilon()) {
     icp_.setMaxCorrespondenceDistance(icp_.getMaxCorrespondenceDistance() *
                                       cfg_icp_refinement_factor_);
     epsilon_reached = true;
+    logger->log_info(name(), "Epsilon reached. Max.corr.dist: %f, last_tf_len: %.14f",
+                     icp_.getMaxCorrespondenceDistance(), last_tf_len);
   }
-  prev_last_tf_ = icp_.getLastIncrementalTransformation();
+  else
+    logger->log_info(name(), "last_tf_len: %.9f", last_tf_len);
 
   if (main_thread_->cfg_debug_mode_)
     publish_result();
