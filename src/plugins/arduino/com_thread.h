@@ -45,13 +45,6 @@
 
 #define NEMA_STEPS_PER_REVOLUTION 200.0 * 4.0
 
-// Each axis has an individual thread diameter.
-// As such each axis has its own value for a
-// number of steps required to move one millimeter.
-#define X_AXIS_STEPS_PER_MM (200 * 1 / 3.0)
-#define Y_AXIS_STEPS_PER_MM (200 * 1 / 2.0)
-#define Z_AXIS_STEPS_PER_MM (200 * 1 / 1.5)
-
 class ArduinoComMessage;
 
 namespace fawkes {
@@ -141,6 +134,10 @@ private:
 
   unsigned int cfg_speeds_[4];
   unsigned int cfg_accs_[4];
+
+  float cfg_steps_per_mm_[3];
+
+  unsigned int cfg_a_toggle_steps_;
 
   bool movement_pending_;
   bool calibrated_;

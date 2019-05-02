@@ -66,6 +66,8 @@ AccelStepper motor_Y(MOTOR_Y_STEP_SHIFT, MOTOR_Y_DIR_SHIFT);
 AccelStepper motor_Z(MOTOR_Z_STEP_SHIFT, MOTOR_Z_DIR_SHIFT);
 AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 
+long a_toggle_steps = 120;
+
 #define AT "AT "
 #define TERMINATOR '+'
 
@@ -85,6 +87,8 @@ AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 #define CMD_SET_SPEED '9'
 #define CMD_STOP '.'
 #define CMD_FAST_STOP ':'
+
+#define CMD_A_SET_TOGGLE_STEPS 'T'
 
 #define CMD_X_NEW_SPEED 'x'
 #define CMD_Y_NEW_SPEED 'y'
@@ -243,6 +247,14 @@ void set_new_pos(long new_pos, AccelStepper &motor) {
   set_status(STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
 }
 
+void set_new_rel_pos(long new_rel_pos, AccelStepper &motor) {
+  motor.enableOutputs();
+  noInterrupts();
+  motor.move(new_rel_pos);
+  interrupts();
+  set_status(STATUS_MOVING);
+}
+
 void set_new_speed(float new_speed) {
   noInterrupts(); // shortly disable interrupts to preverent stepping while changing target position (this is actually only a problem when cur_status == STATUS_MOVING)
   set_new_speed_acc(new_speed, -1, motor_X);
@@ -327,6 +339,7 @@ void read_package() {
     if (cur_cmd == CMD_X_NEW_POS ||
         cur_cmd == CMD_Y_NEW_POS ||
         cur_cmd == CMD_Z_NEW_POS ||
+        cur_cmd == CMD_A_SET_TOGGLE_STEPS ||
 #ifdef DEBUG_MODE
         cur_cmd == CMD_A_NEW_POS ||
 #endif
@@ -351,6 +364,11 @@ void read_package() {
         break;
       case CMD_Z_NEW_POS:
         set_new_pos(-new_value, motor_Z);
+        break;
+      case CMD_A_SET_TOGGLE_STEPS:
+        a_toggle_steps = new_value;
+        send_status();
+        send_status();
         break;
 #ifdef DEBUG_MODE
       case CMD_A_NEW_POS:
@@ -400,7 +418,7 @@ void read_package() {
       case CMD_OPEN:
         if(!open_gripper){
           open_gripper = true;
-          set_new_pos(motor_A.currentPosition()+120,motor_A);
+          set_new_rel_pos(a_toggle_steps,motor_A);
         } else {
           send_status();
           send_status();
@@ -409,7 +427,7 @@ void read_package() {
       case CMD_CLOSE:
         if(open_gripper){
           open_gripper = false;
-          set_new_pos(motor_A.currentPosition()-120,motor_A);
+          set_new_rel_pos(-a_toggle_steps,motor_A);
         } else {
           send_status();
           send_status();
