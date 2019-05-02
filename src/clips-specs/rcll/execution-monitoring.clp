@@ -320,10 +320,10 @@
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
   (wm-fact (key domain fact self args? r ?r))
-  (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)))
+  (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp g ?goal-id)))
   =>
   (assert
-    (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value 0))
+    (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp g ?goal-id) (value 0))
   )
   (printout error "Start retrying" crlf)
 )
@@ -345,60 +345,21 @@
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
   (wm-fact (key domain fact self args? r ?r))
-  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp g ?goal-id)
           (value ?tries&:(< ?tries ?*MAX-RETRIES-PICK*)))
   =>
   (bind ?tries (+ 1 ?tries))
-  (if (<= ?tries ?*MAX-RETRIES-PICK*) then
-    (modify ?pa (state FORMULATED))
-    (printout error "Restarted: " ?tries crlf)
-  )
+  (modify ?pa (state FORMULATED))
+  (printout error "Restarted: " ?tries crlf)
   (modify ?wm (value ?tries))
-)
-
-(defrule execution-monitoring-retry-action-abort
-" The retried action failed with a different error where we dont want to retry"
- (declare (salience ?*MONITORING-SALIENCE*))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
-  ?pa <- (plan-action
-              (action-name ?an)
-              (plan-id ?plan-id)
-              (goal-id ?goal-id)
-              (state FAILED)
-              (error-msg ?error&: (not (eq ?error "Conveyor Align Failed")))
-              (param-values $? ?wp $? ?mps $?))
-  (domain-obj-is-of-type ?mps mps)
-  (domain-obj-is-of-type ?wp workpiece)
-  (wm-fact (key domain fact self args? r ?r))
-  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp))
-  =>
-  (retract ?wm)
-  (printout error "Abort retrying " ?an crlf)
-)
-
-(defrule execution-monitoring-retry-action-final
-  (declare (salience ?*MONITORING-SALIENCE*))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
-  (plan-action
-        (plan-id ?plan-id)
-        (action-name ?an)
-        (state FINAL)
-        (param-values $? ?wp $? ?mps $?))
-  (domain-obj-is-of-type ?mps mps)
-  (domain-obj-is-of-type ?wp workpiece)
-  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp))
-  =>
-  (printout error "Retrying was successful" crlf)
-  (retract ?wm)
 )
 
 (defrule execution-monitoring-retry-action-failed
   (declare (salience ?*MONITORING-SALIENCE*))
   (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
+  (goal (id ?goal-id) (mode DISPATCHED) (class ?class) (params $?params))
   (plan-action
+        (goal-id ?goal-id)
         (plan-id ?plan-id)
         (action-name ?an)
         (state FAILED)
@@ -406,11 +367,41 @@
         (error-msg ?error))
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
-  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp g ?goal-id)
                 (value ?tries&:(= ?tries ?*MAX-RETRIES-PICK*)))
   =>
-  (retract ?wm)
+  (assert
+    (wm-fact (key monitoring forbid-goal args? c ?class mps ?mps))
+  )
   (printout error "Reached max retries" crlf)
+)
+
+(defrule execution-monitoring-clear-action-retried
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp g ?goal-id))
+  (goal (id ?goal-id) (mode EVALUATED))
+  =>
+  (retract ?wm)
+)
+
+(defrule execution-monitoring-remove-forbid
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?wm <- (wm-fact (key monitoring forbid-goal args? c ?class mps ?mps))
+  (goal (id ?goal-id) (sub-type SIMPLE) (class ?c) (params ?p) (mode EVALUATED))
+  (and (test (neq ?c ?class))
+       (test (not (member$ ?mps ?p)))
+  )
+  =>
+  (retract ?wm)
+)
+
+(defrule execution-monitoring-reject-forbidden-goal
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
+  (wm-fact (key monitoring forbid-goal args? c ?class mps ?mps))
+  ?g <- (goal (id ?goal-id) (params $? ?mps $?) (mode ?m&:(and (not (eq ?m DISPATCHED)) (not (eq ?m FINISHED)) (not (eq ?m RETRACTED)) (not (eq ?m EVALUATED)) )))
+  =>
+  (printout t "Goal " ?class " was tried and failed before at " ?mps ". Reject" crlf)
+  (modify ?g (outcome REJECTED) (mode RETRACTED))
 )
 
 ;
@@ -429,19 +420,11 @@
         (action-name ?an&wp-get)
         (state FAILED)
         (param-values $? ?wp $? ?mps $?)
-        (error-msg ?error))
+        (error-msg ?error&:(not (eq ?error "Conveyor Align Failed"))))
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
-
-  (or (not (eq ?error "Conveyor Align Failed"))
-      (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value ?tries&:(= ?tries ?*MAX-RETRIES-PICK*)))
-  )
   =>
   (printout error "wp-get failed not by aligning: reset " ?mps crlf)
-  (do-for-all-facts ((?wf wm-fact)) (and (wm-key-prefix ?wf:key (create$ monitoring action-retried))
-                                    (member$ ?an (wm-key-args ?wf:key)))
-    (retract ?wf)
-  )
   (assert
     (wm-fact (key evaluated reset-mps args? m ?mps))
   )
