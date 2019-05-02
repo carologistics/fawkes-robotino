@@ -598,8 +598,10 @@ bool ArduinoComThread::send_one_message() {
 
     std::string s = read_packet(1000); // read receipt
     logger->log_debug(name(), "Read receipt: %s", s.c_str());
+    tf_thread_->set_moving(true);
     s = read_packet(msecs_to_wait_); // read
     logger->log_debug(name(), "Read status: %s", s.c_str());
+    tf_thread_->set_moving(false);
 
     return true;
   } else {
