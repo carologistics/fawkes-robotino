@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align","shelf_pick"}
+depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align", "shelf_pick", "gripper_commands"}
 depends_interfaces = {
 }
 
@@ -47,6 +47,8 @@ local pam = require("parse_module")
 
 -- Constants
 
+local get_z_clear = 0.05
+
 -- If this matches the desired x distance of conveyor align, conveyor align has the chance
 -- of not needing to move at all.
 -- x distance to laserline
@@ -64,11 +66,12 @@ end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph,shelf_set=shelf_set},
    {"INIT", JumpState},
-   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="PRE_FAILED"},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="PRE_FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
-   {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
-   {"SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="FINAL", fail_to="FAILED"},
+   {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="PRE_FAILED"},
+   {"SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="FINAL", fail_to="PRE_FAILED"},
+   {"PRE_FAILED", SkillJumpState, skills={{gripper_commands}}, final_to="FAILED", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
@@ -120,4 +123,17 @@ function CONVEYOR_ALIGN:init()
      self.args["conveyor_align"].slide = self.fsm.vars.slide
    end
 
+end
+
+function PRE_FAILED:init()
+  self.args["gripper_commands"].x = 0
+  self.args["gripper_commands"].z = get_z_clear
+  self.args["gripper_commands"].command = "MOVEABS"
+  self.args["gripper_commands"].wait = true
+end
+
+function FAILED:init()
+  self.args["gripper_commands"].z = 0
+  self.args["gripper_commands"].wait = false
+  self.args["gripper_commands"].command = "MOVEABS"
 end
