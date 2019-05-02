@@ -66,7 +66,7 @@ AccelStepper motor_Y(MOTOR_Y_STEP_SHIFT, MOTOR_Y_DIR_SHIFT);
 AccelStepper motor_Z(MOTOR_Z_STEP_SHIFT, MOTOR_Z_DIR_SHIFT);
 AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 
-long a_toggle_steps = 120;
+long a_toggle_steps = 480;
 
 #define AT "AT "
 #define TERMINATOR '+'
@@ -109,8 +109,8 @@ long a_toggle_steps = 120;
 #define DEFAULT_MAX_SPEED_Z 2000
 #define DEFAULT_MAX_ACCEL_Z 3500
 
-#define DEFAULT_MAX_SPEED_A 4000
-#define DEFAULT_MAX_ACCEL_A 5000
+#define DEFAULT_MAX_SPEED_A 15000
+#define DEFAULT_MAX_ACCEL_A 30000
 
 #define SECOND_CAL_MAX_SPEED 500
 #define SECOND_CAL_MAX_ACC 1000
