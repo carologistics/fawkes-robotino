@@ -82,6 +82,12 @@ public:
    * @param new_z New Z-coordinate
    */
   void set_position(float new_x, float new_y, float new_z);
+
+  /**
+   * @brief sets the bool flag for the moving state ot the gripper
+   *
+   * @param moving New moving state
+   */
   void set_moving(bool moving);
 
 private:
