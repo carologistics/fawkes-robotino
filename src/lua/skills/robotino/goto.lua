@@ -161,7 +161,7 @@ function MOVING:init()
 
    -- Use a tolerance if it is defined.
    if self.fsm.vars.trans_tolerance ~= nil and self.fsm.vars.ori_tolerance ~= nil then
-      msg = navigator.CartesianGotoWithFrameWithToleranceMessage:new(
+      msg = navigator.CartesianGotoFrameTolMessage:new(
         self.fsm.vars.x,
         self.fsm.vars.y,
         self.fsm.vars.ori,
