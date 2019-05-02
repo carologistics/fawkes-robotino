@@ -1,0 +1,63 @@
+/***************************************************************************
+ *  tensorflow_thread.h - Thread to use tensorflow in Fawkes
+ *
+ *  Created: Thu May 2 10:31:00 2019
+ *  Copyright  2019    Morian Sonnet
+ ****************************************************************************/
+
+/*  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  Read the full text in the LICENSE.GPL file in the doc directory.
+ */
+
+#ifndef __PLUGINS_TENSORFLOW_THREAD_H_
+#define __PLUGINS_TENSORFLOW_THREAD_H_
+
+#include <aspect/blackboard.h>
+#include <aspect/blocked_timing.h>
+#include <aspect/clock.h>
+#include <aspect/configurable.h>
+#include <aspect/logging.h>
+#include <aspect/vision.h>
+#include <core/threading/mutex.h>
+#include <core/threading/thread.h>
+#include <string>
+
+// config handling
+#include <config/change_handler.h>
+
+#include <libtensorflow/c_api.h>
+
+namespace fawkes {
+class TensorflowInterface;
+}
+
+class TensorflowThread : public fawkes::Thread,
+                         public fawkes::LoggingAspect,
+                         public fawkes::ConfigurableAspect,
+                         public fawkes::BlackBoardAspect,
+                         // public fawkes::VisionAspect,
+                         // public fawkes::ConfigurationChangeHandler,
+                         public fawkes::ClockAspect {
+public:
+  TensorflowThread(std::string cfg_name);
+
+  virtual void init();
+  virtual void loop();
+  virtual void finalize();
+
+private:
+  std::string cfg_name_;
+
+  void load_config();
+};
+
+#endif

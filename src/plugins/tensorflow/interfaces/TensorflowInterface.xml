@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="TensorflowInterface" author="Morian Sonnet" year="2019">
+  <constant>
+  </constant>
+  <data>
+    <comment>
+        Interface to acces tensorflow plugin
+    </comment>
+    <field type="float" name="dummy">Dummy data entry</field>
+  </data>
+</interface>
