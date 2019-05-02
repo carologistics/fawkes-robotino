@@ -43,6 +43,15 @@
   (blackboard-open "MotorInterface" "Robotino")
 )
 
+(defrule state-estimation-robotino-sensor-interfaces
+  "Open the Navgraph blackboard interfaces ."
+  (executive-init)
+  (ff-feature-loaded blackboard)
+  (not (blackboard-interface (type "RobotinoSensorInterface") (id "Robotino")))
+  =>
+  (blackboard-open "RobotinoSensorInterface" "Robotino")
+)
+
 (defrule exploration-interfaces-init
   (executive-init)
   (ff-feature-loaded blackboard)
@@ -80,7 +89,6 @@
   (blackboard-open "MotorInterface" "Robotino")
   (blackboard-open "ZoneInterface" "/explore-zone/info")
  (unwatch rules blackboard-read)
-  (unwatch facts RobotinoSensorInterface)
   (unwatch facts Position3DInterface)
   (unwatch facts RobotinoLightInterface)
   (unwatch facts NavGraphWithMPSGeneratorInterface)
