@@ -1,0 +1,313 @@
+#!/usr/bin/env bash
+
+############################################################################
+#  Lint script to check some basic things on the relevant commits
+#
+#  Created: Fri Sep 28 15:59:06 2018 +0200
+#  Copyright  2018  Tim Niemueller [www.niemueller.org]
+############################################################################
+
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Library General Public License for more details.
+#
+#  Read the full text in the LICENSE.GPL file in the doc directory.
+
+SCRIPT_PATH=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
+
+# Source standard environment, may setup ccache if available
+source /etc/profile
+
+source $SCRIPT_PATH/functions.sh
+
+# Error out on any error in the script, pipes etc.
+set -eu
+
+# Enable debug output, only enable temporarily, rather verbose
+#set -x
+
+# We need to update the master to determine the merge base
+# For now, trust the post-checkout hook to have done this.
+# git fetch origin master
+
+# We rely on GNU diffutils here, therefore apply heuristics to find it
+DIFF=diff
+if type -p gdiff >/dev/null; then
+	DIFF=gdiff
+fi
+
+MERGE_BASE=$($DIFF --old-line-format='' --new-line-format='' \
+             <(git rev-list --first-parent "HEAD") \
+             <(git rev-list --first-parent "origin/master") \
+             | head -1)
+
+error_exit () {
+	MSG="$@"
+	if [ -n "${BUILDKITE:-}" ]; then
+		buildkite-agent annotate --context buildfail --style error "$MSG"
+	fi
+	print_fail "lint" "$MSG"
+	exit 1
+}
+
+set -o pipefail
+
+AUTHORS_FILE=
+
+echo "-> Getting committer information"
+if [[ "${BUILDKITE_REPO-}" =~ ^(https://|git@)github.com(/|:)([^/]+)/ ]]; then
+	COMMITTERS_REPO="git@github.com:${BASH_REMATCH[3]}/committers.git"
+	COMMITTERS_DIR="$HOME/committers/${BASH_REMATCH[3]}/committers"
+	AUTHORS_FILE="$COMMITTERS_DIR/committers.csv"
+	if [ -d "$COMMITTERS_DIR" ]; then
+		pushd $COMMITTERS_DIR >/dev/null
+		git_repo_pull
+		popd >/dev/null
+	else
+		git_repo_clone "$COMMITTERS_REPO" "$COMMITTERS_DIR"
+	fi
+fi
+
+if [ ! -e "$AUTHORS_FILE" ]; then
+	error_exit "Cannot open authors file"
+fi
+
+declare -a AUTHOR_NAME=()
+declare -a AUTHOR_EMAILS=()
+declare -a AUTHOR_GITHUB=()
+declare -a AUTHOR_BRANCHES=()
+AUTHOR_INDEX=
+
+OIFS=$IFS
+IFS=$'\n'
+for line in $(cat $AUTHORS_FILE); do
+	if [[ "$line" =~ ^# ]]; then continue; fi
+	OIFSF=$IFS
+	IFS=";"
+	# Temporarily disable pathname expansion, could expand branch patterns
+	set -f
+	declare -a AUTHOR=($line)
+	set +f
+	IFS=$OIFSF
+
+	AUTHOR_NAME[${#AUTHOR_NAME[*]}]="${AUTHOR[0]}"
+	AUTHOR_EMAILS[${#AUTHOR_EMAILS[*]}]="${AUTHOR[1]}"
+	AUTHOR_GITHUB[${#AUTHOR_GITHUB[*]}]="${AUTHOR[2]}"
+	AUTHOR_BRANCHES[${#AUTHOR_BRANCHES[*]}]="${AUTHOR[3]}"
+done
+IFS=$OIFS
+
+check_build_creator () {
+	for ((i=0; i<${#AUTHOR_NAME[@]}; i++)); do
+		n=${AUTHOR_NAME[$i]}
+		g=${AUTHOR_GITHUB[$i]}
+		c=${BUILDKITE_BUILD_CREATOR:-}
+		ce=${BUILDKITE_BUILD_CREATOR_EMAIL:-}
+		if [[ "$n" == "$c" || "$g" == "$c" ]]; then
+			OIFS=$IFS
+			IFS=","
+			declare -a EMAILS=(${AUTHOR_EMAILS[$i]})
+			IFS=$OIFS
+			for E in $EMAILS; do
+				if [[ "$E" == "$ce" || "$E" == "$g@users.noreply.github.com" ]]; then
+					AUTHOR_INDEX=$i
+				fi
+			done
+			break;
+		fi
+	done
+
+	if [ -z "$AUTHOR_INDEX" ]; then
+		error_exit "Unrecognized build creator '${BUILDKITE_BUILD_CREATOR:-UNSET} <${BUILDKITE_BUILD_CREATOR_EMAIL:-UNSET}>'"
+	fi
+	echo $AUTHOR_INDEX
+}
+
+check_branch_name () {
+	AUTHOR_INDEX=$1
+
+	if [ -z "$AUTHOR_INDEX" ]; then
+		error_exit "Cannot check branch name, failed to determine build creator"
+	fi
+
+	BRANCH_OK=false
+
+	if [ "${BUILDKITE_BRANCH:-}" == "master" ]; then
+		BRANCH_OK=true
+	else
+		OIFS=$IFS
+		IFS=","
+		set -f
+		declare -a BRANCHES=(${AUTHOR_BRANCHES[$AUTHOR_INDEX]})
+		for ((i=0; i<${#BRANCHES[@]}; i++)); do
+			BRANCHES[$i]=${BRANCHES[$i]//@/${AUTHOR_GITHUB[$AUTHOR_INDEX]}}
+		done
+		IFS=$OIFS
+
+		for ((i=0; i<${#BRANCHES[@]}; i++)); do
+			B=${BRANCHES[$i]}
+			case "${BUILDKITE_BRANCH-}" in ($B)
+				BRANCH_OK=true;
+				break;
+				;;
+			esac
+		done
+	fi
+
+	if [ "$BRANCH_OK" != "true" ]; then
+		error_exit "Disallowed branch name '${BUILDKITE_BRANCH-}' (must match '${AUTHOR_BRANCHES[$AUTHOR_INDEX]}')"
+	fi
+	set +f
+}
+
+check_commit_authors () {
+
+	rm -rf .barerepo
+	git_repo_clone "$BUILDKITE_REPO" .barerepo "--reference . --bare"
+	pushd .barerepo >/dev/null
+
+	OTHER_BRANCHES=$(git for-each-ref --format='%(refname)' refs/heads/ | grep -F -v "refs/heads/${BUILDKITE_BRANCH:-}" || :)
+
+	git rev-parse ${OTHER_BRANCHES:+--not $OTHER_BRANCHES} |
+	git rev-list --stdin $MERGE_BASE..$BUILDKITE_COMMIT |
+	while read onerev
+	do
+	  l=$(git log --pretty="format:%h:%ae:%ce:%an:%cn" -n1 $onerev)
+	  OIFS=$IFS
+	  IFS=":"
+	  declare -a LOGENTRIES=($l)
+	  HASH=${LOGENTRIES[0]}
+	  AE=${LOGENTRIES[1]}
+	  CE=${LOGENTRIES[2]}
+	  AN=${LOGENTRIES[3]}
+	  CN=${LOGENTRIES[4]}
+	  VALID_AE=0
+	  VALID_CE=0
+	  VALID_AN=0
+	  VALID_CN=0
+		IFS=$OIFS
+
+	  for ((i=0; i<${#AUTHOR_NAME[@]}; i++)); do
+			OIFS=$IFS
+			IFS=","
+			declare -a EMAILS=(${AUTHOR_EMAILS[$i]})
+			declare -a BRANCHES=(${AUTHOR_BRANCHES[$i]})
+			IFS=$OIFS
+
+			for ((j=0; j<${#EMAILS[@]}; j++)); do
+				a=${EMAILS[$j]}
+				if [ "$a" == "$AE" ]; then
+					VALID_AE=1
+				fi
+				if [ "$a" == "$CE" ]; then
+					VALID_CE=1
+				fi
+	    done
+	    if [ -z "$AN" ]; then
+				error_exit "Author name may not be empty."
+	    fi
+	    if [ -z "$CN" ]; then
+				error_exit "Committer name may not be empty."
+	    fi
+			n=${AUTHOR_NAME[$i]}
+			if [ "$n" == "$AN" ]; then
+				VALID_AN=1
+			fi
+			if [ "$n" == "$CN" ]; then
+				VALID_CN=1
+			fi
+		done
+		if [[ $VALID_AE == 0 ]]; then
+			error_exit "Invalid author email address '$AE' in commit $HASH."
+		fi
+		if [ $VALID_CE == 0 ]; then
+			error_exit "Invalid committer email address '$CE' in commit $HASH."
+		fi
+		if [[ $VALID_AN == 0 ]]; then
+			error_exit "Invalid author name '$AN' in commit $HASH."
+		fi
+		if [ $VALID_CN == 0 ]; then
+			error_exit "Invalid committer name '$AN' in commit $HASH."
+		fi
+	done
+	# This is required because we are piping to the while loop which will
+	# cause a subshell to be used and only this is exited by "exit 1"
+	LOOP_EXIT=$?
+	if [ "$LOOP_EXIT" != "0" ]; then
+	    exit $LOOP_EXIT;
+	fi
+	popd >/dev/null
+	rm -rf .barerepo
+}
+
+check_gitlint ()
+{
+	local NPROC=$(num_proc)
+	local GITLINT_ERROR=0
+	git rev-list $MERGE_BASE..HEAD | \
+	  xargs -n1 -P $NPROC -I@ -- sh -c "git log -1 --pretty=%B @ | gitlint >gitlint-@.txt 2>&1" ||\
+	GITLINT_ERROR=$?
+	if [ $GITLINT_ERROR -ne 0 ]; then
+		URL_PREFIX=
+		if [[ "${BUILDKITE_REPO:-}" =~ ^(https://|git@)github.com(/|:)([^/]+/[^/.]+) ]]; then
+			URL_PREFIX="https://github.com/${BASH_REMATCH[3]}/commit"
+		fi
+		{
+			echo "#### Detected Gitlint Errors"
+			for r in $(git rev-list $MERGE_BASE..HEAD); do
+				if [ -s gitlint-$r.txt ]; then
+					>&2 echo Commit $r
+					>&2 cat gitlint-$r.txt
+					echo "- In [commit $r]($URL_PREFIX/$r)"
+					sed gitlint-$r.txt -E \
+							-e 's/^([^:]+): ([^:]+): "(.+)"$/  - Line \1: *\2*\n    ```\n    \3\n    ```/g'
+				fi
+				rm -f gitlint-$r.txt
+			done
+		} | buildkite-agent annotate --context gitlint --style error
+		print_fail "Gitlint exited with errors. See log."
+		exit $GITLINT_ERROR
+	fi
+	rm -f gitlint-*.txt
+}
+
+check_yamllint()
+{
+	YAMLLINT_ERROR=0
+	YAMLLINT_OUTPUT=$(yamllint -s -f colored cfg/config.yaml cfg/conf.d/) || YAMLLINT_ERROR=$?
+	if [ $YAMLLINT_ERROR -ne 0 ]; then
+		# Print error to log
+		>&2 cat <<< $YAMLLINT_OUTPUT
+
+		{
+			echo "#### Detected yamllint Errors"
+			echo '```terminal'
+			cat <<< $YAMLLINT_OUTPUT
+			echo '```'
+		} | buildkite-agent annotate --context yamllint --style error
+		exit $YAMLLINT_ERROR
+	fi
+}
+
+### Main Program
+
+echo "-> Verifying build creator"
+AUTHOR_INDEX=$(check_build_creator)
+
+echo "-> Verifying branch name"
+check_branch_name $AUTHOR_INDEX
+
+echo "-> Verifying committer and author information for branch commits"
+check_commit_authors
+
+echo "-> Running gitlint to check commit messages"
+check_gitlint
+
+echo "-> Running yamllint on configuration files"
+check_yamllint

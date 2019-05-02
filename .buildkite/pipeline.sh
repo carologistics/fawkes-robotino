@@ -11,9 +11,7 @@ SCRIPT_PATH=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
 # Note that these jobs will be appended at the end, that is in the build job
 # section. Add a wait step to wait for the completion of the builds.
 
-sed $SCRIPT_PATH/../fawkes/.buildkite/pipeline.yml \
-	-e 's|\.buildkite/|fawkes/.buildkite/|g' \
-	-e 's/SSH_DEPLOY_PRIVKEY_COMMITTERS/SSH_DEPLOY_PRIVKEY_COMMITTERS\n            - SSH_DEPLOY_PRIVKEY_FAWKES_ROBOTINO/g'
+cat $SCRIPT_PATH/pipeline.yml
 
 # Example to add more steps:
 # Note, that the steps must be properly indented as if it were
