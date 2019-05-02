@@ -136,7 +136,6 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
   {"INIT", "FAILED", cond="pose_not_exist()"},
-  {"INIT", "FAILED", cond="not is_grabbed()", desc="Lost product"},
   {"INIT", "GRIPPER_ALIGN", true, desc="Start aligning"},
   {"MOVE_GRIPPER_FORWARD", "FAILED", cond="not is_grabbed()", desc="Lost product while aligning"},
 }
@@ -220,7 +219,7 @@ end
 function GRIPPER_HOME:init()
   self.args["gripper_commands"].x = 0
   self.args["gripper_commands"].y = 0
-  self.args["gripper_commands"].z = 0.03
+  self.args["gripper_commands"].z = 0.0
   self.args["gripper_commands"].wait = false
   self.args["gripper_commands"].command = "MOVEABS"
 end
