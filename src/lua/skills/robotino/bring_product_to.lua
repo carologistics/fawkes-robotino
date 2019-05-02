@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "bring_product_to"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"product_put", "drive_to_machine_point", "conveyor_align"}
+depends_skills     = {"product_put", "drive_to_machine_point", "conveyor_align", "gripper_commands"}
 depends_interfaces = {
 }
 
@@ -45,6 +45,8 @@ Parameters:
 skillenv.skill_module(_M)
 
 -- Constants
+local get_z_clear = 0.05
+
 -- If this matches the desired x distance of conveyor align, conveyor align has the chance
 -- of not needing to move at all.
 local X_AT_MPS = 0.28
@@ -59,9 +61,10 @@ end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
-   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PUT", fail_to="FAILED"},
-   {"PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="FAILED"}
+   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="PRE_FAILED"},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PUT", fail_to="PRE_FAILED"},
+   {"PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="PRE_FAILED"},
+   {"PRE_FAILED", SkillJumpState, skills={{gripper_commands}}, final_to="FAILED", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
@@ -109,4 +112,16 @@ function PRODUCT_PUT:init()
   self.args["product_put"].place = self.fsm.vars.place
   self.args["product_put"].slide = self.fsm.vars.slide
   self.args["product_put"].side = self.fsm.vars.side
+end
+
+function PRE_FAILED:init()
+  self.args["gripper_commands"].x = 0
+  self.args["gripper_commands"].z = get_z_clear
+  self.args["gripper_commands"].command = "MOVEABS"
+end
+
+function FAILED:init()
+  self.args["gripper_commands"].z = 0
+  self.args["gripper_commands"].command = "MOVEABS"
+  self.args["gripper_commands"].wait = false
 end
