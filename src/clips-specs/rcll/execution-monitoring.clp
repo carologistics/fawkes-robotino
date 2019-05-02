@@ -24,6 +24,19 @@
   ?*HOLDING-MONITORING* = 60
 )
 
+
+(deffunction should-retry (?an ?error)
+  (if (eq ?error "Conveyor Align Failed") then
+    (return TRUE)
+  )
+  (if (and (or (eq ?an wp-put) (eq ?an wp-put-slide-cc))
+           (any-factp ((?if RobotinoSensorInterface))
+                      (and (nth$ 1 ?if:digital_in) (not (nth$ 2 ?if:digital_in))))) then
+    (return TRUE)
+  )
+  (return FALSE)
+)
+
 ;
 ; ============================== MPS State Monitoring ==============================
 ;
@@ -311,14 +324,15 @@
   (goal (id ?goal-id) (mode DISPATCHED))
   (plan (id ?plan-id) (goal-id ?goal-id))
   ?pa <- (plan-action
-              (action-name ?an&:(or (eq ?an wp-get) (eq ?an wp-get-shelf)))
+              (action-name ?an)
               (plan-id ?plan-id)
               (goal-id ?goal-id)
               (state FAILED)
-              (error-msg ?error&: (eq ?error "Conveyor Align Failed"))
+              (error-msg ?error)
               (param-values $? ?wp $? ?mps $?))
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
+  (test (eq TRUE (should-retry ?an ?error)))
   (wm-fact (key domain fact self args? r ?r))
   (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp g ?goal-id)))
   =>
@@ -340,11 +354,12 @@
               (plan-id ?plan-id)
               (goal-id ?goal-id)
               (state FAILED)
-              (error-msg ?error&: (eq ?error "Conveyor Align Failed"))
+              (error-msg ?error)
               (param-values $? ?wp $? ?mps $?))
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
   (wm-fact (key domain fact self args? r ?r))
+  (test (eq TRUE (should-retry ?an ?error)))
   ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp g ?goal-id)
           (value ?tries&:(< ?tries ?*MAX-RETRIES-PICK*)))
   =>
@@ -420,7 +435,8 @@
         (action-name ?an&wp-get)
         (state FAILED)
         (param-values $? ?wp $? ?mps $?)
-        (error-msg ?error&:(not (eq ?error "Conveyor Align Failed"))))
+        (error-msg ?error))
+  (test (eq FALSE (should-retry ?an ?error)))
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
   =>
