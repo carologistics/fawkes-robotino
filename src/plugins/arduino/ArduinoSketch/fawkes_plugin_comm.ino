@@ -170,12 +170,20 @@ void send_status() {
 
 void send_gripper_status()
 {
+  check_gripper_status();
+  if(open_gripper)
+    Serial.print("OPEN");
+  else 
+    Serial.print("CLOSED");
+}
+
+void check_gripper_status()
+{
   byte open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
-  if(open_button == LOW){
-        Serial.print("OPEN");
-  }
-  if(open_button == HIGH){
-        Serial.print("CLOSED");
+  if(open_button == LOW){ // definetely OPEN
+    open_gripper = true;
+  } else { // gripper should be closed
+    open_gripper = false;
   }
 }
 
@@ -416,6 +424,7 @@ void read_package() {
         send_status();
         break;
       case CMD_OPEN:
+        check_gripper_status();
         if(!open_gripper){
           open_gripper = true;
           set_new_rel_pos(a_toggle_steps,motor_A);
@@ -425,6 +434,7 @@ void read_package() {
         }
         break;
       case CMD_CLOSE:
+        check_gripper_status();
         if(open_gripper){
           open_gripper = false;
           set_new_rel_pos(-a_toggle_steps,motor_A);
