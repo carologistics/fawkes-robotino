@@ -82,6 +82,7 @@ public:
    * @param new_z New Z-coordinate
    */
   void set_position(float new_x, float new_y, float new_z);
+  void set_moving(bool moving);
 
 private:
   std::string cfg_gripper_frame_id_;
@@ -117,6 +118,8 @@ private:
   float cur_x_;
   float cur_y_;
   float cur_z_;
+
+  bool moving_;
 
 protected:
   /** Mutex to protect data_. Lock whenever accessing it. */
