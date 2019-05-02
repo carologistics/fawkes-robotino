@@ -78,7 +78,7 @@ end
 
 
 function enable_conveyor_plane(enable)
-   if if_plane_switch:has_writer() then
+   if not fsm.vars.slide and if_plane_switch:has_writer() then
       local msg
       if enable then
          msg = if_plane_switch.EnableSwitchMessage:new()
