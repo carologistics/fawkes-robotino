@@ -31,7 +31,7 @@
   )
   (if (and (or (eq ?an wp-put) (eq ?an wp-put-slide-cc))
            (any-factp ((?if RobotinoSensorInterface))
-                      (and (nth$ 1 ?if:digital_in) (not (nth$ 2 ?if:digital_in))))) then
+                      (and (not (nth$ 1 ?if:digital_in)) (nth$ 2 ?if:digital_in)))) then
     (return TRUE)
   )
   (return FALSE)
