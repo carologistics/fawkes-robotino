@@ -507,7 +507,6 @@ void ConveyorPoseThread::loop() {
       ConveyorPoseInterface::RunICPMessage *msg =
           bb_pose_->msgq_first<ConveyorPoseInterface::RunICPMessage>();
       update_station_information(*msg);
-      bb_pose_->write();
 
       result_pose_.release();
 
@@ -851,6 +850,7 @@ void ConveyorPoseThread::update_station_information(
     result_fitness_ = std::numeric_limits<double>::min();
     bb_pose_->set_euclidean_fitness(result_fitness_);
     bb_pose_->set_msgid(msg.id());
+    bb_pose_->set_busy(true);
     bb_pose_->write();
   }
 }
