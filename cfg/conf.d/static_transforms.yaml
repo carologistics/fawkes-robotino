@@ -127,7 +127,7 @@ plugins/static-transforms:
       child_frame: !frame cam_conveyor
       trans_x: 0.0
       trans_y: 0.0
-      trans_z: 0.01
+      trans_z: 0.0
 
     # This frame can be used by the conveyor_pose plugin
     # to align the recorded model using the gripper fingers
