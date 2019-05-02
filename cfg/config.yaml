@@ -8,7 +8,9 @@ include:
   # reads host-specific config files from host.d subdir
   - !ignore-missing host.d/
   # Reads the host-specific configuration file, no failure if missing
-  - !host-specific host.yaml
+  # The <> is replaced by the hostname, thus robotino-(laptop/base)-(1/2/3)
+  # e.g. host_robotino-laptop-1.yaml
+  - !host-specific host_<>.yaml
 ---
 # Main configuration document
 
