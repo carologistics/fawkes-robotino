@@ -31,6 +31,7 @@
 
 #include <aspect/blackboard.h>
 #include <aspect/blocked_timing.h>
+#include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <aspect/pointcloud.h>
@@ -38,6 +39,7 @@
 #include <aspect/tf.h>
 
 #include <interfaces/ConveyorPoseInterface.h>
+#include <interfaces/Position3DInterface.h>
 
 #include <config/change_handler.h>
 
@@ -75,7 +77,8 @@ class ConveyorPoseThread : public fawkes::Thread,
                            public fawkes::PointCloudAspect,
                            public fawkes::ROSAspect,
                            public fawkes::TransformAspect,
-                           public fawkes::SyncPointManagerAspect {
+                           public fawkes::SyncPointManagerAspect,
+                           public fawkes::ClockAspect {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -101,8 +104,8 @@ private:
   typedef Cloud::ConstPtr CloudConstPtr;
 
   std::atomic<double> result_fitness_;
-  const std::string syncpoint_clouds_ready_name_;
-  fawkes::RefPtr<fawkes::SyncPoint> syncpoint_clouds_ready;
+  const std::string syncpoint_ready_for_icp_name_;
+  fawkes::RefPtr<fawkes::SyncPoint> syncpoint_ready_for_icp_;
 
   // cfg values
   std::string cfg_if_prefix_;
@@ -117,6 +120,9 @@ private:
 
   fawkes::ConveyorPoseInterface::MPS_TYPE current_mps_type_;
   fawkes::ConveyorPoseInterface::MPS_TARGET current_mps_target_;
+
+  std::unique_ptr<fawkes::Time> initial_guess_deadline_;
+  fawkes::Position3DInterface *bb_init_guess_pose_;
 
   int cfg_force_shelf_;
 
@@ -178,6 +184,9 @@ private:
 
   std::atomic<float> cfg_voxel_grid_leaf_size_;
 
+  std::atomic<double> cfg_max_timediff_external_pc_;
+  std::atomic<double> cfg_external_timeout_;
+
   std::map<fawkes::ConveyorPoseInterface::MPS_TARGET,
            std::array<std::atomic<float>, 3>>
       cfg_target_hint_;
@@ -190,13 +199,13 @@ private:
   // state vars
   bool cfg_enable_switch_;
   bool cloud_in_registered_;
-  pcl::PCLHeader header_;
+  bool have_initial_guess_;
+  pcl::PCLHeader input_pc_header_;
 
   // point clouds from pcl_manager
   fawkes::RefPtr<const Cloud> cloud_in_;
 
   // interfaces write
-  fawkes::SwitchInterface *bb_enable_switch_;
   fawkes::ConveyorPoseInterface *bb_pose_;
 
   // interfaces read
@@ -216,33 +225,29 @@ private:
   fawkes::Mutex cloud_mutex_;
   fawkes::Mutex bb_mutex_;
 
-  std::atomic_bool have_laser_line_;
-
   fawkes::RefPtr<Cloud> cloud_out_raw_;
   fawkes::RefPtr<Cloud> cloud_out_trimmed_;
   fawkes::RefPtr<Cloud> cloud_out_model_;
 
   std::unique_ptr<fawkes::tf::Stamped<fawkes::tf::Pose>> result_pose_;
 
-  fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_laser_odom_;
+  fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_odom_;
+  fawkes::LaserLineInterface *best_laser_line_;
 
-  bool cfg_debug_mode_;
+  std::atomic<bool> cfg_debug_mode_;
 
   bool update_input_cloud();
 
-  void bb_update_switch();
-  bool laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit);
+  fawkes::LaserLineInterface *laserline_get_best_fit();
   Eigen::Vector3f
   laserline_get_center_transformed(fawkes::LaserLineInterface *ll);
   fawkes::tf::Stamped<fawkes::tf::Pose>
   laserline_get_center(fawkes::LaserLineInterface *ll);
 
-  void set_initial_tf_from_laserline(
-      fawkes::LaserLineInterface *ll,
-      fawkes::ConveyorPoseInterface::MPS_TYPE mps_type,
-      fawkes::ConveyorPoseInterface::MPS_TARGET mps_target);
+  bool set_laserline_initial_tf(fawkes::tf::Stamped<fawkes::tf::Pose> &);
+  bool set_external_initial_tf(fawkes::tf::Stamped<fawkes::tf::Pose> &);
 
-  CloudPtr cloud_trim(CloudPtr in, fawkes::LaserLineInterface *ll, bool use_ll);
+  CloudPtr cloud_trim(CloudPtr in);
 
   boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
   CloudPtr cloud_voxel_grid(CloudPtr in);
@@ -255,6 +260,9 @@ private:
   void pose_publish_tf(const fawkes::tf::Stamped<fawkes::tf::Pose> &pose);
   void start_waiting();
   bool need_to_wait();
+
+  bool initial_guess_deadline_reached();
+  bool get_initial_guess();
 
   virtual void config_value_erased(const char *path) override;
   virtual void config_tag_changed(const char *new_tag) override;
