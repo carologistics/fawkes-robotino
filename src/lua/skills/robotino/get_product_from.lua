@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "get_product_from"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align","shelf_pick"}
+depends_skills     = {"product_pick", "drive_to_machine_point", "conveyor_align","shelf_pick","gripper_commands"}
 depends_interfaces = {
 }
 
@@ -65,10 +65,11 @@ end
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph,shelf_set=shelf_set},
    {"INIT", JumpState},
    {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="PRE_FAIL_CAL"},
    {"DECIDE_ENDSKILL", JumpState},
    {"PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
    {"SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="FINAL", fail_to="FAILED"},
+   {"PRE_FAIL_CAL", SkillJumpState, skills={{gripper_commands}}, final_to="FAILED", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -79,6 +80,11 @@ fsm:add_transitions{
    {"DECIDE_ENDSKILL","SHELF_PICK", cond=shelf_set},
    {"DECIDE_ENDSKILL","PRODUCT_PICK", cond=true},
 }
+
+function PRE_FAIL_CAL:init()
+  self.args["gripper_commands"].command = "CALIBRATE"
+  self.args["gripper_commands"].wait = false
+end
 
 function INIT:init()
    self.fsm.vars.node = navgraph:node(self.fsm.vars.place)
