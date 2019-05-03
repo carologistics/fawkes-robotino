@@ -61,10 +61,11 @@ end
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
-   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="PRE_FAILED"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PUT", fail_to="PRE_FAILED"},
-   {"PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="PRE_FAILED"},
-   {"PRE_FAILED", SkillJumpState, skills={{gripper_commands}}, final_to="FAILED", fail_to="FAILED"}
+   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="PRE_PRE_FAILED"},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PUT", fail_to="PRE_PRE_FAILED"},
+   {"PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="PRE_PRE_FAILED"},
+   {"PRE_PRE_FAILED", SkillJumpState, skills={{gripper_commands}}, final_to="PRE_FAILED", fail_to="PRE_FAILED"},
+   {"PRE_FAILED", SkillJumpState, skills={{gripper_commands}}, final_to="FAILED", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -114,13 +115,13 @@ function PRODUCT_PUT:init()
   self.args["product_put"].side = self.fsm.vars.side
 end
 
-function PRE_FAILED:init()
+function PRE_PRE_FAILED:init()
   self.args["gripper_commands"].x = 0
   self.args["gripper_commands"].z = get_z_clear
   self.args["gripper_commands"].command = "MOVEABS"
 end
 
-function FAILED:init()
+function PRE_FAILED:init()
   self.args["gripper_commands"].z = 0
   self.args["gripper_commands"].command = "MOVEABS"
   self.args["gripper_commands"].wait = false
