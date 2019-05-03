@@ -22,29 +22,46 @@
 )
 
 (defrule action-seleection-explorezone-unlock
+  (declare (salience 1))
 	(goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
 	?p <- (plan (id EXPLORE-ZONE) (goal-id ?goal-id))
-	(not (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id ?goal-id)
-                    (state ?s&~FINAL&~FORMULATED&~FAILED)))
-	?rl <- (plan-action (plan-id EXPLORE-ZONE) (action-name unlock)
-                      (state FORMULATED))
+	; unlock not tried yet
+	?rl <- (plan-action (id ?id) (plan-id EXPLORE-ZONE) (action-name unlock) (state FORMULATED) (param-values ?zn))
+	; nothing running
+	(not (plan-action (id ?id2) (plan-id EXPLORE-ZONE) (state ?s&:(not (or (eq ?s FINAL) (eq ?s FAILED) (eq ?s FORMULATED))))))
+	; The corresping lock was successfull and something failed before
+	; Otherwise normal action selection takes over
+  (plan-action (id ?id4) (plan-id EXPLORE-ZONE) (action-name ~unlock) (state FAILED))
+	(plan-action (id ?id3) (plan-id EXPLORE-ZONE) (action-name one-time-lock) (state FINAL) (param-values ?zn))
 	=>
 	(modify ?rl (state PENDING))
 )
 
-
-(defrule action-selection-explorezone-done
+(defrule action-selection-explorezone-finished
 	(goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
 	?p <- (plan (id EXPLORE-ZONE) (goal-id ?goal-id))
-	(or (not (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id ?goal-id)
-                        (state ?s&~FINAL)))
-      (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id ?goal-id)
-                   (state ?s&FAILED))
+  (not (plan-action (id ?id) (plan-id EXPLORE-ZONE) (state ?s&~FINAL)))
+  =>
+	(do-for-all-facts ((?pa plan-action))
+                    (and (eq ?pa:goal-id ?goal-id)
+                         (eq ?pa:plan-id EXPLORE-ZONE))
+                    (retract ?pa)
 	)
-	(or (plan-action (goal-id ?goal-id) (plan-id EXPLORE-ZONE)
-                   (action-name unlock) (state FINAL))
-		  (not (plan-action (goal-id ?goal-id) (plan-id EXPLORE-ZONE)
-                        (action-name unlock))))
+	(retract ?p)
+)
+
+(defrule action-selection-explorezone-failed
+	(goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
+	?p <- (plan (id EXPLORE-ZONE) (goal-id ?goal-id))
+  ; Something failed
+  (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id ?goal-id)
+                   (state ?s&FAILED))
+  ; all unlocks are finished
+	(not (and (plan-action (goal-id ?goal-id) (plan-id EXPLORE-ZONE)
+                        (action-name unlock) (state ~FINAL) (param-values ?zn))
+            (plan-action (goal-id ?goal-id) (plan-id EXPLORE-ZONE)
+                        (action-name one-time-lock) (state FINAL) (param-values ?zn))
+  ))
 	=>
 	(do-for-all-facts ((?pa plan-action))
                     (and (eq ?pa:goal-id ?goal-id)
