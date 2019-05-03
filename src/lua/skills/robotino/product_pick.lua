@@ -54,6 +54,11 @@ local gripper_pose_offset_y = 0.00   -- conveyor_pose offset in y direction
 local gripper_pose_offset_z = 0.035  -- conveyor_pose offset in z direction
 
 
+if config:exists("/skills/product_pick/gripper_down_z") then
+   conveyor_gripper_down_z = config:get_float("/skills/product_pick/gripper_down_z")
+end
+
+
 -- function to evaluate sensor data
 function is_grabbed()
  if not robotino_sensor:has_writer() then
