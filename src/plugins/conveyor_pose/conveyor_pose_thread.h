@@ -199,6 +199,7 @@ private:
   // state vars
   bool cfg_enable_switch_;
   bool cloud_in_registered_;
+  bool have_initial_guess_;
   pcl::PCLHeader input_pc_header_;
 
   // point clouds from pcl_manager
