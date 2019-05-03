@@ -203,8 +203,8 @@ clips-executive:
           exploration:
             # Reduce navigator velocity while traveling the field so we can find
             # laser-lines more reliably
-            low-velocity: 0.4
-            low-rotation: 0.5
+            low-velocity: 0.3
+            low-rotation: 0.4
 
             # Increased speed and rotation when exploring a zone
             max-velocity: 1.0
@@ -214,7 +214,7 @@ clips-executive:
             # before we start investigating it further (i.e. call the
             # explore_zone skill on it)
 
-            zone-margin: 0.15
+            zone-margin: 0.20
             latest-send-last-report-time: 210  # =3:30
 
           max-velocity: 1.0

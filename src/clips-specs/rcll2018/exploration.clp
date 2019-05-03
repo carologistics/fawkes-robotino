@@ -193,7 +193,7 @@
   )
   (Position3DInterface
     (id ?tag-if-id&:(eq ?tag-if-id (str-cat "/tag-vision/" (- (member$ ?tag ?tag-ids) 1))))
-    (visibility_history ?vh&:(> ?vh 1))
+    (visibility_history ?vh&:(> ?vh 10))
     (translation $?trans) (rotation $?rot)
     (frame ?frame) (time $?timestamp)
   )
@@ -203,7 +203,7 @@
   (wm-fact (key exploration zone ?zn args? machine UNKNOWN team ?))
 =>
   (modify ?ze-f (value 1 ))
-  (printout t "Found tag in " ?zn crlf)
+  (printout t "Found tag in " ?zn " with visibility " ?vh crlf)
 )
 
 
