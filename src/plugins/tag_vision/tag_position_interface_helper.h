@@ -38,7 +38,7 @@
 
 #define EMPTY_INTERFACE_MARKER_ID 0
 #define CHILD_FRAME "/tag_"
-#define INTERFACE_UNSEEN_BOUND -100
+#define INTERFACE_UNSEEN_BOUND -5
 
 class TagPositionInterfaceHelper {
   enum ROT { X = 0, Y = 1, Z = 2, W = 3 };
