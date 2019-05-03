@@ -550,6 +550,7 @@ void ArduinoComThread::flush_device() {
 }
 
 void ArduinoComThread::send_message(ArduinoComMessage &msg) {
+  logger->log_debug("Now try to send: %s", msg.get_data());
   try {
     boost::asio::write(serial_, boost::asio::const_buffers_1(msg.buffer()));
   } catch (boost::system::system_error &e) {
