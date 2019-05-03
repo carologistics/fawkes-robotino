@@ -184,7 +184,7 @@ clips-executive:
           magenta-port: 4442
 
           team-name: Carologistics
-          crypto-key: randomkey
+          crypto-key: eif6noTai5
           cipher: "aes-128-cbc"
 
           waitpoint-in-cyan: R-1
