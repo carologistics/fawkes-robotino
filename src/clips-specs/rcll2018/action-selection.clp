@@ -21,12 +21,12 @@
 	(modify ?g (mode FINISHED) (outcome COMPLETED))
 )
 
-(defrule action-seleection-explorezone-release-locks
+(defrule action-seleection-explorezone-unlock
 	(goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
 	?p <- (plan (id EXPLORE-ZONE) (goal-id ?goal-id))
 	(not (plan-action (id ?id) (plan-id EXPLORE-ZONE) (goal-id ?goal-id)
                     (state ?s&~FINAL&~FORMULATED&~FAILED)))
-	?rl <- (plan-action (plan-id EXPLORE-ZONE) (action-name release-locks)
+	?rl <- (plan-action (plan-id EXPLORE-ZONE) (action-name unlock)
                       (state FORMULATED))
 	=>
 	(modify ?rl (state PENDING))
@@ -42,9 +42,9 @@
                    (state ?s&FAILED))
 	)
 	(or (plan-action (goal-id ?goal-id) (plan-id EXPLORE-ZONE)
-                   (action-name release-locks) (state FINAL))
+                   (action-name unlock) (state FINAL))
 		  (not (plan-action (goal-id ?goal-id) (plan-id EXPLORE-ZONE)
-                        (action-name release-locks))))
+                        (action-name unlock))))
 	=>
 	(do-for-all-facts ((?pa plan-action))
                     (and (eq ?pa:goal-id ?goal-id)
