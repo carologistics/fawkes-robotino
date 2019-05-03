@@ -220,3 +220,10 @@ unsigned short ArduinoComMessage::get_data_size() { return data_size_; }
 unsigned short ArduinoComMessage::get_cur_buffer_index() {
   return cur_buffer_index_;
 }
+
+/** Get the current buffer (e.g. to for logging purpose
+ * @return current buffer
+ */
+const char * ArduinoComMessage::get_data(){
+  return data_;
+}
