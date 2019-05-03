@@ -511,6 +511,7 @@ void ConveyorPoseThread::loop() {
       result_pose_.release();
 
       best_laser_line_ = nullptr;
+      have_initial_guess_ = false;
 
       // Schedule restart of recognition thread
       recognition_thread_->retries_ = 0;
@@ -522,6 +523,8 @@ void ConveyorPoseThread::loop() {
               new Time(clock->now() + cfg_external_timeout_));
     } else if (bb_pose_->msgq_first_is<ConveyorPoseInterface::StopICPMessage>()) {
       recognition_thread_->disable();
+      if (!have_initial_guess_)
+        logger->log_error(name(), "Stopped without ever getting an initial guess");
     } else {
       logger->log_warn(name(), "Unknown message received");
     }
@@ -540,6 +543,7 @@ void ConveyorPoseThread::loop() {
     return;
 
   if (update_input_cloud() && get_initial_guess()) {
+    have_initial_guess_ = true;
 
     CloudPtr cloud_in(new Cloud(**cloud_in_));
 
