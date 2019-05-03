@@ -221,7 +221,7 @@ clips-executive:
           max-rotation: 1.0
           master: R-2
 
-          allowed-complexities: ["C0", "C1"]
+          allowed-complexities: ["C0", "C1", "C2"]
           exclusive-complexities: ["C2", "C3"]
 
           # Priority to pursue competitive orders.
