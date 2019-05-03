@@ -347,7 +347,7 @@
                         mps ?mps
                         cc ?cc
                 )
-                (required-resources ?mps)
+                (required-resources ?cc ?mps)
   ))
 )
 
@@ -447,7 +447,7 @@
                         wp ?wp
                         side ?side
                 )
-                (required-resources ?mps ?wp)
+                (required-resources ?wp)
   ))
 )
 
