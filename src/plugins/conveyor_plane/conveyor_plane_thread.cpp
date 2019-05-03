@@ -302,7 +302,13 @@ void ConveyorPlaneThread::loop() {
   }
 
   fawkes::LaserLineInterface *ll = NULL;
-  bool use_laserline = laserline_get_best_fit(ll);
+
+  bool use_laserline = false;
+  try {
+    use_laserline = laserline_get_best_fit(ll);
+  } catch (tf::TransformException &e) {
+    logger->log_error(name(), "Failed to transform laser line: %s", e.what());
+  }
 
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
