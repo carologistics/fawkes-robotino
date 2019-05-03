@@ -176,3 +176,4 @@ function PRE_FAILED:init()
   self.args["gripper_commands"].command = "MOVEABS"
   self.args["gripper_commands"].wait = false
 end
+
