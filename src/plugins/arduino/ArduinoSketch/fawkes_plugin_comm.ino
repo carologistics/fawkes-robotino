@@ -214,9 +214,9 @@ void calibrate()
   do { //repeat calibration as long as not successfull
     x_done = y_done = z_done = false;
     motor_X.enableOutputs();
-    motor_X.move(100000L);
-    motor_Y.move(100000L);
-    motor_Z.move(100000L);
+    motor_X.move(10000L);
+    motor_Y.move(10000L);
+    motor_Z.move(10000L);
     // due to high step count, reaching end stops is guaranteed!
     set_status(STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
     // This while loop controls permanently the state of the respective end stops and handles crashing into them
