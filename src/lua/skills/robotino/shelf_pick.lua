@@ -28,6 +28,7 @@ name               = "shelf_pick"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = {"motor_move", "gripper_commands", "approach_mps"}
 depends_interfaces = {
+   {v = "robotino_sensor", type = "RobotinoSensorInterface", id="Robotino"} -- Interface to read I/O ports
 }
 
 documentation      = [==[ shelf_pick
@@ -40,11 +41,24 @@ documentation      = [==[ shelf_pick
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
-local x_distance = 0.27
 local gripper_adjust_z_distance = 0.03
 local gripper_adjust_x_distance = 0.015
 local adjust_target_frame = "gripper_home"
 local gripper_down_to_puck = -0.025
+
+-- function to evaluate sensor data
+function is_grabbed()
+ if not robotino_sensor:has_writer() then
+   print_warn("No robotino sensor writer to check sensor")
+   return true
+ end
+ if robotino_sensor:is_digital_in(0) == false and robotino_sensor:is_digital_in(1) == true then -- white cable on DI1 and black on DI2
+    return true
+ else
+    return false
+ end
+end
+
 
 function pose_gripper_offset(x,y,z)
   local target_pos = { x = x,
@@ -77,20 +91,21 @@ function pose_gripper_offset(x,y,z)
 end
 
 
-fsm:define_states{ export_to=_M, closure={},
+fsm:define_states{ export_to=_M, closure={is_grabbed = is_grabbed},
    {"INIT", SkillJumpState, skills={{gripper_commands}}, final_to="GOTO_SHELF", fail_to="FAILED" },
-   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SHELF", fail_to="FAILED"},
-   {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="MOVE_ABOVE_PUCK", fail_to="FAILED"},
+   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="MOVE_ABOVE_PUCK", fail_to="FAILED"},
    {"MOVE_ABOVE_PUCK", SkillJumpState, skills={{gripper_commands}}, final_to="ADJUST_HEIGHT", fail_to="FAILED" },
    {"ADJUST_HEIGHT", SkillJumpState, skills={{gripper_commands}}, final_to="GRAB_PRODUCT", fail_to="FAILED" },
    {"GRAB_PRODUCT", SkillJumpState, skills={{gripper_commands}}, final_to="LEAVE_SHELF", fail_to="FAILED"},
    {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="HOME_GRIPPER", fail_to="FAILED"},
-   {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="FINAL", fail_to="FAILED"},
-   {"WAIT_AFTER_GRAB", JumpState},
+   {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="CHECK_PUCK", fail_to="FAILED"},
+   {"CHECK_PUCK", JumpState}
 }
 
 fsm:add_transitions{
    {"GOTO_SHELF", "FAILED", cond="vars.error"},
+   {"CHECK_PUCK", "FAILED", cond="not is_grabbed", desc = "Lost Product"},
+   {"CHECK_PUCK", "FINAL", cond=true}
 }
 
 function INIT:init()
@@ -164,11 +179,6 @@ function ADJUST_HEIGHT:init()
   self.args["gripper_commands"].command = "MOVEREL"
   self.args["gripper_commands"].target_frame = "gripper_home"
 
-end
-
-function APPROACH_SHELF:init()
-   self.args["approach_mps"].x = x_distance
-   self.args["approach_mps"].use_conveyor = false
 end
 
 function GRAB_PRODUCT:init()
