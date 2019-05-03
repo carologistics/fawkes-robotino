@@ -286,6 +286,53 @@ void NavGraphGeneratorMPSThread::loop() {
   }
 }
 
+void NavGraphGeneratorMPSThread::generate_mps_wait_zones(
+    std::vector<Eigen::Vector2i> &free_zones) {
+  for (auto &entry : this->stations_) {
+    std::sort(free_zones.begin(), free_zones.end(),
+              [&entry](const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) {
+                double d_lhs_min = std::numeric_limits<double>::max();
+                double d_rhs_min = std::numeric_limits<double>::max();
+                Eigen::Vector2f station_input = entry.second.input_pos.head(2);
+
+                double d_lhs = (lhs.cast<float>() - station_input).norm();
+                if (d_lhs < d_lhs_min)
+                  d_lhs_min = d_lhs;
+
+                double d_rhs = (rhs.cast<float>() - station_input).norm();
+                if (d_rhs < d_rhs_min)
+                  d_rhs_min = d_rhs;
+                return d_lhs_min < d_rhs_min;
+              });
+    Eigen::Vector2f ori_vec =
+        (*(free_zones.begin())).cast<float>() - entry.second.input_pos.head(2);
+    double wait_ori = std::atan2(ori_vec.x(), ori_vec.y());
+    mps_wait_zones_.emplace(entry.first + "-INPUT",
+                            std::make_pair(*(free_zones.begin()), wait_ori));
+    std::sort(free_zones.begin(), free_zones.end(),
+              [&entry](const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) {
+                double d_lhs_min = std::numeric_limits<double>::max();
+                double d_rhs_min = std::numeric_limits<double>::max();
+                Eigen::Vector2f station_output =
+                    entry.second.output_pos.head(2);
+
+                double d_lhs = (lhs.cast<float>() - station_output).norm();
+                if (d_lhs < d_lhs_min)
+                  d_lhs_min = d_lhs;
+
+                double d_rhs = (rhs.cast<float>() - station_output).norm();
+                if (d_rhs < d_rhs_min)
+                  d_rhs_min = d_rhs;
+                return d_lhs_min < d_rhs_min;
+              });
+    ori_vec =
+        (*(free_zones.begin())).cast<float>() - entry.second.output_pos.head(2);
+    wait_ori = std::atan2(ori_vec.x(), ori_vec.y());
+    mps_wait_zones_.emplace(entry.first + "-OUTPUT",
+                            std::make_pair(*(free_zones.begin()), wait_ori));
+  }
+}
+
 void NavGraphGeneratorMPSThread::generate_wait_zones(
     size_t count, std::vector<Eigen::Vector2i> &free_zones) {
   std::sort(free_zones.begin(), free_zones.end(),
@@ -310,6 +357,7 @@ void NavGraphGeneratorMPSThread::generate_wait_zones(
        it < free_zones.begin() + count && it < free_zones.end(); ++it) {
     wait_zones_.push_back(*it);
   }
+  generate_mps_wait_zones(free_zones);
 }
 
 /*
@@ -677,6 +725,33 @@ void NavGraphGeneratorMPSThread::generate_navgraph() {
             NavGraphGeneratorInterface::CLOSEST_EDGE_OR_NODE));
   }
 
+  for (const auto &zn : mps_wait_zones_) {
+    std::string z_name = "WAIT-";
+    z_name += zn.first;
+
+    float x = float(zn.second.first.x());
+    if (x < 0) {
+      x += 0.5f;
+    } else {
+      x -= 0.5f;
+    }
+
+    float y = float(zn.second.first.y());
+    if (y < 0)
+      y += 0.5f;
+    else
+      y -= 0.5f;
+    logger->log_info(name(), "Adding wait zone %s.", z_name.c_str());
+    std::string wait_ori = "orientation";
+    navgen_if_->msgq_enqueue(
+        new NavGraphGeneratorInterface::AddPointOfInterestMessage(
+            z_name.c_str(), x, y,
+            NavGraphGeneratorInterface::CLOSEST_EDGE_OR_NODE));
+    navgen_if_->msgq_enqueue(
+        new NavGraphGeneratorInterface::SetPointOfInterestPropertyMessage(
+            z_name.c_str(), wait_ori.c_str(),
+            std::to_string(zn.second.second).c_str()));
+  }
   NavGraphGeneratorInterface::ComputeMessage *compute_msg =
       new NavGraphGeneratorInterface::ComputeMessage();
   compute_msg->ref();

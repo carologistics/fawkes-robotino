@@ -220,7 +220,8 @@
   (goal (id ?production-id) (class NO-PROGRESS) (mode FORMULATED))
   (wm-fact (key domain fact self args? r ?self))
   (domain-object (type waitpoint) (name ?waitpoint))
-  (wm-fact (key domain fact at args? r ?self m ?waitpoint side WAIT))
+  (wm-fact (key domain fact at args? r ?self m ?waitpoint&:
+               (eq (str-length (str-cat ?waitpoint)) 10) side WAIT))
   =>
   (printout t "Goal " WAIT " formulated" crlf)
   (assert (goal (id (sym-cat WAIT- (gensym*)))
@@ -239,7 +240,8 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class NO-PROGRESS) (mode FORMULATED))
   (wm-fact (key domain fact self args? r ?self))
-  (domain-object (type waitpoint) (name ?waitpoint))
+  (domain-object (type waitpoint) (name ?waitpoint&:
+               (eq (str-length (str-cat ?waitpoint)) 10)))
   =>
   (printout t "Goal " GO-WAIT " formulated" crlf)
   (assert (goal (id (sym-cat GO-WAIT- (gensym*)))
