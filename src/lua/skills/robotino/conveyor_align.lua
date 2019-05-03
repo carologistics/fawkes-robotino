@@ -47,7 +47,7 @@ local tfm = require("fawkes.tfutils")
 local pam = require("parse_module")
 
 -- Constants
-local euclidean_fitness_threshold = 5 -- threshold for euclidean fitness for targets other than shelf
+local euclidean_fitness_threshold = 8 -- threshold for euclidean fitness for targets other than shelf
 local slide_euclidean_fitness_threshold = 7 -- threshold for euclidean fitness if target is shelf
 local tolerance_trans = 0.04  -- tolerance in x and y direction after the align
 local tolerance_ori = 0.05   -- orientation tolerance after the align
