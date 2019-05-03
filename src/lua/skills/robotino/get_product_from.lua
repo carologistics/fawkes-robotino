@@ -105,7 +105,7 @@ end
 function DRIVE_TO_MACHINE_POINT:exit()
   local dtmp_fsm = skillenv.get_skill_fsm("drive_to_machine_point")
   if dtmp_fsm.current == dtmp_fsm.states[dtmp_fsm.fail_state] then
-    self.fsm:set_error("Drive To Machine Point Failed")
+    self.fsm.vars.error = "Drive To Machine Point Failed"
   end
 end
 
@@ -119,7 +119,7 @@ end
 function PRODUCT_PICK:exit()
   local pp_fsm = skillenv.get_skill_fsm("product_pick")
   if pp_fsm.current == pp_fsm.states[pp_fsm.fail_state] then
-    self.fsm:set_error("Product Pick Failed")
+    self.fsm.vars.error = "Product Pick Failed"
   end
 end
 
@@ -130,7 +130,7 @@ end
 function SHELF_PICK:exit()
   local sp_fsm = skillenv.get_skill_fsm("shelf_pick")
   if sp_fsm.current == sp_fsm.states[sp_fsm.fail_state] then
-    self.fsm:set_error("Shelf Pick Failed")
+    self.fsm.vars.error = "Shelf Pick Failed"
   end
 end
 
@@ -158,6 +158,12 @@ end
 function CONVEYOR_ALIGN:exit()
   local cv_fsm = skillenv.get_skill_fsm("conveyor_align")
   if cv_fsm.current == cv_fsm.states[cv_fsm.fail_state] then
-    self.fsm:set_error("Conveyor Align Failed")
+    self.fsm.vars.error = "Conveyor Align Failed"
+  end
+end
+
+function FAILED:init()
+  if self.fsm.vars.error then
+    self.fsm:set_error(self.fsm.vars.error)
   end
 end
