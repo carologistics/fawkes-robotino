@@ -26,7 +26,7 @@
 
 
 (deffunction should-retry (?an ?error)
-  (if (eq ?error "Conveyor Align Failed") then
+  (if (or (eq ?error "Conveyor Align Failed") (eq ?error "Drive To Machine Point Failed")) then
     (return TRUE)
   )
   (if (and (or (eq ?an wp-put) (eq ?an wp-put-slide-cc))
