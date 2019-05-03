@@ -44,6 +44,7 @@ fawkes/meta_plugins:
     - realsense
     - conveyor-plane
     - conveyor-pose
+    - picture_taker
     - ros-pcl
     - skiller-rest-api
   m-robot-memory:

@@ -1,8 +1,9 @@
 #*****************************************************************************
-#                  Makefile Build System for Fawkes: Plugins
+#              Makefile Build System for Fawkes: PTU interfaces
 #                            -------------------
-#   Created on Mon May 14 11:37:00 2012
-#   Copyright (C) 2006-2012 by Tim Niemueller, Carologistics RoboCup Team
+#   Created on Sat Feb 28 10:41:48 2015
+#   Copyright (C) 2006-2011 by Tim Niemueller, AllemaniACs RoboCup Team
+#                      2015    Nicolas Limpert
 #
 #*****************************************************************************
 #
@@ -13,27 +14,12 @@
 #
 #*****************************************************************************
 
-BASEDIR = ../..
+BASEDIR = ../../../..
+
 include $(BASEDIR)/etc/buildsys/config.mk
 
-SUBDIRS	= clips-motor-switch \
-	  voltagelogger \
-	  ax12_gripper \
-	  arduino \
-		tag_vision \
-      navgraph_broker \
-	  navgraph-generator-mps \
-	  conveyor_pose \
-	  conveyor_plane \
-	  gazebo \
-	  marker_writer \
-	  motor-led \
-		laser_front_dist \
-		mps-laser-gen \
-		webtools-bridge \
-		asp-planner \
-		picture_taker
+INTERFACES_all = $(notdir $(patsubst %.xml,%,$(wildcard $(SRCDIR)/*.xml)))
+include $(BUILDSYSDIR)/interface.mk
 
-include $(BUILDSYSDIR)/rules.mk
+include $(BUILDSYSDIR)/base.mk
 
-gazebo: ax12_gripper tag_vision arduino

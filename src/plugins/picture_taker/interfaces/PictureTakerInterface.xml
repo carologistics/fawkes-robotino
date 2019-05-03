@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="PictureTakerInterface" author="Daniel Habering" year="2019">
+  <constants>
+  </constants>
+  <data>
+    <comment>
+        Interface to take pictures (Obviously)
+    </comment>
+    <field type="bool" name="noop">
+        Noop because there has to be data in a blackboard interface
+    </field>
+  </data>
+  <message name="TakePicture">
+    <comment>
+      TakeAPicture
+    </comment>
+    <field type="string" length="1024" name="mps_name">
+        Name of the mps the robot is currently facing
+    </field>
+    <field type="string" length="1024" name="mps_side">
+        Side of the mps the robot is currently facing
+    </field>
+  </message>
+</interface>
