@@ -22,34 +22,25 @@
 #include "conveyor_plane_thread.h"
 
 #include <pcl/ModelCoefficients.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/filters/approximate_voxel_grid.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-
-#include <pcl/ModelCoefficients.h>
-#include <pcl/common/centroid.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/passthrough.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-
-#include <pcl/common/centroid.h>
-#include <pcl/common/distances.h>
-#include <pcl/common/transforms.h>
 #include <pcl/features/normal_3d_omp.h>
-#include <pcl/filters/conditional_removal.h>
+
+#include <pcl/filters/approximate_voxel_grid.h>
+#include <pcl/filters/crop_box.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/project_inliers.h>
-#include <pcl/kdtree/kdtree.h>
-#include <pcl/kdtree/kdtree_flann.h>
-#include <pcl/registration/distances.h>
+#include <pcl/filters/voxel_grid.h>
+
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
+
 #include <pcl/segmentation/extract_clusters.h>
-#include <pcl/surface/convex_hull.h>
+#include <pcl/segmentation/sac_segmentation.h>
+
+#include <pcl/common/centroid.h>
+#include <pcl/common/transforms.h>
+
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/registration/distances.h>
 
 #include <tf/types.h>
 #include <utils/math/angle.h>
@@ -116,28 +107,32 @@ void ConveyorPlaneThread::init() {
   cfg_use_visualisation_ =
       config->get_bool((cfg_prefix + "use_visualisation").c_str());
 
-  cfg_gripper_y_min_ =
-      config->get_float((cfg_prefix + "gripper/y_min").c_str());
-  cfg_gripper_y_max_ =
-      config->get_float((cfg_prefix + "gripper/y_max").c_str());
-  cfg_gripper_z_max_ =
-      config->get_float((cfg_prefix + "gripper/z_max").c_str());
-  cfg_gripper_slice_y_min_ =
-      config->get_float((cfg_prefix + "gripper/slice/y_min").c_str());
-  cfg_gripper_slice_y_max_ =
-      config->get_float((cfg_prefix + "gripper/slice/y_max").c_str());
-
-  cfg_front_space_ = config->get_float((cfg_prefix + "front/space").c_str());
-  cfg_front_offset_ = config->get_float((cfg_prefix + "front/offset").c_str());
-
-  cfg_left_cut_ =
-      config->get_float((cfg_prefix + "left_right/left_cut").c_str());
-  cfg_right_cut_ =
-      config->get_float((cfg_prefix + "left_right/right_cut").c_str());
-  cfg_left_cut_no_ll_ =
-      config->get_float((cfg_prefix + "left_right/left_cut_no_ll").c_str());
-  cfg_right_cut_no_ll_ =
-      config->get_float((cfg_prefix + "left_right/right_cut_no_ll").c_str());
+  cfg_crop_cam_x_min =
+      config->get_float((cfg_prefix + "crop/cam/x_min").c_str());
+  cfg_crop_cam_x_max =
+      config->get_float((cfg_prefix + "crop/cam/x_max").c_str());
+  cfg_crop_cam_y_min =
+      config->get_float((cfg_prefix + "crop/cam/y_min").c_str());
+  cfg_crop_cam_y_max =
+      config->get_float((cfg_prefix + "crop/cam/y_max").c_str());
+  cfg_crop_cam_z_min =
+      config->get_float((cfg_prefix + "crop/cam/z_min").c_str());
+  cfg_crop_cam_z_max =
+      config->get_float((cfg_prefix + "crop/cam/z_max").c_str());
+  cfg_mps_top_offset =
+      config->get_float((cfg_prefix + "crop/laserline/mps_top_offset").c_str());
+  cfg_crop_laserline_x_min =
+      config->get_float((cfg_prefix + "crop/laserline/x_min").c_str());
+  cfg_crop_laserline_x_max =
+      config->get_float((cfg_prefix + "crop/laserline/x_max").c_str());
+  cfg_crop_laserline_y_min =
+      config->get_float((cfg_prefix + "crop/laserline/y_min").c_str());
+  cfg_crop_laserline_y_max =
+      config->get_float((cfg_prefix + "crop/laserline/y_max").c_str());
+  cfg_crop_laserline_z_min =
+      config->get_float((cfg_prefix + "crop/laserline/z_min").c_str());
+  cfg_crop_laserline_z_max =
+      config->get_float((cfg_prefix + "crop/laserline/z_max").c_str());
 
   cfg_plane_dist_threshold_ =
       config->get_float((cfg_prefix + "plane/dist_threshold").c_str());
@@ -211,7 +206,6 @@ void ConveyorPlaneThread::finalize() {
   blackboard->close(bb_enable_switch_);
   logger->log_info(name(), "Unloading, disabling %s",
                    cfg_bb_realsense_switch_name_.c_str());
-  realsense_switch_->msgq_enqueue(new SwitchInterface::DisableSwitchMessage());
   blackboard->close(realsense_switch_);
   bb_pose_conditional_close();
 }
@@ -232,31 +226,21 @@ void ConveyorPlaneThread::bb_pose_conditional_close() {
 }
 
 void ConveyorPlaneThread::loop() {
-  if_read();
-  // logger->log_debug(name(),"CONVEYOR-POSE 1: Interface read");
-  realsense_switch_->read();
+  //-- reads message queue and performs en- and disablings
+  if_read(); //-- if_read also reads the laserlines
 
-  if (bb_enable_switch_->is_enabled()) {
-    if (realsense_switch_->has_writer()) {
-      if (!realsense_switch_->is_enabled()) {
-        logger->log_info(name(), "Camera %s is disabled, enabling",
-                         cfg_bb_realsense_switch_name_.c_str());
-        realsense_switch_->msgq_enqueue(
-            new SwitchInterface::EnableSwitchMessage());
-        start_waiting();
-        return;
-      }
-    } else {
-      logger->log_error(name(), "No writer for camera %s",
-                        cfg_bb_realsense_switch_name_.c_str());
-      return;
-    }
-  } else if (realsense_switch_->has_writer() &&
-             realsense_switch_->is_enabled()) {
-    logger->log_info(name(), "Disabling %s",
+  //-- skip processing if conveyor plane is disabled
+  if (!bb_enable_switch_->is_enabled()) {
+    return;
+  }
+
+  //-- skip processing if camera is not enabled
+  realsense_switch_->read();
+  if (!realsense_switch_->is_enabled()) {
+    logger->log_info(name(), "Camera %s is disabled",
                      cfg_bb_realsense_switch_name_.c_str());
-    realsense_switch_->msgq_enqueue(
-        new SwitchInterface::DisableSwitchMessage());
+    start_waiting();
+    return;
   }
 
   if (!pc_in_check() || !bb_enable_switch_->is_enabled()) {
@@ -278,92 +262,107 @@ void ConveyorPlaneThread::loop() {
         (wait_start_ + wait_time_ - Time()).in_sec());
     return;
   }
-  // logger->log_info(name(),"CONVEYOR-POSE 2: Added Trash if no point cloud or
-  // not enabled and pose enabled");
-  bb_pose_conditional_open();
 
-  pose pose_average;
-  bool pose_average_availabe = pose_get_avg(pose_average);
-  // logger->log_info(name(),"CONVEYOR-POSE 3: set average");
-  if (pose_average_availabe) {
-    vis_hist_ = std::max(1, vis_hist_ + 1);
-    pose_write(pose_average);
+  //-- if it are enough planes collected to decide whether the avg is valid or
+  //not...
+  if (poses_.size() >= cfg_allow_invalid_poses_) {
+    bb_pose_conditional_open();
 
-    pose_publish_tf(pose_average);
+    pose pose_average;
+    bool pose_average_availabe = pose_get_avg(pose_average);
 
-    //    tf_send_from_pose_if(pose_current);
-    if (cfg_use_visualisation_) {
-      visualisation_->marker_draw(header_, pose_average.translation,
-                                  pose_average.rotation);
+    if (pose_average_availabe) {
+      vis_hist_ = std::max(1, vis_hist_ + 1);
+
+      //-- NOTE: THIS IS HARD CODED SHIFTIGN DIREICTION ALONG THE POSITIVE
+      //Y-AXIS,
+      //--       SPACIFIED BY THE REALSSENSE MOUNTING.
+      //--       I'M SURE THIS COULD AND SHOULD BE DONE MORE FLEXIBLE, BUT I'VE
+      //NO IDEA ATM
+      //-- shift pose to the top conveyor belt
+      pose_average.translation +=
+          tf::Vector3(0.f, cfg_plane_height_minimum_ * 0.5f, 0.f);
+
+      pose_write(pose_average);
+
+      pose_publish_tf(pose_average);
+
+      //    tf_send_from_pose_if(pose_current);
+      if (cfg_use_visualisation_) {
+        visualisation_->marker_draw(header_, pose_average.translation,
+                                    pose_average.rotation);
+      }
+    } else {
+      vis_hist_ = -1;
+      pose trash;
+      trash.valid = false;
+      pose_write(trash);
+      poses_.clear();
     }
-  } else {
-    vis_hist_ = -1;
-    pose trash;
-    trash.valid = false;
-    pose_write(trash);
   }
-  // logger->log_debug(name(),"CONVEYOR-POSE 4: checked average");
+
   fawkes::LaserLineInterface *ll = NULL;
   bool use_laserline = laserline_get_best_fit(ll);
-  // logger->log_debug(name(),"CONVEYOR-POSE 5: got laserline");
 
   CloudPtr cloud_in(new Cloud(**cloud_in_));
 
+  //-- apply voxelgrid filter
   uint in_size = cloud_in->points.size();
-  // logger->log_debug(name(), "Size before voxel grid: %u", in_size);
+
   CloudPtr cloud_vg = cloud_voxel_grid(cloud_in);
   uint out_size = cloud_vg->points.size();
-  // logger->log_debug(name(), "Size of voxel grid: %u", out_size);
+
   if (in_size == out_size) {
     logger->log_error(name(), "Voxel Grid failed, skipping loop!");
     return;
   }
-  CloudPtr cloud_gripper = cloud_remove_gripper(cloud_vg);
-  CloudPtr cloud_front =
-      cloud_remove_offset_to_front(cloud_gripper, ll, use_laserline);
-  // logger->log_debug(name(),"CONVEYOR-POSE 6: intially filtered pointcloud");
 
-  CloudPtr cloud_front_side(new Cloud);
-  cloud_front_side =
-      cloud_remove_offset_to_left_right(cloud_front, ll, use_laserline);
+  //-- crop pointcloud
+  CloudPtr cloud_cropped(new Cloud);
+  cloud_cropped = crop_cloud(cloud_vg, ll, use_laserline);
 
-  // logger->log_debug(name(),"CONVEYOR-POSE 7: set cut off left and rigt");
-
-  cloud_publish(cloud_front_side, cloud_out_inter_1_);
+  //-- publish filter result
+  cloud_publish(cloud_cropped, cloud_out_inter_1_);
 
   // search for best plane
   CloudPtr cloud_choosen;
   pcl::ModelCoefficients::Ptr coeff(new pcl::ModelCoefficients);
   do {
-    //  logger->log_debug(name(), "In while loop");
-    CloudPtr cloud_plane = cloud_get_plane(cloud_front_side, coeff);
-    //  logger->log_debug(name(), "After getting plane");
+    CloudPtr cloud_plane = cloud_get_plane(cloud_cropped, coeff);
+
+    //-- if there was no suffitient planar patch found ...
     if (cloud_plane == NULL || !cloud_plane) {
-      pose trash;
-      trash.valid = false;
-      pose_add_element(trash);
+      //-- ... add as invalid plane
+      Eigen::Vector4f invalid(std::numeric_limits<float>::quiet_NaN(),
+                              std::numeric_limits<float>::quiet_NaN(),
+                              std::numeric_limits<float>::quiet_NaN(),
+                              std::numeric_limits<float>::quiet_NaN());
+      pose_add_element(invalid, invalid.head<3>());
       return;
     }
 
+    //-- separate connected components laying in the plane
     size_t id;
-    //  logger->log_debug(name(), "Before clustering");
     boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices =
         cloud_cluster(cloud_plane);
-    //  logger->log_debug(name(), "After clustering");
+
+    //-- if even there were no sufficient connected components on the found
+    // surface ...
     if (cluster_indices->size() <= 0) {
-      pose trash;
-      trash.valid = false;
-      pose_add_element(trash);
+      //-- ... add as invalid plane
+      Eigen::Vector4f invalid(std::numeric_limits<float>::quiet_NaN(),
+                              std::numeric_limits<float>::quiet_NaN(),
+                              std::numeric_limits<float>::quiet_NaN(),
+                              std::numeric_limits<float>::quiet_NaN());
+      pose_add_element(invalid, invalid.head<3>());
       return;
     }
-    // logger->log_debug(name(), "Before split");
+
+    //-- get biggest connected planar component
     std::vector<CloudPtr> clouds_cluster =
         cluster_split(cloud_plane, cluster_indices);
-    // logger->log_debug(name(), "Before finding biggest");
-    cloud_choosen = cluster_find_biggest(clouds_cluster, id);
-    // logger->log_debug(name(), "After finding biggest");
 
-    // check if plane is ok, otherwise remove indicies
+    cloud_choosen = cluster_find_biggest(clouds_cluster, id);
 
     // check if the height is ok (remove shelfs)
     float y_min = -200;
@@ -379,7 +378,7 @@ void ConveyorPlaneThread::loop() {
 
     float height = y_min - y_max;
     if (height < cfg_plane_height_minimum_) {
-      logger->log_info(
+      logger->log_debug(
           name(),
           "Discard plane, because of height restriction. is: %f\tshould: %f",
           height, cfg_plane_height_minimum_);
@@ -388,12 +387,12 @@ void ConveyorPlaneThread::loop() {
           new pcl::PointIndices(cluster_indices->at(id)));
       CloudPtr tmp(new Cloud);
       pcl::ExtractIndices<Point> extract;
-      extract.setInputCloud(cloud_front_side);
+      extract.setInputCloud(cloud_cropped);
       extract.setIndices(extract_indicies);
       extract.setNegative(true);
       extract.filter(*tmp);
       // logger->log_debug(name(), "After extraction");
-      *cloud_front_side = *tmp;
+      *cloud_cropped = *tmp;
     } else {
       // height is ok
       float x_min = -200;
@@ -409,7 +408,7 @@ void ConveyorPlaneThread::loop() {
 
       float width = x_min - x_max;
       if (width < cfg_plane_width_minimum_) {
-        logger->log_info(
+        logger->log_debug(
             name(),
             "Discard plane, because of width restriction. is: %f\tshould: %f",
             width, cfg_plane_width_minimum_);
@@ -417,11 +416,11 @@ void ConveyorPlaneThread::loop() {
             new pcl::PointIndices(cluster_indices->at(id)));
         CloudPtr tmp(new Cloud);
         pcl::ExtractIndices<Point> extract;
-        extract.setInputCloud(cloud_front_side);
+        extract.setInputCloud(cloud_cropped);
         extract.setIndices(extract_indicies);
         extract.setNegative(true);
         extract.filter(*tmp);
-        *cloud_front_side = *tmp;
+        *cloud_cropped = *tmp;
 
       } else {
         // height and width ok
@@ -441,9 +440,8 @@ void ConveyorPlaneThread::loop() {
   normal(0) = coeff->values[0];
   normal(1) = coeff->values[1];
   normal(2) = coeff->values[2];
-  pose pose_current = calculate_pose(centroid, normal);
-  ;
-  pose_add_element(pose_current);
+
+  pose_add_element(centroid, normal);
 }
 
 bool ConveyorPlaneThread::pc_in_check() {
@@ -480,6 +478,8 @@ void ConveyorPlaneThread::if_read() {
     if (bb_enable_switch_
             ->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
       rv = false;
+      bb_pose_->set_visibility_history(-1);
+      bb_pose_->write();
     } else if (bb_enable_switch_
                    ->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
       rv = true;
@@ -507,9 +507,10 @@ void ConveyorPlaneThread::if_read() {
   }
 }
 
-void ConveyorPlaneThread::pose_add_element(pose element) {
+void ConveyorPlaneThread::pose_add_element(const Eigen::Vector4f &centroid,
+                                           const Eigen::Vector3f &normal) {
   // add element
-  poses_.push_front(element);
+  poses_.push_front(std::make_pair(centroid, normal));
 
   // if to full, remove oldest
   while (poses_.size() > cfg_pose_avg_hist_size_) {
@@ -518,102 +519,66 @@ void ConveyorPlaneThread::pose_add_element(pose element) {
 }
 
 bool ConveyorPlaneThread::pose_get_avg(pose &out) {
-  pose median;
-
   // count invalid loops
   unsigned int invalid = 0;
-  for (pose p : poses_) {
-    if (!p.valid) {
-      invalid++;
+  std::list<std::pair<Eigen::Vector4f, Eigen::Vector3f>> valid_planes;
+  for (const std::pair<Eigen::Vector4f, Eigen::Vector3f> &p : poses_) {
+    //-- keep plane if valid
+    if (!std::isnan(p.first(0))) {
+      valid_planes.push_back(p);
+
+    } else {
+      ++invalid;
     }
   }
 
-  if (invalid > cfg_allow_invalid_poses_) {
+  if (valid_planes.size() <= 0) {
+    logger->log_warn(name(), "no valid planes to average");
+    return false;
+
+  } else if (invalid > cfg_allow_invalid_poses_) {
     logger->log_warn(name(), "view unstable, got %u invalid frames", invalid);
-  }
-
-  // Weiszfeld's algorithm to find the geometric median
-  median.translation.setValue(0, 0, 0);
-  median.rotation.setEuler(0, 0, 0);
-  unsigned int iteraterions = 20;
-  for (unsigned int i = 0; i < iteraterions; ++i) {
-
-    fawkes::tf::Vector3 numerator(0, 0, 0);
-    double divisor = 0;
-
-    for (pose p : poses_) {
-      if (p.valid) {
-        double divisor_current = (p.translation - median.translation).norm();
-        divisor += (1 / divisor_current);
-        numerator += (p.translation / divisor_current);
-        //        logger->log_info(name(), "(%lf\t%lf\t%lf) /\t%lf",
-        //        numerator.x(), numerator.y(), numerator.z(), divisor);
-      }
-    }
-    median.translation = numerator / divisor;
-  }
-
-  // remove outliers
-  std::list<pose> poses_used;
-  for (pose p : poses_) {
-    if (p.valid) {
-      double dist = (p.translation - median.translation).norm();
-
-      //      logger->log_warn(name(), "(%f\t%f\t%f)\t(%f\t%f\t%f) => %lf",
-      //          median.translation.x(), median.translation.y(),
-      //          median.translation.z(), p.translation.x(), p.translation.y(),
-      //          p.translation.z(), dist);
-      if (dist <= cfg_pose_diff_) {
-        poses_used.push_back(p);
-      }
-    }
-  }
-
-  if (poses_used.size() <= cfg_pose_avg_min_) {
-    logger->log_warn(name(), "not enough for average, got: %zu",
-                     poses_used.size());
     return false;
   }
 
-  // calculate average
-  //  Eigen::Quaternion<float> avgRot;
-  //  Eigen::Vector4f cumulative;
-  //  Eigen::Quaternion<float> firstRotation(poses_used.front().rotation.x(),
-  //  poses_used.front().rotation.y(), poses_used.front().rotation.z(),
-  //  poses_used.front().rotation.w()); float addDet = 1.0 /
-  //  (float)poses_used.size();
-  for (pose p : poses_used) {
-    //    Eigen::Quaternion<float> newRotation(p.rotation.x(), p.rotation.y(),
-    //    p.rotation.z(), p.rotation.w());
-
-    out.translation.setX(out.translation.x() + p.translation.x());
-    out.translation.setY(out.translation.y() + p.translation.y());
-    out.translation.setZ(out.translation.z() + p.translation.z());
-
-    //  fawkes::tf::Matrix3x3 m(p.rotation);
-    //  fawkes::tf::Scalar rc, pc, yc;
-    //  m.getEulerYPR(yc, pc, rc);
-    //  roll += fawkes::normalize_rad(rc);
-    //  pitch += fawkes::normalize_rad(pc);
-    //  yaw += fawkes::normalize_rad(yc);
-    //    avgRot = averageQuaternion(cumulative, newRotation, firstRotation,
-    //    addDet);
+  //-- averaging planes
+  Eigen::Vector4f median_centroid(0, 0, 0, 0);
+  Eigen::Vector3f median_normal(0, 0, 0);
+  float invN = 1.f / static_cast<float>(valid_planes.size());
+  for (const std::pair<Eigen::Vector4f, Eigen::Vector3f> &p : valid_planes) {
+    median_centroid += p.first * invN;
+    median_normal += p.second * invN;
   }
 
-  // normalize
-  out.translation.setX(out.translation.x() / poses_used.size());
-  out.translation.setY(out.translation.y() / poses_used.size());
-  out.translation.setZ(out.translation.z() / poses_used.size());
+  // remove outliers
+  std::list<std::pair<Eigen::Vector4f, Eigen::Vector3f>> planes_used;
+  for (const std::pair<Eigen::Vector4f, Eigen::Vector3f> &p : valid_planes) {
+    float dist = (p.first - median_centroid).norm();
 
-  // roll /= poses_used.size();
-  // pitch /= poses_used.size();
-  // yaw /= poses_used.size();
-  // out.rotation.setEuler(yaw, pitch, roll);
+    if (dist <= cfg_pose_diff_) {
+      planes_used.push_back(p);
+    }
+  }
 
-  //  logger->log_info(name(), "got %u for avg: (%f\t%f\t%f)\t(%f\t%f\t%f)",
-  //  poses_used.size(),
-  //      out.translation.x(), out.translation.y(), out.translation.z(),
-  //      roll, pitch, yaw);
+  if (planes_used.size() < cfg_pose_avg_min_) {
+    logger->log_warn(name(), "not enough for average, got: %zu",
+                     planes_used.size());
+  }
+
+  //-- if there are any inliers kept, due to the outlier removal ...
+  if (planes_used.size() > 0) {
+    //-- ... recalculate average using valid inliers
+    median_centroid = Eigen::Vector4f(0, 0, 0, 0);
+    median_normal = Eigen::Vector3f(0, 0, 0);
+    invN = 1.f / static_cast<float>(planes_used.size());
+
+    for (const std::pair<Eigen::Vector4f, Eigen::Vector3f> &p : planes_used) {
+      median_centroid += p.first * invN;
+      median_normal += p.second * invN;
+    }
+  }
+
+  out = calculate_pose(median_centroid, median_normal);
 
   return true;
 }
@@ -635,7 +600,8 @@ bool ConveyorPlaneThread::laserline_get_best_fit(
     // just if not too far away
     Eigen::Vector3f center = laserline_get_center_transformed(ll);
 
-    if (std::sqrt(center(0) * center(0) + center(2) * center(2)) > 0.8) {
+    if (std::sqrt(static_cast<float>(center(0) * center(0) +
+                                     center(2) * center(2))) > 0.8) {
       continue;
     }
 
@@ -671,7 +637,7 @@ bool ConveyorPlaneThread::laserline_get_best_fit(
 Eigen::Vector3f ConveyorPlaneThread::laserline_get_center_transformed(
     fawkes::LaserLineInterface *ll) {
   fawkes::tf::Stamped<fawkes::tf::Point> tf_in, tf_out;
-  tf_in.stamp = ll->timestamp();
+  tf_in.stamp = fawkes::Time(0.); // ll->timestamp();
   tf_in.frame_id = ll->frame_id();
   tf_in.setX(ll->end_point_2(0) +
              (ll->end_point_1(0) - ll->end_point_2(0)) / 2.);
@@ -680,11 +646,45 @@ Eigen::Vector3f ConveyorPlaneThread::laserline_get_center_transformed(
   tf_in.setZ(ll->end_point_2(2) +
              (ll->end_point_1(2) - ll->end_point_2(2)) / 2.);
 
-  tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
+  try {
+    tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
+  } catch (tf::ExtrapolationException &) {
+    tf_in.stamp = Time(0, 0);
+    tf_listener->transform_point(header_.frame_id, tf_in, tf_out);
+  }
 
   Eigen::Vector3f out(tf_out.getX(), tf_out.getY(), tf_out.getZ());
 
   return out;
+}
+
+Eigen::Vector3f ConveyorPlaneThread::get_conveyor_estimate(
+    fawkes::LaserLineInterface *laser_line, const std::string &target_frame,
+    const fawkes::Time &desired_stamp) {
+  btVector3 endpt_1(laser_line->end_point_1(0), laser_line->end_point_1(1),
+                    laser_line->end_point_1(2));
+  btVector3 endpt_2(laser_line->end_point_2(0), laser_line->end_point_2(1),
+                    laser_line->end_point_2(2));
+  btVector3 center = endpt_2 + (endpt_1 - endpt_2) * 0.5;
+
+  fawkes::tf::Stamped<fawkes::tf::Point> estimate_source;
+  estimate_source.stamp = desired_stamp; // laser_line->timestamp();
+  estimate_source.frame_id = std::string(laser_line->frame_id());
+  estimate_source.set_data(center);
+  estimate_source += {0, 0, double(cfg_mps_top_offset)};
+
+  fawkes::tf::Stamped<fawkes::tf::Point> estimate_target;
+  try {
+    tf_listener->transform_point(target_frame, estimate_source,
+                                 estimate_target);
+  } catch (tf::ExtrapolationException &) {
+    estimate_source.stamp = Time(0, 0);
+    tf_listener->transform_point(target_frame, estimate_source,
+                                 estimate_target);
+  }
+
+  return Eigen::Vector3f(estimate_target.getX(), estimate_target.getY(),
+                         estimate_target.getZ());
 }
 
 bool ConveyorPlaneThread::is_inbetween(double a, double b, double val) {
@@ -698,67 +698,47 @@ bool ConveyorPlaneThread::is_inbetween(double a, double b, double val) {
   }
 }
 
-CloudPtr ConveyorPlaneThread::cloud_remove_gripper(CloudPtr in) {
-  CloudPtr out(new Cloud);
-  for (Point p : *in) {
-    if (!(is_inbetween(cfg_gripper_y_min_, cfg_gripper_y_max_, p.y) &&
-          p.z < cfg_gripper_z_max_)) { // remove gripper
-      if (p.y < cfg_gripper_slice_y_max_ &&
-          p.y > cfg_gripper_slice_y_min_) { // leave just correct hight
-        out->push_back(p);
-      }
-    }
-  }
+CloudPtr ConveyorPlaneThread::crop_cloud(CloudPtr in_cloud,
+                                         fawkes::LaserLineInterface *laser_line,
+                                         bool use_laserline) {
+  CloudPtr cropped_cloud(new Cloud);
 
-  return out;
-}
+  Eigen::Vector3f min(1.f, 1.f, 1.f);
+  Eigen::Vector3f max(1.f, 1.f, 1.f);
 
-CloudPtr ConveyorPlaneThread::cloud_remove_offset_to_front(
-    CloudPtr in, fawkes::LaserLineInterface *ll, bool use_ll) {
-  double space = cfg_front_space_;
-  double z_min, z_max;
-  z_min = 0;
-  if (use_ll) {
-    Eigen::Vector3f c = laserline_get_center_transformed(ll);
-    z_min = c(2) + cfg_front_offset_ - (space / 2.);
-  }
-  z_max = z_min + space;
+  if (use_laserline) {
+    std::string target_frame = header_.frame_id;
+    Eigen::Vector3f cropbox_reference =
+        get_conveyor_estimate(laser_line, target_frame, fawkes::Time(0, 0));
 
-  CloudPtr out(new Cloud);
-  for (Point p : *in) {
-    if (p.z >= z_min && p.z <= z_max) {
-      out->push_back(p);
-    }
-  }
+    logger->log_debug(name(), "ll cropbox_reference = (%f, %f, %f) in %s",
+                      cropbox_reference[0], cropbox_reference[1],
+                      cropbox_reference[2], target_frame.c_str());
 
-  return out;
-}
+    min = Eigen::Vector3f(cfg_crop_laserline_x_min, cfg_crop_laserline_y_min,
+                          cfg_crop_laserline_z_min) +
+          cropbox_reference;
+    max = Eigen::Vector3f(cfg_crop_laserline_x_max, cfg_crop_laserline_y_max,
+                          cfg_crop_laserline_z_max) +
+          cropbox_reference;
 
-CloudPtr ConveyorPlaneThread::cloud_remove_offset_to_left_right(
-    CloudPtr in, fawkes::LaserLineInterface *ll, bool use_ll) {
-  if (use_ll) {
-    Eigen::Vector3f c = laserline_get_center_transformed(ll);
-
-    double x_min = c(0) - cfg_left_cut_;
-    double x_max = c(0) + cfg_right_cut_;
-
-    CloudPtr out(new Cloud);
-    for (Point p : *in) {
-      if (p.x >= x_min && p.x <= x_max) {
-        out->push_back(p);
-      }
-    }
-    return out;
   } else {
-    logger->log_info(name(), "-------------STOPPED USING LASERLINE-----------");
-    CloudPtr out(new Cloud);
-    for (Point p : *in) {
-      if (p.x >= -cfg_left_cut_no_ll_ && p.x <= cfg_right_cut_no_ll_) {
-        out->push_back(p);
-      }
-    }
-    return out;
+    min = Eigen::Vector3f(cfg_crop_cam_x_min, cfg_crop_cam_y_min,
+                          cfg_crop_cam_z_min);
+    max = Eigen::Vector3f(cfg_crop_cam_x_max, cfg_crop_cam_y_max,
+                          cfg_crop_cam_z_max);
   }
+
+  for (const Point &pt : *in_cloud) {
+    if (pcl::isFinite<Point>(pt) && pt.x >= min[0] && pt.x <= max[0] &&
+        pt.y >= min[1] && pt.y <= max[1] && pt.z >= min[2] && pt.z <= max[2])
+      cropped_cloud->push_back(pt);
+  }
+  cropped_cloud->width = static_cast<uint32_t>(cropped_cloud->size());
+  cropped_cloud->height = 1;
+  cropped_cloud->is_dense = true;
+
+  return cropped_cloud;
 }
 
 CloudPtr
@@ -781,7 +761,7 @@ ConveyorPlaneThread::cloud_get_plane(CloudPtr in,
   seg.segment(*inliers, *coeff);
 
   if (inliers->indices.size() == 0) {
-    logger->log_error(
+    logger->log_debug(
         name(), "Could not estimate a planar model for the given dataset.");
     return CloudPtr();
   }
@@ -879,15 +859,13 @@ void ConveyorPlaneThread::cloud_publish(CloudPtr cloud_in,
 ConveyorPlaneThread::pose
 ConveyorPlaneThread::calculate_pose(Eigen::Vector4f centroid,
                                     Eigen::Vector3f normal) {
-  Eigen::Vector3f tangent0 = normal.cross(Eigen::Vector3f(1, 0, 0));
-  if (tangent0.dot(tangent0) < 0.0001) {
-    tangent0 = normal.cross(Eigen::Vector3f(0, 1, 0));
-  }
-  tangent0.normalize();
-  Eigen::Vector3f tangent1 = normal.cross(tangent0);
-  tangent1.normalize();
+  Eigen::Vector3f z = normal.normalized();
+  Eigen::Vector3f x;
+  x << normal(0), normal(2), normal(1);
+  Eigen::Vector3f y = x.cross(z);
+
   Eigen::Matrix3f rotMatrix;
-  rotMatrix << tangent0, tangent1, normal;
+  rotMatrix << x, y, z;
   Eigen::Quaternion<float> q(rotMatrix);
   fawkes::tf::Vector3 origin(centroid(0), centroid(1), centroid(2));
   fawkes::tf::Quaternion rot(q.x(), q.y(), q.z(), q.w());
@@ -936,7 +914,8 @@ void ConveyorPlaneThread::pose_write(pose pose) {
 void ConveyorPlaneThread::pose_publish_tf(pose pose) {
   // transform data into gripper frame (this is better for later use)
   tf::Stamped<tf::Pose> tf_pose_cam, tf_pose_gripper;
-  tf_pose_cam.stamp = fawkes::Time((long)header_.stamp / 1000);
+  tf_pose_cam.stamp =
+      fawkes::Time(0.); // fawkes::Time((long)header_.stamp / 1000);
   tf_pose_cam.frame_id = header_.frame_id;
   tf_pose_cam.setOrigin(tf::Vector3(pose.translation.x(), pose.translation.y(),
                                     pose.translation.z()));
@@ -953,67 +932,6 @@ void ConveyorPlaneThread::pose_publish_tf(pose pose) {
   tf_publisher->send_transform(stamped_transform);
 }
 void ConveyorPlaneThread::start_waiting() { wait_start_ = Time(); }
-
-Eigen::Quaternion<float> ConveyorPlaneThread::averageQuaternion(
-    Eigen::Vector4f &cumulative, Eigen::Quaternion<float> newRotation,
-    Eigen::Quaternion<float> firstRotation, float addDet) {
-
-  float w = 0.0;
-  float x = 0.0;
-  float y = 0.0;
-  float z = 0.0;
-
-  if (!areQuaternionsClose(newRotation, firstRotation)) {
-    newRotation = inverseSignQuaternion(newRotation);
-  }
-
-  cumulative.x() += newRotation.x();
-  x = cumulative.x() * addDet;
-  cumulative.y() += newRotation.y();
-  y = cumulative.y() * addDet;
-  cumulative.z() += newRotation.z();
-  z = cumulative.z() * addDet;
-  cumulative.w() += newRotation.w();
-  w = cumulative.w() * addDet;
-
-  Eigen::Quaternion<float> result = normalizeQuaternion(x, y, z, w);
-  return result;
-}
-Eigen::Quaternion<float>
-ConveyorPlaneThread::normalizeQuaternion(float x, float y, float z, float w) {
-
-  float lengthD = 1.0 / (w * w + x * x + y * y + z * z);
-  w *= lengthD;
-  x *= lengthD;
-  y *= lengthD;
-  z *= lengthD;
-
-  Eigen::Quaternion<float> result(x, y, z, w);
-  return result;
-}
-
-// Changes the sign of the quaternion components. This is not the same as the
-// inverse.
-Eigen::Quaternion<float>
-ConveyorPlaneThread::inverseSignQuaternion(Eigen::Quaternion<float> q) {
-  Eigen::Quaternion<float> result(-q.x(), -q.y(), -q.z(), -q.w());
-  return result;
-}
-
-// Returns true if the two input quaternions are close to each other. This can
-// be used to check whether or not one of two quaternions which are supposed to
-// be very similar but has its component signs reversed (q has the same rotation
-// as -q)
-bool ConveyorPlaneThread::areQuaternionsClose(Eigen::Quaternion<float> q1,
-                                              Eigen::Quaternion<float> q2) {
-
-  float dot = q1.dot(q2);
-  if (dot < 0.0) {
-    return false;
-  } else {
-    return true;
-  }
-}
 
 bool ConveyorPlaneThread::need_to_wait() {
   return Time() < wait_start_ + wait_time_;

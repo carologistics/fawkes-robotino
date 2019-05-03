@@ -62,11 +62,11 @@ plugins/static-transforms:
 
     # Move the gripper to (0,0,0) in this frame to calibrate conveyor_pose
     conveyor_calib:
-      frame: !frame gripper_base
+      frame: !frame gripper_home
       child_frame: !frame conveyor_calib
-      trans_x: 0.114
+      trans_x: 0.11
       trans_y: 0
-      trans_z: 0.03
+      trans_z: 0.01
 
     # this system is located in the gripper where the puck should be held
     gripper_base:
@@ -134,12 +134,12 @@ plugins/static-transforms:
     fingers_record:
       frame: !frame gripper
       child_frame: !frame gripper_fingers_record
-      trans_x: 0.06
+      trans_x: 0.057
       trans_y: 0
-      trans_z: 0.0
-      rot_yaw: -1.57
+      trans_z: -0.015
+      rot_yaw: 1.57
       rot_pitch: 0
-      rot_roll: -1.57
+      rot_roll: 1.57
 
     fingers:
       frame: !frame gripper
