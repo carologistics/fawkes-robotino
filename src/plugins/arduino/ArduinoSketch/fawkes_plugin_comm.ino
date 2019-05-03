@@ -218,26 +218,29 @@ void double_calibrate()
 
 void calibrate()
 {
-  bool x_done=false, y_done=false, z_done=false;
-  motor_X.enableOutputs();
-  motor_X.move(1000000L);
-  motor_Y.move(1000000L);
-  motor_Z.move(1000000L);
-  // due to high step count, reaching end stops is guaranteed!
-  set_status(STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
-  // This while loop controls permanently the state of the respective end stops and handles crashing into them
-  // When all end stops are triggered simulatenously, additional latency is introduced.
-  // The latency is maily due to the planning of the back movement.
-  // One work around is to calibrate twice, the first time fast and the second time slowly.
-  // (again inspired from grbl)
-  // Additionally, the backwards movement should use different numbers of steps
-  // to ensure that the end stops will not be triggerend simulatenously at the second calibration.
-  while(!x_done || !y_done || !z_done){
-    if(!x_done && digitalRead(MOTOR_X_LIMIT_PIN)==LOW){ x_done=true; reach_end_handle(motor_X,0);}
-    if(!y_done && digitalRead(MOTOR_Y_LIMIT_PIN)==LOW){ y_done=true; reach_end_handle(motor_Y,100);}
-    if(!z_done && digitalRead(MOTOR_Z_LIMIT_PIN)==LOW){ z_done=true; reach_end_handle(motor_Z,200);}
-  }
-  movement_done_flag = false;
+  bool x_done, y_done, z_done;
+  do { //repeat calibration as long as not successfull
+    x_done = y_done = z_done = false;
+    motor_X.enableOutputs();
+    motor_X.move(10000L);
+    motor_Y.move(10000L);
+    motor_Z.move(10000L);
+    // due to high step count, reaching end stops is guaranteed!
+    set_status(STATUS_MOVING); // status is always only changed on no interrupt code level, hence no race condition occurs here
+    // This while loop controls permanently the state of the respective end stops and handles crashing into them
+    // When all end stops are triggered simulatenously, additional latency is introduced.
+    // The latency is maily due to the planning of the back movement.
+    // One work around is to calibrate twice, the first time fast and the second time slowly.
+    // (again inspired from grbl)
+    // Additionally, the backwards movement should use different numbers of steps
+    // to ensure that the end stops will not be triggerend simulatenously at the second calibration.
+    while(!movement_done_flag && (!x_done || !y_done || !z_done)){
+      if(!x_done && digitalRead(MOTOR_X_LIMIT_PIN)==LOW){ x_done=true; reach_end_handle(motor_X,0);}
+      if(!y_done && digitalRead(MOTOR_Y_LIMIT_PIN)==LOW){ y_done=true; reach_end_handle(motor_Y,100);}
+      if(!z_done && digitalRead(MOTOR_Z_LIMIT_PIN)==LOW){ z_done=true; reach_end_handle(motor_Z,200);}
+    }
+    movement_done_flag = false;
+  } while(!x_done || !y_done || !z_done);
 }
 
 
