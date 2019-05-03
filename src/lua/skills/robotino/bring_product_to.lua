@@ -117,11 +117,14 @@ end
 
 function PRE_PRE_FAILED:init()
   self.args["gripper_commands"].x = 0
+  self.args["gripper_commands"].y = 0
   self.args["gripper_commands"].z = get_z_clear
   self.args["gripper_commands"].command = "MOVEABS"
 end
 
 function PRE_FAILED:init()
+  self.args["gripper_commands"].x = 0
+  self.args["gripper_commands"].y = 0
   self.args["gripper_commands"].z = 0
   self.args["gripper_commands"].command = "MOVEABS"
   self.args["gripper_commands"].wait = false
