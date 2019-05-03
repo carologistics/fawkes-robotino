@@ -104,7 +104,7 @@ function INIT:init()
 
 
   if self.fsm.vars.place ~= nil then
-    if string.match(self.fsm.vars.place, "[MC][-]Z[1-7][1-8]") then
+    if string.match(self.fsm.vars.place, "^[MC][-]Z[1-7][1-8]$") then
       -- place argument is a zone, e.g. M-Z21
       self.fsm.vars.zone = self.fsm.vars.place
       self.fsm.vars.x = tonumber(string.sub(self.fsm.vars.place, 4, 4)) - 0.5
