@@ -200,7 +200,7 @@ end
 function GRIPPER_HOME:init()
   self.args["gripper_commands"].x = 0
   self.args["gripper_commands"].y = 0
-  self.args["gripper_commands"].z = 0.03
+  self.args["gripper_commands"].z = 0.0
   self.args["gripper_commands"].wait = false
   self.args["gripper_commands"].command = "MOVEABS"
 end
