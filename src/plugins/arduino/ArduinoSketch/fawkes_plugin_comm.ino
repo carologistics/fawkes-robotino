@@ -434,14 +434,8 @@ void read_package() {
         }
         break;
       case CMD_CLOSE:
-        check_gripper_status();
-        if(open_gripper){
-          open_gripper = false;
-          set_new_rel_pos(-a_toggle_steps,motor_A);
-        } else {
-          send_status();
-          send_status();
-        }
+        open_gripper = false;
+        set_new_rel_pos(-a_toggle_steps,motor_A);
         break;
       case CMD_STATUS_REQ:
         send_status();
