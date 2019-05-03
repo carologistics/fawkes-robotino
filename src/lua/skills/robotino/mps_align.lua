@@ -86,7 +86,7 @@ local tag_utils = require("tag_utils")
 -- Tunables
 local MIN_VIS_HIST_LINE=5 --15
 local MIN_VIS_HIST_LINE_SEARCH=4
-local MIN_VIS_HIST_TAG=10
+local MIN_VIS_HIST_TAG=5
 
 local LINE_LENGTH_MIN=0.64
 local LINE_LENGTH_MAX=0.71
@@ -155,7 +155,7 @@ fsm:add_transitions{
    {"INIT",          "GRIPPER_PRE_CONVEYOR",       cond=true},
 
    {"CHECK_TAG",     "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
-   {"CHECK_TAG",     "FIND_TAG",        timeout=1, desc="no tag"},
+   {"CHECK_TAG",     "FIND_TAG",        timeout=2, desc="no tag"},
 
    {"FIND_TAG",      "SEARCH_LINES",    cond="want_search() and #vars.interesting_lines > 0", desc="search 4 tag"},
    {"FIND_TAG",      "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
