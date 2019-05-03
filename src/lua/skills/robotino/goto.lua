@@ -121,6 +121,13 @@ function INIT:init()
         if node:has_property("orientation") then
           self.fsm.vars.ori = node:property_as_float("orientation");
         end
+        -- In case the navgraph place defines tolerances we'll use them.
+        if node:has_property("orientation_tolerance") then
+          self.fsm.vars.ori_tolerance = node:property_as_float("orientation_tolerance");
+        end
+        if node:has_property("target_tolerance") then
+          self.fsm.vars.trans_tolerance = node:property_as_float("target_tolerance");
+        end
       else
         self.fsm.vars.target_valid = false
       end
@@ -151,6 +158,17 @@ function MOVING:init()
       self.fsm.vars.y,
       self.fsm.vars.ori,
       "map")
+
+   -- Use a tolerance if it is defined.
+   if self.fsm.vars.trans_tolerance ~= nil and self.fsm.vars.ori_tolerance ~= nil then
+      msg = navigator.CartesianGotoFrameTolMessage:new(
+        self.fsm.vars.x,
+        self.fsm.vars.y,
+        self.fsm.vars.ori,
+        "map",
+        self.fsm.vars.trans_tolerance,
+        self.fsm.vars.ori_tolerance)
+   end
    fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
 end
 
