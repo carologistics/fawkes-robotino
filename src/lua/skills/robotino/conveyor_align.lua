@@ -26,7 +26,7 @@ depends_skills     = {"motor_move", "gripper_commands"}
 depends_interfaces = {
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
-   {v = "if_conveyor_switch", type = "SwitchInterface", id="conveyor_pose/switch"},
+   {v = "if_plane_switch", type = "SwitchInterface", id="conveyor_plane/switch"},
 }
 
 documentation      = [==[aligns the robot orthogonal to the conveyor by using the
@@ -46,8 +46,8 @@ local tfm = require("fawkes.tfutils")
 local pam = require("parse_module")
 
 -- Constants
-local euclidean_fitness_threshold = 4 -- threshold for euclidean fitness for targets other than shelf
-local shelf_euclidean_fitness_threshold = 3 -- threshold for euclidean fitness if target is shelf
+local euclidean_fitness_threshold = 5 -- threshold for euclidean fitness for targets other than shelf
+local slide_euclidean_fitness_threshold = 7 -- threshold for euclidean fitness if target is shelf
 local tolerance_trans = 0.04  -- tolerance in x and y direction after the align
 local tolerance_ori = 0.05   -- orientation tolerance after the align
 local x_dist_to_mps = -0.255  -- x-distance the robot should have after the align
@@ -77,6 +77,18 @@ function input_ok()
 end
 
 
+function enable_conveyor_plane(enable)
+   if not fsm.vars.slide and if_plane_switch:has_writer() then
+      local msg
+      if enable then
+         msg = if_plane_switch.EnableSwitchMessage:new()
+      else
+         msg = if_plane_switch.DisableSwitchMessage:new()
+      end
+      if_plane_switch:msgq_enqueue_copy(msg)
+   end
+end
+
 function tolerance_ok()
    local pose = pose_offset()
    return math.abs(pose.x) <= tolerance_trans
@@ -86,11 +98,13 @@ end
 
 function fitness_ok()
   local local_fitness_threshold = 0
-  if fsm.vars.shelf then
-    local_fitness_threshold = shelf_euclidean_fitness_threshold
+  if fsm.vars.slide then
+    local_fitness_threshold = slide_euclidean_fitness_threshold
   else
     local_fitness_threshold = euclidean_fitness_threshold
   end
+
+  print_info("conveyor_pose fitness: %f", if_conveyor_pose:euclidean_fitness())
 
   return if_conveyor_pose:euclidean_fitness() >= local_fitness_threshold
 end
@@ -123,8 +137,19 @@ function pose_offset()
                        y = y_offset,
                        ori = 0,
   }
+
+  local conv_odom_tf = tfm.transform(target_pos, "conveyor_pose", "odom")
+  local conv_odom_tf_age = tfm.tf_age("conveyor_pose", "odom")
+  local odom_base_tf = tfm.transform(conv_odom_tf, "odom", "base_link")
+  local odom_base_tf_age = tfm.tf_age( "odom", "base_link")
+
   local transformed_pos = tfm.transform(target_pos, "conveyor_pose", "base_link")
-  print_info("transformed_pos is x = %f, y = %f,ori = %f", transformed_pos.x, transformed_pos.y, transformed_pos.ori)
+  local transformed_pos_age = tfm.tf_age("conveyor_pose", "base_link")
+
+  print_info("conv_odom_tf is x = %f, y = %f,ori = %f, age = %f", conv_odom_tf.x, conv_odom_tf.y, conv_odom_tf.ori, conv_odom_tf_age)
+  print_info("odom_base_tf is x = %f, y = %f,ori = %f, age = %f", odom_base_tf.x, odom_base_tf.y, odom_base_tf.ori, odom_base_tf_age)
+  print_info("transformed_pos  is x = %f, y = %f,ori = %f, age = %f", transformed_pos.x, transformed_pos.y, transformed_pos.ori, transformed_pos_age)
+
   return transformed_pos
 end
 
@@ -142,17 +167,17 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not input_ok()", desc = "Wrong input format"},
    {"INIT", "MOVE_GRIPPER", cond=true},
-   {"CHECK_VISION", "FAILED", timeout=10, desc = "Fitness threshold wasn't reached"},
+   {"CHECK_VISION", "FAILED", timeout=15, desc = "Fitness threshold wasn't reached"},
    {"CHECK_VISION", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
-   {"CHECK_VISION", "DECIDE_WHAT", cond=result_ready, desc="Fitness threshold reached"},
+   {"CHECK_VISION", "DECIDE_WHAT", cond=result_ready, desc="conveyor_pose result ready"},
    {"DECIDE_WHAT", "FINAL", cond="fitness_ok() and tolerance_ok()"},
    {"DECIDE_WHAT", "DRIVE", cond="fitness_ok() and not tolerance_ok() and vars.retries <= MAX_RETRIES"},
-   {"DECIDE_WHAT", "FAILED", cond="vars.vision_retries >= MAX_VISION_RETRIES"},
+   {"DECIDE_WHAT", "FAILED", cond="vars.vision_retries > MAX_VISION_RETRIES"},
    {"DECIDE_WHAT", "CHECK_VISION", cond="not fitness_ok()"},
 }
 
 function INIT:init()
-   if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.EnableSwitchMessage:new())
+   enable_conveyor_plane(true)
    local parse_result = pam.parse_to_type_target(if_conveyor_pose,self.fsm.vars.place,self.fsm.vars.side,self.fsm.vars.shelf,self.fsm.vars.slide)
    self.fsm.vars.mps_type = parse_result.mps_type
    self.fsm.vars.mps_target = parse_result.mps_target
@@ -165,6 +190,11 @@ function CHECK_VISION:init()
    if_conveyor_pose:msgq_enqueue_copy(msg)
    self.fsm.vars.msgid = msg:id()
    self.fsm.vars.vision_retries = self.fsm.vars.vision_retries + 1
+end
+
+function CHECK_VISION:exit()
+   local msg = if_conveyor_pose.StopICPMessage:new()
+   if_conveyor_pose:msgq_enqueue_copy(msg)
 end
 
 function MOVE_GRIPPER:init()
@@ -189,7 +219,7 @@ function DRIVE:init()
 end
 
 function cleanup()
-  if_conveyor_switch:msgq_enqueue_copy(if_conveyor_switch.DisableSwitchMessage:new())
+   enable_conveyor_plane(false)
 end
 
 function FAILED:init()
@@ -197,7 +227,5 @@ function FAILED:init()
 end
 
 function FINAL:init()
-   if (fsm.vars.disable_realsense_afterwards == nil or fsm.vars.disable_realsense_afterwards) then
-      cleanup()
-   end
+   cleanup()
 end

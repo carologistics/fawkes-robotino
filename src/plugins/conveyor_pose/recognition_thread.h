@@ -23,6 +23,7 @@
 #ifndef CORRESPONDENCE_GROUPING_THREAD_H
 #define CORRESPONDENCE_GROUPING_THREAD_H
 
+#include <aspect/clock.h>
 #include <aspect/logging.h>
 #include <aspect/syncpoint_manager.h>
 #include <aspect/tf.h>
@@ -51,7 +52,8 @@ public:
 class RecognitionThread : public fawkes::Thread,
                           public fawkes::LoggingAspect,
                           public fawkes::TransformAspect,
-                          public fawkes::SyncPointManagerAspect {
+                          public fawkes::SyncPointManagerAspect,
+                          public fawkes::ClockAspect {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -70,7 +72,7 @@ public:
   void disable();
 
   /** Re-initialize this thread, e.g. after a config change */
-  void restart();
+  void schedule_restart();
 
   /** @return whether this thread is currently enabled (running) */
   bool enabled();
@@ -89,26 +91,26 @@ private:
 
   ConveyorPoseThread *main_thread_;
 
-  fawkes::RefPtr<fawkes::SyncPoint> syncpoint_clouds_ready_;
+  fawkes::RefPtr<fawkes::SyncPoint> syncpoint_ready_for_icp_;
 
   std::atomic_bool enabled_;
   std::atomic_bool restart_pending_;
 
-  fawkes::tf::Stamped<fawkes::tf::Pose> initial_guess_icp_odom_;
   Eigen::Matrix4f initial_tf_;
   CloudPtr model_;
   CloudPtr scene_;
 
   CustomICP icp_;
   pcl::PapazovHV<Point, Point> hypot_verif_;
-  Eigen::Matrix4f prev_last_tf_;
   CloudPtr icp_result_;
   Eigen::Matrix4f final_tf_;
 
   unsigned int iterations_;
+  unsigned int retries_;
   double last_raw_fitness_;
 
   std::atomic<float> cfg_icp_max_corr_dist_;
+  std::atomic<double> cfg_icp_min_corr_dist_;
   std::atomic<double> cfg_icp_tf_epsilon_;
   std::atomic<double> cfg_icp_refinement_factor_;
   std::array<std::atomic<float>, 3> cfg_icp_conveyor_hint_;
@@ -121,6 +123,7 @@ private:
   std::atomic<float> cfg_icp_shelf_hv_inlier_thresh_;
   std::atomic<unsigned int> cfg_icp_min_loops_;
   std::atomic<unsigned int> cfg_icp_max_loops_;
+  std::atomic<unsigned int> cfg_icp_max_retries_;
   std::atomic_bool cfg_icp_auto_restart_;
 };
 

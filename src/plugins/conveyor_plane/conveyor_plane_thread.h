@@ -88,19 +88,19 @@ private:
   float cfg_pose_diff_;
   float vis_hist_angle_diff_;
 
-  float cfg_gripper_y_min_;
-  float cfg_gripper_y_max_;
-  float cfg_gripper_z_max_;
-  float cfg_gripper_slice_y_min_;
-  float cfg_gripper_slice_y_max_;
-
-  float cfg_front_space_;
-  float cfg_front_offset_;
-
-  float cfg_left_cut_;
-  float cfg_right_cut_;
-  float cfg_left_cut_no_ll_;
-  float cfg_right_cut_no_ll_;
+  float cfg_crop_cam_x_min;
+  float cfg_crop_cam_x_max;
+  float cfg_crop_cam_y_min;
+  float cfg_crop_cam_y_max;
+  float cfg_crop_cam_z_min;
+  float cfg_crop_cam_z_max;
+  float cfg_mps_top_offset;
+  float cfg_crop_laserline_x_min;
+  float cfg_crop_laserline_x_max;
+  float cfg_crop_laserline_y_min;
+  float cfg_crop_laserline_y_max;
+  float cfg_crop_laserline_z_min;
+  float cfg_crop_laserline_z_max;
 
   float cfg_plane_dist_threshold_;
 
@@ -130,7 +130,7 @@ private:
   size_t cfg_pose_avg_hist_size_;
   size_t cfg_pose_avg_min_;
 
-  std::list<pose> poses_;
+  std::list<std::pair<Eigen::Vector4f, Eigen::Vector3f>> poses_;
 
   // point clouds from pcl_manager
   fawkes::RefPtr<const Cloud> cloud_in_;
@@ -155,24 +155,23 @@ private:
   void bb_pose_conditional_open();
   void bb_pose_conditional_close();
 
-  void pose_add_element(pose element);
+  void pose_add_element(const Eigen::Vector4f &centroid,
+                        const Eigen::Vector3f &normal);
   bool pose_get_avg(pose &out);
 
   void if_read();
   bool laserline_get_best_fit(fawkes::LaserLineInterface *&best_fit);
   Eigen::Vector3f
   laserline_get_center_transformed(fawkes::LaserLineInterface *ll);
+  Eigen::Vector3f get_conveyor_estimate(fawkes::LaserLineInterface *laser_line,
+                                        const std::string &target_frame,
+                                        const fawkes::Time &stamp);
 
   bool is_inbetween(double a, double b, double val);
 
-  CloudPtr cloud_remove_gripper(CloudPtr in);
-  CloudPtr cloud_remove_offset_to_bottom(CloudPtr in);
-  CloudPtr cloud_remove_offset_to_front(CloudPtr in,
-                                        fawkes::LaserLineInterface *ll = NULL,
-                                        bool use_ll = false);
-  CloudPtr cloud_remove_offset_to_left_right(CloudPtr in,
-                                             fawkes::LaserLineInterface *ll,
-                                             bool use_ll);
+  CloudPtr crop_cloud(CloudPtr in_cloud,
+                      fawkes::LaserLineInterface *ll = nullptr,
+                      bool use_laserline = false);
   CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);
   boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
   CloudPtr cloud_voxel_grid(CloudPtr in);
@@ -187,15 +186,6 @@ private:
   pose calculate_pose(Eigen::Vector4f centroid, Eigen::Vector3f normal);
   void tf_send_from_pose_if(pose pose);
   void pose_write(pose pose);
-  Eigen::Quaternion<float>
-  averageQuaternion(Eigen::Vector4f &cumulative,
-                    Eigen::Quaternion<float> newRotation,
-                    Eigen::Quaternion<float> firstRotation, float addDet);
-  Eigen::Quaternion<float> normalizeQuaternion(float x, float y, float z,
-                                               float w);
-  Eigen::Quaternion<float> inverseSignQuaternion(Eigen::Quaternion<float> q);
-  bool areQuaternionsClose(Eigen::Quaternion<float> q1,
-                           Eigen::Quaternion<float> q2);
 
   void pose_publish_tf(pose pose);
   void start_waiting();

@@ -54,7 +54,7 @@ plugins/conveyor_pose:
   # For MPS which output on both sides, output_conveyor model is used. However,
   # further below hints regarding input and output are applied as usual.
   reference_models:
-    default: "conveyor_pcls/default.pcd"
+    default: "conveyor_pcls/no_cone.pcd"
     input_conveyor: "conveyor_pcls/with_cone.pcd"
     output_conveyor: "conveyor_pcls/no_cone.pcd"
     shelf_left: "conveyor_pcls/shelf_left.pcd"
@@ -67,6 +67,23 @@ plugins/conveyor_pose:
     leaf_size: 0.001
 
   icp:
+    # ID of a Position3DInterface that supplies an initial guess.
+    # We call this an "external" initial guess, as opposed to the one
+    # internally generated from the laser line.
+    init_guess_interface_id: "conveyor_plane/pose"
+
+    # Timeout (in seconds) for the external initial estimate taken from the
+    # Position3DInterface above.
+    # We fall back to laser-line init. guess if this is exceeded.
+    external_timeout: 2.0
+
+    # Maximum time difference between external initial guess and input
+    # pointcloud.  This is needed to ensure they actually refer to the same
+    # situation in the world, because the blackboard is not synced to the
+    # PointCloudManager
+    max_timediff_external_pc: 0.066
+
+
     # Recognition parameters
 
     # Ignore model point if it doesn't have a scene correspondence within this
@@ -85,6 +102,10 @@ plugins/conveyor_pose:
     # Range: (0,1)
     refinement_factor: 0.85
 
+    # Stop ICP if we have reduced the maximum correspondence distance to this
+    # value.
+    min_correspondence_dist: 0.0005
+
     # Maximum number of (internal!) ICP iterations per recognition loop
     max_iterations: 2
 
@@ -95,6 +116,9 @@ plugins/conveyor_pose:
     # Maximum number of recognition loops before either stopping or restarting
     # with a new scene
     max_loops: 30
+
+    # Try with a new initial estimate this many times
+    max_retries: 3
 
     # Restart with a new scene when max_loops have been run, even if a match has
     # been found (i.e. run until the whole plugin is disabled via the switch
@@ -168,9 +192,9 @@ plugins/conveyor_pose:
         y: 0.19
         z: 0.655
       slide:
-        x: 0.00
-        y: 0.27
-        z: 0.65
+        x: -0.015
+        y: 0.26
+        z: 0.62
 
 
     # MPS-type-specific offset in y direction added to the input_conveyor hint
@@ -195,8 +219,6 @@ plugins/conveyor_pose:
     # the prefix used for all interfaces
     prefix: conveyor_pose
 
-    # the switch interface
-    switch: switch
     # the laser lines, they don't use the prefix
     laser_lines: [
       "/laser-lines/1",
@@ -240,10 +262,10 @@ plugins/conveyor_pose:
   with_ll:  # THESE VALUES IF LASERLINE IS AVAILABLE
     left_cut: -0.065
     right_cut: 0.065
-    top_cut: -0.02
+    top_cut: -0.04
     bottom_cut: 0.055
     front_cut: -0.055
-    back_cut: 0.045
+    back_cut: 0.06
   without_ll:  # THESE VALUES IF LASERLINE IS NOT AVAILABLE
     left_cut: -0.075
     right_cut: 0.075

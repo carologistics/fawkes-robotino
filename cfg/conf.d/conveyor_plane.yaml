@@ -60,27 +60,28 @@ conveyor_plane:
       used_min: 3
     allow_invalid_poses: 3
 
-  # the dimensions of the gripper in the point cloud (check rotation of actual
-  # tf)
-  gripper:
-    y_min: -0.055
-    y_max: -0.015
-    z_max: 0.135
-    slice:
-      y_min: -0.025
-      y_max: 0.03
-  front:
-    # the distance that is not pruned at the front of the MPS
-    space: 0.6
-    # this should be a tf, but I did not get it work :(
-    offset: 0.005
-  bottom:
-    offset: 0.06
-  left_right:
-    left_cut: 0.1
-    right_cut: 0.1
-    left_cut_no_ll: 0.1
-    right_cut_no_ll: 0.1
+  # define cropbox in camera frame to cut out the aera containing the plane
+  # min point - the right bottom cropbox corner in camera frame
+  # max point - the left upper cropbox corner in camera frame
+  crop:
+    # cropbox relative to the laserline center point + (0,0,mps_top_offset)
+    laserline:
+      mps_top_offset: 0.64
+      x_min: -0.13
+      y_min: -0.04
+      z_min: -0.03
+      x_max: 0.07
+      y_max: 0.04
+      z_max: 0.05
+    # cropbox relative to the camera
+    cam:
+      x_min: -0.1
+      y_min: -0.1
+      z_min: 0.14
+      x_max: 0.1
+      y_max: 0.01
+      z_max: 0.5
+
   plane:
     # the allowed noise for a plane
     dist_threshold: 0.0025
