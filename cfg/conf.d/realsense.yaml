@@ -10,6 +10,12 @@ realsense:
   # ID of the PointCloud
   pcl_id: "/camera/depth/points"
 
+  # restart device after num retries
+  restart_after_num_errors: 20
+  # wait time before ppolling new images
+  delay_between_pol_errors: 0.5
+
+
   # Section to set the Realsense device options
   device_options:
     # Laser power from 0 - 15 as integer
