@@ -34,8 +34,8 @@
   ?*PRIORITY-CLEAR-CS* = 70
   ?*PRIORITY-CLEAR-RS* = 55
   ?*PRIORITY-PREFILL-CS* = 50 ;This priority can be increased by +1
-  ?*PRIORITY-PREFILL-RS* = 40 ;This priority can be increased by up to +4
-  ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* = 30
+  ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* = 40
+  ?*PRIORITY-PREFILL-RS* = 30 ;This priority can be increased by up to +4
   ?*PRIORITY-ADD-ADDITIONAL-RING-WAITING* = 20
   ?*PRIORITY-DISCARD-UNKNOWN* = 10
   ?*PRIORITY-WAIT* = 2
