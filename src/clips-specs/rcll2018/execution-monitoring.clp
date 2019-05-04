@@ -377,7 +377,7 @@
 (defrule execution-monitoring-remove-forbid
   (declare (salience ?*MONITORING-SALIENCE*))
   ?wm <- (wm-fact (key monitoring forbid-goal args? c ?class mps ?mps))
-  (goal (id ?goal-id) (sub-type SIMPLE) (class ?c) (params ?p) (mode EVALUATED))
+  (goal (id ?goal-id) (sub-type SIMPLE) (class ?c&:(production-leaf-goal ?c)) (params ?p) (outcome ~REJECTED) (mode FINISHED))
   (and (test (neq ?c ?class))
        (test (not (member$ ?mps ?p)))
   )
