@@ -230,7 +230,8 @@ void NavGraphGeneratorMPSThread::loop() {
                              entry.second.blocked_zones.end());
       }
 
-      std::vector<Eigen::Vector2i> free_zones_left, free_zones_right;
+      std::vector<Eigen::Vector2i> free_zones, free_zones_left,
+          free_zones_right;
 
       int x_min, x_max, y_min, y_max;
       if (cfg_bounding_box_p1_.x() < cfg_bounding_box_p2_.x()) {
@@ -257,6 +258,7 @@ void NavGraphGeneratorMPSThread::loop() {
                 std::find(blocked_zones.begin(), blocked_zones.end(), zn) ==
                     blocked_zones.end()) {
               // Zone is not reserved or blocked
+              free_zones.push_back(zn);
               if (x < 0)
                 free_zones_left.push_back(zn);
               else
@@ -268,6 +270,7 @@ void NavGraphGeneratorMPSThread::loop() {
 
       generate_wait_zones(cfg_num_wait_zones_, free_zones_left);
       generate_wait_zones(cfg_num_wait_zones_, free_zones_right);
+      generate_mps_wait_zones(free_zones);
     } else if (navgen_mps_if_->msgq_first_is<
                    NavGraphWithMPSGeneratorInterface::ComputeMessage>()) {
       NavGraphWithMPSGeneratorInterface::ComputeMessage *m =
@@ -357,7 +360,6 @@ void NavGraphGeneratorMPSThread::generate_wait_zones(
        it < free_zones.begin() + count && it < free_zones.end(); ++it) {
     wait_zones_.push_back(*it);
   }
-  generate_mps_wait_zones(free_zones);
 }
 
 /*
