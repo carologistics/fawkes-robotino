@@ -25,7 +25,7 @@
   (assert
     (plan (id ACQUIRE-TOKEN-PLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id ACQUIRE-TOKEN-PLAN) (goal-id ?goal-id)
-                    (action-name lock)
+                    (action-name one-time-lock)
                     (param-values ?token-name)))
   (modify ?g (mode EXPANDED))
 )
