@@ -372,8 +372,8 @@
   (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
 
   ;TODO: Discuss strategy, throwing away expired products is usually not desired.
-  (wm-fact (key refbox order ?order delivery-end) (type UINT)
-    (value ?end&:(< ?end (nth$ 1 ?game-time))))
+  ;(wm-fact (key refbox order ?order delivery-end) (type UINT)
+  ;  (value ?end&:(< ?end (nth$ 1 ?game-time))))
   =>
   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*))) (class CLEAR-MPS)
@@ -471,8 +471,8 @@
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
 
-  (wm-fact (key refbox order ?order delivery-end) (type UINT)
-           (value ?end&:(< ?end (nth$ 1 ?game-time))))
+  ;(wm-fact (key refbox order ?order delivery-end) (type UINT)
+  ;         (value ?end&:(< ?end (nth$ 1 ?game-time))))
   =>
   (printout t "Goal " CLEAR-MPS " (" ?mps ") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
@@ -1279,8 +1279,8 @@
   ;note: could be moved to rejected checks
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
            (value ?qd&:(> ?qr ?qd)))
-  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
-           (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
+  ;(wm-fact (key refbox order ?order delivery-begin) (type UINT)
+  ;         (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
 
   (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
   (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
