@@ -108,7 +108,7 @@ function GO_UP:init()
   self.args["gripper_commands"].x = pose.x
   self.args["gripper_commands"].y = pose.y
   self.args["gripper_commands"].z = height_safe
-  self.args["gripper_commands"].wait = false
+  self.args["gripper_commands"].wait = true
 end
 
 function GO_BACK:init()
