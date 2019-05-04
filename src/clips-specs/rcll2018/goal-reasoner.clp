@@ -525,25 +525,18 @@
 )
 
 
-(deffunction intersection (?m1 ?m2)
-   (foreach ?i1 ?m1
-      (foreach ?i2 ?m2
-         (if (eq ?i1 ?i2)
-            then (return TRUE))))
-   (return FALSE))
-
-
 (defrule goal-reasoner-reject-production-goals-that-block-produce-cx
 " Retract a formulated sub-goal of the production tree if it blocks a
   goal to produce high complexity products.
 "
   (declare (salience ?*SALIENCE-GOAL-REJECT*))
+  (domain-obj-is-of-type ?mps mps)
   (goal (id ?goal) (parent ?parent) (type ACHIEVE)
               (sub-type SIMPLE) (class PRODUCE-CX|MOUNT-NEXT-RING|MOUNT-FIRST-RING)
-              (required-resources $?res) (mode FORMULATED))
-  ?g <- (goal (id ?o-goal&~?goal (class ~PRODUCE-CX&~MOUNT-NEXT-RING&~MOUNT-FIRST-RING)
+              (required-resources $? ?mps $?) (mode FORMULATED))
+  ?g <- (goal (id ?o-goal&~?goal) (class ~PRODUCE-CX&~MOUNT-NEXT-RING&~MOUNT-FIRST-RING)
               (sub-type SIMPLE) (mode FORMULATED)
-              (required-resources $?o-res&:(intersection ?res ?o-res)))
+              (required-resources $? ?mps $?))
 =>
   (printout t "Goal " ?o-goal " is rejected because it blocks " ?goal crlf)
   (modify ?g (mode RETRACTED) (outcome REJECTED))
