@@ -468,3 +468,14 @@
 	(modify ?p (param-values ?modified))
   )
 )
+
+(defrule go-wait-fix
+  (declare (salience 1000))
+  ?pa <- (plan-action (id ?id) (goal-id ?goal-id&:(production-leaf-goal ?goal-id))
+      (action-name go-wait)
+      (state FAILED)
+  )
+  =>
+  (modify ?pa (state FINAL)
+  (printout error "Arsch gerettet" crlf)
+)
