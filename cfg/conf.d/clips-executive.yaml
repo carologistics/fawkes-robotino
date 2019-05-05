@@ -230,3 +230,8 @@ clips-executive:
           # LOW: Try to avoid producing competitive orders
 
           competitive-order-priority: DEFAULT
+
+          # Robots listed here will only formulate waiting goals in the
+          # production phase (allowed values: "R-1", "R-2" and "R-3")
+
+          disabled-bots: []
