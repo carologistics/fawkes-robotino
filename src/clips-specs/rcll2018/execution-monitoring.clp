@@ -470,12 +470,12 @@
 )
 
 (defrule go-wait-fix
-  (declare (salience 1000))
-  ?pa <- (plan-action (id ?id) (goal-id ?goal-id&:(production-leaf-goal ?goal-id))
+  (declare (salience 10000))
+  ?pa <- (plan-action (id ?id)
       (action-name go-wait)
-      (state FAILED)
+      (state EXECUTION-FAILED)
   )
   =>
-  (modify ?pa (state FINAL)
+  (modify ?pa (state EXECUTION-SUCCEEDED))
   (printout error "Arsch gerettet" crlf)
 )
