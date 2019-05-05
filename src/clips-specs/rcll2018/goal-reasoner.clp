@@ -535,8 +535,9 @@
               (sub-type SIMPLE) (class PRODUCE-CX|MOUNT-NEXT-RING|MOUNT-FIRST-RING)
               (required-resources $? ?mps $?) (mode FORMULATED))
   ?g <- (goal (id ?o-goal&~?goal) (class ~PRODUCE-CX&~MOUNT-NEXT-RING&~MOUNT-FIRST-RING)
-              (sub-type SIMPLE) (mode FORMULATED)
+              (sub-type SIMPLE) (parent ?o-parent) (mode FORMULATED)
               (required-resources $? ?mps $?))
+  (goal (id ?o-parent) (class ~URGENT))
 =>
   (printout t "Goal " ?o-goal " is rejected because it blocks " ?goal crlf)
   (modify ?g (mode RETRACTED) (outcome REJECTED))
