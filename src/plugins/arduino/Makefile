@@ -58,7 +58,7 @@ ifeq ($(OBJSSUBMAKE),1)
   ifneq ($(WARN_TARGETS),)
 all: $(WARN_TARGETS)
   endif
-.PHONY: warning_libudev warning_cpp11
+.PHONY: warning_tf warning_cpp11
 warning_cpp11:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TYELLOW)Omitting Arduino commnunication support$(TNORMAL) (C++11 support required)"
 warning_tf:
