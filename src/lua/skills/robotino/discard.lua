@@ -1,9 +1,9 @@
 
 ----------------------------------------------------------------------------
---  product_put.lua
+--  discard.lua
 --
---  Created Wed Apr 15
---  Copyright  2015  Johannes Rothe
+--  Created Sat 04 April
+--  Copyright  2019  Daniel Habering
 --
 ----------------------------------------------------------------------------
 
@@ -30,17 +30,15 @@ depends_interfaces = {
 }
 
 documentation      = [==[
-Skill to put a product onto the conveyor or the slide.
-
+Skill to safely discard a workpiece
 ]==]
 
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
-local tfm = require("fawkes.tfutils")
 
 fsm:define_states{ export_to=_M,
-   closure={pose_not_exist=pose_not_exist,is_grabbed = is_grabbed},
+   closure={},
   {"INIT", JumpState},
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="CALIBRATE_GRIPPER"},
@@ -49,7 +47,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-  {"INIT", "MOVE_GRIPPER_FORWARD", true, desc="Start aligning"},
+  {"INIT", "MOVE_GRIPPER_FORWARD", true},
 }
 
 function INIT:init()
