@@ -125,7 +125,7 @@ private:
   float cur_y_;
   float cur_z_;
 
-  bool moving_;
+  std::atomic<bool> moving_;
 
 protected:
   /** Mutex to protect data_. Lock whenever accessing it. */
