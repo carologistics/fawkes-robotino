@@ -156,7 +156,7 @@ clips-executive:
         wp-get: >
           get_product_from{place=?(m)S,
                            side=?(side|/INPUT/input/|/OUTPUT/output/)s}
-        wp-discard: ax12gripper{command="OPEN"}
+        wp-discard: discard{}
 
       blackboard-preload:
         - Position3DInterface
