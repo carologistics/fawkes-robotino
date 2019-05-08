@@ -83,6 +83,13 @@ public:
    */
   void set_position(float new_x, float new_y, float new_z);
 
+  /**
+   * @brief sets the bool flag for the moving state ot the gripper
+   *
+   * @param moving New moving state
+   */
+  void set_moving(bool moving);
+
 private:
   std::string cfg_gripper_frame_id_;
   std::string cfg_gripper_dyn_x_frame_id_;
@@ -117,6 +124,8 @@ private:
   float cur_x_;
   float cur_y_;
   float cur_z_;
+
+  std::atomic<bool> moving_;
 
 protected:
   /** Mutex to protect data_. Lock whenever accessing it. */
