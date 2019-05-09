@@ -38,13 +38,11 @@
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
   ; Ring Specs CEs
   (wm-fact (key domain fact rs-ring-spec
-            args? m ?mps1 r RING_BLUE rn ?req1&:(neq ?req1 NA)))
+            args? m ?mps1 r ?col-r1 rn ?req1&:(neq ?req1 NA)))
   (wm-fact (key domain fact rs-ring-spec
-            args? m ?mps2 r RING_GREEN rn ?req2&:(neq ?req2 NA)))
+            args? m ?mps2 r ?col-r2 rn ?req2&:(neq ?req2 NA)))
   (wm-fact (key domain fact rs-ring-spec
-            args? m ?mps3 r RING_ORANGE rn ?req3&:(neq ?req3 NA)))
-  (wm-fact (key domain fact rs-ring-spec
-            args? m ?mps4 r RING_YELLOW rn ?req4&:(neq ?req4 NA)))
+            args? m ?mps3 r ?col-r3 rn ?req3&:(neq ?req3 NA)))
   ; Order Meta CEs
   (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
   (not (wm-fact (key order meta points-total args? ord ?order)))
@@ -57,26 +55,20 @@
            (value ?qd-them))
 =>
   (bind ?rings-needed (string-to-field (sub-string 2 2 (str-cat ?com))))
-  (bind ?points-ring1 (+ (* (color-req-points ?col-r1 ?req1 ?req2 ?req3 ?req4)
-                            (bool-to-int (neq ?col-r1 RING_NONE)))
+  (bind ?points-ring1 (+ (ring-req-points ?req1)
                          (* (bool-to-int (= ?rings-needed 1))
                             (last-ring-points ?com))))
-  (bind ?points-ring2 (+ (* (color-req-points ?col-r2 ?req1 ?req2 ?req3 ?req4)
-                            (bool-to-int (neq ?col-r2 RING_NONE)))
+  (bind ?points-ring2 (+ (ring-req-points ?req2)
                          (* (bool-to-int (= ?rings-needed 2))
                             (last-ring-points ?com))))
-  (bind ?points-ring3 (+ (* (color-req-points ?col-r3 ?req1 ?req2 ?req3 ?req4)
-                            (bool-to-int (neq ?col-r3 RING_NONE)))
+  (bind ?points-ring3 (+ (ring-req-points ?req3)
                          (* (bool-to-int (= ?rings-needed 3))
                             (last-ring-points ?com))))
   (bind ?points-cap 10)
   (bind ?points-delivery 20)
-  (bind ?bases-needed (+ (sym-to-int (color-req-bases ?col-r1 ?req1 ?req2
-                                                              ?req3 ?req4))
-                         (sym-to-int (color-req-bases ?col-r2 ?req1 ?req2
-                                                              ?req3 ?req4))
-                         (sym-to-int (color-req-bases ?col-r3 ?req1 ?req2
-                                                              ?req3 ?req4))))
+  (bind ?bases-needed (+ (sym-to-int ?req1)
+                         (sym-to-int ?req2)
+                         (sym-to-int ?req3)))
   (bind ?res (+ ?points-ring1 ?points-ring2 ?points-ring3 ?points-cap
                ?points-delivery))
   (bind ?res (finalize-points ?res ?competitive ?qr ?qd-us ?qd-them))
