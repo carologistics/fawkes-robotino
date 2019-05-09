@@ -532,9 +532,13 @@
   (declare (salience ?*SALIENCE-GOAL-REJECT*))
   (domain-obj-is-of-type ?mps mps)
   (goal (id ?goal) (parent ?parent) (type ACHIEVE)
-              (sub-type SIMPLE) (class PRODUCE-CX|MOUNT-NEXT-RING|MOUNT-FIRST-RING)
-              (required-resources $? ?mps $?) (mode FORMULATED))
-  ?g <- (goal (id ?o-goal&~?goal) (class ~PRODUCE-CX&~MOUNT-NEXT-RING&~MOUNT-FIRST-RING)
+        (sub-type SIMPLE) (class PRODUCE-CX
+                                |MOUNT-NEXT-RING
+                                |MOUNT-FIRST-RING)
+        (required-resources $? ?mps $?) (mode FORMULATED))
+  ?g <- (goal (id ?o-goal&~?goal) (class ~PRODUCE-CX
+                                        &~MOUNT-NEXT-RING
+                                        &~MOUNT-FIRST-RING)
               (sub-type SIMPLE) (parent ?o-parent) (mode FORMULATED)
               (required-resources $? ?mps $?))
   (goal (id ?o-parent) (class ~URGENT))
