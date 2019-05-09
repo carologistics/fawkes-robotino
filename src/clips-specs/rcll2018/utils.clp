@@ -752,40 +752,17 @@
 )
 
 
-(deffunction color-req-bases (?col ?req-blue ?req-green
-                                   ?req-orange ?req-yellow)
-" @param ?col ring color
-  @param ?req-blue number of additional bases needed to mount a blue ring
-  @param ?req-green number of additional bases needed to mount a green ring
-  @param ?req-orange number of additional bases needed to mount an orange ring
-  @param ?req-yellow number of additional bases needed to mount a yellow ring
+(deffunction ring-req-points (?req)
+" @param ?req number of additional bases needed for a ring
 
-  @return number (as symbol) of required bases to mount a ring of color ?col
+  @return points awarded for mounting a ring needing ?req additinal bases
 "
-  (bind ?req ZERO)
-  (if (eq ?col RING_BLUE) then (bind ?req ?req-blue))
-  (if (eq ?col RING_GREEN) then (bind ?req ?req-green))
-  (if (eq ?col RING_ORANGE) then (bind ?req ?req-orange))
-  (if (eq ?col RING_YELLOW) then (bind ?req ?req-yellow))
-  (return ?req)
-)
-
-
-(deffunction color-req-points (?col ?req-blue ?req-green
-                                    ?req-orange ?req-yellow)
-" @param ?col ring color
-  @param ?req-blue number of additional bases needed to mount a blue ring
-  @param ?req-green number of additional bases needed to mount a green ring
-  @param ?req-orange number of additional bases needed to mount an orange ring
-  @param ?req-yellow number of additional bases needed to mount a yellow ring
-
-  @return points awarded for mounting a ring of color ?col
-"
-  (bind ?req (color-req-bases ?col ?req-blue ?req-green
-                                   ?req-orange ?req-yellow))
+  (if (eq ?req NONE) then (return 0))
   (if (eq ?req ZERO) then (return 5))
   (if (eq ?req ONE) then (return 10))
   (if (eq ?req TWO) then (return 20))
+  (printout error "ring-req-points input " ?req " is not a valid ring spec
+                   (allowed values: NONE,ZERO,ONE,TWO)" crlf)
   (return 0)
 )
 
