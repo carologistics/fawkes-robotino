@@ -500,7 +500,9 @@
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   ;The MPS can mount a ring which needs more bases than currently available.
-  (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?ring-num&:(neq ?rs-before ?ring-num)))
+  (wm-fact (key domain fact rs-ring-spec
+            args? m ?mps r ?ring-color&~RING_NONE
+                  rn ?ring-num&:(neq ?rs-before ?ring-num)))
   (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-diff))
 
   ;(TODO: make the mps-state  a precond of the put-slide to save traviling time)
@@ -559,7 +561,8 @@
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   ;The MPS can mount a ring which needs more bases than currently available.
-  (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring1-color rn ?ring-num))
+  (wm-fact (key domain fact rs-ring-spec
+            args? m ?mps r ?ring1-color&~RING_NONE rn ?ring-num))
   (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-diff))
 
  ;(TODO: make the mps-state  a precond of the put-slide to save traviling time)
@@ -859,7 +862,8 @@
   (wm-fact (key domain fact mps-state args?      m ?mps-rs s ~BROKEN))
   (wm-fact (key domain fact mps-team args?       m ?mps-rs col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
-  (wm-fact (key domain fact rs-ring-spec args?   m ?mps-rs r ?ring1-color rn ?bases-needed))
+  (wm-fact (key domain fact rs-ring-spec
+            args? m ?mps-rs r ?ring1-color&~RING_NONE rn ?bases-needed))
   (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
                                          subtrahend ?bases-needed
                                          difference ?bases-remain&ZERO|ONE|TWO|THREE))
@@ -952,7 +956,8 @@
   (wm-fact (key domain fact mps-state args?      m ?mps-rs s ~BROKEN))
   (wm-fact (key domain fact mps-team args?       m ?mps-rs col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
-  (wm-fact (key domain fact rs-ring-spec args?   m ?mps-rs r ?next-ring-color rn ?bases-needed))
+  (wm-fact (key domain fact rs-ring-spec
+            args? m ?mps-rs r ?next-ring-color&~RING_NONE rn ?bases-needed))
   (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
                                          subtrahend ?bases-needed
                                          difference ?bases-remain&ZERO|ONE|TWO|THREE))
