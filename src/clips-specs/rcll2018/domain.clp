@@ -206,6 +206,8 @@
     (domain-fact (name rs-inc) (param-values TWO THREE))
     (domain-fact (name rs-filled-with) (param-values ?rs1 ZERO))
     (domain-fact (name rs-filled-with) (param-values ?rs2 ZERO))
+    (domain-fact (name rs-ring-spec) (param-values ?rs1 RING_NONE NONE))
+    (domain-fact (name rs-ring-spec) (param-values ?rs2 RING_NONE NONE))
 
     (domain-fact (name tag-matching) (param-values C-BS INPUT CYAN 65))
     (domain-fact (name tag-matching) (param-values C-CS1 INPUT CYAN 1))
