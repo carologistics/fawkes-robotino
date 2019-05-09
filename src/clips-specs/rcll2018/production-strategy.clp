@@ -76,7 +76,8 @@
   (if (> ?rings-needed 0)
     then
       (printout t "It needs " ?rings-needed " rings, they require to feed "
-                  ?bases-needed " more bases into ring stations." crlf))
+                  ?bases-needed " more bases into ring stations." crlf)
+  )
   (assert (wm-fact (key order meta points-steps args? ord ?order) (type INT)
                    (is-list TRUE) (values (create$ ?points-ring1 ?points-ring2
                                                    ?points-ring3 ?points-cap
@@ -129,16 +130,14 @@
                        (+ (* (bool-to-int (eq ?wp-col-r1 ?col-r1)) ?p-r1)
                           (* (bool-to-int (eq ?wp-col-r2 ?col-r2)) ?p-r2)
                           (* (bool-to-int (eq ?wp-col-r3 ?col-r3)) ?p-r3)
-                          (* (bool-to-int (eq ?wp-cap-col ?cap-col))
-                          ?p-cap))
+                          (* (bool-to-int (eq ?wp-cap-col ?cap-col)) ?p-cap))
                        ?competitive ?qr ?qd-us ?qd-them))))
 =>
   (bind ?res (finalize-points
                (+ (* (bool-to-int (eq ?wp-col-r1 ?col-r1)) ?p-r1)
                   (* (bool-to-int (eq ?wp-col-r2 ?col-r2)) ?p-r2)
                   (* (bool-to-int (eq ?wp-col-r3 ?col-r3)) ?p-r3)
-                  (* (bool-to-int (eq ?wp-cap-col ?cap-col))
-                  ?p-cap))
+                  (* (bool-to-int (eq ?wp-cap-col ?cap-col)) ?p-cap))
                 ?competitive ?qr ?qd-us ?qd-them))
   (modify ?pc (value ?res))
   (printout t "WP " ?wp " for order " ?order " yields " ?res
