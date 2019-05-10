@@ -905,6 +905,7 @@ nodes:
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.025
+      - orientation: 0.0
       - orientation_tolerance: 0.6
       - output_offset_y: -0.025
       - shortcut_tolerance: 1.2
@@ -934,6 +935,7 @@ nodes:
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.025
+      - orientation: 0.0
       - orientation_tolerance: 0.6
       - output_offset_y: -0.025
       - shortcut_tolerance: 1.2
