@@ -525,6 +525,28 @@
 )
 
 
+(defrule goal-reasoner-reject-production-goals-that-block-produce-cx
+" Retract a formulated sub-goal of the production tree if it blocks a
+  goal to produce high complexity products.
+"
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
+  (domain-obj-is-of-type ?mps mps)
+  (goal (id ?goal) (parent ?parent) (type ACHIEVE)
+        (sub-type SIMPLE) (class PRODUCE-CX
+                                |MOUNT-NEXT-RING
+                                |MOUNT-FIRST-RING)
+        (required-resources $? ?mps $?) (mode FORMULATED))
+  ?g <- (goal (id ?o-goal&~?goal) (class ~PRODUCE-CX
+                                        &~MOUNT-NEXT-RING
+                                        &~MOUNT-FIRST-RING)
+              (sub-type SIMPLE) (parent ?o-parent) (mode FORMULATED)
+              (required-resources $? ?mps $?))
+  (goal (id ?o-parent) (class ~URGENT))
+=>
+  (printout t "Goal " ?o-goal " is rejected because it blocks " ?goal crlf)
+  (modify ?g (mode RETRACTED) (outcome REJECTED))
+)
+
 (defrule goal-reasoner-error-goal-without-sub-type-detected
 " This goal reasoner only deals with goals that have a sub-type. Other goals
   are not supported.
