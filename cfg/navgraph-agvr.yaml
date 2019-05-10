@@ -219,7 +219,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-BS-INPUT
-    pos: [-2.881388, 1.916154]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -234,7 +234,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-BS-OUTPUT
-    pos: [-1.5958, 1.95049]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -249,7 +249,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-CS1-INPUT
-    pos: [-2.19262, 1.778172]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -264,7 +264,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-CS1-OUTPUT
-    pos: [-1.916108, 2.319252]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -279,7 +279,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-CS2-INPUT
-    pos: [-1.655471, 1.616465]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -294,7 +294,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-CS2-OUTPUT
-    pos: [-1.87058, 1.789233]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -309,7 +309,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-RS1-INPUT
-    pos: [-1.939618, 1.876075]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -324,7 +324,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-RS1-OUTPUT
-    pos: [-2.402575, 1.661986]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -339,7 +339,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-RS2-INPUT
-    pos: [-2.044062, 1.691959]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -354,7 +354,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-RS2-OUTPUT
-    pos: [-2.14474, 2.074233]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -369,7 +369,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-DS-INPUT
-    pos: [-0.7025406, 2.80576]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -384,7 +384,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-DS-OUTPUT
-    pos: [-1.437146, 1.670428]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -399,7 +399,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-SS-INPUT
-    pos: [-2.078368, 1.626913]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -414,7 +414,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-SS-OUTPUT
-    pos: [-1.58665, 2.283514]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -429,7 +429,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-M-BS-INPUT
-    pos: [-1.760108, -0.6381477]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -444,7 +444,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-M-BS-OUTPUT
-    pos: [-2.178965, -0.324286]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -459,7 +459,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-M-CS1-INPUT
-    pos: [-2.088842, -0.6332448]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -474,7 +474,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-M-CS1-OUTPUT
-    pos: [-1.027696, 1.855209]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -489,7 +489,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-M-CS2-INPUT
-    pos: [-9.813812e-08, -0.646811]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -504,7 +504,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-M-CS2-OUTPUT
-    pos: [-3.018314, 1.656576]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -519,7 +519,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-M-RS1-INPUT
-    pos: [-1.019798e-07, -0.7110691]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -534,7 +534,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-M-RS1-OUTPUT
-    pos: [-1.406828, -0.4668225]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -549,7 +549,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-M-RS2-INPUT
-    pos: [-1.080334e-07, -0.8127435]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -564,7 +564,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-M-RS2-OUTPUT
-    pos: [-1.197561, -0.4979798]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -579,7 +579,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-M-DS-INPUT
-    pos: [-2.140734, -0.567716]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -594,7 +594,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-M-CDS-OUTPUT
-    pos: [-1.884152, -0.4003308]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -609,7 +609,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-M-SS-INPUT
-    pos: [-1.061708e-07, -0.7806491]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -624,7 +624,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-M-SS-OUTPUT
-    pos: [-1.024455e-07, -0.7165828]
+    pos: [2.471, 1.1]
     properties:
       - align_distance: 0.45
       - always-copy: true
