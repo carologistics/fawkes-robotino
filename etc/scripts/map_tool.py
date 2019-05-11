@@ -34,7 +34,7 @@ reg_num = r"[-+]?\d+(?:\.\d*)?"
 reg_wall = reg_num
 reg_empty = r"\[" + reg_num + "\]"
 reg_coordinate = r"\("+reg_num+r","+reg_num+r"\)"
-reg_same_dir_element = r"(?:(?:"+ reg_empty +r"|" +reg_wall+r")+;)"
+reg_same_dir_element = r"(?:(?:"+ reg_empty +r"|" +reg_wall+r"|)+;)"
 reg_long_line = reg_coordinate+ reg_same_dir_element+"+"
 
 pixel_per_meter=20
