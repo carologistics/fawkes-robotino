@@ -49,7 +49,7 @@
 )
 
 (defrule goal-exploration-create-explore-zone-goal
-  (goal (class ZONE-EXPLORATION) (id ?maintain-id) (mode SELECTED))
+  (goal (class ZONE-EXPLORATION) (id ?maintain-id))
   
   (wm-fact (key domain fact self args? r ?r))
 
