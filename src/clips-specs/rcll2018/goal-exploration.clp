@@ -127,9 +127,7 @@
   ?zm2 <- (wm-fact (key exploration zone ?zn3&:(eq (mirror-name ?zn2) ?zn3) args? machine ? team ?team2))
 
   (not (exploration-result (machine ?machine) (zone ?zn2)))
-  (exp-navigator-vlow ?vel ?rot)
   =>
-  (navigator-set-speed ?vel ?rot)
   (modify ?ze (value (+ 1 ?times-searched)))
   (modify ?zm (key exploration zone ?zn2 args? machine ?machine team ?team))
   (modify ?zm2 (key exploration zone ?zn3 args? machine (mirror-name ?machine) team ?team2))
@@ -151,8 +149,6 @@
 
 (defrule goal-exploration-evaluate-explore-zone-failed
   ?g <- (goal (class EXPLORE-ZONE) (mode FINISHED) (outcome FAILED))
-  (exp-navigator-vlow ?vel ?rot)
   =>
-  (navigator-set-speed ?vel ?rot)
   (modify ?g (mode EVALUATED))
 )

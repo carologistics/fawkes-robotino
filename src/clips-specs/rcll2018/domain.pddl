@@ -546,4 +546,15 @@
     :precondition (self ?r)
     :effect (self ?r)
   )
+	(:action set-speed-high
+		:parameters (?r - robot)
+		:precondition (self ?r)
+		:effect (self ?r)
+	)
+
+	(:action set-speed-low
+		:parameters (?r - robot)
+		:precondition (self ?r)
+		:effect (self ?r)
+	)
 )

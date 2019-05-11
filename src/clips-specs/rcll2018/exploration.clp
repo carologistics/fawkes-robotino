@@ -21,6 +21,22 @@
   (slot team (type SYMBOL) (allowed-symbols CYAN MAGENTA))
 )
 
+(defrule exploration-set-speed-action-high
+  ?pa <- (plan-action (action-name set-speed-high) (state PENDING))
+  (exp-navigator-vmax ?vmax ?rmax)
+  =>
+  (navigator-set-speed ?vmax ?rmax)
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
+(defrule exploration-set-speed-action-low
+  ?pa <- (plan-action (action-name set-speed-low) (state PENDING))
+  (exp-navigator-vlow ?vlow ?rlow)
+  =>
+  (navigator-set-speed ?vlow ?rlow)
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
 
 (defrule exp-startup
 " Asserts all needed wm-facts for the exploration phase
