@@ -108,7 +108,15 @@ if __name__ == "__main__":
         if arg in ['--help','-h']:
             print("Usage: script [--command <command>] [--help] [--save <file>]\n\n"+
                     "The <command> is parsed and the output is written to <file>\n"+
-                    "Default output is map.png")
+                    "Default output is map.png\n\n"+
+                    "Each command consists of multiple line streaks. Each line streak\n"+
+                    "starts with a coordinate, e.g. (2,3) and continues with\n"+
+                    "lengths, which can either be painted (just the number without brackets)\n"+
+                    "or invisible (number inside rectangular brackets).\n"+
+                    "These lengths are applied first in x direction, switching into y direction\n"+
+                    "is done by a semicolon. Each line streak should be ended by a semicolon.\n\n"+
+                    "One example is shown in the file map_example.png. It was created using the command\n"+
+                    "(-7,0)3;1;[-1]-2;1[4.5]1.5;14;-1.5[-4.5]-1;-2[-1];-1;3;(-2,0)4;")
             sys.exit(0)
         if arg in ['--command','-c']:
             command = value
