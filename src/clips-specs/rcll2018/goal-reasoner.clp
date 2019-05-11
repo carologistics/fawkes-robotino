@@ -544,7 +544,7 @@
   (not (goal (id ?parent)))
 =>
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
-    (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
+    (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
       (retract ?a)
     )
     (retract ?p)
