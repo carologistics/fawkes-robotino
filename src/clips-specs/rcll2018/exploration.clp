@@ -145,8 +145,10 @@
                                               (create$ ?vx ?vy)
                                               (laser-line-center-map ?ep1 ?ep2 ?frame ?timestamp)
                                               ?timestamp)))) (value ?zn-vh&:(< ?zn-vh 1) ))
+  ?ze-f2 <- (wm-fact (key exploration fact line-vis args? zone ?zn2&:(eq ?zn2 (mirror-name ?zn))))
 =>
   (modify ?ze-f (key exploration fact line-vis args? zone ?zn) (value 1 ))
+  (modify ?ze-f2 (value 1))
   (printout warn "EXP found line: " ?zn " vh: " ?vh crlf)
 )
 
@@ -193,9 +195,11 @@
   (exp-zone-margin ?zone-margin)
   ?ze-f <- (wm-fact (key exploration fact tag-vis args? zone ?zn&:(eq ?zn (get-zone ?zone-margin
                                                       (transform-safe "map" ?frame ?timestamp ?trans ?rot)))) (value ?tv&:(< ?tv 1) ))
+  ?ze-f2 <- (wm-fact (key exploration fact tag-vis args? zone ?zn2&:(eq ?zn2 (mirror-name ?zn))))
   (wm-fact (key exploration zone ?zn args? machine UNKNOWN team ?))
 =>
   (modify ?ze-f (value 1 ))
+  (modify ?ze-f2 (value 1))
   (printout t "Found tag in " ?zn crlf)
 )
 
