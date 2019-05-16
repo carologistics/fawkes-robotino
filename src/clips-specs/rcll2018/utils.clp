@@ -32,6 +32,10 @@
   ?*POINTS-MOUNT-CAP* = 10
   ?*POINTS-DELIVER* = 20
   ?*POINTS-COMPETITIVE* = 10
+
+  ?*TIME-MOUNT-RING* = 60
+  ?*TIME-MOUNT-CAP* = 90
+  ?*TIME-DELIVER* = 120
 )
 
 (deffunction random-id ()
@@ -854,5 +858,62 @@
           (return (+ ?points ?*POINTS-COMPETITIVE*)))
     else
       (return ?points)
+  )
+)
+
+
+(deffunction greedy-knapsack (?goods ?initial-weight ?max-weight)
+" @params ?goods list of weights to pack in knapsack
+          ?initial-weight weight of the empty knapsack
+          ?max-weight upper bound on total weight that fits in the knapsack
+
+  @return number of items that can be greedily packed into the knapsack
+"
+  (bind ?curr-weight ?initial-weight)
+  (bind ?counter 0)
+  (progn$ (?item ?goods)
+    (if (<= (+ ?curr-weight ?item) ?max-weight)
+      then
+        (bind ?curr-weight (+ ?curr-weight ?item))
+        (bind ?counter (+ ?counter 1))
+      else
+        (return ?counter)
+    )
+  )
+  (return ?counter)
+)
+
+
+(deffunction estimate-achievable-points
+             (?pointlist ?achieved-points ?timelist ?curr-time ?deadline)
+" @params ?pointlist list of points for all production steps
+          ?achieved-points points already scored in previous production steps
+          ?timelist list of time-estimates for all production steps
+          ?curr-time current game time in seconds
+          ?deadline deadline (in seconds) for the order that gets produced
+
+  @return Amount of points the product yields, assuming tasks only score points
+          if they are finished within the deadline
+"
+  (bind ?steps-done (greedy-knapsack ?pointlist 0 ?achieved-points))
+  (bind ?curr-step (+ 1 ?steps-done))
+  (if (<= ?curr-step (length ?pointlist))
+    then
+      (bind ?remaining-timelist (subseq$ ?timelist
+                                         ?curr-step
+                                         (length ?timelist)))
+      (bind ?doable-steps (greedy-knapsack ?remaining-timelist
+                                           ?curr-time
+                                           ?deadline))
+      (bind ?achievable-pointlist (subseq$ ?pointlist
+                                           ?curr-step
+                                           (+ ?curr-step (- ?doable-steps 1))))
+      (bind ?achievable-points ?achieved-points)
+      (progn$ (?points ?achievable-pointlist)
+            (bind ?achievable-points (+ ?achievable-points ?points))
+      )
+      (return ?achievable-points)
+    else
+      (return ?achieved-points)
   )
 )

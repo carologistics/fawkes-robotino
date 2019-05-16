@@ -89,7 +89,24 @@
           (wm-fact (key order meta bases-missing args? ord ?order)
                    (type INT) (is-list FALSE) (value ?bases-needed))
           (wm-fact (key order meta rings-missing args? ord ?order)
-                   (type INT) (is-list FALSE) (value ?rings-needed)))
+                   (type INT) (is-list FALSE) (value ?rings-needed))
+          (wm-fact (key order meta estimated-points-next-step args? ord ?order)
+                   (type INT) (is-list FALSE) (value 0))
+          (wm-fact (key order meta estimated-time-next-step args? ord ?order)
+                   (type INT) (is-list FALSE) (value 0))
+          (wm-fact (key order meta estimated-points-total args? ord ?order)
+                   (type INT) (is-list FALSE) (value 0))
+          (wm-fact (key order meta estimated-time-steps args? ord ?order)
+                   (type INT) (is-list TRUE)
+                   (values
+                     (create$ (* (bool-to-int (not (= 0 ?points-ring1)))
+                                 ?*TIME-MOUNT-RING*)
+                              (* (bool-to-int (not (= 0 ?points-ring2)))
+                                 ?*TIME-MOUNT-RING*)
+                              (* (bool-to-int (not (= 0 ?points-ring3)))
+                                 ?*TIME-MOUNT-RING*)
+                              ?*TIME-MOUNT-CAP*
+                              ?*TIME-DELIVER*))))
 )
 
 
@@ -263,4 +280,197 @@
     else
       (printout t "WP " ?wp " for order " ?order " has all rings now." crlf)
   )
+)
+
+
+(defrule production-strategy-estimate-first-step
+" Estimate point gains and time bound to finish the first step.
+"
+  (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order)))
+  ; Order CEs
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
+  ?om1 <- (wm-fact (key order meta estimated-points-next-step args? ord ?order)
+                   (value ?e-p))
+  ?om2 <- (wm-fact (key order meta estimated-time-next-step args? ord ?order)
+                   (value ?e-t))
+  (test (or (neq ?e-p ?*POINTS-MOUNT-CAP*) (neq ?e-t ?*TIME-MOUNT-CAP*)))
+=>
+  (modify ?om1 (value ?*POINTS-MOUNT-CAP*))
+  (modify ?om2 (value ?*TIME-MOUNT-CAP*))
+)
+
+
+(defrule production-strategy-estimate-next-step-mount-cap
+" Estimate point gains and time bound to finish the next step.
+  Next Step is to mount a cap.
+"
+  ; WP CEs
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?col-r1))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?col-r2))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?col-r3))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  ; Order CEs
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
+  ; Order Meta CEs
+  ?om1 <- (wm-fact (key order meta estimated-points-next-step args? ord ?order)
+                   (value ?e-p))
+  ?om2 <- (wm-fact (key order meta estimated-time-next-step args? ord ?order)
+                   (value ?e-t))
+  (test (or (neq ?e-p ?*POINTS-MOUNT-CAP*) (neq ?e-t ?*TIME-MOUNT-CAP*)))
+=>
+  (modify ?om1 (value ?*POINTS-MOUNT-CAP*))
+  (modify ?om2 (value ?*TIME-MOUNT-CAP*))
+)
+
+
+(defrule production-strategy-estimate-next-step-mount-ring
+" Estimate point gains and time bound to finish the next step.
+  Next Step is to mount a ring.
+"
+  ; WP CEs
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-col-r1))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-col-r2))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-col-r3))
+  ; Order CEs
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
+  ; Ring Specs CEs
+  (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?next-col rn ?req))
+  ; next rings color needs ?req additional bases
+  (test (or
+            (and (eq ?wp-col-r1 ?col-r1)
+                 (eq ?wp-col-r2 ?col-r2)
+                 (neq ?wp-col-r3 ?col-r3)
+                 (eq ?next-col ?col-r3))
+            (and (eq ?wp-col-r1 ?col-r1)
+                 (neq ?wp-col-r2 ?col-r2)
+                 (eq ?next-col ?col-r2))
+            (and (neq ?wp-col-r1 ?col-r1)
+                 (eq ?next-col ?col-r1))))
+  ; Order Meta CEs
+  ?om1 <- (wm-fact (key order meta estimated-points-next-step args? ord ?order)
+                   (value ?e-p))
+  ?om2 <- (wm-fact (key order meta estimated-time-next-step args? ord ?order)
+                   (value ?e-t))
+  (test (or (neq ?e-p (+ (ring-req-points ?req)
+                      (* (last-ring-points ?com)
+                         (bool-to-int (and (eq ?wp-col-r1 ?col-r1)
+                                           (eq ?wp-col-r2 ?col-r2)
+                                           (eq ?wp-col-r3 ?col-r3))))))
+            (neq ?e-t ?*TIME-MOUNT-RING*)))
+=>
+  (modify ?om1 (value (+ (ring-req-points ?req)
+                         (* (last-ring-points ?com)
+                            (bool-to-int (and (eq ?wp-col-r1 ?col-r1)
+                                              (eq ?wp-col-r2 ?col-r2)
+                                              (eq ?wp-col-r3 ?col-r3)))))))
+  (modify ?om2 (value ?*TIME-MOUNT-RING*))
+)
+
+
+(defrule production-strategy-estimate-achievable-points-for-posted-order
+" Calculates the points one may score when starting the order assuming the
+  required production tasks are all performed within the upper bounds
+  as specified in the globals.
+
+  Additional points for prepared caps and supplied additional bases are not
+  counted.
+"
+  (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order)))
+  ; Order CEs
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-col))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
+  ; Time CEs
+  (wm-fact (key refbox order ?order delivery-end) (value ?end&:(> ?end 0)))
+  (wm-fact (key refbox game-time) (values ?game-time $?ms))
+  ; Order Meta CEs
+  (wm-fact (key order meta points-steps args? ord ?order) (values $?p-steps))
+  (wm-fact (key order meta estimated-time-steps args? ord ?order)
+           (values $?t-steps))
+  (wm-fact (key order meta points-total args? ord ?order) (value ?p-total))
+  (wm-fact (key order meta points-current args? ord ?order) (value ?p-curr))
+  ?om <- (wm-fact (key order meta estimated-points-total args? ord ?order)
+                  (value ?tpe&:(not (= ?tpe (estimate-achievable-points
+                    ?p-steps
+                    ?p-curr
+                    ?t-steps
+                    ?game-time
+                    ?end)))))
+=>
+  (bind ?res (estimate-achievable-points
+               ?p-steps
+               ?p-curr
+               ?t-steps
+               ?game-time
+               ?end))
+  (printout t  "Order " ?order " is expected to score " ?res " out of "
+               ?p-total " points" crlf)
+  (modify ?om (value ?res))
+)
+
+
+(defrule production-strategy-estimate-points-for-started-order
+" Calculates the points one may score when finishing a started order assuming
+  the required production tasks are all performed within the upper bounds
+  as specified in the globals.
+
+  Additional points for prepared caps and supplied additional bases are not
+  counted.
+"
+  ; Order CEs
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-col-r1))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-col-r2))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-col-r3))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?wp-cap-col))
+  ; Order CEs
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-col))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
+  ; Time CEs
+  (wm-fact (key refbox order ?order delivery-end) (value ?end&:(> ?end 0)))
+  (wm-fact (key refbox game-time) (values ?game-time $?ms))
+  ; Order Meta CEs
+  (wm-fact (key order meta rings-missing args? ord ?order)
+           (value ?rings-missing))
+  (wm-fact (key order meta points-current args? ord ?order) (value ?p-curr))
+  (wm-fact (key order meta points-total args? ord ?order) (value ?p-total))
+  (wm-fact (key order meta points-steps args? ord ?order) (values $?p-steps))
+  (wm-fact (key order meta estimated-time-steps args? ord ?order)
+           (values $?t-steps))
+  ?tpe <- (wm-fact (key order meta estimated-points-total args? ord ?order)
+             (value ?ap&:(not (= ?ap
+               (estimate-achievable-points
+                 ?p-steps
+                 ?p-curr
+                 ?t-steps
+                 ?game-time
+                 ?end)))))
+=>
+  (bind ?res (estimate-achievable-points
+               ?p-steps
+               ?p-curr
+               ?t-steps
+               ?game-time
+               ?end))
+  (printout error "Order " ?order " can score us " ?res " out of " ?p-total
+                  "  points in total." crlf)
+  (modify ?tpe (value ?res))
 )
