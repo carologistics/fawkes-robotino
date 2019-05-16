@@ -210,6 +210,8 @@
   (wm-fact (key domain fact entered-field args? r ?robot))
   (NavGraphWithMPSGeneratorInterface (final TRUE))
   (wm-fact (key navgraph waitzone generated))
+  (not (and (domain-object (name ?mps) (type mps))
+            (not (navgraph-node (name ?name&:(eq ?name (str-cat ?mps)))))))
   =>
   (goal-tree-assert-run-endless PRODUCTION-MAINTAIN 1)
 )
