@@ -231,7 +231,7 @@ clips-executive:
 
           competitive-order-priority: DEFAULT
 
-          # Robots listed here will only formulate waiting goals in the
-          # production phase (allowed values: "R-1", "R-2" and "R-3")
+          # Bots that are enabled can formulate production goals,
+          # disabled bots only formulate wait goals
 
-          disabled-bots: []
+          enable-bot: true

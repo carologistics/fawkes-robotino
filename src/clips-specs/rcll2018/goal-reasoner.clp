@@ -159,15 +159,10 @@
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (not (goal (parent ?goal-id)))
-  (wm-fact (key config rcll disabled-bots) (values $?disabled))
-  (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key config rcll enable-bot) (value ?enabled))
 =>
-  (if (member$ (str-cat ?robot) ?disabled)
+  (if ?enabled
     then
-      (goal-tree-assert-subtree ?goal-id
-        (goal-tree-assert-run-one PRODUCTION-SELECTOR
-            (goal-tree-assert-run-one NO-PROGRESS)))
-    else
       (goal-tree-assert-subtree ?goal-id
         (goal-tree-assert-run-one PRODUCTION-SELECTOR
           (goal-tree-assert-run-one URGENT)
@@ -178,6 +173,10 @@
               (goal-tree-assert-run-one CLEAR)
               (goal-tree-assert-run-one PREPARE-CAPS)
               (goal-tree-assert-run-one PREPARE-RINGS))
+            (goal-tree-assert-run-one NO-PROGRESS)))
+    else
+      (goal-tree-assert-subtree ?goal-id
+        (goal-tree-assert-run-one PRODUCTION-SELECTOR
             (goal-tree-assert-run-one NO-PROGRESS)))
   )
 )
