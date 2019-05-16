@@ -112,10 +112,19 @@
 
 (defrule goal-exploration-abort-move-node
   ?g <- (goal (id ?goal-id) (class MOVE-NODE) (mode DISPATCHED))
-  (goal (class EXPLORE-ZONE) (mode FORMULATED))
+
   ?pa <- (plan-action (goal-id ?goal-id) (state RUNNING))
   (exploration-reached-initial-position)
+
+  (wm-fact (key exploration fact time-searched args? zone ?zn) (value ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
+  (wm-fact (key exploration zone ?zn args? machine UNKNOWN team ?team))
+  (wm-fact (key exploration fact line-vis args? zone ?zn) (value ?vh))
+  (wm-fact (key exploration fact tag-vis args? zone ?zn) (value ?tv))
+  (test (or (> ?vh 0) (> ?tv 0)))
+
+  (not (exploration-result (zone ?zn)))
   =>
+  (printout t "Aborted move node because possible explore zone was found" crlf)
   (modify ?pa (state EXECUTION-FAILED))
 )
 
