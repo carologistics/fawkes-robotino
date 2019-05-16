@@ -31,7 +31,7 @@
 
 (defrule goal-exploration-create-move-initial-position-goal
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (class INITIAL-POSITION) (id ?maintain-id) (mode SELECTED))
+  (goal (class INITIAL-POSITION) (id ?maintain-id) (mode FORMULATED))
   (not (exploration-reached-initial-position))
   =>  
   (assert
@@ -51,8 +51,8 @@
 
 (defrule goal-exploration-create-explore-zone-goal
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (class ZONE-EXPLORATION) (id ?maintain-id) (mode SELECTED))
-  
+  (goal (class ZONE-EXPLORATION) (id ?maintain-id) (mode FORMULATED))
+
   (wm-fact (key domain fact self args? r ?r))
 
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn) (value ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
@@ -93,7 +93,7 @@
 
 (defrule goal-exploration-create-visit-node-goal
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (class VISIT-NODE) (id ?maintain-id) (mode SELECTED))
+  (goal (class VISIT-NODE) (id ?maintain-id) (mode FORMULATED))
 
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact self args? r ?r))
