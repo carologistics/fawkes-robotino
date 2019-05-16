@@ -98,6 +98,7 @@
   ?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED)
         (meta last-formulated $?last))
   ; TODO: make interval a constant
+  (not (goal (class SEND-BEACON)))
   =>
   (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
                 (class SEND-BEACON) (parent ?maintain-id)))
