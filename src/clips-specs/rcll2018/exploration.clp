@@ -261,6 +261,7 @@
   and reset the velocity
 
 "
+  ?pg <- (goal (class EXPLORATION-MAINTAIN))
   ?g <- (goal (class EXPLORE-ZONE|MOVE-NODE) (mode DISPATCHED))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
@@ -270,6 +271,7 @@
 =>
   (printout t "exploration phase ended, cleaning up" crlf)
   (modify ?g (mode FINISHED) (outcome FAILED))
+  (modify ?pg (mode RETRACTED))
   (navigator-set-speed ?max-velocity ?max-rotation)
 )
 

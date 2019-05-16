@@ -10,7 +10,7 @@
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact entered-field args? r ?robot))
   =>
-  (goal-tree-assert-run-one EXPLORATION-MAINTAIN)
+  (goal-tree-assert-run-endless EXPLORATION-MAINTAIN 0)
 )
 
 (defrule goal-eploration-expand-exploration-goal
@@ -30,6 +30,7 @@
 )
 
 (defrule goal-exploration-create-move-initial-position-goal
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (class INITIAL-POSITION) (id ?maintain-id) (mode SELECTED))
   (not (exploration-reached-initial-position))
   =>  
@@ -49,7 +50,8 @@
 )
 
 (defrule goal-exploration-create-explore-zone-goal
-  (goal (class ZONE-EXPLORATION) (id ?maintain-id))
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (class ZONE-EXPLORATION) (id ?maintain-id) (mode SELECTED))
   
   (wm-fact (key domain fact self args? r ?r))
 
@@ -62,6 +64,7 @@
   (not (exploration-result (zone ?zn)))
 
   (Position3DInterface (id "Pose") (translation $?trans))
+  (not (goal (class EXPLORE-ZONE) (params robot ?r zone ?zn)))
   =>
   ; Priotize zones with tag and laser findings over zones with only one
   ; Priotize zones with tag findings over zones with only laser findings
