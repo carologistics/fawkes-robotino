@@ -68,14 +68,14 @@
   =>
   ; Priotize zones with tag and laser findings over zones with only one
   ; Priotize zones with tag findings over zones with only laser findings
-  (bind ?prio (* ?vh 150))
-  (bind ?prio (+ ?prio (* ?tv 100)))
+  (bind ?prio (* ?tv 150))
+  (bind ?prio (+ ?prio (* ?vh 100)))
 
   ; Increase priority by "inverse" of current distance to zone
   ; 17 is greater than the maximum distance between two points on the current size of the field
   (bind ?dist (distance-mf ?trans (zone-center ?zn)))
-  (bind ?prio (+ ?prio (- 17 (integer ?dist))))
-
+  (bind ?prio (+ ?prio (integer (- 17 ?dist))))
+  (printout t "Formulated explore zone goal for " ?zn  " " ?vh " " ?tv crlf)
   (assert
     (goal (id (sym-cat EXPLORE-ZONE- (gensym*)))
           (class EXPLORE-ZONE)
@@ -92,6 +92,7 @@
 )
 
 (defrule goal-exploration-create-visit-node-goal
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (class VISIT-NODE) (id ?maintain-id) (mode SELECTED))
 
   (wm-fact (key refbox team-color) (value ?team-color))
