@@ -736,6 +736,8 @@
   (if (eq ?sym ONE) then (return 1))
   (if (eq ?sym TWO) then (return 2))
   (if (eq ?sym THREE) then (return 3))
+  (printout error "sym-to-int input " ?sym " is not a valid domain number
+                   (allowed values: ZERO,ONE,TWO,THREE)" crlf)
   (return 0)
 )
 
@@ -759,6 +761,8 @@
   (if (eq ?com C1) then (return ?*POINTS-MOUNT-LAST-RING-C1*))
   (if (eq ?com C2) then (return ?*POINTS-MOUNT-LAST-RING-C2*))
   (if (eq ?com C3) then (return ?*POINTS-MOUNT-LAST-RING-C3*))
+  (printout error "last-ring-points input " ?com " is not a valid complexity
+                   (allowed values: C0,C1,C2,C3)" crlf)
   (return 0)
 )
 
