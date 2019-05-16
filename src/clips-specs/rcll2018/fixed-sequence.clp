@@ -711,7 +711,7 @@
                           cap-color ?cap-color
        ))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
- (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?ord))
+ (wm-fact (key order meta wp-for-order args? wp ?wp ord ?ord))
  (wm-fact (key domain fact order-complexity args? ord ?ord com ?complexity))
  =>
  (assert

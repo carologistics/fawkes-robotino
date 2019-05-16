@@ -22,6 +22,16 @@
   ?*PI* = 3.141592653589
   ?*2PI* = 6.2831853
   ?*PI-HALF* = 1.5707963
+
+  ?*POINTS-MOUNT-RING-CC0* = 5
+  ?*POINTS-MOUNT-RING-CC1* = 10
+  ?*POINTS-MOUNT-RING-CC2* = 20
+  ?*POINTS-MOUNT-LAST-RING-C1* = 10
+  ?*POINTS-MOUNT-LAST-RING-C2* = 30
+  ?*POINTS-MOUNT-LAST-RING-C3* = 80
+  ?*POINTS-MOUNT-CAP* = 10
+  ?*POINTS-DELIVER* = 20
+  ?*POINTS-COMPETITIVE* = 10
 )
 
 (deffunction random-id ()
@@ -712,8 +722,89 @@
       )
 
     )
-  ) 
+  )
   (return FALSE)
 )
 
 
+(deffunction sym-to-int (?sym)
+" @param ?sym domain representation of a number (ZERO|ONE|TWO|THREE)
+
+  @return Integer value described in ?sym, or 0 if ?sym is not recognized
+"
+  (if (eq ?sym ZERO) then (return 0))
+  (if (eq ?sym ONE) then (return 1))
+  (if (eq ?sym TWO) then (return 2))
+  (if (eq ?sym THREE) then (return 3))
+  (printout error "sym-to-int input " ?sym " is not a valid domain number
+                   (allowed values: ZERO,ONE,TWO,THREE)" crlf)
+  (return 0)
+)
+
+
+(deffunction bool-to-int (?bool)
+" @param ?bool boolean
+
+  @return Integer 1 if ?bool is true, else 0
+"
+  (if (eq ?bool TRUE) then (return 1) else (return 0))
+)
+
+
+(deffunction last-ring-points (?com)
+" @param ?com complexity of an order
+
+  @return returns points awarded for mounting the last ring of an order with
+          complexity ?com
+"
+  (if (eq ?com C0) then (return 0))
+  (if (eq ?com C1) then (return ?*POINTS-MOUNT-LAST-RING-C1*))
+  (if (eq ?com C2) then (return ?*POINTS-MOUNT-LAST-RING-C2*))
+  (if (eq ?com C3) then (return ?*POINTS-MOUNT-LAST-RING-C3*))
+  (printout error "last-ring-points input " ?com " is not a valid complexity
+                   (allowed values: C0,C1,C2,C3)" crlf)
+  (return 0)
+)
+
+
+(deffunction ring-req-points (?req)
+" @param ?req number of additional bases needed for a ring
+
+  @return points awarded for mounting a ring needing ?req additinal bases
+"
+  (if (eq ?req NONE) then (return 0))
+  (if (eq ?req ZERO) then (return ?*POINTS-MOUNT-RING-CC0*))
+  (if (eq ?req ONE) then (return ?*POINTS-MOUNT-RING-CC1*))
+  (if (eq ?req TWO) then (return ?*POINTS-MOUNT-RING-CC2*))
+  (printout error "ring-req-points input " ?req " is not a valid ring spec
+                   (allowed values: NONE,ZERO,ONE,TWO)" crlf)
+  (return 0)
+)
+
+
+(deffunction finalize-points (?points ?competitive ?qr ?qd-us ?qd-them)
+" @param ?points points before considering delivered quantities and complexity
+                 rules
+  @param ?competitive bool indicating whether competitive point changes should
+                      be applied
+  @param ?qr quantities-requested of the order in question
+  @param ?qd-us quantities-delivered of our team
+  @param ?qd-them quantities-delivered of the opposing team
+
+  @return adjusted points (apply competitive rules if needed, 0 points if
+          the requested quantites are already delivered)
+"
+  (if (not (> ?qr ?qd-us))
+    then
+      (return 0))
+  (if ?competitive
+    then
+      (if (> ?qd-them ?qd-us)
+        then
+          (return (max 0 (- ?points ?*POINTS-COMPETITIVE*)))
+        else
+          (return (+ ?points ?*POINTS-COMPETITIVE*)))
+    else
+      (return ?points)
+  )
+)

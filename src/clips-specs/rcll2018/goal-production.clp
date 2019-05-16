@@ -328,7 +328,7 @@
                       (eq (wm-key-arg ?order-cap-color:key col) ?cap-color)
                       ;... and this order is currently being processed ...
                       (any-factp ((?wp-for-order wm-fact))
-                        (and (wm-key-prefix ?wp-for-order:key (create$ evaluated fact wp-for-order))
+                        (and (wm-key-prefix ?wp-for-order:key (create$ order meta wp-for-order))
                              (eq (wm-key-arg ?wp-for-order:key ord) (wm-key-arg ?order-cap-color:key ord)))))
       )
   then
@@ -367,7 +367,7 @@
   ;WP CEs
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
-  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 
   ;TODO: Discuss strategy, throwing away expired products is usually not desired.
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
@@ -467,7 +467,7 @@
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;WP CEs
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
            (value ?end&:(< ?end (nth$ 1 ?game-time))))
@@ -500,12 +500,14 @@
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   ;The MPS can mount a ring which needs more bases than currently available.
-  (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?ring-num&:(neq ?rs-before ?ring-num)))
+  (wm-fact (key domain fact rs-ring-spec
+            args? m ?mps r ?ring-color&~RING_NONE
+                  rn ?ring-num&:(neq ?rs-before ?ring-num)))
   (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-diff))
 
   ;(TODO: make the mps-state  a precond of the put-slide to save traviling time)
 
-  (wm-fact (key evaluated fact wp-for-order args? wp ?order-wp ord ?order))
+  (wm-fact (key order meta wp-for-order args? wp ?order-wp ord ?order))
   ;Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&:(neq ?complexity C0)))
   ;The order requires this ring and the started workpiece does not
@@ -559,7 +561,8 @@
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   ;The MPS can mount a ring which needs more bases than currently available.
-  (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring1-color rn ?ring-num))
+  (wm-fact (key domain fact rs-ring-spec
+            args? m ?mps r ?ring1-color&~RING_NONE rn ?ring-num))
   (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-diff))
 
  ;(TODO: make the mps-state  a precond of the put-slide to save traviling time)
@@ -789,7 +792,7 @@
   ;Active Order CEs
   ;This order complexity is not produced exclusively while another exclusive
   ;complexity order is already started
-  (not (and (wm-fact (key evaluated fact wp-for-order args? wp ?ord-wp ord ?any-order))
+  (not (and (wm-fact (key order meta wp-for-order args? wp ?ord-wp ord ?any-order))
             (wm-fact (key domain fact order-complexity args? ord ?any-order com ?other-complexity))
             (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
             (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
@@ -798,7 +801,7 @@
   ;	 Model old agents constraints
   ;	 (in-production 0)
   ;	 (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
-  (not (wm-fact (key evaluated fact wp-for-order args? wp ?any-ord-wp ord ?order)))
+  (not (wm-fact (key order meta wp-for-order args? wp ?any-ord-wp ord ?order)))
 
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (eq ?complexity C0))
@@ -859,7 +862,8 @@
   (wm-fact (key domain fact mps-state args?      m ?mps-rs s ~BROKEN))
   (wm-fact (key domain fact mps-team args?       m ?mps-rs col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
-  (wm-fact (key domain fact rs-ring-spec args?   m ?mps-rs r ?ring1-color rn ?bases-needed))
+  (wm-fact (key domain fact rs-ring-spec
+            args? m ?mps-rs r ?ring1-color&~RING_NONE rn ?bases-needed))
   (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
                                          subtrahend ?bases-needed
                                          difference ?bases-remain&ZERO|ONE|TWO|THREE))
@@ -879,7 +883,7 @@
   ;Active Order CEs
   ;This order complexity is not produced exclusively while another exclusive
   ;complexity order is already started
-  (not (and (wm-fact (key evaluated fact wp-for-order args? wp ?ord-wp ord ?any-order))
+  (not (and (wm-fact (key order meta wp-for-order args? wp ?ord-wp ord ?any-order))
             (wm-fact (key domain fact order-complexity args? ord ?any-order com ?other-complexity))
             (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
             (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
@@ -888,7 +892,7 @@
   ;	 Model old agents constraints
   ;	 (in-production 0)
   ;	 (in-delivery ?id&:(> ?qr (+ ?qd ?id)))"
-  (not (wm-fact (key evaluated fact wp-for-order args? wp ?any-ord-wp ord ?order)))
+  (not (wm-fact (key order meta wp-for-order args? wp ?any-ord-wp ord ?order)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (neq ?complexity C0))
   =>
@@ -952,7 +956,8 @@
   (wm-fact (key domain fact mps-state args?      m ?mps-rs s ~BROKEN))
   (wm-fact (key domain fact mps-team args?       m ?mps-rs col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
-  (wm-fact (key domain fact rs-ring-spec args?   m ?mps-rs r ?next-ring-color rn ?bases-needed))
+  (wm-fact (key domain fact rs-ring-spec
+            args? m ?mps-rs r ?next-ring-color&~RING_NONE rn ?bases-needed))
   (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
                                          subtrahend ?bases-needed
                                          difference ?bases-remain&ZERO|ONE|TWO|THREE))
@@ -966,7 +971,7 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color) (value ?qd&:(> ?qr ?qd)))
   ;WP CEs
-  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?prev-rs side OUTPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-ring1-color))
@@ -1045,7 +1050,7 @@
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
   (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
   ;Order CEs
-  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key domain fact order-complexity args? ord ?order com C1))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
@@ -1101,7 +1106,7 @@
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
   (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
   ;Order CEs
-  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key domain fact order-complexity args? ord ?order com C2))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
@@ -1159,7 +1164,7 @@
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
   (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
   ;Order CEs
-  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key domain fact order-complexity args? ord ?order com C3))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
@@ -1266,7 +1271,7 @@
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
   ;Order-CEs
-  (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
@@ -1327,9 +1332,9 @@
 )
 
 
-(defrule goal-production-evaluate-cleanup-evaluated-wp-for-order-facts
+(defrule goal-production-cleanup-wp-for-order-facts
   "Unbind a workpiece from it's order when it can not be used anymore."
-  ?wp-for-order <- (wm-fact (key evaluated fact wp-for-order args? wp ?wp ord ?order) (value TRUE))
+  ?wp-for-order <- (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (value TRUE))
   (not (wm-fact (key domain fact wp-usable args? wp ?wp)))
   =>
   (retract ?wp-for-order)
