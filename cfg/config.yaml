@@ -5,9 +5,15 @@
 include:
   # reads files ending in .yaml from modules.d config subdir
   - !ignore-missing conf.d/
-  # reads host-specific config files from host.d subdir
-  - !ignore-missing host.d/
-  # Reads the host-specific configuration file, no failure if missing
+  # Reads host-specific config files from host_$host.d subdir
+  # $host is replaced by the hostname, thus robotino-(laptop/base)-(1/2/3)
+  # e.g. host_robotino-laptop-1.d
+  - !ignore-missing host_$host.d/
+  # Reads first host specific config file, this file is treated as normal
+  # config file by the fawkes framework
+  - !ignore-missing host_$host.yaml
+  # Reads the second host-specific configuration file, no failure if missing
+  # This file is rewritten from time to time by the fawkes system.
   - !host-specific host.yaml
 ---
 # Main configuration document
