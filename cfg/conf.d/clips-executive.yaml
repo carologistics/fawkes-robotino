@@ -230,3 +230,8 @@ clips-executive:
           # LOW: Try to avoid producing competitive orders
 
           competitive-order-priority: DEFAULT
+
+          # Bots that are enabled can formulate production goals,
+          # disabled bots only formulate wait goals
+
+          enable-bot: true
