@@ -86,7 +86,7 @@
 )
 
 
-(deffunction production-leaf-goal (?goal-class)
+(deffunction rcll-leaf-goal (?goal-class)
   (return (or (eq ?goal-class GET-BASE-TO-FILL-RS)
               (eq ?goal-class GET-SHELF-TO-FILL-RS)
               (eq ?goal-class FILL-CAP)
@@ -97,11 +97,18 @@
               (eq ?goal-class MOUNT-NEXT-RING)
               (eq ?goal-class DELIVER)
               (eq ?goal-class WAIT)
-              (eq ?goal-class GO-WAIT)))
+              (eq ?goal-class GO-WAIT)
+              (eq ?goal-class MOVE-NODE)
+              (eq ?goal-class EXPLORE-ZONE)
+              (eq ?goal-class MOVE-INITIAL-POSITION)
+              (eq ?goal-class ENTER-FIELD)
+              (eq ?goal-class REFILL-SHELF)
+              (eq ?goal-class SPAWN-WP)
+              (eq ?goal-class SEND-BEACON)))
 )
 
 
-(deffunction production-tree-goal (?goal-class)
+(deffunction rcll-tree-goal (?goal-class)
   (return (or (eq ?goal-class PRODUCTION-SELECTOR)
               (eq ?goal-class URGENT)
               (eq ?goal-class FULFILL-ORDERS)
@@ -111,13 +118,23 @@
               (eq ?goal-class PREPARE-RESOURCES)
               (eq ?goal-class PREPARE-CAPS)
               (eq ?goal-class PREPARE-RINGS)
-              (eq ?goal-class NO-PROGRESS)))
+              (eq ?goal-class NO-PROGRESS)
+              (eq ?goal-class INITIAL-POSITION)
+              (eq ?goal-class ZONE-EXPLORATION)
+              (eq ?goal-class VISIT-NODE)
+              (eq ?goal-class EXPLORATION-SELECTOR)
+              (eq ?goal-class ENTER-FIELD)
+              (eq ?goal-class PRODUCTION-MAINTAIN)
+              (eq ?goal-class EXPLORATION-MAINTAIN)
+              (eq ?goal-class REFILL-SHELF-MAINTAIN)
+              (eq ?goal-class WP-SPAWN-MAINTAIN)
+              (eq ?goal-class BEACON-MAINTAIN)))
 )
 
 
-(deffunction production-goal (?goal-class)
-  (return (or (production-tree-goal ?goal-class)
-              (production-leaf-goal ?goal-class)))
+(deffunction rcll-goal (?goal-class)
+  (return (or (rcll-tree-goal ?goal-class)
+              (rcll-leaf-goal ?goal-class)))
 )
 
 
@@ -144,7 +161,8 @@
 (defrule goal-reasoner-select-root
 "  Select all root goals (having no parent) in order to expand them."
   (declare (salience ?*SALIENCE-GOAL-SELECT*))
-  ?g <- (goal (parent nil) (type ACHIEVE|MAINTAIN) (sub-type ~nil) (id ?goal-id) (mode FORMULATED))
+  ?g <- (goal (parent nil) (class ?class&:(rcll-goal ?class))
+              (type ACHIEVE|MAINTAIN) (sub-type ~nil) (id ?goal-id) (mode FORMULATED))
   (not (goal (parent ?goal-id)))
 =>
   (modify ?g (mode SELECTED))
@@ -186,8 +204,8 @@
 " Expand a goal with sub-type, if it has a child."
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?p <- (goal (id ?parent-id) (type ACHIEVE|MAINTAIN)
-              (sub-type ?sub-type&:(requires-subgoal ?sub-type)) (mode SELECTED))
-  ?g <- (goal (parent ?parent-id) (mode FORMULATED))
+              (sub-type ?sub-type&:(requires-subgoal ?sub-type)) (class ?class&:(rcll-goal ?class)) (mode SELECTED))
+  ?g <- (goal (parent ?parent-id) (mode FORMULATED) (class ?class2&:(rcll-goal ?class2)))
 =>
   (modify ?p (mode EXPANDED))
 )
@@ -214,7 +232,7 @@
 " Unlock all remaining locks of a failed goal."
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   (wm-fact (key cx identity) (value ?identity))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (class ?class&:(rcll-goal ?class)))
   ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
   ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
                      (action-name lock) (param-values ?name))
@@ -232,7 +250,7 @@
 " Unlock all remaining location-locks of a failed goal."
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   (wm-fact (key cx identity) (value ?identity))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (class ?class&:(rcll-goal ?class)))
   ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
   ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
                      (action-name location-lock) (param-values ?loc ?side))
@@ -281,7 +299,7 @@
   which is necessary to ensure a proper clean up of any related plans.
 "
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome) (class ?class&:(rcll-goal ?class)))
   (goal (id ?sub-goal) (parent ?goal-id) (mode ~FINISHED&~EVALUATED&~RETRACTED))
 =>
   (delayed-do-for-all-facts ((?sg goal))
@@ -303,7 +321,7 @@
   All pre evaluation steps should have been executed, enforced by the higher priority
 "
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome) (class ?class&:(rcll-goal ?class)))
 =>
   ;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
   ;  "') has been completed, Evaluating" crlf)
@@ -435,7 +453,7 @@
 	   (param-values ?r ?wp ?mps $?)
 	   (state FAILED))
   (plan (id ?plan-id) (goal-id ?goal-id))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (class ?class&:(rcll-goal ?class)))
   ?hold <- (wm-fact (key domain fact holding args? r ?r wp ?wp))
   (AX12GripperInterface (holds_puck ?holds))
   =>
@@ -500,7 +518,7 @@
 	   (param-values ?r ?wp ?mps ?spot)
 	   (state FAILED))
   (plan (id ?plan-id) (goal-id ?goal-id))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (class ?class&:(rcll-goal ?class)))
   ?wp-s<- (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot))
   =>
   (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated" crlf)
@@ -527,7 +545,7 @@
   actions attached to it.
 "
   ?g <-(goal (id ?goal-id) (type ACHIEVE) (mode EVALUATED)
-             (acquired-resources))
+             (acquired-resources) (class ?class&:(rcll-goal ?class)))
   (not (goal (parent ?goal-id) (mode ?mode&~RETRACTED)))
 =>
   ;(printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
@@ -539,8 +557,8 @@
 " Remove a retracted goal if it has no parent (anymore).
   Goal trees are retracted recursively from top to bottom.
 "
-  ?g <- (goal (id ?goal-id) (class ?class) (parent ?parent)
-        (mode RETRACTED) (acquired-resources))
+  ?g <- (goal (id ?goal-id) (parent ?parent)
+        (mode RETRACTED) (acquired-resources) (class ?class&:(rcll-goal ?class)))
   (not (goal (id ?parent)))
 =>
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
@@ -556,40 +574,40 @@
 (defrule goal-reasoner-remove-retracted-subgoal-of-maintain-goal
 " Remove a retracted sub-goal of a maintain goal once the parent is EVALUATED."
   ?g <- (goal (id ?goal-id) (parent ?parent) (acquired-resources)
-              (class ?class) (mode RETRACTED))
+              (class ?class&:(rcll-goal ?class)) (mode RETRACTED))
   (goal (id ?parent) (type MAINTAIN) (mode EVALUATED))
 =>
   (retract ?g)
 )
 
 
-(defrule goal-reasoner-reject-production-tree-goal-missing-subgoal
+(defrule goal-reasoner-reject-rcll-tree-goal-missing-subgoal
 " Retract a formulated sub-goal of the production tree if it requires a
   sub-goal but there is none formulated.
 "
   (declare (salience ?*SALIENCE-GOAL-REJECT*))
   ?g <- (goal (id ?goal) (parent ?parent) (type ACHIEVE)
               (sub-type ?sub-type&:(requires-subgoal ?sub-type))
-              (class ?class&:(production-goal ?class)) (mode FORMULATED))
+              (class ?class&:(rcll-goal ?class)) (mode FORMULATED))
   (not (goal (parent ?goal) (mode FORMULATED)))
 =>
   (modify ?g (mode RETRACTED) (outcome REJECTED))
 )
 
 
-(defrule goal-reasoner-reject-production-tree-goal-other-goal-dispatched
-" Retract a formulated sub-goal of the production tree once a production leaf
-  goal is dispatched.
-"
-  (declare (salience ?*SALIENCE-GOAL-REJECT*))
-  ?g <- (goal (id ?goal) (parent ?parent) (type ACHIEVE)
-              (sub-type ?sub-type) (class ?class&:(production-goal ?class))
-              (mode FORMULATED))
-  (goal (id ?some-leaf) (class ?some-class&:(production-goal ?some-class))
-        (sub-type SIMPLE) (mode DISPATCHED))
-=>
-  (modify ?g (mode RETRACTED) (outcome REJECTED))
-)
+;(defrule goal-reasoner-reject-rcll-tree-goal-other-goal-dispatched
+;" Retract a formulated sub-goal of the production tree once a production leaf
+;  goal is dispatched.
+;"
+;  (declare (salience ?*SALIENCE-GOAL-REJECT*))
+;  ?g <- (goal (id ?goal) (parent ?parent) (type ACHIEVE)
+;              (sub-type ?sub-type) (class ?class&:(rcll-goal ?class))
+;              (mode FORMULATED))
+;  (goal (id ?some-leaf) (parent ?parent) (class ?some-class&:(rcll-goal ?some-class))
+;        (sub-type SIMPLE) (mode DISPATCHED))
+;=>
+;  (modify ?g (mode RETRACTED) (outcome REJECTED))
+;)
 
 
 (defrule goal-reasoner-reject-production-goals-that-block-produce-cx
