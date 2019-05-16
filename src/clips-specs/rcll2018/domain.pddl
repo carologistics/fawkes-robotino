@@ -59,7 +59,7 @@
 		RETRIEVE_CAP MOUNT_CAP - cs-operation
 		C0 C1 C2 C3 - order-complexity-value
 		LEFT MIDDLE RIGHT - shelf-spot
-		NA ZERO ONE TWO THREE - ring-num
+		NA NONE ZERO ONE TWO THREE - ring-num
 	)
 
 	(:predicates
