@@ -134,6 +134,202 @@ nodes:
       - orientation: 1.57
       - always-copy: true
       - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-BS-INPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-BS-OUTPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-CS1-INPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-CS1-OUTPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-CS2-INPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-CS2-OUTPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-RS1-INPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-RS1-OUTPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-RS2-INPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-RS2-OUTPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-DS-INPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-DS-OUTPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-SS-INPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-SS-OUTPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-BS-INPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-BS-OUTPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-CS1-INPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-CS1-OUTPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-CS2-INPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-CS2-OUTPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-RS1-INPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-RS1-OUTPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-RS2-INPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-RS2-OUTPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-DS-INPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-CDS-OUTPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-SS-INPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-SS-OUTPUT
+    pos : [0,1]
+    properties:
+      - always-copy: true
+      - orientation_tolerance: 3.14
+      - target_tolerance: 1.5
 
 # Machine points for property generation
 # Positions will be written by the generator
