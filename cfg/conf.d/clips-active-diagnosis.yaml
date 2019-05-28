@@ -1,0 +1,31 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/clips-executive
+---
+clips-active-diagnosis:
+  # If true, will enable watching of facts and rules
+  debug:
+    enable: true
+    # debug level is a number of: 0 ~ none, 1 ~ minimal, 2 ~ more, 3 ~ maximum
+    level: 3
+
+    # If CLIPS debugging is enabled, certain rules and facts can be excluded
+    # from watching, e.g. if they are showing up at too high frequencies or
+    # are not of interest.
+    unwatch-facts: ["time"]
+    unwatch-rules: ["time-retract", "blackboard-read"]
+
+  # Directory where to look for CLIPS files
+  clips-dirs: ["@BASEDIR@/src/clips-specs"]
+
+
+  # Agent name. On startup the clips-agent will try to resolve a file named
+  # <agent name>.clp. It must be in the CLIPS path directories.
+  spec: active-diagnosis
+
+  specs:
+    active-diagnosis:
+      init:
+        stage-1:
+          - name: pddl-parser
