@@ -69,6 +69,20 @@ fawkes/meta_plugins:
     - clips-executive
     - clips-executive-rest-api
 
+  m-skill-sim-clips-exec:
+    - skiller-simulator
+    - ros
+    - navgraph
+    - navgraph-generator
+    - navgraph-generator-mps
+    - m-clips
+    - m-robot-memory
+    - pddl-robot-memory
+    - clips_robot_memory
+    - clips-pddl-parser
+    - clips-executive
+    - clips-executive-rest-api
+
   rcll-sim-2016:
     - mps-laser-gen
     - map-lasergen
