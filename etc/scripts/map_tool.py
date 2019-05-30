@@ -89,6 +89,12 @@ def paint(lines, sizes, interpret_xy):
     for line in lines:
         draw.line([interpret_xy(line[0]),interpret_xy(line[1])],fill=0)
     return im
+
+def get_origin(sizes,interpret_xy):
+    origin = list(interpret_xy((0,0))) #origin in pixel relative to left top pixel
+    origin[1] = sizes[1]-origin[1] # origin in pixel relative to left bottom pixel
+    return  tuple([-x/pixel_per_meter for x in origin]) # left bottom pixel in meter relative to origin
+
     
 if __name__ == "__main__":
     
@@ -128,9 +134,9 @@ if __name__ == "__main__":
         lines, min_x, min_y, max_x, max_y = parse(command)
         sizes = [max_x-min_x + x_margin*2, max_y-min_y + y_margin*2]    
         interpret_xy = lambda xy: (xy[0]-min_x+x_margin,sizes[1]-(xy[1]-min_y+y_margin))
-        origin = interpret_xy((0,0))
         image = paint(lines, sizes, interpret_xy)
         image.save(file_output)
+        origin = get_origin(sizes,interpret_xy)
         print("origin is at "+str(origin))
     
 
