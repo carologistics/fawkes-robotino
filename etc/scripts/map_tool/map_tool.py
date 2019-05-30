@@ -27,12 +27,16 @@ from PIL import ImageDraw, Image
 
 import re # for verifying correct input string
 
+import numpy as np
+
 import sys
 import getopt
 
 reg_num = r"[-+]?\d+(?:\.\d*)?"
-reg_wall = reg_num
-reg_empty = r"\[" + reg_num + "\]"
+reg_wall = reg_num + r"\*?"
+reg_wall_red = reg_num + r"\*"
+reg_empty = r"\[" + reg_num + "\*?\]"
+reg_empty_red = r"\[" + reg_num + "\*\]"
 reg_coordinate = r"\("+reg_num+r","+reg_num+r"\)"
 reg_same_dir_element = r"(?:(?:"+ reg_empty +r"|" +reg_wall+r"|)+;)"
 reg_long_line = reg_coordinate+ reg_same_dir_element+"+"
@@ -48,6 +52,8 @@ def update_limits(x,y,min_x,min_y, max_x, max_y):
 def parse(command):
     part_commands = re.findall(reg_long_line,command)
     lines = [] # format is [[(xs,ys),(xe,ye)],...]
+    red_lines = [] # format is [[(xs,ys),(xe,ye)],...]
+    red_dotted_lines = [] # format is [[(xs,ys),(xe,ye)],...]
     min_x = min_y = float("inf")      # used to generate bounding box    
     max_x = max_y = -float("inf")
     
@@ -66,13 +72,17 @@ def parse(command):
                 else:
                     y_new = y+distance
                 
-                if re.match(reg_empty,line_element)==None: # this is a wall, should add
+                if re.match(reg_wall_red,line_element)  and re.match(reg_wall,line_element).start() == 0: #this is a highlighted wall
+                    red_lines.append([(x,y),(x_new,y_new)])
+                elif re.match(reg_wall,line_element) and re.match(reg_wall,line_element).start() == 0: # this is a wall, should add
                     lines.append([(x,y),(x_new,y_new)])
+                elif re.match(reg_empty_red,line_element): # this is a empty element, but highlighted
+                    red_dotted_lines.append([(x,y),(x_new,y_new)])
                 x = x_new
                 y = y_new
                 min_x, min_y, max_x, max_y = update_limits(x,y,min_x,min_y, max_x, max_y)
             dir = 1 if dir == 0 else 0
-    return lines, min_x, min_y, max_x, max_y 
+    return lines, red_lines, red_dotted_lines, min_x, min_y, max_x, max_y 
         
 def verify(command):
     match_object = re.match("^("+reg_long_line+"\s*)+$", command)
@@ -83,11 +93,20 @@ def verify(command):
         print("Your command is verified")
         return True
     
-def paint(lines, sizes, interpret_xy):
-    im = Image.new('1',sizes,color=1)
+def paint(lines, red_lines, red_dotted_lines, sizes, interpret_xy):
+    im = Image.new('RGB',sizes,color=(255,255,255))
     draw = ImageDraw.Draw(im)
     for line in lines:
-        draw.line([interpret_xy(line[0]),interpret_xy(line[1])],fill=0)
+        draw.line([interpret_xy(line[0]),interpret_xy(line[1])],fill=(0,0,0))
+    for line in red_lines:
+        draw.line([interpret_xy(line[0]),interpret_xy(line[1])],fill=(255,0,0))
+    for line in red_dotted_lines:
+        line_start = np.array(interpret_xy(line[0]))
+        line_end = np.array(interpret_xy(line[1]))
+        line_length = np.sqrt(np.sum((line_end - line_start)**2))
+        line_fraction_per_dot = 4/line_length
+        dots = [tuple(fraction*line_end + (1-fraction) * line_start) for fraction in np.arange(0,1,line_fraction_per_dot)]
+        draw.point(dots,fill=(255,0,0))
     return im
 
 def get_origin(sizes,interpret_xy):
@@ -137,10 +156,10 @@ if __name__ == "__main__":
             
     
     if command != "" and verify(command):
-        lines, min_x, min_y, max_x, max_y = parse(command)
+        lines, red_lines, red_dotted_lines, min_x, min_y, max_x, max_y = parse(command)
         sizes = [max_x-min_x + x_margin*2, max_y-min_y + y_margin*2]    
         interpret_xy = lambda xy: (xy[0]-min_x+x_margin,sizes[1]-(xy[1]-min_y+y_margin))
-        image = paint(lines, sizes, interpret_xy)
+        image = paint(lines, red_lines, red_dotted_lines, sizes, interpret_xy)
         image.save(file_output)
         origin = get_origin(sizes,interpret_xy)
         print("origin is at "+str(origin))
