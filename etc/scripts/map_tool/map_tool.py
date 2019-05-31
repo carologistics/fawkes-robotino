@@ -114,6 +114,15 @@ def get_origin(sizes,interpret_xy):
     origin[1] = sizes[1]-origin[1] # origin in pixel relative to left bottom pixel
     return  tuple([-x/pixel_per_meter for x in origin]) # left bottom pixel in meter relative to origin
 
+def paint_command(command):
+    lines, red_lines, red_dotted_lines, min_x, min_y, max_x, max_y = parse(command)
+    sizes = [max_x-min_x + x_margin*2, max_y-min_y + y_margin*2]    
+    interpret_xy = lambda xy: (xy[0]-min_x+x_margin,sizes[1]-(xy[1]-min_y+y_margin))
+    image = paint(lines, red_lines, red_dotted_lines, sizes, interpret_xy)
+    origin = get_origin(sizes,interpret_xy)
+
+    return image, origin
+
     
 if __name__ == "__main__":
     
@@ -156,13 +165,6 @@ if __name__ == "__main__":
             
     
     if command != "" and verify(command):
-        lines, red_lines, red_dotted_lines, min_x, min_y, max_x, max_y = parse(command)
-        sizes = [max_x-min_x + x_margin*2, max_y-min_y + y_margin*2]    
-        interpret_xy = lambda xy: (xy[0]-min_x+x_margin,sizes[1]-(xy[1]-min_y+y_margin))
-        image = paint(lines, red_lines, red_dotted_lines, sizes, interpret_xy)
+        image, origin = paint_command(command)
         image.save(file_output)
-        origin = get_origin(sizes,interpret_xy)
         print("origin is at "+str(origin))
-    
-
-    
