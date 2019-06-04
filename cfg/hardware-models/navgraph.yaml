@@ -1,0 +1,21 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+
+navgraph:
+  states:
+    - LOCALIZED
+    - INIT
+
+  INIT:
+    edges:
+      - LOCALIZED
+    LOCALIZED:
+      transition: localize
+
+  LOCALIZED:
+    edges:
+      - INIT
+    INIT:
+      transition: unlocalize
+      probability: 0.5
+

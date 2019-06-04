@@ -1,0 +1,31 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+
+tag-camera:
+  states:
+    - DEACTIVATED
+    - ACTIVATED
+    - LOST
+
+  DEACTIVATED:
+    edges:
+      - ACTIVATED
+      - LOST
+    ACTIVATED:
+      transition: tag_camera_activate
+    LOST:
+      transition: tag_camera_lost
+      probability: 0.1
+
+  ACTIVATED:
+    edges:
+      - DEACTIVATED
+      - LOST
+    DEACTIVATED:
+      transition: tag_camera_deactivate
+    LOST:
+      transition: tag_camera_lost
+      probability: 0.1
+
+  LOST:
+    edges:

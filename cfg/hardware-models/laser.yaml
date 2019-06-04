@@ -1,0 +1,18 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+
+laser:
+  states:
+    - ACTIVATED
+    - LOST
+
+  ACTIVATED:
+    edges:
+      - LOST
+    LOST:
+      transition: laser_lost
+      probability: 0.1
+
+  LOST:
+    edges:
+

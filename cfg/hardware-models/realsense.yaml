@@ -1,0 +1,32 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+
+realsense:
+  states:
+    - DEACTIVATED
+    - ACTIVATED
+    - LOST
+
+  DEACTIVATED:
+    edges:
+      - ACTIVATED
+      - LOST
+    ACTIVATED:
+      transition: realsense_activate
+    LOST:
+      transition: realsense_lost
+      probability: 0.1
+
+  ACTIVATED:
+    edges:
+      - DEACTIVATED
+      - LOST
+    DEACTIVATED:
+      transition: realsense_deactivate
+    LOST:
+      transition: realsense_lost
+      probability: 0.1
+
+  LOST:
+    edges:
+

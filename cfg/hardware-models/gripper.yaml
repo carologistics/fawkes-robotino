@@ -1,0 +1,46 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+
+gripper:
+  states:
+    - CALIBRATED
+    - UNCALIBRATED
+    - AXIS-BROKEN
+    - FINGERS-BROKEN
+
+  UNCALIBRATED:
+    edges:
+      - CALIBRATED
+      - AXIS-BROKEN
+      - FINGERS-BROKEN
+    CALIBRATED:
+      transition: calibrate
+    FINGERS-BROKEN:
+      transition: break_gripper_fingers
+      probability: 0.1
+    AXIS-BROKEN:
+      transition: break_gripper_axis
+      probability: 0.1
+
+  CALIBRATED:
+    edges:
+      - UNCALIBRATED
+      - AXIS-BROKEN
+      - FINGERS-BROKEN
+    UNCALIBRATED:
+      transition: uncalibrate
+      probability: 0.5
+    FINGERS-BROKEN:
+      transition: break_gripper_fingers
+      probability: 0.5
+    AXIS-BROKEN:
+      transition: break_gripper_axis
+      probability: 0.1
+
+  AXIS-BROKEN:
+    edges:
+
+  FINGERS-BROKEN:
+    edges:
+
+

@@ -1,0 +1,30 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+
+communication:
+  states:
+    - INIT
+    - CONNECTION-ESTABLISHED
+    - CONNECTION-LOST
+
+  INIT:
+    edges:
+      - CONNECTION-ESTABLISHED
+    CONNECTION-ESTABLISHED:
+      transition: connection_established
+
+  CONNECTION-ESTABLISHED:
+    edges:
+      - CONNECTION-LOST
+
+    CONNECTION-LOST:
+      transition: connection_lost
+      probability: 0.1
+
+  CONNECTION-LOST:
+    edges:
+      - CONNECTION-ESTABLISHED
+
+    CONNECTION-ESTABLISHED:
+      transition: connection_established
+

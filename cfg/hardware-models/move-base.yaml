@@ -1,0 +1,32 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+move-base:
+  states:
+    - INIT
+    - LOCKED
+    - FAILED
+
+  INIT:
+    edges:
+      - LOCKED
+      - FAILED 
+    LOCKED:
+      transition: lock-move-base
+      probability: 0.1
+    FAILED:
+      transition: break_move_base
+      probability: 0.9
+
+  LOCKED:
+    edges:
+      - INIT
+      - FAILED
+    INIT:
+      transition: unlock-move-base
+    FAILED:
+      transition: break_move_base
+      probability: 1
+
+  FAILED:
+    edges:
+
