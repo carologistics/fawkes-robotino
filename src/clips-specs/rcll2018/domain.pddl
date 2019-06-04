@@ -37,7 +37,7 @@
 		cs-operation - object
 		cs-statename - object
 		order - object
-    order-complexity-value - object
+    	order-complexity-value - object
 		workpiece - object
 		cap-carrier - workpiece
 		shelf-spot - object
@@ -79,6 +79,7 @@
 		(cs-buffered ?m - mps ?col - cap-color)
 		(cs-color ?m - mps ?col - cap-color)
 		(cs-free ?m - mps)
+		(mps-side-free ?m - mps ?side - mps-side)
 		(rs-prepared-color ?m - mps ?col - ring-color)
 		(rs-ring-spec ?m - mps ?r - ring-color ?rn - ring-num)
 		(rs-filled-with ?m - mps ?n - ring-num)
@@ -106,91 +107,225 @@
 		(wp-cap-color ?wp - workpiece ?col - cap-color)
 		(wp-on-shelf ?wp - workpiece ?m - mps ?spot - shelf-spot)
 		(wp-spawned-for ?wp - workpiece ?r - robot)
-    (spot-free ?m - mps ?spot - shelf-spot)
+    	(spot-free ?m - mps ?spot - shelf-spot)
+		(comp-state ?comp - component ?state - state)	
+    	(locked ?name - object)
+    	(location-locked ?m - mps ?s - mps-side)
 
-    (locked ?name - object)
-    (location-locked ?m - mps ?s - mps-side)
+		(next-reset-mps ?m - mps)
+		(last-reset-mps ?m - mps)
+
+		(next-prepare-bs ?m - mps ?side - mps-side ?bc - base-color)
+		(last-prepare-bs ?m - mps ?side - mps-side ?bc - base-color)
+
+		(next-prepare-ds ?m - mps ?gate - ds-gate)
+		(last-prepare-ds ?m - mps ?gate - ds-gate)
+
+		(next-prepare-cs ?m - mps ?op - cs-operation)
+		(last-prepare-cs ?m - mps ?op - cs-operation)
+
+		(next-bs-dispense ?r - robot ?m - mps ?side - mps-isde ?wp - workpiece ?basecol - base-color)
+		(last-bs-dispense ?r - robot ?m - mps ?side - mps-isde ?wp - workpiece ?basecol - base-color)
+	
+		(next-cs-mount-cap ?m - mps ?wp - workpiece ?capcol - cap-color)
+		(last-cs-mount-cap ?m - mps ?wp - workpiece ?capcol - cap-color)
+
+		(next-cs-retrieve-cap ?m - mps ?cc - cap-carrier ?capcol - cap-color)
+		(last-cs-retrieve-cap ?m - mps ?cc - cap-carrier ?capcol - cap-color)
+	
+		(next-prepare-rs ?m - mps ?rc - ring-color)
+		(last-prepare-rs ?m - mps ?rc - ring-color)
+
+		(next-rs-mount-ring1 ?m - mps ?wp - workpiece ?col - ring-color)
+		(last-rs-mount-ring1 ?m - mps ?wp - workpiece ?col - ring-color)
+	
+		(next-rs-mount-ring2 ?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color)
+		(last-rs-mount-ring2 ?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color)
+	
+		(next-rs-mount-ring3 ?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color ?col2 - ring-color)
+		(last-rs-mount-ring3 ?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color ?col2 - ring-color)
+	
+		(next-go-wait ?r - robot ?to - waitpoint)
+		(last-go-wait ?r - robot ?to - waitpoint)
+	
+		(next-wait ?r - robot)
+		(last-wait ?r - robot)
+
+		(next-move ?r - robot ?to - mps ?to-side - mps-side)
+		(last-move ?r - robot ?to - mps ?to-side - mps-side)
+
+		(next-enter-field ?r - robot)
+		(last-enter-field ?r - robot)
+
+		(next-wp-discard ?r - robot)
+		(last-wp-discard ?r - robot)
+
+		(next-wp-get-shelf ?r - robot ?spot - shelf-spot)
+		(last-wp-get-shelf ?r - robot ?spot - shelf-spot)
+
+		(next-wp-get ?r - robot)
+		(last-wp-get ?r - robot)
+
+		(next-wp-put ?r - robot)
+		(last-wp-put ?r - robot)
+
+		(next-wp-put-slide ?r - robot)
+		(last-wp-put-slide ?r - robot)
+
+		(next-fulfill-order-c0)
+		(last-fulfill-order-c0)
+
+		(next-fulfill-order-c1)
+		(last-fulfill-order-c1)
+
+		(next-fulfill-order-c2)
+		(last-fulfill-order-c2)
+
+		(next-fulfill-order-c3)
+		(last-fulfill-order-c3)
+
+		(next-lock ?name - object)
+		(last-lock ?name - object)
+
+		(next-one-time-lock ?name - object)
+		(last-one-time-lock ?name - object)
+
+		(next-unlock ?name - object)
+		(last-unlock ?name - object)
+
+		(next-eventually-unlock ?name - object)
+		(last-eventually-unlock ?name - object)
+		
+		(next-location-lock ?location - mps ?side - side)
+		(last-location-lock ?location - mps ?side - side)
+
+		(next-location-unlock ?location - mps ?side - side)
+		(last-location-unlock ?location - mps ?side - side)
+
+
 	)
-
-;Kind of a hack. actually it should model the removal of present workpieces
 	(:action reset-mps
 		:parameters (?m - mps)
-		:precondition (or (mps-state ?m BROKEN) (not (mps-state ?m BROKEN)))
-		:effect (mps-state ?m BROKEN)
+		:precondition ()
+		:effect (and (mps-state ?m BROKEN))
 	)
 
 	(:action prepare-bs
 		:parameters (?m - mps ?side - mps-side ?bc - base-color)
-		:precondition (and (mps-type ?m BS) (mps-state ?m IDLE) (locked ?m))
-		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m READY-AT-OUTPUT)
-								 (bs-prepared-color ?m ?bc) (bs-prepared-side ?m ?side))
+		:precondition (and (mps-type ?m BS)
+									)
+		:effect (and (last-prepare-bs ?m ?side ?bc)
+								 (when (and (mps-state ?m IDLE) (locked ?m))
+								 			 (and (not (mps-state ?m IDLE)) (mps-state ?m READY-AT-OUTPUT)
+								 			 			(bs-prepared-color ?m ?bc) (bs-prepared-side ?m ?side))
+								 )
+						)
 	)
 
 	(:action prepare-ds
 		:parameters (?m - mps ?ord - order)
-		:precondition (and (mps-type ?m DS) (mps-state ?m IDLE) (locked ?m))
-		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m PREPARED)
-                 (ds-prepared-order ?m ?ord))
+		:precondition (and (mps-type ?m DS)
+									)
+		:effect (and (when (and (mps-state ?m IDLE) (locked ?m))
+								 			 (and (not (mps-state ?m IDLE)) 
+													  (mps-state ?m PREPARED)
+                 						(ds-prepared-order ?m ?ord)
+											 )
+								 )
+						)
 	)
 
 	(:action prepare-cs
 		:parameters (?m - mps ?op - cs-operation)
 		:precondition (and  (mps-type ?m CS) (mps-state ?m IDLE)
                         (cs-can-perform ?m ?op) (locked ?m))
-		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m READY-AT-OUTPUT)
-								 (not (cs-can-perform ?m ?op)) (cs-prepared-for ?m ?op))
+		:effect (and (when (and (mps-state ?m IDLE)
+                        		(cs-can-perform ?m ?op)
+														(locked ?m)
+											 )
+											 (and (not (mps-state ?m IDLE))
+											 			(mps-state ?m READY-AT-OUTPUT)
+								 						(not (cs-can-perform ?m ?op))
+														(cs-prepared-for ?m ?op)
+											 )
+								 )
+				)
 	)
 
 	(:action bs-dispense
 		:parameters (?r - robot ?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
-		:precondition (and (mps-type ?m BS) (mps-state ?m READY-AT-OUTPUT)
-                       (locked ?m) (bs-prepared-color ?m ?basecol)
+		:precondition (and (mps-type ?m BS)
+											 (mps-state ?m READY-AT-OUTPUT)
+                       (locked ?m) 
+											 (bs-prepared-color ?m ?basecol)
                        (bs-prepared-side ?m ?side)
-											 (wp-base-color ?wp BASE_NONE) (wp-unused ?wp)
+											 (wp-base-color ?wp BASE_NONE)
+											 (wp-unused ?wp)
 											 (wp-spawned-for ?wp ?r)
-											 (self ?r))
+											 (self ?r)
+									)
 											 ;(not (wp-usable ?wp))
 		:effect (and (wp-at ?wp ?m ?side)
-								 (not (wp-base-color ?wp BASE_NONE)) (wp-base-color ?wp ?basecol)
-								 (not (wp-unused ?wp)) (wp-usable ?wp)
-								 (not (wp-spawned-for ?wp ?r)))
+								 (not (wp-base-color ?wp BASE_NONE))
+								 (wp-base-color ?wp ?basecol)
+								 (not (wp-unused ?wp)) 
+								 (wp-usable ?wp)
+								 (not (wp-spawned-for ?wp ?r))
+						)
 	)
 
 	(:action cs-mount-cap
 		:parameters (?m - mps ?wp - workpiece ?capcol - cap-color)
-		:precondition (and (mps-type ?m CS) (mps-state ?m READY-AT-OUTPUT) (locked ?m)
-										(cs-buffered ?m ?capcol) (cs-prepared-for ?m MOUNT_CAP)
-										(wp-usable ?wp) (wp-at ?wp ?m INPUT)
-										(wp-cap-color ?wp CAP_NONE))
-		:effect (and
-								 (not (wp-at ?wp ?m INPUT)) (wp-at ?wp ?m OUTPUT)
+		:precondition (and (mps-type ?m CS)
+											 (mps-state ?m READY-AT-OUTPUT)
+											 (locked ?m)
+											 (cs-buffered ?m ?capcol)
+											 (cs-prepared-for ?m MOUNT_CAP)
+											 (wp-usable ?wp)
+											 (wp-at ?wp ?m INPUT)
+											 (wp-cap-color ?wp CAP_NONE)
+									)
+		:effect (and (not (wp-at ?wp ?m INPUT))
+								 (wp-at ?wp ?m OUTPUT)
 								 (not (wp-cap-color ?wp CAP_NONE)) (wp-cap-color ?wp ?capcol)
-								 (cs-can-perform ?m RETRIEVE_CAP)
-								 (not (cs-can-perform ?m MOUNT_CAP))
+								 (not (cs-can-perform ?m MOUNT_CAP)) (cs-can-perform ?m RETRIEVE_CAP)
 								 (not (cs-prepared-for ?m MOUNT_CAP))
-								 (not (cs-buffered ?m ?capcol)))
+								 (not (cs-buffered ?m ?capcol))
+						)
 	)
 
 	(:action cs-retrieve-cap
 		:parameters (?m - mps ?cc - cap-carrier ?capcol - cap-color)
-		:precondition (and (mps-type ?m CS) (mps-state ?m READY-AT-OUTPUT)
-                       (locked ?m) (cs-prepared-for ?m RETRIEVE_CAP)
-										(wp-at ?cc ?m INPUT)  (wp-cap-color ?cc ?capcol))
-		:effect (and
-								 (not (wp-at ?cc ?m INPUT)) (wp-at ?cc ?m OUTPUT)
+		:precondition (and (mps-type ?m CS) 
+											 (mps-state ?m READY-AT-OUTPUT)
+                       (locked ?m) 
+											 (cs-prepared-for ?m RETRIEVE_CAP)
+											 (wp-at ?cc ?m INPUT)
+										   (wp-cap-color ?cc ?capcol)
+									)
+		:effect (and (not (wp-at ?cc ?m INPUT)) (wp-at ?cc ?m OUTPUT)
 								 (not (wp-cap-color ?cc ?capcol)) (wp-cap-color ?cc CAP_NONE)
-								 (cs-buffered ?m ?capcol)(cs-can-perform ?m MOUNT_CAP)
-								 (not (cs-prepared-for ?m RETRIEVE_CAP)))
+								 (cs-buffered ?m ?capcol)
+								 (cs-can-perform ?m MOUNT_CAP)
+								 (not (cs-prepared-for ?m RETRIEVE_CAP))
+						)
 	)
 
 	(:action prepare-rs
 		:parameters (?m - mps ?rc - ring-color ?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
-		:precondition (and  (mps-type ?m RS) (mps-state ?m IDLE) (locked ?m)
-                        (rs-ring-spec ?m ?rc ?r-req)
-						            (rs-filled-with ?m ?rs-before)
-                        (rs-sub ?rs-before ?r-req ?rs-after))
-		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m READY-AT-OUTPUT)
-								 (rs-prepared-color ?m ?rc))
+		:precondition (and (mps-type ?m RS)
+                       (rs-ring-spec ?m ?rc ?r-req)
+						           (rs-filled-with ?m ?rs-before)
+                       (rs-sub ?rs-before ?r-req ?rs-after)
+									)
+		:effect (and (when (and (mps-state ?m IDLE) (locked ?m)
+								 			 )
+											 (and (not (mps-state ?m IDLE)) (mps-state ?m READY-AT-OUTPUT)
+											 			(rs-prepared-color ?m ?rc)
+											 )
+									
+								 )
+						)
 	)
 
 	(:action rs-mount-ring1
@@ -203,8 +338,7 @@
 										(rs-ring-spec ?m ?col ?r-req)
 										(rs-filled-with ?m ?rs-before)
 										(rs-sub ?rs-before ?r-req ?rs-after))
-		:effect (and
-								 (not (rs-prepared-color ?m ?col))
+		:effect (and (not (rs-prepared-color ?m ?col))
 								 (not (wp-at ?wp ?m INPUT)) (wp-at ?wp ?m OUTPUT)
 								 (not (wp-ring1-color ?wp RING_NONE)) (wp-ring1-color ?wp ?col)
 								 (not (rs-filled-with ?m ?rs-before)) (rs-filled-with ?m ?rs-after))
@@ -223,8 +357,7 @@
 										(rs-ring-spec ?m ?col ?r-req)
 										(rs-filled-with ?m ?rs-before)
 										(rs-sub ?rs-before ?r-req ?rs-after))
-		:effect (and
-								 (not (rs-prepared-color ?m ?col))
+		:effect (and (not (rs-prepared-color ?m ?col))
 								 (not (wp-at ?wp ?m INPUT)) (wp-at ?wp ?m OUTPUT)
 								 (not (wp-ring2-color ?wp RING_NONE)) (wp-ring2-color ?wp ?col)
 								 (not (rs-filled-with ?m ?rs-before)) (rs-filled-with ?m ?rs-after))
@@ -243,8 +376,7 @@
 										(rs-ring-spec ?m ?col ?r-req)
 										(rs-filled-with ?m ?rs-before)
 										(rs-sub ?rs-before ?r-req ?rs-after))
-		:effect (and
-								 (not (rs-prepared-color ?m ?col))
+		:effect (and (not (rs-prepared-color ?m ?col))
 								 (not (wp-at ?wp ?m INPUT)) (wp-at ?wp ?m OUTPUT)
 								 (not (wp-ring3-color ?wp RING_NONE)) (wp-ring3-color ?wp ?col)
 								 (not (rs-filled-with ?m ?rs-before)) (rs-filled-with ?m ?rs-after))
@@ -257,50 +389,35 @@
 	;
 	(:action go-wait
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - waitpoint)
-		:precondition (at ?r ?from ?from-side)
-		:effect (and
-					(not (at ?r ?from ?from-side))
-					(at ?r ?to WAIT))
+		:precondition (and (or (at ?r ?to WAIT) (location-free ?to WAIT))
+                       (at ?r ?from ?from-side))
+		:effect (and (not (at ?r ?from ?from-side)) (at ?r ?to WAIT)
+          			 (not (location-free ?to WAIT)) (location-free ?from ?from-side)
+						)
 	)
 
   (:action wait
     :parameters (?r - robot ?point - waitpoint)
-    :precondition (at ?r ?point WAIT)
-    :effect (at ?r ?point WAIT)
+    :precondition ()
+    :effect ()
   )
 
 	(:action move
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
-		:precondition (at ?r ?from ?from-side)
-		:effect (and (not (at ?r ?from ?from-side))
-								 (at ?r ?to ?to-side))
-	)
-
-	; Move actions specific for the expected follow-up action.
-	; This models the move in two versions specific to the expected next action,
-	; either the retrieval or the delivery of a workpiece. While a more generic
-	; such as the one would be desirable, in typical test cases these specific
-	; actions cut the planning time by about 95%.
-	(:action move-wp-put
-		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps)
-		:precondition (and (at ?r ?from ?from-side)
-										(mps-state ?to IDLE))
-		:effect (and (not (at ?r ?from ?from-side))
-								 (at ?r ?to INPUT))
-	)
-
-	(:action move-wp-get
-		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
-		:precondition (and (at ?r ?from ?from-side)
-										(mps-state ?to READY-AT-OUTPUT)
-										(can-hold ?r))
-		:effect (and (not (at ?r ?from ?from-side))
-								 (at ?r ?to ?to-side))
+		:precondition (and (comp-state move-base INIT)
+											 (at ?r ?from ?from-side)
+											 (or (at ?r ?to ?to-side) (location-free ?to ?to-side))
+									)
+		:effect (and (not (at ?r ?from ?from-side)) (at ?r ?to ?to-side)
+								 (not (location-free ?to ?to-side)) (location-free ?from ?from-side)
+						)
 	)
 
 	(:action enter-field
-		:parameters (?r - robot ?team-color - team-color)
-		:precondition (robot-waiting ?r)
+		:parameters (?r - robot)
+		:precondition (and (or (location-free START INPUT) (at ?r START INPUT))
+											 (robot-waiting ?r)
+									)
 		:effect (and (entered-field ?r)
 								 (at ?r START INPUT)
 								 (not (robot-waiting ?r)))
@@ -308,87 +425,132 @@
 
 	(:action wp-discard
 		:parameters (?r - robot ?cc - cap-carrier)
-		:precondition (and (holding ?r ?cc))
-		:effect (and (not (holding ?r ?cc)) (wp-unused ?cc) (not (wp-usable ?cc))
-                 (can-hold ?r))
+		:precondition ()
+		:effect (and (when (holding ?r ?cc)
+								 		(and (not (holding ?r ?cc)) 
+												(wp-unused ?cc) 
+												(not (wp-usable ?cc))
+                 								(can-hold ?r))
+								 )
+						)
 	)
 
 	(:action wp-get-shelf
-		:parameters (?r - robot ?cc - cap-carrier ?m - mps ?spot - shelf-spot)
-		:precondition (and (at ?r ?m INPUT) (wp-on-shelf ?cc ?m ?spot) (can-hold ?r))
-		:effect (and (holding ?r ?cc) (not (can-hold ?r))
-								 (not (wp-on-shelf ?cc ?m ?spot)) (wp-usable ?cc)
-                 (spot-free ?m ?spot))
+		:parameters (?r - robot ?cc - cap-carrier ?m - mps ?spot - shelf-spot ?hold - workpiece)
+		:precondition (and (comp-state gripper CALIBRATED)
+		                   (at ?r ?m INPUT) 
+		                   (or (wp-on-shelf ?cc ?m ?spot)
+		                       (spot-free ?m ?spot))
+		                   (or (holding ?r ?hold)
+		                       (can-hold ?r))
+		              )
+		:effect (and (when (and (wp-on-shelf ?cc ?m ?spot)
+								 			 )
+											 (and (holding ?r ?cc) 
+											 			(not (can-hold ?r))
+								 						(not (wp-on-shelf ?cc ?m ?spot))
+														(wp-usable ?cc)
+                 						(spot-free ?m ?spot)
+											 )
+								 )
+								 (when (and (holding ?r ?hold)
+								       )
+								       (and (not (holding ?r ?hold)))
+								 )
+								 (when (not (wp-on-shelf ?cc ?m ?spot))
+								       (can-hold ?r)
+								 )
+						)
 	)
 
-  (:action refill-shelf1
-    :parameters (?m - mps ?spot - shelf-spot ?cc1 - cap-carrier
-                 ?color - cap-color)
-    :precondition ( and (spot-free ?m ?spot) (locked ?m)
-                        (wp-unused ?cc1)
-                  )
-    :effect (and ( not (spot-free ?m ?spot) )
-                 (wp-on-shelf ?cc1 ?m ?spot)
-                 (not (wp-unused ?cc1))
-                 (wp-cap-color ?cc1  ?color)
-            )
-  )
-;  (:action refill-shelf3
-;    :parameters (?m - mps ?cc1 - cap-carrier
-;                 ?cc2 - cap-carrier ?cc3 - cap-carrier
-;                 ?color - cap-color)
-;    :precondition ( and (spot-free ?m LEFT) (spot-free ?m MIDDLE)
-;                        (spot-free ?m RIGHT)
-;                        (locked ?m)
-;                        (wp-unused ?cc1) (wp-unused ?cc2) (wp-unused ?cc3)
-;;                        (wp-cap-color ?cc1  CAP_NONE)
-;;                        (wp-cap-color ?cc2  CAP_NONE)
-;;                        (wp-cap-color ?cc3  CAP_NONE)
-;                        (not (= ?cc1 ?cc2)) (not (= ?cc1 ?cc3))
-;                        (not (= ?cc2 ?cc3))
-;                  )
-;    :effect (and ( not (spot-free ?m LEFT) ) ( not (spot-free ?m MIDDLE) )
-;                 ( not (spot-free ?m RIGHT) )
-;                 (wp-on-shelf ?cc1 ?m LEFT) (wp-on-shelf ?cc2 ?m MIDDLE)
-;                 (wp-on-shelf ?cc3 ?m RIGHT)
-;                 (not (wp-unused ?cc1))
-;                 (not (wp-unused ?cc2))
-;                 (not (wp-unused ?cc3))
-;                 (wp-cap-color ?cc1  ?color)
-;                 (wp-cap-color ?cc2  ?color)
-;                 (wp-cap-color ?cc3  ?color)
-;            )
-;  )
-
 	(:action wp-get
-		:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side)
-		:precondition (and (at ?r ?m ?side) (can-hold ?r) (wp-at ?wp ?m ?side)
-                    (locked ?m) (wp-usable ?wp))
-		:effect (and (not (wp-at ?wp ?m ?side)) (holding ?r ?wp) (not (can-hold ?r))
-								 (not (mps-state ?m READY-AT-OUTPUT)) (mps-state ?m IDLE))
+		:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side ?hold - workpiece)
+		:precondition (and (comp-state gripper CALIBRATED)
+											 (at ?r ?m ?side)
+											 (wp-usable ?wp)
+											 (or (wp-at ?wp ?m ?side)
+											     (mps-side-free ?m ?side)
+											 )
+											 (or (holding ?r ?hold)
+											     (can-hold ?r)
+											 )
+									)
+		:effect (and (when (and (wp-at ?wp ?m ?side)
+                    				(locked ?m) 
+								 			 )
+											 (and (not (wp-at ?wp ?m ?side)) 
+											 			(holding ?r ?wp)
+											 			(mps-side-free ?m ?side)
+														(not (can-hold ?r))
+								 						(not (mps-state ?m READY-AT-OUTPUT)) 
+														(mps-state ?m IDLE)
+											 )
+								 )
+								 (when (holding ?r ?hold)
+								       (and (not (holding ?r ?hold)))
+								 )
+								 (when (not (wp-at ?wp ?m ?side))
+								       (can-hold ?r)
+								 )
+						)
 	)
 
 	(:action wp-put
-		:parameters (?r - robot ?wp - workpiece ?m - mps)
-		:precondition (and (at ?r ?m INPUT) (mps-state ?m IDLE) (locked ?m)
-										(wp-usable ?wp) (holding ?r ?wp))
-		:effect (and (wp-at ?wp ?m INPUT) (not (holding ?r ?wp)) (can-hold ?r))
+		:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side ?wp-there - workpiece)
+		:precondition (and (comp-state gripper CALIBRATED)
+											 (at ?r ?m ?side)
+											 (locked ?m)
+											 (or (mps-side-free ?m ?side)
+											     (wp-at ?wp-there ?m ?side)
+											 )
+											 (or (holding ?r ?wp)
+											     (can-hold ?r)
+											 )
+									)
+		:effect (and (when (and (holding ?r ?wp)
+								 						(wp-usable ?wp)
+								 						(mps-side-free ?m ?side)
+								 			 )
+											 (and (wp-at ?wp ?m INPUT)
+											      (not (mps-side-free ?m ?side))
+											 			(not (holding ?r ?wp)) 
+														(can-hold ?r)
+											 )
+								 )
+								 (when (and (holding ?r ?wp)
+								            (not (mps-side-free ?m ?side)))
+								       (and (not (holding ?r ?wp))
+								            (can-hold ?r)
+								       )
+						     )
+						)
 	)
 
 	(:action wp-put-slide-cc
 		:parameters (?r - robot ?wp - cap-carrier ?m - mps ?rs-before - ring-num ?rs-after - ring-num)
-		:precondition (and (mps-type ?m RS) (not (mps-state BROKEN))
-							(at ?r ?m INPUT)
-							(wp-usable ?wp)
-							(holding ?r ?wp)
-							(rs-filled-with ?m ?rs-before)
-							(rs-inc ?rs-before ?rs-after))
-		:effect (and (not (wp-usable ?wp))
-					(not (holding ?r ?wp))
-					(can-hold ?r)
-					(not (rs-filled-with ?m ?rs-before))
-					(rs-filled-with ?m ?rs-after))
+		:precondition (and (comp-state gripper CALIBRATED)
+							         (mps-type ?m RS) 
+							         (locked ?m)
+							         (at ?r ?m INPUT)
+							         (rs-filled-with ?m ?rs-before)
+							         (rs-inc ?rs-before ?rs-after)
+							         (or (holding ?r ?wp)
+							             (can-hold ?r)
+							         )
+							    )
+		:effect (and (when (and (wp-usable ?wp)
+								      (holding ?r ?wp)
+					 	     )
+						    (and (not (wp-usable ?wp))
+								     (not (holding ?r ?wp))
+								     (can-hold ?r)
+								     (not (rs-filled-with ?m ?rs-before))
+								     (rs-filled-with ?m ?rs-after)
+						    )
+					 )
+				)
 	)
+
 
 	(:action fulfill-order-c0
 		:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate
@@ -429,7 +591,6 @@
 		:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate
 		             ?basecol - base-color ?capcol - cap-color
 		             ?ring1col - ring-color ?ring2col - ring-color)
-
 		:precondition (and (wp-at ?wp ?m INPUT) (wp-usable ?wp)
 											 (mps-type ?m DS) (locked ?m)
 											 (ds-prepared-order ?m ?ord)
@@ -442,7 +603,6 @@
 		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT))
                  (not (ds-prepared-order ?m ?ord))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
-
 	)
 
 	(:action fulfill-order-c3
@@ -466,51 +626,283 @@
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
 	)
 
-        (:action move-node
-			:parameters (?r - robot ?z - zone)
-			:precondition (self ?r)
-			:effect (self ?r)
-	)
 
-	(:action explore-zone
-			:parameters (?r - robot ?z - zone)
-			:precondition (self ?r)
-			:effect (self ?r)
-	)
+  (:action refill-shelf
+    :parameters (?m - mps ?spot - shelf-spot ?cc1 - cap-carrier
+                 ?color - cap-color)
+    :precondition (and (spot-free ?m ?spot) (locked ?m)
+                        (wp-unused ?cc1)
+                  )
+    :effect (and (not (spot-free ?m ?spot) )
+                 (wp-on-shelf ?cc1 ?m ?spot)
+                 (not (wp-unused ?cc1))
+                 (wp-cap-color ?cc1  ?color)
+            )
+  )
 
   (:action lock
     :parameters (?name - object)
-    :precondition (not (locked ?name))
-    :effect (locked ?name)
+    :precondition (and (not (locked ?name)))
+    :effect (and (locked ?name)
+			)
   )
+
   (:action one-time-lock
     :parameters (?name - object)
-    :precondition (not (locked ?name))
-    :effect (locked ?name)
+    :precondition (and (not (locked ?name)))
+    :effect (and (locked ?name)
+			)
   )
+
   (:action unlock
     :parameters (?name - object)
-    :precondition (locked ?name)
-    :effect (not (locked ?name))
+    :precondition (and (locked ?name))
+    :effect (and (not (locked ?name))
+			)
   )
+
   (:action eventually-unlock
     :parameters (?name - object)
-    :precondition (locked ?name)
-    :effect (not (locked ?name))
+    :precondition (and (locked ?name))
+    :effect (and (not (locked ?name))
+			)
   )
+
   (:action location-lock
     :parameters (?location - mps ?side - side)
-    :precondition (not (location-locked ?location ?side))
-    :effect (location-locked ?location ?side)
+    :precondition (and (not (location-locked ?location ?side))
+				  )
+    :effect (and (location-locked ?location ?side)
+			)
   )
+
   (:action location-unlock
     :parameters (?location - mps ?side - side)
-    :precondition (location-locked ?location ?side)
-    :effect (not (location-locked ?location ?side))
+    :precondition (and (location-locked ?location ?side)
+				  )
+    :effect (and (not (location-locked ?location ?side))
+			)
   )
+; ----------------------------- sensing actions --------------------------------
+
+(:action check-workpiece
+	:parameters (?r - robot ?m - mps ?side - mps-side)
+	:precondition (and (at ?r ?m ?side)
+										 (comp-state realsense ACTIVATED))
+	:effect ()
+)
+
+(:action drive-to-check-workpiece
+	:parameters (?r - robot ?m - mps ?side - mps-side)
+	:precondition (and (comp-state realsense ACTIVATED)
+										 (comp-state move-base INIT)
+										 (comp-state navgraph LOCALIZED))
+	:effect ()
+)
+
+(:action gripper-is-calibrated
+	:parameters (?r - robot)
+	:precondition ()
+	:effect ()
+)
+
+(:action move-base-is-locked
+	:parameters (?r - robot)
+	:precondition ()
+	:effect ()
+)
+; ----------------------------- action alternatives ----------------------------
+  (:action move-stuck
+    :parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
+    :precondition (and (comp-state move-base LOCKED))
+    :effect ()
+  )
+
+ (:action move-lost
+    :parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side ?real-to - mps ?real-to-side - mps-side)
+    :precondition (and (at ?r ?from ?from-side) 
+                       (location-free ?real-to ?real-to-side) 
+                       (comp-state navgraph INIT))
+    :effect (and (not (at ?r ?from ?from-side)) 
+                 (at ?r ?real-to ?real-to-side) 
+                 (not (location-free ?real-to ?real-to-side)) 
+                 (location-free ?from from-side))
+    )
+
+
+
+  (:action wp-get-decalib
+    :parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side)
+    :precondition (and (comp-state gripper UNCALIBRATED) (at ?r ?m ?side))
+    :effect (and (when (wp-at ?wp ?m ?side) (not (wp-at ?wp ?m ?side)))
+             (when (holding ?r ?wp)
+						       (and (not (holding ?r ?wp))
+									 			(can-hold ?r)
+												(wp-usable ?wp)
+									 )
+						 )
+			)
+  )
+
+  (:action wp-put-decalib
+    :parameters (?r - robot ?wp - workpiece ?m - mps )
+    :precondition (and (comp-state gripper UNCALIBRATED) (at ?r ?m INPUT))
+    :effect (and (when (holding ?r ?wp) 
+											 (and (not (holding ?r ?wp))
+											 			(can-hold ?r)
+														 (not (wp-usable ?wp))
+								 				)
+                 )
+						)
+  )
+
+  (:action wp-put-axis-broken
+    :parameters (?r - robot ?wp - workpiece ?m - mps )
+    :precondition (and (comp-state gripper AXIS-BROKEN) 
+                       (at ?r ?m INPUT)
+                       (or (holding ?r ?wp)
+                           (can-hold ?r)
+                       )
+                  )
+    :effect ()
+  )
+
   (:action expire-locks
     :parameters (?r - robot)
     :precondition (self ?r)
     :effect (self ?r)
   )
+
+  (:action wp-get-shelf-decalib
+		:parameters (?r - robot ?cc - cap-carrier ?m - mps ?spot - shelf-spot)
+		:precondition (and (comp-state gripper UNCALIBRATED) (at ?r ?m INPUT))
+		:effect (and (when (and (wp-on-shelf ?cc ?m ?spot)
+								 			 )
+											 (and (not (wp-on-shelf ?cc ?m ?spot))
+														(wp-usable ?cc)
+                 						(spot-free ?m ?spot)
+											 )
+								 )
+						)
+		
+	)
+  
+  (:action wp-get-shelf-axis-broken
+		:parameters (?r - robot ?cc - cap-carrier ?m - mps ?spot - shelf-spot)
+		:precondition (and (comp-state gripper AXIS-BROKEN) 
+		                   (at ?r ?m INPUT))
+		:effect ()
+		
+	)
+; ----------------------------- exog actions ------------------------------
+
+  (:action drop
+    :parameters (?r - robot ?wp - workpiece)
+    :precondition (holding ?r ?wp)
+    :effect (and (not (holding ?r ?wp))
+								 (can-hold ?r)
+            (increase (total-cost) 1))
+  )
+
+  (:action break_gripper_axis
+ :parameters ()
+ :precondition (or (comp-state gripper CALIBRATED) (comp-state gripper UNCALIBRATED) )
+ :effect (and 
+ (when (comp-state gripper CALIBRATED)
+  (and (not (comp-state gripper CALIBRATED)) (comp-state gripper AXIS-BROKEN) )
+ ) 
+ (when (comp-state gripper UNCALIBRATED)
+  (and (not (comp-state gripper UNCALIBRATED)) (comp-state gripper AXIS-BROKEN) )
+ )  
+ (increase (total-cost) 1)
+ )
+)
+(:action break_gripper_fingers
+ :parameters ()
+ :precondition (or (comp-state gripper CALIBRATED) (comp-state gripper UNCALIBRATED) )
+ :effect (and 
+ (when (comp-state gripper CALIBRATED)
+  (and (not (comp-state gripper CALIBRATED)) (comp-state gripper FINGERS-BROKEN) )
+ ) 
+ (when (comp-state gripper UNCALIBRATED)
+  (and (not (comp-state gripper UNCALIBRATED)) (comp-state gripper FINGERS-BROKEN) )
+ )  
+ (increase (total-cost) 1)
+ )
+)
+(:action break_move_base
+ :parameters ()
+ :precondition (or (comp-state move-base INIT) (comp-state move-base LOCKED) )
+ :effect (and 
+ (when (comp-state move-base INIT)
+  (and (not (comp-state move-base INIT)) (comp-state move-base FAILED) )
+ ) 
+ (when (comp-state move-base LOCKED)
+  (and (not (comp-state move-base LOCKED)) (comp-state move-base FAILED) )
+ )  
+ (increase (total-cost) 1)
+ )
+)
+(:action calibrate
+ :parameters ()
+ :precondition (or (comp-state gripper UNCALIBRATED) )
+ :effect (and 
+ (when (comp-state gripper UNCALIBRATED)
+  (and (not (comp-state gripper UNCALIBRATED)) (comp-state gripper CALIBRATED) )
+ )  
+ (increase (total-cost) 1)
+ )
+)
+(:action localize
+ :parameters ()
+ :precondition (or (comp-state navgraph INIT) )
+ :effect (and 
+ (when (comp-state navgraph INIT)
+  (and (not (comp-state navgraph INIT)) (comp-state navgraph LOCALIZED) )
+ )  
+ (increase (total-cost) 1)
+ )
+)
+(:action lock-move-base
+ :parameters ()
+ :precondition (or (comp-state move-base INIT) )
+ :effect (and 
+ (when (comp-state move-base INIT)
+  (and (not (comp-state move-base INIT)) (comp-state move-base LOCKED) )
+ )  
+ (increase (total-cost) 1)
+ )
+)
+(:action uncalibrate
+ :parameters ()
+ :precondition (or (comp-state gripper CALIBRATED) )
+ :effect (and 
+ (when (comp-state gripper CALIBRATED)
+  (and (not (comp-state gripper CALIBRATED)) (comp-state gripper UNCALIBRATED) )
+ )  
+ (increase (total-cost) 1)
+ )
+)
+(:action unlocalize
+ :parameters ()
+ :precondition (or (comp-state navgraph LOCALIZED) )
+ :effect (and 
+ (when (comp-state navgraph LOCALIZED)
+  (and (not (comp-state navgraph LOCALIZED)) (comp-state navgraph INIT) )
+ )  
+ (increase (total-cost) 1)
+ )
+)
+(:action unlock-movebase
+ :parameters ()
+ :precondition (or (comp-state move-base LOCKED) )
+ :effect (and 
+ (when (comp-state move-base LOCKED)
+  (and (not (comp-state move-base LOCKED)) (comp-state move-base INIT) )
+ )  
+ (increase (total-cost) 1)
+ )
+)
+
+
 )

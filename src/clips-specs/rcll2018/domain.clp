@@ -78,6 +78,31 @@
 	(assert (domain-wm-flushed))
 )
 
+(defrule domain-sensing-actions
+  (not (domain-sensing-action))
+  =>
+  (assert
+    (domain-sensing-action (operator check-workpiece)
+                           (param-names r m side)
+                           (sensed-predicate mps-side-free)
+                           (sensed-param-names m side))
+    (domain-sensing-action (operator drive-to-check-workpiece)
+                           (param-names r m side)
+                           (sensed-predicate mps-side-free)
+                           (sensed-param-names m side))
+    (domain-sensing-action (operator gripper-calibrated)
+                           (sensed-predicate comp-state)
+                           (sensed-param-names comp state)
+                           (sensed-constants gripper CALIBRATED))
+    (domain-sensing-action (operator move-base-is-locked)
+                           (sensed-predicate comp-state)
+                           (sensed-param-names comp state)
+                           (sensed-constants move-base LOCKED))
+  )
+)
+
+>>>>>>> cx: adapt pddl files to diagnosis requirements
+
 (defrule domain-load-initial-facts
 " Load all initial domain facts on startup of the game "
   (domain-loaded)
@@ -157,6 +182,33 @@
     (domain-fact (name self) (param-values ?self))
     (domain-fact (name at) (param-values ?self START INPUT))
     (domain-fact (name can-hold) (param-values ?self))
+
+    (domain-fact (name location-free) (param-values START INPUT))
+    (domain-fact (name location-free) (param-values ?bs INPUT))
+    (domain-fact (name location-free) (param-values ?bs OUTPUT))
+    (domain-fact (name location-free) (param-values ?cs1 INPUT))
+    (domain-fact (name location-free) (param-values ?cs1 OUTPUT))
+    (domain-fact (name location-free) (param-values ?cs2 INPUT))
+    (domain-fact (name location-free) (param-values ?cs2 OUTPUT))
+    (domain-fact (name location-free) (param-values ?ds INPUT))
+    (domain-fact (name location-free) (param-values ?rs1 INPUT))
+    (domain-fact (name location-free) (param-values ?rs1 OUTPUT))
+    (domain-fact (name location-free) (param-values ?rs2 INPUT))
+    (domain-fact (name location-free) (param-values ?rs2 OUTPUT))
+    (domain-fact (name location-free) (param-values ?ss INPUT))
+
+    (domain-fact (name mps-side-free) (param-values ?bs INPUT))
+    (domain-fact (name mps-side-free) (param-values ?bs OUTPUT))
+    (domain-fact (name mps-side-free) (param-values ?cs1 INPUT))
+    (domain-fact (name mps-side-free) (param-values ?cs1 OUTPUT))
+    (domain-fact (name mps-side-free) (param-values ?cs2 INPUT))
+    (domain-fact (name mps-side-free) (param-values ?cs2 OUTPUT))
+    (domain-fact (name mps-side-free) (param-values ?ds INPUT))
+    (domain-fact (name mps-side-free) (param-values ?rs1 INPUT))
+    (domain-fact (name mps-side-free) (param-values ?rs1 OUTPUT))
+    (domain-fact (name mps-side-free) (param-values ?rs2 INPUT))
+    (domain-fact (name mps-side-free) (param-values ?rs2 OUTPUT))
+    (domain-fact (name mps-side-free) (param-values ?ss INPUT))
 
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
