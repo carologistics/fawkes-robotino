@@ -68,6 +68,7 @@ fawkes/meta_plugins:
     - hardware-models
     - pddl-diagnosis
     - pddl-planner
+    - clips-active-diagnosis
     - clips_robot_memory
     - clips-pddl-parser
     - clips-executive

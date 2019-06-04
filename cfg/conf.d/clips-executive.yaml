@@ -91,6 +91,8 @@ clips-executive:
             files: ["BATCH|robmem-wait-init.clp"]
             wait-for: robmem-initialized
           - name: robot_memory
+          - name: hardware-models
+          - name: active-diagnosis
         stage-3:
           - name: utils
             file: rcll2018/utils.clp
@@ -146,6 +148,8 @@ clips-executive:
             #files:
           - name: hardware-models
             file: rcll2018/hardware-models.clp
+          - name: diagnosis-sensing-actions
+            file: rcll2018/diagnosis.clp
 
       action-mapping:
         enter-field: >
