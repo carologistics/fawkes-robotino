@@ -99,14 +99,16 @@ def paint(lines, red_lines, red_dotted_lines, sizes, interpret_xy):
     for line in lines:
         draw.line([interpret_xy(line[0]),interpret_xy(line[1])],fill=(0,0,0))
     for line in red_lines:
-        draw.line([interpret_xy(line[0]),interpret_xy(line[1])],fill=(255,0,0))
+        draw.line([interpret_xy(line[0]),interpret_xy(line[1])],fill=(255,0,0), width=3)
     for line in red_dotted_lines:
         line_start = np.array(interpret_xy(line[0]))
         line_end = np.array(interpret_xy(line[1]))
         line_length = np.sqrt(np.sum((line_end - line_start)**2))
         line_fraction_per_dot = 4/line_length
         dots = [tuple(fraction*line_end + (1-fraction) * line_start) for fraction in np.arange(0,1,line_fraction_per_dot)]
-        draw.point(dots,fill=(255,0,0))
+        bboxes = [[(dot[0]-1,dot[1]-1),(dot[0]+1,dot[1]+1)] for dot in dots]
+        for bbox in bboxes:
+            draw.ellipse(bbox,fill=(255,0,0))
     return im
 
 def get_origin(sizes,interpret_xy):
