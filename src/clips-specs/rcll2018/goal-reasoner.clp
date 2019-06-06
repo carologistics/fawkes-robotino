@@ -474,6 +474,140 @@
   (modify ?g (mode EVALUATED))
 )
 
+(defrule goal-reasoner-evaluate-fill-cap
+" After a successull fill cap goal, the mps has to be prepared
+  as soon as it is possible. Add a mps-handling request fact.
+"
+  ?g <- (goal (id ?goal-id) (class FILL-CAP)
+            (mode FINISHED) 
+            (outcome COMPLETED)
+            (params robot ?robot 
+                    mps ?mps
+                    cc ?cc)
+        )
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+  =>
+  (assert
+    (wm-fact (key mps-handling prepare prepare-cs ?mps args? ?mps RETRIEVE_CAP))
+    (wm-fact (key mps-handling process cs-retrieve-cap ?mps args? ?mps ?cc ?cap-color))
+  )
+  (modify ?g (mode EVALUATED))
+)
+
+(defrule goal-reasoner-evaluate-produce-c0
+" After a successull produce c0 goal, the mps has to be prepared
+  as soon as it is possible. Add a mps-handling request fact.
+"
+  ?g <- (goal (class PRODUCE-C0) (mode FINISHED) (outcome COMPLETED)
+              (params robot ?robot
+                        bs ?bs
+                        bs-side ?bs-side
+                        bs-color ?base-color
+                        mps ?mps
+                        cs-color ?cap-color
+                        order ?order
+                        wp ?spawned-wp))
+  =>
+  (assert
+    (wm-fact (key mps-handling prepare prepare-cs ?mps args? ?mps MOUNT_CAP))
+    (wm-fact (key mps-handling process cs-mount-cap ?mps args? ?mps ?spawned-wp ?cap-color))
+  )
+  (modify ?g (mode EVALUATED))
+)
+
+(defrule goal-reasoner-evaluate-mount-first-ring
+" After a successull mount first ring goal, the mps has to be prepared
+  as soon as it is possible. Add a mps-handling request fact.
+"
+  ?g <- (goal (id ?goal-id) (class MOUNT-FIRST-RING) (mode FINISHED) (outcome COMPLETED)
+             (params robot ?robot
+                      bs ?bs
+                      bs-side ?bs-side
+                      bs-color ?base-color
+                      mps ?mps
+                      ring-color ?ring-color
+                      rs-before ?rs-before
+                      rs-after ?rs-after
+                      rs-req ?rs-req
+                      order ?order
+                      wp ?spawned-wp
+             ))
+  =>
+  (assert
+    (wm-fact (key mps-handling prepare prepare-rs ?mps args? ?mps ?ring-color ?rs-before ?rs-after ?rs-req))
+    (wm-fact (key mps-handling process rs-mount-ring1 ?mps args? ?mps ?spawned-wp ?ring-color ?rs-before ?rs-after ?rs-req))
+  )
+  (modify ?g (mode EVALUATED))
+)
+
+(defrule goal-reasoner-evaluate-mount-next-ring
+" After a successull mount next ring goal, the mps has to be prepared
+  as soon as it is possible. Add a mps-handling request fact.
+"
+  ?g <- (goal (mode FINISHED) (outcome COMPLETED) (id ?goal-id)
+              (class MOUNT-NEXT-RING)
+              (params robot ?robot
+                      prev-rs ?prev-rs
+                      prev-rs-side ?prev-rs-side
+                      wp ?wp
+                      rs ?rs
+                      ring1-color ?ring1-color
+                      ring2-color ?ring2-color
+                      ring3-color ?ring3-color
+                      curr-ring-color ?curr-ring-color
+                      ring-pos ?ring-pos
+                      rs-before ?rs-before
+                      rs-after ?rs-after
+                      rs-req ?rs-req
+                      order ?order
+              ))
+  =>
+    (bind ?mount-ring-action-name (sym-cat rs-mount-ring ?ring-pos))
+    (switch ?ring-pos
+      (case 1 then
+        (bind ?mount-ring-param-names m wp col rs-before rs-after r-req)
+        (bind ?mount-ring-param-values ?rs ?wp ?curr-ring-color ?rs-before ?rs-after ?rs-req))
+      (case 2 then
+        (bind ?mount-ring-param-names m wp col col1 rs-before rs-after r-req)
+        (bind ?mount-ring-param-values ?rs ?wp ?curr-ring-color ?ring1-color ?rs-before ?rs-after ?rs-req))
+      (case 3 then
+        (bind ?mount-ring-param-names m wp col col1 col2 rs-before rs-after r-req)
+        (bind ?mount-ring-param-values ?rs ?wp ?curr-ring-color ?ring1-color ?ring2-color ?rs-before ?rs-after ?rs-req))
+     (default
+        (printout t "ERROR, goal params of MOUNT-NEXT-RING are wrong" crlf)))
+  (assert
+    (wm-fact (key mps-handling prepare prepare-rs ?rs args? ?rs ?curr-ring-color ?rs-before ?rs-after ?rs-req))
+    (wm-fact (key mps-handling process ?mount-ring-action-name ?rs args? ?mount-ring-param-values))
+  )
+  (modify ?g (mode EVALUATED))
+)
+
+(defrule goal-reasoner-evaluate-process-mps
+  ?g <- (goal (class PROCESS-MPS) (mode FINISHED) (outcome COMPLETED) (params m ?mps))
+  ?pre <- (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
+  ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
+  =>
+  (retract ?pre ?pro)
+  (modify ?g (mode EVALUATED))
+)
+
+(defrule goal-reasoner-evaluate-produce-cx
+  ?g <- (goal (mode SELECTED) (parent ?parent) (id ?goal-id) (class PRODUCE-CX)
+              (params robot ?robot
+                      wp ?wp
+                      rs ?rs
+                      mps ?mps
+                      cs-color ?cap-color
+                      order ?order
+              ))
+  =>
+  (assert
+    (wm-fact (key mps-handling prepare prepare-cs ?mps args? ?mps MOUNT_CAP))
+    (wm-fact (key mps-handling process cs-mount-cap ?mps args? ?mps ?wp ?cap-color))
+  )
+  (modify ?g (mode EVALUATED))
+)
+
 
 ; ================================= Goal Clean up ============================
 
