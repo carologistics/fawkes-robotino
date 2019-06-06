@@ -213,6 +213,20 @@
   (goal-tree-assert-run-endless PRODUCTION-MAINTAIN 1)
 )
 
+(defrule goal-production-create-mps-handling-maintain
+" The parent mps handling goal. Allows formulation of
+  mps handling goals, if requested by a production goal.
+"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (domain-facts-loaded)
+  (not (goal (class MPS-HANLDING-MAINTAIN)))
+  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
+  (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
+  (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  =>
+  (goal-tree-assert-run-endless MPS-HANDLING-MAINTAIN 1)
+)
 
 (defrule goal-production-create-wait
   "Keep waiting at one of the waiting positions."
@@ -1234,7 +1248,7 @@
                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
   =>
   (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
-  (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
+ (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
                 (class DISCARD-UNKNOWN) (sub-type SIMPLE)
                 (priority ?*PRIORITY-RESET*)
                 (parent ?production-id)
@@ -1243,7 +1257,7 @@
                 )
                 (required-resources ?wp)
   ))
-  (retract ?t)
+  (retract ?t) 
 )
 
 
@@ -1320,6 +1334,29 @@
   ))
 )
 
+(defrule goal-production-mps-handling-create-prepare-goal
+  "Prepare and model processing of a mps"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?pg <- (goal (id ?mps-handling-id) (class MPS-HANDLING-MAINTAIN) (mode SELECTED))
+  ;Robot CEs
+  (wm-fact (key domain fact self args? r ?robot))
+  ;Requested process CEs
+  (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
+  (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
+  ;MPS CEs
+  (wm-fact (key domain fact mps-state args? m ?mps s IDLE))
+  (not (wm-fact (key domain fact wp-at args? wp ? m ?mps side OUTPUT)))
+  =>
+   (assert (goal (id (sym-cat PROCESS-MPS- ?mps - (gensym*)))
+                (class PROCESS-MPS) (sub-type SIMPLE)
+                (priority ?*PRIORITY-RESET*)
+                (parent ?mps-handling-id)
+                (params m ?mps
+                )
+                (required-resources)
+  ))
+  (modify ?pg (mode EXPANDED))
+)
 
 (defrule goal-production-hack-failed-enter-field
   "HACK: Stop trying to enter the field when it failed a few times."
