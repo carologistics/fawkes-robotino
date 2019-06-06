@@ -1351,7 +1351,7 @@
                 (parent ?mps-handling-id)
                 (params m ?mps
                 )
-                (required-resources)
+                (required-resources (sym-cat prepare- ?mps))
   ))
   (modify ?pg (mode EXPANDED))
 )
