@@ -106,7 +106,7 @@ def paint(lines, red_lines, red_dotted_lines, sizes, interpret_xy):
         line_length = np.sqrt(np.sum((line_end - line_start)**2))
         line_fraction_per_dot = 4/line_length
         dots = [tuple(fraction*line_end + (1-fraction) * line_start) for fraction in np.arange(0,1,line_fraction_per_dot)]
-        bboxes = [[(dot[0]-1,dot[1]-1),(dot[0]+1,dot[1]+1)] for dot in dots]
+        bboxes = [[(round(dot[0]-1),round(dot[1]-1)),(round(dot[0]+1),round(dot[1]+1))] for dot in dots]
         for bbox in bboxes:
             draw.ellipse(bbox,fill=(255,0,0))
     return im
@@ -119,7 +119,7 @@ def get_origin(sizes,interpret_xy):
 def paint_command(command):
     lines, red_lines, red_dotted_lines, min_x, min_y, max_x, max_y = parse(command)
     sizes = [max_x-min_x + x_margin*2, max_y-min_y + y_margin*2]    
-    interpret_xy = lambda xy: (xy[0]-min_x+x_margin,sizes[1]-(xy[1]-min_y+y_margin))
+    interpret_xy = lambda xy: (round(xy[0]-min_x+x_margin),round(sizes[1]-(xy[1]-min_y+y_margin)))
     image = paint(lines, red_lines, red_dotted_lines, sizes, interpret_xy)
     origin = get_origin(sizes,interpret_xy)
 
