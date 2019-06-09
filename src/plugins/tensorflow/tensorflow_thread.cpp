@@ -33,13 +33,53 @@ using namespace fawkes;
  */
 TensorflowThread::TensorflowThread(std::string cfg_name)
     : Thread("TensorflowThread", Thread::OPMODE_WAITFORWAKEUP),
-      cfg_name_(cfg_name) {}
+      BlackBoardInterfaceListener("TensorflowThread(%s)", cfg_name.c_str()),
+      cfg_name_(cfg_name), graph_(nullptr), source_(nullptr) {}
 
-void TensorflowThread::init() { load_config(); }
+void TensorflowThread::init() {
+  tensorflow_if_ = blackboard->open_for_reading<TensorflowInterface>(
+      "Tensorflow", cfg_name_.c_str());
 
-void TensorflowThread::loop() {}
+  // maybe bbil_add_message_interface(tensorflow_if_);
+  blackboard->register_listener(this);
 
-void TensorflowThread::finalize() {}
+  load_config();
+}
+
+void TensorflowThread::loop() {
+  tensorflow_if_->read();
+  while (!tensorflow_if_->msgq_empty()) {
+    if (tensorflow_if_
+            ->msgq_first_is<TensorflowInterface::LoadGraphFileMessage>()) {
+      TensorflowInterface::LoadGraphFileMessage *msg =
+          tensorflow_if_->msgq_first(msg);
+      this->graph_input_node_ = std::string(msg->input_node());
+      this->graph_output_node_ = std::string(msg->output_node());
+      this->load_graph(std::string(msg->file_path()));
+
+    } else if (tensorflow_if_->msgq_first_is<
+                   TensorflowInterface::SetSourceImageSHMMessage>()) {
+      TensorflowInterface::SetSourceImageSHMMessage *msg =
+          tensorflow_if_->msgq_first(msg);
+      this->set_source_image_shm(
+          std::string(msg->shm_id()), std::string(msg->hostname()),
+          msg->is_normalize(), msg->norm_mean(), msg->norm_std(), msg->width(),
+          msg->height(), msg->image_dtype());
+
+    } else if (tensorflow_if_
+                   ->msgq_first_is<TensorflowInterface::TriggerRunMessage>()) {
+      TensorflowInterface::TriggerRunMessage *msg =
+          tensorflow_if_->msgq_first(msg);
+      this->run_graph_once(msg->id());
+
+    } else {
+      logger->log_error(name(), "Unhandled message");
+    }
+    tensorflow_if_->msgq_pop();
+  }
+}
+
+void TensorflowThread::finalize() { this->delete_graph(); }
 
 void TensorflowThread::load_config() {
   logger->log_info(name(), "load config");

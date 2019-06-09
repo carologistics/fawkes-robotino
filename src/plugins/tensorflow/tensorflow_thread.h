@@ -63,8 +63,23 @@ public:
 
 private:
   std::string cfg_name_;
+  TF_Graph *graph_;
+  TF_Plugin_Loader *source_;
+
+  std::string graph_file_name_;
+  std::string graph_input_node_;
+  std::string graph_output_node_;
+
+  fawkes::TensorflowInterface *tensorflow_if_;
 
   void load_config();
+  void load_graph(std::string);
+  void set_source_image_shm(std::string shm_id, std::string their_hostname,
+                            bool normalize, double norm_mean, double norm_std,
+                            unsigned int width, unsigned int height,
+                            unsigned int image_dtype);
+  void run_graph_once(unsigned int msg_id);
+  void delete_graph();
 };
 
 #endif
