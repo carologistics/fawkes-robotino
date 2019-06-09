@@ -64,6 +64,17 @@ private:
   firevision::colorspace_t should_colorspace_;
   unsigned int width_, height_;
 
+  void resize(const unsigned char *in_buffer, unsigned char *out_buffer,
+              firevision::colorspace_t colorspace, unsigned int old_width,
+              unsigned int old_height, unsigned int new_width,
+              unsigned int new_height);
+  void convert(const unsigned char *in_buffer, unsigned char *out_buffer,
+               firevision::colorspace_t old_colorspace,
+               firevision::colorspace_t new_colorspace, unsigned int width,
+               unsigned int height);
+
+  template <typename T> void normalize(T *buffer, size_t size);
+
   int colorspace_to_cv_type(firevision::colorspace_t colorspace);
   BASE_TYPE colorspace_to_base_type(firevision::colorspace_t colorspace);
   bool normalize_;

@@ -22,6 +22,8 @@
 #include <exception>
 #include <memory>
 
+#include <fvutils/color/conversions.h>
+
 TF_Plugin_Image_SHM_Loader::TF_Plugin_Image_SHM_Loader(
     std::string name, fawkes::Logger *logger, std::string shm_id,
     firevision::colorspace_t expected_colorspace, unsigned int width,
@@ -34,6 +36,26 @@ TF_Plugin_Image_SHM_Loader::TF_Plugin_Image_SHM_Loader(
 TF_Plugin_Image_SHM_Loader::~TF_Plugin_Image_SHM_Loader() {}
 
 bool TF_Plugin_Image_SHM_Loader::verify() { return true; }
+
+void TF_Plugin_Image_SHM_Loader::resize(
+    const unsigned char *in_buffer, unsigned char *out_buffer,
+    firevision::colorspace_t colorspace, unsigned int old_width,
+    unsigned int old_height, unsigned int new_width, unsigned int new_height) {
+  int type = colorspace_to_cv_type(colorspace);                 // wonderful
+  cv::Mat src(old_width, old_height, type, (void *)in_buffer);  // use AUTO_STEP
+  cv::Mat dst(new_width, new_height, type, (void *)out_buffer); // use AUTO_STEP
+  cv::resize(src, dst, dst.size(), /* compute scaling factors by dstsize */ 0,
+             0, /*interpolation*/ cv::INTER_LINEAR);
+}
+
+void TF_Plugin_Image_SHM_Loader::convert(
+    const unsigned char *in_buffer, unsigned char *out_buffer,
+    firevision::colorspace_t old_colorspace,
+    firevision::colorspace_t new_colorspace, unsigned int width,
+    unsigned int height) {
+  firevision::convert(old_colorspace, new_colorspace, in_buffer, out_buffer,
+                      width, height);
+}
 
 int TF_Plugin_Image_SHM_Loader::colorspace_to_cv_type(
     firevision::colorspace_t colorspace) {
@@ -118,4 +140,14 @@ TF_Plugin_Image_SHM_Loader::colorspace_to_base_type(
     return BASE_TYPE::TYPE_UCHAR;
   }
   return BASE_TYPE::TYPE_UNSUPPORTED;
+}
+
+template <typename T>
+void TF_Plugin_Image_SHM_Loader::normalize(T *buffer, size_t size) {
+  size /= sizeof(T);
+  T mean = static_cast<T>(normalize_mean_);
+  T std = static_cast<T>(normalize_std_);
+  for (size_t i = 0; i < size; i++) {
+    buffer[i] = ((buffer[i] - mean) / std);
+  }
 }
