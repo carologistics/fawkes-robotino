@@ -44,6 +44,149 @@ TF_Plugin_Image_SHM_Loader::~TF_Plugin_Image_SHM_Loader() {
 
 bool TF_Plugin_Image_SHM_Loader::verify() { return true; }
 
+const void *TF_Plugin_Image_SHM_Loader::read() {
+  shm_cam_->capture();
+  unsigned char *image_buffer = shm_cam_->buffer();
+  bool own_buffer = false;
+
+  // resize is necessary if in and out image sizes do not coincide
+  bool must_resize = (shm_cam_->pixel_width() != width_ ||
+                      shm_cam_->pixel_height() != height_);
+
+  // converting before resizing can per se only happen when must_resize is
+  // activated Even then, it should only happen when the cam colorspace is not
+  // usable for resizing
+  bool must_preconvert =
+      must_resize ? (colorspace_to_cv_type(shm_cam_->colorspace()) < 0) : false;
+  // The preconvert should convert in a  colorspace usable for resizing
+  // If the should_colorspace is usable it is taken, otherwise RGB is used
+  // For convenience in the postconvert, if no resize is done, this variable
+  // still contains the colorspace at start of post_convert
+  firevision::colorspace_t preconvert_to =
+      must_preconvert ? (colorspace_to_cv_type(should_colorspace_) >= 0
+                             ? should_colorspace_
+                             : firevision::colorspace_t::RGB)
+                      : shm_cam_->colorspace();
+
+  // Postconvert only needs to be executed when the colorspace after the
+  // potential resize stage does not coincide with the output colorspace
+  bool must_postconvert = preconvert_to != should_colorspace_;
+
+  // convert the image into the right colorspace
+  if (must_preconvert) {
+    unsigned char *old_image_buffer = image_buffer;
+    unsigned char *new_image_buffer = new unsigned char[colorspace_buffer_size(
+        preconvert_to, width_, height_)];
+    try {
+      convert(old_image_buffer, new_image_buffer, shm_cam_->colorspace(),
+              preconvert_to, width_, height_);
+    } catch (std::exception &e) {
+      if (own_buffer)
+        delete[] old_image_buffer;
+      delete[] new_image_buffer;
+    }
+    if (own_buffer)
+      delete[] old_image_buffer;
+    image_buffer = new_image_buffer;
+    own_buffer = true;
+  }
+
+  // sample down to should be image size
+  //
+  if (must_resize) {
+    unsigned char *old_image_buffer = image_buffer;
+    unsigned char *new_image_buffer = new unsigned char[colorspace_buffer_size(
+        preconvert_to, width_, height_)];
+    try {
+      resize(old_image_buffer, new_image_buffer, preconvert_to,
+             shm_cam_->pixel_width(), shm_cam_->pixel_height(), width_,
+             height_);
+    } catch (std::exception &e) {
+      if (own_buffer)
+        delete[] old_image_buffer;
+      delete[] new_image_buffer;
+    }
+    if (own_buffer)
+      delete[] old_image_buffer;
+    image_buffer = new_image_buffer;
+    own_buffer = true;
+  }
+
+  // convert the image into the right colorspace
+  if (must_postconvert) {
+    unsigned char *old_image_buffer = image_buffer;
+    unsigned char *new_image_buffer = new unsigned char[colorspace_buffer_size(
+        should_colorspace_, width_, height_)];
+    try {
+      convert(old_image_buffer, new_image_buffer, preconvert_to,
+              should_colorspace_, width_, height_);
+    } catch (std::exception &e) {
+      if (own_buffer)
+        delete[] old_image_buffer;
+      delete[] new_image_buffer;
+    }
+    if (own_buffer)
+      delete[] old_image_buffer;
+    image_buffer = new_image_buffer;
+    own_buffer = true;
+  }
+
+  if (normalize_) {
+    try {
+      switch (colorspace_to_base_type(should_colorspace_)) {
+      default:
+      case TYPE_UNSUPPORTED:
+        logger_->log_error(name_.c_str(), "Unsupported type for normalizing");
+        break;
+      case TYPE_UINT:
+        normalize(reinterpret_cast<unsigned int *>(image_buffer),
+                  colorspace_buffer_size(should_colorspace_, width_, height_));
+        break;
+      case TYPE_INT:
+        normalize(reinterpret_cast<int *>(image_buffer),
+                  colorspace_buffer_size(should_colorspace_, width_, height_));
+        break;
+      case TYPE_FLOAT:
+        normalize(reinterpret_cast<float *>(image_buffer),
+                  colorspace_buffer_size(should_colorspace_, width_, height_));
+        break;
+      case TYPE_DOUBLE:
+        normalize(reinterpret_cast<double *>(image_buffer),
+                  colorspace_buffer_size(should_colorspace_, width_, height_));
+        break;
+      case TYPE_UCHAR:
+        normalize(reinterpret_cast<unsigned char *>(image_buffer),
+                  colorspace_buffer_size(should_colorspace_, width_, height_));
+        break;
+      case TYPE_CHAR:
+        normalize(reinterpret_cast<char *>(image_buffer),
+                  colorspace_buffer_size(should_colorspace_, width_, height_));
+        break;
+      case TYPE_CHAR16:
+        normalize(reinterpret_cast<char16_t *>(image_buffer),
+                  colorspace_buffer_size(should_colorspace_, width_, height_));
+        break;
+      }
+    } catch (std::exception &e) {
+      if (own_buffer)
+        delete[] image_buffer;
+    }
+  }
+
+  if (own_final_buffer_)
+    delete[] final_buffer_; // do this just in case the user of this class did
+                            // not call the post_read method
+  own_final_buffer_ = true;
+  final_buffer_ = image_buffer;
+  return final_buffer_;
+}
+
+void TF_Plugin_Image_SHM_Loader::post_read() {
+  if (own_final_buffer_)
+    delete[] final_buffer_;
+  own_final_buffer_ = false; // make double delete not possible
+}
+
 void TF_Plugin_Image_SHM_Loader::resize(
     const unsigned char *in_buffer, unsigned char *out_buffer,
     firevision::colorspace_t colorspace, unsigned int old_width,

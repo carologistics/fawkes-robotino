@@ -50,6 +50,19 @@ public:
    */
   virtual ~TF_Plugin_Image_SHM_Loader();
 
+  /** Function to verify the objects integrity
+   * @return true if object is ok, false if not
+   */
+  virtual bool verify();
+
+  /** Function to clean up after the buffer returned by read() was used
+   */
+  virtual void post_read();
+  /** Function to read the image from the SHM buffer
+   * @return Pointer to the image buffer
+   */
+  virtual const void *read();
+
 protected:
 private:
   typedef enum {
@@ -79,6 +92,10 @@ private:
 
   int colorspace_to_cv_type(firevision::colorspace_t colorspace);
   BASE_TYPE colorspace_to_base_type(firevision::colorspace_t colorspace);
+
+  bool own_final_buffer_;
+  unsigned char *final_buffer_;
+
   bool normalize_;
   double normalize_mean_;
   double normalize_std_;
