@@ -20,6 +20,9 @@
 
 #include "tensorflow_thread.h"
 #include "interfaces/TensorflowInterface.h"
+#include <unistd.h>
+
+#include "image_shm_loader.h"
 
 using namespace fawkes;
 
@@ -77,6 +80,22 @@ void TensorflowThread::loop() {
     }
     tensorflow_if_->msgq_pop();
   }
+}
+
+void TensorflowThread::load_graph(std::string file_name) {
+  this->delete_graph();
+  graph_ = tf_utils::LoadGraph(file_name.c_str());
+
+  if (graph_ == nullptr) {
+    logger->log_error(name(), "Could not import the graph");
+  }
+
+  this->graph_file_name_ = file_name;
+}
+
+void TensorflowThread::delete_graph() {
+  if (graph_ != nullptr)
+    TF_DeleteGraph(graph_);
 }
 
 void TensorflowThread::finalize() { this->delete_graph(); }
