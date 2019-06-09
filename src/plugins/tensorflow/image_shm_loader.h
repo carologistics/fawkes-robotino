@@ -21,6 +21,7 @@
 #ifndef IMAGE_SHM_LOADER
 #define IMAGE_SHM_LOADER
 #include "loader.h"
+#include <opencv/cv.hpp>
 
 /** Class for loading Image data from SHM buffer
  */
@@ -50,9 +51,21 @@ public:
 
 protected:
 private:
+  typedef enum {
+    TYPE_UNSUPPORTED = 0,
+    TYPE_UINT = 1,
+    TYPE_INT = 2,
+    TYPE_FLOAT = 3,
+    TYPE_DOUBLE = 4,
+    TYPE_UCHAR = 5,
+    TYPE_CHAR = 6,
+    TYPE_CHAR16 = 7,
+  } BASE_TYPE;
   firevision::colorspace_t should_colorspace_;
   unsigned int width_, height_;
 
+  int colorspace_to_cv_type(firevision::colorspace_t colorspace);
+  BASE_TYPE colorspace_to_base_type(firevision::colorspace_t colorspace);
   bool normalize_;
   double normalize_mean_;
   double normalize_std_;

@@ -34,3 +34,88 @@ TF_Plugin_Image_SHM_Loader::TF_Plugin_Image_SHM_Loader(
 TF_Plugin_Image_SHM_Loader::~TF_Plugin_Image_SHM_Loader() {}
 
 bool TF_Plugin_Image_SHM_Loader::verify() { return true; }
+
+int TF_Plugin_Image_SHM_Loader::colorspace_to_cv_type(
+    firevision::colorspace_t colorspace) {
+  switch (colorspace) {
+  case firevision::colorspace_t::CS_UNKNOWN:
+  case firevision::colorspace_t::YUV411_PLANAR:
+  case firevision::colorspace_t::YUV411_PACKED:
+  case firevision::colorspace_t::YUV420_PLANAR:
+  case firevision::colorspace_t::YUY2:
+  case firevision::colorspace_t::YVY2:
+  case firevision::colorspace_t::YUV422_PACKED:
+  case firevision::colorspace_t::YUV444_PACKED:
+  case firevision::colorspace_t::YVU444_PACKED:
+  case firevision::colorspace_t::YUV422_PLANAR:
+  case firevision::colorspace_t::YUV422_PLANAR_QUARTER:
+  case firevision::colorspace_t::BAYER_MOSAIC_RGGB:
+  case firevision::colorspace_t::BAYER_MOSAIC_GBRG:
+  case firevision::colorspace_t::BAYER_MOSAIC_GRBG:
+  case firevision::colorspace_t::BAYER_MOSAIC_BGGR:
+  case firevision::colorspace_t::RAW16:
+  case firevision::colorspace_t::RGB_PLANAR:
+  case firevision::colorspace_t::CARTESIAN_3D_FLOAT:
+  case firevision::colorspace_t::CARTESIAN_3D_DOUBLE:
+  case firevision::colorspace_t::CARTESIAN_3D_FLOAT_RGB:
+  default:
+    logger_->log_error(name_.c_str(),
+                       "Should not use %s for anything here right now",
+                       colorspace_to_string(colorspace));
+    return -1;
+
+  case firevision::colorspace_t::BGR:
+  case firevision::colorspace_t::RGB:
+    return CV_8UC3;
+
+  case firevision::colorspace_t::MONO8:
+  case firevision::colorspace_t::GRAY8:
+    return CV_8UC1;
+
+  case firevision::colorspace_t::RGB_WITH_ALPHA:
+  case firevision::colorspace_t::BGR_WITH_ALPHA:
+    return CV_8UC4;
+  }
+  return -1;
+}
+
+TF_Plugin_Image_SHM_Loader::BASE_TYPE
+TF_Plugin_Image_SHM_Loader::colorspace_to_base_type(
+    firevision::colorspace_t colorspace) {
+  switch (colorspace) {
+  case firevision::colorspace_t::CS_UNKNOWN:
+  case firevision::colorspace_t::YUV411_PLANAR:
+  case firevision::colorspace_t::YUV411_PACKED:
+  case firevision::colorspace_t::YUV420_PLANAR:
+  case firevision::colorspace_t::YUY2:
+  case firevision::colorspace_t::YVY2:
+  case firevision::colorspace_t::YUV422_PACKED:
+  case firevision::colorspace_t::YUV444_PACKED:
+  case firevision::colorspace_t::YVU444_PACKED:
+  case firevision::colorspace_t::YUV422_PLANAR:
+  case firevision::colorspace_t::YUV422_PLANAR_QUARTER:
+  case firevision::colorspace_t::BAYER_MOSAIC_RGGB:
+  case firevision::colorspace_t::BAYER_MOSAIC_GBRG:
+  case firevision::colorspace_t::BAYER_MOSAIC_GRBG:
+  case firevision::colorspace_t::BAYER_MOSAIC_BGGR:
+  case firevision::colorspace_t::RAW16:
+  case firevision::colorspace_t::RGB_PLANAR:
+  case firevision::colorspace_t::CARTESIAN_3D_FLOAT:
+  case firevision::colorspace_t::CARTESIAN_3D_DOUBLE:
+  case firevision::colorspace_t::CARTESIAN_3D_FLOAT_RGB:
+  default:
+    logger_->log_error(name_.c_str(),
+                       "Should not use %s for anything here right now",
+                       colorspace_to_string(colorspace));
+    return BASE_TYPE::TYPE_UNSUPPORTED;
+
+  case firevision::colorspace_t::RGB_WITH_ALPHA:
+  case firevision::colorspace_t::BGR_WITH_ALPHA:
+  case firevision::colorspace_t::MONO8:
+  case firevision::colorspace_t::GRAY8:
+  case firevision::colorspace_t::BGR:
+  case firevision::colorspace_t::RGB:
+    return BASE_TYPE::TYPE_UCHAR;
+  }
+  return BASE_TYPE::TYPE_UNSUPPORTED;
+}
