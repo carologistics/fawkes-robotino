@@ -21,6 +21,7 @@
 #ifndef IMAGE_SHM_LOADER
 #define IMAGE_SHM_LOADER
 #include "loader.h"
+#include <fvcams/shmem.h>
 #include <opencv/cv.hpp>
 
 /** Class for loading Image data from SHM buffer
@@ -61,6 +62,7 @@ private:
     TYPE_CHAR = 6,
     TYPE_CHAR16 = 7,
   } BASE_TYPE;
+  firevision::SharedMemoryCamera *shm_cam_;
   firevision::colorspace_t should_colorspace_;
   unsigned int width_, height_;
 

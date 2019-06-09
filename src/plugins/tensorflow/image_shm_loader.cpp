@@ -31,9 +31,16 @@ TF_Plugin_Image_SHM_Loader::TF_Plugin_Image_SHM_Loader(
     : TF_Plugin_Loader(name, logger), should_colorspace_(expected_colorspace),
       width_(width), height_(height), own_final_buffer_(false),
       normalize_(normalize), normalize_mean_(norm_mean),
-      normalize_std_(norm_std) {}
+      normalize_std_(norm_std) {
+  shm_cam_ =
+      new firevision::SharedMemoryCamera(shm_id.c_str(), /* deep_copy */ true);
+}
 
-TF_Plugin_Image_SHM_Loader::~TF_Plugin_Image_SHM_Loader() {}
+TF_Plugin_Image_SHM_Loader::~TF_Plugin_Image_SHM_Loader() {
+  delete shm_cam_;
+  if (own_final_buffer_)
+    delete[] final_buffer_;
+}
 
 bool TF_Plugin_Image_SHM_Loader::verify() { return true; }
 
