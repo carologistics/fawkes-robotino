@@ -27,14 +27,19 @@
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <aspect/vision.h>
+#include <blackboard/interface_listener.h>
 #include <core/threading/mutex.h>
 #include <core/threading/thread.h>
 #include <string>
 
+#include <interfaces/TensorflowInterface.h>
+
 // config handling
 #include <config/change_handler.h>
 
-#include <libtensorflow/c_api.h>
+#include "tf_utils.h"
+
+#include "loader.h"
 
 namespace fawkes {
 class TensorflowInterface;
@@ -44,10 +49,12 @@ class TensorflowThread : public fawkes::Thread,
                          public fawkes::LoggingAspect,
                          public fawkes::ConfigurableAspect,
                          public fawkes::BlackBoardAspect,
+                         public fawkes::BlackBoardInterfaceListener,
                          // public fawkes::VisionAspect,
                          // public fawkes::ConfigurationChangeHandler,
                          public fawkes::ClockAspect {
 public:
+  /** Constructor */
   TensorflowThread(std::string cfg_name);
 
   virtual void init();
