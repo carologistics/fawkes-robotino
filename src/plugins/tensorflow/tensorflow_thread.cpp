@@ -128,3 +128,55 @@ void TensorflowThread::set_source_image_shm(std::string shm_id,
     source_ = nullptr;
   }
 }
+
+void TensorflowThread::run_graph_once(unsigned int msg_id) {
+  if (this->graph_ == nullptr) {
+    logger->log_error(name(), "Graph was not initialized");
+    return;
+  }
+  if (this->source_ == nullptr) {
+    logger->log_error(name(), "Source was not initialized");
+    return;
+  }
+  TF_Output input_op = {
+      TF_GraphOperationByName(graph_, graph_input_node_.c_str()), 0};
+  TF_Output output_op = {
+      TF_GraphOperationByName(graph_, graph_input_node_.c_str()), 0};
+
+  if (input_op.oper == nullptr) {
+    logger->log_error(name(), "Cannot init input_op");
+  }
+  if (output_op.oper == nullptr) {
+    logger->log_error(name(), "Cannot init output_op");
+  }
+
+  const void *input_vals = source_->read();
+  int64_t ndim[3] = {1, 2, 3};
+  TF_Tensor *input_tensor =
+      tf_utils::CreateTensor(TF_FLOAT, ndim, 3, input_vals, 400);
+  source_->post_read();
+
+  if (input_tensor == nullptr) {
+    logger->log_error(name(), "Creating input tensor went wrong");
+    return;
+  }
+
+  TF_Tensor *output_tensor = nullptr;
+
+  TF_Session *sess = tf_utils::CreateSession(graph_);
+  if (sess == nullptr) {
+    logger->log_error(name(), "Creating session was not successful");
+    return;
+  }
+
+  TF_Code session_run_code = tf_utils::RunSession(
+      sess, &input_op, &input_tensor, 1, &output_op, &output_tensor, 1);
+  if (session_run_code != TF_OK) {
+    logger->log_error(name(), "Running session was not successful");
+    return;
+  }
+
+  tf_utils::DeleteSession(sess);
+  tf_utils::DeleteTensor(input_tensor);
+  tf_utils::DeleteTensor(output_tensor);
+}
