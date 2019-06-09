@@ -1,12 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE interface SYSTEM "interface.dtd">
 <interface name="TensorflowInterface" author="Morian Sonnet" year="2019">
-  <constant>
-  </constant>
   <data>
     <comment>
-        Interface to acces tensorflow plugin
+        Interface to access tensorflow plugin
     </comment>
-    <field type="float" name="dummy">Dummy data entry</field>
+    <field type="uint32" name="int_result" length="15">Results of type integer</field>
+    <field type="float" name="float_result" length="15">Results of type float</field>
+    <field type="uint32" name="msgid">The ID of the triggering message to which the classification result refers</field>
+      <!--TODO give more flexible possibilites for output-->
   </data>
+  <message name="LoadGraphFile">
+    <comment>Load a neural network from a file</comment>
+    <field type="string" length="256" name="file_path">The file including the network</field>
+    <field type="string" length="256" name="input_node">The name of the input node in the graph</field>
+    <field type="string" length="256" name="output_node">The name of the output node in the graph</field>
+  </message>
+  <message name="SetSourceImageSHM">
+    <comment>Use image data from this SHM as source. The data is only actually read upon triggering the run.</comment>
+    <field type="string" length="256" name="shm_id">The SHM key to use as source</field>
+    <field type="string" length="256" name="hostname">The hostname on which the SHM resides</field>
+    <field type="bool" name="normalize">Whether the image shall be normalized</field>
+    <field type="float" name="norm_mean">Mean for normalization</field>
+    <field type="float" name="norm_std">Std for normalization</field>
+    <field type="uint32" name="width">Width of image after conversion</field>
+    <field type="uint32" name="height">Height of image after conversion</field>
+    <field type="uint32" name="image_dtype">Dtype of image after conversion</field>
+  </message>
+    <!--TODO give other possibilities for source-->
+  <message name="TriggerRun">
+    <comment>Trigger a run of the network</comment>
+  </message>
+
 </interface>
