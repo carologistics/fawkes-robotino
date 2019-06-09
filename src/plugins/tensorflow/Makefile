@@ -16,14 +16,23 @@
 BASEDIR = ../../..
 
 include $(BASEDIR)/etc/buildsys/config.mk
-include $(BUILDCONFDIR)/tf/tf.mk
+include $(BUILDSYSDIR)/fvconf.mk
+
+CFLAGS   += $(VISION_CFLAGS)
+LDFLAGS  += $(VISION_LDFLAGS)
+INCDIRS  += $(VISION_INCDIRS)
+LIBDIRS  += $(VISION_LIBDIRS)
+LIBS     += $(VISION_LIBS)
+
+CFLAGS	 += $(CFLAGS_OPENCV)
+LDFLAGS  += $(LDFLAGS_OPENCV)
 
 PRESUBDIRS = interfaces 
 
-LIBS_tensorflow = fawkescore fawkesutils fawkesaspects fvutils \
+LIBS_tensorflow = fawkescore fawkesutils fawkesaspects fvutils fvcams \
 	       fawkestf fawkesinterface fawkesblackboard \
 	       TensorflowInterface
-OBJS_tensorflow = tensorflow_plugin.o tensorflow_thread.o
+OBJS_tensorflow = tensorflow_plugin.o tensorflow_thread.o tf_utils.o loader.o image_shm_loader.o
 
 OBJS_all    = $(OBJS_tensorflow)
 
@@ -31,6 +40,7 @@ CFLAGS  += $(CFLAGS_TF)  -DIS_SLIM_BUILD -std=c++11
 LDFLAGS += $(LDFLAGS_TF)  -ltensorflow -lstdc++ -lm -lz  -ldl
 
 PLUGINS_all = $(PLUGINDIR)/tensorflow.$(SOEXT)
+PLUGINS_build = $(PLUGINS_all)
 
 
 
