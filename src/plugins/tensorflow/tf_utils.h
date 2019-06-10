@@ -35,7 +35,7 @@
 #include <cstdint>
 #include <vector>
 
-#include <libtensorflow/c_api.h>
+#include <tensorflow/c/c_api.h>
 
 namespace tf_utils {
 
