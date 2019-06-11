@@ -27,23 +27,45 @@
 TF_Plugin_Image_Loader::TF_Plugin_Image_Loader(
     std::string name, fawkes::Logger *logger,
     firevision::colorspace_t expected_colorspace, unsigned int width,
-    unsigned int height, bool normalize, double norm_mean, double norm_std)
+    unsigned int height, bool normalize, double norm_mean, double norm_std,
+    bool late_open, bool late_start)
     : TF_Plugin_Loader(name, logger), should_colorspace_(expected_colorspace),
       width_(width), height_(height), own_final_buffer_(false),
       normalize_(normalize), normalize_mean_(norm_mean),
-      normalize_std_(norm_std) {
-}
+      normalize_std_(norm_std), late_open_(late_open),
+      late_start_(late_start || late_open) {}
 
 TF_Plugin_Image_Loader::~TF_Plugin_Image_Loader() {
+  if (!late_start_)
+    cam_->stop();
+  if (!late_open_)
+    cam_->close();
   delete cam_;
   if (own_final_buffer_)
     delete[] final_buffer_;
 }
 
 // TODO: check cam more detailed here
-bool TF_Plugin_Image_Loader::verify() { return true; }
+bool TF_Plugin_Image_Loader::verify() {
+  try {
+    cam_->open();
+    cam_->start();
+    if (late_start_)
+      cam_->stop();
+    if (late_open_)
+      cam_->close();
+  } catch (fawkes::Exception &e) {
+    logger_->log_error(name_.c_str(), "Could not init source: %s", e.what());
+    return false;
+  }
+  return true;
+}
 
 const void *TF_Plugin_Image_Loader::read() {
+  if (late_open_)
+    cam_->open();
+  if (late_start_)
+    cam_->start();
   cam_->capture();
   unsigned char *image_buffer = cam_->buffer();
   bool own_buffer = false;
@@ -183,6 +205,10 @@ const void *TF_Plugin_Image_Loader::read() {
 }
 
 void TF_Plugin_Image_Loader::post_read() {
+  if (late_start_)
+    cam_->stop();
+  if (late_open_)
+    cam_->close();
   if (own_final_buffer_)
     delete[] final_buffer_;
   own_final_buffer_ = false; // make double delete not possible

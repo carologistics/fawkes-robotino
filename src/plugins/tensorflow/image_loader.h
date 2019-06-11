@@ -55,12 +55,15 @@ protected:
    * @param normalize Whether the output image shall be normalized
    * @param norm_mean Mean value for normalization
    * @param norm_std StD value for normalization
+   * @param late_start Whether the camera is started at creation or later
+   * @param late_open whether the camera is opened at creation or later (Note:
+   * Start always happens after opening. late_open thus takes precedence.)
    */
   TF_Plugin_Image_Loader(std::string name, fawkes::Logger *logger,
                              firevision::colorspace_t expected_colorspace,
                              unsigned int width, unsigned int height,
                              bool normalize = false, double norm_mean = 0.0,
-                             double norm_std = 0.0);
+                             double norm_std = 0.0, late_open=false, late_start=false);
 
   /** fvcam which is used as source */
   firevision::Camera *cam_;
@@ -98,6 +101,9 @@ private:
   bool normalize_;
   double normalize_mean_;
   double normalize_std_;
+
+  bool late_open_;
+  bool late_start_;
 };
 
 #endif
