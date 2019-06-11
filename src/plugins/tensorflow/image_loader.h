@@ -60,13 +60,15 @@ protected:
    * Start always happens after opening. late_open thus takes precedence.)
    */
   TF_Plugin_Image_Loader(std::string name, fawkes::Logger *logger,
-                             firevision::colorspace_t expected_colorspace,
-                             unsigned int width, unsigned int height,
-                             bool normalize = false, double norm_mean = 0.0,
-                             double norm_std = 0.0, late_open=false, late_start=false);
+                         firevision::colorspace_t expected_colorspace,
+                         unsigned int width, unsigned int height,
+                         bool normalize = false, double norm_mean = 0.0,
+                         double norm_std = 0.0, bool late_open = false,
+                         bool late_start = false);
 
   /** fvcam which is used as source */
   firevision::Camera *cam_;
+
 private:
   typedef enum {
     TYPE_UNSUPPORTED = 0,

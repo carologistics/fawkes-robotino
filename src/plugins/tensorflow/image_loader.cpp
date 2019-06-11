@@ -71,8 +71,8 @@ const void *TF_Plugin_Image_Loader::read() {
   bool own_buffer = false;
 
   // resize is necessary if in and out image sizes do not coincide
-  bool must_resize = (cam_->pixel_width() != width_ ||
-                      cam_->pixel_height() != height_);
+  bool must_resize =
+      (cam_->pixel_width() != width_ || cam_->pixel_height() != height_);
 
   // converting before resizing can per se only happen when must_resize is
   // activated Even then, it should only happen when the cam colorspace is not
@@ -120,8 +120,7 @@ const void *TF_Plugin_Image_Loader::read() {
         preconvert_to, width_, height_)];
     try {
       resize(old_image_buffer, new_image_buffer, preconvert_to,
-             cam_->pixel_width(), cam_->pixel_height(), width_,
-             height_);
+             cam_->pixel_width(), cam_->pixel_height(), width_, height_);
     } catch (std::exception &e) {
       if (own_buffer)
         delete[] old_image_buffer;
@@ -200,7 +199,6 @@ const void *TF_Plugin_Image_Loader::read() {
   own_final_buffer_ = true;
   final_buffer_ = image_buffer;
 
-
   return final_buffer_;
 }
 
@@ -225,11 +223,11 @@ void TF_Plugin_Image_Loader::resize(
              0, /*interpolation*/ cv::INTER_LINEAR);
 }
 
-void TF_Plugin_Image_Loader::convert(
-    const unsigned char *in_buffer, unsigned char *out_buffer,
-    firevision::colorspace_t old_colorspace,
-    firevision::colorspace_t new_colorspace, unsigned int width,
-    unsigned int height) {
+void TF_Plugin_Image_Loader::convert(const unsigned char *in_buffer,
+                                     unsigned char *out_buffer,
+                                     firevision::colorspace_t old_colorspace,
+                                     firevision::colorspace_t new_colorspace,
+                                     unsigned int width, unsigned int height) {
   firevision::convert(old_colorspace, new_colorspace, in_buffer, out_buffer,
                       width, height);
 }
