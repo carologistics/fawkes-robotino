@@ -43,10 +43,10 @@ TensorflowThread::TensorflowThread(std::string cfg_name)
       cfg_name_(cfg_name), graph_(nullptr), source_(nullptr) {}
 
 void TensorflowThread::init() {
-  tensorflow_if_ = blackboard->open_for_reading<TensorflowInterface>(
+  tensorflow_if_ = blackboard->open_for_writing<TensorflowInterface>(
       "Tensorflow", cfg_name_.c_str());
 
-  // maybe bbil_add_message_interface(tensorflow_if_);
+  bbil_add_message_interface(tensorflow_if_);
   blackboard->register_listener(this);
 
   load_config();
