@@ -40,7 +40,7 @@ import yaml
 
 class MapTool:
     def __init__(self):
-        self.app = QApplication(sys.argv)
+        self.app = QApplication(sys.argv) 
         self.window = uic.loadUi("./window.ui")
         self.highlight = ''
         try:
@@ -75,14 +75,12 @@ class MapTool:
                 'insert_right_hole' :1,
                 'middle_hole_left' : 2}
 
-        for name in self.values.keys():
+        for name in self.values.keys(): # initialize all edit elements in the GUI
             edit = self.window.findChild(QLineEditFocus,name)
             edit.setText('{:.2f}'.format(self.values[name]))
             edit.focusInSignal.connect(lambda name = name : self.focus(name))
             edit.editingFinished.connect(self.create_string)
             edit.setValidator(QDoubleValidator())
-
-
 
         self.window.createString.clicked.connect(self.dehighlight_reread)
         self.window.saveMap.clicked.connect(self.save_map)
@@ -94,33 +92,37 @@ class MapTool:
 
         self.create_string()
 
-
         sys.exit(self.app.exec_())
 
+    # this is called after the command string was manually manipulated
     def create_custom_string(self):
-        print("hello")
         self.map_string = self.window.mapString.text()
         self.update()
 
+    # paint the command string and display it
     def show_command(self,command):
         self.image, self.origin = mt.paint_command(command)
         self.pixmap = ImageQt.toqpixmap(self.image)
         self.window.map.setPixmap(self.pixmap)
 
+    # focus on a specific line element
     def focus(self,highlight):
         self.highlight = highlight
         self.create_string()
 
+    # remove highlights, but reread. This removes some dead code in the command string, but also deletes all manual manipulations of the command string
     def dehighlight_reread(self):
         self.highlight = ''
         self.create_string()
 
+    # just remote all highlights by eliminating all asterisks
     def dehighlight(self):
         self.highlight = ''
         self.map_string = self.map_string.replace('*','')
         self.window.mapString.setText(self.map_string)
         self.update()
 
+    # function to create the command string for the map, including highlighted element
     def create_string(self):
         def stringify(f):
             return "{:.2f}".format(f)
@@ -196,6 +198,8 @@ class MapTool:
     def update(self):
         self.show_command(self.map_string)
 
+    # function the save the map image and some more helping information
+    # the origin is displayed in a additional message box
     def save_map(self):
         self.dehighlight()
         self.image.save('map.png')
@@ -216,13 +220,5 @@ class MapTool:
         with open('values.yaml','w') as f:
             yaml.dump(self.values, f, default_flow_style=False)
         
-
-
-
-
-        
-
-
-
 if __name__ == '__main__':
     MapTool()
