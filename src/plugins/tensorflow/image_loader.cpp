@@ -112,6 +112,7 @@ const void *TF_Plugin_Image_Loader::read() {
       if (own_buffer)
         delete[] old_image_buffer;
       delete[] new_image_buffer;
+      throw;
     }
     if (own_buffer)
       delete[] old_image_buffer;
@@ -132,6 +133,7 @@ const void *TF_Plugin_Image_Loader::read() {
       if (own_buffer)
         delete[] old_image_buffer;
       delete[] new_image_buffer;
+      throw;
     }
     if (own_buffer)
       delete[] old_image_buffer;
@@ -151,6 +153,7 @@ const void *TF_Plugin_Image_Loader::read() {
       if (own_buffer)
         delete[] old_image_buffer;
       delete[] new_image_buffer;
+      throw;
     }
     if (own_buffer)
       delete[] old_image_buffer;
@@ -197,6 +200,7 @@ const void *TF_Plugin_Image_Loader::read() {
     } catch (std::exception &e) {
       if (own_buffer)
         delete[] image_buffer;
+      throw;
     }
   }
 
