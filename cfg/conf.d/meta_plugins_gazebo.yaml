@@ -61,13 +61,7 @@ fawkes/meta_plugins:
   gazsim-meta-clips-exec:
     - gazsim-meta-robotino-ros
     - gazsim-meta-robotino-ros-movebase
-    - m-clips
-    - m-robot-memory
-    - pddl-robot-memory
-    - clips_robot_memory
-    - clips-pddl-parser
-    - clips-executive
-    - clips-executive-rest-api
+    - m-clips-executive
 
   m-skill-sim-clips-exec:
     - skiller-simulator
