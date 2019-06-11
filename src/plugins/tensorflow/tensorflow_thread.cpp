@@ -22,6 +22,8 @@
 #include "interfaces/TensorflowInterface.h"
 #include <unistd.h>
 
+#include <iostream>
+
 #include "image_file_loader.h"
 #include "image_shm_loader.h"
 #include "image_v4l2_loader.h"
@@ -235,9 +237,17 @@ void TensorflowThread::run_graph_once(unsigned int msg_id) {
   TF_Code session_run_code = tf_utils::RunSession(
       sess, &input_op, &input_tensor, 1, &output_op, &output_tensor, 1);
   if (session_run_code != TF_OK) {
-    logger->log_error(name(), "Running session was not successful");
+    logger->log_error(name(),
+                      "Running session was not successful, return value %d",
+                      session_run_code);
     return;
   }
+
+  const auto tensor_data = static_cast<float *>(TF_TensorData(output_tensor));
+
+  for (int i = 0; i < 10; ++i)
+    std::cout << tensor_data[i] << ' ';
+  std::cout << std::endl;
 
   tf_utils::DeleteSession(sess);
   tf_utils::DeleteTensor(input_tensor);
