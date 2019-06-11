@@ -118,7 +118,11 @@ void TensorflowThread::delete_graph() {
     TF_DeleteGraph(graph_);
 }
 
-void TensorflowThread::finalize() { this->delete_graph(); }
+void TensorflowThread::finalize() {
+  if (source_ != nullptr)
+    delete source_;
+  this->delete_graph();
+}
 
 void TensorflowThread::load_config() {
   logger->log_info(name(), "load config");
