@@ -24,7 +24,7 @@ COMPILE_COMMAND = arduino-builder -hardware=/usr/share/arduino/hardware -tools=/
 
 Compiled/fawkes_plugin_comm.ino.hex: fawkes_plugin_comm.ino accstepper
 	mkdir -p Compiled
-	$(COMPILE_COMMAND) || $(COMPILE_COMMAND)
+	$(COMPILE_COMMAND) || $(COMPILE_COMMAND) # sometimes compilation breaks, due to https://github.com/arduino/arduino-builder/issues/67. Repeating compilation normally resolves the compilation error
 
 flash: Compiled/fawkes_plugin_comm.ino.hex
 	avrdude  -patmega328p -carduino -P$(DEV_ARDUINO) -B 10 -F -Uflash:w:$<:i
