@@ -1,5 +1,5 @@
 /***************************************************************************
- *  image_shm_loader.cpp - Loader for image from SHM
+ *  image_loader.cpp - Loader for image
  *
  *  Created: Thu May 5 10:23:50 2019
  *  Copyright  2019 Morian Sonnet
@@ -18,46 +18,45 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include "image_shm_loader.h"
+#include "image_loader.h"
 #include <exception>
 #include <memory>
 
 #include <fvutils/color/conversions.h>
 
-TF_Plugin_Image_SHM_Loader::TF_Plugin_Image_SHM_Loader(
-    std::string name, fawkes::Logger *logger, std::string shm_id,
+TF_Plugin_Image_Loader::TF_Plugin_Image_Loader(
+    std::string name, fawkes::Logger *logger,
     firevision::colorspace_t expected_colorspace, unsigned int width,
     unsigned int height, bool normalize, double norm_mean, double norm_std)
     : TF_Plugin_Loader(name, logger), should_colorspace_(expected_colorspace),
       width_(width), height_(height), own_final_buffer_(false),
       normalize_(normalize), normalize_mean_(norm_mean),
       normalize_std_(norm_std) {
-  shm_cam_ =
-      new firevision::SharedMemoryCamera(shm_id.c_str(), /* deep_copy */ true);
 }
 
-TF_Plugin_Image_SHM_Loader::~TF_Plugin_Image_SHM_Loader() {
-  delete shm_cam_;
+TF_Plugin_Image_Loader::~TF_Plugin_Image_Loader() {
+  delete cam_;
   if (own_final_buffer_)
     delete[] final_buffer_;
 }
 
-bool TF_Plugin_Image_SHM_Loader::verify() { return true; }
+// TODO: check cam more detailed here
+bool TF_Plugin_Image_Loader::verify() { return true; }
 
-const void *TF_Plugin_Image_SHM_Loader::read() {
-  shm_cam_->capture();
-  unsigned char *image_buffer = shm_cam_->buffer();
+const void *TF_Plugin_Image_Loader::read() {
+  cam_->capture();
+  unsigned char *image_buffer = cam_->buffer();
   bool own_buffer = false;
 
   // resize is necessary if in and out image sizes do not coincide
-  bool must_resize = (shm_cam_->pixel_width() != width_ ||
-                      shm_cam_->pixel_height() != height_);
+  bool must_resize = (cam_->pixel_width() != width_ ||
+                      cam_->pixel_height() != height_);
 
   // converting before resizing can per se only happen when must_resize is
   // activated Even then, it should only happen when the cam colorspace is not
   // usable for resizing
   bool must_preconvert =
-      must_resize ? (colorspace_to_cv_type(shm_cam_->colorspace()) < 0) : false;
+      must_resize ? (colorspace_to_cv_type(cam_->colorspace()) < 0) : false;
   // The preconvert should convert in a  colorspace usable for resizing
   // If the should_colorspace is usable it is taken, otherwise RGB is used
   // For convenience in the postconvert, if no resize is done, this variable
@@ -66,7 +65,7 @@ const void *TF_Plugin_Image_SHM_Loader::read() {
       must_preconvert ? (colorspace_to_cv_type(should_colorspace_) >= 0
                              ? should_colorspace_
                              : firevision::colorspace_t::RGB)
-                      : shm_cam_->colorspace();
+                      : cam_->colorspace();
 
   // Postconvert only needs to be executed when the colorspace after the
   // potential resize stage does not coincide with the output colorspace
@@ -78,7 +77,7 @@ const void *TF_Plugin_Image_SHM_Loader::read() {
     unsigned char *new_image_buffer = new unsigned char[colorspace_buffer_size(
         preconvert_to, width_, height_)];
     try {
-      convert(old_image_buffer, new_image_buffer, shm_cam_->colorspace(),
+      convert(old_image_buffer, new_image_buffer, cam_->colorspace(),
               preconvert_to, width_, height_);
     } catch (std::exception &e) {
       if (own_buffer)
@@ -99,7 +98,7 @@ const void *TF_Plugin_Image_SHM_Loader::read() {
         preconvert_to, width_, height_)];
     try {
       resize(old_image_buffer, new_image_buffer, preconvert_to,
-             shm_cam_->pixel_width(), shm_cam_->pixel_height(), width_,
+             cam_->pixel_width(), cam_->pixel_height(), width_,
              height_);
     } catch (std::exception &e) {
       if (own_buffer)
@@ -178,16 +177,18 @@ const void *TF_Plugin_Image_SHM_Loader::read() {
                             // not call the post_read method
   own_final_buffer_ = true;
   final_buffer_ = image_buffer;
+
+
   return final_buffer_;
 }
 
-void TF_Plugin_Image_SHM_Loader::post_read() {
+void TF_Plugin_Image_Loader::post_read() {
   if (own_final_buffer_)
     delete[] final_buffer_;
   own_final_buffer_ = false; // make double delete not possible
 }
 
-void TF_Plugin_Image_SHM_Loader::resize(
+void TF_Plugin_Image_Loader::resize(
     const unsigned char *in_buffer, unsigned char *out_buffer,
     firevision::colorspace_t colorspace, unsigned int old_width,
     unsigned int old_height, unsigned int new_width, unsigned int new_height) {
@@ -198,7 +199,7 @@ void TF_Plugin_Image_SHM_Loader::resize(
              0, /*interpolation*/ cv::INTER_LINEAR);
 }
 
-void TF_Plugin_Image_SHM_Loader::convert(
+void TF_Plugin_Image_Loader::convert(
     const unsigned char *in_buffer, unsigned char *out_buffer,
     firevision::colorspace_t old_colorspace,
     firevision::colorspace_t new_colorspace, unsigned int width,
@@ -207,7 +208,7 @@ void TF_Plugin_Image_SHM_Loader::convert(
                       width, height);
 }
 
-int TF_Plugin_Image_SHM_Loader::colorspace_to_cv_type(
+int TF_Plugin_Image_Loader::colorspace_to_cv_type(
     firevision::colorspace_t colorspace) {
   switch (colorspace) {
   case firevision::colorspace_t::CS_UNKNOWN:
@@ -247,12 +248,13 @@ int TF_Plugin_Image_SHM_Loader::colorspace_to_cv_type(
   case firevision::colorspace_t::RGB_WITH_ALPHA:
   case firevision::colorspace_t::BGR_WITH_ALPHA:
     return CV_8UC4;
+
   }
   return -1;
 }
 
-TF_Plugin_Image_SHM_Loader::BASE_TYPE
-TF_Plugin_Image_SHM_Loader::colorspace_to_base_type(
+TF_Plugin_Image_Loader::BASE_TYPE
+TF_Plugin_Image_Loader::colorspace_to_base_type(
     firevision::colorspace_t colorspace) {
   switch (colorspace) {
   case firevision::colorspace_t::CS_UNKNOWN:
@@ -288,12 +290,13 @@ TF_Plugin_Image_SHM_Loader::colorspace_to_base_type(
   case firevision::colorspace_t::BGR:
   case firevision::colorspace_t::RGB:
     return BASE_TYPE::TYPE_UCHAR;
+
   }
   return BASE_TYPE::TYPE_UNSUPPORTED;
 }
 
 template <typename T>
-void TF_Plugin_Image_SHM_Loader::normalize(T *buffer, size_t size) {
+void TF_Plugin_Image_Loader::normalize(T *buffer, size_t size) {
   size /= sizeof(T);
   T mean = static_cast<T>(normalize_mean_);
   T std = static_cast<T>(normalize_std_);

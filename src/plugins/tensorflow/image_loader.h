@@ -1,5 +1,5 @@
 /***************************************************************************
- *  image_shm_loader.h - Loader for image from SHM
+ *  image_loader.h - Loader for image from fvcam
  *
  *  Created: Thu May 5 10:23:50 2019
  *  Copyright  2019 Morian Sonnet
@@ -18,37 +18,19 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#ifndef IMAGE_SHM_LOADER
-#define IMAGE_SHM_LOADER
+#ifndef IMAGE_LOADER
+#define IMAGE_LOADER
 #include "loader.h"
-#include <fvcams/shmem.h>
+#include <fvcams/camera.h>
 #include <opencv/cv.hpp>
 
 /** Class for loading Image data from SHM buffer
  */
-class TF_Plugin_Image_SHM_Loader : public TF_Plugin_Loader {
+class TF_Plugin_Image_Loader : public TF_Plugin_Loader {
 public:
-  /** Constructor
-   * @param name Name of the calling thread, used for logging functionalities
-   * @param logger Logger of the calling thread
-   * @param shm_id The ID of the SHM buffer where the image resides
-   * @param expected_colorspace Colorspace of output image
-   * @param width Pixel width of output image
-   * @param height Pixel height of output image
-   * @param normalize Whether the output image shall be normalized
-   * @param norm_mean Mean value for normalization
-   * @param norm_std StD value for normalization
-   */
-  TF_Plugin_Image_SHM_Loader(std::string name, fawkes::Logger *logger,
-                             std::string shm_id,
-                             firevision::colorspace_t expected_colorspace,
-                             unsigned int width, unsigned int height,
-                             bool normalize = false, double norm_mean = 0.0,
-                             double norm_std = 0.0);
-
   /** Destructor
    */
-  virtual ~TF_Plugin_Image_SHM_Loader();
+  virtual ~TF_Plugin_Image_Loader();
 
   /** Function to verify the objects integrity
    * @return true if object is ok, false if not
@@ -64,6 +46,24 @@ public:
   virtual const void *read();
 
 protected:
+  /** Constructor
+   * @param name Name of the calling thread, used for logging functionalities
+   * @param logger Logger of the calling thread
+   * @param expected_colorspace Colorspace of output image
+   * @param width Pixel width of output image
+   * @param height Pixel height of output image
+   * @param normalize Whether the output image shall be normalized
+   * @param norm_mean Mean value for normalization
+   * @param norm_std StD value for normalization
+   */
+  TF_Plugin_Image_Loader(std::string name, fawkes::Logger *logger,
+                             firevision::colorspace_t expected_colorspace,
+                             unsigned int width, unsigned int height,
+                             bool normalize = false, double norm_mean = 0.0,
+                             double norm_std = 0.0);
+
+  /** fvcam which is used as source */
+  firevision::Camera *cam_;
 private:
   typedef enum {
     TYPE_UNSUPPORTED = 0,
@@ -75,7 +75,6 @@ private:
     TYPE_CHAR = 6,
     TYPE_CHAR16 = 7,
   } BASE_TYPE;
-  firevision::SharedMemoryCamera *shm_cam_;
   firevision::colorspace_t should_colorspace_;
   unsigned int width_, height_;
 
