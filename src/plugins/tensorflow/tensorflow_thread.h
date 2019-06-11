@@ -79,6 +79,14 @@ private:
                             bool normalize, double norm_mean, double norm_std,
                             unsigned int width, unsigned int height,
                             unsigned int image_dtype);
+  void set_source_image_file(std::string file_name, bool normalize,
+                             double norm_mean, double norm_std,
+                             unsigned int width, unsigned int height,
+                             unsigned int image_dtype);
+  void set_source_image_v4l2(std::string device_name, bool normalize,
+                             double norm_mean, double norm_std,
+                             unsigned int width, unsigned int height,
+                             unsigned int image_dtype);
   void pre_set_source();
   void post_set_source();
   void run_graph_once(unsigned int msg_id);

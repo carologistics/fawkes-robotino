@@ -72,6 +72,23 @@ void TensorflowThread::loop() {
           msg->is_normalize(), msg->norm_mean(), msg->norm_std(), msg->width(),
           msg->height(), msg->image_dtype());
 
+    } else if (tensorflow_if_->msgq_first_is<
+                   TensorflowInterface::SetSourceImageFileMessage>()) {
+      TensorflowInterface::SetSourceImageFileMessage *msg =
+          tensorflow_if_->msgq_first(msg);
+      this->set_source_image_file(
+          std::string(msg->file_name()), msg->is_normalize(), msg->norm_mean(),
+          msg->norm_std(), msg->width(), msg->height(), msg->image_dtype());
+
+    } else if (tensorflow_if_->msgq_first_is<
+                   TensorflowInterface::SetSourceImageV4L2Message>()) {
+      TensorflowInterface::SetSourceImageV4L2Message *msg =
+          tensorflow_if_->msgq_first(msg);
+      this->set_source_image_v4l2(std::string(msg->device_name()),
+                                  msg->is_normalize(), msg->norm_mean(),
+                                  msg->norm_std(), msg->width(), msg->height(),
+                                  msg->image_dtype());
+
     } else if (tensorflow_if_
                    ->msgq_first_is<TensorflowInterface::TriggerRunMessage>()) {
       TensorflowInterface::TriggerRunMessage *msg =
@@ -143,6 +160,28 @@ void TensorflowThread::set_source_image_shm(std::string shm_id,
 
   source_ = new TF_Plugin_Image_SHM_Loader(
       std::string(name()), logger, shm_id,
+      (firevision::colorspace_t)image_dtype, width, height, normalize,
+      norm_mean, norm_std);
+  this->post_set_source();
+}
+
+void TensorflowThread::set_source_image_file(
+    std::string file_name, bool normalize, double norm_mean, double norm_std,
+    unsigned int width, unsigned int height, unsigned int image_dtype) {
+  this->pre_set_source();
+  source_ = new TF_Plugin_Image_File_Loader(
+      std::string(name()), logger, file_name,
+      (firevision::colorspace_t)image_dtype, width, height, normalize,
+      norm_mean, norm_std);
+  this->post_set_source();
+}
+
+void TensorflowThread::set_source_image_v4l2(
+    std::string device_name, bool normalize, double norm_mean, double norm_std,
+    unsigned int width, unsigned int height, unsigned int image_dtype) {
+  this->pre_set_source();
+  source_ = new TF_Plugin_Image_V4L2_Loader(
+      std::string(name()), logger, device_name,
       (firevision::colorspace_t)image_dtype, width, height, normalize,
       norm_mean, norm_std);
   this->post_set_source();
