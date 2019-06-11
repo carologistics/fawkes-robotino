@@ -93,6 +93,13 @@ const void *TF_Plugin_Image_Loader::read() {
   // potential resize stage does not coincide with the output colorspace
   bool must_postconvert = preconvert_to != should_colorspace_;
 
+  logger_->log_warn(name_.c_str(), "colorspace before %s",
+                    colorspace_to_string(cam_->colorspace()));
+  logger_->log_warn(name_.c_str(), "preconvert to %s",
+                    colorspace_to_string(preconvert_to));
+  logger_->log_warn(name_.c_str(), "colorspace finally %s",
+                    colorspace_to_string(should_colorspace_));
+
   // convert the image into the right colorspace
   if (must_preconvert) {
     unsigned char *old_image_buffer = image_buffer;
