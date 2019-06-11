@@ -132,7 +132,10 @@ const void *TF_Plugin_Image_Loader::read() {
     } catch (std::exception &e) {
       if (own_buffer)
         delete[] old_image_buffer;
-      delete[] new_image_buffer;
+      // delete[] new_image_buffer;
+      // somehow opencv, when it fails, already deallocates the old buffer ?!
+      // Seen when assert failed in opencv, this delete lead to double free or
+      // corruption error -> coredump
       throw;
     }
     if (own_buffer)
