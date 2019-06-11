@@ -38,11 +38,12 @@ public:
    * @param norm_mean Mean value for normalization
    * @param norm_std StD value for normalization
    */
-  TF_Plugin_Image_File_Loader(std::string name, fawkes::Logger *logger,std::string file_name,
-                             firevision::colorspace_t expected_colorspace,
-                             unsigned int width, unsigned int height,
-                             bool normalize = false, double norm_mean = 0.0,
-                             double norm_std = 0.0 );
+  TF_Plugin_Image_File_Loader(std::string name, fawkes::Logger *logger,
+                              std::string file_name,
+                              firevision::colorspace_t expected_colorspace,
+                              unsigned int width, unsigned int height,
+                              bool normalize = false, double norm_mean = 0.0,
+                              double norm_std = 0.0);
 
 protected:
 private:

@@ -20,8 +20,8 @@
 
 #include "image_v4l2_loader.h"
 #include <exception>
-#include <memory>
 #include <fvcams/v4l2.h>
+#include <memory>
 
 #include <fvutils/color/conversions.h>
 
@@ -29,6 +29,7 @@ TF_Plugin_Image_V4L2_Loader::TF_Plugin_Image_V4L2_Loader(
     std::string name, fawkes::Logger *logger, std::string device_name,
     firevision::colorspace_t expected_colorspace, unsigned int width,
     unsigned int height, bool normalize, double norm_mean, double norm_std)
-    : TF_Plugin_Image_Loader(name, logger, expected_colorspace, width, height, normalize, norm_mean, norm_std, false, false) {
+    : TF_Plugin_Image_Loader(name, logger, expected_colorspace, width, height,
+                             normalize, norm_mean, norm_std, false, false) {
   cam_ = new firevision::V4L2Camera(device_name.c_str());
 }

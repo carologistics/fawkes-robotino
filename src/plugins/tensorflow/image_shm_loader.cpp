@@ -20,8 +20,8 @@
 
 #include "image_shm_loader.h"
 #include <exception>
-#include <memory>
 #include <fvcams/shmem.h>
+#include <memory>
 
 #include <fvutils/color/conversions.h>
 
@@ -29,6 +29,8 @@ TF_Plugin_Image_SHM_Loader::TF_Plugin_Image_SHM_Loader(
     std::string name, fawkes::Logger *logger, std::string shm_id,
     firevision::colorspace_t expected_colorspace, unsigned int width,
     unsigned int height, bool normalize, double norm_mean, double norm_std)
-    : TF_Plugin_Image_Loader(name, logger, expected_colorspace, width, height, normalize, norm_mean, norm_std) {
-  cam_ = new firevision::SharedMemoryCamera(shm_id.c_str(), /* deep_copy */ true);
+    : TF_Plugin_Image_Loader(name, logger, expected_colorspace, width, height,
+                             normalize, norm_mean, norm_std) {
+  cam_ =
+      new firevision::SharedMemoryCamera(shm_id.c_str(), /* deep_copy */ true);
 }
