@@ -79,6 +79,8 @@ private:
                             bool normalize, double norm_mean, double norm_std,
                             unsigned int width, unsigned int height,
                             unsigned int image_dtype);
+  void pre_set_source();
+  void post_set_source();
   void run_graph_once(unsigned int msg_id);
   void delete_graph();
 };

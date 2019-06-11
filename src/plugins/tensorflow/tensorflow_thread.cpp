@@ -107,29 +107,45 @@ void TensorflowThread::load_config() {
   logger->log_info(name(), "load config");
 }
 
+void TensorflowThread::pre_set_source() {
+  if (source_ != nullptr)
+    delete source_;
+  source_ = nullptr;
+  return;
+}
+
+void TensorflowThread::post_set_source() {
+  if (!source_->verify()) {
+    delete source_;
+    source_ = nullptr;
+  }
+  return;
+}
+
 void TensorflowThread::set_source_image_shm(std::string shm_id,
                                             std::string their_hostname,
                                             bool normalize, double norm_mean,
                                             double norm_std, unsigned int width,
                                             unsigned int height,
                                             unsigned int image_dtype) {
+  this->pre_set_source();
   // first step: check hostname
   char *my_hostname = new char[256];
   if (gethostname(my_hostname, 256) != 0) {
     logger->log_error(name(), "Error while fetching hostname");
+    return;
   }
   if (their_hostname.compare(std::string(my_hostname)) !=
       0) { // the SHM should reside on the host on which this plugin runs
     logger->log_error(name(), "SHM resides not on my host!");
+    return;
   }
 
   source_ = new TF_Plugin_Image_SHM_Loader(
       std::string(name()), logger, shm_id,
       (firevision::colorspace_t)image_dtype, width, height, normalize,
       norm_mean, norm_std);
-  if (!source_->verify()) {
-    source_ = nullptr;
-  }
+  this->post_set_source();
 }
 
 void TensorflowThread::run_graph_once(unsigned int msg_id) {
