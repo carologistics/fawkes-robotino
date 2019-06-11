@@ -287,6 +287,11 @@ int TF_Plugin_Image_Loader::colorspace_to_cv_type(
   case firevision::colorspace_t::BGR_WITH_ALPHA:
     return CV_8UC4;
 
+  case firevision::colorspace_t::RGB_FLOAT:
+  case firevision::colorspace_t::BGR_FLOAT:
+    // return CV_32FC3; // correct this again if creating convert chain is made
+    // better
+    return -1;
   }
   return -1;
 }
@@ -329,6 +334,9 @@ TF_Plugin_Image_Loader::colorspace_to_base_type(
   case firevision::colorspace_t::RGB:
     return BASE_TYPE::TYPE_UCHAR;
 
+  case firevision::colorspace_t::RGB_FLOAT:
+  case firevision::colorspace_t::BGR_FLOAT:
+    return BASE_TYPE::TYPE_FLOAT;
   }
   return BASE_TYPE::TYPE_UNSUPPORTED;
 }
