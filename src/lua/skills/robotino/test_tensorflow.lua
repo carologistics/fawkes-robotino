@@ -45,11 +45,14 @@ fsm:define_states{
    export_to=_M,
    closure={tensorflow=tensorflow},
    {"COMMAND", JumpState},
+   {"CHECK_WRITER", JumpState},
 }
 
 -- Transitions
 fsm:add_transitions{
    {"COMMAND", "FINAL", timeout=0.2},
+   {"CHECK_WRITER", "FAILED", precond="not tensorflow:has_writer()", desc="No writer for interface"},
+   {"CHECK_WRITER", "COMMAND", cond=true},
 }
 
 function COMMAND:init()
