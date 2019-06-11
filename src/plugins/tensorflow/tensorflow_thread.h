@@ -48,6 +48,7 @@ class TensorflowInterface;
 class TensorflowThread : public fawkes::Thread,
                          public fawkes::LoggingAspect,
                          public fawkes::ConfigurableAspect,
+                         public fawkes::BlockedTimingAspect,
                          public fawkes::BlackBoardAspect,
                          public fawkes::BlackBoardInterfaceListener,
                          // public fawkes::VisionAspect,

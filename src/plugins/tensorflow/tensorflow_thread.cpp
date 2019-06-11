@@ -22,7 +22,9 @@
 #include "interfaces/TensorflowInterface.h"
 #include <unistd.h>
 
+#include "image_file_loader.h"
 #include "image_shm_loader.h"
+#include "image_v4l2_loader.h"
 
 using namespace fawkes;
 
@@ -36,6 +38,7 @@ using namespace fawkes;
  */
 TensorflowThread::TensorflowThread(std::string cfg_name)
     : Thread("TensorflowThread", Thread::OPMODE_WAITFORWAKEUP),
+      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS),
       BlackBoardInterfaceListener("TensorflowThread(%s)", cfg_name.c_str()),
       cfg_name_(cfg_name), graph_(nullptr), source_(nullptr) {}
 
