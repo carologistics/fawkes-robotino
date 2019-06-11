@@ -32,99 +32,160 @@ import numpy as np
 import sys
 import getopt
 
-reg_num = r"[-+]?\d+(?:\.\d*)?"
-reg_wall = reg_num + r"\*?"
-reg_wall_red = reg_num + r"\*"
-reg_empty = r"\[" + reg_num + "\*?\]"
-reg_empty_red = r"\[" + reg_num + "\*\]"
-reg_coordinate = r"\("+reg_num+r","+reg_num+r"\)"
-reg_same_dir_element = r"(?:(?:"+ reg_empty +r"|" +reg_wall+r"|)+;)"
-reg_long_line = reg_coordinate+ reg_same_dir_element+"+"
+# define regex for the different elements
 
+# a float number, e.g. -2.453 +2.3344 45
+# used to give lengths of line elements, as well as coordinates
+reg_num = r"[-+]?\d+(?:\.\d*)?"
+
+# a float number, with an optional appending asterisk *
+# describes a painted line element (with the asterisk, the line element is highlighted in red)
+reg_wall = reg_num + r"\*?"
+
+# a float number, with a definite appending asterisk *
+# describes a highlighted line element
+reg_wall_red = reg_num + r"\*"
+
+# a float number, embedded in square brackets []. The number is followed by an optional asterisk *
+# describes a vacancy (with an asterisk, the vacancy is highlighted as a red dotted line
+reg_empty = r"\[" + reg_num + "\*?\]"
+
+# a float number, appended with a definite asterisk *, embedded in square brackets []
+# describes a high lighted vacancy
+reg_empty_red = r"\[" + reg_num + "\*\]"
+
+# two float numbers, separated by a comma ,, embedded in parantheses ()
+# describes the starting position of a line streak
+reg_coordinate = r"\(" + reg_num + r"," + reg_num + r"\)"
+
+# multiple line elements and/or vacancies, finally ending with a semicolon
+# describes multiple line elements and/or vacancies in the same direction
+# thus a so called same direction element
+reg_same_dir_element = r"(?:(?:" + reg_empty + r"|" + reg_wall + r"|)+;)"
+
+# multiple same direction elements, each consisting of multiple line elements and/or vacancies
+# Prepended by a coordinate
+# describes an entire line streak, the first same direction element is in x direction
+# with each following same direction element, the direction is switched
+reg_long_line = reg_coordinate + reg_same_dir_element+"+"
+
+# the equivalent of one meter in pixel
 pixel_per_meter=20
+
+# margin in x and y direction, relative to the most outer line element or vacancy
 x_margin=10
 y_margin=10
 
 def update_limits(x,y,min_x,min_y, max_x, max_y):
     return min(x,min_x), min(y,min_y), max(x,max_x), max(y, max_y)
     
-
+# parse a command string
+# @param command The command string
+# @return lines list of normal drawn line elements, each with format [(xs,ys),(xe,ye)]
+# @return red_line list of highlighted line elements
+# @return red_dotted_lines ligh of highlighted vacancies
+# @return (min/max)_(x/y) minimum/maximum x/y position of a line element or vacancy
+# all output data is given in pixels
 def parse(command):
-    part_commands = re.findall(reg_long_line,command)
+    line_streaks = re.findall(reg_long_line,command)
     lines = [] # format is [[(xs,ys),(xe,ye)],...]
     red_lines = [] # format is [[(xs,ys),(xe,ye)],...]
     red_dotted_lines = [] # format is [[(xs,ys),(xe,ye)],...]
     min_x = min_y = float("inf")      # used to generate bounding box    
     max_x = max_y = -float("inf")
     
-    for part_command in part_commands:
-        dir = 0 # 0 is in x direction, 1 in y direction
-        x, y = [round(float(num)*pixel_per_meter) for num in re.search("\(("+reg_num+"),("+reg_num+")\)",part_command).groups()]
-        min_x, min_y, max_x, max_y = update_limits(x,y,min_x,min_y, max_x, max_y) 
-        same_dir_elements = re.findall(reg_same_dir_element,part_command)
+    # line_streak is one complete line streak
+    for line_streak in line_streaks:
+        dir = 0 # 0 is in x direction, 1 in y direction, first same dir element in line streak is always in x direction
+        x, y = [round(float(num) * pixel_per_meter) for num in re.search("\((" + reg_num + "),(" + reg_num + ")\)", line_streak).groups()] # extract starting coordinate
+
+        min_x, min_y, max_x, max_y = update_limits(x, y, min_x,min_y, max_x, max_y) # update limits
+
+        same_dir_elements = re.findall(reg_same_dir_element, line_streak) # extract all same direction elements in this line streak
+        # same_dir_element is one same direction element
         for same_dir_element in same_dir_elements:
-            for line_element in re.findall(reg_wall+"|"+reg_empty,same_dir_element):
+            line_elements = re.findall(reg_wall+ "|" +reg_empty, same_dir_element) # extract all line elements and vacancies in this same dir element
+            for line_element in line_elements:
                 x_new = x
                 y_new = y
-                distance = round(float(re.search(reg_num,line_element).group())*pixel_per_meter)
-                if dir == 0:
-                    x_new = x+distance
+
+                distance = round(float(re.search(reg_num, line_element).group()) * pixel_per_meter) # compute distance of this line element
+
+                if dir == 0: # compute end coordinate of this line element
+                    x_new = x + distance
                 else:
-                    y_new = y+distance
+                    y_new = y + distance
                 
-                if re.match(reg_wall_red,line_element)  and re.match(reg_wall,line_element).start() == 0: #this is a highlighted wall
-                    red_lines.append([(x,y),(x_new,y_new)])
-                elif re.match(reg_wall,line_element) and re.match(reg_wall,line_element).start() == 0: # this is a wall, should add
-                    lines.append([(x,y),(x_new,y_new)])
-                elif re.match(reg_empty_red,line_element): # this is a empty element, but highlighted
-                    red_dotted_lines.append([(x,y),(x_new,y_new)])
+                # decide what type of line element is given here
+                # and convert line element in output format
+                if re.match(reg_wall_red, line_element)  and re.match(reg_wall, line_element).start() == 0: #this is a highlighted wall
+                    red_lines.append([(x, y), (x_new, y_new)])
+                elif re.match(reg_wall, line_element) and re.match(reg_wall, line_element).start() == 0: # this is a wall, should add
+                    lines.append([(x, y), (x_new, y_new)])
+                elif re.match(reg_empty_red, line_element): # this is a vacancy, but highlighted
+                    red_dotted_lines.append([(x, y), (x_new, y_new)])
+
+                # update coordinates
                 x = x_new
                 y = y_new
-                min_x, min_y, max_x, max_y = update_limits(x,y,min_x,min_y, max_x, max_y)
-            dir = 1 if dir == 0 else 0
+
+                # update limits
+                min_x, min_y, max_x, max_y = update_limits(x, y, min_x, min_y, max_x, max_y)
+            dir = 1 if dir == 0 else 0 # switch direction for next same dir element
     return lines, red_lines, red_dotted_lines, min_x, min_y, max_x, max_y 
         
+
+# Verify a command string
+# @param command The command string to test
+# @return True if the command string is ok, False is not
 def verify(command):
-    match_object = re.match("^("+reg_long_line+"\s*)+$", command)
-    if(match_object==None):
+    match_object = re.match("^(" + reg_long_line + "\s*)+$", command)
+    if(match_object == None):
         print("Your command is not correct!")
         return False
     else:
         print("Your command is verified")
         return True
-    
+
+# Paint the line elements, as returned from parse    
+# @param sizes The size in pixels of the complete image
+# @param interpet_xy function to convert pixel coordinates in the position of the result image
 def paint(lines, red_lines, red_dotted_lines, sizes, interpret_xy):
-    im = Image.new('RGB',sizes,color=(255,255,255))
-    draw = ImageDraw.Draw(im)
+    im = Image.new('RGB',sizes,color=(255,255,255)) # create new image buffer
+    draw = ImageDraw.Draw(im) # create new drawer
     for line in lines:
-        draw.line([interpret_xy(line[0]),interpret_xy(line[1])],fill=(0,0,0))
+        draw.line([interpret_xy(line[0]), interpret_xy(line[1])], fill=(0, 0, 0)) # create black line for normal wall
     for line in red_lines:
-        draw.line([interpret_xy(line[0]),interpret_xy(line[1])],fill=(255,0,0), width=3)
+        draw.line([interpret_xy(line[0]), interpret_xy(line[1])], fill=(255, 0, 0), width=3) # create red line for highlighted wall
     for line in red_dotted_lines:
-        line_start = np.array(interpret_xy(line[0]))
-        line_end = np.array(interpret_xy(line[1]))
-        line_length = np.sqrt(np.sum((line_end - line_start)**2))
-        line_fraction_per_dot = 4/line_length
-        dots = [tuple(fraction*line_end + (1-fraction) * line_start) for fraction in np.arange(0,1,line_fraction_per_dot)]
-        bboxes = [[(round(dot[0]-1),round(dot[1]-1)),(round(dot[0]+1),round(dot[1]+1))] for dot in dots]
-        for bbox in bboxes:
-            draw.ellipse(bbox,fill=(255,0,0))
+        line_start = np.array(interpret_xy(line[0])) # starting position
+        line_end = np.array(interpret_xy(line[1])) # end position
+        line_length = np.sqrt(np.sum((line_end - line_start)**2)) # length of line element
+        line_fraction_per_dot = 4 / line_length # results in a point every four pixels
+        dots = [tuple(fraction * line_end + (1 - fraction) * line_start) for fraction in np.arange(0, 1, line_fraction_per_dot)] # positions of all dots
+        bboxes = [[(round(dot[0] - 1), round(dot[1] - 1)), (round(dot[0] + 1), round(dot[1] + 1))] for dot in dots] # bounding boxes for all dots
+        for bbox in bboxes: # draw highlighted vacancy
+            draw.ellipse(bbox, fill=(255, 0, 0))
     return im
 
-def get_origin(sizes,interpret_xy):
+# Obtain origin position in meter
+# this follows ROS instructions, thus the position of the left bottom pixel relative to origin
+def get_origin(sizes, interpret_xy):
     origin = list(interpret_xy((0,0))) #origin in pixel relative to left top pixel
     origin[1] = sizes[1]-origin[1] # origin in pixel relative to left bottom pixel
     return  tuple([-x/pixel_per_meter for x in origin]) # left bottom pixel in meter relative to origin
 
+# Paint a complete command string, without verification first
+# @return image The map image
+# @return origin The origin of the map, needed for integration into ROS
 def paint_command(command):
     lines, red_lines, red_dotted_lines, min_x, min_y, max_x, max_y = parse(command)
-    sizes = [max_x-min_x + x_margin*2, max_y-min_y + y_margin*2]    
-    interpret_xy = lambda xy: (round(xy[0]-min_x+x_margin),round(sizes[1]-(xy[1]-min_y+y_margin)))
+    sizes = [max_x-min_x + x_margin * 2, max_y - min_y + y_margin * 2]    
+    interpret_xy = lambda xy: (round(xy[0] - min_x + x_margin), round(sizes[1] - (xy[1] - min_y + y_margin)))
     image = paint(lines, red_lines, red_dotted_lines, sizes, interpret_xy)
     origin = get_origin(sizes,interpret_xy)
 
     return image, origin
-
     
 if __name__ == "__main__":
     
