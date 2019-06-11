@@ -30,7 +30,7 @@ depends_interfaces = {
 }
 
 documentation      = [==[
-    @param command    can be : ( SET_GRAPH | SET_SOURCE_SHM | SET_SOURCE_FILE | TRIGGER_RUN )
+    @param command    can be : ( SET_GRAPH | SET_SOURCE_SHM | SET_SOURCE_FILE | SET_SOURCE_V4L2 | TRIGGER_RUN )
     All other params come directly from the TensorflowInterface
 ]==]
 
@@ -72,10 +72,18 @@ function COMMAND:init()
      message:set_width(self.fsm.vars.width)
      message:set_height(self.fsm.vars.height)
      message:set_image_dtype(self.fsm.vars.image_dtype)
-
    elseif self.fsm.vars.command == "SET_SOURCE_FILE" then
      message = tensorflow.SetSourceImageFileMessage:new()
      message:set_file_name(self.fsm.vars.file_name)
+     message:set_normalize(self.fsm.vars.normalize)
+     message:set_norm_mean(self.fsm.vars.norm_mean)
+     message:set_norm_std(self.fsm.vars.norm_std)
+     message:set_width(self.fsm.vars.width)
+     message:set_height(self.fsm.vars.height)
+     message:set_image_dtype(self.fsm.vars.image_dtype)
+   elseif self.fsm.vars.command == "SET_SOURCE_V4L2" then
+     message = tensorflow.SetSourceImageV4L2Message:new()
+     message:set_file_name(self.fsm.vars.device_name)
      message:set_normalize(self.fsm.vars.normalize)
      message:set_norm_mean(self.fsm.vars.norm_mean)
      message:set_norm_std(self.fsm.vars.norm_std)
