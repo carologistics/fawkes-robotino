@@ -203,7 +203,7 @@ void TensorflowThread::run_graph_once(unsigned int msg_id) {
   TF_Output input_op = {
       TF_GraphOperationByName(graph_, graph_input_node_.c_str()), 0};
   TF_Output output_op = {
-      TF_GraphOperationByName(graph_, graph_input_node_.c_str()), 0};
+      TF_GraphOperationByName(graph_, graph_output_node_.c_str()), 0};
 
   if (input_op.oper == nullptr) {
     logger->log_error(name(), "Cannot init input_op");
@@ -213,9 +213,10 @@ void TensorflowThread::run_graph_once(unsigned int msg_id) {
   }
 
   const void *input_vals = source_->read();
-  int64_t ndim[3] = {1, 2, 3};
+  std::vector<int64_t> ndim = {1, 299, 299, 3};
   TF_Tensor *input_tensor =
-      tf_utils::CreateTensor(TF_FLOAT, ndim, 3, input_vals, 400);
+      tf_utils::CreateTensor(TF_FLOAT, ndim.data(), ndim.size(), input_vals,
+                             299 * 299 * 3 * sizeof(float));
   source_->post_read();
 
   if (input_tensor == nullptr) {
