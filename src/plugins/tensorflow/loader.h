@@ -45,6 +45,7 @@ public:
    */
   virtual void post_read() = 0;
   /** Function to verify the objects integrity
+   * This function should be called exactly once after creating a new Loader
    * @return true if object is ok, false if not
    */
   virtual bool verify() { return true; }
