@@ -27,6 +27,26 @@
     <field type="uint32" name="height">Height of image after conversion</field>
     <field type="uint32" name="image_dtype">Dtype of image after conversion</field>
   </message>
+  <message name="SetSourceImageFile">
+    <comment>Use image data from this File as source. The data is only actually read upon triggering the run.</comment>
+    <field type="string" length="256" name="file_name">The file to use as source</field>
+    <field type="bool" name="normalize">Whether the image shall be normalized</field>
+    <field type="float" name="norm_mean">Mean for normalization</field>
+    <field type="float" name="norm_std">Std for normalization</field>
+    <field type="uint32" name="width">Width of image after conversion</field>
+    <field type="uint32" name="height">Height of image after conversion</field>
+    <field type="uint32" name="image_dtype">Dtype of image after conversion</field>
+  </message>
+  <message name="SetSourceImageV4L2">
+    <comment>Use image data from this V4L2 device as source. The data is only actually read upon triggering the run.</comment>
+    <field type="string" length="256" name="device_name">The device to use as source</field>
+    <field type="bool" name="normalize">Whether the image shall be normalized</field>
+    <field type="float" name="norm_mean">Mean for normalization</field>
+    <field type="float" name="norm_std">Std for normalization</field>
+    <field type="uint32" name="width">Width of image after conversion</field>
+    <field type="uint32" name="height">Height of image after conversion</field>
+    <field type="uint32" name="image_dtype">Dtype of image after conversion</field>
+  </message>
     <!--TODO give other possibilities for source-->
   <message name="TriggerRun">
     <comment>Trigger a run of the network</comment>
