@@ -27,6 +27,8 @@
 #include <cstring>
 #include <fstream>
 
+#include <iostream>
+
 namespace tf_utils {
 
 namespace {
@@ -80,6 +82,8 @@ TF_Graph *LoadGraph(const char *graphPath) {
   TF_DeleteBuffer(buffer);
 
   if (TF_GetCode(status) != TF_OK) {
+    std::cerr << "tensorflow error, code: " << TF_GetCode(status)
+              << "msg: " << TF_Message(status) << std::endl;
     TF_DeleteGraph(graph);
     graph = nullptr;
   }
@@ -98,6 +102,8 @@ TF_Session *CreateSession(TF_Graph *graph) {
   TF_DeleteSessionOptions(options);
 
   if (TF_GetCode(status) != TF_OK) {
+    std::cerr << "tensorflow error, code: " << TF_GetCode(status)
+              << "msg: " << TF_Message(status) << std::endl;
     DeleteSession(session);
     TF_DeleteStatus(status);
     return nullptr;
@@ -111,10 +117,14 @@ void DeleteSession(TF_Session *session) {
   TF_Status *status = TF_NewStatus();
   TF_CloseSession(session, status);
   if (TF_GetCode(status) != TF_OK) {
+    std::cerr << "tensorflow error, code: " << TF_GetCode(status)
+              << "msg: " << TF_Message(status) << std::endl;
     TF_CloseSession(session, status);
   }
   TF_DeleteSession(session, status);
   if (TF_GetCode(status) != TF_OK) {
+    std::cerr << "tensorflow error, code: " << TF_GetCode(status)
+              << "msg: " << TF_Message(status) << std::endl;
     TF_DeleteSession(session, status);
   }
   TF_DeleteStatus(status);
@@ -145,6 +155,9 @@ TF_Code RunSession(TF_Session *session, const TF_Output *inputs,
   );
 
   TF_Code code = TF_GetCode(status);
+  if (code != TF_OK)
+    std::cerr << "tensorflow error, code: " << code
+              << "msg: " << TF_Message(status) << std::endl;
   TF_DeleteStatus(status);
   return code;
 }
