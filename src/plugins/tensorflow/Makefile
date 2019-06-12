@@ -24,8 +24,6 @@ INCDIRS  += $(VISION_INCDIRS)
 LIBDIRS  += $(VISION_LIBDIRS)
 LIBS     += $(VISION_LIBS)
 
-CFLAGS	 += $(CFLAGS_OPENCV)
-LDFLAGS  += $(LDFLAGS_OPENCV)
 
 PRESUBDIRS = interfaces 
 
@@ -38,20 +36,42 @@ OBJS_tensorflow = tensorflow_plugin.o tensorflow_thread.o tf_utils.o \
 
 OBJS_all    = $(OBJS_tensorflow)
 
-CFLAGS  += $(CFLAGS_TF)  -DIS_SLIM_BUILD -std=c++11
-LDFLAGS += $(LDFLAGS_TF)  -ltensorflow -lstdc++ -lm -lz  -ldl
 
 PLUGINS_all = $(PLUGINDIR)/tensorflow.$(SOEXT)
-PLUGINS_build = $(PLUGINS_all)
+
+ifneq ($(wildcard $(SYSROOT)/usr/lib/libtensorflow.so),)
+  ifneq ($(wildcard $(SYSROOT)/usr/include/tensorflow/c/c_api.h),)
+    HAVE_TENSORFLOW = 1
+    LIBS_tensorflow += tensorflow
+  endif
+endif
 
 
+ifeq ($(HAVE_TENSORFLOW)$(HAVE_OPENCV),11)
+  CFLAGS	 += $(CFLAGS_OPENCV)
+  LDFLAGS  += $(LDFLAGS_OPENCV)
+  CFLAGS  += $(CFLAGS_TF)  -DIS_SLIM_BUILD -std=c++11
+  LDFLAGS += $(LDFLAGS_TF)  -lstdc++ -lm -lz  -ldl
+  PLUGINS_build = $(PLUGINS_all)
+  BLA = bla
+else
+  ifneq ($(HAVE_TENSORFLOW),1)
+    WARN_TARGETS += warning_tensorflow
+  endif
+  ifneq ($(HAVE_OPENCV),1)
+    WARN_TARGETS += warning_cv
+  endif
+endif
 
-ifeq ($(OBJSUBMAKE),1)
-	ifneq($(WARN_TARGETS),)
+ifeq ($(OBJSSUBMAKE),1)
+  ifneq ($(WARN_TARGETS),)
 all: $(WARN_TARGETS)
-	endif
-
-
-
+  endif
+.PHONY: warning_cv warning_tensorflow
+warning_tensorflow:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TBROWN)Omitting tensorflow plugin$(TNORMAL) (Tensorflow not available)"
+warning_cv:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TBROWN)Omitting tensorflow plugin$(TNORMAL) (OpenCV not available)"
+endif
 
 include $(BUILDSYSDIR)/base.mk
