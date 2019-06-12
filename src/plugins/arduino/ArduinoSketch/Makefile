@@ -20,9 +20,11 @@ libraries/AccelStepper:
 	mkdir -p libraries
 	git clone git@github.com:momoson/AccelStepper.git libraries/AccelStepper
 
+COMPILE_COMMAND = arduino-builder -hardware=/usr/share/arduino/hardware -tools=/usr/bin -fqbn=arduino:avr:uno -libraries libraries -verbose=true -build-path=$(mkfile_path)/Compiled fawkes_plugin_comm.ino
+
 Compiled/fawkes_plugin_comm.ino.hex: fawkes_plugin_comm.ino accstepper
 	mkdir -p Compiled
-	arduino-builder -hardware=/usr/share/arduino/hardware -tools=/usr/bin -fqbn=arduino:avr:uno -libraries libraries -verbose=true -build-path=$(mkfile_path)/Compiled fawkes_plugin_comm.ino
+	$(COMPILE_COMMAND) || $(COMPILE_COMMAND) # sometimes compilation breaks, due to https://github.com/arduino/arduino-builder/issues/67. Repeating compilation normally resolves the compilation error
 
 flash: Compiled/fawkes_plugin_comm.ino.hex
 	avrdude  -patmega328p -carduino -P$(DEV_ARDUINO) -B 10 -F -Uflash:w:$<:i

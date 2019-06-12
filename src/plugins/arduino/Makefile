@@ -20,6 +20,8 @@ include $(BUILDSYSDIR)/pcl.mk
 include $(BUILDSYSDIR)/ros.mk
 include $(BUILDCONFDIR)/tf/tf.mk
 
+HAVE_arduino = $(shell [ -a /dev/arduino ]; echo $$?)
+
 PRESUBDIRS = interfaces
 
 # Uncomment to enable simple time tracking
@@ -54,16 +56,29 @@ else
   endif
 endif
 
+ifneq ($(HAVE_arduino),0) # arduino not found
+	WARN_TARGETS += warning_arduino
+else 
+  ifeq ($(HAVE_arduino),0) #arduino was found
+all: flash_arduino
+  endif
+endif
+
 ifeq ($(OBJSSUBMAKE),1)
   ifneq ($(WARN_TARGETS),)
 all: $(WARN_TARGETS)
   endif
-.PHONY: warning_libudev warning_cpp11
+.PHONY: warning_tf warning_cpp11 warning_arduino flash_arduino
 warning_cpp11:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TYELLOW)Omitting Arduino commnunication support$(TNORMAL) (C++11 support required)"
 warning_tf:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TYELLOW)Omitting Arduino commnunication support$(TNORMAL) (tf required)"
-
+warning_arduino:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TYELLOW)Omitting flashing Arduino$(TNORMAL) (/dev/arduino not found)"
+flash_arduino:
+	$(SILENT)($(MAKE) -C $(BASEDIR)/src/plugins/arduino/ArduinoSketch safe_flash &> /dev/null) \
+	 	&& echo -e "$(INDENT_PRINT)--> $(TGREEN)Successfully flashed the arduino $(TNORMAL)"\
+	 	|| echo -e "$(INDENT_PRINT)--> $(TRED)Error while flashing the arduino $(TNORMAL)"
 endif
 
 
