@@ -268,6 +268,14 @@
 								 (not (rs-filled-with ?m ?rs-before)) (rs-filled-with ?m ?rs-after))
 	)
 
+	(:action request-rs-mount-ring
+		:parameters (?r - robot ?m - mps ?wp - workpiece ?col - ring-color
+			 				?col1 - ring-color ?col2 - ring-color ?col3 - ring-color
+							?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
+		:precondition (self ?r)
+		:effect (self ?r)	
+	)
+
 	; The following is the generic move version.
 	; It takes the robot from any location (at any side) to any MPS (any side).
 	; However, this also creates a tremendous number of options during search and
