@@ -388,7 +388,7 @@
 
 	(:action wp-put
 		:parameters (?r - robot ?wp - workpiece ?m - mps)
-		:precondition (and (at ?r ?m INPUT) (mps-state ?m IDLE) (locked ?m)
+		:precondition (and (at ?r ?m INPUT) (locked ?m)
 										(wp-usable ?wp) (holding ?r ?wp))
 		:effect (and (wp-at ?wp ?m INPUT) (not (holding ?r ?wp)) (can-hold ?r))
 	)

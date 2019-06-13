@@ -542,7 +542,7 @@
 )
 
 (defrule goal-reasoner-evaluate-process-mps
-  ?g <- (goal (class PROCESS-MPS) (mode FINISHED) (outcome COMPLETED) (params m ?mps))
+  ?g <- (goal (class PROCESS-MPS) (mode FINISHED) (outcome COMPLETED) (acquired-resources) (params m ?mps))
   ?pre <- (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
   ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
   =>
