@@ -156,6 +156,12 @@
 								 (not (wp-spawned-for ?wp ?r)))
 	)
 
+	(:action request-bs-dispense
+		:parameters (?r - robot ?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
+		:precondition (self ?r)
+		:effect (self ?r)
+	)
+
 	(:action cs-mount-cap
 		:parameters (?m - mps ?wp - workpiece ?capcol - cap-color)
 		:precondition (and (mps-type ?m CS) (mps-state ?m READY-AT-OUTPUT) (locked ?m)
