@@ -83,3 +83,29 @@
   )
 )
 
+(defrule action-execute-request-rs-mount-ring
+  ?pa <- (plan-action (action-name request-rs-mount-ring) (state PENDING) (executable TRUE)
+            (param-values ?r ?rs ?wp ?rc ?rc1 ?rc2 ?rc3 ?rs-before ?rs-after ?rs-req))
+
+  =>
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+  (bind ?ring-pos (member$ RING_NONE (create$ ?rc1 ?rc2 ?rc3)))
+  (bind ?mount-ring-action-name (sym-cat rs-mount-ring ?ring-pos))
+    (switch ?ring-pos
+      (case 1 then
+        (bind ?mount-ring-param-names m wp col rs-before rs-after r-req)
+        (bind ?mount-ring-param-values ?rs ?wp ?rc ?rs-before ?rs-after ?rs-req))
+      (case 2 then
+        (bind ?mount-ring-param-names m wp col col1 rs-before rs-after r-req)
+        (bind ?mount-ring-param-values ?rs ?wp ?rc ?rc1 ?rs-before ?rs-after ?rs-req))
+      (case 3 then
+        (bind ?mount-ring-param-names m wp col col1 col2 rs-before rs-after r-req)
+        (bind ?mount-ring-param-values ?rs ?wp ?rc ?rc1 ?rc2 ?rs-before ?rs-after ?rs-req))
+     (default
+        (printout t "ERROR, plan-action params of request-rs-mount-ring are wrong" crlf)))
+  (assert
+    (wm-fact (key mps-handling prepare prepare-rs ?rs args? ?rs ?rc ?rs-before ?rs-after ?rs-req))
+    (wm-fact (key mps-handling process ?mount-ring-action-name ?rs args? ?mount-ring-param-values))
+  )
+)
+
