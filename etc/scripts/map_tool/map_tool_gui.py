@@ -74,6 +74,9 @@ class MapTool:
                 'insert_left_hole' : 1,
                 'insert_right_hole' :1,
                 'middle_hole_left' : 2}
+            # To understand the meaning of the different names, click the corresponding 
+            # line edit in the GUI. The corresponding part is highlighted, the name is output
+            # in the shell.
 
         for name in self.values.keys(): # initialize all edit elements in the GUI
             edit = self.window.findChild(QLineEditFocus,name)
@@ -133,58 +136,89 @@ class MapTool:
 
         print(self.highlight)
 
-        #create THA STRING # magic
+        # The following code assembles the map string, by just concatenating a lot of strings.
+        # All numbers are formated using the stringify function, which allows two digits behind the comma.
+        # The general idea is to have one long line streak, which starts in the left insertion zone and goes in S shape up
+        # to the top wall. It continues then in an 2 shape down to the right insertion zone again. Finally, the middle wall is shown.
+        # At the end, depending on the highlighted section, a few more segments are drawn, to resemble the highlighted vacancies.
+        # To make clearer which part of the code belongs to which part in the final map, for almost each comment a number in parentheses is given.
+        # Look into the file map_example.png to find the number an see where the following line of code refers to.
         temp_string = ""
-        #start with left insertion zone
+
+        # First, the starting coordinate of the left insertion zone is calculated.
         left_start_x = - self.values['middle_extent']/2-self.values['middle_hole_left']-self.values['insert_left_width_wall']
         left_start_y = self.values['middle_height'] - self.values['height_left'] - self.values['insert_left_height']
+        # Store the coordinate into the map string
         temp_string = temp_string + "(" + stringify(left_start_x) + "," + stringify(left_start_y) + ")"
-        #draw left insertion zone
-        temp_string = temp_string + stringify(self.values['insert_left_width_wall']) + ("*;" if self.highlight == 'insert_left_width_wall' else ";") + stringify(self.values['insert_left_height_wall']) + ("*" if self.highlight == 'insert_left_height_wall' else "")
-        #offset insert highest point to main wall
+
+        # Add the line to the right and highlight it, if necessary. (1)
+        temp_string = temp_string + stringify(self.values['insert_left_width_wall']) + ("*;" if self.highlight == 'insert_left_width_wall' else ";")
+        # (2)
+        temp_string = temp_string + stringify(self.values['insert_left_height_wall']) + ("*" if self.highlight == 'insert_left_height_wall' else "")
+        # Sometime there is a small offset between the right wall of the left insertion zone and its top wall.
         y_offset = self.values['insert_left_height'] - self.values['insert_left_height_wall']
         temp_string = temp_string + "[" + stringify(y_offset) + "];"
-        #insert hole left
+        # Insert the vacancy where the robot will enter the field. (3)
         temp_string = temp_string + "[" + stringify(-self.values['insert_left_hole']) + ("*]" if self.highlight == 'insert_left_hole' else "]")
+        # Top wall of the left insertion zone. (4)
         temp_string = temp_string + stringify(-self.values['insert_top_left']) + ('*;' if self.highlight == 'insert_top_left' else ';')
 
-#left side
+        # Now the left side of the playing field. (5)
         temp_string = temp_string + stringify(self.values['hole_bottom_left']) + ( '*' if (self.highlight == 'height_left' or self.highlight == 'hole_bottom_left') else '')
+        # (6)
         temp_string = temp_string + '[' + stringify(self.values['height_left'] - self.values['hole_bottom_left'] - self.values['hole_top_left']) + ( '*]' if (self.highlight == 'height_left') else ']')
+        # (7)
         temp_string = temp_string + stringify(self.values['hole_top_left']) + ( '*;' if (self.highlight == 'height_left' or self.highlight == 'hole_top_left') else ';')
 
-#top side
+        # Top wall of the field. (8)
         temp_string = temp_string + stringify(self.values['hole_left_top']) + ( '*' if (self.highlight == 'hole_left_top' or self.highlight == 'width') else '') 
+        # Often the top wall cannot be closed, due to limited supply of walls during the RoboCup. This vacancy is inserted now. (9)
         temp_string = temp_string + '[' + stringify(self.values['hole_top']) + ( '*]' if (self.highlight == 'hole_top' or self.highlight == 'width') else ']') 
+        # (10)
         temp_string = temp_string +  stringify(self.values['width'] - self.values['hole_top'] - self.values['hole_left_top']) + ( '*;' if  self.highlight == 'width' else ';') 
 
-#right side
+        # The right section of the field. (11)
         temp_string = temp_string + stringify(-self.values['hole_top_right']) + ( '*' if (self.highlight == 'height_right' or self.highlight == 'hole_top_right') else '')
+        # (12)
         temp_string = temp_string + '[' + stringify(-self.values['height_right'] + self.values['hole_bottom_right'] + self.values['hole_top_right']) + ( '*]' if (self.highlight == 'height_right') else ']')
+        # (13)
         temp_string = temp_string + stringify(-self.values['hole_bottom_right']) + ( '*;' if (self.highlight == 'height_right' or self.highlight == 'hole_bottom_right') else ';')
 
+        # Right insertion zone. Just as the left insertion zone, just in reverse order. (14)
         temp_string = temp_string + stringify(-self.values['insert_top_right']) + ( '*' if self.highlight== 'insert_top_right' else '')
+        # (15)
         temp_string = temp_string + '[' + stringify(-self.values['insert_right_hole']) + ( '*];' if self.highlight== 'insert_right_hole' else '];')
 
         y_offset = self.values['insert_right_height'] - self.values['insert_right_height_wall']
         temp_string = temp_string + "[" + stringify(-y_offset) + "]"
 
+        # (16)
         temp_string = temp_string  + stringify(-self.values['insert_right_height_wall']) + ( '*;' if self.highlight== 'insert_right_height_wall' else ';')
+        # (17)
         temp_string = temp_string  + stringify(self.values['insert_right_width_wall']) + ( '*;' if self.highlight== 'insert_right_width_wall' else ';')
+        
+        # The long line streak ended. Now draw the middle bottom wall. As the middle of the middle bottom wall naturally deserves to be at (0,0), computation of the starting coordinate is easy.
+        temp_string = temp_string + "(" + stringify(self.values['middle_extent']/2) + "," + stringify(0) + ")"
+        # (18)
+        temp_string = temp_string + stringify(-self.values['middle_extent']) + ( '*;' if self.highlight == 'middle_extent' else ';' )
 
-
-#middle bottom line
-        temp_string = temp_string + "(" + stringify(self.values['middle_extent']/2) + "," + stringify(0) + ")" + stringify(-self.values['middle_extent']) + ( '*;' if self.highlight == 'middle_extent' else ';' )
+        # now more optional highlighted vacancies follow.
+        # the distance between the middle bottom wall (18) and the left insertion zone (2)
         if self.highlight == 'middle_hole_left' :
             temp_string = temp_string + ';[' + stringify(-self.values['middle_hole_left']) + '*];'
 
-
+        # the distance between the middle bottom wall and the top wall
         if self.highlight == 'middle_height':
             temp_string = temp_string + "(0,0);[" + stringify(self.values['middle_height']) + '*];'
 
+        # the height of the left insertion zone, thus the distance between its bottom (1) and top wall (4).
         if self.highlight == 'insert_left_height':
             temp_string = temp_string + "(" + stringify(left_start_x + self.values['insert_left_width_wall']/2) + ',' + stringify(left_start_y) + ');[' + stringify(self.values['insert_left_height']) + '*];' 
 
+        # the height of the right insertion zone, thus the distance between its bottom (17) and top wall (14).
+        # The computation of the starting point is slightly more complex here, as its x position depends on the complete first line streak.
+        # The position of the left insertion zone is known relative to the origin, however the position of the right insertion zone is only known
+        # relative to the top wall, which is relative to the left insertion zone.
         if self.highlight == 'insert_right_height':
             right_start_x = -self.values['middle_extent']/2-self.values['middle_hole_left']-self.values['insert_left_hole']-self.values['insert_top_left']+self.values['width'] -self.values['insert_top_right'] -self.values['insert_right_hole']+self.values['insert_right_width_wall']
             right_start_y = self.values['middle_height'] - self.values['height_right'] - self.values['insert_right_height']
