@@ -124,7 +124,7 @@ while true; do
              KEEP=yes
              ;;
          -m)
-             META_PLUGIN=,$OPTARG
+             META_PLUGIN=$OPTARG
              ;;
 	 -t)
 	     SKIP_EXPLORATION=",gazsim-navgraph-generator"
