@@ -26,10 +26,16 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QValidator
 import inspect
 
+
+# This class bases on the standard QLineEdit and extends it
+# by the signal focusInSignal, which is emitted when the user
+# focus (by e.g. clicking into the field) this lineEdit.
+#
+# This functionality is needed to highlight the corresponding line 
+# in the map, after the user chooses the value he wants to edit.
 class QLineEditFocus(QLineEdit):
     focusInSignal = pyqtSignal(name="FocusIn")
 
-    #__pyqtSignals__
     def __init__(self, parent = None):
         super().__init__(parent)
 

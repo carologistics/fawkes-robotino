@@ -31,7 +31,6 @@ import PIL.ImageQt as ImageQt
 from qlineeditfocus import  QLineEditFocus
 
 
-
 import map_tool as mt
 import map_tool_validator as mtv
 
