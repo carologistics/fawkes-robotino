@@ -346,13 +346,10 @@ if [  $COMMAND  == start ]; then
     	done
     fi
 
-    if $START_GAZEBO
-    then
-	    #start refbox
-	    COMMANDS+=("bash -i -c \"$startup_script_location -x refbox $KEEP $@\"")
-    	#start refbox shell
-        COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-shell $KEEP $@\"")
-    fi
+    #start refbox
+    COMMANDS+=("bash -i -c \"$startup_script_location -x refbox $KEEP $@\"")
+    #start refbox shell
+    COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-shell $KEEP $@\"")
 
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
