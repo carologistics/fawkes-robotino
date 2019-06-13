@@ -195,6 +195,12 @@
 								 (not (cs-prepared-for ?m RETRIEVE_CAP)))
 	)
 
+	(:action request-cs-retrieve-cap
+		:parameters (?r - robot ?m - mps ?cc - cap-carrier ?capcol - cap-color)
+		:precondition (self ?r)
+		:effect (self ?r)
+	)
+
 	(:action prepare-rs
 		:parameters (?m - mps ?rc - ring-color ?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
 		:precondition (and  (mps-type ?m RS) (mps-state ?m IDLE) (locked ?m)

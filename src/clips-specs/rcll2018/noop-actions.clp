@@ -72,3 +72,14 @@
   )
 )
 
+(defrule action-execute-request-cs-retrieve-cap
+  ?pa <- (plan-action (action-name request-cs-retrieve-cap) (state PENDING) (executable TRUE)
+            (param-values ?r ?mps ?cc ?capcol))
+  =>
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+  (assert
+    (wm-fact (key mps-handling prepare prepare-cs ?mps args? ?mps RETRIEVE_CAP))
+    (wm-fact (key mps-handling process cs-retrieve-cap ?mps args? ?mps ?cc ?capcol))
+  )
+)
+

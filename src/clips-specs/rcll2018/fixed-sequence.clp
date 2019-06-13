@@ -147,6 +147,7 @@
                         mps ?mps
                         cc ?cc
                 ))
+    (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
     (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
     (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?shelf-spot))
     =>
@@ -178,9 +179,12 @@
                                     (action-name unlock)
                                     (param-values ?mps))
         (plan-action (id 8) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+                                    (action-name request-cs-retrieve-cap)
+                                    (param-values ?robot ?mps ?cc ?cap-color))
+        (plan-action (id 9) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name location-unlock)
                                     (param-values ?mps INPUT))
-        (plan-action (id 9) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+        (plan-action (id 10) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name go-wait)
                                     (param-names r from from-side to)
                                     (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))

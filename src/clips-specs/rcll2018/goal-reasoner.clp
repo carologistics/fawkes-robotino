@@ -474,26 +474,6 @@
   (modify ?g (mode EVALUATED))
 )
 
-(defrule goal-reasoner-evaluate-fill-cap
-" After a successull fill cap goal, the mps has to be prepared
-  as soon as it is possible. Add a mps-handling request fact.
-"
-  ?g <- (goal (id ?goal-id) (class FILL-CAP)
-            (mode FINISHED) 
-            (outcome COMPLETED)
-            (params robot ?robot 
-                    mps ?mps
-                    cc ?cc)
-        )
-  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-  =>
-  (assert
-    (wm-fact (key mps-handling prepare prepare-cs ?mps args? ?mps RETRIEVE_CAP))
-    (wm-fact (key mps-handling process cs-retrieve-cap ?mps args? ?mps ?cc ?cap-color))
-  )
-  (modify ?g (mode EVALUATED))
-)
-
 (defrule goal-reasoner-evaluate-mount-first-ring
 " After a successull mount first ring goal, the mps has to be prepared
   as soon as it is possible. Add a mps-handling request fact.
