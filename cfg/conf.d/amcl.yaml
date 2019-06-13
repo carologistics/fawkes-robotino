@@ -16,8 +16,8 @@ plugins/amcl:
   # around Z axis. Many parts of the system currently ignore yaw.; m
   # There is a wall of one grid cell thickness around the map, therefore
   # set the origin to (-0.05, -0.05)
-  origin_x: -10.0
-  origin_y: -10.0
+  origin_x: -11.9
+  origin_y: -15.5
   origin_theta: 0.0
 
   # Pixels with occupancy probability greater than this threshold are
