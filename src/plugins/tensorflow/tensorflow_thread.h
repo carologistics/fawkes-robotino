@@ -58,6 +58,9 @@ public:
   /** Constructor */
   TensorflowThread(std::string cfg_name);
 
+  /** Destructor */
+  virtual ~TensorflowThread();
+
   virtual void init();
   virtual void loop();
   virtual void finalize();

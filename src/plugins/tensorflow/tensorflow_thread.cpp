@@ -253,3 +253,5 @@ void TensorflowThread::run_graph_once(unsigned int msg_id) {
   tf_utils::DeleteTensor(input_tensor);
   tf_utils::DeleteTensor(output_tensor);
 }
+
+TensorflowThread::~TensorflowThread() {}
