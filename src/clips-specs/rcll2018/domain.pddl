@@ -177,6 +177,12 @@
 								 (not (cs-buffered ?m ?capcol)))
 	)
 
+	(:action request-cs-mount-cap
+		:parameters (?r - robot ?m - mps ?wp - workpiece ?capcol - cap-color)
+		:precondition (self ?r)
+		:effect (self ?r)
+	)
+
 	(:action cs-retrieve-cap
 		:parameters (?m - mps ?cc - cap-carrier ?capcol - cap-color)
 		:precondition (and (mps-type ?m CS) (mps-state ?m READY-AT-OUTPUT)

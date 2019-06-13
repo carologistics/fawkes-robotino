@@ -494,27 +494,6 @@
   (modify ?g (mode EVALUATED))
 )
 
-(defrule goal-reasoner-evaluate-produce-c0
-" After a successull produce c0 goal, the mps has to be prepared
-  as soon as it is possible. Add a mps-handling request fact.
-"
-  ?g <- (goal (class PRODUCE-C0) (mode FINISHED) (outcome COMPLETED)
-              (params robot ?robot
-                        bs ?bs
-                        bs-side ?bs-side
-                        bs-color ?base-color
-                        mps ?mps
-                        cs-color ?cap-color
-                        order ?order
-                        wp ?spawned-wp))
-  =>
-  (assert
-    (wm-fact (key mps-handling prepare prepare-cs ?mps args? ?mps MOUNT_CAP))
-    (wm-fact (key mps-handling process cs-mount-cap ?mps args? ?mps ?spawned-wp ?cap-color))
-  )
-  (modify ?g (mode EVALUATED))
-)
-
 (defrule goal-reasoner-evaluate-mount-first-ring
 " After a successull mount first ring goal, the mps has to be prepared
   as soon as it is possible. Add a mps-handling request fact.
@@ -588,23 +567,6 @@
   ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
   =>
   (retract ?pre ?pro)
-  (modify ?g (mode EVALUATED))
-)
-
-(defrule goal-reasoner-evaluate-produce-cx
-  ?g <- (goal (mode SELECTED) (parent ?parent) (id ?goal-id) (class PRODUCE-CX)
-              (params robot ?robot
-                      wp ?wp
-                      rs ?rs
-                      mps ?mps
-                      cs-color ?cap-color
-                      order ?order
-              ))
-  =>
-  (assert
-    (wm-fact (key mps-handling prepare prepare-cs ?mps args? ?mps MOUNT_CAP))
-    (wm-fact (key mps-handling process cs-mount-cap ?mps args? ?mps ?wp ?cap-color))
-  )
   (modify ?g (mode EVALUATED))
 )
 

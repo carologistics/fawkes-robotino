@@ -60,3 +60,15 @@
     (wm-fact (key mps-handling process bs-dispense ?mps args? ?r ?mps ?side ?wp ?basecol))
   )
 )
+
+(defrule action-execute-request-cs-mount-cap
+  ?pa <- (plan-action (action-name request-cs-mount-cap) (state PENDING) (executable TRUE)
+            (param-values ?r ?mps ?wp ?capcol))
+  =>
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+  (assert
+    (wm-fact (key mps-handling prepare prepare-cs ?mps args? ?mps MOUNT_CAP))
+    (wm-fact (key mps-handling process cs-mount-cap ?mps args? ?mps ?wp ?capcol))
+  )
+)
+
