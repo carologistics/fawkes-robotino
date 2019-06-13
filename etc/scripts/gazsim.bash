@@ -337,7 +337,7 @@ if [  $COMMAND  == start ]; then
 				# robot roscore
 				COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"")
         # move_base
-				if [ -n "$ROS_LAUNCH_MOVE_BASE" ]; then
+				if $START_GAZEBO && [ -n "$ROS_LAUNCH_MOVE_BASE" ]; then
 					COMMANDS+=("bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"")
 				fi
 	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
