@@ -51,7 +51,7 @@ reg_wall_red = reg_num + r"\*"
 reg_empty = r"\[" + reg_num + "\*?\]"
 
 # a float number, appended with a definite asterisk *, embedded in square brackets []
-# describes a high lighted vacancy
+# describes a highlighted vacancy
 reg_empty_red = r"\[" + reg_num + "\*\]"
 
 # two float numbers, separated by a comma ,, embedded in parantheses ()
@@ -76,8 +76,8 @@ pixel_per_meter=20
 x_margin=10
 y_margin=10
 
-def update_limits(x,y,min_x,min_y, max_x, max_y):
-    return min(x,min_x), min(y,min_y), max(x,max_x), max(y, max_y)
+def update_limits(x, y, min_x, min_y, max_x, max_y):
+    return min(x, min_x), min(y, min_y), max(x, max_x), max(y, max_y)
     
 # parse a command string
 # @param command The command string
@@ -96,10 +96,10 @@ def parse(command):
     
     # line_streak is one complete line streak
     for line_streak in line_streaks:
-        dir = 0 # 0 is in x direction, 1 in y direction, first same dir element in line streak is always in x direction
+        direction = 0 # 0 is in x direction, 1 in y direction, first same dir element in line streak is always in x direction
         x, y = [round(float(num) * pixel_per_meter) for num in re.search("\((" + reg_num + "),(" + reg_num + ")\)", line_streak).groups()] # extract starting coordinate
 
-        min_x, min_y, max_x, max_y = update_limits(x, y, min_x,min_y, max_x, max_y) # update limits
+        min_x, min_y, max_x, max_y = update_limits(x, y, min_x, min_y, max_x, max_y) # update limits
 
         same_dir_elements = re.findall(reg_same_dir_element, line_streak) # extract all same direction elements in this line streak
         # same_dir_element is one same direction element
@@ -111,7 +111,7 @@ def parse(command):
 
                 distance = round(float(re.search(reg_num, line_element).group()) * pixel_per_meter) # compute distance of this line element
 
-                if dir == 0: # compute end coordinate of this line element
+                if direction == 0: # compute end coordinate of this line element
                     x_new = x + distance
                 else:
                     y_new = y + distance
@@ -131,7 +131,7 @@ def parse(command):
 
                 # update limits
                 min_x, min_y, max_x, max_y = update_limits(x, y, min_x, min_y, max_x, max_y)
-            dir = 1 if dir == 0 else 0 # switch direction for next same dir element
+            direction = 1 if direction == 0 else 0 # switch direction for next same dir element
     return lines, red_lines, red_dotted_lines, min_x, min_y, max_x, max_y 
         
 
@@ -177,7 +177,7 @@ def get_origin(sizes, interpret_xy):
 
 # Paint a complete command string, without verification first
 # @return image The map image
-# @return origin The origin of the map, needed for integration into ROS
+# @return origin The origin of the map, needed for integration into ROS move_base and the Fawkes amcl plugin
 def paint_command(command):
     lines, red_lines, red_dotted_lines, min_x, min_y, max_x, max_y = parse(command)
     sizes = [max_x-min_x + x_margin * 2, max_y - min_y + y_margin * 2]    
