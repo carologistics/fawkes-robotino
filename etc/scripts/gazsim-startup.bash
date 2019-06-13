@@ -192,6 +192,10 @@ case $COMMAND in
 	comm_plugins=gazsim-organization$SHUTDOWN
 	$FAWKES_BIN/fawkes -p $comm_plugins $@
 	;;
+    comm-no-gazebo )
+	comm_plugins=gazsim-comm
+	$FAWKES_BIN/fawkes -p $comm_plugins $@
+	;;
     asp )
 	ulimit -c unlimited
 	export ROS_MASTER_URI=http://localhost:$PORT
