@@ -376,7 +376,7 @@ if [  $COMMAND  == start ]; then
     echo "Executing $TERM_COMMAND ${SUFFIXED_COMMANDS[@]} ${TERM_COMMAND_END}"
     eval "$TERM_COMMAND ${SUFFIXED_COMMANDS[@]} ${TERM_COMMAND_END}"
 
-    if $FAWKES_USED
+    if $FAWKES_USED && $START_GAZEBO
     then
 	# publish initial poses
 	echo "publish initial poses"
