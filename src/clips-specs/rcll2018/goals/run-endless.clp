@@ -106,7 +106,7 @@
 (defrule run-endless-goal-finish
   ?pg <- (goal (id ?pg-id) (mode DISPATCHED) (type MAINTAIN)
                (sub-type RUN-ENDLESS))
-  ?sg <- (goal (id ?sg-id) (parent ?pg-id) (mode EVALUATED)
+  ?sg <- (goal (id ?sg-id) (parent ?pg-id) (mode RETRACTED)
                (acquired-resources) (outcome ?sg-out&:(neq ?sg-out REJECTED)))
 =>
   (modify ?pg (mode FINISHED) (outcome ?sg-out))
