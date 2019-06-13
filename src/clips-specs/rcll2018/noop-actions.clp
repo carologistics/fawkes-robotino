@@ -49,3 +49,14 @@
   ;Need to finalize directly since it has no effects to be aplied
   (modify ?pa (state FINAL))
 )
+
+(defrule action-execute-request-bs-dispense
+  ?pa <- (plan-action (action-name request-bs-dispense) (state PENDING) (executable TRUE)
+            (param-values ?r ?mps ?side ?wp ?basecol))
+  =>
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+  (assert
+    (wm-fact (key mps-handling prepare prepare-bs ?mps args? ?mps ?side ?basecol))
+    (wm-fact (key mps-handling process bs-dispense ?mps args? ?r ?mps ?side ?wp ?basecol))
+  )
+)
