@@ -6,10 +6,10 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/pddl-robot-memory
 plugins/pddl-diagnosis:
 
   world-model-dump-prefix: cfg/robot-memory
-  world-model-dump: "TEST-PLAN"
+  plan-id: "TEST-PLAN"
 
   # Where the current world model is stored
-  world-model: "pddl.worldmodel"
+  collection: "pddl.worldmodel"
 
   # Where is the problem file to use as teplate (in src/agents)
   input-diagnosis-description: rcll2018/diagnosis-problem-template.pddl
