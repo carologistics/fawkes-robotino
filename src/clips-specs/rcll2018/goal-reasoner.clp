@@ -208,6 +208,23 @@
 
 
 ; ------------------------- PRE EVALUATION -----------------------------------
+(defrule goal-reasoner-evaluate-subgoal-common-start-diagnosis
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (acquired-resources) (outcome FAILED))
+  (plan (id ?plan-id) (goal-id ?goal-id) (diag-wm-store STORED))
+  =>
+  (create-diagnosis (sym-cat DIAG- ?goal-id) ?plan-id (str-cat "(and (next-FINISH))"))
+)
+
+(defrule goal-reasoner-evaluate-subgoal-common-finished-diagnosis
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUTATE*))
+  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (acquired-resources) (outcome FAILED))
+  (plan (id ?plan-id) (goal-id ?goal-id) (diag-wm-store STORED))
+  ?d <- (diagnosis (plan-id ?plan-id) (mode FINAL|FAILED))
+  =>
+  (retract ?d)
+  (modify ?g (mode EVALUATED))
+)
 
 
 (defrule goal-reasoner-evaluate-clean-locks
