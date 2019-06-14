@@ -1,0 +1,20 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+/skiller_state:
+  # Interface IDs of SkillerInterface and RobotinoSensorInterface to read from
+  # and send message to.
+  skiller-interface-id: Skiller
+  sensor-interface-id: Robotino
+
+  # Digital output for the different colors.
+  # This is the number as it appears on the Robotino, i.e. 1 to 8, not
+  # the interface index!
+  digital-out-green: 1
+  digital-out-yellow: 2
+  digital-out-red: 3
+
+  # When the last skill failed, the state switches almost immediately to
+  # running again. To make the fail/final visible anyway, the corresponding
+  # light is left on for some timout, given in seconds.
+  timeout: 2.2
