@@ -1,0 +1,15 @@
+hardware-models:
+  models-dir: /hardware-models
+  components:
+    - move-base
+    - gripper
+    - navgraph
+    - realsense
+    - communication
+    - laser
+    - tag-camera
+    - C-CS1
+    - C-CS2
+    - C-BS
+
+  interface: HardwareModels

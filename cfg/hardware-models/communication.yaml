@@ -3,8 +3,8 @@
 
 communication:
   states:
-    - INIT
     - CONNECTION-ESTABLISHED
+    - INIT
     - CONNECTION-LOST
 
   INIT:

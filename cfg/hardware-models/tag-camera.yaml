@@ -3,8 +3,8 @@
 
 tag-camera:
   states:
-    - DEACTIVATED
     - ACTIVATED
+    - DEACTIVATED
     - LOST
 
   DEACTIVATED:

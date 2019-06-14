@@ -3,8 +3,8 @@
 
 realsense:
   states:
-    - DEACTIVATED
     - ACTIVATED
+    - DEACTIVATED
     - LOST
 
   DEACTIVATED:
