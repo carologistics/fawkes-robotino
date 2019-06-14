@@ -35,8 +35,6 @@ public:
    * @param config Fawkes configuration
    */
   SkillerStatePlugin(Configuration *config) : Plugin(config) {
-    std::string cfg_driver = config->get_string("/hardware/robotino/driver");
-
     thread_list.push_back(new SkillerStateThread());
   }
 };
