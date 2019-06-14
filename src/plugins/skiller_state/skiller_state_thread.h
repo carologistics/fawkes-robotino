@@ -55,10 +55,10 @@ private:
   unsigned int cfg_digital_out_red_;
   unsigned int cfg_digital_out_yellow_;
   unsigned int cfg_digital_out_green_;
-  int cfg_timeout_;
+  fawkes::Time cfg_timeout_;
 
-  int final_ctr_;
-  int failed_ctr_;
+  fawkes::Time final_time_;
+  fawkes::Time failed_time_;
 
   void enable(unsigned int output);
   void disable(unsigned int output);

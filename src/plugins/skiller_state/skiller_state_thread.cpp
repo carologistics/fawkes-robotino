@@ -34,8 +34,7 @@ using namespace fawkes;
 /** Constructor. */
 SkillerStateThread::SkillerStateThread()
     : Thread("SkillerStateThread", Thread::OPMODE_WAITFORWAKEUP),
-      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT), final_ctr_(0),
-      failed_ctr_(0) {}
+      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT) {}
 
 void SkillerStateThread::init() {
   cfg_skiller_ifid_ = config->get_string("/skiller_state/skiller-interface-id");
@@ -44,7 +43,7 @@ void SkillerStateThread::init() {
   cfg_digital_out_red_ = config->get_uint("/skiller_state/digital-out-red");
   cfg_digital_out_yellow_ =
       config->get_uint("/skiller_state/digital-out-yellow");
-  cfg_timeout_ = config->get_uint("/skiller_state/timeout");
+  cfg_timeout_ = fawkes::Time(config->get_float("/skiller_state/timeout"));
 
   skiller_if_ =
       blackboard->open_for_reading<SkillerInterface>(cfg_skiller_ifid_.c_str());
@@ -70,23 +69,18 @@ void SkillerStateThread::loop() {
       disable(cfg_digital_out_yellow_);
     }
     if (status == SkillerInterface::S_FINAL) {
-      final_ctr_ = cfg_timeout_;
+      final_time_ = fawkes::Time();
       enable(cfg_digital_out_green_);
     }
     if (status == SkillerInterface::S_FAILED) {
-      failed_ctr_ = cfg_timeout_;
+      failed_time_ = fawkes::Time();
       enable(cfg_digital_out_red_);
     }
 
-    --final_ctr_;
-    --failed_ctr_;
-
-    if (final_ctr_ <= 0) {
-      final_ctr_ = 0;
+    if (fawkes::Time() - final_time_ > cfg_timeout_) {
       disable(cfg_digital_out_green_);
     }
-    if (failed_ctr_ <= 0) {
-      failed_ctr_ = 0;
+    if (fawkes::Time() - failed_time_ > cfg_timeout_) {
       disable(cfg_digital_out_red_);
     }
   }
