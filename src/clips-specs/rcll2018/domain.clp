@@ -24,8 +24,13 @@
   (executive-init)
   (not (domain-loaded))
 =>
-  (parse-pddl-domain (path-resolve "rcll2018/domain.pddl"))
-  (assert (domain-loaded))
+  (bind ?ret (parse-pddl-domain (path-resolve "rcll2018/domain.pddl")))
+  (if ?ret then
+    (assert (domain-loaded))
+    (printout t "Finished parsing pddl domain" crlf)
+  else
+    (printout error "Failed to parse pddl domain" crlf)
+  )
 )
 
 
@@ -148,13 +153,7 @@
     (domain-object (name CCG2) (type cap-carrier))
     (domain-object (name CCG3) (type cap-carrier))
 
-    (domain-object (name ?bs) (type mps))
-    (domain-object (name ?cs1) (type mps))
-    (domain-object (name ?cs2) (type mps))
-    (domain-object (name ?ds) (type mps))
-    (domain-object (name ?rs1) (type mps))
-    (domain-object (name ?rs2) (type mps))
-    (domain-object (name ?ss) (type mps))
+    (domain-object (name DUMMP-WP) (type cap-carrier))
 
     (domain-object (name INPUT) (type mps-side))
     (domain-object (name OUTPUT) (type mps-side))
@@ -171,6 +170,9 @@
     (domain-object (name O7) (type order))
     (domain-object (name O8) (type order))
     (domain-object (name O9) (type order))
+
+    (domain-object (name DUMMY-WP) (type cap-carrier))
+    (domain-fact (name dummy-wp) (param-values DUMMY-WP))
 
     (domain-fact (name wp-base-color) (param-values WP1 BASE_NONE))
     (domain-fact (name wp-cap-color) (param-values WP1 CAP_NONE))
