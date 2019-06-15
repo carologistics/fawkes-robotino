@@ -124,7 +124,7 @@ while true; do
              KEEP=yes
              ;;
          -m)
-             META_PLUGIN=,$OPTARG
+             META_PLUGIN=$OPTARG
              ;;
 	 -t)
 	     SKIP_EXPLORATION=",gazsim-navgraph-generator"
@@ -177,7 +177,11 @@ case $COMMAND in
     fawkes )
 	ulimit -c unlimited
 	export ROS_MASTER_URI=http://localhost:$PORT
-	robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT$META_PLUGIN$SKIP_EXPLORATION
+	if [ -n "$META_PLUGIN" ] ; then
+		robotino_plugins=$META_PLUGIN
+	else
+	  robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT$SKIP_EXPLORATION
+	fi
 	$GDB $FAWKES_BIN/fawkes -c $CONF/$ROBOTINO.yaml -p $robotino_plugins $@
 	if [ -n "$GDB" ]; then
 		echo Fawkes exited, press return to close shell
@@ -186,6 +190,10 @@ case $COMMAND in
 	;;
     comm )
 	comm_plugins=gazsim-organization$SHUTDOWN
+	$FAWKES_BIN/fawkes -p $comm_plugins $@
+	;;
+    comm-no-gazebo )
+	comm_plugins=gazsim-comm
 	$FAWKES_BIN/fawkes -p $comm_plugins $@
 	;;
     asp )

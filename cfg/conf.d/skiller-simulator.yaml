@@ -1,0 +1,5 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+plugins/skiller-simulation:
+  skill-runtime: 0.1
