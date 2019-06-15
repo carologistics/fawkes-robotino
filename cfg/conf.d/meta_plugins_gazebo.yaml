@@ -61,6 +61,14 @@ fawkes/meta_plugins:
   gazsim-meta-clips-exec:
     - gazsim-meta-robotino-ros
     - gazsim-meta-robotino-ros-movebase
+    - m-clips-executive
+
+  m-skill-sim-clips-exec:
+    - skiller-simulator
+    - ros
+    - navgraph
+    - navgraph-generator
+    - navgraph-generator-mps
     - m-clips
     - m-robot-memory
     - pddl-robot-memory
