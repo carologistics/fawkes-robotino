@@ -44,36 +44,6 @@ skillenv.skill_module(_M)
 
 local tfm = require("fawkes.tfutils")
 
-function pose_gripper_offset(x,y,z)
-  local target_pos = { x = x,
-                       y = y,
-                       z = z,
-                       ori = { x = 0, y = 0, z = 0, w = 0}
-
-   }
-   local tmp = { x = 0,
-                 y = 0,
-                 z = 0,
-                 ori = { x = 0, y = 0, z = 0, w = 0}
-   }
-
-   -- Get offset from gripper axis (middle of z sledge) to gripper finger
-   local gripper_rel = tfm.transform6D(tmp,"gripper","gripper_z_dyn")
-
-   -- Shift target point to gripper axis frame
-   gripper_rel.x = target_pos.x - gripper_rel.x
-   gripper_rel.y = target_pos.y - gripper_rel.y
-   gripper_rel.z = target_pos.z - gripper_rel.z
-
-   -- Transform target to gripper home frame = absolut coordinates of the axis
-   local gripper_home_rel = tfm.transform6D(gripper_rel,"gripper","gripper_home")
-
-   -- Clip to axis limits
-   return { x = gripper_home_rel.x,
-            y = gripper_home_rel.y,
-            z = gripper_home_rel.z}
-end
-
 -- Constant
 local height_safe = 0.05  -- z coordinate at home
 
@@ -103,18 +73,16 @@ fsm:add_transitions{
 }
 
 function GO_UP:init()
-  local pose = pose_gripper_offset(0,0,0)
   self.args["gripper_commands"].command="MOVEABS"
-  self.args["gripper_commands"].x = pose.x
-  self.args["gripper_commands"].y = pose.y
+  self.args["gripper_commands"].x_rel = 0.0
+  self.args["gripper_commands"].y_rel = 0.0
   self.args["gripper_commands"].z = height_safe
   self.args["gripper_commands"].wait = true
 end
 
 function GO_BACK:init()
-  local pose = pose_gripper_offset(0,0,0) -- CAREFUL, THIS WILL STILL BE THE OLD POSITION (BEFORE GO_UP)
   self.args["gripper_commands"].command="MOVEABS"
-  self.args["gripper_commands"].y = pose.y
+  self.args["gripper_commands"].y_rel = 0.0
   self.args["gripper_commands"].x = 0
   self.args["gripper_commands"].z = height_safe
   self.args["gripper_commands"].wait = false

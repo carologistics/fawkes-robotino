@@ -117,28 +117,23 @@ function GRIPPER_ALIGN:init()
                        ori = { x = 0, y = 0, z = 0, w = 0}
   }
 
-  local grip_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper")
-
-  local pose =  pose_gripper_offset(grip_pos.x,grip_pos.y,grip_pos.z)
-
-  self.args["gripper_commands"].command = "MOVEABS"
-  self.args["gripper_commands"].x = pose.x
-  self.args["gripper_commands"].y = pose.y
-  self.args["gripper_commands"].z = pose.z
-  self.args["gripper_commands"].target_frame = "gripper_home"
+  self.args["gripper_commands"].command = "MOVEREL"
+  self.args["gripper_commands"].x = target_pos.x
+  self.args["gripper_commands"].y = target_pos.y
+  self.args["gripper_commands"].z = target_pos.z
 end
 
 function MOVE_GRIPPER_FORWARD:init()
-  local pose = {}
   if self.fsm.vars.slide ~= nil then
-    pose = pose_gripper_offset(slide_gripper_forward_x, 0, slide_gripper_down_z)
+    self.args["gripper_commands"].x = slide_gripper_forward_x
+    self.args["gripper_commands"].z = slide_gripper_down_z
   else
-    pose = pose_gripper_offset(conveyor_gripper_forward_x, 0, conveyor_gripper_down_z)
+    self.args["gripper_commands"].x = conveyor_gripper_forward_x
+    self.args["gripper_commands"].z = conveyor_gripper_down_z
   end
 
-  self.args["gripper_commands"] = pose
-  self.args["gripper_commands"].command = "MOVEABS"
-  self.args["gripper_commands"].target_frame = "gripper_home"
+  self.args["gripper_commands"].y = 0.0
+  self.args["gripper_commands"].command = "MOVEREL"
 end
 
 function OPEN_GRIPPER:init()
@@ -146,15 +141,15 @@ function OPEN_GRIPPER:init()
 end
 
 function MOVE_GRIPPER_BACK:init()
-  local pose = {}
   if self.fsm.vars.slide ~= nil then
-    pose = pose_gripper_offset(slide_gripper_back_x, 0, slide_gripper_up_z)
+    self.args["gripper_commands"].x = slide_gripper_back_x
+    self.args["gripper_commands"].z = slide_gripper_up_z
   else
-    pose = pose_gripper_offset(conveyor_gripper_back_x, 0, conveyor_gripper_up_z)
+    self.args["gripper_commands"].x = conveyor_gripper_back_x
+    self.args["gripper_commands"].z = conveyor_gripper_up_z
   end
-  self.args["gripper_commands"] = pose
-  self.args["gripper_commands"].command = "MOVEABS"
-  self.args["gripper_commands"].target_frame = "gripper_home"
+  self.args["gripper_commands"].y = 0.0
+  self.args["gripper_commands"].command = "MOVEREL"
 end
 
 function CALIBRATE_GRIPPER:init()

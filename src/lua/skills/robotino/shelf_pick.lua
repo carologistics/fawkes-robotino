@@ -45,11 +45,6 @@ local gripper_adjust_z_distance = 0.03
 local gripper_adjust_x_distance = 0.015
 local gripper_down_to_puck = -0.025
 
-function clip_value(value, min, max)
-  return math.max(min,math.min(value,max))
-end
-
-
 fsm:define_states{ export_to=_M, closure={},
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="GOTO_SHELF", fail_to="FAILED" },
    {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SHELF", fail_to="FAILED"},
@@ -63,7 +58,6 @@ fsm:define_states{ export_to=_M, closure={},
 }
 
 fsm:add_transitions{
-   {"OPEN_GRIPPER", "FAILED", cond="vars.error"},
    {"GOTO_SHELF", "FAILED", cond="vars.error"},
 }
 
@@ -109,11 +103,8 @@ function MOVE_ABOVE_PUCK:init()
   local grip_pos = tfm.transform6D(self.fsm.vars.target_pos, "odom", "gripper")
   -- grip_pos now gives the relative movement necessary to reach the shelf
 
-  local pose = pose_gripper_offset(grip_pos)
-  -- pose is relative to gripper_home now
-
-  self.args["gripper_commands"].x = pose.x
-  self.args["gripper_commands"].y = pose.y
+  self.args["gripper_commands"].x_rel = grip_pos.x
+  self.args["gripper_commands"].y_rel = grip_pos.y
   self.args["gripper_commands"].z = gripper_adjust_z_distance
   self.args["gripper_commands"].command = "MOVEABS"
   self.args["gripper_commands"].target_frame = "gripper_home"

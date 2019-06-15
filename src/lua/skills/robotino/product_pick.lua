@@ -125,28 +125,22 @@ function GRIPPER_ALIGN:init()
 
   local grip_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper")
 
-  local pose = pose_gripper_offset(grip_pos.x,grip_pos.y,grip_pos.z)
-  self.args["gripper_commands"] = pose
-  self.args["gripper_commands"].command = "MOVEABS"
-  self.args["gripper_commands"].target_frame = "gripper_home"
+  self.args["gripper_commands"] = grip_pos
+  self.args["gripper_commands"].command = "MOVEREL"
 end
 
 function MOVE_GRIPPER_FORWARD:init()
-  local pose = {}
-  pose = pose_gripper_offset(conveyor_gripper_forward_x, 0, conveyor_gripper_down_z)
-
-  self.args["gripper_commands"] = pose
-  self.args["gripper_commands"].command = "MOVEABS"
-  self.args["gripper_commands"].target_frame = "gripper_home"
+  self.args["gripper_commands"].x = conveyor_gripper_forward_x
+  self.args["gripper_commands"].y = 0.0
+  self.args["gripper_commands"].z = conveyor_gripper_down_z
+  self.args["gripper_commands"].command = "MOVEREL"
 end
 
 function MOVE_GRIPPER_BACK:init()
-  local pose = {}
-  pose = pose_gripper_offset(conveyor_gripper_back_x, 0, conveyor_gripper_up_z)
-
-  self.args["gripper_commands"] = pose
-  self.args["gripper_commands"].command = "MOVEABS"
-  self.args["gripper_commands"].target_frame = "gripper_home"
+  self.args["gripper_commands"].x = conveyor_gripper_back_x
+  self.args["gripper_commands"].y = 0.0
+  self.args["gripper_commands"].z = conveyor_gripper_up_z
+  self.args["gripper_commands"].command = "MOVEREL"
 end
 
 function GRIPPER_HOME:init()
