@@ -46,33 +46,37 @@ local gripper_adjust_x_distance = 0.015
 local gripper_down_to_puck = -0.025
 
 function pose_gripper_offset(x,y,z)
-  local target_pos = { x = x,
-                        y = y,
-                        z = z,
-                        ori = { x = 0, y = 0, z = 0, w = 0}
-
-   }
    local tmp = { x = 0,
                  y = 0,
                  z = 0,
                  ori = { x = 0, y = 0, z = 0, w = 0}
    }
 
-   -- Get offset from gripper axis (middle of z sledge) to gripper finger
-   local gripper_rel = tfm.transform6D(tmp,"gripper","gripper_z_dyn")
+   -- Get current position values of gripper as seen from arduino plugin
+   local cur_x = tfm.transform6D(tmp,"gripper_x_origin","gripper_x_dyn").x
+   local cur_y = tfm.transform6D(tmp,"gripper_y_origin","gripper_y_dyn").y
+   local cur_z = tfm.transform6D(tmp,"gripper_z_origin","gripper_z_dyn").z
+   -- The cur_* values are now those you need to give gripper_commands
+   -- to reach exactly the position at which the gripper is.
 
-   -- Shift target point to gripper axis frame
-   gripper_rel.x = target_pos.x - gripper_rel.x
-   gripper_rel.y = target_pos.y - gripper_rel.y
-   gripper_rel.z = target_pos.z - gripper_rel.z
-
-   -- Transform target to gripper home frame = absolut coordinates of the axis
-   local gripper_home_rel = tfm.transform6D(gripper_rel,"gripper","gripper_home")
+   -- Now just add the shifts we have to do, to reach the final position
+   local target_pos_wrt_gripper_home = {
+     x = target_pos_wrt_gripper.x + cur_x,
+     y = target_pos_wrt_gripper.y + cur_y,
+     z = target_pos_wrt_gripper.z + cur_z,
+     ori = { x=0, y=0, z=0, w=0}
+   }
 
    -- Clip to axis limits
-   return { x = math.max(0,math.min(gripper_home_rel.x,fsm.vars.x_max)),
-            y = math.max(-fsm.vars.y_max/2,math.min(gripper_home_rel.y,fsm.vars.y_max/2)),
-            z = math.max(0,math.min(gripper_home_rel.z,fsm.vars.z_max))}
+   target_pos_wrt_gripper_home.x = clip_value(target_pos_wrt_gripper_home.x,0,fsm.vars.x_max)
+   target_pos_wrt_gripper_home.y = clip_value(target_pos_wrt_gripper_home.y,-fsm.vars.y_max/2,fsm.vars.y_max/2)
+   target_pos_wrt_gripper_home.z = clip_value(target_pos_wrt_gripper_home.z,0,fsm.vars.z_max)
+
+   return  target_pos_wrt_gripper_home
+end
+
+function clip_value(value, min, max)
+  return math.max(min,math.min(value,max))
 end
 
 
@@ -159,7 +163,7 @@ function MOVE_ABOVE_PUCK:init()
   local grip_pos = tfm.transform6D(self.fsm.vars.target_pos, "odom", "gripper")
   -- grip_pos now gives the relative movement necessary to reach the shelf
 
-  local pose = pose_gripper_offset(grip_pos.x,grip_pox.y,grip_pos.z)
+  local pose = pose_gripper_offset(grip_pos)
   -- pose is relative to gripper_home now
 
   self.args["gripper_commands"].x = pose.x
