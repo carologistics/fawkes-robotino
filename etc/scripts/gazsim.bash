@@ -337,7 +337,7 @@ if [  $COMMAND  == start ]; then
 				# robot roscore
 				COMMANDS+=("bash -i -c \"$startup_script_location -x roscore -p 1132$ROBO $KEEP $@\"")
         # move_base
-				if $START_GAZEBO && [ -n "$ROS_LAUNCH_MOVE_BASE" ]; then
+				if [ -n "$ROS_LAUNCH_MOVE_BASE" ]; then
 					COMMANDS+=("bash -i -c \"$startup_script_location -x move_base -p 1132$ROBO $KEEP $@\"")
 				fi
 	if [ -n "$ROS_LAUNCH_ROBOT" ]; then
@@ -346,10 +346,13 @@ if [  $COMMAND  == start ]; then
     	done
     fi
 
-    #start refbox
-    COMMANDS+=("bash -i -c \"$startup_script_location -x refbox $KEEP $@\"")
-    #start refbox shell
-    COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-shell $KEEP $@\"")
+    if $START_GAZEBO
+    then
+	    #start refbox
+	    COMMANDS+=("bash -i -c \"$startup_script_location -x refbox $KEEP $@\"")
+    	#start refbox shell
+        COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-shell $KEEP $@\"")
+    fi
 
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
@@ -363,20 +366,18 @@ if [  $COMMAND  == start ]; then
 	COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x asp -p ${ROS_MASTER_URI##*:} $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
     fi
 
-    #start fawkes for communication, llsfrbcomm and eventually statistics
-    if $START_GAZEBO ; then
-        comm_plugin=comm
-    else
-        comm_plugin=comm-no-gazebo
+    if $START_GAZEBO
+    then
+    	#start fawkes for communication, llsfrbcomm and eventually statistics
+	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x comm $KEEP $SHUTDOWN $@\"")
     fi
-	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x $comm_plugin $KEEP $SHUTDOWN $@\"")
 
     PREFIXED_COMMANDS=("${COMMANDS[@]/#/${SUBTERM_PREFIX}}")
     SUFFIXED_COMMANDS=("${PREFIXED_COMMANDS[@]/%/${SUBTERM_SUFFIX}}")
     echo "Executing $TERM_COMMAND ${SUFFIXED_COMMANDS[@]} ${TERM_COMMAND_END}"
     eval "$TERM_COMMAND ${SUFFIXED_COMMANDS[@]} ${TERM_COMMAND_END}"
 
-    if $FAWKES_USED && $START_GAZEBO
+    if $FAWKES_USED
     then
 	# publish initial poses
 	echo "publish initial poses"

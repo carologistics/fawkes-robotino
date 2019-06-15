@@ -26,6 +26,7 @@
   	(wm-fact (id "/config/rcll/robot-number")  (value ?robot-number) )
   	(wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   	(wm-fact (id "/refbox/comm/peer-id/public") (value ?peer) (type INT))
+  	(Position3DInterface (id "Pose") (translation $?trans) (rotation $?ori) (time $?ptime))
   	=>
   (modify ?bs (value (+ ?seq 1)))
 	(bind ?beacon (pb-create "llsf_msgs.BeaconSignal"))
@@ -39,13 +40,6 @@
 	(pb-set-field ?beacon "team_color" ?team-color)
 	(pb-set-field ?beacon "number" ?robot-number)
 
-	(bind ?trans (create$ 0 0))
-	(bind ?ori (create$ 0 0 0 1))
-	(bind ?ptime ?now)
-	(do-for-fact ((?pose Position3DInterface)) (eq ?pose:id "Pose")
-		(bind ?trans ?pose:translation)
-		(bind ?ptime ?pose:time)
-	)
 	(bind ?beacon-pose (pb-field-value ?beacon "pose"))
 	(pb-set-field ?beacon-pose "x" (nth$ 1 ?trans))
 	(pb-set-field ?beacon-pose "y" (nth$ 2 ?trans))
