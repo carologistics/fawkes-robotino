@@ -400,7 +400,7 @@
     :parameters (?r - robot ?point - waitpoint)
     :precondition ()
     :effect ()
-
+  )
   (:action move
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
 		:precondition (and (comp-state move-base INIT)
@@ -637,7 +637,7 @@
                  (not (wp-unused ?cc1))
                  (wp-cap-color ?cc1  ?color)
             )
-
+  )
 (:action one-time-lock
 :parameters (?name - object)
 :precondition (and (comp-state communication CONNECTION-ESTABLISHED) (not (locked ?name)))

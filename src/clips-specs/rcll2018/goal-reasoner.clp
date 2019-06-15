@@ -217,7 +217,7 @@
 )
 
 (defrule goal-reasoner-evaluate-subgoal-common-finished-diagnosis
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUTATE*))
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (acquired-resources) (outcome FAILED))
   (plan (id ?plan-id) (goal-id ?goal-id) (diag-wm-store STORED))
   ?d <- (diagnosis (plan-id ?plan-id) (mode FINAL|FAILED))
