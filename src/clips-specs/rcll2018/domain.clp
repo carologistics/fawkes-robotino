@@ -208,8 +208,8 @@
     (domain-object (name O7) (type order))
     (domain-object (name O8) (type order))
     (domain-object (name O9) (type order))
-    (domain-fact (name rs-ring-spec) (param-values ?rs1 RING_NONE NONE))
-    (domain-fact (name rs-ring-spec) (param-values ?rs2 RING_NONE NONE))
+    (domain-fact (name rs-ring-spec) (param-values ?rs1 RING_NONE ZERO))
+    (domain-fact (name rs-ring-spec) (param-values ?rs2 RING_NONE ZERO))
 	)
 )
 
@@ -304,7 +304,7 @@
   (wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
   (wm-fact (key config rcll robot-name) (value ?robot-name))
  (wm-fact (key refbox team-color) (value ?team-color&~nil))
- 
+
  =>
   (printout warn "Restoring world model from the database" crlf)
 	(domain-load-local-facts (sym-cat ?robot-name) ?team-color)
