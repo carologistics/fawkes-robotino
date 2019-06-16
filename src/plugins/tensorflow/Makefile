@@ -39,7 +39,7 @@ OBJS_all    = $(OBJS_tensorflow)
 
 PLUGINS_all = $(PLUGINDIR)/tensorflow.$(SOEXT)
 
-ifneq ($(wildcard $(SYSROOT)/usr/lib/libtensorflow.so),)
+ifneq ($(wildcard $(SYSROOT)/usr/lib64/libtensorflow.so),)
   ifneq ($(wildcard $(SYSROOT)/usr/include/tensorflow/c/c_api.h),)
     HAVE_TENSORFLOW = 1
     LIBS_tensorflow += tensorflow
