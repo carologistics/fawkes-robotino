@@ -1,0 +1,10 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+clips-executive:
+  specs:
+    rcll2018:
+      parameters:
+        rcll:
+          robot-name: "R-2"
+          robot-number: 2

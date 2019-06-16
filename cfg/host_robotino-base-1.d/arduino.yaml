@@ -1,0 +1,9 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+arduino:
+  firmware_settings:
+    acc_x: 2500
+    acc_y: 2500
+    acc_z: 2500
+    speed_x: 1500

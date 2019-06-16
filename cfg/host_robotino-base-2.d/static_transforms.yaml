@@ -1,0 +1,10 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+plugins:
+  static-transforms:
+    transforms:
+      back_laser:
+        rot_pitch: 2.931331
+        rot_roll: 0.012375
+        rot_yaw: -0.055420
