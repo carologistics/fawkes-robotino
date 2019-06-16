@@ -1,0 +1,11 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+hardware:
+  laser:
+    back:
+      serial: 17250137
+      time_offset: -0.040254
+    front:
+      serial: 15170145
+      time_offset: -0.061254
