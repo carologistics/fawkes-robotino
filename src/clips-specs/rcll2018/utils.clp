@@ -811,12 +811,11 @@
 
   @return points awarded for mounting a ring needing ?req additinal bases
 "
-  (if (eq ?req NONE) then (return 0))
   (if (eq ?req ZERO) then (return ?*POINTS-MOUNT-RING-CC0*))
   (if (eq ?req ONE) then (return ?*POINTS-MOUNT-RING-CC1*))
   (if (eq ?req TWO) then (return ?*POINTS-MOUNT-RING-CC2*))
   (printout error "ring-req-points input " ?req " is not a valid ring spec
-                   (allowed values: NONE,ZERO,ONE,TWO)" crlf)
+                   (allowed values: ZERO,ONE,TWO)" crlf)
   (return 0)
 )
 
