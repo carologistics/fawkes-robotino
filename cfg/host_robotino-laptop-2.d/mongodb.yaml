@@ -1,0 +1,7 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+plugins/mongodb:
+  clients:
+    robot-memory-distributed-direct:
+      hostport: robotino-laptop-2:27022
