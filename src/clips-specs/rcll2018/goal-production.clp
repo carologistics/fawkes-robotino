@@ -158,6 +158,7 @@
 
 (defrule goal-production-navgraph-compute-wait-positions-finished
   "Add the waiting points to the domain once their generation is finished."
+  (this-fact-wont-ever-exist)
   (NavGraphWithMPSGeneratorInterface (final TRUE))
 =>
   (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
@@ -184,8 +185,6 @@
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact entered-field args? r ?robot))
-  (NavGraphWithMPSGeneratorInterface (final TRUE))
-  (wm-fact (key navgraph waitzone generated))
   =>
   (goal-tree-assert-run-endless PRODUCTION-MAINTAIN 1)
 )
