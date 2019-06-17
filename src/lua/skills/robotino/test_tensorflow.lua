@@ -23,7 +23,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "test_tensorflow"
-fsm                = SkillHSM:new{name=name, start="CHECK_WRITER", debug=false}
+fsm                = SkillHSM:new{name=name, start="COMMAND", debug=false}
 depends_skills     = nil
 depends_interfaces = {
     {v = "tensorflow", type = "TensorflowInterface", id="Tensorflow"},
