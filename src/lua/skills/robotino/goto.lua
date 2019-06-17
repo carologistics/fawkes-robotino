@@ -168,6 +168,8 @@ function MOVING:init()
         "map",
         self.fsm.vars.trans_tolerance,
         self.fsm.vars.ori_tolerance)
+   else
+        print_warn("Not all tolerances given for place " .. self.fsm.vars.place .. ", using default tolerances.")
    end
    fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
 end
