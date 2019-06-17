@@ -62,6 +62,8 @@ void SkillerStateThread::finalize() {
 
 void SkillerStateThread::loop() {
   if (rsens_if_->has_writer() && skiller_if_->has_writer()) {
+    rsens_if_->read();
+    skiller_if_->read();
     SkillerInterface::SkillStatusEnum status = skiller_if_->status();
     if (status == SkillerInterface::S_RUNNING) {
       enable(cfg_digital_out_yellow_);
