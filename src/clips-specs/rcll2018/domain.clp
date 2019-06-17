@@ -68,15 +68,27 @@
   (modify ?op (exogenous TRUE))
 )
 
+(defrule domain-worldmodel-flush
+	(executive-init)
+	(wm-fact (key cx identity))
+	(wm-fact (key refbox phase) (value SETUP))
+	=>
+	(printout warn "Flushing worldmodel!" crlf)
+	(wm-robmem-flush)
+	(assert (domain-wm-flushed))
+)
 
 (defrule domain-load-initial-facts
 " Load all initial domain facts on startup of the game "
   (domain-loaded)
+  ?flushed <- (domain-wm-flushed)
   (wm-fact (key config rcll robot-name) (value ?robot-name))
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
   (wm-fact (key refbox phase) (value SETUP))
   =>
+  (retract ?flushed)
   (bind ?self (sym-cat ?robot-name))
+  (printout info "Initializing worldmodel" crlf)
   (if (eq ?team-color CYAN)
     then
         (bind ?bs C-BS)
