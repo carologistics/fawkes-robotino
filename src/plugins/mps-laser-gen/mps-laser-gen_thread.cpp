@@ -117,89 +117,123 @@ void MPSLaserGenThread::loop() {
       }
 
       MPS mps;
-      mps.center = transform * Eigen::Vector2f(n.x(), n.y());
-      mps.corners[0] =
-          sensor_rotation * Eigen::Vector2f(mps_width_2, -mps_length_2);
-      mps.corners[1] =
-          sensor_rotation * Eigen::Vector2f(-mps_width_2, -mps_length_2);
-      mps.corners[2] =
-          sensor_rotation * Eigen::Vector2f(-mps_width_2, mps_length_2);
-      mps.corners[3] =
-          sensor_rotation * Eigen::Vector2f(mps_width_2, mps_length_2);
+      // send a message to the box_filter laser filter if needed
+      if (cfg_enable_mps_box_filter_ == true && mpses.count(n.name()) == 0) {
+        mps.center = Eigen::Vector2f(n.x(), n.y());
 
-      Eigen::Rotation2Df rot(ori);
+        mps.corners[0] = Eigen::Vector2f(mps_width_2, -mps_length_2);
+        mps.corners[1] = Eigen::Vector2f(-mps_width_2, -mps_length_2);
+        mps.corners[2] = Eigen::Vector2f(-mps_width_2, mps_length_2);
+        mps.corners[3] = Eigen::Vector2f(mps_width_2, mps_length_2);
 
-      mps.corners[0] = (rot * mps.corners[0]) + mps.center;
-      mps.corners[1] = (rot * mps.corners[1]) + mps.center;
-      mps.corners[2] = (rot * mps.corners[2]) + mps.center;
-      mps.corners[3] = (rot * mps.corners[3]) + mps.center;
+        Eigen::Rotation2Df rot(ori);
+        mps.corners[0] = (rot * mps.corners[0]) + mps.center;
+        mps.corners[1] = (rot * mps.corners[1]) + mps.center;
+        mps.corners[2] = (rot * mps.corners[2]) + mps.center;
+        mps.corners[3] = (rot * mps.corners[3]) + mps.center;
 
-      float dists[4] = {mps.corners[0].norm(), mps.corners[1].norm(),
-                        mps.corners[2].norm(), mps.corners[3].norm()};
-      mps.closest_idx = 0;
-      for (unsigned int i = 1; i < 4; ++i) {
-        if (dists[i] < dists[mps.closest_idx])
-          mps.closest_idx = i;
+        LaserBoxFilterInterface::CreateNewBoxFilterMessage *box_filter_msg =
+            new LaserBoxFilterInterface::CreateNewBoxFilterMessage();
+        box_filter_msg->set_p1(0, mps.corners[0][0]);
+        box_filter_msg->set_p1(1, mps.corners[0][1]);
+        box_filter_msg->set_p2(0, mps.corners[1][0]);
+        box_filter_msg->set_p2(1, mps.corners[1][1]);
+        box_filter_msg->set_p3(0, mps.corners[2][0]);
+        box_filter_msg->set_p3(1, mps.corners[2][1]);
+        box_filter_msg->set_p4(0, mps.corners[3][0]);
+        box_filter_msg->set_p4(1, mps.corners[3][1]);
+
+        laser_box_filter_if_->read();
+        laser_box_filter_if_->msgq_enqueue(box_filter_msg);
+
+        mpses[n.name()] = mps;
       }
 
-      mps.adjacent_1 = (mps.closest_idx == 0) ? 3 : mps.closest_idx - 1;
-      mps.adjacent_2 = (mps.closest_idx == 3) ? 0 : mps.closest_idx + 1;
+      if (cfg_enable_mps_laser_gen_ == true) {
+        mps.center = transform * Eigen::Vector2f(n.x(), n.y());
 
-      mps.bearing = atan2f(mps.corners[mps.closest_idx][1],
-                           mps.corners[mps.closest_idx][0]);
-      // logger->log_info(name(), "Station %s bearing %f", n.name().c_str(),
-      // mps.bearing);
+        mps.corners[0] =
+            sensor_rotation * Eigen::Vector2f(mps_width_2, -mps_length_2);
+        mps.corners[1] =
+            sensor_rotation * Eigen::Vector2f(-mps_width_2, -mps_length_2);
+        mps.corners[2] =
+            sensor_rotation * Eigen::Vector2f(-mps_width_2, mps_length_2);
+        mps.corners[3] =
+            sensor_rotation * Eigen::Vector2f(mps_width_2, mps_length_2);
 
-      mpses[n.name()] = mps;
+        Eigen::Rotation2Df rot(ori);
+        mps.corners[0] = (rot * mps.corners[0]) + mps.center;
+        mps.corners[1] = (rot * mps.corners[1]) + mps.center;
+        mps.corners[2] = (rot * mps.corners[2]) + mps.center;
+        mps.corners[3] = (rot * mps.corners[3]) + mps.center;
 
-      {
-        visualization_msgs::Marker sphere;
-        sphere.header.frame_id = sensor_frame;
-        sphere.header.stamp = ros::Time::now();
-        sphere.ns = "mps-laser-gen";
-        sphere.id = id_num++;
-        sphere.type = visualization_msgs::Marker::SPHERE;
-        sphere.action = visualization_msgs::Marker::ADD;
-        sphere.pose.position.x = mps.center[0];
-        sphere.pose.position.y = mps.center[1];
-        sphere.pose.position.z = 0.;
-        sphere.pose.orientation.w = 1.;
-        sphere.scale.x = sphere.scale.y = sphere.scale.z = 0.1;
-        sphere.color.r = 0.f;
-        sphere.color.g = 1.f;
-        sphere.color.b = 0.f;
-        sphere.color.a = 1.0;
-        sphere.lifetime = ros::Duration(0, 0);
-        m.markers.push_back(sphere);
-      }
-
-      for (unsigned int i = 0; i < 4; ++i) {
-        visualization_msgs::Marker sphere;
-        sphere.header.frame_id = sensor_frame;
-        sphere.header.stamp = ros::Time::now();
-        sphere.ns = "mps-laser-gen";
-        sphere.id = id_num++;
-        sphere.type = visualization_msgs::Marker::SPHERE;
-        sphere.action = visualization_msgs::Marker::ADD;
-        sphere.pose.position.x = mps.corners[i][0];
-        sphere.pose.position.y = mps.corners[i][1];
-        sphere.pose.position.z = 0.;
-        sphere.pose.orientation.w = 1.;
-        sphere.scale.x = sphere.scale.y = sphere.scale.z = 0.05;
-        if (i == mps.closest_idx) {
-          sphere.color.r = 0.f;
-          sphere.color.b = 1.f;
-        } else if (i == mps.adjacent_1 || i == mps.adjacent_2) {
-          sphere.color.r = 1.f;
-          sphere.color.b = 1.f;
-        } else {
-          sphere.color.r = 1.f;
-          sphere.color.b = 0.f;
+        float dists[4] = {mps.corners[0].norm(), mps.corners[1].norm(),
+                          mps.corners[2].norm(), mps.corners[3].norm()};
+        mps.closest_idx = 0;
+        for (unsigned int i = 1; i < 4; ++i) {
+          if (dists[i] < dists[mps.closest_idx])
+            mps.closest_idx = i;
         }
-        sphere.color.g = 0.f;
-        sphere.color.a = 1.0;
-        sphere.lifetime = ros::Duration(0, 0);
-        m.markers.push_back(sphere);
+
+        mps.adjacent_1 = (mps.closest_idx == 0) ? 3 : mps.closest_idx - 1;
+        mps.adjacent_2 = (mps.closest_idx == 3) ? 0 : mps.closest_idx + 1;
+
+        mps.bearing = atan2f(mps.corners[mps.closest_idx][1],
+                             mps.corners[mps.closest_idx][0]);
+        // logger->log_info(name(), "Station %s bearing %f", n.name().c_str(),
+        // mps.bearing);
+
+        mpses[n.name()] = mps;
+
+        {
+          visualization_msgs::Marker sphere;
+          sphere.header.frame_id = sensor_frame;
+          sphere.header.stamp = ros::Time::now();
+          sphere.ns = "mps-laser-gen";
+          sphere.id = id_num++;
+          sphere.type = visualization_msgs::Marker::SPHERE;
+          sphere.action = visualization_msgs::Marker::ADD;
+          sphere.pose.position.x = mps.center[0];
+          sphere.pose.position.y = mps.center[1];
+          sphere.pose.position.z = 0.;
+          sphere.pose.orientation.w = 1.;
+          sphere.scale.x = sphere.scale.y = sphere.scale.z = 0.1;
+          sphere.color.r = 0.f;
+          sphere.color.g = 1.f;
+          sphere.color.b = 0.f;
+          sphere.color.a = 1.0;
+          sphere.lifetime = ros::Duration(0, 0);
+          m.markers.push_back(sphere);
+        }
+
+        for (unsigned int i = 0; i < 4; ++i) {
+          visualization_msgs::Marker sphere;
+          sphere.header.frame_id = sensor_frame;
+          sphere.header.stamp = ros::Time::now();
+          sphere.ns = "mps-laser-gen";
+          sphere.id = id_num++;
+          sphere.type = visualization_msgs::Marker::SPHERE;
+          sphere.action = visualization_msgs::Marker::ADD;
+          sphere.pose.position.x = mps.corners[i][0];
+          sphere.pose.position.y = mps.corners[i][1];
+          sphere.pose.position.z = 0.;
+          sphere.pose.orientation.w = 1.;
+          sphere.scale.x = sphere.scale.y = sphere.scale.z = 0.05;
+          if (i == mps.closest_idx) {
+            sphere.color.r = 0.f;
+            sphere.color.b = 1.f;
+          } else if (i == mps.adjacent_1 || i == mps.adjacent_2) {
+            sphere.color.r = 1.f;
+            sphere.color.b = 1.f;
+          } else {
+            sphere.color.r = 1.f;
+            sphere.color.b = 0.f;
+          }
+          sphere.color.g = 0.f;
+          sphere.color.a = 1.0;
+          sphere.lifetime = ros::Duration(0, 0);
+          m.markers.push_back(sphere);
+        }
       }
     }
   }
