@@ -87,16 +87,10 @@
                                                    ?points-delivery)))
           (wm-fact (key order meta points-total args? ord ?order) (type INT)
                    (is-list FALSE) (value ?res))
-          (wm-fact (key order meta points-current args? ord ?order) (type INT)
-                   (is-list FALSE) (value 0))
           (wm-fact (key order meta bases-missing args? ord ?order)
                    (type INT) (is-list FALSE) (value ?bases-needed))
           (wm-fact (key order meta rings-missing args? ord ?order)
                    (type INT) (is-list FALSE) (value ?rings-needed))
-          (wm-fact (key order meta estimated-points-next-step args? ord ?order)
-                   (type INT) (is-list FALSE) (value 0))
-          (wm-fact (key order meta estimated-time-next-step args? ord ?order)
-                   (type INT) (is-list FALSE) (value 0))
           (wm-fact (key order meta estimated-points-total args? ord ?order)
                    (type INT) (is-list FALSE) (value 0))
           (wm-fact (key order meta estimated-time-steps args? ord ?order)
@@ -110,6 +104,67 @@
                                  ?*TIME-MOUNT-RING*)
                               ?*TIME-MOUNT-CAP*
                               ?*TIME-DELIVER*))))
+)
+
+
+(defrule production-strategy-init-wp-meta-facts
+" Initializes facts to track for a given workpiece (started order)
+   - number of missing rings
+   - number of additional bases for missing rings
+   - current points the workpiece already scored
+   - estimated total points the workpiece can score
+   - estimated points the workpiece will score in the next step
+   - estimated time it will take to score the next points with the workpiece
+"
+  ; Order CEs
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-col))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
+  ; Ring Specs CEs
+  (wm-fact (key domain fact rs-ring-spec
+            args? m ?mps1 r ?col-r1 rn ?req1&:(neq ?req1 NA)))
+  (wm-fact (key domain fact rs-ring-spec
+            args? m ?mps2 r ?col-r2 rn ?req2&:(neq ?req2 NA)))
+  (wm-fact (key domain fact rs-ring-spec
+            args? m ?mps3 r ?col-r3 rn ?req3&:(neq ?req3 NA)))
+  ; Order Meta CEs
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (not (wm-fact (key wp meta points-current args? wp ?wp)))
+  (wm-fact (key order meta estimated-points-total args? ord ?order)
+           (value ?ep-total))
+  ; Refbox CEs
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
+           (value ?qd-us))
+  (wm-fact (key refbox order ?order quantity-delivered ~?team-color)
+           (value ?qd-them))
+=>
+  (bind ?rings-needed (string-to-field (sub-string 2 2 (str-cat ?com))))
+  (bind ?bases-needed (+ (sym-to-int ?req1)
+                         (sym-to-int ?req2)
+                         (sym-to-int ?req3)))
+  (printout t "WP " ?wp " attached to order " ?order "." crlf)
+  (if (> ?rings-needed 0)
+    then
+      (printout t "It needs " ?rings-needed " rings, they require to feed "
+                  ?bases-needed " more bases into ring stations." crlf)
+  )
+  (assert (wm-fact (key wp meta points-current args? wp ?wp) (type INT)
+                   (is-list FALSE) (value 0))
+          (wm-fact (key wp meta bases-missing args? wp ?wp)
+                   (type INT) (is-list FALSE) (value ?bases-needed))
+          (wm-fact (key wp meta rings-missing args? wp ?wp)
+                   (type INT) (is-list FALSE) (value ?rings-needed))
+          (wm-fact (key wp meta estimated-points-next-step args? wp ?wp)
+                   (type INT) (is-list FALSE) (value 0))
+          (wm-fact (key wp meta estimated-time-next-step args? wp ?wp)
+                   (type INT) (is-list FALSE) (value 0))
+          (wm-fact (key wp meta estimated-points-total args? wp ?wp)
+                   (type INT) (is-list FALSE) (value ?ep-total)))
 )
 
 
@@ -142,7 +197,8 @@
   (wm-fact (key order meta points-steps args? ord ?order)
            (values ?p-r1 ?p-r2 ?p-r3 ?p-cap $?))
   (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
-  ?pc <- (wm-fact (key order meta points-current args? ord ?order)
+  ; WP Meta CEs
+  ?pc <- (wm-fact (key wp meta points-current args? wp ?wp)
                   ; the current points have changed and the deadline has not
                   ; been met yet
                   (value ?p-curr&:(neq ?p-curr
@@ -230,8 +286,8 @@
             args? minuend ?req2 subtrahend ?cur2 difference ?diff2))
   (wm-fact (key domain fact rs-sub
             args? minuend ?req3 subtrahend ?cur3 difference ?diff3))
-  ; Order Meta CEs
-  ?om <- (wm-fact (key order meta bases-missing args? ord ?order)
+  ; WP Meta CEs
+  ?wm <- (wm-fact (key wp meta bases-missing args? wp ?wp)
                          (value ?rn&:(neq ?rn
                            (+ (* (sym-to-int ?diff1)
                                  (bool-to-int (neq ?wp-col-r1 ?col-r1)))
@@ -246,7 +302,7 @@
                    (bool-to-int (neq ?wp-col-r2 ?col-r2)))
                 (* (sym-to-int ?diff3)
                    (bool-to-int (neq ?wp-col-r3 ?col-r3)))))
-  (modify ?om (value ?res))
+  (modify ?wm (value ?res))
   (printout t "WP " ?wp " for order " ?order " requires " ?res
               " additional base(s) to pay for the remaining ring(s)." crlf)
 )
@@ -265,8 +321,8 @@
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
-  ; Order Meta CEs
-  ?om <- (wm-fact (key order meta rings-missing args? ord ?order)
+  ; WP Meta CEs
+  ?wm <- (wm-fact (key wp meta rings-missing args? wp ?wp)
                   (value ?rm&:(neq ?rm
                     (+ (bool-to-int (neq ?wp-col-r1 ?col-r1))
                        (bool-to-int (neq ?wp-col-r2 ?col-r2))
@@ -275,7 +331,7 @@
   (bind ?res (+ (bool-to-int (neq ?wp-col-r1 ?col-r1))
                 (bool-to-int (neq ?wp-col-r2 ?col-r2))
                 (bool-to-int (neq ?wp-col-r3 ?col-r3))))
-  (modify ?om (value ?res))
+  (modify ?wm (value ?res))
   (if (> ?res 0)
     then
       (printout t "WP " ?wp " for order " ?order " needs " ?res
@@ -295,14 +351,15 @@
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
-  ?om1 <- (wm-fact (key order meta estimated-points-next-step args? ord ?order)
+  ; WP Meta CEs
+  ?wm1 <- (wm-fact (key wp meta estimated-points-next-step args? wp ?wp)
                    (value ?e-p))
-  ?om2 <- (wm-fact (key order meta estimated-time-next-step args? ord ?order)
+  ?wm2 <- (wm-fact (key wp meta estimated-time-next-step args? wp ?wp)
                    (value ?e-t))
   (test (or (neq ?e-p ?*POINTS-MOUNT-CAP*) (neq ?e-t ?*TIME-MOUNT-CAP*)))
 =>
-  (modify ?om1 (value ?*POINTS-MOUNT-CAP*))
-  (modify ?om2 (value ?*TIME-MOUNT-CAP*))
+  (modify ?wm1 (value ?*POINTS-MOUNT-CAP*))
+  (modify ?wm2 (value ?*TIME-MOUNT-CAP*))
 )
 
 
@@ -321,15 +378,15 @@
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
-  ; Order Meta CEs
-  ?om1 <- (wm-fact (key order meta estimated-points-next-step args? ord ?order)
+  ; WP Meta CEs
+  ?wm1 <- (wm-fact (key wp meta estimated-points-next-step args? wp ?wp)
                    (value ?e-p))
-  ?om2 <- (wm-fact (key order meta estimated-time-next-step args? ord ?order)
+  ?wm2 <- (wm-fact (key wp meta estimated-time-next-step args? wp ?wp)
                    (value ?e-t))
   (test (or (neq ?e-p ?*POINTS-MOUNT-CAP*) (neq ?e-t ?*TIME-MOUNT-CAP*)))
 =>
-  (modify ?om1 (value ?*POINTS-MOUNT-CAP*))
-  (modify ?om2 (value ?*TIME-MOUNT-CAP*))
+  (modify ?wm1 (value ?*POINTS-MOUNT-CAP*))
+  (modify ?wm2 (value ?*TIME-MOUNT-CAP*))
 )
 
 
@@ -360,10 +417,10 @@
                  (eq ?next-col ?col-r2))
             (and (neq ?wp-col-r1 ?col-r1)
                  (eq ?next-col ?col-r1))))
-  ; Order Meta CEs
-  ?om1 <- (wm-fact (key order meta estimated-points-next-step args? ord ?order)
+  ; WP Meta CEs
+  ?wm1 <- (wm-fact (key wp meta estimated-points-next-step args? wp ?wp)
                    (value ?e-p))
-  ?om2 <- (wm-fact (key order meta estimated-time-next-step args? ord ?order)
+  ?wm2 <- (wm-fact (key wp meta estimated-time-next-step args? wp ?wp)
                    (value ?e-t))
   (test (or (neq ?e-p (+ (ring-req-points ?req)
                       (* (last-ring-points ?com)
@@ -372,12 +429,12 @@
                                            (eq ?wp-col-r3 ?col-r3))))))
             (neq ?e-t ?*TIME-MOUNT-RING*)))
 =>
-  (modify ?om1 (value (+ (ring-req-points ?req)
+  (modify ?wm1 (value (+ (ring-req-points ?req)
                          (* (last-ring-points ?com)
                             (bool-to-int (and (eq ?wp-col-r1 ?col-r1)
                                               (eq ?wp-col-r2 ?col-r2)
                                               (eq ?wp-col-r3 ?col-r3)))))))
-  (modify ?om2 (value ?*TIME-MOUNT-RING*))
+  (modify ?wm2 (value ?*TIME-MOUNT-RING*))
 )
 
 
@@ -405,18 +462,17 @@
   (wm-fact (key order meta estimated-time-steps args? ord ?order)
            (values $?t-steps))
   (wm-fact (key order meta points-total args? ord ?order) (value ?p-total))
-  (wm-fact (key order meta points-current args? ord ?order) (value ?p-curr))
   ?om <- (wm-fact (key order meta estimated-points-total args? ord ?order)
                   (value ?tpe&:(not (= ?tpe (estimate-achievable-points
                     ?p-steps
-                    ?p-curr
+                    0
                     ?t-steps
                     ?game-time
                     ?end)))))
 =>
   (bind ?res (estimate-achievable-points
                ?p-steps
-               ?p-curr
+               0
                ?t-steps
                ?game-time
                ?end))
@@ -451,14 +507,15 @@
   (wm-fact (key refbox order ?order delivery-end) (value ?end&:(> ?end 0)))
   (wm-fact (key refbox game-time) (values ?game-time $?ms))
   ; Order Meta CEs
-  (wm-fact (key order meta rings-missing args? ord ?order)
-           (value ?rings-missing))
-  (wm-fact (key order meta points-current args? ord ?order) (value ?p-curr))
   (wm-fact (key order meta points-total args? ord ?order) (value ?p-total))
   (wm-fact (key order meta points-steps args? ord ?order) (values $?p-steps))
   (wm-fact (key order meta estimated-time-steps args? ord ?order)
            (values $?t-steps))
-  ?tpe <- (wm-fact (key order meta estimated-points-total args? ord ?order)
+  ; WP Meta CEs
+  (wm-fact (key wp meta points-current args? wp ?wp) (value ?p-curr))
+  (wm-fact (key wp meta rings-missing args? wp ?wp)
+           (value ?rings-missing))
+  ?tpe <- (wm-fact (key wp meta estimated-points-total args? wp ?wp)
              (value ?ap&:(not (= ?ap
                (estimate-achievable-points
                  ?p-steps
@@ -473,7 +530,7 @@
                ?t-steps
                ?game-time
                ?end))
-  (printout error "Order " ?order " can score us " ?res " out of " ?p-total
-                  "  points in total." crlf)
+  (printout error "Workpiece " ?wp " for order " ?order " can score us " ?res
+                  " out of " ?p-total "  points in total." crlf)
   (modify ?tpe (value ?res))
 )
