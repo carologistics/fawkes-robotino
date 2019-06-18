@@ -103,10 +103,11 @@ fsm:add_transitions{
 function INIT:init()
   self.fsm.vars.target_valid = true
   -- check for waiting position
-  if string.match(self.fsm.vars.place, "[WAIT]") then 
-    self.fsm.vars.waiting_pos = true
-  else
-    self.fsm.vars.waiting_pos = false 
+  self.fsm.vars.waiting_pos = false
+  if self.fsm.vars.place ~=nil then
+    if string.match(self.fsm.vars.place, "[WAIT]") then 
+      self.fsm.vars.waiting_pos = true
+    end
   end
 
   if self.fsm.vars.place ~= nil then
@@ -186,6 +187,7 @@ function MOVING:init()
         self.fsm.vars.trans_tolerance,
         self.fsm.vars.ori_tolerance)
    end
+
    fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
 end
 
