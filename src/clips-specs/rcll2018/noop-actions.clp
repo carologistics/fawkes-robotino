@@ -56,8 +56,8 @@
   =>
   (modify ?pa (state EXECUTION-SUCCEEDED))
   (assert
-    (wm-fact (key mps-handling prepare prepare-cs ?mps args? ?mps MOUNT_CAP))
-    (wm-fact (key mps-handling process cs-mount-cap ?mps args? ?mps ?wp ?capcol))
+    (wm-fact (key mps-handling prepare prepare-cs ?mps args? m ?mps op MOUNT_CAP))
+    (wm-fact (key mps-handling process cs-mount-cap ?mps args? m ?mps wp ?wp capcol ?capcol))
   )
 )
 
@@ -67,8 +67,8 @@
   =>
   (modify ?pa (state EXECUTION-SUCCEEDED))
   (assert
-    (wm-fact (key mps-handling prepare prepare-cs ?mps args? ?mps RETRIEVE_CAP))
-    (wm-fact (key mps-handling process cs-retrieve-cap ?mps args? ?mps ?cc ?capcol))
+    (wm-fact (key mps-handling prepare prepare-cs ?mps args? m ?mps op RETRIEVE_CAP))
+    (wm-fact (key mps-handling process cs-retrieve-cap ?mps args? m ?mps cc ?cc capcol ?capcol))
   )
 )
 
@@ -93,8 +93,9 @@
      (default
         (printout t "ERROR, plan-action params of request-rs-mount-ring are wrong" crlf)))
   (assert
-    (wm-fact (key mps-handling prepare prepare-rs ?rs args? ?rs ?rc ?rs-before ?rs-after ?rs-req))
-    (wm-fact (key mps-handling process ?mount-ring-action-name ?rs args? ?mount-ring-param-values))
+    (wm-fact (key mps-handling prepare prepare-rs ?rs args? m ?rs rc ?rc rs-before ?rs-before rs-after ?rs-after r-req ?rs-req))
+    (wm-fact (key mps-handling process ?mount-ring-action-name ?rs args? 
+                        (merge-params ?mount-ring-param-names ?mount-ring-param-values)))
   )
 )
 
