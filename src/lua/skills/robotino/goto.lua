@@ -121,6 +121,20 @@ function INIT:init()
         if node:has_property("orientation") then
           self.fsm.vars.ori = node:property_as_float("orientation");
         end
+
+        local ori_tolerance_given = node:property_as_float("orientation_tolerance") ~= navgraph:default_property_as_float("orientation_tolerance")
+        local target_tolerance_given = node:property_as_float("target_tolerance") ~= navgraph:default_property_as_float("target_tolerance")
+
+        -- Check whether only one of the tolerances is customized.
+        -- If so, print a warning due to an unexpected definition.
+        if ori_tolerance_given and not target_tolerance_given or
+           not ori_tolerance_given and target_tolerance_given then
+          print_warn("Place " .. self.fsm.vars.place .. " only defines one custom tolerance.")
+        end
+
+        self.fsm.vars.ori_tolerance = node:property_as_float("orientation_tolerance");
+        self.fsm.vars.trans_tolerance = node:property_as_float("target_tolerance");
+
       else
         self.fsm.vars.target_valid = false
       end
@@ -151,6 +165,17 @@ function MOVING:init()
       self.fsm.vars.y,
       self.fsm.vars.ori,
       "map")
+
+   -- Use a tolerance if it is defined.
+   if self.fsm.vars.trans_tolerance ~= nil and self.fsm.vars.ori_tolerance ~= nil then
+      msg = navigator.CartesianGotoWithFrameWithToleranceMessage:new(
+        self.fsm.vars.x,
+        self.fsm.vars.y,
+        self.fsm.vars.ori,
+        "map",
+        self.fsm.vars.trans_tolerance,
+        self.fsm.vars.ori_tolerance)
+   end
    fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
 end
 
