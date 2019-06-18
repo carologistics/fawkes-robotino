@@ -68,6 +68,9 @@ class MPSLaserGenThread : public fawkes::Thread,
   /// @endcond
 
 public:
+  /** MPSLaserGenThread constructor
+   * @param mps_laser_gen_prefix configuration path prefix
+   */
   MPSLaserGenThread(std::string mps_laser_gen_prefix);
 
   virtual void init();
