@@ -121,13 +121,20 @@ function INIT:init()
         if node:has_property("orientation") then
           self.fsm.vars.ori = node:property_as_float("orientation");
         end
-        -- In case the navgraph place defines tolerances we'll use them.
-        if node:has_property("orientation_tolerance") then
-          self.fsm.vars.ori_tolerance = node:property_as_float("orientation_tolerance");
+
+        local ori_tolerance_given = node:property_as_float("orientation_tolerance") ~= navgraph:default_property_as_float("orientation_tolerance")
+        local target_tolerance_given = node:property_as_float("target_tolerance") ~= navgraph:default_property_as_float("target_tolerance")
+
+        -- Check whether only one of the tolerances is customized.
+        -- If so, print a warning due to an unexpected definition.
+        if ori_tolerance_given and not target_tolerance_given or
+           not ori_tolerance_given and target_tolerance_given then
+          print_warn("Place " .. self.fsm.vars.place .. " only defines one custom tolerance.")
         end
-        if node:has_property("target_tolerance") then
-          self.fsm.vars.trans_tolerance = node:property_as_float("target_tolerance");
-        end
+
+        self.fsm.vars.ori_tolerance = node:property_as_float("orientation_tolerance");
+        self.fsm.vars.trans_tolerance = node:property_as_float("target_tolerance");
+
       else
         self.fsm.vars.target_valid = false
       end
@@ -168,8 +175,6 @@ function MOVING:init()
         "map",
         self.fsm.vars.trans_tolerance,
         self.fsm.vars.ori_tolerance)
-   else
-        print_warn("Not all tolerances given for place " .. self.fsm.vars.place .. ", using default tolerances.")
    end
    fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
 end
