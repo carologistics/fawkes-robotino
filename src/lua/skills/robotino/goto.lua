@@ -94,14 +94,20 @@ fsm:add_transitions{
   {"INIT",  "FAILED",         cond="not vars.target_valid",                 desc="target invalid"},
   {"INIT",  "MOVING",         cond=true},
   {"MOVING", "TIMEOUT",       timeout=2}, -- Give the interface some time to update
-  {"TIMEOUT", "FINAL",         cond=target_reached, desc="Target reached"},
-  {"TIMEOUT", "FAILED",        cond=target_unreachable, desc="Target unreachable"},
+  {"TIMEOUT", "FINAL",        cond="vars.waiting_pos and vars.travelled", desc="Going to waiting position"},
+  {"TIMEOUT", "FINAL",        cond=target_reached, desc="Target reached"},
+  {"TIMEOUT", "FAILED",       cond=target_unreachable, desc="Target unreachable"},
 }
 
 
 function INIT:init()
   self.fsm.vars.target_valid = true
-
+  -- check for waiting position
+  if string.match(self.fsm.vars.place, "[WAIT]") then 
+    self.fsm.vars.waiting_pos = true
+  else
+    self.fsm.vars.waiting_pos = false 
+  end
 
   if self.fsm.vars.place ~= nil then
     if string.match(self.fsm.vars.place, "[MC][-]Z[1-7][1-8]") then
@@ -153,6 +159,10 @@ function WAIT_TF:loop()
    self.fsm.vars.x   = cur_pose.x
    self.fsm.vars.y   = cur_pose.y
    self.fsm.vars.ori = cur_pose.ori
+   self.fsm.vars.initial_position_x   = cur_pose.x
+   self.fsm.vars.initial_position_y   = cur_pose.y
+   self.fsm.vars.initial_position_ori = cur_pose.ori
+
 end
 
 function MOVING:init()
@@ -179,8 +189,30 @@ function MOVING:init()
    fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
 end
 
+function TIMEOUT:loop()
+  local got_cur_pose = false
+  local distance_to_travel = 1.0
+ 
+  while not got_cur_pose do
+    local cur_pose = tf_mod.transform({x=0, y=0, ori=0}, "base_link", "map")
+    if cur_pose ~= nil then
+      self.fsm.vars.cur_x = cur_pose.x
+      self.fsm.vars.cur_y = cur_pose.y
+      self.fsm.vars.cur_ori = cur_pose.ori
+      got_cur_pose = true
+    end
+    local x = (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x) * (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x)
+    local y = (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y) * (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y)
+    local distance_travelled = math.sqrt(x + y)
+ 
+    if distance_travelled > distance_to_travel then
+      self.fsm.vars.travelled=true
+    end
+  end
+end
+
 function MOVING:reset()
-    if navigator:has_writer() and not navigator:is_final() then
+    if navigator:has_writer() and not navigator:is_final() and fsm.vars.waiting_pos == false then
        printf("goto: sending stop");
        navigator:msgq_enqueue(navigator.StopMessage:new(fsm.vars.msgid or 0))
     end
