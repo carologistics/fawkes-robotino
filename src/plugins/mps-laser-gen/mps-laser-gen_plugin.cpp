@@ -33,11 +33,9 @@ public:
   /** Constructor
    * @param config Fakwes configuration
    */
-  MPSLaserGenPlugin(Configuration *config)
-     : Plugin(config)
-  {
-     std::string prefix = "plugins/mps_laser_gen/";
-     thread_list.push_back(new MPSLaserGenThread(prefix));
+  MPSLaserGenPlugin(Configuration *config) : Plugin(config) {
+    std::string prefix = "plugins/mps_laser_gen/";
+    thread_list.push_back(new MPSLaserGenThread(prefix));
   }
 };
 
