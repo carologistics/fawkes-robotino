@@ -845,16 +845,29 @@
   ?pre <- (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
   ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
   =>
+  (bind ?prepare-param-values (create$))
+  (bind ?process-param-values (create$))
+  (foreach ?pre ?prepare-params
+      (if (eq 0 (mod ?pre-index 2)) then
+            (bind ?prepare-param-values (create$ ?prepare-param-values (nth$ ?pre-index ?prepare-params)))
+      )
+  )
+  (foreach ?pro ?process-params
+      (if (eq 0 (mod ?pro-index 2)) then
+            (bind ?process-param-values (create$ ?process-param-values (nth$ ?pro-index ?process-params)))
+      )
+  )
+
   (assert
     (plan (id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
             (action-name lock) (param-values ?mps))
     (plan-action (id 2) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
         (action-name ?prepare-action)
-        (param-values ?prepare-params))
+        (param-values ?prepare-param-values))
     (plan-action (id 3) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
                                     (action-name ?process-action)
-                                    (param-values ?process-params))
+                                    (param-values ?process-param-values))
       (plan-action (id 4) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
             (action-name unlock)
             (param-values ?mps))
