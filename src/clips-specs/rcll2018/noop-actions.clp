@@ -50,17 +50,6 @@
   (modify ?pa (state FINAL))
 )
 
-(defrule action-execute-request-bs-dispense
-  ?pa <- (plan-action (action-name request-bs-dispense) (state PENDING) (executable TRUE)
-            (param-values ?r ?mps ?side ?wp ?basecol))
-  =>
-  (modify ?pa (state EXECUTION-SUCCEEDED))
-  (assert
-    (wm-fact (key mps-handling prepare prepare-bs ?mps args? ?mps ?side ?basecol))
-    (wm-fact (key mps-handling process bs-dispense ?mps args? ?r ?mps ?side ?wp ?basecol))
-  )
-)
-
 (defrule action-execute-request-cs-mount-cap
   ?pa <- (plan-action (action-name request-cs-mount-cap) (state PENDING) (executable TRUE)
             (param-values ?r ?mps ?wp ?capcol))
