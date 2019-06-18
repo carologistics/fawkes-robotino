@@ -32,9 +32,7 @@
 #include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
 
-
 using namespace fawkes;
-
 
 /** @class MPSLaserGenThread "mps-laser-gen_thread.h"
  * Generate laser data from known MPS.
@@ -42,10 +40,9 @@ using namespace fawkes;
  */
 
 MPSLaserGenThread::MPSLaserGenThread(std::string mps_laser_gen_prefix)
- : Thread("MPSLaserGenThread", Thread::OPMODE_WAITFORWAKEUP),
-   BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_ACQUIRE),
-   TransformAspect(TransformAspect::ONLY_LISTENER)
-{
+    : Thread("MPSLaserGenThread", Thread::OPMODE_WAITFORWAKEUP),
+      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_ACQUIRE),
+      TransformAspect(TransformAspect::ONLY_LISTENER) {
   mps_laser_gen_cfg_prefix = mps_laser_gen_prefix;
 }
 
@@ -54,6 +51,8 @@ void MPSLaserGenThread::init() {
       "visualization_marker_array", 100, /* latching */ true);
 
   laser_if_ = blackboard->open_for_writing<Laser360Interface>("Laser MPS");
+  laser_box_filter_if_ =
+      blackboard->open_for_reading<LaserBoxFilterInterface>("Laser Box Filter");
   load_config();
 }
 
@@ -63,7 +62,7 @@ void MPSLaserGenThread::loop() {
   navgraph.unlock();
 
   const float mps_length = cfg_mps_length_;
-  const float mps_width  = cfg_mps_width_;
+  const float mps_width = cfg_mps_width_;
 
   const float mps_length_2 = mps_length / 2.;
   const float mps_width_2 = mps_width / 2.;
@@ -254,11 +253,13 @@ void MPSLaserGenThread::finalize() {
   blackboard->close(laser_if_);
 }
 
-void
-MPSLaserGenThread::load_config()
-{
-  cfg_enable_mps_laser_gen_ = config->get_bool((mps_laser_gen_cfg_prefix + "enable_laser_gen").c_str());
-  cfg_enable_mps_box_filter_ = config->get_bool((mps_laser_gen_cfg_prefix + "enable_mps_box_filter").c_str());
-  cfg_mps_length_ = config->get_float((mps_laser_gen_cfg_prefix + "mps_length").c_str());
-  cfg_mps_width_ = config->get_float((mps_laser_gen_cfg_prefix + "mps_width").c_str());
+void MPSLaserGenThread::load_config() {
+  cfg_enable_mps_laser_gen_ =
+      config->get_bool((mps_laser_gen_cfg_prefix + "enable_laser_gen").c_str());
+  cfg_enable_mps_box_filter_ = config->get_bool(
+      (mps_laser_gen_cfg_prefix + "enable_mps_box_filter").c_str());
+  cfg_mps_length_ =
+      config->get_float((mps_laser_gen_cfg_prefix + "mps_length").c_str());
+  cfg_mps_width_ =
+      config->get_float((mps_laser_gen_cfg_prefix + "mps_width").c_str());
 }

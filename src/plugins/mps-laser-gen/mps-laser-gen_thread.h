@@ -30,14 +30,15 @@
 #include <aspect/logging.h>
 #include <aspect/tf.h>
 #include <core/threading/thread.h>
+#include <interfaces/LaserBoxFilterInterface.h>
 #include <navgraph/aspect/navgraph.h>
 #include <plugins/ros/aspect/ros.h>
 
 #include <string>
 
+#include <Eigen/Geometry>
 #include <interfaces/Laser360Interface.h>
 #include <ros/publisher.h>
-#include <Eigen/Geometry>
 
 namespace fawkes {}
 
@@ -50,9 +51,9 @@ class MPSLaserGenThread : public fawkes::Thread,
                           public fawkes::ROSAspect,
                           public fawkes::TransformAspect {
 
-/// @cond INTERNAL
+  /// @cond INTERNAL
   class MPS {
-   public:
+  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     Eigen::Vector2f center;
@@ -66,7 +67,7 @@ class MPSLaserGenThread : public fawkes::Thread,
   };
   /// @endcond
 
- public:
+public:
   MPSLaserGenThread(std::string mps_laser_gen_prefix);
 
   virtual void init();
@@ -79,6 +80,7 @@ protected:
 
 private:
   fawkes::Laser360Interface *laser_if_;
+  fawkes::LaserBoxFilterInterface *laser_box_filter_if_;
   ros::Publisher vispub_;
   std::string mps_laser_gen_cfg_prefix;
   std::map<std::string, MPS> mpses;
@@ -89,7 +91,6 @@ private:
   float cfg_mps_width_;
 
   void load_config();
-
 };
 
 #endif
