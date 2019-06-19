@@ -130,6 +130,7 @@ clips-executive:
               - diagnosis/diag-pddl.clp
               - diagnosis/diag-wm.clp
               - diagnosis/diag-goal.clp
+                #- diagnosis/diag-test.clp
               - rcll2018/goal-reasoner.clp
               - rcll2018/goal-production.clp
               - rcll2018/production-strategy.clp
