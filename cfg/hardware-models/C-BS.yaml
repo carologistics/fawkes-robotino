@@ -20,11 +20,11 @@ C-BS:
       transition: refbox_c_bs_down
       probability: 0.05
     READY-AT-OUTPUT:
-      transition: prepare-cs
+      transition: prepare-bs
     BROKEN:
       transition: reset-mps
     PREPARED:
-      transition: prepare-cs
+      transition: prepare-bs
 
   DOWN-TO-IDLE:
     edges:
@@ -48,6 +48,9 @@ C-BS:
       transition: wp-get
     BROKEN:
       transition: reset-mps
+    DOWN:
+      transition: refbox_c_bs_down
+      probability: 0.05
 
   BROKEN:
     edges:
@@ -64,7 +67,7 @@ C-BS:
       transition: break_c_bs
       probability: 0.05
     READY-AT-OUTPUT:
-      transition: finished-processing-c-bs
+      transition: c_bs_finished_processing
       probability: 1.0
 
 

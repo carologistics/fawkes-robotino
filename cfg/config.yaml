@@ -15,6 +15,7 @@ include:
   # Reads the second host-specific configuration file, no failure if missing
   # This file is rewritten from time to time by the fawkes system.
   - !host-specific host.yaml
+  - hardware-models/
 ---
 # Main configuration document
 

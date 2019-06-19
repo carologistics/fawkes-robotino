@@ -44,10 +44,14 @@ C-CS2:
     edges:
       - IDLE
       - BROKEN
+      - DOWN-TO-READY-AT-OUTPUT
     IDLE:
       transition: wp-get
     BROKEN:
       transition: reset-mps
+    DOWN-TO-READY-AT-OUTPUT:
+      transition: refbox_c_cs2_down
+      probability: 0.05
 
   BROKEN:
     edges:
@@ -64,8 +68,7 @@ C-CS2:
       transition: break_c_cs2
       probability: 0.05
     READY-AT-OUTPUT:
-      transition: finished-processing-c-cs2
-      probability: 1.0
+      transition: wp-put
 
 
 

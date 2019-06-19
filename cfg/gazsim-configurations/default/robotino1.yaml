@@ -6,7 +6,8 @@
 #include main config file
 include:
   - !ignore-missing conf.d/
-  #concrete configuration in an other file because I could not override config values when using a single file
+  - hardware-models/
+    #concrete configuration in an other file because I could not override config values when using a single file
   - gazsim-configurations/gazsim-config-override.yaml
   - !host-specific gazsim-configurations/default/host_robotino_1.yaml
 ---

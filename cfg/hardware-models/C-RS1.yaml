@@ -1,7 +1,7 @@
 %YAML 1.2
 %TAG ! tag:fawkesrobotics.org,cfg/
 
-C-CS1:
+C-RS1:
   states:
     - IDLE
     - DOWN-TO-IDLE
@@ -17,27 +17,27 @@ C-CS1:
       - PREPARED
       - READY-AT-OUTPUT
     DOWN-TO-IDLE:
-      transition: refbox_c_cs1_down
+      transition: refbox_c_rs1_down
       probability: 0.05
     READY-AT-OUTPUT:
-      transition: prepare-cs
+      transition: prepare-rs
     BROKEN:
       transition: reset-mps
     PREPARED:
-      transition: prepare-cs
+      transition: prepare-rs
 
   DOWN-TO-IDLE:
     edges:
       - IDLE
     IDLE:
-      transition: back_up_c_cs1
+      transition: back_up_c_rs1
       probability: 1.0
 
   DOWN-TO-READY-AT-OUTPUT:
     edges:
       - READY-AT-OUTPUT
     READY-AT-OUTPUT:
-      transition: back_up_c_cs1
+      transition: back_up_c_rs1
       probability: 1.0
 
   READY-AT-OUTPUT:
@@ -53,7 +53,7 @@ C-CS1:
     edges:
       - IDLE
     IDLE:
-      transition: unbreak_c_cs1
+      transition: unbreak_c_rs1
       probability: 1.0
 
   PREPARED:
@@ -61,10 +61,11 @@ C-CS1:
       - BROKEN
       - READY-AT-OUTPUT
     BROKEN:
-      transition: break_c_cs1
+      transition: break_c_rs1
       probability: 0.05
     READY-AT-OUTPUT:
-      transition: wp-put
+      transition: finished-processing-c-rs1
+      probability: 1.0
 
 
 
