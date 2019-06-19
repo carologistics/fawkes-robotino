@@ -111,7 +111,8 @@
 		(comp-state ?comp - component ?state - state)	
     	(locked ?name - object)
     	(location-locked ?m - mps ?s - mps-side)
-
+		(dummy-wp ?wp - cap-carrier)
+	
 		(next-reset-mps ?m - mps)
 		(last-reset-mps ?m - mps)
 
@@ -638,6 +639,13 @@
                  (wp-cap-color ?cc1  ?color)
             )
   )
+
+  (:action lock
+    :parameters (?name - object)
+    :precondition (and (not (locked ?name)) (comp-state communication CONNECTION-ESTABLISHED)) 
+    :effect (locked ?name)
+)
+
 (:action one-time-lock
 :parameters (?name - object)
 :precondition (and (comp-state communication CONNECTION-ESTABLISHED) (not (locked ?name)))

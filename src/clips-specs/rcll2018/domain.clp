@@ -153,8 +153,8 @@
     (domain-object (name CCG2) (type cap-carrier))
     (domain-object (name CCG3) (type cap-carrier))
 
-    (domain-object (name DUMMP-WP) (type cap-carrier))
-
+    (domain-object (name DUMMY-WP) (type cap-carrier))
+  
     (domain-object (name INPUT) (type mps-side))
     (domain-object (name OUTPUT) (type mps-side))
     (domain-object (name WAIT) (type mps-side))
@@ -170,8 +170,7 @@
     (domain-object (name O7) (type order))
     (domain-object (name O8) (type order))
     (domain-object (name O9) (type order))
-
-    (domain-object (name DUMMY-WP) (type cap-carrier))
+    
     (domain-fact (name dummy-wp) (param-values DUMMY-WP))
 
     (domain-fact (name wp-base-color) (param-values WP1 BASE_NONE))
