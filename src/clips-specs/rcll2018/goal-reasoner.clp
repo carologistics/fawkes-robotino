@@ -208,22 +208,63 @@
 
 
 ; ------------------------- PRE EVALUATION -----------------------------------
-(defrule goal-reasoner-evaluate-subgoal-common-start-diagnosis
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (acquired-resources) (outcome FAILED))
-  (plan (id ?plan-id) (goal-id ?goal-id) (diag-wm-store STORED))
-  =>
-  (create-diagnosis (sym-cat DIAG- ?goal-id) ?plan-id (str-cat "(and (next-FINISH))"))
-)
+(deffunction action-precondition-as-fol (?precond-name ?action-id ?plan-id)
+  (if (any-factp ((?pa plan-action)) (and (eq ?pa:id ?action-id) (eq ?pa:plan-id ?plan-id))) then
+    (do-for-fact ((?pa plan-action)) (and (eq ?pa:id ?action-id) (eq ?pa:plan-id ?plan-id))
+      (bind ?action-names ?pa:param-names)
+      (bind ?action-values ?pa:param-values)
+    )
+    else
+      (printout error "No planaction with id " ?action-id " for plan " ?plan-id " found" crlf)
+      (return "")
+  )
+  (bind ?ret "")
 
-(defrule goal-reasoner-evaluate-subgoal-common-finished-diagnosis
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (acquired-resources) (outcome FAILED))
-  (plan (id ?plan-id) (goal-id ?goal-id) (diag-wm-store STORED))
-  ?d <- (diagnosis (plan-id ?plan-id) (mode FINAL|FAILED))
-  =>
-  (retract ?d)
-  (modify ?g (mode EVALUATED))
+  (do-for-all-facts ((?dp domain-precondition)) (and (eq ?dp:part-of ?precond-name) (eq ?dp:grounded FALSE))
+    (printout t "DP Name: " ?dp:name crlf)
+    (if (eq ?dp:type conjunction) then
+      (bind ?ret (str-cat ?ret " (and "))
+    )  
+    (if (eq ?dp:type disjunction) then
+      (bind ?ret (str-cat ?ret " (or "))
+    )
+    (if (eq ?dp:type negation) then
+      (bind ?ret (str-cat ?ret " (not "))
+    )
+    (bind ?ret (str-cat ?ret (action-precondition-as-fol ?dp:name ?action-id ?plan-id)))
+    (bind ?ret (str-cat ?ret ")"))
+  )
+
+  (do-for-all-facts ((?dap domain-atomic-precondition)) (and (eq ?dap:part-of ?precond-name) (eq ?dap:grounded FALSE))
+
+    (bind ?ret (str-cat ?ret " ("))
+    (bind ?ret (str-cat ?ret ?dap:predicate))
+ 
+    (bind ?values (create$))
+    (foreach ?pre ?dap:param-names
+      (if (neq (nth$ ?pre-index ?dap:param-constants) nil) then
+        (bind ?values
+          (insert$ ?values ?pre-index (nth$ ?pre-index ?dap:param-constants)))
+      else
+        (bind ?action-index (member$ ?pre ?action-names))
+        (if (not ?action-index) then
+          ; ?p is not in the list of the action parameters
+          (assert (domain-error (error-type unknown-parameter) (error-msg
+            (str-cat "Precondition " ?dap:name " has unknown parameter " ?pre)))
+          )
+        else
+          (bind ?values
+            (insert$ ?values ?pre-index (nth$ ?action-index ?action-values)))
+        )
+      )
+    )
+    (foreach ?v ?values
+      (bind ?ret (str-cat ?ret " " ?v))
+    )
+    (bind ?ret (str-cat ?ret ")"))
+  )
+  (printout t ?ret crlf)
+  (return ?ret)
 )
 
 
@@ -313,7 +354,23 @@
 
 
 ; ----------------------- EVALUATE COMMON ------------------------------------
+(defrule goal-reasoner-evaluate-subgoal-common-start-diagnosis
+  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome FAILED))
+  (plan (id ?plan-id) (goal-id ?goal-id) (diag-wm-store STORED))
+  (plan-action (id ?action-id) (action-name ?an) (plan-id ?plan-id) (goal-id ?goal-id) (state FAILED) (param-names $?pn) (param-values $?pv))
+  (not (diagnosis (plan-id ?plan-id)))
+  =>
+  (create-diagnosis (sym-cat DIAG- ?goal-id) ?plan-id (str-cat "(and (next-FINISH) (not " (action-precondition-as-fol ?an ?action-id ?plan-id) "))"))
+)
 
+(defrule goal-reasoner-evaluate-subgoal-common-finished-diagnosis
+  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome FAILED))
+  (plan (id ?plan-id) (goal-id ?goal-id) (diag-wm-store STORED))
+  ?d <- (diagnosis (plan-id ?plan-id) (mode FINAL|FAILED))
+  =>
+  (retract ?d)
+  (modify ?g (mode EVALUATED))
+)
 
 (defrule goal-reasoner-evaluate-common
 " Finally set a finished goal to evaluated.
@@ -321,9 +378,11 @@
 "
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
+  (not (and (plan (goal-id ?goal-id) (id ?plan-id))
+            (diagnosis (plan-id ?plan-id))))
 =>
-  ;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
-  ;  "') has been completed, Evaluating" crlf)
+  (printout debug "Goal '" ?goal-id "' (part of '" 
+    "') has been completed, Evaluating" crlf)
   (modify ?g (mode EVALUATED))
 )
 
@@ -369,6 +428,7 @@
           (value ?total))
  (wm-fact (key order meta bases-missing args? ord ?order) (value ?bm))
  (wm-fact (key order meta rings-missing args? ord ?order) (value ?rm))
+ (not (diagnosis (plan-id ?plan-id)))
  =>
  (printout t "Goal '" ?goal-id "' has been completed, Evaluating" crlf)
  (assert (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE)))
@@ -460,6 +520,7 @@
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?hold <- (wm-fact (key domain fact holding args? r ?r wp ?wp))
   (AX12GripperInterface (holds_puck ?holds))
+  (not (diagnosis (plan-id ?plan-id)))
   =>
   (if (eq ?holds FALSE)
       then
@@ -483,6 +544,7 @@
 	   (param-values ?r ?wp ?mps ?spot)
 	   (state FAILED))
   (plan (id ?plan-id) (goal-id ?goal-id))
+  (not (diagnosis (plan-id ?plan-id)))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?wp-s<- (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot))
   =>

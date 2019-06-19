@@ -65,7 +65,7 @@
 
 (defrule simple-goal-dispatch
   ?g <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SIMPLE) (mode COMMITTED)
-              (class ?type)  (committed-to nil) (required-resources $?req)
+              (class ?type) (required-resources $?req)
               (acquired-resources $?acq&:(subsetp ?req ?acq)))
   (not (goal (parent ?goal-id)))
 =>
