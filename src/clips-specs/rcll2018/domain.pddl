@@ -125,26 +125,26 @@
 		(next-prepare-cs ?m - mps ?op - cs-operation)
 		(last-prepare-cs ?m - mps ?op - cs-operation)
 
-		(next-bs-dispense ?r - robot ?m - mps ?side - mps-isde ?wp - workpiece ?basecol - base-color)
-		(last-bs-dispense ?r - robot ?m - mps ?side - mps-isde ?wp - workpiece ?basecol - base-color)
+		(next-bs-dispense ?r - robot ?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
+		(last-bs-dispense ?r - robot ?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
 	
-		(next-cs-mount-cap ?m - mps ?wp - workpiece ?capcol - cap-color)
-		(last-cs-mount-cap ?m - mps ?wp - workpiece ?capcol - cap-color)
+		(next-cs-mount-cap ?m - mps)
+		(last-cs-mount-cap ?m - mps)
 
-		(next-cs-retrieve-cap ?m - mps ?cc - cap-carrier ?capcol - cap-color)
-		(last-cs-retrieve-cap ?m - mps ?cc - cap-carrier ?capcol - cap-color)
+		(next-cs-retrieve-cap ?m - mps)
+		(last-cs-retrieve-cap ?m - mps)
 	
 		(next-prepare-rs ?m - mps ?rc - ring-color)
 		(last-prepare-rs ?m - mps ?rc - ring-color)
 
-		(next-rs-mount-ring1 ?m - mps ?wp - workpiece ?col - ring-color)
-		(last-rs-mount-ring1 ?m - mps ?wp - workpiece ?col - ring-color)
+		(next-rs-mount-ring1 ?m - mps)
+		(last-rs-mount-ring1 ?m - mps)
 	
-		(next-rs-mount-ring2 ?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color)
-		(last-rs-mount-ring2 ?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color)
+		(next-rs-mount-ring2 ?m - mps)
+		(last-rs-mount-ring2 ?m - mps)
 	
-		(next-rs-mount-ring3 ?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color ?col2 - ring-color)
-		(last-rs-mount-ring3 ?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color ?col2 - ring-color)
+		(next-rs-mount-ring3 ?m - mps)
+		(last-rs-mount-ring3 ?m - mps)
 	
 		(next-go-wait ?r - robot ?to - waitpoint)
 		(last-go-wait ?r - robot ?to - waitpoint)
@@ -215,33 +215,27 @@
 		:parameters (?m - mps ?side - mps-side ?bc - base-color)
 		:precondition (and (mps-type ?m BS)
 									)
-		:effect (and (last-prepare-bs ?m ?side ?bc)
-								 (when (and (mps-state ?m IDLE) (locked ?m))
-								 			 (and (not (mps-state ?m IDLE)) (mps-state ?m READY-AT-OUTPUT)
-								 			 			(bs-prepared-color ?m ?bc) (bs-prepared-side ?m ?side))
-								 )
-						)
+		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m READY-AT-OUTPUT)
+							(bs-prepared-color ?m ?bc) (bs-prepared-side ?m ?side))
 	)
 
 	(:action prepare-ds
 		:parameters (?m - mps ?ord - order)
 		:precondition (and (mps-type ?m DS)
 									)
-		:effect (and (when (and (mps-state ?m IDLE) (locked ?m))
-								 			 (and (not (mps-state ?m IDLE)) 
+		:effect (and (not (mps-state ?m IDLE)) 
 													  (mps-state ?m PREPARED)
                  						(ds-prepared-order ?m ?ord)
 											 )
-								 )
-						)
+								 
+						
 	)
 
 	(:action prepare-cs
 		:parameters (?m - mps ?op - cs-operation)
 		:precondition (and  (mps-type ?m CS) (mps-state ?m IDLE)
                         (cs-can-perform ?m ?op) (locked ?m))
-		:effect (and (when (and (mps-state ?m IDLE)
-                        		(cs-can-perform ?m ?op)
+		:effect (and (when (and (cs-can-perform ?m ?op)
 														(locked ?m)
 											 )
 											 (and (not (mps-state ?m IDLE))
@@ -390,10 +384,10 @@
 	;
 	(:action go-wait
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - waitpoint)
-		:precondition (and (or (at ?r ?to WAIT) (location-free ?to WAIT))
-                       (at ?r ?from ?from-side))
+		:precondition (and (at ?r ?from ?from-side) (comp-state move-base INIT)
+							(comp-state navgraph LOCALIZED)
+							(comp-state laser ACTIVATED))
 		:effect (and (not (at ?r ?from ?from-side)) (at ?r ?to WAIT)
-          			 (not (location-free ?to WAIT)) (location-free ?from ?from-side)
 						)
 	)
 
@@ -406,16 +400,14 @@
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
 		:precondition (and (comp-state move-base INIT)
 											 (at ?r ?from ?from-side)
-											 (or (at ?r ?to ?to-side) (location-free ?to ?to-side))
 									)
 		:effect (and (not (at ?r ?from ?from-side)) (at ?r ?to ?to-side)
-								 (not (location-free ?to ?to-side)) (location-free ?from ?from-side)
 						)
 	)
 
 	(:action enter-field
 		:parameters (?r - robot)
-		:precondition (and (or (location-free START INPUT) (at ?r START INPUT))
+		:precondition (and (or (at ?r START INPUT))
 											 (robot-waiting ?r)
 									)
 		:effect (and (entered-field ?r)
@@ -499,7 +491,6 @@
 		:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side ?wp-there - workpiece)
 		:precondition (and (comp-state gripper CALIBRATED)
 											 (at ?r ?m ?side)
-											 (locked ?m)
 											 (or (mps-side-free ?m ?side)
 											     (wp-at ?wp-there ?m ?side)
 											 )
@@ -530,7 +521,6 @@
 		:parameters (?r - robot ?wp - cap-carrier ?m - mps ?rs-before - ring-num ?rs-after - ring-num)
 		:precondition (and (comp-state gripper CALIBRATED)
 							         (mps-type ?m RS) 
-							         (locked ?m)
 							         (at ?r ?m INPUT)
 							         (rs-filled-with ?m ?rs-before)
 							         (rs-inc ?rs-before ?rs-after)
@@ -710,14 +700,11 @@
 (:action move-navgraph-init
 :parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side ?real-to - mps ?real-to-side - mps-side)
 :precondition (and (at ?r ?from ?from-side) 
-                    (location-free ?real-to ?real-to-side) 
                     (not (or (comp-state move-base LOCKED) (comp-state move-base FAILED)))
                     (comp-state navgraph INIT))
 :effect (and 
               (not (at ?r ?from ?from-side))
-              (at ?r ?real-to ?real-to-side) 
-              (not (location-free ?real-to ?real-to-side))
-              (location-free ?from from-side))
+              (at ?r ?real-to ?real-to-side))
 )
 
 (:action wp-get-gripper-decalibrated
