@@ -7,7 +7,7 @@
     =>
     (bind ?plan-id (sym-cat CHECK-WORKPIECE-PLAN- (gensym*)))
     (assert
-        (plan (id ?plan-id) (goal-id ?id))
+        (plan (id ?plan-id) (goal-id ?id) (diag-wm-store FALSE))
         (plan-action (goal-id ?id) (plan-id ?plan-id) (action-name check-workpiece) (id 1) (param-names r m side) (param-values ?r ?mps ?side))
     )
 )
@@ -21,7 +21,7 @@
     =>
     (bind ?plan-id (sym-cat DRIVE-TO-CHECK-WORKPIECE-PLAN- (gensym*)))
     (assert
-        (plan (id ?plan-id) (goal-id ?id))
+        (plan (id ?plan-id) (goal-id ?id) (diag-wm-store FALSE))
         (plan-action (goal-id ?id) (plan-id ?plan-id) (action-name drive-to-check-workpiece) (id 1) (param-names r m side) (param-values ?r ?mps ?side))
     )
 )
@@ -34,7 +34,7 @@
     =>
     (bind ?plan-id (sym-cat GRIPPER-CALIBRATED-PLAN (gensym*)))
     (assert
-        (plan (id ?plan-id) (goal-id ?id))
+        (plan (id ?plan-id) (goal-id ?id) (diag-wm-store FALSE))
         (plan-action (goal-id ?id) (plan-id ?plan-id) (action-name gripper-calibrated) (id 1) (param-values ?r))
     )
 )
@@ -47,7 +47,7 @@
     =>
     (bind ?plan-id (sym-cat MOVE-BASE-IS-LOCKED-PLAN (gensym*)))
     (assert
-        (plan (id ?plan-id) (goal-id ?id))
+        (plan (id ?plan-id) (goal-id ?id) (diag-wm-store FALSE))
         (plan-action (goal-id ?id) (plan-id ?plan-id) (action-name move-base-is-locked) (id 1) (param-values ?r))
     )
 )
