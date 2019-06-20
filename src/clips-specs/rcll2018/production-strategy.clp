@@ -43,7 +43,7 @@
             args? m ?mps3 r ?col-r3 rn ?req3&:(neq ?req3 NA)))
   ; Order Meta CEs
   (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
-  (not (wm-fact (key order meta points-total args? ord ?order)))
+  (not (wm-fact (key order meta points-max args? ord ?order)))
   ; Refbox CEs
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
@@ -83,7 +83,7 @@
                    (is-list TRUE) (values (create$ ?points-ring1 ?points-ring2
                                                    ?points-ring3 ?points-cap
                                                    ?points-delivery)))
-          (wm-fact (key order meta points-total args? ord ?order) (type INT)
+          (wm-fact (key order meta points-max args? ord ?order) (type INT)
                    (is-list FALSE) (value ?res))
           (wm-fact (key order meta bases-missing args? ord ?order)
                    (type INT) (is-list FALSE) (value ?bases-needed))
@@ -456,7 +456,7 @@
   (wm-fact (key order meta points-steps args? ord ?order) (values $?p-steps))
   (wm-fact (key order meta estimated-time-steps args? ord ?order)
            (values $?t-steps))
-  (wm-fact (key order meta points-total args? ord ?order) (value ?p-total))
+  (wm-fact (key order meta points-max args? ord ?order) (value ?p-total))
   ?om <- (wm-fact (key order meta estimated-points-total args? ord ?order)
                   (value ?tpe&:(not (= ?tpe (estimate-achievable-points
                     ?p-steps
@@ -502,7 +502,7 @@
   (wm-fact (key refbox order ?order delivery-end) (value ?end&:(> ?end 0)))
   (wm-fact (key refbox game-time) (values ?game-time $?ms))
   ; Order Meta CEs
-  (wm-fact (key order meta points-total args? ord ?order) (value ?p-total))
+  (wm-fact (key order meta points-max args? ord ?order) (value ?p-total))
   (wm-fact (key order meta points-steps args? ord ?order) (values $?p-steps))
   (wm-fact (key order meta estimated-time-steps args? ord ?order)
            (values $?t-steps))
