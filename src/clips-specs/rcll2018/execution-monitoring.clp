@@ -150,7 +150,6 @@
                                             (wm-key-prefix ?wf:key (create$ domain fact cs-can-perform))
                                             (wm-key-prefix ?wf:key (create$ domain fact rs-filled-with))
                                             (wm-key-prefix ?wf:key (create$ domain fact rs-prepared-color))
-                                            (wm-key-prefix ?wf:key (create$ order meta wp-for-order))
                                             (and (wm-key-prefix ?wf:key (create$ mps-handling prepare))
                                                  (member$ ?mps (wm-key-path ?wf:key)))
                                             (and (wm-key-prefix ?wf:key (create$ mps-handling process))
