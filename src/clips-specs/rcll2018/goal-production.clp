@@ -1378,9 +1378,17 @@
 
 (defrule goal-production-cleanup-wp-for-order-facts
   "Unbind a workpiece from it's order when it can not be used anymore."
-  ?wp-for-order <- (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (value TRUE))
+  ?wp-for-order <- (wm-fact (key order meta wp-for-order
+                                 args? wp ?wp ord ?order)
+                            (value TRUE))
   (not (wm-fact (key domain fact wp-usable args? wp ?wp)))
   =>
   (retract ?wp-for-order)
-  (printout debug "WP " ?wp " no longer tied to Order " ?order " because it is not usable anymore" crlf)
+  (delayed-do-for-all-facts ((?wm wm-fact))
+    (and (wm-key-prefix ?wm:key (create$ wp meta))
+         (eq (wm-key-arg ?wm:key wp) ?wp))
+    (retract ?wm)
+  )
+  (printout debug "WP " ?wp " no longer tied to Order " ?order " because it is
+    not usable anymore" crlf)
 )
