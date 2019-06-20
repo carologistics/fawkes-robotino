@@ -31,11 +31,9 @@
 "
   ; Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-col))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
   ; Ring Specs CEs
   (wm-fact (key domain fact rs-ring-spec
             args? m ?mps1 r ?col-r1 rn ?req1&:(neq ?req1 NA)))
@@ -118,11 +116,9 @@
 "
   ; Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-col))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
   ; Ring Specs CEs
   (wm-fact (key domain fact rs-ring-spec
             args? m ?mps1 r ?col-r1 rn ?req1&:(neq ?req1 NA)))
@@ -178,7 +174,6 @@
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?wp-cap-col))
   ; Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-col))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
