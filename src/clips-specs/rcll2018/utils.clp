@@ -36,6 +36,9 @@
   ?*TIME-MOUNT-RING* = 60
   ?*TIME-MOUNT-CAP* = 90
   ?*TIME-DELIVER* = 120
+  ?*TIME-GET-BASE* = 30
+  ?*TIME-RETRIEVE-CAP* = 60
+  ?*TIME-FILL-RS* = 20
 )
 
 (deffunction random-id ()
