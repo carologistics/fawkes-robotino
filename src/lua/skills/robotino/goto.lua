@@ -192,23 +192,25 @@ function MOVING:init()
 end
 
 function TIMEOUT:loop()
-  local got_cur_pose = false
-  local distance_to_travel = 1.0
+  if fsm.vars.waiting_pos == true then
+    local got_cur_pose = false
+    local distance_to_travel = 1.0
  
-  while not got_cur_pose do
-    local cur_pose = tf_mod.transform({x=0, y=0, ori=0}, "base_link", "map")
-    if cur_pose ~= nil then
-      self.fsm.vars.cur_x = cur_pose.x
-      self.fsm.vars.cur_y = cur_pose.y
-      self.fsm.vars.cur_ori = cur_pose.ori
-      got_cur_pose = true
-    end
-    local x = (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x) * (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x)
-    local y = (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y) * (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y)
-    local distance_travelled = math.sqrt(x + y)
+    while not got_cur_pose do
+      local cur_pose = tf_mod.transform({x=0, y=0, ori=0}, "base_link", "map")
+      if cur_pose ~= nil then
+        self.fsm.vars.cur_x = cur_pose.x
+        self.fsm.vars.cur_y = cur_pose.y
+        self.fsm.vars.cur_ori = cur_pose.ori
+        got_cur_pose = true
+      end
+      local x = (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x) * (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x)
+      local y = (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y) * (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y)
+      local distance_travelled = math.sqrt(x + y)
  
-    if distance_travelled > distance_to_travel then
-      self.fsm.vars.travelled=true
+      if distance_travelled > distance_to_travel then
+        self.fsm.vars.travelled=true
+      end
     end
   end
 end
