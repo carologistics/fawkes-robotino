@@ -833,6 +833,22 @@
   (return ?values)
 )
 
+(deffunction order-steps-index (?step)
+" @param ?step production step, from the agent view describing the progress
+               after a production goal is successfully executed.
+
+  @return index of ?step in the list of points-steps and estimated-time-steps
+"
+  (if (eq ?step RING1) then (return 1))
+  (if (eq ?step RING2) then (return 2))
+  (if (eq ?step RING3) then (return 3))
+  (if (eq ?step CAP) then (return 4))
+  (if (eq ?step DELIVER) then (return 5))
+  (printout error "order-steps-index input " ?step " is not a valid step
+                   (allowed values: RING1,RING2,RING3,CAP,DELIVER)" crlf)
+)
+
+
 (deffunction finalize-points (?points ?competitive ?qr ?qd-us ?qd-them)
 " @param ?points points before considering delivered quantities and complexity
                  rules
