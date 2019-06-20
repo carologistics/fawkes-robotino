@@ -67,28 +67,16 @@
                             (last-ring-points ?com))))
   (bind ?points-cap ?*POINTS-MOUNT-CAP*)
   (bind ?points-delivery ?*POINTS-DELIVER*)
-  (bind ?bases-needed (+ (sym-to-int ?req1)
-                         (sym-to-int ?req2)
-                         (sym-to-int ?req3)))
   (bind ?res (+ ?points-ring1 ?points-ring2 ?points-ring3 ?points-cap
                ?points-delivery))
   (bind ?res (finalize-points ?res ?competitive ?qr ?qd-us ?qd-them))
   (printout t "Order " ?order " gives " ?res " points in total." crlf)
-  (if (> ?rings-needed 0)
-    then
-      (printout t "It needs " ?rings-needed " rings, they require to feed "
-                  ?bases-needed " more bases into ring stations." crlf)
-  )
   (assert (wm-fact (key order meta points-steps args? ord ?order) (type INT)
                    (is-list TRUE) (values (create$ ?points-ring1 ?points-ring2
                                                    ?points-ring3 ?points-cap
                                                    ?points-delivery)))
           (wm-fact (key order meta points-max args? ord ?order) (type INT)
                    (is-list FALSE) (value ?res))
-          (wm-fact (key order meta bases-missing args? ord ?order)
-                   (type INT) (is-list FALSE) (value ?bases-needed))
-          (wm-fact (key order meta rings-missing args? ord ?order)
-                   (type INT) (is-list FALSE) (value ?rings-needed))
           (wm-fact (key order meta estimated-points-total args? ord ?order)
                    (type INT) (is-list FALSE) (value 0))
           (wm-fact (key order meta estimated-time-steps args? ord ?order)
@@ -139,26 +127,12 @@
   (wm-fact (key refbox order ?order quantity-delivered ~?team-color)
            (value ?qd-them))
 =>
-  (bind ?rings-needed (string-to-field (sub-string 2 2 (str-cat ?com))))
-  (bind ?bases-needed (+ (sym-to-int ?req1)
-                         (sym-to-int ?req2)
-                         (sym-to-int ?req3)))
-  (printout t "WP " ?wp " attached to order " ?order "." crlf)
-  (if (> ?rings-needed 0)
-    then
-      (printout t "It needs " ?rings-needed " rings, they require to feed "
-                  ?bases-needed " more bases into ring stations." crlf)
-  )
+  (bind ?curr-step RING1)
+  (if (eq ?com C0) then (bind ?curr-step CAP))
   (assert (wm-fact (key wp meta points-current args? wp ?wp) (type INT)
                    (is-list FALSE) (value 0))
-          (wm-fact (key wp meta bases-missing args? wp ?wp)
-                   (type INT) (is-list FALSE) (value ?bases-needed))
-          (wm-fact (key wp meta rings-missing args? wp ?wp)
-                   (type INT) (is-list FALSE) (value ?rings-needed))
-          (wm-fact (key wp meta estimated-points-next-step args? wp ?wp)
-                   (type INT) (is-list FALSE) (value 0))
-          (wm-fact (key wp meta estimated-time-next-step args? wp ?wp)
-                   (type INT) (is-list FALSE) (value 0))
+          (wm-fact (key wp meta current-step args? wp ?wp)
+                   (type SYMBOL) (is-list FALSE) (value ?curr-step))
           (wm-fact (key wp meta estimated-points-total args? wp ?wp)
                    (type INT) (is-list FALSE) (value ?ep-total)))
 )
@@ -216,220 +190,69 @@
 )
 
 
-(defrule production-strategy-bases-missing-for-posted-order
-" Calculates the amount of bases missing in any ring station that are required
-  to produce a given order that has not been started yet.
-
-  This does not take the consumption of additional bases used within other
-  orders into account.
+(defrule production-strategy-update-current-step
+" Keeps track of the workpiece progress by checking which step has to be
+  performed next.
+  This information together with the point-steps and estimated-time-steps
+  order meta facts can be used to obtain the point gain and estimated time
+  consumption that the next step will cause.
 "
-  (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order)))
-  ; Order CEs
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
-  ; Ring Specs CEs
-  (wm-fact (key domain fact rs-ring-spec args? m ?mps1 r ?col-r1 rn ?req1))
-  (wm-fact (key domain fact rs-ring-spec args? m ?mps2 r ?col-r2 rn ?req2))
-  (wm-fact (key domain fact rs-ring-spec args? m ?mps3 r ?col-r3 rn ?req3))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps1 n ?cur1))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps2 n ?cur2))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps3 n ?cur3))
-  (wm-fact (key domain fact rs-sub
-            args? minuend ?req1 subtrahend ?cur1 difference ?diff1))
-  (wm-fact (key domain fact rs-sub
-            args? minuend ?req2 subtrahend ?cur2 difference ?diff2))
-  (wm-fact (key domain fact rs-sub
-            args? minuend ?req3 subtrahend ?cur3 difference ?diff3))
-  ; Order Meta CEs
-  ?bm <- (wm-fact (key order meta bases-missing args? ord ?order)
-                  (value ?rn&:(neq ?rn (+ (sym-to-int ?diff1)
-                                          (sym-to-int ?diff2)
-                                          (sym-to-int ?diff3)))))
-=>
-  (modify ?bm (value (+ (sym-to-int ?diff1) (sym-to-int ?diff2)
-                                (sym-to-int ?diff3))))
-)
-
-
-(defrule production-strategy-bases-missing-for-started-order
-" Calculates the amount of bases missing in any ring station that are required
-  to finish an intermediate product for an order.
-
-  This does not take the consumption of additional bases used within other
-  orders into account.
-"
-  ; WP CEs
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  ; WP CEs
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-col-r1))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-col-r2))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-col-r3))
-  ; Order CEs
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
-  ; Ring Specs CEs
-  (wm-fact (key domain fact rs-ring-spec args? m ?mps1 r ?col-r1 rn ?req1))
-  (wm-fact (key domain fact rs-ring-spec args? m ?mps2 r ?col-r2 rn ?req2))
-  (wm-fact (key domain fact rs-ring-spec args? m ?mps3 r ?col-r3 rn ?req3))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps1 n ?cur1))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps2 n ?cur2))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps3 n ?cur3))
-  (wm-fact (key domain fact rs-sub
-            args? minuend ?req1 subtrahend ?cur1 difference ?diff1))
-  (wm-fact (key domain fact rs-sub
-            args? minuend ?req2 subtrahend ?cur2 difference ?diff2))
-  (wm-fact (key domain fact rs-sub
-            args? minuend ?req3 subtrahend ?cur3 difference ?diff3))
-  ; WP Meta CEs
-  ?wm <- (wm-fact (key wp meta bases-missing args? wp ?wp)
-                         (value ?rn&:(neq ?rn
-                           (+ (* (sym-to-int ?diff1)
-                                 (bool-to-int (neq ?wp-col-r1 ?col-r1)))
-                              (* (sym-to-int ?diff2)
-                                 (bool-to-int (neq ?wp-col-r2 ?col-r2)))
-                              (* (sym-to-int ?diff3)
-                                 (bool-to-int (neq ?wp-col-r3 ?col-r3)))))))
-=>
-  (bind ?res (+ (* (sym-to-int ?diff1)
-                   (bool-to-int (neq ?wp-col-r1 ?col-r1)))
-                (* (sym-to-int ?diff2)
-                   (bool-to-int (neq ?wp-col-r2 ?col-r2)))
-                (* (sym-to-int ?diff3)
-                   (bool-to-int (neq ?wp-col-r3 ?col-r3)))))
-  (modify ?wm (value ?res))
-  (printout t "WP " ?wp " for order " ?order " requires " ?res
-              " additional base(s) to pay for the remaining ring(s)." crlf)
-)
-
-
-(defrule production-strategy-rings-missing-for-started-order
-" calculates the amount of rings that have to be mounted to finish
-  an intermediate product for an order.
-"
-  ; WP CEs
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-col-r1))
-  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-col-r2))
-  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-col-r3))
-  ; Order CEs
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
-  ; WP Meta CEs
-  ?wm <- (wm-fact (key wp meta rings-missing args? wp ?wp)
-                  (value ?rm&:(neq ?rm
-                    (+ (bool-to-int (neq ?wp-col-r1 ?col-r1))
-                       (bool-to-int (neq ?wp-col-r2 ?col-r2))
-                       (bool-to-int (neq ?wp-col-r3 ?col-r3))))))
-=>
-  (bind ?res (+ (bool-to-int (neq ?wp-col-r1 ?col-r1))
-                (bool-to-int (neq ?wp-col-r2 ?col-r2))
-                (bool-to-int (neq ?wp-col-r3 ?col-r3))))
-  (modify ?wm (value ?res))
-  (if (> ?res 0)
-    then
-      (printout t "WP " ?wp " for order " ?order " needs " ?res
-                  " more ring(s)." crlf)
-    else
-      (printout t "WP " ?wp " for order " ?order " has all rings now." crlf)
-  )
-)
-
-
-(defrule production-strategy-estimate-first-step
-" Estimate point gains and time bound to finish the first step.
-"
-  (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order)))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?wp-cap-col))
   ; Order CEs
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
   ; WP Meta CEs
-  ?wm1 <- (wm-fact (key wp meta estimated-points-next-step args? wp ?wp)
-                   (value ?e-p))
-  ?wm2 <- (wm-fact (key wp meta estimated-time-next-step args? wp ?wp)
-                   (value ?e-t))
-  (test (or (neq ?e-p ?*POINTS-MOUNT-CAP*) (neq ?e-t ?*TIME-MOUNT-CAP*)))
-=>
-  (modify ?wm1 (value ?*POINTS-MOUNT-CAP*))
-  (modify ?wm2 (value ?*TIME-MOUNT-CAP*))
-)
-
-
-(defrule production-strategy-estimate-next-step-mount-cap
-" Estimate point gains and time bound to finish the next step.
-  Next Step is to mount a cap.
-"
-  ; WP CEs
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?col-r1))
-  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?col-r2))
-  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?col-r3))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
-  ; Order CEs
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
-  ; WP Meta CEs
-  ?wm1 <- (wm-fact (key wp meta estimated-points-next-step args? wp ?wp)
-                   (value ?e-p))
-  ?wm2 <- (wm-fact (key wp meta estimated-time-next-step args? wp ?wp)
-                   (value ?e-t))
-  (test (or (neq ?e-p ?*POINTS-MOUNT-CAP*) (neq ?e-t ?*TIME-MOUNT-CAP*)))
-=>
-  (modify ?wm1 (value ?*POINTS-MOUNT-CAP*))
-  (modify ?wm2 (value ?*TIME-MOUNT-CAP*))
-)
-
-
-(defrule production-strategy-estimate-next-step-mount-ring
-" Estimate point gains and time bound to finish the next step.
-  Next Step is to mount a ring.
-"
-  ; WP CEs
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-col-r1))
-  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-col-r2))
-  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-col-r3))
-  ; Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
-  ; Ring Specs CEs
-  (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?next-col rn ?req))
-  ; next rings color needs ?req additional bases
+  ?wm <- (wm-fact (key wp meta current-step args? wp ?wp)
+                   (value ?curr-step))
   (test (or
-            (and (eq ?wp-col-r1 ?col-r1)
-                 (eq ?wp-col-r2 ?col-r2)
-                 (neq ?wp-col-r3 ?col-r3)
-                 (eq ?next-col ?col-r3))
-            (and (eq ?wp-col-r1 ?col-r1)
-                 (neq ?wp-col-r2 ?col-r2)
-                 (eq ?next-col ?col-r2))
-            (and (neq ?wp-col-r1 ?col-r1)
-                 (eq ?next-col ?col-r1))))
-  ; WP Meta CEs
-  ?wm1 <- (wm-fact (key wp meta estimated-points-next-step args? wp ?wp)
-                   (value ?e-p))
-  ?wm2 <- (wm-fact (key wp meta estimated-time-next-step args? wp ?wp)
-                   (value ?e-t))
-  (test (or (neq ?e-p (+ (ring-req-points ?req)
-                      (* (last-ring-points ?com)
-                         (bool-to-int (and (eq ?wp-col-r1 ?col-r1)
-                                           (eq ?wp-col-r2 ?col-r2)
-                                           (eq ?wp-col-r3 ?col-r3))))))
-            (neq ?e-t ?*TIME-MOUNT-RING*)))
+          (and (not (eq ?wp-col-r1 ?col-r1)) (not (eq ?curr-step RING1)))
+          (and (eq ?wp-col-r1 ?col-r1)
+               (not (eq ?wp-col-r2 ?col-r2))
+               (not (eq ?curr-step RING2)))
+          (and (eq ?wp-col-r1 ?col-r1)
+               (eq ?wp-col-r2 ?col-r2)
+               (not (eq ?wp-col-r3 ?col-r3))
+               (not (eq ?curr-step RING3)))
+          (and (eq ?wp-col-r1 ?col-r1)
+               (eq ?wp-col-r2 ?col-r2)
+               (eq ?wp-col-r3 ?col-r3)
+               (not (eq ?wp-cap-col ?cap-col))
+               (not (eq ?curr-step CAP)))
+          (and (eq ?wp-col-r1 ?col-r1)
+               (eq ?wp-col-r2 ?col-r2)
+               (eq ?wp-col-r3 ?col-r3)
+               (eq ?wp-cap-col ?cap-col)
+               (not (eq ?curr-step DELIVER)))
+))
 =>
-  (modify ?wm1 (value (+ (ring-req-points ?req)
-                         (* (last-ring-points ?com)
-                            (bool-to-int (and (eq ?wp-col-r1 ?col-r1)
-                                              (eq ?wp-col-r2 ?col-r2)
-                                              (eq ?wp-col-r3 ?col-r3)))))))
-  (modify ?wm2 (value ?*TIME-MOUNT-RING*))
+  (bind ?new-step DELIVER)
+  (if (not (eq ?wp-col-r1 ?col-r1))
+    then
+      (bind ?new-step RING1)
+    else
+      (if (not (eq ?wp-col-r2 ?col-r2))
+        then
+          (bind ?new-step RING2)
+        else
+          (if (not (eq ?wp-col-r3 ?col-r3))
+            then
+              (bind ?new-step RING3)
+            else
+              (if (not (eq ?wp-cap-col ?cap-col))
+                then
+                  (bind ?new-step CAP)
+              )
+          )
+      )
+  )
+  (modify ?wm (value ?new-step))
 )
 
 
@@ -508,8 +331,6 @@
            (values $?t-steps))
   ; WP Meta CEs
   (wm-fact (key wp meta points-current args? wp ?wp) (value ?p-curr))
-  (wm-fact (key wp meta rings-missing args? wp ?wp)
-           (value ?rings-missing))
   ?tpe <- (wm-fact (key wp meta estimated-points-total args? wp ?wp)
              (value ?ap&:(not (= ?ap
                (estimate-achievable-points
