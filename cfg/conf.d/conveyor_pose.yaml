@@ -9,6 +9,10 @@ plugins/conveyor_pose:
   # - the switch if is ignored, the plugin is always running
   debug: false
 
+  # sets the switch interface the plugin is waiting for before
+  # starting the plugin
+  realsense_switch: "realsense"
+
   # forces ConveyorPosePlugin to think its MPS_TARGET is a shelf
   # This works only in debug mode, as its usage is intended to simplify
   # debugging of shelf specific code
