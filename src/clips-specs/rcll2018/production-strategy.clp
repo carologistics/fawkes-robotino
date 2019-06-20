@@ -81,26 +81,19 @@
                    (type INT) (is-list FALSE) (value 0))
           (wm-fact (key order meta estimated-time-steps args? ord ?order)
                    (type INT) (is-list TRUE)
-                   (values
-                     (create$ (* (bool-to-int (not (= 0 ?points-ring1)))
-                                 ?*TIME-MOUNT-RING*)
-                              (* (bool-to-int (not (= 0 ?points-ring2)))
-                                 ?*TIME-MOUNT-RING*)
-                              (* (bool-to-int (not (= 0 ?points-ring3)))
-                                 ?*TIME-MOUNT-RING*)
-                              ?*TIME-MOUNT-CAP*
-                              ?*TIME-DELIVER*))))
+                   (values (create$ 0 0 0 0 ?*TIME-DELIVER*))))
 )
 
 
-(defrule production-strategy-init-wp-meta-facts
-" Initializes facts to track for a given workpiece (started order)
-   - number of missing rings
-   - number of additional bases for missing rings
-   - current points the workpiece already scored
-   - estimated total points the workpiece can score
-   - estimated points the workpiece will score in the next step
-   - estimated time it will take to score the next points with the workpiece
+(defrule production-strategy-update-time-steps-mount-ring
+" Tracks how long the mount ring step for a given order might take.
+  This is influenced by:
+   - estimated time to mount the ring
+   - estimated time to provide additional bases, if there are not enough yet
+   - time to get a base, if the order is of complexity C1 and the step is for
+     the first ring
+     (getting a base and mounting the first ring is part of the same production
+      step for the agent: MOUNT-FIRST-RING)
 "
   ; Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
@@ -114,18 +107,109 @@
             args? m ?mps2 r ?col-r2 rn ?req2&:(neq ?req2 NA)))
   (wm-fact (key domain fact rs-ring-spec
             args? m ?mps3 r ?col-r3 rn ?req3&:(neq ?req3 NA)))
+  (wm-fact (key domain fact rs-filled-with args? m ?mps1 n ?cur1))
+  (wm-fact (key domain fact rs-filled-with args? m ?mps2 n ?cur2))
+  (wm-fact (key domain fact rs-filled-with args? m ?mps3 n ?cur3))
+  (wm-fact (key domain fact rs-sub
+            args? minuend ?req1 subtrahend ?cur1 difference ?diff1))
+  (wm-fact (key domain fact rs-sub
+            args? minuend ?req2 subtrahend ?cur2 difference ?diff2))
+  (wm-fact (key domain fact rs-sub
+            args? minuend ?req3 subtrahend ?cur3 difference ?diff3))
+  ; Order Meta CEs
+  ?et-steps <- (wm-fact (key order meta estimated-time-steps args? ord ?order)
+                        (values $?timelist))
+  (test (not (and
+	       (eq (nth$ (order-steps-index RING1) ?timelist)
+                   (* (bool-to-int (not (eq ?col-r1 RING_NONE)))
+                      (+ (* (sym-to-int ?diff1) ?*TIME-FILL-RS*)
+                         ?*TIME-MOUNT-RING*
+                         ?*TIME-GET-BASE*)))
+	       (eq (nth$ (order-steps-index RING2) ?timelist)
+                   (* (bool-to-int (not (eq ?col-r2 RING_NONE)))
+                      (+ (* (sym-to-int ?diff2) ?*TIME-FILL-RS*)
+                         ?*TIME-MOUNT-RING*)))
+	       (eq (nth$ (order-steps-index RING3) ?timelist)
+                   (* (bool-to-int (not (eq ?col-r3 RING_NONE)))
+                      (+ (* (sym-to-int ?diff3) ?*TIME-FILL-RS*)
+                         ?*TIME-MOUNT-RING*))))))
+=>
+  (modify ?et-steps (values (replace$
+                              ?timelist
+                              (order-steps-index RING1)
+                              (order-steps-index RING3)
+                              (* (bool-to-int (not (eq ?col-r1 RING_NONE)))
+                                 (+ (* (sym-to-int ?diff1) ?*TIME-FILL-RS*)
+                                    ?*TIME-MOUNT-RING*
+                                    ?*TIME-GET-BASE*))
+                              (* (bool-to-int (not (eq ?col-r2 RING_NONE)))
+                                 (+ (* (sym-to-int ?diff2) ?*TIME-FILL-RS*)
+                                    ?*TIME-MOUNT-RING*))
+                              (* (bool-to-int (not (eq ?col-r3 RING_NONE)))
+                                 (+ (* (sym-to-int ?diff3) ?*TIME-FILL-RS*)
+                                    ?*TIME-MOUNT-RING*)))))
+)
+
+
+(defrule update-time-steps-mount-cap
+" Tracks how long the mount cap step for a given order might take.
+  This is influenced by:
+   - estimated time to mount the cap
+   - estimated time to buffer the cap, if it is not buffered already
+   - time to get a base, if the order is of complexity 0
+     (getting a base and mounting a cap is part of the same production step
+      for the agent: PRODUCE-C0)
+"
+  ; Order CEs
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
+  ; Order Meta CEs
+  ?et-steps <- (wm-fact (key order meta estimated-time-steps args? ord ?order)
+                        (values $?timelist))
+  (or (and (wm-fact (key domain fact cs-buffered args? m ? col ?cap-col))
+           (test (not (eq (nth$ (order-steps-index CAP) ?timelist)
+                      (+ ?*TIME-MOUNT-CAP*
+		         (* (bool-to-int (eq ?com C0))
+                             ?*TIME-GET-BASE*))))))
+       (and (not (wm-fact (key domain fact cs-buffered
+                           args? m ? col ?cap-col)))
+            (test (not (eq (nth$ (order-steps-index CAP) ?timelist)
+                  (+ ?*TIME-MOUNT-CAP*
+                     ?*TIME-RETRIEVE-CAP*
+                     (* (bool-to-int (eq ?com C0))
+                         ?*TIME-GET-BASE*)))))))
+=>
+  (bind ?buffer-cap
+          (* (bool-to-int
+               (not (any-factp ((?wm wm-fact))
+                      (and (wm-key-prefix ?wm:key
+                             (create$ domain fact cs-buffered))
+                           (eq (wm-key-arg ?wm:key col) ?cap-col)))))
+             ?*TIME-RETRIEVE-CAP*))
+  (printout error "buffer value: " ?buffer-cap crlf)
+  (modify ?et-steps (values (replace$ ?timelist
+                                      (order-steps-index CAP)
+                                      (order-steps-index CAP)
+                                      (+ ?buffer-cap
+                                         ?*TIME-MOUNT-CAP*
+		                         (* (bool-to-int (eq ?com C0))
+                                            ?*TIME-GET-BASE*)))))
+)
+
+
+(defrule production-strategy-init-wp-meta-facts
+" Initializes facts to track for a given workpiece (started order)
+   - current points the workpiece already scored
+   - estimated total points the workpiece can score
+   - type of the next step that has to be performed
+"
+  ; Order CEs
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
   ; Order Meta CEs
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   (not (wm-fact (key wp meta points-current args? wp ?wp)))
   (wm-fact (key order meta estimated-points-total args? ord ?order)
            (value ?ep-total))
-  ; Refbox CEs
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
-           (value ?qd-us))
-  (wm-fact (key refbox order ?order quantity-delivered ~?team-color)
-           (value ?qd-them))
 =>
   (bind ?curr-step RING1)
   (if (eq ?com C0) then (bind ?curr-step CAP))
