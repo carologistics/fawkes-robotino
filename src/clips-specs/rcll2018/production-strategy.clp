@@ -23,12 +23,15 @@
 ; Provide additional information to each order like for example total and
 ; expected point gains, time estimates and info about the required production
 ; steps.
-
+(defglobal
+  ?*SALIENCE-PRODUCTION-STRATEGY* = -1
+)
 
 (defrule production-strategy-init-order-meta-facts
 " Calculates the points for each production step, total points and number
   of rings needed for a posted order.
 "
+  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   ; Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
@@ -95,6 +98,7 @@
      (getting a base and mounting the first ring is part of the same production
       step for the agent: MOUNT-FIRST-RING)
 "
+  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   ; Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
@@ -160,6 +164,7 @@
      (getting a base and mounting a cap is part of the same production step
       for the agent: PRODUCE-C0)
 "
+  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   ; Order CEs
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
   (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
@@ -203,6 +208,7 @@
    - estimated total points the workpiece can score
    - type of the next step that has to be performed
 "
+  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   ; Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
   ; Order Meta CEs
@@ -224,6 +230,7 @@
 
 (defrule production-strategy-current-points-for-started-order
 " Calculates the point value of an intermediate product."
+  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   ; WP CEs
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-col-r1))
@@ -281,6 +288,7 @@
   order meta facts can be used to obtain the point gain and estimated time
   consumption that the next step will cause.
 "
+  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   ; WP CEs
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-col-r1))
@@ -348,6 +356,7 @@
   Additional points for prepared caps and supplied additional bases are not
   counted.
 "
+  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order)))
   ; Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
@@ -392,6 +401,7 @@
   Additional points for prepared caps and supplied additional bases are not
   counted.
 "
+  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   ; Order CEs
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-col-r1))
