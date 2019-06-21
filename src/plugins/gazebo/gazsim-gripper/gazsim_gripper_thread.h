@@ -28,6 +28,7 @@
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
+#include <aspect/tf.h>
 #include <blackboard/interface_listener.h>
 #include <core/threading/thread.h>
 #include <interfaces/DynamixelServoInterface.h>
@@ -44,6 +45,7 @@ class AX12GripperInterface;
 class ArduinoInterface;
 class LedInterface;
 class JointInterface;
+class RobotinoSensorInterface;
 } // namespace fawkes
 
 class GazsimGripperThread : public fawkes::Thread,
@@ -51,7 +53,8 @@ class GazsimGripperThread : public fawkes::Thread,
                             public fawkes::LoggingAspect,
                             public fawkes::ConfigurableAspect,
                             public fawkes::BlackBoardAspect,
-                            public fawkes::GazeboAspect {
+                            public fawkes::GazeboAspect,
+                            public fawkes::TransformAspect {
 public:
   GazsimGripperThread();
 
@@ -66,9 +69,11 @@ protected:
 private:
   fawkes::AX12GripperInterface *gripper_if_;
   fawkes::ArduinoInterface *arduino_if_;
+  fawkes::RobotinoSensorInterface *robotino_sensor_if_;
 
   std::string gripper_if_name_;
   std::string arduino_if_name_;
+  std::string robotino_sensor_if_name_;
   std::string cfg_prefix_;
 
   // Publisher to sent msgs to gazebo
@@ -76,7 +81,12 @@ private:
   gazebo::transport::PublisherPtr set_conveyor_pub_;
   gazebo::transport::SubscriberPtr gripper_has_puck_sub_;
 
+  fawkes::Time gripper_cmd_start_time_;
+  long int gripper_move_duration_;
+  bool is_busy;
+
   void send_gripper_msg(int value);
+  void update_gripper_tfs(float x, float y, float z);
   void on_has_puck_msg(ConstIntPtr &msg);
 };
 
