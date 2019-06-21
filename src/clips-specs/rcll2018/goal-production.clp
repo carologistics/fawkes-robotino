@@ -219,7 +219,7 @@
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
-  (not (goal (class MPS-HANLDING-MAINTAIN)))
+  (not (goal (class MPS-HANDLING-MAINTAIN)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
   (wm-fact (key domain fact self args? r ?robot))
@@ -1255,7 +1255,7 @@
                 )
                 (required-resources ?wp)
   ))
-  (retract ?t) 
+  (retract ?t)
 )
 
 
