@@ -66,5 +66,8 @@
   </message>
   <message name="StopICP">
     <comment>Stop a currently running recognition</comment>
+    <field type="double" name="dummy">
+        DUmmy field
+    </field>
   </message>
 </interface>

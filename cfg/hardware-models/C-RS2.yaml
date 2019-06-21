@@ -1,0 +1,74 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+
+C-RS2:
+  states:
+    - IDLE
+    - DOWN-TO-IDLE
+    - DOWN-TO-READY-AT-OUTPUT
+    - READY-AT-OUTPUT
+    - BROKEN
+    - PREPARED
+
+  IDLE:
+    edges:
+      - DOWN-TO-IDLE
+      - BROKEN
+      - PREPARED
+      - READY-AT-OUTPUT
+    DOWN-TO-IDLE:
+      transition: refbox_c_rs2_down
+      probability: 0.05
+    READY-AT-OUTPUT:
+      transition: prepare-rs
+    BROKEN:
+      transition: reset-mps
+    PREPARED:
+      transition: prepare-rs
+
+  DOWN-TO-IDLE:
+    edges:
+      - IDLE
+    IDLE:
+      transition: back_up_c_rs2
+      probability: 1.0
+
+  DOWN-TO-READY-AT-OUTPUT:
+    edges:
+      - READY-AT-OUTPUT
+    READY-AT-OUTPUT:
+      transition: back_up_c_rs2
+      probability: 1.0
+
+  READY-AT-OUTPUT:
+    edges:
+      - IDLE
+      - BROKEN
+    IDLE:
+      transition: wp-get
+    BROKEN:
+      transition: reset-mps
+
+  BROKEN:
+    edges:
+      - IDLE
+    IDLE:
+      transition: unbreak_c_rs2
+      probability: 1.0
+
+  PREPARED:
+    edges:
+      - BROKEN
+      - READY-AT-OUTPUT
+    BROKEN:
+      transition: break_c_rs2
+      probability: 0.05
+    READY-AT-OUTPUT:
+      transition: finished-processing-c-rs2
+      probability: 1.0
+
+
+
+
+
+

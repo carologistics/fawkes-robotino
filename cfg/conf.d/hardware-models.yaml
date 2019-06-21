@@ -12,5 +12,7 @@ hardware-models:
     - C-CS2
     - C-BS
     - C-RS1
+    - C-RS2
+    - C-DS
 
   interface: HardwareModels

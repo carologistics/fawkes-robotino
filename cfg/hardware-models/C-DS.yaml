@@ -1,0 +1,53 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+
+C-DS:
+  states:
+    - IDLE
+    - DOWN-TO-IDLE
+    - BROKEN
+    - PREPARED
+
+  IDLE:
+    edges:
+      - DOWN-TO-IDLE
+      - BROKEN
+      - PREPARED
+    DOWN-TO-IDLE:
+      transition: refbox_c_ds_down
+      probability: 0.05
+    BROKEN:
+      transition: reset-mps
+    PREPARED:
+      transition: prepare-ds
+
+  DOWN-TO-IDLE:
+    edges:
+      - IDLE
+    IDLE:
+      transition: back_up_c_ds
+      probability: 1.0
+
+  BROKEN:
+    edges:
+      - IDLE
+    IDLE:
+      transition: unbreak_c_ds
+      probability: 1.0
+
+  PREPARED:
+    edges:
+      - BROKEN
+      - IDLE
+    BROKEN:
+      transition: break_c_ds
+      probability: 0.05
+    IDLE:
+      transition: c_ds_finished_processing
+      probability: 1.0
+
+
+
+
+
+

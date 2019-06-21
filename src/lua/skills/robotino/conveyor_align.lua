@@ -112,16 +112,21 @@ end
 function result_ready()
   if if_conveyor_pose:is_busy()
      or if_conveyor_pose:msgid() ~= fsm.vars.msgid
-  then return false end
+  then
+    print(if_conveyor_pose:msgid() .. " " .. fsm.vars.msgid)
+    return false 
+  end
 
   local bb_stamp = fawkes.Time:new(if_conveyor_pose:input_timestamp(0), if_conveyor_pose:input_timestamp(1))
   if not tf:can_transform("conveyor_pose", "base_link", bb_stamp) then
+    print("cant convert")
     return false
   end
 
   local transform = fawkes.tf.StampedTransform:new()
   tf:lookup_transform("conveyor_pose", "base_link", transform)
   if transform.stamp:in_usec() < bb_stamp:in_usec() then
+    print(transform.stamp.in_usec() .. " < " .. bb_stamp:in_usec())
     return false
   end
   return true
