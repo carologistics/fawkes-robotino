@@ -40,25 +40,25 @@ arduino:
   # These values changed the speed and the acceleration
   # in steps/s and steps/s/s of the differen stepper motors.
   # Please use these tags in the hostspecific host.yaml
-  #  firmware_settings:
-  #    speed_x: 2000
-  #    speed_y: 2000
-  #    speed_z: 2000
-  #    speed_a: 2000
-  #    acc_x: 2000
-  #    acc_y: 2000
-  #    acc_z: 2000
-  #    acc_a: 2000
+  firmware_settings:
+    speed_x: 4000
+    speed_y: 4000
+    speed_z: 4000
+    speed_a: 7000
+    acc_x: 7000
+    acc_y: 7000
+    acc_z: 7000
+    acc_a: 15000
 
   hardware_settings:
     # the micro stepping mode.
     # e.g. 4 for 4 microsteps per step
-    x_micro_stepping: 1
-    y_micro_stepping: 1
-    z_micro_stepping: 1
+    x_micro_stepping: 2
+    y_micro_stepping: 2
+    z_micro_stepping: 2
 
     # the number of steps to move to open/close the gripper
     # CAREFUL! setting this too high can also make open not working
     # a good starting value is 120*a where a
     # is the microstepping mode of the A motor
-    a_toggle_steps: 480
+    a_toggle_steps: 240
