@@ -225,9 +225,10 @@ fsm:define_states{ export_to=_M,
            laser_line_still_visible=laser_line_still_visible, laser_line_found=laser_line_found, NUM_DIRECT_MPS_ALIGN_TRIES=NUM_DIRECT_MPS_ALIGN_TRIES},
 
   {"INIT",                     JumpState},
+  {"TIMEOUT",                  JumpState},
 
   -- DRIVE_TO fails when the goal cannot be reached - should we still try to perform an MPS_ALIGN?
-  {"SKILL_DRIVE_TO",           SkillJumpState, skills={{goto}},          final_to="SKILL_MPS_ALIGN", fail_to="FAILED"},
+  {"SKILL_DRIVE_TO",           SkillJumpState, skills={{goto}},          final_to="TIMEOUT", fail_to="FAILED"},
   {"SKILL_MPS_ALIGN",          SkillJumpState, skills={{mps_align}},         final_to="FINAL", fail_to="FAILED"},
 }
 
@@ -237,7 +238,8 @@ fsm:add_transitions{
   { "INIT",    "FAILED",                   cond="not parameters_valid(self)",  desc="parameters invalid" },
   { "INIT",    "FAILED",                   timeout=5,  desc="timeout" }, -- ONLY FOR TESTING!
   { "INIT",    "SKILL_DRIVE_TO",           cond=true },
-  { "SKILL_DRIVE_TO", "SKILL_MPS_ALIGN",    cond="laser_line_found(self)" },
+  { "SKILL_DRIVE_TO", "TIMEOUT",    cond="laser_line_found(self)" },
+  { "TIMEOUT", "SKILL_MPS_ALIGN",          timeout=1.0 },
 }
 
 function INIT:init()
