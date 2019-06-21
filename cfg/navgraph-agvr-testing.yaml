@@ -657,7 +657,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: C-CS2
-    pos: [4.142457, 1.47642]
+    pos: [4.289614, 1.368615]
     properties:
       - align_distance: 0.45
       - input_offset_x: 0.0
@@ -676,7 +676,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: C-RS1
-    pos: [4.285712, 3.658004]
+    pos: [4.359291, 3.535244]
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.02
@@ -871,7 +871,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: C-DS-I
-    pos: [0.9567751, 0.9892156]
+    pos: [1.035024, 0.9402974]
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.025
@@ -886,11 +886,11 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: C-RS1-I
-    pos: [5.023417, 3.548472]
+    pos: [5.181956, 3.494636]
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.025
-      - orientation: 3.096339
+      - orientation: -3.095548
       - orientation_tolerance: 0.6
       - output_offset_y: -0.025
       - shortcut_tolerance: 1.2
@@ -901,7 +901,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: C-RS1-O
-    pos: [3.798702, 3.572582]
+    pos: [3.580997, 3.508957]
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.025
@@ -916,7 +916,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: C-CS2-O
-    pos: [4.943186, 1.377795]
+    pos: [4.943186, 1.328633]
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.025
@@ -931,7 +931,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: C-CS2-I
-    pos: [3.54612, 1.424437]
+    pos: [3.634356, 1.35084]
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.025
@@ -946,11 +946,11 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: C-RS2-O
-    pos: [2.344489, 2.017174]
+    pos: [2.518883, 1.706937]
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.025
-      - orientation: 1.546661
+      - orientation: 1.562796
       - orientation_tolerance: 0.6
       - output_offset_y: -0.025
       - shortcut_tolerance: 1.2
@@ -961,7 +961,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: C-BS-O
-    pos: [0.6694411, 1.835581]
+    pos: [0.7603794, 1.578029]
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.025
@@ -976,7 +976,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: C-BS-I
-    pos: [0.5825669, 3.131814]
+    pos: [0.7908186, 3.270257]
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.025
@@ -991,7 +991,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: C-RS2-I
-    pos: [2.330421, 3.076035]
+    pos: [2.534234, 3.148046]
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.025
@@ -1006,7 +1006,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: C-CS1-I
-    pos: [5.893066, 1.818804]
+    pos: [5.937481, 1.818804]
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.025
@@ -1021,7 +1021,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: C-CS1-O
-    pos: [5.882389, 3.005877]
+    pos: [5.937909, 3.005877]
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.025
