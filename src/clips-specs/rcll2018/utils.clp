@@ -799,6 +799,19 @@
   (return 0)
 )
 
+(deffunction values-from-name-value-list ($?args)
+" @param $?args a list containing name value pairs. E.g. (m C-CS1 s IDLE)
+
+  @return The values of the argument list as list. E.g (C-CS1 IDLE)
+"
+  (bind ?values (create$))
+  (foreach ?a ?args
+    (if (eq 0 (mod ?a-index 2)) then
+      (bind ?values (create$ ?values ?a))
+    )
+  )
+  (return ?values)
+)
 
 (deffunction finalize-points (?points ?competitive ?qr ?qd-us ?qd-them)
 " @param ?points points before considering delivered quantities and complexity

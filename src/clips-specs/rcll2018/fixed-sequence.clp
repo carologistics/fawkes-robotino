@@ -845,19 +845,8 @@
   ?pre <- (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
   ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
   =>
-  (bind ?prepare-param-values (create$))
-  (bind ?process-param-values (create$))
-  (foreach ?pre ?prepare-params
-      (if (eq 0 (mod ?pre-index 2)) then
-            (bind ?prepare-param-values (create$ ?prepare-param-values (nth$ ?pre-index ?prepare-params)))
-      )
-  )
-  (foreach ?pro ?process-params
-      (if (eq 0 (mod ?pro-index 2)) then
-            (bind ?process-param-values (create$ ?process-param-values (nth$ ?pro-index ?process-params)))
-      )
-  )
-
+  (bind ?prepare-param-values (values-from-name-value-list ?prepare-params))
+  (bind ?process-param-values (values-from-name-value-list ?process-params))
   (assert
     (plan (id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
