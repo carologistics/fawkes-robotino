@@ -787,9 +787,9 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
 	(value ?qd&:(> ?qr ?qd)))
-  (wm-fact (key refbox order ?order-id delivery-begin) (type UINT)
+  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
 	(value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*))))
-  (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
+  (wm-fact (key refbox order ?order delivery-end) (type UINT)
 	(value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-LATEST-TIME*))))
   ;Active Order CEs
   ;This order complexity is not produced exclusively while another exclusive
