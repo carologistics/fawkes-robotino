@@ -965,7 +965,7 @@
                                          difference ?bases-remain&ZERO|ONE|TWO|THREE))
   (not (wm-fact (key domain fact rs-prepared-color args?  m ?mps-rs col ?some-col)))
   ;Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C3))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C2|C3))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?order-ring1-color))
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?order-ring2-color))
