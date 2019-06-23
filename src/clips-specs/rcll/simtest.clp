@@ -27,6 +27,7 @@
 
 (deffunction simtest-quit (?success)
 	(printout info "Exiting (success: " ?success ") ..." crlf)
+	(printout info "SIMTEST: " (if ?success then "SUCCEEDED" else "FAILED") crlf)
 	(quit)
 )
 
