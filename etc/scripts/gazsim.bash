@@ -391,6 +391,8 @@ if [  $COMMAND  == start ]; then
 						echo "rcll-refbox-instruct not found, not built or old version?"
 				else
 						echo "Starting game (Phase: $START_GAME ${TEAM_CYAN:+Cyan: ${TEAM_CYAN}}${TEAM_MAGENTA:+ Magenta: ${TEAM_MAGENTA}})"
+						$LLSF_REFBOX_DIR/bin/rcll-refbox-instruct -p SETUP -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
+						sleep 5
 						$LLSF_REFBOX_DIR/bin/rcll-refbox-instruct -p $START_GAME -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
 				fi
 		fi
