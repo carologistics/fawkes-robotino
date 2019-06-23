@@ -15,5 +15,5 @@ fawkes:
 
   # Main app relevant settings
   mainapp:
-    loggers: console;file/debug:debug1_$time.log
+    loggers: console;file:robot1_$time.log;file/debug:debug1_$time.log
 
