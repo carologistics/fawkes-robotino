@@ -218,6 +218,48 @@ nodes:
       - target_tolerance: 1.5
       - travel_tolerance: 1.5
   - !unconnected
+    name: WAIT-C-Z13
+    pos: [2.7, 3.9]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-Z35
+    pos: [2.5, 4.5]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-Z75
+    pos: [4.4, 2.5]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
     name: WAIT-C-BS-INPUT
     pos: [0.6190259, 3.553846]
     properties:
