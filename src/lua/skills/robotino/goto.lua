@@ -76,8 +76,21 @@ function target_unreachable()
    return false
 end
 
+function travelled_distance(self)
+  distance_to_travel = 1.0
+  local x = (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x) * (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x)
+  local y = (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y) * (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y)
+  local distance_travelled = math.sqrt(x + y)
+ 
+  if distance_travelled > distance_to_travel then
+    return true
+  else
+    return false
+  end
+end
+
 fsm:define_states{ export_to=_M,
-  closure={check_navgraph=check_navgraph, reached_target_region=reached_target_region, has_navigator=has_navigator},
+  closure={check_navgraph=check_navgraph, reached_target_region=reached_target_region, has_navigator=has_navigator, travelled_distance=travelled_distance},
   {"CHECK_INPUT",   JumpState},
   {"WAIT_TF",       JumpState},
   {"INIT",          JumpState},
@@ -94,7 +107,7 @@ fsm:add_transitions{
   {"INIT",  "FAILED",         cond="not vars.target_valid",                 desc="target invalid"},
   {"INIT",  "MOVING",         cond=true},
   {"MOVING", "TIMEOUT",       timeout=2}, -- Give the interface some time to update
-  {"TIMEOUT", "FINAL",        cond="vars.waiting_pos and vars.travelled", desc="Going to waiting position"},
+  {"TIMEOUT", "FINAL",        cond="vars.waiting_pos and travelled_distance(self)", desc="Going to waiting position"},
   {"TIMEOUT", "FINAL",        cond=target_reached, desc="Target reached"},
   {"TIMEOUT", "FAILED",       cond=target_unreachable, desc="Target unreachable"},
 }
@@ -163,7 +176,9 @@ function WAIT_TF:loop()
    self.fsm.vars.initial_position_x   = cur_pose.x
    self.fsm.vars.initial_position_y   = cur_pose.y
    self.fsm.vars.initial_position_ori = cur_pose.ori
-
+   self.fsm.vars.cur_x = cur_pose.x
+   self.fsm.vars.cur_y = cur_pose.y
+   self.fsm.vars.cur_ori = cur_pose.ori
 end
 
 function MOVING:init()
@@ -194,7 +209,6 @@ end
 function TIMEOUT:loop()
   if fsm.vars.waiting_pos == true then
     local got_cur_pose = false
-    local distance_to_travel = 1.0
  
     while not got_cur_pose do
       local cur_pose = tf_mod.transform({x=0, y=0, ori=0}, "base_link", "map")
@@ -203,13 +217,6 @@ function TIMEOUT:loop()
         self.fsm.vars.cur_y = cur_pose.y
         self.fsm.vars.cur_ori = cur_pose.ori
         got_cur_pose = true
-      end
-      local x = (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x) * (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x)
-      local y = (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y) * (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y)
-      local distance_travelled = math.sqrt(x + y)
- 
-      if distance_travelled > distance_to_travel then
-        self.fsm.vars.travelled=true
       end
     end
   end
