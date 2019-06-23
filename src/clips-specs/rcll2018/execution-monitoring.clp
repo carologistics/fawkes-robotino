@@ -260,7 +260,7 @@
 	   (id ?id) (state PENDING)
 	   (action-name ?action-name)
 	   (param-values $? ?mps $?))
-  (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
+  (domain-atomic-precondition (operator ?an) (predicate comp-state) (param-values ?mps ?state))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
   (wm-fact (key domain fact mps-state args? m ?mps s ?s&~IDLE&~READY-AT-OUTPUT))
