@@ -225,11 +225,6 @@ function TIMEOUT:loop()
 end
 
 function MOVING:reset()
-  if waiting_pos then 
-    print("yes")
-  else
-    print("nnoo")
-  end
     if navigator:has_writer() and not navigator:is_final() and waiting_pos == false then
        printf("goto: sending stop");
        navigator:msgq_enqueue(navigator.StopMessage:new(fsm.vars.msgid or 0))
