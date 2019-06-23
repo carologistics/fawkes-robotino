@@ -46,7 +46,7 @@ if place is set, this will be used and x, y and ori will be ignored
 skillenv.skill_module(_M)
 
 local tf_mod = require 'fawkes.tfutils'
-
+local waiting_pos = false
 -- Tunables
 --local REGION_TRANS=0.2
 
@@ -117,9 +117,11 @@ function INIT:init()
   self.fsm.vars.target_valid = true
   -- check for waiting position
   self.fsm.vars.waiting_pos = false
+  waiting_pos = false
   if self.fsm.vars.place ~=nil then
-    if string.match(self.fsm.vars.place, "[WAIT]") then 
+    if string.match(self.fsm.vars.place, "%bWAIT") then 
       self.fsm.vars.waiting_pos = true
+      waiting_pos = true
     end
   end
 
@@ -223,7 +225,12 @@ function TIMEOUT:loop()
 end
 
 function MOVING:reset()
-    if navigator:has_writer() and not navigator:is_final() and fsm.vars.waiting_pos == false then
+  if waiting_pos then 
+    print("yes")
+  else
+    print("nnoo")
+  end
+    if navigator:has_writer() and not navigator:is_final() and waiting_pos == false then
        printf("goto: sending stop");
        navigator:msgq_enqueue(navigator.StopMessage:new(fsm.vars.msgid or 0))
     end
