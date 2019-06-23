@@ -66,7 +66,7 @@ AccelStepper motor_Y(MOTOR_Y_STEP_SHIFT, MOTOR_Y_DIR_SHIFT);
 AccelStepper motor_Z(MOTOR_Z_STEP_SHIFT, MOTOR_Z_DIR_SHIFT);
 AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 
-long a_toggle_steps = 480;
+long a_toggle_steps = 240;
 
 #define AT "AT "
 #define TERMINATOR '+'
@@ -109,8 +109,8 @@ long a_toggle_steps = 480;
 #define DEFAULT_MAX_SPEED_Z 2000
 #define DEFAULT_MAX_ACCEL_Z 3500
 
-#define DEFAULT_MAX_SPEED_A 15000
-#define DEFAULT_MAX_ACCEL_A 30000
+#define DEFAULT_MAX_SPEED_A 7000
+#define DEFAULT_MAX_ACCEL_A 15000
 
 #define SECOND_CAL_MAX_SPEED 500
 #define SECOND_CAL_MAX_ACC 1000
@@ -427,7 +427,7 @@ void read_package() {
         check_gripper_status();
         if(!open_gripper){
           open_gripper = true;
-          set_new_rel_pos(a_toggle_steps,motor_A);
+          set_new_rel_pos(-a_toggle_steps,motor_A);
         } else {
           send_status();
           send_status();
@@ -435,7 +435,7 @@ void read_package() {
         break;
       case CMD_CLOSE:
         open_gripper = false;
-        set_new_rel_pos(-a_toggle_steps,motor_A);
+        set_new_rel_pos(a_toggle_steps,motor_A);
         break;
       case CMD_STATUS_REQ:
         send_status();
@@ -587,7 +587,8 @@ ISR(TIMER0_COMPA_vect) // this is called every overflow of the timer 0
     if(step | step_a){ // only step if really necessary
       while(!pulse_done); // wait until the previous pulse is done // TODO:: remove after ensuring pulse is surely done here EVERY TIME!
       // Serial.println(dir,BIN);
-      dir ^= 1 << MOTOR_Z_DIR_SHIFT; // TODO CHANGE IN HARDWARE
+      dir ^= 1 << MOTOR_X_DIR_SHIFT;
+      dir ^= 1 << MOTOR_Y_DIR_SHIFT;
       MOTOR_XYZ_DIR_OUT = (MOTOR_XYZ_DIR_OUT & MOTOR_XYZ_DIR_INV_MASK) | dir; // set the direction pins right
       MOTOR_A_DIR_OUT = (MOTOR_A_DIR_OUT & MOTOR_A_DIR_INV_MASK) | dir_a; // set the direction pins right
       step_bits_xyz = step;
