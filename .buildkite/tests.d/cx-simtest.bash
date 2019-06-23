@@ -18,6 +18,8 @@ if [ "$NAME" != "Fedora" ] ; then
   exit 0
 fi
 
+cd $TOP_BASEDIR
+sed -i 's_simtest/enabled:.*_simtest/enabled: true_' cfg/conf.d/*
 SCRIPT_PATH=$TOP_BASEDIR/bin/
 cd $SCRIPT_PATH
 TERMINAL=tmux
