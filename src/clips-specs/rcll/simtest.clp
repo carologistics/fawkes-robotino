@@ -27,6 +27,7 @@
 
 (deffunction simtest-quit (?success)
 	(printout info "Exiting (success: " ?success ") ..." crlf)
+	(quit)
 )
 
 (defrule simtest-initialize
