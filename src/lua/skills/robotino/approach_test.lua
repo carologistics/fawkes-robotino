@@ -85,11 +85,6 @@ function CONVEYOR_ALIGN:init()
    end
 end
 
-function SKILL_SHELF_PUT:init()
-   -- Just hand through the Shelf position
-   self.args["shelf_put"].slot = self.fsm.vars.shelf
-end
-
 function SKILL_SHELF_PICK:init()
    -- Just hand through the Shelf position
    self.args["shelf_pick"].slot = self.fsm.vars.shelf
