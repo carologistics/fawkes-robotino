@@ -15,6 +15,9 @@ sed $SCRIPT_PATH/../fawkes/.buildkite/pipeline.yml \
 	-e 's|\.buildkite/|fawkes/.buildkite/|g' \
 	-e 's/SSH_DEPLOY_PRIVKEY_COMMITTERS/SSH_DEPLOY_PRIVKEY_COMMITTERS\n            - SSH_DEPLOY_PRIVKEY_FAWKES_ROBOTINO/g'
 
+TOP_BASEDIR=$(realpath $SCRIPT_PATH/..)
+export TOP_BASEDIR
+
 # Example to add more steps:
 # Note, that the steps must be properly indented as if it were
 # prefixed with "steps:"!
