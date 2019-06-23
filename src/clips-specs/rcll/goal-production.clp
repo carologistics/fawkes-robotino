@@ -197,8 +197,7 @@
 
 (defrule goal-production-navgraph-compute-wait-positions-finished
   "Add the waiting points to the domain once their generation is finished."
-  (this-fact-wont-ever-exist)
-  (NavGraphWithMPSGeneratorInterface (final TRUE))
+  (not (domain-object (type waitpoint)))
 =>
   (printout t "Navgraph generation of waiting-points finished. Getting waitpoints." crlf)
   (do-for-all-facts ((?waitzone navgraph-node)) (str-index "WAIT-" ?waitzone:name)
