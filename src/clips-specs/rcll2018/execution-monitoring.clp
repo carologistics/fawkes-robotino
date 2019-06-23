@@ -109,9 +109,9 @@
      (param-values $? ?mps $?)
      (action-name ?an))
   (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
-  (not (wm-fact (key monitoring fail-goal) (value ?goal-id)))
+  (not (wm-fact (key monitoring fail-goal args? g ?goal-id)))
   =>
-  (assert (wm-fact (key monitoring fail-goal) (type UNKNOWN) (value ?goal-id)))
+  (assert (wm-fact (key monitoring fail-goal args? g ?goal-id) (type UNKNOWN)))
 )
 
 
@@ -120,7 +120,7 @@
   set the goal to finished and failed
 "
   (declare (salience ?*MONITORING-SALIENCE*))
-  ?fg <-(wm-fact (key monitoring fail-goal) (type UNKNOWN) (value ?goal-id))
+  ?fg <-(wm-fact (key monitoring fail-goal args? g ?goal-id) (type UNKNOWN))
   ?g <- (goal (id ?goal-id) (mode DISPATCHED))
   (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state ~FORMULATED&~PENDING&~FINAL&~FAILED)))
   =>
