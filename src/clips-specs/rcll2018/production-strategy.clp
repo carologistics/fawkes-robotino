@@ -114,6 +114,9 @@
   (wm-fact (key domain fact rs-filled-with args? m ?mps1 n ?cur1))
   (wm-fact (key domain fact rs-filled-with args? m ?mps2 n ?cur2))
   (wm-fact (key domain fact rs-filled-with args? m ?mps3 n ?cur3))
+  (not (wm-fact (key domain fact rs-filled-with args? m ?mps1 n ~?cur1)))
+  (not (wm-fact (key domain fact rs-filled-with args? m ?mps2 n ~?cur2)))
+  (not (wm-fact (key domain fact rs-filled-with args? m ?mps3 n ~?cur3)))
   (wm-fact (key domain fact rs-sub
             args? minuend ?req1 subtrahend ?cur1 difference ?diff1))
   (wm-fact (key domain fact rs-sub
@@ -167,6 +170,8 @@
   (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   ; Order CEs
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
+  (not (wm-fact (key domain fact order-cap-color
+                 args? ord ?order col ~?cap-col)))
   (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
   ; Order Meta CEs
   ?et-steps <- (wm-fact (key order meta estimated-time-steps args? ord ?order)
@@ -237,6 +242,10 @@
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-col-r2))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-col-r3))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?wp-cap-col))
+  (not (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ~?wp-col-r1)))
+  (not (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ~?wp-col-r2)))
+  (not (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ~?wp-col-r3)))
+  (not (wm-fact (key domain fact wp-cap-color args? wp ?wp col ~?wp-cap-col)))
   ; Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
@@ -295,6 +304,10 @@
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-col-r2))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-col-r3))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?wp-cap-col))
+  (not (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ~?wp-col-r1)))
+  (not (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ~?wp-col-r2)))
+  (not (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ~?wp-col-r3)))
+  (not (wm-fact (key domain fact wp-cap-color args? wp ?wp col ~?wp-cap-col)))
   ; Order CEs
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
@@ -408,6 +421,10 @@
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-col-r2))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-col-r3))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?wp-cap-col))
+  (not (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ~?wp-col-r1)))
+  (not (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ~?wp-col-r2)))
+  (not (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ~?wp-col-r3)))
+  (not (wm-fact (key domain fact wp-cap-color args? wp ?wp col ~?wp-cap-col)))
   ; Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-col))
