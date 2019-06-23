@@ -86,6 +86,10 @@ if [ -z $TERMINAL ] ; then
     fi
 fi
 
+if [ -n $LLSF_REFBOX_DIR ] ; then
+    export PATH=$LLSF_REFBOX_DIR/bin:$PATH
+fi
+
 case "$TERMINAL" in
     gnome-terminal)
         TERM_COMMAND="gnome-terminal --window --geometry=$TERM_GEOMETRY -- bash -i -c '"
@@ -387,13 +391,13 @@ if [  $COMMAND  == start ]; then
     fi
 
 		if [ -n "$START_GAME" ]; then
-				if [ ! -x $LLSF_REFBOX_DIR/bin/rcll-refbox-instruct ]; then
+				if [ "$(command -v rcll-refbox-instruct)" == "" ]; then
 						echo "rcll-refbox-instruct not found, not built or old version?"
 				else
 						echo "Starting game (Phase: $START_GAME ${TEAM_CYAN:+Cyan: ${TEAM_CYAN}}${TEAM_MAGENTA:+ Magenta: ${TEAM_MAGENTA}})"
-						$LLSF_REFBOX_DIR/bin/rcll-refbox-instruct -p SETUP -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
+						rcll-refbox-instruct -p SETUP -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
 						sleep 5
-						$LLSF_REFBOX_DIR/bin/rcll-refbox-instruct -p $START_GAME -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
+						rcll-refbox-instruct -p $START_GAME -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
 				fi
 		fi
 

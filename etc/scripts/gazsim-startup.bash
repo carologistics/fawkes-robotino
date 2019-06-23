@@ -147,6 +147,10 @@ then
      exit 1
 fi
 
+if [ -n $LLSF_REFBOX_DIR ] ; then
+    export PATH=$LLSF_REFBOX_DIR/bin:$PATH
+fi
+
 if [[ -z $GAZEBO_WORLD_PATH ]]
 then
      echo "Error: \$GAZEBO_WORLD_PATH is not set. Please set it in your .bashrc"
@@ -221,12 +225,12 @@ case $COMMAND in
 	roslaunch $@ --wait robotino_move_base robotino_move_base_simu.launch
 	;;
     refbox )
-	$LLSF_REFBOX_DIR/bin/llsf-refbox $@
+	llsf-refbox $@
 	;;
     refbox-shell )
         # wait some time such that the terminal has the final size
 	sleep 3
-	$LLSF_REFBOX_DIR/bin/llsf-refbox-shell $@
+	llsf-refbox-shell $@
 	;;
 esac
 
