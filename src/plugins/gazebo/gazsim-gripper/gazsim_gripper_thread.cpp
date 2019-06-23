@@ -74,6 +74,11 @@ void GazsimGripperThread::init() {
       config->get_string("/gazsim/topics/gripper-has-puck"),
       &GazsimGripperThread::on_has_puck_msg, this);
 
+  gripper_feedback_sub_ = gazebonode->Subscribe(
+      config->get_string("/gazsim/topics/gripper-feedback"),
+      &GazsimGripperThread::on_feedback_msg, this);
+  
+
   // setup gripper if with default values
   gripper_if_ = blackboard->open_for_writing<AX12GripperInterface>(
       gripper_if_name_.c_str());
@@ -181,6 +186,13 @@ void GazsimGripperThread::loop() {
                    ->msgq_first_is<ArduinoInterface::CloseGripperMessage>()) {
       send_gripper_msg(0);
       gripper_if_->set_holds_puck(true);
+    } else if (arduino_if_
+                   ->msgq_first_is<ArduinoInterface::CalibrateMessage>()) {
+      ArduinoInterface::CalibrateMessage *msg = arduino_if_->msgq_first(msg);
+      logger->log_info(name(),"Start calibrating");
+      arduino_if_->set_final(false);
+      arduino_if_->set_msgid(msg->id());
+      send_gripper_msg(3);
     } else {
       logger->log_warn(name(), "Unknown Arduino message received");
     }
@@ -205,7 +217,7 @@ void GazsimGripperThread::update_gripper_tfs(float x, float y, float z) {
 
 void GazsimGripperThread::send_gripper_msg(int value) {
   // send message to gazebo
-  // 0 close, 1 open, 2 move
+  // 0 close, 1 open, 2 move, 3 calibrate
   msgs::Int msg;
   msg.set_data(value);
   set_gripper_pub_->Publish(msg);
@@ -224,4 +236,16 @@ void GazsimGripperThread::on_has_puck_msg(ConstIntPtr &msg) {
 
   gripper_if_->set_holds_puck(msg->data() > 0);
   gripper_if_->write();
+}
+
+void GazsimGripperThread::on_feedback_msg(ConstIntPtr &msg) {
+  // 1 final 0 failed
+  logger->log_info(name(),"Feedback Message");
+  arduino_if_->set_final(true);
+  if (msg->data() == 0) {
+    arduino_if_->set_status(5);
+  } else if (msg->data() == 1) {
+    arduino_if_->set_status(0);
+  }
+  arduino_if_->write();
 }

@@ -173,6 +173,7 @@ clips-executive:
           get_product_from{place=?(m)S,
                            side=?(side|/INPUT/input/|/OUTPUT/output/)s}
         wp-discard: discard{}
+        gripper-calibrate: gripper_commands{command="CALIBRATE"}
 
       blackboard-preload:
         - Position3DInterface

@@ -8,6 +8,7 @@
     <constant type="uint32" value="2" name="ERROR_OUT_OF_RANGE_X">Desired motion in X would lead to exceeding limits.</constant>
     <constant type="uint32" value="3" name="ERROR_OUT_OF_RANGE_Y">Desired motion in Y would lead to exceeding limits.</constant>
     <constant type="uint32" value="4" name="ERROR_OUT_OF_RANGE_Z">Desired motion in Z would lead to exceeding limits.</constant>
+    <constant type="uint32" value="5" name="FAILED">Last command failed</constant>
 
   </constants>
   <data>

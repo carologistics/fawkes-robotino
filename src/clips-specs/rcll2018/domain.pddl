@@ -885,6 +885,11 @@
 			)
   )
 
+  (:action gripper-calibrate
+    :parameters ()
+    :precondition (or (comp-state gripper CALIBRATED) (comp-state gripper UNCALIBRATED))
+    :effect (and (not (comp-state gripper UNCALIBRATED)) (comp-state gripper CALIBRATED))
+  )
   ; ----------------------------- action alternatives ----------------------------
  (:action move-navgraph-init
     :parameters (?r - robot ?from - location ?from-side - mps-side 
