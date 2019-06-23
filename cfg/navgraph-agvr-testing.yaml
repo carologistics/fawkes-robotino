@@ -1048,7 +1048,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: C-CS1-I
-    pos: [5.937481, 1.818804]
+    pos: [5.937481, 1.612323]
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.025
@@ -1063,7 +1063,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: C-CS1-O
-    pos: [5.937909, 3.005877]
+    pos: [5.937909, 3.140278]
     properties:
       - align_distance: 0.45
       - input_offset_y: 0.025
