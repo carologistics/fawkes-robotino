@@ -313,7 +313,7 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
   ;MPS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
+  (wm-fact (key domain fact comp-state args? c ?mps s ~BROKEN&~DOWN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
   (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
@@ -403,7 +403,7 @@
   ;MPS CEs
   ;Maybe add a check for the base_color
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-;  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
+;  (wm-fact (key domain fact comp-state args? c ?mps s READY-AT-OUTPUT))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;WP CEs
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
@@ -435,7 +435,7 @@
   ;MPS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t BS))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
+  (wm-fact (key domain fact comp-state args? c ?mps s READY-AT-OUTPUT))
   ;WP CEs
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
   =>
@@ -465,7 +465,7 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
+  (wm-fact (key domain fact comp-state args? c ?mps s ~BROKEN&~DOWN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;WP CEs
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
@@ -607,7 +607,7 @@
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?bs side ?any-side)))
-  (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
+  (wm-fact (key domain fact comp-state args? c ?bs s ~BROKEN&~DOWN))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
 
   (wm-fact (key domain fact order-base-color args? ord ?any-order col ?base-color))
@@ -683,7 +683,7 @@
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ?state&~BROKEN))
+  (wm-fact (key domain fact comp-state args? c ?mps s ?state&~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
@@ -761,7 +761,7 @@
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side ?any-side)))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+  (wm-fact (key domain fact comp-state args? c ?mps s ~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
@@ -770,7 +770,7 @@
   (domain-object (name ?bs-side) (type mps-side))
   (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?bs side ?any-side)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
+  (wm-fact (key domain fact comp-state args? c ?bs s ~BROKEN&~DOWN))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
   ;To-Do: Model the bs active-side
   ;Order CEs
@@ -873,7 +873,7 @@
   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs m ?mps-rs side ?any-rs-side)))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args?  m ?mps-bs t BS))
-  (wm-fact (key domain fact mps-state args? m ?mps-bs s ~BROKEN))
+  (wm-fact (key domain fact comp-state args? c ?mps-bs s ~BROKEN))
   (wm-fact (key domain fact mps-team args?  m ?mps-bs col ?team-color))
   (not (wm-fact (key domain fact wp-at args? wp ?bs-wp m ?mps-bs side ?any-bs-side)))
   ;Order CEs
@@ -1039,7 +1039,7 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+  (wm-fact (key domain fact comp-state args? c ?mps s ~BROKEN))
   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side ?side-cs)))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
@@ -1094,7 +1094,7 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+  (wm-fact (key domain fact comp-state args? c ?mps s ~BROKEN))
   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side ?side-cs)))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
@@ -1151,7 +1151,7 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+  (wm-fact (key domain fact comp-state args? c ?mps s ~BROKEN))
   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side ?side-cs)))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
@@ -1263,7 +1263,7 @@
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
   ;MPS-CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+  (wm-fact (key domain fact comp-state args? c ?mps s ~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;WP-CEs
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
