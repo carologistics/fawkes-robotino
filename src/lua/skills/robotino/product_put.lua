@@ -124,7 +124,7 @@ function GRIPPER_ALIGN:init()
 end
 
 function MOVE_GRIPPER_FORWARD:init()
-  if self.fsm.vars.slide ~= nil then
+  if self.fsm.vars.slide then
     self.args["gripper_commands"].x = slide_gripper_forward_x
     self.args["gripper_commands"].z = slide_gripper_down_z
   else
@@ -141,7 +141,7 @@ function OPEN_GRIPPER:init()
 end
 
 function MOVE_GRIPPER_BACK:init()
-  if self.fsm.vars.slide ~= nil then
+  if self.fsm.vars.slide then
     self.args["gripper_commands"].x = slide_gripper_back_x
     self.args["gripper_commands"].z = slide_gripper_up_z
   else
