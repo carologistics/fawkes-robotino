@@ -89,9 +89,9 @@ function input_ok()
         return false
       end
     end
-    if       (not fsm.vars.x and not fsm.vars.x_rel) 
-          or (not fsm.vars.y and not fsm.vars.y_rel)
-          or (not fsm.vars.z and not fsm.vars.z_rel) then
+    if       (fsm.vars.x == nil and fsm.vars.x_rel == nil) 
+          or (fsm.vars.y == nil and fsm.vars.y_rel == nil)
+          or (fsm.vars.z == nil and fsm.vars.z_rel == nil) then
       print("Missing coordinates " .. fsm.vars.x .. " " .. fsm.vars.y .. " " ..fsm.vars.z)
       return false
     else 
@@ -100,7 +100,7 @@ function input_ok()
   end
 
   if fsm.vars.command == "MOVEREL" then
-    if not fsm.vars.x or not fsm.vars.y or not fsm.vars.z then
+    if fsm.vars.x == nil or fsm.vars.y == nil or fsm.vars.z == nil then
       print("Missing coordinates " .. fsm.vars.x .. " " .. fsm.vars.y .. " " ..fsm.vars.z)
       return false
     elseif fsm.vars.target_frame then
@@ -217,24 +217,24 @@ function COMMAND:init()
         current_pos = get_current_pos()
 
         if self.fsm.vars.command == "MOVEABS" then
-          if self.fsm.vars.x then
+          if self.fsm.vars.x ~= nil then
             x = self.fsm.vars.x
           end
-          if self.fsm.vars.x_rel then
+          if self.fsm.vars.x_rel ~= nil then
             x = clip_value_x(current_pos.x + self.fsm.vars.x_rel)
           end
 
-          if self.fsm.vars.y then
+          if self.fsm.vars.y ~= nil then
             y = self.fsm.vars.y
           end
-          if self.fsm.vars.y_rel then
+          if self.fsm.vars.y_rel ~= nil then
             y = clip_value_y(current_pos.y + self.fsm.vars.y_rel)
           end
            
-          if self.fsm.vars.z then
+          if self.fsm.vars.z ~= nil then
             z = self.fsm.vars.z
           end
-          if self.fsm.vars.z_rel then
+          if self.fsm.vars.z_rel ~= nil then
             z = clip_value_z(current_pos.z + self.fsm.vars.z_rel)
           end
           target_frame = self.fsm.vars.target_frame or "gripper_home"
