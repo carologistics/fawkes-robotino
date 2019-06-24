@@ -975,7 +975,7 @@
                                          subtrahend ?bases-needed
                                          difference ?bases-remain&ZERO|ONE|TWO|THREE))
   (not (wm-fact (key domain fact rs-prepared-color args?  m ?mps-rs col ?some-col)))
-  (not (wm-fact (key domain fact wp-at args? wp ? m ?mps-rs side INPUT)))
+
   ;Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C2|C3))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
@@ -992,6 +992,12 @@
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-ring2-color))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-ring3-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+
+  (or (not (wm-fact (key domain fact wp-at args? wp ? m ?mps-rs side INPUT)))
+      ; The next rs is equal to the current rs. So if the workpiece gets taken 
+      ; from the output, we know that the workpiece from the input gets processed
+      (test (eq ?prev-rs ?mps-rs))
+  )
   ;The workpiece misses a ring
   (test (or
             (and (eq ?wp-ring1-color ?order-ring1-color)
