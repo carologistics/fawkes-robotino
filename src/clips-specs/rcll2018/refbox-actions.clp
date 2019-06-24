@@ -207,7 +207,7 @@
 	?st <- (timer (name prepare-mps-send-timer))
 	?at <- (timer (name prepare-mps-abort-timer))
 	?md <- (metadata-prepare-mps ?mps $?date)
-	(wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|PROCESSING|PREPARED))
+	(wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|PROCESSING|PROCESSED|PREPARED))
 	=>
 	(printout t "Action Prepare " ?mps " is final" crlf)
 	(retract ?st ?at ?md)
@@ -233,6 +233,20 @@
 	(modify ?pa (state EXECUTION-FAILED))
 )
 
+(defrule refbox-action-prepare-mps-abort-on-broken
+  "Abort preparing if the mps got broken"
+  ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
+                          (action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs))
+  ?at <- (timer (name prepare-mps-abort-timer))
+  ?st <- (timer (name prepare-mps-send-timer))
+  ?md <- (metadata-prepare-mps ?mps $?date)
+  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
+  =>
+  (printout t "Action Prepare " ?mps " is Aborted because mps is broken" crlf)
+  (retract ?st ?md ?at)
+  (modify ?pa (state EXECUTION-FAILED))
+)
+
 (defrule refbox-action-prepare-mps-abort
 	"Abort preparing and fail the action if took too long"
 	(time $?now)
@@ -245,7 +259,7 @@
 					(seq ?seq))
 	?st <- (timer (name prepare-mps-send-timer))
 	?md <- (metadata-prepare-mps ?mps $?date)
-	(not (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|PROCESSING|PREPARED)))
+	(not (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|PROCESSING|PROCESSED|PREPARED)))
 	=>
 	(printout t "Action Prepare " ?mps " is Aborted" crlf)
 	(retract ?st ?md ?at)
