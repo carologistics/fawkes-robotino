@@ -810,6 +810,28 @@
   =>
   (bind ?prepare-param-values (values-from-name-value-list ?prepare-params))
   (bind ?process-param-values (values-from-name-value-list ?process-params))
+
+  ;Special case: if process is a ring mount, we have to get the current number of rings stored
+  ; and adapt the param-values
+  (if (eq ?prepare-action prepare-rs) then
+    (bind ?rs-req (nth$ (+ 1 (member$ r-req ?prepare-params)) ?prepare-params))
+    (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact rs-filled-with))
+                                       (eq (wm-key-arg ?wm:key m) ?mps))
+      (bind ?rs-before (wm-key-arg ?wm:key n))
+    )
+    (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact rs-sub))
+                                       (eq (wm-key-arg ?wm:key minuend) ?rs-before)
+                                       (eq (wm-key-arg ?wm:key difference) ?rs-req))
+      (bind ?rs-after (wm-key-arg ?wm:key subtrahend))
+    )
+    (bind ?prepare-param-values (insert$ ?prepare-param-values (length$ ?prepare-param-values) ?rs-before))
+    (bind ?process-param-values (insert$ ?process-param-values (length$ ?process-param-values) ?rs-before))
+
+    (bind ?prepare-param-values (insert$ ?prepare-param-values (length$ ?prepare-param-values) ?rs-after))
+    (bind ?process-param-values (insert$ ?process-param-values (length$ ?process-param-values) ?rs-after))
+
+  )
+
   (assert
     (plan (id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
