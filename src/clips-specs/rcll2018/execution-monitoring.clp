@@ -49,6 +49,10 @@
           (wm-fact (key domain fact wp-at args? wp ?wp-gen m ?mps side OUTPUT))
           (wm-fact (key domain fact wp-usable args? wp ?wp-gen))
   )
+  (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact mps-side-free))
+                                    (eq ?mps (wm-key-arg ?wm:key m))
+    (retract ?wm)
+  )
   (printout warn "A WP has been Generated at the OUTPUT side" crlf)
 )
 
@@ -168,6 +172,9 @@
   (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?mps (wm-key-args ?wf:key)) FALSE)
                                               (wm-key-prefix ?wf:key (create$ domain fact wp-at)))
            (assert (wm-fact (key monitoring cleanup-wp args? wp (wm-key-arg ?wf:key wp))))
+  )
+  (assert (wm-fact (key domain fact mps-side-free args? m ?mps side INPUT))
+          (wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT))
   )
 )
 

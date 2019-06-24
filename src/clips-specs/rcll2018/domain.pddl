@@ -72,6 +72,7 @@
 		(mps-type ?m - mps ?t - mps-typename)
 		(mps-state ?m - mps ?s - mps-statename)
 		(mps-team ?m - mps ?col - team-color)
+		(mps-side-free ?m - mps ?side - mps-side)
 		(bs-prepared-color ?m - mps ?col - base-color)
 		(bs-prepared-side ?m - mps ?side - mps-side)
 		(cs-can-perform ?m - mps ?op - cs-operation)
@@ -148,9 +149,10 @@
                        (bs-prepared-side ?m ?side)
 											 (wp-base-color ?wp BASE_NONE) (wp-unused ?wp)
 											 (wp-spawned-for ?wp ?r)
-											 (self ?r))
+											 (self ?r)
+											 (mps-side-free ?m ?side))
 											 ;(not (wp-usable ?wp))
-		:effect (and (wp-at ?wp ?m ?side)
+		:effect (and (wp-at ?wp ?m ?side) (not (mps-side-free ?m ?side))
 								 (not (wp-base-color ?wp BASE_NONE)) (wp-base-color ?wp ?basecol)
 								 (not (wp-unused ?wp)) (wp-usable ?wp)
 								 (not (wp-spawned-for ?wp ?r)))
@@ -161,9 +163,12 @@
 		:precondition (and (mps-type ?m CS) (mps-state ?m READY-AT-OUTPUT) (locked ?m)
 										(cs-buffered ?m ?capcol) (cs-prepared-for ?m MOUNT_CAP)
 										(wp-usable ?wp) (wp-at ?wp ?m INPUT)
+										(not (mps-side-free ?m INPUT))
+										(mps-side-free ?m OUTPUT)
 										(wp-cap-color ?wp CAP_NONE))
 		:effect (and
-								 (not (wp-at ?wp ?m INPUT)) (wp-at ?wp ?m OUTPUT)
+								 (not (wp-at ?wp ?m INPUT)) (mps-side-free ?m INPUT)
+								 (wp-at ?wp ?m OUTPUT) (not (mps-side-free ?m OUTPUT))
 								 (not (wp-cap-color ?wp CAP_NONE)) (wp-cap-color ?wp ?capcol)
 								 (cs-can-perform ?m RETRIEVE_CAP)
 								 (not (cs-can-perform ?m MOUNT_CAP))
@@ -181,9 +186,11 @@
 		:parameters (?m - mps ?cc - cap-carrier ?capcol - cap-color)
 		:precondition (and (mps-type ?m CS) (mps-state ?m READY-AT-OUTPUT)
                        (locked ?m) (cs-prepared-for ?m RETRIEVE_CAP)
-										(wp-at ?cc ?m INPUT)  (wp-cap-color ?cc ?capcol))
+										(wp-at ?cc ?m INPUT) (not (mps-side-free ?m INPUT)) (mps-side-free ?m OUTPUT)
+										(wp-cap-color ?cc ?capcol))
 		:effect (and
-								 (not (wp-at ?cc ?m INPUT)) (wp-at ?cc ?m OUTPUT)
+								 (not (wp-at ?cc ?m INPUT)) (mps-side-free ?m INPUT)
+								 (wp-at ?cc ?m OUTPUT) (not (mps-side-free ?m OUTPUT))
 								 (not (wp-cap-color ?cc ?capcol)) (wp-cap-color ?cc CAP_NONE)
 								 (cs-buffered ?m ?capcol)(cs-can-perform ?m MOUNT_CAP)
 								 (not (cs-prepared-for ?m RETRIEVE_CAP)))
@@ -208,7 +215,9 @@
 	(:action rs-mount-ring1
 		:parameters (?m - mps ?wp - workpiece ?col - ring-color ?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
 		:precondition (and (mps-type ?m RS) (mps-state ?m READY-AT-OUTPUT) (locked ?m)
-										(wp-at ?wp ?m INPUT) (wp-usable ?wp)
+										(wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) 
+                    (mps-side-free ?m OUTPUT)
+										(wp-usable ?wp)
 										(wp-ring1-color ?wp RING_NONE)
 										(wp-cap-color ?wp CAP_NONE)
 										(rs-prepared-color ?m ?col)
@@ -217,7 +226,7 @@
 										(rs-sub ?rs-before ?r-req ?rs-after))
 		:effect (and
 								 (not (rs-prepared-color ?m ?col))
-								 (not (wp-at ?wp ?m INPUT)) (wp-at ?wp ?m OUTPUT)
+								 (not (wp-at ?wp ?m INPUT)) (mps-side-free ?m INPUT) (wp-at ?wp ?m OUTPUT) (not (mps-side-free ?m OUTPUT))
 								 (not (wp-ring1-color ?wp RING_NONE)) (wp-ring1-color ?wp ?col)
 								 (not (rs-filled-with ?m ?rs-before)) (rs-filled-with ?m ?rs-after))
 	)
@@ -227,7 +236,7 @@
 					?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
 		:precondition (and (mps-type ?m RS) (mps-state ?m READY-AT-OUTPUT)
                     (locked ?m)
-										(wp-at ?wp ?m INPUT) (wp-usable ?wp)
+										(wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) (wp-usable ?wp)
 										(wp-ring1-color ?wp ?col1)
 										(wp-ring2-color ?wp RING_NONE)
 										(wp-cap-color ?wp CAP_NONE)
@@ -237,7 +246,7 @@
 										(rs-sub ?rs-before ?r-req ?rs-after))
 		:effect (and
 								 (not (rs-prepared-color ?m ?col))
-								 (not (wp-at ?wp ?m INPUT)) (wp-at ?wp ?m OUTPUT)
+								 (not (wp-at ?wp ?m INPUT)) (mps-side-free ?m INPUT) (wp-at ?wp ?m OUTPUT) (not (mps-side-free ?m OUTPUT))
 								 (not (wp-ring2-color ?wp RING_NONE)) (wp-ring2-color ?wp ?col)
 								 (not (rs-filled-with ?m ?rs-before)) (rs-filled-with ?m ?rs-after))
 	)
@@ -246,7 +255,7 @@
 		:parameters (?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color ?col2 - ring-color
 							?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
 		:precondition (and (mps-type ?m RS) (mps-state ?m READY-AT-OUTPUT) (locked ?m)
-										(wp-at ?wp ?m INPUT) (wp-usable ?wp)
+										(wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) (wp-usable ?wp)
 										(wp-ring1-color ?wp ?col1)
 										(wp-ring2-color ?wp ?col2)
 										(wp-ring3-color ?wp RING_NONE)
@@ -257,7 +266,7 @@
 										(rs-sub ?rs-before ?r-req ?rs-after))
 		:effect (and
 								 (not (rs-prepared-color ?m ?col))
-								 (not (wp-at ?wp ?m INPUT)) (wp-at ?wp ?m OUTPUT)
+								 (not (wp-at ?wp ?m INPUT)) (mps-side-free ?m INPUT) (wp-at ?wp ?m OUTPUT) (not (mps-side-free ?m OUTPUT))
 								 (not (wp-ring3-color ?wp RING_NONE)) (wp-ring3-color ?wp ?col)
 								 (not (rs-filled-with ?m ?rs-before)) (rs-filled-with ?m ?rs-after))
 	)
@@ -383,16 +392,18 @@
 	(:action wp-get
 		:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side)
 		:precondition (and (at ?r ?m ?side) (can-hold ?r) (wp-at ?wp ?m ?side)
-                    (wp-usable ?wp))
+                    (wp-usable ?wp) (not (mps-side-free ?m ?side)))
 		:effect (and (not (wp-at ?wp ?m ?side)) (holding ?r ?wp) (not (can-hold ?r))
-								 (not (mps-state ?m READY-AT-OUTPUT)) (mps-state ?m IDLE))
+								 (not (mps-state ?m READY-AT-OUTPUT)) (mps-state ?m IDLE)
+								 (mps-side-free ?m ?side))
 	)
 
 	(:action wp-put
 		:parameters (?r - robot ?wp - workpiece ?m - mps)
 		:precondition (and (at ?r ?m INPUT)
-										(wp-usable ?wp) (holding ?r ?wp))
-		:effect (and (wp-at ?wp ?m INPUT) (not (holding ?r ?wp)) (can-hold ?r))
+										(wp-usable ?wp) (holding ?r ?wp)
+										(mps-side-free ?m INPUT))
+		:effect (and (wp-at ?wp ?m INPUT) (not (holding ?r ?wp)) (can-hold ?r) (not (mps-side-free ?m INPUT)))
 	)
 
 	(:action wp-put-slide-cc
@@ -413,7 +424,7 @@
 	(:action fulfill-order-c0
 		:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate
 		             ?basecol - base-color ?capcol - cap-color)
-		:precondition (and (wp-at ?wp ?m INPUT)
+		:precondition (and (wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT))
                       (wp-usable ?wp)
                        (mps-type ?m DS) (locked ?m)
 											 (ds-prepared-order ?m ?ord)
@@ -421,7 +432,7 @@
 											 (order-base-color ?ord ?basecol) (wp-base-color ?wp ?basecol)
 											 (order-cap-color ?ord ?capcol) (wp-cap-color ?wp ?capcol)
 											 (wp-ring1-color ?wp RING_NONE) (wp-ring2-color ?wp RING_NONE) (wp-ring3-color ?wp RING_NONE))
-		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT))
+		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT)) (mps-side-free ?m INPUT)
                  (not (ds-prepared-order ?m ?ord))
                  (not (wp-usable ?wp))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
@@ -432,14 +443,14 @@
 		             ?basecol - base-color ?capcol - cap-color
 		             ?ring1col - ring-color)
 
-		:precondition (and (wp-at ?wp ?m INPUT) (wp-usable ?wp)
+		:precondition (and (wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) (wp-usable ?wp)
 											 (mps-type ?m DS) (locked ?m)
 											 (ds-prepared-order ?m ?ord)
 											 (order-complexity ?ord C1)
 											 (order-base-color ?ord ?basecol) (wp-base-color ?wp ?basecol)
 											 (order-ring1-color ?ord ?ring1col) (wp-ring1-color ?wp ?ring1col)
 											 (order-cap-color ?ord ?capcol) (wp-cap-color ?wp ?capcol))
-		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT))
+		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT)) (mps-side-free ?m INPUT)
                  (not (ds-prepared-order ?m ?ord))
                  (not (wp-usable ?wp))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
@@ -450,7 +461,7 @@
 		             ?basecol - base-color ?capcol - cap-color
 		             ?ring1col - ring-color ?ring2col - ring-color)
 
-		:precondition (and (wp-at ?wp ?m INPUT) (wp-usable ?wp)
+		:precondition (and (wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) (wp-usable ?wp)
 											 (mps-type ?m DS) (locked ?m)
 											 (ds-prepared-order ?m ?ord)
 											 (order-complexity ?ord C2)
@@ -459,7 +470,7 @@
 											 (order-ring2-color ?ord ?ring2col) (wp-ring2-color ?wp ?ring2col)
 											 (wp-ring3-color ?wp RING_NONE)
 											 (order-cap-color ?ord ?capcol) (wp-cap-color ?wp ?capcol))
-		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT))
+		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT)) (mps-side-free ?m INPUT)
                  (not (ds-prepared-order ?m ?ord))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
 
@@ -470,7 +481,7 @@
 		             ?basecol - base-color ?capcol - cap-color
 		             ?ring1col - ring-color ?ring2col - ring-color ?ring3col - ring-color)
 
-		:precondition (and (wp-at ?wp ?m INPUT) (wp-usable ?wp)
+		:precondition (and (wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) (wp-usable ?wp)
 											 (mps-type ?m DS) (locked ?m)
 											 (ds-prepared-order ?m ?ord)
 											 (order-complexity ?ord C3)
@@ -480,13 +491,13 @@
 											 (order-ring3-color ?ord ?ring3col) (wp-ring3-color ?wp ?ring3col)
 											 (order-cap-color ?ord ?capcol) (wp-cap-color ?wp ?capcol)
 											 )
-		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT))
+		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT)) (mps-side-free ?m INPUT)
                  (not (ds-prepared-order ?m ?ord))
                  (not (wp-usable ?wp))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
 	)
 
-        (:action move-node
+  (:action move-node
 			:parameters (?r - robot ?z - zone)
 			:precondition (self ?r)
 			:effect (self ?r)
