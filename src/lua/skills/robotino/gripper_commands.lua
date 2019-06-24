@@ -100,10 +100,13 @@ function input_ok()
   end
 
   if fsm.vars.command == "MOVEREL" then
-    if (not fsm.vars.x and not fsm.vars.x_rel) or not fsm.vars.y or not fsm.vars.z then
+    if not fsm.vars.x or not fsm.vars.y or not fsm.vars.z then
       print("Missing coordinates " .. fsm.vars.x .. " " .. fsm.vars.y .. " " ..fsm.vars.z)
       return false
-    else 
+    elseif fsm.vars.target_frame then
+      print("Target frame may not be specified for MOVEREL command")
+      return false
+    else
       return true
     end
   end
@@ -205,7 +208,7 @@ function COMMAND:init()
       theCloseMessage = arduino.CloseGripperMessage:new()
       arduino:msgq_enqueue(theCloseMessage)
 
-   elseif self.fsm.vars.command == "MOVEABS" then
+   elseif self.fsm.vars.command == "MOVEABS" or self.fsm.vars.command == "MOVEREL" then
 
         local x = 0.0
         local y = 0.0
@@ -213,27 +216,34 @@ function COMMAND:init()
 
         current_pos = get_current_pos()
 
-        if self.fsm.vars.x then
-          x = self.fsm.vars.x
-        end
-        if self.fsm.vars.x_rel then
-          x = clip_value_x(current_pos.x + self.fsm.vars.x_rel)
-        end
+        if self.fsm.vars.command == "MOVEABS" then
+          if self.fsm.vars.x then
+            x = self.fsm.vars.x
+          end
+          if self.fsm.vars.x_rel then
+            x = clip_value_x(current_pos.x + self.fsm.vars.x_rel)
+          end
 
-        if self.fsm.vars.y then
-          y = self.fsm.vars.y
+          if self.fsm.vars.y then
+            y = self.fsm.vars.y
+          end
+          if self.fsm.vars.y_rel then
+            y = clip_value_y(current_pos.y + self.fsm.vars.y_rel)
+          end
+           
+          if self.fsm.vars.z then
+            z = self.fsm.vars.z
+          end
+          if self.fsm.vars.z_rel then
+            z = clip_value_z(current_pos.z + self.fsm.vars.z_rel)
+          end
+          target_frame = self.fsm.vars.target_frame or "gripper_home"
+        else
+          x = clip_value_x(current_pos.x + self.fsm.vars.x)
+          y = clip_value_y(current_pos.y + self.fsm.vars.y)
+          z = clip_value_z(current_pos.z + self.fsm.vars.z)
+          target_frame = "gripper_home"
         end
-        if self.fsm.vars.y_rel then
-          y = clip_value_y(current_pos.y + self.fsm.vars.y_rel)
-        end
-         
-        if self.fsm.vars.z then
-          z = self.fsm.vars.z
-        end
-        if self.fsm.vars.z_rel then
-          z = clip_value_z(current_pos.z + self.fsm.vars.z_rel)
-        end
-        target_frame = self.fsm.vars.target_frame or "gripper_home"
 
         move_abs_message = arduino.MoveXYZAbsMessage:new()
         move_abs_message:set_x(x)
@@ -241,16 +251,6 @@ function COMMAND:init()
         move_abs_message:set_z(z)
         move_abs_message:set_target_frame(target_frame)
         self.fsm.vars.msgid = arduino:msgq_enqueue_copy(move_abs_message)
-
-   elseif self.fsm.vars.command == "MOVEREL" then
-        x = self.fsm.vars.x
-        y = self.fsm.vars.y
-        z = self.fsm.vars.z
-        move_rel_message = arduino.MoveXYZRelMessage:new()
-        move_rel_message:set_x(x)
-        move_rel_message:set_y(y)
-        move_rel_message:set_z(z)
-        self.fsm.vars.msgid = arduino:msgq_enqueue_copy(move_rel_message)
 
    elseif self.fsm.vars.command == "CALIBRATE" then
         calibrate_message = arduino.CalibrateMessage:new()
