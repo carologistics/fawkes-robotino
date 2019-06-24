@@ -82,7 +82,7 @@ plugins/laser-filter:
       2-sector:
         # Ignore a defined range of beams (e.g. those hitting the robot itself)
         type: circle_sector
-        from: 255
+        from: 265
         to: 110
 
   filter-back-360:
@@ -100,7 +100,7 @@ plugins/laser-filter:
         # Ignore a defined range of beams (e.g. those hitting the robot itself)
         type: circle_sector
         from: 245
-        to: 135
+        to: 115
       3-projection:
         type: projection
         target_frame: !frame base_laser
