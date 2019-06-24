@@ -539,7 +539,7 @@
   (plan-action (id 14) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
         (action-name request-rs-mount-ring)
         (param-values ?robot ?mps ?spawned-wp ?ring-color RING_NONE RING_NONE RING_NONE
-                        ?rs-before ?rs-after ?rs-req))
+                       ?rs-req))
   (plan-action (id 15) (plan-id MOUNT-FIRST-RING-PLAN) (goal-id ?goal-id)
         (action-name location-unlock)
         (param-values ?mps INPUT))
@@ -611,7 +611,7 @@
       (plan-action (id 10) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name request-rs-mount-ring)
             (param-values ?robot ?rs ?wp ?curr-ring-color 
-                              ?ring1-color ?ring2-color ?ring3-color ?rs-before ?rs-after ?rs-req))
+                              ?ring1-color ?ring2-color ?ring3-color ?rs-req))
       (plan-action (id 11) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name location-unlock)
             (param-values ?rs INPUT))
