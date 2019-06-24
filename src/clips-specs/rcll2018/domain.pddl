@@ -383,14 +383,14 @@
 	(:action wp-get
 		:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side)
 		:precondition (and (at ?r ?m ?side) (can-hold ?r) (wp-at ?wp ?m ?side)
-                    (locked ?m) (wp-usable ?wp))
+                    (wp-usable ?wp))
 		:effect (and (not (wp-at ?wp ?m ?side)) (holding ?r ?wp) (not (can-hold ?r))
 								 (not (mps-state ?m READY-AT-OUTPUT)) (mps-state ?m IDLE))
 	)
 
 	(:action wp-put
 		:parameters (?r - robot ?wp - workpiece ?m - mps)
-		:precondition (and (at ?r ?m INPUT) (locked ?m)
+		:precondition (and (at ?r ?m INPUT)
 										(wp-usable ?wp) (holding ?r ?wp))
 		:effect (and (wp-at ?wp ?m INPUT) (not (holding ?r ?wp)) (can-hold ?r))
 	)
