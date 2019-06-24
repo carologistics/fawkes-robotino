@@ -1,6 +1,6 @@
 
 ----------------------------------------------------------------------------
---  gripper.lua - Skill to open or close Robotino AX12 gripper
+--  gripper.lua - Skill to control the gripper
 --
 --  Created: Sat Feb 28 10:46:33 2015
 --  Copyright  2014  Sebastian Reuter
