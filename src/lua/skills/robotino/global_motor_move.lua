@@ -41,7 +41,7 @@ MAX_POSE_TRIES = 60
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-local tfm = require("tf_module")
+local tfm = require("fawkes.tfutils")
 
 function invalid_input()
    if fsm.vars.ori and math.abs(fsm.vars.ori) > math.pi then
