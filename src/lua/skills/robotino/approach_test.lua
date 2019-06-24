@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "approach_test"
 fsm                = SkillHSM:new{name=name, start="MPS_ALIGN", debug=false}
-depends_skills     = {"mps_align","product_put","product_pick","shelf_pick","slide_put","conveyor_align"}
+depends_skills     = {"mps_align","product_put","product_pick","shelf_pick","conveyor_align"}
 depends_interfaces = {
 }
 
@@ -51,14 +51,12 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="FINAL", fail_to="FAILED"},
-   {"SKILL_SLIDE_PUT", SkillJumpState, skills={{slide_put}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
    {"DECIDE_ENDSKILL", "SKILL_SHELF_PICK", cond="vars.shelf and vars.option=='pick'", desc="Pick from shelf"},
-   {"DECIDE_ENDSKILL", "SKILL_SLIDE_PUT", cond="vars.slide", desc="Put on slide"},
    {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PUT", cond="vars.option=='put'", desc="Put on conveyor"},
    {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PICK", cond="vars.option=='pick'", desc="Pick from conveyor"}
 }
