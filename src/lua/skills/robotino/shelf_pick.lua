@@ -90,6 +90,7 @@ fsm:define_states{ export_to=_M, closure={},
 }
 
 fsm:add_transitions{
+   {"INIT", "FAILED", cond="vars.error"},
    {"GOTO_SHELF", "FAILED", cond="vars.error"},
 }
 
@@ -104,17 +105,20 @@ function INIT:init()
    if config:exists("/arduino/x_max") then
        self.fsm.vars.x_max = config:get_float("/arduino/x_max")
    else
-       self.fsm.vars.x_max = 0.114
+       self.fsm:set_error("arduino x_max config not found")
+       self.fsm.vars.error = true
    end
    if config:exists("/arduino/y_max") then
        self.fsm.vars.y_max = config:get_float("/arduino/y_max")
    else
-       self.fsm.vars.y_max = 0.037
+       self.fsm:set_error("arduino y_max config not found")
+       self.fsm.vars.error = true
    end
-   if config:exists("/arduino/max_z") then
+   if config:exists("/arduino/z_max") then
        self.fsm.vars.z_max = config:get_float("/arduino/z_max")
    else
-       self.fsm.vars.z_max = 0.057
+       self.fsm:set_error("arduino z_max config not found")
+       self.fsm.vars.error = true
    end
 end
 
