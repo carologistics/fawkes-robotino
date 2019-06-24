@@ -66,14 +66,15 @@ function OPEN_GRIPPER:init()
 end
 
 function GOTO_SHELF:init()
-   local shelf_to_conveyor = 0.1 --TODO measure both values
-   local shelf_distance = 0.1
    if self.fsm.vars.slot == "LEFT" then
       dest_y = shelf_to_conveyor
+      dest_y = dest_y + left_slot_y_offset
    elseif self.fsm.vars.slot == "MIDDLE" then
       dest_y = shelf_to_conveyor + shelf_distance
+      dest_y = dest_y + middle_slot_y_offset
    elseif self.fsm.vars.slot == "RIGHT" then
       dest_y = shelf_to_conveyor + 2*shelf_distance
+      dest_y = dest_y + right_slot_y_offset
    else
       dest_y = 0
       self.fsm:set_error("no shelf side set")
