@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "shelf_pick"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
+fsm                = SkillHSM:new{name=name, start="OPEN_GRIPPER", debug=false}
 depends_skills     = {"motor_move", "gripper_commands", "approach_mps"}
 depends_interfaces = {
 }
@@ -45,43 +45,13 @@ local gripper_adjust_z_distance = 0.03
 local gripper_adjust_x_distance = 0.015
 local gripper_down_to_puck = -0.025
 
-function pose_gripper_offset(x,y,z)
-   local tmp = { x = 0,
-                 y = 0,
-                 z = 0,
-                 ori = { x = 0, y = 0, z = 0, w = 0}
-   }
-
-   -- Get current position values of gripper as seen from arduino plugin
-   local cur_x = tfm.transform6D(tmp,"gripper_x_origin","gripper_x_dyn").x
-   local cur_y = tfm.transform6D(tmp,"gripper_y_origin","gripper_y_dyn").y
-   local cur_z = tfm.transform6D(tmp,"gripper_z_origin","gripper_z_dyn").z
-   -- The cur_* values are now those you need to give gripper_commands
-   -- to reach exactly the position at which the gripper is.
-
-   -- Now just add the shifts we have to do, to reach the final position
-   local target_pos_wrt_gripper_home = {
-     x = target_pos_wrt_gripper.x + cur_x,
-     y = target_pos_wrt_gripper.y + cur_y,
-     z = target_pos_wrt_gripper.z + cur_z,
-     ori = { x=0, y=0, z=0, w=0}
-   }
-
-   -- Clip to axis limits
-   target_pos_wrt_gripper_home.x = clip_value(target_pos_wrt_gripper_home.x,0,fsm.vars.x_max)
-   target_pos_wrt_gripper_home.y = clip_value(target_pos_wrt_gripper_home.y,-fsm.vars.y_max/2,fsm.vars.y_max/2)
-   target_pos_wrt_gripper_home.z = clip_value(target_pos_wrt_gripper_home.z,0,fsm.vars.z_max)
-
-   return  target_pos_wrt_gripper_home
-end
-
 function clip_value(value, min, max)
   return math.max(min,math.min(value,max))
 end
 
 
 fsm:define_states{ export_to=_M, closure={},
-   {"INIT", SkillJumpState, skills={{gripper_commands}}, final_to="GOTO_SHELF", fail_to="FAILED" },
+   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="GOTO_SHELF", fail_to="FAILED" },
    {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SHELF", fail_to="FAILED"},
    {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="MOVE_ABOVE_PUCK", fail_to="FAILED"},
    {"MOVE_ABOVE_PUCK", SkillJumpState, skills={{gripper_commands}}, final_to="ADJUST_HEIGHT", fail_to="FAILED" },
@@ -93,36 +63,12 @@ fsm:define_states{ export_to=_M, closure={},
 }
 
 fsm:add_transitions{
-   {"INIT", "FAILED", cond="vars.error"},
+   {"OPEN_GRIPPER", "FAILED", cond="vars.error"},
    {"GOTO_SHELF", "FAILED", cond="vars.error"},
 }
 
-function INIT:init()
+function OPEN_GRIPPER:init()
    self.args["gripper_commands"].command = "OPEN"
-
-   -- Override values if host specific config value is set
-   if config:exists("/skills/shelf_pick/gripper_adjust_z_distance") then
-       gripper_adjust_z_distance = config:get_float("/skills/shelf_pick/gripper_adjust_z_distance")
-   end
-
-   if config:exists("/arduino/x_max") then
-       self.fsm.vars.x_max = config:get_float("/arduino/x_max")
-   else
-       self.fsm:set_error("arduino x_max config not found")
-       self.fsm.vars.error = true
-   end
-   if config:exists("/arduino/y_max") then
-       self.fsm.vars.y_max = config:get_float("/arduino/y_max")
-   else
-       self.fsm:set_error("arduino y_max config not found")
-       self.fsm.vars.error = true
-   end
-   if config:exists("/arduino/z_max") then
-       self.fsm.vars.z_max = config:get_float("/arduino/z_max")
-   else
-       self.fsm:set_error("arduino z_max config not found")
-       self.fsm.vars.error = true
-   end
 end
 
 function GOTO_SHELF:init()

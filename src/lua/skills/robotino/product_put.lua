@@ -91,36 +91,6 @@ function pose_not_exist()
    return false
 end
 
-function pose_gripper_offset(x,y,z)
-  local target_pos = { x = x,
-                       y = y,
-                       z = z,
-                       ori = { x = 0, y = 0, z = 0, w = 0}
-
-   }
-   local tmp = { x = 0,
-                 y = 0,
-                 z = 0,
-                 ori = { x = 0, y = 0, z = 0, w = 0}
-   }
-
-   -- Get offset from gripper axis (middle of z sledge) to gripper finger
-   local gripper_rel = tfm.transform6D(tmp,"gripper","gripper_z_dyn")
-
-   -- Shift target point to gripper axis frame
-   gripper_rel.x = target_pos.x - gripper_rel.x
-   gripper_rel.y = target_pos.y - gripper_rel.y
-   gripper_rel.z = target_pos.z - gripper_rel.z
-
-   -- Transform target to gripper home frame = absolut coordinates of the axis
-   local gripper_home_rel = tfm.transform6D(gripper_rel,"gripper","gripper_home")
-
-   -- Clip to axis limits
-   return { x = math.max(0,math.min(gripper_home_rel.x,fsm.vars.x_max)),
-            y = math.max(-fsm.vars.y_max/2,math.min(gripper_home_rel.y,fsm.vars.y_max/2)),
-            z = math.max(0,math.min(gripper_home_rel.z,fsm.vars.z_max))}
-end
-
 fsm:define_states{ export_to=_M,
    closure={pose_not_exist=pose_not_exist,is_grabbed = is_grabbed},
   {"INIT", JumpState},
@@ -139,26 +109,6 @@ fsm:add_transitions{
   {"INIT", "GRIPPER_ALIGN", true, desc="Start aligning"},
   {"MOVE_GRIPPER_FORWARD", "FAILED", cond="not is_grabbed()", desc="Lost product while aligning"},
 }
-
-function INIT:init()
-  -- Override values if host specific config value is set
-
-  if config:exists("/arduino/x_max") then
-      self.fsm.vars.x_max = config:get_float("/arduino/x_max")
-  else
-      self.fsm.vars.x_max = 0.114
-  end
-  if config:exists("/arduino/y_max") then
-      self.fsm.vars.y_max = config:get_float("/arduino/y_max")
-  else
-      self.fsm.vars.y_max = 0.038
-  end
-  if config:exists("/arduino/max_z") then
-      self.fsm.vars.z_max = config:get_float("/arduino/z_max")
-  else
-      self.fsm.vars.z_max = 0.057
-  end
-end
 
 function GRIPPER_ALIGN:init()
   local target_pos = { x = gripper_pose_offset_x,
