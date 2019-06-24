@@ -50,7 +50,7 @@
           (wm-fact (key domain fact wp-usable args? wp ?wp-gen))
   )
   (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact mps-side-free))
-                                    (eq ?mps (wm-key-arg ?wm:key m))
+                                    (eq ?mps (wm-key-arg ?wm:key m)))
     (retract ?wm)
   )
   (printout warn "A WP has been Generated at the OUTPUT side" crlf)
@@ -267,7 +267,7 @@
 	   (id ?id) (state PENDING)
 	   (action-name ?action-name)
 	   (param-values $? ?mps $?))
-  (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
+  (domain-atomic-precondition (operator ?an) (predicate mps-state) (grounded-with ?id) (param-values ?mps ?state))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
   (wm-fact (key domain fact mps-state args? m ?mps s ?s&~IDLE&~READY-AT-OUTPUT))
@@ -277,6 +277,28 @@
             (timeout-duration ?timeout&:(neq ?timeout ?*MPS-DOWN-TIMEOUT-DURATION*)))
   =>
   (printout t "Detected that " ?mps " is " ?s " while " ?action-name " is waiting for it. Enhance timeout-timer" crlf)
+  (modify ?pt (timeout-duration ?*MPS-DOWN-TIMEOUT-DURATION*))
+)
+
+
+(defrule execution-monitoring-enhance-timer-on-mps-wait-for-side-to-clear
+" If an action is pending for a certain mps-side to be free and the mps is currently in a non final state (processing, down, ...),
+  enhance the timeout to give the mps enough time to process the workpiece that is still at the side
+"
+  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	   (id ?id) (state PENDING)
+	   (action-name wp-put)
+	   (param-values $? ?mps $? ?side $?))
+  (domain-atomic-precondition (operator ?an) (grounded-with ?id) (predicate mps-side-free) (param-values ?mps ?side))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  (wm-fact (key domain fact mps-state args? m ?mps s ?s&~IDLE&~READY-AT-OUTPUT))
+  ?pt <- (action-timer (plan-id ?plan-id)
+            (action-id ?id)
+            (start-time $?starttime)
+            (timeout-duration ?timeout&:(neq ?timeout ?*MPS-DOWN-TIMEOUT-DURATION*)))
+  =>
+  (printout t "Detected that " ?mps " is " ?s " while wp-put is waiting for the side to clear. Enhance timeout-timer" crlf)
   (modify ?pt (timeout-duration ?*MPS-DOWN-TIMEOUT-DURATION*))
 )
 
