@@ -46,7 +46,7 @@ if place is set, this will be used and x, y and ori will be ignored
 skillenv.skill_module(_M)
 
 local tf_mod = require 'fawkes.tfutils'
-local waiting_pos = false
+local waiting_pos = fsm.vars.waiting_pos
 -- Tunables
 --local REGION_TRANS=0.2
 
