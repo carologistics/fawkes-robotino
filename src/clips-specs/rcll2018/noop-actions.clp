@@ -82,14 +82,14 @@
   (bind ?mount-ring-action-name (sym-cat rs-mount-ring ?ring-pos))
     (switch ?ring-pos
       (case 1 then
-        (bind ?mount-ring-param-names m wp col rs-before rs-after r-req)
-        (bind ?mount-ring-param-values ?rs ?wp ?rc ?rs-before ?rs-after ?rs-req))
+        (bind ?mount-ring-param-names m wp col r-req)
+        (bind ?mount-ring-param-values ?rs ?wp ?rc ?rs-req))
       (case 2 then
-        (bind ?mount-ring-param-names m wp col col1 rs-before rs-after r-req)
-        (bind ?mount-ring-param-values ?rs ?wp ?rc ?rc1 ?rs-before ?rs-after ?rs-req))
+        (bind ?mount-ring-param-names m wp col col1 r-req)
+        (bind ?mount-ring-param-values ?rs ?wp ?rc ?rc1 ?rs-req))
       (case 3 then
-        (bind ?mount-ring-param-names m wp col col1 col2 rs-before rs-after r-req)
-        (bind ?mount-ring-param-values ?rs ?wp ?rc ?rc1 ?rc2 ?rs-before ?rs-after ?rs-req))
+        (bind ?mount-ring-param-names m wp col col1 col2 r-req)
+        (bind ?mount-ring-param-values ?rs ?wp ?rc ?rc1 ?rc2 ?rs-req))
      (default
         (printout t "ERROR, plan-action params of request-rs-mount-ring are wrong" crlf)))
   (assert
