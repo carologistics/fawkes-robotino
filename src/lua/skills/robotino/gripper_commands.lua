@@ -32,10 +32,19 @@ depends_interfaces = {
 }
 
 documentation      = [==[
+    Control of the gripper.
+    Setting an absolute position sets the position of gripper_z_dyn.
+    By default, absolute positions are given in the frame of gripper_home.
+    gripper_home and gripper_z_dyn coincide exactly then, when the absolute position is set 0,0,0.
+
     @param command    can be : ( OPEN | CLOSE | MOVEABS | MOVEREL | CALIBRATE )
     @param x   x position for gripper move
     @param y   y position for gripper move
     @param z   z position for gripper move
+    @param x_rel Mocks MOVEREL by adding the value to current position
+    @param y_rel Mocks MOVEREL by adding the value to current position
+    @param z_rel Mocks MOVEREL by adding the value to current position
+    *_rel params work only if target_frame is gripper_home or not defined
     @param target_frame   target frame of absolute coordinates
     @param wait (optional, default: true) force the skill to wait on arduino plugin
 
@@ -45,13 +54,53 @@ documentation      = [==[
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
+local tfm = require("fawkes.tfutils")
+
+function get_current_pos()
+   local tmp = { x = 0,
+                 y = 0,
+                 z = 0,
+                 ori = { x = 0, y = 0, z = 0, w = 0}
+   }
+
+   return tfm.transform6D(tmp,"gripper_z_dyn","gripper_home")
+end
+
+function clip_value_x(value)
+  return math.max(0,math.min(value,fsm.vars.x_max))
+end
+
+function clip_value_y(value)
+  return math.max(-fsm.vars.y_max/2,math.min(value,fsm.vars.y_max/2))
+end
+
+function clip_value_z(value)
+  return math.max(0,math.min(value,fsm.vars.z_max))
+end
 
 function input_ok()
   if fsm.vars.command == "OPEN" or fsm.vars.command == "CLOSE" then
     return true
   end
-  if fsm.vars.command == "MOVEABS" or fsm.vars.command == "MOVEREL" then
-    if not fsm.vars.x or not fsm.vars.y or not fsm.vars.z then
+  if fsm.vars.command == "MOVEABS" then
+    if fsm.vars.x_rel or fsm.vars.y_rel or fsm.vars.z_rel then
+      if fsm.vars.target_frame and fsm.vars.target_frame ~= "gripper_home" then
+        print("Can use *_rel only with gripper_home as target_frame")
+        return false
+      end
+    end
+    if       (not fsm.vars.x and not fsm.vars.x_rel) 
+          or (not fsm.vars.y and not fsm.vars.y_rel)
+          or (not fsm.vars.z and not fsm.vars.z_rel) then
+      print("Missing coordinates " .. fsm.vars.x .. " " .. fsm.vars.y .. " " ..fsm.vars.z)
+      return false
+    else 
+      return true
+    end
+  end
+
+  if fsm.vars.command == "MOVEREL" then
+    if (not fsm.vars.x and not fsm.vars.x_rel) or not fsm.vars.y or not fsm.vars.z then
       print("Missing coordinates " .. fsm.vars.x .. " " .. fsm.vars.y .. " " ..fsm.vars.z)
       return false
     else 
@@ -106,7 +155,7 @@ end
 -- States
 fsm:define_states{
    export_to=_M,
-   closure={arduino=arduino, is_error=is_error, input_ok = input_ok, tf_ready=tf_ready},
+   closure={arduino=arduino, is_error=is_error, input_ok = input_ok, tf_ready=tf_ready, clip_value_x=clip_value_x, clip_value_y=clip_value_y, clip_value_z=clip_value_z, get_current_pos=get_current_pos},
    {"CHECK_WRITER", JumpState},
    {"COMMAND", JumpState},
    {"WAIT", JumpState},
@@ -114,6 +163,7 @@ fsm:define_states{
 
 -- Transitions
 fsm:add_transitions{
+   {"CHECK_WRITER", "FAILED", cond="vars.error"},
    {"CHECK_WRITER", "FAILED", cond="not input_ok()", desc="Input not correct"},
    {"CHECK_WRITER", "FAILED", precond="not arduino:has_writer()", desc="No writer for gripper"},
    {"CHECK_WRITER", "COMMAND", cond=true, desc="Writer ok got to command"},
@@ -123,6 +173,27 @@ fsm:add_transitions{
    {"WAIT", "FINAL", cond="arduino:is_final() and tf_ready()"},
    {"WAIT", "FAILED", timeout=15},
 }
+
+function CHECK_WRITER:init()
+   if config:exists("/arduino/x_max") then
+       self.fsm.vars.x_max = config:get_float("/arduino/x_max")
+   else
+       self.fsm:set_error("arduino x_max config not found")
+       self.fsm.vars.error = true
+   end
+   if config:exists("/arduino/y_max") then
+       self.fsm.vars.y_max = config:get_float("/arduino/y_max")
+   else
+       self.fsm:set_error("arduino y_max config not found")
+       self.fsm.vars.error = true
+   end
+   if config:exists("/arduino/z_max") then
+       self.fsm.vars.z_max = config:get_float("/arduino/z_max")
+   else
+       self.fsm:set_error("arduino z_max config not found")
+       self.fsm.vars.error = true
+   end
+end
 
 function COMMAND:init()
 
@@ -136,9 +207,32 @@ function COMMAND:init()
 
    elseif self.fsm.vars.command == "MOVEABS" then
 
-        x = self.fsm.vars.x
-        y = self.fsm.vars.y
-        z = self.fsm.vars.z
+        local x = 0.0
+        local y = 0.0
+        local z = 0.0
+
+        current_pos = get_current_pos()
+
+        if self.fsm.vars.x then
+          x = self.fsm.vars.x
+        end
+        if self.fsm.vars.x_rel then
+          x = clip_value_x(current_pos.x + self.fsm.vars.x_rel)
+        end
+
+        if self.fsm.vars.y then
+          y = self.fsm.vars.y
+        end
+        if self.fsm.vars.y_rel then
+          y = clip_value_y(current_pos.y + self.fsm.vars.y_rel)
+        end
+         
+        if self.fsm.vars.z then
+          z = self.fsm.vars.z
+        end
+        if self.fsm.vars.z_rel then
+          z = clip_value_z(current_pos.z + self.fsm.vars.z_rel)
+        end
         target_frame = self.fsm.vars.target_frame or "gripper_home"
 
         move_abs_message = arduino.MoveXYZAbsMessage:new()
