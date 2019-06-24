@@ -53,6 +53,7 @@ Parameters:
       @param side    optional which side of the MPS should be considered ( input | output )
                      default is input for action=="PUT"
                      and output for action=="PICK"
+      @param wait    optional true if the robot should wait for two seconds after each step
       for example: approach_test{place="M-CRS1",action="PUT", side="output"}
 ]==]
 -- Initialize as skill module
@@ -61,17 +62,27 @@ skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
-   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
-   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_ENDSKILL", fail_to="FAILED"},
+   {"MPS_ALIGN", SkillJumpState, skills={{mps_align}}, final_to="DECIDE_WAIT_MPS_ALIGN", fail_to="FAILED"},
+   {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="DECIDE_WAIT_CONVEYOR_ALIGN", fail_to="FAILED"},
    {"DECIDE_ENDSKILL", JumpState},
    {"SKILL_SHELF_PICK", SkillJumpState, skills={{shelf_pick}}, final_to="FINAL", fail_to="FAILED"},
    {"SKILL_PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="FAILED"},
-   {"SKILL_PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"}
+   {"SKILL_PRODUCT_PICK", SkillJumpState, skills={{product_pick}}, final_to="FINAL", fail_to="FAILED"},
+   {"WAIT_MPS_ALIGN", JumpState},
+   {"WAIT_CONVEYOR_ALIGN", JumpState},
+   {"DECIDE_WAIT_MPS_ALIGN", JumpState},
+   {"DECIDE_WAIT_CONVEYOR_ALIGN", JumpState}
 }
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond="vars.error"}, -- not yet used
    {"INIT", "MPS_ALIGN", cond="true"},
+   {"DECIDE_WAIT_MPS_ALIGN", "WAIT_MPS_ALIGN", cond="vars.wait"},
+   {"DECIDE_WAIT_MPS_ALIGN", "CONVEYOR_ALIGN", cond="true"},
+   {"WAIT_MPS_ALIGN", "CONVEYOR_ALIGN", timeout=2},
+   {"DECIDE_WAIT_CONVEYOR_ALIGN", "WAIT_CONVEYOR_ALIGN", cond="vars.wait"},
+   {"DECIDE_WAIT_CONVEYOR_ALIGN", "DECIDE_ENDSKILL", cond="true"},
+   {"WAIT_CONVEYOR_ALIGN", "DECIDE_ENDSKILL", timeout=2},
    {"DECIDE_ENDSKILL", "SKILL_SHELF_PICK", cond="vars.shelf", desc="Pick from shelf"},
    {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PUT", cond="vars.action=='PUT'", desc="Put on conveyor or slide"},
    {"DECIDE_ENDSKILL", "SKILL_PRODUCT_PICK", cond="vars.action=='PICK'", desc="Pick from conveyor"},
