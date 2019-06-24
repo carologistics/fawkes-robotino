@@ -233,6 +233,20 @@
 	(modify ?pa (state EXECUTION-FAILED))
 )
 
+(defrule refbox-action-prepare-mps-abort-on-broken
+  "Abort preparing if the mps got broken"
+  ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
+                          (action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs))
+  ?at <- (timer (name prepare-mps-abort-timer))
+  ?st <- (timer (name prepare-mps-send-timer))
+  ?md <- (metadata-prepare-mps ?mps $?date)
+  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
+  =>
+  (printout t "Action Prepare " ?mps " is Aborted because mps is broken" crlf)
+  (retract ?st ?md ?at)
+  (modify ?pa (state EXECUTION-FAILED))
+)
+
 (defrule refbox-action-prepare-mps-abort
 	"Abort preparing and fail the action if took too long"
 	(time $?now)
