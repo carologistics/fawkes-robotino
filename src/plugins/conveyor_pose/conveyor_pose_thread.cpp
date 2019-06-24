@@ -736,10 +736,12 @@ bool ConveyorPoseThread::set_laserline_initial_tf(
   // Vector from end point 1 to end point 2
   if (!tf_listener->transform_origin(best_laser_line_->end_point_frame_2(),
                                      best_laser_line_->end_point_frame_1(),
-                                     initial_guess, Time(0, 0)))
-    throw fawkes::Exception("Failed to transform from %s to %s",
+                                     initial_guess, Time(0, 0))) {
+    logger->log_error("Failed to transform from %s to %s",
                             best_laser_line_->end_point_frame_2(),
                             best_laser_line_->end_point_frame_1());
+    return false;
+  }
 
   // Halve that to get line center
   initial_guess.setOrigin(initial_guess.getOrigin() / 2);
