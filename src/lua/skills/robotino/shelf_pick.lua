@@ -136,23 +136,33 @@ function GOTO_SHELF:init()
       self.fsm:set_error("no shelf side set")
       self.fsm.vars.error = true
    end
+
+   dest_y = -dest_y --shelf is on the right side of the conveyor
+
+   -- local target_pos is in conveyor_pose frame
+   local target_pos = { x = gripper_adjust_x_distance,
+                       y = dest_y,
+                       z = 0,
+                       ori = { x = 0, y = 0, z = 0, w = 0}
+   }
+   
+   -- shared target_pos is in odom frame
+   self.fsm.vars.target_pos = tfm.transform6D(target_pos, "conveyor_pose", "odom")
    
    self.args["motor_move"] =
-			{ y = -dest_y, --shelf is on the right side of the conveyor
+			{ y = dest_y,
 				tolerance = { x=0.002, y=0.002, ori=0.01 }
 			}
 end
 
 function MOVE_ABOVE_PUCK:init()
-   local target_pos = { x = gripper_adjust_x_distance,
-                       y = 0,
-                       z = 0,
-                       ori = { x = 0, y = 0, z = 0, w = 0}
-   }
 
-  local grip_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper")
+  local grip_pos = tfm.transform6D(self.fsm.vars.target_pos, "odom", "gripper")
+  -- grip_pos now gives the relative movement necessary to reach the shelf
 
-  local pose = pose_gripper_offset(grip_pos.x,grip_pos.y,grip_pos.z)
+  local pose = pose_gripper_offset(grip_pos.x,grip_pox.y,grip_pos.z)
+  -- pose is relative to gripper_home now
+
   self.args["gripper_commands"].x = pose.x
   self.args["gripper_commands"].y = pose.y
   self.args["gripper_commands"].z = gripper_adjust_z_distance
