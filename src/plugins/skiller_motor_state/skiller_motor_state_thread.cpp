@@ -23,6 +23,7 @@
 
 #define CFG_PREFIX std::string("/skiller_motor_state")
 
+#include <interfaces/MotorInterface.h>
 #include <interfaces/RobotinoSensorInterface.h>
 #include <interfaces/SkillerInterface.h>
 
@@ -41,16 +42,24 @@ SkillerMotorStateThread::SkillerMotorStateThread()
 void SkillerMotorStateThread::init() {
   cfg_skiller_ifid_ = config->get_string(CFG_PREFIX + "/skiller-interface-id");
   cfg_rsens_ifid_ = config->get_string(CFG_PREFIX + "/sensor-interface-id");
+  cfg_motor_ifid_ = config->get_string(CFG_PREFIX + "/motor-interface-id");
   cfg_digital_out_green_ = config->get_uint(CFG_PREFIX + "/digital-out-green");
   cfg_digital_out_red_ = config->get_uint(CFG_PREFIX + "/digital-out-red");
   cfg_digital_out_yellow_ =
       config->get_uint(CFG_PREFIX + "/digital-out-yellow");
+  cfg_digital_out_motor_ = config->get_uint(CFG_PREFIX + "/digital-out-motor");
   cfg_timeout_ = fawkes::Time(config->get_float(CFG_PREFIX + "/timeout"));
 
   skiller_if_ =
       blackboard->open_for_reading<SkillerInterface>(cfg_skiller_ifid_.c_str());
   rsens_if_ = blackboard->open_for_reading<RobotinoSensorInterface>(
       cfg_rsens_ifid_.c_str());
+
+  if (cfg_digital_out_motor_) {
+    motor_if_ =
+        blackboard->open_for_reading<MotorInterface>(cfg_motor_ifid_.c_str());
+    disable(cfg_digital_out_motor_);
+  }
 
   disable(cfg_digital_out_red_);
   disable(cfg_digital_out_green_);
@@ -60,6 +69,8 @@ void SkillerMotorStateThread::init() {
 void SkillerMotorStateThread::finalize() {
   blackboard->close(skiller_if_);
   blackboard->close(rsens_if_);
+  if (cfg_digital_out_motor_)
+    blackboard->close(motor_if_);
 }
 
 void SkillerMotorStateThread::loop() {
@@ -79,6 +90,15 @@ void SkillerMotorStateThread::loop() {
     if (status == SkillerInterface::S_FAILED) {
       failed_time_ = fawkes::Time();
       enable(cfg_digital_out_red_);
+    }
+
+    if (cfg_digital_out_motor_) {
+      motor_if_->read();
+      if (motor_if_->motor_state() == MotorInterface::MOTOR_DISABLED) {
+        enable(cfg_digital_out_motor_);
+      } else {
+        disable(cfg_digital_out_motor_);
+      }
     }
 
     if (fawkes::Time() - final_time_ > cfg_timeout_) {

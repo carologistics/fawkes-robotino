@@ -27,7 +27,6 @@ SUBDIRS	= clips-motor-switch \
 	  conveyor_plane \
 	  gazebo \
 	  marker_writer \
-	  motor-led \
 		laser_front_dist \
 		mps-laser-gen \
 		webtools-bridge \
