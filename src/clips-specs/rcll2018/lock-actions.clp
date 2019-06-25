@@ -127,7 +127,7 @@
   ?pa <- (plan-action (id ?id) (action-name unlock) (state RUNNING)
                       (param-names $?param-names) (param-values $?param-values))
 	?mf <- (mutex (name ?name&:(eq ?name (plan-action-arg name ?param-names ?param-values)))
-								(request UNLOCK) (response UNLOCKED))
+								(state OPEN) (request UNLOCK))
 	=>
 	(printout t "Unlock of " ?name " successfull" crlf)
 	(modify ?pa (state EXECUTION-SUCCEEDED))
@@ -207,7 +207,7 @@
 (defrule lock-actions-unlock-location-done
   ?l <- (location-unlock-pending ?loc ?side)
   ?m <- (mutex (name ?lock-name&:(eq ?lock-name (sym-cat ?loc - ?side)))
-         (state OPEN) (request UNLOCK) (response UNLOCKED))
+         (state OPEN) (request UNLOCK))
   =>
   (do-for-fact ((?wm-fact wm-fact)) (eq ?wm-fact:key (create$ domain fact
                                         location-locked args? m ?loc s ?side))
