@@ -276,7 +276,7 @@
 	(:action request-rs-mount-ring
 		:parameters (?r - robot ?m - mps ?wp - workpiece ?col - ring-color
 			 				?col1 - ring-color ?col2 - ring-color ?col3 - ring-color
-							?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
+							?r-req - ring-num)
 		:precondition (self ?r)
 		:effect (self ?r)	
 	)
