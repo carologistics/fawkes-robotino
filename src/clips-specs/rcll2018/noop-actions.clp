@@ -74,7 +74,7 @@
 
 (defrule action-execute-request-rs-mount-ring
   ?pa <- (plan-action (action-name request-rs-mount-ring) (state PENDING) (executable TRUE)
-            (param-values ?r ?rs ?wp ?rc ?rc1 ?rc2 ?rc3 ?rs-before ?rs-after ?rs-req))
+            (param-values ?r ?rs ?wp ?rc ?rc1 ?rc2 ?rc3 ?rs-req))
 
   =>
   (modify ?pa (state EXECUTION-SUCCEEDED))
@@ -93,7 +93,7 @@
      (default
         (printout t "ERROR, plan-action params of request-rs-mount-ring are wrong" crlf)))
   (assert
-    (wm-fact (key mps-handling prepare prepare-rs ?rs args? m ?rs rc ?rc rs-before ?rs-before rs-after ?rs-after r-req ?rs-req))
+    (wm-fact (key mps-handling prepare prepare-rs ?rs args? m ?rs rc ?rc r-req ?rs-req))
     (wm-fact (key mps-handling process ?mount-ring-action-name ?rs args? 
                         (merge-params ?mount-ring-param-names ?mount-ring-param-values)))
   )
