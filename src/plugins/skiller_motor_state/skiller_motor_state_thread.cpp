@@ -21,6 +21,8 @@
 
 #include "skiller_motor_state_thread.h"
 
+#define CFG_PREFIX std::string("/skiller_motor_state")
+
 #include <interfaces/RobotinoSensorInterface.h>
 #include <interfaces/SkillerInterface.h>
 
@@ -36,14 +38,14 @@ SkillerMotorStateThread::SkillerMotorStateThread()
     : Thread("SkillerMotorStateThread", Thread::OPMODE_WAITFORWAKEUP),
       BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT) {}
 
-  cfg_skiller_ifid_ = config->get_string("/skiller_state/skiller-interface-id");
-  cfg_rsens_ifid_ = config->get_string("/skiller_state/sensor-interface-id");
-  cfg_digital_out_green_ = config->get_uint("/skiller_state/digital-out-green");
-  cfg_digital_out_red_ = config->get_uint("/skiller_state/digital-out-red");
 void SkillerMotorStateThread::init() {
+  cfg_skiller_ifid_ = config->get_string(CFG_PREFIX + "/skiller-interface-id");
+  cfg_rsens_ifid_ = config->get_string(CFG_PREFIX + "/sensor-interface-id");
+  cfg_digital_out_green_ = config->get_uint(CFG_PREFIX + "/digital-out-green");
+  cfg_digital_out_red_ = config->get_uint(CFG_PREFIX + "/digital-out-red");
   cfg_digital_out_yellow_ =
-      config->get_uint("/skiller_state/digital-out-yellow");
-  cfg_timeout_ = fawkes::Time(config->get_float("/skiller_state/timeout"));
+      config->get_uint(CFG_PREFIX + "/digital-out-yellow");
+  cfg_timeout_ = fawkes::Time(config->get_float(CFG_PREFIX + "/timeout"));
 
   skiller_if_ =
       blackboard->open_for_reading<SkillerInterface>(cfg_skiller_ifid_.c_str());
