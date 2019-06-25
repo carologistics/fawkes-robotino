@@ -847,5 +847,4 @@
             (param-values ?mps))
   )
   (modify ?g (mode EXPANDED))
-  (retract ?pre ?pro)
 )
