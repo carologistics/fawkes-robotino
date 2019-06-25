@@ -32,6 +32,8 @@
  * @author Randolph Maaßen
  */
 
+using namespace fawkes;
+
 /**
  * Creates an std::vector for handling TagVisionInterfaces for the TagVision.
  * The Interfaces are stored here and updated on the update_blackboard() method
@@ -211,6 +213,28 @@ alvar::Pose TagPositionList::get_nearest_laser_line_pose(
   }
 }
 
+TagPositionInterfaceHelper *TagPositionList::find_suitable_interface(
+    const alvar::MarkerData &marker) const {
+  int min_vis_hist = std::numeric_limits<int>::max();
+  TagPositionInterfaceHelper *rv = nullptr;
+
+  for (TagPositionInterfaceHelper *interface : *this) {
+    if (interface->marker_id() == marker.GetId() ||
+        interface->marker_id() == EMPTY_INTERFACE_MARKER_ID)
+      return interface;
+
+    if (interface->visibility_history() < min_vis_hist) {
+      min_vis_hist = interface->visibility_history();
+      rv = interface;
+    }
+  }
+
+  if (min_vis_hist > INTERFACE_UNSEEN_BOUND)
+    return nullptr;
+
+  return rv;
+}
+
 /**
  * Assignes every marker found to an interface. The interface will stay the same
  * for a marker as long as the marker is considered seen (visibility history >
@@ -233,47 +257,25 @@ void TagPositionList::update_blackboard(
     try {
       alvar::Pose ll_pose =
           get_nearest_laser_line_pose(tmp_pose, laser_line_ifs);
-      //      logger_->log_info("tag_vision", "%i before: %f\t%f\t%f", i,
-      //      tmp_pose.translation[0], tmp_pose.translation[1],
-      //      tmp_pose.translation[2]);
       tmp_pose = ll_pose;
-      //      logger_->log_info("tag_vision", "%i after:  %f\t%f\t%f", i,
-      //      tmp_pose.translation[0], tmp_pose.translation[1],
-      //      tmp_pose.translation[2]);
     } catch (std::exception &e) {
       logger_->log_error(thread_name_.c_str(),
                          "Failed to match tag to laser line: %s", e.what());
     }
     ++i;
-    // get the id of the marker
-    unsigned long marker_id = marker.GetId();
 
-    // find an interface with this marker assigned or an empty interface
-    TagPositionInterfaceHelper *marker_interface = nullptr;
-    TagPositionInterfaceHelper *empty_interface = nullptr;
-    for (TagPositionInterfaceHelper *interface : *this) {
-      // assign marker_interface
-      if (interface->marker_id() == marker_id) {
-        marker_interface = interface;
+    TagPositionInterfaceHelper *marker_interface =
+        find_suitable_interface(marker);
+    if (marker_interface) {
+      if (marker_interface->marker_id() != marker.GetId()) {
+        marker_interface->set_marker_id(marker.GetId());
+        marker_interface->set_visibility_history(0);
       }
-      // assign empty interface
-      if (empty_interface == nullptr &&
-          interface->marker_id() == EMPTY_INTERFACE_MARKER_ID) {
-        empty_interface = interface;
-      }
-    }
-    // if no marker interface is found, assign the empty interface and assign
-    // the marker id
-    if (marker_interface == nullptr) {
-      // no empty interface found, cannot find any suitable interface,
-      if (empty_interface == nullptr) {
-        continue;
-      }
-      marker_interface = empty_interface;
-      marker_interface->set_marker_id(marker_id);
-    }
-    // continue with the marker interface
-    marker_interface->set_pose(tmp_pose);
+      marker_interface->set_pose(tmp_pose);
+    } else
+      logger_->log_warn(thread_name_.c_str(),
+                        "Cannot publish tag #%ld: Index interface full!",
+                        marker.GetId());
   }
   // update blackboard with interfaces
   int32_t visible_markers = 0;

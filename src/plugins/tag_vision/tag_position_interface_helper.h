@@ -77,15 +77,10 @@ public:
   /// Write the interface on the blackboard
   void write();
 
-  /**
-   * @brief Returns the id of the marker this interface belongs to
-   *
-   * @return The marker-id of the interface
-   */
-  int32_t marker_id() { return this->marker_id_; }
-
-  /// Set the marker id
-  void set_marker_id(int32_t new_id);
+  unsigned long marker_id() const;
+  void set_marker_id(unsigned long new_id);
+  int32_t visibility_history() const;
+  void set_visibility_history(int32_t);
 
   /**
    * @brief Returns the Position3D interface of this plugin
