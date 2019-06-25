@@ -251,7 +251,7 @@
 " React to a successful unlock of an location by removing the corresponding location-locked domain-fact"
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   ?p <- (goal-reasoner-unlock-pending ?lock)
-  ?m <- (mutex (name ?lock) (request UNLOCK) (response UNLOCKED))
+  ?m <- (mutex (name ?lock) (request UNLOCK) (state OPEN))
   ?df <- (domain-fact (name location-locked) (param-values ?mps ?side))
   (test (not (eq FALSE (str-index (str-cat ?mps) (str-cat ?lock)))))
   (test (not (eq FALSE (str-index (str-cat ?side) (str-cat ?lock)))))
@@ -266,7 +266,7 @@
 " React to a successful unlock of a lock by removing the corresponding locked domain-fact"
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   ?p <- (goal-reasoner-unlock-pending ?lock)
-  ?m <- (mutex (name ?lock) (request UNLOCK) (response UNLOCKED))
+  ?m <- (mutex (name ?lock) (request UNLOCK) (state OPEN))
   ?df <- (domain-fact (name locked) (param-values ?lock))
   =>
   (modify ?m (request NONE) (response NONE))
