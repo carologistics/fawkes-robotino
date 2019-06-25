@@ -61,10 +61,10 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard,
   this->clock_ = clock;
   this->tf_publisher_ = tf_publisher;
   frame_ = frame;
-  this->tf_listener = tf_listener;
+  this->tf_listener_ = tf_listener;
 
   // create blackboard interfaces
-  for (size_t i = 0; i < this->max_markers_; i++) {
+  for (unsigned int i = 0; i < this->max_markers_; i++) {
     // create a name for the new interface
     std::string interface_name =
         std::string("/tag-vision/") + std::to_string(i);
@@ -81,23 +81,19 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard,
           interface, i, this->clock_, this->tf_publisher_, frame));
     } catch (std::exception &e) {
       this->logger_->log_error(thread_name.c_str(),
-                               (std::string("Could not open the blackboard: ") +
-                                std::string(e.what()))
-                                   .c_str());
+                               "Could not open the blackboard: %s", e.what());
       throw(e);
     }
   }
 
   // initialize tag info interface
   try {
-    this->tag_vision_interface_ =
+    this->index_interface_ =
         blackboard->open_for_writing<fawkes::TagVisionInterface>(
             "/tag-vision/info");
   } catch (std::exception &e) {
-    this->logger_->log_error(
-        thread_name.c_str(),
-        (std::string("Could not open the blackboard: ") + std::string(e.what()))
-            .c_str());
+    this->logger_->log_error(thread_name.c_str(),
+                             "Could not open the blackboard: %s", e.what());
     throw(e);
   }
 }
@@ -107,11 +103,11 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard,
  */
 TagPositionList::~TagPositionList() {
   // close tag vision interface
-  this->blackboard_->close(this->tag_vision_interface_);
+  this->blackboard_->close(this->index_interface_);
 
   // delete this interfaces
-  for (auto &&interface : *this) {
-    this->blackboard_->close(interface->interface());
+  for (auto &interface : *this) {
+    this->blackboard_->close(interface->pos_iface());
     delete interface;
   }
 }
@@ -120,17 +116,16 @@ alvar::Pose TagPositionList::get_laser_line_pose(
     fawkes::LaserLineInterface *laser_line_if) {
   alvar::Pose pose;
 
-  double x =
-      laser_line_if->end_point_1(0) +
-      (laser_line_if->end_point_2(0) - laser_line_if->end_point_1(0)) / 2;
-  double y =
-      laser_line_if->end_point_1(1) +
-      (laser_line_if->end_point_2(1) - laser_line_if->end_point_1(1)) / 2;
-  double ori = fawkes::normalize_mirror_rad(laser_line_if->bearing());
+  float x = laser_line_if->end_point_1(0) +
+            (laser_line_if->end_point_2(0) - laser_line_if->end_point_1(0)) / 2;
+  float y = laser_line_if->end_point_1(1) +
+            (laser_line_if->end_point_2(1) - laser_line_if->end_point_1(1)) / 2;
+  float ori = fawkes::normalize_mirror_rad(laser_line_if->bearing());
 
-  fawkes::tf::Quaternion f_q = fawkes::tf::create_quaternion_from_yaw(ori);
+  fawkes::tf::Quaternion f_q =
+      fawkes::tf::create_quaternion_from_yaw(double(ori));
   double q[4];
-  fawkes::tf::Point f_p(x, y, 0.);
+  tf::Point f_p(tf::Scalar(x), tf::Scalar(y), 0.);
 
   fawkes::tf::Pose f_p_in(f_q, f_p);
 
@@ -142,10 +137,10 @@ alvar::Pose TagPositionList::get_laser_line_pose(
   try {
     //    logger_->log_info("tag_vision", "Transform from %s to %s",
     //    laser_line_if->frame_id(), frame_.c_str());
-    tf_listener->transform_pose(frame_, f_sp_in, f_sp_out);
-  } catch (fawkes::Exception &e) {
+    tf_listener_->transform_pose(frame_, f_sp_in, f_sp_out);
+  } catch (fawkes::Exception &) {
     f_sp_in.stamp = fawkes::Time(0, 0);
-    tf_listener->transform_pose(frame_, f_sp_in, f_sp_out);
+    tf_listener_->transform_pose(frame_, f_sp_in, f_sp_out);
     //    logger_->log_warn("tag_vision", "Can't transform laser-line; error
     //    %s\nuse newest", e.what());
   }
@@ -187,7 +182,7 @@ alvar::Pose TagPositionList::get_nearest_laser_line_pose(
       alvar::Pose ll_pose_current;
       try {
         ll_pose_current = get_laser_line_pose(laser_line_ifs->at(i));
-      } catch (fawkes::Exception &e) {
+      } catch (fawkes::Exception &) {
         continue;
       }
       // check if clostest (translation)
@@ -246,32 +241,32 @@ void TagPositionList::update_blackboard(
       //      tmp_pose.translation[0], tmp_pose.translation[1],
       //      tmp_pose.translation[2]);
     } catch (std::exception &e) {
-      logger_->log_error("tag_vision",
-                         "some strange exception that where not expected");
+      logger_->log_error(thread_name_.c_str(),
+                         "Failed to match tag to laser line: %s", e.what());
     }
     ++i;
     // get the id of the marker
-    u_int32_t marker_id = marker.GetId();
+    unsigned long marker_id = marker.GetId();
 
     // find an interface with this marker assigned or an empty interface
-    TagPositionInterfaceHelper *marker_interface = NULL;
-    TagPositionInterfaceHelper *empty_interface = NULL;
+    TagPositionInterfaceHelper *marker_interface = nullptr;
+    TagPositionInterfaceHelper *empty_interface = nullptr;
     for (TagPositionInterfaceHelper *interface : *this) {
       // assign marker_interface
       if (interface->marker_id() == marker_id) {
         marker_interface = interface;
       }
       // assign empty interface
-      if (empty_interface == NULL &&
+      if (empty_interface == nullptr &&
           interface->marker_id() == EMPTY_INTERFACE_MARKER_ID) {
         empty_interface = interface;
       }
     }
     // if no marker interface is found, assign the empty interface and assign
     // the marker id
-    if (marker_interface == NULL) {
+    if (marker_interface == nullptr) {
       // no empty interface found, cannot find any suitable interface,
-      if (empty_interface == NULL) {
+      if (empty_interface == nullptr) {
         continue;
       }
       marker_interface = empty_interface;
@@ -281,15 +276,15 @@ void TagPositionList::update_blackboard(
     marker_interface->set_pose(tmp_pose);
   }
   // update blackboard with interfaces
-  u_int32_t visible_markers = 0;
-  for (TagPositionInterfaceHelper *interface : *this) {
-    this->tag_vision_interface_->set_tag_id(interface->vector_position(),
-                                            interface->marker_id());
-    if (interface->marker_id() != EMPTY_INTERFACE_MARKER_ID) {
+  int32_t visible_markers = 0;
+  for (TagPositionInterfaceHelper *pos_iface : *this) {
+    this->index_interface_->set_tag_id(pos_iface->index(),
+                                       pos_iface->marker_id());
+    if (pos_iface->marker_id() != EMPTY_INTERFACE_MARKER_ID) {
       visible_markers++;
     }
-    interface->write();
+    pos_iface->write();
   }
-  this->tag_vision_interface_->set_tags_visible(visible_markers);
-  this->tag_vision_interface_->write();
+  this->index_interface_->set_tags_visible(visible_markers);
+  this->index_interface_->write();
 }
