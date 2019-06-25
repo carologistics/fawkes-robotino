@@ -1,6 +1,6 @@
 
 /***************************************************************************
- *  skiller_state_thread.cpp - Indicate skiller state through LED
+ *  skiller_motor_state_thread.cpp - Indicate skiller & motor state through LED
  *
  *  Created: Fri Jun 14 15:07:42 2019
  *  Copyright  2019  Morian Sonnet
@@ -19,28 +19,28 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include "skiller_state_thread.h"
+#include "skiller_motor_state_thread.h"
 
 #include <interfaces/RobotinoSensorInterface.h>
 #include <interfaces/SkillerInterface.h>
 
 using namespace fawkes;
 
-/** @class SkillerStateThread "act_thread.h"
+/** @class SkillerMotorStateThread "act_thread.h"
  * Set LED according to motor state.
  * @author Tim Niemueller
  */
 
 /** Constructor. */
-SkillerStateThread::SkillerStateThread()
-    : Thread("SkillerStateThread", Thread::OPMODE_WAITFORWAKEUP),
+SkillerMotorStateThread::SkillerMotorStateThread()
+    : Thread("SkillerMotorStateThread", Thread::OPMODE_WAITFORWAKEUP),
       BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT) {}
 
-void SkillerStateThread::init() {
   cfg_skiller_ifid_ = config->get_string("/skiller_state/skiller-interface-id");
   cfg_rsens_ifid_ = config->get_string("/skiller_state/sensor-interface-id");
   cfg_digital_out_green_ = config->get_uint("/skiller_state/digital-out-green");
   cfg_digital_out_red_ = config->get_uint("/skiller_state/digital-out-red");
+void SkillerMotorStateThread::init() {
   cfg_digital_out_yellow_ =
       config->get_uint("/skiller_state/digital-out-yellow");
   cfg_timeout_ = fawkes::Time(config->get_float("/skiller_state/timeout"));
@@ -55,12 +55,12 @@ void SkillerStateThread::init() {
   disable(cfg_digital_out_yellow_);
 }
 
-void SkillerStateThread::finalize() {
+void SkillerMotorStateThread::finalize() {
   blackboard->close(skiller_if_);
   blackboard->close(rsens_if_);
 }
 
-void SkillerStateThread::loop() {
+void SkillerMotorStateThread::loop() {
   if (rsens_if_->has_writer() && skiller_if_->has_writer()) {
     rsens_if_->read();
     skiller_if_->read();
@@ -88,7 +88,7 @@ void SkillerStateThread::loop() {
   }
 }
 
-void SkillerStateThread::enable(unsigned int output) {
+void SkillerMotorStateThread::enable(unsigned int output) {
   if (!rsens_if_->is_digital_out(output - 1)) {
     RobotinoSensorInterface::SetDigitalOutputMessage *msg =
         new RobotinoSensorInterface::SetDigitalOutputMessage(output, true);
@@ -97,7 +97,7 @@ void SkillerStateThread::enable(unsigned int output) {
   return;
 }
 
-void SkillerStateThread::disable(unsigned int output) {
+void SkillerMotorStateThread::disable(unsigned int output) {
   if (rsens_if_->is_digital_out(output - 1)) {
     RobotinoSensorInterface::SetDigitalOutputMessage *msg =
         new RobotinoSensorInterface::SetDigitalOutputMessage(output, false);
