@@ -35,6 +35,7 @@
 
 namespace fawkes {
 class SkillerInterface;
+class MotorInterface;
 class RobotinoSensorInterface;
 } // namespace fawkes
 
@@ -58,9 +59,11 @@ protected:
 private:
   std::string cfg_skiller_ifid_;
   std::string cfg_rsens_ifid_;
+  std::string cfg_motor_ifid_;
   unsigned int cfg_digital_out_red_;
   unsigned int cfg_digital_out_yellow_;
   unsigned int cfg_digital_out_green_;
+  unsigned int cfg_digital_out_motor_;
   fawkes::Time cfg_timeout_;
 
   fawkes::Time final_time_;
@@ -71,6 +74,7 @@ private:
 
   fawkes::SkillerInterface *skiller_if_;
   fawkes::RobotinoSensorInterface *rsens_if_;
+  fawkes::MotorInterface *motor_if_;
 };
 
 #endif

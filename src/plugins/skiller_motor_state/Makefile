@@ -19,7 +19,7 @@ include $(BASEDIR)/etc/buildsys/config.mk
 
 LIBS_skiller_motor_state = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
                  fawkesblackboard fawkesinterface \
-                 SkillerInterface RobotinoSensorInterface
+                 SkillerInterface RobotinoSensorInterface MotorInterface
 OBJS_skiller_motor_state = skiller_motor_state_plugin.o skiller_motor_state_thread.o
 
 CFLAGS += $(CFLAGS_CPP11)
