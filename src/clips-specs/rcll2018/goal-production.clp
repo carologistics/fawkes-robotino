@@ -787,9 +787,9 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
 	(value ?qd&:(> ?qr ?qd)))
-  (wm-fact (key refbox order ?order-id delivery-begin) (type UINT)
+  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
 	(value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*))))
-  (wm-fact (key refbox order ?order-id delivery-end) (type UINT)
+  (wm-fact (key refbox order ?order delivery-end) (type UINT)
 	(value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-LATEST-TIME*))))
   ;Active Order CEs
   ;This order complexity is not produced exclusively while another exclusive
@@ -965,7 +965,7 @@
                                          difference ?bases-remain&ZERO|ONE|TWO|THREE))
   (not (wm-fact (key domain fact rs-prepared-color args?  m ?mps-rs col ?some-col)))
   ;Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C3))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C2|C3))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?order-ring1-color))
   (wm-fact (key domain fact order-ring2-color args? ord ?order col ?order-ring2-color))
