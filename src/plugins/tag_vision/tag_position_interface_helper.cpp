@@ -45,11 +45,11 @@ TagPositionInterfaceHelper::TagPositionInterfaceHelper(
     fawkes::Position3DInterface *position_interface, u_int32_t vector_position,
     fawkes::Clock *clock, fawkes::tf::TransformPublisher *tf_publisher,
     std::string frame) {
-  this->interface_ = position_interface;
-  this->vector_position_ = vector_position;
+  this->pos_iface_ = position_interface;
+  this->index_ = vector_position;
   this->visibility_history_ = 0;
   this->marker_id_ = 0;
-  this->touched_ = false;
+  this->was_seen_ = false;
   this->clock_ = clock;
 
   this->frame_ = frame;
@@ -96,19 +96,19 @@ void TagPositionInterfaceHelper::set_pose(alvar::Pose new_pose) {
   fawkes::tf::Quaternion result = tag_rot * fix_tag_orientation;
 
   // publish the quaternion
-  this->interface_->set_rotation(ROT::X, result.getX());
-  this->interface_->set_rotation(ROT::Y, result.getY());
-  this->interface_->set_rotation(ROT::Z, result.getZ());
-  this->interface_->set_rotation(ROT::W, result.getW());
+  this->pos_iface_->set_rotation(ROT::X, result.getX());
+  this->pos_iface_->set_rotation(ROT::Y, result.getY());
+  this->pos_iface_->set_rotation(ROT::Z, result.getZ());
+  this->pos_iface_->set_rotation(ROT::W, result.getW());
   // publish the translation
-  this->interface_->set_translation(
+  this->pos_iface_->set_translation(
       TRANS::T_X /*1*/, new_pose.translation[TRANS::T_X /*0*/] / 1000);
-  this->interface_->set_translation(
+  this->pos_iface_->set_translation(
       TRANS::T_Y /*2*/, new_pose.translation[TRANS::T_Y /*1*/] / 1000);
-  this->interface_->set_translation(
+  this->pos_iface_->set_translation(
       TRANS::T_Z /*0*/, new_pose.translation[TRANS::T_Z /*2*/] / 1000);
 
-  this->touched_ = true;
+  this->was_seen_ = true;
 
   // publish the transform
   fawkes::tf::Transform transform(
@@ -145,13 +145,13 @@ void TagPositionInterfaceHelper::set_marker_id(u_int32_t new_id) {
  */
 void TagPositionInterfaceHelper::write() {
   // when the tag becomes visible or invisible reset the visibility history
-  if ((this->touched_ && this->visibility_history_ < 0) ||
-      (!this->touched_ && this->visibility_history_ > 0)) {
+  if ((this->was_seen_ && this->visibility_history_ < 0) ||
+      (!this->was_seen_ && this->visibility_history_ > 0)) {
     this->visibility_history_ = 0;
   }
   // update the visibility history according to the marker, weather this
   // interface got a new pose
-  if (this->touched_) {
+  if (this->was_seen_) {
     this->visibility_history_++;
   } else {
     this->visibility_history_--;
@@ -162,9 +162,9 @@ void TagPositionInterfaceHelper::write() {
     this->marker_id_ = EMPTY_INTERFACE_MARKER_ID;
   }
   // set the new visibility history
-  this->interface_->set_visibility_history(this->visibility_history_);
+  this->pos_iface_->set_visibility_history(this->visibility_history_);
   // write out the interface
-  this->interface_->write();
+  this->pos_iface_->write();
   // reset the update marker
-  this->touched_ = false;
+  this->was_seen_ = false;
 }

@@ -68,7 +68,7 @@ private:
   /// The blackboard to publish on
   fawkes::BlackBoard *blackboard_;
   /// Tag vision inforamtion interface
-  fawkes::TagVisionInterface *tag_vision_interface_;
+  fawkes::TagVisionInterface *index_interface_;
   /// Name of the calling thread
   std::string thread_name_;
   /// Logger for logging
@@ -79,7 +79,7 @@ private:
   fawkes::tf::TransformPublisher *tf_publisher_;
 
   std::string frame_;
-  fawkes::tf::Transformer *tf_listener;
+  fawkes::tf::Transformer *tf_listener_;
 
   alvar::Pose get_laser_line_pose(fawkes::LaserLineInterface *laser_line_if);
   alvar::Pose get_nearest_laser_line_pose(

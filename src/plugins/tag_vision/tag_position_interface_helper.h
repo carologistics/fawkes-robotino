@@ -65,7 +65,7 @@ class TagPositionInterfaceHelper {
 public:
   /// Constructor
   TagPositionInterfaceHelper(fawkes::Position3DInterface *position_interface,
-                             u_int32_t vector_position_, fawkes::Clock *clock,
+                             u_int32_t index_, fawkes::Clock *clock,
                              fawkes::tf::TransformPublisher *tf_publisher,
                              std::string frame);
   /// Destructor
@@ -82,17 +82,17 @@ public:
    *
    * @return The marker-id of the interface
    */
-  u_int32_t marker_id() { return this->marker_id_; }
+  int32_t marker_id() { return this->marker_id_; }
 
   /// Set the marker id
-  void set_marker_id(u_int32_t new_id);
+  void set_marker_id(int32_t new_id);
 
   /**
    * @brief Returns the Position3D interface of this plugin
    *
    * @return The interface
    */
-  fawkes::Position3DInterface *interface() { return this->interface_; }
+  fawkes::Position3DInterface *pos_iface() { return this->pos_iface_; }
 
   /**
    * @brief Returns the position of this interface in the TagPositionList, or
@@ -100,23 +100,23 @@ public:
    *
    * @return The position of this interface of the list
    */
-  u_int32_t vector_position() { return this->vector_position_; }
+  size_t index() { return this->index_; }
 
 private:
   /// The interface to handle
-  fawkes::Position3DInterface *interface_;
+  fawkes::Position3DInterface *pos_iface_;
 
   /// The visibility history for the interface to handle
   int32_t visibility_history_;
 
   /// Marker, whether the interface was updated since last write
-  bool touched_;
+  bool was_seen_;
 
   /// The id of the marker the interface represents
-  u_int32_t marker_id_;
+  unsigned long marker_id_;
 
   /// The position of the interface in the vector
-  u_int32_t vector_position_;
+  size_t index_;
 
   /// The frame of reference for this tag
   std::string frame_;
