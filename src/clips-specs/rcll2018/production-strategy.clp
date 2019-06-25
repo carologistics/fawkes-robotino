@@ -54,6 +54,9 @@
            (value ?qd-us))
   (wm-fact (key refbox order ?order quantity-delivered ~?team-color)
            (value ?qd-them))
+  (wm-fact (key refbox game-time) (values ?curr-time $?))
+  (wm-fact (key refbox order ?order delivery-end) (type UINT)
+           (value ?deadline))
 =>
   (bind ?rings-needed (string-to-field (sub-string 2 2 (str-cat ?com))))
   (bind ?points-ring1 (+ (* (bool-to-int (> ?rings-needed 0))
@@ -69,10 +72,14 @@
                          (* (bool-to-int (= ?rings-needed 3))
                             (last-ring-points ?com))))
   (bind ?points-cap ?*POINTS-MOUNT-CAP*)
-  (bind ?points-delivery ?*POINTS-DELIVER*)
+  (bind ?points-delivery (delivery-points ?qr
+                                          ?qd-us
+                                          ?qd-them
+                                          ?competitive
+                                          ?curr-time
+                                          ?deadline))
   (bind ?res (+ ?points-ring1 ?points-ring2 ?points-ring3 ?points-cap
                ?points-delivery))
-  (bind ?res (finalize-points ?res ?competitive ?qr ?qd-us ?qd-them))
   (printout t "Order " ?order " gives " ?res " points in total." crlf)
   (assert (wm-fact (key order meta points-steps args? ord ?order) (type INT)
                    (is-list TRUE) (values (create$ ?points-ring1 ?points-ring2
@@ -207,6 +214,71 @@
 )
 
 
+(defrule production-strategy-update-delivery-points
+  ; Refbox CEs
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
+           (value ?qd-us))
+  (wm-fact (key refbox order ?order quantity-delivered ~?team-color)
+           (value ?qd-them))
+  (wm-fact (key refbox game-time) (values ?curr-time $?))
+  (wm-fact (key refbox order ?order delivery-end) (type UINT)
+           (value ?deadline))
+  ; Order Meta CEs
+  (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
+  ?ps <- (wm-fact (key order meta points-steps args? ord ?order)
+                  (values $?pointlist&:(neq (nth$ (order-steps-index DELIVER)
+                                                  ?pointlist)
+                                            (delivery-points ?qr
+                                                             ?qd-us
+                                                             ?qd-them
+                                                             ?competitive
+                                                             ?curr-time
+                                                             ?deadline))))
+=>
+  (modify ?ps (values (replace$ ?pointlist
+                                (order-steps-index DELIVER)
+                                (order-steps-index DELIVER)
+                                (delivery-points ?qr
+                                                 ?qd-us
+                                                 ?qd-them
+                                                 ?competitive
+                                                 ?curr-time
+                                                 ?deadline))))
+)
+
+
+(defrule production-strategy-update-past-deadline-points
+" Points for order steps are only awarded if they are performed within the
+  deadline (except for delivery)  and the order is not fulfilled yet. Therefore
+  reduce the point-step list accordingly.
+"
+  ; Refbox CEs
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
+           (value ?qd-us))
+  (wm-fact (key refbox game-time) (values ?curr-time $?))
+  (wm-fact (key refbox order ?order delivery-end) (type UINT)
+           (value ?deadline))
+  (test (or (<= ?qr ?qd-us) (< ?deadline ?curr-time)))
+  ; Order Meta CEs
+  ?ps <- (wm-fact (key order meta points-steps args? ord ?order)
+                  (values $?pointlist&:(neq (nth$ (order-steps-index CAP)
+                                                  ?pointlist)
+                                            0)))
+=>
+  (modify ?ps (values (replace$ (replace$ ?pointlist
+                                          (order-steps-index CAP)
+                                          (order-steps-index CAP)
+                                          0)
+                                (order-steps-index RING1)
+                                (order-steps-index RING3)
+                                (create$ 0 0 0))))
+)
+
+
 (defrule production-strategy-init-wp-meta-facts
 " Initializes facts to track for a given workpiece (started order)
    - current points the workpiece already scored
@@ -238,52 +310,32 @@
   (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   ; WP CEs
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-col-r1))
-  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-col-r2))
-  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-col-r3))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?wp-cap-col))
-  (not (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ~?wp-col-r1)))
-  (not (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ~?wp-col-r2)))
-  (not (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ~?wp-col-r3)))
-  (not (wm-fact (key domain fact wp-cap-color args? wp ?wp col ~?wp-cap-col)))
-  ; Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
   ; Refbox CEs
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
-           (value ?qd-us))
-  (wm-fact (key refbox order ?order quantity-delivered ~?team-color)
-           (value ?qd-them))
-  (wm-fact (key refbox game-time) (values $?game-time))
+           (value ?qd-us&:(< ?qd-us ?qr)))
+  (wm-fact (key refbox game-time) (values ?time-sec $?))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
-           (value ?end&:(> ?end (nth 1 ?game-time))))
+           (value ?end&:(> ?end ?time-sec)))
   ; Order Meta CEs
   (wm-fact (key order meta points-steps args? ord ?order)
-           (values ?p-r1 ?p-r2 ?p-r3 ?p-cap $?))
-  (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
+           (values $?pointlist))
   ; WP Meta CEs
+  (wm-fact (key wp meta current-step args? wp ?wp) (value ?curr-step))
   ?pc <- (wm-fact (key wp meta points-current args? wp ?wp)
                   ; the current points have changed and the deadline has not
                   ; been met yet
                   (value ?p-curr&:(neq ?p-curr
-                    (finalize-points
-                       (+ (* (bool-to-int (eq ?wp-col-r1 ?col-r1)) ?p-r1)
-                          (* (bool-to-int (eq ?wp-col-r2 ?col-r2)) ?p-r2)
-                          (* (bool-to-int (eq ?wp-col-r3 ?col-r3)) ?p-r3)
-                          (* (bool-to-int (eq ?wp-cap-col ?cap-col)) ?p-cap))
-                       ?competitive ?qr ?qd-us ?qd-them))))
+                    (+ 0 0 (expand$ (subseq$ ?pointlist
+                                             1
+                                             (- (order-steps-index ?curr-step)
+                                                1)))))))
 =>
-  (bind ?res (finalize-points
-               (+ (* (bool-to-int (eq ?wp-col-r1 ?col-r1)) ?p-r1)
-                  (* (bool-to-int (eq ?wp-col-r2 ?col-r2)) ?p-r2)
-                  (* (bool-to-int (eq ?wp-col-r3 ?col-r3)) ?p-r3)
-                  (* (bool-to-int (eq ?wp-cap-col ?cap-col)) ?p-cap))
-                ?competitive ?qr ?qd-us ?qd-them))
+  (bind ?res (+ 0 0  (expand$ (subseq$ ?pointlist
+                              1
+                              (- (order-steps-index ?curr-step)
+                                 1)))))
   (modify ?pc (value ?res))
   (printout t "WP " ?wp " for order " ?order " yields " ?res
               " points if it can be finished." crlf)
@@ -371,13 +423,6 @@
 "
   (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order)))
-  ; Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-col))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
   ; Time CEs
   (wm-fact (key refbox order ?order delivery-end) (value ?end&:(> ?end 0)))
   (wm-fact (key refbox game-time) (values ?game-time $?ms))
@@ -417,21 +462,6 @@
   (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   ; Order CEs
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-col-r1))
-  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-col-r2))
-  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-col-r3))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?wp-cap-col))
-  (not (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ~?wp-col-r1)))
-  (not (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ~?wp-col-r2)))
-  (not (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ~?wp-col-r3)))
-  (not (wm-fact (key domain fact wp-cap-color args? wp ?wp col ~?wp-cap-col)))
-  ; Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-col))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?col-r1))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?col-r2))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
   ; Time CEs
   (wm-fact (key refbox order ?order delivery-end) (value ?end&:(> ?end 0)))
   (wm-fact (key refbox game-time) (values ?game-time $?ms))

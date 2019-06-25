@@ -852,30 +852,35 @@
 )
 
 
-(deffunction finalize-points (?points ?competitive ?qr ?qd-us ?qd-them)
-" @param ?points points before considering delivered quantities and complexity
-                 rules
-  @param ?competitive bool indicating whether competitive point changes should
-                      be applied
-  @param ?qr quantities-requested of the order in question
+(deffunction delivery-points (?qr ?qd-us ?qd-them ?competitive ?curr-time ?deadline)
+" @param ?qr quantities-requested of the order in question
   @param ?qd-us quantities-delivered of our team
   @param ?qd-them quantities-delivered of the opposing team
+  @param ?competitive bool indicating whether competitive point changes should
+                      be applied
+  @param ?curr-time current game time in seconds
+  @param ?deadline deadline of the order
 
-  @return adjusted points (apply competitive rules if needed, 0 points if
-          the requested quantites are already delivered)
+  @return delivery points (apply competitive rules if needed, 0 points if
+          the requested quantities are already delivered, reduced points after)
 "
   (if (not (> ?qr ?qd-us))
     then
       (return 0))
+  (bind ?delivery-points 20)
+  (if (> ?curr-time ?deadline)
+    then
+      (bind ?delivery-points 5)
+  )
   (if ?competitive
     then
       (if (> ?qd-them ?qd-us)
         then
-          (return (max 0 (- ?points ?*POINTS-COMPETITIVE*)))
+          (return (max 0 (- ?delivery-points ?*POINTS-COMPETITIVE*)))
         else
-          (return (+ ?points ?*POINTS-COMPETITIVE*)))
+          (return (+ ?delivery-points ?*POINTS-COMPETITIVE*)))
     else
-      (return ?points)
+      (return ?delivery-points)
   )
 )
 
