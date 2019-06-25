@@ -8,8 +8,21 @@
   sensor-interface-id: Robotino
 
   # Digital output for the different colors.
+  # The green light is activated whenever a skill finals
+  # (Note that it is not activated if a subskill finals, as the skiller
+  # currently does not change the data on the skiller interface right now)
+  # The yellow light is always active if a skill is running.
+  # The red light is activated whenever a skill fails
+  # (Note that the skiller state is always switched to fail if any subskill
+  # fails!)
+  #
   # This is the number as it appears on the Robotino, i.e. 1 to 8, not
   # the interface index!
+  # You can find these numbers by closely inspecting the port in which the
+  # signal light is connected.
+  # The brown cable is connected to the red lamp,
+  # the green one to the green one
+  # and the yellow one to the yellow one.
   digital-out-green: 6
   digital-out-yellow: 7
   digital-out-red: 8
