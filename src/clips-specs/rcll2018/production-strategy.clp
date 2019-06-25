@@ -28,8 +28,8 @@
 )
 
 (defrule production-strategy-init-order-meta-facts
-" Calculates the points for each production step, total points and number
-  of rings needed for a posted order.
+" Calculates the points for each production step, max points and initializes
+  more order meta facts.
 "
   (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   ; Order CEs
@@ -93,6 +93,47 @@
                    (type INT) (is-list TRUE)
                    (values (create$ 0 0 0 0 ?*TIME-DELIVER*))))
 )
+
+
+(defrule production-strategy-estimate-achievable-points-for-posted-order
+" Calculates the points one may score when starting the order assuming the
+  required production tasks are all performed within the upper bounds
+  as specified in the globals.
+
+  Additional points for prepared caps and supplied additional bases are not
+  counted.
+"
+  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
+  (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order)))
+  ; Time CEs
+  (wm-fact (key refbox order ?order delivery-end) (value ?end&:(> ?end 0)))
+  (wm-fact (key refbox game-time) (values ?game-time $?ms))
+  ; Order Meta CEs
+  (wm-fact (key order meta points-steps args? ord ?order) (values $?p-steps))
+  (wm-fact (key order meta estimated-time-steps args? ord ?order)
+           (values $?t-steps))
+  (wm-fact (key order meta points-max args? ord ?order) (value ?p-total))
+  ?om <- (wm-fact (key order meta estimated-points-total args? ord ?order)
+                  (value ?tpe&:(not (= ?tpe (estimate-achievable-points
+                    ?p-steps
+                    0
+                    ?t-steps
+                    ?game-time
+                    ?end)))))
+=>
+  (bind ?res (estimate-achievable-points
+               ?p-steps
+               0
+               ?t-steps
+               ?game-time
+               ?end))
+  (printout t  "Order " ?order " is expected to score " ?res " out of "
+               ?p-total " points" crlf)
+  (modify ?om (value ?res))
+)
+
+
+;------------------------- Point/Time Step Updates ---------------------------
 
 
 (defrule production-strategy-update-time-steps-mount-ring
@@ -203,7 +244,6 @@
                              (create$ domain fact cs-buffered))
                            (eq (wm-key-arg ?wm:key col) ?cap-col)))))
              ?*TIME-RETRIEVE-CAP*))
-  (printout error "buffer value: " ?buffer-cap crlf)
   (modify ?et-steps (values (replace$ ?timelist
                                       (order-steps-index CAP)
                                       (order-steps-index CAP)
@@ -279,6 +319,11 @@
 )
 
 
+; ========================= WP Meta Facts ====================================
+; Provide additional information to each intermediate workpiece, like
+; the already scored points and information about future production steps.
+
+
 (defrule production-strategy-init-wp-meta-facts
 " Initializes facts to track for a given workpiece (started order)
    - current points the workpiece already scored
@@ -340,6 +385,7 @@
   (printout t "WP " ?wp " for order " ?order " yields " ?res
               " points if it can be finished." crlf)
 )
+
 
 
 (defrule production-strategy-update-next-step
@@ -413,44 +459,6 @@
 )
 
 
-(defrule production-strategy-estimate-achievable-points-for-posted-order
-" Calculates the points one may score when starting the order assuming the
-  required production tasks are all performed within the upper bounds
-  as specified in the globals.
-
-  Additional points for prepared caps and supplied additional bases are not
-  counted.
-"
-  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
-  (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order)))
-  ; Time CEs
-  (wm-fact (key refbox order ?order delivery-end) (value ?end&:(> ?end 0)))
-  (wm-fact (key refbox game-time) (values ?game-time $?ms))
-  ; Order Meta CEs
-  (wm-fact (key order meta points-steps args? ord ?order) (values $?p-steps))
-  (wm-fact (key order meta estimated-time-steps args? ord ?order)
-           (values $?t-steps))
-  (wm-fact (key order meta points-max args? ord ?order) (value ?p-total))
-  ?om <- (wm-fact (key order meta estimated-points-total args? ord ?order)
-                  (value ?tpe&:(not (= ?tpe (estimate-achievable-points
-                    ?p-steps
-                    0
-                    ?t-steps
-                    ?game-time
-                    ?end)))))
-=>
-  (bind ?res (estimate-achievable-points
-               ?p-steps
-               0
-               ?t-steps
-               ?game-time
-               ?end))
-  (printout t  "Order " ?order " is expected to score " ?res " out of "
-               ?p-total " points" crlf)
-  (modify ?om (value ?res))
-)
-
-
 (defrule production-strategy-estimate-points-for-started-order
 " Calculates the points one may score when finishing a started order assuming
   the required production tasks are all performed within the upper bounds
@@ -463,7 +471,7 @@
   ; Order CEs
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   ; Time CEs
-  (wm-fact (key refbox order ?order delivery-end) (value ?end&:(> ?end 0)))
+  (wm-fact (key refbox order ?order delivery-end) (value ?end))
   (wm-fact (key refbox game-time) (values ?game-time $?ms))
   ; Order Meta CEs
   (wm-fact (key order meta points-max args? ord ?order) (value ?p-total))
