@@ -298,7 +298,7 @@
   (if (eq ?com C0) then (bind ?curr-step CAP))
   (assert (wm-fact (key wp meta points-current args? wp ?wp) (type INT)
                    (is-list FALSE) (value 0))
-          (wm-fact (key wp meta current-step args? wp ?wp)
+          (wm-fact (key wp meta next-step args? wp ?wp)
                    (type SYMBOL) (is-list FALSE) (value ?curr-step))
           (wm-fact (key wp meta estimated-points-total args? wp ?wp)
                    (type INT) (is-list FALSE) (value ?ep-total)))
@@ -322,7 +322,7 @@
   (wm-fact (key order meta points-steps args? ord ?order)
            (values $?pointlist))
   ; WP Meta CEs
-  (wm-fact (key wp meta current-step args? wp ?wp) (value ?curr-step))
+  (wm-fact (key wp meta next-step args? wp ?wp) (value ?curr-step))
   ?pc <- (wm-fact (key wp meta points-current args? wp ?wp)
                   ; the current points have changed and the deadline has not
                   ; been met yet
@@ -342,7 +342,7 @@
 )
 
 
-(defrule production-strategy-update-current-step
+(defrule production-strategy-update-next-step
 " Keeps track of the workpiece progress by checking which step has to be
   performed next.
   This information together with the point-steps and estimated-time-steps
@@ -366,7 +366,7 @@
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
   ; WP Meta CEs
-  ?wm <- (wm-fact (key wp meta current-step args? wp ?wp)
+  ?wm <- (wm-fact (key wp meta next-step args? wp ?wp)
                    (value ?curr-step))
   (test (or
           (and (not (eq ?wp-col-r1 ?col-r1)) (not (eq ?curr-step RING1)))
