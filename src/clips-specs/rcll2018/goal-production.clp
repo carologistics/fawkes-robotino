@@ -363,7 +363,7 @@
                         mps ?mps
                         cc ?cc
                 )
-                (required-resources ?cc)
+                (required-resources (sym-cat ?mps -INPUT) ?cc)
   ))
 )
 
@@ -399,7 +399,7 @@
                         wp ?wp
                         side OUTPUT
                 )
-                (required-resources ?wp)
+                (required-resources (sym-cat ?mps -OUTPUT) ?wp)
   ))
 )
 
@@ -433,7 +433,7 @@
                         wp ?wp
                         side OUTPUT
                 )
-                (required-resources ?wp)
+                (required-resources (sym-cat ?mps -OUTPUT) ?wp)
   ))
 )
 
@@ -463,7 +463,7 @@
                         wp ?wp
                         side ?side
                 )
-                (required-resources ?wp)
+                (required-resources (sym-cat ?mps - ?side) ?wp)
   ))
 )
 
@@ -498,7 +498,7 @@
                         wp ?wp
                         side OUTPUT
                 )
-                (required-resources ?wp)
+                (required-resources (sym-cat ?mps -OUTPUT) ?wp)
   ))
 )
 
@@ -852,7 +852,7 @@
                         order ?order
                         wp ?spawned-wp
                 )
-                (required-resources ?required-resources)
+                (required-resources (sym-cat ?mps -INPUT) ?required-resources)
   ))
 )
 
@@ -936,7 +936,7 @@
                         order ?order
                         wp ?spawned-wp
                 )
-                (required-resources ?required-resources)
+                (required-resources (sym-cat ?mps-rs -INPUT) ?required-resources)
   ))
 )
 
@@ -1033,7 +1033,7 @@
                         rs-req ?bases-needed
                         order ?order
                 )
-                (required-resources ?wp)
+                (required-resources (sym-cat ?mps-rs -INPUT) (sym-cat ?prev-rs -OUTPUT) ?wp)
   ))
 )
 
@@ -1093,7 +1093,7 @@
                                         cs-color ?cap-color
                                         order ?order
                                 )
-                                (required-resources ?wp)
+                                (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
   ))
 )
 
@@ -1150,7 +1150,7 @@
                         cs-color ?cap-color
                         order ?order
                 )
-                (required-resources ?wp)
+                (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
   ))
 )
 
@@ -1209,7 +1209,7 @@
                         cs-color ?cap-color
                         order ?order
                 )
-                (required-resources ?wp)
+                (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
   ))
 )
 
@@ -1334,7 +1334,7 @@
                         ring3-color ?ring3-color
                         cap-color ?cap-color
                 )
-                (required-resources ?order ?wp)
+                (required-resources (sym-cat ?mps -OUTPUT) ?order ?wp)
   ))
 )
 
@@ -1351,7 +1351,7 @@
   (wm-fact (key domain fact mps-state args? m ?mps s IDLE))
   (not (wm-fact (key domain fact wp-at args? wp ? m ?mps side OUTPUT)))
   =>
-  (bind ?resources (create$ (sym-cat ?mps)))
+  (bind ?resources (create$ ?mps (sym-cat ?mps -OUTPUT) (sym-cat ?mps -INPUT)))
   (assert (goal (id (sym-cat PROCESS-MPS- ?mps - (gensym*)))
                 (class PROCESS-MPS) (sub-type SIMPLE)
                 (priority ?*PRIORITY-RESET*)
