@@ -40,6 +40,7 @@
   (wm-robmem-sync-enable "/domain/fact/rs-prepared-color")
   (wm-robmem-sync-enable "/domain/fact/rs-filled-with")
   (wm-robmem-sync-enable "/domain/fact/ds-prepared-gate")
+  (wm-robmem-sync-enable "/domain/fact/mps-side-free")
   (wm-robmem-sync-enable "/domain/fact/wp-unused")
   (wm-robmem-sync-enable "/domain/fact/wp-usable")
   (wm-robmem-sync-enable "/domain/fact/wp-at")
