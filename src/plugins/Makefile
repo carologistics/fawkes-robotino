@@ -31,7 +31,7 @@ SUBDIRS	= clips-motor-switch \
 		laser_front_dist \
 		mps-laser-gen \
 		webtools-bridge \
-		skiller_state \
+		skiller_motor_state \
 		asp-planner
 
 include $(BUILDSYSDIR)/rules.mk

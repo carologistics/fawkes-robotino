@@ -1,6 +1,6 @@
 
 #*****************************************************************************
-#         Makefile Build System for Fawkes: Skiller State LED
+#         Makefile Build System for Fawkes: Skiller Motor State LED
 #                            -------------------
 #   Created on Fri Jun 14 15:00:36 2019
 #   Copyright (C) 2019 by Morian Sonnet
@@ -17,15 +17,15 @@
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 
-LIBS_skiller_state = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
+LIBS_skiller_motor_state = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
                  fawkesblackboard fawkesinterface \
                  SkillerInterface RobotinoSensorInterface
-OBJS_skiller_state = skiller_state_plugin.o skiller_state_thread.o
+OBJS_skiller_motor_state = skiller_motor_state_plugin.o skiller_motor_state_thread.o
 
 CFLAGS += $(CFLAGS_CPP11)
 
-OBJS_all    = $(OBJS_skiller_state)
-PLUGINS_all = $(PLUGINDIR)/skiller_state.$(SOEXT)
+OBJS_all    = $(OBJS_skiller_motor_state)
+PLUGINS_all = $(PLUGINDIR)/skiller_motor_state.$(SOEXT)
 PLUGINS_build = $(PLUGINS_all)
 
 include $(BUILDSYSDIR)/base.mk

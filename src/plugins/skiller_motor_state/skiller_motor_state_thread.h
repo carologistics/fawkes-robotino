@@ -19,27 +19,33 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#ifndef __PLUGINS_SKILLER_STATE_THREAD_H_
-#define __PLUGINS_SKILLER_STATE_THREAD_H_
+#ifndef __PLUGINS_SKILLER_MOTOR_STATE_THREAD_H_
+#define __PLUGINS_SKILLER_MOTOR_STATE_THREAD_H_
 
 #include <aspect/blackboard.h>
 #include <aspect/blocked_timing.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
+#include <blackboard/interface_listener.h>
 #include <core/threading/thread.h>
+
+#include <interfaces/MotorInterface.h>
+#include <interfaces/RobotinoSensorInterface.h>
+#include <interfaces/SkillerInterface.h>
 
 namespace fawkes {
 class SkillerInterface;
 class RobotinoSensorInterface;
 } // namespace fawkes
 
-class SkillerStateThread : public fawkes::Thread,
-                           public fawkes::LoggingAspect,
-                           public fawkes::ConfigurableAspect,
-                           public fawkes::BlockedTimingAspect,
-                           public fawkes::BlackBoardAspect {
+class SkillerMotorStateThread : public fawkes::Thread,
+                                public fawkes::LoggingAspect,
+                                public fawkes::ConfigurableAspect,
+                                public fawkes::BlockedTimingAspect,
+                                public fawkes::BlackBoardAspect,
+                                public fawkes::BlackBoardInterfaceListener {
 public:
-  SkillerStateThread();
+  SkillerMotorStateThread();
 
   virtual void init();
   virtual void loop();

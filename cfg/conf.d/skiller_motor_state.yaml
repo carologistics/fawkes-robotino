@@ -1,7 +1,7 @@
 %YAML 1.2
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
-/skiller_state:
+/skiller_motor_state:
   # Interface IDs of SkillerInterface and RobotinoSensorInterface to read from
   # and send message to.
   skiller-interface-id: Skiller

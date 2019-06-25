@@ -1,6 +1,6 @@
 
 /***************************************************************************
- *  skiller_state_plugin.cpp - Indicate skiller state through LED
+ *  skiller_motor_state_plugin.cpp - Indicate skiller & motor state through LED
  *
  *  Created: Fri Jun 14 15:03:30 2019
  *  Copyright  2019  Morian Sonnet
@@ -22,22 +22,22 @@
 
 #include <core/plugin.h>
 
-#include "skiller_state_thread.h"
+#include "skiller_motor_state_thread.h"
 
 using namespace fawkes;
 
 /** Plugin to indicate skiller state by LED.
  * @author Morian Sonnet
  */
-class SkillerStatePlugin : public fawkes::Plugin {
+class SkillerMotorStatePlugin : public fawkes::Plugin {
 public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  SkillerStatePlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new SkillerStateThread());
+  SkillerMotorStatePlugin(Configuration *config) : Plugin(config) {
+    thread_list.push_back(new SkillerMotorStateThread());
   }
 };
 
-PLUGIN_DESCRIPTION("Indicate skiller state through LED")
-EXPORT_PLUGIN(SkillerStatePlugin)
+PLUGIN_DESCRIPTION("Indicate skiller and motor state through LED")
+EXPORT_PLUGIN(SkillerMotorStatePlugin)
