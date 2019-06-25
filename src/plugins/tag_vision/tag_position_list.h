@@ -50,17 +50,12 @@ public:
   /// Destructor
   ~TagPositionList();
 
-  /**
-   * @brief Assigns every marker found to an interface. The interface will stay
-   * the same for a marker as long as the marker is considered seen (visibility
-   * history > 0). It also updates the Marker IDs on the TagVision interface.
-   *
-   * @param marker_list List of marker data
-   * @param laser_line_ifs List of laser_line interfaces
-   */
   void
   update_blackboard(std::vector<alvar::MarkerData> *marker_list,
                     std::vector<fawkes::LaserLineInterface *> *laser_line_ifs);
+
+  TagPositionInterfaceHelper *
+  find_suitable_interface(const alvar::MarkerData &) const;
 
 private:
   /// How many markers can be detected at the same time

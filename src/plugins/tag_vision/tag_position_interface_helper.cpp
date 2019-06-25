@@ -121,17 +121,20 @@ void TagPositionInterfaceHelper::set_pose(alvar::Pose new_pose) {
   this->tf_publisher_->send_transform(stamped_transform);
 }
 
-/**
- * Sets a marker ID to store and identify this interface. It also resets the
- * visibility history so the marker is seen from the beginning on.
- *
- * @param new_id the new ID to set
- */
-void TagPositionInterfaceHelper::set_marker_id(u_int32_t new_id) {
-  // apply the new id
+void TagPositionInterfaceHelper::set_marker_id(unsigned long new_id) {
   this->marker_id_ = new_id;
-  // reset the interface, the visibility history is 0
-  this->visibility_history_ = 0;
+}
+
+unsigned long TagPositionInterfaceHelper::marker_id() const {
+  return this->marker_id_;
+}
+
+int32_t TagPositionInterfaceHelper::visibility_history() const {
+  return visibility_history_;
+}
+
+void TagPositionInterfaceHelper::set_visibility_history(int32_t vis_hist) {
+  visibility_history_ = vis_hist;
 }
 
 /**
