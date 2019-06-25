@@ -87,6 +87,9 @@ void GazsimConveyorThread::finalize() {
 void GazsimConveyorThread::loop() {
 
   pos_if_->set_frame(frame_name_.c_str());
+  if (pos_if_->msgq_first_is<ConveyorPoseInterface::StopICPMessage>()) {
+    pos_if_->msgq_pop();
+  }
   if (new_data_ &&
       pos_if_->msgq_first_is<ConveyorPoseInterface::RunICPMessage>()) {
     new_data_ = false;
