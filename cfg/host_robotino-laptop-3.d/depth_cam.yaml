@@ -12,16 +12,6 @@ conveyor_plane:
   realsense_switch: "realsense2"
 
 fawkes/meta_plugins:
-  m-skiller:
-    - ros
-    - m-fv-vision
-    - navgraph
-    - navgraph-generator
-    - navgraph-generator-mps
-    - skiller
+  m-realsense:
     - realsense2
-    - conveyor-plane
-    - conveyor-pose
-    - ros-pcl
-    - skiller-rest-api
 
