@@ -37,7 +37,6 @@
 #endif
 
 #define EMPTY_INTERFACE_MARKER_ID 0
-#define CHILD_FRAME "/tag_"
 #define INTERFACE_UNSEEN_BOUND -5
 
 class TagPositionInterfaceHelper {
@@ -114,10 +113,10 @@ private:
   size_t index_;
 
   /// The frame of reference for this tag
-  std::string frame_;
+  std::string cam_frame_;
 
   /// The child frame / name of the transform
-  std::string child_frame_;
+  std::string tag_frame_;
 
   /// The clock to get the time stamps for StampedTransform nad Transform
   /// publishing
