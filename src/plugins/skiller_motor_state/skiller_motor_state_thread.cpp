@@ -37,7 +37,9 @@ using namespace fawkes;
 /** Constructor. */
 SkillerMotorStateThread::SkillerMotorStateThread()
     : Thread("SkillerMotorStateThread", Thread::OPMODE_WAITFORWAKEUP),
-      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT) {}
+      BlackBoardInterfaceListener("skiller_motor_state"),
+      timeout_wait_condition_(), motor_if_changed_flag_(false),
+      skiller_if_changed_flag_(false) {}
 
 void SkillerMotorStateThread::init() {
   cfg_skiller_ifid_ = config->get_string(CFG_PREFIX + "/skiller-interface-id");
@@ -55,18 +57,24 @@ void SkillerMotorStateThread::init() {
   rsens_if_ = blackboard->open_for_reading<RobotinoSensorInterface>(
       cfg_rsens_ifid_.c_str());
 
-  if (cfg_digital_out_motor_) {
-    motor_if_ =
-        blackboard->open_for_reading<MotorInterface>(cfg_motor_ifid_.c_str());
-    disable(cfg_digital_out_motor_);
-  }
+  bbil_add_data_interface(skiller_if_);
 
   disable(cfg_digital_out_red_);
   disable(cfg_digital_out_green_);
   disable(cfg_digital_out_yellow_);
+
+  if (cfg_digital_out_motor_) {
+    motor_if_ =
+        blackboard->open_for_reading<MotorInterface>(cfg_motor_ifid_.c_str());
+    bbil_add_data_interface(motor_if_);
+    disable(cfg_digital_out_motor_);
+  }
+
+  blackboard->register_listener(this);
 }
 
 void SkillerMotorStateThread::finalize() {
+  blackboard->unregister_listener(this);
   blackboard->close(skiller_if_);
   blackboard->close(rsens_if_);
   if (cfg_digital_out_motor_)
@@ -74,39 +82,58 @@ void SkillerMotorStateThread::finalize() {
 }
 
 void SkillerMotorStateThread::loop() {
-  if (rsens_if_->has_writer() && skiller_if_->has_writer()) {
-    rsens_if_->read();
-    skiller_if_->read();
-    SkillerInterface::SkillStatusEnum status = skiller_if_->status();
-    if (status == SkillerInterface::S_RUNNING) {
-      enable(cfg_digital_out_yellow_);
-    } else {
-      disable(cfg_digital_out_yellow_);
-    }
-    if (status == SkillerInterface::S_FINAL) {
-      final_time_ = fawkes::Time();
-      enable(cfg_digital_out_green_);
-    }
-    if (status == SkillerInterface::S_FAILED) {
-      failed_time_ = fawkes::Time();
-      enable(cfg_digital_out_red_);
-    }
+  if (!rsens_if_->has_writer())
+    return;
+  rsens_if_->read();
 
-    if (cfg_digital_out_motor_) {
-      motor_if_->read();
-      if (motor_if_->motor_state() == MotorInterface::MOTOR_DISABLED) {
-        enable(cfg_digital_out_motor_);
-      } else {
-        disable(cfg_digital_out_motor_);
+  if (skiller_if_changed_flag_) { // check first the easy things
+    if (skiller_if_->has_writer()) {
+      skiller_if_changed_flag_ = false;
+      skiller_if_->read();
+      signal_skiller_change();
+    }
+  }
+
+  if (cfg_digital_out_motor_) {
+    if (motor_if_changed_flag_) {
+      if (motor_if_->has_writer()) {
       }
+      motor_if_changed_flag_ = false;
+      motor_if_->read();
+      signal_motor_change();
     }
+  }
 
-    if (fawkes::Time() - final_time_ > cfg_timeout_) {
-      disable(cfg_digital_out_green_);
-    }
-    if (fawkes::Time() - failed_time_ > cfg_timeout_) {
-      disable(cfg_digital_out_red_);
-    }
+  while (!motor_if_changed_flag_ && !skiller_if_changed_flag_ &&
+         (!final_time_.is_zero() || !failed_time_.is_zero())) {
+    if (handle_timeout_interruptable())
+      break;
+  }
+
+}
+
+void SkillerMotorStateThread::signal_skiller_change() {
+  SkillerInterface::SkillStatusEnum status = skiller_if_->status();
+  if (status == SkillerInterface::S_RUNNING) {
+    enable(cfg_digital_out_yellow_);
+  } else {
+    disable(cfg_digital_out_yellow_);
+  }
+  if (status == SkillerInterface::S_FINAL) {
+    final_time_ = fawkes::Time() + cfg_timeout_;
+    enable(cfg_digital_out_green_);
+  }
+  if (status == SkillerInterface::S_FAILED) {
+    failed_time_ = fawkes::Time() + cfg_timeout_;
+    enable(cfg_digital_out_red_);
+  }
+}
+
+void SkillerMotorStateThread::signal_motor_change() {
+  if (motor_if_->motor_state() == MotorInterface::MOTOR_DISABLED) {
+    enable(cfg_digital_out_motor_);
+  } else {
+    disable(cfg_digital_out_motor_);
   }
 }
 
@@ -126,4 +153,41 @@ void SkillerMotorStateThread::disable(unsigned int output) {
     rsens_if_->msgq_enqueue(msg);
   }
   return;
+}
+
+bool SkillerMotorStateThread::handle_timeout_interruptable() {
+  fawkes::Time *wait_until = &failed_time_;
+  unsigned int to_disable = 0;
+  if (!final_time_.is_zero()) { // still need to reset final led
+    wait_until = &final_time_;
+    to_disable = cfg_digital_out_green_;
+  }
+  if (!failed_time_.is_zero()) { // still need to reset failed led
+    if (*wait_until >= failed_time_) {
+      wait_until = &failed_time_;
+      to_disable = cfg_digital_out_red_;
+    }
+  }
+
+  long int wait_until_sec = wait_until->get_sec(),
+           wait_until_nsec = wait_until->get_nsec();
+
+  if (timeout_wait_condition_.abstimed_wait(wait_until_sec, wait_until_nsec)) {
+    return true;
+  } else {
+    disable(to_disable);
+    *wait_until = fawkes::Time(0, 0); // also don't need to reset this anymore
+  }
+  return false;
+}
+
+void SkillerMotorStateThread::bb_interface_data_changed(
+    fawkes::Interface *interface) throw() {
+  if (*interface == *skiller_if_) {
+    skiller_if_changed_flag_ = true;
+  } else {
+    motor_if_changed_flag_ = true;
+  }
+  timeout_wait_condition_.wake_all();
+  wakeup();
 }

@@ -28,10 +28,9 @@
 #include <aspect/logging.h>
 #include <blackboard/interface_listener.h>
 #include <core/threading/thread.h>
+#include <core/threading/wait_condition.h>
 
-#include <interfaces/MotorInterface.h>
-#include <interfaces/RobotinoSensorInterface.h>
-#include <interfaces/SkillerInterface.h>
+#include <atomic>
 
 namespace fawkes {
 class SkillerInterface;
@@ -42,15 +41,14 @@ class RobotinoSensorInterface;
 class SkillerMotorStateThread : public fawkes::Thread,
                                 public fawkes::LoggingAspect,
                                 public fawkes::ConfigurableAspect,
-                                public fawkes::BlockedTimingAspect,
                                 public fawkes::BlackBoardAspect,
                                 public fawkes::BlackBoardInterfaceListener {
 public:
   SkillerMotorStateThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+  virtual void init() override;
+  virtual void loop() override;
+  virtual void finalize() override;
 
   /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
@@ -75,6 +73,17 @@ private:
   fawkes::SkillerInterface *skiller_if_;
   fawkes::RobotinoSensorInterface *rsens_if_;
   fawkes::MotorInterface *motor_if_;
+
+  fawkes::WaitCondition timeout_wait_condition_;
+
+  virtual void bb_interface_data_changed(fawkes::Interface *interface) throw() override;
+
+  std::atomic<bool> motor_if_changed_flag_;
+  std::atomic<bool> skiller_if_changed_flag_;
+
+  void signal_skiller_change();
+  void signal_motor_change();
+  bool handle_timeout_interruptable();
 };
 
 #endif
