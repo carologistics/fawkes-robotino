@@ -45,9 +45,8 @@ const std::string TagVisionThread::tag_frame_basename = "tag_";
 TagVisionThread::TagVisionThread()
     : Thread("TagVisionThread", Thread::OPMODE_WAITFORWAKEUP),
       VisionAspect(VisionAspect::CYCLIC),
-      ConfigurationChangeHandler(CFG_PREFIX), fawkes::TransformAspect(
-                                                  fawkes::TransformAspect::BOTH,
-                                                  "tags") {
+      ConfigurationChangeHandler(CFG_PREFIX),
+      fawkes::TransformAspect(fawkes::TransformAspect::BOTH_DEFER_PUBLISHER) {
   fv_cam_ = nullptr;
   shm_buffer_ = nullptr;
   image_buffer_ = nullptr;
@@ -128,9 +127,9 @@ void TagVisionThread::init() {
   max_marker_ = 16;
   this->markers_ = new std::vector<alvar::MarkerData>();
 
-  this->tag_interfaces_ = new TagPositionList(
-      this->blackboard, tf_listener, this->max_marker_, frame, this->name(),
-      this->logger, this->clock, this->tf_publisher);
+  this->tag_interfaces_ =
+      new TagPositionList(this->blackboard, tf_listener, this->max_marker_,
+                          frame, this->name(), this->logger, this->clock, this);
   // get laser-line interfaces
   laser_line_ifs_ = new std::vector<fawkes::LaserLineInterface *>();
   for (int i = 1; i <= 8; i++) {
@@ -164,6 +163,14 @@ void TagVisionThread::finalize() {
     laser_line_ifs_->pop_back();
   }
   delete laser_line_ifs_;
+}
+
+tf::TransformPublisher *TagVisionThread::get_tf_publisher(size_t idx) {
+  if (tf_publishers.find(tag_frame_basename + std::to_string(idx)) ==
+      tf_publishers.end())
+    tf_add_publisher("%s%ld", tag_frame_basename.c_str(), idx);
+
+  return tf_publishers[tag_frame_basename + std::to_string(idx)];
 }
 
 void TagVisionThread::loop() {

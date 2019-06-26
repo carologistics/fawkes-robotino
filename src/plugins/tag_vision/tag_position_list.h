@@ -40,13 +40,15 @@
 
 #include "tag_position_interface_helper.h"
 
+class TagVisionThread;
+
 class TagPositionList : public std::vector<TagPositionInterfaceHelper *> {
 public:
   TagPositionList(fawkes::BlackBoard *blackboard,
                   fawkes::tf::Transformer *tf_listener, size_t max_markers,
                   std::string cam_frame, std::string thread_name,
                   fawkes::Logger *logger, fawkes::Clock *clock,
-                  fawkes::tf::TransformPublisher *tf_publisher);
+                  TagVisionThread *main_thread);
   /// Destructor
   ~TagPositionList();
 
@@ -71,7 +73,7 @@ private:
   /// The clock for the StampedTransforms
   fawkes::Clock *clock_;
   /// Publisher for the transforms
-  fawkes::tf::TransformPublisher *tf_publisher_;
+  TagVisionThread *main_thread_;
 
   std::string cam_frame_;
   fawkes::tf::Transformer *tf_listener_;
