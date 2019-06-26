@@ -43,8 +43,8 @@
 class TagPositionList : public std::vector<TagPositionInterfaceHelper *> {
 public:
   TagPositionList(fawkes::BlackBoard *blackboard,
-                  fawkes::tf::Transformer *tf_listener, u_int32_t max_markers,
-                  std::string frame, std::string thread_name,
+                  fawkes::tf::Transformer *tf_listener, size_t max_markers,
+                  std::string cam_frame, std::string thread_name,
                   fawkes::Logger *logger, fawkes::Clock *clock,
                   fawkes::tf::TransformPublisher *tf_publisher);
   /// Destructor
@@ -59,7 +59,7 @@ public:
 
 private:
   /// How many markers can be detected at the same time
-  u_int32_t max_markers_;
+  size_t max_markers_;
   /// The blackboard to publish on
   fawkes::BlackBoard *blackboard_;
   /// Tag vision inforamtion interface
@@ -73,7 +73,7 @@ private:
   /// Publisher for the transforms
   fawkes::tf::TransformPublisher *tf_publisher_;
 
-  std::string frame_;
+  std::string cam_frame_;
   fawkes::tf::Transformer *tf_listener_;
 
   alvar::Pose get_laser_line_pose(fawkes::LaserLineInterface *laser_line_if);

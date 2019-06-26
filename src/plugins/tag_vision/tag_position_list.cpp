@@ -51,7 +51,7 @@ using namespace fawkes;
  */
 TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard,
                                  fawkes::tf::Transformer *tf_listener,
-                                 u_int32_t max_markers, std::string frame,
+                                 size_t max_markers, std::string cam_frame,
                                  std::string thread_name,
                                  fawkes::Logger *logger, fawkes::Clock *clock,
                                  fawkes::tf::TransformPublisher *tf_publisher) {
@@ -62,7 +62,7 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard,
   this->logger_ = logger;
   this->clock_ = clock;
   this->tf_publisher_ = tf_publisher;
-  frame_ = frame;
+  this->cam_frame_ = cam_frame;
   this->tf_listener_ = tf_listener;
 
   // create blackboard interfaces
@@ -77,10 +77,11 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard,
           this->blackboard_->open_for_writing<fawkes::Position3DInterface>(
               interface_name.c_str());
       // set the frame of the interface
-      interface->set_frame(frame.c_str());
+      interface->set_frame(cam_frame.c_str());
       // generate a helper class and push it into this vector
+
       this->push_back(new TagPositionInterfaceHelper(
-          interface, i, this->clock_, this->tf_publisher_, frame));
+          interface, i, this->clock_, this->tf_publisher_, cam_frame));
     } catch (std::exception &e) {
       this->logger_->log_error(thread_name.c_str(),
                                "Could not open the blackboard: %s", e.what());
@@ -139,10 +140,10 @@ alvar::Pose TagPositionList::get_laser_line_pose(
   try {
     //    logger_->log_info("tag_vision", "Transform from %s to %s",
     //    laser_line_if->frame_id(), frame_.c_str());
-    tf_listener_->transform_pose(frame_, f_sp_in, f_sp_out);
+    tf_listener_->transform_pose(cam_frame_, f_sp_in, f_sp_out);
   } catch (fawkes::Exception &) {
     f_sp_in.stamp = fawkes::Time(0, 0);
-    tf_listener_->transform_pose(frame_, f_sp_in, f_sp_out);
+    tf_listener_->transform_pose(cam_frame_, f_sp_in, f_sp_out);
     //    logger_->log_warn("tag_vision", "Can't transform laser-line; error
     //    %s\nuse newest", e.what());
   }
