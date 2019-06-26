@@ -24,6 +24,7 @@
 #include <utils/math/angle.h>
 
 #include "tag_position_list.h"
+#include "tag_vision_thread.h"
 
 /** @class TagPositionList "tag_position_list.h"
  * This class handles the Tag Positions and the Blackboard communication for the
@@ -54,14 +55,14 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard,
                                  size_t max_markers, std::string cam_frame,
                                  std::string thread_name,
                                  fawkes::Logger *logger, fawkes::Clock *clock,
-                                 fawkes::tf::TransformPublisher *tf_publisher) {
+                                 TagVisionThread *main_thread) {
   // store parameters
   this->blackboard_ = blackboard;
   this->max_markers_ = max_markers;
   this->thread_name_ = thread_name;
   this->logger_ = logger;
   this->clock_ = clock;
-  this->tf_publisher_ = tf_publisher;
+  this->main_thread_ = main_thread;
   this->cam_frame_ = cam_frame;
   this->tf_listener_ = tf_listener;
 
@@ -81,7 +82,8 @@ TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard,
       // generate a helper class and push it into this vector
 
       this->push_back(new TagPositionInterfaceHelper(
-          interface, i, this->clock_, this->tf_publisher_, cam_frame));
+          interface, i, this->clock_, main_thread_->get_tf_publisher(i),
+          cam_frame));
     } catch (std::exception &e) {
       this->logger_->log_error(thread_name.c_str(),
                                "Could not open the blackboard: %s", e.what());
