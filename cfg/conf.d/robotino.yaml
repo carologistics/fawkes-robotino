@@ -94,11 +94,11 @@ hardware/robotino:
 
     # Maximum acceleration and deceleration for translation, m/s^2
     trans-acceleration: 0.4
-    trans-deceleration: 1.0
+    trans-deceleration: 1.5
 
     # Maximum acceleration and deceleration for rotation, rad/s^2
     rot-acceleration: 1.6
-    rot-deceleration: 1.6
+    rot-deceleration: 3.2
 
   bumper:
     # Set to true to enable the emergency stop on bumper contact (provided
