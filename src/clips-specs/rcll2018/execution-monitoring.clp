@@ -263,29 +263,6 @@
   (retract ?pt)
 )
 
-
-(defrule execution-monitoring-enhance-timer-on-mps-nonfinal-states
-" If an action is pending for a certain mps-state and the mps is currently in a non final state (processing, down, ...),
-  enhance the timeout to give the mps enough time to reach final state
-"
-  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	   (id ?id) (state PENDING)
-	   (action-name ?action-name)
-	   (param-values $? ?mps $?))
-  (domain-atomic-precondition (operator ?an) (predicate mps-state) (grounded-with ?id) (param-values ?mps ?state))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
-  (wm-fact (key domain fact mps-state args? m ?mps s ?s&~IDLE&~READY-AT-OUTPUT))
-  ?pt <- (action-timer (plan-id ?plan-id)
-            (action-id ?id)
-            (start-time $?starttime)
-            (timeout-duration ?timeout&:(neq ?timeout ?*MPS-DOWN-TIMEOUT-DURATION*)))
-  =>
-  (printout t "Detected that " ?mps " is " ?s " while " ?action-name " is waiting for it. Enhance timeout-timer" crlf)
-  (modify ?pt (timeout-duration ?*MPS-DOWN-TIMEOUT-DURATION*))
-)
-
-
 (defrule execution-monitoring-enhance-timer-on-mps-wait-for-side-to-clear
 " If an action is pending for a certain mps-side to be free and the mps is currently in a non final state (processing, down, ...),
   enhance the timeout to give the mps enough time to process the workpiece that is still at the side
