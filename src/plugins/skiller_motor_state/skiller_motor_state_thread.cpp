@@ -79,6 +79,9 @@ void SkillerMotorStateThread::init() {
 
   // finally register this thread as a blackboard listener
   blackboard->register_listener(this);
+
+  // activate coalesce wake up, as one loop does all the work to do right now
+  this->set_coalesce_wakeups(true);
 }
 
 void SkillerMotorStateThread::finalize() {
