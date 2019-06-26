@@ -43,12 +43,12 @@ using namespace fawkes;
  * the interfaces
  * @param tf_listener The transform listener
  * @param max_markers Maximum number of markers to detect at the same time
- * @param frame The frame of reference for the tag positions
+ * @param cam_frame The frame of reference for the tag positions
  * @param thread_name Thread name for log information
  * @param logger The loger used for logging
  * @param clock The fawkes clock, used to stamp the transforms
- * @param tf_publisher The fawes transform publisher, used to publish the
- * transforms of the tags
+ * @param main_thread Pointer to the main plugin thread, used to create TF
+ *        publishers
  */
 TagPositionList::TagPositionList(fawkes::BlackBoard *blackboard,
                                  fawkes::tf::Transformer *tf_listener,
@@ -216,6 +216,12 @@ alvar::Pose TagPositionList::get_nearest_laser_line_pose(
   }
 }
 
+/**
+ * Find a blackboard interface manager that we can update with the given
+ * ALVAR marker.
+ * @param marker
+ * @return An unused or matching interface manager.
+ */
 TagPositionInterfaceHelper *TagPositionList::find_suitable_interface(
     const alvar::MarkerData &marker) const {
   int min_vis_hist = std::numeric_limits<int>::max();
@@ -244,6 +250,7 @@ TagPositionInterfaceHelper *TagPositionList::find_suitable_interface(
  * 0). It also updates the Marker IDs on the TagVision interface.
  *
  * @param marker_list The detected markers.
+ * @param laser_line_ifs Laser lines for orientation sanity check
  */
 void TagPositionList::update_blackboard(
     std::vector<alvar::MarkerData> *marker_list,

@@ -89,6 +89,7 @@ public:
 
   fawkes::tf::TransformPublisher *get_tf_publisher(size_t idx);
 
+  /// Common prefix of all tag frame names
   static const std::string tag_frame_basename;
 
 private:
