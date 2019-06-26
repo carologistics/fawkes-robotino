@@ -27,6 +27,8 @@
 #include <interfaces/RobotinoSensorInterface.h>
 #include <interfaces/SkillerInterface.h>
 
+#include <core/threading/mutex_locker.h>
+
 using namespace fawkes;
 
 /** @class SkillerMotorStateThread "act_thread.h"
@@ -38,7 +40,7 @@ using namespace fawkes;
 SkillerMotorStateThread::SkillerMotorStateThread()
     : Thread("SkillerMotorStateThread", Thread::OPMODE_WAITFORWAKEUP),
       BlackBoardInterfaceListener("skiller_motor_state"), final_time_(0, 0),
-      failed_time_(0, 0), timeout_wait_condition_(),
+      failed_time_(0, 0), timeout_wait_condition_(&timeout_wait_mutex_),
       motor_if_changed_flag_(false), skiller_if_changed_flag_(false) {}
 
 void SkillerMotorStateThread::init() {
@@ -202,6 +204,10 @@ bool SkillerMotorStateThread::handle_timeout_interruptable() {
   long int wait_until_sec = wait_until->get_sec(),
            wait_until_nsec = wait_until->get_nsec();
 
+  fawkes::MutexLocker scoped_timeout_mutex(timeout_wait_mutex_);
+  if (motor_if_changed_flag_ || skiller_if_changed_flag_)
+    return true;
+
   // see WaitCondition::abstimed_wait()
   if (timeout_wait_condition_.abstimed_wait(wait_until_sec, wait_until_nsec)) {
     // oh heck, someone wake me up, but it wasn't the alarm I set
@@ -209,6 +215,7 @@ bool SkillerMotorStateThread::handle_timeout_interruptable() {
     // and reset these outputs in the next loop
     return true;
   } else {
+    scoped_timeout_mutex.unlock();
     // sweet, my alarm woke me up, now let's turn off this LED
     disable(to_disable);
     *wait_until = fawkes::Time(0, 0); // also don't need to reset this anymore
@@ -219,8 +226,10 @@ bool SkillerMotorStateThread::handle_timeout_interruptable() {
 void SkillerMotorStateThread::bb_interface_data_changed(
     fawkes::Interface *interface) throw() {
   if (*interface == *skiller_if_) {
+    fawkes::MutexLocker scoped_timeout_mutex(timeout_wait_mutex_);
     skiller_if_changed_flag_ = true;
   } else { // must be motor interface then
+    fawkes::MutexLocker scoped_timeout_mutex(timeout_wait_mutex_);
     motor_if_changed_flag_ = true;
   }
   timeout_wait_condition_.wake_all();

@@ -27,6 +27,7 @@
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <blackboard/interface_listener.h>
+#include <core/threading/mutex.h>
 #include <core/threading/thread.h>
 #include <core/threading/wait_condition.h>
 
@@ -74,6 +75,7 @@ private:
   fawkes::RobotinoSensorInterface *rsens_if_;
   fawkes::MotorInterface *motor_if_;
 
+  fawkes::Mutex timeout_wait_mutex_;
   fawkes::WaitCondition timeout_wait_condition_;
 
   virtual void bb_interface_data_changed(fawkes::Interface *interface) throw() override;
