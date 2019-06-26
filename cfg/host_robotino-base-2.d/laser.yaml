@@ -3,9 +3,13 @@
 ---
 hardware:
   laser:
-    back:
-      serial: 17250137
-      time_offset: -0.040254
     front:
-      serial: 15170145
+      type: TiM55x-Ethernet
+      host: 10.1.0.2
+      port: 2112
       time_offset: -0.061254
+    back:
+      type: TiM55x-Ethernet
+      host: 10.1.0.3
+      port: 2112
+      time_offset: -0.040254
