@@ -117,10 +117,13 @@ fsm:add_transitions{
 
 function INIT:init()
   self.fsm.vars.target_valid = true
-  -- check for waiting position
   self.fsm.vars.waiting_pos = false
 
   if self.fsm.vars.place ~= nil then
+    -- check for waiting position
+    if string.match(self.fsm.vars.place, "%bWAIT") then 
+       self.fsm.vars.waiting_pos = true
+    end
     if string.match(self.fsm.vars.place, "[MC][-]Z[1-7][1-8]") then
       -- place argument is a zone, e.g. M-Z21
       self.fsm.vars.zone = self.fsm.vars.place
@@ -128,9 +131,6 @@ function INIT:init()
       self.fsm.vars.y = tonumber(string.sub(self.fsm.vars.place, 5, 5)) - 0.5
       if string.sub(self.fsm.vars.place, 1, 1) == "M" then
         self.fsm.vars.x = 0 - self.fsm.vars.x
-      end
-      if string.match(self.fsm.vars.place, "%bWAIT") then 
-         self.fsm.vars.waiting_pos = true
       end
     else
       -- place argument is a navgraph point
@@ -182,6 +182,7 @@ function WAIT_TF:loop()
 end
 
 function MOVING:init()
+  print(tostring(self.fsm.vars.waiting_pos))
    self.fsm.vars.msgid_timeout = os.time() + 1
 
    print(self.fsm.vars.ori)
