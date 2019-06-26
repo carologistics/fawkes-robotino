@@ -42,6 +42,7 @@ SkillerMotorStateThread::SkillerMotorStateThread()
       skiller_if_changed_flag_(false) {}
 
 void SkillerMotorStateThread::init() {
+  // first rest all thos config values
   cfg_skiller_ifid_ = config->get_string(CFG_PREFIX + "/skiller-interface-id");
   cfg_rsens_ifid_ = config->get_string(CFG_PREFIX + "/sensor-interface-id");
   cfg_motor_ifid_ = config->get_string(CFG_PREFIX + "/motor-interface-id");
@@ -52,17 +53,23 @@ void SkillerMotorStateThread::init() {
   cfg_digital_out_motor_ = config->get_uint(CFG_PREFIX + "/digital-out-motor");
   cfg_timeout_ = fawkes::Time(config->get_float(CFG_PREFIX + "/timeout"));
 
+  // now open the interfaces which we need definetly, thus skiller and
+  // robotinosensor
   skiller_if_ =
       blackboard->open_for_reading<SkillerInterface>(cfg_skiller_ifid_.c_str());
   rsens_if_ = blackboard->open_for_reading<RobotinoSensorInterface>(
       cfg_rsens_ifid_.c_str());
 
+  // the skiller interface must also be listened to
   bbil_add_data_interface(skiller_if_);
 
+  // finally disable all the outputs
   disable(cfg_digital_out_red_);
   disable(cfg_digital_out_green_);
   disable(cfg_digital_out_yellow_);
 
+  // if the motor state output is also wished for, open the interface,
+  // add it to the listener and disable the output
   if (cfg_digital_out_motor_) {
     motor_if_ =
         blackboard->open_for_reading<MotorInterface>(cfg_motor_ifid_.c_str());
@@ -70,11 +77,15 @@ void SkillerMotorStateThread::init() {
     disable(cfg_digital_out_motor_);
   }
 
+  // finally register this thread as a blackboard listener
   blackboard->register_listener(this);
 }
 
 void SkillerMotorStateThread::finalize() {
+  // important: first deregister, then close
   blackboard->unregister_listener(this);
+
+  // now close all opened interfaces
   blackboard->close(skiller_if_);
   blackboard->close(rsens_if_);
   if (cfg_digital_out_motor_)
@@ -82,18 +93,26 @@ void SkillerMotorStateThread::finalize() {
 }
 
 void SkillerMotorStateThread::loop() {
+  // mandatory to have the robotino sensor interface writer
   if (!rsens_if_->has_writer())
-    return;
+    return; // forget it
   rsens_if_->read();
 
+  // handle change in the skiller interface if necessary
   if (skiller_if_changed_flag_) { // check first the easy things
     if (skiller_if_->has_writer()) {
+      // first clear the flag
+      // if any change in data happens after the inital data change (which
+      // raised the flag) and after the flag was cleared, but before the read(),
+      // the flag is raised again, even though no newer data is available. this
+      // leads to one additional run of handle_change_skiller, which is ok
       skiller_if_changed_flag_ = false;
       skiller_if_->read();
       signal_skiller_change();
     }
   }
 
+  // handle change in the motor interface if necessary
   if (cfg_digital_out_motor_) {
     if (motor_if_changed_flag_) {
       if (motor_if_->has_writer()) {
@@ -104,12 +123,17 @@ void SkillerMotorStateThread::loop() {
     }
   }
 
+  // while no changes need to be handled and we still need to reset some LEDs
   while (!motor_if_changed_flag_ && !skiller_if_changed_flag_ &&
          (!final_time_.is_zero() || !failed_time_.is_zero())) {
     if (handle_timeout_interruptable())
-      break;
+      break; // break, as it was interrupted
   }
 
+  // ok, either all output with timeout are turned off now
+  // then let's sleep now until someone wake us up
+  // *OR* the timeouts got interrupted by some data change we have to handle
+  // let's take a super quick nap now, as another wake up is already pending
 }
 
 void SkillerMotorStateThread::signal_skiller_change() {
@@ -155,7 +179,9 @@ void SkillerMotorStateThread::disable(unsigned int output) {
   return;
 }
 
+// @return True if the timeout was interrupted
 bool SkillerMotorStateThread::handle_timeout_interruptable() {
+  // first determine which LED needs to be reset earliest
   fawkes::Time *wait_until = &failed_time_;
   unsigned int to_disable = 0;
   if (!final_time_.is_zero()) { // still need to reset final led
@@ -169,12 +195,18 @@ bool SkillerMotorStateThread::handle_timeout_interruptable() {
     }
   }
 
+  // transform fawkes::Time to format for timer
   long int wait_until_sec = wait_until->get_sec(),
            wait_until_nsec = wait_until->get_nsec();
 
+  // see WaitCondition::abstimed_wait()
   if (timeout_wait_condition_.abstimed_wait(wait_until_sec, wait_until_nsec)) {
+    // oh heck, someone wake me up, but it wasn't the alarm I set
+    // let's loop!
+    // and reset these outputs in the next loop
     return true;
   } else {
+    // sweet, my alarm woke me up, now let's turn off this LED
     disable(to_disable);
     *wait_until = fawkes::Time(0, 0); // also don't need to reset this anymore
   }
@@ -185,7 +217,7 @@ void SkillerMotorStateThread::bb_interface_data_changed(
     fawkes::Interface *interface) throw() {
   if (*interface == *skiller_if_) {
     skiller_if_changed_flag_ = true;
-  } else {
+  } else { // must be motor interface then
     motor_if_changed_flag_ = true;
   }
   timeout_wait_condition_.wake_all();
