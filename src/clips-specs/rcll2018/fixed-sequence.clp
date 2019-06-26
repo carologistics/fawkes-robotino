@@ -811,40 +811,52 @@
   (bind ?prepare-param-values (values-from-name-value-list ?prepare-params))
   (bind ?process-param-values (values-from-name-value-list ?process-params))
 
+  (bind ?success TRUE)
   ;Special case: if process is a ring mount, we have to get the current number of rings stored
   ; and adapt the param-values
   (if (eq ?prepare-action prepare-rs) then
     (bind ?rs-req (nth$ (+ 1 (member$ r-req ?prepare-params)) ?prepare-params))
-    (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact rs-filled-with))
+    (if (not (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact rs-filled-with))
                                        (eq (wm-key-arg ?wm:key m) ?mps))
       (bind ?rs-before (wm-key-arg ?wm:key n))
+    )) then
+      (bind ?success FALSE)
     )
-    (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact rs-sub))
+    (if (not (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact rs-sub))
                                        (eq (wm-key-arg ?wm:key minuend) ?rs-before)
                                        (eq (wm-key-arg ?wm:key difference) ?rs-req))
       (bind ?rs-after (wm-key-arg ?wm:key subtrahend))
+    )) then
+      (bind ?success FALSE)
     )
-    (bind ?prepare-param-values (insert$ ?prepare-param-values (length$ ?prepare-param-values) ?rs-before))
-    (bind ?process-param-values (insert$ ?process-param-values (length$ ?process-param-values) ?rs-before))
+    (if ?success then 
+      (bind ?prepare-param-values (insert$ ?prepare-param-values (length$ ?prepare-param-values) ?rs-before))
+      (bind ?process-param-values (insert$ ?process-param-values (length$ ?process-param-values) ?rs-before))
 
-    (bind ?prepare-param-values (insert$ ?prepare-param-values (length$ ?prepare-param-values) ?rs-after))
-    (bind ?process-param-values (insert$ ?process-param-values (length$ ?process-param-values) ?rs-after))
-
+      (bind ?prepare-param-values (insert$ ?prepare-param-values (length$ ?prepare-param-values) ?rs-after))
+      (bind ?process-param-values (insert$ ?process-param-values (length$ ?process-param-values) ?rs-after))
+    )
   )
 
-  (assert
-    (plan (id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
+  (if ?success then
+    (assert
+      (plan (id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id))
+      (plan-action (id 1) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
             (action-name lock) (param-values ?mps))
-    (plan-action (id 2) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
+      (plan-action (id 2) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
         (action-name ?prepare-action)
         (param-values ?prepare-param-values))
-    (plan-action (id 3) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
+      (plan-action (id 3) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
                                     (action-name ?process-action)
                                     (param-values ?process-param-values))
       (plan-action (id 4) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
             (action-name unlock)
             (param-values ?mps))
+    )
+    (modify ?g (mode EXPANDED))
+  else
+    (retract ?pre ?pro)
+    (printout error "Tried to expand Process RS goal on changed fact" crlf)
+    (modify ?g (mode RETRACTED) (outcome REJECTED))
   )
-  (modify ?g (mode EXPANDED))
 )
