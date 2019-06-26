@@ -1,0 +1,26 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/realsense
+---
+realsense2:
+  # Frame ID of the PointCloud
+  frame_id: "cam_conveyor"
+
+  # ID of the PointCloud
+  pcl_id: "/camera/depth/points"
+
+  # If true, the camera will be enabled/disabled on incoming Enable/Disable
+  # messages. If false, switch messages will be ignored.
+  use_switch: true
+
+  # Desired Frame rate. Device will try deliver new frames in time.
+  # Use 0 for don't care
+  # Not all Frame rates supported on each device
+  # SR300: 10, 30, 60
+  # D435: 10,15,20,45,60
+  frame_rate: 30
+
+  # Set Laser Power. Some USB3 ports are not able to deliver stable power
+  # use -1 for max power
+  laser_power: -1

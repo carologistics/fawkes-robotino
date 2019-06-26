@@ -28,6 +28,7 @@ depends_interfaces = {
    {v = "motorSwitch", type="SwitchInterface", id="Robotino Motor"},
    {v = "conveyorSwitch", type="SwitchInterface", id="conveyor_plane/switch"},
    {v = "realsenseSwitch", type="SwitchInterface", id="realsense"},
+   {v = "realsense2Switch", type="SwitchInterface", id="realsense2"},
 }
 
 -- Initialize as skill module
@@ -46,7 +47,8 @@ function SWITCH:init()
       laser          = laserSwitch,
       motor          = motorSwitch,
       conveyor       = conveyorSwitch,
-      realsense      = realsenseSwitch
+      realsense      = realsenseSwitch,
+      realsense2      = realsense2Switch,
    }
    iface = ifmap[self.fsm.vars.iface]
 	 printf("Called for %s (%s)", self.fsm.vars.iface, iface:uid())
