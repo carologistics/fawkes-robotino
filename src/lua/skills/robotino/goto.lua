@@ -46,7 +46,7 @@ if place is set, this will be used and x, y and ori will be ignored
 skillenv.skill_module(_M)
 
 local tf_mod = require 'fawkes.tfutils'
-local waiting_pos = fsm.vars.waiting_pos
+
 -- Tunables
 --local REGION_TRANS=0.2
 
@@ -77,6 +77,8 @@ function target_unreachable()
 end
 
 function travelled_distance(self)
+  --Skill will final after it travelled the euclidean distance of 1m from its starting position--
+  --Adapt distance_to_travel for longer or shorter distances--
   distance_to_travel = 1.0
   local x = (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x) * (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x)
   local y = (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y) * (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y)
@@ -117,16 +119,12 @@ function INIT:init()
   self.fsm.vars.target_valid = true
   -- check for waiting position
   self.fsm.vars.waiting_pos = false
-  waiting_pos = false
-  if self.fsm.vars.place ~=nil then
+
+  if self.fsm.vars.place ~= nil then
     if string.match(self.fsm.vars.place, "%bWAIT") then 
       self.fsm.vars.waiting_pos = true
       waiting_pos = true
-    end
-  end
-
-  if self.fsm.vars.place ~= nil then
-    if string.match(self.fsm.vars.place, "[MC][-]Z[1-7][1-8]") then
+    elseif string.match(self.fsm.vars.place, "[MC][-]Z[1-7][1-8]") then
       -- place argument is a zone, e.g. M-Z21
       self.fsm.vars.zone = self.fsm.vars.place
       self.fsm.vars.x = tonumber(string.sub(self.fsm.vars.place, 4, 4)) - 0.5
@@ -225,7 +223,7 @@ function TIMEOUT:loop()
 end
 
 function MOVING:reset()
-    if navigator:has_writer() and not navigator:is_final() and waiting_pos == false then
+    if navigator:has_writer() and not navigator:is_final() and self.fsm.vars.waiting_pos == false then
        printf("goto: sending stop");
        navigator:msgq_enqueue(navigator.StopMessage:new(fsm.vars.msgid or 0))
     end
