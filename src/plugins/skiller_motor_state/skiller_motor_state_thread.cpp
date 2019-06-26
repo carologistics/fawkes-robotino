@@ -37,9 +37,9 @@ using namespace fawkes;
 /** Constructor. */
 SkillerMotorStateThread::SkillerMotorStateThread()
     : Thread("SkillerMotorStateThread", Thread::OPMODE_WAITFORWAKEUP),
-      BlackBoardInterfaceListener("skiller_motor_state"),
-      timeout_wait_condition_(), motor_if_changed_flag_(false),
-      skiller_if_changed_flag_(false) {}
+      BlackBoardInterfaceListener("skiller_motor_state"), final_time_(0, 0),
+      failed_time_(0, 0), timeout_wait_condition_(),
+      motor_if_changed_flag_(false), skiller_if_changed_flag_(false) {}
 
 void SkillerMotorStateThread::init() {
   // first rest all thos config values
