@@ -1,15 +1,8 @@
 %YAML 1.2
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
-hardware:
-  laser:
-    front:
-      type: TiM55x-Ethernet
-      host: 10.1.0.2
-      port: 2112
-      time_offset: -0.061254
-    back:
-      type: TiM55x-Ethernet
-      host: 10.1.0.3
-      port: 2112
-      time_offset: -0.040254
+hardware/laser:
+  front:
+    time_offset: -0.061254
+  back:
+    time_offset: -0.040254
