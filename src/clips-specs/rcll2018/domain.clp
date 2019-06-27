@@ -103,6 +103,7 @@
 	  (domain-object (name R-1) (type robot))
     (domain-object (name R-2) (type robot))
     (domain-object (name R-3) (type robot))
+    (domain-fact (name at) (param-values ?self START INPUT))
     (domain-fact (name robot-waiting) (param-values ?self))
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
     (domain-fact (name can-hold) (param-values ?self))
@@ -253,8 +254,6 @@
     (domain-fact (name wp-ring2-color) (param-values WP1 RING_NONE))
     (domain-fact (name wp-ring3-color) (param-values WP1 RING_NONE))
     (domain-fact (name wp-unused) (param-values WP1))
-
-    (domain-fact (name at) (param-values ?self START INPUT))
 
     (domain-fact (name cs-can-perform) (param-values ?cs1 RETRIEVE_CAP))
     (domain-fact (name cs-can-perform) (param-values ?cs2 RETRIEVE_CAP))
