@@ -760,7 +760,6 @@
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
@@ -771,8 +770,6 @@
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
   ;To-Do: Model the bs active-side
   ;Order CEs
@@ -805,8 +802,14 @@
   ;	 Model old agents constraints
   ;	 (in-production 0)
   ;	 (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
-  (not (wm-fact (key order meta wp-for-order args? wp ?any-ord-wp ord ?order)))
 
+  (or (and (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
+           (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
+           (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+           (not (wm-fact (key order meta wp-for-order args? wp ?any-ord-wp ord ?order))))
+      (and (wm-fact (key domain fact holding args? r ?robot wp ?spawned-wp))
+           (wm-fact (key domain fact wp-base-color args? wp ?spawned-wp col ?base-color))
+           (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (eq ?complexity C0))
   =>
@@ -987,7 +990,7 @@
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
 
   (or (not (wm-fact (key domain fact wp-at args? wp ? m ?mps-rs side INPUT)))
-      ; The next rs is equal to the current rs. So if the workpiece gets taken 
+      ; The next rs is equal to the current rs. So if the workpiece gets taken
       ; from the output, we know that the workpiece from the input gets processed
       (test (eq ?prev-rs ?mps-rs))
   )
