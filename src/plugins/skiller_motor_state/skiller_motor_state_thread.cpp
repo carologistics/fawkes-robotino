@@ -104,6 +104,7 @@ void SkillerMotorStateThread::loop() {
   rsens_if_->read();
 
   // handle change in the skiller interface if necessary
+  // by setting the correct signal lamps
   if (skiller_if_changed_flag_) { // check first the easy things
     if (skiller_if_->has_writer()) {
       // first clear the flag
@@ -118,6 +119,7 @@ void SkillerMotorStateThread::loop() {
   }
 
   // handle change in the motor interface if necessary
+  // by setting the correct signal lamps
   if (cfg_digital_out_motor_) {
     if (motor_if_changed_flag_) {
       if (motor_if_->has_writer()) {
@@ -133,7 +135,11 @@ void SkillerMotorStateThread::loop() {
          (!final_time_.is_zero() || !failed_time_.is_zero())) {
     unsigned int digital_output_to_reset;
     fawkes::Time *timeout_at;
+    // first decide which lamp should be reset first
     get_timeout(timeout_at, digital_output_to_reset);
+    // now wait until the right moment to disable the led
+    // However, we need to react on changes in the skiller ot motor interface
+    // Thus, use interruptable timeout
     if (interruptable_timeout(timeout_at))
       break; // break, as it was interrupted
 
@@ -147,6 +153,7 @@ void SkillerMotorStateThread::loop() {
   // let's take a super quick nap now, as another wake up is already pending
 }
 
+// set the correct lights corresponding to the skiller interface
 void SkillerMotorStateThread::signal_skiller_change() {
   SkillerInterface::SkillStatusEnum status = skiller_if_->status();
   if (status == SkillerInterface::S_RUNNING) {
@@ -164,6 +171,7 @@ void SkillerMotorStateThread::signal_skiller_change() {
   }
 }
 
+// set the correct lights corresponding to the motor interface
 void SkillerMotorStateThread::signal_motor_change() {
   if (motor_if_->motor_state() == MotorInterface::MOTOR_DISABLED) {
     enable(cfg_digital_out_motor_);
@@ -190,6 +198,10 @@ void SkillerMotorStateThread::disable(unsigned int output) {
   return;
 }
 
+// function to decide which lamp should be reset first
+// @param wait_until, this is the pointer to the time at which the lamp should
+// be reset
+// @oaram digital_output_to_reset the corresponding signal lamp output
 void SkillerMotorStateThread::get_timeout(
     fawkes::Time *&wait_until, unsigned int &digital_output_to_reset) {
   // first determine which LED needs to be reset earliest
@@ -207,6 +219,9 @@ void SkillerMotorStateThread::get_timeout(
   }
 }
 
+// function to disable the lamp after a timeout
+// additionally also resets the corresponding fawkes time entry
+// to make clear that the lamp is already reset
 void SkillerMotorStateThread::signal_timedout_lights(
     fawkes::Time *wait_until, unsigned int digital_output_to_reset) {
   *wait_until = fawkes::Time(0, 0); // don't need to check this timeout anymore
@@ -220,6 +235,21 @@ bool SkillerMotorStateThread::interruptable_timeout(fawkes::Time *wait_until) {
            wait_until_nsec = wait_until->get_nsec();
 
   fawkes::MutexLocker scoped_timeout_mutex(timeout_wait_mutex_);
+  // use this mutex to make sure that the interface
+  // flags cannot be changed between checking them a
+  // last time and starting the interrupt
+  // otherwise, the following calling series could happen:
+  // we check that the flags are both off-> Ok, let's continue bed preparation
+  // The blackboard changes, hence the flags get set and the
+  // timeout_wait_condition is woken up The timeout is not running yet, hence
+  // the wakeup doesn't have effect Now we start the wait_conditon, as the wake
+  // up call already happened, no one is bothering us
+  // => We don't react fast enough on skiller/motor changes!
+  //
+  // With mutex: the flags setting as well as the wakeup call is blocked
+  // until the wait_condition started, thus the wakeup call will definetely
+  // interrupt our sleep
+  // => We react on changes of the skiller/motor interface on time.
   if (motor_if_changed_flag_ || skiller_if_changed_flag_)
     return true;
 
