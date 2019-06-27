@@ -797,12 +797,6 @@
             (wm-fact (key domain fact order-complexity args? ord ?any-order com ?other-complexity))
             (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
             (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
-  ;No one started this order already
-  ;TODO: for multi-agent
-  ;	 Model old agents constraints
-  ;	 (in-production 0)
-  ;	 (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
-
   (or (and (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
            (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
            (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
@@ -863,8 +857,6 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args?         r ?robot))
-  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
   (wm-fact (key domain fact mps-state args?      m ?mps-rs s ~BROKEN))
@@ -879,7 +871,6 @@
   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs m ?mps-rs side INPUT)))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args?  m ?mps-bs t BS))
-  (wm-fact (key domain fact mps-state args? m ?mps-bs s ~BROKEN))
   (wm-fact (key domain fact mps-team args?  m ?mps-bs col ?team-color))
   (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
   ;Order CEs
@@ -889,18 +880,20 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color) (value ?qd&:(> ?qr ?qd)))
   ;Active Order CEs
+  ;No one started this order already
+  (or (and (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
+           (wm-fact (key domain fact mps-state args? m ?mps-bs s ~BROKEN&~DOWN))
+           (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+           (not (wm-fact (key order meta wp-for-order args? wp ?any-ord-wp ord ?order))))
+      (and (wm-fact (key domain fact holding args? r ?robot wp ?spawned-wp))
+           (wm-fact (key domain fact wp-base-color args? wp ?spawned-wp col ?base-color))
+           (wm-fact (key order meta wp-for-order args? wp ?spawned-wp ord ?order))))
   ;This order complexity is not produced exclusively while another exclusive
   ;complexity order is already started
-  (not (and (wm-fact (key order meta wp-for-order args? wp ?ord-wp ord ?any-order))
+  (not (and (wm-fact (key order meta wp-for-order args? wp ?ord-wp&~?spawned-wp ord ?any-order))
             (wm-fact (key domain fact order-complexity args? ord ?any-order com ?other-complexity))
             (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
             (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
-  ;No one started this order already
-  ;TODO: for multi-agent
-  ;	 Model old agents constraints
-  ;	 (in-production 0)
-  ;	 (in-delivery ?id&:(> ?qr (+ ?qd ?id)))"
-  (not (wm-fact (key order meta wp-for-order args? wp ?any-ord-wp ord ?order)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (neq ?complexity C0))
   =>
