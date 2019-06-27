@@ -1027,7 +1027,7 @@
                         ring2-color ?order-ring2-color
                         ring3-color ?order-ring3-color
                         curr-ring-color ?curr-ring-color
-                        ring-pos ?ring-pos
+                        ring-pos (int-to-sym ?ring-pos)
                         rs-before ?bases-filled
                         rs-after ?bases-remain
                         rs-req ?bases-needed

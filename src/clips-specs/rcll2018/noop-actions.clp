@@ -78,8 +78,8 @@
 
   =>
   (modify ?pa (state EXECUTION-SUCCEEDED))
-  (bind ?mount-ring-action-name (sym-cat rs-mount-ring ?ring-pos))
-    (switch ?ring-pos
+  (bind ?mount-ring-action-name (sym-cat rs-mount-ring (sym-to-int ?ring-pos)))
+    (switch (sym-to-int ?ring-pos)
       (case 1 then
         (bind ?mount-ring-param-names m wp col r-req)
         (bind ?mount-ring-param-values ?rs ?wp ?rc ?rs-req))

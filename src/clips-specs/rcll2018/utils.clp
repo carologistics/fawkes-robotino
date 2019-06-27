@@ -759,6 +759,23 @@
   (return 0)
 )
 
+(deffunction int-to-sym (?int)
+" @param ?int Number as Integer (0,1,2 or 3)
+
+  @return Domain representation of number (ZERO|ONE|TWO|THREE)
+"
+  (switch ?int
+    (case 0 then
+      (return ZERO))
+    (case 1 then
+      (return ONE))
+    (case 2 then
+      (return TWO))
+    (case 3 then
+      (return THREE))
+  )
+  (return nil)
+)
 
 (deffunction bool-to-int (?bool)
 " @param ?bool boolean
