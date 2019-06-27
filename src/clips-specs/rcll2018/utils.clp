@@ -200,6 +200,19 @@
   )
 )
 
+(deffunction wm-fact-to-navgraph-node (?key)
+	"Get the name of the navgraph node given a wm-fact key, where the machine has
+	 the arg 'm' and the side the arg 'side'.
+	 @param ?key key of the wm-fact
+	 @return The name of the navgraph node."
+	(bind ?suffix "")
+	(switch (wm-key-arg ?key side)
+		(case INPUT then (bind ?suffix "-I"))
+		(case OUTPUT then (bind ?suffix "-O"))
+	)
+	(return (str-cat (wm-key-arg ?key m) ?suffix))
+)
+
 
 ;---------------Exploration-Phase functions--------------------------
 
