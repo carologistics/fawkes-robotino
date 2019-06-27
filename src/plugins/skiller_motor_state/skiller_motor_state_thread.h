@@ -78,14 +78,20 @@ private:
   fawkes::Mutex timeout_wait_mutex_;
   fawkes::WaitCondition timeout_wait_condition_;
 
-  virtual void bb_interface_data_changed(fawkes::Interface *interface) throw() override;
+  virtual void
+  bb_interface_data_changed(fawkes::Interface *interface) throw() override;
 
   std::atomic<bool> motor_if_changed_flag_;
   std::atomic<bool> skiller_if_changed_flag_;
 
+  void get_timeout(fawkes::Time *&wait_until,
+                   unsigned int &digital_output_to_reset);
+  void signal_timedout_lights(fawkes::Time *wait_until,
+                              unsigned int digital_output_to_reset);
+  bool interruptable_timeout(fawkes::Time *wait_until);
+
   void signal_skiller_change();
   void signal_motor_change();
-  bool handle_timeout_interruptable();
 };
 
 #endif

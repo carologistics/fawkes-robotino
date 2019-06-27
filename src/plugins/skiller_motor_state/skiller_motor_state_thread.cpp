@@ -131,8 +131,14 @@ void SkillerMotorStateThread::loop() {
   // while no changes need to be handled and we still need to reset some LEDs
   while (!motor_if_changed_flag_ && !skiller_if_changed_flag_ &&
          (!final_time_.is_zero() || !failed_time_.is_zero())) {
-    if (handle_timeout_interruptable())
+    unsigned int digital_output_to_reset;
+    fawkes::Time *timeout_at;
+    get_timeout(timeout_at, digital_output_to_reset);
+    if (interruptable_timeout(timeout_at))
       break; // break, as it was interrupted
+
+    // sweet, my alarm woke me up, now let's turn off the LED
+    signal_timedout_lights(timeout_at, digital_output_to_reset);
   }
 
   // ok, either all output with timeout are turned off now
@@ -184,22 +190,31 @@ void SkillerMotorStateThread::disable(unsigned int output) {
   return;
 }
 
-// @return True if the timeout was interrupted
-bool SkillerMotorStateThread::handle_timeout_interruptable() {
+void SkillerMotorStateThread::get_timeout(
+    fawkes::Time *&wait_until, unsigned int &digital_output_to_reset) {
   // first determine which LED needs to be reset earliest
-  fawkes::Time *wait_until = &failed_time_;
-  unsigned int to_disable = 0;
+  wait_until = &failed_time_;
+  digital_output_to_reset = 0;
   if (!final_time_.is_zero()) { // still need to reset final led
     wait_until = &final_time_;
-    to_disable = cfg_digital_out_green_;
+    digital_output_to_reset = cfg_digital_out_green_;
   }
   if (!failed_time_.is_zero()) { // still need to reset failed led
     if (*wait_until >= failed_time_) {
       wait_until = &failed_time_;
-      to_disable = cfg_digital_out_red_;
+      digital_output_to_reset = cfg_digital_out_red_;
     }
   }
+}
 
+void SkillerMotorStateThread::signal_timedout_lights(
+    fawkes::Time *wait_until, unsigned int digital_output_to_reset) {
+  *wait_until = fawkes::Time(0, 0); // don't need to check this timeout anymore
+  disable(digital_output_to_reset);
+}
+
+// @return True if the timeout was interrupted
+bool SkillerMotorStateThread::interruptable_timeout(fawkes::Time *wait_until) {
   // transform fawkes::Time to format for timer
   long int wait_until_sec = wait_until->get_sec(),
            wait_until_nsec = wait_until->get_nsec();
@@ -209,18 +224,7 @@ bool SkillerMotorStateThread::handle_timeout_interruptable() {
     return true;
 
   // see WaitCondition::abstimed_wait()
-  if (timeout_wait_condition_.abstimed_wait(wait_until_sec, wait_until_nsec)) {
-    // oh heck, someone wake me up, but it wasn't the alarm I set
-    // let's loop!
-    // and reset these outputs in the next loop
-    return true;
-  } else {
-    scoped_timeout_mutex.unlock();
-    // sweet, my alarm woke me up, now let's turn off this LED
-    disable(to_disable);
-    *wait_until = fawkes::Time(0, 0); // also don't need to reset this anymore
-  }
-  return false;
+  return timeout_wait_condition_.abstimed_wait(wait_until_sec, wait_until_nsec);
 }
 
 void SkillerMotorStateThread::bb_interface_data_changed(
