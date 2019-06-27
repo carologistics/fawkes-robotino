@@ -15,7 +15,7 @@ fawkes/meta_plugins:
     - tag_vision
     - fvretriever
   m-realsense:
-    - realsense
+    - realsense2
   m-clips:
     - clips
     - clips-motor-switch
