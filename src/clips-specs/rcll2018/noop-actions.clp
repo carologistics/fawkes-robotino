@@ -74,11 +74,10 @@
 
 (defrule action-execute-request-rs-mount-ring
   ?pa <- (plan-action (action-name request-rs-mount-ring) (state PENDING) (executable TRUE)
-            (param-values ?r ?rs ?wp ?rc ?rc1 ?rc2 ?rc3 ?rs-req))
+            (param-values ?r ?rs ?wp ?ring-pos ?rc ?rc1 ?rc2 ?rc3 ?rs-req))
 
   =>
   (modify ?pa (state EXECUTION-SUCCEEDED))
-  (bind ?ring-pos (member$ RING_NONE (create$ ?rc1 ?rc2 ?rc3)))
   (bind ?mount-ring-action-name (sym-cat rs-mount-ring ?ring-pos))
     (switch ?ring-pos
       (case 1 then
