@@ -820,13 +820,15 @@
                                        (eq (wm-key-arg ?wm:key m) ?mps))
       (bind ?rs-before (wm-key-arg ?wm:key n))
     )) then
+      (printout error "Cant find rs-filled-with for " ?mps crlf)
       (bind ?success FALSE)
     )
     (if (not (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact rs-sub))
                                        (eq (wm-key-arg ?wm:key minuend) ?rs-before)
-                                       (eq (wm-key-arg ?wm:key difference) ?rs-req))
-      (bind ?rs-after (wm-key-arg ?wm:key subtrahend))
+                                       (eq (wm-key-arg ?wm:key subtrahend) ?rs-req))
+      (bind ?rs-after (wm-key-arg ?wm:key difference))
     )) then
+      (printout error "Cant find rs-sub fact with " ?rs-before "-" ?rs-req crlf)
       (bind ?success FALSE)
     )
     (if ?success then 
