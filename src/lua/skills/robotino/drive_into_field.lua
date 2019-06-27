@@ -44,20 +44,30 @@ function is_in_field(x)
    return pose:translation(1) > 1.0
 end
 
+function too_many_tries(self)
+   if self.fsm.vars.tries > 15 then
+      return true
+   else
+      return false
+   end
+end
+
 fsm:define_states{ export_to=_M,
-   --closure={wait=fsm.vars.wait},
+   closure={too_many_tries=too_many_tries},
    {"INIT",             JumpState},
    {"WAIT",             JumpState},
-   {"DRIVE_INTO_FIELD", SkillJumpState, skills={{goto_waypoints}}, final_to="FINAL", fail_to="FAILED"},
+   {"DRIVE_INTO_FIELD", SkillJumpState, skills={{goto_waypoints}}, final_to="FINAL", fail_to="DRIVE_INTO_FIELD"},
 }
 
 fsm:add_transitions{
    {"INIT",   "WAIT", cond=true},
    {"WAIT",   "DRIVE_INTO_FIELD", timeout=TIMEOUT_UPPER_LIMIT},   -- this just creates the transision
    {"DRIVE_INTO_FIELD", "FINAL", cond=is_in_field, desc="Already in field"},
+   {"DRIVE_INTO_FIELD", "FAILED", cond=too_many_tries, desc="No way into field"}
 }
 
 function INIT:init()
+   self.fsm.vars.tries = 0
    if self.fsm.vars.team == "CYAN" then
       self.fsm.vars.waypoints = {"C-ins-out", "C-ins-in"}
    else
@@ -70,5 +80,6 @@ function WAIT:init()
 end
 
 function DRIVE_INTO_FIELD:init()
+   self.fsm.vars.tries = self.fsm.vars.tries + 1
    self.args["goto_waypoints"] = {wp = self.fsm.vars.waypoints}
 end
