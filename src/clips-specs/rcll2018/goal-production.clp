@@ -951,7 +951,6 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args?         r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
@@ -975,18 +974,12 @@
   (wm-fact (key refbox order ?order quantity-delivered ?team-color) (value ?qd&:(> ?qr ?qd)))
   ;WP CEs
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?prev-rs side OUTPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-ring1-color))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-ring2-color))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-ring3-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
 
-  (or (not (wm-fact (key domain fact wp-at args? wp ? m ?mps-rs side INPUT)))
-      ; The next rs is equal to the current rs. So if the workpiece gets taken
-      ; from the output, we know that the workpiece from the input gets processed
-      (test (eq ?prev-rs ?mps-rs))
-  )
   ;The workpiece misses a ring
   (test (or
             (and (eq ?wp-ring1-color ?order-ring1-color)
@@ -998,6 +991,14 @@
                  (eq ?next-ring-color ?order-ring2-color))
             (and (neq ?wp-ring1-color ?order-ring1-color)
                  (eq ?next-ring-color ?order-ring1-color))))
+  (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+           (wm-fact (key domain fact wp-at args? wp ?wp m ?prev-rs side OUTPUT))
+           ; The next rs is equal to the current rs. So if the workpiece gets taken
+           ; from the output, we know that the workpiece from the input gets processed
+           (or (not (wm-fact (key domain fact wp-at args? wp ? m ?mps-rs side INPUT)))
+               (test (eq ?prev-rs ?mps-rs))))
+      (and (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+           (wm-fact (key domain fact mps-type args? m ?prev-rs t RS))))
   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs&:(neq ?wp-rs ?wp) m ?mps-rs side ?any-rs-side)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   =>
