@@ -34,7 +34,8 @@ SECONDARY_BUILDSYSDIR  = $(abspath $(TOP_BASEDIR)/etc/buildsys)
 #LD=clang
 
 ifeq ($(wildcard $(BUILDSYSDIR)/config.mk),)
-  $(error Fawkes submodule missing. Execute "git submodule update --init")
+  $(error Fawkes submodule missing (could not find file $(BUILDSYSDIR)/config.mk).\
+          Execute "git submodule update --init")
 else
   ifndef __buildsys_config_mk_
     include $(BUILDSYSDIR)/config.mk
