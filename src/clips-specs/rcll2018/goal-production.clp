@@ -1267,7 +1267,6 @@
   (wm-fact (key refbox game-time) (values $?game-time))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-DS CEs
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
@@ -1276,7 +1275,6 @@
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;WP-CEs
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
@@ -1297,7 +1295,9 @@
            (value ?qd&:(> ?qr ?qd)))
   (wm-fact (key refbox order ?order delivery-begin) (type UINT)
            (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
-
+  (or (and (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+           (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp))))
+      (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
   (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
   (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
   =>
