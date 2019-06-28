@@ -1059,7 +1059,6 @@
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
@@ -1068,7 +1067,6 @@
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
   ;WP CEs
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
   ;MPS-RS CEs
@@ -1086,6 +1084,9 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
            (value ?qd&:(> ?qr ?qd)))
+  (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+           (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
+      (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
   =>
   (printout t "Goal " PRODUCE-CX " formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
@@ -1114,7 +1115,6 @@
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
@@ -1123,7 +1123,6 @@
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
   ;WP CEs
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
@@ -1143,6 +1142,9 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
            (value ?qd&:(> ?qr ?qd)))
+  (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+           (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
+      (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
   =>
   (printout t "Goal " PRODUCE-CX " (C2) formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
@@ -1171,7 +1173,6 @@
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
@@ -1180,7 +1181,6 @@
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
   ;WP CEs
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
@@ -1202,6 +1202,9 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
   (value ?qd&:(> ?qr ?qd)))
+  (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+           (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
+      (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
   =>
   (printout t "Goal " PRODUCE-CX " (C3) formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
