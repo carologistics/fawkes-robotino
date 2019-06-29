@@ -367,29 +367,3 @@
   (retract ?cleanup)
 )
 
-
-(defrule execution-monitoring-bs-switch-sides
-" If an agent tries to lock a side of a base station before a dispense and this side is already locked,
-  switch the side, since the base station can be operated from both sides
-"
-  ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id)
-	          (id ?id)
-	          (action-name location-lock)
-	          (state RUNNING)
-	          (param-values ?bs ?side))
-  (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name bs-dispense))
-  ?li <- (lock-info (name ?name) (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id) (status WAITING))
-  (test (eq ?name (sym-cat ?bs - ?side)))
-  ; Do not switch sides if the other side is blocked, too.
-  (not (mutex (name ?lock&:(eq ?lock (sym-cat ?bs - (if (eq ?side INPUT) then OUTPUT else INPUT)))) (state LOCKED)))
-  =>
-  (retract ?li)
-  (modify ?pa (state PENDING))
-  (delayed-do-for-all-facts
-    ((?p plan-action))
-    (and (eq ?p:goal-id ?goal-id) (eq ?p:plan-id ?plan-id) (neq FALSE (member$ ?bs ?p:param-values)) (neq FALSE (member$ ?side ?p:param-values)))
-    (printout t "Execution monitoring: Adapting " ?p:action-name crlf)
-    (modify ?p (param-values (replace-member$ ?p:param-values (if (eq ?side INPUT) then OUTPUT else INPUT) ?side)))
-  )
-)
