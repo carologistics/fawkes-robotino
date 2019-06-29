@@ -230,7 +230,6 @@
                (parent ?production-id)
                (params r ?self
                        point ?waitpoint)
-               (required-resources ?waitpoint)
   ))
 )
 
@@ -251,7 +250,6 @@
                 (params r ?self
                         point ?waitpoint
                 )
-                (required-resources ?waitpoint)
   ))
 )
 
@@ -349,7 +347,6 @@
                         mps ?mps
                         cc ?cc
                 )
-                (required-resources ?cc ?mps)
   ))
 )
 
@@ -385,7 +382,6 @@
                         wp ?wp
                         side OUTPUT
                 )
-                (required-resources ?wp)
   ))
 )
 
@@ -419,7 +415,6 @@
                         wp ?wp
                         side OUTPUT
                 )
-                (required-resources ?wp)
   ))
 )
 
@@ -449,7 +444,6 @@
                         wp ?wp
                         side ?side
                 )
-                (required-resources ?wp)
   ))
 )
 
@@ -484,7 +478,6 @@
                         wp ?wp
                         side OUTPUT
                 )
-                (required-resources ?wp)
   ))
 )
 
@@ -606,7 +599,7 @@
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?bs side ?any-side)))
+  (domain-object (name ?side) (type mps-side))
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
 
@@ -615,7 +608,7 @@
   ; the goals due to matching with RS-1 and RS-2)
   (not (goal (class GET-BASE-TO-FILL-RS) (params robot ?robot
                                           bs ?bs
-                                          bs-side INPUT
+                                          bs-side ?side
                                           base-color ?
                                           wp ?spawned-wp)))
   =>
@@ -626,11 +619,10 @@
                 (parent ?maintain-id) (sub-type SIMPLE)
                              (params robot ?robot
                                      bs ?bs
-                                     bs-side INPUT
+                                     bs-side ?side
                                      base-color ?base-color
                                      wp ?spawned-wp
                                      )
-                            (required-resources ?spawned-wp)
   ))
 )
 
@@ -667,7 +659,6 @@
                                      wp ?wp
                                      spot ?spot
                                      )
-                             (required-resources ?wp)
   ))
 )
 
@@ -714,7 +705,6 @@
                         rs-before ?rs-before
                         rs-after ?rs-after
                 )
-                (required-resources ?mps ?wp)
   ))
 )
 
@@ -808,7 +798,7 @@
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (eq ?complexity C0))
   =>
-  (bind ?required-resources ?mps ?order ?spawned-wp)
+  (bind ?required-resources ?order)
   ;If this order complexity should be produced exclusively ...
   (if (any-factp ((?exclusive-complexities wm-fact))
         (and (wm-key-prefix ?exclusive-complexities:key (create$ config rcll exclusive-complexities))
@@ -873,6 +863,7 @@
   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs m ?mps-rs side ?any-rs-side)))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args?  m ?mps-bs t BS))
+  (domain-object (name ?bs-side) (type mps-side))
   (wm-fact (key domain fact mps-state args? m ?mps-bs s ~BROKEN))
   (wm-fact (key domain fact mps-team args?  m ?mps-bs col ?team-color))
   (not (wm-fact (key domain fact wp-at args? wp ?bs-wp m ?mps-bs side ?any-bs-side)))
@@ -898,7 +889,7 @@
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (neq ?complexity C0))
   =>
-  (bind ?required-resources ?mps-rs ?order ?spawned-wp)
+  (bind ?required-resources ?order)
   ;If this order complexity should be produced exclusively ...
   (if (any-factp ((?exclusive-complexities wm-fact))
         (and (wm-key-prefix ?exclusive-complexities:key (create$ config rcll exclusive-complexities))
@@ -915,7 +906,7 @@
                 (parent ?production-id)
                 (params robot ?robot
                         bs ?mps-bs
-                        bs-side OUTPUT
+                        bs-side ?bs-side
                         bs-color ?base-color
                         mps ?mps-rs
                         ring-color ?ring1-color
@@ -1015,7 +1006,6 @@
                         rs-req ?bases-needed
                         order ?order
                 )
-                (required-resources ?wp ?mps-rs)
   ))
 )
 
@@ -1075,7 +1065,6 @@
                                         cs-color ?cap-color
                                         order ?order
                                 )
-                                (required-resources ?mps ?wp)
   ))
 )
 
@@ -1132,7 +1121,6 @@
                         cs-color ?cap-color
                         order ?order
                 )
-                (required-resources ?mps ?wp)
   ))
 )
 
@@ -1191,7 +1179,6 @@
                         cs-color ?cap-color
                         order ?order
                 )
-                (required-resources ?wp ?mps)
   ))
 )
 
@@ -1316,10 +1303,9 @@
                         ring3-color ?ring3-color
                         cap-color ?cap-color
                 )
-                (required-resources ?order ?wp)
+                (required-resources ?order)
   ))
 )
-
 
 (defrule goal-production-hack-failed-enter-field
   "HACK: Stop trying to enter the field when it failed a few times."
