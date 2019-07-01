@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "product_put"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"gripper_commands","motor_move"}
+depends_skills     = {"gripper_commands","motor_move", "reset_gripper"}
 depends_interfaces = {
     {v = "robotino_sensor", type = "RobotinoSensorInterface", id="Robotino"} -- Interface to read I/O ports
 }
@@ -126,11 +126,8 @@ fsm:define_states{ export_to=_M,
   {"INIT", JumpState},
   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="FAILED"},
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
-  {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_BACK", fail_to="FAILED"},
-  {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands}}, final_to = "CALIBRATE_GRIPPER", fail_to="FAILED"},
-  {"CALIBRATE_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="GRIPPER_HOME", fail_to="FAILED"},
-  {"GRIPPER_HOME", SkillJumpState, skills={{gripper_commands}}, final_to="DRIVE_BACK", fail_to="FAILED"},
-  {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"}
+  {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="RESET_GRIPPER", fail_to="FAILED"},
+  {"RESET_GRIPPER", SkillJumpState, skills={{reset_gripper}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -195,32 +192,6 @@ function OPEN_GRIPPER:init()
   self.args["gripper_commands"].command = "OPEN"
 end
 
-function MOVE_GRIPPER_BACK:init()
-  local pose = {}
-  if self.fsm.vars.slide ~= nil then
-    pose = pose_gripper_offset(slide_gripper_back_x, 0, slide_gripper_up_z)
-  else
-    pose = pose_gripper_offset(conveyor_gripper_back_x, 0, conveyor_gripper_up_z)
-  end
-  self.args["gripper_commands"] = pose
-  self.args["gripper_commands"].command = "MOVEABS"
-  self.args["gripper_commands"].target_frame = "gripper_home"
-end
-
-function CALIBRATE_GRIPPER:init()
-  self.args["gripper_commands"].command = "CALIBRATE"
-  self.args["gripper_commands"].wait = false
-end
-
-function GRIPPER_HOME:init()
-  self.args["gripper_commands"].x = 0
-  self.args["gripper_commands"].y = 0
-  self.args["gripper_commands"].z = 0.03
-  self.args["gripper_commands"].wait = false
-  self.args["gripper_commands"].command = "MOVEABS"
-end
-
-
-function DRIVE_BACK:init()
-  self.args["motor_move"].x = drive_back_x
+function RESET_GRIPPER:init()
+  self.args["reset_gripper"].calibrate = true
 end
