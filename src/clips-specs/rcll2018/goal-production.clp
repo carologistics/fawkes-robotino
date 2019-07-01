@@ -85,7 +85,8 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (not (goal (class BEACON-MAINTAIN)))
   =>
-  (goal-tree-assert-run-endless BEACON-MAINTAIN 1)
+  (bind ?goal (goal-tree-assert-run-endless BEACON-MAINTAIN 1))
+  (modify ?goal (verbosity QUIET))
 )
 
 
@@ -152,7 +153,8 @@
   =>
   (bind ?goal (goal-tree-assert-run-endless REFILL-SHELF-MAINTAIN 1))
   (modify ?goal (required-resources refill-shelf)
-                (params frequency 1))
+                (params frequency 1)
+                (verbosity QUIET))
 )
 
 
