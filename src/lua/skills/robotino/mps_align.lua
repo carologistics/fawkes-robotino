@@ -64,6 +64,7 @@ depends_interfaces = {
    {v = "tag_14", type = "Position3DInterface", id="/tag-vision/14"},
    {v = "tag_15", type = "Position3DInterface", id="/tag-vision/15"},
    {v = "tag_info", type = "TagVisionInterface", id="/tag-vision/info"},
+   {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
 }
 
 documentation      = [==[Align precisely at the given coordinates, relative to the center of an MPS
@@ -176,6 +177,8 @@ fsm:add_transitions{
 }
 
 function INIT:init()
+   laserline_switch:msgq_enqueue(laserline_switch.EnableSwitchMessage:new())
+
    self.fsm.vars.y   = self.fsm.vars.y   or 0
    self.fsm.vars.ori = self.fsm.vars.ori or 0
 

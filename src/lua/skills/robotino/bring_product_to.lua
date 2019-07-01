@@ -27,6 +27,7 @@ name               = "bring_product_to"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"product_put", "drive_to_machine_point", "conveyor_align"}
 depends_interfaces = {
+   {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
 }
 
 documentation      = [==[ 
@@ -109,4 +110,12 @@ function PRODUCT_PUT:init()
   self.args["product_put"].place = self.fsm.vars.place
   self.args["product_put"].slide = self.fsm.vars.slide
   self.args["product_put"].side = self.fsm.vars.side
+end
+
+function FINAL:init()
+  laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
+end
+
+function FAILED:init()
+  laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
 end
