@@ -14,6 +14,8 @@ fawkes/meta_plugins:
     - m-fv
     - tag_vision
     - fvretriever
+  m-realsense:
+    - realsense2
   m-clips:
     - clips
     - clips-motor-switch
@@ -40,7 +42,7 @@ fawkes/meta_plugins:
     - navgraph-generator
     - navgraph-generator-mps
     - skiller
-    - realsense
+    - m-realsense
     - conveyor-plane
     - conveyor-pose
     - ros-pcl
