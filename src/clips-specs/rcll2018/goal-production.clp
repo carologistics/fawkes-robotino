@@ -149,11 +149,12 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
   (not (goal (class REFILL-SHELF-MAINTAIN)))
+  (not (mutex (name ?n&:(eq ?n (resource-to-mutex refill-shelf))) (state LOCKED)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   =>
   (bind ?goal (goal-tree-assert-run-endless REFILL-SHELF-MAINTAIN 1))
   (modify ?goal (required-resources refill-shelf)
-                (params frequency 1)
+                (params frequency 1 retract-on-REJECTED)
                 (verbosity QUIET))
 )
 
