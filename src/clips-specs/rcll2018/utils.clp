@@ -908,18 +908,18 @@
 
 
 (deffunction estimate-achievable-points
-             (?pointlist ?achieved-points ?timelist ?curr-time ?deadline)
+             (?pointlist ?achieved-points ?timelist ?curr-time ?deadline ?next-step)
 " @params ?pointlist list of points for all production steps
           ?achieved-points points already scored in previous production steps
           ?timelist list of time-estimates for all production steps
           ?curr-time current game time in seconds
           ?deadline deadline (in seconds) for the order that gets produced
+          ?next-step next step that scores points
 
   @return Amount of points the product yields, assuming tasks only score points
           if they are finished within the deadline
 "
-  (bind ?steps-done (greedy-knapsack ?pointlist 0 ?achieved-points))
-  (bind ?curr-step (+ 1 ?steps-done))
+  (bind ?curr-step (order-steps-index ?next-step))
   (if (<= ?curr-step (length ?pointlist))
     then
       (bind ?remaining-timelist (subseq$ ?timelist
