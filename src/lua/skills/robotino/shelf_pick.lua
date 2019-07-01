@@ -58,6 +58,10 @@ local gripper_down_to_puck = -0.025
 local shelf_to_conveyor = 0.1
 local shelf_distance = 0.1
 
+local left_slot_y_extra = 0.0
+local middle_slot_y_extra = 0.0
+local right_slot_y_extra = 0.0
+
 local MIN_VIS_HIST_LINE=5
 local LINE_LENGTH_MIN=0.64
 local LINE_LENGTH_MAX=0.71
@@ -184,10 +188,13 @@ end
 function GOTO_SHELF:init()
    if self.fsm.vars.slot == "LEFT" then
       dist_y = shelf_to_conveyor
+      dist_y = dist_y + left_slot_y_extra
    elseif self.fsm.vars.slot == "MIDDLE" then
       dist_y = shelf_to_conveyor + shelf_distance
+      dist_y = dist_y + middle_slot_y_extra
    elseif self.fsm.vars.slot == "RIGHT" then
       dist_y = shelf_to_conveyor + 2*shelf_distance
+      dist_y = dist_y + right_slot_y_extra
    else
       dist_y = 0
       self.fsm:set_error("no shelf side set")
