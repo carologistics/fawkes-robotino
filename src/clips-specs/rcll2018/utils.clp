@@ -759,6 +759,23 @@
   (return 0)
 )
 
+(deffunction int-to-sym (?int)
+" @param ?int Number as Integer (0,1,2 or 3)
+
+  @return Domain representation of number (ZERO|ONE|TWO|THREE)
+"
+  (switch ?int
+    (case 0 then
+      (return ZERO))
+    (case 1 then
+      (return ONE))
+    (case 2 then
+      (return TWO))
+    (case 3 then
+      (return THREE))
+  )
+  (return nil)
+)
 
 (deffunction bool-to-int (?bool)
 " @param ?bool boolean
@@ -799,6 +816,19 @@
   (return 0)
 )
 
+(deffunction values-from-name-value-list ($?args)
+" @param $?args a list containing name value pairs. E.g. (m C-CS1 s IDLE)
+
+  @return The values of the argument list as list. E.g (C-CS1 IDLE)
+"
+  (bind ?values (create$))
+  (foreach ?a ?args
+    (if (eq 0 (mod ?a-index 2)) then
+      (bind ?values (create$ ?values ?a))
+    )
+  )
+  (return ?values)
+)
 
 (deffunction finalize-points (?points ?competitive ?qr ?qd-us ?qd-them)
 " @param ?points points before considering delivered quantities and complexity

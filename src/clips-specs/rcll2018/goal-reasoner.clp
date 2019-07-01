@@ -339,13 +339,8 @@
               (mode FINISHED) (outcome ?outcome)
               (params $?params))
  (plan (goal-id ?goal-id) (id ?plan-id))
- ?p <-(plan-action
-         (plan-id ?plan-id)
-         (action-name bs-dispense)
-         (param-names r m side wp basecol)
-         (param-values ?robot ?bs ?bs-side ?wp ?base-color))
  (time $?now)
- (wm-fact (key domain fact wp-usable args? wp ?wp))
+ (wm-fact (key domain fact wp-usable args? wp ?wp&:(eq ?wp (get-param-by-arg ?params wp))))
  (wm-fact (key domain fact self args? r ?robot))
  (wm-fact (key order meta points-total
            args? ord ?order&:(eq ?order (get-param-by-arg ?params order)))
@@ -471,6 +466,16 @@
   =>
   (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated" crlf)
   (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
+  (modify ?g (mode EVALUATED))
+)
+
+(defrule goal-reasoner-evaluate-process-mps
+  ?g <- (goal (class PROCESS-MPS) (id ?goal-id) (mode FINISHED) (outcome ?outcome) (params m ?mps))
+  (plan-action (goal-id ?goal-id) (action-name ?prepare-action) (state FINAL))
+  ?pre <- (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
+  ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
+  =>
+  (retract ?pre ?pro)
   (modify ?g (mode EVALUATED))
 )
 
