@@ -33,6 +33,8 @@ documentation      = [==[
 Skill to pick a product from the conveyor.
 
 Parameters:
+	@param calibrate	(optional, default: false) decide if the gripper should calibrate after resetting
+				will be evaluated in reset_gripper
 ]==]
 
 
@@ -192,12 +194,8 @@ function MOVE_GRIPPER_FORWARD:init()
   self.args["gripper_commands"].target_frame = "gripper_home"
 end
 
-function GRIPPER_HOME:init()
-  self.args["gripper_commands"].x = 0
-  self.args["gripper_commands"].y = 0
-  self.args["gripper_commands"].z = 0.03
-  self.args["gripper_commands"].wait = false
-  self.args["gripper_commands"].command = "MOVEABS"
+function RESET_GRIPPER:init()
+  self.args["reset_gripper"].calibrate = self.fsm.vars.calibrate
 end
 
 function DRIVE_BACK:init()
