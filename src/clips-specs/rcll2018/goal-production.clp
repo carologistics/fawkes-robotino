@@ -56,8 +56,6 @@
   ?*DELIVER-LATEST-TIME* = 10
   ?*DELIVER-ABORT-TIMEOUT* = 30
 
-; Maximum distance between two points on the field
-  ?*MAX-DISTANCE* = 16.124
 )
 
 
@@ -645,10 +643,10 @@
                                           wp ?spawned-wp)))
   =>
   (printout t "Goal " GET-BASE-TO-FILL-RS " formulated" crlf)
-  (bind ?distance-prio (- 1 (/ (node-distance (str-cat ?bs - (if (eq ?bs-side INPUT) then I else O))) ?*MAX-DISTANCE*)))
+  (bind ?distance (node-distance (str-cat ?bs - (if (eq ?bs-side INPUT) then I else O))))
   (assert (goal (id (sym-cat GET-BASE-TO-FILL-RS- (gensym*)))
                 (class GET-BASE-TO-FILL-RS)
-                (priority  (+ ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* ?distance-prio))
+                (priority  (+ ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* (goal-distance-prio ?distance)))
                 (parent ?maintain-id) (sub-type SIMPLE)
                              (params robot ?robot
                                      bs ?bs
@@ -852,10 +850,10 @@
   (if (eq ?comp-prio "LOW")
     then
       (bind ?priority-decrease 1))
-  (bind ?distance-prio (- 1 (/ (node-distance (str-cat ?bs - (if (eq ?bs-side INPUT) then I else O))) ?*MAX-DISTANCE*)))
+  (bind ?distance (node-distance (str-cat ?bs - (if (eq ?bs-side INPUT) then I else O))))
   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
                 (class PRODUCE-C0) (sub-type SIMPLE)
-                (priority (+ (- ?*PRIORITY-PRODUCE-C0* ?priority-decrease) ?distance-prio))
+                (priority (+ (- ?*PRIORITY-PRODUCE-C0* ?priority-decrease) (goal-distance-prio ?distance)))
                 (parent ?parent)
                 (params robot ?robot
                         bs ?bs
@@ -935,10 +933,10 @@
       (printout t "Goal " MOUNT-FIRST-RING " formulated, it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
     else
       (printout t "Goal " MOUNT-FIRST-RING " formulated" crlf))
-  (bind ?distance-prio (- 1 (/ (node-distance (str-cat ?mps-bs - (if (eq ?bs-side INPUT) then I else O))) ?*MAX-DISTANCE*)))
+  (bind ?distance (node-distance (str-cat ?mps-bs - (if (eq ?bs-side INPUT) then I else O))))
   (assert (goal (id (sym-cat MOUNT-FIRST-RING- (gensym*)))
                 (class MOUNT-FIRST-RING) (sub-type SIMPLE)
-                (priority (+ ?*PRIORITY-MOUNT-FIRST-RING* ?distance-prio))
+                (priority (+ ?*PRIORITY-MOUNT-FIRST-RING* (goal-distance-prio ?distance)))
                 (parent ?production-id)
                 (params robot ?robot
                         bs ?mps-bs

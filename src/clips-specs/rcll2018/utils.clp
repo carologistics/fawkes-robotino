@@ -32,6 +32,10 @@
   ?*POINTS-MOUNT-CAP* = 10
   ?*POINTS-DELIVER* = 20
   ?*POINTS-COMPETITIVE* = 10
+
+; Maximum distance between two points on the field
+  ?*MAX-DISTANCE* = 16.124
+
 )
 
 (deffunction random-id ()
@@ -878,4 +882,12 @@
       (return -1)
   )
   (return (distance ?xn ?yn ?xp ?yp))
+)
+
+(deffunction goal-distance-prio (?dist)
+" @param The distance between the robot and a target position of a goal
+
+  @return A value between 0 and 1 based on the distance
+"
+  (return (- 1 (/ ?dist ?*MAX-DISTANCE*)))
 )
