@@ -38,6 +38,7 @@ plugins/mongodb:
       mode: replica_set
       name: robot-memory-distributed
       hosts:
+        - arbiter:27022
         - robotino-laptop-1:27022
         - robotino-laptop-2:27022
         - robotino-laptop-3:27022
@@ -88,6 +89,7 @@ plugins/mongodb:
         enabled: true
         local-client: robot-memory-distributed-direct
         hosts:
+          - arbiter:27022
           - robotino-laptop-1:27022
           - robotino-laptop-2:27022
           - robotino-laptop-3:27022
