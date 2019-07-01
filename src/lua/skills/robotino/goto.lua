@@ -66,7 +66,7 @@ function has_navigator()
 end
 
 function can_navigate(self)
-   return self.fsm.vars.x ~= nil and self.fsm.vars.y ~= nil and self.fsm.vars.ori ~= nil
+   return self.fsm.vars.x ~= nil and self.fsm.vars.y ~= nil
 end
 
 function target_unreachable()
@@ -139,6 +139,9 @@ function INIT:init()
         self.fsm.vars.target_valid = false
       end
     end
+  else
+    -- infinity tells the navigator to ignore ori
+    self.fsm.vars.ori = self.fsm.vars.ori or 1/0
   end 
 
   self.fsm.vars.region_trans = self.fsm.vars.region_trans or REGION_TRANS
