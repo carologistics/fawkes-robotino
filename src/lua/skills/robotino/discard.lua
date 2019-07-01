@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "discard"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"gripper_commands"}
+depends_skills     = {"gripper_commands", "reset_gripper"}
 depends_interfaces = {
 }
 
@@ -41,9 +41,8 @@ fsm:define_states{ export_to=_M,
    closure={},
   {"INIT", JumpState},
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
-  {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="CALIBRATE_GRIPPER"},
-  {"CALIBRATE_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="GRIPPER_HOME", fail_to="FAILED"},
-  {"GRIPPER_HOME", SkillJumpState, skills={{gripper_commands}}, final_to="FINAL", fail_to="FAILED"},
+  {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="RESET_GRIPPER"},
+  {"RESET_GRIPPER", SkillJumpState, skills={{reset_gripper}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -83,15 +82,6 @@ function OPEN_GRIPPER:init()
   self.args["gripper_commands"].command = "OPEN"
 end
 
-function CALIBRATE_GRIPPER:init()
-  self.args["gripper_commands"].command = "CALIBRATE"
-  self.args["gripper_commands"].wait = false
-end
-
-function GRIPPER_HOME:init()
-  self.args["gripper_commands"].x = 0
-  self.args["gripper_commands"].y = 0
-  self.args["gripper_commands"].z = 0
-  self.args["gripper_commands"].wait = false
-  self.args["gripper_commands"].command = "MOVEABS"
+function RESET_GRIPPER:init()
+  self.args["reset_gripper"].calibrate = true
 end

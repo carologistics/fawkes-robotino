@@ -35,7 +35,7 @@ documentation      = [==[
 Skill to reset the gripper after either an succesful or not succesful pick/put
 
 Parameters:
-    @param calibrate   Decide whether gripper should be calibrated or not
+    @param calibrate (optional, default: false) decide whether gripper should be calibrated
 ]==]
 
 
@@ -130,5 +130,5 @@ end
 
 function CALIBRATE:init()
   self.args["gripper_commands"].command="CALIBRATE"
-  self.args["gripper_commands"].wait="CALIBRATE"
+  self.args["gripper_commands"].wait=false
 end
