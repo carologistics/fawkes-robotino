@@ -62,8 +62,8 @@ depends_interfaces = {
    {v = "tag_14", type = "Position3DInterface", id="/tag-vision/14"},
    {v = "tag_15", type = "Position3DInterface", id="/tag-vision/15"},
    {v = "tag_info", type = "TagVisionInterface", id="/tag-vision/info"},
-   {v = "navi", type = "NavigatorInterface", id="Navigator"}
-
+   {v = "navi", type = "NavigatorInterface", id="Navigator"},
+   {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
 }
 
 documentation      = [==[Drive to point with colisoin avoidance and approach a point relative to the laser line.
@@ -241,6 +241,8 @@ fsm:add_transitions{
 }
 
 function INIT:init()
+  laserline_switch:msgq_enqueue(laserline_switch.EnableSwitchMessage:new())
+
   self.fsm.vars.lines = {}
   self.fsm.vars.lines[line1:id()] = line1
   self.fsm.vars.lines[line2:id()] = line2
