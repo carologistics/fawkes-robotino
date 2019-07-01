@@ -47,6 +47,12 @@ skillenv.skill_module(_M)
 
 local tf_mod = require 'fawkes.tfutils'
 
+if config:exists("/skills/goto/distance_to_travel") then
+   distance_to_travel = config:get_float("/skills/goto/distance_to_travel")
+else
+   distance_to_travel = 0.5
+end
+
 -- Tunables
 --local REGION_TRANS=0.2
 
@@ -78,8 +84,6 @@ end
 
 function travelled_distance(self)
   --Skill will final after it travelled the euclidean distance of 1m from its starting position--
-  --Adapt distance_to_travel for longer or shorter distances--
-  distance_to_travel = 1.0
   local x = (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x) * (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x)
   local y = (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y) * (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y)
   local distance_travelled = math.sqrt(x + y)
