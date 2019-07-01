@@ -18,17 +18,6 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
-(defrule goal-expander-acquire-token
-  ?g <- (goal (id ?goal-id) (class ACQUIRE-TOKEN) (mode SELECTED)
-                            (params token-name ?token-name))
-=>
-  (assert
-    (plan (id ACQUIRE-TOKEN-PLAN) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id ACQUIRE-TOKEN-PLAN) (goal-id ?goal-id)
-                    (action-name lock)
-                    (param-values ?token-name)))
-  (modify ?g (mode EXPANDED))
-)
 
 (defrule goal-expander-send-beacon-signal
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
