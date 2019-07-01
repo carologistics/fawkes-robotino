@@ -138,7 +138,6 @@ fsm:add_transitions{
    {"INIT", "OPEN_GRIPPER", true, desc="Open gripper for product_pick"},
    {"CHECK_PUCK", "FAILED", cond="not is_grabbed()", desc="Don't hold puck!"},  -- add or not is_grabbed() 
    {"CHECK_PUCK", "FINAL", cond=true},
-   {"CLOSE_GRIPPER", "MOVE_GRIPPER_BACK", timeout=0.5},
 }
 
 
