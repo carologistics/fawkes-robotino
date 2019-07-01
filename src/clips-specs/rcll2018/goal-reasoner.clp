@@ -104,7 +104,10 @@
               (eq ?goal-class ENTER-FIELD)
               (eq ?goal-class REFILL-SHELF)
               (eq ?goal-class SPAWN-WP)
-              (eq ?goal-class SEND-BEACON)))
+              (eq ?goal-class SEND-BEACON)
+              (eq ?goal-class FILL-RS)
+              (eq ?goal-class ACQUIRE-TOKEN)
+              ))
 )
 
 
@@ -128,7 +131,8 @@
               (eq ?goal-class EXPLORATION-MAINTAIN)
               (eq ?goal-class REFILL-SHELF-MAINTAIN)
               (eq ?goal-class WP-SPAWN-MAINTAIN)
-              (eq ?goal-class BEACON-MAINTAIN)))
+              (eq ?goal-class BEACON-MAINTAIN)
+              (eq ?goal-class LOCKEXPIRE-MAINTAIN)))
 )
 
 
