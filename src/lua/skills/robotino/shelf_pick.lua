@@ -26,7 +26,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "shelf_pick"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"motor_move", "gripper_commands", "approach_mps"}
+depends_skills     = {"motor_move", "gripper_commands", "approach_mps", "reset_gripper"}
 depends_interfaces = {
 }
 
@@ -84,8 +84,8 @@ fsm:define_states{ export_to=_M, closure={},
    {"MOVE_ABOVE_PUCK", SkillJumpState, skills={{gripper_commands}}, final_to="ADJUST_HEIGHT", fail_to="FAILED" },
    {"ADJUST_HEIGHT", SkillJumpState, skills={{gripper_commands}}, final_to="GRAB_PRODUCT", fail_to="FAILED" },
    {"GRAB_PRODUCT", SkillJumpState, skills={{gripper_commands}}, final_to="LEAVE_SHELF", fail_to="FAILED"},
-   {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="HOME_GRIPPER", fail_to="FAILED"},
-   {"HOME_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="FINAL", fail_to="FAILED"},
+   {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="RESET_GRIPPER", fail_to="FAILED"},
+   {"RESET_GRIPPER", SkillJumpState, skills={{reset_gripper}}, final_to="FINAL", fail_to="FAILED"},
    {"WAIT_AFTER_GRAB", JumpState},
 }
 
@@ -179,11 +179,3 @@ function LEAVE_SHELF:init()
    self.args["motor_move"].x = -0.2
 end
 
-function HOME_GRIPPER:init()
-  self.args["gripper_commands"].x = 0
-  self.args["gripper_commands"].y = 0
-  self.args["gripper_commands"].z = 0
-  self.args["gripper_commands"].target_frame = "gripper_home"
-  self.args["gripper_commands"].command = "MOVEABS"
-  self.args["gripper_commands"].wait = false
-end
