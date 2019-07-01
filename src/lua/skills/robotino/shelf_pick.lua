@@ -55,6 +55,9 @@ local gripper_adjust_x_distance = 0.02
 local adjust_target_frame = "gripper_home"
 local gripper_down_to_puck = -0.025
 
+local shelf_to_conveyor = 0.1
+local shelf_distance = 0.1
+
 local MIN_VIS_HIST_LINE=5
 local LINE_LENGTH_MIN=0.64
 local LINE_LENGTH_MAX=0.71
@@ -180,16 +183,14 @@ function INIT:init()
 end
 
 function GOTO_SHELF:init()
-   local shelf_to_conveyor = 0.1 --TODO measure both values
-   local shelf_distance = 0.1
    if self.fsm.vars.slot == "LEFT" then
-      dest_y = shelf_to_conveyor
+      dist_y = shelf_to_conveyor
    elseif self.fsm.vars.slot == "MIDDLE" then
-      dest_y = shelf_to_conveyor + shelf_distance
+      dist_y = shelf_to_conveyor + shelf_distance
    elseif self.fsm.vars.slot == "RIGHT" then
-      dest_y = shelf_to_conveyor + 2*shelf_distance
+      dist_y = shelf_to_conveyor + 2*shelf_distance
    else
-      dest_y = 0
+      dist_y = 0
       self.fsm:set_error("no shelf side set")
       self.fsm.vars.error = true
    end
@@ -204,16 +205,16 @@ function GOTO_SHELF:init()
    local target_pos_bl = tfm.transform6D(target_pos_cp, "conveyor_pose", "base_link")
 
    laserline_direction = find_ll_direction(self.fsm.vars.lines_avg)
-   target_pos_bl.x = target_pos_bl.x + dest_y * laserline_direction.x
-   target_pos_bl.y = target_pos_bl.y + dest_y * laserline_direction.y
+   target_pos_bl.x = target_pos_bl.x + dist_y * laserline_direction.x
+   target_pos_bl.y = target_pos_bl.y + dist_y * laserline_direction.y
 
    self.fsm.vars.target_pos_odom = tfm.transform6D(target_pos_bl, "base_link", "odom")
    
-   self.args["motor_move"] =
-			{ y = dest_y * laserline_direction.y, 
-        x = dest_y * laserline_direction.x,
-				tolerance = { x=0.002, y=0.002, ori=0.01 }
-			}
+  self.args["motor_move"] =
+	{ y = dist_y * laserline_direction.y, 
+    x = dist_y * laserline_direction.x,
+		tolerance = { x=0.002, y=0.002, ori=0.01 }
+	}
 end
 
 function MOVE_ABOVE_PUCK:init()
