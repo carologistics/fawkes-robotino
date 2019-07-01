@@ -98,3 +98,20 @@
   )
 )
 
+(defrule action-execute-wp-spawn
+	?pa <- (plan-action (plan-id ?plan-id) (state PENDING) (executable TRUE)
+	                    (action-name spawn-wp) (param-values ?wp ?robot))
+	=>
+	(printout info "Spawning workpiece " ?wp " for robot " ?robot crlf)
+	(assert
+		(domain-object (name ?wp) (type workpiece))
+		(wm-fact (key domain fact wp-unused args? wp ?wp) (type BOOL) (value TRUE))
+		(wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE) (type BOOL) (value TRUE))
+		(wm-fact (key domain fact wp-ring1-color args? wp ?wp col RING_NONE) (type BOOL) (value TRUE))
+		(wm-fact (key domain fact wp-ring2-color args? wp ?wp col RING_NONE) (type BOOL) (value TRUE))
+		(wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE) (type BOOL) (value TRUE))
+		(wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE) (type BOOL) (value TRUE))
+		(wm-fact (key domain fact wp-spawned-for args? wp ?wp r ?robot) (type BOOL) (value TRUE))
+	)
+	(modify ?pa (state EXECUTION-SUCCEEDED))
+)

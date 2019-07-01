@@ -546,4 +546,9 @@
     :precondition (self ?r)
     :effect (self ?r)
   )
+  (:action spawn-wp
+    :parameters (?wp - workpiece ?r - robot)
+    :precondition (not (wp-spawned-for ?wp ?r))
+    :effect (wp-spawned-for ?wp ?r)
+  )
 )
