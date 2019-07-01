@@ -182,7 +182,6 @@ function WAIT_TF:loop()
 end
 
 function MOVING:init()
-  print(tostring(self.fsm.vars.waiting_pos))
    self.fsm.vars.msgid_timeout = os.time() + 1
 
    print(self.fsm.vars.ori)
