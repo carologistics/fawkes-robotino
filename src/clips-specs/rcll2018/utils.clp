@@ -940,3 +940,26 @@
       (return ?achieved-points)
   )
 )
+
+(deffunction node-distance (?node)
+" @param ?node Name of a navgraph node
+
+  @return Euclidean distance between robots position and node
+          -1 if any of the two positions can not be found.
+"
+  (if (not (do-for-fact ((?nn navgraph-node)) (eq ?nn:name (str-cat ?node))
+        (bind ?xn (nth$ 1 ?nn:pos))
+        (bind ?yn (nth$ 2 ?nn:pos))
+      ))
+    then
+      (return -1)
+  )
+  (if (not (do-for-fact ((?pos Position3DInterface)) (eq ?pos:id "Pose")
+        (bind ?xp (nth$ 1 ?pos:translation))
+        (bind ?yp (nth$ 2 ?pos:translation))
+      ))
+    then
+      (return -1)
+  )
+  (return (distance ?xn ?yn ?xp ?yp))
+)
