@@ -78,27 +78,22 @@
   (retract ?dp)
 )
 
-(defrule execution-monitoring-reset-prepare-action-on-downed
-" If a machine is down while trying to prepare it, reset depending timers
-  and reset prepare action to FORMULATED. The prepare action will then be restarted
-  as soon as the machine is IDLE again
-  The timer refers to the refbox-action.clp timers
+(defrule execution-monitoring-broken-mps-fail-pending-action
+" If an action is pending and depends on a broken mps, we can instantly set it to failed,
+  since the precondition will never be satisfied.
 "
   (declare (salience ?*MONITORING-SALIENCE*))
-  (wm-fact (key domain fact mps-state args? m ?mps s DOWN))
-  ?pa <- (plan-action (id ?id) (goal-id ?goal-id)
-            (plan-id ?plan-id)
-            (action-name prepare-cs|prepare-rs|prepare-ds|prepare-bs)
-            (state RUNNING)
-            (param-values $? ?mps $?)
-            (executable TRUE))
-  ?ta <- (timer (name prepare-mps-abort-timer))
-  ?ts <- (timer (name prepare-mps-send-timer))
+  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  ?pa <- (plan-action (id ?action-id)
+                      (action-name ?an)
+                      (goal-id ?goal-id)
+                      (param-values $? ?mps $?)
+                      (state PENDING))
+  (domain-atomic-precondition (operator ?an) (grounded-with ?action-id) (is-satisfied FALSE))
   =>
-  (modify ?pa (state FORMULATED) (executable FALSE))
-  (retract ?ta ?ts)
+  (modify ?pa (state EXECUTION-FAILED))
 )
-
 
 (defrule execution-monitoring-broken-mps-add-fail-goal-flag
 " If an action makes use of a mps that is broken (and has the mps-state as precondition),
