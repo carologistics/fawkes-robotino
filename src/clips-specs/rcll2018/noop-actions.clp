@@ -106,3 +106,12 @@
 	(assert (domain-object (name ?wp) (type workpiece)))
 	(modify ?pa (state EXECUTION-SUCCEEDED))
 )
+
+(defrule action-execute-cc-spawn
+	?pa <- (plan-action (plan-id ?plan-id) (state PENDING) (executable TRUE)
+	                    (action-name refill-shelf) (param-values ?mps ?spot ?cc ?color))
+	=>
+	(printout info "Spawning cap carrier " ?cc " with color " ?color " at " ?mps " " ?spot crlf)
+	(assert (domain-object (name ?cc) (type cap-carrier)))
+	(modify ?pa (state EXECUTION-SUCCEEDED))
+)
