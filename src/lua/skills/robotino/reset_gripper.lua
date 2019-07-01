@@ -130,5 +130,5 @@ end
 
 function CALIBRATE:init()
   self.args["gripper_commands"].command="CALIBRATE"
-  self.args["gripper_commands"].wait="CALIBRATE"
+  self.args["gripper_commands"].wait=false
 end
