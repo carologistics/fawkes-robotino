@@ -31,8 +31,7 @@
 )
 
 (defrule goal-lock-expiration-create-achieve
-  ?g <- (goal (id ?maintain-id) (class LOCKEXPIRE-MAINTAIN) (mode SELECTED)
-              (meta last-formulated $?last))
+  ?g <- (goal (id ?maintain-id) (class LOCKEXPIRE-MAINTAIN) (mode SELECTED))
   (not (goal (class EXPIRE-LOCKS)))
   =>
   (assert (goal (id (sym-cat EXPIRE-LOCKS- (gensym*)))
