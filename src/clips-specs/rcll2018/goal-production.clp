@@ -144,16 +144,15 @@
 (defrule goal-production-create-refill-shelf-maintain
 " The parent goal to refill a shelf. Allows formulation of goals to refill
   a shelf only if the game is in the production phase and the domain is loaded.
-  Only the spawning-master is in charge of handling shelf refills.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
   (not (goal (class REFILL-SHELF-MAINTAIN)))
-  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
-  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   =>
-  (goal-tree-assert-run-endless REFILL-SHELF-MAINTAIN 1)
+  (bind ?goal (goal-tree-assert-run-endless REFILL-SHELF-MAINTAIN 1))
+  (modify ?goal (required-resources refill-shelf)
+                (params frequency 1))
 )
 
 
@@ -168,9 +167,6 @@
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
-  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
-  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
-  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   =>
   (assert (goal (id (sym-cat REFILL-SHELF- (gensym*)))
                 (class REFILL-SHELF) (sub-type SIMPLE)
