@@ -46,12 +46,14 @@
 (defrule goal-expander-wp-spawn
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
   ?g <- (goal (id ?goal-id) (class SPAWN-WP) (mode SELECTED)
-              (parent ?parent-id))
+              (parent ?parent-id) (params robot ?robot))
 =>
   (assert
     (plan (id SPAWNPLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id SPAWNPLAN) (goal-id ?goal-id)
-      (action-name noop)))
+                 (action-name spawn-wp)
+                 (param-values (sym-cat WP- (random-id)) ?robot))
+  )
   (modify ?g (mode EXPANDED))
 )
 

@@ -400,28 +400,8 @@
 
 
 (defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
-" Create the domain objects and wm-facts corresponding to the freshly spawned
-  workpieces when the WP-SPAWN-ACHIEVE goal finishes successfully.
-"
-  ?g <- (goal (id ?goal-id) (class SPAWN-WP) (parent ?parent-id)
-              (mode FINISHED) (outcome COMPLETED)
-              (params robot ?robot))
-  ?p <- (goal (id ?parent-id) (class WP-SPAWN-MAINTAIN))
-  (time $?now)
+  ?g <- (goal (id ?goal-id) (class SPAWN-WP) (mode FINISHED))
   =>
-  (printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
-    "') has been completed, Evaluating" crlf)
-  (bind ?wp-id (sym-cat WP (random-id)))
-  (assert
-    (domain-object (name ?wp-id) (type workpiece))
-    (wm-fact (key domain fact wp-unused args? wp ?wp-id) (type BOOL) (value TRUE))
-    (wm-fact (key domain fact wp-cap-color args? wp ?wp-id col CAP_NONE) (type BOOL) (value TRUE))
-    (wm-fact (key domain fact wp-ring1-color args? wp ?wp-id col RING_NONE) (type BOOL) (value TRUE))
-    (wm-fact (key domain fact wp-ring2-color args? wp ?wp-id col RING_NONE) (type BOOL) (value TRUE))
-    (wm-fact (key domain fact wp-ring3-color args? wp ?wp-id col RING_NONE) (type BOOL) (value TRUE))
-    (wm-fact (key domain fact wp-base-color args? wp ?wp-id col BASE_NONE) (type BOOL) (value TRUE))
-    (wm-fact (key domain fact wp-spawned-for args? wp ?wp-id r ?robot) (type BOOL) (value TRUE))
-  )
   (modify ?g (mode EVALUATED))
 )
 
