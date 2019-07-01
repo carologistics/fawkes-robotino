@@ -49,6 +49,11 @@
           (wm-fact (key domain fact wp-at args? wp ?wp-gen m ?mps side OUTPUT))
           (wm-fact (key domain fact wp-usable args? wp ?wp-gen))
   )
+  (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact mps-side-free))
+                                    (eq ?mps (wm-key-arg ?wm:key m))
+                                    (eq OUTPUT (wm-key-arg ?wm:key s)))
+    (retract ?wm)
+  )
   (printout warn "A WP has been Generated at the OUTPUT side" crlf)
 )
 
@@ -109,9 +114,9 @@
      (param-values $? ?mps $?)
      (action-name ?an))
   (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
-  (not (wm-fact (key monitoring fail-goal) (value ?goal-id)))
+  (not (wm-fact (key monitoring fail-goal args? g ?goal-id)))
   =>
-  (assert (wm-fact (key monitoring fail-goal) (type UNKNOWN) (value ?goal-id)))
+  (assert (wm-fact (key monitoring fail-goal args? g ?goal-id) (type UNKNOWN)))
 )
 
 
@@ -120,7 +125,7 @@
   set the goal to finished and failed
 "
   (declare (salience ?*MONITORING-SALIENCE*))
-  ?fg <-(wm-fact (key monitoring fail-goal) (type UNKNOWN) (value ?goal-id))
+  ?fg <-(wm-fact (key monitoring fail-goal args? g ?goal-id) (type UNKNOWN))
   ?g <- (goal (id ?goal-id) (mode DISPATCHED))
   (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state ~FORMULATED&~PENDING&~FINAL&~FAILED)))
   =>
@@ -150,7 +155,11 @@
                                             (wm-key-prefix ?wf:key (create$ domain fact cs-can-perform))
                                             (wm-key-prefix ?wf:key (create$ domain fact rs-filled-with))
                                             (wm-key-prefix ?wf:key (create$ domain fact rs-prepared-color))
-	                                    (wm-key-prefix ?wf:key (create$ order meta wp-for-order))
+                                            (wm-key-prefix ?wf:key (create$ order meta wp-for-order))
+                                            (and (wm-key-prefix ?wf:key (create$ mps-handling prepare))
+                                                 (member$ ?mps (wm-key-path ?wf:key)))
+                                            (and (wm-key-prefix ?wf:key (create$ mps-handling process))
+                                                 (member$ ?mps (wm-key-path ?wf:key)))
                                          )
                                      )
     (retract ?wf)
@@ -168,6 +177,9 @@
   (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?mps (wm-key-args ?wf:key)) FALSE)
                                               (wm-key-prefix ?wf:key (create$ domain fact wp-at)))
            (assert (wm-fact (key monitoring cleanup-wp args? wp (wm-key-arg ?wf:key wp))))
+  )
+  (assert (wm-fact (key domain fact mps-side-free args? m ?mps side INPUT))
+          (wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT))
   )
 )
 
@@ -251,16 +263,15 @@
   (retract ?pt)
 )
 
-
-(defrule execution-monitoring-enhance-timer-on-mps-nonfinal-states
-" If an action is pending for a certain mps-state and the mps is currently in a non final state (processing, down, ...),
-  enhance the timeout to give the mps enough time to reach final state
+(defrule execution-monitoring-enhance-timer-on-mps-wait-for-side-to-clear
+" If an action is pending for a certain mps-side to be free and the mps is currently in a non final state (processing, down, ...),
+  enhance the timeout to give the mps enough time to process the workpiece that is still at the side
 "
   (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
 	   (id ?id) (state PENDING)
-	   (action-name ?action-name)
-	   (param-values $? ?mps $?))
-  (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
+	   (action-name wp-put)
+	   (param-values $? ?mps $? ?side $?))
+  (domain-atomic-precondition (operator ?an) (grounded-with ?id) (predicate mps-side-free) (param-values ?mps ?side))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
   (wm-fact (key domain fact mps-state args? m ?mps s ?s&~IDLE&~READY-AT-OUTPUT))
@@ -269,7 +280,7 @@
             (start-time $?starttime)
             (timeout-duration ?timeout&:(neq ?timeout ?*MPS-DOWN-TIMEOUT-DURATION*)))
   =>
-  (printout t "Detected that " ?mps " is " ?s " while " ?action-name " is waiting for it. Enhance timeout-timer" crlf)
+  (printout t "Detected that " ?mps " is " ?s " while wp-put is waiting for the side to clear. Enhance timeout-timer" crlf)
   (modify ?pt (timeout-duration ?*MPS-DOWN-TIMEOUT-DURATION*))
 )
 

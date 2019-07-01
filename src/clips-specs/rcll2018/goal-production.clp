@@ -213,6 +213,20 @@
   (goal-tree-assert-run-endless PRODUCTION-MAINTAIN 1)
 )
 
+(defrule goal-production-create-mps-handling-maintain
+" The parent mps handling goal. Allows formulation of
+  mps handling goals, if requested by a production goal.
+"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (domain-facts-loaded)
+  (not (goal (class MPS-HANDLING-MAINTAIN)))
+  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
+  (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
+  (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  =>
+  (goal-tree-assert-run-endless MPS-HANDLING-MAINTAIN 1)
+)
 
 (defrule goal-production-create-wait
   "Keep waiting at one of the waiting positions."
@@ -313,11 +327,11 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
   ;MPS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN&~DOWN))
+  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
   (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
-  (not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side ?any-side)))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT)))
   ;Capcarrier CEs
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
@@ -349,7 +363,7 @@
                         mps ?mps
                         cc ?cc
                 )
-                (required-resources ?cc ?mps)
+                (required-resources (sym-cat ?mps -INPUT) ?cc)
   ))
 )
 
@@ -385,7 +399,7 @@
                         wp ?wp
                         side OUTPUT
                 )
-                (required-resources ?wp)
+                (required-resources (sym-cat ?mps -OUTPUT) ?wp)
   ))
 )
 
@@ -419,7 +433,7 @@
                         wp ?wp
                         side OUTPUT
                 )
-                (required-resources ?wp)
+                (required-resources (sym-cat ?mps -OUTPUT) ?wp)
   ))
 )
 
@@ -449,7 +463,7 @@
                         wp ?wp
                         side ?side
                 )
-                (required-resources ?wp)
+                (required-resources (sym-cat ?mps - ?side) ?wp)
   ))
 )
 
@@ -484,7 +498,7 @@
                         wp ?wp
                         side OUTPUT
                 )
-                (required-resources ?wp)
+                (required-resources (sym-cat ?mps -OUTPUT) ?wp)
   ))
 )
 
@@ -606,7 +620,6 @@
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?bs side ?any-side)))
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
 
@@ -760,7 +773,7 @@
   (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side ?any-side)))
+  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
@@ -768,7 +781,6 @@
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (domain-object (name ?bs-side) (type mps-side))
-  (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?bs side ?any-side)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
@@ -808,7 +820,7 @@
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (eq ?complexity C0))
   =>
-  (bind ?required-resources ?mps ?order ?spawned-wp)
+  (bind ?required-resources ?order ?spawned-wp)
   ;If this order complexity should be produced exclusively ...
   (if (any-factp ((?exclusive-complexities wm-fact))
         (and (wm-key-prefix ?exclusive-complexities:key (create$ config rcll exclusive-complexities))
@@ -840,7 +852,7 @@
                         order ?order
                         wp ?spawned-wp
                 )
-                (required-resources ?required-resources)
+                (required-resources (sym-cat ?mps -INPUT) ?required-resources)
   ))
 )
 
@@ -870,12 +882,11 @@
                                          subtrahend ?bases-needed
                                          difference ?bases-remain&ZERO|ONE|TWO|THREE))
   (not (wm-fact (key domain fact rs-prepared-color args?  m ?mps-rs col ?some-col)))
-  (not (wm-fact (key domain fact wp-at args? wp ?wp-rs m ?mps-rs side ?any-rs-side)))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp-rs m ?mps-rs side INPUT)))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args?  m ?mps-bs t BS))
   (wm-fact (key domain fact mps-state args? m ?mps-bs s ~BROKEN))
   (wm-fact (key domain fact mps-team args?  m ?mps-bs col ?team-color))
-  (not (wm-fact (key domain fact wp-at args? wp ?bs-wp m ?mps-bs side ?any-bs-side)))
   ;Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
@@ -898,7 +909,7 @@
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (neq ?complexity C0))
   =>
-  (bind ?required-resources ?mps-rs ?order ?spawned-wp)
+  (bind ?required-resources ?order ?spawned-wp)
   ;If this order complexity should be produced exclusively ...
   (if (any-factp ((?exclusive-complexities wm-fact))
         (and (wm-key-prefix ?exclusive-complexities:key (create$ config rcll exclusive-complexities))
@@ -925,7 +936,7 @@
                         order ?order
                         wp ?spawned-wp
                 )
-                (required-resources ?required-resources)
+                (required-resources (sym-cat ?mps-rs -INPUT) ?required-resources)
   ))
 )
 
@@ -964,6 +975,7 @@
                                          subtrahend ?bases-needed
                                          difference ?bases-remain&ZERO|ONE|TWO|THREE))
   (not (wm-fact (key domain fact rs-prepared-color args?  m ?mps-rs col ?some-col)))
+
   ;Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C2|C3))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
@@ -980,6 +992,12 @@
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-ring2-color))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-ring3-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+
+  (or (not (wm-fact (key domain fact wp-at args? wp ? m ?mps-rs side INPUT)))
+      ; The next rs is equal to the current rs. So if the workpiece gets taken 
+      ; from the output, we know that the workpiece from the input gets processed
+      (test (eq ?prev-rs ?mps-rs))
+  )
   ;The workpiece misses a ring
   (test (or
             (and (eq ?wp-ring1-color ?order-ring1-color)
@@ -1009,13 +1027,13 @@
                         ring2-color ?order-ring2-color
                         ring3-color ?order-ring3-color
                         curr-ring-color ?curr-ring-color
-                        ring-pos ?ring-pos
+                        ring-pos (int-to-sym ?ring-pos)
                         rs-before ?bases-filled
                         rs-after ?bases-remain
                         rs-req ?bases-needed
                         order ?order
                 )
-                (required-resources ?wp ?mps-rs)
+                (required-resources (sym-cat ?mps-rs -INPUT) (sym-cat ?prev-rs -OUTPUT) ?wp)
   ))
 )
 
@@ -1040,7 +1058,7 @@
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side ?side-cs)))
+  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
@@ -1075,7 +1093,7 @@
                                         cs-color ?cap-color
                                         order ?order
                                 )
-                                (required-resources ?mps ?wp)
+                                (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
   ))
 )
 
@@ -1095,7 +1113,7 @@
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side ?side-cs)))
+  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
@@ -1132,7 +1150,7 @@
                         cs-color ?cap-color
                         order ?order
                 )
-                (required-resources ?mps ?wp)
+                (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
   ))
 )
 
@@ -1152,7 +1170,7 @@
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side ?side-cs)))
+  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
@@ -1191,7 +1209,7 @@
                         cs-color ?cap-color
                         order ?order
                 )
-                (required-resources ?wp ?mps)
+                (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
   ))
 )
 
@@ -1234,7 +1252,7 @@
                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
   =>
   (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
-  (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
+ (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
                 (class DISCARD-UNKNOWN) (sub-type SIMPLE)
                 (priority ?*PRIORITY-RESET*)
                 (parent ?production-id)
@@ -1316,10 +1334,34 @@
                         ring3-color ?ring3-color
                         cap-color ?cap-color
                 )
-                (required-resources ?order ?wp)
+                (required-resources (sym-cat ?mps -OUTPUT) ?order ?wp)
   ))
 )
 
+(defrule goal-production-mps-handling-create-prepare-goal
+  "Prepare and model processing of a mps"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?pg <- (goal (id ?mps-handling-id) (class MPS-HANDLING-MAINTAIN) (mode SELECTED))
+  ;Robot CEs
+  (wm-fact (key domain fact self args? r ?robot))
+  ;Requested process CEs
+  (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
+  (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
+  ;MPS CEs
+  (wm-fact (key domain fact mps-state args? m ?mps s IDLE))
+  (not (wm-fact (key domain fact wp-at args? wp ? m ?mps side OUTPUT)))
+  =>
+  (bind ?resources (create$ ?mps (sym-cat ?mps -OUTPUT) (sym-cat ?mps -INPUT)))
+  (assert (goal (id (sym-cat PROCESS-MPS- ?mps - (gensym*)))
+                (class PROCESS-MPS) (sub-type SIMPLE)
+                (priority ?*PRIORITY-RESET*)
+                (parent ?mps-handling-id)
+                (params m ?mps
+                )
+                (required-resources ?resources)
+  ))
+  (modify ?pg (mode EXPANDED))
+)
 
 (defrule goal-production-hack-failed-enter-field
   "HACK: Stop trying to enter the field when it failed a few times."
