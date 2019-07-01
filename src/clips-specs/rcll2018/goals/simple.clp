@@ -66,11 +66,11 @@
 (defrule simple-goal-dispatch
   ?g <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SIMPLE) (mode COMMITTED)
               (class ?type)  (committed-to nil) (required-resources $?req)
+							(verbosity ?verbosity)
               (acquired-resources $?acq&:(subsetp ?req ?acq)))
   (not (goal (parent ?goal-id)))
 =>
-  (if (neq ?type SEND-BEACON)
-    then
+  (if (neq ?verbosity QUIET) then
     (printout t "Goal " ?goal-id " DISPATCHED!" crlf)
   )
   (modify ?g (mode DISPATCHED))

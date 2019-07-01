@@ -100,7 +100,7 @@
   ; TODO: make interval a constant
   =>
   (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
-                (class SEND-BEACON) (parent ?maintain-id)))
+                (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)))
 )
 
 
@@ -174,7 +174,7 @@
   =>
   (assert (goal (id (sym-cat REFILL-SHELF- (gensym*)))
                 (class REFILL-SHELF) (sub-type SIMPLE)
-                (parent ?maintain-id)
+                (parent ?maintain-id) (verbosity QUIET)
                 (params mps ?mps)))
 )
 
