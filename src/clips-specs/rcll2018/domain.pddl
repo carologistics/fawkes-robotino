@@ -549,6 +549,14 @@
   (:action spawn-wp
     :parameters (?wp - workpiece ?r - robot)
     :precondition (not (wp-spawned-for ?wp ?r))
-    :effect (wp-spawned-for ?wp ?r)
+    :effect (and
+      (wp-spawned-for ?wp ?r)
+      (wp-unused ?wp)
+      (wp-cap-color ?wp CAP_NONE)
+      (wp-ring1-color wp RING_NONE)
+      (wp-ring2-color wp RING_NONE)
+      (wp-ring3-color wp RING_NONE)
+      (wp-base-color wp BASE_NONE)
+    )
   )
 )
