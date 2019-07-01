@@ -383,7 +383,11 @@ void NavGraphGeneratorMPSThread::update_station(std::string id, bool input,
         tf::Pose(tf::Quaternion(tag_ori[0], tag_ori[1], tag_ori[2], tag_ori[3]),
                  tf::Vector3(tag_pos[0], tag_pos[1], tag_pos[2])),
         fawkes::Time(0, 0), frame);
-    tf_listener->transform_pose(cfg_global_frame_, spose, pose);
+    if (cfg_global_frame_ == frame) {
+      pose = spose;
+    } else {
+      tf_listener->transform_pose(cfg_global_frame_, spose, pose);
+    }
   } catch (tf::TransformException &e) {
     logger->log_warn(name(), "Transform exception:");
     logger->log_warn(name(), e);
