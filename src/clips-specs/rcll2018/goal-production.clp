@@ -356,9 +356,10 @@
   else
     (printout t "Goal " FILL-CAP " formulated" crlf)
   )
+  (bind ?distance (node-distance (str-cat ?mps -I)))
   (assert (goal (id (sym-cat FILL-CAP- (gensym*)))
                 (class FILL-CAP) (sub-type SIMPLE)
-                (priority (+ ?priority-increase ?*PRIORITY-PREFILL-CS*))
+                (priority (+ ?priority-increase ?*PRIORITY-PREFILL-CS* (goal-distance-prio ?distance)))
                 (parent ?production-id)
                 (params robot ?robot
                         mps ?mps
@@ -682,9 +683,10 @@
                                      )))
   =>
   (printout t "Goal " GET-SHELF-TO-FILL-RS " formulated" crlf)
+  (bind ?distance (node-distance (str-cat ?mps -I)))
   (assert (goal (id (sym-cat GET-SHELF-TO-FILL-RS- (gensym*)))
                 (class GET-SHELF-TO-FILL-RS)
-                (priority ?*PRIORITY-PREFILL-RS*)
+                (priority (+ ?*PRIORITY-PREFILL-RS* (goal-distance-prio ?distance)))
                 (parent ?maintain-id) (sub-type SIMPLE)
                              (params robot ?robot
                                      cs ?cs
@@ -727,10 +729,11 @@
     then
       (bind ?priority-increase (- ?priority-increase 1))
   )
+  (bind ?distance (node-distance (str-cat ?mps -I)))
   (printout t "Goal " FILL-RS " formulated" crlf)
   (assert (goal (id (sym-cat FILL-RS- (gensym*)))
                 (class FILL-RS) (sub-type SIMPLE)
-                (priority (+ ?*PRIORITY-PREFILL-RS* ?priority-increase))
+                (priority (+ ?*PRIORITY-PREFILL-RS* ?priority-increase (goal-distance-prio ?distance)))
                 (parent ?production-id)
                 (params robot ?robot
                         mps ?mps
