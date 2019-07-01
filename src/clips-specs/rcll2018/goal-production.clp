@@ -86,7 +86,7 @@
   (not (goal (class BEACON-MAINTAIN)))
   =>
   (bind ?goal (goal-tree-assert-run-endless BEACON-MAINTAIN 1))
-  (modify ?goal (verbosity QUIET))
+  (modify ?goal (verbosity QUIET) (params frequency 1))
 )
 
 
@@ -96,8 +96,7 @@
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (time $?now)
-  ?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED)
-        (meta last-formulated $?last))
+  ?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED))
   ; TODO: make interval a constant
   =>
   (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
@@ -114,7 +113,8 @@
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (not (goal (class WP-SPAWN-MAINTAIN)))
  =>
-  (goal-tree-assert-run-endless WP-SPAWN-MAINTAIN 1)
+  (bind ?goal (goal-tree-assert-run-endless WP-SPAWN-MAINTAIN 1))
+	(modify ?goal (params frequency 1))
 )
 
 
@@ -122,8 +122,7 @@
   "Spawn a WP for each robot, if you are the spawn-master"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (time $?now)
-  ?g <- (goal (id ?maintain-id) (class WP-SPAWN-MAINTAIN) (mode SELECTED)
-              (meta  last-formulated $?last&:(timeout ?now ?last 1)))
+  ?g <- (goal (id ?maintain-id) (class WP-SPAWN-MAINTAIN) (mode SELECTED))
   (not (goal (class SPAWN-WP)))
   ; TODO: make interval a constant
   (domain-object (name ?robot) (type robot))
