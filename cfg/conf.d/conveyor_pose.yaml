@@ -11,7 +11,7 @@ plugins/conveyor_pose:
 
   # sets the switch interface the plugin is waiting for before
   # starting the plugin
-  realsense_switch: "realsense"
+  realsense_switch: "realsense2"
 
   # forces ConveyorPosePlugin to think its MPS_TARGET is a shelf
   # This works only in debug mode, as its usage is intended to simplify

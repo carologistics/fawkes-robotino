@@ -11,6 +11,9 @@ conveyor_plane:
   # the point cloud that is used to detect the belt
   cloud_in: "/camera/depth/points"
 
+  # switch interface that enables/disables the depth cam
+  realsense_switch: "realsense2"
+
   if:
     # the prefix used for all interfaces
     prefix: conveyor_plane
