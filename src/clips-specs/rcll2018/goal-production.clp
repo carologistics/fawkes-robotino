@@ -424,9 +424,17 @@
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   =>
   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
+  (bind ?prio ?*PRIORITY-CLEAR-CS*)
+  (if (any-factp ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact wp-at))
+                                      (eq (wm-key-arg ?wm:key m) ?mps)
+                                      (eq (wm-key-arg ?wm:key side) INPUT)))
+    then
+      (bind ?prio (+ 1 ?prio))
+      (printout warn "Enhance CLEAR-MPS priority, since there is a product at the input already" crlf)
+  )
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
                 (class CLEAR-MPS) (sub-type SIMPLE)
-                (priority ?*PRIORITY-CLEAR-CS*)
+                (priority ?prio)
                 (parent ?production-id)
                 (params robot ?robot
                         mps ?mps
