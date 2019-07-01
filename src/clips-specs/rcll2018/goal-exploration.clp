@@ -133,7 +133,7 @@
     (goal (id (sym-cat MOVE-NODE- (gensym*)))
           (class MOVE-NODE)
           (sub-type SIMPLE)
-          (priority 1)
+          (priority 1.0)
           (parent ?maintain-id)
     )
   )
