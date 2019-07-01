@@ -87,6 +87,14 @@
                                                    ?points-delivery)))
           (wm-fact (key order meta points-max args? ord ?order) (type INT)
                    (is-list FALSE) (value ?res))
+          (wm-fact (key order meta step-scored args? ord ?order step RING1)
+                   (type INT) (is-list FALSE) (value 0))
+          (wm-fact (key order meta step-scored args? ord ?order step RING2)
+                   (type INT) (is-list FALSE) (value 0))
+          (wm-fact (key order meta step-scored args? ord ?order step RING3)
+                   (type INT) (is-list FALSE) (value 0))
+          (wm-fact (key order meta step-scored args? ord ?order step CAP)
+                   (type INT) (is-list FALSE) (value 0))
           (wm-fact (key order meta estimated-points-total args? ord ?order)
                    (type INT) (is-list FALSE) (value 0))
           (wm-fact (key order meta estimated-time-steps args? ord ?order)
@@ -119,14 +127,16 @@
                     0
                     ?t-steps
                     ?game-time
-                    ?end)))))
+                    ?end
+                    RING1)))))
 =>
   (bind ?res (estimate-achievable-points
                ?p-steps
                0
                ?t-steps
                ?game-time
-               ?end))
+               ?end
+               RING1))
   (printout t  "Order " ?order " is expected to score " ?res " out of "
                ?p-total " points" crlf)
   (modify ?om (value ?res))
@@ -350,43 +360,6 @@
 )
 
 
-(defrule production-strategy-current-points-for-started-order
-" Calculates the point value of an intermediate product."
-  (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
-  ; WP CEs
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-  ; Refbox CEs
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
-           (value ?qd-us&:(< ?qd-us ?qr)))
-  (wm-fact (key refbox game-time) (values ?time-sec $?))
-  (wm-fact (key refbox order ?order delivery-end) (type UINT)
-           (value ?end&:(> ?end ?time-sec)))
-  ; Order Meta CEs
-  (wm-fact (key order meta points-steps args? ord ?order)
-           (values $?pointlist))
-  ; WP Meta CEs
-  (wm-fact (key wp meta next-step args? wp ?wp) (value ?curr-step))
-  ?pc <- (wm-fact (key wp meta points-current args? wp ?wp)
-                  ; the current points have changed and the deadline has not
-                  ; been met yet
-                  (value ?p-curr&:(neq ?p-curr
-                    (+ 0 0 (expand$ (subseq$ ?pointlist
-                                             1
-                                             (- (order-steps-index ?curr-step)
-                                                1)))))))
-=>
-  (bind ?res (+ 0 0  (expand$ (subseq$ ?pointlist
-                              1
-                              (- (order-steps-index ?curr-step)
-                                 1)))))
-  (modify ?pc (value ?res))
-  (printout t "WP " ?wp " for order " ?order " yields " ?res
-              " points if it can be finished." crlf)
-)
-
-
 
 (defrule production-strategy-update-next-step
 " Keeps track of the workpiece progress by checking which step has to be
@@ -412,8 +385,13 @@
   (wm-fact (key domain fact order-ring3-color args? ord ?order col ?col-r3))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
   ; WP Meta CEs
+  ?ns <- (wm-fact (key wp meta points-current args? wp ?wp) (value ?p-curr))
   ?wm <- (wm-fact (key wp meta next-step args? wp ?wp)
                    (value ?curr-step))
+  ; Order Meta CE
+  (wm-fact (key order meta points-steps args? ord ?order) (values $?p-list))
+  ?ss <- (wm-fact (key order meta step-scored args? ord ?order step ?curr-step)
+                  (value ?scored))
   (test (or
           (and (not (eq ?wp-col-r1 ?col-r1)) (not (eq ?curr-step RING1)))
           (and (eq ?wp-col-r1 ?col-r1)
@@ -455,6 +433,9 @@
           )
       )
   )
+  (modify ?ss (value (+ ?scored 1)))
+  (modify ?ns (value (+ ?p-curr
+                        (nth$ (order-steps-index ?curr-step) $?p-list))))
   (modify ?wm (value ?new-step))
 )
 
@@ -476,6 +457,7 @@
   ; Order Meta CEs
   (wm-fact (key order meta points-max args? ord ?order) (value ?p-total))
   (wm-fact (key order meta points-steps args? ord ?order) (values $?p-steps))
+  (wm-fact (key order meta next-step args? ord ?order) (value ?next-step))
   (wm-fact (key order meta estimated-time-steps args? ord ?order)
            (values $?t-steps))
   ; WP Meta CEs
@@ -487,15 +469,36 @@
                  ?p-curr
                  ?t-steps
                  ?game-time
-                 ?end)))))
+                 ?end
+                 ?next-step)))))
 =>
   (bind ?res (estimate-achievable-points
                ?p-steps
                ?p-curr
                ?t-steps
                ?game-time
-               ?end))
+               ?end
+               ?next-step))
   (printout error "Workpiece " ?wp " for order " ?order " can score us " ?res
                   " out of " ?p-total "  points in total." crlf)
   (modify ?tpe (value ?res))
+)
+
+
+(defrule production-strategy-reduce-points-already-scored
+  ; Refbox CEs
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  ; Order Meta CEs
+  (wm-fact (key order meta step-scored args? ord ?order step ?step)
+           (value ?scored&:(<= ?qr ?scored)))
+  ?ps <- (wm-fact (key order meta points-steps args? ord ?order)
+                  (values $?p-steps&:(not (eq (nth$ (order-steps-index ?step)
+                                                    ?p-steps)
+                                          0))))
+=>
+  (modify ?ps (values (replace$ ?p-steps
+                                (order-steps-index ?step)
+                                (order-steps-index ?step)
+                                0)))
 )
