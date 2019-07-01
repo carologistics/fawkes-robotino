@@ -10,3 +10,8 @@ skills:
     x: 0.31
   approach_distance_laser:
     x: 0.27
+
+  shelf_pick:
+    left_slot_y_offset: 0.0
+    middle_slot_y_offset: 0.0
+    right_slot_y_offset: 0.0
