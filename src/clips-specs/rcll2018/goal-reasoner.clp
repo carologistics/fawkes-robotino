@@ -365,36 +365,8 @@
 
 
 (defrule goal-reasoner-evaluate-completed-subgoal-refill-shelf
-" Create the domain objects and wm-facts corresponding to the freshly spawned
-  capcarriers when the REFILL-SHELF-ACHIEVE goal finishes successfully.
-"
-  ?g <- (goal (class REFILL-SHELF) (parent ?parent-id)
-              (mode FINISHED) (outcome COMPLETED)
-              (params mps ?mps))
-  ?p <- (goal (id ?parent-id))
-  (wm-fact (key domain fact cs-color args? m ?mps col ?col))
+  ?g <- (goal (class REFILL-SHELF) (mode FINISHED))
   =>
-  (if (eq ?col CAP_GREY)
-     then
-     (bind ?cc1 (sym-cat CCG (random-id)))
-     (bind ?cc2 (sym-cat CCG (random-id)))
-     (bind ?cc3 (sym-cat CCG (random-id)))
-     else
-     (bind ?cc1 (sym-cat CCB (random-id)))
-     (bind ?cc2 (sym-cat CCB (random-id)))
-     (bind ?cc3 (sym-cat CCB (random-id)))
-   )
-   (assert
-     (domain-object (name ?cc1) (type cap-carrier))
-     (domain-object (name ?cc2) (type cap-carrier))
-     (domain-object (name ?cc3) (type cap-carrier))
-     (wm-fact (key domain fact wp-cap-color args? wp ?cc1 col ?col) (type BOOL) (value TRUE))
-     (wm-fact (key domain fact wp-cap-color args? wp ?cc2 col ?col) (type BOOL) (value TRUE))
-     (wm-fact (key domain fact wp-cap-color args? wp ?cc3 col ?col) (type BOOL) (value TRUE))
-     (wm-fact (key domain fact wp-on-shelf args? wp ?cc1 m ?mps spot LEFT) (type BOOL) (value TRUE))
-     (wm-fact (key domain fact wp-on-shelf args? wp ?cc2 m ?mps spot MIDDLE) (type BOOL) (value TRUE))
-     (wm-fact (key domain fact wp-on-shelf args? wp ?cc3 m ?mps spot RIGHT) (type BOOL) (value TRUE))
-   )
    (modify ?g (mode EVALUATED))
 )
 
