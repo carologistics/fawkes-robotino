@@ -132,8 +132,7 @@ end
 
 fsm:define_states{ export_to=_M, closure={},
    {"INIT", SkillJumpState, skills={{gripper_commands}}, final_to="GOTO_SHELF", fail_to="FAILED" },
-   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SHELF", fail_to="FAILED"},
-   {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="MOVE_ABOVE_PUCK", fail_to="FAILED"},
+   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="MOVE_ABOVE_PUCK", fail_to="FAILED"},
    {"MOVE_ABOVE_PUCK", SkillJumpState, skills={{gripper_commands}}, final_to="ADJUST_HEIGHT", fail_to="FAILED" },
    {"ADJUST_HEIGHT", SkillJumpState, skills={{gripper_commands}}, final_to="GRAB_PRODUCT", fail_to="FAILED" },
    {"GRAB_PRODUCT", SkillJumpState, skills={{gripper_commands}}, final_to="LEAVE_SHELF", fail_to="FAILED"},
@@ -236,11 +235,6 @@ function ADJUST_HEIGHT:init()
   self.args["gripper_commands"].command = "MOVEREL"
   self.args["gripper_commands"].target_frame = "gripper_home"
 
-end
-
-function APPROACH_SHELF:init()
-   self.args["approach_mps"].x = x_distance
-   self.args["approach_mps"].use_conveyor = false
 end
 
 function GRAB_PRODUCT:init()
