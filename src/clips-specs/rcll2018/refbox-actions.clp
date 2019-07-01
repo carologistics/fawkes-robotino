@@ -52,7 +52,6 @@
 		                  (eq ?node:name (wm-fact-to-navgraph-node ?at:key)))
 		(bind ?trans ?node:pos)
 	))
-	(printout info "Using trans " ?trans " in beacon" crlf)
 	(bind ?beacon-pose (pb-field-value ?beacon "pose"))
 	(pb-set-field ?beacon-pose "x" (nth$ 1 ?trans))
 	(pb-set-field ?beacon-pose "y" (nth$ 2 ?trans))
