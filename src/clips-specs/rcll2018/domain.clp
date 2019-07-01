@@ -292,28 +292,7 @@
  
  =>
   (printout warn "Restoring world model from the database" crlf)
- (if (eq ?team-color CYAN)
-    then
-        (bind ?bs C-BS)
-        (bind ?cs1 C-CS1)
-        (bind ?cs2 C-CS2)
-        (bind ?rs1 C-RS1)
-        (bind ?rs2 C-RS2)
-        (bind ?ds C-DS)
-        (bind ?ss C-SS)
-    else
-        (bind ?bs M-BS)
-        (bind ?cs1 M-CS1)
-        (bind ?cs2 M-CS2)
-        (bind ?rs1 M-RS1)
-        (bind ?rs2 M-RS2)
-        (bind ?ds M-DS)
-        (bind ?ss M-SS)
-  )
-
 	(domain-load-local-facts (sym-cat ?robot-name) ?team-color)
 	(wm-robmem-sync-restore)
 	(assert (domain-facts-loaded))
 )
-
-  
