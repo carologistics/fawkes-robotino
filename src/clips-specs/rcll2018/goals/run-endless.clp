@@ -135,7 +135,7 @@
   (time $?now)
   ?g <- (goal (id ?goal-id) (parent nil) (type MAINTAIN) (sub-type RUN-ENDLESS)
           (mode EVALUATED) (outcome ?outcome)
-          (params frequency ?freq) (acquired-resources)
+          (params frequency ?freq)
           (meta last-formulated $?last&:(timeout ?now ?last ?freq)))
   (not (goal (parent ?goal-id)))
 =>
