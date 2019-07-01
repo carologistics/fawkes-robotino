@@ -36,6 +36,7 @@
   =>
   (assert (goal (id (sym-cat EXPIRE-LOCKS- (gensym*)))
                 (class EXPIRE-LOCKS) (sub-type SIMPLE)
+                (verbosity QUIET)
                 (parent ?maintain-id)))
 )
 
