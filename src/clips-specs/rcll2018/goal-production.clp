@@ -57,27 +57,6 @@
   ?*DELIVER-ABORT-TIMEOUT* = 30
 )
 
-
-(defrule goal-production-create-acquire-token-spawning-master
-" If no one is spawning master. Try to become the spawning master
-
-  The spawning master creates the facts for new workpieces anyd capcarriers.
-  Those can be introduced to the world during the game e.g. through dispensing
-  at the base station or refilling of a shelf.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (domain-facts-loaded)
-  (domain-object (name SPAWNING-MASTER) (type master-token))
-  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
-  (not (goal (class ACQUIRE-TOKEN) (params token-name SPAWNING-MASTER)))
-  (not (mutex (name SPAWNING-MASTER) (state LOCKED)))
-  =>
-  (assert (goal (id (sym-cat ACQUIRE-TOKEN- (gensym*)))
-                    (class ACQUIRE-TOKEN) (sub-type SIMPLE)
-		    (params token-name SPAWNING-MASTER)))
-)
-
-
 (defrule goal-production-create-beacon-maintain
 " The parent goal for beacon signals. Allows formulation of
   goals that periodically communicate with the refbox.
@@ -108,13 +87,14 @@
   "Maintain Spawning if the spawning-master token is held"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
-  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
-  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
+	(not (mutex (name ?n&:(eq ?n (resource-to-mutex wp-spawn))) (state LOCKED)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (not (goal (class WP-SPAWN-MAINTAIN)))
  =>
   (bind ?goal (goal-tree-assert-run-endless WP-SPAWN-MAINTAIN 1))
-	(modify ?goal (params frequency 1))
+  (modify ?goal (required-resources wp-spawn)
+                (params frequency 1 retract-on-REJECTED)
+                (verbosity QUIET))
 )
 
 
@@ -124,15 +104,12 @@
   (time $?now)
   ?g <- (goal (id ?maintain-id) (class WP-SPAWN-MAINTAIN) (mode SELECTED))
   (not (goal (class SPAWN-WP)))
-  ; TODO: make interval a constant
   (domain-object (name ?robot) (type robot))
   (not
     (and
     (domain-object (name ?wp) (type workpiece))
     (wm-fact (key domain fact wp-spawned-for args? wp ?wp r ?robot)))
   )
-  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
-  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   =>
   (assert (goal (id (sym-cat SPAWN-WP- (gensym*))) (sub-type SIMPLE)
