@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "product_pick"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"gripper_commands", "motor_move"}
+depends_skills     = {"gripper_commands", "motor_move", "reset_gripper"}
 depends_interfaces = {
    {v = "robotino_sensor", type = "RobotinoSensorInterface", id="Robotino"} -- Interface to read I/O ports
 }
@@ -125,9 +125,8 @@ fsm:define_states{ export_to=_M,
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}},final_to="GRIPPER_ALIGN", fail_to="FAILED"},
    {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="FAILED"},
    {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="CLOSE_GRIPPER",fail_to="FAILED"},
-   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_BACK", fail_to="FAILED"},
-   {"MOVE_GRIPPER_BACK", SkillJumpState, skills={{gripper_commands}}, final_to = "GRIPPER_HOME", fail_to="FAILED"},
-   {"GRIPPER_HOME", SkillJumpState, skills={{gripper_commands}}, final_to = "DRIVE_BACK", fail_to="FAILED"},
+   {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="RESET_GRIPPER", fail_to="FAILED"},
+   {"RESET_GRIPPER", SkillJumpState, skills={{reset_gripper}}, final_to = "DRIVE_BACK", fail_to="FAILED"},
    {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CHECK_PUCK", fail_to="FAILED"},
    {"CHECK_PUCK", JumpState},
 }
@@ -187,15 +186,6 @@ end
 function MOVE_GRIPPER_FORWARD:init()
   local pose = {}
   pose = pose_gripper_offset(conveyor_gripper_forward_x, 0, conveyor_gripper_down_z)
-
-  self.args["gripper_commands"] = pose
-  self.args["gripper_commands"].command = "MOVEABS"
-  self.args["gripper_commands"].target_frame = "gripper_home"
-end
-
-function MOVE_GRIPPER_BACK:init()
-  local pose = {}
-  pose = pose_gripper_offset(conveyor_gripper_back_x, 0, conveyor_gripper_up_z)
 
   self.args["gripper_commands"] = pose
   self.args["gripper_commands"].command = "MOVEABS"
