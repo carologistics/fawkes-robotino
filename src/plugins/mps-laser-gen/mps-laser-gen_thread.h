@@ -30,11 +30,13 @@
 #include <aspect/logging.h>
 #include <aspect/tf.h>
 #include <core/threading/thread.h>
+#include <interfaces/LaserBoxFilterInterface.h>
 #include <navgraph/aspect/navgraph.h>
 #include <plugins/ros/aspect/ros.h>
 
 #include <string>
 
+#include <Eigen/Geometry>
 #include <interfaces/Laser360Interface.h>
 #include <ros/publisher.h>
 
@@ -49,8 +51,27 @@ class MPSLaserGenThread : public fawkes::Thread,
                           public fawkes::ROSAspect,
                           public fawkes::TransformAspect {
 
+  /// @cond INTERNAL
+  class MPS {
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    Eigen::Vector2f center;
+    Eigen::Vector2f corners[4];
+
+    unsigned int closest_idx;
+    unsigned int adjacent_1;
+    unsigned int adjacent_2;
+
+    float bearing;
+  };
+  /// @endcond
+
 public:
-  MPSLaserGenThread();
+  /** MPSLaserGenThread constructor
+   * @param mps_laser_gen_prefix configuration path prefix
+   */
+  MPSLaserGenThread(std::string mps_laser_gen_prefix);
 
   virtual void init();
   virtual void finalize();
@@ -62,7 +83,17 @@ protected:
 
 private:
   fawkes::Laser360Interface *laser_if_;
+  fawkes::LaserBoxFilterInterface *laser_box_filter_if_;
   ros::Publisher vispub_;
+  std::string mps_laser_gen_cfg_prefix;
+  std::map<std::string, MPS> mpses;
+
+  bool cfg_enable_mps_laser_gen_;
+  bool cfg_enable_mps_box_filter_;
+  float cfg_mps_length_;
+  float cfg_mps_width_;
+
+  void load_config();
 };
 
 #endif
