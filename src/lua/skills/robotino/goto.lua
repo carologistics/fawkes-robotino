@@ -127,8 +127,7 @@ function INIT:init()
     -- check for waiting position
     if string.match(self.fsm.vars.place, "%bWAIT") then 
        self.fsm.vars.waiting_pos = true
-    end
-    if string.match(self.fsm.vars.place, "[MC][-]Z[1-7][1-8]") then
+    elseif string.match(self.fsm.vars.place, "^[MC][-]Z[1-7][1-8]$") then
       -- place argument is a zone, e.g. M-Z21
       self.fsm.vars.zone = self.fsm.vars.place
       self.fsm.vars.x = tonumber(string.sub(self.fsm.vars.place, 4, 4)) - 0.5
