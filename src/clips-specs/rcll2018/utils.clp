@@ -32,6 +32,13 @@
   ?*POINTS-MOUNT-CAP* = 10
   ?*POINTS-DELIVER* = 20
   ?*POINTS-COMPETITIVE* = 10
+
+  ?*TIME-MOUNT-RING* = 60
+  ?*TIME-MOUNT-CAP* = 90
+  ?*TIME-DELIVER* = 120
+  ?*TIME-GET-BASE* = 30
+  ?*TIME-RETRIEVE-CAP* = 60
+  ?*TIME-FILL-RS* = 20
 )
 
 (deffunction random-id ()
@@ -807,12 +814,11 @@
 
   @return points awarded for mounting a ring needing ?req additinal bases
 "
-  (if (eq ?req NONE) then (return 0))
   (if (eq ?req ZERO) then (return ?*POINTS-MOUNT-RING-CC0*))
   (if (eq ?req ONE) then (return ?*POINTS-MOUNT-RING-CC1*))
   (if (eq ?req TWO) then (return ?*POINTS-MOUNT-RING-CC2*))
   (printout error "ring-req-points input " ?req " is not a valid ring spec
-                   (allowed values: NONE,ZERO,ONE,TWO)" crlf)
+                   (allowed values: ZERO,ONE,TWO)" crlf)
   (return 0)
 )
 
@@ -830,29 +836,107 @@
   (return ?values)
 )
 
-(deffunction finalize-points (?points ?competitive ?qr ?qd-us ?qd-them)
-" @param ?points points before considering delivered quantities and complexity
-                 rules
-  @param ?competitive bool indicating whether competitive point changes should
-                      be applied
-  @param ?qr quantities-requested of the order in question
+(deffunction order-steps-index (?step)
+" @param ?step production step, from the agent view describing the progress
+               after a production goal is successfully executed.
+
+  @return index of ?step in the list of points-steps and estimated-time-steps
+"
+  (if (eq ?step RING1) then (return 1))
+  (if (eq ?step RING2) then (return 2))
+  (if (eq ?step RING3) then (return 3))
+  (if (eq ?step CAP) then (return 4))
+  (if (eq ?step DELIVER) then (return 5))
+  (printout error "order-steps-index input " ?step " is not a valid step
+                   (allowed values: RING1,RING2,RING3,CAP,DELIVER)" crlf)
+)
+
+
+(deffunction delivery-points (?qr ?qd-us ?qd-them ?competitive ?curr-time ?deadline)
+" @param ?qr quantities-requested of the order in question
   @param ?qd-us quantities-delivered of our team
   @param ?qd-them quantities-delivered of the opposing team
+  @param ?competitive bool indicating whether competitive point changes should
+                      be applied
+  @param ?curr-time current game time in seconds
+  @param ?deadline deadline of the order
 
-  @return adjusted points (apply competitive rules if needed, 0 points if
-          the requested quantites are already delivered)
+  @return delivery points (apply competitive rules if needed, 0 points if
+          the requested quantities are already delivered, reduced points after)
 "
   (if (not (> ?qr ?qd-us))
     then
       (return 0))
+  (bind ?delivery-points 20)
+  (if (> ?curr-time ?deadline)
+    then
+      (bind ?delivery-points 5)
+  )
   (if ?competitive
     then
       (if (> ?qd-them ?qd-us)
         then
-          (return (max 0 (- ?points ?*POINTS-COMPETITIVE*)))
+          (return (max 0 (- ?delivery-points ?*POINTS-COMPETITIVE*)))
         else
-          (return (+ ?points ?*POINTS-COMPETITIVE*)))
+          (return (+ ?delivery-points ?*POINTS-COMPETITIVE*)))
     else
-      (return ?points)
+      (return ?delivery-points)
+  )
+)
+
+
+(deffunction greedy-knapsack (?goods ?initial-weight ?max-weight)
+" @params ?goods list of weights to pack in knapsack
+          ?initial-weight weight of the empty knapsack
+          ?max-weight upper bound on total weight that fits in the knapsack
+
+  @return number of items that can be greedily packed into the knapsack
+"
+  (bind ?curr-weight ?initial-weight)
+  (bind ?counter 0)
+  (progn$ (?item ?goods)
+    (if (<= (+ ?curr-weight ?item) ?max-weight)
+      then
+        (bind ?curr-weight (+ ?curr-weight ?item))
+        (bind ?counter (+ ?counter 1))
+      else
+        (return ?counter)
+    )
+  )
+  (return ?counter)
+)
+
+
+(deffunction estimate-achievable-points
+             (?pointlist ?achieved-points ?timelist ?curr-time ?deadline ?next-step)
+" @params ?pointlist list of points for all production steps
+          ?achieved-points points already scored in previous production steps
+          ?timelist list of time-estimates for all production steps
+          ?curr-time current game time in seconds
+          ?deadline deadline (in seconds) for the order that gets produced
+          ?next-step next step that scores points
+
+  @return Amount of points the product yields, assuming tasks only score points
+          if they are finished within the deadline
+"
+  (bind ?curr-step (order-steps-index ?next-step))
+  (if (<= ?curr-step (length ?pointlist))
+    then
+      (bind ?remaining-timelist (subseq$ ?timelist
+                                         ?curr-step
+                                         (length ?timelist)))
+      (bind ?doable-steps (greedy-knapsack ?remaining-timelist
+                                           ?curr-time
+                                           ?deadline))
+      (bind ?achievable-pointlist (subseq$ ?pointlist
+                                           ?curr-step
+                                           (+ ?curr-step (- ?doable-steps 1))))
+      (bind ?achievable-points ?achieved-points)
+      (progn$ (?points ?achievable-pointlist)
+            (bind ?achievable-points (+ ?achievable-points ?points))
+      )
+      (return ?achievable-points)
+    else
+      (return ?achieved-points)
   )
 )

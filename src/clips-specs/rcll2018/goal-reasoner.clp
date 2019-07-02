@@ -342,24 +342,14 @@
  (time $?now)
  (wm-fact (key domain fact wp-usable args? wp ?wp&:(eq ?wp (get-param-by-arg ?params wp))))
  (wm-fact (key domain fact self args? r ?robot))
- (wm-fact (key order meta points-total
+ (wm-fact (key order meta points-max
            args? ord ?order&:(eq ?order (get-param-by-arg ?params order)))
-          (value ?total))
- (wm-fact (key order meta bases-missing args? ord ?order) (value ?bm))
- (wm-fact (key order meta rings-missing args? ord ?order) (value ?rm))
+          (value ?max))
  =>
  (printout t "Goal '" ?goal-id "' has been completed, Evaluating" crlf)
  (assert (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE)))
  (printout t "Started producing order " ?order " which potentially yields "
-             ?total " points" crlf)
- (if (> ?rm 0)
-   then
-     (printout t "It needs " ?rm " more ring(s)")
-     (if (> ?bm 0)
-       then
-         (printout t " and requires " ?bm " more base(s) to mount them"))
-     (printout t "." crlf)
-  )
+             ?max " points" crlf)
  (modify ?g (mode EVALUATED))
 )
 
