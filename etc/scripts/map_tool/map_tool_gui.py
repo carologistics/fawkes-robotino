@@ -32,7 +32,6 @@ from qlineeditfocus import  QLineEditFocus
 
 
 import map_tool as mt
-import map_tool_validator as mtv
 
 import yaml
 
@@ -87,7 +86,6 @@ class MapTool:
         self.window.createString.clicked.connect(self.dehighlight_reread)
         self.window.saveMap.clicked.connect(self.save_map)
 
-        #self.window.mapString.soft_validator = mtv.MapStringValidator()
         self.window.mapString.editingFinished.connect(self.create_custom_string)
     
         self.window.show()
