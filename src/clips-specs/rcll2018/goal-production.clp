@@ -1369,8 +1369,8 @@
 
   (wm-fact (key domain fact self args? r ?robot))
   (or (and (wm-fact (key domain fact at args? r ?robot m ?mps side WAIT))
-           (domain-object (type waitpoint) (name ?waitpoint&:(eq mps ?waitpoint))))
-      (and (domain-object (type waitpoint) (name ?waitpoint))
+           (domain-object (type waitpoint) (name ?waitpoint&:(and (eq ?mps ?waitpoint) (eq (str-length (str-cat ?waitpoint)) 10)))))
+      (and (domain-object (type waitpoint) (name ?waitpoint&:(eq (str-length (str-cat ?waitpoint)) 10)))
            (wm-fact (key domain fact at args? r ?robot m ?mps side ?side))
            (not (domain-object (type waitpoint) (name ?w2&:(eq ?w2 ?mps)))))
   )
