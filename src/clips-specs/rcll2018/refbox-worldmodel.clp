@@ -123,18 +123,9 @@
           (printout t "Added order " ?id " with " (pb-field-value ?o "cap_color") crlf)
       else
           (if (eq ?team-color CYAN) then
-            (bind ?qd (pb-field-value ?o "quantity_delivered_cyan"))
             (bind ?qd-them (pb-field-value ?o "quantity_delivered_magenta"))
           else
-            (bind ?qd (pb-field-value ?o "quantity_delivered_magenta"))
             (bind ?qd-them (pb-field-value ?o "quantity_delivered_cyan"))
-          )
-          (do-for-fact ((?old-qd wm-fact))
-            (and (wm-key-prefix ?old-qd:key
-                   (create$ refbox order ?order-id
-                    quantity-delivered ?team-color))
-                 (neq ?old-qd:value ?qd))
-              (modify ?old-qd (value ?qd))
           )
           (do-for-fact ((?old-qd-them wm-fact))
             (and (wm-key-prefix ?old-qd-them:key

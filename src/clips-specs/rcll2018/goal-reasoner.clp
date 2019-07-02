@@ -326,6 +326,18 @@
   (modify ?g (mode EVALUATED))
 )
 
+(defrule goal-reasoner-evaluate-completed-deliver
+" Enhance the order-delivered fact of the order of a successful deliver goal
+"
+  ?g <- (goal (id ?goal-id) (class DELIVER) (mode FINISHED) (outcome COMPLETED)
+              (params $? ?order $?))
+  (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
+  ?od <- (wm-fact (key refbox order ?order quantity-delivered ?team-color) (value ?val))
+  =>
+  (modify ?od (value (+ ?val 1)))
+  (modify ?g (mode EVALUATED))
+)
+
 
 (defrule goal-reasoner-evaluate-completed-produce-c0-and-mount-first-ring
 " Bind a workpiece to the order it belongs to.
