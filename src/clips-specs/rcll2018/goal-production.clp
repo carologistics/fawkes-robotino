@@ -57,27 +57,6 @@
   ?*DELIVER-ABORT-TIMEOUT* = 30
 )
 
-
-(defrule goal-production-create-acquire-token-spawning-master
-" If no one is spawning master. Try to become the spawning master
-
-  The spawning master creates the facts for new workpieces anyd capcarriers.
-  Those can be introduced to the world during the game e.g. through dispensing
-  at the base station or refilling of a shelf.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (domain-facts-loaded)
-  (domain-object (name SPAWNING-MASTER) (type master-token))
-  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
-  (not (goal (class ACQUIRE-TOKEN) (params token-name SPAWNING-MASTER)))
-  (not (mutex (name SPAWNING-MASTER) (state LOCKED)))
-  =>
-  (assert (goal (id (sym-cat ACQUIRE-TOKEN- (gensym*)))
-                    (class ACQUIRE-TOKEN) (sub-type SIMPLE)
-		    (params token-name SPAWNING-MASTER)))
-)
-
-
 (defrule goal-production-create-beacon-maintain
 " The parent goal for beacon signals. Allows formulation of
   goals that periodically communicate with the refbox.
@@ -85,7 +64,8 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (not (goal (class BEACON-MAINTAIN)))
   =>
-  (goal-tree-assert-run-endless BEACON-MAINTAIN 1)
+  (bind ?goal (goal-tree-assert-run-endless BEACON-MAINTAIN 1))
+  (modify ?goal (verbosity QUIET) (params frequency 1))
 )
 
 
@@ -95,12 +75,11 @@
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (time $?now)
-  ?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED)
-        (meta last-formulated $?last))
+  ?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED))
   ; TODO: make interval a constant
   =>
   (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
-                (class SEND-BEACON) (parent ?maintain-id)))
+                (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)))
 )
 
 
@@ -108,12 +87,14 @@
   "Maintain Spawning if the spawning-master token is held"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
-  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
-  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
+	(not (mutex (name ?n&:(eq ?n (resource-to-mutex wp-spawn))) (state LOCKED)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   (not (goal (class WP-SPAWN-MAINTAIN)))
  =>
-  (goal-tree-assert-run-endless WP-SPAWN-MAINTAIN 1)
+  (bind ?goal (goal-tree-assert-run-endless WP-SPAWN-MAINTAIN 1))
+  (modify ?goal (required-resources wp-spawn)
+                (params frequency 1 retract-on-REJECTED)
+                (verbosity QUIET))
 )
 
 
@@ -121,18 +102,14 @@
   "Spawn a WP for each robot, if you are the spawn-master"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (time $?now)
-  ?g <- (goal (id ?maintain-id) (class WP-SPAWN-MAINTAIN) (mode SELECTED)
-              (meta  last-formulated $?last&:(timeout ?now ?last 1)))
+  ?g <- (goal (id ?maintain-id) (class WP-SPAWN-MAINTAIN) (mode SELECTED))
   (not (goal (class SPAWN-WP)))
-  ; TODO: make interval a constant
   (domain-object (name ?robot) (type robot))
   (not
     (and
     (domain-object (name ?wp) (type workpiece))
     (wm-fact (key domain fact wp-spawned-for args? wp ?wp r ?robot)))
   )
-  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
-  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   =>
   (assert (goal (id (sym-cat SPAWN-WP- (gensym*))) (sub-type SIMPLE)
@@ -144,16 +121,17 @@
 (defrule goal-production-create-refill-shelf-maintain
 " The parent goal to refill a shelf. Allows formulation of goals to refill
   a shelf only if the game is in the production phase and the domain is loaded.
-  Only the spawning-master is in charge of handling shelf refills.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
   (not (goal (class REFILL-SHELF-MAINTAIN)))
-  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
-  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
+  (not (mutex (name ?n&:(eq ?n (resource-to-mutex refill-shelf))) (state LOCKED)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   =>
-  (goal-tree-assert-run-endless REFILL-SHELF-MAINTAIN 1)
+  (bind ?goal (goal-tree-assert-run-endless REFILL-SHELF-MAINTAIN 1))
+  (modify ?goal (required-resources refill-shelf)
+                (params frequency 1 retract-on-REJECTED)
+                (verbosity QUIET))
 )
 
 
@@ -168,13 +146,10 @@
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
-  (mutex (name SPAWNING-MASTER) (state LOCKED) (locked-by ?locked-by))
-  (wm-fact (key domain fact self args? r ?self&:(eq ?self (sym-cat ?locked-by))))
-  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
   =>
   (assert (goal (id (sym-cat REFILL-SHELF- (gensym*)))
                 (class REFILL-SHELF) (sub-type SIMPLE)
-                (parent ?maintain-id)
+                (parent ?maintain-id) (verbosity QUIET)
                 (params mps ?mps)))
 )
 
