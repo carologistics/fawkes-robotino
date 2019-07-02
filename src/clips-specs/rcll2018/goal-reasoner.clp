@@ -371,13 +371,6 @@
 )
 
 
-(defrule goal-reasoner-evaluate-completed-subgoal-wp-spawn
-  ?g <- (goal (id ?goal-id) (class SPAWN-WP) (mode FINISHED))
-  =>
-  (modify ?g (mode EVALUATED))
-)
-
-
 (defrule goal-reasoner-evaluate-failed-wp-put
 " After a failed wp-put, check if the gripper interface indicates, that the workpiece is still in the gripper.
   If this is not the case, the workpiece is lost and the corresponding facts are marked for clean-up
