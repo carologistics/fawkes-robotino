@@ -136,7 +136,7 @@ void SkillerMotorStateThread::loop() {
     unsigned int digital_output_to_reset;
     fawkes::Time *timeout_at;
     // first decide which lamp should be reset first
-    get_timeout(timeout_at, digital_output_to_reset);
+    get_next_switchoff(timeout_at, digital_output_to_reset);
     // now wait until the right moment to disable the led
     // However, we need to react on changes in the skiller ot motor interface
     // Thus, use interruptable timeout
@@ -146,7 +146,9 @@ void SkillerMotorStateThread::loop() {
     rsens_if_->read(); // always reread sensor interface after waking up
 
     // sweet, my alarm woke me up, now let's turn off the LED
-    signal_timedout_lights(timeout_at, digital_output_to_reset);
+    disable(digital_output_to_reset);
+    *timeout_at =
+        fawkes::Time(0, 0); // don't need to check this timeout anymore
   }
 
   // ok, either all output with timeout are turned off now
@@ -204,7 +206,7 @@ void SkillerMotorStateThread::disable(unsigned int output) {
 // @param wait_until, this is the pointer to the time at which the lamp should
 // be reset
 // @oaram digital_output_to_reset the corresponding signal lamp output
-void SkillerMotorStateThread::get_timeout(
+void SkillerMotorStateThread::get_next_switchoff(
     fawkes::Time *&wait_until, unsigned int &digital_output_to_reset) {
   // first determine which LED needs to be reset earliest
   wait_until = &failed_time_;
@@ -219,15 +221,6 @@ void SkillerMotorStateThread::get_timeout(
       digital_output_to_reset = cfg_digital_out_red_;
     }
   }
-}
-
-// function to disable the lamp after a timeout
-// additionally also resets the corresponding fawkes time entry
-// to make clear that the lamp is already reset
-void SkillerMotorStateThread::signal_timedout_lights(
-    fawkes::Time *wait_until, unsigned int digital_output_to_reset) {
-  *wait_until = fawkes::Time(0, 0); // don't need to check this timeout anymore
-  disable(digital_output_to_reset);
 }
 
 // @return True if the timeout was interrupted
