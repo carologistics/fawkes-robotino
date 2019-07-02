@@ -99,6 +99,7 @@
   ?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED)
         (meta last-formulated $?last))
   ; TODO: make interval a constant
+  (not (goal (class SEND-BEACON)))
   =>
   (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
                 (class SEND-BEACON) (parent ?maintain-id)))
@@ -210,6 +211,8 @@
   (wm-fact (key domain fact entered-field args? r ?robot))
   (NavGraphWithMPSGeneratorInterface (final TRUE))
   (wm-fact (key navgraph waitzone generated))
+  (not (and (domain-object (name ?mps) (type mps))
+            (not (navgraph-node (name ?name&:(eq ?name (str-cat ?mps)))))))
   =>
   (goal-tree-assert-run-endless PRODUCTION-MAINTAIN 1)
 )

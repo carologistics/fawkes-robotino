@@ -67,21 +67,78 @@
   (modify ?g (mode EXPANDED))
 )
 
-(defrule goal-expander-exploration
-  ?g <- (goal (id ?goal-id) (mode SELECTED) (class EXPLORATION))
+(defrule goal-expander-exploration-move-initial-position
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class MOVE-INITIAL-POSITION))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact self args? r ?r))
   (wm-fact (id ?id&: (eq ?id (str-cat "/config/rcll/route/" ?team-color "/" ?r))) (values $?route))
   =>
-  (assert (plan (goal-id ?goal-id) (id EXPLORATION-PLAN)))
-  (bind ?action-id 1)
-  (foreach ?node ?route
-	(assert (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id EXPLORATION-PLAN) (action-name move-node) (param-values ?r ?node)))
-	(bind ?action-id (+ ?action-id 1))
+  (assert (plan (goal-id ?goal-id) (id MOVE-INITIAL-POSITION-PLAN)))
+  (assert (plan-action (id 1) (plan-id MOVE-INITIAL-POSITION-PLAN) (goal-id ?goal-id)
+                                    (action-name set-speed-low)
+                                    (param-names r)
+                                    (param-values ?r))
+          (plan-action (id 2) (goal-id ?goal-id)
+                        (plan-id MOVE-INITIAL-POSITION-PLAN)
+                        (action-name move-node)
+                        (param-values ?r (nth$ 1 ?route)))
+          (plan-action (id 3) (plan-id MOVE-INITIAL-POSITION-PLAN) (goal-id ?goal-id)
+                                    (action-name set-speed-high)
+                                    (param-names r)
+                                    (param-values ?r))       
   )
   (modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-exploration-move-node
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class MOVE-NODE))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact self args? r ?r))
+  (wm-fact (id ?id&: (eq ?id (str-cat "/config/rcll/route/" ?team-color "/" ?r))) (values $?route))
+  =>
+  (assert (plan (goal-id ?goal-id) (id MOVE-NODE-PLAN)))
+  (bind ?action-id 1)
+  (assert (plan-action (id ?action-id) (plan-id MOVE-NODE-PLAN) (goal-id ?goal-id)
+                                    (action-name set-speed-low)
+                                    (param-names r)
+                                    (param-values ?r))
+  )
+  (bind ?action-id (+ 1 ?action-id))
+  (foreach ?node ?route
+	(assert (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id MOVE-NODE-PLAN) (action-name move-node) (param-values ?r ?node)))
+	(bind ?action-id (+ ?action-id 1))
+  )
+  (assert (plan-action (id ?action-id) (plan-id MOVE-NODE-PLAN) (goal-id ?goal-id)
+                                    (action-name set-speed-high)
+                                    (param-names r)
+                                    (param-values ?r))
+  )
+  (modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-exploration-explore-zone
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class EXPLORE-ZONE)
+            (params robot ?r zone ?zn))
+
+  =>
+  (assert
+      (plan (goal-id ?goal-id) (id EXPLORE-ZONE-PLAN))
+      (plan-action (id 1) (plan-id EXPLORE-ZONE-PLAN) (goal-id ?goal-id)
+                                    (action-name set-speed-high)
+                                    (param-names r)
+                                    (param-values ?r))
+      (plan-action (id 2) (plan-id EXPLORE-ZONE-PLAN) (goal-id ?goal-id)
+                                    (action-name explore-zone)
+                                    (param-names r z)
+                                    (param-values ?r ?zn))
+      (plan-action (id 3) (plan-id EXPLORE-ZONE-PLAN) (goal-id ?goal-id)
+                                    (action-name set-speed-low)
+                                    (param-names r)
+                                    (param-values ?r))
+  )
+  (modify ?g (mode EXPANDED))
+
+)
 
 
 (defrule goal-expander-enter-field

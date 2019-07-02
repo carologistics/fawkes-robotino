@@ -127,6 +127,7 @@ clips-executive:
               - rcll2018/production-strategy.clp
               - rcll2018/exploration.clp
               - rcll2018/goal-lock-expiration.clp
+              - rcll2018/goal-exploration.clp
           - name: goal-expander
             file: rcll2018/fixed-sequence.clp
           - name: action-selection
