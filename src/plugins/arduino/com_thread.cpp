@@ -175,8 +175,8 @@ void ArduinoComThread::loop() {
         float goal_y =
             tf_pose_target.getOrigin().getY() + msg->y() + cfg_y_max_ / 2.;
         float goal_z = tf_pose_target.getOrigin().getZ() + msg->z();
-        logger->log_info(name(), "Transformed: %f,%f,%f in frame %s", goal_x,
-                         goal_y, goal_z, cfg_gripper_frame_id_.c_str());
+        logger->log_debug(name(), "Transformed target axis values: %f,%f,%f",
+                         goal_x, goal_y, goal_z);
 
         bool msg_has_data = false;
         int d = 0;
