@@ -806,6 +806,33 @@
  (modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-wait-mps-process
+  ?p <- (goal (mode DISPATCHED) (id ?parent))
+  ?g <- (goal (id ?goal-id) (class WAIT-FOR-MPS-PROCESS) (mode SELECTED) (parent ?parent)
+            (params robot ?robot
+                    pos ?pos)
+  )
+  (wm-fact (key domain fact at args? r ?robot m ?mps-other side ?side-other))
+  =>
+  (assert
+    (plan (id WAIT-FOR-MPS-PROCESS-PLAN) (goal-id ?goal-id))
+  )
+  (if (eq ?pos ?mps-other) then 
+    (assert
+      (plan-action (id 1) (plan-id WAIT-FOR-MPS-PROCESS-PLAN) (goal-id ?goal-id)
+                        (action-name wait)
+                        (param-values ?robot ?pos))
+    )
+  else
+    (assert 
+      (plan-action (id 1) (plan-id WAIT-FOR-MPS-PROCESS-PLAN) (goal-id ?goal-id)
+                        (action-name go-wait)
+                        (param-values ?robot ?mps-other ?side-other ?pos))
+    )
+  )
+  (modify ?g (mode EXPANDED))
+)
+
 (defrule goal-expander-process-mps
  ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (class PROCESS-MPS) (mode SELECTED) (parent ?parent)
