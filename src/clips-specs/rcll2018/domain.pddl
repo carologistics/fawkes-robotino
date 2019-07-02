@@ -519,7 +519,10 @@
   )
   (:action spawn-wp
     :parameters (?wp - workpiece ?r - robot)
-    :precondition (not (wp-spawned-for ?wp ?r))
+    :precondition (and
+      (not (wp-unused ?wp))
+      (not (wp-usable ?wp))
+      (not (wp-spawned-for ?wp ?r)))
     :effect (and
       (wp-spawned-for ?wp ?r)
       (wp-unused ?wp)
