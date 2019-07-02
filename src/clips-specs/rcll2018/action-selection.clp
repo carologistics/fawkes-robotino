@@ -103,11 +103,11 @@
                       (action-name ?action-name)
                       (param-values $?param-values))
 	(plan (id ?plan-id) (goal-id ?goal-id))
-	(goal (id ?goal-id) (class ?class) (mode DISPATCHED))
+	(goal (id ?goal-id) (class ?class) (mode DISPATCHED) (verbosity ?verbosity))
 	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state PENDING|WAITING|RUNNING|FAILED)))
 	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state FORMULATED) (id ?oid&:(< ?oid ?id))))
 	=>
-  (if (neq ?class SEND-BEACON) then
+  (if (neq ?verbosity QUIET) then
     (printout t "Selected next action " ?action-name ?param-values crlf)
   )
 	(modify ?pa (state PENDING))
