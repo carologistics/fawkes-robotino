@@ -18,12 +18,13 @@ BASEDIR = ../../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 include $(BASEDIR)/fawkes/src/plugins/gazebo/gazebo.mk
 include $(BUILDSYSDIR)/protobuf.mk
+include $(BUILDCONFDIR)/tf/tf.mk
 
 
 LIBS_gazsim_gripper = m fawkescore fawkesutils fawkesaspects fawkesblackboard \
                       fawkesinterface fawkesconfig AX12GripperInterface LedInterface \
                       JointInterface DynamixelServoInterface gazsim_msgs \
-                      fawkesgazeboaspect ArduinoInterface
+                      fawkesgazeboaspect fawkestf ArduinoInterface
 OBJS_gazsim_gripper = gazsim_gripper_plugin.o gazsim_gripper_thread.o
 
 OBJS_all    = $(OBJS_gazsim_gripper)
