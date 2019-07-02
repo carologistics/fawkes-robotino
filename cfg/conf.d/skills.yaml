@@ -10,3 +10,7 @@ skills:
     x: 0.31
   approach_distance_laser:
     x: 0.27
+  # The distance goto travels before transitioning into FINAL when going to a
+  # waiting position
+  goto:
+    distance_to_travel: 0.5

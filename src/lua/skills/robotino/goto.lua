@@ -47,6 +47,12 @@ skillenv.skill_module(_M)
 
 local tf_mod = require 'fawkes.tfutils'
 
+if config:exists("/skills/goto/distance_to_travel") then
+   distance_to_travel = config:get_float("/skills/goto/distance_to_travel")
+else
+   distance_to_travel = 0.5
+end
+
 -- Tunables
 --local REGION_TRANS=0.2
 
@@ -76,8 +82,21 @@ function target_unreachable()
    return false
 end
 
+function travelled_distance(self)
+  --Skill will final after it travelled the euclidean distance of 1m from its starting position--
+  local x = (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x) * (self.fsm.vars.cur_x - self.fsm.vars.initial_position_x)
+  local y = (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y) * (self.fsm.vars.cur_y - self.fsm.vars.initial_position_y)
+  local distance_travelled = math.sqrt(x + y)
+ 
+  if distance_travelled > distance_to_travel then
+    return true
+  else
+    return false
+  end
+end
+
 fsm:define_states{ export_to=_M,
-  closure={check_navgraph=check_navgraph, reached_target_region=reached_target_region, has_navigator=has_navigator},
+  closure={check_navgraph=check_navgraph, reached_target_region=reached_target_region, has_navigator=has_navigator, travelled_distance=travelled_distance},
   {"CHECK_INPUT",   JumpState},
   {"WAIT_TF",       JumpState},
   {"INIT",          JumpState},
@@ -94,16 +113,21 @@ fsm:add_transitions{
   {"INIT",  "FAILED",         cond="not vars.target_valid",                 desc="target invalid"},
   {"INIT",  "MOVING",         cond=true},
   {"MOVING", "TIMEOUT",       timeout=2}, -- Give the interface some time to update
-  {"TIMEOUT", "FINAL",         cond=target_reached, desc="Target reached"},
-  {"TIMEOUT", "FAILED",        cond=target_unreachable, desc="Target unreachable"},
+  {"TIMEOUT", "FINAL",        cond="vars.waiting_pos and travelled_distance(self)", desc="Going to waiting position"},
+  {"TIMEOUT", "FINAL",        cond=target_reached, desc="Target reached"},
+  {"TIMEOUT", "FAILED",       cond=target_unreachable, desc="Target unreachable"},
 }
 
 
 function INIT:init()
   self.fsm.vars.target_valid = true
-
+  self.fsm.vars.waiting_pos = false
 
   if self.fsm.vars.place ~= nil then
+    -- check for waiting position
+    if string.match(self.fsm.vars.place, "%bWAIT") then 
+       self.fsm.vars.waiting_pos = true
+    end
     if string.match(self.fsm.vars.place, "[MC][-]Z[1-7][1-8]") then
       -- place argument is a zone, e.g. M-Z21
       self.fsm.vars.zone = self.fsm.vars.place
@@ -156,6 +180,12 @@ function WAIT_TF:loop()
    self.fsm.vars.x   = cur_pose.x
    self.fsm.vars.y   = cur_pose.y
    self.fsm.vars.ori = cur_pose.ori
+   self.fsm.vars.initial_position_x   = cur_pose.x
+   self.fsm.vars.initial_position_y   = cur_pose.y
+   self.fsm.vars.initial_position_ori = cur_pose.ori
+   self.fsm.vars.cur_x = cur_pose.x
+   self.fsm.vars.cur_y = cur_pose.y
+   self.fsm.vars.cur_ori = cur_pose.ori
 end
 
 function MOVING:init()
@@ -179,11 +209,28 @@ function MOVING:init()
         self.fsm.vars.trans_tolerance,
         self.fsm.vars.ori_tolerance)
    end
+
    fsm.vars.goto_msgid = navigator:msgq_enqueue(msg)
 end
 
+function TIMEOUT:loop()
+  if fsm.vars.waiting_pos == true then
+    local got_cur_pose = false
+ 
+    while not got_cur_pose do
+      local cur_pose = tf_mod.transform({x=0, y=0, ori=0}, "base_link", "map")
+      if cur_pose ~= nil then
+        self.fsm.vars.cur_x = cur_pose.x
+        self.fsm.vars.cur_y = cur_pose.y
+        self.fsm.vars.cur_ori = cur_pose.ori
+        got_cur_pose = true
+      end
+    end
+  end
+end
+
 function MOVING:reset()
-    if navigator:has_writer() and not navigator:is_final() then
+    if navigator:has_writer() and not navigator:is_final() and self.fsm.vars.waiting_pos == false then
        printf("goto: sending stop");
        navigator:msgq_enqueue(navigator.StopMessage:new(fsm.vars.msgid or 0))
     end

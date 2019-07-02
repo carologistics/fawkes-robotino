@@ -787,7 +787,6 @@
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
@@ -797,9 +796,7 @@
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
+  (domain-object (name ?bs-side) (type mps-side))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
   ;To-Do: Model the bs active-side
   ;Order CEs
@@ -827,13 +824,13 @@
             (wm-fact (key domain fact order-complexity args? ord ?any-order com ?other-complexity))
             (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
             (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
-  ;No one started this order already
-  ;TODO: for multi-agent
-  ;	 Model old agents constraints
-  ;	 (in-production 0)
-  ;	 (in-delivery ?id&:(> ?qr (+ ?qd ?id)))
-  (not (wm-fact (key order meta wp-for-order args? wp ?any-ord-wp ord ?order)))
-
+  (or (and (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
+           (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
+           (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+           (not (wm-fact (key order meta wp-for-order args? wp ?any-ord-wp ord ?order))))
+      (and (wm-fact (key domain fact holding args? r ?robot wp ?spawned-wp))
+           (wm-fact (key domain fact wp-base-color args? wp ?spawned-wp col ?base-color))
+           (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (eq ?complexity C0))
   =>
@@ -887,8 +884,6 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args?         r ?robot))
-  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
   (wm-fact (key domain fact mps-state args?      m ?mps-rs s ~BROKEN))
@@ -903,7 +898,6 @@
   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs m ?mps-rs side INPUT)))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args?  m ?mps-bs t BS))
-  (wm-fact (key domain fact mps-state args? m ?mps-bs s ~BROKEN))
   (wm-fact (key domain fact mps-team args?  m ?mps-bs col ?team-color))
   (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
   ;Order CEs
@@ -913,18 +907,20 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color) (value ?qd&:(> ?qr ?qd)))
   ;Active Order CEs
+  ;No one started this order already
+  (or (and (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
+           (wm-fact (key domain fact mps-state args? m ?mps-bs s ~BROKEN&~DOWN))
+           (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+           (not (wm-fact (key order meta wp-for-order args? wp ?any-ord-wp ord ?order))))
+      (and (wm-fact (key domain fact holding args? r ?robot wp ?spawned-wp))
+           (wm-fact (key domain fact wp-base-color args? wp ?spawned-wp col ?base-color))
+           (wm-fact (key order meta wp-for-order args? wp ?spawned-wp ord ?order))))
   ;This order complexity is not produced exclusively while another exclusive
   ;complexity order is already started
-  (not (and (wm-fact (key order meta wp-for-order args? wp ?ord-wp ord ?any-order))
+  (not (and (wm-fact (key order meta wp-for-order args? wp ?ord-wp&~?spawned-wp ord ?any-order))
             (wm-fact (key domain fact order-complexity args? ord ?any-order com ?other-complexity))
             (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
             (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
-  ;No one started this order already
-  ;TODO: for multi-agent
-  ;	 Model old agents constraints
-  ;	 (in-production 0)
-  ;	 (in-delivery ?id&:(> ?qr (+ ?qd ?id)))"
-  (not (wm-fact (key order meta wp-for-order args? wp ?any-ord-wp ord ?order)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (neq ?complexity C0))
   =>
@@ -982,7 +978,6 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args?         r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
 
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
@@ -1006,18 +1001,12 @@
   (wm-fact (key refbox order ?order quantity-delivered ?team-color) (value ?qd&:(> ?qr ?qd)))
   ;WP CEs
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?prev-rs side OUTPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-ring1-color))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-ring2-color))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?wp-ring3-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
 
-  (or (not (wm-fact (key domain fact wp-at args? wp ? m ?mps-rs side INPUT)))
-      ; The next rs is equal to the current rs. So if the workpiece gets taken 
-      ; from the output, we know that the workpiece from the input gets processed
-      (test (eq ?prev-rs ?mps-rs))
-  )
   ;The workpiece misses a ring
   (test (or
             (and (eq ?wp-ring1-color ?order-ring1-color)
@@ -1029,6 +1018,14 @@
                  (eq ?next-ring-color ?order-ring2-color))
             (and (neq ?wp-ring1-color ?order-ring1-color)
                  (eq ?next-ring-color ?order-ring1-color))))
+  (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+           (wm-fact (key domain fact wp-at args? wp ?wp m ?prev-rs side OUTPUT))
+           ; The next rs is equal to the current rs. So if the workpiece gets taken
+           ; from the output, we know that the workpiece from the input gets processed
+           (or (not (wm-fact (key domain fact wp-at args? wp ? m ?mps-rs side INPUT)))
+               (test (eq ?prev-rs ?mps-rs))))
+      (and (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+           (wm-fact (key domain fact mps-type args? m ?prev-rs t RS))))
   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs&:(neq ?wp-rs ?wp) m ?mps-rs side ?any-rs-side)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   =>
@@ -1074,7 +1071,6 @@
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
@@ -1083,7 +1079,6 @@
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
   ;WP CEs
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
   ;MPS-RS CEs
@@ -1101,6 +1096,9 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
            (value ?qd&:(> ?qr ?qd)))
+  (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+           (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
+      (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
   =>
   (printout t "Goal " PRODUCE-CX " formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
@@ -1129,7 +1127,6 @@
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
@@ -1138,7 +1135,6 @@
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
   ;WP CEs
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
@@ -1158,6 +1154,9 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
            (value ?qd&:(> ?qr ?qd)))
+  (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+           (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
+      (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
   =>
   (printout t "Goal " PRODUCE-CX " (C2) formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
@@ -1186,7 +1185,6 @@
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
@@ -1195,7 +1193,6 @@
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
   ;WP CEs
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
@@ -1217,6 +1214,9 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
   (value ?qd&:(> ?qr ?qd)))
+  (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+           (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
+      (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
   =>
   (printout t "Goal " PRODUCE-CX " (C3) formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
@@ -1294,7 +1294,6 @@
   (wm-fact (key refbox game-time) (values $?game-time))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-DS CEs
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
@@ -1303,7 +1302,6 @@
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;WP-CEs
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
@@ -1324,7 +1322,9 @@
            (value ?qd&:(> ?qr ?qd)))
   (wm-fact (key refbox order ?order delivery-begin) (type UINT)
            (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
-
+  (or (and (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+           (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp))))
+      (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
   (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
   (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
   =>
