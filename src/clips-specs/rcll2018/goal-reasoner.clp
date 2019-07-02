@@ -449,9 +449,9 @@
   (plan (id ?plan-id) (goal-id ?goal-id))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (class ?class&:(rcll-goal ?class)))
   ?hold <- (wm-fact (key domain fact holding args? r ?r wp ?wp))
-  (AX12GripperInterface (holds_puck ?holds))
+  (RobotinoSensorInterface (digital_in ?d1 ?d2 $?))
   =>
-  (if (eq ?holds FALSE)
+  (if (not (and (eq ?d1 FALSE) (eq ?d2 TRUE)))
       then
       (retract ?hold)
       (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))

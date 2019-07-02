@@ -941,6 +941,7 @@
       (return ?achievable-points)
     else
       (return ?achieved-points)
+<<<<<<< HEAD
   )
 )
 
@@ -963,6 +964,8 @@
       ))
     then
       (return -1)
+=======
+>>>>>>> origin/dhabering/cx-retry-decision
   )
   (return (distance ?xn ?yn ?xp ?yp))
 )
