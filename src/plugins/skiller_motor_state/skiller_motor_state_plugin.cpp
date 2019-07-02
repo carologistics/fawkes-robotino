@@ -1,9 +1,9 @@
 
 /***************************************************************************
- *  motor_led_plugin.cpp - Indicate motor status through LED
+ *  skiller_motor_state_plugin.cpp - Indicate skiller & motor state through LED
  *
- *  Created: Fri Apr 15 15:03:30 2016
- *  Copyright  2016  Tim Niemueller [www.niemueller.de]
+ *  Created: Fri Jun 14 15:03:30 2019
+ *  Copyright  2019  Morian Sonnet
  *
  ****************************************************************************/
 
@@ -22,24 +22,22 @@
 
 #include <core/plugin.h>
 
-#include "motor_led_thread.h"
+#include "skiller_motor_state_thread.h"
 
 using namespace fawkes;
 
-/** Plugin to indicate motor status by LED.
- * @author Tim Niemueller
+/** Plugin to indicate skiller state by LED.
+ * @author Morian Sonnet
  */
-class MotorLedPlugin : public fawkes::Plugin {
+class SkillerMotorStatePlugin : public fawkes::Plugin {
 public:
   /** Constructor.
    * @param config Fawkes configuration
    */
-  MotorLedPlugin(Configuration *config) : Plugin(config) {
-    std::string cfg_driver = config->get_string("/hardware/robotino/driver");
-
-    thread_list.push_back(new MotorLedThread());
+  SkillerMotorStatePlugin(Configuration *config) : Plugin(config) {
+    thread_list.push_back(new SkillerMotorStateThread());
   }
 };
 
-PLUGIN_DESCRIPTION("Indicate motor status through LED")
-EXPORT_PLUGIN(MotorLedPlugin)
+PLUGIN_DESCRIPTION("Indicate skiller and motor state through LED")
+EXPORT_PLUGIN(SkillerMotorStatePlugin)
