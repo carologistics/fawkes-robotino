@@ -107,7 +107,7 @@
               (eq ?goal-class SEND-BEACON)
               (eq ?goal-class FILL-RS)
               (eq ?goal-class ACQUIRE-TOKEN)
-              ))
+              (eq ?goal-class WAIT-FOR-MPS-PROCESS)))
 )
 
 
@@ -118,6 +118,7 @@
               (eq ?goal-class DELIVER-PRODUCTS)
               (eq ?goal-class INTERMEDEATE-STEPS)
               (eq ?goal-class CLEAR)
+              (eq ?goal-class WAIT-FOR-PROCESS)
               (eq ?goal-class PREPARE-RESOURCES)
               (eq ?goal-class PREPARE-CAPS)
               (eq ?goal-class PREPARE-RINGS)
@@ -194,6 +195,7 @@
             (goal-tree-assert-run-one PREPARE-RESOURCES
               (goal-tree-assert-run-one CLEAR)
               (goal-tree-assert-run-one PREPARE-CAPS)
+              (goal-tree-assert-run-one WAIT-FOR-PROCESS)
               (goal-tree-assert-run-one PREPARE-RINGS))
             (goal-tree-assert-run-one NO-PROGRESS)))
     else
