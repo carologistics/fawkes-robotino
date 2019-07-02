@@ -34,6 +34,7 @@
   ?*PRIORITY-CLEAR-CS* = 70
   ?*PRIORITY-CLEAR-RS* = 55
   ?*PRIORITY-PREFILL-CS* = 50 ;This priority can be increased by +1
+  ?*PRIORITY-WAIT-MPS-PROCESS* = 45
   ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* = 40
   ?*PRIORITY-PREFILL-RS* = 30 ;This priority can be increased by up to +4
   ?*PRIORITY-ADD-ADDITIONAL-RING-WAITING* = 20
@@ -1344,6 +1345,43 @@
                 (required-resources (sym-cat ?mps -OUTPUT) ?order ?wp)
   ))
 )
+
+(defrule goal-production-wait-for-mps-processing
+" If a mps is ready to process (IDLE and not wp at input) drive to output
+  and wait for this mps
+"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?production-id) (class WAIT-FOR-PROCESS) (mode FORMULATED))
+
+  (not (wm-fact (key domain fact mps-state args? m ?mps s DOWN|BROKEN)))
+  (not (and (wm-fact (key domain fact wp-at args? wp ? m ?mps side OUTPUT))
+            (wm-fact (key domain fact wp-at args? wp ? m ?mps side INPUT))
+       )
+  )
+
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?)))
+  
+  (domain-fact (name mps-type) (param-values ?mps CS|RS))
+  (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?))
+  (wm-fact (key mps-handling process ?process-action ?mps args? $?))
+
+  (wm-fact (key domain fact self args? r ?robot))
+  =>
+  (assert 
+    (goal (id (sym-cat WAIT-FOR-MPS-PROCESS- (gensym*)))
+          (class WAIT-FOR-MPS-PROCESS)
+          (sub-type SIMPLE)
+          (parent ?production-id)
+          (priority ?*PRIORITY-WAIT-MPS-PROCESS*)
+          (params robot ?robot
+                  mps ?mps
+                  pos (wait-pos ?mps OUTPUT)
+          )
+          (required-resources (sym-cat WAIT-PROCESS- ?mps))
+    )
+  )
+)
+
 
 (defrule goal-production-mps-handling-create-prepare-goal
   "Prepare and model processing of a mps"
