@@ -55,6 +55,7 @@
   ?*DELIVER-AHEAD-TIME* = 60
   ?*DELIVER-LATEST-TIME* = 10
   ?*DELIVER-ABORT-TIMEOUT* = 30
+
 )
 
 
@@ -355,9 +356,10 @@
   else
     (printout t "Goal " FILL-CAP " formulated" crlf)
   )
+  (bind ?distance (node-distance (str-cat ?mps -I)))
   (assert (goal (id (sym-cat FILL-CAP- (gensym*)))
                 (class FILL-CAP) (sub-type SIMPLE)
-                (priority (+ ?priority-increase ?*PRIORITY-PREFILL-CS*))
+                (priority (+ ?priority-increase ?*PRIORITY-PREFILL-CS* (goal-distance-prio ?distance)))
                 (parent ?production-id)
                 (params robot ?robot
                         mps ?mps
@@ -630,24 +632,26 @@
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
+  (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
 
   (wm-fact (key domain fact order-base-color args? ord ?any-order col ?base-color))
   ; Formulate the goal only if it is not already formulated (prevents doubling
   ; the goals due to matching with RS-1 and RS-2)
   (not (goal (class GET-BASE-TO-FILL-RS) (params robot ?robot
                                           bs ?bs
-                                          bs-side INPUT
+                                          bs-side ?bs-side
                                           base-color ?
                                           wp ?spawned-wp)))
   =>
   (printout t "Goal " GET-BASE-TO-FILL-RS " formulated" crlf)
+  (bind ?distance (node-distance (str-cat ?bs - (if (eq ?bs-side INPUT) then I else O))))
   (assert (goal (id (sym-cat GET-BASE-TO-FILL-RS- (gensym*)))
                 (class GET-BASE-TO-FILL-RS)
-                (priority  ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE*)
+                (priority  (+ ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* (goal-distance-prio ?distance)))
                 (parent ?maintain-id) (sub-type SIMPLE)
                              (params robot ?robot
                                      bs ?bs
-                                     bs-side INPUT
+                                     bs-side ?bs-side
                                      base-color ?base-color
                                      wp ?spawned-wp
                                      )
@@ -679,9 +683,10 @@
                                      )))
   =>
   (printout t "Goal " GET-SHELF-TO-FILL-RS " formulated" crlf)
+  (bind ?distance (node-distance (str-cat ?mps -I)))
   (assert (goal (id (sym-cat GET-SHELF-TO-FILL-RS- (gensym*)))
                 (class GET-SHELF-TO-FILL-RS)
-                (priority ?*PRIORITY-PREFILL-RS*)
+                (priority (+ ?*PRIORITY-PREFILL-RS* (goal-distance-prio ?distance)))
                 (parent ?maintain-id) (sub-type SIMPLE)
                              (params robot ?robot
                                      cs ?cs
@@ -724,10 +729,11 @@
     then
       (bind ?priority-increase (- ?priority-increase 1))
   )
+  (bind ?distance (node-distance (str-cat ?mps -I)))
   (printout t "Goal " FILL-RS " formulated" crlf)
   (assert (goal (id (sym-cat FILL-RS- (gensym*)))
                 (class FILL-RS) (sub-type SIMPLE)
-                (priority (+ ?*PRIORITY-PREFILL-RS* ?priority-increase))
+                (priority (+ ?*PRIORITY-PREFILL-RS* ?priority-increase (goal-distance-prio ?distance)))
                 (parent ?production-id)
                 (params robot ?robot
                         mps ?mps
@@ -788,7 +794,7 @@
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (domain-object (name ?bs-side) (type mps-side))
+  (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
@@ -847,9 +853,10 @@
   (if (eq ?comp-prio "LOW")
     then
       (bind ?priority-decrease 1))
+  (bind ?distance (node-distance (str-cat ?bs - (if (eq ?bs-side INPUT) then I else O))))
   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
                 (class PRODUCE-C0) (sub-type SIMPLE)
-                (priority (- ?*PRIORITY-PRODUCE-C0* ?priority-decrease))
+                (priority (+ (- ?*PRIORITY-PRODUCE-C0* ?priority-decrease) (goal-distance-prio ?distance)))
                 (parent ?parent)
                 (params robot ?robot
                         bs ?bs
@@ -895,6 +902,7 @@
   (wm-fact (key domain fact mps-type args?  m ?mps-bs t BS))
   (wm-fact (key domain fact mps-state args? m ?mps-bs s ~BROKEN))
   (wm-fact (key domain fact mps-team args?  m ?mps-bs col ?team-color))
+  (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
   ;Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
@@ -928,13 +936,14 @@
       (printout t "Goal " MOUNT-FIRST-RING " formulated, it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
     else
       (printout t "Goal " MOUNT-FIRST-RING " formulated" crlf))
+  (bind ?distance (node-distance (str-cat ?mps-bs - (if (eq ?bs-side INPUT) then I else O))))
   (assert (goal (id (sym-cat MOUNT-FIRST-RING- (gensym*)))
                 (class MOUNT-FIRST-RING) (sub-type SIMPLE)
-                (priority ?*PRIORITY-MOUNT-FIRST-RING*)
+                (priority (+ ?*PRIORITY-MOUNT-FIRST-RING* (goal-distance-prio ?distance)))
                 (parent ?production-id)
                 (params robot ?robot
                         bs ?mps-bs
-                        bs-side OUTPUT
+                        bs-side ?bs-side
                         bs-color ?base-color
                         mps ?mps-rs
                         ring-color ?ring1-color
