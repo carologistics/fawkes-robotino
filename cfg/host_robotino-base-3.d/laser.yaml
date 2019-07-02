@@ -6,3 +6,9 @@ hardware/laser:
     time_offset: -0.072911
   back:
     time_offset: -0.028779
+
+plugins/laser-filter:
+  back-downsample:
+    active: true
+  back-360to360:
+    active: false
