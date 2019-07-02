@@ -806,7 +806,6 @@
   ?p <- (goal (mode DISPATCHED) (id ?parent))
   ?g <- (goal (id ?goal-id) (class WAIT-FOR-MPS-PROCESS) (mode SELECTED) (parent ?parent)
             (params robot ?robot
-                    mps ?mps
                     pos ?pos)
   )
   (wm-fact (key domain fact at args? r ?robot m ?mps-other side ?side-other))
@@ -814,7 +813,7 @@
   (assert
     (plan (id WAIT-FOR-MPS-PROCESS-PLAN) (goal-id ?goal-id))
   )
-  (if (eq ?pos (sym-cat ?mps-other ?side-other)) then 
+  (if (eq ?pos ?mps-other) then 
     (assert
       (plan-action (id 1) (plan-id WAIT-FOR-MPS-PROCESS-PLAN) (goal-id ?goal-id)
                         (action-name wait)

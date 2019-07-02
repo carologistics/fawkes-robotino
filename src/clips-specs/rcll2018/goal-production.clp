@@ -1353,31 +1353,25 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class WAIT-FOR-PROCESS) (mode FORMULATED))
 
-  (not (wm-fact (key domain fact mps-state args? m ?mps s DOWN|BROKEN)))
-  (not (and (wm-fact (key domain fact wp-at args? wp ? m ?mps side OUTPUT))
-            (wm-fact (key domain fact wp-at args? wp ? m ?mps side INPUT))
-       )
-  )
-
   (not (wm-fact (key domain fact holding args? r ?robot wp ?)))
-  
-  (domain-fact (name mps-type) (param-values ?mps CS|RS))
-  (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?))
-  (wm-fact (key mps-handling process ?process-action ?mps args? $?))
 
   (wm-fact (key domain fact self args? r ?robot))
+  (or (and (wm-fact (key domain fact at args? r ?robot m ?mps side WAIT))
+           (domain-object (type waitpoint) (name ?waitpoint&:(and (eq ?mps ?waitpoint) (eq (str-length (str-cat ?waitpoint)) 10)))))
+      (and (domain-object (type waitpoint) (name ?waitpoint&:(eq (str-length (str-cat ?waitpoint)) 10)))
+           (wm-fact (key domain fact at args? r ?robot m ?mps side ?side))
+           (not (domain-object (type waitpoint) (name ?w2&:(eq ?w2 ?mps)))))
+  )
   =>
-  (assert 
+  (assert
     (goal (id (sym-cat WAIT-FOR-MPS-PROCESS- (gensym*)))
           (class WAIT-FOR-MPS-PROCESS)
           (sub-type SIMPLE)
           (parent ?production-id)
           (priority ?*PRIORITY-WAIT-MPS-PROCESS*)
           (params robot ?robot
-                  mps ?mps
-                  pos (wait-pos ?mps OUTPUT)
-          )
-          (required-resources (sym-cat WAIT-PROCESS- ?mps))
+                  pos ?waitpoint)
+          (required-resources WAIT-PROCESS ?waitpoint)
     )
   )
 )
