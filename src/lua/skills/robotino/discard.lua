@@ -33,6 +33,7 @@ documentation      = [==[
 Skill to safely discard a workpiece
 ]==]
 
+local MOVE_X = 0.05
 
 -- Initialize as skill module
 skillenv.skill_module(_M)
@@ -51,14 +52,8 @@ fsm:add_transitions{
 
 function INIT:init()
   -- Override values if host specific config value is set
-
-  if config:exists("/arduino/x_max") then
-      self.fsm.vars.x_max = config:get_float("/arduino/x_max")
-  else
-      self.fsm.vars.x_max = 0.114
-  end
   if config:exists("/arduino/y_max") then
-      self.fsm.vars.y_max = config:get_float("/arduino/y_max")
+      self.fsm.vars.y_max = config:get_float("/arduino/y_max")/2
   else
       self.fsm.vars.y_max = 0.038
   end
@@ -71,7 +66,7 @@ end
 
 function MOVE_GRIPPER_FORWARD:init()
 
-  self.args["gripper_commands"].x = self.fsm.vars.x_max
+  self.args["gripper_commands"].x = MOVE_X 
   self.args["gripper_commands"].y = self.fsm.vars.y_max
   self.args["gripper_commands"].z = 0
   self.args["gripper_commands"].command = "MOVEABS"
