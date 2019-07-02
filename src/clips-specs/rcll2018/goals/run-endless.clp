@@ -19,7 +19,11 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 ; Sub-type: RUN-ENDLESS
-; Params:  (params frequency T) for a frequencey T as float in seconds
+; Params:  (params frequency T $?outcomes)
+; with frequency T: integer in seconds
+;      outcomes: (possibly multiple) outcomes in the format retract-on-?outcome
+;                on which to retract the goal
+;
 ; Perform: single goal
 ; Succeed: if sub-goal succeeds within given time
 ; Fail:    if sub-goal fails or all subgoals are rejected
@@ -72,8 +76,7 @@
 
 (defrule run-endless-goal-failed-invalid-params
   ?gf <- (goal (id ?id) (type MAINTAIN) (sub-type RUN-ENDLESS) (mode EXPANDED)
-               (params $?params&~:(member$ frequency ?params)|
-                                  ~:(= (length$ ?params) 2)))
+               (params $?params&~:(member$ frequency ?params)))
 =>
   (modify ?gf (mode FINISHED) (outcome FAILED) (error INVALID-PARAMETERS)
               (message (str-cat "Invalid parameters for RUN-ENDLESS goal '"
@@ -83,7 +86,7 @@
 
 (defrule run-endless-goal-commit
   ?g <- (goal (id ?id) (type MAINTAIN) (sub-type RUN-ENDLESS) (mode EXPANDED)
-              (parent nil))
+              (params $? frequency ? $?) (parent nil))
   (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode FORMULATED)
         (priority ?priority))
 =>
@@ -135,10 +138,20 @@
   (time $?now)
   ?g <- (goal (id ?goal-id) (parent nil) (type MAINTAIN) (sub-type RUN-ENDLESS)
           (mode EVALUATED) (outcome ?outcome)
-          (params frequency ?freq) (acquired-resources)
+          (params frequency ?freq
+                  $?params&:(not (member$ (sym-cat retract-on- ?outcome) ?params)))
           (meta last-formulated $?last&:(timeout ?now ?last ?freq)))
   (not (goal (parent ?goal-id)))
 =>
   (modify ?g (mode FORMULATED) (outcome UNKNOWN) (committed-to nil)
              (meta last-formulated ?now))
+)
+
+(defrule run-endless-goal-retract
+  ?g <- (goal (id ?goal-id) (parent nil) (type MAINTAIN) (sub-type RUN-ENDLESS)
+              (mode EVALUATED) (outcome ?outcome)
+              (params $?params&:(member$ (sym-cat retract-on- ?outcome) ?params)))
+  (not (goal (parent ?goal-id)))
+  =>
+  (modify ?g (mode RETRACTED))
 )

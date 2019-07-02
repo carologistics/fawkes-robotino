@@ -18,17 +18,6 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
-(defrule goal-expander-acquire-token
-  ?g <- (goal (id ?goal-id) (class ACQUIRE-TOKEN) (mode SELECTED)
-                            (params token-name ?token-name))
-=>
-  (assert
-    (plan (id ACQUIRE-TOKEN-PLAN) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id ACQUIRE-TOKEN-PLAN) (goal-id ?goal-id)
-                    (action-name lock)
-                    (param-values ?token-name)))
-  (modify ?g (mode EXPANDED))
-)
 
 (defrule goal-expander-send-beacon-signal
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
@@ -46,24 +35,39 @@
 (defrule goal-expander-wp-spawn
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
   ?g <- (goal (id ?goal-id) (class SPAWN-WP) (mode SELECTED)
-              (parent ?parent-id))
+              (parent ?parent-id) (params robot ?robot))
 =>
   (assert
     (plan (id SPAWNPLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id SPAWNPLAN) (goal-id ?goal-id)
-      (action-name noop)))
+                 (action-name spawn-wp)
+                 (param-values (sym-cat WP- (random-id)) ?robot))
+  )
   (modify ?g (mode EXPANDED))
 )
 
 (defrule goal-expander-refill-shelf
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
   ?g <- (goal (id ?goal-id) (class REFILL-SHELF) (mode SELECTED)
-              (parent ?parent-id))
+              (params mps ?mps) (parent ?parent-id))
+  (wm-fact (key domain fact cs-color args? m ?mps col ?col))
   =>
   (assert
-     (plan (id REFILLPLAN) (goal-id ?goal-id))
-     (plan-action (id 1) (plan-id REFILLPLAN) (goal-id ?goal-id)
-        (action-name noop)))
+    (plan (id REFILL-PLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                 (action-name lock) (param-values ?mps))
+    (plan-action (id 2) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                 (action-name refill-shelf)
+                 (param-values ?mps LEFT (sym-cat CC- (random-id)) ?col))
+    (plan-action (id 3) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                 (action-name refill-shelf)
+                 (param-values ?mps MIDDLE (sym-cat CC- (random-id)) ?col))
+    (plan-action (id 4) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                 (action-name refill-shelf)
+                 (param-values ?mps RIGHT (sym-cat CC- (random-id)) ?col))
+    (plan-action (id 5) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                 (action-name unlock) (param-values ?mps))
+  )
   (modify ?g (mode EXPANDED))
 )
 

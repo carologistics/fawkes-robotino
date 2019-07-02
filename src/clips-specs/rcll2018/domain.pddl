@@ -352,44 +352,15 @@
                  (spot-free ?m ?spot))
 	)
 
-  (:action refill-shelf1
-    :parameters (?m - mps ?spot - shelf-spot ?cc1 - cap-carrier
-                 ?color - cap-color)
-    :precondition ( and (spot-free ?m ?spot) (locked ?m)
-                        (wp-unused ?cc1)
-                  )
-    :effect (and ( not (spot-free ?m ?spot) )
-                 (wp-on-shelf ?cc1 ?m ?spot)
-                 (not (wp-unused ?cc1))
-                 (wp-cap-color ?cc1  ?color)
+  (:action refill-shelf
+    :parameters (?m - mps ?spot - shelf-spot ?cc - cap-carrier ?color - cap-color)
+    :precondition (and (spot-free ?m ?spot) (locked ?m))
+    :effect (and (not (spot-free ?m ?spot))
+                 (wp-on-shelf ?cc ?m ?spot)
+                 (not (wp-unused ?cc))
+                 (wp-cap-color ?cc ?color)
             )
   )
-;  (:action refill-shelf3
-;    :parameters (?m - mps ?cc1 - cap-carrier
-;                 ?cc2 - cap-carrier ?cc3 - cap-carrier
-;                 ?color - cap-color)
-;    :precondition ( and (spot-free ?m LEFT) (spot-free ?m MIDDLE)
-;                        (spot-free ?m RIGHT)
-;                        (locked ?m)
-;                        (wp-unused ?cc1) (wp-unused ?cc2) (wp-unused ?cc3)
-;;                        (wp-cap-color ?cc1  CAP_NONE)
-;;                        (wp-cap-color ?cc2  CAP_NONE)
-;;                        (wp-cap-color ?cc3  CAP_NONE)
-;                        (not (= ?cc1 ?cc2)) (not (= ?cc1 ?cc3))
-;                        (not (= ?cc2 ?cc3))
-;                  )
-;    :effect (and ( not (spot-free ?m LEFT) ) ( not (spot-free ?m MIDDLE) )
-;                 ( not (spot-free ?m RIGHT) )
-;                 (wp-on-shelf ?cc1 ?m LEFT) (wp-on-shelf ?cc2 ?m MIDDLE)
-;                 (wp-on-shelf ?cc3 ?m RIGHT)
-;                 (not (wp-unused ?cc1))
-;                 (not (wp-unused ?cc2))
-;                 (not (wp-unused ?cc3))
-;                 (wp-cap-color ?cc1  ?color)
-;                 (wp-cap-color ?cc2  ?color)
-;                 (wp-cap-color ?cc3  ?color)
-;            )
-;  )
 
 	(:action wp-get
 		:parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side)
@@ -545,5 +516,21 @@
     :parameters (?r - robot)
     :precondition (self ?r)
     :effect (self ?r)
+  )
+  (:action spawn-wp
+    :parameters (?wp - workpiece ?r - robot)
+    :precondition (and
+      (not (wp-unused ?wp))
+      (not (wp-usable ?wp))
+      (not (wp-spawned-for ?wp ?r)))
+    :effect (and
+      (wp-spawned-for ?wp ?r)
+      (wp-unused ?wp)
+      (wp-cap-color ?wp CAP_NONE)
+      (wp-ring1-color wp RING_NONE)
+      (wp-ring2-color wp RING_NONE)
+      (wp-ring3-color wp RING_NONE)
+      (wp-base-color wp BASE_NONE)
+    )
   )
 )
