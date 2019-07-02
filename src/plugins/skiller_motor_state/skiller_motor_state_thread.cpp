@@ -143,6 +143,8 @@ void SkillerMotorStateThread::loop() {
     if (interruptable_timeout(timeout_at))
       break; // break, as it was interrupted
 
+    rsens_if_->read(); // always reread sensor interface after waking up
+
     // sweet, my alarm woke me up, now let's turn off the LED
     signal_timedout_lights(timeout_at, digital_output_to_reset);
   }
