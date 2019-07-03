@@ -61,7 +61,6 @@ void PictureTakerThread::finalize() {
 }
 
 void PictureTakerThread::init() {
-  try {
     p_t_if_ =
         blackboard->open_for_writing<PictureTakerInterface>("PictureTaker");
 
@@ -114,9 +113,6 @@ void PictureTakerThread::init() {
     ipl = cvCreateImage(cvSize(this->img_width, this->img_height), IPL_DEPTH_8U,
                         IMAGE_CHANNELS);
 
-  } catch (...) {
-    // Do nothing to not fail anything important
-  }
 }
 
 void PictureTakerThread::takePictureFromFVcamera(std::string name,
