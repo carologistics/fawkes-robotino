@@ -32,7 +32,7 @@
 )
 
 
-(defrule goal-expander-wp-spawn
+(defrule goal-expander-spawn-wp
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
   ?g <- (goal (id ?goal-id) (class SPAWN-WP) (mode SELECTED)
               (parent ?parent-id) (params robot ?robot))
@@ -42,6 +42,25 @@
     (plan-action (id 1) (plan-id SPAWNPLAN) (goal-id ?goal-id)
                  (action-name spawn-wp)
                  (param-values (sym-cat WP- (random-id)) ?robot))
+  )
+  (modify ?g (mode EXPANDED))
+)
+
+
+(defrule goal-expander-spawn-ss-c0
+  ?p <- (goal (mode DISPATCHED) (id ?parent-id))
+  ?g <- (goal (id ?goal-id) (class SPAWN-SS-C0) (mode SELECTED)
+              (parent ?parent-id) (params robot ?robot ss ?ss base ?base cap ?cap))
+=>
+  (bind ?wp (sym-cat WP- (random-id)))
+  (assert
+    (plan (id SPAWNPLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id SPAWNPLAN) (goal-id ?goal-id)
+                 (action-name spawn-wp)
+                 (param-values ?wp ?robot))
+    (plan-action (id 2) (plan-id SPAWNPLAN) (goal-id ?goal-id)
+                 (action-name ss-store-wp)
+                 (param-values ?robot ?ss ?wp ?base ?cap))
   )
   (modify ?g (mode EXPANDED))
 )
