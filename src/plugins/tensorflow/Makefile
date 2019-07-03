@@ -29,11 +29,11 @@ PRESUBDIRS = interfaces
 
 LIBS_tensorflow = fawkescore fawkesutils fawkesaspects fvutils fvcams \
 	       fawkestf fawkesinterface fawkesblackboard \
-	       TensorflowInterface
+	       TensorflowInterface ClassificationResultInterface
 OBJS_tensorflow = tensorflow_plugin.o tensorflow_thread.o tf_utils.o \
                   loader.o image_shm_loader.o image_loader.o \
                   image_file_loader.o image_v4l2_loader.o \
-									outputter.o
+									outputter.o output_bb_classification.o
 
 OBJS_all    = $(OBJS_tensorflow)
 

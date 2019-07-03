@@ -28,6 +28,8 @@
 #include "image_shm_loader.h"
 #include "image_v4l2_loader.h"
 
+#include "output_bb_classification.h"
+
 using namespace fawkes;
 
 /** @class TensorflowThread
@@ -96,12 +98,28 @@ void TensorflowThread::loop() {
       TensorflowInterface::TriggerRunMessage *msg =
           tensorflow_if_->msgq_first(msg);
       this->run_graph_once(msg->id());
+    } else if (tensorflow_if_->msgq_first_is<
+                   TensorflowInterface::
+                       SetOutputClassificationBlackboardMessage>()) {
+      TensorflowInterface::SetOutputClassificationBlackboardMessage *msg =
+          tensorflow_if_->msgq_first(msg);
+      this->set_output_classification_blackboard(
+          std::string(msg->classification_table()));
 
     } else {
       logger->log_error(name(), "Unhandled message");
     }
     tensorflow_if_->msgq_pop();
   }
+}
+
+void TensorflowThread::set_output_classification_blackboard(
+    std::string classifiation_table) {
+  this->pre_set_output();
+  output_ = new TF_Plugin_Outputter_BB_Classification(
+      std::string(name()), logger, blackboard, classifiation_table);
+  this->post_set_output();
+  return;
 }
 
 void TensorflowThread::load_graph(std::string file_name) {

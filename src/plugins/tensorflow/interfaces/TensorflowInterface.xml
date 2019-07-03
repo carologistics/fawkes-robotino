@@ -47,6 +47,10 @@
     <field type="uint32" name="image_dtype">Dtype of image after conversion</field>
   </message>
     <!--TODO give other possibilities for source-->
+  <message name="SetOutputClassificationBlackboard">
+    <comment>Add an outputter to write a classification result to the blackboard</comment>
+    <field type="string" length="256" name="classification_table">The table of classification</field>
+  </message>
   <message name="TriggerRun">
     <comment>Trigger a run of the network</comment>
   </message>
