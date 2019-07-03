@@ -28,6 +28,7 @@ depends_interfaces = {
    {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
    {v = "if_plane_switch", type = "SwitchInterface", id="conveyor_plane/switch"},
    {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
+   {v = "realsense_switch", type = "SwitchInterface", id="realsense2"},
 }
 
 documentation      = [==[aligns the robot orthogonal to the conveyor by using the
@@ -230,6 +231,7 @@ fsm:add_transitions{
 
 function INIT:init()
    laserline_switch:msgq_enqueue(laserline_switch.EnableSwitchMessage:new())
+   realsense_switch:msgq_enqueue(realsense_switch.EnableSwitchMessage:new())
 
    enable_conveyor_plane(true)
    local parse_result = pam.parse_to_type_target(
@@ -285,6 +287,7 @@ end
 
 function cleanup()
    enable_conveyor_plane(false)
+   realsense_switch:msgq_enqueue(realsense_switch.DisableSwitchMessage:new())
 end
 
 function FAILED:init()
