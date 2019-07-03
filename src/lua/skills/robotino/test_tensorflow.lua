@@ -92,6 +92,9 @@ function COMMAND:init()
      message:set_image_dtype(self.fsm.vars.image_dtype)
    elseif self.fsm.vars.command == "TRIGGER_RUN" then
      message = tensorflow.TriggerRunMessage:new()
+   elseif self.fsm.vars.command == "SET_OUTPUT_BB_CLASS" then
+     message = tensorflow.SetOutputClassificationBlackboardMessage:new()
+     message:set_classification_table(self.fsm.vars.classification_table)
    end
    tensorflow:msgq_enqueue(message)
 end
