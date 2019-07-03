@@ -8,7 +8,6 @@ plugins/picture_taker:
   # camera being used
   camera: v4l2:conveyor:device=/dev/video0
 
-
   shm_image_id: "conveyor_vision"
 
   # frame of reference
@@ -16,4 +15,3 @@ plugins/picture_taker:
   vframe: "/cam_vision_markerless"
   # frame of reference
   vpath: "/tmp/vision_image.jpg"
-

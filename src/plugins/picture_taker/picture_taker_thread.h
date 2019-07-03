@@ -53,6 +53,11 @@ class Camera;
 class SharedMemoryImageBuffer;
 } // namespace firevision
 
+/*! \class PictureTakerThread
+ *
+ *  Docs for MyClassName
+ */
+
 class PictureTakerThread : public fawkes::Thread,
                            public fawkes::LoggingAspect,
                            public fawkes::ConfigurableAspect,

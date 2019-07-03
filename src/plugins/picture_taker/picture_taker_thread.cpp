@@ -1,3 +1,22 @@
+/***************************************************************************
+ *  picture_taker_thread.cpp - Thread to take a picture
+ *  Created: Thu May 7 10:10:00 2017
+ *  Copyright  2019  Daniel Habering
+ ****************************************************************************/
+
+/*  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  Read the full text in the LICENSE.GPL file in the doc directory.
+ */
+
 #include "picture_taker_thread.h"
 #include "opencv2/opencv.hpp"
 #include <dlfcn.h>
@@ -16,7 +35,7 @@
 using namespace fawkes;
 using namespace std;
 using namespace cv;
-/** @class MarkerlessRecognitionThread "markerlss_rec_thread.h"
+/** @class MarkerlessRecognitionThread 'picture_taker_thread.h'
  * Thread to print recognized MPS
  * @author Sebastian Schönitz, Daniel Habering, Carsten Stoffels
  */
@@ -42,8 +61,9 @@ void PictureTakerThread::finalize() {
 }
 
 void PictureTakerThread::init() {
-  try{
-    p_t_if_ = blackboard->open_for_writing<PictureTakerInterface>("PictureTaker");
+  try {
+    p_t_if_ =
+        blackboard->open_for_writing<PictureTakerInterface>("PictureTaker");
 
     std::string prefix = CFG_PREFIX;
     vpath = this->config->get_string((prefix + "vpath").c_str());
@@ -94,7 +114,7 @@ void PictureTakerThread::init() {
     ipl = cvCreateImage(cvSize(this->img_width, this->img_height), IPL_DEPTH_8U,
                         IMAGE_CHANNELS);
 
-  } catch ( ... ) {
+  } catch (...) {
     // Do nothing to not fail anything important
   }
 }
