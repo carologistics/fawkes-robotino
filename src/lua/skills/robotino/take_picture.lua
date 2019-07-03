@@ -20,8 +20,8 @@ documentation = [==[Take a Picture of the Realsense Camera.
 
 -- Crucial skill information
 name               = "take_picture"
-fsm                = SkillHSM:new{name=name, start="TAKE_PICTURE", debug=false}
-depends_skills     = {}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
+depends_skills     = {"markerless_mps_align"}
 depends_interfaces = {
    {v = "if_picture_taker", type = "PictureTakerInterface", id="PictureTaker"},
 }
@@ -30,15 +30,35 @@ depends_interfaces = {
 skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
+   {"INIT", JumpState},
+   {"ALIGN", SkillJumpState, skills={{markerless_mps_align}}, final_to="TAKE_PICTURE",fail_to="FAILED"},
    {"TAKE_PICTURE", JumpState}
 }
 
 fsm:add_transitions{
+   {"INIT", "ALIGN", cond=true},
+   {"TAKE_PICTURE", "ALIGN", cond="self.fsm.vars.index==3"},
    {"TAKE_PICTURE", "FINAL", cond=true},
 }
 
-function TAKE_PICTURE:init()
+function INIT:init()
+  self.fsm.vars.index=0
+  self.fsm.vars.pos_y = {-0.3,0.0,0.3}
+  self.fsm.vars.pos_x = {0.5, 0.5, 0.5}
+  self.fsm.vars.ori = {math.atan2(self.fsm.vars.pos_y[0],self.fsm.vars.pos_x[0]),
+			math.atan2(self.fsm.vars.pos_y[1],self.fsm.vars.pos_x[1]),
+			math.atan2(self.fsm.vars.pos_y[2],self.fsm.vars.pos_x[2])
+		      }
+end
 
+function ALIGN:init()
+  self.args["markerless_mps_align"].x = self.fsm.vars.pos_x[self.fsm.vars.index] 
+  self.args["markerless_mps_align"].y = self.fsm.vars.pos_y[self.fsm.vars.index]
+  self.args["markerless_mps_align"].ori = self.fsm.vars.ori[self.fsm.vars.index]
+end
+
+function TAKE_PICTURE:init()
+   self.fsm.vars.index=self.fsm.vars.index+1	
    print_info("take_picture: mps: %s side: %s", self.fsm.vars.mps, self.fsm.vars.side)
 
    if if_picture_taker:has_writer() and self.fsm.vars.mps  and self.fsm.vars.side then
