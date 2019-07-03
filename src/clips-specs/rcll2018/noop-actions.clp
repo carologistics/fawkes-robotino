@@ -93,7 +93,7 @@
         (printout t "ERROR, plan-action params of request-rs-mount-ring are wrong" crlf)))
   (assert
     (wm-fact (key mps-handling prepare prepare-rs ?rs args? m ?rs rc ?rc r-req ?rs-req))
-    (wm-fact (key mps-handling process ?mount-ring-action-name ?rs args? 
+    (wm-fact (key mps-handling process ?mount-ring-action-name ?rs args?
                         (merge-params ?mount-ring-param-names ?mount-ring-param-values)))
   )
 )
@@ -113,5 +113,13 @@
 	=>
 	(printout info "Spawning cap carrier " ?cc " with color " ?color " at " ?mps " " ?spot crlf)
 	(assert (domain-object (name ?cc) (type cap-carrier)))
+	(modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
+(defrule action-execute-ss-store-wp
+	?pa <- (plan-action (plan-id ?plan-id) (state PENDING) (executable TRUE)
+	                    (action-name ss-store-wp) (param-values ?robot ?m ?wp ?base ?cap))
+	=>
+	(printout info "Init  " ?m " with " ?wp ": " ?base " " ?cap crlf)
 	(modify ?pa (state EXECUTION-SUCCEEDED))
 )
