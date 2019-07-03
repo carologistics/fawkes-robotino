@@ -6,7 +6,7 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/tag_vision
 
 plugins/picture_taker:
   # camera being used
-  camera: v4l2:conveyor:device=/dev/video0
+  camera: v4l2:conveyor:device=/dev/video4
 
   shm_image_id: "conveyor_vision"
 
@@ -14,4 +14,4 @@ plugins/picture_taker:
   dframe: "/cam_depth_markerless"
   vframe: "/cam_vision_markerless"
   # frame of reference
-  vpath: "/tmp/vision_image.jpg"
+  vpath: "/home/robotino/realsense_images/mps_"
