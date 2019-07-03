@@ -797,6 +797,16 @@
            (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (eq ?complexity C0))
+  (not (goal (class PRODUCE-C0)
+             (parent ?parent)
+             (params robot ?robot
+                     bs ?bs
+                     bs-side ?bs-side $?
+                     mps ?mps $?
+                     order ?order
+                     wp ?spawned-wp
+             )
+  ))
   =>
   (bind ?required-resources ?order)
   ;If this order complexity should be produced exclusively ...
@@ -894,6 +904,12 @@
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (neq ?complexity C0))
   ; Strategy CEs
+  (not (goal (class MOUNT-FIRST-RING)
+             (parent ?production-id)
+             (params robot ?robot $?
+                     bs-side ?bs-side $?
+                     order ?order
+                     wp ?spawned-wp)))
   (not (wm-fact (key strategy keep-mps-side-free args? m ?mps-rs side INPUT $?)))
   =>
   (bind ?required-resources ?order)
@@ -997,6 +1013,11 @@
   ; Strategy CEs
   (not (wm-fact (key strategy keep-mps-side-free
                  args? m ?mps-rs side INPUT cause ~?wp)))
+  (not (goal (class MOUNT-NEXT-RING)
+             (parent ?maintain-id)
+             (params robot ?robot $?
+                     wp ?wp $?
+                     order ?order)))
   =>
   (bind ?ring-pos (member$ RING_NONE (create$ ?wp-ring1-color ?wp-ring2-color ?wp-ring3-color)))
   (bind ?curr-ring-color (nth$ ?ring-pos (create$ ?order-ring1-color ?order-ring2-color ?order-ring3-color)))
@@ -1067,6 +1088,12 @@
   (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
            (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
       (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+  (not (goal (class PRODUCE-CX)
+             (parent ?maintain-id)
+             (params robot ?robot
+                     wp ?wp $?
+                     mps ?mps $?
+                     order ?order)))
   =>
   (printout t "Goal " PRODUCE-CX " formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
@@ -1124,6 +1151,12 @@
   (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
            (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
       (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+  (not (goal (class PRODUCE-CX)
+             (parent ?maintain-id)
+             (params robot ?robot
+                     wp ?wp $?
+                     mps ?mps $?
+                     order ?order)))
   =>
   (printout t "Goal " PRODUCE-CX " (C2) formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
@@ -1183,6 +1216,12 @@
   (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
            (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
       (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+  (not (goal (class PRODUCE-CX)
+                 (parent ?maintain-id)
+                 (params robot ?robot
+                         wp ?wp $?
+                         mps ?mps $?
+                         order ?order)))
   =>
   (printout t "Goal " PRODUCE-CX " (C3) formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
@@ -1234,6 +1273,7 @@
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
   ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-put-slide-cc m ?mps wp ?wp)
                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+
   =>
   (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
  (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
@@ -1292,6 +1332,13 @@
       (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
   (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
   (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
+  (not (goal (class DELIVER)
+             (parent ?parent)
+             (params robot ?robot $?
+                     order ?order
+                     wp ?wp
+                     ds ?ds
+                     ds-gate ?gate $?)))
   =>
   (printout t "Goal " DELIVER " formulated" crlf)
   (bind ?parent ?production-id)
