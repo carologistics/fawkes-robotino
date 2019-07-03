@@ -6,7 +6,6 @@ fawkes/meta_plugins:
     - imu
     - robotino
     - static-transforms
-    - motor-led
   m-base-joy:
     - m-base-bare
     - joystick
