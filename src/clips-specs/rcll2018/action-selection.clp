@@ -99,14 +99,17 @@
 )
 
 (defrule action-selection-select
-	(wm-fact (key game state) (type UNKNOWN) (value RUNNING))
-  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
                       (id ?id) (state FORMULATED)
                       (action-name ?action-name)
                       (param-values $?param-values))
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	(goal (id ?goal-id) (class ?class) (mode DISPATCHED) (verbosity ?verbosity))
-	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state PENDING|WAITING|RUNNING|FAILED)))
+	(or (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
+	    (test (not (production-goal ?class)))
+	)
+
+  (not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state PENDING|WAITING|RUNNING|FAILED)))
 	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state FORMULATED) (id ?oid&:(< ?oid ?id))))
 	=>
   (if (neq ?verbosity QUIET) then
