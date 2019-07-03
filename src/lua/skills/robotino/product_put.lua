@@ -44,11 +44,11 @@ skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
 -- Constants
-local gripper_pose_offset_x = 0.02  -- conveyor pose offset in x direction
+local gripper_pose_offset_x = 0.00  -- conveyor pose offset in x direction
 local gripper_pose_offset_y = 0.00  -- conveyor_pose offset in y direction
 local gripper_pose_offset_z = 0.03  -- conveyor_pose offset in z direction
 
-local conveyor_gripper_forward_x = 0.07 -- distance to move gripper forward after align
+local conveyor_gripper_forward_x = 0.018 -- distance to move gripper forward after align
 local conveyor_gripper_down_z = -0.015  -- distance to move gripper down after driving over conveyor
 
 local conveyor_gripper_back_x = -0.02 -- distance to move gripper back after opening gripper
