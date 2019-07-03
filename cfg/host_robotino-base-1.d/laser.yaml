@@ -3,19 +3,6 @@
 ---
 hardware/laser:
   front:
-    type: TiM55x-Ethernet
-    host: 10.1.1.1
-    port: 2112
     time_offset: -0.063479
-
   back:
-    type: TiM55x-Ethernet
-    host: 10.1.1.2
-    port: 2112
     time_offset: -0.080660
-
-plugins/laser-filter:
-  back-downsample:
-    active: true
-  back-360to360:
-    active: false

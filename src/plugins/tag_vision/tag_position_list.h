@@ -40,35 +40,32 @@
 
 #include "tag_position_interface_helper.h"
 
+class TagVisionThread;
+
 class TagPositionList : public std::vector<TagPositionInterfaceHelper *> {
 public:
   TagPositionList(fawkes::BlackBoard *blackboard,
-                  fawkes::tf::Transformer *tf_listener, u_int32_t max_markers,
-                  std::string frame, std::string thread_name,
+                  fawkes::tf::Transformer *tf_listener, size_t max_markers,
+                  std::string cam_frame, std::string thread_name,
                   fawkes::Logger *logger, fawkes::Clock *clock,
-                  fawkes::tf::TransformPublisher *tf_publisher);
+                  TagVisionThread *main_thread);
   /// Destructor
   ~TagPositionList();
 
-  /**
-   * @brief Assigns every marker found to an interface. The interface will stay
-   * the same for a marker as long as the marker is considered seen (visibility
-   * history > 0). It also updates the Marker IDs on the TagVision interface.
-   *
-   * @param marker_list List of marker data
-   * @param laser_line_ifs List of laser_line interfaces
-   */
   void
   update_blackboard(std::vector<alvar::MarkerData> *marker_list,
                     std::vector<fawkes::LaserLineInterface *> *laser_line_ifs);
 
+  TagPositionInterfaceHelper *
+  find_suitable_interface(const alvar::MarkerData &) const;
+
 private:
   /// How many markers can be detected at the same time
-  u_int32_t max_markers_;
+  size_t max_markers_;
   /// The blackboard to publish on
   fawkes::BlackBoard *blackboard_;
   /// Tag vision inforamtion interface
-  fawkes::TagVisionInterface *tag_vision_interface_;
+  fawkes::TagVisionInterface *index_interface_;
   /// Name of the calling thread
   std::string thread_name_;
   /// Logger for logging
@@ -76,10 +73,10 @@ private:
   /// The clock for the StampedTransforms
   fawkes::Clock *clock_;
   /// Publisher for the transforms
-  fawkes::tf::TransformPublisher *tf_publisher_;
+  TagVisionThread *main_thread_;
 
-  std::string frame_;
-  fawkes::tf::Transformer *tf_listener;
+  std::string cam_frame_;
+  fawkes::tf::Transformer *tf_listener_;
 
   alvar::Pose get_laser_line_pose(fawkes::LaserLineInterface *laser_line_if);
   alvar::Pose get_nearest_laser_line_pose(

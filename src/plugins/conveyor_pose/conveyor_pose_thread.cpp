@@ -492,10 +492,6 @@ void ConveyorPoseThread::finalize() {
 void ConveyorPoseThread::loop() {
   //-- skip processing if camera is not enabled
   realsense_switch_->read();
-  if (!realsense_switch_->is_enabled()) {
-    logger->log_warn(name(), "Waiting for RealSense camera to be enabled");
-    return;
-  }
 
   // Check for Messages in ConveyorPoseInterface and update information if
   // needed
@@ -541,6 +537,11 @@ void ConveyorPoseThread::loop() {
 
   if (!cfg_record_model_ && !recognition_thread_->enabled())
     return;
+
+  if (!realsense_switch_->is_enabled()) {
+    logger->log_warn(name(), "Waiting for RealSense camera to be enabled");
+    return;
+  }
 
   if (update_input_cloud() && get_initial_guess()) {
     have_initial_guess_ = true;

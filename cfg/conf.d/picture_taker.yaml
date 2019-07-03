@@ -1,0 +1,17 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/tag_vision
+---
+
+plugins/picture_taker:
+  # camera being used
+  camera: v4l2:conveyor:device=/dev/video4
+
+  shm_image_id: "conveyor_vision"
+
+  # frame of reference
+  dframe: "/cam_depth_markerless"
+  vframe: "/cam_vision_markerless"
+  # frame of reference
+  vpath: "/home/robotino/realsense_images/mps_"

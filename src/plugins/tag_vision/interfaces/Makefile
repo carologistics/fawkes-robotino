@@ -1,8 +1,8 @@
 #*****************************************************************************
-#                  Makefile Build System for Fawkes: Plugins
+#              Makefile Build System for Fawkes: Robotino interfaces
 #                            -------------------
-#   Created on Mon May 14 11:37:00 2012
-#   Copyright (C) 2006-2012 by Tim Niemueller, Carologistics RoboCup Team
+#   Created on Fri Mar 26 17:25:00 2012
+#   Copyright (C) 2006-2012 by Tim Niemueller, AllemaniACs RoboCup Team
 #
 #*****************************************************************************
 #
@@ -13,27 +13,12 @@
 #
 #*****************************************************************************
 
-BASEDIR = ../..
+BASEDIR = ../../../..
+
 include $(BASEDIR)/etc/buildsys/config.mk
 
-SUBDIRS	= clips-motor-switch \
-	  voltagelogger \
-	  ax12_gripper \
-	  arduino \
-		tag_vision \
-      navgraph_broker \
-	  navgraph-generator-mps \
-	  conveyor_pose \
-	  conveyor_plane \
-	  gazebo \
-	  marker_writer \
-		laser_front_dist \
-		mps-laser-gen \
-		webtools-bridge \
-		skiller_motor_state \
-		asp-planner
-		picture_taker
+INTERFACES_all = $(notdir $(patsubst %.xml,%,$(wildcard $(SRCDIR)/*.xml)))
+include $(BUILDSYSDIR)/interface.mk
 
-include $(BUILDSYSDIR)/rules.mk
+include $(BUILDSYSDIR)/base.mk
 
-gazebo: ax12_gripper tag_vision arduino

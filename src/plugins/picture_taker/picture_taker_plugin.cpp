@@ -1,10 +1,7 @@
-
 /***************************************************************************
- *  motor_led_plugin.cpp - Indicate motor status through LED
- *
- *  Created: Fri Apr 15 15:03:30 2016
- *  Copyright  2016  Tim Niemueller [www.niemueller.de]
- *
+ *  picture_taker_thread.h - Thread to take a picture
+ *  Created: Thu May 7 10:10:00 2017
+ *  Copyright  2019  Daniel Habering
  ****************************************************************************/
 
 /*  This program is free software; you can redistribute it and/or modify
@@ -22,24 +19,22 @@
 
 #include <core/plugin.h>
 
-#include "motor_led_thread.h"
+#include "picture_taker_thread.h"
 
 using namespace fawkes;
 
-/** Plugin to indicate motor status by LED.
- * @author Tim Niemueller
- */
-class MotorLedPlugin : public fawkes::Plugin {
+/** Plugin to ...
+ *  * @author Daniel Habering, Sebastian Schoenitz, Carsten Stoffels
+ *   */
+class PictureTakerPlugin : public fawkes::Plugin {
 public:
   /** Constructor.
-   * @param config Fawkes configuration
-   */
-  MotorLedPlugin(Configuration *config) : Plugin(config) {
-    std::string cfg_driver = config->get_string("/hardware/robotino/driver");
-
-    thread_list.push_back(new MotorLedThread());
+   *    * @param config Fawkes configuration
+   *       */
+  PictureTakerPlugin(Configuration *config) : Plugin(config) {
+    thread_list.push_back(new PictureTakerThread());
   }
 };
 
-PLUGIN_DESCRIPTION("Indicate motor status through LED")
-EXPORT_PLUGIN(MotorLedPlugin)
+PLUGIN_DESCRIPTION("Plugin to take and store pictures")
+EXPORT_PLUGIN(PictureTakerPlugin)

@@ -40,6 +40,8 @@ OBJS_tag_vision = tag_vision_plugin.o tag_vision_thread.o \
 OBJS_all    = $(OBJS_tag_vision)
 PLUGINS_all = $(PLUGINDIR)/tag_vision.$(SOEXT)
 
+PRESUBDIRS = interfaces
+
 ifneq ($(wildcard $(SYSROOT)/usr/include/alvar),)
   ifneq ($(wildcard $(SYSROOT)/usr/lib$(LIB_SUFFIX)/libalvar200.so),)
     HAVE_ALVAR = 1

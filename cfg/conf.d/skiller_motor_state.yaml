@@ -1,0 +1,40 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+/skiller_motor_state:
+  # Interface IDs of SkillerInterface and RobotinoSensorInterface to read from
+  # and send message to.
+  skiller-interface-id: Skiller
+  sensor-interface-id: Robotino
+  motor-interface-id: Robotino
+
+  # Digital output for the different colors.
+  # The green light is activated whenever a skill finals
+  # (Note that it is not activated if a subskill finals, as the skiller
+  # currently does not change the data on the skiller interface right now)
+  # The yellow light is always active if a skill is running.
+  # The red light is activated whenever a skill fails
+  # (Note that the skiller state is always switched to fail if any subskill
+  # fails!)
+  #
+  # This is the number as it appears on the Robotino, i.e. 1 to 8, not
+  # the interface index!
+  # You can find these numbers by closely inspecting the port in which the
+  # signal light is connected.
+  # The brown cable is connected to the red lamp,
+  # the green one to the green one
+  # and the yellow one to the yellow one.
+  digital-out-green: 6
+  digital-out-yellow: 7
+  digital-out-red: 8
+
+  # This settings sets where the motor state should be output.
+  # If the motor is blocked, the output is activated.
+  # Again, the number should be as they appear on the Robotino, i.e. 1 to 8.
+  # A value of 0 means that the motor state is not published.
+  digital-out-motor: 0
+
+  # When the last skill failed, the state switches almost immediately to
+  # running again. To make the fail/final visible anyway, the corresponding
+  # light is left on for some timout, given in seconds.
+  timeout: 2.2
