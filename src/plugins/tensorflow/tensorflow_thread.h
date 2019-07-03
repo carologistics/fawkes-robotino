@@ -93,6 +93,7 @@ private:
                              unsigned int width, unsigned int height,
                              unsigned int image_dtype);
 
+  void set_output_classification_blackboard(std::string classification_table);
   void pre_set_output();
   void post_set_output();
 
