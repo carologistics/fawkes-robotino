@@ -96,10 +96,6 @@ function DRIVE_TO_MACHINE_POINT:init()
 end
 
 function CONVEYOR_ALIGN:init()
-    if (self.fsm.vars.slide == nil) then
-      self.args["conveyor_align"].disable_realsense_afterwards = false
-    end
-
     self.args["conveyor_align"].side = self.fsm.vars.side
     self.args["conveyor_align"].place = self.fsm.vars.place
     self.args["conveyor_align"].slide = self.fsm.vars.slide
