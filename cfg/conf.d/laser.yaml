@@ -23,7 +23,7 @@ hardware/laser:
     active: true
 
     # Configuration is for Sick TiM55x over USB
-    type: TiM55x-USB
+    type: TiM55x-Ethernet
 
     # robotino1:
     # serial: 15300204
@@ -31,6 +31,9 @@ hardware/laser:
     # serial: 16380081
     # robotino3:
     # serial: 15170145
+
+    host: 10.1.0.2
+    port: 2112
 
     # Frame ID
     frame: !frame front_laser
@@ -44,7 +47,7 @@ hardware/laser:
     active: true
 
     # Configuration is for Sick TiM55x over USB
-    type: TiM55x-USB
+    type: TiM55x-Ethernet
 
     # robotino1:
     # serial: 14200190
@@ -52,6 +55,9 @@ hardware/laser:
     # serial: 14200191
     # robotino3:
     # serial: 14190279
+
+    host: 10.1.0.3
+    port: 2112
 
     # Frame ID
     frame: !frame back_laser
