@@ -27,7 +27,6 @@ name               = "product_put"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"gripper_commands","motor_move", "reset_gripper"}
 depends_interfaces = {
-    {v = "robotino_sensor", type = "RobotinoSensorInterface", id="Robotino"} -- Interface to read I/O ports
 }
 
 documentation      = [==[
@@ -61,21 +60,6 @@ local slide_gripper_back_x = -0.01 -- distance to move gripper back after openin
 local slide_gripper_up_z = 0.01    --distance to move gripper up after opening the gripper if the target is slide
 
 local drive_back_x = -0.1      -- distance to drive back after closing the gripper
-
--- function to evaluate sensor data
-function is_grabbed()
- if not robotino_sensor:has_writer() then
-   print_warn("No robotino sensor writer to check sensor")
-   return true
- end
- if robotino_sensor:is_digital_in(0) == false and robotino_sensor:is_digital_in(1) == true then -- white cable on DI1 and black on DI2
-    return true
- else
-   -- Ignore until realsense is switched of by default 
-   return true
- end
-end
-
 
 function pose_not_exist()
   local target_pos = { x = gripper_pose_offset_x,
@@ -123,7 +107,7 @@ function pose_gripper_offset(x,y,z)
 end
 
 fsm:define_states{ export_to=_M,
-   closure={pose_not_exist=pose_not_exist,is_grabbed = is_grabbed},
+   closure={pose_not_exist=pose_not_exist},
   {"INIT", JumpState},
   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="FAILED"},
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
@@ -133,9 +117,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
   {"INIT", "FAILED", cond="pose_not_exist()"},
-  {"INIT", "FAILED", cond="not is_grabbed()", desc="Lost product"},
   {"INIT", "GRIPPER_ALIGN", true, desc="Start aligning"},
-  {"MOVE_GRIPPER_FORWARD", "FAILED", cond="not is_grabbed()", desc="Lost product while aligning"},
 }
 
 function INIT:init()
