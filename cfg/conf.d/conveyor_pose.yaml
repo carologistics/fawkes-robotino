@@ -98,7 +98,7 @@ plugins/conveyor_pose:
     # ICP stops iterating if the last transformation was shorter than this
     # distance.  If this value is reached, max_correspondence_dist is multiplied
     # by refinement_factor.  This value refers to translation only.
-    transformation_epsilon: 0.001
+    transformation_epsilon: 0.0009
 
     # Multiply max_correspondence_dist by this factor if transformation_epsilon
     # was reached.  This is needed to be able to ignore model points that are
@@ -147,7 +147,7 @@ plugins/conveyor_pose:
       penalty_threshold: 0.25
 
       # Min. proportion of supported model points for a match
-      support_threshold: 0.55
+      support_threshold: 0.65
 
       # For the shelf recognition, hypothesis verifications needs to be lesst
       # strict.  The following values only apply for hv for shelf.
@@ -196,9 +196,9 @@ plugins/conveyor_pose:
         y: 0.19
         z: 0.655
       slide:
-        x: -0.015
-        y: 0.26
-        z: 0.62
+        x: -0.02
+        y: 0.24
+        z: 0.64
 
 
     # MPS-type-specific offset in y direction added to the input_conveyor hint
@@ -266,10 +266,10 @@ plugins/conveyor_pose:
   with_ll:  # THESE VALUES IF LASERLINE IS AVAILABLE
     left_cut: -0.065
     right_cut: 0.065
-    top_cut: -0.04
+    top_cut: -0.05
     bottom_cut: 0.055
     front_cut: -0.055
-    back_cut: 0.06
+    back_cut: 0.07
   without_ll:  # THESE VALUES IF LASERLINE IS NOT AVAILABLE
     left_cut: -0.075
     right_cut: 0.075
