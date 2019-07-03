@@ -40,6 +40,7 @@
 #include "tf_utils.h"
 
 #include "loader.h"
+#include "outputter.h"
 
 namespace fawkes {
 class TensorflowInterface;
@@ -69,6 +70,7 @@ private:
   std::string cfg_name_;
   TF_Graph *graph_;
   TF_Plugin_Loader *source_;
+  TF_Plugin_Outputter *output_;
 
   std::string graph_file_name_;
   std::string graph_input_node_;
@@ -90,6 +92,10 @@ private:
                              double norm_mean, double norm_std,
                              unsigned int width, unsigned int height,
                              unsigned int image_dtype);
+
+  void pre_set_output();
+  void post_set_output();
+
   void pre_set_source();
   void post_set_source();
   void run_graph_once(unsigned int msg_id);
