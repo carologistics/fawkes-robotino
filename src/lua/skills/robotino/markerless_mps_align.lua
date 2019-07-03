@@ -63,6 +63,22 @@ skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 local llutils = require("fawkes.laser-lines_utils")
 
+-- Tunables
+local MIN_VIS_HIST_LINE=5 --15
+local MAX_ORI=15
+local MAX_TRIES=3
+
+local LINE_LENGTH_MIN=0.64
+local LINE_LENGTH_MAX=0.71
+
+local EXTRA_X_FAST_OFFSET=0.1
+
+local TURN_MOVES={
+   { ori = math.pi},
+   { ori = -math.pi/2},
+   { ori = -math.pi}
+}
+
 function find_line(lines)
   local closest_ll = nil
   local min_distance = math.huge
@@ -85,21 +101,6 @@ function find_line(lines)
   return closest_ll
 end
 
--- Tunables
-local MIN_VIS_HIST_LINE=5 --15
-local MAX_ORI=15
-
-local LINE_LENGTH_MIN=0.64
-local LINE_LENGTH_MAX=0.71
-
-local EXTRA_X_FAST_OFFSET=0.1
-
-local TURN_MOVES={
-   { ori = math.pi},
-   { ori = -math.pi/2},
-   { ori = -math.pi}
-}
-local MAX_TRIES = 8
 
 
 
