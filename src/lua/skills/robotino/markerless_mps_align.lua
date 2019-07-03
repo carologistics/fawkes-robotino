@@ -82,7 +82,7 @@ local TURN_MOVES={
 function find_line(lines, prealigned)
   if prealigned == nil then
     prealigned = false
-
+  end
   local closest_ll = nil
   local min_distance = math.huge
   for line_id,line in pairs(lines) do
@@ -103,7 +103,6 @@ function find_line(lines, prealigned)
       end
     end
   end
-
   return closest_ll
 end
 
