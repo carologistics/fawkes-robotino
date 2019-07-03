@@ -39,7 +39,7 @@ fsm:add_transitions{
 
 function TAKE_PICTURE:init()
 
-   print_info("take_picture: writer %d mps: %s side: %s", if_picture_taker:has_writer(), self.fsm.vars.mps, self.fsm.vars.side)
+   print_info("take_picture: mps: %s side: %s", self.fsm.vars.mps, self.fsm.vars.side)
 
    if if_picture_taker:has_writer() and self.fsm.vars.mps  and self.fsm.vars.side then
      local msg = if_picture_taker.TakePictureMessage:new(self.fsm.vars.mps,self.fsm.vars.side)
