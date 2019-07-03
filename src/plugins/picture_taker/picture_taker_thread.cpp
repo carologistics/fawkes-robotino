@@ -138,6 +138,7 @@ void PictureTakerThread::loop() {
       init();
       return;
     }
+    p_t_if_->read();
     while (!p_t_if_->msgq_empty()) {
       if (p_t_if_->msgq_first_is<PictureTakerInterface::TakePictureMessage>()) {
         PictureTakerInterface::TakePictureMessage *msg =
