@@ -455,6 +455,7 @@
   =>
   (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated" crlf)
   (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
+  (assert (wm-fact (key domain fact spot-free args? m ?mps spot ?spot)))
   (modify ?g (mode EVALUATED))
 )
 
