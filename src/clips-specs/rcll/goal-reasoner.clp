@@ -413,9 +413,7 @@
   =>
   (if (not (and (eq ?d1 FALSE) (eq ?d2 TRUE)))
       then
-      (retract ?hold)
-      (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
-      (assert (domain-fact (name can-hold) (param-values ?r)))
+      (assert (wm-fact (key monitoring safety-discard)))
   )
   (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
   (modify ?g (mode EVALUATED))

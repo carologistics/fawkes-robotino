@@ -762,6 +762,7 @@
   "Discard a base which is not needed."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class NO-PROGRESS) (mode FORMULATED))
+  (goal (id ?urgent) (class URGENT) (mode FORMULATED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;TODO: Model state IDLE
   (wm-fact (key domain fact self args? r ?robot))
@@ -771,6 +772,9 @@
   ;question: or would be more correct to create it and later
   ;  reject it because its not useful
   =>
+  (if (any-factp ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring safety-discard))) then
+    (bind ?parent ?urgent)
+  )
   (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
   (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
                 (class DISCARD-UNKNOWN) (sub-type SIMPLE)
