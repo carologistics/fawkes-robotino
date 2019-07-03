@@ -888,6 +888,7 @@ bool ConveyorPoseThread::update_input_cloud() {
 
 fawkes::LaserLineInterface *ConveyorPoseThread::laserline_get_best_fit() {
   fawkes::LaserLineInterface *best_fit = nullptr;
+  double min_dist2 = std::numeric_limits<double>::max();
 
   // get best line
   for (fawkes::LaserLineInterface *ll : laserlines_) {
@@ -896,74 +897,35 @@ fawkes::LaserLineInterface *ConveyorPoseThread::laserline_get_best_fit() {
       continue;
     if (ll->visibility_history() <= 2)
       continue;
+    if (fabs(ll->bearing()) > cfg_ll_bearing_thresh_)
+      continue;
 
+    tf::Stamped<tf::Pose> center_ep;
+    if (!tf_listener->transform_origin(ll->end_point_frame_2(),
+                                       ll->end_point_frame_1(),
+                                       center_ep, Time(0, 0)))
+      continue;
+
+    // center_ep is is in the endpoint frame
+
+    tf::Stamped<tf::Pose> center;
     try {
-      Eigen::Vector3f center = laserline_get_center_transformed(ll);
-      if (std::sqrt(center(0) * center(0) + center(2) * center(2)) > 0.8f)
-        continue;
-
-      // take with lowest angle
-      if (!best_fit || fabs(best_fit->bearing()) > fabs(ll->bearing()))
-        best_fit = ll;
-    } catch (fawkes::tf::TransformException &e) {
-      logger->log_error(name(), e);
+      // transform it to the laser frame
+      tf_listener->transform_pose(ll->frame_id(), center_ep, center);
+    } catch (tf::TransformException &) {
+      continue;
     }
-  }
 
-  if (!best_fit)
-    return nullptr;
-
-  if (!best_fit->has_writer()) {
-    logger->log_info(name(), "no writer for laser lines");
-    best_fit = nullptr;
-    return nullptr;
-  }
-  if (best_fit->visibility_history() <= 2) {
-    best_fit = nullptr;
-    return nullptr;
-  }
-  if (fabs(best_fit->bearing()) > cfg_ll_bearing_thresh_) {
-    best_fit = nullptr;
-    return nullptr; // ~20 deg
-  }
-
-  try {
-    Eigen::Vector3f center = laserline_get_center_transformed(best_fit);
-    if (std::sqrt(center(0) * center(0) + center(2) * center(2)) > 0.8f) {
-      best_fit = nullptr;
-      return nullptr;
+    if (center.getOrigin().length2() < min_dist2) {
+      best_fit = ll;
+      min_dist2 = center.getOrigin().length2();
     }
-  } catch (tf::TransformException &e) {
-    logger->log_error(name(), e);
-    return nullptr;
   }
 
   return best_fit;
 }
 
-Eigen::Vector3f ConveyorPoseThread::laserline_get_center_transformed(
-    fawkes::LaserLineInterface *ll) {
-  fawkes::tf::Stamped<fawkes::tf::Point> tf_in, tf_out;
-  tf_in.stamp = ll->timestamp();
-  tf_in.frame_id = ll->frame_id();
-  tf_in.setX(ll->end_point_2(0) +
-             (ll->end_point_1(0) - ll->end_point_2(0)) / 2.);
-  tf_in.setY(ll->end_point_2(1) +
-             (ll->end_point_1(1) - ll->end_point_2(1)) / 2.);
-  tf_in.setZ(ll->end_point_2(2) +
-             (ll->end_point_1(2) - ll->end_point_2(2)) / 2.);
 
-  try {
-    tf_listener->transform_point(input_pc_header_.frame_id, tf_in, tf_out);
-  } catch (tf::ExtrapolationException &) {
-    tf_in.stamp = Time(0, 0);
-    tf_listener->transform_point(input_pc_header_.frame_id, tf_in, tf_out);
-  }
-
-  Eigen::Vector3f out(tf_out.getX(), tf_out.getY(), tf_out.getZ());
-
-  return out;
-}
 
 ConveyorPoseThread::CloudPtr
 ConveyorPoseThread::cloud_voxel_grid(ConveyorPoseThread::CloudPtr in) {
