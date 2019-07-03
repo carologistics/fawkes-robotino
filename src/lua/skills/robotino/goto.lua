@@ -125,7 +125,7 @@ function INIT:init()
 
   if self.fsm.vars.place ~= nil then
     -- check for waiting position
-    if string.match(self.fsm.vars.place, "%bWAIT") then 
+    if string.match(self.fsm.vars.place, "WAIT") then 
        self.fsm.vars.waiting_pos = true
     end
     if string.match(self.fsm.vars.place, "^[MC][-]Z[1-7][1-8]$") then
