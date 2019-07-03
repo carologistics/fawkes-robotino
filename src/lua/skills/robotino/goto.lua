@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "goto"
-fsm                = SkillHSM:new{name=name, start="CHECK_INPUT"}
+fsm                = SkillHSM:new{name=name, start="CHECK_INPUT", debug=true}
 depends_skills     = { }
 depends_interfaces = {
 --   {v = "pose", type="Position3DInterface", id="Pose"},
