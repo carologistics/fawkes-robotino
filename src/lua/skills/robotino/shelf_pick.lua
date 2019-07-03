@@ -209,7 +209,8 @@ function GOTO_SHELF:init()
                            ori = { x=0,y=0,z=0,w=0}
                          }
 
-   local target_pos_bl = tfm.transform6D(target_pos_cp, "conveyor_pose", "base_link")
+   local target_pos_odom = tfm.transform6D(target_pos_cp, "conveyor_pose", "odom")
+   local target_pos_bl = tfm.transform6D(target_pos_odom, "odom", "base_link")
 
    laserline_direction = find_ll_direction(self.fsm.vars.lines_avg)
    target_pos_bl.x = target_pos_bl.x + dist_y * laserline_direction.x
