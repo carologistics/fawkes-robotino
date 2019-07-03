@@ -83,56 +83,61 @@ public:
   TagVisionThread();
   // marker size accasors
   // thread functions
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+  virtual void init() override;
+  virtual void loop() override;
+  virtual void finalize() override;
+
+  fawkes::tf::TransformPublisher *get_tf_publisher(size_t idx);
+
+  /// Common prefix of all tag frame names
+  static const std::string tag_frame_basename;
 
 private:
   /// load config from file
   void loadConfig();
   /// the marker detector in alvar
-  alvar::MarkerDetector<alvar::MarkerData> detector;
+  alvar::MarkerDetector<alvar::MarkerData> alvar_detector_;
   /// the camera the detector uses
-  alvar::Camera alvar_cam;
+  alvar::Camera alvar_cam_;
   /// the size of a marker in millimeter
-  uint marker_size;
+  uint marker_size_;
   /// function to get the markers from an image
   void get_marker();
   /// store the alvar markers, containing the poses
   std::vector<alvar::MarkerData> *markers_;
   /// maximum markers to detect, size for the markers array
-  size_t max_marker;
+  size_t max_marker_;
 
   /// mutex for config access
-  fawkes::Mutex cfg_mutex;
+  fawkes::Mutex cfg_mutex_;
 
   /// firevision camera
-  firevision::Camera *fv_cam;
+  firevision::Camera *fv_cam_;
   /// firevision image buffer
-  firevision::SharedMemoryImageBuffer *shm_buffer;
-  unsigned char *image_buffer;
+  firevision::SharedMemoryImageBuffer *shm_buffer_;
+  unsigned char *image_buffer_;
   /// Image Buffer Id
-  std::string shm_id;
+  std::string shm_id_;
 
   // config handling
-  virtual void config_value_erased(const char *path);
-  virtual void config_tag_changed(const char *new_tag);
+  virtual void config_value_erased(const char *path) override;
+  virtual void config_tag_changed(const char *new_tag) override;
+  virtual void config_comment_changed(
+      const fawkes::Configuration::ValueIterator *v) override;
   virtual void
-  config_comment_changed(const fawkes::Configuration::ValueIterator *v);
-  virtual void
-  config_value_changed(const fawkes::Configuration::ValueIterator *v);
+  config_value_changed(const fawkes::Configuration::ValueIterator *v) override;
 
   /// cv image
-  IplImage *ipl;
+  IplImage *ipl_image_;
 
   /// blackboard communication
-  TagPositionList *tag_interfaces;
+  TagPositionList *tag_interfaces_;
   std::vector<fawkes::LaserLineInterface *> *laser_line_ifs_;
 
   /// Width of the image
-  unsigned int img_width;
+  unsigned int img_width_;
   /// Height of the image
-  unsigned int img_height;
+  unsigned int img_height_;
 };
 
 #endif
