@@ -36,6 +36,7 @@ depends_interfaces = {
    {v = "line6_avg", type="LaserLineInterface", id="/laser-lines/6/moving_avg"},
    {v = "line7_avg", type="LaserLineInterface", id="/laser-lines/7/moving_avg"},
    {v = "line8_avg", type="LaserLineInterface", id="/laser-lines/8/moving_avg"},
+   {v = "robotino_sensor", type="RobotinoSensorInterface", id="Robotino"},
 }
 
 documentation      = [==[ shelf_pick
@@ -108,8 +109,7 @@ function is_grabbed()
  if robotino_sensor:is_digital_in(0) == false and robotino_sensor:is_digital_in(1) == true then -- white cable on DI1 and black on DI2
     return true
  else
-   -- Ignore puck laser, until realsense is disabled by default 
-   return true
+   return false
  end
 end
 
@@ -159,7 +159,7 @@ fsm:define_states{ export_to=_M, closure={is_grabbed=is_grabbed},
 
 fsm:add_transitions{
    {"GOTO_SHELF", "FAILED", cond="vars.error"},
-   {"CHECK_PUCK", "FAILED", cond="not is_grabbed()", desc="Not holding puck"}
+   {"CHECK_PUCK", "FAILED", cond="not is_grabbed()", desc="Not holding puck"},
    {"CHECK_PUCK", "FINAL", cond=true},
 }
 
