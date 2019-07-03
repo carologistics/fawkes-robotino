@@ -341,7 +341,6 @@
                         mps ?mps
                         cc ?cc
                 )
-                (required-resources (sym-cat ?mps -INPUT) ?cc)
   ))
 )
 
@@ -377,7 +376,6 @@
                         wp ?wp
                         side OUTPUT
                 )
-                (required-resources (sym-cat ?mps -OUTPUT) ?wp)
   ))
 )
 
@@ -419,7 +417,6 @@
                         wp ?wp
                         side OUTPUT
                 )
-                (required-resources (sym-cat ?mps -OUTPUT) ?wp)
   ))
 )
 
@@ -449,7 +446,6 @@
                         wp ?wp
                         side ?side
                 )
-                (required-resources (sym-cat ?mps - ?side) ?wp)
   ))
 )
 
@@ -484,7 +480,6 @@
                         wp ?wp
                         side OUTPUT
                 )
-                (required-resources (sym-cat ?mps -OUTPUT) ?wp)
   ))
 )
 
@@ -631,7 +626,6 @@
                                      base-color ?base-color
                                      wp ?spawned-wp
                                      )
-                            (required-resources ?spawned-wp)
   ))
 )
 
@@ -669,7 +663,6 @@
                                      wp ?wp
                                      spot ?spot
                                      )
-                             (required-resources ?wp)
   ))
 )
 
@@ -717,7 +710,6 @@
                         rs-before ?rs-before
                         rs-after ?rs-after
                 )
-                (required-resources ?mps ?wp)
   ))
 )
 
@@ -743,7 +735,6 @@
                 (params robot ?robot
                         wp ?wp
                 )
-                (required-resources ?wp)
   ))
   ; (assert (goal-already-tried DISCARD-UNKNOWN))
 )
@@ -807,14 +798,14 @@
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (eq ?complexity C0))
   =>
-  (bind ?required-resources ?order ?spawned-wp)
+  (bind ?required-resources ?order)
   ;If this order complexity should be produced exclusively ...
   (if (any-factp ((?exclusive-complexities wm-fact))
         (and (wm-key-prefix ?exclusive-complexities:key (create$ config rcll exclusive-complexities))
              (neq FALSE (member$ (str-cat ?complexity) ?exclusive-complexities:values))))
     then
       ;... then an exclusive order token is required.
-      (bind ?required-resources ?mps ?order ?spawned-wp PRODUCE-EXCLUSIVE-COMPLEXITY)
+      (bind ?required-resources ?order PRODUCE-EXCLUSIVE-COMPLEXITY)
       (printout t "Goal " PRODUCE-C0 " formulated, it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
     else
       (printout t "Goal " PRODUCE-C0 " formulated" crlf))
@@ -840,7 +831,7 @@
                         order ?order
                         wp ?spawned-wp
                 )
-                (required-resources (sym-cat ?mps -INPUT) ?required-resources)
+                (required-resources ?required-resources)
   ))
 )
 
@@ -905,14 +896,14 @@
   ; Strategy CEs
   (not (wm-fact (key strategy keep-mps-side-free args? m ?mps-rs side INPUT $?)))
   =>
-  (bind ?required-resources ?order ?spawned-wp)
+  (bind ?required-resources ?order)
   ;If this order complexity should be produced exclusively ...
   (if (any-factp ((?exclusive-complexities wm-fact))
         (and (wm-key-prefix ?exclusive-complexities:key (create$ config rcll exclusive-complexities))
              (neq FALSE (member$ (str-cat ?complexity) ?exclusive-complexities:values))))
     then
       ;... then an exclusive order token is required.
-      (bind ?required-resources ?mps-rs ?order ?spawned-wp PRODUCE-EXCLUSIVE-COMPLEXITY)
+      (bind ?required-resources ?order PRODUCE-EXCLUSIVE-COMPLEXITY)
       (printout t "Goal " MOUNT-FIRST-RING " formulated, it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
     else
       (printout t "Goal " MOUNT-FIRST-RING " formulated" crlf))
@@ -933,7 +924,7 @@
                         order ?order
                         wp ?spawned-wp
                 )
-                (required-resources (sym-cat ?mps-rs -INPUT) ?required-resources)
+                (required-resources ?required-resources)
   ))
 )
 
@@ -1028,7 +1019,6 @@
                         rs-req ?bases-needed
                         order ?order
                 )
-                (required-resources (sym-cat ?mps-rs -INPUT) (sym-cat ?prev-rs -OUTPUT) ?wp)
   ))
 )
 
@@ -1089,7 +1079,6 @@
                                         cs-color ?cap-color
                                         order ?order
                                 )
-                                (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
   ))
 )
 
@@ -1147,7 +1136,6 @@
                         cs-color ?cap-color
                         order ?order
                 )
-                (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
   ))
 )
 
@@ -1207,7 +1195,6 @@
                         cs-color ?cap-color
                         order ?order
                 )
-                (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
   ))
 )
 
@@ -1331,7 +1318,7 @@
                         ring3-color ?ring3-color
                         cap-color ?cap-color
                 )
-                (required-resources (sym-cat ?mps -OUTPUT) ?order ?wp)
+                (required-resources ?order)
   ))
 )
 
@@ -1379,14 +1366,12 @@
   (wm-fact (key domain fact mps-state args? m ?mps s IDLE))
   (not (wm-fact (key domain fact wp-at args? wp ? m ?mps side OUTPUT)))
   =>
-  (bind ?resources (create$ ?mps (sym-cat ?mps -OUTPUT) (sym-cat ?mps -INPUT)))
   (assert (goal (id (sym-cat PROCESS-MPS- ?mps - (gensym*)))
                 (class PROCESS-MPS) (sub-type SIMPLE)
                 (priority ?*PRIORITY-RESET*)
                 (parent ?mps-handling-id)
                 (params m ?mps
                 )
-                (required-resources ?resources)
   ))
   (modify ?pg (mode EXPANDED))
 )
