@@ -350,6 +350,12 @@ function DRIVE:init()
       ori = math.min(V_MAX.ori, self.fsm.vars.vel_rot or V_MAX.ori)
    }
    self.fsm.vars.tolerance_arg = self.fsm.vars.tolerance or TOLERANCE
+
+   print_info("motor_move tolerance x: %f, y: %f, ori: %f",
+      self.fsm.vars.tolerance_arg.x,
+      self.fsm.vars.tolerance_arg.y,
+      self.fsm.vars.tolerance_arg.ori
+   )
    
    -- "Magic", i.e. heuristic multiplier that determines how much we brake
    -- when approaching target. Important to avoid overshooting.
