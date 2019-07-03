@@ -545,3 +545,27 @@
 =>
   (retract ?strat)
 )
+
+
+(defrule production-strategy-use-ss-c0
+  (wm-fact (key domain fact ss-stored-wp args? m ?ss wp ?wp))
+  (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?any-order)))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+  (not (wm-fact (key order meta wp-for-order args? wp ?any-wp ord ?order)))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
+           (value ?qd-us&:(< ?qd-us ?qr)))
+  (wm-fact (key refbox game-time) (values ?curr-time $?))
+  (wm-fact (key refbox order ?order delivery-end)
+           (value ?deadline&:(> ?deadline ?curr-time)))
+=>
+  (assert
+    (wm-fact (key mps-handling prepare prepare-ss ?ss args? m ?ss wp ?wp op RETRIEVE))
+    (wm-fact (key mps-handling process ss-retrieve-c0 ?ss args? m ?ss wp ?wp))
+    (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  )
+)
