@@ -502,3 +502,46 @@
                                 (order-steps-index ?step)
                                 0)))
 )
+
+
+; ======================== Production Strategy ===============================
+
+
+(defrule production-strategy-keep-rs-side-free
+" Mount ring deadlocks can happen if two different workpieces need a ring
+  from the same ring station, while one of the workpieces already is already at
+  said mps output. In this case, the other workpiece should not be placed on
+  the mps input side.
+"
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (goal (id ?g) (class PROCESS-MPS) (params m ?rs) (mode FINISHED)
+                (outcome COMPLETED))
+  (wm-fact (key domain fact mps-type args? m ?rs t RS))
+  (wm-fact (key domain fact mps-team args? m ?rs col ?team))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT))
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key wp meta next-step args? wp ?wp) (value ?ns&RING1|RING2|RING3))
+  (wm-fact (key domain fact ?orc&:(eq ?orc
+                                      (sym-cat order-ring
+                                      (sub-string 5 5 (str-cat ?ns))
+                                     -color))
+            args? ord ?order col ?ring-col))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-col $?))
+=>
+  (assert (wm-fact (key strategy keep-mps-side-free
+                    args? m ?rs side INPUT cause ?wp)))
+)
+
+
+(defrule production-strategy-retract-keep-rs-side-free
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  ?strat <- (wm-fact (key strategy keep-mps-side-free
+                      args? m ?rs side INPUT cause ?wp))
+  (wm-fact (key domain fact mps-type args? m ?rs t RS))
+  (wm-fact (key domain fact mps-team args? m ?rs col ?team))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
+=>
+  (retract ?strat)
+)
