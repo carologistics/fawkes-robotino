@@ -53,7 +53,7 @@ public:
 
   /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() { Thread::run(); }
+  virtual void run() override { Thread::run(); }
 
 private:
   std::string cfg_skiller_ifid_;
@@ -84,10 +84,8 @@ private:
   std::atomic<bool> motor_if_changed_flag_;
   std::atomic<bool> skiller_if_changed_flag_;
 
-  void get_timeout(fawkes::Time *&wait_until,
-                   unsigned int &digital_output_to_reset);
-  void signal_timedout_lights(fawkes::Time *wait_until,
-                              unsigned int digital_output_to_reset);
+  void get_next_switchoff(fawkes::Time *&wait_until,
+                          unsigned int &digital_output_to_reset);
   bool interruptable_timeout(fawkes::Time *wait_until);
 
   void signal_skiller_change();
