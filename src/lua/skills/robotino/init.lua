@@ -41,7 +41,11 @@ skillenv.use_skill("skills.robotino.enable_switch")
 skillenv.use_skill("skills.robotino.explore_zone")
 skillenv.use_skill("skills.robotino.gripper_commands")
 skillenv.use_skill("skills.robotino.reset_gripper")
+
+-- Skills for markerless MPS interaction
+skillenv.use_skill("skills.robotino.markerless_mps_align")
 skillenv.use_skill("skills.robotino.take_picture")
+
 
 -- Skills for MPS interaction
 skillenv.use_skill("skills.robotino.check_tag")
@@ -57,5 +61,4 @@ skillenv.use_skill("skills.robotino.get_product_from")
 skillenv.use_skill("skills.robotino.approach_test")
 skillenv.use_skill("skills.robotino.discard")
 
--- Skills for markerless MPS interaction
-skillenv.use_skill("skills.robotino.markerless_mps_align")
+
