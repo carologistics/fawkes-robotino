@@ -135,10 +135,6 @@ function SHELF_PICK:exit()
 end
 
 function CONVEYOR_ALIGN:init()
-   if (self.fsm.vars.shelf == nil) then
-     self.args["conveyor_align"].disable_realsense_afterwards = false
-   end
-
    if self.fsm.vars.shelf ~= nil then
      self.args["conveyor_align"].side = "input"
      self.args["conveyor_align"].place = self.fsm.vars.place
