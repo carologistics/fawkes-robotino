@@ -5,9 +5,8 @@
     <comment>
         Interface to access tensorflow plugin
     </comment>
-    <field type="uint32" name="int_result" length="15">Results of type integer</field>
-    <field type="float" name="float_result" length="15">Results of type float</field>
-    <field type="uint32" name="msgid">The ID of the triggering message to which the classification result refers</field>
+    <field type="uint32" name="msgid">The ID of the triggering message to which the done flag refers to</field>
+    <field type="bool" name="is_done">Whether the Tensorflow run is done</field>
       <!--TODO give more flexible possibilites for output-->
   </data>
   <message name="LoadGraphFile">
@@ -48,6 +47,10 @@
     <field type="uint32" name="image_dtype">Dtype of image after conversion</field>
   </message>
     <!--TODO give other possibilities for source-->
+  <message name="SetOutputClassificationBlackboard">
+    <comment>Add an outputter to write a classification result to the blackboard</comment>
+    <field type="string" length="256" name="classification_table">The table of classification</field>
+  </message>
   <message name="TriggerRun">
     <comment>Trigger a run of the network</comment>
   </message>

@@ -83,7 +83,7 @@ function COMMAND:init()
      message:set_image_dtype(self.fsm.vars.image_dtype)
    elseif self.fsm.vars.command == "SET_SOURCE_V4L2" then
      message = tensorflow.SetSourceImageV4L2Message:new()
-     message:set_file_name(self.fsm.vars.device_name)
+     message:set_device_name(self.fsm.vars.device_name)
      message:set_normalize(self.fsm.vars.normalize)
      message:set_norm_mean(self.fsm.vars.norm_mean)
      message:set_norm_std(self.fsm.vars.norm_std)
