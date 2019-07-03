@@ -28,7 +28,8 @@ fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"product_put", "drive_to_machine_point", "conveyor_align"}
 depends_interfaces = {
    {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
-}
+   {v = "robotino_sensor", type = "RobotinoSensorInterface", id="Robotino"} -- Interface to read I/O ports
+ }
 
 documentation      = [==[ 
 aligns to a machine and puts a product on the conveyor.
@@ -50,6 +51,22 @@ skillenv.skill_module(_M)
 -- of not needing to move at all.
 local X_AT_MPS = 0.28
 
+
+-- function to evaluate sensor data
+function is_grabbed()
+ if not robotino_sensor:has_writer() then
+   print_warn("No robotino sensor writer to check sensor")
+   return true
+ end
+ if robotino_sensor:is_digital_in(0) == false and robotino_sensor:is_digital_in(1) == true then -- white cable on DI1 and black on DI2
+    return true
+ else
+   return false
+ end
+end
+
+
+
 function already_at_mps(self)
    return not (self.fsm.vars.atmps=="NO" or self.fsm.vars.atmps==nil)
 end
@@ -58,7 +75,7 @@ function already_at_conveyor(self)
    return (self.fsm.vars.atmps == "CONVEYOR")
 end
 
-fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
+fsm:define_states{ export_to=_M, closure={navgraph=navgraph, is_grabbed = is_grabbed},
    {"INIT", JumpState},
    {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PUT", fail_to="FAILED"},
@@ -67,6 +84,7 @@ fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not navgraph", desc="navgraph not available"},
+   {"INIT", "FAILED", cond="not is_grabbed()", desc="product lost while moving"},
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
    {"INIT", "CONVEYOR_ALIGN", cond=already_at_conveyor, desc="At mps, skip drive_to_local"},
    {"INIT", "DRIVE_TO_MACHINE_POINT", cond=true, desc="Everything OK"},
