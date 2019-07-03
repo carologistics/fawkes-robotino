@@ -106,7 +106,7 @@ end
 
 
 fsm:define_states{ export_to=_M, closure={
-      pose_error=pose_error, tag_visible=tag_visible, MIN_VIS_HIST_TAG=MIN_VIS_HIST_TAG,
+      pose_error=pose_error, tag_visible=tag_visible, MIN_VIS_HIST_TAG=MIN_VIS_HIST_TAG, MAX_TRIES=MAX_TRIES,
       want_search=want_search, line_visible=line_visible },
    {"INIT",                   JumpState},
    {"GRIPPER_PRE_CONVEYOR",   SkillJumpState, skills={{"gripper_commands"}}, final_to="FIND_LINE", fail_to="FIND_LINE"},
@@ -129,7 +129,7 @@ fsm:add_transitions{
    {"FIND_AVG_LINE", "ALIGN_PRECISE",  timeout=0.5},
    {"FIND_AVG_LINE", "FIND_LINE", cond="not self.fsm.vars.found_line"},
 
-   {"NO_LINE",       "FAILED",          cond="vars.tried_searching>MAX_TRIES"},
+   {"NO_LINE",       "FAILED",          cond="vars.tried_searching > MAX_TRIES"},
    {"NO_LINE",       "SEARCH_LINE", cond=true},
 
    {"ALIGN_FAST",    "FAILED",          cond="vars.align_attempts >= 3"}
@@ -161,20 +161,8 @@ function INIT:init()
    self.fsm.vars.lines_avg[line7_avg:id()] = line7_avg
    self.fsm.vars.lines_avg[line8_avg:id()] = line8_avg
 
-   -- Tracker to remember how often we looked for a tag at each line
-   -- Required so we don't alternate between two lines that both don't have the desired tag.
-   self.fsm.vars.lines_visited = {}
-   for k,v in pairs(self.fsm.vars.lines) do
-      self.fsm.vars.lines_visited[k] = 0
-   end
 
-   self.fsm.vars.interesting_lines = {}
-
-   self.fsm.vars.tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7,
-      tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
-
-   self.fsm.vars.search_idx = 0
-   self.fsm.vars.globalsearch_done = false
+   self.fsm.vars.tried_searching = 0
 end
 
 function FIND_LINE:init()
