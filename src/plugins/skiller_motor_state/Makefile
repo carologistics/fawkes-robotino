@@ -1,9 +1,9 @@
 
 #*****************************************************************************
-#         Makefile Build System for Fawkes: Robotino Motor LED Indicator
+#         Makefile Build System for Fawkes: Skiller Motor State LED
 #                            -------------------
-#   Created on Fri Apr 15 15:00:36 2016
-#   Copyright (C) 2011 by Tim Niemueller, AllemaniACs RoboCup Team
+#   Created on Fri Jun 14 15:00:36 2019
+#   Copyright (C) 2019 by Morian Sonnet
 #
 #*****************************************************************************
 #
@@ -17,15 +17,15 @@
 BASEDIR = ../../..
 include $(BASEDIR)/etc/buildsys/config.mk
 
-LIBS_motor_led = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
+LIBS_skiller_motor_state = m fawkescore fawkesutils fawkesaspects fawkesbaseapp \
                  fawkesblackboard fawkesinterface \
-                 MotorInterface RobotinoSensorInterface
-OBJS_motor_led = motor_led_plugin.o motor_led_thread.o
+                 SkillerInterface RobotinoSensorInterface MotorInterface
+OBJS_skiller_motor_state = skiller_motor_state_plugin.o skiller_motor_state_thread.o
 
 CFLAGS += $(CFLAGS_CPP11)
 
-OBJS_all    = $(OBJS_motor_led)
-PLUGINS_all = $(PLUGINDIR)/motor-led.$(SOEXT)
+OBJS_all    = $(OBJS_skiller_motor_state)
+PLUGINS_all = $(PLUGINDIR)/skiller_motor_state.$(SOEXT)
 PLUGINS_build = $(PLUGINS_all)
 
 include $(BUILDSYSDIR)/base.mk
