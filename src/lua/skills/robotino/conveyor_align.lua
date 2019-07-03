@@ -225,7 +225,7 @@ fsm:add_transitions{
 
    {"DRIVE_DONE", "FINAL", cond="fitness_high() and tolerance_ok()"},
    {"DRIVE_DONE", "FAILED", cond="vars.vision_retries > MAX_VISION_RETRIES"},
-   {"DRIVE_DONE", "LOOK", cond="not fitness_min() or not tolerance_ok()"},
+   {"DRIVE_DONE", "LOOK", cond="not fitness_high() or not tolerance_ok()"},
 }
 
 function INIT:init()
