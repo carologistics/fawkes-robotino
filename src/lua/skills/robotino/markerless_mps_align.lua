@@ -79,13 +79,19 @@ local TURN_MOVES={
    { ori = -math.pi}
 }
 
-function find_line(lines)
+function find_line(lines, prealigned)
+  if prealigned == nil then
+    prealigned = false
+
   local closest_ll = nil
   local min_distance = math.huge
   for line_id,line in pairs(lines) do
     local center = llutils.center(line)
     local distance = math.sqrt(math.pow(center.x,2),math.pow(center.y,2))
     local ori = math.deg(math.atan2(center.y, center.x))
+    if prealigned then
+       ori = ori -math.deg(math.atan2(self.fsm.vars.y, self.fsm.vars.x))
+    end
     if math.abs(ori) < MAX_ORI then -- approximately in front of us
       if line:visibility_history() >= MIN_VIS_HIST_LINE then -- this laser line is not stale
         if distance < min_distance then
@@ -167,11 +173,12 @@ end
 
 function FIND_LINE:init()
    self.fsm.vars.align_attempts = 0
+   self.fsm.vars.tried_searching = self.fsm.vars.tried_searching + 1
 end
 
 
 function FIND_LINE:loop()
-   self.fsm.vars.found_line = find_line(self.fsm.vars.lines)
+   self.fsm.vars.found_line = find_line(self.fsm.vars.lines, self.fsm.vars.prealigned)
 end
 
 
@@ -198,11 +205,12 @@ function ALIGN_FAST:init()
       ori = p.ori,
       tolerance = { x=0.05, y=0.03, ori=0.03 }
    }
+   self.fsm.vars.prealigned = true
 end
 
 
 function FIND_AVG_LINE:loop()
-  self.fsm.vars.found_line = find_line(self.fsm.vars.lines_avg)
+  self.fsm.vars.found_line = find_line(self.fsm.vars.lines, self.fsm.vars.prealigned)
 end
 
 
