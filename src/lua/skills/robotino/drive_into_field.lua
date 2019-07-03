@@ -55,13 +55,11 @@ end
 fsm:define_states{ export_to=_M,
    closure={too_many_tries=too_many_tries},
    {"INIT",             JumpState},
-   {"WAIT",             JumpState},
    {"DRIVE_INTO_FIELD", SkillJumpState, skills={{goto_waypoints}}, final_to="FINAL", fail_to="DRIVE_INTO_FIELD"},
 }
 
 fsm:add_transitions{
-   {"INIT",   "WAIT", cond=true},
-   {"WAIT",   "DRIVE_INTO_FIELD", timeout=TIMEOUT_UPPER_LIMIT},   -- this just creates the transision
+   {"INIT",   "DRIVE_INTO_FIELD", cond=true},
    {"DRIVE_INTO_FIELD", "FINAL", cond=is_in_field, desc="Already in field"},
    {"DRIVE_INTO_FIELD", "FAILED", cond=too_many_tries, desc="No way into field"}
 }
@@ -73,10 +71,6 @@ function INIT:init()
    else
       self.fsm.vars.waypoints = {"M-ins-out", "M-ins-in"}
    end
-end
-
-function WAIT:init()
-   self.timeout_time = self.fsm.vars.wait or 0                    -- this "resets" the timeout of the transition
 end
 
 function DRIVE_INTO_FIELD:init()
