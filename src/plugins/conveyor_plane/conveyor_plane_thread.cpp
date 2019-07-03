@@ -714,21 +714,25 @@ CloudPtr ConveyorPlaneThread::crop_cloud(CloudPtr in_cloud,
 
   if (use_laserline) {
     std::string target_frame = header_.frame_id;
-    Eigen::Vector3f cropbox_reference =
-        get_conveyor_estimate(laser_line, target_frame, fawkes::Time(0, 0));
+    try {
+      Eigen::Vector3f cropbox_reference =
+          get_conveyor_estimate(laser_line, target_frame, fawkes::Time(0, 0));
+      logger->log_debug(name(), "ll cropbox_reference = (%f, %f, %f) in %s",
+                        cropbox_reference[0], cropbox_reference[1],
+          cropbox_reference[2], target_frame.c_str());
 
-    logger->log_debug(name(), "ll cropbox_reference = (%f, %f, %f) in %s",
-                      cropbox_reference[0], cropbox_reference[1],
-                      cropbox_reference[2], target_frame.c_str());
-
-    min = Eigen::Vector3f(cfg_crop_laserline_x_min, cfg_crop_laserline_y_min,
-                          cfg_crop_laserline_z_min) +
+      min = Eigen::Vector3f(cfg_crop_laserline_x_min, cfg_crop_laserline_y_min,
+                            cfg_crop_laserline_z_min) +
           cropbox_reference;
-    max = Eigen::Vector3f(cfg_crop_laserline_x_max, cfg_crop_laserline_y_max,
-                          cfg_crop_laserline_z_max) +
+      max = Eigen::Vector3f(cfg_crop_laserline_x_max, cfg_crop_laserline_y_max,
+                            cfg_crop_laserline_z_max) +
           cropbox_reference;
-
-  } else {
+    }
+    catch (fawkes::Exception &) {
+      use_laserline = false;
+    }
+  }
+  if (!use_laserline) {
     min = Eigen::Vector3f(cfg_crop_cam_x_min, cfg_crop_cam_y_min,
                           cfg_crop_cam_z_min);
     max = Eigen::Vector3f(cfg_crop_cam_x_max, cfg_crop_cam_y_max,
