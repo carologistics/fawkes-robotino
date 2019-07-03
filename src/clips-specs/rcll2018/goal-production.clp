@@ -869,6 +869,12 @@
                                          difference ?bases-remain&ZERO|ONE|TWO|THREE))
   (not (wm-fact (key domain fact rs-prepared-color args?  m ?mps-rs col ?some-col)))
   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs m ?mps-rs side INPUT)))
+  (wm-fact (key domain fact mps-type args? m ?other-rs&~?mps-rs t RS))
+  (wm-fact (key domain fact mps-team args? m ?other-rs col ?team-color))
+  ; There is at least one other rs side, except for the target input, that
+  ; is free (because occupying all 4 sides at once can cause deadlocks)
+  (or (wm-fact (key domain fact mps-side-free args? m ?mps-rs side OUTPUT))
+      (wm-fact (key domain fact mps-side-free args? m ?other-mps side ?any-side)))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args?  m ?mps-bs t BS))
   (wm-fact (key domain fact mps-team args?  m ?mps-bs col ?team-color))
@@ -896,6 +902,8 @@
             (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (neq ?complexity C0))
+  ; Strategy CEs
+  (not (wm-fact (key strategy keep-mps-side-free args? m ?mps-rs side INPUT $?)))
   =>
   (bind ?required-resources ?order ?spawned-wp)
   ;If this order complexity should be produced exclusively ...
@@ -988,19 +996,16 @@
                  (eq ?next-ring-color ?order-ring3-color))
             (and (eq ?wp-ring1-color ?order-ring1-color)
                  (neq ?wp-ring2-color ?order-ring2-color)
-                 (eq ?next-ring-color ?order-ring2-color))
-            (and (neq ?wp-ring1-color ?order-ring1-color)
-                 (eq ?next-ring-color ?order-ring1-color))))
+                 (eq ?next-ring-color ?order-ring2-color))))
   (or (and (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-           (wm-fact (key domain fact wp-at args? wp ?wp m ?prev-rs side OUTPUT))
-           ; The next rs is equal to the current rs. So if the workpiece gets taken
-           ; from the output, we know that the workpiece from the input gets processed
-           (or (not (wm-fact (key domain fact wp-at args? wp ? m ?mps-rs side INPUT)))
-               (test (eq ?prev-rs ?mps-rs))))
+           (wm-fact (key domain fact wp-at args? wp ?wp m ?prev-rs side OUTPUT)))
       (and (wm-fact (key domain fact holding args? r ?robot wp ?wp))
            (wm-fact (key domain fact mps-type args? m ?prev-rs t RS))))
-  (not (wm-fact (key domain fact wp-at args? wp ?wp-rs&:(neq ?wp-rs ?wp) m ?mps-rs side ?any-rs-side)))
+  (not (wm-fact (key domain fact wp-at args? wp ?wp-rs&:(neq ?wp-rs ?wp) m ?mps-rs side INPUT)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+  ; Strategy CEs
+  (not (wm-fact (key strategy keep-mps-side-free
+                 args? m ?mps-rs side INPUT cause ~?wp)))
   =>
   (bind ?ring-pos (member$ RING_NONE (create$ ?wp-ring1-color ?wp-ring2-color ?wp-ring3-color)))
   (bind ?curr-ring-color (nth$ ?ring-pos (create$ ?order-ring1-color ?order-ring2-color ?order-ring3-color)))
