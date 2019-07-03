@@ -871,6 +871,8 @@
   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs m ?mps-rs side INPUT)))
   (wm-fact (key domain fact mps-type args? m ?other-rs&~?mps-rs t RS))
   (wm-fact (key domain fact mps-team args? m ?other-rs col ?team-color))
+  ; There is at least one other rs side, except for the target input, that
+  ; is free (because occupying all 4 sides at once can cause deadlocks)
   (or (wm-fact (key domain fact mps-side-free args? m ?mps-rs side OUTPUT))
       (wm-fact (key domain fact mps-side-free args? m ?other-mps side ?any-side)))
   ;MPS-BS CEs
