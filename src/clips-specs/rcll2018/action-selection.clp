@@ -1,4 +1,5 @@
 (defrule action-selection-exploration-select
+	(wm-fact (key game state) (type UNKNOWN) (value RUNNING))
 	(goal (id ?parent-id) (class EXPLORATION) (mode DISPATCHED))
 	(goal (id ?goal-id) (parent ?parent-id) (mode DISPATCHED))
 	?pa <- (plan-action (plan-id EXPLORATION-PLAN) (goal-id ?goal-id)
@@ -98,7 +99,8 @@
 )
 
 (defrule action-selection-select
-	?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+	(wm-fact (key game state) (type UNKNOWN) (value RUNNING))
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
                       (id ?id) (state FORMULATED)
                       (action-name ?action-name)
                       (param-values $?param-values))
