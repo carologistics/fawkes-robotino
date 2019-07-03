@@ -193,10 +193,6 @@ function result_ready()
   return true
 end
 
-function pose_offset()
-  return transformed_pos
-end
-
 
 fsm:define_states{ export_to=_M,
    closure={ MAX_RETRIES=MAX_RETRIES, tolerance_ok=tolerance_ok,input_ok=input_ok,
