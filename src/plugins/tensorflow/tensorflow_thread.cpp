@@ -123,7 +123,10 @@ void TensorflowThread::delete_graph() {
 void TensorflowThread::finalize() {
   if (source_ != nullptr)
     delete source_;
+  if (output_ != nullptr)
+    delete output_;
   this->delete_graph();
+  blackboard->close(tensorflow_if_);
 }
 
 void TensorflowThread::load_config() {
@@ -144,6 +147,15 @@ void TensorflowThread::post_set_source() {
   }
   return;
 }
+
+void TensorflowThread::pre_set_output() {
+  if (output_ != nullptr)
+    delete output_;
+  output_ = nullptr;
+  return;
+}
+
+void TensorflowThread::post_set_output() { return; }
 
 void TensorflowThread::set_source_image_shm(std::string shm_id,
                                             std::string their_hostname,
@@ -202,6 +214,10 @@ void TensorflowThread::run_graph_once(unsigned int msg_id) {
     logger->log_error(name(), "Source was not initialized");
     return;
   }
+  if (this->output_ == nullptr) {
+    logger->log_error(name(), "Outputter was not initialized");
+    return;
+  }
   TF_Output input_op = {
       TF_GraphOperationByName(graph_, graph_input_node_.c_str()), 0};
   TF_Output output_op = {
@@ -244,6 +260,11 @@ void TensorflowThread::run_graph_once(unsigned int msg_id) {
   }
 
   const auto tensor_data = static_cast<float *>(TF_TensorData(output_tensor));
+
+  this->output_->write(tensor_data);
+  tensorflow_if_->set_msgid(msg_id);
+  tensorflow_if_->set_is_done(true);
+  tensorflow_if_->write();
 
   for (int i = 0; i < 10; ++i)
     std::cout << tensor_data[i] << ' ';

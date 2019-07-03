@@ -32,7 +32,8 @@ LIBS_tensorflow = fawkescore fawkesutils fawkesaspects fvutils fvcams \
 	       TensorflowInterface
 OBJS_tensorflow = tensorflow_plugin.o tensorflow_thread.o tf_utils.o \
                   loader.o image_shm_loader.o image_loader.o \
-                  image_file_loader.o image_v4l2_loader.o
+                  image_file_loader.o image_v4l2_loader.o \
+									outputter.o
 
 OBJS_all    = $(OBJS_tensorflow)
 
