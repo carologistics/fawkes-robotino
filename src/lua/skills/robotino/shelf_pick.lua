@@ -26,8 +26,16 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "shelf_pick"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"motor_move", "gripper_commands", "approach_mps", "reset_gripper"}
+depends_skills     = {"motor_move", "gripper_commands", "reset_gripper"}
 depends_interfaces = {
+   {v = "line1_avg", type="LaserLineInterface", id="/laser-lines/1/moving_avg"},
+   {v = "line2_avg", type="LaserLineInterface", id="/laser-lines/2/moving_avg"},
+   {v = "line3_avg", type="LaserLineInterface", id="/laser-lines/3/moving_avg"},
+   {v = "line4_avg", type="LaserLineInterface", id="/laser-lines/4/moving_avg"},
+   {v = "line5_avg", type="LaserLineInterface", id="/laser-lines/5/moving_avg"},
+   {v = "line6_avg", type="LaserLineInterface", id="/laser-lines/6/moving_avg"},
+   {v = "line7_avg", type="LaserLineInterface", id="/laser-lines/7/moving_avg"},
+   {v = "line8_avg", type="LaserLineInterface", id="/laser-lines/8/moving_avg"},
 }
 
 documentation      = [==[ shelf_pick
@@ -39,12 +47,57 @@ documentation      = [==[ shelf_pick
 -- Initialize as skill module
 skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
+local llutils = require("fawkes.laser-lines_utils")
 
 local x_distance = 0.27
 local gripper_adjust_z_distance = 0.03
-local gripper_adjust_x_distance = 0.015
+local gripper_adjust_x_distance = 0.002
 local adjust_target_frame = "gripper_home"
 local gripper_down_to_puck = -0.025
+
+local shelf_to_conveyor = 0.1
+local shelf_distance = 0.1
+
+local MIN_VIS_HIST_LINE=5
+local LINE_LENGTH_MIN=0.64
+local LINE_LENGTH_MAX=0.71
+local MAX_ORI=30 -- in degrees
+
+-- function to find the closest LL's direction 
+-- which fulfills the following criteria:
+-- visibility history over MIN_VIS_HIST_LINE
+-- minimum distance to bot
+-- angle from bot's forward direction to laserline's center smaller than MAX_ORI
+--
+-- the function returns the direction of this LL
+-- if no LL is found which fulfills all the above criterias, the ideal direction is returned.
+function find_ll_direction(lines)
+  local closest_ll = -1
+  local min_distance = math.huge
+  for line_id,line in pairs(lines) do
+    local center = llutils.center(line)
+    local distance = math.sqrt(math.pow(center.x,2),math.pow(center.y,2))
+    local ori = math.deg(math.atan2(center.y, center.x))
+    if math.abs(ori) < MAX_ORI then -- approximately in front of us
+      if line:visibility_history() >= MIN_VIS_HIST_LINE then -- this laser line is not stale
+        if distance < min_distance then
+          closest_ll = line:id()
+          min_distance = distance
+        end
+      end
+    end
+  end
+
+  -- determination of laser line is done
+
+  if closest_ll == -1 then
+    return {x=0.0,y=1.0}
+  else
+    direction = {x=lines[closest_ll]:line_direction(0),y=lines[closest_ll]:line_direction(1)}
+    length_direction = math.sqrt(math.pow(direction.x,2)+math.pow(direction.y,2))
+    return {x=direction.x/length_direction,y=direction.y/length_direction}
+  end
+end
 
 function pose_gripper_offset(x,y,z)
   local target_pos = { x = x,
@@ -79,8 +132,7 @@ end
 
 fsm:define_states{ export_to=_M, closure={},
    {"INIT", SkillJumpState, skills={{gripper_commands}}, final_to="GOTO_SHELF", fail_to="FAILED" },
-   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="APPROACH_SHELF", fail_to="FAILED"},
-   {"APPROACH_SHELF", SkillJumpState, skills={{approach_mps}}, final_to="MOVE_ABOVE_PUCK", fail_to="FAILED"},
+   {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="MOVE_ABOVE_PUCK", fail_to="FAILED"},
    {"MOVE_ABOVE_PUCK", SkillJumpState, skills={{gripper_commands}}, final_to="ADJUST_HEIGHT", fail_to="FAILED" },
    {"ADJUST_HEIGHT", SkillJumpState, skills={{gripper_commands}}, final_to="GRAB_PRODUCT", fail_to="FAILED" },
    {"GRAB_PRODUCT", SkillJumpState, skills={{gripper_commands}}, final_to="LEAVE_SHELF", fail_to="FAILED"},
@@ -116,37 +168,64 @@ function INIT:init()
    else
        self.fsm.vars.z_max = 0.057
    end
+
+
+   self.fsm.vars.left_slot_y_offset = config:get_float("/skills/shelf_pick/left_slot_y_offset")
+   self.fsm.vars.middle_slot_y_offset = config:get_float("/skills/shelf_pick/middle_slot_y_offset")
+   self.fsm.vars.right_slot_y_offset = config:get_float("/skills/shelf_pick/right_slot_y_offset")
+
+   self.fsm.vars.lines_avg = {}
+   self.fsm.vars.lines_avg[line1_avg:id()] = line1_avg
+   self.fsm.vars.lines_avg[line2_avg:id()] = line2_avg
+   self.fsm.vars.lines_avg[line3_avg:id()] = line3_avg
+   self.fsm.vars.lines_avg[line4_avg:id()] = line4_avg
+   self.fsm.vars.lines_avg[line5_avg:id()] = line5_avg
+   self.fsm.vars.lines_avg[line6_avg:id()] = line6_avg
+   self.fsm.vars.lines_avg[line7_avg:id()] = line7_avg
+   self.fsm.vars.lines_avg[line8_avg:id()] = line8_avg
+
 end
 
 function GOTO_SHELF:init()
-   local shelf_to_conveyor = 0.1 --TODO measure both values
-   local shelf_distance = 0.1
    if self.fsm.vars.slot == "LEFT" then
-      dest_y = shelf_to_conveyor
+      dist_y = shelf_to_conveyor
+      dist_y = dist_y + self.fsm.vars.left_slot_y_offset
    elseif self.fsm.vars.slot == "MIDDLE" then
-      dest_y = shelf_to_conveyor + shelf_distance
+      dist_y = shelf_to_conveyor + shelf_distance
+      dist_y = dist_y + self.fsm.vars.middle_slot_y_offset
    elseif self.fsm.vars.slot == "RIGHT" then
-      dest_y = shelf_to_conveyor + 2*shelf_distance
+      dist_y = shelf_to_conveyor + 2*shelf_distance
+      dist_y = dist_y + self.fsm.vars.right_slot_y_offset
    else
-      dest_y = 0
+      dist_y = 0
       self.fsm:set_error("no shelf side set")
       self.fsm.vars.error = true
    end
    
-   self.args["motor_move"] =
-			{ y = -dest_y, --shelf is on the right side of the conveyor
-				tolerance = { x=0.002, y=0.002, ori=0.01 }
-			}
+
+   local target_pos_cp = { x = gripper_adjust_x_distance,
+                           y = 0.0,
+                           z = 0.0,
+                           ori = { x=0,y=0,z=0,w=0}
+                         }
+
+   local target_pos_bl = tfm.transform6D(target_pos_cp, "conveyor_pose", "base_link")
+
+   laserline_direction = find_ll_direction(self.fsm.vars.lines_avg)
+   target_pos_bl.x = target_pos_bl.x + dist_y * laserline_direction.x
+   target_pos_bl.y = target_pos_bl.y + dist_y * laserline_direction.y
+
+   self.fsm.vars.target_pos_odom = tfm.transform6D(target_pos_bl, "base_link", "odom")
+   
+  self.args["motor_move"] =
+	{ y = dist_y * laserline_direction.y, 
+    x = dist_y * laserline_direction.x,
+		tolerance = { x=0.002, y=0.002, ori=0.01 }
+	}
 end
 
 function MOVE_ABOVE_PUCK:init()
-   local target_pos = { x = gripper_adjust_x_distance,
-                       y = 0,
-                       z = 0,
-                       ori = { x = 0, y = 0, z = 0, w = 0}
-   }
-
-  local grip_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper")
+  local grip_pos = tfm.transform6D(self.fsm.vars.target_pos_odom, "odom", "gripper")
 
   local pose = pose_gripper_offset(grip_pos.x,grip_pos.y,grip_pos.z)
   self.args["gripper_commands"].x = pose.x
@@ -164,11 +243,6 @@ function ADJUST_HEIGHT:init()
   self.args["gripper_commands"].command = "MOVEREL"
   self.args["gripper_commands"].target_frame = "gripper_home"
 
-end
-
-function APPROACH_SHELF:init()
-   self.args["approach_mps"].x = x_distance
-   self.args["approach_mps"].use_conveyor = false
 end
 
 function GRAB_PRODUCT:init()
