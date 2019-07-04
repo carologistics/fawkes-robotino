@@ -19,7 +19,8 @@
 
 (defglobal
   ?*MONITORING-SALIENCE* = 1
-  ?*COMMON-TIMEOUT-DURATION* = 30
+  ?*COMMON-TIMEOUT-DURATION* = 10
+  ?*MPS-TIMEOUT-DURATION* = 45
   ?*MPS-DOWN-TIMEOUT-DURATION* = 120
   ?*HOLDING-MONITORING* = 60
 )
@@ -227,6 +228,57 @@
               (start-time ?now)))
 )
 
+(defrule execution-monitoring-change-timeout-to-common
+  (declare (salience (+ ?*MONITORING-SALIENCE* 1)))
+  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+      (id ?id)
+      (state PENDING)
+      (executable FALSE)
+      (action-name ?action-name)
+      (param-values $?param-values))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  (domain-object (name ?mps) (type mps))
+
+  (domain-atomic-precondition (is-satisfied TRUE)
+      (grounded-with ?id)
+      (operator ?action-name)
+      (goal-id ?goal-id)
+      (predicate mps-state)
+      (param-values $? ?mps&:(neq FALSE (member$ ?mps $?param-values)) $?))
+  ?pt <- (action-timer (plan-id ?plan-id) (action-id ?id)
+              (timeout-duration ?to&:(eq ?to ?*MPS-TIMEOUT-DURATION*)))
+  =>
+  (modify ?pt (timeout-duration ?*COMMON-TIMEOUT-DURATION*))
+)
+
+
+(defrule execution-monitoring-change-timeout-to-mps
+  (declare (salience (+ ?*MONITORING-SALIENCE* 1)))
+  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+      (id ?id)
+      (state PENDING)
+      (executable FALSE)
+      (action-name ?action-name)
+      (param-values $? ?mps $?))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  (domain-object (name ?mps) (type mps))
+
+  (domain-atomic-precondition (is-satisfied FALSE)
+      (grounded-with ?id)
+      (operator ?action-name)
+      (goal-id ?goal-id)
+      (predicate mps-state)
+      (param-values $? ?mps $?))
+  ?pt <- (action-timer (plan-id ?plan-id) (action-id ?id)
+              (timeout-duration ?to&:(neq ?to ?*MPS-TIMEOUT-DURATION*)))
+  =>
+  (modify ?pt (timeout-duration ?*MPS-TIMEOUT-DURATION*))
+)
+
+
+  ?t <- (action-time (plan-id ?plan-id) (action-id ?id)
 
 (defrule execution-monitoring-detect-timeout
 " If an action was longer than its timeout-duration in a volatile state like pending or pending-sensed-effect
