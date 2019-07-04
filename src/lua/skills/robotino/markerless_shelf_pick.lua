@@ -232,6 +232,14 @@ function GOTO_SHELF:init()
       dist_y = dist_y + self.fsm.vars.left_slot_y_offset
 
       dist_y_motor = shelf_to_conveyor + self.fsm.vars.left_slot_y_offset
+
+      self.fsm.vars.ll_direction = find-ll_direction(self.fsm.vars.lines_avg)
+      tmp={x=0,y=0,ori=math.atan2(self.fsm.vars.ll_direction.x,self.fsm.vars.ll_direction.y)}
+      ori_odom = tfm.transform(tmp,"base_laser","odom").ori
+      self.fsm.vars.ll_direction_odom = {}
+      self.fsm.vars.ll_direction_odom.x = math.cos(ori_odom)
+      self.fsm.vars.ll_direction_odom.y = math.sin(ori_odom)
+      
       
    elseif self.fsm.vars.slot == 2 then
       dist_y = shelf_to_conveyor + shelf_distance
@@ -239,6 +247,13 @@ function GOTO_SHELF:init()
 
 
       dist_y_motor = dist_y - shelf_to_conveyor - self.fsm.vars.left_slot_y_offset
+
+      self.fsm.vars.ll_direction = find-ll_direction(self.fsm.vars.lines_avg)
+      tmp={x=0,y=0,ori=math.atan2(self.fsm.vars.ll_direction.x,self.fsm.vars.ll_direction.y)}
+      ori_odom = tfm.transform(tmp,"base_laser","odom").ori
+      self.fsm.vars.ll_direction_odom = {}
+      self.fsm.vars.ll_direction_odom.x = math.cos(ori_odom)
+      self.fsm.vars.ll_direction_odom.y = math.sin(ori_odom)
 
    elseif self.fsm.vars.slot == 3 then
       dist_y = shelf_to_conveyor + 2*shelf_distance
@@ -252,17 +267,12 @@ function GOTO_SHELF:init()
    end
    
 
-   local target_pos_bl = tfm.transform6D(self.fsm.target_pos_odom, "odom", "base_link")
-
-   laserline_direction = find_ll_direction(self.fsm.vars.lines_avg)
-   target_pos_bl.x = target_pos_bl.x + dist_y * laserline_direction.x
-   target_pos_bl.y = target_pos_bl.y + dist_y * laserline_direction.y
-
-   self.fsm.vars.target_pos_odom = tfm.transform6D(target_pos_bl, "base_link", "odom")
+   target_pos_bl.x = target_pos_bl.x + dist_y * self.fsm.vars.ll_direction_odom.x
+   target_pos_bl.y = target_pos_bl.y + dist_y * self.fsm.vars.ll_direction_odom.y
    
   self.args["motor_move"] =
-	{ y = dist_y_motor * laserline_direction.y, 
-    x = dist_y_motor * laserline_direction.x,
+	{ y = dist_y_motor * self.fsm.vars.ll_direction.y, 
+    x = dist_y_motor * self.fsm.vars.ll_direction.x,
 		tolerance = { x=0.002, y=0.002, ori=0.01 }
 	}
 end
