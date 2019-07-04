@@ -60,8 +60,8 @@
     "expected it!" crlf)
   (bind ?wp-gen  (sym-cat WP- (gensym)))
   (assert (domain-object (name (sym-cat WP- (gensym))) (type workpiece))
-          (wm-fact (key domain fact wp-at args? wp ?wp-gen m ?mps side OUTPUT))
-          (wm-fact (key domain fact wp-usable args? wp ?wp-gen))
+          (wm-fact (key domain fact wp-at args? wp ?wp-gen m ?mps side OUTPUT) (type BOOL) (value TRUE))
+          (wm-fact (key domain fact wp-usable args? wp ?wp-gen) (type BOOL) (value TRUE))
   )
   (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact mps-side-free))
                                     (eq ?mps (wm-key-arg ?wm:key m))
@@ -125,7 +125,7 @@
   (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
   (not (wm-fact (key monitoring fail-goal args? g ?goal-id)))
   =>
-  (assert (wm-fact (key monitoring fail-goal args? g ?goal-id) (type UNKNOWN)))
+  (assert (wm-fact (key monitoring fail-goal args? g ?goal-id) (type BOOL) (value TRUE)))
 )
 
 
@@ -184,19 +184,19 @@
   )
   (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?mps (wm-key-args ?wf:key)) FALSE)
                                               (wm-key-prefix ?wf:key (create$ domain fact wp-at)))
-           (assert (wm-fact (key monitoring cleanup-wp args? wp (wm-key-arg ?wf:key wp))))
+           (assert (wm-fact (key monitoring cleanup-wp args? wp (wm-key-arg ?wf:key wp)) (type BOOL) (value TRUE)))
   )
   (if (not (any-factp ((?wf wm-fact)) (and (wm-key-prefix ?wf:key (create$ domain fact mps-side-free))
                                            (eq (wm-key-arg ?wf:key m) ?mps)
                                            (eq (wm-key-arg ?wf:key side) INPUT))))
       then
-    (assert (wm-fact (key domain fact mps-side-free args? m ?mps side INPUT) (value TRUE) (type BOOL)))
+    (assert (wm-fact (key domain fact mps-side-free args? m ?mps side INPUT) (type BOOL) (value TRUE)))
   )
   (if (not (any-factp ((?wf wm-fact)) (and (wm-key-prefix ?wf:key (create$ domain fact mps-side-free))
                                            (eq (wm-key-arg ?wf:key m) ?mps)
                                            (eq (wm-key-arg ?wf:key side) OUTPUT))))
       then
-    (assert (wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT) (value TRUE) (type BOOL)))
+    (assert (wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT) (type BOOL) (value TRUE)))
   )
 )
 
@@ -525,7 +525,7 @@
     (retract ?wf)
     (printout t "WP-fact " ?wf:key crlf " domain fact flushed!"  crlf)
   )
-  (assert (wm-fact (key wp-unused args? wp ?wp)))
+  (assert (wm-fact (key wp-unused args? wp ?wp) (type BOOL) (value TRUE)))
   (retract ?cleanup)
 )
 
