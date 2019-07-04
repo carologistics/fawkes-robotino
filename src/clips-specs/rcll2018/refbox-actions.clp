@@ -99,7 +99,8 @@
                       (action-name ?action&prepare-bs|
                                            prepare-cs|
                                            prepare-ds|
-                                           prepare-rs)
+                                           prepare-rs|
+                                           prepare-ss)
                       (executable TRUE)
                       (param-names $?param-names)
                       (param-values $?param-values))
@@ -156,7 +157,8 @@
                       (action-name prepare-bs|
                                    prepare-cs|
                                    prepare-ds|
-                                   prepare-rs)
+                                   prepare-rs|
+                                   prepare-ss)
                       (executable TRUE)
                       (param-names $?param-names)
                       (param-values $?param-values))
@@ -196,6 +198,13 @@
         (bind ?order-id (float (string-to-field (sub-string 2 (length$ (str-cat ?order)) (str-cat ?order)))))
         (pb-set-field ?ds-inst "order_id" ?order-id)
         (pb-set-field ?machine-instruction "instruction_ds" ?ds-inst)
+    )
+    (case SS
+      then
+       (bind ?ss-inst (pb-create "llsf_msgs.PrepareInstructionSS"))
+                (bind ?instruction (nth$ 2 ?instruction_info))
+                (pb-set-field ?ss-inst "operation" ?instruction)
+                (pb-set-field ?machine-instruction "instruction_ss" ?ss-inst)
     )
     (case RS
       then
@@ -244,7 +253,8 @@
                       (action-name prepare-bs|
                                    prepare-cs|
                                    prepare-ds|
-                                   prepare-rs)
+                                   prepare-rs|
+                                   prepare-ss)
                       (param-names $?param-names)
                       (param-values $?param-values))
   (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
@@ -302,7 +312,8 @@
                       (action-name prepare-bs|
                                    prepare-cs|
                                    prepare-ds|
-                                   prepare-rs)
+                                   prepare-rs|
+                                   prepare-ss)
                       (param-names $?param-names)
                       (param-values $?param-values))
   (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
@@ -331,7 +342,8 @@
                       (action-name prepare-bs|
                                    prepare-cs|
                                    prepare-ds|
-                                   prepare-rs)
+                                   prepare-rs|
+                                   prepare-ss)
                       (param-names $?param-names)
                       (param-values $?param-values))
   (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
