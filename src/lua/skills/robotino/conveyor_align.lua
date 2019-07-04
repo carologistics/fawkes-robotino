@@ -48,8 +48,8 @@ local pam = require("parse_module")
 
 -- Constants
 local FITNESS_THRESHOLD = {           -- low is the minimum required fitness to do anything
-   conveyor = { low = 8, high = 20 }, -- if fitness is >= high, we assume that the fit is perfect
-   slide = { low = 7, high = 20 }     -- and don't re-run ICP after moving
+   conveyor = { low = 15, high = 25 }, -- if fitness is >= high, we assume that the fit is perfect
+   slide = { low = 15, high = 25 }     -- and don't re-run ICP after moving
 }
 
 local GRIP_OFFSET = {
