@@ -124,7 +124,7 @@ function HOME:init()
   self.args["gripper_commands"].command="MOVEABS"
   self.args["gripper_commands"].x = 0
   self.args["gripper_commands"].y = 0
-  self.args["gripper_commands"].z = 0
+  self.args["gripper_commands"].z = height_safe
   self.args["gripper_commands"].wait = false
 end
 
