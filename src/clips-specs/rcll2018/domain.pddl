@@ -444,7 +444,7 @@
 											 (wp-ring3-color ?wp RING_NONE)
 											 (order-cap-color ?ord ?capcol) (wp-cap-color ?wp ?capcol))
 		:effect (and (order-fulfilled ?ord) (not (wp-at ?wp ?m INPUT)) (mps-side-free ?m INPUT)
-                 (not (ds-prepared-order ?m ?ord))
+                 (not (ds-prepared-order ?m ?ord)) (not (wp-usable ?wp))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
 
 	)
