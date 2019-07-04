@@ -232,6 +232,8 @@ clips-executive:
 
           competitive-order-priority: DEFAULT
 
+          ignore-deadlines: TRUE
+          ignore-deadlines-c0: FALSE
           # Bots that are enabled can formulate production goals,
           # disabled bots only formulate wait goals
 
