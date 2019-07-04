@@ -203,6 +203,7 @@ fsm:define_states{ export_to=_M,
    {"MOVE_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="LOOK", failed_to="FAILED"},
    {"LOOK", JumpState},
    {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="DRIVE_DONE", failed_to="FAILED"},
+   {"MOVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="LOOK", failed_to="FAILED"},
    {"LOOK_DONE", JumpState},
    {"DRIVE_DONE", JumpState},
 }
@@ -215,10 +216,11 @@ fsm:add_transitions{
    {"LOOK", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"LOOK", "LOOK_DONE", cond=result_ready, desc="conveyor_pose result ready"},
    
-   {"LOOK_DONE", "LOOK", cond="tolerance_ok() == nil"},
+   {"LOOK_DONE", "LOOK", cond="tolerance_ok() == nil", desc="TF error"},
    {"LOOK_DONE", "FINAL", cond="fitness_high() and tolerance_ok()"},
    {"LOOK_DONE", "FAILED", cond="vars.retries > MAX_RETRIES"},
-   {"LOOK_DONE", "DRIVE", cond="fitness_low() or not tolerance_ok()"},
+   {"LOOK_DONE", "DRIVE", cond="fitness_min() and not tolerance_ok()"},
+   {"LOOK_DONE", "MOVE_BACK", cond="not fitness_min()"},
 
    {"DRIVE_DONE", "FINAL", cond="fitness_high() and tolerance_ok()"},
    {"DRIVE_DONE", "FAILED", cond="vars.vision_retries > MAX_VISION_RETRIES"},
@@ -261,6 +263,11 @@ function LOOK:exit()
    if_conveyor_pose:msgq_enqueue_copy(msg)
    
    self.fsm.vars.target_pos_odom = tfm.transform(TARGET_POS, "conveyor_pose", "odom")
+end
+
+function MOVE_BACK:init()
+   self.args["motor_move"].x = -0.015
+   self.args["motor_move"].tolerance = { x = 0.01 }
 end
 
 function MOVE_GRIPPER:init()
