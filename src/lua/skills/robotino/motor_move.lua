@@ -349,6 +349,8 @@ function DRIVE:init()
       y = math.min(V_MAX.y, self.fsm.vars.vel_trans or V_MAX.y),
       ori = math.min(V_MAX.ori, self.fsm.vars.vel_rot or V_MAX.ori)
    }
+
+   self.fsm.vars.tolerance = self.fsm.vars.tolerance or {}
    self.fsm.vars.tolerance_arg = {
       x = self.fsm.vars.tolerance.x or TOLERANCE.x,
       y = self.fsm.vars.tolerance.y or TOLERANCE.y,
