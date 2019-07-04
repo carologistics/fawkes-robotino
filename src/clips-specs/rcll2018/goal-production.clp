@@ -1348,7 +1348,7 @@
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
   ;MPS-CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
+  (wm-fact (key domain fact mps-type args? m ?mps t CS|SS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;WP-CEs
