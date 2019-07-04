@@ -15,5 +15,5 @@ firevision:
         string: v4l2:tag:device=/dev/video_tag
         frame: !frame base_link
       conveyor:
-        string: v4l2:conveyor:device=/dev/video_conveyor
+        string: v4l2:conveyor:device=/dev/video4
         frame: !frame base_link
