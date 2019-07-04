@@ -45,8 +45,8 @@ fsm:add_transitions{
 
 function INIT:init()
   self.fsm.vars.index=1
-  self.fsm.vars.pos_y = {-0.3,0.0,0.3}
-  self.fsm.vars.pos_x = {0.5, 0.5, 0.5}
+  self.fsm.vars.pos_y = {-0.35,0.0,0.35}
+  self.fsm.vars.pos_x = {0.6, 0.6, 0.6}
   self.fsm.vars.ori = {-math.atan2(self.fsm.vars.pos_y[1],self.fsm.vars.pos_x[1]),
 		-	math.atan2(self.fsm.vars.pos_y[2],self.fsm.vars.pos_x[2]),
 		-	math.atan2(self.fsm.vars.pos_y[3],self.fsm.vars.pos_x[3])
