@@ -75,6 +75,9 @@
 	=>
 	(printout warn "Flushing worldmodel!" crlf)
 	(wm-robmem-flush)
+	(do-for-all-facts ((?df domain-fact)) TRUE
+	  (retract ?df)
+	)
 	(assert (domain-wm-flushed))
 )
 
