@@ -112,7 +112,7 @@
   counted.
 "
   (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
-  (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order)))
+  (not (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order)))
   ; Time CEs
   (wm-fact (key refbox order ?order delivery-end) (value ?end&:(> ?end 0)))
   (wm-fact (key refbox game-time) (values ?game-time $?ms))
@@ -344,7 +344,7 @@
   ; Order CEs
   (wm-fact (key domain fact order-complexity args? ord ?order com ?com))
   ; Order Meta CEs
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
   (not (wm-fact (key wp meta points-current args? wp ?wp)))
   (wm-fact (key order meta estimated-points-total args? ord ?order)
            (value ?ep-total))
@@ -369,7 +369,7 @@
   consumption that the next step will cause.
 "
   (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
   ; WP CEs
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?wp-col-r1))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?wp-col-r2))
@@ -450,7 +450,7 @@
 "
   (declare (salience ?*SALIENCE-PRODUCTION-STRATEGY*))
   ; Order CEs
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
   ; Time CEs
   (wm-fact (key refbox order ?order delivery-end) (value ?end))
   (wm-fact (key refbox game-time) (values ?game-time $?ms))
@@ -520,7 +520,7 @@
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
   (wm-fact (key domain fact mps-team args? m ?rs col ?team))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT))
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key wp meta next-step args? wp ?wp) (value ?ns&RING1|RING2|RING3))
   (wm-fact (key domain fact ?orc&:(eq ?orc
                                       (sym-cat order-ring

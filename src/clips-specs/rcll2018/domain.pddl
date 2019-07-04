@@ -107,6 +107,7 @@
 		(wp-cap-color ?wp - workpiece ?col - cap-color)
 		(wp-on-shelf ?wp - workpiece ?m - mps ?spot - shelf-spot)
 		(wp-spawned-for ?wp - workpiece ?r - robot)
+    (wp-for-order ?wp - workpiece ?ord - order)
     (spot-free ?m - mps ?spot - shelf-spot)
 
     (locked ?name - object)
@@ -142,7 +143,7 @@
 								 (not (cs-can-perform ?m ?op)) (cs-prepared-for ?m ?op))
 	)
 
-	(:action bs-dispense
+	(:action bs-dispense-trash
 		:parameters (?r - robot ?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
 		:precondition (and (mps-type ?m BS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
                        (locked ?m) (bs-prepared-color ?m ?basecol)
@@ -156,6 +157,24 @@
 								 (not (wp-base-color ?wp BASE_NONE)) (wp-base-color ?wp ?basecol)
 								 (not (wp-unused ?wp)) (wp-usable ?wp)
 								 (not (wp-spawned-for ?wp ?r)))
+	)
+
+	(:action bs-dispense-for-order
+		:parameters (?r - robot ?m - mps ?side - mps-side ?ord - order ?wp - workpiece ?basecol - base-color)
+		:precondition (and (mps-type ?m BS) (mps-state ?m READY-AT-OUTPUT)
+                       (locked ?m) (bs-prepared-color ?m ?basecol)
+                       (bs-prepared-side ?m ?side)
+                       (order-base-color ?ord ?basecol)
+											 (wp-base-color ?wp BASE_NONE) (wp-unused ?wp)
+											 (wp-spawned-for ?wp ?r)
+											 (self ?r)
+											 (mps-side-free ?m ?side))
+											 ;(not (wp-usable ?wp))
+		:effect (and (wp-at ?wp ?m ?side) (not (mps-side-free ?m ?side))
+								 (not (wp-base-color ?wp BASE_NONE)) (wp-base-color ?wp ?basecol)
+								 (not (wp-unused ?wp)) (wp-usable ?wp)
+								 (not (wp-spawned-for ?wp ?r))
+								 (wp-for-order ?wp ?ord))
 	)
 
 	(:action cs-mount-cap

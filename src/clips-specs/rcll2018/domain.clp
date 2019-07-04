@@ -59,7 +59,7 @@
 (defrule domain-exogenous-actions
   "Mark all actions, that model state changes of the machines, as exogenous"
   ?op <- (domain-operator
-    (name bs-dispense | cs-mount-cap | cs-retrieve-cap | rs-mount-ring1 |
+    (name bs-dispense-for-order | bs-dispense-trash | cs-mount-cap | cs-retrieve-cap | rs-mount-ring1 |
           rs-mount-ring2 | rs-mount-ring3 | fulfill-order-c0 |
           fulfill-order-c1 | fulfill-order-c2 | fulfill-order-c3)
     (exogenous FALSE)

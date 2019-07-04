@@ -48,6 +48,7 @@
   (wm-robmem-sync-enable "/domain/fact/wp-ring1-color")
   (wm-robmem-sync-enable "/domain/fact/wp-ring2-color")
   (wm-robmem-sync-enable "/domain/fact/wp-ring3-color")
+  (wm-robmem-sync-enable "/domain/fact/wp-for-order")
   (wm-robmem-sync-enable "/domain/fact/wp-cap-color")
   (wm-robmem-sync-enable "/domain/fact/wp-on-shelf")
   (wm-robmem-sync-enable "/domain/fact/wp-spawned-for")
