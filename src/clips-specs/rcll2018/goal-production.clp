@@ -284,8 +284,10 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
            (value ?qd&:(> ?qr ?qd)))
+  (wm-fact (key config rcll ignore-deadlines) (value ?ignore))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
-           (value ?end&:(> ?end (nth$ 1 ?game-time))))
+           (value ?end))
+  (test (or ?ignore (> ?end (nth$ 1 ?game-time))))
   =>
   (printout t "Goal " FILL-CAP " for competitive order " ?order
               " is urgent." crlf)
@@ -363,6 +365,7 @@
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
 
   ;TODO: Discuss strategy, throwing away expired products is usually not desired.
+  (wm-fact (key config rcll ignore-deadlines) (value FALSE))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
     (value ?end&:(< ?end (nth$ 1 ?game-time))))
   =>
@@ -466,7 +469,7 @@
   ;WP CEs
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-
+  (wm-fact (key config rcll ignore-deadlines) (value FALSE))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
            (value ?end&:(< ?end (nth$ 1 ?game-time))))
   =>
@@ -781,10 +784,13 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
 	(value ?qd&:(> ?qr ?qd)))
+  (wm-fact (key config rcll ignore-deadlines) (value ?ignore))
+  (wm-fact (key config rcll ignore-deadlines-c0) (value ?i-c0))
   (wm-fact (key refbox order ?order delivery-begin) (type UINT)
 	(value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-AHEAD-TIME*))))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
-	(value ?end&:(> ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-LATEST-TIME*))))
+	(value ?end))
+  (test (or (and ?ignore ?i-c0) (< ?end (+ (nth$ 1 ?game-time) ?*PRODUCE-C0-LATEST-TIME*))))
   ;Active Order CEs
   ;This order complexity is not produced exclusively while another exclusive
   ;complexity order is already started
