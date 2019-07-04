@@ -298,6 +298,26 @@
 )
 
 
+(defrule goal-reasouner-evaluate-failed-exog-actions
+  " If an exogenous action failed, this means that something went totally wrong.
+    However, it is unlikely that we are able to continue using the mps. Therefore
+    we want to reset it
+  "
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  (plan-action (id ?id) (goal-id ?goal-id)
+               (plan-id ?plan-id)
+               (action-name bs-dispense|cs-retrieve-cap|cs-mount-cap|rs-mount-ring1|rs-mount-ring2|rs-mount-ring3)
+               (param-values $? ?mps $?)
+               (state FAILED))
+  (domain-object (name ?mps) (type mps))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  (not (wm-fact (key evaluated reset-mps args? m ?mps)))
+  =>
+  (assert
+    (wm-fact (key evaluated reset-mps args? m ?mps))
+  )
+)
+
 ; ----------------------- EVALUATE COMMON ------------------------------------
 
 
@@ -419,26 +439,6 @@
   (modify ?g (mode EVALUATED))
 )
 
-(defrule goal-reasouner-evaluate-failed-exog-actions
-  " If an exogenous action failed, this means that something went totally wrong.
-    However, it is unlikely that we are able to continue using the mps. Therefore
-    we want to reset it
-  "
-  (plan-action (id ?id) (goal-id ?goal-id)
-               (plan-id ?plan-id)
-               (action-name bs-dispense|cs-retrieve-cap|cs-mount-cap|rs-mount-ring1|rs-mount-ring2|rs-mount-ring3)
-               (param-values $? ?mps $?)
-               (state FAILED))
-  (domain-object (name ?mps) (type mps))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
-  (domain-fact (name mps-state) (param-values ?mps ~BROKEN))
-  (not (wm-fact (key evaluated reset-mps args? m ?mps)))
-  =>
-  (assert
-    (wm-fact (key evaluated reset-mps args? m ?mps))
-  )
-  (modify ?g (mode EVALUATED))
-)
 
 (defrule goal-reasoner-evaluate-get-shelf-failed
 " After a failed wp-get-shelf, assume that the workpiece is not there
