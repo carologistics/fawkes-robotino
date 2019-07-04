@@ -213,7 +213,9 @@ end
 
 
 function FIND_AVG_LINE:loop()
-  self.fsm.vars.found_line = find_line(self.fsm.vars.lines, self.fsm.vars.prealigned)
+  if self.fsm.vars.found_line == nil then
+    self.fsm.vars.found_line = find_line(self.fsm.vars.lines, self.fsm.vars.prealigned)
+  end
 end
 
 

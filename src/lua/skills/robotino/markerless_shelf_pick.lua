@@ -199,9 +199,9 @@ function INIT:init()
    end
 
 
-   self.fsm.vars.left_slot_y_offset = config:get_float("/skills/shelf_pick/left_slot_y_offset")
-   self.fsm.vars.middle_slot_y_offset = config:get_float("/skills/shelf_pick/middle_slot_y_offset")
-   self.fsm.vars.right_slot_y_offset = config:get_float("/skills/shelf_pick/right_slot_y_offset")
+   self.fsm.vars.left_slot_y_offset = 0.0
+   self.fsm.vars.middle_slot_y_offset = 0.0
+   self.fsm.vars.right_slot_y_offset = 0.0
 
    self.fsm.vars.lines_avg = {}
    self.fsm.vars.lines_avg[line1_avg:id()] = line1_avg
@@ -252,7 +252,7 @@ function GOTO_SHELF:init()
    end
    
 
-   local target_pos_bl = tfm.transform6D(target_pos_odom, "odom", "base_link")
+   local target_pos_bl = tfm.transform6D(self.fsm.target_pos_odom, "odom", "base_link")
 
    laserline_direction = find_ll_direction(self.fsm.vars.lines_avg)
    target_pos_bl.x = target_pos_bl.x + dist_y * laserline_direction.x
