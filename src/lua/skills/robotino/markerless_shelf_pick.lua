@@ -42,7 +42,6 @@ depends_interfaces = {
 documentation      = [==[ shelf_pick
                           This skill does:
                           - Picks of Shelf
-                          @param slot       string  the slot to pick the puck of; options ( LEFT | MIDDLE | RIGHT )
 ]==]
 
 -- Initialize as skill module
@@ -62,7 +61,7 @@ local shelf_distance = 0.1
 local MIN_VIS_HIST_LINE=5
 local LINE_LENGTH_MIN=0.64
 local LINE_LENGTH_MAX=0.71
-local MAX_ORI=30 -- in degrees
+local MAX_ORI=70 -- in degrees
 
 -- function to find the closest LL's direction 
 -- which fulfills the following criteria:
@@ -101,7 +100,7 @@ function find_ll_direction(lines)
 end
 
 -- function to evaluate sensor data
-function is_grabbed()
+function puck_exist()
  if not robotino_sensor:has_writer() then
    print_warn("No robotino sensor writer to check sensor")
    return true
@@ -145,23 +144,35 @@ function pose_gripper_offset(x,y,z)
 end
 
 
-fsm:define_states{ export_to=_M, closure={is_grabbed=is_grabbed},
+fsm:define_states{ export_to=_M, closure={puck_exist=puck_exist},
    {"INIT", SkillJumpState, skills={{gripper_commands}}, final_to="GOTO_SHELF", fail_to="FAILED" },
    {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="MOVE_ABOVE_PUCK", fail_to="FAILED"},
    {"MOVE_ABOVE_PUCK", SkillJumpState, skills={{gripper_commands}}, final_to="ADJUST_HEIGHT", fail_to="FAILED" },
-   {"ADJUST_HEIGHT", SkillJumpState, skills={{gripper_commands}}, final_to="GRAB_PRODUCT", fail_to="FAILED" },
+   {"ADJUST_HEIGHT", SkillJumpState, skills={{gripper_commands}}, final_to="CHECK_PUCK", fail_to="FAILED" },
+   {"CHECK_PUCK", JumpState},
+   {"MOVE_GRIPPER_UP", SkillJumpState, skills={{gripper_commands}}, final_to="GOTO_SHELF", fail_to="GOTO_SHELF"},
+   
    {"GRAB_PRODUCT", SkillJumpState, skills={{gripper_commands}}, final_to="LEAVE_SHELF", fail_to="FAILED"},
    {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="RESET_GRIPPER", fail_to="FAILED"},
-   {"RESET_GRIPPER", SkillJumpState, skills={{reset_gripper}}, final_to="CHECK_PUCK", fail_to="FAILED"},
-   {"CHECK_PUCK", JumpState},
-   {"WAIT_AFTER_GRAB", JumpState},
+   {"RESET_GRIPPER", SkillJumpState, skills={{reset_gripper}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
    {"GOTO_SHELF", "FAILED", cond="vars.error"},
-   {"CHECK_PUCK", "FAILED", cond="not is_grabbed()", desc="Not holding puck"},
-   {"CHECK_PUCK", "FINAL", cond=true},
+   {"CHECK_PUCK", "GRAB_PRODUCT", cond="puck_exist()"},
+   {"CHECK_PUCK", "FAILED", cond="vars.slot==4"},
+   {"CHECK_PUCK", "MOVE_GRIPPER_UP", cond=true},
 }
+
+function MOVE_GRIPPER_UP:init()
+  local grip_pos = tfm.transform6D(self.fsm.vars.target_pos_odom, "odom", "gripper")
+  local pose = pose_gripper_offset(grip_pos.x,grip_pos.y,grip_pos.z)
+  self.args["gripper_commands"].x = pose.x
+  self.args["gripper_commands"].y = pose.y
+  self.args["gripper_commands"].z = gripper_adjust_z_distance
+  self.args["gripper_commands"].command = "MOVEABS"
+  self.args["gripper_commands"].target_frame = "gripper_home"
+end
 
 function INIT:init()
    self.args["gripper_commands"].command = "OPEN"
@@ -202,24 +213,7 @@ function INIT:init()
    self.fsm.vars.lines_avg[line7_avg:id()] = line7_avg
    self.fsm.vars.lines_avg[line8_avg:id()] = line8_avg
 
-end
-
-function GOTO_SHELF:init()
-   if self.fsm.vars.slot == "LEFT" then
-      dist_y = shelf_to_conveyor
-      dist_y = dist_y + self.fsm.vars.left_slot_y_offset
-   elseif self.fsm.vars.slot == "MIDDLE" then
-      dist_y = shelf_to_conveyor + shelf_distance
-      dist_y = dist_y + self.fsm.vars.middle_slot_y_offset
-   elseif self.fsm.vars.slot == "RIGHT" then
-      dist_y = shelf_to_conveyor + 2*shelf_distance
-      dist_y = dist_y + self.fsm.vars.right_slot_y_offset
-   else
-      dist_y = 0
-      self.fsm:set_error("no shelf side set")
-      self.fsm.vars.error = true
-   end
-   
+   self.fsm.vars.slot = 0
 
    local target_pos_cp = { x = gripper_adjust_x_distance,
                            y = 0.0,
@@ -227,7 +221,37 @@ function GOTO_SHELF:init()
                            ori = { x=0,y=0,z=0,w=0}
                          }
 
-   local target_pos_odom = tfm.transform6D(target_pos_cp, "conveyor_pose", "odom")
+   self.fsm.target_pos_odom = tfm.transform6D(target_pos_cp, "conveyor_pose", "odom")
+
+end
+
+function GOTO_SHELF:init()
+   self.fsm.vars.slot = self.fsm.vars.slot + 1
+   if self.fsm.vars.slot == 1 then -- first slot now
+      dist_y = shelf_to_conveyor
+      dist_y = dist_y + self.fsm.vars.left_slot_y_offset
+
+      dist_y_motor = shelf_to_conveyor + self.fsm.vars.left_slot_y_offset
+      
+   elseif self.fsm.vars.slot == 2 then
+      dist_y = shelf_to_conveyor + shelf_distance
+      dist_y = dist_y + self.fsm.vars.middle_slot_y_offset
+
+
+      dist_y_motor = dist_y - shelf_to_conveyor - self.fsm.vars.left_slot_y_offset
+
+   elseif self.fsm.vars.slot == 3 then
+      dist_y = shelf_to_conveyor + 2*shelf_distance
+      dist_y = dist_y + self.fsm.vars.right_slot_y_offset
+
+      dist_y_motor = dist_y - shelf_to_conveyor - shelf_distance - self.fsm.vars.middle_slot_y_offset
+   else
+      dist_y = 0
+      self.fsm:set_error("no shelf side set")
+      self.fsm.vars.error = true
+   end
+   
+
    local target_pos_bl = tfm.transform6D(target_pos_odom, "odom", "base_link")
 
    laserline_direction = find_ll_direction(self.fsm.vars.lines_avg)
@@ -237,8 +261,8 @@ function GOTO_SHELF:init()
    self.fsm.vars.target_pos_odom = tfm.transform6D(target_pos_bl, "base_link", "odom")
    
   self.args["motor_move"] =
-	{ y = dist_y * laserline_direction.y, 
-    x = dist_y * laserline_direction.x,
+	{ y = dist_y_motor * laserline_direction.y, 
+    x = dist_y_motor * laserline_direction.x,
 		tolerance = { x=0.002, y=0.002, ori=0.01 }
 	}
 end
@@ -252,7 +276,6 @@ function MOVE_ABOVE_PUCK:init()
   self.args["gripper_commands"].z = gripper_adjust_z_distance
   self.args["gripper_commands"].command = "MOVEABS"
   self.args["gripper_commands"].target_frame = "gripper_home"
-
 end
 
 function ADJUST_HEIGHT:init()
