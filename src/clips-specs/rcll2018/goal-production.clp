@@ -798,7 +798,8 @@
            (not (wm-fact (key order meta wp-for-order args? wp ?any-ord-wp ord ?order))))
       (and (wm-fact (key domain fact holding args? r ?robot wp ?spawned-wp))
            (wm-fact (key domain fact wp-base-color args? wp ?spawned-wp col ?base-color))
-           (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))))
+           (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+           (wm-fact (key domain fact wp-cap-color args? wp ?wp cap-color CAP_NONE))))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (eq ?complexity C0))
   (not (goal (class PRODUCE-C0)
@@ -898,7 +899,8 @@
            (not (wm-fact (key order meta wp-for-order args? wp ?any-ord-wp ord ?order))))
       (and (wm-fact (key domain fact holding args? r ?robot wp ?spawned-wp))
            (wm-fact (key domain fact wp-base-color args? wp ?spawned-wp col ?base-color))
-           (wm-fact (key order meta wp-for-order args? wp ?spawned-wp ord ?order))))
+           (wm-fact (key order meta wp-for-order args? wp ?spawned-wp ord ?order))
+           (wm-fact (key domain fact wp-ring1-color args? wp ?spawned-wp col RING_NONE))))
   ;This order complexity is not produced exclusively while another exclusive
   ;complexity order is already started
   (not (and (wm-fact (key order meta wp-for-order args? wp ?ord-wp&~?spawned-wp ord ?any-order))
