@@ -90,8 +90,9 @@ function find_line(lines, prealigned)
     local distance = math.sqrt(math.pow(center.x,2),math.pow(center.y,2))
     local ori = math.deg(math.atan2(center.y, center.x))
     if prealigned then
-       ori = ori -math.deg(math.atan2(self.fsm.vars.y, self.fsm.vars.x))
+       ori = ori +math.deg(math.atan2(fsm.vars.y, fsm.vars.x))
     end
+    
     if math.abs(ori) < MAX_ORI then -- approximately in front of us
       if line:visibility_history() >= MIN_VIS_HIST_LINE then -- this laser line is not stale
         if distance < min_distance then
