@@ -292,6 +292,7 @@ function GRAB_PRODUCT:init()
 end
 
 function LEAVE_SHELF:init()
-   self.args["motor_move"].x = -0.2
+   self.args["motor_move"].x = -0.5
+   self.args["motor_move"].y = -shelf_to_conveyor-(self.fsm.vars.slot-1)*shelf_distance
 end
 
