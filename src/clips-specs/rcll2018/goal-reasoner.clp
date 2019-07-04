@@ -392,7 +392,7 @@
   (if (eq ?holds FALSE)
       then
       (retract ?hold)
-      (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
+      (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp) (type BOOL) (value TRUE)))
       (assert (domain-fact (name can-hold) (param-values ?r)))
   )
   (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
@@ -413,7 +413,7 @@
   =>
   (retract ?t)
   (assert
-    (wm-fact (key evaluated reset-mps args? m ?mps))
+    (wm-fact (key evaluated reset-mps args? m ?mps) (type BOOL) (value TRUE))
   )
   (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
   (modify ?g (mode EVALUATED))
@@ -434,7 +434,7 @@
   (not (wm-fact (key evaluated reset-mps args? m ?mps)))
   =>
   (assert
-    (wm-fact (key evaluated reset-mps args? m ?mps))
+    (wm-fact (key evaluated reset-mps args? m ?mps) (type BOOL) (value TRUE))
   )
   (modify ?g (mode EVALUATED))
 )
@@ -454,8 +454,8 @@
   ?wp-s<- (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot))
   =>
   (printout t "Goal " ?goal-id " has been failed because of wp-get-shelf and is evaluated" crlf)
-  (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
-  (assert (wm-fact (key domain fact spot-free args? m ?mps spot ?spot)))
+  (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp) (type BOOL) (value TRUE)))
+  (assert (wm-fact (key domain fact spot-free args? m ?mps spot ?spot) (type BOOL) (value TRUE)))
   (modify ?g (mode EVALUATED))
 )
 

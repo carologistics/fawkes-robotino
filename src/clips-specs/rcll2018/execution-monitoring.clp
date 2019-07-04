@@ -335,7 +335,7 @@
   (if (< 1 ?*MAX-RETRIES-PICK*) then
     (modify ?pa (state PENDING))
     (assert
-      (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (type INTEGER) (value 1))
+      (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (type INT) (value 1))
     )
   )
 )

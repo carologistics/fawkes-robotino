@@ -530,7 +530,7 @@
   (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-col $?))
 =>
   (assert (wm-fact (key strategy keep-mps-side-free
-                    args? m ?rs side INPUT cause ?wp)))
+                    args? m ?rs side INPUT cause ?wp) (type BOOL) (value TRUE)))
 )
 
 

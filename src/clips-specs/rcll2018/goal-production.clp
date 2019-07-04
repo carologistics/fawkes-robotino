@@ -542,7 +542,7 @@
             (modify ?wmf (value 2))))
     then
       (assert
-        (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 4)))
+        (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (type INT) (value 4)))
   )
 )
 
@@ -586,7 +586,7 @@
       (modify ?wmf (value 1))))
     then
       (assert
-        (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (value 2)))
+        (wm-fact (key evaluated fact rs-fill-priority args? m ?mps) (type INT) (value 2)))
   )
 )
 
