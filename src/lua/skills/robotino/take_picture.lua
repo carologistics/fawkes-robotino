@@ -31,23 +31,25 @@ skillenv.skill_module(_M)
 
 fsm:define_states{ export_to=_M,
    {"INIT", JumpState},
-   {"ALIGN", SkillJumpState, skills={{markerless_mps_align}}, final_to="TAKE_PICTURE",fail_to="FAILED"},
+   {"ALIGN", SkillJumpState, skills={{markerless_mps_align}}, final_to="SHORT_WAIT",fail_to="FAILED"},
+   {"SHORT_WAIT", JumpState},
    {"TAKE_PICTURE", JumpState}
 }
 
 fsm:add_transitions{
    {"INIT", "ALIGN", cond=true},
-   {"TAKE_PICTURE", "ALIGN", cond="self.fsm.vars.index==3"},
+   {"SHORT_WAIT", "TAKE_PICTURE", timeout=0.5},
+   {"TAKE_PICTURE", "ALIGN", cond="self.fsm.vars.index<=3"},
    {"TAKE_PICTURE", "FINAL", cond=true},
 }
 
 function INIT:init()
-  self.fsm.vars.index=0
+  self.fsm.vars.index=1
   self.fsm.vars.pos_y = {-0.3,0.0,0.3}
   self.fsm.vars.pos_x = {0.5, 0.5, 0.5}
-  self.fsm.vars.ori = {math.atan2(self.fsm.vars.pos_y[0],self.fsm.vars.pos_x[0]),
-			math.atan2(self.fsm.vars.pos_y[1],self.fsm.vars.pos_x[1]),
-			math.atan2(self.fsm.vars.pos_y[2],self.fsm.vars.pos_x[2])
+  self.fsm.vars.ori = {-math.atan2(self.fsm.vars.pos_y[1],self.fsm.vars.pos_x[1]),
+		-	math.atan2(self.fsm.vars.pos_y[2],self.fsm.vars.pos_x[2]),
+		-	math.atan2(self.fsm.vars.pos_y[3],self.fsm.vars.pos_x[3])
 		      }
 end
 
