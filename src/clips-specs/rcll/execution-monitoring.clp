@@ -34,6 +34,9 @@
                       (and (not (nth$ 1 ?if:digital_in)) (nth$ 2 ?if:digital_in)))) then
     (return TRUE)
   )
+  (if (or (eq ?an move) (eq ?an go-wait)) then
+    (return TRUE)
+  )
   (return FALSE)
 )
 
@@ -329,15 +332,14 @@
               (goal-id ?goal-id)
               (state FAILED)
               (error-msg ?error)
-              (param-values $? ?wp $? ?mps $?))
+              (param-values $? ?mps $?))
   (domain-obj-is-of-type ?mps mps)
-  (domain-obj-is-of-type ?wp workpiece)
   (test (eq TRUE (should-retry ?an ?error)))
   (wm-fact (key domain fact self args? r ?r))
-  (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp g ?goal-id)))
+  (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps g ?goal-id)))
   =>
   (assert
-    (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp g ?goal-id) (value 0))
+    (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps g ?goal-id) (value 0))
   )
   (printout error "Start retrying" crlf)
 )
@@ -355,12 +357,11 @@
               (goal-id ?goal-id)
               (state FAILED)
               (error-msg ?error)
-              (param-values $? ?wp $? ?mps $?))
+              (param-values $? ?mps $?))
   (domain-obj-is-of-type ?mps mps)
-  (domain-obj-is-of-type ?wp workpiece)
   (wm-fact (key domain fact self args? r ?r))
   (test (eq TRUE (should-retry ?an ?error)))
-  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp g ?goal-id)
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps g ?goal-id)
           (value ?tries&:(< ?tries ?*MAX-RETRIES-PICK*)))
   =>
   (bind ?tries (+ 1 ?tries))
@@ -378,11 +379,10 @@
         (plan-id ?plan-id)
         (action-name ?an)
         (state FAILED)
-        (param-values $? ?wp $? ?mps $?)
+        (param-values $? ?mps $?)
         (error-msg ?error))
   (domain-obj-is-of-type ?mps mps)
-  (domain-obj-is-of-type ?wp workpiece)
-  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp g ?goal-id)
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps g ?goal-id)
                 (value ?tries&:(= ?tries ?*MAX-RETRIES-PICK*)))
   =>
   (assert
@@ -393,7 +393,7 @@
 
 (defrule execution-monitoring-clear-action-retried
   (declare (salience ?*MONITORING-SALIENCE*))
-  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp g ?goal-id))
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps g ?goal-id))
   (goal (id ?goal-id) (mode EVALUATED))
   =>
   (retract ?wm)
