@@ -23,18 +23,30 @@
 #
 
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QMessageBox
-from PyQt5.QtGui import QPixmap, QImage, QDoubleValidator
-import PyQt5.uic as uic
+try:
+    from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QMessageBox
+    from PyQt5.QtGui import QPixmap, QImage, QDoubleValidator
+    import PyQt5.uic as uic
+except ImportError:
+    print("PyQt5 import error, install \'python3-qt5\' with dnf")
+    sys.exit(1)
 
-import PIL.ImageQt as ImageQt
+try:
+    import PIL.ImageQt as ImageQt
+except ImportError:
+    print("PIL.ImageQt import error, install \'python3-pillow-qt\' with dnf")
+    sys.exit(1)
+
 from qlineeditfocus import  QLineEditFocus
 
 
 import map_tool as mt
-import map_tool_validator as mtv
-
-import yaml
+    
+try:
+    import yaml
+except ImportError:
+    print("yaml import error, install \'python3-pyyaml\' with dnf") 
+    sys.exit(1)
 
 
 class MapTool:
@@ -87,7 +99,6 @@ class MapTool:
         self.window.createString.clicked.connect(self.dehighlight_reread)
         self.window.saveMap.clicked.connect(self.save_map)
 
-        #self.window.mapString.soft_validator = mtv.MapStringValidator()
         self.window.mapString.editingFinished.connect(self.create_custom_string)
     
         self.window.show()
