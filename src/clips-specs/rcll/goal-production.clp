@@ -761,7 +761,7 @@
 (defrule goal-production-create-discard-unknown
   "Discard a base which is not needed."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class NO-PROGRESS) (mode FORMULATED))
+  (goal (id ?parent) (class NO-PROGRESS) (mode FORMULATED))
   (goal (id ?urgent) (class URGENT) (mode FORMULATED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;TODO: Model state IDLE
@@ -779,7 +779,7 @@
   (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
                 (class DISCARD-UNKNOWN) (sub-type SIMPLE)
                 (priority ?*PRIORITY-DISCARD-UNKNOWN*)
-                (parent ?production-id)
+                (parent ?parent)
                 (params robot ?robot
                         wp ?wp
                 )
