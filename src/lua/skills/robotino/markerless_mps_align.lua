@@ -136,7 +136,7 @@ fsm:add_transitions{
    {"FIND_LINE",   "NO_LINE",          timeout=2, desc="cannot find line"},
 
    {"FIND_AVG_LINE", "ALIGN_PRECISE",  timeout=0.5},
-   {"FIND_AVG_LINE", "FIND_LINE", cond="not self.fsm.vars.found_line"},
+   {"FIND_AVG_LINE", "FIND_LINE", cond="vars.tried_find_avg_line > 30 and not self.fsm.vars.found_line"},
 
    {"NO_LINE",       "FAILED",          cond="vars.tried_searching > MAX_TRIES"},
    {"NO_LINE",       "SEARCH_LINE", cond=true},
@@ -181,7 +181,10 @@ end
 
 
 function FIND_LINE:loop()
-   self.fsm.vars.found_line = find_line(self.fsm.vars.lines, self.fsm.vars.prealigned)
+  local new_line = find_line(self.fsm.vars.lines, self.fsm.vars.prealigned)
+  if new_line ~= nil then
+   self.fsm.vars.found_line = new_line
+  end
 end
 
 
@@ -211,11 +214,19 @@ function ALIGN_FAST:init()
    self.fsm.vars.prealigned = true
 end
 
+function FIND_AVG_LINE:init()
+  self.fsm.vars.tried_find_avg_line = 0
+  self.fsm.vars.found_line = find_line(self.fsm.vars.lines, self.fsm.vars.prealigned)
+end
+
+
 
 function FIND_AVG_LINE:loop()
-  if self.fsm.vars.found_line == nil then
-    self.fsm.vars.found_line = find_line(self.fsm.vars.lines, self.fsm.vars.prealigned)
+  local new_line = find_line(self.fsm.vars.lines_avg, self.fsm.vars.prealigned)
+  if new_line ~= nil then
+   self.fsm.vars.found_line = new_line
   end
+  self.fsm.vars.tried_find_avg_line = self.fsm.vars.tried_find_avg_line + 1
 end
 
 
