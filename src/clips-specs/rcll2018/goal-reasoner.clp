@@ -422,6 +422,7 @@
     However, it is unlikely that we are able to continue using the mps. Therefore
     we want to reset it
   "
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   (plan-action (id ?id) (goal-id ?goal-id)
                (plan-id ?plan-id)
                (action-name bs-dispense|cs-retrieve-cap|cs-mount-cap|rs-mount-ring1|rs-mount-ring2|rs-mount-ring3)
@@ -434,7 +435,6 @@
   (assert
     (wm-fact (key evaluated reset-mps args? m ?mps))
   )
-  (modify ?g (mode EVALUATED))
 )
 
 (defrule goal-reasoner-evaluate-get-shelf-failed
