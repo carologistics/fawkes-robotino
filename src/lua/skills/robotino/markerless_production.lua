@@ -240,7 +240,6 @@ function MPS_ALIGN_BEFORE_PICK:init()
   self.args["markerless_mps_align"].x=0.3
   local laserline = find_ll(self.fsm.vars.lines)
   local center_ll = llutils.center(laserline)
-  self.args["markerless_mps_align"].preori = - math.atan2(center_ll.y, center_ll.x)
   self.args["markerless_mps_align"].y= - 0.03
 end
 
