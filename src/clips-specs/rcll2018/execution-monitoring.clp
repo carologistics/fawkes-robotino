@@ -176,13 +176,13 @@
                                            (eq (wm-key-arg ?wf:key m) ?mps)
                                            (eq (wm-key-arg ?wf:key side) INPUT))))
       then
-    (assert (wm-fact (key domain fact mps-side-free args? m ?mps side INPUT)))
+    (assert (wm-fact (key domain fact mps-side-free args? m ?mps side INPUT) (value TRUE) (type BOOL)))
   )
   (if (not (any-factp ((?wf wm-fact)) (and (wm-key-prefix ?wf:key (create$ domain fact mps-side-free))
                                            (eq (wm-key-arg ?wf:key m) ?mps)
                                            (eq (wm-key-arg ?wf:key side) OUTPUT))))
       then
-    (assert (wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT)))
+    (assert (wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT) (value TRUE) (type BOOL)))
   )
 )
 
