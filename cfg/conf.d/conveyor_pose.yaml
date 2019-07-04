@@ -197,7 +197,7 @@ plugins/conveyor_pose:
         z: 0.655
       slide:
         x: -0.02
-        y: 0.24
+        y: 0.26
         z: 0.64
 
 
