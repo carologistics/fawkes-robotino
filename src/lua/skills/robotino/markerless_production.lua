@@ -170,14 +170,15 @@ fsm:define_states{ export_to=_M,
    {"TEST_INPUT", JumpState},
    {"TEST_OUTPUT", JumpState},
    {"DECIDE_SIDE", JumpState},
-   {"SWITCH_SIDE_BEFORE", SkillJumpState, skills={{relgoto}}, final_to="MPS_ALIGN_OTHER_SIDE", fail_to="FAILED"},
-   {"MPS_ALIGN_OTHER_SIDE", SkillJumpState, skills={{markerless_mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
+   {"SWITCH_SIDE_BEFORE", SkillJumpState, skills={{relgoto}}, final_to="MPS_ALIGN_BEFORE_SHELF_PICK", fail_to="FAILED"},
+   {"MPS_ALIGN_BEFORE_SHELF_PICK", SkillJumpState, skills={{markerless_mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="SHELF_PICK", fail_to="FAILED"},
-   {"SHELF_PICK", SkillJumpState, skills={{markerless_shelf_pick}}, final_to="MPS_ALIGN_BEFORE_PICK", fail_to="FAILED"},
-   {"MPS_ALIGN_BEFORE_PICK", SkillJumpState, skills={{markerless_mps_align}}, final_to="CONVEYOR_ALIGN_PUT", fail_to="FAILED"},
+   {"SHELF_PICK", SkillJumpState, skills={{markerless_shelf_pick}}, final_to="MPS_ALIGN_BEFORE_PUT", fail_to="FAILED"},
+   {"MPS_ALIGN_BEFORE_PUT", SkillJumpState, skills={{markerless_mps_align}}, final_to="CONVEYOR_ALIGN_PUT", fail_to="FAILED"},
    {"CONVEYOR_ALIGN_PUT", SkillJumpState, skills={{conveyor_align}}, final_to="PUT_PRODUCT", fail_to="FAILED"},
    {"PUT_PRODUCT", SkillJumpState, skills={{product_put}}, final_to="SWITCH_SIDE", fail_to="FAILED"},
-   {"SWITCH_SIDE", SkillJumpState, skills={{relgoto}}, final_to="CONVEYOR_ALIGN_PICK", fail_to="FAILED"},
+   {"SWITCH_SIDE", SkillJumpState, skills={{relgoto}}, final_to="MPS_ALIGN_BEFORE_PICK", fail_to="FAILED"},
+   {"MPS_ALIGN_BEFORE_PICK", SkillJumpState, skills={{markerless_mps_align}}, final_to="CONVEYOR_ALIGN_PICK", fail_to="FAILED"},
    {"CONVEYOR_ALIGN_PICK", SkillJumpState, skills={{conveyor_align}}, final_to="PICK_PRODUCT", fail_to="FAILED"},
    {"PICK_PRODUCT", SkillJumpState, skills={{product_pick}}, final_to="MOVE_BACK", fail_to="FAILED"},
    {"MOVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="MOVE_BACK"},
@@ -189,7 +190,7 @@ fsm:add_transitions{
   {"TEST_INPUT", "TEST_OUTPUT", timeout=3},
   {"TEST_OUTPUT", "DECIDE_SIDE", timeout=3},
   {"DECIDE_SIDE", "SWITCH_SIDE_BEFORE", cond="vars.fitness_input < vars.fitness_output"},
-  {"DECIDE_SIDE", "CONVEYOR_ALIGN", cond=true}
+  {"DECIDE_SIDE", "MPS_ALIGN_BEFORE_SHELF_PICK", cond=true}
 }
 
 
@@ -222,9 +223,17 @@ function MPS_ALIGN:init()
 end
 
 
-function MPS_ALIGN_OTHER_SIDE:init()
+function MPS_ALIGN_BEFORE_SHELF_PICK:init()
   self.args["markerless_mps_align"].x=0.3
   self.args["markerless_mps_align"].y=0.03
+end
+
+
+function MPS_ALIGN_BEFORE_PUT:init()
+  self.args["markerless_mps_align"].x=0.3
+  local laserline = find_ll(self.fsm.vars.lines)
+  local center_ll = llutils.center(laserline)
+  self.args["markerless_mps_align"].y= 0.03
 end
 
 function MPS_ALIGN_BEFORE_PICK:init()
