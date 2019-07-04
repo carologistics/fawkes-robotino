@@ -91,7 +91,7 @@
 (defrule refbox-action-prepare-mps-start
 	(time $?now)
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state PENDING)
-	                      (action-name ?action&prepare-bs|prepare-cs|prepare-ds|prepare-rs)
+	                      (action-name ?action&prepare-bs|prepare-cs|prepare-ds|prepare-rs|prepare-ss)
 	                      (executable TRUE)
 	                      (param-names $?param-names)
 	                      (param-values $?param-values))
@@ -134,11 +134,11 @@
 
 (defrule refbox-action-mps-prepare-send-signal
 	(time $?now)
-	?st <- (timer (name prepare-mps-send-timer) 
+	?st <- (timer (name prepare-mps-send-timer)
 					(time $?t&:(timeout ?now ?t ?*PREPARE-PERIOD*))
 					(seq ?seq))
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
-	                      (action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs)
+	                      (action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs|prepare-ss)
 	                      (executable TRUE)
 	                      (param-names $?param-names)
 	                      (param-values $?param-values))
@@ -171,6 +171,13 @@
   		(pb-set-field ?ds-inst "order_id" ?order-id)
   		(pb-set-field ?machine-instruction "instruction_ds" ?ds-inst)
   		)
+    (case SS
+      then
+       (bind ?ss-inst (pb-create "llsf_msgs.PrepareInstructionSS"))
+                (bind ?instruction (nth$ 2 ?instruction_info))
+                (pb-set-field ?ss-inst "operation" ?instruction)
+                (pb-set-field ?machine-instruction "instruction_ss" ?ss-inst)
+    )
     (case RS
       then
         (bind ?rs-inst (pb-create "llsf_msgs.PrepareInstructionRS"))
@@ -207,7 +214,7 @@
 	"Finalize the prepare action if the desired machine state was reached"
 	(time $?now)
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
-	                      (action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs)
+	                      (action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs|prepare-ss)
 	                      (param-names $?param-names)
 	                      (param-values $?param-values))
 	?st <- (timer (name prepare-mps-send-timer))
@@ -242,7 +249,7 @@
 (defrule refbox-action-prepare-mps-abort-on-broken
   "Abort preparing if the mps got broken"
   ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
-                          (action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs))
+                          (action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs|prepare-ss))
   ?at <- (timer (name prepare-mps-abort-timer))
   ?st <- (timer (name prepare-mps-send-timer))
   ?md <- (metadata-prepare-mps ?mps $?date)
@@ -257,7 +264,7 @@
 	"Abort preparing and fail the action if took too long"
 	(time $?now)
 	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
-	                      	(action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs)
+                                (action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs|prepare-ss)
 	                      	(param-names $?param-names)
 	                      	(param-values $?param-values))
 	?at <- (timer (name prepare-mps-abort-timer) 
