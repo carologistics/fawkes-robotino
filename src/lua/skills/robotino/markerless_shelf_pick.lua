@@ -50,10 +50,10 @@ local tfm = require("fawkes.tfutils")
 local llutils = require("fawkes.laser-lines_utils")
 
 local x_distance = 0.28
-local gripper_adjust_z_distance = 0.03
+local gripper_adjust_z_distance = 0.04
 local gripper_adjust_x_distance = 0.01
 local adjust_target_frame = "gripper_home"
-local gripper_down_to_puck = -0.025
+local gripper_down_to_puck = -0.035
 
 local shelf_to_conveyor = 0.1
 local shelf_distance = 0.1

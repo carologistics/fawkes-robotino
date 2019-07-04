@@ -24,11 +24,29 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "markerless_production"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"gripper_commands", "motor_move", "reset_gripper"}
+depends_skills     = {"gripper_commands", "motor_move", "reset_gripper", "relgoto", "markerless_mps_align", "conveyor_align", "markerless_shelf_pick", "product_put", "product_pick"}
 depends_interfaces = {
-   {v = "robotino_sensor", type = "RobotinoSensorInterface", id="Robotino"} -- Interface to read I/O ports
+   {v = "robotino_sensor", type = "RobotinoSensorInterface", id="Robotino"}, -- Interface to read I/O ports
    {v = "realsense_switch", type = "SwitchInterface", id="realsense2"},
    {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
+   {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
+   {v = "line2", type="LaserLineInterface", id="/laser-lines/2"},
+   {v = "line3", type="LaserLineInterface", id="/laser-lines/3"},
+   {v = "line4", type="LaserLineInterface", id="/laser-lines/4"},
+   {v = "line5", type="LaserLineInterface", id="/laser-lines/5"},
+   {v = "line6", type="LaserLineInterface", id="/laser-lines/6"},
+   {v = "line7", type="LaserLineInterface", id="/laser-lines/7"},
+   {v = "line8", type="LaserLineInterface", id="/laser-lines/8"},
+   {v = "line1_avg", type="LaserLineInterface", id="/laser-lines/1/moving_avg"},
+   {v = "line2_avg", type="LaserLineInterface", id="/laser-lines/2/moving_avg"},
+   {v = "line3_avg", type="LaserLineInterface", id="/laser-lines/3/moving_avg"},
+   {v = "line4_avg", type="LaserLineInterface", id="/laser-lines/4/moving_avg"},
+   {v = "line5_avg", type="LaserLineInterface", id="/laser-lines/5/moving_avg"},
+   {v = "line6_avg", type="LaserLineInterface", id="/laser-lines/6/moving_avg"},
+   {v = "line7_avg", type="LaserLineInterface", id="/laser-lines/7/moving_avg"},
+   {v = "line8_avg", type="LaserLineInterface", id="/laser-lines/8/moving_avg"},
+   {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
+   {v = "if_plane_switch", type = "SwitchInterface", id="conveyor_plane/switch"},
 }
 
 documentation      = [==[
@@ -44,6 +62,11 @@ local tfm = require("fawkes.tfutils")
 local llutils = require("fawkes.laser-lines_utils")
 
 local MAX_ORI = 80
+
+local MIN_VIS_HIST_LINE = 15
+
+local LINE_LENGTH_MIN = 0.66
+local LINE_LENGTH_MAX = 0.73
 
 
 -- function to find ll in front
@@ -147,14 +170,14 @@ fsm:define_states{ export_to=_M,
    {"TEST_INPUT", JumpState},
    {"TEST_OUTPUT", JumpState},
    {"DECIDE_SIDE", JumpState},
-   {"SWITCH_SIDE_BEFORE", SkillJumpState, skills={{goto}}, final_to="MPS_ALIGN_OTHER_SIDE", fail_to="FAILED"},
+   {"SWITCH_SIDE_BEFORE", SkillJumpState, skills={{relgoto}}, final_to="MPS_ALIGN_OTHER_SIDE", fail_to="FAILED"},
    {"MPS_ALIGN_OTHER_SIDE", SkillJumpState, skills={{markerless_mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="SHELF_PICK", fail_to="FAILED"},
    {"SHELF_PICK", SkillJumpState, skills={{markerless_shelf_pick}}, final_to="MPS_ALIGN_BEFORE_PICK", fail_to="FAILED"},
    {"MPS_ALIGN_BEFORE_PICK", SkillJumpState, skills={{markerless_mps_align}}, final_to="PUT_PRODUCT", fail_to="FAILED"},
    {"CONVEYOR_ALIGN_PUT", SkillJumpState, skills={{conveyor_align}}, final_to="SHELF_PICK", fail_to="FAILED"},
    {"PUT_PRODUCT", SkillJumpState, skills={{product_put}}, final_to="SWITCH_SIDE", fail_to="FAILED"},
-   {"SWITCH_SIDE", SkillJumpState, skills={{goto}}, final_to="PICK_PRODUCT", fail_to="FAILED"},
+   {"SWITCH_SIDE", SkillJumpState, skills={{relgoto}}, final_to="PICK_PRODUCT", fail_to="FAILED"},
    {"CONVEYOR_ALIGN_PICK", SkillJumpState, skills={{conveyor_align}}, final_to="SHELF_PICK", fail_to="FAILED"},
    {"PICK_PRODUCT", SkillJumpState, skills={{product_pick}}, final_to="MOVE_BACK", fail_to="FAILED"},
    {"MOVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="MOVE_BACK"},
@@ -162,9 +185,9 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
   {"INIT", "MPS_ALIGN", cond=true},
-  {"CHECK_SIDE", "SWITCH_SIDE_BEFORE", cond="vars.input ~= nil and vars.input==true"},
-  {"CHECK_SIDE", "SHELF_PICK", cond="vars.input ~= nil and vars.input==false"},
-  {"CHECK_SIDE", "FAILED", cond="vars.error"},
+  {"CHECK_SIDE", "TEST_INPUT", cond="true"},
+  {"TEST_INPUT", "TEST_OUTPUT", timeout=3},
+  {"TEST_OUTPUT", "DECIDE_SIDE", timeout=3},
   {"DECIDE_SIDE", "SWITCH_SIDE_BEFORE", cond="vars.fitness_input < vars.fitness_output"},
   {"DECIDE_SIDE", "CONVEYOR_ALIGN", cond=true}
 }
@@ -201,14 +224,14 @@ end
 
 function MPS_ALIGN_OTHER_SIDE:init()
   self.args["markerless_mps_align"].x=0.3
-  self.args["markerless_mps_align"].y= + 0.03
+  self.args["markerless_mps_align"].y=0.03
 end
 
 function MPS_ALIGN_BEFORE_PICK:init()
   self.args["markerless_mps_align"].x=0.3
   local laserline = find_ll(self.fsm.vars.lines)
   local center_ll = llutils.center(laserline)
-  self.args["markerless_mps_align"].preori = math.atan2(center.y, center.x)
+  self.args["markerless_mps_align"].preori = - math.atan2(center_ll.y, center_ll.x)
   self.args["markerless_mps_align"].y= - 0.03
 end
 
@@ -233,31 +256,36 @@ end
 
 function TEST_INPUT:init()
   local mps_type = if_conveyor_pose.CAP_STATION
-  local target = if_conveyor_pose.INPUT_CONVEYOR
-  local msg = if_conveyor_pose.RunICPMessage:new(self.fsm.vars.mps_type, self.fsm.vars.mps_target)
+  local mps_target = if_conveyor_pose.INPUT_CONVEYOR
+  local msg = if_conveyor_pose.RunICPMessage:new(mps_type, mps_target)
   if_conveyor_pose:msgq_enqueue_copy(msg)
   self.fsm.vars.msgid = msg:id()
-  self.fsm.vars.vision_retries = self.fsm.vars.vision_retries + 1
 end
 
 function TEST_INPUT:exit()
    local msg = if_conveyor_pose.StopICPMessage:new()
+   self.fsm.vars.fitness_input = if_conveyor_pose:euclidean_fitness()
    if_conveyor_pose:msgq_enqueue_copy(msg)
 end
 
 function TEST_OUTPUT:init()
   local mps_type = if_conveyor_pose.CAP_STATION
-  local target = if_conveyor_pose.OUTPUT_CONVEYOR
-  local msg = if_conveyor_pose.RunICPMessage:new(self.fsm.vars.mps_type, self.fsm.vars.mps_target)
+  local mps_target = if_conveyor_pose.OUTPUT_CONVEYOR
+  local msg = if_conveyor_pose.RunICPMessage:new(mps_type, mps_target)
   if_conveyor_pose:msgq_enqueue_copy(msg)
   self.fsm.vars.msgid = msg:id()
-  self.fsm.vars.vision_retries = self.fsm.vars.vision_retries + 1
 end
 
 function TEST_OUTPUT:exit()
    local msg = if_conveyor_pose.StopICPMessage:new()
+   self.fsm.vars.fitness_output = if_conveyor_pose:euclidean_fitness()
    if_conveyor_pose:msgq_enqueue_copy(msg)
    enable_conveyor_plane(false)
+end
+
+function DECIDE_SIDE:init()
+   printf("input fitness %f",self.fsm.vars.fitness_input)
+   printf("output fitness %f",self.fsm.vars.fitness_output)
 end
 
 
@@ -265,20 +293,20 @@ function SWITCH_SIDE_BEFORE:init()
   local laserline = find_ll(self.fsm.vars.lines)
   local center_ll = llutils.center(laserline)
   local pos_to_go_ll = llutils.point_in_front(center_ll,-0.9)
-  local target_pos = tfutils.transform(pos_to_go_ll, "base_laser", "base_link")
+  local target_pos = tfm.transform(pos_to_go_ll, "base_laser", "base_link")
   self.args["relgoto"].rel_x = target_pos.x
   self.args["relgoto"].rel_y = target_pos.y
-  self.args["relgoto"].ori=math.normalize_mirror_rad(target_pos.ori)
+  self.args["relgoto"].ori=target_pos.ori+3.14
 end
 
 function SWITCH_SIDE:init()
   local laserline = find_ll(self.fsm.vars.lines)
   local center_ll = llutils.center(laserline)
   local pos_to_go_ll = llutils.point_in_front(center_ll,-0.9)
-  local target_pos = tfutils.transform(pos_to_go_ll, "base_laser", "base_link")
+  local target_pos = tfm.transform(pos_to_go_ll, "base_laser", "base_link")
   self.args["relgoto"].rel_x = target_pos.x
   self.args["relgoto"].rel_y = target_pos.y
-  self.args["relgoto"].ori=math.normalize_mirror_rad(target_pos.ori)
+  self.args["relgoto"].ori=target_pos.ori+3.14
 end
 
 function SHELF_PICK:init()

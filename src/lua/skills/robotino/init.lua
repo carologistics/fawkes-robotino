@@ -63,3 +63,4 @@ skillenv.use_skill("skills.robotino.approach_test")
 skillenv.use_skill("skills.robotino.discard")
 
 
+skillenv.use_skill("skills.robotino.markerless_production")
