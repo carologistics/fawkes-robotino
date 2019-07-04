@@ -21,7 +21,9 @@
 
 (defrule action-execute-exogenous-noops
   ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state PENDING)
-                   (action-name ?action&bs-dispense|cs-retrieve-cap
+                   (action-name ?action&bs-dispense-for-order
+                        |bs-dispense-trash
+                        |cs-retrieve-cap
                         |cs-mount-cap
                         |rs-mount-ring1
                         |rs-mount-ring2
