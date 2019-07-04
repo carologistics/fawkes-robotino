@@ -53,6 +53,7 @@ depends_interfaces = {
 documentation      = [==[Align precisely at the given coordinates, relative to the center of an MPS
 @param x X offset, i.e. distance from the MPS in meters.
 @param y (optional) Y offset from the center of the MPS. Defaults to 0.
+@param preori (optional) orientation at start, relative to the normal of the laser line
 ]==]
 
 local pre_conveyor_pose = { x = 0.05, y = 0.0, z = 0.045 }
@@ -90,7 +91,9 @@ function find_line(lines, prealigned)
     local distance = math.sqrt(math.pow(center.x,2),math.pow(center.y,2))
     local ori = math.deg(math.atan2(center.y, center.x))
     if prealigned then
-       ori = ori +math.deg(math.atan2(fsm.vars.y, fsm.vars.x))
+       ori = ori + math.deg(math.atan2(fsm.vars.y, fsm.vars.x))
+    elseif fsm.vars.preori ~= nil then
+       ori = ori - fsm.vars.preori
     end
     
     if math.abs(ori) < MAX_ORI then -- approximately in front of us
