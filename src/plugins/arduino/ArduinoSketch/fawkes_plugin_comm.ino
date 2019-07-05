@@ -170,14 +170,14 @@ void send_status() {
 
 void send_gripper_status()
 {
-  check_gripper_status();
+  check_gripper_endstop();
   if(open_gripper)
     Serial.print("OPEN");
   else 
     Serial.print("CLOSED");
 }
 
-void check_gripper_status()
+void check_gripper_endstop()
 {
   byte open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
   if(open_button == LOW){ // definetely OPEN
@@ -192,6 +192,18 @@ void set_status(int status_) {
     cur_status = status_;
     send_status();
   }
+}
+
+bool assumed_gripper_state;
+
+// @Return True if gripper is assumed to be open
+bool get_gripper_assumed_state(bool is_open_command) {
+  static bool initialized = false;
+  if(!initialized){
+    initialized = true;
+    assumed_gripper_state = !is_open_command;// assume closed if command is opening, assume open if command is closing
+  }
+  return assumed_gripper_state;
 }
 
 void double_calibrate()
@@ -365,6 +377,7 @@ void read_package() {
         cur_cmd == CMD_SET_ACCEL) {
       if(sscanf (buffer_ + (cur_i_cmd + 1),"%ld",&new_value)<=0){buf_i_ = 0; return;} // flush and return if parsing error
     }
+    bool assumed_state;
     switch (cur_cmd) {
       case CMD_X_NEW_POS:
         set_new_pos(-new_value, motor_X);
@@ -426,18 +439,28 @@ void read_package() {
         send_status();
         break;
       case CMD_OPEN:
-        check_gripper_status();
-        if(!open_gripper){
-          open_gripper = true;
+        check_gripper_endstop();
+        assumed_state = get_gripper_assumed_state(true);
+        if(!assumed_state && open_gripper || !open_gripper)
+        { // we do it
           set_new_rel_pos(-a_toggle_steps,motor_A);
-        } else {
+          assumed_gripper_state = true;
+        } else { // we don't do it
           send_status();
           send_status();
         }
         break;
       case CMD_CLOSE:
-        open_gripper = false;
-        set_new_rel_pos(a_toggle_steps,motor_A);
+        check_gripper_endstop();
+        assumed_state = get_gripper_assumed_state(false);
+        if(assumed_state)
+        { // we do it
+          set_new_rel_pos(a_toggle_steps,motor_A);
+          assumed_gripper_state = false;
+        } else { // we don't do it
+          send_status();
+          send_status();
+        }
         break;
       case CMD_STATUS_REQ:
         send_status();
