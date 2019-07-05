@@ -126,8 +126,7 @@ void PictureTakerThread::takePictureFromFVcamera(std::string name,
   firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
   visionMat = cvarrToMat(ipl);
   fawkes::Time now = fawkes::Time();
-  std::string image_path = vpath + "_" + name + "_" + side + "_" +
-                           std::to_string(now.in_sec()) + ".jpg";
+  std::string image_path = "/tmp/new_image.jpg";
   imwrite(image_path.c_str(), visionMat);
 }
 
