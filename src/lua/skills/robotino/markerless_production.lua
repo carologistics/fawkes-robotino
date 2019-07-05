@@ -24,7 +24,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "markerless_production"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"gripper_commands", "motor_move", "reset_gripper", "relgoto", "markerless_mps_align", "conveyor_align", "markerless_shelf_pick", "product_put", "product_pick"}
+depends_skills     = {"goto", "gripper_commands", "motor_move", "reset_gripper", "relgoto", "markerless_mps_align", "conveyor_align", "markerless_shelf_pick", "product_put", "product_pick"}
 depends_interfaces = {
    {v = "robotino_sensor", type = "RobotinoSensorInterface", id="Robotino"}, -- Interface to read I/O ports
    {v = "realsense_switch", type = "SwitchInterface", id="realsense2"},
@@ -165,13 +165,7 @@ end
 fsm:define_states{ export_to=_M,
    closure={pose_not_exist=pose_not_exist, is_grabbed=is_grabbed},
    {"INIT", JumpState},
-   {"MPS_ALIGN", SkillJumpState, skills={{markerless_mps_align}}, final_to="CHECK_SIDE", fail_to="FAILED"},
-   {"CHECK_SIDE", JumpState},
-   {"TEST_INPUT", JumpState},
-   {"MOVE_TO_OUTPUT", SkillJumpState, skills={{motor_move}}, final_to="TEST_OUTPUT", fail_to="TEST_OUTPUT"},
-   {"TEST_OUTPUT", JumpState},
-   {"DECIDE_SIDE", JumpState},
-   {"SWITCH_SIDE_BEFORE", SkillJumpState, skills={{relgoto}}, final_to="MPS_ALIGN_BEFORE_SHELF_PICK", fail_to="FAILED"},
+   {"GOTO_STATION", SkillJumpState, skills={{goto}}, final_to="MPS_ALIGN_BEFORE_SHELF_PICK", fail_to="MPS_ALIGN_BEFORE_SHELF_PICK"},
    {"MPS_ALIGN_BEFORE_SHELF_PICK", SkillJumpState, skills={{markerless_mps_align}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="SHELF_PICK", fail_to="FAILED"},
    {"SHELF_PICK", SkillJumpState, skills={{markerless_shelf_pick}}, final_to="MPS_ALIGN_BEFORE_PUT", fail_to="FAILED"},
@@ -186,12 +180,7 @@ fsm:define_states{ export_to=_M,
 }
 
 fsm:add_transitions{
-  {"INIT", "MPS_ALIGN", cond=true},
-  {"CHECK_SIDE", "TEST_INPUT", cond="true"},
-  {"TEST_INPUT", "MOVE_TO_OUTPUT", timeout=3},
-  {"TEST_OUTPUT", "DECIDE_SIDE", timeout=3},
-  {"DECIDE_SIDE", "SWITCH_SIDE_BEFORE", cond="vars.fitness_input < vars.fitness_output"},
-  {"DECIDE_SIDE", "MPS_ALIGN_BEFORE_SHELF_PICK", cond=true}
+  {"INIT", "GOTO_STATION", cond=true},
 }
 
 
@@ -219,12 +208,6 @@ function INIT:init()
    self.fsm.vars.lines_avg[line8_avg:id()] = line8_avg
 end
 
-function MPS_ALIGN:init()
-  self.args["markerless_mps_align"].x=0.3
-  self.args["markerless_mps_align"].y=0.03
-end
-
-
 function MPS_ALIGN_BEFORE_SHELF_PICK:init()
   self.args["markerless_mps_align"].x=0.3
   self.args["markerless_mps_align"].y=0.03
@@ -239,81 +222,6 @@ end
 function MPS_ALIGN_BEFORE_PICK:init()
   self.args["markerless_mps_align"].x=0.3
   self.args["markerless_mps_align"].y= - 0.03
-end
-
-function enable_conveyor_plane(enable)
-   if if_plane_switch:has_writer() then
-      local msg
-      if enable then
-         msg = if_plane_switch.EnableSwitchMessage:new()
-      else
-         msg = if_plane_switch.DisableSwitchMessage:new()
-      end
-      if_plane_switch:msgq_enqueue_copy(msg)
-   end
-end
-
-function CHECK_SIDE:init()
-   laserline_switch:msgq_enqueue(laserline_switch.EnableSwitchMessage:new())
-   realsense_switch:msgq_enqueue(realsense_switch.EnableSwitchMessage:new())
-   enable_conveyor_plane(true)
-
-end
-
-function TEST_INPUT:init()
-  local mps_type = if_conveyor_pose.CAP_STATION
-  local mps_target = if_conveyor_pose.INPUT_CONVEYOR
-  local msg = if_conveyor_pose.RunICPMessage:new(mps_type, mps_target)
-  if_conveyor_pose:msgq_enqueue_copy(msg)
-  self.fsm.vars.msgid = msg:id()
-end
-
-function TEST_INPUT:exit()
-   local msg = if_conveyor_pose.StopICPMessage:new()
-   self.fsm.vars.fitness_input = if_conveyor_pose:euclidean_fitness()
-   if_conveyor_pose:msgq_enqueue_copy(msg)
-end
-
-function MOVE_TO_OUTPUT:init()
-  self.args["motor_move"].y=-0.06
-end
-
-function TEST_OUTPUT:init()
-  local mps_type = if_conveyor_pose.CAP_STATION
-  local mps_target = if_conveyor_pose.OUTPUT_CONVEYOR
-  local msg = if_conveyor_pose.RunICPMessage:new(mps_type, mps_target)
-  if_conveyor_pose:msgq_enqueue_copy(msg)
-  self.fsm.vars.msgid = msg:id()
-end
-
-function TEST_OUTPUT:exit()
-   local msg = if_conveyor_pose.StopICPMessage:new()
-   self.fsm.vars.fitness_output = if_conveyor_pose:euclidean_fitness()
-   if_conveyor_pose:msgq_enqueue_copy(msg)
-   enable_conveyor_plane(false)
-end
-
-function DECIDE_SIDE:init()
-   printf("input fitness %f",self.fsm.vars.fitness_input)
-   printf("output fitness %f",self.fsm.vars.fitness_output)
-end
-
-
-function SWITCH_SIDE_BEFORE:init()
-  local laserline = find_ll(self.fsm.vars.lines)
-  if laserline ~= nil then
-    local center_ll = llutils.center(laserline)
-    local pos_to_go_ll = llutils.point_in_front(center_ll,-0.9)
-    local target_pos = tfm.transform(pos_to_go_ll, "base_laser", "base_link")
-    self.args["relgoto"].rel_x = target_pos.x
-    self.args["relgoto"].rel_y = target_pos.y
-    self.args["relgoto"].ori = target_pos.ori+3.14
-  else
-    print("WARNING: Could not find a laserline")
-    self.args["relgoto"].rel_x = -1.5
-    self.args["relgoto"].rel_y = 0.0
-    self.args["relgoto"].ori = 3.14
-  end
 end
 
 function SWITCH_SIDE:init()
@@ -336,6 +244,11 @@ end
 function SHELF_PICK:init()
 end
 
+function GOTO_STATION:init()
+  self.args["goto"].place = self.fsm.vars.place
+  self.args["goto"].distance = 1.0
+  self.args["goto"].place_ori = self.fsm.var.place_ori
+end
 
 function CONVEYOR_ALIGN:init()
   self.args["conveyor_align"].disable_realsense_afterwards=true
