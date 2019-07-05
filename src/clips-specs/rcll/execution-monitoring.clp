@@ -375,7 +375,7 @@
 )
 
 (defrule execution-monitoring-retry-action-failed
-  (declare (salience ?*MONITORING-SALIENCE*))
+  (declare (salience 1000))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED) (class ?class) (params $?params))
   (plan-action
