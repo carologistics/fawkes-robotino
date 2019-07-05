@@ -327,19 +327,23 @@
   (goal (id ?goal-id) (mode DISPATCHED))
   (plan (id ?plan-id) (goal-id ?goal-id))
   ?pa <- (plan-action
+              (id ?id)
               (action-name ?an)
               (plan-id ?plan-id)
               (goal-id ?goal-id)
               (state FAILED)
               (error-msg ?error)
-              (param-values $? ?mps $?))
-  (domain-obj-is-of-type ?mps mps)
+              (param-values $?param-values))
   (test (eq TRUE (should-retry ?an ?error)))
   (wm-fact (key domain fact self args? r ?r))
-  (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps g ?goal-id)))
+  (not (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)))
   =>
+  (bind ?mps nil)
+  (do-for-fact ((?do domain-object)) (and (member$ ?do:name ?param-values) (eq ?do:type mps))
+    (bind ?mps ?do:name)
+  )
   (assert
-    (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps g ?goal-id) (value 0))
+    (wm-fact (key monitoring action-retried args? r ?r a ?an id (sym-cat ?id) m ?mps g ?goal-id) (value 0))
   )
   (printout error "Start retrying" crlf)
 )
@@ -352,16 +356,16 @@
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
   ?pa <- (plan-action
+              (id ?id)
               (action-name ?an)
               (plan-id ?plan-id)
               (goal-id ?goal-id)
               (state FAILED)
               (error-msg ?error)
-              (param-values $? ?mps $?))
-  (domain-obj-is-of-type ?mps mps)
+              (param-values $?param-values))
   (wm-fact (key domain fact self args? r ?r))
   (test (eq TRUE (should-retry ?an ?error)))
-  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps g ?goal-id)
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)
           (value ?tries&:(< ?tries ?*MAX-RETRIES-PICK*)))
   =>
   (bind ?tries (+ 1 ?tries))
@@ -375,15 +379,16 @@
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED) (class ?class) (params $?params))
   (plan-action
+        (id ?id)
         (goal-id ?goal-id)
         (plan-id ?plan-id)
         (action-name ?an)
         (state FAILED)
         (param-values $? ?mps $?)
         (error-msg ?error))
-  (domain-obj-is-of-type ?mps mps)
-  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps g ?goal-id)
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ?mps g ?goal-id)
                 (value ?tries&:(= ?tries ?*MAX-RETRIES-PICK*)))
+  (domain-obj-is-of-type ?mps mps)
   =>
   (assert
     (wm-fact (key monitoring forbid-goal args? c ?class mps ?mps))
@@ -393,7 +398,7 @@
 
 (defrule execution-monitoring-clear-action-retried
   (declare (salience ?*MONITORING-SALIENCE*))
-  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps g ?goal-id))
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ? id ? m ? g ?goal-id))
   (goal (id ?goal-id) (mode EVALUATED))
   =>
   (retract ?wm)
