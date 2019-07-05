@@ -168,6 +168,7 @@ fsm:define_states{ export_to=_M,
    {"MPS_ALIGN", SkillJumpState, skills={{markerless_mps_align}}, final_to="CHECK_SIDE", fail_to="FAILED"},
    {"CHECK_SIDE", JumpState},
    {"TEST_INPUT", JumpState},
+   {"MOVE_TO_OUTPUT", SkillJumpState, skills={{motor_move}}, final_to="TEST_OUTPUT", fail_to="TEST_OUTPUT"},
    {"TEST_OUTPUT", JumpState},
    {"DECIDE_SIDE", JumpState},
    {"SWITCH_SIDE_BEFORE", SkillJumpState, skills={{relgoto}}, final_to="MPS_ALIGN_BEFORE_SHELF_PICK", fail_to="FAILED"},
@@ -187,7 +188,7 @@ fsm:define_states{ export_to=_M,
 fsm:add_transitions{
   {"INIT", "MPS_ALIGN", cond=true},
   {"CHECK_SIDE", "TEST_INPUT", cond="true"},
-  {"TEST_INPUT", "TEST_OUTPUT", timeout=3},
+  {"TEST_INPUT", "MOVE_TO_OUTPUT", timeout=3},
   {"TEST_OUTPUT", "DECIDE_SIDE", timeout=3},
   {"DECIDE_SIDE", "SWITCH_SIDE_BEFORE", cond="vars.fitness_input < vars.fitness_output"},
   {"DECIDE_SIDE", "MPS_ALIGN_BEFORE_SHELF_PICK", cond=true}
@@ -220,6 +221,7 @@ end
 
 function MPS_ALIGN:init()
   self.args["markerless_mps_align"].x=0.3
+  self.args["markerless_mps_align"].y=0.03
 end
 
 
@@ -270,6 +272,10 @@ function TEST_INPUT:exit()
    local msg = if_conveyor_pose.StopICPMessage:new()
    self.fsm.vars.fitness_input = if_conveyor_pose:euclidean_fitness()
    if_conveyor_pose:msgq_enqueue_copy(msg)
+end
+
+function MOVE_TO_OUTPUT:init()
+  self.args["motor_move"].y=-0.06
 end
 
 function TEST_OUTPUT:init()
