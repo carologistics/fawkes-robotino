@@ -239,7 +239,7 @@ function SWITCH_SIDE:init()
     self.args["relgoto"].ori=target_pos.ori+3.14
   else
     print("WARNING: Could not find a laserline")
-    self.args["relgoto"].rel_x = 1.7
+    self.args["relgoto"].rel_x = 2.0
     self.args["relgoto"].rel_y = 0.0
     self.args["relgoto"].ori=3.14
   end

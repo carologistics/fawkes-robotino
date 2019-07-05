@@ -59,7 +59,7 @@ local slide_gripper_down_z = -0.04    -- distance to move gripper down after dri
 local slide_gripper_back_x = -0.01 -- distance to move gripper back after opening the gripper if the target is slide
 local slide_gripper_up_z = 0.01    --distance to move gripper up after opening the gripper if the target is slide
 
-local drive_back_x = -0.2      -- distance to drive back after closing the gripper
+local drive_back_x = -0.8      -- distance to drive back after closing the gripper
 
 function pose_not_exist()
   local target_pos = { x = gripper_pose_offset_x,
@@ -112,7 +112,8 @@ fsm:define_states{ export_to=_M,
   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="FAILED"},
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="RESET_GRIPPER", fail_to="FAILED"},
-  {"RESET_GRIPPER", SkillJumpState, skills={{reset_gripper}}, final_to="FINAL", fail_to="FAILED"},
+  {"RESET_GRIPPER", SkillJumpState, skills={{reset_gripper}}, final_to="DRIVE_BACK", fail_to="FAILED"},
+  {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FINAL"},
 }
 
 fsm:add_transitions{
@@ -178,4 +179,8 @@ end
 
 function RESET_GRIPPER:init()
   self.args["reset_gripper"].calibrate = true
+end
+
+function DRIVE_BACK:init()
+  self.args["motor_move"].x = drive_back_x
 end
