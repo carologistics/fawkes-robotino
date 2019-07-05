@@ -59,7 +59,7 @@ local slide_gripper_down_z = -0.04    -- distance to move gripper down after dri
 local slide_gripper_back_x = -0.01 -- distance to move gripper back after opening the gripper if the target is slide
 local slide_gripper_up_z = 0.01    --distance to move gripper up after opening the gripper if the target is slide
 
-local drive_back_x = -0.1      -- distance to drive back after closing the gripper
+local drive_back_x = -0.2      -- distance to drive back after closing the gripper
 
 function pose_not_exist()
   local target_pos = { x = gripper_pose_offset_x,
