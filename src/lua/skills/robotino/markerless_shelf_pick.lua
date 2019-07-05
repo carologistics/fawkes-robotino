@@ -168,10 +168,10 @@ fsm:add_transitions{
 function MOVE_GRIPPER_UP:init()
   local grip_pos = tfm.transform6D(self.fsm.vars.target_pos_odom, "odom", "gripper")
   local pose = pose_gripper_offset(grip_pos.x,grip_pos.y,grip_pos.z)
-  self.args["gripper_commands"].x = pose.x
-  self.args["gripper_commands"].y = pose.y
-  self.args["gripper_commands"].z = gripper_adjust_z_distance
-  self.args["gripper_commands"].command = "MOVEABS"
+  self.args["gripper_commands"].x = 0.0
+  self.args["gripper_commands"].y = 0.0
+  self.args["gripper_commands"].z = -gripper_down_to_puck
+  self.args["gripper_commands"].command = "MOVEREL"
   self.args["gripper_commands"].target_frame = "gripper_home"
 end
 
@@ -222,61 +222,23 @@ function INIT:init()
                            ori = { x=0,y=0,z=0,w=0}
                          }
 
-   self.fsm.vars.cp_pos_odom = tfm.transform6D(target_pos_cp, "conveyor_pose", "odom")
+   target_pos_cp.y = - shelf_to_conveyor
+   self.fsm.vars.targets_pos_odom[1] = tfm.transform6D(target_pos_cp, "conveyor_pose", "odom")
+   target_pos_cp.y = target_pos_cp.y - shelf_distance
+   self.fsm.vars.targets_pos_odom[2] = tfm.transform6D(target_pos_cp, "conveyor_pose", "odom")
+   target_pos_cp.y = target_pos_cp.y - shelf_distance
+   self.fsm.vars.targets_pos_odom[3] = tfm.transform6D(target_pos_cp, "conveyor_pose", "odom")
 
 end
 
 function GOTO_SHELF:init()
    self.fsm.vars.slot = self.fsm.vars.slot + 1
+   self.fsm.vars.ll_direction = find_ll_direction(self.fsm.vars.lines_avg)
    if self.fsm.vars.slot == 1 then -- first slot now
-      dist_y = shelf_to_conveyor
-      dist_y = dist_y + self.fsm.vars.left_slot_y_offset
-
-      dist_y_motor = shelf_to_conveyor + self.fsm.vars.left_slot_y_offset
-
-      self.fsm.vars.ll_direction = find_ll_direction(self.fsm.vars.lines_avg)
-      tmp={x=0,y=0,ori=math.atan2(self.fsm.vars.ll_direction.x,self.fsm.vars.ll_direction.y)}
-      ori_odom = tfm.transform(tmp,"base_laser","odom").ori
-      self.fsm.vars.ll_direction_odom = {}
-      self.fsm.vars.ll_direction_odom.x = - math.cos(ori_odom)
-      self.fsm.vars.ll_direction_odom.y = math.sin(ori_odom)
-      print(tmp.ori)
-      print(ori_odom)
-      
-      
-   elseif self.fsm.vars.slot == 2 then
-      dist_y = shelf_to_conveyor + shelf_distance
-      dist_y = dist_y + self.fsm.vars.middle_slot_y_offset
-
-
-      dist_y_motor = dist_y - shelf_to_conveyor - self.fsm.vars.left_slot_y_offset
-
-      self.fsm.vars.ll_direction = find_ll_direction(self.fsm.vars.lines_avg)
-      tmp={x=0,y=0,ori=math.atan2(self.fsm.vars.ll_direction.x,self.fsm.vars.ll_direction.y)}
-      ori_odom = tfm.transform(tmp,"base_laser","odom").ori
-      self.fsm.vars.ll_direction_odom = {}
-      self.fsm.vars.ll_direction_odom.x = math.cos(ori_odom)
-      self.fsm.vars.ll_direction_odom.y = math.sin(ori_odom)
-
-   elseif self.fsm.vars.slot == 3 then
-      dist_y = shelf_to_conveyor + 2*shelf_distance
-      dist_y = dist_y + self.fsm.vars.right_slot_y_offset
-
-      dist_y_motor = dist_y - shelf_to_conveyor - shelf_distance - self.fsm.vars.middle_slot_y_offset
+     dist_y_motor = shelf_to_conveyor
    else
-      dist_y = 0
-      self.fsm:set_error("no shelf side set")
-      self.fsm.vars.error = true
+     dist_y_motor = shelf_distance
    end
-   
-
-   local target_pos_bl = tfm.transform6D(self.fsm.vars.cp_pos_odom, "odom", "base_link")
-
-   target_pos_bl.x = target_pos_bl.x + dist_y * self.fsm.vars.ll_direction.x
-   target_pos_bl.y = target_pos_bl.y + dist_y * self.fsm.vars.ll_direction.y
-
-   self.fsm.vars.target_pos_odom = tfm.transform6D(target_pos_bl, "base_link", "odom")
-
    
   self.args["motor_move"] =
 	{ y = dist_y_motor * self.fsm.vars.ll_direction.y, 
@@ -286,7 +248,7 @@ function GOTO_SHELF:init()
 end
 
 function MOVE_ABOVE_PUCK:init()
-  local grip_pos = tfm.transform6D(self.fsm.vars.target_pos_odom, "odom", "gripper")
+  local grip_pos = tfm.transform6D(self.fsm.vars.targets_pos_odom[self.fsm.vars.slot], "odom", "gripper")
 
   local pose = pose_gripper_offset(grip_pos.x,grip_pos.y,grip_pos.z)
   self.args["gripper_commands"].x = pose.x
