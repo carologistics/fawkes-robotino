@@ -24,15 +24,14 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "product_pick"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"gripper_commands", "motor_move", "reset_gripper"}
-depends_interfaces = {
-   {v = "robotino_sensor", type = "RobotinoSensorInterface", id="Robotino"} -- Interface to read I/O ports
-}
+depends_skills     = {"gripper_commands", "motor_move", "reset_gripper", "check_wp"}
+depends_interfaces = {}
 
 documentation      = [==[
 Skill to pick a product from the conveyor.
 
 Parameters:
+	@param check_wp (optional, default=true) whether you want to check for a wp or not
 	@param calibrate	(optional, default: false) decide if the gripper should calibrate after resetting
 				will be evaluated in reset_gripper
 ]==]
@@ -60,20 +59,6 @@ if config:exists("/skills/product_pick/gripper_down_z") then
    conveyor_gripper_down_z = config:get_float("/skills/product_pick/gripper_down_z")
 end
 
-
--- function to evaluate sensor data
-function is_grabbed()
- if not robotino_sensor:has_writer() then
-   print_warn("No robotino sensor writer to check sensor")
-   return true
- end
- if robotino_sensor:is_digital_in(0) == false and robotino_sensor:is_digital_in(1) == true then -- white cable on DI1 and black on DI2
-    return true
- else
-   -- Ignore puck laser, until realsense is disabled by default 
-   return true
- end
-end
 
 function pose_not_exist()
   local target_pos = { x = gripper_pose_offset_x,
@@ -123,7 +108,7 @@ end
 
 
 fsm:define_states{ export_to=_M,
-   closure={pose_not_exist=pose_not_exist, is_grabbed=is_grabbed},
+   closure={pose_not_exist=pose_not_exist},
    {"INIT", JumpState},
    {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}},final_to="GRIPPER_ALIGN", fail_to="FAILED"},
    {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="FAILED"},
@@ -131,14 +116,12 @@ fsm:define_states{ export_to=_M,
    {"CLOSE_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="RESET_GRIPPER", fail_to="FAILED"},
    {"RESET_GRIPPER", SkillJumpState, skills={{reset_gripper}}, final_to = "DRIVE_BACK", fail_to="FAILED"},
    {"DRIVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="CHECK_PUCK", fail_to="FAILED"},
-   {"CHECK_PUCK", JumpState},
+   {"CHECK_WP", SkillJumpstate, skills={{check_wp}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond="pose_not_exist()"},
    {"INIT", "OPEN_GRIPPER", true, desc="Open gripper for product_pick"},
-   {"CHECK_PUCK", "FAILED", cond="not is_grabbed()", desc="Don't hold puck!"},  -- add or not is_grabbed() 
-   {"CHECK_PUCK", "FINAL", cond=true},
 }
 
 
@@ -201,4 +184,11 @@ end
 
 function DRIVE_BACK:init()
   self.args["motor_move"].x = drive_back_x
+end
+
+function CHECK_WP:init()
+   if not self.fsm.vars.check_wp then
+      self.fsm.vars.check_wp = true
+   end
+   self.args["check_wp"].check_wp = self.fsm.vars.check_wp
 end

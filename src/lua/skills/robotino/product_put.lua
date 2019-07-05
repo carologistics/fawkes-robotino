@@ -25,14 +25,14 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "product_put"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = {"gripper_commands","motor_move", "reset_gripper"}
-depends_interfaces = {
-}
+depends_skills     = {"gripper_commands","motor_move", "reset_gripper", "check_wp"}
+depends_interfaces = {}
 
 documentation      = [==[
 Skill to put a product onto the conveyor or the slide.
 
 Parameters:
+      @param check_wp (optional, default=true) whether you want to check for a wp or not
       @param slide   optional true if you want to put it on the slide
 
 ]==]
@@ -109,6 +109,7 @@ end
 fsm:define_states{ export_to=_M,
    closure={pose_not_exist=pose_not_exist},
   {"INIT", JumpState},
+  {"CHECK_WP", SkillJumpstate, skills={{check_wp}}, final_to="GRIPPER_ALIGN", fail_to="FAILED"},
   {"GRIPPER_ALIGN", SkillJumpState, skills={{gripper_commands}}, final_to="MOVE_GRIPPER_FORWARD",fail_to="FAILED"},
   {"MOVE_GRIPPER_FORWARD", SkillJumpState, skills={{gripper_commands}}, final_to="OPEN_GRIPPER",fail_to="FAILED"},
   {"OPEN_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="RESET_GRIPPER", fail_to="FAILED"},
@@ -117,7 +118,7 @@ fsm:define_states{ export_to=_M,
 
 fsm:add_transitions{
   {"INIT", "FAILED", cond="pose_not_exist()"},
-  {"INIT", "GRIPPER_ALIGN", true, desc="Start aligning"},
+  {"INIT", "CHECK_WP", cond=true, desc="Start aligning"},
 }
 
 function INIT:init()
