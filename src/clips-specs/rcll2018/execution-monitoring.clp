@@ -247,7 +247,7 @@
       (predicate mps-state)
       (param-values $? ?mps&:(neq FALSE (member$ ?mps $?param-values)) $?))
   ?pt <- (action-timer (plan-id ?plan-id) (action-id ?id)
-              (timeout-duration ?to&:(eq ?to ?*MPS-TIMEOUT-DURATION*)))
+              (timeout-duration ?to&:(> ?to ?*COMMON-TIMEOUT-DURATION*)))
   =>
   (modify ?pt (timeout-duration ?*COMMON-TIMEOUT-DURATION*))
 )
@@ -272,10 +272,36 @@
       (predicate mps-state)
       (param-values $? ?mps $?))
   ?pt <- (action-timer (plan-id ?plan-id) (action-id ?id)
-              (timeout-duration ?to&:(neq ?to ?*MPS-TIMEOUT-DURATION*)))
+              (timeout-duration ?to&:(< ?to ?*MPS-TIMEOUT-DURATION*)))
   =>
   (modify ?pt (timeout-duration ?*MPS-TIMEOUT-DURATION*))
 )
+
+(defrule execution-monitoring-change-timeout-to-down
+  (declare (salience (+ ?*MONITORING-SALIENCE* 1)))
+  (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
+      (id ?id)
+      (state PENDING)
+      (executable FALSE)
+      (action-name ?action-name)
+      (param-values $? ?mps $?))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  (domain-object (name ?mps) (type mps))
+
+  (domain-atomic-precondition (is-satisfied FALSE)
+      (grounded-with ?id)
+      (operator ?action-name)
+      (goal-id ?goal-id)
+      (predicate mps-state)
+      (param-values $? ?mps $?))
+  (domain-fact (name mps-state) (param-values ?mps DOWN))
+  ?pt <- (action-timer (plan-id ?plan-id) (action-id ?id)
+              (timeout-duration ?to&:(< ?to ?*MPS-DOWN-TIMEOUT-DURATION*)))
+  =>
+  (modify ?pt (timeout-duration ?*MPS-DOWN-TIMEOUT-DURATION*))
+)
+
 
 
   ?t <- (action-time (plan-id ?plan-id) (action-id ?id)
