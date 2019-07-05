@@ -556,6 +556,7 @@
   (wm-fact (key config rcll use-ss) (value TRUE))
   ; Order CEs
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-complexity args? ord ?order com C0))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   ; WP CEs
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))

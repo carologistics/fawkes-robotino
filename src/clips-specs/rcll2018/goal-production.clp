@@ -134,7 +134,7 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact self args? r ?robot))
   ;Standing Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+  (wm-fact (key domain fact order-complexity args? ord ?order com C0))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   (wm-fact (key refbox order ?order delivery-begin) (value 0))
