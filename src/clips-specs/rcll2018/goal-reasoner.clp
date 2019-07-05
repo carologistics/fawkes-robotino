@@ -380,6 +380,7 @@
 " After a failed wp-put, check if the gripper interface indicates, that the workpiece is still in the gripper.
   If this is not the case, the workpiece is lost and the corresponding facts are marked for clean-up
 "
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   (plan-action (id ?id) (goal-id ?goal-id)
 	(plan-id ?plan-id) (action-name ?an&:(or (eq ?an wp-put) (eq ?an wp-put-slide-cc)))
 	   (param-values ?r ?wp ?mps $?)
@@ -390,31 +391,10 @@
   (RobotinoSensorInterface (digital_in ?d1 ?d2 $?))
   =>
   (if (not (and (eq ?d1 FALSE) (eq ?d2 TRUE)))
-      then
+  then
       (assert (wm-fact (key monitoring safety-discard)))
   )
-  (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
-  (modify ?g (mode EVALUATED))
-)
-
-(defrule goal-reasoner-evaluate-failed-wp-get
-" After a failed wp-get with multiple retries, we want to reset the mps"
-  (plan-action (id ?id) (goal-id ?goal-id)
-	             (plan-id ?plan-id) (action-name ?an&:(or (eq ?an wp-get) (eq ?an wp-put-slide-cc)))
-	             (param-values $? ?mps $?)
-	             (state FAILED))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
-  ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
-                (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
-  (domain-object (name ?mps) (type mps))
-  =>
-  (retract ?t)
-  (assert
-    (wm-fact (key evaluated reset-mps args? m ?mps) (type BOOL) (value TRUE))
-  )
-  (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
-  (modify ?g (mode EVALUATED))
+  (printout t "Goal " ?goal-id " failed because of " ?an crlf)
 )
 
 (defrule goal-reasouner-evaluate-failed-exog-actions
