@@ -136,6 +136,13 @@ function INIT:init()
       if string.sub(self.fsm.vars.place, 1, 1) == "M" then
         self.fsm.vars.x = 0 - self.fsm.vars.x
       end
+      if self.fsm.vars.distance ~= nil then
+        self.fsm.vars.ori = self.fsm.vars.place_ori or 0.0
+        step_x = math.cos(self.fsm.vars.ori)
+        step_y = math.sin(self.fsm.vars.ori)
+        self.fsm.vars.x = self.fsm.vars.x - step_x * self.fsm.vars.distance
+        self.fsm.vars.y = self.fsm.vars.y - step_y * self.fsm.vars.distance
+      end
     else
       -- place argument is a navgraph point
       local node = navgraph:node(self.fsm.vars.place)
