@@ -222,7 +222,7 @@ function INIT:init()
                            ori = { x=0,y=0,z=0,w=0}
                          }
 
-   self.fsm.cp_pos_odom = tfm.transform6D(target_pos_cp, "conveyor_pose", "odom")
+   self.fsm.vars.cp_pos_odom = tfm.transform6D(target_pos_cp, "conveyor_pose", "odom")
 
 end
 
@@ -238,8 +238,10 @@ function GOTO_SHELF:init()
       tmp={x=0,y=0,ori=math.atan2(self.fsm.vars.ll_direction.x,self.fsm.vars.ll_direction.y)}
       ori_odom = tfm.transform(tmp,"base_laser","odom").ori
       self.fsm.vars.ll_direction_odom = {}
-      self.fsm.vars.ll_direction_odom.x = math.cos(ori_odom)
+      self.fsm.vars.ll_direction_odom.x = - math.cos(ori_odom)
       self.fsm.vars.ll_direction_odom.y = math.sin(ori_odom)
+      print(tmp.ori)
+      print(ori_odom)
       
       
    elseif self.fsm.vars.slot == 2 then
@@ -268,8 +270,13 @@ function GOTO_SHELF:init()
    end
    
 
-   self.fsm.vars.target_pos_odom.x = self.fsm.vars.cp_pos_odom.x + dist_y * self.fsm.vars.ll_direction_odom.x
-   self.fsm.vars.target_pos_odom.y = self.fsm.vars.cp_pos_odom.y + dist_y * self.fsm.vars.ll_direction_odom.y
+   local target_pos_bl = tfm.transform6D(self.fsm.vars.cp_pos_odom, "odom", "base_link")
+
+   target_pos_bl.x = target_pos_bl.x + dist_y * self.fsm.vars.ll_direction.x
+   target_pos_bl.y = target_pos_bl.y + dist_y * self.fsm.vars.ll_direction.y
+
+   self.fsm.vars.target_pos_odom = tfm.transform6D(target_pos_bl, "base_link", "odom")
+
    
   self.args["motor_move"] =
 	{ y = dist_y_motor * self.fsm.vars.ll_direction.y, 
