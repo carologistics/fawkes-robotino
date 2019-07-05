@@ -268,34 +268,32 @@ fsm:define_states{ export_to=_M,
    closure={args_ok=args_ok, local_bearing=local_bearing, CAM_ANGLE=CAM_ANGLE, ZONE_CORNERS=ZONE_CORNERS,
       MAX_ATTEMPTS=MAX_ATTEMPTS, found_tag=found_tag},
    {"INIT", JumpState},
-   {"WAIT_FOR_TAG", JumpState},
-   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="WAIT_FOR_TAG", fail_to="FAILED"},
+   {"WAIT", JumpState},
+   {"TURN", SkillJumpState, skills={{motor_move}}, final_to="WAIT", fail_to="FAILED"},
    {"WAIT_FOR_SENORS", JumpState},
-   {"FIND_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
+   {"FIND_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT", fail_to="WAIT"},
    {"PICK_VISTA_POINT", JumpState},
-   {"GOTO_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
-   {"GOTO_VISTA_POINT", SkillJumpState, skills={{goto}}, final_to="WAIT_FOR_TAG", fail_to="WAIT_FOR_TAG"},
-   {"WAIT_AMCL", JumpState}
+   {"GOTO_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT", fail_to="WAIT"},
+   {"GOTO_VISTA_POINT", SkillJumpState, skills={{goto}}, final_to="WAIT", fail_to="WAIT"},
+   {"DETECT_MACHINE", JumpState}
 }
 
 fsm:add_transitions{
    {"INIT", "FAILED", cond="not args_ok()", desc="invalid arguments"},
    {"INIT", "TURN", cond="vars.line_center"},
    {"INIT", "TURN", cond="local_bearing(vars.x, vars.y) > CAM_ANGLE"},
-   {"INIT", "WAIT_FOR_TAG", cond=true},
-   {"WAIT_FOR_TAG", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"WAIT_FOR_TAG", "WAIT_FOR_SENORS", timeout=1},
-   {"WAIT_FOR_SENORS", "WAIT_AMCL", cond=found_tag, desc="found tag"},
+   {"INIT", "WAIT", cond=true},
+   {"WAIT", "WAIT_FOR_SENORS", timeout=1},
    {"WAIT_FOR_SENORS", "FAILED", cond="vars.attempts >= MAX_ATTEMPTS", desc="give up"},
    {"WAIT_FOR_SENORS", "GOTO_LINE", cond="vars.line_vista"},
    {"WAIT_FOR_SENORS", "FIND_LINE", cond="vars.cluster_vista"},
    {"WAIT_FOR_SENORS", "PICK_VISTA_POINT", timeout=2},
    {"PICK_VISTA_POINT", "GOTO_VISTA_POINT", cond="vars.zone_corner"},
    {"PICK_VISTA_POINT", "FAILED", cond="not vars.zone_corner"},
-   {"GOTO_VISTA_POINT", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"GOTO_LINE", "WAIT_AMCL", cond=found_tag, desc="found tag"},
-   {"WAIT_AMCL", "WAIT_FOR_SENORS", cond=lost_tag, desc="lost tag"},
-   {"WAIT_AMCL", "FINAL", timeout=1},
+   {"GOTO_VISTA_POINT", "WAIT", cond=true, },
+   {"GOTO_LINE", "DETECT_MACHINE", cond=true, desc="standing at laserline"},
+   {"DETECT_MACHINE", "WAIT_FOR_SENORS", cond=true, desc="tensor_flow"},
+   {"DETECT_MACHINE", "FINAL", timeout=1},
 }
 
 
@@ -484,6 +482,6 @@ function FAILED:init()
    end
 end
 
-function WAIT_AMCL:loop()
-   found_tag()
+function DETECT_MACHINE:init()
+    return true
 end
