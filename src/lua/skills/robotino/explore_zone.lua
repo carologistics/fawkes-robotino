@@ -275,7 +275,7 @@ fsm:define_states{ export_to=_M,
    {"PICK_VISTA_POINT", JumpState},
    {"GOTO_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT", fail_to="WAIT"},
    {"GOTO_VISTA_POINT", SkillJumpState, skills={{goto}}, final_to="WAIT", fail_to="WAIT"},
-   {"DETECT_MACHINE", SkillJumpState, skills={{recognize_mps}}, final_to="FINAL", fail_to="FAILED"}
+   {"DETECT_MACHINE", SkillJumpState, skills={{recognize_mps}}, final_to="FINAL", fail_to="WAIT_FOR_SENORS"}
 }
 
 fsm:add_transitions{
@@ -292,8 +292,6 @@ fsm:add_transitions{
    {"PICK_VISTA_POINT", "FAILED", cond="not vars.zone_corner"},
    {"GOTO_VISTA_POINT", "WAIT", cond=true, },
    {"GOTO_LINE", "DETECT_MACHINE", cond=true, desc="standing at laserline"},
-   {"DETECT_MACHINE", "WAIT_FOR_SENORS", cond=true, desc="tensor_flow"},
-   {"DETECT_MACHINE", "FINAL", timeout=1},
 }
 
 
