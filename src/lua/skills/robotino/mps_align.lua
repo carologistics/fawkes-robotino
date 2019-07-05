@@ -96,8 +96,8 @@ local LINE_XDIST_MAX=0.6
 local LINE_MATCH_TOLERANCE=0.3
 
 local TURN_MOVES={
-   { ori = math.pi/4},
-   { ori = -math.pi/4},
+   { ori = math.pi/8},
+   { ori = -math.pi/8},
 }
 local MAX_TRIES = 8
 
@@ -330,7 +330,8 @@ end
 
 function TURN_AROUND:init()
    print("TURN_AROUND search_idx: " .. self.fsm.vars.search_idx)
-   self.args["motor_move"] = TURN_MOVES[math.mod(self.fsm.vars.search_idx, #TURN_MOVES)+1] * self.fsm.vars.search_idx
+   print(TURN_MOVES[math.mod(self.fsm.vars.search_idx, #TURN_MOVES)+1]["ori"]     * (self.fsm.vars.search_idx + 1))
+self.args["motor_move"] = {ori = TURN_MOVES[math.mod(self.fsm.vars.search_idx, #TURN_MOVES)+1]["ori"] * (self.fsm.vars.search_idx + 1)}
    self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
 
    for k,v in pairs(self.fsm.vars.lines_visited) do
