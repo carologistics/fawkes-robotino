@@ -266,10 +266,15 @@
   "Drive to a waiting position and wait there."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class NO-PROGRESS) (mode FORMULATED))
+  (goal (id ?urgent) (class URGENT) (mode FORMULATED))
   (wm-fact (key domain fact self args? r ?self))
   (domain-object (type waitpoint) (name ?waitpoint&:
                (eq (str-length (str-cat ?waitpoint)) 10)))
   =>
+  (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring shame))
+    (retract ?wm)
+    (bind ?production-id ?urgent)
+  )
   (printout t "Goal " GO-WAIT " formulated" crlf)
   (assert (goal (id (sym-cat GO-WAIT- (gensym*)))
                 (class GO-WAIT) (sub-type SIMPLE)
@@ -772,8 +777,9 @@
   ;question: or would be more correct to create it and later
   ;  reject it because its not useful
   =>
-  (if (any-factp ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring safety-discard))) then
+  (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring safety-discard))
     (bind ?parent ?urgent)
+    (retract ?wm)
   )
   (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
   (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
