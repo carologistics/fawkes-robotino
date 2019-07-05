@@ -419,26 +419,25 @@
   (printout t "Goal " ?goal-id " failed because of " ?an crlf)
 )
 
-(defrule goal-reasoner-evaluate-failed-wp-get
-" After a failed wp-get with multiple retries, we want to reset the mps"
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+(defrule goal-reasouner-evaluate-failed-exog-actions
+  " If an exogenous action failed, this means that something went totally wrong.
+    However, it is unlikely that we are able to continue using the mps. Therefore
+    we want to reset it
+  "
   (plan-action (id ?id) (goal-id ?goal-id)
-	             (plan-id ?plan-id) (action-name ?an&:(or (eq ?an wp-get) (eq ?an wp-put-slide-cc)))
-	             (param-values $? ?mps $?)
-	             (state FAILED))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
-  ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
-                (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+               (plan-id ?plan-id)
+               (action-name bs-dispense|cs-retrieve-cap|cs-mount-cap|rs-mount-ring1|rs-mount-ring2|rs-mount-ring3)
+               (param-values $? ?mps $?)
+               (state FAILED))
   (domain-object (name ?mps) (type mps))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  (not (wm-fact (key evaluated reset-mps args? m ?mps)))
   =>
-  (retract ?t)
   (assert
-    (wm-fact (key monitoring shame args? r ?self m ?mps))
+    (wm-fact (key evaluated reset-mps args? m ?mps))
   )
-  (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
+  (modify ?g (mode EVALUATED))
 )
-
 
 (defrule goal-reasoner-evaluate-get-shelf-failed
 " After a failed wp-get-shelf, assume that the workpiece is not there

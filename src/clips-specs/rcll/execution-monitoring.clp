@@ -384,14 +384,12 @@
         (plan-id ?plan-id)
         (action-name ?an)
         (state FAILED)
-        (param-values $? ?mps $?)
         (error-msg ?error))
-  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ?mps g ?goal-id)
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)
                 (value ?tries&:(= ?tries ?*MAX-RETRIES-PICK*)))
-  (domain-obj-is-of-type ?mps mps)
   =>
   (assert
-    (wm-fact (key monitoring shame args? c ?class mps ?mps))
+    (wm-fact (key monitoring shame args?))
   )
   (printout error "Reached max retries" crlf)
 )
@@ -446,6 +444,7 @@
   (printout error "wp-get failed not by aligning: reset " ?mps crlf)
   (assert
     (wm-fact (key evaluated reset-mps args? m ?mps))
+    (wm-fact (key monitoring safety-discard))
   )
 )
 
