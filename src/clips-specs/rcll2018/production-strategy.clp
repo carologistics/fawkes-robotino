@@ -548,6 +548,9 @@
 
 
 (defrule production-strategy-use-ss-c0
+" Use the stored C0 in the storage station to fulfill an order that matches
+  the base and cap color.
+"
   (wm-fact (key domain fact ss-stored-wp args? m ?ss wp ?wp))
   (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?any-order)))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
