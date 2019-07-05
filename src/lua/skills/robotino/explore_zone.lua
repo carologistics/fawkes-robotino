@@ -25,7 +25,7 @@ module(..., skillenv.module_init)
 -- Crucial skill information
 name               = "explore_zone"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
-depends_skills     = { "goto", "motor_move" }
+depends_skills     = { "goto", "motor_move","recognize_mps" }
 depends_interfaces = {
    {v = "zone_info", type="ZoneInterface",       id="/explore-zone/info", writing=true},
    {v = "bb_found_tag", type="Position3DInterface", id="/explore-zone/found-tag", writing=true},
@@ -275,7 +275,7 @@ fsm:define_states{ export_to=_M,
    {"PICK_VISTA_POINT", JumpState},
    {"GOTO_LINE", SkillJumpState, skills={{goto}}, final_to="WAIT", fail_to="WAIT"},
    {"GOTO_VISTA_POINT", SkillJumpState, skills={{goto}}, final_to="WAIT", fail_to="WAIT"},
-   {"DETECT_MACHINE", JumpState}
+   {"DETECT_MACHINE", SkillJumpState, skills={{recognize_mps}}, final_to="FINAL", fail_to="FAILED"}
 }
 
 fsm:add_transitions{
@@ -483,5 +483,5 @@ function FAILED:init()
 end
 
 function DETECT_MACHINE:init()
-    return true
+   self.args["recognize_mps"] = self.fsm.vars.zone_corner
 end
