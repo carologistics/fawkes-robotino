@@ -172,7 +172,7 @@ fsm:define_states{ export_to=_M,
    {"MPS_ALIGN_BEFORE_PUT", SkillJumpState, skills={{markerless_mps_align}}, final_to="CONVEYOR_ALIGN_PUT", fail_to="FAILED"},
    {"CONVEYOR_ALIGN_PUT", SkillJumpState, skills={{conveyor_align}}, final_to="PUT_PRODUCT", fail_to="FAILED"},
    {"PUT_PRODUCT", SkillJumpState, skills={{product_put}}, final_to="SWITCH_SIDE", fail_to="FAILED"},
-   {"SWITCH_SIDE", SkillJumpState, skills={{relgoto}}, final_to="MPS_ALIGN_BEFORE_PICK", fail_to="FAILED"},
+   {"SWITCH_SIDE", SkillJumpState, skills={{relgoto}}, final_to="MPS_ALIGN_BEFORE_PICK", fail_to="MPS_ALIGN_BEFORE_PICK"},
    {"MPS_ALIGN_BEFORE_PICK", SkillJumpState, skills={{markerless_mps_align}}, final_to="CONVEYOR_ALIGN_PICK", fail_to="FAILED"},
    {"CONVEYOR_ALIGN_PICK", SkillJumpState, skills={{conveyor_align}}, final_to="PICK_PRODUCT", fail_to="FAILED"},
    {"PICK_PRODUCT", SkillJumpState, skills={{product_pick}}, final_to="MOVE_BACK", fail_to="FAILED"},
@@ -239,7 +239,7 @@ function SWITCH_SIDE:init()
     self.args["relgoto"].ori=target_pos.ori+3.14
   else
     print("WARNING: Could not find a laserline")
-    self.args["relgoto"].rel_x = -1.7
+    self.args["relgoto"].rel_x = 1.7
     self.args["relgoto"].rel_y = 0.0
     self.args["relgoto"].ori=3.14
   end
