@@ -99,7 +99,6 @@
 )
 
 (defrule action-selection-select
-	(wm-fact (key game state) (type UNKNOWN) (value RUNNING))
   ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
                       (id ?id) (state FORMULATED)
                       (action-name ?action-name)

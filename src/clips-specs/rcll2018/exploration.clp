@@ -60,7 +60,7 @@
      )
      (foreach ?zone ?Mzones
        (assert (wm-fact (key exploration fact line-vis args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
-               (wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) )
+               (wm-fact (key exploration fact time-searched args? zone ?zone) (value 0) (type INT) (is-list FALSE) ))
      )
 
 )
@@ -183,11 +183,11 @@
   (bind ?new-ts (+ 1 ?ts))
   (modify ?ze (value ?new-ts))
   (modify ?skill (status S_FAILED))
-  (printout t "EXP formulating zone exploration plan " ?zn " with line: " ?vh " and tag: " ?tv crlf)
+  (printout t "EXP formulating zone exploration plan " ?zn " with line: " ?vh crlf)
   (assert
     (plan (id EXPLORE-ZONE) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name explore-zone) (param-names r z) (param-values ?r ?zn))
-    (plan-action (id 2) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name evaluation))
+    (plan-action (id 2) (plan-id EXPLORE-ZONE) (goal-id ?goal-id) (action-name evaluation) (param-names z) (param-values ?zn))
   )
 )
 
@@ -222,11 +222,11 @@
   (goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
   (plan-action (action-name explore-zone) (state FINAL))
   ?pa <- (plan-action (action-name evaluation) (goal-id ?goal-id)
-                      (plan-id EXPLORE-ZONE) (state PENDING))
+                      (plan-id EXPLORE-ZONE) (state PENDING) (param-values ?zn-str))
 
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn2&:(eq ?zn2 (sym-cat ?zn-str))) (value ?times-searched))
 
-  (not (exploration-result (machine ?machine) (zone ?zn2)))
+  (not (exploration-result (zone ?zn2)))
   (exp-navigator-vlow ?vel ?rot)
   =>
   (navigator-set-speed ?vel ?rot)
@@ -234,12 +234,10 @@
   (modify ?ze (value (+ 1 ?times-searched)))
   (assert
     (exploration-result
-      (machine ?machine) (zone ?zn2)
-      (orientation ?orientation)
-      (team ?team-color)
+      (zone ?zn2)
     )
   )
-  (printout t "EXP exploration fact zone successfull. Found " ?machine " in " ?zn2 crlf)
+  (printout t "EXP exploration fact zone successfull" ?zn2 crlf)
 
 )
 
