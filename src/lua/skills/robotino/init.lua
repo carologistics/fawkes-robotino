@@ -45,6 +45,7 @@ skillenv.use_skill("skills.robotino.reset_gripper")
 -- Skills for markerless MPS interaction
 skillenv.use_skill("skills.robotino.markerless_mps_align")
 skillenv.use_skill("skills.robotino.take_picture")
+skillenv.use_skill("skills.robotino.recognize_mps")
 skillenv.use_skill("skills.robotino.markerless_shelf_pick")
 
 
