@@ -487,8 +487,9 @@
 
 
 (defrule goal-reasoner-remove-retracted-goal-common
-" Remove a retracted goal if it has no parent (anymore).
-  Goal trees are retracted recursively from top to bottom.
+" Remove a retracted goal if it has no child (anymore).
+  Goal trees are retracted recursively from bottom to top. This has to be done
+  with low priority to avoid races with the sub-type goal lifecycle.
 "
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
   ?g <- (goal (id ?goal-id)
@@ -521,7 +522,8 @@
 
 (defrule goal-reasoner-reject-production-tree-goal-other-goal-dispatched
 " Retract a formulated sub-goal of the production tree once a production leaf
-  goal is dispatched.
+  goal is dispatched. Retraction is done in bottom-up fashion (this is
+  relevant due to sub-type goal implementation details)
 "
   (declare (salience ?*SALIENCE-GOAL-REJECT*))
   ?g <- (goal (id ?goal) (parent ?parent) (type ACHIEVE)
