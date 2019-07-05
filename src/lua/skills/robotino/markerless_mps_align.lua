@@ -66,8 +66,11 @@ local llutils = require("fawkes.laser-lines_utils")
 
 -- Tunables
 local MIN_VIS_HIST_LINE=5 --15
-local MAX_ORI=15
-local MAX_TRIES=3
+local MAX_ORI=15 -- in degrees
+local MAX_TRIES=7
+
+-- 0.15 is ~9 degrees
+local search_angles={0.15,-0.3,0.45,-0.6,0.75,-0.9,1.05,-1.2}
 
 local LINE_LENGTH_MIN=0.64
 local LINE_LENGTH_MAX=0.71
@@ -188,8 +191,9 @@ function FIND_LINE:loop()
 end
 
 
---function SEARCH_LINE:init()
---end
+function SEARCH_LINE:init()
+  self.args["motor_move"].ori = search_angles[self.fsm.vars.tried_searching]
+end
 
 function GRIPPER_PRE_CONVEYOR:init()
   self.args["gripper_commands"] = pre_conveyor_pose
