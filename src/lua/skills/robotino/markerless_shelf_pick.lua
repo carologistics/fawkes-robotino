@@ -152,9 +152,10 @@ fsm:define_states{ export_to=_M, closure={puck_exist=puck_exist},
    {"CHECK_PUCK", JumpState},
    {"MOVE_GRIPPER_UP", SkillJumpState, skills={{gripper_commands}}, final_to="GOTO_SHELF", fail_to="GOTO_SHELF"},
    
-   {"GRAB_PRODUCT", SkillJumpState, skills={{gripper_commands}}, final_to="LEAVE_SHELF", fail_to="FAILED"},
-   {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="RESET_GRIPPER", fail_to="FAILED"},
-   {"RESET_GRIPPER", SkillJumpState, skills={{reset_gripper}}, final_to="FINAL", fail_to="FAILED"},
+   {"GRAB_PRODUCT", SkillJumpState, skills={{gripper_commands}}, final_to="LEAVE_SHELF_STRAIGHT", fail_to="FAILED"},
+   {"LEAVE_SHELF_STRAIGHT", SkillJumpState, skills={{motor_move}}, final_to="RESET_GRIPPER", fail_to="FAILED"},
+   {"RESET_GRIPPER", SkillJumpState, skills={{reset_gripper}}, final_to="LEAVE_SHELF", fail_to="FAILED"},
+   {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="FINAL", fail_to="FAILED"},
 }
 
 fsm:add_transitions{
@@ -301,8 +302,12 @@ function GRAB_PRODUCT:init()
    self.args["gripper_commands"].command = "CLOSE"
 end
 
+function LEAVE_SHELF_STRAIGHT:init()
+   self.args["motor_move"].x = -0.2
+end
+
 function LEAVE_SHELF:init()
-   self.args["motor_move"].x = -0.5
-   self.args["motor_move"].y = -shelf_to_conveyor-(self.fsm.vars.slot-1)*shelf_distance
+   self.args["motor_move"].x = -0.3
+   self.args["motor_move"].y = shelf_to_conveyor+(self.fsm.vars.slot-1)*shelf_distance
 end
 
