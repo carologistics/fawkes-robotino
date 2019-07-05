@@ -20,20 +20,20 @@ SUBDIRS	= clips-motor-switch \
 	  voltagelogger \
 	  ax12_gripper \
 	  arduino \
-		tag_vision \
-      navgraph_broker \
+	  tag_vision \
+    navgraph_broker \
 	  navgraph-generator-mps \
 	  conveyor_pose \
 	  conveyor_plane \
 	  gazebo \
 	  marker_writer \
-		laser_front_dist \
-		mps-laser-gen \
-		webtools-bridge \
-		skiller_motor_state \
-		asp-planner
-		picture_taker
-		tensorflow 
+	  laser_front_dist \
+	  mps-laser-gen \
+	  webtools-bridge \
+	  skiller_motor_state \
+	  asp-planner \
+	  picture_taker \
+	  tensorflow 
 
 include $(BUILDSYSDIR)/rules.mk
 
