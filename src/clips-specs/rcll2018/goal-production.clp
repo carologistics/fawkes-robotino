@@ -122,7 +122,8 @@
 
 
 (defrule goal-production-create-ss-spawn
-  "Spawn a WP for each robot, if you are the spawn-master"
+" Spawn a C0 into the storage station.
+"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?g <- (goal (id ?maintain-id) (class WP-SPAWN-MAINTAIN) (mode SELECTED))
   (not (goal (class SPAWN-WP)))

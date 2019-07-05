@@ -548,13 +548,20 @@
 
 
 (defrule production-strategy-use-ss-c0
+" Use the stored C0 in the storage station to fulfill an order that matches
+  the base and cap color.
+"
   (wm-fact (key domain fact ss-stored-wp args? m ?ss wp ?wp))
   (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?any-order)))
+  (wm-fact (key config rcll use-ss) (value TRUE))
+  ; Order CEs
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  ; WP CEs
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
   (not (wm-fact (key order meta wp-for-order args? wp ?any-wp ord ?order)))
+  ; Refbox CEs
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
