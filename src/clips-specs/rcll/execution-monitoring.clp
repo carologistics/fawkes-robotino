@@ -391,7 +391,7 @@
   (domain-obj-is-of-type ?mps mps)
   =>
   (assert
-    (wm-fact (key monitoring forbid-goal args? c ?class mps ?mps))
+    (wm-fact (key monitoring shame args? c ?class mps ?mps))
   )
   (printout error "Reached max retries" crlf)
 )

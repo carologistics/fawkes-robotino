@@ -421,6 +421,7 @@
 
 (defrule goal-reasoner-evaluate-failed-wp-get
 " After a failed wp-get with multiple retries, we want to reset the mps"
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   (plan-action (id ?id) (goal-id ?goal-id)
 	             (plan-id ?plan-id) (action-name ?an&:(or (eq ?an wp-get) (eq ?an wp-put-slide-cc)))
 	             (param-values $? ?mps $?)
@@ -433,10 +434,9 @@
   =>
   (retract ?t)
   (assert
-    (wm-fact (key evaluated reset-mps args? m ?mps))
+    (wm-fact (key monitoring shame args? r ?self m ?mps))
   )
   (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
-  (modify ?g (mode EVALUATED))
 )
 
 
