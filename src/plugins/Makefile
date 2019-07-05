@@ -33,6 +33,7 @@ SUBDIRS	= clips-motor-switch \
 		skiller_motor_state \
 		asp-planner
 		picture_taker
+		tensorflow 
 
 include $(BUILDSYSDIR)/rules.mk
 

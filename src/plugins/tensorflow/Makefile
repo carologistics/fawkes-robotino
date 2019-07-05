@@ -1,0 +1,78 @@
+#*****************************************************************************
+#               Makefile Build System for Fawkes: Genesis Plugin
+#
+#   Created on Sun Nov 13 15:19:32 2011
+#   Copyright (C) 2011 by Tim Niemueller, AllemaniACs RoboCup Team
+#
+##*****************************************************************************
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#*****************************************************************************
+
+BASEDIR = ../../..
+
+include $(BASEDIR)/etc/buildsys/config.mk
+include $(BUILDSYSDIR)/fvconf.mk
+
+CFLAGS   += $(VISION_CFLAGS)
+LDFLAGS  += $(VISION_LDFLAGS)
+INCDIRS  += $(VISION_INCDIRS)
+LIBDIRS  += $(VISION_LIBDIRS)
+LIBS     += $(VISION_LIBS)
+
+
+PRESUBDIRS = interfaces 
+
+LIBS_tensorflow = fawkescore fawkesutils fawkesaspects fvutils fvcams \
+	       fawkestf fawkesinterface fawkesblackboard \
+	       TensorflowInterface ClassificationResultInterface
+OBJS_tensorflow = tensorflow_plugin.o tensorflow_thread.o tf_utils.o \
+                  loader.o image_shm_loader.o image_loader.o \
+                  image_file_loader.o image_v4l2_loader.o \
+									outputter.o output_bb_classification.o
+
+OBJS_all    = $(OBJS_tensorflow)
+
+
+PLUGINS_all = $(PLUGINDIR)/tensorflow.$(SOEXT)
+
+ifneq ($(wildcard $(SYSROOT)/usr/lib64/libtensorflow.so),)
+  ifneq ($(wildcard $(SYSROOT)/usr/include/tensorflow/c/c_api.h),)
+    HAVE_TENSORFLOW = 1
+    LIBS_tensorflow += tensorflow
+  endif
+endif
+
+
+ifeq ($(HAVE_TENSORFLOW)$(HAVE_OPENCV),11)
+  CFLAGS	 += $(CFLAGS_OPENCV)
+  LDFLAGS  += $(LDFLAGS_OPENCV)
+  CFLAGS  += $(CFLAGS_TF)  -DIS_SLIM_BUILD -std=c++11
+  LDFLAGS += $(LDFLAGS_TF)  -lstdc++ -lm -lz  -ldl
+  PLUGINS_build = $(PLUGINS_all)
+  BLA = bla
+else
+  ifneq ($(HAVE_TENSORFLOW),1)
+    WARN_TARGETS += warning_tensorflow
+  endif
+  ifneq ($(HAVE_OPENCV),1)
+    WARN_TARGETS += warning_cv
+  endif
+endif
+
+ifeq ($(OBJSSUBMAKE),1)
+  ifneq ($(WARN_TARGETS),)
+all: $(WARN_TARGETS)
+  endif
+.PHONY: warning_cv warning_tensorflow
+warning_tensorflow:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TBROWN)Omitting tensorflow plugin$(TNORMAL) (Tensorflow not available)"
+warning_cv:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TBROWN)Omitting tensorflow plugin$(TNORMAL) (OpenCV not available)"
+endif
+
+include $(BUILDSYSDIR)/base.mk

@@ -1,0 +1,111 @@
+/***************************************************************************
+ *  image_loader.h - Loader for image from fvcam
+ *
+ *  Created: Thu May 5 10:23:50 2019
+ *  Copyright  2019 Morian Sonnet
+ ****************************************************************************/
+
+/*  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  Read the full text in the LICENSE.GPL file in the doc directory.
+ */
+
+#ifndef IMAGE_LOADER
+#define IMAGE_LOADER
+#include "loader.h"
+#include <fvcams/camera.h>
+#include <opencv/cv.hpp>
+
+/** Class for loading Image data from SHM buffer
+ */
+class TF_Plugin_Image_Loader : public TF_Plugin_Loader {
+public:
+  /** Destructor
+   */
+  virtual ~TF_Plugin_Image_Loader();
+
+  /** Function to verify the objects integrity
+   * @return true if object is ok, false if not
+   */
+  virtual bool verify();
+
+  /** Function to clean up after the buffer returned by read() was used
+   */
+  virtual void post_read();
+  /** Function to read the image from the SHM buffer
+   * @return Pointer to the image buffer
+   */
+  virtual const void *read();
+
+protected:
+  /** Constructor
+   * @param name Name of the calling thread, used for logging functionalities
+   * @param logger Logger of the calling thread
+   * @param expected_colorspace Colorspace of output image
+   * @param width Pixel width of output image
+   * @param height Pixel height of output image
+   * @param normalize Whether the output image shall be normalized
+   * @param norm_mean Mean value for normalization
+   * @param norm_std StD value for normalization
+   * @param late_start Whether the camera is started at creation or later
+   * @param late_open whether the camera is opened at creation or later (Note:
+   * Start always happens after opening. late_open thus takes precedence.)
+   */
+  TF_Plugin_Image_Loader(std::string name, fawkes::Logger *logger,
+                         firevision::colorspace_t expected_colorspace,
+                         unsigned int width, unsigned int height,
+                         bool normalize = false, double norm_mean = 0.0,
+                         double norm_std = 0.0, bool late_open = false,
+                         bool late_start = false);
+
+  /** fvcam which is used as source */
+  firevision::Camera *cam_;
+
+private:
+  typedef enum {
+    TYPE_UNSUPPORTED = 0,
+    TYPE_UINT = 1,
+    TYPE_INT = 2,
+    TYPE_FLOAT = 3,
+    TYPE_DOUBLE = 4,
+    TYPE_UCHAR = 5,
+    TYPE_CHAR = 6,
+    TYPE_CHAR16 = 7,
+  } BASE_TYPE;
+  firevision::colorspace_t should_colorspace_;
+  unsigned int width_, height_;
+
+  void resize(const unsigned char *in_buffer, unsigned char *out_buffer,
+              firevision::colorspace_t colorspace, unsigned int old_width,
+              unsigned int old_height, unsigned int new_width,
+              unsigned int new_height);
+  void convert(const unsigned char *in_buffer, unsigned char *out_buffer,
+               firevision::colorspace_t old_colorspace,
+               firevision::colorspace_t new_colorspace, unsigned int width,
+               unsigned int height);
+
+  template <typename T> void normalize(T *buffer, size_t size);
+
+  int colorspace_to_cv_type(firevision::colorspace_t colorspace);
+  BASE_TYPE colorspace_to_base_type(firevision::colorspace_t colorspace);
+
+  bool own_final_buffer_;
+  unsigned char *final_buffer_;
+
+  bool normalize_;
+  double normalize_mean_;
+  double normalize_std_;
+
+  bool late_open_;
+  bool late_start_;
+};
+
+#endif

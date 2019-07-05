@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="TensorflowInterface" author="Morian Sonnet" year="2019">
+  <data>
+    <comment>
+        Interface to access tensorflow plugin
+    </comment>
+    <field type="uint32" name="msgid">The ID of the triggering message to which the done flag refers to</field>
+    <field type="bool" name="is_done">Whether the Tensorflow run is done</field>
+      <!--TODO give more flexible possibilites for output-->
+  </data>
+  <message name="LoadGraphFile">
+    <comment>Load a neural network from a file</comment>
+    <field type="string" length="256" name="file_path">The file including the network</field>
+    <field type="string" length="256" name="input_node">The name of the input node in the graph</field>
+    <field type="string" length="256" name="output_node">The name of the output node in the graph</field>
+  </message>
+  <message name="SetSourceImageSHM">
+    <comment>Use image data from this SHM as source. The data is only actually read upon triggering the run.</comment>
+    <field type="string" length="256" name="shm_id">The SHM key to use as source</field>
+    <field type="string" length="256" name="hostname">The hostname on which the SHM resides</field>
+    <field type="bool" name="normalize">Whether the image shall be normalized</field>
+    <field type="float" name="norm_mean">Mean for normalization</field>
+    <field type="float" name="norm_std">Std for normalization</field>
+    <field type="uint32" name="width">Width of image after conversion</field>
+    <field type="uint32" name="height">Height of image after conversion</field>
+    <field type="uint32" name="image_dtype">Dtype of image after conversion</field>
+  </message>
+  <message name="SetSourceImageFile">
+    <comment>Use image data from this File as source. The data is only actually read upon triggering the run.</comment>
+    <field type="string" length="256" name="file_name">The file to use as source</field>
+    <field type="bool" name="normalize">Whether the image shall be normalized</field>
+    <field type="float" name="norm_mean">Mean for normalization</field>
+    <field type="float" name="norm_std">Std for normalization</field>
+    <field type="uint32" name="width">Width of image after conversion</field>
+    <field type="uint32" name="height">Height of image after conversion</field>
+    <field type="uint32" name="image_dtype">Dtype of image after conversion</field>
+  </message>
+  <message name="SetSourceImageV4L2">
+    <comment>Use image data from this V4L2 device as source. The data is only actually read upon triggering the run.</comment>
+    <field type="string" length="256" name="device_name">The device to use as source</field>
+    <field type="bool" name="normalize">Whether the image shall be normalized</field>
+    <field type="float" name="norm_mean">Mean for normalization</field>
+    <field type="float" name="norm_std">Std for normalization</field>
+    <field type="uint32" name="width">Width of image after conversion</field>
+    <field type="uint32" name="height">Height of image after conversion</field>
+    <field type="uint32" name="image_dtype">Dtype of image after conversion</field>
+  </message>
+    <!--TODO give other possibilities for source-->
+  <message name="SetOutputClassificationBlackboard">
+    <comment>Add an outputter to write a classification result to the blackboard</comment>
+    <field type="string" length="256" name="classification_table">The table of classification</field>
+  </message>
+  <message name="TriggerRun">
+    <comment>Trigger a run of the network</comment>
+  </message>
+
+</interface>
