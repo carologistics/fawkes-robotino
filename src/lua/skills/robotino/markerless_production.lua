@@ -183,6 +183,10 @@ fsm:add_transitions{
   {"INIT", "GOTO_STATION", cond=true},
 }
 
+function MOVE_BACK:init() 
+  self.args["motor_move"].x=-0.8
+end
+
 
 function INIT:init()
    laserline_switch:msgq_enqueue(laserline_switch.EnableSwitchMessage:new())
