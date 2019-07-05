@@ -92,7 +92,7 @@ function find_ll_direction(lines)
   -- determination of laser line is done
 
   if closest_ll == -1 then
-    return {x=0.0,y=1.0}
+    return {x=0.0,y=-1.0}
   else
     direction = {x=lines[closest_ll]:line_direction(0),y=lines[closest_ll]:line_direction(1)}
     length_direction = math.sqrt(math.pow(direction.x,2)+math.pow(direction.y,2))
