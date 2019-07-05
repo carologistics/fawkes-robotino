@@ -167,7 +167,7 @@
   ?ze <- (wm-fact (key exploration fact time-searched args? zone ?zn) (value ?ts&:(<= ?ts ?*EXP-SEARCH-LIMIT*)))
   (wm-fact (key exploration fact line-vis args? zone ?zn) (value ?vh&:(> ?vh 0)))
 
-  (not (wm-fact (key exploration fact line-vis args? zone ?zn3&:(< (distance-mf (zone-center ?zn3) ?trans) (distance-mf (zone-center ?zn) ?trans))) (value ?vh3&: (> ?vh 0))))
+  (not (wm-fact (key exploration fact line-vis args? zone ?zn3&:(< (distance-mf (zone-center ?zn3) ?trans) (distance-mf (zone-center ?zn) ?trans))) (value ?vh3&: (> ?vh3 0))))
 
   (plan (id ?plan-id&EXPLORATION-PLAN) (goal-id ?goal-id))
   (not (plan (id EXPLORE-ZONE)))
