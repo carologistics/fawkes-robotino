@@ -29,6 +29,7 @@
   (if (or (eq ?error "Conveyor Align Failed") (eq ?error "Drive To Machine Point Failed")) then
     (return TRUE)
   )
+  (if (eq ?error "Unsatisfied precondition") then (return FALSE))
   (if (and (or (eq ?an wp-put) (eq ?an wp-put-slide-cc))
            (any-factp ((?if RobotinoSensorInterface))
                       (and (not (nth$ 1 ?if:digital_in)) (nth$ 2 ?if:digital_in)))) then
@@ -273,7 +274,7 @@
           (printout error "Precondition " ?da:predicate ?da:param-values " is not satisfied" crlf)
     )
   )
-  (modify ?p (state FAILED))
+  (modify ?p (state FAILED) (error-msg "Unsatisfied precondition"))
   (retract ?pt)
 )
 
