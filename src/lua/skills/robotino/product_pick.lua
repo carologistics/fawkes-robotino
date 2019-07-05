@@ -70,8 +70,7 @@ function is_grabbed()
  if robotino_sensor:is_digital_in(0) == false and robotino_sensor:is_digital_in(1) == true then -- white cable on DI1 and black on DI2
     return true
  else
-   -- Ignore puck laser, until realsense is disabled by default 
-   return true
+    return false
  end
 end
 
@@ -83,7 +82,7 @@ function pose_not_exist()
 
    }
 
-   local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper")
+   local transformed_pos = tfm.transform6D(target_pos, "conveyor_pose", "odom")
    if transformed_pos == nil then
      return true
    end
@@ -177,7 +176,8 @@ function GRIPPER_ALIGN:init()
                        ori = { x = 0, y = 0, z = 0, w = 0}
   }
 
-  local grip_pos = tfm.transform6D(target_pos, "conveyor_pose", "gripper")
+  local grip_pos_odom = tfm.transform6D(target_pos, "conveyor_pose", "odom")
+  local grip_pos = tfm.transform6D(grip_pos_odom, "odom", "gripper")
 
   local pose = pose_gripper_offset(grip_pos.x,grip_pos.y,grip_pos.z)
   self.args["gripper_commands"] = pose

@@ -48,8 +48,8 @@ local pam = require("parse_module")
 
 -- Constants
 local FITNESS_THRESHOLD = {           -- low is the minimum required fitness to do anything
-   conveyor = { low = 8, high = 20 }, -- if fitness is >= high, we assume that the fit is perfect
-   slide = { low = 7, high = 20 }     -- and don't re-run ICP after moving
+   conveyor = { low = 15, high = 25 }, -- if fitness is >= high, we assume that the fit is perfect
+   slide = { low = 15, high = 25 }     -- and don't re-run ICP after moving
 }
 
 local GRIP_OFFSET = {
@@ -179,7 +179,15 @@ end
 function result_ready()
   if if_conveyor_pose:is_busy()
      or if_conveyor_pose:msgid() ~= fsm.vars.msgid
-  then return false end
+  then
+    return false
+  end
+
+  if if_conveyor_pose:msgid() == fsm.vars.msgid
+     and not if_conveyor_pose:is_busy()
+  then
+    return true
+  end
 
   local bb_stamp = fawkes.Time:new(if_conveyor_pose:input_timestamp(0), if_conveyor_pose:input_timestamp(1))
   if not tf:can_transform("conveyor_pose", "base_link", bb_stamp) then
@@ -203,6 +211,7 @@ fsm:define_states{ export_to=_M,
    {"MOVE_GRIPPER", SkillJumpState, skills={{gripper_commands}}, final_to="LOOK", failed_to="FAILED"},
    {"LOOK", JumpState},
    {"DRIVE", SkillJumpState, skills={{motor_move}}, final_to="DRIVE_DONE", failed_to="FAILED"},
+   {"MOVE_BACK", SkillJumpState, skills={{motor_move}}, final_to="LOOK", failed_to="FAILED"},
    {"LOOK_DONE", JumpState},
    {"DRIVE_DONE", JumpState},
 }
@@ -215,10 +224,12 @@ fsm:add_transitions{
    {"LOOK", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"LOOK", "LOOK_DONE", cond=result_ready, desc="conveyor_pose result ready"},
    
-   {"LOOK_DONE", "LOOK", cond="tolerance_ok() == nil"},
+   {"LOOK_DONE", "LOOK", cond="tolerance_ok() == nil", desc="TF error"},
    {"LOOK_DONE", "FINAL", cond="fitness_high() and tolerance_ok()"},
    {"LOOK_DONE", "FAILED", cond="vars.retries > MAX_RETRIES"},
-   {"LOOK_DONE", "DRIVE", cond="fitness_low() or not tolerance_ok()"},
+   {"LOOK_DONE", "FAILED", cond="vars.vision_retries > MAX_VISION_RETRIES"},
+   {"LOOK_DONE", "DRIVE", cond="fitness_min()"},
+   {"LOOK_DONE", "MOVE_BACK", cond="not fitness_min()"},
 
    {"DRIVE_DONE", "FINAL", cond="fitness_high() and tolerance_ok()"},
    {"DRIVE_DONE", "FAILED", cond="vars.vision_retries > MAX_VISION_RETRIES"},
@@ -261,6 +272,11 @@ function LOOK:exit()
    if_conveyor_pose:msgq_enqueue_copy(msg)
    
    self.fsm.vars.target_pos_odom = tfm.transform(TARGET_POS, "conveyor_pose", "odom")
+end
+
+function MOVE_BACK:init()
+   self.args["motor_move"].x = -0.015
+   self.args["motor_move"].tolerance = { x = 0.01 }
 end
 
 function MOVE_GRIPPER:init()
