@@ -166,8 +166,6 @@ fsm:add_transitions{
 }
 
 function MOVE_GRIPPER_UP:init()
-  local grip_pos = tfm.transform6D(self.fsm.vars.target_pos_odom, "odom", "gripper")
-  local pose = pose_gripper_offset(grip_pos.x,grip_pos.y,grip_pos.z)
   self.args["gripper_commands"].x = 0.0
   self.args["gripper_commands"].y = 0.0
   self.args["gripper_commands"].z = -gripper_down_to_puck
