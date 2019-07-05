@@ -138,8 +138,8 @@ fsm:add_transitions{
    {"FIND_LINE",   "ALIGN_FAST",       cond="self.fsm.vars.found_line"},
    {"FIND_LINE",   "NO_LINE",          timeout=2, desc="cannot find line"},
 
-   {"FIND_AVG_LINE", "ALIGN_PRECISE",  timeout=0.5},
-   {"FIND_AVG_LINE", "FIND_LINE", cond="vars.tried_find_avg_line > 30 and not self.fsm.vars.found_line"},
+   {"FIND_AVG_LINE", "ALIGN_PRECISE",  timeout=0.9},
+   {"FIND_AVG_LINE", "FIND_LINE", cond="vars.tried_find_avg_line > 7 and not self.fsm.vars.found_line"},
 
    {"NO_LINE",       "FAILED",          cond="vars.tried_searching > MAX_TRIES"},
    {"NO_LINE",       "SEARCH_LINE", cond=true},
