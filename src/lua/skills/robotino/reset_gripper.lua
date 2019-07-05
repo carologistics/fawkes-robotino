@@ -89,7 +89,6 @@ end
 
 fsm:define_states{ export_to=_M, closure={should_calibrate=should_calibrate},
   {"INIT", JumpState},
-  {"GO_UP", SkillJumpState, skills={{gripper_commands}}, final_to="GO_BACK", fail_to="FAILED"},
   {"GO_BACK", SkillJumpState, skills={{gripper_commands}}, final_to="DECIDE_CAL", fail_to="FAILED"},
   {"DECIDE_CAL", JumpState},
   {"CALIBRATE", SkillJumpState, skills={{gripper_commands}}, final_to="HOME", fail_to="FAILED"},
@@ -97,19 +96,10 @@ fsm:define_states{ export_to=_M, closure={should_calibrate=should_calibrate},
 }
 
 fsm:add_transitions{
-   {"INIT", "GO_UP", cond=true},
+   {"INIT", "GO_BACK", cond=true},
    {"DECIDE_CAL", "CALIBRATE", cond=should_calibrate},
    {"DECIDE_CAL", "HOME", cond=true},
 }
-
-function GO_UP:init()
-  local pose = pose_gripper_offset(0,0,0)
-  self.args["gripper_commands"].command="MOVEABS"
-  self.args["gripper_commands"].x = pose.x
-  self.args["gripper_commands"].y = pose.y
-  self.args["gripper_commands"].z = height_safe
-  self.args["gripper_commands"].wait = true
-end
 
 function GO_BACK:init()
   local pose = pose_gripper_offset(0,0,0) -- CAREFUL, THIS WILL STILL BE THE OLD POSITION (BEFORE GO_UP)
