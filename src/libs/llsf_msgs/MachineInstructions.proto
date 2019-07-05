@@ -50,11 +50,6 @@ enum MachineSide {
   OUTPUT = 2;
 }
 
-message SSTask {
-  required SSOp   operation = 2;
-  required SSSlot shelf     = 3;
-}
-
 message PrepareInstructionBS {
   required MachineSide side  = 1;
   required BaseColor   color = 2;
@@ -67,7 +62,7 @@ message PrepareInstructionDS {
 }
 
 message PrepareInstructionSS {
-  required SSTask task = 1;
+  required SSOp   operation = 1;
 }
 
 message PrepareInstructionRS {
