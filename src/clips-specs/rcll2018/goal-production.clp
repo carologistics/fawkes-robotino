@@ -138,8 +138,12 @@
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   (wm-fact (key refbox order ?order delivery-begin) (value 0))
-
-  (wm-fact (key domain fact wp-cap-color args? wp ? col ?other-cap-color&~?cap-color&~CAP_NONE))
+  (wm-fact (key config rcll store-standing-c0) (value ?store-standing))
+  (wm-fact (key domain fact wp-cap-color args? wp ? col ?other-cap-color))
+  (test (or (and (eq ?other-cap-color ?cap-color) ?store-standing)
+            (and (not ?store-standing)
+                 (not (eq ?other-cap-color ?cap-color))
+                 (not (eq ?other-cap-color CAP_NONE)))))
   ;SS CEs
   (wm-fact (key domain fact mps-type args? m ?ss t SS))
   (wm-fact (key domain fact mps-state args? m ?ss s ~BROKEN))
