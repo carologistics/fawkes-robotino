@@ -490,9 +490,10 @@
 " Remove a retracted goal if it has no parent (anymore).
   Goal trees are retracted recursively from top to bottom.
 "
-  ?g <- (goal (id ?goal-id) (class ?class) (parent ?parent)
+  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
+  ?g <- (goal (id ?goal-id)
         (mode RETRACTED) (acquired-resources))
-  (not (goal (id ?parent)))
+  (not (goal (parent ?goal-id)))
 =>
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
     (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
@@ -500,16 +501,6 @@
     )
     (retract ?p)
   )
-  (retract ?g)
-)
-
-
-(defrule goal-reasoner-remove-retracted-subgoal-of-maintain-goal
-" Remove a retracted sub-goal of a maintain goal once the parent is EVALUATED."
-  ?g <- (goal (id ?goal-id) (parent ?parent) (acquired-resources)
-              (class ?class) (mode RETRACTED))
-  (goal (id ?parent) (type MAINTAIN) (mode EVALUATED))
-=>
   (retract ?g)
 )
 
@@ -536,6 +527,7 @@
   ?g <- (goal (id ?goal) (parent ?parent) (type ACHIEVE)
               (sub-type ?sub-type) (class ?class&:(production-goal ?class))
               (mode FORMULATED))
+  (not (goal (parent ?goal)))
   (goal (id ?some-leaf) (class ?some-class&:(production-goal ?some-class))
         (sub-type SIMPLE) (mode DISPATCHED))
 =>
