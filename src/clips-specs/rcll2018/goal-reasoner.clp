@@ -397,26 +397,6 @@
   (printout t "Goal " ?goal-id " failed because of " ?an crlf)
 )
 
-(defrule goal-reasoner-evaluate-failed-wp-get
-" After a failed wp-get with multiple retries, we want to reset the mps"
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  (plan-action (id ?id) (goal-id ?goal-id)
-	             (plan-id ?plan-id) (action-name ?an&:(or (eq ?an wp-get) (eq ?an wp-put-slide-cc)))
-	             (param-values $? ?mps $?)
-	             (state FAILED))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
-  ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
-                (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
-  (domain-object (name ?mps) (type mps))
-  =>
-  (retract ?t)
-  (assert
-    (wm-fact (key monitoring shame args? r ?self m ?mps))
-  )
-  (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
-)
-
 (defrule goal-reasouner-evaluate-failed-exog-actions
   " If an exogenous action failed, this means that something went totally wrong.
     However, it is unlikely that we are able to continue using the mps. Therefore
