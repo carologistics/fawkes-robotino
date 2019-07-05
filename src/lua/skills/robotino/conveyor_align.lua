@@ -179,7 +179,15 @@ end
 function result_ready()
   if if_conveyor_pose:is_busy()
      or if_conveyor_pose:msgid() ~= fsm.vars.msgid
-  then return false end
+  then
+    return false
+  end
+
+  if if_conveyor_pose:msgid() == fsm.vars.msgid
+     and not if_conveyor_pose:is_busy()
+  then
+    return true
+  end
 
   local bb_stamp = fawkes.Time:new(if_conveyor_pose:input_timestamp(0), if_conveyor_pose:input_timestamp(1))
   if not tf:can_transform("conveyor_pose", "base_link", bb_stamp) then
@@ -219,7 +227,8 @@ fsm:add_transitions{
    {"LOOK_DONE", "LOOK", cond="tolerance_ok() == nil", desc="TF error"},
    {"LOOK_DONE", "FINAL", cond="fitness_high() and tolerance_ok()"},
    {"LOOK_DONE", "FAILED", cond="vars.retries > MAX_RETRIES"},
-   {"LOOK_DONE", "DRIVE", cond="fitness_min() and not tolerance_ok()"},
+   {"LOOK_DONE", "FAILED", cond="vars.vision_retries > MAX_VISION_RETRIES"},
+   {"LOOK_DONE", "DRIVE", cond="fitness_min()"},
    {"LOOK_DONE", "MOVE_BACK", cond="not fitness_min()"},
 
    {"DRIVE_DONE", "FINAL", cond="fitness_high() and tolerance_ok()"},
