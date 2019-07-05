@@ -231,15 +231,11 @@ end
 
 function MPS_ALIGN_BEFORE_PUT:init()
   self.args["markerless_mps_align"].x=0.3
-  local laserline = find_ll(self.fsm.vars.lines)
-  local center_ll = llutils.center(laserline)
   self.args["markerless_mps_align"].y= 0.03
 end
 
 function MPS_ALIGN_BEFORE_PICK:init()
   self.args["markerless_mps_align"].x=0.3
-  local laserline = find_ll(self.fsm.vars.lines)
-  local center_ll = llutils.center(laserline)
   self.args["markerless_mps_align"].y= - 0.03
 end
 
@@ -299,22 +295,36 @@ end
 
 function SWITCH_SIDE_BEFORE:init()
   local laserline = find_ll(self.fsm.vars.lines)
-  local center_ll = llutils.center(laserline)
-  local pos_to_go_ll = llutils.point_in_front(center_ll,-0.9)
-  local target_pos = tfm.transform(pos_to_go_ll, "base_laser", "base_link")
-  self.args["relgoto"].rel_x = target_pos.x
-  self.args["relgoto"].rel_y = target_pos.y
-  self.args["relgoto"].ori=target_pos.ori+3.14
+  if laserline ~= nil then
+    local center_ll = llutils.center(laserline)
+    local pos_to_go_ll = llutils.point_in_front(center_ll,-0.9)
+    local target_pos = tfm.transform(pos_to_go_ll, "base_laser", "base_link")
+    self.args["relgoto"].rel_x = target_pos.x
+    self.args["relgoto"].rel_y = target_pos.y
+    self.args["relgoto"].ori = target_pos.ori+3.14
+  else
+    print("WARNING: Could not find a laserline")
+    self.args["relgoto"].rel_x = -1.5
+    self.args["relgoto"].rel_y = 0.0
+    self.args["relgoto"].ori = 3.14
+  end
 end
 
 function SWITCH_SIDE:init()
   local laserline = find_ll(self.fsm.vars.lines)
-  local center_ll = llutils.center(laserline)
-  local pos_to_go_ll = llutils.point_in_front(center_ll,-0.9)
-  local target_pos = tfm.transform(pos_to_go_ll, "base_laser", "base_link")
-  self.args["relgoto"].rel_x = target_pos.x
-  self.args["relgoto"].rel_y = target_pos.y
-  self.args["relgoto"].ori=target_pos.ori+3.14
+  if laserline ~= nil then
+    local center_ll = llutils.center(laserline)
+    local pos_to_go_ll = llutils.point_in_front(center_ll,-0.9)
+    local target_pos = tfm.transform(pos_to_go_ll, "base_laser", "base_link")
+    self.args["relgoto"].rel_x = target_pos.x
+    self.args["relgoto"].rel_y = target_pos.y
+    self.args["relgoto"].ori=target_pos.ori+3.14
+  else
+    print("WARNING: Could not find a laserline")
+    self.args["relgoto"].rel_x = -1.7
+    self.args["relgoto"].rel_y = 0.0
+    self.args["relgoto"].ori=3.14
+  end
 end
 
 function SHELF_PICK:init()
