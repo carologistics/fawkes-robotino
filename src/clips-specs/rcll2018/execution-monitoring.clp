@@ -172,18 +172,6 @@
                                               (wm-key-prefix ?wf:key (create$ domain fact wp-at)))
            (assert (wm-fact (key monitoring cleanup-wp args? wp (wm-key-arg ?wf:key wp))))
   )
-  (if (not (any-factp ((?wf wm-fact)) (and (wm-key-prefix ?wf:key (create$ domain fact mps-side-free))
-                                           (eq (wm-key-arg ?wf:key m) ?mps)
-                                           (eq (wm-key-arg ?wf:key side) INPUT))))
-      then
-    (assert (wm-fact (key domain fact mps-side-free args? m ?mps side INPUT) (value TRUE) (type BOOL)))
-  )
-  (if (not (any-factp ((?wf wm-fact)) (and (wm-key-prefix ?wf:key (create$ domain fact mps-side-free))
-                                           (eq (wm-key-arg ?wf:key m) ?mps)
-                                           (eq (wm-key-arg ?wf:key side) OUTPUT))))
-      then
-    (assert (wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT) (value TRUE) (type BOOL)))
-  )
 )
 
 
@@ -391,14 +379,19 @@
   =>
   (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?wp (wm-key-args ?wf:key)) FALSE)
                                          (or
-                                           (wm-key-prefix ?wf:key (create$ domain fact wp-at))
                                            (wm-key-prefix ?wf:key (create$ domain fact wp-usable))
-	                                         (wm-key-prefix ?wf:key (create$ domain fact wp-on-shelf))
+	                                   (wm-key-prefix ?wf:key (create$ domain fact wp-on-shelf))
                                            (wm-key-prefix ?wf:key (create$ monitoring cleanup-wp))
                                          )
                                     )
     (retract ?wf)
     (printout t "WP-fact " ?wf:key crlf " domain fact flushed!"  crlf)
+  )
+  (do-for-all-facts ((?wf wm-fact)) (and (wm-key-prefix ?wf:key (create$ domain fact wp-at))
+				         (eq ?wp (wm-key-arg ?wf:key wp)))
+    (assert (wm-fact (key domain fact mps-side-free args? m (wm-key-arg ?wf:key m) side (wm-key-arg ?wf:key side)) (type BOOL) (value TRUE)))
+    (retract ?wf)
+    (printout t "WP-fact " ?wf:key crlf " domain fact flushed!" crlf)
   )
   (assert (wm-fact (key wp-unused args? wp ?wp)))
   (retract ?cleanup)
