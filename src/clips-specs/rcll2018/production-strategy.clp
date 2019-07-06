@@ -24,6 +24,7 @@
 ; expected point gains, time estimates and info about the required production
 ; steps.
 (defglobal
+  ?*DEADLINE-C2-C3-START* = 540
   ?*SALIENCE-PRODUCTION-STRATEGY* = -1
 )
 
@@ -576,4 +577,27 @@
     (wm-fact (key mps-handling process ss-retrieve-c0 ?ss args? m ?ss wp ?wp))
     (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   )
+)
+
+
+(defrule production-strategy-prevent-c2-c3-mid-game
+  (wm-fact (key refbox game-time)
+           (values ?curr-time&:(> ?curr-time ?*DEADLINE-C2-C3-START*) $?))
+  (not (blocked C2|C3))
+=>
+  (assert (blocked C2)
+          (blocked C3))
+)
+
+
+(defrule production-strategy-allow-c1-on-failed-c2-c3
+  (wm-fact (key refbox game-time)
+           (values ?curr-time&:(> ?curr-time ?*DEADLINE-C2-C3-START*) $?))
+  (not (allowed C1))
+  (not (and (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+            (wm-fact (key domain fact order-complexity
+                      args? ord ?order com C2|C3))
+       ))
+=>
+  (assert (allowed C1))
 )
