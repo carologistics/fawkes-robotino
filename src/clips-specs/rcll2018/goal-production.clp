@@ -129,8 +129,8 @@
   (not (goal (class SPAWN-WP)))
   (not (goal (class SPAWN-SS-C0)))
   (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
-  ; Give Replenisher one minute to place the C0 into the SS
-  (wm-fact (key refbox game-time) (values ?sec&:(> ?sec 60) $?))
+  ; Give Replenisher some time to place the C0 into the SS
+  (wm-fact (key refbox game-time) (values ?sec&:(> ?sec 45) $?))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact self args? r ?robot))
   ;Standing Order CEs
