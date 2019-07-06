@@ -19,7 +19,7 @@ documentation = [==[Tries to recognize a MPS
 -- Crucial skill information
 name               = "recognize_mps"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
-depends_skills     = {"markerless_mps_align"}
+depends_skills     = {"markerless_mps_align", "say"}
 depends_interfaces = {
    {v = "if_picture_taker", type = "PictureTakerInterface", id="PictureTaker"},
 }
@@ -27,23 +27,39 @@ depends_interfaces = {
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
-fsm:define_states{ export_to=_M,
+function tf_done()
+    if os.execute("kill -0 " .. string.format("%d",fsm.vars.tf_pid)) ~= 0 then
+      return true
+    else 
+      return false
+    end
+end
+
+fsm:define_states{ export_to=_M, closure={tf_done=tf_done},
    {"INIT", JumpState},
    {"MPS_ALIGN", SkillJumpState, skills={{markerless_mps_align}}, final_to="SHORT_WAIT", fail_to="FAILED"},
    {"TAKE_NEW_PICTURE", JumpState},
+   {"START_RECOGNIZE_PICTURE", JumpState},
    {"RECOGNIZE_PICTURE", JumpState},
+   {"RECOGNIZE_PICTURE_LAST", JumpState},
    {"SHORT_WAIT", JumpState},
-   {"TAKE_PICTURE", JumpState},
    {"DECIDE", JumpState},
+   {"YELL_OUT_THE_RESULT", SkillJumpState, skills={{say}}, final_to="FINAL", fail_to="FINAL"},
 }
 
 fsm:add_transitions{
    {"INIT", "MPS_ALIGN", cond=true},
-   {"SHORT_WAIT", "TAKE_NEW_PICTURE", timeout=0.3},
-   {"TAKE_NEW_PICTURE", "RECOGNIZE_PICTURE", timeout=1},
-   {"RECOGNIZE_PICTURE", "MPS_ALIGN", cond="vars.index <= 3"},
-   {"RECOGNIZE_PICTURE", "DECIDE", cond=true},
-   {"DECIDE", "FINAL", timeout=1}
+   {"SHORT_WAIT", "RECOGNIZE_PICTURE", cond="vars.index > 1 and tf_done()"},
+   {"SHORT_WAIT", "TAKE_NEW_PICTURE", cond="vars.index == 1"},
+   {"SHORT_WAIT", "TAKE_NEW_PICTURE", timeout=10},
+   {"RECOGNIZE_PICTURE", "TAKE_NEW_PICTURE", timeout=0.3},
+   {"TAKE_NEW_PICTURE", "START_RECOGNIZE_PICTURE", timeout=1},
+   {"START_RECOGNIZE_PICTURE", "MPS_ALIGN", cond="vars.index <= 3"},
+   {"START_RECOGNIZE_PICTURE", "RECOGNIZE_PICTURE_LAST", cond="tf_done()"},
+   {"START_RECOGNIZE_PICTURE", "DECIDE", timeout=10},
+   {"RECOGNIZE_PICTURE_LAST", "DECIDE", cond=true},
+   {"DECIDE", "FAILED", cond="vars.max_confidence < 0.1"},
+   {"DECIDE", "YELL_OUT_THE_RESULT", cond=true}
 }
 
 function INIT:init()
@@ -60,6 +76,7 @@ function INIT:init()
     self.fsm.vars.results[label] = 0.0
     print(label)
   end
+  self.fsm.vars.texts = {bs="base station", cs="cap station", rs="ring station", ss="storage station"}
 end
 
 function TAKE_NEW_PICTURE:init()
@@ -69,11 +86,35 @@ function TAKE_NEW_PICTURE:init()
   end
 end
 
-function RECOGNIZE_PICTURE:init()
+function START_RECOGNIZE_PICTURE:init()
   os.execute("convert -rotate \"180\" /tmp/new_image.jpg /tmp/new_image.jpg")
-  os.execute("python $HOME/label_image.py --graph=$HOME/recognition_model/output_graph_io.pb --labels=$HOME/recognition_model/output_labels_io.txt --input_layer=Placeholder --output_layer=final_result --image=/tmp/new_image.jpg > bla.txt")
-  lines1 = io.lines("bla.txt")
-  for line in lines1 do
+  os.execute("python $HOME/label_image.py --graph=$HOME/recognition_model/output_graph_io.pb --labels=$HOME/recognition_model/output_labels_io.txt --input_layer=Mul --output_layer=final_result --image=/tmp/new_image.jpg > bla.txt & echo $! > pid.txt")
+  for line in io.lines('pid.txt') do
+    self.fsm.vars.tf_pid = tonumber(line)
+  end
+  print(self.fsm.vars.tf_pid)
+
+  self.fsm.vars.index=self.fsm.vars.index+1	
+end
+
+function RECOGNIZE_PICTURE:init()
+  print("recognize done, analyzation")
+  lines = io.lines("bla.txt")
+  for line in lines do
+    label, _, confidence = string.match(line, "(%a+) (%a) (%d+\.?%d+)")
+    print(label, confidence)
+    for _,possible_label in pairs(self.fsm.vars.possible_station) do
+     if label == possible_label then
+       self.fsm.vars.results[label] = self.fsm.vars.results[label] + confidence
+       break
+     end
+    end
+  end
+end
+
+function RECOGNIZE_PICTURE_LAST:init()
+  lines = io.lines("bla.txt")
+  for line in lines do
     label, _, confidence = string.match(line, "(%a+) (%a) (%d+\.?%d+)")
     for _,possible_label in pairs(self.fsm.vars.possible_station) do
      if label == possible_label then
@@ -82,8 +123,6 @@ function RECOGNIZE_PICTURE:init()
      end
     end
   end
-
-  self.fsm.vars.index=self.fsm.vars.index+1	
 end
 
 function MPS_ALIGN:init()
@@ -93,14 +132,18 @@ function MPS_ALIGN:init()
 end
 
 function DECIDE:init()
-  local max_confidence = 0.0
-  local max_label = ""
+  self.fsm.vars.max_confidence = 0.0
+  self.fsm.vars.max_label = ""
   for label, confidence in pairs(self.fsm.vars.results) do
     printf("%s %f", label, confidence)
-    if confidence > max_confidence then
-      max_confidence = confidence
-      max_label = label
+    if confidence > self.fsm.vars.max_confidence then
+      self.fsm.vars.max_confidence = confidence
+      self.fsm.vars.max_label = label
     end
   end
-  printf("This is a %s", max_label)
+  printf("This is a %s", self.fsm.vars.texts[self.fsm.vars.max_label])
+end
+
+function YELL_OUT_THE_RESULT:init()
+  self.args["say"].text = "This is a " .. self.fsm.vars.texts[self.fsm.vars.max_label]
 end
