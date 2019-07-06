@@ -121,7 +121,7 @@ fsm:add_transitions{
    {"WAIT", "FAILED", cond="is_error()"},
    {"WAIT", "FINAL", cond="vars.wait ~= nil and not vars.wait"},
    {"WAIT", "FINAL", cond="arduino:is_final() and tf_ready()"},
-   {"WAIT", "FAILED", timeout=15},
+   {"WAIT", "FAILED", timeout=20},
 }
 
 function COMMAND:init()
