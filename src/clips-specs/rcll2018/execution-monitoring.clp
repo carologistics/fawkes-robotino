@@ -515,7 +515,7 @@
 ;======================================Misc==============================
 ;
 
-(defrule execution-monitoring-wp-get-failed-reset-mps
+(defrule execution-monitoring-wp-get-finally-failed
 " If a wp-get failed, we have to reset the mps to make sure, that there is no workpiece
   pushed into the mps
 "
@@ -531,10 +531,12 @@
   (test (eq FALSE (should-retry ?an ?error)))
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
+  (domain-fact (name mps-state) (param-values ?mps ?state))
+  (domain-fact (name wp-at) (param-values ?wp ?mps ?side))
   =>
-  (printout error "wp-get failed not by aligning: reset " ?mps crlf)
+  (printout error "wp-get failed not by aligning: lost " ?wp crlf)
   (assert
-    (wm-fact (key evaluated reset-mps args? m ?mps))
+    (wm-fact (key monitoring cleanup-wp args? wp ?wp))
     (wm-fact (key monitoring safety-discard))
   )
 )

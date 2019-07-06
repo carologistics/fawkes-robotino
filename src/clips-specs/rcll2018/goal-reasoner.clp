@@ -96,6 +96,7 @@
               (eq ?goal-class MOUNT-FIRST-RING)
               (eq ?goal-class MOUNT-NEXT-RING)
               (eq ?goal-class DELIVER)
+              (eq ?goal-class RESET-MPS) 
               (eq ?goal-class WAIT)
               (eq ?goal-class GO-WAIT)
               (eq ?goal-class WAIT-FOR-MPS-PROCESS)))
@@ -316,6 +317,17 @@
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
+
+(defrule goal-reasoner-evaluate-mps-reset-completed
+  " Remove reset-mps flag after a successful reset-mps goal
+  "
+  ?g <- (goal (id ?id) (class RESET-MPS) (mode FINISHED)
+                      (outcome COMPLETED) (params r ?self m ?mps))
+  ?t <- (wm-fact (key evaluated reset-mps args? m ?mps))
+  =>
+  (retract ?t)
+  (modify ?g (mode EVALUATED))
+)
 
 (defrule goal-reasoner-evaluate-production-maintain
   "Clean up all rs-fill-priorities facts when the production maintenance goal
