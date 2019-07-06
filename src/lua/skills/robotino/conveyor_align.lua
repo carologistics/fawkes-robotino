@@ -53,7 +53,7 @@ local FITNESS_THRESHOLD = {           -- low is the minimum required fitness to 
 }
 
 local GRIP_OFFSET = {
-   x = 0.02,
+   x = 0.03,
    y = 0,
    z = 0.02,
    ori = { x = 0, y = 0, z = 0, w = 1 }
