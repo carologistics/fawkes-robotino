@@ -139,6 +139,7 @@
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   (wm-fact (key refbox order ?order delivery-begin) (value 0))
   (wm-fact (key config rcll store-standing-c0) (value ?store-standing))
+  (wm-fact (key config rcll use-ss) (value TRUE))
   (wm-fact (key domain fact wp-cap-color args? wp ? col ?other-cap-color))
   (test (or (and (eq ?other-cap-color ?cap-color) ?store-standing)
             (and (not ?store-standing)
