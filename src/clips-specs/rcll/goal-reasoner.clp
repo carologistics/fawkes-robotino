@@ -98,6 +98,7 @@
               (eq ?goal-class MOUNT-FIRST-RING)
               (eq ?goal-class MOUNT-NEXT-RING)
               (eq ?goal-class DELIVER)
+              (eq ?goal-class RESET-MPS) 
               (eq ?goal-class WAIT)
               (eq ?goal-class GO-WAIT)
               (eq ?goal-class WAIT-FOR-MPS-PROCESS)))
