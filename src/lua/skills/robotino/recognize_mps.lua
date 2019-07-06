@@ -71,23 +71,10 @@ end
 
 function RECOGNIZE_PICTURE:init()
   os.execute("convert -rotate \"180\" /tmp/new_image.jpg /tmp/new_image.jpg")
-  os.execute("python $HOME/label_image.py --graph=$HOME/recognition_model/output_graph.pb --labels=$HOME/recognition_model/output_labels.txt --input_layer=Placeholder --output_layer=final_result --image=/tmp/new_image.jpg > bla.txt")
+  os.execute("python $HOME/label_image.py --graph=$HOME/recognition_model/output_graph_io.pb --labels=$HOME/recognition_model/output_labels_io.txt --input_layer=Placeholder --output_layer=final_result --image=/tmp/new_image.jpg > bla.txt")
   lines1 = io.lines("bla.txt")
   for line in lines1 do
-    label, confidence = string.match(line, "(%a+) (%d+\.?%d+)")
-    for _,possible_label in pairs(self.fsm.vars.possible_station) do
-     if label == possible_label then
-       self.fsm.vars.results[label] = self.fsm.vars.results[label] + confidence
-       break
-     end
-    end
-  end
-
-  os.execute("python $HOME/label_image.py --graph=$HOME/recognition_model/output_graph2.pb --labels=$HOME/recognition_model/output_labels2.txt --input_layer=Mul --output_layer=final_result --image=/tmp/new_image.jpg > bla.txt")
-  lines2 = io.lines("bla.txt")
-  local result
-  for line in lines2 do
-    label, confidence = string.match(line, "(%a+) (%d+\.?%d+)")
+    label, _, confidence = string.match(line, "(%a+) (%a) (%d+\.?%d+)")
     for _,possible_label in pairs(self.fsm.vars.possible_station) do
      if label == possible_label then
        self.fsm.vars.results[label] = self.fsm.vars.results[label] + confidence
