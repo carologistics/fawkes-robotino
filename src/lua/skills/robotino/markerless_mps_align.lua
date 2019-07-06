@@ -229,6 +229,7 @@ end
 
 
 function ALIGN_PRECISE:init()
+  if self.fsm.vars.found_line ~= nil then
    local center = llutils.center(self.fsm.vars.found_line)
    printf("center l avg: %f, %f, %f", center.x, center.y, center.ori)
    local center_bl = tfm.transform(center, "/base_laser", "/base_link")
@@ -241,6 +242,9 @@ function ALIGN_PRECISE:init()
       y = p.y+math.cos(p.ori)*self.fsm.vars.y,
       ori = p.ori,
    }
+  else
+    self.args["motor_move"] = { x= EXTRA_X_FAST_OFFSET}
+  end
 end
 
 
