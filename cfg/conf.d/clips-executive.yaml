@@ -237,6 +237,7 @@ clips-executive:
           # standing C0 is stored.
 
           store-standing-c0: true
+          use-ss: false
 
           # Bots that are enabled can formulate production goals,
           # disabled bots only formulate wait goals
