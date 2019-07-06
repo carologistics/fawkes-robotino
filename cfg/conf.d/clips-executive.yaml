@@ -238,7 +238,7 @@ clips-executive:
           # else, a C0 with the same base and opposite cap color as the
           # standing C0 is stored.
 
-          store-standing-c0: false
+          store-standing-c0: true
 
           # Bots that are enabled can formulate production goals,
           # disabled bots only formulate wait goals
