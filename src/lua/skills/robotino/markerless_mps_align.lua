@@ -69,19 +69,13 @@ local MIN_VIS_HIST_LINE=5 --15
 local MAX_ORI=15 -- in degrees
 local MAX_TRIES=7
 
--- 0.15 is ~9 degrees
-local search_angles={0.15,-0.3,0.45,-0.6,0.75,-0.9,1.05,-1.2}
+-- 0.25 is ~15 degrees
+local search_angles={0.25,-0.5,0.75,-1.0,1.25,-1.5,1.75,-2}
 
 local LINE_LENGTH_MIN=0.64
 local LINE_LENGTH_MAX=0.71
 
 local EXTRA_X_FAST_OFFSET=0.1
-
-local TURN_MOVES={
-   { ori = math.pi},
-   { ori = -math.pi/2},
-   { ori = -math.pi}
-}
 
 function find_line(lines, prealigned)
   if prealigned == nil then
