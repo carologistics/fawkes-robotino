@@ -82,7 +82,7 @@ function find_line(lines, prealigned)
     prealigned = false
   end
   local closest_ll = nil
-  local min_distance = math.huge
+  local min_distance = 2.0 -- math.huge
   for line_id,line in pairs(lines) do
     local center = llutils.center(line)
     local distance = math.sqrt(math.pow(center.x,2),math.pow(center.y,2))
