@@ -562,7 +562,7 @@
   (not (wm-fact (key order meta wp-for-order args? wp ?any-wp ord ?order)))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key domain fact quantity-delivered ?team-color)
+  (wm-fact (key domain fact quantity-delivered ?order ?team-color)
            (value ?qd-us&:(< ?qd-us ?qr)))
   (wm-fact (key refbox game-time) (values ?curr-time $?))
   (wm-fact (key refbox order ?order delivery-end)
