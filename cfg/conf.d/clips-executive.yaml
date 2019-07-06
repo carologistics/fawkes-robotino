@@ -116,6 +116,11 @@ clips-executive:
               - skills-actions.clp
               - rcll2018/noop-actions.clp
               - rcll2018/wait-actions.clp
+          - name: refbox-init
+            files:
+              - rcll2018/refbox-comm-init.clp
+              - rcll2018/refbox-worldmodel.clp
+
 
       action-mapping:
         enter-field: >

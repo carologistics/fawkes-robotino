@@ -85,7 +85,7 @@
   Refer to fixed-squence.clp for the expandation of the goal and the creation of the EXPLORATION-PLAN
   The EXPLORATION-PLAN let the robot visit a number of configurable points. If a possible machine was detected, this plan is interrupted
 "
-
+  (wm-fact (key refbox phase) (value EXPLORATION))
   (not (goal (id ?goal-id) (class EXPLORATION)))
   (wm-fact (key domain fact self args? r ?r))
 
