@@ -598,3 +598,15 @@
 =>
   (assert (allowed C1))
 )
+
+
+(defrule production-strategy-reset-mps-on-config
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?mps t ?))
+  ?ro <- (wm-fact (key config rcll reset-once) (values $?val&:(member$ (str-cat ?mps) $?val)))
+=>
+  (assert (wm-fact (key evaluated reset-mps args? m ?mps)
+                   (type BOOL) (value TRUE)))
+  (modify ?ro (values (delete$ ?val (member$ (str-cat ?mps) ?val) (member$ (str-cat ?mps) ?val))))
+)
