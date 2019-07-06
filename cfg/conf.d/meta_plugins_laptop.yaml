@@ -49,6 +49,7 @@ fawkes/meta_plugins:
     - ros-pcl
     - skiller-rest-api
     - skiller_motor_state
+    - festival
   m-robot-memory:
     - mongodb
     - robot-memory
