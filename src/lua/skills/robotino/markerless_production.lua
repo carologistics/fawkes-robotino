@@ -251,7 +251,7 @@ end
 function GOTO_STATION:init()
   self.args["goto"].place = self.fsm.vars.place
   self.args["goto"].distance = 1.0
-  self.args["goto"].place_ori = self.fsm.var.place_ori
+  self.args["goto"].place_ori = self.fsm.vars.place_ori
 end
 
 function CONVEYOR_ALIGN:init()
