@@ -1320,7 +1320,6 @@
                 )
                 (required-resources ?mps)
   ))
-  (retract ?t)
 )
 
 

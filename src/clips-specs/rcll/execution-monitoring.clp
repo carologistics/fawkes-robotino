@@ -425,7 +425,7 @@
 ;======================================Misc==============================
 ;
 
-(defrule execution-monitoring-wp-get-failed-reset-mps
+(defrule execution-monitoring-wp-get-finally-failed
 " If a wp-get failed, we have to reset the mps to make sure, that there is no workpiece
   pushed into the mps
 "
