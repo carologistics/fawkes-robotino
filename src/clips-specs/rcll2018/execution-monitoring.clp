@@ -320,9 +320,6 @@
 )
 
 
-
-  ?t <- (action-time (plan-id ?plan-id) (action-id ?id)
-
 (defrule execution-monitoring-detect-timeout
 " If an action was longer than its timeout-duration in a volatile state like pending or pending-sensed-effect
   reason that this action got stuck and set it to failed
