@@ -51,7 +51,7 @@ local conveyor_gripper_up_z = 0.025   -- distance to move gripper up after closi
 
 local drive_back_x = -0.1      -- distance to drive back after closing the gripper
 
-local gripper_pose_offset_x = 0.02   -- conveyor pose offset in x direction
+local gripper_pose_offset_x = 0.015   -- conveyor pose offset in x direction
 local gripper_pose_offset_y = 0.00   -- conveyor_pose offset in y direction
 local gripper_pose_offset_z = 0.035  -- conveyor_pose offset in z direction
 
