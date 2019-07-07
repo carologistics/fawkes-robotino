@@ -519,7 +519,7 @@
   (goal (id ?g) (class PROCESS-MPS) (params m ?rs) (mode FINISHED)
                 (outcome COMPLETED))
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
-  (wm-fact (key domain fact mps-team args? m ?rs col ?team))
+  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT))
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key wp meta next-step args? wp ?wp) (value ?ns&RING1|RING2|RING3))
@@ -541,7 +541,7 @@
   ?strat <- (wm-fact (key strategy keep-mps-side-free
                       args? m ?rs side INPUT cause ?wp))
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
-  (wm-fact (key domain fact mps-team args? m ?rs col ?team))
+  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
   (not (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
 =>
   (retract ?strat)
@@ -554,6 +554,7 @@
 "
   (wm-fact (key domain fact ss-stored-wp args? m ?ss wp ?wp))
   (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?any-order)))
+  (wm-fact (key config rcll use-ss) (value TRUE))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-complexity args? ord ?order com C0))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
@@ -562,7 +563,7 @@
   (not (wm-fact (key order meta wp-for-order args? wp ?any-wp ord ?order)))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key domain fact quantity-delivered ?team-color)
+  (wm-fact (key domain fact quantity-delivered ?order ?team-color)
            (value ?qd-us&:(< ?qd-us ?qr)))
   (wm-fact (key refbox game-time) (values ?curr-time $?))
   (wm-fact (key refbox order ?order delivery-end)
@@ -596,4 +597,16 @@
        ))
 =>
   (assert (allowed C1))
+)
+
+
+(defrule production-strategy-reset-mps-on-config
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?mps t ?))
+  ?ro <- (wm-fact (key config rcll reset-once) (values $?val&:(member$ (str-cat ?mps) $?val)))
+=>
+  (assert (wm-fact (key evaluated reset-mps args? m ?mps)
+                   (type BOOL) (value TRUE)))
+  (modify ?ro (values (delete$ ?val (member$ (str-cat ?mps) ?val) (member$ (str-cat ?mps) ?val))))
 )

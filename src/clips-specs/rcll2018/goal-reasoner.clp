@@ -61,6 +61,7 @@
   ?*MAX-RETRIES-PUT-SLIDE* = 2
   ?*GOAL-MAX-TRIES* = 3
 
+  ?*SALIENCE-GOAL-REJECT-AFTER-DISPATCH* = 600
   ?*SALIENCE-GOAL-FORMULATE* = 500
   ?*SALIENCE-GOAL-REJECT* = 400
   ?*SALIENCE-GOAL-EXPAND* = 300
@@ -514,7 +515,7 @@
 " Retract a formulated sub-goal of the production tree once a production leaf
   goal is dispatched.
 "
-  (declare (salience ?*SALIENCE-GOAL-REJECT*))
+  (declare (salience ?*SALIENCE-GOAL-REJECT-AFTER-DISPATCH*))
   ?g <- (goal (id ?goal) (parent ?parent) (type ACHIEVE)
               (sub-type ?sub-type) (class ?class&:(production-goal ?class))
               (mode FORMULATED))
