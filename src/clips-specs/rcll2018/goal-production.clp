@@ -435,7 +435,6 @@
   ;MPS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t BS))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
   ;WP CEs
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
   =>
