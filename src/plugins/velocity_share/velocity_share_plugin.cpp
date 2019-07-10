@@ -19,9 +19,9 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "velocity_share_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
@@ -35,15 +35,14 @@ using namespace fawkes;
  */
 class VelocitySharePlugin : public fawkes::Plugin
 {
- public:
-  /** Constructor.
+public:
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  VelocitySharePlugin(Configuration *config)
-    : Plugin(config)
-  {
-    thread_list.push_back(new VelocityShareThread());
-  }
+	VelocitySharePlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new VelocityShareThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Fawkes Velocity Share Plugin to share position and velocities")

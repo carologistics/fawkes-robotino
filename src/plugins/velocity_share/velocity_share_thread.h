@@ -24,66 +24,64 @@
 
 #include <aspect/logging.h>
 #include <aspect/tf.h>
-#include <core/threading/thread.h>
-#include <tf/types.h>
-#include <plugins/ros/aspect/ros.h>
-#include <utils/time/wait.h>
-#include <plugins/robot-memory/aspect/robot_memory_aspect.h>
-#include <interfaces/Position3DInterface.h>
-#include <interfaces/MotorInterface.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <nav_msgs/Path.h>
-#include <velocity_share_msgs/RobotVelInfo.h>
-#include <ros/subscriber.h>
-#include <ros/node_handle.h>
 #include <config/change_handler.h>
+#include <core/threading/thread.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <interfaces/MotorInterface.h>
+#include <interfaces/Position3DInterface.h>
+#include <nav_msgs/Path.h>
+#include <plugins/robot-memory/aspect/robot_memory_aspect.h>
+#include <plugins/ros/aspect/ros.h>
+#include <ros/node_handle.h>
+#include <ros/subscriber.h>
+#include <tf/types.h>
+#include <utils/time/wait.h>
+#include <velocity_share_msgs/RobotVelInfo.h>
 
-
-class VelocityShareThread
-    : public fawkes::Thread,
-    public fawkes::ClockAspect,
-    public fawkes::LoggingAspect,
-    public fawkes::ConfigurableAspect,
-    public fawkes::ConfigurationChangeHandler,
-    public fawkes::BlackBoardAspect,
-    public fawkes::ROSAspect,
-    public fawkes::TransformAspect,
-    public fawkes::RobotMemoryAspect
+class VelocityShareThread : public fawkes::Thread,
+                            public fawkes::ClockAspect,
+                            public fawkes::LoggingAspect,
+                            public fawkes::ConfigurableAspect,
+                            public fawkes::ConfigurationChangeHandler,
+                            public fawkes::BlackBoardAspect,
+                            public fawkes::ROSAspect,
+                            public fawkes::TransformAspect,
+                            public fawkes::RobotMemoryAspect
 {
 public:
-  VelocityShareThread();
+	VelocityShareThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual void finalize();
 
 private:
-  // Implemented abstracts inherited from ConfigurationChangeHandler
-  virtual void config_tag_changed(const char *new_tag);
-  virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v);
-  virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v);
-  virtual void config_value_erased(const char *path);
+	// Implemented abstracts inherited from ConfigurationChangeHandler
+	virtual void config_tag_changed(const char *new_tag);
+	virtual void config_value_changed(const fawkes::Configuration::ValueIterator *v);
+	virtual void config_comment_changed(const fawkes::Configuration::ValueIterator *v);
+	virtual void config_value_erased(const char *path);
 
-  fawkes::TimeWait *time_wait_;
-  float update_rate_;
-  bool update_needed_;
+	fawkes::TimeWait *time_wait_;
+	float             update_rate_;
+	bool              update_needed_;
 
-  unsigned int cfg_max_cell_lookahead_count_;
-  unsigned int cfg_number_of_segments_;
+	unsigned int cfg_max_cell_lookahead_count_;
+	unsigned int cfg_number_of_segments_;
 
-  // used to determine the priority between robots
-  int robot_number_;
+	// used to determine the priority between robots
+	int robot_number_;
 
-  void load_config();
+	void load_config();
 
-  ros::Subscriber path_sub_;
-  nav_msgs::Path path_;
-  ros::Time now_;
+	ros::Subscriber path_sub_;
+	nav_msgs::Path  path_;
+	ros::Time       now_;
 
-  std::string vel_share_pub_topic_;
-  ros::Publisher vel_share_pub_;
+	std::string    vel_share_pub_topic_;
+	ros::Publisher vel_share_pub_;
 
-  void pathCallback(const ros::MessageEvent<const nav_msgs::Path> &path);
+	void pathCallback(const ros::MessageEvent<const nav_msgs::Path> &path);
 };
 
 #endif
