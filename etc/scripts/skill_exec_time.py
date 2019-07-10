@@ -26,17 +26,19 @@ from datetime import datetime
 import re
 
 skill_start_regex = '.*==>\s+.*\(skill\s+.*\(status S_RUNNING\).*\)'
-skill_end_regex =  '.*==>\s+.*\(skill\s+.*\(status S_FINAL\).*\)'
+skill_end_regex = '.*==>\s+.*\(skill\s+.*\(status (S_FINAL|S_FAILED)\).*\)'
 skill_name_regex = '.*\(skill\s.*\(name ([\w-]+)\).*'
+skill_success_regex = '.*==>\s+.*\(skill\s+.*\(status (\w+)\).*\)'
 time_regex = '\w\s([0-9:.]+)\s.*'
 time_format = '%H:%M:%S.%f'
 
 
 class SkillCall:
 
-    def __init__(self, skill_name, skill_args, start, end):
+    def __init__(self, skill_name, skill_args, result, start, end):
         self.skill_name = skill_name
         self.skill_args = skill_args
+        self.result = result
         self.start = start
         self.end = end
         assert self.end > self.start
@@ -49,7 +51,8 @@ class SkillCall:
                 'Mismatching lines: "{}", "{}"'.format(start_line, end_line))
         start = SkillCall.parse_time(start_line)
         end = SkillCall.parse_time(end_line)
-        return cls(skill_name, [], start, end)
+        result = re.match(skill_success_regex, end_line).group(1)
+        return cls(skill_name, [], result, start, end)
 
     @classmethod
     def parse_name(cls, line):
@@ -63,7 +66,7 @@ class SkillCall:
         return self.end - self.start
 
     def __str__(self):
-        return 'name: "{}", duration: {}'.format(self.skill_name, self.get_duration())
+        return 'name: "{}", duration: {}, result: {}'.format(self.skill_name, self.get_duration(), self.result)
 
     def __eq__(self, other):
         return self.skill_name == other.skill_name \
