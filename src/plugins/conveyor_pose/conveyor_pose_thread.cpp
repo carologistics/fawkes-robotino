@@ -669,21 +669,21 @@ bool ConveyorPoseThread::set_external_initial_tf(
   //-- compose translational part
   btVector3 init_origin;
   double *blackboard_origin = bb_init_guess_pose_->translation();
-  init_origin.setX(static_cast<float>(blackboard_origin[0]));
-  init_origin.setY(static_cast<float>(blackboard_origin[1]));
-  init_origin.setZ(static_cast<float>(blackboard_origin[2]));
+  init_origin.setX(static_cast<btScalar>(blackboard_origin[0]));
+  init_origin.setY(static_cast<btScalar>(blackboard_origin[1]));
+  init_origin.setZ(static_cast<btScalar>(blackboard_origin[2]));
 
   //-- compose orientation
   btMatrix3x3 init_basis;
   double *blackboard_orientation = bb_init_guess_pose_->rotation();
   btQuaternion init_orientation(
-      static_cast<float>(blackboard_orientation[0]) //-- x
+      static_cast<btScalar>(blackboard_orientation[0]) //-- x
       ,
-      static_cast<float>(blackboard_orientation[1]) //-- y
+      static_cast<btScalar>(blackboard_orientation[1]) //-- y
       ,
-      static_cast<float>(blackboard_orientation[2]) //-- z
+      static_cast<btScalar>(blackboard_orientation[2]) //-- z
       ,
-      static_cast<float>(blackboard_orientation[3])); //-- w
+      static_cast<btScalar>(blackboard_orientation[3])); //-- w
 
   init_basis.setRotation(init_orientation);
 
@@ -711,8 +711,8 @@ bool ConveyorPoseThread::set_external_initial_tf(
       std::isnan(orientation.getY()) || std::isinf(orientation.getY()) ||
       std::isnan(orientation.getZ()) || std::isinf(orientation.getZ()) ||
       std::isnan(orientation.getW()) || std::isinf(orientation.getW()) ||
-      std::abs(orientation.length() - 1.f) >
-          std::numeric_limits<float>::epsilon()) {
+      std::abs(orientation.length() - btScalar(1.)) >
+          std::numeric_limits<btScalar>::epsilon()) {
 
     logger->log_warn(
         name(),
@@ -738,7 +738,7 @@ bool ConveyorPoseThread::set_laserline_initial_tf(
   if (!tf_listener->transform_origin(best_laser_line_->end_point_frame_2(),
                                      best_laser_line_->end_point_frame_1(),
                                      initial_guess, Time(0, 0))) {
-    logger->log_error("Failed to transform from %s to %s",
+    logger->log_error(name(), "Failed to transform from %s to %s",
                             best_laser_line_->end_point_frame_2(),
                             best_laser_line_->end_point_frame_1());
     return false;
@@ -789,8 +789,8 @@ bool ConveyorPoseThread::set_laserline_initial_tf(
   if (std::isnan(translation.getX()) || std::isinf(translation.getX()) ||
       std::isnan(translation.getY()) || std::isinf(translation.getY()) ||
       std::isnan(translation.getZ()) || std::isinf(translation.getZ()) ||
-      std::abs(orientation.length() - 1.f) >
-          std::numeric_limits<float>::epsilon()) {
+      std::abs(orientation.length() - btScalar(1.)) >
+          std::numeric_limits<btScalar>::epsilon()) {
 
     logger->log_warn(name(),
                      "Laserline initial_guess_odom invalid [||R|| = %.10e, t = "
@@ -992,12 +992,12 @@ void ConveyorPoseThread::set_cg_thread(RecognitionThread *cg_thread) {
   recognition_thread_ = cg_thread;
 }
 
-void ConveyorPoseThread::config_value_erased(const char *path) {}
+void ConveyorPoseThread::config_value_erased(const char *) {}
 
-void ConveyorPoseThread::config_tag_changed(const char *new_tag) {}
+void ConveyorPoseThread::config_tag_changed(const char *) {}
 
 void ConveyorPoseThread::config_comment_changed(
-    const Configuration::ValueIterator *v) {}
+    const Configuration::ValueIterator *) {}
 
 void ConveyorPoseThread::config_value_changed(
     const Configuration::ValueIterator *v) {
@@ -1354,9 +1354,9 @@ ConveyorPoseThread::cloud_trim(ConveyorPoseThread::CloudPtr in) {
                                 initial_guess_odom_.frame_id),
           origin_pose);
     }
-    float x_ini = origin_pose.getOrigin()[X_DIR],
-          y_ini = origin_pose.getOrigin()[Y_DIR],
-          z_ini = origin_pose.getOrigin()[Z_DIR];
+    float x_ini = float(origin_pose.getOrigin()[X_DIR]),
+          y_ini = float(origin_pose.getOrigin()[Y_DIR]),
+          z_ini = float(origin_pose.getOrigin()[Z_DIR]);
 
     if (is_target_shelf()) { // using shelf cut values
       float x_min_temp = x_ini + (float)cfg_shelf_left_cut_,
