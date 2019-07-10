@@ -23,6 +23,7 @@ Parse the skill execution times from the log file and store them in a database.
 
 import argparse
 from datetime import datetime
+import pymongo
 import re
 
 skill_start_regex = '.*==>\s+.*\(skill\s+.*\(status S_RUNNING\).*\)'
@@ -95,6 +96,7 @@ class LogfileParser:
     def __init__(self, logfile):
         self.logfile = logfile
         self.skill_calls = []
+        self.parsed = False
 
     def parse_file(self):
         while True:
@@ -107,6 +109,12 @@ class LogfileParser:
             skill_call = SkillCall.from_lines(start_line, end_line)
             print('Parsed skill {}'.format(skill_call))
             self.skill_calls.append(skill_call)
+        self.parsed = True
+
+    def get_results(self):
+        if not self.parsed:
+            self.parse_file()
+        return self.skill_calls
 
     def find_start(self):
         while True:
@@ -125,13 +133,29 @@ class LogfileParser:
                 return next_line
 
 
+class ResultUploader:
+
+    def __init__(self, mongodb_uri, database='skill_execution', collection='calls'):
+        self.client = pymongo.MongoClient(mongodb_uri)
+        self.collection = self.client[database][collection]
+
+    def upload(self, call):
+        doc = call.__dict__
+        if not self.collection.find_one(doc):
+            self.collection.insert_one(doc)
+
+
 def main():
     parser = argparse.ArgumentParser(description='Skill execution time parser')
     parser.add_argument('logfile', type=argparse.FileType('r'), nargs='+')
+    parser.add_argument('--mongodb-uri', type=str, help='The MongoDB URI of the result database',
+                        default='mongodb://localhost:27017/')
     args = parser.parse_args()
+    uploader = ResultUploader(args.mongodb_uri)
     for logfile in args.logfile:
         file_parser = LogfileParser(logfile)
-        file_parser.parse_file()
+        for call in file_parser.get_results():
+            uploader.upload(call)
 
 
 if __name__ == '__main__':
