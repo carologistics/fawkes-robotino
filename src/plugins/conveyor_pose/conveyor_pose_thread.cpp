@@ -906,6 +906,7 @@ fawkes::LaserLineInterface *ConveyorPoseThread::laserline_get_best_fit() {
                                        center_ep, Time(0, 0)))
       continue;
 
+    center_ep.setOrigin(center_ep.getOrigin() / 2);
     // center_ep is is in the endpoint frame
 
     tf::Stamped<tf::Pose> center;
