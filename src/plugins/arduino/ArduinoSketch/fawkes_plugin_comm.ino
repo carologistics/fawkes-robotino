@@ -197,7 +197,8 @@ void set_status(int status_) {
 bool assumed_gripper_state;
 
 // @Return True if gripper is assumed to be open
-bool get_gripper_assumed_state(bool is_open_command) {
+// This helper function is necessary to set the assumed_gripper_state initially
+bool get_assumed_gripper_state(bool is_open_command) {
   static bool initialized = false;
   if(!initialized){
     initialized = true;
@@ -377,7 +378,7 @@ void read_package() {
         cur_cmd == CMD_SET_ACCEL) {
       if(sscanf (buffer_ + (cur_i_cmd + 1),"%ld",&new_value)<=0){buf_i_ = 0; return;} // flush and return if parsing error
     }
-    bool assumed_state;
+    bool assumed_gripper_state_local; // this is used to store the assumed gripper state locally, to reduce calls to the function get_assumed_gripper_state
     switch (cur_cmd) {
       case CMD_X_NEW_POS:
         set_new_pos(-new_value, motor_X);
@@ -440,8 +441,8 @@ void read_package() {
         break;
       case CMD_OPEN:
         check_gripper_endstop();
-        assumed_state = get_gripper_assumed_state(true);
-        if(!assumed_state && open_gripper || !open_gripper)
+        assumed_gripper_state_local = get_assumed_gripper_state(true);
+        if(!assumed_gripper_state_local && open_gripper || !open_gripper)
         { // we do it
           set_new_rel_pos(-a_toggle_steps,motor_A);
           assumed_gripper_state = true;
@@ -452,8 +453,8 @@ void read_package() {
         break;
       case CMD_CLOSE:
         check_gripper_endstop();
-        assumed_state = get_gripper_assumed_state(false);
-        if(assumed_state)
+        assumed_gripper_state_local = get_assumed_gripper_state(false);
+        if(assumed_gripper_state_local)
         { // we do it
           set_new_rel_pos(a_toggle_steps,motor_A);
           assumed_gripper_state = false;
