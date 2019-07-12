@@ -36,6 +36,7 @@ depends_interfaces = {
    {v = "line6_avg", type="LaserLineInterface", id="/laser-lines/6/moving_avg"},
    {v = "line7_avg", type="LaserLineInterface", id="/laser-lines/7/moving_avg"},
    {v = "line8_avg", type="LaserLineInterface", id="/laser-lines/8/moving_avg"},
+   {v = "robotino_sensor", type="RobotinoSensorInterface", id="Robotino"},
 }
 
 documentation      = [==[ shelf_pick
@@ -99,6 +100,20 @@ function find_ll_direction(lines)
   end
 end
 
+-- function to evaluate sensor data
+function is_grabbed()
+ if not robotino_sensor:has_writer() then
+   print_warn("No robotino sensor writer to check sensor")
+   return true
+ end
+ if robotino_sensor:is_digital_in(0) == false and robotino_sensor:is_digital_in(1) == true then -- white cable on DI1 and black on DI2
+    return true
+ else
+   return false
+ end
+end
+
+
 function pose_gripper_offset(x,y,z)
   local target_pos = { x = x,
                         y = y,
@@ -130,19 +145,22 @@ function pose_gripper_offset(x,y,z)
 end
 
 
-fsm:define_states{ export_to=_M, closure={},
+fsm:define_states{ export_to=_M, closure={is_grabbed=is_grabbed},
    {"INIT", SkillJumpState, skills={{gripper_commands}}, final_to="GOTO_SHELF", fail_to="FAILED" },
    {"GOTO_SHELF", SkillJumpState, skills={{motor_move}}, final_to="MOVE_ABOVE_PUCK", fail_to="FAILED"},
    {"MOVE_ABOVE_PUCK", SkillJumpState, skills={{gripper_commands}}, final_to="ADJUST_HEIGHT", fail_to="FAILED" },
    {"ADJUST_HEIGHT", SkillJumpState, skills={{gripper_commands}}, final_to="GRAB_PRODUCT", fail_to="FAILED" },
    {"GRAB_PRODUCT", SkillJumpState, skills={{gripper_commands}}, final_to="LEAVE_SHELF", fail_to="FAILED"},
    {"LEAVE_SHELF", SkillJumpState, skills={{motor_move}}, final_to="RESET_GRIPPER", fail_to="FAILED"},
-   {"RESET_GRIPPER", SkillJumpState, skills={{reset_gripper}}, final_to="FINAL", fail_to="FAILED"},
+   {"RESET_GRIPPER", SkillJumpState, skills={{reset_gripper}}, final_to="CHECK_PUCK", fail_to="FAILED"},
+   {"CHECK_PUCK", JumpState},
    {"WAIT_AFTER_GRAB", JumpState},
 }
 
 fsm:add_transitions{
    {"GOTO_SHELF", "FAILED", cond="vars.error"},
+   {"CHECK_PUCK", "FAILED", cond="not is_grabbed()", desc="Not holding puck"},
+   {"CHECK_PUCK", "FINAL", cond=true},
 }
 
 function INIT:init()
