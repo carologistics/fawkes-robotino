@@ -1,13 +1,15 @@
 (deffunction robot-needs-repair ()
-  (do-for-fact ((?df domain-fact)) (and (eq ?df:name comp-state) (eq (nth$ 1 ?df:param-values) BROKEN))
-      (printout error "Component " (nth$ 2 ?df:param-values) " is broken" crlf)
+  (do-for-fact ((?df domain-fact)) (and (eq ?df:name comp-state) (eq (nth$ 2 ?df:param-values) BROKEN)
+                                        (not (any-factp ((?do domain-object)) (and (eq ?do:name (nth$ 1 ?df:param-values)) (eq ?do:type mps))))
+                                   )
+     ; (printout error "Component " (nth$ 1 ?df:param-values) " is broken" crlf)
       (return TRUE)
   )
   (do-for-fact ((?hc hm-component)) TRUE
     (if (not (any-factp ((?df domain-fact)) (and (eq ?df:name comp-state)
                                               (eq (nth$ 1 ?df:param-values) ?hc:name))
          )) then
-      (printout error "Component " ?hc:name " has no state " crlf)
+     ; (printout error "Component " ?hc:name " has no state " crlf)
       (return TRUE)
     )
   )
