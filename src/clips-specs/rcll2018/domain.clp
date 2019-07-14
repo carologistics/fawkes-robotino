@@ -55,7 +55,7 @@
 (defrule domain-nowait-actions
   " Mark some actions that have a sensed effect as non-waiting. That means the effect is applied without sensing for it "
   (domain-loaded)
-	?o <- (domain-operator (name wp-put|wp-get|prepare-bs|prepare-rs|prepare-ds|prepare-cs|location-unlock) (wait-sensed ~FALSE))
+	?o <- (domain-operator (name wp-put|wp-get|prepare-bs|prepare-rs|prepare-ds|prepare-cs|location-unlock|gripper-calibrate) (wait-sensed ~FALSE))
 =>
 	(modify ?o (wait-sensed FALSE))
 )
@@ -83,30 +83,6 @@
 	(assert (domain-wm-flushed))
 )
 
-(defrule domain-sensing-actions
-  (not (domain-sensing-action))
-  =>
-  (assert
-    (domain-sensing-action (operator check-workpiece)
-                           (param-names r m side)
-                           (sensed-predicate mps-side-free)
-                           (sensed-param-names m side))
-    (domain-sensing-action (operator drive-to-check-workpiece)
-                           (param-names r m side)
-                           (sensed-predicate mps-side-free)
-                           (sensed-param-names m side))
-    (domain-sensing-action (operator gripper-calibrated)
-                           (sensed-predicate comp-state)
-                           (sensed-param-names comp state)
-                           (sensed-constants gripper CALIBRATED))
-    (domain-sensing-action (operator move-base-is-locked)
-                           (sensed-predicate comp-state)
-                           (sensed-param-names comp state)
-                           (sensed-constants move-base LOCKED))
-  )
-)
-
->>>>>>> cx: adapt pddl files to diagnosis requirements
 
 (defrule domain-load-initial-facts
 " Load all initial domain facts on startup of the game "

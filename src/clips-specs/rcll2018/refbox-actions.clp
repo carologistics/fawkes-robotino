@@ -184,7 +184,7 @@
 	?st <- (timer (name reset-mps-send-timer))
 	?at <- (timer (name reset-mps-abort-timer))
 ;	?md <- (metadata-prepare-mps ?mps $?date)
-	(wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
+	(wm-fact (key domain fact comp-state args? comp ?mps state BROKEN))
 	=>
 	(printout t "Action Reset " ?mps " is final" crlf)
 	(retract ?st ?at)
@@ -201,7 +201,7 @@
 	?st <- (timer (name prepare-mps-send-timer))
 	?at <- (timer (name prepare-mps-abort-timer))
 	?md <- (metadata-prepare-mps ?mps $?date)
-	(wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|PREPARED|PROCESSING|PROCESSED|AVAILABLE))
+	(wm-fact (key domain fact comp-state args? comp ?mps state READY-AT-OUTPUT|PREPARED|PROCESSING|PROCESSED|AVAILABLE))
 	=>
 	(printout t "Action Prepare " ?mps " is final" crlf)
 	(retract ?st ?at ?md)
@@ -220,7 +220,7 @@
 					(seq ?seq))
 	?st <- (timer (name reset-mps-send-timer))
 ;	?md <- (metadata-prepare-mps ?mps $?date)
-	(not (wm-fact (key domain fact mps-state args? m ?mps s BROKEN)))
+	(not (wm-fact (key domain fact comp-state args? comp ?mps state BROKEN)))
 	=>
 	(printout t "Action Reset " ?mps " is Aborted" crlf)
 	(retract ?st ?at);md
@@ -239,7 +239,7 @@
 					(seq ?seq))
 	?st <- (timer (name prepare-mps-send-timer))
 	?md <- (metadata-prepare-mps ?mps $?date)
-	(not (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|PREPARED|PROCESSING)))
+	(not (wm-fact (key domain fact comp-state args? comp ?mps state READY-AT-OUTPUT|PREPARED|PROCESSING)))
 	=>
 	(printout t "Action Prepare " ?mps " is Aborted" crlf)
 	(retract ?st ?md ?at)

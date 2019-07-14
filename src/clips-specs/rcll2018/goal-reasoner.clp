@@ -389,6 +389,16 @@
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
+(defrule goal-reasoner-gripper-repair
+  ?g <- (goal (id ?goal-id) (class REPAIR-GRIPPER) (mode FINISHED) (outcome ?outcome&:(or (eq ?outcome COMPLETED) (eq ?outcome FAILED))))
+  =>
+  (if (eq ?outcome COMPLETED) then
+     (assert (domain-fact (name comp-state) (param-values gripper CALIBRATED)))  
+  else
+     (assert (domain-fact (name comp-state) (param-values gripper BROKEN)))  
+  )
+  (modify ?g (mode EVALUATED))
+)
 
 (defrule goal-reasoner-evaluate-production-maintain
   "Clean up all rs-fill-priorities facts when the production maintenance goal
@@ -412,7 +422,7 @@
 "
   ?g <- (goal (id ?goal-id) (class PRODUCE-C0|MOUNT-FIRST-RING)
               (parent ?parent-id)
-              (mode FINISHED) (outcome ?outcome)
+              (mode FINISHED) (outcome COMPLETED)
               (params $?params))
  (plan (goal-id ?goal-id) (id ?plan-id))
  ?p <-(plan-action

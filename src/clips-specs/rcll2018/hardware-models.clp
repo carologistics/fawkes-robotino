@@ -1,8 +1,23 @@
+(deffunction robot-needs-repair ()
+  (do-for-fact ((?df domain-fact)) (and (eq ?df:name comp-state) (eq (nth$ 1 ?df:param-values) BROKEN))
+      (printout error "Component " (nth$ 2 ?df:param-values) " is broken" crlf)
+      (return TRUE)
+  )
+  (do-for-fact ((?hc hm-component)) TRUE
+    (if (not (any-factp ((?df domain-fact)) (and (eq ?df:name comp-state)
+                                              (eq (nth$ 1 ?df:param-values) ?hc:name))
+         )) then
+      (printout error "Component " ?hc:name " has no state " crlf)
+      (return TRUE)
+    )
+  )
+  (return FALSE)
+)
+
 (defrule hm-add-component
-  ?hc <- (hm-component (name ?name) (state ?state))
+  ?hc <- (hm-component (name ?name) (initial-state ?state))
   (domain-fact (name self) (param-values ?r))
   =>
-  (retract ?hc)
   (assert (domain-fact (name comp-state) (param-values ?name ?state)))
 )
 
@@ -31,16 +46,4 @@
   =>
   (retract ?t)
   (printout error "Invalid transition " ?trans " for component " ?comp " in state " ?state crlf)
-)
-
-(defrule hm-mps-components
-  (domain-fact (name mps-state) (param-values ?mps ?state))
-  ?cs <- (domain-fact (name comp-state) (param-values ?mps ?prev-state&:(neq ?state ?prev-state)))
-  =>
-  (if (any-factp ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ hardware edge args? comp ?mps from ?prev-state to ?state))) then
-    (printout t ?mps " changed state from " ?prev-state " to " ?state crlf)
-  else
-    (printout error ?mps " changed state from " ?prev-state " to " ?state " which is not part of the model" crlf)
-  )
-  (modify ?cs (param-values ?mps ?state))
 )

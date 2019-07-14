@@ -877,3 +877,16 @@
  )
  (modify ?g (mode EXPANDED))
 )
+
+(defrule goal-expaneder-repair
+  ?g <- (goal (id ?goal-id) (class REPAIR-GRIPPER) (mode SELECTED) (parent ?parent))
+  =>
+  (assert
+    (plan (id REPAIR-PLAN) (goal-id ?goal-id))
+      (plan-action (id 1) (plan-id REPAIR-PLAN) (goal-id ?goal-id)
+        (action-name gripper-calibrate)
+        (param-names)
+        (param-values))
+  )
+  (modify ?g (mode EXPANDED))
+)

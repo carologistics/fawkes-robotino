@@ -160,11 +160,11 @@
     (bind ?m-team (sym-cat (pb-field-value ?m "team_color")))
     (bind ?m-state (sym-cat (pb-field-value ?m "state")))
     (if (not (any-factp ((?wm-fact wm-fact)) 
-              (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-state))
-                    (eq ?m-name (wm-key-arg ?wm-fact:key m)))))
+              (and  (wm-key-prefix ?wm-fact:key (create$ domain fact comp-state))
+                    (eq ?m-name (wm-key-arg ?wm-fact:key comp)))))
       then
       (if (eq ?team-color ?m-team) then
-        (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state) (type BOOL) (value TRUE) ))
+        (assert (wm-fact (key domain fact comp-state args? comp ?m-name state ?m-state) (type BOOL) (value TRUE) ))
       )
     ; set available rings for ring-stations
       (if (eq ?m-type RS) then
@@ -174,11 +174,11 @@
       )
     )
    (do-for-fact ((?wm-fact wm-fact)) 
-                  (and  (wm-key-prefix ?wm-fact:key (create$ domain fact mps-state)) 
-                        (eq ?m-name (wm-key-arg ?wm-fact:key m))
-                        (neq ?m-state (wm-key-arg ?wm-fact:key s)))
+                  (and  (wm-key-prefix ?wm-fact:key (create$ domain fact comp-state)) 
+                        (eq ?m-name (wm-key-arg ?wm-fact:key comp))
+                        (neq ?m-state (wm-key-arg ?wm-fact:key state)))
       (retract ?wm-fact)
-      (assert (wm-fact (key domain fact mps-state args? m ?m-name s ?m-state) (type BOOL) (value TRUE))) 
+      (assert (wm-fact (key domain fact comp-state args? comp ?m-name state ?m-state) (type BOOL) (value TRUE))) 
     )
    )
 )

@@ -17,12 +17,14 @@
     (domain-fact (name self) (param-values ?r))
     (domain-object (name ?mps) (type mps))
     (domain-object (name ?side) (type mps-side))
+    (domain-fact (name at) (param-values ?r ?loc ?side))
     (not (plan-action (action-name drive-to-check-workpiece) (goal-id ?id) (param-values ?r ?mps ?side)))
     =>
     (bind ?plan-id (sym-cat DRIVE-TO-CHECK-WORKPIECE-PLAN- (gensym*)))
     (assert
         (plan (id ?plan-id) (goal-id ?id) (diag-wm-store FALSE))
-        (plan-action (goal-id ?id) (plan-id ?plan-id) (action-name drive-to-check-workpiece) (id 1) (param-names r m side) (param-values ?r ?mps ?side))
+        (plan-action (id 1) (goal-id ?id) (plan-id ?plan-id) (action-name move) (param-values ?r ?loc ?side ?mps ?side))
+        (plan-action (id 2) (goal-id ?id) (plan-id ?plan-id) (action-name check-workpiece) (param-names r m side) (param-values ?r ?mps ?side))
     )
 )
 

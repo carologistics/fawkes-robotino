@@ -20,168 +20,8 @@
 (defglobal
   ?*MONITORING-SALIENCE* = 1
   ?*COMMON-TIMEOUT-DURATION* = 30
-  ?*MPS-DOWN-TIMEOUT-DURATION* = 120
+  ?*MPS-DOWN-TIMEOUT-DURATION* = 50
   ?*HOLDING-MONITORING* = 60
-)
-
-;
-; ============================== MPS State Monitoring ==============================
-;
-
-(defrule execution-monitoring-spawn-missing-wp-on-ready-at-output
-" If an mps is READY-AT-OUTPUT and an action has a pending effect for it,
-  but there is no workpiece object at the output of this machine, generate a new workpiece
-"
-  (declare (salience ?*MONITORING-SALIENCE*))
-  (domain-pending-sensed-fact
-    (goal-id ?goal-id)
-    (action-id ?action-id)
-    (name mps-state)
-    (param-values ?mps READY-AT-OUTPUT)
-    (type POSITIVE))
-  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
-  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT)))
-  =>
-  (printout warn "Monitoring: MPS state READY-AT-OUTPUT but no WP at output, Yet action " ?action-id " in Goal " ?goal-id
-    "expected it!" crlf)
-  (bind ?wp-gen  (sym-cat WP- (gensym)))
-  (assert (domain-object (name (sym-cat WP- (gensym))) (type workpiece))
-          (wm-fact (key domain fact wp-at args? wp ?wp-gen m ?mps side OUTPUT))
-          (wm-fact (key domain fact wp-usable args? wp ?wp-gen))
-  )
-  (printout warn "A WP has been Generated at the OUTPUT side" crlf)
-)
-
-(defrule execution-monitoring-skipped-ready-at-output
-" Execution Monitoring MPS state
-  When a bot waits for an mps to be ready-at-output, and its idle, reason that it must have been ready at output in between
-  This is only reasonable, when the fact, that the bots waits for ready-at-output includes, that the mps actually was prepared correctly. Otherwise this will break things
-"
-  (declare (salience ?*MONITORING-SALIENCE*))
-  ?dp <- (domain-pending-sensed-fact (action-id ?action-id)
-            (plan-id ?plan-id)
-            (goal-id ?goal-id)
-            (name mps-state)
-            (param-values ?mps READY-AT-OUTPUT))
-  ?pa <- (plan-action (id ?action-id)
-            (plan-id ?plan-id)
-            (goal-id ?goal-id)
-            (state SENSED-EFFECTS-WAIT))
-  (wm-fact (key domain fact mps-state args m ?mps s IDLE))
-  =>
-  (printout warn "Monitoring: Waited for READY-AT-OUTPUT at " ?mps " and detected IDLE. Remove pending-sensed fact" crlf)
-  (retract ?dp)
-)
-
-(defrule execution-monitoring-reset-prepare-action-on-downed
-" If a machine is down while trying to prepare it, reset depending timers
-  and reset prepare action to FORMULATED. The prepare action will then be restarted
-  as soon as the machine is IDLE again
-  The timer refers to the refbox-action.clp timers
-"
-  (declare (salience ?*MONITORING-SALIENCE*))
-  (wm-fact (key domain fact mps-state args? m ?mps s DOWN))
-  ?pa <- (plan-action (id ?id) (goal-id ?goal-id)
-            (plan-id ?plan-id)
-            (action-name prepare-cs|prepare-rs|prepare-ds|prepare-bs)
-            (state RUNNING)
-            (param-values $? ?mps $?)
-            (executable TRUE))
-  ?ta <- (timer (name prepare-mps-abort-timer))
-  ?ts <- (timer (name prepare-mps-send-timer))
-  =>
-  (modify ?pa (state FORMULATED) (executable FALSE))
-  (retract ?ta ?ts)
-)
-
-
-(defrule execution-monitoring-broken-mps-add-fail-goal-flag
-" If an action makes use of a mps that is broken (and has the mps-state as precondition),
-  mark the corresponding goal to be failed.
-  Reason: A broken mps looses all stored parts, therefore making the current goal unable to achieve
-"
-  (declare (salience ?*MONITORING-SALIENCE*))
-  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
-  ?g <- (goal (id ?goal-id) (mode DISPATCHED))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (plan-action (id ?id) (plan-id ?plan-id) (goal-id ?goal-id)
-     (state FORMULATED|PENDING)
-     (param-values $? ?mps $?)
-     (action-name ?an))
-  (domain-atomic-precondition (operator ?an) (predicate mps-state) (param-values ?mps ?state))
-  (not (wm-fact (key monitoring fail-goal) (value ?goal-id)))
-  =>
-  (assert (wm-fact (key monitoring fail-goal) (type UNKNOWN) (value ?goal-id)))
-)
-
-
-(defrule execution-monitoring-broken-mps-fail-goal
-" If the current dispatched goal is marked to be failed and no action is running,
-  set the goal to finished and failed
-"
-  (declare (salience ?*MONITORING-SALIENCE*))
-  ?fg <-(wm-fact (key monitoring fail-goal) (type UNKNOWN) (value ?goal-id))
-  ?g <- (goal (id ?goal-id) (mode DISPATCHED))
-  (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state ~FORMULATED&~PENDING&~FINAL&~FAILED)))
-  =>
-  (printout t "Fail goal " ?goal-id " because it is unsatisfiable" crlf)
-  (retract ?fg)
-  (modify ?g (mode FINISHED) (outcome FAILED))
-)
-
-
-(defrule execution-monitoring-broken-mps-remove-facts
-" If a mps is broken, all stored parts and stati are lost.
-  Therefore, remove all corresponding facts and mark every workpiece at the machine for cleanup, since its lost
-  Afterwards reset the facts of the mps to the initial state, depending on the type of the mps
-"
-  (declare (salience ?*MONITORING-SALIENCE*))
-  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
-  (wm-fact (key domain fact mps-type args? m ?mps t ?type))
-  =>
-  (printout t "MPS " ?mps " was broken, cleaning up facts" crlf)
-  (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?mps (wm-key-args ?wf:key)) FALSE)
-                                         (or
-                                            (wm-key-prefix ?wf:key (create$ domain fact bs-prepared-color))
-                                            (wm-key-prefix ?wf:key (create$ domain fact ds-prepared-gate))
-                                            (wm-key-prefix ?wf:key (create$ domain fact bs-prepared-side))
-                                            (wm-key-prefix ?wf:key (create$ domain fact cs-prepared-for))
-                                            (wm-key-prefix ?wf:key (create$ domain fact cs-buffered))
-                                            (wm-key-prefix ?wf:key (create$ domain fact cs-can-perform))
-                                            (wm-key-prefix ?wf:key (create$ domain fact rs-filled-with))
-                                            (wm-key-prefix ?wf:key (create$ domain fact rs-prepared-color))
-	                                    (wm-key-prefix ?wf:key (create$ order meta wp-for-order))
-                                         )
-                                     )
-    (retract ?wf)
-    (printout t "Exec-Monotoring: Broken Machine " ?wf:key crlf " domain facts flushed!"  crlf)
-  )
-
-  (switch ?type
-    (case CS then
-      (assert (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP) (type BOOL) (value TRUE)))
-    )
-    (case RS then
-      (assert (wm-fact (key domain fact rs-filled-with args? m ?mps n ZERO) (type BOOL) (value TRUE)))
-    )
-  )
-  (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?mps (wm-key-args ?wf:key)) FALSE)
-                                              (wm-key-prefix ?wf:key (create$ domain fact wp-at)))
-           (assert (wm-fact (key monitoring cleanup-wp args? wp (wm-key-arg ?wf:key wp))))
-  )
-)
-
-
-(defrule execution-monitoring-broken-mps-reject-goals
-" Every goal that was formulated, that depends on a currently broken goal,
-  was formulated with outdated facts about the mps. Therfore, reject it.
-"
-  (declare (salience ?*MONITORING-SALIENCE*))
-  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
-  ?g <- (goal (id ?goal-id) (mode FORMULATED|SELECTED|EXPANDED) (params $? ?mps $?))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  =>
-  (modify ?g (mode FINISHED) (outcome REJECTED))
 )
 
 ;
@@ -263,7 +103,7 @@
   (domain-atomic-precondition (operator ?an) (predicate comp-state) (param-values ?mps ?state))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
-  (wm-fact (key domain fact mps-state args? m ?mps s ?s&~IDLE&~READY-AT-OUTPUT))
+  (wm-fact (key domain fact comp-state args? comp ?mps state ?s&~IDLE&~READY-AT-OUTPUT))
   ?pt <- (action-timer (plan-id ?plan-id)
             (action-id ?id)
             (start-time $?starttime)
@@ -273,78 +113,94 @@
   (modify ?pt (timeout-duration ?*MPS-DOWN-TIMEOUT-DURATION*))
 )
 
-;
-;======================================Retries=========================================
-;
+; =========================== Broken MPS ===============================
 
-(defrule execution-monitoring-start-retry-action-wp-get
-" Since wp-get is shaky sometimes, we want to retry it several times before actually failing it
-  Retries a maximum of ?*MAX-RETRIES-PICK* times
+(defrule execution-monitoring-broken-mps-fail-pending-action
+" If an action is pending and depends on a broken mps, we can instantly set it to failed,
+  since the precondition will never be satisfied.
 "
   (declare (salience ?*MONITORING-SALIENCE*))
+  (wm-fact (key domain fact comp-state args? comp ?mps state BROKEN))
   (goal (id ?goal-id) (mode DISPATCHED))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  ?pa <- (plan-action
-              (action-name ?an&wp-get)
-              (plan-id ?plan-id)
-              (goal-id ?goal-id)
-              (state FAILED)
-              (param-values $? ?wp $? ?mps $?))
-  (domain-obj-is-of-type ?mps mps)
-  (domain-obj-is-of-type ?wp workpiece)
-  (wm-fact (key domain fact self args? r ?r))
-  (not (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)))
+  ?pa <- (plan-action (id ?action-id)
+                      (action-name ?an)
+                      (goal-id ?goal-id)
+                      (param-values $? ?mps $?)
+                      (state PENDING))
+  (domain-atomic-precondition (operator ?an) (grounded-with ?action-id) (is-satisfied FALSE))
   =>
-  (if (< 1 ?*MAX-RETRIES-PICK*) then
-    (modify ?pa (state PENDING))
-    (assert
-      (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp) (value 1))
+  (modify ?pa (state EXECUTION-FAILED))
+)
+
+
+
+(defrule execution-monitoring-broken-mps-remove-facts
+" If a mps is broken, all stored parts and stati are lost.
+  Therefore, remove all corresponding facts and mark every workpiece at the machine for cleanup, since its lost
+  Afterwards reset the facts of the mps to the initial state, depending on the type of the mps
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (wm-fact (key domain fact comp-state args? comp ?mps state BROKEN))
+  (wm-fact (key domain fact mps-type args? m ?mps t ?type))
+  =>
+  (printout t "MPS " ?mps " was broken, cleaning up facts" crlf)
+  (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?mps (wm-key-args ?wf:key)) FALSE)
+                                         (or
+                                            (wm-key-prefix ?wf:key (create$ domain fact bs-prepared-color))
+                                            (wm-key-prefix ?wf:key (create$ domain fact ds-prepared-gate))
+                                            (wm-key-prefix ?wf:key (create$ domain fact bs-prepared-side))
+                                            (wm-key-prefix ?wf:key (create$ domain fact cs-prepared-for))
+                                            (wm-key-prefix ?wf:key (create$ domain fact cs-buffered))
+                                            (wm-key-prefix ?wf:key (create$ domain fact cs-can-perform))
+                                            (wm-key-prefix ?wf:key (create$ domain fact rs-filled-with))
+                                            (wm-key-prefix ?wf:key (create$ domain fact rs-prepared-color))
+                                            (and (wm-key-prefix ?wf:key (create$ mps-handling prepare))
+                                                 (member$ ?mps (wm-key-path ?wf:key)))
+                                            (and (wm-key-prefix ?wf:key (create$ mps-handling process))
+                                                 (member$ ?mps (wm-key-path ?wf:key)))
+                                         )
+                                     )
+    (retract ?wf)
+    (printout t "Exec-Monotoring: Broken Machine " ?wf:key crlf " domain facts flushed!"  crlf)
+  )
+
+  (switch ?type
+    (case CS then
+      (assert (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP) (type BOOL) (value TRUE)))
+    )
+    (case RS then
+      (assert (wm-fact (key domain fact rs-filled-with args? m ?mps n ZERO) (type BOOL) (value TRUE)))
     )
   )
+  (do-for-all-facts ((?wf wm-fact)) (and (neq (member$ ?mps (wm-key-args ?wf:key)) FALSE)
+                                              (wm-key-prefix ?wf:key (create$ domain fact wp-at)))
+           (assert (wm-fact (key monitoring cleanup-wp args? wp (wm-key-arg ?wf:key wp))))
+  )
+  (if (not (any-factp ((?wf wm-fact)) (and (wm-key-prefix ?wf:key (create$ domain fact mps-side-free))
+                                           (eq (wm-key-arg ?wf:key m) ?mps)
+                                           (eq (wm-key-arg ?wf:key side) INPUT))))
+      then
+    (assert (wm-fact (key domain fact mps-side-free args? m ?mps side INPUT)))
+  )
+  (if (not (any-factp ((?wf wm-fact)) (and (wm-key-prefix ?wf:key (create$ domain fact mps-side-free))
+                                           (eq (wm-key-arg ?wf:key m) ?mps)
+                                           (eq (wm-key-arg ?wf:key side) OUTPUT))))
+      then
+    (assert (wm-fact (key domain fact mps-side-free args? m ?mps side OUTPUT)))
+  )
 )
 
-
-(defrule execution-monitoring-retry-action-wp-get
-" If the retry of a failed wp-get is failed again, increment the counter and restart the action
+(defrule execution-monitoring-broken-mps-reject-goals
+" Every goal that was formulated, that depends on a currently broken goal,
+  was formulated with outdated facts about the mps. Therfore, reject it.
 "
   (declare (salience ?*MONITORING-SALIENCE*))
+  (wm-fact (key domain fact comp-state args? comp ?mps state BROKEN))
+  ?g <- (goal (id ?goal-id) (mode FORMULATED|SELECTED|EXPANDED) (params $? ?mps $?))
   (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id) (mode DISPATCHED))
-  ?pa <- (plan-action
-              (action-name ?an&wp-get)
-              (plan-id ?plan-id)
-              (goal-id ?goal-id)
-              (state FAILED)
-              (param-values $? ?wp $? ?mps $?))
-  (domain-obj-is-of-type ?mps mps)
-  (domain-obj-is-of-type ?wp workpiece)
-  (wm-fact (key domain fact self args? r ?r))
-  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp)
-          (value ?tries&:(< ?tries ?*MAX-RETRIES-PICK*)))
   =>
-  (bind ?tries (+ 1 ?tries))
-  (if (<= ?tries ?*MAX-RETRIES-PICK*) then
-    (modify ?pa (state PENDING))
-  )
-  (modify ?wm (value ?tries))
+  (modify ?g (mode FINISHED) (outcome REJECTED))
 )
-
-
-(defrule execution-monitoring-retry-action-wp-get-final
-  (plan-action
-        (action-name ?an&wp-get)
-        (state FINAL)
-        (param-values $? ?wp $? ?mps $?))
-  (domain-obj-is-of-type ?mps mps)
-  (domain-obj-is-of-type ?wp workpiece)
-  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an m ?mps wp ?wp))
-  =>
-  (retract ?wm)
-)
-
-;
-;======================================Misc==============================
-;
 
 (defrule execution-monitoring-cleanup-wp-facts
 "If a workpiece is lost, it is marked for cleanup.
@@ -365,31 +221,4 @@
   )
   (assert (wm-fact (key wp-unused args? wp ?wp)))
   (retract ?cleanup)
-)
-
-
-(defrule execution-monitoring-bs-switch-sides
-" If an agent tries to lock a side of a base station before a dispense and this side is already locked,
-  switch the side, since the base station can be operated from both sides
-"
-  ?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id)
-	          (id ?id)
-	          (action-name location-lock)
-	          (state RUNNING)
-	          (param-values ?bs ?side))
-  (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (action-name bs-dispense))
-  ?li <- (lock-info (name ?name) (goal-id ?goal-id) (plan-id ?plan-id) (action-id ?id) (status WAITING))
-  (test (eq ?name (sym-cat ?bs - ?side)))
-  ; Do not switch sides if the other side is blocked, too.
-  (not (mutex (name ?lock&:(eq ?lock (sym-cat ?bs - (if (eq ?side INPUT) then OUTPUT else INPUT)))) (state LOCKED)))
-  =>
-  (retract ?li)
-  (modify ?pa (state PENDING))
-  (delayed-do-for-all-facts
-    ((?p plan-action))
-    (and (eq ?p:goal-id ?goal-id) (eq ?p:plan-id ?plan-id) (neq FALSE (member$ ?bs ?p:param-values)) (neq FALSE (member$ ?side ?p:param-values)))
-    (printout t "Execution monitoring: Adapting " ?p:action-name crlf)
-    (modify ?p (param-values (replace-member$ ?p:param-values (if (eq ?side INPUT) then OUTPUT else INPUT) ?side)))
-  )
 )

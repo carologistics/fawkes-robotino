@@ -264,6 +264,7 @@
   (wm-fact (key domain fact robot-waiting args? r ?robot))
   (wm-fact (key refbox state) (value RUNNING))
   (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
+  (test (not (robot-needs-repair)))
   ; (NavGraphGeneratorInterface (final TRUE))
   ; (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
@@ -295,6 +296,7 @@
            (value ?qd&:(> ?qr ?qd)))
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
            (value ?end&:(> ?end (nth$ 1 ?game-time))))
+      (test (not (robot-needs-repair)))
   =>
   (printout t "Goal " FILL-CAP " for competitive order " ?order
               " is urgent." crlf)
@@ -313,7 +315,7 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
   ;MPS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact comp-state args? c ?mps s ~BROKEN&~DOWN))
+  (wm-fact (key domain fact comp-state args? comp ?mps state ~BROKEN&~DOWN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
   (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
@@ -321,6 +323,7 @@
   ;Capcarrier CEs
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+  (test (not (robot-needs-repair)))
   =>
   (bind ?priority-increase 0)
   ;If there is ...
@@ -357,6 +360,7 @@
 (defrule goal-production-create-clear-rs-from-expired-product
   "Remove an unfinished product from the output of a ring station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
   (goal (class CLEAR) (id ?maintain-id) (mode FORMULATED))
   (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -374,6 +378,7 @@
   ;TODO: Discuss strategy, throwing away expired products is usually not desired.
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
     (value ?end&:(< ?end (nth$ 1 ?game-time))))
+  (test (not (robot-needs-repair)))
   =>
   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*))) (class CLEAR-MPS)
@@ -395,6 +400,7 @@
   retrieving a cap from it.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
   (goal (id ?production-id) (class CLEAR) (mode FORMULATED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
@@ -403,11 +409,12 @@
   ;MPS CEs
   ;Maybe add a check for the base_color
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-;  (wm-fact (key domain fact comp-state args? c ?mps s READY-AT-OUTPUT))
+  (wm-fact (key domain fact comp-state args? comp ?mps state READY-AT-OUTPUT))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;WP CEs
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+    (test (not (robot-needs-repair)))
   =>
   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
@@ -435,9 +442,10 @@
   ;MPS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t BS))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact comp-state args? c ?mps s READY-AT-OUTPUT))
+  (wm-fact (key domain fact comp-state args? comp ?mps state READY-AT-OUTPUT))
   ;WP CEs
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side ?side))
+    (test (not (robot-needs-repair)))
   =>
   (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
@@ -465,7 +473,7 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact comp-state args? c ?mps s ~BROKEN&~DOWN))
+  (wm-fact (key domain fact comp-state args? comp ?mps state ~BROKEN&~DOWN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;WP CEs
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
@@ -473,6 +481,7 @@
 
   (wm-fact (key refbox order ?order delivery-end) (type UINT)
            (value ?end&:(< ?end (nth$ 1 ?game-time))))
+  (test (not (robot-needs-repair)))
   =>
   (printout t "Goal " CLEAR-MPS " (" ?mps ") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
@@ -496,6 +505,7 @@
 "
   ;Compute the priorities before goals get formulated.
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+
   (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
   (not (goal (class FILL-RS) (mode FORMULATED)))
   ;MPS CEs
@@ -594,6 +604,7 @@
 (defrule goal-production-create-get-base-to-fill-rs
   "Fill the ring station with a fresh base from the base station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
   (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
@@ -607,7 +618,7 @@
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?bs side ?any-side)))
-  (wm-fact (key domain fact comp-state args? c ?bs s ~BROKEN&~DOWN))
+  (wm-fact (key domain fact comp-state args? comp ?bs state ~BROKEN&~DOWN))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
 
   (wm-fact (key domain fact order-base-color args? ord ?any-order col ?base-color))
@@ -618,6 +629,7 @@
                                           bs-side INPUT
                                           base-color ?
                                           wp ?spawned-wp)))
+      (test (not (robot-needs-repair)))
   =>
   (printout t "Goal " GET-BASE-TO-FILL-RS " formulated" crlf)
   (assert (goal (id (sym-cat GET-BASE-TO-FILL-RS- (gensym*)))
@@ -638,6 +650,7 @@
 (defrule goal-production-create-get-shelf-to-fill-rs
   "Get a capcarrier from a shelf to feed it later."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
   (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
@@ -656,6 +669,7 @@
   (not (goal (class GET-SHELF-TO-FILL-RS) (parent ?maintain-id)
              (params robot ?robot cs ?cs wp ?wp spot ?spot
                                      )))
+      (test (not (robot-needs-repair)))
   =>
   (printout t "Goal " GET-SHELF-TO-FILL-RS " formulated" crlf)
   (assert (goal (id (sym-cat GET-SHELF-TO-FILL-RS- (gensym*)))
@@ -683,12 +697,13 @@
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
-  (wm-fact (key domain fact comp-state args? c ?mps s ?state&~BROKEN))
+  (wm-fact (key domain fact comp-state args? comp ?mps state ?state&~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   ;CCs don't have a base color. Hence, models base with UNKOWN color
   ; (not (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color)))
+    (test (not (robot-needs-repair)))
   =>
   ;Check if this ring station should be filled with increased priority.
   (bind ?priority-increase 0)
@@ -731,6 +746,7 @@
   ;(wm-fact (key domain fact rs-filled-with args? m ?mps n TWO|THREE))
   ;question: or would be more correct to create it and later
   ;  reject it because its not useful
+    (test (not (robot-needs-repair)))
   =>
   (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
   (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
@@ -752,6 +768,7 @@
   successfully executing this goal.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
   (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
   (goal (id ?urgent) (class URGENT) (mode FORMULATED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
@@ -761,7 +778,7 @@
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side ?any-side)))
-  (wm-fact (key domain fact comp-state args? c ?mps s ~BROKEN))
+  (wm-fact (key domain fact comp-state args? comp ?mps state ~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
   (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
@@ -770,7 +787,7 @@
   (domain-object (name ?bs-side) (type mps-side))
   (not (wm-fact (key domain fact wp-at args? wp ?some-wp m ?bs side ?any-side)))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  (wm-fact (key domain fact comp-state args? c ?bs s ~BROKEN&~DOWN))
+  (wm-fact (key domain fact comp-state args? comp ?bs state ~BROKEN&~DOWN))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
   ;To-Do: Model the bs active-side
   ;Order CEs
@@ -807,6 +824,7 @@
 
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (eq ?complexity C0))
+  (test (not (robot-needs-repair)))
   =>
   (bind ?required-resources ?mps ?order ?spawned-wp)
   ;If this order complexity should be produced exclusively ...
@@ -851,6 +869,7 @@
   successfully finishing this goal.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
   (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
 
   (wm-fact (key refbox game-time) (values $?game-time))
@@ -861,7 +880,7 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
-  (wm-fact (key domain fact mps-state args?      m ?mps-rs s ~BROKEN))
+  (wm-fact (key domain fact comp-state args?      comp ?mps-rs state ~BROKEN))
   (wm-fact (key domain fact mps-team args?       m ?mps-rs col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
   (wm-fact (key domain fact rs-ring-spec
@@ -871,9 +890,10 @@
                                          difference ?bases-remain&ZERO|ONE|TWO|THREE))
   (not (wm-fact (key domain fact rs-prepared-color args?  m ?mps-rs col ?some-col)))
   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs m ?mps-rs side ?any-rs-side)))
+  (wm-fact (key peter))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args?  m ?mps-bs t BS))
-  (wm-fact (key domain fact comp-state args? c ?mps-bs s ~BROKEN))
+  (wm-fact (key domain fact comp-state args? comp ?mps-bs state ~BROKEN))
   (wm-fact (key domain fact mps-team args?  m ?mps-bs col ?team-color))
   (not (wm-fact (key domain fact wp-at args? wp ?bs-wp m ?mps-bs side ?any-bs-side)))
   ;Order CEs
@@ -897,6 +917,7 @@
   (not (wm-fact (key order meta wp-for-order args? wp ?any-ord-wp ord ?order)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (neq ?complexity C0))
+    (test (not (robot-needs-repair)))
   =>
   (bind ?required-resources ?mps-rs ?order ?spawned-wp)
   ;If this order complexity should be produced exclusively ...
@@ -955,7 +976,7 @@
 
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args?       m ?mps-rs t RS))
-  (wm-fact (key domain fact mps-state args?      m ?mps-rs s ~BROKEN))
+  (wm-fact (key domain fact comp-state args?      comp ?mps-rs state ~BROKEN))
   (wm-fact (key domain fact mps-team args?       m ?mps-rs col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?mps-rs n ?bases-filled))
   (wm-fact (key domain fact rs-ring-spec
@@ -993,6 +1014,7 @@
                  (eq ?next-ring-color ?order-ring1-color))))
   (not (wm-fact (key domain fact wp-at args? wp ?wp-rs&:(neq ?wp-rs ?wp) m ?mps-rs side ?any-rs-side)))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+      (test (not (robot-needs-repair)))
   =>
   (bind ?ring-pos (member$ RING_NONE (create$ ?wp-ring1-color ?wp-ring2-color ?wp-ring3-color)))
   (bind ?curr-ring-color (nth$ ?ring-pos (create$ ?order-ring1-color ?order-ring2-color ?order-ring3-color)))
@@ -1032,6 +1054,7 @@
   the future.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
   (goal (id ?maintain-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
@@ -1039,7 +1062,7 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact comp-state args? c ?mps s ~BROKEN))
+  (wm-fact (key domain fact comp-state args? comp ?mps state ~BROKEN))
   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side ?side-cs)))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
@@ -1063,6 +1086,7 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
            (value ?qd&:(> ?qr ?qd)))
+      (test (not (robot-needs-repair)))
   =>
   (printout t "Goal " PRODUCE-CX " formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
@@ -1087,6 +1111,7 @@
   successfully executing this goal.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
   (goal (class INTERMEDEATE-STEPS) (id ?maintain-id) (mode FORMULATED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
@@ -1094,7 +1119,7 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact comp-state args? c ?mps s ~BROKEN))
+  (wm-fact (key domain fact comp-state args? comp ?mps state ~BROKEN))
   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side ?side-cs)))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
@@ -1120,6 +1145,7 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
            (value ?qd&:(> ?qr ?qd)))
+      (test (not (robot-needs-repair)))
   =>
   (printout t "Goal " PRODUCE-CX " (C2) formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
@@ -1144,6 +1170,7 @@
   successfully executing this goal.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
   (goal (class INTERMEDEATE-STEPS) (id ?maintain-id) (mode FORMULATED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
@@ -1151,7 +1178,7 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
   ;MPS-CS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact comp-state args? c ?mps s ~BROKEN))
+  (wm-fact (key domain fact comp-state args? comp ?mps state ~BROKEN))
   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side ?side-cs)))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
@@ -1179,6 +1206,7 @@
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox order ?order quantity-delivered ?team-color)
   (value ?qd&:(> ?qr ?qd)))
+    (test (not (robot-needs-repair)))
   =>
   (printout t "Goal " PRODUCE-CX " (C3) formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
@@ -1201,10 +1229,12 @@
   from it failed too often.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
   (goal (id ?production-id) (class URGENT) (mode FORMULATED))
   (wm-fact (key domain fact self args? r ?self))
   ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+    (test (not (robot-needs-repair)))
   =>
   (printout t "Goal " RESET-MPS " formulated" crlf)
   (assert (goal (id (sym-cat RESET-MPS- (gensym*)))
@@ -1232,6 +1262,7 @@
   (wm-fact (key domain fact mps-type args? m ?mps t RS))
   ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-put-slide-cc m ?mps wp ?wp)
                 (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+      (test (not (robot-needs-repair)))
   =>
   (printout t "Goal " DISCARD-UNKNOWN " formulated" crlf)
   (assert (goal (id (sym-cat DISCARD-UNKNOWN- (gensym*)))
@@ -1250,6 +1281,7 @@
 (defrule goal-production-create-deliver
   "Deliver a fully produced workpiece."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
   (goal (id ?production-id) (class DELIVER-PRODUCTS) (mode FORMULATED))
   (goal (id ?urgent) (class URGENT) (mode FORMULATED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
@@ -1263,7 +1295,7 @@
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
   ;MPS-CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact comp-state args? c ?mps s ~BROKEN))
+  (wm-fact (key domain fact comp-state args? comp ?mps state ~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;WP-CEs
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
@@ -1290,6 +1322,7 @@
 
   (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
   (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
+    (test (not (robot-needs-repair)))
   =>
   (printout t "Goal " DELIVER " formulated" crlf)
   (bind ?parent ?production-id)
@@ -1341,4 +1374,18 @@
   =>
   (retract ?wp-for-order)
   (printout debug "WP " ?wp " no longer tied to Order " ?order " because it is not usable anymore" crlf)
+)
+
+(defrule goal-production-gripper-repair
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?urgent-id) (class URGENT))
+  (not (domain-fact (name comp-state) (param-values gripper ?state)))
+
+  =>
+  (assert (goal (id (sym-cat REPAIR-GRIPPER (gensym*)))
+                (parent ?urgent-id)
+                (class REPAIR-GRIPPER)
+                (sub-type SIMPLE)
+          )
+  )
 )

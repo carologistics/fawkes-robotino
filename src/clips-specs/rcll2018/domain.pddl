@@ -142,7 +142,7 @@
 		(wp-on-shelf ?wp - workpiece ?m - mps ?spot - shelf-spot)
 		(wp-spawned-for ?wp - workpiece ?r - robot)
     	(spot-free ?m - mps ?spot - shelf-spot)
-		(comp-state ?c - component ?s - state)
+		(comp-state ?comp - component ?state - state)
     	(dummy-wp ?wp - workpiece)
 
     	(exog-possible)
@@ -314,7 +314,7 @@
                         (and (not (cs-can-perform ?m ?op))
                               (cs-prepared-for ?m ?op)
                               (not (comp-state ?m IDLE))
-                              (comp-state ?m READY-AT-OUPUT)
+                              (comp-state ?m READY-AT-OUTPUT)
                         )
                 )
                  (not (exog-possible))
@@ -887,21 +887,19 @@
 
   (:action gripper-calibrate
     :parameters ()
-    :precondition (or (comp-state gripper CALIBRATED) (comp-state gripper UNCALIBRATED))
+    :precondition ()
     :effect (and (not (comp-state gripper UNCALIBRATED)) (comp-state gripper CALIBRATED))
   )
-  ; ----------------------------- action alternatives ----------------------------
- (:action move-navgraph-init
-    :parameters (?r - robot ?from - location ?from-side - mps-side 
-                ?to - mps ?to-side - mps-side ?real-to - mps ?real-to-side - mps-side)
-    :precondition (and (at ?r ?from ?from-side) 
-											 (not (or (comp-state move-base LOCKED) (comp-state move-base FAILED)))
-                       (comp-state navgraph INIT))
-    :effect (and (not (exog-possible))
-								 (not (at ?r ?from ?from-side))
-                 (at ?r ?real-to ?real-to-side))
- )
 
+  (:action realsense-reconnect
+    :parameters ()
+    :precondition (or (comp-state realsense ACTIVATED) (comp-state realsense LOST))
+    :effect (and (not (comp-state realsense LOST)) (comp-state realsense ACTIVATED)) 
+  )
+
+  
+  ; ----------------------------- action alternatives ----------------------------
+ 
   (:action wp-get-gripper-uncalibrated-only-loose
     :parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side ?hold - workpiece)
     :precondition (and (comp-state gripper UNCALIBRATED)
@@ -1012,7 +1010,7 @@
                            (and (can-hold ?r) (dummy-wp ?wp))
                        )
 											 (or (wp-at ?there ?m ?side)
-											 		 (and (mps-side-free ?m ?side) (dummy-wp ?wp)))
+											 		 (and (mps-side-free ?m ?side) (dummy-wp ?there)))
                   )
     :effect (and (not (exog-possible))
             		 (when (holding ?r ?wp) 
@@ -1026,7 +1024,8 @@
   
   (:action wp-put-gripper-decalibrated-knock-off
     :parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side ?there - workpiece)
-    :precondition (and (comp-state gripper UNCALIBRATED)
+    :precondition (and 
+                       (comp-state gripper UNCALIBRATED)
 											 	(comp-state realsense ACTIVATED)
 											 (comp-state tag-camera ACTIVATED)
 											 (comp-state laser ACTIVATED)
@@ -1035,7 +1034,7 @@
                            (and (can-hold ?r) (dummy-wp ?wp))
                        )
 											 (or (wp-at ?there ?m ?side)
-											 		 (and (mps-side-free ?m ?side) (dummy-wp ?wp)))
+											 		 (and (mps-side-free ?m ?side) (dummy-wp ?there)))
                   )
     :effect (and (not (exog-possible))
             		 (when (holding ?r ?wp) 
@@ -1048,13 +1047,15 @@
 								 			 (and (not (wp-at ?there ?m ?side))
 														(mps-side-free ?m ?side))
 								 )
-                 )
+                
+            )
   )
   
 
    (:action wp-put-gripper-axis-broken
     :parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side ?there - workpiece)
-    :precondition (and (comp-state gripper AXIS-BROKEN) 
+    :precondition (and 
+                       (comp-state gripper AXIS-BROKEN) 
 											 (comp-state realsense ACTIVATED)
 											 (comp-state tag-camera ACTIVATED)
 											 (comp-state laser ACTIVATED)
@@ -1063,10 +1064,11 @@
                            (and (can-hold ?r) (dummy-wp ?wp))
                        )
 											 (or (wp-at ?there ?m ?side)
-											 		 (and (mps-side-free ?m ?side) (dummy-wp ?wp)))
+											 		 (and (mps-side-free ?m ?side) (dummy-wp ?there)))
                   )
     :effect (and (not (exog-possible))
-								 (when (holding ?r ?wp)
+								 
+                 (when (holding ?r ?wp)
                        (and (not (holding ?r ?wp))
                             (can-hold ?r)
                             (not (wp-usable ?wp))
@@ -1078,7 +1080,8 @@
 
    (:action wp-put-gripper-fingers-broken
     :parameters (?r - robot ?wp - workpiece ?m - mps ?side - mps-side ?there - workpiece)
-    :precondition (and (comp-state gripper AXIS-BROKEN) 
+    :precondition (and
+                       (comp-state gripper AXIS-BROKEN) 
 											 (comp-state realsense ACTIVATED)
 											 (comp-state tag-camera ACTIVATED)
 											 (comp-state laser ACTIVATED)
@@ -1087,9 +1090,10 @@
                            (and (can-hold ?r) (dummy-wp ?wp))
                        )
 											 (or (wp-at ?there ?m ?side)
-											 		 (and (mps-side-free ?m ?side) (dummy-wp ?wp)))
+											 		 (and (mps-side-free ?m ?side) (dummy-wp ?there)))
                   )
     :effect (and (not (exog-possible))
+								
 								 (when (wp-at ?there ?m ?side)
 								 			 (and (not (wp-at ?there ?m ?side))
 														(mps-side-free ?m ?side))
@@ -1103,13 +1107,15 @@
 											 	(comp-state realsense ACTIVATED)
 											 (comp-state tag-camera ACTIVATED)
 											 (comp-state laser ACTIVATED)
-		                   (at ?r ?m ?side)
+		                  
+							         (at ?r ?m ?side)
 							         (or (holding ?r ?wp)
 							             (and (can-hold ?r) (dummy-wp ?wp))
 							         )
 							    )
 		:effect (and (not (exog-possible))
-								 (when (and (wp-usable ?wp)
+			
+					 			 (when (and (wp-usable ?wp)
 								       			(holding ?r ?wp)
 					 	           )
 						    			 (and (not (wp-usable ?wp))
@@ -1126,13 +1132,15 @@
 											 	(comp-state realsense ACTIVATED)
 											 (comp-state tag-camera ACTIVATED)
 											 (comp-state laser ACTIVATED)
-		                   (at ?r ?m ?side)
+	
+							         (at ?r ?m ?side)
 							         (or (holding ?r ?wp)
 							             (and (can-hold ?r) (dummy-wp ?wp))
 							         )
 							    )
 		:effect (and (not (exog-possible))
-								 )
+							
+						)
 		)
 
 	(:action wp-put-slide-cc-gripper-broken
@@ -1141,13 +1149,15 @@
 											 (comp-state realsense ACTIVATED)
 											 (comp-state tag-camera ACTIVATED)
 											 (comp-state laser ACTIVATED)
-		                   (at ?r ?m ?side)
+		  
+							         (at ?r ?m ?side)
 							         (or (holding ?r ?wp)
 							             (and (can-hold ?r) (dummy-wp ?wp))
 							         )
 							    )
 		:effect (and (not (exog-possible))
-								 (when (and (wp-usable ?wp)
+	
+					 			 (when (and (wp-usable ?wp)
 								       			(holding ?r ?wp)
 					 	           )
 						    			 (and (not (wp-usable ?wp))
@@ -1160,7 +1170,8 @@
 
   (:action wp-get-shelf-gripper-decalibrated
 		:parameters (?r - robot ?cc - cap-carrier ?m - mps ?spot - shelf-spot ?hold - workpiece)
-		:precondition (and (comp-state gripper UNCALIBRATED) 
+		:precondition (and 
+		                   (comp-state gripper UNCALIBRATED) 
 		                   (at ?r ?m INPUT)
                        (or (wp-on-shelf ?cc ?m ?spot)
                            (and (spot-free ?m ?spot) (dummy-wp ?cc))
@@ -1170,6 +1181,7 @@
 											 )
 		              )
 		:effect (and (not (exog-possible))
+							
 								 (when (and (wp-on-shelf ?cc ?m ?spot)
 								 			 )
 											 (and (not (wp-on-shelf ?cc ?m ?spot))
@@ -1186,15 +1198,17 @@
 
   (:action wp-get-shelf-axis-broken
 		:parameters (?r - robot ?cc - cap-carrier ?m - mps ?side - mps-side ?spot - shelf-spot ?hold - workpiece)
-		:precondition (and (comp-state gripper AXIS-BROKEN) 
+		:precondition (and
+		                   (comp-state gripper AXIS-BROKEN) 
 		                   (at ?r ?m ?side)
                        (or (wp-on-shelf ?cc ?m ?spot)
                            (and (spot-free ?m ?spot) (dummy-wp ?cc))
                        )
 											 (or (holding ?r ?hold)
-											 		 (and (can-hold ?r) (dummy-wp ?wp)))
+											 		 (and (can-hold ?r) (dummy-wp ?hold)))
 		              )
 		:effect (and (not (exog-possible))
+							
 								 (when (holding ?r ?hold)
 								 			 (and (not (holding ?r ?hold))
 												    (not (wp-usable ?r)))
@@ -1205,7 +1219,8 @@
 
 	  (:action wp-get-shelf-gripper-fingers-broken
 		:parameters (?r - robot ?cc - cap-carrier ?m - mps ?side - mps-side ?spot - shelf-spot ?hold - workpiece)
-		:precondition (and (comp-state gripper FINGERS-BROKEN) 
+		:precondition (and 
+		                   (comp-state gripper FINGERS-BROKEN) 
 		                   (at ?r ?m ?side)
                        (or (wp-on-shelf ?cc ?m ?spot)
                            (and (spot-free ?m ?spot) (dummy-wp ?cc))
@@ -1215,6 +1230,7 @@
 											 )
 		              )
 		:effect (and (not (exog-possible))
+						
 								 (when (and (wp-on-shelf ?cc ?m ?spot) (at ?r ?m INPUT)
 								 			 )
 											 (and (not (wp-on-shelf ?cc ?m ?spot))
@@ -1222,36 +1238,8 @@
 											 )
 								 )
 						)
+		
 	)
-; ----------------------------- exog actions ------------------------------
-
-(:action check-workpiece
-	:parameters (?r - robot ?m - mps ?side - mps-side)
-	:precondition (and (at ?r ?m ?side)
-										 (comp-state realsense ACTIVATED))
-	:effect ()
-)
-
-(:action drive-to-check-workpiece
-	:parameters (?r - robot ?m - mps ?side - mps-side)
-	:precondition (and (comp-state realsense ACTIVATED)
-										 (comp-state move-base INIT)
-										 (comp-state navgraph LOCALIZED))
-	:effect ()
-)
-
-(:action gripper-calibrated
-	:parameters (?r - robot)
-	:precondition ()
-	:effect ()
-)
-
-(:action move-base-is-locked
-	:parameters (?r - robot)
-	:precondition ()
-	:effect ()
-)
-
 ; ----------------------------- sensing actions ---------------------------
 
   (:action drop
