@@ -116,6 +116,10 @@ clips-executive:
             file: rcll2018/domain.clp
           - name: resource-locking
             file: resource-locks.clp
+          - name: hardware-models
+            file: rcll2018/hardware-models.clp
+          - name: diagnosis-sensing-actions
+            file: rcll2018/diagnosis.clp
           - name: goal-reasoner
             files:
               - goals/retry.clp
@@ -147,15 +151,11 @@ clips-executive:
               - rcll2018/refbox-actions.clp
               - rcll2018/lock-actions.clp
               - rcll2018/wait-actions.clp
-              # - name: execution-monitoring
-            # file: rcll2018/execution-monitoring.clp
-            #- name: diagnosis
-            # files:
-          - name: hardware-models
-            file: rcll2018/hardware-models.clp
-          - name: diagnosis-sensing-actions
-            file: rcll2018/diagnosis.clp
-
+          - name: execution-monitoring
+            file: rcll2018/execution-monitoring.clp
+          - name: diagnosis
+            file: rcll2018/sensing-actions.clp
+      
       action-mapping:
         enter-field: >
           drive_into_field{team=?(team-color)S,

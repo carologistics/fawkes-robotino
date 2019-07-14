@@ -25,7 +25,7 @@ plugins/pddl-planner:
 
   # optional search options for kstar planner
   kstar-search-opts: >
-    --search "kstar(blind(),30,bound=3)"
+    --search "kstar(blind(),100,bound=3)"
 
   # mongodb collection for robot-memory
   collection: robmem.pddl-plan
