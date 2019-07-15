@@ -669,21 +669,21 @@ bool ConveyorPoseThread::set_external_initial_tf(
   //-- compose translational part
   btVector3 init_origin;
   double *blackboard_origin = bb_init_guess_pose_->translation();
-  init_origin.setX(static_cast<float>(blackboard_origin[0]));
-  init_origin.setY(static_cast<float>(blackboard_origin[1]));
-  init_origin.setZ(static_cast<float>(blackboard_origin[2]));
+  init_origin.setX(static_cast<btScalar>(blackboard_origin[0]));
+  init_origin.setY(static_cast<btScalar>(blackboard_origin[1]));
+  init_origin.setZ(static_cast<btScalar>(blackboard_origin[2]));
 
   //-- compose orientation
   btMatrix3x3 init_basis;
   double *blackboard_orientation = bb_init_guess_pose_->rotation();
   btQuaternion init_orientation(
-      static_cast<float>(blackboard_orientation[0]) //-- x
+      static_cast<btScalar>(blackboard_orientation[0]) //-- x
       ,
-      static_cast<float>(blackboard_orientation[1]) //-- y
+      static_cast<btScalar>(blackboard_orientation[1]) //-- y
       ,
-      static_cast<float>(blackboard_orientation[2]) //-- z
+      static_cast<btScalar>(blackboard_orientation[2]) //-- z
       ,
-      static_cast<float>(blackboard_orientation[3])); //-- w
+      static_cast<btScalar>(blackboard_orientation[3])); //-- w
 
   init_basis.setRotation(init_orientation);
 
@@ -711,8 +711,8 @@ bool ConveyorPoseThread::set_external_initial_tf(
       std::isnan(orientation.getY()) || std::isinf(orientation.getY()) ||
       std::isnan(orientation.getZ()) || std::isinf(orientation.getZ()) ||
       std::isnan(orientation.getW()) || std::isinf(orientation.getW()) ||
-      std::abs(orientation.length() - 1.f) >
-          std::numeric_limits<float>::epsilon()) {
+      std::abs(orientation.length() - btScalar(1.)) >
+          std::numeric_limits<btScalar>::epsilon()) {
 
     logger->log_warn(
         name(),
@@ -738,7 +738,7 @@ bool ConveyorPoseThread::set_laserline_initial_tf(
   if (!tf_listener->transform_origin(best_laser_line_->end_point_frame_2(),
                                      best_laser_line_->end_point_frame_1(),
                                      initial_guess, Time(0, 0))) {
-    logger->log_error("Failed to transform from %s to %s",
+    logger->log_error(name(), "Failed to transform from %s to %s",
                             best_laser_line_->end_point_frame_2(),
                             best_laser_line_->end_point_frame_1());
     return false;
@@ -789,8 +789,8 @@ bool ConveyorPoseThread::set_laserline_initial_tf(
   if (std::isnan(translation.getX()) || std::isinf(translation.getX()) ||
       std::isnan(translation.getY()) || std::isinf(translation.getY()) ||
       std::isnan(translation.getZ()) || std::isinf(translation.getZ()) ||
-      std::abs(orientation.length() - 1.f) >
-          std::numeric_limits<float>::epsilon()) {
+      std::abs(orientation.length() - btScalar(1.)) >
+          std::numeric_limits<btScalar>::epsilon()) {
 
     logger->log_warn(name(),
                      "Laserline initial_guess_odom invalid [||R|| = %.10e, t = "
@@ -888,6 +888,7 @@ bool ConveyorPoseThread::update_input_cloud() {
 
 fawkes::LaserLineInterface *ConveyorPoseThread::laserline_get_best_fit() {
   fawkes::LaserLineInterface *best_fit = nullptr;
+  double min_dist2 = std::numeric_limits<double>::max();
 
   // get best line
   for (fawkes::LaserLineInterface *ll : laserlines_) {
@@ -896,74 +897,36 @@ fawkes::LaserLineInterface *ConveyorPoseThread::laserline_get_best_fit() {
       continue;
     if (ll->visibility_history() <= 2)
       continue;
+    if (fabs(ll->bearing()) > cfg_ll_bearing_thresh_)
+      continue;
 
+    tf::Stamped<tf::Pose> center_ep;
+    if (!tf_listener->transform_origin(ll->end_point_frame_2(),
+                                       ll->end_point_frame_1(),
+                                       center_ep, Time(0, 0)))
+      continue;
+
+    center_ep.setOrigin(center_ep.getOrigin() / 2);
+    // center_ep is is in the endpoint frame
+
+    tf::Stamped<tf::Pose> center;
     try {
-      Eigen::Vector3f center = laserline_get_center_transformed(ll);
-      if (std::sqrt(center(0) * center(0) + center(2) * center(2)) > 0.8f)
-        continue;
-
-      // take with lowest angle
-      if (!best_fit || fabs(best_fit->bearing()) > fabs(ll->bearing()))
-        best_fit = ll;
-    } catch (fawkes::tf::TransformException &e) {
-      logger->log_error(name(), e);
+      // transform it to the laser frame
+      tf_listener->transform_pose(ll->frame_id(), center_ep, center);
+    } catch (tf::TransformException &) {
+      continue;
     }
-  }
 
-  if (!best_fit)
-    return nullptr;
-
-  if (!best_fit->has_writer()) {
-    logger->log_info(name(), "no writer for laser lines");
-    best_fit = nullptr;
-    return nullptr;
-  }
-  if (best_fit->visibility_history() <= 2) {
-    best_fit = nullptr;
-    return nullptr;
-  }
-  if (fabs(best_fit->bearing()) > cfg_ll_bearing_thresh_) {
-    best_fit = nullptr;
-    return nullptr; // ~20 deg
-  }
-
-  try {
-    Eigen::Vector3f center = laserline_get_center_transformed(best_fit);
-    if (std::sqrt(center(0) * center(0) + center(2) * center(2)) > 0.8f) {
-      best_fit = nullptr;
-      return nullptr;
+    if (center.getOrigin().length2() < min_dist2) {
+      best_fit = ll;
+      min_dist2 = center.getOrigin().length2();
     }
-  } catch (tf::TransformException &e) {
-    logger->log_error(name(), e);
-    return nullptr;
   }
 
   return best_fit;
 }
 
-Eigen::Vector3f ConveyorPoseThread::laserline_get_center_transformed(
-    fawkes::LaserLineInterface *ll) {
-  fawkes::tf::Stamped<fawkes::tf::Point> tf_in, tf_out;
-  tf_in.stamp = ll->timestamp();
-  tf_in.frame_id = ll->frame_id();
-  tf_in.setX(ll->end_point_2(0) +
-             (ll->end_point_1(0) - ll->end_point_2(0)) / 2.);
-  tf_in.setY(ll->end_point_2(1) +
-             (ll->end_point_1(1) - ll->end_point_2(1)) / 2.);
-  tf_in.setZ(ll->end_point_2(2) +
-             (ll->end_point_1(2) - ll->end_point_2(2)) / 2.);
 
-  try {
-    tf_listener->transform_point(input_pc_header_.frame_id, tf_in, tf_out);
-  } catch (tf::ExtrapolationException &) {
-    tf_in.stamp = Time(0, 0);
-    tf_listener->transform_point(input_pc_header_.frame_id, tf_in, tf_out);
-  }
-
-  Eigen::Vector3f out(tf_out.getX(), tf_out.getY(), tf_out.getZ());
-
-  return out;
-}
 
 ConveyorPoseThread::CloudPtr
 ConveyorPoseThread::cloud_voxel_grid(ConveyorPoseThread::CloudPtr in) {
@@ -1030,12 +993,12 @@ void ConveyorPoseThread::set_cg_thread(RecognitionThread *cg_thread) {
   recognition_thread_ = cg_thread;
 }
 
-void ConveyorPoseThread::config_value_erased(const char *path) {}
+void ConveyorPoseThread::config_value_erased(const char *) {}
 
-void ConveyorPoseThread::config_tag_changed(const char *new_tag) {}
+void ConveyorPoseThread::config_tag_changed(const char *) {}
 
 void ConveyorPoseThread::config_comment_changed(
-    const Configuration::ValueIterator *v) {}
+    const Configuration::ValueIterator *) {}
 
 void ConveyorPoseThread::config_value_changed(
     const Configuration::ValueIterator *v) {
@@ -1392,9 +1355,9 @@ ConveyorPoseThread::cloud_trim(ConveyorPoseThread::CloudPtr in) {
                                 initial_guess_odom_.frame_id),
           origin_pose);
     }
-    float x_ini = origin_pose.getOrigin()[X_DIR],
-          y_ini = origin_pose.getOrigin()[Y_DIR],
-          z_ini = origin_pose.getOrigin()[Z_DIR];
+    float x_ini = float(origin_pose.getOrigin()[X_DIR]),
+          y_ini = float(origin_pose.getOrigin()[Y_DIR]),
+          z_ini = float(origin_pose.getOrigin()[Z_DIR]);
 
     if (is_target_shelf()) { // using shelf cut values
       float x_min_temp = x_ini + (float)cfg_shelf_left_cut_,
