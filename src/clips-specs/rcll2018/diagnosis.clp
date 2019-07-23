@@ -54,3 +54,17 @@
     )
 )
 
+(defrule diag-create-realsense-activated-plans
+    ?g <- (goal (id ?id) (mode SELECTED) (class ACTIVE-DIAGNOSIS-SENSE))
+    (not (plan-action (action-name realsense-activated) (goal-id ?id) (param-values ?r)))
+    (domain-fact (name self) (param-values ?r))
+    =>
+    (bind ?plan-id (sym-cat REALSENSE-ACTIVATED-PLAN (gensym*)))
+    (assert
+        (plan (id ?plan-id) (goal-id ?id) (diag-wm-store FALSE))
+        (plan-action (goal-id ?id) (plan-id ?plan-id) (action-name realsense-activated) (id 1) (param-values ?r))
+
+    )
+
+)
+

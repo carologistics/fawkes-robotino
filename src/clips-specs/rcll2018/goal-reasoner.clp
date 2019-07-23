@@ -400,6 +400,22 @@
   (modify ?g (mode EVALUATED))
 )
 
+(defrule goal-reasoner-realsense-activate
+  ?g <- (goal (id ?goal-id) (class REPAIR-REALSENSE) (mode FINISHED) (outcome ?outcome&:(or (eq ?outcome COMPLETED) (eq ?outcome FAILED))))
+  =>  
+  (do-for-fact ((?df domain-fact)) (and (eq ?df:name comp-state) (eq (nth$ 1 ?df:param-values) realsense))
+    (retract ?df)
+  )
+  (if (eq ?outcome COMPLETED) then
+     (printout t "Activating realsense was successful" crlf)
+     (assert (domain-fact (name comp-state) (param-values realsense ACTIVATED)))  
+  else
+     (printout t "Activating realsense failed: is broken now" crlf)
+     (assert (domain-fact (name comp-state) (param-values realsense BROKEN)))  
+  )
+  (modify ?g (mode EVALUATED))
+)
+
 (defrule goal-reasoner-evaluate-production-maintain
   "Clean up all rs-fill-priorities facts when the production maintenance goal
    fails."

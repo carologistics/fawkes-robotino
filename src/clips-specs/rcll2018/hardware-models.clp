@@ -49,3 +49,28 @@
   (retract ?t)
   (printout error "Invalid transition " ?trans " for component " ?comp " in state " ?state crlf)
 )
+
+
+(defrule repair-action-realsense-activated-start
+    ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (action-name realsense-activate) (state PENDING))
+    (GazsimSensingInterface (busy FALSE))    
+    =>
+    (bind ?msg (blackboard-create-msg "GazsimSensingInterface::GazsimSensing" "ActivateRealsenseMessage"))
+    (blackboard-set-msg-field ?msg "dummy" 1)
+    (bind ?msg-id (blackboard-send-msg ?msg))
+    (modify ?pa (state WAITING) (param-values ?msg-id))  
+)
+
+(defrule repair-action-realsense-activated-running
+    ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (action-name realsense-activate) (state WAITING))
+    (GazsimSensingInterface (busy TRUE))
+    =>
+    (modify ?pa (state RUNNING))
+)
+
+(defrule repair-action-realsense-activated-final
+    ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (action-name realsense-activate) (state RUNNING|WAITING) (param-values ?msg-id))
+    (GazsimSensingInterface (busy FALSE) (last_sensed "realsense") (ret ?ret) (msgid ?msg-id))
+    =>
+    (modify ?pa (state (if (eq ?ret 1) then FINAL else FAILED)))
+)

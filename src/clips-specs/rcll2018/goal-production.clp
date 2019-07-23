@@ -1378,9 +1378,10 @@
 
 (defrule goal-production-gripper-repair
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?urgent-id) (class URGENT))
-  (not (domain-fact (name comp-state) (param-values gripper ?state)))
-
+  (goal (id ?urgent-id) (class URGENT) (mode FORMULATED))
+  (or (not (domain-fact (name comp-state) (param-values gripper ?state)))
+      (domain-fact (name comp-state) (param-values gripper UNCALIBRATED)))
+  (not (goal (class REPAIR-GRIPPER)))
   =>
   (assert (goal (id (sym-cat REPAIR-GRIPPER (gensym*)))
                 (parent ?urgent-id)
@@ -1388,4 +1389,19 @@
                 (sub-type SIMPLE)
           )
   )
+)
+
+(defrule goal-production-realsense-activate
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?urgent-id) (class URGENT) (mode FORMULATED))
+  (or (not (domain-fact (name comp-state) (param-values realsense ?state)))
+      (domain-fact (name comp-state) (param-values realsense LOST))
+  )
+  (not (goal (class REPAIR-REALSENSE)))
+  =>
+  (assert (goal (id (sym-cat REPAIR-REALSENSE (gensym*)))
+                (parent ?urgent-id)
+                (class REPAIR-REALSENSE)
+                (sub-type SIMPLE))
+  ) 
 )

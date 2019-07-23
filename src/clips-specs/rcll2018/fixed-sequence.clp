@@ -878,7 +878,7 @@
  (modify ?g (mode EXPANDED))
 )
 
-(defrule goal-expaneder-repair
+(defrule goal-expaneder-repair-gripper
   ?g <- (goal (id ?goal-id) (class REPAIR-GRIPPER) (mode SELECTED) (parent ?parent))
   =>
   (assert
@@ -888,5 +888,18 @@
         (param-names)
         (param-values))
   )
+  (modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-repair-realsense
+  ?g <- (goal (id ?goal-id) (class REPAIR-REALSENSE) (mode SELECTED) (parent ?parent))
+  =>
+  (assert
+    (plan (id REPAIR-REALSENSE-PLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id REPAIR-REALSENSE-PLAN) (goal-id ?goal-id)
+          (action-name realsense-activate)
+          (param-names)
+          (param-values))
+    )
   (modify ?g (mode EXPANDED))
 )
