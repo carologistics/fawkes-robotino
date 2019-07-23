@@ -208,7 +208,7 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
  (assert
-  (plan (id CLEAR-MPS-PLAN) (goal-id ?goal-id))
+  (plan (diag-wm-store TRUE) (id CLEAR-MPS-PLAN) (goal-id ?goal-id))
   (plan-action (id 1) (plan-id CLEAR-MPS-PLAN) (goal-id ?goal-id)
         (action-name go-wait)
         (param-names r from from-side to)
@@ -426,7 +426,7 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
  (assert
-  (plan (id PRODUCE-C0-PLAN) (goal-id ?goal-id))
+  (plan (diag-wm-store TRUE) (id PRODUCE-C0-PLAN) (goal-id ?goal-id))
   (plan-action (id 1) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
         (action-name go-wait)
         (param-names r from from-side to)
@@ -699,7 +699,7 @@
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  =>
    (assert
-    (plan (id PRODUCE-CX-PLAN) (goal-id ?goal-id))
+    (plan (diag-wm-store TRUE) (id PRODUCE-CX-PLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id PRODUCE-CX-PLAN) (goal-id ?goal-id)
           (action-name go-wait)
           (param-names r from from-side to)
