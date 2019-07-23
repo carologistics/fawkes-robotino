@@ -68,6 +68,7 @@
   ; PRE-EVALUATE rules should do additional steps in EVALUATION but must not
   ; set the goal to EVALUATED
   ?*SALIENCE-GOAL-PRE-EVALUATE* = 1
+  ?*SALIENCE-GOAL-PRE-EVALUATE-DIAGNOSIS* = 2
   ; common evaluate rules should have
   ;   lower salience than case specific ones
   ?*SALIENCE-GOAL-EVALUATE-GENERIC* = -1
@@ -267,13 +268,37 @@
   (return ?ret)
 )
 
+(defrule goal-reasoner-evaluate-subgoal-common-start-diagnosis
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE-DIAGNOSIS*))
+  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome FAILED))
+  (plan (id ?plan-id) (goal-id ?goal-id) (diag-wm-store STORED))
+  (plan-action (id ?action-id) (action-name ?an) (plan-id ?plan-id) (goal-id ?goal-id) (state FAILED) (param-names $?pn) (param-values $?pv))
+  (not (diagnosis (plan-id ?plan-id)))
+  =>
+  (create-diagnosis (sym-cat DIAG- ?goal-id) ?plan-id (str-cat "(and (next-FINISH) (not " (action-precondition-as-fol ?an ?action-id ?plan-id) "))"))
+)
+
+;(defrule goal-reasoner-evaluate-subgoal-common-finished-diagnosis
+;  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+;  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome FAILED))
+;  (plan (id ?plan-id) (goal-id ?goal-id) (diag-wm-store STORED))
+;  ?d <- (diagnosis (plan-id ?plan-id) (mode FINAL|FAILED))
+;  =>
+;  (retract ?d)
+;  ;(modify ?g (mode EVALUATED))
+;)
+
 
 (defrule goal-reasoner-evaluate-clean-locks
 " Unlock all remaining locks of a failed goal."
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   (wm-fact (key cx identity) (value ?identity))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
-  ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
+  ?p <- (plan (id ?plan-id) (goal-id ?goal-id) (diag-wm-store ?diag))
+  (or (test (eq ?diag FALSE))
+      (diagnosis (plan-id ?plan-id) (mode FINAL|FAILED))
+  )
+
   ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
                      (action-name lock) (param-values ?name))
   (mutex (name ?name) (state LOCKED) (request ~UNLOCK) (locked-by ?identity)
@@ -291,7 +316,10 @@
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   (wm-fact (key cx identity) (value ?identity))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
-  ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
+  ?p <- (plan (id ?plan-id) (goal-id ?goal-id) (diag-wm-store ?diag))
+  (or (test (eq ?diag FALSE))
+      (diagnosis (plan-id ?plan-id) (mode FINAL|FAILED))
+  )
   ?a <- (plan-action (id ?action-id) (goal-id ?goal-id) (plan-id ?plan-id)
                      (action-name location-lock) (param-values ?loc ?side))
   (mutex (name ?name&:(eq ?name (sym-cat ?loc - ?side)))
@@ -354,33 +382,20 @@
 
 
 ; ----------------------- EVALUATE COMMON ------------------------------------
-(defrule goal-reasoner-evaluate-subgoal-common-start-diagnosis
-  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome FAILED))
-  (plan (id ?plan-id) (goal-id ?goal-id) (diag-wm-store STORED))
-  (plan-action (id ?action-id) (action-name ?an) (plan-id ?plan-id) (goal-id ?goal-id) (state FAILED) (param-names $?pn) (param-values $?pv))
-  (not (diagnosis (plan-id ?plan-id)))
-  =>
-  (create-diagnosis (sym-cat DIAG- ?goal-id) ?plan-id (str-cat "(and (next-FINISH) (not " (action-precondition-as-fol ?an ?action-id ?plan-id) "))"))
-)
-
-(defrule goal-reasoner-evaluate-subgoal-common-finished-diagnosis
-  ?g <- (goal (id ?goal-id) (parent ?parent-id&~nil) (mode FINISHED) (outcome FAILED))
-  (plan (id ?plan-id) (goal-id ?goal-id) (diag-wm-store STORED))
-  ?d <- (diagnosis (plan-id ?plan-id) (mode FINAL|FAILED))
-  =>
-  (retract ?d)
-  (modify ?g (mode EVALUATED))
-)
-
 (defrule goal-reasoner-evaluate-common
 " Finally set a finished goal to evaluated.
   All pre evaluation steps should have been executed, enforced by the higher priority
 "
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
-  (not (and (plan (goal-id ?goal-id) (id ?plan-id))
-            (diagnosis (plan-id ?plan-id))))
+  (or (not (diagnosis (plan-id ?plan-id)))
+      (diagnosis (plan-id ?plan-id) (mode FINAL|FAILED))
+  )
+  (not (goal-reasoner-unlock-pending ?))
 =>
+  (do-for-fact ((?d diagnosis)) TRUE
+    (retract ?d)
+  )
   (printout debug "Goal '" ?goal-id "' (part of '" 
     "') has been completed, Evaluating" crlf)
   (modify ?g (mode EVALUATED))
@@ -392,6 +407,9 @@
 (defrule goal-reasoner-gripper-repair
   ?g <- (goal (id ?goal-id) (class REPAIR-GRIPPER) (mode FINISHED) (outcome ?outcome&:(or (eq ?outcome COMPLETED) (eq ?outcome FAILED))))
   =>
+  (do-for-fact ((?df domain-fact)) (and (eq ?df:name comp-state) (eq (nth$ 1 ?df:param-values) gripper))
+    (retract ?df)
+  )
   (if (eq ?outcome COMPLETED) then
      (assert (domain-fact (name comp-state) (param-values gripper CALIBRATED)))  
   else
