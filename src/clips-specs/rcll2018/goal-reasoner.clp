@@ -520,20 +520,21 @@
 )
 
 
-(defrule goal-reasoner-reject-production-tree-goal-other-goal-dispatched
-" Retract a formulated sub-goal of the production tree once a production leaf
-  goal is dispatched. Retraction is done in bottom-up fashion (this is
-  relevant due to sub-type goal implementation details)
+(defrule goal-reasoner-reject-production-tree-goals-other-goal-dispatched
+" Retract all formulated sub-goal of the production tree once a production leaf
+  goal is dispatched.
 "
   (declare (salience ?*SALIENCE-GOAL-REJECT*))
-  ?g <- (goal (id ?goal) (parent ?parent) (type ACHIEVE)
-              (sub-type ?sub-type) (class ?class&:(production-goal ?class))
-              (mode FORMULATED))
-  (not (goal (parent ?goal)))
+  (goal (id ?goal) (parent ?parent) (type ACHIEVE)
+        (sub-type ?sub-type) (class ?class&:(production-goal ?class))
+        (mode FORMULATED))
   (goal (id ?some-leaf) (class ?some-class&:(production-goal ?some-class))
         (sub-type SIMPLE) (mode DISPATCHED))
 =>
-  (modify ?g (mode RETRACTED) (outcome REJECTED))
+  (delayed-do-for-all-facts ((?g goal))
+    (and (eq ?g:mode FORMULATED) (production-goal ?g:class))
+    (modify ?g (mode RETRACTED) (outcome REJECTED))
+  )
 )
 
 
