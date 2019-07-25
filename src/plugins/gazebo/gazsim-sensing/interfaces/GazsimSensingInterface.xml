@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="GazsimSensingInterface" author="Daniel Habering" year="2019">
+  <constants>
+    <enum name="COMPONENT">
+      <comment>The different types of machines.</comment>
+      <item name="REALSENSE">No station set.</item>
+      <item name="GRIPPER">Base station.</item>
+    </enum>
+  </constants>
+  <data>
+    <comment>Comment</comment>	  
+    <field type="string" length="32" name="last_sensed">
+      Reference coordinate frame for the data.
+    </field>
+    <field type="string" length="32" name="ret">
+      Timestamp { sec, usec } of the input cloud used for this matching.
+    </field>
+    <field type="bool" name="busy">
+      Whether the plugin is currently working.
+    </field>
+    <field type="uint32" name="msgid">
+	id of message currently processed
+    </field>
+  </data>
+  <message name="GripperCalibrated">
+    <comment>Check if the gripper is calibrated</comment>
+    <field type="double" name="dummy">
+      Dummy field
+    </field>
+  </message>
+  <message name="RealsenseActivated">
+    <comment>Check if the realsense is activated</comment>
+    <field type="double" name="dummy">
+        DUmmy field
+    </field>
+  </message>
+  <message name="ActivateRealsense">
+	<comment>Activate realsense</comment>
+	<field type="double" name="dummy">
+		Dummy field
+	</field>
+</message>
+  <message name="Holding">
+	<comment>Check if bot is holding</comment>
+	<field type="double" name="dummy">
+		Dummy field
+	</field>
+</message>
+<message name="WorkpieceCheck">
+	<comment>Check if workpiece is laying at mps</comment>
+	<field type="string" length="32" name="mps">
+		mps-side string
+	</field>
+</message>
+</interface>
