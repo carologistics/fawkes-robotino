@@ -427,7 +427,7 @@
 (defrule goal-production-create-clear-bs
   "Remove a workpiece from the base station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class CLEAR) (mode FORMULATED))
+  (goal (id ?production-id) (class URGENT) (mode FORMULATED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
