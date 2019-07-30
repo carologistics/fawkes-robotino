@@ -431,6 +431,7 @@
                (state FAILED))
   (domain-object (name ?mps) (type mps))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  (domain-fact (name mps-state) (param-values ?mps ~BROKEN))
   (not (wm-fact (key evaluated reset-mps args? m ?mps)))
   =>
   (assert
