@@ -126,12 +126,15 @@
                       (action-name reset-mps)
                       (executable TRUE)
                       (param-names $?param-names)
-                      (param-values $? ?mps $?))
+                      (param-values $?param-values))
   ?st <- (timer (name ?n&:(eq ?n (sym-cat reset- ?goal-id - ?plan-id
                                           - ?id -send-timer)))
                 (time $?t&:(timeout ?now ?t ?*PREPARE-PERIOD*))
                 (seq ?seq))
-  (domain-obj-is-of-type ?mps mps)
+  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
+                                                         ?param-names
+                                                         ?param-values))
+                         mps)
   (metadata-reset-mps ?mps ?team-color ?peer-id $?instruction_info)
   (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type) (value TRUE))
   =>
@@ -156,7 +159,11 @@
                                    prepare-rs)
                       (executable TRUE)
                       (param-names $?param-names)
-                      (param-values $? ?mps $?))
+                      (param-values $?param-values))
+  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
+                                                         ?param-names
+                                                         ?param-values))
+                         mps)
   ?st <- (timer (name ?n&:(eq ?n (sym-cat prepare- ?goal-id - ?plan-id
                                           - ?id -send-timer)))
                 (time $?t&:(timeout ?now ?t ?*PREPARE-PERIOD*))
@@ -213,7 +220,11 @@
                       (state RUNNING)
                       (action-name reset-mps)
                       (param-names $?param-names)
-                      (param-values $? ?mps $?))
+                      (param-values $?param-values))
+  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
+                                                         ?param-names
+                                                         ?param-values))
+                         mps)
   ?st <- (timer (name ?nst&:(eq ?nst (sym-cat reset- ?goal-id - ?plan-id
                                       - ?id -send-timer))))
   ?at <- (timer (name ?nat&:(eq ?nat (sym-cat reset- ?goal-id - ?plan-id
@@ -235,7 +246,11 @@
                                    prepare-ds|
                                    prepare-rs)
                       (param-names $?param-names)
-                      (param-values $? ?mps $?))
+                      (param-values $?param-values))
+  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
+                                                         ?param-names
+                                                         ?param-values))
+                         mps)
   ?st <- (timer (name ?nst&:(eq ?nst
                                (sym-cat prepare- ?goal-id - ?plan-id
                                         - ?id -send-timer))))
@@ -260,7 +275,11 @@
                       (state RUNNING)
                       (action-name reset-mps)
                       (param-names $?param-names)
-                      (param-values $? ?mps $?))
+                      (param-values $?param-values))
+  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
+                                                         ?param-names
+                                                         ?param-values))
+                         mps)
   ?at <- (timer (name ?nat&:(eq ?nat
                                (sym-cat reset- ?goal-id - ?plan-id
                                         - ?id -abort-timer)))
@@ -284,7 +303,12 @@
                                    prepare-cs|
                                    prepare-ds|
                                    prepare-rs)
-                      (param-values $? ?mps $?))
+                      (param-names $?param-names)
+                      (param-values $?param-values))
+  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
+                                                         ?param-names
+                                                         ?param-values))
+                         mps)
   ?st <- (timer (name ?nst&:(eq ?nst
                                (sym-cat prepare- ?goal-id - ?plan-id
                                         - ?id -send-timer))))
@@ -309,7 +333,11 @@
                                    prepare-ds|
                                    prepare-rs)
                       (param-names $?param-names)
-                      (param-values $? ?mps $?))
+                      (param-values $?param-values))
+  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
+                                                         ?param-names
+                                                         ?param-values))
+                         mps)
   ?at <- (timer (name ?nat&:(eq ?nat
                                 (sym-cat prepare- ?goal-id - ?plan-id
                                          - ?id -abort-timer)))
