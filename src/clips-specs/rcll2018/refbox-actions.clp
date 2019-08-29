@@ -71,7 +71,8 @@
 
 (defrule refbox-action-reset-mps-start
   (time $?now)
-  ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state PENDING)
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state PENDING)
                       (action-name ?action&reset-mps)
                       (executable TRUE)
                       (param-names $?param-names)
@@ -83,9 +84,9 @@
   (bind ?instruction_info (rest$ ?param-values))
   (printout t "Executing " ?action ?param-values crlf)
   (assert (metadata-reset-mps ?mps ?team-color ?peer-id ?instruction_info))
-  (assert (timer (name (sym-cat reset- ?mps -send-timer))
+  (assert (timer (name (sym-cat reset- ?goal-id - ?plan-id - ?id -send-timer))
                  (time ?now) (seq 1)))
-  (assert (timer (name (sym-cat reset- ?mps -abort-timer))
+  (assert (timer (name (sym-cat reset- ?goal-id - ?plan-id - ?id -abort-timer))
                  (time ?now) (seq 1)))
   (modify ?pa (state RUNNING))
 )
@@ -93,7 +94,8 @@
 
 (defrule refbox-action-prepare-mps-start
   (time $?now)
-  ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state PENDING)
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state PENDING)
                       (action-name ?action&prepare-bs|
                                            prepare-cs|
                                            prepare-ds|
@@ -108,21 +110,25 @@
   (bind ?instruction_info (rest$ ?param-values))
   (printout t "Executing " ?action ?param-values crlf)
   (assert (metadata-prepare-mps ?mps ?team-color ?peer-id ?instruction_info))
-  (assert (timer (name (sym-cat prepare- ?mps -send-timer))
+  (assert (timer (name (sym-cat prepare- ?goal-id - ?plan-id
+                                - ?id -send-timer))
           (time ?now) (seq 1)))
-  (assert (timer (name (sym-cat prepare- ?mps -abort-timer))
+  (assert (timer (name (sym-cat prepare- ?goal-id - ?plan-id
+                                - ?id -abort-timer))
           (time ?now) (seq 1)))
   (modify ?pa (state RUNNING))
 )
 
 (defrule refbox-action-reset-mps-send-signal
   (time $?now)
-  ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state RUNNING)
                       (action-name reset-mps)
                       (executable TRUE)
                       (param-names $?param-names)
                       (param-values $? ?mps $?))
-  ?st <- (timer (name ?n&:(eq ?n (sym-cat reset- ?mps -send-timer)))
+  ?st <- (timer (name ?n&:(eq ?n (sym-cat reset- ?goal-id - ?plan-id
+                                          - ?id -send-timer)))
                 (time $?t&:(timeout ?now ?t ?*PREPARE-PERIOD*))
                 (seq ?seq))
   (domain-obj-is-of-type ?mps mps)
@@ -142,7 +148,8 @@
 
 (defrule refbox-action-mps-prepare-send-signal
   (time $?now)
-  ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state RUNNING)
                       (action-name prepare-bs|
                                    prepare-cs|
                                    prepare-ds|
@@ -150,7 +157,8 @@
                       (executable TRUE)
                       (param-names $?param-names)
                       (param-values $? ?mps $?))
-  ?st <- (timer (name ?n&:(eq ?n (sym-cat prepare- ?mps -send-timer)))
+  ?st <- (timer (name ?n&:(eq ?n (sym-cat prepare- ?goal-id - ?plan-id
+                                          - ?id -send-timer)))
                 (time $?t&:(timeout ?now ?t ?*PREPARE-PERIOD*))
                 (seq ?seq))
   (metadata-prepare-mps ?mps ?team-color ?peer-id $?instruction_info)
@@ -201,12 +209,15 @@
 (defrule refbox-action-reset-mps-final
   "Finalize the prepare action if the desired machine state was reached"
   (time $?now)
-  ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state RUNNING)
                       (action-name reset-mps)
                       (param-names $?param-names)
                       (param-values $? ?mps $?))
-  ?st <- (timer (name ?nst&:(eq ?nst (sym-cat reset- ?mps -send-timer))))
-  ?at <- (timer (name ?nat&:(eq ?nat (sym-cat reset- ?mps -abort-timer))))
+  ?st <- (timer (name ?nst&:(eq ?nst (sym-cat reset- ?goal-id - ?plan-id
+                                      - ?id -send-timer))))
+  ?at <- (timer (name ?nat&:(eq ?nat (sym-cat reset- ?goal-id - ?plan-id
+                                      - ?id -abort-timer))))
   (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
   =>
   (printout t "Action Reset " ?mps " is final" crlf)
@@ -217,7 +228,8 @@
 (defrule refbox-action-prepare-mps-final
   "Finalize the prepare action if the desired machine state was reached"
   (time $?now)
-  ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state RUNNING)
                       (action-name prepare-bs|
                                    prepare-cs|
                                    prepare-ds|
@@ -225,9 +237,11 @@
                       (param-names $?param-names)
                       (param-values $? ?mps $?))
   ?st <- (timer (name ?nst&:(eq ?nst
-                               (sym-cat prepare- ?mps -send-timer))))
+                               (sym-cat prepare- ?goal-id - ?plan-id
+                                        - ?id -send-timer))))
   ?at <- (timer (name ?nat&:(eq ?nat
-                               (sym-cat prepare- ?mps -abort-timer))))
+                               (sym-cat prepare- ?goal-id - ?plan-id
+                                        - ?id -abort-timer))))
   ?md <- (metadata-prepare-mps ?mps $?date)
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|
                                                      PROCESSING|
@@ -242,16 +256,19 @@
 (defrule refbox-action-reset-mps-abort
   "Abort preparing and fail the action if took too long"
   (time $?now)
-  ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state RUNNING)
                       (action-name reset-mps)
                       (param-names $?param-names)
                       (param-values $? ?mps $?))
   ?at <- (timer (name ?nat&:(eq ?nat
-                               (sym-cat reset- ?mps -abort-timer)))
+                               (sym-cat reset- ?goal-id - ?plan-id
+                                        - ?id -abort-timer)))
 			       (time $?t&:(timeout ?now ?t ?*ABORT-PREPARE-PERIOD*))
 			       (seq ?seq))
   ?st <- (timer (name ?nst&:(eq ?nst
-                                (sym-cat reset- ?mps -send-timer))))
+                                (sym-cat reset- ?goal-id - ?plan-id
+                                         - ?id -send-timer))))
   (not (wm-fact (key domain fact mps-state args? m ?mps s BROKEN)))
   =>
   (printout t "Action Reset " ?mps " is Aborted" crlf)
@@ -261,16 +278,19 @@
 
 (defrule refbox-action-prepare-mps-abort-on-broken
   "Abort preparing if the mps got broken"
-  ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state RUNNING)
                       (action-name prepare-bs|
                                    prepare-cs|
                                    prepare-ds|
                                    prepare-rs)
                       (param-values $? ?mps $?))
   ?st <- (timer (name ?nst&:(eq ?nst
-                               (sym-cat prepare- ?mps -send-timer))))
+                               (sym-cat prepare- ?goal-id - ?plan-id
+                                        - ?id -send-timer))))
   ?at <- (timer (name ?nat&:(eq ?nat
-                               (sym-cat prepare- ?mps -abort-timer))))
+                               (sym-cat prepare- ?goal-id - ?plan-id
+                                        - ?id -abort-timer))))
   ?md <- (metadata-prepare-mps ?mps $?date)
   (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
   =>
@@ -282,7 +302,8 @@
 (defrule refbox-action-prepare-mps-abort
   "Abort preparing and fail the action if took too long"
   (time $?now)
-  ?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state RUNNING)
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state RUNNING)
                       (action-name prepare-bs|
                                    prepare-cs|
                                    prepare-ds|
@@ -290,11 +311,13 @@
                       (param-names $?param-names)
                       (param-values $? ?mps $?))
   ?at <- (timer (name ?nat&:(eq ?nat
-                                (sym-cat prepare- ?mps -abort-timer)))
+                                (sym-cat prepare- ?goal-id - ?plan-id
+                                         - ?id -abort-timer)))
 	        (time $?t&:(timeout ?now ?t ?*ABORT-PREPARE-PERIOD*))
                 (seq ?seq))
   ?st <- (timer (name ?nst&:(eq ?nst
-                                (sym-cat prepare- ?mps -send-timer))))
+                                (sym-cat prepare- ?goal-id - ?plan-id
+                                         - ?id -send-timer))))
   ?md <- (metadata-prepare-mps ?mps $?date)
   (not (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|
                                                           PROCESSING|
