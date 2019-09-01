@@ -35,4 +35,4 @@ SUBDIRS	= clips-motor-switch \
 
 include $(BUILDSYSDIR)/rules.mk
 
-gazebo: ax12_gripper tag_vision arduino
+gazebo: ax12_gripper tag_vision arduino conveyor_pose navgraph-generator-mps
