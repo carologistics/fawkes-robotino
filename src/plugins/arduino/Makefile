@@ -76,9 +76,11 @@ warning_tf:
 warning_arduino:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TYELLOW)Omitting flashing Arduino$(TNORMAL) (/dev/arduino not found)"
 flash_arduino:
-	$(SILENT)($(MAKE) -C $(BASEDIR)/src/plugins/arduino/ArduinoSketch safe_flash &> /dev/null) \
-	 	&& echo -e "$(INDENT_PRINT)--> $(TGREEN)Successfully flashed the arduino $(TNORMAL)"\
-	 	|| echo -e "$(INDENT_PRINT)--> $(TRED)Error while flashing the arduino $(TNORMAL)"
+	$(SILENT)($(MAKE) -C $(BASEDIR)/src/plugins/arduino/ArduinoSketch verify &> /dev/null) \
+		&& echo -e "$(INDENT_PRINT)--> $(TGREEN)No need to reflash arduino $(TNORMAL)"\
+		|| ( ($(MAKE) -C $(BASEDIR)/src/plugins/arduino/ArduinoSketch flash &> /dev/null) \
+			&& echo -e "$(INDENT_PRINT)--> $(TGREEN)Successfully reflashed arduino $(TNORMAL)" \
+			|| echo -e "$(INDENT_PRINT)--> $(TRED)Something went wrong while flashing the arduino $(TNORMAL)")
 endif
 
 
