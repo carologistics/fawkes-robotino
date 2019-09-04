@@ -175,8 +175,8 @@ void ArduinoComThread::loop() {
         float goal_y =
             tf_pose_target.getOrigin().getY() + msg->y() + cfg_y_max_ / 2.;
         float goal_z = tf_pose_target.getOrigin().getZ() + msg->z();
-        logger->log_info(name(), "Transformed: %f,%f,%f in frame %s", goal_x,
-                         goal_y, goal_z, cfg_gripper_frame_id_.c_str());
+        logger->log_debug(name(), "Transformed target axis values: %f,%f,%f",
+                         goal_x, goal_y, goal_z);
 
         bool msg_has_data = false;
         int d = 0;
@@ -193,7 +193,7 @@ void ArduinoComThread::loop() {
           arduino_msg->set_msecs_if_lower(abs(d) * cfg_speed_);
           msg_has_data = true;
         } else {
-          logger->log_error(name(), "Motion exceeds X dimension: %f", goal_x);
+          logger->log_error(name(), "Motion exceeds X dimension: %f", msg->x());
           arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_X);
           arduino_if_->write();
         }
@@ -211,7 +211,7 @@ void ArduinoComThread::loop() {
           arduino_msg->set_msecs_if_lower(abs(d) * cfg_speed_);
           msg_has_data = true;
         } else {
-          logger->log_error(name(), "Motion exceeds Y dimension: %f", goal_y);
+          logger->log_error(name(), "Motion exceeds Y dimension: %f", msg->y());
           arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_Y);
           arduino_if_->write();
         }
@@ -228,7 +228,7 @@ void ArduinoComThread::loop() {
           arduino_msg->set_msecs_if_lower(abs(d) * cfg_speed_);
           msg_has_data = true;
         } else {
-          logger->log_error(name(), "Motion exceeds Z dimension: %f", goal_z);
+          logger->log_error(name(), "Motion exceeds Z dimension: %f", msg->z());
           arduino_if_->set_status(ArduinoInterface::ERROR_OUT_OF_RANGE_Z);
           arduino_if_->write();
         }
