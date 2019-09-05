@@ -203,3 +203,31 @@ plugins/laser-filter:
       1-mix:
         type: min_merge
         timestamp_selection: first
+
+  map:
+
+    # URG input interface
+    in/filtered: Laser360Interface::Laser urg-filtered
+
+    # URG filtered output interface
+    out/mapless: Laser360Interface::Laser mapless
+
+    filters:
+
+      1-map:
+        # filter to remove map parts of the laser
+        type: map_filter
+
+  non-static:
+
+    # URG input interface
+    in/mapless: Laser360Interface::Laser mapless
+
+    # URG filtered output interface
+    out/non-static: Laser360Interface::Laser non-static
+
+    filters:
+
+      1-map:
+        # filter to remove map parts of the laser
+        type: box_filter
