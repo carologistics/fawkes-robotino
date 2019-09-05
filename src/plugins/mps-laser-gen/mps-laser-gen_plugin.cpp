@@ -34,8 +34,7 @@ public:
    * @param config Fakwes configuration
    */
   MPSLaserGenPlugin(Configuration *config) : Plugin(config) {
-    std::string prefix = "plugins/mps_laser_gen/";
-    thread_list.push_back(new MPSLaserGenThread(prefix));
+    thread_list.push_back(new MPSLaserGenThread());
   }
 };
 

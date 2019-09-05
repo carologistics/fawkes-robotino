@@ -40,6 +40,8 @@
 #include <interfaces/Laser360Interface.h>
 #include <ros/publisher.h>
 
+#define CFG_PREFIX "/plugins/mps_laser_gen/"
+
 namespace fawkes {}
 
 class MPSLaserGenThread : public fawkes::Thread,
@@ -69,9 +71,8 @@ class MPSLaserGenThread : public fawkes::Thread,
 
 public:
   /** MPSLaserGenThread constructor
-   * @param mps_laser_gen_prefix configuration path prefix
    */
-  MPSLaserGenThread(std::string mps_laser_gen_prefix);
+  MPSLaserGenThread();
 
   virtual void init();
   virtual void finalize();
