@@ -30,6 +30,7 @@ fawkes/meta_plugins:
     - laser-lines
     - gazsim-vis-localization
     - skiller
+    - mps-laser-gen
   gazsim-meta-robotino-ros-movebase:
     - ros-cmdvel
     - ros-navigator
@@ -43,6 +44,7 @@ fawkes/meta_plugins:
     - colli
     - gazsim-vis-localization
     - skiller
+    - mps-laser-gen
   gazsim-meta-robotino-vision-high-level:
     - gazsim-conveyor
     - gazsim-tag-vision

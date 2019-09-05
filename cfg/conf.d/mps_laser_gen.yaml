@@ -1,0 +1,13 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/tag_vision
+---
+
+plugins/mps_laser_gen:
+  # MPS dimensions
+  mps_length: 1.0
+  mps_width: 0.8
+
+  enable_laser_gen: false
+  enable_mps_box_filter: true

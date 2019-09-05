@@ -94,7 +94,9 @@ fawkes/bbsync:
         laser-lines: SwitchInterface::laser-lines
         arduino: ArduinoInterface::Arduino
         laser_front_dist: Position3DInterface::front_dist
+        laser_box_filter: LaserBoxFilterInterface::Laser Box Filter
       writing:
         tfTags: TransformInterface::TF tags
         conveyor_pose: TransformInterface::/tf/conveyor_pose
         conveyor_pose_init: TransformInterface::/tf/conveyor_pose_initial_guess
+        laser_non_static: Laser360Interface::Laser MPS

@@ -48,6 +48,7 @@ fawkes/meta_plugins:
     - ros-pcl
     - skiller-rest-api
     - skiller_motor_state
+    - mps-laser-gen
   m-robot-memory:
     - mongodb
     - robot-memory
