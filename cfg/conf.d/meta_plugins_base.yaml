@@ -29,8 +29,8 @@ fawkes/meta_plugins:
   m-base-laser:
     - laser
     - laser-filter
-    - m-base-ros
     - laser-pointclouds
+    - m-base-ros
     - laser-cluster
     - laser-lines
   m-base-full:
