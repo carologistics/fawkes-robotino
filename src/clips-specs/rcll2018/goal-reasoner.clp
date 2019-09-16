@@ -213,7 +213,7 @@
 ; ------------------------- PRE EVALUATION -----------------------------------
 
 
-(defrule goal-reasoner-evaluate-clean-locks
+(defrule goal-reasoner-pre-evaluate-clean-locks
 " Unlock all remaining locks of a failed goal."
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   (wm-fact (key cx identity) (value ?identity))
@@ -231,7 +231,7 @@
 )
 
 
-(defrule goal-reasoner-evaluate-clean-location-locks
+(defrule goal-reasoner-pre-evaluate-clean-location-locks
 " Unlock all remaining location-locks of a failed goal."
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   (wm-fact (key cx identity) (value ?identity))
@@ -250,7 +250,7 @@
 )
 
 
-(defrule goal-reasoner-evaluate-location-unlock-done
+(defrule goal-reasoner-pre-evaluate-location-unlock-done
 " React to a successful unlock of an location by removing the corresponding location-locked domain-fact"
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   ?p <- (goal-reasoner-unlock-pending ?lock)
@@ -265,7 +265,7 @@
 )
 
 
-(defrule goal-reasoner-evaluate-lock-unlock-done
+(defrule goal-reasoner-pre-evaluate-lock-unlock-done
 " React to a successful unlock of a lock by removing the corresponding locked domain-fact"
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   ?p <- (goal-reasoner-unlock-pending ?lock)
@@ -275,6 +275,27 @@
   (modify ?m (request NONE) (response NONE))
   (retract ?df)
   (retract ?p)
+)
+
+
+(defrule goal-reasoner-pre-evaluate-failed-exog-actions
+  " If an exogenous action failed, this means that something went totally wrong.
+    However, it is unlikely that we are able to continue using the mps. Therefore
+    we want to reset it
+  "
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  (plan-action (id ?id) (goal-id ?goal-id)
+               (plan-id ?plan-id)
+               (action-name bs-dispense|cs-retrieve-cap|cs-mount-cap|rs-mount-ring1|rs-mount-ring2|rs-mount-ring3)
+               (param-values $? ?mps $?)
+               (state FAILED))
+  (domain-object (name ?mps) (type mps))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  (not (wm-fact (key evaluated reset-mps args? m ?mps)))
+  =>
+  (assert
+    (wm-fact (key evaluated reset-mps args? m ?mps))
+  )
 )
 
 
@@ -294,27 +315,6 @@
   ; (printout t "Goal '" ?sg:id "' (part of '" ?sg:parent
   ;     "') has, cleaning up" crlf)
     (modify ?sg (mode FINISHED))
-  )
-)
-
-
-(defrule goal-reasouner-evaluate-failed-exog-actions
-  " If an exogenous action failed, this means that something went totally wrong.
-    However, it is unlikely that we are able to continue using the mps. Therefore
-    we want to reset it
-  "
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  (plan-action (id ?id) (goal-id ?goal-id)
-               (plan-id ?plan-id)
-               (action-name bs-dispense|cs-retrieve-cap|cs-mount-cap|rs-mount-ring1|rs-mount-ring2|rs-mount-ring3)
-               (param-values $? ?mps $?)
-               (state FAILED))
-  (domain-object (name ?mps) (type mps))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
-  (not (wm-fact (key evaluated reset-mps args? m ?mps)))
-  =>
-  (assert
-    (wm-fact (key evaluated reset-mps args? m ?mps))
   )
 )
 
