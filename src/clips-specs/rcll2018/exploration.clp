@@ -95,8 +95,8 @@
 
   (wm-fact (key domain fact entered-field args? r ?r))
   (wm-fact (key domain fact self args? r ?r))
-  (wm-fact (key refbox phase) (type UNKNOWN) (value EXPLORATION))
-  (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
+  (wm-fact (key refbox phase) (value EXPLORATION))
+  (wm-fact (key game state) (value RUNNING))
 
   ?cv <- (wm-fact (id "/config/rcll/exploration/zone-margin") (type FLOAT) (value ?zone-margin))
   (exp-navigator-vlow ?vel ?rot)
@@ -397,8 +397,8 @@
 
 "
   ?g <- (goal (class EXPLORATION) (mode DISPATCHED))
-  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
-  (wm-fact (key game state) (type UNKNOWN) (value RUNNING))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (wm-fact (key game state) (value RUNNING))
   (wm-fact (id "/config/rcll/max-velocity") (type FLOAT) (value ?max-velocity))
   (wm-fact (id "/config/rcll/max-rotation") (type FLOAT) (value ?max-rotation))
 
