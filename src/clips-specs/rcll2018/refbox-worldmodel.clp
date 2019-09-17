@@ -205,8 +205,8 @@
       (bind ?yaw (deg-to-rad ?rot))
       (assert
         (wm-fact (key refbox field-ground-truth name args? m ?name) (type BOOL) (value TRUE))
-        (wm-fact (key refbox field-ground-truth mtype args? m ?name) (type UNKNOWN) (value ?type))
-        (wm-fact (key refbox field-ground-truth zone args? m ?name) (type UNKNOWN) (value ?zone))
+        (wm-fact (key refbox field-ground-truth mtype args? m ?name) (value ?type))
+        (wm-fact (key refbox field-ground-truth zone args? m ?name) (value ?zone))
         (wm-fact (key refbox field-ground-truth yaw args? m ?name) (type FLOAT) (value ?yaw))
         (wm-fact (key refbox field-ground-truth orientation args? m ?name) (type FLOAT) (value ?rot))
       )
