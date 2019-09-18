@@ -51,7 +51,7 @@ local tfm = require("fawkes.tfutils")
 local llutils = require("fawkes.laser-lines_utils")
 
 local x_distance = 0.28
-local gripper_adjust_z_distance = 0.03
+local gripper_adjust_z_distance = -0.4
 local gripper_adjust_x_distance = 0.005
 local adjust_target_frame = "gripper_home"
 local gripper_down_to_puck = -0.025
