@@ -565,7 +565,7 @@
   ; Refbox CEs
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key refbox order ?order quantity-delivered ?team-color)
+  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
            (value ?qd-us&:(< ?qd-us ?qr)))
   (wm-fact (key refbox game-time) (values ?curr-time $?))
   (wm-fact (key refbox order ?order delivery-end)
