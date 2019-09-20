@@ -106,6 +106,7 @@
   (time $?now)
   ?g <- (goal (id ?maintain-id) (class WP-SPAWN-MAINTAIN) (mode SELECTED))
   (not (goal (class SPAWN-WP)))
+  (not (goal (class SPAWN-SS-C0)))
   (domain-object (name ?robot) (type robot))
   (not
     (and
@@ -119,6 +120,41 @@
                 (params robot ?robot)))
 )
 
+
+(defrule goal-production-create-ss-spawn
+" Spawn a C0 into the storage station.
+"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?g <- (goal (id ?maintain-id) (class WP-SPAWN-MAINTAIN) (mode SELECTED))
+  (not (goal (class SPAWN-WP)))
+  (not (goal (class SPAWN-SS-C0)))
+  (wm-fact (key refbox phase) (type UNKNOWN) (value PRODUCTION))
+  ; Give Replenisher some time to place the C0 into the SS
+  (wm-fact (key refbox game-time) (values ?sec&:(> ?sec 45) $?))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact self args? r ?robot))
+  ;Standing Order CEs
+  (wm-fact (key domain fact order-complexity args? ord ?order com C0))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key refbox order ?order delivery-begin) (value 0))
+  (wm-fact (key config rcll store-standing-c0) (value ?store-standing))
+  (wm-fact (key config rcll use-ss) (value TRUE))
+  (wm-fact (key domain fact wp-cap-color args? wp ? col ?other-cap-color))
+  (test (or (and (eq ?other-cap-color ?cap-color) ?store-standing)
+            (and (not ?store-standing)
+                 (not (eq ?other-cap-color ?cap-color))
+                 (not (eq ?other-cap-color CAP_NONE)))))
+  ;SS CEs
+  (wm-fact (key domain fact mps-type args? m ?ss t SS))
+  (wm-fact (key domain fact mps-state args? m ?ss s ~BROKEN))
+  (wm-fact (key domain fact mps-team args? m ?ss col ?team-color))
+  (not (wm-fact (key domain fact ss-initialized args? m ?ss)))
+  =>
+  (assert (goal (id (sym-cat SPAWN-SS-C0- (gensym*))) (sub-type SIMPLE)
+                (class SPAWN-SS-C0) (parent ?maintain-id)
+                (params robot ?robot ss ?ss base ?base-color cap ?other-cap-color)))
+)
 
 (defrule goal-production-create-refill-shelf-maintain
 " The parent goal to refill a shelf. Allows formulation of goals to refill
@@ -1318,7 +1354,7 @@
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
   ;MPS-CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
+  (wm-fact (key domain fact mps-type args? m ?mps t CS|SS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;WP-CEs

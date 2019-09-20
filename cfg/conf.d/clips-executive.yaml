@@ -232,6 +232,13 @@ clips-executive:
 
           competitive-order-priority: DEFAULT
 
+          # If true, the standing c0 order is stored at the storage station
+          # else, a C0 with the same base and opposite cap color as the
+          # standing C0 is stored.
+
+          store-standing-c0: true
+          use-ss: false
+
           # Bots that are enabled can formulate production goals,
           # disabled bots only formulate wait goals
 

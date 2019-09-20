@@ -34,6 +34,7 @@
 		cap-color - object
 		ring-color - object
 		ds-gate - object
+		ss-operation - object
 		cs-operation - object
 		cs-statename - object
 		order - object
@@ -57,6 +58,7 @@
 		GATE-1 GATE-2 GATE-3 - ds-gate
 		RING_NONE RING_BLUE RING_GREEN RING_ORANGE RING_YELLOW - ring-color
 		RETRIEVE_CAP MOUNT_CAP - cs-operation
+		RETRIEVE - ss-operation
 		C0 C1 C2 C3 - order-complexity-value
 		LEFT MIDDLE RIGHT - shelf-spot
 		NA ZERO ONE TWO THREE - ring-num
@@ -80,6 +82,7 @@
 		(cs-buffered ?m - mps ?col - cap-color)
 		(cs-color ?m - mps ?col - cap-color)
 		(cs-free ?m - mps)
+		(ss-prepared-for ?m - mps ?op - ss-operation ?wp - workpiece)
 		(rs-prepared-color ?m - mps ?col - ring-color)
 		(rs-ring-spec ?m - mps ?r - ring-color ?rn - ring-num)
 		(rs-filled-with ?m - mps ?n - ring-num)
@@ -108,7 +111,8 @@
 		(wp-on-shelf ?wp - workpiece ?m - mps ?spot - shelf-spot)
 		(wp-spawned-for ?wp - workpiece ?r - robot)
     (spot-free ?m - mps ?spot - shelf-spot)
-
+    (ss-initialized ?m - mps)
+    (ss-stored-wp ?m  - mps ?wp - workpiece)
     (locked ?name - object)
     (location-locked ?m - mps ?s - mps-side)
 	)
@@ -532,5 +536,47 @@
       (wp-ring3-color wp RING_NONE)
       (wp-base-color wp BASE_NONE)
     )
+  )
+  (:action ss-store-wp
+    :parameters (?r - robot ?m - mps ?wp - workpiece ?base - base-color ?cap - cap-color)
+    :precondition (and
+      (mps-type ?m SS)
+      (wp-unused ?wp)
+      (wp-spawned-for ?wp ?r)
+      (wp-cap-color ?wp CAP_NONE)
+      (wp-ring1-color ?wp RING_NONE)
+      (wp-ring2-color ?wp RING_NONE)
+      (wp-ring3-color ?wp RING_NONE)
+      (wp-base-color ?wp BASE_NONE)
+      (not (ss-initialized ?m)))
+    :effect (and
+      (not (wp-spawned-for ?wp ?r))
+      (not (wp-cap-color ?wp CAP_NONE))
+      (wp-cap-color ?wp ?cap)
+      (not (wp-base-color wp BASE_NONE))
+      (wp-base-color wp ?base)
+      (ss-initialized ?m)
+      (wp-usable ?wp)
+      (not (wp-unused ?wp))
+      (ss-stored-wp ?m ?wp)
+    )
+  )
+  (:action prepare-ss
+    :parameters (?m - mps ?wp - workpiece ?op - ss-operation)
+    :precondition (and (mps-type ?m SS) (mps-state ?m IDLE) (ss-stored-wp ?m ?wp))
+    :effect (and (not (mps-state ?m IDLE)) (mps-state ?m READY-AT-OUTPUT)
+                 (ss-prepared-for ?m ?op ?wp))
+  )
+  (:action ss-retrieve-c0
+   :parameters (?m - mps ?wp - workpiece)
+   :precondition (and (mps-type ?m SS) (mps-state ?m READY-AT-OUTPUT)
+                      (ss-prepared-for ?m RETRIEVE ?wp)
+                      (mps-side-free ?m OUTPUT)
+                      (ss-stored-wp ?m ?wp))
+   :effect (and (wp-at ?wp ?m OUTPUT) (not (mps-side-free ?m OUTPUT))
+                (wp-at ?wp ?m OUTPUT)
+                (not (ss-prepared-for ?m RETRIEVE ?wp))
+                (not (wp-spawned-for ?wp ?r))
+                (not (ss-stored-wp ?m ?wp)))
   )
 )
