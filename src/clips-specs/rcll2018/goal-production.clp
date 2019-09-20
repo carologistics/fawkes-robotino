@@ -948,8 +948,11 @@
             (wm-fact (key domain fact order-complexity args? ord ?any-order com ?other-complexity))
             (wm-fact (key config rcll exclusive-complexities) (values $?other-exclusive&:(member$ (str-cat ?other-complexity) ?other-exclusive)))
             (wm-fact (key config rcll exclusive-complexities) (values $?exclusive&:(member$ (str-cat ?complexity) ?exclusive)))))
-  (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+  (or (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+      (allowed ?complexity)
+  )
   (test (neq ?complexity C0))
+  (not (blocked ?complexity))
   ; Strategy CEs
   (not (goal (class MOUNT-FIRST-RING)
              (parent ?production-id)
