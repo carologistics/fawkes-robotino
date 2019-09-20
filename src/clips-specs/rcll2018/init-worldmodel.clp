@@ -52,6 +52,7 @@
   (wm-robmem-sync-enable "/domain/fact/wp-on-shelf")
   (wm-robmem-sync-enable "/domain/fact/wp-spawned-for")
   (wm-robmem-sync-enable "/domain/fact/spot-free")
+  (wm-robmem-sync-enable "/domain/fact/quantity-delivered")
   (wm-robmem-sync-enable "/mps-handling/")
   (wm-robmem-sync-enable "/order/meta/wp-for-order")
   (wm-robmem-sync-enable "/exploration/fact/tag-vis")

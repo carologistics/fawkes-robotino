@@ -111,9 +111,9 @@
             (wm-fact (key domain fact order-cap-color  args? ord ?order-id col ?cap) (type BOOL) (value TRUE) )
             (wm-fact (key domain fact order-gate  args? ord ?order-id gate (sym-cat GATE- ?delivery-gate)) (type BOOL) (value TRUE) )
             (wm-fact (key refbox order ?order-id quantity-requested) (type UINT) (value ?quantity-requested) )
-            (wm-fact (key refbox order ?order-id quantity-delivered CYAN)
+            (wm-fact (key domain fact quantity-delivered args? ord ?order-id team CYAN)
                      (type UINT) (value 0))
-            (wm-fact (key refbox order ?order-id quantity-delivered MAGENTA)
+            (wm-fact (key domain fact quantity-delivered args? ord ?order-id team MAGENTA)
                      (type UINT) (value 0))
             (wm-fact (key refbox order ?order-id delivery-begin) (type UINT) (value ?begin) )
             (wm-fact (key refbox order ?order-id delivery-end) (type UINT) (value ?end) )
@@ -129,8 +129,8 @@
           )
           (do-for-fact ((?old-qd-them wm-fact))
             (and (wm-key-prefix ?old-qd-them:key
-                   (create$ refbox order ?order-id
-                    quantity-delivered (mirror-team ?team-color)))
+                   (create$ domain fact quantity-delivered args? ord ?order-id
+                    team (mirror-team ?team-color)))
                  (neq ?old-qd-them:value ?qd-them))
               (modify ?old-qd-them (value ?qd-them))
           )
