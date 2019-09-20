@@ -90,6 +90,7 @@
   (return (or (eq ?goal-class GET-BASE-TO-FILL-RS)
               (eq ?goal-class GET-SHELF-TO-FILL-RS)
               (eq ?goal-class FILL-CAP)
+              (eq ?goal-class CLEAR-MPS)
               (eq ?goal-class DISCARD-UNKNOWN)
               (eq ?goal-class PRODUCE-C0)
               (eq ?goal-class PRODUCE-CX)
@@ -488,12 +489,14 @@
 
 
 (defrule goal-reasoner-remove-retracted-goal-common
-" Remove a retracted goal if it has no parent (anymore).
-  Goal trees are retracted recursively from top to bottom.
+" Remove a retracted goal if it has no child (anymore).
+  Goal trees are retracted recursively from bottom to top. This has to be done
+  with low priority to avoid races with the sub-type goal lifecycle.
 "
-  ?g <- (goal (id ?goal-id) (class ?class) (parent ?parent)
+  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
+  ?g <- (goal (id ?goal-id)
         (mode RETRACTED) (acquired-resources))
-  (not (goal (id ?parent)))
+  (not (goal (parent ?goal-id)))
 =>
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
     (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
@@ -501,16 +504,6 @@
     )
     (retract ?p)
   )
-  (retract ?g)
-)
-
-
-(defrule goal-reasoner-remove-retracted-subgoal-of-maintain-goal
-" Remove a retracted sub-goal of a maintain goal once the parent is EVALUATED."
-  ?g <- (goal (id ?goal-id) (parent ?parent) (acquired-resources)
-              (class ?class) (mode RETRACTED))
-  (goal (id ?parent) (type MAINTAIN) (mode EVALUATED))
-=>
   (retract ?g)
 )
 
@@ -529,18 +522,21 @@
 )
 
 
-(defrule goal-reasoner-reject-production-tree-goal-other-goal-dispatched
-" Retract a formulated sub-goal of the production tree once a production leaf
+(defrule goal-reasoner-reject-production-tree-goals-other-goal-dispatched
+" Retract all formulated sub-goal of the production tree once a production leaf
   goal is dispatched.
 "
   (declare (salience ?*SALIENCE-GOAL-REJECT*))
-  ?g <- (goal (id ?goal) (parent ?parent) (type ACHIEVE)
-              (sub-type ?sub-type) (class ?class&:(production-goal ?class))
-              (mode FORMULATED))
+  (goal (id ?goal) (parent ?parent) (type ACHIEVE)
+        (sub-type ?sub-type) (class ?class&:(production-goal ?class))
+        (mode FORMULATED))
   (goal (id ?some-leaf) (class ?some-class&:(production-goal ?some-class))
         (sub-type SIMPLE) (mode DISPATCHED))
 =>
-  (modify ?g (mode RETRACTED) (outcome REJECTED))
+  (delayed-do-for-all-facts ((?g goal))
+    (and (eq ?g:mode FORMULATED) (production-goal ?g:class))
+    (modify ?g (mode RETRACTED) (outcome REJECTED))
+  )
 )
 
 
