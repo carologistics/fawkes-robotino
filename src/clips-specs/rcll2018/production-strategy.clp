@@ -518,7 +518,7 @@
   (goal (id ?g) (class PROCESS-MPS) (params m ?rs) (mode FINISHED)
                 (outcome COMPLETED))
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
-  (wm-fact (key domain fact mps-team args? m ?rs col ?team))
+  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
   (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT))
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key wp meta next-step args? wp ?wp) (value ?ns&RING1|RING2|RING3))
@@ -540,7 +540,7 @@
   ?strat <- (wm-fact (key strategy keep-mps-side-free
                       args? m ?rs side INPUT cause ?wp))
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
-  (wm-fact (key domain fact mps-team args? m ?rs col ?team))
+  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
   (not (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
 =>
   (retract ?strat)
