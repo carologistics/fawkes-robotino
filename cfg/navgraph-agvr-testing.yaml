@@ -1,0 +1,1092 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,navgraph/
+---
+graph-name: LLSF
+default-properties:
+  - align_distance: 0.45
+  - input_offset_y: 0.025
+  - orientation_tolerance: 0.6
+  - output_offset_y: -0.025
+  - shortcut_tolerance: 1.2
+  - signal_hint_x: 0.035
+  - signal_hint_y: -0.1
+  - signal_hint_z: 0.78
+  - target_tolerance: 0.7
+  - travel_tolerance: 1.5
+nodes:
+  - !unconnected
+    name: place-default
+    pos: [1, 0.5493042]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - only-copy-properties: true
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: exp-11
+    pos: [2.103677, 2.735544]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation: 0.016802
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: exp-12
+    pos: [6.032726, 1.566791]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation: 2.9
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: exp-21
+    pos: [5.626884, 3.4761]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation: -2.479268
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: exp-22
+    pos: [0.5949329, 4]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation: -1.480659
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: exp-23
+    pos: [3.353695, 3.85202]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation: -1.605476
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: exp-31
+    pos: [5.492358, 0.4282717]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: 2.627826
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: exp-32
+    pos: [1.153883, 1.740971]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: 0.705826
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-ins-out
+    pos: [3.187884, -0.6459253]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-ins-in
+    pos: [3.198881, 0.2133753]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation: 1.537017
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: M-ins-out
+    pos: [1.854602, -0.6577129]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: M-ins-in
+    pos: [1.802249, 0.2747931]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation: 1.547685
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT1
+    pos: [4.153177, 0.1906792]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation: 1.57
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1.5
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-Z13
+    pos: [2.7, 3.9]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-Z35
+    pos: [2.5, 4.5]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-Z75
+    pos: [4.4, 2.5]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-BS-INPUT
+    pos: [0.6190259, 3.553846]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-BS-OUTPUT
+    pos: [0.679945, 1.52709]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-CS1-INPUT
+    pos: [5.741041, 1.484159]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-CS1-OUTPUT
+    pos: [5.902574, 3.190466]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-CS2-INPUT
+    pos: [3.122373, 1.352757]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-CS2-OUTPUT
+    pos: [5.307632, 1.376023]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-RS1-INPUT
+    pos: [5.495708, 3.570585]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-RS1-OUTPUT
+    pos: [3.330406, 3.574407]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-RS2-INPUT
+    pos: [2.298882, 3.556323]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-RS2-OUTPUT
+    pos: [2.355251, 1.457607]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-DS-INPUT
+    pos: [0.791117, 1.172523]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-DS-OUTPUT
+    pos: [-0.1643214, -0.209429]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-SS-INPUT
+    pos: [4.199894, 2.483869]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-C-SS-OUTPUT
+    pos: [4.497852, 2.519289]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-BS-INPUT
+    pos: [2.471, -0.9811634]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-BS-OUTPUT
+    pos: [2.471, -1.161997]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-CS1-INPUT
+    pos: [2.471, -1.066641]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-CS1-OUTPUT
+    pos: [2.471, -1.203781]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-CS2-INPUT
+    pos: [2.471, -1.124957]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-CS2-OUTPUT
+    pos: [2.471, -1.095931]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-RS1-INPUT
+    pos: [2.471, -1.025523]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-RS1-OUTPUT
+    pos: [2.471, -1.096842]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-RS2-INPUT
+    pos: [2.471, -1.018084]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-RS2-OUTPUT
+    pos: [2.471, -1.038587]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-DS-INPUT
+    pos: [2.471, -0.949499]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-CDS-OUTPUT
+    pos: [2.471, -1.032934]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-SS-INPUT
+    pos: [2.471, -1.034261]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: WAIT-M-SS-OUTPUT
+    pos: [2.471, -1.057505]
+    properties:
+      - align_distance: 0.45
+      - always-copy: true
+      - input_offset_y: 0.025
+      - orientation_tolerance: 3.14
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-CS1
+    pos: [5.87796, 2.439332]
+    properties:
+      - mps: true
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - only-copy-properties: true
+      - orientation_tolerance: 0.6
+      - output_offset_x: -0.003
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - tag_input: 1
+      - tag_output: 2
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-CS2
+    pos: [4.289614, 1.368615]
+    properties:
+      - mps: true
+      - align_distance: 0.45
+      - input_offset_x: 0.0
+      - input_offset_y: 0.025
+      - only-copy-properties: true
+      - orientation_tolerance: 0.6
+      - output_offset_x: 0.0
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - tag_input: 17
+      - tag_output: 18
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-RS1
+    pos: [4.359291, 3.535244]
+    properties:
+      - mps: true
+      - align_distance: 0.45
+      - input_offset_y: 0.02
+      - only-copy-properties: true
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - tag_input: 33
+      - tag_output: 34
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-RS2
+    pos: [2.326889, 2.523885]
+    properties:
+      - mps: true
+      - align_distance: 0.45
+      - input_offset_x: -0.01
+      - input_offset_y: 0.02
+      - only-copy-properties: true
+      - orientation_tolerance: 0.6
+      - output_offset_x: 0.005
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - tag_input: 177
+      - tag_output: 178
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-BS
+    pos: [0.60374, 2.488763]
+    properties:
+      - mps: true
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - only-copy-properties: true
+      - orientation_tolerance: 0.6
+      - output_offset_x: -0.015
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - tag_input: 65
+      - tag_output: 66
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-DS
+    pos: [0.4836947, 0.5408679]
+    properties:
+      - mps: true
+      - align_distance: 0.45
+      - input_offset_x: 0.02
+      - input_offset_y: 0.025
+      - only-copy-properties: true
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - tag_input: 81
+      - tag_output: 82
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: M-CS1
+    pos: [-5.401671e-08, -0.8914272]
+    properties:
+      - mps: true
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - only-copy-properties: true
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.015
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - tag_input: 97
+      - tag_output: 98
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: M-CS2
+    pos: [-4.237518e-08, -0.7172707]
+    properties:
+      - mps: true
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - only-copy-properties: true
+      - orientation_tolerance: 0.6
+      - output_offset_x: -0.005
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - tag_input: 113
+      - tag_output: 114
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: M-RS1
+    pos: [-3.352761e-08, -0.5533589]
+    properties:
+      - mps: true
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - only-copy-properties: true
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - tag_input: 129
+      - tag_output: 130
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: M-RS2
+    pos: [-4.284084e-08, -0.7053379]
+    properties:
+      - mps: true
+      - align_distance: 0.45
+      - input_offset_x: -0.02
+      - input_offset_y: 0.025
+      - only-copy-properties: true
+      - orientation_tolerance: 0.6
+      - output_offset_x: -0.005
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - tag_input: 145
+      - tag_output: 146
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: M-BS
+    pos: [-3.783498e-08, -0.6426864]
+    properties:
+      - mps: true
+      - align_distance: 0.45
+      - input_offset_x: -0.01
+      - input_offset_y: 0.025
+      - only-copy-properties: true
+      - orientation_tolerance: 0.6
+      - output_offset_x: -0.015
+      - output_offset_y: -0.035
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - tag_input: 161
+      - tag_output: 162
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: M-DS
+    pos: [-2.980232e-08, -0.5175678]
+    properties:
+      - mps: true
+      - align_distance: 0.45
+      - input_offset_x: -0.02
+      - input_offset_y: 0.025
+      - only-copy-properties: true
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - tag_input: 49
+      - tag_output: 50
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-DS-O
+    pos: [0.1623127, 0.1548042]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: 0.656838
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-DS-I
+    pos: [1.035024, 0.9402974]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: -2.346813
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-RS1-I
+    pos: [5.181956, 3.494636]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: -3.095548
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-RS1-O
+    pos: [3.580997, 3.508957]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: 0.0
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-CS2-O
+    pos: [4.943186, 1.328633]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: -3.136102
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-CS2-I
+    pos: [3.634356, 1.35084]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: 0.0
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-RS2-O
+    pos: [2.518883, 1.706937]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: 1.562796
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-BS-O
+    pos: [0.7603794, 1.578029]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: 1.607037
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-BS-I
+    pos: [0.7908186, 3.270257]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: -1.598812
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-RS2-I
+    pos: [2.534234, 3.148046]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: -1.565025
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-CS1-I
+    pos: [5.937481, 1.612323]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: 1.565159
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-CS1-O
+    pos: [5.937909, 3.140278]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: -1.525244
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+connections:
+  []
