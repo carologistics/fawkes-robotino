@@ -15,6 +15,6 @@ skills:
   goto:
     distance_to_travel: 0.5
   shelf_pick:
-    left_slot_y_offset: 0.0
-    middle_slot_y_offset: 0.0
-    right_slot_y_offset: 0.0
+    left_slot_y_offset: -0.01
+    middle_slot_y_offset: -0.01
+    right_slot_y_offset: -0.01
