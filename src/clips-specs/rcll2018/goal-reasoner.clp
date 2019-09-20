@@ -336,7 +336,7 @@
   ?g <- (goal (id ?goal-id) (class DELIVER) (mode FINISHED) (outcome COMPLETED)
               (params $? ?order $?))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
-  ?od <- (wm-fact (key refbox order ?order quantity-delivered ?team-color) (value ?val))
+  ?od <- (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color) (value ?val))
   =>
   (modify ?od (value (+ ?val 1)))
   (modify ?g (mode EVALUATED))
