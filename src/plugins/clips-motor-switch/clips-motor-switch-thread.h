@@ -40,33 +40,38 @@ class ClipsMotorSwitchThread : public fawkes::Thread,
                                public fawkes::ConfigurableAspect,
                                public fawkes::BlackBoardAspect,
                                public fawkes::CLIPSFeature,
-                               public fawkes::CLIPSFeatureAspect {
+                               public fawkes::CLIPSFeatureAspect
+{
 public:
-  ClipsMotorSwitchThread();
-  virtual ~ClipsMotorSwitchThread();
+	ClipsMotorSwitchThread();
+	virtual ~ClipsMotorSwitchThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual void finalize();
 
-  // for CLIPSFeature
-  virtual void clips_context_init(const std::string &env_name,
-                                  fawkes::LockPtr<CLIPS::Environment> &clips);
-  virtual void clips_context_destroyed(const std::string &env_name);
+	// for CLIPSFeature
+	virtual void clips_context_init(const std::string &                  env_name,
+	                                fawkes::LockPtr<CLIPS::Environment> &clips);
+	virtual void clips_context_destroyed(const std::string &env_name);
 
-  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() { Thread::run(); }
+	virtual void
+	run()
+	{
+		Thread::run();
+	}
 
 private:
-  void clips_motor_enable(std::string env_name);
-  void clips_motor_disable(std::string env_name);
+	void clips_motor_enable(std::string env_name);
+	void clips_motor_disable(std::string env_name);
 
-  std::map<std::string, fawkes::LockPtr<CLIPS::Environment>> envs_;
+	std::map<std::string, fawkes::LockPtr<CLIPS::Environment>> envs_;
 
 private:
-  std::string cfg_iface_id_;
-  fawkes::MotorInterface *motor_if_;
+	std::string             cfg_iface_id_;
+	fawkes::MotorInterface *motor_if_;
 };
 
 #endif
