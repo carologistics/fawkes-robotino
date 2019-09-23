@@ -37,29 +37,39 @@ using namespace fawkes;
 
 /** Constructor. */
 VoltageLoggerThread::VoltageLoggerThread()
-    : Thread("PluginTemplateThread", Thread::OPMODE_WAITFORWAKEUP),
-      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SKILL) {
-  flogger_ = new FileLogger(FILENAME, Logger::LL_DEBUG);
+: Thread("PluginTemplateThread", Thread::OPMODE_WAITFORWAKEUP),
+  BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SKILL)
+{
+	flogger_ = new FileLogger(FILENAME, Logger::LL_DEBUG);
 }
 
-void VoltageLoggerThread::init() {
-
-  logger->log_info(name(), "Plugin Template starts up");
-  bat_if_ = blackboard->open_for_reading<BatteryInterface>("Robotino");
-  last_measure_ = clock->now();
+void
+VoltageLoggerThread::init()
+{
+	logger->log_info(name(), "Plugin Template starts up");
+	bat_if_       = blackboard->open_for_reading<BatteryInterface>("Robotino");
+	last_measure_ = clock->now();
 }
 
-bool VoltageLoggerThread::prepare_finalize_user() { return true; }
-
-void VoltageLoggerThread::finalize() {
-  blackboard->close(bat_if_);
-  delete flogger_;
+bool
+VoltageLoggerThread::prepare_finalize_user()
+{
+	return true;
 }
 
-void VoltageLoggerThread::loop() {
-  if (clock->elapsed(&last_measure_) > INTERVAL) {
-    last_measure_ = clock->now();
-    bat_if_->read();
-    flogger_->log_info(name(), "voltage[V]: %f", (bat_if_->voltage() / 1000.f));
-  }
+void
+VoltageLoggerThread::finalize()
+{
+	blackboard->close(bat_if_);
+	delete flogger_;
+}
+
+void
+VoltageLoggerThread::loop()
+{
+	if (clock->elapsed(&last_measure_) > INTERVAL) {
+		last_measure_ = clock->now();
+		bat_if_->read();
+		flogger_->log_info(name(), "voltage[V]: %f", (bat_if_->voltage() / 1000.f));
+	}
 }
