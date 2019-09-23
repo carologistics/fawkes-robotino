@@ -20,9 +20,9 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "light_compass_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
@@ -30,14 +30,16 @@ using namespace fawkes;
  * the nearest light
  * @author Florian Nolden & Tobias Neumann
  */
-class LightCompassPlugin : public fawkes::Plugin {
+class LightCompassPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  LightCompassPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new LightCompassThread());
-  }
+	LightCompassPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new LightCompassThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Gives the distance and direction of the nearest light ")

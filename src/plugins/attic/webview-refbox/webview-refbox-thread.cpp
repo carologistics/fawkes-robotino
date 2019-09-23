@@ -20,6 +20,7 @@
  */
 
 #include "webview-refbox-thread.h"
+
 #include "webview-refbox-processor.h"
 
 #include <webview/nav_manager.h>
@@ -37,28 +38,38 @@ using namespace fawkes;
 
 /** Constructor. */
 WebviewRCLLRefBoxThread::WebviewRCLLRefBoxThread()
-    : Thread("WebviewRCLLRefBoxThread", Thread::OPMODE_WAITFORWAKEUP) {}
+: Thread("WebviewRCLLRefBoxThread", Thread::OPMODE_WAITFORWAKEUP)
+{
+}
 
 /** Destructor. */
-WebviewRCLLRefBoxThread::~WebviewRCLLRefBoxThread() {}
-
-void WebviewRCLLRefBoxThread::init() {
-  std::string nav_entry = "RCLL RefBox";
-  try {
-    nav_entry = config->get_string("/webview/refbox/nav-entry");
-  } catch (Exception &e) {
-  } // ignored, use default
-
-  web_proc_ =
-      new WebviewRCLLRefBoxRequestProcessor(REFBOX_URL_PREFIX, mongodb_client);
-  webview_url_manager->register_baseurl(REFBOX_URL_PREFIX, web_proc_);
-  webview_nav_manager->add_nav_entry(REFBOX_URL_PREFIX, nav_entry.c_str());
+WebviewRCLLRefBoxThread::~WebviewRCLLRefBoxThread()
+{
 }
 
-void WebviewRCLLRefBoxThread::finalize() {
-  webview_url_manager->unregister_baseurl(REFBOX_URL_PREFIX);
-  webview_nav_manager->remove_nav_entry(REFBOX_URL_PREFIX);
-  delete web_proc_;
+void
+WebviewRCLLRefBoxThread::init()
+{
+	std::string nav_entry = "RCLL RefBox";
+	try {
+		nav_entry = config->get_string("/webview/refbox/nav-entry");
+	} catch (Exception &e) {
+	} // ignored, use default
+
+	web_proc_ = new WebviewRCLLRefBoxRequestProcessor(REFBOX_URL_PREFIX, mongodb_client);
+	webview_url_manager->register_baseurl(REFBOX_URL_PREFIX, web_proc_);
+	webview_nav_manager->add_nav_entry(REFBOX_URL_PREFIX, nav_entry.c_str());
 }
 
-void WebviewRCLLRefBoxThread::loop() {}
+void
+WebviewRCLLRefBoxThread::finalize()
+{
+	webview_url_manager->unregister_baseurl(REFBOX_URL_PREFIX);
+	webview_nav_manager->remove_nav_entry(REFBOX_URL_PREFIX);
+	delete web_proc_;
+}
+
+void
+WebviewRCLLRefBoxThread::loop()
+{
+}

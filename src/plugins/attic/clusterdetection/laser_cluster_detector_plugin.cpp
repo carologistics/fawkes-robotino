@@ -20,23 +20,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "laser_cluster_detector_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /** Template! Makes the robotino move forward for 3 seconds
  * @author Daniel Ewert
  */
-class LaserClusterDetectorPlugin : public fawkes::Plugin {
+class LaserClusterDetectorPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  LaserClusterDetectorPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new LaserClusterDetector());
-  }
+	LaserClusterDetectorPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new LaserClusterDetector());
+	}
 };
 
 PLUGIN_DESCRIPTION("find a cluster of laserpoints")

@@ -20,23 +20,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "laser_sim_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /** Template! Makes the robotino move forward for 3 seconds
  * @author Daniel Ewert
  */
-class LaserSimPlugin : public fawkes::Plugin {
+class LaserSimPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  LaserSimPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new LaserSim());
-  }
+	LaserSimPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new LaserSim());
+	}
 };
 
 PLUGIN_DESCRIPTION("simple laser simulation")

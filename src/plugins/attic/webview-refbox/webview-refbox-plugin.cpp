@@ -21,6 +21,7 @@
  */
 
 #include "webview-refbox-thread.h"
+
 #include <core/plugin.h>
 
 using namespace fawkes;
@@ -28,14 +29,16 @@ using namespace fawkes;
 /** RCLL refbox webview plugin.
  * @author Tim Niemueller
  */
-class WebviewRCLLRefBoxPlugin : public fawkes::Plugin {
+class WebviewRCLLRefBoxPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  WebviewRCLLRefBoxPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new WebviewRCLLRefBoxThread());
-  }
+	WebviewRCLLRefBoxPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new WebviewRCLLRefBoxThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("RCLL refbox log data")

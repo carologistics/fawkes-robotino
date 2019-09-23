@@ -23,10 +23,11 @@
 
 #include <core/threading/mutex_locker.h>
 #include <interfaces/NavGraphGeneratorInterface.h>
-#include <limits>
-#include <memory>
 #include <navgraph/navgraph.h>
 #include <navgraph/yaml_navgraph.h>
+
+#include <limits>
+#include <memory>
 
 using namespace fawkes;
 
@@ -37,119 +38,102 @@ using namespace fawkes;
 
 /** Constructor. */
 NavGraphGenerator2014Thread::NavGraphGenerator2014Thread()
-    : Thread("NavGraphGenerator2014Thread", Thread::OPMODE_WAITFORWAKEUP) {}
+: Thread("NavGraphGenerator2014Thread", Thread::OPMODE_WAITFORWAKEUP)
+{
+}
 
 /** Destructor. */
-NavGraphGenerator2014Thread::~NavGraphGenerator2014Thread() {}
+NavGraphGenerator2014Thread::~NavGraphGenerator2014Thread()
+{
+}
 
-void NavGraphGenerator2014Thread::init() {
-  last_id_ = 0;
+void
+NavGraphGenerator2014Thread::init()
+{
+	last_id_ = 0;
 
-  navgen_if_ = blackboard->open_for_reading<NavGraphGeneratorInterface>(
-      "/navgraph-generator");
+	navgen_if_ = blackboard->open_for_reading<NavGraphGeneratorInterface>("/navgraph-generator");
 
-  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::ClearMessage());
-  navgen_if_->msgq_enqueue(
-      new NavGraphGeneratorInterface::SetBoundingBoxMessage(-5.6, 0, 5.6, 5.6));
+	navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::ClearMessage());
+	navgen_if_->msgq_enqueue(
+	  new NavGraphGeneratorInterface::SetBoundingBoxMessage(-5.6, 0, 5.6, 5.6));
 
-  navgen_if_->msgq_enqueue(
-      new NavGraphGeneratorInterface::AddMapObstaclesMessage(0.5));
+	navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddMapObstaclesMessage(0.5));
 
-  logger->log_info(name(), "Copying");
-  std::string cfg_graph_file = config->get_string("/navgraph/graph_file");
-  if (cfg_graph_file[0] != '/') {
-    cfg_graph_file = std::string(CONFDIR) + "/" + cfg_graph_file;
-  }
-  std::shared_ptr<NavGraph> file_graph(load_yaml_navgraph(cfg_graph_file));
+	logger->log_info(name(), "Copying");
+	std::string cfg_graph_file = config->get_string("/navgraph/graph_file");
+	if (cfg_graph_file[0] != '/') {
+		cfg_graph_file = std::string(CONFDIR) + "/" + cfg_graph_file;
+	}
+	std::shared_ptr<NavGraph> file_graph(load_yaml_navgraph(cfg_graph_file));
 
-  for (unsigned int i = 1; i <= 24; ++i) {
-    NavGraphNode n = file_graph->node(NavGraph::format_name("M%u", i));
-    if (n) {
-      navgen_if_->msgq_enqueue(
-          new NavGraphGeneratorInterface::AddPointOfInterestMessage(
-              n.name().c_str(), n.x(), n.y(),
-              NavGraphGeneratorInterface::CLOSEST_EDGE));
-    }
-  }
+	for (unsigned int i = 1; i <= 24; ++i) {
+		NavGraphNode n = file_graph->node(NavGraph::format_name("M%u", i));
+		if (n) {
+			navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddPointOfInterestMessage(
+			  n.name().c_str(), n.x(), n.y(), NavGraphGeneratorInterface::CLOSEST_EDGE));
+		}
+	}
 
-  for (unsigned int i = 1; i <= 24; ++i) {
-    NavGraphNode n = file_graph->node(NavGraph::format_name("ExpM%u", i));
-    if (n) {
-      navgen_if_->msgq_enqueue(
-          new NavGraphGeneratorInterface::AddPointOfInterestMessage(
-              n.name().c_str(), n.x(), n.y(),
-              NavGraphGeneratorInterface::CLOSEST_EDGE));
-    }
-  }
+	for (unsigned int i = 1; i <= 24; ++i) {
+		NavGraphNode n = file_graph->node(NavGraph::format_name("ExpM%u", i));
+		if (n) {
+			navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddPointOfInterestMessage(
+			  n.name().c_str(), n.x(), n.y(), NavGraphGeneratorInterface::CLOSEST_EDGE));
+		}
+	}
 
-  for (unsigned int i = 1; i <= 2; ++i) {
-    for (unsigned int j = 1; i <= 2; ++i) {
-      NavGraphNode n =
-          file_graph->node(NavGraph::format_name("D%u_PUCK_STORAGE_%u", i, j));
-      if (n) {
-        navgen_if_->msgq_enqueue(
-            new NavGraphGeneratorInterface::AddPointOfInterestMessage(
-                n.name().c_str(), n.x(), n.y(),
-                NavGraphGeneratorInterface::CLOSEST_EDGE));
-      }
-    }
-  }
+	for (unsigned int i = 1; i <= 2; ++i) {
+		for (unsigned int j = 1; i <= 2; ++i) {
+			NavGraphNode n = file_graph->node(NavGraph::format_name("D%u_PUCK_STORAGE_%u", i, j));
+			if (n) {
+				navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddPointOfInterestMessage(
+				  n.name().c_str(), n.x(), n.y(), NavGraphGeneratorInterface::CLOSEST_EDGE));
+			}
+		}
+	}
 
-  for (unsigned int i = 1; i <= 2; ++i) {
-    for (unsigned int j = 1; i <= 3; ++i) {
-      NavGraphNode n = file_graph->node(
-          NavGraph::format_name("WAIT_FOR_INS_%u_ROBOTINO_%u", i, j));
-      if (n) {
-        navgen_if_->msgq_enqueue(
-            new NavGraphGeneratorInterface::AddPointOfInterestMessage(
-                n.name().c_str(), n.x(), n.y(),
-                NavGraphGeneratorInterface::CLOSEST_EDGE));
-      }
-    }
-  }
+	for (unsigned int i = 1; i <= 2; ++i) {
+		for (unsigned int j = 1; i <= 3; ++i) {
+			NavGraphNode n = file_graph->node(NavGraph::format_name("WAIT_FOR_INS_%u_ROBOTINO_%u", i, j));
+			if (n) {
+				navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddPointOfInterestMessage(
+				  n.name().c_str(), n.x(), n.y(), NavGraphGeneratorInterface::CLOSEST_EDGE));
+			}
+		}
+	}
 
-  for (unsigned int i = 1; i <= 2; ++i) {
-    NavGraphNode n = file_graph->node(NavGraph::format_name("deliver%u", i));
-    NavGraphNode n2 = file_graph->node(NavGraph::format_name("deliver%ua", i));
-    NavGraphNode n3 =
-        file_graph->node(NavGraph::format_name("WAIT_FOR_DELIVER_%u", i));
-    if (n) {
-      navgen_if_->msgq_enqueue(
-          new NavGraphGeneratorInterface::AddPointOfInterestMessage(
-              n.name().c_str(), n.x(), n.y(),
-              NavGraphGeneratorInterface::CLOSEST_NODE));
-    }
-    if (n2) {
-      navgen_if_->msgq_enqueue(
-          new NavGraphGeneratorInterface::AddPointOfInterestMessage(
-              n2.name().c_str(), n2.x(), n2.y(),
-              NavGraphGeneratorInterface::CLOSEST_NODE));
-    }
-    if (n3) {
-      navgen_if_->msgq_enqueue(
-          new NavGraphGeneratorInterface::AddPointOfInterestMessage(
-              n3.name().c_str(), n3.x(), n3.y(),
-              NavGraphGeneratorInterface::CLOSEST_EDGE));
-    }
-  }
-  for (unsigned int i = 1; i <= 2; ++i) {
-    NavGraphNode n = file_graph->node(NavGraph::format_name("Ins%u", i));
-    NavGraphNode n2 = file_graph->node(NavGraph::format_name("Ins%uSec", i));
-    if (n) {
-      navgen_if_->msgq_enqueue(
-          new NavGraphGeneratorInterface::AddPointOfInterestMessage(
-              n.name().c_str(), n.x(), n.y(),
-              NavGraphGeneratorInterface::CLOSEST_EDGE));
-    }
-    if (n2) {
-      navgen_if_->msgq_enqueue(
-          new NavGraphGeneratorInterface::AddPointOfInterestMessage(
-              n2.name().c_str(), n2.x(), n2.y(),
-              NavGraphGeneratorInterface::CLOSEST_EDGE));
-    }
-  }
+	for (unsigned int i = 1; i <= 2; ++i) {
+		NavGraphNode n  = file_graph->node(NavGraph::format_name("deliver%u", i));
+		NavGraphNode n2 = file_graph->node(NavGraph::format_name("deliver%ua", i));
+		NavGraphNode n3 = file_graph->node(NavGraph::format_name("WAIT_FOR_DELIVER_%u", i));
+		if (n) {
+			navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddPointOfInterestMessage(
+			  n.name().c_str(), n.x(), n.y(), NavGraphGeneratorInterface::CLOSEST_NODE));
+		}
+		if (n2) {
+			navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddPointOfInterestMessage(
+			  n2.name().c_str(), n2.x(), n2.y(), NavGraphGeneratorInterface::CLOSEST_NODE));
+		}
+		if (n3) {
+			navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddPointOfInterestMessage(
+			  n3.name().c_str(), n3.x(), n3.y(), NavGraphGeneratorInterface::CLOSEST_EDGE));
+		}
+	}
+	for (unsigned int i = 1; i <= 2; ++i) {
+		NavGraphNode n  = file_graph->node(NavGraph::format_name("Ins%u", i));
+		NavGraphNode n2 = file_graph->node(NavGraph::format_name("Ins%uSec", i));
+		if (n) {
+			navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddPointOfInterestMessage(
+			  n.name().c_str(), n.x(), n.y(), NavGraphGeneratorInterface::CLOSEST_EDGE));
+		}
+		if (n2) {
+			navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddPointOfInterestMessage(
+			  n2.name().c_str(), n2.x(), n2.y(), NavGraphGeneratorInterface::CLOSEST_EDGE));
+		}
+	}
 
-  /* We rely on navgraph-generator to copy the properties
+	/* We rely on navgraph-generator to copy the properties
   const std::map<std::string, std::string> &graph_props =
   file_graph->default_properties(); for (auto &p : graph_props) {
     navgen_if_->msgq_enqueue
@@ -157,18 +141,19 @@ void NavGraphGenerator2014Thread::init() {
        (p.first.c_str(), p.second.c_str()));
   }
   */
-  navgen_if_->msgq_enqueue(
-      new NavGraphGeneratorInterface::SetCopyGraphDefaultPropertiesMessage(
-          true));
+	navgen_if_->msgq_enqueue(
+	  new NavGraphGeneratorInterface::SetCopyGraphDefaultPropertiesMessage(true));
 
-  navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::ComputeMessage());
+	navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::ComputeMessage());
 }
 
 /** Add node, connect to closest edge.
  * @param n node to add
  */
-void NavGraphGenerator2014Thread::add_node_edge(const NavGraphNode &n) {
-  /*
+void
+NavGraphGenerator2014Thread::add_node_edge(const NavGraphNode &n)
+{
+	/*
   NavGraphEdge closest = navgraph->closest_edge(n.x(), n.y());
   cart_coord_2d_t p = closest.closest_point_on_edge(n.x(), n.y());
 
@@ -222,8 +207,10 @@ void NavGraphGenerator2014Thread::add_node_edge(const NavGraphNode &n) {
 /** Add node, connect to closest node.
  * @param n node to add
  */
-void NavGraphGenerator2014Thread::add_node_node(const NavGraphNode &n) {
-  /*
+void
+NavGraphGenerator2014Thread::add_node_node(const NavGraphNode &n)
+{
+	/*
   NavGraphNode closest = navgraph->closest_node(n.x(), n.y());
   closest.set_property("highway_exit", true);
   navgraph->update_node(closest);
@@ -232,10 +219,19 @@ void NavGraphGenerator2014Thread::add_node_node(const NavGraphNode &n) {
   */
 }
 
-std::string NavGraphGenerator2014Thread::gen_id() {
-  return "O" + std::to_string(++last_id_);
+std::string
+NavGraphGenerator2014Thread::gen_id()
+{
+	return "O" + std::to_string(++last_id_);
 }
 
-void NavGraphGenerator2014Thread::finalize() { blackboard->close(navgen_if_); }
+void
+NavGraphGenerator2014Thread::finalize()
+{
+	blackboard->close(navgen_if_);
+}
 
-void NavGraphGenerator2014Thread::loop() {}
+void
+NavGraphGenerator2014Thread::loop()
+{
+}

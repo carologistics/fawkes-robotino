@@ -22,14 +22,13 @@
 
 #include "sensor_thread.h"
 
+#include <core/threading/mutex_locker.h>
 #include <interfaces/Position3DInterface.h>
 
 #include <cmath>
 #include <cstdio>
-#include <stdlib.h>
-
-#include <core/threading/mutex_locker.h>
 #include <limits.h>
+#include <stdlib.h>
 #include <string>
 
 using namespace fawkes;
@@ -47,89 +46,87 @@ using namespace std;
  * @param pipeline_thread MachineSignalPipelineThread to get data from (runs
  * continuously)
  */
-MachineSignalSensorThread::MachineSignalSensorThread(
-    MachineSignalPipelineThread *pipeline_thread)
-    : Thread("MachineSignalSensorThread", Thread::OPMODE_WAITFORWAKEUP),
-      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS) {
-  pipeline_thread_ = pipeline_thread;
-  bb_signal_compat_ = NULL;
+MachineSignalSensorThread::MachineSignalSensorThread(MachineSignalPipelineThread *pipeline_thread)
+: Thread("MachineSignalSensorThread", Thread::OPMODE_WAITFORWAKEUP),
+  BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SENSOR_PROCESS)
+{
+	pipeline_thread_  = pipeline_thread;
+	bb_signal_compat_ = NULL;
 }
 
-void MachineSignalSensorThread::init() {
-  // Open required blackboard interfaces
-  for (int i = 0; i < MAX_SIGNALS; i++) {
-    std::string iface_name = "/machine-signal/";
-    iface_name += std::to_string(i);
-    bb_signal_states_.push_back(
-        blackboard->open_for_writing<RobotinoLightInterface>(
-            iface_name.c_str()));
-  }
-  bb_signal_compat_ = blackboard->open_for_writing<RobotinoLightInterface>(
-      "/machine-signal/best");
+void
+MachineSignalSensorThread::init()
+{
+	// Open required blackboard interfaces
+	for (int i = 0; i < MAX_SIGNALS; i++) {
+		std::string iface_name = "/machine-signal/";
+		iface_name += std::to_string(i);
+		bb_signal_states_.push_back(
+		  blackboard->open_for_writing<RobotinoLightInterface>(iface_name.c_str()));
+	}
+	bb_signal_compat_ = blackboard->open_for_writing<RobotinoLightInterface>("/machine-signal/best");
 }
 
-void MachineSignalSensorThread::finalize() {
-  for (std::vector<RobotinoLightInterface *>::iterator bb_it =
-           bb_signal_states_.begin();
-       bb_it != bb_signal_states_.end(); bb_it++) {
-    blackboard->close(*bb_it);
-  }
-  blackboard->close(bb_signal_compat_);
+void
+MachineSignalSensorThread::finalize()
+{
+	for (std::vector<RobotinoLightInterface *>::iterator bb_it = bb_signal_states_.begin();
+	     bb_it != bb_signal_states_.end();
+	     bb_it++) {
+		blackboard->close(*bb_it);
+	}
+	blackboard->close(bb_signal_compat_);
 }
 
-void MachineSignalSensorThread::loop() {
-  if (pipeline_thread_->lock_if_new_data()) {
-    std::list<SignalState> known_signals =
-        pipeline_thread_->get_known_signals();
-    std::list<SignalState>::iterator best_signal =
-        pipeline_thread_->get_best_signal();
+void
+MachineSignalSensorThread::loop()
+{
+	if (pipeline_thread_->lock_if_new_data()) {
+		std::list<SignalState>           known_signals = pipeline_thread_->get_known_signals();
+		std::list<SignalState>::iterator best_signal   = pipeline_thread_->get_best_signal();
 
-    // Go through all known signals...
-    std::list<SignalState>::iterator known_signal = known_signals.begin();
-    for (size_t i = 0; i < MAX_SIGNALS; i++) {
+		// Go through all known signals...
+		std::list<SignalState>::iterator known_signal = known_signals.begin();
+		for (size_t i = 0; i < MAX_SIGNALS; i++) {
+			if (known_signal != known_signals.end()) {
+				// Put their states into the blackboard interfaces
+				bb_signal_states_[i]->set_red(known_signal->red);
+				bb_signal_states_[i]->set_yellow(known_signal->yellow);
+				bb_signal_states_[i]->set_green(known_signal->green);
+				bb_signal_states_[i]->set_visibility_history(
+				  known_signal->unseen > 1 ? -1 : known_signal->visibility);
+				bb_signal_states_[i]->set_ready(known_signal->ready);
+				bb_signal_states_[i]->write();
 
-      if (known_signal != known_signals.end()) {
-        // Put their states into the blackboard interfaces
-        bb_signal_states_[i]->set_red(known_signal->red);
-        bb_signal_states_[i]->set_yellow(known_signal->yellow);
-        bb_signal_states_[i]->set_green(known_signal->green);
-        bb_signal_states_[i]->set_visibility_history(
-            known_signal->unseen > 1 ? -1 : known_signal->visibility);
-        bb_signal_states_[i]->set_ready(known_signal->ready);
-        bb_signal_states_[i]->write();
+				known_signal++;
+			} else {
+				bb_signal_states_[i]->set_red(RobotinoLightInterface::LightState::UNKNOWN);
+				bb_signal_states_[i]->set_yellow(RobotinoLightInterface::LightState::UNKNOWN);
+				bb_signal_states_[i]->set_green(RobotinoLightInterface::LightState::UNKNOWN);
+				bb_signal_states_[i]->set_visibility_history(-1);
+				bb_signal_states_[i]->set_ready(false);
+			}
+		}
 
-        known_signal++;
-      } else {
-        bb_signal_states_[i]->set_red(
-            RobotinoLightInterface::LightState::UNKNOWN);
-        bb_signal_states_[i]->set_yellow(
-            RobotinoLightInterface::LightState::UNKNOWN);
-        bb_signal_states_[i]->set_green(
-            RobotinoLightInterface::LightState::UNKNOWN);
-        bb_signal_states_[i]->set_visibility_history(-1);
-        bb_signal_states_[i]->set_ready(false);
-      }
-    }
+		bb_signal_compat_->set_red(best_signal->red);
+		bb_signal_compat_->set_yellow(best_signal->yellow);
+		bb_signal_compat_->set_green(best_signal->green);
+		bb_signal_compat_->set_visibility_history(best_signal->unseen > 1 ? -1
+		                                                                  : best_signal->visibility);
+		bb_signal_compat_->set_ready(best_signal->ready);
+		bb_signal_compat_->write();
+	}
 
-    bb_signal_compat_->set_red(best_signal->red);
-    bb_signal_compat_->set_yellow(best_signal->yellow);
-    bb_signal_compat_->set_green(best_signal->green);
-    bb_signal_compat_->set_visibility_history(
-        best_signal->unseen > 1 ? -1 : best_signal->visibility);
-    bb_signal_compat_->set_ready(best_signal->ready);
-    bb_signal_compat_->write();
-  }
+	if (!pipeline_thread_->is_enabled()) {
+		for (size_t i = 0; i < MAX_SIGNALS; i++) {
+			bb_signal_states_[i]->set_visibility_history(0);
+			bb_signal_states_[i]->set_ready(true);
+			bb_signal_states_[i]->write();
+		}
+		bb_signal_compat_->set_visibility_history(0);
+		bb_signal_compat_->set_ready(true);
+		bb_signal_compat_->write();
+	}
 
-  if (!pipeline_thread_->is_enabled()) {
-    for (size_t i = 0; i < MAX_SIGNALS; i++) {
-      bb_signal_states_[i]->set_visibility_history(0);
-      bb_signal_states_[i]->set_ready(true);
-      bb_signal_states_[i]->write();
-    }
-    bb_signal_compat_->set_visibility_history(0);
-    bb_signal_compat_->set_ready(true);
-    bb_signal_compat_->write();
-  }
-
-  pipeline_thread_->unlock();
+	pipeline_thread_->unlock();
 }
