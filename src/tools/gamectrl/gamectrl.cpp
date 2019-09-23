@@ -21,12 +21,10 @@
  */
 
 #include <blackboard/remote.h>
-
 #include <core/threading/thread.h>
+#include <interfaces/SwitchInterface.h>
 #include <utils/system/argparser.h>
 #include <utils/system/signal.h>
-
-#include <interfaces/SwitchInterface.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -36,45 +34,48 @@
 
 using namespace fawkes;
 
-static void print_usage(const char *progname) {
-  printf("Usage: %s -r remote start|stop\n", progname);
+static void
+print_usage(const char *progname)
+{
+	printf("Usage: %s -r remote start|stop\n", progname);
 }
 
-int main(int argc, char **argv) {
-  ArgumentParser argp(argc, argv, "hr:");
+int
+main(int argc, char **argv)
+{
+	ArgumentParser argp(argc, argv, "hr:");
 
-  if (argp.has_arg("h") || argp.num_items() == 0) {
-    print_usage(argp.program_name());
-    exit(0);
-  }
+	if (argp.has_arg("h") || argp.num_items() == 0) {
+		print_usage(argp.program_name());
+		exit(0);
+	}
 
-  Thread::init_main();
+	Thread::init_main();
 
-  std::string host = "localhost";
-  unsigned short int port = 1910;
-  if (argp.has_arg("r")) {
-    argp.parse_hostport("r", host, port);
-  }
+	std::string        host = "localhost";
+	unsigned short int port = 1910;
+	if (argp.has_arg("r")) {
+		argp.parse_hostport("r", host, port);
+	}
 
-  BlackBoard *remote_bb = new RemoteBlackBoard(host.c_str(), port);
-  SwitchInterface *gamectrl_if =
-      remote_bb->open_for_writing<SwitchInterface>("Clips Agent Start");
+	BlackBoard *     remote_bb   = new RemoteBlackBoard(host.c_str(), port);
+	SwitchInterface *gamectrl_if = remote_bb->open_for_writing<SwitchInterface>("Clips Agent Start");
 
-  if (strcmp(argp.items()[0], "start") == 0) {
-    printf("Sending START to robot %s\n", host.c_str());
-    gamectrl_if->set_enabled(true);
-  } else if (strcmp(argp.items()[0], "start") == 0) {
-    printf("Sending STOP to robot %s\n", host.c_str());
-    gamectrl_if->set_enabled(false);
-  } else {
-    printf("Unknown command %s\n", argp.items()[0]);
-  }
-  gamectrl_if->write();
-  usleep(1000000);
-  remote_bb->close(gamectrl_if);
-  delete remote_bb;
+	if (strcmp(argp.items()[0], "start") == 0) {
+		printf("Sending START to robot %s\n", host.c_str());
+		gamectrl_if->set_enabled(true);
+	} else if (strcmp(argp.items()[0], "start") == 0) {
+		printf("Sending STOP to robot %s\n", host.c_str());
+		gamectrl_if->set_enabled(false);
+	} else {
+		printf("Unknown command %s\n", argp.items()[0]);
+	}
+	gamectrl_if->write();
+	usleep(1000000);
+	remote_bb->close(gamectrl_if);
+	delete remote_bb;
 
-  Thread::destroy_main();
+	Thread::destroy_main();
 
-  return 0;
+	return 0;
 }
