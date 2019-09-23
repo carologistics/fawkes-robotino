@@ -42,25 +42,29 @@ class VoltageLoggerThread : public fawkes::Thread,
                             public fawkes::LoggingAspect,
                             public fawkes::ConfigurableAspect,
                             public fawkes::BlackBoardAspect,
-                            public fawkes::ClockAspect {
-
+                            public fawkes::ClockAspect
+{
 public:
-  VoltageLoggerThread();
+	VoltageLoggerThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual bool prepare_finalize_user();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual bool prepare_finalize_user();
+	virtual void finalize();
 
-  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() { Thread::run(); }
+	virtual void
+	run()
+	{
+		Thread::run();
+	}
 
 private:
 private:
-  fawkes::BatteryInterface *bat_if_;
-  fawkes::FileLogger *flogger_;
-  fawkes::Time last_measure_;
+	fawkes::BatteryInterface *bat_if_;
+	fawkes::FileLogger *      flogger_;
+	fawkes::Time              last_measure_;
 };
 
 #endif
