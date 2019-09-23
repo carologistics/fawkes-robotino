@@ -20,23 +20,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "tag_vision_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /**
  * @author Nicolas Limpert & Randolph Maaßen
  */
-class TagVision : public fawkes::Plugin {
+class TagVision : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  TagVision(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new TagVisionThread());
-  }
+	TagVision(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new TagVisionThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("AR Tracking plugin")
