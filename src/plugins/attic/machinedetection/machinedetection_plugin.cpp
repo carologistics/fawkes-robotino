@@ -33,14 +33,16 @@ using namespace fawkes;
  * brightest spot!
  * @author Daniel Ewert
  */
-class RobotinoMachineDetectionPlugin : public fawkes::Plugin {
+class RobotinoMachineDetectionPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  RobotinoMachineDetectionPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new RobotinoMachineDetectionThread());
-  }
+	RobotinoMachineDetectionPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new RobotinoMachineDetectionThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Robotino Machine detection image processing")

@@ -32,11 +32,11 @@
 #include <llsf_msgs/GameState.pb.h>
 #include <plugins/gazebo/aspect/gazebo.h>
 #include <plugins/mongodb/aspect/mongodb.h>
-#include <string.h>
 
 #include <gazebo/msgs/MessageTypes.hh>
 #include <gazebo/transport/TransportTypes.hh>
 #include <gazebo/transport/transport.hh>
+#include <string.h>
 
 namespace fawkes {
 class Position3DInterface;
@@ -56,34 +56,35 @@ class LlsfStatisticsSimThread : public fawkes::Thread,
                                 public fawkes::BlackBoardAspect,
                                 public fawkes::BlockedTimingAspect,
                                 public fawkes::GazeboAspect,
-                                public fawkes::MongoDBAspect {
+                                public fawkes::MongoDBAspect
+{
 public:
-  LlsfStatisticsSimThread();
+	LlsfStatisticsSimThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual void finalize();
 
 private:
-  // suscribers for gazebo nodes (refbox messages forwarded by
-  // gazsim-llsfrbcomm)
-  gazebo::transport::SubscriberPtr game_state_sub_;
+	// suscribers for gazebo nodes (refbox messages forwarded by
+	// gazsim-llsfrbcomm)
+	gazebo::transport::SubscriberPtr game_state_sub_;
 
-  // Mongo stuff
-  mongo::DBClientBase *mongodb_;
-  std::map<std::string, mongo::GridFS *> mongogrids_;
+	// Mongo stuff
+	mongo::DBClientBase *                  mongodb_;
+	std::map<std::string, mongo::GridFS *> mongogrids_;
 
-  // handler functions
-  void on_game_state_msg(ConstGameStatePtr &msg);
+	// handler functions
+	void on_game_state_msg(ConstGameStatePtr &msg);
 
-  // statistics
-  std::string configuration_, replay_, namespace_, db_name_, collection_;
-  int run_;
-  int exp_points_cyan_, prod_points_cyan_;
-  int exp_points_magenta_, prod_points_magenta_;
-  bool written_;
+	// statistics
+	std::string configuration_, replay_, namespace_, db_name_, collection_;
+	int         run_;
+	int         exp_points_cyan_, prod_points_cyan_;
+	int         exp_points_magenta_, prod_points_magenta_;
+	bool        written_;
 
-  void write_statistics();
+	void write_statistics();
 };
 
 #endif

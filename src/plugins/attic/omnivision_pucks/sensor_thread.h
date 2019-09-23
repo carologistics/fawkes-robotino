@@ -23,13 +23,14 @@
 #ifndef __PLUGINS_OMNIVISION_SENSOR_THREAD_H_
 #define __PLUGINS_OMNIVISION_SENSOR_THREAD_H_
 
+#include "pipeline_thread.h"
+
 #include <aspect/blackboard.h>
 #include <aspect/blocked_timing.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <core/threading/thread.h>
 
-#include "pipeline_thread.h"
 #include <string>
 
 namespace fawkes {
@@ -43,22 +44,27 @@ class OmniVisionPucksSensorThread : public fawkes::Thread,
                                     public fawkes::BlockedTimingAspect,
                                     public fawkes::LoggingAspect,
                                     public fawkes::ConfigurableAspect,
-                                    public fawkes::BlackBoardAspect {
+                                    public fawkes::BlackBoardAspect
+{
 public:
-  OmniVisionPucksSensorThread(OmniVisionPucksPipelineThread *aqt);
+	OmniVisionPucksSensorThread(OmniVisionPucksPipelineThread *aqt);
 
-  virtual void init();
-  virtual void finalize();
-  virtual void loop();
+	virtual void init();
+	virtual void finalize();
+	virtual void loop();
 
-  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() { Thread::run(); }
+	virtual void
+	run()
+	{
+		Thread::run();
+	}
 
 private:
-  std::string cfg_frame_;
+	std::string cfg_frame_;
 
-  OmniVisionPucksPipelineThread *__aqt;
+	OmniVisionPucksPipelineThread *__aqt;
 };
 
 #endif

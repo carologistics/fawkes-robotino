@@ -23,12 +23,14 @@
 #ifndef __PLUGINS_ROBOTINO_AMPELVAR_PIPELINE_THREAD_H_
 #define __PLUGINS_ROBOTINO_AMPELVAR_PIPELINE_THREAD_H_
 
-#include <core/threading/thread.h>
+#include "BlobFarm.h"
 
 #include <aspect/blackboard.h>
+#include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
 #include <aspect/vision.h>
+#include <core/threading/thread.h>
 #include <fvfilters/threshold.h>
 #include <fvmodels/scanlines/grid.h>
 #include <fvutils/base/roi.h>
@@ -38,9 +40,6 @@
 #include <fvwidgets/image_display.h>
 #include <utils/math/types.h>
 
-#include <aspect/clock.h>
-
-#include "BlobFarm.h"
 #include <string>
 
 namespace firevision {
@@ -56,35 +55,36 @@ class RobotinoMachineDetectionThread : public fawkes::Thread,
                                        public fawkes::VisionAspect,
                                        public fawkes::ConfigurableAspect,
                                        public fawkes::BlackBoardAspect,
-                                       public fawkes::ClockAspect {
+                                       public fawkes::ClockAspect
+{
 public:
-  RobotinoMachineDetectionThread();
-  virtual ~RobotinoMachineDetectionThread();
+	RobotinoMachineDetectionThread();
+	virtual ~RobotinoMachineDetectionThread();
 
-  virtual void init();
-  virtual void finalize();
-  virtual void loop();
+	virtual void init();
+	virtual void finalize();
+	virtual void loop();
 
 private:
-  void detect_white_blobs();
+	void detect_white_blobs();
 
-  BlobFarm *blobFarm;
-  firevision::Camera *cam_;
-  firevision::SharedMemoryImageBuffer *shm_buffer_;
-  unsigned char *buffer_;
-  int pic_width_;
-  int pic_height_;
+	BlobFarm *                           blobFarm;
+	firevision::Camera *                 cam_;
+	firevision::SharedMemoryImageBuffer *shm_buffer_;
+	unsigned char *                      buffer_;
+	int                                  pic_width_;
+	int                                  pic_height_;
 
-  firevision::ROI *full_image_roi_;
+	firevision::ROI *full_image_roi_;
 
-  firevision::colorspace_t pic_colorspace_;
+	firevision::colorspace_t pic_colorspace_;
 
-  firevision::Filter *thresholdFilter_;
+	firevision::Filter *thresholdFilter_;
 
-  firevision::ScanlineModel *scanlinegrid_;
+	firevision::ScanlineModel *scanlinegrid_;
 
-  // for debugging
-  firevision::Reader *reader_;
+	// for debugging
+	firevision::Reader *reader_;
 };
 
 #endif
