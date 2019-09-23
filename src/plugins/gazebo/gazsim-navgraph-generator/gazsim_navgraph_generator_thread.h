@@ -41,41 +41,42 @@ class GazsimNavgraphGeneratorThread : public fawkes::Thread,
                                       public fawkes::BlackBoardAspect,
                                       public fawkes::BlockedTimingAspect,
                                       public fawkes::TransformAspect,
-                                      public fawkes::GazeboAspect {
+                                      public fawkes::GazeboAspect
+{
 public:
-  GazsimNavgraphGeneratorThread();
+	GazsimNavgraphGeneratorThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual void finalize();
 
 private:
-  // controlling flags
-  bool task_finished_;
-  bool computation_is_running_;
-  fawkes::NavGraphWithMPSGeneratorInterface::ComputeMessage *compute_msg_;
+	// controlling flags
+	bool                                                       task_finished_;
+	bool                                                       computation_is_running_;
+	fawkes::NavGraphWithMPSGeneratorInterface::ComputeMessage *compute_msg_;
 
-  // Subscribers to receive tag positions from gazebo
-  std::vector<std::string> tags_;
-  std::vector<std::string> related_mps_;
-  std::vector<gazebo::transport::SubscriberPtr> subscriber_tags_;
+	// Subscribers to receive tag positions from gazebo
+	std::vector<std::string>                      tags_;
+	std::vector<std::string>                      related_mps_;
+	std::vector<gazebo::transport::SubscriberPtr> subscriber_tags_;
 
-  // navgraph generator interface
-  std::string nav_gen_if_name_;
-  fawkes::NavGraphWithMPSGeneratorInterface *nav_gen_if_;
+	// navgraph generator interface
+	std::string                                nav_gen_if_name_;
+	fawkes::NavGraphWithMPSGeneratorInterface *nav_gen_if_;
 
-  // list of poses of the tags
-  std::map<int, gazebo::msgs::Pose> tag_msgs_;
+	// list of poses of the tags
+	std::map<int, gazebo::msgs::Pose> tag_msgs_;
 
-  // handler function for incoming messages about the tag positions
-  void on_tag_msg(ConstPosePtr &msg);
+	// handler function for incoming messages about the tag positions
+	void on_tag_msg(ConstPosePtr &msg);
 
-  // extract mpsID ordered by tagID
-  std::map<int, std::string> mps_id_;
-  void get_mpsID_by_tagID();
+	// extract mpsID ordered by tagID
+	std::map<int, std::string> mps_id_;
+	void                       get_mpsID_by_tagID();
 
-  // send station msg with pose information to navgraph generator
-  void send_station_msg(int id, gazebo::msgs::Pose pose);
+	// send station msg with pose information to navgraph generator
+	void send_station_msg(int id, gazebo::msgs::Pose pose);
 };
 
 #endif
