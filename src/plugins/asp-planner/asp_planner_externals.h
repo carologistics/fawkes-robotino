@@ -32,49 +32,46 @@ struct ProductIdentifier;
 struct TaskDescription;
 
 Clingo::Symbol generateAliveExternal(const std::string &robotName);
-Clingo::Symbol generateRobotLocationExternal(const std::string &robotName,
+Clingo::Symbol generateRobotLocationExternal(const std::string &   robotName,
                                              const Clingo::Symbol &location);
-Clingo::Symbol generateHoldingExternal(const std::string &robotName,
+Clingo::Symbol generateHoldingExternal(const std::string &      robotName,
                                        const ProductIdentifier &product);
-Clingo::Symbol generateDoingExternal(const std::string &robotName,
+Clingo::Symbol generateDoingExternal(const std::string &    robotName,
                                      const TaskDescription &task,
-                                     const int duration);
+                                     const int              duration);
 
 Clingo::Symbol generateExploreLocationExternal(const int zone);
 Clingo::Symbol generateExploreTaskExternal(const int zone);
 
 Clingo::Symbol generateProductExternal(const ProductIdentifier &product);
 Clingo::Symbol generateProductBaseExternal(const ProductIdentifier &product,
-                                           const std::string &base);
+                                           const std::string &      base);
 Clingo::Symbol generateProductRingExternal(const ProductIdentifier &product,
-                                           const int ringNumber,
-                                           const std::string &color);
-Clingo::Symbol generateProductCapExternal(const ProductIdentifier &product,
-                                          const std::string &cap);
+                                           const int                ringNumber,
+                                           const std::string &      color);
+Clingo::Symbol generateProductCapExternal(const ProductIdentifier &product, const std::string &cap);
 
-Clingo::Symbol generateMachineBrokenExternal(const std::string &machineName,
-                                             const int duration);
-Clingo::Symbol generateMachineWorkingExternal(const std::string &machineName,
-                                              const int duration,
+Clingo::Symbol generateMachineBrokenExternal(const std::string &machineName, const int duration);
+Clingo::Symbol generateMachineWorkingExternal(const std::string &      machineName,
+                                              const int                duration,
                                               const ProductIdentifier &product);
-Clingo::Symbol generateMachineStoringExternal(const std::string &machineName,
+Clingo::Symbol generateMachineStoringExternal(const std::string &      machineName,
                                               const ProductIdentifier &product);
 Clingo::Symbol generatePreparedExternal(const std::string &machineName);
-Clingo::Symbol generateFillStateExternal(const std::string &machineName,
-                                         const int fillState);
+Clingo::Symbol generateFillStateExternal(const std::string &machineName, const int fillState);
 
-Clingo::Symbol generateLocationExternal(const char *teamColor,
-                                        const char *machine, const char *side);
+Clingo::Symbol
+generateLocationExternal(const char *teamColor, const char *machine, const char *side);
 
 Clingo::Symbol generateMountRingExternal(const Clingo::Symbol &location,
-                                         const int orderNumber, const int qty,
-                                         const int ring);
-Clingo::Symbol generateMountCapExternal(const Clingo::Symbol &location,
-                                        const int orderNumber, const int qty);
-Clingo::Symbol generateDeliverExternal(const Clingo::Symbol &location,
-                                       const int orderNumber, const int qty);
-Clingo::Symbol generateLateDeliverExternal(const Clingo::Symbol &location,
-                                           const int orderNumber,
-                                           const int qty);
+                                         const int             orderNumber,
+                                         const int             qty,
+                                         const int             ring);
+Clingo::Symbol
+generateMountCapExternal(const Clingo::Symbol &location, const int orderNumber, const int qty);
+Clingo::Symbol
+generateDeliverExternal(const Clingo::Symbol &location, const int orderNumber, const int qty);
+Clingo::Symbol
+generateLateDeliverExternal(const Clingo::Symbol &location, const int orderNumber, const int qty);
 
 #endif
