@@ -21,6 +21,7 @@
  */
 
 #include "event_emitter.h"
+
 #include "callable.h"
 
 #include <core/threading/mutex.h>
@@ -38,12 +39,16 @@ using namespace fawkes;
  */
 
 /** Constructor. */
-EventEmitter::EventEmitter() { mutex_ = new fawkes::Mutex(); }
+EventEmitter::EventEmitter()
+{
+	mutex_ = new fawkes::Mutex();
+}
 
 /** Destructor. */
-EventEmitter::~EventEmitter() {
-  callbacks_.clear();
-  delete mutex_;
+EventEmitter::~EventEmitter()
+{
+	callbacks_.clear();
+	delete mutex_;
 }
 
 /** Call the callbacks of the Callable Objects
@@ -52,42 +57,45 @@ EventEmitter::~EventEmitter() {
  * Used to emulates signal emitting.
  * @param event_type what ever event you would like to signal (ex, TERMINATE)
  */
-void EventEmitter::emitt_event(EventType event_type) {
+void
+EventEmitter::emitt_event(EventType event_type)
+{
+	// for(it_callables_  = callbacks_ [event_type].begin();
+	// 	it_callables_ != callbacks_ [event_type].end() ;
+	// 	it_callables_++)
+	// {
+	// 	(*it_callables_)->callback(event_type , shared_from_this());
+	// }
 
-  // for(it_callables_  = callbacks_ [event_type].begin();
-  // 	it_callables_ != callbacks_ [event_type].end() ;
-  // 	it_callables_++)
-  // {
-  // 	(*it_callables_)->callback(event_type , shared_from_this());
-  // }
-
-  // do_on_event(event_type);
+	// do_on_event(event_type);
 }
 
 /** Register a callable to be called on some event type
  * @param event_type to receive a callback for
  * @param callable the class with the callback that handles the event.
  */
-void EventEmitter::register_callback(EventType event_type,
-                                     std::shared_ptr<Callable> callable) {
-  MutexLocker ml(mutex_);
+void
+EventEmitter::register_callback(EventType event_type, std::shared_ptr<Callable> callable)
+{
+	MutexLocker ml(mutex_);
 
-  callbacks_[event_type].push_back(callable);
+	callbacks_[event_type].push_back(callable);
 }
 
 /** Unregister a callable from emitter entries
  * @param event_type that the callable was registered to
  * @param callable to the class that wants to unregister.
  */
-void EventEmitter::unregister_callback(EventType event_type,
-                                       std::shared_ptr<Callable> callable) {
-  MutexLocker ml(mutex_);
+void
+EventEmitter::unregister_callback(EventType event_type, std::shared_ptr<Callable> callable)
+{
+	MutexLocker ml(mutex_);
 
-  it_callables_ = std::find_if(
-      callbacks_[event_type].begin(), callbacks_[event_type].end(),
-      [&](std::shared_ptr<Callable> const &c) { return c == callable; });
+	it_callables_ = std::find_if(callbacks_[event_type].begin(),
+	                             callbacks_[event_type].end(),
+	                             [&](std::shared_ptr<Callable> const &c) { return c == callable; });
 
-  if (it_callables_ != callbacks_[event_type].end()) {
-    callbacks_[event_type].erase(it_callables_);
-  }
+	if (it_callables_ != callbacks_[event_type].end()) {
+		callbacks_[event_type].erase(it_callables_);
+	}
 }

@@ -25,8 +25,10 @@
 
 #include "callable.h"
 #include "web_session.h"
+
 #include <core/threading/mutex.h>
 #include <core/threading/mutex_locker.h>
+
 #include <exception>
 
 using namespace fawkes;
@@ -48,17 +50,18 @@ using namespace websocketpp;
  */
 
 /** Constructor */
-ProxySession::ProxySession() : status_("connecting") {
-  web_session_available = false;
-  std::shared_ptr<WebSession> dumy_session =
-      websocketpp::lib::make_shared<WebSession>();
-  mutex_ = new fawkes::Mutex();
+ProxySession::ProxySession() : status_("connecting")
+{
+	web_session_available                    = false;
+	std::shared_ptr<WebSession> dumy_session = websocketpp::lib::make_shared<WebSession>();
+	mutex_                                   = new fawkes::Mutex();
 }
 
 /** Destructor */
-ProxySession::~ProxySession() {
-  delete mutex_;
-  web_session_.reset();
+ProxySession::~ProxySession()
+{
+	delete mutex_;
+	web_session_.reset();
 }
 
 /** On Message Handler
@@ -70,19 +73,20 @@ ProxySession::~ProxySession() {
  * connection.
  * @param msg a pointer to the WebSocket message sent
  */
-void ProxySession::on_message(
-    websocketpp::connection_hdl hdl,
-    websocketpp::client<websocketpp::config::asio_client>::message_ptr msg) {
-  MutexLocker ml(mutex_);
-  if (status_ != "open" && !web_session_available) {
-    return;
-    // throw
-  }
+void
+ProxySession::on_message(websocketpp::connection_hdl                                        hdl,
+                         websocketpp::client<websocketpp::config::asio_client>::message_ptr msg)
+{
+	MutexLocker ml(mutex_);
+	if (status_ != "open" && !web_session_available) {
+		return;
+		// throw
+	}
 
-  std::string jsonString = msg->get_payload();
+	std::string jsonString = msg->get_payload();
 
-  // maybe check for its validity before
-  web_session_->send(jsonString);
+	// maybe check for its validity before
+	web_session_->send(jsonString);
 }
 
 /** Send A WebSocket message To RosBrirdge Server.
@@ -91,107 +95,126 @@ void ProxySession::on_message(
  * @return true on succeeding
  * @todo catch exceptions and print in the log.
  */
-bool ProxySession::send(std::string const &msg) {
+bool
+ProxySession::send(std::string const &msg)
+{
+	// MutexLocker ml(mutex_);
+	if (status_ != "open") {
+		return false;
+		// throw
+	}
 
-  // MutexLocker ml(mutex_);
-  if (status_ != "open") {
-    return false;
-    // throw
-  }
+	websocketpp::lib::error_code ec;
 
-  websocketpp::lib::error_code ec;
+	// std::cout << ">TO Proxy::sending message: "<<msg << std::endl;
 
-  // std::cout << ">TO Proxy::sending message: "<<msg << std::endl;
+	endpoint_ptr_->send(hdl_, msg, websocketpp::frame::opcode::text, ec);
 
-  endpoint_ptr_->send(hdl_, msg, websocketpp::frame::opcode::text, ec);
-
-  if (ec) {
-    // std::cout << "> Error sending message: " << ec.message() << std::endl;
-    return false;
-  }
-  return true;
+	if (ec) {
+		// std::cout << "> Error sending message: " << ec.message() << std::endl;
+		return false;
+	}
+	return true;
 }
 
 /** Set internal session id.
  * @param id to set
  */
-void ProxySession::set_id(int id) {
-  MutexLocker ml(mutex_);
-  session_id_ = id;
+void
+ProxySession::set_id(int id)
+{
+	MutexLocker ml(mutex_);
+	session_id_ = id;
 }
 
 /** Set internal websocketpp connection handler
  * @param hdl websocket connection_hdl used to identify this session
  */
-void ProxySession::set_connection_hdl(websocketpp::connection_hdl hdl) {
-  MutexLocker ml(mutex_);
-  hdl_ = hdl;
+void
+ProxySession::set_connection_hdl(websocketpp::connection_hdl hdl)
+{
+	MutexLocker ml(mutex_);
+	hdl_ = hdl;
 }
 
 /** Set internal websocketpp endpoint
  * @param endpoint_ptr websocket endpoint
  */
-void ProxySession::set_endpoint(std::shared_ptr<Client> endpoint_ptr) {
-  MutexLocker ml(mutex_);
-  endpoint_ptr_ = endpoint_ptr;
+void
+ProxySession::set_endpoint(std::shared_ptr<Client> endpoint_ptr)
+{
+	MutexLocker ml(mutex_);
+	endpoint_ptr_ = endpoint_ptr;
 }
 
 /** Set internal session status
  * @param status to set
  */
-void ProxySession::set_status(std::string status) {
-  MutexLocker ml(mutex_);
-  status_ = status;
+void
+ProxySession::set_status(std::string status)
+{
+	MutexLocker ml(mutex_);
+	status_ = status;
 }
 
 /** Get internal id
  * @return id of the session
  */
-int ProxySession::get_id() {
-  MutexLocker ml(mutex_);
-  return session_id_;
+int
+ProxySession::get_id()
+{
+	MutexLocker ml(mutex_);
+	return session_id_;
 }
 
 /** Get internal session status
  * @return status string
  */
-std::string ProxySession::get_status() {
-  MutexLocker ml(mutex_);
-  return status_;
+std::string
+ProxySession::get_status()
+{
+	MutexLocker ml(mutex_);
+	return status_;
 }
 
 /** Get internal websocketpp connection handler
  * @return the websocekctpp::connection_hdl of the session
  */
-websocketpp::connection_hdl ProxySession::get_connection_hdl() {
-  MutexLocker ml(mutex_);
-  return hdl_;
+websocketpp::connection_hdl
+ProxySession::get_connection_hdl()
+{
+	MutexLocker ml(mutex_);
+	return hdl_;
 }
 
 /** Get the internal websession
  * @return websession ptr of the proxied session
  */
-std::shared_ptr<WebSession> ProxySession::get_web_session() {
-  MutexLocker ml(mutex_);
-  return web_session_;
+std::shared_ptr<WebSession>
+ProxySession::get_web_session()
+{
+	MutexLocker ml(mutex_);
+	return web_session_;
 }
 
 /** set internal web session
  * @param web_session to register*/
-void ProxySession::register_web_session(
-    std::shared_ptr<WebSession> web_session) {
-  MutexLocker ml(mutex_);
-  web_session_ = web_session;
-  web_session_available = true;
+void
+ProxySession::register_web_session(std::shared_ptr<WebSession> web_session)
+{
+	MutexLocker ml(mutex_);
+	web_session_          = web_session;
+	web_session_available = true;
 }
 
 /** unregister web session*/
-void ProxySession::unregister_web_session() {
-  MutexLocker ml(mutex_);
-  web_session_available = false;
-  std::shared_ptr<WebSession> dumy_session =
-      websocketpp::lib::make_shared<WebSession>();
-  web_session_ = dumy_session;
+void
+ProxySession::unregister_web_session()
+{
+	MutexLocker ml(mutex_);
+	web_session_available                    = false;
+	std::shared_ptr<WebSession> dumy_session = websocketpp::lib::make_shared<WebSession>();
+	web_session_                             = dumy_session;
 }
 
 // ==>OLD CODE
