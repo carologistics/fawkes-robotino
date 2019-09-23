@@ -43,53 +43,56 @@ class SkillerMotorStateThread : public fawkes::Thread,
                                 public fawkes::LoggingAspect,
                                 public fawkes::ConfigurableAspect,
                                 public fawkes::BlackBoardAspect,
-                                public fawkes::BlackBoardInterfaceListener {
+                                public fawkes::BlackBoardInterfaceListener
+{
 public:
-  SkillerMotorStateThread();
+	SkillerMotorStateThread();
 
-  virtual void init() override;
-  virtual void loop() override;
-  virtual void finalize() override;
+	virtual void init() override;
+	virtual void loop() override;
+	virtual void finalize() override;
 
-  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() override { Thread::run(); }
+	virtual void
+	run() override
+	{
+		Thread::run();
+	}
 
 private:
-  std::string cfg_skiller_ifid_;
-  std::string cfg_rsens_ifid_;
-  std::string cfg_motor_ifid_;
-  unsigned int cfg_digital_out_red_;
-  unsigned int cfg_digital_out_yellow_;
-  unsigned int cfg_digital_out_green_;
-  unsigned int cfg_digital_out_motor_;
-  fawkes::Time cfg_timeout_;
+	std::string  cfg_skiller_ifid_;
+	std::string  cfg_rsens_ifid_;
+	std::string  cfg_motor_ifid_;
+	unsigned int cfg_digital_out_red_;
+	unsigned int cfg_digital_out_yellow_;
+	unsigned int cfg_digital_out_green_;
+	unsigned int cfg_digital_out_motor_;
+	fawkes::Time cfg_timeout_;
 
-  fawkes::Time final_time_;
-  fawkes::Time failed_time_;
+	fawkes::Time final_time_;
+	fawkes::Time failed_time_;
 
-  void enable(unsigned int output);
-  void disable(unsigned int output);
+	void enable(unsigned int output);
+	void disable(unsigned int output);
 
-  fawkes::SkillerInterface *skiller_if_;
-  fawkes::RobotinoSensorInterface *rsens_if_;
-  fawkes::MotorInterface *motor_if_;
+	fawkes::SkillerInterface *       skiller_if_;
+	fawkes::RobotinoSensorInterface *rsens_if_;
+	fawkes::MotorInterface *         motor_if_;
 
-  fawkes::Mutex timeout_wait_mutex_;
-  fawkes::WaitCondition timeout_wait_condition_;
+	fawkes::Mutex         timeout_wait_mutex_;
+	fawkes::WaitCondition timeout_wait_condition_;
 
-  virtual void
-  bb_interface_data_changed(fawkes::Interface *interface) throw() override;
+	virtual void bb_interface_data_changed(fawkes::Interface *interface) throw() override;
 
-  std::atomic<bool> motor_if_changed_flag_;
-  std::atomic<bool> skiller_if_changed_flag_;
+	std::atomic<bool> motor_if_changed_flag_;
+	std::atomic<bool> skiller_if_changed_flag_;
 
-  void get_next_switchoff(fawkes::Time *&wait_until,
-                          unsigned int &digital_output_to_reset);
-  bool interruptable_timeout(fawkes::Time *wait_until);
+	void get_next_switchoff(fawkes::Time *&wait_until, unsigned int &digital_output_to_reset);
+	bool interruptable_timeout(fawkes::Time *wait_until);
 
-  void signal_skiller_change();
-  void signal_motor_change();
+	void signal_skiller_change();
+	void signal_motor_change();
 };
 
 #endif

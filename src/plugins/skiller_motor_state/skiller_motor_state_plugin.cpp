@@ -20,23 +20,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "skiller_motor_state_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /** Plugin to indicate skiller state by LED.
  * @author Morian Sonnet
  */
-class SkillerMotorStatePlugin : public fawkes::Plugin {
+class SkillerMotorStatePlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  SkillerMotorStatePlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new SkillerMotorStateThread());
-  }
+	SkillerMotorStatePlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new SkillerMotorStateThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Indicate skiller and motor state through LED")
