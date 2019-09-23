@@ -22,7 +22,6 @@
 
 #include "gazsim_conveyor_thread.h"
 
-#include <boost/lexical_cast.hpp>
 #include <config/change_handler.h>
 #include <core/threading/mutex_locker.h>
 #include <core/threading/read_write_lock.h>
@@ -31,6 +30,7 @@
 #include <tf/types.h>
 #include <utils/math/angle.h>
 
+#include <boost/lexical_cast.hpp>
 #include <cmath>
 #include <cstdarg>
 #include <unistd.h>
@@ -47,92 +47,96 @@ using namespace gazebo;
 /** Constructor. */
 
 GazsimConveyorThread::GazsimConveyorThread()
-    : Thread("GazsimConveyorThread", Thread::OPMODE_WAITFORWAKEUP),
-      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT_EXEC),
-      fawkes::TransformAspect(fawkes::TransformAspect::BOTH, "conveyor_pose"),
-      new_data_(false) {
-  set_name("GazsimConveyorThread()");
-  loopcount_ = 0;
+: Thread("GazsimConveyorThread", Thread::OPMODE_WAITFORWAKEUP),
+  BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT_EXEC),
+  fawkes::TransformAspect(fawkes::TransformAspect::BOTH, "conveyor_pose"),
+  new_data_(false)
+{
+	set_name("GazsimConveyorThread()");
+	loopcount_ = 0;
 }
 
-void GazsimConveyorThread::init() {
-  logger->log_debug(name(),
-                    "Initializing Simulation of the Conveyor Vision Plugin");
-  const std::string if_prefix =
-      config->get_string("plugins/conveyor_pose/if/prefix") + "/";
-  frame_name_ = config->get_string("/realsense/frame_id");
-  conveyor_frame_id_ =
-      config->get_string("plugins/conveyor_pose/conveyor_frame_id");
+void
+GazsimConveyorThread::init()
+{
+	logger->log_debug(name(), "Initializing Simulation of the Conveyor Vision Plugin");
+	const std::string if_prefix = config->get_string("plugins/conveyor_pose/if/prefix") + "/";
+	frame_name_                 = config->get_string("/realsense/frame_id");
+	conveyor_frame_id_          = config->get_string("plugins/conveyor_pose/conveyor_frame_id");
 
-  cfg_if_prefix_ = config->get_string(CFG_PREFIX "/if/prefix");
-  if (cfg_if_prefix_.back() != '/')
-    cfg_if_prefix_.append("/");
+	cfg_if_prefix_ = config->get_string(CFG_PREFIX "/if/prefix");
+	if (cfg_if_prefix_.back() != '/')
+		cfg_if_prefix_.append("/");
 
-  // setup ConveyorPoseInterface if with default values
-  pos_if_ = blackboard->open_for_writing<ConveyorPoseInterface>(
-      (cfg_if_prefix_ + "status").c_str());
-  switch_if_ = blackboard->open_for_writing<SwitchInterface>(
-      config->get_string("/gazsim/conveyor/switch-if-name").c_str());
+	// setup ConveyorPoseInterface if with default values
+	pos_if_ =
+	  blackboard->open_for_writing<ConveyorPoseInterface>((cfg_if_prefix_ + "status").c_str());
+	switch_if_ = blackboard->open_for_writing<SwitchInterface>(
+	  config->get_string("/gazsim/conveyor/switch-if-name").c_str());
 
-  conveyor_vision_sub_ = gazebonode->Subscribe(
-      "~/RobotinoSim/ConveyorVisionResult/",
-      &GazsimConveyorThread::on_conveyor_vision_msg, this);
+	conveyor_vision_sub_ = gazebonode->Subscribe("~/RobotinoSim/ConveyorVisionResult/",
+	                                             &GazsimConveyorThread::on_conveyor_vision_msg,
+	                                             this);
 }
 
-void GazsimConveyorThread::finalize() {
-  blackboard->close(pos_if_);
-  blackboard->close(switch_if_);
+void
+GazsimConveyorThread::finalize()
+{
+	blackboard->close(pos_if_);
+	blackboard->close(switch_if_);
 }
 
-void GazsimConveyorThread::loop() {
+void
+GazsimConveyorThread::loop()
+{
+	pos_if_->set_frame(frame_name_.c_str());
+	if (new_data_ && pos_if_->msgq_first_is<ConveyorPoseInterface::RunICPMessage>()) {
+		new_data_ = false;
 
-  pos_if_->set_frame(frame_name_.c_str());
-  if (new_data_ &&
-      pos_if_->msgq_first_is<ConveyorPoseInterface::RunICPMessage>()) {
-    new_data_ = false;
+		ConveyorPoseInterface::RunICPMessage *msg =
+		  pos_if_->msgq_first<ConveyorPoseInterface::RunICPMessage>();
+		// write to interface
+		// swap the axis' because the cam_conveyor frame has the z-axis facing
+		// foward
+		double trans[] = {-last_msg_.positions().y(),
+		                  -last_msg_.positions().z(),
+		                  last_msg_.positions().x()};
+		if (strcmp(pos_if_->tostring_MPS_TARGET(msg->mps_target_to_set()), "SLIDE") == 0) {
+			trans[0] += shelf_offset_x;
+		}
+		double rot[] = {last_msg_.positions().ori_x(),
+		                last_msg_.positions().ori_y(),
+		                last_msg_.positions().ori_z(),
+		                last_msg_.positions().ori_w()};
 
-    ConveyorPoseInterface::RunICPMessage *msg =
-        pos_if_->msgq_first<ConveyorPoseInterface::RunICPMessage>();
-    // write to interface
-    // swap the axis' because the cam_conveyor frame has the z-axis facing
-    // foward
-    double trans[] = {-last_msg_.positions().y(), -last_msg_.positions().z(),
-                      last_msg_.positions().x()};
-    if (strcmp(pos_if_->tostring_MPS_TARGET(msg->mps_target_to_set()),
-               "SLIDE") == 0) {
-      trans[0] += shelf_offset_x;
-    }
-    double rot[] = {
-        last_msg_.positions().ori_x(), last_msg_.positions().ori_y(),
-        last_msg_.positions().ori_z(), last_msg_.positions().ori_w()};
+		pos_if_->set_translation(trans);
+		pos_if_->set_rotation(rot);
+		pos_if_->set_euclidean_fitness(rand() % 100);
+		pos_if_->set_msgid(msg->id());
+		pos_if_->write();
 
-    pos_if_->set_translation(trans);
-    pos_if_->set_rotation(rot);
-    pos_if_->set_euclidean_fitness(rand() % 100);
-    pos_if_->set_msgid(msg->id());
-    pos_if_->write();
+		// publishe tf
+		fawkes::tf::StampedTransform transform;
 
-    // publishe tf
-    fawkes::tf::StampedTransform transform;
+		transform.frame_id       = frame_name_;
+		transform.child_frame_id = conveyor_frame_id_;
+		transform.stamp          = fawkes::Time();
 
-    transform.frame_id = frame_name_;
-    transform.child_frame_id = conveyor_frame_id_;
-    transform.stamp = fawkes::Time();
+		transform.setOrigin(fawkes::tf::Vector3(trans[0], trans[1], trans[2]));
+		fawkes::tf::Quaternion q /*(rot[0], rot[1], rot[2], rot[3])*/;
+		q.setEuler(M_PI_2, M_PI_2, M_PI);
+		transform.setRotation(q);
 
-    transform.setOrigin(fawkes::tf::Vector3(trans[0], trans[1], trans[2]));
-    fawkes::tf::Quaternion q /*(rot[0], rot[1], rot[2], rot[3])*/;
-    q.setEuler(M_PI_2, M_PI_2, M_PI);
-    transform.setRotation(q);
+		tf_publisher->send_transform(transform);
+		pos_if_->msgq_pop();
+	}
 
-    tf_publisher->send_transform(transform);
-    pos_if_->msgq_pop();
-  }
-
-  loopcount_++;
+	loopcount_++;
 }
 
-void GazsimConveyorThread::on_conveyor_vision_msg(
-    ConstConveyorVisionResultPtr &msg) {
-  last_msg_.CopyFrom(*msg);
-  new_data_ = true;
+void
+GazsimConveyorThread::on_conveyor_vision_msg(ConstConveyorVisionResultPtr &msg)
+{
+	last_msg_.CopyFrom(*msg);
+	new_data_ = true;
 }
