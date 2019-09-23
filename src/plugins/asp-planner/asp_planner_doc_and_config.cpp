@@ -489,100 +489,98 @@
 /**
  * @brief Reads the config and fills the members.
  */
-void AspPlannerThread::loadConfig(void) {
-  constexpr auto infixPlanner = "planner/";
-  constexpr auto infixTime = "time-estimations/";
-  constexpr auto infixCapStation = "cap-station/assigned-color/";
-  constexpr auto infixWorkingDuration = "working-durations/";
+void
+AspPlannerThread::loadConfig(void)
+{
+	constexpr auto infixPlanner         = "planner/";
+	constexpr auto infixTime            = "time-estimations/";
+	constexpr auto infixCapStation      = "cap-station/assigned-color/";
+	constexpr auto infixWorkingDuration = "working-durations/";
 
-  constexpr auto infixPlannerLen = std::strlen(infixPlanner),
-                 infixTimeLen = std::strlen(infixTime);
-  constexpr auto infixCapStationLen = std::strlen(infixCapStation);
-  constexpr auto infixWorkingDurationLen = std::strlen(infixWorkingDuration);
-  const auto prefixLen = std::strlen(ConfigPrefix);
+	constexpr auto infixPlannerLen = std::strlen(infixPlanner), infixTimeLen = std::strlen(infixTime);
+	constexpr auto infixCapStationLen      = std::strlen(infixCapStation);
+	constexpr auto infixWorkingDurationLen = std::strlen(infixWorkingDuration);
+	const auto     prefixLen               = std::strlen(ConfigPrefix);
 
-  char buffer[prefixLen +
-              std::max<size_t>({infixPlannerLen, infixTimeLen,
-                                infixCapStationLen, infixWorkingDurationLen}) +
-              20];
-  std::strcpy(buffer, ConfigPrefix);
+	char buffer[prefixLen
+	            + std::max<size_t>(
+	              {infixPlannerLen, infixTimeLen, infixCapStationLen, infixWorkingDurationLen})
+	            + 20];
+	std::strcpy(buffer, ConfigPrefix);
 
-  // The plain part.
-  auto suffix = buffer + prefixLen;
-  std::strcpy(suffix, "exploration-time");
-  ExplorationTime = config->get_int(buffer);
+	// The plain part.
+	auto suffix = buffer + prefixLen;
+	std::strcpy(suffix, "exploration-time");
+	ExplorationTime = config->get_int(buffer);
 
-  std::strcpy(suffix, "production-end");
-  ProductionEnd = ExplorationTime + config->get_int(buffer);
+	std::strcpy(suffix, "production-end");
+	ProductionEnd = ExplorationTime + config->get_int(buffer);
 
-  // The planner part.
-  suffix = buffer + prefixLen + infixPlannerLen;
-  std::strcpy(buffer + prefixLen, infixPlanner);
+	// The planner part.
+	suffix = buffer + prefixLen + infixPlannerLen;
+	std::strcpy(buffer + prefixLen, infixPlanner);
 
-  std::strcpy(suffix, "debug-level");
-  clingo->set_debug_level(
-      static_cast<fawkes::ClingoAccess::DebugLevel_t>(config->get_int(buffer)));
+	std::strcpy(suffix, "debug-level");
+	clingo->set_debug_level(static_cast<fawkes::ClingoAccess::DebugLevel_t>(config->get_int(buffer)));
 
-  std::strcpy(suffix, "max-orders");
-  MaxOrders = config->get_int(buffer);
-  std::strcpy(suffix, "max-products");
-  MaxProducts = config->get_int(buffer);
-  std::strcpy(suffix, "max-quantity");
-  MaxQuantity = config->get_int(buffer);
-  std::strcpy(suffix, "look-ahead");
-  LookAhaed = config->get_int(buffer);
-  std::strcpy(suffix, "time-resolution");
-  TimeResolution = config->get_int(buffer);
-  std::strcpy(suffix, "robots");
-  PossibleRobots = config->get_strings(buffer);
+	std::strcpy(suffix, "max-orders");
+	MaxOrders = config->get_int(buffer);
+	std::strcpy(suffix, "max-products");
+	MaxProducts = config->get_int(buffer);
+	std::strcpy(suffix, "max-quantity");
+	MaxQuantity = config->get_int(buffer);
+	std::strcpy(suffix, "look-ahead");
+	LookAhaed = config->get_int(buffer);
+	std::strcpy(suffix, "time-resolution");
+	TimeResolution = config->get_int(buffer);
+	std::strcpy(suffix, "robots");
+	PossibleRobots = config->get_strings(buffer);
 
-  // The time-estimation part.
-  suffix = buffer + prefixLen + infixTimeLen;
-  std::strcpy(buffer + prefixLen, infixTime);
+	// The time-estimation part.
+	suffix = buffer + prefixLen + infixTimeLen;
+	std::strcpy(buffer + prefixLen, infixTime);
 
-  std::strcpy(suffix, "deliver-product");
-  DeliverProductTaskDuration = config->get_int(buffer);
-  std::strcpy(suffix, "fetch-product");
-  FetchProductTaskDuration = config->get_int(buffer);
-  std::strcpy(suffix, "max-drive-duration");
-  MaxDriveDuration = config->get_int(buffer);
-  std::strcpy(suffix, "prepare-cs");
-  PrepareCSTaskDuration = config->get_int(buffer);
+	std::strcpy(suffix, "deliver-product");
+	DeliverProductTaskDuration = config->get_int(buffer);
+	std::strcpy(suffix, "fetch-product");
+	FetchProductTaskDuration = config->get_int(buffer);
+	std::strcpy(suffix, "max-drive-duration");
+	MaxDriveDuration = config->get_int(buffer);
+	std::strcpy(suffix, "prepare-cs");
+	PrepareCSTaskDuration = config->get_int(buffer);
 
-  MaxTaskDuration = std::max({DeliverProductTaskDuration,
-                              FetchProductTaskDuration, PrepareCSTaskDuration});
+	MaxTaskDuration =
+	  std::max({DeliverProductTaskDuration, FetchProductTaskDuration, PrepareCSTaskDuration});
 
-  // The cap-station part.
-  suffix = buffer + prefixLen + infixCapStationLen;
-  std::strcpy(buffer + prefixLen, infixCapStation);
+	// The cap-station part.
+	suffix = buffer + prefixLen + infixCapStationLen;
+	std::strcpy(buffer + prefixLen, infixCapStation);
 
-  CapColors.reserve(2);
-  // We assume the distribution is the same, for CYAN and MAGENTA.
-  std::strcpy(suffix, "C-CS1");
-  CapColors.emplace_back(
-      CapColorInformation{config->get_string(buffer), "CS1"});
-  std::strcpy(suffix, "C-CS2");
-  CapColors.emplace_back(
-      CapColorInformation{config->get_string(buffer), "CS2"});
+	CapColors.reserve(2);
+	// We assume the distribution is the same, for CYAN and MAGENTA.
+	std::strcpy(suffix, "C-CS1");
+	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "CS1"});
+	std::strcpy(suffix, "C-CS2");
+	CapColors.emplace_back(CapColorInformation{config->get_string(buffer), "CS2"});
 
-  // The working-duration part.
-  suffix = buffer + prefixLen + infixWorkingDurationLen;
-  std::strcpy(buffer + prefixLen, infixWorkingDuration);
+	// The working-duration part.
+	suffix = buffer + prefixLen + infixWorkingDurationLen;
+	std::strcpy(buffer + prefixLen, infixWorkingDuration);
 
-  WorkingDurations.reserve(6);
-  std::strcpy(suffix, "base-station");
-  WorkingDurations.insert({"BS", config->get_int(buffer)});
-  std::strcpy(suffix, "cap-station");
-  WorkingDurations.insert({"CS1", config->get_int(buffer)});
-  WorkingDurations.insert({"CS2", config->get_int(buffer)});
-  std::strcpy(suffix, "delivery-station");
-  WorkingDurations.insert({"DS", config->get_int(buffer)});
-  std::strcpy(suffix, "ring-station");
-  WorkingDurations.insert({"RS1", config->get_int(buffer)});
-  WorkingDurations.insert({"RS2", config->get_int(buffer)});
+	WorkingDurations.reserve(6);
+	std::strcpy(suffix, "base-station");
+	WorkingDurations.insert({"BS", config->get_int(buffer)});
+	std::strcpy(suffix, "cap-station");
+	WorkingDurations.insert({"CS1", config->get_int(buffer)});
+	WorkingDurations.insert({"CS2", config->get_int(buffer)});
+	std::strcpy(suffix, "delivery-station");
+	WorkingDurations.insert({"DS", config->get_int(buffer)});
+	std::strcpy(suffix, "ring-station");
+	WorkingDurations.insert({"RS1", config->get_int(buffer)});
+	WorkingDurations.insert({"RS2", config->get_int(buffer)});
 
-  for (const auto &pair : WorkingDurations) {
-    MaxWorkingDuration = std::max(MaxWorkingDuration, pair.second);
-  } // for ( const auto& pair : WorkingDurations )
-  return;
+	for (const auto &pair : WorkingDurations) {
+		MaxWorkingDuration = std::max(MaxWorkingDuration, pair.second);
+	} // for ( const auto& pair : WorkingDurations )
+	return;
 }
