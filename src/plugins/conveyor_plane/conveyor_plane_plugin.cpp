@@ -20,9 +20,9 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "conveyor_plane_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
@@ -30,14 +30,16 @@ using namespace fawkes;
  * intel real sense)
  * @author Tobias Neumann
  */
-class ConveyorPlanePlugin : public fawkes::Plugin {
+class ConveyorPlanePlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  ConveyorPlanePlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new ConveyorPlaneThread());
-  }
+	ConveyorPlanePlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new ConveyorPlaneThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Plugin to detec the conveyor beld from a pointcloud")
