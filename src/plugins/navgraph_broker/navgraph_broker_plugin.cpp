@@ -21,6 +21,7 @@
  */
 
 #include "navgraph_broker_thread.h"
+
 #include <core/plugin.h>
 
 using namespace fawkes;
@@ -28,14 +29,16 @@ using namespace fawkes;
 /** NavGraph Broker plugin.
  * @author Sebastian Reuter
  */
-class NavGraphBrokerPlugin : public fawkes::Plugin {
+class NavGraphBrokerPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  NavGraphBrokerPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new NavgraphBrokerThread());
-  }
+	NavGraphBrokerPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new NavgraphBrokerThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("NavGraph Broker")
