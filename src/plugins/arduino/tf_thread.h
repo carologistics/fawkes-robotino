@@ -34,7 +34,6 @@
 #include <core/threading/thread.h>
 #include <interfaces/JoystickInterface.h>
 #include <tf/types.h>
-
 #include <utils/time/time.h>
 
 #include <boost/asio.hpp>
@@ -59,77 +58,77 @@ class ArduinoTFThread : public fawkes::Thread,
 
 {
 public:
-  ArduinoTFThread();
-  /**
+	ArduinoTFThread();
+	/**
    * @brief Constructor
    *
    * @param cfg_name Name of the config file
    * @param cfg_prefix Tag prefixes of the arduino tf config values
    */
-  ArduinoTFThread(std::string &cfg_name, std::string &cfg_prefix);
-  virtual ~ArduinoTFThread();
+	ArduinoTFThread(std::string &cfg_name, std::string &cfg_prefix);
+	virtual ~ArduinoTFThread();
 
-  virtual void init();
-  //	virtual void once();
-  virtual void loop();
-  virtual void finalize();
+	virtual void init();
+	//	virtual void once();
+	virtual void loop();
+	virtual void finalize();
 
-  /**
+	/**
    * @brief Resets the current position to a given position
    *
    * @param new_x New X-coordinate
    * @param new_y New Y-coordinate
    * @param new_z New Z-coordinate
    */
-  void set_position(float new_x, float new_y, float new_z);
+	void set_position(float new_x, float new_y, float new_z);
 
-  /**
+	/**
    * @brief sets the bool flag for the moving state ot the gripper
    *
    * @param moving New moving state
    */
-  void set_moving(bool moving);
+	void set_moving(bool moving);
 
 private:
-  std::string cfg_gripper_frame_id_;
-  std::string cfg_gripper_dyn_x_frame_id_;
-  std::string cfg_gripper_dyn_y_frame_id_;
-  std::string cfg_gripper_dyn_z_frame_id_;
+	std::string cfg_gripper_frame_id_;
+	std::string cfg_gripper_dyn_x_frame_id_;
+	std::string cfg_gripper_dyn_y_frame_id_;
+	std::string cfg_gripper_dyn_z_frame_id_;
 
-  std::string cfg_gripper_origin_x_frame_id_;
-  std::string cfg_gripper_origin_y_frame_id_;
-  std::string cfg_gripper_origin_z_frame_id_;
+	std::string cfg_gripper_origin_x_frame_id_;
+	std::string cfg_gripper_origin_y_frame_id_;
+	std::string cfg_gripper_origin_z_frame_id_;
 
-  std::string cfg_prefix_;
-  std::string cfg_name_;
+	std::string cfg_prefix_;
+	std::string cfg_name_;
 
-  fawkes::tf::TransformPublisher *dyn_x_pub;
-  fawkes::tf::TransformPublisher *dyn_y_pub;
-  fawkes::tf::TransformPublisher *dyn_z_pub;
+	fawkes::tf::TransformPublisher *dyn_x_pub;
+	fawkes::tf::TransformPublisher *dyn_y_pub;
+	fawkes::tf::TransformPublisher *dyn_z_pub;
 
-  float cfg_static_tf_x_home_;
-  float cfg_static_tf_y_home_;
-  float cfg_static_tf_z_home_;
-  float cfg_x_max_;
-  float cfg_y_max_;
-  float cfg_z_max_;
+	float cfg_static_tf_x_home_;
+	float cfg_static_tf_y_home_;
+	float cfg_static_tf_z_home_;
+	float cfg_x_max_;
+	float cfg_y_max_;
+	float cfg_z_max_;
 
-  void load_config();
+	void load_config();
 
-  fawkes::Time end_time_point_;
-  float desired_end_z_pose_;
-  float current_end_z_pose_;
+	fawkes::Time end_time_point_;
+	float        desired_end_z_pose_;
+	float        current_end_z_pose_;
 
-  float cur_step_d_;
-  float cur_x_;
-  float cur_y_;
-  float cur_z_;
+	float cur_step_d_;
+	float cur_x_;
+	float cur_y_;
+	float cur_z_;
 
-  std::atomic<bool> moving_;
+	std::atomic<bool> moving_;
 
 protected:
-  /** Mutex to protect data_. Lock whenever accessing it. */
-  boost::mutex data_mutex_;
+	/** Mutex to protect data_. Lock whenever accessing it. */
+	boost::mutex data_mutex_;
 };
 
 #endif
