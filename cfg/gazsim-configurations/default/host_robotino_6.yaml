@@ -64,7 +64,7 @@ plugins/tag_vision:
 plugins/robot-memory:
   database: robmem6
 
-clips-executive/specs/rcll2018/parameters/rcll:
+clips-executive/specs/rcll/parameters/rcll:
   team-name: Carologistics
   robot-name: R-6
   robot-number: 6
