@@ -20,23 +20,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "navgraph_generator_mps_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /** Automatically generate navgraph for MPS
  * @author Tim Niemueller
  */
-class NavGraphGeneratorMPSPlugin : public fawkes::Plugin {
+class NavGraphGeneratorMPSPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  NavGraphGeneratorMPSPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new NavGraphGeneratorMPSThread());
-  }
+	NavGraphGeneratorMPSPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new NavGraphGeneratorMPSThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Generate navgraph for MPS game")
