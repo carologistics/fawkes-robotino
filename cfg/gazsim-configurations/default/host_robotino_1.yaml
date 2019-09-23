@@ -72,7 +72,7 @@ webtools-bridge:
   rosbridge-port: 9090
   rosbridge-uri: "ws://localhost:9090"
 
-clips-executive/specs/rcll2018/parameters/rcll:
+clips-executive/specs/rcll/parameters/rcll:
   team-name: Carologistics
   robot-name: R-1
   robot-number: 1

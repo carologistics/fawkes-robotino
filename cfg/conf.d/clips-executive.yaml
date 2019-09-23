@@ -48,7 +48,7 @@ clips-executive:
 
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  spec: rcll2018
+  spec: rcll
 
   specs:
     test:
@@ -78,7 +78,7 @@ clips-executive:
         visit: ppgoto{place=?(m)S}
       blackboard-preload: ["Position3DInterface"]
 
-    rcll2018:
+    rcll:
       init:
         stage-1:
           - name: pddl-parser
@@ -93,23 +93,23 @@ clips-executive:
           - name: robot_memory
         stage-3:
           - name: utils
-            file: rcll2018/utils.clp
+            file: rcll/utils.clp
           - name: coordination
             file: coordination-mutex.clp
           - name: state-estimation
-            file: rcll2018/state-estimation-init.clp
+            file: rcll/state-estimation-init.clp
           - name: worldmodel
             files:
               - wm-robmem-sync.clp
-              - rcll2018/init-wm-sync.clp
-              - rcll2018/init-worldmodel.clp
-              - rcll2018/game-worldmodel.clp
+              - rcll/init-wm-sync.clp
+              - rcll/init-worldmodel.clp
+              - rcll/game-worldmodel.clp
           - name: communication
             files:
-              - rcll2018/refbox-comm-init.clp
-              - rcll2018/refbox-worldmodel.clp
+              - rcll/refbox-comm-init.clp
+              - rcll/refbox-worldmodel.clp
           - name: domain
-            file: rcll2018/domain.clp
+            file: rcll/domain.clp
           - name: resource-locking
             file: resource-locks.clp
           - name: goal-reasoner
@@ -120,26 +120,26 @@ clips-executive:
               - goals/timeout.clp
               - goals/try-all.clp
               - goal-tree.clp
-              - rcll2018/goals/run-endless.clp
-              - rcll2018/goals/simple.clp
-              - rcll2018/goal-reasoner.clp
-              - rcll2018/goal-production.clp
-              - rcll2018/production-strategy.clp
-              - rcll2018/exploration.clp
-              - rcll2018/goal-lock-expiration.clp
+              - rcll/goals/run-endless.clp
+              - rcll/goals/simple.clp
+              - rcll/goal-reasoner.clp
+              - rcll/goal-production.clp
+              - rcll/production-strategy.clp
+              - rcll/exploration.clp
+              - rcll/goal-lock-expiration.clp
           - name: goal-expander
-            file: rcll2018/fixed-sequence.clp
+            file: rcll/fixed-sequence.clp
           - name: action-selection
-            file: rcll2018/action-selection.clp
+            file: rcll/action-selection.clp
           - name: action-execution
             files:
               - skills-actions.clp
-              - rcll2018/noop-actions.clp
-              - rcll2018/refbox-actions.clp
-              - rcll2018/lock-actions.clp
-              - rcll2018/wait-actions.clp
+              - rcll/noop-actions.clp
+              - rcll/refbox-actions.clp
+              - rcll/lock-actions.clp
+              - rcll/wait-actions.clp
           - name: execution-monitoring
-            file: rcll2018/execution-monitoring.clp
+            file: rcll/execution-monitoring.clp
 
       action-mapping:
         enter-field: >

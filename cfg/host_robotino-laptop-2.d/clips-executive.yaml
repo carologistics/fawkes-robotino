@@ -3,7 +3,7 @@
 ---
 clips-executive:
   specs:
-    rcll2018:
+    rcll:
       parameters:
         rcll:
           robot-name: "R-2"
