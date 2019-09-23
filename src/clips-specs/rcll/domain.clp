@@ -24,7 +24,7 @@
   (executive-init)
   (not (domain-loaded))
 =>
-  (parse-pddl-domain (path-resolve "rcll2018/domain.pddl"))
+  (parse-pddl-domain (path-resolve "rcll/domain.pddl"))
   (assert (domain-loaded))
 )
 
