@@ -168,7 +168,7 @@ void TagVisionThread::finalize() {
 /**
  * Get the appropriate TransformPublisher for the given tag index
  * @param idx The tag index
- * @return The TransformPublisher to be used for @param idx
+ * @return The TransformPublisher to be used for the tag index
  */
 tf::TransformPublisher *TagVisionThread::get_tf_publisher(size_t idx) {
   if (tf_publishers.find(tag_frame_basename + std::to_string(idx)) ==
