@@ -8,6 +8,7 @@
 --                   Johannes Rothe
 --                   Nicolas Limpert
 --             2016  Victor Mataré
+--             2019  Sebastian Eltester
 --
 ----------------------------------------------------------------------------
 
