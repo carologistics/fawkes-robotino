@@ -7,7 +7,7 @@ plugins/amcl:
   # Image file containing the map, must be a PNG file
   # If path starts with slash (/) it's considered to be absolute,
   # otherwise relative to the config directory
-  map_file: maps/rc-2017-map.png
+  map_file: maps/agvr_testing.png
   # Resolution of the map; meters per pixel
   resolution: 0.05
 
@@ -16,8 +16,8 @@ plugins/amcl:
   # around Z axis. Many parts of the system currently ignore yaw.; m
   # There is a wall of one grid cell thickness around the map, therefore
   # set the origin to (-0.05, -0.05)
-  origin_x: -9.7
-  origin_y: -0.25
+  origin_x: -11.8
+  origin_y: -11.5
   origin_theta: 0.0
 
   # Pixels with occupancy probability greater than this threshold are

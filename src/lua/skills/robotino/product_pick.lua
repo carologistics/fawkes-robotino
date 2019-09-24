@@ -44,7 +44,7 @@ local tfm = require("fawkes.tfutils")
 
 -- Constant
 local conveyor_gripper_forward_x = 0.095 -- distance to move gripper forward after align
-local conveyor_gripper_down_z = -0.027  -- distance to move gripper down after driving over product
+local conveyor_gripper_down_z = -0.022  -- distance to move gripper down after driving over product
 
 local conveyor_gripper_back_x = -0.03 -- distance to move gripper back after closing gripper
 local conveyor_gripper_up_z = 0.025   -- distance to move gripper up after closing gripper
