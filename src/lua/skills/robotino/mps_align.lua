@@ -28,7 +28,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "mps_align"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = { "motor_move" ,"gripper_commands"}
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
@@ -128,7 +128,7 @@ end
 
 
 function want_search()
-   return fsm.vars.search_idx <= MAX_TRIES
+   return fsm.vars.search_idx <= MAX_TRIES or fsm.vars.turn_around_idx <= MAX_TRIES
 end
 
 
@@ -214,6 +214,7 @@ function INIT:init()
       tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
 
    self.fsm.vars.search_idx = 0
+   self.fsm.vars.turn_around_idx = 0
    self.fsm.vars.globalsearch_done = false
 end
 
@@ -329,10 +330,10 @@ end
 
 
 function TURN_AROUND:init()
-   print("TURN_AROUND search_idx: " .. self.fsm.vars.search_idx)
-   print(TURN_MOVES[math.mod(self.fsm.vars.search_idx, #TURN_MOVES)+1]["ori"]     * (self.fsm.vars.search_idx + 1))
-self.args["motor_move"] = {ori = TURN_MOVES[math.mod(self.fsm.vars.search_idx, #TURN_MOVES)+1]["ori"] * (self.fsm.vars.search_idx + 1)}
-   self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
+   print("TURN_AROUND turn_around_idx: " .. self.fsm.vars.turn_around_idx)
+   print(TURN_MOVES[math.mod(self.fsm.vars.turn_around_idx, #TURN_MOVES) + 1]["ori"] * self.fsm.vars.turn_around_idx)
+   self.args["motor_move"] = {ori = TURN_MOVES[math.mod(self.fsm.vars.turn_around_idx, #TURN_MOVES) + 1]["ori"] * self.fsm.vars.turn_around_idx}
+   self.fsm.vars.turn_around_idx = self.fsm.vars.turn_around_idx + 1
 
    for k,v in pairs(self.fsm.vars.lines_visited) do
       self.fsm.vars.lines_visited[k] = 0
