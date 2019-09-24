@@ -53,8 +53,8 @@ local conveyor_gripper_down_z = -0.015  -- distance to move gripper down after d
 local conveyor_gripper_back_x = -0.02 -- distance to move gripper back after opening gripper
 local conveyor_gripper_up_z = 0.03    -- distance to move gripper up after opening the gripper
 
-local slide_gripper_forward_x = 0.035  -- distance to move gripper forward after align if the target is slide
-local slide_gripper_down_z = -0.04    -- distance to move gripper down after driving over slide
+local slide_gripper_forward_x = 0.028  -- distance to move gripper forward after align if the target is slide
+local slide_gripper_down_z = -0.025    -- distance to move gripper down after driving over slide
 
 local slide_gripper_back_x = -0.01 -- distance to move gripper back after opening the gripper if the target is slide
 local slide_gripper_up_z = 0.01    --distance to move gripper up after opening the gripper if the target is slide
