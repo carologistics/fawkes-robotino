@@ -25,69 +25,72 @@
 #include <boost/asio.hpp>
 #include <cstdint>
 
-class ArduinoComMessage {
+class ArduinoComMessage
+{
 public:
-  /**
+	/**
    * @brief Mapping for all possible commands, that can be send to the arduino
    */
-  enum class command_id_t : char {
-    CMD_CALIBRATE = 'C',
-    CMD_X_NEW_POS = 'X',
-    CMD_Y_NEW_POS = 'Y',
-    CMD_Z_NEW_POS = 'Z',
-    CMD_CLOSE = 'G',
-    CMD_OPEN = 'O',
-    CMD_STATUS_REQ = 'S',
-    CMD_SET_A_TOGGLE_STEPS = 'T',
-    CMD_X_NEW_SPEED = 'x',
-    CMD_Y_NEW_SPEED = 'y',
-    CMD_Z_NEW_SPEED = 'z',
-    CMD_A_NEW_SPEED = 'a',
-    CMD_X_NEW_ACC = 'm',
-    CMD_Y_NEW_ACC = 'n',
-    CMD_Z_NEW_ACC = 'o',
-    CMD_A_NEW_ACC = 'p'
-  };
+	enum class command_id_t : char {
+		CMD_CALIBRATE          = 'C',
+		CMD_X_NEW_POS          = 'X',
+		CMD_Y_NEW_POS          = 'Y',
+		CMD_Z_NEW_POS          = 'Z',
+		CMD_CLOSE              = 'G',
+		CMD_OPEN               = 'O',
+		CMD_STATUS_REQ         = 'S',
+		CMD_SET_A_TOGGLE_STEPS = 'T',
+		CMD_X_NEW_SPEED        = 'x',
+		CMD_Y_NEW_SPEED        = 'y',
+		CMD_Z_NEW_SPEED        = 'z',
+		CMD_A_NEW_SPEED        = 'a',
+		CMD_X_NEW_ACC          = 'm',
+		CMD_Y_NEW_ACC          = 'n',
+		CMD_Z_NEW_ACC          = 'o',
+		CMD_A_NEW_ACC          = 'p'
+	};
 
-  /**
+	/**
    * @brief The prefix of each message to the arduino
    */
-  static const char MSG_HEAD[3];
+	static const char MSG_HEAD[3];
 
-  ArduinoComMessage();
-  ~ArduinoComMessage();
-  ArduinoComMessage(command_id_t cmdid, unsigned int value);
+	ArduinoComMessage();
+	~ArduinoComMessage();
+	ArduinoComMessage(command_id_t cmdid, unsigned int value);
 
-  bool add_command(command_id_t cmd, unsigned int number);
-  unsigned short get_data_size();
-  unsigned short get_cur_buffer_index();
+	bool           add_command(command_id_t cmd, unsigned int number);
+	unsigned short get_data_size();
+	unsigned short get_cur_buffer_index();
 
-  boost::asio::const_buffer buffer();
+	boost::asio::const_buffer buffer();
 
-  void set_msecs_if_lower(unsigned int msecs);
-  unsigned int get_msecs();
+	void         set_msecs_if_lower(unsigned int msecs);
+	unsigned int get_msecs();
 
-  /**
+	/**
    * @brief Calculates the number of digits an integer consists of
    *
    * @param i The number of which the number of digits should be calculated
    *
    * @return The amount of digits i consists of
    */
-  static inline unsigned short num_digits(unsigned int i) {
-    return i > 0 ? (int)log10((double)i) + 1 : 1;
-  }
+	static inline unsigned short
+	num_digits(unsigned int i)
+	{
+		return i > 0 ? (int)log10((double)i) + 1 : 1;
+	}
 
 private:
-  void ctor();
-  void dtor();
+	void ctor();
+	void dtor();
 
 private:
-  char *data_;
-  unsigned short data_size_;
-  unsigned short cur_buffer_index_; // index of next data field
+	char *         data_;
+	unsigned short data_size_;
+	unsigned short cur_buffer_index_; // index of next data field
 
-  unsigned int msecs_to_wait_;
+	unsigned int msecs_to_wait_;
 };
 
 #endif

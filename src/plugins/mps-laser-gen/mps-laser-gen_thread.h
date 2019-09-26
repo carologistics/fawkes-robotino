@@ -30,19 +30,19 @@
 #include <aspect/logging.h>
 #include <aspect/tf.h>
 #include <core/threading/thread.h>
+#include <interfaces/Laser360Interface.h>
 #include <interfaces/LaserBoxFilterInterface.h>
 #include <navgraph/aspect/navgraph.h>
 #include <plugins/ros/aspect/ros.h>
-
-#include <string>
+#include <ros/publisher.h>
 
 #include <Eigen/Geometry>
-#include <interfaces/Laser360Interface.h>
-#include <ros/publisher.h>
+#include <string>
 
 #define CFG_PREFIX "/plugins/mps_laser_gen/"
 
-namespace fawkes {}
+namespace fawkes {
+}
 
 class MPSLaserGenThread : public fawkes::Thread,
                           public fawkes::BlockedTimingAspect,
@@ -51,50 +51,55 @@ class MPSLaserGenThread : public fawkes::Thread,
                           public fawkes::BlackBoardAspect,
                           public fawkes::NavGraphAspect,
                           public fawkes::ROSAspect,
-                          public fawkes::TransformAspect {
+                          public fawkes::TransformAspect
+{
+	/// @cond INTERNAL
+	class MPS
+	{
+	public:
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  /// @cond INTERNAL
-  class MPS {
-  public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+		Eigen::Vector2f center;
+		Eigen::Vector2f corners[4];
 
-    Eigen::Vector2f center;
-    Eigen::Vector2f corners[4];
+		unsigned int closest_idx;
+		unsigned int adjacent_1;
+		unsigned int adjacent_2;
 
-    unsigned int closest_idx;
-    unsigned int adjacent_1;
-    unsigned int adjacent_2;
-
-    float bearing;
-  };
-  /// @endcond
+		float bearing;
+	};
+	/// @endcond
 
 public:
-  /** MPSLaserGenThread constructor
+	/** MPSLaserGenThread constructor
    */
-  MPSLaserGenThread();
+	MPSLaserGenThread();
 
-  virtual void init();
-  virtual void finalize();
-  virtual void loop();
+	virtual void init();
+	virtual void finalize();
+	virtual void loop();
 
-  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() { Thread::run(); }
+	virtual void
+	run()
+	{
+		Thread::run();
+	}
 
 private:
-  fawkes::Laser360Interface *laser_if_;
-  fawkes::LaserBoxFilterInterface *laser_box_filter_if_;
-  ros::Publisher vispub_;
-  std::string mps_laser_gen_cfg_prefix;
-  std::map<std::string, MPS> mpses;
+	fawkes::Laser360Interface *      laser_if_;
+	fawkes::LaserBoxFilterInterface *laser_box_filter_if_;
+	ros::Publisher                   vispub_;
+	std::string                      mps_laser_gen_cfg_prefix;
+	std::map<std::string, MPS>       mpses;
 
-  bool cfg_enable_mps_laser_gen_;
-  bool cfg_enable_mps_box_filter_;
-  float cfg_mps_length_;
-  float cfg_mps_width_;
+	bool  cfg_enable_mps_laser_gen_;
+	bool  cfg_enable_mps_box_filter_;
+	float cfg_mps_length_;
+	float cfg_mps_width_;
 
-  void load_config();
+	void load_config();
 };
 
 #endif

@@ -32,14 +32,16 @@ using namespace fawkes;
  * ampel.
  * @author Tim Niemueller
  */
-class RobotinoAmpelVarPlugin : public fawkes::Plugin {
+class RobotinoAmpelVarPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  RobotinoAmpelVarPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new RobotinoAmpelVarPipelineThread());
-  }
+	RobotinoAmpelVarPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new RobotinoAmpelVarPipelineThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Robotino ampel-var image processing")

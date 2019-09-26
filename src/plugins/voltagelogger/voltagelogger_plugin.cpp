@@ -20,23 +20,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "voltagelogger_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /** Template! Makes the robotino move forward for 3 seconds
  * @author Daniel Ewert
  */
-class VoltageLoggerPlugin : public fawkes::Plugin {
+class VoltageLoggerPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  VoltageLoggerPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new VoltageLoggerThread());
-  }
+	VoltageLoggerPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new VoltageLoggerThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Write Battery Voltage to file")

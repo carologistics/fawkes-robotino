@@ -19,23 +19,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "mps-laser-gen_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /** Plugin to generate virtual laser data based on known MPS positions.
  * @author Tim Niemueller
  */
-class MPSLaserGenPlugin : public fawkes::Plugin {
+class MPSLaserGenPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor
+	/** Constructor
    * @param config Fakwes configuration
    */
-  MPSLaserGenPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new MPSLaserGenThread());
-  }
+	MPSLaserGenPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new MPSLaserGenThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Generate virtual laser data for known MPS")

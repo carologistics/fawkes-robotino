@@ -19,9 +19,9 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "gazsim_machine_signal_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
@@ -30,14 +30,16 @@ using namespace fawkes;
  *
  * @author Frederik Zwilling
  */
-class GazsimMachineSignalPlugin : public fawkes::Plugin {
+class GazsimMachineSignalPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimMachineSignalPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new MachineSignalSimThread());
-  }
+	GazsimMachineSignalPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new MachineSignalSimThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Simulation of the MachineSignal Plugin results")

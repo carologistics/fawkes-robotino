@@ -51,33 +51,38 @@ class GazsimGripperThread : public fawkes::Thread,
                             public fawkes::LoggingAspect,
                             public fawkes::ConfigurableAspect,
                             public fawkes::BlackBoardAspect,
-                            public fawkes::GazeboAspect {
+                            public fawkes::GazeboAspect
+{
 public:
-  GazsimGripperThread();
+	GazsimGripperThread();
 
-  virtual void init();
-  virtual void finalize();
-  virtual void loop();
+	virtual void init();
+	virtual void finalize();
+	virtual void loop();
 
-  /** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
 protected:
-  virtual void run() { Thread::run(); }
+	virtual void
+	run()
+	{
+		Thread::run();
+	}
 
 private:
-  fawkes::AX12GripperInterface *gripper_if_;
-  fawkes::ArduinoInterface *arduino_if_;
+	fawkes::AX12GripperInterface *gripper_if_;
+	fawkes::ArduinoInterface *    arduino_if_;
 
-  std::string gripper_if_name_;
-  std::string arduino_if_name_;
-  std::string cfg_prefix_;
+	std::string gripper_if_name_;
+	std::string arduino_if_name_;
+	std::string cfg_prefix_;
 
-  // Publisher to sent msgs to gazebo
-  gazebo::transport::PublisherPtr set_gripper_pub_;
-  gazebo::transport::PublisherPtr set_conveyor_pub_;
-  gazebo::transport::SubscriberPtr gripper_has_puck_sub_;
+	// Publisher to sent msgs to gazebo
+	gazebo::transport::PublisherPtr  set_gripper_pub_;
+	gazebo::transport::PublisherPtr  set_conveyor_pub_;
+	gazebo::transport::SubscriberPtr gripper_has_puck_sub_;
 
-  void send_gripper_msg(int value);
-  void on_has_puck_msg(ConstIntPtr &msg);
+	void send_gripper_msg(int value);
+	void on_has_puck_msg(ConstIntPtr &msg);
 };
 
 #endif

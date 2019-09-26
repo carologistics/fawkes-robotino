@@ -20,23 +20,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "light_front_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /** Light Detection with front cam and Laser
  * @author Florian Nolden & Tobias Neumann
  */
-class LightFront : public fawkes::Plugin {
+class LightFront : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  LightFront(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new LightFrontThread());
-  }
+	LightFront(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new LightFrontThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Front camera light detection")

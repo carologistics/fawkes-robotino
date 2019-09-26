@@ -32,24 +32,30 @@ using namespace fawkes;
 
 /** Constructor. */
 OmnivisionActivatorThread::OmnivisionActivatorThread()
-    : Thread("OmnivisionActivatorThread", Thread::OPMODE_WAITFORWAKEUP),
-      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SKILL) {}
-
-void OmnivisionActivatorThread::init() {
-  switch_if_ =
-      blackboard->open_for_reading<SwitchInterface>("omnivisionSwitch");
-  SwitchInterface::EnableSwitchMessage *msg =
-      new SwitchInterface::EnableSwitchMessage();
-  switch_if_->msgq_enqueue(msg);
-  logger->log_info(name(), "Activating Omnivision");
+: Thread("OmnivisionActivatorThread", Thread::OPMODE_WAITFORWAKEUP),
+  BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SKILL)
+{
 }
 
-void OmnivisionActivatorThread::finalize() {
-  SwitchInterface::DisableSwitchMessage *msg =
-      new SwitchInterface::DisableSwitchMessage();
-  switch_if_->msgq_enqueue(msg);
-
-  blackboard->close(switch_if_);
+void
+OmnivisionActivatorThread::init()
+{
+	switch_if_ = blackboard->open_for_reading<SwitchInterface>("omnivisionSwitch");
+	SwitchInterface::EnableSwitchMessage *msg = new SwitchInterface::EnableSwitchMessage();
+	switch_if_->msgq_enqueue(msg);
+	logger->log_info(name(), "Activating Omnivision");
 }
 
-void OmnivisionActivatorThread::loop() {}
+void
+OmnivisionActivatorThread::finalize()
+{
+	SwitchInterface::DisableSwitchMessage *msg = new SwitchInterface::DisableSwitchMessage();
+	switch_if_->msgq_enqueue(msg);
+
+	blackboard->close(switch_if_);
+}
+
+void
+OmnivisionActivatorThread::loop()
+{
+}
