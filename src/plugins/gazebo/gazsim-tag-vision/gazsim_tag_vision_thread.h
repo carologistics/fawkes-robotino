@@ -30,8 +30,9 @@
 #include <core/threading/thread.h>
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/TagVisionInterface.h>
-#include <map>
 #include <plugins/gazebo/aspect/gazebo.h>
+
+#include <map>
 #include <vector>
 
 // from Gazebo
@@ -50,41 +51,42 @@ class TagVisionSimThread : public fawkes::Thread,
                            public fawkes::BlackBoardAspect,
                            public fawkes::BlockedTimingAspect,
                            public fawkes::GazeboAspect,
-                           public fawkes::TransformAspect {
+                           public fawkes::TransformAspect
+{
 public:
-  TagVisionSimThread();
+	TagVisionSimThread();
 
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+	virtual void init();
+	virtual void loop();
+	virtual void finalize();
 
 private:
-  // Subscriber to receive tag positions from gazebo
-  gazebo::transport::SubscriberPtr tag_vision_sub_;
+	// Subscriber to receive tag positions from gazebo
+	gazebo::transport::SubscriberPtr tag_vision_sub_;
 
-  // interfaces to publish the positions
-  std::map<int, fawkes::Position3DInterface *> tag_pos_ifs_;
-  // switch interface for enableing/disableing
-  fawkes::TagVisionInterface *info_if_;
+	// interfaces to publish the positions
+	std::map<int, fawkes::Position3DInterface *> tag_pos_ifs_;
+	// switch interface for enableing/disableing
+	fawkes::TagVisionInterface *info_if_;
 
-  // handler function for incoming messages about the machine light signals
-  void on_tag_vision_msg(ConstPosesStampedPtr &msg);
+	// handler function for incoming messages about the machine light signals
+	void on_tag_vision_msg(ConstPosesStampedPtr &msg);
 
-  // copy of last msg to write the interface in the next loop
-  gazebo::msgs::PosesStamped last_msg_;
-  bool new_data_;
+	// copy of last msg to write the interface in the next loop
+	gazebo::msgs::PosesStamped last_msg_;
+	bool                       new_data_;
 
-  // config values
-  std::string gazebo_topic_;
-  std::string tag_if_name_prefix_;
-  std::string info_if_name_;
-  std::string sim_frame_name_;
-  std::string frame_name_;
-  int number_interfaces_;
-  int visibility_history_increase_per_update_;
+	// config values
+	std::string gazebo_topic_;
+	std::string tag_if_name_prefix_;
+	std::string info_if_name_;
+	std::string sim_frame_name_;
+	std::string frame_name_;
+	int         number_interfaces_;
+	int         visibility_history_increase_per_update_;
 
-  // assignment tag-id to interface-index
-  std::map<int, int> map_id_if_;
+	// assignment tag-id to interface-index
+	std::map<int, int> map_id_if_;
 };
 
 #endif

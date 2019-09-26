@@ -20,23 +20,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "plugin_template_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /** Template! Makes the robotino move forward for 3 seconds
  * @author Daniel Ewert
  */
-class PluginTemplatePlugin : public fawkes::Plugin {
+class PluginTemplatePlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  PluginTemplatePlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new PluginTemplateThread());
-  }
+	PluginTemplatePlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new PluginTemplateThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Plugin Template")

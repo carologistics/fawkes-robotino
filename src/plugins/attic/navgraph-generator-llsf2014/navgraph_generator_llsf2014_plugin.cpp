@@ -20,23 +20,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "navgraph_generator_llsf2014_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /** Automatically generate navgraph for LLSF2014
  * @author Tim Niemueller
  */
-class NavGraphGenerator2014Plugin : public fawkes::Plugin {
+class NavGraphGenerator2014Plugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  NavGraphGenerator2014Plugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new NavGraphGenerator2014Thread());
-  }
+	NavGraphGenerator2014Plugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new NavGraphGenerator2014Thread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Generate navgraph for LLSF2014 game")

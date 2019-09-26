@@ -19,9 +19,9 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "gazsim_llsf_statistics_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
@@ -30,14 +30,16 @@ using namespace fawkes;
  *
  * @author Frederik Zwilling
  */
-class GazsimLlsfStatisticsPlugin : public fawkes::Plugin {
+class GazsimLlsfStatisticsPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimLlsfStatisticsPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new LlsfStatisticsSimThread());
-  }
+	GazsimLlsfStatisticsPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new LlsfStatisticsSimThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Makes statistics of a llsf game in gazebo")

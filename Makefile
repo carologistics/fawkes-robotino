@@ -21,7 +21,6 @@ include $(BASEDIR)/etc/buildsys/config.mk
 include $(BUILDSYSDIR)/rules.mk
 include $(BUILDSYSDIR)/root/root.mk
 include $(BUILDSYSDIR)/root/linkscripts.mk
-include $(BASEDIR)/etc/buildsys/override.mk
 
 src: fawkes
 

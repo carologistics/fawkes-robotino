@@ -39,32 +39,47 @@ using namespace fawkes;
 
 /** Constructor. */
 PluginTemplateThread::PluginTemplateThread()
-    : Thread("PluginTemplateThread", Thread::OPMODE_WAITFORWAKEUP),
-      BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SKILL) {}
-
-void PluginTemplateThread::init() {
-
-  logger->log_info(name(), "Plugin Template starts up");
-  motor_if_ = blackboard->open_for_reading<MotorInterface>("Robotino");
+: Thread("PluginTemplateThread", Thread::OPMODE_WAITFORWAKEUP),
+  BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_SKILL)
+{
 }
 
-bool PluginTemplateThread::prepare_finalize_user() {
-  stop();
-  return true;
+void
+PluginTemplateThread::init()
+{
+	logger->log_info(name(), "Plugin Template starts up");
+	motor_if_ = blackboard->open_for_reading<MotorInterface>("Robotino");
 }
 
-void PluginTemplateThread::finalize() { blackboard->close(motor_if_); }
-
-void PluginTemplateThread::send_transrot(float vx, float vy, float omega) {
-  MotorInterface::TransRotMessage *msg =
-      new MotorInterface::TransRotMessage(vx, vy, omega);
-  motor_if_->msgq_enqueue(msg);
+bool
+PluginTemplateThread::prepare_finalize_user()
+{
+	stop();
+	return true;
 }
 
-void PluginTemplateThread::stop() { send_transrot(0., 0., 0.); }
+void
+PluginTemplateThread::finalize()
+{
+	blackboard->close(motor_if_);
+}
 
-void PluginTemplateThread::loop() {
+void
+PluginTemplateThread::send_transrot(float vx, float vy, float omega)
+{
+	MotorInterface::TransRotMessage *msg = new MotorInterface::TransRotMessage(vx, vy, omega);
+	motor_if_->msgq_enqueue(msg);
+}
 
-  send_transrot(FORWARD_SPEED, SIDEWARD_SPEED, ROTATIONAL_SPEED);
-  logger->log_info(name(), "Driving madly!!");
+void
+PluginTemplateThread::stop()
+{
+	send_transrot(0., 0., 0.);
+}
+
+void
+PluginTemplateThread::loop()
+{
+	send_transrot(FORWARD_SPEED, SIDEWARD_SPEED, ROTATIONAL_SPEED);
+	logger->log_info(name(), "Driving madly!!");
 }

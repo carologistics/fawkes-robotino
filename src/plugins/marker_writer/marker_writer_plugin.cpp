@@ -20,23 +20,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "marker_writer_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /** Visualize selected Position3dInterfaces in RVIZ
  * @author Daniel Ewert
  */
-class MarkerWriterPlugin : public fawkes::Plugin {
+class MarkerWriterPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  MarkerWriterPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new MarkerWriterThread());
-  }
+	MarkerWriterPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new MarkerWriterThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("write markers to rviz")

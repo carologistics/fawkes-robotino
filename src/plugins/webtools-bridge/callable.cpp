@@ -21,6 +21,7 @@
  */
 
 #include "callable.h"
+
 #include "event_emitter.h"
 
 /** @class Callable "callable.h"
@@ -35,8 +36,9 @@
  * called.
  * @param handler the object instance initiated the callback method call.
  */
-void Callable::callback(EventType event_type,
-                        std::shared_ptr<EventEmitter> handler) {
-  // the event_type with dynamic_casting for the event_emitter should be enough
-  // to uniquily tell you what you want to do
+void
+Callable::callback(EventType event_type, std::shared_ptr<EventEmitter> handler)
+{
+	// the event_type with dynamic_casting for the event_emitter should be enough
+	// to uniquily tell you what you want to do
 }

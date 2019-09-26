@@ -19,9 +19,9 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "gazsim_light_front_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
@@ -30,14 +30,16 @@ using namespace fawkes;
  *
  * @author Frederik Zwilling
  */
-class GazsimLightFrontPlugin : public fawkes::Plugin {
+class GazsimLightFrontPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimLightFrontPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new LightFrontSimThread());
-  }
+	GazsimLightFrontPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new LightFrontSimThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Simulation of the LightFront Plugin results")

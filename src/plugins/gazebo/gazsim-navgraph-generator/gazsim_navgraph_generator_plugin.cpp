@@ -19,23 +19,25 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#include <core/plugin.h>
-
 #include "gazsim_navgraph_generator_thread.h"
+
+#include <core/plugin.h>
 
 using namespace fawkes;
 
 /** Plugin to generate navgraph without exploration phase in simulation
  * @author David Schmidt
  */
-class GazsimNavgraphGeneratorPlugin : public fawkes::Plugin {
+class GazsimNavgraphGeneratorPlugin : public fawkes::Plugin
+{
 public:
-  /** Constructor.
+	/** Constructor.
    * @param config Fawkes configuration
    */
-  GazsimNavgraphGeneratorPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new GazsimNavgraphGeneratorThread());
-  }
+	GazsimNavgraphGeneratorPlugin(Configuration *config) : Plugin(config)
+	{
+		thread_list.push_back(new GazsimNavgraphGeneratorThread());
+	}
 };
 
 PLUGIN_DESCRIPTION("Gazsim Navgraph Generator Plugin for generating navgraph "

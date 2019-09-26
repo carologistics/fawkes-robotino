@@ -30,6 +30,9 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 
+#include <libs/tf/types.h>
+#include <core/utils/lockptr.h>
+
 #include <string>
 
 /**
