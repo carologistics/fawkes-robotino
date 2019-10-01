@@ -23,39 +23,28 @@
 #include <libs/protoboard/blackboard_manager.h>
 #include <libs/protoboard/plugin.h>
 
-// This is too templatey for auto-formatting ;-)
-// clang-format off
-
-
 namespace protoboard {
 
-std::vector<std::string> proto_dirs()
-{ return { BASEDIR "/src/libs/llsf_msgs" }; }
-
+std::vector<std::string>
+proto_dirs()
+{
+	return {BASEDIR "/src/libs/llsf_msgs"};
 }
 
+} // namespace protoboard
 
-using ProtoboardPluginRCLL = ProtoboardPlugin <
-	protoboard::bb_iface_manager <
-		fawkes::SendBeaconInterface,
-		protoboard::type_list <
-			fawkes::SendBeaconInterface::SendBeaconMessage,
-			fawkes::SendBeaconInterface::SetPeerMessage
-		>
-	>,
-	protoboard::bb_iface_manager <
-		fawkes::PrepareMachineInterface,
-		protoboard::type_list <
-			fawkes::PrepareMachineInterface::PrepareBSMessage,
-			fawkes::PrepareMachineInterface::PrepareCSMessage,
-			fawkes::PrepareMachineInterface::PrepareDSMessage,
-			fawkes::PrepareMachineInterface::PrepareRSMessage,
-			fawkes::PrepareMachineInterface::PrepareSSMessage,
-			fawkes::PrepareMachineInterface::SetPeerMessage
-		>
-	>
->;
+using ProtoboardPluginRCLL = ProtoboardPlugin<
+  protoboard::bb_iface_manager<fawkes::SendBeaconInterface,
+                               protoboard::type_list<fawkes::SendBeaconInterface::SendBeaconMessage,
+                                                     fawkes::SendBeaconInterface::SetPeerMessage>>,
+  protoboard::bb_iface_manager<
+    fawkes::PrepareMachineInterface,
+    protoboard::type_list<fawkes::PrepareMachineInterface::PrepareBSMessage,
+                          fawkes::PrepareMachineInterface::PrepareCSMessage,
+                          fawkes::PrepareMachineInterface::PrepareDSMessage,
+                          fawkes::PrepareMachineInterface::PrepareRSMessage,
+                          fawkes::PrepareMachineInterface::PrepareSSMessage,
+                          fawkes::PrepareMachineInterface::SetPeerMessage>>>;
 
 PLUGIN_DESCRIPTION("ProtoBoard plugin for the RoboCup Logistics League")
 EXPORT_PLUGIN(ProtoboardPluginRCLL)
-
