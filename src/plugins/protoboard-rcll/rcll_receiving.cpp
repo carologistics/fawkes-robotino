@@ -58,7 +58,7 @@ template <>
 std::string
 iface_id_for_type<OrderInterface>()
 {
-	return "/protoboard/order/";
+	return "/protoboard/order";
 }
 
 static const enum_map<llsf_msgs::BaseColor, OrderInterface::BaseColor> base_color_enum_order{
@@ -142,7 +142,7 @@ template <>
 std::string
 iface_id_for_type<RecvBeaconInterface>()
 {
-	return "/protoboard/beacon/";
+	return "/protoboard/beacon";
 }
 
 static const enum_map<llsf_msgs::Team, RecvBeaconInterface::TEAM_COLOR> team_enum_recv_beacon{
@@ -174,7 +174,7 @@ template <>
 std::string
 iface_id_for_type<RCLLGameStateInterface>()
 {
-	return "/protoboard/game_state/";
+	return "/protoboard/game_state";
 }
 
 static const enum_map<llsf_msgs::GameState::State, RCLLGameStateInterface::GameState>
