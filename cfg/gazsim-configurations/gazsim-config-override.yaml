@@ -87,6 +87,7 @@ plugins/amcl:
   map-lasergen/origin_y: -0.5
 
 plugins/laser-filter:
+  front-rotate/active: false
   front-downsample/active: false
   front-360to360/active: false
   filter-front-360/active: false
