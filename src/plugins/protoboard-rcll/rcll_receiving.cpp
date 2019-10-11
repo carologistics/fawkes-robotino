@@ -93,11 +93,10 @@ pb_sequence_converter<llsf_msgs::OrderInfo, pb_converter<llsf_msgs::Order, Order
 }
 
 template <>
-bool
-pb_converter<llsf_msgs::Order, OrderInterface>::corresponds(const llsf_msgs::Order &msg,
-                                                            const OrderInterface *  iface)
+size_t
+pb_converter<llsf_msgs::Order, OrderInterface>::get_sequence_index(const llsf_msgs::Order &msg)
 {
-	return iface->order_id() == msg.id();
+	return msg.id();
 }
 
 template <>
