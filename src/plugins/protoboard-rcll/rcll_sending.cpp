@@ -114,6 +114,19 @@ static const enum_map<llsf_msgs::CSOp, PrepareMachineInterface::CSOp> csop_enum{
   {llsf_msgs::CSOp::MOUNT_CAP, PrepareMachineInterface::CSOp::MOUNT_CAP},
   {llsf_msgs::CSOp::RETRIEVE_CAP, PrepareMachineInterface::CSOp::RETRIEVE_CAP}};
 
+static const enum_map<llsf_msgs::RingColor, PrepareMachineInterface::RingColor>
+  prepare_ring_color_enum{
+    {llsf_msgs::RingColor::RING_BLUE, PrepareMachineInterface::RingColor::RING_BLUE},
+    {llsf_msgs::RingColor::RING_GREEN, PrepareMachineInterface::RingColor::RING_GREEN},
+    {llsf_msgs::RingColor::RING_ORANGE, PrepareMachineInterface::RingColor::RING_ORANGE},
+    {llsf_msgs::RingColor::RING_YELLOW, PrepareMachineInterface::RingColor::RING_YELLOW},
+  };
+
+static const enum_map<llsf_msgs::SSOp, PrepareMachineInterface::SSOp> ssop_enum{
+  {llsf_msgs::SSOp::STORE, PrepareMachineInterface::SSOp::STORE},
+  {llsf_msgs::SSOp::RETRIEVE, PrepareMachineInterface::SSOp::RETRIEVE},
+};
+
 template <>
 void
 BlackboardManager::handle_message(PrepareMachineInterface *                  iface,
@@ -150,7 +163,14 @@ void
 BlackboardManager::handle_message(PrepareMachineInterface *                  iface,
                                   PrepareMachineInterface::PrepareDSMessage *msg)
 {
-	// TODO
+	std::shared_ptr<llsf_msgs::PrepareMachine> m     = std::make_shared<llsf_msgs::PrepareMachine>();
+	llsf_msgs::PrepareInstructionDS *          instr = new llsf_msgs::PrepareInstructionDS();
+	instr->set_order_id(msg->order_id());
+	m->set_allocated_instruction_ds(instr);
+	m->set_team_color(team_enum_prepare.of(msg->team_color()));
+	m->set_machine(msg->machine());
+
+	message_handler_->send(iface->peer_id(), m);
 }
 
 template <>
@@ -158,7 +178,14 @@ void
 BlackboardManager::handle_message(PrepareMachineInterface *                  iface,
                                   PrepareMachineInterface::PrepareRSMessage *msg)
 {
-	// TODO
+	std::shared_ptr<llsf_msgs::PrepareMachine> m     = std::make_shared<llsf_msgs::PrepareMachine>();
+	llsf_msgs::PrepareInstructionRS *          instr = new llsf_msgs::PrepareInstructionRS();
+	instr->set_ring_color(prepare_ring_color_enum.of(msg->ring_color()));
+	m->set_allocated_instruction_rs(instr);
+	m->set_team_color(team_enum_prepare.of(msg->team_color()));
+	m->set_machine(msg->machine());
+
+	message_handler_->send(iface->peer_id(), m);
 }
 
 template <>
@@ -166,7 +193,7 @@ void
 BlackboardManager::handle_message(PrepareMachineInterface *                  iface,
                                   PrepareMachineInterface::PrepareSSMessage *msg)
 {
-	// TODO
+	logger->log_error(name(), "Storage Station is not implemented yet");
 }
 
 template <>
