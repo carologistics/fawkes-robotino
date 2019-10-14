@@ -19,12 +19,16 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
+#include <interfaces/MachineInfoInterface.h>
 #include <interfaces/OrderInterface.h>
 #include <interfaces/RCLLGameStateInterface.h>
 #include <interfaces/RecvBeaconInterface.h>
+#include <interfaces/RingInfoInterface.h>
 #include <libs/llsf_msgs/BeaconSignal.pb.h>
 #include <libs/llsf_msgs/GameState.pb.h>
+#include <libs/llsf_msgs/MachineInfo.pb.h>
 #include <libs/llsf_msgs/OrderInfo.pb.h>
+#include <libs/llsf_msgs/RingInfo.pb.h>
 #include <libs/llsf_msgs/RobotInfo.pb.h>
 #include <libs/llsf_msgs/VersionInfo.pb.h>
 #include <protoboard/protobuf_to_bb.h>
@@ -37,17 +41,23 @@ using namespace std;
 std::unordered_map<std::string, std::shared_ptr<pb_convert>>
 make_receiving_interfaces_map()
 {
-	return {{"llsf_msgs.OrderInfo",
-	         make_shared<pb_sequence_converter<llsf_msgs::OrderInfo,
-	                                           pb_converter<llsf_msgs::Order, OrderInterface>>>()},
-	        {"llsf_msgs.BeaconSignal",
-	         make_shared<pb_converter<llsf_msgs::BeaconSignal, RecvBeaconInterface>>()},
-	        {"llsf_msgs.GameState",
-	         make_shared<pb_converter<llsf_msgs::GameState, RCLLGameStateInterface>>()},
+	return {
+	  {"llsf_msgs.OrderInfo",
+	   make_shared<pb_sequence_converter<llsf_msgs::OrderInfo,
+	                                     pb_converter<llsf_msgs::Order, OrderInterface>>>()},
+	  {"llsf_msgs.BeaconSignal",
+	   make_shared<pb_converter<llsf_msgs::BeaconSignal, RecvBeaconInterface>>()},
+	  {"llsf_msgs.GameState",
+	   make_shared<pb_converter<llsf_msgs::GameState, RCLLGameStateInterface>>()},
+	  {"llsf_msgs.MachineInfo",
+	   make_shared<pb_sequence_converter<llsf_msgs::MachineInfo,
+	                                     pb_converter<llsf_msgs::Machine, MachineInfoInterface>>>()},
+	  {"llsf_msgs.RingInfo", make_shared<pb_converter<llsf_msgs::RingInfo, RingInfoInterface>>()},
 
-	        // Dummy handler, i.e. discard message
-	        {"llsf_msgs.RobotInfo", make_shared<pb_convert>()},
-	        {"llsf_msgs.VersionInfo", make_shared<pb_convert>()}};
+	  // Dummy handler, i.e. discard message
+	  {"llsf_msgs.RobotInfo", make_shared<pb_convert>()},
+	  {"llsf_msgs.VersionInfo", make_shared<pb_convert>()},
+	};
 };
 
 /****************************************
@@ -93,10 +103,10 @@ pb_sequence_converter<llsf_msgs::OrderInfo, pb_converter<llsf_msgs::Order, Order
 }
 
 template <>
-size_t
-pb_converter<llsf_msgs::Order, OrderInterface>::get_sequence_index(const llsf_msgs::Order &msg)
+std::string
+pb_converter<llsf_msgs::Order, OrderInterface>::get_sequence_id(const llsf_msgs::Order &msg)
 {
-	return msg.id();
+	return std::to_string(msg.id());
 }
 
 template <>
@@ -211,6 +221,124 @@ pb_converter<llsf_msgs::GameState, RCLLGameStateInterface>::handle(const llsf_ms
 	iface->set_state(game_state_enum.of(msg.state()));
 	iface->set_team_cyan(msg.team_cyan().substr(0, iface->maxlenof_team_cyan()).c_str());
 	iface->set_team_magenta(msg.team_magenta().substr(0, iface->maxlenof_team_magenta()).c_str());
+}
+
+/****************************************
+ *          MachineInfoInterface        *
+ ****************************************/
+
+template <>
+std::string
+iface_id_for_type<MachineInfoInterface>()
+{
+	return "/protoboard/machine_info";
+}
+
+static const enum_map<llsf_msgs::RingColor, MachineInfoInterface::RingColor>
+  machine_info_ring_color{
+    {llsf_msgs::RingColor::RING_BLUE, MachineInfoInterface::RING_BLUE},
+    {llsf_msgs::RingColor::RING_GREEN, MachineInfoInterface::RING_GREEN},
+    {llsf_msgs::RingColor::RING_ORANGE, MachineInfoInterface::RING_ORANGE},
+    {llsf_msgs::RingColor::RING_YELLOW, MachineInfoInterface::RING_YELLOW},
+  };
+
+static const enum_map<llsf_msgs::Team, MachineInfoInterface::Team> mi_team_color_enum{
+  {llsf_msgs::CYAN, MachineInfoInterface::Team::CYAN},
+  {llsf_msgs::MAGENTA, MachineInfoInterface::Team::MAGENTA}};
+
+template <>
+std::string
+pb_converter<llsf_msgs::Machine, MachineInfoInterface>::get_sequence_id(
+  const llsf_msgs::Machine &msg)
+{
+	return msg.name();
+}
+
+template <>
+const google::protobuf::RepeatedPtrField<llsf_msgs::Machine> &
+pb_sequence_converter<llsf_msgs::MachineInfo,
+                      pb_converter<llsf_msgs::Machine, MachineInfoInterface>>::
+  extract_sequence(const llsf_msgs::MachineInfo &msg)
+{
+	return msg.machines();
+}
+
+template <>
+void
+pb_converter<llsf_msgs::Machine, MachineInfoInterface>::handle(const llsf_msgs::Machine &msg,
+                                                               MachineInfoInterface *    iface)
+{
+	float pose[3]{msg.pose().x(), msg.pose().y(), msg.pose().ori()};
+	iface->set_pose(pose);
+	std::string zone = llsf_msgs::Zone_Name(msg.zone());
+	for (std::string::size_type idx = zone.find('_'); idx != std::string::npos; idx = zone.find('_'))
+		zone[idx] = '-';
+	iface->set_zone(zone.c_str());
+	iface->set_state(msg.state().c_str());
+	iface->set_rotation(msg.rotation());
+	iface->set_team_color(mi_team_color_enum.of(msg.team_color()));
+	iface->set_loaded_with(msg.loaded_with());
+
+	if (msg.ring_colors_size() == 2) {
+		MachineInfoInterface::RingColor ring_colors[2]{machine_info_ring_color.of(msg.ring_colors(0)),
+		                                               machine_info_ring_color.of(msg.ring_colors(1))};
+		iface->set_ring_colors(ring_colors);
+	} else if (msg.ring_colors_size() == 0) {
+		MachineInfoInterface::RingColor ring_colors[2]{MachineInfoInterface::RING_NONE,
+		                                               MachineInfoInterface::RING_NONE};
+		iface->set_ring_colors(ring_colors);
+	} else {
+		logger_->log_error(name(),
+		                   "Unexpected: MachineInfo message for %s contains %d ring colors",
+		                   msg.name().c_str(),
+		                   msg.ring_colors_size());
+	}
+
+	iface->set_machine_name(msg.name().c_str());
+	iface->set_machine_type(msg.type().c_str());
+	iface->set_correctly_reported(msg.correctly_reported());
+}
+
+/****************************************
+ *          RingInfoInterface           *
+ ****************************************/
+
+template <>
+std::string
+iface_id_for_type<RingInfoInterface>()
+{
+	return "/protoboard/ring_info";
+}
+
+static const enum_map<llsf_msgs::RingColor, RingInfoInterface::RingColor> ring_info_color_enum{
+  {llsf_msgs::RingColor::RING_BLUE, RingInfoInterface::RING_BLUE},
+  {llsf_msgs::RingColor::RING_GREEN, RingInfoInterface::RING_GREEN},
+  {llsf_msgs::RingColor::RING_ORANGE, RingInfoInterface::RING_ORANGE},
+  {llsf_msgs::RingColor::RING_YELLOW, RingInfoInterface::RING_YELLOW},
+};
+
+template <>
+void
+pb_converter<llsf_msgs::RingInfo, RingInfoInterface>::handle(const llsf_msgs::RingInfo &msg,
+                                                             RingInfoInterface *        iface)
+{
+	if (msg.rings_size() != 4) {
+		logger_->log_error(name(),
+		                   "Unexpected: RingInfo message with %d entries instead of %d",
+		                   msg.rings_size(),
+		                   4);
+	} else {
+		RingInfoInterface::RingColor ring_colors[4]{ring_info_color_enum.of(msg.rings(0).ring_color()),
+		                                            ring_info_color_enum.of(msg.rings(1).ring_color()),
+		                                            ring_info_color_enum.of(msg.rings(2).ring_color()),
+		                                            ring_info_color_enum.of(msg.rings(3).ring_color())};
+		uint32_t                     cost[4]{msg.rings(0).raw_material(),
+                     msg.rings(1).raw_material(),
+                     msg.rings(2).raw_material(),
+                     msg.rings(3).raw_material()};
+		iface->set_ring_colors(ring_colors);
+		iface->set_raw_materials(cost);
+	}
 }
 
 } // namespace protoboard

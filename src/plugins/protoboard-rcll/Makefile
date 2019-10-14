@@ -16,7 +16,7 @@ PRESUBDIRS = interfaces
 
 LIBS_protoboard_rcll = fawkesprotoboard llsf_msgs \
   OrderInterface PrepareMachineInterface SendBeaconInterface ProtobufPeerInterface \
-  RecvBeaconInterface RCLLGameStateInterface
+  RecvBeaconInterface RCLLGameStateInterface MachineInfoInterface RingInfoInterface
 
 CFLAGS += $(CFLAGS_CPP11)
 

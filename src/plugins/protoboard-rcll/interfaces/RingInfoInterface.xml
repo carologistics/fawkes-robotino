@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="RingInfoInterface" author="Victor Mataré" year="2019">
+  <constants>
+    <enum name="RingColor">
+      <comment>Available ring colors</comment>
+      <item name="RING_BLUE">Blue ring</item>
+      <item name="RING_GREEN">Green ring</item>
+      <item name="RING_ORANGE">Orange ring</item>
+      <item name="RING_YELLOW">Yellow ring</item>
+    </enum>
+  </constants>
+  <data>
+    <comment>How much raw material needs to be paid for which ring color</comment>
+    <field type="RingColor" name="ring_colors" length="4">Ring colors</field>
+    <field type="uint32" name="raw_materials" length="4">Raw material costs</field>
+  </data>
+</interface>
+
