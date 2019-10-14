@@ -62,7 +62,7 @@
   <message name="PrepareDS">
     <field type="Team" name="team_color">The sending team's color</field>
     <field type="string" length="16" name="machine">Machine name</field>
-    <field type="uint32" name="gate">Delivery gate</field>
+    <field type="uint32" name="order_id">Delivered order ID</field>
   </message>
   <message name="PrepareSS">
     <field type="Team" name="team_color">The sending team's color</field>
