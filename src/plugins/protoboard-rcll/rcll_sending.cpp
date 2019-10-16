@@ -45,6 +45,9 @@ static const enum_map<llsf_msgs::Team, SendBeaconInterface::TEAM_COLOR> team_enu
   {llsf_msgs::CYAN, SendBeaconInterface::TEAM_COLOR::CYAN},
   {llsf_msgs::MAGENTA, SendBeaconInterface::TEAM_COLOR::MAGENTA}};
 
+/** Send a ProtoBuf BeaconSignal
+ * @param iface The SendBeaconInterface
+ * @param msg The SendBeaconMessage that came in on the interface */
 template <>
 void
 BlackboardManager::handle_message(SendBeaconInterface *                   iface,
@@ -78,6 +81,9 @@ BlackboardManager::handle_message(SendBeaconInterface *                   iface,
 	message_handler_->send(iface->peer_id(), m);
 }
 
+/** Set the ProtoBuf peer on the SendBeaconInterface
+ * @param iface The SendBeaconInterface
+ * @param msg The SetPeerMessage that came in on the interface */
 template <>
 void
 BlackboardManager::handle_message(SendBeaconInterface *                iface,
@@ -127,6 +133,9 @@ static const enum_map<llsf_msgs::SSOp, PrepareMachineInterface::SSOp> ssop_enum{
   {llsf_msgs::SSOp::RETRIEVE, PrepareMachineInterface::SSOp::RETRIEVE},
 };
 
+/** Send a ProtoBuf PrepareInstructionBS
+ * @param iface The PrepareMachineInterface
+ * @param msg The PrepareBSMessage that came in on the interface */
 template <>
 void
 BlackboardManager::handle_message(PrepareMachineInterface *                  iface,
@@ -143,6 +152,9 @@ BlackboardManager::handle_message(PrepareMachineInterface *                  ifa
 	message_handler_->send(iface->peer_id(), m);
 }
 
+/** Send a ProtoBuf PrepareInstructionCS
+ * @param iface The PrepareMachineInterface
+ * @param msg The PrepareCSMessage that came in on the interface */
 template <>
 void
 BlackboardManager::handle_message(PrepareMachineInterface *                  iface,
@@ -158,6 +170,9 @@ BlackboardManager::handle_message(PrepareMachineInterface *                  ifa
 	message_handler_->send(iface->peer_id(), m);
 }
 
+/** Send a ProtoBuf PrepareInstructionCS
+ * @param iface The PrepareMachineInterface
+ * @param msg The PrepareCSMessage that came in on the interface */
 template <>
 void
 BlackboardManager::handle_message(PrepareMachineInterface *                  iface,
@@ -173,6 +188,9 @@ BlackboardManager::handle_message(PrepareMachineInterface *                  ifa
 	message_handler_->send(iface->peer_id(), m);
 }
 
+/** Send a ProtoBuf PrepareInstructionRS
+ * @param iface The PrepareMachineInterface
+ * @param msg The PrepareRSMessage that came in on the interface */
 template <>
 void
 BlackboardManager::handle_message(PrepareMachineInterface *                  iface,
@@ -188,6 +206,9 @@ BlackboardManager::handle_message(PrepareMachineInterface *                  ifa
 	message_handler_->send(iface->peer_id(), m);
 }
 
+/** Send a ProtoBuf PrepareInstructionSS (not implemented yet)
+ * @param iface The PrepareMachineInterface
+ * @param msg The PrepareSSMessage that came in on the interface */
 template <>
 void
 BlackboardManager::handle_message(PrepareMachineInterface *                  iface,
@@ -196,6 +217,9 @@ BlackboardManager::handle_message(PrepareMachineInterface *                  ifa
 	logger->log_error(name(), "Storage Station is not implemented yet");
 }
 
+/** Set the ProtoBuf peer on the PrepareMachineInterface
+ * @param iface The PrepareMachineInterface
+ * @param msg The SetPeerMessage that came in on the interface */
 template <>
 void
 BlackboardManager::handle_message(PrepareMachineInterface *                iface,

@@ -94,6 +94,9 @@ static const enum_map<llsf_msgs::Order::Complexity, OrderInterface::Complexity>
                         {llsf_msgs::Order::Complexity::Order_Complexity_C2, OrderInterface::C2},
                         {llsf_msgs::Order::Complexity::Order_Complexity_C3, OrderInterface::C3}};
 
+/** @param msg an incoming ProtoBuf OrderInfo message
+ * @return the repeated orders field
+ */
 template <>
 const google::protobuf::RepeatedPtrField<llsf_msgs::Order> &
 pb_sequence_converter<llsf_msgs::OrderInfo, pb_converter<llsf_msgs::Order, OrderInterface>>::
@@ -102,6 +105,9 @@ pb_sequence_converter<llsf_msgs::OrderInfo, pb_converter<llsf_msgs::Order, Order
 	return msg.orders();
 }
 
+/** Get an ID for an incoming order
+ * @param msg A ProtoBuf Order message
+ * @return The order's ID (message field) as a string */
 template <>
 std::string
 pb_converter<llsf_msgs::Order, OrderInterface>::get_sequence_id(const llsf_msgs::Order &msg)
@@ -109,6 +115,9 @@ pb_converter<llsf_msgs::Order, OrderInterface>::get_sequence_id(const llsf_msgs:
 	return std::to_string(msg.id());
 }
 
+/** Convert a ProtoBuf Order message into an OrderInterface
+ * @param msg The incoming Order message
+ * @param iface The appropriate blackboard interface */
 template <>
 void
 pb_converter<llsf_msgs::Order, OrderInterface>::handle(const llsf_msgs::Order &msg,
@@ -158,6 +167,9 @@ static const enum_map<llsf_msgs::Team, RecvBeaconInterface::TEAM_COLOR> team_enu
   {llsf_msgs::Team::CYAN, RecvBeaconInterface::TEAM_COLOR::CYAN},
   {llsf_msgs::Team::MAGENTA, RecvBeaconInterface::TEAM_COLOR::MAGENTA}};
 
+/** Convert a ProtoBuf BeaconSignal message into a RecvBeaconInterface
+ * @param msg The incoming BeaconSignal message
+ * @param iface The appropriate blackboard interface */
 template <>
 void
 pb_converter<llsf_msgs::BeaconSignal, RecvBeaconInterface>::handle(
@@ -208,6 +220,9 @@ static const enum_map<llsf_msgs::GameState::Phase, RCLLGameStateInterface::GameP
                   {llsf_msgs::GameState::Phase::GameState_Phase_SETUP,
                    RCLLGameStateInterface::GamePhase::SETUP}};
 
+/** Convert a ProtoBuf GameState message into a RCLLGameStateInterface
+ * @param msg The incoming GameState message
+ * @param iface The appropriate blackboard interface */
 template <>
 void
 pb_converter<llsf_msgs::GameState, RCLLGameStateInterface>::handle(const llsf_msgs::GameState &msg,
@@ -246,6 +261,8 @@ static const enum_map<llsf_msgs::Team, MachineInfoInterface::Team> mi_team_color
   {llsf_msgs::CYAN, MachineInfoInterface::Team::CYAN},
   {llsf_msgs::MAGENTA, MachineInfoInterface::Team::MAGENTA}};
 
+/** @param msg an incoming ProtoBuf Machine message
+ * @return The name of the machine to use as interface ID */
 template <>
 std::string
 pb_converter<llsf_msgs::Machine, MachineInfoInterface>::get_sequence_id(
@@ -254,6 +271,9 @@ pb_converter<llsf_msgs::Machine, MachineInfoInterface>::get_sequence_id(
 	return msg.name();
 }
 
+/** @param msg an incoming ProtoBuf MachineInfo message
+ * @return the repeated machines field
+ */
 template <>
 const google::protobuf::RepeatedPtrField<llsf_msgs::Machine> &
 pb_sequence_converter<llsf_msgs::MachineInfo,
@@ -263,6 +283,9 @@ pb_sequence_converter<llsf_msgs::MachineInfo,
 	return msg.machines();
 }
 
+/** Convert a ProtoBuf Machine message into a MachineInfoInterface
+ * @param msg The incoming Machine message
+ * @param iface The appropriate blackboard interface */
 template <>
 void
 pb_converter<llsf_msgs::Machine, MachineInfoInterface>::handle(const llsf_msgs::Machine &msg,
@@ -317,6 +340,9 @@ static const enum_map<llsf_msgs::RingColor, RingInfoInterface::RingColor> ring_i
   {llsf_msgs::RingColor::RING_YELLOW, RingInfoInterface::RING_YELLOW},
 };
 
+/** Convert a ProtoBuf RingInfo message into a RingInfoInterface
+ * @param msg The incoming RingInfo message
+ * @param iface The appropriate blackboard interface */
 template <>
 void
 pb_converter<llsf_msgs::RingInfo, RingInfoInterface>::handle(const llsf_msgs::RingInfo &msg,
