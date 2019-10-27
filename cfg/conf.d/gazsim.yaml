@@ -163,6 +163,7 @@ gazsim:
   gripper:
     if-name: "Gripper AX12"
     arduino-if-name: "Arduino"
+    sensor-if-name: "Robotino"
     cfg-prefix: "/hardware/ax12_gripper/"
   conveyor:
     pose-if-name: "conveyor_pose/pose"
