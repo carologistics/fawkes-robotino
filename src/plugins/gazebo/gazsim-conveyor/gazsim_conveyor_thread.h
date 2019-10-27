@@ -77,8 +77,8 @@ private:
 	fawkes::SwitchInterface *      realsense_switch_if_;
 	// fawkes::ConveyorConfigInterface *conv_config_if_;
 
-	std::string conveyor_if_name_;
-	std::string frame_name_;
+	std::string conv_pose_if_name_;
+	std::string realsense_frame_id_;
 	std::string cfg_if_prefix_;
 	std::string conveyor_frame_id_;
 
