@@ -61,7 +61,7 @@ GazsimConveyorThread::init()
 {
 	logger->log_debug(name(), "Initializing Simulation of the Conveyor Vision Plugin");
 	const std::string if_prefix = config->get_string("plugins/conveyor_pose/if/prefix") + "/";
-	frame_name_                 = config->get_string("/realsense/frame_id");
+	realsense_frame_id_          = config->get_string("/realsense2/frame_id");
 	conveyor_frame_id_          = config->get_string("plugins/conveyor_pose/conveyor_frame_id");
 
 	cfg_if_prefix_ = config->get_string(CFG_PREFIX "/if/prefix");
@@ -71,8 +71,11 @@ GazsimConveyorThread::init()
 	// setup ConveyorPoseInterface if with default values
 	pos_if_ =
 	  blackboard->open_for_writing<ConveyorPoseInterface>((cfg_if_prefix_ + "status").c_str());
-	switch_if_ = blackboard->open_for_writing<SwitchInterface>(
+	plane_switch_if_ =
+	  blackboard->open_for_writing<SwitchInterface>(
 	  config->get_string("/gazsim/conveyor/switch-if-name").c_str());
+	realsense_switch_if_ =
+	  blackboard->open_for_writing<SwitchInterface>("realsense2");
 
 	conveyor_vision_sub_ = gazebonode->Subscribe("~/RobotinoSim/ConveyorVisionResult/",
 	                                             &GazsimConveyorThread::on_conveyor_vision_msg,
@@ -83,13 +86,44 @@ void
 GazsimConveyorThread::finalize()
 {
 	blackboard->close(pos_if_);
-	blackboard->close(switch_if_);
+	blackboard->close(plane_switch_if_);
+	blackboard->close(realsense_switch_if_);
 }
 
 void
 GazsimConveyorThread::loop()
 {
 	pos_if_->set_frame(frame_name_.c_str());
+
+	// Process switch-interfaces messages
+	while (!plane_switch_if_->msgq_empty()) {
+		if (plane_switch_if_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
+			plane_switch_if_->set_value(1);
+		} else if (plane_switch_if_->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
+			plane_switch_if_->set_value(0);
+		} else {
+			logger->log_warn(name(),
+			                 "%s is not implemented in the simulation.",
+			                 plane_switch_if_->msgq_first()->type());
+		}
+		plane_switch_if_->msgq_pop();
+		plane_switch_if_->write();
+	}
+
+	while (!realsense_switch_if_->msgq_empty()) {
+		if (realsense_switch_if_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
+			realsense_switch_if_->set_value(1);
+		} else if (realsense_switch_if_->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
+			realsense_switch_if_->set_value(0);
+		} else {
+			logger->log_warn(name(),
+			                 "%s is not implemented in the simulation.",
+			                 realsense_switch_if_->msgq_first()->type());
+		}
+		realsense_switch_if_->msgq_pop();
+		realsense_switch_if_->write();
+	}
+
 	if (new_data_ && pos_if_->msgq_first_is<ConveyorPoseInterface::RunICPMessage>()) {
 		new_data_ = false;
 
