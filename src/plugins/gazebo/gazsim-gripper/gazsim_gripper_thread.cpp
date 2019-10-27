@@ -30,6 +30,7 @@
 #include <interfaces/ArduinoInterface.h>
 #include <interfaces/JointInterface.h>
 #include <interfaces/LedInterface.h>
+#include <interfaces/RobotinoSensorInterface.h>
 #include <utils/math/angle.h>
 
 #include <boost/lexical_cast.hpp>
@@ -61,6 +62,7 @@ GazsimGripperThread::init()
 	logger->log_debug(name(), "Initializing Simulation of the Light Front Plugin");
 
 	gripper_if_name_ = config->get_string("/gazsim/gripper/if-name");
+	sensor_if_name_  = config->get_string("/gazsim/gripper/sensor-if-name");
 	arduino_if_name_ = config->get_string("/gazsim/gripper/arduino-if-name");
 	cfg_prefix_      = config->get_string("/gazsim/gripper/cfg-prefix");
 
@@ -96,6 +98,12 @@ GazsimGripperThread::init()
 
 	arduino_if_->set_final(true);
 	arduino_if_->write();
+
+	cfg_prefix_ = "//";
+	sensor_if_  = blackboard->open_for_writing<RobotinoSensorInterface>(sensor_if_name_.c_str());
+	sensor_if_->set_digital_in(0, false);
+	sensor_if_->set_digital_in(1, false);
+	sensor_if_->write();
 }
 
 void
@@ -232,6 +240,6 @@ void
 GazsimGripperThread::on_has_puck_msg(ConstIntPtr &msg)
 {
 	// 1 means the gripper has a puck 0 not
-	gripper_if_->set_holds_puck(msg->data() > 0);
-	gripper_if_->write();
+	sensor_if_->set_digital_in(1, msg->data() > 0);
+	sensor_if_->write();
 }
