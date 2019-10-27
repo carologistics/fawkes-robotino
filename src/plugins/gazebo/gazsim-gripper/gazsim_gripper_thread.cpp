@@ -95,7 +95,9 @@ GazsimGripperThread::init()
 	arduino_if_->set_x_position(0);
 	arduino_if_->set_y_position(arduino_if_->y_max() / 2.);
 	arduino_if_->set_y_position(0);
-
+	arduino_if_->set_x_max(config->get_float(cfg_prefix_ + "x_max"));
+	arduino_if_->set_y_max(config->get_float(cfg_prefix_ + "y_max"));
+	arduino_if_->set_z_max(config->get_float(cfg_prefix_ + "z_max"));
 	arduino_if_->set_final(true);
 	arduino_if_->write();
 
@@ -218,6 +220,30 @@ GazsimGripperThread::loop()
 			//      arduino_if_->z_position() - msg->num_mm() ); msgs::Int s;
 			//      s.set_data( - msg->num_mm() );
 			//      set_conveyor_pub_->Publish( s );
+		} else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveGripperAbsMessage>()) {
+			logger->log_warn(name(),
+			                 "%s is not implemented in the simulation.",
+			                 arduino_if_->msgq_first()->type());
+		} else if (arduino_if_->msgq_first_is<ArduinoInterface::MoveGripperRelMessage>()) {
+			logger->log_warn(name(),
+			                 "%s is not implemented in the simulation.",
+			                 arduino_if_->msgq_first()->type());
+		} else if (arduino_if_->msgq_first_is<ArduinoInterface::ToHomeMessage>()) {
+			logger->log_warn(name(),
+			                 "%s is not implemented in the simulation.",
+			                 arduino_if_->msgq_first()->type());
+		} else if (arduino_if_->msgq_first_is<ArduinoInterface::CalibrateMessage>()) {
+			arduino_if_->set_x_position(0);
+			arduino_if_->set_y_position(0);
+			arduino_if_->set_z_position(0);
+		} else if (arduino_if_->msgq_first_is<ArduinoInterface::CloseGripperMessage>()) {
+			send_gripper_msg(0);
+		} else if (arduino_if_->msgq_first_is<ArduinoInterface::OpenGripperMessage>()) {
+			send_gripper_msg(1);
+		} else if (arduino_if_->msgq_first_is<ArduinoInterface::StatusUpdateMessage>()) {
+			logger->log_warn(name(),
+			                 "%s is not implemented in the simulation.",
+			                 arduino_if_->msgq_first()->type());
 		} else {
 			logger->log_warn(name(), "Unknown Arduino message received");
 		}
