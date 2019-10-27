@@ -136,16 +136,16 @@ GazsimConveyorThread::loop()
 		if (strcmp(pos_if_->tostring_MPS_TARGET(msg->mps_target_to_set()), "SLIDE") == 0) {
 			trans[0] += shelf_offset_x;
 		}
-		double rot[] = {last_msg_.positions().ori_x(),
-		                last_msg_.positions().ori_y(),
-		                last_msg_.positions().ori_z(),
-		                last_msg_.positions().ori_w()};
-
-		pos_if_->set_translation(trans);
-		pos_if_->set_rotation(rot);
-		pos_if_->set_euclidean_fitness(rand() % 100);
-		pos_if_->set_msgid(msg->id());
-		pos_if_->write();
+		double                            rot[]      = {last_msg_.positions().ori_x(),
+                    last_msg_.positions().ori_y(),
+                    last_msg_.positions().ori_z(),
+                    last_msg_.positions().ori_w()};
+		ConveyorPoseInterface::MPS_TYPE   mps_type   = msg->mps_type_to_set();
+		ConveyorPoseInterface::MPS_TARGET mps_target = msg->mps_target_to_set();
+		logger->log_info(name(),
+		                 "Setting Station to %s, %s",
+		                 pos_if_->enum_tostring("MPS_TYPE", mps_type),
+		                 pos_if_->enum_tostring("MPS_TARGET", mps_target));
 
 		// publishe tf
 		fawkes::tf::StampedTransform transform;
@@ -160,7 +160,24 @@ GazsimConveyorThread::loop()
 		transform.setRotation(q);
 
 		tf_publisher->send_transform(transform);
+		pos_if_->set_translation(trans);
+		pos_if_->set_rotation(rot);
+		pos_if_->set_current_mps_target(mps_target);
+		pos_if_->set_current_mps_type(mps_type);
+		pos_if_->set_euclidean_fitness(26);
+		pos_if_->set_msgid(msg->id());
+		pos_if_->set_busy(false);
+		curr_time_.stamp();
+		//pos_if_->set_input_timestamp(curr_time_.get_sec(),curr_time_.get_usec());
 		pos_if_->msgq_pop();
+		pos_if_->write();
+
+	} else if (new_data_ && pos_if_->msgq_first_is<ConveyorPoseInterface::StopICPMessage>()) {
+		logger->log_warn(name(),
+		                 "%s is not implemented in the simulation.",
+		                 pos_if_->msgq_first()->type());
+		pos_if_->msgq_pop();
+		pos_if_->write();
 	}
 
 	loopcount_++;

@@ -72,6 +72,7 @@ protected:
 	}
 
 private:
+	fawkes::Time                   curr_time_;
 	fawkes::ConveyorPoseInterface *pos_if_;
 	fawkes::SwitchInterface *      plane_switch_if_;
 	fawkes::SwitchInterface *      realsense_switch_if_;
