@@ -73,7 +73,8 @@ protected:
 
 private:
 	fawkes::ConveyorPoseInterface *pos_if_;
-	fawkes::SwitchInterface *      switch_if_;
+	fawkes::SwitchInterface *      plane_switch_if_;
+	fawkes::SwitchInterface *      realsense_switch_if_;
 	// fawkes::ConveyorConfigInterface *conv_config_if_;
 
 	std::string conveyor_if_name_;
