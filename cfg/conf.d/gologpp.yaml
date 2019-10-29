@@ -1,21 +1,26 @@
 %YAML 1.2
 %TAG ! tag:fawkesrobotics.org,cfg/
 ---
-# yamllint disable
 /plugins/gologpp:
-  program_dir: "@BASEDIR@/src/gologpp/blocksworld"
-  program_path: test-scenario/rcll_game_state.gpp
-  action-mapping:
-    stack: say{text="Stacking ?(x)y on ?(y)y", wait=true}
-    unstack: say{text="Unstacking ?(x)y", wait=true}
-    create_peer: create_peer{address=?(address)s, recv_on_port=?(recv_on_port)i, send_to_port=?(send_to_port)i}
-    create_peer_crypto: create_peer{address=?(address)s, recv_on_port=?(recv_on_port)i, send_to_port=?(send_to_port)i, crypto_key=?(crypto_key)s, cipher="aes-128-cbc"}
-    goto: goto{x=?(x)f, y=?(y)f, ori=?(ori)f}
-
-  blackboard:
-    watch:
-      id: RCLLGameStateInterface::/protoboard/game_state
-    observe:
-      pattern: MachineInfoInterface::/protoboard/machine_info/*
-      pattern: OrderInterface::/protoboard/order/*
-# yamllint enable
+  gologpp-dirs: ["@BASEDIR@/src/gologpp"]
+  spec: blocksworld
+  specs:
+    blocksworld:
+      action-mapping:
+        stack: say{text="Stacking ?(x)y on ?(y)y", wait=true}
+        unstack: say{text="Unstacking ?(x)y", wait=true}
+    rcll:
+      action-mapping:
+        # yamllint disable
+        create_peer: create_peer{address=?(address)s, recv_on_port=?(recv_on_port)i, send_to_port=?(send_to_port)i}
+        create_peer_crypto: create_peer{address=?(address)s, recv_on_port=?(recv_on_port)i, send_to_port=?(send_to_port)i, crypto_key=?(crypto_key)s, cipher="aes-128-cbc"}
+        goto: goto{x=?(x)f, y=?(y)f, ori=?(ori)f}
+        # yamllint enable
+      blackboard:
+        watch:
+          id: RCLLGameStateInterface::/protoboard/game_state
+        observe:
+          # yamllint disable
+          pattern: MachineInfoInterface::/protoboard/machine_info/*
+          pattern: OrderInterface::/protoboard/order/*
+          # yamllint enable
