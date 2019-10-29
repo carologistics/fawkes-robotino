@@ -114,21 +114,3 @@ plugins/static-transforms:
       rot_roll: 0
     cam_conveyor:
       trans_z: -0.056
-    gazsim_gripper_x:
-      frame: !frame gripper_x_origin
-      child_frame: !frame gripper_x_dyn
-      trans_x: 0.08
-      trans_y: 0.0
-      trans_z: 0.0
-    gazsim_gripper_y:
-      frame: !frame gripper_y_origin
-      child_frame: !frame gripper_y_dyn
-      trans_x: 0.0
-      trans_y: 0.0
-      trans_z: 0.0
-    gazsim_gripper_z:
-      frame: !frame gripper_z_origin
-      child_frame: !frame gripper_z_dyn
-      trans_x: 0.0
-      trans_y: 0.0
-      trans_z: 0.0

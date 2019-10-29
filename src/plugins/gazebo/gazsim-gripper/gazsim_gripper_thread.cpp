@@ -48,19 +48,56 @@ using namespace gazebo;
 
 GazsimGripperThread::GazsimGripperThread()
 : Thread("GazsimGripperThread", Thread::OPMODE_WAITFORWAKEUP),
-  BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT_EXEC)
+  BlockedTimingAspect(BlockedTimingAspect::WAKEUP_HOOK_ACT_EXEC),
+  TransformAspect(TransformAspect::DEFER_PUBLISHER),
+  dyn_x_pub{nullptr},
+  dyn_y_pub{nullptr},
+  dyn_z_pub{nullptr}
 {
 	set_name("GazsimGripperThread()");
 }
 
 void
-GazsimGripperThread::init()
+GazsimGripperThread::load_config()
 {
-	logger->log_debug(name(), "Initializing Simulation of the Light Front Plugin");
+	cfg_prefix_                    = "/arduino/";
+	cfg_gripper_frame_id_          = config->get_string(cfg_prefix_ + "/gripper_frame_id");
+	cfg_gripper_origin_x_frame_id_ = config->get_string(cfg_prefix_ + "/gripper_origin_x_frame_id");
+	cfg_gripper_origin_y_frame_id_ = config->get_string(cfg_prefix_ + "/gripper_origin_y_frame_id");
+	cfg_gripper_origin_z_frame_id_ = config->get_string(cfg_prefix_ + "/gripper_origin_z_frame_id");
+
+	cfg_gripper_dyn_x_frame_id_ = config->get_string(cfg_prefix_ + "/gripper_dyn_x_frame_id");
+	cfg_gripper_dyn_y_frame_id_ = config->get_string(cfg_prefix_ + "/gripper_dyn_y_frame_id");
+	cfg_gripper_dyn_z_frame_id_ = config->get_string(cfg_prefix_ + "/gripper_dyn_z_frame_id");
+
+	cfg_x_max_ = config->get_float(cfg_prefix_ + "/x_max");
+	cfg_y_max_ = config->get_float(cfg_prefix_ + "/y_max");
+	cfg_z_max_ = config->get_float(cfg_prefix_ + "/z_max");
 
 	sensor_if_name_  = config->get_string("/gazsim/gripper/sensor-if-name");
 	arduino_if_name_ = config->get_string("/gazsim/gripper/arduino-if-name");
-	cfg_prefix_      = config->get_string("/gazsim/gripper/cfg-prefix");
+}
+
+void
+GazsimGripperThread::init()
+{
+	logger->log_debug(name(), "Initializing Simulation of gripper Plugin");
+
+	load_config();
+	moving_ = false;
+	cur_x_  = 0.0;
+	cur_y_  = 0.0;
+	cur_z_  = 0.0;
+
+	//-- initialize publisher objects
+	tf_add_publisher(cfg_gripper_dyn_x_frame_id_.c_str());
+	dyn_x_pub = tf_publishers[cfg_gripper_dyn_x_frame_id_];
+
+	tf_add_publisher(cfg_gripper_dyn_y_frame_id_.c_str());
+	dyn_y_pub = tf_publishers[cfg_gripper_dyn_y_frame_id_];
+
+	tf_add_publisher(cfg_gripper_dyn_z_frame_id_.c_str());
+	dyn_z_pub = tf_publishers[cfg_gripper_dyn_z_frame_id_];
 
 	set_gripper_pub_ = gazebonode->Advertise<msgs::Int>(config->get_string("/gazsim/topics/gripper"));
 	set_conveyor_pub_ =
@@ -70,19 +107,19 @@ GazsimGripperThread::init()
 	                        &GazsimGripperThread::on_has_puck_msg,
 	                        this);
 
-	cfg_prefix_ = "/arduino/";
+	//open ArduinoInterface for writing
 	arduino_if_ = blackboard->open_for_writing<ArduinoInterface>(arduino_if_name_.c_str());
 	arduino_if_->set_x_position(0);
 	arduino_if_->set_y_position(arduino_if_->y_max() / 2.);
 	arduino_if_->set_y_position(0);
-	arduino_if_->set_x_max(config->get_float(cfg_prefix_ + "x_max"));
-	arduino_if_->set_y_max(config->get_float(cfg_prefix_ + "y_max"));
-	arduino_if_->set_z_max(config->get_float(cfg_prefix_ + "z_max"));
+	arduino_if_->set_x_max(cfg_x_max_);
+	arduino_if_->set_y_max(cfg_y_max_);
+	arduino_if_->set_z_max(cfg_z_max_);
 	arduino_if_->set_final(true);
 	arduino_if_->write();
 
-	cfg_prefix_ = "//";
-	sensor_if_  = blackboard->open_for_writing<RobotinoSensorInterface>(sensor_if_name_.c_str());
+	//open RobotinoInterface where puck sensor connected to first 2 inputs
+	sensor_if_ = blackboard->open_for_writing<RobotinoSensorInterface>(sensor_if_name_.c_str());
 	sensor_if_->set_digital_in(0, false);
 	sensor_if_->set_digital_in(1, false);
 	sensor_if_->write();
@@ -148,6 +185,39 @@ GazsimGripperThread::loop()
 		}
 		arduino_if_->msgq_pop();
 		arduino_if_->write();
+	}
+
+	if (!moving_) {
+		boost::mutex::scoped_lock lock(data_mutex_);
+		fawkes::Time              now(clock);
+
+		tf::Quaternion q(0.0, 0.0, 0.0);
+
+		tf::Vector3 v_x(cur_x_, 0.0, 0.0);
+
+		tf::Vector3 v_y(0.0, (cur_y_ - cfg_y_max_ / 2.), 0.0);
+
+		tf::Vector3 v_z(0.0, 0.0, cur_z_);
+
+		tf::Transform tf_pose_gripper_x(q, v_x);
+		tf::Transform tf_pose_gripper_y(q, v_y);
+		tf::Transform tf_pose_gripper_z(q, v_z);
+
+		tf::StampedTransform stamped_transform_x(tf_pose_gripper_x,
+		                                         now.stamp(),
+		                                         cfg_gripper_origin_x_frame_id_,
+		                                         cfg_gripper_dyn_x_frame_id_);
+		tf::StampedTransform stamped_transform_y(tf_pose_gripper_y,
+		                                         now.stamp(),
+		                                         cfg_gripper_origin_y_frame_id_,
+		                                         cfg_gripper_dyn_y_frame_id_);
+		tf::StampedTransform stamped_transform_z(tf_pose_gripper_z,
+		                                         now.stamp(),
+		                                         cfg_gripper_origin_z_frame_id_,
+		                                         cfg_gripper_dyn_z_frame_id_);
+		dyn_x_pub->send_transform(stamped_transform_x);
+		dyn_y_pub->send_transform(stamped_transform_y);
+		dyn_z_pub->send_transform(stamped_transform_z);
 	}
 }
 
