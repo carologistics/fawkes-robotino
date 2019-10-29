@@ -36,6 +36,10 @@ arduino:
   y_max: 0.075
   z_max: 0.057
 
+  # minmum space in x, y and z in meters
+  x_min: 0
+  z_min: 0
+
 
   # These values changed the speed and the acceleration
   # in steps/s and steps/s/s of the differen stepper motors.
