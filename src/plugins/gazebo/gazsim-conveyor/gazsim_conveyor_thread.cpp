@@ -147,23 +147,11 @@ GazsimConveyorThread::loop()
 		                 pos_if_->enum_tostring("MPS_TYPE", mps_type),
 		                 pos_if_->enum_tostring("MPS_TARGET", mps_target));
 
-		// publishe tf
-		fawkes::tf::StampedTransform transform;
-
-		transform.frame_id       = realsense_frame_id_;
-		transform.child_frame_id = conveyor_frame_id_;
-		transform.stamp          = fawkes::Time();
-
-		transform.setOrigin(fawkes::tf::Vector3(trans[0], trans[1], trans[2]));
-		fawkes::tf::Quaternion q /*(rot[0], rot[1], rot[2], rot[3])*/;
-		q.setEuler(M_PI_2, M_PI_2, M_PI);
-		transform.setRotation(q);
-
-		tf_publisher->send_transform(transform);
 		pos_if_->set_translation(trans);
 		pos_if_->set_rotation(rot);
 		pos_if_->set_current_mps_target(mps_target);
 		pos_if_->set_current_mps_type(mps_type);
+		// fitness value higher than the fitness_max specified in conveyor_align.yaml
 		pos_if_->set_euclidean_fitness(26);
 		pos_if_->set_msgid(msg->id());
 		pos_if_->set_busy(false);
@@ -187,5 +175,25 @@ void
 GazsimConveyorThread::on_conveyor_vision_msg(ConstConveyorVisionResultPtr &msg)
 {
 	last_msg_.CopyFrom(*msg);
+	double trans[] = {-last_msg_.positions().y(),
+	                  -last_msg_.positions().z(),
+	                  last_msg_.positions().x()};
+	//double                            rot[]      = {last_msg_.positions().ori_x(),
+	//                                                last_msg_.positions().ori_y(),
+	//                                                last_msg_.positions().ori_z(),
+	//                                                last_msg_.positions().ori_w()};
+
+	fawkes::tf::Quaternion q /*(rot[0], rot[1], rot[2], rot[3])*/;
+
+	// publishe tf
+	fawkes::tf::StampedTransform transform;
+	transform.frame_id       = realsense_frame_id_;
+	transform.child_frame_id = conveyor_frame_id_;
+	transform.stamp          = fawkes::Time();
+	transform.setOrigin(fawkes::tf::Vector3(trans[0], trans[1], trans[2]));
+	q.setEuler(M_PI_2, M_PI_2, M_PI);
+	transform.setRotation(q);
+	tf_publisher->send_transform(transform);
+
 	new_data_ = true;
 }
