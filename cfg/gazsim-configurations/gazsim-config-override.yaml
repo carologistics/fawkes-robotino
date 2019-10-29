@@ -114,3 +114,13 @@ plugins/static-transforms:
       rot_roll: 0
     cam_conveyor:
       trans_z: -0.22
+
+arduino:
+  # maximum space in x, y and z in meters
+  x_max: 0.1999
+  y_max: 0.085
+  z_max: 0.0
+
+ # min space in x, y and z in meters
+  x_min: 0
+  z_min: -2.0
