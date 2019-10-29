@@ -77,9 +77,9 @@ local gripper_max = {
    z = config:get_float("/arduino/z_max"),
 }
 local gripper_min = {
-   x = 0,
+   x = config:get_float("/arduino/x_min"),
    y = config:get_float("/arduino/y_max") / -2,
-   z = 0,
+   z = config:get_float("/arduino/z_min"),
 }
 
 function no_writer()
