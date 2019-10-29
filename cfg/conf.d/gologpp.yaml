@@ -1,0 +1,9 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+/plugins/gologpp:
+  program_dir: "@BASEDIR@/src/gologpp/blocksworld"
+  program_path: blocksworld.gpp
+  action-mapping:
+    stack: say{text="Stacking ?(x)y on ?(y)y", wait=true}
+    unstack: say{text="Unstacking ?(x)y", wait=true}
