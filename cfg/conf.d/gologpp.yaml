@@ -3,7 +3,7 @@
 ---
 /plugins/gologpp:
   gologpp-dirs: ["@BASEDIR@/src/gologpp"]
-  spec: blocksworld
+  spec: rcll
   specs:
     blocksworld:
       action-mapping:
@@ -12,15 +12,16 @@
     rcll:
       action-mapping:
         # yamllint disable
-        create_peer: create_peer{address=?(address)s, recv_on_port=?(recv_on_port)i, send_to_port=?(send_to_port)i}
-        create_peer_crypto: create_peer{address=?(address)s, recv_on_port=?(recv_on_port)i, send_to_port=?(send_to_port)i, crypto_key=?(crypto_key)s, cipher="aes-128-cbc"}
+        create_peer: create_peer{address=?(address)y, recv_on_port=?(recv_on_port)i, send_to_port=?(send_to_port)i}
+        create_peer_crypto: create_peer{address=?(address)y, recv_on_port=?(recv_on_port)i, send_to_port=?(send_to_port)i, crypto_key=?(crypto_key)y, cipher="aes-128-cbc"}
         goto: goto{x=?(x)f, y=?(y)f, ori=?(ori)f}
+        goto_place: goto{place=?(place)s}
         # yamllint enable
       blackboard:
         watch:
-          id: RCLLGameStateInterface::/protoboard/game_state
+          - "RCLLGameStateInterface::/protoboard/game_state"
         observe:
           # yamllint disable
-          pattern: MachineInfoInterface::/protoboard/machine_info/*
-          pattern: OrderInterface::/protoboard/order/*
+          - "MachineInfoInterface::/protoboard/machine_info/*"
+          #- "OrderInterface::/protoboard/order/*"
           # yamllint enable
