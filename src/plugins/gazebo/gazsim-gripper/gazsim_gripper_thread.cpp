@@ -128,6 +128,8 @@ GazsimGripperThread::init()
 void
 GazsimGripperThread::finalize()
 {
+	blackboard->close(arduino_if_);
+	blackboard->close(sensor_if_);
 }
 
 void
@@ -145,9 +147,9 @@ GazsimGripperThread::loop()
 			arduino_if_->set_y_position(arduino_if_->y_position() + msg->y());
 			arduino_if_->set_z_position(arduino_if_->z_position() + msg->z());
 
-			msgs::Int s;
-			s.set_data(arduino_if_->z_position() + msg->z());
-			set_conveyor_pub_->Publish(s);
+			//msgs::Int s;
+			//s.set_data(arduino_if_->z_position() + msg->z());
+			//set_conveyor_pub_->Publish(s);
 			//    } else if (
 			//    arduino_if_->msgq_first_is<ArduinoInterface::MoveUpwardsMessage>() )
 			//    {
