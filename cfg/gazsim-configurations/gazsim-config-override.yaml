@@ -113,4 +113,4 @@ plugins/static-transforms:
       rot_yaw: 0
       rot_roll: 0
     cam_conveyor:
-      trans_z: -0.056
+      trans_z: -0.22
