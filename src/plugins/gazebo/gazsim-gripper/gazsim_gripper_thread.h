@@ -40,11 +40,8 @@
 #include <gazebo/transport/transport.hh>
 
 namespace fawkes {
-class AX12GripperInterface;
 class ArduinoInterface;
 class RobotinoSensorInterface;
-class LedInterface;
-class JointInterface;
 } // namespace fawkes
 
 class GazsimGripperThread : public fawkes::Thread,
@@ -70,7 +67,6 @@ protected:
 	}
 
 private:
-	fawkes::AX12GripperInterface *   gripper_if_;
 	fawkes::ArduinoInterface *       arduino_if_;
 	fawkes::RobotinoSensorInterface *sensor_if_;
 
