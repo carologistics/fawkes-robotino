@@ -4,6 +4,7 @@
  *
  *  Created: Fri Jul 10 11:27:12 2015
  *  Copyright  2015 Randolph Maaßen
+ *  Copyright  2019 Mostafa Gomaa
  *
  ****************************************************************************/
 
