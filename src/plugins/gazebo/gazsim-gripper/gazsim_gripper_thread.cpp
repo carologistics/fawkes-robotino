@@ -197,7 +197,8 @@ GazsimGripperThread::loop()
 
 		tf::Vector3 v_x(cur_x_, 0.0, 0.0);
 
-		tf::Vector3 v_y(0.0, (cur_y_ - cfg_y_max_ / 2.), 0.0);
+		//tf::Vector3 v_y(0.0, (cur_y_ - cfg_y_max_ / 2.), 0.0);
+		tf::Vector3 v_y(0.0, cur_y_, 0.0);
 
 		tf::Vector3 v_z(0.0, 0.0, cur_z_);
 
