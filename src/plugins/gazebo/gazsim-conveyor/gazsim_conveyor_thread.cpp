@@ -187,7 +187,7 @@ GazsimConveyorThread::on_conveyor_vision_msg(ConstConveyorVisionResultPtr &msg)
 
 	// publishe tf
 	fawkes::tf::StampedTransform transform;
-	transform.frame_id       = realsense_frame_id_;
+	transform.frame_id       = "base_link";
 	transform.child_frame_id = conveyor_frame_id_;
 	transform.stamp          = fawkes::Time();
 	transform.setOrigin(fawkes::tf::Vector3(trans[0], trans[1], trans[2]));
