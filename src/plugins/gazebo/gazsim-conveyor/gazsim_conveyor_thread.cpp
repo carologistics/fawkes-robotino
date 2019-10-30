@@ -175,15 +175,15 @@ void
 GazsimConveyorThread::on_conveyor_vision_msg(ConstConveyorVisionResultPtr &msg)
 {
 	last_msg_.CopyFrom(*msg);
-	double trans[] = {-last_msg_.positions().y(),
-	                  -last_msg_.positions().z(),
-	                  last_msg_.positions().x()};
-	//double                            rot[]      = {last_msg_.positions().ori_x(),
-	//                                                last_msg_.positions().ori_y(),
-	//                                                last_msg_.positions().ori_z(),
-	//                                                last_msg_.positions().ori_w()};
+	double trans[] = {last_msg_.positions().x(),
+	                  last_msg_.positions().y(),
+	                  last_msg_.positions().z()};
+	double rot[]   = {last_msg_.positions().ori_x(),
+                  last_msg_.positions().ori_y(),
+                  last_msg_.positions().ori_z(),
+                  last_msg_.positions().ori_w()};
 
-	fawkes::tf::Quaternion q /*(rot[0], rot[1], rot[2], rot[3])*/;
+	fawkes::tf::Quaternion q(rot[0], rot[1], rot[2], rot[3]);
 
 	// publishe tf
 	fawkes::tf::StampedTransform transform;
@@ -191,7 +191,6 @@ GazsimConveyorThread::on_conveyor_vision_msg(ConstConveyorVisionResultPtr &msg)
 	transform.child_frame_id = conveyor_frame_id_;
 	transform.stamp          = fawkes::Time();
 	transform.setOrigin(fawkes::tf::Vector3(trans[0], trans[1], trans[2]));
-	q.setEuler(M_PI_2, M_PI_2, M_PI);
 	transform.setRotation(q);
 	tf_publisher->send_transform(transform);
 
