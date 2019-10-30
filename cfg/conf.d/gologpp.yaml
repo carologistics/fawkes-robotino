@@ -21,7 +21,5 @@
         watch:
           - "RCLLGameStateInterface::/protoboard/game_state"
         observe:
-          # yamllint disable
           - "MachineInfoInterface::/protoboard/machine_info/*"
-          #- "OrderInterface::/protoboard/order/*"
-          # yamllint enable
+          # - "OrderInterface::/protoboard/order/*"
