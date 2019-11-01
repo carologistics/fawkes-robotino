@@ -178,7 +178,7 @@ case $COMMAND in
 	ulimit -c unlimited
 	export ROS_MASTER_URI=http://localhost:$PORT
 	if [ -n "$META_PLUGIN" ] ; then
-		robotino_plugins=$META_PLUGIN
+		robotino_plugins=$META_PLUGIN$SKIP_EXPLORATION
 	else
 	  robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT$SKIP_EXPLORATION
 	fi
