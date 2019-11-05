@@ -128,25 +128,39 @@ GazsimConveyorThread::loop()
 
 		ConveyorPoseInterface::RunICPMessage *msg =
 		  pos_if_->msgq_first<ConveyorPoseInterface::RunICPMessage>();
-		// write to interface
-		// swap the axis' because the cam_conveyor frame has the z-axis facing
-		// foward
-		double trans[] = {-last_msg_.positions().y(),
-		                  -last_msg_.positions().z(),
-		                  last_msg_.positions().x()};
-		if (strcmp(pos_if_->tostring_MPS_TARGET(msg->mps_target_to_set()), "SLIDE") == 0) {
-			trans[0] += shelf_offset_x;
-		}
-		double                            rot[]      = {last_msg_.positions().ori_x(),
-                    last_msg_.positions().ori_y(),
-                    last_msg_.positions().ori_z(),
-                    last_msg_.positions().ori_w()};
+
 		ConveyorPoseInterface::MPS_TYPE   mps_type   = msg->mps_type_to_set();
 		ConveyorPoseInterface::MPS_TARGET mps_target = msg->mps_target_to_set();
+
 		logger->log_info(name(),
 		                 "Setting Station to %s, %s",
 		                 pos_if_->enum_tostring("MPS_TYPE", mps_type),
 		                 pos_if_->enum_tostring("MPS_TARGET", mps_target));
+
+		double trans[] = {0, 0, 0};
+		if (strcmp(pos_if_->tostring_MPS_TARGET(msg->mps_target_to_set()), "SLIDE") != 0) {
+			trans[0] = last_msg_.conveyor().x();
+			trans[1] = last_msg_.conveyor().y();
+			trans[2] = last_msg_.conveyor().z();
+		} else {
+			trans[0] = last_msg_.slide().x();
+			trans[1] = last_msg_.slide().y(), trans[2] = last_msg_.slide().z();
+		}
+		double rot[] = {last_msg_.conveyor().ori_x(),
+		                last_msg_.conveyor().ori_y(),
+		                last_msg_.conveyor().ori_z(),
+		                last_msg_.conveyor().ori_w()};
+
+		fawkes::tf::Quaternion q(rot[0], rot[1], rot[2], rot[3]);
+
+		// publishe tf
+		fawkes::tf::StampedTransform transform;
+		transform.frame_id       = "base_link";
+		transform.child_frame_id = conveyor_frame_id_;
+		transform.stamp          = fawkes::Time();
+		transform.setOrigin(fawkes::tf::Vector3(trans[0], trans[1], trans[2]));
+		transform.setRotation(q);
+		tf_publisher->send_transform(transform);
 
 		pos_if_->set_translation(trans);
 		pos_if_->set_rotation(rot);
@@ -176,24 +190,5 @@ void
 GazsimConveyorThread::on_conveyor_vision_msg(ConstConveyorVisionResultPtr &msg)
 {
 	last_msg_.CopyFrom(*msg);
-	double trans[] = {last_msg_.positions().x(),
-	                  last_msg_.positions().y(),
-	                  last_msg_.positions().z()};
-	double rot[]   = {last_msg_.positions().ori_x(),
-                  last_msg_.positions().ori_y(),
-                  last_msg_.positions().ori_z(),
-                  last_msg_.positions().ori_w()};
-
-	fawkes::tf::Quaternion q(rot[0], rot[1], rot[2], rot[3]);
-
-	// publishe tf
-	fawkes::tf::StampedTransform transform;
-	transform.frame_id       = "base_link";
-	transform.child_frame_id = conveyor_frame_id_;
-	transform.stamp          = fawkes::Time();
-	transform.setOrigin(fawkes::tf::Vector3(trans[0], trans[1], trans[2]));
-	transform.setRotation(q);
-	tf_publisher->send_transform(transform);
-
 	new_data_ = true;
 }
