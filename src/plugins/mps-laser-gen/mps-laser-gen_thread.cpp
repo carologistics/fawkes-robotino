@@ -116,9 +116,9 @@ MPSLaserGenThread::loop()
 				ori = n.property_as_float("orientation");
 			}
 
-			MPS mps;
 			// send a message to the box_filter laser filter if needed
 			if (cfg_enable_mps_box_filter_ == true && mpses.count(n.name()) == 0) {
+				MPS mps;
 				mps.center = Eigen::Vector2f(n.x(), n.y());
 
 				mps.corners[0] = Eigen::Vector2f(mps_width_2, -mps_length_2);
@@ -146,10 +146,25 @@ MPSLaserGenThread::loop()
 				laser_box_filter_if_->read();
 				laser_box_filter_if_->msgq_enqueue(box_filter_msg);
 
+				float dists[4]  = {mps.corners[0].norm(),
+                          mps.corners[1].norm(),
+                          mps.corners[2].norm(),
+                          mps.corners[3].norm()};
+				mps.closest_idx = 0;
+				for (unsigned int i = 1; i < 4; ++i) {
+					if (dists[i] < dists[mps.closest_idx])
+						mps.closest_idx = i;
+				}
+
+				mps.adjacent_1 = (mps.closest_idx == 0) ? 3 : mps.closest_idx - 1;
+				mps.adjacent_2 = (mps.closest_idx == 3) ? 0 : mps.closest_idx + 1;
+
+				mps.bearing     = atan2f(mps.corners[mps.closest_idx][1], mps.corners[mps.closest_idx][0]);
 				mpses[n.name()] = mps;
 			}
 
 			if (cfg_enable_mps_laser_gen_ == true) {
+				MPS mps;
 				mps.center = transform * Eigen::Vector2f(n.x(), n.y());
 
 				mps.corners[0] = sensor_rotation * Eigen::Vector2f(mps_width_2, -mps_length_2);
