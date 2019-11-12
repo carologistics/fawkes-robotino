@@ -180,7 +180,7 @@ mapping:
 	create_private_peer();
   set_peer("SendBeaconInterface", "/protoboard/send_beacon", 2);
   set_peer("PrepareMachineInterface", "/protoboard/prepare_machine", 2);
-  prepare_bs(CYAN, INPUT, BASE_BLACK);
 	test(game_phase() == PRODUCTION & game_state() == RUNNING);
+  prepare_bs(CYAN, INPUT, BASE_BLACK);
 	go_to(0, 4, 0);
 }
