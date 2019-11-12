@@ -175,6 +175,21 @@ mapping:
   }
 }
 
+action send_beacon(number robot_number, string team_name, string peer_name, symbol team_color) {
+domain:
+  team_color in TeamColor;
+mapping:
+  "send_message" {
+    interface_type = "SendBeaconInterface",
+    interface_id = "/protoboard/send_beacon",
+    message_type = "SendBeaconMessage",
+    number = robot_number,
+    team_name = team_name,
+    peer_name = peer_name,
+    team_color = team_color
+  }
+}
+
 // main program
 {
 	create_public_peer();
@@ -182,6 +197,9 @@ mapping:
   set_peer("SendBeaconInterface", "/protoboard/send_beacon", 2);
   set_peer("PrepareMachineInterface", "/protoboard/prepare_machine", 2);
 	test(game_phase() == PRODUCTION & game_state() == RUNNING);
+  while (game_phase() == PRODUCTION & game_state() == RUNNING) {
+    send_beacon(1, "Carologistics", "R-1", CYAN);
+  }
   prepare_bs(CYAN, INPUT, BASE_BLACK);
 	go_to(0, 4, 0);
 }
