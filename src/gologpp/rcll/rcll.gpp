@@ -5,6 +5,7 @@ symbol domain BaseColor = { BASE_RED, BASE_BLACK, BASE_SILVER }
 symbol domain CapColor = { CAP_BLACK, CAP_GREY }
 symbol domain TeamColor = { CYAN, MAGENTA }
 symbol domain Complexity = { C0, C1, C2, C3 }
+symbol domain MachineSide = { INPUT, OUTPUT }
 
 compound GameTime {
 	number sec,
