@@ -190,6 +190,13 @@ mapping:
   }
 }
 
+action sleep(number seconds) {
+mapping:
+  "sleep" {
+    seconds = seconds
+  }
+}
+
 // main program
 {
 	create_public_peer();
@@ -199,6 +206,7 @@ mapping:
 	test(game_phase() == PRODUCTION & game_state() == RUNNING);
   while (game_phase() == PRODUCTION & game_state() == RUNNING) {
     send_beacon(1, "Carologistics", "R-1", CYAN);
+    sleep(1);
   }
   prepare_bs(CYAN, INPUT, BASE_BLACK);
 	go_to(0, 4, 0);
