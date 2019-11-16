@@ -441,7 +441,7 @@
   (test (eq FALSE (should-retry ?an ?error)))
   (domain-obj-is-of-type ?mps mps)
   (domain-obj-is-of-type ?wp workpiece)
-  (domain-fact (name mps-state) (param-values ?mps ?state))
+  (domain-fact (name mps-state) (param-values ?mps WAIT-IDLE|IDLE))
   (domain-fact (name wp-at) (param-values ?wp ?mps ?side))
   =>
   (printout error "wp-get failed not by aligning: lost " ?wp crlf)
