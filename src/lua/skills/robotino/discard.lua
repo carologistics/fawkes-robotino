@@ -78,5 +78,5 @@ function OPEN_GRIPPER:init()
 end
 
 function RESET_GRIPPER:init()
-  self.args["reset_gripper"].calibrate = true
+  self.args["reset_gripper"].calibrate = false
 end
