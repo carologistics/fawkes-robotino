@@ -388,7 +388,7 @@ if [  $COMMAND  == start ]; then
     done
 
     if $START_CENTRAL_AGENT ; then
-	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB -m $CENTRAL_AGENT $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -p 11311 -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB -m $CENTRAL_AGENT $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
     fi
 
     if $START_ASP_PLANER
