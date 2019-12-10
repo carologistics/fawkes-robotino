@@ -76,6 +76,12 @@ fawkes/meta_plugins:
     - gologpp
 
   gazsim-meta-central-gologpp:
+    - gazebo
+    - ros
+    - navgraph
+    - navgraph-generator
+    - navgraph-generator-mps
+    - skiller
     - protoboard-rcll
     - gologpp
 
