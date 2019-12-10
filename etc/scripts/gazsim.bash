@@ -16,6 +16,7 @@ OPTIONS:
    -n arg            Specify number Robotinos
    -m arg            load fawkes with the specified (meta-)plugin
    -a                Run with default CLIPS-agent (don't mix with -m)
+   --central-agent p Run an additional fawkes instance with plugin p
    -l                Run Gazebo headless
    -k                Keep started shells open after finish
    -s                Keep statistics and shutdown after game
@@ -69,6 +70,7 @@ FIRST_ROBOTINO_NUMBER=1
 REPLAY=
 FAWKES_BIN=$FAWKES_DIR/bin
 META_PLUGIN=
+CENTRAL_AGENT=
 START_GAZEBO=true
 TERM_GEOMETRY=105x56
 GDB=
@@ -77,6 +79,7 @@ FAWKES_USED=false
 START_GAME=
 TEAM_CYAN=
 TEAM_MAGENTA=
+START_CENTRAL_AGENT=false
 START_ASP_PLANER=false
 START_MONGODB=false
 
@@ -124,7 +127,7 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -203,6 +206,10 @@ while true; do
      --mongodb)
          START_MONGODB=true
          ;;
+	 --central-agent)
+	     CENTRAL_AGENT="$OPTARG"
+         START_CENTRAL_AGENT=true
+	     ;;
 	 --asp)
 	     CONF="-c asp-planner"
 	     META_PLUGIN="-m asp-sim-2016"
@@ -379,6 +386,10 @@ if [  $COMMAND  == start ]; then
 	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
 	FAWKES_USED=true
     done
+
+    if $START_CENTRAL_AGENT ; then
+	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB -m $CENTRAL_AGENT $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+    fi
 
     if $START_ASP_PLANER
     then
