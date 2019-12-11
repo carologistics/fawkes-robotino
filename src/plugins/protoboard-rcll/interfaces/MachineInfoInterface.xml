@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="MachineInfoInterface" author="Victor Mataré" year="2019">
+  <constants>
+    <enum name="Team">
+      <comment>Team color</comment>
+      <item name="CYAN">Cyan team</item>
+      <item name="MAGENTA">Magenta team</item>
+    </enum>
+    <enum name="RingColor">
+      <comment>Available ring colors</comment>
+      <item name="RING_NONE">Not a RingStation</item>
+      <item name="RING_BLUE">Blue ring</item>
+      <item name="RING_GREEN">Green ring</item>
+      <item name="RING_ORANGE">Orange ring</item>
+      <item name="RING_YELLOW">Yellow ring</item>
+    </enum>
+  </constants>
+  <data>
+    <comment>Information about a machine</comment>
+    <field type="string" name="machine_name" length="32">Machine name</field>
+    <field type="string" name="machine_type" length="32">Machine type</field>
+    <field type="string" name="state" length="64">Current state</field>
+    <field type="Team" name="team_color">Team color</field>
+    <field type="float" name="pose" length="3">2D Pose (x, y, yaw)</field>
+    <field type="string" name="zone" length="32">Zone the machine is in</field>
+    <field type="uint32" name="rotation">Discretized rotation in degrees</field>
+    <field type="bool" name="correctly_reported">Whether it was correctly reported</field>
+    <field type="uint32" name="loaded_with">Bases loaded in slide</field>
+    <field type="RingColor" name="ring_colors" length="2">Available ring colors</field>
+  </data>
+</interface>
+
