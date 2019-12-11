@@ -26,7 +26,7 @@
     <field type="string" name="zone" length="32">Zone the machine is in</field>
     <field type="uint32" name="rotation">Discretized rotation in degrees</field>
     <field type="bool" name="correctly_reported">Whether it was correctly reported</field>
-    <field type="uint32" name="loaded_with">TODO: ??</field>
+    <field type="uint32" name="loaded_with">Bases loaded in slide</field>
     <field type="RingColor" name="ring_colors" length="2">Available ring colors</field>
   </data>
 </interface>
