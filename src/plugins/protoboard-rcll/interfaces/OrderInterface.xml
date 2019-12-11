@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="OrderInterface" author="Victor Mataré" year="2017">
+  <constants>
+    <enum name="BaseColor">
+      <comment>What color to output</comment>
+      <item name="BASE_RED">Red base</item>
+      <item name="BASE_BLACK">Black base</item>
+      <item name="BASE_SILVER">Silver base</item>
+    </enum>
+    <enum name="RingColor">
+      <comment>Available ring colors</comment>
+      <item name="RING_BLUE">Blue ring</item>
+      <item name="RING_GREEN">Green ring</item>
+      <item name="RING_ORANGE">Orange ring</item>
+      <item name="RING_YELLOW">Yellow ring</item>
+    </enum>
+    <enum name="CapColor">
+      <comment>Available cap colors</comment>
+      <item name="CAP_BLACK">Black cap</item>
+      <item name="CAP_GREY">Grey cap</item>
+    </enum>
+    <enum name="Team">
+      <comment>Team color</comment>
+      <item name="CYAN">Cyan team</item>
+      <item name="MAGENTA">Magenta team</item>
+    </enum>
+    <enum name="Complexity">
+      <comment>Product complexity</comment>
+      <item name="C0">No ring</item>
+      <item name="C1">One ring</item>
+      <item name="C2">Two rings</item>
+      <item name="C3">Three rings</item>
+    </enum>
+  </constants>
+  <data>
+    <comment>Description of a single order</comment>
+    <field type="uint32" name="order_id">Order ID</field>
+    <field type="Complexity" name="complexity">Order complexity</field>
+    <field type="BaseColor" name="base_color">Requested base color</field>
+    <field type="RingColor" name="ring_colors" length="4">Requested rings</field>
+    <field type="CapColor" name="cap_color">Requested cap color</field>
+    <field type="uint32" name="delivery_period_begin">Delivery window start (seconds of game time)</field>
+    <field type="uint32" name="delivery_period_end">Delivery window end (seconds of game time)</field>
+    <field type="uint32" name="delivery_gate">Which gate must be used at the DS</field>
+    <field type="uint32" name="quantity_requested">How many of this type must be delivered</field>
+    <field type="uint32" name="quantity_delivered_cyan">How many were delivered by Cyan</field>
+    <field type="uint32" name="quantity_delivered_magenta">How many were delivered by Magenta</field>
+  </data>
+</interface>
+
