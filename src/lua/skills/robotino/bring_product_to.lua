@@ -28,7 +28,8 @@ fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"product_put", "drive_to_machine_point", "conveyor_align"}
 depends_interfaces = {
    {v = "laserline_switch", type = "SwitchInterface", id="laser-lines"},
-}
+   {v = "robotino_sensor", type = "RobotinoSensorInterface", id="Robotino"} -- Interface to read I/O ports
+ }
 
 documentation      = [==[ 
 aligns to a machine and puts a product on the conveyor.
@@ -50,6 +51,22 @@ skillenv.skill_module(_M)
 -- of not needing to move at all.
 local X_AT_MPS = 0.28
 
+
+-- function to evaluate sensor data
+function is_grabbed()
+ if not robotino_sensor:has_writer() then
+   print_warn("No robotino sensor writer to check sensor")
+   return true
+ end
+ if robotino_sensor:is_digital_in(0) == false and robotino_sensor:is_digital_in(1) == true then -- white cable on DI1 and black on DI2
+    return true
+ else
+   return false
+ end
+end
+
+
+
 function already_at_mps(self)
    return not (self.fsm.vars.atmps=="NO" or self.fsm.vars.atmps==nil)
 end
@@ -58,9 +75,10 @@ function already_at_conveyor(self)
    return (self.fsm.vars.atmps == "CONVEYOR")
 end
 
-fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
+fsm:define_states{ export_to=_M, closure={navgraph=navgraph, is_grabbed = is_grabbed},
    {"INIT", JumpState},
-   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CONVEYOR_ALIGN", fail_to="FAILED"},
+   {"DRIVE_TO_MACHINE_POINT", SkillJumpState, skills={{drive_to_machine_point}}, final_to="CHECK_PUCK", fail_to="FAILED"},
+   {"CHECK_PUCK", JumpState},
    {"CONVEYOR_ALIGN", SkillJumpState, skills={{conveyor_align}}, final_to="PRODUCT_PUT", fail_to="FAILED"},
    {"PRODUCT_PUT", SkillJumpState, skills={{product_put}}, final_to="FINAL", fail_to="FAILED"}
 }
@@ -70,6 +88,8 @@ fsm:add_transitions{
    {"INIT", "FAILED", cond="not vars.node:is_valid()", desc="point invalid"},
    {"INIT", "CONVEYOR_ALIGN", cond=already_at_conveyor, desc="At mps, skip drive_to_local"},
    {"INIT", "DRIVE_TO_MACHINE_POINT", cond=true, desc="Everything OK"},
+   {"CHECK_PUCK", "FAILED", cond="not is_grabbed()", desc="Lost Puck"},
+   {"CHECK_PUCK", "CONVEYOR_ALIGN", cond=true}
 }
 
 function INIT:init()
@@ -95,12 +115,25 @@ function DRIVE_TO_MACHINE_POINT:init()
    end
 end
 
+function DRIVE_TO_MACHINE_POINT:exit()
+  local dtmp_fsm = skillenv.get_skill_fsm("drive_to_machine_point")
+  if dtmp_fsm.current == dtmp_fsm.states[dtmp_fsm.fail_state] then
+    self.fsm.vars.error = "Drive To Machine Point Failed"
+  end
+end
+
 function CONVEYOR_ALIGN:init()
     self.args["conveyor_align"].side = self.fsm.vars.side
     self.args["conveyor_align"].place = self.fsm.vars.place
     self.args["conveyor_align"].slide = self.fsm.vars.slide
 end
 
+function CONVEYOR_ALIGN:exit()
+  local cv_fsm = skillenv.get_skill_fsm("conveyor_align")
+  if cv_fsm.current == cv_fsm.states[cv_fsm.fail_state] then
+    self.fsm.vars.error = "Conveyor Align Failed"
+  end
+end
 
 function PRODUCT_PUT:init()
   self.args["product_put"].place = self.fsm.vars.place
@@ -114,4 +147,17 @@ end
 
 function FAILED:init()
   laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
+end
+
+function PRODUCT_PUT:exit()
+  local pp_fsm = skillenv.get_skill_fsm("product_put")
+  if pp_fsm.current == pp_fsm.states[pp_fsm.fail_state] then
+    self.fsm.vars.error = "Product Put Failed"
+  end
+end
+
+function FAILED:init()
+  if self.fsm.vars.error then
+    self.fsm:set_error(self.fsm.vars.error)
+  end
 end

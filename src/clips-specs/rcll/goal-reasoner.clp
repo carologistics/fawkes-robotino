@@ -98,6 +98,7 @@
               (eq ?goal-class MOUNT-FIRST-RING)
               (eq ?goal-class MOUNT-NEXT-RING)
               (eq ?goal-class DELIVER)
+              (eq ?goal-class RESET-MPS) 
               (eq ?goal-class WAIT)
               (eq ?goal-class GO-WAIT)
               (eq ?goal-class WAIT-FOR-MPS-PROCESS)))
@@ -339,6 +340,17 @@
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
 
+(defrule goal-reasoner-evaluate-mps-reset-completed
+  " Remove reset-mps flag after a successful reset-mps goal
+  "
+  ?g <- (goal (id ?id) (class RESET-MPS) (mode FINISHED)
+                      (outcome COMPLETED) (params r ?self m ?mps))
+  ?t <- (wm-fact (key evaluated reset-mps args? m ?mps))
+  =>
+  (retract ?t)
+  (modify ?g (mode EVALUATED))
+)
+
 (defrule goal-reasoner-evaluate-production-maintain
   "Clean up all rs-fill-priorities facts when the production maintenance goal
    fails."
@@ -402,6 +414,7 @@
 " After a failed wp-put, check if the gripper interface indicates, that the workpiece is still in the gripper.
   If this is not the case, the workpiece is lost and the corresponding facts are marked for clean-up
 "
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
   (plan-action (id ?id) (goal-id ?goal-id)
 	(plan-id ?plan-id) (action-name ?an&:(or (eq ?an wp-put) (eq ?an wp-put-slide-cc)))
 	   (param-values ?r ?wp ?mps $?)
@@ -409,38 +422,34 @@
   (plan (id ?plan-id) (goal-id ?goal-id))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
   ?hold <- (wm-fact (key domain fact holding args? r ?r wp ?wp))
-  (AX12GripperInterface (holds_puck ?holds))
+  (RobotinoSensorInterface (digital_in ?d1 ?d2 $?))
   =>
-  (if (eq ?holds FALSE)
-      then
-      (retract ?hold)
-      (assert (wm-fact (key monitoring cleanup-wp args? wp ?wp)))
-      (assert (domain-fact (name can-hold) (param-values ?r)))
+  (if (not (and (eq ?d1 FALSE) (eq ?d2 TRUE)))
+  then
+      (assert (wm-fact (key monitoring safety-discard)))
   )
-  (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
-  (modify ?g (mode EVALUATED))
+  (printout t "Goal " ?goal-id " failed because of " ?an crlf)
 )
 
-(defrule goal-reasoner-evaluate-failed-wp-get
-" After a failed wp-get with multiple retries, we want to reset the mps"
+(defrule goal-reasouner-evaluate-failed-exog-actions
+  " If an exogenous action failed, this means that something went totally wrong.
+    However, it is unlikely that we are able to continue using the mps. Therefore
+    we want to reset it
+  "
   (plan-action (id ?id) (goal-id ?goal-id)
-	             (plan-id ?plan-id) (action-name ?an&:(or (eq ?an wp-get) (eq ?an wp-put-slide-cc)))
-	             (param-values $? ?mps $?)
-	             (state FAILED))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
-  ?t <- (wm-fact (key monitoring action-retried args? r ?self a wp-get m ?mps wp ?wp)
-                (value ?tried&:(>= ?tried ?*MAX-RETRIES-PICK*)))
+               (plan-id ?plan-id)
+               (action-name bs-dispense|cs-retrieve-cap|cs-mount-cap|rs-mount-ring1|rs-mount-ring2|rs-mount-ring3)
+               (param-values $? ?mps $?)
+               (state FAILED))
   (domain-object (name ?mps) (type mps))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome FAILED))
+  (not (wm-fact (key evaluated reset-mps args? m ?mps)))
   =>
-  (retract ?t)
   (assert
     (wm-fact (key evaluated reset-mps args? m ?mps))
   )
-  (printout t "Goal " ?goal-id " failed because of " ?an " and is evaluated" crlf)
   (modify ?g (mode EVALUATED))
 )
-
 
 (defrule goal-reasoner-evaluate-get-shelf-failed
 " After a failed wp-get-shelf, assume that the workpiece is not there
