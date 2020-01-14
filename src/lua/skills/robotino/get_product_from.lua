@@ -102,8 +102,36 @@ function DRIVE_TO_MACHINE_POINT:init()
    end
 end
 
+function DRIVE_TO_MACHINE_POINT:exit()
+  local dtmp_fsm = skillenv.get_skill_fsm("drive_to_machine_point")
+  if dtmp_fsm.current == dtmp_fsm.states[dtmp_fsm.fail_state] then
+    self.fsm.vars.error = "Drive To Machine Point Failed"
+  end
+end
+
+function PRODUCT_PICK:init()
+  self.args["product_pick"].place = self.fsm.vars.place
+  self.args["product_pick"].side = self.fsm.vars.side
+  self.args["product_pick"].slide = self.fsm.vars.slide
+  self.args["product_pick"].shelf = self.fsm.vars.shelf
+end
+
+function PRODUCT_PICK:exit()
+  local pp_fsm = skillenv.get_skill_fsm("product_pick")
+  if pp_fsm.current == pp_fsm.states[pp_fsm.fail_state] then
+    self.fsm.vars.error = "Product Pick Failed"
+  end
+end
+
 function SHELF_PICK:init()
   self.args["shelf_pick"].slot = self.fsm.vars.shelf
+end
+
+function SHELF_PICK:exit()
+  local sp_fsm = skillenv.get_skill_fsm("shelf_pick")
+  if sp_fsm.current == sp_fsm.states[sp_fsm.fail_state] then
+    self.fsm.vars.error = "Shelf Pick Failed"
+  end
 end
 
 function CONVEYOR_ALIGN:init()
@@ -125,4 +153,17 @@ end
 
 function FAILED:init()
   laserline_switch:msgq_enqueue(laserline_switch.DisableSwitchMessage:new())
+end
+
+function CONVEYOR_ALIGN:exit()
+  local cv_fsm = skillenv.get_skill_fsm("conveyor_align")
+  if cv_fsm.current == cv_fsm.states[cv_fsm.fail_state] then
+    self.fsm.vars.error = "Conveyor Align Failed"
+  end
+end
+
+function FAILED:init()
+  if self.fsm.vars.error then
+    self.fsm:set_error(self.fsm.vars.error)
+  end
 end
