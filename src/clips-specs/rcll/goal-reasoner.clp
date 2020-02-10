@@ -478,13 +478,13 @@
 
 
 (defrule goal-reasoner-reject-production-tree-goal-missing-subgoal
-" Retract a formulated sub-goal of the production tree if it requires a
-  sub-goal but there is none formulated.
+" Retract a selected compound sub-goal of the production tree if
+  no sub-goals are formulated.
 "
   (declare (salience ?*SALIENCE-GOAL-REJECT*))
   ?g <- (goal (id ?goal) (parent ?parent) (type ACHIEVE)
               (sub-type ?sub-type&:(requires-subgoal ?sub-type))
-              (class ?class&:(production-goal ?class)) (mode FORMULATED))
+              (class ?class&:(production-goal ?class)) (mode SELECTED))
   (not (goal (parent ?goal) (mode FORMULATED)))
 =>
   (modify ?g (mode RETRACTED) (outcome REJECTED))
