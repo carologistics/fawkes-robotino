@@ -226,6 +226,70 @@
   (goal-tree-assert-run-endless PRODUCTION-MAINTAIN 1)
 )
 
+;=========Goal Tree Expansion
+(defrule goal-production-expand-goal-production-maintain
+"  Populate the first level of the tree structure of the production tree.
+"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (not (goal (parent ?goal-id)))
+  (wm-fact (key config rcll enable-bot) (value TRUE))
+=>
+   (goal-tree-assert-subtree ?goal-id
+      (goal-tree-assert-run-one PRODUCTION-SELECTOR))
+)
+
+(defrule goal-production-expand-goal-production-selector
+"  Expand the production selector compound goal. The priority of subgoals
+   is determined by the order they are asserted. Sub-goals that are asserted
+   earlier get a higher priority.
+"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?goal-id) (class PRODUCTION-SELECTOR) (mode SELECTED))
+  (wm-fact (key config rcll enable-bot) (value ?enabled))
+=>
+  (if ?enabled
+    then
+      (goal-tree-assert-subtree ?goal-id
+         (goal-tree-assert-run-one URGENT)
+         (goal-tree-assert-run-one FULFILL-ORDERS)
+         (goal-tree-assert-run-one PREPARE-RESOURCES)
+         (goal-tree-assert-run-one NO-PROGRESS))
+    else
+      (goal-tree-assert-subtree ?goal-id
+            (goal-tree-assert-run-one NO-PROGRESS))
+  )
+)
+
+(defrule goal-production-expand-goal-fullfill-orders
+"  Expand FULLFILL-ORDERS compoud goal, populating it with subgoals. The priority of
+   subgoals is determined by the order they are asserted. Sub-goals that are
+   asserted earlier get a higher priority.
+"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?goal-id) (class FULFILL-ORDERS) (mode SELECTED))
+=>
+  (goal-tree-assert-subtree ?goal-id
+    (goal-tree-assert-run-one DELIVER-PRODUCTS)
+    (goal-tree-assert-run-one INTERMEDEATE-STEPS))
+)
+
+(defrule goal-production-expand-goal-prepare-resources
+"  Populate the tree structure of the production tree. The priority of subgoals
+   is determined by the order they are asserted. Sub-goals that are asserted
+   earlier get a higher priority.
+"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?goal-id) (class PREPARE-RESOURCES) (mode SELECTED))
+=>
+  (goal-tree-assert-subtree ?goal-id
+    (goal-tree-assert-run-one CLEAR)
+    (goal-tree-assert-run-one PREPARE-CAPS)
+    (goal-tree-assert-run-one WAIT-FOR-PROCESS)
+    (goal-tree-assert-run-one PREPARE-RINGS))
+)
+
+
 (defrule goal-production-create-mps-handling-maintain
 " The parent mps handling goal. Allows formulation of
   mps handling goals, if requested by a production goal.

@@ -155,40 +155,8 @@
 )
 
 
-(defrule goal-reasoner-expand-production-tree
-"  Populate the tree structure of the production tree. The priority of subgoals
-   is determined by the order they are asserted. Sub-goals that are asserted
-   earlier get a higher priority.
-"
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
-  (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
-  (not (goal (parent ?goal-id)))
-  (wm-fact (key config rcll enable-bot) (value ?enabled))
-=>
-  (if ?enabled
-    then
-      (goal-tree-assert-subtree ?goal-id
-        (goal-tree-assert-run-one PRODUCTION-SELECTOR
-          (goal-tree-assert-run-one URGENT)
-            (goal-tree-assert-run-one FULFILL-ORDERS
-              (goal-tree-assert-run-one DELIVER-PRODUCTS)
-              (goal-tree-assert-run-one INTERMEDEATE-STEPS))
-            (goal-tree-assert-run-one PREPARE-RESOURCES
-              (goal-tree-assert-run-one CLEAR)
-              (goal-tree-assert-run-one PREPARE-CAPS)
-              (goal-tree-assert-run-one WAIT-FOR-PROCESS)
-              (goal-tree-assert-run-one PREPARE-RINGS))
-            (goal-tree-assert-run-one NO-PROGRESS)))
-    else
-      (goal-tree-assert-subtree ?goal-id
-        (goal-tree-assert-run-one PRODUCTION-SELECTOR
-            (goal-tree-assert-run-one NO-PROGRESS)))
-  )
-)
-
-
 (defrule goal-reasoner-expand-goal-with-sub-type
-" Expand a goal with sub-type, if it has a child."
+" Expand a goal with sub-type, if it has at least one child."
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?p <- (goal (id ?parent-id) (type ACHIEVE|MAINTAIN)
               (sub-type ?sub-type&:(requires-subgoal ?sub-type)) (mode SELECTED))
