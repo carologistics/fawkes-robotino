@@ -41,11 +41,6 @@ else
   endif
 endif
 
-ifeq ($(shell hostname),robotino-base)
-  CFLAGS_EXTRA  = -mtune=geode -march=geode -m32 -Wno-strict-aliasing
-  LDFLAGS_EXTRA = -m32
-endif
-
 # Globally enable optimization for the Robotino platform
 CFLAGS_EXTRA  += -g -Wall -Werror -O2
 
