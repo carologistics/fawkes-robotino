@@ -508,3 +508,35 @@
     (modify ?p (param-values (replace-member$ ?p:param-values (if (eq ?side INPUT) then OUTPUT else INPUT) ?side)))
   )
 )
+
+
+(defrule execution-monitoring-cleanup-wp-for-order-facts
+  "Unbind a workpiece from it's order when it can not be used anymore."
+  ?wp-for-order <- (wm-fact (key order meta wp-for-order
+                                 args? wp ?wp ord ?order)
+                            (value TRUE))
+  (not (wm-fact (key domain fact wp-usable args? wp ?wp)))
+  =>
+  (retract ?wp-for-order)
+  (delayed-do-for-all-facts ((?wm wm-fact))
+    (and (wm-key-prefix ?wm:key (create$ wp meta))
+         (eq (wm-key-arg ?wm:key wp) ?wp))
+    (retract ?wm)
+  )
+  (printout debug "WP " ?wp " no longer tied to Order " ?order " because it is
+    not usable anymore" crlf)
+)
+
+
+(defrule execution-monitoring-hack-failed-enter-field
+  "HACK: Stop trying to enter the field when it failed a few times."
+  ; TODO-GM: this was after 3 tries, now its instantly
+  ?g <- (goal (id ?gid) (class ENTER-FIELD)
+               (mode FINISHED) (outcome FAILED))
+  ?pa <- (plan-action (goal-id ?gid) (state FAILED) (action-name enter-field))
+  =>
+  (printout t "Goal '" ?gid "' has failed, evaluating" crlf)
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+  (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
+)
+
