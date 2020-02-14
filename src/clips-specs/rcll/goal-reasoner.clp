@@ -156,7 +156,7 @@
 )
 
 
-(defrule goal-reasoner-expand-production-tree
+(defrule goal-reasoner-expand-production-tree-distributed
 "  Populate the tree structure of the production tree. The priority of subgoals
    is determined by the order they are asserted. Sub-goals that are asserted
    earlier get a higher priority.
@@ -164,13 +164,13 @@
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (not (goal (parent ?goal-id)))
-  (wm-fact (key config rcll enable-bot) (value ?enabled))
+  (wm-fact (key config rcll enable-bot) (value ?enable-bot))
+  (wm-fact (key config coordination centralized-reasoning enable) (value FALSE))
 =>
-  (if ?enabled
-    then
-      (goal-tree-assert-subtree ?goal-id
-        (goal-tree-assert-run-one PRODUCTION-SELECTOR
-          (goal-tree-assert-run-one URGENT)
+  (if ?enable-bot then
+       (goal-tree-assert-subtree ?goal-id
+         (goal-tree-assert-run-one PRODUCTION-SELECTOR
+            (goal-tree-assert-run-one URGENT)
             (goal-tree-assert-run-one FULFILL-ORDERS
               (goal-tree-assert-run-one DELIVER-PRODUCTS)
               (goal-tree-assert-run-one INTERMEDEATE-STEPS))
@@ -187,6 +187,50 @@
   )
 )
 
+(defrule goal-reasoner-expand-production-tree-centralized
+"  Populate the tree structure of the production tree. The priority of subgoals
+   is determined by the order they are asserted. Sub-goals that are asserted
+   earlier get a higher priority.
+"
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
+  (wm-fact (key config rcll enable-bot) (value ?enable-bot))
+  (and (wm-fact (key config coordination centralized-reasoning enable) (value TRUE))
+	   (wm-fact (key domain fact order-complexity args? ord ?order-id comp ?complexity))
+       (goal (id ?order-id) (parent ?goal-id) (class ORDER) (mode FORMULATED))
+	  )
+=>
+  (if ?enable-bot then
+	   (goal-tree-assert-subtree ?order-id
+		  (goal-tree-assert-run-all WP
+		    (goal-tree-assert-run-one MOUNT-RING1)
+		    (goal-tree-assert-run-one MOUNT-RING2)
+		    (goal-tree-assert-run-one MOUNT-RING3)
+		    (goal-tree-assert-run-one MOUNT-CAP)
+		    (goal-tree-assert-run-one DELIVER))
+		  (goal-tree-assert-run-all PREPARE-MACHINE
+		    (goal-tree-assert-run-all PREPARE-CS
+		      (goal-tree-assert-run-one RETRIVE-CAP)
+		      (goal-tree-assert-run-one CLEAN))
+		    (goal-tree-assert-run-all PREPARE-RING1)
+		    (goal-tree-assert-run-all PREPARE-RING2)
+		    (goal-tree-assert-run-all PREPARE-RING3))
+		)
+     )
+
+	(assert
+	  (wm-fact (key meta precedence goal-class ?args PREPARE-RING1 MOUNT-RING1)
+	  (wm-fact (key meta precedence goal-class ?args PREPARE-RING2 MOUNT-RING2)
+	  (wm-fact (key meta precedence goal-class ?args PREPARE-RING3 MOUNT-RING3)
+
+	  (wm-fact (key meta precedence goal-class ?args PREPARE-CS MOUNT-CAP)
+
+	  (wm-fact (key meta precedence goal-class ?args MOUNT-RING1 MOUNT-RING2)
+	  (wm-fact (key meta precedence goal-class ?args MOUNT-RING2 MOUNT-RING3)
+	  (wm-fact (key meta precedence goal-class ?args MOUNT-RING3 MOUNT-CAP)
+	  (wm-fact (key meta precedence goal-class ?args PREPARE-CAP DELIVER)
+	)
+)
 
 (defrule goal-reasoner-expand-goal-with-sub-type
 " Expand a goal with sub-type, if it has a child."

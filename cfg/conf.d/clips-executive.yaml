@@ -185,6 +185,10 @@ clips-executive:
           mutex:
             renew-interval: 5
             max-age-sec: 30
+          centralized-reasoning:
+            enable: true
+            scheduling:
+              enable: true
         rcll:
           # real-world-setup:
           peer-address: 172.26.255.255
