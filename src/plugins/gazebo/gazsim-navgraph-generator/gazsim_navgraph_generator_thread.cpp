@@ -114,6 +114,8 @@ GazsimNavgraphGeneratorThread::loop()
 	  new NavGraphWithMPSGeneratorInterface::SetExplorationZonesMessage(allFalse);
 	// delete_explo_navgraph_msg->set_zones(allFalse);
 	nav_gen_if_->msgq_enqueue(delete_explo_navgraph_msg);
+	// generate waitzones
+	nav_gen_if_->msgq_enqueue(new NavGraphWithMPSGeneratorInterface::GenerateWaitZonesMessage());
 	compute_msg_ = new NavGraphWithMPSGeneratorInterface::ComputeMessage();
 	nav_gen_if_->msgq_enqueue(compute_msg_);
 	computation_is_running_ = true;
