@@ -196,13 +196,13 @@
   (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key config rcll enable-bot) (value ?enable-bot))
   (and (wm-fact (key config coordination centralized-reasoning enable) (value TRUE))
-	   (wm-fact (key domain fact order-complexity args? ord ?order-id comp ?complexity))
+	   (wm-fact (key domain fact order-complexity args? ord ?order-id com ?complexity))
        (goal (id ?order-id) (parent ?goal-id) (class ORDER) (mode FORMULATED))
 	  )
 =>
   (if ?enable-bot then
 	   (goal-tree-assert-subtree ?order-id
-		  (goal-tree-assert-run-all WP
+		  (goal-tree-assert-run-all WP-OPERATIONS
 		    (goal-tree-assert-run-one MOUNT-RING1)
 		    (goal-tree-assert-run-one MOUNT-RING2)
 		    (goal-tree-assert-run-one MOUNT-RING3)
@@ -211,7 +211,7 @@
 		  (goal-tree-assert-run-all PREPARE-MACHINE
 		    (goal-tree-assert-run-all PREPARE-CS
 		      (goal-tree-assert-run-one RETRIVE-CAP)
-		      (goal-tree-assert-run-one CLEAN))
+		      (goal-tree-assert-run-one CLEAR-CAP))
 		    (goal-tree-assert-run-all PREPARE-RING1)
 		    (goal-tree-assert-run-all PREPARE-RING2)
 		    (goal-tree-assert-run-all PREPARE-RING3))
@@ -219,16 +219,16 @@
      )
 
 	(assert
-	  (wm-fact (key meta precedence goal-class ?args PREPARE-RING1 MOUNT-RING1)
-	  (wm-fact (key meta precedence goal-class ?args PREPARE-RING2 MOUNT-RING2)
-	  (wm-fact (key meta precedence goal-class ?args PREPARE-RING3 MOUNT-RING3)
+	  (wm-fact (key meta precedence goal-class args? PREPARE-RING1 MOUNT-RING1))
+	  (wm-fact (key meta precedence goal-class args? PREPARE-RING2 MOUNT-RING2))
+	  (wm-fact (key meta precedence goal-class args? PREPARE-RING3 MOUNT-RING3))
 
-	  (wm-fact (key meta precedence goal-class ?args PREPARE-CS MOUNT-CAP)
+	  (wm-fact (key meta precedence goal-class args? PREPARE-CS MOUNT-CAP))
 
-	  (wm-fact (key meta precedence goal-class ?args MOUNT-RING1 MOUNT-RING2)
-	  (wm-fact (key meta precedence goal-class ?args MOUNT-RING2 MOUNT-RING3)
-	  (wm-fact (key meta precedence goal-class ?args MOUNT-RING3 MOUNT-CAP)
-	  (wm-fact (key meta precedence goal-class ?args PREPARE-CAP DELIVER)
+	  (wm-fact (key meta precedence goal-class args? MOUNT-RING1 MOUNT-RING2))
+	  (wm-fact (key meta precedence goal-class args? MOUNT-RING2 MOUNT-RING3))
+	  (wm-fact (key meta precedence goal-class args? MOUNT-RING3 MOUNT-CAP))
+	  (wm-fact (key meta precedence goal-class args? PREPARE-CAP DELIVER))
 	)
 )
 
