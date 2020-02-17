@@ -160,6 +160,75 @@
   ))
 )
 
+(defrule goal-production-create-deliver
+  "Deliver a fully produced workpiece."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?order) (class ORDER) (mode FORMULATED))
+  (goal (id ?wp-operations) (parent ?order) (class WP-OPERATIONS) (mode FORMULATED))
+  (goal (id ?deliver) (parent ?wp-operations) (class DELIVER) (mode FORMULATED))
+  ;To-Do: Model state IDLE|wait-and-look-for-alternatives
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  ;Robot CEs
+  (wm-fact (key domain fact self args? r ?robot))
+  ;MPS-DS CEs
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
+  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+  ;MPS-CEs
+  (wm-fact (key domain fact mps-type args? m ?mps t CS))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  ;WP-CEs
+  ;(wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+  ;(wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+  ;(wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+  ;(wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+  ;(wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+  ;Order-CEs
+  ;(wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  ;note: could be moved to rejected checks
+  ;(wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+  ;         (value ?qd&:(> ?qr ?qd)))
+  ;(wm-fact (key refbox order ?order delivery-begin) (type UINT)
+  ;         (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
+  ;(or (and (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+  ;         (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp))))
+  ;    (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+  (not (goal (class DELIVER)
+             (parent ?deliver)
+  ))
+  =>
+  (printout t "Goal " DELIVER " formulated" crlf)
+  (assert (goal (id (sym-cat DELIVER- (gensym*)))
+                (class DELIVER) (sub-type SIMPLE)
+                (parent ?deliver)
+                (params robot ?robot
+                        mps ?mps
+                        order ?order
+                        wp X-wp
+                        ds ?ds
+                        ds-gate ?gate
+                        base-color ?base-color
+                        ring1-color ?ring1-color
+                        ring2-color ?ring2-color
+                        ring3-color ?ring3-color
+                        cap-color ?cap-color
+                )
+                (required-resources (sym-cat ?mps -OUTPUT) ?order X-wp)
+  ))
+)
+
+
+
+
+
 
 ;::Rejecting goals::;
 
