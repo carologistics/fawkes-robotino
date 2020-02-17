@@ -159,3 +159,74 @@
                 (required-resources (sym-cat ?mps -INPUT) ?required-resources)
   ))
 )
+
+
+;::Rejecting goals::;
+
+(defrule goal-production-reject-mount-3rd-ring
+"Reject 3rd ring compount goals when for lower complexities"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?order) (class ORDER) (mode FORMULATED))
+  (goal (id ?wp-operations) (parent ?order) (class WP-OPERATIONS) (mode FORMULATED))
+  (goal (id ?prepare-machines) (parent ?order) (class PREPARE-MACHINE) (mode FORMULATED))
+  ?gf1 <-  (goal (id ?prepare-ring3) (parent ?prepare-machine)
+                 (class PREPARE-RING3) (mode FORMULATED))
+  ?gf2 <-  (goal (id ?mount-ring3) (parent ?wp-operations)
+                 (class MOUNT-RING3) (mode FORMULATED))
+  ;Game CEs
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  ;Order CEs
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+  (not (eq ?complexity C3))
+  =>
+  (modify ?gf1 (mode RETRACTED) (outcome REJECTED))
+  (modify ?gf2 (mode RETRACTED) (outcome REJECTED))
+)
+
+(defrule goal-production-reject-mount-2rd-ring
+"Reject 2rd ring compount goals when for lower complexities"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?order) (class ORDER) (mode FORMULATED))
+  (goal (id ?wp-operations) (parent ?order) (class WP-OPERATIONS) (mode FORMULATED))
+  (goal (id ?prepare-machines) (parent ?order) (class PREPARE-MACHINE) (mode FORMULATED))
+  ?gf1 <-  (goal (id ?prepare-ring2) (parent ?prepare-machine)
+                 (class PREPARE-RING2) (mode FORMULATED))
+  ?gf2 <-  (goal (id ?mount-ring2) (parent ?wp-operations)
+                 (class MOUNT-RING2) (mode FORMULATED))
+  ;Game CEs
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  ;Order CEs
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+  (and (not (eq ?complexity C3))
+       (not (eq ?complexity C2))
+  )
+  =>
+  (modify ?gf1 (mode RETRACTED) (outcome REJECTED))
+  (modify ?gf2 (mode RETRACTED) (outcome REJECTED))
+)
+
+(defrule goal-production-reject-mount-1st-ring
+"Reject 2rd ring compount goals when for lower complexities"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?order) (class ORDER) (mode FORMULATED))
+  (goal (id ?wp-operations) (parent ?order) (class WP-OPERATIONS) (mode FORMULATED))
+  (goal (id ?prepare-machines) (parent ?order) (class PREPARE-MACHINE) (mode FORMULATED))
+  ?gf1 <-  (goal (id ?prepare-ring1) (parent ?prepare-machine)
+                 (class PREPARE-RING1) (mode FORMULATED))
+  ?gf2 <-  (goal (id ?mount-ring1) (parent ?wp-operations)
+                 (class MOUNT-RING1) (mode FORMULATED))
+  ;Game CEs
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  ;Order CEs
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+  (and (not (eq ?complexity C3))
+       (not (eq ?complexity C2))
+       (not (eq ?complexity C1))
+  )
+  =>
+  (modify ?gf1 (mode RETRACTED) (outcome REJECTED))
+  (modify ?gf2 (mode RETRACTED) (outcome REJECTED))
+)
