@@ -165,7 +165,7 @@
 
 (defrule goal-production-reject-mount-3rd-ring
 "Reject 3rd ring compount goals when for lower complexities"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
   (goal (id ?order) (class ORDER) (mode FORMULATED))
   (goal (id ?wp-operations) (parent ?order) (class WP-OPERATIONS) (mode FORMULATED))
   (goal (id ?prepare-machines) (parent ?order) (class PREPARE-MACHINE) (mode FORMULATED))
@@ -186,7 +186,7 @@
 
 (defrule goal-production-reject-mount-2rd-ring
 "Reject 2rd ring compount goals when for lower complexities"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
   (goal (id ?order) (class ORDER) (mode FORMULATED))
   (goal (id ?wp-operations) (parent ?order) (class WP-OPERATIONS) (mode FORMULATED))
   (goal (id ?prepare-machines) (parent ?order) (class PREPARE-MACHINE) (mode FORMULATED))
@@ -209,7 +209,7 @@
 
 (defrule goal-production-reject-mount-1st-ring
 "Reject 2rd ring compount goals when for lower complexities"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
   (goal (id ?order) (class ORDER) (mode FORMULATED))
   (goal (id ?wp-operations) (parent ?order) (class WP-OPERATIONS) (mode FORMULATED))
   (goal (id ?prepare-machines) (parent ?order) (class PREPARE-MACHINE) (mode FORMULATED))
