@@ -42,35 +42,39 @@
   Use a capcarrier from the corresponding shelf to feed it into a cap station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?order) (class ORDER) (mode FORMULATED))
-  (goal (id ?prepare-cap) (class PREPARE-CAP) (mode FORMULATED))
-  (goal (id ?fill-cap) (parent ?prepare-cap) (class FILL-CAP) (mode FORMULATED))
-  (goal (id ?clear-cap) (parent ?prepare-cap) (class CLEAR-CAP) (mode FORMULATED))
+  (goal (id ?prepare-machine)(class PREPARE-MACHINE) (parent ?order) (mode FORMULATED))
+  (goal (id ?prepare-cs) (parent ?prepare-machine) (class PREPARE-CS) (mode FORMULATED))
+  (goal (id ?retrive-cap) (parent ?prepare-cs) (class RETRIVE-CAP) (mode FORMULATED))
+  (goal (id ?clear-cap) (parent ?prepare-cs) (class CLEAR-CAP) (mode FORMULATED))
   (wm-fact (key refbox team-color) (value ?team-color))
+  ;Robot CEs
+  (wm-fact (key domain fact self args? r ?robot))
   ;MPS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   ;; ex (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
   ;; ex (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
-  (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
-  ; ex (not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT))
+  ;; ex (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
+  ;; ex (not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT))
   ;Capcarrier CEs
-  ;; ex (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
-  ;; ex (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
  ;; order-selection (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
  ;; order-selection (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
  ;; order-selection (value ?qd&:(> ?qr ?qd)))
  ;; order-selection (wm-fact (key refbox order ?order delivery-end) (type UINT)
  ;; order-selection (value ?end&:(> ?end (nth$ 1 ?game-time))))
+ (not (goal (class FILL-CAP) (parent ?retrive-cs)))
   =>
   (printout t "Goals " related to CAP " formulated" crlf)
   ;; sche (bind ?distance (node-distance (str-cat ?mps -I)))
   (assert (goal (id (sym-cat FILL-CAP- (gensym*)))
                 (class FILL-CAP) (sub-type SIMPLE)
-                (parent ?fill-cap)
-                (params robot X-R
+                (parent ?retrive-cap)
+                (params robot ?robot
                         mps ?mps
-                        cc X-CC
+                        cc ?cc
                 )
                 (required-resources (sym-cat ?mps -INPUT) ?cc)
   ))
@@ -78,11 +82,11 @@
   (assert (goal (id (sym-cat CLEAR-CAP- (gensym*)))
                 (class CLEAR-CAP) (sub-type SIMPLE)
                 (parent ?clear-cap)
-                (params robot X-R
+                (params robot ?robot
                         mps ?mps
-						cc X-CC
+						cc ?cc
                 )
-                (required-resources (sym-cat ?mps -OUTPUT) X-CC)
+                (required-resources (sym-cat ?mps -OUTPUT) ?cc)
   ))
 )
 
@@ -92,8 +96,9 @@
   successfully executing this goal.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?order) (class MOUNT-CAP) (mode FORMULATED))
-  (goal (id ?produciton-id) (class MOUNT-CAP) (mode FORMULATED))
+  (goal (id ?order) (class ORDER) (mode FORMULATED))
+  (goal (id ?wp-operations) (parent ?order) (class WP-OPERATIONS) (mode FORMULATED))
+  (goal (id ?mount-cap) (parent ?wp-operations) (class MOUNT-CAP) (mode FORMULATED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -126,16 +131,7 @@
            (wm-fact (key domain fact wp-cap-color args? wp ?wp cap-color CAP_NONE))))
   (wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
   (test (eq ?complexity C0))
-  (not (goal (class PRODUCE-C0)
-             (parent ?parent)
-             (params robot ?robot
-                     bs ?bs
-                     bs-side ?bs-side $?
-                     mps ?mps $?
-                     order ?order
-                     wp ?spawned-wp
-             )
-  ))
+  (not (goal (class PRODUCE-C0)(parent ?mount-cap)))
   =>
   (bind ?required-resources ?order ?spawned-wp)
   ;If this order complexity should be produced exclusively ...
@@ -148,20 +144,9 @@
       (printout t "Goal " PRODUCE-C0 " formulated, it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
     else
       (printout t "Goal " PRODUCE-C0 " formulated" crlf))
-  (bind ?parent ?production-id)
-  (bind ?priority-decrease 0)
-  (if (and (eq ?comp-prio "HIGH") ?competitive)
-    then
-     (bind ?parent ?urgent))
-  (if (eq ?comp-prio "LOW")
-    then
-      (bind ?priority-decrease 1))
-  (bind ?distance (node-distance (str-cat ?bs - (if (eq ?bs-side INPUT) then I else O))))
-
   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
                 (class PRODUCE-C0) (sub-type SIMPLE)
-                (priority (+ (- ?*PRIORITY-PRODUCE-C0* ?priority-decrease) (goal-distance-prio ?distance)))
-                (parent ?parent)
+                (parent ?mount-cap)
                 (params robot ?robot
                         bs ?bs
                         bs-side ?bs-side
