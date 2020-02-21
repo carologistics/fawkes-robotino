@@ -175,12 +175,23 @@ GazsimNavgraphGeneratorThread::send_station_msg(int id, gazebo::msgs::Pose pose)
 	stationMsg->set_tag_rotation(1, pose.orientation().y());
 	stationMsg->set_tag_rotation(2, pose.orientation().z());
 	stationMsg->set_tag_rotation(3, pose.orientation().w());
+	auto zone_coords = get_zone_coords(pose.position().x(), pose.position().y());
+	stationMsg->set_zone_coords(zone_coords.data());
 	/*
-   double tag_orientation=fawkes::tf::get_yaw(pose);
-   logger->log_info(name(),"ID:%i",id);
-   logger->log_info(name(),"Name:%s",mps_id_[id].data());
-   logger->log_info(name(),"Position:%f,%f,%f",pose.position().x(),pose.position().y(),pose.position().z());
-   logger->log_info(name(),"Rotation:%f",tag_orientation);
-   */
+	logger->log_info(name(), "ID:%i", id);
+	logger->log_info(name(), "Name:%s", mps_id_[id].data());
+	logger->log_info(
+	  name(), "Position:%f,%f,%f", pose.position().x(), pose.position().y(), pose.position().z());
+	logger->log_info(name(), "Zone: (%d,%d)", zone_coords[0], zone_coords[1]);
+	*/
 	nav_gen_if_->msgq_enqueue(stationMsg);
+}
+
+std::array<int16_t, 2>
+GazsimNavgraphGeneratorThread::get_zone_coords(float x, float y)
+{
+	std::array<int16_t, 2> coords;
+	coords[0] = x < 0 ? floor(x) : ceil(x);
+	coords[1] = ceil(y);
+	return coords;
 }
