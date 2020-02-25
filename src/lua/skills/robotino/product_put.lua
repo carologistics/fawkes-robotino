@@ -71,8 +71,7 @@ function is_grabbed()
  if robotino_sensor:is_digital_in(0) == false and robotino_sensor:is_digital_in(1) == true then -- white cable on DI1 and black on DI2
     return true
  else
-   -- Ignore until realsense is switched of by default 
-   return true
+    return false
  end
 end
 
