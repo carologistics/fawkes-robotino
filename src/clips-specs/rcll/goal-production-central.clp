@@ -30,65 +30,108 @@
   (not (goal (class ORDER)))
   =>
   (printout t "Goal " ORDER " formulated" crlf)
-  (assert (goal (id O1)
-               (class ORDER) (sub-type RUN-ALL-OF-SUBGOALS)
-               (parent ?production-id)
+  (assert (goal (id (sym-cat ORDER- (gensym*)))
+                (params ord O1)
+                (class ORDER)
+				(sub-type RUN-ALL-OF-SUBGOALS)
+                (parent ?production-id)
   ))
 )
 
+(defrule goal-production-create-operations
+  "Keep waiting at one of the waiting positions."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (class ORDER) (id ?goal-id) (mode SELECTED))
+  (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
+  (wm-fact (key refbox team-color) (value ?team-color&~nil))
+  =>
+  (printout t "Goal " WPOPERATTIONS " formulated" crlf)
+  (assert (goal (id (sym-cat WP-OPERATIONS- (gensym*)))
+                (class WP-OPERAITONS)
+			    (sub-type RUN-ALL-OF-SUBGOALS)
+                (parent ?goal-id)
+				(params (create$ wp ?spawned-wp))
+  ))
+  (assert (goal (id (sym-cat PREPARE-MACHINE- (gensym*)))
+                (class PREPARE-MACHINE)
+			    (sub-type RUN-ALL-OF-SUBGOALS)
+                (parent ?goal-id)
+  ))
+)
 
-(defrule goal-production-create-prepare-cap
+(defrule goal-production-create-prepare-cs
 " Fill a cap into a cap station.
   Use a capcarrier from the corresponding shelf to feed it into a cap station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?order) (class ORDER) (mode FORMULATED))
-  (goal (id ?prepare-machine)(class PREPARE-MACHINE) (parent ?order) (mode FORMULATED))
-  (goal (id ?prepare-cs) (parent ?prepare-machine) (class PREPARE-CS) (mode FORMULATED))
-  (goal (id ?retrive-cap) (parent ?prepare-cs) (class RETRIVE-CAP) (mode FORMULATED))
-  (goal (id ?clear-cap) (parent ?prepare-cs) (class CLEAR-CAP) (mode FORMULATED))
+  (goal (id ?goal-id) (class ORDER) (params ord ?ord $?) (mode SELECTED))
+  (goal (id ?prepare-machine) (class PREPARE-MACHINE) (parent ?goal-id) (mode SELECTED))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
-  ;MPS CEs
+  ;MPS CEs (CS)
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  ;; ex (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  ;; ex (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
-  ;; ex (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
-  ;; ex (not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT))
+  ; (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
+  ; (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
+  ; (not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT))
   ;Capcarrier CEs
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
- ;; order-selection (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
- ;; order-selection (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
- ;; order-selection (value ?qd&:(> ?qr ?qd)))
- ;; order-selection (wm-fact (key refbox order ?order delivery-end) (type UINT)
- ;; order-selection (value ?end&:(> ?end (nth$ 1 ?game-time))))
- (not (goal (class FILL-CAP) (parent ?retrive-cs)))
+  (not (goal (class PREPARE-CS) (parent ?prepare-machine)))
   =>
   (printout t "Goals " related to CAP " formulated" crlf)
   ;; sche (bind ?distance (node-distance (str-cat ?mps -I)))
+  (assert (goal (id (sym-cat PREPARE-CS- (gensym*)))
+                (class PREPARE-CS) (sub-type RUN-ALL-OF-SUBGOALS)
+                (parent ?prepare-machine)
+                (params (create$ cs ?mps cc ?cc))
+			))
+)
+
+
+(defrule goal-production-create-cap-simple-goals
+" Fill a cap into a cap station.
+  Use a capcarrier from the corresponding shelf to feed it into a cap station."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?goal-id) (class ORDER)
+        (params ord ?ord $?) (mode SELECTED))
+  (goal (id ?prepare-machine) (class PREPARE-MACHINE) (parent ?goal-id)
+        (mode SELECTED))
+  (goal (id ?prepare-cs) (class PREPARE-CS) (parent ?prepare-machine)
+        (params $? cs ?cs $? cc ?cc $?) (mode SELECTED))
+  (goal (id ?wp-operations) (class WP-OPERATION) (parent ?goal-id)
+        (params wp ?wp) (mode SELECTED))
+  ; (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
+  ; (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color)))
+  ; (not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT))
+  ;Capcarrier CEs
+  (not (goal (class FILL-CS) (parent ?prepare-cs)))
+  =>
   (assert (goal (id (sym-cat FILL-CAP- (gensym*)))
                 (class FILL-CAP) (sub-type SIMPLE)
-                (parent ?retrive-cap)
-                (params robot ?robot
-                        mps ?mps
-                        cc ?cc
-                )
-                (required-resources (sym-cat ?mps -INPUT) ?cc)
-  ))
-
+                (parent ?prepare-cs)
+                (params (create$ cs ?cs cc ?cc))
+				))
   (assert (goal (id (sym-cat CLEAR-CAP- (gensym*)))
                 (class CLEAR-CAP) (sub-type SIMPLE)
-                (parent ?clear-cap)
-                (params robot ?robot
-                        mps ?mps
-						cc ?cc
-                )
-                (required-resources (sym-cat ?mps -OUTPUT) ?cc)
+                (parent ?prepare-cs)
+                (params (create$ cs ?cs cc ?cc))
   ))
+  (assert (goal (id (sym-cat MOUNT-CAP- (gensym*)))
+                (class MOUNT-CAP) (sub-type SIMPLE)
+                (parent ?wp-operations)
+                (params (create$ cs ?cs wp ?wp))
+  ))
+  (assert (goal (id (sym-cat DELIVER- (gensym*)))
+                (class DELIVER) (sub-type SIMPLE)
+                (parent ?wp-operations)
+                (params (create$ cs ?cs wp ?wp))
+  ))
+  ;(required-resources (sym-cat ?mps -OUTPUT) ?cc)
 )
+
 
 (defrule goal-production-create-produce-c0
 " Produce a C0 product: Get the correct base and mount the right cap on it.

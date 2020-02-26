@@ -236,7 +236,7 @@
 " Expand a goal with sub-type, if it has a child."
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?p <- (goal (id ?parent-id) (type ACHIEVE|MAINTAIN)
-              (sub-type ?sub-type&:(requires-subgoal ?sub-type)) (mode SELECTED))
+              (sub-type ~SIMPLE) (mode SELECTED))
   ?g <- (goal (parent ?parent-id) (mode FORMULATED))
 =>
   (modify ?p (mode EXPANDED))
