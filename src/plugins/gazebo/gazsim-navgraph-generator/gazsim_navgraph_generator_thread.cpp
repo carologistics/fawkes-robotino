@@ -192,6 +192,6 @@ GazsimNavgraphGeneratorThread::get_zone_coords(float x, float y)
 {
 	std::array<int16_t, 2> coords;
 	coords[0] = x < 0 ? floor(x) : ceil(x);
-	coords[1] = ceil(y);
+	coords[1] = y < 0 ? floor(y) : ceil(y);
 	return coords;
 }
