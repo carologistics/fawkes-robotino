@@ -1,0 +1,16 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+# to start fawkes, use robotino12.yaml in cfg/
+
+doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
+---
+
+network:
+  fawkes:
+    tcp_port: !tcp-port 1932
+    service_name: "Fawkes on Agent (Magenta)"
+
+webview:
+  # TCP port for Webview HTTP requests; TCP port
+  port: !tcp-port 8092
