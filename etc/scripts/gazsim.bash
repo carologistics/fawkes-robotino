@@ -388,8 +388,14 @@ if [  $COMMAND  == start ]; then
     done
 
     if $START_CENTRAL_AGENT ; then
-		ROBO=$(($FIRST_ROBOTINO_NUMBER+10))
-		COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -p $((11320+$ROBO)) -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB -m $CENTRAL_AGENT $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+        if [ $NUM_CYAN -gt 0 ] ; then
+		    ROBO=11
+		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+        fi
+        if [ $NUM_MAGENTA -gt 0 ] ; then
+		    ROBO=12
+		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+        fi
     fi
 
     if $START_ASP_PLANER
