@@ -186,7 +186,7 @@ case $COMMAND in
 	else
 	  robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT$SKIP_EXPLORATION
 	fi
-	$GDB $FAWKES_BIN/fawkes -c $CONF/$ROBOTINO.yaml -p $robotino_plugins $@
+	$GDB $FAWKES_BIN/fawkes ${ROBOTINO:+ -c $CONF/$ROBOTINO.yaml} -p $robotino_plugins $@
 	if [ -n "$GDB" ]; then
 		echo Fawkes exited, press return to close shell
 		read
