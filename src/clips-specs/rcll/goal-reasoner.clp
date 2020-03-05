@@ -243,12 +243,13 @@
 
 
 (defrule goal-reasoner-expand-goal-with-sub-type
-" Expand a goal with sub-type, if it has a child."
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
-  ?p <- (goal (id ?parent-id) (type ACHIEVE|MAINTAIN)
-              (sub-type ~SIMPLE) (mode SELECTED))
-  ?g <- (goal (parent ?parent-id) (mode FORMULATED))
-=>
+" Expand a goal with sub-type, if it all its children are EXPANDED."
+  ;(declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  ?p <- (goal (id ?compound-id) (parent ?parent-id) (type ACHIEVE|MAINTAIN)
+                (sub-type ~SIMPLE) (mode SELECTED))
+    (goal (parent ?compound-id) (mode EXPANDED))
+    (not  (goal (parent ?compound-id) (mode SELECTED)))
+ =>
   (modify ?p (mode EXPANDED))
 )
 
