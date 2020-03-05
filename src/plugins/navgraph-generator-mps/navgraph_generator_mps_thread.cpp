@@ -594,6 +594,56 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 		  (s.first + "-C").c_str(), s.second.pose_pos[0], s.second.pose_pos[1]));
 	}
 
+	for (const Eigen::Vector2i &zn : wait_zones_) {
+		std::string z_name = "WAIT-";
+
+		float x = float(zn.x());
+		if (x < 0) {
+			x += 0.5f;
+			z_name += "M-Z";
+		} else {
+			x -= 0.5f;
+			z_name += "C-Z";
+		}
+
+		float y = float(zn.y());
+		if (y < 0)
+			y += 0.5f;
+		else
+			y -= 0.5f;
+
+		z_name += std::to_string(std::abs(zn.x())) + std::to_string(zn.y());
+
+		logger->log_info(name(), "Adding wait zone %s at %f %f.", z_name.c_str(), x, y);
+
+		navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddPointOfInterestMessage(
+		  z_name.c_str(), x, y, NavGraphGeneratorInterface::CLOSEST_EDGE_OR_NODE));
+	}
+
+	for (const auto &zn : mps_wait_zones_) {
+		std::string z_name = "WAIT-";
+		z_name += zn.first;
+
+		float x = float(zn.second.first.x());
+		if (x < 0) {
+			x += 0.5f;
+		} else {
+			x -= 0.5f;
+		}
+
+		float y = float(zn.second.first.y());
+		if (y < 0)
+			y += 0.5f;
+		else
+			y -= 0.5f;
+		logger->log_info(name(), "Adding wait zone %s at %f %f.", z_name.c_str(), x, y);
+		std::string wait_ori = "orientation";
+		navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddPointOfInterestMessage(
+		  z_name.c_str(), x, y, NavGraphGeneratorInterface::CLOSEST_EDGE_OR_NODE));
+		navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::SetPointOfInterestPropertyMessage(
+		  z_name.c_str(), wait_ori.c_str(), std::to_string(zn.second.second).c_str()));
+	}
+
 	if (base_graph_) {
 		// add base graph nodes and edges
 		std::list<std::string>           cn; // copied nodes
@@ -701,56 +751,6 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 				                  e.to().c_str());
 			}
 		}
-	}
-
-	for (const Eigen::Vector2i &zn : wait_zones_) {
-		std::string z_name = "WAIT-";
-
-		float x = float(zn.x());
-		if (x < 0) {
-			x += 0.5f;
-			z_name += "M-Z";
-		} else {
-			x -= 0.5f;
-			z_name += "C-Z";
-		}
-
-		float y = float(zn.y());
-		if (y < 0)
-			y += 0.5f;
-		else
-			y -= 0.5f;
-
-		z_name += std::to_string(std::abs(zn.x())) + std::to_string(zn.y());
-
-		logger->log_info(name(), "Adding wait zone %s.", z_name.c_str());
-
-		navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddPointOfInterestMessage(
-		  z_name.c_str(), x, y, NavGraphGeneratorInterface::CLOSEST_EDGE_OR_NODE));
-	}
-
-	for (const auto &zn : mps_wait_zones_) {
-		std::string z_name = "WAIT-";
-		z_name += zn.first;
-
-		float x = float(zn.second.first.x());
-		if (x < 0) {
-			x += 0.5f;
-		} else {
-			x -= 0.5f;
-		}
-
-		float y = float(zn.second.first.y());
-		if (y < 0)
-			y += 0.5f;
-		else
-			y -= 0.5f;
-		logger->log_info(name(), "Adding wait zone %s.", z_name.c_str());
-		std::string wait_ori = "orientation";
-		navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::AddPointOfInterestMessage(
-		  z_name.c_str(), x, y, NavGraphGeneratorInterface::CLOSEST_EDGE_OR_NODE));
-		navgen_if_->msgq_enqueue(new NavGraphGeneratorInterface::SetPointOfInterestPropertyMessage(
-		  z_name.c_str(), wait_ori.c_str(), std::to_string(zn.second.second).c_str()));
 	}
 	NavGraphGeneratorInterface::ComputeMessage *compute_msg =
 	  new NavGraphGeneratorInterface::ComputeMessage();

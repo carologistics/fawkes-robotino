@@ -76,7 +76,8 @@ private:
 	void                       get_mpsID_by_tagID();
 
 	// send station msg with pose information to navgraph generator
-	void send_station_msg(int id, gazebo::msgs::Pose pose);
+	void                   send_station_msg(int id, gazebo::msgs::Pose pose);
+	std::array<int16_t, 2> get_zone_coords(float x, float y);
 };
 
 #endif
