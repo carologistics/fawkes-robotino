@@ -232,6 +232,16 @@
 	)
 )
 
+(defrule run-all-goal-select-subgoals
+     (declare (salience ?*SALIENCE-GOAL-SELECT*))
+	(goal (id ?id) (mode SELECTED))
+	?sg <- (goal (id ?sub-goal) (parent ?id)
+	      (type ACHIEVE) (mode FORMULATED) (priority ?priority))
+	=>
+	(modify ?sg (mode SELECTED))
+)
+
+
 (defrule goal-reasoner-expand-goal-with-sub-type
 " Expand a goal with sub-type, if it has a child."
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
