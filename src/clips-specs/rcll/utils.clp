@@ -768,6 +768,9 @@
   )
 )
 
+(deffunction node-name (?mps ?side)
+  (return  (str-cat ?mps - (if (eq ?side INPUT) then I else O)))
+)
 
 (deffunction sym-to-int (?sym)
 " @param ?sym domain representation of a number (ZERO|ONE|TWO|THREE)
@@ -978,6 +981,33 @@
     then
       (return -1)
   )
+  (return (distance ?xn ?yn ?xp ?yp))
+)
+
+(deffunction nodes-distance (?node-a ?node-b)
+" @param ?node-a Name of a navgraph node
+  @param ?node-b Name of a navgraph node
+
+  @return Euclidean distance between robots position and node
+          -1 if any of the two positions can not be found.
+"
+  (if (not (do-for-fact ((?nn navgraph-node)) (eq ?nn:name (str-cat ?node-a))
+        (bind ?xn (nth$ 1 ?nn:pos))
+        (bind ?yn (nth$ 2 ?nn:pos))
+      ))
+    then
+      (return -1)
+  )
+  (if (not (do-for-fact ((?nn navgraph-node)) (eq ?nn:name (str-cat ?node-b))
+        (bind ?xp (nth$ 1 ?nn:pos))
+        (bind ?yp (nth$ 2 ?nn:pos))
+      ))
+    then
+      (return -1)
+  )
+
+
+
   (return (distance ?xn ?yn ?xp ?yp))
 )
 
