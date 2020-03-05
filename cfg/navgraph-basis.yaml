@@ -57,12 +57,14 @@ nodes:
     name: exp-11
     pos: [5, 6]
     properties:
+      - group: exploration
       - orientation: 0.2
       - always-copy: true
   - !unconnected
     name: exp-12
     pos: [-5.0, 6]
     properties:
+      - group: exploration
       - orientation: 2.9
       - always-copy: true
 
@@ -72,18 +74,21 @@ nodes:
     name: exp-21
     pos: [5, 4]
     properties:
+      - group: exploration
       - orientation: 0.7
       - always-copy: true
   - !unconnected
     name: exp-22
     pos: [0, 4]
     properties:
+      - group: exploration
       - orientation: 2.9
       - always-copy: true
   - !unconnected
     name: exp-23
     pos: [-5.0, 4]
     properties:
+      - group: exploration
       - orientation: 0.85
       - always-copy: true
   
@@ -93,11 +98,13 @@ nodes:
     name: exp-31
     pos: [4, 2]
     properties:
+      - group: exploration
       - orientation: 3.14
   - !unconnected
     name: exp-32
     pos: [-4.0, 2]
     properties:
+      - group: exploration
       - orientation: 0
 
 # drive into field points
@@ -131,203 +138,232 @@ nodes:
     name: WAIT1
     pos : [0,1]
     properties:
+      - group: waiting-positions
       - orientation: 1.57
-      - always-copy: true
+      - only-copy-properties
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-BS-INPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-BS-OUTPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-CS1-INPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-CS1-OUTPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-CS2-INPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-CS2-OUTPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-RS1-INPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-RS1-OUTPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-RS2-INPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-RS2-OUTPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-DS-INPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-DS-OUTPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-SS-INPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-C-SS-OUTPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-BS-INPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-BS-OUTPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-CS1-INPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-CS1-OUTPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-CS2-INPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-CS2-OUTPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-RS1-INPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-RS1-OUTPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-RS2-INPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-RS2-OUTPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-DS-INPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-M-CDS-OUTPUT
+    name: WAIT-M-DS-OUTPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-SS-INPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
     name: WAIT-M-SS-OUTPUT
     pos : [0,1]
     properties:
-      - always-copy: true
+      - group: waiting-positions
+      - only-copy-properties
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
 
@@ -339,6 +375,7 @@ nodes:
     pos: [0, 0]
     properties:
       - only-copy-properties
+      - group: machines
       - tag_input: 1
       - tag_output: 2
       - output_offset_x: -0.003
@@ -347,6 +384,7 @@ nodes:
     pos: [0, 0]
     properties:
       - only-copy-properties
+      - group: machines
       - tag_input: 17
       - tag_output: 18
       - input_offset_x: 0.0
@@ -356,6 +394,7 @@ nodes:
     pos: [0, 0]
     properties:
       - only-copy-properties
+      - group: machines
       - tag_input: 33
       - tag_output: 34
       - input_offset_y: 0.02
@@ -364,6 +403,7 @@ nodes:
     pos: [0, 0]
     properties:
       - only-copy-properties
+      - group: machines
       - tag_input: 177
       - tag_output: 178
       - input_offset_x: -0.01
@@ -374,6 +414,7 @@ nodes:
     pos: [0, 0]
     properties:
       - only-copy-properties
+      - group: machines
       - tag_input: 65
       - tag_output: 66
       - output_offset_x: -0.015 #the gripper should be 2mm higher in z
@@ -382,6 +423,7 @@ nodes:
     pos: [0, 0]
     properties:
       - only-copy-properties
+      - group: machines
       - tag_input: 81
       - tag_output: 82
       - input_offset_x: 0.02
@@ -391,6 +433,7 @@ nodes:
     pos: [0, 0]
     properties:
       - only-copy-properties
+      - group: machines
       - tag_input: 97
       - tag_output: 98
       - output_offset_y: -0.015
@@ -399,6 +442,7 @@ nodes:
     pos: [0, 0]
     properties:
       - only-copy-properties
+      - group: machines
       - tag_input: 113
       - tag_output: 114
       - output_offset_x: -0.005
@@ -407,6 +451,7 @@ nodes:
     pos: [0, 0]
     properties:
       - only-copy-properties
+      - group: machines
       - tag_input: 129
       - tag_output: 130
   - !unconnected
@@ -414,6 +459,7 @@ nodes:
     pos: [0, 0]
     properties:
       - only-copy-properties
+      - group: machines
       - tag_input: 145
       - tag_output: 146
       - output_offset_x: -0.005
@@ -423,6 +469,7 @@ nodes:
     pos: [0, 0]
     properties:
       - only-copy-properties
+      - group: machines
       - tag_input: 161
       - tag_output: 162
       - input_offset_x: -0.01
@@ -434,6 +481,7 @@ nodes:
     pos: [0, 0]
     properties:
       - only-copy-properties
+      - group: machines
       - tag_input: 49
       - tag_output: 50
       - input_offset_x: -0.02

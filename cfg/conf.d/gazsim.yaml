@@ -191,6 +191,8 @@ gazsim:
       - "~/tag_129/gazsim/gps/"
       - "~/tag_145/gazsim/gps/"
       - "~/tag_49/gazsim/gps/"
+      - "~/tag_193/gazsim/gps/"
+      - "~/tag_209/gazsim/gps/"
 
     related-mps:
       - C-BS
@@ -205,5 +207,7 @@ gazsim:
       - M-RS1
       - M-RS2
       - M-DS
+      - C-SS
+      - M-SS
 
     nav-gen-if-name: "/navgraph-generator-mps"
