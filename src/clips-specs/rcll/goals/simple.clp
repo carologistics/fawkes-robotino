@@ -36,6 +36,15 @@
 ; - Automatic: Clean up any attached goals and RETRACT goal
 
 
+(deffunction committment-strategy-random (?g-id ?p-id)
+  (return true)
+)
+
+(deffunction committment-strategy-scheduled (?g-id ?p-id)
+ (return (any-factp ((?wf wm-fact))
+          (wm-key-prefix ?wf:key (create$ meta goal committ-to args? parent ?g-id child ?p-id))))
+)
+
 (defrule simple-goal-select
   ?g <- (goal (parent nil) (id ?goal-id) (sub-type SIMPLE) (mode FORMULATED))
   (not (goal (parent ?goal-id)))
@@ -43,12 +52,25 @@
   (modify ?g (mode SELECTED))
 )
 
-
-(defrule simple-goal-commit
-  ?g <- (goal (id ?goal-id) (sub-type SIMPLE) (mode EXPANDED))
+(defrule simple-goal-commit-root
+"commit to parentless simple goal automatically"
+  ?g <- (goal (id ?goal-id) (sub-type SIMPLE) (parent nil) (mode EXPANDED))
   (not (goal (parent ?goal-id)))
+  ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
+  (test (committment-strategy-random ?goal-id ?plan-id))
 =>
-  (modify ?g (mode COMMITTED))
+  (modify ?g (mode COMMITTED) (committed-to ?plan-id))
+)
+
+(defrule simple-goal-commit-leaf
+"commit to simple goal when parent is committed"
+  (goal (id ?parent) (committed-to $? ?goal-id $?))
+  ?g <- (goal (id ?goal-id) (sub-type SIMPLE) (parent ?parent) (mode EXPANDED))
+  (not (goal (parent ?goal-id)))
+  ?p <- (plan (id ?plan-id) (goal-id ?goal-id))
+  (test (committment-strategy-random ?goal-id ?plan-id))
+=>
+  (modify ?g (mode COMMITTED) (committed-to ?plan-id))
 )
 
 
@@ -64,11 +86,14 @@
 
 
 (defrule simple-goal-dispatch
-  ?g <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SIMPLE) (mode COMMITTED)
-              (class ?type)  (committed-to nil) (required-resources $?req)
+  ?g <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SIMPLE) (parent ?parent) (mode COMMITTED)
+              (committed-to ?plan-id) (required-resources $?req)
 							(verbosity ?verbosity)
               (acquired-resources $?acq&:(subsetp ?req ?acq)))
-  (not (goal (parent ?goal-id)))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (or (goal (id ?parent) (mode COMMITTED|DISPATCHED))
+      (test (eq ?parent nil))
+  )
 =>
   (if (neq ?verbosity QUIET) then
     (printout t "Goal " ?goal-id " DISPATCHED!" crlf)
