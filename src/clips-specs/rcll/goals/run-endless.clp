@@ -38,11 +38,12 @@
 ;
 ; Interactions:
 ; - User FORMULATES goal
-; - User creates sub-goals when FORMULATING the RUN-ENDLESS goal
 ; - User SELECTS goal
+; - User creates sub-goals when FORMULATING|SELECTING the RUN-ENDLESS goal
 ; - Automatic: if no sub-goal formulated -> FAIL
-; - Automatic: take highest FORMULATED sub-goal and COMMIT to
-; - Automatic: DISPATCH committed sub-goal by SELECTING it
+; - Automatic: Expand selected sub-goal is Expanded
+; - Automatic: take highest EXPANDED sub-goal and COMMIT to it
+; - Automatic: DISPATCH when sub-goal is DISPATCHED
 ; - User handles sub-goal expanding committing and dispatching
 ; - Automatic: when sub-goal is EVALUATED, goal either fails or succeeds
 ; - Automatic: when sub-goal is REJECTED, goal selects another one if possibe,
@@ -54,8 +55,9 @@
 
 
 (defrule run-endless-goal-failed-no-subgoal
-  ?gf <- (goal (id ?id) (type MAINTAIN) (sub-type RUN-ENDLESS) (mode EXPANDED))
-  (not (goal (type ACHIEVE) (parent ?id)))
+  (declare (salience ?*SALIENCE-LOW*))
+  ?gf <- (goal (id ?id) (type MAINTAIN) (sub-type RUN-ENDLESS) (mode SELECTED))
+  (not (goal (type ACHIEVE) (parent ?id) (mode FORMULATED|SELECTED|EXPANDED)))
 =>
  (modify ?gf (mode FINISHED) (outcome FAILED) (error NO-SUB-GOAL)
              (message (str-cat "No sub-goal for RUN-ENDLESS goal '" ?id "'")))
@@ -63,8 +65,9 @@
 
 
 (defrule run-endless-goal-failed-many-subgoals
+  (declare (salience ?*SALIENCE-LOW*))
   ?gf <- (goal (id ?id) (type ACHIEVE) (sub-type RETRY-SUBGOAL)
-               (mode EXPANDED))
+               (mode SELECTED))
   (goal (id ?id1) (type ACHIEVE) (parent ?id))
   (goal (id ?id2&~?id1) (type ACHIEVE) (parent ?id))
 =>
@@ -75,7 +78,7 @@
 
 
 (defrule run-endless-goal-failed-invalid-params
-  ?gf <- (goal (id ?id) (type MAINTAIN) (sub-type RUN-ENDLESS) (mode EXPANDED)
+  ?gf <- (goal (id ?id) (type MAINTAIN) (sub-type RUN-ENDLESS) (mode SELECTED)
                (params $?params&~:(member$ frequency ?params)))
 =>
   (modify ?gf (mode FINISHED) (outcome FAILED) (error INVALID-PARAMETERS)
@@ -83,26 +86,34 @@
                        ?id "'")))
 )
 
-
-(defrule run-endless-goal-commit
-  ?g <- (goal (id ?id) (type MAINTAIN) (sub-type RUN-ENDLESS) (mode EXPANDED)
+(defrule run-endless-goal-commit-root
+  ?g <- (goal (id ?root) (type MAINTAIN) (sub-type RUN-ENDLESS) (mode EXPANDED)
               (params $? frequency ? $?) (parent nil))
-  (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode FORMULATED)
+  (goal (id ?sub-goal) (parent ?root) (type ACHIEVE) (mode EXPANDED)
         (priority ?priority))
 =>
   (modify ?g (mode COMMITTED) (committed-to ?sub-goal))
 )
 
+(defrule run-endless-goal-commit-intermediate
+  (goal (id ?parent) (committed-to ?intermediate) (mode COMMITTED|DISPATCHED))
+  ?g <- (goal (id ?intermedite) (type MAINTAIN) (sub-type RUN-ENDLESS) (mode EXPANDED)
+              (params $? frequency ? $?) (parent ?parent))
+  (goal (id ?sub-goal) (parent ?intermediate) (type ACHIEVE) (mode EXPANDED)
+        (priority ?priority))
+=>
+  (modify ?g (mode COMMITTED) (committed-to ?sub-goal))
+)
 
 (defrule run-endless-goal-dispatch
   ?g <- (goal (mode COMMITTED) (id ?goal-id) (parent nil) (type MAINTAIN)
               (committed-to ?sub-goal) (sub-type RUN-ENDLESS)
               (required-resources $?req)
               (acquired-resources $?acq&:(subsetp ?req ?acq)))
-  ?sg <- (goal (id ?sub-goal) (parent ?goal-id) (mode FORMULATED))
+  ?sg <- (goal (id ?sub-goal) (parent ?goal-id) (mode DISPATCHED))
 =>
   (modify ?g (mode DISPATCHED) (committed-to ?sub-goal))
-  (modify ?sg (mode SELECTED))
+  ;(modify ?sg (mode SELECTED))
 )
 
 
@@ -119,11 +130,11 @@
 (defrule run-endless-goal-fail-all-subgoals-rejected
   ?pg <- (goal (id ?pg-id) (type MAINTAIN) (sub-type RUN-ENDLESS)
                (mode EXPANDED|COMMITTED|DISPATCHED))
+  (goal (parent ?pg-id))
   (not (goal (parent ?pg-id) (outcome ~REJECTED)))
 =>
   (modify ?pg (mode FINISHED) (outcome FAILED))
 )
-
 
 (defrule run-endless-goal-subgoal-evaluated
   ?gf <- (goal (id ?id) (type MAINTAIN) (sub-type RUN-ENDLESS)
@@ -132,7 +143,6 @@
 =>
   (modify ?sg (mode RETRACTED))
 )
-
 
 (defrule run-endless-goal-reformulate
   (time $?now)
@@ -143,7 +153,7 @@
           (meta last-formulated $?last&:(timeout ?now ?last ?freq)))
   (not (goal (parent ?goal-id)))
 =>
-  (modify ?g (mode FORMULATED) (outcome UNKNOWN) (committed-to nil)
+  (modify ?g (mode FORMULATED) (outcome UNKNOWN) (committed-to (create$))
              (meta last-formulated ?now))
 )
 
