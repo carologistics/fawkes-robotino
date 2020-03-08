@@ -104,14 +104,17 @@
                       (action-name ?action-name)
                       (param-values $?param-values))
 	(plan (id ?plan-id) (goal-id ?goal-id))
-	(goal (id ?goal-id) (class ?class) (mode DISPATCHED) (verbosity ?verbosity))
+     (goal (id ?goal-id) (class ?class) (mode DISPATCHED) (parent ?parent) (verbosity ?verbosity))
 	(or (wm-fact (key game state) (value RUNNING))
 	    (test (not (production-goal ?class)))
 	)
 
   (not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state PENDING|WAITING|RUNNING|FAILED)))
 	(not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state FORMULATED) (id ?oid&:(< ?oid ?id))))
-	=>
+  ;Goal is root OR parent is DISPATCHED
+  (or (goal (id ?parent) (mode DISPATCHED))
+      (test (eq ?parent nil)))
+  =>
   (if (neq ?verbosity QUIET) then
     (printout t "Selected next action " ?action-name ?param-values crlf)
   )
