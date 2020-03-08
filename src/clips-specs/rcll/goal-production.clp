@@ -38,6 +38,7 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (time $?now)
   ?g <- (goal (id ?maintain-id) (class BEACON-MAINTAIN) (mode SELECTED))
+  (not (goal (class SEND-BEACON)))
   ; TODO: make interval a constant
   =>
   (assert (goal (id (sym-cat SEND-BEACON- (gensym*))) (sub-type SIMPLE)
