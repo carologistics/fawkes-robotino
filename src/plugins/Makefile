@@ -17,6 +17,7 @@ BASEDIR = ../..
 include $(BASEDIR)/etc/buildsys/config.mk
 
 SUBDIRS	= clips-motor-switch \
+		  clips-mip-scheduler \
 	  voltagelogger \
 	  ax12_gripper \
 	  arduino \
