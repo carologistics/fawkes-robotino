@@ -42,7 +42,7 @@
 
 (defrule goal-lock-expiration-create-plan
   (wm-fact (key cx identity) (value ?self))
-  ?p <- (goal (id ?parent-id) (class LOCKEXPIRE-MAINTAIN) (mode DISPATCHED))
+  ?p <- (goal (id ?parent-id) (class LOCKEXPIRE-MAINTAIN))
   ?g <- (goal (id ?goal-id) (parent ?parent-id)
               (class EXPIRE-LOCKS) (mode SELECTED))
   =>
