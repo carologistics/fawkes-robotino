@@ -75,7 +75,6 @@ GazsimGripperThread::load_config()
 	cfg_y_max_ = config->get_float(cfg_prefix_ + "/y_max");
 	cfg_z_max_ = config->get_float(cfg_prefix_ + "/z_max");
 
-	sensor_if_name_  = config->get_string("/gazsim/gripper/sensor-if-name");
 	arduino_if_name_ = config->get_string("/gazsim/gripper/arduino-if-name");
 }
 
@@ -103,10 +102,6 @@ GazsimGripperThread::init()
 	set_gripper_pub_ = gazebonode->Advertise<msgs::Int>(config->get_string("/gazsim/topics/gripper"));
 	set_conveyor_pub_ =
 	  gazebonode->Advertise<msgs::Int>(config->get_string("/gazsim/topics/conveyor"));
-	gripper_has_puck_sub_ =
-	  gazebonode->Subscribe(config->get_string("/gazsim/topics/gripper-has-puck"),
-	                        &GazsimGripperThread::on_has_puck_msg,
-	                        this);
 
 	//open ArduinoInterface for writing
 	arduino_if_ = blackboard->open_for_writing<ArduinoInterface>(arduino_if_name_.c_str());
@@ -118,19 +113,12 @@ GazsimGripperThread::init()
 	arduino_if_->set_z_max(cfg_z_max_);
 	arduino_if_->set_final(true);
 	arduino_if_->write();
-
-	//open RobotinoInterface where puck sensor connected to first 2 inputs
-	sensor_if_ = blackboard->open_for_writing<RobotinoSensorInterface>(sensor_if_name_.c_str());
-	sensor_if_->set_digital_in(0, false);
-	sensor_if_->set_digital_in(1, false);
-	sensor_if_->write();
 }
 
 void
 GazsimGripperThread::finalize()
 {
 	blackboard->close(arduino_if_);
-	blackboard->close(sensor_if_);
 }
 
 void
@@ -233,12 +221,4 @@ GazsimGripperThread::send_gripper_msg(int value)
 	msgs::Int msg;
 	msg.set_data(value);
 	set_gripper_pub_->Publish(msg);
-}
-
-void
-GazsimGripperThread::on_has_puck_msg(ConstIntPtr &msg)
-{
-	// 1 means the gripper has a puck 0 not
-	sensor_if_->set_digital_in(1, msg->data() > 0);
-	sensor_if_->write();
 }

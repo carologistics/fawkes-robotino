@@ -47,7 +47,6 @@
 
 namespace fawkes {
 class ArduinoInterface;
-class RobotinoSensorInterface;
 } // namespace fawkes
 
 class GazsimGripperThread : public fawkes::Thread,
@@ -75,12 +74,10 @@ protected:
 	}
 
 private:
-	fawkes::ArduinoInterface *       arduino_if_;
-	fawkes::RobotinoSensorInterface *sensor_if_;
+	fawkes::ArduinoInterface *arduino_if_;
 
 	std::string gripper_if_name_;
 	std::string arduino_if_name_;
-	std::string sensor_if_name_;
 	std::string cfg_prefix_;
 
 	std::string cfg_gripper_frame_id_;
@@ -111,12 +108,10 @@ private:
 	std::atomic<bool> moving_;
 
 	// Publisher to sent msgs to gazebo
-	gazebo::transport::PublisherPtr  set_gripper_pub_;
-	gazebo::transport::PublisherPtr  set_conveyor_pub_;
-	gazebo::transport::SubscriberPtr gripper_has_puck_sub_;
+	gazebo::transport::PublisherPtr set_gripper_pub_;
+	gazebo::transport::PublisherPtr set_conveyor_pub_;
 
 	void send_gripper_msg(int value);
-	void on_has_puck_msg(ConstIntPtr &msg);
 
 protected:
 	/** Mutex to protect data_. Lock whenever accessing it. */
