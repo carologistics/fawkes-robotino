@@ -106,7 +106,7 @@ case "$TERMINAL" in
         if [[ -n $TMUX ]] ; then
             TERM_COMMAND=""
         else
-            TERM_COMMAND="tmux new-session -d;"
+            TERM_COMMAND="tmux new-session -s gazsim -d;"
         fi
         TERM_COMMAND_END=""
         SUBTERM_PREFIX="tmux new-window "
@@ -286,14 +286,18 @@ initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash
 
 if [  $COMMAND  == kill ]; then
     echo 'Kill Gazebo-sim'
-    #killall gazebo
-    killall gzserver
-    killall gzclient
-    killall fawkes
-    killall roscore
-    killall llsf-refbox
-    killall llsf-refbox-shell
-    killall roslaunch
+    if [ "$TERMINAL" == "tmux" ] ; then
+        tmux kill-session -t gazsim
+    else
+        #killall gazebo
+        killall gzserver
+        killall gzclient
+        killall fawkes
+        killall roscore
+        killall llsf-refbox
+        killall llsf-refbox-shell
+        killall roslaunch
+    fi
     exit 0
 fi
 
