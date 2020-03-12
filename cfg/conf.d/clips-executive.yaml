@@ -91,6 +91,7 @@ clips-executive:
             files: ["BATCH|robmem-wait-init.clp"]
             wait-for: robmem-initialized
           - name: robot_memory
+          - name: mip-scheduler
         stage-3:
           - name: utils
             file: rcll/utils.clp

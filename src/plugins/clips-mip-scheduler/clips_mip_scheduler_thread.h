@@ -25,12 +25,38 @@
 #include <core/threading/thread.h>
 #include <plugins/clips/aspect/clips_feature.h>
 
+#include <clipsmm.h>
+#include <map>
+#include <string>
 class ClipsMipSchedulerThread : public fawkes::Thread,
                                 public fawkes::LoggingAspect,
+                                public fawkes::CLIPSFeature,
                                 public fawkes::CLIPSFeatureAspect
 {
 public:
 	ClipsMipSchedulerThread();
-	//virtual ~ClipsMipSchedulerThread();
+	virtual ~ClipsMipSchedulerThread();
+
+	virtual void init();
+	virtual void loop();
+	virtual void finalize(){};
+
+	virtual void clips_context_init(const std::string &                  env_name,
+	                                fawkes::LockPtr<CLIPS::Environment> &clips);
+	virtual void clips_context_destroyed(const std::string &env_name);
+
+	/** Stub to see name in backtrace for easier debugging. @see Thread::run() */
+protected:
+	virtual void
+	run()
+	{
+		Thread::run();
+	}
+
+private:
+	void gen_datasets(std::string env_name);
+
+private:
+	std::map<std::string, fawkes::LockPtr<CLIPS::Environment>> envs_;
 };
 #endif /* !PLUGINS_CLIPS_MIP_SCHEDULER_THEAD_H__ */
