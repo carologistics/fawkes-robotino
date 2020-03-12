@@ -1,7 +1,7 @@
 #! /bin/bash
 #
 # cx-simtest-check.bash
-# Copyright (C) 2019 Till Hofmann <hofmann@kbsg.rwth-aachen.de>
+# Copyright (C) 2019-2020 Till Hofmann <hofmann@kbsg.rwth-aachen.de>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,16 +20,25 @@
 # Collect and print the failures and exit with status 1 if a failure occurred.
 # Otherwise, exit with status 0.
 
-failures=()
+set -eu
+
+check_file () {
+  tail -n +0 -f $file | while read LINE ; do
+    if [[ "${LINE}" == *"SIMTEST: FAILED"* ]] ; then
+      echo $file
+      return
+    elif [[ "${LINE}" == *"SIMTEST: SUCCEEDED"* ]] ; then
+      return
+    fi
+  done
+}
+
 for file in $* ; do
   if [ ! -f $file ] ; then
     echo "File $file does not exist!"
     exit 1
   fi
-  tail -n +0 -f $file | while read LINE ; do
-    [[ "${LINE}" == *"SIMTEST: FAILED"* ]] && failures+=($file)
-    [[ "${LINE}" == *"SIMTEST: SUCCEEDED"* ]] && break
-  done
+  failures+=($(check_file $file))
 done
 
 if [ ${#failures[@]} -gt 0 ] ; then
