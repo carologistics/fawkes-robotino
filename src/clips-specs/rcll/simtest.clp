@@ -64,9 +64,9 @@
 		(printout error ?testcase:name " failed: " ?testcase:msg crlf)
 	)
 	 then
-		(simtest-quit false)
+		(simtest-quit FALSE)
 	else
 		(printout info "All tests successful!" crlf)
-		(simtest-quit true)
+		(simtest-quit TRUE)
 	)
 )
