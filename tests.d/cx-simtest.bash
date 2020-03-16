@@ -20,7 +20,9 @@ if [ "$NAME" != "Fedora" ] ; then
 fi
 
 echo "/clips-executive/specs/rcll/parameters/simtest/enabled: true" >> ./cfg/host.yaml
-SCRIPT_PATH=$PWD/bin/
+FAWKES_DIR=$PWD
+export FAWKES_DIR
+SCRIPT_PATH=$FAWKES_DIR/bin/
 pushd $SCRIPT_PATH
 TERMINAL=tmux
 export TERMINAL
