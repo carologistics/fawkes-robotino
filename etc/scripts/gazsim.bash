@@ -151,6 +151,9 @@ while true; do
              ;;
          -k)
 	     KEEP=-k
+        if [ "$TERMINAL" == "tmux" ] ; then
+            TERM_COMMAND="$TERM_COMMAND tmux set-window-option -g remain-on-exit on;"
+        fi
              ;;
          -r)
            ROS=-r
