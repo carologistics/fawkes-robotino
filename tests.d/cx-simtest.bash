@@ -11,6 +11,7 @@
 # Read the full text in the LICENSE.GPL file in the doc directory.
 #
 
+set -eu -o pipefail
 
 # Only run the simtest on Fedora.
 source /etc/os-release
