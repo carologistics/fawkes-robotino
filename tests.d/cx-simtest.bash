@@ -19,8 +19,10 @@ if [ "$NAME" != "Fedora" ] ; then
   exit 0
 fi
 
-echo "/clips-executive/specs/rcll/parameters/simtest/enabled: true" >> ./cfg/host.yaml
+
 FAWKES_DIR=$PWD
+tmpconfig=$(mktemp $FAWKES_DIR/cfg/conf.d/simtest-XXXXXX.yaml)
+echo "/clips-executive/specs/rcll/parameters/simtest/enabled: true" > $tmpconfig
 export FAWKES_DIR
 SCRIPT_PATH=$FAWKES_DIR/bin/
 pushd $SCRIPT_PATH
@@ -29,7 +31,7 @@ export TERMINAL
 
 stop_test () {
   $SCRIPT_PATH/gazsim.bash -x kill
-  #sed -i '/clips-executive\/specs\/rcll\/parameters\/simtest\/enabled: true/d' $FAWKES_DIR/cfg/host.yaml
+  rm -f $tmpconfig
 }
 
 trap "echo Aborting simulation test; stop_test" SIGINT SIGTERM
