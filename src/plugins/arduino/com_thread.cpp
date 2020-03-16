@@ -404,13 +404,13 @@ ArduinoComThread::loop()
 			append_message_to_queue(ArduinoComMessage::command_id_t::CMD_SET_A_TOGGLE_STEPS,
 			                        cfg_a_toggle_steps_,
 			                        1000);
-      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_SET_X_MICRO_STEPPING,
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_X_SET_MICRO_STEPPING,
                               cfg_x_microstep,
                               1000);
-      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_SET_Y_MICRO_STEPPING,
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Y_SET_MICRO_STEPPING,
                               cfg_y_microstep,
                               1000);
-      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_SET_Z_MICRO_STEPPING,
+      append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Z_SET_MICRO_STEPPING,
                               cfg_z_microstep,
                               1000);
     }
