@@ -151,17 +151,17 @@ if [ -n $LLSF_REFBOX_DIR ] ; then
     export PATH=$LLSF_REFBOX_DIR/bin:$PATH
 fi
 
-if [[ -z $GAZEBO_WORLD_PATH ]]
-then
-     echo "Error: \$GAZEBO_WORLD_PATH is not set. Please set it in your .bashrc"
-     exit 1
-fi
 
 
 #ulimit -c unlimited
 
 case $COMMAND in
     gazebo )
+	if  [[ -z $GAZEBO_WORLD_PATH ]]
+	then
+	     echo "Error: \$GAZEBO_WORLD_PATH is not set. Please set it in your .bashrc"
+	     exit 1
+	fi
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LC_ALL="C"
 	( gzserver $REPLAY $GAZEBO_WORLD_PATH & ); sleep 10s; gzclient
