@@ -67,6 +67,9 @@ AccelStepper motor_Z(MOTOR_Z_STEP_SHIFT, MOTOR_Z_DIR_SHIFT);
 AccelStepper motor_A(MOTOR_A_STEP_SHIFT, MOTOR_A_DIR_SHIFT);
 
 long a_toggle_steps = 240;
+int x_micro_stepping = 2;
+int y_micro_stepping = 2;
+int z_micro_stepping = 2;
 
 #define AT "AT "
 #define TERMINATOR '+'
@@ -89,6 +92,9 @@ long a_toggle_steps = 240;
 #define CMD_FAST_STOP ':'
 
 #define CMD_A_SET_TOGGLE_STEPS 'T'
+#define CMD_X_SET_MICRO_STEPPING 'J'
+#define CMD_Y_SET_MICRO_STEPPING 'K'
+#define CMD_Z_SET_MICRO_STEPPING 'L'
 
 #define CMD_X_NEW_SPEED 'x'
 #define CMD_Y_NEW_SPEED 'y'
@@ -173,7 +179,7 @@ void send_gripper_status()
   check_gripper_endstop();
   if(open_gripper)
     Serial.print("OPEN");
-  else 
+  else
     Serial.print("CLOSED");
 }
 
@@ -322,7 +328,7 @@ void fast_stop_all() {
 
 void read_package() {
   char next_char;
-  while(true) 
+  while(true)
   {
     next_char = Serial.read();
     if(next_char == TERMINATOR){ // if we find the terminator character we can analyze the package now
@@ -339,7 +345,7 @@ void read_package() {
   }
 
   // this point is only reached when a Terminator symbol was reached
-  if(buf_i_<4){buf_i_ = 0; return;} // skip too small packages // buffer flush 
+  if(buf_i_<4){buf_i_ = 0; return;} // skip too small packages // buffer flush
 
   byte package_start = 0;
   bool package_located = false;
@@ -357,7 +363,7 @@ void read_package() {
   }
 
   // this point is only reached when package was successfully located
-  
+
   byte cur_i_cmd = package_start + 3;
   while (cur_i_cmd < buf_i_) {
     char cur_cmd = buffer_[cur_i_cmd];
@@ -366,6 +372,9 @@ void read_package() {
         cur_cmd == CMD_Y_NEW_POS ||
         cur_cmd == CMD_Z_NEW_POS ||
         cur_cmd == CMD_A_SET_TOGGLE_STEPS ||
+        cur_cmd == CMD_X_SET_MICRO_STEPPING ||
+        cur_cmd == CMD_Y_SET_MICRO_STEPPING ||
+        cur_cmd == CMD_Z_SET_MICRO_STEPPING ||
 #ifdef DEBUG_MODE
         cur_cmd == CMD_A_NEW_POS ||
 #endif
@@ -396,6 +405,15 @@ void read_package() {
         a_toggle_steps = new_value;
         send_status();
         send_status();
+        break;
+      case CMD_X_SET_MICRO_STEPPING:
+        x_micro_stepping = new_value;
+        break;
+      case CMD_Y_SET_MICRO_STEPPING:
+        y_micro_stepping = new_value;
+        break;
+      case CMD_Z_SET_MICRO_STEPPING:
+        z_micro_stepping = new_value;
         break;
 #ifdef DEBUG_MODE
       case CMD_A_NEW_POS:
@@ -507,7 +525,7 @@ void read_package() {
       }
     }
   }
-  
+
   // sucked everything out of this package, flush it
   buf_i_ = 0;
 }
@@ -563,13 +581,13 @@ void setup() {
   TCCR2A = 0x1; // just normal mode
   TCCR2B = 0x0; //no clock source, activate with TCCR2B=0x1; just direct io clock
   TCNT2 = 0; // reset counter
-  OCR2A = 3;//15; // start pulse, should be at least 650ns after setting direction 
+  OCR2A = 3;//15; // start pulse, should be at least 650ns after setting direction
   OCR2B = 254; // end pulse, should be at least 1.9us after starting pulse
   TIFR2 = 0x7; // clear already set flags
   TIMSK2 = 0x6; // activate both compare interrupts
 
   // configure the step interrupt
- 
+
   TCCR0A = 0x2; // CTC mode
   TCCR0B = 0x2; // 0.5us per cnt, prescaler is 8
   OCR0A = 70; // 35us per step
