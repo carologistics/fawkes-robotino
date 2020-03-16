@@ -47,4 +47,5 @@ if [ ${#failures[@]} -gt 0 ] ; then
   done
   exit 1
 fi
+echo "All tests successful!"
 exit 0
