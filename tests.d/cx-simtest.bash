@@ -26,6 +26,7 @@ SCRIPT_PATH=$FAWKES_DIR/bin/
 pushd $SCRIPT_PATH
 TERMINAL=tmux
 export TERMINAL
+trap "echo Aborting simulation test; $SCRIPT_PATH/gazsim.bash -x kill" SIGINT SIGTERM
 $SCRIPT_PATH/gazsim.bash -o -r -m m-skill-sim-clips-exec -k -n 3 --team-cyan Carologistics --start-game=PRODUCTION
 $SCRIPT_PATH/cx-simtest-check.bash ./robot1_latest.log ./robot2_latest.log ./robot3_latest.log
 $SCRIPT_PATH/gazsim.bash -x kill
