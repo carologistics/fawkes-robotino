@@ -19,7 +19,7 @@ if [ "$NAME" != "Fedora" ] ; then
   exit 0
 fi
 
-sed -i 's_simtest/enabled:.*_simtest/enabled: true_' cfg/conf.d/*
+echo "/clips-executive/specs/rcll/parameters/simtest/enabled: true" >> ./cfg/host.yaml
 SCRIPT_PATH=$PWD/bin/
 pushd $SCRIPT_PATH
 TERMINAL=tmux
@@ -28,3 +28,4 @@ $SCRIPT_PATH/gazsim.bash -o -r -m m-skill-sim-clips-exec -k -n 3 --team-cyan Car
 $SCRIPT_PATH/cx-simtest-check.bash ./robot1_latest.log ./robot2_latest.log ./robot3_latest.log
 $SCRIPT_PATH/gazsim.bash -x kill
 popd
+sed -i '/\/clips-executive\/specs\/rcll\/parameters\/simtest\/enabled: true/d' ./cfg/host.yaml
