@@ -39,7 +39,7 @@ public:
 		CMD_CLOSE              = 'G',
 		CMD_OPEN               = 'O',
 		CMD_STATUS_REQ         = 'S',
-		CMD_SET_A_TOGGLE_STEPS = 'T',
+		CMD_A_SET_TOGGLE_STEPS = 'T',
 		CMD_X_NEW_SPEED        = 'x',
 		CMD_Y_NEW_SPEED        = 'y',
 		CMD_Z_NEW_SPEED        = 'z',
