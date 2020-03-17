@@ -134,12 +134,14 @@ ArduinoComMessage::add_command(command_id_t cmd, unsigned int value)
 
 	if (cmd == command_id_t::CMD_CALIBRATE || cmd == command_id_t::CMD_X_NEW_POS
 	    || cmd == command_id_t::CMD_Y_NEW_POS || cmd == command_id_t::CMD_Z_NEW_POS
-	    || cmd == command_id_t::CMD_OPEN || cmd == command_id_t::CMD_A_SET_TOGGLE_STEPS
-	    || cmd == command_id_t::CMD_CLOSE || cmd == command_id_t::CMD_STATUS_REQ
-	    || cmd == command_id_t::CMD_X_NEW_SPEED || cmd == command_id_t::CMD_Y_NEW_SPEED
-	    || cmd == command_id_t::CMD_Z_NEW_SPEED || cmd == command_id_t::CMD_A_NEW_SPEED
-	    || cmd == command_id_t::CMD_X_NEW_ACC || cmd == command_id_t::CMD_Y_NEW_ACC
-	    || cmd == command_id_t::CMD_Z_NEW_ACC || cmd == command_id_t::CMD_A_NEW_ACC) {
+	    || cmd == command_id_t::CMD_X_SET_MICRO_STEPPING || cmd == command_id_t::CMD_Y_SET_MICRO_STEPPING
+			|| cmd == command_id_t::CMD_Z_SET_MICRO_STEPPING || cmd == command_id_t::CMD_OPEN
+			|| cmd == command_id_t::CMD_A_SET_TOGGLE_STEPS || cmd == command_id_t::CMD_CLOSE
+			|| cmd == command_id_t::CMD_STATUS_REQ || cmd == command_id_t::CMD_X_NEW_SPEED
+			|| cmd == command_id_t::CMD_Y_NEW_SPEED || cmd == command_id_t::CMD_Z_NEW_SPEED
+			|| cmd == command_id_t::CMD_A_NEW_SPEED || cmd == command_id_t::CMD_X_NEW_ACC
+			|| cmd == command_id_t::CMD_Y_NEW_ACC || cmd == command_id_t::CMD_Z_NEW_ACC
+			|| cmd == command_id_t::CMD_A_NEW_ACC) {
 		valid_command = true;
 	}
 

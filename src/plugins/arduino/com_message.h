@@ -32,22 +32,25 @@ public:
    * @brief Mapping for all possible commands, that can be send to the arduino
    */
 	enum class command_id_t : char {
-		CMD_CALIBRATE          = 'C',
-		CMD_X_NEW_POS          = 'X',
-		CMD_Y_NEW_POS          = 'Y',
-		CMD_Z_NEW_POS          = 'Z',
-		CMD_CLOSE              = 'G',
-		CMD_OPEN               = 'O',
-		CMD_STATUS_REQ         = 'S',
-		CMD_A_SET_TOGGLE_STEPS = 'T',
-		CMD_X_NEW_SPEED        = 'x',
-		CMD_Y_NEW_SPEED        = 'y',
-		CMD_Z_NEW_SPEED        = 'z',
-		CMD_A_NEW_SPEED        = 'a',
-		CMD_X_NEW_ACC          = 'm',
-		CMD_Y_NEW_ACC          = 'n',
-		CMD_Z_NEW_ACC          = 'o',
-		CMD_A_NEW_ACC          = 'p'
+		CMD_CALIBRATE         		= 'C',
+		CMD_X_NEW_POS         		= 'X',
+		CMD_Y_NEW_POS         		= 'Y',
+		CMD_Z_NEW_POS      		  	= 'Z',
+		CMD_CLOSE        		      = 'G',
+		CMD_OPEN             		  = 'O',
+		CMD_STATUS_REQ         		= 'S',
+		CMD_A_SET_TOGGLE_STEPS 		= 'T',
+		CMD_X_SET_MICRO_STEPPING	= 'J',
+		CMD_Y_SET_MICRO_STEPPING	= 'K',
+		CMD_Z_SET_MICRO_STEPPING	= 'L',
+		CMD_X_NEW_SPEED       		= 'x',
+		CMD_Y_NEW_SPEED     		  = 'y',
+		CMD_Z_NEW_SPEED       		= 'z',
+		CMD_A_NEW_SPEED       		= 'a',
+		CMD_X_NEW_ACC         		= 'm',
+		CMD_Y_NEW_ACC        			= 'n',
+		CMD_Z_NEW_ACC        			= 'o',
+		CMD_A_NEW_ACC         		= 'p'
 	};
 
 	/**
