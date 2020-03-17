@@ -135,9 +135,9 @@ private:
 	float cfg_steps_per_mm_[3];
 
 	unsigned int cfg_a_toggle_steps_;
-  unsigned int cfg_x_microstep_;
-  unsigned int cfg_y_microstep_;
-  unsigned int cfg_z_microstep_;
+	unsigned int cfg_x_microstep_;
+	unsigned int cfg_y_microstep_;
+	unsigned int cfg_z_microstep_;
 
 	bool movement_pending_;
 	bool calibrated_;
