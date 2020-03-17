@@ -405,13 +405,13 @@ ArduinoComThread::loop()
 			                        cfg_a_toggle_steps_,
 			                        1000);
       append_message_to_queue(ArduinoComMessage::command_id_t::CMD_X_SET_MICRO_STEPPING,
-                              cfg_x_microstep,
+                              cfg_x_microstep_,
                               1000);
       append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Y_SET_MICRO_STEPPING,
-                              cfg_y_microstep,
+                              cfg_y_microstep_,
                               1000);
       append_message_to_queue(ArduinoComMessage::command_id_t::CMD_Z_SET_MICRO_STEPPING,
-                              cfg_z_microstep,
+                              cfg_z_microstep_,
                               1000);
     }
 
@@ -754,15 +754,15 @@ ArduinoComThread::load_config()
 		cfg_accs_[A] =
 		  config->get_float_or_default((cfg_prefix_ + "/firmware_settings/acc_a").c_str(), 0.f);
 
-		int cfg_x_microstep = config->get_int(cfg_prefix_ + "/hardware_settings/x_micro_stepping");
-		int cfg_y_microstep = config->get_int(cfg_prefix_ + "/hardware_settings/y_micro_stepping");
-		int cfg_z_microstep = config->get_int(cfg_prefix_ + "/hardware_settings/z_micro_stepping");
+		cfg_x_microstep_ = config->get_int(cfg_prefix_ + "/hardware_settings/x_micro_stepping");
+		cfg_y_microstep_ = config->get_int(cfg_prefix_ + "/hardware_settings/y_micro_stepping");
+		cfg_z_microstep_ = config->get_int(cfg_prefix_ + "/hardware_settings/z_micro_stepping");
 
 		// the factor the microstepping mode needs to be multiplied with
 		// depends on the individual thread diameter and slope.
-		cfg_steps_per_mm_[X] = 200.0 * cfg_x_microstep / 3.0;
-		cfg_steps_per_mm_[Y] = 200.0 * cfg_y_microstep / 2.0;
-		cfg_steps_per_mm_[Z] = 200.0 * cfg_z_microstep / 1.5;
+		cfg_steps_per_mm_[X] = 200.0 * cfg_x_microstep_ / 3.0;
+		cfg_steps_per_mm_[Y] = 200.0 * cfg_y_microstep_ / 2.0;
+		cfg_steps_per_mm_[Z] = 200.0 * cfg_z_microstep_ / 1.5;
 
 		cfg_a_toggle_steps_ = config->get_int(cfg_prefix_ + "/hardware_settings/a_toggle_steps");
 
