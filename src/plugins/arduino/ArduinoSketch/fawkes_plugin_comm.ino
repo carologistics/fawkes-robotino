@@ -1,5 +1,5 @@
-#include <Wire.h>
 #include <AccelStepper.h>
+#include <Wire.h>
 
 // #define DEBUG_MODE
 
@@ -237,13 +237,16 @@ void double_calibrate()
 
 void calibrate()
 {
+  int steps_per_mm_X = 200 * x_micro_stepping / 3;
+  int steps_per_mm_Y = 200 * y_micro_stepping / 2;
+  int steps_per_mm_Z = 200 * z_micro_stepping / 1.5;
   bool x_done = false, y_done = false, z_done = false;
   do { //repeat calibration as long as not successfull
     motor_X.enableOutputs();
     noInterrupts();
-    if(!x_done) motor_X.move(20000L);
-    if(!y_done) motor_Y.move(20000L);
-    if(!z_done) motor_Z.move(20000L);
+    if(!x_done) motor_X.move(steps_per_mm_X * 120);
+    if(!y_done) motor_Y.move(steps_per_mm_Y * 80);
+    if(!z_done) motor_Z.move(steps_per_mm_Z * 60);
     movement_done_flag = false;
     interrupts();
     // due to high step count, reaching end stops is guaranteed!
