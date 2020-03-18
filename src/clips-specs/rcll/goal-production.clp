@@ -1005,14 +1005,6 @@
 )
 
 
-;TODO: Do we need this?
-(deffunction trac-ring-mount-time (?complexity ?rings)
-  "Determine time to mount the remaining rings plus cap"
-  (bind ?max-rings (eval (sub-string 2 3 (str-cat ?complexity))))
-  (return (+ (* (- ?max-rings ?rings) ?*PRODUCE-RING-AHEAD-TIME*) ?*PRODUCE-CAP-AHEAD-TIME*))
-)
-
-
 (defrule goal-production-create-mount-next-ring
 " Mount the next ring on a CX product:
    - Take the started workpiece from the ring station output.
