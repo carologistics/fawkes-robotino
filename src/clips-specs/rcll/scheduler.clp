@@ -18,30 +18,25 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
-
-; An event is initialized with a type (start|end) and related to the id of the
-; fact that it represents.
-;(wm-fact (key scheduling event args? id ?g-id type end) (value ?event-name)))
 ; sets
-; (wm-fact (key scheduling dataset events)    (values ))
-; (wm-fact (key scheduling dataset resources) (values ))
-; (wm-fact (key scheduling dataset goals)     (values ))
-; (wm-fact (key scheduling dataset plans)     (values ))
-;
-; (wm-fact (key scheduling dataset goal-plans args? g ?g-id) (values ))
-; (wm-fact (key scheduling dataset goal-events args? p ?p-id)) plan-events + lg
-; (wm-fact (key scheduling dataset plan-events args? p ?p-id))
-; (wm-fact (key scheduling dataset resource-consuming-events args? r ?r-id))
-; (wm-fact (key scheduling dataset resource-producing-events args? r ?r-id))
+; (wm-fact (key scheduling events)    (values ))
+; (wm-fact (key scheduling goal-plans args? g ?g-id) (values ))
+; (wm-fact (key scheduling goal-events args? p ?p-id)) plan-events + lg
+; (wm-fact (key scheduling plan-events args? p ?p-id))
+; (wm-fact (key scheduling resource-consuming-events args? r ?r-id))
+; (wm-fact (key scheduling resource-producing-events args? r ?r-id))
 ;
 ; In principle each EVENT has a location, duration, resource consumption or
 ; supply. Those are tracked by parameters.
 ; PARAMETERS:
-; (wm-fact (key scheduling param event-duration args? e ?e-id) (v))
-; (wm-fact (key scheduling param event-location args? e ?e-id) (v))
-; (wm-fact (key scheduling param event-precedence args? e-a ?e-before e-b ?after) ())
-; (wm-fact (key scheduling param demand-supply args? r ?r-id e-b ?e-id) (v +1 -1))
-; (wm-fact (key scheduling param traveling-duration args? e-a ?e-id e-b ?e-id) (v))
+; (wm-fact (key scheduling event-duration args? e ?e-id) (v))
+; (wm-fact (key scheduling event-location args? e ?e-id) (v))
+; (wm-fact (key scheduling event-requiremnt args? e ?e-id r ?r) (value 1/-1))
+; (wm-fact (key scheduling event-precedence args? e-a ?e-before e-b ?after) ())
+; (wm-fact (key scheduling traveling-duration args? e-a ?e-id e-b ?e-id) (v))
+
+
+
 
 ;(defrule scheduling-calc-action-duration-move
 ;?p <- (plan-action (action-name move) (duration 0.0)
@@ -76,7 +71,6 @@
   (return ?duration)
 )
 
-
 (defrule scheduling-goal-class-precedence
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (goal (id ?order-id) (parent ?goal-id) (class ORDER) (mode FORMULATED))
@@ -98,109 +92,53 @@
   )
 )
 
-(defrule scheduling-init-dataset-goal-events
- (goal (id ?g-id) (sub-type SIMPLE) (mode EXPANDED) (class ?class))
- (wm-fact (key meta precedence goal-class args? $?  ?class $?))
- (not (wm-fact (key scheduling event args? id ?g-id type ?)))
- =>
- (bind ?event-name (sym-cat E- ?g-id -end))
- (assert (wm-fact (key scheduling event args? id ?g-id type end) (value ?event-name))
-         (wm-fact (key scheduling dataset goal-events args? g ?g-id)
-                  (type SYMBOL) (is-list TRUE) (values ?event-name)))
-)
-
-(defrule scheduling-populate-dataset-goal-events
- (goal (id ?g-id) (sub-type SIMPLE) (mode EXPANDED) (class ?class))
- (plan (id ?p-id) (goal-id ?g-id))
- (wm-fact (key meta precedence goal-class args? $?  ?class $?))
- (wm-fact (key scheduling event args? id ?p-id type ?) (value ?e))
- ?geset <- (wm-fact (key scheduling dataset goal-events args? g ?g-id)
-                  (values $?events&:(not (member$ ?e ?events))))
- =>
- (modify ?geset (values (create$ ?events ?e)))
-)
-
 ;;;Goal Events
-(defrule scheduling-init-dataset-goal-events
- (goal (id ?g-id) (sub-type SIMPLE) (mode EXPANDED) (class ?class))
- (wm-fact (key meta precedence goal-class args? $?  ?class $?))
- (not (wm-fact (key scheduling event args? id ?g-id type ?)))
+(defrule scheduling-goal-completion-event
+ (goal (id ?g-id) (sub-type SIMPLE) (mode SELECTED) (class ?class))
+ (not (wm-fact (key scheduling goal-event args? g ?g-id e ?)))
+ ;Is production goal
+ (wm-fact (key meta precedence goal-class args? $? ?class $?))
  =>
  (bind ?event-name (sym-cat E- ?g-id -end))
- (assert (wm-fact (key scheduling event args? id ?g-id type end) (value ?event-name))
-         (wm-fact (key scheduling dataset goal-events args? g ?g-id)
-                  (type SYMBOL) (is-list TRUE) (values ?event-name)))
+ (assert
+   (wm-fact (key scheduling event args? e ?event-name) (type INT))
+   (wm-fact (key scheduling goal-event args? g ?g-id e ?event-name)))
 )
 
-(defrule scheduling-populate-dataset-goal-events
- (goal (id ?g-id) (sub-type SIMPLE) (mode EXPANDED) (class ?class))
- (plan (id ?p-id) (goal-id ?g-id))
- (wm-fact (key meta precedence goal-class args? $?  ?class $?))
- (wm-fact (key scheduling event args? id ?p-id type ?) (value ?e))
- ?geset <- (wm-fact (key scheduling dataset goal-events args? g ?g-id)
-                  (values $?events&:(not (member$ ?e ?events))))
- =>
- (modify ?geset (values (create$ ?events ?e)))
-)
+;(defrule scheduling-plan-events-as-goal-event
+;"add plan event as events of the goal events"
+; (goal (id ?g-id) (sub-type SIMPLE) (mode SELECTED) (class ?class))
+; (plan (id ?p-id) (goal-id ?g-id))
+; (wm-fact (key scheduling event args? e ?e))
+; (wm-fact (key scheduling plan-event args? p ?p-id e ?e))
+; (not (wm-fact (key scheduling goal-event args? g ?g-id e ?e)))
+; =>
+;)
 
-;;;Goal Plans
-(defrule scheduling-init-datasets-goal-plans
- (goal (id ?g-id) (class ?class))
- (plan (id ?p-id) (goal-id ?g-id))
- (wm-fact (key meta precedence goal-class args? $?  ?class $?))
- (not (wm-fact (key scheduling dataset goal-plans args? g ?g-id)))
- =>
- (assert (wm-fact (key scheduling dataset goal-plans args? g ?g-id)
-                  (type SYMBOL) (is-list TRUE)))
-)
-
-(defrule scheduling-populate-dataset-goal-plans
- (goal (id ?g-id) (class ?class))
- (plan (id ?p-id) (goal-id ?g-id))
- (wm-fact (key meta precedence goal-class args? $?  ?class $?))
- ?gpset <- (wm-fact (key scheduling dataset goal-plans args? g ?g-id)
-                    (values $?plans&:(not (member$ ?p-id ?plans))))
- =>
- (modify ?gpset (values (create$ ?plans ?p-id)))
-)
-
-;;;;Resource Set
-(defrule scheduling-init-dataset-resource-events
- (or  (wm-fact (key scheduling param event-supply args? e ? r ?r))
-      (wm-fact (key scheduling param event-demand args? e ? r ?r))
- )
- (not (wm-fact (key scheduling event args? id ?r type ?)))
+(defrule scheduling-resource-production-event
+ (wm-fact (key scheduling event-requirment args? e ? r ?r))
+ (not (wm-fact (key scheduling resource-producing-event args? e ? r ?r)))
 =>
  (bind ?start-event-name (sym-cat E- ?r -start))
+ (assert
+   (wm-fact (key scheduling event args? e ?start-event-name))
+   (wm-fact (key scheduling event-requirment args? e ?start-event-name r ?r)
+            (type INT) (value 1))
+   (wm-fact (key scheduling resource-producing-event args? e ?start-event-name r ?r))
+   )
+)
+
+(defrule scheduling-resource-consumption-event
+ (wm-fact (key scheduling event-requirment args? e ? r ?r))
+ (not (wm-fact (key scheduling resource-consuming-event args? e ? r ?r)))
+=>
  (bind ?end-event-name (sym-cat E- ?r -end))
- (assert (wm-fact (key scheduling event args? id ?r type start) (value ?start-event-name)))
- (assert (wm-fact (key scheduling event args? id ?r type end) (value ?end-event-name)))
-
- (assert (wm-fact (key scheduling param event-supply args? e ?start-event-name r ?r)
-                  (type INT) (value 1)))
- (assert (wm-fact (key scheduling param event-demand args? e ?end-event-name r ?r)
-                  (type INT) (value 1)))
-
- (assert (wm-fact (key scheduling dataset resource-producing-events args? r ?r)
-                  (is-list TRUE) (type SYMBOL) (values ?start-event-name)))
- (assert (wm-fact (key scheduling dataset resource-consuming-events args? r ?r)
-                  (is-list TRUE) (type SYMBOL) (values ?end-event-name)))
-)
-
-(defrule scheduling-populate-dataset-resource-conmsuing-events
- (wm-fact (key scheduling param event-demand args? e ?e r ?r))
- ?rset <- (wm-fact (key scheduling dataset resource-consuming-events args? r ?r)
-           (values $?events&:(not (member$ ?e ?events))))
-=>
- (modify ?rset (values (create$ ?events ?e)))
-)
-
-(defrule scheduling-populate-dataset-resource-producing-events
- (wm-fact (key scheduling param event-supply args? e ?e r ?r))
- ?rset <- (wm-fact (key scheduling dataset resource-producing-events args? r ?r)
-           (values $?events&:(not ( member$ ?e ?events))))
-=>
- (modify ?rset (values (create$ ?events ?e)))
+ (assert
+   (wm-fact (key scheduling event args? e ?end-event-name))
+   (wm-fact (key scheduling event-requirment args? e ?end-event-name r ?r)
+            (type INT) (value -1))
+   (wm-fact (key scheduling resource-consuming-event args? e ?end-event-name r ?r))
+   )
 )
 
 ;;;Plan Events
@@ -211,35 +149,41 @@
  (wm-fact (key meta plan start-location args? id ?plan-id) (values ?ls ?ls-side))
  (wm-fact (key meta plan end-location args? id ?plan-id) (values ?le ?le-side))
  (wm-fact (key meta plan required-resources args? id ?plan-id) (values $?resources))
- (wm-fact (key scheduling event args? id ?goal-id type end) (value ?e-goal-end))
- (not (wm-fact (key scheduling dataset plan-events args? p ?plan-id)))
+ (wm-fact (key scheduling event args? e ?e-goal-end))
+ (wm-fact (key scheduling goal-event args? g ?goal-id e ?e-goal-end))
+ (not (wm-fact (key scheduling goal-plan args? g ? p ?plan-id)))
  =>
+ (assert (wm-fact (key scheduling goal-plan args? g ?goal-id p ?plan-id)))
  ;events
  (bind ?e-plan-start (sym-cat E- ?plan-id -start))
  (bind ?e-plan-end   (sym-cat E- ?plan-id -end))
- (assert (wm-fact (key scheduling event args? id ?plan-id type start) (value ?e-plan-start)))
- (assert (wm-fact (key scheduling event args? id ?plan-id type end) (value ?e-plan-end)))
  ;plan-events
- (assert (wm-fact (key scheduling dataset plan-events args? p ?plan-id)
-                  (type SYMBOL) (is-list TRUE)
-                  (values ?e-plan-start ?e-plan-end)))
- ;Location param
- (assert (wm-fact (key scheduling param event-location args? e ?e-plan-start l (node-name ?ls ?ls-side)))
-         (wm-fact (key scheduling param event-location args? e ?e-plan-end l (node-name ?le ?le-side)))
-         )
- ;Duration param
- (assert (wm-fact (key scheduling param event-duration args? e ?e-plan-start)
-                  (type INT) (value (plan-duration ?plan-id)))
-         (wm-fact (key scheduling param event-duration args? e ?e-plan-end)
-                  (type INT) (value 0)))
+ (assert
+    (wm-fact (key scheduling event args? e ?e-plan-start))
+    (wm-fact (key scheduling event args? e ?e-plan-end))
+    (wm-fact (key scheduling plan-event args? p ?plan-id e ?e-plan-start))
+    (wm-fact (key scheduling plan-event args? p ?plan-id e ?e-plan-end))
+    (wm-fact (key scheduling goal-event args? g ?goal-id e ?e-plan-start))
+    (wm-fact (key scheduling goal-event args? g ?goal-id e ?e-plan-end))
+    (wm-fact (key scheduling event-location args? e ?e-plan-start)
+             (type SYMBOL) (value (node-name ?ls ?ls-side)))
+    (wm-fact (key scheduling event-location args? e ?e-plan-end)
+             (type SYMBOL) (value (node-name ?le ?le-side)))
+    (wm-fact (key scheduling event-duration args? e ?e-plan-start)
+             (type INT) (value (plan-duration ?plan-id)))
+    (wm-fact (key scheduling event-duration args? e ?e-plan-end)
+             (type INT) (value 0)))
  ;Resources param
  (progn$ (?r ?resources)
-   (assert (wm-fact (key scheduling param event-demand args? e ?e-plan-start r ?r) (type INT) (value 1)))
-   (assert (wm-fact (key scheduling param event-supply args? e ?e-plan-end r ?r) (type INT) (value 1))))
+   (assert
+     (wm-fact (key scheduling event-requirment args? e ?e-plan-start r ?r)
+              (type INT) (value -1))
+     (wm-fact (key scheduling event-requirment args? e ?e-plan-end r ?r)
+              (type INT) (value 1))))
  ;Precedence within plan
-   (assert (wm-fact (key scheduling param event-precedence args? e-a ?e-plan-start e-b ?e-plan-end)))
+ (assert (wm-fact (key scheduling event-precedence args? e-a ?e-plan-start e-b ?e-plan-end)))
  ;Precedence plan goals
-   (assert (wm-fact (key scheduling param event-precedence args? e-a ?e-plan-end e-b ?e-goal-end)))
+ (assert (wm-fact (key scheduling event-precedence args? e-a ?e-plan-end e-b ?e-goal-end)))
 )
 
 ;Precedence across goals
@@ -248,9 +192,15 @@
  (goal (id ?g-id-a) (sub-type SIMPLE) (class ?class-a)(mode EXPANDED))
  (goal (id ?g-id-b) (sub-type SIMPLE) (class ?class-b)(mode EXPANDED))
  (plan (id ?p-id-b) (goal-id ?g-id-b))
- (wm-fact (key scheduling event args? id ?g-id-a type end) (value ?e-goal-end))
- (wm-fact (key scheduling event args? id ?p-id-b type start) (value ?e-plan-start))
- (not (wm-fact (key scheduling param event-precedence args? e-a ?e-goal-end e-b ?e-plan-start)))
+ ;from end of goal 'a'
+ (wm-fact (key scheduling event args? e ?e-goal-end))
+ (wm-fact (key scheduling goal-event args? g ?g-id-a e ?e-goal-end))
+ (not (wm-fact (key scheduling plan-event args? g ?g-id-a e ?e-goal-end)))
+ ;to all events of goal 'b'
+ (wm-fact (key scheduling event args? e ?e-plan))
+ (wm-fact (key scheduling plan-event args? p ?p-id-b e ?e-plan))
+ (not (wm-fact (key scheduling event-precedence args? e-a ?e-goal-end e-b ?e-plan)))
+ (wm-fact (key meta precedence goal-class args? a  ?class-a b ?class-b))
  =>
- (assert (wm-fact (key scheduling param event-precedence args? e-a ?e-goal-end e-b ?e-plan-start)))
+ (assert (wm-fact (key scheduling event-precedence args? e-a ?e-goal-end e-b ?e-plan)))
 )
