@@ -931,7 +931,7 @@
   ; There is at least one other rs side, except for the target input, that
   ; is free (because occupying all 4 sides at once can cause deadlocks)
   (or (wm-fact (key domain fact mps-side-free args? m ?mps-rs side OUTPUT))
-      (wm-fact (key domain fact mps-side-free args? m ?other-mps side ?any-side)))
+      (wm-fact (key domain fact mps-side-free args? m ?other-rs side ?any-side)))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args?  m ?mps-bs t BS))
   (wm-fact (key domain fact mps-team args?  m ?mps-bs col ?team-color))
