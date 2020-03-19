@@ -217,3 +217,63 @@
  =>
  (assert (wm-fact (key scheduling event-precedence args? e-a ?e-goal-end e-b ?e-plan)))
 )
+
+
+;;Adding datasets to scheduler
+(defrule scheduling-add-event-location
+ (wm-fact (key scheduling event args? e ?e))
+ (wm-fact (key scheduling event-location args? e ?e ) (value ?l))
+ =>
+ (scheduler-set-event-location (sym-cat ?e) (sym-cat ?l))
+)
+
+(defrule scheduling-add-event-duration
+ (wm-fact (key scheduling event args? e ?e))
+ (wm-fact (key scheduling event-duration args? e ?e) (value ?d))
+ =>
+ (scheduler-set-event-duration (sym-cat ?e) ?d)
+)
+
+(defrule scheduling-add-event-requirment
+ (wm-fact (key scheduling event args? e ?e))
+ (wm-fact (key scheduling event-requirment args? e ?e r ?r) (value ?req))
+=>
+ (scheduler-add-event-resource (sym-cat ?e) (sym-cat ?r) ?req)
+)
+
+(defrule scheduling-add-event-precedence
+ (wm-fact (key scheduling event args? e ?e-a))
+ (wm-fact (key scheduling event args? e ?e-b))
+ (wm-fact (key scheduling event-precedence args? e-a ?e-a e-b ?e-b))
+ =>
+ (scheduler-add-event-precedence (sym-cat ?e-a) (sym-cat ?e-b))
+)
+
+(defrule scheduling-add-goal-event
+ (wm-fact (key scheduling event args? e ?e))
+ (wm-fact (key scheduling goal-event args? g ?g-id e ?e))
+ =>
+ (scheduler-add-goal-event (sym-cat ?g-id) (sym-cat ?e))
+)
+
+(defrule scheduling-add-plan-event
+ (wm-fact (key scheduling event args? e ?e))
+ (wm-fact (key scheduling plan-event args? p ?p-id e ?e))
+ =>
+ (scheduler-add-plan-event (sym-cat ?p-id) (sym-cat ?e))
+)
+
+(defrule scheduling-add-goal-plans
+ (wm-fact (key scheduling goal-plan args? g ?g-id p ?p-id))
+ =>
+ (scheduler-add-goal-plan (sym-cat ?g-id) (sym-cat ?p-id))
+)
+
+
+;(defrule shceduling-call-scheduler
+; (goal (class ORDER) (mode EXPANDED))
+;=>
+;  (printout warn "Calling scheduler: Generating scheduling datasets" crlf)
+;  (generate-datasets)
+;  (printout warn "datasets are generated" crlf)
+;)
