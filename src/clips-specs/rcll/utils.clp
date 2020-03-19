@@ -752,7 +752,7 @@
 
 
 (deffunction wait-pos (?mps ?side)
-  (return (sym-cat WAIT- ?mps - ?side))
+  (return (sym-cat WAIT- ?mps - (sub-string 1 1 ?side)))
 )
 
 
