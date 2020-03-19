@@ -18,16 +18,18 @@
  *  Read the full text in the LICENSE.GPL file in the doc directory.
  */
 
-#ifndef _PLUGINS_CLIPS_MIP_SCHEDULER_THEAD_H_
-#define _PLUGINS_CLIPS_MIP_SCHEDULER_THEAD_H_
+#ifndef _PLUGINS_CLIPS_MIP_SCHEDULER_THREAD_H_
+#define _PLUGINS_CLIPS_MIP_SCHEDULER_THREAD_H_
 
 #include <aspect/logging.h>
 #include <core/threading/thread.h>
 #include <plugins/clips/aspect/clips_feature.h>
 
 #include <clipsmm.h>
+#include <gurobi_c++.h>
 #include <map>
 #include <string>
+
 class ClipsMipSchedulerThread : public fawkes::Thread,
                                 public fawkes::LoggingAspect,
                                 public fawkes::CLIPSFeature,
@@ -57,6 +59,10 @@ private:
 	void gen_datasets(std::string env_name);
 
 private:
-	std::map<std::string, fawkes::LockPtr<CLIPS::Environment>> envs_;
+	std::map<std::string, fawkes::LockPtr<CLIPS::Environment>> clips_envs_;
+
+	GRBEnv *                      gurobi_env_ = 0;
+	GRBModel *                    model_      = 0;
+	std::map<std::string, GRBVar> events_;
 };
-#endif /* !PLUGINS_CLIPS_MIP_SCHEDULER_THEAD_H__ */
+#endif /* !PLUGINS_CLIPS_MIP_SCHEDULER_THREAD_H__ */

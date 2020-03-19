@@ -36,12 +36,17 @@ ClipsMipSchedulerThread::ClipsMipSchedulerThread()
 
 ClipsMipSchedulerThread::~ClipsMipSchedulerThread()
 {
-	envs_.clear();
+	clips_envs_.clear();
 }
 
 void
 ClipsMipSchedulerThread::init()
 {
+	gurobi_env_    = new GRBEnv();
+	GRBModel model = GRBModel(*gurobi_env_);
+	model.set(GRB_StringAttr_ModelName, "SchedulingRcll");
+	model_ = &model;
+
 	logger->log_info(name(), "Intilized");
 };
 
@@ -60,8 +65,9 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
                                             fawkes::LockPtr<CLIPS::Environment> &clips)
 {
 	logger->log_info(name(), "Called to initialize environment %s", env_name.c_str());
-	envs_[env_name] = clips;
-	fawkes::MutexLocker lock(envs_[env_name].objmutex_ptr());
+	clips_envs_[env_name] = clips;
+	fawkes::MutexLocker lock(clips_envs_[env_name].objmutex_ptr());
+
 	clips->add_function("generate-datasets",
 	                    sigc::slot<void>(
 	                      sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::gen_datasets),
@@ -72,7 +78,7 @@ void
 ClipsMipSchedulerThread::clips_context_destroyed(const std::string &env_name)
 {
 	logger->log_info(name(), "Removing environment %s", env_name.c_str());
-	envs_.erase(env_name);
+	clips_envs_.erase(env_name);
 }
 
 /** CLIPS function to build the MIPS model used for scheduling.
@@ -84,8 +90,8 @@ void
 ClipsMipSchedulerThread::gen_datasets(std::string env_name)
 {
 	logger->log_info(name(), "Generating datasets");
-	fawkes::MutexLocker lock(envs_[env_name].objmutex_ptr());
-	CLIPS::Environment &env = **(envs_[env_name]);
+	fawkes::MutexLocker lock(clips_envs_[env_name].objmutex_ptr());
+	CLIPS::Environment &env = **(clips_envs_[env_name]);
 
 	CLIPS::Fact::pointer fact = env.get_facts();
 	std::string          events_set;

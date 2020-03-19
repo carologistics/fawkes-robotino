@@ -33,6 +33,11 @@ else
   WARN_TARGETS += warning_clips
 endif
 
+
+CFLAGS += -I$(GUROBI_HOME)/include/
+LDFLAGS += -L$(GUROBI_HOME)/lib -lgurobi_c++ -lgurobi90
+
+
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
 
