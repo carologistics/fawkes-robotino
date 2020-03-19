@@ -371,7 +371,7 @@ if [  $COMMAND  == start ]; then
     if $START_MONGODB ; then
         MONGODB_DBPATH=/tmp/mongodb-27017
         mkdir -p $MONGODB_DBPATH
-        COMMANDS+=("mongod --port 27017 --dbpath $MONGODB_DBPATH")
+        COMMANDS+=("bash -i -c \"mongod --port 27017 --dbpath $MONGODB_DBPATH | tee $script_path/mongodb.log \"")
     fi
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
