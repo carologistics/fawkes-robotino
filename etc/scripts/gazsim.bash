@@ -43,6 +43,7 @@ OPTIONS:
                       optionally, "--start-game=PHASE" may be given
                       to set the phase explicitly)
                      Typically requires at least --team-cyan.
+   --mongodb         Start central mongodb instance
    --asp             Run with ASP agent and global planner
 EOF
 }
@@ -77,6 +78,7 @@ START_GAME=
 TEAM_CYAN=
 TEAM_MAGENTA=
 START_ASP_PLANER=false
+START_MONGODB=false
 
 if [ -z $TERMINAL ] ; then
     if [[ -n $TMUX ]] ; then
@@ -122,7 +124,7 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,asp" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -198,6 +200,9 @@ while true; do
 	 -a)
 	     META_PLUGIN="-m gazsim-meta-clips-exec"
 	     ;;
+     --mongodb)
+         START_MONGODB=true
+         ;;
 	 --asp)
 	     CONF="-c asp-planner"
 	     META_PLUGIN="-m asp-sim-2016"
@@ -362,6 +367,12 @@ if [  $COMMAND  == start ]; then
     #start refbox shell
     COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-shell $KEEP $@\"")
 
+    # start mongodb central instance
+    if $START_MONGODB ; then
+        MONGODB_DBPATH=/tmp/mongodb-27017
+        mkdir -p $MONGODB_DBPATH
+        COMMANDS+=("mongod --port 27017 --dbpath $MONGODB_DBPATH")
+    fi
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
