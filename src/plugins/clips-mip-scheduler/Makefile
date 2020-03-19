@@ -20,7 +20,6 @@ include $(BUILDSYSDIR)/clips.mk
 
 LIBS_clips_mip_scheduler = fawkescore fawkesclipsaspect
 OBJS_clips_mip_scheduler = clips_mip_scheduler_plugin.o clips_mip_scheduler_thread.o \
-												 clips_mip_scheduler_feature.o \
 
 OBJS_all    = $(OBJS_clips_mip_scheduler)
 PLUGINS_all = $(PLUGINDIR)/clips-mip-scheduler.$(SOEXT)
