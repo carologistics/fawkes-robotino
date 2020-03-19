@@ -56,13 +56,43 @@ protected:
 	}
 
 private:
-	void gen_datasets(std::string env_name);
-
-private:
 	std::map<std::string, fawkes::LockPtr<CLIPS::Environment>> clips_envs_;
 
-	GRBEnv *                      gurobi_env_ = 0;
-	GRBModel *                    model_      = 0;
-	std::map<std::string, GRBVar> events_;
+	GRBEnv *  gurobi_env_ = 0;
+	GRBModel *model_      = 0;
+
+	struct Event
+	{
+		Event(std::string n)
+		{
+			name = n;
+		};
+		std::string                name;
+		std::string                location;
+		int                        duration;
+		std::map<std::string, int> resources;
+		std::vector<Event *>       precedes;
+
+		GRBVar *time = 0;
+	};
+
+	std::map<std::string, Event *> events_;
+
+	std::map<std::string, std::vector<Event *>> resource_producers_;
+	std::map<std::string, std::vector<Event *>> resource_consumers_;
+	std::map<std::string, std::vector<Event *>> plan_events_;
+	std::map<std::string, std::vector<Event *>> goal_events_;
+
+	std::map<std::string, std::vector<std::string>> goal_plans_;
+
+private:
+	void set_event_location(std::string env_name, std::string event_name, std::string location);
+	void set_event_duration(std::string env_name, std::string event_name, int duration);
+	void
+	     add_event_resource(std::string env_name, std::string event_name, std::string res_name, int req);
+	void add_event_precedence(std::string env_name, std::string event_name, std::string preceded);
+	void add_plan_event(std::string env_name, std::string plan_name, std::string event_name);
+	void add_goal_event(std::string env_name, std::string goal_name, std::string event_name);
+	void add_goal_plan(std::string env_name, std::string goal_name, std::string plan_name);
 };
 #endif /* !PLUGINS_CLIPS_MIP_SCHEDULER_THREAD_H__ */
