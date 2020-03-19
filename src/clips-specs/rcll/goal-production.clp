@@ -931,7 +931,7 @@
   ; There is at least one other rs side, except for the target input, that
   ; is free (because occupying all 4 sides at once can cause deadlocks)
   (or (wm-fact (key domain fact mps-side-free args? m ?mps-rs side OUTPUT))
-      (wm-fact (key domain fact mps-side-free args? m ?other-mps side ?any-side)))
+      (wm-fact (key domain fact mps-side-free args? m ?other-rs side ?any-side)))
   ;MPS-BS CEs
   (wm-fact (key domain fact mps-type args?  m ?mps-bs t BS))
   (wm-fact (key domain fact mps-team args?  m ?mps-bs col ?team-color))
@@ -1002,14 +1002,6 @@
                 )
                 (required-resources (sym-cat ?mps-rs -INPUT) ?required-resources)
   ))
-)
-
-
-;TODO: Do we need this?
-(deffunction trac-ring-mount-time (?complexity ?rings)
-  "Determine time to mount the remaining rings plus cap"
-  (bind ?max-rings (eval (sub-string 2 3 (str-cat ?complexity))))
-  (return (+ (* (- ?max-rings ?rings) ?*PRODUCE-RING-AHEAD-TIME*) ?*PRODUCE-CAP-AHEAD-TIME*))
 )
 
 
