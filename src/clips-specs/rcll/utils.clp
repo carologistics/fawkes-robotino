@@ -769,7 +769,13 @@
 )
 
 (deffunction node-name (?mps ?side)
-  (return  (str-cat ?mps - (if (eq ?side INPUT) then I else O)))
+  (if (or (eq ?side INPUT)
+          (eq ?side OUTPUT))
+    then
+    (return (str-cat ?mps - (if (eq ?side INPUT) then I else O)))
+    else
+    (return ?mps)
+  )
 )
 
 (deffunction sym-to-int (?sym)

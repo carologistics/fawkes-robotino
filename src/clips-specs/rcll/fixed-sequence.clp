@@ -1141,9 +1141,9 @@
  (assert (wm-fact (key meta plan required-resources args? id ?plan-id)
                   (values ?wp ?bs ?cs))
          (wm-fact (key meta plan start-location args? id ?plan-id)
-                  (values (wait-pos ?bs ?bs-side) ?bs-side))
+                  (values (wait-pos ?bs ?bs-side) WAIT))
          (wm-fact (key meta plan end-location args? id ?plan-id)
-                  (values (wait-pos ?cs INPUT) INPUT)))
+                  (values (wait-pos ?cs INPUT) WAIT)))
  (assert
   (plan (id ?plan-id) (goal-id ?goal-id))
   (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
@@ -1246,9 +1246,9 @@
  (assert (wm-fact (key meta plan required-resources args? id ?plan-id)
                   (values ?wp ?cs ?ds))
          (wm-fact (key meta plan start-location args? id ?plan-id)
-                  (values (wait-pos ?cs ?side)  OUTPUT))
+                  (values (wait-pos ?cs ?side)  WAIT))
          (wm-fact (key meta plan end-location args? id ?plan-id)
-                  (values (wait-pos ?ds ?side) INPUT)))
+                  (values (wait-pos ?ds ?side) WAIT)))
   (assert
      (plan (id ?plan-id) (goal-id ?goal-id))
      (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
