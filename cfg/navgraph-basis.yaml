@@ -143,7 +143,7 @@ nodes:
       - only-copy-properties
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-C-BS-INPUT
+    name: WAIT-C-BS-I
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -151,7 +151,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-C-BS-OUTPUT
+    name: WAIT-C-BS-O
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -159,7 +159,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-C-CS1-INPUT
+    name: WAIT-C-CS1-I
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -167,7 +167,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-C-CS1-OUTPUT
+    name: WAIT-C-CS1-O
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -175,7 +175,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-C-CS2-INPUT
+    name: WAIT-C-CS2-I
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -183,7 +183,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-C-CS2-OUTPUT
+    name: WAIT-C-CS2-O
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -191,7 +191,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-C-RS1-INPUT
+    name: WAIT-C-RS1-I
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -199,7 +199,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-C-RS1-OUTPUT
+    name: WAIT-C-RS1-O
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -207,7 +207,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-C-RS2-INPUT
+    name: WAIT-C-RS2-I
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -215,7 +215,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-C-RS2-OUTPUT
+    name: WAIT-C-RS2-O
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -223,7 +223,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-C-DS-INPUT
+    name: WAIT-C-DS-I
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -231,7 +231,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-C-DS-OUTPUT
+    name: WAIT-C-DS-O
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -239,7 +239,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-C-SS-INPUT
+    name: WAIT-C-SS-I
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -247,7 +247,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-C-SS-OUTPUT
+    name: WAIT-C-SS-O
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -255,7 +255,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-M-BS-INPUT
+    name: WAIT-M-BS-I
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -263,7 +263,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-M-BS-OUTPUT
+    name: WAIT-M-BS-O
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -271,7 +271,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-M-CS1-INPUT
+    name: WAIT-M-CS1-I
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -279,7 +279,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-M-CS1-OUTPUT
+    name: WAIT-M-CS1-O
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -287,7 +287,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-M-CS2-INPUT
+    name: WAIT-M-CS2-I
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -295,7 +295,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-M-CS2-OUTPUT
+    name: WAIT-M-CS2-O
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -303,7 +303,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-M-RS1-INPUT
+    name: WAIT-M-RS1-I
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -311,7 +311,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-M-RS1-OUTPUT
+    name: WAIT-M-RS1-O
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -319,7 +319,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-M-RS2-INPUT
+    name: WAIT-M-RS2-I
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -327,7 +327,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-M-RS2-OUTPUT
+    name: WAIT-M-RS2-O
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -335,7 +335,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-M-DS-INPUT
+    name: WAIT-M-DS-I
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -343,7 +343,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-M-DS-OUTPUT
+    name: WAIT-M-DS-O
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -351,7 +351,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-M-SS-INPUT
+    name: WAIT-M-SS-I
     pos : [0,1]
     properties:
       - group: waiting-positions
@@ -359,7 +359,7 @@ nodes:
       - orientation_tolerance: 3.14
       - target_tolerance: 1.5
   - !unconnected
-    name: WAIT-M-SS-OUTPUT
+    name: WAIT-M-SS-O
     pos : [0,1]
     properties:
       - group: waiting-positions
