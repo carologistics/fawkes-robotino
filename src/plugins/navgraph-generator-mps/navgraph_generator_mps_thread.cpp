@@ -305,8 +305,7 @@ NavGraphGeneratorMPSThread::generate_mps_wait_zones(std::vector<Eigen::Vector2i>
 		Eigen::Vector2f ori_vec =
 		  (*(free_zones.begin())).cast<float>() - entry.second.input_pos.head(2);
 		double wait_ori = std::atan2(ori_vec.x(), ori_vec.y());
-		mps_wait_zones_.emplace(entry.first + "-I",
-		                        std::make_pair(*(free_zones.begin()), wait_ori));
+		mps_wait_zones_.emplace(entry.first + "-I", std::make_pair(*(free_zones.begin()), wait_ori));
 		std::sort(free_zones.begin(),
 		          free_zones.end(),
 		          [&entry](const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) {
@@ -317,8 +316,7 @@ NavGraphGeneratorMPSThread::generate_mps_wait_zones(std::vector<Eigen::Vector2i>
 		          });
 		ori_vec  = (*(free_zones.begin())).cast<float>() - entry.second.output_pos.head(2);
 		wait_ori = std::atan2(ori_vec.x(), ori_vec.y());
-		mps_wait_zones_.emplace(entry.first + "-O",
-		                        std::make_pair(*(free_zones.begin()), wait_ori));
+		mps_wait_zones_.emplace(entry.first + "-O", std::make_pair(*(free_zones.begin()), wait_ori));
 	}
 }
 
