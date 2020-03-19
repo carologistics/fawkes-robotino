@@ -92,8 +92,18 @@
   )
 )
 
+(defrule scheduling-expand-gaol
+ ?g <- (goal (id ?g-id) (sub-type SIMPLE) (mode SELECTED) (class ?class))
+ (forall (plan (id ?p-id) (goal-id ?g-id))
+         (wm-fact (key scheduling goal-plan args? g ?g-id p ?p-id)))
+ (wm-fact (key meta precedence goal-class args? $? ?class $?))
+  =>
+  (modify ?g (mode EXPANDED))
+)
+
 ;;;Goal Events
 (defrule scheduling-goal-completion-event
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (goal (id ?g-id) (sub-type SIMPLE) (mode SELECTED) (class ?class))
  (not (wm-fact (key scheduling goal-event args? g ?g-id e ?)))
  ;Is production goal
@@ -116,6 +126,7 @@
 ;)
 
 (defrule scheduling-resource-production-event
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (wm-fact (key scheduling event-requirment args? e ? r ?r))
  (not (wm-fact (key scheduling resource-producing-event args? e ? r ?r)))
 =>
@@ -125,10 +136,11 @@
    (wm-fact (key scheduling event-requirment args? e ?start-event-name r ?r)
             (type INT) (value 1))
    (wm-fact (key scheduling resource-producing-event args? e ?start-event-name r ?r))
-   )
+ )
 )
 
 (defrule scheduling-resource-consumption-event
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (wm-fact (key scheduling event-requirment args? e ? r ?r))
  (not (wm-fact (key scheduling resource-consuming-event args? e ? r ?r)))
 =>
@@ -143,7 +155,8 @@
 
 ;;;Plan Events
 (defrule scheduling-plan-events
- (goal (id ?goal-id) (sub-type SIMPLE) (class ?class)(mode EXPANDED))
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (goal (id ?goal-id) (sub-type SIMPLE) (class ?class) (mode SELECTED))
  (plan (id ?plan-id) (goal-id ?goal-id))
  (wm-fact (key meta precedence goal-class args? $?  ?class $?))
  (wm-fact (key meta plan start-location args? id ?plan-id) (values ?ls ?ls-side))
@@ -188,9 +201,9 @@
 
 ;Precedence across goals
 (defrule scheduling-precedence-across-goals
- (wm-fact (key meta precedence goal-class args? a  ?class-a b ?class-b))
- (goal (id ?g-id-a) (sub-type SIMPLE) (class ?class-a)(mode EXPANDED))
- (goal (id ?g-id-b) (sub-type SIMPLE) (class ?class-b)(mode EXPANDED))
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (goal (id ?g-id-a) (sub-type SIMPLE) (class ?class-a))
+ (goal (id ?g-id-b) (sub-type SIMPLE) (class ?class-b))
  (plan (id ?p-id-b) (goal-id ?g-id-b))
  ;from end of goal 'a'
  (wm-fact (key scheduling event args? e ?e-goal-end))

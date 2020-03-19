@@ -1007,6 +1007,7 @@
 (defrule goal-expander-fill-cap-station-centralgoal-id
    "Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
     (goal (class ORDER) (id ?g-order))
     (goal (class PREPARE-MACHINE) (id ?g-prepare) (parent ?g-order))
     ?p <- (goal (class PREPARE-CS) (id ?g-cs) (parent ?g-prepare))
@@ -1060,10 +1061,10 @@
                                     (duration (/ (nodes-distance (node-name ?cs INPUT)
                                                                 (wait-pos ?cs INPUT)) ?*V*)))
     )
-    (modify ?g (mode EXPANDED))
 )
 
 (defrule goal-remove-workpiece-from-mps-central
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (goal (class ORDER) (id ?g-order))
  (goal (class PREPARE-MACHINE) (id ?g-prepare) (parent ?g-order))
  ?p <- (goal (class PREPARE-CS) (id ?g-cs) (parent ?g-prepare))
@@ -1108,11 +1109,11 @@
         (duration (/ (nodes-distance (node-name ?mps ?side)
                                     (wait-pos ?mps ?side)) ?*V*)))
  )
- (modify ?g (mode EXPANDED))
 )
 
 
 (defrule goal-produce-c0-central
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (goal (class ORDER) (id ?g-order) (params ord ?order))
  ?p <- (goal (class WP-OPERATIONS) (id ?g-wp) (parent ?g-order))
  ?g <- (goal (mode SELECTED) (id ?goal-id) (class MOUNT-CAP) (parent ?g-wp)
@@ -1207,10 +1208,10 @@
         (duration (/ (nodes-distance (node-name ?cs INPUT)
                                     (wait-pos ?cs INPUT)) ?*V*)))
  )
- (modify ?g (mode EXPANDED))
 )
 
 (defrule goal-deliver-central
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (goal (class ORDER) (id ?g-order)
              (params  ord ?order))
  ?p <- (goal (class WP-OPERATIONS) (id ?g-wp) (parent ?g-order)
@@ -1332,5 +1333,4 @@
                 (duration (/ (nodes-distance (node-name ?ds INPUT)
                                              (wait-pos ?ds INPUT)) ?*V*)))
  )
- (modify ?g (mode EXPANDED))
 )
