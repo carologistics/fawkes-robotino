@@ -27,6 +27,9 @@ check_file () {
     if [[ "${LINE}" == *"SIMTEST: FAILED"* ]] ; then
       echo $file
       return
+    elif [[ "${LINE}" == *"[EXCEPTION]"* ]] ; then
+      echo $file
+      return
     elif [[ "${LINE}" == *"SIMTEST: SUCCEEDED"* ]] ; then
       return
     fi
