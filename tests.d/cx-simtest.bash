@@ -34,7 +34,7 @@ stop_test () {
   rm -f $tmpconfig
 }
 
-trap "echo Aborting simulation test; stop_test" SIGINT SIGTERM
+trap "echo Aborting simulation test; stop_test" SIGINT SIGTERM SIGPIPE
 $SCRIPT_PATH/gazsim.bash -o -r --mongodb -m m-skill-sim-clips-exec -n 3 --team-cyan Carologistics --start-game=PRODUCTION $@
 echo "Waiting for results..."
 $SCRIPT_PATH/cx-simtest-check.bash ./robot1_latest.log ./robot2_latest.log ./robot3_latest.log
