@@ -38,6 +38,7 @@ ClipsMipSchedulerThread::ClipsMipSchedulerThread()
 ClipsMipSchedulerThread::~ClipsMipSchedulerThread()
 {
 	clips_envs_.clear();
+	delete gurobi_model_;
 	delete gurobi_env_;
 }
 
@@ -90,6 +91,10 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
 	clips->add_function("scheduler-add-goal-plan",
 	                    sigc::slot<void, std::string, std::string>(
 	                      sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_goal_plan),
+	                                    env_name)));
+	clips->add_function("scheduler-generate-model",
+	                    sigc::slot<void>(
+	                      sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::build_model),
 	                                    env_name)));
 }
 
@@ -219,4 +224,28 @@ ClipsMipSchedulerThread::add_goal_plan(std::string env_name,
                                        std::string plan_name)
 {
 	goal_plans_[goal_name].push_back(plan_name);
+}
+
+void
+ClipsMipSchedulerThread::build_model(std::string env_name)
+{
+	try {
+		gurobi_model_ = new GRBModel(*gurobi_env_);
+		gurobi_model_->set(GRB_StringAttr_ModelName, "SchedulingRcll");
+	} catch (GRBException e) {
+	}
+	//Init Gurobi Vars
+	for (auto const &iE : events_)
+		v_event_time_[iE.first] =
+		  gurobi_model_->addVar(0, 900, 1, GRB_INTEGER, ("T_" + iE.first).c_str());
+
+	for (auto const &iR : resource_producers_)
+		for (auto const &iEp : resource_producers_[iR.first])
+			for (auto const &iEc : resource_consumers_[iR.first])
+				if (iEp->goal != iEc->goal || iEp->goal.size() == 0)
+					v_events_sequence_[iEp->name][iEc->name] = gurobi_model_->addVar(
+					  0, 1, 0, GRB_BINARY, ("X_" + iEp->name + "." + iEc->name).c_str());
+
+	for (auto const &iP : plan_events_)
+		v_plan_selection_[iP.first] = gurobi_model_->addVar(0, 900, 1, GRB_INTEGER, iP.first);
 }

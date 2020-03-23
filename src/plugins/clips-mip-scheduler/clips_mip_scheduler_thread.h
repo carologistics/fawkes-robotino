@@ -58,8 +58,8 @@ protected:
 private:
 	std::map<std::string, fawkes::LockPtr<CLIPS::Environment>> clips_envs_;
 
-	GRBEnv *  gurobi_env_ = 0;
-	GRBModel *model_      = 0;
+	GRBEnv *  gurobi_env_   = 0;
+	GRBModel *gurobi_model_ = 0;
 
 	struct Event
 	{
@@ -75,6 +75,7 @@ private:
 		std::string                goal = "";
 		std::string                plan = "";
 	};
+
 	std::map<std::string, Event *>                  events_;
 	std::map<std::string, std::vector<Event *>>     resource_producers_;
 	std::map<std::string, std::vector<Event *>>     resource_consumers_;
@@ -95,5 +96,6 @@ private:
 	void add_plan_event(std::string env_name, std::string plan_name, std::string event_name);
 	void add_goal_event(std::string env_name, std::string goal_name, std::string event_name);
 	void add_goal_plan(std::string env_name, std::string goal_name, std::string plan_name);
+	void build_model(std::string env_name);
 };
 #endif /* !PLUGINS_CLIPS_MIP_SCHEDULER_THREAD_H__ */
