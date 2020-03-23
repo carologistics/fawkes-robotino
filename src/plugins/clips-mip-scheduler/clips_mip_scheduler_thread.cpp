@@ -32,21 +32,18 @@ ClipsMipSchedulerThread::ClipsMipSchedulerThread()
   CLIPSFeature("mip-scheduler"),
   CLIPSFeatureAspect(this)
 {
+	gurobi_env_ = new GRBEnv("mip_log.lp");
 }
 
 ClipsMipSchedulerThread::~ClipsMipSchedulerThread()
 {
 	clips_envs_.clear();
+	delete gurobi_env_;
 }
 
 void
 ClipsMipSchedulerThread::init()
 {
-	gurobi_env_    = new GRBEnv();
-	GRBModel model = GRBModel(*gurobi_env_);
-	model.set(GRB_StringAttr_ModelName, "SchedulingRcll");
-	model_ = &model;
-
 	logger->log_info(name(), "Intilized");
 };
 
@@ -200,8 +197,8 @@ ClipsMipSchedulerThread::add_plan_event(std::string env_name,
 	if (events_.find(event_name) == events_.end())
 		events_[event_name] = new Event(event_name);
 
-      plan_events_[plan_name].push_back(events_[event_name]);
-      events_[event_name]->plan = plan_name;
+	plan_events_[plan_name].push_back(events_[event_name]);
+	events_[event_name]->plan = plan_name;
 }
 
 void
@@ -212,8 +209,8 @@ ClipsMipSchedulerThread::add_goal_event(std::string env_name,
 	if (events_.find(event_name) == events_.end())
 		events_[event_name] = new Event(event_name);
 
-      goal_events_[goal_name].push_back(events_[event_name]);
-      events_[event_name]->goal = goal_name;
+	goal_events_[goal_name].push_back(events_[event_name]);
+	events_[event_name]->goal = goal_name;
 }
 
 void
