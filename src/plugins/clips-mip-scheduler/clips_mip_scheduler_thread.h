@@ -61,6 +61,7 @@ private:
 	GRBEnv *  gurobi_env_ = 0;
 	GRBModel *model_      = 0;
 
+<<<<<<< HEAD
 	struct Event
 	{
 		Event(std::string n)
@@ -72,6 +73,20 @@ private:
 		int                        duration;
 		std::map<std::string, int> resources;
 		std::vector<Event *>       precedes;
+=======
+     struct Event {
+         Event(std::string n)  { name = n; };
+         std::string                    name;
+         std::string                    location;
+         int                            duration;
+         std::map<std::string,int>      resources;
+         std::vector<Event*>            precedes;
+
+         GRBVar*                         time = 0;
+         std::string                    goal = "";
+         std::string                    plan = "";
+     };
+>>>>>>> fba35ed17... clips_mip_scheduler: Event trackes its goal and plan (for easier access)
 
 		GRBVar *time = 0;
 	};

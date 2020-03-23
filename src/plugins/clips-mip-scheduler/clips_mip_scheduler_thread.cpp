@@ -200,7 +200,8 @@ ClipsMipSchedulerThread::add_plan_event(std::string env_name,
 	if (events_.find(event_name) == events_.end())
 		events_[event_name] = new Event(event_name);
 
-	plan_events_[plan_name].push_back(events_[event_name]);
+      plan_events_[plan_name].push_back(events_[event_name]);
+      events_[event_name]->plan = plan_name;
 }
 
 void
@@ -211,7 +212,8 @@ ClipsMipSchedulerThread::add_goal_event(std::string env_name,
 	if (events_.find(event_name) == events_.end())
 		events_[event_name] = new Event(event_name);
 
-	goal_events_[goal_name].push_back(events_[event_name]);
+      goal_events_[goal_name].push_back(events_[event_name]);
+      events_[event_name]->goal = goal_name;
 }
 
 void
