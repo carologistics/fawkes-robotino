@@ -22,7 +22,7 @@
 	(modify ?g (mode FINISHED) (outcome COMPLETED))
 )
 
-(defrule action-seleection-explorezone-unlock
+(defrule action-selection-explorezone-unlock
   (declare (salience 1))
 	(goal (id ?goal-id) (class EXPLORATION) (mode DISPATCHED))
 	?p <- (plan (id EXPLORE-ZONE) (goal-id ?goal-id))
