@@ -28,6 +28,8 @@ SCRIPT_PATH=$FAWKES_DIR/bin/
 pushd $SCRIPT_PATH
 TERMINAL=tmux
 export TERMINAL
+ROS_LOG_DIR=$FAWKES_DIR/ros.log
+export ROS_LOG_DIR
 
 stop_test () {
   $SCRIPT_PATH/gazsim.bash -x kill
