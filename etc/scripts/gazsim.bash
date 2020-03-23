@@ -405,13 +405,13 @@ if [  $COMMAND  == start ]; then
 	$initial_pose_script_location $CONF -C $NUM_CYAN -M $NUM_MAGENTA -d
     else
 	echo "Skipped publishing poses"
-  sleep 10
     fi
 
 		if [ -n "$START_GAME" ]; then
 				if [ "$(command -v rcll-refbox-instruct)" == "" ]; then
 						echo "rcll-refbox-instruct not found, not built or old version?"
 				else
+						rcll-refbox-instruct -w
 						echo "Starting game (Phase: $START_GAME ${TEAM_CYAN:+Cyan: ${TEAM_CYAN}}${TEAM_MAGENTA:+ Magenta: ${TEAM_MAGENTA}})"
 						rcll-refbox-instruct -p SETUP -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
 						sleep 5
