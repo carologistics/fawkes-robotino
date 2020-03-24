@@ -83,9 +83,9 @@ private:
 	std::map<std::string, std::vector<Event *>>     goal_events_;
 	std::map<std::string, std::vector<std::string>> goal_plans_;
 
-	std::map<std::string, GRBVar>                        v_event_time_;
-	std::map<std::string, GRBVar>                        v_plan_selection_;
-	std::map<std::string, std::map<std::string, GRBVar>> v_events_sequence_;
+	std::map<std::string, GRBVar>                        gurobi_vars_time_;
+	std::map<std::string, GRBVar>                        gurobi_vars_selection_;
+	std::map<std::string, std::map<std::string, GRBVar>> gurobi_vars_sequence_;
 
 private:
 	void set_event_location(std::string env_name, std::string event_name, std::string location);
