@@ -249,4 +249,13 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 	for (auto const &iP : plan_events_)
 		gurobi_vars_selection_[iP.first] =
 		  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("P_" + iP.first).c_str());
+
+	//Constraint 1
+	for (auto const &iE1 : events_)
+		for (auto const &iE2 : iE1.second->precedes) {
+			logger->log_info(name(), (iE1.first + "-->" + iE2->name + ",").c_str());
+			gurobi_model_->addConstr(gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
+			                           >= iE1.second->duration,
+			                         ("PRES_" + iE1.second->name + "<" + iE2->name).c_str());
+		}
 }
