@@ -242,12 +242,15 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 	for (auto const &iR : resource_producers_)
 		for (auto const &iEp : resource_producers_[iR.first])
 			for (auto const &iEc : resource_consumers_[iR.first])
-				if (iEp->goal != iEc->goal || iEp->goal.size() == 0)
-					gurobi_vars_sequence_[iEp->name][iEc->name] = gurobi_model_->addVar(
-					  0, 1, 0, GRB_BINARY, ("X_" + iR.first + "_" + iEp->name + "." + iEc->name).c_str());
+				if (iEp->goal != iEc->goal || iEp->goal.size() == 0) {
+					std::string vname = iR.first + "_" + iEp->name + "." + iEc->name;
+					gurobi_vars_sequence_[iR.first][iEp->name][iEc->name] =
+					  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("X_" + vname).c_str());
+					logger->log_info(name(), ("X_" + vname).c_str());
+				}
 
 	for (auto const &iP : plan_events_)
-		gurobi_vars_selection_[iP.first] =
+		gurobi_vars_plan_[iP.first] =
 		  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("P_" + iP.first).c_str());
 
 	//Constraint 1
