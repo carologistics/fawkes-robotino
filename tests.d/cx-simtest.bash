@@ -34,11 +34,11 @@ ROS_LOG_DIR=$WORKING_DIR/ros
 export ROS_LOG_DIR
 
 stop_test () {
-  $SCRIPT_PATH/gazsim.bash -x kill
+  $SCRIPT_PATH/gazsim.bash -x kill >/dev/null
   rm -f $tmpconfig
 }
 
-trap "echo Aborting simulation test; stop_test" SIGINT SIGTERM SIGPIPE EXIT
+trap "echo Stopping simulation test; stop_test" SIGINT SIGTERM SIGPIPE EXIT
 ulimit -c 0
 $SCRIPT_PATH/gazsim.bash -o -r --mongodb -m m-skill-sim-clips-exec -n 3 --team-cyan Carologistics --start-game=PRODUCTION $@
 echo "Waiting for results..."
