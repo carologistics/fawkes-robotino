@@ -43,4 +43,4 @@
 # Log and stats files
 *.log
 /buildstats.db
-
+/tests.out.d

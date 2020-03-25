@@ -25,10 +25,12 @@ tmpconfig=$(mktemp $FAWKES_DIR/cfg/conf.d/simtest-XXXXXX.yaml)
 echo "/clips-executive/specs/rcll/parameters/simtest/enabled: true" > $tmpconfig
 export FAWKES_DIR
 SCRIPT_PATH=$FAWKES_DIR/bin/
-cd $SCRIPT_PATH
+WORKING_DIR=$FAWKES_DIR/tests.out.d/cx-simtest
+mkdir -p $WORKING_DIR
+cd $WORKING_DIR
 TERMINAL=tmux
 export TERMINAL
-ROS_LOG_DIR=$FAWKES_DIR/ros.log
+ROS_LOG_DIR=$WORKING_DIR/ros
 export ROS_LOG_DIR
 
 stop_test () {
