@@ -260,6 +260,15 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 				                         ("PRES_" + iE1.second->name + "<" + iE2->name).c_str());
 			}
 
+		//Constraint 4
+		for (auto const &iG : goal_plans_) {
+			GRBLinExpr sum = 0;
+			for (auto const &iP : iG.second)
+				sum += gurobi_vars_plan_[iP];
+
+			gurobi_model_->addConstr(sum == 1, ("Goal_[" + iG.first + "]").c_str());
+		}
+
 		//Constraint 2&4,5&6
 		for (auto const &iR : resource_producers_) {
 			for (auto const &iErp : resource_producers_[iR.first]) {
