@@ -25,7 +25,7 @@ tmpconfig=$(mktemp $FAWKES_DIR/cfg/conf.d/simtest-XXXXXX.yaml)
 echo "/clips-executive/specs/rcll/parameters/simtest/enabled: true" > $tmpconfig
 export FAWKES_DIR
 SCRIPT_PATH=$FAWKES_DIR/bin/
-pushd $SCRIPT_PATH
+cd $SCRIPT_PATH
 TERMINAL=tmux
 export TERMINAL
 ROS_LOG_DIR=$FAWKES_DIR/ros.log
@@ -40,4 +40,3 @@ trap "echo Aborting simulation test; stop_test" SIGINT SIGTERM SIGPIPE EXIT
 $SCRIPT_PATH/gazsim.bash -o -r --mongodb -m m-skill-sim-clips-exec -n 3 --team-cyan Carologistics --start-game=PRODUCTION $@
 echo "Waiting for results..."
 $SCRIPT_PATH/cx-simtest-check.bash ./robot1_latest.log ./robot2_latest.log ./robot3_latest.log
-popd
