@@ -189,7 +189,7 @@ ClipsMipSchedulerThread::add_event_precedence(std::string env_name,
 		events_[event_name] = new Event(event_name);
 
 	if (events_.find(preceded) == events_.end())
-		events_[preceded] = new Event(event_name);
+		events_[preceded] = new Event(preceded);
 
 	events_[event_name]->precedes.push_back(events_[preceded]);
 }
