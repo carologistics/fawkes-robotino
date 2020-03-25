@@ -232,33 +232,73 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 	try {
 		gurobi_model_ = new GRBModel(*gurobi_env_);
 		gurobi_model_->set(GRB_StringAttr_ModelName, "SchedulingRcll");
-	} catch (GRBException e) {
-	}
-	//Init Gurobi Vars
-	for (auto const &iE : events_)
-		gurobi_vars_time_[iE.first] =
-		  gurobi_model_->addVar(0, 900, 1, GRB_INTEGER, ("T_" + iE.first).c_str());
+		//Init Gurobi Vars
+		for (auto const &iE : events_)
+			gurobi_vars_time_[iE.first] =
+			  gurobi_model_->addVar(0, 900, 1, GRB_INTEGER, ("T_" + iE.first).c_str());
 
-	for (auto const &iR : resource_producers_)
-		for (auto const &iEp : resource_producers_[iR.first])
-			for (auto const &iEc : resource_consumers_[iR.first])
-				if (iEp->goal != iEc->goal || iEp->goal.size() == 0) {
-					std::string vname = iR.first + "_" + iEp->name + "." + iEc->name;
-					gurobi_vars_sequence_[iR.first][iEp->name][iEc->name] =
-					  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("X_" + vname).c_str());
-					logger->log_info(name(), ("X_" + vname).c_str());
-				}
+		for (auto const &iR : resource_producers_)
+			for (auto const &iEp : resource_producers_[iR.first])
+				for (auto const &iEc : resource_consumers_[iR.first])
+					if (iEp->goal != iEc->goal || iEp->goal.size() == 0) {
+						std::string vname = iR.first + "_" + iEp->name + "." + iEc->name;
+						gurobi_vars_sequence_[iR.first][iEp->name][iEc->name] =
+						  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("X_" + vname).c_str());
+						logger->log_info(name(), ("X_" + vname).c_str());
+					}
 
-	for (auto const &iP : plan_events_)
-		gurobi_vars_plan_[iP.first] =
-		  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("P_" + iP.first).c_str());
+		for (auto const &iP : plan_events_)
+			gurobi_vars_plan_[iP.first] =
+			  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("P_" + iP.first).c_str());
 
-	//Constraint 1
-	for (auto const &iE1 : events_)
-		for (auto const &iE2 : iE1.second->precedes) {
-			logger->log_info(name(), (iE1.first + "-->" + iE2->name + ",").c_str());
-			gurobi_model_->addConstr(gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
-			                           >= iE1.second->duration,
-			                         ("PRES_" + iE1.second->name + "<" + iE2->name).c_str());
+		//Constraint 1
+		for (auto const &iE1 : events_)
+			for (auto const &iE2 : iE1.second->precedes) {
+				logger->log_info(name(), (iE1.first + "-->" + iE2->name + ",").c_str());
+				gurobi_model_->addConstr(gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
+				                           >= iE1.second->duration,
+				                         ("PRES_" + iE1.second->name + "<" + iE2->name).c_str());
+			}
+
+		//Constraint 2&4,5&6
+		for (auto const &iR : resource_producers_) {
+			for (auto const &iErp : resource_producers_[iR.first]) {
+				GRBLinExpr flow_out = 0;
+				for (auto const &iErc : resource_consumers_[iR.first])
+					if (iErp->goal != iErc->goal || iErp->goal.size() == 0)
+						flow_out += gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
+
+				if (iErp->plan.size() == 0 && iErp->goal.size() == 0)
+					gurobi_model_->addConstr(flow_out == iErp->resources[iR.first],
+					                         ("flow_out_" + iR.first + "_" + iErp->name).c_str());
+
+				else if (gurobi_vars_plan_.find(iErp->plan) != gurobi_vars_plan_.end())
+					gurobi_model_->addConstr(flow_out
+					                           == iErp->resources[iR.first] * gurobi_vars_plan_[iErp->plan],
+					                         ("flow_out_" + iR.first + "_" + iErp->name).c_str());
+			}
+
+			for (auto const &iErc : resource_consumers_[iR.first]) {
+				GRBLinExpr flow_in = 0;
+				for (auto const &iErp : resource_producers_[iR.first])
+					if (iErp->goal != iErc->goal || iErp->goal.size() == 0)
+						flow_in -= gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
+
+				if (iErc->plan.size() == 0 && iErc->goal.size() == 0)
+					gurobi_model_->addConstr(flow_in == iErc->resources[iR.first],
+					                         ("flow_in_" + iR.first + "_" + iErc->name).c_str());
+
+				else if (gurobi_vars_plan_.find(iErc->plan) != gurobi_vars_plan_.end())
+					gurobi_model_->addConstr(flow_in
+					                           == iErc->resources[iR.first] * gurobi_vars_plan_[iErc->plan],
+					                         ("flow_in_" + iR.first + "_" + iErc->name).c_str());
+			}
 		}
+		gurobi_model_->write("model.lp");
+	} catch (GRBException &e) {
+		logger->log_error(name(), "Error code = %u ", e.getErrorCode());
+		logger->log_error(name(), e.getMessage().c_str());
+	} catch (...) {
+		logger->log_error(name(), "Exception during optimization");
+	}
 }
