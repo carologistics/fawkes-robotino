@@ -78,6 +78,10 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
 	  "scheduler-add-event-resource",
 	  sigc::slot<void, std::string, std::string, int>(
 	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_event_resource), env_name)));
+	clips->add_function("scheduler-set-resource-setup-time",
+	                    sigc::slot<void, std::string, std::string, std::string, double>(sigc::bind<0>(
+	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::set_resource_setup_time),
+	                      env_name)));
 	clips->add_function("scheduler-add-event-precedence",
 	                    sigc::slot<void, std::string, std::string>(sigc::bind<0>(
 	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_event_precedence),
@@ -178,6 +182,25 @@ ClipsMipSchedulerThread::add_event_resource(std::string env_name,
 		resource_producers_[res_name].push_back(events_[event_name]);
 	else
 		resource_consumers_[res_name].push_back(events_[event_name]);
+}
+
+void
+ClipsMipSchedulerThread::set_resource_setup_time(std::string env_name,
+                                                 std::string res,
+                                                 std::string event1,
+                                                 std::string event2,
+                                                 double      duration)
+{
+	if (events_.find(event1) == events_.end())
+		events_[event1] = new Event(event1);
+
+	if (events_.find(event2) == events_.end())
+		events_[event2] = new Event(event2);
+
+	resource_setup_[res][events_[event1]][events_[event2]] = duration;
+
+	logger->log_info(
+	  name(), "Setup [%s]: %s --> %s %lf ", res.c_str(), event1.c_str(), event2.c_str(), duration);
 }
 
 void
