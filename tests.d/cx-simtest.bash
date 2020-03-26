@@ -24,7 +24,7 @@ FAWKES_DIR=$(realpath $(dirname ${BASH_SOURCE[0]})/..)
 tmpconfig=$(mktemp $FAWKES_DIR/cfg/conf.d/simtest-XXXXXX.yaml)
 echo "/clips-executive/specs/rcll/parameters/simtest/enabled: true" > $tmpconfig
 export FAWKES_DIR
-SCRIPT_PATH=$FAWKES_DIR/bin/
+SCRIPT_PATH=$FAWKES_DIR/bin
 WORKING_DIR=$FAWKES_DIR/tests.out.d/cx-simtest
 mkdir -p $WORKING_DIR
 cd $WORKING_DIR
