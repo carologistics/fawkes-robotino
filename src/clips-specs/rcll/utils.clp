@@ -752,7 +752,15 @@
 
 
 (deffunction wait-pos (?mps ?side)
-  (return (sym-cat WAIT- ?mps - (sub-string 1 1 ?side)))
+	(bind ?prefix (sym-cat WAIT- ?mps))
+  (switch ?side
+    (case INPUT then (return (sym-cat ?prefix - I)))
+    (case OUTPUT then (return (sym-cat ?prefix - O)))
+		(default
+      (printout error "wait-pos input " ?side " is not a valid side
+                       (allowed values: INPUT,OUTPUT)" crlf)
+      (return (sym-cat ?prefix - I)))
+  )
 )
 
 
