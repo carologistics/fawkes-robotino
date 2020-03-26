@@ -215,6 +215,8 @@ ClipsMipSchedulerThread::add_event_precedence(std::string env_name,
 		events_[preceded] = new Event(preceded);
 
 	events_[event_name]->precedes.push_back(events_[preceded]);
+
+	logger->log_info(name(), "Pres: %s << %s  ", event_name.c_str(), preceded.c_str());
 }
 
 void
@@ -255,11 +257,12 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 	try {
 		gurobi_model_ = new GRBModel(*gurobi_env_);
 		gurobi_model_->set(GRB_StringAttr_ModelName, "SchedulingRcll");
-		//Init Gurobi Vars
+		//Init Gurobi Time Vars (T)
 		for (auto const &iE : events_)
 			gurobi_vars_time_[iE.first] =
 			  gurobi_model_->addVar(0, 900, 1, GRB_INTEGER, ("T_" + iE.first).c_str());
 
+		//Init Gurobi event sequencing Vars (X)
 		for (auto const &iR : resource_producers_)
 			for (auto const &iEp : resource_producers_[iR.first])
 				for (auto const &iEc : resource_consumers_[iR.first])
@@ -270,6 +273,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 						logger->log_info(name(), ("X_" + vname).c_str());
 					}
 
+		//Init Gurobi plan selection Vars (S)
 		for (auto const &iP : plan_events_)
 			gurobi_vars_plan_[iP.first] =
 			  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("P_" + iP.first).c_str());
@@ -277,7 +281,6 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 		//Constraint 1
 		for (auto const &iE1 : events_)
 			for (auto const &iE2 : iE1.second->precedes) {
-				logger->log_info(name(), (iE1.first + "-->" + iE2->name + ",").c_str());
 				gurobi_model_->addConstr(gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
 				                           >= iE1.second->duration,
 				                         ("PRES_" + iE1.second->name + "<" + iE2->name).c_str());
@@ -326,6 +329,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 					                         ("flow_in_" + iR.first + "_" + iErc->name).c_str());
 			}
 		}
+
 		gurobi_model_->write("model.lp");
 	} catch (GRBException &e) {
 		logger->log_error(name(), "Error code = %u ", e.getErrorCode());
