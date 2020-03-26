@@ -752,6 +752,11 @@
 
 
 (deffunction wait-pos (?mps ?side)
+" @param ?mps  machine name
+  @param ?side machine side
+
+  @return Symbol of the waiting position corresponding to the given mps side
+"
 	(bind ?prefix (sym-cat WAIT- ?mps))
   (switch ?side
     (case INPUT then (return (sym-cat ?prefix - I)))
