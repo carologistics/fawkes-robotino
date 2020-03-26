@@ -20,7 +20,7 @@ if [ "$NAME" != "Fedora" ] ; then
 fi
 
 
-FAWKES_DIR=$PWD
+FAWKES_DIR=$(realpath $(dirname ${BASH_SOURCE[0]})/..)
 tmpconfig=$(mktemp $FAWKES_DIR/cfg/conf.d/simtest-XXXXXX.yaml)
 echo "/clips-executive/specs/rcll/parameters/simtest/enabled: true" > $tmpconfig
 export FAWKES_DIR
