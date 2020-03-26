@@ -199,12 +199,12 @@
  ;from end of goal 'a'
  (wm-fact (key scheduling event args? e ?e-goal-end))
  (wm-fact (key scheduling goal-event args? g ?g-id-a e ?e-goal-end))
- (not (wm-fact (key scheduling plan-event args? g ?g-id-a e ?e-goal-end)))
+ (not (wm-fact (key scheduling plan-event args? p ?g-id-a e ?e-goal-end)))
  ;to all events of goal 'b'
  (wm-fact (key scheduling event args? e ?e-plan))
  (wm-fact (key scheduling plan-event args? p ?p-id-b e ?e-plan))
  (not (wm-fact (key scheduling event-precedence args? e-a ?e-goal-end e-b ?e-plan)))
- (wm-fact (key meta precedence goal-class args? a  ?class-a b ?class-b))
+ (wm-fact (key meta precedence goal-class args? a ?class-a b ?class-b))
  =>
  (assert (wm-fact (key scheduling event-precedence args? e-a ?e-goal-end e-b ?e-plan)))
 )
