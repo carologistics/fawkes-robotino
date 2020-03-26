@@ -36,6 +36,8 @@ export ROS_LOG_DIR
 stop_test () {
   $SCRIPT_PATH/gazsim.bash -x kill >/dev/null
   rm -f $tmpconfig
+  # Workaround for https://github.com/buildkite/agent/issues/1203
+  rm -f $ROS_LOG_DIR/latest
 }
 
 trap "echo Stopping simulation test; stop_test" SIGINT SIGTERM SIGPIPE EXIT
@@ -43,6 +45,3 @@ ulimit -c 0
 $SCRIPT_PATH/gazsim.bash -o -r --mongodb -m m-skill-sim-clips-exec -n 3 --team-cyan Carologistics --start-game=PRODUCTION $@
 echo "Waiting for results..."
 $SCRIPT_PATH/cx-simtest-check.bash ./robot1_latest.log ./robot2_latest.log ./robot3_latest.log
-stop_test
-# Workaround for https://github.com/buildkite/agent/issues/1203
-rm -f $ROS_LOG_DIR/latest
