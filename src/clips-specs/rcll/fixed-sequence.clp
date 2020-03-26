@@ -1020,7 +1020,7 @@
     (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
     (not (plan (goal-id ?goal-id)))
     =>
-   (bind ?plan-id  (sym-cat FILL-CAP-PLAN- (gensym*)))
+   (bind ?plan-id  (sym-cat FCAP_ p1))
    (assert (wm-fact (key meta plan required-resources args? id ?plan-id)
                     (values ?cs ?cc R))
            (wm-fact (key meta plan start-location args? id ?plan-id)
@@ -1075,7 +1075,7 @@
  ;(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  (not (plan (goal-id ?goal-id)))
  =>
- (bind ?plan-id  (sym-cat CLEAR-MPS-PLAN- (gensym*)))
+ (bind ?plan-id  (sym-cat CLEAR_ p1 ))
  (bind ?side OUTPUT)
  (assert (wm-fact (key meta plan required-resources args? id ?plan-id)
                   (values ?mps ?wp R))
@@ -1137,7 +1137,7 @@
   ;(test (eq ?complexity C0))
  (not (plan (goal-id ?goal-id)))
  =>
- (bind ?plan-id  (sym-cat MOUNT-CAP-PLAN- (gensym*)))
+ (bind ?plan-id  (sym-cat MCAP_ p1 ))
  (assert (wm-fact (key meta plan required-resources args? id ?plan-id)
                   (values ?wp ?bs ?cs R))
          (wm-fact (key meta plan start-location args? id ?plan-id)
@@ -1241,7 +1241,7 @@
  ;(wm-fact (key order meta wp-for-order args? wp ?wp ord ?ord))
  (not (plan (goal-id ?goal-id)))
  =>
- (bind ?plan-id  (sym-cat DELIVER-PLAN- (gensym*)))
+ (bind ?plan-id  (sym-cat DELIVER_ p1))
  (bind ?side OUTPUT)
  (assert (wm-fact (key meta plan required-resources args? id ?plan-id)
                   (values ?wp ?cs ?ds R))
