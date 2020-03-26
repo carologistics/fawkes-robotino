@@ -92,15 +92,6 @@
   )
 )
 
-(defrule scheduling-expand-gaol
- ?g <- (goal (id ?g-id) (sub-type SIMPLE) (mode SELECTED) (class ?class))
- (forall (plan (id ?p-id) (goal-id ?g-id))
-         (wm-fact (key scheduling goal-plan args? g ?g-id p ?p-id)))
- (wm-fact (key meta precedence goal-class args? $? ?class $?))
-  =>
-  (modify ?g (mode EXPANDED))
-)
-
 ;;;Goal Events
 (defrule scheduling-goal-completion-event
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
@@ -249,6 +240,7 @@
 
 ;;Adding datasets to scheduler
 (defrule scheduling-add-event-location
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (wm-fact (key scheduling event args? e ?e))
  (wm-fact (key scheduling event-location args? e ?e ) (value ?l))
  =>
@@ -256,6 +248,7 @@
 )
 
 (defrule scheduling-add-event-duration
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (wm-fact (key scheduling event args? e ?e))
  (wm-fact (key scheduling event-duration args? e ?e) (value ?d))
  =>
@@ -263,6 +256,7 @@
 )
 
 (defrule scheduling-add-event-requirment
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (wm-fact (key scheduling event args? e ?e))
  (wm-fact (key scheduling event-requirment args? e ?e r ?r) (value ?req))
 =>
@@ -270,6 +264,7 @@
 )
 
 (defrule scheduling-add-event-precedence
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (wm-fact (key scheduling event args? e ?e-a))
  (wm-fact (key scheduling event args? e ?e-b))
  (wm-fact (key scheduling event-precedence args? e-a ?e-a e-b ?e-b))
@@ -278,6 +273,7 @@
 )
 
 (defrule scheduling-add-goal-event
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (wm-fact (key scheduling event args? e ?e))
  (wm-fact (key scheduling goal-event args? g ?g-id e ?e))
  =>
@@ -285,6 +281,7 @@
 )
 
 (defrule scheduling-add-plan-event
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (wm-fact (key scheduling event args? e ?e))
  (wm-fact (key scheduling plan-event args? p ?p-id e ?e))
  =>
@@ -292,12 +289,14 @@
 )
 
 (defrule scheduling-add-goal-plans
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (wm-fact (key scheduling goal-plan args? g ?g-id p ?p-id))
  =>
  (scheduler-add-goal-plan (sym-cat ?g-id) (sym-cat ?p-id))
 )
 
 (defrule scheduling-set-resource-setup-time
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (wm-fact (key scheduling event args? e ?producer))
  (wm-fact (key scheduling event args? e ?consumer))
  (wm-fact (key scheduling setup-time args? r ?r e-a ?producer e-b ?consumer)
