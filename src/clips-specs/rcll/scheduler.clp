@@ -218,6 +218,34 @@
  (assert (wm-fact (key scheduling event-precedence args? e-a ?e-goal-end e-b ?e-plan)))
 )
 
+;Resource setup times between 2 events
+(defrule scheduling-resource-Robot-setup-time
+ (wm-fact (key scheduling event args? e ?producer))
+ (wm-fact (key scheduling event-requirment args? e ?producer r ?r)
+          (value ?v1&:(> ?v1 0)))
+ (wm-fact (key scheduling event args? e ?consumer))
+ (wm-fact (key scheduling event-requirment args? e ?consumer r ?r)
+          (value ?v2&:(< ?v2 0)))
+ (or (not (wm-fact (key scheduling plan-event args? p ? e ?producer)))
+     (not (wm-fact (key scheduling plan-event args? p ? e ?consumer)))
+     (and (wm-fact (key scheduling plan-event args? p ?p1 e ?producer))
+          (wm-fact (key scheduling plan-event args? p ?p2 e ?consumer))
+          (test (neq ?p1 ?p2))))
+ =>
+ (bind ?setup-time 0)
+ (if (eq ?r R) then
+   (do-for-fact ((?l1 wm-fact) (?l2 wm-fact))
+                (and  (wm-key-prefix ?l1:key
+                       (create$ scheduling event-location args? e ?producer))
+                      (wm-key-prefix ?l2:key
+                       (create$ scheduling event-location args? e ?consumer)))
+      (bind ?setup-time (/ (nodes-distance ?l1:value ?l2:value) ?*V*)))
+ )
+ (assert (wm-fact (key scheduling setup-time args? r ?r e-a ?producer e-b ?consumer)
+                  (type INT) (value ?setup-time)))
+)
+
+
 
 ;;Adding datasets to scheduler
 (defrule scheduling-add-event-location
@@ -269,6 +297,15 @@
  (scheduler-add-goal-plan (sym-cat ?g-id) (sym-cat ?p-id))
 )
 
+(defrule scheduling-set-resource-setup-time
+ (wm-fact (key scheduling event args? e ?producer))
+ (wm-fact (key scheduling event args? e ?consumer))
+ (wm-fact (key scheduling setup-time args? r ?r e-a ?producer e-b ?consumer)
+           (value ?setup-time))
+ =>
+ (scheduler-set-resource-setup-time
+      (sym-cat ?r) (sym-cat ?producer) (sym-cat ?consumer) ?setup-time )
+ )
 
 ;(defrule shceduling-call-scheduler
 ; (goal (class ORDER) (mode EXPANDED))
