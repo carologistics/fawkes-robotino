@@ -306,10 +306,12 @@
       (sym-cat ?r) (sym-cat ?producer) (sym-cat ?consumer) ?setup-time )
  )
 
-;(defrule shceduling-call-scheduler
-; (goal (class ORDER) (mode EXPANDED))
-;=>
-;  (printout warn "Calling scheduler: Generating scheduling datasets" crlf)
-;  (generate-datasets)
-;  (printout warn "datasets are generated" crlf)
-;)
+
+
+(defrule shceduling-call-scheduler
+ (goal (class ORDER) (mode EXPANDED))
+ =>
+ (printout warn "Calling scheduler: Generating scheduling datasets" crlf)
+ (scheduler-generate-model)
+ (printout warn "datasets are generated" crlf)
+)
