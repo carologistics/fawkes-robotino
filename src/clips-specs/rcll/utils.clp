@@ -752,7 +752,20 @@
 
 
 (deffunction wait-pos (?mps ?side)
-  (return (sym-cat WAIT- ?mps - ?side))
+" @param ?mps  machine name
+  @param ?side machine side
+
+  @return Symbol of the waiting position corresponding to the given mps side
+"
+	(bind ?prefix (sym-cat WAIT- ?mps))
+  (switch ?side
+    (case INPUT then (return (sym-cat ?prefix - I)))
+    (case OUTPUT then (return (sym-cat ?prefix - O)))
+		(default
+      (printout error "wait-pos input " ?side " is not a valid side
+                       (allowed values: INPUT,OUTPUT)" crlf)
+      (return (sym-cat ?prefix - I)))
+  )
 )
 
 
