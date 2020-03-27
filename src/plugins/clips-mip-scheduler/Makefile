@@ -16,32 +16,36 @@
 BASEDIR = ../../..
 
 include $(BASEDIR)/etc/buildsys/config.mk
+include $(BASEDIR)/etc/buildsys/gurobi.mk
 include $(BUILDSYSDIR)/clips.mk
 
 LIBS_clips_mip_scheduler = fawkescore fawkesclipsaspect
 OBJS_clips_mip_scheduler = clips_mip_scheduler_plugin.o clips_mip_scheduler_thread.o \
 
+CFLAGS += $(CFLAGS_CLIPS) $(CFLAGS_GUROBI)
+LDFLAGS += $(LDFLAGS_CLIPS) $(LDFLAGS_GUROBI)
+
 OBJS_all    = $(OBJS_clips_mip_scheduler)
 PLUGINS_all = $(PLUGINDIR)/clips-mip-scheduler.$(SOEXT)
 
-ifeq ($(HAVE_CLIPS),1)
-  CFLAGS += $(CFLAGS_CLIPS)
-  LDFLAGS += $(LDFLAGS_CLIPS)
-
+ifeq ($(HAVE_CLIPS)$(HAVE_GUROBI),11)
   PLUGINS_build = $(PLUGINS_all)
 else
-  WARN_TARGETS += warning_clips
+  ifneq ($(HAVE_GUROBI),1)
+    WARN_TARGETS += warning_gurobi
+  endif
+  ifneq ($(HAVE_CLIPS),1)
+    WARN_TARGETS += warning_clips
+  endif
 endif
-
-
-CFLAGS += -I$(GUROBI_HOME)/include/
-LDFLAGS += -L$(GUROBI_HOME)/lib -lgurobi_c++ -lgurobi90
 
 
 ifeq ($(OBJSSUBMAKE),1)
 all: $(WARN_TARGETS)
 
-.PHONY: warning_clips
+.PHONY: warning_clips warning_gurobi
+warning_gurobi:
+	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting clips-mip-scheduler plugin$(TNORMAL) ($(GUROBI_ERROR))"
 warning_clips:
 	$(SILENT)echo -e "$(INDENT_PRINT)--> $(TRED)Omitting clips-mip-scheduler plugin$(TNORMAL) ($(CLIPS_ERROR))"
 endif
