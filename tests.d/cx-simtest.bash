@@ -33,14 +33,16 @@ export TERMINAL
 ROS_LOG_DIR=$WORKING_DIR/ros
 export ROS_LOG_DIR
 
+TRAP_SIGNALS="SIGINT SIGTERM SIGPIPE EXIT"
 stop_test () {
+  trap - $TRAP_SIGNALS
   $SCRIPT_PATH/gazsim.bash -x kill >/dev/null
   rm -f $tmpconfig
   # Workaround for https://github.com/buildkite/agent/issues/1203
   rm -f $ROS_LOG_DIR/latest
 }
 
-trap stop_test SIGINT SIGTERM SIGPIPE EXIT
+trap stop_test $TRAP_SIGNALS
 ulimit -c 0
 $SCRIPT_PATH/gazsim.bash -o -r --mongodb -m m-skill-sim-clips-exec -n 3 --team-cyan Carologistics --start-game=PRODUCTION $@
 echo "Waiting for results..."
