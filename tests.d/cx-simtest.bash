@@ -40,7 +40,7 @@ stop_test () {
   rm -f $ROS_LOG_DIR/latest
 }
 
-trap "echo Stopping simulation test; stop_test" SIGINT SIGTERM SIGPIPE EXIT
+trap stop_test SIGINT SIGTERM SIGPIPE EXIT
 ulimit -c 0
 $SCRIPT_PATH/gazsim.bash -o -r --mongodb -m m-skill-sim-clips-exec -n 3 --team-cyan Carologistics --start-game=PRODUCTION $@
 echo "Waiting for results..."
