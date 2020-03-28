@@ -78,9 +78,9 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
 	  "scheduler-add-event-resource",
 	  sigc::slot<void, std::string, std::string, int>(
 	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_event_resource), env_name)));
-	clips->add_function("scheduler-set-resource-setup-time",
+	clips->add_function("scheduler-set-resource-setup-duration",
 	                    sigc::slot<void, std::string, std::string, std::string, double>(sigc::bind<0>(
-	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::set_resource_setup_time),
+	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::set_resource_setup_duration),
 	                      env_name)));
 	clips->add_function("scheduler-add-event-precedence",
 	                    sigc::slot<void, std::string, std::string>(sigc::bind<0>(
@@ -185,11 +185,11 @@ ClipsMipSchedulerThread::add_event_resource(std::string env_name,
 }
 
 void
-ClipsMipSchedulerThread::set_resource_setup_time(std::string env_name,
-                                                 std::string res,
-                                                 std::string event1,
-                                                 std::string event2,
-                                                 double      duration)
+ClipsMipSchedulerThread::set_resource_setup_duration(std::string env_name,
+                                                     std::string res,
+                                                     std::string event1,
+                                                     std::string event2,
+                                                     double      duration)
 {
 	if (events_.find(event1) == events_.end())
 		events_[event1] = new Event(event1);
@@ -197,7 +197,7 @@ ClipsMipSchedulerThread::set_resource_setup_time(std::string env_name,
 	if (events_.find(event2) == events_.end())
 		events_[event2] = new Event(event2);
 
-	resource_setup_[res][events_[event1]][events_[event2]] = duration;
+	res_setup_duration_[res][events_[event1]][events_[event2]] = duration;
 
 	logger->log_info(
 	  name(), "Setup [%s]: %s --> %s %lf ", res.c_str(), event1.c_str(), event2.c_str(), duration);
@@ -263,15 +263,19 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 			  gurobi_model_->addVar(0, 900, 1, GRB_INTEGER, ("T_" + iE.first).c_str());
 
 		//Init Gurobi event sequencing Vars (X)
-		for (auto const &iR : resource_producers_)
-			for (auto const &iEp : resource_producers_[iR.first])
-				for (auto const &iEc : resource_consumers_[iR.first])
-					if (iEp->goal != iEc->goal || iEp->goal.size() == 0) {
-						std::string vname = iR.first + "_" + iEp->name + "." + iEc->name;
-						gurobi_vars_sequence_[iR.first][iEp->name][iEc->name] =
-						  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("X_" + vname).c_str());
-						logger->log_info(name(), ("X_" + vname).c_str());
-					}
+		for (auto const &iR : res_setup_duration_)
+			for (auto const &iEprod : iR.second)
+				for (auto const &iEcons : iEprod.second)
+				//if (iEp->goal != iEc->goal || iEp->goal.size() == 0)
+				{
+					std::string resource = iR.first;
+					std::string producer = iEprod.first->name;
+					std::string consumer = iEcons.first->name;
+					std::string vname    = resource + "_" + producer + "." + consumer;
+					gurobi_vars_sequence_[resource][producer][consumer] =
+					  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("X_" + vname).c_str());
+					logger->log_info(name(), ("X_" + vname).c_str());
+				}
 
 		//Init Gurobi plan selection Vars (S)
 		for (auto const &iP : plan_events_)

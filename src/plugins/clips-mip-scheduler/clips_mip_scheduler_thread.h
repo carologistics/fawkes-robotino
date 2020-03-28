@@ -79,7 +79,7 @@ private:
 	std::map<std::string, Event *>                                      events_;
 	std::map<std::string, std::vector<Event *>>                         resource_producers_;
 	std::map<std::string, std::vector<Event *>>                         resource_consumers_;
-	std::map<std::string, std::map<Event *, std::map<Event *, double>>> resource_setup_;
+	std::map<std::string, std::map<Event *, std::map<Event *, double>>> res_setup_duration_;
 	std::map<std::string, std::vector<Event *>>                         plan_events_;
 	std::map<std::string, std::vector<Event *>>                         goal_events_;
 	std::map<std::string, std::vector<std::string>>                     goal_plans_;
@@ -93,11 +93,11 @@ private:
 	void set_event_duration(std::string env_name, std::string event_name, int duration);
 	void
 	     add_event_resource(std::string env_name, std::string event_name, std::string res_name, int req);
-	void set_resource_setup_time(std::string env_name,
-	                             std::string res,
-	                             std::string event1,
-	                             std::string event2,
-	                             double      duration);
+	void set_resource_setup_duration(std::string env_name,
+	                                 std::string res,
+	                                 std::string event1,
+	                                 std::string event2,
+	                                 double      duration);
 	void add_event_precedence(std::string env_name, std::string event_name, std::string preceded);
 	void add_plan_event(std::string env_name, std::string plan_name, std::string event_name);
 	void add_goal_event(std::string env_name, std::string goal_name, std::string event_name);
