@@ -334,6 +334,25 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 			}
 		}
 
+		//Constraint 8
+		for (auto const &iR : res_setup_duration_)
+			for (auto const &iEprod : iR.second)
+				for (auto const &iEcons : iEprod.second) {
+					std::string resource       = iR.first;
+					std::string producer       = iEprod.first->name;
+					std::string consumer       = iEcons.first->name;
+					std::string cname          = "[" + resource + "]" + producer + "->" + consumer;
+					int         event_duration = iEprod.first->duration;
+					double      setup_duration = iEcons.second;
+					gurobi_model_->addGenConstrIndicator(gurobi_vars_sequence_[resource][producer][consumer],
+					                                     1,
+					                                     gurobi_vars_time_[consumer]
+					                                         - gurobi_vars_time_[producer] - event_duration
+					                                         - setup_duration
+					                                       >= 0,
+					                                     cname.c_str());
+				}
+
 		gurobi_model_->write("model.lp");
 	} catch (GRBException &e) {
 		logger->log_error(name(), "Error code = %u ", e.getErrorCode());
