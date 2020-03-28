@@ -163,12 +163,12 @@
  (bind ?e-plan-end   (sym-cat  ?plan-id -end))
  ;plan-events
  (assert
-    (wm-fact (key scheduling event args? e ?e-plan-start))
-    (wm-fact (key scheduling event args? e ?e-plan-end))
     (wm-fact (key scheduling plan-event args? p ?plan-id e ?e-plan-start))
     (wm-fact (key scheduling plan-event args? p ?plan-id e ?e-plan-end))
     (wm-fact (key scheduling goal-event args? g ?goal-id e ?e-plan-start))
     (wm-fact (key scheduling goal-event args? g ?goal-id e ?e-plan-end))
+    (wm-fact (key scheduling event args? e ?e-plan-start))
+    (wm-fact (key scheduling event args? e ?e-plan-end))
     (wm-fact (key scheduling event-location args? e ?e-plan-start)
              (type SYMBOL) (value (node-name ?ls ?ls-side)))
     (wm-fact (key scheduling event-location args? e ?e-plan-end)
@@ -210,30 +210,31 @@
 )
 
 ;Resource setup times between 2 events
-(defrule scheduling-resource-Robot-setup-time
+(defrule scheduling-resource-setup-duration
  (wm-fact (key scheduling event args? e ?producer))
  (wm-fact (key scheduling event-requirment args? e ?producer r ?r)
           (value ?v1&:(> ?v1 0)))
- (wm-fact (key scheduling event args? e ?consumer))
+ (wm-fact (key scheduling event args? e ?consumer&:(neq ?consumer ?producer)))
  (wm-fact (key scheduling event-requirment args? e ?consumer r ?r)
           (value ?v2&:(< ?v2 0)))
- (or (not (wm-fact (key scheduling plan-event args? p ? e ?producer)))
-     (not (wm-fact (key scheduling plan-event args? p ? e ?consumer)))
-     (and (wm-fact (key scheduling plan-event args? p ?p1 e ?producer))
-          (wm-fact (key scheduling plan-event args? p ?p2 e ?consumer))
-          (test (neq ?p1 ?p2))))
+ (or (not (wm-fact (key scheduling goal-event args? g ? e ?producer)))
+     (not (wm-fact (key scheduling goal-event args? g ? e ?consumer)))
+     (and (wm-fact (key scheduling goal-event args? g ?g1 e ?producer))
+          (wm-fact (key scheduling goal-event args? g ?g2 e ?consumer))
+          (test (neq ?g1 ?g2))))
+ (not (wm-fact (key scheduling setup-duration args? r ?r e-a ?producer e-b ?consumer)))
  =>
- (bind ?setup-time 0)
+ (bind ?setup 0)
  (if (eq ?r R) then
    (do-for-fact ((?l1 wm-fact) (?l2 wm-fact))
                 (and  (wm-key-prefix ?l1:key
                        (create$ scheduling event-location args? e ?producer))
                       (wm-key-prefix ?l2:key
                        (create$ scheduling event-location args? e ?consumer)))
-      (bind ?setup-time (/ (nodes-distance ?l1:value ?l2:value) ?*V*)))
+      (bind ?setup (/ (nodes-distance ?l1:value ?l2:value) ?*V*)))
  )
- (assert (wm-fact (key scheduling setup-time args? r ?r e-a ?producer e-b ?consumer)
-                  (type INT) (value ?setup-time)))
+ (assert (wm-fact (key scheduling setup-duration args? r ?r e-a ?producer e-b ?consumer)
+                  (type INT) (value ?setup)))
 )
 
 
@@ -295,15 +296,15 @@
  (scheduler-add-goal-plan (sym-cat ?g-id) (sym-cat ?p-id))
 )
 
-(defrule scheduling-set-resource-setup-time
+(defrule scheduling-set-resource-setup-duration
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (wm-fact (key scheduling event args? e ?producer))
  (wm-fact (key scheduling event args? e ?consumer))
- (wm-fact (key scheduling setup-time args? r ?r e-a ?producer e-b ?consumer)
-           (value ?setup-time))
+ (wm-fact (key scheduling setup-duration args? r ?r e-a ?producer e-b ?consumer)
+           (value ?setup))
  =>
- (scheduler-set-resource-setup-time
-      (sym-cat ?r) (sym-cat ?producer) (sym-cat ?consumer) ?setup-time )
+ (scheduler-set-resource-setup-duration
+      (sym-cat ?r) (sym-cat ?producer) (sym-cat ?consumer) ?setup )
  )
 
 
