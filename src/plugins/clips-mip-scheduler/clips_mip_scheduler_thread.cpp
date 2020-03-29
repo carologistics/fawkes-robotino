@@ -308,12 +308,13 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 						flow_out += gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
 
 				if (iErp->plan.size() == 0 && iErp->goal.size() == 0)
-					gurobi_model_->addConstr(flow_out == iErp->resources[iR.first],
+					gurobi_model_->addConstr(flow_out - iErp->resources[iR.first] == 0,
 					                         ("flow_out_" + iR.first + "_" + iErp->name).c_str());
 
 				else if (gurobi_vars_plan_.find(iErp->plan) != gurobi_vars_plan_.end())
 					gurobi_model_->addConstr(flow_out
-					                           == iErp->resources[iR.first] * gurobi_vars_plan_[iErp->plan],
+					                             - iErp->resources[iR.first] * gurobi_vars_plan_[iErp->plan]
+					                           == 0,
 					                         ("flow_out_" + iR.first + "_" + iErp->name).c_str());
 			}
 
@@ -324,12 +325,13 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 						flow_in -= gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
 
 				if (iErc->plan.size() == 0 && iErc->goal.size() == 0)
-					gurobi_model_->addConstr(flow_in == iErc->resources[iR.first],
+					gurobi_model_->addConstr(flow_in - iErc->resources[iR.first] == 0,
 					                         ("flow_in_" + iR.first + "_" + iErc->name).c_str());
 
 				else if (gurobi_vars_plan_.find(iErc->plan) != gurobi_vars_plan_.end())
 					gurobi_model_->addConstr(flow_in
-					                           == iErc->resources[iR.first] * gurobi_vars_plan_[iErc->plan],
+					                             - iErc->resources[iR.first] * gurobi_vars_plan_[iErc->plan]
+					                           == 0,
 					                         ("flow_in_" + iR.first + "_" + iErc->name).c_str());
 			}
 		}
@@ -353,7 +355,20 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 					                                     cname.c_str());
 				}
 
+		//Constraint 10
+		GRBVar Tmax = gurobi_model_->addVar(0, 900, 1, GRB_INTEGER, "Tmax");
+
+		for (auto const &iE : events_)
+			gurobi_model_->addConstr(Tmax - gurobi_vars_time_[iE.first] >= 0,
+			                         ("Tmax<<" + iE.first).c_str());
+
+		GRBLinExpr obje = Tmax;
+		gurobi_model_->setObjective(obje);
+		gurobi_model_->set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
+
 		gurobi_model_->write("model.lp");
+		gurobi_model_->optimize();
+
 	} catch (GRBException &e) {
 		logger->log_error(name(), "Error code = %u ", e.getErrorCode());
 		logger->log_error(name(), e.getMessage().c_str());
