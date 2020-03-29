@@ -369,6 +369,18 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 		gurobi_model_->write("model.lp");
 		gurobi_model_->optimize();
 
+		// do IIS
+		logger->log_info(name(), "The model is infeasible; computing IIS");
+		gurobi_model_->computeIIS();
+		logger->log_info(name(), "The following constraint(s) cannot be satisfied:");
+		GRBConstr *c = gurobi_model_->getConstrs();
+		for (int i = 0; i < gurobi_model_->get(GRB_IntAttr_NumConstrs); ++i)
+			if (c[i].get(GRB_IntAttr_IISConstr) == 1)
+				logger->log_info(name(), c[i].get(GRB_StringAttr_ConstrName).c_str());
+
+		gurobi_model_->write("model.sol");
+		delete[] c;
+
 	} catch (GRBException &e) {
 		logger->log_error(name(), "Error code = %u ", e.getErrorCode());
 		logger->log_error(name(), e.getMessage().c_str());
