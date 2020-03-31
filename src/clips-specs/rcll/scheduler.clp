@@ -193,20 +193,24 @@
 ;Precedence across goals
 (defrule scheduling-precedence-across-goals
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (wm-fact (key meta precedence goal-class args? a ?class-a b ?class-b))
  (goal (id ?g-id-a) (sub-type SIMPLE) (class ?class-a))
  (goal (id ?g-id-b) (sub-type SIMPLE) (class ?class-b))
- (plan (id ?p-id-b) (goal-id ?g-id-b))
- ;from end of goal 'a'
- (wm-fact (key scheduling event args? e ?e-goal-end))
- (wm-fact (key scheduling goal-event args? g ?g-id-a e ?e-goal-end))
- (not (wm-fact (key scheduling plan-event args? p ?g-id-a e ?e-goal-end)))
- ;to all events of goal 'b'
- (wm-fact (key scheduling event args? e ?e-plan))
- (wm-fact (key scheduling plan-event args? p ?p-id-b e ?e-plan))
- (not (wm-fact (key scheduling event-precedence args? e-a ?e-goal-end e-b ?e-plan)))
- (wm-fact (key meta precedence goal-class args? a ?class-a b ?class-b))
+ (plan (id ?pa-id) (goal-id ?g-id-a))
+ (plan (id ?pb-id) (goal-id ?g-id-b))
+ ;from last plan event of goal 'a'
+ (wm-fact (key scheduling event args? e ?pa-end))
+ (wm-fact (key scheduling plan-event args? p ?pa-id e ?pa-end))
+ (not (and (wm-fact (key scheduling plan-event args? p ?pa-id e ?pa-event))
+           (wm-fact (key scheduling event-precedence args? e-a ?pa-end e-b ?pa-event))))
+ ;To first plan-even in goal 'b'
+ (wm-fact (key scheduling event args? e ?pb-start))
+ (wm-fact (key scheduling plan-event args? p ?pb-id e ?pb-start))
+ (not (and (wm-fact (key scheduling plan-event args? p ?pb-id e ?pb-event))
+           (wm-fact (key scheduling event-precedence args? e-a ?pb-event e-b ?pb-start))))
+ (not (wm-fact (key scheduling event-precedence args? e-a ?pa-end e-b ?pb-start)))
  =>
- (assert (wm-fact (key scheduling event-precedence args? e-a ?e-goal-end e-b ?e-plan)))
+ (assert (wm-fact (key scheduling event-precedence args? e-a ?pa-end e-b ?pb-start)))
 )
 
 ;Resource setup times between 2 events
