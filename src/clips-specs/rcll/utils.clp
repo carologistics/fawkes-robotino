@@ -1024,3 +1024,14 @@
 "
   (return (- 1 (/ ?dist ?*MAX-DISTANCE*)))
 )
+
+(deffunction str-replace (?str ?find ?replace)
+  (bind ?p (str-index ?find ?str))
+  (while (neq ?p FALSE) do
+    (bind ?str (str-cat (sub-string 1 (- ?p 1) ?str)
+                        ?replace
+                        (sub-string (+ ?p 1) (str-length ?str) ?str)))
+    (bind ?p (str-index ?find ?str))
+  )
+  return ?str
+)
