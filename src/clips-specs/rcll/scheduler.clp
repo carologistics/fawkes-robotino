@@ -100,7 +100,7 @@
  ;Is production goal
  (wm-fact (key meta precedence goal-class args? $? ?class $?))
  =>
- (bind ?event-name (sym-cat ?g-id -end))
+ (bind ?event-name (sym-cat (str-replace ?g-id "-" "_") _end))
  (assert
    (wm-fact (key scheduling event args? e ?event-name) (type INT))
    (wm-fact (key scheduling goal-event args? g ?g-id e ?event-name)))
@@ -121,7 +121,7 @@
  (wm-fact (key scheduling event-requirment args? e ? r ?r))
  (not (wm-fact (key scheduling resource-producing-event args? e ? r ?r)))
 =>
- (bind ?start-event-name (sym-cat ?r -start))
+ (bind ?start-event-name (sym-cat (str-replace ?r "-" "_")  _start))
  (assert
    (wm-fact (key scheduling event args? e ?start-event-name))
    (wm-fact (key scheduling event-requirment args? e ?start-event-name r ?r)
@@ -135,7 +135,7 @@
  (wm-fact (key scheduling event-requirment args? e ? r ?r))
  (not (wm-fact (key scheduling resource-consuming-event args? e ? r ?r)))
 =>
- (bind ?end-event-name (sym-cat ?r -end))
+ (bind ?end-event-name (sym-cat (str-replace ?r "-" "_")  _end))
  (assert
    (wm-fact (key scheduling event args? e ?end-event-name))
    (wm-fact (key scheduling event-requirment args? e ?end-event-name r ?r)
@@ -159,8 +159,8 @@
  =>
  (assert (wm-fact (key scheduling goal-plan args? g ?goal-id p ?plan-id)))
  ;events
- (bind ?e-plan-start (sym-cat  ?plan-id -start))
- (bind ?e-plan-end   (sym-cat  ?plan-id -end))
+ (bind ?e-plan-start (sym-cat  (str-replace ?plan-id "-" "_") _start))
+ (bind ?e-plan-end   (sym-cat  (str-replace ?plan-id "-" "_") _end))
  ;plan-events
  (assert
     (wm-fact (key scheduling plan-event args? p ?plan-id e ?e-plan-start))
