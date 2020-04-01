@@ -264,7 +264,8 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 		//Init Gurobi Time Vars (T)
 		for (auto const &iE : events_)
 			gurobi_vars_time_[iE.first] =
-			  gurobi_model_->addVar(0, GRB_INFINITY, 0, GRB_CONTINUOUS, ("T_" + iE.first).c_str());
+			  gurobi_model_->addVar(0, GRB_INFINITY, 0, GRB_CONTINUOUS, ("t{" + iE.first + "}").c_str());
+
 		//Init Gurobi event sequencing Vars (X)
 		for (auto const &iR : res_setup_duration_)
 			for (auto const &iEprod : iR.second)
@@ -274,23 +275,23 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 					std::string resource = iR.first;
 					std::string producer = iEprod.first->name;
 					std::string consumer = iEcons.first->name;
-					std::string vname    = resource + "_" + producer + "." + consumer;
+					std::string vname    = "{" + resource + "}{" + producer + "__" + consumer + "}";
 					gurobi_vars_sequence_[resource][producer][consumer] =
-					  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("X_" + vname).c_str());
-					logger->log_info(name(), ("X_" + vname).c_str());
+					  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("x" + vname).c_str());
 				}
 
 		//Init Gurobi plan selection Vars (S)
 		for (auto const &iP : plan_events_)
 			gurobi_vars_plan_[iP.first] =
-			  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("P_" + iP.first).c_str());
+			  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("p{" + iP.first + "}").c_str());
 
 		//Constraint 1
 		for (auto const &iE1 : events_)
 			for (auto const &iE2 : iE1.second->precedes) {
-				gurobi_model_->addConstr(gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
-				                           >= iE1.second->duration,
-				                         ("PRES_" + iE1.second->name + "<" + iE2->name).c_str());
+				gurobi_model_->addConstr(
+				  gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
+				    >= iE1.second->duration,
+				  ("Presdence{" + iE1.second->name + "<<" + iE2->name + "}").c_str());
 				logger->log_info(name(),
 				                 "%s - %s >= %u ",
 				                 iE2->name.c_str(),
@@ -304,7 +305,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 			for (auto const &iP : iG.second)
 				sum += gurobi_vars_plan_[iP];
 
-			gurobi_model_->addConstr(sum == 1, ("Goal_[" + iG.first + "]").c_str());
+			gurobi_model_->addConstr(sum == 1, ("TotalGoalPlans{" + iG.first + "}").c_str());
 		}
 
 		//Constraint 2&4,5&6
@@ -317,13 +318,13 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 
 				if (iErp->plan.size() == 0 && iErp->goal.size() == 0)
 					gurobi_model_->addConstr(flow_out - iErp->resources[iR.first] == 0,
-					                         ("flow_out_" + iR.first + "_" + iErp->name).c_str());
+					                         ("FlowOut{" + iR.first + "}{" + iErp->name + "}").c_str());
 
 				else if (gurobi_vars_plan_.find(iErp->plan) != gurobi_vars_plan_.end())
 					gurobi_model_->addConstr(flow_out
 					                             - iErp->resources[iR.first] * gurobi_vars_plan_[iErp->plan]
 					                           == 0,
-					                         ("flow_out_" + iR.first + "_" + iErp->name).c_str());
+					                         ("FlowOut{" + iR.first + "}{" + iErp->name + "}").c_str());
 			}
 
 			for (auto const &iErc : resource_consumers_[iR.first]) {
@@ -334,13 +335,13 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 
 				if (iErc->plan.size() == 0 && iErc->goal.size() == 0)
 					gurobi_model_->addConstr(flow_in - iErc->resources[iR.first] == 0,
-					                         ("flow_in_" + iR.first + "_" + iErc->name).c_str());
+					                         ("FlowIn{" + iR.first + "}{" + iErc->name + "}").c_str());
 
 				else if (gurobi_vars_plan_.find(iErc->plan) != gurobi_vars_plan_.end())
 					gurobi_model_->addConstr(flow_in
 					                             - iErc->resources[iR.first] * gurobi_vars_plan_[iErc->plan]
 					                           == 0,
-					                         ("flow_in_" + iR.first + "_" + iErc->name).c_str());
+					                         ("FlowIn{" + iR.first + "}{" + iErc->name + "}").c_str());
 			}
 		}
 
@@ -348,10 +349,10 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 		for (auto const &iR : res_setup_duration_)
 			for (auto const &iEprod : iR.second)
 				for (auto const &iEcons : iEprod.second) {
-					std::string resource       = iR.first;
-					std::string producer       = iEprod.first->name;
-					std::string consumer       = iEcons.first->name;
-					std::string cname          = "[" + resource + "]" + producer + "->" + consumer;
+					std::string resource = iR.first;
+					std::string producer = iEprod.first->name;
+					std::string consumer = iEcons.first->name;
+					std::string cname    = "Select_X{" + resource + "}{" + producer + "->" + consumer + "}";
 					int         event_duration = iEprod.first->duration;
 					double      setup_duration = iEcons.second;
 					gurobi_model_->addGenConstrIndicator(gurobi_vars_sequence_[resource][producer][consumer],
