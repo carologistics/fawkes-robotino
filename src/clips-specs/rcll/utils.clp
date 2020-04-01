@@ -1030,7 +1030,7 @@
   (while (neq ?p FALSE) do
     (bind ?str (str-cat (sub-string 1 (- ?p 1) ?str)
                         ?replace
-                        (sub-string (+ ?p 1) (str-length ?str) ?str)))
+                        (sub-string (+ ?p (str-length ?find)) (str-length ?str) ?str)))
     (bind ?p (str-index ?find ?str))
   )
   return ?str

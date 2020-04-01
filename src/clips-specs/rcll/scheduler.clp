@@ -71,6 +71,24 @@
   (return ?duration)
 )
 
+(deffunction formate-event-name (?e)
+  (bind ?e (str-replace ?e "-" ""))
+  (bind ?e (str-replace ?e "_" ""))
+  return ?e
+)
+
+(deffunction formate-resource-name (?n)
+  (bind ?r (str-replace ?n "C-" "$"))
+  (bind ?r (str-replace ?r "M-" "$"))
+  (bind ?r (formate-event-name ?r))
+  (if (eq (str-index "$" ?r) FALSE) then
+    (bind ?r (str-cat "$" ?r))
+  )
+  return ?r
+)
+
+
+
 (defrule scheduling-goal-class-precedence
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (goal (id ?order-id) (parent ?goal-id) (class ORDER) (mode FORMULATED))
@@ -100,7 +118,7 @@
  ;Is production goal
  (wm-fact (key meta precedence goal-class args? $? ?class $?))
  =>
- (bind ?event-name (sym-cat (str-replace ?g-id "-" "_") _end))
+ (bind ?event-name (sym-cat (formate-event-name ?g-id) @end))
  (assert
    (wm-fact (key scheduling event args? e ?event-name) (type INT))
    (wm-fact (key scheduling goal-event args? g ?g-id e ?event-name)))
@@ -121,7 +139,7 @@
  (wm-fact (key scheduling event-requirment args? e ? r ?r))
  (not (wm-fact (key scheduling resource-producing-event args? e ? r ?r)))
 =>
- (bind ?start-event-name (sym-cat (str-replace ?r "-" "_")  _start))
+ (bind ?start-event-name (sym-cat (formate-event-name ?r)  @start))
  (assert
    (wm-fact (key scheduling event args? e ?start-event-name))
    (wm-fact (key scheduling event-requirment args? e ?start-event-name r ?r)
@@ -135,7 +153,7 @@
  (wm-fact (key scheduling event-requirment args? e ? r ?r))
  (not (wm-fact (key scheduling resource-consuming-event args? e ? r ?r)))
 =>
- (bind ?end-event-name (sym-cat (str-replace ?r "-" "_")  _end))
+ (bind ?end-event-name (sym-cat (formate-event-name ?r)  @end))
  (assert
    (wm-fact (key scheduling event args? e ?end-event-name))
    (wm-fact (key scheduling event-requirment args? e ?end-event-name r ?r)
@@ -159,8 +177,8 @@
  =>
  (assert (wm-fact (key scheduling goal-plan args? g ?goal-id p ?plan-id)))
  ;events
- (bind ?e-plan-start (sym-cat  (str-replace ?plan-id "-" "_") _start))
- (bind ?e-plan-end   (sym-cat  (str-replace ?plan-id "-" "_") _end))
+ (bind ?e-plan-start (sym-cat  (formate-event-name ?plan-id) @start))
+ (bind ?e-plan-end   (sym-cat  (formate-event-name ?plan-id) @end))
  ;plan-events
  (assert
     (wm-fact (key scheduling plan-event args? p ?plan-id e ?e-plan-start))
@@ -179,10 +197,11 @@
              (type INT) (value 0)))
  ;Resources param
  (progn$ (?r ?resources)
+   (bind ?rr (formate-resource-name ?r))
    (assert
-     (wm-fact (key scheduling event-requirment args? e ?e-plan-start r ?r)
+     (wm-fact (key scheduling event-requirment args? e ?e-plan-start r ?rr)
               (type INT) (value -1))
-     (wm-fact (key scheduling event-requirment args? e ?e-plan-end r ?r)
+     (wm-fact (key scheduling event-requirment args? e ?e-plan-end r ?rr)
               (type INT) (value 1))))
  ;Precedence within plan
  (assert (wm-fact (key scheduling event-precedence args? e-a ?e-plan-start e-b ?e-plan-end)))

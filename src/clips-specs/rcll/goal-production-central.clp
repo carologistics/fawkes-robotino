@@ -50,13 +50,13 @@
   (not (goal (class PREPARE-MACHINE) (parent ?goal-id)))
   =>
   (printout t "Goal " WPOPERATTIONS " formulated" crlf)
-  (assert (goal (id  WP-OPERATIONS-g)
+  (assert (goal (id  gWPOPER)
                 (class WP-OPERATIONS)
                 (sub-type RUN-ALL-OF-SUBGOALS)
                 (parent ?goal-id)
                 (params (create$ wp ?spawned-wp))
   ))
-  (assert (goal (id PREPARE-MACHINE-g)
+  (assert (goal (id gPREPMACHINE)
                 (class PREPARE-MACHINE)
                 (sub-type RUN-ALL-OF-SUBGOALS)
                 (parent ?goal-id)
@@ -88,7 +88,7 @@
   =>
   (printout t "Goals " related to CAP " formulated" crlf)
   ;; sche (bind ?distance (node-distance (str-cat ?mps -I)))
-  (assert (goal (id PREPARE-CS-g)
+  (assert (goal (id gPREPCS)
                 (class PREPARE-CS) (sub-type RUN-ALL-OF-SUBGOALS)
                 (parent ?prepare-machine)
                 (params (create$  cc ?cc cs ?mps ))
@@ -112,12 +112,12 @@
   (not (goal (class FILL-CAP) (parent ?prepare-cs)))
   (not (goal (class CLEAR-MPS) (parent ?prepare-cs)))
   =>
-  (assert (goal (id FILL-CAP-g)
+  (assert (goal (id gFILLCAP)
                 (class FILL-CAP) (sub-type SIMPLE)
                 (parent ?prepare-cs)
                 (params (create$ cc ?cc cs ?cs))
 				))
-  (assert (goal (id CLEAR-MPS-g)
+  (assert (goal (id gCLEARMPS)
                 (class CLEAR-MPS) (sub-type SIMPLE)
                 (parent ?prepare-cs)
                 (params (create$ wp ?cc mps ?cs))
@@ -143,12 +143,12 @@
   (not (goal (class MOUNT-CAP) (parent ?wp-operations)))
   (not (goal (class DELIVER) (parent ?wp-operations)))
   =>
-  (assert (goal (id MOUNT-CAP-g)
+  (assert (goal (id gMOUNTCAP)
                 (class MOUNT-CAP) (sub-type SIMPLE)
                 (parent ?wp-operations)
                 (params (create$ wp ?wp cs ?cs))
   ))
-  (assert (goal (id DELIVER-g)
+  (assert (goal (id gDELIVER)
                 (class DELIVER) (sub-type SIMPLE)
                 (parent ?wp-operations)
                 (params (create$ wp ?wp cs ?cs))
@@ -210,7 +210,7 @@
       (printout t "Goal " PRODUCE-C0 " formulated, it needs the PRODUCE-EXCLUSIVE-COMPLEXITY token" crlf)
     else
       (printout t "Goal " PRODUCE-C0 " formulated" crlf))
-  (assert (goal (id PRODUCE-C0-g)
+  (assert (goal (id gPRODUCEC0)
                 (class PRODUCE-C0) (sub-type SIMPLE)
                 (parent ?mount-cap)
                 (params robot ?robot
@@ -272,7 +272,7 @@
   ))
   =>
   (printout t "Goal " DELIVER " formulated" crlf)
-  (assert (goal (id DELIVER-g)
+  (assert (goal (id gDELIVER)
                 (class DELIVER) (sub-type SIMPLE)
                 (parent ?deliver)
                 (params robot ?robot
