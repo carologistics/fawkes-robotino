@@ -199,8 +199,12 @@ ClipsMipSchedulerThread::set_resource_setup_duration(std::string env_name,
 
 	res_setup_duration_[res][events_[event1]][events_[event2]] = duration;
 
-	logger->log_info(
-	  name(), "Setup [%s]: %s --> %s %lf ", res.c_str(), event1.c_str(), event2.c_str(), duration);
+	logger->log_info(name(),
+	                 "ADD Setup [%s]: %s --> %s %lf ",
+	                 res.c_str(),
+	                 event1.c_str(),
+	                 event2.c_str(),
+	                 duration);
 }
 
 void
@@ -216,7 +220,7 @@ ClipsMipSchedulerThread::add_event_precedence(std::string env_name,
 
 	events_[event_name]->precedes.push_back(events_[preceded]);
 
-	logger->log_info(name(), "Pres: %s << %s  ", event_name.c_str(), preceded.c_str());
+	logger->log_info(name(), "ADD Pres: %s << %s  ", event_name.c_str(), preceded.c_str());
 }
 
 void
@@ -287,6 +291,11 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 				gurobi_model_->addConstr(gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
 				                           >= iE1.second->duration,
 				                         ("PRES_" + iE1.second->name + "<" + iE2->name).c_str());
+				logger->log_info(name(),
+				                 "%s - %s >= %u ",
+				                 iE2->name.c_str(),
+				                 iE1.second->name.c_str(),
+				                 iE1.second->duration);
 			}
 
 		//Constraint 4
@@ -362,9 +371,29 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 			                         ("Tmax<<" + iE.first).c_str());
 
 		gurobi_model_->set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
-
 		gurobi_model_->write("model.lp");
+
 		gurobi_model_->optimize();
+
+		int status = gurobi_model_->get(GRB_IntAttr_Status);
+		if (status == GRB_UNBOUNDED) {
+			logger->log_warn(name(), "The model cannot be solved  because it is unbounded");
+			//return 1;
+			return;
+		}
+		if (status == GRB_OPTIMAL) {
+			logger->log_warn(name(),
+			                 "The optimal objective is %f ",
+			                 gurobi_model_->get(GRB_DoubleAttr_ObjVal));
+			gurobi_model_->write("model_sol.sol");
+			//return 0;
+			return;
+		}
+		if ((status != GRB_INF_OR_UNBD) && (status != GRB_INFEASIBLE)) {
+			logger->log_warn(name(), "Optimization was stopped with status %u", status);
+			//return 1;
+			return;
+		}
 
 		// do IIS
 		logger->log_info(name(), "The model is infeasible; computing IIS");
@@ -375,7 +404,15 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 			if (c[i].get(GRB_IntAttr_IISConstr) == 1)
 				logger->log_info(name(), c[i].get(GRB_StringAttr_ConstrName).c_str());
 
-		gurobi_model_->write("model.sol");
+		gurobi_model_->write("model.rlp");
+		gurobi_model_->write("model.ilp");
+		gurobi_model_->write("model.rew");
+
+		gurobi_model_->write("model.hnt");
+		gurobi_model_->write("model.bas");
+		gurobi_model_->write("model.prm");
+		gurobi_model_->write("model.attr");
+		gurobi_model_->write("model.json");
 		delete[] c;
 
 	} catch (GRBException &e) {
