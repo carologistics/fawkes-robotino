@@ -74,6 +74,8 @@ fawkes/meta_plugins:
     - navgraph-generator
     - navgraph-generator-mps
     - m-clips-executive
+    # - skiller-simulator-navgraph
+    - webview
 
   rcll-sim-2016:
     - mps-laser-gen
