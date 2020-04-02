@@ -43,6 +43,7 @@ OPTIONS:
                       optionally, "--start-game=PHASE" may be given
                       to set the phase explicitly)
                      Typically requires at least --team-cyan.
+   --mongodb         Start central mongodb instance
    --asp             Run with ASP agent and global planner
 EOF
 }
@@ -77,6 +78,7 @@ START_GAME=
 TEAM_CYAN=
 TEAM_MAGENTA=
 START_ASP_PLANER=false
+START_MONGODB=false
 
 if [ -z $TERMINAL ] ; then
     if [[ -n $TMUX ]] ; then
@@ -84,6 +86,10 @@ if [ -z $TERMINAL ] ; then
     else
         TERMINAL=gnome-terminal
     fi
+fi
+
+if [ -n $LLSF_REFBOX_DIR ] ; then
+    export PATH=$LLSF_REFBOX_DIR/bin:$PATH
 fi
 
 case "$TERMINAL" in
@@ -102,7 +108,7 @@ case "$TERMINAL" in
         if [[ -n $TMUX ]] ; then
             TERM_COMMAND=""
         else
-            TERM_COMMAND="tmux new-session -d;"
+            TERM_COMMAND="tmux new-session -s gazsim -d;"
         fi
         TERM_COMMAND_END=""
         SUBTERM_PREFIX="tmux new-window "
@@ -118,7 +124,7 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,asp" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -147,6 +153,9 @@ while true; do
              ;;
          -k)
 	     KEEP=-k
+        if [ "$TERMINAL" == "tmux" ] ; then
+            TERM_COMMAND="$TERM_COMMAND tmux set-window-option -g remain-on-exit on;"
+        fi
              ;;
          -r)
            ROS=-r
@@ -191,6 +200,9 @@ while true; do
 	 -a)
 	     META_PLUGIN="-m gazsim-meta-clips-exec"
 	     ;;
+     --mongodb)
+         START_MONGODB=true
+         ;;
 	 --asp)
 	     CONF="-c asp-planner"
 	     META_PLUGIN="-m asp-sim-2016"
@@ -282,14 +294,18 @@ initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash
 
 if [  $COMMAND  == kill ]; then
     echo 'Kill Gazebo-sim'
-    #killall gazebo
-    killall gzserver
-    killall gzclient
-    killall fawkes
-    killall roscore
-    killall llsf-refbox
-    killall llsf-refbox-shell
-    killall roslaunch
+    if [ "$TERMINAL" == "tmux" ] ; then
+        tmux kill-session -t gazsim
+    else
+        #killall gazebo
+        killall gzserver
+        killall gzclient
+        killall fawkes
+        killall roscore
+        killall llsf-refbox
+        killall llsf-refbox-shell
+        killall roslaunch
+    fi
     exit 0
 fi
 
@@ -300,7 +316,7 @@ if [  $COMMAND  == start ]; then
 	echo "FAWKES_DIR is not set"
 	exit 1
     fi
-    if ! [[ $GAZEBO_PLUGIN_PATH == *lib/gazebo* ]]
+    if $START_GAZEBO && ! [[ $GAZEBO_PLUGIN_PATH == *lib/gazebo* ]]
     then
 	echo "Missing path to Gazebo Plugins in GAZEBO_PLUGIN_PATH";
 	exit 1
@@ -351,16 +367,22 @@ if [  $COMMAND  == start ]; then
     #start refbox shell
     COMMANDS+=("bash -i -c \"$startup_script_location -x refbox-shell $KEEP $@\"")
 
+    # start mongodb central instance
+    if $START_MONGODB ; then
+        MONGODB_DBPATH=/tmp/mongodb-27017
+        mkdir -p $MONGODB_DBPATH
+        COMMANDS+=("bash -i -c \"mongod --port 27017 --dbpath $MONGODB_DBPATH | tee mongodb.log \"")
+    fi
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
 	FAWKES_USED=true
     done
 
     if $START_ASP_PLANER
     then
-	COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 10; $startup_script_location -x asp -p ${ROS_MASTER_URI##*:} $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+	COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x asp -p ${ROS_MASTER_URI##*:} $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
     fi
 
     #start fawkes for communication, llsfrbcomm and eventually statistics
@@ -369,7 +391,7 @@ if [  $COMMAND  == start ]; then
     else
         comm_plugin=comm-no-gazebo
     fi
-	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x $comm_plugin $KEEP $SHUTDOWN $@\"")
+	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 0; $startup_script_location -x $comm_plugin $KEEP $SHUTDOWN $@\"")
 
     PREFIXED_COMMANDS=("${COMMANDS[@]/#/${SUBTERM_PREFIX}}")
     SUFFIXED_COMMANDS=("${PREFIXED_COMMANDS[@]/%/${SUBTERM_SUFFIX}}")
@@ -383,15 +405,18 @@ if [  $COMMAND  == start ]; then
 	$initial_pose_script_location $CONF -C $NUM_CYAN -M $NUM_MAGENTA -d
     else
 	echo "Skipped publishing poses"
-  sleep 10
     fi
 
 		if [ -n "$START_GAME" ]; then
-				if [ ! -x $LLSF_REFBOX_DIR/bin/rcll-refbox-instruct ]; then
+				if [ "$(command -v rcll-refbox-instruct)" == "" ]; then
 						echo "rcll-refbox-instruct not found, not built or old version?"
 				else
+						rcll-refbox-instruct -w
 						echo "Starting game (Phase: $START_GAME ${TEAM_CYAN:+Cyan: ${TEAM_CYAN}}${TEAM_MAGENTA:+ Magenta: ${TEAM_MAGENTA}})"
-						$LLSF_REFBOX_DIR/bin/rcll-refbox-instruct -p $START_GAME -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
+						rcll-refbox-instruct -p SETUP -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
+						sleep 5
+						rcll-refbox-instruct -n $NUM_ROBOTINOS -s RUNNING -W 60
+						rcll-refbox-instruct -p $START_GAME -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
 				fi
 		fi
 

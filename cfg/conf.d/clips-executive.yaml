@@ -140,6 +140,8 @@ clips-executive:
               - rcll/wait-actions.clp
           - name: execution-monitoring
             file: rcll/execution-monitoring.clp
+          - name: simtest
+            file: rcll/simtest.clp
 
       action-mapping:
         enter-field: >
@@ -173,6 +175,7 @@ clips-executive:
         - RobotinoLightInterface
 
       parameters:
+        simtest/enabled: false
         coordination:
           mutex:
             renew-interval: 5
