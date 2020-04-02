@@ -147,17 +147,21 @@ then
      exit 1
 fi
 
-if [[ -z $GAZEBO_WORLD_PATH ]]
-then
-     echo "Error: \$GAZEBO_WORLD_PATH is not set. Please set it in your .bashrc"
-     exit 1
+if [ -n $LLSF_REFBOX_DIR ] ; then
+    export PATH=$LLSF_REFBOX_DIR/bin:$PATH
 fi
+
 
 
 #ulimit -c unlimited
 
 case $COMMAND in
     gazebo )
+	if  [[ -z $GAZEBO_WORLD_PATH ]]
+	then
+	     echo "Error: \$GAZEBO_WORLD_PATH is not set. Please set it in your .bashrc"
+	     exit 1
+	fi
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LC_ALL="C"
 	( gzserver $REPLAY $GAZEBO_WORLD_PATH & ); sleep 10s; gzclient
@@ -221,12 +225,12 @@ case $COMMAND in
 	roslaunch $@ --wait robotino_move_base robotino_move_base_simu.launch
 	;;
     refbox )
-	$LLSF_REFBOX_DIR/bin/llsf-refbox $@
+	llsf-refbox $@
 	;;
     refbox-shell )
         # wait some time such that the terminal has the final size
 	sleep 3
-	$LLSF_REFBOX_DIR/bin/llsf-refbox-shell $@
+	llsf-refbox-shell $@
 	;;
 esac
 
