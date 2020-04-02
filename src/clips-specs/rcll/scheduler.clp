@@ -78,12 +78,12 @@
 )
 
 (deffunction formate-resource-name (?n)
-  (bind ?r (str-replace ?n "C-" "$"))
-  (bind ?r (str-replace ?r "M-" "$"))
+  (bind ?r (str-replace ?n "C-" ""))
+  (bind ?r (str-replace ?r "M-" ""))
   (bind ?r (formate-event-name ?r))
-  (if (eq (str-index "$" ?r) FALSE) then
-    (bind ?r (str-cat "$" ?r))
-  )
+  ;(if (eq (str-index "$" ?r) FALSE) then
+  ;  (bind ?r (str-cat "$" ?r))
+  ;)
   return ?r
 )
 
@@ -248,7 +248,7 @@
  (not (wm-fact (key scheduling setup-duration args? r ?r e-a ?producer e-b ?consumer)))
  =>
  (bind ?setup 0)
- (if (eq ?r R) then
+ (if (eq  ?r R) then
    (do-for-fact ((?l1 wm-fact) (?l2 wm-fact))
                 (and  (wm-key-prefix ?l1:key
                        (create$ scheduling event-location args? e ?producer))
