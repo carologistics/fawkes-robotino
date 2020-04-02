@@ -30,16 +30,12 @@ mkdir -p $WORKING_DIR
 cd $WORKING_DIR
 TERMINAL=tmux
 export TERMINAL
-ROS_LOG_DIR=$WORKING_DIR/ros
-export ROS_LOG_DIR
 
 TRAP_SIGNALS="SIGINT SIGTERM SIGPIPE EXIT"
 stop_test () {
   trap - $TRAP_SIGNALS
   $SCRIPT_PATH/gazsim.bash -x kill >/dev/null
   rm -f $tmpconfig
-  # Workaround for https://github.com/buildkite/agent/issues/1203
-  rm -f $ROS_LOG_DIR/latest
 }
 
 trap stop_test $TRAP_SIGNALS
