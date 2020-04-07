@@ -124,3 +124,4 @@ arduino:
  # min space in x, y and z in meters
   x_min: 0
   z_min: -2.0
+  # y_min: defaults to y_max / -2
