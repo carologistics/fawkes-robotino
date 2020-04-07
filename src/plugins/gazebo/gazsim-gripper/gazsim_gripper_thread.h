@@ -105,8 +105,6 @@ private:
 	float cur_y_;
 	float cur_z_;
 
-	std::atomic<bool> moving_;
-
 	// Publisher to sent msgs to gazebo
 	gazebo::transport::PublisherPtr set_gripper_pub_;
 	gazebo::transport::PublisherPtr set_conveyor_pub_;
