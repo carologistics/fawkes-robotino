@@ -21,6 +21,7 @@
 
 (deftemplate testcase
 	(slot name (type SYMBOL))
+	(slot termination (type SYMBOL) (allowed-values CUSTOM FAILURE SUCCESS) (default CUSTOM))
 	(slot state (type SYMBOL) (allowed-values SUCCEEDED FAILED PENDING) (default PENDING))
 	(slot msg (type STRING))
 )
@@ -36,7 +37,22 @@
 	(wm-fact (key config simtest enabled) (value TRUE))
 	=>
 	(assert (testcase (name POINTS-AFTER-ONE-MINUTE)))
+	(assert (testcase (name FLAWLESS-MPS) (termination SUCCESS)))
 	(assert (simtest-initialized))
+)
+
+(defrule simtest-termination-success
+	?testcase <- (testcase (termination SUCCESS) (state PENDING))
+  (not (testcase (termination CUSTOM) (state PENDING)))
+  =>
+  (modify ?testcase (state SUCCEEDED) (msg "No failure detected"))
+)
+
+(defrule simtest-termination-failure
+	?testcase <- (testcase (termination FAILURE) (state PENDING))
+  (not (testcase (termination CUSTOM) (state PENDING)))
+  =>
+  (modify ?testcase (state FAILED) (msg "Fail per default"))
 )
 
 (defrule simtest-points-after-one-minute-success
@@ -56,13 +72,6 @@
 	(wm-fact (key refbox game-time) (values $?gt&:(>= (nth$ 1 ?gt) 60)))
 	=>
 	(modify ?testcase (state FAILED) (msg (str-cat "No points after " (nth$ 1 ?gt) " seconds")))
-)
-
-(defrule simtest-flawless-mps-success
-	?testcase <- (testcase (name FLAWLESS-MPS) (state PENDING))
-	(wm-fact (key refbox phase) (value POST_GAME))
-	=>
-	(modify ?testcase (state SUCCEEDED) (msg (str-cat "No broken MPS")))
 )
 
 (defrule simtest-flawless-mps-failure
