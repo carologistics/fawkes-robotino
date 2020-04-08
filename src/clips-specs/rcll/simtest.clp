@@ -41,8 +41,12 @@
 		(case "FAST" then
 			(assert (testcase (name POINTS-AFTER-ONE-MINUTE)))
 		)
+		(case "DELIVERY" then
+			(assert (testcase (name DELIVERY)))
+		)
 		(case "FULL" then
 			(assert (testcase (name POINTS-FULL-GAME)))
+			(assert (testcase (name DELIVERY) (termination FAILURE)))
 		)
 		(default none)
 	)
@@ -62,6 +66,15 @@
   (not (testcase (termination CUSTOM) (state PENDING)))
   =>
   (modify ?testcase (state FAILED) (msg "Fail per default"))
+)
+
+(defrule simtest-delivery-success
+	?testcase <- (testcase (name DELIVERY) (state PENDING))
+	(wm-fact (key refbox team-color) (value ?team-color&~nil))
+	(wm-fact (key refbox phase) (value PRODUCTION))
+	(wm-fact (key domain fact quantity-delivered args? ord ? team ?team-color) (value ?delivered&:(> ?delivered 0)))
+	=>
+	(modify ?testcase (state SUCCEEDED) (msg (str-cat "Delivery done")))
 )
 
 (defrule simtest-points-after-one-minute-success
