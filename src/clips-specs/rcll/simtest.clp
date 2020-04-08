@@ -50,6 +50,14 @@
 	(modify ?testcase (state SUCCEEDED) (msg (str-cat "Scored " ?points " points")))
 )
 
+(defrule simtest-no-points-after-one-minute
+	?testcase <- (testcase (name POINTS-AFTER-ONE-MINUTE) (state PENDING))
+	(wm-fact (key refbox phase) (value PRODUCTION))
+	(wm-fact (key refbox game-time) (values $?gt&:(>= (nth$ 1 ?gt) 60)))
+	=>
+	(modify ?testcase (state FAILED) (msg (str-cat "No points after " (nth$ 1 ?gt) " seconds")))
+)
+
 (defrule simtest-flawless-mps-success
 	?testcase <- (testcase (name FLAWLESS-MPS) (state PENDING))
 	(wm-fact (key refbox phase) (value POST_GAME))
@@ -83,15 +91,6 @@
 	         (value ?points&:(< ?points 150)))
 	=>
 	(modify ?testcase (state FAILED) (msg (str-cat "Only " ?points " points after full game, expected at least 150")))
-)
-
-
-(defrule simtest-no-points-after-one-minute
-	?testcase <- (testcase (name POINTS-AFTER-ONE-MINUTE) (state PENDING))
-	(wm-fact (key refbox phase) (value PRODUCTION))
-	(wm-fact (key refbox game-time) (values $?gt&:(>= (nth$ 1 ?gt) 60)))
-	=>
-	(modify ?testcase (state FAILED) (msg (str-cat "No points after " (nth$ 1 ?gt) " seconds")))
 )
 
 (defrule simtest-finished
