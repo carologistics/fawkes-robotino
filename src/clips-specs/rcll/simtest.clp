@@ -25,6 +25,7 @@
 	(slot termination (type SYMBOL) (allowed-values CUSTOM FAILURE SUCCESS) (default CUSTOM))
 	(slot state (type SYMBOL) (allowed-values SUCCEEDED FAILED PENDING) (default PENDING))
 	(slot msg (type STRING))
+	(multislot args)
 )
 
 (deffunction simtest-quit (?success)
@@ -40,14 +41,16 @@
 	=>
 	(switch ?testbed
 		(case "FAST" then
-			(assert (testcase (name POINTS-AFTER-ONE-MINUTE)))
+			(assert (testcase (name POINTS-AFTER-MINUTE) (args minute 1 points 1)))
 		)
 		(case "DELIVERY" then
 			(assert (testcase (name DELIVERY)))
 		)
 		(case "FULL" then
-			(assert (testcase (name POINTS-FULL-GAME)))
+			(assert (testcase (name POINTS-AFTER-MINUTE) (args minute 5 points 30)))
+			(assert (testcase (name POINTS-AFTER-MINUTE) (args minute 17 points 150)))
 			(assert (testcase (name DELIVERY) (termination FAILURE)))
+			(assert (testcase (name FULL-GAME)))
 		)
 		(default none)
 	)
@@ -63,6 +66,13 @@
 		(eq ?custom-test:termination CUSTOM)
     (modify ?custom-test (state FAILED) (msg "testcase did not terminate"))
   )
+)
+
+(defrule simtest-full-game-success
+	?testcase <- (testcase (name FULL-GAME) (state PENDING))
+	(wm-fact (key refbox phase) (value POST_GAME))
+  =>
+  (modify ?testcase (state SUCCEEDED) (msg "Game completed"))
 )
 
 (defrule simtest-termination-success
@@ -88,23 +98,25 @@
 	(modify ?testcase (state SUCCEEDED) (msg (str-cat "Delivery done")))
 )
 
-(defrule simtest-points-after-one-minute-success
-	?testcase <- (testcase (name POINTS-AFTER-ONE-MINUTE) (state PENDING))
+(defrule simtest-points-after-minute-success
+	?testcase <- (testcase (name POINTS-AFTER-MINUTE) (state PENDING)
+								(args minute ?time points ?desired-points))
 	(wm-fact (key refbox team-color) (value ?team-color&~nil))
 	(wm-fact (key refbox phase) (value PRODUCTION))
-	(wm-fact (key refbox game-time) (values $?gt&:(< (nth$ 1 ?gt) 60)))
+	(wm-fact (key refbox game-time) (values $?gt&:(< (nth$ 1 ?gt) (* ?time 60))))
 	(wm-fact (key refbox points ?lc-team-color&:(eq ?lc-team-color (lowcase ?team-color)))
-	         (value ?points&:(> ?points 0)))
+	         (value ?points&:(>= ?points ?desired-points)))
 	=>
 	(modify ?testcase (state SUCCEEDED) (msg (str-cat "Scored " ?points " points")))
 )
 
-(defrule simtest-points-after-one-minute-failure
-	?testcase <- (testcase (name POINTS-AFTER-ONE-MINUTE) (state PENDING))
+(defrule simtest-points-after-minute-failure
+	?testcase <- (testcase (name POINTS-AFTER-MINUTE) (state PENDING)
+								(args minute ?time points ?desired-points))
 	(wm-fact (key refbox phase) (value PRODUCTION))
-	(wm-fact (key refbox game-time) (values $?gt&:(>= (nth$ 1 ?gt) 60)))
+	(wm-fact (key refbox game-time) (values $?gt&:(>= (nth$ 1 ?gt) (* ?time 60))))
 	=>
-	(modify ?testcase (state FAILED) (msg (str-cat "No points after " (nth$ 1 ?gt) " seconds")))
+	(modify ?testcase (state FAILED) (msg (str-cat "Insufficient points after " (nth$ 1 ?gt) " seconds")))
 )
 
 (defrule simtest-flawless-mps-failure
@@ -112,27 +124,6 @@
 	(wm-fact (key domain fact mps-state args? m ?m s BROKEN))
 	=>
 	(modify ?testcase (state FAILED) (msg (str-cat "Broken MPS " ?m)))
-)
-
-(defrule simtest-points-full-game-success
-	?testcase <- (testcase (name POINTS-FULL-GAME) (state PENDING))
-	(wm-fact (key refbox team-color) (value ?team-color&~nil))
-	(wm-fact (key refbox phase) (value POST_GAME))
-	(wm-fact (key refbox points ?lc-team-color&:(eq ?lc-team-color (lowcase ?team-color)))
-	         (value ?points&:(>= ?points 150)))
-	=>
-	(modify ?testcase (state SUCCEEDED) (msg (str-cat "Scored " ?points " points")))
-)
-
-
-(defrule simtest-points-full-game-failure
-	?testcase <- (testcase (name POINTS-FULL-GAME) (state PENDING))
-	(wm-fact (key refbox phase) (value POST_GAME))
-	(wm-fact (key refbox team-color) (value ?team-color&~nil))
-	(wm-fact (key refbox points ?lc-team-color&:(eq ?lc-team-color (lowcase ?team-color)))
-	         (value ?points&:(< ?points 150)))
-	=>
-	(modify ?testcase (state FAILED) (msg (str-cat "Only " ?points " points after full game, expected at least 150")))
 )
 
 (defrule simtest-finished
