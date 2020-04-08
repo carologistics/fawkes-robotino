@@ -42,6 +42,7 @@
 (defrule simtest-points-after-one-minute-success
 	?testcase <- (testcase (name POINTS-AFTER-ONE-MINUTE) (state PENDING))
 	(wm-fact (key refbox team-color) (value ?team-color&~nil))
+	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key refbox game-time) (values $?gt&:(< (nth$ 1 ?gt) 60)))
 	(wm-fact (key refbox points ?lc-team-color&:(eq ?lc-team-color (lowcase ?team-color)))
 	         (value ?points&:(> ?points 0)))
@@ -51,6 +52,7 @@
 
 (defrule simtest-no-points-after-one-minute
 	?testcase <- (testcase (name POINTS-AFTER-ONE-MINUTE) (state PENDING))
+	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key refbox game-time) (values $?gt&:(>= (nth$ 1 ?gt) 60)))
 	=>
 	(modify ?testcase (state FAILED) (msg (str-cat "No points after " (nth$ 1 ?gt) " seconds")))
