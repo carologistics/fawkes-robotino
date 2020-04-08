@@ -50,6 +50,20 @@
 	(modify ?testcase (state SUCCEEDED) (msg (str-cat "Scored " ?points " points")))
 )
 
+(defrule simtest-flawless-mps-success
+	?testcase <- (testcase (name FLAWLESS-MPS) (state PENDING))
+	(wm-fact (key refbox phase) (value POST_GAME))
+	=>
+	(modify ?testcase (state SUCCEEDED) (msg (str-cat "No broken MPS")))
+)
+
+(defrule simtest-flawless-mps-failure
+	?testcase <- (testcase (name NO-BROKEN-MPS) (state PENDING))
+	(wm-fact (key domain fact mps-state args? m ?m s BROKEN))
+	=>
+	(modify ?testcase (state FAILED) (msg (str-cat "Broken MPS " ?m)))
+)
+
 (defrule simtest-no-points-after-one-minute
 	?testcase <- (testcase (name POINTS-AFTER-ONE-MINUTE) (state PENDING))
 	(wm-fact (key refbox phase) (value PRODUCTION))
