@@ -177,7 +177,9 @@ clips-executive:
       parameters:
         simtest:
           enabled: false
-          # FAST checks only partial game, FULL checks whole game
+          # FAST checks only first minute of a game
+          # DELIVERY tests until the first delivery happens
+          # FULL checks whole game
           testbed: FAST
         coordination:
           mutex:
