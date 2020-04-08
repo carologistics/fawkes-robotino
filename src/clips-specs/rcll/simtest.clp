@@ -35,8 +35,17 @@
 (defrule simtest-initialize
 	(not (simtest-initialized))
 	(wm-fact (key config simtest enabled) (value TRUE))
+	(wm-fact (key config simtest testbed) (value ?testbed))
 	=>
-	(assert (testcase (name POINTS-AFTER-ONE-MINUTE)))
+	(switch ?testbed
+		(case "FAST" then
+			(assert (testcase (name POINTS-AFTER-ONE-MINUTE)))
+		)
+		(case "FULL" then
+			(assert (testcase (name POINTS-FULL-GAME)))
+		)
+		(default none)
+	)
 	(assert (testcase (name FLAWLESS-MPS) (termination SUCCESS)))
 	(assert (simtest-initialized))
 )
