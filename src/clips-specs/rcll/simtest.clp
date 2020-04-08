@@ -18,6 +18,7 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
+(defglobal ?*DEFAULT-TESTCASE-HANDLING* = -1)
 
 (deftemplate testcase
 	(slot name (type SYMBOL))
@@ -52,6 +53,16 @@
 	)
 	(assert (testcase (name FLAWLESS-MPS) (termination SUCCESS)))
 	(assert (simtest-initialized))
+)
+
+(defrule simtest-game-over-default-failure
+  (declare (salience ?*DEFAULT-TESTCASE-HANDLING*))
+	(wm-fact (key refbox phase) (value POST_GAME))
+  =>
+	(do-for-all-facts ((?custom-test testcase))
+		(eq ?custom-test:termination CUSTOM)
+    (modify ?custom-test (state FAILED) (msg "testcase did not terminate"))
+  )
 )
 
 (defrule simtest-termination-success
