@@ -50,7 +50,7 @@
 	(modify ?testcase (state SUCCEEDED) (msg (str-cat "Scored " ?points " points")))
 )
 
-(defrule simtest-no-points-after-one-minute
+(defrule simtest-points-after-one-minute-failure
 	?testcase <- (testcase (name POINTS-AFTER-ONE-MINUTE) (state PENDING))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key refbox game-time) (values $?gt&:(>= (nth$ 1 ?gt) 60)))
