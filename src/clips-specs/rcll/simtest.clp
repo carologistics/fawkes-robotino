@@ -64,6 +64,28 @@
 	(modify ?testcase (state FAILED) (msg (str-cat "Broken MPS " ?m)))
 )
 
+(defrule simtest-points-full-game-success
+	?testcase <- (testcase (name POINTS-FULL-GAME) (state PENDING))
+	(wm-fact (key refbox team-color) (value ?team-color&~nil))
+	(wm-fact (key refbox phase) (value POST_GAME))
+	(wm-fact (key refbox points ?lc-team-color&:(eq ?lc-team-color (lowcase ?team-color)))
+	         (value ?points&:(>= ?points 150)))
+	=>
+	(modify ?testcase (state SUCCEEDED) (msg (str-cat "Scored " ?points " points")))
+)
+
+
+(defrule simtest-points-full-game-failure
+	?testcase <- (testcase (name POINTS-FULL-GAME) (state PENDING))
+	(wm-fact (key refbox phase) (value POST_GAME))
+	(wm-fact (key refbox team-color) (value ?team-color&~nil))
+	(wm-fact (key refbox points ?lc-team-color&:(eq ?lc-team-color (lowcase ?team-color)))
+	         (value ?points&:(< ?points 150)))
+	=>
+	(modify ?testcase (state FAILED) (msg (str-cat "Only " ?points " points after full game, expected at least 150")))
+)
+
+
 (defrule simtest-no-points-after-one-minute
 	?testcase <- (testcase (name POINTS-AFTER-ONE-MINUTE) (state PENDING))
 	(wm-fact (key refbox phase) (value PRODUCTION))
