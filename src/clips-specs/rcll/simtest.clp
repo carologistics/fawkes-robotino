@@ -44,7 +44,7 @@
 			(assert (testcase (name POINTS-AFTER-MINUTE) (args minute 1 points 1)))
 		)
 		(case "DELIVERY" then
-			(assert (testcase (name DELIVERY)))
+			(assert (testcase (name DELIVERY-COUNT) (args count 1)))
 		)
 		(case "FULL" then
 			(assert (testcase (name POINTS-AFTER-MINUTE) (args minute 5 points 30)))
@@ -98,6 +98,25 @@
 	(wm-fact (key domain fact order-complexity args? ord ?ord com ?com))
 	=>
 	(modify ?testcase (state SUCCEEDED) (msg (str-cat "Delivery of complexity " ?com " done")))
+)
+
+(defrule simtest-delivery-count-success
+	(wm-fact (key refbox team-color) (value ?team-color&~nil))
+	(wm-fact (key domain fact quantity-delivered args? ord ? team ?team-color) (value ?delivered&:(> ?delivered 0)))
+	?testcase <- (testcase (name DELIVERY-COUNT) (state PENDING) (args count ?count))
+	(wm-fact (key refbox phase) (value PRODUCTION))
+	=>
+	(bind ?curr 0)
+  (delayed-do-for-all-facts ((?qd wm-fact))
+		(and 	(wm-key-prefix ?qd:key (create$ domain fact quantity-delivered))
+					(eq (wm-key-arg ?qd:key team) ?team-color)
+					(> ?qd:value 0))
+    (bind ?curr (+ ?curr ?qd:value))
+  )
+  (if (<= ?count ?curr)
+		then
+			(modify ?testcase (state SUCCEEDED))
+	)
 )
 
 (defrule simtest-points-after-minute-success
