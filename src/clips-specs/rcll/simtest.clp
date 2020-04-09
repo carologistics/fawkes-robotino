@@ -49,7 +49,7 @@
 		(case "FULL" then
 			(assert (testcase (name POINTS-AFTER-MINUTE) (args minute 5 points 30)))
 			(assert (testcase (name POINTS-AFTER-MINUTE) (args minute 17 points 150)))
-			(assert (testcase (name DELIVERY) (termination FAILURE)))
+			(assert (testcase (name DELIVERY) (termination FAILURE) (args complexity C0)))
 			(assert (testcase (name FULL-GAME)))
 		)
 		(default none)
@@ -90,12 +90,13 @@
 )
 
 (defrule simtest-delivery-success
-	?testcase <- (testcase (name DELIVERY) (state PENDING))
+	?testcase <- (testcase (name DELIVERY) (state PENDING) (args complexity ?com))
 	(wm-fact (key refbox team-color) (value ?team-color&~nil))
 	(wm-fact (key refbox phase) (value PRODUCTION))
-	(wm-fact (key domain fact quantity-delivered args? ord ? team ?team-color) (value ?delivered&:(> ?delivered 0)))
+	(wm-fact (key domain fact quantity-delivered args? ord ?ord team ?team-color) (value ?delivered&:(> ?delivered 0)))
+	(wm-fact (key domain fact order-complexity args? ord ?ord com ?com))
 	=>
-	(modify ?testcase (state SUCCEEDED) (msg (str-cat "Delivery done")))
+	(modify ?testcase (state SUCCEEDED) (msg (str-cat "Delivery of complexity " ?com " done")))
 )
 
 (defrule simtest-points-after-minute-success
