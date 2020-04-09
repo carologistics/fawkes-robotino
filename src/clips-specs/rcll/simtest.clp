@@ -62,8 +62,9 @@
   (declare (salience ?*DEFAULT-TESTCASE-HANDLING*))
 	(wm-fact (key refbox phase) (value POST_GAME))
   =>
-	(do-for-all-facts ((?custom-test testcase))
-		(eq ?custom-test:termination CUSTOM)
+	(delayed-do-for-all-facts ((?custom-test testcase))
+		(and (eq ?custom-test:termination CUSTOM)
+					(eq ?custom-test:state PENDING))
     (modify ?custom-test (state FAILED) (msg "testcase did not terminate"))
   )
 )
