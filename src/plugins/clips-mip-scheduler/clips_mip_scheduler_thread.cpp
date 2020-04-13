@@ -270,6 +270,10 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 			gurobi_vars_plan_[iP.first] =
 			  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("p{" + iP.first + "}").c_str());
 
+		//Objective
+		GRBVar Tmax = gurobi_model_->addVar(0, GRB_INFINITY, 1, GRB_CONTINUOUS, "Tmax");
+		gurobi_model_->set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
+
 		//Constraint 1
 		for (auto const &iE1 : events_)
 			for (auto const &iE2 : iE1.second->precedes) {
@@ -350,13 +354,10 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 				}
 
 		//Constraint 10
-		GRBVar Tmax = gurobi_model_->addVar(0, GRB_INFINITY, 1, GRB_CONTINUOUS, "Tmax");
-
 		for (auto const &iE : events_)
 			gurobi_model_->addConstr(Tmax - gurobi_vars_time_[iE.first] >= 0,
 			                         ("Tmax<<" + iE.first).c_str());
 
-		gurobi_model_->set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
 		gurobi_model_->write("model.lp");
 
 		gurobi_model_->optimize();
