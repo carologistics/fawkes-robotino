@@ -88,6 +88,65 @@
 )
 
 
+;We start off by defining the Events that happen at time 0
+; (Ex: resource producing events)
+(defrule scheduling-init-resources-machines
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (wm-fact (key refbox team-color) (value ?team-color))
+ (wm-fact (key domain fact mps-type args? m ?mps t ?type))
+ (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+=>
+ (bind ?r-name (formate-resource-name ?mps))
+ (assert (wm-fact (key scheduling resource args? r ?r-name)))
+)
+
+(defrule scheduling-init-resources-robots
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (wm-fact (key domain fact self args? r ?robot))
+=>
+ (bind ?r-name (formate-resource-name ?robot))
+ (assert (wm-fact (key scheduling resource args? r ?r-name)))
+)
+
+(defrule scheduling-init-resources
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (wm-fact (key scheduling resource args? r ?r))
+ (not (wm-fact (key scheduling event-requirment args? e ? r ?r)))
+=>
+ ;mps-resource events
+ (bind ?start-event (sym-cat (formate-event-name ?r)  @start))
+ (bind ?end-event (sym-cat (formate-event-name ?r)  @end))
+ (assert
+   (wm-fact (key scheduling event args? e ?start-event))
+   (wm-fact (key scheduling event args? e ?end-event))
+   (wm-fact (key scheduling event-requirment args? e ?start-event r ?r)
+            (type INT)
+            (value 1))
+   (wm-fact (key scheduling event-requirment args? e ?end-event r ?r)
+            (type INT)
+            (value -1)))
+)
+
+(defrule scheduling-resource-production
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (wm-fact (key scheduling event-requirment args? e ? r ?r))
+ (not (wm-fact (key scheduling resource args?  r ?r)))
+=>
+ (bind ?start-event (sym-cat (formate-event-name ?r)  @start))
+ (bind ?end-event (sym-cat (formate-event-name ?r)  @end))
+ (assert
+   (wm-fact (key scheduling resource args?  r ?r))
+   (wm-fact (key scheduling event args? e ?start-event))
+   (wm-fact (key scheduling event args? e ?end-event))
+   (wm-fact (key scheduling event-requirment args? e ?start-event r ?r)
+            (type INT)
+            (value 1))
+   (wm-fact (key scheduling event-requirment args? e ?end-event r ?r)
+            (type INT)
+            (value -1))
+ )
+)
+
 
 (defrule scheduling-goal-class-precedence
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
@@ -134,33 +193,6 @@
 ; =>
 ;)
 
-(defrule scheduling-resource-production-event
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (wm-fact (key scheduling event-requirment args? e ? r ?r))
- (not (wm-fact (key scheduling resource-producing-event args? e ? r ?r)))
-=>
- (bind ?start-event-name (sym-cat (formate-event-name ?r)  @start))
- (assert
-   (wm-fact (key scheduling event args? e ?start-event-name))
-   (wm-fact (key scheduling event-requirment args? e ?start-event-name r ?r)
-            (type INT) (value 1))
-   (wm-fact (key scheduling resource-producing-event args? e ?start-event-name r ?r))
- )
-)
-
-(defrule scheduling-resource-consumption-event
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (wm-fact (key scheduling event-requirment args? e ? r ?r))
- (not (wm-fact (key scheduling resource-consuming-event args? e ? r ?r)))
-=>
- (bind ?end-event-name (sym-cat (formate-event-name ?r)  @end))
- (assert
-   (wm-fact (key scheduling event args? e ?end-event-name))
-   (wm-fact (key scheduling event-requirment args? e ?end-event-name r ?r)
-            (type INT) (value -1))
-   (wm-fact (key scheduling resource-consuming-event args? e ?end-event-name r ?r))
-   )
-)
 
 ;;;Plan Events
 (defrule scheduling-plan-events
