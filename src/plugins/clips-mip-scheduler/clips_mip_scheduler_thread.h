@@ -68,7 +68,6 @@ private:
 			name = n;
 		};
 		std::string                name;
-		std::string                location;
 		int                        duration;
 		std::map<std::string, int> resources;
 		std::vector<Event *>       precedes;
@@ -89,7 +88,6 @@ private:
 	std::map<std::string, std::map<std::string, std::map<std::string, GRBVar>>> gurobi_vars_sequence_;
 
 private:
-	void set_event_location(std::string env_name, std::string event_name, std::string location);
 	void set_event_duration(std::string env_name, std::string event_name, int duration);
 	void
 	     add_event_resource(std::string env_name, std::string event_name, std::string res_name, int req);

@@ -67,10 +67,6 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
 	fawkes::MutexLocker lock(clips_envs_[env_name].objmutex_ptr());
 
 	clips->add_function(
-	  "scheduler-set-event-location",
-	  sigc::slot<void, std::string, std::string>(
-	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::set_event_location), env_name)));
-	clips->add_function(
 	  "scheduler-set-event-duration",
 	  sigc::slot<void, std::string, int>(
 	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::set_event_duration), env_name)));
@@ -107,17 +103,6 @@ ClipsMipSchedulerThread::clips_context_destroyed(const std::string &env_name)
 {
 	logger->log_info(name(), "Removing environment %s", env_name.c_str());
 	clips_envs_.erase(env_name);
-}
-
-void
-ClipsMipSchedulerThread::set_event_location(std::string env_name,
-                                            std::string event_name,
-                                            std::string location)
-{
-	if (events_.find(event_name) == events_.end())
-		events_[event_name] = new Event(event_name);
-
-	events_[event_name]->location = location;
 }
 
 //{

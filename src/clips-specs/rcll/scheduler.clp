@@ -290,17 +290,7 @@
  )
  (assert (wm-fact (key scheduling setup-duration args? r ?r e-a ?producer e-b ?consumer)
                   (type INT) (value ?setup)))
-)
 
-
-
-;;Adding datasets to scheduler
-(defrule scheduling-add-event-location
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (wm-fact (key scheduling event args? e ?e))
- (wm-fact (key scheduling event-location args? e ?e ) (value ?l))
- =>
- (scheduler-set-event-location (sym-cat ?e) (sym-cat ?l))
 )
 
 (defrule scheduling-add-event-duration
