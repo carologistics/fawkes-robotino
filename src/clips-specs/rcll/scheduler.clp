@@ -149,7 +149,6 @@
 
 
 (defrule scheduling-goal-class-precedence
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (goal (id ?order-id) (parent ?goal-id) (class ORDER) (mode FORMULATED))
   (not (wm-fact (key meta precedence goal-class args? $?)))
 =>
@@ -266,6 +265,7 @@
 
 ;Resource setup times between 2 events
 (defrule scheduling-resource-setup-duration
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (wm-fact (key scheduling event args? e ?producer))
  (wm-fact (key scheduling event-requirment args? e ?producer r ?r)
           (value ?v1&:(> ?v1 0)))
