@@ -62,6 +62,13 @@
 ;)
 
 
+(deftemplate scheduler-info
+  (slot goal-id (type SYMBOL))
+  (slot type (type SYMBOL) (allowed-values EVENT-TIME EVENT-SEQUENCE PLAN-SELECTION))
+  (multislot descriptors (type SYMBOL))
+  (slot value (type FLOAT))
+)
+
 (deffunction plan-duration (?plan-id)
  (bind ?duration 0)
  (do-for-all-facts ((?pa plan-action))
