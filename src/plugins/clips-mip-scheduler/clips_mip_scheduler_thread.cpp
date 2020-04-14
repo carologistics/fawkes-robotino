@@ -249,7 +249,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 		//Init Gurobi Time Vars (T)
 		for (auto const &iE : events_)
 			gurobi_vars_time_[iE.first] =
-			  gurobi_model_->addVar(0, GRB_INFINITY, 0, GRB_CONTINUOUS, ("t{" + iE.first + "}").c_str());
+			  gurobi_model_->addVar(0, GRB_INFINITY, 0, GRB_INTEGER, ("t{" + iE.first + "}").c_str());
 
 		//Init Gurobi event sequencing Vars (X)
 		for (auto const &iR : res_setup_duration_)
@@ -271,7 +271,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 			  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("p{" + iP.first + "}").c_str());
 
 		//Objective
-		GRBVar Tmax = gurobi_model_->addVar(0, GRB_INFINITY, 1, GRB_CONTINUOUS, "Tmax");
+		GRBVar Tmax = gurobi_model_->addVar(0, GRB_INFINITY, 1, GRB_INTEGER, "Tmax");
 		gurobi_model_->set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
 
 		//Constraint 1
@@ -374,6 +374,45 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 			                 gurobi_model_->get(GRB_DoubleAttr_ObjVal));
 			gurobi_model_->write("model_sol.sol");
 			//return 0;
+			fawkes::MutexLocker lock(clips_envs_[env_name].objmutex_ptr());
+			CLIPS::Environment &env = **(clips_envs_[env_name]);
+
+			//Post process Time Vars (T)
+			for (auto const &iE : events_) {
+				std::string type  = "EVENT-TIME";
+				float       value = gurobi_vars_time_[iE.first].get(GRB_DoubleAttr_X);
+				env.assert_fact_f("(scheduler-info (type %s) (descriptors %s )(value  %f ))",
+				                  type.c_str(),
+				                  iE.first.c_str(),
+				                  value);
+			}
+
+			//Post process sequencing Vars (X)
+			for (auto const &iR : res_setup_duration_)
+				for (auto const &iEprod : iR.second)
+					for (auto const &iEcons : iEprod.second) {
+						std::string type = "EVENT-SEQUENCE";
+						float       value =
+						  gurobi_vars_sequence_[iR.first][iEprod.first->name][iEcons.first->name].get(
+						    GRB_DoubleAttr_X);
+						env.assert_fact_f("(scheduler-info (type %s) (descriptors %s %s %s) (value  %f ))",
+						                  type.c_str(),
+						                  iR.first.c_str(),
+						                  iEprod.first->name.c_str(),
+						                  iEcons.first->name.c_str(),
+						                  value);
+					}
+
+			//Post process plan selection Vars (S)
+			for (auto const &iP : plan_events_) {
+				std::string type  = "PLAN-SELECTION";
+				float       value = gurobi_vars_plan_[iP.first].get(GRB_DoubleAttr_X);
+				env.assert_fact_f("(scheduler-info (type %s) (descriptors %s ) (value  %f ))",
+				                  type.c_str(),
+				                  iP.first.c_str(),
+				                  value);
+			}
+
 			return;
 		}
 		if ((status != GRB_INF_OR_UNBD) && (status != GRB_INFEASIBLE)) {
