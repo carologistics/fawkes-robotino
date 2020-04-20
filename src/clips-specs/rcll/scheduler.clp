@@ -63,10 +63,47 @@
 
 
 (deftemplate scheduler-info
-  (slot goal-id (type SYMBOL))
+  (slot sched-id (type SYMBOL))
   (slot type (type SYMBOL) (allowed-values EVENT-TIME EVENT-SEQUENCE PLAN-SELECTION))
   (multislot descriptors (type SYMBOL))
   (slot value (type FLOAT))
+)
+
+(deftemplate schedule
+  (slot id (type SYMBOL))
+  (slot goal-id (type SYMBOL))
+  (slot mode (type SYMBOL))
+  (slot duration (type INTEGER))
+  (slot start-time (type INTEGER))
+)
+
+(deftemplate schedule-event
+  (slot sched-id (type SYMBOL))
+  (slot id (type SYMBOL))
+  (slot entity (type SYMBOL))
+  (slot at (type SYMBOL) (allowed-values START END))
+  (slot scheduled (type SYMBOL) (allowed-values TRUE FALSE) (default FALSE))
+  (slot scheduled-start (type INTEGER) (default 0))
+  (slot duration (type INTEGER) (default 0))
+)
+
+
+(deftemplate schedule-resource
+  (slot sched-id (type SYMBOL))
+  (slot id (type SYMBOL))
+  (slot type (type SYMBOL))
+  (slot consumable (type SYMBOL) (allowed-values TRUE FALSE) (default FALSE))
+  (slot producible (type SYMBOL) (allowed-values TRUE FALSE) (default FALSE))
+  (multislot states (type SYMBOL))
+  (slot units (type INTEGER))
+)
+
+(deftemplate schedule-requirment
+  (slot sched-id (type SYMBOL))
+  (slot event-id (type SYMBOL))
+  (slot resource-id (type SYMBOL))
+  (slot resource-setup (type SYMBOL))
+  (slot resource-units (type INTEGER))
 )
 
 (deffunction plan-duration (?plan-id)
