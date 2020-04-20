@@ -1021,13 +1021,17 @@
     (not (plan (goal-id ?goal-id)))
     =>
    (bind ?plan-id  (sym-cat ?goal-id .p1))
-   (assert (wm-fact (key meta plan required-resources args? id ?plan-id)
-                    (values ?cs ?cc R))
-           (wm-fact (key meta plan start-location args? id ?plan-id)
-                    (values (wait-pos ?cs INPUT)  WAIT))
-           (wm-fact (key meta plan end-location args? id ?plan-id)
-                    (values (wait-pos ?cs INPUT)  WAIT)))
    (assert
+      (wm-fact (key meta plan required-resource args? id ?plan-id r ?cc setup nil))
+
+      (wm-fact (key meta plan required-resource args? id ?plan-id r ?cs setup nil ))
+      (wm-fact (key meta plan released-resource args? id ?plan-id r ?cs setup BUFFERED))
+
+      (wm-fact (key meta plan required-resource args? id ?plan-id r R
+                                setup (node-name (wait-pos ?cs INPUT) WAIT)))
+      (wm-fact (key meta plan released-resource args? id ?plan-id r R
+                                setup (node-name (wait-pos ?cs INPUT) WAIT)))
+
         (plan (id ?plan-id) (goal-id ?goal-id))
         (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
                                     (action-name location-lock)
@@ -1076,14 +1080,18 @@
  (not (plan (goal-id ?goal-id)))
  =>
  (bind ?plan-id  (sym-cat ?goal-id .p1 ))
- (bind ?side OUTPUT)
- (assert (wm-fact (key meta plan required-resources args? id ?plan-id)
-                  (values ?mps ?wp R))
-         (wm-fact (key meta plan start-location args? id ?plan-id)
-                  (values (wait-pos ?mps ?side)  WAIT))
-         (wm-fact (key meta plan end-location args? id ?plan-id)
-                  (values (wait-pos ?mps ?side) WAIT)))
-(assert
+ (assert
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup nil ))
+
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?mps setup nil ))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?mps setup nil ))
+
+  (wm-fact (key meta plan required-resource args? id ?plan-id r R
+                     setup (node-name (wait-pos ?mps OUTPUT) WAIT )))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r R
+                     setup (node-name (wait-pos ?mps OUTPUT) WAIT )))
+
+
   (plan (id ?plan-id) (goal-id ?goal-id))
   (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
         (action-name location-lock)
@@ -1138,13 +1146,18 @@
  (not (plan (goal-id ?goal-id)))
  =>
  (bind ?plan-id  (sym-cat ?goal-id .p1))
- (assert (wm-fact (key meta plan required-resources args? id ?plan-id)
-                  (values ?wp ?bs ?cs R))
-         (wm-fact (key meta plan start-location args? id ?plan-id)
-                  (values (wait-pos ?bs ?bs-side) WAIT))
-         (wm-fact (key meta plan end-location args? id ?plan-id)
-                  (values (wait-pos ?cs INPUT) WAIT)))
  (assert
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?cs setup BUFFERED))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?cs setup nil ))
+
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?bs setup nil ))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?bs setup nil  ))
+
+  (wm-fact (key meta plan required-resource args? id ?plan-id r R
+                setup (node-name (wait-pos ?bs ?bs-side) WAIT)))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r R
+                setup (node-name (wait-pos ?cs INPUT) WAIT)))
+
   (plan (id ?plan-id) (goal-id ?goal-id))
   (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
          (action-name location-lock)
@@ -1242,14 +1255,20 @@
  (not (plan (goal-id ?goal-id)))
  =>
  (bind ?plan-id  (sym-cat ?goal-id .p1))
- (bind ?side OUTPUT)
- (assert (wm-fact (key meta plan required-resources args? id ?plan-id)
-                  (values ?wp ?cs ?ds R))
-         (wm-fact (key meta plan start-location args? id ?plan-id)
-                  (values (wait-pos ?cs ?side)  WAIT))
-         (wm-fact (key meta plan end-location args? id ?plan-id)
-                  (values (wait-pos ?ds ?side) WAIT)))
-  (assert
+ (assert
+     (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup nil))
+
+     (wm-fact (key meta plan required-resource args? id ?plan-id r ?ds setup nil ))
+     (wm-fact (key meta plan released-resource args? id ?plan-id r ?ds setup nil ))
+
+     (wm-fact (key meta plan required-resource args? id ?plan-id r ?cs setup nil ))
+     (wm-fact (key meta plan released-resource args? id ?plan-id r ?cs setup nil ))
+
+     (wm-fact (key meta plan required-resource args? id ?plan-id r R
+                        setup (node-name (wait-pos ?cs OUTPUT) WAIT)))
+     (wm-fact (key meta plan released-resource args? id ?plan-id r R
+                        setup (node-name (wait-pos ?ds INPUT) WAIT)))
+
      (plan (id ?plan-id) (goal-id ?goal-id))
      (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
                   (action-name location-lock)
