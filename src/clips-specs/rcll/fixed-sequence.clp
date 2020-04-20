@@ -1003,11 +1003,10 @@
 )
 
 ; Centralized Goal Reasoning
-
 (defrule goal-expander-fill-cap-station-centralgoal-id
    "Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
     (goal (class ORDER) (id ?g-order))
     (goal (class PREPARE-MACHINE) (id ?g-prepare) (parent ?g-order))
     ?p <- (goal (class PREPARE-CS) (id ?g-cs) (parent ?g-prepare))
@@ -1068,13 +1067,14 @@
 )
 
 (defrule goal-remove-workpiece-from-mps-central
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
  (goal (class ORDER) (id ?g-order))
  (goal (class PREPARE-MACHINE) (id ?g-prepare) (parent ?g-order))
  ?p <- (goal (class PREPARE-CS) (id ?g-cs) (parent ?g-prepare))
  ?g <- (goal (id ?goal-id) (class CLEAR-MPS) (mode SELECTED) (parent ?g-cs)
              (params  wp ?wp
-                      mps ?mps))
+                      mps ?mps
+                      side ?side))
  (wm-fact (key domain fact self args? r ?robot))
  ;(wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  (not (plan (goal-id ?goal-id)))
@@ -1121,7 +1121,7 @@
 
 
 (defrule goal-produce-c0-central
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
  (goal (class ORDER) (id ?g-order) (params ord ?order))
  ?p <- (goal (class WP-OPERATIONS) (id ?g-wp) (parent ?g-order))
  ?g <- (goal (mode SELECTED) (id ?goal-id) (class MOUNT-CAP) (parent ?g-wp)
@@ -1224,7 +1224,7 @@
 )
 
 (defrule goal-deliver-central
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
  (goal (class ORDER) (id ?g-order)
              (params  ord ?order))
  ?p <- (goal (class WP-OPERATIONS) (id ?g-wp) (parent ?g-order)

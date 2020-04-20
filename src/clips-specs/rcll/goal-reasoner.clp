@@ -252,16 +252,14 @@
   (modify ?p (mode EXPANDED))
 )
 
-(defrule goal-reasoner-expand-simple-gaol
-" Expand simple goal, if it all its plans are expanded."
- ?g <- (goal (id ?g-id) (sub-type SIMPLE) (mode SELECTED) (class ?class))
- (forall (plan (id ?p-id) (goal-id ?g-id))
-         (wm-fact (key scheduling goal-plan args? g ?g-id p ?p-id)))
- (wm-fact (key meta precedence goal-class args? $? ?class $?))
+(defrule goal-reasoner-expand-scheduled-goals
+  " Expand a schedule goal, if some plans are expanded."
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  ?g <- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode SELECTED))
+  (plan (id ?p-id) (goal-id ?g-id))
   =>
   (modify ?g (mode EXPANDED))
 )
-
 
 
 ; ========================= Goal Dispatching =================================
