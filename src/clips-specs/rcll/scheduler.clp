@@ -131,6 +131,42 @@
   return ?r
 )
 
+(defrule scheduling-create-resource-source-event
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule-resource (id ?r-id) (producible FALSE) (units ?units))
+=>
+ (bind ?event-id  (sym-cat ?r-id @start))
+ (assert
+   (schedule-event (id ?event-id) (entity ?r-id) (at START))
+   (schedule-requirment (event-id ?event-id)
+                        (resource-id ?r-id)
+                        (resource-units ?units)))
+)
+
+(defrule scheduling-create-resource-sink-event
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule-resource (id ?r-id) (consumable FALSE) (units ?units))
+=>
+ (bind ?event-id  (sym-cat ?r-id @end))
+ (assert
+   (schedule-event (id ?event-id) (entity ?r-id) (at END))
+   (schedule-requirment (event-id ?event-id)
+                        (resource-id ?r-id)
+                        (resource-units (* -1 ?units))))
+)
+
+
+(defrule scheduling-create-resource-from-req
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule-requirment (event-id ?event-id) (resource-id ?r-id) )
+ (not (schedule-resource (id ?r-id)))
+=>
+ (assert (schedule-resource (id ?r-id)
+                            (units 1)
+                            (type WP)
+                            (consumable FALSE)
+                            (producible FALSE)))
+)
 
 ;We start off by defining the Events that happen at time 0
 ; (Ex: resource producing events)
@@ -140,57 +176,29 @@
  (wm-fact (key domain fact mps-type args? m ?mps t ?type))
  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 =>
- (bind ?r-name (formate-resource-name ?mps))
- (assert (wm-fact (key scheduling resource args? r ?r-name)))
+ (bind ?r (formate-resource-name ?mps))
+ (assert (schedule-resource (id ?r)
+                            (units 1)
+                            (type ?type)
+                            (consumable FALSE)
+                            (producible FALSE)))
 )
 
 (defrule scheduling-init-resources-robots
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (wm-fact (key domain fact self args? r ?robot))
 =>
- (bind ?r-name (formate-resource-name ?robot))
- (assert (wm-fact (key scheduling resource args? r ?r-name)))
+ (bind ?r (formate-resource-name ?robot))
+ (assert (schedule-resource (id ?r)
+                            (units 1)
+                            (type ROBOT)
+                            (consumable FALSE)
+                            (producible FALSE)))
 )
 
-(defrule scheduling-init-resources
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (wm-fact (key scheduling resource args? r ?r))
- (not (wm-fact (key scheduling event-requirment args? e ? r ?r)))
-=>
- ;mps-resource events
- (bind ?start-event (sym-cat (formate-event-name ?r)  @start))
- (bind ?end-event (sym-cat (formate-event-name ?r)  @end))
- (assert
-   (wm-fact (key scheduling event args? e ?start-event))
-   (wm-fact (key scheduling event args? e ?end-event))
-   (wm-fact (key scheduling event-requirment args? e ?start-event r ?r)
-            (type INT)
-            (value 1))
-   (wm-fact (key scheduling event-requirment args? e ?end-event r ?r)
-            (type INT)
-            (value -1)))
-)
 
-(defrule scheduling-resource-production
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (wm-fact (key scheduling event-requirment args? e ? r ?r))
- (not (wm-fact (key scheduling resource args?  r ?r)))
-=>
- (bind ?start-event (sym-cat (formate-event-name ?r)  @start))
- (bind ?end-event (sym-cat (formate-event-name ?r)  @end))
- (assert
-   (wm-fact (key scheduling resource args?  r ?r))
-   (wm-fact (key scheduling event args? e ?start-event))
-   (wm-fact (key scheduling event args? e ?end-event))
-   (wm-fact (key scheduling event-requirment args? e ?start-event r ?r)
-            (type INT)
-            (value 1))
-   (wm-fact (key scheduling event-requirment args? e ?end-event r ?r)
-            (type INT)
-            (value -1))
- )
-)
-
+;;TODO: Error on requirment with no resource
+;;TODO: Error on event requires both -ve and +ve
 
 (defrule scheduling-goal-class-precedence
   (goal (id ?order-id) (parent ?goal-id) (class ORDER) (mode FORMULATED))
@@ -212,190 +220,184 @@
   )
 )
 
-;;;Goal Events
-(defrule scheduling-goal-completion-event
+(defrule scheduling-goal-events
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (goal (id ?g-id) (sub-type SIMPLE) (mode SELECTED) (class ?class))
- (not (wm-fact (key scheduling goal-event args? g ?g-id e ?)))
- ;Is production goal
- (wm-fact (key meta precedence goal-class args? $? ?class $?))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode SELECTED))
+ (plan (goal-id ?g-id))
+ (not (schedule-event (entity ?g-id)))
  =>
- (bind ?event-name (sym-cat (formate-event-name ?g-id) @end))
- (assert
-   (wm-fact (key scheduling event args? e ?event-name) (type INT))
-   (wm-fact (key scheduling goal-event args? g ?g-id e ?event-name)))
+ (bind ?goal-end (sym-cat (formate-event-name ?g-id) @end))
+ (assert (schedule-event (id ?goal-end) (entity ?g-id) (at END)))
 )
 
-;(defrule scheduling-plan-events-as-goal-event
-;"add plan event as events of the goal events"
-; (goal (id ?g-id) (sub-type SIMPLE) (mode SELECTED) (class ?class))
-; (plan (id ?p-id) (goal-id ?g-id))
-; (wm-fact (key scheduling event args? e ?e))
-; (wm-fact (key scheduling plan-event args? p ?p-id e ?e))
-; (not (wm-fact (key scheduling goal-event args? g ?g-id e ?e)))
-; =>
-;)
-
-
-;;;Plan Events
 (defrule scheduling-plan-events
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (goal (id ?goal-id) (sub-type SIMPLE) (class ?class) (mode SELECTED))
- (plan (id ?plan-id) (goal-id ?goal-id))
- (wm-fact (key meta precedence goal-class args? $?  ?class $?))
- (wm-fact (key meta plan start-location args? id ?plan-id) (values ?ls ?ls-side))
- (wm-fact (key meta plan end-location args? id ?plan-id) (values ?le ?le-side))
- (wm-fact (key meta plan required-resources args? id ?plan-id) (values $?resources))
- (wm-fact (key scheduling event args? e ?e-goal-end))
- (wm-fact (key scheduling goal-event args? g ?goal-id e ?e-goal-end))
- (not (wm-fact (key scheduling goal-plan args? g ? p ?plan-id)))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode SELECTED))
+ (plan (id ?p-id) (goal-id ?g-id))
+ (not (schedule-event (entity ?p-id)))
  =>
- (assert (wm-fact (key scheduling goal-plan args? g ?goal-id p ?plan-id)))
- ;events
- (bind ?e-plan-start (sym-cat  (formate-event-name ?plan-id) @start))
- (bind ?e-plan-end   (sym-cat  (formate-event-name ?plan-id) @end))
- ;plan-events
+ (bind ?plan-start (sym-cat  (formate-event-name ?p-id) @start))
+ (bind ?plan-end   (sym-cat  (formate-event-name ?p-id) @end))
+ (bind ?duration (plan-duration ?p-id))
  (assert
-    (wm-fact (key scheduling plan-event args? p ?plan-id e ?e-plan-start))
-    (wm-fact (key scheduling plan-event args? p ?plan-id e ?e-plan-end))
-    (wm-fact (key scheduling goal-event args? g ?goal-id e ?e-plan-start))
-    (wm-fact (key scheduling goal-event args? g ?goal-id e ?e-plan-end))
-    (wm-fact (key scheduling event args? e ?e-plan-start))
-    (wm-fact (key scheduling event args? e ?e-plan-end))
-    (wm-fact (key scheduling event-location args? e ?e-plan-start)
-             (type SYMBOL) (value (node-name ?ls ?ls-side)))
-    (wm-fact (key scheduling event-location args? e ?e-plan-end)
-             (type SYMBOL) (value (node-name ?le ?le-side)))
-    (wm-fact (key scheduling event-duration args? e ?e-plan-start)
-             (type INT) (value (plan-duration ?plan-id)))
-    (wm-fact (key scheduling event-duration args? e ?e-plan-end)
-             (type INT) (value 0)))
- ;Resources param
- (progn$ (?r ?resources)
-   (bind ?rr (formate-resource-name ?r))
-   (assert
-     (wm-fact (key scheduling event-requirment args? e ?e-plan-start r ?rr)
-              (type INT) (value -1))
-     (wm-fact (key scheduling event-requirment args? e ?e-plan-end r ?rr)
-              (type INT) (value 1))))
- ;Precedence within plan
- (assert (wm-fact (key scheduling event-precedence args? e-a ?e-plan-start e-b ?e-plan-end)))
- ;Precedence plan goals
- (assert (wm-fact (key scheduling event-precedence args? e-a ?e-plan-end e-b ?e-goal-end)))
+  (schedule-event (id ?plan-start) (entity ?p-id) (at START) (duration ?duration))
+  (schedule-event (id ?plan-end) (entity ?p-id) (at END))
+ )
+)
+
+(defrule scheduling-plan-resources-at-start
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode SELECTED))
+ (plan (id ?p-id) (goal-id ?g-id))
+ (schedule-event (id ?e-id) (entity ?p-id) (at START))
+ (wm-fact (key meta plan resource-consumed args? id ?p-id r ?r setup ?setup))
+ =>
+  ;(wm-fact (key scheduling event-location args? e ?plan-end)
+    ;         (type SYMBOL) (value (node-name ?le ?le-side)))
+   (bind ?r-id (formate-resource-name ?r))
+   (assert (schedule-requirment (event-id ?e-id)
+                                (resource-id ?r-id)
+                                (resource-setup ?setup)
+                                (resource-units -1)))
+)
+
+(defrule scheduling-plan-resources-at-end
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode SELECTED))
+ (plan (id ?p-id) (goal-id ?g-id))
+ (schedule-event (id ?e-id) (entity ?p-id) (at END))
+ (wm-fact (key meta plan resource-produced args? id ?p-id r ?r setup ?setup))
+ =>
+  ;(wm-fact (key scheduling event-location args? e ?plan-end)
+    ;         (type SYMBOL) (value (node-name ?le ?le-side)))
+   (bind ?r-id (formate-resource-name ?r))
+   (assert (schedule-requirment (event-id ?e-id)
+                                (resource-id ?r-id)
+                                (resource-setup ?setup)
+                                (resource-units 1)))
 )
 
 ;Precedence across goals
-(defrule scheduling-precedence-across-goals
+(defrule scheduling-goal-plan-precedence
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (wm-fact (key meta precedence goal-class args? a ?class-a b ?class-b))
- (goal (id ?g-id-a) (sub-type SIMPLE) (class ?class-a))
- (goal (id ?g-id-b) (sub-type SIMPLE) (class ?class-b))
- (plan (id ?pa-id) (goal-id ?g-id-a))
- (plan (id ?pb-id) (goal-id ?g-id-b))
- ;from last plan event of goal 'a'
- (wm-fact (key scheduling event args? e ?pa-end))
- (wm-fact (key scheduling plan-event args? p ?pa-id e ?pa-end))
- (not (and (wm-fact (key scheduling plan-event args? p ?pa-id e ?pa-event))
-           (wm-fact (key scheduling event-precedence args? e-a ?pa-end e-b ?pa-event))))
- ;To first plan-even in goal 'b'
- (wm-fact (key scheduling event args? e ?pb-start))
- (wm-fact (key scheduling plan-event args? p ?pb-id e ?pb-start))
- (not (and (wm-fact (key scheduling plan-event args? p ?pb-id e ?pb-event))
-           (wm-fact (key scheduling event-precedence args? e-a ?pb-event e-b ?pb-start))))
- (not (wm-fact (key scheduling event-precedence args? e-a ?pa-end e-b ?pb-start)))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode SELECTED))
+ (plan (id ?p-id) (goal-id ?g-id))
+ (schedule-event (id ?goal-end) (entity ?g-id) (at END))
+ (schedule-event (id ?plan-end) (entity ?p-id) (at END))
  =>
- (assert (wm-fact (key scheduling event-precedence args? e-a ?pa-end e-b ?pb-start)))
+ (assert
+  (wm-fact (key scheduling event-precedence args? e-a ?plan-end e-b ?goal-end)))
+)
+
+(defrule scheduling-in-plan-precedence
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode SELECTED))
+ (plan (id ?p-id) (goal-id ?g-id))
+ (schedule-event (id ?plan-start) (entity ?p-id) (at START))
+ (schedule-event (id ?plan-end) (entity ?p-id) (at END))
+=>
+ (assert
+  (wm-fact (key scheduling event-precedence args? e-a ?plan-start e-b ?plan-end)))
+)
+
+(defrule scheduling-precedence-across-goals
+" From goal (1) plans end, to  goal (2) plans start"
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (wm-fact (key meta precedence goal-class args? a ?class-1 b ?class-2))
+ (goal (id ?g1-id) (sub-type SCHEDULE-SUBGOALS) (class ?class-1))
+ (goal (id ?g2-id) (sub-type SCHEDULE-SUBGOALS) (class ?class-2))
+ (plan (id ?p1-id) (goal-id ?g1-id))
+ (plan (id ?p2-id) (goal-id ?g2-id))
+ (schedule-event (id ?p1-end) (entity ?p1-id) (at END))
+ (schedule-event (id ?p2-start) (entity ?p2-id) (at START))
+ (not (wm-fact (key scheduling event-precedence args? e-a ?p1-end e-b ?p2-start)))
+ =>
+ (assert (wm-fact (key scheduling event-precedence args? e-a ?p1-end e-b ?p2-start)))
 )
 
 ;Resource setup times between 2 events
 (defrule scheduling-resource-setup-duration
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (wm-fact (key scheduling event args? e ?producer))
- (wm-fact (key scheduling event-requirment args? e ?producer r ?r)
-          (value ?v1&:(> ?v1 0)))
- (wm-fact (key scheduling event args? e ?consumer&:(neq ?consumer ?producer)))
- (wm-fact (key scheduling event-requirment args? e ?consumer r ?r)
-          (value ?v2&:(< ?v2 0)))
- (or (not (wm-fact (key scheduling goal-event args? g ? e ?producer)))
-     (not (wm-fact (key scheduling goal-event args? g ? e ?consumer)))
-     (and (wm-fact (key scheduling goal-event args? g ?g1 e ?producer))
-          (wm-fact (key scheduling goal-event args? g ?g2 e ?consumer))
-          (test (neq ?g1 ?g2))))
+ (schedule-resource (id ?r-id) (type ?r-type))
+ (schedule-event (id ?producer) (entity ?entity-1))
+ (schedule-requirment (event-id ?producer)
+                      (resource-id ?r-id)
+                      (resource-units ?v1&:(> ?v1 0))
+                      (resource-setup ?setup-1))
+ (schedule-event (id ?consumer) (entity ?entity-2))
+ (schedule-requirment (event-id ?consumer)
+                      (resource-id ?r-id)
+                      (resource-units ?v2&:(< ?v2 0))
+                      (resource-setup ?setup-2))
+ (not (and (plan (id ?entity-1) (goal-id ?same-goal))
+           (plan (id ?entity-2) (goal-id ?same-goal))))
  (not (wm-fact (key scheduling setup-duration args? r ?r e-a ?producer e-b ?consumer)))
  =>
- (bind ?setup 0)
- (if (eq  ?r R) then
-   (do-for-fact ((?l1 wm-fact) (?l2 wm-fact))
-                (and  (wm-key-prefix ?l1:key
-                       (create$ scheduling event-location args? e ?producer))
-                      (wm-key-prefix ?l2:key
-                       (create$ scheduling event-location args? e ?consumer)))
-      (bind ?setup (/ (nodes-distance ?l1:value ?l2:value) ?*V*)))
+ (bind ?duration 0)
+ (if (eq  ?r-type ROBOT) then
+      (bind ?duration (/ (nodes-distance ?setup-1 ?setup-2) ?*V*)))
  )
  (assert (wm-fact (key scheduling setup-duration args? r ?r e-a ?producer e-b ?consumer)
-                  (type INT) (value ?setup)))
-
+                  (type INT) (value ?duration)))
 )
 
-(defrule scheduling-add-event-duration
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (wm-fact (key scheduling event args? e ?e))
- (wm-fact (key scheduling event-duration args? e ?e) (value ?d))
- =>
- (scheduler-set-event-duration (sym-cat ?e) ?d)
-)
 
+;; Scheduler Calls
 (defrule scheduling-add-event-requirment
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (wm-fact (key scheduling event args? e ?e))
- (wm-fact (key scheduling event-requirment args? e ?e r ?r) (value ?req))
+ (schedule-event (id ?e-id))
+ (schedule-resource (id ?r-id))
+ (schedule-requirment (event-id ?e-d) (resource-id ?r-id) (resource-units ?req))
 =>
- (scheduler-add-event-resource (sym-cat ?e) (sym-cat ?r) ?req)
+ (scheduler-add-event-resource (sym-cat ?e-id) (sym-cat ?r-id) ?req)
 )
 
 (defrule scheduling-add-event-precedence
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (wm-fact (key scheduling event args? e ?e-a))
- (wm-fact (key scheduling event args? e ?e-b))
- (wm-fact (key scheduling event-precedence args? e-a ?e-a e-b ?e-b))
+ (schedule-event (id ?e1-id))
+ (schedule-event (id ?e2-id))
+ (wm-fact (key scheduling event-precedence args? e-a ?e1-id e-b ?e2-id))
  =>
- (scheduler-add-event-precedence (sym-cat ?e-a) (sym-cat ?e-b))
+ (scheduler-add-event-precedence (sym-cat ?e1-id) (sym-cat ?e2-id))
 )
 
 (defrule scheduling-add-goal-event
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (wm-fact (key scheduling event args? e ?e))
- (wm-fact (key scheduling goal-event args? g ?g-id e ?e))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS))
+ (schedule-event (id ?e-id) (entity ?g-id))
  =>
- (scheduler-add-goal-event (sym-cat ?g-id) (sym-cat ?e))
+ (scheduler-add-goal-event (sym-cat ?g-id) (sym-cat ?e-id))
 )
 
 (defrule scheduling-add-plan-event
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (wm-fact (key scheduling event args? e ?e))
- (wm-fact (key scheduling plan-event args? p ?p-id e ?e))
+ (schedule-event (id ?e-id) (entity ?p-id) (duration ?d))
+ (plan (id ?p-id) (goal-id ?g-id))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS))
  =>
- (scheduler-add-plan-event (sym-cat ?p-id) (sym-cat ?e))
+ (scheduler-add-plan-event (sym-cat ?p-id) (sym-cat ?e-id))
+ (scheduler-add-goal-event (sym-cat ?g-id) (sym-cat ?e-id))
+ (scheduler-set-event-duration (sym-cat ?e-id) ?d)
 )
 
 (defrule scheduling-add-goal-plans
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (wm-fact (key scheduling goal-plan args? g ?g-id p ?p-id))
+ (plan (id ?p-id) (goal-id ?g-id))
+ (goal (id ?g-id) (sub-type SCHEDULED-SUBGOAL))
  =>
  (scheduler-add-goal-plan (sym-cat ?g-id) (sym-cat ?p-id))
 )
 
 (defrule scheduling-set-resource-setup-duration
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (wm-fact (key scheduling event args? e ?producer))
- (wm-fact (key scheduling event args? e ?consumer))
+ (schedule-event (id ?producer))
+ (schedule-event (id ?consumer))
  (wm-fact (key scheduling setup-duration args? r ?r e-a ?producer e-b ?consumer)
            (value ?setup))
  =>
  (scheduler-set-resource-setup-duration
       (sym-cat ?r) (sym-cat ?producer) (sym-cat ?consumer) ?setup )
  )
-
 
 
 (defrule shceduling-call-scheduler
