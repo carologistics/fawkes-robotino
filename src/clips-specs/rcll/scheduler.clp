@@ -407,3 +407,35 @@
  (scheduler-generate-model)
  (printout warn "datasets are generated" crlf)
 )
+
+;; Post Process Schedule
+(defrule scheduling-post-processing-plans
+  ?if <- (scheduler-info (type PLAN-SELECTION) (descriptor ?plan-id) (value ?v))
+  ?ef <- (schedule-event (entity ?plan-id))
+  (plan (id ?plan-id) (goal ?goal-id))
+=>
+  (if (> 0 ?v) then
+    (modify ?ef (scheduled TRUE))
+  else
+    (modify ?ef (scheduled FALSE))
+  )
+  (retract ?if)
+)
+
+(defrule scheduling-post-processing-events
+ ?if <- (scheduler-info (type EVENT-TIME) (descriptor ?e-id) (value ?time))
+ ?ef <- (schedule-event (id ?e-id))
+ =>
+ (modify (schedule-event (id ?e-id) (scheduled-time ?time)))
+ (retract ?if)
+)
+
+(defrule scheduling-post-process-resource
+ ?if <- (scheduler-info (type EVENT-SEQUENCE) (descriptor ?r-id ?e1-id ?e2-id) (value ?v))
+ (schedule-resource (id ?r-id))
+ (schedule-event (id ?e1-id))
+ (schedule-event (id ?e2-id))
+ =>
+ ;(retract ?if)
+)
+
