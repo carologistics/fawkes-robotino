@@ -224,12 +224,21 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-commit-schedule
-"Commit to schedule by specifing its start-time"
- (time $?now)
+"Commit after reasoning about the EXPANDED schedule"
  ?sf <- (schedule (id ?s-id) (goals ?g-id $?) (mode EXPANDED))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
+ ;reasoning about schedule duration and events happens here
 =>
- (modify ?sf (mode COMMITTED) (start-time ?now))
+ (modify ?sf (mode COMMITTED))
+)
+
+(defrule scheduling-dispatch-schedule
+"Dispatch to schedule by specifing its start-time"
+ (time $?now)
+ ?sf <- (schedule (id ?s-id) (goals ?g-id $?) (mode COMMITTED))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
+=>
+ (modify ?sf (mode DISPATCHED) (start-time ?now))
 )
 
 ;; General resource handling
