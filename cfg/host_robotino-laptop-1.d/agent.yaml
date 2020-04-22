@@ -4,3 +4,4 @@
 fawkes:
   agent:
     name: "Icks"
+    number: 1
