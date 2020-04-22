@@ -18,6 +18,37 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
+;
+; Schedule Lifecyle:
+; Schedules are direcly related to a goal-tree with sub-type SCHEDULE-SUBGOALS.
+; Upon expansion of the top most goal with SCHEDULE-SUBGOALS subtype (i.e., the
+; schedule root goal), a 'Schedule' fact is created tracking a single scheduling
+; attempt (i.e, a single call to the scheduler). A Schedule has lifecyle
+; similar to goal-lifecycle, tracked by its
+; modes.
+;
+; FORMULATION [a schedule is created for the schedule root goal]
+;  - all sub-goals in the 'SCHEDULE-SUBGOALS' subtree are added to the
+;    schedule (goals)
+;  - schedule-events and resource requirment are extracted from the tree
+;    and the plan resource requirments
+;  - the scheduler is called to build the datasets
+;
+; SELECTION [the scheduler is called to trigger the optimization]
+;     - Process the results of the optimization into corresponding schedule-event
+;
+; EXPANSION [a schedule has been found]
+;     - allows reasoning if this schedule should be COMMITTED for executing the
+;        goal tree
+; COMMITMENT [create setup goals needed for execution, at the right branch of
+;              the scheduling goal-tree]
+;
+; DISPATCH [A schedule is ready to be executed, ground the starting-time]
+;
+; Upon dispatching of a schedule, the scheduling goal-subtree continue its
+; lifecycle, according to the dispatched schedule]
+
+
 ; sets
 ; (wm-fact (key scheduling events)    (values ))
 ; (wm-fact (key scheduling goal-plans args? g ?g-id) (values ))
@@ -71,10 +102,10 @@
 
 (deftemplate schedule
   (slot id (type SYMBOL))
-  (slot goal-id (type SYMBOL))
+  (multislot goals (type SYMBOL))
   (slot mode (type SYMBOL))
   (slot duration (type INTEGER))
-  (slot start-time (type INTEGER))
+  (multislot start-time (type INTEGER))
 )
 
 (deftemplate schedule-event
@@ -129,6 +160,61 @@
   ;  (bind ?r (str-cat "$" ?r))
   ;)
   return ?r
+
+;; Schedule Lifecycle
+(defrule scheduling-create-schedule
+"Formulate 'schedule' entity on the expantion of the top most goal of the
+the sub-tree with SCHEDULE-SUBGOALS sub-type"
+ (goal (id ?g-id) (parent ?pg) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
+ (not (goal (id ?pg) (sub-type SCHEDULE-SUBGOALS)))
+ (not (schedule (goals $? ?g-id $?)))
+=>
+ (assert (schedule (id (sym-cat SCHEDULE_ ?g-id))
+                   (goals ?g-id)
+                   (mode FORMULATED)))
+)
+
+(defrule scheduling-goals-to-schedule
+"Include all sub-goals of the scheduling subtree in the schedule"
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ ?sf <- (schedule (goals $?goals) (mode FORMULATED))
+ (goal (id ?pg&:(member$ ?pg ?goals)) (mode EXPANDED))
+ (goal (id ?g-id&:(not (member$ ?g-id ?goals))) (parent ?pg) (mode EXPANDED))
+=>
+ (modify ?sf (goals (create$ ?goals ?g-id)))
+)
+
+(defrule scheduling-select-schedule
+ "After schedule events has been formulated and scheduler called to build sets,
+ select schedule for expantion "
+ ?sf <- (schedule (goals ?g-id $?) (mode FORMULATED))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
+=>
+ (printout warn "Calling scheduler: Generating scheduling datasets" crlf)
+ (scheduler-generate-model)
+ (printout warn "datasets are generated" crlf)
+;TODO: check for scheduler feature and if usable (maybe by scheduling a simple model)
+ (modify ?sf (mode SELECTED))
+)
+
+
+(defrule scheduling-expand-schedule
+"Expand a schedule after the MIP scheduler has returned a scheduled event "
+ ?sf <- (schedule (id ?s-id) (goals ?g-id $?) (mode SELECTED))
+ (schedule-event (sched-id ?s-id) (scheduled TRUE))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
+ (not (scheduler-info))
+=>
+ (modify ?sf (mode EXPANDED))
+)
+
+(defrule scheduling-commit-schedule
+"Commit to schedule by specifing its start-time"
+ (time $?now)
+ ?sf <- (schedule (id ?s-id) (goals ?g-id $?) (mode EXPANDED))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
+=>
+ (modify ?sf (mode COMMITTED) (start-time ?now))
 )
 
 (defrule scheduling-create-resource-source-event
