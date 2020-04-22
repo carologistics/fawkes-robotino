@@ -24,7 +24,6 @@
   ?*DURATION-WP-GET-SHELF* = 30
   ?*DURATION-WP-PUT* = 30
   ?*DURATION-WP-PUT-SLIDE* = 30
-  ?*V* = 0.03
 )
 
 (defrule goal-expander-send-beacon-signal

@@ -20,6 +20,8 @@
 ;
 
 
+(defglobal ?*V* = 0.03)
+
 (defrule goal-production-create-order
   "Keep waiting at one of the waiting positions."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
