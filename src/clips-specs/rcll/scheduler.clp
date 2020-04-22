@@ -518,42 +518,56 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  )
 
 
-(defrule shceduling-call-scheduler
- (goal (class ORDER) (mode EXPANDED))
- =>
- (printout warn "Calling scheduler: Generating scheduling datasets" crlf)
- (scheduler-generate-model)
- (printout warn "datasets are generated" crlf)
-)
-
 ;; Post Process Schedule
-(defrule scheduling-post-processing-plans
-  ?if <- (scheduler-info (type PLAN-SELECTION) (descriptor ?plan-id) (value ?v))
-  ?ef <- (schedule-event (entity ?plan-id))
-  (plan (id ?plan-id) (goal ?goal-id))
+(defrule scheduling-post-processing-scheduled-plans
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (schedule (id ?s-id) (mode SELECTED))
+  ?if <- (scheduler-info (type PLAN-SELECTION) (descriptors ?plan-id) (value ?v))
+  ?ef <- (schedule-event (sched-id ?s-id) (entity ?plan-id))
+  (plan (id ?plan-id) (goal-id ?goal-id))
 =>
-  (if (> 0 ?v) then
-    (modify ?ef (scheduled TRUE))
-  else
-    (modify ?ef (scheduled FALSE))
-  )
-  (retract ?if)
+  (if (> ?v 0) then
+    (modify ?ef (scheduled TRUE)))
+
+ (retract ?if)
 )
 
-(defrule scheduling-post-processing-events
- ?if <- (scheduler-info (type EVENT-TIME) (descriptor ?e-id) (value ?time))
- ?ef <- (schedule-event (id ?e-id))
+(defrule scheduling-post-process-scheduled-goals
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (schedule (id ?s-id) (goals $? ?g-id $?) (mode SELECTED))
+  (schedule-event (sched-id ?s-id) (entity ?p-id) (scheduled TRUE) (at START))
+  ?ef <- (schedule-event (sched-id ?s-id) (entity ?g-id) (scheduled FALSE))
+  (goal (id ?g-id))
+  (plan (id ?p-id) (goal-id ?g-id))
+=>
+  (modify ?ef (scheduled TRUE))
+)
+
+
+(defrule scheduling-post-process-events-start
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule (id ?s-id) (mode SELECTED))
+ ?if <- (scheduler-info (type EVENT-TIME) (descriptors ?e-id) (value ?time))
+ ?ef <- (schedule-event (sched-id ?s-id) (id ?e-id))
  =>
- (modify (schedule-event (id ?e-id) (scheduled-time ?time)))
+ (modify ?ef (scheduled-start ?time))
  (retract ?if)
 )
 
 (defrule scheduling-post-process-resource
- ?if <- (scheduler-info (type EVENT-SEQUENCE) (descriptor ?r-id ?e1-id ?e2-id) (value ?v))
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule (id ?s-id) (mode SELECTED))
+ ?if <- (scheduler-info (type EVENT-SEQUENCE) (descriptors ?r-id ?e1-id ?e2-id) (value ?v))
  (schedule-resource (id ?r-id))
- (schedule-event (id ?e1-id))
- (schedule-event (id ?e2-id))
- =>
- ;(retract ?if)
+ ?ef1 <- (schedule-event (sched-id ?s-id) (id ?e1-id))
+ ;(schedule-requirment (schedu-id ?s-id) (event-id ?e1-id) (resource-id ?r-id))
+ ?ef2 <- (schedule-event (sched-id ?s-id) (id ?e2-id))
+ ;(schedule-requirment (schedu-id ?s-id) (event-id ?e2-id) (resource-id ?r-id))
+=>
+ (if (> ?v 0) then
+  (modify ?ef1 (scheduled TRUE))
+  (modify ?ef2 (scheduled TRUE)))
+
+ (retract ?if)
 )
 
