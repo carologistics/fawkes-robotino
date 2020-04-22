@@ -9,6 +9,8 @@ doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
 fawkes:
   agent:
     name: Upsilan
+    number: 2
+    team: Carologistics
 
 network:
   fawkes:
@@ -77,9 +79,6 @@ webtools-bridge:
   rosbridge-uri: "ws://localhost:8080"
 
 clips-executive/specs/rcll/parameters/rcll:
-  team-name: Carologistics
-  robot-name: R-2
-  robot-number: 2
 
   peer-address: 127.0.0.1
   peer-port: 0

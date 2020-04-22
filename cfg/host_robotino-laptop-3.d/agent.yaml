@@ -4,3 +4,4 @@
 fawkes:
   agent:
     name: "Set"
+    number: 3
