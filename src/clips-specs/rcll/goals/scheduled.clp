@@ -49,8 +49,8 @@
      (declare (salience ?*SALIENCE-LOW*))
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS)
 							 (mode SELECTED))
- 	(and  (not (goal (type ACHIEVE) (parent ?id) (mode FORMULATED|SELECTED|EXPANDED))
-           (not (plan (goal-id ?id))))
+ 	(not (goal (type ACHIEVE) (parent ?id) (mode FORMULATED|SELECTED|EXPANDED)))
+  	(not (plan (goal-id ?id)))
 	=>
 	(modify ?gf (mode FINISHED) (outcome FAILED)
 					(error NO-SUB-GOALS)
@@ -59,73 +59,73 @@
 
 (defrule schedule-goal-commit-to-all-subgoals
      (declare (salience ?*SALIENCE-HIGH*))
-     (schedule (id ?schedule-id))
-	?gf <- (goal (id ?goal-id) (parent ?parent)
-                  (committed-to ?schedule-id $?committed)
+     (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
+     ?gf <- (goal (id ?g-id) (parent ?pg) (committed-to $?committed)
                   (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
      ;Goal is root || parent is committed
-     (or (goal (id ?parent) (mode COMMITTED|DISPATCHED) (committed-to $? ?goal-id $?))
-         (not (goal (id ?parent))))
+     (or (goal (id ?pg) (mode COMMITTED|DISPATCHED) (committed-to $? ?g-id $?))
+         (not (goal (id ?pg))))
      ;Sub-goal is expanded
-     ?sgf <- (goal (id ?sub-goal) (parent ?goal-id) (params ?sub-params)
+     ?sgf <- (goal (id ?sub-goal) (parent ?g-id) (params ?sub-params)
                    (committed-to nil) (type ACHIEVE) (mode EXPANDED))
-     (test (not (member$ ?sub-goal ?committed)))
+     (not (test (member$ ?sub-goal ?committed)))
      ;Scheduled but not yet committed
      ;(schedule (id ?sched-id) (mode COMMITTED) (scheduled ?goal-id))
      ;(test (member$ ?goal-id ?scheduled))
      ;(test (member$ ?sub-goal ?scheduled))
     =>
 	(modify ?gf  (committed-to (create$ ?committed ?sub-goal)))
-	(modify ?sgf (committed-to (create$ ?schedule-id))))
  )
 
 
 (defrule schedule-goal-commit-to-scheduled-plans
      (declare (salience ?*SALIENCE-HIGH*))
-     (schedule (id ?schedule-id) (start-time ?start-time))
-	?gf <- (goal (id ?goal-id) (parent ?parent)
-                  (committed-to ?schedule-id $?committed)
-                  (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED)
+     (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
+	?gf <- (goal (id ?g-id) (parent ?pg) (committed-to $?committed)
+                  (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
      ;Goal is root || parent is committed
-     (or (goal (id ?parent) (mode COMMITTED|DISPATCHED) (committed-to $? ?goal-id $?))
-         (not (goal (id ?parent))))
+     (or (goal (id ?pg) (mode COMMITTED|DISPATCHED) (committed-to $? ?g-id $?))
+         (not (goal (id ?pg))))
      ;Plan is schedueled
-     (plan (id ?plan-id) (goal-id ?goal-id))
-     (schedule-event (sched-id ?schedule-id) (entity ?plan-id) (at START)
+     (plan (id ?plan-id) (goal-id ?g-id))
+     (schedule-event (sched-id ?s-id) (entity ?plan-id) (at START)
                      (scheduled TRUE) (scheduled-start ?scheduled-start)
                      (duration ?scheduled-duration))
-     (test (not (memeber$ ?plan-id ?committed))
+     (not (test (member$ ?plan-id ?committed)))
    =>
-	(modify ?gf  (committed-to (create$ ?committed ?plan-goal)))
-     (modify ?p (start-time  (+ ?start-time ?scheduled-start))
+	(modify ?gf  (committed-to (create$ ?committed ?plan-id)))
  )
 
 
 (defrule schedule-goal-commit
-     (schedule (id ?schedule-id))
-	?gf <- (goal (id ?goal-id) (parent ?parent) (committed-to ?schedule-id $?committed)
+     (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
+	?gf <- (goal (id ?g-id) (parent ?pg) (committed-to $?committed)
                   (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
      ;Goal is root || parent is committed
-     (or (goal (id ?parent) (mode COMMITTED|DISPATCHED) (committed-to $? ?goal-id $?))
-         (not (goal (id ?parent))))
-     (not (goal (id ?sub-goal&:(not (member$ ?sub-goal ?committed))) (parent ?goal-id)))
-     (not (and (plan (id ?plan-id&:(not (member$ ?plan-id ?committed))) (goal-id ?goal-id))
+     (or (goal (id ?pg) (mode COMMITTED|DISPATCHED) (committed-to $? ?g-id $?))
+         (not (goal (id ?pg))))
+     (not (goal (id ?sub-goal&:(not (member$ ?sub-goal ?committed))) (parent ?g-id)))
+     (not (and (plan (id ?plan-id&:(not (member$ ?plan-id ?committed))) (goal-id ?g-id))
                (schedule-event (sched-id ?schedule-id) (entity ?plan-id) (at START)
                                (scheduled TRUE))))
      =>
 	(modify ?gf (mode COMMITTED))
 )
 
-(defrule schedule-plan-goal-dispatch
-     (time ?now)
-     (schedule (id ?schedule-id) (start-time ?start-time))
+(defrule schedule-plan-dispatch
+     (time ?now-sec ?now-msec)
+     (schedule (id ?schedule-id) (start-time ?start-sec $?))
 	?gf <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode COMMITTED)
 	             (committed-to ?schedule-id $? ?plan-id $?)
 	             (required-resources $?req)
 	             (acquired-resources $?acq&:(subsetp ?req ?acq)))
-     (plan (id ?plan-id) (goal-id ?goal-id) (start-time ?plan-start&:(>= ?plan-start ?now))
-	=>
+     ?pf <- (plan (id ?plan-id) (goal-id ?goal-id))
+	(schedule-event (sched-id ?schedule-id) (entity ?plan-id) (at START)
+                     (scheduled TRUE) (scheduled-start ?scheduled-start))
+     (test (> ?now-sec (+ ?start-sec ?scheduled-start)))
+     =>
 	(modify ?gf (mode DISPATCHED))
+     (modify ?pf (start-time (now)))
 )
 
 
@@ -146,7 +146,7 @@
 	             (committed-to $? ?sub-goal $?))
 	?sg <- (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode EVALUATED))
 	=>
-     (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+     (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?id)
        (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
          (retract ?a))
        (retract ?p))
