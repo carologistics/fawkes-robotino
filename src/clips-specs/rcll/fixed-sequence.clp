@@ -1022,13 +1022,14 @@
    (bind ?plan-id  (sym-cat ?goal-id .p1))
    (assert
       (wm-fact (key meta plan required-resource args? id ?plan-id r ?cc setup nil))
+      (wm-fact (key meta plan released-resource args? id ?plan-id r ?cc setup nil))
 
       (wm-fact (key meta plan required-resource args? id ?plan-id r ?cs setup nil ))
       (wm-fact (key meta plan released-resource args? id ?plan-id r ?cs setup BUFFERED))
 
-      (wm-fact (key meta plan required-resource args? id ?plan-id r R
+      (wm-fact (key meta plan required-resource args? id ?plan-id r ?robot
                                 setup (node-name (wait-pos ?cs INPUT) WAIT)))
-      (wm-fact (key meta plan released-resource args? id ?plan-id r R
+      (wm-fact (key meta plan released-resource args? id ?plan-id r ?robot
                                 setup (node-name (wait-pos ?cs INPUT) WAIT)))
 
         (plan (id ?plan-id) (goal-id ?goal-id))
@@ -1082,13 +1083,14 @@
  (bind ?plan-id  (sym-cat ?goal-id .p1 ))
  (assert
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup nil ))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?wp setup nil ))
 
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?mps setup nil ))
   (wm-fact (key meta plan released-resource args? id ?plan-id r ?mps setup nil ))
 
-  (wm-fact (key meta plan required-resource args? id ?plan-id r R
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?robot
                      setup (node-name (wait-pos ?mps OUTPUT) WAIT )))
-  (wm-fact (key meta plan released-resource args? id ?plan-id r R
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?robot
                      setup (node-name (wait-pos ?mps OUTPUT) WAIT )))
 
 
@@ -1147,15 +1149,18 @@
  =>
  (bind ?plan-id  (sym-cat ?goal-id .p1))
  (assert
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup nil ))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?wp setup nil ))
+
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?cs setup BUFFERED))
   (wm-fact (key meta plan released-resource args? id ?plan-id r ?cs setup nil ))
 
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?bs setup nil ))
   (wm-fact (key meta plan released-resource args? id ?plan-id r ?bs setup nil  ))
 
-  (wm-fact (key meta plan required-resource args? id ?plan-id r R
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?robot
                 setup (node-name (wait-pos ?bs ?bs-side) WAIT)))
-  (wm-fact (key meta plan released-resource args? id ?plan-id r R
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?robot
                 setup (node-name (wait-pos ?cs INPUT) WAIT)))
 
   (plan (id ?plan-id) (goal-id ?goal-id))
@@ -1257,6 +1262,7 @@
  (bind ?plan-id  (sym-cat ?goal-id .p1))
  (assert
      (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup nil))
+     (wm-fact (key meta plan released-resource args? id ?plan-id r ?wp setup nil))
 
      (wm-fact (key meta plan required-resource args? id ?plan-id r ?ds setup nil ))
      (wm-fact (key meta plan released-resource args? id ?plan-id r ?ds setup nil ))
@@ -1264,9 +1270,9 @@
      (wm-fact (key meta plan required-resource args? id ?plan-id r ?cs setup nil ))
      (wm-fact (key meta plan released-resource args? id ?plan-id r ?cs setup nil ))
 
-     (wm-fact (key meta plan required-resource args? id ?plan-id r R
+     (wm-fact (key meta plan required-resource args? id ?plan-id r ?robot
                         setup (node-name (wait-pos ?cs OUTPUT) WAIT)))
-     (wm-fact (key meta plan released-resource args? id ?plan-id r R
+     (wm-fact (key meta plan released-resource args? id ?plan-id r ?robot
                         setup (node-name (wait-pos ?ds INPUT) WAIT)))
 
      (plan (id ?plan-id) (goal-id ?goal-id))
