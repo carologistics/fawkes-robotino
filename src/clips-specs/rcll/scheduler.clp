@@ -120,9 +120,10 @@
 
 
 (deftemplate schedule-resource
-  (slot sched-id (type SYMBOL))
+ ; (slot sched-id (type SYMBOL))
   (slot id (type SYMBOL))
   (slot type (type SYMBOL))
+  (slot entity (type SYMBOL))
   (slot consumable (type SYMBOL) (allowed-values TRUE FALSE) (default FALSE))
   (slot producible (type SYMBOL) (allowed-values TRUE FALSE) (default FALSE))
   (multislot states (type SYMBOL))
@@ -133,7 +134,7 @@
   (slot sched-id (type SYMBOL))
   (slot event-id (type SYMBOL))
   (slot resource-id (type SYMBOL))
-  (slot resource-setup (type SYMBOL))
+  (slot resource-setup (type SYMBOL) (default NA))
   (slot resource-units (type INTEGER))
 )
 
@@ -217,30 +218,112 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (modify ?sf (mode COMMITTED) (start-time ?now))
 )
 
+;; General resource handling
 (defrule scheduling-create-resource-source-event
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (schedule-resource (id ?r-id) (producible FALSE) (units ?units))
+ (schedule (id ?s-id) (mode FORMULATED))
+ ;resource consumed by schedule
+ (schedule-requirment (sched-id ?s-id)
+                      (resource-id ?r-id)
+                      (resource-units ?v&:(< ?v 0)))
+ ;no source event in schedule
+ (not (schedule-event (sched-id ?s-id) (entity ?r-id) (at START)))
+ ;non producible resource
+ (schedule-resource (id ?r-id) (producible FALSE) (entity ?entity) (units ?units))
+ (or (test (eq ?entity UNKOWN))
+     (wm-fact (key domain fact mps-type args? m ?entity t ?type)))
 =>
- (bind ?event-id  (sym-cat ?r-id @start))
+ (bind ?source-id  (sym-cat ?r-id @start))
  (assert
-   (schedule-event (id ?event-id) (entity ?r-id) (at START))
-   (schedule-requirment (event-id ?event-id)
+   (schedule-event (sched-id ?s-id) (id ?source-id) (entity ?r-id) (at START))
+   (schedule-requirment (sched-id ?s-id)
+                        (event-id ?source-id)
                         (resource-id ?r-id)
                         (resource-units ?units)))
 )
 
 (defrule scheduling-create-resource-sink-event
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (schedule-resource (id ?r-id) (consumable FALSE) (units ?units))
+ (schedule (id ?s-id) (mode FORMULATED))
+ ;resourece produced by schedule
+ (schedule-requirment (sched-id ?s-id)
+                      (resource-id ?r-id)
+                      (resource-units ?v&:(> ?v 0)))
+ ;no sink event in schedule
+ (not  (schedule-event (sched-id ?s-id) (entity ?r-id) (at END)))
+ ;non consumable resource
+ (schedule-resource (id ?r-id) (consumable FALSE) (entity ?entity) (units ?units))
+ (or (test (eq ?entity UNKOWN))
+     (wm-fact (key domain fact mps-type args? m ?entity t ?type)))
 =>
- (bind ?event-id  (sym-cat ?r-id @end))
+ (bind ?sink-id  (sym-cat ?r-id @end))
  (assert
-   (schedule-event (id ?event-id) (entity ?r-id) (at END))
-   (schedule-requirment (event-id ?event-id)
+   (schedule-event (sched-id ?s-id) (id ?sink-id) (entity ?r-id) (at END))
+   (schedule-requirment (sched-id ?s-id)
+                        (event-id ?sink-id)
                         (resource-id ?r-id)
                         (resource-units (* -1 ?units))))
 )
 
+(defrule scheduling-create-resource-source--robot
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule (id ?s-id) (mode FORMULATED))
+ ;resource consumed by schedule
+ (schedule-requirment (sched-id ?s-id)
+                      (resource-id ?r-id)
+                      (resource-units ?v&:(< ?v 0)))
+ ;no source event in schedule
+ (not (schedule-event (sched-id ?s-id) (entity ?r-id) (at START)))
+ ;non producible resource
+ (schedule-resource (id ?r-id) (producible FALSE) (entity ?robot) (units ?units))
+ (wm-fact (key domain fact self args? r ?robot))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+ (wm-fact (key refbox team-color) (value ?team-color))
+=>
+ (bind ?source-id  (sym-cat ?r-id @start))
+
+ (bind ?setup (node-name ?curr-location ?curr-side))
+ (if (eq ?curr-location START) then
+   (if (eq ?team-color CYAN) then (bind ?setup "C-ins-in") else (bind ?setup "M-ins-in")))
+
+ (assert
+   (schedule-event (sched-id ?s-id) (id ?source-id) (entity ?r-id) (at START))
+   (schedule-requirment (sched-id ?s-id)
+                        (event-id ?source-id)
+                        (resource-id ?r-id)
+                        (resource-setup ?setup)
+                        (resource-units ?units)))
+)
+
+(defrule scheduling-create-resource-sink--robot
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule (id ?s-id) (mode FORMULATED))
+ ;produced by a schedule event
+ (schedule-requirment (sched-id ?s-id)
+                      (resource-id ?r-id)
+                      (resource-units ?v&:(> ?v 0)))
+ ;no sink event for resource in schedule
+ (not  (schedule-event (sched-id ?s-id) (entity ?r-id) (at END)))
+ (schedule-resource (id ?r-id) (consumable FALSE) (entity ?robot)(units ?units))
+ ;;TODO: replace with IDLING location of a defaule state ANY
+ (wm-fact (key domain fact self args? r ?robot))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+ (wm-fact (key refbox team-color) (value ?team-color))
+=>
+ (bind ?sink-id  (sym-cat ?r-id @end))
+
+ (bind ?setup (node-name ?curr-location ?curr-side))
+ (if (eq ?curr-location START) then
+   (if (eq ?team-color CYAN) then (bind ?setup "C-ins-in") else (bind ?setup "M-ins-in")))
+
+(assert
+   (schedule-event (sched-id ?s-id) (id ?sink-id) (entity ?r-id) (at END))
+   (schedule-requirment (sched-id ?s-id)
+                        (event-id ?sink-id)
+                        (resource-id ?r-id)
+                        (resource-setup ?setup)
+                        (resource-units (* -1 ?units))))
+)
 
 (defrule scheduling-create-resource-from-req
 "Create a reproducable resource by default from requirement "
@@ -251,7 +334,8 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 =>
  (assert (schedule-resource (id ?r-id)
                             (units 1)
-                            (type WP)
+                            (type UNKOWN)
+                            (entity UNKOWN)
                             (consumable FALSE)
                             (producible FALSE)))
 )
@@ -259,7 +343,6 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 ;We start off by defining the Events that happen at time 0
 ; (Ex: resource producing events)
 (defrule scheduling-init-resources-machines
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (wm-fact (key refbox team-color) (value ?team-color))
  (wm-fact (key domain fact mps-type args? m ?mps t ?type))
  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
@@ -268,23 +351,25 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (assert (schedule-resource (id ?r)
                             (units 1)
                             (type ?type)
+                            (entity ?mps)
                             (consumable FALSE)
                             (producible FALSE)))
 )
 
 (defrule scheduling-init-resources-robots
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (wm-fact (key domain fact self args? r ?robot))
 =>
  (bind ?r (formate-resource-name ?robot))
  (assert (schedule-resource (id ?r)
                             (units 1)
                             (type ROBOT)
+                            (entity ?robot)
                             (consumable FALSE)
                             (producible FALSE)))
 )
 
 
+;;TODO: Error on a requirment's unites more than resource units
 ;;TODO: Error on requirment with no resource
 ;;TODO: Error on event requires both -ve and +ve
 ;;TODO: deduce presedance from tree structure
