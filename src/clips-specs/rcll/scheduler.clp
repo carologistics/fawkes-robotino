@@ -150,7 +150,7 @@
 (deffunction formate-event-name (?e)
   (bind ?e (str-replace ?e "-" ""))
   (bind ?e (str-replace ?e "_" ""))
-  return ?e
+  return (sym-cat ?e)
 )
 
 (deffunction formate-resource-name (?n)
@@ -160,7 +160,8 @@
   ;(if (eq (str-index "$" ?r) FALSE) then
   ;  (bind ?r (str-cat "$" ?r))
   ;)
-  return ?r
+  return (sym-cat ?r)
+)
 
 ;; Schedule Lifecycle
 (defrule scheduling-create-schedule

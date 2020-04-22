@@ -774,7 +774,7 @@
     then
     (return (str-cat ?mps - (if (eq ?side INPUT) then I else O)))
     else
-    (return ?mps)
+    (return (str-cat ?mps))
   )
 )
 
