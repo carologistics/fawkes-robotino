@@ -647,8 +647,8 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  )
 
 
-;; Post Process Schedule
-(defrule scheduling-post-processing-scheduled-plans
+;; Process scheduler results
+(defrule scheduling-process-scheduled-plans
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (schedule (id ?s-id) (mode SELECTED))
   ?if <- (scheduler-info (type PLAN-SELECTION) (descriptors ?plan-id) (value ?v))
@@ -661,7 +661,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (retract ?if)
 )
 
-(defrule scheduling-post-process-scheduled-goals
+(defrule scheduling-process-scheduled-goals
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (schedule (id ?s-id) (goals $? ?g-id $?) (mode SELECTED))
   (schedule-event (sched-id ?s-id) (entity ?p-id) (scheduled TRUE) (at START))
@@ -673,17 +673,21 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 
-(defrule scheduling-post-process-events-start
+(defrule scheduling-process-events-start
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (mode SELECTED))
- ?if <- (scheduler-info (type EVENT-TIME) (descriptors ?e-id) (value ?time))
+ ?if <- (scheduler-info (type EVENT-TIME)
+                        (descriptors ?e-id)
+                        (value ?scheduled-start))
  ?ef <- (schedule-event (sched-id ?s-id) (id ?e-id))
  =>
- (modify ?ef (scheduled-start ?time))
+ (modify ?ef (scheduled-start ?scheduled-start))
  (retract ?if)
 )
 
-(defrule scheduling-post-process-resource
+;TODO: check in consistency in schedule
+;  - more that one possible sequence of events for some resource
+(defrule scheduling-process-scheduled-edges
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (mode SELECTED))
  ?if <- (scheduler-info (type EVENT-SEQUENCE)
