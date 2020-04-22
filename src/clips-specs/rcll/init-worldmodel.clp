@@ -20,7 +20,7 @@
 ;
 
 (defrule init-worldmodel-set-identity
-  (wm-fact (key config rcll robot-name) (value ?name))
+  (wm-fact (key config agent name) (value ?name))
   =>
   (printout info "Setting /cx/identity to " ?name crlf)
   (assert (wm-fact (key cx identity) (value ?name)))
