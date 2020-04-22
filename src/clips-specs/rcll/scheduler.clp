@@ -120,7 +120,13 @@
 
 
 (deftemplate schedule-resource
- ; (slot sched-id (type SYMBOL))
+  (slot sched-id (type SYMBOL))
+  (slot resource-id (type SYMBOL))
+  (multislot events (type SYMBOL))
+)
+
+
+(deftemplate resource
   (slot id (type SYMBOL))
   (slot type (type SYMBOL))
   (slot entity (type SYMBOL))
@@ -230,7 +236,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  ;no source event in schedule
  (not (schedule-event (sched-id ?s-id) (entity ?r-id) (at START)))
  ;non producible resource
- (schedule-resource (id ?r-id) (producible FALSE) (entity ?entity) (units ?units))
+ (resource (id ?r-id) (producible FALSE) (entity ?entity) (units ?units))
  (or (test (eq ?entity UNKOWN))
      (wm-fact (key domain fact mps-type args? m ?entity t ?type)))
 =>
@@ -253,7 +259,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  ;no sink event in schedule
  (not  (schedule-event (sched-id ?s-id) (entity ?r-id) (at END)))
  ;non consumable resource
- (schedule-resource (id ?r-id) (consumable FALSE) (entity ?entity) (units ?units))
+ (resource (id ?r-id) (consumable FALSE) (entity ?entity) (units ?units))
  (or (test (eq ?entity UNKOWN))
      (wm-fact (key domain fact mps-type args? m ?entity t ?type)))
 =>
@@ -276,7 +282,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  ;no source event in schedule
  (not (schedule-event (sched-id ?s-id) (entity ?r-id) (at START)))
  ;non producible resource
- (schedule-resource (id ?r-id) (producible FALSE) (entity ?robot) (units ?units))
+ (resource (id ?r-id) (producible FALSE) (entity ?robot) (units ?units))
  (wm-fact (key domain fact self args? r ?robot))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  (wm-fact (key refbox team-color) (value ?team-color))
@@ -305,7 +311,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                       (resource-units ?v&:(> ?v 0)))
  ;no sink event for resource in schedule
  (not  (schedule-event (sched-id ?s-id) (entity ?r-id) (at END)))
- (schedule-resource (id ?r-id) (consumable FALSE) (entity ?robot)(units ?units))
+ (resource (id ?r-id) (consumable FALSE) (entity ?robot)(units ?units))
  ;;TODO: replace with IDLING location of a defaule state ANY
  (wm-fact (key domain fact self args? r ?robot))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
@@ -317,7 +323,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (if (eq ?curr-location START) then
    (if (eq ?team-color CYAN) then (bind ?setup "C-ins-in") else (bind ?setup "M-ins-in")))
 
-(assert
+ (assert
    (schedule-event (sched-id ?s-id) (id ?sink-id) (entity ?r-id) (at END))
    (schedule-requirment (sched-id ?s-id)
                         (event-id ?sink-id)
@@ -331,14 +337,25 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (mode FORMULATED))
  (schedule-requirment (sched-id ?s-id) (event-id ?e-id) (resource-id ?r-id))
- (not (schedule-resource (id ?r-id)))
+ (not (resource (id ?r-id)))
 =>
- (assert (schedule-resource (id ?r-id)
-                            (units 1)
-                            (type UNKOWN)
-                            (entity UNKOWN)
-                            (consumable FALSE)
-                            (producible FALSE)))
+ (assert (resource (id ?r-id)
+                   (units 1)
+                   (type UNKOWN)
+                   (entity UNKOWN)
+                   (consumable FALSE)
+                   (producible FALSE)))
+)
+
+(defrule scheduling-create-schedule-resource-from-req
+"Create schedule-resource to track scheduled sequence of events on each
+ resource "
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule (id ?s-id) (mode FORMULATED))
+ (schedule-requirment (sched-id ?s-id) (event-id ?e-id) (resource-id ?r-id))
+ (not (schedule-resource (sched-id ?r-id) (resource-id ?r-id)))
+=>
+ (assert (schedule-resource (sched-id ?s-id) (resource-id ?r-id)))
 )
 
 ;We start off by defining the Events that happen at time 0
@@ -349,24 +366,24 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 =>
  (bind ?r (formate-resource-name ?mps))
- (assert (schedule-resource (id ?r)
-                            (units 1)
-                            (type ?type)
-                            (entity ?mps)
-                            (consumable FALSE)
-                            (producible FALSE)))
+ (assert (resource (id ?r)
+                   (units 1)
+                   (type ?type)
+                   (entity ?mps)
+                   (consumable FALSE)
+                   (producible FALSE)))
 )
 
 (defrule scheduling-init-resources-robots
  (wm-fact (key domain fact self args? r ?robot))
 =>
  (bind ?r (formate-resource-name ?robot))
- (assert (schedule-resource (id ?r)
-                            (units 1)
-                            (type ROBOT)
-                            (entity ?robot)
-                            (consumable FALSE)
-                            (producible FALSE)))
+ (assert (resource (id ?r)
+                   (units 1)
+                   (type ROBOT)
+                   (entity ?robot)
+                   (consumable FALSE)
+                   (producible FALSE)))
 )
 
 
@@ -513,7 +530,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 (defrule scheduling-resource-setup-duration
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
- (schedule-resource (id ?r-id) (type ?r-type))
+ (resource (id ?r-id) (type ?r-type))
  (schedule-event (sched-id ?s-id) (id ?producer) (entity ?entity-1))
  (schedule-requirment (sched-id ?s-id)
                       (event-id ?producer)
@@ -546,7 +563,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (schedule-event (sched-id ?s-id) (id ?e-id))
  (schedule-requirment (sched-id ?s-id) (event-id ?e-id)
                       (resource-id ?r-id) (resource-units ?req))
- (schedule-resource (id ?r-id))
+ (resource (id ?r-id))
 =>
  (scheduler-add-event-resource (sym-cat ?e-id) (sym-cat ?r-id) ?req)
 )
@@ -643,17 +660,45 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 (defrule scheduling-post-process-resource
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (mode SELECTED))
- ?if <- (scheduler-info (type EVENT-SEQUENCE) (descriptors ?r-id ?e1-id ?e2-id) (value ?v))
- (schedule-resource (id ?r-id))
+ ?if <- (scheduler-info (type EVENT-SEQUENCE)
+                        (descriptors ?r-id ?e1-id ?e2-id)
+                        (value ?v&:(> ?v 0)))
+ (resource (id ?r-id))
  ?ef1 <- (schedule-event (sched-id ?s-id) (id ?e1-id))
- ;(schedule-requirment (schedu-id ?s-id) (event-id ?e1-id) (resource-id ?r-id))
  ?ef2 <- (schedule-event (sched-id ?s-id) (id ?e2-id))
- ;(schedule-requirment (schedu-id ?s-id) (event-id ?e2-id) (resource-id ?r-id))
+ (schedule-requirment (sched-id ?s-id) (event-id ?e1-id) (resource-id ?r-id))
+ (schedule-requirment (sched-id ?s-id) (event-id ?e2-id) (resource-id ?r-id))
+ ?rf <- (schedule-resource (sched-id ?s-id) (resource-id ?r-id)
+                           (events $?resource-schedule))
+ ;Where e1-id is the first scheduled event on that resource, or already
+ ; added to the resource schedule
+ (or (and (eq ?resource-schedule (create$))
+          (not (scheduler-info (decriptors ?r-id ? ?e1-id) (value ?v&:(> ?v 0)))
+      (member$ ?e1-id ?resource-schedule))
 =>
- (if (> ?v 0) then
-  (modify ?ef1 (scheduled TRUE))
-  (modify ?ef2 (scheduled TRUE)))
+  (if (eq ?resource-schedule (create$)) then
+    (bind ?resource-schedule (create$ ?e1-id)))
+  (bind ?resource-schedule (create$ ?resource-schedule ?e2-id))
 
+  (modify ?rf (events ?resource-schedule))
+  (modify ?ef1 (scheduled TRUE))
+  (modify ?ef2 (scheduled TRUE))
+
+ (retract ?if)
+)
+
+(defrule scheduling-process-nonscheduled-edges
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule (id ?s-id) (mode SELECTED))
+ ?if <- (scheduler-info (type EVENT-SEQUENCE)
+                        (descriptors ?r-id ?e1-id ?e2-id)
+                        (value ?v&:(=< ?v 0)))
+ (resource (id ?r-id))
+ (schedule-event (sched-id ?s-id) (id ?e1-id))
+ (schedule-event (sched-id ?s-id) (id ?e2-id))
+ (schedule-requirment (sched-id ?s-id) (event-id ?e1-id) (resource-id ?r-id))
+ (schedule-requirment (sched-id ?s-id) (event-id ?e2-id) (resource-id ?r-id))
+=>
  (retract ?if)
 )
 
