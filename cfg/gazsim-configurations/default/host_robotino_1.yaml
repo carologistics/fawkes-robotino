@@ -6,6 +6,10 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
 ---
 
+fawkes:
+  agent:
+    name: Icks
+
 network:
   fawkes:
     tcp_port: !tcp-port 1921
