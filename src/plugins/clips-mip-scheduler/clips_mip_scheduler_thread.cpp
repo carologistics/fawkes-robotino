@@ -150,6 +150,8 @@ ClipsMipSchedulerThread::set_event_duration(std::string env_name,
 		events_[event_name] = new Event(event_name);
 
 	events_[event_name]->duration = duration;
+
+	logger->log_info(name(), "Duration: %s takes %u sec  ", event_name.c_str(), duration);
 }
 
 void
@@ -167,6 +169,9 @@ ClipsMipSchedulerThread::add_event_resource(std::string env_name,
 		resource_producers_[res_name].push_back(events_[event_name]);
 	else
 		resource_consumers_[res_name].push_back(events_[event_name]);
+
+	logger->log_info(
+	  name(), "Resource-req: %s uses %s in %d units  ", event_name.c_str(), res_name.c_str(), req);
 }
 
 void
@@ -185,7 +190,7 @@ ClipsMipSchedulerThread::set_resource_setup_duration(std::string env_name,
 	res_setup_duration_[res][events_[event1]][events_[event2]] = duration;
 
 	logger->log_info(name(),
-	                 "ADD Setup [%s]: %s --> %s %lf ",
+	                 " Setup [%s]: from %s to %s takes %lf sec",
 	                 res.c_str(),
 	                 event1.c_str(),
 	                 event2.c_str(),
@@ -205,7 +210,10 @@ ClipsMipSchedulerThread::add_event_precedence(std::string env_name,
 
 	events_[event_name]->precedes.push_back(events_[preceded]);
 
-	logger->log_info(name(), "ADD Pres: %s << %s  ", event_name.c_str(), preceded.c_str());
+	logger->log_info(name(),
+	                 "Precedence: %s directly before %s  ",
+	                 event_name.c_str(),
+	                 preceded.c_str());
 }
 
 void
@@ -218,6 +226,8 @@ ClipsMipSchedulerThread::add_plan_event(std::string env_name,
 
 	plan_events_[plan_name].push_back(events_[event_name]);
 	events_[event_name]->plan = plan_name;
+
+	logger->log_info(name(), "Event[plan]: %s in %s  ", event_name.c_str(), plan_name.c_str());
 }
 
 void
@@ -230,6 +240,8 @@ ClipsMipSchedulerThread::add_goal_event(std::string env_name,
 
 	goal_events_[goal_name].push_back(events_[event_name]);
 	events_[event_name]->goal = goal_name;
+
+	logger->log_info(name(), "Event[goal]: %s in %s  ", event_name.c_str(), goal_name.c_str());
 }
 
 void
@@ -238,6 +250,7 @@ ClipsMipSchedulerThread::add_goal_plan(std::string env_name,
                                        std::string plan_name)
 {
 	goal_plans_[goal_name].push_back(plan_name);
+	logger->log_info(name(), "GoalPlan: %s in %s  ", plan_name.c_str(), goal_name.c_str());
 }
 
 void
@@ -282,22 +295,23 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 				    >= iE1.second->duration,
 				  ("Presdence{" + iE1.second->name + "<<" + iE2->name + "}").c_str());
 				logger->log_info(name(),
-				                 "%s - %s >= %u ",
+				                 "C1: %s - %s >= %u ",
 				                 iE2->name.c_str(),
 				                 iE1.second->name.c_str(),
 				                 iE1.second->duration);
 			}
 
-		//Constraint 4
+		//Constraint 2
 		for (auto const &iG : goal_plans_) {
 			GRBLinExpr sum = 0;
 			for (auto const &iP : iG.second)
 				sum += gurobi_vars_plan_[iP];
 
 			gurobi_model_->addConstr(sum == 1, ("TotalGoalPlans{" + iG.first + "}").c_str());
+			logger->log_info(name(), "C3: plans of goal %s", iG.first.c_str());
 		}
 
-		//Constraint 2&4,5&6
+		//Constraint 3&4,5&6
 		for (auto const &iR : resource_producers_) {
 			for (auto const &iErp : resource_producers_[iR.first]) {
 				GRBLinExpr flow_out = 0;
