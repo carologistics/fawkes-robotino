@@ -103,9 +103,9 @@
   )
 	(assert
 	  (domain-fact (name self) (param-values ?self))
-	  (domain-object (name R-1) (type robot))
-    (domain-object (name R-2) (type robot))
-    (domain-object (name R-3) (type robot))
+	  (domain-object (name Icks) (type robot))
+    (domain-object (name Upsilan) (type robot))
+    (domain-object (name Set) (type robot))
     (domain-fact (name at) (param-values ?self START INPUT))
     (domain-fact (name robot-waiting) (param-values ?self))
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
