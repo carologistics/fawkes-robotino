@@ -146,7 +146,7 @@ clips-executive:
       action-mapping:
         enter-field: >
           drive_into_field{team=?(team-color)S,
-                           wait=?(r|/R-1/0.0/|/R-2/10.0/|/R-3/20.0/)f}
+                           wait=?(r|/Icks/0.0/|/Upsilan/10.0/|/Set/20.0/)f}
         explore-zone: explore_zone{zone=?(z)s}
         move-node: goto{place=?(z)s}
         move: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
@@ -196,18 +196,18 @@ clips-executive:
           crypto-key: randomkey
           cipher: "aes-128-cbc"
 
-          waitpoint-in-cyan: R-1
-          waitpoint-in-magenta: R-3
+          waitpoint-in-cyan: Icks
+          waitpoint-in-magenta: Upsilan
 
           route:
             CYAN:
-              R-1: ["exp-12", "exp-11", "exp-22"]
-              R-2: ["exp-22", "exp-23", "exp-31"]
-              R-3: ["exp-31", "exp-32", "exp-21"]
+              Icks: ["exp-12", "exp-11", "exp-22"]
+              Upsilan: ["exp-22", "exp-23", "exp-31"]
+              Set: ["exp-31", "exp-32", "exp-21"]
             MAGENTA:
-              R-1: ["exp-11", "exp-12", "exp-21"]
-              R-2: ["exp-22", "exp-21", "exp-32"]
-              R-3: ["exp-32", "exp-31", "exp-22"]
+              Icks: ["exp-11", "exp-12", "exp-21"]
+              Upsilan: ["exp-22", "exp-21", "exp-32"]
+              Set: ["exp-32", "exp-31", "exp-22"]
 
           exploration:
             # Reduce navigator velocity while traveling the field so we can find
@@ -228,7 +228,7 @@ clips-executive:
 
           max-velocity: 1.0
           max-rotation: 1.0
-          master: R-2
+          master: Upsilan
 
           allowed-complexities: ["C0", "C2", "C3"]
           exclusive-complexities: []
