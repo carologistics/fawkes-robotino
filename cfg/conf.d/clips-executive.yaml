@@ -126,13 +126,13 @@ clips-executive:
               - rcll/goal-reasoner.clp
               - rcll/goal-production.clp
               - rcll/goal-production-central.clp
+              - rcll/scheduler.clp
+              - rcll/goals/scheduled.clp
               - rcll/production-strategy.clp
               - rcll/exploration.clp
               - rcll/goal-lock-expiration.clp
           - name: goal-expander
             file: rcll/fixed-sequence.clp
-          - name: scheduler
-            file: rcll/scheduler.clp
           - name: action-selection
             file: rcll/action-selection.clp
           - name: action-execution
