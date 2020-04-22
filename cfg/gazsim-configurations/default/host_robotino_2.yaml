@@ -6,6 +6,10 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
 ---
 
+fawkes:
+  agent:
+    name: Upsilan
+
 network:
   fawkes:
     tcp_port: !tcp-port 1922
