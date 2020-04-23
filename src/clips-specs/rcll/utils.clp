@@ -769,6 +769,15 @@
 )
 
 (deffunction node-name (?mps ?side)
+  (if (eq ?mps START) then
+     (if (any-factp ((?wm wm-fact))
+                    (and (wm-key-prefix ?wm:key (create$ refbox team-color))
+                         (eq ?wm:value CYAN)))
+       then
+       (return "C-ins-in")
+       else
+       (return "M-ins-in")))
+
   (if (or (eq ?side INPUT)
           (eq ?side OUTPUT))
     then

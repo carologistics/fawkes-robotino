@@ -306,9 +306,6 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (bind ?source-id  (sym-cat ?r-id @start))
 
  (bind ?setup (create$ ?curr-location ?curr-side))
- (if (eq ?curr-location START) then
-   (if (eq ?team-color CYAN) then (bind ?setup "C-ins-in") else (bind ?setup "M-ins-in")))
-
  (assert
    (schedule-event (sched-id ?s-id) (id ?source-id) (entity ?r-id) (at START))
    (schedule-requirment (sched-id ?s-id)
