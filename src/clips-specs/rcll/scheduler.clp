@@ -138,8 +138,8 @@
 
 (deftemplate resource-setup
   (slot resource-id (type SYMBOL))
-  (slot from-state (type SYMBOL))
-  (slot to-state (type SYMBOL))
+  (multislot from-state (type SYMBOL))
+  (multislot to-state (type SYMBOL))
   (slot duration (type FLOAT))
 )
 
@@ -147,7 +147,7 @@
   (slot sched-id (type SYMBOL))
   (slot event-id (type SYMBOL))
   (slot resource-id (type SYMBOL))
-  (slot resource-setup (type SYMBOL) (default NA))
+  (multislot resource-setup (type SYMBOL))
   (slot resource-units (type INTEGER))
 )
 
@@ -305,7 +305,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 =>
  (bind ?source-id  (sym-cat ?r-id @start))
 
- (bind ?setup (node-name ?curr-location ?curr-side))
+ (bind ?setup (create$ ?curr-location ?curr-side))
  (if (eq ?curr-location START) then
    (if (eq ?team-color CYAN) then (bind ?setup "C-ins-in") else (bind ?setup "M-ins-in")))
 
@@ -335,7 +335,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 =>
  (bind ?sink-id  (sym-cat ?r-id @end))
 
- (bind ?setup (node-name ?curr-location ?curr-side))
+ (bind ?setup (create$ ?curr-location ?curr-side))
  (if (eq ?curr-location START) then
    (if (eq ?team-color CYAN) then (bind ?setup "C-ins-in") else (bind ?setup "M-ins-in")))
 
@@ -475,7 +475,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at START))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (id ?p-id) (goal-id ?g-id))
- (wm-fact (key meta plan required-resource args? id ?p-id r ?r setup ?setup))
+ (wm-fact (key meta plan required-resource args? id ?p-id r ?r setup [ $?setup ] ))
  =>
  (bind ?r-id (formate-resource-name ?r))
  (assert (schedule-requirment (sched-id ?s-id)
@@ -491,7 +491,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at END))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (id ?p-id) (goal-id ?g-id))
- (wm-fact (key meta plan released-resource args? id ?p-id r ?r setup ?setup))
+ (wm-fact (key meta plan released-resource args? id ?p-id r ?r setup [ $?setup ] ))
  =>
  (bind ?r-id (formate-resource-name ?r))
  (assert (schedule-requirment (sched-id ?s-id)
@@ -552,22 +552,26 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                       (event-id ?producer)
                       (resource-id ?r-id)
                       (resource-units ?v1&:(> ?v1 0))
-                      (resource-setup ?setup-1))
+                      (resource-setup $?setup-1))
  (schedule-event (sched-id ?s-id) (id ?consumer) (entity ?entity-2))
  (schedule-requirment (sched-id ?s-id)
                       (event-id ?consumer)
                       (resource-id ?r-id)
                       (resource-units ?v2&:(< ?v2 0))
-                      (resource-setup ?setup-2))
+                      (resource-setup $?setup-2))
  (not (and (plan (id ?entity-1) (goal-id ?same-goal))
            (plan (id ?entity-2) (goal-id ?same-goal))))
  (not (resource-setup (resource-id ?r-id)
-                      (from-state ?setup-1)
-                      (to-state ?setup-2)))
+                      (from-state $?setup-1)
+                      (to-state $?setup-2)))
  =>
  (bind ?duration 0)
  (if (eq  ?r-type ROBOT) then
-      (bind ?duration (/ (nodes-distance ?setup-1 ?setup-2) ?*V*)))
+      (bind ?duration (/ (nodes-distance (node-name (nth$ 1 ?setup-1) (nth$ 2 ?setup-1))
+                                         (node-name (nth$ 1 ?setup-2) (nth$ 2 ?setup-2)))
+                          ?*V*)
+      )
+ )
 
  (assert (resource-setup (resource-id ?r-id)
                          (from-state ?setup-1)
@@ -637,18 +641,18 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                       (event-id ?producer)
                       (resource-id ?r-id)
                       (resource-units ?v1&:(> ?v1 0))
-                      (resource-setup ?setup-1))
+                      (resource-setup $?setup-1))
  (schedule-event (sched-id ?s-id) (id ?consumer) (entity ?entity-2))
  (schedule-requirment (sched-id ?s-id)
                       (event-id ?consumer)
                       (resource-id ?r-id)
                       (resource-units ?v2&:(< ?v2 0))
-                      (resource-setup ?setup-2))
+                      (resource-setup $?setup-2))
  (not (and (plan (id ?entity-1) (goal-id ?same-goal))
            (plan (id ?entity-2) (goal-id ?same-goal))))
  (resource-setup (resource-id ?r-id)
-                 (from-state ?setup-1)
-                 (to-state ?setup-2)
+                 (from-state $?setup-1)
+                 (to-state $?setup-2)
                  (duration ?duration))
  =>
  (scheduler-set-resource-setup-duration
