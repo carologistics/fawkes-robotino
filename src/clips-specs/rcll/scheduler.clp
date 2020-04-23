@@ -430,7 +430,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 (defrule scheduling-create-goal-event
 "Create schedule-events for goals that have a child plan"
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (goal-id ?g-id))
  (not (schedule-event (sched-id ?s-id) (entity ?g-id)))
@@ -444,7 +444,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 (defrule scheduling-plan-events
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (id ?p-id) (goal-id ?g-id))
  (not (schedule-event (sched-id ?s-id) (entity ?p-id)))
@@ -468,7 +468,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 (defrule scheduling-plan-resources-at-start
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
  (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at START))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (id ?p-id) (goal-id ?g-id))
@@ -484,7 +484,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 (defrule scheduling-plan-resources-at-end
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
  (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at END))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (id ?p-id) (goal-id ?g-id))
@@ -800,4 +800,25 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                (meta scheduled-start (+ ?e1-start ?e1-dur))))
 
 (modify ?sf (goals (create$ ?goals ?g-id)))
+)
+
+(defrule scheduling-post-processing--schedule-setup-plan-events
+ "Schedule setup plan events"
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
+ ?gef <- (schedule-event (sched-id ?s-id) (entity ?g-id) (at END)
+                         (scheduled FALSE))
+ ?pef <- (schedule-event (sched-id ?s-id) (entity ?p-id) (at END)
+                         (scheduled FALSE) (duration ?pend-duration))
+ ?psf <- (schedule-event (sched-id ?s-id) (entity ?p-id) (at START)
+                         (scheduled FALSE) (duration ?pstart-duration))
+ (plan (id ?p-id) (goal-id ?g-id))
+ (goal (id ?g-id) (class SETUP) (meta scheduled-start ?goal-start))
+ =>
+ (modify ?psf (scheduled TRUE)
+              (scheduled-start ?goal-start))
+ (modify ?pef (scheduled TRUE)
+              (scheduled-start (+ ?goal-start ?pstart-duration)))
+ (modify ?gef (scheduled TRUE)
+              (scheduled-start (+ ?goal-start ?pstart-duration ?pend-duration)))
 )
