@@ -21,7 +21,7 @@
 (defglobal ?*DEFAULT-TESTCASE-HANDLING* = -1)
 
 (deftemplate testcase
-	(slot name (type SYMBOL))
+	(slot type (type SYMBOL))
 	(slot termination (type SYMBOL) (allowed-values CUSTOM FAILURE SUCCESS) (default CUSTOM))
 	(slot state (type SYMBOL) (allowed-values SUCCEEDED FAILED PENDING) (default PENDING))
 	(slot msg (type STRING))
@@ -41,20 +41,20 @@
 	=>
 	(switch ?testbed
 		(case "FAST" then
-			(assert (testcase (name POINTS-AFTER-MINUTE) (args minute 1 points 1)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 1 points 1)))
 		)
 		(case "DELIVERY" then
-			(assert (testcase (name DELIVERY-COUNT) (args count 1)))
+			(assert (testcase (type DELIVERY-COUNT) (args count 1)))
 		)
 		(case "FULL" then
-			(assert (testcase (name POINTS-AFTER-MINUTE) (args minute 5 points 30)))
-			(assert (testcase (name POINTS-AFTER-MINUTE) (args minute 17 points 150)))
-			(assert (testcase (name DELIVERY) (termination FAILURE) (args complexity C0)))
-			(assert (testcase (name FULL-GAME)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 8 points 30)))
+			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 17 points 150)))
+			(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C0)))
+			(assert (testcase (type FULL-GAME)))
 		)
 		(default none)
 	)
-	(assert (testcase (name FLAWLESS-MPS) (termination SUCCESS)))
+	(assert (testcase (type NO-BROKEN-MPS) (termination SUCCESS)))
 	(assert (simtest-initialized))
 )
 
@@ -70,7 +70,7 @@
 )
 
 (defrule simtest-full-game-success
-	?testcase <- (testcase (name FULL-GAME) (state PENDING))
+	?testcase <- (testcase (type FULL-GAME) (state PENDING))
 	(wm-fact (key refbox phase) (value POST_GAME))
   =>
   (modify ?testcase (state SUCCEEDED) (msg "Game completed"))
@@ -91,7 +91,7 @@
 )
 
 (defrule simtest-delivery-success
-	?testcase <- (testcase (name DELIVERY) (state PENDING) (args complexity ?com))
+	?testcase <- (testcase (type DELIVERY) (state PENDING) (args complexity ?com))
 	(wm-fact (key refbox team-color) (value ?team-color&~nil))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key domain fact quantity-delivered args? ord ?ord team ?team-color) (value ?delivered&:(> ?delivered 0)))
@@ -103,7 +103,7 @@
 (defrule simtest-delivery-count-success
 	(wm-fact (key refbox team-color) (value ?team-color&~nil))
 	(wm-fact (key domain fact quantity-delivered args? ord ? team ?team-color) (value ?delivered&:(> ?delivered 0)))
-	?testcase <- (testcase (name DELIVERY-COUNT) (state PENDING) (args count ?count))
+	?testcase <- (testcase (type DELIVERY-COUNT) (state PENDING) (args count ?count))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	=>
 	(bind ?curr 0)
@@ -120,7 +120,7 @@
 )
 
 (defrule simtest-points-after-minute-success
-	?testcase <- (testcase (name POINTS-AFTER-MINUTE) (state PENDING)
+	?testcase <- (testcase (type POINTS-AFTER-MINUTE) (state PENDING)
 								(args minute ?time points ?desired-points))
 	(wm-fact (key refbox team-color) (value ?team-color&~nil))
 	(wm-fact (key refbox phase) (value PRODUCTION))
@@ -132,7 +132,7 @@
 )
 
 (defrule simtest-points-after-minute-failure
-	?testcase <- (testcase (name POINTS-AFTER-MINUTE) (state PENDING)
+	?testcase <- (testcase (type POINTS-AFTER-MINUTE) (state PENDING)
 								(args minute ?time points ?desired-points))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key refbox game-time) (values $?gt&:(>= (nth$ 1 ?gt) (* ?time 60))))
@@ -141,7 +141,7 @@
 )
 
 (defrule simtest-flawless-mps-failure
-	?testcase <- (testcase (name NO-BROKEN-MPS) (state PENDING))
+	?testcase <- (testcase (type NO-BROKEN-MPS) (state PENDING))
 	(wm-fact (key domain fact mps-state args? m ?m s BROKEN))
 	=>
 	(modify ?testcase (state FAILED) (msg (str-cat "Broken MPS " ?m)))
@@ -152,7 +152,7 @@
 	(not (testcase (state PENDING)))
 	=>
 	(if (do-for-all-facts ((?testcase testcase)) (eq ?testcase:state FAILED)
-		(printout error ?testcase:name " failed: " ?testcase:msg crlf)
+		(printout error ?testcase:type " failed: " ?testcase:msg crlf)
 	)
 	 then
 		(simtest-quit FALSE)
