@@ -21,7 +21,9 @@
 (defglobal ?*DEFAULT-TESTCASE-HANDLING* = -1)
 
 (deftemplate testcase
+	(slot id (type SYMBOL))
 	(slot type (type SYMBOL))
+	(slot parent (type SYMBOL))
 	(slot termination (type SYMBOL) (allowed-values CUSTOM FAILURE SUCCESS) (default CUSTOM))
 	(slot state (type SYMBOL) (allowed-values SUCCEEDED FAILED PENDING) (default PENDING))
 	(slot msg (type STRING))
@@ -32,6 +34,14 @@
 	(printout info "Exiting (success: " ?success ") ..." crlf)
 	(printout info "SIMTEST: " (if ?success then "SUCCEEDED" else "FAILED") crlf)
 	(quit)
+)
+
+(deffunction simtest-connect (?type $?tests)
+	(bind ?name (sym-cat ?type - (gensym*)))
+  (foreach ?test-fact ?tests
+		(bind ?test-id-fact (modify ?test-fact (parent ?name)))
+	)
+	(return (assert (testcase (id ?name) (type ?type) (termination FAILURE))))
 )
 
 (defrule simtest-initialize
@@ -46,16 +56,56 @@
 		(case "DELIVERY" then
 			(assert (testcase (type DELIVERY-COUNT) (args count 1)))
 		)
+		(case "COMPLEX" then
+			(simtest-connect OR
+			  (assert (testcase (type DELIVERY-COUNT) (args count 5)))
+				(simtest-connect AND
+					(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C0)))
+					(simtest-connect OR
+						(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C2)))
+						(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C3)))
+					)
+				)
+			)
+			(assert (testcase (type FULL-GAME)))
+		)
 		(case "FULL" then
 			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 8 points 30)))
 			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 17 points 150)))
 			(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C0)))
+			(simtest-connect OR
+				(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C2)))
+				(assert (testcase (type DELIVERY) (termination FAILURE) (args complexity C3)))
+			)
 			(assert (testcase (type FULL-GAME)))
 		)
 		(default none)
 	)
 	(assert (testcase (type NO-BROKEN-MPS) (termination SUCCESS)))
 	(assert (simtest-initialized))
+)
+
+(defrule simtest-gen-id
+  (testcase (id nil))
+ =>
+  (do-for-all-facts ((?test testcase))
+    (eq ?test:id nil)
+    (modify ?test (id (sym-cat TEST- (gensym*))))
+  )
+)
+
+(defrule simtest-or-success
+  ?t <- (testcase (type OR) (id ?name) (state PENDING))
+  (testcase (id ?id) (parent ?name) (state SUCCEEDED) (msg ?msg))
+  =>
+  (modify ?t (state SUCCEEDED) (msg (str-cat ?id SUCCEEDED)))
+)
+
+(defrule simtest-and-success
+  ?t <- (testcase (type AND) (id ?name) (state PENDING))
+  (not (testcase (parent ?name) (state ~SUCCEEDED)))
+  =>
+  (modify ?t (state SUCCEEDED) (msg (str-cat "all child tests " SUCCEEDED)))
 )
 
 (defrule simtest-game-over-default-failure
@@ -151,7 +201,8 @@
 	(simtest-initialized)
 	(not (testcase (state PENDING)))
 	=>
-	(if (do-for-all-facts ((?testcase testcase)) (eq ?testcase:state FAILED)
+	(if (do-for-all-facts ((?testcase testcase))
+		(and (eq ?testcase:state FAILED) (eq ?testcase:parent nil))
 		(printout error ?testcase:type " failed: " ?testcase:msg crlf)
 	)
 	 then
