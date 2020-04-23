@@ -1002,6 +1002,48 @@
 )
 
 ; Centralized Goal Reasoning
+(defrule goal-expander-setup-robot
+   "Move a robot from one location to another to satisfy setup requirements "
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+    ?g <- (goal (class SETUP) (id ?goal-id) (mode SELECTED)
+                (params r ?r-id
+                        setup1 $?setup1
+                        setup2 $?setup2))
+    (resource (id ?r-id) (entity ?robot) (type ROBOT))
+    (resource-setup (resource-id ?r-id)
+                    (from-state $?setup1)
+                    (to-state $?setup2)
+                    (duration ?setup-duration))
+    (wm-fact (key domain fact self args? r ?robot))
+    (not (plan (goal-id ?goal-id)))
+    =>
+   (bind ?plan-id  (sym-cat ?goal-id _PLAN))
+   (assert
+      (wm-fact (key meta plan required-resource args? id ?plan-id r ?robot
+                                setup [ ?setup1 ] ))
+      (wm-fact (key meta plan released-resource args? id ?plan-id r ?robot
+                                setup [ ?setup2 ] ))
+
+        (plan (id ?plan-id) (goal-id ?goal-id))
+        (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+                                    (action-name move)
+                                    (param-names r
+                                                 from
+                                                 from-side
+                                                 to
+                                                 to-side)
+                                    (param-values ?robot
+                                                  (nth$ 1 ?setup1)
+                                                  (nth$ 2 ?setup1)
+                                                  (nth$ 1 ?setup2)
+                                                  (nth$ 2 ?setup2))
+                                    (duration  ?setup-duration))
+    )
+)
+
+
+
+
 (defrule goal-expander-fill-cap-station-centralgoal-id
    "Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
