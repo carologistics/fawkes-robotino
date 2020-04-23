@@ -758,3 +758,45 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (retract ?if)
 )
 
+;; Post processing on COMMITTED schedules
+(defrule scheduling-post-processing--create-setup-goals
+ "Create a setup goal for each producer-consumer sequence, which requires
+  different setup-states for the resource"
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ ?sf <- (schedule (id ?s-id) (goals $?goals) (mode COMMITTED))
+ ;Producer -> consumer sequence
+ (schedule-resource (sched-id ?s-id) (resource-id ?r-id) (events $? ?e1 ?e2 $?))
+ ;Scheduled producer CEs
+ (schedule-event (id ?e1) (sched-id ?s-id) (scheduled TRUE) (entity ?e1-entity)
+                 (duration ?e1-dur) (scheduled-start ?e1-start))
+ (schedule-requirment (event-id ?e1)
+                      (sched-id ?s-id)
+                      (resource-id ?r-id)
+                      (resource-setup $?e1-setup)
+                      (resource-units ?produced&:(> ?produced 0)))
+ ;Scheduled consumer CEs
+ (schedule-event (id ?e2) (sched-id ?s-id) (scheduled TRUE) (entity ?e2-entity))
+ (schedule-requirment (event-id ?e2)
+                      (sched-id ?s-id)
+                      (resource-id ?r-id)
+                      (resource-setup $?e2-setup&:(neq ?e1-setup ?e2-setup))
+                      (resource-units ?consumed&:(< ?consumed 0)))
+ ;resource CEs
+ (resource-setup (resource-id ?r-id) (duration ?setup-duration)
+                 (from-state $?e1-setup) (to-state $?e2-setup))
+
+ ;Insert the setup-goal as a sibiling of the goal that needs the setup
+ (plan (id ?e2-entity) (goal-id ?e2-goal))
+ (goal (id ?e2-goal) (parent ?parent-goal))
+ (not (goal (parent ?parent-goal)
+            (id ?g-id&:(eq ?g-id (sym-cat SETUP_ ?r-id _ ?e1 _ ?e2)))))
+ =>
+ (bind ?g-id (sym-cat SETUP_ ?r-id  _ ?e1 _ ?e2))
+ (assert (goal (id ?g-id) (parent ?parent-goal)
+               (class SETUP) (mode SELECTED)
+               (sub-type SCHEDULE-SUBGOALS)
+               (params r ?r-id setup1 ?e1-setup setup2 ?e2-setup)
+               (meta scheduled-start (+ ?e1-start ?e1-dur))))
+
+(modify ?sf (goals (create$ ?goals ?g-id)))
+)
