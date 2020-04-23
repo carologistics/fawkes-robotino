@@ -67,6 +67,12 @@ fawkes/meta_plugins:
     - gazsim-meta-robotino-ros-movebase
     - m-clips-executive
 
+  gazsim-meta-gologpp:
+    - gazsim-meta-robotino-ros
+    - gazsim-meta-robotino-ros-movebase
+    - protoboard-rcll
+    - gologpp
+
   m-skill-sim-clips-exec:
     - skiller-simulator
     - ros
