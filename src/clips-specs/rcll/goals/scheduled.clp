@@ -59,20 +59,13 @@
 
 (defrule schedule-goal-commit-to-all-subgoals
      (declare (salience ?*SALIENCE-HIGH*))
-     (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
+     (schedule (id ?s-id) (goals $? ?g-id $?) (mode DISPATCHED))
      ?gf <- (goal (id ?g-id) (parent ?pg) (committed-to $?committed)
                   (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
-     ;Goal is root || parent is committed
-     (or (goal (id ?pg) (mode COMMITTED|DISPATCHED) (committed-to $? ?g-id $?))
-         (not (goal (id ?pg))))
-     ;Sub-goal is expanded
-     ?sgf <- (goal (id ?sub-goal) (parent ?g-id) (params ?sub-params)
-                   (committed-to nil) (type ACHIEVE) (mode EXPANDED))
-     (not (test (member$ ?sub-goal ?committed)))
-     ;Scheduled but not yet committed
-     ;(schedule (id ?sched-id) (mode COMMITTED) (scheduled ?goal-id))
-     ;(test (member$ ?goal-id ?scheduled))
-     ;(test (member$ ?sub-goal ?scheduled))
+     ?sgf <- (goal (id ?sub-goal&:(not (member$ ?sub-goal ?committed)))
+                   (parent ?g-id) (type ACHIEVE) (mode EXPANDED))
+     (or (not (goal (id ?pg)))
+         (goal (id ?pg) (mode COMMITTED|DISPATCHED) (committed-to $? ?g-id $?)))
     =>
 	(modify ?gf  (committed-to (create$ ?committed ?sub-goal)))
  )
@@ -80,49 +73,46 @@
 
 (defrule schedule-goal-commit-to-scheduled-plans
      (declare (salience ?*SALIENCE-HIGH*))
-     (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
+     (schedule (id ?s-id) (goals $? ?g-id $?) (mode DISPATCHED))
 	?gf <- (goal (id ?g-id) (parent ?pg) (committed-to $?committed)
                   (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
-     ;Goal is root || parent is committed
-     (or (goal (id ?pg) (mode COMMITTED|DISPATCHED) (committed-to $? ?g-id $?))
-         (not (goal (id ?pg))))
      ;Plan is schedueled
-     (plan (id ?plan-id) (goal-id ?g-id))
-     (schedule-event (sched-id ?s-id) (entity ?plan-id) (at START)
-                     (scheduled TRUE) (scheduled-start ?scheduled-start)
-                     (duration ?scheduled-duration))
-     (not (test (member$ ?plan-id ?committed)))
+     (plan (id ?plan-id&:(not (member$ ?plan-id ?committed))) (goal-id ?g-id))
+     (schedule-event (sched-id ?s-id) (entity ?plan-id) (scheduled TRUE))
+     (or (not (goal (id ?pg)))
+         (goal (id ?pg) (mode COMMITTED|DISPATCHED) (committed-to $? ?g-id $?)))
    =>
 	(modify ?gf  (committed-to (create$ ?committed ?plan-id)))
  )
 
 
 (defrule schedule-goal-commit
-     (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
+     (schedule (id ?s-id) (goals $? ?g-id $?) (mode DISPATCHED))
 	?gf <- (goal (id ?g-id) (parent ?pg) (committed-to $?committed)
                   (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
-     ;Goal is root || parent is committed
-     (or (goal (id ?pg) (mode COMMITTED|DISPATCHED) (committed-to $? ?g-id $?))
-         (not (goal (id ?pg))))
-     (not (goal (id ?sub-goal&:(not (member$ ?sub-goal ?committed))) (parent ?g-id)))
-     (not (and (plan (id ?plan-id&:(not (member$ ?plan-id ?committed))) (goal-id ?g-id))
-               (schedule-event (sched-id ?schedule-id) (entity ?plan-id) (at START)
-                               (scheduled TRUE))))
+     (not
+      (and
+       (plan (id ?plan-id&:(not (member$ ?plan-id ?committed))) (goal-id ?g-id))
+       (schedule-event (sched-id ?s-id) (entity ?plan-id) (scheduled TRUE))))
+     (not (goal (id ?sub&:(not (member$ ?sub ?committed))) (parent ?g-id)))
+     (or (not (goal (id ?pg)))
+         (goal (id ?pg) (mode COMMITTED|DISPATCHED) (committed-to $? ?g-id $?)))
      =>
 	(modify ?gf (mode COMMITTED))
 )
 
 (defrule schedule-plan-dispatch
-     (time ?now-sec ?now-msec)
-     (schedule (id ?schedule-id) (start-time ?start-sec $?))
+     (time ?now ?)
+     (schedule (id ?s-id) (goals $? ?goal-id $?) (start-time ?time-zero ?))
 	?gf <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode COMMITTED)
-	             (committed-to ?schedule-id $? ?plan-id $?)
+	             (committed-to $? ?plan-id $?)
 	             (required-resources $?req)
 	             (acquired-resources $?acq&:(subsetp ?req ?acq)))
      ?pf <- (plan (id ?plan-id) (goal-id ?goal-id))
-	(schedule-event (sched-id ?schedule-id) (entity ?plan-id) (at START)
-                     (scheduled TRUE) (scheduled-start ?scheduled-start))
-     (test (> ?now-sec (+ ?start-sec ?scheduled-start)))
+	(schedule-event (sched-id ?s-id)
+                     (entity ?plan-id) (at START)
+                     (scheduled TRUE)
+                     (scheduled-start ?sched-start&:(> ?now (+ ?time-zero ?sched-start))))
      =>
 	(modify ?gf (mode DISPATCHED))
      (modify ?pf (start-time (now)))
