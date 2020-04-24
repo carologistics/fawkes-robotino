@@ -427,6 +427,8 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
   )
 )
 
+
+;; Building The Scheduling Model
 (defrule scheduling-create-goal-event
 "Create schedule-events for goals that have a child plan"
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
@@ -539,8 +541,8 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (assert (wm-fact (key scheduling event-precedence args? e-a ?p1-end e-b ?p2-start)))
 )
 
-;Schedule Formulate Resource Setup Times
 (defrule scheduling-resource-setup-duration
+ "Calculate Setup duration estimates for resources"
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
  (resource (id ?r-id) (type ?r-type))
@@ -577,7 +579,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 
-;; call scheduler to build data sets
+;; Call scheduler to build data sets
 (defrule scheduling-add-event-requirment
  (declare (salience ?*SALIENCE-GOAL-SELECT*))
  (schedule (id ?s-id) (mode FORMULATED))
@@ -744,7 +746,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (retract ?if)
 )
 
-(defrule scheduling-process-nonscheduled-edges
+(defrule scheduling-process-clean-nonscheduled-sequences
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (mode SELECTED))
  ?if <- (scheduler-info (type EVENT-SEQUENCE)
