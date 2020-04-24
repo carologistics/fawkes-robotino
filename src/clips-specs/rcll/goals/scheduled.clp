@@ -167,16 +167,6 @@
 					(message (str-cat "Sub-goal '" ?sub-goal "' of SCHEDULE goal '" ?id "' has failed")))
 )
 
-(defrule schedule-goal-subgoal-completed-one-resources-clear
-	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode DISPATCHED)
-                  (committed-to $?committed))
-	(forall (goal (id ?sub-goal&:(member$ ?sub-goal ?committed)) (type ACHIEVE) (parent ?id))
-             (goal (id ?sub-goal) (acquired-resources) (mode RETRACTED) (outcome COMPLETED))
-             )
-	(goal (parent ?id) (type ACHIEVE) (mode EXPANDED))
-	=>
-	(modify ?gf (mode EXPANDED) (committed-to (create$)))
-)
 
 (defrule schedule-goal-subgoal-completed-all-resources-clear
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode DISPATCHED)
