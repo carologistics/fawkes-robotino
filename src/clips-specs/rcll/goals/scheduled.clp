@@ -176,7 +176,9 @@
              )
 	;?sg <- (goal (id ?sub-goal) (parent ?id) (acquired-resources)
 	;             (type ACHIEVE) (mode RETRACTED) (outcome COMPLETED))
-	(not (goal (parent ?id) (type ACHIEVE) (mode EXPANDED)))
+	(not (and (plan (id ?plan-id) (goal-id ?goal-id))
+	          (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state ~FINAL))))
+     (not (goal (parent ?id) (type ACHIEVE) (mode EXPANDED)))
 	=>
 	(modify ?gf (mode FINISHED) (outcome COMPLETED) (committed-to (create$ )))
 )
