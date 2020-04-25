@@ -1255,28 +1255,4 @@
 )
 
 
-(defrule goal-production-mps-handling-create-prepare-goal
-  "Prepare and model processing of a mps"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?pg <- (goal (id ?mps-handling-id) (class MPS-HANDLING-MAINTAIN) (mode SELECTED))
-  ;Robot CEs
-  (wm-fact (key domain fact self args? r ?robot))
-  ;Requested process CEs
-  (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
-  (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
-  ;MPS CEs
-  (wm-fact (key domain fact mps-state args? m ?mps s IDLE))
-  (not (wm-fact (key domain fact wp-at args? wp ? m ?mps side OUTPUT)))
-  =>
-  (bind ?resources (create$ ?mps (sym-cat ?mps -OUTPUT) (sym-cat ?mps -INPUT)))
-  (assert (goal (id (sym-cat PROCESS-MPS- ?mps - (gensym*)))
-                (class PROCESS-MPS) (sub-type SIMPLE)
-                (priority ?*PRIORITY-RESET*)
-                (parent ?mps-handling-id)
-                (params m ?mps
-                )
-                (required-resources ?resources)
-  ))
-  (modify ?pg (mode EXPANDED))
-)
 
