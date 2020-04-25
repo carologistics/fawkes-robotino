@@ -223,7 +223,6 @@
                 )
                 (required-resources ?resources)
   ))
-  (modify ?pg (mode EXPANDED))
 )
 
 
