@@ -114,6 +114,7 @@
                      (scheduled TRUE)
                      (scheduled-start ?sched-start&:(> ?now (+ ?time-zero ?sched-start))))
      =>
+     (printout t " Plan of scheduled goal " ?goal-id " is DISPATCHED at the " ?now " Sec"crlf)
 	(modify ?gf (mode DISPATCHED))
      (modify ?pf (start-time (now)))
 )
@@ -180,6 +181,7 @@
 	          (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state ~FINAL))))
      (not (goal (parent ?id) (type ACHIEVE) (mode EXPANDED)))
 	=>
+     (printout t " Scheduled Goal " ?id " is COMPLETED" crlf)
 	(modify ?gf (mode FINISHED) (outcome COMPLETED) (committed-to (create$ )))
 )
 
