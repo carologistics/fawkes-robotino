@@ -232,7 +232,7 @@
 	)
 )
 
-(defrule run-all-goal-select-subgoals
+(defrule goal-reasoner-select-all-subgoals
      (declare (salience ?*SALIENCE-GOAL-SELECT*))
 	(goal (id ?id) (mode SELECTED))
 	?sg <- (goal (id ?sub-goal) (parent ?id)
@@ -255,7 +255,7 @@
 (defrule goal-reasoner-expand-scheduled-goals
   " Expand a schedule goal, if some plans are expanded."
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
-  ?g <- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode SELECTED))
+  ?g <- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS|SIMPLE) (mode SELECTED))
   (plan (id ?p-id) (goal-id ?g-id))
   =>
   (modify ?g (mode EXPANDED))
