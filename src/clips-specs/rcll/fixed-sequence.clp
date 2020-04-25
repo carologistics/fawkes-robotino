@@ -1159,6 +1159,11 @@
         (param-values ?robot ?mps ?side (wait-pos ?mps ?side))
         (duration (/ (nodes-distance (node-name ?mps ?side)
                                     (wait-pos ?mps ?side)) ?*V*)))
+     (plan-action (id 6) (plan-id ?plan-id ) (goal-id ?goal-id)
+          (action-name wp-discard)
+          (param-names r cc )
+          (param-values ?robot ?wp))
+
  )
 )
 
