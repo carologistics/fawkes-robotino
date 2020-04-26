@@ -20,7 +20,7 @@
 ;
 
 
-(defglobal ?*V* = 0.03)
+(defglobal ?*V* = 0.5)
 
 (defrule goal-production-create-order
   "Keep waiting at one of the waiting positions."
