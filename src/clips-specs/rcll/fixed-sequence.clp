@@ -1018,6 +1018,19 @@
     (not (plan (goal-id ?goal-id)))
     =>
    (bind ?plan-id  (sym-cat ?goal-id _PLAN))
+
+   (if (eq (nth$ 2 ?setup2) WAIT) then
+     (bind ?action-name go-wait)
+     (bind ?param-names (create$ r from from-side to))
+     (bind ?param-values (create$ ?robot (nth$ 1 ?setup1) (nth$ 2 ?setup1)
+                                  (nth$ 1 ?setup2)))
+     else
+     (bind ?action-name goto)
+     (bind ?param-names (create$ r from from-side to to-side))
+     (bind ?param-values (create$ ?robot (nth$ 1 ?setup1) (nth$ 2 ?setup1)
+                                  (nth$ 1 ?setup2) (nth$ 2 ?setup2)))
+
+   )
    (assert
       (wm-fact (key meta plan required-resource args? id ?plan-id r ?robot
                                 setup [ ?setup1 ] ))
@@ -1026,17 +1039,9 @@
 
         (plan (id ?plan-id) (goal-id ?goal-id))
         (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
-                                    (action-name move)
-                                    (param-names r
-                                                 from
-                                                 from-side
-                                                 to
-                                                 to-side)
-                                    (param-values ?robot
-                                                  (nth$ 1 ?setup1)
-                                                  (nth$ 2 ?setup1)
-                                                  (nth$ 1 ?setup2)
-                                                  (nth$ 2 ?setup2))
+                                    (action-name ?action-name)
+                                    (param-names ?param-names)
+                                    (param-values ?param-values)
                                     (duration  ?setup-duration))
     )
 )
