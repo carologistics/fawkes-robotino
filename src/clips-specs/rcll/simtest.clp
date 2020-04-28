@@ -33,7 +33,7 @@
 	; termination behaviour:
 	;   CUSTOM:  Specific termination rules required.
 	;            Tests with CUSTOM termination determine the termination of testbeds,
-	;						 hence each testbed should have at least one CUSTOM terminating test.
+	;            hence each testbed should have at least one CUSTOM terminating test.
 	;   FAILURE: Specific termination rule required to reach SUCCEEDED state.
 	;            PENDING Test is FAILED if all CUSTOM tests terminate.
 	;            Suitable if a situation has to be observed eventually.
@@ -50,7 +50,7 @@
 
 (deffunction simtest-quit (?success)
 " Quit test by terminating CLIPS
-	@param success termination status of the executed testbed
+  @param success termination status of the executed testbed
 "
 	(printout info "Exiting (success: " ?success ") ..." crlf)
 	(printout info "SIMTEST: " (if ?success then "SUCCEEDED" else "FAILED") crlf)
@@ -59,12 +59,12 @@
 
 (deffunction simtest-connect (?type $?tests)
 " Create hierarchical tests with:
-	@param ?type type
-	@param ?$tests child tests
-	@return fact id of parent test
+  @param ?type type
+  @param ?$tests child tests
+  @return fact id of parent test
 "
 	(bind ?name (sym-cat ?type - (gensym*)))
-  (foreach ?test-fact ?tests
+	(foreach ?test-fact ?tests
 		(bind ?test-id-fact (modify ?test-fact (parent ?name)))
 	)
 	(return (assert (testcase (id ?name) (type ?type) (termination FAILURE))))
@@ -114,80 +114,80 @@
 
 (defrule simtest-gen-id
 " Create unique ids for each testcase that has no id yet. "
-  (testcase (id nil))
- =>
-  (do-for-all-facts ((?test testcase))
-    (eq ?test:id nil)
-    (modify ?test (id (sym-cat TEST- (gensym*))))
-  )
+	(testcase (id nil))
+	=>
+	(do-for-all-facts ((?test testcase))
+		(eq ?test:id nil)
+		(modify ?test (id (sym-cat TEST- (gensym*))))
+	)
 )
 
 ; ===================== default termination rules ============================
 
 (defrule simtest-game-over-default-failure
 " Fail all tests that are still pending after the game with low priority. "
-  (declare (salience ?*DEFAULT-TESTCASE-HANDLING*))
+	(declare (salience ?*DEFAULT-TESTCASE-HANDLING*))
 	(wm-fact (key refbox phase) (value POST_GAME))
-  =>
+	=>
 	(delayed-do-for-all-facts ((?custom-test testcase))
 		(and (eq ?custom-test:termination CUSTOM)
-					(eq ?custom-test:state PENDING))
-    (modify ?custom-test (state FAILED) (msg "testcase did not terminate"))
-  )
+		     (eq ?custom-test:state PENDING))
+		(modify ?custom-test (state FAILED) (msg "testcase did not terminate"))
+	)
 )
 
 (defrule simtest-termination-success
 " All custom tests are terminated. Succeed all tests that passively watch
-	watch out for erroneous situations as no such situation was observed. "
+  watch out for erroneous situations as no such situation was observed. "
 	?testcase <- (testcase (termination SUCCESS) (state PENDING))
-  (not (testcase (termination CUSTOM) (state PENDING)))
-  =>
-  (modify ?testcase (state SUCCEEDED) (msg "No failure detected"))
+	(not (testcase (termination CUSTOM) (state PENDING)))
+	=>
+	(modify ?testcase (state SUCCEEDED) (msg "No failure detected"))
 )
 
 (defrule simtest-termination-failure
 " All custom tests are terminated. Fail all tests that passively watch
-	watch out for desired situations as no such situation was observed. "
+  watch out for desired situations as no such situation was observed. "
 	?testcase <- (testcase (termination FAILURE) (state PENDING))
-  (not (testcase (termination CUSTOM) (state PENDING)))
-  =>
-  (modify ?testcase (state FAILED) (msg "Fail per default"))
+	(not (testcase (termination CUSTOM) (state PENDING)))
+	=>
+	(modify ?testcase (state FAILED) (msg "Fail per default"))
 )
 
 ; ===================== type-specific termination rules =======================
 
 (defrule simtest-or-success
 " A child test succeeded, succeed. "
-  ?t <- (testcase (type OR) (id ?name) (state PENDING))
-  (testcase (id ?id) (parent ?name) (state SUCCEEDED) (msg ?msg))
-  =>
-  (modify ?t (state SUCCEEDED) (msg (str-cat ?id SUCCEEDED)))
+	?t <- (testcase (type OR) (id ?name) (state PENDING))
+	(testcase (id ?id) (parent ?name) (state SUCCEEDED) (msg ?msg))
+	=>
+	(modify ?t (state SUCCEEDED) (msg (str-cat ?id SUCCEEDED)))
 )
 
 (defrule simtest-and-success
 " A child test failed, fail. "
-  ?t <- (testcase (type AND) (id ?name) (state PENDING))
-  (not (testcase (parent ?name) (state ~SUCCEEDED)))
-  =>
-  (modify ?t (state SUCCEEDED) (msg (str-cat "all child tests " SUCCEEDED)))
+	?t <- (testcase (type AND) (id ?name) (state PENDING))
+	(not (testcase (parent ?name) (state ~SUCCEEDED)))
+	=>
+	(modify ?t (state SUCCEEDED) (msg (str-cat "all child tests " SUCCEEDED)))
 )
 
 (defrule simtest-full-game-success
 " Tests of type FULL-GAME succeed once the game is over. "
 	?testcase <- (testcase (type FULL-GAME) (state PENDING))
 	(wm-fact (key refbox phase) (value POST_GAME))
-  =>
-  (modify ?testcase (state SUCCEEDED) (msg "Game completed"))
+	=>
+	(modify ?testcase (state SUCCEEDED) (msg "Game completed"))
 )
 
 (defrule simtest-delivery-success
 " Tests of type DELIVERY succeed once a delivery of the specified complexity
-	happens. "
+  happens. "
 	?testcase <- (testcase (type DELIVERY) (state PENDING) (args complexity ?com))
 	(wm-fact (key refbox team-color) (value ?team-color&~nil))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key domain fact quantity-delivered args? ord ?ord team ?team-color)
-						(value ?delivered&:(> ?delivered 0)))
+	         (value ?delivered&:(> ?delivered 0)))
 	(wm-fact (key domain fact order-complexity args? ord ?ord com ?com))
 	=>
 	(modify ?testcase (state SUCCEEDED) (msg (str-cat "Delivery of complexity " ?com " done")))
@@ -195,21 +195,21 @@
 
 (defrule simtest-delivery-count-success
 " Tests of type DELIVERY-COUNT succeed once the specified number of deliveries
-	happens. "
+  happens. "
 	(wm-fact (key refbox team-color) (value ?team-color&~nil))
 	(wm-fact (key domain fact quantity-delivered args? ord ? team ?team-color)
-						(value ?delivered&:(> ?delivered 0)))
+	         (value ?delivered&:(> ?delivered 0)))
 	?testcase <- (testcase (type DELIVERY-COUNT) (state PENDING) (args count ?count))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	=>
 	(bind ?curr 0)
   (delayed-do-for-all-facts ((?qd wm-fact))
 		(and 	(wm-key-prefix ?qd:key (create$ domain fact quantity-delivered))
-					(eq (wm-key-arg ?qd:key team) ?team-color)
-					(> ?qd:value 0))
-    (bind ?curr (+ ?curr ?qd:value))
-  )
-  (if (<= ?count ?curr)
+		      (eq (wm-key-arg ?qd:key team) ?team-color)
+		      (> ?qd:value 0))
+		(bind ?curr (+ ?curr ?qd:value))
+	)
+	(if (<= ?count ?curr)
 		then
 			(modify ?testcase (state SUCCEEDED))
 	)
@@ -217,9 +217,9 @@
 
 (defrule simtest-points-after-minute-success
 " Tests of type POINT-AFTER-MINUTE succeed if the specified number of points
-	happen before a given deadline. "
+  happen before a given deadline. "
 	?testcase <- (testcase (type POINTS-AFTER-MINUTE) (state PENDING)
-								(args minute ?time points ?desired-points))
+	             (args minute ?time points ?desired-points))
 	(wm-fact (key refbox team-color) (value ?team-color&~nil))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key refbox game-time) (values $?gt&:(< (nth$ 1 ?gt) (* ?time 60))))
@@ -232,7 +232,7 @@
 (defrule simtest-points-after-minute-failure
 " Tests of type POINT-AFTER-MINUTE fail if the deadline is crossed. "
 	?testcase <- (testcase (type POINTS-AFTER-MINUTE) (state PENDING)
-								(args minute ?time points ?desired-points))
+	             (args minute ?time points ?desired-points))
 	(wm-fact (key refbox phase) (value PRODUCTION))
 	(wm-fact (key refbox game-time) (values $?gt&:(>= (nth$ 1 ?gt) (* ?time 60))))
 	=>
@@ -251,7 +251,7 @@
 
 (defrule simtest-finished
 " All tests terminated, the testbed is done. Evaluate the success status and
-	terminate the agent."
+  terminate the agent."
 	(simtest-initialized)
 	(not (testcase (state PENDING)))
 	=>
