@@ -824,3 +824,31 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (modify ?gef (scheduled TRUE)
               (scheduled-start (+ ?goal-start ?pstart-duration ?pend-duration)))
 )
+
+(defrule scheduling-post-processing--propogate-goal-START-events
+ "Bottom up propagation of start-time events for each goal in the
+  scheduling goal tree"
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS))
+ (not (schedule-event (sched-id ?s-id) (entity ?g-id) (at START)))
+
+ ;Child with the smallest scheduled start
+ (or (plan (id ?child-id) (goal-id ?g-id))
+     (goal (id ?child-id) (parent ?g-id)))
+ (schedule-event (sched-id ?s-id) (entity ?child-id) (at START) (scheduled TRUE)
+                 (scheduled-start ?child-start))
+ (forall (goal (id ?sub-goal&:(neq ?child-id ?sub-goal)) (parent ?g-id))
+         (schedule-event (sched-id ?s-id) (entity ?sub-goal) (at START)
+                         (scheduled TRUE) (scheduled-start ?gt&:(<= ?child-start ?gt))))
+ (forall (plan (id ?sub-plan&:(neq ?child-id ?sub-plan)) (goal-id ?g-id))
+         (schedule-event (sched-id ?s-id) (entity ?sub-plan) (at START)
+                         (scheduled TRUE) (scheduled-start ?pt&:(<= ?child-start ?pt))))
+=>
+ (assert (schedule-event (id (sym-cat ?g-id @start))
+                         (sched-id ?s-id)
+                         (entity ?g-id)
+                         (at START)
+                         (scheduled TRUE)
+                         (scheduled-start ?child-start)))
+)
