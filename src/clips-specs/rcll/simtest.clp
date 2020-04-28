@@ -43,6 +43,7 @@
 	(slot termination (type SYMBOL) (allowed-values CUSTOM FAILURE SUCCESS) (default CUSTOM))
 	; termination status
 	; All tests have to terminate in order for a testbed to be completed.
+	; If a test without parent fails, all other tests fail as well.
 	(slot state (type SYMBOL) (allowed-values SUCCEEDED FAILED PENDING) (default PENDING))
 	; additional information on the reason for test termination
 	(slot msg (type STRING))
@@ -248,6 +249,19 @@
 )
 
 ; ============================================================================
+
+(defrule simtest-abort-early
+" A test has failed and the testbed will fail as well. Fail all other tests
+  as well."
+	(testcase (id ?id) (state FAILED) (parent nil))
+	(testcase (state ~FAILED))
+=>
+	(do-for-all-facts ((?testcase testcase))
+		(eq ?testcase:state PENDING)
+		(modify ?testcase (state FAILED)
+		                  (msg (str-cat "Test " ?id " failed already")))
+	)
+)
 
 (defrule simtest-finished
 " All tests terminated, the testbed is done. Evaluate the success status and
