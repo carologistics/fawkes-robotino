@@ -57,64 +57,44 @@
 					(message (str-cat "No sub-goals or plans for SCHEDULE goal '" ?id "'" )))
 )
 
-(defrule schedule-goal-commit-to-all-subgoals
+(defrule schedule-goal-commit-to-all-children-on-time
      (declare (salience ?*SALIENCE-HIGH*))
-     (schedule (id ?s-id) (goals $? ?g-id $?) (mode DISPATCHED))
-     ?gf <- (goal (id ?g-id) (parent ?pg) (committed-to $?committed)
-                  (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
-     ?sgf <- (goal (id ?sub-goal&:(not (member$ ?sub-goal ?committed)))
-                   (parent ?g-id) (type ACHIEVE) (mode EXPANDED))
+     (time ?now ?)
      (or (not (goal (id ?pg)))
-         (goal (id ?pg) (mode COMMITTED|DISPATCHED) (committed-to $? ?g-id $?)))
-    =>
-	(modify ?gf  (committed-to (create$ ?committed ?sub-goal)))
- )
-
-
-(defrule schedule-goal-commit-to-scheduled-plans
-     (declare (salience ?*SALIENCE-HIGH*))
-     (schedule (id ?s-id) (goals $? ?g-id $?) (mode DISPATCHED))
-	?gf <- (goal (id ?g-id) (parent ?pg) (committed-to $?committed)
-                  (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
-     ;Plan is schedueled
-     (plan (id ?plan-id&:(not (member$ ?plan-id ?committed))) (goal-id ?g-id))
-     (schedule-event (sched-id ?s-id) (entity ?plan-id) (scheduled TRUE))
-     (or (not (goal (id ?pg)))
-         (goal (id ?pg) (mode COMMITTED|DISPATCHED) (committed-to $? ?g-id $?)))
-   =>
-	(modify ?gf  (committed-to (create$ ?committed ?plan-id)))
- )
-
+         (goal (id ?pg) (mode COMMITTED|DISPATCHED)))
+     ?gf <- (goal (id ?g-id) (parent ?pg) (sub-type SCHEDULE-SUBGOALS)
+                  (committed-to $?committed) (type ACHIEVE) (mode EXPANDED)
+                  (meta dispatch-time ?d-time&:(< ?d-time ?now)))
+     (or (plan (id ?child-id&:(not (member$ ?child-id ?committed))) (goal-id ?g-id))
+         (goal (id ?child-id&:(not (member$ ?child-id ?committed))) (parent ?g-id) (mode EXPANDED)))
+  =>
+	(modify ?gf  (committed-to (create$ ?committed ?child-id)))
+)
 
 (defrule schedule-goal-commit
-     (schedule (id ?s-id) (goals $? ?g-id $?) (mode DISPATCHED))
-	?gf <- (goal (id ?g-id) (parent ?pg) (committed-to $?committed)
-                  (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
-     (not
-      (and
-       (plan (id ?plan-id&:(not (member$ ?plan-id ?committed))) (goal-id ?g-id))
-       (schedule-event (sched-id ?s-id) (entity ?plan-id) (scheduled TRUE))))
-     (not (goal (id ?sub&:(not (member$ ?sub ?committed))) (parent ?g-id)))
      (or (not (goal (id ?pg)))
-         (goal (id ?pg) (mode COMMITTED|DISPATCHED) (committed-to $? ?g-id $?)))
+         (goal (id ?pg) (mode COMMITTED|DISPATCHED)))
+	?gf <- (goal (id ?g-id) (parent ?pg) (sub-type SCHEDULE-SUBGOALS)
+                  (committed-to $?committed) (type ACHIEVE) (mode EXPANDED)
+                  (meta dispatch-time ?d-time&:(< ?d-time (nth$ 1 (now)))))
+     (not (plan (id ?child-id&:(not (member$ ?child-id ?committed))) (goal-id ?g-id)))
+     (not (goal (id ?child-id&:(not (member$ ?child-id ?committed))) (parent ?g-id)))
      =>
 	(modify ?gf (mode COMMITTED))
 )
 
 (defrule schedule-plan-dispatch
      (time ?now ?)
-     (schedule (id ?s-id) (goals $? ?goal-id $?) (start-time ?time-zero ?))
 	?gf <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode COMMITTED)
 	             (committed-to $? ?plan-id $?)
 	             (required-resources $?req)
-	             (acquired-resources $?acq&:(subsetp ?req ?acq)))
+	             (acquired-resources $?acq&:(subsetp ?req ?acq))
+                  (meta dispatch-time ?d-time&:(< ?d-time ?now)))
      ?pf <- (plan (id ?plan-id) (goal-id ?goal-id))
-	(schedule-event (sched-id ?s-id)
-                     (entity ?plan-id) (at START)
-                     (scheduled TRUE)
-                     (scheduled-start ?sched-start&:(> ?now (+ ?time-zero ?sched-start))))
      =>
-     (printout t " Plan of scheduled goal " ?goal-id " is DISPATCHED at the " ?now " Sec"crlf)
+     (printout t " Plan of scheduled goal " ?goal-id
+                 " is DISPATCHED at the " ?now " Sec ( "
+                 (- ?now ?d-time)  " sec from sched)"crlf)
 	(modify ?gf (mode DISPATCHED))
      (modify ?pf (start-time (now)))
 )
