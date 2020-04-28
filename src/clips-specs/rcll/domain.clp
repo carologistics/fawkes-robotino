@@ -102,6 +102,8 @@
         (bind ?ss M-SS)
   )
 	(assert
+
+    (domain-fact (name truth) (param-values TRUE))
 	  (domain-fact (name self) (param-values ?self))
 	  (domain-object (name Icks) (type robot))
     (domain-object (name Upsilan) (type robot))

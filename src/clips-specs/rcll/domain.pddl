@@ -62,6 +62,7 @@
 		C0 C1 C2 C3 - order-complexity-value
 		LEFT MIDDLE RIGHT - shelf-spot
 		NA ZERO ONE TWO THREE - ring-num
+          TRUE FALSE - truth-value
 	)
 
 	(:predicates
@@ -115,6 +116,7 @@
     (ss-stored-wp ?m  - mps ?wp - workpiece)
     (locked ?name - object)
     (location-locked ?m - mps ?s - mps-side)
+    (truth ?v - truth-value)
 	)
 
 ;Kind of a hack. actually it should model the removal of present workpieces
@@ -153,7 +155,6 @@
                        (bs-prepared-side ?m ?side)
 											 (wp-base-color ?wp BASE_NONE) (wp-unused ?wp)
 											 (wp-spawned-for ?wp ?r)
-											 (self ?r)
 											 (mps-side-free ?m ?side))
 											 ;(not (wp-usable ?wp))
 		:effect (and (wp-at ?wp ?m ?side) (not (mps-side-free ?m ?side))
@@ -182,8 +183,8 @@
 
 	(:action request-cs-mount-cap
 		:parameters (?r - robot ?m - mps ?wp - workpiece ?capcol - cap-color)
-		:precondition (self ?r)
-		:effect (self ?r)
+		:precondition (mps-type ?m CS)
+		:effect (mps-type ?m CS)
 	)
 
 	(:action cs-retrieve-cap
@@ -202,8 +203,8 @@
 
 	(:action request-cs-retrieve-cap
 		:parameters (?r - robot ?m - mps ?cc - cap-carrier ?capcol - cap-color)
-		:precondition (self ?r)
-		:effect (self ?r)
+		:precondition (mps-type ?m CS)
+		:effect (mps-type ?m CS)
 	)
 
 	(:action prepare-rs
@@ -281,8 +282,8 @@
 		:parameters (?r - robot ?m - mps ?wp - workpiece ?col - ring-color
 			 				?ring-pos - ring-num ?col1 - ring-color ?col2 - ring-color ?col3 - ring-color
 							?r-req - ring-num)
-		:precondition (self ?r)
-		:effect (self ?r)	
+		:precondition (mps-type ?m RS)
+		:effect  (mps-type ?m RS)
 	)
 
 	; The following is the generic move version.
@@ -518,8 +519,8 @@
   )
   (:action expire-locks
     :parameters (?r - robot)
-    :precondition (self ?r)
-    :effect (self ?r)
+    :precondition (truth TRUE)
+    :effect (truth TRUE)
   )
   (:action spawn-wp
     :parameters (?wp - workpiece ?r - robot)
