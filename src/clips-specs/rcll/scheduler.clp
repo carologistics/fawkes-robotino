@@ -105,7 +105,7 @@
   (multislot goals (type SYMBOL))
   (slot mode (type SYMBOL))
   (slot duration (type INTEGER))
-  (multislot start-time (type INTEGER))
+  (multislot dispatch-time (type INTEGER))
 )
 
 (deftemplate schedule-event
@@ -237,12 +237,12 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (time $?now)
  ?sf <- (schedule (id ?s-id) (goals $?goals) (mode COMMITTED))
 =>
- (modify ?sf (mode DISPATCHED) (start-time ?now))
  (delayed-do-for-all-facts ((?g goal) (?e schedule-event)) (and (member$ ?g:id ?goals)
                                                         (eq ?e:entity ?g:id)
                                                         (eq ?e:at START)
                                                         (eq ?e:scheduled TRUE))
     (modify ?g (meta dispatch-time (+ (nth$ 1 ?now) ?e:scheduled-start 5))))
+ (modify ?sf (mode DISPATCHED) (dispatch-time ?now))
 )
 
 
