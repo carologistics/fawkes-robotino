@@ -184,7 +184,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (not (goal (id ?pg) (sub-type SCHEDULE-SUBGOALS)))
  (not (schedule (goals $? ?g-id $?)))
 =>
- (assert (schedule (id (sym-cat SCHEDULE_ ?g-id))
+ (assert (schedule (id (sym-cat sched_ (gensym*)))
                    (goals ?g-id)
                    (mode FORMULATED)))
 )
@@ -236,10 +236,15 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 "Dispatch to schedule by specifing its start-time"
  (time $?now)
  ?sf <- (schedule (id ?s-id) (goals $?goals) (mode COMMITTED))
- (not (goal (id ?g-id&:(member$ ?g-id ?goals)) (mode ~EXPANDED)))
 =>
  (modify ?sf (mode DISPATCHED) (start-time ?now))
+ (delayed-do-for-all-facts ((?g goal) (?e schedule-event)) (and (member$ ?g:id ?goals)
+                                                        (eq ?e:entity ?g:id)
+                                                        (eq ?e:at START)
+                                                        (eq ?e:scheduled TRUE))
+    (modify ?g (meta dispatch-time (+ (nth$ 1 ?now) ?e:scheduled-start 5))))
 )
+
 
 ;; General resource handling
 (defrule scheduling-create-resource-source-event
