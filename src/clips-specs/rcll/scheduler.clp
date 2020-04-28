@@ -857,3 +857,17 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                          (scheduled TRUE)
                          (scheduled-start ?child-start)))
 )
+
+(defrule scheduling-post-processing---ground-goal-resource
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
+  (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at START)
+                  (scheduled TRUE))
+  (schedule-requirment (sched-id ?s-id) (event-id ?e-id) (resource-id ?r-id)
+                      (resource-units ?u&:(< ?u 0)))
+  (plan (id ?p-id) (goal-id ?g-id))
+  ?gf <- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED)
+               (required-resources $?req&:(not (member$ ?r-id ?req))))
+  =>
+  (modify ?gf (required-resources (create$ ?req ?r-id)))
+)
