@@ -304,7 +304,6 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (not (schedule-event (sched-id ?s-id) (entity ?r-id) (at START)))
  ;non producible resource
  (resource (id ?r-id) (producible FALSE) (entity ?robot) (units ?units))
- (wm-fact (key domain fact self args? r ?robot))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  (wm-fact (key refbox team-color) (value ?team-color))
 =>
@@ -331,7 +330,6 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (not  (schedule-event (sched-id ?s-id) (entity ?r-id) (at END)))
  (resource (id ?r-id) (consumable FALSE) (entity ?robot)(units ?units))
  ;;TODO: replace with IDLING location of a defaule state ANY
- (wm-fact (key domain fact self args? r ?robot))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  (wm-fact (key refbox team-color) (value ?team-color))
 =>
@@ -393,7 +391,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-init-resources-robots
- (wm-fact (key domain fact self args? r ?robot))
+ (wm-fact (key domain fact at args? r ?robot m ? side ?))
 =>
  (bind ?r (formate-resource-name ?robot))
  (assert (resource (id ?r)
@@ -743,7 +741,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  )
 =>
   (bind ?resource-schedule (create$ ?resource-schedule ?e1-id ?e2-id))
- 
+
   (modify ?rf (events ?resource-schedule))
   (modify ?ef1 (scheduled TRUE))
   (modify ?ef2 (scheduled TRUE))
