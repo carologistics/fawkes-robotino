@@ -871,3 +871,18 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
   =>
   (modify ?gf (required-resources (create$ ?req ?r-id)))
 )
+
+(defrule scheduling-post-processing---reject-non-scheduled-plans
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
+  (schedule-event (sched-id ?s-id) (id ?e-start) (entity ?p-id) (at START)
+                  (scheduled FALSE))
+  (plan (id ?p-id) (goal-id ?g-id))
+  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
+  =>
+  (delayed-do-for-all-facts ((?p plan)) (eq ?p:id ?p-id)
+   (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
+       (retract ?a))
+   (retract ?p))
+)
+
