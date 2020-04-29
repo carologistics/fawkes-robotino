@@ -28,7 +28,6 @@
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
   (wm-fact (key domain fact self args? r ?self))
   (wm-fact (key domain fact quantity-delivered args? ord O1 team CYAN))
-  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
   (not (goal (class ORDER)))
   =>
@@ -46,17 +45,25 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (class ORDER) (id ?goal-id) (mode SELECTED))
   (wm-fact (key domain fact self args? r ?robot))
-  (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
+  ;(wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
   (not (goal (class WP-OPERATIONS) (parent ?goal-id)))
   (not (goal (class PREPARE-MACHINE) (parent ?goal-id)))
   =>
   (printout t "Goal " WPOPERATTIONS " formulated" crlf)
+
+  ;(assert (wm-fact (key meta grounding predicate wp-spawned-for args? wp F_WP1 r X_R))
+  ;        (wm-fact (key meta grounding predicate at args? r X_R m m? side s?))
+  ;        (wm-fact (key meta grounding fact goal [ required-resources X_R ] [ class PRODUCE-C0 ]))
+  ;)
+
+  (assert (wm-fact (key meta grounding wp-spawned-for args? wp FVAR_WP1 r XVAR_R)))
+
   (assert (goal (id  gWPOPER)
                 (class WP-OPERATIONS)
                 (sub-type SCHEDULE-SUBGOALS)
                 (parent ?goal-id)
-                (params (create$ wp ?spawned-wp))
+                (params (create$ wp FVAR_WP1))
   ))
   (assert (goal (id gPREPMACHINE)
                 (class PREPARE-MACHINE)

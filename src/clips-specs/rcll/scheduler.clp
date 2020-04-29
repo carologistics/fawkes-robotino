@@ -884,3 +884,25 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
    (retract ?p))
 )
 
+(defrule scheduling-post-processing---ground-free-vars-WP
+  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+  (schedule (id ?s-id) (goals $?goals) (mode COMMITTED))
+  ; Binding
+  (wm-fact (key domain fact wp-spawned-for args? wp ?bound-wp r ?bound-r))
+  (wm-fact (key domain fact at args? r ?bound-r m ? side ?))
+  (resource (id ?bound-resource) (entity ?bound-r))
+  (goal (required-resources $? ?bound-resource $?)
+        (id ?g&:(member$ ?g ?goals)) (class MOUNT-CAP))
+  ; Free
+  ?gf <- (wm-fact (key meta grounding wp-spawned-for args? wp ?fvar-wp r ?xvar_r))
+  ?rf <- (resource (id ?r-id&:(eq ?r-id (formate-resource-name ?fvar-wp))))
+  =>
+  (delayed-do-for-all-facts ((?g goal)) (and (member$ ?g:id ?goals)
+                                             (member$ ?r-id ?g:required-resources))
+    (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?g:id)
+      (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
+        (modify ?a (param-values (replace-member$ ?a:param-values ?bound-wp ?fvar-wp))))))
+
+  (modify ?rf (entity ?bound-wp))
+  (retract ?gf)
+)
