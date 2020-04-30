@@ -57,6 +57,7 @@
   ?*DELIVER-LATEST-TIME* = 10
   ?*DELIVER-ABORT-TIMEOUT* = 30
 
+  ?*BLOCKING-THRESHOLD* = 60
 )
 
 (defrule goal-production-create-beacon-maintain
@@ -1345,6 +1346,62 @@
   (retract ?t)
 )
 
+(defrule goal-production-create-clear-ds
+  "Pick up a workpiece from the DS if it blocks an earlier product."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?production-id) (class DELIVER-PRODUCTS) (mode FORMULATED))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  ;Robot CEs
+  (wm-fact (key domain fact self args? r ?robot))
+  ;MPS-DS CEs
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
+  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+  ;MPS-CEs
+  (wm-fact (key domain fact mps-type args? m ?mps t CS|SS))
+  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  ;WP-CEs
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+  ;Order-CEs
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  ;Other WP that currently blocks the DS
+  (wm-fact (key domain fact wp-at args? wp ?blocking-wp m ?ds side INPUT))
+  (wm-fact (key order meta wp-for-order args? wp ?blocking-wp ord ?blocking-order))
+  (wm-fact (key refbox order ?blocking-order delivery-begin)
+           (value ?blocking-del-begin&:(> (- ?blocking-del-begin (nth$ 1 ?game-time))
+                                        ?*BLOCKING-THRESHOLD*)))
+  ; TODO: any more threshold on that?
+  (wm-fact (key refbox order ?order delivery-begin)
+           (value ?del-begin&:(< ?del-begin (nth$ 1 ?game-time))))
+  (not (goal (class CLEAR-MPS)
+             (parent ?production-id)
+             (params robot ?robot
+                     wp ?blocking-wp
+                     ds ?ds)))
+  =>
+  (printout t "Goal " CLEAR-MPS " formulated" crlf)
+  (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
+                (class CLEAR-MPS) (sub-type SIMPLE)
+                (priority ?*PRIORITY-DELIVER*)
+                (parent ?production-id)
+                (params robot ?robot
+                        mps ?ds
+                        wp ?blocking-wp
+                        side INPUT)
+                (required-resources (sym-cat ?ds -INPUT) ?blocking-wp)
+  ))
+)
 
 (defrule goal-production-create-deliver
   "Deliver a fully produced workpiece."
