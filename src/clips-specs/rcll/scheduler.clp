@@ -816,13 +816,14 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (not (schedule-event (sched-id ?s-id) (entity ?g-id) (at START)))
 
  ;Child with the smallest scheduled start
- (or (plan (id ?child-id) (goal-id ?g-id))
-     (goal (id ?child-id) (parent ?g-id)))
+ ;(or
+     (plan (id ?child-id) (goal-id ?g-id))
+ ;   (goal (id ?child-id) (parent ?g-id)))
  (schedule-event (sched-id ?s-id) (entity ?child-id) (at START) (scheduled TRUE)
                  (scheduled-start ?child-start))
- (forall (goal (id ?sub-goal&:(neq ?child-id ?sub-goal)) (parent ?g-id))
-         (schedule-event (sched-id ?s-id) (entity ?sub-goal) (at START)
-                         (scheduled TRUE) (scheduled-start ?gt&:(<= ?child-start ?gt))))
+ ;(forall (goal (id ?sub-goal&:(neq ?child-id ?sub-goal)) (parent ?g-id))
+ ;        (schedule-event (sched-id ?s-id) (entity ?sub-goal) (at START)
+ ;                        (scheduled TRUE) (scheduled-start ?gt&:(<= ?child-start ?gt))))
  (forall (plan (id ?sub-plan&:(neq ?child-id ?sub-plan)) (goal-id ?g-id))
          (schedule-event (sched-id ?s-id) (entity ?sub-plan) (at START)
                          (scheduled TRUE) (scheduled-start ?pt&:(<= ?child-start ?pt))))
