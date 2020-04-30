@@ -366,8 +366,8 @@
 (defrule goal-reasoner-evaluate-completed-deliver
 " Enhance the order-delivered fact of the order of a successful deliver goal
 "
-  ?g <- (goal (id ?goal-id) (class DELIVER) (mode FINISHED) (outcome COMPLETED)
-              (params $? ?order $?))
+  ?g <- (goal (id ?goal-id) (class PROCESS-MPS) (mode FINISHED) (outcome COMPLETED)
+              (params m ?mps ord ?order))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   ?od <- (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color) (value ?val))
   =>
