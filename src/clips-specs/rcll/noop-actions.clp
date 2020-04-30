@@ -99,6 +99,40 @@
   )
 )
 
+(defrule action-execute-request-ds-deliver
+  ?pa <- (plan-action (action-name request-ds-fulfill-order) (state PENDING) (executable TRUE)
+            (param-values ?r ?ds ?wp ?order))
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+  ;Order-CEs
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
+  =>
+ (bind ?params (create$ ord ?order wp ?wp m ?ds g ?gate basecol ?base-color capcol ?cap-color))
+ (switch ?complexity
+  (case C1 then
+      (bind ?params (create$ ord ?order wp ?wp m ?ds g ?gate basecol ?base-color capcol ?cap-color ring1col ?ring1-color)))
+  (case C2 then
+      (bind ?params (create$ ord ?order wp ?wp m ?ds g ?gate bascol ?base-color capcol ?cap-color ring1col ?ring1-color ring2col ?ring2-color)))
+  (case C3 then
+      (bind ?params (create$ ord ?order wp ?wp m ?ds g ?gate basecol ?base-color capcol ?cap-color ring1col ?ring1-color ring2col ?ring2-color ring3col ?ring3-color)))
+ )
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+  (assert
+    (wm-fact (key mps-handling prepare prepare-ds ?ds args? m ?ds ord ?order))
+    (wm-fact (key mps-handling process (sym-cat fulfill-order- (lowcase ?complexity)) ?ds args? ?params))
+  )
+)
+
 (defrule action-execute-wp-spawn
 	?pa <- (plan-action (plan-id ?plan-id) (state PENDING) (executable TRUE)
 	                    (action-name spawn-wp) (param-values ?wp ?robot))

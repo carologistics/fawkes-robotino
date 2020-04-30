@@ -1353,7 +1353,6 @@
   (goal (id ?urgent) (class URGENT) (mode FORMULATED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key refbox game-time) (values $?game-time))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
   ;MPS-DS CEs
@@ -1369,6 +1368,7 @@
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?ds side INPUT)))
   ;Order-CEs
   (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
@@ -1382,8 +1382,6 @@
   ;note: could be moved to rejected checks
   (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
            (value ?qd&:(> ?qr ?qd)))
-  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
-           (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
   (or (and (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
            (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp))))
       (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
@@ -1422,7 +1420,7 @@
                         ring3-color ?ring3-color
                         cap-color ?cap-color
                 )
-                (required-resources (sym-cat ?mps -OUTPUT) ?order ?wp)
+                (required-resources (sym-cat ?mps -OUTPUT) ?order ?wp (sym-cat ?ds -INPUT))
   ))
 )
 
@@ -1464,6 +1462,8 @@
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
   ;Requested process CEs
+; Separate conditions apply for delivery stations
+  (wm-fact (key domain fact mps-type args? m ?mps t ~DS))
   (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
   (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
   ;MPS CEs
@@ -1477,6 +1477,37 @@
                 (parent ?mps-handling-id)
                 (params m ?mps
                 )
+                (required-resources ?resources)
+  ))
+  (modify ?pg (mode EXPANDED))
+)
+
+
+(defrule goal-production-mps-handling-create-prepare-goal-delivery
+  "Prepare and model processing of a delivery"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?pg <- (goal (id ?mps-handling-id) (class MPS-HANDLING-MAINTAIN) (mode SELECTED))
+  ;Robot CEs
+  (wm-fact (key domain fact self args? r ?robot))
+  ;Requested process CEs
+  ; Separate conditions apply for delivery stations
+  (wm-fact (key domain fact mps-type args? m ?mps t DS))
+  (wm-fact (key mps-handling prepare ?prepare-action ?mps args? m ?mps ord ?order))
+  (wm-fact (key mps-handling process ?process-action ?mps
+            args? ord ?order wp ?wp m ?ds $?other))
+  (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
+           (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
+  (wm-fact (key domain fact mps-state args? m ?mps s IDLE))
+  =>
+  (bind ?resources (create$ ?mps ?wp (sym-cat ?mps -INPUT)))
+  (assert (goal (id (sym-cat PROCESS-MPS- ?mps - (gensym*)))
+                (class PROCESS-MPS) (sub-type SIMPLE)
+                (priority ?*PRIORITY-RESET*)
+                (parent ?mps-handling-id)
+                (params m ?mps ord ?order)
                 (required-resources ?resources)
   ))
   (modify ?pg (mode EXPANDED))
