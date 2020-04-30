@@ -1004,7 +1004,7 @@
 ; Centralized Goal Reasoning
 (defrule goal-expander-setup-robot
    "Move a robot from one location to another to satisfy setup requirements "
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
     ?g <- (goal (class SETUP) (id ?goal-id) (mode SELECTED)
                 (params r ?r-id
                         setup1 $?setup1
@@ -1043,31 +1043,29 @@
                                     (param-values ?param-values)
                                     (duration  ?setup-duration))
     )
+
 )
 
 
-
-
-(defrule goal-expander-fill-cap-station-centralgoal-id
+(defrule goal-expander-fill-cap-station-central
    "Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-    (goal (class ORDER) (id ?g-order))
-    (goal (class PREPARE-MACHINE) (id ?g-prepare) (parent ?g-order))
-    ?p <- (goal (class PREPARE-CS) (id ?g-cs) (parent ?g-prepare))
-    ?g <- (goal (class FILL-CAP) (id ?goal-id) (parent ?g-cs) (mode SELECTED)
-                (params cc ?cc
-                        cs ?cs))
-
-   ;Resources groundable during execution (Symbolic resource)
-   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
+   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+   ?g <- (goal (id ?goal-id) (class FILL-CAP) (params $?params) (mode SELECTED))
+   (test (subsetp (create$ cs cc shelf-spot cap-color) ?params))
 
    ;Resources groundable during scheduling (Schedulable resources)
    (wm-fact (key domain fact at args? r ?robot m ? side ?))
    (wm-fact (key domain fact can-hold args? r ?robot))
    =>
+   (bind ?cs (nth$ (+ 1 (member$ cs ?params)) ?params))
+   (bind ?cc (nth$ (+ 1 (member$ cc ?params)) ?params))
+   (bind ?shelf-spot (nth$ (+ 1 (member$ shelf-spot ?params)) ?params))
+   (bind ?cap-color (nth$ (+ 1 (member$ cap-color ?params)) ?params))
+
+
    (bind ?plan-id  (sym-cat ?goal-id _P (gensym*)))
+
    (assert
       (wm-fact (key meta plan required-resource args? id ?plan-id r ?cc setup [ ] ))
       (wm-fact (key meta plan released-resource args? id ?plan-id r ?cc setup [ ] ))
@@ -1116,23 +1114,24 @@
 )
 
 (defrule goal-remove-workpiece-from-mps-central
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- (goal (class ORDER) (id ?g-order))
- (goal (class PREPARE-MACHINE) (id ?g-prepare) (parent ?g-order))
- ?p <- (goal (class PREPARE-CS) (id ?g-cs) (parent ?g-prepare))
- ?g <- (goal (id ?goal-id) (class CLEAR-MPS) (mode SELECTED) (parent ?g-cs)
-             (params  wp ?wp
-                      mps ?mps
-                      side ?side))
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ ?g <- (goal (id ?goal-id) (class PREPARE-CS) (params $?params) (mode SELECTED))
+ (test (subsetp (create$ cc cs) ?params))
 
  ;Resources groundable during scheduling (Schedulable resources)
  (wm-fact (key domain fact at args? r ?robot m ? side ?))
  (wm-fact (key domain fact can-hold args? r ?robot))
  =>
+ (bind ?mps (nth$ (+ 1 (member$ cs ?params)) ?params))
+ (bind ?cc (nth$ (+ 1 (member$ cc ?params)) ?params))
+ (bind ?side OUTPUT)
+
+
  (bind ?plan-id  (sym-cat ?goal-id _P (gensym*)))
+
  (assert
-  (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup [ ] ))
-  (wm-fact (key meta plan released-resource args? id ?plan-id r ?wp setup [ ] ))
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?cc setup [ ] ))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?cc setup [ ] ))
 
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?mps setup [ ] ))
   (wm-fact (key meta plan released-resource args? id ?plan-id r ?mps setup [ ] ))
@@ -1157,7 +1156,7 @@
         (action-name wp-get)
         (duration  ?*DURATION-WP-GET* )
         (param-names r wp m side)
-        (param-values ?robot ?wp ?mps ?side))
+        (param-values ?robot ?cc ?mps ?side))
   (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
         (action-name location-unlock)
         (param-values ?mps ?side))
@@ -1170,37 +1169,28 @@
      (plan-action (id 6) (plan-id ?plan-id ) (goal-id ?goal-id)
           (action-name wp-discard)
           (param-names r cc )
-          (param-values ?robot ?wp))
+          (param-values ?robot ?cc))
 
  )
 )
 
-
 (defrule goal-produce-c0-central
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- (goal (class ORDER) (id ?g-order) (params ord ?order))
- ?p <- (goal (class WP-OPERATIONS) (id ?g-wp) (parent ?g-order))
- ?g <- (goal (mode SELECTED) (id ?goal-id) (class MOUNT-CAP) (parent ?g-wp)
-             (params  wp ?wp cs ?cs))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;MPS-CS CEs
-  ;(wm-fact (key domain fact mps-type args? m ?cs t CS))
-  ;(wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ ?g <- (goal (id ?goal-id) (class MOUNT-CAP) (params $?params) (mode SELECTED))
+ (test (subsetp (create$ wp cs bs) ?params))
 
-  ; Resources groundable during scheduling (Schedulable resources)
-  ;ROBOT CEs
-  (wm-fact (key domain fact at args? r ?robot m ? side ?))
-  (wm-fact (key domain fact can-hold args? r ?robot))
-  ;MPS-BS CEs
-  (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
-  (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
-  ;Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-  (test (eq ?complexity C0))
+ ; Resources groundable during scheduling (Schedulable resources)
+ (wm-fact (key domain fact at args? r ?robot m ? side ?))
+ (wm-fact (key domain fact can-hold args? r ?robot))
+ (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT)))
+                (type mps-side))
  =>
+ (bind ?wp (nth$ (+ 1 (member$ wp ?params)) ?params))
+ (bind ?bs (nth$ (+ 1 (member$ bs ?params)) ?params))
+ (bind ?cs (nth$ (+ 1 (member$ cs ?params)) ?params))
+ (bind ?cap-color (nth$ (+ 1 (member$ cap-color ?params)) ?params))
+ (bind ?base-color (nth$ (+ 1 (member$ base-color ?params)) ?params))
+
  (bind ?plan-id  (sym-cat ?goal-id _P(gensym*)))
  (assert
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup [ ] ))
@@ -1283,36 +1273,28 @@
 )
 
 (defrule goal-deliver-central
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- (goal (class ORDER) (id ?g-order)
-             (params  ord ?order))
- ?p <- (goal (class WP-OPERATIONS) (id ?g-wp) (parent ?g-order)
-             (params  wp ?wp))
- ?g <- (goal (id ?goal-id) (class DELIVER) (mode SELECTED) (parent ?g-wp)
-             (params  wp ?wp cs ?cs))
- (wm-fact (key refbox team-color) (value ?team-color))
- ;MPS-CEs
- ;(wm-fact (key domain fact mps-type args? m ?cs t CS))
- ;(wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
- ;Order-CEs
- (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
- (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
- (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
- (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
- (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
- (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
- (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
- (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
- ;(wm-fact (key order meta wp-for-order args? wp ?wp ord ?ord))
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ ?g <- (goal (id ?goal-id) (class DELIVER) (params $?params) (mode SELECTED))
+ (test (subsetp (create$ ord com base-color ring1-color ring2-color ring3-color
+                         cap-color gate wp cs ds ) ?params))
 
  ; Resources groundable during scheduling (Schedulable resources)
  ;ROBOT CEs
  (wm-fact (key domain fact at args? r ?robot m ? side ?))
  (wm-fact (key domain fact can-hold args? r ?robot))
- ;MPS-DS CEs
- (wm-fact (key domain fact mps-type args? m ?ds t DS))
- (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
  =>
+ (bind ?wp (nth$ (+ 1 (member$ wp ?params)) ?params))
+ (bind ?ds (nth$ (+ 1 (member$ ds ?params)) ?params))
+ (bind ?cs (nth$ (+ 1 (member$ cs ?params)) ?params))
+ (bind ?order (nth$ (+ 1 (member$ ord ?params)) ?params))
+ (bind ?gate (nth$ (+ 1 (member$ gate ?params)) ?params))
+ (bind ?complexity (nth$ (+ 1 (member$ com ?params)) ?params))
+ (bind ?cap-color (nth$ (+ 1 (member$ cap-color ?params)) ?params))
+ (bind ?base-color (nth$ (+ 1 (member$ base-color ?params)) ?params))
+ (bind ?ring1-color (nth$ (+ 1 (member$ ring1-color ?params)) ?params))
+ (bind ?ring2-color (nth$ (+ 1 (member$ ring2-color ?params)) ?params))
+ (bind ?ring3-color (nth$ (+ 1 (member$ ring3-color ?params)) ?params))
+
  (bind ?plan-id  (sym-cat ?goal-id _P (gensym*)))
  (assert
      (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup [ ] ))

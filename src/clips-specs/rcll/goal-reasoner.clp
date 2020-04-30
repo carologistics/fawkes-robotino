@@ -254,7 +254,6 @@
 
 (defrule goal-reasoner-expand-scheduled-goals
   " Expand a schedule goal, if some plans are expanded."
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS|SIMPLE) (mode SELECTED))
   (plan (id ?p-id) (goal-id ?g-id))
   =>
