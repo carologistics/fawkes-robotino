@@ -919,7 +919,7 @@
 (defrule goal-expander-process-mps
  ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (class PROCESS-MPS) (mode SELECTED) (parent ?parent)
-             (params m ?mps))
+             (params m ?mps $?))
   ?pre <- (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
   ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
   =>
