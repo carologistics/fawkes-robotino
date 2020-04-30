@@ -44,6 +44,15 @@
 ; User: RETRACT goal
 
 
+(defrule schedule-goal-expand
+  " Expand if a plan exists and/or all sub-goals are expanded."
+  ?g <- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode SELECTED))
+  (or  (plan (goal-id ?g-id))
+       (goal (parent ?g-id)))
+  (not (goal (parent ?g-id) (mode ~EXPANDED)))
+  =>
+  (modify ?g (mode EXPANDED) (params (create$ )))
+)
 
 (defrule schedule-goal-expand-failed
      (declare (salience ?*SALIENCE-LOW*))

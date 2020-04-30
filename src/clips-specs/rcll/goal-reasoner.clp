@@ -245,7 +245,7 @@
 (defrule goal-reasoner-expand-goal-with-sub-type
 " Expand a goal with sub-type, if it all its children are EXPANDED."
   ?p <- (goal (id ?compound-id) (parent ?parent-id) (type ACHIEVE|MAINTAIN)
-                (sub-type ~SIMPLE) (mode SELECTED))
+                (sub-type ~SIMPLE&~SCHEDULE-SUBGOALS) (mode SELECTED))
     (goal (parent ?compound-id) (mode EXPANDED))
     (not  (goal (parent ?compound-id) (mode SELECTED)))
  =>
@@ -253,13 +253,12 @@
 )
 
 (defrule goal-reasoner-expand-scheduled-goals
-  " Expand a schedule goal, if some plans are expanded."
-  ?g <- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS|SIMPLE) (mode SELECTED))
+  " Expand simple a goal, if some plans are expanded."
+  ?g <- (goal (id ?g-id) (sub-type SIMPLE) (mode SELECTED))
   (plan (id ?p-id) (goal-id ?g-id))
   =>
   (modify ?g (mode EXPANDED))
 )
-
 
 ; ========================= Goal Dispatching =================================
 ; Trigger execution of a plan. We may commit to multiple plans
