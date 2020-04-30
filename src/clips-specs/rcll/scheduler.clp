@@ -770,14 +770,14 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (resource-setup (resource-id ?r-id) (duration ?setup-duration)
                  (from-state $?e1-setup) (to-state $?e2-setup))
 
- ;Insert the setup-goal as a sibiling of the goal that needs the setup
+ ;Insert the setup-goal as a sibiling of the plan that needs the setup
  (plan (id ?e2-entity) (goal-id ?e2-goal))
- (goal (id ?e2-goal) (parent ?parent-goal))
- (not (goal (parent ?parent-goal)
+ ;(goal (id ?e2-goal) (parent ?parent-goal))
+ (not (goal (parent ?e2-goal)
             (id ?g-id&:(eq ?g-id (sym-cat SETUP_ ?r-id _ ?e1 _ ?e2)))))
  =>
  (bind ?g-id (sym-cat SETUP_ ?r-id  _ ?e1 _ ?e2))
- (assert (goal (id ?g-id) (parent ?parent-goal)
+ (assert (goal (id ?g-id) (parent ?e2-goal)
                (class SETUP) (mode SELECTED)
                (sub-type SCHEDULE-SUBGOALS)
                (params r ?r-id setup1 ?e1-setup setup2 ?e2-setup)
