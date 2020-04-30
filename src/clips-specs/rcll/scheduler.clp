@@ -409,28 +409,6 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 ;;TODO: deduce presedance from tree structure
 ;;TODO: add sched-id to scheduler-info
 
-(defrule scheduling-goal-class-precedence
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
-  (goal (id ?order-id) (parent ?goal-id) (class ORDER) (mode FORMULATED))
-  (not (wm-fact (key meta precedence goal-class args? $?)))
-=>
-  (assert
-   (wm-fact (key meta precedence goal-class args? a PREPARE-RING1 b MOUNT-RING1))
-   (wm-fact (key meta precedence goal-class args? a PREPARE-RING2 b MOUNT-RING2))
-   (wm-fact (key meta precedence goal-class args? a PREPARE-RING3 b MOUNT-RING3))
-
-   (wm-fact (key meta precedence goal-class args? a FILL-CAP b CLEAR-MPS))
-   (wm-fact (key meta precedence goal-class args? a CLEAR-MPS b MOUNT-CAP))
-
-   (wm-fact (key meta precedence goal-class args? a MOUNT-RING1 b MOUNT-RING2))
-   (wm-fact (key meta precedence goal-class args? a MOUNT-RING2 b MOUNT-RING3))
-   (wm-fact (key meta precedence goal-class args? a MOUNT-RING3 b MOUNT-CAP))
-
-   (wm-fact (key meta precedence goal-class args? a MOUNT-CAP b DELIVER))
-  )
-)
-
-
 ;; Building The Scheduling Model
 (defrule scheduling-create-goal-event
 "Create schedule-events for goals that have a child plan"
@@ -534,11 +512,12 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (schedule (id ?s-id) (goals $?goals) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (id ?p1-end) (entity ?p1-id) (at END))
  (schedule-event (sched-id ?s-id) (id ?p2-start) (entity ?p2-id) (at START))
- (goal (id ?g1-id&:(member$ ?g1-id ?goals)) (sub-type SCHEDULE-SUBGOALS) (class ?class-1))
+
+ (goal (id ?g1-id&:(member$ ?g1-id ?goals)) (sub-type SCHEDULE-SUBGOALS) (class ?class-1)
+       (parent ?g2-id))
  (goal (id ?g2-id&:(member$ ?g2-id ?goals)) (sub-type SCHEDULE-SUBGOALS) (class ?class-2))
  (plan (id ?p1-id) (goal-id ?g1-id))
  (plan (id ?p2-id) (goal-id ?g2-id))
- (wm-fact (key meta precedence goal-class args? a ?class-1 b ?class-2))
  (not (wm-fact (key scheduling event-precedence args? e-a ?p1-end e-b ?p2-start)))
  =>
  (assert (wm-fact (key scheduling event-precedence args? e-a ?p1-end e-b ?p2-start)))
