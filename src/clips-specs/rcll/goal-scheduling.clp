@@ -43,9 +43,17 @@
   (wm-fact (key domain fact quantity-delivered args? ord ?ord team ?team-color)
            (value ?del&:(> ?qr ?del)))
 
-  (test (eq ?ord O1))
+  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?bs t BS))
+
+  (test (eq ?ord O2))
   =>
   (bind ?g-id (sym-cat ROOT_ ?ord))
+
+  (bind ?v-wp FVAR_WP)
+  (bind ?v-robot FVAR_WP_R)
+  (assert (wm-fact (key meta grounding wp-spawned-for args? wp ?v-wp r ?v-robot)))
+
   (assert (goal (id ?g-id)
                 (parent ?production-id)
                 (sub-type SCHEDULE-SUBGOALS)
@@ -57,73 +65,62 @@
                         ring2-color ?ring2-color
                         ring3-color ?ring3-color
                         cap-color ?cap-color
-                        gate ?gate)))
+                        gate ?gate
+                        wp ?v-wp
+                        base-station ?bs)))
 
   (printout t "Goal " ORDER " formulated" crlf)
 )
 
 (defrule goal-scheduling-create-deliver
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?goal-id) (class ORDER) (params $?params) (mode SELECTED))
-  (not (goal (parent ?goal-id) (class DELIVER)))
+  (goal (id ?root-id) (class ORDER) (mode SELECTED))
+  ?gf <- (goal (class MOUNT-CAP) (parent ?root-id) (params $?params) (mode SELECTED))
+  (not (goal (parent ?root-id) (class DELIVER)))
 
   (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
-  (wm-fact (key domain fact mps-type args? m ?cs t CS))
-  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?spot))
-  ;MPS-DS CEs
-
-  (test (member$ (create$ cap-color ?cap-color) ?params))
   =>
-  (assert (wm-fact (key meta grounding wp-spawned-for args? wp FVAR_WP1 r XVAR_R)))
-
   (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
-  (bind ?g-id (sym-cat DELIVER_ ?ord))
+  (bind ?goal-id (sym-cat DELIVER_ ?ord))
 
-  (assert (goal (id ?g-id )
-                (parent ?goal-id)
+  (modify ?gf (parent ?goal-id))
+
+  (assert (goal (id ?goal-id )
+                (parent ?root-id)
                 (sub-type SCHEDULE-SUBGOALS)
                 (class DELIVER)
-                (params (create$ ?params wp FVAR_WP1 cs ?cs ds ?ds ))))
+                (params (create$ ?params delivery-station ?ds ))))
 
   (printout t "Goal " DELIVER " formulated" crlf)
 )
 
-;(defrule goal-scheduling-create-pre-deliver
-;  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-;  (goal (id ?goal-id)  (params $?params) (class DELIVER) (mode SELECTED))
-;  (not (goal (parent ?goal-id) (class PRE-DELIVER)))
-;  =>
-;  (bind ?g-id (sym-cat PRE_ ?goal-id))
-;  (assert (goal (id ?g-id)
-;                (parent ?goal-id)
-;                (sub-type SCHEDULE-SUBGOALS)
-;                (class PRE-DELIVER)
-;                (params ?params)))
-;)
-
 (defrule goal-scheduling-create-mount-cap
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ;(goal (id ?goal-id) (params $?params) (class PRE-DELIVER) (mode SELECTED))
-  (goal (id ?goal-id) (params $?params) (class DELIVER) (mode SELECTED))
-  (not (goal (parent ?goal-id) (class MOUNT-CAP)))
+  (goal (id ?root-id) (params $?params) (class ORDER) (mode SELECTED))
+  (not (goal (parent ?root-id) (class MOUNT-CAP)))
+  (not (goal (parent ?root-id) (class DELIVER)))
 
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
+
+  (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?cs t CS))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+
+  (test (member$ (create$ cap-color ?cap-color) ?params))
   =>
   (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
-  (bind ?g-id (sym-cat MOUNT_CAP ?ord))
+  (bind ?goal-id (sym-cat MOUNT_CAP ?ord))
 
-  (assert (goal (id ?g-id)
-                (parent ?goal-id)
+  (assert (goal (id ?goal-id)
+                (parent ?root-id)
                 (sub-type SCHEDULE-SUBGOALS)
                 (class MOUNT-CAP)
-                (params (create$ ?params bs ?bs))))
-
+                (params (create$ ?params cap-station ?cs))))
   (printout t "Goal " MOUNT-CAP " formulated" crlf)
 )
 
@@ -137,7 +134,7 @@
   (wm-fact (key domain fact cs-can-perform args? m ?cs op RETRIEVE_CAP))
   (not (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color)))
 
-  (test (member$ (create$ cs ?cs) ?params))
+  (test (member$ (create$ cap-station ?cs) ?params))
   (test (member$ (create$ cap-color ?cap-color) ?params))
   =>
   (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
@@ -154,7 +151,7 @@
   (printout t "Goals " PREPARE-CS " formulated" crlf)
 )
 
-(defrule goal-scheduling-create-fill-cap
+(defrule goal-scheduling-create-prepare-cs-fill-cap
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?goal-id) (params $?params) (class PREPARE-CS) (mode SELECTED))
   (not (goal (parent ?goal-cs) (class FILL-CAP)))
