@@ -269,6 +269,7 @@
                                         - ?id -abort-timer))))
   ?md <- (metadata-prepare-mps ?mps $?date)
   (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|
+                                                     WAIT-IDLE|
                                                      PROCESSING|
                                                      PROCESSED|
                                                      PREPARED))

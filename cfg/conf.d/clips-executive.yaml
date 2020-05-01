@@ -175,7 +175,12 @@ clips-executive:
         - RobotinoLightInterface
 
       parameters:
-        simtest/enabled: false
+        simtest:
+          enabled: false
+          # FAST checks only first minute of a game
+          # DELIVERY tests until the first delivery happens
+          # FULL checks whole game
+          testbed: FULL
         coordination:
           mutex:
             renew-interval: 5
