@@ -84,6 +84,7 @@
                   (meta dispatch-time ?d-time&:(< ?d-time (nth$ 1 (now)))))
      (not (plan (id ?child-id&:(not (member$ ?child-id ?committed))) (goal-id ?g-id)))
      (not (goal (id ?child-id&:(not (member$ ?child-id ?committed))) (parent ?g-id)))
+     (not (goal (parent ?g-id) (mode ~RETRACTED) (outcome ~COMPLETED)))
      =>
 	(modify ?gf (mode COMMITTED))
 )
