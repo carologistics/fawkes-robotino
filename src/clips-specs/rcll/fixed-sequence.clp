@@ -1052,13 +1052,13 @@
    it can directly put the cap on a product."
    (declare (salience ?*SALIENCE-GOAL-EXPAND*))
    ?g <- (goal (id ?goal-id) (class FILL-CAP) (params $?params) (mode SELECTED))
-   (test (subsetp (create$ cs cc shelf-spot cap-color) ?params))
+   (test (subsetp (create$ cap-station cc shelf-spot cap-color) ?params))
 
    ;Resources groundable during scheduling (Schedulable resources)
    (wm-fact (key domain fact at args? r ?robot m ? side ?))
    (wm-fact (key domain fact can-hold args? r ?robot))
    =>
-   (bind ?cs (nth$ (+ 1 (member$ cs ?params)) ?params))
+   (bind ?cs (nth$ (+ 1 (member$ cap-station ?params)) ?params))
    (bind ?cc (nth$ (+ 1 (member$ cc ?params)) ?params))
    (bind ?shelf-spot (nth$ (+ 1 (member$ shelf-spot ?params)) ?params))
    (bind ?cap-color (nth$ (+ 1 (member$ cap-color ?params)) ?params))
@@ -1116,13 +1116,13 @@
 (defrule goal-remove-workpiece-from-mps-central
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  ?g <- (goal (id ?goal-id) (class PREPARE-CS) (params $?params) (mode SELECTED))
- (test (subsetp (create$ cc cs) ?params))
+ (test (subsetp (create$ cc cap-station) ?params))
 
  ;Resources groundable during scheduling (Schedulable resources)
  (wm-fact (key domain fact at args? r ?robot m ? side ?))
  (wm-fact (key domain fact can-hold args? r ?robot))
  =>
- (bind ?mps (nth$ (+ 1 (member$ cs ?params)) ?params))
+ (bind ?mps (nth$ (+ 1 (member$ cap-station ?params)) ?params))
  (bind ?cc (nth$ (+ 1 (member$ cc ?params)) ?params))
  (bind ?side OUTPUT)
 
@@ -1174,74 +1174,89 @@
  )
 )
 
-(defrule goal-produce-c0-central
+
+(defrule goal-mount-cap-central
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  ?g <- (goal (id ?goal-id) (class MOUNT-CAP) (params $?params) (mode SELECTED))
- (test (subsetp (create$ wp cs bs) ?params))
+ (test (subsetp (create$ wp cap-station cap-color) ?params))
 
- ; Resources groundable during scheduling (Schedulable resources)
+ (wm-fact (key domain fact mps-type args? m ?prior-mps t ?prior-mps-type))
+ (or (and (test (member$ (create$ com C0) ?params))
+          (test (member$ (create$ base-station ?prior-mps) ?params))
+          (domain-object (name ?prior-side&~WAIT) (type mps-side)))
+     (and (test (member$ (create$ com C1) ?params))
+          (test (member$ (create$ ring1-station ?prior-mps) ?params))
+          (domain-object (name ?prior-side&INPUT) (type mps-side)))
+     (and (test (member$ (create$ com C2) ?params))
+          (test (member$ (create$ ring2-station ?prior-mps) ?params))
+          (domain-object (name ?prior-side&INPUT) (type mps-side)))
+     (and (test (member$ (create$ com C3) ?params))
+          (test (member$ (create$ ring3-station ?prior-mps) ?params))
+          (domain-object (name ?prior-side&INPUT) (type mps-side))))
+
+
  (wm-fact (key domain fact at args? r ?robot m ? side ?))
  (wm-fact (key domain fact can-hold args? r ?robot))
- (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT)))
-                (type mps-side))
  =>
  (bind ?wp (nth$ (+ 1 (member$ wp ?params)) ?params))
- (bind ?bs (nth$ (+ 1 (member$ bs ?params)) ?params))
- (bind ?cs (nth$ (+ 1 (member$ cs ?params)) ?params))
+ (bind ?cs (nth$ (+ 1 (member$ cap-station ?params)) ?params))
  (bind ?cap-color (nth$ (+ 1 (member$ cap-color ?params)) ?params))
- (bind ?base-color (nth$ (+ 1 (member$ base-color ?params)) ?params))
 
  (bind ?plan-id  (sym-cat ?goal-id _P(gensym*)))
+
  (assert
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup [ ] ))
   (wm-fact (key meta plan released-resource args? id ?plan-id r ?wp setup [ ] ))
-
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?cs setup [ ] ))
   (wm-fact (key meta plan released-resource args? id ?plan-id r ?cs setup [ ] ))
-
-  (wm-fact (key meta plan required-resource args? id ?plan-id r ?bs setup [ ]  ))
-  (wm-fact (key meta plan released-resource args? id ?plan-id r ?bs setup [ ]  ))
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?prior-mps setup [ ]  ))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?prior-mps setup [ ]  ))
 
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?robot
-                setup [ (wait-pos ?bs ?bs-side) WAIT ] ))
+                setup [ (wait-pos ?prior-mps ?prior-side) WAIT ] ))
   (wm-fact (key meta plan released-resource args? id ?plan-id r ?robot
-                setup [ (wait-pos ?cs INPUT) WAIT ] ))
+                setup [ (wait-pos ?cs INPUT) WAIT ] )))
 
+
+ (assert
   (plan (id ?plan-id) (goal-id ?goal-id))
   (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
          (action-name location-lock)
-         (param-values ?bs ?bs-side))
+         (param-values ?prior-mps ?prior-side))
   (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
          (action-name move)
          (param-names r from from-side to to-side )
-         (param-values ?robot (wait-pos ?bs ?bs-side) WAIT ?bs ?bs-side)
-         (duration (/ (nodes-distance (wait-pos ?bs ?bs-side)
-                                     (node-name ?bs ?bs-side)) ?*V*)))
+         (param-values ?robot (wait-pos ?prior-mps ?prior-side) WAIT ?prior-mps ?prior-side)
+         (duration (/ (nodes-distance (wait-pos ?prior-mps ?prior-side)
+                                      (node-name ?prior-mps ?prior-side)) ?*V*)))
   (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
-         (action-name lock) (param-values ?bs))
-  (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
-         (action-name prepare-bs)
-         (param-names m side bc)
-         (param-values ?bs ?bs-side ?base-color))
-  (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
-        (action-name bs-dispense)
-        (param-names r m side wp basecol)
-        (param-values ?robot ?bs ?bs-side ?wp ?base-color))
+         (action-name lock) (param-values ?prior-mps)))
+
+ (if (eq ?prior-mps-type BS) then
+     (bind ?base-color (nth$ (+ 1 (member$ base-color ?params)) ?params))
+     (assert (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
+                          (action-name prepare-bs) (param-names m side bc)
+                          (param-values ?prior-mps ?prior-side ?base-color))
+             (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
+                          (action-name bs-dispense) (param-names r m side wp basecol)
+                          (param-values ?robot ?prior-mps ?prior-side ?wp ?base-color))))
+
+ (assert
   (plan-action (id 6) (plan-id ?plan-id) (goal-id ?goal-id)
          (action-name wp-get)
          (duration  ?*DURATION-WP-GET* )
          (param-names r wp m side)
-         (param-values ?robot ?wp ?bs ?bs-side))
+         (param-values ?robot ?wp ?prior-mps ?prior-side))
   (plan-action (id 7) (plan-id ?plan-id) (goal-id ?goal-id)
-         (action-name unlock) (param-values ?bs))
+         (action-name unlock) (param-values ?prior-mps))
   (plan-action (id 8) (plan-id ?plan-id) (goal-id ?goal-id)
         (action-name location-unlock)
-        (param-values ?bs ?bs-side))
+        (param-values ?prior-mps ?prior-side))
   (plan-action (id 9) (plan-id ?plan-id) (goal-id ?goal-id)
         (action-name go-wait)
         (param-names r from from-side to)
-        (param-values ?robot ?bs ?bs-side (wait-pos ?cs INPUT))
-        (duration (/ (nodes-distance (node-name ?bs ?bs-side)
+        (param-values ?robot ?prior-mps ?prior-side (wait-pos ?cs INPUT))
+        (duration (/ (nodes-distance (node-name ?prior-mps ?prior-side)
                                     (wait-pos ?cs INPUT)) ?*V*)))
   (plan-action (id 10) (plan-id ?plan-id) (goal-id ?goal-id)
         (action-name location-lock)
@@ -1276,7 +1291,7 @@
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  ?g <- (goal (id ?goal-id) (class DELIVER) (params $?params) (mode SELECTED))
  (test (subsetp (create$ ord com base-color ring1-color ring2-color ring3-color
-                         cap-color gate wp cs ds ) ?params))
+                         cap-color gate wp cap-station delivery-station ) ?params))
 
  ; Resources groundable during scheduling (Schedulable resources)
  ;ROBOT CEs
@@ -1284,8 +1299,6 @@
  (wm-fact (key domain fact can-hold args? r ?robot))
  =>
  (bind ?wp (nth$ (+ 1 (member$ wp ?params)) ?params))
- (bind ?ds (nth$ (+ 1 (member$ ds ?params)) ?params))
- (bind ?cs (nth$ (+ 1 (member$ cs ?params)) ?params))
  (bind ?order (nth$ (+ 1 (member$ ord ?params)) ?params))
  (bind ?gate (nth$ (+ 1 (member$ gate ?params)) ?params))
  (bind ?complexity (nth$ (+ 1 (member$ com ?params)) ?params))
@@ -1294,6 +1307,8 @@
  (bind ?ring1-color (nth$ (+ 1 (member$ ring1-color ?params)) ?params))
  (bind ?ring2-color (nth$ (+ 1 (member$ ring2-color ?params)) ?params))
  (bind ?ring3-color (nth$ (+ 1 (member$ ring3-color ?params)) ?params))
+ (bind ?cs (nth$ (+ 1 (member$ cap-station ?params)) ?params))
+ (bind ?ds (nth$ (+ 1 (member$ delivery-station ?params)) ?params))
 
  (bind ?plan-id  (sym-cat ?goal-id _P (gensym*)))
  (assert
