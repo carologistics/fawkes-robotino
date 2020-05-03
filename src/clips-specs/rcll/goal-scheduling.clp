@@ -204,15 +204,18 @@
 
   (test (neq ?ring-color RING_NONE))
   =>
+  (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
+
   (bind ?ring# 1)
   (if (eq ?priori-class MOUNT-RING1) then  (bind ?ring# 2))
   (if (eq ?priori-class MOUNT-RING2) then  (bind ?ring# 3))
 
-  (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
   (bind ?goal-id (sym-cat MOUNT_RING ?ring# ?ord))
+  (bind ?params (create$ ?params (sym-cat ring ?ring# -station) ?rs))
 
+  ;Steal parentship of lastest goal
   (if (eq ?priori-parent ?root-id) then
-     (modify ?gf (parent ?goal-id)))
+      (modify ?gf (parent ?goal-id)))
 
   (assert (goal (id ?goal-id)
                 (parent ?root-id)
@@ -222,46 +225,24 @@
 
   (printout t "Goal " (sym-cat MOUNT-RING ?ring#) " formulated" crlf)
 
+  ;;Create Fill-RS goals
+  (if (neq ?req-num ZERO) then
+    (bind ?set (create$ na THREE TWO ONE))
+    (bind ?req-set (delete$ ?set 1 (- (member$ ?req-num ?set) 1)))
 
-)
-(defrule goal-scheduling-create-prepare-rs-fill-ring-station
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?goal-id) (class ?class&MOUNT-RING1|MOUNT-RING2|MOUNT-RING3)
-        (params $?params) (mode SELECTED))
+    (progn$ (?fill-base# ?req-set)
+      (bind ?parent-id ?goal-id)
+      (bind ?goal-id (sym-cat FILL_RS ?ring# _ ?fill-base# _ ?ord))
 
-    (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color&~RING_NONE rn ?req-num&~ZERO))
+      (assert (goal (id ?goal-id)
+                    (parent ?parent-id)
+                    (class FILL-RS)
+                    (sub-type SCHEDULE-SUBGOALS)
+                    (params (create$ ?params
+                                     fill-base# ?fill-base#
+                                     fill-rs ?rs))))
 
-  (or (and (test (eq ?class MOUNT-RING1))
-           (test (member$ (create$ ring1-color ?ring-color) ?params)))
-      (and (test (eq ?class MOUNT-RING2))
-           (test (member$ (create$ ring2-color ?ring-color) ?params)))
-      (and (test (eq ?class MOUNT-RING3))
-           (test (member$ (create$ ring3-color ?ring-color) ?params))))
-  ;(wm-fact (key refbox team-color) (value ?team-color))
-  ;MPS-RS CEs
-  ;(wm-fact (key domain fact mps-type args? m ?mps t RS))
-  ;(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-
-  ;(wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
-  ;(wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-diff))
-  ;(wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
-  =>
-  (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
-
-  (bind ?req-set (create$ NA THREE TWO ONE))
-  (bind ?req-set (delete$ ?req-set 1  (- (member$ ?req-num ?req-set) 1)))
-
-  (progn$ (?i ?req-set)
-    (bind ?parent-id ?goal-id)
-    (bind ?class (sym-cat FILL-RS- ?i))
-    (bind ?goal-id (sym-cat ?class _FILL_RS_ ?i _ ?ord))
-
-    (assert (goal (id ?goal-id) (parent ?parent-id) (class ?class)
-                  (sub-type SCHEDULE-SUBGOALS) (params $?params)))
-
-    (printout t "Goal " (sym-cat FILL-RS- ?i) " formulated" crlf)
+      (printout t "Goal " (sym-cat FILL-RS- ?fill-base#) " formulated" crlf)
+    )
   )
-
-  ;rs-before ?rs-before
-  ;rs-after ?rs-after
 )
