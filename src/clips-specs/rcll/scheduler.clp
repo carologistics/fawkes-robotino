@@ -872,7 +872,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
   (wm-fact (key domain fact at args? r ?bound-r m ? side ?))
   (resource (id ?bound-resource) (entity ?bound-r))
   (goal (required-resources $? ?bound-resource $?)
-        (id ?g&:(member$ ?g ?goals)) (class MOUNT-CAP))
+        (id ?g&:(member$ ?g ?goals)) (class MOUNT-CAP|MOUNT-RING1))
   ; Free
   ?gf <- (wm-fact (key meta grounding wp-spawned-for args? wp ?fvar-wp r ?xvar_r))
   ?rf <- (resource (id ?r-id&:(eq ?r-id (formate-resource-name ?fvar-wp))))
