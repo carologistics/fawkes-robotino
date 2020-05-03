@@ -1410,3 +1410,121 @@
                                              (wait-pos ?ds INPUT)) ?*V*)))
  )
 )
+
+(defrule goal-mount-ring-central
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (goal (id ?goal-id) (class ?class) (params $?params) (mode SELECTED))
+ (test (subsetp (create$ wp) ?params))
+
+ (wm-fact (key domain fact mps-type args? m ?prior-mps t ?prior-mps-type))
+ (wm-fact (key domain fact mps-type args? m ?curr-mps t RS))
+ (wm-fact (key domain fact rs-ring-spec args? m ?curr-mps r ?ring-color rn ?rs-req))
+ (or (and (test (eq ?class MOUNT-RING1))
+          (test (member$ (create$ base-station ?prior-mps) ?params))
+          (test (member$ (create$ ring1-station ?curr-mps) ?params))
+          (test (member$ (create$ ring1-color ?ring-color) ?params))
+          (domain-object (name ?prior-side&INPUT|OUTPUT) (type mps-side))
+          )
+     (and (test (eq ?class MOUNT-RING2))
+          (test (member$ (create$ ring1-station ?prior-mps) ?params))
+          (test (member$ (create$ ring2-station ?curr-mps) ?params))
+          (test (member$ (create$ ring2-color ?ring-color) ?params))
+          (domain-object (name ?prior-side&INPUT) (type mps-side))
+          )
+     (and (test (eq ?class MOUNT-RING3))
+          (test (member$ (create$ ring2-station ?prior-mps) ?params))
+          (test (member$ (create$ ring3-station ?curr-mps) ?params))
+          (test (member$ (create$ ring3-color ?ring-color) ?params))
+          (domain-object (name ?prior-side&INPUT) (type mps-side))
+          ))
+
+ ;Resources groundable during scheduling (Schedulable resources)
+ (wm-fact (key domain fact at args? r ?robot m ? side ?))
+ (wm-fact (key domain fact can-hold args? r ?robot))
+ =>
+ (bind ?wp (nth$ (+ 1 (member$ wp ?params)) ?params))
+ (bind ?ring1-color (nth$ (+ 1 (member$ ring1-color ?params)) ?params))
+ (bind ?ring2-color (nth$ (+ 1 (member$ ring2-color ?params)) ?params))
+ (bind ?ring3-color (nth$ (+ 1 (member$ ring3-color ?params)) ?params))
+
+ (bind ?ring-pos ONE)
+ (if (eq ?class MOUNT-RING2) then (bind ?ring-pos TWO))
+ (if (eq ?class MOUNT-RING3) then (bind ?ring-pos THREE))
+
+ (bind ?plan-id  (sym-cat ?goal-id _P (gensym*)))
+
+ (assert
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup [ ] ))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?wp setup [ ] ))
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?prior-mps setup [ ] ))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?prior-mps setup [ ] ))
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?curr-mps setup [ ] ))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?curr-mps setup [ ] ))
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?robot
+                setup [ (wait-pos ?prior-mps ?prior-side) WAIT ] ))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?robot
+                setup [ (wait-pos ?curr-mps INPUT) WAIT ] )))
+
+ (assert
+        (plan (id ?plan-id) (goal-id ?goal-id))
+
+        (plan-action (id 1) (action-name location-lock)
+                     (plan-id ?plan-id) (goal-id ?goal-id)
+                     (param-values ?prior-mps ?prior-side))
+        (plan-action (id 2) (action-name move)
+                     (plan-id ?plan-id) (goal-id ?goal-id)
+                     (param-names r from from-side to to-side )
+                     (param-values ?robot
+                                   (wait-pos ?prior-mps ?prior-side)
+                                   WAIT
+                                   ?prior-mps
+                                   ?prior-side))
+        (plan-action (id 3) (action-name lock)
+                     (plan-id ?plan-id) (goal-id ?goal-id)
+                     (param-values ?prior-mps)))
+
+ (if (eq ?prior-mps-type BS) then
+     (bind ?base-color (nth$ (+ 1 (member$ base-color ?params)) ?params))
+     (assert (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
+                          (action-name prepare-bs) (param-names m side bc)
+                          (param-values ?prior-mps ?prior-side ?base-color))
+             (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
+                          (action-name bs-dispense) (param-names r m side wp basecol)
+                          (param-values ?robot ?prior-mps ?prior-side ?wp ?base-color))))
+
+ (assert
+        (plan-action (id 7) (plan-id ?plan-id) (goal-id ?goal-id)
+                     (action-name wp-get) (param-names r wp m side)
+                     (param-values ?robot ?wp ?prior-mps ?prior-side))
+        (plan-action (id 8) (plan-id ?plan-id) (goal-id ?goal-id)
+                      (action-name unlock) (param-values ?prior-mps))
+        (plan-action (id 9) (plan-id ?plan-id) (goal-id ?goal-id)
+                     (action-name location-unlock)
+                     (param-values ?prior-mps ?prior-side))
+        (plan-action (id 10) (plan-id ?plan-id) (goal-id ?goal-id)
+                     (action-name go-wait) (param-names r from from-side to)
+                     (param-values ?robot ?prior-mps ?prior-side (wait-pos ?curr-mps INPUT)))
+        (plan-action (id 11) (plan-id ?plan-id) (goal-id ?goal-id)
+                     (action-name location-lock)
+                     (param-values ?curr-mps INPUT))
+        (plan-action (id 12) (plan-id ?plan-id) (goal-id ?goal-id)
+                     (action-name move) (param-names r from from-side to to-side)
+                     (param-values ?robot (wait-pos ?curr-mps INPUT) WAIT ?curr-mps INPUT))
+        (plan-action (id 13) (plan-id ?plan-id) (goal-id ?goal-id)
+                     (action-name wp-put) (param-names r wp m)
+                     (param-values ?robot ?wp ?curr-mps))
+      (plan-action (id 14) (plan-id ?plan-id) (goal-id ?goal-id)
+                   (action-name request-rs-mount-ring)
+                   (param-values ?robot ?curr-mps ?wp ?ring-pos ?ring-color
+                                 ?ring1-color ?ring2-color ?ring3-color ?rs-req))
+        (plan-action (id 15) (plan-id ?plan-id) (goal-id ?goal-id)
+                     (action-name location-unlock)
+                     (param-values ?curr-mps INPUT))
+        (plan-action (id 16) (plan-id ?plan-id) (goal-id ?goal-id)
+                     (action-name go-wait)
+                     (param-names r from from-side to)
+                     (param-values ?robot ?curr-mps INPUT (wait-pos ?curr-mps INPUT)))
+ )
+)
+
+
