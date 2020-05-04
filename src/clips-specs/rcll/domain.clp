@@ -266,6 +266,11 @@
     (domain-fact (name wp-ring3-color) (param-values WP1 RING_NONE))
     (domain-fact (name wp-unused) (param-values WP1))
 
+    (domain-fact (name wp-spawn-counter) (param-values WP1 ONE))
+    (domain-fact (name wp-spawn-counter) (param-values WP2 TWO))
+    (domain-fact (name wp-spawn-counter) (param-values WP3 THREE))
+    (domain-fact (name wp-spawn-counter) (param-values WP4 FOUR))
+
     (domain-fact (name cs-can-perform) (param-values ?cs1 RETRIEVE_CAP))
     (domain-fact (name cs-can-perform) (param-values ?cs2 RETRIEVE_CAP))
     (domain-fact (name cs-free) (param-values ?cs1))

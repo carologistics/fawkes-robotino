@@ -68,17 +68,13 @@
   ?g <- (goal (id ?maintain-id) (class WP-SPAWN-MAINTAIN) (mode SELECTED))
   (not (goal (class SPAWN-WP)))
   (not (goal (class SPAWN-SS-C0)))
-  (domain-object (name ?robot) (type robot))
-  (not
-    (and
-    (domain-object (name ?wp) (type workpiece))
-    (wm-fact (key domain fact wp-spawned-for args? wp ?wp r ?robot)))
-  )
+  (wm-fact (key domain fact wp-spawn-counter args? wp ?used-wp c ?count))
+  (not (wm-fact (key domain fact wp-unused args? wp ?used-wp)))
   (wm-fact (key refbox phase) (value PRODUCTION))
   =>
   (assert (goal (id (sym-cat SPAWN-WP- (gensym*))) (sub-type SIMPLE)
                 (class SPAWN-WP) (parent ?maintain-id)
-                (params robot ?robot)))
+                (params used-wp ?used-wp count ?count)))
 )
 
 
