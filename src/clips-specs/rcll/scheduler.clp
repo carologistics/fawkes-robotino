@@ -68,31 +68,6 @@
 
 
 
-
-;(defrule scheduling-calc-action-duration-move
-;?p <- (plan-action (action-name move) (duration 0.0)
-;                   (param-values ?robot ?from ?from-side ?to ?to-side))
-;=>
-; (bind ?from-node (node-name ?from ?from-side))
-; (bind ?to-node   (node-name ?to ?to-side))
-; (bind ?distance  (nodes-distance ?from-node ?to-node))
-; (modify ?p  (duration (/ ?distance 0.03)))
-;)
-
-;(defrule scheduling-calc-plan-duration
-; "Add calculate total plan duration"
-; (plan-action (id ?id) (plan-id ?plan-id) (duration ?duration&~0.0))
-; ?fa <- (wm-fact (key meta fact plan durative-action args? id ?plan-id)
-;                 (values $?actions))
-; ?fd <- (wm-fact (key meta fact plan duration args? id ?plan-id)
-;                 (value ?d))
-; (test (not (member$ ?id ?actions)))
-; =>
-; (modify ?fd (value (+ ?d ?duration)))
-; (modify ?fa (values (create$ ?actions ?id)))
-;)
-
-
 (deftemplate scheduler-info
   (slot sched-id (type SYMBOL))
   (slot type (type SYMBOL) (allowed-values EVENT-TIME EVENT-SEQUENCE PLAN-SELECTION))

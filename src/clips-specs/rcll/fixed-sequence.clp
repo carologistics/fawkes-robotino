@@ -1002,6 +1002,87 @@
 )
 
 ; Centralized Goal Reasoning
+(defrule goal-expander-calc-action-duration-move
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ ?pf <- (plan-action (action-name move) (duration 0.0) (state FORMULATED)
+                   (param-values ? ?from ?from-side ?to ?to-side))
+ (not (plan-action (action-name move) (duration ?d&:(> ?d 0))
+                   (param-values ? ?from ?from-side ?to ?to-side)))
+=>
+ (bind ?from-node (node-name ?from ?from-side))
+ (bind ?to-node   (node-name ?to ?to-side))
+ (bind ?distance  (nodes-distance ?from-node ?to-node))
+ (bind ?duration (/ ?distance ?*V*))
+ (if (< ?duration 0) then (bind ?duration 1))
+ (modify ?pf  (duration ?duration ))
+)
+
+(defrule goal-expander-copy-action-duration-move
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ ?pf <- (plan-action (action-name move) (duration 0.0) (state FORMULATED)
+                   (param-values ? ?from ?from-side ?to ?to-side))
+ (plan-action (action-name move) (duration ?d&:(> ?d 0))
+              (param-values ? ?from ?from-side ?to ?to-side))
+=>
+ (modify ?pf  (duration ?d))
+)
+
+(defrule goal-expander-calc-action-duration-go-wait
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ ?pf <- (plan-action (action-name go-wait) (duration 0.0) (state FORMULATED)
+                   (param-values ?robot ?from ?from-side ?to ))
+ (not (plan-action (action-name go-wait) (duration ?d&:(> ?d 0))
+                    (param-values ? ?from ?from-side ?to )))
+=>
+ (bind ?from-node (node-name ?from ?from-side))
+ (bind ?to-node   (node-name ?to WAIT))
+ (bind ?distance  (nodes-distance ?from-node ?to-node))
+ (bind ?duration (/ ?distance ?*V*))
+ (if (< ?duration 1) then (bind ?duration 1))
+ (modify ?pf  (duration ?duration ))
+)
+
+(defrule goal-expander-copy-action-duration-go-wait
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ ?pf <- (plan-action (action-name go-wait) (duration 0.0) (state FORMULATED)
+                   (param-values ? ?from ?from-side ?to ))
+ (plan-action (action-name go-wait) (duration ?d&:(> ?d 0))
+                   (param-values ? ?from ?from-side ?to ))
+=>
+ (modify ?pf  (duration ?d ))
+)
+
+(defrule  goal-expander-calc-action-wp-get
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ ?p <- (plan-action (action-name wp-get) (duration 0.0) (state FORMULATED))
+=>
+ (modify ?p  (duration ?*DURATION-WP-GET*))
+)
+
+(defrule  goal-expander-calc-action-wp-get-shelf
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ ?p <- (plan-action (action-name wp-get) (duration 0.0) (state FORMULATED))
+=>
+ (modify ?p  (duration ?*DURATION-WP-GET-SHELF*))
+)
+
+(defrule  goal-expander-calc-action-put
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ ?p <- (plan-action (action-name wp-put) (duration 0.0) (state FORMULATED))
+=>
+ (modify ?p  (duration ?*DURATION-WP-PUT*))
+)
+
+
+(defrule scheduling-calc-action-put-slide
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ ?p <- (plan-action (action-name wp-put-slide-cc) (duration 0.0) (state FORMULATED))
+=>
+ (modify ?p  (duration ?*DURATION-WP-PUT-SLIDE*))
+)
+
+
+
 (defrule goal-expander-setup-robot
    "Move a robot from one location to another to satisfy setup requirements "
    (declare (salience ?*SALIENCE-GOAL-EXPAND*))
