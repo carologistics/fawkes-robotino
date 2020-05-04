@@ -45,14 +45,15 @@
 
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
+  (wm-fact (key domain fact wp-unused args? wp ?wp))
 
   (test (eq ?ord O2))
   =>
   (bind ?g-id (sym-cat ROOT_ ?ord))
 
-  (bind ?v-wp FVAR_WP)
-  (bind ?v-robot FVAR_WP_R)
-  (assert (wm-fact (key meta grounding wp-spawned-for args? wp ?v-wp r ?v-robot)))
+  ;(bind ?v-wp FVAR_WP)
+  ;(bind ?v-robot FVAR_WP_R)
+  ;(assert (wm-fact (key meta grounding wp-spawned-for args? wp ?v-wp r ?v-robot)))
 
   (assert (goal (id ?g-id)
                 (parent ?production-id)
@@ -66,7 +67,7 @@
                         ring3-color ?ring3-color
                         cap-color ?cap-color
                         gate ?gate
-                        wp ?v-wp
+                        wp ?wp
                         base-station ?bs)))
 
   (printout t "Goal " ORDER " formulated" crlf)
