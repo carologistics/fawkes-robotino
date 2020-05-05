@@ -37,7 +37,6 @@ ClipsMipSchedulerThread::ClipsMipSchedulerThread()
 
 ClipsMipSchedulerThread::~ClipsMipSchedulerThread()
 {
-	delete gurobi_model_;
 	delete gurobi_env_;
 }
 
@@ -45,9 +44,6 @@ void
 ClipsMipSchedulerThread::init()
 {
 	logger->log_info(name(), "Intilized");
-
-	gurobi_model_ = new GRBModel(*gurobi_env_);
-	gurobi_model_->set(GRB_StringAttr_ModelName, "SchedulingRcll");
 };
 
 void
@@ -95,11 +91,11 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
 	                      sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_goal_plan),
 	                                    env_name)));
 	clips->add_function("scheduler-generate-model",
-	                    sigc::slot<void>(
+	                    sigc::slot<void, std::string>(
 	                      sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::build_model),
 	                                    env_name)));
 	clips->add_function("scheduler-optimization-status",
-	                    sigc::slot<void>(sigc::bind<0>(
+	                    sigc::slot<void, std::string>(sigc::bind<0>(
 	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::check_progress), env_name)));
 }
 
@@ -258,13 +254,15 @@ ClipsMipSchedulerThread::add_goal_plan(std::string env_name,
 }
 
 void
-ClipsMipSchedulerThread::build_model(std::string env_name)
+ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 {
 	try {
+		gurobi_models_[model_id] = std::make_unique<GRBModel>(*gurobi_env_);
+		gurobi_models_[model_id]->set(GRB_StringAttr_ModelName, model_id);
 		//Init Gurobi Time Vars (T)
 		for (auto const &iE : events_)
-			gurobi_vars_time_[iE.first] =
-			  gurobi_model_->addVar(0, GRB_INFINITY, 0, GRB_INTEGER, ("t{" + iE.first + "}").c_str());
+			gurobi_vars_time_[iE.first] = gurobi_models_[model_id]->addVar(
+			  0, GRB_INFINITY, 0, GRB_INTEGER, ("t{" + iE.first + "}").c_str());
 
 		//Init Gurobi event sequencing Vars (X)
 		for (auto const &iR : res_setup_duration_)
@@ -277,22 +275,22 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 					std::string consumer = iEcons.first->name;
 					std::string vname    = "{" + resource + "}{" + producer + "__" + consumer + "}";
 					gurobi_vars_sequence_[resource][producer][consumer] =
-					  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("x" + vname).c_str());
+					  gurobi_models_[model_id]->addVar(0, 1, 0, GRB_BINARY, ("x" + vname).c_str());
 				}
 
 		//Init Gurobi plan selection Vars (S)
 		for (auto const &iP : plan_events_)
 			gurobi_vars_plan_[iP.first] =
-			  gurobi_model_->addVar(0, 1, 0, GRB_BINARY, ("p{" + iP.first + "}").c_str());
+			  gurobi_models_[model_id]->addVar(0, 1, 0, GRB_BINARY, ("p{" + iP.first + "}").c_str());
 
 		//Objective
-		GRBVar Tmax = gurobi_model_->addVar(0, GRB_INFINITY, 1, GRB_INTEGER, "Tmax");
-		gurobi_model_->set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
+		GRBVar Tmax = gurobi_models_[model_id]->addVar(0, GRB_INFINITY, 1, GRB_INTEGER, "Tmax");
+		gurobi_models_[model_id]->set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
 
 		//Constraint 1
 		for (auto const &iE1 : events_)
 			for (auto const &iE2 : iE1.second->precedes) {
-				gurobi_model_->addConstr(
+				gurobi_models_[model_id]->addConstr(
 				  gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
 				    >= iE1.second->duration,
 				  ("Presdence{" + iE1.second->name + "<<" + iE2->name + "}").c_str());
@@ -309,7 +307,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 			for (auto const &iP : iG.second)
 				sum += gurobi_vars_plan_[iP];
 
-			gurobi_model_->addConstr(sum == 1, ("TotalGoalPlans{" + iG.first + "}").c_str());
+			gurobi_models_[model_id]->addConstr(sum == 1, ("TotalGoalPlans{" + iG.first + "}").c_str());
 			logger->log_info(name(), "C3: plans of goal %s", iG.first.c_str());
 		}
 
@@ -322,14 +320,14 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 						flow_out += gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
 
 				if (iErp->plan.size() == 0 && iErp->goal.size() == 0)
-					gurobi_model_->addConstr(flow_out - iErp->resources[iR.first] == 0,
-					                         ("FlowOut{" + iR.first + "}{" + iErp->name + "}").c_str());
+					gurobi_models_[model_id]->addConstr(
+					  flow_out - iErp->resources[iR.first] == 0,
+					  ("FlowOut{" + iR.first + "}{" + iErp->name + "}").c_str());
 
 				else if (gurobi_vars_plan_.find(iErp->plan) != gurobi_vars_plan_.end())
-					gurobi_model_->addConstr(flow_out
-					                             - iErp->resources[iR.first] * gurobi_vars_plan_[iErp->plan]
-					                           == 0,
-					                         ("FlowOut{" + iR.first + "}{" + iErp->name + "}").c_str());
+					gurobi_models_[model_id]->addConstr(
+					  flow_out - iErp->resources[iR.first] * gurobi_vars_plan_[iErp->plan] == 0,
+					  ("FlowOut{" + iR.first + "}{" + iErp->name + "}").c_str());
 			}
 
 			for (auto const &iErc : resource_consumers_[iR.first]) {
@@ -339,14 +337,14 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 						flow_in -= gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
 
 				if (iErc->plan.size() == 0 && iErc->goal.size() == 0)
-					gurobi_model_->addConstr(flow_in - iErc->resources[iR.first] == 0,
-					                         ("FlowIn{" + iR.first + "}{" + iErc->name + "}").c_str());
+					gurobi_models_[model_id]->addConstr(
+					  flow_in - iErc->resources[iR.first] == 0,
+					  ("FlowIn{" + iR.first + "}{" + iErc->name + "}").c_str());
 
 				else if (gurobi_vars_plan_.find(iErc->plan) != gurobi_vars_plan_.end())
-					gurobi_model_->addConstr(flow_in
-					                             - iErc->resources[iR.first] * gurobi_vars_plan_[iErc->plan]
-					                           == 0,
-					                         ("FlowIn{" + iR.first + "}{" + iErc->name + "}").c_str());
+					gurobi_models_[model_id]->addConstr(
+					  flow_in - iErc->resources[iR.first] * gurobi_vars_plan_[iErc->plan] == 0,
+					  ("FlowIn{" + iR.first + "}{" + iErc->name + "}").c_str());
 			}
 		}
 
@@ -360,23 +358,23 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 					std::string cname    = "Select_X{" + resource + "}{" + producer + "->" + consumer + "}";
 					int         event_duration = iEprod.first->duration;
 					double      setup_duration = iEcons.second;
-					gurobi_model_->addGenConstrIndicator(gurobi_vars_sequence_[resource][producer][consumer],
-					                                     1,
-					                                     gurobi_vars_time_[consumer]
-					                                         - gurobi_vars_time_[producer] - event_duration
-					                                         - setup_duration
-					                                       >= 0,
-					                                     cname.c_str());
+					gurobi_models_[model_id]->addGenConstrIndicator(
+					  gurobi_vars_sequence_[resource][producer][consumer],
+					  1,
+					  gurobi_vars_time_[consumer] - gurobi_vars_time_[producer] - event_duration
+					      - setup_duration
+					    >= 0,
+					  cname.c_str());
 				}
 
 		//Constraint 10
 		for (auto const &iE : events_)
-			gurobi_model_->addConstr(Tmax - gurobi_vars_time_[iE.first] >= 0,
-			                         ("Tmax<<" + iE.first).c_str());
+			gurobi_models_[model_id]->addConstr(Tmax - gurobi_vars_time_[iE.first] >= 0,
+			                                    ("Tmax<<" + iE.first).c_str());
 
-		gurobi_model_->write("gurobi_model.lp");
+		gurobi_models_[model_id]->write("gurobi_model.lp");
 
-		gurobi_model_->optimizeasync();
+		gurobi_models_[model_id]->optimizeasync();
 
 	} catch (GRBException &e) {
 		logger->log_error(name(), "Error code = %u ", e.getErrorCode());
@@ -387,10 +385,10 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 }
 
 void
-ClipsMipSchedulerThread::check_progress(std::string env_name)
+ClipsMipSchedulerThread::check_progress(std::string env_name, std::string model_id)
 {
 	try {
-		const int status = gurobi_model_->get(GRB_IntAttr_Status);
+		const int status = gurobi_models_[model_id]->get(GRB_IntAttr_Status);
 
 		if ((status == GRB_LOADED)) {
 			logger->log_warn(name(), "Model is loaded, but no solution information available %u", status);
@@ -409,12 +407,12 @@ ClipsMipSchedulerThread::check_progress(std::string env_name)
 		}
 
 		if (status == GRB_OPTIMAL) {
-			gurobi_model_->sync();
+			gurobi_models_[model_id]->sync();
 
 			logger->log_warn(name(),
 			                 "The optimal objective is %f ",
-			                 gurobi_model_->get(GRB_DoubleAttr_ObjVal));
-			gurobi_model_->write("gurobi_model.sol");
+			                 gurobi_models_[model_id]->get(GRB_DoubleAttr_ObjVal));
+			gurobi_models_[model_id]->write("gurobi_model.sol");
 
 			//Post result facts
 			fawkes::MutexLocker lock(clips_env_.objmutex_ptr());
@@ -456,7 +454,7 @@ ClipsMipSchedulerThread::check_progress(std::string env_name)
 				                  value);
 			}
 
-			gurobi_model_->reset();
+			gurobi_models_[model_id]->reset();
 		}
 
 		if ((status != GRB_INF_OR_UNBD) && (status != GRB_INFEASIBLE)) {
@@ -466,27 +464,27 @@ ClipsMipSchedulerThread::check_progress(std::string env_name)
 		if (status == GRB_INFEASIBLE) {
 			// do IIS
 			logger->log_info(name(), "The model is infeasible; computing IIS");
-			gurobi_model_->sync();
+			gurobi_models_[model_id]->sync();
 
-			gurobi_model_->computeIIS();
+			gurobi_models_[model_id]->computeIIS();
 			logger->log_info(name(), "The following constraint(s) cannot be satisfied:");
-			GRBConstr *c = gurobi_model_->getConstrs();
-			for (int i = 0; i < gurobi_model_->get(GRB_IntAttr_NumConstrs); ++i)
+			GRBConstr *c = gurobi_models_[model_id]->getConstrs();
+			for (int i = 0; i < gurobi_models_[model_id]->get(GRB_IntAttr_NumConstrs); ++i)
 				if (c[i].get(GRB_IntAttr_IISConstr) == 1)
 					logger->log_info(name(), c[i].get(GRB_StringAttr_ConstrName).c_str());
 
 			delete[] c;
 		}
 
-		//gurobi_model_->write("gurobi_model.rlp");
-		//gurobi_model_->write("gurobi_model.ilp");
-		//gurobi_model_->write("gurobi_model.rew");
+		//gurobi_models_[model_id]->write("gurobi_model.rlp");
+		//gurobi_models_[model_id]->write("gurobi_model.ilp");
+		//gurobi_models_[model_id]->write("gurobi_model.rew");
 
-		//gurobi_model_->write("gurobi_model.hnt");
-		//gurobi_model_->write("gurobi_model.bas");
-		//gurobi_model_->write("gurobi_model.prm");
-		//gurobi_model_->write("gurobi_model.attr");
-		//gurobi_model_->write("gurobi_model.json");
+		//gurobi_models_[model_id]->write("gurobi_model.hnt");
+		//gurobi_models_[model_id]->write("gurobi_model.bas");
+		//gurobi_models_[model_id]->write("gurobi_model.prm");
+		//gurobi_models_[model_id]->write("gurobi_model.attr");
+		//gurobi_models_[model_id]->write("gurobi_model.json");
 	} catch (GRBException &e) {
 		logger->log_error(name(), "Error code = %u ", e.getErrorCode());
 		logger->log_error(name(), e.getMessage().c_str());

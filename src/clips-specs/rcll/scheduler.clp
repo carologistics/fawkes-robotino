@@ -175,13 +175,13 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-select-schedule
- "After schedule events has been formulated and scheduler called to build sets,
- select schedule for expantion "
- ?sf <- (schedule (goals ?g-id $?) (mode FORMULATED))
+ " After a 'schedule' events has been formulated and scheduler called to build
+   sets, a 'schedule' model is selected and the optimization is triggered "
+ ?sf <- (schedule (id ?s-id)(goals ?g-id $?) (mode FORMULATED))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
 =>
  (printout warn "Calling scheduler: Generating scheduling datasets" crlf)
- (scheduler-generate-model)
+ (scheduler-generate-model (sym-cat ?s-id))
  (printout warn "datasets are generated" crlf)
 ;TODO: check for scheduler feature and if usable (maybe by scheduling a simple model)
  (modify ?sf (mode SELECTED))
@@ -194,7 +194,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (not (scheduler-info))
 =>
  (printout info "Calling scheduler: Checking progress" crlf)
- (scheduler-optimization-status)
+ (scheduler-optimization-status (sym-cat ?s-id))
 )
 
 
