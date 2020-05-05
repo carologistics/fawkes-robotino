@@ -37,7 +37,6 @@ ClipsMipSchedulerThread::ClipsMipSchedulerThread()
 
 ClipsMipSchedulerThread::~ClipsMipSchedulerThread()
 {
-	clips_envs_.clear();
 	delete gurobi_model_;
 	delete gurobi_env_;
 }
@@ -63,8 +62,8 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
                                             fawkes::LockPtr<CLIPS::Environment> &clips)
 {
 	logger->log_info(name(), "Called to initialize environment %s", env_name.c_str());
-	clips_envs_[env_name] = clips;
-	fawkes::MutexLocker lock(clips_envs_[env_name].objmutex_ptr());
+	clips_env_ = clips;
+	fawkes::MutexLocker lock(clips_env_.objmutex_ptr());
 
 	clips->add_function(
 	  "scheduler-set-event-duration",
@@ -102,7 +101,6 @@ void
 ClipsMipSchedulerThread::clips_context_destroyed(const std::string &env_name)
 {
 	logger->log_info(name(), "Removing environment %s", env_name.c_str());
-	clips_envs_.erase(env_name);
 }
 
 //{

@@ -56,8 +56,9 @@ protected:
 	}
 
 private:
-	std::map<std::string, fawkes::LockPtr<CLIPS::Environment>> clips_envs_;
+	fawkes::LockPtr<CLIPS::Environment> clips_env_;
 
+private:
 	GRBEnv *  gurobi_env_   = 0;
 	GRBModel *gurobi_model_ = 0;
 
