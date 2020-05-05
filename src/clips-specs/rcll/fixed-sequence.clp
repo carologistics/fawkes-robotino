@@ -1620,12 +1620,14 @@
  (wm-fact (key refbox team-color) (value ?team-color))
  (wm-fact (key domain fact mps-team args? m ?from-mps col ?team-color))
  (wm-fact (key domain fact mps-type args? m ?from-mps t ?from-type))
- ;(or (and (test (eq ?from-type BSS))
- ;         (domain-object (name ?from-side&INPUT|OUTPUT) (type mps-side)))
-     (and (test (eq ?from-type CS))
-          (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?c))
-          (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?from-mps spot ?spot))
-          (domain-object (name ?from-side&INPUT) (type mps-side)))
+ ;(or
+    (and (test (eq ?from-type BS))
+          (wm-fact (key domain fact wp-unused args? wp ?wp))
+          (domain-object (name ?from-side&INPUT|OUTPUT) (type mps-side)))
+  ;   (and (test (eq ?from-type CS))
+  ;        (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?))
+  ;        (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?from-mps spot ?spot))
+  ;        (domain-object (name ?from-side&INPUT) (type mps-side)))
  ;)
 
 
@@ -1680,6 +1682,119 @@
              (plan-action (id 7) (plan-id ?plan-id) (goal-id ?goal-id)
                           (action-name unlock)
                           (param-values ?from-mps))))
+
+  ;(if (and (eq ?from-type CS) (eq ?from-side INPUT)) then
+  ;   (assert (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
+  ;                        (action-name wp-get-shelf)
+  ;                        (param-names r cc m spot)
+  ;                        (param-values ?robot ?wp ?from-mps ?spot))))
+
+ (assert
+    (plan-action (id 8) (plan-id ?plan-id) (goal-id ?goal-id)
+                  (action-name location-unlock)
+                  (param-values ?from-mps ?from-side))
+     (plan-action (id 9) (plan-id ?plan-id) (goal-id ?goal-id)
+                  (action-name go-wait)
+                  (param-names r from from-side to)
+                  (param-values ?robot
+                                ?from-mps ?from-side
+                                (wait-pos ?rs INPUT)))
+     (plan-action (id 10) (plan-id ?plan-id) (goal-id ?goal-id)
+                 (action-name location-lock)
+                 (param-values ?rs INPUT))
+     (plan-action (id 11) (plan-id ?plan-id) (goal-id ?goal-id)
+                  (action-name move)
+                  (param-names r from from-side to to-side)
+                  (param-values ?robot
+                               (wait-pos ?rs INPUT) WAIT
+                               ?rs INPUT))
+     (plan-action (id 12) (plan-id ?plan-id) (goal-id ?goal-id)
+                  (action-name wp-put-slide-cc)
+                  (param-names r wp m rs-before rs-after)
+                  (param-values ?robot ?wp ?rs ?last-filled ?fill-base#))
+     (plan-action (id 13) (plan-id ?plan-id) (goal-id ?goal-id)
+                  (action-name location-unlock)
+                  (param-values ?rs INPUT))
+     (plan-action (id 14) (plan-id ?plan-id) (goal-id ?goal-id)
+                  (action-name go-wait)
+                  (param-names r from from-side to)
+                  (param-values ?robot ?rs INPUT (wait-pos ?rs INPUT)))
+  )
+)
+
+(defrule goal-expander-fill-rs-central-from-shelf
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (goal (id ?goal-id) (class FILL-RS) (params $?params) (mode SELECTED))
+ (test (subsetp (create$ fill-base# fill-rs) ?params))
+
+ ;Resources groundable during scheduling (Schedulable resources)
+ (wm-fact (key domain fact at args? r ?robot m ? side ?))
+ (wm-fact (key domain fact can-hold args? r ?robot))
+
+ (wm-fact (key refbox team-color) (value ?team-color))
+ (wm-fact (key domain fact mps-team args? m ?from-mps col ?team-color))
+ (wm-fact (key domain fact mps-type args? m ?from-mps t ?from-type))
+; (or (and (test (eq ?from-type BS))
+;          (wm-fact (key domain fact wp-unused args? wp ?wp))
+;          (domain-object (name ?from-side&INPUT|OUTPUT) (type mps-side)))
+     (and (test (eq ?from-type CS))
+          (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?))
+          (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?from-mps spot ?spot))
+          (domain-object (name ?from-side&INPUT) (type mps-side)))
+; )
+
+
+ (wm-fact (key domain fact rs-inc args? summand ?last-filled sum ?fill-base#))
+ (test (member$ (create$ fill-base# ?fill-base#) ?params))
+ =>
+ (bind ?rs (nth$ (+ 1 (member$ fill-rs ?params)) ?params))
+
+ (bind ?plan-id  (sym-cat ?goal-id _P (gensym*)))
+
+ (assert
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup [ ] ))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?wp setup [ ] ))
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?from-mps setup [ ] ))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?from-mps setup [ ] ))
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?rs setup [ ] ))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?rs setup [ ] ))
+  (wm-fact (key meta plan required-resource args? id ?plan-id r ?robot
+                setup [ (wait-pos ?from-mps ?from-side) WAIT ] ))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r ?robot
+                setup [ (wait-pos ?rs INPUT) WAIT ] )))
+
+ ;(wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
+
+ (assert
+    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+                 (action-name location-lock)
+                 (param-values ?from-mps ?from-side))
+    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
+                 (action-name move)
+                 (param-names r from from-side to to-side)
+                 (param-values ?robot
+                               (wait-pos ?from-mps ?from-side) WAIT
+                               ?from-mps ?from-side)))
+
+; (if (eq ?from-type BS) then
+;     (bind ?base-color (nth$ (+ 1 (member$ base-color ?params)) ?params))
+;     (assert (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
+;                          (action-name lock)
+;                          (param-values ?from-mps))
+;             (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
+;                          (action-name prepare-bs) (param-names m side bc)
+;                          (param-values ?from-mps ?from-side ?base-color))
+;             (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
+;                          (action-name bs-dispense) (param-names r m side wp basecol)
+;                          (param-values ?robot ?from-mps ?from-side ?wp ?base-color))
+;             (plan-action (id 6) (plan-id  ?plan-id) (goal-id ?goal-id)
+;                          (action-name wp-get)
+;                          (param-names r wp m side)
+;                          (param-values ?robot ?wp ?from-mps ?from-side))
+;             (plan-action (id 7) (plan-id ?plan-id) (goal-id ?goal-id)
+;                          (action-name unlock)
+;                          (param-values ?from-mps))))
 
   (if (and (eq ?from-type CS) (eq ?from-side INPUT)) then
      (assert (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
