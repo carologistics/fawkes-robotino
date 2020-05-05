@@ -187,9 +187,20 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (modify ?sf (mode SELECTED))
 )
 
+(defrule scheduling-check-optimization-results
+"Periodically check if the optimization returned"
+(time $?)
+ ?sf <- (schedule (id ?s-id) (mode SELECTED))
+ (not (scheduler-info))
+=>
+ (printout info "Calling scheduler: Checking progress" crlf)
+ (scheduler-optimization-status)
+)
+
 
 (defrule scheduling-expand-schedule
 "Expand a schedule after the MIP scheduler has returned a scheduled event "
+(declare (salience ?*SALIENCE-GOAL-EXPAND*))
  ?sf <- (schedule (id ?s-id) (goals ?g-id $?) (mode SELECTED))
  (schedule-event (sched-id ?s-id) (scheduled TRUE))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
