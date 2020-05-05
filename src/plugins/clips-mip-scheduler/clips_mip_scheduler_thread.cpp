@@ -45,6 +45,9 @@ void
 ClipsMipSchedulerThread::init()
 {
 	logger->log_info(name(), "Intilized");
+
+	gurobi_model_ = new GRBModel(*gurobi_env_);
+	gurobi_model_->set(GRB_StringAttr_ModelName, "SchedulingRcll");
 };
 
 void
@@ -95,6 +98,9 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
 	                    sigc::slot<void>(
 	                      sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::build_model),
 	                                    env_name)));
+	clips->add_function("scheduler-optimization-status",
+	                    sigc::slot<void>(sigc::bind<0>(
+	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::check_progress), env_name)));
 }
 
 void
@@ -255,8 +261,6 @@ void
 ClipsMipSchedulerThread::build_model(std::string env_name)
 {
 	try {
-		gurobi_model_ = new GRBModel(*gurobi_env_);
-		gurobi_model_->set(GRB_StringAttr_ModelName, "SchedulingRcll");
 		//Init Gurobi Time Vars (T)
 		for (auto const &iE : events_)
 			gurobi_vars_time_[iE.first] =
@@ -370,24 +374,51 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 			gurobi_model_->addConstr(Tmax - gurobi_vars_time_[iE.first] >= 0,
 			                         ("Tmax<<" + iE.first).c_str());
 
-		gurobi_model_->write("model.lp");
+		gurobi_model_->write("gurobi_model.lp");
 
-		gurobi_model_->optimize();
+		gurobi_model_->optimizeasync();
 
-		int status = gurobi_model_->get(GRB_IntAttr_Status);
-		if (status == GRB_UNBOUNDED) {
-			logger->log_warn(name(), "The model cannot be solved  because it is unbounded");
-			//return 1;
+	} catch (GRBException &e) {
+		logger->log_error(name(), "Error code = %u ", e.getErrorCode());
+		logger->log_error(name(), e.getMessage().c_str());
+	} catch (...) {
+		logger->log_error(name(), "Exception during optimization");
+	}
+}
+
+void
+ClipsMipSchedulerThread::check_progress(std::string env_name)
+{
+	try {
+		const int status = gurobi_model_->get(GRB_IntAttr_Status);
+
+		if ((status == GRB_LOADED)) {
+			logger->log_warn(name(), "Model is loaded, but no solution information available %u", status);
 			return;
 		}
+
+		if ((status == GRB_INPROGRESS)) {
+			logger->log_warn(name(), "Optimization in progress %u", status);
+			return;
+		} else {
+			logger->log_warn(name(), "Optimization NOT in progress %u", status);
+		}
+
+		if (status == GRB_UNBOUNDED) {
+			logger->log_warn(name(), "The model cannot be solved  because it is unbounded");
+		}
+
 		if (status == GRB_OPTIMAL) {
+			gurobi_model_->sync();
+
 			logger->log_warn(name(),
 			                 "The optimal objective is %f ",
 			                 gurobi_model_->get(GRB_DoubleAttr_ObjVal));
-			gurobi_model_->write("model_sol.sol");
-			//return 0;
-			fawkes::MutexLocker lock(clips_envs_[env_name].objmutex_ptr());
-			CLIPS::Environment &env = **(clips_envs_[env_name]);
+			gurobi_model_->write("gurobi_model.sol");
+
+			//Post result facts
+			fawkes::MutexLocker lock(clips_env_.objmutex_ptr());
+			CLIPS::Environment &env = **(clips_env_);
 
 			//Post process Time Vars (T)
 			for (auto const &iE : events_) {
@@ -425,38 +456,41 @@ ClipsMipSchedulerThread::build_model(std::string env_name)
 				                  value);
 			}
 
-			return;
+			gurobi_model_->reset();
 		}
+
 		if ((status != GRB_INF_OR_UNBD) && (status != GRB_INFEASIBLE)) {
 			logger->log_warn(name(), "Optimization was stopped with status %u", status);
-			//return 1;
-			return;
 		}
 
-		// do IIS
-		logger->log_info(name(), "The model is infeasible; computing IIS");
-		gurobi_model_->computeIIS();
-		logger->log_info(name(), "The following constraint(s) cannot be satisfied:");
-		GRBConstr *c = gurobi_model_->getConstrs();
-		for (int i = 0; i < gurobi_model_->get(GRB_IntAttr_NumConstrs); ++i)
-			if (c[i].get(GRB_IntAttr_IISConstr) == 1)
-				logger->log_info(name(), c[i].get(GRB_StringAttr_ConstrName).c_str());
+		if (status == GRB_INFEASIBLE) {
+			// do IIS
+			logger->log_info(name(), "The model is infeasible; computing IIS");
+			gurobi_model_->sync();
 
-		gurobi_model_->write("model.rlp");
-		gurobi_model_->write("model.ilp");
-		gurobi_model_->write("model.rew");
+			gurobi_model_->computeIIS();
+			logger->log_info(name(), "The following constraint(s) cannot be satisfied:");
+			GRBConstr *c = gurobi_model_->getConstrs();
+			for (int i = 0; i < gurobi_model_->get(GRB_IntAttr_NumConstrs); ++i)
+				if (c[i].get(GRB_IntAttr_IISConstr) == 1)
+					logger->log_info(name(), c[i].get(GRB_StringAttr_ConstrName).c_str());
 
-		gurobi_model_->write("model.hnt");
-		gurobi_model_->write("model.bas");
-		gurobi_model_->write("model.prm");
-		gurobi_model_->write("model.attr");
-		gurobi_model_->write("model.json");
-		delete[] c;
+			delete[] c;
+		}
 
+		//gurobi_model_->write("gurobi_model.rlp");
+		//gurobi_model_->write("gurobi_model.ilp");
+		//gurobi_model_->write("gurobi_model.rew");
+
+		//gurobi_model_->write("gurobi_model.hnt");
+		//gurobi_model_->write("gurobi_model.bas");
+		//gurobi_model_->write("gurobi_model.prm");
+		//gurobi_model_->write("gurobi_model.attr");
+		//gurobi_model_->write("gurobi_model.json");
 	} catch (GRBException &e) {
 		logger->log_error(name(), "Error code = %u ", e.getErrorCode());
 		logger->log_error(name(), e.getMessage().c_str());
 	} catch (...) {
 		logger->log_error(name(), "Exception during optimization");
 	}
-}
+};

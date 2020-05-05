@@ -102,5 +102,6 @@ private:
 	void add_goal_event(std::string env_name, std::string goal_name, std::string event_name);
 	void add_goal_plan(std::string env_name, std::string goal_name, std::string plan_name);
 	void build_model(std::string env_name);
+	void check_progress(std::string env_name);
 };
 #endif /* !PLUGINS_CLIPS_MIP_SCHEDULER_THREAD_H__ */
