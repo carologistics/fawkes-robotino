@@ -441,7 +441,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at START))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (id ?p-id) (goal-id ?g-id))
- (wm-fact (key meta plan required-resource args? id ?p-id r ?r setup [ $?setup ] ))
+ ?pf <- (wm-fact (key meta plan required-resource args? id ?p-id r ?r setup [ $?setup ] ))
  =>
  (bind ?r-id (formate-resource-name ?r))
  (assert (schedule-requirment (sched-id ?s-id)
@@ -449,6 +449,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                               (resource-id ?r-id)
                               (resource-setup ?setup)
                               (resource-units -1)))
+ (retract ?pf)
 )
 
 (defrule scheduling-plan-resources-at-end
@@ -457,7 +458,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at END))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (id ?p-id) (goal-id ?g-id))
- (wm-fact (key meta plan released-resource args? id ?p-id r ?r setup [ $?setup ] ))
+ ?pf <- (wm-fact (key meta plan released-resource args? id ?p-id r ?r setup [ $?setup ] ))
  =>
  (bind ?r-id (formate-resource-name ?r))
  (assert (schedule-requirment (sched-id ?s-id)
@@ -465,6 +466,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                               (resource-id ?r-id)
                               (resource-setup ?setup)
                               (resource-units 1)))
+ (retract ?pf)
 )
 
 ;;Schedule Formulate Precedence
