@@ -112,39 +112,51 @@
 )
 
 
-(defrule schedule-goal-subgoal-rejected-resources-clear
-	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS)
-                  (committed-to $? ?sub-goals $?))
-	(goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode RETRACTED) (outcome REJECTED))
-	=>
-	(modify ?gf (mode FINISHED) (outcome REJECTED)
-	            (error SUB-GOAL-REJECTED)
-	            (message (str-cat "Sub-goal '" ?sub-goal "' of SCHEDULE goal '" ?id
-				      "' was rejected")))
+(defrule schedule-subgoal-rejected-resources-clear
+     ?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS)
+                  (outcome ~REJECTED) (committed-to $? ?sub-goals $?))
+     (goal (id ?sub-goal) (parent ?id) (type ACHIEVE) (mode RETRACTED) (outcome REJECTED))
+     =>
+     (modify ?gf (mode FINISHED) (outcome REJECTED)
+                 (error SUB-GOAL-REJECTED)
+                 (message (str-cat "Sub-goal '" ?sub-goal
+                        "' of SCHEDULE goal '" ?id  "' had rejected")))
 )
 
 
-(defrule schedule-goal-subgoal-failed-resources-clear
-	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS)
-	             (committed-to $? ?sub-goal $?))
-	?sg <- (goal (id ?sub-goal) (type ACHIEVE) (parent ?id) (acquired-resources)
-	             (mode RETRACTED) (outcome FAILED))
-	=>
-	(modify ?gf (mode FINISHED) (outcome FAILED)
-					(error SUB-GOAL-FAILED ?sub-goal)
-					(message (str-cat "Sub-goal '" ?sub-goal "' of SCHEDULE goal '" ?id "' has failed")))
+(defrule schedule-subgoal-failed-resources-clear
+     ?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS)
+                  (outcome ~FAILED) (committed-to $? ?sub-goal $?))
+     ?sg <- (goal (id ?sub-goal) (type ACHIEVE) (parent ?id) (acquired-resources)
+                  (mode RETRACTED) (outcome FAILED))
+     =>
+     (modify ?gf (mode FINISHED) (outcome FAILED)
+                 (error SUB-GOAL-FAILED ?sub-goal)
+                 (message (str-cat "Sub-goal '" ?sub-goal
+                       "' of SCHEDULE goal '" ?id "' had failed")))
 )
 
 (defrule schedule-goal-failed-resources-clear
-	(goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode FINISHED) (outcome FAILED|REJECTED)
-                    (acquired-resources) (committed-to $? ?sub-goal $?))
-	?sg <- (goal (id ?sub-goal) (type ACHIEVE) (parent ?id) (mode ~FINISHED))
-	=>
-	(modify ?sg (mode FINISHED) (outcome REJECTED)
-					(error PARENT-GOAL-REJECTED ?id)
-					(message (str-cat "Sub-goal '" ?sub-goal "' of SCHEDULE goal '" ?id "' is rejected")))
+     (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS)
+            (mode FINISHED) (outcome FAILED) (committed-to $? ?sub-goal $?))
+     ?sg <- (goal (id ?sub-goal) (type ACHIEVE) (parent ?id) (outcome ~FAILED))
+     =>
+     (modify ?sg (mode FINISHED) (outcome FAILED)
+                 (error PARENT-GOAL-REJECTED ?id)
+                 (message (str-cat "Sub-goal '" ?sub-goal
+                           "' of SCHEDULE goal '" ?id "' is rejected")))
 )
 
+(defrule schedule-goal-rejected-resources-clear
+     (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS)
+           (mode FINISHED) (outcome REJECTED) (committed-to $? ?sub-goal $?))
+     ?sg <- (goal (id ?sub-goal) (type ACHIEVE) (parent ?id) (outcome ~REJECTED))
+     =>
+     (modify ?sg (mode FINISHED) (outcome REJECTED)
+                 (error PARENT-GOAL-REJECTED ?id)
+                 (message (str-cat "Sub-goal '" ?sub-goal
+                           "' of SCHEDULE goal '" ?id "' is rejected")))
+)
 
 (defrule schedule-goal-subgoal-completed-all-resources-clear
 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode DISPATCHED)
