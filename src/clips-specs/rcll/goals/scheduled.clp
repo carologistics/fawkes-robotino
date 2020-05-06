@@ -56,14 +56,14 @@
 
 (defrule schedule-goal-expand-failed
      (declare (salience ?*SALIENCE-LOW*))
-	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS)
-							 (mode SELECTED))
- 	(not (goal (type ACHIEVE) (parent ?id) (mode FORMULATED|SELECTED|EXPANDED)))
-  	(not (plan (goal-id ?id)))
-	=>
-	(modify ?gf (mode FINISHED) (outcome FAILED)
-					(error NO-SUB-GOALS)
-					(message (str-cat "No sub-goals or plans for SCHEDULE goal '" ?id "'" )))
+     ?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS)
+                                    (mode SELECTED))
+     (not (goal (type ACHIEVE) (parent ?id) (mode FORMULATED|SELECTED|EXPANDED)))
+     (not (plan (goal-id ?id)))
+     =>
+     (modify ?gf (mode FINISHED) (outcome FAILED)
+                         (error NO-SUB-GOALS)
+                         (message (str-cat "No sub-goals or plans for SCHEDULE goal '" ?id "'" )))
 )
 
 (defrule schedule-goal-commit-to-all-children-on-time
@@ -75,27 +75,27 @@
      (or (plan (id ?child-id&:(not (member$ ?child-id ?committed))) (goal-id ?g-id))
          (goal (id ?child-id&:(not (member$ ?child-id ?committed))) (parent ?g-id)))
   =>
-	(modify ?gf  (committed-to (create$ ?committed ?child-id)))
+     (modify ?gf  (committed-to (create$ ?committed ?child-id)))
 )
 
 (defrule schedule-goal-commit-on-time
-	?gf <- (goal (id ?g-id) (parent ?pg) (sub-type SCHEDULE-SUBGOALS)
+     ?gf <- (goal (id ?g-id) (parent ?pg) (sub-type SCHEDULE-SUBGOALS)
                   (committed-to $?committed) (type ACHIEVE) (mode EXPANDED)
                   (meta dispatch-time ?d-time&:(< ?d-time (nth$ 1 (now)))))
      (not (plan (id ?child-id&:(not (member$ ?child-id ?committed))) (goal-id ?g-id)))
      (not (goal (id ?child-id&:(not (member$ ?child-id ?committed))) (parent ?g-id)))
      (not (goal (parent ?g-id) (mode ~RETRACTED) (outcome ~COMPLETED)))
      =>
-	(modify ?gf (mode COMMITTED))
+     (modify ?gf (mode COMMITTED))
 )
 
 
 (defrule schedule-goal-dispatch
      (time ?now-sec ?)
-	?gf <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode COMMITTED)
-	             (committed-to $? ?sub-goal $?)
-	             (required-resources $?req)
-	             (acquired-resources $?acq&:(subsetp ?req ?acq))
+     ?gf <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode COMMITTED)
+                  (committed-to $? ?sub-goal $?)
+                  (required-resources $?req)
+                  (acquired-resources $?acq&:(subsetp ?req ?acq))
                   (meta dispatch-time ?d-time))
     =>
     (printout t " Scheduled goal " ?goal-id " DISPATCHED at " ?now-sec " Sec ( "
@@ -106,9 +106,9 @@
 
 
 (defrule schedule-goal-evaluated
-	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode EVALUATED))
-	=>
-	(modify ?gf (mode RETRACTED) (committed-to (create$ )))
+     ?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode EVALUATED))
+     =>
+     (modify ?gf (mode RETRACTED) (committed-to (create$ )))
 )
 
 
@@ -159,14 +159,14 @@
 )
 
 (defrule schedule-goal-subgoal-completed-all-resources-clear
-	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode DISPATCHED)
-	             (committed-to $?committed))
+     ?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode DISPATCHED)
+                  (committed-to $?committed))
      (forall (goal (id ?sub-goal&:(member$ ?sub-goal ?committed)) (parent ?id))
              (goal (id ?sub-goal) (acquired-resources) (mode RETRACTED) (outcome COMPLETED)))
-	(not (and (plan (id ?plan-id) (goal-id ?goal-id))
-	          (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state ~FINAL))))
-	=>
+     (not (and (plan (id ?plan-id) (goal-id ?goal-id))
+               (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state ~FINAL))))
+     =>
      (printout t " Scheduled Goal " ?id " is COMPLETED" crlf)
-	(modify ?gf (mode FINISHED) (outcome COMPLETED) (committed-to (create$ )))
+     (modify ?gf (mode FINISHED) (outcome COMPLETED) (committed-to (create$ )))
 )
 
