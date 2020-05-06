@@ -58,6 +58,7 @@
   (wm-robmem-sync-enable "/domain/fact/quantity-delivered")
   (wm-robmem-sync-enable "/mps-handling/")
   (wm-robmem-sync-enable "/order/meta/wp-for-order")
+  (wm-robmem-sync-enable "/strategy/keep-mps-side-free")
   (wm-robmem-sync-enable "/exploration/fact/tag-vis")
   (wm-robmem-sync-enable "/exploration/fact/line-vis")
   (wm-robmem-sync-enable "/exploration/fact/time-searched")
