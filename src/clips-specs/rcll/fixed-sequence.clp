@@ -1267,13 +1267,13 @@
           (domain-object (name ?prior-side&~WAIT) (type mps-side)))
      (and (test (member$ (create$ com C1) ?params))
           (test (member$ (create$ ring1-station ?prior-mps) ?params))
-          (domain-object (name ?prior-side&INPUT) (type mps-side)))
+          (domain-object (name ?prior-side&OUTPUT) (type mps-side)))
      (and (test (member$ (create$ com C2) ?params))
           (test (member$ (create$ ring2-station ?prior-mps) ?params))
-          (domain-object (name ?prior-side&INPUT) (type mps-side)))
+          (domain-object (name ?prior-side&OUTPUT) (type mps-side)))
      (and (test (member$ (create$ com C3) ?params))
           (test (member$ (create$ ring3-station ?prior-mps) ?params))
-          (domain-object (name ?prior-side&INPUT) (type mps-side))))
+          (domain-object (name ?prior-side&OUTPUT) (type mps-side))))
 
 
  (wm-fact (key domain fact at args? r ?robot m ? side ?))
