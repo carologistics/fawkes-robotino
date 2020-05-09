@@ -81,12 +81,24 @@
 (defrule schedule-goal-commit-on-time
      ?gf <- (goal (id ?g-id) (parent ?pg) (sub-type SCHEDULE-SUBGOALS)
                   (committed-to $?committed) (type ACHIEVE) (mode EXPANDED)
+                  (required-resources $?req)
                   (meta dispatch-time ?d-time&:(< ?d-time (nth$ 1 (now)))))
      (not (plan (id ?child-id&:(not (member$ ?child-id ?committed))) (goal-id ?g-id)))
      (not (goal (id ?child-id&:(not (member$ ?child-id ?committed))) (parent ?g-id)))
      (not (goal (parent ?g-id) (mode ~RETRACTED) (outcome ~COMPLETED)))
      =>
-     (modify ?gf (mode COMMITTED))
+     (if (check-unbound ?req) then
+         (bind ?req (replace-unbound ?req))
+     )
+     (do-for-all-facts ((?planf plan)) (member$ ?planf:id ?committed)
+       (do-for-all-facts ((?actionf plan-action)) (eq ?actionf:plan-id ?planf:id)
+          (if (check-unbound ?actionf:param-values) then
+             (bind ?bound-values (replace-unbound ?actionf:param-values))
+             (modify ?actionf (param-values ?bound-values))
+          )
+       )
+     )
+     (modify ?gf (mode COMMITTED) (required-resources ?req))
 )
 
 
