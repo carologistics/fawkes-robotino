@@ -1625,8 +1625,8 @@
      (and (test (eq ?from-type CS))
           (domain-object (name ?from-side&INPUT) (type mps-side))))
 
- (wm-fact (key domain fact rs-inc args? summand ?last-filled sum ?fill-base#))
- (test (member$ (create$ fill-base# ?fill-base#) ?params))
+ ;(wm-fact (key domain fact rs-inc args? summand ?last-filled sum ?fill-base#))
+ ;(test (member$ (create$ fill-base# ?fill-base#) ?params))
  =>
  (bind ?rs (nth$ (+ 1 (member$ fill-rs ?params)) ?params))
  (bind ?plan-id  (sym-cat ?goal-id _P (gensym*)))
@@ -1640,14 +1640,24 @@
      (bind ?fact-key (create$ domain fact wp-on-shelf args? wp ?wp m ?from-mps spot ?spot)))
  (assert (wm-fact (key meta binding-id ?binding-id wm-fact-key $?fact-key )))
 
+ (bind ?binding-id (sym-cat X (gensym*)))
+ (bind ?rs-before  (sym-cat ?binding-id #n))
+ (bind ?fact-key (create$ domain fact rs-filled-with args? m ?rs n ?rs-before))
+ (assert (wm-fact (key meta binding-id ?binding-id wm-fact-key $?fact-key )))
+
+ (bind ?binding-id (sym-cat X (gensym*)))
+ (bind ?rs-after  (sym-cat ?binding-id #sum))
+ (bind ?fact-key (create$ domain fact rs-inc args? summand ?rs-before sum ?rs-after))
+ (assert (wm-fact (key meta binding-id ?binding-id wm-fact-key $?fact-key )))
+
 
  (assert
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup [ ] ))
   (wm-fact (key meta plan released-resource args? id ?plan-id r ?wp setup [ ] ))
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?from-mps setup [ ] ))
   (wm-fact (key meta plan released-resource args? id ?plan-id r ?from-mps setup [ ] ))
-  (wm-fact (key meta plan required-resource args? id ?plan-id r ?rs setup [ ] ))
-  (wm-fact (key meta plan released-resource args? id ?plan-id r ?rs setup [ ] ))
+  (wm-fact (key meta plan required-resource args? id ?plan-id r (sym-cat ?rs SLIDE) setup [ ] ))
+  (wm-fact (key meta plan released-resource args? id ?plan-id r (sym-cat ?rs SLIDE) setup [ ] ))
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?robot
                 setup [ (wait-pos ?from-mps ?from-side) WAIT ] ))
   (wm-fact (key meta plan released-resource args? id ?plan-id r ?robot
@@ -1712,13 +1722,19 @@
                                (wait-pos ?rs INPUT) WAIT
                                ?rs INPUT))
      (plan-action (id 12) (plan-id ?plan-id) (goal-id ?goal-id)
+                  (action-name lock)
+                  (param-values ?rs))
+     (plan-action (id 13) (plan-id ?plan-id) (goal-id ?goal-id)
                   (action-name wp-put-slide-cc)
                   (param-names r wp m rs-before rs-after)
-                  (param-values ?robot ?wp ?rs ?last-filled ?fill-base#))
-     (plan-action (id 13) (plan-id ?plan-id) (goal-id ?goal-id)
+                  (param-values ?robot ?wp ?rs ?rs-before ?rs-after))
+     (plan-action (id 14) (plan-id ?plan-id) (goal-id ?goal-id)
+                  (action-name unlock)
+                  (param-values ?rs))
+     (plan-action (id 15) (plan-id ?plan-id) (goal-id ?goal-id)
                   (action-name location-unlock)
                   (param-values ?rs INPUT))
-     (plan-action (id 14) (plan-id ?plan-id) (goal-id ?goal-id)
+     (plan-action (id 16) (plan-id ?plan-id) (goal-id ?goal-id)
                   (action-name go-wait)
                   (param-names r from from-side to)
                   (param-values ?robot ?rs INPUT (wait-pos ?rs INPUT)))
