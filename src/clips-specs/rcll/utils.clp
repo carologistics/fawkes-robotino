@@ -1053,17 +1053,25 @@
   (return (nth (+ (member$ binding-id ?key) 1) ?key))
 )
 
-(deffunction check-unbound ($?params)
-   (progn$ (?param ?params)
-       (bind ?p (str-cat ?param))
-       (if (and (str-index "X" ?p) (str-index "#" ?p))
-           then
-           (return TRUE))
-   )
+
+
+(deffunction param-binding-id (?param)
+  (bind ?p (str-cat ?param))
+  (bind ?s (str-index "Xgen" ?p))
+  (bind ?l (str-index "#" ?p))
+  (bind ?L (str-length ?p))
+  (if (and ?s ?l)
+       then
+       (return (sym-cat (sub-string 1 (-  ?l 1) ?p))))
    (return FALSE)
 )
 
-
+(deffunction check-unbound ($?params)
+   (progn$ (?param ?params)
+       (if (param-binding-id ?param) then
+           (return TRUE)))
+   (return FALSE)
+)
 (deffunction resolve-binding-by-id (?binding-id)
    (do-for-fact ((?bf wm-fact))
                  (wm-key-prefix ?bf:key (create$ meta binding-id ?binding-id))
@@ -1087,15 +1095,20 @@
       (printout t "Binding " ?binding-id " detecting binding of args "crlf)
       (while (<= (+ ?l 1) ?L) do
          (bind ?arg (nth ?l ?args))
+         ;Replace unbound vars from another binding
+         (if (neq  (param-binding-id ?arg) ?binding-id ) then
+              (printout t "Binding " ?binding-id " resolving  " ?arg crlf)
+              (bind ?arg (replace-unbound ?arg)))
+
          (if (any-factp ((?wm wm-fact)) (and (wm-key-prefix ?wm:key ?path)
                                              (neq (wm-key-arg ?wm:key ?arg) nil)
                                              (eq (wm-key-arg ?wm:key ?arg)
                                                  (wm-key-arg ?wm-fact-key ?arg))))
             then
             (bind ?bound-args (create$ ?bound-args ?arg))
-            (printout t "Binding " ?binding-id " has a bound arg " ?arg crlf)
+            (printout t "Binding " ?binding-id " bound arg " ?arg crlf)
             else
-            (printout t "Binding " ?binding-id " has an unbound arg " ?arg crlf)
+            (printout t "Binding " ?binding-id " unbound arg " ?arg crlf)
          )
          (bind ?va (nth$ (+ ?l 1) ?args))
          (if (eq ?va [)
