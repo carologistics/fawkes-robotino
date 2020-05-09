@@ -51,9 +51,10 @@
   =>
   (bind ?g-id (sym-cat ROOT_ ?ord))
 
-  ;(bind ?v-wp FVAR_WP)
-  ;(bind ?v-robot FVAR_WP_R)
-  ;(assert (wm-fact (key meta grounding wp-spawned-for args? wp ?v-wp r ?v-robot)))
+  (bind ?binding-id (sym-cat X (gensym*)))
+  (bind ?wp (str-cat ?binding-id #wp))
+  (bind ?fact-key (create$ domain fact wp-unused args? wp ?wp))
+  (assert (wm-fact (key meta binding-id ?binding-id wm-fact-key $?fact-key )))
 
   (assert (goal (id ?g-id)
                 (parent ?production-id)
@@ -143,9 +144,9 @@
   (goal (id ?goal-id) (params $?params) (class MOUNT-CAP) (mode SELECTED))
   (not (goal (parent ?goal-id) (class PREPARE-CS)))
 
-  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
+  ;(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?))
   (wm-fact (key domain fact cs-can-perform args? m ?cs op RETRIEVE_CAP))
+  (wm-fact (key domain fact wp-cap-color args? wp ? col ?cap-color))
   (not (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color)))
 
   (test (member$ (create$ cap-station ?cs) ?params))
@@ -153,6 +154,12 @@
   =>
   (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
   (bind ?g-id (sym-cat PREPARE_CS_ ?ord))
+
+  (bind ?binding-id (sym-cat X (gensym*)))
+  (bind ?shelf-spot (sym-cat ?binding-id #spot))
+  (bind ?cc  (sym-cat ?binding-id #wp))
+  (bind ?fact-key (create$ domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
+  (assert (wm-fact (key meta binding-id ?binding-id wm-fact-key $?fact-key )))
 
   (assert (goal (id ?g-id)
                 (parent ?goal-id)

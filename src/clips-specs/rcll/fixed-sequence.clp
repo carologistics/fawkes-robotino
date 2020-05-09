@@ -1629,8 +1629,17 @@
  (test (member$ (create$ fill-base# ?fill-base#) ?params))
  =>
  (bind ?rs (nth$ (+ 1 (member$ fill-rs ?params)) ?params))
-
  (bind ?plan-id  (sym-cat ?goal-id _P (gensym*)))
+
+ (bind ?binding-id (sym-cat X (gensym*)))
+ (bind ?spot (sym-cat ?binding-id #spot))
+ (bind ?wp  (sym-cat ?binding-id #wp))
+ (if (eq ?from-type BS) then
+     (bind ?fact-key (create$ domain fact wp-unused args? wp ?wp)))
+ (if (eq ?from-type CS) then
+     (bind ?fact-key (create$ domain fact wp-on-shelf args? wp ?wp m ?from-mps spot ?spot)))
+ (assert (wm-fact (key meta binding-id ?binding-id wm-fact-key $?fact-key )))
+
 
  (assert
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup [ ] ))

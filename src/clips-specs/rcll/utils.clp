@@ -1044,3 +1044,150 @@
   )
   return ?str
 )
+
+(deffunction binding-wm-fact-key (?key)
+  (return (subseq$ ?key (+ (member$ wm-fact-key ?key) 1) (length$ ?key)))
+)
+
+(deffunction binding-id (?key)
+  (return (nth (+ (member$ binding-id ?key) 1) ?key))
+)
+
+(deffunction check-unbound ($?params)
+   (progn$ (?param ?params)
+       (bind ?p (str-cat ?param))
+       (if (and (str-index "X" ?p) (str-index "#" ?p))
+           then
+           (return TRUE))
+   )
+   (return FALSE)
+)
+
+
+(deffunction resolve-binding-by-id (?binding-id)
+   (do-for-fact ((?bf wm-fact))
+                 (wm-key-prefix ?bf:key (create$ meta binding-id ?binding-id))
+
+      (bind ?wm-fact-key (binding-wm-fact-key ?bf:key))
+      (bind ?path (wm-key-path ?wm-fact-key))
+      (bind ?args (wm-key-args ?wm-fact-key))
+      (bind ?bound-args (create$))
+
+      (if (not (check-unbound ?args))
+         then
+         (printout t "Binding " ?binding-id " is already resolved!" crlf)
+         (return TRUE)
+      )
+
+      (printout t "Binding " ?binding-id " path " ?path crlf)
+      (printout t "Binding " ?binding-id " args " ?args crlf)
+      ;Extract bound args
+      (bind ?l 2)
+      (bind ?L (length$ ?args))
+      (printout t "Binding " ?binding-id " detecting binding of args "crlf)
+      (while (<= (+ ?l 1) ?L) do
+         (bind ?arg (nth ?l ?args))
+         (if (any-factp ((?wm wm-fact)) (and (wm-key-prefix ?wm:key ?path)
+                                             (neq (wm-key-arg ?wm:key ?arg) nil)
+                                             (eq (wm-key-arg ?wm:key ?arg)
+                                                 (wm-key-arg ?wm-fact-key ?arg))))
+            then
+            (bind ?bound-args (create$ ?bound-args ?arg))
+            (printout t "Binding " ?binding-id " has a bound arg " ?arg crlf)
+            else
+            (printout t "Binding " ?binding-id " has an unbound arg " ?arg crlf)
+         )
+         (bind ?va (nth$ (+ ?l 1) ?args))
+         (if (eq ?va [)
+            then
+            (bind ?l (+ (wm-key-multifield-arg-end ?wm-fact-key ?l) 1))
+            else
+            (bind ?l (+ ?l 2))
+         )
+      )
+      ;Resolve binding
+      (bind ?resolution FALSE)
+      (do-for-all-facts ((?wm wm-fact))
+                        (wm-key-prefix ?wm:key ?path)
+         (bind ?matched TRUE)
+         (progn$ (?arg ?bound-args)
+            (if (neq (wm-key-arg ?wm:key ?arg) (wm-key-arg ?wm-fact-key ?arg))
+               then
+               (bind ?matched FALSE)
+               (break)
+             )
+         )
+         (if ?matched
+            then
+            (do-for-fact ((?oldf wm-fact))
+               (and (wm-key-prefix ?oldf:key (create$ meta binding-id))
+                    (eq ?wm:key (binding-wm-fact-key ?oldf:key))
+                    (neq ?binding-id (binding-id ?oldf:key)))
+               (bind ?matched FALSE))
+         )
+         (if ?matched
+            then
+            (bind ?resolution ?wm:key)
+            (break)
+         )
+      )
+
+      (if (neq ?resolution FALSE)
+         then
+         (modify ?bf (key (create$ meta binding-id ?binding-id wm-fact-key ?resolution)))
+         (printout t "Binding " ?binding-id " resolved to " ?resolution "" crlf)
+         (return TRUE)
+         else
+         (printout t "Binding " ?binding-id " could not be resolved!" crlf)
+         (printout error "Wrong predicate or all wm-facts already used in other bindings" crlf)
+         (return FALSE)
+      )
+   )
+   (printout t "Binding " ?binding-id " Does not exist!" crlf)
+   (return FALSE)
+)
+
+(deffunction binding-fact-by-id (?binding-id)
+  (do-for-fact ((?wm wm-fact))
+               (wm-key-prefix ?wm:key (create$ meta binding-id ?binding-id))
+    (return ?wm))
+  (return nil)
+)
+
+(deffunction binding-predicate-by-id (?binding-id)
+  (bind ?binding-fact (binding-fact-by-id ?binding-id))
+  (if (eq ?binding-fact nil) then (return nil))
+  (bind ?key (fact-slot-value ?binding-fact key))
+  (return (subseq$ ?key (+ (member$ wm-fact-key ?key) 1) (length$ ?key)))
+)
+
+
+(deffunction binding-arg-by-id (?binding-id ?arg)
+  (bind ?binding-fact (binding-fact-by-id ?binding-id))
+  (if (eq ?binding-fact nil) then (return ?arg))
+  (bind ?value (wm-key-arg (binding-predicate-by-id ?binding-id) ?arg))
+  (return ?value)
+)
+
+(deffunction replace-unbound ($?params)
+   (bind ?params-new (create$))
+   (progn$ (?param ?params)
+       (bind ?value-new ?param)
+       (bind ?p (str-cat ?param))
+       (if (and (str-index "X" ?p) (str-index "#" ?p))
+           then
+           (bind ?l (str-index "#" ?p))
+           (bind ?L (str-length ?p))
+           (bind ?binding-id (sym-cat (sub-string 1 (-  ?l 1) ?p)))
+           (bind ?arg (sym-cat (sub-string (+ ?l 1) ?L ?p)))
+           (resolve-binding-by-id ?binding-id)
+           (bind ?value-new (binding-arg-by-id ?binding-id ?arg))
+        )
+        (if (check-unbound ?value-new) then
+            (printout t "Param " ?value-new " still unbound, call resolve-binding before!" crlf))
+       (bind ?params-new (create$ ?params-new ?value-new))
+   )
+   (return ?params-new)
+)
+
+
