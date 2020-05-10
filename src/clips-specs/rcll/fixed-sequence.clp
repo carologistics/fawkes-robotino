@@ -1638,17 +1638,24 @@
      (bind ?fact-key (create$ domain fact wp-unused args? wp ?wp)))
  (if (eq ?from-type CS) then
      (bind ?fact-key (create$ domain fact wp-on-shelf args? wp ?wp m ?from-mps spot ?spot)))
- (assert (wm-fact (key meta binding-id ?binding-id policy BIND-UNIQUE wm-fact-key $?fact-key )))
+ (assert (wm-fact (key meta binding args? id ?binding-id policy BIND-UNIQUE)
+                  (is-list TRUE)
+                  (values $?fact-key)))
 
  (bind ?binding-id (sym-cat X (gensym*)))
  (bind ?rs-before  (sym-cat ?binding-id #n))
  (bind ?fact-key (create$ domain fact rs-filled-with args? m ?rs n ?rs-before))
- (assert (wm-fact (key meta binding-id ?binding-id policy BIND-ANY wm-fact-key $?fact-key )))
+ (assert (wm-fact (key meta binding args? id ?binding-id policy BIND-ANY)
+                  (is-list TRUE)
+                  (values $?fact-key)))
 
  (bind ?binding-id (sym-cat X (gensym*)))
  (bind ?rs-after  (sym-cat ?binding-id #sum))
  (bind ?fact-key (create$ domain fact rs-inc args? summand ?rs-before sum ?rs-after))
- (assert (wm-fact (key meta binding-id ?binding-id policy BIND-ANY wm-fact-key $?fact-key )))
+ (assert (wm-fact (key meta binding args? id ?binding-id policy BIND-ANY)
+                  (is-list TRUE)
+                  (values $?fact-key)))
+
 
 
  (assert

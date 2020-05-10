@@ -1045,19 +1045,6 @@
   return ?str
 )
 
-(deffunction binding-wm-fact-key (?key)
-  (return (subseq$ ?key (+ (member$ wm-fact-key ?key) 1) (length$ ?key)))
-)
-
-(deffunction binding-id (?key)
-  (return (nth (+ (member$ binding-id ?key) 1) ?key))
-)
-
-(deffunction binding-policy (?key)
-  (return (nth (+ (member$ policy ?key) 1) ?key))
-)
-
-
 (deffunction unbound-param-id (?param)
   (bind ?p (str-cat ?param))
   (bind ?s (str-index "Xgen" ?p))
@@ -1088,86 +1075,70 @@
 
 (deffunction meta-binding-fact (?binding-id)
   (do-for-fact ((?wm wm-fact))
-               (wm-key-prefix ?wm:key (create$ meta binding-id ?binding-id))
+               (wm-key-prefix ?wm:key (create$ meta binding args? id ?binding-id))
     (return ?wm))
-  (printout t "Binding fact " ?binding-id " not found!" crlf)
+  (printout t "Binding fact with " ?binding-id " not found!" crlf)
   (return nil)
 )
 
-(deffunction meta-binding-predicate (?binding-id)
-  (bind ?binding-fact (meta-binding-fact ?binding-id))
-  (if (eq ?binding-fact nil) then
-      (return nil))
-  (bind ?key (fact-slot-value ?binding-fact key))
-  (return (subseq$ ?key (+ (member$ wm-fact-key ?key) 1) (length$ ?key)))
-)
-
-
-(deffunction meta-binding-arg (?binding-id ?arg)
-  (bind ?binding-fact (meta-binding-fact ?binding-id))
-  (if (eq ?binding-fact nil) then (return ?arg))
-  (bind ?value (wm-key-arg (meta-binding-predicate ?binding-id) ?arg))
-  (printout t "Binding " ?binding-id " arg " ?arg " has value "  ?value crlf)
-  (return ?value)
-)
-
-
 (deffunction resolve-meta-binding (?binding-id)
-   (do-for-fact ((?bf wm-fact))
-                 (wm-key-prefix ?bf:key (create$ meta binding-id ?binding-id))
 
-      (bind ?wm-fact-key (binding-wm-fact-key ?bf:key))
-      (bind ?path (wm-key-path ?wm-fact-key))
-      (bind ?args (wm-key-args ?wm-fact-key))
-      (bind ?bound-args (create$))
-      (bind ?bound-values (create$))
+   (bind ?binding-fact (meta-binding-fact ?binding-id))
+   (bind ?binding-key (fact-slot-value ?binding-fact key))
 
-      (if (not (check-unbound ?args))
-         then
-         (printout t "Binding " ?binding-id " is already resolved!" crlf)
-         (return TRUE)
-      )
+   (bind ?predicate-key (fact-slot-value ?binding-fact values))
+   (bind ?predicate-path (wm-key-path ?predicate-key))
+   (bind ?predicate-args (wm-key-args ?predicate-key))
+   (bind ?bound-args (create$))
+   (bind ?bound-values (create$))
 
-      (printout t "Binding " ?binding-id " path " ?path crlf)
-      (printout t "Binding " ?binding-id " args " ?args crlf)
-      ;Extract bound args
-      (bind ?l 2)
-      (bind ?L (length$ ?args))
-      (printout t "Binding " ?binding-id " detecting binding of args "crlf)
-      (while (<= (+ ?l 1) ?L) do
-         (bind ?param-arg (nth ?l ?args))
-         (bind ?param-value (meta-binding-arg ?binding-id ?param-arg))
+   (if (not (check-unbound ?predicate-key))
+       then
+       (printout t "Binding " ?binding-id " is already resolved!" crlf)
+       (return TRUE))
 
-         (bind ?unbound-param-id (unbound-param-id ?param-value))
-         (if (and ?unbound-param-id (neq ?unbound-param-id ?binding-id))
-                 then
-                 (printout t "Binding " ?binding-id " resolving param-value " ?param-value crlf)
-                 (resolve-meta-binding ?unbound-param-id)
-                 (bind ?param-value (meta-binding-arg ?unbound-param-id (unbound-param-name ?param-value))))
+   ;Extract bound params
+   (printout t "Binding " ?binding-id " detecting bound args "crlf)
+   (bind ?l 2)
+   (bind ?L (length$ ?predicate-args))
+   (while (<= (+ ?l 1) ?L) do
+         (bind ?predicate-arg-name (nth ?l ?predicate-args))
+         (bind ?predicate-arg-value (wm-key-arg ?predicate-key ?predicate-arg-name))
 
+         (bind ?other-binding-id (unbound-param-id ?predicate-arg-value))
 
-         (bind ?unbound-param-id (unbound-param-id ?param-value))
-         (if ?unbound-param-id
-            then
-            (printout t "Binding " ?binding-id " param-arg " ?param-arg " unbound value " ?param-value crlf)
-            else
-            (bind ?bound-args (create$ ?bound-args ?param-arg))
-            (bind ?bound-values (create$ ?bound-values ?param-value))
-            (printout t "Binding " ?binding-id " bound arg " ?param-arg crlf))
+         (if (and (neq ?other-binding-id FALSE)
+                  (neq ?other-binding-id ?binding-id))
+                  then
+                  (printout t "Binding " ?binding-id
+                              " ,resolving arg-value " ?predicate-arg-value
+                              " from binding " ?other-binding-id crlf)
+                  (resolve-meta-binding ?other-binding-id)
+                  (bind ?other-binding-fact (meta-binding-fact ?other-binding-id))
+                  (bind ?other-predicate-key (fact-slot-value ?other-binding-fact values))
+                  (bind ?other-predicate-arg-name (unbound-param-name ?predicate-arg-value))
+                  (bind ?other-predicate-arg-value (wm-key-arg ?other-predicate-key ?other-predicate-arg-name))
+                  (bind ?predicate-arg-value ?other-predicate-arg-value))
 
-         (bind ?va (nth$ (+ ?l 1) ?args))
-         (if (eq ?va [)
-            then
-            (bind ?l (+ (wm-key-multifield-arg-end ?wm-fact-key ?l) 1))
-            else
-            (bind ?l (+ ?l 2))
-         )
-      )
+         (if (unbound-param-id ?predicate-arg-value)
+             then
+             (printout t "Binding " ?binding-id " predicate (arg,value):"
+                         " (" ?predicate-arg-name ", " ?predicate-arg-value " ) is unbound" crlf)
+             else
+             (bind ?bound-args (create$ ?bound-args ?predicate-arg-name))
+             (bind ?bound-values (create$ ?bound-values ?predicate-arg-value))
+             (printout t "Binding " ?binding-id " predicate (arg,value)"
+                         " (" ?predicate-arg-name ", " ?predicate-arg-value " ) is bound" crlf))
 
-      ;Resolve binding
-      (bind ?resolution FALSE)
-      (do-for-all-facts ((?wm wm-fact)) (wm-key-prefix ?wm:key ?path)
+        (if (multifieldp ?predicate-arg-value)
+             then
+             (bind ?l (+ (wm-key-multifield-arg-end ?predicate-key ?l) 1))
+             else
+             (bind ?l (+ ?l 2))))
 
+   ;Resolve unbound args from a matching wm-facts
+   (bind ?resolution FALSE)
+   (do-for-all-facts ((?wm wm-fact)) (wm-key-prefix ?wm:key ?predicate-path)
         (bind ?matched TRUE)
         (progn$ (?arg ?bound-args)
                 (if (neq (wm-key-arg ?wm:key ?arg) (nth ?arg-index ?bound-values))
@@ -1175,31 +1146,30 @@
                     (bind ?matched FALSE)
                     (break)))
 
-         (if (and ?matched (eq (binding-policy ?bf:key) BIND-UNIQUE))
+         (if (and ?matched (eq (wm-key-arg ?binding-key policy) BIND-UNIQUE))
              then
-             (do-for-fact ((?oldf wm-fact))
-                          (and (wm-key-prefix ?oldf:key (create$ meta binding-id))
-                               (eq ?wm:key (binding-wm-fact-key ?oldf:key))
-                               (neq ?binding-id (binding-id ?oldf:key)))
+             (do-for-fact ((?old-binding-fact wm-fact))
+                          (and (wm-key-prefix ?old-binding-fact:key (create$ meta binding args?))
+                               (neq ?binding-id (wm-key-arg ?old-binding-fact:key id))
+                               (eq ?wm:key ?old-binding-fact:values))
                           (bind ?matched FALSE)))
 
          (if ?matched
             then
             (bind ?resolution ?wm:key)
             (break))
-      )
+    )
 
-      (if (neq ?resolution FALSE)
+    (if (neq ?resolution FALSE)
          then
-         (modify ?bf (key (create$ meta binding-id ?binding-id wm-fact-key ?resolution)))
+         (modify ?binding-fact (values ?resolution))
          (printout t "Binding " ?binding-id " resolved to " ?resolution "" crlf)
          (return TRUE)
          else
          (printout t "Binding " ?binding-id " could not be resolved!" crlf)
          (printout error "Wrong predicate or all wm-facts already used in other bindings" crlf)
-         (return FALSE)
-      )
-   )
+         (return FALSE))
+
    (printout t "Binding " ?binding-id " does not exist!" crlf)
    (return FALSE)
 )
@@ -1208,23 +1178,25 @@
    (if (not (check-unbound ?params))
         then (return ?params))
 
-   (bind ?params-new (create$))
+   (bind ?new-params (create$))
    (progn$ (?param ?params)
-       (bind ?value-new ?param)
+       (bind ?new-value ?param)
        (if (check-unbound ?param)
            then
            (bind ?binding-id (unbound-param-id ?param))
            (bind ?arg (unbound-param-name ?param))
            (resolve-meta-binding ?binding-id)
-           (bind ?value-new (meta-binding-arg ?binding-id ?arg))
-           (printout t "Param " ?arg " replaced by " ?value-new crlf)
+           (bind ?binding-fact (meta-binding-fact ?binding-id))
+           (bind ?predicate-key (fact-slot-value ?binding-fact values))
+           (bind ?new-value (wm-key-arg ?predicate-key ?arg))
+           (printout t "Param " ?arg " replaced by " ?new-value crlf)
         )
-        (if (check-unbound ?value-new) then
-            (printout t "Param " ?value-new " still unbound, failed to repalce!" crlf))
-       (bind ?params-new (create$ ?params-new ?value-new))
+        (if (check-unbound ?new-value) then
+            (printout t "Param " ?new-value " still unbound, failed to repalce!" crlf))
+       (bind ?new-params (create$ ?new-params ?new-value))
    )
 
-   (return ?params-new)
+   (return ?new-params)
 )
 
 

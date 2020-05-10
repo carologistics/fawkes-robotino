@@ -54,7 +54,9 @@
   (bind ?binding-id (sym-cat X (gensym*)))
   (bind ?wp (str-cat ?binding-id #wp))
   (bind ?fact-key (create$ domain fact wp-unused args? wp ?wp))
-  (assert (wm-fact (key meta binding-id ?binding-id policy BIND-UNIQUE wm-fact-key $?fact-key )))
+  (assert (wm-fact (key meta binding args? id ?binding-id policy BIND-UNIQUE)
+                   (is-list TRUE)
+                   (values $?fact-key)))
 
   (assert (goal (id ?g-id)
                 (parent ?production-id)
@@ -159,7 +161,9 @@
   (bind ?shelf-spot (sym-cat ?binding-id #spot))
   (bind ?cc  (sym-cat ?binding-id #wp))
   (bind ?fact-key (create$ domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
-  (assert (wm-fact (key meta binding-id ?binding-id policy BIND-UNIQUE wm-fact-key $?fact-key )))
+  (assert (wm-fact (key meta binding args? id ?binding-id policy BIND-UNIQUE)
+                   (is-list TRUE)
+                   (values $?fact-key)))
 
   (assert (goal (id ?g-id)
                 (parent ?goal-id)
