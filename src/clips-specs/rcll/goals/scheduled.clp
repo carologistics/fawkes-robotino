@@ -87,17 +87,7 @@
      (not (goal (id ?child-id&:(not (member$ ?child-id ?committed))) (parent ?g-id)))
      (not (goal (parent ?g-id) (mode ~RETRACTED) (outcome ~COMPLETED)))
      =>
-     (if (check-unbound ?req) then
-         (bind ?req (replace-unbound ?req))
-     )
-     (do-for-all-facts ((?planf plan)) (member$ ?planf:id ?committed)
-       (do-for-all-facts ((?actionf plan-action)) (eq ?actionf:plan-id ?planf:id)
-          (if (check-unbound ?actionf:param-values) then
-             (bind ?bound-values (replace-unbound ?actionf:param-values))
-             (modify ?actionf (param-values ?bound-values))
-          )
-       )
-     )
+     (bind ?req (replace-unbound ?req))
      (modify ?gf (mode COMMITTED) (required-resources ?req))
 )
 

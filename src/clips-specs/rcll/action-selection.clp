@@ -119,7 +119,8 @@
   (if (neq ?verbosity QUIET) then
     (printout t "Selected next action " ?action-name ?param-values crlf)
   )
-	(modify ?pa (state PENDING))
+	(bind ?param-values (replace-unbound ?param-values))
+	(modify ?pa (state PENDING) (param-values ?param-values))
 )
 
 (defrule action-selection-done
