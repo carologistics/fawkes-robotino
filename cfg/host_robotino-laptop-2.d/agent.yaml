@@ -1,0 +1,7 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+fawkes:
+  agent:
+    name: "Upsilan"
+    number: 2
