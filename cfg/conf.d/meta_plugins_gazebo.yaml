@@ -86,13 +86,15 @@ fawkes/meta_plugins:
     - gologpp
 
   m-skill-sim-clips-exec:
+    - execution-time-estimator
     - skiller-simulator
     - ros
     - navgraph
     - navgraph-generator
     - navgraph-generator-mps
     - m-clips-executive
-    # - skiller-simulator-navgraph
+    - execution-time-estimator-navgraph
+    # - execution-time-estimator-lookup
     - webview
 
   rcll-sim-2016:
