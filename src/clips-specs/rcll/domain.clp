@@ -103,9 +103,9 @@
   )
 	(assert
 	  (domain-fact (name self) (param-values ?self))
-	  (domain-object (name R-1) (type robot))
-    (domain-object (name R-2) (type robot))
-    (domain-object (name R-3) (type robot))
+	  (domain-object (name Icks) (type robot))
+    (domain-object (name Upsilan) (type robot))
+    (domain-object (name Set) (type robot))
     (domain-fact (name at) (param-values ?self START INPUT))
     (domain-fact (name robot-waiting) (param-values ?self))
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
@@ -220,7 +220,7 @@
 " Load all initial domain facts on startup of the game "
   (domain-loaded)
   ?flushed <- (domain-wm-flushed)
-  (wm-fact (key config rcll robot-name) (value ?robot-name))
+  (wm-fact (key config agent name) (value ?robot-name))
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
   (wm-fact (key refbox phase) (value SETUP))
   =>
@@ -305,7 +305,7 @@
    Restore the world model from the database."
   (not (domain-facts-loaded))
   (wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
-  (wm-fact (key config rcll robot-name) (value ?robot-name))
+  (wm-fact (key config agent name) (value ?robot-name))
  (wm-fact (key refbox team-color) (value ?team-color&~nil))
 
  =>

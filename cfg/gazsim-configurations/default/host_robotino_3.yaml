@@ -6,6 +6,12 @@
 doc-url: !url http://trac.fawkesrobotics.org/wiki/Plugins/gazsim
 ---
 
+fawkes:
+  agent:
+    name: Set
+    number: 3
+    team: Carologistics
+
 network:
   fawkes:
     tcp_port: !tcp-port 1923
@@ -73,9 +79,6 @@ webtools-bridge:
   rosbridge-uri: "ws://localhost:7070"
 
 clips-executive/specs/rcll/parameters/rcll:
-  team-name: Carologistics
-  robot-name: R-3
-  robot-number: 3
 
   peer-address: 127.0.0.1
   peer-port: 0
