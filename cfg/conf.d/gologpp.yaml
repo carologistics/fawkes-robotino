@@ -23,3 +23,23 @@
         observe:
           - "MachineInfoInterface::/protoboard/machine_info/*"
           # - "OrderInterface::/protoboard/order/*"
+    visitall-multi-agent:
+      use_local_skiller: true
+      agents:
+        names: [robot1, robot2]
+        robot1:
+          port: 1921
+        robot2:
+          port: 1922
+      blackboard:
+        watch:
+          - "RCLLGameStateInterface::/protoboard/game_state"
+        observe:
+          - "MachineInfoInterface::/protoboard/machine_info/*"
+      action-mapping:
+        # yamllint disable
+        create_peer: create_peer{address=?(address)s, recv_on_port=?(recv_on_port)i, send_to_port=?(send_to_port)i}
+        create_peer_crypto: create_peer{address=?(address)s, recv_on_port=?(recv_on_port)i, send_to_port=?(send_to_port)i, crypto_key=?(crypto_key)s, cipher="aes-128-cbc"}
+        goto: goto{x=?(x)f, y=?(y)f, ori=?(ori)f}
+        goto_place: goto{place=?(place|/_/-/)s}
+        # yamllint enable

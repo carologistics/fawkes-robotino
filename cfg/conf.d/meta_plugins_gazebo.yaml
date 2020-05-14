@@ -62,14 +62,26 @@ fawkes/meta_plugins:
   gazsim-meta-agent:
     - gazsim-meta-clips
 
-  gazsim-meta-clips-exec:
+  gazsim-meta-skiller:
     - gazsim-meta-robotino-ros
     - gazsim-meta-robotino-ros-movebase
+
+  gazsim-meta-clips-exec:
+    - gazsim-meta-skiller
     - m-clips-executive
 
   gazsim-meta-gologpp:
-    - gazsim-meta-robotino-ros
-    - gazsim-meta-robotino-ros-movebase
+    - gazsim-meta-skiller
+    - protoboard-rcll
+    - gologpp
+
+  gazsim-meta-central-gologpp:
+    - gazebo
+    - ros
+    - navgraph
+    - navgraph-generator
+    - navgraph-generator-mps
+    - skiller
     - protoboard-rcll
     - gologpp
 
