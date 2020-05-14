@@ -1,0 +1,19 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+#start fawkes with this configuration file if you want to control robotino 1 in the simulation
+
+#include main config file
+include:
+  - !ignore-missing conf.d/
+  #concrete configuration in an other file because I could not override config values when using a single file
+  - gazsim-configurations/gazsim-config-override.yaml
+  - !host-specific gazsim-configurations/default/host_robotino_12.yaml
+---
+
+fawkes:
+
+  # Main app relevant settings
+  mainapp:
+    loggers: console;file/debug:debug12_$time.log
+
