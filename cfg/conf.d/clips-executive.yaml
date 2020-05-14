@@ -197,7 +197,7 @@ clips-executive:
           cipher: "aes-128-cbc"
 
           waitpoint-in-cyan: Icks
-          waitpoint-in-magenta: Upsilan
+          waitpoint-in-magenta: Set
 
           route:
             CYAN:
