@@ -39,6 +39,7 @@
 #include <core/threading/thread.h>
 #include <interfaces/ConveyorPoseInterface.h>
 #include <interfaces/Position3DInterface.h>
+#include <pcl_utils/compatibility.h>
 #include <plugins/ros/aspect/ros.h>
 
 //#include <pcl/filters/uniform_sampling.h>
@@ -239,8 +240,8 @@ private:
 
 	CloudPtr cloud_trim(CloudPtr in);
 
-	boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
-	CloudPtr                                          cloud_voxel_grid(CloudPtr in);
+	pcl::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
+	CloudPtr                                        cloud_voxel_grid(CloudPtr in);
 
 	bool is_target_shelf();
 
