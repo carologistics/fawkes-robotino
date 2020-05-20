@@ -311,8 +311,8 @@ ConveyorPlaneThread::loop()
 		}
 
 		//-- separate connected components laying in the plane
-		size_t                                            id;
-		boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices = cloud_cluster(cloud_plane);
+		size_t                                          id;
+		pcl::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices = cloud_cluster(cloud_plane);
 
 		//-- if even there were no sufficient connected components on the found
 		// surface ...
@@ -350,7 +350,7 @@ ConveyorPlaneThread::loop()
 			                  height,
 			                  cfg_plane_height_minimum_);
 
-			boost::shared_ptr<pcl::PointIndices> extract_indicies(
+			pcl::shared_ptr<pcl::PointIndices> extract_indicies(
 			  new pcl::PointIndices(cluster_indices->at(id)));
 			CloudPtr                   tmp(new Cloud);
 			pcl::ExtractIndices<Point> extract;
@@ -379,7 +379,7 @@ ConveyorPlaneThread::loop()
 				                  "Discard plane, because of width restriction. is: %f\tshould: %f",
 				                  width,
 				                  cfg_plane_width_minimum_);
-				boost::shared_ptr<pcl::PointIndices> extract_indicies(
+				pcl::shared_ptr<pcl::PointIndices> extract_indicies(
 				  new pcl::PointIndices(cluster_indices->at(id)));
 				CloudPtr                   tmp(new Cloud);
 				pcl::ExtractIndices<Point> extract;
@@ -756,7 +756,7 @@ ConveyorPlaneThread::cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr co
 	return out;
 }
 
-boost::shared_ptr<std::vector<pcl::PointIndices>>
+pcl::shared_ptr<std::vector<pcl::PointIndices>>
 ConveyorPlaneThread::cloud_cluster(CloudPtr in)
 {
 	// in = cloud_voxel_grid(in);
@@ -764,7 +764,7 @@ ConveyorPlaneThread::cloud_cluster(CloudPtr in)
 	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
 	tree->setInputCloud(in);
 
-	boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices(
+	pcl::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices(
 	  new std::vector<pcl::PointIndices>);
 	pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
 	ec.setClusterTolerance(cfg_cluster_tolerance_);
@@ -778,9 +778,8 @@ ConveyorPlaneThread::cloud_cluster(CloudPtr in)
 }
 
 std::vector<CloudPtr>
-ConveyorPlaneThread::cluster_split(
-  CloudPtr                                          in,
-  boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices)
+ConveyorPlaneThread::cluster_split(CloudPtr                                        in,
+                                   pcl::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices)
 {
 	std::vector<CloudPtr> clouds_out;
 	for (std::vector<pcl::PointIndices>::const_iterator c_it = cluster_indices->begin();
