@@ -87,6 +87,7 @@ plugins/amcl:
   map-lasergen/origin_y: -0.5
 
 plugins/laser-filter:
+  front-rotate/active: false
   front-downsample/active: false
   front-360to360/active: false
   filter-front-360/active: false
@@ -112,10 +113,15 @@ plugins/static-transforms:
       rot_yaw: 0
       rot_roll: 0
     cam_conveyor:
-      trans_z: -0.056
-    gazsim_gripper:
-      frame: !frame gripper_home
-      child_frame: !frame gripper
-      trans_x: 0.08
-      trans_y: 0.0
-      trans_z: 0.0
+      trans_z: -0.22
+
+arduino:
+  # maximum space in x, y and z in meters
+  x_max: 0.1999
+  y_max: 0.085
+  z_max: 0.1
+
+ # min space in x, y and z in meters
+  x_min: 0
+  z_min: -2.0
+  # y_min: defaults to y_max / -2

@@ -24,6 +24,7 @@ LIBS_gazsim_tag_vision = fawkescore fawkesutils fawkesaspects fvutils \
                          fawkestf fawkesinterface fawkesblackboard llsf_msgs\
                          Position3DInterface TransformInterface \
                          SwitchInterface RobotinoLightInterface \
+                         TagVisionInterface \
                          fawkesgazeboaspect
 OBJS_gazsim_tag_vision = gazsim_tag_vision_plugin.o gazsim_tag_vision_thread.o
 
