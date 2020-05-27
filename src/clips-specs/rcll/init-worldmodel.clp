@@ -62,4 +62,6 @@
   (wm-robmem-sync-enable "/exploration/fact/tag-vis")
   (wm-robmem-sync-enable "/exploration/fact/line-vis")
   (wm-robmem-sync-enable "/exploration/fact/time-searched")
+
+  (wm-robmem-sync-enable "/exec/remote-action")
 )
