@@ -47,6 +47,8 @@
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (wm-fact (key domain fact wp-unused args? wp ?wp))
 
+  (not (wm-fact (key domain fact robot-waiting args? ?)))
+
   (test (eq ?ord O2))
   =>
   (bind ?g-id (sym-cat ROOT_ ?ord))

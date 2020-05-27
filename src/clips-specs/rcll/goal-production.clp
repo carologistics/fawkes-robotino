@@ -228,6 +228,7 @@
   (not (goal (class ENTER-FIELD)))
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
+  (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key refbox state) (value RUNNING))
   (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
   ; (NavGraphGeneratorInterface (final TRUE))
@@ -235,6 +236,7 @@
   =>
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
   (assert (goal (id (sym-cat ENTER-FIELD- (gensym*)))
-                (class ENTER-FIELD) (sub-type SIMPLE)))
+                (class ENTER-FIELD) (sub-type SIMPLE)
+                (params r ?robot team-color ?team-color)))
 )
 

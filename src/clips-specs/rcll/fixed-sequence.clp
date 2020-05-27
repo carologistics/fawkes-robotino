@@ -115,9 +115,8 @@
 
 
 (defrule goal-expander-enter-field
-  ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact robot-waiting args? r ?robot))
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
+              (params r ?robot team-color ?team-color))
 =>
   (assert
     (plan (id ENTER-FIELD-PLAN) (goal-id ?goal-id))
