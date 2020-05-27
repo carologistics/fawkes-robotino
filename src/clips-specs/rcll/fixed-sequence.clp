@@ -1610,7 +1610,7 @@
 (defrule goal-expander-fill-rs-central
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (goal (id ?goal-id) (class FILL-RS) (params $?params) (mode SELECTED))
- (test (subsetp (create$ fill-base# fill-rs) ?params))
+ (test (subsetp (create$ fill-rs) ?params))
 
  ;Resources groundable during scheduling (Schedulable resources)
  (wm-fact (key domain fact at args? r ?robot m ? side ?))

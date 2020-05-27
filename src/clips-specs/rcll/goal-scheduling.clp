@@ -240,23 +240,21 @@
   (printout t "Goal " (sym-cat MOUNT-RING ?ring#) " formulated" crlf)
 
   ;;Create Fill-RS goals
-  (if (neq ?req-num ZERO) then
-    (bind ?set (create$ na THREE TWO ONE))
-    (bind ?req-set (delete$ ?set 1 (- (member$ ?req-num ?set) 1)))
+  (if (neq ?req-num ZERO)
+      then
+      (bind ?fill# (member$ ?req-num (create$ ONE TWO THREE)))
 
-    (progn$ (?fill-base# ?req-set)
-      (bind ?parent-id ?goal-id)
-      (bind ?goal-id (sym-cat FILL_RS ?ring# _ ?fill-base# _ ?ord))
-
-      (assert (goal (id ?goal-id)
-                    (parent ?parent-id)
-                    (class FILL-RS)
-                    (sub-type SCHEDULE-SUBGOALS)
-                    (params (create$ ?params
-                                     fill-base# ?fill-base#
-                                     fill-rs ?rs))))
-
-      (printout t "Goal " (sym-cat FILL-RS- ?fill-base#) " formulated" crlf)
-    )
+      (while (> ?fill# 0)
+             (bind ?parent-id ?goal-id)
+             (bind ?goal-id (sym-cat FILL_RS_ ?ring# ?fill# _ ?ord))
+             (assert (goal (id ?goal-id)
+                     (parent ?parent-id)
+                     (class FILL-RS)
+                     (sub-type SCHEDULE-SUBGOALS)
+                     (params (create$ ?params
+                                      fill-rs ?rs))))
+            (bind ?fill# (- 1 ?fill#))
+            (printout t "Goal " (sym-cat FILL-RS- ?fill#) " formulated" crlf)
+      )
   )
 )
