@@ -489,6 +489,52 @@
   (modify ?g (mode EVALUATED))
 )
 
+(defrule goal-reasoner-evaluate-deliver
+  ?g <- (goal (class DELIVER)
+              (params robot ?robot
+                      mps ?mps
+                      order ?order
+                      wp ?wp
+                      ds ?ds
+                      $?)
+              (mode FINISHED) (outcome ?outcome)
+        )
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?ds side INPUT))
+  =>
+  (do-for-all-facts ((?wait wm-fact))
+    (and (wm-key-prefix ?wait:key (create$ wp meta wait-for-delivery))
+         (eq (wm-key-arg ?wait:key wp) ?wp))
+    (retract ?wait)
+  )
+  (modify ?g (mode EVALUATED))
+)
+
+(defrule goal-reasoner-evaluate-clear-ds
+" Another workpiece has precedence over the currently picked up one
+"
+  ?g <- (goal (class CLEAR-MPS) (mode FINISHED) (outcome ?outcome)
+              (params robot ?robot mps ?ds wp ?wp side INPUT))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  ; DS station
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+  ; our wp
+  (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  ; other wp
+  ;Order-CEs
+  (wm-fact (key order meta wp-for-order
+            args? wp ?other-wp&:(neq ?wp ?other-wp) ord ?other-order))
+  (wm-fact (key wp meta next-step args? wp ?other-wp) (value DELIVER))
+  (wm-fact (key refbox order ?other-order delivery-begin)
+           (value ?other-begin&:(< ?other-begin (nth$ 1 ?game-time))))
+  =>
+  (assert (wm-fact (key wp meta wait-for-delivery args? wp ?wp wait-for ?other-wp)))
+  (modify ?g (mode EVALUATED))
+)
+
 
 ; ================================= Goal Clean up ============================
 
