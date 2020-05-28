@@ -1442,6 +1442,7 @@
   (or (and (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
            (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp))))
       (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+  (not (wm-fact (key wp meta wait-for-delivery args? wp ?wp wait-for ?)))
   (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
   (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
   (not (goal (class DELIVER)
