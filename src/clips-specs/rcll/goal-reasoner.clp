@@ -363,15 +363,23 @@
   (modify ?g (mode EVALUATED))
 )
 
-(defrule goal-reasoner-evaluate-completed-deliver
-" Enhance the order-delivered fact of the order of a successful deliver goal
+(defrule goal-reasoner-evaluate-process-ds
+" Enhance the order-delivered fact of the order of a successful deliver goal,
+  delete the mps-handling fact if the preparation took place.
 "
-  ?g <- (goal (id ?goal-id) (class PROCESS-MPS) (mode FINISHED) (outcome COMPLETED)
+  ?g <- (goal (id ?goal-id) (class PROCESS-MPS) (mode FINISHED) (outcome ?outcome)
               (params m ?mps ord ?order))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   ?od <- (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color) (value ?val))
+  (plan-action (goal-id ?goal-id) (action-name ?prepare-action) (state FINAL))
+  ?pre <- (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
+  ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
   =>
-  (modify ?od (value (+ ?val 1)))
+  (retract ?pre ?pro)
+  (if (eq ?outcome COMPLETED)
+    then
+      (modify ?od (value (+ ?val 1)))
+  )
   (modify ?g (mode EVALUATED))
 )
 
