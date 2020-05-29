@@ -70,15 +70,27 @@
 
 (defrule domain-worldmodel-flush
 	(executive-init)
-	(wm-fact (key cx identity))
+	(wm-fact (key cx identity) (value ?master))
+	(wm-fact (key config rcll master) (value ?master))
 	(wm-fact (key refbox phase) (value SETUP))
+	(not (wm-fact (key domain-wm-flusehd)))
 	=>
 	(printout warn "Flushing worldmodel!" crlf)
 	(wm-robmem-flush)
 	(do-for-all-facts ((?df domain-fact)) TRUE
 	  (retract ?df)
 	)
-	(assert (domain-wm-flushed))
+	(assert (wm-fact (key domain-wm-flushed)))
+)
+
+(defrule domain-worldmodel-remove-flushed-fact
+	(executive-init)
+	(wm-fact (key cx identity) (value ?master))
+     (wm-fact (key config rcll master) (value ?master))
+	(wm-fact (key refbox phase) (value ~SETUP))
+     ?df <- (wm-fact (key domain-wm-flusehd))
+	=>
+	(retract ?df)
 )
 
 
@@ -218,21 +230,12 @@
     (domain-object (name O9) (type order))
     (domain-fact (name rs-ring-spec) (param-values ?rs1 RING_NONE ZERO))
     (domain-fact (name rs-ring-spec) (param-values ?rs2 RING_NONE ZERO))
-	)
+    )
 )
 
-(defrule domain-load-initial-facts
-" Load all initial domain facts on startup of the game "
-  (domain-loaded)
-  ?flushed <- (domain-wm-flushed)
-  (wm-fact (key config agent name) (value ?robot-name))
-  (wm-fact (key refbox team-color) (value ?team-color&~nil))
-  (wm-fact (key refbox phase) (value SETUP))
-  =>
-  (retract ?flushed)
-  (bind ?self (sym-cat ?robot-name))
-  (printout info "Initializing worldmodel" crlf)
-  (if (eq ?team-color CYAN)
+
+(deffunction domain-load-fresh-game-facts (?team-color)
+ (if (eq ?team-color CYAN)
     then
         (bind ?bs C-BS)
         (bind ?cs1 C-CS1)
@@ -249,10 +252,8 @@
         (bind ?rs2 M-RS2)
         (bind ?ds M-DS)
         (bind ?ss M-SS)
-  )
-
-	(domain-load-local-facts ?self ?team-color)
-  (assert
+ )
+ (assert
     (domain-object (name SPAWNING-MASTER) (type master-token))
     (domain-object (name PRODUCE-EXCLUSIVE-COMPLEXITY) (type token))
 
@@ -306,7 +307,21 @@
     (domain-fact (name rs-filled-with) (param-values ?rs1 ZERO))
     (domain-fact (name rs-filled-with) (param-values ?rs2 ZERO))
   )
+)
 
+(defrule domain-load-initial-facts
+" Load all initial domain facts on startup of the game "
+  (domain-loaded)
+  ?flushed <- (wm-fact (key domain-wm-flushed))
+  (wm-fact (key config agent name) (value ?robot-name))
+  (wm-fact (key refbox team-color) (value ?team-color&~nil))
+  (wm-fact (key refbox phase) (value SETUP))
+  =>
+  (bind ?self (sym-cat ?robot-name))
+  (printout info "Initializing worldmodel" crlf)
+  (domain-load-self-facts ?self)
+  (domain-load-local-facts ?team-color)
+  (domain-load-fresh-game-facts ?team-color)
   (assert (domain-facts-loaded))
 )
 
