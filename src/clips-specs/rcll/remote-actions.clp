@@ -19,56 +19,134 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
+(defglobal
+  ?*REMOTE-ACTION-ARGS-NAMES* = (create$ id goal-id plan-id action-name)
+)
 
-(deffunction remote-action-create-args (?actionf)
+
+(deffunction remote-action-create-wm-args (?actionf)
    (printout t "Creating remote-action args" crlf)
    (bind ?args (create$))
-   (bind ?arg-names (fact-slot-names ?actionf))
-   (progn$ (?arg-name ?arg-names)
-           (bind ?arg-value (fact-slot-value ?actionf ?arg-name))
+   ;(bind ?arg-keys (fact-slot-names ?actionf))
+   (bind ?arg-keys ?*REMOTE-ACTION-ARGS-NAMES* )
+   (progn$ (?arg-key ?arg-keys)
+           (bind ?arg-value (fact-slot-value ?actionf ?arg-key))
            (if (multifieldp ?arg-value)
                 then
                 (bind ?arg-value (create$ [ ?arg-value ])))
            (if (numberp ?arg-value)
                then
-               (printout t " Converting numerical value of " ?arg-name " " ?arg-value  " to symbol" crlf)
+               (printout t " Converting numerical value of " ?arg-key " " ?arg-value  " to symbol" crlf)
                (bind ?arg-value (sym-cat ?arg-value)))
-           (printout t "arg? "  ?arg-name " " ?arg-value crlf)
-           (bind ?args (create$ ?args ?arg-name ?arg-value))
+           (printout t "arg? "  ?arg-key ": " ?arg-value crlf)
+           (bind ?args (create$ ?args ?arg-key ?arg-value))
    )
    (return (create$ args? ?args))
 )
 
-(deffunction remote-action-updated (?local-actionf ?remote-actionf)
+(deffunction remote-action-create-wm-values (?actionf)
+   (printout t "Creating remote-action key args?" crlf)
+   (bind ?values-list (create$))
+   (bind ?arg-keys (delete-member$ (fact-slot-names ?actionf) ?*REMOTE-ACTION-ARGS-NAMES* ))
+   (progn$ (?arg-key ?arg-keys)
+           (bind ?arg-value (fact-slot-value ?actionf ?arg-key))
+           (if (multifieldp ?arg-value)
+                then
+                (bind ?arg-value (create$ [ ?arg-value ])))
 
+           (printout t "       "  ?arg-key " " ?arg-value crlf)
+           (bind ?values-list (create$ ?values-list ?arg-key ?arg-value))
+   )
+   (return ?values-list)
+)
+
+(deffunction remote-action-updated (?local-actionf ?remote-actionf)
    (bind ?old-key (fact-slot-value ?remote-actionf key))
    (bind ?old-args (wm-key-args ?old-key))
 
    (printout t "old args " ?old-args crlf)
-   (printout t "new args " (remote-action-create-args ?local-actionf) crlf)
-   (if (eq ?old-args (remote-action-create-args ?local-actionf)) then
+   (printout t "new args " (remote-action-create-wm-args ?local-actionf) crlf)
+   (if (eq ?old-args (remote-action-create-wm-args ?local-actionf)) then
    (printout t "matching :D " ?old-args crlf)
        (return TRUE)
 )
    (return FALSE)
 )
 
+(deffunction remote-action-to-plan-action-str (?wm-idx)
+  (printout t " Creating plan-action from remote-action " crlf)
+  (printout t "  (plan-action " crlf)
+  (bind ?fact-string " (plan-action ")
+  ;Process remote-action key
+  (bind ?wm-key (fact-slot-value ?wm-idx key) )
+  (bind ?l (+ 2 (length$ (wm-key-path ?wm-key)))) ; + 2 offset from path to first-arg
+  (bind ?L (length$ ?wm-key))
+  (while (<= ?l ?L) do
+         (bind ?slot-name (nth ?l ?wm-key))
+         (bind ?slot-value (wm-key-arg ?wm-key ?slot-name))
+         (printout t "     (" ?slot-name " " ?slot-value ")" crlf)
+         (if (multifieldp ?slot-value)
+             then
+             (bind ?slot-value (implode$ ?slot-value))
+             (bind ?l (+ (wm-key-multifield-arg-end ?wm-key ?l) 1))
+             else
+             (if (stringp ?slot-value) then (bind ?slot-value (str-cat "\"" ?slot-value "\"")))
+             (bind ?l (+ ?l 2)))
+
+         (bind ?slot-string (str-cat "(" ?slot-name " " ?slot-value ")"))
+         (bind ?fact-string (str-cat ?fact-string " " ?slot-string))
+  )
+  ;Process remote-action values
+  (bind ?wm-values (fact-slot-value ?wm-idx values) )
+  (bind ?l 1)
+  (bind ?L (length$ ?wm-values))
+  (while (<= ?l ?L) do
+         (bind ?slot-name (nth ?l ?wm-values))
+         (bind ?l (+ 1 ?l))
+         (bind ?slot-value (create$))
+         (if (eq [ (nth$ ?l ?wm-values))
+             then
+             (bind ?l (+ 1 ?l))
+             (while (and (<= ?l ?L) (neq ] (nth$ ?l ?wm-values)))
+                    (bind ?slot-value (append$ ?slot-value (nth$ ?l ?wm-values)))
+                    (bind ?l (+ 1 ?l)))
+             else
+             (bind ?slot-value (nth$ ?l ?wm-values))
+             (if (stringp ?slot-value) then (bind ?slot-value (str-cat "\"" ?slot-value "\"")))
+         )
+         (if (multifieldp ?slot-value) then (bind ?slot-value (implode$ ?slot-value)))
+
+         (printout t "    (" ?slot-name " " ?slot-value ")" crlf)
+         (bind ?slot-string (str-cat "(" ?slot-name " " ?slot-value ")"))
+         (bind ?fact-string (str-cat ?fact-string " " ?slot-string))
+         (bind ?l (+ 1 ?l))
+  )
+
+  (printout t ")" crlf)
+  (return (str-cat ?fact-string " )"))
+)
+
 
 (defrule remote-action-create-remote-fact
-  (wm-fact (key domain fact self args? r ?master))
+  (wm-fact (key domain fact self args? r ?self))
+  (wm-fact (key cx identity) (value ?self-str))
   ?actionf <- (plan-action (state PENDING)
-                          (id ?id)
-                          (goal-id ?goal-id)
-                          (plan-id ?plan-id)
-                          (param-names $?p-names&:(member$ r ?p-names))
-                          (param-values $?p-values&:(not (member$ ?master ?p-values))))
+                           (executable TRUE)
+                           (id ?id)
+                           (goal-id ?goal-id)
+                           (plan-id ?plan-id)
+                           (param-names $?p-names&:(member$ r ?p-names))
+                           (param-values $?p-values&:(and (not (member$ ?self ?p-values))
+                                                          (not (member$ ?self-str ?p-values))))
+              )
   (not (wm-fact (key exec remote-action args? id ?id-sym&:(eq ?id-sym (sym-cat ?id))
                                               goal-id ?goal-id
                                               plan-id ?plan-id
                                               $?)))
   =>
-  (bind ?args (remote-action-create-args ?actionf))
-  (assert (wm-fact (key exec remote-action ?args)))
+  (bind ?args (remote-action-create-wm-args ?actionf))
+  (bind ?values (remote-action-create-wm-values ?actionf))
+  (assert (wm-fact (key exec remote-action ?args) (is-list TRUE) (type SYMBOL) (values ?values)))
 )
 
 (defrule remote-action-execution-end
@@ -79,90 +157,37 @@
                            (plan-id ?plan-id)
                            (param-names $?p-names&:(member$ r ?p-names))
                            (param-values $?p-values&:(not (member$ ?master ?p-values))))
-;  ?remotef <- (wm-fact (key exec remote-action args? id ?id-sym&:(eq ?id-sym (sym-cat ?id))
-;                                                     goal-id ?goal-id
-;                                                     plan-id ?plan-id
-;                                                     $?
-;                                                     state ?new-state&:(neq ?state ?new-state)
-;                                                     $?))
-  ?remotef <- (wm-fact (key $?key))
+  ?remotef <- (wm-fact (key $?key) (values $? state ?new-state $?))
   (test (wm-key-prefix ?key (create$ exec remote-action)))
   (test (eq (wm-key-arg ?key id) (sym-cat ?id)))
   (test (eq (wm-key-arg ?key goal-id) ?goal-id))
   (test (eq (wm-key-arg ?key plan-id) ?plan-id))
-  (test (neq (wm-key-arg ?key state) ?state ))
-
- ;(test (not (remote-action-updated ?actionf ?remotef)))
+  (test (neq ?new-state ?state))
   =>
-  (printout t " Creating plan-action " crlf)
-  (bind ?fact-string "(plan-action ")
-  (bind ?key (fact-slot-value ?remotef key) )
-  (bind ?l (+ 2 (length$ (wm-key-path ?key)))) ; + 2 offset from path to first-arg
-  (bind ?L (length$ ?key))
-  (while (<= ?l ?L) do
-         (bind ?arg-name (nth ?l ?key))
-         (bind ?arg-value (wm-key-arg ?key ?arg-name))
-         (printout t " ( " ?arg-name " " ?arg-value ")" crlf)
-         (if (multifieldp ?arg-value)
-             then
-             (bind ?arg-value (implode$ ?arg-value))
-             (bind ?l (+ (wm-key-multifield-arg-end ?key ?l) 1))
-             else
-             (if (stringp ?arg-value) then (bind ?arg-value (str-cat "\"" ?arg-value "\"")))
-             (bind ?l (+ ?l 2)))
-         (bind ?slot-string (str-cat "(" ?arg-name " " ?arg-value ")"))
-         (bind ?fact-string (str-cat ?fact-string " " ?slot-string))
-
-         (if (and (eq ?arg-name state)
-                  (or (eq ?arg-value EXECUTION-SUCCEEDED) (eq ?arg-value EXECUTION-FAILED)))
-                  then
-                  (retract ?remotef))
-  )
-  (bind ?fact-string (str-cat ?fact-string " )"))
-
   (retract ?actionf)
-  (assert-string ?fact-string)
-)
+  (assert-string (remote-action-to-plan-action-str ?remotef ))
 
+  (if (or (eq ?new-state EXECUTION-SUCCEEDED)
+          (eq ?new-state EXECUTION-FAILED))
+      then
+      (retract ?remotef))
+)
 
 
 
 (defrule remote-action-execution-start
   (wm-fact (key domain fact self args? r ?robot))
-  ?remotef <- (wm-fact (key exec remote-action args? id ?id-sym
+  ?remotef <- (wm-fact (key exec remote-action args? id ?action-id-sym
                                                      goal-id ?goal-id
                                                      plan-id ?plan-id
-                                                     $?
-                                                     param-names [ r $? ]
-                                                     param-values [ ?robot $? ]
-                                                     $? ))
-  (not (plan-action (id ?id&:(eq ?id (string-to-field (sym-cat ?id-sym))))
+                                                     $?)
+                       (values $?values&:(and (member$  r ?values)
+                                              (member$ ?robot ?values))))
+  (not (plan-action (id ?action-id&:(eq ?action-id (string-to-field (sym-cat ?action-id-sym))))
                     (goal-id ?goal-id)
-                    (plan-id ?plan-id))
-  )
-  =>
-  (printout t " Creating plan-action " crlf)
-  (bind ?fact-string "(plan-action ")
-  (bind ?key (fact-slot-value ?remotef key) )
-  (bind ?l (+ 2 (length$ (wm-key-path ?key)))) ; + 2 offset from path to first-arg
-  (bind ?L (length$ ?key))
-  (while (<= ?l ?L) do
-         (bind ?arg-name (nth ?l ?key))
-         (bind ?arg-value (wm-key-arg ?key ?arg-name))
-         (printout t " ( " ?arg-name " " ?arg-value ")" crlf)
-         (if (multifieldp ?arg-value)
-             then
-             (bind ?arg-value (implode$ ?arg-value))
-             (bind ?l (+ (wm-key-multifield-arg-end ?key ?l) 1))
-             else
-             (if (stringp ?arg-value) then (bind ?arg-value (str-cat "\"" ?arg-value "\"")))
-             (bind ?l (+ ?l 2)))
-
-         (bind ?slot-string (str-cat "(" ?arg-name " " ?arg-value ")"))
-         (bind ?fact-string (str-cat ?fact-string " " ?slot-string)))
-
-  (bind ?fact-string (str-cat ?fact-string " )"))
-  (assert-string ?fact-string)
+                    (plan-id ?plan-id)))
+ =>
+  (assert-string (remote-action-to-plan-action-str ?remotef ))
 )
 
 
@@ -174,23 +199,15 @@
                            (plan-id ?plan-id)
                            (param-names $?p-names&:(member$ r ?p-names))
                            (param-values $?p-values&:(member$ ?robot ?p-values)))
-  ;?remotef <- (wm-fact (key $?key))
-  ;(test (wm-key-prefix ?key (create$ exec remote-action)))
-  ;(test (eq (wm-key-arg ?key id) (sym-cat ?id)))
-  ;(test (eq (wm-key-arg ?key goal-id) ?goal-id))
-  ;(test (eq (wm-key-arg ?key plan-id) ?plan-id))
-  ;(test (neq (wm-key-arg ?key state) ?state ))
+  ?remotef <- (wm-fact (key $?key) (values $? state ?old-state $?))
+  (test (wm-key-prefix ?key (create$ exec remote-action)))
+  (test (eq (wm-key-arg ?key id) (sym-cat ?id)))
+  (test (eq (wm-key-arg ?key goal-id) ?goal-id))
+  (test (eq (wm-key-arg ?key plan-id) ?plan-id))
+  (test (neq ?old-state ?state))
   =>
-  (delayed-do-for-all-facts ((?wm wm-fact))
-                            (and (wm-key-prefix ?wm:key (create$ exec remote-action))
-                                 (eq (wm-key-arg ?wm:key id) (sym-cat ?id))
-                                 (eq (wm-key-arg ?wm:key goal-id) ?goal-id)
-                                 (eq (wm-key-arg ?wm:key plan-id) ?plan-id)
-                                 (neq (wm-key-arg ?wm:key state) ?state))
-     (printout t "Updating remote-action fact (state " (wm-key-arg ?wm:key state)
+  (printout t "Updating remote-action fact (state " ?old-state
                  ") => (state " ?state ") " crlf)
-     (retract ?wm)
-     (bind ?args (remote-action-create-args ?actionf))
-     (assert (wm-fact (key exec remote-action ?args)))
- )
+  (bind ?values (remote-action-create-wm-values ?actionf))
+  (modify ?remotef (values ?values))
 )
