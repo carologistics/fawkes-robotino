@@ -152,7 +152,7 @@
 )
 
 ;; Schedule Lifecycle
-(defrule scheduling-create-schedule
+(defrule scheduling-create-schedule-goal
 "Formulate 'schedule' entity on the expantion of the top most goal of the
 the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (goal (id ?g-id) (parent ?pg) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
@@ -363,6 +363,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 ;We start off by defining the Events that happen at time 0
 ; (Ex: resource producing events)
 (defrule scheduling-init-resources-machines
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
  (wm-fact (key refbox team-color) (value ?team-color))
  (wm-fact (key domain fact mps-type args? m ?mps t ?type))
  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
@@ -377,7 +378,9 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-init-resources-robots
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
  (wm-fact (key domain fact at args? r ?robot m ? side ?))
+ (not (resource (entity ?robot)))
 =>
  (bind ?r (formate-resource-name ?robot))
  (assert (resource (id ?r)
