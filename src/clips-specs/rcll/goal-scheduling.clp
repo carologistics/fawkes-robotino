@@ -47,7 +47,7 @@
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (wm-fact (key domain fact wp-unused args? wp ?wp))
 
-  (not (wm-fact (key domain fact robot-waiting args? ?)))
+  (not (wm-fact (key domain fact robot-waiting $?)))
 
   (test (eq ?ord O2))
   =>
