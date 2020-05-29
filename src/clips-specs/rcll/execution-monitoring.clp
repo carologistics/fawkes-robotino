@@ -238,7 +238,7 @@
   reason that this action got stuck and set it to failed
 "
   ?p <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id)
-	         (id ?id) (state ?status)
+	         (id ?id) (state ?status) (executable ?executable)
 	         (action-name ?action-name)
 	         (param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
@@ -274,7 +274,12 @@
           (printout error "Precondition " ?da:predicate ?da:param-values " is not satisfied" crlf)
     )
   )
-  (modify ?p (state FAILED) (error-msg "Unsatisfied precondition"))
+  (if ?executable
+      then
+      (modify ?p (state FAILED) (error-msg "No executor could execute action"))
+      else
+      (modify ?p (state FAILED) (error-msg "Unsatisfied precondition"))
+  )
   (retract ?pt)
 )
 
