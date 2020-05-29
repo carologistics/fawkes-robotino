@@ -119,6 +119,8 @@
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
+  (wm-fact (key cx identity) (value ?identity))
+  (wm-fact (key config rcll master) (value ?identity))
   (not (goal (class REFILL-SHELF-MAINTAIN)))
   (not (mutex (name ?n&:(eq ?n (resource-to-mutex refill-shelf))) (state LOCKED)))
   (wm-fact (key refbox phase) (value PRODUCTION))
@@ -172,6 +174,8 @@
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
+  (wm-fact (key cx identity) (value ?identity))
+  (wm-fact (key config rcll master) (value ?identity))
   (not (goal (class PRODUCTION-MAINTAIN)))
   (wm-fact (key refbox phase) (value PRODUCTION))
   (wm-fact (key game state) (value RUNNING))
@@ -189,6 +193,8 @@
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
+  (wm-fact (key cx identity) (value ?identity))
+  (wm-fact (key config rcll master) (value ?identity))
   (not (goal (class MPS-HANDLING-MAINTAIN)))
   (wm-fact (key refbox phase) (value PRODUCTION))
   (wm-fact (key game state) (value RUNNING))
