@@ -81,7 +81,17 @@
 	(assert (domain-wm-flushed))
 )
 
-(deffunction domain-load-local-facts (?self ?team-color)
+
+(deffunction domain-load-self-facts (?self)
+ (assert
+    (domain-object (name ?self) (type robot))
+    (domain-fact (name self) (param-values ?self))
+    (domain-fact (name robot-waiting) (param-values ?self))
+    (domain-fact (name can-hold) (param-values ?self))
+ )
+)
+
+(deffunction domain-load-local-facts (?team-color)
 	"Initialize facts that are not synced."
   (if (eq ?team-color CYAN)
     then
@@ -101,23 +111,10 @@
         (bind ?ds M-DS)
         (bind ?ss M-SS)
   )
-	(assert
-
+  (assert
     (domain-fact (name truth) (param-values TRUE))
-	  (domain-fact (name self) (param-values ?self))
-	  (domain-object (name Icks) (type robot))
-    (domain-object (name Upsilan) (type robot))
-    (domain-object (name Set) (type robot))
-    (domain-fact (name at) (param-values ?self START INPUT))
-    (domain-fact (name at) (param-values R-2 START INPUT))
-    (domain-fact (name at) (param-values R-3 START INPUT))
-    (domain-fact (name robot-waiting) (param-values ?self))
-    (domain-fact (name robot-waiting) (param-values R-2))
-    (domain-fact (name robot-waiting) (param-values R-3))
+
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
-    (domain-fact (name can-hold) (param-values ?self))
-    (domain-fact (name can-hold) (param-values R-2))
-    (domain-fact (name can-hold) (param-values R-3))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
     (domain-fact (name mps-team) (param-values ?ss ?team-color))
     (domain-fact (name mps-team) (param-values ?cs1 ?team-color))
@@ -319,11 +316,11 @@
   (not (domain-facts-loaded))
   (wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
   (wm-fact (key config agent name) (value ?robot-name))
- (wm-fact (key refbox team-color) (value ?team-color&~nil))
-
- =>
+  (wm-fact (key refbox team-color) (value ?team-color&~nil))
+  =>
   (printout warn "Restoring world model from the database" crlf)
-	(domain-load-local-facts (sym-cat ?robot-name) ?team-color)
+	(domain-load-self-facts (sym-cat ?robot-name) )
+	(domain-load-local-facts ?team-color)
 	(wm-robmem-sync-restore)
 	(assert (domain-facts-loaded))
 )
