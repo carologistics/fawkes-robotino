@@ -183,6 +183,11 @@
   (wm-fact (key domain fact entered-field args? r ?robot))
   (NavGraphWithMPSGeneratorInterface (final TRUE))
   (wm-fact (key navgraph waitzone generated))
+  (wm-fact (key domain fact self args? r ?self))
+  (wm-fact (key domain fact order-complexity $?))
+  (wm-fact (key domain fact rs-ring-spec $?))
+  (wm-fact (key domain fact mps-state $?))
+  (not (wm-fact (key domain fact rs-ring-spec args? m ? r ? rn NA)))
   =>
   (goal-tree-assert-run-endless PRODUCTION-MAINTAIN 1)
 )
