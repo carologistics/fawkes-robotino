@@ -49,7 +49,7 @@
 
   (not (wm-fact (key domain fact robot-waiting $?)))
 
-  (test (eq ?ord O2))
+  (test (eq ?complexity C3))
   =>
   (bind ?g-id (sym-cat ROOT_ ?ord))
 
@@ -246,15 +246,15 @@
 
       (while (> ?fill# 0)
              (bind ?parent-id ?goal-id)
-             (bind ?goal-id (sym-cat FILL_RS_ ?ring# ?fill# _ ?ord))
+             (bind ?goal-id (sym-cat FILL_RS ?ring# _ ?fill# _ ?ord))
              (assert (goal (id ?goal-id)
                      (parent ?parent-id)
                      (class FILL-RS)
                      (sub-type SCHEDULE-SUBGOALS)
                      (params (create$ ?params
                                       fill-rs ?rs))))
-            (bind ?fill# (- 1 ?fill#))
-            (printout t "Goal " (sym-cat FILL-RS- ?fill#) " formulated" crlf)
+            (bind ?fill# (- ?fill# 1))
+            (printout t "Goal " ?goal-id  " formulated" crlf)
       )
   )
 )
