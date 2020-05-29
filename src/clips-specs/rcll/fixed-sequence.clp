@@ -1003,7 +1003,7 @@
 ; Centralized Goal Reasoning
 (defrule goal-expander-calc-action-duration-move
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?pf <- (plan-action (action-name move) (duration 0.0) (state FORMULATED)
+ ?pf <- (plan-action (action-name move) (duration 0) (state FORMULATED)
                    (param-values ? ?from ?from-side ?to ?to-side))
  (not (plan-action (action-name move) (duration ?d&:(> ?d 0))
                    (param-values ? ?from ?from-side ?to ?to-side)))
@@ -1018,7 +1018,7 @@
 
 (defrule goal-expander-copy-action-duration-move
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?pf <- (plan-action (action-name move) (duration 0.0) (state FORMULATED)
+ ?pf <- (plan-action (action-name move) (duration 0) (state FORMULATED)
                    (param-values ? ?from ?from-side ?to ?to-side))
  (plan-action (action-name move) (duration ?d&:(> ?d 0))
               (param-values ? ?from ?from-side ?to ?to-side))
@@ -1028,7 +1028,7 @@
 
 (defrule goal-expander-calc-action-duration-go-wait
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?pf <- (plan-action (action-name go-wait) (duration 0.0) (state FORMULATED)
+ ?pf <- (plan-action (action-name go-wait) (duration 0) (state FORMULATED)
                    (param-values ?robot ?from ?from-side ?to ))
  (not (plan-action (action-name go-wait) (duration ?d&:(> ?d 0))
                     (param-values ? ?from ?from-side ?to )))
@@ -1043,7 +1043,7 @@
 
 (defrule goal-expander-copy-action-duration-go-wait
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?pf <- (plan-action (action-name go-wait) (duration 0.0) (state FORMULATED)
+ ?pf <- (plan-action (action-name go-wait) (duration 0) (state FORMULATED)
                    (param-values ? ?from ?from-side ?to ))
  (plan-action (action-name go-wait) (duration ?d&:(> ?d 0))
                    (param-values ? ?from ?from-side ?to ))
@@ -1053,21 +1053,21 @@
 
 (defrule  goal-expander-calc-action-wp-get
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?p <- (plan-action (action-name wp-get) (duration 0.0) (state FORMULATED))
+ ?p <- (plan-action (action-name wp-get) (duration 0) (state FORMULATED))
 =>
  (modify ?p  (duration ?*DURATION-WP-GET*))
 )
 
 (defrule  goal-expander-calc-action-wp-get-shelf
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?p <- (plan-action (action-name wp-get) (duration 0.0) (state FORMULATED))
+ ?p <- (plan-action (action-name wp-get) (duration 0) (state FORMULATED))
 =>
  (modify ?p  (duration ?*DURATION-WP-GET-SHELF*))
 )
 
 (defrule  goal-expander-calc-action-put
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?p <- (plan-action (action-name wp-put) (duration 0.0) (state FORMULATED))
+ ?p <- (plan-action (action-name wp-put) (duration 0) (state FORMULATED))
 =>
  (modify ?p  (duration ?*DURATION-WP-PUT*))
 )
@@ -1075,7 +1075,7 @@
 
 (defrule scheduling-calc-action-put-slide
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?p <- (plan-action (action-name wp-put-slide-cc) (duration 0.0) (state FORMULATED))
+ ?p <- (plan-action (action-name wp-put-slide-cc) (duration 0) (state FORMULATED))
 =>
  (modify ?p  (duration ?*DURATION-WP-PUT-SLIDE*))
 )
