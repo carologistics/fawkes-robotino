@@ -237,7 +237,7 @@ clips-executive:
 
           max-velocity: 1.0
           max-rotation: 1.0
-          master: Upsilan
+          master: Icks
 
           allowed-complexities: ["C0"]
           exclusive-complexities: []
