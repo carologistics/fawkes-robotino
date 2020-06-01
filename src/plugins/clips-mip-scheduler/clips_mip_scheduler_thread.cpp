@@ -250,7 +250,9 @@ ClipsMipSchedulerThread::add_goal_plan(std::string env_name,
                                        std::string plan_name)
 {
 	goal_plans_[goal_name].push_back(plan_name);
-	logger->log_info(name(), "GoalPlan: %s in %s  ", plan_name.c_str(), goal_name.c_str());
+	plan_goal_[plan_name].push_back(goal_name);
+
+	logger->log_info(name(), "Plan: %s achives Goal %s  ", plan_name.c_str(), goal_name.c_str());
 }
 
 void
@@ -290,34 +292,81 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 		//Constraint 1
 		for (auto const &iE1 : events_)
 			for (auto const &iE2 : iE1.second->precedes) {
-				gurobi_models_[model_id]->addConstr(
-				  gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
-				    >= iE1.second->duration,
-				  ("Presdence{" + iE1.second->name + "<<" + iE2->name + "}").c_str());
-				logger->log_info(name(),
-				                 "C1: %s - %s >= %u ",
-				                 iE2->name.c_str(),
-				                 iE1.second->name.c_str(),
-				                 iE1.second->duration);
+				//logger->log_info(name(),
+				//                 "C1: %s - %s >= %u ",
+				//                 iE2->name.c_str(),
+				//                 iE1.second->name.c_str(),
+				//                 iE1.second->duration);
+
+				if (iE1.second->plan == iE2->plan && iE2->plan != ""
+				    && plan_events_.find(iE1.second->plan) != plan_events_.end()
+				    && plan_events_.find(iE2->plan) != plan_events_.end()) {
+					//logger->log_info(name(), "Presd_InPlan: %s  ", iE1.second->plan.c_str() );
+					gurobi_models_[model_id]->addConstr(
+					  gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
+					    >= iE1.second->duration,
+					  ("PresdInPlan{" + iE1.second->name + "<<" + iE2->name + "}").c_str());
+
+				} else if (iE1.second->goal != ""
+				           && goal_events_.find(iE1.second->goal) != goal_events_.end()
+				           && goal_events_.find(iE2->goal) != goal_events_.end()) {
+					//logger->log_info(name(), "Presd_AcrossGoals: %s << %s ", iE1.second->goal.c_str() , iE2 -> goal.c_str() );
+					gurobi_models_[model_id]->addConstr(
+					  gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
+					    >= iE1.second->duration,
+					  ("PresdAcrossGoals{" + iE1.second->name + "<<" + iE2->name + "}").c_str());
+				} else if ((plan_events_.find(iE1.second->plan) != plan_events_.end()
+				            && goal_events_.find(iE2->goal) != goal_events_.end())) {
+					//logger->log_info(name(), "Presd_PlanGoal_End: %s << %s ", iE1.second->plan.c_str() , iE2 -> goal.c_str() );
+					gurobi_models_[model_id]->addGenConstrIndicator(
+					  gurobi_vars_plan_[iE1.second->plan],
+					  1,
+					  gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
+					    == iE1.second->duration,
+					  ("PresdPlanGoal_End{" + iE1.second->name + "<<" + iE2->name + "}").c_str());
+				} else if ((goal_events_.find(iE1.second->goal) != goal_events_.end()
+				            && plan_events_.find(iE2->plan) != plan_events_.end())) {
+					// logger->log_info(name(), "Presd_PlanGoal_Start: %s << %s ", iE1.second->goal.c_str() , iE2 -> plan.c_str() );
+					gurobi_models_[model_id]->addGenConstrIndicator(
+					  gurobi_vars_plan_[iE2->plan],
+					  1,
+					  gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
+					    == iE1.second->duration,
+					  ("PresdPlanGoal_Start{" + iE1.second->name + "<<" + iE2->name + "}").c_str());
+				}
 			}
 
-		//Constraint 2
+		//Constraint (2) Plan Selection
 		for (auto const &iG : goal_plans_) {
 			GRBLinExpr sum = 0;
 			for (auto const &iP : iG.second)
 				sum += gurobi_vars_plan_[iP];
 
 			gurobi_models_[model_id]->addConstr(sum == 1, ("TotalGoalPlans{" + iG.first + "}").c_str());
-			logger->log_info(name(), "C3: plans of goal %s", iG.first.c_str());
+			//logger->log_info(name(), "C2: plans of goal %s", iG.first.c_str());
 		}
 
 		//Constraint 3&4,5&6
 		for (auto const &iR : resource_producers_) {
+			// logger->log_info(name(), "flow of respurce %s :", iR.first.c_str());
 			for (auto const &iErp : resource_producers_[iR.first]) {
 				GRBLinExpr flow_out = 0;
 				for (auto const &iErc : resource_consumers_[iR.first])
-					if (iErp->goal != iErc->goal || iErp->goal.size() == 0)
+					//if (iErp->goal != iErc->goal || iErp->goal.size() == 0)
+					if (plan_goal_.find(iErp->plan) != plan_goal_.end()
+					    && plan_goal_.find(iErc->plan) != plan_goal_.end()
+					    && plan_goal_[iErp->plan] == plan_goal_[iErc->plan]) {
+						//logger->log_info(name(),
+						//	            "Skipping X%s_%s :",
+						//			  iErp->name.c_str(),
+						//			  iErc -> name.c_str());
+					} else {
+						//	logger->log_info(name(),
+						//		            "flowOut + X%s_%s :",
+						//				  iErp->name.c_str(),
+						//				  iErc -> name.c_str());
 						flow_out += gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
+					}
 
 				if (iErp->plan.size() == 0 && iErp->goal.size() == 0)
 					gurobi_models_[model_id]->addConstr(
@@ -333,8 +382,21 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 			for (auto const &iErc : resource_consumers_[iR.first]) {
 				GRBLinExpr flow_in = 0;
 				for (auto const &iErp : resource_producers_[iR.first])
-					if (iErp->goal != iErc->goal || iErp->goal.size() == 0)
+					if (plan_goal_.find(iErp->plan) != plan_goal_.end()
+					    && plan_goal_.find(iErc->plan) != plan_goal_.end()
+					    && plan_goal_[iErp->plan] == plan_goal_[iErc->plan]) {
+						//	logger->log_info(name(),
+						//		            "skipping  X%s_%s :",
+						//				  iErc->name.c_str(),
+						//				  iErp -> name.c_str());
+
+					} else {
+						//	logger->log_info(name(),
+						//		            "flowIn + X%s_%s :",
+						//				  iErp->name.c_str(),
+						//				  iErc -> name.c_str());
 						flow_in -= gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
+					}
 
 				if (iErc->plan.size() == 0 && iErc->goal.size() == 0)
 					gurobi_models_[model_id]->addConstr(
@@ -365,6 +427,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 					      - setup_duration
 					    >= 0,
 					  cname.c_str());
+					//logger->log_info(name(), "C8: %s", cname.c_str());
 				}
 
 		//Constraint 10
@@ -377,6 +440,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 		gurobi_models_[model_id]->optimizeasync();
 
 	} catch (GRBException &e) {
+		gurobi_models_[model_id]->write("gurobi_model.lp");
 		logger->log_error(name(), "Error code = %u ", e.getErrorCode());
 		logger->log_error(name(), e.getMessage().c_str());
 	} catch (...) {

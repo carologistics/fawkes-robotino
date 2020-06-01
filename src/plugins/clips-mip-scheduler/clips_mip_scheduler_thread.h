@@ -62,6 +62,11 @@ private:
 	GRBEnv *                                         gurobi_env_ = 0;
 	std::map<std::string, std::unique_ptr<GRBModel>> gurobi_models_;
 
+	//struct Entity{
+	//    std::string name;
+	//    enum type {RESOURCE, GOAL, PLAN}
+	//};
+
 	struct Event
 	{
 		Event(std::string n)
@@ -69,11 +74,13 @@ private:
 			name = n;
 		};
 		std::string                name;
-		int                        duration;
+		int                        duration = 0;
 		std::map<std::string, int> resources;
 		std::vector<Event *>       precedes;
 		std::string                goal = "";
 		std::string                plan = "";
+		//    enum at {START, END};
+		//    Entity entity;
 	};
 
 	std::map<std::string, Event *>                                      events_;
@@ -83,6 +90,7 @@ private:
 	std::map<std::string, std::vector<Event *>>                         plan_events_;
 	std::map<std::string, std::vector<Event *>>                         goal_events_;
 	std::map<std::string, std::vector<std::string>>                     goal_plans_;
+	std::map<std::string, std::vector<std::string>>                     plan_goal_;
 
 	std::map<std::string, GRBVar>                                               gurobi_vars_time_;
 	std::map<std::string, GRBVar>                                               gurobi_vars_plan_;
