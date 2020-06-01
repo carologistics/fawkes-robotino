@@ -515,20 +515,18 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-create-precedence--across-goals
-" From goal (1) plans end, to  goal (2) plans start"
+" From goal (1) end, to  goal (2) start"
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (goals $?goals) (mode FORMULATED))
- (schedule-event (sched-id ?s-id) (id ?p1-end) (entity ?p1-id) (at END))
- (schedule-event (sched-id ?s-id) (id ?p2-start) (entity ?p2-id) (at START))
+ (schedule-event (sched-id ?s-id) (id ?g1-end) (entity ?g1-id) (at END))
+ (schedule-event (sched-id ?s-id) (id ?g2-start) (entity ?g2-id) (at START))
 
- (goal (id ?g1-id&:(member$ ?g1-id ?goals)) (sub-type SCHEDULE-SUBGOALS) (class ?class-1)
+ (goal (id ?g1-id&:(member$ ?g1-id ?goals)) (sub-type SCHEDULE-SUBGOALS)
        (parent ?g2-id))
- (goal (id ?g2-id&:(member$ ?g2-id ?goals)) (sub-type SCHEDULE-SUBGOALS) (class ?class-2))
- (plan (id ?p1-id) (goal-id ?g1-id))
- (plan (id ?p2-id) (goal-id ?g2-id))
- (not (wm-fact (key scheduling event-precedence args? e-a ?p1-end e-b ?p2-start)))
+ (goal (id ?g2-id&:(member$ ?g2-id ?goals)) (sub-type SCHEDULE-SUBGOALS))
+ (not (wm-fact (key scheduling event-precedence args? e-a ?g1-end e-b ?g2-start)))
  =>
- (assert (wm-fact (key scheduling event-precedence args? e-a ?p1-end e-b ?p2-start)))
+ (assert (wm-fact (key scheduling event-precedence args? e-a ?g1-end e-b ?g2-start)))
 )
 
 (defrule scheduling-resource-setup-duration
