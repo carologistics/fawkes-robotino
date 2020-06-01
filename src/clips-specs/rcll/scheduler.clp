@@ -407,7 +407,12 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (plan (goal-id ?g-id))
  (not (schedule-event (sched-id ?s-id) (entity ?g-id)))
  =>
+ (bind ?goal-start (sym-cat (formate-event-name ?g-id) @start))
  (bind ?goal-end (sym-cat (formate-event-name ?g-id) @end))
+ (assert (schedule-event (sched-id ?s-id)
+                         (entity ?g-id)
+                         (id ?goal-start)
+                         (at START)))
  (assert (schedule-event (sched-id ?s-id)
                          (entity ?g-id)
                          (id ?goal-end)
@@ -473,7 +478,19 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 ;;Schedule Formulate Precedence
-(defrule scheduling-create-precedence--goal-plan
+(defrule scheduling-create-precedence--goal-plan-start
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
+ (schedule-event (sched-id ?s-id) (id ?goal-start) (entity ?g-id) (at START))
+ (schedule-event (sched-id ?s-id) (id ?plan-start) (entity ?p-id) (at START))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
+ (plan (id ?p-id) (goal-id ?g-id))
+=>
+ (assert
+  (wm-fact (key scheduling event-precedence args? e-a ?goal-start e-b ?plan-start)))
+)
+
+(defrule scheduling-create-precedence--goal-plan-end
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (id ?goal-end) (entity ?g-id) (at END))
@@ -591,7 +608,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (plan (id ?p-id) (goal-id ?g-id))
  =>
  (scheduler-add-plan-event (sym-cat ?p-id) (sym-cat ?e-id))
- (scheduler-add-goal-event (sym-cat ?g-id) (sym-cat ?e-id))
+ ;(scheduler-add-goal-event (sym-cat ?g-id) (sym-cat ?e-id))
  (scheduler-set-event-duration (sym-cat ?e-id) ?d)
 )
 
@@ -781,6 +798,8 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  "Schedule setup plan events"
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
+ ?gsf <- (schedule-event (sched-id ?s-id) (entity ?g-id) (at START)
+                         (scheduled FALSE))
  ?gef <- (schedule-event (sched-id ?s-id) (entity ?g-id) (at END)
                          (scheduled FALSE))
  ?pef <- (schedule-event (sched-id ?s-id) (entity ?p-id) (at END)
@@ -790,6 +809,8 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (plan (id ?p-id) (goal-id ?g-id))
  (goal (id ?g-id) (class SETUP) (meta scheduled-start ?goal-start))
  =>
+ (modify ?gsf (scheduled TRUE)
+              (scheduled-start ?goal-start))
  (modify ?psf (scheduled TRUE)
               (scheduled-start ?goal-start))
  (modify ?pef (scheduled TRUE)
