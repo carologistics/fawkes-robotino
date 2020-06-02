@@ -131,8 +131,6 @@ clips-executive:
               - rcll/production-strategy.clp
               - rcll/exploration.clp
               - rcll/goal-lock-expiration.clp
-          - name: goal-expander
-            file: rcll/fixed-sequence.clp
           - name: action-selection
             file: rcll/action-selection.clp
           - name: action-execution
@@ -143,6 +141,8 @@ clips-executive:
               - rcll/lock-actions.clp
               - rcll/wait-actions.clp
               - rcll/remote-actions.clp
+          - name: goal-expander
+            file: rcll/fixed-sequence.clp
           - name: execution-monitoring
             file: rcll/execution-monitoring.clp
           - name: simtest
