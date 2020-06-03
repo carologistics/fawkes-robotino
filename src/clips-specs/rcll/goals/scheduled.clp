@@ -78,20 +78,59 @@
      (modify ?gf  (committed-to (create$ ?committed ?child-id)))
 )
 
-(defrule schedule-goal-commit-on-time
+(defrule schedule-goal-commit-next
      ?gf <- (goal (id ?g-id) (parent ?pg) (sub-type SCHEDULE-SUBGOALS)
                   (committed-to $?committed) (type ACHIEVE) (mode EXPANDED)
                   (required-resources $?req)
                   (meta dispatch-time ?d-time&:(< ?d-time (nth$ 1 (now)))))
+     ;All children are in committed-to
      (not (plan (id ?child-id&:(not (member$ ?child-id ?committed))) (goal-id ?g-id)))
      (not (goal (id ?child-id&:(not (member$ ?child-id ?committed))) (parent ?g-id)))
+     ;All children are completed
      (not (goal (parent ?g-id) (mode ~RETRACTED) (outcome ~COMPLETED)))
+     ;Next in line for all resource
+     (not (goal (required-resources $? ?resource&:(member$ ?resource ?req) $?)
+                (meta dispatch-time ?d2-time&:(< ?d2-time ?d-time))
+                (outcome ~COMPLETED)
+                ))
      =>
      (bind ?req (replace-unbound ?req))
      (modify ?gf (mode COMMITTED) (required-resources ?req))
 )
 
+(defrule schedule-goal-error-delayed-commit-resource-scheduled
+     ?gf <- (goal (id ?g-id) (parent ?pg) (sub-type SCHEDULE-SUBGOALS)
+                  (committed-to $?committed) (type ACHIEVE) (mode EXPANDED)
+                  (required-resources $?req)
+                  (meta dispatch-time ?d-time&:(< ?d-time (nth$ 1 (now)))))
+     (goal (required-resources $? ?resource&:(member$ ?resource ?req) $?)
+           (meta dispatch-time ?d2-time&:(< ?d2-time ?d-time))
+           (outcome ~COMPLETED)
+           (mode ?g2-mode)
+           (id ?g2-id))
+     =>
+    (printout error "Goal " ?g-id " delayed, resource [" ?resource "] needed by goal " ?g2-id " in ( " ?g2-mode ")"  crlf)
+)
 
+(defrule schedule-goal-error-delayed-commit-child-not-completed
+     ?gf <- (goal (id ?g-id) (parent ?pg) (sub-type SCHEDULE-SUBGOALS)
+                  (committed-to $?committed) (type ACHIEVE) (mode EXPANDED)
+                  (required-resources $?req)
+                  (meta dispatch-time ?d-time&:(< ?d-time (nth$ 1 (now)))))
+     (goal (id ?g2-id) (parent ?g-id) (mode ?g2-mode) (outcome ~COMPLETED))
+     =>
+    (printout error "Goal " ?g-id " delayed, child goal " ?g2-id " in (" ?g2-mode ")" crlf)
+)
+
+(defrule schedule-goal-error-delayed-commit
+     (time ?now-sec ?)
+     ?gf <- (goal (id ?g-id) (parent ?pg) (sub-type SCHEDULE-SUBGOALS)
+                  (committed-to $?committed) (type ACHIEVE) (mode EXPANDED)
+                  (required-resources $?req)
+                  (meta dispatch-time ?d-time&:(< ?d-time (nth$ 1 (now)))))
+     =>
+    (printout warn "Goal " ?g-id " delayed by (" (- ?now-sec ?d-time) ")"  crlf)
+)
 (defrule schedule-goal-dispatch
      (time ?now-sec ?)
      ?gf <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode COMMITTED)
