@@ -25,7 +25,9 @@
 
 
 (deffunction remote-action-create-wm-args (?actionf)
-   (printout t "Creating remote-action args" crlf)
+   (printout t "Remote-action " (fact-slot-value ?actionf action-name)
+               (fact-slot-value ?actionf param-values)
+               " is " (fact-slot-value ?actionf state) crlf)
    (bind ?args (create$))
    ;(bind ?arg-keys (fact-slot-names ?actionf))
    (bind ?arg-keys ?*REMOTE-ACTION-ARGS-NAMES* )
@@ -36,16 +38,16 @@
                 (bind ?arg-value (create$ [ ?arg-value ])))
            (if (numberp ?arg-value)
                then
-               (printout t " Converting numerical value of " ?arg-key " " ?arg-value  " to symbol" crlf)
+               ;(printout t " Converting numerical value of " ?arg-key " " ?arg-value  " to symbol" crlf)
                (bind ?arg-value (sym-cat ?arg-value)))
-           (printout t "arg? "  ?arg-key ": " ?arg-value crlf)
+           ;(printout t "arg? "  ?arg-key ": " ?arg-value crlf)
            (bind ?args (create$ ?args ?arg-key ?arg-value))
    )
    (return (create$ args? ?args))
 )
 
 (deffunction remote-action-create-wm-values (?actionf)
-   (printout t "Creating remote-action key args?" crlf)
+   ;(printout t "Creating remote-action key args?" crlf)
    (bind ?values-list (create$))
    (bind ?arg-keys (delete-member$ (fact-slot-names ?actionf) ?*REMOTE-ACTION-ARGS-NAMES* ))
    (progn$ (?arg-key ?arg-keys)
@@ -54,28 +56,15 @@
                 then
                 (bind ?arg-value (create$ [ ?arg-value ])))
 
-           (printout t "       "  ?arg-key " " ?arg-value crlf)
+           ;(printout t "       "  ?arg-key " " ?arg-value crlf)
            (bind ?values-list (create$ ?values-list ?arg-key ?arg-value))
    )
    (return ?values-list)
 )
 
-(deffunction remote-action-updated (?local-actionf ?remote-actionf)
-   (bind ?old-key (fact-slot-value ?remote-actionf key))
-   (bind ?old-args (wm-key-args ?old-key))
-
-   (printout t "old args " ?old-args crlf)
-   (printout t "new args " (remote-action-create-wm-args ?local-actionf) crlf)
-   (if (eq ?old-args (remote-action-create-wm-args ?local-actionf)) then
-   (printout t "matching :D " ?old-args crlf)
-       (return TRUE)
-)
-   (return FALSE)
-)
-
 (deffunction remote-action-to-plan-action-str (?wm-idx)
-  (printout t " Creating plan-action from remote-action " crlf)
-  (printout t "  (plan-action " crlf)
+  ;(printout t " Creating plan-action from remote-action " crlf)
+  ;(printout t "  (plan-action " crlf)
   (bind ?fact-string " (plan-action ")
   ;Process remote-action key
   (bind ?wm-key (fact-slot-value ?wm-idx key) )
@@ -84,7 +73,7 @@
   (while (<= ?l ?L) do
          (bind ?slot-name (nth ?l ?wm-key))
          (bind ?slot-value (wm-key-arg ?wm-key ?slot-name))
-         (printout t "     (" ?slot-name " " ?slot-value ")" crlf)
+         ;(printout t "     (" ?slot-name " " ?slot-value ")" crlf)
          (if (multifieldp ?slot-value)
              then
              (bind ?slot-value (implode$ ?slot-value))
@@ -116,13 +105,13 @@
          )
          (if (multifieldp ?slot-value) then (bind ?slot-value (implode$ ?slot-value)))
 
-         (printout t "    (" ?slot-name " " ?slot-value ")" crlf)
+         ;(printout t "    (" ?slot-name " " ?slot-value ")" crlf)
          (bind ?slot-string (str-cat "(" ?slot-name " " ?slot-value ")"))
          (bind ?fact-string (str-cat ?fact-string " " ?slot-string))
          (bind ?l (+ 1 ?l))
   )
 
-  (printout t ")" crlf)
+  ;(printout t ")" crlf)
   (return (str-cat ?fact-string " )"))
 )
 

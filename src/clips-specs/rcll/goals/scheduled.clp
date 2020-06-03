@@ -139,8 +139,7 @@
                   (acquired-resources $?acq&:(subsetp ?req ?acq))
                   (meta dispatch-time ?d-time))
     =>
-    (printout t " Scheduled goal " ?goal-id " DISPATCHED at " ?now-sec " Sec ( "
-                (- ?now-sec ?d-time)  " sec from sched)"crlf)
+    (printout t "Goal " ?goal-id " DISPATCHED (" (- ?now-sec ?d-time)  " sec from sched)"crlf)
 
     (modify ?gf (mode DISPATCHED))
 )

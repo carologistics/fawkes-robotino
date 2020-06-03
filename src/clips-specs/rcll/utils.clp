@@ -1094,11 +1094,11 @@
 
    (if (not (check-unbound ?predicate-key))
        then
-       (printout t "Binding " ?binding-id " is already resolved!" crlf)
+       (printout debug "Binding " ?binding-id " is already resolved!" crlf)
        (return TRUE))
 
    ;Extract bound params
-   (printout t "Binding " ?binding-id " detecting bound args "crlf)
+   (printout debug "Binding " ?binding-id " detecting bound args "crlf)
    (bind ?l 2)
    (bind ?L (length$ ?predicate-args))
    (while (<= (+ ?l 1) ?L) do
@@ -1127,7 +1127,7 @@
              else
              (bind ?bound-args (create$ ?bound-args ?predicate-arg-name))
              (bind ?bound-values (create$ ?bound-values ?predicate-arg-value))
-             (printout t "Binding " ?binding-id " predicate (arg,value)"
+             (printout debug "Binding " ?binding-id " predicate (arg,value)"
                          " (" ?predicate-arg-name ", " ?predicate-arg-value " ) is bound" crlf))
 
         (if (multifieldp ?predicate-arg-value)
