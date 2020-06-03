@@ -554,11 +554,10 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  =>
  (bind ?duration 0)
  (if (eq  ?r-type ROBOT) then
-      (bind ?duration (/ (nodes-distance (node-name (nth$ 1 ?setup-1) (nth$ 2 ?setup-1))
-                                         (node-name (nth$ 1 ?setup-2) (nth$ 2 ?setup-2)))
-                          ?*V*)
-      )
- )
+     (bind ?duration (estimate-action-duration "move"
+                                               (create$ r from from-side to to-side)
+                                               (create$ ANY (nth$ 1 ?setup-1) (nth$ 2 ?setup-1)
+                                                            (nth$ 1 ?setup-2) (nth$ 2 ?setup-2)))))
 
  (assert (resource-setup (resource-id ?r-id)
                          (from-state ?setup-1)
