@@ -154,10 +154,8 @@ clips-executive:
                            wait=?(r|/Icks/0.0/|/Upsilan/10.0/|/Set/20.0/)f}
         explore-zone: explore_zone{zone=?(z)s}
         move-node: goto{place=?(z)s}
-        move: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
-        move-wp-get: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
-        move-wp-put: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
-        go-wait: goto{place="?(to)Y"}
+        move: goto{place="?(to)Y?(to-side|/OUTPUT/-O/|/INPUT/-I/|/WAIT//)Y",
+                   from="?(from)Y?(from-side|/OUTPUT/-O/|/INPUT/-I/|/WAIT//)Y"}
         wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
         wp-put: bring_product_to{place=?(m)S}
         wp-put-slide-cc: bring_product_to{place=?(m)S, slide="TRUE"}
