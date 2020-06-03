@@ -651,25 +651,33 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (schedule (id ?s-id) (mode SELECTED))
   ?if <- (scheduler-info (type PLAN-SELECTION) (descriptors ?plan-id) (value ?v))
-  ?ef <- (schedule-event (sched-id ?s-id) (entity ?plan-id))
+  ?ps <- (schedule-event (sched-id ?s-id) (entity ?plan-id) (at START))
+  ?pe <- (schedule-event (sched-id ?s-id) (entity ?plan-id) (at END))
+  ?gs <- (schedule-event (sched-id ?s-id) (entity ?goal-id) (at START))
+  ?ge <- (schedule-event (sched-id ?s-id) (entity ?goal-id) (at END))
   (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id))
 =>
   (if (> ?v 0) then
-    (modify ?ef (scheduled TRUE)))
+    (modify ?ps (scheduled TRUE))
+    (modify ?pe (scheduled TRUE))
+    (modify ?gs (scheduled TRUE))
+    (modify ?ge (scheduled TRUE))
+  )
 
  (retract ?if)
 )
 
-(defrule scheduling-process-scheduled-goals
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
-  (schedule (id ?s-id) (goals $? ?g-id $?) (mode SELECTED))
-  (schedule-event (sched-id ?s-id) (entity ?p-id) (scheduled TRUE) (at START))
-  ?ef <- (schedule-event (sched-id ?s-id) (entity ?g-id) (scheduled FALSE))
-  (goal (id ?g-id))
-  (plan (id ?p-id) (goal-id ?g-id))
-=>
-  (modify ?ef (scheduled TRUE))
-)
+;(defrule scheduling-process-scheduled-goals
+;  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+;  (schedule (id ?s-id) (goals $? ?g-id $?) (mode SELECTED))
+;  (schedule-event (sched-id ?s-id) (entity ?p-id) (scheduled TRUE) (at START))
+;  ?ef <- (schedule-event (sched-id ?s-id) (entity ?g-id) (scheduled FALSE))
+;  (goal (id ?g-id))
+;  (plan (id ?p-id) (goal-id ?g-id))
+;=>
+;  (modify ?ef (scheduled TRUE))
+;)
 
 
 (defrule scheduling-process-events-start
