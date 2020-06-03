@@ -4,8 +4,9 @@
 plugins/skiller-simulator:
   execution-times:
     default: 1
-    # get_product_from: 15
-    # bring_product_to: 15
+    get_product_from: 15
+    bring_product_to: 15
+    discard: 10
     # Only effective if the skiller-simulator-navgraph plugin is loaded
     navgraph:
       speed: 0.5

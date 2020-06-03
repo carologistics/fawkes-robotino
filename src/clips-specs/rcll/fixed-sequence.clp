@@ -19,13 +19,6 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
-(defglobal
-  ?*DURATION-WP-GET* = 30
-  ?*DURATION-WP-GET-SHELF* = 30
-  ?*DURATION-WP-PUT* = 30
-  ?*DURATION-WP-PUT-SLIDE* = 30
-)
-
 (defrule goal-expander-send-beacon-signal
   ?p <- (goal (id ?parent-id))
   ?g <- (goal (id ?goal-id) (class SEND-BEACON) (mode SELECTED)
@@ -1001,86 +994,47 @@
 )
 
 ; Centralized Goal Reasoning
-(defrule goal-expander-calc-action-duration-move
+(defrule goal-expander-calc-action-duration
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?pf <- (plan-action (action-name move) (duration 0) (state FORMULATED)
-                   (param-values ? ?from ?from-side ?to ?to-side))
- (not (plan-action (action-name move) (duration ?d&:(> ?d 0))
-                   (param-values ? ?from ?from-side ?to ?to-side)))
+ ?pf <- (plan-action (state FORMULATED)
+                   (plan-id ?plan-id)
+                   (id ?action-id)
+                   (action-name ?action-name)
+                   (param-names $?param-names)
+                   (param-values $?param-values)
+                   (duration ?d1&:(<= ?d1 0)))
+ (not (plan-action (action-name ?action-name)
+                   (param-names $?param-names )
+                   (param-values $?param-values)
+                   (duration ?d2&:(> ?d2 0))))
+ (skill-action-mapping (name ?action-name))
 =>
- (bind ?from-node (node-name ?from ?from-side))
- (bind ?to-node   (node-name ?to ?to-side))
- (bind ?distance  (nodes-distance ?from-node ?to-node))
- (bind ?duration (/ ?distance ?*V*))
- (if (< ?duration 0) then (bind ?duration 1))
- (modify ?pf  (duration ?duration ))
+
+
+ ;(bind ?duration (map-action-skill (str-cat ?action-name) ?param-names ?param-values))
+ ;(printout error "mapped to " ?duration crlf))
+ (bind ?duration (estimate-action-duration (str-cat ?action-name) ?param-names ?param-values))
+ (if (> ?duration 0)
+     then
+       (modify ?pf (duration ?duration))
+     else
+      (printout error "Cant find duration for action id " ?action-id "in plan " ?plan-id crlf))
 )
 
-(defrule goal-expander-copy-action-duration-move
+(defrule goal-expander-copy-action-duration
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?pf <- (plan-action (action-name move) (duration 0) (state FORMULATED)
-                   (param-values ? ?from ?from-side ?to ?to-side))
- (plan-action (action-name move) (duration ?d&:(> ?d 0))
-              (param-values ? ?from ?from-side ?to ?to-side))
+ ?pf <- (plan-action (state FORMULATED)
+                   (action-name ?action-name)
+                   (param-names $?param-names)
+                   (param-values $?param-values)
+                   (duration ?d1&:(<= ?d1 0)))
+ (plan-action (action-name ?action-name)
+              (param-names $?param-names )
+              (param-values $?param-values)
+              (duration ?d2&:(> ?d2 0)))
 =>
- (modify ?pf  (duration ?d))
+ (modify ?pf  (duration ?d2))
 )
-
-(defrule goal-expander-calc-action-duration-go-wait
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?pf <- (plan-action (action-name go-wait) (duration 0) (state FORMULATED)
-                   (param-values ?robot ?from ?from-side ?to ))
- (not (plan-action (action-name go-wait) (duration ?d&:(> ?d 0))
-                    (param-values ? ?from ?from-side ?to )))
-=>
- (bind ?from-node (node-name ?from ?from-side))
- (bind ?to-node   (node-name ?to WAIT))
- (bind ?distance  (nodes-distance ?from-node ?to-node))
- (bind ?duration (/ ?distance ?*V*))
- (if (< ?duration 1) then (bind ?duration 1))
- (modify ?pf  (duration ?duration ))
-)
-
-(defrule goal-expander-copy-action-duration-go-wait
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?pf <- (plan-action (action-name go-wait) (duration 0) (state FORMULATED)
-                   (param-values ? ?from ?from-side ?to ))
- (plan-action (action-name go-wait) (duration ?d&:(> ?d 0))
-                   (param-values ? ?from ?from-side ?to ))
-=>
- (modify ?pf  (duration ?d ))
-)
-
-(defrule  goal-expander-calc-action-wp-get
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?p <- (plan-action (action-name wp-get) (duration 0) (state FORMULATED))
-=>
- (modify ?p  (duration ?*DURATION-WP-GET*))
-)
-
-(defrule  goal-expander-calc-action-wp-get-shelf
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?p <- (plan-action (action-name wp-get) (duration 0) (state FORMULATED))
-=>
- (modify ?p  (duration ?*DURATION-WP-GET-SHELF*))
-)
-
-(defrule  goal-expander-calc-action-put
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?p <- (plan-action (action-name wp-put) (duration 0) (state FORMULATED))
-=>
- (modify ?p  (duration ?*DURATION-WP-PUT*))
-)
-
-
-(defrule scheduling-calc-action-put-slide
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- ?p <- (plan-action (action-name wp-put-slide-cc) (duration 0) (state FORMULATED))
-=>
- (modify ?p  (duration ?*DURATION-WP-PUT-SLIDE*))
-)
-
-
 
 (defrule goal-expander-setup-robot
    "Move a robot from one location to another to satisfy setup requirements "
@@ -1154,17 +1108,13 @@
         (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
                                     (action-name move)
                                     (param-names r from from-side to to-side)
-                                    (param-values ?robot (wait-pos ?cs INPUT) WAIT ?cs INPUT)
-                                    (duration (/ (nodes-distance (wait-pos ?cs INPUT)
-                                                                (node-name ?cs INPUT)) ?*V*)))
+                                    (param-values ?robot (wait-pos ?cs INPUT) WAIT ?cs INPUT))
         (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
                                     (action-name wp-get-shelf)
-                                    (duration  ?*DURATION-WP-GET-SHELF* )
                                     (param-names r cc m spot)
                                     (param-values ?robot ?cc ?cs ?shelf-spot))
         (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
                                     (action-name wp-put)
-                                    (duration  ?*DURATION-WP-PUT* )
                                     (param-names r wp m)
                                     (param-values ?robot ?cc ?cs))
        (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
@@ -1216,12 +1166,9 @@
   (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
         (action-name move)
         (param-names r from from-side to to-side)
-        (param-values ?robot (wait-pos ?mps ?side) WAIT ?mps ?side)
-        (duration (/ (nodes-distance (wait-pos ?mps ?side)
-                                    (node-name ?mps ?side)) ?*V*)))
+        (param-values ?robot (wait-pos ?mps ?side) WAIT ?mps ?side))
   (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
         (action-name wp-get)
-        (duration  ?*DURATION-WP-GET* )
         (param-names r wp m side)
         (param-values ?robot ?cc ?mps ?side))
   (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
@@ -1291,9 +1238,7 @@
   (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
          (action-name move)
          (param-names r from from-side to to-side )
-         (param-values ?robot (wait-pos ?prior-mps ?prior-side) WAIT ?prior-mps ?prior-side)
-         (duration (/ (nodes-distance (wait-pos ?prior-mps ?prior-side)
-                                      (node-name ?prior-mps ?prior-side)) ?*V*)))
+         (param-values ?robot (wait-pos ?prior-mps ?prior-side) WAIT ?prior-mps ?prior-side))
   (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
          (action-name lock) (param-values ?prior-mps)))
 
@@ -1309,7 +1254,6 @@
  (assert
   (plan-action (id 6) (plan-id ?plan-id) (goal-id ?goal-id)
          (action-name wp-get)
-         (duration  ?*DURATION-WP-GET* )
          (param-names r wp m side)
          (param-values ?robot ?wp ?prior-mps ?prior-side))
   (plan-action (id 7) (plan-id ?plan-id) (goal-id ?goal-id)
@@ -1327,12 +1271,9 @@
   (plan-action (id 11) (plan-id ?plan-id) (goal-id ?goal-id)
         (action-name move)
         (param-names r from from-side to to-side)
-        (param-values ?robot (wait-pos ?cs INPUT) WAIT ?cs INPUT)
-        (duration (/ (nodes-distance (wait-pos ?cs INPUT)
-                                    (node-name ?cs INPUT)) ?*V*)))
+        (param-values ?robot (wait-pos ?cs INPUT) WAIT ?cs INPUT))
   (plan-action (id 12) (plan-id ?plan-id) (goal-id ?goal-id)
         (action-name wp-put)
-        (duration  ?*DURATION-WP-PUT* )
         (param-names r wp m)
         (param-values ?robot ?wp ?cs))
   (plan-action (id 13) (plan-id ?plan-id) (goal-id ?goal-id)
@@ -1394,15 +1335,12 @@
      (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
                   (action-name move)
                   (param-names r from from-side to to-side)
-                  (param-values ?robot (wait-pos ?cs OUTPUT) WAIT ?cs OUTPUT)
-                  (duration (/ (nodes-distance (wait-pos ?cs OUTPUT)
-                                               (node-name ?cs OUTPUT)) ?*V*)))
+                  (param-values ?robot (wait-pos ?cs OUTPUT) WAIT ?cs OUTPUT))
      (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
                   (action-name lock)
 			   (param-values ?cs))
      (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
                   (action-name wp-get)
-                  (duration  ?*DURATION-WP-GET* )
                   (param-names r wp m side)
                   (param-values ?robot ?wp ?cs OUTPUT))
      (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
@@ -1421,15 +1359,12 @@
      (plan-action (id 9) (plan-id ?plan-id) (goal-id ?goal-id)
                   (action-name move)
                   (param-names r from from-side to to-side)
-                  (param-values ?robot (wait-pos ?ds INPUT) WAIT ?ds INPUT)
-                  (duration (/ (nodes-distance (wait-pos ?ds INPUT)
-                                              (node-name ?ds INPUT)) ?*V*)))
+                  (param-values ?robot (wait-pos ?ds INPUT) WAIT ?ds INPUT))
      (plan-action (id 10) (plan-id ?plan-id) (goal-id ?goal-id)
                   (action-name lock)
 			   (param-values ?ds))
      (plan-action (id 11) (plan-id ?plan-id) (goal-id ?goal-id)
                   (action-name wp-put)
-                  (duration  ?*DURATION-WP-PUT* )
                   (param-names r wp m)
                   (param-values ?robot ?wp ?ds))
      (plan-action (id 12) (plan-id ?plan-id) (goal-id ?goal-id)
