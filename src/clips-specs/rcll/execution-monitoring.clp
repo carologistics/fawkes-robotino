@@ -141,7 +141,7 @@
   ?g <- (goal (id ?goal-id) (mode DISPATCHED))
   (not (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (state ~FORMULATED&~PENDING&~FINAL&~FAILED)))
   =>
-  (printout t "Fail goal " ?goal-id " because it is unsatisfiable" crlf)
+  (printout error "Fail goal " ?goal-id " because it is unsatisfiable" crlf)
   (retract ?fg)
   (modify ?g (mode FINISHED) (outcome FAILED))
 )
@@ -174,7 +174,7 @@
                                          )
                                      )
     (retract ?wf)
-    (printout t "Exec-Monotoring: Broken Machine " ?wf:key crlf " domain facts flushed!"  crlf)
+    (printout error "Exec-Monotoring: Broken Machine " ?wf:key crlf " domain facts flushed!"  crlf)
   )
 
   (switch ?type
@@ -250,7 +250,7 @@
             (start-time $?st)
             (timeout-duration ?timeout&:(timeout ?now ?st ?timeout)))
   =>
-  (printout t "Action "  ?action-name " timedout after " ?status  crlf)
+  (printout error "Action "  ?action-name " of goal " ?goal-id  " timedout after " ?status  crlf)
   (do-for-all-facts ((?da domain-atomic-precondition)) (and (eq ?da:grounded-with ?id)
                                                             (eq ?da:plan-id ?plan-id)
                                                             (eq ?da:goal-id ?goal-id)
@@ -351,7 +351,7 @@
   (assert
     (wm-fact (key monitoring action-retried args? r ?r a ?an id (sym-cat ?id) m ?mps g ?goal-id) (value 0))
   )
-  (printout error "Start retrying" crlf)
+  (printout error "Start retrying action " ?an "(" ?param-values ")"crlf)
 )
 
 
@@ -376,7 +376,7 @@
   =>
   (bind ?tries (+ 1 ?tries))
   (modify ?pa (state FORMULATED))
-  (printout error "Restarted: " ?tries crlf)
+  (printout error "Action " ?an "(" ?param-values ") restarted: " ?tries crlf)
   (modify ?wm (value ?tries))
 )
 
@@ -389,6 +389,7 @@
         (goal-id ?goal-id)
         (plan-id ?plan-id)
         (action-name ?an)
+        (param-values $?param-values)
         (state FAILED)
         (error-msg ?error))
   ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)
@@ -397,7 +398,7 @@
   (assert
     (wm-fact (key monitoring shame args?))
   )
-  (printout error "Reached max retries" crlf)
+  (printout error "Reached max retries for action " ?an "(" ?param-values ")" crlf)
 )
 
 (defrule execution-monitoring-clear-action-retried
