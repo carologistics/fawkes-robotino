@@ -350,7 +350,11 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 		for (auto const &iR : resource_producers_) {
 			// logger->log_info(name(), "flow of respurce %s :", iR.first.c_str());
 			for (auto const &iErp : resource_producers_[iR.first]) {
-				GRBLinExpr flow_out = 0;
+				GRBLinExpr flow_out  = 0;
+				int        sosLength = resource_consumers_[iR.first].size();
+				GRBVar     sosVars[sosLength];
+				double     sosWieghts[sosLength];
+				int        i = 0;
 				for (auto const &iErc : resource_consumers_[iR.first])
 					//if (iErp->goal != iErc->goal || iErp->goal.size() == 0)
 					if (plan_goal_.find(iErp->plan) != plan_goal_.end()
@@ -366,21 +370,30 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 						//				  iErp->name.c_str(),
 						//				  iErc -> name.c_str());
 						flow_out += gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
+						sosVars[i]    = gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
+						sosWieghts[i] = i;
+						i++;
 					}
 
 				if (iErp->plan.size() == 0 && iErp->goal.size() == 0)
 					gurobi_models_[model_id]->addConstr(
 					  flow_out - iErp->resources[iR.first] == 0,
 					  ("FlowOut{" + iR.first + "}{" + iErp->name + "}").c_str());
-
 				else if (gurobi_vars_plan_.find(iErp->plan) != gurobi_vars_plan_.end())
 					gurobi_models_[model_id]->addConstr(
 					  flow_out - iErp->resources[iR.first] * gurobi_vars_plan_[iErp->plan] == 0,
 					  ("FlowOut{" + iR.first + "}{" + iErp->name + "}").c_str());
+
+				if (iErp->resources[iR.first] * iErp->resources[iR.first] == 1)
+					gurobi_models_[model_id]->addSOS(sosVars, sosWieghts, i, GRB_SOS_TYPE1);
 			}
 
 			for (auto const &iErc : resource_consumers_[iR.first]) {
-				GRBLinExpr flow_in = 0;
+				GRBLinExpr flow_in   = 0;
+				int        sosLength = resource_producers_[iR.first].size();
+				GRBVar     sosVars[sosLength];
+				double     sosWieghts[sosLength];
+				int        i = 0;
 				for (auto const &iErp : resource_producers_[iR.first])
 					if (plan_goal_.find(iErp->plan) != plan_goal_.end()
 					    && plan_goal_.find(iErc->plan) != plan_goal_.end()
@@ -396,6 +409,9 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 						//				  iErp->name.c_str(),
 						//				  iErc -> name.c_str());
 						flow_in -= gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
+						sosVars[i]    = gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
+						sosWieghts[i] = i;
+						i++;
 					}
 
 				if (iErc->plan.size() == 0 && iErc->goal.size() == 0)
@@ -407,6 +423,9 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 					gurobi_models_[model_id]->addConstr(
 					  flow_in - iErc->resources[iR.first] * gurobi_vars_plan_[iErc->plan] == 0,
 					  ("FlowIn{" + iR.first + "}{" + iErc->name + "}").c_str());
+
+				if (iErc->resources[iR.first] * iErc->resources[iR.first] == 1)
+					gurobi_models_[model_id]->addSOS(sosVars, sosWieghts, i, GRB_SOS_TYPE1);
 			}
 		}
 
