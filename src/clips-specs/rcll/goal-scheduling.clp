@@ -89,7 +89,7 @@
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
   =>
   (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
-  (bind ?goal-id (sym-cat DELIVER_ ?ord))
+  (bind ?goal-id (sym-cat ?ord DELIVER))
 
   (modify ?gf (parent ?goal-id))
 
@@ -130,7 +130,7 @@
   (test (member$ (create$ cap-color ?cap-color) ?params))
   =>
   (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
-  (bind ?goal-id (sym-cat MOUNT_CAP ?ord))
+  (bind ?goal-id (sym-cat ?ord MOUNTCAP))
 
   (if (eq ?priori-parent ?root-id) then (modify ?gf (parent ?goal-id)))
 
@@ -157,7 +157,7 @@
   (test (member$ (create$ cap-color ?cap-color) ?params))
   =>
   (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
-  (bind ?g-id (sym-cat PREPARE_CS_ ?ord))
+  (bind ?g-id (sym-cat ?ord CLEARCAP))
 
   (bind ?binding-id (sym-cat X (gensym*)))
   (bind ?shelf-spot (sym-cat ?binding-id #spot))
@@ -184,7 +184,7 @@
   (not (goal (parent ?goal-cs) (class FILL-CAP)))
   =>
   (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
-  (bind ?g-id (sym-cat FILL_CAP ?ord))
+  (bind ?g-id (sym-cat ?ord FILLCAP))
 
   (assert (goal (id ?g-id)
                 (parent ?goal-id)
@@ -224,7 +224,7 @@
   (if (eq ?priori-class MOUNT-RING1) then  (bind ?ring# 2))
   (if (eq ?priori-class MOUNT-RING2) then  (bind ?ring# 3))
 
-  (bind ?goal-id (sym-cat MOUNT_RING ?ring# ?ord))
+  (bind ?goal-id (sym-cat ?ord MOUNTRING ?ring# ))
   (bind ?params (create$ ?params (sym-cat ring ?ring# -station) ?rs))
 
   ;Steal parentship of lastest goal
@@ -246,7 +246,7 @@
 
       (while (> ?fill# 0)
              (bind ?parent-id ?goal-id)
-             (bind ?goal-id (sym-cat FILL_RS ?ring# _ ?fill# _ ?ord))
+             (bind ?goal-id (sym-cat ?ord FILLRS ?ring# ?fill# ))
              (assert (goal (id ?goal-id)
                      (parent ?parent-id)
                      (class FILL-RS)

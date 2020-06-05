@@ -1050,7 +1050,7 @@
                     (duration ?setup-duration))
    (not (plan (goal-id ?goal-id)))
    =>
-   (bind ?plan-id  (sym-cat ?goal-id _P (gensym*)))
+   (bind ?plan-id  (sym-cat ?goal-id _P ))
 
    (assert
       (wm-fact (key meta plan required-resource args? id ?plan-id r ?robot
@@ -1087,7 +1087,7 @@
    (bind ?cap-color (nth$ (+ 1 (member$ cap-color ?params)) ?params))
 
 
-   (bind ?plan-id  (sym-cat ?goal-id _P (gensym*)))
+   (bind ?plan-id (formate-event-name (sym-cat ?goal-id _ ?robot _ ?cs )))
 
    (assert
       (wm-fact (key meta plan required-resource args? id ?plan-id r ?cc setup [ ] ))
@@ -1144,7 +1144,7 @@
  (bind ?side OUTPUT)
 
 
- (bind ?plan-id  (sym-cat ?goal-id _P (gensym*)))
+ (bind ?plan-id  (formate-event-name (sym-cat ?goal-id _ ?robot _ ?mps)))
 
  (assert
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?cc setup [ ] ))
@@ -1214,7 +1214,7 @@
  (bind ?cs (nth$ (+ 1 (member$ cap-station ?params)) ?params))
  (bind ?cap-color (nth$ (+ 1 (member$ cap-color ?params)) ?params))
 
- (bind ?plan-id  (sym-cat ?goal-id _P(gensym*)))
+ (bind ?plan-id  (formate-event-name (sym-cat ?goal-id _ ?robot  ?prior-mps  (lowcase ?prior-side) _ ?cs )))
 
  (assert
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup [ ] ))
@@ -1312,7 +1312,7 @@
  (bind ?cs (nth$ (+ 1 (member$ cap-station ?params)) ?params))
  (bind ?ds (nth$ (+ 1 (member$ delivery-station ?params)) ?params))
 
- (bind ?plan-id  (sym-cat ?goal-id _P (gensym*)))
+ (bind ?plan-id (formate-event-name (sym-cat ?goal-id _ ?robot _ ?cs _ ?ds )))
  (assert
      (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup [ ] ))
      (wm-fact (key meta plan released-resource args? id ?plan-id r ?wp setup [ ] ))
@@ -1443,7 +1443,7 @@
  (if (eq ?class MOUNT-RING2) then (bind ?ring-pos TWO))
  (if (eq ?class MOUNT-RING3) then (bind ?ring-pos THREE))
 
- (bind ?plan-id  (sym-cat ?goal-id _P (gensym*)))
+ (bind ?plan-id  (formate-event-name (sym-cat ?goal-id _ ?robot _ ?prior-mps (lowcase ?prior-side) _ ?curr-mps )))
 
  (assert
   (wm-fact (key meta plan required-resource args? id ?plan-id r ?wp setup [ ] ))
@@ -1540,7 +1540,7 @@
  ;(test (member$ (create$ fill-base# ?fill-base#) ?params))
  =>
  (bind ?rs (nth$ (+ 1 (member$ fill-rs ?params)) ?params))
- (bind ?plan-id  (sym-cat ?goal-id _P (gensym*)))
+ (bind ?plan-id (formate-event-name (sym-cat ?goal-id _ ?robot _ ?from-mps (lowcase ?from-side) _  ?rs )))
 
  (bind ?binding-id (sym-cat X (gensym*)))
  (bind ?spot (sym-cat ?binding-id #spot))

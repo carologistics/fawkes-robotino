@@ -137,7 +137,7 @@
 
 (deffunction formate-event-name (?e)
   (bind ?e (str-replace ?e "-" ""))
-  (bind ?e (str-replace ?e "_" ""))
+  ;(bind ?e (str-replace ?e "_" ""))
   return (sym-cat ?e)
 )
 
