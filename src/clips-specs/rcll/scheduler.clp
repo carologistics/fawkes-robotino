@@ -126,6 +126,14 @@
   (slot resource-units (type INTEGER))
 )
 
+(deftemplate schedule-setup
+  (slot sched-id (type SYMBOL))
+  (slot resource-id (type SYMBOL))
+  (slot from-event (type SYMBOL))
+  (slot to-event (type SYMBOL))
+  (slot duration (type FLOAT))
+)
+
 (deffunction plan-duration (?plan-id)
  (bind ?duration 0)
  (do-for-all-facts ((?pa plan-action))
@@ -565,6 +573,38 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                          (duration ?duration)))
 )
 
+(defrule scheduling-events-setup-duration
+ "Calculate Setup duration estimates for resources"
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
+ (resource (id ?r-id) (type ?r-type))
+ (schedule-event (sched-id ?s-id) (id ?producer) (entity ?entity-1))
+ (schedule-requirment (sched-id ?s-id)
+                      (event-id ?producer)
+                      (resource-id ?r-id)
+                      (resource-units ?v1&:(> ?v1 0))
+                      (resource-setup $?setup-1))
+ (schedule-event (sched-id ?s-id) (id ?consumer) (entity ?entity-2))
+ (schedule-requirment (sched-id ?s-id)
+                      (event-id ?consumer)
+                      (resource-id ?r-id)
+                      (resource-units ?v2&:(< ?v2 0))
+                      (resource-setup $?setup-2))
+ (not (and (plan (id ?entity-1) (goal-id ?same-goal))
+           (plan (id ?entity-2) (goal-id ?same-goal))))
+ (resource-setup (resource-id ?r-id) (duration ?duration)
+                 (from-state $?setup-1) (to-state $?setup-2))
+ (not (schedule-setup (sched-id ?s-id) (resource-id ?r-id)
+                      (from-event ?producer ) (to-event ?consumer)))
+ =>
+ (assert (schedule-setup (sched-id ?s-id)
+                         (resource-id ?r-id)
+                         (from-event ?producer)
+                         (to-event ?consumer)
+                         (duration ?duration)))
+)
+
+
 
 ;; Call scheduler to build data sets
 (defrule scheduling-add-event-requirment
@@ -621,25 +661,9 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 (defrule scheduling-set-resource-setup-duration
  (declare (salience ?*SALIENCE-GOAL-SELECT*))
  (schedule (id ?s-id) (mode FORMULATED))
- (resource (id ?r-id) (type ?r-type))
- (schedule-event (sched-id ?s-id) (id ?producer) (entity ?entity-1))
- (schedule-requirment (sched-id ?s-id)
-                      (event-id ?producer)
-                      (resource-id ?r-id)
-                      (resource-units ?v1&:(> ?v1 0))
-                      (resource-setup $?setup-1))
- (schedule-event (sched-id ?s-id) (id ?consumer) (entity ?entity-2))
- (schedule-requirment (sched-id ?s-id)
-                      (event-id ?consumer)
-                      (resource-id ?r-id)
-                      (resource-units ?v2&:(< ?v2 0))
-                      (resource-setup $?setup-2))
- (not (and (plan (id ?entity-1) (goal-id ?same-goal))
-           (plan (id ?entity-2) (goal-id ?same-goal))))
- (resource-setup (resource-id ?r-id)
-                 (from-state $?setup-1)
-                 (to-state $?setup-2)
-                 (duration ?duration))
+ (resource (id ?r-id))
+ (schedule-setup (sched-id ?s-id) (resource-id ?r-id) (duration ?duration)
+                 (from-event ?producer) (to-event ?consumer))
  =>
  (scheduler-set-resource-setup-duration
       (sym-cat ?r-id) (sym-cat ?producer) (sym-cat ?consumer)  ?duration)
