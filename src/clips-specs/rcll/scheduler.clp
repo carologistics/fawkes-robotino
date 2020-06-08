@@ -90,6 +90,8 @@
   (slot at (type SYMBOL) (allowed-values START END))
   (slot scheduled (type SYMBOL) (allowed-values TRUE FALSE) (default FALSE))
   (slot scheduled-start (type INTEGER) (default 0))
+  (slot lbound (type FLOAT) (default 0.0))
+  (slot ubound (type FLOAT) (default 500.0))
   (slot duration (type INTEGER) (default 0))
 )
 
@@ -407,24 +409,37 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 ;;TODO: add sched-id to scheduler-info
 
 ;; Building The Scheduling Model
-(defrule scheduling-create-goal-event
+(defrule scheduling-create-goal-start-event
 "Create schedule-events for goals that have a child plan"
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (goal-id ?g-id))
- (not (schedule-event (sched-id ?s-id) (entity ?g-id)))
+ (not (schedule-event (sched-id ?s-id) (entity ?g-id) (at START)))
+ ;All subgoal has schedule-event end
+ (not (and (goal (id ?sub-id) (parent ?g-id))
+           (not (schedule-event (entity ?sub-id) (at END)))))
  =>
  (bind ?goal-start (sym-cat (formate-event-name ?g-id) @start))
  (bind ?goal-end (sym-cat (formate-event-name ?g-id) @end))
+
+ (bind ?lbound 0)
+ (bind ?dur 0)
+ ;lower bound of goal start is the biggest lbound of its sub-goals
+ (do-for-all-facts ((?gf goal) (?sef schedule-event)) (and (eq ?sef:entity ?gf:id)
+                                                           (eq ?sef:at END)
+                                                           (eq ?gf:parent ?g-id))
+                   (if (> ?sef:lbound ?lbound)
+                       then
+                       (bind ?lbound ?sef:lbound)
+                       (bind ?dur ?sef:duration)
+                       ))
+
  (assert (schedule-event (sched-id ?s-id)
                          (entity ?g-id)
                          (id ?goal-start)
+                         (lbound (+ ?lbound ?dur))
                          (at START)))
- (assert (schedule-event (sched-id ?s-id)
-                         (entity ?g-id)
-                         (id ?goal-end)
-                         (at END)))
 )
 
 (defrule scheduling-plan-events
@@ -432,6 +447,8 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (id ?p-id) (goal-id ?g-id))
+ (schedule-event (sched-id ?s-id) (entity ?g-id) (duration ?g-dur) (at START)
+                 (lbound ?g-lb))
  (not (schedule-event (sched-id ?s-id) (entity ?p-id)))
  =>
  (bind ?plan-start (sym-cat  (formate-event-name ?p-id) @start))
@@ -441,14 +458,48 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
   (schedule-event (sched-id ?s-id)
                   (id ?plan-start)
                   (duration ?duration)
+                  (lbound (+ ?g-lb ?g-dur))
                   (entity ?p-id)
                   (at START))
 
   (schedule-event (sched-id ?s-id)
                   (id ?plan-end)
+                  (lbound (+ ?g-lb ?g-dur ?duration))
                   (entity ?p-id)
                   (at END))
  )
+)
+
+(defrule scheduling-create-goal-end-event
+"Create schedule-events for goals that have a child plan"
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
+ (not (schedule-event (sched-id ?s-id) (entity ?g-id) (at END)))
+ ;all sub-plans have schedule-events
+ (not (and (plan (id ?p2-id) (goal-id ?g-id))
+           (not (schedule-event (entity ?p2-id) (at END)))))
+ =>
+ (bind ?goal-start (sym-cat (formate-event-name ?g-id) @start))
+ (bind ?goal-end (sym-cat (formate-event-name ?g-id) @end))
+
+ (bind ?lbound 0)
+ (bind ?dur 0)
+ ;lbound of goal end is the least of its plans (shortest plan in best case)
+ (do-for-all-facts ((?pf plan) (?sef schedule-event)) (and (eq ?sef:entity ?pf:id)
+                                                           (eq ?sef:at END)
+                                                           (eq ?pf:goal-id ?g-id))
+                   (if (or (eq ?lbound 0) (> ?lbound ?sef:lbound))
+                       then
+                       (bind ?lbound ?sef:lbound)
+                       (bind ?dur ?sef:duration)
+                       ))
+
+ (assert (schedule-event (sched-id ?s-id)
+                         (entity ?g-id)
+                         (lbound (+ ?lbound ?dur))
+                         (id ?goal-end)
+                         (at END)))
 )
 
 (defrule scheduling-plan-resources-at-start
@@ -631,22 +682,26 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 (defrule scheduling-add-goal-event
  (declare (salience ?*SALIENCE-GOAL-SELECT*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
- (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?g-id))
+ (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?g-id)
+                 (lbound ?lb) (ubound ?ub))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  =>
  (scheduler-add-goal-event (sym-cat ?g-id) (sym-cat ?e-id))
+ (scheduler-set-event-bounds (sym-cat ?e-id) ?lb ?ub)
 )
 
 (defrule scheduling-add-plan-event
  (declare (salience ?*SALIENCE-GOAL-SELECT*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
- (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (duration ?d))
+ (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id)
+                 (lbound ?lb) (ubound ?ub) (duration ?d))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (id ?p-id) (goal-id ?g-id))
  =>
  (scheduler-add-plan-event (sym-cat ?p-id) (sym-cat ?e-id))
  ;(scheduler-add-goal-event (sym-cat ?g-id) (sym-cat ?e-id))
  (scheduler-set-event-duration (sym-cat ?e-id) ?d)
+ (scheduler-set-event-bounds (sym-cat ?e-id) ?lb ?ub)
 )
 
 (defrule scheduling-add-goal-plans
