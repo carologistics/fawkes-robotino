@@ -675,19 +675,14 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (schedule (id ?s-id) (mode SELECTED))
   ?if <- (scheduler-info (type PLAN-SELECTION) (descriptors ?plan-id) (value ?v))
-  ?ps <- (schedule-event (sched-id ?s-id) (entity ?plan-id) (at START))
-  ?pe <- (schedule-event (sched-id ?s-id) (entity ?plan-id) (at END))
-  ?gs <- (schedule-event (sched-id ?s-id) (entity ?goal-id) (at START))
-  ?ge <- (schedule-event (sched-id ?s-id) (entity ?goal-id) (at END))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id))
 =>
-  (if (> ?v 0) then
-    (modify ?ps (scheduled TRUE))
-    (modify ?pe (scheduled TRUE))
-    (modify ?gs (scheduled TRUE))
-    (modify ?ge (scheduled TRUE))
-  )
+  (if (> ?v 0)
+      then
+      (delayed-do-for-all-facts ((?sef schedule-event)) (or (eq ?sef:entity ?goal-id)
+                                                    (eq ?sef:entity ?plan-id))
+                        (modify ?sef (scheduled TRUE))))
 
  (retract ?if)
 )
@@ -721,46 +716,33 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 (defrule scheduling-process-scheduled-edges
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (mode SELECTED))
+ (not (scheduler-info (type EVENT-TIME)))
+ (not (scheduler-info (type PLAN-SELECTION)))
  ?if <- (scheduler-info (type EVENT-SEQUENCE)
-                        (descriptors ?r-id ?e1-id ?e2-id)
+                        (descriptors ?r-id ?e-id ?e2-id)
                         (value ?scheduled&:(> ?scheduled 0)))
  (resource (id ?r-id))
- ?ef1 <- (schedule-event (sched-id ?s-id) (id ?e1-id) (entity ?entity1) (at ?at1))
- ?ef2 <- (schedule-event (sched-id ?s-id) (id ?e2-id) (entity ?entity2) (at ?at2))
- (schedule-requirment (sched-id ?s-id) (event-id ?e1-id) (resource-id ?r-id))
- (schedule-requirment (sched-id ?s-id) (event-id ?e2-id) (resource-id ?r-id))
  ?rf <- (schedule-resource (sched-id ?s-id) (resource-id ?r-id)
                            (events $?resource-schedule))
- ;Where e1-id is the first scheduled event on that resource, or already
- ; added to the resource schedule
- (or
-  (test (and (eq ?resource-schedule (create$))
-             (eq ?entity1 ?r-id)
-             (eq ?at1 START)))
+ ?ef <- (schedule-event (sched-id ?s-id) (scheduled ?e-scheduled)
+                        (id ?e-id)
+                        (entity ?e-entity) (scheduled-start ?e-time))
+ (schedule-requirment (sched-id ?s-id) (event-id ?e-id) (resource-id ?r-id))
+ (test (or (eq	?e-scheduled TRUE) (eq ?e-entity ?r-id)))
 
-  (and (test (eq ?resource-schedule (create$)))
-       (not (and (schedule-event (sched-id ?s-id) (entity ?entity1)
-                                 (id ?e-id&:(neq ?e1-id ?e-id)))
-                 (schedule-requirment (sched-id ?s-id)
-                                      (event-id ?e-id)
-                                      (resource-id ?r-id)
-                                      (resource-units ?consumption&:(< ?consumption 0))))))
-
-  (and (schedule-event (sched-id ?s-id)
-                       (entity ?entity1)
-                       (id ?e-id&:(and (neq ?e1-id ?e-id)
-                                       (member$ ?e-id ?resource-schedule))))
-       (schedule-requirment (sched-id ?s-id)
-                            (event-id ?e-id)
-                            (resource-id ?r-id)
-                            (resource-units ?consumed&:(< ?consumed 0))))
- )
+ ;there isn't a scheduled resource with a lower time which is not yet added
+ (not (and (schedule-event (sched-id ?s-id) (scheduled TRUE)
+                           (id ?id&:(not (member$ ?id ?resource-schedule)))
+                           (scheduled-start ?time&:(< ?time ?e-time)))
+           (schedule-requirment (sched-id ?s-id) (event-id ?id) (resource-id ?r-id))))
 =>
-  (bind ?resource-schedule (create$ ?resource-schedule ?e1-id ?e2-id))
+  (if (member$ ?e-id ?resource-schedule)
+      then
+      (modify ?rf (events (create$ ?resource-schedule ?e2-id)))
+      else
+      (modify ?rf (events (create$ ?resource-schedule ?e-id ?e2-id))))
 
-  (modify ?rf (events ?resource-schedule))
-  (modify ?ef1 (scheduled TRUE))
-  (modify ?ef2 (scheduled TRUE))
+ (if (not ?e-scheduled) then (modify ?ef (scheduled TRUE)))
 
  (retract ?if)
 )
