@@ -111,5 +111,12 @@ private:
 	void add_goal_plan(std::string env_name, std::string goal_name, std::string plan_name);
 	void build_model(std::string env_name, std::string model_id);
 	void check_progress(std::string env_name, std::string model_id);
+
+	bool resource_included(std::string resource_name, std::vector<std::string> rv);
+
+	bool event_included(std::string event_name, std::vector<std::string> rv);
+
+	bool plan_included(std::string plan_name, std::vector<std::string> rv);
+	void build_model_for_resources(std::string env_name, std::string model_id, CLIPS::Values v);
 };
 #endif /* !PLUGINS_CLIPS_MIP_SCHEDULER_THREAD_H__ */
