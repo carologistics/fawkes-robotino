@@ -75,6 +75,8 @@ private:
 		};
 		std::string                name;
 		int                        duration = 0;
+		float                      lbound   = 0;
+		float                      ubound   = GRB_INFINITY;
 		std::map<std::string, int> resources;
 		std::vector<Event *>       precedes;
 		std::string                goal = "";
@@ -96,6 +98,7 @@ private:
 
 private:
 	void set_event_duration(std::string env_name, std::string event_name, int duration);
+	void set_event_bounds(std::string env_name, std::string event_name, float lb, float ub);
 	void
 	     add_event_resource(std::string env_name, std::string event_name, std::string res_name, int req);
 	void set_resource_setup_duration(std::string env_name,

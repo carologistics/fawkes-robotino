@@ -69,6 +69,10 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
 	  sigc::slot<void, std::string, int>(
 	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::set_event_duration), env_name)));
 	clips->add_function(
+	  "scheduler-set-event-bounds",
+	  sigc::slot<void, std::string, float, float>(
+	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::set_event_bounds), env_name)));
+	clips->add_function(
 	  "scheduler-add-event-resource",
 	  sigc::slot<void, std::string, std::string, int>(
 	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_event_resource), env_name)));
@@ -152,6 +156,21 @@ ClipsMipSchedulerThread::set_event_duration(std::string env_name,
 	events_[event_name]->duration = duration;
 
 	logger->log_info(name(), "Duration: %s takes %u sec  ", event_name.c_str(), duration);
+}
+
+void
+ClipsMipSchedulerThread::set_event_bounds(std::string env_name,
+                                          std::string event_name,
+                                          float       lb,
+                                          float       ub)
+{
+	if (events_.find(event_name) == events_.end())
+		events_[event_name] = new Event(event_name);
+
+	events_[event_name]->lbound = lb;
+	events_[event_name]->ubound = ub;
+
+	logger->log_info(name(), "Bounds: %f < %s  < %f  ", lb, event_name.c_str(), ub);
 }
 
 void
@@ -259,7 +278,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 		//Init Gurobi Time Vars (T)
 		for (auto const &iE : events_)
 			gurobi_vars_time_[iE.first] = gurobi_models_[model_id]->addVar(
-			  0, GRB_INFINITY, 0, GRB_INTEGER, ("t[" + iE.first + "]").c_str());
+			  iE.second->lbound, iE.second->ubound, 0, GRB_INTEGER, ("t[" + iE.first + "]").c_str());
 
 		//Init Gurobi event sequencing Vars (X)
 		for (auto const &iR : res_setup_duration_)
