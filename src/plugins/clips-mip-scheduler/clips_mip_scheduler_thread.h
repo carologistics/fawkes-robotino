@@ -88,7 +88,7 @@ private:
 	std::map<std::string, std::vector<Event *>>                         plan_events_;
 	std::map<std::string, std::vector<Event *>>                         goal_events_;
 	std::map<std::string, std::vector<std::string>>                     goal_plans_;
-	std::map<std::string, std::vector<std::string>>                     plan_goal_;
+	std::map<std::string, std::string>                                  plan_goal_;
 
 	std::map<std::string, GRBVar>                                               gurobi_vars_time_;
 	std::map<std::string, GRBVar>                                               gurobi_vars_plan_;

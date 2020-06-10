@@ -245,7 +245,7 @@ ClipsMipSchedulerThread::add_goal_plan(std::string env_name,
                                        std::string plan_name)
 {
 	goal_plans_[goal_name].push_back(plan_name);
-	plan_goal_[plan_name].push_back(goal_name);
+	plan_goal_[plan_name] = goal_name;
 
 	logger->log_info(name(), "Plan: %s achives Goal %s  ", plan_name.c_str(), goal_name.c_str());
 }
