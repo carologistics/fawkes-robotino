@@ -259,7 +259,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 		//Init Gurobi Time Vars (T)
 		for (auto const &iE : events_)
 			gurobi_vars_time_[iE.first] = gurobi_models_[model_id]->addVar(
-			  0, GRB_INFINITY, 0, GRB_INTEGER, ("t{" + iE.first + "}").c_str());
+			  0, GRB_INFINITY, 0, GRB_INTEGER, ("t[" + iE.first + "]").c_str());
 
 		//Init Gurobi event sequencing Vars (X)
 		for (auto const &iR : res_setup_duration_)
@@ -270,7 +270,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 					std::string resource = iR.first;
 					std::string producer = iEprod.first->name;
 					std::string consumer = iEcons.first->name;
-					std::string vname    = "{" + resource + "}{" + producer + "__" + consumer + "}";
+					std::string vname    = "[" + resource + "][" + producer + "][" + consumer + "]";
 					gurobi_vars_sequence_[resource][producer][consumer] =
 					  gurobi_models_[model_id]->addVar(0, 1, 0, GRB_BINARY, ("x" + vname).c_str());
 				}
@@ -278,7 +278,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 		//Init Gurobi plan selection Vars (S)
 		for (auto const &iP : plan_events_)
 			gurobi_vars_plan_[iP.first] =
-			  gurobi_models_[model_id]->addVar(0, 1, 0, GRB_BINARY, ("p{" + iP.first + "}").c_str());
+			  gurobi_models_[model_id]->addVar(0, 1, 0, GRB_BINARY, ("p[" + iP.first + "]").c_str());
 
 		//Objective
 		GRBVar Tmax = gurobi_models_[model_id]->addVar(0, GRB_INFINITY, 1, GRB_INTEGER, "Tmax");
