@@ -84,8 +84,6 @@ private:
 	};
 
 	std::map<std::string, Event *>                                      events_;
-	std::map<std::string, std::vector<Event *>>                         resource_producers_;
-	std::map<std::string, std::vector<Event *>>                         resource_consumers_;
 	std::map<std::string, std::map<Event *, std::map<Event *, double>>> res_setup_duration_;
 	std::map<std::string, std::vector<Event *>>                         plan_events_;
 	std::map<std::string, std::vector<Event *>>                         goal_events_;

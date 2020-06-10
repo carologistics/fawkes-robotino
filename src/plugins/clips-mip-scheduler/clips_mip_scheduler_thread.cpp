@@ -163,12 +163,7 @@ ClipsMipSchedulerThread::add_event_resource(std::string env_name,
 	if (events_.find(event_name) == events_.end())
 		events_[event_name] = new Event(event_name);
 
-	events_[event_name]->resources[res_name] = req;
-
-	if (req >= 0)
-		resource_producers_[res_name].push_back(events_[event_name]);
-	else
-		resource_consumers_[res_name].push_back(events_[event_name]);
+	events_[event_name]->resources[res_name] = abs(req);
 
 	logger->log_info(
 	  name(), "Resource-req: %s uses %s in %d units  ", event_name.c_str(), res_name.c_str(), req);
@@ -346,92 +341,13 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 			//logger->log_info(name(), "C2: plans of goal %s", iG.first.c_str());
 		}
 
-		//Constraint 3&4,5&6
-		for (auto const &iR : resource_producers_) {
-			// logger->log_info(name(), "flow of respurce %s :", iR.first.c_str());
-			for (auto const &iErp : resource_producers_[iR.first]) {
-				GRBLinExpr flow_out  = 0;
-				int        sosLength = resource_consumers_[iR.first].size();
-				GRBVar     sosVars[sosLength];
-				double     sosWieghts[sosLength];
-				int        i = 0;
-				for (auto const &iErc : resource_consumers_[iR.first])
-					//if (iErp->goal != iErc->goal || iErp->goal.size() == 0)
-					if (plan_goal_.find(iErp->plan) != plan_goal_.end()
-					    && plan_goal_.find(iErc->plan) != plan_goal_.end()
-					    && plan_goal_[iErp->plan] == plan_goal_[iErc->plan]) {
-						//logger->log_info(name(),
-						//	            "Skipping X%s_%s :",
-						//			  iErp->name.c_str(),
-						//			  iErc -> name.c_str());
-					} else {
-						//	logger->log_info(name(),
-						//		            "flowOut + X%s_%s :",
-						//				  iErp->name.c_str(),
-						//				  iErc -> name.c_str());
-						flow_out += gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
-						sosVars[i]    = gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
-						sosWieghts[i] = i;
-						i++;
-					}
+		//Constraints 8,3,4,5,6
+		for (auto const &iR : res_setup_duration_) {
+			std::map<std::string, std::vector<GRBVar>> inflow_vars;
+			std::map<std::string, std::vector<GRBVar>> outflow_vars;
 
-				if (iErp->plan.size() == 0 && iErp->goal.size() == 0)
-					gurobi_models_[model_id]->addConstr(
-					  flow_out - iErp->resources[iR.first] == 0,
-					  ("FlowOut{" + iR.first + "}{" + iErp->name + "}").c_str());
-				else if (gurobi_vars_plan_.find(iErp->plan) != gurobi_vars_plan_.end())
-					gurobi_models_[model_id]->addConstr(
-					  flow_out - iErp->resources[iR.first] * gurobi_vars_plan_[iErp->plan] == 0,
-					  ("FlowOut{" + iR.first + "}{" + iErp->name + "}").c_str());
-
-				if (iErp->resources[iR.first] * iErp->resources[iR.first] == 1)
-					gurobi_models_[model_id]->addSOS(sosVars, sosWieghts, i, GRB_SOS_TYPE1);
-			}
-
-			for (auto const &iErc : resource_consumers_[iR.first]) {
-				GRBLinExpr flow_in   = 0;
-				int        sosLength = resource_producers_[iR.first].size();
-				GRBVar     sosVars[sosLength];
-				double     sosWieghts[sosLength];
-				int        i = 0;
-				for (auto const &iErp : resource_producers_[iR.first])
-					if (plan_goal_.find(iErp->plan) != plan_goal_.end()
-					    && plan_goal_.find(iErc->plan) != plan_goal_.end()
-					    && plan_goal_[iErp->plan] == plan_goal_[iErc->plan]) {
-						//	logger->log_info(name(),
-						//		            "skipping  X%s_%s :",
-						//				  iErc->name.c_str(),
-						//				  iErp -> name.c_str());
-
-					} else {
-						//	logger->log_info(name(),
-						//		            "flowIn + X%s_%s :",
-						//				  iErp->name.c_str(),
-						//				  iErc -> name.c_str());
-						flow_in -= gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
-						sosVars[i]    = gurobi_vars_sequence_[iR.first][iErp->name][iErc->name];
-						sosWieghts[i] = i;
-						i++;
-					}
-
-				if (iErc->plan.size() == 0 && iErc->goal.size() == 0)
-					gurobi_models_[model_id]->addConstr(
-					  flow_in - iErc->resources[iR.first] == 0,
-					  ("FlowIn{" + iR.first + "}{" + iErc->name + "}").c_str());
-
-				else if (gurobi_vars_plan_.find(iErc->plan) != gurobi_vars_plan_.end())
-					gurobi_models_[model_id]->addConstr(
-					  flow_in - iErc->resources[iR.first] * gurobi_vars_plan_[iErc->plan] == 0,
-					  ("FlowIn{" + iR.first + "}{" + iErc->name + "}").c_str());
-
-				if (iErc->resources[iR.first] * iErc->resources[iR.first] == 1)
-					gurobi_models_[model_id]->addSOS(sosVars, sosWieghts, i, GRB_SOS_TYPE1);
-			}
-		}
-
-		//Constraint 8
-		for (auto const &iR : res_setup_duration_)
-			for (auto const &iEprod : iR.second)
+			//Edges Selection GenConstrIndicator
+			for (auto const &iEprod : iR.second) {
 				for (auto const &iEcons : iEprod.second) {
 					std::string resource = iR.first;
 					std::string producer = iEprod.first->name;
@@ -447,7 +363,67 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 					    >= 0,
 					  cname.c_str());
 					//logger->log_info(name(), "C8: %s", cname.c_str());
+
+					inflow_vars[consumer].push_back(gurobi_vars_sequence_[iR.first][producer][consumer]);
+					outflow_vars[producer].push_back(gurobi_vars_sequence_[iR.first][producer][consumer]);
 				}
+			}
+
+			std::string event_name;
+			int         i;
+			int         l;
+			//Constrs : Consumers in-flow
+			for (auto const &iCons : inflow_vars) {
+				event_name = iCons.first;
+				l          = inflow_vars[iCons.first].size();
+				double     sosWieghts[l];
+				GRBVar     sosVars[l];
+				GRBLinExpr constr_LHS = 0;
+				i                     = 0;
+				for (auto const &iFlowVar : iCons.second) {
+					constr_LHS += iFlowVar;
+					sosVars[i]    = iFlowVar;
+					sosWieghts[i] = i;
+					i++;
+				}
+				GRBLinExpr constr_RHS = 1;
+				if (gurobi_vars_plan_.find(events_[event_name]->plan) != gurobi_vars_plan_.end())
+					constr_RHS = gurobi_vars_plan_[events_[event_name]->plan];
+				logger->log_info(name(), "flowIn %s ", event_name.c_str());
+				gurobi_models_[model_id]->addConstr(
+				  constr_LHS - constr_RHS * abs(events_[event_name]->resources[iR.first]) == 0,
+				  ("FlowIn{" + iR.first + "}{" + event_name + "}").c_str());
+				//SOS
+				if (abs(events_[event_name]->resources[iR.first]) == 1)
+					gurobi_models_[model_id]->addSOS(sosVars, sosWieghts, i, GRB_SOS_TYPE1);
+			}
+
+			//Constrs: Producers out-flow
+			for (auto const &iProd : outflow_vars) {
+				event_name = iProd.first;
+				l          = outflow_vars[iProd.first].size();
+				double     sosWieghts[l];
+				GRBVar     sosVars[l];
+				GRBLinExpr constr_LHS = 0;
+				i                     = 0;
+				for (auto const &iFlowVar : iProd.second) {
+					constr_LHS += iFlowVar;
+					sosVars[i]    = iFlowVar;
+					sosWieghts[i] = i;
+					i++;
+				}
+				GRBLinExpr constr_RHS = 1;
+				if (gurobi_vars_plan_.find(events_[event_name]->plan) != gurobi_vars_plan_.end())
+					constr_RHS = gurobi_vars_plan_[events_[event_name]->plan];
+				logger->log_info(name(), "flowOut %s ", event_name.c_str());
+				gurobi_models_[model_id]->addConstr(
+				  constr_LHS - constr_RHS * abs(events_[event_name]->resources[iR.first]) == 0,
+				  ("FlowOut{" + iR.first + "}{" + event_name + "}").c_str());
+				//SOS
+				if (abs(events_[event_name]->resources[iR.first]) == 1)
+					gurobi_models_[model_id]->addSOS(sosVars, sosWieghts, i, GRB_SOS_TYPE1);
+			}
+		}
 
 		//Constraint 10
 		for (auto const &iE : events_)
