@@ -22,11 +22,13 @@
 	(:requirements :strips :typing)
 
 	(:types
-		robot - object
+		resource - object
+		robot - resource
 		team-color - object
 		location - object
     waitpoint - location
 		mps - location
+		mps - resource
 		mps-typename - object
 		mps-statename - object
 		mps-side - object
@@ -39,7 +41,7 @@
 		cs-statename - object
 		order - object
     order-complexity-value - object
-		workpiece - object
+		workpiece - resource
 		cap-carrier - workpiece
 		shelf-spot - object
 		ring-num - object

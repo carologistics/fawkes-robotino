@@ -77,7 +77,9 @@
   (bind ?g-id (sym-cat ?ord (gensym*)))
 
   (bind ?binding-id (sym-cat X (gensym*)))
-  (bind ?wp (str-cat ?binding-id #wp))
+  (bind ?wp (sym-cat ?binding-id #wp))
+  (assert (domain-object (name ?wp) (type workpiece)))
+
   (bind ?fact-key (create$ domain fact wp-unused args? wp ?wp))
   (assert (wm-fact (key meta binding args? id ?binding-id policy BIND-UNIQUE)
                    (is-list TRUE)
@@ -185,6 +187,7 @@
   (bind ?binding-id (sym-cat X (gensym*)))
   (bind ?shelf-spot (sym-cat ?binding-id #spot))
   (bind ?cc  (sym-cat ?binding-id #wp))
+  (assert (domain-object (name ?cc) (type workpiece)))
   (bind ?fact-key (create$ domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
   (assert (wm-fact (key meta binding args? id ?binding-id policy BIND-UNIQUE)
                    (is-list TRUE)
