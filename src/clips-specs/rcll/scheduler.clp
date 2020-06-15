@@ -79,7 +79,7 @@
   (slot id (type SYMBOL))
   (multislot goals (type SYMBOL))
   (slot mode (type SYMBOL))
-  (slot duration (type INTEGER))
+  (slot duration (type FLOAT ))
   (multislot dispatch-time (type INTEGER))
 )
 
@@ -89,10 +89,10 @@
   (slot entity (type SYMBOL))
   (slot at (type SYMBOL) (allowed-values START END))
   (slot scheduled (type SYMBOL) (allowed-values TRUE FALSE) (default FALSE))
-  (slot scheduled-start (type INTEGER) (default 0))
+  (slot scheduled-start (type FLOAT) (default 0.0))
   (slot lbound (type FLOAT) (default 0.0))
   (slot ubound (type FLOAT) (default 500.0))
-  (slot duration (type INTEGER) (default 0))
+  (slot duration (type FLOAT) (default 0.0))
 )
 
 

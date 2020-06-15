@@ -66,7 +66,7 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
 
 	clips->add_function(
 	  "scheduler-set-event-duration",
-	  sigc::slot<void, std::string, int>(
+	  sigc::slot<void, std::string, float>(
 	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::set_event_duration), env_name)));
 	clips->add_function(
 	  "scheduler-set-event-bounds",
@@ -148,14 +148,14 @@ ClipsMipSchedulerThread::clips_context_destroyed(const std::string &env_name)
 void
 ClipsMipSchedulerThread::set_event_duration(std::string env_name,
                                             std::string event_name,
-                                            int         duration)
+                                            float       duration)
 {
 	if (events_.find(event_name) == events_.end())
 		events_[event_name] = new Event(event_name);
 
 	events_[event_name]->duration = duration;
 
-	logger->log_info(name(), "Duration: %s takes %u sec  ", event_name.c_str(), duration);
+	logger->log_info(name(), "Duration: %s takes %f sec  ", event_name.c_str(), duration);
 }
 
 void
@@ -278,7 +278,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 		//Init Gurobi Time Vars (T)
 		for (auto const &iE : events_)
 			gurobi_vars_time_[iE.first] = gurobi_models_[model_id]->addVar(
-			  iE.second->lbound, iE.second->ubound, 0, GRB_INTEGER, ("t[" + iE.first + "]").c_str());
+			  iE.second->lbound, iE.second->ubound, 0, GRB_CONTINUOUS, ("t[" + iE.first + "]").c_str());
 
 		//Init Gurobi event sequencing Vars (X)
 		for (auto const &iR : res_setup_duration_)
@@ -300,7 +300,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 			  gurobi_models_[model_id]->addVar(0, 1, 0, GRB_BINARY, ("p[" + iP.first + "]").c_str());
 
 		//Objective
-		GRBVar Tmax = gurobi_models_[model_id]->addVar(0, GRB_INFINITY, 1, GRB_INTEGER, "Tmax");
+		GRBVar Tmax = gurobi_models_[model_id]->addVar(0, GRB_INFINITY, 1, GRB_CONTINUOUS, "Tmax");
 		gurobi_models_[model_id]->set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
 
 		//Constraint 1

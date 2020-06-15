@@ -74,7 +74,7 @@ private:
 			name = n;
 		};
 		std::string                name;
-		int                        duration = 0;
+		float                      duration = 0;
 		float                      lbound   = 0;
 		float                      ubound   = GRB_INFINITY;
 		std::map<std::string, int> resources;
@@ -97,7 +97,7 @@ private:
 	std::map<std::string, std::map<std::string, std::map<std::string, GRBVar>>> gurobi_vars_sequence_;
 
 private:
-	void set_event_duration(std::string env_name, std::string event_name, int duration);
+	void set_event_duration(std::string env_name, std::string event_name, float duration);
 	void set_event_bounds(std::string env_name, std::string event_name, float lb, float ub);
 	void
 	     add_event_resource(std::string env_name, std::string event_name, std::string res_name, int req);
