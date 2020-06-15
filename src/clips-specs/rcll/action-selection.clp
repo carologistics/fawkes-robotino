@@ -117,7 +117,7 @@
       (test (eq ?parent nil)))
   =>
   (if (neq ?verbosity QUIET) then
-    (printout t "Selected next action " ?action-name ?param-values crlf)
+    (printout t "Selected next action " ?action-name ?param-values " [" ?goal-id "]"crlf)
   )
 	(bind ?param-values (replace-unbound ?param-values))
 	(modify ?pa (state PENDING) (param-values ?param-values))
