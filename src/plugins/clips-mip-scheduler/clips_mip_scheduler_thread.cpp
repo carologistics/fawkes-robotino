@@ -77,7 +77,7 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
 	  sigc::slot<void, std::string, std::string, int>(
 	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_event_resource), env_name)));
 	clips->add_function("scheduler-set-resource-setup-duration",
-	                    sigc::slot<void, std::string, std::string, std::string, double>(sigc::bind<0>(
+	                    sigc::slot<void, std::string, std::string, std::string, int>(sigc::bind<0>(
 	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::set_resource_setup_duration),
 	                      env_name)));
 	clips->add_function("scheduler-add-event-precedence",
@@ -193,7 +193,7 @@ ClipsMipSchedulerThread::set_resource_setup_duration(std::string env_name,
                                                      std::string res,
                                                      std::string event1,
                                                      std::string event2,
-                                                     double      duration)
+                                                     int         duration)
 {
 	if (events_.find(event1) == events_.end())
 		events_[event1] = new Event(event1);
@@ -204,7 +204,7 @@ ClipsMipSchedulerThread::set_resource_setup_duration(std::string env_name,
 	res_setup_duration_[res][events_[event1]][events_[event2]] = duration;
 
 	logger->log_info(name(),
-	                 " Setup [%s]: from %s to %s takes %lf sec",
+	                 " Setup [%s]: from %s to %s takes %d sec",
 	                 res.c_str(),
 	                 event1.c_str(),
 	                 event2.c_str(),
@@ -499,8 +499,8 @@ ClipsMipSchedulerThread::check_progress(std::string env_name, std::string model_
 			//Post process Time Vars (T)
 			for (auto const &iE : events_) {
 				std::string type  = "EVENT-TIME";
-				float       value = gurobi_vars_time_[iE.first].get(GRB_DoubleAttr_X);
-				env.assert_fact_f("(scheduler-info (type %s) (descriptors %s )(value  %f ))",
+				int         value = int(gurobi_vars_time_[iE.first].get(GRB_DoubleAttr_X));
+				env.assert_fact_f("(scheduler-info (type %s) (descriptors %s )(value  %d ))",
 				                  type.c_str(),
 				                  iE.first.c_str(),
 				                  value);
@@ -511,10 +511,10 @@ ClipsMipSchedulerThread::check_progress(std::string env_name, std::string model_
 				for (auto const &iEprod : iR.second)
 					for (auto const &iEcons : iEprod.second) {
 						std::string type = "EVENT-SEQUENCE";
-						float       value =
-						  gurobi_vars_sequence_[iR.first][iEprod.first->name][iEcons.first->name].get(
-						    GRB_DoubleAttr_X);
-						env.assert_fact_f("(scheduler-info (type %s) (descriptors %s %s %s) (value  %f ))",
+						int         value =
+						  int(gurobi_vars_sequence_[iR.first][iEprod.first->name][iEcons.first->name].get(
+						    GRB_DoubleAttr_X));
+						env.assert_fact_f("(scheduler-info (type %s) (descriptors %s %s %s) (value  %d ))",
 						                  type.c_str(),
 						                  iR.first.c_str(),
 						                  iEprod.first->name.c_str(),
@@ -525,8 +525,8 @@ ClipsMipSchedulerThread::check_progress(std::string env_name, std::string model_
 			//Post process plan selection Vars (S)
 			for (auto const &iP : plan_events_) {
 				std::string type  = "PLAN-SELECTION";
-				float       value = gurobi_vars_plan_[iP.first].get(GRB_DoubleAttr_X);
-				env.assert_fact_f("(scheduler-info (type %s) (descriptors %s ) (value  %f ))",
+				int         value = int(gurobi_vars_plan_[iP.first].get(GRB_DoubleAttr_X));
+				env.assert_fact_f("(scheduler-info (type %s) (descriptors %s ) (value  %d ))",
 				                  type.c_str(),
 				                  iP.first.c_str(),
 				                  value);

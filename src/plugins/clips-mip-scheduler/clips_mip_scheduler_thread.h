@@ -85,12 +85,12 @@ private:
 		//    Entity entity;
 	};
 
-	std::map<std::string, Event *>                                      events_;
-	std::map<std::string, std::map<Event *, std::map<Event *, double>>> res_setup_duration_;
-	std::map<std::string, std::vector<Event *>>                         plan_events_;
-	std::map<std::string, std::vector<Event *>>                         goal_events_;
-	std::map<std::string, std::vector<std::string>>                     goal_plans_;
-	std::map<std::string, std::string>                                  plan_goal_;
+	std::map<std::string, Event *>                                   events_;
+	std::map<std::string, std::map<Event *, std::map<Event *, int>>> res_setup_duration_;
+	std::map<std::string, std::vector<Event *>>                      plan_events_;
+	std::map<std::string, std::vector<Event *>>                      goal_events_;
+	std::map<std::string, std::vector<std::string>>                  goal_plans_;
+	std::map<std::string, std::string>                               plan_goal_;
 
 	std::map<std::string, GRBVar>                                               gurobi_vars_time_;
 	std::map<std::string, GRBVar>                                               gurobi_vars_plan_;
@@ -105,7 +105,7 @@ private:
 	                                 std::string res,
 	                                 std::string event1,
 	                                 std::string event2,
-	                                 double      duration);
+	                                 int         duration);
 	void add_event_precedence(std::string env_name, std::string event_name, std::string preceded);
 	void add_plan_event(std::string env_name, std::string plan_name, std::string event_name);
 	void add_goal_event(std::string env_name, std::string goal_name, std::string event_name);
