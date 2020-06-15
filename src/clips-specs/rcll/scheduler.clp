@@ -72,7 +72,7 @@
   (slot sched-id (type SYMBOL))
   (slot type (type SYMBOL) (allowed-values EVENT-TIME EVENT-SEQUENCE PLAN-SELECTION))
   (multislot descriptors (type SYMBOL))
-  (slot value (type FLOAT))
+  (slot value (type INTEGER))
 )
 
 (deftemplate schedule
@@ -117,7 +117,7 @@
   (slot resource-id (type SYMBOL))
   (multislot from-state (type SYMBOL))
   (multislot to-state (type SYMBOL))
-  (slot duration (type FLOAT))
+  (slot duration (type INTEGER))
 )
 
 (deftemplate schedule-requirment
@@ -133,7 +133,7 @@
   (slot resource-id (type SYMBOL))
   (slot from-event (type SYMBOL))
   (slot to-event (type SYMBOL))
-  (slot duration (type FLOAT))
+  (slot duration (type INTEGER))
 )
 
 (deffunction plan-duration (?plan-id)
@@ -614,10 +614,10 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  =>
  (bind ?duration 0)
  (if (eq  ?r-type ROBOT) then
-     (bind ?duration (estimate-action-duration "move"
+     (bind ?duration (integer (round-up (estimate-action-duration "move"
                                                (create$ r from from-side to to-side)
                                                (create$ ANY (nth$ 1 ?setup-1) (nth$ 2 ?setup-1)
-                                                            (nth$ 1 ?setup-2) (nth$ 2 ?setup-2)))))
+                                                            (nth$ 1 ?setup-2) (nth$ 2 ?setup-2)))))))
 
  (assert (resource-setup (resource-id ?r-id)
                          (from-state ?setup-1)
@@ -763,7 +763,9 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                         (value ?scheduled-start))
  ?ef <- (schedule-event (sched-id ?s-id) (id ?e-id))
  =>
- (modify ?ef (scheduled-start ?scheduled-start))
+ ;the comparison is needed to exclude the -0.0 values coming from the scheduler
+ (if (> ?scheduled-start 0.0) then
+     (modify ?ef (scheduled-start (abs ?scheduled-start))))
  (retract ?if)
 )
 
@@ -791,7 +793,8 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
  (not (and  (scheduler-info (type EVENT-SEQUENCE) (value ?xv&:(> ?xv 0))
                             (descriptors ?r-id ?ex1-id ?ex2-id))
-            (schedule-event (id ?ex1-id)) (scheduled-start ?ex1-time&:(> ?e1-time ?ex1-time))))
+            (schedule-event (id ?ex1-id)
+                            (scheduled-start ?ex1-time&:(> ?e1-time ?ex1-time)))))
 =>
  (if (not ?e1-scheduled) then (modify ?e1f (scheduled TRUE)))
  (if (not ?e2-scheduled) then (modify ?e2f (scheduled TRUE)))

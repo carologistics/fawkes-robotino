@@ -1013,7 +1013,7 @@
 
  ;(bind ?duration (map-action-skill (str-cat ?action-name) ?param-names ?param-values))
  ;(printout error "mapped to " ?duration crlf))
- (bind ?duration (estimate-action-duration (str-cat ?action-name) ?param-names ?param-values))
+ (bind ?duration (integer (round-up (estimate-action-duration (str-cat ?action-name) ?param-names ?param-values))))
  (if (> ?duration 0)
      then
        (modify ?pf (duration ?duration))
