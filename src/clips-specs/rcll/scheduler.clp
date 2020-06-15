@@ -814,11 +814,6 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  ?if <- (scheduler-info (type EVENT-SEQUENCE)
                         (descriptors ?r-id ?e1-id ?e2-id)
                         (value ?v&:(<= ?v 0)))
- (resource (id ?r-id))
- (schedule-event (sched-id ?s-id) (id ?e1-id))
- (schedule-event (sched-id ?s-id) (id ?e2-id))
- (schedule-requirment (sched-id ?s-id) (event-id ?e1-id) (resource-id ?r-id))
- (schedule-requirment (sched-id ?s-id) (event-id ?e2-id) (resource-id ?r-id))
 =>
  (retract ?if)
 )
