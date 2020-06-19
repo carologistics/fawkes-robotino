@@ -682,6 +682,17 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (scheduler-add-event-precedence (sym-cat ?e1-id) (sym-cat ?e2-id))
 )
 
+(defrule scheduling-add-resource-event
+ (declare (salience ?*SALIENCE-GOAL-SELECT*))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
+ (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?r-id)
+                 (lbound ?lb) (ubound ?ub) )
+ (resource (id ?r-id))
+ =>
+ (scheduler-add-goal-event (sym-cat ?r-id) (sym-cat ?e-id))
+ ;(scheduler-set-event-bounds (sym-cat ?e-id) ?lb ?ub)
+)
+
 (defrule scheduling-add-goal-event
  (declare (salience ?*SALIENCE-GOAL-SELECT*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
