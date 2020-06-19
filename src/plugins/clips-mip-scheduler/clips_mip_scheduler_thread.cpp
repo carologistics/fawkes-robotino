@@ -319,9 +319,8 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 
 		//Init Gurobi plan selection Vars (S)
 		for (auto const &iP : selectors_)
-			if (!iP.second->selected)
-				gurobi_vars_plan_[iP.first] =
-				  gurobi_models_[model_id]->addVar(0, 1, 0, GRB_BINARY, ("p[" + iP.first + "]").c_str());
+			gurobi_vars_plan_[iP.first] =
+			  gurobi_models_[model_id]->addVar(0, 1, 0, GRB_BINARY, ("s[" + iP.first + "]").c_str());
 
 		//Objective
 		GRBVar Tmax = gurobi_models_[model_id]->addVar(0, GRB_INFINITY, 1, GRB_INTEGER, "Tmax");
@@ -370,14 +369,22 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 				}
 			}
 
-		//Constraint (2) Plan Selection
+		//Constraint (2) Event Selection
 		for (auto const &iG : group_selectors_) {
-			GRBLinExpr sum = 0;
+			GRBLinExpr RHS = gurobi_vars_plan_[iG.first->name];
+			GRBLinExpr LHS = 0;
 			for (auto const &iP : iG.second)
-				sum += gurobi_vars_plan_[iP->name];
+				LHS += gurobi_vars_plan_[iP->name];
 
-			gurobi_models_[model_id]->addConstr(sum == 1,
+			gurobi_models_[model_id]->addConstr(LHS - RHS == 0,
 			                                    ("TotalGoalPlans{" + iG.first->name + "}").c_str());
+			//logger->log_info(name(), "C2: plans of goal %s", iG.first.c_str());
+		}
+
+		for (auto const &iS : selectors_) {
+			if (iS.second->selected)
+				gurobi_models_[model_id]->addConstr(gurobi_vars_plan_[iS.first] == 1,
+				                                    ("SelectedEvent{" + iS.first + "}").c_str());
 			//logger->log_info(name(), "C2: plans of goal %s", iG.first.c_str());
 		}
 
@@ -426,9 +433,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 					sosWieghts[i] = i;
 					i++;
 				}
-				GRBLinExpr constr_RHS = 1;
-				if (gurobi_vars_plan_.find(events_[event_name]->selector->name) != gurobi_vars_plan_.end())
-					constr_RHS = gurobi_vars_plan_[events_[event_name]->selector->name];
+				GRBLinExpr constr_RHS = gurobi_vars_plan_[events_[event_name]->selector->name];
 				logger->log_info(name(), "flowIn %s ", event_name.c_str());
 				gurobi_models_[model_id]->addConstr(
 				  constr_LHS - constr_RHS * abs(events_[event_name]->resources[iR.first]) == 0,
@@ -452,9 +457,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 					sosWieghts[i] = i;
 					i++;
 				}
-				GRBLinExpr constr_RHS = 1;
-				if (gurobi_vars_plan_.find(events_[event_name]->selector->name) != gurobi_vars_plan_.end())
-					constr_RHS = gurobi_vars_plan_[events_[event_name]->selector->name];
+				GRBLinExpr constr_RHS = gurobi_vars_plan_[events_[event_name]->selector->name];
 				logger->log_info(name(), "flowOut %s ", event_name.c_str());
 				gurobi_models_[model_id]->addConstr(
 				  constr_LHS - constr_RHS * abs(events_[event_name]->resources[iR.first]) == 0,
