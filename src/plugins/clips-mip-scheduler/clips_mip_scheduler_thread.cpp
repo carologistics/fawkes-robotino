@@ -232,41 +232,64 @@ ClipsMipSchedulerThread::add_event_precedence(std::string env_name,
 
 void
 ClipsMipSchedulerThread::add_plan_event(std::string env_name,
-                                        std::string plan_name,
+                                        std::string selector_name,
                                         std::string event_name)
 {
+	if (selectors_.find(selector_name) == selectors_.end())
+		selectors_[selector_name] = new Selector(selector_name);
+	Selector *S_ptr = selectors_[selector_name];
+
 	if (events_.find(event_name) == events_.end())
 		events_[event_name] = new Event(event_name);
 
-	plan_events_[plan_name].push_back(events_[event_name]);
-	events_[event_name]->plan = plan_name;
+	selector_events_[S_ptr].push_back(events_[event_name]);
+	events_[event_name]->selector = S_ptr;
+	S_ptr->selected               = false;
 
-	logger->log_info(name(), "Event[plan]: %s in %s  ", event_name.c_str(), plan_name.c_str());
+	logger->log_info(name(), "Event[%s]: %s  ", selector_name.c_str(), event_name.c_str());
 }
 
 void
 ClipsMipSchedulerThread::add_goal_event(std::string env_name,
-                                        std::string goal_name,
+                                        std::string selector_name,
                                         std::string event_name)
 {
+	if (selectors_.find(selector_name) == selectors_.end())
+		selectors_[selector_name] = new Selector(selector_name);
+	Selector *S_ptr = selectors_[selector_name];
+
 	if (events_.find(event_name) == events_.end())
 		events_[event_name] = new Event(event_name);
 
-	goal_events_[goal_name].push_back(events_[event_name]);
-	events_[event_name]->goal = goal_name;
+	selector_events_[S_ptr].push_back(events_[event_name]);
+	events_[event_name]->selector = S_ptr;
+	S_ptr->selected               = true;
 
-	logger->log_info(name(), "Event[goal]: %s in %s  ", event_name.c_str(), goal_name.c_str());
+	logger->log_info(name(), "Event[%s]: %s  ", selector_name.c_str(), event_name.c_str());
 }
 
 void
 ClipsMipSchedulerThread::add_goal_plan(std::string env_name,
-                                       std::string goal_name,
-                                       std::string plan_name)
+                                       std::string group_name,
+                                       std::string selector_name)
 {
-	goal_plans_[goal_name].push_back(plan_name);
-	plan_goal_[plan_name] = goal_name;
+	if (selectors_.find(group_name) == selectors_.end())
+		selectors_[group_name] = new Selector(group_name);
 
-	logger->log_info(name(), "Plan: %s achives Goal %s  ", plan_name.c_str(), goal_name.c_str());
+	if (selectors_.find(selector_name) == selectors_.end())
+		selectors_[selector_name] = new Selector(selector_name);
+
+	Selector *group    = selectors_[group_name];
+	Selector *selector = selectors_[selector_name];
+
+	group->selected    = true;
+	selector->selected = false;
+	group_selectors_[group].push_back(selector);
+
+	logger->log_info(name(),
+	                 "Selector %s added to group group %s  ",
+	                 selector_name.c_str(),
+	                 group_name.c_str());
 }
 
 void
@@ -295,9 +318,10 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 				}
 
 		//Init Gurobi plan selection Vars (S)
-		for (auto const &iP : plan_events_)
-			gurobi_vars_plan_[iP.first] =
-			  gurobi_models_[model_id]->addVar(0, 1, 0, GRB_BINARY, ("p[" + iP.first + "]").c_str());
+		for (auto const &iP : selectors_)
+			if (!iP.second->selected)
+				gurobi_vars_plan_[iP.first] =
+				  gurobi_models_[model_id]->addVar(0, 1, 0, GRB_BINARY, ("p[" + iP.first + "]").c_str());
 
 		//Objective
 		GRBVar Tmax = gurobi_models_[model_id]->addVar(0, GRB_INFINITY, 1, GRB_INTEGER, "Tmax");
@@ -312,37 +336,33 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 				//                 iE1.second->name.c_str(),
 				//                 iE1.second->duration);
 
-				if (iE1.second->plan == iE2->plan && iE2->plan != ""
-				    && plan_events_.find(iE1.second->plan) != plan_events_.end()
-				    && plan_events_.find(iE2->plan) != plan_events_.end()) {
+				if (iE1.second->selector == iE2->selector) {
 					//logger->log_info(name(), "Presd_InPlan: %s  ", iE1.second->plan.c_str() );
 					gurobi_models_[model_id]->addConstr(
 					  gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
 					    >= iE1.second->duration,
 					  ("PresdInPlan{" + iE1.second->name + "<<" + iE2->name + "}").c_str());
 
-				} else if (iE1.second->goal != ""
-				           && goal_events_.find(iE1.second->goal) != goal_events_.end()
-				           && goal_events_.find(iE2->goal) != goal_events_.end()) {
+				} else if (iE1.second->selector->selected && iE2->selector->selected) {
 					//logger->log_info(name(), "Presd_AcrossGoals: %s << %s ", iE1.second->goal.c_str() , iE2 -> goal.c_str() );
 					gurobi_models_[model_id]->addConstr(
 					  gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
 					    >= iE1.second->duration,
 					  ("PresdAcrossGoals{" + iE1.second->name + "<<" + iE2->name + "}").c_str());
-				} else if ((plan_events_.find(iE1.second->plan) != plan_events_.end()
-				            && goal_events_.find(iE2->goal) != goal_events_.end())) {
+				} else if (!(iE1.second->selector->selected) && iE2->selector->selected
+				           && iE1.second->selector != iE2->selector) {
 					//logger->log_info(name(), "Presd_PlanGoal_End: %s << %s ", iE1.second->plan.c_str() , iE2 -> goal.c_str() );
 					gurobi_models_[model_id]->addGenConstrIndicator(
-					  gurobi_vars_plan_[iE1.second->plan],
+					  gurobi_vars_plan_[iE1.second->selector->name],
 					  1,
 					  gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
 					    == iE1.second->duration,
 					  ("PresdPlanGoal_End{" + iE1.second->name + "<<" + iE2->name + "}").c_str());
-				} else if ((goal_events_.find(iE1.second->goal) != goal_events_.end()
-				            && plan_events_.find(iE2->plan) != plan_events_.end())) {
+				} else if (iE1.second->selector->selected && !(iE2->selector->selected)
+				           && iE1.second->selector != iE2->selector) {
 					// logger->log_info(name(), "Presd_PlanGoal_Start: %s << %s ", iE1.second->goal.c_str() , iE2 -> plan.c_str() );
 					gurobi_models_[model_id]->addGenConstrIndicator(
-					  gurobi_vars_plan_[iE2->plan],
+					  gurobi_vars_plan_[iE2->selector->name],
 					  1,
 					  gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
 					    == iE1.second->duration,
@@ -351,12 +371,13 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 			}
 
 		//Constraint (2) Plan Selection
-		for (auto const &iG : goal_plans_) {
+		for (auto const &iG : group_selectors_) {
 			GRBLinExpr sum = 0;
 			for (auto const &iP : iG.second)
-				sum += gurobi_vars_plan_[iP];
+				sum += gurobi_vars_plan_[iP->name];
 
-			gurobi_models_[model_id]->addConstr(sum == 1, ("TotalGoalPlans{" + iG.first + "}").c_str());
+			gurobi_models_[model_id]->addConstr(sum == 1,
+			                                    ("TotalGoalPlans{" + iG.first->name + "}").c_str());
 			//logger->log_info(name(), "C2: plans of goal %s", iG.first.c_str());
 		}
 
@@ -406,8 +427,8 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 					i++;
 				}
 				GRBLinExpr constr_RHS = 1;
-				if (gurobi_vars_plan_.find(events_[event_name]->plan) != gurobi_vars_plan_.end())
-					constr_RHS = gurobi_vars_plan_[events_[event_name]->plan];
+				if (gurobi_vars_plan_.find(events_[event_name]->selector->name) != gurobi_vars_plan_.end())
+					constr_RHS = gurobi_vars_plan_[events_[event_name]->selector->name];
 				logger->log_info(name(), "flowIn %s ", event_name.c_str());
 				gurobi_models_[model_id]->addConstr(
 				  constr_LHS - constr_RHS * abs(events_[event_name]->resources[iR.first]) == 0,
@@ -432,8 +453,8 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 					i++;
 				}
 				GRBLinExpr constr_RHS = 1;
-				if (gurobi_vars_plan_.find(events_[event_name]->plan) != gurobi_vars_plan_.end())
-					constr_RHS = gurobi_vars_plan_[events_[event_name]->plan];
+				if (gurobi_vars_plan_.find(events_[event_name]->selector->name) != gurobi_vars_plan_.end())
+					constr_RHS = gurobi_vars_plan_[events_[event_name]->selector->name];
 				logger->log_info(name(), "flowOut %s ", event_name.c_str());
 				gurobi_models_[model_id]->addConstr(
 				  constr_LHS - constr_RHS * abs(events_[event_name]->resources[iR.first]) == 0,

@@ -66,12 +66,21 @@ private:
 	//    std::string name;
 	//    enum type {RESOURCE, GOAL, PLAN}
 	//};
+	struct Selector
+	{
+		Selector(std::string n)
+		{
+			name = n;
+		};
+		std::string name;
+		bool        selected;
+	};
 
 	struct Event
 	{
-		Event(std::string n)
+		Event(std::string event)
 		{
-			name = n;
+			name = event;
 		};
 		std::string                name;
 		int                        duration = 0;
@@ -79,18 +88,27 @@ private:
 		float                      ubound   = GRB_INFINITY;
 		std::map<std::string, int> resources;
 		std::vector<Event *>       precedes;
-		std::string                goal = "";
-		std::string                plan = "";
-		//    enum at {START, END};
-		//    Entity entity;
+		//	std::string               goal = "";
+		//	std::string               plan = "";
+		Selector *selector;
 	};
 
+	//struct SelectorGroup : Selector
+	//{
+	//    enum policy {SELECT_ONE, SELECT_ALL};
+	//    std::vector<Selector> group;
+	//};
+
 	std::map<std::string, Event *>                                   events_;
+	std::map<std::string, Selector *>                                selectors_;
 	std::map<std::string, std::map<Event *, std::map<Event *, int>>> res_setup_duration_;
-	std::map<std::string, std::vector<Event *>>                      plan_events_;
-	std::map<std::string, std::vector<Event *>>                      goal_events_;
-	std::map<std::string, std::vector<std::string>>                  goal_plans_;
-	std::map<std::string, std::string>                               plan_goal_;
+
+	//std::map<std::string, std::vector<Event *>>                    plan_events_;
+	//std::map<std::string, std::vector<Event *>>                    goal_events_;
+	std::map<Selector *, std::vector<Event *>> selector_events_;
+
+	//std::map<std::string, std::vector<std::string>>                  goal_plans_;
+	std::map<Selector *, std::vector<Selector *>> group_selectors_;
 
 	std::map<std::string, GRBVar>                                               gurobi_vars_time_;
 	std::map<std::string, GRBVar>                                               gurobi_vars_plan_;
