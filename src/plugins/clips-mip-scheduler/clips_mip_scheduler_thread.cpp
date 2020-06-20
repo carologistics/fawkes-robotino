@@ -318,13 +318,23 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 				}
 
 		//Init Gurobi plan selection Vars (S)
-		for (auto const &iP : selectors_)
+		for (auto const &iP : selectors_) {
+			int lb = 0;
+			if (iP.second->selected)
+				lb = 1;
 			gurobi_vars_plan_[iP.first] =
-			  gurobi_models_[model_id]->addVar(0, 1, 0, GRB_BINARY, ("s[" + iP.first + "]").c_str());
-
+			  gurobi_models_[model_id]->addVar(lb, 1, 0, GRB_BINARY, ("s[" + iP.first + "]").c_str());
+		}
 		//Objective
 		GRBVar Tmax = gurobi_models_[model_id]->addVar(0, GRB_INFINITY, 1, GRB_INTEGER, "Tmax");
 		gurobi_models_[model_id]->set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
+
+		for (auto const &iS : selectors_) {
+			if (iS.second->selected)
+				gurobi_models_[model_id]->addConstr(gurobi_vars_plan_[iS.first] == 1,
+				                                    ("SelectedEvent{" + iS.first + "}").c_str());
+			//logger->log_info(name(), "C2: plans of goal %s", iG.first.c_str());
+		}
 
 		//Constraint 1
 		for (auto const &iE1 : events_)
@@ -378,13 +388,6 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 
 			gurobi_models_[model_id]->addConstr(LHS - RHS == 0,
 			                                    ("TotalGoalPlans{" + iG.first->name + "}").c_str());
-			//logger->log_info(name(), "C2: plans of goal %s", iG.first.c_str());
-		}
-
-		for (auto const &iS : selectors_) {
-			if (iS.second->selected)
-				gurobi_models_[model_id]->addConstr(gurobi_vars_plan_[iS.first] == 1,
-				                                    ("SelectedEvent{" + iS.first + "}").c_str());
 			//logger->log_info(name(), "C2: plans of goal %s", iG.first.c_str());
 		}
 
