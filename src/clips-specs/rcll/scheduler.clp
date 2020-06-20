@@ -745,14 +745,11 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 (defrule scheduling-process-scheduled-plans
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (schedule (id ?s-id) (mode SELECTED))
-  ?if <- (scheduler-info (type PLAN-SELECTION) (descriptors ?plan-id) (value ?v))
-  (plan (id ?plan-id) (goal-id ?goal-id))
-  (goal (id ?goal-id))
+  ?if <- (scheduler-info (type PLAN-SELECTION) (descriptors ?entity) (value ?v))
 =>
   (if (> ?v 0)
       then
-      (delayed-do-for-all-facts ((?sef schedule-event)) (or (eq ?sef:entity ?goal-id)
-                                                    (eq ?sef:entity ?plan-id))
+      (delayed-do-for-all-facts ((?sef schedule-event)) (eq ?sef:entity ?entity)
                         (modify ?sef (scheduled TRUE))))
 
  (retract ?if)
