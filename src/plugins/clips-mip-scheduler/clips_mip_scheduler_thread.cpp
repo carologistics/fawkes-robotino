@@ -99,7 +99,7 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
 	                      sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::build_model),
 	                                    env_name)));
 	clips->add_function("scheduler-optimization-status",
-	                    sigc::slot<void, std::string>(sigc::bind<0>(
+	                    sigc::slot<std::string, std::string>(sigc::bind<0>(
 	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::check_progress), env_name)));
 }
 
@@ -462,7 +462,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 	}
 }
 
-void
+std::string
 ClipsMipSchedulerThread::check_progress(std::string env_name, std::string model_id)
 {
 	try {
@@ -470,12 +470,12 @@ ClipsMipSchedulerThread::check_progress(std::string env_name, std::string model_
 
 		if ((status == GRB_LOADED)) {
 			logger->log_warn(name(), "Model is loaded, but no solution information available %u", status);
-			return;
+			return "LOADED";
 		}
 
 		if ((status == GRB_INPROGRESS)) {
 			logger->log_warn(name(), "Optimization in progress %u", status);
-			return;
+			return "INPROGRESS";
 		} else {
 			logger->log_warn(name(), "Optimization NOT in progress %u", status);
 		}
@@ -533,6 +533,7 @@ ClipsMipSchedulerThread::check_progress(std::string env_name, std::string model_
 			}
 
 			gurobi_models_[model_id]->reset();
+			return "OPTIMAL";
 		}
 
 		if ((status != GRB_INF_OR_UNBD) && (status != GRB_INFEASIBLE)) {
@@ -552,6 +553,11 @@ ClipsMipSchedulerThread::check_progress(std::string env_name, std::string model_
 					logger->log_info(name(), c[i].get(GRB_StringAttr_ConstrName).c_str());
 
 			delete[] c;
+			return "INFEASIBLE";
+		}
+
+		if ((status != GRB_INF_OR_UNBD)) {
+			return "INF_OR_UNBD";
 		}
 
 		//gurobi_models_[model_id]->write("gurobi_model.rlp");
@@ -569,4 +575,5 @@ ClipsMipSchedulerThread::check_progress(std::string env_name, std::string model_
 	} catch (...) {
 		logger->log_error(name(), "Exception during optimization");
 	}
+	return "";
 };
