@@ -261,7 +261,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 =>
  (bind ?source-id  (sym-cat ?r-id @start))
  (assert
-   (schedule-event (sched-id ?s-id) (id ?source-id) (entity ?r-id) (at START))
+   (schedule-event (sched-id ?s-id) (id ?source-id) (entity ?r-id) (at START) (scheduled TRUE))
    (schedule-requirment (sched-id ?s-id)
                         (event-id ?source-id)
                         (resource-id ?r-id)
@@ -284,7 +284,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 =>
  (bind ?sink-id  (sym-cat ?r-id @end))
  (assert
-   (schedule-event (sched-id ?s-id) (id ?sink-id) (entity ?r-id) (at END))
+   (schedule-event (sched-id ?s-id) (id ?sink-id) (entity ?r-id) (at END) (scheduled TRUE))
    (schedule-requirment (sched-id ?s-id)
                         (event-id ?sink-id)
                         (resource-id ?r-id)
@@ -309,7 +309,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
  (bind ?setup (create$ ?curr-location ?curr-side))
  (assert
-   (schedule-event (sched-id ?s-id) (id ?source-id) (entity ?r-id) (at START))
+   (schedule-event (sched-id ?s-id) (id ?source-id) (entity ?r-id) (at START) (scheduled TRUE))
    (schedule-requirment (sched-id ?s-id)
                         (event-id ?source-id)
                         (resource-id ?r-id)
@@ -338,7 +338,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
    (if (eq ?team-color CYAN) then (bind ?setup "C-ins-in") else (bind ?setup "M-ins-in")))
 
  (assert
-   (schedule-event (sched-id ?s-id) (id ?sink-id) (entity ?r-id) (at END))
+   (schedule-event (sched-id ?s-id) (id ?sink-id) (entity ?r-id) (at END) (scheduled TRUE))
    (schedule-requirment (sched-id ?s-id)
                         (event-id ?sink-id)
                         (resource-id ?r-id)
@@ -441,6 +441,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                          (entity ?g-id)
                          (id ?goal-start)
                          (lbound (+ ?lbound ?dur))
+                         (scheduled TRUE)
                          (at START)))
 )
 
@@ -500,6 +501,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                          (entity ?g-id)
                          (lbound  ?lbound)
                          (id ?goal-end)
+                         (scheduled TRUE)
                          (at END)))
 )
 
@@ -881,10 +883,8 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  "Schedule setup plan events"
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
- ?gsf <- (schedule-event (sched-id ?s-id) (entity ?g-id) (at START)
-                         (scheduled FALSE))
- ?gef <- (schedule-event (sched-id ?s-id) (entity ?g-id) (at END)
-                         (scheduled FALSE))
+ ?gsf <- (schedule-event (sched-id ?s-id) (entity ?g-id) (at START))
+ ?gef <- (schedule-event (sched-id ?s-id) (entity ?g-id) (at END))
  ;?pef <- (schedule-event (sched-id ?s-id) (entity ?p-id) (at END)
  ;                        (scheduled FALSE) (duration ?pend-duration))
  ?psf <- (schedule-event (sched-id ?s-id) (entity ?p-id) (at START)
@@ -892,16 +892,14 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (plan (id ?p-id) (goal-id ?g-id))
  (goal (id ?g-id) (class SETUP) (meta scheduled-start ?goal-start))
  =>
- (modify ?gsf (scheduled TRUE)
-              (scheduled-start ?goal-start))
+ (modify ?gsf (scheduled-start ?goal-start))
  (modify ?psf (scheduled TRUE)
               (scheduled-start ?goal-start))
  ;(modify ?pef (scheduled TRUE)
  ;             (scheduled-start (+ ?goal-start ?pstart-duration)))
  ;(modify ?gef (scheduled TRUE)
  ;             (scheduled-start (+ ?goal-start ?pstart-duration ?pend-duration)))
- (modify ?gef (scheduled TRUE)
-              (scheduled-start (+ ?goal-start ?pstart-duration)))
+ (modify ?gef (scheduled-start (+ ?goal-start ?pstart-duration)))
 )
 
 (defrule scheduling-post-processing---ground-goal-resource
