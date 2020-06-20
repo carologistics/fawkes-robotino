@@ -91,7 +91,7 @@
   (slot scheduled (type SYMBOL) (allowed-values TRUE FALSE) (default FALSE))
   (slot scheduled-start (type INTEGER) (default 0))
   (slot lbound (type FLOAT) (default 0.0))
-  (slot ubound (type FLOAT) (default 500.0))
+  (slot ubound (type FLOAT) (default 1500.0))
   (slot duration (type INTEGER) (default 0))
 )
 
@@ -614,7 +614,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  =>
  (bind ?duration 0)
  (if (eq  ?r-type ROBOT) then
-     (bind ?duration (integer (round-up (estimate-action-duration "move"
+     (bind ?duration (integer (round (estimate-action-duration "move"
                                                (create$ r from from-side to to-side)
                                                (create$ ANY (nth$ 1 ?setup-1) (nth$ 2 ?setup-1)
                                                             (nth$ 1 ?setup-2) (nth$ 2 ?setup-2)))))))
