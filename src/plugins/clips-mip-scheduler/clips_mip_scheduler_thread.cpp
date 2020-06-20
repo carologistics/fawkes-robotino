@@ -497,9 +497,9 @@ ClipsMipSchedulerThread::check_progress(std::string env_name, std::string model_
 			CLIPS::Environment &env = **(clips_env_);
 
 			//Post process Time Vars (T)
-			for (auto const &iE : events_) {
+			for (auto const &iE : gurobi_vars_time_) {
 				std::string type  = "EVENT-TIME";
-				int         value = int(gurobi_vars_time_[iE.first].get(GRB_DoubleAttr_X));
+				int         value = int(iE.second.get(GRB_DoubleAttr_X));
 				env.assert_fact_f("(scheduler-info (type %s) (descriptors %s )(value  %d ))",
 				                  type.c_str(),
 				                  iE.first.c_str(),
@@ -507,25 +507,23 @@ ClipsMipSchedulerThread::check_progress(std::string env_name, std::string model_
 			}
 
 			//Post process sequencing Vars (X)
-			for (auto const &iR : res_setup_duration_)
+			for (auto const &iR : gurobi_vars_sequence_)
 				for (auto const &iEprod : iR.second)
 					for (auto const &iEcons : iEprod.second) {
-						std::string type = "EVENT-SEQUENCE";
-						int         value =
-						  int(gurobi_vars_sequence_[iR.first][iEprod.first->name][iEcons.first->name].get(
-						    GRB_DoubleAttr_X));
+						std::string type  = "EVENT-SEQUENCE";
+						int         value = int(iEcons.second.get(GRB_DoubleAttr_X));
 						env.assert_fact_f("(scheduler-info (type %s) (descriptors %s %s %s) (value  %d ))",
 						                  type.c_str(),
 						                  iR.first.c_str(),
-						                  iEprod.first->name.c_str(),
-						                  iEcons.first->name.c_str(),
+						                  iEprod.first.c_str(),
+						                  iEcons.first.c_str(),
 						                  value);
 					}
 
 			//Post process plan selection Vars (S)
-			for (auto const &iP : plan_events_) {
+			for (auto const &iP : gurobi_vars_plan_) {
 				std::string type  = "PLAN-SELECTION";
-				int         value = int(gurobi_vars_plan_[iP.first].get(GRB_DoubleAttr_X));
+				int         value = int(iP.second.get(GRB_DoubleAttr_X));
 				env.assert_fact_f("(scheduler-info (type %s) (descriptors %s ) (value  %d ))",
 				                  type.c_str(),
 				                  iP.first.c_str(),
