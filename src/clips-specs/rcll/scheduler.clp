@@ -81,6 +81,7 @@
   (slot mode (type SYMBOL))
   (slot duration (type INTEGER))
   (multislot dispatch-time (type INTEGER))
+  (slot scheduler-status (type SYMBOL))
 )
 
 (deftemplate schedule-event
@@ -199,21 +200,22 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 (defrule scheduling-check-optimization-results
 "Periodically check if the optimization returned"
-(time $?)
- ?sf <- (schedule (id ?s-id) (mode SELECTED))
- (not (scheduler-info))
+ (time $?)
+ ?sf <- (schedule (id ?s-id) (mode SELECTED) (scheduler-status ?status&~OPTIMAL|INFEASABL|INF_OR_UNBD))
 =>
  (printout info "Calling scheduler: Checking progress" crlf)
- (scheduler-optimization-status (sym-cat ?s-id))
+ (bind ?new-status (sym-cat (scheduler-optimization-status (sym-cat ?s-id))))
+ (if (neq ?status ?new-status) then
+     (modify ?sf (scheduler-status ?new-status))
+ )
 )
 
 
 (defrule scheduling-expand-schedule
 "Expand a schedule after the MIP scheduler has returned a scheduled event "
 (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- ?sf <- (schedule (id ?s-id) (goals ?g-id $?) (mode SELECTED))
- (schedule-event (sched-id ?s-id) (scheduled TRUE))
- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
+ ?sf <- (schedule (id ?s-id) (goals ?g-id $?) (mode SELECTED)
+                  (scheduler-status OPTIMAL))
  (not (scheduler-info))
 =>
  (modify ?sf (mode EXPANDED))
