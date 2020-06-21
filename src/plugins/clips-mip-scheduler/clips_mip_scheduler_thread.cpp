@@ -65,14 +65,6 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
 	fawkes::MutexLocker lock(clips_env_.objmutex_ptr());
 
 	clips->add_function(
-	  "scheduler-set-event-duration",
-	  sigc::slot<void, std::string, int>(
-	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::set_event_duration), env_name)));
-	clips->add_function(
-	  "scheduler-set-event-bounds",
-	  sigc::slot<void, std::string, float, float>(
-	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::set_event_bounds), env_name)));
-	clips->add_function(
 	  "scheduler-add-event-resource",
 	  sigc::slot<void, std::string, std::string, int>(
 	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_event_resource), env_name)));
@@ -84,16 +76,18 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
 	                    sigc::slot<void, std::string, std::string>(sigc::bind<0>(
 	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_event_precedence),
 	                      env_name)));
-	clips->add_function("scheduler-add-plan-event",
+	clips->add_function(
+	  "scheduler-add-atomic-event",
+	  sigc::slot<void, std::string, std::string, int, float, float>(
+	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_atomic_event), env_name)));
+	clips->add_function("scheduler-set-selector-selected",
 	                    sigc::slot<void, std::string, std::string>(sigc::bind<0>(
-	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_plan_event), env_name)));
-	clips->add_function("scheduler-add-goal-event",
+	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::set_selector_selected),
+	                      env_name)));
+	clips->add_function("scheduler-add-selector-to-group",
 	                    sigc::slot<void, std::string, std::string>(sigc::bind<0>(
-	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_goal_event), env_name)));
-	clips->add_function("scheduler-add-goal-plan",
-	                    sigc::slot<void, std::string, std::string>(
-	                      sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_goal_plan),
-	                                    env_name)));
+	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_selector_to_group),
+	                      env_name)));
 	clips->add_function("scheduler-generate-model",
 	                    sigc::slot<void, std::string>(
 	                      sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::build_model),
@@ -144,34 +138,6 @@ ClipsMipSchedulerThread::clips_context_destroyed(const std::string &env_name)
 //		fact = fact->next();
 //	}
 //}
-
-void
-ClipsMipSchedulerThread::set_event_duration(std::string env_name,
-                                            std::string event_name,
-                                            int         duration)
-{
-	if (events_.find(event_name) == events_.end())
-		events_[event_name] = new Event(event_name);
-
-	events_[event_name]->duration = duration;
-
-	logger->log_info(name(), "Duration: %s takes %u sec  ", event_name.c_str(), duration);
-}
-
-void
-ClipsMipSchedulerThread::set_event_bounds(std::string env_name,
-                                          std::string event_name,
-                                          float       lb,
-                                          float       ub)
-{
-	if (events_.find(event_name) == events_.end())
-		events_[event_name] = new Event(event_name);
-
-	events_[event_name]->lbound = lb;
-	events_[event_name]->ubound = ub;
-
-	logger->log_info(name(), "Bounds: %f < %s  < %f  ", lb, event_name.c_str(), ub);
-}
 
 void
 ClipsMipSchedulerThread::add_event_resource(std::string env_name,
@@ -231,47 +197,45 @@ ClipsMipSchedulerThread::add_event_precedence(std::string env_name,
 }
 
 void
-ClipsMipSchedulerThread::add_plan_event(std::string env_name,
-                                        std::string selector_name,
-                                        std::string event_name)
+ClipsMipSchedulerThread::add_atomic_event(std::string env_name,
+                                          std::string event_name,
+                                          std::string selector_name,
+                                          int         duration,
+                                          float       lbound,
+                                          float       ubound)
 {
+	logger->log_info(name(), "Event[%s]: %s  ", event_name.c_str(), selector_name.c_str());
+
 	if (selectors_.find(selector_name) == selectors_.end())
 		selectors_[selector_name] = new Selector(selector_name);
 	Selector *S_ptr = selectors_[selector_name];
 
 	if (events_.find(event_name) == events_.end())
 		events_[event_name] = new Event(event_name);
+	events_[event_name]->duration = duration;
+	events_[event_name]->lbound   = lbound;
+	events_[event_name]->ubound   = ubound;
+	events_[event_name]->selector = S_ptr;
 
 	selector_events_[S_ptr].push_back(events_[event_name]);
-	events_[event_name]->selector = S_ptr;
-	S_ptr->selected               = false;
-
-	logger->log_info(name(), "Event[%s]: %s  ", selector_name.c_str(), event_name.c_str());
 }
 
 void
-ClipsMipSchedulerThread::add_goal_event(std::string env_name,
-                                        std::string selector_name,
-                                        std::string event_name)
+ClipsMipSchedulerThread::set_selector_selected(std::string env_name,
+                                               std::string selector_name,
+                                               std::string selected)
 {
 	if (selectors_.find(selector_name) == selectors_.end())
 		selectors_[selector_name] = new Selector(selector_name);
-	Selector *S_ptr = selectors_[selector_name];
 
-	if (events_.find(event_name) == events_.end())
-		events_[event_name] = new Event(event_name);
-
-	selector_events_[S_ptr].push_back(events_[event_name]);
-	events_[event_name]->selector = S_ptr;
-	S_ptr->selected               = true;
-
-	logger->log_info(name(), "Event[%s]: %s  ", selector_name.c_str(), event_name.c_str());
+	selectors_[selector_name]->selected = (selected == "TRUE") ? true : false;
+	logger->log_info(name(), "Selector[%s]: is %s  ", selector_name.c_str(), selected.c_str());
 }
 
 void
-ClipsMipSchedulerThread::add_goal_plan(std::string env_name,
-                                       std::string group_name,
-                                       std::string selector_name)
+ClipsMipSchedulerThread::add_selector_to_group(std::string env_name,
+                                               std::string selector_name,
+                                               std::string group_name)
 {
 	if (selectors_.find(group_name) == selectors_.end())
 		selectors_[group_name] = new Selector(group_name);
@@ -287,9 +251,9 @@ ClipsMipSchedulerThread::add_goal_plan(std::string env_name,
 	group_selectors_[group].push_back(selector);
 
 	logger->log_info(name(),
-	                 "Selector %s added to group group %s  ",
-	                 selector_name.c_str(),
-	                 group_name.c_str());
+	                 "SelectorGroup[%s] has selector [%s]  ",
+	                 group_name.c_str(),
+	                 selector_name.c_str());
 }
 
 void

@@ -663,8 +663,35 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 
 ;; Call scheduler to build data sets
-(defrule scheduling-add-event-requirment
+(defrule scheduling-add-atomic-event
  (declare (salience ?*SALIENCE-GOAL-SELECT*))
+ (schedule (id ?s-id) (mode FORMULATED))
+ (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?selector)
+                 (duration ?d) (lbound ?lb) (ubound ?ub))
+ =>
+ (scheduler-add-atomic-event (sym-cat ?e-id) (sym-cat ?selector) ?d ?lb ?ub)
+)
+
+(defrule scheduling-set-selector-selected
+ (declare (salience (- ?*SALIENCE-GOAL-SELECT* 1)))
+ (schedule (id ?s-id) (mode FORMULATED))
+ (schedule-event (sched-id ?s-id) (entity ?selector-id) (scheduled ?selected))
+ =>
+ (scheduler-set-selector-selected  (sym-cat ?selector-id) (sym-cat ?selected))
+)
+
+(defrule scheduling-add-selector-group-goal-plans
+ (declare (salience (- ?*SALIENCE-GOAL-SELECT* 2)))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS))
+ (plan (id ?p-id) (goal-id ?g-id))
+ =>
+ (scheduler-add-selector-to-group (sym-cat ?p-id) (sym-cat ?g-id))
+)
+
+
+(defrule scheduling-add-event-requirment
+ (declare (salience (-  ?*SALIENCE-GOAL-SELECT* 4)))
  (schedule (id ?s-id) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (id ?e-id))
  (schedule-requirment (sched-id ?s-id) (event-id ?e-id)
@@ -675,7 +702,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-add-event-precedence
- (declare (salience ?*SALIENCE-GOAL-SELECT*))
+ (declare (salience (- ?*SALIENCE-GOAL-SELECT* 3)))
  (schedule (id ?s-id) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (id ?e1-id))
  (schedule-event (sched-id ?s-id) (id ?e2-id))
@@ -684,53 +711,8 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (scheduler-add-event-precedence (sym-cat ?e1-id) (sym-cat ?e2-id))
 )
 
-(defrule scheduling-add-resource-event
- (declare (salience ?*SALIENCE-GOAL-SELECT*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
- (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?r-id)
-                 (lbound ?lb) (ubound ?ub) )
- (resource (id ?r-id))
- =>
- (scheduler-add-goal-event (sym-cat ?r-id) (sym-cat ?e-id))
- ;(scheduler-set-event-bounds (sym-cat ?e-id) ?lb ?ub)
-)
-
-(defrule scheduling-add-goal-event
- (declare (salience ?*SALIENCE-GOAL-SELECT*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
- (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?g-id)
-                 (lbound ?lb) (ubound ?ub))
- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
- =>
- (scheduler-add-goal-event (sym-cat ?g-id) (sym-cat ?e-id))
- (scheduler-set-event-bounds (sym-cat ?e-id) ?lb ?ub)
-)
-
-(defrule scheduling-add-plan-event
- (declare (salience ?*SALIENCE-GOAL-SELECT*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
- (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id)
-                 (lbound ?lb) (ubound ?ub) (duration ?d))
- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
- (plan (id ?p-id) (goal-id ?g-id))
- =>
- (scheduler-add-plan-event (sym-cat ?p-id) (sym-cat ?e-id))
- ;(scheduler-add-goal-event (sym-cat ?g-id) (sym-cat ?e-id))
- (scheduler-set-event-duration (sym-cat ?e-id) ?d)
- (scheduler-set-event-bounds (sym-cat ?e-id) ?lb ?ub)
-)
-
-(defrule scheduling-add-goal-plans
- (declare (salience ?*SALIENCE-GOAL-SELECT*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS))
- (plan (id ?p-id) (goal-id ?g-id))
- =>
- (scheduler-add-goal-plan (sym-cat ?g-id) (sym-cat ?p-id))
-)
-
 (defrule scheduling-set-resource-setup-duration
- (declare (salience ?*SALIENCE-GOAL-SELECT*))
+ (declare (salience (- ?*SALIENCE-GOAL-SELECT* 5)))
  (schedule (id ?s-id) (mode FORMULATED))
  (resource (id ?r-id))
  (schedule-setup (sched-id ?s-id) (resource-id ?r-id) (duration ?duration)

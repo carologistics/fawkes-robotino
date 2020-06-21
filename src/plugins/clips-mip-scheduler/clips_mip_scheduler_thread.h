@@ -62,10 +62,6 @@ private:
 	GRBEnv *                                         gurobi_env_ = 0;
 	std::map<std::string, std::unique_ptr<GRBModel>> gurobi_models_;
 
-	//struct Entity{
-	//    std::string name;
-	//    enum type {RESOURCE, GOAL, PLAN}
-	//};
 	struct Selector
 	{
 		Selector(std::string n)
@@ -88,9 +84,7 @@ private:
 		float                      ubound   = GRB_INFINITY;
 		std::map<std::string, int> resources;
 		std::vector<Event *>       precedes;
-		//	std::string               goal = "";
-		//	std::string               plan = "";
-		Selector *selector;
+		Selector *                 selector;
 	};
 
 	//struct SelectorGroup : Selector
@@ -103,11 +97,7 @@ private:
 	std::map<std::string, Selector *>                                selectors_;
 	std::map<std::string, std::map<Event *, std::map<Event *, int>>> res_setup_duration_;
 
-	//std::map<std::string, std::vector<Event *>>                    plan_events_;
-	//std::map<std::string, std::vector<Event *>>                    goal_events_;
-	std::map<Selector *, std::vector<Event *>> selector_events_;
-
-	//std::map<std::string, std::vector<std::string>>                  goal_plans_;
+	std::map<Selector *, std::vector<Event *>>    selector_events_;
 	std::map<Selector *, std::vector<Selector *>> group_selectors_;
 
 	std::map<std::string, GRBVar>                                               gurobi_vars_time_;
@@ -115,8 +105,12 @@ private:
 	std::map<std::string, std::map<std::string, std::map<std::string, GRBVar>>> gurobi_vars_sequence_;
 
 private:
-	void set_event_duration(std::string env_name, std::string event_name, int duration);
-	void set_event_bounds(std::string env_name, std::string event_name, float lb, float ub);
+	void add_atomic_event(std::string env_name,
+	                      std::string event_name,
+	                      std::string selector_name,
+	                      int         duraton,
+	                      float       lbound,
+	                      float       ubound);
 	void
 	     add_event_resource(std::string env_name, std::string event_name, std::string res_name, int req);
 	void set_resource_setup_duration(std::string env_name,
@@ -125,10 +119,10 @@ private:
 	                                 std::string event2,
 	                                 int         duration);
 	void add_event_precedence(std::string env_name, std::string event_name, std::string preceded);
-	void add_plan_event(std::string env_name, std::string plan_name, std::string event_name);
-	void add_goal_event(std::string env_name, std::string goal_name, std::string event_name);
-	void add_goal_plan(std::string env_name, std::string goal_name, std::string plan_name);
-	void build_model(std::string env_name, std::string model_id);
+	void set_selector_selected(std::string env_name, std::string selector_name, std::string selected);
+	void
+	            add_selector_to_group(std::string env_name, std::string selector_name, std::string group_name);
+	void        build_model(std::string env_name, std::string model_id);
 	std::string check_progress(std::string env_name, std::string model_id);
 };
 #endif /* !PLUGINS_CLIPS_MIP_SCHEDULER_THREAD_H__ */
