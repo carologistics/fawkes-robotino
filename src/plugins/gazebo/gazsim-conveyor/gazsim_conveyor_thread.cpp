@@ -4,6 +4,7 @@
  *
  *  Created: Fri Jul 10 11:27:12 2015
  *  Copyright  2015 Randolph Maaßen
+ *  Copyright  2019 Mostafa Gomaa
  *
  ****************************************************************************/
 
@@ -61,7 +62,7 @@ GazsimConveyorThread::init()
 {
 	logger->log_debug(name(), "Initializing Simulation of the Conveyor Vision Plugin");
 	const std::string if_prefix = config->get_string("plugins/conveyor_pose/if/prefix") + "/";
-	frame_name_                 = config->get_string("/realsense/frame_id");
+	realsense_frame_id_         = config->get_string("/realsense2/frame_id");
 	conveyor_frame_id_          = config->get_string("plugins/conveyor_pose/conveyor_frame_id");
 
 	cfg_if_prefix_ = config->get_string(CFG_PREFIX "/if/prefix");
@@ -71,8 +72,9 @@ GazsimConveyorThread::init()
 	// setup ConveyorPoseInterface if with default values
 	pos_if_ =
 	  blackboard->open_for_writing<ConveyorPoseInterface>((cfg_if_prefix_ + "status").c_str());
-	switch_if_ = blackboard->open_for_writing<SwitchInterface>(
+	plane_switch_if_ = blackboard->open_for_writing<SwitchInterface>(
 	  config->get_string("/gazsim/conveyor/switch-if-name").c_str());
+	realsense_switch_if_ = blackboard->open_for_writing<SwitchInterface>("realsense2");
 
 	conveyor_vision_sub_ = gazebonode->Subscribe("~/RobotinoSim/ConveyorVisionResult/",
 	                                             &GazsimConveyorThread::on_conveyor_vision_msg,
@@ -83,52 +85,102 @@ void
 GazsimConveyorThread::finalize()
 {
 	blackboard->close(pos_if_);
-	blackboard->close(switch_if_);
+	blackboard->close(plane_switch_if_);
+	blackboard->close(realsense_switch_if_);
 }
 
 void
 GazsimConveyorThread::loop()
 {
-	pos_if_->set_frame(frame_name_.c_str());
+	pos_if_->set_frame(realsense_frame_id_.c_str());
+
+	// Process switch-interfaces messages
+	while (!plane_switch_if_->msgq_empty()) {
+		if (plane_switch_if_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
+			plane_switch_if_->set_value(1);
+		} else if (plane_switch_if_->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
+			plane_switch_if_->set_value(0);
+		} else {
+			logger->log_warn(name(),
+			                 "%s is not implemented in the simulation.",
+			                 plane_switch_if_->msgq_first()->type());
+		}
+		plane_switch_if_->msgq_pop();
+		plane_switch_if_->write();
+	}
+
+	while (!realsense_switch_if_->msgq_empty()) {
+		if (realsense_switch_if_->msgq_first_is<SwitchInterface::EnableSwitchMessage>()) {
+			realsense_switch_if_->set_value(1);
+		} else if (realsense_switch_if_->msgq_first_is<SwitchInterface::DisableSwitchMessage>()) {
+			realsense_switch_if_->set_value(0);
+		} else {
+			logger->log_warn(name(),
+			                 "%s is not implemented in the simulation.",
+			                 realsense_switch_if_->msgq_first()->type());
+		}
+		realsense_switch_if_->msgq_pop();
+		realsense_switch_if_->write();
+	}
+
 	if (new_data_ && pos_if_->msgq_first_is<ConveyorPoseInterface::RunICPMessage>()) {
 		new_data_ = false;
 
 		ConveyorPoseInterface::RunICPMessage *msg =
 		  pos_if_->msgq_first<ConveyorPoseInterface::RunICPMessage>();
-		// write to interface
-		// swap the axis' because the cam_conveyor frame has the z-axis facing
-		// foward
-		double trans[] = {-last_msg_.positions().y(),
-		                  -last_msg_.positions().z(),
-		                  last_msg_.positions().x()};
-		if (strcmp(pos_if_->tostring_MPS_TARGET(msg->mps_target_to_set()), "SLIDE") == 0) {
-			trans[0] += shelf_offset_x;
-		}
-		double rot[] = {last_msg_.positions().ori_x(),
-		                last_msg_.positions().ori_y(),
-		                last_msg_.positions().ori_z(),
-		                last_msg_.positions().ori_w()};
 
-		pos_if_->set_translation(trans);
-		pos_if_->set_rotation(rot);
-		pos_if_->set_euclidean_fitness(rand() % 100);
-		pos_if_->set_msgid(msg->id());
-		pos_if_->write();
+		ConveyorPoseInterface::MPS_TYPE   mps_type   = msg->mps_type_to_set();
+		ConveyorPoseInterface::MPS_TARGET mps_target = msg->mps_target_to_set();
+
+		logger->log_info(name(),
+		                 "Setting Station to %s, %s",
+		                 pos_if_->enum_tostring("MPS_TYPE", mps_type),
+		                 pos_if_->enum_tostring("MPS_TARGET", mps_target));
+
+		double trans[] = {0, 0, 0};
+		if (strcmp(pos_if_->tostring_MPS_TARGET(msg->mps_target_to_set()), "SLIDE") != 0) {
+			trans[0] = last_msg_.conveyor().x();
+			trans[1] = last_msg_.conveyor().y();
+			trans[2] = last_msg_.conveyor().z();
+		} else {
+			trans[0] = last_msg_.slide().x();
+			trans[1] = last_msg_.slide().y(), trans[2] = last_msg_.slide().z();
+		}
+		double rot[] = {last_msg_.conveyor().ori_x(),
+		                last_msg_.conveyor().ori_y(),
+		                last_msg_.conveyor().ori_z(),
+		                last_msg_.conveyor().ori_w()};
+
+		fawkes::tf::Quaternion q(rot[0], rot[1], rot[2], rot[3]);
 
 		// publishe tf
 		fawkes::tf::StampedTransform transform;
-
-		transform.frame_id       = frame_name_;
+		transform.frame_id       = "base_link";
 		transform.child_frame_id = conveyor_frame_id_;
 		transform.stamp          = fawkes::Time();
-
 		transform.setOrigin(fawkes::tf::Vector3(trans[0], trans[1], trans[2]));
-		fawkes::tf::Quaternion q /*(rot[0], rot[1], rot[2], rot[3])*/;
-		q.setEuler(M_PI_2, M_PI_2, M_PI);
 		transform.setRotation(q);
-
 		tf_publisher->send_transform(transform);
+
+		pos_if_->set_translation(trans);
+		pos_if_->set_rotation(rot);
+		pos_if_->set_current_mps_target(mps_target);
+		pos_if_->set_current_mps_type(mps_type);
+		// fitness value higher than the fitness_max specified in conveyor_align.yaml
+		pos_if_->set_euclidean_fitness(26);
+		pos_if_->set_msgid(msg->id());
+		pos_if_->set_busy(false);
+		curr_time_.stamp();
+		//pos_if_->set_input_timestamp(curr_time_.get_sec(),curr_time_.get_usec());
 		pos_if_->msgq_pop();
+		pos_if_->write();
+
+	} else if (new_data_ && pos_if_->msgq_first_is<ConveyorPoseInterface::StopICPMessage>()) {
+		logger->log_warn(name(),
+		                 "%s is not implemented in the simulation.",
+		                 pos_if_->msgq_first()->type());
+		pos_if_->msgq_pop();
+		pos_if_->write();
 	}
 
 	loopcount_++;

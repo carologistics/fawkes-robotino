@@ -23,6 +23,7 @@ module(..., skillenv.module_init)
 name               = "conveyor_align"
 fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
 depends_skills     = {"motor_move", "gripper_commands"}
+-- TODO:get interface names from congic
 depends_interfaces = {
    {v = "motor", type = "MotorInterface", id="Robotino" },
    {v = "if_conveyor_pose", type = "ConveyorPoseInterface", id="conveyor_pose/status"},
@@ -77,9 +78,9 @@ local gripper_max = {
    z = config:get_float("/arduino/z_max"),
 }
 local gripper_min = {
-   x = 0,
+   x = config:get_float("/arduino/x_min"),
    y = config:get_float("/arduino/y_max") / -2,
-   z = 0,
+   z = config:get_float("/arduino/z_min"),
 }
 
 function no_writer()
@@ -128,11 +129,22 @@ function tolerance_ok()
    )
    local yaw = fawkes.tf.get_yaw(q)
    
-   print_info("gripper_dist: %f, %f, %f",
+   print_info("gripper_dist: %f, %f, ,%f, %f",
       gripper_dist.x,
       gripper_dist.y,
+      gripper_dist.z,
       yaw
    )
+
+   --  For debuging
+   --  if  gripper_dist.x < gripper_max.x - GRIPPER_POSE.x then print_info("1") end
+   --  if  gripper_dist.x > gripper_min.x - GRIPPER_POSE.x  then print_info("2") end
+   --  if  gripper_dist.y < 0.8 * (gripper_max.y - GRIPPER_POSE.y)  then print_info("3") end
+   --  if  gripper_dist.y > 0.8 * (gripper_min.y - GRIPPER_POSE.y)  then print_info("4") end
+   --  if  gripper_dist.z < gripper_max.z - GRIPPER_POSE.z then print_info("5") end
+   --  if  gripper_dist.z > gripper_min.z - GRIPPER_POSE.z then print_info("6") end
+   --  if  math.abs(yaw) <= 0.05 then print_info("7") end
+
 
    return gripper_dist.x < gripper_max.x - GRIPPER_POSE.x
       and gripper_dist.x > gripper_min.x - GRIPPER_POSE.x

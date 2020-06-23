@@ -4,6 +4,7 @@
  *
  *  Created: Mon Apr 20 18:45:09 2015
  *  Copyright  2015 Frederik Zwilling
+ *  Copyright  2019 Mostafa Gomaa
  *
  ****************************************************************************/
 
@@ -28,11 +29,16 @@
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
+#include <aspect/tf.h>
 #include <blackboard/interface_listener.h>
 #include <core/threading/thread.h>
 #include <interfaces/DynamixelServoInterface.h>
 #include <plugins/gazebo/aspect/gazebo.h>
+#include <tf/types.h>
 #include <utils/time/time.h>
+
+#include <boost/thread/mutex.hpp>
+#include <memory>
 
 // from Gazebo
 #include <gazebo/msgs/MessageTypes.hh>
@@ -40,10 +46,7 @@
 #include <gazebo/transport/transport.hh>
 
 namespace fawkes {
-class AX12GripperInterface;
 class ArduinoInterface;
-class LedInterface;
-class JointInterface;
 } // namespace fawkes
 
 class GazsimGripperThread : public fawkes::Thread,
@@ -51,7 +54,9 @@ class GazsimGripperThread : public fawkes::Thread,
                             public fawkes::LoggingAspect,
                             public fawkes::ConfigurableAspect,
                             public fawkes::BlackBoardAspect,
-                            public fawkes::GazeboAspect
+                            public fawkes::GazeboAspect,
+                            public fawkes::ClockAspect,
+                            public fawkes::TransformAspect
 {
 public:
 	GazsimGripperThread();
@@ -69,20 +74,46 @@ protected:
 	}
 
 private:
-	fawkes::AX12GripperInterface *gripper_if_;
-	fawkes::ArduinoInterface *    arduino_if_;
+	fawkes::ArduinoInterface *arduino_if_;
 
 	std::string gripper_if_name_;
 	std::string arduino_if_name_;
 	std::string cfg_prefix_;
 
+	std::string cfg_gripper_frame_id_;
+	std::string cfg_gripper_dyn_x_frame_id_;
+	std::string cfg_gripper_dyn_y_frame_id_;
+	std::string cfg_gripper_dyn_z_frame_id_;
+	std::string cfg_gripper_origin_x_frame_id_;
+	std::string cfg_gripper_origin_y_frame_id_;
+	std::string cfg_gripper_origin_z_frame_id_;
+
+	float cfg_static_tf_x_home_;
+	float cfg_static_tf_y_home_;
+	float cfg_static_tf_z_home_;
+	float cfg_x_max_;
+	float cfg_y_max_;
+	float cfg_z_max_;
+
+	fawkes::tf::TransformPublisher *dyn_x_pub;
+	fawkes::tf::TransformPublisher *dyn_y_pub;
+	fawkes::tf::TransformPublisher *dyn_z_pub;
+
+	void load_config();
+
+	float cur_x_;
+	float cur_y_;
+	float cur_z_;
+
 	// Publisher to sent msgs to gazebo
-	gazebo::transport::PublisherPtr  set_gripper_pub_;
-	gazebo::transport::PublisherPtr  set_conveyor_pub_;
-	gazebo::transport::SubscriberPtr gripper_has_puck_sub_;
+	gazebo::transport::PublisherPtr set_gripper_pub_;
+	gazebo::transport::PublisherPtr set_conveyor_pub_;
 
 	void send_gripper_msg(int value);
-	void on_has_puck_msg(ConstIntPtr &msg);
+
+protected:
+	/** Mutex to protect data_. Lock whenever accessing it. */
+	boost::mutex data_mutex_;
 };
 
 #endif
