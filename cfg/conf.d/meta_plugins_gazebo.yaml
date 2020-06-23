@@ -86,6 +86,7 @@ fawkes/meta_plugins:
     - gologpp
 
   m-skill-sim-clips-exec:
+    - execution-time-estimator
     - skiller-simulator
     - ros
     - navgraph
