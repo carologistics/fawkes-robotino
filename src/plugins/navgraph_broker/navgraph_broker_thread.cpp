@@ -26,6 +26,7 @@
 #include <boost/algorithm/string.hpp>
 
 using namespace fawkes;
+using namespace boost::placeholders;
 
 /** @class NavgraphBrokerThread "navgraph_broker_thread.h"
  *
