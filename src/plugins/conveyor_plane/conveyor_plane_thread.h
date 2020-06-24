@@ -35,6 +35,7 @@
 #include <interfaces/LaserLineInterface.h>
 #include <interfaces/Position3DInterface.h>
 #include <interfaces/SwitchInterface.h>
+#include <pcl_utils/compatibility.h>
 #include <plugins/ros/aspect/ros.h>
 
 #include <map>
@@ -172,11 +173,11 @@ private:
 	                    fawkes::LaserLineInterface *ll            = nullptr,
 	                    bool                        use_laserline = false);
 	CloudPtr cloud_get_plane(CloudPtr in, pcl::ModelCoefficients::Ptr coeff);
-	boost::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
-	CloudPtr                                          cloud_voxel_grid(CloudPtr in);
+	pcl::shared_ptr<std::vector<pcl::PointIndices>> cloud_cluster(CloudPtr in);
+	CloudPtr                                        cloud_voxel_grid(CloudPtr in);
 
 	std::vector<CloudPtr>
-	         cluster_split(CloudPtr in, boost::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices);
+	         cluster_split(CloudPtr in, pcl::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices);
 	CloudPtr cluster_find_biggest(std::vector<CloudPtr> clouds_in, size_t &id);
 
 	void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
