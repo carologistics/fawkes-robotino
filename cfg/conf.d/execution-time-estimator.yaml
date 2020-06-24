@@ -1,0 +1,76 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+plugins/execution-time-estimator:
+  # Make sure to load the corresponding plugins when using special estimators
+  # (the config estimator is loaded by default)
+  #
+  # common options for each estimator:
+  #  priority: order in which different executors get queried
+  #  speed: control the execution speed through applying a factor on each
+  #         individual estimator
+  #  blacklist: do not use executor for blacklisted skills
+  #  whitelist: only use executor for whitelisted skills, if unspecified all
+  #             skills are whitelisted
+
+  # Reads skill execution times from this config
+  # Does not work with empty whitelist
+  static:
+    priority: -1
+    speed: 1
+
+    # global whitelist options
+    exec-time: 5
+
+    # whitelist and blacklist
+    whitelist:
+      # shelf picks
+      01-get-shelf:
+        name: get_product_from
+        args: ["shelf=.*"]
+        exec-time: 15
+      # shelf picks
+      02-put-slide:
+        name: bring_product_to
+        args: ["slide=TRUE"]
+        exec-time: 15
+      # default pick
+      99-default-pick:
+        name: get_product_from
+        exec-time: 12
+      # default put
+      99-default-put:
+        name: bring_prodcut_to
+        exec-time: 12
+
+  # Estimates exec times of driving skills by taking distances from NavGraph
+  # as reference.
+  navgraph:
+    # misc options
+    priority: 1
+    speed: 0.5
+
+    # global whitelist options
+    target: place
+
+    # whitelist and blacklist
+    whitelist:
+      # defaults to target place as specified above
+      movement:
+        name: goto
+
+  # Takes samples from a mongodb database to provide skill exec times
+  lookup:
+    # misc options
+    priority: 0
+    speed: 1.0
+    database: "skills"
+    collection: "exec_times"
+
+    # global whitelist options
+    fully-match-args: true
+    include-failures: false
+    # whitelist and blacklist
+    blacklist:
+      movement:
+        name: goto
