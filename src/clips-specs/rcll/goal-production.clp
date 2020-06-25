@@ -65,6 +65,8 @@
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (not (goal (class BEACON-MAINTAIN)))
+  (or (domain-facts-loaded)
+      (wm-fact (key refbox phase) (value ~SETUP&~PRE_GAME)))
   =>
   (bind ?goal (goal-tree-assert-run-endless BEACON-MAINTAIN 1))
   (modify ?goal (verbosity QUIET) (params frequency 1))
