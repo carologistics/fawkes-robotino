@@ -299,21 +299,25 @@ script_path=$FAWKES_DIR/bin
 startup_script_location=$script_path/gazsim-startup.bash 
 initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash 
 
+function stop_simulation {
+  echo 'Kill Gazebo-sim'
+  if [ "$TERMINAL" == "tmux" ] ; then
+      tmux kill-session -t gazsim
+  else
+      #killall gazebo
+      killall gzserver
+      killall gzclient
+      killall fawkes
+      killall roscore
+      killall llsf-refbox
+      killall llsf-refbox-shell
+      killall roslaunch
+  fi
+}
+
 if [  $COMMAND  == kill ]; then
-    echo 'Kill Gazebo-sim'
-    if [ "$TERMINAL" == "tmux" ] ; then
-        tmux kill-session -t gazsim
-    else
-        #killall gazebo
-        killall gzserver
-        killall gzclient
-        killall fawkes
-        killall roscore
-        killall llsf-refbox
-        killall llsf-refbox-shell
-        killall roslaunch
-    fi
-    exit 0
+  stop_simulation
+  exit 0
 fi
 
 if [  $COMMAND  == start ]; then
@@ -432,9 +436,8 @@ if [  $COMMAND  == start ]; then
 						rcll-refbox-instruct -w
 						echo "Starting game (Phase: $START_GAME ${TEAM_CYAN:+Cyan: ${TEAM_CYAN}}${TEAM_MAGENTA:+ Magenta: ${TEAM_MAGENTA}})"
 						rcll-refbox-instruct -p SETUP -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
-						sleep 5
-						rcll-refbox-instruct -n $NUM_ROBOTINOS -s RUNNING -W 60
-						rcll-refbox-instruct -p $START_GAME -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
+						rcll-refbox-instruct -n $NUM_ROBOTINOS -W60 || (stop_simulation; exit 1)
+						rcll-refbox-instruct -p $START_GAME -s RUNNING
 				fi
 		fi
 
