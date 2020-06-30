@@ -22,11 +22,33 @@
 
 (defglobal ?*V* = 0.5)
 
-(defrule goal-scheduling-create-order
+(defrule goal-scheduling-create-scheduler-root
   "Keep waiting at one of the waiting positions."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class PRODUCTION-MAINTAIN) (mode SELECTED))
-  (not (goal (class ORDER)))
+  (not (goal (class SCHEDULE-ORDERS)))
+
+  (wm-fact (key refbox team-color) (value ?team-color&~nil))
+  (wm-fact (key domain fact self args? r ?self))
+
+  ;Order-CEs
+  (wm-fact (key domain fact order-complexity args? ord ?ord com ?complexity))
+  =>
+  (bind ?goal-id (sym-cat ROOT))
+
+  (assert (goal (id ?goal-id)
+                (parent ?production-id)
+                (sub-type SCHEDULE-SUBGOALS)
+                (class SCHEDULE-ORDERS)
+                (params ords [ O1 O2 ])))
+
+  (printout t "Goal " SCHEDULE-ORDERS " formulated" crlf)
+)
+
+(defrule goal-scheduling-create-order
+  "Keep waiting at one of the waiting positions."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?root-id) (class SCHEDULE-ORDERS) (params ords [ $? ?ord $? ]) (mode SELECTED))
 
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
   (wm-fact (key domain fact self args? r ?self))
@@ -45,13 +67,14 @@
 
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (wm-fact (key domain fact wp-unused args? wp ?wp))
 
   (not (wm-fact (key domain fact robot-waiting $?)))
 
-  (test (eq ?complexity C3))
+  ;(test (eq ?complexity ?ord1-com))
+  ;(test (member$ ?ord ?ords))
+  ;(not (goal (id ?ord) (parent ?root-id) (class ORDER)))
   =>
-  (bind ?g-id (sym-cat ROOT_ ?ord))
+  (bind ?g-id (sym-cat ?ord (gensym*)))
 
   (bind ?binding-id (sym-cat X (gensym*)))
   (bind ?wp (str-cat ?binding-id #wp))
@@ -61,7 +84,7 @@
                    (values $?fact-key)))
 
   (assert (goal (id ?g-id)
-                (parent ?production-id)
+                (parent ?root-id)
                 (sub-type SCHEDULE-SUBGOALS)
                 (class ORDER)
                 (params ord ?ord
@@ -75,7 +98,7 @@
                         wp ?wp
                         base-station ?bs)))
 
-  (printout t "Goal " ORDER " formulated" crlf)
+  (printout t "Goal " ?g-id " formulated" crlf)
 )
 
 (defrule goal-scheduling-create-deliver
@@ -89,7 +112,7 @@
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
   =>
   (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
-  (bind ?goal-id (sym-cat ?ord DELIVER))
+  (bind ?goal-id (sym-cat ?ord DELIVER _ (gensym*)))
 
   (modify ?gf (parent ?goal-id))
 
@@ -99,7 +122,7 @@
                 (class DELIVER)
                 (params (create$ ?params delivery-station ?ds ))))
 
-  (printout t "Goal " DELIVER " formulated" crlf)
+  (printout t "Goal " ?goal-id " formulated" crlf)
 )
 
 (defrule goal-scheduling-create-mount-cap
@@ -130,7 +153,7 @@
   (test (member$ (create$ cap-color ?cap-color) ?params))
   =>
   (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
-  (bind ?goal-id (sym-cat ?ord MOUNTCAP))
+  (bind ?goal-id (sym-cat ?ord MOUNTCAP _ (gensym*)))
 
   (if (eq ?priori-parent ?root-id) then (modify ?gf (parent ?goal-id)))
 
@@ -139,7 +162,7 @@
                 (sub-type SCHEDULE-SUBGOALS)
                 (class MOUNT-CAP)
                 (params (create$ ?params cap-station ?cs))))
-  (printout t "Goal " MOUNT-CAP " formulated" crlf)
+  (printout t "Goal " ?goal-id " formulated" crlf)
 )
 
 ;; Prepare CS goals
@@ -157,7 +180,7 @@
   (test (member$ (create$ cap-color ?cap-color) ?params))
   =>
   (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
-  (bind ?g-id (sym-cat ?ord CLEARCAP))
+  (bind ?g-id (sym-cat ?ord CLEARCAP _ (gensym*) ))
 
   (bind ?binding-id (sym-cat X (gensym*)))
   (bind ?shelf-spot (sym-cat ?binding-id #spot))
@@ -175,16 +198,16 @@
                                  cc ?cc
                                  shelf-spot ?shelf-spot))))
 
-  (printout t "Goals " PREPARE-CS " formulated" crlf)
+  (printout t "Goals " ?goal-id " formulated" crlf)
 )
 
 (defrule goal-scheduling-create-prepare-cs-fill-cap
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?goal-id) (params $?params) (class PREPARE-CS) (mode SELECTED))
-  (not (goal (parent ?goal-cs) (class FILL-CAP)))
+  (not (goal (parent ?goal-id) (class FILL-CAP)))
   =>
   (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
-  (bind ?g-id (sym-cat ?ord FILLCAP))
+  (bind ?g-id (sym-cat ?ord FILLCAP _ (gensym*)))
 
   (assert (goal (id ?g-id)
                 (parent ?goal-id)
@@ -192,7 +215,7 @@
                 (class FILL-CAP)
                 (params ?params)))
 
-  (printout t "Goals " FILL-CS " formulated" crlf)
+  (printout t "Goals " ?g-id " formulated" crlf)
 )
 
 (defrule goal-scheduling-create-mount-rings
@@ -224,7 +247,7 @@
   (if (eq ?priori-class MOUNT-RING1) then  (bind ?ring# 2))
   (if (eq ?priori-class MOUNT-RING2) then  (bind ?ring# 3))
 
-  (bind ?goal-id (sym-cat ?ord MOUNTRING ?ring# ))
+  (bind ?goal-id (sym-cat ?ord MOUNTRING ?ring#  _ (gensym*)))
   (bind ?params (create$ ?params (sym-cat ring ?ring# -station) ?rs))
 
   ;Steal parentship of lastest goal
@@ -237,7 +260,7 @@
                 (class (sym-cat MOUNT-RING ?ring#))
                 (params (create$ ?params (sym-cat ring ?ring# -station) ?rs))))
 
-  (printout t "Goal " (sym-cat MOUNT-RING ?ring#) " formulated" crlf)
+  (printout t "Goal " ?goal-id " formulated" crlf)
 
   ;;Create Fill-RS goals
   (if (neq ?req-num ZERO)
@@ -246,7 +269,7 @@
 
       (while (> ?fill# 0)
              (bind ?parent-id ?goal-id)
-             (bind ?goal-id (sym-cat ?ord FILLRS ?ring# ?fill# ))
+             (bind ?goal-id (sym-cat ?ord FILLRS ?ring# ?fill#  _ (gensym*) ))
              (assert (goal (id ?goal-id)
                      (parent ?parent-id)
                      (class FILL-RS)
