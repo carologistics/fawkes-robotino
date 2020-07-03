@@ -695,8 +695,16 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                       (resource-id ?r-id)
                       (resource-units ?v2&:(< ?v2 0))
                       (resource-setup $?setup-2))
+ ;Plans do not to the same goal
  (not (and (plan (id ?entity-1) (goal-id ?same-goal))
            (plan (id ?entity-2) (goal-id ?same-goal))))
+ ;Same none-setup state
+ (not (and (wm-fact (key sched fact consumption-requirment args? r ?r-id e ?cosumer  pred [ $?pred1 ]))
+           (not (wm-fact (key sched fact production-requirment args? r ?r-id e ?producer pred [ $?pred1])))))
+
+ (not (and (not (wm-fact (key sched fact consumption-requirment args? r ?r-id e ?cosumer  pred [ $?pred2 ])))
+           (wm-fact (key sched fact production-requirment args? r ?r-id e ?producer pred [ $?pred2 ]))))
+
  (resource-setup (resource-id ?r-id) (duration ?duration)
                  (from-state $?setup-1) (to-state $?setup-2))
  (not (schedule-setup (sched-id ?s-id) (resource-id ?r-id)
