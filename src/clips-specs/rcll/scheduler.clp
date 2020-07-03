@@ -266,6 +266,11 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                         (event-id ?source-id)
                         (resource-id ?r-id)
                         (resource-units ?units)))
+
+ (do-for-all-facts ((?wd domain-fact)) (member$ ?entity ?wd:param-values)
+    (assert (wm-fact (key sched fact production-requirment args? r ?r-id e ?source-id
+                          pred [ ?wd:name ?wd:param-values ] )))
+ )
 )
 
 (defrule scheduling-create-resource-sink-event
@@ -289,6 +294,10 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                         (event-id ?sink-id)
                         (resource-id ?r-id)
                         (resource-units (* -1 ?units))))
+(do-for-all-facts ((?wd domain-fact)) (member$ ?entity ?wd:param-values)
+    (assert (wm-fact (key sched fact consumption-requirment args? r ?r-id e ?sink-id
+                          pred [ ?wd:name ?wd:param-values ] )))
+ )
 )
 
 (defrule scheduling-create-resource-source--robot
@@ -315,6 +324,13 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                         (resource-id ?r-id)
                         (resource-setup ?setup)
                         (resource-units ?units)))
+
+ (do-for-all-facts ((?wd domain-fact)) (and (neq ?wd:name  self)
+                                            (member$ ?robot ?wd:param-values))
+    (assert (wm-fact (key sched fact production-requirment args? r ?r-id e ?source-id
+                          pred [ ?wd:name ?wd:param-values ] )))
+ )
+
 )
 
 (defrule scheduling-create-resource-sink--robot
@@ -344,6 +360,11 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                         (resource-id ?r-id)
                         (resource-setup ?setup)
                         (resource-units (* -1 ?units))))
+ (do-for-all-facts ((?wd domain-fact)) (and (neq ?wd:name  self)
+                                            (member$ ?robot ?wd:param-values))
+    (assert (wm-fact (key sched fact consumption-requirment args? r ?r-id e ?sink-id
+                          pred [ ?wd:name ?wd:param-values ] )))
+ )
 )
 
 (defrule scheduling-create-resource-from-req
@@ -538,6 +559,34 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                               (resource-setup ?setup)
                               (resource-units 1)))
  (retract ?pf)
+)
+
+(defrule scheduling-plan-resources-consumtion
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
+ (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at START))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
+ (plan (id ?p-id) (goal-id ?g-id))
+ ?pf <- (wm-fact (key meta plan-resource at-start args? p ?p-id r ?r pred [ $?pred ] ))
+ (test (not (member$ self ?pred)))
+ (test (not (member$ at ?pred)))
+ =>
+ (bind ?r-id (formate-resource-name ?r))
+ (assert (wm-fact (key sched fact consumption-requirment args? r ?r-id e ?e-id pred [ $?pred ] )))
+)
+
+(defrule scheduling-plan-resources-production
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
+ (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at START))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
+ (plan (id ?p-id) (goal-id ?g-id))
+ ?pf <- (wm-fact (key meta plan-resource at-end args? p ?p-id r ?r pred [ $?pred ] ))
+ (test (not (member$ self ?pred)))
+ (test (not (member$ at ?pred)))
+ =>
+ (bind ?r-id (formate-resource-name ?r))
+ (assert (wm-fact (key sched fact production-requirment args? r ?r-id e ?e-id pred [ $?pred ] )))
 )
 
 ;;Schedule Formulate Precedence
