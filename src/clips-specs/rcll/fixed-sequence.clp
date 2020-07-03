@@ -1139,8 +1139,8 @@
       (if (< ?act ?af:id) then (bind ?check TRUE)))
 
     (if (not ?check) then
-      (assert (wm-fact (key meta plan-resource at-start args? p ?plan-id r ?rs  pred ?df:predicate)
-                (values ?df:param-values) (is-list TRUE)))
+      (assert (wm-fact (key meta plan-resource at-start args? p ?plan-id r ?rs
+                                       pred [ ?df:predicate ?df:param-values ])))
     )
   )
 )
@@ -1175,8 +1175,8 @@
       (if (> ?act ?af:id) then (bind ?check TRUE)))
 
     (if (not ?check) then
-      (assert (wm-fact (key meta plan-resource at-end args? p ?plan-id r ?rs  pred ?df:predicate)
-                (values ?grounded-param-values) (is-list TRUE)))
+      (assert (wm-fact (key meta plan-resource at-end args? p ?plan-id r ?rs
+                         pred [ ?df:predicate  ?grounded-param-values ])))
     )
   )
 )
