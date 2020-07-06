@@ -1104,22 +1104,35 @@
 )
 
 
-;(defrule goal-expander-deduce-plan-resources
-; (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-; (domain-obj-is-of-type ?rs resource)
-; ?pf <- (plan (id ?plan-id) (required-resources $?req&:(not(member$ ?rs ?req))))
-; (plan-action (plan-id ?plan-id) (param-values $param-v&:(member$ ?rs ?param-v)))
-;=>
-; (modify ?pf  (required-resources (append$ ?req ?rs)))
-;)
+(defrule goal-expander-deduce-plan-resources
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (goal (id ?goal) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
+ ?pf <- (plan (id ?plan-id) (goal-id ?goal-id)
+              (required-resources $?req&:(eq ?req (create$))))
+=>
+ (do-for-all-facts ((?paf plan-action)) (eq ?paf:plan-id ?plan-id)
+   (progn$ (?rs ?paf:param-values)
+     (if (any-factp ((?dof domain-obj-is-of-type))
+                    (member$ (create$ ?rs resource) ?dof:implied))
+         then
+         (bind ?req (append$ ?req ?rs))
+     )
+  )
+ )
+ (if (> (length$ ?req) 0) then
+     (modify ?pf  (required-resources ?req )))
+)
 
 
 
 (defrule goal-expander-deduce-plan-resources-at-start
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (domain-obj-is-of-type ?rs resource)
-  (plan (id ?plan-id) (goal-id ?goal-id))
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (goal (id ?goal) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
+  (plan (id ?plan-id) (goal-id ?goal-id) (required-resources $? ?rs $?))
+  (not (wm-fact (key meta plan-resource at-start args? p ?plan-id r ?rs)))
 =>
+  (printout t "Positive preconds in plan " ?plan-id "  " crlf)
+  (bind ?statements (create$))
   (do-for-all-facts ((?af plan-action) (?df domain-atomic-precondition))
                      (and (eq ?af:goal-id ?goal-id)
                           (eq ?df:goal-id ?goal-id)
@@ -1131,26 +1144,30 @@
                           (member$ ?rs ?df:param-values)
                           (not (domain-is-precond-negative ?df:part-of)))
     (bind ?actions (domain-positive-effect-occurs-in-plan ?plan-id ?df:predicate ?df:param-values))
-    (printout t "Positive precond [" ?df:predicate ?df:param-values "]"
-                 "of action (" ?af:id  " " ?af:action-name ") satisfied by actions " ?actions  crlf)
+    (printout t "  action (" ?af:id  " " ?af:action-name ") precond [" ?df:predicate ?df:param-values
+                "] satisfied by actions " ?actions  crlf)
     ;check if precodition is satisfied by an earlier plan action
     (bind ?check FALSE)
     (progn$ (?act ?actions)
       (if (< ?act ?af:id) then (bind ?check TRUE)))
 
     (if (not ?check) then
-      (assert (wm-fact (key meta plan-resource at-start args? p ?plan-id r ?rs
-                                       pred [ ?df:predicate ?df:param-values ])))
+      (bind ?statements (append$ ?statements (create$ [ ?df:predicate (delete-member$ ?df:param-values ?rs) ])))
     )
   )
+  (assert (wm-fact (key meta plan-resource at-start args? p ?plan-id r ?rs)
+                   (is-list TRUE) (values ?statements)))
 )
 
 
 (defrule goal-expander-deduce-plan-resources-at-end
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (domain-obj-is-of-type ?rs resource)
-  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
+  (plan (id ?plan-id) (goal-id ?goal-id) (required-resources $? ?rs $?))
+  (not (wm-fact (key meta plan-resource at-end args? p ?plan-id r ?rs)))
 =>
+  (printout t "Positive effects in plan " ?plan-id "  " crlf)
+  (bind ?statements (create$))
   (do-for-all-facts ((?af plan-action) (?df domain-effect))
                      (and (eq ?af:goal-id ?goal-id)
                           (eq ?af:plan-id ?plan-id)
@@ -1167,18 +1184,20 @@
                                                        ?af:param-names
                                                        ?af:param-values))
     (bind ?actions (domain-negative-effect-occurs-in-plan ?plan-id ?df:predicate ?grounded-param-values))
-    (printout t "Positive effect [" ?df:predicate ?grounded-param-values "]"
-                 "of action (" ?af:id  " " ?af:action-name ") negated by actions " ?actions  crlf)
+    (printout t  " action (" ?af:id  " " ?af:action-name ") effect [" ?df:predicate ?grounded-param-values
+                 "] negated by actions " ?actions  crlf)
     ;check if positive effect is negated by a later plan action
     (bind ?check FALSE)
     (progn$ (?act ?actions)
       (if (> ?act ?af:id) then (bind ?check TRUE)))
 
     (if (not ?check) then
-      (assert (wm-fact (key meta plan-resource at-end args? p ?plan-id r ?rs
-                         pred [ ?df:predicate  ?grounded-param-values ])))
+      (bind ?statements (append$ ?statements
+         (create$ [ ?df:predicate (delete-member$ ?grounded-param-values ?rs) ])))
     )
   )
+  (assert (wm-fact (key meta plan-resource at-end args? p ?plan-id r ?rs)
+                   (is-list TRUE) (values ?statements)))
 )
 
 
