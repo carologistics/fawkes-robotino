@@ -143,7 +143,9 @@ clips-executive:
               - rcll/wait-actions.clp
               - rcll/remote-actions.clp
           - name: goal-expander
-            file: rcll/fixed-sequence.clp
+            files:
+              - rcll/fixed-sequence.clp
+              - rcll/plan-processing.clp
           - name: execution-monitoring
             file: rcll/execution-monitoring.clp
           - name: simtest

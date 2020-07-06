@@ -1103,6 +1103,40 @@
   (return ?satisfied-by)
 )
 
+(deffunction domain-positive-effect-earlier-in-plan (?plan-id ?action-id ?predicate ?param-values)
+  (bind ?satisfied-by (create$))
+  (do-for-all-facts ((?af plan-action) (?df domain-effect))
+                    (and (eq ?af:plan-id ?plan-id)
+                         (< ?af:id ?action-id)
+                         (eq ?df:part-of ?af:action-name)
+                         (eq ?df:predicate ?predicate)
+                         (eq ?df:type POSITIVE)
+                         (eq ?param-values (domain-ground-effect ?df:param-names
+                                                                 ?df:param-constants
+                                                                 ?af:param-names
+                                                                 ?af:param-values)))
+    (return TRUE)
+  )
+  (return FALSE)
+)
+
+(deffunction domain-negative-effect-later-in-plan (?plan-id ?action-id ?predicate ?param-values)
+  (bind ?satisfied-by (create$))
+  (do-for-all-facts ((?af plan-action) (?df domain-effect))
+                    (and (eq ?af:plan-id ?plan-id)
+                         (> ?af:id ?action-id)
+                         (eq ?df:part-of ?af:action-name)
+                         (eq ?df:predicate ?predicate)
+                         (eq ?df:type NEGATIVE)
+                         (eq ?param-values (domain-ground-effect ?df:param-names
+                                                                 ?df:param-constants
+                                                                 ?af:param-names
+                                                                 ?af:param-values)))
+    (return TRUE)
+  )
+  (return FALSE)
+)
+
 
 (defrule goal-expander-deduce-plan-resources
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
@@ -1111,18 +1145,19 @@
               (required-resources $?req&:(eq ?req (create$))))
 =>
  (do-for-all-facts ((?paf plan-action)) (eq ?paf:plan-id ?plan-id)
-   (progn$ (?rs ?paf:param-values)
-     (if (any-factp ((?dof domain-obj-is-of-type))
-                    (member$ (create$ ?rs resource) ?dof:implied))
-         then
-         (bind ?req (append$ ?req ?rs))
+   (progn$ (?p ?paf:param-values)
+     (if (not (member$ ?p ?req)) then
+       (if (any-factp ((?dof domain-obj-is-of-type))
+                      (member$ (create$ ?p resource) ?dof:implied))
+           then
+           (bind ?req (append$ ?req ?p))
+       )
      )
-  )
+   )
  )
  (if (> (length$ ?req) 0) then
      (modify ?pf  (required-resources ?req )))
 )
-
 
 
 (defrule goal-expander-deduce-plan-resources-at-start
@@ -1143,15 +1178,10 @@
                           (member$ ?rs ?af:param-values)
                           (member$ ?rs ?df:param-values)
                           (not (domain-is-precond-negative ?df:part-of)))
-    (bind ?actions (domain-positive-effect-occurs-in-plan ?plan-id ?df:predicate ?df:param-values))
-    (printout t "  action (" ?af:id  " " ?af:action-name ") precond [" ?df:predicate ?df:param-values
-                "] satisfied by actions " ?actions  crlf)
     ;check if precodition is satisfied by an earlier plan action
-    (bind ?check FALSE)
-    (progn$ (?act ?actions)
-      (if (< ?act ?af:id) then (bind ?check TRUE)))
-
-    (if (not ?check) then
+    (bind ?previous-effect (domain-positive-effect-earlier-in-plan ?plan-id ?af:id ?df:predicate ?df:param-values))
+    (if (not ?previous-effect) then
+      (printout t "  action (" ?af:id  " " ?af:action-name ") precond [" ?df:predicate ?df:param-values "]"  crlf)
       (bind ?statements (append$ ?statements (create$ [ ?df:predicate (delete-member$ ?df:param-values ?rs) ])))
     )
   )
@@ -1178,20 +1208,14 @@
                                                              ?df:param-constants
                                                              ?af:param-names
                                                              ?af:param-values)))
-
     (bind ?grounded-param-values (domain-ground-effect ?df:param-names
                                                        ?df:param-constants
                                                        ?af:param-names
                                                        ?af:param-values))
-    (bind ?actions (domain-negative-effect-occurs-in-plan ?plan-id ?df:predicate ?grounded-param-values))
-    (printout t  " action (" ?af:id  " " ?af:action-name ") effect [" ?df:predicate ?grounded-param-values
-                 "] negated by actions " ?actions  crlf)
     ;check if positive effect is negated by a later plan action
-    (bind ?check FALSE)
-    (progn$ (?act ?actions)
-      (if (> ?act ?af:id) then (bind ?check TRUE)))
-
-    (if (not ?check) then
+    (bind ?later-effect (domain-negative-effect-later-in-plan ?plan-id ?af:id ?df:predicate ?grounded-param-values))
+    (if (not ?later-effect) then
+      (printout t  " action (" ?af:id  " " ?af:action-name ") effect [" ?df:predicate ?grounded-param-values  crlf)
       (bind ?statements (append$ ?statements
          (create$ [ ?df:predicate (delete-member$ ?grounded-param-values ?rs) ])))
     )
