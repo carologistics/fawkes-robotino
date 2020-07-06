@@ -78,6 +78,7 @@
 (deftemplate schedule
   (slot id (type SYMBOL))
   (multislot goals (type SYMBOL))
+  (multislot resources (type SYMBOL))
   (slot mode (type SYMBOL))
   (slot duration (type INTEGER))
   (multislot dispatch-time (type INTEGER))
@@ -96,37 +97,22 @@
   (slot duration (type INTEGER) (default 0))
 )
 
-
 (deftemplate schedule-resource
   (slot sched-id (type SYMBOL))
   (slot resource-id (type SYMBOL))
   (multislot events (type SYMBOL))
-)
-
-
-(deftemplate resource
-  (slot id (type SYMBOL))
   (slot type (type SYMBOL))
   (slot entity (type SYMBOL))
-  (slot consumable (type SYMBOL) (allowed-values TRUE FALSE) (default FALSE))
-  (slot producible (type SYMBOL) (allowed-values TRUE FALSE) (default FALSE))
-  (multislot states (type SYMBOL))
-  (slot units (type INTEGER))
-)
-
-(deftemplate resource-setup
-  (slot resource-id (type SYMBOL))
-  (multislot from-state (type SYMBOL))
-  (multislot to-state (type SYMBOL))
-  (slot duration (type INTEGER))
 )
 
 (deftemplate schedule-requirment
   (slot sched-id (type SYMBOL))
   (slot event-id (type SYMBOL))
-  (slot resource-id (type SYMBOL))
-  (multislot resource-setup (type SYMBOL))
+  (slot resource-type (type SYMBOL))
+  (slot resource-entity (type SYMBOL))
   (slot resource-units (type INTEGER))
+  (multislot resource-state (type SYMBOL))
+  (multislot resource-setup (type SYMBOL))
 )
 
 (deftemplate schedule-setup
@@ -162,16 +148,40 @@
   return (sym-cat ?r)
 )
 
+
+(deffunction create-schedule-resource (?sched-id ?entity ?type)
+  (bind ?r-id (formate-resource-name ?entity))
+  (if (not (any-factp ((?srf schedule-resource))
+                      (eq ?srf:resource-id ?r-id)))
+      then
+      (assert (schedule-resource (sched-id ?sched-id)
+                                 (entity ?entity)
+                                 (type ?type))))
+)
++
 ;; Schedule Lifecycle
 (defrule scheduling-create-schedule-goal
 "Formulate 'schedule' entity on the expantion of the top most goal of the
 the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (goal (id ?g-id) (parent ?pg) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
+ (wm-fact (key refbox team-color) (value ?team-color))
  (not (goal (id ?pg) (sub-type SCHEDULE-SUBGOALS)))
  (not (schedule (goals $? ?g-id $?)))
 =>
+(bind ?resources (create$))
+  ;Add the robots
+  (do-for-all-facts ((?wm wm-fact)) (eq (wm-key-prefix ?wm:key) (create$ domain fact at))
+    (bind ?resources (append$ ?resources (wm-key-arg ?wm:key r)))
+  )
+  ;Add machines
+  (do-for-all-facts ((?wm wm-fact)) (and (eq (wm-key-prefix ?wm:key) (create$ domain fact mps-team))
+                                         (eq (wm-key-arg ?wm:key col) ?team-color))
+    (bind ?resources (append$ ?resources (wm-key-arg ?wm:key m)))
+  )
+
  (assert (schedule (id (sym-cat sched_ (gensym*)))
                    (goals ?g-id)
+                   (resources ?resources)
                    (mode FORMULATED)))
 )
 
@@ -245,185 +255,90 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 
 ;; General resource handling
+
+;We start off by defining the Events that happen at time 0
+; (Ex: resource producing events)
+(defrule scheduling-init-resources
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ (schedule (id ?s-id) (resources ?$ ?r-entity $?)(mode FORMULATED))
+ (domain-object (name ?r-entity) (type ?r-type))
+ (not (schedule-resource (sched-id ?s-id) (entity ?r-entity)))
+=>
+ (bind ?r-id (formate-resource-name ?r-entity))
+ (assert (schedule-resource (sched-id ?s-id)
+                            (resource-id ?r-id)
+                            (type ?r-type)
+                            (entity ?r-entity)))
+)
+
 (defrule scheduling-create-resource-source-event
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (mode FORMULATED))
  ;resource consumed by schedule
  (schedule-requirment (sched-id ?s-id)
-                      (resource-id ?r-id)
+                      (resource-entity ?r-entity)
                       (resource-units ?v&:(< ?v 0)))
  ;no source event in schedule
- (not (schedule-event (sched-id ?s-id) (entity ?r-id) (at START)))
+ (not (schedule-event (sched-id ?s-id) (entity ?r-entity) (at START)))
  ;non producible resource
- (resource (id ?r-id) (producible FALSE) (entity ?entity) (units ?units))
- (or (test (eq ?entity UNKOWN))
-     (wm-fact (key domain fact mps-type args? m ?entity t ?type)))
+ (schedule-resource (sched-id ?s-id) (resource-id ?r-id) (type ?r-type) (entity ?r-entity))
+ (resource-info (type ?r-type) (producible FALSE) (state-preds $?state-preds) (setup-preds $?setup-preds))
 =>
  (bind ?source-id  (sym-cat ?r-id @start))
+ (bind ?units 1)
  (assert
-   (schedule-event (sched-id ?s-id) (id ?source-id) (entity ?r-id) (at START) (scheduled TRUE))
-   (schedule-requirment (sched-id ?s-id)
-                        (event-id ?source-id)
-                        (resource-id ?r-id)
-                        (resource-units ?units)))
+   (schedule-event (sched-id ?s-id) (id ?source-id) (entity ?r-entity) (at START) (scheduled TRUE)))
 
- (do-for-all-facts ((?wd domain-fact)) (member$ ?entity ?wd:param-values)
-    (assert (wm-fact (key sched fact production-requirment args? r ?r-id e ?source-id
-                          pred [ ?wd:name ?wd:param-values ] )))
+ (bind ?resource-state (create$))
+ (bind ?resource-setup (create$))
+ (do-for-all-facts ((?wd domain-fact))
+                   (and (member$ ?wd:name (create$ ?state-preds ?setup-preds))
+                        (member$ ?r-entity ?wd:param-values))
+   (bind ?statement (create$ [ ?wd:name (delete-member$ ?wd:param-values ?r-entity) ] ))
+   (if (member$ ?wd:name ?state-preds) then
+       (bind ?resource-state (append$ ?resource-state  ?statement))
+   )
+   (if (member$ ?wd:name ?setup-preds) then
+       (bind ?resource-setup (append$ ?resource-setup  ?statement))
+   )
+ )
+
+ (assert (schedule-requirment (sched-id ?s-id)
+                              (event-id ?source-id)
+                              (resource-entity ?r-entity)
+                              (resource-type ?r-type)
+                              (resource-units ?units)
+                              (resource-state ?resource-state)
+                              (resource-setup ?resource-setup))
  )
 )
-
 (defrule scheduling-create-resource-sink-event
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (mode FORMULATED))
  ;resourece produced by schedule
  (schedule-requirment (sched-id ?s-id)
-                      (resource-id ?r-id)
+                      (resource-entity ?r-entity)
                       (resource-units ?v&:(> ?v 0)))
  ;no sink event in schedule
- (not  (schedule-event (sched-id ?s-id) (entity ?r-id) (at END)))
+ (not  (schedule-event (sched-id ?s-id) (entity ?r-entity) (at END)))
  ;non consumable resource
- (resource (id ?r-id) (consumable FALSE) (entity ?entity) (units ?units))
- (or (test (eq ?entity UNKOWN))
-     (wm-fact (key domain fact mps-type args? m ?entity t ?type)))
+ (schedule-resource (sched-id ?s-id) (resource-id ?r-id) (type ?r-type) (entity ?r-entity))
+ (resource-info (type ?r-type) (consumable FALSE) (state-preds $?state-preds) (setup-preds $?setup-preds))
 =>
  (bind ?sink-id  (sym-cat ?r-id @end))
+ (bind ?units 1)
  (assert
-   (schedule-event (sched-id ?s-id) (id ?sink-id) (entity ?r-id) (at END) (scheduled TRUE))
-   (schedule-requirment (sched-id ?s-id)
-                        (event-id ?sink-id)
-                        (resource-id ?r-id)
-                        (resource-units (* -1 ?units))))
-(do-for-all-facts ((?wd domain-fact)) (member$ ?entity ?wd:param-values)
-    (assert (wm-fact (key sched fact consumption-requirment args? r ?r-id e ?sink-id
-                          pred [ ?wd:name ?wd:param-values ] )))
- )
+   (schedule-event (sched-id ?s-id) (id ?sink-id) (entity ?r-entity) (at END) (scheduled TRUE)))
+
+ ;Todo, maybe u dont really need a state for the sink and the assumption
+ ; should be that that all states consumed needs to had been produced, not the
+ ; other way
+ (assert  (schedule-requirment (sched-id ?s-id)
+                               (event-id ?sink-id)
+                               (resource-entity ?r-entity)
+                               (resource-type ?r-type)
+                               (resource-units (* -1 ?units))))
 )
-
-(defrule scheduling-create-resource-source--robot
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (schedule (id ?s-id) (mode FORMULATED))
- ;resource consumed by schedule
- (schedule-requirment (sched-id ?s-id)
-                      (resource-id ?r-id)
-                      (resource-units ?v&:(< ?v 0)))
- ;no source event in schedule
- (not (schedule-event (sched-id ?s-id) (entity ?r-id) (at START)))
- ;non producible resource
- (resource (id ?r-id) (producible FALSE) (entity ?robot) (units ?units))
- (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
- (wm-fact (key refbox team-color) (value ?team-color))
-=>
- (bind ?source-id  (sym-cat ?r-id @start))
-
- (bind ?setup (create$ ?curr-location ?curr-side))
- (assert
-   (schedule-event (sched-id ?s-id) (id ?source-id) (entity ?r-id) (at START) (scheduled TRUE))
-   (schedule-requirment (sched-id ?s-id)
-                        (event-id ?source-id)
-                        (resource-id ?r-id)
-                        (resource-setup ?setup)
-                        (resource-units ?units)))
-
- (do-for-all-facts ((?wd domain-fact)) (and (neq ?wd:name  self)
-                                            (member$ ?robot ?wd:param-values))
-    (assert (wm-fact (key sched fact production-requirment args? r ?r-id e ?source-id
-                          pred [ ?wd:name ?wd:param-values ] )))
- )
-
-)
-
-(defrule scheduling-create-resource-sink--robot
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (schedule (id ?s-id) (mode FORMULATED))
- ;produced by a schedule event
- (schedule-requirment (sched-id ?s-id)
-                      (resource-id ?r-id)
-                      (resource-units ?v&:(> ?v 0)))
- ;no sink event for resource in schedule
- (not  (schedule-event (sched-id ?s-id) (entity ?r-id) (at END)))
- (resource (id ?r-id) (consumable FALSE) (entity ?robot)(units ?units))
- ;;TODO: replace with IDLING location of a defaule state ANY
- (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
- (wm-fact (key refbox team-color) (value ?team-color))
-=>
- (bind ?sink-id  (sym-cat ?r-id @end))
-
- (bind ?setup (create$ ?curr-location ?curr-side))
- (if (eq ?curr-location START) then
-   (if (eq ?team-color CYAN) then (bind ?setup "C-ins-in") else (bind ?setup "M-ins-in")))
-
- (assert
-   (schedule-event (sched-id ?s-id) (id ?sink-id) (entity ?r-id) (at END) (scheduled TRUE))
-   (schedule-requirment (sched-id ?s-id)
-                        (event-id ?sink-id)
-                        (resource-id ?r-id)
-                        (resource-setup ?setup)
-                        (resource-units (* -1 ?units))))
- (do-for-all-facts ((?wd domain-fact)) (and (neq ?wd:name  self)
-                                            (member$ ?robot ?wd:param-values))
-    (assert (wm-fact (key sched fact consumption-requirment args? r ?r-id e ?sink-id
-                          pred [ ?wd:name ?wd:param-values ] )))
- )
-)
-
-(defrule scheduling-create-resource-from-req
-"Create a reproducable resource by default from requirement "
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (schedule (id ?s-id) (mode FORMULATED))
- (schedule-requirment (sched-id ?s-id) (event-id ?e-id) (resource-id ?r-id))
- (not (resource (id ?r-id)))
-=>
- (assert (resource (id ?r-id)
-                   (units 1)
-                   (type UNKOWN)
-                   (entity UNKOWN)
-                   (consumable FALSE)
-                   (producible FALSE)))
-)
-
-(defrule scheduling-create-schedule-resource-from-req
-"Create schedule-resource to track scheduled sequence of events on each
- resource "
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (schedule (id ?s-id) (mode FORMULATED))
- (schedule-requirment (sched-id ?s-id) (event-id ?e-id) (resource-id ?r-id))
- (not (schedule-resource (sched-id ?r-id) (resource-id ?r-id)))
-=>
- (assert (schedule-resource (sched-id ?s-id) (resource-id ?r-id)))
-)
-
-;We start off by defining the Events that happen at time 0
-; (Ex: resource producing events)
-(defrule scheduling-init-resources-machines
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- (wm-fact (key refbox team-color) (value ?team-color))
- (wm-fact (key domain fact mps-type args? m ?mps t ?type))
- (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-=>
- (bind ?r (formate-resource-name ?mps))
- (assert (resource (id ?r)
-                   (units 1)
-                   (type ?type)
-                   (entity ?mps)
-                   (consumable FALSE)
-                   (producible FALSE)))
-)
-
-(defrule scheduling-init-resources-robots
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
- (wm-fact (key domain fact at args? r ?robot m ? side ?))
- (not (resource (entity ?robot)))
-=>
- (bind ?r (formate-resource-name ?robot))
- (assert (resource (id ?r)
-                   (units 1)
-                   (type ROBOT)
-                   (entity ?robot)
-                   (consumable FALSE)
-                   (producible FALSE)))
-)
-
 
 ;;TODO: Error on a requirment's unites more than resource units
 ;;TODO: Error on requirment with no resource
@@ -526,67 +441,54 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                          (at END)))
 )
 
-(defrule scheduling-plan-resources-at-start
+(defrule scheduling-plan-resources-requriment
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
  (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at START))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
- (plan (id ?p-id) (goal-id ?g-id))
- ?pf <- (wm-fact (key meta plan required-resource args? id ?p-id r ?r setup [ $?setup ] ))
+ (plan (id ?p-id) (goal-id ?g-id) (required-resources $? ?r-entity $?))
+ (domain-object (name ?r-entity) (type ?r-type))
+ (resource-info (type ?r-type) (state-preds $?state-preds) (setup-preds $?setup-preds))
+ ?pf <- (wm-fact (key meta plan-resource ?at args? p ?p-id r ?r-entity) (values $?statements))
+ (not (schedule-requirment (sched-id ?s-id) (event-id ?e-id) (resource-entity ?r-entity)
+                           (resource-units ?u&:(or (and (eq ?at at-start) (< ?u 0))
+                                                   (and (eq ?at at-end) (> ?u 0)))))
+ )
  =>
- (bind ?r-id (formate-resource-name ?r))
+ (bind ?units 1)
+ (if (eq ?at at-start) then (bind ?units (* -1 ?units)))
+ (bind ?resource-state (create$))
+ (bind ?resource-setup (create$))
+
+ (if (member$ [ ?statements) then
+    (printout t "req-statements for " ?p-id ?at ?r-entity " " ?statements  crlf)
+    (while (> (length$ ?statements) 0)
+      (bind ?statement  (statements-first$ ?statements))
+      (bind ?statements (statements-rest$ ?statements))
+      (if (eq (length$ ?statement) 0) then
+        (printout error "Unexpected statement formate" crlf)
+        (break))
+      (printout t "req-statement " ?statement crlf)
+      (if (member$ (first$ ?statement) ?state-preds) then
+        (bind ?resource-state (append$ ?resource-state (create$ [ ?statement ]))))
+      (if (member$ (first$ ?statement)  ?setup-preds) then
+        (bind ?resource-setup (append$ ?resource-setup  (create$ [ ?statement ]))))
+     )
+ )
+
  (assert (schedule-requirment (sched-id ?s-id)
                               (event-id ?e-id)
-                              (resource-id ?r-id)
-                              (resource-setup ?setup)
-                              (resource-units -1)))
- (retract ?pf)
-)
+                              (resource-entity ?r-entity)
+                              (resource-type ?r-type)
+                              (resource-units ?units)
+                              (resource-state ?resource-state)
+                              (resource-setup ?resource-setup))
+ )
 
-(defrule scheduling-plan-resources-at-end
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
-;(schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at END))
- (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at START))
- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
- (plan (id ?p-id) (goal-id ?g-id))
- ?pf <- (wm-fact (key meta plan released-resource args? id ?p-id r ?r setup [ $?setup ] ))
- =>
- (bind ?r-id (formate-resource-name ?r))
- (assert (schedule-requirment (sched-id ?s-id)
-                              (event-id ?e-id)
-                              (resource-id ?r-id)
-                              (resource-setup ?setup)
-                              (resource-units 1)))
- (retract ?pf)
-)
-
-(defrule scheduling-plan-resources-consumtion
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
- (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at START))
- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
- (plan (id ?p-id) (goal-id ?g-id))
- ?pf <- (wm-fact (key meta plan-resource at-start args? p ?p-id r ?r pred [ $?pred ] ))
- (test (not (member$ self ?pred)))
- (test (not (member$ at ?pred)))
- =>
- (bind ?r-id (formate-resource-name ?r))
- (assert (wm-fact (key sched fact consumption-requirment args? r ?r-id e ?e-id pred [ $?pred ] )))
-)
-
-(defrule scheduling-plan-resources-production
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
- (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at START))
- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
- (plan (id ?p-id) (goal-id ?g-id))
- ?pf <- (wm-fact (key meta plan-resource at-end args? p ?p-id r ?r pred [ $?pred ] ))
- (test (not (member$ self ?pred)))
- (test (not (member$ at ?pred)))
- =>
- (bind ?r-id (formate-resource-name ?r))
- (assert (wm-fact (key sched fact production-requirment args? r ?r-id e ?e-id pred [ $?pred ] )))
+ (if (not (any-factp ((?sr schedule-resource)) (eq ?sr:entity ?r-entity))) then
+   (bind ?r-id (formate-resource-name ?r-entity))
+   (assert (schedule-resource (sched-id ?s-id) (resource-id ?r-id) (type ?r-type) (entity ?r-entity)))
+ )
 )
 
 ;;Schedule Formulate Precedence
@@ -633,7 +535,6 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (schedule (id ?s-id) (goals $?goals) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (id ?g1-end) (entity ?g1-id) (at END))
  (schedule-event (sched-id ?s-id) (id ?g2-start) (entity ?g2-id) (at START))
-
  (goal (id ?g1-id&:(member$ ?g1-id ?goals)) (sub-type SCHEDULE-SUBGOALS)
        (parent ?g2-id))
  (goal (id ?g2-id&:(member$ ?g2-id ?goals)) (sub-type SCHEDULE-SUBGOALS))
@@ -642,79 +543,45 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (assert (wm-fact (key scheduling event-precedence args? e-a ?g1-end e-b ?g2-start)))
 )
 
-(defrule scheduling-resource-setup-duration
- "Calculate Setup duration estimates for resources"
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
- (resource (id ?r-id) (type ?r-type))
- (schedule-event (sched-id ?s-id) (id ?producer) (entity ?entity-1))
- (schedule-requirment (sched-id ?s-id)
-                      (event-id ?producer)
-                      (resource-id ?r-id)
-                      (resource-units ?v1&:(> ?v1 0))
-                      (resource-setup $?setup-1))
- (schedule-event (sched-id ?s-id) (id ?consumer) (entity ?entity-2))
- (schedule-requirment (sched-id ?s-id)
-                      (event-id ?consumer)
-                      (resource-id ?r-id)
-                      (resource-units ?v2&:(< ?v2 0))
-                      (resource-setup $?setup-2))
- (not (and (plan (id ?entity-1) (goal-id ?same-goal))
-           (plan (id ?entity-2) (goal-id ?same-goal))))
- (not (resource-setup (resource-id ?r-id)
-                      (from-state $?setup-1)
-                      (to-state $?setup-2)))
- =>
- (bind ?duration 0)
- (if (eq  ?r-type ROBOT) then
-     (bind ?duration (integer (round (estimate-action-duration "move"
-                                               (create$ r from from-side to to-side)
-                                               (create$ ANY (nth$ 1 ?setup-1) (nth$ 2 ?setup-1)
-                                                            (nth$ 1 ?setup-2) (nth$ 2 ?setup-2)))))))
-
- (assert (resource-setup (resource-id ?r-id)
-                         (from-state ?setup-1)
-                         (to-state ?setup-2)
-                         (duration ?duration)))
-)
-
 (defrule scheduling-events-setup-duration
  "Calculate Setup duration estimates for resources"
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
- (resource (id ?r-id) (type ?r-type))
+ (resource-info (type ?r-type))
+ (schedule-resource (sched-id ?s-id) (type ?r-type) (entity ?r-entity) (resource-id ?r-id))
  (schedule-event (sched-id ?s-id) (id ?producer) (entity ?entity-1))
  (schedule-requirment (sched-id ?s-id)
                       (event-id ?producer)
-                      (resource-id ?r-id)
-                      (resource-units ?v1&:(> ?v1 0))
-                      (resource-setup $?setup-1))
+                      (resource-entity ?r-entity)
+                      (resource-type ?r-type)
+                      (resource-setup $?resource-setup-1)
+                      (resource-units ?v1&:(> ?v1 0)))
  (schedule-event (sched-id ?s-id) (id ?consumer) (entity ?entity-2))
  (schedule-requirment (sched-id ?s-id)
                       (event-id ?consumer)
-                      (resource-id ?r-id)
-                      (resource-units ?v2&:(< ?v2 0))
-                      (resource-setup $?setup-2))
+                      (resource-entity ?r-entity)
+                      (resource-type ?r-type)
+                      (resource-setup $?resource-setup-2)
+                      (resource-units ?v2&:(< ?v2 0)))
+ (not (schedule-setup (sched-id ?s-id) (resource-id ?r-id)
+                      (from-event ?producer ) (to-event ?consumer)))
  ;Plans do not to the same goal
  (not (and (plan (id ?entity-1) (goal-id ?same-goal))
            (plan (id ?entity-2) (goal-id ?same-goal))))
  ;Same none-setup state
- (not (and (wm-fact (key sched fact consumption-requirment args? r ?r-id e ?cosumer  pred [ $?pred1 ]))
-           (not (wm-fact (key sched fact production-requirment args? r ?r-id e ?producer pred [ $?pred1])))))
+; (not (and (wm-fact (key sched fact consumption-requirment args? r ?r-id e ?cosumer  pred [ $?pred1 ]))
+;           (not (wm-fact (key sched fact production-requirment args? r ?r-id e ?producer pred [ $?pred1])))))
 
- (not (and (not (wm-fact (key sched fact consumption-requirment args? r ?r-id e ?cosumer  pred [ $?pred2 ])))
-           (wm-fact (key sched fact production-requirment args? r ?r-id e ?producer pred [ $?pred2 ]))))
+; (not (and (not (wm-fact (key sched fact consumption-requirment args? r ?r-id e ?cosumer  pred [ $?pred2 ])))
+;           (wm-fact (key sched fact production-requirment args? r ?r-id e ?producer pred [ $?pred2 ]))))
+=>
+ (bind ?setup-duration (estimate-setup-duration ?r-type ?resource-setup-1 ?resource-setup-2))
 
- (resource-setup (resource-id ?r-id) (duration ?duration)
-                 (from-state $?setup-1) (to-state $?setup-2))
- (not (schedule-setup (sched-id ?s-id) (resource-id ?r-id)
-                      (from-event ?producer ) (to-event ?consumer)))
- =>
  (assert (schedule-setup (sched-id ?s-id)
                          (resource-id ?r-id)
                          (from-event ?producer)
                          (to-event ?consumer)
-                         (duration ?duration)))
+                         (duration ?setup-duration)))
 )
 
 
@@ -752,8 +619,8 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (schedule (id ?s-id) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (id ?e-id))
  (schedule-requirment (sched-id ?s-id) (event-id ?e-id)
-                      (resource-id ?r-id) (resource-units ?req))
- (resource (id ?r-id))
+                      (resource-entity ?r-entity) (resource-units ?req))
+ (schedule-resource (sched-id ?s-id) (entity ?r-entity) (resource-id ?r-id))
 =>
  (scheduler-add-event-resource (sym-cat ?e-id) (sym-cat ?r-id) ?req)
 )
@@ -771,7 +638,6 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 (defrule scheduling-set-resource-setup-duration
  (declare (salience (- ?*SALIENCE-GOAL-SELECT* 5)))
  (schedule (id ?s-id) (mode FORMULATED))
- (resource (id ?r-id))
  (schedule-setup (sched-id ?s-id) (resource-id ?r-id) (duration ?duration)
                  (from-event ?producer) (to-event ?consumer))
  =>
@@ -837,11 +703,9 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                          (id ?e2-id)
                          (scheduled ?e2-scheduled)
                          (scheduled-start ?e2-time))
- (resource (id ?r-id))
- (schedule-requirment (resource-id ?r-id) (sched-id ?s-id) (event-id ?e1-id))
- (schedule-requirment (resource-id ?r-id) (sched-id ?s-id) (event-id ?e2-id))
- ?rf <- (schedule-resource (resource-id ?r-id) (sched-id ?s-id) (events $?sched-events))
-
+ (schedule-requirment (resource-entity ?r-entity) (sched-id ?s-id) (event-id ?e1-id))
+ (schedule-requirment (resource-entity ?r-entity) (sched-id ?s-id) (event-id ?e2-id))
+ ?rf <- (schedule-resource (entity ?r-entity) (resource-id ?r-id) (sched-id ?s-id) (events $?sched-events))
  (not (and  (scheduler-info (type EVENT-SEQUENCE) (value ?xv&:(> ?xv 0))
                             (descriptors ?r-id ?ex1-id ?ex2-id))
             (schedule-event (id ?ex1-id)
@@ -879,40 +743,50 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
  ?sf <- (schedule (id ?s-id) (goals $?goals) (mode COMMITTED))
  ;Producer -> consumer sequence
- (schedule-resource (sched-id ?s-id) (resource-id ?r-id) (events $? ?e1 ?e2 $?))
+ (schedule-resource (sched-id ?s-id) (type ?r-type) (entity ?r-entity)
+                    (resource-id ?r-id) (events $? ?e1 ?e2 $?))
  ;Scheduled producer CEs
  (schedule-event (id ?e1) (sched-id ?s-id) (scheduled TRUE) (entity ?e1-entity)
                  (duration ?e1-dur) (scheduled-start ?e1-start))
  (schedule-requirment (event-id ?e1)
                       (sched-id ?s-id)
-                      (resource-id ?r-id)
+                      (resource-entity ?r-entity)
                       (resource-setup $?e1-setup)
                       (resource-units ?produced&:(> ?produced 0)))
  ;Scheduled consumer CEs
  (schedule-event (id ?e2) (sched-id ?s-id) (scheduled TRUE) (entity ?e2-entity))
  (schedule-requirment (event-id ?e2)
                       (sched-id ?s-id)
-                      (resource-id ?r-id)
+                      (resource-entity ?r-entity)
                       (resource-setup $?e2-setup&:(neq ?e1-setup ?e2-setup))
                       (resource-units ?consumed&:(< ?consumed 0)))
- ;resource CEs
- (resource-setup (resource-id ?r-id) (duration ?setup-duration)
-                 (from-state $?e1-setup) (to-state $?e2-setup))
-
  ;Insert the setup-goal as a sibiling of the plan that needs the setup
  (plan (id ?e2-entity) (goal-id ?e2-goal))
  ;(goal (id ?e2-goal) (parent ?parent-goal))
  (not (goal (parent ?e2-goal)
-            (id ?g-id&:(eq ?g-id (sym-cat SETUP_ ?r-id _ ?e1 _ ?e2)))))
+            (id ?g-id&:(eq ?g-id (sym-cat SETUP [ ?r-id ] [ ?e1 ] [ ?e2 ] ))))
+ )
  =>
- (bind ?g-id (sym-cat SETUP_ ?r-id  _ ?e1 _ ?e2))
- (assert (goal (id ?g-id) (parent ?e2-goal)
-               (class SETUP) (mode SELECTED)
-               (sub-type SCHEDULE-SUBGOALS)
-               (params r ?r-id setup1 ?e1-setup setup2 ?e2-setup)
+ (if (member$ [ ?e2-setup) then
+     (progn$ (?opening-i (create$ (member$ [ ?e2-setup)))
+       (bind ?pred-name (nth$ (+ 1 ?opening-i) ?e2-setup))
+       (bind ?setup-state-to (statement-by-name ?e2-setup ?pred-name ))
+       (bind ?setup-state-from (statement-by-name ?e1-setup ?pred-name ))
+
+       (bind ?g-id (sym-cat SETUP [ ?r-id ] [ ?e1 ] [ ?e2 ] ))
+       (assert (goal (id ?g-id)
+                     (parent ?e2-goal)
+                     (class SETUP)
+                     (mode SELECTED)
+                     (sub-type SCHEDULE-SUBGOALS)
+                     (params r ?r-entity
+                             setup1 (rest$ ?setup-state-from)
+                             setup2 (rest$ ?setup-state-to))
                (meta scheduled-start (+ ?e1-start ?e1-dur))))
 
-(modify ?sf (goals (create$ ?goals ?g-id)))
+       (modify ?sf (goals (create$ ?goals ?g-id)))
+     )
+    )
 )
 
 (defrule scheduling-post-processing--schedule-setup-plan-events
@@ -938,18 +812,19 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (modify ?gef (scheduled-start (+ ?goal-start ?pstart-duration)))
 )
 
-(defrule scheduling-post-processing---ground-goal-resource
+(defrule scheduling-post-processing---elevate-plan-resource
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
   (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at START)
                   (scheduled TRUE))
-  (schedule-requirment (sched-id ?s-id) (event-id ?e-id) (resource-id ?r-id)
-                      (resource-units ?u&:(< ?u 0)))
+  (schedule-requirment (sched-id ?s-id) (event-id ?e-id)
+                       (resource-entity ?r-entity)
+                       (resource-units ?u&:(< ?u 0)))
   (plan (id ?p-id) (goal-id ?g-id))
   ?gf <- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED)
-               (required-resources $?req&:(not (member$ ?r-id ?req))))
+               (required-resources $?req&:(not (member$ ?r-entity ?req))))
   =>
-  (modify ?gf (required-resources (create$ ?req ?r-id)))
+  (modify ?gf (required-resources (create$ ?req ?r-entity)))
 )
 
 (defrule scheduling-post-processing---reject-non-scheduled-plans

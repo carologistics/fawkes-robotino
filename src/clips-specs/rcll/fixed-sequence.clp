@@ -1205,31 +1205,25 @@
    "Move a robot from one location to another to satisfy setup requirements "
    (declare (salience ?*SALIENCE-GOAL-EXPAND*))
     ?g <- (goal (class SETUP) (id ?goal-id) (mode SELECTED)
-                (params r ?r-id
+                (params r ?r-entity
                         setup1 $?setup1
                         setup2 $?setup2))
-    (resource (id ?r-id) (entity ?robot) (type ROBOT))
-    (resource-setup (resource-id ?r-id)
-                    (from-state $?setup1)
-                    (to-state $?setup2)
-                    (duration ?setup-duration))
    (not (plan (goal-id ?goal-id)))
    =>
    (bind ?plan-id  (sym-cat ?goal-id _P ))
 
    (assert
-      (wm-fact (key meta plan required-resource args? id ?plan-id r ?robot
+      (wm-fact (key meta plan required-resource args? id ?plan-id r ?r-entity
                                 setup [ ?setup1 ] ))
-      (wm-fact (key meta plan released-resource args? id ?plan-id r ?robot
+      (wm-fact (key meta plan released-resource args? id ?plan-id r ?r-entity
                                 setup [ ?setup2 ] ))
 
         (plan (id ?plan-id) (goal-id ?goal-id))
         (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
                                     (action-name move)
                                     (param-names (create$ r from from-side to to-side))
-                                    (param-values (create$ ?robot (nth$ 1 ?setup1) (nth$ 2 ?setup1)
-                                                                  (nth$ 1 ?setup2) (nth$ 2 ?setup2)))
-                                    (duration  ?setup-duration))
+                                    (param-values (create$ ?r-entity (nth$ 1 ?setup1) (nth$ 2 ?setup1)
+                                                                  (nth$ 1 ?setup2) (nth$ 2 ?setup2))))
     )
 
 )

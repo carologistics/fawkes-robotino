@@ -126,6 +126,7 @@ clips-executive:
               - rcll/goal-reasoner.clp
               - rcll/goal-production.clp
               - rcll/goal-scheduling.clp
+              - rcll/resource-sched.clp
               - rcll/scheduler.clp
               - rcll/goals/scheduled.clp
               - rcll/production-strategy.clp
