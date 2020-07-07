@@ -449,7 +449,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (plan (id ?p-id) (goal-id ?g-id) (required-resources $? ?r-entity $?))
  (domain-object (name ?r-entity) (type ?r-type))
  (resource-info (type ?r-type) (state-preds $?state-preds) (setup-preds $?setup-preds))
- ?pf <- (wm-fact (key meta plan-resource ?at args? p ?p-id r ?r-entity) (values $?statements))
+ (wm-fact (key meta plan-resource ?at args? p ?p-id r ?r-entity $?))
  (not (schedule-requirment (sched-id ?s-id) (event-id ?e-id) (resource-entity ?r-entity)
                            (resource-units ?u&:(or (and (eq ?at at-start) (< ?u 0))
                                                    (and (eq ?at at-end) (> ?u 0)))))
@@ -460,20 +460,17 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (bind ?resource-state (create$))
  (bind ?resource-setup (create$))
 
- (if (member$ [ ?statements) then
-    (printout t "req-statements for " ?p-id ?at ?r-entity " " ?statements  crlf)
-    (while (> (length$ ?statements) 0)
-      (bind ?statement  (statements-first$ ?statements))
-      (bind ?statements (statements-rest$ ?statements))
-      (if (eq (length$ ?statement) 0) then
-        (printout error "Unexpected statement formate" crlf)
-        (break))
-      (printout t "req-statement " ?statement crlf)
-      (if (member$ (first$ ?statement) ?state-preds) then
-        (bind ?resource-state (append$ ?resource-state (create$ [ ?statement ]))))
-      (if (member$ (first$ ?statement)  ?setup-preds) then
-        (bind ?resource-setup (append$ ?resource-setup  (create$ [ ?statement ]))))
-     )
+ (do-for-all-facts ((?wm wm-fact))
+                   (and (wm-key-prefix ?wm:key (create$ meta plan-resource ?at args? p ?p-id r ?r-entity))
+                        (member$ (first$ (wm-key-arg ?wm:key pred)) ?setup-preds))
+   (bind ?statement (create$ [ (delete-member$ (wm-key-arg ?wm:key pred) ?r-entity) ] ))
+   (bind ?resource-setup (append$ ?resource-setup  ?statement))
+ )
+ (do-for-all-facts ((?wm wm-fact))
+                   (and (wm-key-prefix ?wm:key (create$ meta plan-resource ?at args? p ?p-id r ?r-entity))
+                        (member$ (first$ (wm-key-arg ?wm:key pred)) ?state-preds))
+   (bind ?statement (create$ [ (delete-member$ (wm-key-arg ?wm:key pred) ?r-entity) ] ))
+   (bind ?resource-state (append$ ?resource-state  ?statement))
  )
 
  (assert (schedule-requirment (sched-id ?s-id)
