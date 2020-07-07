@@ -919,9 +919,14 @@
 (defrule goal-expander-process-mps
  ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (class PROCESS-MPS) (mode SELECTED) (parent ?parent)
-             (params m ?mps $?))
+             (params m ?mps $?other-goal-args))
   ?pre <- (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
   ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
+  ; The DS might have multiple pending mps-handling facts, they can be
+  ; distinguished by additional params (wp and order id) that are present
+  ; both in the goal and the mps-handling facts
+  (test (and (member$ ?other-goal-args ?prepare-params)
+             (member$ ?other-goal-args ?process-params)))
   =>
   (bind ?prepare-param-values (values-from-name-value-list ?prepare-params))
   (bind ?process-param-values (values-from-name-value-list ?process-params))
