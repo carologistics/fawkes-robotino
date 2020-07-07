@@ -201,7 +201,7 @@
                                  cc ?cc
                                  shelf-spot ?shelf-spot))))
 
-  (printout t "Goals " ?goal-id " formulated" crlf)
+  (printout t "Goal " ?g-id " formulated" crlf)
 )
 
 (defrule goal-scheduling-create-prepare-cs-fill-cap
@@ -218,7 +218,7 @@
                 (class FILL-CAP)
                 (params ?params)))
 
-  (printout t "Goals " ?g-id " formulated" crlf)
+  (printout t "Goal " ?g-id " formulated" crlf)
 )
 
 (defrule goal-scheduling-create-mount-rings
