@@ -186,6 +186,7 @@
 
 (defrule goal-expander-deduce-plan-resources-at-start
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (disable)
   (goal (id ?goal) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
   (plan (id ?plan-id) (goal-id ?goal-id) (required-resources $? ?rs $?))
   (not (wm-fact (key meta plan-resource at-start args? p ?plan-id r ?rs)))
@@ -215,6 +216,7 @@
 
 (defrule goal-expander-deduce-plan-resources-at-end
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (disable)
   (goal (id ?goal) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
   (plan (id ?plan-id) (goal-id ?goal-id) (required-resources $? ?rs $?))
   (not (wm-fact (key meta plan-resource at-end args? p ?plan-id r ?rs)))
@@ -247,3 +249,79 @@
                    (is-list TRUE) (values ?statements)))
 )
 
+
+
+
+(defrule goal-expander-process-plan-preconds-and-effects
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  (disable)
+  (goal (id ?goal) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
+  (plan (id ?plan-id) (goal-id ?goal-id) (required-resources $?req-rs&:(neq ?req-rs (create$))))
+  (not (wm-fact (key meta plan-positive-preconds args? p ?plan-id)))
+  (not (wm-fact (key meta plan-positive-effects args? p ?plan-id)))
+=>
+  (printout t "Processing plan " ?plan-id "  " crlf)
+  (bind ?positive-preconds (create$))
+  (bind ?positive-effects (create$))
+  (do-for-all-facts ((?af plan-action)) (and (eq ?af:goal-id ?goal-id)
+                                             (eq ?af:plan-id ?plan-id))
+    (bind ?action-resources (intersect ?req-rs ?af:param-values))
+    (if (> (length$ ?action-resources) 0) then
+      ;Plan's Positive preconds
+      (do-for-all-facts ((?df domain-atomic-precondition))
+                        (and (eq ?df:grounded TRUE)
+                             (eq ?df:goal-id ?goal-id)
+                             (eq ?df:plan-id ?plan-id)
+                             (eq ?df:grounded-with ?af:id)
+                             (not (domain-is-precond-negative ?df:part-of)))
+          (progn$ (?rs ?action-resources)
+               (if (member$ ?rs ?df:param-values) then
+                   (bind ?actions (domain-positive-effect-occurs-in-plan ?plan-id
+                                                                         ?df:predicate
+                                                                         ?df:param-values))
+                   (printout t "  For resource " ?rs
+                               "  action (" ?af:id  " " ?af:action-name
+                               ") precond [" ?df:predicate ?df:param-values
+                               "] satisfied by actions " ?actions  crlf)
+                   ;check if precodition is satisfied by an earlier plan action
+                   (bind ?check FALSE)
+                   (progn$ (?act ?actions) (if (< ?act ?af:id) then (bind ?check TRUE)))
+                   (if (not ?check) then
+                       (bind ?positive-preconds (append$ ?positive-preconds
+                                (create$ [ ?df:predicate ?df:param-values  ]))))
+              )
+          )
+      )
+      ;Plan's effects
+      (do-for-all-facts ((?df domain-effect))
+                        (and (eq ?df:type POSITIVE)
+                             (eq ?df:part-of ?af:action-name))
+           (bind ?grounded-param-values (domain-ground-effect ?df:param-names
+                                                              ?df:param-constants
+                                                              ?af:param-names
+                                                              ?af:param-values))
+           (progn$ (?rs ?action-resources)
+               (if (member$ ?rs ?grounded-param-values) then
+                   (bind ?actions (domain-negative-effect-occurs-in-plan ?plan-id
+                                                                         ?df:predicate
+                                                                         ?grounded-param-values))
+                   (printout t " For resource " ?rs
+                               " action (" ?af:id  " " ?af:action-name
+                                ") effect [" ?df:predicate ?grounded-param-values
+                                 "] negated by actions " ?actions  crlf)
+                   ;check if positive effect is negated by a later plan action
+                   (bind ?check FALSE)
+                   (progn$ (?act ?actions) (if (> ?act ?af:id) then (bind ?check TRUE)))
+                   (if (not ?check) then
+                       (bind ?postive-effects (append$ ?positive-effects
+                              (create$ [ ?df:predicate ?grounded-param-values ]))))
+               )
+           )
+      )
+    )
+  )
+  (assert (wm-fact (key meta plan-positive-preconds args? p ?plan-id)
+                   (is-list TRUE) (values ?positive-preconds)))
+  (assert (wm-fact (key meta plan-positive-effects args? p ?plan-id)
+                   (is-list TRUE) (values ?positive-effects)))
+)
