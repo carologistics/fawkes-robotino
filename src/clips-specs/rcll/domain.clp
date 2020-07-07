@@ -96,7 +96,6 @@
 
 (deffunction domain-load-self-facts (?self)
  (assert
-    (domain-object (name ?self) (type robot))
     (domain-fact (name self) (param-values ?self))
     (domain-fact (name robot-waiting) (param-values ?self))
     (domain-fact (name can-hold) (param-values ?self))
@@ -202,6 +201,9 @@
     (domain-fact (name mirror-orientation) (param-values 270 270))
     (domain-fact (name mirror-orientation) (param-values 315 225))
 
+    (domain-object (name Icks) (type robot))
+    (domain-object (name Set) (type robot))
+    (domain-object (name Upsilan) (type robot))
     (domain-object (name CCB1) (type cap-carrier))
     (domain-object (name CCB2) (type cap-carrier))
     (domain-object (name CCB3) (type cap-carrier))
