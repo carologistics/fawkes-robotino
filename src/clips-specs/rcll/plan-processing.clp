@@ -38,7 +38,7 @@
 
  ;(bind ?duration (map-action-skill (str-cat ?action-name) ?param-names ?param-values))
  ;(printout error "mapped to " ?duration crlf))
- (bind ?duration (integer (round (estimate-action-duration (str-cat ?action-name) ?param-names ?param-values))))
+ (bind ?duration (integer (round-up (estimate-action-duration (str-cat ?action-name) ?param-names ?param-values))))
  (if (> ?duration 0)
      then
        (modify ?pf (duration ?duration))
@@ -329,7 +329,7 @@
 (defrule expanded-plan-processing-deduce-plan-resources-at-start
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (goal (id ?g) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
-  (plan (id ?p) (goal-id ?g) (required-resources $? ?rs $?))
+  (plan (id ?p) (goal-id ?g) (required-resources $?req-rs))
   (domain-atomic-precondition
     (grounded TRUE)
     (part-of ?part-of)
@@ -337,7 +337,7 @@
     (plan-id ?p)
     (grounded-with ?action)
     (predicate ?predicate)
-    (param-values $?param-values&:(member$ ?rs ?param-values))
+    (param-values $?param-values&:(intersect ?req-rs ?param-values))
     )
   (not (domain-effect
         (grounded TRUE)
@@ -349,23 +349,21 @@
         (param-values $?param-values)
   ))
   (test (not (domain-is-precond-negative ?part-of)))
- ; ?meta <- (wm-fact (key meta plan-resource at-start args? p ?p r ?rs)
- ;          (values $?statements&:(not (member$ ?param-values $?statements ))))
 =>
   (printout t "Precond of plan " ?p "  " crlf)
-  ;(bind ?statement (create$ [ ?predicate (delete-member$ ?param-values ?rs) ]))
-  (bind ?statement (create$ [ ?predicate ?param-values  ]))
-  (printout t "  action (" ?action ") precond " ?statement  crlf)
-  ;(modify ?meta  (values (create$ ?statements ?statement)))
-  ;(assert (wm-fact (key meta plan-resource at-start args? p ?p r ?rs)
-  ;                 (values ?statement)))
-  (assert (wm-fact (key meta plan-resource at-start args? p ?p r ?rs pred ?statement)))
+  (progn$ (?rs ?req-rs)
+    (if (member$ ?rs ?param-values) then
+      (bind ?statement (create$ [ ?predicate ?param-values  ]))
+      (printout t "  action (" ?action ") " ?statement  crlf)
+      (assert (wm-fact (key meta plan-resource at-start args? p ?p r ?rs pred ?statement)))
+    )
+  )
 )
 
 (defrule expanded-plan-processing-deduce-plan-resources-at-end
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (goal (id ?g) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
-  (plan (id ?p) (goal-id ?g) (required-resources $? ?rs $?))
+  (plan (id ?p) (goal-id ?g) (required-resources $?req-rs))
   (domain-effect
     (grounded TRUE)
     (type POSITIVE)
@@ -373,7 +371,7 @@
     (plan-id ?p)
     (grounded-with ?action)
     (predicate ?predicate)
-    (param-values $?param-values&:(member$ ?rs ?param-values))
+    (param-values $?param-values&:(intersect ?req-rs ?param-values))
     )
   (not (domain-effect
         (grounded TRUE)
@@ -384,16 +382,14 @@
         (predicate ?predicate)
         (param-values $?param-values)
   ))
- ; ?meta <- (wm-fact (key meta plan-resource at-end args? p ?p r ?rs)
- ;          (values $?statements&:(not (member$ ?param-values $?statements ))))
 =>
   (printout t "Effect of plan " ?p "  " crlf)
-  ;(bind ?statement (create$ [ ?predicate (delete-member$ ?param-values ?rs) ]))
-  (bind ?statement (create$ [ ?predicate ?param-values  ]))
-  (printout t "  action (" ?action ") " ?statement  crlf)
-  ;(modify ?meta  (values (create$ ?statements ?statement)))
-  ;(assert (wm-fact (key meta plan-resource at-start args? p ?p r ?rs)
-  ;                 (values ?statement)))
-  (assert (wm-fact (key meta plan-resource at-end args? p ?p r ?rs pred ?statement)))
+  (progn$ (?rs ?req-rs)
+    (if (member$ ?rs ?param-values) then
+      (bind ?statement (create$ [ ?predicate ?param-values  ]))
+      (printout t "  action (" ?action ") " ?statement  crlf)
+      (assert (wm-fact (key meta plan-resource at-end args? p ?p r ?rs pred ?statement)))
+    )
+  )
 )
 
