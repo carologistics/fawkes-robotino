@@ -9,9 +9,64 @@
 (defglobal
   ; network sending periods; seconds
   ?*BEACON-PERIOD* = 1.0
-  ?*PREPARE-PERIOD* = 1.0
+  ?*PREPARE-PERIOD* = 5.0
   ?*ABORT-PREPARE-PERIOD* = 30.0
 
+)
+
+(deffunction refbox-send-instruction-msg (?params)
+  (bind ?mps (nth$ 1 ?params))
+  (bind ?instructions (rest$ ?params))
+  (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ domain fact mps-team args? m ?mps))
+    (bind ?team-color (wm-key-arg ?wm:key col)))
+  (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ domain fact mps-type args? m ?mps))
+    (bind ?mps-type (wm-key-arg ?wm:key t)))
+  (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ refbox comm peer-id private))
+    (bind ?peer-id ?wm:value))
+
+  (bind ?msg (pb-create "llsf_msgs.PrepareMachine"))
+  (pb-set-field ?msg "team_color" ?team-color)
+  (pb-set-field ?msg "machine" (str-cat ?mps))
+
+  (switch ?mps-type
+    (case BS
+      then
+        (bind ?bs-inst (pb-create "llsf_msgs.PrepareInstructionBS"))
+        (pb-set-field ?bs-inst "side" (nth$ 1 ?instructions))
+        (pb-set-field ?bs-inst "color" (nth$ 2 ?instructions))
+        (pb-set-field ?msg "instruction_bs" ?bs-inst)
+    )
+    (case CS
+      then
+        (bind ?cs-inst (pb-create "llsf_msgs.PrepareInstructionCS"))
+        (pb-set-field ?cs-inst "operation" (nth$ 1 ?instructions))
+        (pb-set-field ?msg "instruction_cs" ?cs-inst)
+    )
+    (case DS
+      then
+        (bind ?ds-inst (pb-create "llsf_msgs.PrepareInstructionDS"))
+        (bind ?order (nth$ 1 ?instructions))
+        (bind ?order-id (float (string-to-field (sub-string 2 (length$ (str-cat ?order)) (str-cat ?order)))))
+        (pb-set-field ?ds-inst "order_id" ?order-id)
+        (pb-set-field ?msg "instruction_ds" ?ds-inst)
+    )
+    (case SS
+      then
+       (bind ?ss-inst (pb-create "llsf_msgs.PrepareInstructionSS"))
+                (bind ?instruction (nth$ 2 ?instructions))
+                (pb-set-field ?ss-inst "operation" ?instruction)
+                (pb-set-field ?msg "instruction_ss" ?ss-inst)
+    )
+    (case RS
+      then
+        (bind ?rs-inst (pb-create "llsf_msgs.PrepareInstructionRS"))
+        (pb-set-field ?rs-inst "ring_color" (nth$ 1 ?instructions))
+        (pb-set-field ?msg "instruction_rs" ?rs-inst)
+    )
+  )
+  (pb-broadcast ?peer-id ?msg)
+  (pb-destroy ?msg)
+  (printout t "Sent Prepare Msg for " ?params  crlf)
 )
 
 (defrule action-send-beacon-signal
@@ -91,7 +146,6 @@
   (modify ?pa (state RUNNING))
 )
 
-
 (defrule refbox-action-prepare-mps-start
   (time $?now)
   ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
@@ -106,18 +160,19 @@
                       (param-values $?param-values))
   (wm-fact (key refbox team-color) (value ?team-color&:(neq ?team-color nil)))
   (wm-fact (key refbox comm peer-id private) (value ?peer-id))
+  (wm-fact (key domain fact mps-state args?
+    m ?mps&:(eq ?mps (plan-action-arg m ?param-names ?param-values))
+    s IDLE))
   =>
-  (bind ?mps (nth$ 1 ?param-values))
-  (bind ?instruction_info (rest$ ?param-values))
+  (modify ?pa (state RUNNING))
   (printout t "Executing " ?action ?param-values crlf)
-  (assert (metadata-prepare-mps ?mps ?team-color ?peer-id ?instruction_info))
+  (refbox-send-instruction-msg ?param-values)
   (assert (timer (name (sym-cat prepare- ?goal-id - ?plan-id
                                 - ?id -send-timer))
           (time ?now) (seq 1)))
   (assert (timer (name (sym-cat prepare- ?goal-id - ?plan-id
                                 - ?id -abort-timer))
           (time ?now) (seq 1)))
-  (modify ?pa (state RUNNING))
 )
 
 (defrule refbox-action-reset-mps-send-signal
@@ -150,6 +205,7 @@
   (modify ?st (time ?now) (seq (+ ?seq 1)))
 )
 
+
 (defrule refbox-action-mps-prepare-send-signal
   (time $?now)
   ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
@@ -162,62 +218,14 @@
                       (executable TRUE)
                       (param-names $?param-names)
                       (param-values $?param-values))
-  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
-                                                         ?param-names
-                                                         ?param-values))
-                         mps)
-  ?st <- (timer (name ?n&:(eq ?n (sym-cat prepare- ?goal-id - ?plan-id
-                                          - ?id -send-timer)))
+  ?st <- (timer (name ?n&:(eq ?n (sym-cat prepare- ?goal-id - ?plan-id - ?id -send-timer)))
                 (time $?t&:(timeout ?now ?t ?*PREPARE-PERIOD*))
                 (seq ?seq))
-  (metadata-prepare-mps ?mps ?team-color ?peer-id $?instruction_info)
-  (wm-fact (key domain fact mps-type args? m ?mps t ?mps-type) (value TRUE))
+  (wm-fact (key domain fact mps-state args?
+    m ?mps&:(eq ?mps (plan-action-arg m ?param-names ?param-values))
+    s IDLE))
   =>
-  (bind ?machine-instruction (pb-create "llsf_msgs.PrepareMachine"))
-  (pb-set-field ?machine-instruction "team_color" ?team-color)
-  (pb-set-field ?machine-instruction "machine" (str-cat ?mps))
-
-  (switch ?mps-type
-    (case BS
-      then
-        (bind ?bs-inst (pb-create "llsf_msgs.PrepareInstructionBS"))
-        (pb-set-field ?bs-inst "side" (nth$ 1 ?instruction_info))
-        (pb-set-field ?bs-inst "color" (nth$ 2 ?instruction_info))
-        (pb-set-field ?machine-instruction "instruction_bs" ?bs-inst)
-    )
-    (case CS
-      then
-      	(bind ?cs-inst (pb-create "llsf_msgs.PrepareInstructionCS"))
-        (pb-set-field ?cs-inst "operation" (nth$ 1 ?instruction_info))
-        (pb-set-field ?machine-instruction "instruction_cs" ?cs-inst)
-    )
-    (case DS
-      then
-        (bind ?ds-inst (pb-create "llsf_msgs.PrepareInstructionDS"))
-        (bind ?order (nth$ 1 ?instruction_info))
-        (bind ?order-id (float (string-to-field (sub-string 2 (length$ (str-cat ?order)) (str-cat ?order)))))
-        (pb-set-field ?ds-inst "order_id" ?order-id)
-        (pb-set-field ?machine-instruction "instruction_ds" ?ds-inst)
-    )
-    (case SS
-      then
-       (bind ?ss-inst (pb-create "llsf_msgs.PrepareInstructionSS"))
-                (bind ?instruction (nth$ 2 ?instruction_info))
-                (pb-set-field ?ss-inst "operation" ?instruction)
-                (pb-set-field ?machine-instruction "instruction_ss" ?ss-inst)
-    )
-    (case RS
-      then
-        (bind ?rs-inst (pb-create "llsf_msgs.PrepareInstructionRS"))
-        (pb-set-field ?rs-inst "ring_color" (nth$ 1 ?instruction_info) )
-        (pb-set-field ?machine-instruction "instruction_rs" ?rs-inst)
-    )
-  )
-
-  (pb-broadcast ?peer-id ?machine-instruction)
-  (pb-destroy ?machine-instruction)
-  (printout t "Sent Prepare Msg for " ?mps " with " ?instruction_info  crlf)
-
+  (refbox-send-instruction-msg ?param-values)
   (modify ?st (time ?now) (seq (+ ?seq 1)))
 )
 
@@ -257,25 +265,14 @@
                                    prepare-ss)
                       (param-names $?param-names)
                       (param-values $?param-values))
-  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
-                                                         ?param-names
-                                                         ?param-values))
-                         mps)
-  ?st <- (timer (name ?nst&:(eq ?nst
-                               (sym-cat prepare- ?goal-id - ?plan-id
-                                        - ?id -send-timer))))
-  ?at <- (timer (name ?nat&:(eq ?nat
-                               (sym-cat prepare- ?goal-id - ?plan-id
-                                        - ?id -abort-timer))))
-  ?md <- (metadata-prepare-mps ?mps $?date)
-  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|
-                                                     WAIT-IDLE|
-                                                     PROCESSING|
-                                                     PROCESSED|
-                                                     PREPARED))
+  ?st <- (timer (name ?nst&:(eq ?nst (sym-cat prepare- ?goal-id - ?plan-id - ?id -send-timer))))
+  ?at <- (timer (name ?nat&:(eq ?nat (sym-cat prepare- ?goal-id - ?plan-id - ?id -abort-timer))))
+  (wm-fact (key domain fact mps-state args?
+    m ?mps&:(eq ?mps (plan-action-arg m ?param-names ?param-values))
+    s READY-AT-OUTPUT|WAIT-IDLE|PROCESSING|PROCESSED|PREPARED))
   =>
   (printout t "Action Prepare " ?mps " is final" crlf)
-  (retract ?st ?at ?md)
+  (retract ?st ?at)
   (modify ?pa (state EXECUTION-SUCCEEDED))
 )
 
@@ -306,66 +303,37 @@
   (modify ?pa (state EXECUTION-FAILED))
 )
 
-(defrule refbox-action-prepare-mps-abort-on-broken
-  "Abort preparing if the mps got broken"
-  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
-                      (state RUNNING)
-                      (action-name prepare-bs|
-                                   prepare-cs|
-                                   prepare-ds|
-                                   prepare-rs|
-                                   prepare-ss)
-                      (param-names $?param-names)
-                      (param-values $?param-values))
-  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
-                                                         ?param-names
-                                                         ?param-values))
-                         mps)
-  ?st <- (timer (name ?nst&:(eq ?nst
-                               (sym-cat prepare- ?goal-id - ?plan-id
-                                        - ?id -send-timer))))
-  ?at <- (timer (name ?nat&:(eq ?nat
-                               (sym-cat prepare- ?goal-id - ?plan-id
-                                        - ?id -abort-timer))))
-  ?md <- (metadata-prepare-mps ?mps $?date)
-  (wm-fact (key domain fact mps-state args? m ?mps s BROKEN))
-  =>
-  (printout t "Action Prepare " ?mps " is Aborted because mps is broken" crlf)
-  (retract ?st ?md ?at)
-  (modify ?pa (state EXECUTION-FAILED))
-)
-
-(defrule refbox-action-prepare-mps-abort
-  "Abort preparing and fail the action if took too long"
+(defrule refbox-action-prepare-mps-abort-timeout-or-broken
+  "Abort preparing if mps got broken or action took too long"
   (time $?now)
-  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
-                      (state RUNNING)
-                      (action-name prepare-bs|
-                                   prepare-cs|
-                                   prepare-ds|
-                                   prepare-rs|
-                                   prepare-ss)
-                      (param-names $?param-names)
-                      (param-values $?param-values))
-  (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
-                                                         ?param-names
-                                                         ?param-values))
-                         mps)
-  ?at <- (timer (name ?nat&:(eq ?nat
-                                (sym-cat prepare- ?goal-id - ?plan-id
-                                         - ?id -abort-timer)))
-	        (time $?t&:(timeout ?now ?t ?*ABORT-PREPARE-PERIOD*))
-                (seq ?seq))
-  ?st <- (timer (name ?nst&:(eq ?nst
-                                (sym-cat prepare- ?goal-id - ?plan-id
-                                         - ?id -send-timer))))
-  ?md <- (metadata-prepare-mps ?mps $?date)
-  (not (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT|
-                                                          PROCESSING|
-                                                          PROCESSED|
-                                                          PREPARED)))
+  ?pa <- (plan-action
+           (plan-id ?plan-id)
+           (goal-id ?goal-id)
+           (id ?id)
+           (state RUNNING)
+           (action-name prepare-bs|prepare-cs|prepare-ds|prepare-rs|prepare-ss)
+           (param-names $?param-names)
+           (param-values $?param-values))
+  ?at <- (timer
+           (name ?nat&:(eq ?nat (sym-cat prepare- ?goal-id - ?plan-id - ?id -abort-timer))))
+  ?st <- (timer
+           (name ?nst&:(eq ?nst (sym-cat prepare- ?goal-id - ?plan-id - ?id -send-timer)))
+	      (time $?abort-timer))
+  (wm-fact (key domain fact mps-state args?
+              m ?mps&:(eq ?mps (plan-action-arg m ?param-names ?param-values))
+              s ?mps-state))
+  (or
+    (test (eq ?mps-state BROKEN))
+    (and
+      (test (timeout ?now ?abort-timer ?*ABORT-PREPARE-PERIOD*))
+      (test (neq ?mps-state READY-AT-OUTPUT))
+      (test (neq ?mps-state PROCESSING))
+      (test (neq ?mps-state PROCESSED))
+      (test (neq ?mps-state PREPARED))
+    )
+  )
   =>
-  (printout t "Action Prepare " ?mps " is Aborted" crlf)
-  (retract ?st ?md ?at)
+  (printout t "Action Prepare " ?mps " is Aborted (timeout or mps broke)" crlf)
+  (retract ?st ?at)
   (modify ?pa (state EXECUTION-FAILED))
 )
