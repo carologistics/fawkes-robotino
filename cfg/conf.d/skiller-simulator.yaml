@@ -7,6 +7,13 @@ plugins/skiller-simulator:
     get_product_from: 15
     bring_product_to: 15
     discard: 10
+    prepare-bs: 10
+    prepare-cs: 10
+    prepare-ds: 10
+    prepare-rs: 10
+    lock: 4
+    unlock: 4
+    location-lock: 4
     # Only effective if the skiller-simulator-navgraph plugin is loaded
     navgraph:
       speed: 0.5
