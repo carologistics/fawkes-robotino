@@ -44,27 +44,42 @@
 ; User: RETRACT goal
 
 
+(defrule schedule-goal-selected-timer-start
+     (declare (salience ?*SALIENCE-HIGH*))
+     ?gf <- (goal (id ?g) (sub-type SCHEDULE-SUBGOALS) (mode SELECTED))
+     =>
+     (assert (timer (name (sym-cat [ ?g ] - selected) ) (time (now)) (seq 1)))
+)
+
+
 (defrule schedule-goal-expand
   " Expand if a plan exists and/or all sub-goals are expanded."
   ?g <- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode SELECTED))
   (or  (plan (goal-id ?g-id))
        (goal (parent ?g-id)))
   (not (goal (parent ?g-id) (mode ~EXPANDED)))
+  ?tf <-(timer (name ?n&:(eq ?n (sym-cat [ ?g-id ] - selected))))
   =>
   (modify ?g (mode EXPANDED) (params (create$ )))
+  (retract ?tf)
 )
 
 (defrule schedule-goal-expand-failed
      (declare (salience ?*SALIENCE-LOW*))
-     ?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS)
-                                    (mode SELECTED))
-     (not (goal (type ACHIEVE) (parent ?id) (mode FORMULATED|SELECTED|EXPANDED)))
-     (not (plan (goal-id ?id)))
+     (time $?now)
+     ?gf <- (goal (id ?g) (sub-type SCHEDULE-SUBGOALS) (mode SELECTED))
+     (not (goal (type ACHIEVE) (parent ?g) (mode FORMULATED|SELECTED|EXPANDED)))
+     (not (plan (goal-id ?g)))
+      ?tf <-(timer (name ?n&:(eq ?n (sym-cat [ ?g ] - selected)))
+                   (time $?t&:(timeout ?now ?t 3.0))
+                   (seq ?seq))
      =>
      (modify ?gf (mode FINISHED) (outcome FAILED)
                          (error NO-SUB-GOALS)
-                         (message (str-cat "No sub-goals or plans for SCHEDULE goal '" ?id "'" )))
+                         (message (str-cat "No sub-goals or plans for SCHEDULE goal '" ?g "'" )))
+     (retract ?tf)
 )
+
 
 (defrule schedule-goal-commit-to-all-children-on-time
      (declare (salience ?*SALIENCE-HIGH*))
