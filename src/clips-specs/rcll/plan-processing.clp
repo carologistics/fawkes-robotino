@@ -165,8 +165,8 @@
 
 (defrule goal-expander-deduce-plan-resources
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (goal (id ?goal) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
- ?pf <- (plan (id ?plan-id) (goal-id ?goal-id)
+ (goal (id ?g-id) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
+ ?pf <- (plan (id ?plan-id) (goal-id ?g-id)
               (required-resources $?req&:(eq ?req (create$))))
 =>
  (do-for-all-facts ((?paf plan-action)) (eq ?paf:plan-id ?plan-id)
