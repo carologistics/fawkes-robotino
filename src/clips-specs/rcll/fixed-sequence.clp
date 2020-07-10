@@ -994,7 +994,7 @@
 )
 
 ; Centralized Goal Reasoning
-(defrule goal-expander-setup-robot
+(defrule goal-expander-central-setup-robot
    "Move a robot from one location to another to satisfy setup requirements "
    (declare (salience ?*SALIENCE-GOAL-EXPAND*))
     ?g <- (goal (class SETUP) (id ?goal-id) (mode SELECTED)
@@ -1022,7 +1022,7 @@
 )
 
 
-(defrule goal-expander-fill-cap-station-central
+(defrule goal-expander-central-fill-cap-station
    "Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
    (declare (salience ?*SALIENCE-GOAL-EXPAND*))
@@ -1093,7 +1093,7 @@
     )
 )
 
-(defrule goal-remove-workpiece-from-mps-central
+(defrule goal-expander-central-prepare-cs
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  ?g <- (goal (id ?goal-id) (class PREPARE-CS) (params $?params) (mode SELECTED))
  (test (subsetp (create$ cc cap-station) ?params))
@@ -1150,7 +1150,7 @@
 )
 
 
-(defrule goal-mount-cap-central
+(defrule goal-expander-central-mount-cap
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  ?g <- (goal (id ?goal-id) (class MOUNT-CAP) (params $?params) (mode SELECTED))
  (test (subsetp (create$ wp cap-station cap-color) ?params))
@@ -1263,7 +1263,7 @@
  )
 )
 
-(defrule goal-deliver-central
+(defrule goal-expander-central-deliver
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  ?g <- (goal (id ?goal-id) (class DELIVER) (params $?params) (mode SELECTED))
  (test (subsetp (create$ ord com base-color ring1-color ring2-color ring3-color
@@ -1377,7 +1377,7 @@
  )
 )
 
-(defrule goal-mount-ring-central
+(defrule goal-expander-central-mount-ring
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (goal (id ?goal-id) (class ?class) (params $?params) (mode SELECTED))
  (test (subsetp (create$ wp) ?params))
@@ -1529,7 +1529,7 @@
  )
 )
 
-(defrule goal-expander-fill-rs-central
+(defrule goal-expander-central-fill-rs
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (goal (id ?goal-id) (class FILL-RS) (params $?params) (mode SELECTED))
  (test (subsetp (create$ fill-rs) ?params))
