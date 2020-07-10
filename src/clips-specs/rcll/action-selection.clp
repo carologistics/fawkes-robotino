@@ -120,6 +120,7 @@
     (printout t "Selected next action " ?action-name ?param-values " [" ?goal-id "]"crlf)
   )
 	(bind ?param-values (replace-unbound ?param-values))
+	(domain-retract-action-grounding ?goal-id ?plan-id ?id)
 	(modify ?pa (state PENDING) (param-values ?param-values))
 )
 
