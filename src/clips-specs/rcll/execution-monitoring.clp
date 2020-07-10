@@ -294,7 +294,7 @@
 	   (param-values $?param-values))
   (plan (id ?plan-id) (goal-id ?goal-id))
   (goal (id ?goal-id) (mode DISPATCHED))
-  ?pt <- (action-timer (plan-id ?plan-id) (action-id ?id) (status ?st& : (neq ?st ?status)))
+  ?pt <- (action-timer (plan-id ?plan-id) (action-id ?id) (status ?st&:(neq ?st ?status)))
   =>
   (retract ?pt)
 )
