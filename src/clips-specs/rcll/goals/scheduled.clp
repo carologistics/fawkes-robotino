@@ -114,10 +114,16 @@
      (not (goal (required-resources $? ?resource&:(member$ ?resource ?req) $?)
                 (meta scheduled-start ?s2-time&:(< ?s2-time ?s-time) $?)
                 (outcome ~COMPLETED)
-                ))
+          ))
      =>
      (bind ?req (replace-unbound ?req))
      (modify ?gf (mode COMMITTED) (required-resources ?req))
+
+     (bind ?commit-time (now))
+     (bind ?n (sym-cat [ ?g-id ] - committed))
+     (printout error ?n ": delay from schedule (" (- (nth$ 1 ?commit-time ) ?s-time ) ")"  crlf)
+     (printout t "Scheduled duration  "  " (" (- ?f-time ?s-time ) ")"  crlf)
+     (assert (timer (name ?n) (time ?commit-time) (seq 1)))
 )
 
 (defrule schedule-goal-error-delayed
@@ -125,25 +131,26 @@
      (time $?now)
      ?gf <- (goal (id ?g-id) (parent ?pg) (sub-type SCHEDULE-SUBGOALS)
                   (committed-to $?committed) (type ACHIEVE) (mode ?mode)
-                  (required-resources $?req) (meta dispatch-time ?d-time))
-     ?tf <-(timer (name ?n&:(eq ?n (sym-cat SCHED-DELAY[ ?g-id ])))
-            (time $?t&:(timeout ?now ?t 1.0))
+                  (required-resources $?req) (meta scheduled-start ?scheduled-start $?))
+     ?tf <-(timer (name ?n&:(eq ?n (sym-cat [ ?g-id ] - scheduled-start)))
+            (time $?t&:(timeout ?now ?t 10.0))
             (seq ?seq))
+     (not (timer (name ?nd&:(eq ?nd (sym-cat [ ?g-id ] - dispatched) ))))
     =>
     ;(bind ?req (replace-unbound ?req))
     (modify ?tf (time ?now) (seq (+ ?seq 1)))
-    (printout error  "SCHED-DELAY:--> (" ?mode ") " ?g-id " (+" (- (nth$ 1 ?now) ?d-time ) ")"  crlf)
+    (printout t  "SCHED-DELAY:--> " ?mode ": " ?g-id " (+" (- (nth$ 1 ?now) ?scheduled-start ) ")"  crlf)
     ; Unfinished subgoals
     (do-for-all-facts ((?g2f goal)) (and (neq ?g2f:outcome COMPLETED)
                                          (eq ?g2f:parent ?g-id))
-        (printout warn  "SCHED-DEYAL     Subgoal ("?g2f:mode ") " ?g2f:id   crlf)
+        (printout t  "   [ Subgoal/" ?g2f:mode ": " ?g2f:id "] "  crlf)
     )
     ; In-use resources
     (progn$ (?rs ?req)
       (do-for-all-facts ((?g2f goal)) (and (neq ?g2f:outcome COMPLETED)
                                            (member$ ?rs ?g2f:required-resources)
-                                           (< (nth$ 2 ?g2f:meta) ?d-time))
-        (printout warn "SCHED-DELAY:     [" ?rs "] used by (" ?g2f:mode ")  " ?g2f:id  crlf)
+                                           (< (nth$ 2 ?g2f:meta) ?scheduled-start))
+        (printout t "   [" ?rs "/ " ?g2f:mode ": " ?g2f:id "]" crlf)
       )
     )
 )
@@ -151,19 +158,44 @@
 (defrule schedule-goal-dispatch
      ?gf <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode COMMITTED)
                   (required-resources $?req)
-                  (acquired-resources $?acq&:(subsetp ?req ?acq))
-                  (meta dispatch-time ?d-time))
-     ?tf <-(timer (name ?n&:(eq ?n (sym-cat SCHED-DELAY[ ?goal-id ]))))
+                  (acquired-resources $?acq&:(subsetp ?req ?acq)))
+    (timer (name ?n&:(eq ?n (sym-cat [ ?goal-id ] - committed))) (time $?commit-time))
     =>
-    (printout error ?n ": " DISPATCHED " (+" (- (nth$ 1 (now)) ?d-time ) ")"  crlf)
-    (retract ?tf)
+    (bind ?dispatch-time (now))
+    (assert (timer (name (sym-cat [ ?goal-id ] - dispatched) ) (time ?dispatch-time) (seq 1)))
+    (printout error (sym-cat [ ?goal-id ] - dispatched)  ": from committing took  [" (- (nth$ 1 ?dispatch-time)  (nth$ 1 ?commit-time)) "]"  crlf)
     (modify ?gf (mode DISPATCHED))
 )
 
-
 (defrule schedule-goal-evaluated
-     ?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode EVALUATED))
+     ?gf <- (goal (id ?id) (sub-type SCHEDULE-SUBGOALS) (mode EVALUATED) (outcome ~COMPLETED ))
      =>
+     (modify ?gf (mode RETRACTED) (committed-to (create$ )))
+)
+
+(defrule schedule-goal-evaluated-completed
+     ?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode EVALUATED)
+                  (meta scheduled-start ?s-time scheduled-finish ?f-time) (outcome COMPLETED ))
+     ;(timer (name ?n&:(eq ?n (sym-cat [ ?id ] - scheduled-start))) (time $?schedule-time))
+     (timer (name ?nc&:(eq ?nc (sym-cat [ ?id ] - committed))) (time $?commit-time))
+     (timer (name ?nd&:(eq ?nd (sym-cat [ ?id ] - dispatched))) (time $?dispatch-time))
+     (timer (name ?nf&:(eq ?nf (sym-cat [ ?id ] - finished))) (time $?finish-time))
+     =>
+     (bind ?evaluate-time (now))
+     (bind ?schedule-duration  (- ?f-time ?s-time))
+     (bind ?schedule-delay  (- (nth$ 1 ?commit-time) ?s-time))
+     (bind ?dispatch-duration  (- (nth$ 1 ?dispatch-time) (nth$ 1 ?commit-time)))
+     (bind ?evaluate-duration  (- (nth$ 1 ?evaluate-time) (nth$ 1 ?dispatch-time)))
+     (bind ?finish-duration  (- (nth$ 1 ?finish-time) (nth$ 1 ?evaluate-time)))
+     (bind ?goal-execution-duration  (- (nth$ 1 ?evaluate-time) (nth$ 1 ?commit-time)))
+     (printout error "--------------Evaluation Statisitcs [" ?id "] ------------------" crlf)
+     (printout error (sym-cat [ ?id ] - evaluated)  ": Execution delay [" (- ?goal-execution-duration ?schedule-duration)  "]" crlf)
+     (printout error (sym-cat [ ?id ] - evaluated)  ": execution took " ?goal-execution-duration " was scheduled to take " ?schedule-duration crlf)
+     (printout error (sym-cat [ ?id ] - evaluated)  ": from commit to dispatch " ?dispatch-duration crlf)
+     (printout error (sym-cat [ ?id ] - evaluated)  ": from dispatch to evaluate " ?finish-duration crlf)
+     (printout error (sym-cat [ ?id ] - evaluated)  ": from evaluate to finish " ?evaluate-duration crlf)
+     (printout error (sym-cat [ ?id ] - evaluated)  ": scheduled finish delay [" (- (nth$ 1 ?evaluate-time) ?f-time)  "]" crlf)
+     (printout error "------------------------------------------ ------------------" crlf)
      (modify ?gf (mode RETRACTED) (committed-to (create$ )))
 )
 
@@ -225,5 +257,6 @@
      =>
      (printout t " Scheduled Goal " ?g-id " is COMPLETED" crlf)
      (modify ?gf (mode FINISHED) (outcome COMPLETED) (committed-to (create$ )))
+     (assert (timer (name (sym-cat [ ?g-id ] - finished) ) (time (now)) (seq 1)))
 )
 
