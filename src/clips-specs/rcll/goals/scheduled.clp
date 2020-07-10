@@ -216,14 +216,14 @@
 )
 
 (defrule schedule-goal-subgoal-completed-all-resources-clear
-     ?gf <- (goal (id ?id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode DISPATCHED)
-                  (committed-to $?committed))
-     (forall (goal (id ?sub-goal&:(member$ ?sub-goal ?committed)) (parent ?id))
-             (goal (id ?sub-goal) (acquired-resources) (mode RETRACTED) (outcome COMPLETED)))
-     (not (and (plan (id ?plan-id) (goal-id ?goal-id))
-               (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state ~FINAL))))
+     ?gf <- (goal (id ?g-id) (type ACHIEVE) (sub-type SCHEDULE-SUBGOALS) (mode DISPATCHED))
+     ;            (committed-to $?committed))
+     ;(forall (goal (id ?sub-goal&:(member$ ?sub-goal ?committed)) (parent ?id))
+     ;        (goal (id ?sub-goal) (acquired-resources) (mode RETRACTED) (outcome COMPLETED)))
+     (not (and (plan (id ?plan-id) (goal-id ?g-id))
+               (plan-action (goal-id ?g-id) (plan-id ?plan-id) (state ~FINAL))))
      =>
-     (printout t " Scheduled Goal " ?id " is COMPLETED" crlf)
+     (printout t " Scheduled Goal " ?g-id " is COMPLETED" crlf)
      (modify ?gf (mode FINISHED) (outcome COMPLETED) (committed-to (create$ )))
 )
 
