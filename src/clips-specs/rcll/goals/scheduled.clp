@@ -80,13 +80,12 @@
      (retract ?tf)
 )
 
-
 (defrule schedule-goal-commit-to-all-children-on-time
      (declare (salience ?*SALIENCE-HIGH*))
      (time $?now)
      ?gf <- (goal (id ?goal-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED)
                   (committed-to $?ct&:(eq ?ct (create$)))
-                  (meta dispatch-time ?d-time&:(< ?d-time (nth 1 ?now))))
+                  (meta scheduled-start ?d-time&:(< ?d-time (nth 1 ?now)) $? ))
   =>
      (bind ?committed-to (create$))
      (do-for-all-facts ((?subf goal)) (eq ?subf:parent ?goal-id)
@@ -95,16 +94,16 @@
      (do-for-all-facts ((?subf plan)) (eq ?subf:goal-id ?goal-id)
        (bind ?committed-to (append$ ?committed-to ?subf:id ))
      )
-
      (modify ?gf  (committed-to ?committed-to))
-     (assert (timer (name (sym-cat SCHED-DELAY[ ?goal-id ]) ) (time ?now) (seq 1)))
+     (assert (timer (name (sym-cat [ ?goal-id ] - scheduled-start) ) (time ?now) (seq 1)))
+     (printout error (sym-cat [ ?goal-id ] - scheduled-start)  ": " delay " (+" (- (nth$ 1 (now)) ?d-time ) ")"  crlf)
 )
 
 (defrule schedule-goal-commit-next
      ?gf <- (goal (id ?g-id) (parent ?pg) (sub-type SCHEDULE-SUBGOALS)
                   (committed-to $?committed) (type ACHIEVE) (mode EXPANDED)
                   (required-resources $?req)
-                  (meta dispatch-time ?d-time&:(< ?d-time (nth$ 1 (now)))))
+                  (meta scheduled-start ?s-time&:(< ?s-time (nth$ 1 (now))) scheduled-finish ?f-time))
      ;All children are in committed-to
      (not (plan (id ?child-id&:(not (member$ ?child-id ?committed))) (goal-id ?g-id)))
      (not (goal (id ?child-id&:(not (member$ ?child-id ?committed))) (parent ?g-id)))
@@ -113,7 +112,7 @@
      ;Next in line for all resource
      ;(not (goal (required-resources $? ?resource&:(member$ ?resource (replace-unbound ?req)) $?)
      (not (goal (required-resources $? ?resource&:(member$ ?resource ?req) $?)
-                (meta dispatch-time ?d2-time&:(< ?d2-time ?d-time))
+                (meta scheduled-start ?s2-time&:(< ?s2-time ?s-time) $?)
                 (outcome ~COMPLETED)
                 ))
      =>

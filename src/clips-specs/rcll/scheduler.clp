@@ -245,17 +245,21 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (time $?now)
  ?sf <- (schedule (id ?s-id) (goals $?goals) (mode COMMITTED))
 =>
- (delayed-do-for-all-facts ((?g goal) (?e schedule-event)) (and (member$ ?g:id ?goals)
-                                                        (eq ?e:entity ?g:id)
-                                                        (eq ?e:at START)
-                                                        (eq ?e:scheduled TRUE))
-    (modify ?g (meta dispatch-time (+ (nth$ 1 ?now) ?e:scheduled-start 5))))
+ (delayed-do-for-all-facts ((?g goal) (?es schedule-event) (?ee schedule-event))
+                           (and (member$ ?g:id ?goals)
+                                (eq ?es:entity ?g:id)
+                                (eq ?ee:entity ?g:id)
+                                (eq ?es:at START)
+                                (eq ?ee:at END)
+                                (eq ?es:scheduled TRUE)
+                                (eq ?ee:scheduled TRUE))
+    (modify ?g (meta scheduled-start (+ (nth$ 1 ?now) ?es:scheduled-start 5)
+                     scheduled-finish (+ (nth$ 1 ?now) ?ee:scheduled-start 5))))
  (modify ?sf (mode DISPATCHED) (dispatch-time ?now))
 )
 
 
 ;; General resource handling
-
 ;We start off by defining the Events that happen at time 0
 ; (Ex: resource producing events)
 (defrule scheduling-init-resources
@@ -795,7 +799,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                      (params r ?r-entity
                              setup1 (rest$ ?setup-state-from)
                              setup2 (rest$ ?setup-state-to))
-               (meta scheduled-start (+ ?e1-start ?e1-dur))))
+               (meta last-goal-end (+ ?e1-start ?e1-dur))))
 
        (modify ?sf (goals (create$ ?goals ?g-id)))
      )
@@ -813,7 +817,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  ?psf <- (schedule-event (sched-id ?s-id) (entity ?p-id) (at START)
                          (scheduled FALSE) (duration ?pstart-duration))
  (plan (id ?p-id) (goal-id ?g-id))
- (goal (id ?g-id) (class SETUP) (meta scheduled-start ?goal-start))
+ (goal (id ?g-id) (class SETUP) (meta last-goal-end ?goal-start))
  =>
  (modify ?gsf (scheduled-start ?goal-start))
  (modify ?psf (scheduled TRUE)
