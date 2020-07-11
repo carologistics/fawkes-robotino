@@ -555,6 +555,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                       (event-id ?producer)
                       (resource-entity ?r-entity)
                       (resource-type ?r-type)
+                      (resource-state $?resource-state-1)
                       (resource-setup $?resource-setup-1)
                       (resource-units ?v1&:(> ?v1 0)))
  (schedule-event (sched-id ?s-id) (id ?consumer) (entity ?entity-2))
@@ -562,6 +563,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                       (event-id ?consumer)
                       (resource-entity ?r-entity)
                       (resource-type ?r-type)
+                      (resource-state $?resource-state-2)
                       (resource-setup $?resource-setup-2)
                       (resource-units ?v2&:(< ?v2 0)))
  (not (schedule-setup (sched-id ?s-id) (resource-id ?r-id)
@@ -575,6 +577,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 ; (not (and (not (wm-fact (key sched fact consumption-requirment args? r ?r-id e ?cosumer  pred [ $?pred2 ])))
 ;           (wm-fact (key sched fact production-requirment args? r ?r-id e ?producer pred [ $?pred2 ]))))
+(test (subsetp ?resource-state-2 ?resource-state-1))
 =>
  (bind ?setup-duration (estimate-setup-duration ?r-type ?resource-setup-1 ?resource-setup-2))
 
