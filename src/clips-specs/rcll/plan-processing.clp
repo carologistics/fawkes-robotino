@@ -353,7 +353,7 @@
   (printout t "Precond of plan " ?p "  " crlf)
   (progn$ (?rs ?req-rs)
     (if (member$ ?rs ?param-values) then
-      (bind ?statement (create$ [ ?predicate ?param-values  ]))
+      (bind ?statement (create$ [ ?predicate (delete-member$ ?param-values ?rs)  ]))
       (printout t "  action (" ?action ") " ?statement  crlf)
       (assert (wm-fact (key meta plan-resource at-start args? p ?p r ?rs pred ?statement)))
     )
@@ -386,7 +386,7 @@
   (printout t "Effect of plan " ?p "  " crlf)
   (progn$ (?rs ?req-rs)
     (if (member$ ?rs ?param-values) then
-      (bind ?statement (create$ [ ?predicate ?param-values  ]))
+      (bind ?statement (create$ [ ?predicate (delete-member$ ?param-values ?rs) ]))
       (printout t "  action (" ?action ") " ?statement  crlf)
       (assert (wm-fact (key meta plan-resource at-end args? p ?p r ?rs pred ?statement)))
     )
