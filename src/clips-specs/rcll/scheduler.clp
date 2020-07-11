@@ -590,6 +590,37 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                          (duration ?setup-duration)))
 )
 
+(defrule scheduling-update-resource-states-with-previous-plans
+ "Resource-states for an existing "
+ (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
+ (resource-info (type ?r-type) (state-preds $?state-preds))
+ (schedule-resource (sched-id ?s-id) (type ?r-type) (entity ?r-entity) (resource-id ?r-id))
+ (schedule-event (sched-id ?s-id) (id ?producer) (entity ?entity-1))
+ (schedule-requirment (sched-id ?s-id)
+                      (event-id ?producer)
+                      (resource-entity ?r-entity)
+                      (resource-type ?r-type)
+                      (resource-state $?
+                                      [
+                                      $?producer-state&:(and (not (member$ [ ?producer-state ))
+                                                             (not (member$ ] ?producer-state )))
+                                      ]
+                                      $?)
+                      (resource-units ?v1&:(> ?v1 0)))
+ (schedule-event (sched-id ?s-id) (id ?consumer) (entity ?entity-2))
+ ?srf <- (schedule-requirment (sched-id ?s-id)
+                      (event-id ?consumer)
+                      (resource-entity ?r-entity)
+                      (resource-type ?r-type)
+                      (resource-state $?consumer-states&:(not (subsetp ?producer-state ?consumer-states)))
+                      (resource-units ?v2&:(> ?v2 0)))
+ (schedule-setup (sched-id ?s-id) (resource-id ?r-id)
+                      (from-event ?producer ) (to-event ?consumer))
+ (not (wm-fact (key meta plan-resource at-end args? p ?entity-2 r ?r-entity pred [ $?producer-state ])))
+=>
+ (modify ?srf (resource-state (append$ ?consumer-states [ ?producer-state ] )) )
+)
 
 
 ;; Call scheduler to build data sets
