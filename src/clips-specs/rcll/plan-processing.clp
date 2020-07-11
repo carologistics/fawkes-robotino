@@ -355,7 +355,8 @@
     (if (member$ ?rs ?param-values) then
       (bind ?statement (create$ [ ?predicate (delete-member$ ?param-values ?rs)  ]))
       (printout t "  action (" ?action ") " ?statement  crlf)
-      (assert (wm-fact (key meta plan-resource at-start args? p ?p r ?rs pred ?statement)))
+      (assert (wm-fact (key meta plan-resource at-start args? p ?p r ?rs pred ?statement)
+              (type SYMBOL) (value POSITIVE)))
     )
   )
 )
@@ -366,7 +367,7 @@
   (plan (id ?p) (goal-id ?g) (required-resources $?req-rs))
   (domain-effect
     (grounded TRUE)
-    (type POSITIVE)
+    (type ?effect-type)
     (goal-id ?g)
     (plan-id ?p)
     (grounded-with ?action)
@@ -375,7 +376,7 @@
     )
   (not (domain-effect
         (grounded TRUE)
-        (type NEGATIVE)
+        (type ?later-type&:(neq ?effect-type ?later-type))
         (goal-id ?g)
         (plan-id ?p)
         (grounded-with ?later-action&:(> ?later-action ?action))
@@ -388,7 +389,8 @@
     (if (member$ ?rs ?param-values) then
       (bind ?statement (create$ [ ?predicate (delete-member$ ?param-values ?rs) ]))
       (printout t "  action (" ?action ") " ?statement  crlf)
-      (assert (wm-fact (key meta plan-resource at-end args? p ?p r ?rs pred ?statement)))
+      (assert (wm-fact (key meta plan-resource at-end args? p ?p r ?rs pred ?statement)
+              (type SYMBOL) (value ?effect-type)))
     )
   )
 )
