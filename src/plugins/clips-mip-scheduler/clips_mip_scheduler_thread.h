@@ -71,6 +71,7 @@ private:
 		std::string name;
 		bool        selected;
 	};
+	typedef std::shared_ptr<Selector> Selector_ptr;
 
 	struct Event
 	{
@@ -83,46 +84,86 @@ private:
 		float                      lbound   = 0;
 		float                      ubound   = GRB_INFINITY;
 		std::map<std::string, int> resources;
-		std::vector<Event *>       precedes;
-		Selector *                 selector;
+		Selector_ptr               selector;
 	};
-
+	typedef std::shared_ptr<Event> Event_ptr;
 	//struct SelectorGroup : Selector
 	//{
 	//    enum policy {SELECT_ONE, SELECT_ALL};
 	//    std::vector<Selector> group;
 	//};
+	struct Edge
+	{
+		Edge(std::string resource_name, Event_ptr from_event, Event_ptr to_event)
+		{
+			name     = "[" + resource_name + "][" + from_event->name + "][" + to_event->name + "]";
+			resource = resource_name;
+			from     = from_event;
+			to       = to_event;
+		};
+		std::string               name;
+		std::string               resource;
+		Event_ptr                 from;
+		Event_ptr                 to;
+		int                       duration;
+		std::vector<Selector_ptr> selectors;
+	};
+	typedef std::shared_ptr<Edge> Edge_ptr;
 
-	std::map<std::string, Event *>                                   events_;
-	std::map<std::string, Selector *>                                selectors_;
-	std::map<std::string, std::map<Event *, std::map<Event *, int>>> res_setup_duration_;
+	std::map<std::string, Event_ptr>    events_;
+	std::map<std::string, Selector_ptr> selectors_;
+	std::map<std::string, Edge_ptr>     edges_;
 
-	std::map<Selector *, std::vector<Event *>>    selector_events_;
-	std::map<Selector *, std::vector<Selector *>> group_selectors_;
+	std::map<Event_ptr, std::vector<Event_ptr>>       precedence_;
+	std::map<Selector_ptr, std::vector<Edge_ptr>>     selector_edges_;
+	std::map<Selector_ptr, std::vector<Selector_ptr>> select_one_groups_;
+	std::map<Selector_ptr, std::vector<Selector_ptr>> select_all_groups_;
 
 	std::map<std::string, GRBVar>                                               gurobi_vars_time_;
 	std::map<std::string, GRBVar>                                               gurobi_vars_plan_;
 	std::map<std::string, std::map<std::string, std::map<std::string, GRBVar>>> gurobi_vars_sequence_;
 
 private:
-	void add_atomic_event(std::string env_name,
-	                      std::string event_name,
-	                      std::string selector_name,
-	                      int         duraton,
-	                      float       lbound,
-	                      float       ubound);
+	void         create_event(std::string event_name);
+	void         create_edge(std::string res, std::string event1, std::string event2);
+	void         create_selector(std::string selector_name);
+	Event_ptr    get_event(std::string event_name);
+	Edge_ptr     get_edge(std::string res, std::string event1, std::string event2);
+	Selector_ptr get_selector(std::string selector_name);
+
+	void clips_add_event(std::string env_name,
+	                     std::string event_name,
+	                     int         duraton,
+	                     float       lbound,
+	                     float       ubound);
+	void clips_add_event_resource(std::string env_name,
+	                              std::string event_name,
+	                              std::string res_name,
+	                              int         req);
 	void
-	     add_event_resource(std::string env_name, std::string event_name, std::string res_name, int req);
-	void set_resource_setup_duration(std::string env_name,
-	                                 std::string res,
-	                                 std::string event1,
-	                                 std::string event2,
-	                                 int         duration);
-	void add_event_precedence(std::string env_name, std::string event_name, std::string preceded);
-	void set_selector_selected(std::string env_name, std::string selector_name, std::string selected);
+	clips_add_event_precedence(std::string env_name, std::string event_name, std::string preceded);
 	void
-	            add_selector_to_group(std::string env_name, std::string selector_name, std::string group_name);
-	void        build_model(std::string env_name, std::string model_id);
-	std::string check_progress(std::string env_name, std::string model_id);
+	            clips_set_event_selector(std::string env_name, std::string event_name, std::string selector_name);
+	void        clips_set_edge_duration(std::string env_name,
+	                                    std::string res,
+	                                    std::string event1,
+	                                    std::string event2,
+	                                    int         duration);
+	void        clips_add_edge_selector(std::string env_name,
+	                                    std::string res,
+	                                    std::string event1,
+	                                    std::string event2,
+	                                    std::string selector_name);
+	void        clips_set_selector_selected(std::string env_name,
+	                                        std::string selector_name,
+	                                        std::string selected);
+	void        clips_add_to_select_one_group(std::string env_name,
+	                                          std::string selector_name,
+	                                          std::string group_name);
+	void        clips_add_to_select_all_group(std::string env_name,
+	                                          std::string selector_name,
+	                                          std::string group_name);
+	void        clips_build_model(std::string env_name, std::string model_id);
+	std::string clips_check_progress(std::string env_name, std::string model_id);
 };
 #endif /* !PLUGINS_CLIPS_MIP_SCHEDULER_THREAD_H__ */

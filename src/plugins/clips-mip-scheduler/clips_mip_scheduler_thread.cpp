@@ -64,37 +64,62 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
 	clips_env_ = clips;
 	fawkes::MutexLocker lock(clips_env_.objmutex_ptr());
 
-	clips->add_function(
-	  "scheduler-add-event-resource",
-	  sigc::slot<void, std::string, std::string, int>(
-	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_event_resource), env_name)));
-	clips->add_function("scheduler-set-resource-setup-duration",
-	                    sigc::slot<void, std::string, std::string, std::string, int>(sigc::bind<0>(
-	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::set_resource_setup_duration),
+	clips->add_function("scheduler-add-event-resource",
+	                    sigc::slot<void, std::string, std::string, int>(sigc::bind<0>(
+	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_add_event_resource),
 	                      env_name)));
+
 	clips->add_function("scheduler-add-event-precedence",
 	                    sigc::slot<void, std::string, std::string>(sigc::bind<0>(
-	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_event_precedence),
+	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_add_event_precedence),
 	                      env_name)));
+
 	clips->add_function(
 	  "scheduler-add-atomic-event",
-	  sigc::slot<void, std::string, std::string, int, float, float>(
-	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_atomic_event), env_name)));
+	  sigc::slot<void, std::string, int, float, float>(
+	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_add_event), env_name)));
 	clips->add_function("scheduler-set-selector-selected",
 	                    sigc::slot<void, std::string, std::string>(sigc::bind<0>(
-	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::set_selector_selected),
+	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_set_selector_selected),
 	                      env_name)));
-	clips->add_function("scheduler-add-selector-to-group",
+
+	clips->add_function("scheduler-set-edge-duration",
+	                    sigc::slot<void, std::string, std::string, std::string, int>(sigc::bind<0>(
+	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_set_edge_duration),
+	                      env_name)));
+
+	clips->add_function(
+	  "scheduler-add-edge-selector",
+	  sigc::slot<void, std::string, std::string, std::string, std::string>(
+	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_add_edge_selector),
+	                  env_name)));
+
+	clips->add_function("scheduler-set-event-selector",
 	                    sigc::slot<void, std::string, std::string>(sigc::bind<0>(
-	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::add_selector_to_group),
+	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_set_event_selector),
 	                      env_name)));
-	clips->add_function("scheduler-generate-model",
-	                    sigc::slot<void, std::string>(
-	                      sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::build_model),
-	                                    env_name)));
+
+	clips->add_function(
+	  "scheduler-add-to-select-all-group",
+	  sigc::slot<void, std::string, std::string>(
+	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_add_to_select_all_group),
+	                  env_name)));
+
+	clips->add_function(
+	  "scheduler-add-to-select-one-group",
+	  sigc::slot<void, std::string, std::string>(
+	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_add_to_select_one_group),
+	                  env_name)));
+
+	clips->add_function(
+	  "scheduler-generate-model",
+	  sigc::slot<void, std::string>(
+	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_build_model), env_name)));
+
 	clips->add_function("scheduler-optimization-status",
 	                    sigc::slot<std::string, std::string>(sigc::bind<0>(
-	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::check_progress), env_name)));
+	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_check_progress),
+	                      env_name)));
 }
 
 void
@@ -140,56 +165,97 @@ ClipsMipSchedulerThread::clips_context_destroyed(const std::string &env_name)
 //}
 
 void
-ClipsMipSchedulerThread::add_event_resource(std::string env_name,
-                                            std::string event_name,
-                                            std::string res_name,
-                                            int         req)
+ClipsMipSchedulerThread::create_event(std::string event_name)
+{
+	if (events_.find(event_name) != events_.end())
+		return;
+	events_[event_name] = std::make_shared<Event>(event_name);
+	logger->log_info(name(), "Creating Event[%s] ", event_name.c_str());
+}
+
+void
+ClipsMipSchedulerThread::create_edge(std::string res, std::string event1, std::string event2)
+{
+	std::string edge_name = "[" + res + "][" + event1 + "][" + event2 + "]";
+	if (edges_.find(edge_name) != edges_.end())
+		return;
+
+	Event_ptr event1_ptr = get_event(event1);
+	Event_ptr event2_ptr = get_event(event2);
+	edges_[edge_name]    = std::make_shared<Edge>(res, event1_ptr, event2_ptr);
+	logger->log_info(name(), "Created Edge %s ", edge_name.c_str());
+}
+
+void
+ClipsMipSchedulerThread::create_selector(std::string selector_name)
+{
+	if (selectors_.find(selector_name) != selectors_.end())
+		return;
+	selectors_[selector_name] = std::make_shared<Selector>(selector_name);
+	logger->log_info(name(), "Creating selector %s ", selector_name.c_str());
+}
+
+ClipsMipSchedulerThread::Event_ptr
+ClipsMipSchedulerThread::get_event(std::string event_name)
 {
 	if (events_.find(event_name) == events_.end())
-		events_[event_name] = new Event(event_name);
+		create_event(event_name);
 
-	events_[event_name]->resources[res_name] = abs(req);
+	return events_[event_name];
+}
 
+ClipsMipSchedulerThread::Edge_ptr
+ClipsMipSchedulerThread::get_edge(std::string res, std::string event1, std::string event2)
+{
+	std::string edge_name = "[" + res + "][" + event1 + "][" + event2 + "]";
+	if (edges_.find(edge_name) == edges_.end())
+		create_edge(res, event1, event2);
+
+	return edges_[edge_name];
+}
+
+ClipsMipSchedulerThread::Selector_ptr
+ClipsMipSchedulerThread::get_selector(std::string selector_name)
+{
+	if (selectors_.find(selector_name) == selectors_.end())
+		create_selector(selector_name);
+
+	return selectors_[selector_name];
+}
+
+void
+ClipsMipSchedulerThread::clips_add_event(std::string env_name,
+                                         std::string event_name,
+                                         int         duration,
+                                         float       lbound,
+                                         float       ubound)
+{
+	Event_ptr event = get_event(event_name);
+	event->duration = duration;
+	event->lbound   = lbound;
+	event->ubound   = ubound;
+	logger->log_info(name(), "Event[%s] duration %d ", event_name.c_str(), duration);
+}
+
+void
+ClipsMipSchedulerThread::clips_add_event_resource(std::string env_name,
+                                                  std::string event_name,
+                                                  std::string res_name,
+                                                  int         req)
+{
+	get_event(event_name)->resources[res_name] = abs(req);
 	logger->log_info(
 	  name(), "Resource-req: %s uses %s in %d units  ", event_name.c_str(), res_name.c_str(), req);
 }
 
 void
-ClipsMipSchedulerThread::set_resource_setup_duration(std::string env_name,
-                                                     std::string res,
-                                                     std::string event1,
-                                                     std::string event2,
-                                                     int         duration)
+ClipsMipSchedulerThread::clips_add_event_precedence(std::string env_name,
+                                                    std::string event_name,
+                                                    std::string preceded)
 {
-	if (events_.find(event1) == events_.end())
-		events_[event1] = new Event(event1);
-
-	if (events_.find(event2) == events_.end())
-		events_[event2] = new Event(event2);
-
-	res_setup_duration_[res][events_[event1]][events_[event2]] = duration;
-
-	logger->log_info(name(),
-	                 " Setup [%s]: from %s to %s takes %d sec",
-	                 res.c_str(),
-	                 event1.c_str(),
-	                 event2.c_str(),
-	                 duration);
-}
-
-void
-ClipsMipSchedulerThread::add_event_precedence(std::string env_name,
-                                              std::string event_name,
-                                              std::string preceded)
-{
-	if (events_.find(event_name) == events_.end())
-		events_[event_name] = new Event(event_name);
-
-	if (events_.find(preceded) == events_.end())
-		events_[preceded] = new Event(preceded);
-
-	events_[event_name]->precedes.push_back(events_[preceded]);
-
+	Event_ptr before = get_event(event_name);
+	Event_ptr after  = get_event(preceded);
+	precedence_[before].push_back(after);
 	logger->log_info(name(),
 	                 "Precedence: %s directly before %s  ",
 	                 event_name.c_str(),
@@ -197,92 +263,111 @@ ClipsMipSchedulerThread::add_event_precedence(std::string env_name,
 }
 
 void
-ClipsMipSchedulerThread::add_atomic_event(std::string env_name,
-                                          std::string event_name,
-                                          std::string selector_name,
-                                          int         duration,
-                                          float       lbound,
-                                          float       ubound)
+ClipsMipSchedulerThread::clips_set_event_selector(std::string env_name,
+                                                  std::string event_name,
+                                                  std::string selector_name)
 {
-	logger->log_info(name(), "Event[%s]: %s  ", event_name.c_str(), selector_name.c_str());
+	Event_ptr    event    = get_event(event_name);
+	Selector_ptr selector = get_selector(selector_name);
 
-	if (selectors_.find(selector_name) == selectors_.end())
-		selectors_[selector_name] = new Selector(selector_name);
-	Selector *S_ptr = selectors_[selector_name];
-
-	if (events_.find(event_name) == events_.end())
-		events_[event_name] = new Event(event_name);
-	events_[event_name]->duration = duration;
-	events_[event_name]->lbound   = lbound;
-	events_[event_name]->ubound   = ubound;
-	events_[event_name]->selector = S_ptr;
-
-	selector_events_[S_ptr].push_back(events_[event_name]);
+	event->selector = selector;
+	//selector_events_[selector].push_back(event);
 }
 
 void
-ClipsMipSchedulerThread::set_selector_selected(std::string env_name,
-                                               std::string selector_name,
-                                               std::string selected)
+ClipsMipSchedulerThread::clips_set_edge_duration(std::string env_name,
+                                                 std::string res,
+                                                 std::string event1,
+                                                 std::string event2,
+                                                 int         duration)
 {
-	if (selectors_.find(selector_name) == selectors_.end())
-		selectors_[selector_name] = new Selector(selector_name);
+	Edge_ptr edge  = get_edge(res, event1, event2);
+	edge->duration = duration;
+	logger->log_info(name(), "Edge %s duration %d ", edge->name.c_str(), duration);
+}
 
-	selectors_[selector_name]->selected = (selected == "TRUE") ? true : false;
+void
+ClipsMipSchedulerThread::clips_add_edge_selector(std::string env_name,
+                                                 std::string res,
+                                                 std::string event1,
+                                                 std::string event2,
+                                                 std::string selector_name)
+{
+	Edge_ptr     edge     = get_edge(res, event1, event2);
+	Selector_ptr selector = get_selector(selector_name);
+
+	selector_edges_[selector].push_back(edge);
+	edge->selectors.push_back(selector);
+	logger->log_info(name(), "Edge %s selector %s", edge->name.c_str(), selector_name.c_str());
+}
+
+void
+ClipsMipSchedulerThread::clips_set_selector_selected(std::string env_name,
+                                                     std::string selector_name,
+                                                     std::string selected)
+{
+	get_selector(selector_name)->selected = (selected == "TRUE") ? true : false;
 	logger->log_info(name(), "Selector[%s]: is %s  ", selector_name.c_str(), selected.c_str());
 }
 
 void
-ClipsMipSchedulerThread::add_selector_to_group(std::string env_name,
-                                               std::string selector_name,
-                                               std::string group_name)
+ClipsMipSchedulerThread::clips_add_to_select_all_group(std::string env_name,
+                                                       std::string selector_name,
+                                                       std::string group_name)
 {
-	if (selectors_.find(group_name) == selectors_.end())
-		selectors_[group_name] = new Selector(group_name);
-
-	if (selectors_.find(selector_name) == selectors_.end())
-		selectors_[selector_name] = new Selector(selector_name);
-
-	Selector *group    = selectors_[group_name];
-	Selector *selector = selectors_[selector_name];
+	Selector_ptr group    = get_selector(group_name);
+	Selector_ptr selector = get_selector(selector_name);
 
 	group->selected    = true;
 	selector->selected = false;
-	group_selectors_[group].push_back(selector);
+
+	select_all_groups_[group].push_back(selector);
 
 	logger->log_info(name(),
-	                 "SelectorGroup[%s] has selector [%s]  ",
+	                 "SelectAllGroup[%s]: add selector [%s]  ",
 	                 group_name.c_str(),
 	                 selector_name.c_str());
 }
 
 void
-ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
+ClipsMipSchedulerThread::clips_add_to_select_one_group(std::string env_name,
+                                                       std::string selector_name,
+                                                       std::string group_name)
+{
+	Selector_ptr group    = get_selector(group_name);
+	Selector_ptr selector = get_selector(selector_name);
+
+	select_one_groups_[group].push_back(selector);
+
+	logger->log_info(name(),
+	                 "SelectOneGroup[%s]: add selector [%s]  ",
+	                 group_name.c_str(),
+	                 selector_name.c_str());
+}
+
+void
+ClipsMipSchedulerThread::clips_build_model(std::string env_name, std::string model_id)
 {
 	try {
 		gurobi_models_[model_id] = std::make_unique<GRBModel>(*gurobi_env_);
 		gurobi_models_[model_id]->set(GRB_StringAttr_ModelName, model_id);
 		//Init Gurobi Time Vars (T)
-		for (auto const &iE : events_)
+		for (auto const &iE : events_) {
+			//logger->log_info(name(), "t[%s] ", iE.first.c_str());
 			gurobi_vars_time_[iE.first] = gurobi_models_[model_id]->addVar(
 			  iE.second->lbound, iE.second->ubound, 0, GRB_INTEGER, ("t[" + iE.first + "]").c_str());
-
+		}
 		//Init Gurobi event sequencing Vars (X)
-		for (auto const &iR : res_setup_duration_)
-			for (auto const &iEprod : iR.second)
-				for (auto const &iEcons : iEprod.second)
-				//if (iEp->goal != iEc->goal || iEp->goal.size() == 0)
-				{
-					std::string resource = iR.first;
-					std::string producer = iEprod.first->name;
-					std::string consumer = iEcons.first->name;
-					std::string vname    = "[" + resource + "][" + producer + "][" + consumer + "]";
-					gurobi_vars_sequence_[resource][producer][consumer] =
-					  gurobi_models_[model_id]->addVar(0, 1, 0, GRB_BINARY, ("x" + vname).c_str());
-				}
+		for (auto const &iE : edges_) {
+			Edge_ptr e = iE.second;
+			//logger->log_info(name(), "x %s", e->name.c_str());
+			gurobi_vars_sequence_[e->resource][e->from->name][e->to->name] =
+			  gurobi_models_[model_id]->addVar(0, 1, 0, GRB_BINARY, ("x" + e->name).c_str());
+		}
 
 		//Init Gurobi plan selection Vars (S)
 		for (auto const &iP : selectors_) {
+			//logger->log_info(name(), "s[%s]", iP.first.c_str());
 			int lb = 0;
 			if (iP.second->selected)
 				lb = 1;
@@ -297,12 +382,12 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 			if (iS.second->selected)
 				gurobi_models_[model_id]->addConstr(gurobi_vars_plan_[iS.first] == 1,
 				                                    ("SelectedEvent{" + iS.first + "}").c_str());
-			//logger->log_info(name(), "C2: plans of goal %s", iG.first.c_str());
+			logger->log_info(name(), "C2: plans of goal %s", iS.first.c_str());
 		}
 
 		//Constraint 1
 		for (auto const &iE1 : events_)
-			for (auto const &iE2 : iE1.second->precedes) {
+			for (auto const &iE2 : precedence_[iE1.second]) {
 				//logger->log_info(name(),
 				//                 "C1: %s - %s >= %u ",
 				//                 iE2->name.c_str(),
@@ -343,20 +428,76 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 				}
 			}
 
-		//Constraint (2) Event Selection
-		for (auto const &iG : group_selectors_) {
+		//Constraint (2) Select-one groups
+		for (auto const &iG : select_one_groups_) {
 			GRBLinExpr RHS = gurobi_vars_plan_[iG.first->name];
 			GRBLinExpr LHS = 0;
 			for (auto const &iP : iG.second)
 				LHS += gurobi_vars_plan_[iP->name];
 
 			gurobi_models_[model_id]->addConstr(LHS - RHS == 0,
-			                                    ("TotalGoalPlans{" + iG.first->name + "}").c_str());
-			//logger->log_info(name(), "C2: plans of goal %s", iG.first.c_str());
+			                                    ("SelectOneGroup{" + iG.first->name + "}").c_str());
 		}
 
+		//Constraint (3) Select-all groups
+		for (auto const &iG : select_all_groups_) {
+			GRBLinExpr RHS = gurobi_vars_plan_[iG.first->name];
+			GRBLinExpr LHS = 0;
+			for (auto const &iP : iG.second) {
+				LHS = gurobi_vars_plan_[iP->name];
+				gurobi_models_[model_id]->addConstr(LHS - RHS == 0,
+				                                    ("SelectAllGroup{" + iG.first->name + "}").c_str());
+			}
+		}
+
+		//Edges Selection GenConstrIndicator
+		//for (auto const &ie : edges_) {
+		//	Edge *      e              = ie.second;
+		//	std::string edge_name      = ie.first;
+		//	std::string resource       = e->resource;
+		//	std::string producer       = e->from->name;
+		//	std::string consumer       = e->to->name;
+		//	std::string cname          = "Select_X" + edge_name;
+		//	int         event_duration = e->from->duration;
+		//	double      setup_duration = e->duration;
+		//	gurobi_models_[model_id]->addGenConstrIndicator(
+		//	  gurobi_vars_sequence_[resource][producer][consumer],
+		//	  1,
+		//	  gurobi_vars_time_[consumer] - gurobi_vars_time_[producer] - event_duration - setup_duration
+		//	    >= 0,
+		//	  cname.c_str());
+		//	//logger->log_info(name(), "C8: %s", cname.c_str());
+		//}
+
+		//Constrs : Consumers edge-selectors
+		//	for (auto const &is : selector_edges_) {
+		//	    std::string selector_name = is.first->name;
+		//		int        l  = is.second.size();
+		//		double     sosWieghts[l];
+		//		GRBVar     sosVars[l];
+		//		GRBLinExpr constr_LHS = 0;
+		//		GRBLinExpr constr_RHS = gurobi_vars_plan_[selector_name];
+		//		int i=0;
+		//		for (auto const &ie : is.second) {
+		//			std::string resource = ie->resource;
+		//			std::string producer = ie->from->name;
+		//			std::string consumer = ie->to->name;
+		//			GRBVar      edgeVar  = gurobi_vars_sequence_[resource][producer][consumer];
+		//			constr_LHS += edgeVar;
+		//			sosVars[i]    = edgeVar;
+		//			sosWieghts[i] = i;
+		//			i++;
+		//		}
+		//		logger->log_info(name(), "flow %s ", selector_name.c_str());
+		//		gurobi_models_[model_id]->addConstr(
+		//		  constr_LHS - constr_RHS  == 0,
+		//		  ("EdgeSelector " + selector_name).c_str());
+		//		//SOS
+		//		gurobi_models_[model_id]->addSOS(sosVars, sosWieghts, i, GRB_SOS_TYPE1);
+		//	}
+
 		//Constraints 8,3,4,5,6
-		for (auto const &iR : res_setup_duration_) {
+		for (auto const &iR : gurobi_vars_sequence_) {
 			std::map<std::string, std::vector<GRBVar>> inflow_vars;
 			std::map<std::string, std::vector<GRBVar>> outflow_vars;
 
@@ -364,22 +505,22 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 			for (auto const &iEprod : iR.second) {
 				for (auto const &iEcons : iEprod.second) {
 					std::string resource = iR.first;
-					std::string producer = iEprod.first->name;
-					std::string consumer = iEcons.first->name;
+					std::string producer = iEprod.first;
+					std::string consumer = iEcons.first;
+					GRBVar      edgeVar  = iEcons.second;
 					std::string cname    = "Select_X{" + resource + "}{" + producer + "->" + consumer + "}";
-					int         event_duration = iEprod.first->duration;
-					double      setup_duration = iEcons.second;
-					gurobi_models_[model_id]->addGenConstrIndicator(
-					  gurobi_vars_sequence_[resource][producer][consumer],
-					  1,
-					  gurobi_vars_time_[consumer] - gurobi_vars_time_[producer] - event_duration
-					      - setup_duration
-					    >= 0,
-					  cname.c_str());
+					int         event_duration = get_event(producer)->duration;
+					double      setup_duration = get_edge(resource, producer, consumer)->duration;
+					gurobi_models_[model_id]->addGenConstrIndicator(edgeVar,
+					                                                1,
+					                                                gurobi_vars_time_[consumer]
+					                                                    - gurobi_vars_time_[producer]
+					                                                    - event_duration - setup_duration
+					                                                  >= 0,
+					                                                cname.c_str());
 					//logger->log_info(name(), "C8: %s", cname.c_str());
-
-					inflow_vars[consumer].push_back(gurobi_vars_sequence_[iR.first][producer][consumer]);
-					outflow_vars[producer].push_back(gurobi_vars_sequence_[iR.first][producer][consumer]);
+					inflow_vars[consumer].push_back(edgeVar);
+					outflow_vars[producer].push_back(edgeVar);
 				}
 			}
 
@@ -401,7 +542,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 					i++;
 				}
 				GRBLinExpr constr_RHS = gurobi_vars_plan_[events_[event_name]->selector->name];
-				logger->log_info(name(), "flowIn %s ", event_name.c_str());
+				//logger->log_info(name(), "flowIn %s ", event_name.c_str());
 				gurobi_models_[model_id]->addConstr(
 				  constr_LHS - constr_RHS * abs(events_[event_name]->resources[iR.first]) == 0,
 				  ("FlowIn{" + iR.first + "}{" + event_name + "}").c_str());
@@ -425,7 +566,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 					i++;
 				}
 				GRBLinExpr constr_RHS = gurobi_vars_plan_[events_[event_name]->selector->name];
-				logger->log_info(name(), "flowOut %s ", event_name.c_str());
+				//logger->log_info(name(), "flowOut %s ", event_name.c_str());
 				gurobi_models_[model_id]->addConstr(
 				  constr_LHS - constr_RHS * abs(events_[event_name]->resources[iR.first]) == 0,
 				  ("FlowOut{" + iR.first + "}{" + event_name + "}").c_str());
@@ -443,7 +584,6 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 		gurobi_models_[model_id]->write("gurobi_model.lp");
 
 		gurobi_models_[model_id]->optimizeasync();
-
 	} catch (GRBException &e) {
 		gurobi_models_[model_id]->write("gurobi_model.lp");
 		logger->log_error(name(), "Error code = %u ", e.getErrorCode());
@@ -454,7 +594,7 @@ ClipsMipSchedulerThread::build_model(std::string env_name, std::string model_id)
 }
 
 std::string
-ClipsMipSchedulerThread::check_progress(std::string env_name, std::string model_id)
+ClipsMipSchedulerThread::clips_check_progress(std::string env_name, std::string model_id)
 {
 	try {
 		const int status = gurobi_models_[model_id]->get(GRB_IntAttr_Status);

@@ -121,6 +121,7 @@
   (slot from-event (type SYMBOL))
   (slot to-event (type SYMBOL))
   (slot duration (type INTEGER))
+  (multislot selection-groupds (type SYMBOL))
 )
 
 (deffunction plan-duration (?plan-id)
@@ -624,13 +625,20 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 
 ;; Call scheduler to build data sets
-(defrule scheduling-add-atomic-event
+(defrule scheduling-create-event
  (declare (salience ?*SALIENCE-GOAL-SELECT*))
  (schedule (id ?s-id) (mode FORMULATED))
- (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?selector)
-                 (duration ?d) (lbound ?lb) (ubound ?ub))
+ (schedule-event (sched-id ?s-id) (id ?e-id) (duration ?d) (lbound ?lb) (ubound ?ub))
  =>
- (scheduler-add-atomic-event (sym-cat ?e-id) (sym-cat ?selector) ?d ?lb ?ub)
+ (scheduler-add-atomic-event (sym-cat ?e-id) ?d ?lb ?ub)
+)
+
+(defrule scheduling-add-event-selector
+ (declare (salience ?*SALIENCE-GOAL-SELECT*))
+ (schedule (id ?s-id) (mode FORMULATED))
+ (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?selector))
+ =>
+ (scheduler-set-event-selector (sym-cat ?e-id) (sym-cat ?selector))
 )
 
 (defrule scheduling-set-selector-selected
@@ -647,9 +655,8 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS))
  (plan (id ?p-id) (goal-id ?g-id))
  =>
- (scheduler-add-selector-to-group (sym-cat ?p-id) (sym-cat ?g-id))
+ (scheduler-add-to-select-one-group (sym-cat ?p-id) (sym-cat ?g-id))
 )
-
 
 (defrule scheduling-add-event-requirment
  (declare (salience (-  ?*SALIENCE-GOAL-SELECT* 4)))
@@ -678,9 +685,48 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (schedule-setup (sched-id ?s-id) (resource-id ?r-id) (duration ?duration)
                  (from-event ?producer) (to-event ?consumer))
  =>
- (scheduler-set-resource-setup-duration
+ (scheduler-set-edge-duration
       (sym-cat ?r-id) (sym-cat ?producer) (sym-cat ?consumer)  ?duration)
  )
+
+;(defrule scheduling-add-edge-selection-producer
+; (declare (salience (- ?*SALIENCE-GOAL-SELECT* 6)))
+; (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
+; (schedule-requirment (sched-id ?s-id)
+;                      (event-id ?prod-id)
+;                      (resource-entity ?r-entity)
+;                      (resource-state $? [ $?prod-state&:(and (not (member$ [ ?prod-state))
+;                                                              (not (member$ ] ?prod-state)))  ] $?)
+;                      (resource-units ?prod-units&:(> ?prod-units 0)))
+; (schedule-resource (sched-id ?s-id) (entity ?r-entity) (resource-id ?r-id))
+; (schedule-setup (sched-id ?s-id) (resource-id ?r-id)
+;                 (from-event ?prod-id) (to-event ?cons-id))
+; =>
+; (bind ?statement (create$))
+; (progn$ (?p ?prod-state) (bind ?statemnet (sym-cat ?statement ?p)))
+; (bind ?selector-name (sym-cat [ ?r-id ] [ ?prod-id ] [ ?statement ] ))
+; (scheduler-add-edge-selector (sym-cat ?r-id) (sym-cat ?prod-id) (sym-cat ?cons-id) (sym-cat ?selector-name))
+;)
+
+;(defrule scheduling-add-edge-selection-consumer
+; (declare (salience (- ?*SALIENCE-GOAL-SELECT* 6)))
+; (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
+; (schedule-requirment (sched-id ?s-id)
+;                      (event-id ?cons-id)
+;                      (resource-entity ?r-entity)
+;                      (resource-state $? [ $?cons-state&:(and (not (member$ [ ?cons-state))
+;                                                              (not (member$ ] ?cons-state)))  ] $?)
+;                      (resource-units ?cons-units&:(< ?cons-units 0)))
+; (schedule-resource (sched-id ?s-id) (entity ?r-entity) (resource-id ?r-id))
+; (schedule-setup (sched-id ?s-id) (resource-id ?r-id)
+;                 (from-event ?prod-id) (to-event ?cons-id))
+; =>
+; (bind ?statement (create$))
+; (progn$ (?p ?prod-state) (bind ?statemnet (sym-cat ?statement ?p)))
+; (bind ?selector-name (sym-cat [ ?r-id ] [ ?prod-id ] [ ?statement ] ))
+; (scheduler-add-edge-selector (sym-cat ?r-id) (sym-cat ?prod-id) (sym-cat ?cons-id) (sym-cat ?selector-name))
+;)
+
 
 
 ;; Process scheduler results
