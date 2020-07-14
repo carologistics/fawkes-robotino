@@ -76,14 +76,15 @@
   =>
   (bind ?g-id (sym-cat ?ord (gensym*)))
 
-  (bind ?binding-id (sym-cat X (gensym*)))
-  (bind ?wp (sym-cat ?binding-id #wp))
-  (assert (domain-object (name ?wp) (type workpiece)))
+  (bind ?wp (sym-cat WP- (gensym*)))
+  (assert (domain-object (name ?wp) (type workpiece))
+          (domain-fact (name wp-base-color) (param-values ?wp BASE_NONE))
+          (domain-fact (name wp-cap-color) (param-values ?wp CAP_NONE))
+          (domain-fact (name wp-ring1-color) (param-values ?wp RING_NONE))
+          (domain-fact (name wp-ring2-color) (param-values ?wp RING_NONE))
+          (domain-fact (name wp-ring3-color) (param-values ?wp RING_NONE))
+          (domain-fact (name wp-unused) (param-values ?wp)))
 
-  (bind ?fact-key (create$ domain fact wp-unused args? wp ?wp))
-  (assert (wm-fact (key meta binding args? id ?binding-id policy BIND-UNIQUE)
-                   (is-list TRUE)
-                   (values $?fact-key)))
 
   (assert (goal (id ?g-id)
                 (parent ?root-id)
@@ -187,7 +188,7 @@
   (bind ?binding-id (sym-cat X (gensym*)))
   (bind ?shelf-spot (sym-cat ?binding-id #spot))
   (bind ?cc  (sym-cat ?binding-id #wp))
-  (assert (domain-object (name ?cc) (type workpiece)))
+  (assert (domain-object (name ?cc) (type cap-carrier)))
   (bind ?fact-key (create$ domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
   (assert (wm-fact (key meta binding args? id ?binding-id policy BIND-UNIQUE)
                    (is-list TRUE)

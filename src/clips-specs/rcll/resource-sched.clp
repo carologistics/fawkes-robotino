@@ -66,7 +66,20 @@
                                        ds-prepared-order))
   )
 
-  (resource-info (type wp)
+  (resource-info (type workpiece)
+                 (consumable TRUE)
+                 (setup-preds (create$))
+                 (state-preds (create$ wp-at
+                                       wp-base-color
+                                       wp-ring1-color
+                                       wp-ring2-color
+                                       wp-ring3-color
+                                       wp-cap-color))
+  )
+
+  (resource-info (type cap-carrier)
+                 (consumable TRUE)
+                 (producible TRUE)
                  (setup-preds (create$))
                  (state-preds (create$ wp-at
                                        wp-base-color
