@@ -398,14 +398,14 @@ ClipsMipSchedulerThread::clips_build_model(std::string env_name, std::string mod
 					//logger->log_info(name(), "Presd_InPlan: %s  ", iE1.second->plan.c_str() );
 					gurobi_models_[model_id]->addConstr(
 					  gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
-					    >= iE1.second->duration,
+					    >= iE1.second->duration + 1 ,
 					  ("PresdInPlan{" + iE1.second->name + "<<" + iE2->name + "}").c_str());
 
 				} else if (iE1.second->selector->selected && iE2->selector->selected) {
 					//logger->log_info(name(), "Presd_AcrossGoals: %s << %s ", iE1.second->goal.c_str() , iE2 -> goal.c_str() );
 					gurobi_models_[model_id]->addConstr(
 					  gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
-					    >= iE1.second->duration,
+					    >= iE1.second->duration + 1,
 					  ("PresdAcrossGoals{" + iE1.second->name + "<<" + iE2->name + "}").c_str());
 				} else if (!(iE1.second->selector->selected) && iE2->selector->selected
 				           && iE1.second->selector != iE2->selector) {
@@ -516,7 +516,7 @@ ClipsMipSchedulerThread::clips_build_model(std::string env_name, std::string mod
 					                                                gurobi_vars_time_[consumer]
 					                                                    - gurobi_vars_time_[producer]
 					                                                    - event_duration - setup_duration
-					                                                  >= 0,
+					                                                  >= 1,
 					                                                cname.c_str());
 					//logger->log_info(name(), "C8: %s", cname.c_str());
 					inflow_vars[consumer].push_back(edgeVar);
@@ -578,7 +578,7 @@ ClipsMipSchedulerThread::clips_build_model(std::string env_name, std::string mod
 
 		//Constraint 10
 		for (auto const &iE : events_)
-			gurobi_models_[model_id]->addConstr(Tmax - gurobi_vars_time_[iE.first] >= 0,
+			gurobi_models_[model_id]->addConstr(Tmax - gurobi_vars_time_[iE.first] >= 1,
 			                                    ("Tmax<<" + iE.first).c_str());
 
 		gurobi_models_[model_id]->write("gurobi_model.lp");
