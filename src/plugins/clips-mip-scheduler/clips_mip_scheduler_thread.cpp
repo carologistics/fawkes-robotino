@@ -83,14 +83,15 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
 	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_set_selector_selected),
 	                      env_name)));
 
-	clips->add_function("scheduler-set-edge-duration",
-	                    sigc::slot<void, std::string, std::string, std::string, int>(sigc::bind<0>(
-	                      sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_set_edge_duration),
-	                      env_name)));
+	clips->add_function(
+	  "scheduler-set-edge-duration",
+	  sigc::slot<void, std::string, std::string, std::string, std::string, int>(
+	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_set_edge_duration),
+	                  env_name)));
 
 	clips->add_function(
 	  "scheduler-add-edge-selector",
-	  sigc::slot<void, std::string, std::string, std::string, std::string>(
+	  sigc::slot<void, std::string, std::string, std::string, std::string, std::string>(
 	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_add_edge_selector),
 	                  env_name)));
 
@@ -174,15 +175,21 @@ ClipsMipSchedulerThread::create_event(std::string event_name)
 }
 
 void
-ClipsMipSchedulerThread::create_edge(std::string res, std::string event1, std::string event2)
+ClipsMipSchedulerThread::create_edge(std::string resource_name,
+                                     std::string resource_state,
+                                     std::string event1,
+                                     std::string event2)
 {
-	std::string edge_name = "[" + res + "][" + event1 + "][" + event2 + "]";
+	std::string edge_name = Edge::create_edge_name(resource_name, resource_state, event1, event2);
 	if (edges_.find(edge_name) != edges_.end())
 		return;
 
 	Event_ptr event1_ptr = get_event(event1);
 	Event_ptr event2_ptr = get_event(event2);
-	edges_[edge_name]    = std::make_shared<Edge>(res, event1_ptr, event2_ptr);
+	Edge_ptr edge_ptr = std::make_shared<Edge>(resource_name, resource_state, event1_ptr, event2_ptr);
+
+	edges_[edge_name] = edge_ptr;
+
 	logger->log_info(name(), "Created Edge %s ", edge_name.c_str());
 }
 
@@ -205,11 +212,14 @@ ClipsMipSchedulerThread::get_event(std::string event_name)
 }
 
 ClipsMipSchedulerThread::Edge_ptr
-ClipsMipSchedulerThread::get_edge(std::string res, std::string event1, std::string event2)
+ClipsMipSchedulerThread::get_edge(std::string resource_name,
+                                  std::string resource_state,
+                                  std::string event1,
+                                  std::string event2)
 {
-	std::string edge_name = "[" + res + "][" + event1 + "][" + event2 + "]";
+	std::string edge_name = Edge::create_edge_name(resource_name, resource_state, event1, event2);
 	if (edges_.find(edge_name) == edges_.end())
-		create_edge(res, event1, event2);
+		create_edge(resource_name, resource_state, event1, event2);
 
 	return edges_[edge_name];
 }
@@ -276,29 +286,32 @@ ClipsMipSchedulerThread::clips_set_event_selector(std::string env_name,
 
 void
 ClipsMipSchedulerThread::clips_set_edge_duration(std::string env_name,
-                                                 std::string res,
+                                                 std::string resource_name,
+                                                 std::string resource_state,
                                                  std::string event1,
                                                  std::string event2,
                                                  int         duration)
 {
-	Edge_ptr edge  = get_edge(res, event1, event2);
+	Edge_ptr edge  = get_edge(resource_name, resource_state, event1, event2);
 	edge->duration = duration;
-	logger->log_info(name(), "Edge %s duration %d ", edge->name.c_str(), duration);
+
+	logger->log_info(name(), "Edge %s duration %d ", edge->name().c_str(), duration);
 }
 
 void
 ClipsMipSchedulerThread::clips_add_edge_selector(std::string env_name,
-                                                 std::string res,
+                                                 std::string resource_name,
+                                                 std::string resource_state,
                                                  std::string event1,
                                                  std::string event2,
                                                  std::string selector_name)
 {
-	Edge_ptr     edge     = get_edge(res, event1, event2);
+	Edge_ptr     edge     = get_edge(resource_name, resource_state, event1, event2);
 	Selector_ptr selector = get_selector(selector_name);
 
 	selector_edges_[selector].push_back(edge);
 	edge->selectors.push_back(selector);
-	logger->log_info(name(), "Edge %s selector %s", edge->name.c_str(), selector_name.c_str());
+	logger->log_info(name(), "Edge %s selector %s", edge->name().c_str(), selector_name.c_str());
 }
 
 void
@@ -317,9 +330,6 @@ ClipsMipSchedulerThread::clips_add_to_select_all_group(std::string env_name,
 {
 	Selector_ptr group    = get_selector(group_name);
 	Selector_ptr selector = get_selector(selector_name);
-
-	group->selected    = true;
-	selector->selected = false;
 
 	select_all_groups_[group].push_back(selector);
 
@@ -361,8 +371,8 @@ ClipsMipSchedulerThread::clips_build_model(std::string env_name, std::string mod
 		for (auto const &iE : edges_) {
 			Edge_ptr e = iE.second;
 			//logger->log_info(name(), "x %s", e->name.c_str());
-			gurobi_vars_sequence_[e->resource][e->from->name][e->to->name] =
-			  gurobi_models_[model_id]->addVar(0, 1, 0, GRB_BINARY, ("x" + e->name).c_str());
+			gurobi_vars_sequence_[e->resource_name][e->resource_state][e->from->name][e->to->name] =
+			  gurobi_models_[model_id]->addVar(0, 1, 0, GRB_BINARY, ("x" + e->name()).c_str());
 		}
 
 		//Init Gurobi plan selection Vars (S)
@@ -398,7 +408,7 @@ ClipsMipSchedulerThread::clips_build_model(std::string env_name, std::string mod
 					//logger->log_info(name(), "Presd_InPlan: %s  ", iE1.second->plan.c_str() );
 					gurobi_models_[model_id]->addConstr(
 					  gurobi_vars_time_[iE2->name] - gurobi_vars_time_[iE1.second->name]
-					    >= iE1.second->duration + 1 ,
+					    >= iE1.second->duration + 1,
 					  ("PresdInPlan{" + iE1.second->name + "<<" + iE2->name + "}").c_str());
 
 				} else if (iE1.second->selector->selected && iE2->selector->selected) {
@@ -470,57 +480,60 @@ ClipsMipSchedulerThread::clips_build_model(std::string env_name, std::string mod
 		//}
 
 		//Constrs : Consumers edge-selectors
-		//	for (auto const &is : selector_edges_) {
-		//	    std::string selector_name = is.first->name;
-		//		int        l  = is.second.size();
-		//		double     sosWieghts[l];
-		//		GRBVar     sosVars[l];
-		//		GRBLinExpr constr_LHS = 0;
-		//		GRBLinExpr constr_RHS = gurobi_vars_plan_[selector_name];
-		//		int i=0;
-		//		for (auto const &ie : is.second) {
-		//			std::string resource = ie->resource;
-		//			std::string producer = ie->from->name;
-		//			std::string consumer = ie->to->name;
-		//			GRBVar      edgeVar  = gurobi_vars_sequence_[resource][producer][consumer];
-		//			constr_LHS += edgeVar;
-		//			sosVars[i]    = edgeVar;
-		//			sosWieghts[i] = i;
-		//			i++;
-		//		}
-		//		logger->log_info(name(), "flow %s ", selector_name.c_str());
-		//		gurobi_models_[model_id]->addConstr(
-		//		  constr_LHS - constr_RHS  == 0,
-		//		  ("EdgeSelector " + selector_name).c_str());
-		//		//SOS
-		//		gurobi_models_[model_id]->addSOS(sosVars, sosWieghts, i, GRB_SOS_TYPE1);
-		//	}
+		for (auto const &is : selector_edges_) {
+			std::string selector_name = is.first->name;
+			int         l             = is.second.size();
+			double      sosWieghts[l];
+			GRBVar      sosVars[l];
+			GRBLinExpr  constr_LHS = 0;
+			GRBLinExpr  constr_RHS = gurobi_vars_plan_[selector_name];
+			int         i          = 0;
+			for (auto const &ie : is.second) {
+				std::string resource_name  = ie->resource_name;
+				std::string resource_state = ie->resource_state;
+				std::string producer       = ie->from->name;
+				std::string consumer       = ie->to->name;
+				GRBVar edgeVar = gurobi_vars_sequence_[resource_name][resource_state][producer][consumer];
+				constr_LHS += edgeVar;
+				sosVars[i]    = edgeVar;
+				sosWieghts[i] = i;
+				i++;
+			}
+			logger->log_info(name(), "flow %s ", selector_name.c_str());
+			gurobi_models_[model_id]->addConstr(constr_LHS - constr_RHS == 0,
+			                                    ("EdgeSelector " + selector_name).c_str());
+			//SOS
+			gurobi_models_[model_id]->addSOS(sosVars, sosWieghts, i, GRB_SOS_TYPE1);
+		}
 
 		//Constraints 8,3,4,5,6
 		for (auto const &iR : gurobi_vars_sequence_) {
 			std::map<std::string, std::vector<GRBVar>> inflow_vars;
 			std::map<std::string, std::vector<GRBVar>> outflow_vars;
-
+			std::string                                resource_name = iR.first;
 			//Edges Selection GenConstrIndicator
-			for (auto const &iEprod : iR.second) {
-				for (auto const &iEcons : iEprod.second) {
-					std::string resource = iR.first;
+			for (auto const &iRStates : iR.second) {
+				std::string resource_state = iRStates.first;
+				for (auto const &iEprod : iRStates.second) {
 					std::string producer = iEprod.first;
-					std::string consumer = iEcons.first;
-					GRBVar      edgeVar  = iEcons.second;
-					std::string cname    = "Select_X{" + resource + "}{" + producer + "->" + consumer + "}";
-					int         event_duration = get_event(producer)->duration;
-					double      setup_duration = get_edge(resource, producer, consumer)->duration;
-					gurobi_models_[model_id]->addGenConstrIndicator(edgeVar,
-					                                                1,
-					                                                gurobi_vars_time_[consumer]
-					                                                    - gurobi_vars_time_[producer]
-					                                                    - event_duration - setup_duration
-					                                                  >= 1,
-					                                                cname.c_str());
-					//logger->log_info(name(), "C8: %s", cname.c_str());
-					inflow_vars[consumer].push_back(edgeVar);
-					outflow_vars[producer].push_back(edgeVar);
+					for (auto const &iEcons : iEprod.second) {
+						std::string consumer = iEcons.first;
+						GRBVar      edgeVar  = iEcons.second;
+						Edge_ptr    edge     = get_edge(resource_name, resource_state, producer, consumer);
+						std::string cname    = "EdgeSelection_X" + edge->name();
+						int         event_duration = get_event(producer)->duration;
+						double      setup_duration = edge->duration;
+						gurobi_models_[model_id]->addGenConstrIndicator(edgeVar,
+						                                                1,
+						                                                gurobi_vars_time_[consumer]
+						                                                    - gurobi_vars_time_[producer]
+						                                                    - event_duration - setup_duration
+						                                                  >= 1,
+						                                                cname.c_str());
+						logger->log_info(name(), "C8: %s", cname.c_str());
+						inflow_vars[consumer].push_back(edgeVar);
+						outflow_vars[producer].push_back(edgeVar);
+					}
 				}
 			}
 
@@ -639,17 +652,19 @@ ClipsMipSchedulerThread::clips_check_progress(std::string env_name, std::string 
 
 			//Post process sequencing Vars (X)
 			for (auto const &iR : gurobi_vars_sequence_)
-				for (auto const &iEprod : iR.second)
-					for (auto const &iEcons : iEprod.second) {
-						std::string type  = "EVENT-SEQUENCE";
-						int         value = int(iEcons.second.get(GRB_DoubleAttr_X));
-						env.assert_fact_f("(scheduler-info (type %s) (descriptors %s %s %s) (value  %d ))",
-						                  type.c_str(),
-						                  iR.first.c_str(),
-						                  iEprod.first.c_str(),
-						                  iEcons.first.c_str(),
-						                  value);
-					}
+				for (auto const &iRStates : iR.second)
+					for (auto const &iEprod : iRStates.second)
+						for (auto const &iEcons : iEprod.second) {
+							std::string type  = "EVENT-SEQUENCE";
+							int         value = int(iEcons.second.get(GRB_DoubleAttr_X));
+							env.assert_fact_f("(scheduler-info (type %s) (descriptors %s %s %s %s) (value  %d ))",
+							                  type.c_str(),
+							                  iR.first.c_str(),
+							                  iRStates.first.c_str(),
+							                  iEprod.first.c_str(),
+							                  iEcons.first.c_str(),
+							                  value);
+						}
 
 			//Post process plan selection Vars (S)
 			for (auto const &iP : gurobi_vars_plan_) {

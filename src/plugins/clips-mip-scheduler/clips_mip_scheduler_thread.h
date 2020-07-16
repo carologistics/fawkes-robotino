@@ -66,12 +66,16 @@ private:
 	{
 		Selector(std::string n)
 		{
-			name = n;
+			name     = n;
+			selected = false;
 		};
 		std::string name;
 		bool        selected;
 	};
+
 	typedef std::shared_ptr<Selector> Selector_ptr;
+	void                              create_selector(std::string selector_name);
+	Selector_ptr                      get_selector(std::string selector_name);
 
 	struct Event
 	{
@@ -86,29 +90,53 @@ private:
 		std::map<std::string, int> resources;
 		Selector_ptr               selector;
 	};
+
 	typedef std::shared_ptr<Event> Event_ptr;
-	//struct SelectorGroup : Selector
-	//{
-	//    enum policy {SELECT_ONE, SELECT_ALL};
-	//    std::vector<Selector> group;
-	//};
+	void                           create_event(std::string event_name);
+	Event_ptr                      get_event(std::string event_name);
+
 	struct Edge
 	{
-		Edge(std::string resource_name, Event_ptr from_event, Event_ptr to_event)
+		Edge(std::string res_name, std::string res_state, Event_ptr from_event, Event_ptr to_event)
 		{
-			name     = "[" + resource_name + "][" + from_event->name + "][" + to_event->name + "]";
-			resource = resource_name;
-			from     = from_event;
-			to       = to_event;
+			resource_name  = res_name;
+			resource_state = res_state;
+			from           = from_event;
+			to             = to_event;
 		};
-		std::string               name;
-		std::string               resource;
+
+		static std::string
+		create_edge_name(std::string res_name,
+		                 std::string res_state,
+		                 std::string from_name,
+		                 std::string to_name)
+		{
+			return "[" + res_name + "][" + res_state + "][" + from_name + "][" + to_name + "]";
+		};
+
+		std::string               resource_name;
+		std::string               resource_state;
 		Event_ptr                 from;
 		Event_ptr                 to;
 		int                       duration;
 		std::vector<Selector_ptr> selectors;
+
+		std::string
+		name()
+		{
+			return create_edge_name(resource_name, resource_state, from->name, to->name);
+		};
 	};
+
 	typedef std::shared_ptr<Edge> Edge_ptr;
+	void                          create_edge(std::string resource_name,
+	                                          std::string resource_state,
+	                                          std::string event1,
+	                                          std::string event2);
+	Edge_ptr                      get_edge(std::string resource_name,
+	                                       std::string resource_state,
+	                                       std::string event1,
+	                                       std::string event2);
 
 	std::map<std::string, Event_ptr>    events_;
 	std::map<std::string, Selector_ptr> selectors_;
@@ -119,18 +147,13 @@ private:
 	std::map<Selector_ptr, std::vector<Selector_ptr>> select_one_groups_;
 	std::map<Selector_ptr, std::vector<Selector_ptr>> select_all_groups_;
 
-	std::map<std::string, GRBVar>                                               gurobi_vars_time_;
-	std::map<std::string, GRBVar>                                               gurobi_vars_plan_;
-	std::map<std::string, std::map<std::string, std::map<std::string, GRBVar>>> gurobi_vars_sequence_;
+	std::map<std::string, GRBVar> gurobi_vars_time_;
+	std::map<std::string, GRBVar> gurobi_vars_plan_;
+	//EdgeVars[resource_name][resource_state][from_name][to_name]
+	std::map<std::string, std::map<std::string, std::map<std::string, std::map<std::string, GRBVar>>>>
+	  gurobi_vars_sequence_;
 
 private:
-	void         create_event(std::string event_name);
-	void         create_edge(std::string res, std::string event1, std::string event2);
-	void         create_selector(std::string selector_name);
-	Event_ptr    get_event(std::string event_name);
-	Edge_ptr     get_edge(std::string res, std::string event1, std::string event2);
-	Selector_ptr get_selector(std::string selector_name);
-
 	void clips_add_event(std::string env_name,
 	                     std::string event_name,
 	                     int         duraton,
@@ -145,12 +168,14 @@ private:
 	void
 	            clips_set_event_selector(std::string env_name, std::string event_name, std::string selector_name);
 	void        clips_set_edge_duration(std::string env_name,
-	                                    std::string res,
+	                                    std::string res_name,
+	                                    std::string res_state,
 	                                    std::string event1,
 	                                    std::string event2,
 	                                    int         duration);
 	void        clips_add_edge_selector(std::string env_name,
-	                                    std::string res,
+	                                    std::string res_name,
+	                                    std::string res_state,
 	                                    std::string event1,
 	                                    std::string event2,
 	                                    std::string selector_name);
