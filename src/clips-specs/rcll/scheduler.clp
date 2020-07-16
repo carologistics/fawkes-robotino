@@ -67,6 +67,16 @@
 ; (wm-fact (key scheduling traveling-duration args? e-a ?e-id e-b ?e-id) (v))
 
 
+(defglobal
+  ?*SALIENCE-SCHED-GOALS* = 95
+  ?*SALIENCE-SCHED-RESOURCES* = 90
+  ?*SALIENCE-SCHED-EVENTS* = 85
+  ?*SALIENCE-SCHED-PRECEDENCE* = 80
+  ?*SALIENCE-SCHED-REQUIREMENTS* = 75
+  ?*SALIENCE-SCHED-EDGES* = 70
+  ?*SALIENCE-SCHED-CALL* = 10
+)
+
 
 (deftemplate scheduler-info
   (slot sched-id (type SYMBOL))
@@ -180,15 +190,17 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
     (bind ?resources (append$ ?resources (wm-key-arg ?wm:key m)))
   )
 
- (assert (schedule (id (sym-cat sched_ (gensym*)))
+ (bind ?s-id (sym-cat sched_ (gensym*)) )
+ (assert (schedule (id ?s-id)
                    (goals ?g-id)
                    (resources ?resources)
                    (mode FORMULATED)))
+ (printout t "Sched " ?s-id " FORMULATED" crlf)
 )
 
 (defrule scheduling-goals-to-schedule
 "Include all sub-goals of the scheduling subtree in the schedule"
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ (declare (salience ?*SALIENCE-SCHED-GOALS*))
  ?sf <- (schedule (goals $?goals) (mode FORMULATED))
  (goal (id ?pg&:(member$ ?pg ?goals)) (mode EXPANDED))
  (goal (id ?g-id&:(not (member$ ?g-id ?goals))) (parent ?pg) (mode EXPANDED))
@@ -207,6 +219,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (printout warn "datasets are generated" crlf)
 ;TODO: check for scheduler feature and if usable (maybe by scheduling a simple model)
  (modify ?sf (mode SELECTED))
+ (printout t "Sched " ?s-id " SELECTED" crlf)
 )
 
 (defrule scheduling-check-optimization-results
@@ -224,12 +237,12 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 (defrule scheduling-expand-schedule
 "Expand a schedule after the MIP scheduler has returned a scheduled event "
-(declare (salience ?*SALIENCE-GOAL-EXPAND*))
  ?sf <- (schedule (id ?s-id) (goals ?g-id $?) (mode SELECTED)
                   (scheduler-status OPTIMAL))
  (not (scheduler-info))
 =>
  (modify ?sf (mode EXPANDED))
+ (printout t "Sched " ?s-id "EXPANDED" crlf )
 )
 
 (defrule scheduling-commit-schedule
@@ -239,6 +252,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  ;reasoning about schedule duration and events, happens here
 =>
  (modify ?sf (mode COMMITTED))
+ (printout t "Sched " ?s-id "COMITTED" crlf)
 )
 
 (defrule scheduling-dispatch-schedule
@@ -257,6 +271,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
     (modify ?g (meta scheduled-start (+ (nth$ 1 ?now) ?es:scheduled-start 5)
                      scheduled-finish (+ (nth$ 1 ?now) ?ee:scheduled-start 5))))
  (modify ?sf (mode DISPATCHED) (dispatch-time ?now))
+ (printout t "Sched " ?s-id "DIPATCHED" )
 )
 
 
@@ -264,7 +279,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 ;We start off by defining the Events that happen at time 0
 ; (Ex: resource producing events)
 (defrule scheduling-init-resources
- (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ (declare (salience ?*SALIENCE-SCHED-RESOURCES*))
  (schedule (id ?s-id) (resources ?$ ?r-entity $?)(mode FORMULATED))
  (domain-object (name ?r-entity) (type ?r-type))
  (not (schedule-resource (sched-id ?s-id) (entity ?r-entity)))
@@ -277,7 +292,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-create-resource-source-event
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (declare (salience ?*SALIENCE-SCHED-EVENTS*))
  (schedule (id ?s-id) (mode FORMULATED))
  ;resource consumed by schedule
  (schedule-requirment (sched-id ?s-id)
@@ -318,7 +333,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  )
 )
 (defrule scheduling-create-resource-sink-event
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (declare (salience ?*SALIENCE-SCHED-EVENTS*))
  (schedule (id ?s-id) (mode FORMULATED))
  ;resourece produced by schedule
  (schedule-requirment (sched-id ?s-id)
@@ -354,7 +369,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 ;; Building The Scheduling Model
 (defrule scheduling-create-goal-start-event
 "Create schedule-events for goals that have a child plan"
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (declare (salience ?*SALIENCE-SCHED-EVENTS*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (goal-id ?g-id))
@@ -387,7 +402,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-plan-events
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (declare (salience ?*SALIENCE-SCHED-EVENTS*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (id ?p-id) (goal-id ?g-id))
@@ -417,7 +432,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 (defrule scheduling-create-goal-end-event
 "Create schedule-events for goals that have a child plan"
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (declare (salience ?*SALIENCE-SCHED-EVENTS*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (not (schedule-event (sched-id ?s-id) (entity ?g-id) (at END)))
@@ -447,7 +462,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-plan-resources-requriment
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (declare (salience ?*SALIENCE-SCHED-REQUIREMENTS*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
  (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at START))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
@@ -497,7 +512,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 ;;Schedule Formulate Precedence
 (defrule scheduling-create-precedence--goal-plan-start
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (declare (salience ?*SALIENCE-SCHED-PRECEDENCE*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (id ?goal-start) (entity ?g-id) (at START))
  (schedule-event (sched-id ?s-id) (id ?plan-start) (entity ?p-id) (at START))
@@ -509,7 +524,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-create-precedence--goal-plan-end
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (declare (salience ?*SALIENCE-SCHED-PRECEDENCE*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (id ?goal-end) (entity ?g-id) (at END))
 ; (schedule-event (sched-id ?s-id) (id ?plan-end) (entity ?p-id) (at END))
@@ -522,7 +537,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-create-precedence--in-plan
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (declare (salience ?*SALIENCE-SCHED-PRECEDENCE*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (id ?plan-start) (entity ?p-id) (at START))
  (schedule-event (sched-id ?s-id) (id ?plan-end) (entity ?p-id) (at END))
@@ -535,7 +550,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 (defrule scheduling-create-precedence--across-goals
 " From goal (1) end, to  goal (2) start"
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (declare (salience ?*SALIENCE-SCHED-PRECEDENCE*))
  (schedule (id ?s-id) (goals $?goals) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (id ?g1-end) (entity ?g1-id) (at END))
  (schedule-event (sched-id ?s-id) (id ?g2-start) (entity ?g2-id) (at START))
@@ -549,7 +564,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 (defrule scheduling-events-setup-duration
  "Calculate Setup duration estimates for resources"
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+ (declare (salience  ?*SALIENCE-SCHED-EDGES*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
  (resource-info (type ?r-type))
  (schedule-resource (sched-id ?s-id) (type ?r-type) (entity ?r-entity) (resource-id ?r-id))
@@ -626,7 +641,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 ;; Call scheduler to build data sets
 (defrule scheduling-create-event
- (declare (salience ?*SALIENCE-GOAL-SELECT*))
+ (declare (salience ?*SALIENCE-SCHED-CALL*))
  (schedule (id ?s-id) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (id ?e-id) (duration ?d) (lbound ?lb) (ubound ?ub))
  =>
@@ -634,7 +649,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-add-event-selector
- (declare (salience ?*SALIENCE-GOAL-SELECT*))
+ (declare (salience ?*SALIENCE-SCHED-CALL*))
  (schedule (id ?s-id) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?selector))
  =>
@@ -642,7 +657,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-set-selector-selected
- (declare (salience (- ?*SALIENCE-GOAL-SELECT* 1)))
+ (declare (salience (- ?*SALIENCE-SCHED-CALL* 1)))
  (schedule (id ?s-id) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (entity ?selector-id) (scheduled ?selected))
  =>
@@ -650,7 +665,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-add-selector-group-goal-plans
- (declare (salience (- ?*SALIENCE-GOAL-SELECT* 2)))
+ (declare (salience (- ?*SALIENCE-SCHED-CALL* 2)))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS))
  (plan (id ?p-id) (goal-id ?g-id))
@@ -659,7 +674,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-add-event-requirment
- (declare (salience (-  ?*SALIENCE-GOAL-SELECT* 4)))
+ (declare (salience (- ?*SALIENCE-SCHED-CALL* 4)))
  (schedule (id ?s-id) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (id ?e-id))
  (schedule-requirment (sched-id ?s-id) (event-id ?e-id)
@@ -670,7 +685,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-add-event-precedence
- (declare (salience (- ?*SALIENCE-GOAL-SELECT* 3)))
+ (declare (salience (- ?*SALIENCE-SCHED-CALL* 3)))
  (schedule (id ?s-id) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (id ?e1-id))
  (schedule-event (sched-id ?s-id) (id ?e2-id))
@@ -680,7 +695,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 )
 
 (defrule scheduling-set-resource-setup-duration
- (declare (salience (- ?*SALIENCE-GOAL-SELECT* 5)))
+ (declare (salience (- ?*SALIENCE-SCHED-CALL* 5)))
  (schedule (id ?s-id) (mode FORMULATED))
  (schedule-setup (sched-id ?s-id) (resource-id ?r-id) (duration ?duration)
                  (from-event ?producer) (to-event ?consumer))
