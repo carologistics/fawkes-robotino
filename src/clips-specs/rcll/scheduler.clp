@@ -128,11 +128,18 @@
 (deftemplate schedule-setup
   (slot sched-id (type SYMBOL))
   (slot resource-id (type SYMBOL))
+  (slot edge-group)
   (slot from-event (type SYMBOL))
   (slot to-event (type SYMBOL))
   (slot duration (type INTEGER))
-  (multislot selection-groupds (type SYMBOL))
+  (multislot resource-state (type SYMBOL))
 )
+
+(deftemplate schedule-edge-flow
+  (slot edge-group)
+  (multislot leading-groups (type SYMBOL))
+ )
+
 
 (deffunction plan-duration (?plan-id)
  (bind ?duration 0)
@@ -565,7 +572,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 (defrule scheduling-events-setup-duration
  "Calculate Setup duration estimates for resources"
  (declare (salience  ?*SALIENCE-SCHED-EDGES*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
+ (schedule (id ?s-id) (mode FORMULATED))
  (resource-info (type ?r-type))
  (schedule-resource (sched-id ?s-id) (type ?r-type) (entity ?r-entity) (resource-id ?r-id))
  (schedule-event (sched-id ?s-id) (id ?producer) (entity ?entity-1))
@@ -576,6 +583,11 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                       (resource-state $?resource-state-1)
                       (resource-setup $?resource-setup-1)
                       (resource-units ?v1&:(> ?v1 0)))
+ ;There is an init setup with an edge-state
+ ?sef <- (schedule-setup (sched-id ?s-id) (resource-id ?r-id) (edge-group ?edge-id)
+                         (from-event ?producer) (to-event nil)
+                         (resource-state $?edge-state))
+ ;Consumer states is a sub-set of the edges-state
  (schedule-event (sched-id ?s-id) (id ?consumer) (entity ?entity-2))
  (schedule-requirment (sched-id ?s-id)
                       (event-id ?consumer)
@@ -584,58 +596,122 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                       (resource-state $?resource-state-2)
                       (resource-setup $?resource-setup-2)
                       (resource-units ?v2&:(< ?v2 0)))
- (not (schedule-setup (sched-id ?s-id) (resource-id ?r-id)
-                      (from-event ?producer ) (to-event ?consumer)))
+(not (schedule-setup (sched-id ?s-id) (resource-id ?r-id) (edge-group ?edge-id)
+                      (from-event ?producer) (to-event ?consumer)))
  ;Plans do not to the same goal
  (not (and (plan (id ?entity-1) (goal-id ?same-goal))
            (plan (id ?entity-2) (goal-id ?same-goal))))
- ;Same none-setup state
-; (not (and (wm-fact (key sched fact consumption-requirment args? r ?r-id e ?cosumer  pred [ $?pred1 ]))
-;           (not (wm-fact (key sched fact production-requirment args? r ?r-id e ?producer pred [ $?pred1])))))
-
-; (not (and (not (wm-fact (key sched fact consumption-requirment args? r ?r-id e ?cosumer  pred [ $?pred2 ])))
-;           (wm-fact (key sched fact production-requirment args? r ?r-id e ?producer pred [ $?pred2 ]))))
-(test (subsetp ?resource-state-2 ?resource-state-1))
+ (test (subsetp ?resource-state-2 ?edge-state))
 =>
+ (printout t "Grounding " ?edge-id " for [" ?consumer "]" crlf)
  (bind ?setup-duration (estimate-setup-duration ?r-type ?resource-setup-1 ?resource-setup-2))
-
- (assert (schedule-setup (sched-id ?s-id)
-                         (resource-id ?r-id)
-                         (from-event ?producer)
-                         (to-event ?consumer)
-                         (duration ?setup-duration)))
+ (duplicate ?sef (to-event ?consumer) (duration ?setup-duration))
 )
 
-(defrule scheduling-update-resource-states-with-previous-plans
- "Resource-states for an existing "
- (declare (salience ?*SALIENCE-GOAL-EXPAND*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
- (resource-info (type ?r-type) (state-preds $?state-preds))
+(defrule scheduling-init-source-edges
+ "Edges from a source has the same a resource-state as the effects of the source"
+ (declare (salience (- ?*SALIENCE-SCHED-EDGES* 1)))
+ (schedule (id ?s-id) (mode FORMULATED))
+ (resource-info (type ?r-type))
  (schedule-resource (sched-id ?s-id) (type ?r-type) (entity ?r-entity) (resource-id ?r-id))
- (schedule-event (sched-id ?s-id) (id ?producer) (entity ?entity-1))
+ (schedule-event (sched-id ?s-id) (id ?source) (entity ?entity))
  (schedule-requirment (sched-id ?s-id)
-                      (event-id ?producer)
+                      (event-id ?source)
                       (resource-entity ?r-entity)
                       (resource-type ?r-type)
-                      (resource-state $?
-                                      [
-                                      $?producer-state&:(and (not (member$ [ ?producer-state ))
-                                                             (not (member$ ] ?producer-state )))
-                                      ]
-                                      $?)
+                      (resource-state $?resource-state)
+                      (resource-setup $?resource-setup)
                       (resource-units ?v1&:(> ?v1 0)))
- (schedule-event (sched-id ?s-id) (id ?consumer) (entity ?entity-2))
- ?srf <- (schedule-requirment (sched-id ?s-id)
-                      (event-id ?consumer)
+ (not (schedule-requirment (sched-id ?s-id)
+                      (event-id ?source)
                       (resource-entity ?r-entity)
                       (resource-type ?r-type)
-                      (resource-state $?consumer-states&:(not (subsetp ?producer-state ?consumer-states)))
-                      (resource-units ?v2&:(> ?v2 0)))
- (schedule-setup (sched-id ?s-id) (resource-id ?r-id)
-                      (from-event ?producer ) (to-event ?consumer))
- (not (wm-fact (key meta plan-resource at-end args? p ?entity-2 r ?r-entity pred [ $?producer-state ])))
+                      (resource-units ?v2&:(< ?v2 0))))
+ (not (schedule-setup (sched-id ?s-id) (resource-id ?r-id)
+                      (from-event ?source )))
 =>
- (modify ?srf (resource-state (append$ ?consumer-states [ ?producer-state ] )) )
+ (bind ?edge-id (sym-cat Ed (gensym*)))
+ (assert (schedule-setup (sched-id ?s-id)
+                         (resource-id ?r-id)
+                         (edge-group ?edge-id )
+                         (from-event ?source)
+                         (resource-state ?resource-state))
+          (schedule-edge-flow (edge-group ?edge-id))
+ )
+
+ (printout t "Init Source-" ?edge-id " [" ?r-id "][" ?source "][..] states: " ?resource-state crlf)
+)
+
+(defrule scheduling-init-intermediate-edges
+ (declare (salience (- ?*SALIENCE-SCHED-EDGES* 2)))
+ (schedule (id ?s-id) (mode FORMULATED))
+ (resource-info (type ?r-type))
+ (schedule-resource (sched-id ?s-id) (type ?r-type) (entity ?r-entity) (resource-id ?r-id))
+ (schedule-event (sched-id ?s-id) (id ?intermediate) (entity ?entity))
+ (schedule-requirment (sched-id ?s-id)
+                      (event-id ?intermediate)
+                      (resource-entity ?r-entity)
+                      (resource-type ?r-type)
+                      (resource-state $?prod-resource-state)
+                      (resource-units ?v1&:(> ?v1 0)))
+ (schedule-requirment (sched-id ?s-id)
+                      (event-id ?intermediate)
+                      (resource-entity ?r-entity)
+                      (resource-type ?r-type)
+                      (resource-units ?v2&:(< ?v2 0)))
+ ;(not (schedule-setup (sched-id ?s-id) (resource-id ?r-id)
+ ;                      (from-event ?producer)
+ ;                       ))
+ ;Previous edges leading to the intermediate
+ (schedule-setup (sched-id ?s-id) (resource-id ?r-id) (edge-group ?leading-id)
+                 (from-event ?prod-id) (to-event ?intermediate)
+                 (resource-state $?leading-edge-state))
+=>
+ (bind ?resource-state (create$))
+ ; All previous states which were not mensioned by an effect
+ (bind ?pre-state ?leading-edge-state)
+ (while (> (length$ ?pre-state) 0)
+        (bind ?statement (statements-first$ ?pre-state))
+        (bind ?pre-state (statements-rest$ ?pre-state))
+        (if (not
+             (any-factp ((?wm wm-fact))
+                        (wm-key-prefix ?wm:key
+                          (create$ meta plan-resource at-end args? p ?entity r ?r-entity pred [ ?statement ]))))
+            then
+             (bind ?resource-state (append$ ?resource-state [ ?statement ] ))
+        )
+ )
+ ;Positive effects of the event
+ (bind ?resource-state (append$ ?resource-state ?prod-resource-state ))
+ ;(do-for-all-facts ((?wm wm-fact))
+ ;                  (and (wm-key-prefix ?wm:key (create$ meta plan-resource at-end args? p ?entity r ?r-entity))
+ ;                       (eq ?wm:value POSITIVE))
+ ;    (assert ?resource-state (append$ ?resource-state [ (wm-key-arg ?wm:key pred) ] ))
+ ;)
+ (bind ?new-edge TRUE)
+ ;If already existing just update the edge-flow groups
+ (do-for-fact ((?ss schedule-setup) (?sef schedule-edge-flow))
+              (and (eq ?ss:from-event ?intermediate)
+                   (subsetp ?ss:resource-state ?resource-state)
+                   (subsetp ?resource-state ?ss:resource-state)
+                   (eq ?ss:edge-group ?sef:edge-group))
+     (modify ?sef (leading-groups (append$ ?sef:leading-groups ?leading-id)))
+     (bind ?new-edge FALSE)
+ )
+
+ ;Create a new edge group
+ (if ?new-edge then
+   (bind ?edge-id (sym-cat Ed (gensym*)))
+   (assert (schedule-setup (sched-id ?s-id)
+                           (resource-id ?r-id)
+                           (edge-group ?edge-id)
+                           (from-event ?intermediate)
+                           (resource-state ?resource-state))
+            (schedule-edge-flow (edge-group ?edge-id)
+                                (leading-groups ?leading-id))
+    )
+    (printout t "Init Setup-" ?edge-id " [" ?r-id "][" ?intermediate "][..]" crlf)
+ )
 )
 
 
@@ -697,12 +773,49 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 (defrule scheduling-set-resource-setup-duration
  (declare (salience (- ?*SALIENCE-SCHED-CALL* 5)))
  (schedule (id ?s-id) (mode FORMULATED))
+ (schedule-event (sched-id ?s-id) (id ?producer))
+ (schedule-event (sched-id ?s-id) (id ?consumer))
  (schedule-setup (sched-id ?s-id) (resource-id ?r-id) (duration ?duration)
-                 (from-event ?producer) (to-event ?consumer))
+                 (from-event ?producer) (to-event ?consumer) (edge-group ?edge-group) )
  =>
  (scheduler-set-edge-duration
-      (sym-cat ?r-id) (sym-cat ?producer) (sym-cat ?consumer)  ?duration)
+      (sym-cat ?r-id) (sym-cat ?edge-group) (sym-cat ?producer) (sym-cat ?consumer)  ?duration)
+ (scheduler-add-edge-selector
+      (sym-cat ?r-id) (sym-cat ?edge-group) (sym-cat ?producer) (sym-cat ?consumer)  (sym-cat ?edge-group ?consumer))
  )
+
+(defrule scheduling-select-one-edge-out
+ (declare (salience (- ?*SALIENCE-SCHED-CALL* 6)))
+ (schedule (id ?s-id) (mode FORMULATED))
+ (schedule-setup (edge-group ?edge-group) (from-event ?e) (to-event nil))
+ (schedule-setup (edge-group ?edge-group) (from-event ?e) (to-event ?consumer))
+ (schedule-event (id ?consumer))
+=>
+ (scheduler-add-to-select-one-group (sym-cat ?edge-group ?consumer)  (sym-cat ?edge-group _OUT))
+)
+
+(defrule scheduling-select-one-edge-in
+ (declare (salience (- ?*SALIENCE-SCHED-CALL* 6)))
+ (schedule (id ?s-id) (mode FORMULATED))
+ (schedule-event (id ?e))
+ (schedule-setup (edge-group ?edge-group) (from-event ?e) (to-event nil))
+ (schedule-setup (edge-group ?previous-group) (to-event ?e))
+ (schedule-edge-flow (edge-group ?edge-group) (leading-groups $? ?previous-group $?))
+=>
+ (scheduler-add-to-select-one-group (sym-cat ?previous-group ?e) (sym-cat ?edge-group _IN))
+)
+
+(defrule scheduling-edge-flow
+ (declare (salience (- ?*SALIENCE-SCHED-CALL* 6)))
+ (schedule (id ?s-id) (mode FORMULATED))
+ (schedule-setup (edge-group ?edge-group) (from-event ?e) (to-event nil))
+ (schedule-setup (edge-group ?edge-group) (from-event ?e) (to-event ?consumer))
+ (schedule-edge-flow (edge-group ?edge-group) (leading-groups $? ?previous-group $?))
+=>
+ (scheduler-add-to-select-all-group (sym-cat ?edge-group _IN)  (sym-cat ?edge-group _OUT))
+)
+
+
 
 ;(defrule scheduling-add-edge-selection-producer
 ; (declare (salience (- ?*SALIENCE-GOAL-SELECT* 6)))
@@ -792,7 +905,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (not (scheduler-info (type EVENT-TIME)))
  (not (scheduler-info (type PLAN-SELECTION)))
  ?if <- (scheduler-info (type EVENT-SEQUENCE) (value ?v&:(> ?v 0))
-                        (descriptors ?r-id ?e1-id ?e2-id))
+                        (descriptors ?r-id ?edge-group ?e1-id ?e2-id))
   ?e1f <- (schedule-event (sched-id ?s-id)
                           (id ?e1-id)
                           (scheduled ?e1-scheduled)
@@ -835,7 +948,6 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (if (and ?second-index (not ?first-index)) then
      (bind ?sched-events (insert$ ?sched-events ?second-index ?e1-id)))
 
-
  (modify ?rf (events ?sched-events))
  (retract ?if)
 )
@@ -844,7 +956,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (schedule (id ?s-id) (mode SELECTED))
  ?if <- (scheduler-info (type EVENT-SEQUENCE)
-                        (descriptors ?r-id ?e1-id ?e2-id)
+                        (descriptors ?r-id ?edge-group ?e1-id ?e2-id)
                         (value ?v&:(<= ?v 0)))
 =>
  (retract ?if)
