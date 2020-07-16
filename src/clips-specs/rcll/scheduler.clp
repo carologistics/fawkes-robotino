@@ -370,7 +370,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 (defrule scheduling-create-goal-start-event
 "Create schedule-events for goals that have a child plan"
  (declare (salience ?*SALIENCE-SCHED-EVENTS*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (goal-id ?g-id))
  (not (schedule-event (sched-id ?s-id) (entity ?g-id) (at START)))
@@ -403,7 +403,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 (defrule scheduling-plan-events
  (declare (salience ?*SALIENCE-SCHED-EVENTS*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (id ?p-id) (goal-id ?g-id))
  (schedule-event (sched-id ?s-id) (entity ?g-id) (duration ?g-dur) (at START)
@@ -433,7 +433,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 (defrule scheduling-create-goal-end-event
 "Create schedule-events for goals that have a child plan"
  (declare (salience ?*SALIENCE-SCHED-EVENTS*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (not (schedule-event (sched-id ?s-id) (entity ?g-id) (at END)))
  ;all sub-plans have schedule-events
@@ -463,7 +463,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 (defrule scheduling-plan-resources-requriment
  (declare (salience ?*SALIENCE-SCHED-REQUIREMENTS*))
- (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED|COMMITTED))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode FORMULATED))
  (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at START))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
  (plan (id ?p-id) (goal-id ?g-id) (required-resources $? ?r-entity $?))
@@ -895,50 +895,70 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                      (sub-type SCHEDULE-SUBGOALS)
                      (params r ?r-entity
                              setup1 (rest$ ?setup-state-from)
-                             setup2 (rest$ ?setup-state-to))
-               (meta last-goal-end (+ ?e1-start ?e1-dur))))
+                             setup2 (rest$ ?setup-state-to)))
+       )
 
        (modify ?sf (goals (create$ ?goals ?g-id)))
+
+       (bind ?goal-start (sym-cat (formate-event-name ?g-id) @strat))
+       (assert (schedule-event (sched-id ?s-id)
+                               (entity ?g-id)
+                               (id ?goal-start)
+                               (scheduled TRUE)
+                               (scheduled-start (+ ?e1-start ?e1-dur)))
+                               (at START))
      )
     )
 )
 
 (defrule scheduling-post-processing--schedule-setup-plan-events
- "Schedule setup plan events"
  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
  (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
- ?gsf <- (schedule-event (sched-id ?s-id) (entity ?g-id) (at START))
- ?gef <- (schedule-event (sched-id ?s-id) (entity ?g-id) (at END))
- ;?pef <- (schedule-event (sched-id ?s-id) (entity ?p-id) (at END)
- ;                        (scheduled FALSE) (duration ?pend-duration))
- ?psf <- (schedule-event (sched-id ?s-id) (entity ?p-id) (at START)
-                         (scheduled FALSE) (duration ?pstart-duration))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED) (class SETUP))
  (plan (id ?p-id) (goal-id ?g-id))
- (goal (id ?g-id) (class SETUP) (meta last-goal-end ?goal-start))
+ (schedule-event (sched-id ?s-id) (entity ?g-id) (duration ?g-dur) (at START)
+                 (scheduled-start ?scheduled-start))
+ (not (schedule-event (sched-id ?s-id) (entity ?p-id)))
  =>
- (modify ?gsf (scheduled-start ?goal-start))
- (modify ?psf (scheduled TRUE)
-              (scheduled-start ?goal-start))
- ;(modify ?pef (scheduled TRUE)
- ;             (scheduled-start (+ ?goal-start ?pstart-duration)))
- ;(modify ?gef (scheduled TRUE)
- ;             (scheduled-start (+ ?goal-start ?pstart-duration ?pend-duration)))
- (modify ?gef (scheduled-start (+ ?goal-start ?pstart-duration)))
+ (bind ?plan-start (sym-cat  (formate-event-name ?p-id)))
+ (bind ?duration (plan-duration ?p-id))
+ (assert (schedule-event (sched-id ?s-id)
+                         (entity ?p-id)
+                         (id ?plan-start)
+                         (scheduled TRUE)
+                         (scheduled-start ?scheduled-start)
+                         (duration ?duration)
+                         (at START))
+ )
+)
+
+(defrule scheduling-post-processing--setup-goal-end-event
+ (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+ (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
+ (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED) (class SETUP))
+ (not (schedule-event (sched-id ?s-id) (entity ?g-id) (at END)))
+ (plan (id ?p2-id) (goal-id ?g-id))
+ (schedule-event (sched-id ?s-id) (entity ?p-id) (duration ?p-dur)
+                 (scheduled-start ?scheduled-start))
+ =>
+ (bind ?goal-end (sym-cat (formate-event-name ?g-id) @end))
+ (assert (schedule-event (sched-id ?s-id)
+                         (entity ?g-id)
+                         (id ?goal-end)
+                         (scheduled TRUE)
+                         (scheduled-start (+ ?scheduled-start ?p-dur))
+                         (at END)))
 )
 
 (defrule scheduling-post-processing---elevate-plan-resource
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (schedule (id ?s-id) (goals $? ?g-id $?) (mode COMMITTED))
-  (schedule-event (sched-id ?s-id) (id ?e-id) (entity ?p-id) (at START)
-                  (scheduled TRUE))
-  (schedule-requirment (sched-id ?s-id) (event-id ?e-id)
-                       (resource-entity ?r-entity)
-                       (resource-units ?u&:(< ?u 0)))
-  (plan (id ?p-id) (goal-id ?g-id))
+  (schedule-event (sched-id ?s-id) (entity ?p-id) (scheduled TRUE))
+  (plan (id ?p-id) (goal-id ?g-id) (required-resources $?plan-resources))
   ?gf <- (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED)
-               (required-resources $?req&:(not (member$ ?r-entity ?req))))
+               (required-resources $?goal-resources&:(neq ?goal-resources ?plan-resources)))
   =>
-  (modify ?gf (required-resources (create$ ?req ?r-entity)))
+  (modify ?gf (required-resources ?plan-resources))
 )
 
 (defrule scheduling-post-processing---reject-non-scheduled-plans
