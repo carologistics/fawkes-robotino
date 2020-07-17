@@ -56,12 +56,6 @@ protected:
 	}
 
 private:
-	fawkes::LockPtr<CLIPS::Environment> clips_env_;
-
-private:
-	GRBEnv *                                         gurobi_env_ = 0;
-	std::map<std::string, std::unique_ptr<GRBModel>> gurobi_models_;
-
 	struct Selector
 	{
 		Selector(std::string n)
@@ -77,6 +71,7 @@ private:
 	void                              create_selector(std::string selector_name);
 	Selector_ptr                      get_selector(std::string selector_name);
 
+private:
 	struct Event
 	{
 		Event(std::string event)
@@ -95,6 +90,7 @@ private:
 	void                           create_event(std::string event_name);
 	Event_ptr                      get_event(std::string event_name);
 
+private:
 	struct Edge
 	{
 		Edge(std::string res_name, std::string res_state, Event_ptr from_event, Event_ptr to_event)
@@ -138,6 +134,7 @@ private:
 	                                       std::string event1,
 	                                       std::string event2);
 
+private:
 	std::map<std::string, Event_ptr>    events_;
 	std::map<std::string, Selector_ptr> selectors_;
 	std::map<std::string, Edge_ptr>     edges_;
@@ -147,13 +144,9 @@ private:
 	std::map<Selector_ptr, std::vector<Selector_ptr>> select_one_groups_;
 	std::map<Selector_ptr, std::vector<Selector_ptr>> select_all_groups_;
 
-	std::map<std::string, GRBVar> gurobi_vars_time_;
-	std::map<std::string, GRBVar> gurobi_vars_plan_;
-	//EdgeVars[resource_name][resource_state][from_name][to_name]
-	std::map<std::string, std::map<std::string, std::map<std::string, std::map<std::string, GRBVar>>>>
-	  gurobi_vars_sequence_;
-
 private:
+	fawkes::LockPtr<CLIPS::Environment> clips_env_;
+
 	void clips_add_event(std::string env_name,
 	                     std::string event_name,
 	                     int         duraton,
@@ -166,28 +159,39 @@ private:
 	void
 	clips_add_event_precedence(std::string env_name, std::string event_name, std::string preceded);
 	void
-	            clips_set_event_selector(std::string env_name, std::string event_name, std::string selector_name);
-	void        clips_set_edge_duration(std::string env_name,
-	                                    std::string res_name,
-	                                    std::string res_state,
-	                                    std::string event1,
-	                                    std::string event2,
-	                                    int         duration);
-	void        clips_add_edge_selector(std::string env_name,
-	                                    std::string res_name,
-	                                    std::string res_state,
-	                                    std::string event1,
-	                                    std::string event2,
-	                                    std::string selector_name);
-	void        clips_set_selector_selected(std::string env_name,
-	                                        std::string selector_name,
-	                                        std::string selected);
-	void        clips_add_to_select_one_group(std::string env_name,
-	                                          std::string selector_name,
-	                                          std::string group_name);
-	void        clips_add_to_select_all_group(std::string env_name,
-	                                          std::string selector_name,
-	                                          std::string group_name);
+	     clips_set_event_selector(std::string env_name, std::string event_name, std::string selector_name);
+	void clips_set_edge_duration(std::string env_name,
+	                             std::string res_name,
+	                             std::string res_state,
+	                             std::string event1,
+	                             std::string event2,
+	                             int         duration);
+	void clips_add_edge_selector(std::string env_name,
+	                             std::string res_name,
+	                             std::string res_state,
+	                             std::string event1,
+	                             std::string event2,
+	                             std::string selector_name);
+	void clips_set_selector_selected(std::string env_name,
+	                                 std::string selector_name,
+	                                 std::string selected);
+	void clips_add_to_select_one_group(std::string env_name,
+	                                   std::string selector_name,
+	                                   std::string group_name);
+	void clips_add_to_select_all_group(std::string env_name,
+	                                   std::string selector_name,
+	                                   std::string group_name);
+
+private:
+	GRBEnv *                                         gurobi_env_ = 0;
+	std::map<std::string, std::unique_ptr<GRBModel>> gurobi_models_;
+
+	std::map<std::string, GRBVar> gurobi_vars_time_;
+	std::map<std::string, GRBVar> gurobi_vars_plan_;
+	//EdgeVars[resource_name][resource_state][from_name][to_name]
+	std::map<std::string, std::map<std::string, std::map<std::string, std::map<std::string, GRBVar>>>>
+	  gurobi_vars_sequence_;
+
 	void        clips_build_model(std::string env_name, std::string model_id);
 	std::string clips_check_progress(std::string env_name, std::string model_id);
 };
