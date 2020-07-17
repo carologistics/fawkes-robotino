@@ -192,6 +192,8 @@ private:
 	std::map<std::string, std::map<std::string, std::map<std::string, std::map<std::string, GRBVar>>>>
 	  gurobi_vars_sequence_;
 
+	std::map<std::string, std::string> solver_params_;
+
 	void        clips_build_model(std::string env_name, std::string model_id);
 	std::string clips_check_progress(std::string env_name, std::string model_id);
 };
