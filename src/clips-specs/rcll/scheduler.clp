@@ -226,19 +226,22 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (printout warn "datasets are generated" crlf)
 ;TODO: check for scheduler feature and if usable (maybe by scheduling a simple model)
  (modify ?sf (mode SELECTED))
- (printout t "Sched " ?s-id " SELECTED" crlf)
+ (assert (timer (name (sym-cat [ sched ] - optimization-finished)) (time (now))))
 )
 
 (defrule scheduling-check-optimization-results
 "Periodically check if the optimization returned"
- (time $?)
+ (time $?now)
  ?sf <- (schedule (id ?s-id) (mode SELECTED) (scheduler-status ?status&~OPTIMAL|INFEASABL|INF_OR_UNBD))
+  ?tf <-(timer (name ?n&:(eq ?n (sym-cat [ sched ] - optimization-finished)))
+               (time $?t&:(timeout ?now ?t 3.0))
+               (seq ?seq))
 =>
  (printout info "Calling scheduler: Checking progress" crlf)
  (bind ?new-status (sym-cat (scheduler-optimization-status (sym-cat ?s-id))))
  (if (neq ?status ?new-status) then
-     (modify ?sf (scheduler-status ?new-status))
- )
+     (modify ?sf (scheduler-status ?new-status)))
+ (modify ?tf (time ?now) (seq (+ ?seq 1)))
 )
 
 
