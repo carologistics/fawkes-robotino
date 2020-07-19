@@ -497,6 +497,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
  (do-for-all-facts ((?wm wm-fact))
                    (and (wm-key-prefix ?wm:key (create$ meta plan-resource ?at args? p ?p-id r ?r-entity))
+                        (neq (wm-key-arg ?wm:key pred) (create$))
                         (member$ (first$ (wm-key-arg ?wm:key pred)) ?setup-preds)
                         (eq ?wm:value POSITIVE))
    (bind ?statement (create$ [ (wm-key-arg ?wm:key pred) ] ))
@@ -504,6 +505,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  )
  (do-for-all-facts ((?wm wm-fact))
                    (and (wm-key-prefix ?wm:key (create$ meta plan-resource ?at args? p ?p-id r ?r-entity))
+                        (neq (wm-key-arg ?wm:key pred) (create$))
                         (member$ (first$ (wm-key-arg ?wm:key pred)) ?state-preds)
                         (eq ?wm:value POSITIVE))
    (bind ?statement (create$ [ (wm-key-arg ?wm:key pred) ] ))
@@ -1043,11 +1045,11 @@ of another processed causal link. Relate it the same causal group (aka, edge-flo
             (id ?g-id&:(eq ?g-id (sym-cat SETUP [ ?r-id ] [ ?e1 ] [ ?e2 ] ))))
  )
  =>
- (if (member$ [ ?e2-setup) then
-     (progn$ (?opening-i (create$ (member$ [ ?e2-setup)))
-       (bind ?pred-name (nth$ (+ 1 ?opening-i) ?e2-setup))
-       (bind ?setup-state-to (statement-by-name ?e2-setup ?pred-name ))
-       (bind ?setup-state-from (statement-by-name ?e1-setup ?pred-name ))
+ ;(if (member$ [ ?e2-setup) then
+ ;    (progn$ (?opening-i (create$ (member$ [ ?e2-setup)))
+ ;      (bind ?pred-name (nth$ (+ 1 ?opening-i) ?e2-setup))
+ ;      (bind ?setup-state-to (statement-by-name ?e2-setup ?pred-name ))
+ ;      (bind ?setup-state-from (statement-by-name ?e1-setup ?pred-name ))
 
        (bind ?g-id (sym-cat SETUP [ ?r-id ] [ ?e1 ] [ ?e2 ] ))
        (assert (goal (id ?g-id)
@@ -1056,8 +1058,10 @@ of another processed causal link. Relate it the same causal group (aka, edge-flo
                      (mode SELECTED)
                      (sub-type SCHEDULE-SUBGOALS)
                      (params r ?r-entity
-                             setup1 (rest$ ?setup-state-from)
-                             setup2 (rest$ ?setup-state-to)))
+                             setup1 ?e1-setup
+                             setup2 ?e2-setup))
+ ;                            setup1 (rest$ ?setup-state-from)
+ ;                            setup2 (rest$ ?setup-state-to)))
        )
 
        (modify ?sf (goals (create$ ?goals ?g-id)))
@@ -1069,8 +1073,8 @@ of another processed causal link. Relate it the same causal group (aka, edge-flo
                                (scheduled TRUE)
                                (scheduled-start (+ ?e1-start ?e1-dur)))
                                (at START))
-     )
-    )
+ ;    )
+ ;   )
 )
 
 (defrule scheduling-post-processing--schedule-setup-plan-events

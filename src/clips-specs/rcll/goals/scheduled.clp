@@ -139,12 +139,12 @@
     =>
     ;(bind ?req (replace-unbound ?req))
     (modify ?tf (time ?now) (seq (+ ?seq 1)))
-    (printout t  "-------------------------SCHED-DELAY-----------------"  crlf)
-    (printout t   ?g-id " ("?mode"), delay: (+" (- (nth$ 1 ?now) ?scheduled-start ) ")"  crlf)
+    (printout t  "------SCHED-DELAY [" ?g-id "]-----------------"  crlf)
+    (printout t   "Mode ("?mode"), delay: (+" (- (nth$ 1 ?now) ?scheduled-start ) ")"  crlf)
     ; Unfinished subgoals
     (do-for-all-facts ((?g2f goal)) (and (neq ?g2f:outcome COMPLETED)
                                          (eq ?g2f:parent ?g-id))
-        (printout t  "   [ Subgoal/" ?g2f:mode ": " ?g2f:id "] "  crlf)
+        (printout t  "   [SubG/" ?g2f:mode ": " ?g2f:id "] "  crlf)
     )
     ; In-use resources
     (progn$ (?rs ?req)

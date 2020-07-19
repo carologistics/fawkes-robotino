@@ -61,108 +61,6 @@
  (modify ?pf  (duration ?d2))
 )
 
-
-(deffunction plan-positive-atomic-precond-is-previous-effect (?pref)
-  (if (not (domain-is-precond-negative (fact-slot-value ?pref part-of))) then
-    (do-for-all-facts ((?actf plan-action) (?doef domain-effect))
-                      (and
-                        (eq ?doef:part-of ?actf:action-name)
-                        (eq ?doef:type POSITIVE)
-                        (eq (fact-slot-value ?pref grounded) TRUE)
-                        (eq (fact-slot-value ?pref plan-id) ?actf:plan-id)
-                        (eq (fact-slot-value ?pref goal-id) ?actf:goal-id)
-                        (>  (fact-slot-value ?pref grounded-with) ?actf:id)
-                        (eq (fact-slot-value ?pref predicate) ?doef:predicate))
-
-    (if  (eq (fact-slot-value ?pref param-values)
-         (domain-ground-effect ?doef:param-names ?doef:param-constants ?doef:param-names ?actf:param-values))
-       then
-       (printout warn " Action  [" ?actf:id " " ?actf:action-name  "]"
-                      " effect[" ?doef:name "] ACHIVES "
-                      "Action ["  (fact-slot-value ?pref grounded-with) "] PRE-COND "  ?doef:predicate " "
-       (domain-ground-effect ?doef:param-names ?doef:param-constants ?actf:param-names ?actf:param-values)   crlf )
-  (return TRUE)
-   )
-   (printout error " Action  [" ?actf:id " " ?actf:action-name  "]"
-                   " effect[" ?doef:name "] doesnt achieve "
-                   "Action ["  (fact-slot-value ?pref grounded-with) "] PRE-COND "
-                   ?doef:predicate ": grounding of  " ?doef:param-names " " ?doef:param-constants " " ?doef:param-names " " ?actf:param-values " is "
-                   (domain-ground-effect ?doef:param-names ?doef:param-constants ?actf:param-names ?actf:param-values) " !=! "
-       (fact-slot-value ?pref param-values)   crlf )
-
-;    (return TRUE)
-)
-)
-  (return FALSE)
-)
-
-(deffunction domain-positive-effect-occurs-in-plan (?plan-id ?predicate ?param-values)
-  (bind ?satisfied-by (create$))
-  (do-for-all-facts ((?af plan-action) (?df domain-effect))
-                    (and (eq ?af:plan-id ?plan-id)
-                         (eq ?df:part-of ?af:action-name)
-                         (eq ?df:predicate ?predicate)
-                         (eq ?df:type POSITIVE)
-                         (eq ?param-values (domain-ground-effect ?df:param-names
-                                                                 ?df:param-constants
-                                                                 ?af:param-names
-                                                                 ?af:param-values)))
-    (bind ?satisfied-by (append$ ?satisfied-by ?af:id))
-  )
-  (return ?satisfied-by)
-)
-
-(deffunction domain-negative-effect-occurs-in-plan (?plan-id ?predicate ?param-values)
-  (bind ?satisfied-by (create$))
-  (do-for-all-facts ((?af plan-action) (?df domain-effect))
-                    (and (eq ?af:plan-id ?plan-id)
-                         (eq ?df:part-of ?af:action-name)
-                         (eq ?df:predicate ?predicate)
-                         (eq ?df:type NEGATIVE)
-                         (eq ?param-values (domain-ground-effect ?df:param-names
-                                                                 ?df:param-constants
-                                                                 ?af:param-names
-                                                                 ?af:param-values)))
-    (bind ?satisfied-by (append$ ?satisfied-by ?af:id))
-  )
-  (return ?satisfied-by)
-)
-
-(deffunction domain-positive-effect-earlier-in-plan (?plan-id ?action-id ?predicate ?param-values)
-  (bind ?satisfied-by (create$))
-  (do-for-all-facts ((?af plan-action) (?df domain-effect))
-                    (and (eq ?af:plan-id ?plan-id)
-                         (< ?af:id ?action-id)
-                         (eq ?df:part-of ?af:action-name)
-                         (eq ?df:predicate ?predicate)
-                         (eq ?df:type POSITIVE)
-                         (eq ?param-values (domain-ground-effect ?df:param-names
-                                                                 ?df:param-constants
-                                                                 ?af:param-names
-                                                                 ?af:param-values)))
-    (return TRUE)
-  )
-  (return FALSE)
-)
-
-(deffunction domain-negative-effect-later-in-plan (?plan-id ?action-id ?predicate ?param-values)
-  (bind ?satisfied-by (create$))
-  (do-for-all-facts ((?af plan-action) (?df domain-effect))
-                    (and (eq ?af:plan-id ?plan-id)
-                         (> ?af:id ?action-id)
-                         (eq ?df:part-of ?af:action-name)
-                         (eq ?df:predicate ?predicate)
-                         (eq ?df:type NEGATIVE)
-                         (eq ?param-values (domain-ground-effect ?df:param-names
-                                                                 ?df:param-constants
-                                                                 ?af:param-names
-                                                                 ?af:param-values)))
-    (return TRUE)
-  )
-  (return FALSE)
-)
-
-
 (defrule goal-expander-deduce-plan-resources
  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
  (goal (id ?g-id) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
@@ -176,6 +74,11 @@
                       (member$ (create$ ?p resource) ?dof:implied))
            then
            (bind ?req (append$ ?req ?p))
+           (assert (wm-fact (key meta plan-resource at-start args? p ?plan-id r ?p pred [ ])
+                             (type SYMBOL) (value POSITIVE)))
+           (assert (wm-fact (key meta plan-resource at-end args? p ?plan-id r ?p pred [ ])
+                            (type SYMBOL) (value POSITIVE)))
+
        )
      )
    )

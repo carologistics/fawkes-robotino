@@ -51,8 +51,8 @@
   (resource-info (type mps)
                  (setup-preds (create$))
                  (state-preds (create$ mps-type
+                                       wp-at
                                        mps-state
-                                       mps-side-free
                                        mps-side-free
                                        bs-prepared-color
                                        bs-prepare-side

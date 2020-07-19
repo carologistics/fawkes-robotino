@@ -1004,19 +1004,21 @@
    (not (plan (goal-id ?goal-id)))
    =>
    (bind ?plan-id  (sym-cat ?goal-id _P ))
+   (bind ?setup-state-from (statement-by-name ?setup1 at ))
+   (bind ?setup-state-to (statement-by-name ?setup2 at ))
 
    (assert
       (wm-fact (key meta plan required-resource args? id ?plan-id r ?r-entity
-                                setup [ ?setup1 ] ))
+                                setup [ ?setup-state-from ] ))
       (wm-fact (key meta plan released-resource args? id ?plan-id r ?r-entity
-                                setup [ ?setup2 ] ))
+                                setup [ ?setup-state-to ] ))
 
         (plan (id ?plan-id) (goal-id ?goal-id))
         (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
                                     (action-name move)
                                     (param-names (create$ r from from-side to to-side))
-                                    (param-values (create$ ?r-entity (nth$ 1 ?setup1) (nth$ 2 ?setup1)
-                                                                  (nth$ 1 ?setup2) (nth$ 2 ?setup2))))
+                                    (param-values (create$ ?r-entity (rest$ ?setup-state-from)
+                                                                     (rest$ ?setup-state-to))))
     )
 
 )
