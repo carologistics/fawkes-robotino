@@ -65,8 +65,6 @@
   (wm-fact (key domain fact quantity-delivered args? ord ?ord team ?team-color)
            (value ?del&:(> ?qr ?del)))
 
-  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
-  (wm-fact (key domain fact mps-type args? m ?bs t BS))
 
   (not (wm-fact (key domain fact robot-waiting $?)))
 
@@ -98,190 +96,148 @@
                         ring3-color ?ring3-color
                         cap-color ?cap-color
                         gate ?gate
-                        wp ?wp
-                        base-station ?bs)))
+                        wp ?wp)))
 
   (printout t "Goal " ?g-id " formulated" crlf)
 )
 
-(defrule goal-scheduling-create-deliver
+(defrule goal-scheduling-order-production-goals
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?root-id) (class ORDER) (mode SELECTED))
-  ?gf <- (goal (class MOUNT-CAP) (parent ?root-id) (params $?params) (mode SELECTED))
-  (not (goal (parent ?root-id) (class DELIVER)))
+  (goal (id ?root-id) (class ORDER) (params $?params) (mode SELECTED))
+  (not (goal (parent ?root-id)))
 
   (wm-fact (key refbox team-color) (value ?team-color))
+  ;DS
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
-  =>
-  (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
-  (bind ?goal-id (sym-cat ?ord DELIVER _ (gensym*)))
-
-  (modify ?gf (parent ?goal-id))
-
-  (assert (goal (id ?goal-id )
-                (parent ?root-id)
-                (sub-type SCHEDULE-SUBGOALS)
-                (class DELIVER)
-                (params (create$ ?params delivery-station ?ds ))))
-
-  (printout t "Goal " ?goal-id " formulated" crlf)
-)
-
-(defrule goal-scheduling-create-mount-cap
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?root-id) (class ORDER) (mode SELECTED))
-
-  ?gf <- (goal (parent ?priori-parent) (class ?priori-class)
-               (params $?params) (mode SELECTED))
-
-  (or (and (test (member$ (create$ com C0) ?params))
-           (not (goal (parent ?root-id))))
-       (and (test (member$ (create$ com C1) ?params))
-            (test (eq ?priori-class MOUNT-RING1))
-            (test (eq ?priori-parent ?root-id)))
-       (and (test (member$ (create$ com C2) ?params))
-            (test (eq ?priori-class MOUNT-RING2))
-            (test (eq ?priori-parent ?root-id)))
-       (and (test (member$ (create$ com C3) ?params))
-            (test (eq ?priori-class MOUNT-RING3))
-            (test (eq ?priori-parent ?root-id))))
-
-  (wm-fact (key refbox team-color) (value ?team-color))
+  ;CS
   (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
   (wm-fact (key domain fact mps-type args? m ?cs t CS))
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-
+  (wm-fact (key domain fact cs-can-perform args? m ?cs op ?cs-can-perform))
   (test (member$ (create$ cap-color ?cap-color) ?params))
+  ;BS
+  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?bs t BS))
   =>
   (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
+  (bind ?complexity (nth$ (+ 1 (member$ com ?params)) ?params))
+  (bind ?params (append$ ?params delivery-station ?ds
+                                 base-station ?bs
+                                 cap-station ?cs))
+  (bind ?ring# 0)
+  (switch ?complexity
+     (case C1 then (bind ?ring# 1))
+     (case C2 then (bind ?ring# 2))
+     (case C3 then (bind ?ring# 3))
+  )
+  (bind ?i ?ring#)
+  (while (> ?i 0)
+    (bind ?ring-color (nth$ (+ 1 (member$ (sym-cat ring ?i -color) ?params)) ?params))
+    (do-for-fact ((?wm1 wm-fact) (?wm2 wm-fact))
+                 (and (wm-key-prefix ?wm1:key (create$ domain fact mps-team))
+                      (wm-key-prefix ?wm2:key (create$ domain fact rs-ring-spec))
+                      (eq (wm-key-arg ?wm1:key m) (wm-key-arg ?wm2:key m))
+                      (eq (wm-key-arg ?wm1:key col) ?team-color)
+                      (eq (wm-key-arg ?wm2:key r) ?ring-color))
+       (bind ?rs (wm-key-arg ?wm2:key m))
+       (bind ?params (create$ ?params (sym-cat ring ?i -station) ?rs ))
+    )
+    (bind ?i (- ?i 1))
+  )
+
+
+
+  ;;DELIVER
+  (bind ?parent-id ?root-id)
+  (bind ?goal-id (sym-cat ?ord DELIVER _ (gensym*)))
+  (assert (goal (id ?goal-id )
+                (parent ?parent-id)
+                (sub-type SCHEDULE-SUBGOALS)
+                (class DELIVER)
+                (params ?params)))
+  (printout t "Goal " ?goal-id " formulated" crlf)
+  ;;MOUNT-CAP
+  (bind ?parent-id ?goal-id)
   (bind ?goal-id (sym-cat ?ord MOUNTCAP _ (gensym*)))
-
-  (if (eq ?priori-parent ?root-id) then (modify ?gf (parent ?goal-id)))
-
   (assert (goal (id ?goal-id)
-                (parent ?root-id)
+                (parent ?parent-id)
                 (sub-type SCHEDULE-SUBGOALS)
                 (class MOUNT-CAP)
-                (params (create$ ?params cap-station ?cs))))
-  (printout t "Goal " ?goal-id " formulated" crlf)
-)
-
-;; Prepare CS goals
-(defrule goal-scheduling-create-prepare-cs
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?goal-id) (params $?params) (class MOUNT-CAP) (mode SELECTED))
-  (not (goal (parent ?goal-id) (class PREPARE-CS)))
-
-  ;(wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?))
-  (wm-fact (key domain fact cs-can-perform args? m ?cs op RETRIEVE_CAP))
-  (wm-fact (key domain fact wp-cap-color args? wp ? col ?cap-color))
-  (not (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color)))
-
-  (test (member$ (create$ cap-station ?cs) ?params))
-  (test (member$ (create$ cap-color ?cap-color) ?params))
-  =>
-  (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
-  (bind ?g-id (sym-cat ?ord CLEARCAP _ (gensym*) ))
-
-  (bind ?binding-id (sym-cat X (gensym*)))
-  (bind ?shelf-spot (sym-cat ?binding-id #spot))
-  (bind ?cc  (sym-cat ?binding-id #wp))
-  (assert (domain-object (name ?cc) (type cap-carrier)))
-  (bind ?fact-key (create$ domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
-  (assert (wm-fact (key meta binding args? id ?binding-id policy BIND-UNIQUE)
-                   (is-list TRUE)
-                   (values $?fact-key)))
-
-  (assert (goal (id ?g-id)
-                (parent ?goal-id)
-                (sub-type SCHEDULE-SUBGOALS)
-                (class PREPARE-CS)
-                (params (create$ ?params
-                                 cc ?cc
-                                 shelf-spot ?shelf-spot))))
-
-  (printout t "Goal " ?g-id " formulated" crlf)
-)
-
-(defrule goal-scheduling-create-prepare-cs-fill-cap
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?goal-id) (params $?params) (class PREPARE-CS) (mode SELECTED))
-  (not (goal (parent ?goal-id) (class FILL-CAP)))
-  =>
-  (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
-  (bind ?g-id (sym-cat ?ord FILLCAP _ (gensym*)))
-
-  (assert (goal (id ?g-id)
-                (parent ?goal-id)
-                (sub-type SCHEDULE-SUBGOALS)
-                (class FILL-CAP)
                 (params ?params)))
-
-  (printout t "Goal " ?g-id " formulated" crlf)
-)
-
-(defrule goal-scheduling-create-mount-rings
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?root-id) (class ORDER) (mode SELECTED))
-
-  ?gf <- (goal (parent ?priori-parent) (class ?priori-class)
-               (params $?params) (mode SELECTED))
-
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ?req-num))
-  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
-  (wm-fact (key domain fact mps-type args? m ?rs t RS))
-
-  (or (and (test (member$ (create$ ring1-color ?ring-color) ?params))
-           (not (goal (parent ?root-id))))
-       (and (test (member$ (create$ ring2-color ?ring-color) ?params))
-            (test (eq ?priori-class MOUNT-RING1))
-            (test (eq ?priori-parent ?root-id)))
-       (and (test (member$ (create$ ring3-color ?ring-color) ?params))
-            (test (eq ?priori-class MOUNT-RING2))
-            (test (eq ?priori-parent ?root-id))))
-
-  (test (neq ?ring-color RING_NONE))
-  =>
-  (bind ?ord (nth$ (+ 1 (member$ ord ?params)) ?params))
-
-  (bind ?ring# 1)
-  (if (eq ?priori-class MOUNT-RING1) then  (bind ?ring# 2))
-  (if (eq ?priori-class MOUNT-RING2) then  (bind ?ring# 3))
-
-  (bind ?goal-id (sym-cat ?ord MOUNTRING ?ring#  _ (gensym*)))
-  (bind ?params (create$ ?params (sym-cat ring ?ring# -station) ?rs))
-
-  ;Steal parentship of lastest goal
-  (if (eq ?priori-parent ?root-id) then
-      (modify ?gf (parent ?goal-id)))
-
-  (assert (goal (id ?goal-id)
-                (parent ?root-id)
-                (sub-type SCHEDULE-SUBGOALS)
-                (class (sym-cat MOUNT-RING ?ring#))
-                (params (create$ ?params (sym-cat ring ?ring# -station) ?rs))))
-
   (printout t "Goal " ?goal-id " formulated" crlf)
+  ;; Prepare CS goals
+  (if (eq ?cs-can-perform RETRIEVE_CAP)
+       then
+       (bind ?binding-id (sym-cat X (gensym*)))
+       (bind ?shelf-spot (sym-cat ?binding-id #spot))
+       (bind ?cc  (sym-cat ?binding-id #wp))
+       (assert (domain-object (name ?cc) (type cap-carrier)))
+       (assert (wm-fact (key meta binding args? id ?binding-id policy BIND-UNIQUE)
+                        (values (create$ domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
+                        (is-list TRUE)))
+       (bind ?params (append$ ?params  cc ?cc shelf-spot ?shelf-spot))
 
-  ;;Create Fill-RS goals
-  (if (neq ?req-num ZERO)
-      then
-      (bind ?fill# (member$ ?req-num (create$ ONE TWO THREE)))
-
-      (while (> ?fill# 0)
-             (bind ?parent-id ?goal-id)
-             (bind ?goal-id (sym-cat ?ord FILLRS ?ring# ?fill#  _ (gensym*) ))
-             (assert (goal (id ?goal-id)
+       ;;CLEAR-GOAL
+       (bind ?parent-id ?goal-id)
+       (bind ?subgoal-id (sym-cat ?ord CLEARCAP _ (gensym*) ))
+       (assert (goal (id ?subgoal-id)
                      (parent ?parent-id)
-                     (class FILL-RS)
                      (sub-type SCHEDULE-SUBGOALS)
-                     (params (create$ ?params
-                                      fill-rs ?rs))))
-            (bind ?fill# (- ?fill# 1))
-            (printout t "Goal " ?goal-id  " formulated" crlf)
-      )
+                     (class PREPARE-CS)
+                     (params ?params)))
+       (printout t "Goal " ?subgoal-id " formulated" crlf)
+       ;; FILL-CAP
+       (bind ?parent-id ?subgoal-id)
+       (bind ?subgoal-id (sym-cat ?ord FILLCAP _ (gensym*)))
+       (assert (goal (id ?subgoal-id)
+                     (parent ?parent-id)
+                     (sub-type SCHEDULE-SUBGOALS)
+                     (class FILL-CAP)
+                     (params ?params)))
+       (printout t "Goal " ?subgoal-id " formulated" crlf)
+  )
+
+  ;;MOUNT-RING
+  (while (> ?ring# 0)
+    (bind ?ring-color (nth$ (+ 1 (member$ (sym-cat ring ?ring# -color) ?params)) ?params))
+    (do-for-fact ((?wm1 wm-fact) (?wm2 wm-fact))
+                 (and (wm-key-prefix ?wm1:key (create$ domain fact mps-team))
+                      (wm-key-prefix ?wm2:key (create$ domain fact rs-ring-spec))
+                      (eq (wm-key-arg ?wm1:key m) (wm-key-arg ?wm2:key m))
+                      (eq (wm-key-arg ?wm1:key col) ?team-color)
+                      (eq (wm-key-arg ?wm2:key r) ?ring-color))
+       (bind ?rs (wm-key-arg ?wm2:key m))
+       (bind ?req-num (wm-key-arg ?wm2:key rn))
+    )
+
+    (bind ?parent-id ?goal-id)
+    (bind ?goal-id (sym-cat ?ord MOUNTRING ?ring#  _ (gensym*)))
+    (assert (goal (id ?goal-id)
+                  (parent ?parent-id)
+                  (sub-type SCHEDULE-SUBGOALS)
+                  (class (sym-cat MOUNT-RING ?ring#))
+                  (params ?params)))
+    (printout t "Goal " ?goal-id " formulated" crlf)
+
+     ;;Create Fill-RS sub-goals
+     (if (neq ?req-num ZERO)
+         then
+         (bind ?fill# (member$ ?req-num (create$ ONE TWO THREE)))
+         (bind ?subgoal-id ?goal-id)
+         (while (> ?fill# 0)
+                (bind ?parent-id ?subgoal-id)
+                (bind ?subgoal-id (sym-cat ?ord FILLRS ?ring# ?fill#  _ (gensym*)))
+                (assert (goal (id ?subgoal-id)
+                              (parent ?parent-id)
+                              (class FILL-RS)
+                              (sub-type SCHEDULE-SUBGOALS)
+                              (params (create$ ?params fill-rs ?rs))))
+                (bind ?fill# (- ?fill# 1))
+                (printout t "Goal " ?subgoal-id  " formulated" crlf)
+         )
+     )
+     (bind ?ring# (- ?ring# 1))
   )
 )
