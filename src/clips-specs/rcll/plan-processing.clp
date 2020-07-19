@@ -330,13 +330,15 @@
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (goal (id ?g) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
   (plan (id ?p) (goal-id ?g) (required-resources $? ?rs $?))
+  (domain-object (name ?rs) (type ?rs-type))
+  (resource-info (type ?rs-type) (setup-preds $?setups) (state-preds $?states))
   (domain-atomic-precondition
     (grounded TRUE)
     (part-of ?part-of)
     (goal-id ?g)
     (plan-id ?p)
     (grounded-with ?action)
-    (predicate ?predicate)
+    (predicate ?predicate&:(or (member$ ?predicate ?setups) (member$ ?predicate ?states)))
     (param-values $?param-values&:(member$ ?rs ?param-values))
     )
   (not (domain-effect
@@ -360,13 +362,15 @@
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (goal (id ?g) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
   (plan (id ?p) (goal-id ?g) (required-resources $? ?rs $?))
+  (domain-object (name ?rs) (type ?rs-type))
+  (resource-info (type ?rs-type) (setup-preds $?setups) (state-preds $?states))
   (domain-effect
     (grounded TRUE)
     (type ?effect-type)
     (goal-id ?g)
     (plan-id ?p)
     (grounded-with ?action)
-    (predicate ?predicate)
+    (predicate ?predicate&:(or (member$ ?predicate ?setups) (member$ ?predicate ?states)))
     (param-values $?param-values&:(member$ ?rs ?param-values))
     )
   (not (domain-effect
