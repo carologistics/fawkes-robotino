@@ -588,13 +588,13 @@ ClipsMipSchedulerThread::clips_build_model(std::string   env_name,
 					for (auto const &iFlowVar : outflow_vars[event_name])
 						expr_out += iFlowVar;
 				else
-					expr_out = abs(events_[event_name]->resources[iR.first]);
+					expr_out = expr_selector * abs(events_[event_name]->resources[iR.first]);
 
 				if (inflow_vars.find(event_name) != inflow_vars.end())
 					for (auto const &iFlowVar : inflow_vars[event_name])
 						expr_in += iFlowVar;
 				else
-					expr_in = abs(events_[event_name]->resources[iR.first]);
+					expr_in = expr_selector * abs(events_[event_name]->resources[iR.first]);
 
 				//logger->log_info(name(), "FlowConservation %s ", event_name.c_str());
 				gurobi_models_[model_id]->addConstr(
