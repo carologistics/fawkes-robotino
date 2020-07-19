@@ -329,7 +329,7 @@
 (defrule expanded-plan-processing-deduce-plan-resources-at-start
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (goal (id ?g) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
-  (plan (id ?p) (goal-id ?g) (required-resources $?req-rs))
+  (plan (id ?p) (goal-id ?g) (required-resources $?req-rs&:(> (length$ ?req-rs) 0)))
   (domain-atomic-precondition
     (grounded TRUE)
     (part-of ?part-of)
@@ -364,7 +364,7 @@
 (defrule expanded-plan-processing-deduce-plan-resources-at-end
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (goal (id ?g) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
-  (plan (id ?p) (goal-id ?g) (required-resources $?req-rs))
+  (plan (id ?p) (goal-id ?g) (required-resources $?req-rs&:(> (length$ ?req-rs) 0)))
   (domain-effect
     (grounded TRUE)
     (type ?effect-type)
