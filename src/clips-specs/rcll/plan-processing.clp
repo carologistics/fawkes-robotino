@@ -329,7 +329,7 @@
 (defrule expanded-plan-processing-deduce-plan-resources-at-start
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (goal (id ?g) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
-  (plan (id ?p) (goal-id ?g) (required-resources $?req-rs&:(> (length$ ?req-rs) 0)))
+  (plan (id ?p) (goal-id ?g) (required-resources $? ?rs $?))
   (domain-atomic-precondition
     (grounded TRUE)
     (part-of ?part-of)
@@ -337,7 +337,7 @@
     (plan-id ?p)
     (grounded-with ?action)
     (predicate ?predicate)
-    (param-values $?param-values&:(intersect ?req-rs ?param-values))
+    (param-values $?param-values&:(member$ ?rs ?param-values))
     )
   (not (domain-effect
         (grounded TRUE)
@@ -350,21 +350,16 @@
   ))
   (test (not (domain-is-precond-negative ?part-of)))
 =>
-  (printout t "Precond of plan " ?p "  " crlf)
-  (progn$ (?rs ?req-rs)
-    (if (member$ ?rs ?param-values) then
-      (bind ?statement (create$ [ ?predicate (delete-member$ ?param-values ?rs)  ]))
-      (printout t "  action (" ?action ") " ?statement  crlf)
-      (assert (wm-fact (key meta plan-resource at-start args? p ?p r ?rs pred ?statement)
-              (type SYMBOL) (value POSITIVE)))
-    )
-  )
+  (bind ?statement (create$ [ ?predicate (delete-member$ ?param-values ?rs)  ]))
+  (printout t "Precon of plan (" ?p ") res (" ?rs ")  action (" ?action ") " ?statement  crlf)
+  (assert (wm-fact (key meta plan-resource at-start args? p ?p r ?rs pred ?statement)
+                   (type SYMBOL) (value POSITIVE)))
 )
 
 (defrule expanded-plan-processing-deduce-plan-resources-at-end
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   (goal (id ?g) (mode SELECTED) (sub-type SCHEDULE-SUBGOALS))
-  (plan (id ?p) (goal-id ?g) (required-resources $?req-rs&:(> (length$ ?req-rs) 0)))
+  (plan (id ?p) (goal-id ?g) (required-resources $? ?rs $?))
   (domain-effect
     (grounded TRUE)
     (type ?effect-type)
@@ -372,7 +367,7 @@
     (plan-id ?p)
     (grounded-with ?action)
     (predicate ?predicate)
-    (param-values $?param-values&:(intersect ?req-rs ?param-values))
+    (param-values $?param-values&:(member$ ?rs ?param-values))
     )
   (not (domain-effect
         (grounded TRUE)
@@ -384,14 +379,9 @@
         (param-values $?param-values)
   ))
 =>
-  (printout t "Effect of plan " ?p "  " crlf)
-  (progn$ (?rs ?req-rs)
-    (if (member$ ?rs ?param-values) then
-      (bind ?statement (create$ [ ?predicate (delete-member$ ?param-values ?rs) ]))
-      (printout t "  action (" ?action ") " ?statement  crlf)
-      (assert (wm-fact (key meta plan-resource at-end args? p ?p r ?rs pred ?statement)
-              (type SYMBOL) (value ?effect-type)))
-    )
-  )
+  (bind ?statement (create$ [ ?predicate (delete-member$ ?param-values ?rs) ]))
+  (printout t "Effect of plan (" ?p ") res (" ?rs ")  action (" ?action ") " ?statement  crlf)
+  (assert (wm-fact (key meta plan-resource at-end args? p ?p r ?rs pred ?statement)
+                   (type SYMBOL) (value ?effect-type)))
 )
 
