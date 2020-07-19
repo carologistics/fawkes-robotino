@@ -610,7 +610,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 
 (defrule scheduling-init-source-edges
  "Edges from a source has the same a resource-state as the effects of the source"
- (declare (salience (- ?*SALIENCE-SCHED-EDGES* 1)))
+ (declare (salience ?*SALIENCE-SCHED-EDGES*))
  (schedule (id ?s-id) (mode FORMULATED))
  (resource-info (type ?r-type))
  (schedule-resource (sched-id ?s-id) (type ?r-type) (entity ?r-entity) (resource-id ?r-id))
@@ -642,6 +642,41 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (printout t "New Group SOURCE-->["?edge-id "] for [" ?r-id "][" ?source "][..]" crlf)
 )
 
+(defrule scheduling-init-intermediate-existing-causal-edge
+"If there is a causal link to the intermediate, with the same resource-state
+of another processed causal link. Relate it the same causal group (aka, edge-flow)"
+(declare (salience ?*SALIENCE-SCHED-EDGES*))
+(schedule (id ?s-id) (mode FORMULATED))
+(resource-info (type ?r-type))
+(schedule-resource (sched-id ?s-id) (type ?r-type) (entity ?r-entity) (resource-id ?r-id))
+;Intermediate event (--> E -->)
+(schedule-event (sched-id ?s-id) (id ?intermediate) (entity ?entity))
+(schedule-requirment (sched-id ?s-id)
+                     (event-id ?intermediate)
+                     (resource-entity ?r-entity)
+                     (resource-type ?r-type)
+                     (resource-state $?prod-resource-state)
+                     (resource-units ?v1&:(> ?v1 0)))
+(schedule-requirment (sched-id ?s-id)
+                     (event-id ?intermediate)
+                     (resource-entity ?r-entity)
+                     (resource-type ?r-type)
+                     (resource-units ?v2&:(< ?v2 0)))
+;A causal link to intermediate
+(schedule-setup (from-event ?intermediate) (edge-group ?caused-group))
+ ?sef <- (schedule-edge-flow (edge-group ?caused-group) (leading-groups $?causing-groups))
+(schedule-setup (sched-id ?s-id) (resource-id ?r-id) (to-event ?intermediate)
+                (edge-group ?cause-1&:(member$ ?cause-1 ?causing-groups))
+                (resource-state $?cause-1-resource-state))
+(schedule-setup (sched-id ?s-id) (resource-id ?r-id) (to-event ?intermediate) (from-event ?causer-2)
+                (edge-group ?cause-2&:(not (member$ ?cause-2 ?causing-groups)))
+                (resource-state $?cause-2-resource-state&:(and (subsetp ?cause-1-resource-state ?cause-2-resource-state)
+                                                               (subsetp ?cause-2-resource-state ?cause-1-resource-state))))
+=>
+ (printout t "Existing Group ["?caused-group "] adding cause [" ?cause-2 "][" ?r-id "][" ?causer-2 "][" ?intermediate"]" crlf)
+ (modify ?sef (leading-groups (append$ ?causing-groups ?cause-2)))
+)
+
 (defrule scheduling-init-intermediate-edges
  (declare (salience (- ?*SALIENCE-SCHED-EDGES* 2)))
  (schedule (id ?s-id) (mode FORMULATED))
@@ -659,13 +694,18 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                       (resource-entity ?r-entity)
                       (resource-type ?r-type)
                       (resource-units ?v2&:(< ?v2 0)))
- ;(not (schedule-setup (sched-id ?s-id) (resource-id ?r-id)
- ;                      (from-event ?producer)
- ;                       ))
  ;Previous edges leading to the intermediate
  (schedule-setup (sched-id ?s-id) (resource-id ?r-id) (edge-group ?leading-id)
                  (from-event ?prod-id) (to-event ?intermediate)
                  (resource-state $?leading-edge-state))
+
+(not (and
+   (schedule-edge-flow (edge-group ?caused-group) (leading-groups $?causing-groups))
+   (schedule-setup (sched-id ?s-id) (resource-id ?r-id) (from-event ?intermediate) (edge-group ?caused-group))
+   (schedule-setup (sched-id ?s-id) (resource-id ?r-id) (to-event ?intermediate)
+                   (edge-group ?cause-2&:(member$ ?cause-2 ?causing-groups))
+                   (resource-state $?cause-2-resource-state&:(and (subsetp ?leading-edge-state ?cause-2-resource-state)
+                                                                  (subsetp ?cause-2-resource-state ?leading-edge-state))))))
 =>
  (bind ?resource-state (create$))
  ; All previous states which were not mensioned by an effect
@@ -711,6 +751,8 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                                 (leading-groups ?leading-id))
     )
     (printout t "New Group ["?edge-id "][" ?r-id "][" ?intermediate "][..]" crlf)
+    (printout t "  adding cause [" ?leading-id "][" ?r-id "][" ?prod-id "][" ?intermediate "]" crlf)
+
  )
 )
 
