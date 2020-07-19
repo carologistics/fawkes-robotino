@@ -93,6 +93,8 @@
   (slot duration (type INTEGER))
   (multislot dispatch-time (type INTEGER))
   (slot scheduler-status (type SYMBOL))
+  (multislot param-names (type SYMBOL))
+  (multislot param-values)
 )
 
 (deftemplate schedule-event
@@ -201,6 +203,8 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
  (assert (schedule (id ?s-id)
                    (goals ?g-id)
                    (resources ?resources)
+                   (param-names ImproveStartGap ImproveStartTime CliqueCuts MIPFocus TimeLimit)
+                   (param-values .2 10 -1 1 100)
                    (mode FORMULATED)))
  (printout t "Sched " ?s-id " FORMULATED" crlf)
 )
@@ -218,11 +222,12 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 (defrule scheduling-select-schedule
  " After a 'schedule' events has been formulated and scheduler called to build
    sets, a 'schedule' model is selected and the optimization is triggered "
- ?sf <- (schedule (id ?s-id)(goals ?g-id $?) (mode FORMULATED))
+ ?sf <- (schedule (id ?s-id)(goals ?g-id $?) (mode FORMULATED)
+                  (param-names $?param-names) (param-values $?param-values))
  (goal (id ?g-id) (sub-type SCHEDULE-SUBGOALS) (mode EXPANDED))
 =>
  (printout warn "Calling scheduler: Generating scheduling datasets" crlf)
- (scheduler-generate-model (sym-cat ?s-id))
+ (scheduler-generate-model (sym-cat ?s-id) ?param-names ?param-values)
  (printout warn "datasets are generated" crlf)
 ;TODO: check for scheduler feature and if usable (maybe by scheduling a simple model)
  (modify ?sf (mode SELECTED))

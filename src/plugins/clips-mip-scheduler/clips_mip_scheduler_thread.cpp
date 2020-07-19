@@ -114,7 +114,7 @@ ClipsMipSchedulerThread::clips_context_init(const std::string &                 
 
 	clips->add_function(
 	  "scheduler-generate-model",
-	  sigc::slot<void, std::string>(
+	  sigc::slot<void, std::string, CLIPS::Values, CLIPS::Values>(
 	    sigc::bind<0>(sigc::mem_fun(*this, &ClipsMipSchedulerThread::clips_build_model), env_name)));
 
 	clips->add_function("scheduler-optimization-status",
@@ -349,18 +349,56 @@ ClipsMipSchedulerThread::clips_add_to_select_one_group(std::string env_name,
 
 	select_one_groups_[group].push_back(selector);
 
-	logger->log_info(name(),
-	                 "SelectOneGroup[%s]: add selector [%s]  ",
-	                 group_name.c_str(),
-	                 selector_name.c_str());
+	//logger->log_info(name(),
+	//                 "SelectOneGroup[%s]: add selector [%s]  ",
+	//                 group_name.c_str(),
+	//                 selector_name.c_str());
 }
 
 void
-ClipsMipSchedulerThread::clips_build_model(std::string env_name, std::string model_id)
+ClipsMipSchedulerThread::clips_build_model(std::string   env_name,
+                                           std::string   model_id,
+                                           CLIPS::Values param_names,
+                                           CLIPS::Values param_values)
 {
 	try {
 		gurobi_models_[model_id] = std::make_unique<GRBModel>(*gurobi_env_);
 		gurobi_models_[model_id]->set(GRB_StringAttr_ModelName, model_id);
+
+		std::map<std::string, std::string> param_map;
+		for (size_t i = 0; i < param_names.size(); ++i) {
+			if (param_names[i].type() != CLIPS::TYPE_SYMBOL
+			    && param_names[i].type() != CLIPS::TYPE_STRING) {
+				logger->log_error(name(), "Param of scheduler is not a string or symbol");
+				continue;
+			}
+			switch (param_values[i].type()) {
+			case CLIPS::TYPE_FLOAT:
+				param_map[param_names[i].as_string()] = std::to_string(param_values[i].as_float());
+				break;
+			case CLIPS::TYPE_INTEGER:
+				param_map[param_names[i].as_string()] = std::to_string(param_values[i].as_integer());
+				break;
+			case CLIPS::TYPE_SYMBOL:
+			case CLIPS::TYPE_STRING:
+				param_map[param_names[i].as_string()] = param_values[i].as_string();
+				break;
+			default:
+				logger->log_error(name(),
+				                  "Param '%s' of scheduler of invalid type",
+				                  param_names[i].as_string().c_str());
+				break;
+			}
+		}
+
+		for (auto const &iP : param_map) {
+			gurobi_models_[model_id]->set(iP.first, iP.second);
+			logger->log_info(name(),
+			                 "Solver params: setting %s to %s ",
+			                 iP.first.c_str(),
+			                 iP.second.c_str());
+		}
+
 		//Init Gurobi Time Vars (T)
 		for (auto const &iE : events_) {
 			//logger->log_info(name(), "t[%s] ", iE.first.c_str());
@@ -652,7 +690,7 @@ ClipsMipSchedulerThread::clips_check_progress(std::string env_name, std::string 
 			logger->log_warn(name(), "The model cannot be solved  because it is unbounded");
 		}
 
-		if (status == GRB_OPTIMAL) {
+		if (status == GRB_OPTIMAL || status == GRB_TIME_LIMIT) {
 			gurobi_models_[model_id]->sync();
 
 			logger->log_warn(name(),

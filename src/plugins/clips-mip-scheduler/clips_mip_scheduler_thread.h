@@ -194,7 +194,10 @@ private:
 
 	std::map<std::string, std::string> solver_params_;
 
-	void        clips_build_model(std::string env_name, std::string model_id);
+	void        clips_build_model(std::string   env_name,
+	                              std::string   model_id,
+	                              CLIPS::Values param_names,
+	                              CLIPS::Values param_values);
 	std::string clips_check_progress(std::string env_name, std::string model_id);
 };
 #endif /* !PLUGINS_CLIPS_MIP_SCHEDULER_THREAD_H__ */
