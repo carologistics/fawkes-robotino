@@ -311,7 +311,7 @@ ClipsMipSchedulerThread::clips_add_edge_selector(std::string env_name,
 
 	selector_edges_[selector].push_back(edge);
 	edge->selectors.push_back(selector);
-	logger->log_info(name(), "Edge %s selector %s", edge->name().c_str(), selector_name.c_str());
+	//logger->log_info(name(), "Edge %s selector %s", edge->name().c_str(), selector_name.c_str());
 }
 
 void
@@ -320,7 +320,7 @@ ClipsMipSchedulerThread::clips_set_selector_selected(std::string env_name,
                                                      std::string selected)
 {
 	get_selector(selector_name)->selected = (selected == "TRUE") ? true : false;
-	logger->log_info(name(), "Selector[%s]: is %s  ", selector_name.c_str(), selected.c_str());
+	//logger->log_info(name(), "Selector[%s]: is %s  ", selector_name.c_str(), selected.c_str());
 }
 
 void
@@ -333,10 +333,10 @@ ClipsMipSchedulerThread::clips_add_to_select_all_group(std::string env_name,
 
 	select_all_groups_[group].push_back(selector);
 
-	logger->log_info(name(),
-	                 "SelectAllGroup[%s]: add selector [%s]  ",
-	                 group_name.c_str(),
-	                 selector_name.c_str());
+	//logger->log_info(name(),
+	//                 "SelectAllGroup[%s]: add selector [%s]  ",
+	//                 group_name.c_str(),
+	//                 selector_name.c_str());
 }
 
 void
@@ -392,17 +392,17 @@ ClipsMipSchedulerThread::clips_build_model(std::string env_name, std::string mod
 			if (iS.second->selected)
 				gurobi_models_[model_id]->addConstr(gurobi_vars_plan_[iS.first] == 1,
 				                                    ("SelectedEvent{" + iS.first + "}").c_str());
-			logger->log_info(name(), "C2: plans of goal %s", iS.first.c_str());
+			//logger->log_info(name(), "C2: plans of goal %s", iS.first.c_str());
 		}
 
 		//Constraint 1
 		for (auto const &iE1 : events_)
 			for (auto const &iE2 : precedence_[iE1.second]) {
-				logger->log_info(name(),
-				                 "C1: %s - %s >= %u ",
-				                 iE2->name.c_str(),
-				                 iE1.second->name.c_str(),
-				                 iE1.second->duration);
+				//logger->log_info(name(),
+				//                 "C1: %s - %s >= %u ",
+				//                 iE2->name.c_str(),
+				//                 iE1.second->name.c_str(),
+				//                 iE1.second->duration);
 
 				if (iE1.second->selector == iE2->selector) {
 					//logger->log_info(name(), "Presd_InPlan: %s  ", iE1.second->plan.c_str() );
@@ -500,7 +500,7 @@ ClipsMipSchedulerThread::clips_build_model(std::string env_name, std::string mod
 				sosWieghts[i] = i;
 				i++;
 			}
-			logger->log_info(name(), "flow %s ", selector_name.c_str());
+			//logger->log_info(name(), "flow %s ", selector_name.c_str());
 			gurobi_models_[model_id]->addConstr(constr_LHS - constr_RHS == 0,
 			                                    ("EdgeSelector " + selector_name).c_str());
 			//SOS
@@ -532,7 +532,7 @@ ClipsMipSchedulerThread::clips_build_model(std::string env_name, std::string mod
 						                                                    - event_duration - setup_duration
 						                                                  >= 1,
 						                                                cname.c_str());
-						logger->log_info(name(), "C8: %s", cname.c_str());
+						//logger->log_info(name(), "C8: %s", cname.c_str());
 						inflow_vars[consumer].push_back(edgeVar);
 						outflow_vars[producer].push_back(edgeVar);
 					}
@@ -558,19 +558,19 @@ ClipsMipSchedulerThread::clips_build_model(std::string env_name, std::string mod
 				else
 					expr_in = abs(events_[event_name]->resources[iR.first]);
 
-				logger->log_info(name(), "FlowConservation %s ", event_name.c_str());
+				//logger->log_info(name(), "FlowConservation %s ", event_name.c_str());
 				gurobi_models_[model_id]->addConstr(
 				  expr_in == expr_out, ("FlowConservation[" + iR.first + "][" + event_name + "]").c_str());
 
 				if (outflow_vars.find(event_name) != outflow_vars.end()) {
-					logger->log_info(name(), "SelectableFlowOut %s ", event_name.c_str());
+					//logger->log_info(name(), "SelectableFlowOut %s ", event_name.c_str());
 					gurobi_models_[model_id]->addConstr(
 					  expr_out == expr_selector * abs(events_[event_name]->resources[iR.first]),
 					  ("FlowOut[" + iR.first + "][" + event_name + "]").c_str());
 				}
 
 				if (inflow_vars.find(event_name) != inflow_vars.end()) {
-					logger->log_info(name(), "SelectableFlowIn %s ", event_name.c_str());
+					//logger->log_info(name(), "SelectableFlowIn %s ", event_name.c_str());
 					gurobi_models_[model_id]->addConstr(
 					  expr_in == expr_selector * abs(events_[event_name]->resources[iR.first]),
 					  ("FlowIn[" + iR.first + "][" + event_name + "]").c_str());

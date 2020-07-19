@@ -106,7 +106,7 @@
    (bind ?opening-i (member$ [ ?statements ))
    (if (eq ?opening-i FALSE) then (return (create$)))
    (bind ?closing-i (wm-key-multifield-arg-end ?statements (- ?opening-i 1)))
-   (printout t "statemnets-first$ " (subseq$ ?statements (+ ?opening-i 1) (- ?closing-i 1)) crlf)
+   ;(printout t "statemnets-first$ " (subseq$ ?statements (+ ?opening-i 1) (- ?closing-i 1)) crlf)
    (return (subseq$ ?statements (+ ?opening-i 1) (- ?closing-i 1)))   
 )
 
@@ -115,7 +115,7 @@
    (bind ?L (length$ ?statements ))
    (if (eq ?opening-i FALSE) then (return (create$)))
    (bind ?closing-i (wm-key-multifield-arg-end ?statements (- ?opening-i 1)))
-   (printout t "statemnet-rest$" (subseq$ ?statements (+ ?closing-i 1) ?L) crlf)
+   ;(printout t "statemnet-rest$" (subseq$ ?statements (+ ?closing-i 1) ?L) crlf)
    (return (subseq$ ?statements (+ ?closing-i 1) ?L))   
 )
 

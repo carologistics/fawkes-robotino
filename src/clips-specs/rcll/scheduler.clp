@@ -603,7 +603,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
            (plan (id ?entity-2) (goal-id ?same-goal))))
  (test (subsetp ?resource-state-2 ?edge-state))
 =>
- (printout t "Grounding " ?edge-id " for [" ?consumer "]" crlf)
+ (printout t "Ground Group ["?edge-id "] for [" ?r-id "][" ?producer "]["?consumer"]" crlf)
  (bind ?setup-duration (estimate-setup-duration ?r-type ?resource-setup-1 ?resource-setup-2))
  (duplicate ?sef (to-event ?consumer) (duration ?setup-duration))
 )
@@ -639,7 +639,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
           (schedule-edge-flow (edge-group ?edge-id))
  )
 
- (printout t "Init Source-" ?edge-id " [" ?r-id "][" ?source "][..] states: " ?resource-state crlf)
+ (printout t "New Group SOURCE-->["?edge-id "] for [" ?r-id "][" ?source "][..]" crlf)
 )
 
 (defrule scheduling-init-intermediate-edges
@@ -710,7 +710,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
             (schedule-edge-flow (edge-group ?edge-id)
                                 (leading-groups ?leading-id))
     )
-    (printout t "Init Setup-" ?edge-id " [" ?r-id "][" ?intermediate "][..]" crlf)
+    (printout t "New Group ["?edge-id "][" ?r-id "][" ?intermediate "][..]" crlf)
  )
 )
 
