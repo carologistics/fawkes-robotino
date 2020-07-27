@@ -139,7 +139,7 @@
 
 (deftemplate schedule-edge-flow
   (slot edge-group)
-  (multislot leading-groups (type SYMBOL))
+  (slot leading-groups (type SYMBOL))
  )
 
 
@@ -646,7 +646,6 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
                          (edge-group ?edge-id )
                          (from-event ?source)
                          (resource-state ?resource-state))
-          (schedule-edge-flow (edge-group ?edge-id))
  )
 
  (printout t "New Group SOURCE-->["?edge-id "] for [" ?r-id "][" ?source "][..]" crlf)
@@ -655,7 +654,7 @@ the sub-tree with SCHEDULE-SUBGOALS sub-type"
 (defrule scheduling-init-intermediate-existing-causal-edge
 "If there is a causal link to the intermediate, with the same resource-state
 of another processed causal link. Relate it the same causal group (aka, edge-flow)"
-(declare (salience ?*SALIENCE-SCHED-EDGES*))
+(declare (salience (- ?*SALIENCE-SCHED-EDGES* 3)))
 (schedule (id ?s-id) (mode FORMULATED))
 (resource-info (type ?r-type))
 (schedule-resource (sched-id ?s-id) (type ?r-type) (entity ?r-entity) (resource-id ?r-id))
@@ -673,22 +672,22 @@ of another processed causal link. Relate it the same causal group (aka, edge-flo
                      (resource-type ?r-type)
                      (resource-units ?v2&:(< ?v2 0)))
 ;A causal link to intermediate
-(schedule-setup (from-event ?intermediate) (edge-group ?caused-group))
- ?sef <- (schedule-edge-flow (edge-group ?caused-group) (leading-groups $?causing-groups))
-(schedule-setup (sched-id ?s-id) (resource-id ?r-id) (to-event ?intermediate)
-                (edge-group ?cause-1&:(member$ ?cause-1 ?causing-groups))
+(schedule-setup (sched-id ?s-id) (edge-group ?caused) (resource-id ?r-id) (from-event ?intermediate) (to-event nil))
+(schedule-setup (sched-id ?s-id) (edge-group ?cause-1) (resource-id ?r-id) (from-event ?) (to-event ?intermediate)
                 (resource-state $?cause-1-resource-state))
-(schedule-setup (sched-id ?s-id) (resource-id ?r-id) (to-event ?intermediate) (from-event ?causer-2)
-                (edge-group ?cause-2&:(not (member$ ?cause-2 ?causing-groups)))
+(schedule-setup (sched-id ?s-id) (edge-group ?cause-2) (resource-id ?r-id) (from-event ?causer-2) (to-event ?intermediate)
                 (resource-state $?cause-2-resource-state&:(and (subsetp ?cause-1-resource-state ?cause-2-resource-state)
                                                                (subsetp ?cause-2-resource-state ?cause-1-resource-state))))
+(schedule-edge-flow (edge-group ?caused) (leading-groups ?cause-1))
+(not (schedule-edge-flow (edge-group ?caused) (leading-groups ?cause-2)))
 =>
- (printout t "Existing Group ["?caused-group "] adding cause [" ?cause-2 "][" ?r-id "][" ?causer-2 "][" ?intermediate"]" crlf)
- (modify ?sef (leading-groups (append$ ?causing-groups ?cause-2)))
+ (printout t "Existing Group ["?caused "] adding cause [" ?cause-2 "][" ?r-id "][" ?causer-2 "][" ?intermediate"]" crlf)
+ (assert (schedule-edge-flow (edge-group ?caused) (leading-groups ?cause-2)))
+ ;(modify ?sef (leading-groups (append$ ?causing-groups ?cause-2)))
 )
 
 (defrule scheduling-init-intermediate-edges
- (declare (salience (- ?*SALIENCE-SCHED-EDGES* 2)))
+ (declare (salience ?*SALIENCE-SCHED-EDGES* ))
  (schedule (id ?s-id) (mode FORMULATED))
  (resource-info (type ?r-type))
  (schedule-resource (sched-id ?s-id) (type ?r-type) (entity ?r-entity) (resource-id ?r-id))
@@ -708,14 +707,12 @@ of another processed causal link. Relate it the same causal group (aka, edge-flo
  (schedule-setup (sched-id ?s-id) (resource-id ?r-id) (edge-group ?leading-id)
                  (from-event ?prod-id) (to-event ?intermediate)
                  (resource-state $?leading-edge-state))
-
 (not (and
-   (schedule-edge-flow (edge-group ?caused-group) (leading-groups $?causing-groups))
-   (schedule-setup (sched-id ?s-id) (resource-id ?r-id) (from-event ?intermediate) (edge-group ?caused-group))
-   (schedule-setup (sched-id ?s-id) (resource-id ?r-id) (to-event ?intermediate)
-                   (edge-group ?cause-2&:(member$ ?cause-2 ?causing-groups))
+   (schedule-setup (sched-id ?s-id) (edge-group ?caused-group) (resource-id ?r-id) (from-event ?intermediate))
+   (schedule-setup (sched-id ?s-id) (edge-group ?cause-2&:(neq ?cause-2 ?prod-id)) (resource-id ?r-id) (to-event ?intermediate)
                    (resource-state $?cause-2-resource-state&:(and (subsetp ?leading-edge-state ?cause-2-resource-state)
-                                                                  (subsetp ?cause-2-resource-state ?leading-edge-state))))))
+                                                                  (subsetp ?cause-2-resource-state ?leading-edge-state))))
+   (schedule-edge-flow (edge-group ?caused-group) (leading-groups ?cause-2))))
 =>
  (bind ?resource-state (create$))
  ; All previous states which were not mensioned by an effect
@@ -740,12 +737,12 @@ of another processed causal link. Relate it the same causal group (aka, edge-flo
  ;)
  (bind ?new-edge TRUE)
  ;If already existing just update the edge-flow groups
- (do-for-fact ((?ss schedule-setup) (?sef schedule-edge-flow))
+ (do-for-fact ((?ss schedule-setup))
               (and (eq ?ss:from-event ?intermediate)
+                   (eq ?ss:resource-id ?r-id )
                    (subsetp ?ss:resource-state ?resource-state)
-                   (subsetp ?resource-state ?ss:resource-state)
-                   (eq ?ss:edge-group ?sef:edge-group))
-     (modify ?sef (leading-groups (append$ ?sef:leading-groups ?leading-id)))
+                   (subsetp ?resource-state ?ss:resource-state))
+     (assert (schedule-edge-flow (edge-group ?ss:edge-group) (leading-groups ?leading-id)))
      (bind ?new-edge FALSE)
  )
 
@@ -757,8 +754,8 @@ of another processed causal link. Relate it the same causal group (aka, edge-flo
                            (edge-group ?edge-id)
                            (from-event ?intermediate)
                            (resource-state ?resource-state))
-            (schedule-edge-flow (edge-group ?edge-id)
-                                (leading-groups ?leading-id))
+           (schedule-edge-flow (edge-group ?edge-id)
+                               (leading-groups ?leading-id))
     )
     (printout t "New Group ["?edge-id "][" ?r-id "][" ?intermediate "][..]" crlf)
     (printout t "  adding cause [" ?leading-id "][" ?r-id "][" ?prod-id "][" ?intermediate "]" crlf)
@@ -852,7 +849,7 @@ of another processed causal link. Relate it the same causal group (aka, edge-flo
  (schedule-event (id ?e))
  (schedule-setup (edge-group ?edge-group) (from-event ?e) (to-event nil))
  (schedule-setup (edge-group ?previous-group) (to-event ?e))
- (schedule-edge-flow (edge-group ?edge-group) (leading-groups $? ?previous-group $?))
+ (schedule-edge-flow (edge-group ?edge-group) (leading-groups ?previous-group))
 =>
  (scheduler-add-to-select-one-group (sym-cat ?previous-group ?e) (sym-cat ?edge-group _IN))
 )
@@ -862,7 +859,7 @@ of another processed causal link. Relate it the same causal group (aka, edge-flo
  (schedule (id ?s-id) (mode FORMULATED))
  (schedule-setup (edge-group ?edge-group) (from-event ?e) (to-event nil))
  (schedule-setup (edge-group ?edge-group) (from-event ?e) (to-event ?consumer))
- (schedule-edge-flow (edge-group ?edge-group) (leading-groups $? ?previous-group $?))
+ (schedule-edge-flow (edge-group ?edge-group) (leading-groups ?previous-group))
 =>
  (scheduler-add-to-select-all-group (sym-cat ?edge-group _IN)  (sym-cat ?edge-group _OUT))
 )
