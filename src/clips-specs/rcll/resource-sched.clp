@@ -68,6 +68,7 @@
 
   (resource-info (type workpiece)
                  (consumable TRUE)
+                 (producible TRUE)
                  (setup-preds (create$))
                  (state-preds (create$ wp-at
                                        wp-base-color

@@ -1554,20 +1554,20 @@
  (bind ?rs (nth$ (+ 1 (member$ fill-rs ?params)) ?params))
  (bind ?plan-id (formate-event-name (sym-cat ?goal-id _ ?robot _ ?from-mps (lowcase ?from-side) _  ?rs )))
 
- (bind ?binding-id (sym-cat X (gensym*)))
- (bind ?spot (sym-cat ?binding-id #spot))
- (bind ?wp  (sym-cat ?binding-id #wp))
-
  (if (eq ?from-type BS) then
-     (assert (domain-object (name ?wp) (type workpiece)))
-     (bind ?fact-key (create$ domain fact wp-unused args? wp ?wp)))
+     (bind ?wp (sym-cat WP- (gensym*)))
+     (assert (domain-object (name ?wp) (type workpiece))
+             (domain-fact (name wp-unused) (param-values ?wp)))
+ )
  (if (eq ?from-type CS) then
+     (bind ?binding-id (sym-cat X (gensym*)))
+     (bind ?spot (sym-cat ?binding-id #spot))
+     (bind ?wp  (sym-cat ?binding-id #wp))
      (assert (domain-object (name ?wp) (type cap-carrier)))
-     (bind ?fact-key (create$ domain fact wp-on-shelf args? wp ?wp m ?from-mps spot ?spot)))
- (assert (wm-fact (key meta binding args? id ?binding-id policy BIND-UNIQUE)
-                  (is-list TRUE)
-                  (values $?fact-key)))
-
+     (bind ?fact-key (create$ domain fact wp-on-shelf args? wp ?wp m ?from-mps spot ?spot))
+     (assert (wm-fact (key meta binding args? id ?binding-id policy BIND-UNIQUE)
+                      (is-list TRUE) (values $?fact-key)))
+ )
  (bind ?binding-id (sym-cat X (gensym*)))
  (bind ?rs-before  (sym-cat ?binding-id #n))
  (bind ?fact-key (create$ domain fact rs-filled-with args? m ?rs n ?rs-before))
