@@ -20,7 +20,6 @@ fawkes/meta_plugins:
     - clips
     - clips-motor-switch
     - clips-protobuf
-    - clips-rest-api
     - clips-navgraph
     - clips-tf
   m-clips-agent:
@@ -34,7 +33,7 @@ fawkes/meta_plugins:
     - clips_robot_memory
     - clips-pddl-parser
     - clips-executive
-    - clips-executive-rest-api
+      #- clips-executive-rest-api
   m-skiller:
     - ros
     - m-fv-vision

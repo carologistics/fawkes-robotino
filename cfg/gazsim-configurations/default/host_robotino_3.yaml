@@ -10,7 +10,7 @@ fawkes:
   agent:
     name: Set
     number: 3
-    team: Carologistics
+    team: CaroBogistics
 
 network:
   fawkes:

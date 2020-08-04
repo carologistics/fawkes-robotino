@@ -1,0 +1,21 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+plugins/skiller-simulator:
+  execution-times:
+    default: 1
+    get_product_from: 15
+    bring_product_to: 15
+    discard: 10
+    prepare-bs: 17
+    prepare-cs: 17
+    prepare-ds: 17
+    prepare-rs: 17
+    lock: 4
+    unlock: 4
+    location-lock: 4
+    # Only effective if the skiller-simulator-navgraph plugin is loaded
+    navgraph:
+      speed: 0.5
+      skills:
+        - goto
