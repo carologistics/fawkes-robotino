@@ -141,7 +141,7 @@ void PictureTakerThread::loop() {
       if (p_t_if_->msgq_first_is<PictureTakerInterface::TakePictureMessage>()) {
         PictureTakerInterface::TakePictureMessage *msg =
             p_t_if_->msgq_first<PictureTakerInterface::TakePictureMessage>();
-        takePictureFromFVcamera(std::string(msg->mps_name()));
+        takePictureFromFVcamera(std::string(msg->name()));
       } else {
         logger->log_warn(name(), "Unknown message received");
       }
