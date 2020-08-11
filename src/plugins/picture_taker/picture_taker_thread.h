@@ -28,20 +28,20 @@
 #include <aspect/vision.h>
 #include <core/threading/mutex.h>
 #include <core/threading/thread.h>
+
 #include <string>
 
 // firevision camera
 #include <fvcams/camera.h>
 #include <fvclassifiers/simple.h>
+#include <fvutils/adapters/iplimage.h>
 #include <fvutils/base/roi.h>
 #include <fvutils/color/conversions.h>
 #include <fvutils/ipc/shm_image.h>
 
-#include <fvutils/adapters/iplimage.h>
+#include <iostream>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
-
-#include <iostream>
 #include <stdio.h>
 
 namespace fawkes {
@@ -63,7 +63,8 @@ class PictureTakerThread : public fawkes::Thread,
                            public fawkes::ConfigurableAspect,
                            public fawkes::BlackBoardAspect,
                            public fawkes::VisionAspect,
-                           public fawkes::ClockAspect {
+                           public fawkes::ClockAspect
+{
 public:
 	PictureTakerThread();
 	virtual void init();
@@ -74,32 +75,32 @@ private:
 	void readImage();
 	void setupCamera();
 	void takePictureFromFVcamera(std::string name);
-	
+
 	fawkes::PictureTakerInterface *p_t_if_;
-	
+
 	// firevision camera
 	firevision::Camera *fv_cam;
-	
+
 	// firevision image buffer
 	firevision::SharedMemoryImageBuffer *shm_buffer;
-	unsigned char *image_buffer;
-	
+	unsigned char *                      image_buffer;
+
 	// Image Buffer Id
 	std::string shm_id;
-	
+
 	// cv image
 	IplImage *ipl;
-	
+
 	// Width of the image
 	unsigned int img_width;
 	// Height of the image
 	unsigned int img_height;
-	
+
 	// cv::Mat frame;
 	cv::Mat visionMat;
-	
+
 	std::string vframe;
-	
+
 	std::string vpath;
 };
 

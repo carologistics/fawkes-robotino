@@ -18,9 +18,12 @@
  */
 
 #include "picture_taker_thread.h"
+
 #include "opencv2/opencv.hpp"
-#include <dlfcn.h>
+
 #include <interfaces/PictureTakerInterface.h>
+
+#include <dlfcn.h>
 #include <iostream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -42,30 +45,34 @@ using namespace cv;
 
 /** Constructor. */
 PictureTakerThread::PictureTakerThread()
-: Thread("PictureTakerThread", Thread::OPMODE_WAITFORWAKEUP),
-  VisionAspect(VisionAspect::CYCLIC) {
-	  fv_cam = NULL;
-	  shm_buffer = NULL;
-	  image_buffer = NULL;
-	  ipl = NULL;
+: Thread("PictureTakerThread", Thread::OPMODE_WAITFORWAKEUP), VisionAspect(VisionAspect::CYCLIC)
+{
+	fv_cam       = NULL;
+	shm_buffer   = NULL;
+	image_buffer = NULL;
+	ipl          = NULL;
 }
 
-void PictureTakerThread::finalize() {
+void
+PictureTakerThread::finalize()
+{
 	blackboard->close(p_t_if_);
 	delete fv_cam;
 	fv_cam = NULL;
 	delete shm_buffer;
-	shm_buffer = NULL;
+	shm_buffer   = NULL;
 	image_buffer = NULL;
-	ipl = NULL;
+	ipl          = NULL;
 }
 
-void PictureTakerThread::init() {
+void
+PictureTakerThread::init()
+{
 	p_t_if_ = blackboard->open_for_writing<PictureTakerInterface>("PictureTaker");
-	
+
 	std::string prefix = CFG_PREFIX;
-	vpath = this->config->get_string((prefix + "vpath").c_str());
-	
+	vpath              = this->config->get_string((prefix + "vpath").c_str());
+
 	// init firevision camera
 	// CAM swapping not working (??)
 	if (fvcam != NULL) {
@@ -79,55 +86,60 @@ void PictureTakerThread::init() {
 	}
 	if (fv_cam == NULL) {
 		std::string connection = this->config->get_string((prefix + "camera").c_str());
-		fv_cam = vision_master->register_for_camera(connection.c_str(), this);
+		fv_cam                 = vision_master->register_for_camera(connection.c_str(), this);
 		fv_cam->start();
 		fv_cam->open();
-		this->img_width = fv_cam->pixel_width();
+		this->img_width  = fv_cam->pixel_width();
 		this->img_height = fv_cam->pixel_height();
 	}
 	// SHM image buffer
 	if (shm_buffer != NULL) {
 		delete shm_buffer;
-		shm_buffer = NULL;
+		shm_buffer   = NULL;
 		image_buffer = NULL;
 	}
-	
-	shm_buffer = new firevision::SharedMemoryImageBuffer(
-			shm_id.c_str(), firevision::YUV422_PLANAR, this->img_width,
-			this->img_height);
+
+	shm_buffer = new firevision::SharedMemoryImageBuffer(shm_id.c_str(),
+	                                                     firevision::YUV422_PLANAR,
+	                                                     this->img_width,
+	                                                     this->img_height);
 	if (!shm_buffer->is_valid()) {
 		delete shm_buffer;
 		delete fv_cam;
 		shm_buffer = NULL;
-		fv_cam = NULL;
+		fv_cam     = NULL;
 		throw fawkes::Exception("Shared memory segment not valid");
 	}
-	
+
 	std::string vframe = this->config->get_string((prefix + "vframe").c_str());
 	shm_buffer->set_frame_id(vframe.c_str());
-	
+
 	image_buffer = shm_buffer->buffer();
 	ipl = cvCreateImage(cvSize(this->img_width, this->img_height), IPL_DEPTH_8U, IMAGE_CHANNELS);
 }
 
-void PictureTakerThread::takePictureFromFVcamera(std::string name) {
+void
+PictureTakerThread::takePictureFromFVcamera(std::string name)
+{
 	fv_cam->capture();
 	firevision::convert(fv_cam->colorspace(),
-			    firevision::YUV422_PLANAR,
-			    fv_cam->buffer(),
-			    image_buffer,
-			    this->img_width,
-			    this->img_height);
+	                    firevision::YUV422_PLANAR,
+	                    fv_cam->buffer(),
+	                    image_buffer,
+	                    this->img_width,
+	                    this->img_height);
 	fv_cam->dispose_buffer();
 	// convert img
 	firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
-	visionMat = cvarrToMat(ipl);
-	fawkes::Time now = fawkes::Time();
-	std::string image_path = vpath + "_" + name + "_" + std::to_string(now.in_sec()) + ".jpg";
+	visionMat               = cvarrToMat(ipl);
+	fawkes::Time now        = fawkes::Time();
+	std::string  image_path = vpath + "_" + name + "_" + std::to_string(now.in_sec()) + ".jpg";
 	imwrite(image_path.c_str(), visionMat);
 }
 
-void PictureTakerThread::loop() {
+void
+PictureTakerThread::loop()
+{
 	try {
 		if (fv_cam == NULL || !fv_cam->ready()) {
 			logger->log_info(name(), "Camera not ready");
@@ -138,7 +150,7 @@ void PictureTakerThread::loop() {
 		while (!p_t_if_->msgq_empty()) {
 			if (p_t_if_->msgq_first_is<PictureTakerInterface::TakePictureMessage>()) {
 				PictureTakerInterface::TakePictureMessage *msg =
-					p_t_if_->msgq_first<PictureTakerInterface::TakePictureMessage>();
+				  p_t_if_->msgq_first<PictureTakerInterface::TakePictureMessage>();
 				takePictureFromFVcamera(std::string(msg->name()));
 			} else {
 				logger->log_warn(name(), "Unknown message received");
@@ -147,5 +159,5 @@ void PictureTakerThread::loop() {
 		}
 	} catch (...) {
 		// Catch everything in order to not crash anything important
-		}
+	}
 }
