@@ -74,7 +74,7 @@ public:
 private:
   void readImage();
   void setupCamera();
-  void takePictureFromFVcamera(std::string name, std::string side);
+  void takePictureFromFVcamera(std::string name);
 
   fawkes::PictureTakerInterface *p_t_if_;
 
