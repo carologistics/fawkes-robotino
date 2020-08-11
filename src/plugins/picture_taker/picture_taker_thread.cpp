@@ -115,8 +115,7 @@ void PictureTakerThread::init() {
 
 }
 
-void PictureTakerThread::takePictureFromFVcamera(std::string name,
-                                                 std::string side) {
+void PictureTakerThread::takePictureFromFVcamera(std::string name) {
   fv_cam->capture();
   firevision::convert(fv_cam->colorspace(), firevision::YUV422_PLANAR,
                       fv_cam->buffer(), image_buffer, this->img_width,
@@ -126,8 +125,7 @@ void PictureTakerThread::takePictureFromFVcamera(std::string name,
   firevision::IplImageAdapter::convert_image_bgr(image_buffer, ipl);
   visionMat = cvarrToMat(ipl);
   fawkes::Time now = fawkes::Time();
-  std::string image_path = vpath + "_" + name + "_" + side + "_" +
-                           std::to_string(now.in_sec()) + ".jpg";
+  std::string image_path = vpath + "_" + name + "_" + std::to_string(now.in_sec()) + ".jpg";
   imwrite(image_path.c_str(), visionMat);
 }
 
@@ -143,8 +141,7 @@ void PictureTakerThread::loop() {
       if (p_t_if_->msgq_first_is<PictureTakerInterface::TakePictureMessage>()) {
         PictureTakerInterface::TakePictureMessage *msg =
             p_t_if_->msgq_first<PictureTakerInterface::TakePictureMessage>();
-        takePictureFromFVcamera(std::string(msg->mps_name()),
-                                std::string(msg->mps_side()));
+        takePictureFromFVcamera(std::string(msg->mps_name()));
       } else {
         logger->log_warn(name(), "Unknown message received");
       }
