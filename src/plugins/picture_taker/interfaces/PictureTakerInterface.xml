@@ -5,7 +5,7 @@
   </constants>
   <data>
     <comment>
-        Interface to take pictures (Obviously)
+        Interface to take pictures
     </comment>
     <field type="bool" name="noop">
         Noop because there has to be data in a blackboard interface
@@ -15,11 +15,5 @@
     <comment>
       TakeAPicture
     </comment>
-    <field type="string" length="1024" name="mps_name">
-        Name of the mps the robot is currently facing
-    </field>
-    <field type="string" length="1024" name="mps_side">
-        Side of the mps the robot is currently facing
-    </field>
   </message>
 </interface>
