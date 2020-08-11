@@ -14,6 +14,7 @@
 
 module(..., skillenv.module_init)
 documentation = [==[Take a Picture of the Realsense Camera.
+@params name: Name of the object
 ]==]
 
 -- Crucial skill information
@@ -36,11 +37,14 @@ fsm:add_transitions{
 }
 
 function TAKE_PICTURE:init()
+   
+   if self.fsm.vars.name == nil then
+      print_warn("Please specify the object you want to photograph")
+   end
 
-   print_info("Taking picture")
-
-   if if_picture_taker:has_writer() then
-     local msg = if_picture_taker.TakePictureMessage:new()
+   if if_picture_taker:has_writer() and self.fsm.vars.name then
+     print_info("Taking picture")
+     local msg = if_picture_taker.TakePictureMessage:new(self.fsm.vars.name)
      if_picture_taker:msgq_enqueue_copy(msg)
    end
 end
