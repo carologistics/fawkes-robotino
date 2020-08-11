@@ -33,6 +33,7 @@ SUBDIRS	= clips-motor-switch \
 		skiller_motor_state \
 		protoboard-rcll \
 		asp-planner
+		picture_taker
 
 
 include $(BUILDSYSDIR)/rules.mk
