@@ -75,7 +75,7 @@ PictureTakerThread::init()
 
 	// init firevision camera
 	// CAM swapping not working (??)
-	if (fvcam != NULL) {
+	if (fv_cam != NULL) {
 		// free the camera
 		fv_cam->stop();
 		fv_cam->flush();
