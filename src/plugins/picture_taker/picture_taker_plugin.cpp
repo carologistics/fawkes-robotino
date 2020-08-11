@@ -24,16 +24,16 @@
 using namespace fawkes;
 
 /** Plugin to ...
- *  * @author Daniel Habering, Sebastian Schoenitz, Carsten Stoffels
- *   */
+ * @author Daniel Habering, Sebastian Schoenitz, Carsten Stoffels
+ */
 class PictureTakerPlugin : public fawkes::Plugin {
 public:
-  /** Constructor.
-   *    * @param config Fawkes configuration
-   *       */
-  PictureTakerPlugin(Configuration *config) : Plugin(config) {
-    thread_list.push_back(new PictureTakerThread());
-  }
+	/** Constructor.
+	 * @param config Fawkes configuration
+   	 */
+  	PictureTakerPlugin(Configuration *config) : Plugin(config) {
+    		thread_list.push_back(new PictureTakerThread());
+  	}
 };
 
 PLUGIN_DESCRIPTION("Plugin to take and store pictures")
