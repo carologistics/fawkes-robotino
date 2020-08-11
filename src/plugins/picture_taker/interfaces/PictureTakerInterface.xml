@@ -13,7 +13,10 @@
   </data>
   <message name="TakePicture">
     <comment>
-      TakeAPicture
+	TakeAPicture
     </comment>
+    <field type="string" length="1024" name="name">
+	Name of the object to photograph
+    </field>
   </message>
 </interface>
