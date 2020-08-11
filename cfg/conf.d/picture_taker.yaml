@@ -14,4 +14,4 @@ plugins/picture_taker:
   dframe: "/cam_depth_markerless"
   vframe: "/cam_vision_markerless"
   # frame of reference
-  vpath: "/home/robotino/realsense_images/mps_"
+  vpath: "/home/robotino/realsense_images/img_"
