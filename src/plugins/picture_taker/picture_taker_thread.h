@@ -65,43 +65,42 @@ class PictureTakerThread : public fawkes::Thread,
                            public fawkes::VisionAspect,
                            public fawkes::ClockAspect {
 public:
-  PictureTakerThread();
-
-  virtual void init();
-  virtual void loop();
-  virtual void finalize();
+	PictureTakerThread();
+	virtual void init();
+	virtual void loop();
+	virtual void finalize();
 
 private:
-  void readImage();
-  void setupCamera();
-  void takePictureFromFVcamera(std::string name);
-
-  fawkes::PictureTakerInterface *p_t_if_;
-
-  // firevision camera
-  firevision::Camera *fv_cam;
-
-  // firevision image buffer
-  firevision::SharedMemoryImageBuffer *shm_buffer;
-  unsigned char *image_buffer;
-
-  /// Image Buffer Id
-  std::string shm_id;
-
-  // cv image
-  IplImage *ipl;
-
-  // Width of the image
-  unsigned int img_width;
-  // Height of the image
-  unsigned int img_height;
-
-  // cv::Mat frame;
-  cv::Mat visionMat;
-
-  std::string vframe;
-
-  std::string vpath;
+	void readImage();
+	void setupCamera();
+	void takePictureFromFVcamera(std::string name);
+	
+	fawkes::PictureTakerInterface *p_t_if_;
+	
+	// firevision camera
+	firevision::Camera *fv_cam;
+	
+	// firevision image buffer
+	firevision::SharedMemoryImageBuffer *shm_buffer;
+	unsigned char *image_buffer;
+	
+	// Image Buffer Id
+	std::string shm_id;
+	
+	// cv image
+	IplImage *ipl;
+	
+	// Width of the image
+	unsigned int img_width;
+	// Height of the image
+	unsigned int img_height;
+	
+	// cv::Mat frame;
+	cv::Mat visionMat;
+	
+	std::string vframe;
+	
+	std::string vpath;
 };
 
 #endif
