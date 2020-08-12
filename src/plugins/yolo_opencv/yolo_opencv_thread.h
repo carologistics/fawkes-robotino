@@ -22,10 +22,10 @@
 
 //Fawkes
 #include <aspect/blackboard.h>
+#include <blackboard/interface_listener.h>
 #include <aspect/clock.h>
 #include <aspect/configurable.h>
 #include <aspect/logging.h>
-#include <blackboard/interface_listener.h>
 #include <core/threading/mutex.h>
 #include <core/threading/thread.h>
 
@@ -55,7 +55,6 @@ public:
 	QueueFPS() : counter(0)
 	{
 	}
-
 	/** Push frame into queue 
 	 * @param entry The frame to add to the queue*/
 	void

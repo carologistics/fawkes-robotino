@@ -36,7 +36,6 @@ SUBDIRS	= clips-motor-switch \
     yolo_opencv \
     workpiece_pose
 
-
 include $(BUILDSYSDIR)/rules.mk
 
 gazebo: ax12_gripper tag_vision arduino conveyor_pose navgraph-generator-mps
