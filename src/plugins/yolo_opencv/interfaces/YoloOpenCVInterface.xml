@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE interface SYSTEM "interface.dtd">
+<interface name="YoloOpenCVInterface" author="Niklas Sebastian Eltester" year="2020">
+  <constants>
+  </constants>
+  <data>
+    <comment>
+        Interface to run Image detection based on the Yolo implementation in OpenCV
+    </comment>
+    <field type="vector" name="detection_boxes">
+        Vector for bounding boxes around detected objects
+    </field>
+  </data>
+  <message name="DetectObjectMessagMessage">
+    <comment>
+      Detect an object based on existing weights
+    </comment>
+    <field type="string" length="1024" name="path_to_picture">
+        Path to the picture to run the detection on
+    </field>
+    <field type="string" length="1024" name="video_device">
+	Which video device to use
+    </field>
+  </message>
+</interface>
