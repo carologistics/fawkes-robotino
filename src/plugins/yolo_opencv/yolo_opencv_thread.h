@@ -68,7 +68,7 @@ public:
 	QueueFPS() : counter(0)
 	{
 	}
-	
+
 	/** Push frame into queue */
 	void
 	push(const T &entry)
@@ -83,7 +83,7 @@ public:
 			tm.start();
 		}
 	}
-	
+
 	/** Get frame from queue*/
 	T
 	get()
@@ -93,7 +93,7 @@ public:
 		this->pop();
 		return entry;
 	}
-	
+
 	/** Get fps*/
 	float
 	getFPS()
