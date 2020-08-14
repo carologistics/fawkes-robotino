@@ -69,7 +69,8 @@ public:
 	{
 	}
 
-	/** Push frame into queue */
+	/** Push frame into queue 
+	 * @param entry The frame to add to the queue*/
 	void
 	push(const T &entry)
 	{
@@ -84,7 +85,8 @@ public:
 		}
 	}
 
-	/** Get frame from queue*/
+	/** Get frame from queue
+	 * @return entry The first frame from the queue*/
 	T
 	get()
 	{
@@ -94,7 +96,8 @@ public:
 		return entry;
 	}
 
-	/** Get fps*/
+	/** Get fps
+	 * @return fps The framerate*/
 	float
 	getFPS()
 	{
@@ -113,6 +116,7 @@ public:
 			this->pop();
 	}
 
+	// fps counter
 	unsigned int counter;
 
 private:
