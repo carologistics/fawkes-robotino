@@ -55,10 +55,16 @@ void preprocess(const cv::Mat &   frame,
 
 void postprocess(cv::Mat &frame, const std::vector<Mat> &out, cv::dnn::Net &net, int backend);
 
+/**
+ * Queueing frames for image detection
+ * @author Alessandro de Oliveira Faria
+ */
+
 template <typename T>
 class QueueFPS : public std::queue<T>
 {
 public:
+	/** Constructor. */
 	QueueFPS() : counter(0)
 	{
 	}
