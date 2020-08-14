@@ -116,7 +116,7 @@ public:
 			this->pop();
 	}
 
-	// fps counter
+	/// fps counter
 	unsigned int counter;
 
 private:
