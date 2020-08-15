@@ -870,28 +870,12 @@
         (param-names r wp m)
         (param-values ?robot ?wp ?ds))
   (plan-action (id (+ ?offset 5)) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
-        (action-name prepare-ds)
-        (param-names m ord)
-        (param-values ?ds ?order)))
+        (action-name request-ds-fulfill-order)
+        (param-names r m wp ord)
+        (param-values ?robot ?ds ?wp ?order))
+)
 
- (bind ?param-names (create$ ord wp m g basecol capcol))
- (bind ?param-values (create$ ?order ?wp ?ds ?gate ?base-color ?cap-color))
- (switch ?complexity
-  (case C1 then
-      (bind ?param-names (create$ ord wp m g basecol capcol ring1col))
-      (bind ?param-values (create$ ?order ?wp ?ds ?gate ?base-color ?cap-color ?ring1-color)))
-  (case C2 then
-      (bind ?param-names (create$ ord wp m g basecol capcol ring1col ring2col))
-      (bind ?param-values (create$ ?order ?wp ?ds ?gate ?base-color ?cap-color ?ring1-color ?ring2-color)))
-  (case C3 then
-      (bind ?param-names (create$ ord wp m g basecol capcol ring1col ring2col ring3col))
-      (bind ?param-values (create$ ?order ?wp ?ds ?gate ?base-color ?cap-color ?ring1-color ?ring2-color ?ring3-color)))
- )
  (assert
-   (plan-action (id (+ ?offset 6)) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
-        (action-name (sym-cat fulfill-order- (lowcase ?complexity)))
-        (param-names ?param-names)
-        (param-values ?param-values))
    (plan-action (id (+ ?offset 7)) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
         (action-name unlock) (param-values ?ds))
    (plan-action (id (+ ?offset 8)) (plan-id DELIVER-PLAN) (goal-id ?goal-id)
@@ -935,9 +919,14 @@
 (defrule goal-expander-process-mps
  ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (class PROCESS-MPS) (mode SELECTED) (parent ?parent)
-             (params m ?mps))
+             (params m ?mps $?other-goal-args))
   ?pre <- (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
   ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
+  ; The DS might have multiple pending mps-handling facts, they can be
+  ; distinguished by additional params (wp and order id) that are present
+  ; both in the goal and the mps-handling facts
+  (test (and (member$ ?other-goal-args ?prepare-params)
+             (member$ ?other-goal-args ?process-params)))
   =>
   (bind ?prepare-param-values (values-from-name-value-list ?prepare-params))
   (bind ?process-param-values (values-from-name-value-list ?process-params))

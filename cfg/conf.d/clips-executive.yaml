@@ -233,6 +233,9 @@ clips-executive:
           allowed-complexities: ["C0", "C2", "C3"]
           exclusive-complexities: []
 
+          # If true, robots will not start big products after a certain time
+          block-late-c2-c3: true
+
           # Priority to pursue competitive orders.
           # HIGH: Produce it as fast as possible.
           # DEFAULT: Treat competitive order just like normal ones

@@ -363,15 +363,23 @@
   (modify ?g (mode EVALUATED))
 )
 
-(defrule goal-reasoner-evaluate-completed-deliver
-" Enhance the order-delivered fact of the order of a successful deliver goal
+(defrule goal-reasoner-evaluate-process-ds
+" Enhance the order-delivered fact of the order of a successful deliver goal,
+  delete the mps-handling fact if the preparation took place.
 "
-  ?g <- (goal (id ?goal-id) (class DELIVER) (mode FINISHED) (outcome COMPLETED)
-              (params $? ?order $?))
+  ?g <- (goal (id ?goal-id) (class PROCESS-MPS) (mode FINISHED) (outcome ?outcome)
+              (params m ?mps ord ?order))
   (wm-fact (id "/refbox/team-color") (value ?team-color&:(neq ?team-color nil)))
   ?od <- (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color) (value ?val))
+  (plan-action (goal-id ?goal-id) (action-name ?prepare-action) (state FINAL))
+  ?pre <- (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
+  ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
   =>
-  (modify ?od (value (+ ?val 1)))
+  (retract ?pre ?pro)
+  (if (eq ?outcome COMPLETED)
+    then
+      (modify ?od (value (+ ?val 1)))
+  )
   (modify ?g (mode EVALUATED))
 )
 
@@ -478,6 +486,52 @@
   ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
   =>
   (retract ?pre ?pro)
+  (modify ?g (mode EVALUATED))
+)
+
+(defrule goal-reasoner-evaluate-deliver
+  ?g <- (goal (class DELIVER)
+              (params robot ?robot
+                      mps ?mps
+                      order ?order
+                      wp ?wp
+                      ds ?ds
+                      $?)
+              (mode FINISHED) (outcome ?outcome)
+        )
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?ds side INPUT))
+  =>
+  (do-for-all-facts ((?wait wm-fact))
+    (and (wm-key-prefix ?wait:key (create$ wp meta wait-for-delivery))
+         (eq (wm-key-arg ?wait:key wp) ?wp))
+    (retract ?wait)
+  )
+  (modify ?g (mode EVALUATED))
+)
+
+(defrule goal-reasoner-evaluate-clear-ds
+" Another workpiece has precedence over the currently picked up one
+"
+  ?g <- (goal (class CLEAR-MPS) (mode FINISHED) (outcome ?outcome)
+              (params robot ?robot mps ?ds wp ?wp side INPUT))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  ; DS station
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+  ; our wp
+  (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  ; other wp
+  ;Order-CEs
+  (wm-fact (key order meta wp-for-order
+            args? wp ?other-wp&:(neq ?wp ?other-wp) ord ?other-order))
+  (wm-fact (key wp meta next-step args? wp ?other-wp) (value DELIVER))
+  (wm-fact (key refbox order ?other-order delivery-begin)
+           (value ?other-begin&:(< ?other-begin (nth$ 1 ?game-time))))
+  =>
+  (assert (wm-fact (key wp meta wait-for-delivery args? wp ?wp wait-for ?other-wp)))
   (modify ?g (mode EVALUATED))
 )
 
