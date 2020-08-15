@@ -394,6 +394,9 @@ function ALIGN_FAST:init()
    }
 end
 
+function TAKE_PICTURE:init()
+   self.args.["take_picture"].name = self.fsm.vars.tag_id
+end
 
 function MATCH_AVG_LINE:loop()
    local tag = tag_utils.iface_for_id(fsm.vars.tags, tag_info, self.fsm.vars.tag_id)
