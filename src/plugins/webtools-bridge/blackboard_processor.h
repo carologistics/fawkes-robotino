@@ -66,7 +66,7 @@ public:
 	void        finalize_impl();
 	std::string serialize(std::string op, std::string topic, std::string id);
 
-	void bb_interface_data_changed(fawkes::Interface *interface) throw();
+	void bb_interface_data_refreshed(fawkes::Interface *interface) throw();
 
 private:
 	fawkes::BlackBoard *blackboard_; /**< Fawkes blackboard */

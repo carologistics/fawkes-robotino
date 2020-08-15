@@ -83,7 +83,7 @@ private:
 	fawkes::Mutex         timeout_wait_mutex_;
 	fawkes::WaitCondition timeout_wait_condition_;
 
-	virtual void bb_interface_data_changed(fawkes::Interface *interface) throw() override;
+	virtual void bb_interface_data_refreshed(fawkes::Interface *interface) throw() override;
 
 	std::atomic<bool> motor_if_changed_flag_;
 	std::atomic<bool> skiller_if_changed_flag_;

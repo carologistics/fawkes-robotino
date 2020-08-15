@@ -495,7 +495,7 @@ BlackBoardSubscription::serialize(std::string op, std::string topic_name, std::s
  * @param interface The interface to listen too
  */
 void
-BlackBoardSubscription::bb_interface_data_changed(fawkes::Interface *interface) throw()
+BlackBoardSubscription::bb_interface_data_refreshed(fawkes::Interface *interface) throw()
 {
 	if (!is_active()) {
 		// this should not happen. listener should be deregistered in
