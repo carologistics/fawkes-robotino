@@ -145,7 +145,8 @@ fsm:define_states{ export_to=_M, closure={
    {"MATCH_LINE",             JumpState},
    {"NO_LINE",                JumpState},
    {"SEARCH_TAG_LINE",        SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_LINE", fail_to="CHECK_TAG"},
-   {"ALIGN_FAST",             SkillJumpState, skills={{"motor_move"}}, final_to="MATCH_AVG_LINE", fail_to="FAILED"},
+   {"ALIGN_FAST",             SkillJumpState, skills={{"motor_move"}}, final_to="TAKE_PICTURE", fail_to="FAILED"},
+   {"TAKE_PICTURE", SkillJumpState, skills={{"take_picture"}}, final_to="MATCH_AVG_LINE", fail_to="MATCH_AVG_LINE"},
    {"MATCH_AVG_LINE",         JumpState},
    {"ALIGN_PRECISE",          SkillJumpState, skills={{"motor_move"}}, final_to="ALIGN_TURN", fail_to="ALIGN_FAST"},
    {"ALIGN_TURN",             SkillJumpState, skills={{"motor_move"}}, final_to="FINAL", fail_to="FAILED"}
