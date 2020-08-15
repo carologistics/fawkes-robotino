@@ -474,6 +474,12 @@
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
 	)
 
+(:action request-ds-fulfill-order
+		:parameters (?r - robot ?m - mps ?wp - workpiece ?ord - order)
+		:precondition (self ?r)
+		:effect (self ?r)
+	)
+
   (:action move-node
 			:parameters (?r - robot ?z - zone)
 			:precondition (self ?r)
