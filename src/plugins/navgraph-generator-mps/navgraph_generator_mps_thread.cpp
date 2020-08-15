@@ -759,7 +759,7 @@ NavGraphGeneratorMPSThread::generate_navgraph()
 }
 
 void
-NavGraphGeneratorMPSThread::bb_interface_data_changed(Interface *interface) throw()
+NavGraphGeneratorMPSThread::bb_interface_data_refreshed(Interface *interface) throw()
 {
 	navgen_if_->read();
 	if (navgen_if_->msgid() == compute_msgid_ && navgen_if_->is_final()) {

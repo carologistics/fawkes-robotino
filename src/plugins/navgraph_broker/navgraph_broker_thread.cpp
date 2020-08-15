@@ -379,7 +379,7 @@ NavgraphBrokerThread::send_msg()
 }
 
 void
-NavgraphBrokerThread::bb_interface_data_changed(fawkes::Interface *interface) throw()
+NavgraphBrokerThread::bb_interface_data_refreshed(fawkes::Interface *interface) throw()
 {
 	path_if_->read();
 	std::vector<std::string> path = get_path_from_interface_as_vector();
