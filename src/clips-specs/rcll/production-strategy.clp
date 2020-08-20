@@ -553,7 +553,7 @@
   the base and cap color.
 "
   (wm-fact (key domain fact ss-stored-wp args? m ?ss wp ?wp))
-  (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?any-order)))
+  (not (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?any-order)))
   (wm-fact (key config rcll use-ss) (value TRUE))
   ; Order CEs
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
@@ -562,7 +562,7 @@
   ; WP CEs
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
-  (not (wm-fact (key order meta wp-for-order args? wp ?any-wp ord ?order)))
+  (not (wm-fact (key domain fact wp-for-order args? wp ?any-wp ord ?order)))
   ; Refbox CEs
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
@@ -575,7 +575,7 @@
   (assert
     (wm-fact (key mps-handling prepare prepare-ss ?ss args? m ?ss wp ?wp op RETRIEVE))
     (wm-fact (key mps-handling process ss-retrieve-c0 ?ss args? m ?ss wp ?wp))
-    (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+    (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
   )
 )
 
@@ -595,7 +595,7 @@
   (wm-fact (key refbox game-time)
            (values ?curr-time&:(> ?curr-time ?*DEADLINE-C2-C3-START*) $?))
   (not (allowed C1))
-  (not (and (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (not (and (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
             (wm-fact (key domain fact order-complexity
                       args? ord ?order com C2|C3))
        ))

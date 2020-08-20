@@ -98,7 +98,7 @@
               (eq ?goal-class MOUNT-FIRST-RING)
               (eq ?goal-class MOUNT-NEXT-RING)
               (eq ?goal-class DELIVER)
-              (eq ?goal-class RESET-MPS) 
+              (eq ?goal-class RESET-MPS)
               (eq ?goal-class WAIT)
               (eq ?goal-class GO-WAIT)
               (eq ?goal-class WAIT-FOR-MPS-PROCESS)))
@@ -498,7 +498,7 @@
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   ; other wp
   ;Order-CEs
-  (wm-fact (key order meta wp-for-order
+  (wm-fact (key domain fact wp-for-order
             args? wp ?other-wp&:(neq ?wp ?other-wp) ord ?other-order))
   (wm-fact (key wp meta next-step args? wp ?other-wp) (value DELIVER))
   (wm-fact (key refbox order ?other-order delivery-begin)
