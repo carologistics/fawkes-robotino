@@ -952,12 +952,8 @@
            (not (wm-fact (key domain fact wp-for-order args? wp ?any-ord-wp ord ?order))))
       (and (wm-fact (key domain fact holding args? r ?robot wp ?spawned-wp))
            (wm-fact (key domain fact wp-base-color args? wp ?spawned-wp col ?base-color))
-<<<<<<< HEAD
-           (wm-fact (key order meta wp-for-order args? wp ?spawned-wp ord ?order))
+           (wm-fact (key domain fact wp-for-order args? wp ?spawned-wp ord ?order))
            (wm-fact (key domain fact wp-ring1-color args? wp ?spawned-wp col RING_NONE))))
-=======
-           (wm-fact (key domain fact wp-for-order args? wp ?spawned-wp ord ?order))))
->>>>>>> cx: add bs-dispense-for-order
   ;This order complexity is not produced exclusively while another exclusive
   ;complexity order is already started
   (not (and (wm-fact (key domain fact wp-for-order args? wp ?ord-wp&~?spawned-wp ord ?any-order))
@@ -1374,7 +1370,7 @@
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
   ;Order-CEs
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
@@ -1383,7 +1379,7 @@
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   ;Other WP that currently blocks the DS
   (wm-fact (key domain fact wp-at args? wp ?blocking-wp m ?ds side INPUT))
-  (wm-fact (key order meta wp-for-order args? wp ?blocking-wp ord ?blocking-order))
+  (wm-fact (key domain fact wp-for-order args? wp ?blocking-wp ord ?blocking-order))
   (wm-fact (key refbox order ?blocking-order delivery-begin)
            (value ?blocking-del-begin&:(> (- ?blocking-del-begin (nth$ 1 ?game-time))
                                         ?*BLOCKING-THRESHOLD*)))
