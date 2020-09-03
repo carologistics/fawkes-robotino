@@ -1126,6 +1126,7 @@
   ;WP CEs
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
   (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
@@ -1189,6 +1190,7 @@
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
   (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
@@ -1254,6 +1256,7 @@
   (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ;MPS-RS CEs
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
   (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
