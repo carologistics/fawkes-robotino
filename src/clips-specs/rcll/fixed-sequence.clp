@@ -165,7 +165,7 @@
    "Feed a CS with a cap from its shelf so that afterwards
    it can directly put the cap on a product."
     ?p <- (goal (mode DISPATCHED) (id ?parent))
-    ?g <- (goal (id ?goal-id) (class FILL-CAP) (mode SELECTED) (parent ?parent)
+    ?g <- (goal (id ?goal-id) (class FEED-CAP) (mode SELECTED) (parent ?parent)
                 (params robot ?robot
                         mps ?mps
                         cc ?cc
@@ -175,33 +175,33 @@
     (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?shelf-spot))
     =>
    (assert
-        (plan (id FILL-CAP-PLAN) (goal-id ?goal-id))
-        (plan-action (id 1) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+        (plan (id FEED-CAP-PLAN) (goal-id ?goal-id))
+        (plan-action (id 1) (plan-id FEED-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name go-wait)
                                     (param-names r from from-side to)
                                     (param-values ?robot ?curr-location ?curr-side (wait-pos ?mps INPUT)))
-        (plan-action (id 2) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+        (plan-action (id 2) (plan-id FEED-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name location-lock)
                                     (param-values ?mps INPUT))
-        (plan-action (id 3) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+        (plan-action (id 3) (plan-id FEED-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name move)
                                     (param-names r from from-side to to-side)
                                     (param-values ?robot (wait-pos ?mps INPUT) WAIT ?mps INPUT))
-        (plan-action (id 4) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+        (plan-action (id 4) (plan-id FEED-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name wp-get-shelf)
                                     (param-names r cc m spot)
                                     (param-values ?robot ?cc ?mps ?shelf-spot))
-        (plan-action (id 5) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+        (plan-action (id 5) (plan-id FEED-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name wp-put)
                                     (param-names r wp m)
                                     (param-values ?robot ?cc ?mps))
-        (plan-action (id 6) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
-                                    (action-name request-cs-retrieve-cap)
-                                    (param-values ?robot ?mps ?cc ?cap-color))
-        (plan-action (id 7) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+      ;   (plan-action (id 6) (plan-id FEED-CAP-PLAN) (goal-id ?goal-id)
+      ;                               (action-name request-cs-retrieve-cap)
+      ;                               (param-values ?robot ?mps ?cc ?cap-color))
+        (plan-action (id 7) (plan-id FEED-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name location-unlock)
                                     (param-values ?mps INPUT))
-        (plan-action (id 8) (plan-id FILL-CAP-PLAN) (goal-id ?goal-id)
+        (plan-action (id 8) (plan-id FEED-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name go-wait)
                                     (param-names r from from-side to)
                                     (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))
@@ -992,4 +992,28 @@
     (printout error "Tried to expand Process RS goal on changed fact" crlf)
     (modify ?g (mode RETRACTED) (outcome REJECTED))
   )
+)
+
+
+(defrule goal-expander-prepare-cs-retrieve
+ ?p <- (goal (mode DISPATCHED) (id ?parent))
+ ?g <- (goal (id ?goal-id) (class PREPARE-CS-RETRIEVE) (mode SELECTED) (parent ?parent)
+             (params m ?mps cc ?cc capcol ?capcol))
+  =>
+  (assert
+      (plan (id (sym-cat PREPARE-CS-RETRIEVE- ?mps)) (goal-id ?goal-id))
+      (plan-action (id 1) (plan-id (sym-cat PREPARE-CS-RETRIEVE- ?mps)) (goal-id ?goal-id)
+            (action-name lock) (param-values ?mps))
+      (plan-action (id 2) (plan-id (sym-cat PREPARE-CS-RETRIEVE- ?mps)) (goal-id ?goal-id)
+        (action-name prepare-cs)
+        (param-values ?mps RETRIEVE_CAP))
+      (plan-action (id 3) (plan-id (sym-cat PREPARE-CS-RETRIEVE- ?mps)) (goal-id ?goal-id)
+                                    (action-name cs-retrieve-cap)
+                                    (param-values ?mps ?cc ?capcol ))
+      (plan-action (id 4) (plan-id (sym-cat PREPARE-CS-RETRIEVE- ?mps)) (goal-id ?goal-id)
+            (action-name unlock)
+            (param-values ?mps))
+    )
+    (modify ?g (mode EXPANDED))
+
 )

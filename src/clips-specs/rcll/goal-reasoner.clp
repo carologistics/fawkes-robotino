@@ -81,6 +81,7 @@
   (return (or (eq ?goal-type TRY-ONE-OF-SUBGOALS)
               (eq ?goal-type TIMEOUT-SUBGOAL)
               (eq ?goal-type RUN-ONE-OF-SUBGOALS)
+              (eq ?goal-type RUN-ALL-OF-SUBGOALS)
               (eq ?goal-type RETRY-SUBGOAL)
               (eq ?goal-type RUN-ENDLESS)))
 )
@@ -90,7 +91,7 @@
   (return (or (eq ?goal-class GET-BASE-TO-FILL-RS)
               (eq ?goal-class GET-SHELF-TO-FILL-RS)
               (eq ?goal-class FILL-RS)
-              (eq ?goal-class FILL-CAP)
+              (eq ?goal-class FEED-CAP)
               (eq ?goal-class CLEAR-MPS)
               (eq ?goal-class DISCARD-UNKNOWN)
               (eq ?goal-class PRODUCE-C0)
@@ -116,6 +117,7 @@
               (eq ?goal-class PREPARE-RESOURCES)
               (eq ?goal-class PREPARE-CAPS)
               (eq ?goal-class PREPARE-RINGS)
+              (eq ?goal-class FILL-CAP)
               (eq ?goal-class NO-PROGRESS)))
 )
 
@@ -580,4 +582,15 @@
   (goal (id ?goal) (class ?class) (sub-type nil))
 =>
   (printout error ?goal " of class " ?class " has no sub-type" crlf)
+)
+
+
+(defrule goal-reasoner-reject-subgoal-if-parent-rejected
+" Reject a goal if its parent is rejected. 
+"
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
+  (goal (id ?parent) (mode RETRACTED) (outcome REJECTED))
+  ?g <- (goal (parent ?parent) (id ?id) (mode FORMULATED|SELECTED))
+  =>
+  (modify ?g (mode RETRACTED) (outcome REJECTED))
 )

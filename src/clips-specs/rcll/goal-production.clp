@@ -376,15 +376,38 @@
     (printout t "Goal " FILL-CAP " formulated" crlf)
   )
   (bind ?distance (node-distance (str-cat ?mps -I)))
-  (assert (goal (id (sym-cat FILL-CAP- (gensym*)))
-                (class FILL-CAP) (sub-type SIMPLE)
-                (priority (+ ?priority-increase ?*PRIORITY-PREFILL-CS* (goal-distance-prio ?distance)))
+  (bind ?fill-cap-id (sym-cat FILL-CAP- (gensym*)))
+  (bind ?priority (+ ?priority-increase ?*PRIORITY-PREFILL-CS* (goal-distance-prio ?distance)))
+  (assert (goal (id ?fill-cap-id)
+                (class FILL-CAP) (sub-type RUN-ALL-OF-SUBGOALS)
+                (priority ?priority)
                 (parent ?production-id)
                 (params robot ?robot
                         mps ?mps
                         cc ?cc
                 )
                 (required-resources (sym-cat ?mps -INPUT) ?cc)
+  ))
+  (assert (goal (id (sym-cat FEED-CAP- (gensym*)))
+                (class FEED-CAP)
+                (sub-type SIMPLE)
+                (parent ?fill-cap-id)
+                (priority (+ ?priority 2))
+                (params robot ?robot
+                        mps ?mps
+                        cc ?cc
+                )
+                (required-resources)
+  ))
+  (assert (goal (id (sym-cat PREPARE-CS-RETRIEVE- ?mps - (gensym*)))
+                (class PREPARE-CS-RETRIEVE) (sub-type SIMPLE)
+                (priority (+ ?priority 1))
+                (parent ?fill-cap-id)
+                (params m ?mps
+                        cc ?cc 
+                        capcol ?cap-color)
+                )
+                (required-resources)
   ))
 )
 

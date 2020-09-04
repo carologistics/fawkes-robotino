@@ -62,16 +62,16 @@
   )
 )
 
-(defrule action-execute-request-cs-retrieve-cap
-  ?pa <- (plan-action (action-name request-cs-retrieve-cap) (state PENDING) (executable TRUE)
-            (param-values ?r ?mps ?cc ?capcol))
-  =>
-  (modify ?pa (state EXECUTION-SUCCEEDED))
-  (assert
-    (wm-fact (key mps-handling prepare prepare-cs ?mps args? m ?mps op RETRIEVE_CAP))
-    (wm-fact (key mps-handling process cs-retrieve-cap ?mps args? m ?mps cc ?cc capcol ?capcol))
-  )
-)
+; (defrule action-execute-request-cs-retrieve-cap
+;   ?pa <- (plan-action (action-name request-cs-retrieve-cap) (state PENDING) (executable TRUE)
+;             (param-values ?r ?mps ?cc ?capcol))
+;   =>
+;   (modify ?pa (state EXECUTION-SUCCEEDED))
+;   (assert
+;     (wm-fact (key mps-handling prepare prepare-cs ?mps args? m ?mps op RETRIEVE_CAP))
+;     (wm-fact (key mps-handling process cs-retrieve-cap ?mps args? m ?mps cc ?cc capcol ?capcol))
+;   )
+; )
 
 (defrule action-execute-request-rs-mount-ring
   ?pa <- (plan-action (action-name request-rs-mount-ring) (state PENDING) (executable TRUE)
