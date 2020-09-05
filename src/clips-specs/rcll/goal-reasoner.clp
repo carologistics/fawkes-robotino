@@ -594,3 +594,22 @@
   =>
   (modify ?g (mode RETRACTED) (outcome REJECTED))
 )
+
+(defrule goal-reasoner-cut-goal-from-goaltree-if-only-async-children-left
+  " Remove a production from the goal-tree if all the children of type SIMPLE are executed
+    and there are still async children left.  
+  "
+  ?p <- (goal (id ?parent) (mode DISPATCHED) (sub-type RUN-ALL-OF-SUBGOALS) (parent ?grandparent&~nil))
+  ?gp <- (goal (id ?grandparent) (mode DISPATCHED))
+  (not (goal (parent ?parent) (sub-type SIMPLE) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+  (goal (parent ?parent) (sub-type SIMPLE-ASYNC) (mode ~DISPATCHED&~FINISHED&~EVALUATED&~RETRACTED))
+  =>
+  (modify ?p (parent nil))
+  (modify ?gp (mode FINISHED) (outcome COMPLETED))
+)
+
+(defrule goal-reasoner-retract-run-all-of-subgoals
+  ?g <- (goal (id ?parent) (mode EVALUATED) (sub-type RUN-ALL-OF-SUBGOALS))
+  =>
+  (modify ?g (mode RETRACTED))
+)
