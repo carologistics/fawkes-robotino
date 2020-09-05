@@ -400,7 +400,7 @@
                 (required-resources)
   ))
   (assert (goal (id (sym-cat PREPARE-CS-RETRIEVE- ?mps - (gensym*)))
-                (class PREPARE-CS-RETRIEVE) (sub-type SIMPLE)
+                (class PREPARE-CS-RETRIEVE) (sub-type SIMPLE-ASYNC)
                 (priority (+ ?priority 1))
                 (parent ?fill-cap-id)
                 (params m ?mps

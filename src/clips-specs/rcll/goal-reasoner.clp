@@ -573,7 +573,7 @@
   (printout t "Goal " ?o-goal " is rejected because it blocks " ?goal crlf)
   (modify ?g (mode RETRACTED) (outcome REJECTED))
 )
-
+ 
 (defrule goal-reasoner-error-goal-without-sub-type-detected
 " This goal reasoner only deals with goals that have a sub-type. Other goals
   are not supported.

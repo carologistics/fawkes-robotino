@@ -51,6 +51,12 @@
   (modify ?g (mode COMMITTED))
 )
 
+(defrule simple-async-goal-commit
+  (goal (id ?parent) (sub-type RUN-ALL-OF-SUBGOALS) (mode DISPATCHED))
+  ?g <- (goal (id ?id) (parent ?parent) (sub-type SIMPLE-ASYNC) (mode EXPANDED))
+  =>
+  (modify ?g (mode DISPATCHED))
+)
 
 (defrule simple-goal-fail-because-of-subgoal
   ?g <- (goal (id ?goal-id) (sub-type SIMPLE)
