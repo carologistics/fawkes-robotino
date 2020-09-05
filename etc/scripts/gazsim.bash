@@ -433,7 +433,21 @@ if [  $COMMAND  == start ]; then
 				if [ "$(command -v rcll-refbox-instruct)" == "" ]; then
 						echo "rcll-refbox-instruct not found, not built or old version?"
 				else
-						rcll-refbox-instruct -w
+                        (rcll-refbox-instruct -w) & pid=$!
+                        # in the background, sleep for 10 secs then kill that process
+
+                        runwake=true
+                        while $runwake
+                            do sleep 2
+                            if ps -p $pid > /dev/null
+                            then kill -9 $pid 
+                                echo "Refbox wakeup stuck, retrying"
+                                (rcll-refbox-instruct -w) & pid=$!
+                            else runwake=false
+                                echo "Refbox alive"
+                            fi
+                        done
+                         
 						echo "Starting game (Phase: $START_GAME ${TEAM_CYAN:+Cyan: ${TEAM_CYAN}}${TEAM_MAGENTA:+ Magenta: ${TEAM_MAGENTA}})"
 						rcll-refbox-instruct -p SETUP -s RUNNING ${TEAM_CYAN:+-c ${TEAM_CYAN}}${TEAM_MAGENTA:+-m ${TEAM_MAGENTA}}
 						rcll-refbox-instruct -n $NUM_ROBOTINOS -W60 || (stop_simulation; exit 1)
