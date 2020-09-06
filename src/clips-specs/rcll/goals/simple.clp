@@ -82,7 +82,6 @@
   (modify ?g (mode DISPATCHED))
 )
 
-
 (defrule simple-goal-retract
  ?g <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SIMPLE) (mode EVALUATED)
              (acquired-resources))
@@ -95,4 +94,13 @@
     (retract ?p)
   )
  (modify ?g (mode RETRACTED))
+)
+
+(defrule simple-async-goal-retry-failed-or-rejected
+	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type RUN-ALL-OF-SUBGOALS) (mode DISPATCHED)
+	             (committed-to ?sub-goal))
+	?sg <- (goal (id ?sub-goal) (parent ?id) (sub-type SIMPLE-ASYNC) (mode RETRACTED) (outcome ?outcome&FAILED|REJECTED))
+	=>
+		(modify ?sg (mode FORMULATED) (outcome UNKNOWN))
+	)
 )
