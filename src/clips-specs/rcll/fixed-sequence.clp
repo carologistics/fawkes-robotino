@@ -1068,6 +1068,8 @@
                                                 (param-values ?mps))
             )
             (modify ?g (mode EXPANDED))
+            else 
+            (modify ?g (mode RETRACTED) (outcome FAILED))
       )
 )
 
@@ -1130,6 +1132,8 @@
                                           (param-values ?mps))
       )
       (modify ?g (mode EXPANDED))
+      else 
+      (modify ?g (mode RETRACTED) (outcome FAILED))
 )
 )
 
