@@ -94,10 +94,10 @@
               (eq ?goal-class FEED-CAP)
               (eq ?goal-class CLEAR-MPS)
               (eq ?goal-class DISCARD-UNKNOWN)
-              (eq ?goal-class PRODUCE-C0)
               (eq ?goal-class PRODUCE-CX)
               (eq ?goal-class FEED-BASE-FIRST-RING)
               (eq ?goal-class FEED-BASE-NEXT-RING)
+              (eq ?goal-class FEED-BASE-PRODUCE-C0)
               (eq ?goal-class DELIVER)
               (eq ?goal-class RESET-MPS) 
               (eq ?goal-class WAIT)
@@ -120,6 +120,7 @@
               (eq ?goal-class FILL-CAP)
               (eq ?goal-class MOUNT-FIRST-RING)
               (eq ?goal-class MOUNT-NEXT-RING)
+              (eq ?goal-class PRODUCE-C0)
               (eq ?goal-class NO-PROGRESS)))
 )
 
@@ -387,7 +388,7 @@
   tied to their order independent of the goal outcome as long as they are
   still usable.
 "
-  ?g <- (goal (id ?goal-id) (class PRODUCE-C0|FEED-BASE-FIRST-RING)
+  ?g <- (goal (id ?goal-id) (class FEED-BASE-PRODUCE-C0|FEED-BASE-FIRST-RING)
               (parent ?parent-id)
               (mode FINISHED) (outcome ?outcome)
               (params $?params))

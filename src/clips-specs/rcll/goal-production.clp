@@ -909,9 +909,11 @@
     then
       (bind ?priority-decrease 1))
   (bind ?distance (node-distance (str-cat ?bs - (if (eq ?bs-side INPUT) then I else O))))
-  (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-                (class PRODUCE-C0) (sub-type SIMPLE)
-                (priority (+ (- ?*PRIORITY-PRODUCE-C0* ?priority-decrease) (goal-distance-prio ?distance)))
+  (bind ?pc0-id (sym-cat PRODUCE-C0- (gensym*)))
+  (bind ?priority (+ (- ?*PRIORITY-PRODUCE-C0* ?priority-decrease) (goal-distance-prio ?distance)))
+  (assert (goal (id ?pc0-id)
+                (class PRODUCE-C0) (sub-type RUN-ALL-OF-SUBGOALS)
+                (priority ?priority)
                 (parent ?parent)
                 (params robot ?robot
                         bs ?bs
@@ -923,6 +925,29 @@
                         wp ?spawned-wp
                 )
                 (required-resources (sym-cat ?mps -INPUT) ?required-resources)
+  ))
+  (assert (goal (id (sym-cat FEED-BASE-PRODUCE-C0- (gensym*)))
+                (class FEED-BASE-PRODUCE-C0) 
+                (sub-type SIMPLE)
+                (parent ?pc0-id)
+                (priority (+ ?priority 2))
+                (params robot ?robot
+                        bs ?bs
+                        bs-side ?bs-side
+                        bs-color ?base-color
+                        mps ?mps
+                        cs-color ?cap-color
+                        order ?order
+                        wp ?spawned-wp
+                )
+                (required-resources)
+  ))
+  (assert (goal (id (sym-cat PREPARE-CS-MOUNT- ?mps - (gensym*)))
+                (class PREPARE-CS-MOUNT) (sub-type SIMPLE-ASYNC)
+                (priority (+ ?priority 1))
+                (parent ?pc0-id)
+                 (params m ?mps cc ?spawned-wp capcol ?cap-color)
+                (required-resources)
   ))
 )
 
