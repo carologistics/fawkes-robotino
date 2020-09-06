@@ -1052,7 +1052,7 @@
                         order ?order
                         wp ?spawned-wp
                 )
-                (required-resources ?mps-rs (sym-cat ?mps-rs -OUTPUT) (sym-cat ?mps-rs -INPUT) ?required-resources)
+                (required-resources (sym-cat ?mps-rs -INPUT) ?required-resources)
   ))
   (assert (goal (id (sym-cat FEED-BASE-FIRST-RING- (gensym*)))
                 (class FEED-BASE-FIRST-RING) 
@@ -1269,17 +1269,40 @@
                      order ?order)))
   =>
   (printout t "Goal " PRODUCE-CX " formulated" crlf)
-  (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
-                (priority ?*PRIORITY-PRODUCE-C1*) (sub-type SIMPLE)
-                                (parent ?maintain-id)
-                                (params robot ?robot
-                                        wp ?wp
-                                        rs ?rs
-                                        mps ?mps
-                                        cs-color ?cap-color
-                                        order ?order
-                                )
-                                (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
+  (bind ?pcx-id (sym-cat PRODUCE-CX- (gensym*)))
+  (bind ?priority ?*PRIORITY-PRODUCE-C1*)
+  (assert (goal (id ?pcx-id) (class PRODUCE-CX)
+                (priority ?priority) (sub-type RUN-ALL-OF-SUBGOALS)
+                (parent ?maintain-id)
+                (params robot ?robot
+                        wp ?wp
+                        rs ?rs
+                        mps ?mps
+                        cs-color ?cap-color
+                        order ?order
+                )
+                (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
+  ))
+  (assert (goal (id (sym-cat FEED-PRODUCT-PRODUCE-CX- (gensym*)))
+                (class FEED-PRODUCT-PRODUCE-CX) 
+                (sub-type SIMPLE)
+                (parent ?pcx-id)
+                (priority (+ ?priority 2))
+                (params robot ?robot
+                        wp ?wp
+                        rs ?rs
+                        mps ?mps
+                        cs-color ?cap-color
+                        order ?order
+                )
+                (required-resources)
+  ))
+  (assert (goal (id (sym-cat PREPARE-CS-MOUNT- ?mps - (gensym*)))
+                (class PREPARE-CS-MOUNT) (sub-type SIMPLE-ASYNC)
+                (priority (+ ?priority 1))
+                (parent ?pcx-id)
+                 (params m ?mps cc ?wp capcol ?cap-color)
+                (required-resources)
   ))
 )
 
@@ -1333,8 +1356,10 @@
                      order ?order)))
   =>
   (printout t "Goal " PRODUCE-CX " (C2) formulated" crlf)
-  (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
-                (priority ?*PRIORITY-PRODUCE-C2*) (sub-type SIMPLE)
+  (bind ?pcx-id (sym-cat PRODUCE-CX- (gensym*)))
+  (bind ?priority ?*PRIORITY-PRODUCE-C2*)
+  (assert (goal (id ?pcx-id) (class PRODUCE-CX)
+                (priority ?priority) (sub-type RUN-ALL-OF-SUBGOALS)
                 (parent ?maintain-id)
                 (params robot ?robot
                         wp ?wp
@@ -1344,6 +1369,27 @@
                         order ?order
                 )
                 (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
+  ))
+  (assert (goal (id (sym-cat FEED-PRODUCT-PRODUCE-CX- (gensym*)))
+                (class FEED-PRODUCT-PRODUCE-CX) 
+                (sub-type SIMPLE)
+                (parent ?pcx-id)
+                (priority (+ ?priority 2))
+                (params robot ?robot
+                        wp ?wp
+                        rs ?rs
+                        mps ?mps
+                        cs-color ?cap-color
+                        order ?order
+                )
+                (required-resources)
+  ))
+  (assert (goal (id (sym-cat PREPARE-CS-MOUNT- ?mps - (gensym*)))
+                (class PREPARE-CS-MOUNT) (sub-type SIMPLE-ASYNC)
+                (priority (+ ?priority 1))
+                (parent ?pcx-id)
+                 (params m ?mps cc ?wp capcol ?cap-color)
+                (required-resources)
   ))
 )
 
@@ -1399,8 +1445,10 @@
                          order ?order)))
   =>
   (printout t "Goal " PRODUCE-CX " (C3) formulated" crlf)
-  (assert (goal (id (sym-cat PRODUCE-CX- (gensym*))) (class PRODUCE-CX)
-                (priority ?*PRIORITY-PRODUCE-C3*) (sub-type SIMPLE)
+  (bind ?pcx-id (sym-cat PRODUCE-CX- (gensym*)))
+  (bind ?priority ?*PRIORITY-PRODUCE-C3*)
+  (assert (goal (id ?pcx-id) (class PRODUCE-CX)
+                (priority ?priority) (sub-type RUN-ALL-OF-SUBGOALS)
                 (parent ?maintain-id)
                 (params robot ?robot
                         wp ?wp
@@ -1410,6 +1458,27 @@
                         order ?order
                 )
                 (required-resources (sym-cat ?mps -INPUT) (sym-cat ?rs -OUTPUT) ?wp)
+  ))
+  (assert (goal (id (sym-cat FEED-PRODUCT-PRODUCE-CX- (gensym*)))
+                (class FEED-PRODUCT-PRODUCE-CX) 
+                (sub-type SIMPLE)
+                (parent ?pcx-id)
+                (priority (+ ?priority 2))
+                (params robot ?robot
+                        wp ?wp
+                        rs ?rs
+                        mps ?mps
+                        cs-color ?cap-color
+                        order ?order
+                )
+                (required-resources)
+  ))
+  (assert (goal (id (sym-cat PREPARE-CS-MOUNT- ?mps - (gensym*)))
+                (class PREPARE-CS-MOUNT) (sub-type SIMPLE-ASYNC)
+                (priority (+ ?priority 1))
+                (parent ?pcx-id)
+                 (params m ?mps cc ?wp capcol ?cap-color)
+                (required-resources)
   ))
 )
 
