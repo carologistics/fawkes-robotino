@@ -1131,9 +1131,11 @@
   (bind ?ring-pos (member$ RING_NONE (create$ ?wp-ring1-color ?wp-ring2-color ?wp-ring3-color)))
   (bind ?curr-ring-color (nth$ ?ring-pos (create$ ?order-ring1-color ?order-ring2-color ?order-ring3-color)))
   (printout t "Goal " MOUNT-NEXT-RING " formulated (Ring " ?ring-pos")" crlf)
-  (assert (goal (id (sym-cat MOUNT-NEXT-RING- (gensym*)))
-                (class MOUNT-NEXT-RING) (priority (+ ?ring-pos ?*PRIORITY-MOUNT-NEXT-RING*))
-                (parent ?maintain-id) (sub-type SIMPLE)
+  (bind ?priority (+ ?ring-pos ?*PRIORITY-MOUNT-NEXT-RING*))
+  (bind ?mnr-id (sym-cat MOUNT-NEXT-RING- (gensym*)))
+  (assert (goal (id ?mnr-id)
+                (class MOUNT-NEXT-RING) (priority ?priority)
+                (parent ?maintain-id) (sub-type RUN-ALL-OF-SUBGOALS)
                 (params robot ?robot
                         prev-rs ?prev-rs
                         prev-rs-side OUTPUT
@@ -1150,6 +1152,42 @@
                         order ?order
                 )
                 (required-resources (sym-cat ?mps-rs -INPUT) (sym-cat ?prev-rs -OUTPUT) ?wp)
+  ))
+  (assert (goal (id (sym-cat FEED-BASE-NEXT-RING- (gensym*)))
+                (class FEED-BASE-NEXT-RING) 
+                (sub-type SIMPLE)
+                (parent ?mnr-id)
+                (priority (+ ?priority 2))
+                (params robot ?robot
+                        prev-rs ?prev-rs
+                        prev-rs-side OUTPUT
+                        wp ?wp
+                        rs ?mps-rs
+                        ring1-color ?order-ring1-color
+                        ring2-color ?order-ring2-color
+                        ring3-color ?order-ring3-color
+                        curr-ring-color ?curr-ring-color
+                        ring-pos (int-to-sym ?ring-pos)
+                        rs-before ?bases-filled
+                        rs-after ?bases-remain
+                        rs-req ?bases-needed
+                        order ?order
+                )
+                (required-resources)
+  ))
+  (assert (goal (id (sym-cat PREPARE-RS-MOUNT-NEXT-RING- ?mps-rs - (gensym*)))
+                (class PREPARE-RS-MOUNT-NEXT-RING) (sub-type SIMPLE-ASYNC)
+                (priority (+ ?priority 1))
+                (parent ?mnr-id)
+                (params mps ?mps-rs 
+                        wp ?wp 
+                        r-pos (int-to-sym ?ring-pos) 
+                        rc ?curr-ring-color
+                        rc1 ?order-ring1-color 
+                        rc2 ?order-ring2-color 
+                        rc3 ?order-ring3-color 
+                        rs-req ?bases-needed)
+                (required-resources)
   ))
 )
 

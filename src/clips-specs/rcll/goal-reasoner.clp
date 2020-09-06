@@ -97,7 +97,7 @@
               (eq ?goal-class PRODUCE-C0)
               (eq ?goal-class PRODUCE-CX)
               (eq ?goal-class FEED-BASE-FIRST-RING)
-              (eq ?goal-class MOUNT-NEXT-RING)
+              (eq ?goal-class FEED-BASE-NEXT-RING)
               (eq ?goal-class DELIVER)
               (eq ?goal-class RESET-MPS) 
               (eq ?goal-class WAIT)
@@ -119,6 +119,7 @@
               (eq ?goal-class PREPARE-RINGS)
               (eq ?goal-class FILL-CAP)
               (eq ?goal-class MOUNT-FIRST-RING)
+              (eq ?goal-class MOUNT-NEXT-RING)
               (eq ?goal-class NO-PROGRESS)))
 )
 

@@ -607,10 +607,10 @@
 )
 
 
-(defrule goal-mount-next-ring
+(defrule goal-feed-base-next-ring
  ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (mode SELECTED) (parent ?parent) (id ?goal-id)
-             (class MOUNT-NEXT-RING)
+             (class FEED-BASE-NEXT-RING)
                                              (params robot ?robot
                                                       prev-rs ?prev-rs
                                                       prev-rs-side ?prev-rs-side
@@ -635,57 +635,57 @@
     then
       (bind ?offset 8)
       (assert
-      (plan-action (id 1) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+      (plan-action (id 1) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name go-wait)
             (param-names r from from-side to)
             (param-values ?robot ?curr-location ?curr-side (wait-pos ?prev-rs ?prev-rs-side)))
-      (plan-action (id 2) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+      (plan-action (id 2) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name location-lock)
             (param-values ?prev-rs ?prev-rs-side))
-      (plan-action (id 3) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+      (plan-action (id 3) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name move)
             (param-names r from from-side to to-side)
             (param-values ?robot (wait-pos ?prev-rs ?prev-rs-side) WAIT ?prev-rs ?prev-rs-side))
-      (plan-action (id 4) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+      (plan-action (id 4) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name wp-get)
             (param-names r wp m side)
             (param-values ?robot ?wp ?prev-rs ?prev-rs-side))
-      (plan-action (id 5) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+      (plan-action (id 5) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name location-unlock)
             (param-values ?prev-rs ?prev-rs-side))
-      (plan-action (id 6) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+      (plan-action (id 6) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name go-wait)
             (param-names r from from-side to)
             (param-values ?robot ?prev-rs ?prev-rs-side (wait-pos ?rs INPUT))))
     else
       (bind ?offset 1)
       (assert
-        (plan-action (id 1) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+        (plan-action (id 1) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
               (action-name go-wait)
               (param-names r from from-side to)
               (param-values ?robot ?curr-location ?curr-side (wait-pos ?rs INPUT))))
   )
     (assert
-      (plan (id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id))
-      (plan-action (id (+ ?offset 1)) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+      (plan (id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id))
+      (plan-action (id (+ ?offset 1)) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name location-lock)
             (param-values ?rs INPUT))
-      (plan-action (id (+ ?offset 2)) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+      (plan-action (id (+ ?offset 2)) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name move)
             (param-names r from from-side to to-side )
             (param-values ?robot (wait-pos ?rs INPUT) WAIT ?rs INPUT))
-      (plan-action (id (+ ?offset 3)) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+      (plan-action (id (+ ?offset 3)) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name wp-put)
             (param-names r wp m)
             (param-values ?robot ?wp ?rs))
-      (plan-action (id (+ ?offset 4)) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
-            (action-name request-rs-mount-ring)
-            (param-values ?robot ?rs ?wp ?ring-pos ?curr-ring-color
-                              ?ring1-color ?ring2-color ?ring3-color ?rs-req))
-      (plan-action (id (+ ?offset 5)) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+      ; (plan-action (id (+ ?offset 4)) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
+      ;       (action-name request-rs-mount-ring)
+      ;       (param-values ?robot ?rs ?wp ?ring-pos ?curr-ring-color
+      ;                         ?ring1-color ?ring2-color ?ring3-color ?rs-req))
+      (plan-action (id (+ ?offset 5)) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name location-unlock)
             (param-values ?rs INPUT))
-      (plan-action (id (+ ?offset 6)) (plan-id MOUNT-NEXT-RING-PLAN) (goal-id ?goal-id)
+      (plan-action (id (+ ?offset 6)) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name go-wait)
             (param-names r from from-side to)
             (param-values ?robot ?rs INPUT (wait-pos ?rs INPUT)))
@@ -1067,4 +1067,66 @@
             )
             (modify ?g (mode EXPANDED))
       )
+)
+
+
+(defrule goal-expander-prepare-rs-mount-next-ring
+ ?p <- (goal (mode DISPATCHED) (id ?parent))
+ ?g <- (goal (id ?goal-id) (class PREPARE-RS-MOUNT-NEXT-RING) (mode SELECTED) (parent ?parent)
+             (params mps ?mps wp ?wp r-pos ?ring-pos rc ?curr-ring-color 
+                  rc1 ?ring1-color rc2 ?ring2-color rc3 ?ring3-color rs-req ?rs-req))
+ (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side OUTPUT)))
+  =>
+(bind ?prepare-param-values (create$ ?mps ?curr-ring-color ?rs-req))
+(bind ?process-action (sym-cat rs-mount-ring (sym-to-int ?ring-pos)))
+(switch (sym-to-int ?ring-pos)
+      (case 1 then
+      (bind ?process-param-values ?mps ?wp ?curr-ring-color ?rs-req))
+      (case 2 then
+      (bind ?process-param-values ?mps ?wp ?curr-ring-color ?ring1-color ?rs-req))
+      (case 3 then
+      (bind ?process-param-values ?mps ?wp ?curr-ring-color ?ring1-color ?ring2-color ?rs-req))
+(default
+      (printout t "ERROR, plan-action params of request-rs-mount-ring are wrong" crlf))
+)
+
+(bind ?success TRUE)
+(if (not (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact rs-filled-with))
+                                    (eq (wm-key-arg ?wm:key m) ?mps))
+      (bind ?rs-before (wm-key-arg ?wm:key n))
+)) then
+      (printout error "Cant find rs-filled-with for " ?mps crlf)
+      (bind ?success FALSE)
+)
+(if (not (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact rs-sub))
+                                    (eq (wm-key-arg ?wm:key minuend) ?rs-before)
+                                    (eq (wm-key-arg ?wm:key subtrahend) ?rs-req))
+      (bind ?rs-after (wm-key-arg ?wm:key difference))
+)) then
+      (printout error "Cant find rs-sub fact with " ?rs-before "-" ?rs-req crlf)
+      (bind ?success FALSE)
+)
+(if ?success then
+      (bind ?prepare-param-values (insert$ ?prepare-param-values (length$ ?prepare-param-values) ?rs-before))
+      (bind ?process-param-values (insert$ ?process-param-values (length$ ?process-param-values) ?rs-before))
+      (bind ?prepare-param-values (insert$ ?prepare-param-values (length$ ?prepare-param-values) ?rs-after))
+      (bind ?process-param-values (insert$ ?process-param-values (length$ ?process-param-values) ?rs-after))
+
+      (assert
+            (plan (id (sym-cat REPARE-RS-MOUNT-NEXT-RING- ?mps)) (goal-id ?goal-id))
+            (plan-action (id 1) (plan-id (sym-cat REPARE-RS-MOUNT-NEXT-RING- ?mps)) (goal-id ?goal-id)
+                                          (action-name lock) 
+                                          (param-values ?mps))
+            (plan-action (id 2) (plan-id (sym-cat REPARE-RS-MOUNT-NEXT-RING- ?mps)) (goal-id ?goal-id)
+                                          (action-name prepare-rs)
+                                          (param-values ?prepare-param-values))
+            (plan-action (id 3) (plan-id (sym-cat REPARE-RS-MOUNT-NEXT-RING- ?mps)) (goal-id ?goal-id)
+                                          (action-name ?process-action)
+                                          (param-values ?process-param-values))
+            (plan-action (id 4) (plan-id (sym-cat REPARE-RS-MOUNT-NEXT-RING- ?mps)) (goal-id ?goal-id)
+                                          (action-name unlock)
+                                          (param-values ?mps))
+      )
+      (modify ?g (mode EXPANDED))
+)
 )
