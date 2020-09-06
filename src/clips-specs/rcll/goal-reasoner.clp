@@ -617,3 +617,13 @@
   =>
   (modify ?g (mode RETRACTED))
 )
+
+(defrule goal-reasoner-fail-goal-if-subgoal-failed
+" Fail a seperated goal if its child failed
+"
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
+  ?g <- (goal (id ?parent) (mode DISPATCHED) (sub-type RUN-ALL-OF-SUBGOALS) (parent nil))
+  (goal (parent ?parent) (mode RETRACTED) (outcome FAILED) (sub-type SIMPLE))
+  =>
+  (modify ?g (mode RETRACTED) (outcome FAILED))
+)
