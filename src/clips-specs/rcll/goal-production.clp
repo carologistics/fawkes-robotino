@@ -405,7 +405,7 @@
                 (parent ?fill-cap-id)
                 (params m ?mps
                         cc ?cc 
-                        capcol ?cap-color)
+                        capcol ?cap-color
                 )
                 (required-resources)
   ))
@@ -1009,9 +1009,11 @@
     else
       (printout t "Goal " MOUNT-FIRST-RING " formulated" crlf))
   (bind ?distance (node-distance (str-cat ?mps-bs - (if (eq ?bs-side INPUT) then I else O))))
-  (assert (goal (id (sym-cat MOUNT-FIRST-RING- (gensym*)))
-                (class MOUNT-FIRST-RING) (sub-type SIMPLE)
-                (priority (+ ?*PRIORITY-MOUNT-FIRST-RING* (goal-distance-prio ?distance)))
+  (bind ?priority (+ ?*PRIORITY-MOUNT-FIRST-RING* (goal-distance-prio ?distance)))
+  (bind ?mfr-id (sym-cat MOUNT-FIRST-RING- (gensym*)))
+  (assert (goal (id ?mfr-id)
+                (class MOUNT-FIRST-RING) (sub-type RUN-ALL-OF-SUBGOALS)
+                (priority ?priority)
                 (parent ?production-id)
                 (params robot ?robot
                         bs ?mps-bs
@@ -1025,7 +1027,37 @@
                         order ?order
                         wp ?spawned-wp
                 )
-                (required-resources (sym-cat ?mps-rs -INPUT) ?required-resources)
+                (required-resources ?mps-rs (sym-cat ?mps-rs -OUTPUT) (sym-cat ?mps-rs -INPUT) ?required-resources)
+  ))
+  (assert (goal (id (sym-cat FEED-BASE-FIRST-RING- (gensym*)))
+                (class FEED-BASE-FIRST-RING) 
+                (sub-type SIMPLE)
+                (parent ?mfr-id)
+                (priority (+ ?priority 2))
+                (params robot ?robot
+                        bs ?mps-bs
+                        bs-side ?bs-side
+                        bs-color ?base-color
+                        mps ?mps-rs
+                        ring-color ?ring1-color
+                        rs-before ?bases-filled
+                        rs-after ?bases-remain
+                        rs-req ?bases-needed
+                        order ?order
+                        wp ?spawned-wp
+                )
+                (required-resources)
+  ))
+  (assert (goal (id (sym-cat PREPARE-RS-MOUNT-FIRST-RING- ?mps-rs - (gensym*)))
+                (class PREPARE-RS-MOUNT-FIRST-RING) (sub-type SIMPLE-ASYNC)
+                (priority (+ ?priority 1))
+                (parent ?mfr-id)
+                (params mps ?mps-rs
+                        wp ?spawned-wp
+                        rc ?ring1-color
+                        rs-req ?bases-needed
+                )
+                (required-resources)
   ))
 )
 

@@ -96,7 +96,7 @@
               (eq ?goal-class DISCARD-UNKNOWN)
               (eq ?goal-class PRODUCE-C0)
               (eq ?goal-class PRODUCE-CX)
-              (eq ?goal-class MOUNT-FIRST-RING)
+              (eq ?goal-class FEED-BASE-FIRST-RING)
               (eq ?goal-class MOUNT-NEXT-RING)
               (eq ?goal-class DELIVER)
               (eq ?goal-class RESET-MPS) 
@@ -118,6 +118,7 @@
               (eq ?goal-class PREPARE-CAPS)
               (eq ?goal-class PREPARE-RINGS)
               (eq ?goal-class FILL-CAP)
+              (eq ?goal-class MOUNT-FIRST-RING)
               (eq ?goal-class NO-PROGRESS)))
 )
 
@@ -385,7 +386,7 @@
   tied to their order independent of the goal outcome as long as they are
   still usable.
 "
-  ?g <- (goal (id ?goal-id) (class PRODUCE-C0|MOUNT-FIRST-RING)
+  ?g <- (goal (id ?goal-id) (class PRODUCE-C0|FEED-BASE-FIRST-RING)
               (parent ?parent-id)
               (mode FINISHED) (outcome ?outcome)
               (params $?params))
