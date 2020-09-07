@@ -1052,7 +1052,7 @@
                         order ?order
                         wp ?spawned-wp
                 )
-                (required-resources (sym-cat ?mps-rs -INPUT) ?required-resources)
+                (required-resources ?mps-rs (sym-cat ?mps-rs -INPUT) ?required-resources)
   ))
   (assert (goal (id (sym-cat FEED-BASE-FIRST-RING- (gensym*)))
                 (class FEED-BASE-FIRST-RING) 
@@ -1176,7 +1176,7 @@
                         rs-req ?bases-needed
                         order ?order
                 )
-                (required-resources (sym-cat ?mps-rs -INPUT) (sym-cat ?prev-rs -OUTPUT) ?wp)
+                (required-resources ?mps-rs (sym-cat ?mps-rs -INPUT) (sym-cat ?prev-rs -OUTPUT) ?wp)
   ))
   (assert (goal (id (sym-cat FEED-BASE-NEXT-RING- (gensym*)))
                 (class FEED-BASE-NEXT-RING) 

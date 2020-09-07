@@ -623,7 +623,7 @@
 "
   (declare (salience ?*SALIENCE-GOAL-REJECT*))
   ?g <- (goal (id ?parent) (mode DISPATCHED) (sub-type RUN-ALL-OF-SUBGOALS) (parent nil))
-  (goal (parent ?parent) (mode RETRACTED) (outcome FAILED) (sub-type SIMPLE))
+  (goal (parent ?parent) (mode RETRACTED) (outcome FAILED) (sub-type SIMPLE-ASYNC))
   =>
   (modify ?g (mode RETRACTED) (outcome FAILED))
 )
