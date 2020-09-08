@@ -606,6 +606,7 @@
   ?p <- (goal (id ?parent) (mode DISPATCHED) (sub-type RUN-ALL-OF-SUBGOALS) (parent ?grandparent&~nil))
   ?gp <- (goal (id ?grandparent) (mode DISPATCHED))
   (not (goal (parent ?parent) (sub-type SIMPLE) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
+  (not (goal (parent ?parent) (sub-type SIMPLE) (outcome FAILED)))
   (goal (parent ?parent) (sub-type SIMPLE-ASYNC) (mode ~DISPATCHED&~FINISHED&~EVALUATED&~RETRACTED))
   =>
   (modify ?p (parent nil))

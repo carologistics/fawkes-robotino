@@ -386,7 +386,7 @@
                         mps ?mps
                         cc ?cc
                 )
-                (required-resources (sym-cat ?mps -INPUT) ?cc)
+                (required-resources ?mps (sym-cat ?mps -INPUT) ?cc)
   ))
   (assert (goal (id (sym-cat FEED-CAP- (gensym*)))
                 (class FEED-CAP)
@@ -924,7 +924,7 @@
                         order ?order
                         wp ?spawned-wp
                 )
-                (required-resources (sym-cat ?mps -INPUT) ?required-resources)
+                (required-resources ?mps (sym-cat ?mps -INPUT) ?required-resources)
   ))
   (assert (goal (id (sym-cat FEED-BASE-PRODUCE-C0- (gensym*)))
                 (class FEED-BASE-PRODUCE-C0) 
