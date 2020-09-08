@@ -3,6 +3,7 @@
 ;
 ;  Created: Tue 09 Jan 2018 17:03:31 CET
 ;  Copyright  2018  Mostafa Gomaa <gomaa@kbsg.rwth-aachen.de>
+;             2020  Daniel Swoboda <swoboda@kbsg.rwth-aachen.de>
 ;  Licensed under GPLv2+ license, cf. LICENSE file in the doc directory.
 ;---------------------------------------------------------------------------
 
@@ -215,13 +216,10 @@
                                     (action-name wp-put)
                                     (param-names r wp m)
                                     (param-values ?robot ?cc ?mps))
-      ;   (plan-action (id 6) (plan-id FEED-CAP-PLAN) (goal-id ?goal-id)
-      ;                               (action-name request-cs-retrieve-cap)
-      ;                               (param-values ?robot ?mps ?cc ?cap-color))
-        (plan-action (id 7) (plan-id FEED-CAP-PLAN) (goal-id ?goal-id)
+        (plan-action (id 6) (plan-id FEED-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name location-unlock)
                                     (param-values ?mps INPUT))
-        (plan-action (id 8) (plan-id FEED-CAP-PLAN) (goal-id ?goal-id)
+        (plan-action (id 7) (plan-id FEED-CAP-PLAN) (goal-id ?goal-id)
                                     (action-name go-wait)
                                     (param-names r from from-side to)
                                     (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))
@@ -515,13 +513,10 @@
         (action-name wp-put)
         (param-names r wp m)
         (param-values ?robot ?spawned-wp ?mps))
-;   (plan-action (id (+ ?offset 4)) (plan-id FEED-BASE-PRODUCE-C0-PLAN) (goal-id ?goal-id)
-;         (action-name request-cs-mount-cap)
-;         (param-values ?robot ?mps ?spawned-wp ?cap-color))
-  (plan-action (id (+ ?offset 5)) (plan-id FEED-BASE-PRODUCE-C0-PLAN) (goal-id ?goal-id)
+  (plan-action (id (+ ?offset 4)) (plan-id FEED-BASE-PRODUCE-C0-PLAN) (goal-id ?goal-id)
         (action-name location-unlock)
         (param-values ?mps INPUT))
-  (plan-action (id (+ ?offset 6)) (plan-id FEED-BASE-PRODUCE-C0-PLAN) (goal-id ?goal-id)
+  (plan-action (id (+ ?offset 5)) (plan-id FEED-BASE-PRODUCE-C0-PLAN) (goal-id ?goal-id)
         (action-name go-wait)
         (param-names r from from-side to)
         (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))
@@ -610,15 +605,10 @@
         (action-name wp-put)
         (param-names r wp m)
         (param-values ?robot ?spawned-wp ?mps))
-;   (plan-action (id (+ ?offset 4)) (plan-id FEED-BASE-FIRST-RING-PLAN) (goal-id ?goal-id)
-;         (action-name request-rs-mount-ring)
-;         (param-values ?robot ?mps ?spawned-wp ONE ?ring-color
-;                        RING_NONE RING_NONE RING_NONE
-;                        ?rs-req))
-  (plan-action (id (+ ?offset 5)) (plan-id FEED-BASE-FIRST-RING-PLAN) (goal-id ?goal-id)
+  (plan-action (id (+ ?offset 4)) (plan-id FEED-BASE-FIRST-RING-PLAN) (goal-id ?goal-id)
         (action-name location-unlock)
         (param-values ?mps INPUT))
-  (plan-action (id (+ ?offset 6)) (plan-id FEED-BASE-FIRST-RING-PLAN) (goal-id ?goal-id)
+  (plan-action (id (+ ?offset 5)) (plan-id FEED-BASE-FIRST-RING-PLAN) (goal-id ?goal-id)
         (action-name go-wait)
         (param-names r from from-side to)
         (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))
@@ -698,14 +688,10 @@
             (action-name wp-put)
             (param-names r wp m)
             (param-values ?robot ?wp ?rs))
-      ; (plan-action (id (+ ?offset 4)) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
-      ;       (action-name request-rs-mount-ring)
-      ;       (param-values ?robot ?rs ?wp ?ring-pos ?curr-ring-color
-      ;                         ?ring1-color ?ring2-color ?ring3-color ?rs-req))
-      (plan-action (id (+ ?offset 5)) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
+      (plan-action (id (+ ?offset 4)) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name location-unlock)
             (param-values ?rs INPUT))
-      (plan-action (id (+ ?offset 6)) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
+      (plan-action (id (+ ?offset 5)) (plan-id FEED-BASE-NEXT-RING-PLAN) (goal-id ?goal-id)
             (action-name go-wait)
             (param-names r from from-side to)
             (param-values ?robot ?rs INPUT (wait-pos ?rs INPUT)))
@@ -782,13 +768,10 @@
           (action-name wp-put)
           (param-names r wp m)
           (param-values ?robot ?wp ?mps))
-;     (plan-action (id (+ ?offset 4)) (plan-id FEED-PRODUCT-PRODUCE-CX-PLAN) (goal-id ?goal-id)
-;           (action-name request-cs-mount-cap)
-;           (param-values ?robot ?mps ?wp ?cap-color))
-    (plan-action (id (+ ?offset 5)) (plan-id FEED-PRODUCT-PRODUCE-CX-PLAN) (goal-id ?goal-id)
+    (plan-action (id (+ ?offset 4)) (plan-id FEED-PRODUCT-PRODUCE-CX-PLAN) (goal-id ?goal-id)
           (action-name location-unlock)
           (param-values ?mps INPUT))
-    (plan-action (id (+ ?offset 6)) (plan-id FEED-PRODUCT-PRODUCE-CX-PLAN) (goal-id ?goal-id)
+    (plan-action (id (+ ?offset 5)) (plan-id FEED-PRODUCT-PRODUCE-CX-PLAN) (goal-id ?goal-id)
           (action-name go-wait)
           (param-names r from from-side to)
           (param-values ?robot ?mps INPUT (wait-pos ?mps INPUT)))
@@ -952,70 +935,6 @@
   (modify ?g (mode EXPANDED))
 )
 
-; (defrule goal-expander-process-mps
-;  ?p <- (goal (mode DISPATCHED) (id ?parent))
-;  ?g <- (goal (id ?goal-id) (class PROCESS-MPS) (mode SELECTED) (parent ?parent)
-;              (params m ?mps))
-;   ?pre <- (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
-;   ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
-;   =>
-;   (bind ?prepare-param-values (values-from-name-value-list ?prepare-params))
-;   (bind ?process-param-values (values-from-name-value-list ?process-params))
-
-;   (bind ?success TRUE)
-;   ;Special case: if process is a ring mount, we have to get the current number of rings stored
-;   ; and adapt the param-values
-;   (if (eq ?prepare-action prepare-rs) then
-;     (bind ?rs-req (nth$ (+ 1 (member$ r-req ?prepare-params)) ?prepare-params))
-;     (if (not (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact rs-filled-with))
-;                                        (eq (wm-key-arg ?wm:key m) ?mps))
-;       (bind ?rs-before (wm-key-arg ?wm:key n))
-;     )) then
-;       (printout error "Cant find rs-filled-with for " ?mps crlf)
-;       (bind ?success FALSE)
-;     )
-;     (if (not (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact rs-sub))
-;                                        (eq (wm-key-arg ?wm:key minuend) ?rs-before)
-;                                        (eq (wm-key-arg ?wm:key subtrahend) ?rs-req))
-;       (bind ?rs-after (wm-key-arg ?wm:key difference))
-;     )) then
-;       (printout error "Cant find rs-sub fact with " ?rs-before "-" ?rs-req crlf)
-;       (bind ?success FALSE)
-;     )
-;     (if ?success then
-;       (bind ?prepare-param-values (insert$ ?prepare-param-values (length$ ?prepare-param-values) ?rs-before))
-;       (bind ?process-param-values (insert$ ?process-param-values (length$ ?process-param-values) ?rs-before))
-
-;       (bind ?prepare-param-values (insert$ ?prepare-param-values (length$ ?prepare-param-values) ?rs-after))
-;       (bind ?process-param-values (insert$ ?process-param-values (length$ ?process-param-values) ?rs-after))
-;     )
-;   )
-
-;   (if ?success then
-;     (assert
-;       (plan (id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id))
-;       (plan-action (id 1) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
-;                                     (action-name lock) 
-;                                     (param-values ?mps))
-;       (plan-action (id 2) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
-;                                     (action-name ?prepare-action)
-;                                     (param-values ?prepare-param-values))
-;       (plan-action (id 3) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
-;                                     (action-name ?process-action)
-;                                     (param-values ?process-param-values))
-;       (plan-action (id 4) (plan-id (sym-cat PROCESS-MPS- ?mps)) (goal-id ?goal-id)
-;                                     (action-name unlock)
-;                                     (param-values ?mps))
-;     )
-;     (modify ?g (mode EXPANDED))
-;   else
-;     (retract ?pre ?pro)
-;     (printout error "Tried to expand Process RS goal on changed fact" crlf)
-;     (modify ?g (mode RETRACTED) (outcome REJECTED))
-;   )
-; )
-
-
 (defrule goal-expander-prepare-cs-retrieve
  ?p <- (goal (mode DISPATCHED) (id ?parent))
  ?g <- (goal (id ?goal-id) (class PREPARE-CS-RETRIEVE) (mode SELECTED) (parent ?parent)
@@ -1078,7 +997,7 @@
             )
             (modify ?g (mode EXPANDED))
             else 
-            (modify ?g (mode RETRACTED) (outcome FAILED))
+            (modify ?g (mode FINISHED) (outcome REJECTED))
       )
 )
 

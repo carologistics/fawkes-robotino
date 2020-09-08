@@ -3,6 +3,7 @@
 ;
 ;  Created: Tue 05 Jan 2019 15:48:31 CET
 ;  Copyright  2019  Tarik Viehmann <tarik.viehmann@rwth-aachen.de>
+;             2020  Daniel Swoboda <swoboda@kbsg.rwth-aachen.de>
 ;  Licensed under GPLv2+ license, cf. LICENSE file in the doc directory.
 ;---------------------------------------------------------------------------
 
@@ -51,13 +52,6 @@
   (modify ?g (mode COMMITTED))
 )
 
-(defrule simple-async-goal-commit
-  (goal (id ?parent) (sub-type RUN-ALL-OF-SUBGOALS) (mode DISPATCHED))
-  ?g <- (goal (id ?id) (parent ?parent) (sub-type SIMPLE-ASYNC) (mode EXPANDED))
-  =>
-  (modify ?g (mode DISPATCHED))
-)
-
 (defrule simple-goal-fail-because-of-subgoal
   ?g <- (goal (id ?goal-id) (sub-type SIMPLE)
               (mode ~FINISHED&~EVALUATED&~RETRACTED))
@@ -96,11 +90,23 @@
  (modify ?g (mode RETRACTED))
 )
 
-; (defrule simple-async-goal-retry-failed-or-rejected
-; 	?gf <- (goal (id ?id) (type ACHIEVE) (sub-type RUN-ALL-OF-SUBGOALS) (mode DISPATCHED)
-; 	             (committed-to ?sub-goal))
-; 	?sg <- (goal (id ?sub-goal) (parent ?id) (sub-type SIMPLE-ASYNC) (mode RETRACTED) (outcome ?outcome&FAILED|REJECTED))
-; 	=>
-; 		(modify ?sg (mode FORMULATED) (outcome UNKNOWN))
-; 	)
-; )
+(defrule simple-async-goal-dispatch
+  (goal (id ?parent) (sub-type RUN-ALL-OF-SUBGOALS) (mode DISPATCHED))
+  ?g <- (goal (id ?id) (parent ?parent) (sub-type SIMPLE-ASYNC) (mode EXPANDED))
+  =>
+  (modify ?g (mode DISPATCHED))
+)
+
+(defrule simple-async-goal-retract
+ ?g <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SIMPLE-ASYNC) (mode EVALUATED)
+             (acquired-resources))
+  (not (goal (parent ?goal-id)))
+=>
+  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+    (delayed-do-for-all-facts ((?a plan-action)) (eq ?a:plan-id ?p:id)
+      (retract ?a)
+    )
+    (retract ?p)
+  )
+ (modify ?g (mode RETRACTED))
+)

@@ -3,6 +3,7 @@
 ;
 ;  Created: Tue 09 Jan 2018 17:03:31 CET
 ;  Copyright  2018  Mostafa Gomaa <gomaa@kbsg.rwth-aachen.de>
+;             2020  Daniel Swoboda <swoboda@kbsg.rwth-aachen.de>
 ;  Licensed under GPLv2+ license, cf. LICENSE file in the doc directory.
 ;---------------------------------------------------------------------------
 
@@ -588,7 +589,6 @@
   (printout error ?goal " of class " ?class " has no sub-type" crlf)
 )
 
-
 (defrule goal-reasoner-reject-subgoal-if-parent-rejected
 " Reject a goal if its parent is rejected. 
 "
@@ -614,17 +614,9 @@
 )
 
 (defrule goal-reasoner-retract-run-all-of-subgoals
+  " Retract an evaluated RUN-ALL goal, so that the acquired resources can be released.
+  "
   ?g <- (goal (id ?parent) (mode EVALUATED) (sub-type RUN-ALL-OF-SUBGOALS))
   =>
   (modify ?g (mode RETRACTED))
-)
-
-(defrule goal-reasoner-fail-goal-if-subgoal-failed
-" Fail a seperated goal if its child failed
-"
-  (declare (salience ?*SALIENCE-GOAL-REJECT*))
-  ?g <- (goal (id ?parent) (mode DISPATCHED) (sub-type RUN-ALL-OF-SUBGOALS) (parent nil))
-  (goal (parent ?parent) (mode RETRACTED) (outcome FAILED) (sub-type SIMPLE-ASYNC))
-  =>
-  (modify ?g (mode RETRACTED) (outcome FAILED))
 )

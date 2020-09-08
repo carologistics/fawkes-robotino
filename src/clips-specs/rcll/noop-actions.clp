@@ -51,54 +51,6 @@
   (modify ?pa (state FINAL))
 )
 
-; (defrule action-execute-request-cs-mount-cap
-;   ?pa <- (plan-action (action-name request-cs-mount-cap) (state PENDING) (executable TRUE)
-;             (param-values ?r ?mps ?wp ?capcol))
-;   =>
-;   (modify ?pa (state EXECUTION-SUCCEEDED))
-;   (assert
-;     (wm-fact (key mps-handling prepare prepare-cs ?mps args? m ?mps op MOUNT_CAP))
-;     (wm-fact (key mps-handling process cs-mount-cap ?mps args? m ?mps wp ?wp capcol ?capcol))
-;   )
-; )
-
-; (defrule action-execute-request-cs-retrieve-cap
-;   ?pa <- (plan-action (action-name request-cs-retrieve-cap) (state PENDING) (executable TRUE)
-;             (param-values ?r ?mps ?cc ?capcol))
-;   =>
-;   (modify ?pa (state EXECUTION-SUCCEEDED))
-;   (assert
-;     (wm-fact (key mps-handling prepare prepare-cs ?mps args? m ?mps op RETRIEVE_CAP))
-;     (wm-fact (key mps-handling process cs-retrieve-cap ?mps args? m ?mps cc ?cc capcol ?capcol))
-;   )
-; )
-
-; (defrule action-execute-request-rs-mount-ring
-;   ?pa <- (plan-action (action-name request-rs-mount-ring) (state PENDING) (executable TRUE)
-;             (param-values ?r ?rs ?wp ?ring-pos ?rc ?rc1 ?rc2 ?rc3 ?rs-req))
-
-;   =>
-;   (modify ?pa (state EXECUTION-SUCCEEDED))
-;   (bind ?mount-ring-action-name (sym-cat rs-mount-ring (sym-to-int ?ring-pos)))
-;     (switch (sym-to-int ?ring-pos)
-;       (case 1 then
-;         (bind ?mount-ring-param-names m wp col r-req)
-;         (bind ?mount-ring-param-values ?rs ?wp ?rc ?rs-req))
-;       (case 2 then
-;         (bind ?mount-ring-param-names m wp col col1 r-req)
-;         (bind ?mount-ring-param-values ?rs ?wp ?rc ?rc1 ?rs-req))
-;       (case 3 then
-;         (bind ?mount-ring-param-names m wp col col1 col2 r-req)
-;         (bind ?mount-ring-param-values ?rs ?wp ?rc ?rc1 ?rc2 ?rs-req))
-;      (default
-;         (printout t "ERROR, plan-action params of request-rs-mount-ring are wrong" crlf)))
-;   (assert
-;     (wm-fact (key mps-handling prepare prepare-rs ?rs args? m ?rs rc ?rc r-req ?rs-req))
-;     (wm-fact (key mps-handling process ?mount-ring-action-name ?rs args?
-;                         (merge-params ?mount-ring-param-names ?mount-ring-param-values)))
-;   )
-; )
-
 (defrule action-execute-wp-spawn
 	?pa <- (plan-action (plan-id ?plan-id) (state PENDING) (executable TRUE)
 	                    (action-name spawn-wp) (param-values ?wp ?robot))
