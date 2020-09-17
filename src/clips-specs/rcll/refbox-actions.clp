@@ -176,6 +176,7 @@
   (bind ?machine-instruction (pb-create "llsf_msgs.PrepareMachine"))
   (pb-set-field ?machine-instruction "team_color" ?team-color)
   (pb-set-field ?machine-instruction "machine" (str-cat ?mps))
+  (pb-set-field ?machine-instruction "sent_at" (nth$ 1 ?now))
 
   (switch ?mps-type
     (case BS
