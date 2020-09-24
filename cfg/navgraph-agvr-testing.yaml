@@ -441,7 +441,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-SS-I
-    pos: [4.199894, 2.483869]
+    pos: [3.66, 0.92]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -456,7 +456,7 @@ nodes:
       - travel_tolerance: 1.5
   - !unconnected
     name: WAIT-C-SS-O
-    pos: [4.497852, 2.519289]
+    pos: [1.25, 0.92]
     properties:
       - align_distance: 0.45
       - always-copy: true
@@ -795,6 +795,25 @@ nodes:
       - target_tolerance: 0.7
       - travel_tolerance: 1.5
   - !unconnected
+    name: C-SS
+    pos: [2.2, 0.913]
+    properties:
+      - mps: true
+      - align_distance: 0.45
+      - input_offset_x: 0.02
+      - input_offset_y: 0.025
+      - only-copy-properties: true
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - tag_input: 193
+      - tag_output: 194
+      - target_tolerance: 1
+      - travel_tolerance: 1.5
+  - !unconnected
     name: M-CS1
     pos: [-5.401671e-08, -0.8914272]
     properties:
@@ -960,6 +979,36 @@ nodes:
       - align_distance: 0.45
       - input_offset_y: 0.025
       - orientation: 0.0
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-SS-O
+    pos: [1.6, 0.92]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: 0.0
+      - orientation_tolerance: 0.6
+      - output_offset_y: -0.025
+      - shortcut_tolerance: 1.2
+      - signal_hint_x: 0.035
+      - signal_hint_y: -0.1
+      - signal_hint_z: 0.78
+      - target_tolerance: 0.7
+      - travel_tolerance: 1.5
+  - !unconnected
+    name: C-SS-I
+    pos: [3.3, 0.92]
+    properties:
+      - align_distance: 0.45
+      - input_offset_y: 0.025
+      - orientation: -3.136102
       - orientation_tolerance: 0.6
       - output_offset_y: -0.025
       - shortcut_tolerance: 1.2
