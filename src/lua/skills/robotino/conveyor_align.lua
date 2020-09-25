@@ -48,28 +48,32 @@ local tfm = require("fawkes.tfutils")
 local pam = require("parse_module")
 
 -- Constants
-local FITNESS_THRESHOLD = {           -- low is the minimum required fitness to do anything
-   conveyor = { low = 15, high = 25 }, -- if fitness is >= high, we assume that the fit is perfect
-   slide = { low = 7, high = 17 }     -- and don't re-run ICP after moving
+local FITNESS_THRESHOLD = {
+   conveyor = { low = config:get_float_or_default("/skills/conveyor_align/conveyor_low", 15),
+                high = config:get_float_or_default("/skills/conveyor_align/conveyor_high", 25)}, 
+   slide = { low = config:get_float_or_default("/skills/conveyor_align/slide_low", 7),
+             high = config:get_float_or_default("/skills/conveyor_align/slide_high", 17)}     
 }
 
 local GRIP_OFFSET = {
-   x = 0.03,
-   y = 0,
-   z = 0.02,
+   x = config:get_float_or_default("/skills/conveyor_align/GRIP_OFFSET_X", 0.03),
+   y = config:get_float_or_default("/skills/conveyor_align/GRIP_OFFSET_Y", 0),
+   z = config:get_float_or_default("/skills/conveyor_align/GRIP_OFFSET_Z", 0.02),
    ori = { x = 0, y = 0, z = 0, w = 1 }
 }
 local TARGET_POS = { -- target pose rel. to the conveyor_pose frame
-   x = -0.255,
-   y = 0,
-   ori = 0
+   x = config:get_float_or_default("/skills/conveyor_align/TARGET_POS_X", -0.255),
+   y = config:get_float_or_default("/skills/conveyor_align/TARGET_POS_Y", 0),
+   ori = config:get_float_or_default("/skills/conveyor_align/TARGET_POS_ORI", 0)
 }
 
 -- initial gripper poses depending on the target
-local GRIPPER_POSE = { x= 0.05, y = 0.00, z = 0.03}
+local GRIPPER_POSE = { x= config:get_float_or_default("/skills/conveyor_align/GRIPPER_POSE_X", 0.05),
+                       y = config:get_float_or_default("/skills/conveyor_align/GRIPPER_POSE_Y", 0),
+                       z = config:get_float_or_default("/skills/conveyor_align/GRIPPER_POSE_Z", 0.03)}
 
-local MAX_RETRIES=2
-local MAX_VISION_RETRIES=2
+local MAX_RETRIEs = config:get_float_or_default("/skills/conveyor_align/MAX_RETRIES", 2)
+local MAX_VISION_RETRIES config:get_float_or_default("/skills/conveyor_align/MAX_VISION_RETRIES", 2)
 
 
 local gripper_max = {

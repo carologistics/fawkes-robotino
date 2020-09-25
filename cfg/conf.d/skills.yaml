@@ -10,6 +10,25 @@ skills:
     x: 0.31
   approach_distance_laser:
     x: 0.27
+  conveyor_align:
+    # low is the minimum required fitness to do anything
+    # if fitness is >= high, we assume that the fit is perfect
+    # and don't re-run ICP after moving
+    conveyor_low: 15
+    conveyor_high: 25
+    slide_low: 7
+    slide_high: 17
+    GRIP_OFFSET_X: 0.03
+    GRIP_OFFSET_Y: 0
+    GRIP_OFFSET_Z: 0.02
+    TARGET_POS_X: -0.255
+    TARGET_POS_Y: 0
+    TARGET_POS_ORI: 0
+    GRIPPER_POSE_X: 0.05
+    GRIPPER_POSE_Y: 0
+    GRIPPER_POSE_Z: 0.03
+    MAX_RETRIES: 2
+    MAX_VISION_RETRIES: 2
   # The distance goto travels before transitioning into FINAL when going to a
   # waiting position
   goto:
@@ -29,7 +48,6 @@ skills:
     TURN_MOVE_1: 3.1415926535898
     TURN_MOVE_2: -1.57079632679
     TURN_MOVE_3: -3.1415926535898
-
   shelf_pick:
     left_slot_y_offset: 0.0
     middle_slot_y_offset: 0.0
