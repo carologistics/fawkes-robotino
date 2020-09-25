@@ -83,28 +83,32 @@ local llutils = require("fawkes.laser-lines_utils")
 local tag_utils = require("tag_utils")
 
 -- Tunables
-local ZONE_MARGIN = 0.05
-local CAM_ANGLE = 0.4
-local MIN_VIS_HIST = 10
-local MAX_ATTEMPTS = 4
+local ZONE_MARGIN = config:get_float_or_default("/skills/explore_zone/ZONE_MARGIN", 0.05)
+local CAM_ANGLE = config:get_float_or_default("/skills/explore_zone/CAM_ANGLE", 0.4)
+local MIN_VIS_HIST =config:get_int_or_default("/skills/explore_zone/MIN_VIS_HIST", 10)
+local MAX_ATTEMPTS = config:get_int_or_default("/skills/explore_zone/MAX_ATTEMPTS", 4)
 
 -- Maximum reachable coordinates (i.e. usable playing field dimensions)
-local X_MAX = 6.6 -- X direction is mirrored, so no minimum here
-local Y_MIN = 0.3
-local Y_MAX = 7.6
+-- X direction is mirrored, so no minimum here
+local X_MAX = config:get_float_or_default("/skills/explore_zone/X_MAX", 6.6) 
+local Y_MIN = config:get_float_or_default("/skills/explore_zone/Y_MIN", 0.3)
+local Y_MAX = config:get_float_or_default("/skills/explore_zone/Y_MAX", 7.6)
 
 -- When we can't find a laser-line in the zone, we try looking at the zone
 -- from these coordinates, relative to the center.
 local ZONE_CORNERS = {
-   { x = 0.7, y = 0.07 },
-   { x = -0.07,   y = 0.7 },
-   { x = -0.76, y = -0.81 },
+   { x = config:get_float_or_default("/skills/explore_zone/ZONE_CORNERS/x_1", 0.7), 
+     y = config:get_float_or_default("/skills/explore_zone/ZONE_CORNERS/y_1", 0.07)},
+   { x = config:get_float_or_default("/skills/explore_zone/ZONE_CORNERS/x_2", -0.07), 
+     y = config:get_float_or_default("/skills/explore_zone/ZONE_CORNERS/y_2", 0.7)},
+   { x = config:get_float_or_default("/skills/explore_zone/ZONE_CORNERS/x_3", -0.76), 
+     y = config:get_float_or_default("/skills/explore_zone/ZONE_CORNERS/y_3", -0.81)},
 }
 
 -- Maximum difference between tag and line trans/rot
 local TAG_LINE_TOLERANCE = {
-   trans = 0.2,
-   rot = 0.05
+   trans = config:get_float_or_default("/skills/explore_zone/TAG_LINE_TOLERANCE_trans", 0.2),
+   rot = config:get_float_or_default("/skills/explore_zone/TAG_LINE_TOLERANCE_rot", 0.05)
 }
 
 
