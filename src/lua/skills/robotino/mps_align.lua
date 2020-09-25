@@ -75,8 +75,6 @@ documentation      = [==[Align precisely at the given coordinates, relative to t
 @param y (optional) Y offset from the center of the MPS. Defaults to 0.
 ]==]
 
-local pre_conveyor_pose = { x = 0.05, y = 0.0, z = 0.03 }
-
 -- Initialize as skill module
 skillenv.skill_module(_M)
 
@@ -85,22 +83,25 @@ local llutils = require("fawkes.laser-lines_utils")
 local tag_utils = require("tag_utils")
 
 -- Tunables
-local MIN_VIS_HIST_LINE=5 --15
-local MIN_VIS_HIST_LINE_SEARCH=4
-local MIN_VIS_HIST_TAG=5
-
-local LINE_LENGTH_MIN=0.64
-local LINE_LENGTH_MAX=0.71
-local LINE_XDIST_MAX=0.6
-
-local LINE_MATCH_TOLERANCE=0.3
+local MIN_VIS_HIST_LINE = config:get_float_or_default("/skills/mps_align/MIN_VIS_HIST_LINE", 5)
+local MIN_VIS_HIST_LINE_SEARCH = config:get_float_or_default("/skills/mps_align/MIN_VIS_HIST_LINE_SEARCH", 4)
+local MIN_VIS_HIST_TAG = config:get_float_or_default("/skills/mps_align/MIN_VIS_HIST_TAG", 5)
+local LINE_LENGTH_MIN = config:get_float_or_default("/skills/mps_align/LINE_LENGTH_MIN", 0.64)
+local LINE_LENGTH_MAX = config:get_float_or_default("/skills/mps_align/LINE_LENGTH_MAX", 0.71)
+local LINE_XDIST_MAX = config:get_float_or_default("/skills/mps_align/LINE_XDIST_MAX", 0.6)
+local LINE_MATCH_TOLERANCE = config:get_float_or_default("/skills/mps_align/LINE_MATCH_TOLERANCE", 0.3)
+local MAX_TRIES = config:get_float_or_default("/skills/mps_align/MAX_TRIES", 8)
+local pre_conveyor_pose = { 
+   x = config:get_float_or_default("/skills/mps_align/pre_conveyor_pose_x", 0.05),
+   y = config:get_float_or_default("/skills/mps_align/pre_conveyor_pose_y", 0.0),
+   z = config:get_float_or_default("/skills/mps_align/pre_conveyor_pose", 0.03) 
+}
 
 local TURN_MOVES={
-   { ori = math.pi},
-   { ori = -math.pi/2},
-   { ori = -math.pi}
+   { ori = config:get_float_or_default("/skills/mps_align/TURN_MOVE_1", math.pi)},
+   { ori = config:get_float_or_default("/skills/mps_align/TURN_MOVE_2", -math.pi/2)},
+   { ori = config:get_float_or_default("/skills/mps_align/TURN_MOVE_3", -math.pi)}
 }
-local MAX_TRIES = 8
 
 
 function tag_visible(vis_hist)
