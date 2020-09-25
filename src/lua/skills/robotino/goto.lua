@@ -47,11 +47,7 @@ skillenv.skill_module(_M)
 
 local tf_mod = require 'fawkes.tfutils'
 
-if config:exists("/skills/goto/distance_to_travel") then
-   distance_to_travel = config:get_float("/skills/goto/distance_to_travel")
-else
-   distance_to_travel = 0.5
-end
+distance_to_travel = config:get_float_or_default("/skills/goto/distance_to_travel", 0.5)
 
 -- Tunables
 --local REGION_TRANS=0.2
