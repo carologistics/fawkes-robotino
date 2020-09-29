@@ -10,6 +10,10 @@ skills:
     x: 0.31
   approach_distance_laser:
     x: 0.27
+  approach_test:
+    X_AT_MPS: 0.28
+    CONVEYOR_IN_OUT_OFFSET: 0.03
+    OFFSET_SLIDE: -0.27
   conveyor_align:
     # low is the minimum required fitness to do anything
     # if fitness is >= high, we assume that the fit is perfect
@@ -63,6 +67,8 @@ skills:
       y_3: -0.81
     TAG_LINE_TOLERANCE_trans: 0.2
     TAG_LINETOLERANCE_rot: 0.05
+  get_product_from:
+    X_AT_MPS: 0.28
   # The distance goto travels before transitioning into FINAL when going to a
   # waiting position
   goto:
