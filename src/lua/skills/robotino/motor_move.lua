@@ -55,10 +55,15 @@ documentation      = [==[Move on a (kind of) straight line to the given coordina
 @param vel_rot (Optional) Rotational top-speed. Upper limit: dito.
 ]==]
 
+-- Initialize as skill module
+skillenv.skill_module(_M )
+
+local tfm = require("fawkes.tfutils")
+
 -- Tunables
 -- ultimate limit
 local V_MAX =         { x = config:get_float_or_default("/skills/motor_move/V_MAX_x", 0.35),
-                        y, = config:get_float_or_default("/skills/motor_move/V_MAX_y", 0.35)
+                        y = config:get_float_or_default("/skills/motor_move/V_MAX_y", 0.35),
                         ori = config:get_float_or_default("/skills/motor_move/V_MAX_ori", 1.4)}
 local V_MAX_CAM =     { x = config:get_float_or_default("/skills/motor_move/V_MAX_CAM_x", 0.06),
                         y = config:get_float_or_default("/skills/motor_move/V_MAX_CAM_y", 0.06),
@@ -90,11 +95,6 @@ local STUCK_MAX = config:get_int_or_default("/skills/motor_move/STUCK_MAX", 120)
 --                  this factor times V_MIN speed during the
 --                  last MONITOR_LEN loops
 local STUCK_THRESHOLD = config:get_float_or_default("/skills/motor_move/STUCK_THRESHOLD", 0.6)
-
--- Initialize as skill module
-skillenv.skill_module(_M )
-
-local tfm = require("fawkes.tfutils")
 
 local laser_front_dist_frame = "/motor_move_frame_empty"
 if config:exists("/plugins/laser-front-dist/target_frame") then
