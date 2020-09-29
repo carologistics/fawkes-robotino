@@ -56,18 +56,40 @@ documentation      = [==[Move on a (kind of) straight line to the given coordina
 ]==]
 
 -- Tunables
-local V_MAX =         { x=0.35, y=0.35, ori=1.4 }    -- ultimate limit
-local V_MAX_CAM =     { x=0.06, y=0.06, ori=0.3 }
-local V_MIN =         { x=0.006, y=0.006, ori=0.02 }   -- below the motor won't even start
-local TOLERANCE =     { x=0.02, y=0.02, ori=0.025 } -- accuracy
-local TOLERANCE_CAM = { x=0.005, y=0.0015, ori=0.01 }
-local D_DECEL =       { x=0.035, y=0.035, ori=0.15 }    -- deceleration distance
-local ACCEL =         { x=0.06, y=0.06, ori=0.21 }   -- accelerate by this factor every loop
-local MONITOR_LEN     = 15   -- STUCK monitor: Watch distance moved over this many loops
-local STUCK_MAX       = 120  -- STUCK timeout: Fail after being stuck for this many loops
-local STUCK_THRESHOLD = 0.6  -- STUCK threshold: Consider ourselves stuck if we moved less than
-                             --                  this factor times V_MIN speed during the
-                             --                  last MONITOR_LEN loops
+-- ultimate limit
+local V_MAX =         { x = config:get_float_or_default("/skills/motor_move/V_MAX_x", 0.35),
+                        y, = config:get_float_or_default("/skills/motor_move/V_MAX_y", 0.35)
+                        ori = config:get_float_or_default("/skills/motor_move/V_MAX_ori", 1.4)}
+local V_MAX_CAM =     { x = config:get_float_or_default("/skills/motor_move/V_MAX_CAM_x", 0.06),
+                        y = config:get_float_or_default("/skills/motor_move/V_MAX_CAM_y", 0.06),
+                        ori = config:get_float_or_default("/skills/motor_move/V_MAX_CAM_ori", 0.3) }
+-- below the motor won't even start
+local V_MIN =         { x = config:get_float_or_default("/skills/motor_move/V_MIN_x", 0.006),
+                        y = config:get_float_or_default("/skills/motor_move/V_MIN_y", 0.006),
+                        ori = config:get_float_or_default("/skills/motor_move/V_MIN_ori", 0.02) }
+-- accuracy
+local TOLERANCE =     { x = config:get_float_or_default("/skills/motor_move/TOLERANCE_x", 0.02),
+                        y = config:get_float_or_default("/skills/motor_move/TOLERANCE_y", 0.02),
+                        ori = config:get_float_or_default("/skills/motor_move/TOLERANCE_ori", 0.025) }
+local TOLERANCE_CAM = { x = config:get_float_or_default("/skills/motor_move/TOLERANCE_CAM_x", 0.005),
+                        y = config:get_float_or_default("/skills/motor_move/TOLERANCE_CAM_y", 0.0015),
+                        ori = config:get_float_or_default("/skills/motor_move/TOLERANCE_CAM_ori", 0.01) }
+-- deceleration distance
+local D_DECEL =       { x = config:get_float_or_default("/skills/motor_move/D_DECEL_x", 0.035),
+                        y = config:get_float_or_default("/skills/motor_move/D_DECEL_y", 0.035),
+                        ori = config:get_float_or_default("/skills/motor_move/D_DECEL_ori", 0.15) }
+-- accelerate by this factor every loop
+local ACCEL =         { x = config:get_float_or_default("/skills/motor_move/ACCEL_x", 0.06),
+                        y = config:get_float_or_default("/skills/motor_move/ACCEL_y", 0.06),
+                        ori = config:get_float_or_default("/skills/motor_move/ACCEL_ori", 0.21) }
+-- STUCK monitor: Watch distance moved over this many loops
+local MONITOR_LEN = config:get_int_or_default("/skills/motor_move/MONITOR_LEN", 15)
+-- STUCK timeout: Fail after being stuck for this many loops
+local STUCK_MAX = config:get_int_or_default("/skills/motor_move/STUCK_MAX", 120) 
+-- STUCK threshold: Consider ourselves stuck if we moved less than
+--                  this factor times V_MIN speed during the
+--                  last MONITOR_LEN loops
+local STUCK_THRESHOLD = config:get_float_or_default("/skills/motor_move/STUCK_THRESHOLD", 0.6)
 
 -- Initialize as skill module
 skillenv.skill_module(_M )

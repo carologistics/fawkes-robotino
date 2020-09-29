@@ -82,6 +82,31 @@ skills:
   # waiting position
   goto:
     distance_to_travel: 0.5
+  motor_move:
+    V_MAX_x: 0.35
+    V_MAX_y: 0.35
+    V_MAX_ori: 1.4
+    V_MAX_CAM_x: 0.06
+    V_MAX_CAM_y: 0.06
+    V_MAX_CAM_ori: 0.3
+    V_MIN_x: 0.006
+    V_MIN_y: 0.006
+    V_MIN_ori: 0.02
+    TOLERANCE_x: 0.02
+    TOLERANCE_y: 0.02
+    TOLERANCE_ori: 0.025
+    TOLERANCE_CAM_x: 0.005
+    TOLERANCE_CAM_y: 0.0015
+    TOLERANCE_CAM_ori: 0.01
+    D_DECEL_x: 0.035
+    D_DECEL_y: 0.035
+    D_DECEL_ori: 0.15
+    ACCEL_x: 0.06
+    ACCEL_y: 0.06
+    ACCEL_ori: 0.21
+    MONITOR_LEN: 15
+    STUCK_MAX: 120
+    STUCK_THRESHOLD: 0.6
   mps_align:
     MIN_VIS_HIST_LINE: 5
     MIN_VIS_HIST_LINE_SEARCH: 4
