@@ -93,34 +93,34 @@ local llutils = require("fawkes.laser-lines_utils")
 
 -- Tunables
 -- meter threshold of laserline to navgraph point
-local LINE_MATCH_TOLERANCE = config_get_float_or_default("/skills/drive_to_machine_point/LINE_MATCH_TOLERANCE", 1.2)
+local LINE_MATCH_TOLERANCE = config:get_float_or_default("/skills/drive_to_machine_point/LINE_MATCH_TOLERANCE", 1.2)
 -- rad threshold of laserline to navgraph point
-local LINE_MATCH_ANG_TOLERANCE = config_get_float_or_default("/skills/drive_to_machine_point/LINE_MATCH_ANG_TOLERANCE", 0.05)
+local LINE_MATCH_ANG_TOLERANCE = config:get_float_or_default("/skills/drive_to_machine_point/LINE_MATCH_ANG_TOLERANCE", 0.05)
 -- meter threshold of laser to navgraph point
-local NAVGRAPH_LIN_TOLERANCE = config_get_float_or_default("/skills/drive_to_machine_point/NAVGRAPH_LIN_TOLERANCE", 0.5)
+local NAVGRAPH_LIN_TOLERANCE = config:get_float_or_default("/skills/drive_to_machine_point/NAVGRAPH_LIN_TOLERANCE", 0.5)
 -- rad threshold of laser to navgraph point
-local NAVGRAPH_ANG_TOLERANCE = config_get_float_or_default("/skills/drive_to_machine_point/NAVGRAPH_ANG_TOLERANCE", 0.5)
+local NAVGRAPH_ANG_TOLERANCE = config:get_float_or_default("/skills/drive_to_machine_point/NAVGRAPH_ANG_TOLERANCE", 0.5)
 -- minimum laser line length
-local LINE_LENGTH_MIN = config_get_float_or_default("/skills/drive_to_machine_point/LINE_LENGTH_MIN", 0.64)
+local LINE_LENGTH_MIN = config:get_float_or_default("/skills/drive_to_machine_point/LINE_LENGTH_MIN", 0.64)
 -- maximum laser line length
-local LINE_LENGTH_MAX = config_get_float_or_default("/skills/drive_to_machine_point/LINE_MATCH_TOLERANCE", 0.72)
+local LINE_LENGTH_MAX = config:get_float_or_default("/skills/drive_to_machine_point/LINE_MATCH_TOLERANCE", 0.72)
 -- maximum velocity for motor_move
-local MAX_VEL_MOTOR_MOVE = config_get_float_or_default("/skills/drive_to_machine_point/MAX_VEL_MOTOR_MOVE", 0.1)
+local MAX_VEL_MOTOR_MOVE = config:get_float_or_default("/skills/drive_to_machine_point/MAX_VEL_MOTOR_MOVE", 0.1)
 -- number of tries to correct the pose in front of the laser line
-local NUM_DIRECT_MPS_ALIGN_TRIES = config_get_int_or_default("/skills/drive_to_machine_point/NUM_DIRECT_MPS_ALIGN_TRIES", 4)
+local NUM_DIRECT_MPS_ALIGN_TRIES = config:get_int_or_default("/skills/drive_to_machine_point/NUM_DIRECT_MPS_ALIGN_TRIES", 4)
 -- number of tries to correct the pose in front of the laser line
-local CONVEYOR_IN_OUT_OFFSET = config_get_float_or_default("/skills/drive_to_machine_point/CONVEYOR_IN_OUT_OFFSET", 0.03)
+local CONVEYOR_IN_OUT_OFFSET = config:get_float_or_default("/skills/drive_to_machine_point/CONVEYOR_IN_OUT_OFFSET", 0.03)
 
 -- Offsets for points of interest at the MPS.
 -- Considered to be from the right of the MPS.
-local OFFSET_CONVEYOR = config_get_float_or_default("/skills/drive_to_machine_point/OFFSET_CONVEYRO", 0)
-local OFFSET_SHELF_RIGHT = config_get_float_or_default("/skills/drive_to_machine_point/OFFSET_SHELF_RIGHT", -0.3)
-local OFFSET_SHELF_MIDDLE = config_get_float_or_default("/skills/drive_to_machine_point/OFFSET_SHELF_MIDDLE", -0.2)
-local OFFSET_SHELF_LEFT = config_get_float_or_default("/skills/drive_to_machine_point/OFFSET_SHELF_LEFT", -0.1)
-local OFFSET_SLIDE = config_get_float_or_default("/skills/drive_to_machine_point/OFFSET_SLIDE", -0.27)
+local OFFSET_CONVEYOR = config:get_float_or_default("/skills/drive_to_machine_point/OFFSET_CONVEYRO", 0)
+local OFFSET_SHELF_RIGHT = config:get_float_or_default("/skills/drive_to_machine_point/OFFSET_SHELF_RIGHT", -0.3)
+local OFFSET_SHELF_MIDDLE = config:get_float_or_default("/skills/drive_to_machine_point/OFFSET_SHELF_MIDDLE", -0.2)
+local OFFSET_SHELF_LEFT = config:get_float_or_default("/skills/drive_to_machine_point/OFFSET_SHELF_LEFT", -0.1)
+local OFFSET_SLIDE = config:get_float_or_default("/skills/drive_to_machine_point/OFFSET_SLIDE", -0.27)
 
-local MIN_VIS_HIST_LINE = config_get_int_or_default("/skills/drive_to_machine_point/MIN_VIS_HIST_LINE", 5) --15
-local MIN_VIS_HIST_LINE_SEARCH = config_get_float_or_default("/skills/drive_to_machine_point/MIN_VIS_HIST_LINE_SEARCH", 6) --15
+local MIN_VIS_HIST_LINE = config:get_int_or_default("/skills/drive_to_machine_point/MIN_VIS_HIST_LINE", 5) --15
+local MIN_VIS_HIST_LINE_SEARCH = config:get_float_or_default("/skills/drive_to_machine_point/MIN_VIS_HIST_LINE_SEARCH", 6) --15
 
 function node_is_valid(self)
   if self.fsm.vars.point_set then
