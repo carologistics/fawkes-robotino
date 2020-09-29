@@ -43,23 +43,35 @@ skillenv.skill_module(_M)
 local tfm = require("fawkes.tfutils")
 
 -- Constants
-local gripper_pose_offset_x = 0.005  -- conveyor pose offset in x direction
-local gripper_pose_offset_y = 0.00  -- conveyor_pose offset in y direction
-local gripper_pose_offset_z = 0.03  -- conveyor_pose offset in z direction
+-- conveyor pose offset in x direction
+local gripper_pose_offset_x = config:get_float_or_default("/skills/product_put/gripper_pose_offeset_x", 0.005)
+-- conveyor_pose offset in y direction
+local gripper_pose_offset_y = config:get_float_or_default("/skills/product_put/gripper_pose_offeset_x", 0.0)
+-- conveyor_pose offset in z direction
+local gripper_pose_offset_z = config:get_float_or_default("/skills/product_put/gripper_pose_offeset_x", 0.03)
 
-local conveyor_gripper_forward_x = 0.018 -- distance to move gripper forward after align
-local conveyor_gripper_down_z = -0.015  -- distance to move gripper down after driving over conveyor
+-- distance to move gripper forward after align
+local conveyor_gripper_forward_x = config:get_float_or_default("/skills/product_put/gripper_pose_offeset_x", 0.018)
+-- distance to move gripper down after driving over conveyor
+local conveyor_gripper_down_z = config:get_float_or_default("/skills/product_put/gripper_pose_offeset_x", -0.015)
 
-local conveyor_gripper_back_x = -0.02 -- distance to move gripper back after opening gripper
-local conveyor_gripper_up_z = 0.03    -- distance to move gripper up after opening the gripper
+-- distance to move gripper back after opening gripper
+local conveyor_gripper_back_x = config:get_float_or_default("/skills/product_put/gripper_pose_offeset_x", -0.02)
+-- distance to move gripper up after opening the gripper
+local conveyor_gripper_up_z = config:get_float_or_default("/skills/product_put/gripper_pose_offeset_x", 0.03)
 
-local slide_gripper_forward_x = 0.035  -- distance to move gripper forward after align if the target is slide
-local slide_gripper_down_z = -0.04    -- distance to move gripper down after driving over slide
+-- distance to move gripper forward after align if the target is slide
+local slide_gripper_forward_x = config:get_float_or_default("/skills/product_put/gripper_pose_offeset_x", 0.035)
+-- distance to move gripper down after driving over slide
+local slide_gripper_down_z = config:get_float_or_default("/skills/product_put/gripper_pose_offeset_x", -0.04)
 
-local slide_gripper_back_x = -0.01 -- distance to move gripper back after opening the gripper if the target is slide
-local slide_gripper_up_z = 0.01    --distance to move gripper up after opening the gripper if the target is slide
+-- distance to move gripper back after opening the gripper if the target is slide
+local slide_gripper_back_x = config:get_float_or_default("/skills/product_put/gripper_pose_offeset_x", -0.01)
+--distance to move gripper up after opening the gripper if the target is slide
+local slide_gripper_up_z = config:get_float_or_default("/skills/product_put/gripper_pose_offeset_x", 0.01)
 
-local drive_back_x = -0.1      -- distance to drive back after closing the gripper
+-- distance to drive back after closing the gripper
+local drive_back_x = config:get_float_or_default("/skills/product_put/gripper_pose_offeset_x", -0.1)
 
 function pose_not_exist()
   local target_pos = { x = gripper_pose_offset_x,

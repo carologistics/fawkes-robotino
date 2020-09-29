@@ -90,6 +90,19 @@ skills:
     TURN_MOVE_1: 3.1415926535898
     TURN_MOVE_2: -1.57079632679
     TURN_MOVE_3: -3.1415926535898
+  product_put:
+    gripper_pose_offset_x: 0.005  
+    gripper_pose_offset_y: 0.00  
+    gripper_pose_offset_z: 0.03  
+    conveyor_gripper_forward_x: 0.018 
+    conveyor_gripper_down_z: -0.015
+    conveyor_gripper_back_x: -0.02
+    conveyor_gripper_up_z: 0.03
+    slide_gripper_forward_x: 0.035
+    slide_gripper_down_z: -0.04
+    slide_gripper_back_x: -0.01
+    slide_gripper_up_z: 0.01
+    drive_back_x: -0.1
   shelf_pick:
     left_slot_y_offset: 0.0
     middle_slot_y_offset: 0.0
