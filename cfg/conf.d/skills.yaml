@@ -14,6 +14,8 @@ skills:
     X_AT_MPS: 0.28
     CONVEYOR_IN_OUT_OFFSET: 0.03
     OFFSET_SLIDE: -0.27
+  bring_product_to:
+    X_AT_MPS: 0.28
   conveyor_align:
     # low is the minimum required fitness to do anything
     # if fitness is >= high, we assume that the fit is perfect

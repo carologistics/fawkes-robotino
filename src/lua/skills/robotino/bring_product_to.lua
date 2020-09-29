@@ -49,7 +49,7 @@ skillenv.skill_module(_M)
 -- Constants
 -- If this matches the desired x distance of conveyor align, conveyor align has the chance
 -- of not needing to move at all.
-local X_AT_MPS = 0.28
+local X_AT_MPS = config:get_float_or_default("/skills/bring_product_to/X_AT_MPS", 0.28)
 
 
 -- function to evaluate sensor data
