@@ -29,14 +29,6 @@ depends_skills     = {"mps_align","product_put","product_pick","shelf_pick","con
 depends_interfaces = {
 }
 
--- If this matches the desired x distance of conveyor align, conveyor align has the chance
--- of not needing to move at all.
--- x distance to laserline
-local X_AT_MPS = 0.28
-
-local CONVEYOR_IN_OUT_OFFSET=0.03  -- offset of the conveyor relative to the middlepoint of the laser line
-local OFFSET_SLIDE=-0.27 -- offset of the slide relative to the middle point of the laser liner
-
 documentation      = [==[ 
 Aligns to an machine and interacts with the MPS
 It is meant to test interactions with MPS, when a navgraph is not available
@@ -58,7 +50,18 @@ Parameters:
 ]==]
 -- Initialize as skill module
 skillenv.skill_module(_M)
+
 -- Constants
+
+-- If this matches the desired x distance of conveyor align, conveyor align has the chance
+-- of not needing to move at all.
+-- x distance to laserline
+local X_AT_MPS = config:get_float_or_default("/skills/approach_test/X_AT_MPS", 0.28)
+
+-- offset of the conveyor relative to the middlepoint of the laser line
+local CONVEYOR_IN_OUT_OFFSET = config:get_float_or_default("/skills/approach_test/CONVEYOR_IN_OUT_OFFSET", 0.03)
+-- offset of the slide relative to the middle point of the laser liner
+local OFFSET_SLIDE = config:get_float_or_default("skills/approach_test/OFFSET_SLIDE", -0.27) 
 
 fsm:define_states{ export_to=_M, closure={navgraph=navgraph},
    {"INIT", JumpState},
