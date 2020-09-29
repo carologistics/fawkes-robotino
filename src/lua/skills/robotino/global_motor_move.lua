@@ -33,10 +33,12 @@ documentation      = [==[
 ]==]
 
 -- Tunables
-TOLERANCE = { x=0.08, y=0.06, ori=0.02 }
-MAXTRIES = 1
-MAX_DIST = 1.5
-MAX_POSE_TRIES = 60
+TOLERANCE = { x = config:get_float_or_default("/skills/global_motor_move/TOLERANCE_x", 0.08), 
+              y = config:get_float_or_default("/skills/global_motor_move/TOLERANCE_y", 0.06),
+              ori = config:get_float_or_default("/skills/global_motor_move/TOLERANCE_ori", 0.02) }
+MAXTRIES = config:get_int_or_default("/skills/global_motor_move/MAXTRIES", 1)
+MAX_DIST = config:get_float_or_default("/skills/global_motor_move/MAX_DIST", 1.6)
+MAX_POSE_TRIES = config:get_int_or_default("/skills/global_motor_move/MAX_POSE_TRIES", 60)
 
 -- Initialize as skill module
 skillenv.skill_module(_M)

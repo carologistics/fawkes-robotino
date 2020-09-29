@@ -71,6 +71,13 @@ skills:
     TAG_LINETOLERANCE_rot: 0.05
   get_product_from:
     X_AT_MPS: 0.28
+  global_motor_move:
+    TOLERANCE_x: 0.08
+    TOLERANCE_y: 0.06
+    TOLERANCE_ori: 0.02
+    MAXTRIES: 1
+    MAX_DIST: 1.5
+    MAX_POSE_TRIES: 60
   # The distance goto travels before transitioning into FINAL when going to a
   # waiting position
   goto:
