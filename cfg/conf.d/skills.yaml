@@ -91,10 +91,10 @@ skills:
     TURN_MOVE_2: -1.57079632679
     TURN_MOVE_3: -3.1415926535898
   product_put:
-    gripper_pose_offset_x: 0.005  
-    gripper_pose_offset_y: 0.00  
-    gripper_pose_offset_z: 0.03  
-    conveyor_gripper_forward_x: 0.018 
+    gripper_pose_offset_x: 0.005
+    gripper_pose_offset_y: 0.00
+    gripper_pose_offset_z: 0.03
+    conveyor_gripper_forward_x: 0.018
     conveyor_gripper_down_z: -0.015
     conveyor_gripper_back_x: -0.02
     conveyor_gripper_up_z: 0.03
