@@ -51,7 +51,7 @@ local pam = require("parse_module")
 -- If this matches the desired x distance of conveyor align, conveyor align has the chance
 -- of not needing to move at all.
 -- x distance to laserline
-local X_AT_MPS = 0.28
+local X_AT_MPS = config:get_float_or_default("/skills/get_product_from/X_AT_MPS", 0.28)
 
 
 function already_at_conveyor(self)
