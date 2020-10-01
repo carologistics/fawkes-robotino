@@ -100,7 +100,8 @@
                                            prepare-cs|
                                            prepare-ds|
                                            prepare-rs|
-                                           prepare-ss)
+                                           prepare-ss-to-store|
+                                           prepare-ss-to-retrieve)
                       (executable TRUE)
                       (param-names $?param-names)
                       (param-values $?param-values))
@@ -158,7 +159,8 @@
                                    prepare-cs|
                                    prepare-ds|
                                    prepare-rs|
-                                   prepare-ss)
+                                   prepare-ss-to-store|
+                                   prepare-ss-to-retrieve)
                       (executable TRUE)
                       (param-names $?param-names)
                       (param-values $?param-values))
@@ -203,7 +205,11 @@
       then
        (bind ?ss-inst (pb-create "llsf_msgs.PrepareInstructionSS"))
                 (bind ?instruction (nth$ 2 ?instruction_info))
+                (bind ?ss-shelf (sym-to-int (nth$ 3 ?instruction_info)))
+                (bind ?ss-slot (sym-to-int (nth$ 4 ?instruction_info)))
                 (pb-set-field ?ss-inst "operation" ?instruction)
+                (pb-set-field ?ss-inst "shelf" ?ss-shelf)
+                (pb-set-field ?ss-inst "slot" ?ss-slot)
                 (pb-set-field ?machine-instruction "instruction_ss" ?ss-inst)
     )
     (case RS
@@ -254,7 +260,8 @@
                                    prepare-cs|
                                    prepare-ds|
                                    prepare-rs|
-                                   prepare-ss)
+                                   prepare-ss-to-store|
+                                   prepare-ss-to-retrieve)
                       (param-names $?param-names)
                       (param-values $?param-values))
   (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
@@ -314,7 +321,8 @@
                                    prepare-cs|
                                    prepare-ds|
                                    prepare-rs|
-                                   prepare-ss)
+                                   prepare-ss-to-store|
+                                   prepare-ss-to-retrieve)
                       (param-names $?param-names)
                       (param-values $?param-values))
   (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
@@ -344,7 +352,8 @@
                                    prepare-cs|
                                    prepare-ds|
                                    prepare-rs|
-                                   prepare-ss)
+                                   prepare-ss-to-store|
+                                   prepare-ss-to-retrieve)
                       (param-names $?param-names)
                       (param-values $?param-values))
   (domain-obj-is-of-type ?mps&:(eq ?mps (plan-action-arg m
