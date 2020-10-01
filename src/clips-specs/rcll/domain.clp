@@ -50,7 +50,16 @@
 (defrule domain-nowait-actions
   " Mark some actions that have a sensed effect as non-waiting. That means the effect is applied without sensing for it "
   (domain-loaded)
-	?o <- (domain-operator (name wp-put|wp-get|prepare-bs|prepare-rs|prepare-ds|prepare-cs|location-unlock) (wait-sensed ~FALSE))
+	?o <- (domain-operator (name wp-put
+	                            |wp-get
+	                            |prepare-bs
+	                            |prepare-rs
+	                            |prepare-ds
+	                            |prepare-cs
+	                            |prepare-ss-to-store
+	                            |prepare-ss-to-retrieve
+	                            |location-unlock)
+	                       (wait-sensed ~FALSE))
 =>
 	(modify ?o (wait-sensed FALSE))
 )
@@ -61,7 +70,7 @@
   ?op <- (domain-operator
     (name bs-dispense-for-order | bs-dispense-trash | cs-mount-cap | cs-retrieve-cap | rs-mount-ring1 |
           rs-mount-ring2 | rs-mount-ring3 | fulfill-order-c0 |
-          fulfill-order-c1 | fulfill-order-c2 | fulfill-order-c3 | ss-retrieve-c0)
+          fulfill-order-c1 | fulfill-order-c2 | fulfill-order-c3 | ss-retrieve-wp | ss-store-wp)
     (exogenous FALSE)
   )
 =>
@@ -295,6 +304,46 @@
 
     (domain-fact (name rs-filled-with) (param-values ?rs1 ZERO))
     (domain-fact (name rs-filled-with) (param-values ?rs2 ZERO))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ZERO ZERO))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ZERO ONE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ZERO TWO))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ZERO THREE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ZERO FOUR))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ZERO FIVE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ZERO SIX))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ZERO SEVEN))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ONE ZERO))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ONE ONE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ONE TWO))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ONE THREE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ONE FOUR))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ONE FIVE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ONE SIX))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss ONE SEVEN))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss TWO ZERO))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss TWO ONE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss TWO TWO))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss TWO THREE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss TWO FOUR))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss TWO FIVE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss TWO SIX))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss TWO SEVEN))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss THREE ZERO))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss THREE ONE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss THREE TWO))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss THREE THREE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss THREE FOUR))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss THREE FIVE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss THREE SIX))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss THREE SEVEN))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FOUR ZERO))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FOUR ONE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FOUR TWO))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FOUR THREE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FOUR FOUR))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FOUR FIVE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FOUR SIX))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FOUR SEVEN))
   )
 
   (assert (domain-facts-loaded))
