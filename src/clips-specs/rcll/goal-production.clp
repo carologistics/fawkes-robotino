@@ -1408,11 +1408,32 @@
   ))
 )
 
+
+(defrule goal-production-create-retrieve-ss
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (goal (id ?production-id) (class DELIVER-PRODUCTS) (mode FORMULATED))
+  (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key domain fact mps-type args? m ?ss t SS))
+  (wm-fact (key domain fact mps-team args? m ?ss col ?team-color))
+  (wm-fact (key domain fact mps-state args? m ?ss s ~BROKEN))
+  (wm-fact (key domain fact ss-stored-wp args? m ?m wp ?wp shelf ?shelf slot ?slot))
+  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key refbox order ?order delivery-begin)
+           (value ?del-begin&:(< (- ?del-begin (nth$ 1 ?game-time)) 0)))
+  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?ss side ?any-side)))
+	(not (goal (class GET-STORED-WP) (params $? wp ?wp)))
+=>
+  (assert (goal (id (sym-cat GET-STORED-WP- (gensym*))) (class GET-STORED-WP) (sub-type SIMPLE) (mode FORMULATED)
+              (parent ?production-id) (params robot ?robot ss ?ss wp ?wp shelf ?shelf slot ?slot)))
+)
+
 (defrule goal-production-create-deliver
-  "Deliver a fully produced workpiece."
+  "Deliver a fully produced workpiece if its delivery window is about to start."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class DELIVER-PRODUCTS) (mode FORMULATED))
   (goal (id ?urgent) (class URGENT) (mode FORMULATED))
+  (wm-fact (key refbox game-time) (values $?game-time))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
@@ -1450,6 +1471,10 @@
   (not (wm-fact (key wp meta wait-for-delivery args? wp ?wp wait-for ?)))
   (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
   (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
+  ; only deliver the product if its delivery window approaches
+  (wm-fact (key refbox order ?order delivery-begin)
+           (value ?del-begin&:(< (- ?del-begin (nth$ 1 ?game-time))
+                                        ?*BLOCKING-THRESHOLD*)))
   (not (goal (class DELIVER)
              (parent ?parent)
              (params robot ?robot $?
@@ -1575,6 +1600,76 @@
   ))
   (modify ?pg (mode EXPANDED))
 )
+
+
+(defrule goal-production-create-store-finished-product
+" Store a finished products in the storage station if it cannot be delivered
+  soon."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?production-id) (class DELIVER-PRODUCTS) (mode FORMULATED))
+  (goal (id ?urgent) (class URGENT) (mode FORMULATED))
+  (wm-fact (key refbox game-time) (values $?game-time))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  ;Robot CEs
+  (wm-fact (key domain fact self args? r ?robot))
+  ;MPS-SS CEs
+  (wm-fact (key domain fact mps-type args? m ?ss t SS))
+  (wm-fact (key domain fact mps-team args? m ?ss col ?team-color))
+  ;source MPS CEs
+  (wm-fact (key domain fact mps-type args? m ?mps t CS))
+  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  ;WP-CEs
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?ss side ?any-side)))
+  ;Order-CEs
+  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+
+  (or (and (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
+           (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp))))
+      (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
+  ;only store if the delivery deadline is not approaching soon
+  (wm-fact (key refbox order ?order delivery-begin)
+           (value ?blocking-del-begin&:(> (- ?blocking-del-begin (nth$ 1 ?game-time))
+                                        ?*BLOCKING-THRESHOLD*)))
+  (not (goal    (class STORE-WP)
+                (params robot ?robot
+                        mps ?mps
+                        side OUTPUT
+                        ss ?ss
+                        wp ?wp
+                        shelf ?shelf
+                        slot ?slot)))
+  (wm-fact (key domain fact ss-shelf-slot-free args? m ?ss  shelf ?shelf slot ?slot))
+  =>
+  (printout t "Goal " STORE-WP " formulated" crlf)
+  (bind ?distance (node-distance (str-cat ?mps -I)))
+  (assert (goal (id (sym-cat STORE-WP- (gensym*)))
+                (class STORE-WP)
+                (sub-type SIMPLE)
+                (priority ?*PRIORITY-DELIVER*)
+                (parent ?production-id)
+                (params robot ?robot
+                        mps ?mps
+                        side OUTPUT
+                        ss ?ss
+                        wp ?wp
+                        shelf ?shelf
+                        slot ?slot)
+                (required-resources (sym-cat ?mps -OUTPUT) ?wp (sym-cat ?ss -OUTPUT) (sym-cat ?ss -INPUT) ?ss)
+  ))
+)
+
 
 (defrule goal-production-hack-failed-enter-field
   "HACK: Stop trying to enter the field when it failed a few times."
