@@ -548,36 +548,36 @@
 )
 
 
-(defrule production-strategy-use-ss-c0
-" Use the stored C0 in the storage station to fulfill an order that matches
-  the base and cap color.
-"
-  (wm-fact (key domain fact ss-stored-wp args? m ?ss wp ?wp))
-  (not (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?any-order)))
-  (wm-fact (key config rcll use-ss) (value TRUE))
-  ; Order CEs
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-complexity args? ord ?order com C0))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-  ; WP CEs
-  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
-  (not (wm-fact (key domain fact wp-for-order args? wp ?any-wp ord ?order)))
-  ; Refbox CEs
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
-           (value ?qd-us&:(< ?qd-us ?qr)))
-  (wm-fact (key refbox game-time) (values ?curr-time $?))
-  (wm-fact (key refbox order ?order delivery-end)
-           (value ?deadline&:(> ?deadline ?curr-time)))
-=>
-  (assert
-    (wm-fact (key mps-handling prepare prepare-ss ?ss args? m ?ss wp ?wp op RETRIEVE))
-    (wm-fact (key mps-handling process ss-retrieve-c0 ?ss args? m ?ss wp ?wp))
-    (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
-  )
-)
+;(defrule production-strategy-use-ss-c0
+;" Use the stored C0 in the storage station to fulfill an order that matches
+;  the base and cap color.
+;"
+;  (wm-fact (key domain fact ss-stored-wp args? m ?ss wp ?wp))
+;  (not (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?any-order)))
+;  (wm-fact (key config rcll use-ss) (value TRUE))
+;  ; Order CEs
+;  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+;  (wm-fact (key domain fact order-complexity args? ord ?order com C0))
+;  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+;  ; WP CEs
+;  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+;  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+;  (not (wm-fact (key domain fact wp-for-order args? wp ?any-wp ord ?order)))
+;  ; Refbox CEs
+;  (wm-fact (key refbox team-color) (value ?team-color))
+;  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+;  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+;           (value ?qd-us&:(< ?qd-us ?qr)))
+;  (wm-fact (key refbox game-time) (values ?curr-time $?))
+;  (wm-fact (key refbox order ?order delivery-end)
+;           (value ?deadline&:(> ?deadline ?curr-time)))
+;=>
+;  (assert
+;    (wm-fact (key mps-handling prepare prepare-ss-to-retrieve ?ss args? m ?ss wp ?wp op RETRIEVE))
+;    (wm-fact (key mps-handling process ss-retrieve-c0 ?ss args? m ?ss wp ?wp))
+;    (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
+;  )
+;)
 
 
 (defrule production-strategy-prevent-c2-c3-mid-game
