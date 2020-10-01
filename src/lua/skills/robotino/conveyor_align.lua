@@ -73,7 +73,7 @@ local GRIPPER_POSE = { x= config:get_float_or_default("/skills/conveyor_align/GR
                        z = config:get_float_or_default("/skills/conveyor_align/GRIPPER_POSE_Z", 0.03)}
 
 local MAX_RETRIES = config:get_int_or_default("/skills/conveyor_align/MAX_RETRIES", 2)
-local MAX_VISION_RETRIES config:get_int_or_default("/skills/conveyor_align/MAX_VISION_RETRIES", 2)
+local MAX_VISION_RETRIES = config:get_int_or_default("/skills/conveyor_align/MAX_VISION_RETRIES", 2)
 
 
 local gripper_max = {
