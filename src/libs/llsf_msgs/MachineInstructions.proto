@@ -63,6 +63,8 @@ message PrepareInstructionDS {
 
 message PrepareInstructionSS {
   required SSOp   operation = 1;
+  required uint32 shelf = 2;
+  required uint32 slot = 3;
 }
 
 message PrepareInstructionRS {
@@ -88,6 +90,10 @@ message PrepareMachine {
   optional PrepareInstructionSS instruction_ss = 8;
   optional PrepareInstructionRS instruction_rs = 6;
   optional PrepareInstructionCS instruction_cs = 7;
+  // time since Unix epoch in seconds
+  // if specified and the message is too old it gets ignored
+  // (threshold is specified in globals.clp)
+  optional uint64 sent_at = 15;
 }
 
 message ResetMachine {
