@@ -63,6 +63,8 @@ message PrepareInstructionDS {
 
 message PrepareInstructionSS {
   required SSOp   operation = 1;
+  required uint32 shelf = 2;
+  required uint32 slot = 3;
 }
 
 message PrepareInstructionRS {
