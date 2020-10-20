@@ -137,7 +137,7 @@ mapping:
 }
 
 
-// main program
+procedure main()
 {
 	create_public_peer();
 	create_private_peer();
