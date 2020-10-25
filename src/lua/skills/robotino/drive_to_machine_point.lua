@@ -164,43 +164,7 @@ function match_line(self,lines)
    return matched_line
 end
 
--- Return all lines which may be close to the navgraph point we're looking for
-function get_interesting_lines(self)
-   local rv = {}
-
-   -- Shallow-copy input table so we don't delete values from it
-   local good_lines = {}
-   for k,v in pairs(self.fsm.vars.lines) do good_lines[k] = v end
-
-   -- Use only lines that have been inspected 0 times or less often than the others
-   local max_num_visited = 1
-   for k,v in pairs(fsm.vars.lines_visited) do
-      if v > max_num_visited then
-         max_num_visited = v
-      end
-   end
-
-
-   for k,line in pairs(good_lines) do
-      if line then
-         local center = llutils.center(line, 0)
-         local ori = math.atan2(center.y, center.x)
---         printf("line " .. line:id() .. " " .. line:visibility_history() .. " " .. line:length())
-         if line:visibility_history() >= MIN_VIS_HIST_LINE_SEARCH and
-            line:length() >= LINE_LENGTH_MIN and
-            line:length() <= LINE_LENGTH_MAX and
-            self.fsm.vars.lines_visited[line:id()] < max_num_visited --and
-         then
-            table.insert(rv, line)
-         end
-      end
-   end
-   return rv
-end
-
 function laser_line_found(self)
-
-  self.fsm.vars.interesting_lines = get_interesting_lines(self)
 
   self.fsm.vars.matched_line = match_line(self, self.fsm.vars.lines)
 
@@ -289,8 +253,6 @@ function INIT:init()
   for k,v in pairs(self.fsm.vars.lines) do
      self.fsm.vars.lines_visited[k] = 0
   end
-
-  self.fsm.vars.interesting_lines = {}
 
   self.fsm.vars.point_set   = false
   self.fsm.vars.point_valid = false
