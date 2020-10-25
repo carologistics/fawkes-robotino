@@ -133,6 +133,78 @@ function want_search()
 end
 
 
+-- Match tag to laser line
+function match_line(tag, lines)
+   local matched_line = nil
+   if tag and tag:visibility_history() >= MIN_VIS_HIST_TAG then
+      local tag_laser = tfm.transform6D(
+         { x=tag:translation(0), y=tag:translation(1), z=tag:translation(2),
+            ori = { x=tag:rotation(0), y=tag:rotation(1), z=tag:rotation(2), w=tag:rotation(3)  }
+         }, tag:frame(), "/base_laser"
+      )
+      local min_dist = 1000
+      for k,line in pairs(lines) do
+         local line_center = llutils.center(line, 0)
+         local dist = math.vec_length(tag_laser.x - line_center.x, tag_laser.y - line_center.y)
+         if line:visibility_history() >= MIN_VIS_HIST_LINE
+            and dist < LINE_MATCH_TOLERANCE
+            and dist < min_dist
+         then
+            min_dist = dist
+            matched_line = line
+            printf("Line dist: %f", dist)
+         end
+      end
+   end
+
+   return matched_line
+end
+
+
+-- Return all lines which may have the tag we're looking for
+function get_interesting_lines(lines)
+   local rv = {}
+   
+   -- Shallow-copy input table so we don't delete values from it
+   local good_lines = {}
+   for k,v in pairs(lines) do good_lines[k] = v end
+
+   -- Match unwanted tags to lines and remove them
+   local bad_tags = tag_utils.bad_tags(fsm.vars.tags, tag_info, fsm.vars.tag_id)
+   for j,tag in ipairs(bad_tags) do
+      if tag:visibility_history() > 0 then
+         local matched = match_line(tag, good_lines)
+         if matched then good_lines[matched:id()] = nil end
+      end
+   end
+   
+   -- Use only lines that have been inspected 0 times or less often than the others
+   local max_num_visited = 1
+   for k,v in pairs(fsm.vars.lines_visited) do
+      if v > max_num_visited then
+         max_num_visited = v
+      end
+   end
+
+   for k,line in pairs(good_lines) do
+      if line then
+         local center = llutils.center(line, 0)
+         local ori = math.atan2(center.y, center.x)
+         if line:visibility_history() >= MIN_VIS_HIST_LINE_SEARCH and
+            line:length() >= LINE_LENGTH_MIN and
+            line:length() <= LINE_LENGTH_MAX and
+            fsm.vars.lines_visited[line:id()] < max_num_visited and
+            math.min(line:end_point_1(0), line:end_point_2(0)) <= LINE_XDIST_MAX
+         then
+            table.insert(rv, line)
+            printf("interesting %s ori: %f", line:id(), ori)
+         end
+      end
+   end
+   return rv
+end
+
+
 fsm:define_states{ export_to=_M, closure={
       pose_error=pose_error, tag_visible=tag_visible, MIN_VIS_HIST_TAG=MIN_VIS_HIST_TAG,
       want_search=want_search, line_visible=line_visible },
@@ -218,75 +290,6 @@ function INIT:init()
    self.fsm.vars.globalsearch_done = false
 end
 
--- Match tag to laser line
-function match_line(tag, lines)
-   local matched_line = nil
-   if tag and tag:visibility_history() >= MIN_VIS_HIST_TAG then
-      local tag_laser = tfm.transform6D(
-         { x=tag:translation(0), y=tag:translation(1), z=tag:translation(2),
-            ori = { x=tag:rotation(0), y=tag:rotation(1), z=tag:rotation(2), w=tag:rotation(3)  }
-         }, tag:frame(), "/base_laser"
-      )
-      local min_dist = 1000
-      for k,line in pairs(lines) do
-         local line_center = llutils.center(line, 0)
-         local dist = math.vec_length(tag_laser.x - line_center.x, tag_laser.y - line_center.y)
-         if line:visibility_history() >= MIN_VIS_HIST_LINE
-            and dist < LINE_MATCH_TOLERANCE
-            and dist < min_dist
-         then
-            min_dist = dist
-            matched_line = line
-            printf("Line dist: %f", dist)
-         end
-      end
-   end
-
-   return matched_line
-end
-
--- Return all lines which may have the tag we're looking for
-function get_interesting_lines(lines)
-   local rv = {}
-   
-   -- Shallow-copy input table so we don't delete values from it
-   local good_lines = {}
-   for k,v in pairs(lines) do good_lines[k] = v end
-
-   -- Match unwanted tags to lines and remove them
-   local bad_tags = tag_utils.bad_tags(fsm.vars.tags, tag_info, fsm.vars.tag_id)
-   for j,tag in ipairs(bad_tags) do
-      if tag:visibility_history() > 0 then
-         local matched = match_line(tag, good_lines)
-         if matched then good_lines[matched:id()] = nil end
-      end
-   end
-   
-   -- Use only lines that have been inspected 0 times or less often than the others
-   local max_num_visited = 1
-   for k,v in pairs(fsm.vars.lines_visited) do
-      if v > max_num_visited then
-         max_num_visited = v
-      end
-   end
-
-   for k,line in pairs(good_lines) do
-      if line then
-         local center = llutils.center(line, 0)
-         local ori = math.atan2(center.y, center.x)
-         if line:visibility_history() >= MIN_VIS_HIST_LINE_SEARCH and
-            line:length() >= LINE_LENGTH_MIN and
-            line:length() <= LINE_LENGTH_MAX and
-            fsm.vars.lines_visited[line:id()] < max_num_visited and
-            math.min(line:end_point_1(0), line:end_point_2(0)) <= LINE_XDIST_MAX
-         then
-            table.insert(rv, line)
-            printf("interesting %s ori: %f", line:id(), ori)
-         end
-      end
-   end
-   return rv
-end
 
 
 function CHECK_TAG:loop()
@@ -300,6 +303,7 @@ end
 function FIND_TAG:init()
    self.fsm.vars.interesting_lines = get_interesting_lines(self.fsm.vars.lines)
 end
+
 
 function FIND_TAG:loop()
    self.fsm.vars.interesting_lines = get_interesting_lines(self.fsm.vars.lines)
@@ -370,6 +374,7 @@ function SEARCH_TAG_LINE:init()
       }
    end
 end
+
 
 function GRIPPER_PRE_CONVEYOR:init()
   self.args["gripper_commands"] = pre_conveyor_pose
