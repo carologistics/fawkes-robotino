@@ -8,6 +8,7 @@
 --                   Johannes Rothe
 --                   Nicolas Limpert
 --             2016  Victor Mataré
+--             2019  Sebastian Eltester
 --
 ----------------------------------------------------------------------------
 
@@ -28,7 +29,7 @@ module(..., skillenv.module_init)
 
 -- Crucial skill information
 name               = "mps_align"
-fsm                = SkillHSM:new{name=name, start="INIT", debug=true}
+fsm                = SkillHSM:new{name=name, start="INIT", debug=false}
 depends_skills     = { "motor_move" ,"gripper_commands"}
 depends_interfaces = {
    {v = "line1", type="LaserLineInterface", id="/laser-lines/1"},
@@ -96,9 +97,8 @@ local LINE_XDIST_MAX=0.6
 local LINE_MATCH_TOLERANCE=0.3
 
 local TURN_MOVES={
-   { ori = math.pi},
-   { ori = -math.pi/2},
-   { ori = -math.pi}
+   { ori = math.pi/8},
+   { ori = -math.pi/8},
 }
 local MAX_TRIES = 8
 
@@ -129,7 +129,7 @@ end
 
 
 function want_search()
-   return fsm.vars.search_idx <= MAX_TRIES
+   return fsm.vars.search_idx <= MAX_TRIES or fsm.vars.turn_around_idx <= MAX_TRIES
 end
 
 
@@ -164,6 +164,7 @@ fsm:add_transitions{
    {"FIND_TAG",      "FAILED",          cond="not want_search()"},
 
    {"SEARCH_LINES",  "MATCH_LINE",      cond="tag_visible(MIN_VIS_HIST_TAG)", desc="found tag"},
+   {"SEARCH_LINES",  "TURN_AROUND",     cond="vars.no_interesting_line", desc="no line within 0.5 rad"},
 
    {"MATCH_LINE",   "ALIGN_FAST",       cond="vars.matched_line and tag_visible(MIN_VIS_HIST_TAG)"},
    {"MATCH_LINE",   "NO_LINE",          timeout=2, desc="lost line"},
@@ -210,11 +211,13 @@ function INIT:init()
    end
 
    self.fsm.vars.interesting_lines = {}
+   self.fsm.vars.no_interesting_line = false
 
    self.fsm.vars.tags = { tag_0, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7,
       tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 }
 
    self.fsm.vars.search_idx = 0
+   self.fsm.vars.turn_around_idx = 0
    self.fsm.vars.globalsearch_done = false
 end
 
@@ -307,9 +310,11 @@ end
 
 
 function SEARCH_LINES:init()
-   local min_dist = 1000
+   local min_dist = 0.5
    local ori = nil
    local chosen_line = nil
+
+   self.fsm.vars.no_interesting_line = false
 
    for i,l in ipairs(self.fsm.vars.interesting_lines) do
       local center = tfm.transform(llutils.center(l, 0), "/base_laser", "/base_link")
@@ -321,18 +326,24 @@ function SEARCH_LINES:init()
       end
    end
 
-   self.fsm.vars.lines_visited[chosen_line:id()] = self.fsm.vars.lines_visited[chosen_line:id()] + 1
+   if chosen_line ~= nil then
+     self.fsm.vars.lines_visited[chosen_line:id()] = self.fsm.vars.lines_visited[chosen_line:id()] + 1
    
-   print("SEARCH LINES turn ori: " .. ori)
-   self.args["motor_move"].ori = ori
-   self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
+     print("SEARCH LINES turn ori: " .. ori)
+     self.args["motor_move"].ori = ori
+     self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
+   else
+     self.fsm.vars.no_interesting_line = true
+   end
+
 end
 
 
 function TURN_AROUND:init()
-   print("TURN_AROUND search_idx: " .. self.fsm.vars.search_idx)
-   self.args["motor_move"] = TURN_MOVES[math.mod(self.fsm.vars.search_idx, #TURN_MOVES)+1]
-   self.fsm.vars.search_idx = self.fsm.vars.search_idx + 1
+   print("TURN_AROUND turn_around_idx: " .. self.fsm.vars.turn_around_idx)
+   print(TURN_MOVES[math.mod(self.fsm.vars.turn_around_idx, #TURN_MOVES) + 1]["ori"] * self.fsm.vars.turn_around_idx)
+   self.args["motor_move"] = {ori = TURN_MOVES[math.mod(self.fsm.vars.turn_around_idx, #TURN_MOVES) + 1]["ori"] * self.fsm.vars.turn_around_idx}
+   self.fsm.vars.turn_around_idx = self.fsm.vars.turn_around_idx + 1
 
    for k,v in pairs(self.fsm.vars.lines_visited) do
       self.fsm.vars.lines_visited[k] = 0
