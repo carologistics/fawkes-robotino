@@ -1423,7 +1423,7 @@
 	(not (goal (class GET-STORED-WP) (params $? wp ?wp)))
 =>
   (assert (goal (id (sym-cat GET-STORED-WP- (gensym*))) (class GET-STORED-WP) (sub-type SIMPLE) (mode FORMULATED)
-              (parent ?production-id) (params robot ?robot ss ?ss wp ?wp shelf ?shelf slot ?slot)))
+              (parent ?production-id) (required-resources wp ?wp (sym-cat ?ss -OUTPUT)) (params robot ?robot ss ?ss wp ?wp shelf ?shelf slot ?slot)))
 )
 
 (defrule goal-production-create-deliver
