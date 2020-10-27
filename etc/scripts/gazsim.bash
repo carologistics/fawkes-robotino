@@ -86,6 +86,7 @@ START_MONGODB=false
 if [ -z $TERMINAL ] ; then
     if [[ -n $TMUX ]] ; then
         TERMINAL=tmux
+        tmux rename-session gazebo || exit $?
     else
         TERMINAL=gnome-terminal
     fi
@@ -111,7 +112,7 @@ case "$TERMINAL" in
         if [[ -n $TMUX ]] ; then
             TERM_COMMAND=""
         else
-            TERM_COMMAND="tmux new-session -s gazsim -d;"
+            TERM_COMMAND="tmux new-session -s gazsim;"
         fi
         TERM_COMMAND_END=""
         SUBTERM_PREFIX="tmux new-window "
@@ -301,18 +302,14 @@ initial_pose_script_location=$script_path/gazsim-publish-initial-pose.bash
 
 function stop_simulation {
   echo 'Kill Gazebo-sim'
-  if [ "$TERMINAL" == "tmux" ] ; then
-      tmux kill-session -t gazsim
-  else
-      #killall gazebo
-      killall gzserver
-      killall gzclient
-      killall fawkes
-      killall roscore
-      killall llsf-refbox
-      killall llsf-refbox-shell
-      killall roslaunch
-  fi
+  #killall gazebo
+  killall gzserver
+  killall gzclient
+  killall fawkes
+  killall roscore
+  killall llsf-refbox
+  killall llsf-refbox-shell
+  killall roslaunch
 }
 
 if [  $COMMAND  == kill ]; then
