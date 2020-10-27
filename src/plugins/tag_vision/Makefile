@@ -42,21 +42,33 @@ PLUGINS_all = $(PLUGINDIR)/tag_vision.$(SOEXT)
 
 PRESUBDIRS = interfaces
 
-ifneq ($(wildcard $(SYSROOT)/usr/include/alvar),)
-  ifneq ($(wildcard $(SYSROOT)/usr/lib$(LIB_SUFFIX)/libalvar200.so),)
-    HAVE_ALVAR = 1
+ifneq ($(PKGCONFIG),)
+  HAVE_ALVAR = $(if $(shell $(PKGCONFIG) --exists 'alvar'; echo $${?/1/}),1,0)
+  ifeq ($(HAVE_ALVAR),1)
+    CFLAGS_ALVAR  = -Wno-unused-variable -DHAVE_ALVAR
+    CFLAGS_ALVAR += $(shell $(PKGCONFIG) --cflags alvar)
+    LDFLAGS_ALVAR = $(shell $(PKGCONFIG) --libs alvar)
+  endif
+endif
 
-    CFLAGS_ALVAR = -DHAVE_ALVAR
-    LIBS_ALVAR   = alvar200
-  else
-    ifneq ($(wildcard $(SYSROOT)/usr/lib$(LIB_SUFFIX)/libalvar.so),)
-    HAVE_ALVAR = 1
+ifneq ($(HAVE_ALVAR),1)
+  ifneq ($(wildcard $(SYSROOT)/usr/include/alvar),)
+    ifneq ($(wildcard $(SYSROOT)/usr/lib$(LIB_SUFFIX)/libalvar200.so),)
+      HAVE_ALVAR = 1
 
-    CFLAGS_ALVAR = -DHAVE_ALVAR
-    LIBS_ALVAR   = alvar
+      CFLAGS_ALVAR = -DHAVE_ALVAR
+      LIBS_ALVAR   = alvar200
+    else
+      ifneq ($(wildcard $(SYSROOT)/usr/lib$(LIB_SUFFIX)/libalvar.so),)
+      HAVE_ALVAR = 1
+
+      CFLAGS_ALVAR = -DHAVE_ALVAR
+      LIBS_ALVAR   = alvar
+      endif
     endif
   endif
 endif
+
 ifneq ($(HAVE_ALVAR),1)
   ifeq ($(HAVE_ROS),1)
     include $(BUILDSYSDIR)/ros.mk
