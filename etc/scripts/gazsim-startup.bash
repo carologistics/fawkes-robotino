@@ -18,6 +18,7 @@ OPTIONS:
   FAWKES:
    -c arg         Use a specific configuration-folder
                   in cfg/gazsim-configurations/
+   -m arg         load fawkes with the specified (meta-)plugin (only valid with -x fawkes)
    -r             Start with ros
    --ros-launch-main  Run launch file for main (non-robot) roscore
    --ros-launch   Run launch file for robot roscore
