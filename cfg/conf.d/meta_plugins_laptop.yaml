@@ -39,8 +39,8 @@ fawkes/meta_plugins:
     - ros
     - m-fv-vision
     - navgraph
-    # - navgraph-generator
-    # - navgraph-generator-mps
+    - navgraph-generator
+    - navgraph-generator-mps
     - skiller
     - m-realsense
     - conveyor-plane
