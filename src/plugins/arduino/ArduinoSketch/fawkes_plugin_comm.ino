@@ -180,7 +180,7 @@ void send_gripper_status()
 void check_gripper_endstop()
 {
   byte open_button = digitalRead(MOTOR_A_OPEN_LIMIT_PIN);
-  if(open_button == LOW){ // definetely OPEN
+  if(open_button == HIGH){ // definetely OPEN
     open_gripper = true;
   } else { // gripper should be closed
     open_gripper = false;
