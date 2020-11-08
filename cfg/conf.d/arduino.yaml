@@ -66,3 +66,8 @@ arduino:
     # a good starting value is 120*a where a
     # is the microstepping mode of the A motor
     a_toggle_steps: 240
+
+    # the length of each axis in mm
+    x_length: 120
+    y_length: 80
+    z_length: 60
