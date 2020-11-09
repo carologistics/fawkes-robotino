@@ -82,6 +82,7 @@
 		(mps-side-free ?m - mps ?side - mps-side)
 		(bs-prepared-color ?m - mps ?col - base-color)
 		(bs-prepared-side ?m - mps ?side - mps-side)
+		(bs-color ?m - mps ?col - base-color)
 		(cs-can-perform ?m - mps ?op - cs-operation)
 		(cs-prepared-for ?m - mps ?op - cs-operation)
 		(cs-buffered ?m - mps ?col - cap-color)
@@ -119,6 +120,10 @@
     (spot-free ?m - mps ?spot - shelf-spot)
     (ss-stored-wp ?m  - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
     (ss-shelf-slot-free ?m  - mps ?shelf - ss-shelf ?slot - ss-slot)
+    (ss-new-wp-at ?m  - mps ?wp - workpiece ?shelf - ss-shelf
+                        ?slot - ss-slot ?base-col - base-color
+                        ?ring1-col - ring-color ?ring2-col - ring-color
+                        ?ring3-col - ring-color ?cap-col - cap-color)
     (locked ?name - object)
     (location-locked ?m - mps ?s - mps-side)
 	)

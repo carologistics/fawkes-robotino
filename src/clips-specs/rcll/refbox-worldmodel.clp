@@ -20,13 +20,175 @@
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
 
+(deffunction refbox-get-storage-description (?description-string)
+" Translate a storage description to a multifield of exactly six symbols:m
+  (<WP-id> <base-color> <ring[1,2,3]-color> <cap-color>).
+  If a description is empty or cannot be translated in that format an empty
+  multifield is returned instead.
+"
+  (bind ?descriptions (explode$ ?description-string))
+  (if (eq (length$ descriptions) 0) then (return ?descriptions))
+  (bind ?description-length (length$ ?descriptions))
+  (bind ?base-colors (create$ BASE_NONE))
+  (bind ?ring-colors (create$ RING_NONE))
+  (bind ?cap-colors (create$ CAP_NONE))
+  (delayed-do-for-all-facts ((?col wm-fact))
+    (wm-key-prefix ?col:key (create$ domain fact bs-color))
+    (bind ?base-colors (insert$ ?base-colors 1 (wm-key-arg ?col:key col)))
+  )
+  (delayed-do-for-all-facts ((?col wm-fact))
+    (wm-key-prefix ?col:key (create$ domain fact cs-color))
+    (bind ?cap-colors (insert$ ?cap-colors 1 (wm-key-arg ?col:key col)))
+  )
+  (delayed-do-for-all-facts ((?col wm-fact))
+    (wm-key-prefix ?col:key (create$ domain fact rs-ring-spec))
+    (bind ?ring-colors (insert$ ?ring-colors 1 (wm-key-arg ?col:key r)))
+  )
+  (if (and (eq ?description-length 2)
+           (member$ (nth$ 1 ?descriptions) ?base-colors)
+           (member$ (nth$ 2 ?descriptions) ?cap-colors))
+   then
+    (return (create$ UNKNOWN-WP (nth$ 1 ?descriptions)
+                     RING_NONE RING_NONE RING_NONE
+                     (nth$ 2 ?descriptions)))
+  )
+  (if (and (eq ?description-length 6)
+           (any-factp ((?obj domain-object))
+             (and (eq ?obj:name (nth$ 1 ?descriptions))
+                  (eq ?obj:type workpiece))
+           )
+           (member$ (nth$ 2 ?descriptions) ?base-colors)
+           (member$ (nth$ 3 ?descriptions) ?ring-colors)
+           (member$ (nth$ 4 ?descriptions) ?ring-colors)
+           (member$ (nth$ 5 ?descriptions) ?ring-colors)
+           (member$ (nth$ 6 ?descriptions) ?cap-colors))
+   then (return ?descriptions)
+  )
+  (printout error ?base-colors " " ?ring-colors " " ?cap-colors crlf)
+  (printout error "Unexpected storage information received, expected format "
+                  "() or (<base-col>, <cap-col>) or "
+                  "(<wp>, <base-col>, <ring[1,2,3]-col>, <cap-col>)" crlf)
+  (printout error "Got: " ?descriptions crlf)
+  ; return empty descriptions to not introduce undefined behavior
+  (return (create$))
+)
+
+(deffunction get-wm-fact-from-list-by-args (?wm-facts ?args ?values)
+" Retrieve list of all wm-facts where the given arguments match the given
+  values.
+  @param ?wm-facts list of wm-facts
+  @param ?args argument names to match
+  @param ?values argument values to be matched
+  @return The subset of ?wm-facts where all ?args match the corresponding
+         ?values
+"
+    (if (neq (length$ ?args) (length$ ?values)) then (return FALSE))
+    (foreach ?fact ?wm-facts
+      (if (fact-relation ?fact)
+       then ; the fact exists
+        (bind ?res TRUE)
+        (loop-for-count (?i 1 (length$ ?args))
+          (if (neq (wm-key-arg (fact-slot-value ?fact key) (nth$ ?i ?args)) (nth$ ?i ?values))
+           then (bind ?res FALSE) (break)
+          )
+        )
+        (if ?res then (return ?fact))
+      )
+    )
+    (return FALSE)
+)
+
+(deffunction get-fact-by-shelf-slot (?wm-facts ?shelf ?slot)
+" filter those wm-facts which match the given storage position."
+  (return (get-wm-fact-from-list-by-args ?wm-facts (create$ shelf slot) (create$ ?shelf ?slot)))
+)
+
 (defrule refbox-recv-BeaconSignal
   ?pf <- (protobuf-msg (type "llsf_msgs.BeaconSignal") (ptr ?p))
   (time $?now)
   =>
   (bind ?beacon-name (pb-field-value ?p "peer_name"))
   (printout debug "Beacon Recieved from " ?beacon-name crlf)
-  (retract ?pf) 
+  (retract ?pf)
+)
+
+(defrule refbox-recv-StorageInfo
+" Process the Storage Info and apply all observed changes to the worldmodel."
+  ?pm <- (protobuf-msg (type "llsf_msgs.StorageInfo") (ptr ?si) (rcvd-from ?host ?port))
+  =>
+  (bind ?ss (sym-cat (pb-field-value ?si "machine")))
+  ; gather the current knowledge of the storage station
+  (bind ?stored-positions (find-all-facts ((?stored-wp wm-fact))
+        (and (wm-key-prefix ?stored-wp:key (create$ domain fact ss-stored-wp))
+             (eq (wm-key-arg ?stored-wp:key m) ?ss))))
+  (bind ?free-positions (find-all-facts ((?pos-free wm-fact))
+        (and (wm-key-prefix ?pos-free:key (create$ domain fact ss-shelf-slot-free))
+             (eq (wm-key-arg ?pos-free:key m) ?ss))))
+  (bind ?pending-updates (find-all-facts ((?needs-update wm-fact))
+        (and (wm-key-prefix ?needs-update:key
+                            (create$ domain fact ss-new-wp-at))
+             (eq (wm-key-arg ?needs-update:key m) ?ss))))
+  (bind ?unused-wps (find-all-facts ((?unused-wp wm-fact))
+        (and (wm-key-prefix ?unused-wp:key
+                            (create$ domain fact wp-unused)))))
+  ; process the update for each storage position
+  (foreach ?o (pb-field-list ?si "shelf_slot_info")
+    (bind ?shelf (int-to-sym (pb-field-value ?o "shelf")))
+    (bind ?slot (int-to-sym (pb-field-value ?o "slot")))
+    (bind ?is-filled (pb-field-value ?o "is_filled"))
+    (bind ?description (pb-field-value ?o "description"))
+    ; lookup current knowledge about the storage position
+    (bind ?our-is-filled (get-fact-by-shelf-slot ?stored-positions ?shelf ?slot))
+    (bind ?our-is-not-filled (get-fact-by-shelf-slot ?free-positions ?shelf ?slot))
+    (bind ?pending-update (get-fact-by-shelf-slot ?pending-updates ?shelf ?slot))
+    ; update worldmodel if there is new info
+    (if (and ?our-is-filled (not ?is-filled))
+     then ; the storage position is now empty, update our storage info
+      (retract ?our-is-filled)
+      (assert (wm-fact (key domain fact ss-shelf-slot-free
+                        args? m ?ss shelf ?shelf slot ?slot)))
+     else
+      (if ?is-filled
+       then ; the position is filled, it has a description to process
+        (bind ?wp-info (refbox-get-storage-description ?description))
+        (if (eq (length$ ?wp-info) 6)
+         then ; the description is actually valid
+          (bind ?wp (nth$ 1 ?wp-info))
+          (bind ?base (nth$ 2 ?wp-info))
+          (bind ?r1 (nth$ 3 ?wp-info))
+          (bind ?r2 (nth$ 4 ?wp-info))
+          (bind ?r3 (nth$ 5 ?wp-info))
+          (bind ?cap (nth$ 6 ?wp-info))
+          (bind ?wp-unused (get-wm-fact-from-list-by-args ?unused-wps
+                                                          (create$ wp)
+                                                          (create$ ?wp)))
+          (if ?wp-unused
+           then ; the workpiece is unusable but stored, treat it as a new
+                ; workpiece so that it can be used again
+            (assert (wm-fact (key domain fact ss-new-wp-at
+                              args? m ?ss wp ?wp shelf ?shelf slot ?slot
+                              base-col ?base ring1-col ?r1 ring2-col ?r2
+                              ring3-col ?r3 cap-col ?cap)))
+          )
+          (if ?our-is-not-filled
+           then ; this workpiece is not known, update it
+            (retract ?our-is-not-filled)
+            (assert (wm-fact (key domain fact ss-stored-wp
+                              args? m ?ss wp ?wp shelf ?shelf slot ?slot)))
+           else
+            ; the workpiece is known, process any pending update
+            (if (and ?pending-update
+                     (neq ?wp (wm-key-arg (fact-slot-value ?pending-update key)
+                                           wp)))
+             then
+              (retract ?pending-update)
+            )
+          )
+        )
+      )
+    )
+  )
+  (retract ?pm)
 )
 
 
