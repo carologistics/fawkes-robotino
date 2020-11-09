@@ -788,7 +788,7 @@
 )
 
 (deffunction int-to-sym (?int)
-" @param ?int Number as Integer (0,1,2 or 3)
+" @param ?int Number as Integer (0-7)
 
   @return Domain representation of number (ZERO|ONE|TWO|THREE)
 "
@@ -801,6 +801,14 @@
       (return TWO))
     (case 3 then
       (return THREE))
+    (case 4 then
+      (return FOUR))
+    (case 5 then
+      (return FIVE))
+    (case 6 then
+      (return SIX))
+    (case 7 then
+      (return SEVEN))
   )
   (return nil)
 )
