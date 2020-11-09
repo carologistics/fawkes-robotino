@@ -61,7 +61,7 @@
 		GATE-1 GATE-2 GATE-3 - ds-gate
 		RING_NONE RING_BLUE RING_GREEN RING_ORANGE RING_YELLOW - ring-color
 		RETRIEVE_CAP MOUNT_CAP - cs-operation
-		RETRIEVE STORE - ss-operation
+		RETRIEVE STORE UPDATE - ss-operation
 		C0 C1 C2 C3 - order-complexity-value
 		LEFT MIDDLE RIGHT - shelf-spot
 		NA ZERO ONE TWO THREE - ring-num
@@ -595,18 +595,63 @@
   )
   (:action prepare-ss-to-retrieve
     :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
-    :precondition (and (mps-type ?m SS) (mps-state ?m IDLE) (ss-stored-wp ?m ?wp ?shelf ?slot))
+    :precondition (and (mps-type ?m SS) (mps-state ?m IDLE)
+                       (ss-stored-wp ?m ?wp ?shelf ?slot))
     :effect (and (not (mps-state ?m IDLE)) (mps-state ?m PREPARED)
                  (ss-prepared-for ?m RETRIEVE ?wp ?shelf ?slot))
   )
   (:action prepare-ss-to-store
     :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
-    :precondition (and (mps-type ?m SS) (mps-state ?m IDLE) (ss-shelf-slot-free ?m ?shelf ?slot))
+    :precondition (and (mps-type ?m SS) (mps-state ?m IDLE)
+                       (ss-shelf-slot-free ?m ?shelf ?slot))
     :effect (and (not (mps-state ?m IDLE)) (mps-state ?m PREPARED)
                  (ss-prepared-for ?m STORE ?wp ?shelf ?slot))
   )
+
+  (:action prepare-ss-to-assign-wp
+    :parameters (?m - mps ?r - robot ?old-wp - workpiece ?wp - workpiece
+                 ?shelf - ss-shelf ?slot - ss-slot
+                 ?base-col - base-color ?ring1-col - ring-color
+                 ?ring2-col - ring-color ?ring3-col - ring-color
+                 ?cap-col - cap-color)
+    :precondition (and
+      (mps-type ?m SS)
+      (ss-stored-wp ?m ?old-wp ?shelf ?slot)
+      (wp-spawned-for ?wp ?r)
+      (wp-unused ?wp)
+      (wp-base-color ?wp BASE_NONE)
+      (wp-ring1-color ?wp RING_NONE)
+      (wp-ring2-color ?wp RING_NONE)
+      (wp-ring3-color ?wp RING_NONE)
+      (wp-cap-color ?wp CAP_NONE)
+      (ss-new-wp-at ?m ?old-wp ?shelf ?slot ?base-col ?ring1-col
+                                ?ring2-col ?ring3-col ?cap-col))
+    :effect (and
+            (not (ss-stored-wp ?m ?old-wp ?shelf ?slot))
+            (ss-stored-wp ?m ?wp ?shelf ?slot)
+            (not (wp-spawned-for ?wp ?r))
+            (not (wp-base-color ?wp BASE_NONE))
+            (not (wp-ring1-color ?wp RING_NONE))
+            (not (wp-ring2-color ?wp RING_NONE))
+            (not (wp-ring3-color ?wp RING_NONE))
+            (not (wp-cap-color ?wp CAP_NONE))
+            (wp-base-color ?wp ?base-col)
+            (wp-ring1-color ?wp ?ring1-col)
+            (wp-ring2-color ?wp ?ring2-col)
+            (wp-ring3-color ?wp ?ring3-col)
+            (wp-cap-color ?wp ?cap-col)
+            (wp-usable ?wp)
+            (not (wp-unused ?wp))
+            (wp-unused ?old-wp)
+            (not (wp-usable ?old-wp))
+            (not (ss-new-wp-at ?m ?old-wp ?shelf ?slot ?base-col
+                                           ?ring1-col ?ring2-col ?ring3-col
+                                           ?cap-col)))
+  )
+
   (:action ss-retrieve-wp
-   :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
+   :parameters (?m - mps ?old-wp - workpiece ?wp - workpiece
+                ?shelf - ss-shelf ?slot - ss-slot)
    :precondition (and (mps-type ?m SS) (mps-state ?m READY-AT-OUTPUT)
                       (not (ss-shelf-slot-free ?m ?shelf ?slot))
                       (ss-prepared-for ?m RETRIEVE ?wp ?shelf ?slot)

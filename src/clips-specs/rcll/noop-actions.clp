@@ -153,11 +153,3 @@
 	(assert (domain-object (name ?cc) (type cap-carrier)))
 	(modify ?pa (state EXECUTION-SUCCEEDED))
 )
-
-(defrule action-execute-ss-store-wp
-	?pa <- (plan-action (plan-id ?plan-id) (state PENDING) (executable TRUE)
-	                    (action-name ss-store-wp) (param-values ?robot ?m ?wp ?base ?cap))
-	=>
-	(printout info "Init  " ?m " with " ?wp ": " ?base " " ?cap crlf)
-	(modify ?pa (state EXECUTION-SUCCEEDED))
-)

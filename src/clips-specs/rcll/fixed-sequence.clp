@@ -45,7 +45,33 @@
   )
   (modify ?g (mode EXPANDED))
 )
-
+(defrule goal-expander-ss-assign-wp
+  ?p <- (goal (mode DISPATCHED) (id ?parent-id))
+  ?g <- (goal (id ?goal-id) (class SS-ASSIGN-WP) (mode SELECTED)
+              (parent ?parent-id)
+              (params robot ?robot mps ?ss old-wp ?old-wp wp ?wp
+                      shelf ?shelf slot ?slot
+                      base-col ?base-col ring1-col ?ring1-col
+                      ring2-col ?ring2-col ring3-col ?ring3-col
+                      cap-col ?cap-col))
+=>
+  (assert
+    (plan (id SS-ASSIGN-WP-PLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id SS-ASSIGN-WP-PLAN) (goal-id ?goal-id)
+                                (action-name lock)
+                                (param-values ?ss))
+    (plan-action (id 2) (plan-id SS-ASSIGN-WP-PLAN) (goal-id ?goal-id)
+                 (action-name prepare-ss-to-assign-wp)
+                 (param-names m r old-wp wp shelf slot base-col ring1-col
+                                ring2-col ring3-col cap-col)
+                 (param-values ?ss ?robot ?old-wp ?wp ?shelf ?slot ?base-col
+                               ?ring1-col ?ring2-col ?ring3-col ?cap-col))
+    (plan-action (id 3) (plan-id SS-ASSIGN-WP-PLAN) (goal-id ?goal-id)
+                                (action-name unlock)
+                                (param-values ?ss))
+  )
+  (modify ?g (mode EXPANDED))
+)
 
 (defrule goal-expander-store-wp
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
