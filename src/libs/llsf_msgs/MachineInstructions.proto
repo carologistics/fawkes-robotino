@@ -65,6 +65,10 @@ message PrepareInstructionSS {
   required SSOp   operation = 1;
   required uint32 shelf = 2;
   required uint32 slot = 3;
+  // Optional description of the workpiece that is stored.
+  // The RefBox attaches this description when sending information about
+  // stored products
+  optional string wp_description = 10;
 }
 
 message PrepareInstructionRS {
