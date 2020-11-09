@@ -1,0 +1,132 @@
+symbol domain GameState = { INIT, WAIT_START, RUNNING, PAUSED }
+symbol domain GamePhase = { PRE_GAME, SETUP, EXPLORATION, PRODUCTION }
+symbol domain RingColor = { RING_BLUE, RING_GREEN, RING_ORANGE, RING_YELLOW }
+symbol domain BaseColor = { BASE_RED, BASE_BLACK, BASE_SILVER }
+symbol domain CapColor = { CAP_BLACK, CAP_GREY }
+symbol domain TeamColor = { CYAN, MAGENTA }
+symbol domain Complexity = { C0, C1, C2, C3 }
+symbol domain Robot = { Robot1, Robot2, Robot3 }
+
+compound GameTime {
+	number sec,
+	number nsec
+}
+
+
+GameState fluent game_state() {
+initially:
+	() = INIT;
+}
+
+GamePhase fluent game_phase() {
+initially:
+	() = PRE_GAME;
+}
+
+GameTime fluent game_time() {
+initially:
+	() = GameTime { sec = 0, nsec = 0 };
+}
+
+
+exog_action exog_game_state(number t_sec, number t_nsec, GameState state, GamePhase phase) {
+mapping:
+	"RCLLGameStateInterface::/protoboard/game_state" {
+		game_time_sec = t_sec,
+		game_time_nsec = t_nsec,
+		state = state,
+		phase = phase
+	}
+effect:
+	game_state() = state;
+	game_phase() = phase;
+	game_time().sec = t_sec;
+	game_time().nsec = t_nsec;
+}
+
+
+string fluent machine_type(string name)
+{ initially: (name) = null; }
+
+string fluent machine_state(string name)
+{ initially: (name) = null; }
+
+symbol fluent machine_team(string name)
+{ initially: (name) = null; }
+
+number fluent machine_pose_x(string name)
+{ initially: (name) = null; }
+
+number fluent machine_pose_y(string name)
+{ initially: (name) = null; }
+
+number fluent machine_pose_ori(string name)
+{ initially: (name) = null; }
+
+string fluent machine_zone(string name)
+{ initially: (name) = null; }
+
+number fluent machine_rotation(string name)
+{ initially: (name) = null; }
+
+
+exog_action exog_machine_info(
+	string name,
+	string type,
+	string state,
+	symbol team,
+	list[number] pose,
+	string zone,
+	number rotation,
+	bool correctly_reported,
+	list[symbol] ring_colors
+) {
+mapping:
+	"MachineInfoInterface::/protoboard/machine_info/*" {
+		machine_name = name,
+		machine_type = type,
+		state = state,
+		team_color = team,
+		pose = pose,
+		zone = zone,
+		rotation = rotation,
+		correctly_reported = correctly_reported,
+		ring_colors = ring_colors
+	}
+effect:
+	machine_type(name) = type;
+	machine_state(name) = state;
+	machine_team(name) = team;
+	machine_pose_x(name) = pose[0];
+	machine_pose_y(name) = pose[1];
+	machine_pose_ori(name) = pose[2];
+	machine_zone(name) = zone;
+	machine_rotation(name) = rotation;
+}
+
+
+action create_public_peer() {
+mapping:
+    "create_peer" {
+        address="127.0.0.1",
+        send_to_port=4421,
+        recv_on_port=4411
+    }
+}
+
+action create_private_peer() {
+mapping:
+    "create_peer_crypto" {
+        address="127.0.0.1",
+        send_to_port=4471,
+        recv_on_port=4451,
+        crypto_key="randomkey"
+    }
+}
+
+
+procedure connect()
+{
+	create_public_peer();
+	create_private_peer();
+}

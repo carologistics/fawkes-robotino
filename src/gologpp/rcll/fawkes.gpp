@@ -1,0 +1,72 @@
+compound Quaternion {
+	number x,
+	number y,
+	number z,
+	number w
+}
+
+compound Vector3 {
+	number x,
+	number y,
+	number z
+}
+
+compound Pose {
+	string frame,
+	Vector3 trans,
+	Quaternion rot
+}
+
+
+Pose
+exog_function fawkes_transform_pose(Pose src, string to_frame);
+
+Quaternion
+exog_function fawkes_rpy_to_quaternion(number roll, number pitch, number yaw);
+
+list[number]
+exog_function fawkes_quaternion_to_rpy(Quaternion quaternion);
+
+number
+function quaternion_to_yaw(Quaternion q) =
+	fawkes_quaternion_to_rpy(q)[2]
+
+number
+exog_function fawkes_config_get_float(string path, number default);
+
+
+action log_debug(string msg) {
+mapping:
+	"print" {
+		level = "debug",
+		message = msg
+	}
+silent: true
+}
+
+action log_info(string msg) {
+mapping:
+	"print" {
+		level = "info",
+		message = msg
+	}
+silent: true
+}
+
+action log_warn(string msg) {
+mapping:
+	"print" {
+		level = "warn",
+		message = msg
+	}
+silent: true
+}
+
+action log_error(string msg) {
+mapping:
+	"print" {
+		level = "error",
+		message = msg
+	}
+silent: true
+}
