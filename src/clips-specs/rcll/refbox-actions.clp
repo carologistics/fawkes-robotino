@@ -100,6 +100,7 @@
                                            prepare-cs|
                                            prepare-ds|
                                            prepare-rs|
+                                           prepare-ss-to-assign-wp|
                                            prepare-ss-to-store|
                                            prepare-ss-to-retrieve)
                       (executable TRUE)
@@ -155,12 +156,13 @@
   (time $?now)
   ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
                       (state RUNNING)
-                      (action-name prepare-bs|
-                                   prepare-cs|
-                                   prepare-ds|
-                                   prepare-rs|
-                                   prepare-ss-to-store|
-                                   prepare-ss-to-retrieve)
+                      (action-name ?an&prepare-bs|
+                                       prepare-cs|
+                                       prepare-ds|
+                                       prepare-rs|
+                                       prepare-ss-to-assign-wp|
+                                       prepare-ss-to-store|
+                                       prepare-ss-to-retrieve)
                       (executable TRUE)
                       (param-names $?param-names)
                       (param-values $?param-values))
@@ -204,13 +206,31 @@
     (case SS
       then
        (bind ?ss-inst (pb-create "llsf_msgs.PrepareInstructionSS"))
-                (bind ?instruction (nth$ 2 ?instruction_info))
-                (bind ?ss-shelf (sym-to-int (nth$ 3 ?instruction_info)))
-                (bind ?ss-slot (sym-to-int (nth$ 4 ?instruction_info)))
-                (pb-set-field ?ss-inst "operation" ?instruction)
-                (pb-set-field ?ss-inst "shelf" ?ss-shelf)
-                (pb-set-field ?ss-inst "slot" ?ss-slot)
-                (pb-set-field ?machine-instruction "instruction_ss" ?ss-inst)
+       (bind ?instruction "")
+       (bind ?wp (plan-action-arg wp ?param-names ?param-values))
+       (bind ?description (str-cat ?wp " "))
+       (progn$ (?x (create$ wp-base-color wp-ring1-color wp-ring2-color
+                            wp-ring3-color wp-cap-color))
+         (do-for-fact ((?f wm-fact))
+           (and (wm-key-prefix ?f:key (create$ domain fact ?x))
+                (eq (wm-key-arg ?f:key wp) ?wp))
+           (bind ?description (str-cat ?description " " (wm-key-arg ?f:key col)))
+         )
+       )
+       (switch ?an
+         (case prepare-ss-to-assign-wp then (bind ?instruction CHANGE_INFO))
+         (case prepare-ss-to-store then (bind ?instruction STORE))
+         (case prepare-ss-to-retrieve then (bind ?instruction RETRIEVE))
+       )
+       (bind ?ss-shelf (sym-to-int (plan-action-arg shelf ?param-names ?param-values)))
+       (bind ?ss-slot (sym-to-int (plan-action-arg slot ?param-names ?param-values)))
+       (pb-set-field ?ss-inst "operation" ?instruction)
+       (pb-set-field ?ss-inst "shelf" ?ss-shelf)
+       (pb-set-field ?ss-inst "slot" ?ss-slot)
+       (if (neq ?instruction RETRIEVE) then
+         (pb-set-field ?ss-inst "wp_description" ?description)
+       )
+       (pb-set-field ?machine-instruction "instruction_ss" ?ss-inst)
     )
     (case RS
       then
@@ -286,6 +306,40 @@
   (modify ?pa (state EXECUTION-SUCCEEDED))
 )
 
+(defrule refbox-action-prepare-ss-to-assign-wp-final
+  "Finalize the update at the storage position if the change got sensed
+   through a received storage info."
+  (time $?now)
+  ?pa <- (plan-action (plan-id ?plan-id) (goal-id ?goal-id) (id ?id)
+                      (state RUNNING)
+                      (action-name prepare-ss-to-assign-wp)
+                      (param-names $?param-names)
+                      (param-values $?param-values))
+  (not (wm-fact (key $?key&:(and
+                  (wm-key-prefix ?key (create$ domain fact ss-new-wp-at))
+                  (eq (wm-key-arg ?key wp) (plan-action-arg old-wp
+                                                           ?param-names
+                                                           ?param-values))
+                  (eq (wm-key-arg ?key shelf) (plan-action-arg shelf
+                                                               ?param-names
+                                                               ?param-values))
+                  (eq (wm-key-arg ?key slot) (plan-action-arg slot
+                                                              ?param-names
+                                                              ?param-values))
+                 ))))
+  ?st <- (timer (name ?nst&:(eq ?nst
+                               (sym-cat prepare- ?goal-id - ?plan-id
+                                        - ?id -send-timer))))
+  ?at <- (timer (name ?nat&:(eq ?nat
+                               (sym-cat prepare- ?goal-id - ?plan-id
+                                        - ?id -abort-timer))))
+  ?md <- (metadata-prepare-mps ?mps $?date)
+  =>
+  (printout t "Action prepare-ss-to-assign-wp is final" crlf)
+  (retract ?st ?at ?md)
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+)
+
 (defrule refbox-action-reset-mps-abort
   "Abort preparing and fail the action if took too long"
   (time $?now)
@@ -321,6 +375,7 @@
                                    prepare-cs|
                                    prepare-ds|
                                    prepare-rs|
+                                   prepare-ss-to-assign-wp|
                                    prepare-ss-to-store|
                                    prepare-ss-to-retrieve)
                       (param-names $?param-names)
