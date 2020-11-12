@@ -70,7 +70,7 @@ private:
 	void                                               generate_navgraph();
 	fawkes::NavGraphGeneratorInterface::ConnectionMode mps_node_insmode(std::string name);
 
-	virtual void bb_interface_data_changed(fawkes::Interface *interface) throw();
+	virtual void bb_interface_data_refreshed(fawkes::Interface *interface) throw();
 
 private:
 	std::string                                   cfg_global_frame_;
