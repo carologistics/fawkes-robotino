@@ -40,16 +40,23 @@ Parameters:
 skillenv.skill_module(_M)
 
 function has_writer()
-   return realsense_switch:has_writer() and CameraControlInterface:has_writer()
+   return realsense_switch:has_writer() and realsense_control:has_writer()
+end
+
+function cleanup()
+   if self.fsm.vars.disable_realsense_afterwards then
+      realsense_switch:msgq_enqueue(realsense_switch.DisableSwitchMessage:new())
+   end
 end
 
 fsm:define_states{ export_to=_M,
-   closure={ },
+   closure={has_writer=has_writer},
    {"INIT", JumpState},
+   {"SAVE_IMAGE", JumpState},
 }
 
 fsm:add_transitions{
-   {"INIT", "FAILED", cond = "vars.object != nil", desc = "Object name is required"},
+   {"INIT", "FAILED", cond = "vars.no_object_name", desc = "Object name is required"},
    {"INIT", "FAILED", cond = not has_writer(), desc = "No Switch or Camera Control Writer"},
    {"INIT", "SAVE_IMAGE", cond = has_writer, desc = "Switch and CameraControl writer enabled" },
    {"SAVE_IMAGE", "FINAL", cond = true, desc = "Saving Image"},
@@ -58,16 +65,15 @@ fsm:add_transitions{
 function INIT:init()
    realsense_switch:msgq_enqueue(realsense_switch.EnableSwitchMessage:new())
    self.fsm.vars.disable_realsense_afterwards = false
+   if self.fsm.vars.object ~=nil then
+      self.fsm.vars.no_object_name = false
+   else
+      self.fsm.vars.no_object_name = true
+   end
 end
 
 function SAVE_IMAGE:init()
    realsense_control:msgq_enqueue(realsense_control.SaveImageMessage:new(self.fsm.vars.object))
-end
-
-function cleanup()
-   if self.fsm.vars.disable_realsense_afterwards then
-      realsense_switch:msgq_enqueue(realsense_switch.DisableSwitchMessage:new())
-   end
 end
 
 function FAILED:init()
