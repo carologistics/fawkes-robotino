@@ -129,8 +129,8 @@
                             (create$ domain fact ss-new-wp-at))
              (eq (wm-key-arg ?needs-update:key m) ?ss))))
   (bind ?unused-wps (find-all-facts ((?unused-wp wm-fact))
-        (and (wm-key-prefix ?unused-wp:key
-                            (create$ domain fact wp-unused)))))
+        (wm-key-prefix ?unused-wp:key
+                            (create$ domain fact wp-unused))))
   ; process the update for each storage position
   (foreach ?o (pb-field-list ?si "shelf_slot_info")
     (bind ?shelf (int-to-sym (pb-field-value ?o "shelf")))
