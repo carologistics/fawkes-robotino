@@ -1,9 +1,7 @@
-symbol domain blocks = {a, b, c}
-symbol domain locations = blocks | {table, hand}
+symbol domain Block = {a, b, c}
+symbol domain Location = Block | {table, hand}
 
-symbol fluent loc(symbol x) {
-domain:
-	x in blocks;
+symbol fluent loc(Block x) {
 initially:
 	(a) = c;
 	(b) = table;
@@ -11,18 +9,15 @@ initially:
 // 	(d) = a; //*/
 }
 
-action stack(symbol x, symbol y) {
-domain:
-	x in blocks;
-	y in locations;
+action stack(Block x, Location y) {
 precondition:
 	loc(x) == hand
 	& x != y // Can't stack x on x
-  & x != hand
+	& x != hand
 	& x != table // Can't stack table
 	& (
 		y == table // either y is the table...
-		| !exists(symbol z) loc(z) == y // or nothing is on y
+		| !exists(Block z) loc(z) == y // or nothing is on y
 	)
 
 effect:
@@ -35,11 +30,9 @@ mapping:
   }
 }
 
-action unstack(symbol x) {
-domain:
-	x in blocks;
+action unstack(Block x) {
 precondition:
-	loc(x) != hand & (!exists(symbol z) (loc(z) == x))
+	loc(x) != hand & (!exists(Block z) (loc(z) == x))
 
 effect:
 	loc(x) = hand;
@@ -51,31 +44,23 @@ mapping:
 }
 
 
-procedure bla() {
-	stack(a,b);
-	stack(a,table);
-}
+
+bool function goal() =
+	loc(a) == table & loc(b) == a & loc(c) == b
 
 
-bool function goal() {
-	return loc(a) == table & loc(b) == a & loc(c) == b
-// 	& loc(d) == c
-	;
-}
-
-number function reward() {
+number function reward() =
 	if (goal())
-		return 100;
+		100
 	else
-		return -1;
-}
+		-1
 
 
-{
+main() {
 	solve(20, reward())
 		while (!goal())
-			pick (symbol x in {a, b, c})
-				pick(symbol y in {table, a, b, c}) {
+			pick (Block x in {a, b, c})
+				pick(Location y in {table, a, b, c}) {
 					unstack(x);
 					stack(x, y);
         }

@@ -17,12 +17,12 @@ compound Pose2D {
 	number ori
 }
 
-symbol fluent game_state() {
+GameState fluent game_state() {
 initially:
 	() = INIT;
 }
 
-symbol fluent game_phase() {
+GamePhase fluent game_phase() {
 initially:
 	() = PRE_GAME;
 }
@@ -32,10 +32,7 @@ initially:
 	() = GameTime { sec = 0, nsec = 0 };
 }
 
-exog_action game_state(number t_sec, number t_nsec, symbol state, symbol phase) {
-domain:
-	state in GameState;
-	phase in GamePhase;
+exog_action exog_game_state(number t_sec, number t_nsec, GameState state, GamePhase phase) {
 mapping:
 	"RCLLGameStateInterface::/protoboard/game_state" {
 		game_time_sec = t_sec,
@@ -51,40 +48,32 @@ effect:
 }
 
 
-string fluent machine_type(string name) {
-initially:
-	(name) = null;
-}
-string fluent machine_state(string name) {
-initially:
-	(name) = null;
-}
-symbol fluent machine_team(string name) {
-initially:
-	(name) = null;
-}
-number fluent machine_pose_x(string name) {
-initially:
-	(name) = null;
-}
-number fluent machine_pose_y(string name) {
-initially:
-	(name) = null;
-}
-number fluent machine_pose_ori(string name) {
-initially:
-	(name) = null;
-}
-string fluent machine_zone(string name) {
-initially:
-	(name) = null;
-}
-number fluent machine_rotation(string name) {
-initially:
-	(name) = null;
-}
+string fluent machine_type(string name)
+{ initially: (name) = null; }
 
-exog_action incoming_machine_info(
+string fluent machine_state(string name)
+{ initially: (name) = null; }
+
+symbol fluent machine_team(string name)
+{ initially: (name) = null; }
+
+number fluent machine_pose_x(string name)
+{ initially: (name) = null; }
+
+number fluent machine_pose_y(string name)
+{ initially: (name) = null; }
+
+number fluent machine_pose_ori(string name)
+{ initially: (name) = null; }
+
+string fluent machine_zone(string name)
+{ initially: (name) = null; }
+
+number fluent machine_rotation(string name)
+{ initially: (name) = null; }
+
+
+exog_action exog_machine_info(
 	string name,
 	string type,
 	string state,
@@ -118,6 +107,7 @@ effect:
 	machine_rotation(name) = rotation;
 }
 
+
 action create_public_peer() {
 mapping:
     "create_peer" {
@@ -136,6 +126,7 @@ mapping:
         crypto_key="randomkey"
     }
 }
+
 action go_to(number x, number y, number ori) {
 mapping:
 	"goto" {
@@ -146,7 +137,7 @@ mapping:
 }
 
 
-// main program
+procedure main()
 {
 	create_public_peer();
 	create_private_peer();
