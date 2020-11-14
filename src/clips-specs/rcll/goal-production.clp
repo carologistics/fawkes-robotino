@@ -1442,8 +1442,10 @@
   (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?ss side ?any-side)))
 	(not (goal (class GET-STORED-WP) (params $? wp ?wp)))
 =>
-  (assert (goal (id (sym-cat GET-STORED-WP- (gensym*))) (class GET-STORED-WP) (sub-type SIMPLE) (mode FORMULATED)
-              (parent ?production-id) (required-resources wp ?wp (sym-cat ?ss -OUTPUT)) (params robot ?robot ss ?ss wp ?wp shelf ?shelf slot ?slot)))
+  (assert (goal (id (sym-cat GET-STORED-WP- (gensym*))) (class GET-STORED-WP)
+                (sub-type SIMPLE) (mode FORMULATED) (parent ?production-id)
+                (required-resources wp ?wp (sym-cat ?ss -OUTPUT))
+                (params robot ?robot ss ?ss wp ?wp shelf ?shelf slot ?slot)))
 )
 
 (defrule goal-production-create-deliver
