@@ -32,6 +32,7 @@
   ?*PRIORITY-MOUNT-NEXT-RING* = 92
   ?*PRIORITY-MOUNT-FIRST-RING* = 91
   ?*PRIORITY-CLEAR-CS* = 70
+  ?*PRIORITY-CLEAR-CS-NEEDED* = 91
   ?*PRIORITY-CLEAR-RS* = 55
   ?*PRIORITY-PREFILL-CS* = 50 ;This priority can be increased by +1
   ?*PRIORITY-WAIT-MPS-PROCESS* = 45
@@ -498,38 +499,34 @@
   ))
 )
 
-
-(defrule goal-production-clear-cs-from-expired-product
-  "Remove a finished product from a cap station after it's deadline passed."
+(defrule goal-production-clear-cs-blocked 
+  "Remove a finished product from a cap station if the station is blocked"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?production-id) (class CLEAR) (mode FORMULATED))
-  (wm-fact (key refbox game-time) (values $?game-time))
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
+  ;There is a product on the input that needs the CS, 
+  ;there is a product on the output blocking it
+  (wm-fact (key domain fact wp-at args? wp ?wp-input ?mps side INPUT))
+  (wm-fact (key domain fact wp-at args? wp ?wp-output ?mps side OUTPUT))
   ;MPS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  ;WP CEs
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))
-
-  (wm-fact (key refbox order ?order delivery-end) (type UINT)
-           (value ?end&:(< ?end (nth$ 1 ?game-time))))
   =>
   (printout t "Goal " CLEAR-MPS " (" ?mps ") formulated" crlf)
   (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
                 (class CLEAR-MPS) (sub-type SIMPLE)
-                (priority ?*PRIORITY-CLEAR-CS*)
+                (priority ?*PRIORITY-CLEAR-CS-NEEDED*)
                 (parent ?production-id)
                 (params robot ?robot
                         mps ?mps
-                        wp ?wp
+                        wp ?wp-output
                         side OUTPUT
                 )
-                (required-resources (sym-cat ?mps -OUTPUT) ?wp)
+                (required-resources (sym-cat ?mps -OUTPUT) ?wp-output)
   ))
 )
 
