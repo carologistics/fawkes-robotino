@@ -778,6 +778,10 @@
   ;(wm-fact (key domain fact rs-filled-with args? m ?mps n TWO|THREE))
   ;question: or would be more correct to create it and later
   ;  reject it because its not useful
+  ;only discard if there is no cap mounted (i.e. wp is not a finished product)
+  (or (and (wm-fact (key domain fact wp-cap-color args? wp ?wp cap-color CAP_NONE))
+  (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order)))
+  (not (wm-fact (key domain fact wp-for-order args? wp ?wp ord ?order))))
   =>
   (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring safety-discard))
     (bind ?parent ?urgent)
