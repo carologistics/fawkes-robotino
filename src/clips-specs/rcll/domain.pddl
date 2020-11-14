@@ -147,25 +147,25 @@
 								 (not (cs-can-perform ?m ?op)) (cs-prepared-for ?m ?op))
 	)
 
-	(:action bs-dispense-trash
-		:parameters (?r - robot ?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
-		:precondition (and (mps-type ?m BS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
-                       (locked ?m) (bs-prepared-color ?m ?basecol)
-                       (bs-prepared-side ?m ?side)
-											 (wp-base-color ?wp BASE_NONE) (wp-unused ?wp)
-											 (wp-spawned-for ?wp ?r)
-											 (self ?r)
-											 (mps-side-free ?m ?side))
-											 ;(not (wp-usable ?wp))
-		:effect (and (wp-at ?wp ?m ?side) (not (mps-side-free ?m ?side))
-								 (not (wp-base-color ?wp BASE_NONE)) (wp-base-color ?wp ?basecol)
-								 (not (wp-unused ?wp)) (wp-usable ?wp)
-								 (not (wp-spawned-for ?wp ?r)))
-	)
+  (:action bs-dispense-trash
+    :parameters (?r - robot ?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
+    :precondition (and (mps-type ?m BS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
+                           (locked ?m) (bs-prepared-color ?m ?basecol)
+                           (bs-prepared-side ?m ?side)
+                           (wp-base-color ?wp BASE_NONE) (wp-unused ?wp)
+                           (wp-spawned-for ?wp ?r)
+                           (self ?r)
+                           (mps-side-free ?m ?side))
+                           ;(not (wp-usable ?wp))
+    :effect (and (wp-at ?wp ?m ?side) (not (mps-side-free ?m ?side))
+                 (not (wp-base-color ?wp BASE_NONE)) (wp-base-color ?wp ?basecol)
+                 (not (wp-unused ?wp)) (wp-usable ?wp)
+                 (not (wp-spawned-for ?wp ?r)))
+  )
 
-	(:action bs-dispense-for-order
-		:parameters (?r - robot ?m - mps ?side - mps-side ?ord - order ?wp - workpiece ?basecol - base-color)
-		:precondition (and (mps-type ?m BS) (mps-state ?m READY-AT-OUTPUT)
+  (:action bs-dispense-for-order
+    :parameters (?r - robot ?m - mps ?side - mps-side ?ord - order ?wp - workpiece ?basecol - base-color)
+    :precondition (and (mps-type ?m BS) (mps-state ?m READY-AT-OUTPUT)
                        (locked ?m) (bs-prepared-color ?m ?basecol)
                        (bs-prepared-side ?m ?side)
                        (order-base-color ?ord ?basecol)
@@ -179,7 +179,7 @@
                  (not (wp-unused ?wp)) (wp-usable ?wp)
                  (not (wp-spawned-for ?wp ?r))
                  (wp-for-order ?wp ?ord))
-	)
+  )
 
 	(:action cs-mount-cap
 		:parameters (?m - mps ?wp - workpiece ?capcol - cap-color)
