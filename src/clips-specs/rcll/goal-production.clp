@@ -507,9 +507,14 @@
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
   (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  ;There is a product on the input that needs the CS, 
+  ;There is a cap-carrier on the input that needs the CS, 
+  ;There is a product that needs the CS 
   ;there is a product on the output blocking it
-  (wm-fact (key domain fact wp-at args? wp ?wp-input ?mps side INPUT))
+  (wm-fact (key domain fact wp-at args? wp ?cc ?mps side INPUT))
+  (wm-fact (key wp meta next-step args? wp ?next-wp) (value CAP))
+  (wm-fact (key domain fact wp-for-order args? wp ?next-wp ord ?order))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
   (wm-fact (key domain fact wp-at args? wp ?wp-output ?mps side OUTPUT))
   ;MPS CEs
   (wm-fact (key domain fact mps-type args? m ?mps t CS))
