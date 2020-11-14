@@ -1421,6 +1421,7 @@
   (goal (id ?urgent) (class URGENT) (mode FORMULATED))
   ;To-Do: Model state IDLE|wait-and-look-for-alternatives
   (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key refbox game-time) (values $?game-time))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
   ;MPS-DS CEs
@@ -1456,6 +1457,8 @@
   (not (wm-fact (key wp meta wait-for-delivery args? wp ?wp wait-for ?)))
   (wm-fact (key order meta competitive args? ord ?order) (value ?competitive))
   (wm-fact (key config rcll competitive-order-priority) (value ?comp-prio))
+  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
+           (value ?begin&:(< ?begin (+ (nth$ 1 ?game-time) ?*DELIVER-AHEAD-TIME*))))
   (not (goal (class DELIVER)
              (parent ?parent)
              (params robot ?robot $?
