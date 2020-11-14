@@ -123,7 +123,7 @@
                 (params robot ?robot)))
 )
 
-(defrule goal-production-create-ss-update-wp
+(defrule goal-production-create-ss-use-pre-stored-wp-for-order
 " Assign a workpiece to a pre-stored product in the storage station.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -142,18 +142,32 @@
   (wm-fact (key domain fact self args? r ?robot))
   (wm-fact (key domain fact ss-new-wp-at
             args? m ?ss wp ?wp shelf ?shelf slot ?slot base-col ?base-col
-                  ring1-col ?ring1-col ring2-col ?ring2-col
-                  ring3-col ?ring3-col cap-col ?cap-col))
+                  ring1-col ?ring1-col&RING_NONE ring2-col ?ring2-col&RING_NONE
+                  ring3-col ?ring3-col&RING_NONE cap-col ?cap-col))
+  (wm-fact (key domain fact order-complexity args? ord ?order com C0))
+  ; rules only permit usage of pre-stored products for C0 with requested
+  ; quantity > 1
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr&:(> ?qr 1)))
+  ; The order is not being completed currently
+  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+           (value ?qd&:(> (- ?qr ?qd)
+             (length$ (find-all-facts ((?for-order wm-fact))
+                        (and (wm-key-prefix ?for-order:key
+                                            (create$ domain fact wp-for-order))
+                             (eq (wm-key-arg ?for-order:key ord) ?order)))))))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-col))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-col))
   (wm-fact (key domain fact wp-unused args? wp ?wp))
   ;(wm-fact (key config rcll use-ss) (value TRUE))
   =>
   (assert (goal (id (sym-cat SS-ASSIGN-WP- (gensym*))) (sub-type SIMPLE)
                 (class SS-ASSIGN-WP) (parent ?maintain-id)
-                (required-resources ?wp ?ss)
+                (required-resources ?wp ?ss ?order)
                 (params robot ?robot
                         mps ?ss
                         old-wp ?wp
                         wp ?spawned-wp
+                        order ?order
                         shelf ?shelf
                         slot ?slot
                         base-col ?base-col

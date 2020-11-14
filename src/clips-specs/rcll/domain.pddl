@@ -664,4 +664,31 @@
                 (not (mps-side-free ?m OUTPUT))
                 (not (ss-stored-wp ?m ?wp ?shelf ?slot)))
   )
+
+; Add condition for not assigning wp-for-order multiple times
+  (:action assign-wp-to-order
+    :parameters (?ord - order ?wp - workpiece ?base-col - base-color
+                 ?r1-col - ring-color ?r2-col - ring-color ?r3-col - ring-color
+                 ?cap-col - cap-color)
+    :precondition (and
+                       (not (wp-unused ?wp))
+                       (wp-usable ?wp)
+                       (not (wp-for-order ?wp ?ord))
+                       (wp-base-color ?wp ?base-col)
+                       (wp-ring1-color ?wp ?r1-col)
+                       (wp-ring2-color ?wp ?r2-col)
+                       (wp-ring3-color ?wp ?r3-col)
+                       (or (order-base-color ?ord ?base-col)
+                           (wp-base-color ?wp BASE_NONE))
+                       (or (order-ring1-color ?ord ?r1-col)
+                           (wp-ring1-color ?wp RING_NONE))
+                       (or (order-ring2-color ?ord ?r2-col)
+                           (wp-ring2-color ?wp RING_NONE))
+                       (or (order-ring3-color ?ord ?r3-col)
+                           (wp-ring3-color ?wp RING_NONE))
+                       (or (order-cap-color ?ord ?cap-col)
+                           (wp-cap-color ?wp CAP_NONE))
+                  )
+    :effect (wp-for-order ?wp ?ord)
+  )
 )

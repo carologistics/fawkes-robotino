@@ -28,6 +28,7 @@
                         |rs-mount-ring1
                         |rs-mount-ring2
                         |rs-mount-ring3
+                        |assign-wp-to-order
                         |ss-store-wp
                         |ss-retrieve-wp
                         |fulfill-order-c0
