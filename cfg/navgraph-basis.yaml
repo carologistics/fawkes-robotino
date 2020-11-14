@@ -427,6 +427,14 @@ nodes:
       - tag_input: 81
       - tag_output: 82
       - input_offset_x: 0.02
+  - !unconnected
+    name: C-SS
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - group: machines
+      - tag_input: 193
+      - tag_output: 194
 #Magenta
   - !unconnected
     name: M-CS1
@@ -485,6 +493,14 @@ nodes:
       - tag_input: 49
       - tag_output: 50
       - input_offset_x: -0.02
+  - !unconnected
+    name: M-SS
+    pos: [0, 0]
+    properties:
+      - only-copy-properties
+      - group: machines
+      - tag_input: 209
+      - tag_output: 210
 
 # Possible directional tags:
 # !bidir (bidirectional, default), !dir (directed)
