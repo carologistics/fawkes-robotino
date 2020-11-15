@@ -162,7 +162,7 @@
   =>
   (assert (goal (id (sym-cat SS-ASSIGN-WP- (gensym*))) (sub-type SIMPLE)
                 (class SS-ASSIGN-WP) (parent ?maintain-id)
-                (required-resources ?wp ?ss ?order)
+                (required-resources ?spawned-wp ?ss ?order)
                 (params robot ?robot
                         mps ?ss
                         old-wp ?wp
