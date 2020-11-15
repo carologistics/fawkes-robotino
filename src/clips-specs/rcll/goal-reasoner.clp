@@ -111,6 +111,7 @@
               (eq ?goal-class FULFILL-ORDERS)
               (eq ?goal-class DELIVER-PRODUCTS)
               (eq ?goal-class INTERMEDEATE-STEPS)
+              (eq ?goal-class DO-FOR-ORDER)
               (eq ?goal-class CLEAR)
               (eq ?goal-class WAIT-FOR-PROCESS)
               (eq ?goal-class PREPARE-RESOURCES)

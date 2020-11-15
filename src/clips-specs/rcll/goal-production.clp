@@ -29,7 +29,8 @@
   ?*PRIORITY-PRODUCE-C2* = 95
   ?*PRIORITY-PRODUCE-C1* = 94
   ?*PRIORITY-PRODUCE-C0* = 90
-  ?*PRIORITY-MOUNT-NEXT-RING* = 92
+  ?*PRIORITY-MOUNT-NEXT-RING* = 93
+  ?*PRIORITY-DO-FOR-ORDER* = 92
   ?*PRIORITY-MOUNT-FIRST-RING* = 91
   ?*PRIORITY-CLEAR-CS* = 70
   ?*PRIORITY-CLEAR-CS-NEEDED* = 91
@@ -769,6 +770,31 @@
   ))
 )
 
+(defrule goal-production-create-do-for-order
+" For started orders, create a DO-FOR-ORDER nodes children of INTERMEDIATE-STEP,
+ It shall contain any tasks specific to a started orders.
+
+ This will allow us priorities all tasks related to some orders than
+ others
+
+ The priority of the node (amongst other INTERMEDIATE-STEP CHILDREN)
+ is higher than Starting new orders (MOUNT-FIRST & PRODUCE-C0) and lower
+ than MOUNTING-NEXT-RING
+"
+  (declare (salience  ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
+  (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
+  (wm-fact (key order meta wp-for-order args? wp ?order-wp ord ?order))
+  (not (goal (class DO-FOR-ORDER) (params ord ?order)))
+  =>
+  (printout t "Goal " DO-FOR-ORDER " formulated for "  ?order crlf)
+  (assert (goal (id (sym-cat DO-FOR-ORDER- (gensym*) ))
+                (class DO-FOR-ORDER) (sub-type RUN-ONE-OF-SUBGOALS)
+                (params ord ?order)
+                (priority ?*PRIORITY-DO-FOR-ORDER*)
+                (parent ?production-id)
+  ))
+)
 
 (defrule goal-production-create-discard-unknown
   "Discard a base which is not needed."
