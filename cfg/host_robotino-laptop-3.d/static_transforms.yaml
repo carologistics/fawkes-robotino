@@ -8,4 +8,4 @@ plugins/static-transforms:
       child_frame: !frame gripper
       trans_x: 0.152
       trans_y: 0.0
-      trans_z: -0.062
+      trans_z: -0.052
