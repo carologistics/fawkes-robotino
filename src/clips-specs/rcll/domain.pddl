@@ -576,13 +576,13 @@
     :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
     :precondition (and
       (mps-type ?m SS)
+      (or (mps-state ?m PROCESSING) (mps-state ?m IDLE))
       (wp-at ?wp ?m INPUT)
       (ss-prepared-for ?m STORE ?wp ?shelf ?slot)
       (mps-side-free ?m OUTPUT)
       (not (mps-side-free ?m INPUT))
       (ss-shelf-slot-free ?m ?shelf ?slot))
     :effect (and
-      (mps-state ?m IDLE)
       (not (wp-at ?wp ?m INPUT))
       (not (ss-prepared-for ?m STORE ?wp ?shelf ?slot))
       (not (ss-shelf-slot-free ?m ?shelf ?slot))
