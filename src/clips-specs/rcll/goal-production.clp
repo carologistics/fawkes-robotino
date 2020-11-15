@@ -772,7 +772,7 @@
                         rs-before ?rs-before
                         rs-after ?rs-after
                 )
-                (required-resources ?mps ?wp)
+                (required-resources ?mps ?wp (sym-cat ?mps -FILL))
   ))
 )
 
