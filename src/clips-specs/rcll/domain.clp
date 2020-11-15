@@ -34,7 +34,7 @@
     That means, the truth value of these predicates can be changed not directly but by some external trigger
   "
   (domain-loaded)
-  ?p <- (domain-predicate (name mps-state|location-locked) (sensed FALSE))
+  ?p <- (domain-predicate (name mps-state|location-locked|ss-stored-wp|ss-shelf-slot-free|ss-new-wp-at) (sensed FALSE))
 =>
   (modify ?p (sensed TRUE))
 )
