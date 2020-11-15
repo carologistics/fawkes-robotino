@@ -61,7 +61,7 @@
 		GATE-1 GATE-2 GATE-3 - ds-gate
 		RING_NONE RING_BLUE RING_GREEN RING_ORANGE RING_YELLOW - ring-color
 		RETRIEVE_CAP MOUNT_CAP - cs-operation
-		RETRIEVE STORE UPDATE - ss-operation
+		RETRIEVE STORE - ss-operation
 		C0 C1 C2 C3 - order-complexity-value
 		LEFT MIDDLE RIGHT - shelf-spot
 		NA ZERO ONE TWO THREE - ring-num
