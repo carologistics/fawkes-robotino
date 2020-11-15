@@ -572,6 +572,7 @@
       (wp-base-color ?wp BASE_NONE)
     )
   )
+
   (:action ss-store-wp
     :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
     :precondition (and
@@ -590,6 +591,7 @@
       (ss-stored-wp ?m ?wp ?shelf ?slot)
     )
   )
+
   (:action prepare-ss-to-retrieve
     :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
     :precondition (and (mps-type ?m SS) (mps-state ?m IDLE)
@@ -597,6 +599,7 @@
     :effect (and (not (mps-state ?m IDLE)) (mps-state ?m PREPARED)
                  (ss-prepared-for ?m RETRIEVE ?wp ?shelf ?slot))
   )
+
   (:action prepare-ss-to-store
     :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
     :precondition (and (mps-type ?m SS) (mps-state ?m IDLE)
@@ -613,7 +616,6 @@
                  ?cap-col - cap-color)
     :precondition (and
       (mps-type ?m SS)
-      (ss-stored-wp ?m ?old-wp ?shelf ?slot)
       (wp-spawned-for ?wp ?r)
       (wp-unused ?wp)
       (wp-base-color ?wp BASE_NONE)
@@ -621,6 +623,7 @@
       (wp-ring2-color ?wp RING_NONE)
       (wp-ring3-color ?wp RING_NONE)
       (wp-cap-color ?wp CAP_NONE)
+      (ss-stored-wp ?m ?old-wp ?shelf ?slot)
       (ss-new-wp-at ?m ?old-wp ?shelf ?slot ?base-col ?ring1-col
                     ?ring2-col ?ring3-col ?cap-col))
     :effect (and
@@ -649,7 +652,9 @@
   (:action ss-retrieve-wp
    :parameters (?m - mps ?old-wp - workpiece ?wp - workpiece
                 ?shelf - ss-shelf ?slot - ss-slot)
-   :precondition (and (mps-type ?m SS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
+   :precondition (and (mps-type ?m SS)
+                      (or (mps-state ?m PROCESSING)
+                          (mps-state ?m READY-AT-OUTPUT))
                       (ss-prepared-for ?m RETRIEVE ?wp ?shelf ?slot)
                       (mps-side-free ?m INPUT)
                       (mps-side-free ?m OUTPUT)
@@ -662,7 +667,7 @@
                 (not (ss-stored-wp ?m ?wp ?shelf ?slot)))
   )
 
-; Add condition for not assigning wp-for-order multiple times
+; Add condition to prevent wp from being associated with multiple orders?
   (:action assign-wp-to-order
     :parameters (?ord - order ?wp - workpiece ?base-col - base-color
                  ?r1-col - ring-color ?r2-col - ring-color ?r3-col - ring-color
