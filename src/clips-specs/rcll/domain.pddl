@@ -652,11 +652,11 @@
   (:action ss-retrieve-wp
    :parameters (?m - mps ?old-wp - workpiece ?wp - workpiece
                 ?shelf - ss-shelf ?slot - ss-slot)
-   :precondition (and (mps-type ?m SS) (mps-state ?m READY-AT-OUTPUT)
-                      (not (ss-shelf-slot-free ?m ?shelf ?slot))
+   :precondition (and (mps-type ?m SS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
                       (ss-prepared-for ?m RETRIEVE ?wp ?shelf ?slot)
                       (mps-side-free ?m INPUT)
                       (mps-side-free ?m OUTPUT)
+                      (not (ss-shelf-slot-free ?m ?shelf ?slot))
                       (ss-stored-wp ?m ?wp ?shelf ?slot))
    :effect (and (wp-at ?wp ?m OUTPUT) (not (mps-side-free ?m OUTPUT))
                 (not (ss-prepared-for ?m RETRIEVE ?wp ?shelf ?slot))
