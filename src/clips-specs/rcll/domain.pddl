@@ -52,7 +52,7 @@
 		START - location
 		BS CS DS RS SS - mps-typename
 		IDLE BROKEN PREPARED PROCESSING PROCESSED WAIT-IDLE READY-AT-OUTPUT DOWN - mps-statename
-		;INPUT OUTPUT - mps-side
+		INPUT OUTPUT WAIT - mps-side
 		BASE_NONE BASE_RED BASE_BLACK BASE_SILVER - base-color
 		CAP_NONE CAP_BLACK CAP_GREY - cap-color
 		GATE-1 GATE-2 GATE-3 - ds-gate
@@ -385,7 +385,7 @@
 
 	(:action wp-put-slide-cc
 		:parameters (?r - robot ?wp - cap-carrier ?m - mps ?rs-before - ring-num ?rs-after - ring-num)
-		:precondition (and (mps-type ?m RS) (not (mps-state BROKEN))
+		:precondition (and (mps-type ?m RS) (not (mps-state ?m BROKEN))
 							(at ?r ?m INPUT)
 							(wp-usable ?wp)
 							(holding ?r ?wp)
@@ -513,12 +513,12 @@
     :effect (not (locked ?name))
   )
   (:action location-lock
-    :parameters (?location - mps ?side - side)
+    :parameters (?location - mps ?side - mps-side)
     :precondition (not (location-locked ?location ?side))
     :effect (location-locked ?location ?side)
   )
   (:action location-unlock
-    :parameters (?location - mps ?side - side)
+    :parameters (?location - mps ?side - mps-side)
     :precondition (location-locked ?location ?side)
     :effect (not (location-locked ?location ?side))
   )
@@ -537,10 +537,10 @@
       (wp-spawned-for ?wp ?r)
       (wp-unused ?wp)
       (wp-cap-color ?wp CAP_NONE)
-      (wp-ring1-color wp RING_NONE)
-      (wp-ring2-color wp RING_NONE)
-      (wp-ring3-color wp RING_NONE)
-      (wp-base-color wp BASE_NONE)
+      (wp-ring1-color ?wp RING_NONE)
+      (wp-ring2-color ?wp RING_NONE)
+      (wp-ring3-color ?wp RING_NONE)
+      (wp-base-color ?wp BASE_NONE)
     )
   )
   (:action ss-store-wp
