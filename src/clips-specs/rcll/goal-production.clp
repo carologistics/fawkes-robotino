@@ -58,7 +58,7 @@
   ?*DELIVER-LATEST-TIME* = 10
   ?*DELIVER-ABORT-TIMEOUT* = 30
 
-  ?*BLOCKING-THRESHOLD* = 60
+  ?*STORE-AT-SS-THRESHOLD* = 180
 )
 
 (defrule goal-production-create-beacon-maintain
@@ -1628,7 +1628,7 @@
   ;only store if the delivery deadline is not approaching soon
   (wm-fact (key refbox order ?order delivery-begin)
            (value ?blocking-del-begin&:(> (- ?blocking-del-begin (nth$ 1 ?game-time))
-                                        ?*BLOCKING-THRESHOLD*)))
+                                        ?*STORE-AT-SS-THRESHOLD*)))
   (not (goal    (class STORE-WP)
                 (params robot ?robot
                         mps ?mps
