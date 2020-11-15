@@ -29,12 +29,14 @@
   ?*PRIORITY-PRODUCE-C2* = 95
   ?*PRIORITY-PRODUCE-C1* = 94
   ?*PRIORITY-PRODUCE-C0* = 90
-  ?*PRIORITY-MOUNT-NEXT-RING* = 92
+  ?*PRIORITY-MOUNT-NEXT-RING* = 93
+  ?*PRIORITY-DO-FOR-ORDER* = 92
   ?*PRIORITY-MOUNT-FIRST-RING* = 91
   ?*PRIORITY-CLEAR-CS* = 70
   ?*PRIORITY-CLEAR-RS* = 55
   ?*PRIORITY-PREFILL-CS* = 50 ;This priority can be increased by +1
   ?*PRIORITY-WAIT-MPS-PROCESS* = 45
+  ?*PRIORITY-GET-TO-FILL-RS* = 42
   ?*PRIORITY-PREFILL-RS-WITH-FRESH-BASE* = 40
   ?*PRIORITY-PREFILL-RS* = 30 ;This priority can be increased by up to +4
   ?*PRIORITY-ADD-ADDITIONAL-RING-WAITING* = 20
@@ -638,7 +640,9 @@
 (defrule goal-production-create-get-base-to-fill-rs
   "Fill the ring station with a fresh base from the base station."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
+  (or (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
+      (goal (id ?maintain-id) (class GET-TO-FILL-RS) (mode FORMULATED))
+  )
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -657,7 +661,8 @@
   (wm-fact (key domain fact order-base-color args? ord ?any-order col ?base-color))
   ; Formulate the goal only if it is not already formulated (prevents doubling
   ; the goals due to matching with RS-1 and RS-2)
-  (not (goal (class GET-BASE-TO-FILL-RS) (params robot ?robot
+  (not (goal (class GET-BASE-TO-FILL-RS) (parent ?maintain-id)
+                                         (params robot ?robot
                                           bs ?bs
                                           bs-side ?bs-side
                                           base-color ?
@@ -683,7 +688,9 @@
 (defrule goal-production-create-get-shelf-to-fill-rs
   "Get a capcarrier from a shelf to feed it later."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
+  (or (goal (id ?maintain-id) (class PREPARE-RINGS) (mode FORMULATED))
+      (goal (id ?maintain-id) (class GET-TO-FILL-RS) (mode FORMULATED))
+  )
   (wm-fact (key refbox team-color) (value ?team-color))
   ;Robot CEs
   (wm-fact (key domain fact self args? r ?robot))
@@ -763,6 +770,101 @@
                 )
                 (required-resources ?mps ?wp)
   ))
+)
+
+(defrule goal-production-create-do-for-order
+" For started orders, create a DO-FOR-ORDER nodes children of INTERMEDIATE-STEP
+"
+  (declare (salience  ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (class PRODUCTION-MAINTAIN) (id ?maintain-id) (mode SELECTED))
+  (goal (id ?production-id) (class INTERMEDEATE-STEPS) (mode FORMULATED))
+  (wm-fact (key order meta wp-for-order args? wp ?order-wp ord ?order))
+  (not (goal (class DO-FOR-ORDER) (params ord ?order)))
+  =>
+  (printout t "Goal " DO-FOR-ORDER " formulated for "  ?order crlf)
+  (assert (goal (id (sym-cat DO-FOR-ORDER- (gensym*) ))
+                (class DO-FOR-ORDER) (sub-type RUN-ONE-OF-SUBGOALS)
+                (params ord ?order)
+                (priority ?*PRIORITY-DO-FOR-ORDER*)
+                (parent ?production-id)
+  ))
+)
+
+
+(defrule goal-production-create-fill-rs-for-order
+  "Fill RS for a started order."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?production-id) (class DO-FOR-ORDER) (params ord ?order) (mode FORMULATED))
+  (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?mps t RS))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  ;Not holding an importent WP
+  (not (and (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+            (or (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ~RING_NONE))
+                (wm-fact (key doamin fact wp-cap-color args? wp ?wp col ~CAP_NONE))
+  )))
+  ;Next Ring Needs Payment
+  (wm-fact (key order meta wp-for-order args? wp ?order-wp ord ?order))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&:(neq ?complexity C0)))
+ ; (and (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color))
+ ;      (wm-fact (key domain fact wp-ring1-color args? wp ?order-wp col RING_NONE)))
+   (or (and (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color))
+           (wm-fact (key domain fact wp-ring1-color args? wp ?order-wp col RING_NONE))
+      )
+      (and (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring-color))
+           (wm-fact (key domain fact wp-ring1-color args? wp ?order-wp col ~RING_NONE))
+           (wm-fact (key domain fact wp-ring2-color args? wp ?order-wp col RING_NONE))
+      )
+      (and (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring-color))
+           (wm-fact (key domain fact wp-ring1-color args? wp ?order-wp col ~RING_NONE))
+           (wm-fact (key domain fact wp-ring2-color args? wp ?order-wp col ~RING_NONE))
+           (wm-fact (key domain fact wp-ring3-color args? wp ?order-wp col RING_NONE))
+      )
+  )
+
+  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before&ZERO|ONE|TWO))
+  (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
+  ;The MPS can mount a ring which needs more bases than currently available.
+  (wm-fact (key domain fact rs-ring-spec args? m ?mps r ?ring-color rn ?ring-num&:(neq ?rs-before ?ring-num)))
+  (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-diff))
+  (not (goal (class PREPARE-RINGS-FOR-ORDER) (parent ?production-id)))
+  =>
+  (printout t "Goal " PREPARE-RINGS-FOR-ORDER " formulated for started order " ?order crlf)
+  (bind ?prepare-id (sym-cat PREPARE-RINGS-FOR-ORDER- (gensym*)))
+  (assert (goal (id ?prepare-id)
+                (class PREPARE-RINGS-FOR-ORDER)
+                (priority ?*PRIORITY-PREFILL-RS*)
+                (parent ?production-id)
+                (sub-type RUN-ALL-OF-SUBGOALS)
+                (params rs ?mps)
+                (required-resources (sym-cat ?mps -FILL))))
+
+    ;Get base from somewhere if not already holding
+    (if (not (any-factp ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ domain fact holding args? r ?robot))))
+        then
+        (assert (goal (id (sym-cat GET-TO-FILL-RS- (gensym*)))
+                      (class GET-TO-FILL-RS)
+                      (parent ?prepare-id)
+                      (params robot ?robot mps ?mps)
+                      (priority ?*PRIORITY-GET-TO-FILL-RS*)
+                      (sub-type RUN-ONE-OF-SUBGOALS)))
+        else
+        ;Perform the filling with some held workpiece
+        (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ domain fact holding args? r ?robot))
+                     (bind ?wp (wm-key-arg ?wm:key wp))
+                     (assert (goal (id (sym-cat FILL-RS- (gensym*)))
+                             (class FILL-RS) (sub-type SIMPLE)
+                             (priority ?*PRIORITY-PREFILL-RS*)
+                             (parent ?prepare-id)
+                             (params robot ?robot
+                                     mps ?mps
+                                     wp ?wp
+                                     rs-before ?rs-before
+                                     rs-after ?rs-after)
+                              (required-resources ?mps ?wp)))
+        )
+    )
 )
 
 
