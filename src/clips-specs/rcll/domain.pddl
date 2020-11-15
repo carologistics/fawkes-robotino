@@ -573,25 +573,6 @@
     )
   )
 
-  (:action ss-store-wp
-    :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
-    :precondition (and
-      (mps-type ?m SS)
-      (or (mps-state ?m PROCESSING) (mps-state ?m IDLE))
-      (wp-at ?wp ?m INPUT)
-      (ss-prepared-for ?m STORE ?wp ?shelf ?slot)
-      (mps-side-free ?m OUTPUT)
-      (not (mps-side-free ?m INPUT))
-      (ss-shelf-slot-free ?m ?shelf ?slot))
-    :effect (and
-      (not (wp-at ?wp ?m INPUT))
-      (not (ss-prepared-for ?m STORE ?wp ?shelf ?slot))
-      (not (ss-shelf-slot-free ?m ?shelf ?slot))
-      (mps-side-free ?m INPUT)
-      (ss-stored-wp ?m ?wp ?shelf ?slot)
-    )
-  )
-
   (:action prepare-ss-to-retrieve
     :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
     :precondition (and (mps-type ?m SS) (mps-state ?m IDLE)
@@ -665,6 +646,25 @@
                 (ss-shelf-slot-free ?m ?shelf ?slot)
                 (not (mps-side-free ?m OUTPUT))
                 (not (ss-stored-wp ?m ?wp ?shelf ?slot)))
+  )
+
+  (:action ss-store-wp
+    :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
+    :precondition (and
+      (mps-type ?m SS)
+      (or (mps-state ?m PROCESSING) (mps-state ?m IDLE))
+      (wp-at ?wp ?m INPUT)
+      (ss-prepared-for ?m STORE ?wp ?shelf ?slot)
+      (mps-side-free ?m OUTPUT)
+      (not (mps-side-free ?m INPUT))
+      (ss-shelf-slot-free ?m ?shelf ?slot))
+    :effect (and
+      (not (wp-at ?wp ?m INPUT))
+      (not (ss-prepared-for ?m STORE ?wp ?shelf ?slot))
+      (not (ss-shelf-slot-free ?m ?shelf ?slot))
+      (mps-side-free ?m INPUT)
+      (ss-stored-wp ?m ?wp ?shelf ?slot)
+    )
   )
 
 ; Add condition to prevent wp from being associated with multiple orders?
