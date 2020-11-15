@@ -65,7 +65,7 @@
 		C0 C1 C2 C3 - order-complexity-value
 		LEFT MIDDLE RIGHT - shelf-spot
 		NA ZERO ONE TWO THREE - ring-num
-		ZERO ONE TWO THREE FOUR - ss-shelf
+		ZERO ONE TWO THREE FOUR FIVE - ss-shelf
 		ZERO ONE TWO THREE FOUR FIVE SIX SEVEN - ss-slot
 	)
 
