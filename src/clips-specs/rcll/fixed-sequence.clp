@@ -45,7 +45,37 @@
   )
   (modify ?g (mode EXPANDED))
 )
-
+(defrule goal-expander-ss-assign-wp-to-order
+  ?p <- (goal (mode DISPATCHED) (id ?parent-id))
+  ?g <- (goal (id ?goal-id) (class SS-ASSIGN-WP) (mode SELECTED)
+              (parent ?parent-id)
+              (params robot ?robot mps ?ss old-wp ?old-wp wp ?wp order ?order
+                      shelf ?shelf slot ?slot
+                      base-col ?base-col ring1-col ?ring1-col
+                      ring2-col ?ring2-col ring3-col ?ring3-col
+                      cap-col ?cap-col))
+=>
+  (assert
+    (plan (id SS-ASSIGN-WP-PLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id SS-ASSIGN-WP-PLAN) (goal-id ?goal-id)
+                                (action-name lock)
+                                (param-values ?ss))
+    (plan-action (id 2) (plan-id SS-ASSIGN-WP-PLAN) (goal-id ?goal-id)
+                 (action-name prepare-ss-to-assign-wp)
+                 (param-names m r old-wp wp shelf slot base-col ring1-col
+                                ring2-col ring3-col cap-col)
+                 (param-values ?ss ?robot ?old-wp ?wp ?shelf ?slot ?base-col
+                               ?ring1-col ?ring2-col ?ring3-col ?cap-col))
+    (plan-action (id 3) (plan-id SS-ASSIGN-WP-PLAN) (goal-id ?goal-id)
+                                (action-name unlock)
+                                (param-values ?ss))
+    (plan-action (id 4) (plan-id SS-ASSIGN-WP-PLAN) (goal-id ?goal-id)
+                                (action-name assign-wp-to-order)
+                                (param-values ?order ?wp ?base-col ?ring1-col
+                                              ?ring2-col ?ring3-col ?cap-col))
+  )
+  (modify ?g (mode EXPANDED))
+)
 
 (defrule goal-expander-store-wp
   ?p <- (goal (mode DISPATCHED) (id ?parent-id))
@@ -997,14 +1027,14 @@
   (assert
     (plan (id WAIT-FOR-MPS-PROCESS-PLAN) (goal-id ?goal-id))
   )
-  (if (eq ?pos ?mps-other) then 
+  (if (eq ?pos ?mps-other) then
     (assert
       (plan-action (id 1) (plan-id WAIT-FOR-MPS-PROCESS-PLAN) (goal-id ?goal-id)
                         (action-name wait)
                         (param-values ?robot ?pos))
     )
   else
-    (assert 
+    (assert
       (plan-action (id 1) (plan-id WAIT-FOR-MPS-PROCESS-PLAN) (goal-id ?goal-id)
                         (action-name go-wait)
                         (param-values ?robot ?mps-other ?side-other ?pos))

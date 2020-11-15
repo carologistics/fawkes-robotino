@@ -580,7 +580,6 @@
 ;)
 
 
-
 (defrule production-strategy-prevent-c2-c3-mid-game
   (wm-fact (key config rcll block-late-c2-c3) (value TRUE))
   (wm-fact (key refbox game-time)

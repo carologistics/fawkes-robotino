@@ -57,14 +57,15 @@ enum LightState {
 enum SSOp {
   STORE   = 1;
   RETRIEVE = 2;
+  CHANGE_INFO = 3;
 }
 
-message SSSlot {
-  // Ordering is a right hand coordinate system, starting at the left bottom front corner
-  required uint32 x = 1; // [0-5] height; the shelfs
-  required uint32 y = 2; // [0-4] width;  the place on the shelf
-  required uint32 z = 3; // [0-1] depth;  the front or back row of the shelf
-}
+// message SSSlot {
+//   // Ordering is a right hand coordinate system, starting at the left bottom front corner
+//   required uint32 x = 1; // [0-5] height; the shelfs
+//   required uint32 y = 2; // [0-4] width;  the place on the shelf
+//   required uint32 z = 3; // [0-1] depth;  the front or back row of the shelf
+// }
 
 enum CSOp {
   RETRIEVE_CAP = 1;

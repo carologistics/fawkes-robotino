@@ -34,7 +34,7 @@
     That means, the truth value of these predicates can be changed not directly but by some external trigger
   "
   (domain-loaded)
-  ?p <- (domain-predicate (name mps-state|location-locked) (sensed FALSE))
+  ?p <- (domain-predicate (name mps-state|location-locked|ss-stored-wp|ss-shelf-slot-free|ss-new-wp-at) (sensed FALSE))
 =>
   (modify ?p (sensed TRUE))
 )
@@ -155,6 +155,9 @@
     (domain-fact (name rs-inc) (param-values TWO THREE))
     (domain-fact (name cs-color) (param-values ?cs1 CAP_GREY))
     (domain-fact (name cs-color) (param-values ?cs2 CAP_BLACK))
+    (domain-fact (name bs-color) (param-values ?bs BASE_BLACK))
+    (domain-fact (name bs-color) (param-values ?bs BASE_SILVER))
+    (domain-fact (name bs-color) (param-values ?bs BASE_RED))
     (domain-fact (name tag-matching) (param-values C-BS INPUT CYAN 65))
     (domain-fact (name tag-matching) (param-values C-CS1 INPUT CYAN 1))
     (domain-fact (name tag-matching) (param-values C-CS2 INPUT CYAN 17))
@@ -258,14 +261,15 @@
 	(domain-load-local-facts ?self ?team-color)
   (assert
     (domain-object (name SPAWNING-MASTER) (type master-token))
+    (domain-object (name UNKNOWN-WP) (type workpiece))
     (domain-object (name PRODUCE-EXCLUSIVE-COMPLEXITY) (type token))
 
-    (domain-fact (name wp-base-color) (param-values WP1 BASE_NONE))
-    (domain-fact (name wp-cap-color) (param-values WP1 CAP_NONE))
-    (domain-fact (name wp-ring1-color) (param-values WP1 RING_NONE))
-    (domain-fact (name wp-ring2-color) (param-values WP1 RING_NONE))
-    (domain-fact (name wp-ring3-color) (param-values WP1 RING_NONE))
-    (domain-fact (name wp-unused) (param-values WP1))
+    (domain-fact (name wp-base-color) (param-values UNKNOWN-WP BASE_NONE))
+    (domain-fact (name wp-cap-color) (param-values UNKNOWN-WP CAP_NONE))
+    (domain-fact (name wp-ring1-color) (param-values UNKNOWN-WP RING_NONE))
+    (domain-fact (name wp-ring2-color) (param-values UNKNOWN-WP RING_NONE))
+    (domain-fact (name wp-ring3-color) (param-values UNKNOWN-WP RING_NONE))
+    (domain-fact (name wp-unused) (param-values UNKNOWN-WP))
 
     (domain-fact (name cs-can-perform) (param-values ?cs1 RETRIEVE_CAP))
     (domain-fact (name cs-can-perform) (param-values ?cs2 RETRIEVE_CAP))
@@ -344,6 +348,14 @@
     (domain-fact (name ss-shelf-slot-free) (param-values ?ss FOUR FIVE))
     (domain-fact (name ss-shelf-slot-free) (param-values ?ss FOUR SIX))
     (domain-fact (name ss-shelf-slot-free) (param-values ?ss FOUR SEVEN))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FIVE ZERO))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FIVE ONE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FIVE TWO))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FIVE THREE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FIVE FOUR))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FIVE FIVE))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FIVE SIX))
+    (domain-fact (name ss-shelf-slot-free) (param-values ?ss FIVE SEVEN))
   )
 
   (assert (domain-facts-loaded))

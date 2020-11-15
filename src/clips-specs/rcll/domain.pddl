@@ -61,7 +61,7 @@
 		GATE-1 GATE-2 GATE-3 - ds-gate
 		RING_NONE RING_BLUE RING_GREEN RING_ORANGE RING_YELLOW - ring-color
 		RETRIEVE_CAP MOUNT_CAP - cs-operation
-		RETRIEVE STORE - ss-operation
+		RETRIEVE STORE UPDATE - ss-operation
 		C0 C1 C2 C3 - order-complexity-value
 		LEFT MIDDLE RIGHT - shelf-spot
 		NA ZERO ONE TWO THREE - ring-num
@@ -82,6 +82,7 @@
 		(mps-side-free ?m - mps ?side - mps-side)
 		(bs-prepared-color ?m - mps ?col - base-color)
 		(bs-prepared-side ?m - mps ?side - mps-side)
+		(bs-color ?m - mps ?col - base-color)
 		(cs-can-perform ?m - mps ?op - cs-operation)
 		(cs-prepared-for ?m - mps ?op - cs-operation)
 		(cs-buffered ?m - mps ?col - cap-color)
@@ -119,6 +120,10 @@
     (spot-free ?m - mps ?spot - shelf-spot)
     (ss-stored-wp ?m  - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
     (ss-shelf-slot-free ?m  - mps ?shelf - ss-shelf ?slot - ss-slot)
+    (ss-new-wp-at ?m  - mps ?wp - workpiece ?shelf - ss-shelf
+                        ?slot - ss-slot ?base-col - base-color
+                        ?ring1-col - ring-color ?ring2-col - ring-color
+                        ?ring3-col - ring-color ?cap-col - cap-color)
     (locked ?name - object)
     (location-locked ?m - mps ?s - mps-side)
 	)
@@ -590,28 +595,100 @@
   )
   (:action prepare-ss-to-retrieve
     :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
-    :precondition (and (mps-type ?m SS) (mps-state ?m IDLE) (ss-stored-wp ?m ?wp ?shelf ?slot))
+    :precondition (and (mps-type ?m SS) (mps-state ?m IDLE)
+                       (ss-stored-wp ?m ?wp ?shelf ?slot))
     :effect (and (not (mps-state ?m IDLE)) (mps-state ?m PREPARED)
                  (ss-prepared-for ?m RETRIEVE ?wp ?shelf ?slot))
   )
   (:action prepare-ss-to-store
     :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
-    :precondition (and (mps-type ?m SS) (mps-state ?m IDLE) (ss-shelf-slot-free ?m ?shelf ?slot))
+    :precondition (and (mps-type ?m SS) (mps-state ?m IDLE)
+                       (ss-shelf-slot-free ?m ?shelf ?slot))
     :effect (and (not (mps-state ?m IDLE)) (mps-state ?m PREPARED)
                  (ss-prepared-for ?m STORE ?wp ?shelf ?slot))
   )
+
+  (:action prepare-ss-to-assign-wp
+    :parameters (?m - mps ?r - robot ?old-wp - workpiece ?wp - workpiece
+                 ?shelf - ss-shelf ?slot - ss-slot
+                 ?base-col - base-color ?ring1-col - ring-color
+                 ?ring2-col - ring-color ?ring3-col - ring-color
+                 ?cap-col - cap-color)
+    :precondition (and
+      (mps-type ?m SS)
+      (ss-stored-wp ?m ?old-wp ?shelf ?slot)
+      (wp-spawned-for ?wp ?r)
+      (wp-unused ?wp)
+      (wp-base-color ?wp BASE_NONE)
+      (wp-ring1-color ?wp RING_NONE)
+      (wp-ring2-color ?wp RING_NONE)
+      (wp-ring3-color ?wp RING_NONE)
+      (wp-cap-color ?wp CAP_NONE)
+      (ss-new-wp-at ?m ?old-wp ?shelf ?slot ?base-col ?ring1-col
+                                ?ring2-col ?ring3-col ?cap-col))
+    :effect (and
+            (not (ss-stored-wp ?m ?old-wp ?shelf ?slot))
+            (ss-stored-wp ?m ?wp ?shelf ?slot)
+            (not (wp-spawned-for ?wp ?r))
+            (not (wp-base-color ?wp BASE_NONE))
+            (not (wp-ring1-color ?wp RING_NONE))
+            (not (wp-ring2-color ?wp RING_NONE))
+            (not (wp-ring3-color ?wp RING_NONE))
+            (not (wp-cap-color ?wp CAP_NONE))
+            (wp-base-color ?wp ?base-col)
+            (wp-ring1-color ?wp ?ring1-col)
+            (wp-ring2-color ?wp ?ring2-col)
+            (wp-ring3-color ?wp ?ring3-col)
+            (wp-cap-color ?wp ?cap-col)
+            (wp-usable ?wp)
+            (not (wp-unused ?wp))
+            (wp-unused ?old-wp)
+            (not (wp-usable ?old-wp))
+            (not (ss-new-wp-at ?m ?old-wp ?shelf ?slot ?base-col
+                                           ?ring1-col ?ring2-col ?ring3-col
+                                           ?cap-col)))
+  )
+
   (:action ss-retrieve-wp
-   :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
-   :precondition (and (mps-type ?m SS) (mps-state ?m READY-AT-OUTPUT)
-                      (not (ss-shelf-slot-free ?m ?shelf ?slot))
+   :parameters (?m - mps ?old-wp - workpiece ?wp - workpiece
+                ?shelf - ss-shelf ?slot - ss-slot)
+   :precondition (and (mps-type ?m SS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
                       (ss-prepared-for ?m RETRIEVE ?wp ?shelf ?slot)
                       (mps-side-free ?m INPUT)
                       (mps-side-free ?m OUTPUT)
+                      (not (ss-shelf-slot-free ?m ?shelf ?slot))
                       (ss-stored-wp ?m ?wp ?shelf ?slot))
    :effect (and (wp-at ?wp ?m OUTPUT) (not (mps-side-free ?m OUTPUT))
                 (not (ss-prepared-for ?m RETRIEVE ?wp ?shelf ?slot))
                 (ss-shelf-slot-free ?m ?shelf ?slot)
                 (not (mps-side-free ?m OUTPUT))
                 (not (ss-stored-wp ?m ?wp ?shelf ?slot)))
+  )
+
+; Add condition for not assigning wp-for-order multiple times
+  (:action assign-wp-to-order
+    :parameters (?ord - order ?wp - workpiece ?base-col - base-color
+                 ?r1-col - ring-color ?r2-col - ring-color ?r3-col - ring-color
+                 ?cap-col - cap-color)
+    :precondition (and
+                       (not (wp-unused ?wp))
+                       (wp-usable ?wp)
+                       (not (wp-for-order ?wp ?ord))
+                       (wp-base-color ?wp ?base-col)
+                       (wp-ring1-color ?wp ?r1-col)
+                       (wp-ring2-color ?wp ?r2-col)
+                       (wp-ring3-color ?wp ?r3-col)
+                       (or (order-base-color ?ord ?base-col)
+                           (wp-base-color ?wp BASE_NONE))
+                       (or (order-ring1-color ?ord ?r1-col)
+                           (wp-ring1-color ?wp RING_NONE))
+                       (or (order-ring2-color ?ord ?r2-col)
+                           (wp-ring2-color ?wp RING_NONE))
+                       (or (order-ring3-color ?ord ?r3-col)
+                           (wp-ring3-color ?wp RING_NONE))
+                       (or (order-cap-color ?ord ?cap-col)
+                           (wp-cap-color ?wp CAP_NONE))
+                  )
+    :effect (wp-for-order ?wp ?ord)
   )
 )
