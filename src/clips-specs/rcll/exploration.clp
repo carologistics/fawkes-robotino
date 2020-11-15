@@ -392,7 +392,7 @@
 
 
 (defrule exp-exploration-ends-cleanup
-" As soon as the game phase switches to production, set the exploration goal to finished 
+" As soon as the game phase switches to production, set the exploration goal to finished
   and reset the velocity
 
 "

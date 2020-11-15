@@ -219,7 +219,7 @@
 	(:action rs-mount-ring1
 		:parameters (?m - mps ?wp - workpiece ?col - ring-color ?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
 		:precondition (and (mps-type ?m RS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT)) (locked ?m)
-										(wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) 
+										(wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT))
                     (mps-side-free ?m OUTPUT)
 										(wp-usable ?wp)
 										(wp-ring1-color ?wp RING_NONE)
@@ -282,7 +282,7 @@
 			 				?ring-pos - ring-num ?col1 - ring-color ?col2 - ring-color ?col3 - ring-color
 							?r-req - ring-num)
 		:precondition (self ?r)
-		:effect (self ?r)	
+		:effect (self ?r)
 	)
 
 	; The following is the generic move version.
