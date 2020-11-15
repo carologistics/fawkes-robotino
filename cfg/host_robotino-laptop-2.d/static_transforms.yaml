@@ -1,0 +1,11 @@
+%YAML 1.2
+%TAG ! tag:fawkesrobotics.org,cfg/
+---
+plugins/static-transforms:
+  transforms:
+    gripper:
+      frame: !frame gripper_z_dyn
+      child_frame: !frame gripper
+      trans_x: 0.152
+      trans_y: 0.0
+      trans_z: -0.057
