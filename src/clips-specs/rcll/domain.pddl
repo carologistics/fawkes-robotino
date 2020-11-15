@@ -576,7 +576,6 @@
     :parameters (?m - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
     :precondition (and
       (mps-type ?m SS)
-      ; TODO: is this the correct side
       (wp-at ?wp ?m INPUT)
       (ss-prepared-for ?m STORE ?wp ?shelf ?slot)
       (mps-side-free ?m OUTPUT)
