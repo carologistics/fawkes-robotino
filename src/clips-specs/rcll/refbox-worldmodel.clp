@@ -182,6 +182,9 @@
                                            wp)))
              then
               (retract ?pending-update)
+              (retract ?our-is-filled)
+              (assert (wm-fact (key domain fact ss-stored-wp
+                                args? m ?ss wp ?wp shelf ?shelf slot ?slot)))
             )
           )
         )
