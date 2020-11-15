@@ -121,9 +121,9 @@
     (ss-stored-wp ?m  - mps ?wp - workpiece ?shelf - ss-shelf ?slot - ss-slot)
     (ss-shelf-slot-free ?m  - mps ?shelf - ss-shelf ?slot - ss-slot)
     (ss-new-wp-at ?m  - mps ?wp - workpiece ?shelf - ss-shelf
-                        ?slot - ss-slot ?base-col - base-color
-                        ?ring1-col - ring-color ?ring2-col - ring-color
-                        ?ring3-col - ring-color ?cap-col - cap-color)
+                  ?slot - ss-slot ?base-col - base-color
+                  ?ring1-col - ring-color ?ring2-col - ring-color
+                  ?ring3-col - ring-color ?cap-col - cap-color)
     (locked ?name - object)
     (location-locked ?m - mps ?s - mps-side)
 	)
@@ -623,7 +623,7 @@
       (wp-ring3-color ?wp RING_NONE)
       (wp-cap-color ?wp CAP_NONE)
       (ss-new-wp-at ?m ?old-wp ?shelf ?slot ?base-col ?ring1-col
-                                ?ring2-col ?ring3-col ?cap-col))
+                    ?ring2-col ?ring3-col ?cap-col))
     :effect (and
             (not (ss-stored-wp ?m ?old-wp ?shelf ?slot))
             (ss-stored-wp ?m ?wp ?shelf ?slot)
@@ -643,8 +643,8 @@
             (wp-unused ?old-wp)
             (not (wp-usable ?old-wp))
             (not (ss-new-wp-at ?m ?old-wp ?shelf ?slot ?base-col
-                                           ?ring1-col ?ring2-col ?ring3-col
-                                           ?cap-col)))
+                               ?ring1-col ?ring2-col ?ring3-col
+                               ?cap-col)))
   )
 
   (:action ss-retrieve-wp
