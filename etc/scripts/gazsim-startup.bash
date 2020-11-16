@@ -55,6 +55,7 @@ KEEP=
 GDB=
 SKIP_EXPLORATION=
 GAZEBO_WORLD=$GAZEBO_WORLD_PATH
+GAZEBO_PLUGINS=$GAZEBO_PLUGIN_PATH
 
 OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvi:tw:" -l "ros,ros-launch:" -- "$@")
 if [ $? != 0 ]
@@ -162,14 +163,19 @@ case $COMMAND in
 	     echo "Error: \$GAZEBO_WORLD_PATH is not set. Please set it in your .bashrc"
 	     exit 1
 	fi
+	if  [[ -z $GAZEBO_PLUGIN_PATH ]]
+	then
+	     echo "Error: \$GAZEBO_PLUGIN_PATH is not set. Please set it in your .bashrc"
+	     exit 1
+	fi
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LC_ALL="C"
-	( gzserver $REPLAY $GAZEBO_WORLD_PATH & ); sleep 10s; gzclient
+	( gzserver $REPLAY -s $GAZEBO_PLUGINS $GAZEBO_WORLD & ); sleep 10s; gzclient
 	;;
     gzserver ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LC_ALL="C"
-	gzserver $REPLAY $GAZEBO_WORLD $@
+        gzserver $REPLAY -s $GAZEBO_PLUGINS $GAZEBO_WORLD $@
 	;;
     gzclient ) 
 	# change Language (in german there is an error that gazebo can not use a number with comma)
