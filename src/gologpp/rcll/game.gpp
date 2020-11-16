@@ -6,6 +6,8 @@ symbol domain CapColor = { CAP_BLACK, CAP_GREY }
 symbol domain TeamColor = { CYAN, MAGENTA }
 symbol domain Complexity = { C0, C1, C2, C3 }
 symbol domain Robot = { Robot1, Robot2, Robot3 }
+symbol domain Machine = { CS1, CS2, RS1, RS2, BS, DS, SS }
+symbol domain MachineSide = { output, input }
 
 compound GameTime {
 	number sec,
@@ -42,6 +44,7 @@ effect:
 	game_phase() = phase;
 	game_time().sec = t_sec;
 	game_time().nsec = t_nsec;
+silent: true
 }
 
 
@@ -102,6 +105,7 @@ effect:
 	machine_pose_ori(name) = pose[2];
 	machine_zone(name) = zone;
 	machine_rotation(name) = rotation;
+silent: true
 }
 
 
@@ -125,8 +129,26 @@ mapping:
 }
 
 
-procedure connect()
+procedure connect_refbox()
 {
 	create_public_peer();
 	create_private_peer();
 }
+
+number function tag_id(TeamColor team, Machine machine, MachineSide side);
+
+number function tag_id(TeamColor team, Machine machine, MachineSide side) =
+	if (team == CYAN) (
+		if (side == input) (
+			if (machine == CS1)
+				1
+			else if (machine == CS2)
+				17
+			else
+				null
+		) else
+			null
+	)
+	else
+		null
+				

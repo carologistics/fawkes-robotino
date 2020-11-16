@@ -1,5 +1,4 @@
 #include "robotino_platform.gpp"
-#include "game.gpp"
 
 number function zero() = 0
 
@@ -8,33 +7,30 @@ initially: () = null;
 }
 
 
-action goto_place(string navpoint) {
-mapping:
-	"goto_place" {
-		place = navpoint
+string function machine_navpoint(Machine m, MachineSide s) =
+	(
+		if (team_color() == CYAN) "C"
+		else "M"
+	) + "-" + to_string(m)
+	+ (
+		if (s == input) "-I"
+		else "-O"
+	)
+
+
+procedure process_product(Machine machine) {
+	solve(10, zero()) {
+		goto_place(machine_navpoint(machine, input));
+		mps_align(machine, input);
+		conveyor_align(machine, input);
+		product_put();
+		goto_place(machine_navpoint(DS, input));
 	}
 }
 
-
-procedure product_pick(string machine) {
-	goto_place(machine + "-O");
-	solve(10, zero()){
-		choose {
-			need_alignment();
-			noop();
-		}
-	}
-}
-
-Pose fluent bla() {
-initially: () = null;
-}
 
 procedure main() {
-	bla() = fawkes_transform_pose(pose_origin("base_link"), "map");
-	log_info(
-		to_string(bla().trans.x)
-		+ ", " + to_string(bla().trans.y)
-	);
-	goto_place("C-CS1-O");
+	connect_refbox();
+	test(game_phase() == PRODUCTION & game_state() == RUNNING);
+	process_product(CS1);
 }

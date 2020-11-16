@@ -1,72 +1,95 @@
+#include "game.gpp"
 #include "fawkes.gpp"
 
-Pose fluent pose(string frame) {
-initially: (frame) = null;
+TeamColor fluent team_color() {
+initially: () = CYAN;
 }
 
-
-Quaternion function quaternion(number roll, number pitch, number yaw) =
-	fawkes_rpy_to_quaternion(roll, pitch, yaw)
-
-
-Pose function pose_origin(string frame) = Pose {
-	trans = Vector3 { x = 0, y = 0, z = 0 },
-	rot = quaternion(0, 0, 0),
-	frame = frame
-}
-
-
-Pose function grip_offset() = Pose {
-	frame = "conveyor_pose",
-	rot = quaternion(0, 0, 0),
-	trans = Vector3 {
-		x = 0.013,
-		y = 0,
-		z = 0.033
+action conveyor_align(Machine machine, MachineSide side) {
+mapping:
+	"conveyor_align" {
+		place = to_string(team_color()) + "-" + to_string(machine),
+		side = to_string(side)
 	}
+duration: [0,6]
 }
 
-Pose function gripper_max() = Pose {
-	frame = "gripper_home",
-	rot = quaternion(0, 0, 0),
-	trans = Vector3 {
-		x = fawkes_config_get_float("/arduino/x_max", 0.114),
-		y = fawkes_config_get_float("/arduino/y_max", 0.075) / 2,
-		z = fawkes_config_get_float("/arduino/z_max", 0.057)
+
+
+action mps_align(Machine machine, MachineSide side) {
+mapping:
+	"mps_align" {
+		tag_id = tag_id(team_color(), machine, side),
+		x = 0.3
 	}
+duration: [1, 20]
 }
 
-Pose function gripping_pose(string frame) =
-	fawkes_transform_pose(grip_offset(), frame)
 
-number function abs(number x) =
-	if (x < 0) -1 * x
-	else x
-
-bool function pose_exceeds(Pose larger, Pose lesser) =
-	abs(larger.trans.x) > abs(lesser.trans.x)
-	| abs(larger.trans.y) > abs(lesser.trans.y)
-	| abs(larger.trans.z) > abs(lesser.trans.z)
+action goto_place(string place) {
+duration: [1, 20]
+}
 
 
-component manipulator_system {
-clocks: clalign
-states: aligned, unaligned, aligning
+action product_put() {
+}
+
+
+component conveyordetection {
+clocks: tfclock
+states:
+	idle, busy, successful(tfclock <= 4), failed
 transitions:
-	aligned -> unaligned,
-	unaligned => aligning resets (clalign),
-	aligning ->(clalign >= 2) aligned
+	idle => busy,
+	busy -> successful resets(tfclock),
+	busy -> failed,
+	failed => busy,
+	failed -> idle,
+	successful => busy,
+	successful -> idle
 }
-
-
 	
 
-action need_alignment() {
-precondition:
-	pose_exceeds(
-		gripping_pose("gripper_home"),
-		gripper_max()
-	)
+component laserlines {
+states:
+	off, on
+transitions:
+	off => on,
+	on => off
 }
 
-action noop() {}
+
+component realsense {
+clocks:
+	bcl
+states:
+	off, boot(bcl <= 4), on
+transitions:
+	off => boot resets(bcl),
+	boot ->(bcl >= 2) on,
+	on => off,
+	error => off
+}
+
+
+constraints {
+	during(goto_place(*)):
+		state(realsense) = off;
+	
+	during(goto_place(*)):
+		state(laserlines) = off;
+		
+	during(mps_align(*,*)) | during(conveyor_align(*,*)):
+		state(realsense) = on;
+
+	during(mps_align(*,*)) | during(conveyor_align(*,*)):
+		state(laserlines) = on;
+	
+	start(conveyor_align(*,*)):
+		state(conveyordetection) = successful;
+		  // no workie? */
+		//state(conveyordetection) = successful;
+	
+}
+
+

@@ -34,6 +34,18 @@ function quaternion_to_yaw(Quaternion q) =
 number
 exog_function fawkes_config_get_float(string path, number default);
 
+Quaternion
+function quaternion(number roll, number pitch, number yaw) =
+	fawkes_rpy_to_quaternion(roll, pitch, yaw)
+
+Pose
+function pose_origin(string frame) = Pose {
+	trans = Vector3 { x = 0, y = 0, z = 0 },
+	rot = quaternion(0, 0, 0),
+	frame = frame
+}
+
+
 
 action log_debug(string msg) {
 mapping:
