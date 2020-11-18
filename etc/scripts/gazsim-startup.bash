@@ -162,16 +162,21 @@ case $COMMAND in
 	     echo "Error: \$GAZEBO_WORLD_PATH is not set. Please set it in your .bashrc"
 	     exit 1
 	fi
+	if  [[ -z $GAZEBO_PLUGIN_PATH ]]
+	then
+	     echo "Error: \$GAZEBO_PLUGIN_PATH is not set. Please set it in your .bashrc"
+	     exit 1
+	fi
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LC_ALL="C"
-	( gzserver $REPLAY $GAZEBO_WORLD_PATH & ); sleep 10s; gzclient
+	( gzserver $REPLAY -s $GAZEBO_PLUGIN_PATH $GAZEBO_WORLD & ); sleep 10s; gzclient
 	;;
-    gzserver ) 
+    gzserver )
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LC_ALL="C"
-	gzserver $REPLAY $GAZEBO_WORLD $@
+        gzserver $REPLAY -s $GAZEBO_PLUGIN_PATH $GAZEBO_WORLD $@
 	;;
-    gzclient ) 
+    gzclient )
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LC_ALL="C"
 	#use optirun if available
