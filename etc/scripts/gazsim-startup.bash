@@ -55,7 +55,6 @@ KEEP=
 GDB=
 SKIP_EXPLORATION=
 GAZEBO_WORLD=$GAZEBO_WORLD_PATH
-GAZEBO_PLUGINS=$GAZEBO_PLUGIN_PATH
 
 OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvi:tw:" -l "ros,ros-launch:" -- "$@")
 if [ $? != 0 ]
@@ -170,14 +169,14 @@ case $COMMAND in
 	fi
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LC_ALL="C"
-	( gzserver $REPLAY -s $GAZEBO_PLUGINS $GAZEBO_WORLD & ); sleep 10s; gzclient
+	( gzserver $REPLAY -s $GAZEBO_PLUGIN_PATH $GAZEBO_WORLD & ); sleep 10s; gzclient
 	;;
-    gzserver ) 
+    gzserver )
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LC_ALL="C"
-        gzserver $REPLAY -s $GAZEBO_PLUGINS $GAZEBO_WORLD $@
+        gzserver $REPLAY -s $GAZEBO_PLUGIN_PATH $GAZEBO_WORLD $@
 	;;
-    gzclient ) 
+    gzclient )
 	# change Language (in german there is an error that gazebo can not use a number with comma)
 	export LC_ALL="C"
 	#use optirun if available
