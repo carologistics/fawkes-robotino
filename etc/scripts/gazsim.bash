@@ -26,7 +26,8 @@ OPTIONS:
                      Calls: roslaunch package file.launch
    --ros-launch      Run launch file for each robot (on their roscore)
    -e arg            Record replay
-   -d                Detailed simulation (e.g. simulated webcam)
+   -d|--debug        Run Fawkes with debug output enabled
+   --detailed        Detailed simulation (e.g. simulated webcam)
    -o                Omitt starting gazebo (necessary when starting
                      different teams)
    -f arg            First Robotino Number (default 1, choose 4 when
@@ -60,6 +61,7 @@ ROS_LAUNCH_MAIN=
 ROS_LAUNCH_ROBOT=
 ROS_LAUNCH_MOVEBASE=
 AGENT=
+DEBUG=
 DETAILED=
 KEEP=
 SHUTDOWN=
@@ -126,7 +128,7 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -193,7 +195,10 @@ while true; do
 	 -e)
 	     REPLAY="-e $OPTARG"
 	     ;;
-	 -d)
+     -d|--debug)
+         DEBUG="--debug"
+         ;;
+	 --detailed)
 	     DETAILED="-d"
 	     ;;
 	 -m)
@@ -386,24 +391,24 @@ if [  $COMMAND  == start ]; then
     #start fawkes for robotinos
     for ((ROBO=$FIRST_ROBOTINO_NUMBER ; ROBO<$(($FIRST_ROBOTINO_NUMBER+$NUM_ROBOTINOS)) ;ROBO++))
     do
-	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x fawkes -p 1132$ROBO -i robotino$ROBO $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $META_PLUGIN $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
 	FAWKES_USED=true
     done
 
     if $START_CENTRAL_AGENT ; then
         if [ $NUM_CYAN -gt 0 ] ; then
 		    ROBO=11
-		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
         fi
         if [ $NUM_MAGENTA -gt 0 ] ; then
 		    ROBO=12
-		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+		    COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 20; $startup_script_location -x fawkes -i robotino$ROBO $KEEP $CONF $GDB -m $CENTRAL_AGENT $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
         fi
     fi
 
     if $START_ASP_PLANER
     then
-	COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x asp -p ${ROS_MASTER_URI##*:} $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
+	COMMANDS+=("bash -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 5; $startup_script_location -x asp -p ${ROS_MASTER_URI##*:} $KEEP $CONF $ROS $ROS_LAUNCH_MAIN $ROS_LAUNCH_ROBOT $GDB $DEBUG $DETAILED -f $FAWKES_BIN $SKIP_EXPLORATION $@\"")
     fi
 
     #start fawkes for communication, llsfrbcomm and eventually statistics
@@ -412,7 +417,7 @@ if [  $COMMAND  == start ]; then
     else
         comm_plugin=comm-no-gazebo
     fi
-	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 0; $startup_script_location -x $comm_plugin $KEEP $SHUTDOWN $@\"")
+	COMMANDS+=("bash -i -c \"export TAB_START_TIME=$(date +%s); $script_path/wait-at-first-start.bash 0; $startup_script_location -x $comm_plugin $DEBUG $KEEP $SHUTDOWN $@\"")
 
     PREFIXED_COMMANDS=("${COMMANDS[@]/#/${SUBTERM_PREFIX}}")
     SUFFIXED_COMMANDS=("${PREFIXED_COMMANDS[@]/%/${SUBTERM_SUFFIX}}")
