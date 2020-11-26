@@ -24,7 +24,8 @@ OPTIONS:
    -s             Keep statistics and shutdown after game
    -i robotino[1|2|3]
                   Robotino instance
-   -d             Detailed simulation (e.g. simulated webcam)
+   -d|--debug     Run Fawkes with debug output
+   --detailed     Detailed simulation (e.g. simulated webcam)
    -a             Start with agent
    -f arg         Path to the fawkes bin folder to use
                   ($FAWKES_DIR/bin by default)
@@ -42,6 +43,7 @@ EOF
 #default values
 COMMAND=
 CONF=gazsim-configurations/default
+DEBUG=
 ROS=-no-ros
 ROS_LAUNCH=
 SHUTDOWN=
@@ -56,7 +58,7 @@ GDB=
 SKIP_EXPLORATION=
 GAZEBO_WORLD=$GAZEBO_WORLD_PATH
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvi:tw:" -l "ros,ros-launch:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvi:tw:" -l "debug,ros,ros-launch:" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -114,7 +116,10 @@ while true; do
 	 -e)
 	     REPLAY=-r\ --record_path\ $OPTARG
 	     ;;
-	 -d)
+   -d|--debug)
+       DEBUG=-d
+       ;;
+	 --detailed)
 	     VISION=,gazsim-meta-robotino-vision-low-level
 	     ;;
 	 -a)
@@ -191,7 +196,7 @@ case $COMMAND in
 	else
 	  robotino_plugins=gazsim-meta-robotino$ROS$VISION$AGENT$SKIP_EXPLORATION
 	fi
-	$GDB $FAWKES_BIN/fawkes ${ROBOTINO:+ -c $CONF/$ROBOTINO.yaml} -p $robotino_plugins $@
+	$GDB $FAWKES_BIN/fawkes ${ROBOTINO:+ -c $CONF/$ROBOTINO.yaml} ${DEBUG} -p $robotino_plugins $@
 	if [ -n "$GDB" ]; then
 		echo Fawkes exited, press return to close shell
 		read
@@ -199,17 +204,17 @@ case $COMMAND in
 	;;
     comm )
 	comm_plugins=gazsim-organization$SHUTDOWN
-	$FAWKES_BIN/fawkes -p $comm_plugins $@
+	$FAWKES_BIN/fawkes ${DEBUG} -p $comm_plugins $@
 	;;
     comm-no-gazebo )
 	comm_plugins=gazsim-comm
-	$FAWKES_BIN/fawkes -p $comm_plugins $@
+	$FAWKES_BIN/fawkes ${DEBUG} -p $comm_plugins $@
 	;;
     asp )
 	ulimit -c unlimited
 	export ROS_MASTER_URI=http://localhost:$PORT
 	robotino_plugins=asp-planner-sim-2016$SKIP_EXPLORATION
-	$GDB $FAWKES_BIN/fawkes -c $CONF/asp-planner.yaml -p $robotino_plugins
+	$GDB $FAWKES_BIN/fawkes -c $CONF/asp-planner.yaml ${DEBUG} -p $robotino_plugins
 	if [ -n "$GDB" ]; then
 		echo Fawkes exited, press return to close shell
 		read
