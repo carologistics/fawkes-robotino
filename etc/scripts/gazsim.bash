@@ -384,8 +384,7 @@ if [  $COMMAND  == start ]; then
 
     # start mongodb central instance
     if $START_MONGODB ; then
-        MONGODB_DBPATH=/tmp/mongodb-27017
-        mkdir -p $MONGODB_DBPATH
+        MONGODB_DBPATH=$(mktemp -d --tmpdir mongodb-27017-XXXXXXXXXXXX)
         COMMANDS+=("bash -i -c \"mongod --port 27017 --dbpath $MONGODB_DBPATH | tee mongodb.log \"")
     fi
     #start fawkes for robotinos
