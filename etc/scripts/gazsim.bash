@@ -46,6 +46,7 @@ OPTIONS:
                       to set the phase explicitly)
                      Typically requires at least --team-cyan.
    --mongodb         Start central mongodb instance
+   --keep-tmpfiles   Do not delete tmp files on exit
    --asp             Run with ASP agent and global planner
 EOF
 }
@@ -64,6 +65,7 @@ AGENT=
 DEBUG=
 DETAILED=
 KEEP=
+KEEP_TMPFILES=
 SHUTDOWN=
 NUM_ROBOTINOS=3
 NUM_CYAN=3
@@ -128,7 +130,7 @@ echo "Using $TERMINAL"
 ROS_MASTER_PORT=${ROS_MASTER_URI##*:}
 ROS_MASTER_PORT=${ROS_MASTER_PORT%%/*}
 
-OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:" -- "$@")
+OPTS=$(getopt -o "hx:c:lrksn:e:dm:aof:p:gvt" -l "debug,ros,ros-launch-main:,ros-launch:,start-game::,team-cyan:,team-magenta:,mongodb,asp,central-agent:,keep-tmpfiles" -- "$@")
 if [ $? != 0 ]
 then
     echo "Failed to parse parameters"
@@ -209,6 +211,9 @@ while true; do
 	     ;;
      --mongodb)
          START_MONGODB=true
+         ;;
+     --keep-tmpfiles)
+         KEEP_TMPFILES=true
          ;;
 	 --central-agent)
 	     CENTRAL_AGENT="$OPTARG"
@@ -340,9 +345,17 @@ if [  $COMMAND  == start ]; then
     # delete old shm files. Only do this for the simulation, not on live bot.
     [[ -f /dev/shm/*fawkes* ]] && rm /dev/shm/*fawkes*
 
-    #construct command to open everything in one terminal window with multiple tabs instead of 10.000 windows
+    # Re-define TMPDIR so we can delete all temporary files afterwards.
+    GAZSIM_TMPDIR=$(mktemp -d --tmpdir gazsim-XXXXXXXXXXXX)
+    TMPDIR="${GAZSIM_TMPDIR}"
+    export TMPDIR
 
+    #construct command to open everything in one terminal window with multiple tabs instead of 10.000 windows
     COMMANDS=()
+
+    if [[ -z "$KEEP_TMPFILES" ]] ; then
+      COMMANDS=("bash -i -c \"trap \\\"sleep 1; rm -rf $GAZSIM_TMPDIR\\\" EXIT; echo \\\"Cleanup on $GAZSIM_TMPDIR: Waiting for shutdown\\\"; while true; do sleep 1; done\"")
+    fi
 
     if $START_GAZEBO
     then
@@ -384,8 +397,7 @@ if [  $COMMAND  == start ]; then
 
     # start mongodb central instance
     if $START_MONGODB ; then
-        MONGODB_DBPATH=/tmp/mongodb-27017
-        mkdir -p $MONGODB_DBPATH
+        MONGODB_DBPATH=$(mktemp -d --tmpdir mongodb-27017-XXXXXXXXXXXX)
         COMMANDS+=("bash -i -c \"mongod --port 27017 --dbpath $MONGODB_DBPATH | tee mongodb.log \"")
     fi
     #start fawkes for robotinos
