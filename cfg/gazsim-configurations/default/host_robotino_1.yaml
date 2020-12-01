@@ -115,9 +115,5 @@ plugins/mongodb:
   instances:
     robot-memory-local:
       port: 27021
-      data-path: /tmp/mongodb-robot-memory-local-1
-      log/path: /tmp/mongodb-robot-memory-local-1.log
     robot-memory-distributed:
       port: 27031
-      data-path: /tmp/mongodb-robot-memory-distributed-1
-      log/path: /tmp/mongodb-robot-memory-distributed-1.log

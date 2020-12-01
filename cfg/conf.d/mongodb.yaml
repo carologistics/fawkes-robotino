@@ -51,10 +51,9 @@ plugins/mongodb:
       enabled: true
       termination-grace-period: 15
       clear-data-on-termination: true
+      use-tmp-directory: true
       port: 27021
-      data-path: /tmp/mongodb-robot-memory-local
       log:
-        path: /tmp/mongodb-robot-memory-local.log
         append: true
       replica-set: robot-memory-local
       oplog-size: 100
@@ -63,10 +62,9 @@ plugins/mongodb:
       enabled: true
       termination-grace-period: 15
       clear-data-on-termination: true
+      use-tmp-directory: true
       port: 27022
-      data-path: /tmp/mongodb-robot-memory-distributed
       log:
-        path: /tmp/mongodb-robot-memory-distributed.log
         append: true
       replica-set: robot-memory-distributed
       oplog-size: 100
