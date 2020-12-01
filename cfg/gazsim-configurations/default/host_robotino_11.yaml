@@ -71,3 +71,6 @@ fawkes/bbsync:
       port: !tcp-port 1921
       reading:
         skiller: SkillerInterface::Skiller
+        navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot1/navgraph-generator
+        navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot1/navgraph-generator-mps
+        navigator: NavigatorInterface::Navigator=/robot1/Navigator
