@@ -248,16 +248,6 @@
 
 	(domain-load-local-facts ?self ?team-color)
   (assert
-    (domain-object (name SPAWNING-MASTER) (type master-token))
-    (domain-object (name PRODUCE-EXCLUSIVE-COMPLEXITY) (type token))
-
-    (domain-fact (name wp-base-color) (param-values WP1 BASE_NONE))
-    (domain-fact (name wp-cap-color) (param-values WP1 CAP_NONE))
-    (domain-fact (name wp-ring1-color) (param-values WP1 RING_NONE))
-    (domain-fact (name wp-ring2-color) (param-values WP1 RING_NONE))
-    (domain-fact (name wp-ring3-color) (param-values WP1 RING_NONE))
-    (domain-fact (name wp-unused) (param-values WP1))
-
     (domain-fact (name cs-can-perform) (param-values ?cs1 RETRIEVE_CAP))
     (domain-fact (name cs-can-perform) (param-values ?cs2 RETRIEVE_CAP))
     (domain-fact (name cs-free) (param-values ?cs1))
@@ -298,19 +288,4 @@
   )
 
   (assert (domain-facts-loaded))
-)
-
-(defrule domain-restore-worldmodel-after-maintenance
-  "Domain facts have not been loaded but the game is already running.
-   Restore the world model from the database."
-  (not (domain-facts-loaded))
-  (wm-fact (key refbox phase) (value EXPLORATION|PRODUCTION))
-  (wm-fact (key config agent name) (value ?robot-name))
- (wm-fact (key refbox team-color) (value ?team-color&~nil))
-
- =>
-  (printout warn "Restoring world model from the database" crlf)
-	(domain-load-local-facts (sym-cat ?robot-name) ?team-color)
-	(wm-robmem-sync-restore)
-	(assert (domain-facts-loaded))
 )
