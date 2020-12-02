@@ -50,6 +50,31 @@
   (return (random 0 1000000000))
 )
 
+(deffunction remote-if-id (?remote ?id)
+  (return (str-cat "/" ?remote "/" ?id))
+)
+(deffunction remote-skiller (?remote)
+  (return (str-cat "/" ?remote "/Skiller"))
+)
+
+(deffunction remote-if (?if ?remote ?id)
+  (return (str-cat ?if "::" (remote-if-id ?remote ?id)))
+)
+
+(deffunction get-remote-interfaces (?if ?id)
+  (bind ?interfaces (create$))
+  (do-for-all-facts ((?robot wm-fact))
+    (wm-key-prefix ?robot:key (create$ central agent robot))
+    (bind ?interfaces (append$ ?interfaces
+                               (remote-if ?if (wm-key-arg ?robot:key r) ?id)))
+  )
+  (return ?interfaces)
+)
+
+(deffunction get-interfaces (?if ?id)
+  (bind ?interfaces (create$ (str-cat ?if "::/" ?id)))
+  (return (append$ ?interfaces (get-remote-interfaces ?if ?id)))
+)
 
 (deffunction get-param-by-arg (?params ?arg)
 	"Extract the argument named in ?arg.
@@ -152,6 +177,8 @@
   "Send all new tags to the navgraph generator"
   (bind ?any-tag-to-add FALSE)
 
+  (bind ?interfaces (get-interfaces "NavGraphWithMPSGeneratorInterface" "navgraph-generator-mps"))
+
   (delayed-do-for-all-facts ((?ft-n wm-fact))
       (wm-key-prefix ?ft-n:key (create$ game found-tag name))
     (bind ?mps (wm-key-arg ?ft-n:key m))
@@ -168,8 +195,9 @@
         (bind ?zone ?wm-fact:value))
 
       (bind ?any-tag-to-add TRUE)
+
       ; report tag position to navgraph generator
-      (foreach ?interface (create$ "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "NavGraphWithMPSGeneratorInterface::/robot1/navgraph-generator-mps")
+      (foreach ?interface ?interfaces
         (bind ?msg (blackboard-create-msg ?interface "UpdateStationByTagMessage"))
         (blackboard-set-msg-field ?msg "name" (str-cat ?mps))
         (blackboard-set-msg-field ?msg "side" ?side)
@@ -190,7 +218,7 @@
     ; )
   )
 
-  (foreach ?interface (create$ "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "NavGraphWithMPSGeneratorInterface::/robot1/navgraph-generator-mps")
+  (foreach ?interface ?interfaces
     (bind ?msg (blackboard-create-msg ?interface "GenerateWaitZonesMessage"))
     (blackboard-send-msg ?msg)
   )
@@ -198,7 +226,7 @@
   (if ?any-tag-to-add
     then
     ; send compute message so we can drive to the output
-    (foreach ?interface (create$ "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "NavGraphWithMPSGeneratorInterface::/robot1/navgraph-generator-mps")
+    (foreach ?interface ?interfaces
       (bind ?msg (blackboard-create-msg ?interface "ComputeMessage"))
       (bind ?compute-msg-id (blackboard-send-msg ?msg))
       (printout t "Sent compute" crlf)
@@ -516,10 +544,9 @@
 )
 
 
-(deffunction navigator-set-speed (?max-velocity ?max-rotation)
+(deffunction navigator-set-speed (?max-velocity ?max-rotation ?robot)
   "Uses the NavigatorInterface to set the max velocity and speed"
-  ; TODO make specific for one robot
-  (bind ?msg (blackboard-create-msg "NavigatorInterface::/robot1/Navigator" "SetMaxVelocityMessage"))
+  (bind ?msg (blackboard-create-msg (remote-if "NavigatorInterface" ?robot "Navigator") "SetMaxVelocityMessage"))
   (blackboard-set-msg-field ?msg "max_velocity" ?max-velocity)
   (blackboard-send-msg ?msg)
   (bind ?msg (blackboard-create-msg "NavigatorInterface::/robot1/Navigator" "SetMaxRotationMessage"))
