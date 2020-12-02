@@ -36,3 +36,31 @@
   =>
   (retract ?i)
 )
+
+(defrule init-worldmodel-set-identity
+  (wm-fact (key config agent name) (value ?name))
+  =>
+  (printout info "Setting /cx/identity to " ?name crlf)
+  (assert (wm-fact (key cx identity) (value ?name)))
+)
+
+(defrule init-wm-sync-flush-locks-during-setup
+  (wm-fact (key refbox phase) (value SETUP))
+  =>
+  (printout warn "Flushing all locks!" crlf)
+  (mutex-flush-locks-async)
+)
+
+(defrule init-wm-flush-done
+  ?t <- (mutex-expire-task (task FLUSH) (state COMPLETED))
+  =>
+  (printout info "Flushing done" crlf)
+  (retract ?t)
+)
+
+(defrule init-wm-flush-failed
+  ?t <- (mutex-expire-task (task FLUSH) (state FAILED))
+  =>
+  (printout error "Flushing failed!" crlf)
+  (retract ?t)
+)
