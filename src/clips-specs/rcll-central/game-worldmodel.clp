@@ -34,10 +34,13 @@
   (wm-fact (key refbox phase) (value  EXPLORATION|PRODUCTION))
   (wm-fact (key refbox state) (value RUNNING))
   ?sf <- (wm-fact (key game state) (value ~RUNNING))
+  (wm-fact (key central agent robot args? r ?robot))
 =>
   (printout warn "***** Enabling motor *****" crlf)
   (modify ?sf (value RUNNING))
-  (bind ?msg (blackboard-create-msg "MotorInterface::Robotino" "SetMotorStateMessage"))
+  (bind ?msg (blackboard-create-msg
+               (remote-if "MotorInterface" ?robot "Robotino")
+               "SetMotorStateMessage"))
   (blackboard-set-msg-field ?msg "motor_state" 0)
   (blackboard-send-msg ?msg)
 )
@@ -48,10 +51,13 @@
   (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION|POST_GAME))
   (wm-fact (key refbox state) (value ?refbox-state&~RUNNING))
   ?sf <- (wm-fact (key game state) (value ?game-state&~PAUSED&~WAIT_START))
+  (wm-fact (key central agent robot args? r ?robot))
 =>
   (printout warn "***** Paused, Disabling motor *****" crlf)
   (modify ?sf (value PAUSED))
-  (bind ?msg (blackboard-create-msg "MotorInterface::Robotino" "SetMotorStateMessage"))
+  (bind ?msg (blackboard-create-msg
+               (remote-if "MotorInterface" ?robot "Robotino")
+               "SetMotorStateMessage"))
   (blackboard-set-msg-field ?msg "motor_state" 1)
   (blackboard-send-msg ?msg)
 
