@@ -24,7 +24,6 @@
 ; expected point gains, time estimates and info about the required production
 ; steps.
 (defglobal
-  ?*DEADLINE-C2-C3-START* = 540
   ?*SALIENCE-PRODUCTION-STRATEGY* = -1
 )
 
@@ -217,7 +216,7 @@
 )
 
 
-(defrule update-time-steps-mount-cap
+(defrule production-strategy-update-time-steps-mount-cap
 " Tracks how long the mount cap step for a given order might take.
   This is influenced by:
    - estimated time to mount the cap
@@ -502,103 +501,4 @@
                                 (order-steps-index ?step)
                                 (order-steps-index ?step)
                                 0)))
-)
-
-
-; ======================== Production Strategy ===============================
-
-
-(defrule production-strategy-keep-rs-side-free
-" Mount ring deadlocks can happen if two different workpieces need a ring
-  from the same ring station, while one of the workpieces already is already at
-  said mps output. In this case, the other workpiece should not be placed on
-  the mps input side.
-"
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (goal (id ?g) (class PROCESS-MPS) (params m ?rs) (mode FINISHED)
-                (outcome COMPLETED))
-  (wm-fact (key domain fact mps-type args? m ?rs t RS))
-  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT))
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key wp meta next-step args? wp ?wp) (value ?ns&RING1|RING2|RING3))
-  (wm-fact (key domain fact ?orc&:(eq ?orc
-                                      (sym-cat order-ring
-                                      (sub-string 5 5 (str-cat ?ns))
-                                     -color))
-            args? ord ?order col ?ring-col))
-  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-col $?))
-=>
-  (assert (wm-fact (key strategy keep-mps-side-free
-                    args? m ?rs side INPUT cause ?wp)))
-)
-
-
-(defrule production-strategy-retract-keep-rs-side-free
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ?strat <- (wm-fact (key strategy keep-mps-side-free
-                      args? m ?rs side INPUT cause ?wp))
-  (wm-fact (key domain fact mps-type args? m ?rs t RS))
-  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
-  (not (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side OUTPUT)))
-=>
-  (retract ?strat)
-)
-
-
-(defrule production-strategy-use-ss-c0
-" Use the stored C0 in the storage station to fulfill an order that matches
-  the base and cap color.
-"
-  (wm-fact (key domain fact ss-stored-wp args? m ?ss wp ?wp))
-  (not (wm-fact (key order meta wp-for-order args? wp ?wp ord ?any-order)))
-  (wm-fact (key config rcll use-ss) (value TRUE))
-  ; Order CEs
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-complexity args? ord ?order com C0))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-  ; WP CEs
-  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
-  (not (wm-fact (key order meta wp-for-order args? wp ?any-wp ord ?order)))
-  ; Refbox CEs
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
-           (value ?qd-us&:(< ?qd-us ?qr)))
-  (wm-fact (key refbox game-time) (values ?curr-time $?))
-  (wm-fact (key refbox order ?order delivery-end)
-           (value ?deadline&:(> ?deadline ?curr-time)))
-=>
-  (assert
-    (wm-fact (key mps-handling prepare prepare-ss ?ss args? m ?ss wp ?wp op RETRIEVE))
-    (wm-fact (key mps-handling process ss-retrieve-c0 ?ss args? m ?ss wp ?wp))
-    (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-  )
-)
-
-
-(defrule production-strategy-prevent-c2-c3-mid-game
-  (wm-fact (key config rcll block-late-c2-c3) (value TRUE))
-  (wm-fact (key refbox game-time)
-           (values ?curr-time&:(> ?curr-time ?*DEADLINE-C2-C3-START*) $?))
-  (not (blocked C2|C3))
-=>
-  (assert (blocked C2)
-          (blocked C3))
-)
-
-
-(defrule production-strategy-allow-c1-on-failed-c2-c3
-  (wm-fact (key refbox game-time)
-           (values ?curr-time&:(> ?curr-time ?*DEADLINE-C2-C3-START*) $?))
-  (not (allowed C1))
-  (not (and (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-            (wm-fact (key domain fact order-complexity
-                      args? ord ?order com C2|C3))
-       ))
-=>
-  (assert (allowed C1))
 )
