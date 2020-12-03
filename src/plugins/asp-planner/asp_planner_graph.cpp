@@ -170,8 +170,7 @@ AspPlannerThread::updateNavgraphDistances(void)
 
 	MutexLocker navgraphLocker(navgraph.objmutex_ptr());
 
-	auto distanceToDuration = [this](const float distance) noexcept
-	{
+	auto distanceToDuration = [this](const float distance) noexcept {
 		constexpr float constantCosts   = 2.16988;
 		constexpr float costPerDistance = 1.55322;
 		return std::min(static_cast<int>(constantCosts + distance * costPerDistance), MaxDriveDuration);
