@@ -90,8 +90,8 @@ private: // methods
 	void reserve_edges(std::string                                                constraint_name,
 	                   std::vector<std::pair<fawkes::NavGraphNode, fawkes::Time>> timed_path);
 	void
-	                                  add_edges_to_edge_constraint(fawkes::NavGraphTimedReservationListEdgeConstraint *edge_constraint,
-	                                                               std::vector<fawkes::NavGraphNode>                   path);
+	add_edges_to_edge_constraint(fawkes::NavGraphTimedReservationListEdgeConstraint *edge_constraint,
+	                             std::vector<fawkes::NavGraphNode>                   path);
 	std::vector<fawkes::NavGraphNode> get_nodes_from_string(std::string path);
 	std::vector<std::string>          get_path_from_interface_as_vector();
 	void                              send_msg();
