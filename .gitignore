@@ -45,3 +45,4 @@
 *.log
 /buildstats.db
 /tests.out.d
+/.check_stamp
