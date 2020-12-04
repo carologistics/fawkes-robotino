@@ -19,6 +19,8 @@
   (not (goal (class PRODUCTION-MAINTAIN)))
   (wm-fact (key refbox phase) (value PRODUCTION))
   (wm-fact (key game state) (value RUNNING))
+  (NavGraphWithMPSGeneratorInterface (final TRUE))
+  (wm-fact (key navgraph waitzone generated))
   =>
   (goal-tree-assert-run-endless PRODUCTION-MAINTAIN 1)
 )
@@ -34,7 +36,7 @@
   (wm-fact (key domain fact self args? r ?robot))
 =>
   ; Create goal - params chosen to be compatible with goal-expander-go-wait in fixed-sequence.clp
-  (assert (goal (id VISITSTATION) (parent ?production-id) (class GO-WAIT) (type ACHIEVE) (sub-type SIMPLE) (params r ?robot point WAIT-C-BS-O)))
+  (assert (goal (id VISITSTATION) (parent ?production-id) (class GO-WAIT) (type ACHIEVE) (sub-type SIMPLE) (params r ?robot point C-BS-O)))
   (assert (already-visited))
   (printout t "Goal " VISITSTATION " formulated" crlf)
 )
