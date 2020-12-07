@@ -48,7 +48,7 @@ plugins/mongodb:
       robot-memory-distributed/hosts:
         - localhost:27031
 
-clips-executive/specs/rcll/parameters/rcll:
+clips-executive/specs/rcll-central/parameters/rcll:
 
   peer-address: 127.0.0.1
   peer-port: 0
