@@ -99,16 +99,19 @@
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (not (goal (class ENTER-FIELD)))
-  (wm-fact (key domain fact self args? r ?robot))
+  (wm-fact (key central agent robot args? r ?robot&robot1))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
   (wm-fact (key refbox state) (value RUNNING))
   (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
+  (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE))
+  (wm-fact (key refbox team-color) (value ?team-color))
   ; (NavGraphGeneratorInterface (final TRUE))
   ; (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
   (assert (goal (id (sym-cat ENTER-FIELD- (gensym*)))
-                (class ENTER-FIELD) (sub-type SIMPLE)))
+                (class ENTER-FIELD) (sub-type SIMPLE)
+                (params r ?robot team-color ?team-color)))
 )
 
 (defrule goal-production-hack-failed-enter-field
