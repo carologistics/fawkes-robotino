@@ -6,7 +6,7 @@
 	(plan (id ?plan-id) (goal-id ?goal-id))
 	(goal (id ?goal-id) (class ?class) (mode DISPATCHED) (verbosity ?verbosity))
 	(or (wm-fact (key game state) (value RUNNING))
-	    (test (not (production-goal ?class)))
+	    (test (eq ?action-name send-beacon))
 	)
 
   (not (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (state PENDING|WAITING|RUNNING|FAILED)))
