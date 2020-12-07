@@ -20,7 +20,7 @@
 
 (defrule blackboard-init-open-robot-pose-interface
   "Open the Pose blackboard interface to get the robot pose."
-  (executive-init)
+  (domain-facts-loaded)
   (ff-feature-loaded blackboard)
   (wm-fact (key central agent robot args? r ?robot))
   =>
@@ -29,7 +29,7 @@
 
 (defrule blackboard-init-open-central-navgraph-interfaces
   "Open the central Navgraph blackboard interfaces."
-  (executive-init)
+  (domain-facts-loaded)
   (ff-feature-loaded blackboard)
   =>
   (blackboard-open "NavGraphWithMPSGeneratorInterface" "/navgraph-generator-mps")
@@ -38,7 +38,7 @@
 
 (defrule blackboard-init-open-robot-navgraph-interfaces
   "Open the robot-specific Navgraph blackboard interfaces."
-  (executive-init)
+  (domain-facts-loaded)
   (ff-feature-loaded blackboard)
   (wm-fact (key central agent robot args? r ?robot))
   =>
@@ -52,7 +52,7 @@
 
 (defrule blackboard-init-open-skiller-interface
   "Open the skiller interface for a remote robot."
-  (executive-init)
+  (domain-facts-loaded)
   (ff-feature-loaded blackboard)
   (ff-feature-loaded skills)
   (wm-fact (key central agent robot args? r ?robot))
@@ -64,7 +64,7 @@
 
 (defrule blackboard-init-motor-interfaces
   "Open the Navgraph blackboard interfaces ."
-  (executive-init)
+  (domain-facts-loaded)
   (ff-feature-loaded blackboard)
   (wm-fact (key central agent robot args? r ?robot))
   =>
@@ -74,7 +74,7 @@
 ; TODO: TagVisionInterface? LaserLineInterfaces
 (defrule blackboard-init-unwatch
   "Unwatch IF related facts and rules."
-  (executive-init)
+  (domain-facts-loaded)
   (ff-feature-loaded blackboard)
   =>
   (unwatch rules blackboard-read)
