@@ -48,9 +48,114 @@ clips-executive:
 
   # Agent name. On startup the clips-agent will try to resolve a file named
   # <agent name>.clp. It must be in the CLIPS path directories.
-  spec: rcll
+  spec: rcll-central
 
   specs:
+    rcll-central:
+      init:
+        stage-1:
+          - name: pddl-parser
+          - name: motor-switch
+          - name: navgraph
+          - name: protobuf
+          - name: tf
+          - name: robmem-wait
+            feature-request: false
+            files: ["BATCH|robmem-wait-init.clp"]
+            wait-for: robmem-initialized
+          - name: robot_memory
+        stage-3:
+          - name: utils
+            file: rcll-central/utils.clp
+          - name: coordination
+            file: coordination-mutex.clp
+          - name: worldmodel
+            files:
+              - wm-robmem-sync.clp
+              - rcll-central/init.clp
+              - rcll-central/blackboard-init.clp
+              - rcll-central/game-worldmodel.clp
+          - name: communication
+            files:
+              - rcll-central/refbox-comm-init.clp
+              - rcll-central/refbox-worldmodel.clp
+          - name: domain
+            file: rcll-central/domain.clp
+          - name: resource-locking
+            file: resource-locks.clp
+          - name: goal-reasoner
+            files:
+              - goals/retry.clp
+              - goals/run-all.clp
+              - goals/run-one.clp
+              - goals/timeout.clp
+              - goals/try-all.clp
+              - goal-tree.clp
+              - rcll-central/goals/run-endless.clp
+              - rcll-central/goals/simple.clp
+              - rcll-central/goal-reasoner.clp
+              - rcll-central/goal-production.clp
+              - rcll-central/production-strategy.clp
+          - name: goal-expander
+            file: rcll-central/fixed-sequence.clp
+          - name: action-selection
+            file: rcll-central/action-selection.clp
+          - name: action-execution
+            files:
+              - skills-actions.clp
+              - rcll-central/noop-actions.clp
+              - rcll-central/refbox-actions.clp
+              - rcll-central/lock-actions.clp
+              - rcll-central/wait-actions.clp
+          - name: execution-monitoring
+            file: rcll-central/execution-monitoring.clp
+          - name: simtest
+            file: rcll-central/simtest.clp
+
+      action-mapping:
+        enter-field: >
+          drive_into_field{team=?(team-color)S,
+                           wait=0.0}
+        explore-zone: explore_zone{zone=?(z)s}
+        move-node: goto{place=?(z)s}
+        move: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        move-wp-get: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        move-wp-put: goto{place="?(to)Y-?(to-side|/OUTPUT/O/|/INPUT/I/)Y"}
+        go-wait: goto{place="?(to)Y"}
+        wp-get-shelf: get_product_from{place=?(m)S, shelf=?(spot)S}
+        wp-put: bring_product_to{place=?(m)S}
+        wp-put-slide-cc: bring_product_to{place=?(m)S, slide="TRUE"}
+        wp-get: >
+          get_product_from{place=?(m)S,
+                           side=?(side|/INPUT/input/|/OUTPUT/output/)s}
+        wp-discard: discard{}
+      parameters:
+        simtest:
+          enabled: false
+          testbed: FULL
+        rcll:
+          peer-address: 172.26.255.255
+          peer-port: 4444
+          cyan-port: 4441
+          magenta-port: 4442
+
+          team-name: Carologistics
+          crypto-key: randomkey
+          cipher: "aes-128-cbc"
+
+      blackboard-preload:
+        - Position3DInterface
+        - NavGraphWithMPSGeneratorInterface
+        - NavGraphGeneratorInterface
+        - NavigatorInterface
+        - AX12GripperInterface
+        - MotorInterface
+        - LaserLineInterface
+        - TagVisionInterface
+        - ZoneInterface
+        - RobotinoSensorInterface
+        - RobotinoLightInterface
+
     test:
       domain: test-scenario/test-domain.clp
       goal-reasoner: test-scenario/goal-reasoner.clp
