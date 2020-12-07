@@ -60,21 +60,35 @@ clips-executive/specs/rcll/parameters/rcll:
   magenta-recv-port: 4461
   cyan-send-port: 4471
   magenta-send-port: 4481
-  remote-robots:
-    robot1/enabled: true
-    robot2/enabled: true
-    robot3/enabled: true
 
 fawkes/bbsync:
   check_interval: 1000
   peers:
     robotino-base/active: false
     robot1:
-      active: true
+      #active: true (set via the gazsim startup)
       host: localhost
       port: !tcp-port 1921
       reading:
-        skiller: SkillerInterface::Skiller
+        skiller: SkillerInterface::Skiller=/robot1/Skiller
         navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot1/navgraph-generator
         navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot1/navgraph-generator-mps
         navigator: NavigatorInterface::Navigator=/robot1/Navigator
+    robot2:
+      #active: true (set via the gazsim startup)
+      host: localhost
+      port: !tcp-port 1922
+      reading:
+        skiller: SkillerInterface::Skiller=/robot2/Skiller
+        navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot2/navgraph-generator
+        navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot2/navgraph-generator-mps
+        navigator: NavigatorInterface::Navigator=/robot2/Navigator
+    robot3:
+      #active: true (set via the gazsim startup)
+      host: localhost
+      port: !tcp-port 1923
+      reading:
+        skiller: SkillerInterface::Skiller=/robot3/Skiller
+        navgraph-generator: NavGraphGeneratorInterface::/navgraph-generator=/robot3/navgraph-generator
+        navgraph-generator-mps: NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps=/robot3/navgraph-generator-mps
+        navigator: NavigatorInterface::Navigator=/robot3/Navigator

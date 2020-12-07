@@ -8,6 +8,7 @@ include:
   - !ignore-missing conf.d/
   #concrete configuration in an other file because I could not override config values when using a single file
   - gazsim-configurations/gazsim-config-override.yaml
+  - robotino_11_generated.yaml
   - !host-specific gazsim-configurations/default/host_robotino_11.yaml
 ---
 
