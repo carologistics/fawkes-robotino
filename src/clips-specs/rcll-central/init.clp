@@ -18,11 +18,11 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
-
 (defrule initialization-done
   "Finish Initialization"
   (wm-fact (key refbox comm private-peer-enabled) (type BOOL) (value TRUE) )
   ?i <- (executive-init)
+  (domain-wm-flushed)
   =>
   (printout t "Finished initialization" crlf)
   (retract ?i)
