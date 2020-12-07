@@ -58,6 +58,15 @@
   ?*SALIENCE-GOAL-REJECT* = 400
   ?*SALIENCE-GOAL-EXPAND* = 300
   ?*SALIENCE-GOAL-SELECT* = 200
+  ?*SALIENCE-GOAL-EVALUATE-GENERIC* = -1
+)
+
+(deffunction requires-subgoal (?goal-type)
+  (return (or (eq ?goal-type TRY-ONE-OF-SUBGOALS)
+              (eq ?goal-type TIMEOUT-SUBGOAL)
+              (eq ?goal-type RUN-ONE-OF-SUBGOALS)
+              (eq ?goal-type RETRY-SUBGOAL)
+              (eq ?goal-type RUN-ENDLESS)))
 )
 
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
@@ -86,7 +95,18 @@
   ?g <- (goal (parent nil) (type ACHIEVE|MAINTAIN) (sub-type ~nil) (id ?goal-id) (mode FORMULATED))
   (not (goal (parent ?goal-id)))
 =>
+  (printout error " i select a root " ?goal-id crlf)
   (modify ?g (mode SELECTED))
+)
+
+(defrule goal-reasoner-expand-goal-with-sub-type
+" Expand a goal with sub-type, if it has a child."
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  ?p <- (goal (id ?parent-id) (type ACHIEVE|MAINTAIN)
+              (sub-type ?sub-type&:(requires-subgoal ?sub-type)) (mode SELECTED))
+  ?g <- (goal (parent ?parent-id) (mode FORMULATED))
+=>
+  (modify ?p (mode EXPANDED))
 )
 
 ; ========================= Goal Dispatching =================================
@@ -105,12 +125,54 @@
 
 ; ----------------------- EVALUATE COMMON ------------------------------------
 
+(defrule goal-reasoner-evaluate-common
+" Finally set a finished goal to evaluated.
+  All pre evaluation steps should have been executed, enforced by the higher priority
+"
+  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
+=>
+  ;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
+  ;  "') has been completed, Evaluating" crlf)
+  (modify ?g (mode EVALUATED))
+)
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
 
 ; ================================= Goal Clean up ============================
 
+(defrule goal-reasoner-retract-achieve
+" Retract a goal if all sub-goals are retracted. Clean up any plans and plan
+  actions attached to it.
+"
+  ?g <-(goal (id ?goal-id) (type ACHIEVE) (mode EVALUATED)
+             (acquired-resources))
+  (not (goal (parent ?goal-id) (mode ?mode&~RETRACTED)))
+=>
+  ;(printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)
+  (modify ?g (mode RETRACTED))
+)
+
+
+(defrule goal-reasoner-remove-retracted-goal-common
+" Remove a retracted goal if it has no child (anymore).
+  Goal trees are retracted recursively from bottom to top. This has to be done
+  with low priority to avoid races with the sub-type goal lifecycle.
+"
+  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
+  ?g <- (goal (id ?goal-id)
+        (mode RETRACTED) (acquired-resources))
+  (not (goal (parent ?goal-id)))
+=>
+  (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
+    (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
+      (retract ?a)
+    )
+    (retract ?p)
+  )
+  (retract ?g)
+)
 
 (defrule goal-reasoner-error-goal-without-sub-type-detected
 " This goal reasoner only deals with goals that have a sub-type. Other goals
