@@ -19,6 +19,9 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
+(defglobal
+  ?*BBSYNC_PEER_CONFIG* = "/fawkes/bbsync/peers/"
+)
 
 (defrule domain-load
   (executive-init)
@@ -102,12 +105,8 @@
         (bind ?ss M-SS)
   )
 	(assert
-	  (domain-fact (name self) (param-values ?self))
-	  (domain-object (name Icks) (type robot))
-    (domain-object (name Upsilan) (type robot))
-    (domain-object (name Set) (type robot))
+    (domain-fact (name self) (param-values ?self))
     (domain-fact (name at) (param-values ?self START INPUT))
-    (domain-fact (name robot-waiting) (param-values ?self))
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
     (domain-fact (name can-hold) (param-values ?self))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
@@ -288,4 +287,33 @@
   )
 
   (assert (domain-facts-loaded))
+)
+
+(defrule domain-load-active-robots-from-bbsync-peers-config
+" Initialize all remote robots using the active bbsync connections."
+	(not (confval (path ?p&:(str-prefix ?*BBSYNC_PEER_CONFIG* ?p))))
+	; only load the info after initial fact flushing
+	(domain-facts-loaded)
+	=>
+	(config-load ?*BBSYNC_PEER_CONFIG*)
+	(delayed-do-for-all-facts ((?cf confval))
+		(str-prefix ?*BBSYNC_PEER_CONFIG* ?cf:path)
+		(bind ?name (sub-string (str-length ?*BBSYNC_PEER_CONFIG*)
+		            (str-length ?cf:path)
+		            ?cf:path))
+		(bind ?r-active (wm-id-to-key (str-cat ?name)))
+		(if (and (= (length$ ?r-active) 2) (eq (nth$ 2 ?r-active) active)
+		                                   (eq ?cf:value TRUE))
+		  then
+		    (printout error ?r-active crlf)
+		    (bind ?curr-robot (nth$ 1 ?r-active))
+		    (assert (wm-fact (key central agent robot args? r ?curr-robot))
+		            (domain-object (name ?curr-robot) (type robot))
+		            (domain-fact (name at) (param-values ?curr-robot START INPUT))
+		            (domain-fact (name robot-waiting) (param-values ?curr-robot))
+		            (domain-fact (name at) (param-values ?curr-robot START INPUT)))
+		  else
+		    (retract ?cf)
+		)
+	)
 )
