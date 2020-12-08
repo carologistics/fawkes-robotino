@@ -126,3 +126,13 @@
   (modify ?pa (state EXECUTION-SUCCEEDED))
   (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
 )
+
+(defrule goal-visit-machine
+  "Visit input or output of a machine"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (domain-fact (name mps-side-free) (param-values ?machine ?side))
+  (not (goal (class VISIT-MACHINE) (params machine ?machine side ?side)))
+  =>
+  (printout t "Goal VISIT-MACHINE " ?machine " "?side " formulated" crlf)
+  (assert (goal (id (sym-cat VISIT-MACHINE- (gensym*))) (class VISIT-MACHINE) (sub-type SIMPLE) (mode FORMULATED) (params machine ?machine side ?side)))
+)
