@@ -138,8 +138,6 @@
   =>
   (printout t "Goal " VISIT-ALL " formulated" crlf)
   (bind ?goal (goal-tree-assert-run-all VISIT-ALL))
-  ; Expand the goal manually TODO: more proper to do this outside of formulation
-  (modify ?goal (type ACHIEVE) (mode EXPANDED)) 
 )
 
 
@@ -150,7 +148,7 @@
   (domain-object (type mps) (name ?station))
   (not (already-visited ?station))
   ; Sub-goal of VISIT-ALL
-  (goal (id ?parent-id) (class VISIT-ALL))
+  (goal (id ?parent-id) (class VISIT-ALL) (mode SELECTED))
   ; Get a robot
   (wm-fact (key central agent robot args? r ?robot))
 =>

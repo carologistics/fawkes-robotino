@@ -66,7 +66,8 @@
               (eq ?goal-type TIMEOUT-SUBGOAL)
               (eq ?goal-type RUN-ONE-OF-SUBGOALS)
               (eq ?goal-type RETRY-SUBGOAL)
-              (eq ?goal-type RUN-ENDLESS)))
+              (eq ?goal-type RUN-ENDLESS)
+              (eq ?goal-type RUN-ALL-OF-SUBGOALS)))
 )
 
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
