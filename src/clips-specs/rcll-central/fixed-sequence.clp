@@ -70,3 +70,30 @@
     )
   (modify ?g (mode EXPANDED))
 )
+
+
+(defrule goal-expander-visit-station
+  "Move robot to station"
+   ?g <- (goal (id ?goal-id) (class VISIT-STATION) (mode SELECTED)
+               (params r ?robot
+                 point ?station
+         ))
+   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+   =>
+   (printout t "Expanding " ?goal-id crlf)
+   (assert
+        (plan (id VISIT-STATION-PLAN) (goal-id ?goal-id))
+        (plan-action (id 1) (plan-id VISIT-STATION-PLAN) (goal-id ?goal-id)
+                     (action-name go-wait)
+                     (skiller (remote-skiller ?robot))
+                     (param-names r from from-side to)
+                     (param-values ?robot ?curr-location ?curr-side ?station))
+        ;(plan-action (id 2) (plan-id VISIT-STATION-PLAN) (goal-id ?goal-id)
+        ;             (action-name wait)
+        ;             (skiller (remote-skiller ?robot))
+        ;             (param-names r point)
+        ;             (param-values ?robot ?station)
+        ;             (duration 1.0))
+   )
+   (modify ?g (mode EXPANDED))
+)

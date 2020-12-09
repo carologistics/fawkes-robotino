@@ -126,3 +126,39 @@
   (modify ?pa (state EXECUTION-SUCCEEDED))
   (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
 )
+
+;Create goals to visit all stations:
+
+(defrule goal-production-visit-all-stations
+  "Formulate goal to visit all stations"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ; Check if robots have entered the field
+  (goal (class ENTER-FIELD) (mode FINISHED))
+  (not (goal (class VISIT-ALL)))
+  =>
+  (printout t "Goal " VISIT-ALL " formulated" crlf)
+  (bind ?goal (goal-tree-assert-run-all VISIT-ALL))
+  ; Expand the goal manually TODO: more proper to do this outside of formulation
+  (modify ?goal (type ACHIEVE) (mode EXPANDED)) 
+)
+
+
+(defrule goal-production-create-visit-station
+  "Formulate a goal to visit a single station"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ; Get a station
+  (domain-object (type mps) (name ?station))
+  (not (already-visited ?station))
+  ; Sub-goal of VISIT-ALL
+  (goal (id ?parent-id) (class VISIT-ALL))
+  ; Get a robot
+  (wm-fact (key central agent robot args? r ?robot))
+=>
+  (assert (already-visited ?station))
+  ; Create goal of VISIT-STATION (fixed-sequence.clp)
+  (assert (goal (id (sym-cat VISIT- ?station - (gensym*))) 
+                (parent ?parent-id) 
+                (class VISIT-STATION) (type ACHIEVE) (sub-type SIMPLE) 
+                (params r ?robot point (sym-cat ?station -O))))
+  (printout t "Goal " VISITSTATION " formulated for " ?station crlf)
+)
