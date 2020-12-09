@@ -126,3 +126,20 @@
   (modify ?pa (state EXECUTION-SUCCEEDED))
   (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
 )
+
+
+(defrule goal-production-create-visit
+  (domain-facts-loaded)
+  (not (goal (class VISIT) (params to ?mps)))
+  (goal (class ENTER-FIELD) (mode FINISHED) (outcome COMPLETED))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (wm-fact (key central agent robot args? r ?robot))
+  (domain-object (name ?mps) (type mps))
+  =>
+    (printout t "******************************************************" crlf)
+    (printout t "Goal " VISIT ?mps " formulated for " ?robot crlf)
+    (printout t "******************************************************" crlf)
+    (assert (goal (id (sym-cat VISIT- (gensym*)))
+                (class VISIT) (sub-type SIMPLE)
+                (params r ?robot to ?mps)))
+)

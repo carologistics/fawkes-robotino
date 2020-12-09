@@ -70,3 +70,26 @@
     )
   (modify ?g (mode EXPANDED))
 )
+
+(defrule goal-expander-visit
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class VISIT)
+              (params r ?robot to ?to))
+  (not (goal (class VISIT) (mode ~SELECTED)))
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+=>
+  (printout t "Visit " ?to " curr-location " ?curr-location " curr-side " ?curr-side crlf)
+  (assert
+    (plan (id VISIT-PLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id VISIT-PLAN) (goal-id ?goal-id)
+              (action-name move)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to to-side)
+              (param-values ?robot ?curr-location ?curr-side ?to INPUT))
+    ; (plan-action (id 2) (plan-id VISIT-PLAN) (goal-id ?goal-id)
+    ;           (action-name move)
+    ;           (skiller (remote-skiller ?robot))
+    ;           (param-names r from from-side to to-side)
+    ;           (param-values ?robot ?to INPUT ?to OUTPUT))
+  )
+  (modify ?g (mode EXPANDED))
+)
