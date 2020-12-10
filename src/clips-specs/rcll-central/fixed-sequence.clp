@@ -70,3 +70,20 @@
     )
   (modify ?g (mode EXPANDED))
 )
+
+(defrule goal-expander-visit-machine
+  ?p <- (goal (mode DISPATCHED) (id ?parent))
+  ?g <- (goal (id ?goal-id) (parent ?parent) (class VISIT-MACHINE) (mode SELECTED) (params machine ?machine side ?side))
+  ;(bind ?robot R-1)
+  (wm-fact (key domain fact at args? r ?robot m ?robot-location side ?robot-side))
+  =>
+  (printout t ?robot ?robot-location ?robot-side ?machine ?side crlf)
+  (assert
+    (plan (id VISIT-PLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id VISIT-PLAN) (goal-id ?goal-id)
+                  (action-name move)
+                  (param-names r from from-side to to-side )
+                  (param-values ?robot ?robot-location ?robot-side ?machine ?side))
+  )
+  (modify ?g (mode EXPANDED))
+)

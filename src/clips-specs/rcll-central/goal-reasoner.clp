@@ -66,7 +66,8 @@
               (eq ?goal-type TIMEOUT-SUBGOAL)
               (eq ?goal-type RUN-ONE-OF-SUBGOALS)
               (eq ?goal-type RETRY-SUBGOAL)
-              (eq ?goal-type RUN-ENDLESS)))
+              (eq ?goal-type RUN-ENDLESS)
+              (eq ?goal-type RUN-ALL-OF-SUBGOALS))); Thanks to Cris Dax for suggesting this fix
 )
 
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
@@ -139,6 +140,15 @@
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
+(defrule goal-reasoner-evaluate-common
+" Set finished VISIT-MACHINE goal to EVALUATED. Currently does not deviate from evaluate-common
+"
+  ?g <- (goal (id ?goal-id) (class VISIT-MACHINE) (mode FINISHED) (outcome ?outcome))
+=>
+  (printout t "Goal '" ?goal-id "' outcome: " ?outcome crlf)
+  (printout t "Goal '" ?goal-id "' has been completed, Evaluating" crlf)
+  (modify ?g (mode EVALUATED) (outcome COMPLETED))
+)
 
 ; ================================= Goal Clean up ============================
 
