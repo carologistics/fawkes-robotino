@@ -140,27 +140,34 @@
   (bind ?goal (goal-tree-assert-run-all VISIT-ALL))
 )
 
+(defrule goal-production-visit-one-stations
+  "Formulate goal to visit one stations"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?parent-id) (class VISIT-ALL) (mode SELECTED))
+  ; Get a station
+  (domain-object (type mps) (name ?station))
+  (not (goal (class VISIT-ONE) (params point ?station)))
+  =>
+  (printout t "Goal " VISIT-ONE " formulated for " ?station crlf)
+  (bind ?goalin (goal-tree-assert-run-one VISIT-ONE))
+  (modify ?goalin (parent ?parent-id) (params point (sym-cat ?station -I)))
+  (bind ?goalout (goal-tree-assert-run-one VISIT-ONE))
+  (modify ?goalout (parent ?parent-id) (params point (sym-cat ?station -O)))
+)
 
 (defrule goal-production-create-visit-station
   "Formulate a goal to visit a single station"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ; Get a station
-  (domain-object (type mps) (name ?station))
-  (not (already-visited ?station))
-  ; Sub-goal of VISIT-ALL
-  (goal (id ?parent-id) (class VISIT-ALL) (mode SELECTED))
+  ; Sub-goal of VISIT-ONE
+  (goal (id ?parent-id) (class VISIT-ONE) (mode SELECTED) (params point ?station))
   ; Get a robot
   (wm-fact (key central agent robot args? r ?robot))
+  (not (goal (class VISIT-STATION) (params r ?robot point ?station)))
 =>
-  (assert (already-visited ?station))
   ; Create goal of VISIT-STATION (fixed-sequence.clp)
-  (assert (goal (id (sym-cat VISIT- ?station -O- (gensym*))) 
+  (assert (goal (id (sym-cat VISIT- ?station -R- ?robot))
                 (parent ?parent-id) 
                 (class VISIT-STATION) (type ACHIEVE) (sub-type SIMPLE) 
-                (params r ?robot point (sym-cat ?station -O))))
-  (assert (goal (id (sym-cat VISIT- ?station -I- (gensym*))) 
-                (parent ?parent-id) 
-                (class VISIT-STATION) (type ACHIEVE) (sub-type SIMPLE) 
-                (params r ?robot point (sym-cat ?station -I))))    
-  (printout t "Goal " VISITSTATION " formulated for " ?station crlf)
+                (params r ?robot point ?station)))
+  (printout t "Goal " VISITSTATION " formulated for " ?station " and " ?robot crlf)
 )
