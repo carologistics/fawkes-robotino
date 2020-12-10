@@ -100,7 +100,7 @@
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (not (goal (class ENTER-FIELD)))
-  (wm-fact (key central agent robot args? r ?robot&robot1))
+  (wm-fact (key central agent robot args? r ?robot))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
   (wm-fact (key refbox state) (value RUNNING))
   (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
@@ -154,9 +154,13 @@
 =>
   (assert (already-visited ?station))
   ; Create goal of VISIT-STATION (fixed-sequence.clp)
-  (assert (goal (id (sym-cat VISIT- ?station - (gensym*))) 
+  (assert (goal (id (sym-cat VISIT- ?station -O- (gensym*))) 
                 (parent ?parent-id) 
                 (class VISIT-STATION) (type ACHIEVE) (sub-type SIMPLE) 
                 (params r ?robot point (sym-cat ?station -O))))
+  (assert (goal (id (sym-cat VISIT- ?station -I- (gensym*))) 
+                (parent ?parent-id) 
+                (class VISIT-STATION) (type ACHIEVE) (sub-type SIMPLE) 
+                (params r ?robot point (sym-cat ?station -I))))    
   (printout t "Goal " VISITSTATION " formulated for " ?station crlf)
 )
