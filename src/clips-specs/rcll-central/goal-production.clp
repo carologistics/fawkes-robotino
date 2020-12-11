@@ -144,15 +144,15 @@
   "Formulate goal to visit one stations"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?parent-id) (class VISIT-ALL) (mode SELECTED))
-  ; Get a station
+  ; Get a station and side
   (domain-object (type mps) (name ?station))
+  (domain-object (type mps-side) (name ?side))
   (not (goal (class VISIT-ONE) (params point ?station)))
   =>
-  (printout t "Goal " VISIT-ONE " formulated for " ?station crlf)
-  (bind ?goalin (goal-tree-assert-run-one VISIT-ONE))
-  (modify ?goalin (parent ?parent-id) (params point (sym-cat ?station -I)))
-  (bind ?goalout (goal-tree-assert-run-one VISIT-ONE))
-  (modify ?goalout (parent ?parent-id) (params point (sym-cat ?station -O)))
+  (bind ?destination (str-cat ?station (if (eq ?side INPUT) then -I else -O)))
+  (printout t "Goal " VISIT-ONE " formulated for " ?destination crlf)
+  (bind ?goal (goal-tree-assert-run-one VISIT-ONE))
+  (modify ?goal (parent ?parent-id) (params point ?destination))
 )
 
 (defrule goal-production-create-visit-station
