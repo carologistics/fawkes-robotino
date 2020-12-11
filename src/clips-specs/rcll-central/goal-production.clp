@@ -140,6 +140,25 @@
   (bind ?goal (goal-tree-assert-run-all VISIT-ALL))
 )
 
+(defrule goal-production-visit-first-station
+  "Formulate goal to visit first station (base case), which
+  should be the closest to the start point"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?parent-id) (class VISIT-ALL) (mode SELECTED))
+  (not (goal (class VISIT-ONE) (parent ?parent-id)))
+  ; Get a station and side
+  ; todo: determine distance to start-location and pick closest
+  (domain-object (type mps) (name ?station))
+  (domain-object (type mps-side) (name ?side))
+  (test (or (eq ?side INPUT) (eq ?side OUTPUT)))
+  =>
+  (bind ?loc (str-cat ?station (if (eq ?side INPUT) then -I else -O)))
+  (printout t "First station: " ?loc crlf )
+  (bind ?goal (goal-tree-assert-run-one VISIT-ONE))
+  (modify ?goal (parent ?parent-id) (params point ?loc) (priority 0.0))
+  (assert (visited ?station ?side))
+)
+
 (defrule goal-production-visit-one-stations
   "Formulate goal to visit one stations"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -147,12 +166,40 @@
   ; Get a station and side
   (domain-object (type mps) (name ?station))
   (domain-object (type mps-side) (name ?side))
-  (not (goal (class VISIT-ONE) (params point ?station)))
+  (test (or (eq ?side INPUT) (eq ?side OUTPUT)))
+  (not (visited ?station ?side))
+  ; Get previously visited station (the one with lowest priority)
+  (goal (parent ?parent-id) (params point ?prevstation) (priority ?prevprio))
+  (not (goal (parent ?parent-id) (priority ?prio2&:(< ?prio2 ?prevprio))))
+  ; get poses of previous and next station
+  (navgraph-node (name ?prevstation) (pos $?prev-pose))
+  (navgraph-node
+    (name ?node&:(eq ?node
+                     (str-cat ?station (if (eq ?side INPUT) then -I else -O))))
+    (pos $?mps-pose))
+  ; Check that no (non-visited) station with lower distance to previous exists
+  (not (and
+    (domain-object (type mps) (name ?station2))
+    (domain-object (type mps-side) (name ?side2))
+    (test (or (eq ?side2 INPUT) (eq ?side2 OUTPUT)))
+    (not (visited ?station2 ?side2))
+    (navgraph-node
+      (name ?node2&:(eq ?node2
+                       (str-cat ?station2 (if (eq ?side2 INPUT) then -I else -O))))
+      (pos $?mps-pose2))
+    (test
+      (< (distance-mf ?prev-pose ?mps-pose2)
+         (distance-mf ?prev-pose ?mps-pose))
+    )
+  ))
   =>
   (bind ?destination (str-cat ?station (if (eq ?side INPUT) then -I else -O)))
   (printout t "Goal " VISIT-ONE " formulated for " ?destination crlf)
+  (printout t "Distance is " (distance-mf ?prev-pose ?mps-pose) crlf)
+  (printout t "Previous was " ?prevstation " with priority " ?prevprio crlf)
   (bind ?goal (goal-tree-assert-run-one VISIT-ONE))
-  (modify ?goal (parent ?parent-id) (params point ?destination))
+  (modify ?goal (parent ?parent-id) (params point ?destination) (priority (- ?prevprio 1.0)))
+  (assert (visited ?station ?side))
 )
 
 (defrule goal-production-create-visit-station
