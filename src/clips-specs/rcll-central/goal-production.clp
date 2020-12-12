@@ -127,54 +127,55 @@
   (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
 )
 
-;Create goals to visit all stations:
 
-(defrule goal-production-visit-all-stations
-  "Formulate goal to visit all stations"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ; Check if robots have entered the field
-  (goal (class ENTER-FIELD) (mode FINISHED))
-  (not (goal (class VISIT-ALL)))
-  =>
-  (printout t "Goal " VISIT-ALL " formulated" crlf)
-  (bind ?goal (goal-tree-assert-run-all VISIT-ALL))
-)
 
 (defrule goal-production-visit-first-station
-  "Formulate goal to visit first station (base case), which
-  should be the closest to the start point"
+  "Formulate goal to visit first station (base case), semi-random (which
+  should be the closest to the start point)"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?parent-id) (class VISIT-ALL) (mode SELECTED))
-  (not (goal (class VISIT-ONE) (parent ?parent-id)))
+  ; Get a robot that hasn't visited a station yet but has entered the field
+  (wm-fact (key central agent robot args? r ?robot))
+  (not (started ?robot))
+  (goal (class ENTER-FIELD) (mode FINISHED) (params r ?robot team-color ?team-color))
   ; Get a station and side
-  ; todo: determine distance to start-location and pick closest
+  ; todo: determine distance to start-location and pick closest curr:semi-random
   (domain-object (type mps) (name ?station))
   (domain-object (type mps-side) (name ?side))
   (test (or (eq ?side INPUT) (eq ?side OUTPUT)))
+  (not (visited ?station ?side))
   =>
   (bind ?loc (str-cat ?station (if (eq ?side INPUT) then -I else -O)))
-  (printout t "First station: " ?loc crlf )
-  (bind ?goal (goal-tree-assert-run-one VISIT-ONE))
-  (modify ?goal (parent ?parent-id) (params point ?loc) (priority 0.0))
+  (printout t "Robot " ?robot " has first station: " ?loc crlf )
+  (printout t "Goal " VISIT-STATION " formulated for " ?loc " and " ?robot crlf)
+  (assert (goal (id (sym-cat VISIT- ?loc -WITH- ?robot))
+                (class VISIT-STATION) (type ACHIEVE) (sub-type SIMPLE) 
+                (params r ?robot point ?loc)))
   (assert (visited ?station ?side))
+  (assert (started ?robot))
 )
 
-(defrule goal-production-visit-one-stations
+
+
+(defrule goal-production-visit-one-station
   "Formulate goal to visit one stations"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?parent-id) (class VISIT-ALL) (mode SELECTED))
+  ; Get a robot that has already visited one station and is not currently assigned to a goal
+  (wm-fact (key central agent robot args? r ?robot))
+  (started ?robot)
+  (not (goal (class VISIT-STATION) (params r ?robot point ?)))
   ; Get a station and side
   (domain-object (type mps) (name ?station))
   (domain-object (type mps-side) (name ?side))
   (test (or (eq ?side INPUT) (eq ?side OUTPUT)))
   (not (visited ?station ?side))
-  ; Get previously visited station (the one with lowest priority)
-  (goal (parent ?parent-id) (params point ?prevstation) (priority ?prevprio))
-  (not (goal (parent ?parent-id) (priority ?prio2&:(< ?prio2 ?prevprio))))
-  ; get poses of previous and next station
-  (navgraph-node (name ?prevstation) (pos $?prev-pose))
+  ; Get current position (station) of robot (side unrelated to station side!)
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  ; Get poses of previous and next station
   (navgraph-node
-    (name ?node&:(eq ?node
+    (name ?prevstation&:(eq ?prevstation  (str-cat ?curr-location)))
+    (pos $?prev-pose))
+  (navgraph-node
+    (name ?nextstation&:(eq ?nextstation
                      (str-cat ?station (if (eq ?side INPUT) then -I else -O))))
     (pos $?mps-pose))
   ; Check that no (non-visited) station with lower distance to previous exists
@@ -194,27 +195,11 @@
   ))
   =>
   (bind ?destination (str-cat ?station (if (eq ?side INPUT) then -I else -O)))
-  (printout t "Goal " VISIT-ONE " formulated for " ?destination crlf)
+  (printout t "Goal " VISIT-STATION " formulated for " ?destination " and " ?robot crlf)
   (printout t "Distance is " (distance-mf ?prev-pose ?mps-pose) crlf)
-  (printout t "Previous was " ?prevstation " with priority " ?prevprio crlf)
-  (bind ?goal (goal-tree-assert-run-one VISIT-ONE))
-  (modify ?goal (parent ?parent-id) (params point ?destination) (priority (- ?prevprio 1.0)))
-  (assert (visited ?station ?side))
-)
-
-(defrule goal-production-create-visit-station
-  "Formulate a goal to visit a single station"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ; Sub-goal of VISIT-ONE
-  (goal (id ?parent-id) (class VISIT-ONE) (mode SELECTED) (params point ?station))
-  ; Get a robot
-  (wm-fact (key central agent robot args? r ?robot))
-  (not (goal (class VISIT-STATION) (params r ?robot point ?station)))
-=>
-  ; Create goal of VISIT-STATION (fixed-sequence.clp)
-  (assert (goal (id (sym-cat VISIT- ?station -R- ?robot))
-                (parent ?parent-id) 
+  (printout t "Previous was " ?curr-location " side: " ?curr-side crlf)
+  (assert (goal (id (sym-cat VISIT- ?destination -WITH- ?robot))
                 (class VISIT-STATION) (type ACHIEVE) (sub-type SIMPLE) 
-                (params r ?robot point ?station)))
-  (printout t "Goal " VISITSTATION " formulated for " ?station " and " ?robot crlf)
+                (params r ?robot point ?destination)))
+  (assert (visited ?station ?side))
 )
