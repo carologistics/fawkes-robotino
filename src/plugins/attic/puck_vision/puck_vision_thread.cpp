@@ -833,7 +833,8 @@ PuckVisionThread::updateInterface(std::vector<puck> *pucks)
 	}
 }
 
-void PuckVisionThread::finalize() // TODO check if everthing gets deleted
+void
+PuckVisionThread::finalize() // TODO check if everthing gets deleted
 {
 	logger->log_debug(name(), "finalize starts");
 
