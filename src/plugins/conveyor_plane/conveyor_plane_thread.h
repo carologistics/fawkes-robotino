@@ -177,7 +177,7 @@ private:
 	CloudPtr                                        cloud_voxel_grid(CloudPtr in);
 
 	std::vector<CloudPtr>
-	         cluster_split(CloudPtr in, pcl::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices);
+	cluster_split(CloudPtr in, pcl::shared_ptr<std::vector<pcl::PointIndices>> cluster_indices);
 	CloudPtr cluster_find_biggest(std::vector<CloudPtr> clouds_in, size_t &id);
 
 	void cloud_publish(CloudPtr cloud_in, fawkes::RefPtr<Cloud> cloud_out);
