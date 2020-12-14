@@ -240,7 +240,8 @@ LightFrontThread::init()
 	logger->log_debug(name(), "end of init()");
 }
 
-void LightFrontThread::finalize() // TODO check if everthing gets deleted
+void
+LightFrontThread::finalize() // TODO check if everthing gets deleted
 {
 	logger->log_debug(name(), "start to free memory");
 
@@ -508,7 +509,8 @@ LightFrontThread::detectLightInCurrentPicture(LightFrontThread::lightROIs lightR
 	return lightSignal;
 }
 
-void LightFrontThread::processHistoryBuffer(
+void
+LightFrontThread::processHistoryBuffer(
   fawkes::RobotinoLightInterface *interface,
   boost::circular_buffer<LightFrontThread::lightSignal>
     *buffer) // TODO change function name to say that the interface is writen
