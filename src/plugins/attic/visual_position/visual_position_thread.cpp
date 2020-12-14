@@ -929,7 +929,8 @@ VisualPositionThread::updateInterface(std::vector<puck> *pucks)
 	}
 }
 
-void VisualPositionThread::finalize() // TODO check if everthing gets deleted
+void
+VisualPositionThread::finalize() // TODO check if everthing gets deleted
 {
 	logger->log_debug(name(), "finalize starts");
 
