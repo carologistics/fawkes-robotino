@@ -73,20 +73,19 @@
 
 (deffunction print-distances (?robot)
   (do-for-all-facts ((?goal goal)) (and (eq ?goal:class VISIT) (eq ?goal:mode SELECTED))
-    (bind ?mps (nth$ 4 ?goal:params))
+    (bind ?mps (nth$ 2 ?goal:params))
     (printout t "goal " ?mps "-I " (node-distance (mps-node ?mps INPUT) ?robot) crlf)
     (printout t "goal " ?mps "-O " (node-distance (mps-node ?mps OUTPUT) ?robot) crlf)
   )
 )
 
 (defrule goal-expander-visit
-  ?g <- (goal (id ?goal-id) (mode SELECTED) (class VISIT)
-              (params r ?robot to ?to))  
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class VISIT) (params to ?to))
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (goal (class VISIT) (meta r ?robot)))
   (Position3DInterface (id ?id&:(eq ?id (remote-if-id ?robot "Pose"))) (translation $?pose))
   (domain-object (name ?to-side&:(neq ?to-side WAIT)) (type mps-side))
-  (not (goal (mode SELECTED) (class VISIT) (params r ?robot2 to ?to2&:(< (min (node-distance (mps-node ?to2 INPUT) ?robot) (node-distance (mps-node ?to2 OUTPUT) ?robot)) (node-distance (mps-node ?to ?to-side) ?robot)))))
-  (not (goal (class VISIT) (mode ~SELECTED)))
-  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (goal (mode SELECTED) (class VISIT) (params to ?to2&:(< (min (node-distance (mps-node ?to2 INPUT) ?robot) (node-distance (mps-node ?to2 OUTPUT) ?robot)) (node-distance (mps-node ?to ?to-side) ?robot)))))
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 =>
   (print-distances ?robot)
@@ -99,5 +98,5 @@
               (param-names r from from-side to to-side)
               (param-values ?robot ?curr-location ?curr-side ?to ?to-side))
   )
-  (modify ?g (mode EXPANDED))
+  (modify ?g (mode EXPANDED) (meta r ?robot))
 )

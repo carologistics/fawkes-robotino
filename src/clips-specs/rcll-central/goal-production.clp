@@ -129,16 +129,16 @@
 
 
 (defrule goal-production-create-visit
-  (domain-facts-loaded)
-  (not (goal (class VISIT) (params to ?mps)))
   (wm-fact (key refbox phase) (value PRODUCTION))
-  (wm-fact (key central agent robot args? r ?robot))
+  (domain-facts-loaded)
   (domain-object (name ?mps) (type mps))
+  (not (wm-fact (key visit ?mps) (value TRUE)))
   =>
     (printout t "******************************************************" crlf)
-    (printout t "Goal " VISIT ?mps " formulated for " ?robot crlf)
+    (printout t "Goal " VISIT ?mps " formulated" crlf)
     (printout t "******************************************************" crlf)
     (assert (goal (id (sym-cat VISIT- (gensym*)))
                 (class VISIT) (sub-type SIMPLE)
-                (params r ?robot to ?mps)))
+                (params to ?mps)))
+    (assert (wm-fact (key visit ?mps) (value TRUE)))
 )
