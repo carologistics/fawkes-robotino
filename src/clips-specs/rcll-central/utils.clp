@@ -989,7 +989,7 @@
   )
 )
 
-(deffunction node-distance (?node)
+(deffunction node-distance (?node ?robot)
 " @param ?node Name of a navgraph node
 
   @return Euclidean distance between robots position and node
@@ -1002,7 +1002,7 @@
     then
       (return -1)
   )
-  (if (not (do-for-fact ((?pos Position3DInterface)) (eq ?pos:id "Pose")
+  (if (not (do-for-fact ((?pos Position3DInterface)) (eq ?pos:id (remote-if-id ?robot "Pose"))
         (bind ?xp (nth$ 1 ?pos:translation))
         (bind ?yp (nth$ 2 ?pos:translation))
       ))
@@ -1010,6 +1010,15 @@
       (return -1)
   )
   (return (distance ?xn ?yn ?xp ?yp))
+)
+
+(deffunction mps-node (?mps ?side)
+	(bind ?suffix "")
+	(switch ?side
+		(case INPUT then (bind ?suffix "-I"))
+		(case OUTPUT then (bind ?suffix "-O"))
+	)
+	(return (str-cat ?mps ?suffix))
 )
 
 (deffunction goal-distance-prio (?dist)
