@@ -143,7 +143,7 @@
   (domain-object (type mps) (name ?station))
   (domain-object (type mps-side) (name ?side))
   (test (or (eq ?side INPUT) (eq ?side OUTPUT)))
-  (not (visited ?station ?side))
+  (not (visited ?station))
   =>
   (bind ?loc (str-cat ?station (if (eq ?side INPUT) then -I else -O)))
   (printout t "Robot " ?robot " has first station: " ?loc crlf )
@@ -151,7 +151,7 @@
   (assert (goal (id (sym-cat VISIT- ?loc -WITH- ?robot))
                 (class VISIT-STATION) (type ACHIEVE) (sub-type SIMPLE) 
                 (params r ?robot point ?loc)))
-  (assert (visited ?station ?side))
+  (assert (visited ?station))
   (assert (started ?robot))
 )
 
@@ -168,7 +168,7 @@
   (domain-object (type mps) (name ?station))
   (domain-object (type mps-side) (name ?side))
   (test (or (eq ?side INPUT) (eq ?side OUTPUT)))
-  (not (visited ?station ?side))
+  (not (visited ?station))
   ; Get current position (station) of robot (side unrelated to station side!)
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   ; Get poses of previous and next station
@@ -184,7 +184,7 @@
     (domain-object (type mps) (name ?station2))
     (domain-object (type mps-side) (name ?side2))
     (test (or (eq ?side2 INPUT) (eq ?side2 OUTPUT)))
-    (not (visited ?station2 ?side2))
+    (not (visited ?station2))
     (navgraph-node
       (name ?node2&:(eq ?node2
                        (str-cat ?station2 (if (eq ?side2 INPUT) then -I else -O))))
@@ -202,5 +202,5 @@
   (assert (goal (id (sym-cat VISIT- ?destination -WITH- ?robot))
                 (class VISIT-STATION) (type ACHIEVE) (sub-type SIMPLE) 
                 (params r ?robot point ?destination)))
-  (assert (visited ?station ?side))
+  (assert (visited ?station))
 )
