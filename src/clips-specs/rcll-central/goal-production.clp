@@ -106,8 +106,8 @@
   (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
   (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE))
   (wm-fact (key refbox team-color) (value ?team-color))
-  ; (NavGraphGeneratorInterface (final TRUE))
-  ; (not (wm-fact (key domain fact entered-field args? r ?robot)))
+  (NavGraphGeneratorInterface (final TRUE))
+  (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
   (assert (goal (id (sym-cat ENTER-FIELD- (gensym*)))
@@ -115,17 +115,17 @@
                 (params r ?robot team-color ?team-color)))
 )
 
-(defrule goal-production-hack-failed-enter-field
-  "HACK: Stop trying to enter the field when it failed a few times."
+;(defrule goal-production-hack-failed-enter-field
+;  "HACK: Stop trying to enter the field when it failed a few times."
   ; TODO-GM: this was after 3 tries, now its instantly
-  ?g <- (goal (id ?gid) (class ENTER-FIELD)
-               (mode FINISHED) (outcome FAILED))
-  ?pa <- (plan-action (goal-id ?gid) (state FAILED) (action-name enter-field))
-  =>
-  (printout t "Goal '" ?gid "' has failed, evaluating" crlf)
-  (modify ?pa (state EXECUTION-SUCCEEDED))
-  (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
-)
+;  ?g <- (goal (id ?gid) (class ENTER-FIELD)
+;               (mode FINISHED) (outcome FAILED))
+;  ?pa <- (plan-action (goal-id ?gid) (state FAILED) (action-name enter-field))
+;  =>
+;  (printout t "Goal '" ?gid "' has failed, evaluating" crlf)
+;  (modify ?pa (state EXECUTION-SUCCEEDED))
+;  (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
+;)
 
 
 
@@ -136,7 +136,8 @@
   ; Get a robot that hasn't visited a station yet but has entered the field
   (wm-fact (key central agent robot args? r ?robot))
   (not (started ?robot))
-  (goal (class ENTER-FIELD) (mode FINISHED) (params r ?robot team-color ?team-color))
+  ;(goal (class ENTER-FIELD) (mode FINISHED) (params r ?robot team-color ?team-color))
+  (wm-fact (key domain fact entered-field args? r ?robot))
   ; Get a station and side
   ; todo: determine distance to start-location and pick closest curr:semi-random
   (domain-object (type mps) (name ?station))
