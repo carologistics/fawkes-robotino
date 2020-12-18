@@ -169,7 +169,7 @@ private:
 	                        const int          begin,
 	                        const int          end);
 	void
-	     robotUpdatesTaskTimeEstimation(const std::string &robot, const std::string &task, const int end);
+	robotUpdatesTaskTimeEstimation(const std::string &robot, const std::string &task, const int end);
 	void robotFinishedTask(const std::string &robot,
 	                       const std::string &task,
 	                       const int          end,
@@ -178,10 +178,10 @@ private:
 	void initPlan(void);
 	void loopPlan(void);
 	void
-	     insertPlanElement(const std::string &robot, const int elementIndex, const PlanElement &element);
+	insertPlanElement(const std::string &robot, const int elementIndex, const PlanElement &element);
 	void updatePlan(const std::string &robot, const int elementIndex, const PlanElement &element);
 	void
-	     updatePlanTiming(const std::string &robot, const int elementIndex, const PlanElement &element);
+	updatePlanTiming(const std::string &robot, const int elementIndex, const PlanElement &element);
 	void removeFromPlanDB(const std::string &robot, const int elementIndex);
 	void tellRobotToStop(const std::string &robot);
 
