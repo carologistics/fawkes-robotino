@@ -91,8 +91,8 @@
   (print-distances ?robot)
   (printout t "Visit " ?to "-" ?to-side " with " ?robot " from " ?curr-location "-" ?curr-side " dist " (node-distance (mps-node ?to ?to-side) ?robot) crlf)
   (assert
-    (plan (id VISIT-PLAN) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id VISIT-PLAN) (goal-id ?goal-id)
+    (plan (id (sym-cat VISIT-PLAN- ?robot)) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id (sym-cat VISIT-PLAN- ?robot)) (goal-id ?goal-id)
               (action-name move)
               (skiller (remote-skiller ?robot))
               (param-names r from from-side to to-side)
