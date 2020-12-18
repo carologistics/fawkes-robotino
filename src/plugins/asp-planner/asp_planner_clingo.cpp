@@ -838,13 +838,13 @@ AspPlannerThread::addOrderToASP(const OrderInformation &order)
 	} // for ( auto qty = order.Quantity + 1; qty <= MaxQuantity; ++qty )
 
 	for (auto qty = 1; qty <= order.Quantity; ++qty) {
-		const auto capIndex =
-		  std::find_if(
-		    CapColors.begin(),
-		    CapColors.end(),
-		    [&order](const CapColorInformation &info) noexcept { return info.Color == order.Cap; })
-		    ->Machine[2]
-		  - '1';
+		const auto capIndex = std::find_if(CapColors.begin(),
+		                                   CapColors.end(),
+		                                   [&order](const CapColorInformation &info) noexcept {
+			                                   return info.Color == order.Cap;
+		                                   })
+		                        ->Machine[2]
+		                      - '1';
 
 		OrderTasks tasks{Clingo::Symbol(),
 		                 Clingo::Symbol(),
@@ -867,14 +867,14 @@ AspPlannerThread::addOrderToASP(const OrderInformation &order)
 				break;
 			} // if ( color == "none" )
 
-			const auto ringIndex = std::find_if(
-			                         RingColors.begin(),
-			                         RingColors.end(),
-			                         [&order, &color](const RingColorInformation &info) noexcept {
-				                         return info.Color == color;
-			                         })
-			                         ->Machine[2]
-			                       - '1';
+			const auto ringIndex =
+			  std::find_if(RingColors.begin(),
+			               RingColors.end(),
+			               [&order, &color](const RingColorInformation &info) noexcept {
+				               return info.Color == color;
+			               })
+			    ->Machine[2]
+			  - '1';
 
 			tasks.RingTasks[ring] =
 			  generateMountRingExternal(RingLocations[ringIndex], order.Number, qty, ring);

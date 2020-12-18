@@ -21,6 +21,7 @@
 /warnings.txt
 /cfg/host.yaml
 /cfg/host.d
+/cfg/navgraph-generated.yaml
 
 # Eclipse project files, some are using it...
 .cproject
@@ -44,3 +45,4 @@
 *.log
 /buildstats.db
 /tests.out.d
+/.check_stamp
