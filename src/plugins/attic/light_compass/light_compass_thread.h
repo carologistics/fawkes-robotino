@@ -127,7 +127,7 @@ private:
 
 	firevision::ROI *getBestROI(unsigned char *bufferYCbCr);
 	fawkes::polar_coord_2d_t
-	     distanceCorrectionOfAmple(fawkes::polar_coord_2d_t polatCooredOfMessuredLight, float ampleHeight);
+	distanceCorrectionOfAmple(fawkes::polar_coord_2d_t polatCooredOfMessuredLight, float ampleHeight);
 	void UpdateInterface(double lightPosX, double lightPosY, std::string frame_id);
 	void ResetInterface();
 	bool isValidSuccessor(float px, float py, float cx, float cy);
