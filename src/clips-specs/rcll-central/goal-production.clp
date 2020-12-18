@@ -99,8 +99,8 @@
 (defrule goal-production-create-enter-field
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (goal (class ENTER-FIELD)))
-  (wm-fact (key central agent robot args? r ?robot&robot1))
+  (not (goal (class ENTER-FIELD) (params r ?robot team-color ?team-color)))
+  (wm-fact (key central agent robot args? r ?robot))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
   (wm-fact (key refbox state) (value RUNNING))
   (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
@@ -133,7 +133,7 @@
   (not (goal (class VISIT-ALL-MACHINES)))
   =>
   (printout t "Goal VISIT-ALL-MACHINES formulated" crlf)
-  (assert (goal (id (sym-cat VISIT-ALL-MACHINES- (gensym*))) (class VISIT-ALL-MACHINES) (sub-type RUN-ALL-OF-SUBGOALS) (mode FORMULATED)))
+  (assert (goal (id (sym-cat VISIT-ALL-MACHINES- (gensym*))) (class VISIT-ALL-MACHINES) (sub-type RUN-SUBGOALS-IN-PARALLEL) (mode FORMULATED)))
 )
 
 (defrule goal-visit-machine

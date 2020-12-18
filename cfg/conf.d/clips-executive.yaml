@@ -90,6 +90,7 @@ clips-executive:
               - goals/run-one.clp
               - goals/timeout.clp
               - goals/try-all.clp
+              - goals/run-parallel.clp
               - goal-tree.clp
               - rcll-central/goals/run-endless.clp
               - rcll-central/goals/simple.clp

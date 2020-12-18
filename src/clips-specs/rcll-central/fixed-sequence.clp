@@ -74,10 +74,10 @@
 (defrule goal-expander-visit-machine
   ?p <- (goal (mode DISPATCHED) (id ?parent))
   ?g <- (goal (id ?goal-id) (parent ?parent) (class VISIT-MACHINE) (mode SELECTED) (params machine ?machine side ?side))
-  ;(bind ?robot R-1)
+  (not(goal (parent ?parent) (mode EXPANDED|DISPATCHED) (params machine ?somemachine side ?someside robot ?robot)))
   (wm-fact (key domain fact at args? r ?robot m ?robot-location side ?robot-side))
+  (wm-fact (key domain fact entered-field args? r ?robot))
   =>
-  (printout t ?robot ?robot-location ?robot-side ?machine ?side crlf)
   (assert
     (plan (id VISIT-PLAN) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id VISIT-PLAN) (goal-id ?goal-id)
@@ -86,5 +86,12 @@
                   (param-names r from from-side to to-side )
                   (param-values ?robot ?robot-location ?robot-side ?machine ?side))
   )
-  (modify ?g (mode EXPANDED))
+  (modify ?g (mode EXPANDED) (params machine ?machine side ?side robot ?robot))
 )
+
+;(defrule visit-machine-complement-retractor
+;  ?g <- (goal (class VISIT-MACHINE) (mode EXPANDED|DISPATCHED) (params machine ?machine side ?side robot ?robot))
+;  ?gcomp <- (goal (class VISIT-MACHINE) (params machine ?machine side ?sidecomp))
+;  =>
+;  (modify ?gcomp (mode RETRACTED))
+;)

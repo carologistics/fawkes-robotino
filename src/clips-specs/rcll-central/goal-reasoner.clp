@@ -67,7 +67,8 @@
               (eq ?goal-type RUN-ONE-OF-SUBGOALS)
               (eq ?goal-type RETRY-SUBGOAL)
               (eq ?goal-type RUN-ENDLESS)
-              (eq ?goal-type RUN-ALL-OF-SUBGOALS))); Thanks to Cris Dax for suggesting this fix
+              (eq ?goal-type RUN-ALL-OF-SUBGOALS)
+              (eq ?goal-type RUN-SUBGOALS-IN-PARALLEL))); Thanks to Cris Dax for suggesting this fix
 )
 
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
