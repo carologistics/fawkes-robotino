@@ -140,6 +140,16 @@
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
 
+(defrule goal-reasoner-evaluate-visit-success
+  "Evaluate VISIT-STATION goal. Assert fact that station was
+  visited in case of success."
+  ?g <- (goal (class VISIT-STATION) (mode FINISHED) (outcome ?outcome&COMPLETED)
+    (params r ?robot station ?station side ?side))
+  =>
+  (assert (visited ?station))
+  (modify ?g (mode EVALUATED))
+)
+
 
 ; ================================= Goal Clean up ============================
 

@@ -144,14 +144,13 @@
   (domain-object (type mps-side) (name ?side))
   (test (or (eq ?side INPUT) (eq ?side OUTPUT)))
   (not (visited ?station))
+  (not (goal (class VISIT-STATION) (params r ? station ?station side ?)))
   =>
-  (bind ?loc (str-cat ?station (if (eq ?side INPUT) then -I else -O)))
-  (printout t "Robot " ?robot " has first station: " ?loc crlf )
-  (printout t "Goal " VISIT-STATION " formulated for " ?loc " and " ?robot crlf)
-  (assert (goal (id (sym-cat VISIT- ?loc -WITH- ?robot))
+  (printout t "Robot " ?robot " has first station: " ?station crlf )
+  (printout t "Goal " VISIT-STATION " formulated for " ?station " and " ?robot crlf)
+  (assert (goal (id (sym-cat VISIT- ?station -WITH- ?robot))
                 (class VISIT-STATION) (type ACHIEVE) (sub-type SIMPLE) 
-                (params r ?robot point ?loc)))
-  (assert (visited ?station))
+                (params r ?robot station ?station side ?side)))
   (assert (started ?robot))
 )
 
@@ -162,18 +161,19 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ; Get a robot that has already visited one station and is not currently assigned to a goal
   (wm-fact (key central agent robot args? r ?robot))
-  (started ?robot)
-  (not (goal (class VISIT-STATION) (params r ?robot point ?)))
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (goal (class VISIT-STATION) (params r ?robot station ? side ?)))
   ; Get a station and side
   (domain-object (type mps) (name ?station))
   (domain-object (type mps-side) (name ?side))
   (test (or (eq ?side INPUT) (eq ?side OUTPUT)))
   (not (visited ?station))
+  (not (goal (class VISIT-STATION) (params r ? station ?station side ?)))
   ; Get current position (station) of robot (side unrelated to station side!)
-  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?))
   ; Get poses of previous and next station
   (navgraph-node
-    (name ?prevstation&:(eq ?prevstation  (str-cat ?curr-location)))
+    (name ?prevstation&:(eq ?prevstation ?curr-location))
     (pos $?prev-pose))
   (navgraph-node
     (name ?nextstation&:(eq ?nextstation
@@ -185,6 +185,7 @@
     (domain-object (type mps-side) (name ?side2))
     (test (or (eq ?side2 INPUT) (eq ?side2 OUTPUT)))
     (not (visited ?station2))
+    (not (goal (class VISIT-STATION) (params r ? station ?station2 side ?)))
     (navgraph-node
       (name ?node2&:(eq ?node2
                        (str-cat ?station2 (if (eq ?side2 INPUT) then -I else -O))))
@@ -195,12 +196,10 @@
     )
   ))
   =>
-  (bind ?destination (str-cat ?station (if (eq ?side INPUT) then -I else -O)))
-  (printout t "Goal " VISIT-STATION " formulated for " ?destination " and " ?robot crlf)
+  (printout t "Goal " VISIT-STATION " formulated for " ?station " and " ?robot crlf)
   (printout t "Distance is " (distance-mf ?prev-pose ?mps-pose) crlf)
-  (printout t "Previous was " ?curr-location " side: " ?curr-side crlf)
-  (assert (goal (id (sym-cat VISIT- ?destination -WITH- ?robot))
+  (printout t "Previous was " ?curr-location crlf)
+  (assert (goal (id (sym-cat VISIT- ?station -WITH- ?robot))
                 (class VISIT-STATION) (type ACHIEVE) (sub-type SIMPLE) 
-                (params r ?robot point ?destination)))
-  (assert (visited ?station))
+                (params r ?robot station ?station side ?side)))
 )

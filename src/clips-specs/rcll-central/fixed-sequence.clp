@@ -75,8 +75,7 @@
 (defrule goal-expander-visit-station
   "Move robot to station"
    ?g <- (goal (id ?goal-id) (class VISIT-STATION) (mode SELECTED)
-               (params r ?robot
-                 point ?station
+               (params r ?robot station ?station side ?side
          ))
    (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
    =>
@@ -84,13 +83,14 @@
    ; give robot-dependent plan-ids to avoid multiple plans with the same name
    ; at the same time. (causes problems with execution-monitoring)
    (bind ?plan-id (sym-cat VISIT-STATION-PLAN- ?robot - (gensym*)))
+   (bind ?destination (str-cat ?station (if (eq ?side INPUT) then -I else -O)))
    (assert
         (plan (id ?plan-id ) (goal-id ?goal-id))
         (plan-action (id 1) (plan-id ?plan-id ) (goal-id ?goal-id)
                      (action-name go-wait)
                      (skiller (remote-skiller ?robot))
                      (param-names r from from-side to)
-                     (param-values ?robot ?curr-location ?curr-side ?station))
+                     (param-values ?robot ?curr-location ?curr-side ?destination))
    )
    (modify ?g (mode EXPANDED))
 )
