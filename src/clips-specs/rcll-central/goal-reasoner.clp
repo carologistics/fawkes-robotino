@@ -109,6 +109,12 @@
   (modify ?p (mode EXPANDED))
 )
 
+(defrule goal-production-select-enter-field
+  ?g <- (goal (class ENTER-FIELD-LOOP) (mode FORMULATED))
+  =>
+    (modify ?g (mode SELECTED))
+)
+
 ; ========================= Goal Dispatching =================================
 ; Trigger execution of a plan. We may commit to multiple plans
 ; (for different goals), e.g., one per robot, or for multiple
