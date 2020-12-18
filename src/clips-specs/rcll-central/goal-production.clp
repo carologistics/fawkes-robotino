@@ -131,14 +131,22 @@
 (defrule goal-production-create-visit
   (wm-fact (key refbox phase) (value PRODUCTION))
   (domain-facts-loaded)
-  (domain-object (name ?mps) (type mps))
-  (not (wm-fact (key visit ?mps) (value TRUE)))
+  (not (goal (class VISIT-PARENT)))
   =>
+    (assert (goal (id (sym-cat VISIT-PARENT- (gensym*)))
+                (class VISIT-PARENT) (type ACHIEVE) (sub-type RUN-SUBGOALS-IN-PARALLEL)))  ; RUN-ALL-OF-SUBGOALS
+)
+
+(defrule goal-production-expand-visit
+  ?g <- (goal (id ?parent-id) (mode SELECTED) (class VISIT-PARENT))
+  => 
+    (do-for-all-facts ((?mps domain-object)) (eq ?mps:type mps)
     (printout t "******************************************************" crlf)
-    (printout t "Goal " VISIT ?mps " formulated" crlf)
+      (printout t "Goal VISIT " ?mps:name " formulated" crlf)
     (printout t "******************************************************" crlf)
-    (assert (goal (id (sym-cat VISIT- (gensym*)))
-                (class VISIT) (sub-type SIMPLE)
-                (params to ?mps)))
-    (assert (wm-fact (key visit ?mps) (value TRUE)))
+      (assert (goal (id (sym-cat VISIT- (gensym*))) (parent ?parent-id)
+                  (class VISIT) (type ACHIEVE) (sub-type SIMPLE)
+                  (params to ?mps:name )))
+)
+    (modify ?g (mode EXPANDED))
 )
