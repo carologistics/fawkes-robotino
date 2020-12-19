@@ -75,9 +75,9 @@
 (defrule goal-expander-visit-machine
   ?p <- (goal (mode DISPATCHED) (id ?parent))
   ?g <- (goal (id ?goal-id) (parent ?parent) (class VISIT-MACHINE) (mode SELECTED) (params machine ?machine side ?side))
-  (not(goal (parent ?parent) (mode EXPANDED|DISPATCHED) (params machine ?somemachine side ?someside robot ?robot)))
-  (wm-fact (key domain fact at args? r ?robot m ?robot-location side ?robot-side))
   (wm-fact (key domain fact entered-field args? r ?robot))
+  (wm-fact (key domain fact at args? r ?robot m ?robot-location side ?robot-side))
+  (not(goal (parent ?parent) (mode EXPANDED|DISPATCHED) (params machine ?somemachine side ?someside robot ?robot)))
   =>
   (bind ?planid (sym-cat VISIT-MACHINE- (gensym*)))
   (assert
