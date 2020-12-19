@@ -60,9 +60,10 @@
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
               (params r ?robot team-color ?team-color))
 =>
+(bind ?planid (sym-cat ENTER-FIELD-PLAN- (gensym*)))
   (assert
-    (plan (id ENTER-FIELD-PLAN) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id ENTER-FIELD-PLAN) (goal-id ?goal-id)
+    (plan (id ?planid) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
                                  (action-name enter-field)
                                  (skiller (remote-skiller ?robot))
                                  (param-names r team-color)
@@ -78,9 +79,10 @@
   (wm-fact (key domain fact at args? r ?robot m ?robot-location side ?robot-side))
   (wm-fact (key domain fact entered-field args? r ?robot))
   =>
+  (bind ?planid (sym-cat VISIT-MACHINE- (gensym*)))
   (assert
-    (plan (id VISIT-PLAN) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id VISIT-PLAN) (goal-id ?goal-id)
+    (plan (id ?planid) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
                   (action-name move)
                   (skiller (remote-skiller ?robot))
                   (param-names r from from-side to to-side )

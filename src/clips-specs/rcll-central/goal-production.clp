@@ -99,15 +99,15 @@
 (defrule goal-production-create-enter-field
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (goal (class ENTER-FIELD) (params r ?robot team-color ?team-color)))
   (wm-fact (key central agent robot args? r ?robot))
   (wm-fact (key domain fact robot-waiting args? r ?robot))
+  (not (goal (class ENTER-FIELD)))
   (wm-fact (key refbox state) (value RUNNING))
   (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
   (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE))
   (wm-fact (key refbox team-color) (value ?team-color))
-  ; (NavGraphGeneratorInterface (final TRUE))
-  ; (not (wm-fact (key domain fact entered-field args? r ?robot)))
+  (NavGraphGeneratorInterface (final TRUE))
+  (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
   (printout t "Goal " ENTER-FIELD " formulated" crlf)
   (assert (goal (id (sym-cat ENTER-FIELD- (gensym*)))
@@ -115,17 +115,17 @@
                 (params r ?robot team-color ?team-color)))
 )
 
-(defrule goal-production-hack-failed-enter-field
-  "HACK: Stop trying to enter the field when it failed a few times."
-  ; TODO-GM: this was after 3 tries, now its instantly
-  ?g <- (goal (id ?gid) (class ENTER-FIELD)
-               (mode FINISHED) (outcome FAILED))
-  ?pa <- (plan-action (goal-id ?gid) (state FAILED) (action-name enter-field))
-  =>
-  (printout t "Goal '" ?gid "' has failed, evaluating" crlf)
-  (modify ?pa (state EXECUTION-SUCCEEDED))
-  (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
-)
+;(defrule goal-production-hack-failed-enter-field
+;  "HACK: Stop trying to enter the field when it failed a few times."
+;  ; TODO-GM: this was after 3 tries, now its instantly
+;  ?g <- (goal (id ?gid) (class ENTER-FIELD)
+;               (mode FINISHED) (outcome FAILED))
+;  ?pa <- (plan-action (goal-id ?gid) (state FAILED) (action-name enter-field))
+;  =>
+;  (printout t "Goal '" ?gid "' has failed, evaluating" crlf)
+;  (modify ?pa (state EXECUTION-SUCCEEDED))
+;  (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
+;)
 
 (defrule goal-visit-all-machines
   "Visit input and output of all machines"
