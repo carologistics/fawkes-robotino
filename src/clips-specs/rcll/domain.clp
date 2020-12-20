@@ -216,8 +216,74 @@
 	)
 )
 
-(defrule domain-load-initial-facts
+(defrule domain-load-from-storage
+  (loading-from-storage)
+  (wm-fact (key config agent name) (value "Icks"))
+  (domain-loaded)
+  ?flushed <- (domain-wm-flushed)
+  (wm-fact (key refbox phase) (value SETUP))
+	=>
+  (bind ?game "2020-12-13 23:07:40.624Z")
+  (bind ?timepoint  "2020-12-13 23:08:02.862Z")
+	(printout t "" crlf crlf crlf crlf crlf)
+	(printout t "Loading WM from storage" crlf)
+	(printout t "Game:      " ?game crlf)
+	(printout t "Timepoint: " ?timepoint crlf)
+	(printout t "Source:    Icks" crlf)
+	(printout t "" crlf crlf crlf crlf crlf)
+
+
+
+	(bind ?cursor (wm-robmem-load-from-storage ?game ?timepoint))
+	(if ?cursor then
+		(bind ?doc (robmem-cursor-next ?cursor))
+		(while ?doc do
+			(bind ?id (bson-get ?doc "id"))
+			(bind ?type (bson-get ?doc "type"))
+			(bind ?islist (bson-get ?doc "is-list"))
+			(printout t ?id crlf)
+      (printout t  (wm-id-to-key ?id) crlf)
+      (if (bson-has-field ?doc "values") then
+        (bind ?values (bson-get-array ?doc "values"))
+
+        (bind ?sym-values (create$))
+        (loop-for-count (?cnt 1 (length$ ?values)) do
+          (bind ?sym-values (create$ ?sym-values (sym-cat (nth$ ?cnt ?values))))
+        )
+        (printout t "Values: " ?sym-values crlf)
+
+        (assert (wm-fact (id ?id) (key (wm-id-to-key ?id)) (is-list (sym-cat ?islist)) (type (sym-cat ?type)) (values ?sym-values)))
+      else 
+        (bind ?value (bson-get ?doc "value"))
+        (printout t "Value: " ?value crlf)
+        (if (eq (sym-cat ?type) UINT) then
+          (bind ?value (integer (string-to-field ?value)))
+        )
+        (if (eq (sym-cat ?type) SYMBOL) then
+          (bind ?value (sym-cat ?value))
+        )
+			  (assert (wm-fact (id ?id) (key (wm-id-to-key ?id)) (is-list (sym-cat ?islist)) (type (sym-cat ?type)) (value ?value)))
+      )
+      (printout t "-----" crlf)
+			
+
+			(bind ?doc (robmem-cursor-next ?cursor))
+		)
+    (printout t "DONE LOADING" crlf)
+	)
+)
+
+(defrule switch-initialization
+  (not (loading-from-storage))
+  =>
+  (assert (loading-from-storage))
+)
+
+
+(defrule domain-load-initial-facts ;anfang des games 
 " Load all initial domain facts on startup of the game "
+  (not (loading-from-storage))
+
   (domain-loaded)
   ?flushed <- (domain-wm-flushed)
   (wm-fact (key config agent name) (value ?robot-name))
@@ -300,7 +366,7 @@
   (assert (domain-facts-loaded))
 )
 
-(defrule domain-restore-worldmodel-after-maintenance
+(defrule domain-restore-worldmodel-after-maintenance ; after maintenance
   "Domain facts have not been loaded but the game is already running.
    Restore the world model from the database."
   (not (domain-facts-loaded))
