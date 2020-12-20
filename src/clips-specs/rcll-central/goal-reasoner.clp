@@ -147,6 +147,7 @@
     (params r ?robot station ?station side ?side))
   =>
   (assert (visited ?station))
+  (printout t "Evaluating goal: Station " ?station " visited successfully" crlf)
   (modify ?g (mode EVALUATED))
 )
 
