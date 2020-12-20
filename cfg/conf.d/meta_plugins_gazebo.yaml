@@ -15,6 +15,7 @@ fawkes/meta_plugins:
     - gazsim-meta-robotino-vision-high-level
     - laser_front_dist
     - webview
+    - mongodb-log
   gazsim-meta-robotino-ros:
     - gazsim-meta-robotino
     - ros
@@ -96,6 +97,7 @@ fawkes/meta_plugins:
     - execution-time-estimator-navgraph
     # - execution-time-estimator-lookup
     - webview
+    - mongodb-log
 
   rcll-sim-2016:
     - mps-laser-gen
