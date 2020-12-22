@@ -94,6 +94,8 @@
 ;(defrule visit-machine-complement-retractor
 ;  ?g <- (goal (class VISIT-MACHINE) (mode EXPANDED|DISPATCHED) (params machine ?machine side ?side robot ?robot))
 ;  ?gcomp <- (goal (class VISIT-MACHINE) (params machine ?machine side ?sidecomp))
+;  (neq ?side ?sidecomp)
 ;  =>
+;  (printout t "Goal to visit '"?machine ?sidecomp"' retracted" crlf)
 ;  (modify ?gcomp (mode RETRACTED))
 ;)
