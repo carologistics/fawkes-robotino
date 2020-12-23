@@ -88,6 +88,7 @@ clips-executive:
               - goals/retry.clp
               - goals/run-all.clp
               - goals/run-one.clp
+              - goals/run-parallel.clp
               - goals/timeout.clp
               - goals/try-all.clp
               - goal-tree.clp
