@@ -132,7 +132,7 @@ clips-executive:
       parameters:
         simtest:
           enabled: false
-          testbed: FULL
+          testbed: ENTER-FIELD
         rcll:
           peer-address: 172.26.255.255
           peer-port: 4444
