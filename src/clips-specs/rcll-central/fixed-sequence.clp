@@ -70,3 +70,22 @@
     )
   (modify ?g (mode EXPANDED))
 )
+
+
+(defrule goal-expander-visit-machines
+"Expand plan to visit all machines"
+   ?g <- (goal (id ?goal-id) (class VISIT-MACHINES) (mode SELECTED)
+               (params r ?robot machine ?machine side ?side
+         ))
+   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+   =>
+   (assert
+        (plan (id VISIT-MACHINES-PLAN) (goal-id ?goal-id))
+        (plan-action (id 1) (plan-id VISIT-MACHINES-PLAN) (goal-id ?goal-id)
+                     (action-name move)
+                     (skiller (remote-skiller ?robot))
+                     (param-names r from from-side to to-side)
+                     (param-values ?robot ?curr-location ?curr-side ?machine ?side))
+   )
+   (modify ?g (mode EXPANDED))
+)

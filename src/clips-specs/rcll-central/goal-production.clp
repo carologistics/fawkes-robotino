@@ -126,3 +126,29 @@
   (modify ?pa (state EXECUTION-SUCCEEDED))
   (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
 )
+
+
+(defrule goal-production-visit-all-machines
+"Create parent of visit machines to visit multiple machines" 
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (class ENTER-FIELD) (mode FINISHED))
+  (not (goal (class VISIT-ALL-MACHINES)))
+  =>
+  (bind ?goal (goal-tree-assert-run-all VISIT-ALL-MACHINES))
+  (modify ?goal (type ACHIEVE) (mode EXPANDED)) 
+)
+
+
+(defrule goal-production-create-visit-machines
+"Create visit machines goal"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (domain-fact (name mps-side-free) (param-values ?machine ?side)) 
+  (goal (id ?parent-id) (class VISIT-ALL-MACHINES))
+  (wm-fact (key central agent robot args? r ?robot))  
+  (not (goal (class VISIT-MACHINES) (params r ?robot machine ?machine side ?side)))
+=>
+  (assert (goal (id (sym-cat VISIT-MACHINES ?machine - (gensym*))) 
+                (parent ?parent-id) 
+                (class VISIT-MACHINES) (type ACHIEVE) (sub-type SIMPLE) 
+                (params r ?robot machine ?machine side ?side)))
+)
