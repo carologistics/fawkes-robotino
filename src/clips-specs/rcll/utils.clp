@@ -169,40 +169,37 @@
 
       (bind ?any-tag-to-add TRUE)
       ; report tag position to navgraph generator
-      (foreach ?interface (create$ "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "NavGraphWithMPSGeneratorInterface::/robot1/navgraph-generator-mps")
-        (bind ?msg (blackboard-create-msg ?interface "UpdateStationByTagMessage"))
-        (blackboard-set-msg-field ?msg "name" (str-cat ?mps))
-        (blackboard-set-msg-field ?msg "side" ?side)
-        (blackboard-set-msg-field ?msg "frame" ?frame)
-        (blackboard-set-msg-multifield ?msg "tag_translation" ?trans)
-        (blackboard-set-msg-multifield ?msg "tag_rotation" ?rot)
-        (blackboard-set-msg-multifield ?msg "zone_coords" (zone-coords ?zone))
-        (blackboard-send-msg ?msg)
-        (printout t "Send UpdateStationByTagMessage: id " (str-cat ?mps)
-            " side " ?side
-            " frame " ?frame
-            " trans " ?trans
-            " rot " ?rot
-            " zone " ?zone
-            crlf)
-      )
+      (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "UpdateStationByTagMessage"))
+      (blackboard-set-msg-field ?msg "name" (str-cat ?mps))
+      (blackboard-set-msg-field ?msg "side" ?side)
+      (blackboard-set-msg-field ?msg "frame" ?frame)
+      (blackboard-set-msg-multifield ?msg "tag_translation" ?trans)
+      (blackboard-set-msg-multifield ?msg "tag_rotation" ?rot)
+      (blackboard-set-msg-multifield ?msg "zone_coords" (zone-coords ?zone))
+      (blackboard-send-msg ?msg)
+      (printout t "Send UpdateStationByTagMessage: id " (str-cat ?mps)
+          " side " ?side
+          " frame " ?frame
+          " trans " ?trans
+          " rot " ?rot
+          " zone " ?zone
+          crlf)
     ;   ; (assert (navgraph-added-for-mps (name ?ft-mps:value)))
     ; )
   )
 
-  (foreach ?interface (create$ "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "NavGraphWithMPSGeneratorInterface::/robot1/navgraph-generator-mps")
-    (bind ?msg (blackboard-create-msg ?interface "GenerateWaitZonesMessage"))
-    (blackboard-send-msg ?msg)
-  )
+  (bind ?msg (blackboard-create-msg
+    "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps"
+    "GenerateWaitZonesMessage"
+  ))
+  (blackboard-send-msg ?msg)
 
   (if ?any-tag-to-add
     then
     ; send compute message so we can drive to the output
-    (foreach ?interface (create$ "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "NavGraphWithMPSGeneratorInterface::/robot1/navgraph-generator-mps")
-      (bind ?msg (blackboard-create-msg ?interface "ComputeMessage"))
-      (bind ?compute-msg-id (blackboard-send-msg ?msg))
-      (printout t "Sent compute" crlf)
-    )
+    (bind ?msg (blackboard-create-msg "NavGraphWithMPSGeneratorInterface::/navgraph-generator-mps" "ComputeMessage"))
+    (bind ?compute-msg-id (blackboard-send-msg ?msg))
+    (printout t "Sent compute" crlf)
 
     ; save the last compute-msg-id to know when it was processed
     ; (delayed-do-for-all-facts ((?lncm last-navgraph-compute-msg)) TRUE
@@ -518,11 +515,10 @@
 
 (deffunction navigator-set-speed (?max-velocity ?max-rotation)
   "Uses the NavigatorInterface to set the max velocity and speed"
-  ; TODO make specific for one robot
-  (bind ?msg (blackboard-create-msg "NavigatorInterface::/robot1/Navigator" "SetMaxVelocityMessage"))
+  (bind ?msg (blackboard-create-msg "NavigatorInterface::Navigator" "SetMaxVelocityMessage"))
   (blackboard-set-msg-field ?msg "max_velocity" ?max-velocity)
   (blackboard-send-msg ?msg)
-  (bind ?msg (blackboard-create-msg "NavigatorInterface::/robot1/Navigator" "SetMaxRotationMessage"))
+  (bind ?msg (blackboard-create-msg "NavigatorInterface::Navigator" "SetMaxRotationMessage"))
   (blackboard-set-msg-field ?msg "max_rotation" ?max-rotation)
   (blackboard-send-msg ?msg)
 )
