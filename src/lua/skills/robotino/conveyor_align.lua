@@ -236,10 +236,10 @@ fsm:add_transitions{
    {"LOOK", "FAILED", cond=no_writer, desc="No writer for conveyor vision"},
    {"LOOK", "LOOK_DONE", cond=result_ready, desc="conveyor_pose result ready"},
    
-   {"LOOK_DONE", "LOOK", cond="tolerance_ok() == nil", desc="TF error"},
-   {"LOOK_DONE", "FINAL", cond="fitness_high() and tolerance_ok()"},
    {"LOOK_DONE", "FAILED", cond="vars.retries > MAX_RETRIES"},
    {"LOOK_DONE", "FAILED", cond="vars.vision_retries > MAX_VISION_RETRIES"},
+   {"LOOK_DONE", "LOOK", cond="tolerance_ok() == nil", desc="TF error"},
+   {"LOOK_DONE", "FINAL", cond="fitness_high() and tolerance_ok()"},
    {"LOOK_DONE", "DRIVE", cond="fitness_min()"},
    {"LOOK_DONE", "MOVE_BACK", cond="not fitness_min()"},
 
