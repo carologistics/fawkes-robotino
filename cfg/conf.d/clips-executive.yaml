@@ -203,6 +203,8 @@ clips-executive:
             file: coordination-mutex.clp
           - name: state-estimation
             file: rcll/state-estimation-init.clp
+          - name: blackboard
+            file: rcll/init-blackboard.clp
           - name: worldmodel
             files:
               - wm-robmem-sync.clp
