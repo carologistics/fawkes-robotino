@@ -129,3 +129,81 @@
 ;  (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
 ;)
 
+
+
+(defrule goal-production-visit-first-station
+  "Formulate a goal for a robot to visit his first station, taking first matched station
+   creates semi-random spread of robots over the field"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ; Get a robot that hasn't visited a station yet but has entered the field
+  (wm-fact (key central agent robot args? r ?robot))
+  (not (started ?robot))
+  ;(goal (class ENTER-FIELD) (mode FINISHED) (params r ?robot team-color ?team-color))
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  ; Get an unvisited station and a side
+  (domain-object (type mps) (name ?station))
+  (domain-object (type mps-side) (name ?side))
+  (test (or (eq ?side INPUT) (eq ?side OUTPUT)))
+  (not (visited ?station))
+  (not (goal (class VISIT-STATION) (params r ? station ?station side ?)))
+  =>
+  (printout t "Robot " ?robot " has first station: " ?station crlf )
+  (printout t "Goal " VISIT-STATION " formulated for " ?station " and " ?robot crlf)
+  (assert (goal (id (sym-cat VISIT- ?station -WITH- ?robot))
+                (class VISIT-STATION) (type ACHIEVE) (sub-type SIMPLE) 
+                (params r ?robot station ?station side ?side)))
+  (assert (started ?robot))
+)
+
+
+
+(defrule goal-production-visit-one-station
+  "Formulate goals to send robots to unvisited stations until 
+   all stations have been visited"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ; Get a robot that has already visited at least one station and
+  ; is not currently assigned to a goal
+  (wm-fact (key central agent robot args? r ?robot))
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (goal (class VISIT-STATION) (params r ?robot station ? side ?)))
+  ; Get an unvisited station and a side
+  (domain-object (type mps) (name ?station))
+  (domain-object (type mps-side) (name ?side))
+  (test (or (eq ?side INPUT) (eq ?side OUTPUT)))
+  (not (visited ?station))
+  (not (goal (class VISIT-STATION) (params r ? station ?station side ?)))
+  ; Get current position (station) of robot (side unrelated to station side!)
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?))
+  ; Get positions of current and next station candidate on the field
+  (navgraph-node
+    (name ?curr-station&:(eq ?curr-station ?curr-location))
+    (pos $?curr-pos))
+  (navgraph-node
+    (name ?next-station&:(eq ?next-station
+                     (str-cat ?station (if (eq ?side INPUT) then -I else -O))))
+    (pos $?next-pos))
+  ; Check that no non-visited station alternative with lower distance 
+  ; to current station exists
+  (not (and
+    (domain-object (type mps) (name ?station-alt))
+    (domain-object (type mps-side) (name ?side-alt))
+    (test (or (eq ?side-alt INPUT) (eq ?side-alt OUTPUT)))
+    (not (visited ?station-alt))
+    (not (goal (class VISIT-STATION) (params r ? station ?station-alt side ?)))
+    (navgraph-node
+      (name ?node-alt&:(eq ?node-alt
+                       (str-cat ?station-alt (if (eq ?side-alt INPUT) then -I else -O))))
+      (pos $?next-pos-alt))
+    (test
+      (< (distance-mf ?curr-pos ?next-pos-alt)
+         (distance-mf ?curr-pos ?next-pos))
+    )
+  ))
+  =>
+  (printout t "Goal " VISIT-STATION " formulated for station " ?station " and robot " ?robot crlf)
+  (printout t "Previous was " ?curr-location crlf)
+  (printout t "Distance is " (distance-mf ?curr-pos ?next-pos) crlf)
+  (assert (goal (id (sym-cat VISIT- ?station -WITH- ?robot))
+                (class VISIT-STATION) (type ACHIEVE) (sub-type SIMPLE) 
+                (params r ?robot station ?station side ?side)))
+)
