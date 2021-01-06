@@ -22,10 +22,7 @@
   =>
   (blackboard-open "NavGraphWithMPSGeneratorInterface" "/navgraph-generator-mps")
   (blackboard-open "NavGraphGeneratorInterface" "/navgraph-generator")
-  ;(blackboard-open "NavigatorInterface" "Navigator")
-  (blackboard-open "NavGraphWithMPSGeneratorInterface" "/robot1/navgraph-generator-mps")
-  (blackboard-open "NavGraphGeneratorInterface" "/robot1/navgraph-generator")
-  (blackboard-open "NavigatorInterface" "/robot1/Navigator")
+  (blackboard-open "NavigatorInterface" "Navigator")
   ; (blackboard-open "MotorInterface" "Robotino")
 )
 

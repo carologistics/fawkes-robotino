@@ -132,7 +132,7 @@ clips-executive:
       parameters:
         simtest:
           enabled: false
-          testbed: FULL
+          testbed: ENTER-FIELD
         rcll:
           peer-address: 172.26.255.255
           peer-port: 4444
@@ -203,6 +203,8 @@ clips-executive:
             file: coordination-mutex.clp
           - name: state-estimation
             file: rcll/state-estimation-init.clp
+          - name: blackboard
+            file: rcll/init-blackboard.clp
           - name: worldmodel
             files:
               - wm-robmem-sync.clp
@@ -225,27 +227,27 @@ clips-executive:
               - goals/timeout.clp
               - goals/try-all.clp
               - goal-tree.clp
-              - rcll-central/goals/run-endless.clp
-              - rcll-central/goals/simple.clp
-              - rcll-central/goal-reasoner.clp
-              - rcll-central/goal-production.clp
-              - rcll-central/production-strategy.clp
-              - rcll-central/goal-lock-expiration.clp
+              - rcll/goals/run-endless.clp
+              - rcll/goals/simple.clp
+              - rcll/goal-reasoner.clp
+              - rcll/goal-production.clp
+              - rcll/production-strategy.clp
+              - rcll/goal-lock-expiration.clp
           - name: goal-expander
-            file: rcll-central/fixed-sequence.clp
+            file: rcll/fixed-sequence.clp
           - name: action-selection
-            file: rcll-central/action-selection.clp
+            file: rcll/action-selection.clp
           - name: action-execution
             files:
               - skills-actions.clp
-              - rcll-central/noop-actions.clp
-              - rcll-central/refbox-actions.clp
-              - rcll-central/lock-actions.clp
-              - rcll-central/wait-actions.clp
+              - rcll/noop-actions.clp
+              - rcll/refbox-actions.clp
+              - rcll/lock-actions.clp
+              - rcll/wait-actions.clp
           - name: execution-monitoring
-            file: rcll-central/execution-monitoring.clp
+            file: rcll/execution-monitoring.clp
           - name: simtest
-            file: rcll-central/simtest.clp
+            file: rcll/simtest.clp
 
       action-mapping:
         enter-field: >
