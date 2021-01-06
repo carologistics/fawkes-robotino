@@ -202,8 +202,8 @@
 
 	(:action request-cs-retrieve-cap
 		:parameters (?r - robot ?m - mps ?cc - cap-carrier ?capcol - cap-color)
-		:precondition (self ?r)
-		:effect (self ?r)
+		:precondition (entered-field ?r)
+		:effect (entered-field ?r)
 	)
 
 	(:action prepare-rs
