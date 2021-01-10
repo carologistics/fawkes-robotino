@@ -84,7 +84,7 @@
 	(assert (domain-wm-flushed))
 )
 
-(deffunction domain-load-local-facts (?self ?team-color)
+(deffunction domain-load-local-facts (?team-color)
 	"Initialize facts that are not synced."
   (if (eq ?team-color CYAN)
     then
@@ -105,10 +105,7 @@
         (bind ?ss M-SS)
   )
 	(assert
-    (domain-fact (name self) (param-values ?self))
-    (domain-fact (name at) (param-values ?self START INPUT))
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
-    (domain-fact (name can-hold) (param-values ?self))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
     (domain-fact (name mps-team) (param-values ?ss ?team-color))
     (domain-fact (name mps-team) (param-values ?cs1 ?team-color))
@@ -219,12 +216,10 @@
 " Load all initial domain facts on startup of the game "
   (domain-loaded)
   ?flushed <- (domain-wm-flushed)
-  (wm-fact (key config agent name) (value ?robot-name))
   (wm-fact (key refbox team-color) (value ?team-color&~nil))
   (wm-fact (key refbox phase) (value SETUP))
   =>
   (retract ?flushed)
-  (bind ?self (sym-cat ?robot-name))
   (printout info "Initializing worldmodel" crlf)
   (if (eq ?team-color CYAN)
     then
@@ -245,7 +240,7 @@
         (bind ?ss M-SS)
   )
 
-	(domain-load-local-facts ?self ?team-color)
+	(domain-load-local-facts ?team-color)
   (assert
     (domain-fact (name cs-can-perform) (param-values ?cs1 RETRIEVE_CAP))
     (domain-fact (name cs-can-perform) (param-values ?cs2 RETRIEVE_CAP))
@@ -311,7 +306,7 @@
 		            (domain-object (name ?curr-robot) (type robot))
 		            (domain-fact (name at) (param-values ?curr-robot START INPUT))
 		            (domain-fact (name robot-waiting) (param-values ?curr-robot))
-		            (domain-fact (name at) (param-values ?curr-robot START INPUT)))
+                (domain-fact (name can-hold) (param-values ?curr-robot)))
 		  else
 		    (retract ?cf)
 		)
