@@ -61,7 +61,6 @@
 )
 
 
-;
 (defrule goal-production-create-beacon-maintain
 " The parent goal for beacon signals. Allows formulation of
   goals that periodically communicate with the refbox.
@@ -215,8 +214,6 @@
     (printout t "Goal " FILL-CAP " formulated" crlf)
   )
   (bind ?distance (node-distance (str-cat ?mps -I)))
-  ;TODO check this in domain.clp
-  (assert (domain-fact (name can-hold) (param-values ?robot))) 
   (assert (goal (id (sym-cat FILL-CAP- (gensym*)))
                 (class FILL-CAP) (sub-type SIMPLE)
                 (priority (+ ?priority-increase ?*PRIORITY-PREFILL-CS* (goal-distance-prio ?distance)))
