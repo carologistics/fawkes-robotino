@@ -115,3 +115,37 @@
                 (params r ?robot team-color ?team-color)))
 )
 
+
+(defrule goal-production-create-produce-c0
+" Produce a C0 product: Get the correct base and mount the right cap on it.
+  The produced workpiece stays in the output of the used cap station after
+  successfully executing this goal.
+"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
+  ;(wm-fact (key domain fact mps-type args? m ?mps t CS))
+  ;(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  ;(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
+  ;(wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
+
+  ;(wm-fact (key domain fact mps-type args? m ?bs t BS))
+  ;(wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
+  
+  ;(wm-fact (key refbox team-color) (value ?team-color))
+  (not (goal (class PRODUCE-C0)
+             ;(params bs ?bs
+             ;       mps ?mps 
+             ;)
+  ))
+  =>
+  (printout t "Goal " PRODUCE-C0 " formulated" crlf))
+  (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
+                (class PRODUCE-C0) (sub-type SIMPLE)
+                ;(params ;bs ?bs
+                        ;bs-color BASE_BLACK
+                        ;mps ?mps
+                        ;cs-color CAP_BLACK
+                ;)
+              ;  (required-resources (sym-cat ?mps -INPUT) ?required-resources)
+  ))
+)
