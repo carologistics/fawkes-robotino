@@ -73,24 +73,22 @@
 )
 
 (defrule goal-produce-c0
- ?g <- (goal (id ?goal-id) (class PRODUCE-C0) (mode SELECTED))
+ ?g <- (goal (id ?goal-id) (class PRODUCE-C0) (mode SELECTED) (params bs-color ?bs-color cs-color ?cs-color))
 
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  (wm-fact (key domain fact mps-type args? m ?mps t CS))
  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-; (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
+ ;(wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
 
  (wm-fact (key domain fact mps-type args? m ?bs t BS))
  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
   
  (wm-fact (key refbox team-color) (value ?team-color))
  (wm-fact (key domain fact entered-field args? r ?robot))
- ;(wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
+ (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
 
  =>
-      (bind ?cs-color BASE_BLACK)
-      (bind ?cs-color CAP_BLACK)
-      (printout t "plan action series here " PRODUCE-C0 crlf))
+      (printout t "plan action series here " PRODUCE-C0 crlf)
       (assert
         (plan-action (id 1) (plan-id PRODUCE-C0-PLAN) (goal-id ?goal-id)
               (action-name go-wait)

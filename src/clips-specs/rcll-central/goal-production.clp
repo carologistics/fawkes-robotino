@@ -122,30 +122,12 @@
   successfully executing this goal.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-
-  ;(wm-fact (key domain fact mps-type args? m ?mps t CS))
-  ;(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  ;(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
-  ;(wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
-
-  ;(wm-fact (key domain fact mps-type args? m ?bs t BS))
-  ;(wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
-  
-  ;(wm-fact (key refbox team-color) (value ?team-color))
-  (not (goal (class PRODUCE-C0)
-             ;(params bs ?bs
-             ;       mps ?mps 
-             ;)
-  ))
+  (not (goal (class PRODUCE-C0)))
   =>
-  (printout t "Goal " PRODUCE-C0 " formulated" crlf))
+  (printout t "Goal " PRODUCE-C0 " formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
                 (class PRODUCE-C0) (sub-type SIMPLE)
-                ;(params ;bs ?bs
-                        ;bs-color BASE_BLACK
-                        ;mps ?mps
-                        ;cs-color CAP_BLACK
-                ;)
+                (params bs-color BASE_BLACK cs-color CAP_BLACK)
               ;  (required-resources (sym-cat ?mps -INPUT) ?required-resources)
   ))
 )
