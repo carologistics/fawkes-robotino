@@ -115,37 +115,34 @@
                 (params r ?robot team-color ?team-color)))
 )
 
+;(defrule goal-production-hack-failed-enter-field
+;  "HACK: Stop trying to enter the field when it failed a few times."
+;  ; TODO-GM: this was after 3 tries, now its instantly
+;  ?g <- (goal (id ?gid) (class ENTER-FIELD)
+;               (mode FINISHED) (outcome FAILED))
+;  ?pa <- (plan-action (goal-id ?gid) (state FAILED) (action-name enter-field))
+;  =>
+;  (printout t "Goal '" ?gid "' has failed, evaluating" crlf)
+;  (modify ?pa (state EXECUTION-SUCCEEDED))
+;  (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
+;)
 
-(defrule goal-production-create-produce-c0
-" Produce a C0 product: Get the correct base and mount the right cap on it.
-  The produced workpiece stays in the output of the used cap station after
-  successfully executing this goal.
-"
+(defrule goal-visit-all-machines
+  "Visit input and output of all machines"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-
-  ;(wm-fact (key domain fact mps-type args? m ?mps t CS))
-  ;(wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  ;(wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
-  ;(wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
-
-  ;(wm-fact (key domain fact mps-type args? m ?bs t BS))
-  ;(wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
-  
-  ;(wm-fact (key refbox team-color) (value ?team-color))
-  (not (goal (class PRODUCE-C0)
-             ;(params bs ?bs
-             ;       mps ?mps 
-             ;)
-  ))
+  (not (goal (class VISIT-ALL-MACHINES)))
   =>
-  (printout t "Goal " PRODUCE-C0 " formulated" crlf)
-  (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-                (class PRODUCE-C0) (sub-type SIMPLE)
-                ;(params ;bs ?bs
-                        ;bs-color BASE_BLACK
-                        ;mps ?mps
-                        ;cs-color CAP_BLACK
-                ;)
-              ;  (required-resources (sym-cat ?mps -INPUT) ?required-resources)
-  ))
+  (printout t "Goal VISIT-ALL-MACHINES formulated" crlf)
+  (assert (goal (id (sym-cat VISIT-ALL-MACHINES- (gensym*))) (class VISIT-ALL-MACHINES) (sub-type RUN-SUBGOALS-IN-PARALLEL) (mode FORMULATED)))
+)
+
+(defrule goal-visit-machine
+  "Visit input or output of a machine"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (domain-fact (name mps-side-free) (param-values ?machine ?side))
+  ?p <- (goal (id ?visit-all-id) (class VISIT-ALL-MACHINES) (mode SELECTED))
+  (not (goal (class VISIT-MACHINE) (params machine ?machine side ?side)))
+  =>
+  (printout t "Goal VISIT-MACHINE " ?machine " "?side " formulated" crlf)
+  (assert (goal (id (sym-cat VISIT-MACHINE- (gensym*))) (class VISIT-MACHINE) (parent ?visit-all-id) (sub-type SIMPLE) (mode FORMULATED) (params machine ?machine side ?side)))
 )
