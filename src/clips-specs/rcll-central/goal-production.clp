@@ -121,7 +121,34 @@
   (not (BUILD-C0))
   (not (goal (class BUILD-C0)))
   =>
-    (assert (goal (id (sym-cat BUILD-C0- (gensym*)))
-                (class BUILD-C0) (type ACHIEVE) (sub-type SIMPLE)))
-    (assert (BUILD-C0))
+    (assert
+      (goal (id (sym-cat BUILD-C0- (gensym*)))
+                (class BUILD-C0) (type ACHIEVE) (sub-type RUN-SUBGOALS-IN-PARALLEL))
+      (BUILD-C0)
+    )
+)
+
+(defrule goal-expander-build-C0
+  ?g <- (goal (id ?parent-id) (mode SELECTED) (class BUILD-C0))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col CAP_GREY))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?shelf-spot))
+  => 
+    (printout t "Expanding BUILD-C0, formulating subgoals" crlf)
+    (bind ?base-color BASE_BLACK)
+    (bind ?spawned-wp (sym-cat WP- (random-id)))
+    (assert 
+      (goal (id (sym-cat PREPARE-CAP- (gensym*))) (parent ?parent-id)
+                  (class PREPARE-CAP) (type ACHIEVE) (sub-type SIMPLE)
+                  (params cc ?cc))
+      (goal (id (sym-cat DISCARD-BASE- (gensym*))) (parent ?parent-id)
+                  (class DISCARD-BASE) (type ACHIEVE) (sub-type SIMPLE)
+                  (params cc ?cc))
+      (goal (id (sym-cat FETCH-BASE- (gensym*))) (parent ?parent-id)
+                  (class FETCH-BASE) (type ACHIEVE) (sub-type SIMPLE)
+                  (params base-color ?base-color cap-color CAP_GREY spawned-wp ?spawned-wp mps ?mps))
+      (goal (id (sym-cat DELIVER- (gensym*))) (parent ?parent-id)
+                  (class DELIVER) (type ACHIEVE) (sub-type SIMPLE)
+                  (params wp ?spawned-wp m ?mps side OUTPUT))
+    )
+    (modify ?g (mode EXPANDED))
 )
