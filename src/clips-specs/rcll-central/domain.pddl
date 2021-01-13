@@ -179,12 +179,6 @@
 								 (not (cs-buffered ?m ?capcol)))
 	)
 
-	(:action request-cs-mount-cap
-		:parameters (?r - robot ?m - mps ?wp - workpiece ?capcol - cap-color)
-		:precondition (self ?r)
-		:effect (self ?r)
-	)
-
 	(:action cs-retrieve-cap
 		:parameters (?m - mps ?cc - cap-carrier ?capcol - cap-color)
 		:precondition (and (mps-type ?m CS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
@@ -197,12 +191,6 @@
 								 (not (wp-cap-color ?cc ?capcol)) (wp-cap-color ?cc CAP_NONE)
 								 (cs-buffered ?m ?capcol)(cs-can-perform ?m MOUNT_CAP)
 								 (not (cs-prepared-for ?m RETRIEVE_CAP)))
-	)
-
-	(:action request-cs-retrieve-cap
-		:parameters (?r - robot ?m - mps ?cc - cap-carrier ?capcol - cap-color)
-		:precondition (self ?r)
-		:effect (self ?r)
 	)
 
 	(:action prepare-rs
@@ -274,14 +262,6 @@
 								 (not (wp-at ?wp ?m INPUT)) (mps-side-free ?m INPUT) (wp-at ?wp ?m OUTPUT) (not (mps-side-free ?m OUTPUT))
 								 (not (wp-ring3-color ?wp RING_NONE)) (wp-ring3-color ?wp ?col)
 								 (not (rs-filled-with ?m ?rs-before)) (rs-filled-with ?m ?rs-after))
-	)
-
-	(:action request-rs-mount-ring
-		:parameters (?r - robot ?m - mps ?wp - workpiece ?col - ring-color
-			 				?ring-pos - ring-num ?col1 - ring-color ?col2 - ring-color ?col3 - ring-color
-							?r-req - ring-num)
-		:precondition (self ?r)
-		:effect (self ?r)	
 	)
 
 	; The following is the generic move version.
@@ -471,12 +451,6 @@
                  (not (ds-prepared-order ?m ?ord))
                  (not (wp-usable ?wp))
 								 (not (wp-base-color ?wp ?basecol)) (not (wp-cap-color ?wp ?capcol)))
-	)
-
-(:action request-ds-fulfill-order
-		:parameters (?r - robot ?m - mps ?wp - workpiece ?ord - order)
-		:precondition (self ?r)
-		:effect (self ?r)
 	)
 
   (:action move-node
