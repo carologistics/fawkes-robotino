@@ -153,7 +153,6 @@
                        (bs-prepared-side ?m ?side)
 											 (wp-base-color ?wp BASE_NONE) (wp-unused ?wp)
 											 (wp-spawned-for ?wp ?r)
-											 (self ?r)
 											 (mps-side-free ?m ?side))
 											 ;(not (wp-usable ?wp))
 		:effect (and (wp-at ?wp ?m ?side) (not (mps-side-free ?m ?side))
@@ -182,8 +181,8 @@
 
 	(:action request-cs-mount-cap
 		:parameters (?r - robot ?m - mps ?wp - workpiece ?capcol - cap-color)
-		:precondition (self ?r)
-		:effect (self ?r)
+		:precondition (entered-field ?r)
+		:effect (entered-field ?r)
 	)
 
 	(:action cs-retrieve-cap
@@ -476,8 +475,8 @@
 
 (:action request-ds-fulfill-order
 		:parameters (?r - robot ?m - mps ?wp - workpiece ?ord - order)
-		:precondition (self ?r)
-		:effect (self ?r)
+		:precondition (entered-field ?r)
+		:effect (entered-field ?r)
 	)
 
   (:action move-node
