@@ -80,21 +80,6 @@
   (modify ?li (status WAITING) (last-error ?error-msg))
 )
 
-(defrule lock-actions-one-time-lock-rejected
-	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
-                      (action-name one-time-lock) (state RUNNING))
-  ?mf <- (mutex (name ?name) (response REJECTED|ERROR)
-                (error-msg ?error-msg))
-  ?li <- (lock-info (name ?name) (goal-id ?goal-id) (plan-id ?plan-id)
-                    (action-id ?id))
-	=>
-  (printout warn "Lock " ?name " was rejected " crlf)
-	(modify ?mf (request NONE) (response NONE) (error-msg ""))
-  (retract ?li )
-  (modify ?pa (state EXECUTION-FAILED) (error-msg ?error-msg))
-)
-
-
 (defrule lock-actions-lock-retry
 	?pa <- (plan-action (goal-id ?goal-id) (plan-id ?plan-id) (id ?id)
                       (action-name lock|location-lock) (state RUNNING))
@@ -105,34 +90,6 @@
   (printout warn "Retrying to lock " ?name crlf)
   (mutex-try-lock-async ?name)
   (modify ?li (status REQUESTED) (last-try ?now))
-)
-
-
-(defrule lock-actions-unlock-start
-	?pa <- (plan-action (plan-id ?plan-id) (id ?id) (state PENDING)
-                      (action-name unlock) (executable TRUE)
-                      (param-names $?param-names)
-                      (param-values $?param-values))
-	=>
-	(bind ?lock-name (plan-action-arg name ?param-names ?param-values))
-	; The following performs a synchronous/blocking call
-	;(bind ?rv (robmem-mutex-unlock (str-cat ?lock-name)))
-	;(modify ?pa (state (if ?rv then EXECUTION-SUCCEEDED else EXECUTION-FAILED)))
-	(mutex-unlock-async ?lock-name)
-	(modify ?pa (state RUNNING))
-)
-
-
-(defrule lock-actions-unlock-done
-  ?pa <- (plan-action (id ?id) (action-name unlock) (state RUNNING)
-                      (param-names $?param-names) (param-values $?param-values))
-	?mf <- (mutex (name ?name&:(eq ?name (plan-action-arg name ?param-names ?param-values)))
-								(state OPEN) (request UNLOCK))
-	=>
-	(printout t "Unlock of " ?name " successfull" crlf)
-	(modify ?pa (state EXECUTION-SUCCEEDED))
-  ;(assert (domain-fact (name location-locked) (param-values $?param-values)))
-	(modify ?mf (request NONE) (response NONE))
 )
 
 (defrule lock-actions-unlock-location
