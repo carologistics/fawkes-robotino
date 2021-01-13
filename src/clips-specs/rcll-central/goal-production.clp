@@ -115,25 +115,13 @@
 )
 
 
-(defrule goal-production-create-visit
+(defrule goal-production-create-C0
   (wm-fact (key refbox phase) (value PRODUCTION))
   (domain-facts-loaded)
-  (not (goal (class VISIT-PARENT)))
+  (not (BUILD-C0))
+  (not (goal (class BUILD-C0)))
   =>
-    (assert (goal (id (sym-cat VISIT-PARENT- (gensym*)))
-                (class VISIT-PARENT) (type ACHIEVE) (sub-type RUN-SUBGOALS-IN-PARALLEL)))  ; RUN-ALL-OF-SUBGOALS
-)
-
-(defrule goal-production-expand-visit
-  ?g <- (goal (id ?parent-id) (mode SELECTED) (class VISIT-PARENT))
-  => 
-    (do-for-all-facts ((?mps domain-object)) (eq ?mps:type mps)
-      (printout t "******************************************************" crlf)
-      (printout t "Goal VISIT " ?mps:name " formulated" crlf)
-      (printout t "******************************************************" crlf)
-      (assert (goal (id (sym-cat VISIT- (gensym*))) (parent ?parent-id)
-                  (class VISIT) (type ACHIEVE) (sub-type SIMPLE)
-                  (params to ?mps:name )))
-    )
-    (modify ?g (mode EXPANDED))
+    (assert (goal (id (sym-cat BUILD-C0- (gensym*)))
+                (class BUILD-C0) (type ACHIEVE) (sub-type SIMPLE)))
+    (assert (BUILD-C0))
 )

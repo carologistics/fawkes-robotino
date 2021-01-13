@@ -105,10 +105,7 @@
         (bind ?ss M-SS)
   )
 	(assert
-    (domain-fact (name self) (param-values ?self))
-    (domain-fact (name at) (param-values ?self START INPUT))
     (domain-fact (name mps-team) (param-values ?bs ?team-color))
-    (domain-fact (name can-hold) (param-values ?self))
     (domain-fact (name mps-team) (param-values ?ds ?team-color))
     (domain-fact (name mps-team) (param-values ?ss ?team-color))
     (domain-fact (name mps-team) (param-values ?cs1 ?team-color))
@@ -311,7 +308,8 @@
 		            (domain-object (name ?curr-robot) (type robot))
 		            (domain-fact (name at) (param-values ?curr-robot START INPUT))
 		            (domain-fact (name robot-waiting) (param-values ?curr-robot))
-		            (domain-fact (name at) (param-values ?curr-robot START INPUT)))
+                (domain-fact (name self) (param-values ?curr-robot))
+                (domain-fact (name can-hold) (param-values ?curr-robot)))
 		  else
 		    (retract ?cf)
 		)
