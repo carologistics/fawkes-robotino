@@ -128,6 +128,5 @@
   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
                 (class PRODUCE-C0) (sub-type SIMPLE)
                 (params bs-color BASE_BLACK cs-color CAP_BLACK)
-              ;  (required-resources (sym-cat ?mps -INPUT) ?required-resources)
   ))
 )
