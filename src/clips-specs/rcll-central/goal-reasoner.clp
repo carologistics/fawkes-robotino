@@ -74,40 +74,10 @@
 )
 
 (deffunction production-leaf-goal (?goal-class)
-  (return (or (eq ?goal-class GET-BASE-TO-FILL-RS)
-              (eq ?goal-class GET-SHELF-TO-FILL-RS)
-              (eq ?goal-class FILL-RS)
-              (eq ?goal-class FILL-CAP)
-              (eq ?goal-class CLEAR-MPS)
-              (eq ?goal-class DISCARD-UNKNOWN)
-              (eq ?goal-class PRODUCE-C0)
-              (eq ?goal-class PRODUCE-CX)
-              (eq ?goal-class MOUNT-FIRST-RING)
-              (eq ?goal-class MOUNT-NEXT-RING)
-              (eq ?goal-class DELIVER)
-              (eq ?goal-class RESET-MPS) 
-              (eq ?goal-class WAIT)
-              (eq ?goal-class GO-WAIT)
-              (eq ?goal-class WAIT-FOR-MPS-PROCESS)))
-)
-
-(deffunction production-tree-goal (?goal-class)
-  (return (or (eq ?goal-class PRODUCTION-SELECTOR)
-              (eq ?goal-class URGENT)
-              (eq ?goal-class FULFILL-ORDERS)
-              (eq ?goal-class DELIVER-PRODUCTS)
-              (eq ?goal-class INTERMEDEATE-STEPS)
-              (eq ?goal-class CLEAR)
-              (eq ?goal-class WAIT-FOR-PROCESS)
-              (eq ?goal-class PREPARE-RESOURCES)
-              (eq ?goal-class PREPARE-CAPS)
-              (eq ?goal-class PREPARE-RINGS)
-              (eq ?goal-class NO-PROGRESS)))
-)
-
-(deffunction production-goal (?goal-class)
-  (return (or (production-tree-goal ?goal-class)
-              (production-leaf-goal ?goal-class)))
+  (return (or (eq ?goal-class GET-BASE)
+              (eq ?goal-class FILL-CS)
+              (eq ?goal-class MOUNT-CAP)
+              (eq ?goal-class DELIVER-C0)))
 )
 
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
@@ -140,42 +110,6 @@
   (modify ?g (mode SELECTED))
 )
 
-(deffunction goal-reasoner-assign-production-tree-to-robot (?id ?robot)
-  "Recursively add the robot as parameter to all sub-goals in the tree 
-  rooted at the goal with the given ID.
-  "
-  (do-for-fact ((?g goal)) (eq ?g:id ?id)
-    (delayed-do-for-all-facts ((?sub-goal goal)) (eq ?sub-goal:parent ?g:id)
-      (goal-reasoner-assign-production-tree-to-robot ?sub-goal:id ?robot)
-      (modify ?sub-goal (params $?sub-goal:params robot ?robot))
-    )
-  )
-)
-
-(defrule goal-reasoner-expand-production-tree
-"  Populate the tree structure of the production tree. The priority of subgoals
-   is determined by the order they are asserted. Sub-goals that are asserted
-   earlier get a higher priority.
-"
-  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
-  (goal (id ?goal-id) (class PRODUCTION-MAINTAIN) 
-        (params $?frequency robot ?robot $?params) (mode SELECTED))
-  (not (goal (parent ?goal-id)))
-=>
-  (goal-tree-assert-subtree ?goal-id
-    (goal-tree-assert-run-one PRODUCTION-SELECTOR
-      (goal-tree-assert-run-one URGENT)
-      (goal-tree-assert-run-one FULFILL-ORDERS
-        (goal-tree-assert-run-one DELIVER-PRODUCTS)
-        (goal-tree-assert-run-one INTERMEDEATE-STEPS))
-      (goal-tree-assert-run-one PREPARE-RESOURCES
-        (goal-tree-assert-run-one CLEAR)
-        (goal-tree-assert-run-one PREPARE-CAPS)
-        (goal-tree-assert-run-one WAIT-FOR-PROCESS)
-        (goal-tree-assert-run-one PREPARE-RINGS))
-      (goal-tree-assert-run-one NO-PROGRESS)))
-  (goal-reasoner-assign-production-tree-to-robot ?goal-id ?robot)
-)
 
 (defrule goal-reasoner-expand-goal-with-sub-type
 " Expand a goal with sub-type, if it has a child."
@@ -200,54 +134,6 @@
 ; such as unlocking resources or adapting the world model and strategy based on
 ; goal outcomes or plan and action status.
 
-; ------------------------- PRE EVALUATION -----------------------------------
-
-(defrule goal-reasoner-pre-evaluate-location-unlock-done
-" React to a successful unlock of an location by removing the corresponding location-locked domain-fact"
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?p <- (goal-reasoner-unlock-pending ?lock)
-  ?m <- (mutex (name ?lock) (request UNLOCK) (state OPEN))
-  ?df <- (domain-fact (name location-locked) (param-values ?mps ?side))
-  (test (not (eq FALSE (str-index (str-cat ?mps) (str-cat ?lock)))))
-  (test (not (eq FALSE (str-index (str-cat ?side) (str-cat ?lock)))))
-  =>
-  (modify ?m (request NONE) (response NONE))
-  (retract ?df)
-  (retract ?p)
-)
-
-
-(defrule goal-reasoner-pre-evaluate-lock-unlock-done
-" React to a successful unlock of a lock by removing the corresponding locked domain-fact"
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?p <- (goal-reasoner-unlock-pending ?lock)
-  ?m <- (mutex (name ?lock) (request UNLOCK) (state OPEN))
-  ?df <- (domain-fact (name locked) (param-values ?lock))
-  =>
-  (modify ?m (request NONE) (response NONE))
-  (retract ?df)
-  (retract ?p)
-)
-
-
-(defrule goal-reasoner-finish-sub-goals-of-finished-parent
-" Evaluate any sub-goal of a parent such that they can be cleaned up.
-  This allows to recursively evaluate the sub-tree of an evaluated goal
-  which is necessary to ensure a proper clean up of any related plans.
-"
-  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
-  (goal (id ?sub-goal) (parent ?goal-id) (mode ~FINISHED&~EVALUATED&~RETRACTED))
-=>
-  (delayed-do-for-all-facts ((?sg goal))
-    (and (eq ?sg:parent ?goal-id) (neq ?sg:mode FINISHED)
-                                  (neq ?sg:mode EVALUATED)
-                                  (neq ?sg:mode RETRACTED))
-  ; (printout t "Goal '" ?sg:id "' (part of '" ?sg:parent
-  ;     "') has, cleaning up" crlf)
-    (modify ?sg (mode FINISHED))
-  )
-)
 
 ; ----------------------- EVALUATE COMMON ------------------------------------
 
@@ -277,41 +163,6 @@
 )
 
 
-(defrule goal-reasoner-evaluate-completed-produce-c0-and-mount-first-ring
-" Bind a workpiece to the order it belongs to.
-
-  Workpieces that got dispensed during PRODUCE-C0 and MOUNT-FIRST-RING get
-  tied to their order independent of the goal outcome as long as they are
-  still usable.
-"
-  ?g <- (goal (id ?goal-id) (class PRODUCE-C0|MOUNT-FIRST-RING)
-              (parent ?parent-id)
-              (mode FINISHED) (outcome ?outcome)
-              (params $?params))
- (plan (goal-id ?goal-id) (id ?plan-id))
- (time $?now)
- (wm-fact (key domain fact wp-usable args? wp ?wp&:(eq ?wp (get-param-by-arg ?params wp))))
- (wm-fact (key order meta points-max
-           args? ord ?order&:(eq ?order (get-param-by-arg ?params order)))
-          (value ?max))
- =>
- (printout t "Goal '" ?goal-id "' has been completed, Evaluating" crlf)
- (assert (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order) (type BOOL) (value TRUE)))
- (printout t "Started producing order " ?order " which potentially yields "
-             ?max " points" crlf)
- (modify ?g (mode EVALUATED))
-)
-
-
-(defrule goal-reasoner-evaluate-process-mps
-  ?g <- (goal (class PROCESS-MPS) (id ?goal-id) (mode FINISHED) (outcome ?outcome) (params m ?mps))
-  (plan-action (goal-id ?goal-id) (action-name ?prepare-action) (state FINAL))
-  ?pre <- (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
-  ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
-  =>
-  (retract ?pre ?pro)
-  (modify ?g (mode EVALUATED))
-)
 
 ; ================================= Goal Clean up ============================
 
@@ -345,40 +196,6 @@
     (retract ?p)
   )
   (retract ?g)
-)
-
-
-(defrule goal-reasoner-reject-production-tree-goal-missing-subgoal
-" Retract a formulated sub-goal of the production tree if it requires a
-  sub-goal but there is none formulated.
-"
-  (declare (salience ?*SALIENCE-GOAL-REJECT*))
-  ?g <- (goal (id ?goal) (parent ?parent) (type ACHIEVE)
-              (sub-type ?sub-type&:(requires-subgoal ?sub-type))
-              (class ?class&:(production-goal ?class)) (mode FORMULATED))
-  (not (goal (parent ?goal) (mode FORMULATED)))
-=>
-  (modify ?g (mode RETRACTED) (outcome REJECTED))
-)
-
-
-(defrule goal-reasoner-reject-production-tree-goals-other-goal-dispatched
-" Retract all formulated leaf-goals of a production tree once a production leaf
-  goal of the tree is dispatched.
-"
-  (declare (salience ?*SALIENCE-GOAL-REJECT*))
-  (goal (id ?goal) (parent ?parent) (type ACHIEVE)
-        (sub-type ?sub-type) (class ?class&:(production-goal ?class))
-        (mode FORMULATED))
-  (goal (id ?dispatched-leaf) (class ?some-class&:(production-goal ?some-class))
-        (sub-type SIMPLE) (mode DISPATCHED) (parent ?parent-of-dispatched))
-  (goal (id ?parent) (params $?p1 robot ?robot $?p2))
-  (goal (id ?parent-of-dispatched) (params $?q1 robot ?robot $?q2))
-=>
-  (delayed-do-for-all-facts ((?g goal))
-    (and (eq ?g:mode FORMULATED) (production-goal ?g:class) (eq ?g:parent ?parent))
-    (modify ?g (mode RETRACTED) (outcome REJECTED))
-  )
 )
 
 
