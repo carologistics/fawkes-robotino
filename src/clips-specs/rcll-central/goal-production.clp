@@ -122,11 +122,15 @@
   successfully executing this goal.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (goal (class PRODUCE-C0)))
+  (wm-fact (key domain fact order-complexity args? ord ?order com C0))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (not (goal (class PRODUCE-C0) (params order ?order bs-color ?base-color cs-color ?cap-color)))
+  (not (goal (class PRODUCE-C0) (params order ?order bs-color ?base-color cs-color ?cap-color robot ?any-robot)))
   =>
-  (printout t "Goal " PRODUCE-C0 " formulated" crlf)
+  (printout t "Goal for C0 order " ?order " formulated" crlf)
   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
                 (class PRODUCE-C0) (sub-type SIMPLE)
-                (params bs-color BASE_BLACK cs-color CAP_BLACK)
+                (params order ?order bs-color ?base-color cs-color ?cap-color)
   ))
 )
