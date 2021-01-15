@@ -79,6 +79,9 @@
 	(wm-fact (key config simtest testbed) (value ?testbed))
 	=>
 	(switch ?testbed
+		(case "ENTER-FIELD" then
+			(assert (testcase (type ENTER-FIELD)))
+		)
 		(case "FAST" then
 			(assert (testcase (type POINTS-AFTER-MINUTE) (args minute 1 points 1)))
 		)
@@ -247,6 +250,22 @@
 	(wm-fact (key domain fact mps-state args? m ?m s BROKEN))
 	=>
 	(modify ?testcase (state FAILED) (msg (str-cat "Broken MPS " ?m)))
+)
+
+(defrule simtest-enter-field-success
+" The ENTER-FIELD goal succeeded; we can move."
+	?testcase <- (testcase (type ENTER-FIELD) (state PENDING))
+	(goal (class ENTER-FIELD) (mode FINISHED) (outcome COMPLETED))
+	=>
+	(modify ?testcase (state SUCCEEDED))
+)
+
+(defrule simtest-enter-field-failed
+" The ENTER-FIELD goal failed; something is broken."
+	?testcase <- (testcase (type ENTER-FIELD) (state PENDING))
+	(goal (class ENTER-FIELD) (mode FINISHED) (outcome ~COMPLETED))
+	=>
+	(modify ?testcase (state FAILED))
 )
 
 ; ============================================================================
