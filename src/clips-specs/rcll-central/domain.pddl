@@ -147,18 +147,16 @@
 	)
 
 	(:action bs-dispense
-		:parameters (?r - robot ?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
+		:parameters (?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
 		:precondition (and (mps-type ?m BS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
                        (locked ?m) (bs-prepared-color ?m ?basecol)
                        (bs-prepared-side ?m ?side)
 											 (wp-base-color ?wp BASE_NONE) (wp-unused ?wp)
-											 (wp-spawned-for ?wp ?r)
 											 (mps-side-free ?m ?side))
 											 ;(not (wp-usable ?wp))
 		:effect (and (wp-at ?wp ?m ?side) (not (mps-side-free ?m ?side))
 								 (not (wp-base-color ?wp BASE_NONE)) (wp-base-color ?wp ?basecol)
-								 (not (wp-unused ?wp)) (wp-usable ?wp)
-								 (not (wp-spawned-for ?wp ?r)))
+								 (not (wp-unused ?wp)) (wp-usable ?wp))
 	)
 
 	(:action cs-mount-cap
@@ -398,7 +396,7 @@
 	)
 
 	(:action fulfill-order-c0
-		:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate
+		:parameters (?ord - order ?wp - workpiece ?m - mps
 		             ?basecol - base-color ?capcol - cap-color)
 		:precondition (and (wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT))
                       (wp-usable ?wp)
