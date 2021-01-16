@@ -82,39 +82,6 @@
                 (params mps ?mps)))
 )
 
-; todo (tristan): maybe don't need this (see slack)
-(defrule goal-production-create-wp-spawn-maintain
-  "Maintain Spawning"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (domain-facts-loaded)
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  (not (goal (class WP-SPAWN-MAINTAIN)))
- =>
-  (bind ?goal (goal-tree-assert-run-endless WP-SPAWN-MAINTAIN 1))
-  (modify ?goal (required-resources wp-spawn)
-                (params frequency 1 retract-on-REJECTED)
-                (verbosity QUIET))
-)
-
-(defrule goal-production-create-wp-spawn-achieve
-  "Spawn a WP for each robot"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (time $?now)
-  ?g <- (goal (id ?maintain-id) (class WP-SPAWN-MAINTAIN) (mode SELECTED))
-  (not (goal (class SPAWN-WP)))
-  (not (goal (class SPAWN-SS-C0)))
-  (wm-fact (key central agent robot args? r ?robot))  
-  (not
-    (and
-    (domain-object (name ?wp) (type workpiece))
-    (wm-fact (key domain fact wp-spawned-for args? wp ?wp r ?robot)))
-  )
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  =>
-  (assert (goal (id (sym-cat SPAWN-WP- (gensym*))) (sub-type SIMPLE)
-                (class SPAWN-WP) (parent ?maintain-id)
-                (params robot ?robot)))
-)
 
 (defrule goal-production-navgraph-compute-wait-positions-finished
   "Add the waiting points to the domain once their generation is finished."
@@ -131,72 +98,15 @@
   (assert (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE)))
 )
 
-; ============================= mps handling ===============================
-
-(defrule goal-production-create-mps-handling-maintain
-" The parent mps handling goal. Allows formulation of
-  mps handling goals, if requested by a production goal.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (domain-facts-loaded)
-  (not (goal (class MPS-HANDLING-MAINTAIN)))
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  (wm-fact (key game state) (value RUNNING))
-  =>
-  (goal-tree-assert-run-endless MPS-HANDLING-MAINTAIN 1)
-)
-
-
-(defrule goal-production-mps-handling-create-prepare-goal
-  "Prepare and model processing of a mps"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?pg <- (goal (id ?mps-handling-id) (class MPS-HANDLING-MAINTAIN) (mode SELECTED))
-  ;Requested process CEs
-  ;Separate conditions apply for delivery stations
-  (wm-fact (key domain fact mps-type args? m ?mps t ~DS))
-  (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
-  (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
-  ;MPS CEs
-  (wm-fact (key domain fact mps-state args? m ?mps s IDLE))
-  (not (wm-fact (key domain fact wp-at args? wp ? m ?mps side OUTPUT)))
-  =>
-  (bind ?resources (create$ ?mps (sym-cat ?mps -OUTPUT) (sym-cat ?mps -INPUT)))
-  (assert (goal (id (sym-cat PROCESS-MPS- ?mps - (gensym*)))
-                (class PROCESS-MPS) (sub-type SIMPLE)
-                (parent ?mps-handling-id)
-                (params m ?mps
-                )
-                (required-resources ?resources)
-  ))
-  (modify ?pg (mode EXPANDED))
-)
-
-
-(defrule goal-production-mps-handling-create-prepare-goal-delivery
-  "Prepare and model processing of a delivery"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?pg <- (goal (id ?mps-handling-id) (class MPS-HANDLING-MAINTAIN) (mode SELECTED))
-  ;Requested process CEs
-  ;Separate conditions apply for delivery stations
-  (wm-fact (key domain fact mps-type args? m ?mps t DS))
-  (wm-fact (key mps-handling prepare ?prepare-action ?mps args? m ?mps ord ?order))
-  (wm-fact (key mps-handling process ?process-action ?mps
-            args? ord ?order wp ?wp m ?ds $?other))
-  (wm-fact (key refbox order ?order delivery-begin) (value ?delivery-begin))
-  (wm-fact (key refbox game-time) (values $?game-time))
-  (wm-fact (key refbox order ?order delivery-begin) (type UINT)
-           (value ?begin&:(< ?begin (nth$ 1 ?game-time))))
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side INPUT))
-  (wm-fact (key domain fact mps-state args? m ?mps s IDLE))
-  =>
-  (bind ?resources (create$ ?mps ?wp (sym-cat ?mps -INPUT)))
-  (assert (goal (id (sym-cat PROCESS-MPS- ?mps - (gensym*)))
-                (class PROCESS-MPS) (sub-type SIMPLE)
-                (parent ?mps-handling-id)
-                (params m ?mps ord ?order)
-                (required-resources ?resources)
-  ))
-  (modify ?pg (mode EXPANDED))
+(deffunction create-wp ()
+  (bind ?wp (sym-cat "wp"-(gensym*)))
+  (assert (wm-fact (key domain fact wp-unused args? wp ?wp)))
+  (assert (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE)))
+  (assert (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE)))
+  (assert (wm-fact (key domain fact wp-ring1-color args? wp ?wp col RING_NONE)))
+  (assert (wm-fact (key domain fact wp-ring2-color args? wp ?wp col RING_NONE)))
+  (assert (wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE)))
+  (return ?wp)
 )
 
 ; ============================= Enter-field ===============================
@@ -221,270 +131,176 @@
                 (params r ?robot team-color ?team-color)))
 )
 
-;Diasbled due to the tendency of robot 2 and 3 failing to enter
-;(defrule goal-production-hack-failed-enter-field
-;  "HACK: Stop trying to enter the field when it failed a few times."
-  ; TODO-GM: this was after 3 tries, now its instantly
-;  ?g <- (goal (id ?gid) (class ENTER-FIELD)
-;               (mode FINISHED) (outcome FAILED))
-;  ?pa <- (plan-action (goal-id ?gid) (state FAILED) (action-name enter-field))
-;  =>
-;  (printout t "Goal '" ?gid "' has failed, evaluating" crlf)
-;  (modify ?pa (state EXECUTION-SUCCEEDED))
-;  (modify ?g (mode DISPATCHED) (outcome UNKNOWN))
-;)
 
 ; ============================= Production goals ===============================
 
-(defrule goal-production-create-production-maintain
-" The parent production goal. Allows formulation of
-  production goals only if the proper game state selected
-  and the domain got loaded. Other production goals are
-  formulated as sub-goals of this goal.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (domain-facts-loaded)
-  (wm-fact (key central agent robot args? r ?robot))
-  (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (class PRODUCTION-MAINTAIN) (params $?frequency robot ?robot $?params)))
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  (wm-fact (key game state) (value RUNNING))
-  (NavGraphWithMPSGeneratorInterface (final TRUE))
-  (wm-fact (key navgraph waitzone generated))
-  =>
-  (printout t "Creating production-maintain goal for " ?robot crlf)
-  (bind ?goal (goal-tree-assert-run-endless PRODUCTION-MAINTAIN 1))
-  (modify ?goal (params frequency 1 robot ?robot))
-)
 
-(defrule goal-production-create-fill-cap
-" Fill a cap into a cap station.
-  Use a capcarrier from the corresponding shelf to feed it into a cap station."
+(defrule goal-production-produce-c0
+  "Create root goal of c0-production tree"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class PREPARE-CAPS) (params robot ?robot) (mode FORMULATED))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  ;Robot CEs
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
-  ;MPS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact cs-can-perform args? m ?mps op RETRIEVE_CAP))
-  (not (wm-fact (key domain fact cs-buffered args? m ?mps col ?any-cap-color)))
-  (not (wm-fact (key domain fact wp-at args? wp ?wp-a m ?mps side INPUT)))
-  ;Capcarrier CEs
-  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?spot))
-  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-  =>
-  (assert (goal (id (sym-cat FILL-CAP- (gensym*)))
-                (class FILL-CAP) (sub-type SIMPLE)
-                (parent ?production-id)
-                (params robot ?robot
-                        mps ?mps
-                        cc ?cc
-                )
-                (required-resources (sym-cat ?mps -INPUT) ?cc)
-  ))
-)
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C0))
 
-(defrule goal-production-create-produce-c0
-" Produce a C0 product: Get the correct base and mount the right cap on it.
-  The produced workpiece stays in the output of the used cap station after
-  successfully executing this goal.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class INTERMEDEATE-STEPS) (params robot ?robot) (mode FORMULATED))
-  ;MPS-CS CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?mps side INPUT)))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact cs-buffered args? m ?mps col ?cap-color))
-  (wm-fact (key domain fact cs-can-perform args? m ?mps op MOUNT_CAP))
-  ;MPS-BS CEs
-  (wm-fact (key domain fact mps-type args? m ?bs t BS))
-  (domain-object (name ?bs-side&:(or (eq ?bs-side INPUT) (eq ?bs-side OUTPUT))) (type mps-side))
-  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
-  ;To-Do: Model the bs active-side
-  ;Order CEs
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
-  (test (eq ?complexity C0))
-  ;(wm-fact (key config rcll allowed-complexities) (values $?allowed&:(member$ (str-cat ?complexity) ?allowed)))
+  ; todo: check delivery time/quantity instead of producing only one c0
+  (not (produced-c0))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
-	            (value ?qd&:(> ?qr ?qd)))
-  ;Active Order CEs
-  (or (and (wm-fact (key domain fact wp-spawned-for args? wp ?spawned-wp r ?robot))
-           (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN&~DOWN))
-           (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-           (not (wm-fact (key order meta wp-for-order args? wp ?any-ord-wp ord ?order))))
-      (and (wm-fact (key domain fact holding args? r ?robot wp ?spawned-wp))
-           (wm-fact (key domain fact wp-base-color args? wp ?spawned-wp col ?base-color))
-           (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-           (wm-fact (key domain fact wp-cap-color args? wp ?wp cap-color CAP_NONE))))
   
+  ; order is not already being handled
+  (not (goal (class PRODUCE-C0) (params order ?order wp ?some-wp)))
+
   =>
-  (printout error "GOAL-C0 formulated" crlf)
-  (bind ?required-resources ?order ?spawned-wp)
-  (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-                (class PRODUCE-C0) (sub-type SIMPLE)
-                (parent ?production-id)
-                (params robot ?robot
-                        bs ?bs
-                        bs-side ?bs-side
-                        bs-color ?base-color
-                        mps ?mps
-                        cs-color ?cap-color
-                        order ?order
-                        wp ?spawned-wp
-                )
-                (required-resources (sym-cat ?mps -INPUT) ?required-resources)
-  ))
+  (assert (produced-c0))
+  (bind ?wp (create-wp))
+  (assert 
+    (goal (id (sym-cat PRODUCE-C0- (gensym*)))
+          (class PRODUCE-C0)
+          (sub-type RUN-ALL-OF-SUBGOALS)
+          (params order ?order wp ?wp)
+    )
+  )
+)
+
+(defrule goal-production-produce-c0-create-subgoals
+  "Create subgoals with parallelizable steps for c0 production"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?p <- (goal (id ?parent) (class PRODUCE-C0) (mode SELECTED) (params order ?order wp ?wp))
+  =>
+  (assert
+    (goal (id (sym-cat PRODUCE-C0-GET-BASE-AND-CAP-(gensym*)))
+          (class PRODUCE-C0-GET-BASE-AND-CAP)
+          (parent ?parent)
+          (sub-type RUN-SUBGOALS-IN-PARALLEL)
+          (priority 3.0)
+    )
+    (goal (id (sym-cat PRODUCE-C0-MOUNT-CAP-(gensym*)))
+          (class PRODUCE-C0-MOUNT-CAP)
+          (parent ?parent)
+          (sub-type RUN-SUBGOALS-IN-PARALLEL)
+          (priority 2.0)
+    )
+    (goal (id (sym-cat PRODUCE-C0-DELIVER-(gensym*)))
+          (class PRODUCE-C0-DELIVER)
+          (parent ?parent)
+          (sub-type RUN-SUBGOALS-IN-PARALLEL)
+          (priority 1.0)
+    )
+  )
+  (modify ?p (mode EXPANDED))
 )
 
 
-(defrule goal-production-create-clear-cs-for-capless-carriers
-" Remove a capless capcarrier from the output of a cap station after
-  retrieving a cap from it.
-"
+(defrule goal-production-get-base-and-cap
+  "Leaf goals to prepare a cap and remove the unused base and get a base running in parallel."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class CLEAR) (params robot ?robot) (mode FORMULATED))
+  ?p <- (goal (id ?parent) (class PRODUCE-C0-GET-BASE-AND-CAP) (mode SELECTED) (parent ?root))
+  (goal (id ?root) (params order ?order wp ?wp))
+
+  ; get required color
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+
+  ; get correct cap-station
   (wm-fact (key refbox team-color) (value ?team-color))
-  ;Robot CEs
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp)))
-  ;MPS CEs
-  ;Maybe add a check for the base_color
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-;  (wm-fact (key domain fact mps-state args? m ?mps s READY-AT-OUTPUT))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  ;WP CEs
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  (wm-fact (key domain fact mps-type args? m ?cap-station t CS))
+  (wm-fact (key domain fact mps-team args? m ?cap-station col ?team-color))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?spot))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+
+  ; get base color
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+
+  ; get base station
+  (wm-fact (key domain fact mps-type args? m ?base-station t BS))
+  (wm-fact (key domain fact mps-team args? m ?base-station col ?team-color))
+
   =>
-  (printout t "Goal " CLEAR-MPS " ("?mps") formulated" crlf)
-  (assert (goal (id (sym-cat CLEAR-MPS- (gensym*)))
-                (class CLEAR-MPS) (sub-type SIMPLE)
-                (parent ?production-id)
-                (params robot ?robot
-                        mps ?mps
-                        wp ?wp
-                        side OUTPUT
-                )
-                (required-resources (sym-cat ?mps -OUTPUT) ?wp)
-  ))
+  (assert
+    (goal (id (sym-cat FILL-CS-(gensym*)))
+          (class FILL-CS)
+          (parent ?parent)
+          (sub-type SIMPLE)
+          (params mps ?cap-station cc ?cc)
+    )
+    (goal (id (sym-cat GET-BASE-(gensym*)))
+          (class GET-BASE)
+          (parent ?parent)
+          (sub-type SIMPLE)
+          (params bs ?base-station
+                  bs-side OUTPUT
+                  bs-color ?base-color
+                  cs ?cap-station
+                  wp ?wp)
+    )
+  )
+  (modify ?p (mode EXPANDED))
 )
 
 
-(defrule goal-production-create-deliver
-  "Deliver a fully produced workpiece."
+(defrule goal-production-c0-mount-cap
+  "Create leaf goal to mount a prepared cap on the base the robot is holding."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class DELIVER-PRODUCTS) (params robot ?robot) (mode FORMULATED))
-  ;To-Do: Model state IDLE|wait-and-look-for-alternatives
+  ?p <- (goal (id ?parent) (class PRODUCE-C0-MOUNT-CAP) (mode SELECTED) (parent ?root))
+  (goal (id ?root) (params order ?order wp ?wp))
+
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  ; cap station is buffered from previous step
+  (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color))
+  ; some robot is holding the base from the previous step
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  =>
+  (assert
+    (goal (id (sym-cat MOUNT-CAP-(gensym*)))
+          (class MOUNT-CAP)
+          (parent ?parent)
+          (sub-type SIMPLE)
+          (params robot ?robot cs ?cap-station cap-color ?cap-color wp ?wp)
+    )
+  )
+  (modify ?p (mode EXPANDED))
+)
+
+(defrule goal-production-c0-deliver
+  "Create delivery leaf goal"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?p <- (goal (id ?parent) (class PRODUCE-C0-DELIVER) (mode SELECTED) (parent ?root))
+  (goal (id ?root) (params order ?order wp ?wp))
+  
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  
   (wm-fact (key refbox team-color) (value ?team-color))
-  ;MPS-DS CEs
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
-  ;MPS-CEs
-  (wm-fact (key domain fact mps-type args? m ?mps t CS|SS))
-  (wm-fact (key domain fact mps-state args? m ?mps s ~BROKEN))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  ;WP-CEs
-  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
-  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
-  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
-  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
-  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
-  (not (wm-fact (key domain fact wp-at args? wp ?any-wp m ?ds side INPUT)))
-  ;Order-CEs
-  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-  (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
-  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
-  ;note: could be moved to rejected checks
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
-           (value ?qd&:(> ?qr ?qd)))
-  (or (and (wm-fact (key domain fact wp-at args? wp ?wp m ?mps side OUTPUT))
-           (not (wm-fact (key domain fact holding args? r ?robot wp ?any-wp))))
-      (wm-fact (key domain fact holding args? r ?robot wp ?wp)))
-  (not (wm-fact (key wp meta wait-for-delivery args? wp ?wp wait-for ?)))
-  (not (goal (class DELIVER)
-             (parent ?parent)
-             (params robot ?robot $?
-                     order ?order
-                     wp ?wp
-                     ds ?ds
-                     ds-gate ?gate $?)))
+
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?cap-station side OUTPUT))
   =>
-  (printout t "Goal " DELIVER " formulated" crlf)
-  (bind ?parent ?production-id)
-  (assert (goal (id (sym-cat DELIVER- (gensym*)))
-                (class DELIVER) (sub-type SIMPLE)
-                (parent ?parent)
-                (params robot ?robot
-                        mps ?mps
-                        order ?order
-                        wp ?wp
-                        ds ?ds
-                        ds-gate ?gate
-                        base-color ?base-color
-                        ring1-color ?ring1-color
-                        ring2-color ?ring2-color
-                        ring3-color ?ring3-color
-                        cap-color ?cap-color
-                )
-                (required-resources (sym-cat ?mps -OUTPUT) ?order ?wp (sym-cat ?ds -INPUT))
-  ))
-)
-
-
-; ======================= No-progress (busy waiting) goals ==========================
-(defrule goal-production-create-wait
-  "Keep waiting at one of the waiting positions."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class NO-PROGRESS) (params robot ?robot) (mode FORMULATED))
-  (domain-object (type waitpoint) (name ?waitpoint))
-  (wm-fact (key domain fact at args? r ?robot m ?waitpoint&:
-               (eq (str-length (str-cat ?waitpoint)) 10) side WAIT))
-  =>
-  (printout t "Goal " WAIT " formulated" crlf)
-  (assert (goal (id (sym-cat WAIT- (gensym*)))
-               (class WAIT) (sub-type SIMPLE)
-               (parent ?production-id)
-               (params r ?robot
-                       point ?waitpoint)
-               (required-resources ?waitpoint)
-  ))
-)
-
-
-(defrule goal-production-create-go-wait
-  "Drive to a waiting position and wait there."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (id ?production-id) (class NO-PROGRESS) (params robot ?robot) (mode FORMULATED))
-  (goal (id ?urgent) (class URGENT) (mode FORMULATED))
-  (domain-object (type waitpoint) (name ?waitpoint&:
-               (eq (str-length (str-cat ?waitpoint)) 10)))
-  =>
-  (do-for-fact ((?wm wm-fact)) (wm-key-prefix ?wm:key (create$ monitoring shame))
-    (retract ?wm)
-    (bind ?production-id ?urgent)
+  (assert
+    (goal (id (sym-cat DELIVER-C0-(gensym*)))
+          (class DELIVER-C0)
+          (parent ?parent)
+          (sub-type SIMPLE)
+          (params order ?order
+                    ds ?ds
+                    cs ?cap-station
+                    wp ?wp 
+                    base-color ?base-color 
+                    cap-color ?cap-color)
+    )
   )
-  (printout t "Goal " GO-WAIT " formulated" crlf)
-  (assert (goal (id (sym-cat GO-WAIT- (gensym*)))
-                (class GO-WAIT) (sub-type SIMPLE)
-                (parent ?production-id)
-                (params r ?robot
-                        point ?waitpoint
-                )
-                (required-resources ?waitpoint)
-  ))
+  (modify ?p (mode EXPANDED))
+)
+
+
+(defrule assign-robot-to-production-goal
+  "Select a non-busy robot for executing a production leaf goal without assigned robot"
+  ?g <- (goal (id ?goal-id) (class ?class) (params $?params) (mode SELECTED))
+  (test (production-leaf-goal ?class))
+  (not (test (member$ robot $?params)))
+
+  ; Get robot
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (goal (params robot ?robot $?some-params)))
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+  =>
+  (printout t "Assigning " ?robot " to " ?goal-id crlf)
+  (modify ?g (params robot ?robot $?params))
 )
