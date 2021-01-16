@@ -304,3 +304,26 @@
   (printout t "Assigning " ?robot " to " ?goal-id crlf)
   (modify ?g (params robot ?robot $?params))
 )
+
+(defrule clear-station
+  "Formulate goal to remove robots from stations. This is only done unless the robot
+  could execute another production goal"
+  ; select non-busy robot
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (goal (params robot ?robot $?some-params)))
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+
+  ; check that robot is at input or output
+  (wm-fact (key domain fact at args? r ?robot m ?some-station 
+              side ?side&:(or (eq ?side INPUT) (eq ?side OUTPUT))))
+
+  ; there is nothing else to do:
+  (not (goal (class ?class&:(production-leaf-goal ?class))
+            (mode SELECTED)
+            (params $?params&:(not (member$ robot $?params)))))
+  =>
+  (assert (goal (id (sym-cat CLEAR-STATION-(gensym*)))
+                (class CLEAR-STATION)
+                (sub-type SIMPLE)
+                (params robot ?robot)))
+)
