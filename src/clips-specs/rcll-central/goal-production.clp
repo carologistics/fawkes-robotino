@@ -128,7 +128,7 @@
   (not (goal (class PRODUCE-C0) (params order ?order bs-color ?base-color cs-color ?cap-color)))
   (not (goal (class PRODUCE-C0) (params order ?order bs-color ?base-color cs-color ?cap-color robot ?any-robot)))
   =>
-  (printout t "Goal for C0 order " ?order " formulated" crlf)
+  (printout t "Goal for C0 order " ?order " formulated: " ?base-color " " ?cap-color crlf)
   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
                 (class PRODUCE-C0) (sub-type SIMPLE)
                 (params order ?order bs-color ?base-color cs-color ?cap-color)
