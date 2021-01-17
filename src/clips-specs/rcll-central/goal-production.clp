@@ -146,7 +146,27 @@
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   
   ; order is not already being handled
-  (not (goal (class PRODUCE-C0) (params order ?order wp ?some-wp)))
+  (not (goal (class PRODUCE-C0) (params order ?order $?other-params)))
+
+  ; get required color
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  ; get base color
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+
+  ; get cap station
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?cap-station t CS))
+  (wm-fact (key domain fact mps-team args? m ?cap-station col ?team-color))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?spot))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+
+  ; get base station
+  (wm-fact (key domain fact mps-type args? m ?base-station t BS))
+  (wm-fact (key domain fact mps-team args? m ?base-station col ?team-color))
+
+  ; get delivery station
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
+  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
 
   =>
   (assert (produced-c0))
@@ -155,7 +175,14 @@
     (goal (id (sym-cat PRODUCE-C0- (gensym*)))
           (class PRODUCE-C0)
           (sub-type RUN-ALL-OF-SUBGOALS)
-          (params order ?order wp ?wp)
+          (params order ?order
+                  wp ?wp
+                  cs ?cap-station
+                  bs ?base-station
+                  cap-color ?cap-color
+                  base-color ?base-color
+                  cc ?cc
+                  ds ?ds)
     )
   )
 )
@@ -163,7 +190,7 @@
 (defrule goal-production-produce-c0-create-subgoals
   "Create subgoals with parallelizable steps for c0 production"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?p <- (goal (id ?parent) (class PRODUCE-C0) (mode SELECTED) (params order ?order wp ?wp))
+  ?p <- (goal (id ?parent) (class PRODUCE-C0) (mode SELECTED))
   =>
   (assert
     (goal (id (sym-cat PRODUCE-C0-GET-BASE-AND-CAP-(gensym*)))
@@ -193,25 +220,14 @@
   "Leaf goals to prepare a cap and remove the unused base and get a base running in parallel."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?p <- (goal (id ?parent) (class PRODUCE-C0-GET-BASE-AND-CAP) (mode SELECTED) (parent ?root))
-  (goal (id ?root) (params order ?order wp ?wp))
-
-  ; get required color
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-
-  ; get correct cap-station
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact mps-type args? m ?cap-station t CS))
-  (wm-fact (key domain fact mps-team args? m ?cap-station col ?team-color))
-  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?spot))
-  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-
-  ; get base color
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-
-  ; get base station
-  (wm-fact (key domain fact mps-type args? m ?base-station t BS))
-  (wm-fact (key domain fact mps-team args? m ?base-station col ?team-color))
-
+  (goal (id ?root) (params order ?order
+                            wp ?wp
+                            cs ?cap-station
+                            bs ?base-station
+                            cap-color ?cap-color
+                            base-color ?base-color
+                            cc ?cc
+                            ds ?ds))
   =>
   (assert
     (goal (id (sym-cat FILL-CS-(gensym*)))
@@ -239,11 +255,14 @@
   "Create leaf goal to mount a prepared cap on the base the robot is holding."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?p <- (goal (id ?parent) (class PRODUCE-C0-MOUNT-CAP) (mode SELECTED) (parent ?root))
-  (goal (id ?root) (params order ?order wp ?wp))
-
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-  ; cap station is buffered from previous step
-  (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color))
+  (goal (id ?root) (params order ?order
+                            wp ?wp
+                            cs ?cap-station
+                            bs ?base-station
+                            cap-color ?cap-color
+                            base-color ?base-color
+                            cc ?cc
+                            ds ?ds))
   ; some robot is holding the base from the previous step
   (wm-fact (key domain fact holding args? r ?robot wp ?wp))
   =>
@@ -262,16 +281,14 @@
   "Create delivery leaf goal"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?p <- (goal (id ?parent) (class PRODUCE-C0-DELIVER) (mode SELECTED) (parent ?root))
-  (goal (id ?root) (params order ?order wp ?wp))
-  
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact mps-type args? m ?ds t DS))
-  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
-
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?cap-station side OUTPUT))
+  (goal (id ?root) (params order ?order
+                            wp ?wp
+                            cs ?cap-station
+                            bs ?base-station
+                            cap-color ?cap-color
+                            base-color ?base-color
+                            cc ?cc
+                            ds ?ds))
   =>
   (assert
     (goal (id (sym-cat DELIVER-C0-(gensym*)))
@@ -314,6 +331,7 @@
   (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
 
   ; check that robot is at input or output
+  (domain-object (type mps) (name ?some-station))
   (wm-fact (key domain fact at args? r ?robot m ?some-station 
               side ?side&:(or (eq ?side INPUT) (eq ?side OUTPUT))))
 
