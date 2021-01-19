@@ -64,14 +64,32 @@
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
               (params r ?robot team-color ?team-color))
 =>
-  (assert
-    (plan (id ENTER-FIELD-PLAN) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id ENTER-FIELD-PLAN) (goal-id ?goal-id)
-                                 (action-name enter-field)
-                                 (skiller (remote-skiller ?robot))
-                                 (param-names r team-color)
-                                 (param-values ?robot ?team-color))
+  ; robots 2 and 3 perform a short wait to let previous robot clear
+  (if (eq ?robot robot1)
+  then
+    (assert
+      (plan (id ENTER-FIELD-PLAN) (goal-id ?goal-id))
+      (plan-action (id 1) (plan-id ENTER-FIELD-PLAN) (goal-id ?goal-id)
+                                  (action-name enter-field)
+                                  (skiller (remote-skiller ?robot))
+                                  (param-names r team-color)
+                                  (param-values ?robot ?team-color))
     )
+  else
+    (assert
+      (plan (id ENTER-FIELD-PLAN) (goal-id ?goal-id))
+      (plan-action (id 1) (plan-id ENTER-FIELD-PLAN) (goal-id ?goal-id)
+                                  (action-name wait-at)
+                                  (skiller (remote-skiller ?robot))
+                                  (param-names r loc side)
+                                  (param-values ?robot START INPUT))
+      (plan-action (id 2) (plan-id ENTER-FIELD-PLAN) (goal-id ?goal-id)
+                                  (action-name enter-field)
+                                  (skiller (remote-skiller ?robot))
+                                  (param-names r team-color)
+                                  (param-values ?robot ?team-color))
+    )
+  )
   (modify ?g (mode EXPANDED))
 )
 
