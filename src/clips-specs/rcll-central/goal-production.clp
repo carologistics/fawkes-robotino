@@ -118,25 +118,24 @@
 (defrule goal-production-create-C0
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key refbox phase) (value PRODUCTION))
-  (domain-facts-loaded)
-  (not (BUILD-C0))
-  (not (goal (class BUILD-C0)))
+  (wm-fact (key domain fact order-complexity args? ord ?order com C0))
+  (not (goal (class BUILD-C0) (params ?order)))
   =>
     (assert
       (goal (id (sym-cat BUILD-C0- (gensym*)))
-                (class BUILD-C0) (type ACHIEVE) (sub-type RUN-SUBGOALS-IN-PARALLEL))
-      (BUILD-C0)
+                (class BUILD-C0) (type ACHIEVE) (sub-type RUN-SUBGOALS-IN-PARALLEL) (params ?order))
     )
 )
 
 (defrule goal-expander-build-C0
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?g <- (goal (id ?parent-id) (mode SELECTED) (class BUILD-C0))
-  (wm-fact (key domain fact wp-cap-color args? wp ?cc col CAP_GREY))
+  ?g <- (goal (id ?parent-id) (mode SELECTED) (class BUILD-C0) (params ?order))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?shelf-spot))
   => 
     (printout t "Expanding BUILD-C0, formulating subgoals" crlf)
-    (bind ?base-color BASE_BLACK)
     (bind ?spawned-wp (sym-cat WP- (random-id)))
     (assert 
       (goal (id (sym-cat PREPARE-CAP- (gensym*))) (parent ?parent-id)
@@ -147,12 +146,12 @@
                   (params cc ?cc))
       (goal (id (sym-cat FETCH-BASE- (gensym*))) (parent ?parent-id)
                   (class FETCH-BASE) (type ACHIEVE) (sub-type SIMPLE)
-                  (params base-color ?base-color cap-color CAP_GREY spawned-wp ?spawned-wp mps ?mps))
+                  (params base-color ?base-color cap-color ?cap-color spawned-wp ?spawned-wp mps ?mps))
       (goal (id (sym-cat DELIVER- (gensym*))) (parent ?parent-id)
                   (class DELIVER) (type ACHIEVE) (sub-type SIMPLE)
-                  (params wp ?spawned-wp m ?mps side OUTPUT))
+                  (params wp ?spawned-wp m ?mps side OUTPUT order ?order))
     )
-    (modify ?g (mode EXPANDED))
+    (modify ?g (mode EXPANDED) (meta ?order))
 )
 
 (defrule goal-production-create-go-wait
@@ -166,3 +165,4 @@
                 (class GO-WAIT) (sub-type SIMPLE)
                 (params r ?robot)))
 )
+  
