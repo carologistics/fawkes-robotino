@@ -95,14 +95,18 @@
  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cs-color))
 
  (wm-fact (key domain fact can-hold args? r ?robot))
- (not(goal (parent ?parent) (mode EXPANDED|DISPATCHED) (params machine ?somemachine side ?someside robot ?robot)))
+ (not(goal (parent ?parent) (mode EXPANDED|DISPATCHED) (params order ?some-order bs-color ?some-color cs-color ?other-color robot ?robot)))
  =>
       (printout t ?robot "robot")
       (bind ?wp (sym-cat WP- (random-id)))
       (printout t "plan action series here " PRODUCE-C0 crlf)
       (bind ?planid (sym-cat PRODUCE-C0-PLAN- (gensym*)))
       (printout t "Goal for C0 order " ?order " extended: " ?bs-color " " ?cs-color crlf)
+      
+      ;(if(not (location-locked ?mps INPUT))
+      
       (assert
+       
 
         (plan (id ?planid) (goal-id ?goal-id))
         (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
@@ -157,7 +161,8 @@
         (plan-action (id 13) (plan-id ?planid) (goal-id ?goal-id)
               (action-name location-unlock) (param-values ?mps OUTPUT))
 
-
+        ;else
+        ;(assert
 
 
         (plan-action (id 14) (plan-id ?planid) (goal-id ?goal-id)
