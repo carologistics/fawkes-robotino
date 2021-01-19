@@ -72,8 +72,10 @@
   (modify ?g (mode EXPANDED))
 )
 
+
 (defrule goal-produce-c0
- ?g <- (goal (id ?goal-id) (class PRODUCE-C0) (mode SELECTED) (params order ?order bs-color ?bs-color cs-color ?cs-color))
+ ?p <- (goal (mode DISPATCHED) (id ?parent))
+ ?g <- (goal (id ?goal-id) (parent ?parent) (class PRODUCE-C0) (mode SELECTED) (params order ?order bs-color ?bs-color cs-color ?cs-color))
  (not(goal (class PRODUCE-C0) (params order ?some-order bs-color ?some-color cs-color ?other-color robot ?robot)))
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  
@@ -93,13 +95,15 @@
  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cs-color))
 
  (wm-fact (key domain fact can-hold args? r ?robot))
-
+ (not(goal (parent ?parent) (mode EXPANDED|DISPATCHED) (params machine ?somemachine side ?someside robot ?robot)))
  =>
+      (printout t ?robot "robot")
       (bind ?wp (sym-cat WP- (random-id)))
       (printout t "plan action series here " PRODUCE-C0 crlf)
       (bind ?planid (sym-cat PRODUCE-C0-PLAN- (gensym*)))
       (printout t "Goal for C0 order " ?order " extended: " ?bs-color " " ?cs-color crlf)
       (assert
+
         (plan (id ?planid) (goal-id ?goal-id))
         (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
               (action-name spawn-wp)
@@ -152,6 +156,10 @@
               (param-values ?robot ?cc))
         (plan-action (id 13) (plan-id ?planid) (goal-id ?goal-id)
               (action-name location-unlock) (param-values ?mps OUTPUT))
+
+
+
+
         (plan-action (id 14) (plan-id ?planid) (goal-id ?goal-id)
               (action-name location-lock)
               (param-values ?bs INPUT))
@@ -236,4 +244,5 @@
               (action-name location-unlock) (param-values ?ds INPUT))
 	  )
         (modify ?g (mode EXPANDED)(params order ?order bs-color ?bs-color cs-color ?cs-color robot ?robot))
+)
 )

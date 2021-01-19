@@ -116,12 +116,22 @@
 )
 
 
+(defrule goal-production-create-multiple-produce-c0
+"parent to run in parallel"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (not (goal (class PRODUCE-C0-PARALLEL)))
+  =>
+  (printout t "Goal PRODUCE-C0_PARALLEL formulated" crlf)
+  (assert (goal (id (sym-cat PRODUCE-C0-PARALLEL- (gensym*))) (class PRODUCE-C0-PARALLEL) (sub-type RUN-SUBGOALS-IN-PARALLEL) (mode FORMULATED)))
+)
+
 (defrule goal-production-create-produce-c0
 " Produce a C0 product: Get the correct base and mount the right cap on it.
   The produced workpiece stays in the output of the used cap station after
   successfully executing this goal.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?p <- (goal (id ?produce-c0-parallel-id) (class PRODUCE-C0-PARALLEL) (mode SELECTED))
   (wm-fact (key domain fact order-complexity args? ord ?order com C0))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
@@ -130,7 +140,7 @@
   =>
   (printout t "Goal for C0 order " ?order " formulated: " ?base-color " " ?cap-color crlf)
   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-                (class PRODUCE-C0) (sub-type SIMPLE)
+                (class PRODUCE-C0)(parent ?produce-c0-parallel-id) (sub-type SIMPLE)
                 (params order ?order bs-color ?base-color cs-color ?cap-color)
   ))
 )
