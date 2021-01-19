@@ -134,8 +134,7 @@
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
   ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
 =>
-  ;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
-  ;  "') has been completed, Evaluating" crlf)
+  (printout debug "Goal '" ?goal-id "' has been completed, Evaluating" crlf)
   (modify ?g (mode EVALUATED))
 )
 

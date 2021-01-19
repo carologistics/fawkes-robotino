@@ -27,7 +27,7 @@
   (executive-init)
   (not (domain-loaded))
 =>
-  (parse-pddl-domain (path-resolve "rcll/domain.pddl"))
+  (parse-pddl-domain (path-resolve "rcll-central/domain.pddl"))
   (assert (domain-loaded))
 )
 
@@ -247,6 +247,12 @@
 
 	(domain-load-local-facts ?self ?team-color)
   (assert
+    (domain-fact (name can-hold) (param-values robot1))
+    (domain-fact (name can-hold) (param-values robot2))
+    (domain-fact (name can-hold) (param-values robot3))
+    (domain-fact (name self) (param-values robot1))
+    (domain-fact (name self) (param-values robot2))
+    (domain-fact (name self) (param-values robot3))
     (domain-fact (name cs-can-perform) (param-values ?cs1 RETRIEVE_CAP))
     (domain-fact (name cs-can-perform) (param-values ?cs2 RETRIEVE_CAP))
     (domain-fact (name cs-free) (param-values ?cs1))

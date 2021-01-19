@@ -126,14 +126,14 @@
 
 	(:action prepare-bs
 		:parameters (?m - mps ?side - mps-side ?bc - base-color)
-		:precondition (and (mps-type ?m BS) (mps-state ?m IDLE) (locked ?m))
+		:precondition (and (mps-type ?m BS) (mps-state ?m IDLE))
 		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m READY-AT-OUTPUT)
 								 (bs-prepared-color ?m ?bc) (bs-prepared-side ?m ?side))
 	)
 
 	(:action prepare-ds
 		:parameters (?m - mps ?ord - order)
-		:precondition (and (mps-type ?m DS) (mps-state ?m IDLE) (locked ?m))
+		:precondition (and (mps-type ?m DS) (mps-state ?m IDLE))
 		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m PREPARED)
                  (ds-prepared-order ?m ?ord))
 	)
@@ -141,7 +141,7 @@
 	(:action prepare-cs
 		:parameters (?m - mps ?op - cs-operation)
 		:precondition (and  (mps-type ?m CS) (mps-state ?m IDLE)
-                        (cs-can-perform ?m ?op) (locked ?m))
+                        (cs-can-perform ?m ?op))
 		:effect (and (not (mps-state ?m IDLE)) (mps-state ?m READY-AT-OUTPUT)
 								 (not (cs-can-perform ?m ?op)) (cs-prepared-for ?m ?op))
 	)
@@ -149,13 +149,11 @@
 	(:action bs-dispense
 		:parameters (?r - robot ?m - mps ?side - mps-side ?wp - workpiece ?basecol - base-color)
 		:precondition (and (mps-type ?m BS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
-                       (locked ?m) (bs-prepared-color ?m ?basecol)
+                       (bs-prepared-color ?m ?basecol)
                        (bs-prepared-side ?m ?side)
 											 (wp-base-color ?wp BASE_NONE) (wp-unused ?wp)
-											 (wp-spawned-for ?wp ?r)
 											 (self ?r)
 											 (mps-side-free ?m ?side))
-											 ;(not (wp-usable ?wp))
 		:effect (and (wp-at ?wp ?m ?side) (not (mps-side-free ?m ?side))
 								 (not (wp-base-color ?wp BASE_NONE)) (wp-base-color ?wp ?basecol)
 								 (not (wp-unused ?wp)) (wp-usable ?wp)
@@ -164,7 +162,7 @@
 
 	(:action cs-mount-cap
 		:parameters (?m - mps ?wp - workpiece ?capcol - cap-color)
-		:precondition (and (mps-type ?m CS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT)) (locked ?m)
+		:precondition (and (mps-type ?m CS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
 										(cs-buffered ?m ?capcol) (cs-prepared-for ?m MOUNT_CAP)
 										(wp-usable ?wp) (wp-at ?wp ?m INPUT)
 										(not (mps-side-free ?m INPUT))
@@ -189,7 +187,7 @@
 	(:action cs-retrieve-cap
 		:parameters (?m - mps ?cc - cap-carrier ?capcol - cap-color)
 		:precondition (and (mps-type ?m CS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
-                       (locked ?m) (cs-prepared-for ?m RETRIEVE_CAP)
+                       (cs-prepared-for ?m RETRIEVE_CAP)
 										(wp-at ?cc ?m INPUT) (not (mps-side-free ?m INPUT)) (mps-side-free ?m OUTPUT)
 										(wp-cap-color ?cc ?capcol))
 		:effect (and
@@ -208,7 +206,7 @@
 
 	(:action prepare-rs
 		:parameters (?m - mps ?rc - ring-color ?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
-		:precondition (and  (mps-type ?m RS) (mps-state ?m IDLE) (locked ?m)
+		:precondition (and  (mps-type ?m RS) (mps-state ?m IDLE)
                         (rs-ring-spec ?m ?rc ?r-req)
 						            (rs-filled-with ?m ?rs-before)
                         (rs-sub ?rs-before ?r-req ?rs-after))
@@ -218,7 +216,7 @@
 
 	(:action rs-mount-ring1
 		:parameters (?m - mps ?wp - workpiece ?col - ring-color ?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
-		:precondition (and (mps-type ?m RS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT)) (locked ?m)
+		:precondition (and (mps-type ?m RS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
 										(wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) 
                     (mps-side-free ?m OUTPUT)
 										(wp-usable ?wp)
@@ -239,7 +237,6 @@
 		:parameters (?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color
 					?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
 		:precondition (and (mps-type ?m RS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
-                    (locked ?m)
 										(wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) (wp-usable ?wp)
 										(mps-side-free ?m OUTPUT)
 										(wp-ring1-color ?wp ?col1)
@@ -259,7 +256,7 @@
 	(:action rs-mount-ring3
 		:parameters (?m - mps ?wp - workpiece ?col - ring-color ?col1 - ring-color ?col2 - ring-color
 							?rs-before - ring-num ?rs-after - ring-num ?r-req - ring-num)
-		:precondition (and (mps-type ?m RS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT)) (locked ?m)
+		:precondition (and (mps-type ?m RS) (or (mps-state ?m PROCESSING) (mps-state ?m READY-AT-OUTPUT))
 										(wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) (wp-usable ?wp)
 										(mps-side-free ?m OUTPUT)
 										(wp-ring1-color ?wp ?col1)
@@ -358,7 +355,7 @@
 
   (:action refill-shelf
     :parameters (?m - mps ?spot - shelf-spot ?cc - cap-carrier ?color - cap-color)
-    :precondition (and (spot-free ?m ?spot) (locked ?m))
+    :precondition (and (spot-free ?m ?spot))
     :effect (and (not (spot-free ?m ?spot))
                  (wp-on-shelf ?cc ?m ?spot)
                  (not (wp-unused ?cc))
@@ -403,7 +400,7 @@
 		             ?basecol - base-color ?capcol - cap-color)
 		:precondition (and (wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT))
                       (wp-usable ?wp)
-                       (mps-type ?m DS) (locked ?m)
+                       (mps-type ?m DS)
 											 (ds-prepared-order ?m ?ord)
 											 (order-complexity ?ord C0)
 											 (order-base-color ?ord ?basecol) (wp-base-color ?wp ?basecol)
@@ -421,7 +418,7 @@
 		             ?ring1col - ring-color)
 
 		:precondition (and (wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) (wp-usable ?wp)
-											 (mps-type ?m DS) (locked ?m)
+											 (mps-type ?m DS)
 											 (ds-prepared-order ?m ?ord)
 											 (order-complexity ?ord C1)
 											 (order-base-color ?ord ?basecol) (wp-base-color ?wp ?basecol)
@@ -439,7 +436,7 @@
 		             ?ring1col - ring-color ?ring2col - ring-color)
 
 		:precondition (and (wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) (wp-usable ?wp)
-											 (mps-type ?m DS) (locked ?m)
+											 (mps-type ?m DS)
 											 (ds-prepared-order ?m ?ord)
 											 (order-complexity ?ord C2)
 											 (order-base-color ?ord ?basecol) (wp-base-color ?wp ?basecol)
@@ -459,7 +456,7 @@
 		             ?ring1col - ring-color ?ring2col - ring-color ?ring3col - ring-color)
 
 		:precondition (and (wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT)) (wp-usable ?wp)
-											 (mps-type ?m DS) (locked ?m)
+											 (mps-type ?m DS)
 											 (ds-prepared-order ?m ?ord)
 											 (order-complexity ?ord C3)
 											 (order-base-color ?ord ?basecol) (wp-base-color ?wp ?basecol)
