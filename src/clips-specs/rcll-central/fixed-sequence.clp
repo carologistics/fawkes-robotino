@@ -57,6 +57,7 @@
 )
 
 (defrule goal-expander-enter-field
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
               (params r ?robot team-color ?team-color))
 =>
@@ -73,6 +74,7 @@
 
 
 (defrule goal-expander-prepare-cap
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class PREPARE-CAP) (params cc ?cc))
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (goal (meta r ?robot)))
@@ -113,6 +115,7 @@
 )
 
 (defrule goal-expander-discard-base
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class DISCARD-BASE) (params cc ?cc))
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (goal (meta r ?robot)))
@@ -143,6 +146,7 @@
 )
 
 (defrule goal-expander-fetch-base
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode SELECTED) (class FETCH-BASE) (params base-color ?base-color cap-color ?cap-color spawned-wp ?spawned-wp mps ?mps))
   (not (goal (parent ?parent-id) (class DISCARD-BASE)))
   (wm-fact (key domain fact entered-field args? r ?robot))
@@ -205,6 +209,7 @@
 
 
 (defrule goal-expander-deliver
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class DELIVER) (params wp ?wp m ?mps side ?mps-side))
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (goal (meta r ?robot)))
@@ -241,6 +246,27 @@
     ;           (action-name ds-fulfill-order)
     ;           (param-names m wp ord)
     ;           (param-values ?ds ?wp ?order))
+  )
+  (modify ?g (mode EXPANDED) (meta r ?robot))
+)
+
+(defrule goal-expander-go-wait
+  (declare (salience ?*SALIENCE-GOAL-EXPAND-OPTIONAL*))
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class GO-WAIT) (params r ?robot))
+  (not (goal (meta r ?robot)))
+  (wm-fact (key domain fact at args? r ?robot m ?mps side ?mps-side&INPUT|OUTPUT))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+=>
+  (printout t "Expanding GO_WAIT with " ?robot " " ?mps crlf)
+  (bind ?plan-id (sym-cat GO_WAIT-PLAN- (gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+              (action-name go-wait)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to)
+              (param-values ?robot ?mps ?mps-side ?mps))
   )
   (modify ?g (mode EXPANDED) (meta r ?robot))
 )

@@ -116,6 +116,7 @@
 
 
 (defrule goal-production-create-C0
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key refbox phase) (value PRODUCTION))
   (domain-facts-loaded)
   (not (BUILD-C0))
@@ -129,6 +130,7 @@
 )
 
 (defrule goal-expander-build-C0
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?g <- (goal (id ?parent-id) (mode SELECTED) (class BUILD-C0))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col CAP_GREY))
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?mps spot ?shelf-spot))
@@ -151,4 +153,16 @@
                   (params wp ?spawned-wp m ?mps side OUTPUT))
     )
     (modify ?g (mode EXPANDED))
+)
+
+(defrule goal-production-create-go-wait
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (wm-fact (key game state) (value RUNNING))
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (goal (class GO-WAIT) (params r ?robot)))
+  =>
+  (assert (goal (id (sym-cat GO-WAIT- ?robot))
+                (class GO-WAIT) (sub-type SIMPLE)
+                (params r ?robot)))
 )
