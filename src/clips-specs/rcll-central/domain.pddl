@@ -301,6 +301,12 @@
     :effect (at ?r ?point WAIT)
   )
 
+  (:action wait-at
+    :parameters (?r - robot ?loc - location ?side - side)
+    :precondition (at ?r ?loc ?side)
+    :effect (at ?r ?loc ?side)
+  )
+
 	(:action move
 		:parameters (?r - robot ?from - location ?from-side - mps-side ?to - mps ?to-side - mps-side)
 		:precondition (at ?r ?from ?from-side)

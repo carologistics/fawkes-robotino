@@ -21,6 +21,7 @@
 
 (defglobal
  ?*WAIT-DURATION* = 5
+ ?*WAIT-AT-DURATION* = 1.5
 )
 
 (defrule action-start-execute-wait-action
@@ -50,6 +51,38 @@
   (not (timer (name ?name &: (sym-cat ?goal-id - ?plan-id - ?action-id))))
   =>
   (printout warn "Failed to wait, timer for action id " ?action-id
+                 ", plan-id " ?plan-id ", goal-id " ?goal-id " does not exist"
+                 crlf)
+  (modify ?pa (state EXECUTION-FAILED))
+)
+
+(defrule action-start-execute-wait-at-action
+  ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
+                      (action-name wait-at) (state PENDING) (executable TRUE))
+  =>
+  (printout info "Starting to wait-at" crlf)
+  (assert (timer (name (sym-cat ?goal-id - ?plan-id - ?action-id))))
+  (modify ?pa (state RUNNING))
+)
+
+(defrule action-finish-execute-wait-at-action
+  ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
+                      (action-name wait-at) (state RUNNING) (executable TRUE))
+  (time $?now)
+  ?timer <- (timer (name ?name &: (sym-cat ?goal-id - ?plan-id - ?action-id))
+                   (time $?t&:(timeout ?now ?t ?*WAIT-AT-DURATION*)))
+  =>
+  (printout info "Finished wait-at" crlf)
+  (modify ?pa (state EXECUTION-SUCCEEDED))
+  (retract ?timer)
+)
+
+(defrule action-fail-execute-wait-at-action
+  ?pa <- (plan-action (id ?action-id) (plan-id ?plan-id) (goal-id ?goal-id)
+                      (action-name wait-at) (state RUNNING) (executable TRUE))
+  (not (timer (name ?name &: (sym-cat ?goal-id - ?plan-id - ?action-id))))
+  =>
+  (printout warn "Failed to wait-at, timer for action id " ?action-id
                  ", plan-id " ?plan-id ", goal-id " ?goal-id " does not exist"
                  crlf)
   (modify ?pa (state EXECUTION-FAILED))
