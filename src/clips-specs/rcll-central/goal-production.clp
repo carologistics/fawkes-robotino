@@ -135,6 +135,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order com C0))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
   (not (goal (class PRODUCE-C0) (params order ?order bs-color ?base-color cs-color ?cap-color)))
   (not (goal (class PRODUCE-C0) (params order ?order bs-color ?base-color cs-color ?cap-color robot ?any-robot)))
   =>
