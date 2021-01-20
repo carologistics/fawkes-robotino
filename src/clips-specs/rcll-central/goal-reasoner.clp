@@ -172,6 +172,28 @@
 )
 
 
+; copied
+(defrule goal-reasoner-evaluate-process-ds
+" Enhance the order-delivered fact of the order of a successful deliver goal,
+  delete the mps-handling fact if the preparation took place.
+"
+  ?g <- (goal (id ?goal-id) (class HANDLE-MPS) (mode FINISHED) (outcome ?outcome)
+              (params m ?mps))
+  (wm-fact (key domain fact mps-type args? m ?mps t DS))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  ; get order from plan action
+  (plan-action (goal-id ?goal-id) (param-values $?p1 order ?order $?p2) (state FINAL))
+  ?od <- (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color) (value ?val))  
+  =>
+  (printout t "Order " ?order " increased quantity by 1" crlf)
+  (if (eq ?outcome COMPLETED)
+    then
+      (modify ?od (value (+ ?val 1)))
+  )
+  (modify ?g (mode EVALUATED))
+)
+
+
 
 ; ================================= Goal Clean up ============================
 

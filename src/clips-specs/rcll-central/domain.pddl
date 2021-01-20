@@ -402,7 +402,7 @@
 	)
 
 	(:action fulfill-order-c0
-		:parameters (?ord - order ?wp - workpiece ?m - mps
+		:parameters (?ord - order ?wp - workpiece ?m - mps ?g - ds-gate
 		             ?basecol - base-color ?capcol - cap-color)
 		:precondition (and (wp-at ?wp ?m INPUT) (not (mps-side-free ?m INPUT))
                       (wp-usable ?wp)

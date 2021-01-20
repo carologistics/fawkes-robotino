@@ -54,7 +54,7 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (domain-facts-loaded)
   (not (goal (class REFILL-SHELF-MAINTAIN)))
-  (not (mutex (name ?n&:(eq ?n (resource-to-mutex refill-shelf))) (state LOCKED)))
+  ;(not (mutex (name ?n&:(eq ?n (resource-to-mutex refill-shelf))) (state LOCKED)))
   (wm-fact (key refbox phase) (value PRODUCTION))
   =>
   (bind ?goal (goal-tree-assert-run-endless REFILL-SHELF-MAINTAIN 1))
@@ -108,10 +108,11 @@
   (assert (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE)))
 )
 
-(deffunction create-wp ()
+(deffunction create-wp (?order)
   (bind ?wp (sym-cat "wp"-(gensym*)))
   (assert (wm-fact (key domain fact wp-unused args? wp ?wp)))
   (assert (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE)))
+  (assert (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order)))
   (assert (wm-fact (key domain fact wp-base-color args? wp ?wp col BASE_NONE)))
   (assert (wm-fact (key domain fact wp-ring1-color args? wp ?wp col RING_NONE)))
   (assert (wm-fact (key domain fact wp-ring2-color args? wp ?wp col RING_NONE)))
@@ -164,6 +165,7 @@
   
   ; order is not already being handled
   (not (goal (class PRODUCE-C0) (params order ?order $?other-params)))
+  ; more products ordered
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
 	  (value ?qd&:(> ?qr ?qd)))
@@ -189,7 +191,7 @@
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
 
   =>
-  (bind ?wp (create-wp))
+  (bind ?wp (create-wp ?order))
   (assert 
     (goal (id (sym-cat PRODUCE-C0- (gensym*)))
           (class PRODUCE-C0)
