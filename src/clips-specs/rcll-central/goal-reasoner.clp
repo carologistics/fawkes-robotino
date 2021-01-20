@@ -110,6 +110,15 @@
   (modify ?g (mode SELECTED))
 )
 
+(defrule goal-reasoner-assign-resource
+" Assign resources to goals that require exactly one resource"
+  ?g <- (goal (id ?goal-id) (required-resources $?resources&:(eq (length$ $?resources) 1)) (mode COMMITTED))
+  (not (goal (acquired-resources $?not-available&:(member$ (nth$ 1 $?resources) $?not-available))))
+  =>
+  (modify ?g (acquired-resources $?resources))
+  (printout t "Assigning resources " $?resources " to " ?goal-id crlf)
+)
+
 
 (defrule goal-reasoner-expand-goal-with-sub-type
 " Expand a goal with sub-type, if it has a child."
@@ -142,11 +151,11 @@
   All pre evaluation steps should have been executed, enforced by the higher priority
 "
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome) (acquired-resources $?acquired))
 =>
   ;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
   ;  "') has been completed, Evaluating" crlf)
-  (modify ?g (mode EVALUATED))
+  (modify ?g (mode EVALUATED) (acquired-resources))
 )
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
