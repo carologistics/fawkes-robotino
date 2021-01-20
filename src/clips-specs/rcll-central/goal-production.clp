@@ -115,33 +115,64 @@
                 (params r ?robot team-color ?team-color)))
 )
 
-
-(defrule goal-production-create-multiple-produce-c0
-"parent to run in parallel"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (not (goal (class PRODUCE-C0-PARALLEL)))
-  =>
-  (printout t "Goal PRODUCE-C0_PARALLEL formulated" crlf)
-  (assert (goal (id (sym-cat PRODUCE-C0-PARALLEL- (gensym*))) (class PRODUCE-C0-PARALLEL) (sub-type RUN-SUBGOALS-IN-PARALLEL) (mode FORMULATED)))
-)
-
 (defrule goal-production-create-produce-c0
 " Produce a C0 product: Get the correct base and mount the right cap on it.
   The produced workpiece stays in the output of the used cap station after
   successfully executing this goal.
 "
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?p <- (goal (id ?produce-c0-parallel-id) (class PRODUCE-C0-PARALLEL) (mode SELECTED))
   (wm-fact (key domain fact order-complexity args? ord ?order com C0))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+
+ (wm-fact (key refbox team-color) (value ?team-color))
+
+ (wm-fact (key domain fact mps-type args? m ?cs t CS))
+ (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+
+ (wm-fact (key domain fact mps-type args? m ?bs t BS))
+ (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
+
+ (wm-fact (key domain fact mps-type args? m ?ds t DS))
+ (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+
   (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
-  (not (goal (class PRODUCE-C0) (params order ?order bs-color ?base-color cs-color ?cap-color)))
-  (not (goal (class PRODUCE-C0) (params order ?order bs-color ?base-color cs-color ?cap-color robot ?any-robot)))
+  (not (goal (class PRODUCE-C0) (params order ?order bs-color ?any-base-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds)))
   =>
   (printout t "Goal for C0 order " ?order " formulated: " ?base-color " " ?cap-color crlf)
+  (bind ?wp (sym-cat WP- (random-id)))
   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
-                (class PRODUCE-C0)(parent ?produce-c0-parallel-id) (sub-type SIMPLE)
-                (params order ?order bs-color ?base-color cs-color ?cap-color)
+                (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)
+                (params order ?order bs-color ?base-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds)
   ))
+)
+
+(defrule goal-produce-c0-get-base-wait
+  "get a base for c0-production and wait at the cap-station"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?produce-c0-id) (class PRODUCE-C0) (mode SELECTED))
+  (not (goal (class GET-BASE-WAIT) (parent ?produce-c0-id)))
+  =>
+  (printout t "Goal GET-BASE-WAIT formulated" crlf)
+  (assert (goal (id (sym-cat GET-BASE-WAIT- (gensym*))) (class GET-BASE-WAIT) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED)))
+)
+
+(defrule goal-produce-c0-buffer-cs
+  "get a base for c0-production and wait at the cap-station"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?produce-c0-id) (class PRODUCE-C0) (mode SELECTED))
+  (not (goal (class BUFFER-CS) (parent ?produce-c0-id)))
+  =>
+  (printout t "Goal BUFFER-CS formulated" crlf)
+  (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED)))
+)
+
+(defrule goal-produce-c0-mount-cap-deliver
+  "get a base for c0-production and wait at the cap-station"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (id ?produce-c0-id) (class PRODUCE-C0) (mode SELECTED))
+  (not (goal (class MOUNT-CAP-DELIVER) (parent ?produce-c0-id)))
+  =>
+  (printout t "Goal MOUNT-CAP-DELIVER formulated" crlf)
+  (assert (goal (id (sym-cat MOUNT-CAP-DELIVER- (gensym*))) (class MOUNT-CAP-DELIVER) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED)))
 )
