@@ -82,6 +82,16 @@
                 (params mps ?mps)))
 )
 
+(defrule goal-production-create-handle-mps
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?pre <- (wm-fact (key mps-handling prepare ?prepare-action ?mps args? $?prepare-params))
+  ?pro <- (wm-fact (key mps-handling process ?process-action ?mps args? $?process-params))
+  (not (goal (class HANDLE-MPS) (params ?mps)))
+  =>
+  (assert (goal (id (sym-cat HANDLE-MPS-(gensym*))) (class HANDLE-MPS)
+                (params ?mps) (sub-type SIMPLE)))
+)
+
 
 (defrule goal-production-navgraph-compute-wait-positions-finished
   "Add the waiting points to the domain once their generation is finished."
