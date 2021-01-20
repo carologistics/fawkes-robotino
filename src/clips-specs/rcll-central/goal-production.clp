@@ -149,13 +149,14 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C0))
 
-  ; todo: check delivery time/quantity instead of producing only one c0
-  (not (produced-c0))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   
   ; order is not already being handled
   (not (goal (class PRODUCE-C0) (params order ?order $?other-params)))
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+	  (value ?qd&:(> ?qr ?qd)))
 
   ; get required color
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
@@ -178,12 +179,12 @@
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
 
   =>
-  (assert (produced-c0))
   (bind ?wp (create-wp))
   (assert 
     (goal (id (sym-cat PRODUCE-C0- (gensym*)))
           (class PRODUCE-C0)
           (sub-type RUN-ALL-OF-SUBGOALS)
+          (required-resources ?cap-station)
           (params order ?order
                   wp ?wp
                   cs ?cap-station
@@ -244,6 +245,7 @@
           (parent ?parent)
           (sub-type SIMPLE)
           (params mps ?cap-station cc ?cc)
+          (priority 2.0)
     )
     (goal (id (sym-cat GET-BASE-(gensym*)))
           (class GET-BASE)
@@ -254,6 +256,7 @@
                   bs-color ?base-color
                   cs ?cap-station
                   wp ?wp)
+          (priority 1.0)
     )
   )
   (modify ?p (mode EXPANDED))
