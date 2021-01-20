@@ -218,8 +218,8 @@ clips-executive:
               - rcll/refbox-worldmodel.clp
           - name: domain
             file: rcll/domain.clp
-          #- name: resource-locking
-          #  file: resource-locks.clp
+          # - name: resource-locking
+          #   file: resource-locks.clp
           - name: goal-reasoner
             files:
               - goals/retry.clp
