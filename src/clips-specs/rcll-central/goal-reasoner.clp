@@ -54,6 +54,11 @@
 ; leading the root to be rejected and reformulated.
 
 (defglobal
+
+  ?*MAX-RETRIES-PICK* = 2
+  ?*MAX-RETRIES-PUT-SLIDE* = 2
+  ?*GOAL-MAX-TRIES* = 3
+
   ?*SALIENCE-GOAL-FORMULATE* = 500
   ?*SALIENCE-GOAL-REJECT* = 400
   ?*SALIENCE-GOAL-EXPAND* = 300

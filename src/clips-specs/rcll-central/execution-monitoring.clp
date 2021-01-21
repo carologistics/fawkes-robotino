@@ -19,7 +19,7 @@
 
 (defglobal
   ?*MONITORING-SALIENCE* = 1
-  ?*COMMON-TIMEOUT-DURATION* = 30
+  ?*COMMON-TIMEOUT-DURATION* = 300
   ?*MPS-DOWN-TIMEOUT-DURATION* = 120
   ?*HOLDING-MONITORING* = 60
 )
@@ -112,3 +112,110 @@
   =>
   (retract ?pt)
 )
+
+;copied from RCLL agent
+;======================================Retries=========================================
+;
+
+(defrule execution-monitoring-start-retry-action
+" For some actions it can be feasible to retry them in case of a failure, e.g. if
+  the align failed. If an action failed and the error-msg inquires, that we should
+  retry, add a action-retried counter and set the action to FORMULATED
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  ?pa <- (plan-action
+              (id ?id)
+              (action-name ?an)
+              (plan-id ?plan-id)
+              (goal-id ?goal-id)
+              (state FAILED)
+              (error-msg ?error)
+              (param-values $?param-values))
+  (test (eq TRUE (should-retry ?an ?error)))
+  (wm-fact (key domain fact self args? r ?r))
+  (not (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)))
+  =>
+  (bind ?mps nil)
+  (do-for-fact ((?do domain-object)) (and (member$ ?do:name ?param-values) (eq ?do:type mps))
+    (bind ?mps ?do:name)
+  )
+  (assert
+    (wm-fact (key monitoring action-retried args? r ?r a ?an id (sym-cat ?id) m ?mps g ?goal-id) (value 0))
+  )
+  (printout error "Start retrying" crlf)
+)
+
+
+(defrule execution-monitoring-retry-action
+" If the retry of an action is failed again, increment the counter and restart the action
+"
+  (declare (salience ?*MONITORING-SALIENCE*))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED))
+  ?pa <- (plan-action
+              (id ?id)
+              (action-name ?an)
+              (plan-id ?plan-id)
+              (goal-id ?goal-id)
+              (state FAILED)
+              (error-msg ?error)
+              (param-values $?param-values))
+  (wm-fact (key domain fact self args? r ?r))
+  (test (eq TRUE (should-retry ?an ?error)))
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)
+          (value ?tries&:(< ?tries ?*MAX-RETRIES-PICK*)))
+  =>
+  (bind ?tries (+ 1 ?tries))
+  (modify ?pa (state FORMULATED))
+  (printout error "Restarted: " ?tries crlf)
+  (modify ?wm (value ?tries))
+)
+
+(defrule execution-monitoring-retry-action-failed
+  (declare (salience 1000))
+  (plan (id ?plan-id) (goal-id ?goal-id))
+  (goal (id ?goal-id) (mode DISPATCHED) (class ?class) (params $?params))
+  (plan-action
+        (id ?id)
+        (goal-id ?goal-id)
+        (plan-id ?plan-id)
+        (action-name ?an)
+        (state FAILED)
+        (error-msg ?error))
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)
+                (value ?tries&:(= ?tries ?*MAX-RETRIES-PICK*)))
+  =>
+  (assert
+    (wm-fact (key monitoring shame args?))
+  )
+  (printout error "Reached max retries" crlf)
+)
+
+(defrule execution-monitoring-clear-action-retried
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ? id ? m ? g ?goal-id))
+  (goal (id ?goal-id) (mode EVALUATED))
+  =>
+  (retract ?wm)
+)
+
+(defrule execution-monitoring-remove-forbid
+  (declare (salience ?*MONITORING-SALIENCE*))
+  ?wm <- (wm-fact (key monitoring forbid-goal args? c ?class mps ?mps))
+  (goal (id ?goal-id) (sub-type SIMPLE) (class ?c&:(production-leaf-goal ?c)) (params $?p) (outcome COMPLETED) (mode FINISHED))
+  (test (not (member$ ?mps ?p)))
+  =>
+  (retract ?wm)
+)
+
+(defrule execution-monitoring-reject-forbidden-goal
+  (declare (salience ?*SALIENCE-GOAL-REJECT*))
+  (wm-fact (key monitoring forbid-goal args? c ?class mps ?mps))
+  ?g <- (goal (id ?goal-id) (params $? ?mps $?) (mode ?m&:(and (not (eq ?m DISPATCHED)) (not (eq ?m FINISHED)) (not (eq ?m RETRACTED)) (not (eq ?m EVALUATED)) )))
+  =>
+  (printout t "Goal " ?class " was tried and failed before at " ?mps ". Reject" crlf)
+  (modify ?g (outcome REJECTED) (mode RETRACTED))
+)
+
