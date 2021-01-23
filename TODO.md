@@ -9,6 +9,7 @@ remove self facts in domain.pddl
 handle down/broken machines
 consider delivery times
 C0: split up delivery from reserve goals
+(*) add more tests (e.g. C0)
 
 documentation: visualize goal tree
 
