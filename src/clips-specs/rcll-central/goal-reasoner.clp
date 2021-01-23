@@ -60,6 +60,10 @@
   ?*SALIENCE-GOAL-SELECT* = 200
   ?*SALIENCE-GOAL-PRE-EVALUATE* = 1
   ?*SALIENCE-GOAL-EVALUATE-GENERIC* = -1
+
+  ?*MAX-RETRIES-PICK* = 2
+  ?*MAX-RETRIES-PUT-SLIDE* = 2
+  ?*GOAL-MAX-TRIES* = 3
 )
 
 ; ========================== Goal-Tree-Functions ============================
@@ -73,11 +77,16 @@
               (eq ?goal-type RUN-ALL-OF-SUBGOALS)))
 )
 
-(deffunction production-leaf-goal (?goal-class)
+(deffunction goal-needs-fresh-robot (?goal-class)
   (return (or (eq ?goal-class GET-BASE)
               (eq ?goal-class FILL-CS)
-              (eq ?goal-class MOUNT-CAP)
-              (eq ?goal-class DELIVER-C0)))
+              (eq ?goal-class FILL-BASE-IN-RS)))
+)
+
+(deffunction goal-needs-robot-holding-wp (?goal-class)
+(return (or (eq ?goal-class MOUNT-CAP)
+              (eq ?goal-class DELIVER)
+              (eq ?goal-class MOUNT-RING)))
 )
 
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
