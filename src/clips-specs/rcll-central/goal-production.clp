@@ -329,3 +329,228 @@
                 (sub-type SIMPLE)
                 (params robot ?robot)))
 )
+
+(defrule goal-production-produce-c1
+  "Create root goal of c1-production tree"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C1))
+  (not-defined)
+
+  ; get required colors
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  
+  ; order is not already being handled
+  (not (goal (class PRODUCE-C1) (params order ?order $?other-params)))
+  ; more products ordered
+  (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
+  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
+	  (value ?qd&:(> ?qr ?qd)))  
+
+  ; get cap station
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?cap-station t CS))
+  (wm-fact (key domain fact mps-team args? m ?cap-station col ?team-color))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?spot))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+
+  ; get base station
+  (wm-fact (key domain fact mps-type args? m ?base-station t BS))
+  (wm-fact (key domain fact mps-team args? m ?base-station col ?team-color))
+
+  ; get ring station and number of required bases
+  (wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?ring-color1 rn ?ring-num))
+  (wm-fact (key domain fact mps-team args? m ?ring-station col ?team-color))
+
+  ; get delivery station
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
+  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+
+  =>
+  (bind ?wp (create-wp ?order))
+  (assert 
+    (goal (id (sym-cat PRODUCE-C1- (gensym*)))
+          (class PRODUCE-C1)
+          (sub-type RUN-ALL-OF-SUBGOALS)
+          (required-resources ?cap-station)
+          (params order ?order
+                  wp ?wp
+                  cs ?cap-station
+                  bs ?base-station
+                  rs ?ring-station
+                  cap-color ?cap-color
+                  base-color ?base-color
+                  ring-color1 ?ring-color1
+                  ring-num ?ring-num
+                  ds ?ds)
+    )
+  )
+)
+
+(defrule goal-production-produce-c1-create-subgoals
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?p <- (goal (id ?parent) (class PRODUCE-C1) (mode SELECTED)
+        (params order ?order
+                wp ?wp
+                cs ?cap-station
+                bs ?base-station
+                rs ?ring-station
+                cap-color ?cap-color
+                base-color ?base-color
+                ring-color1 ?ring-color1
+                ring-num ?ring-num
+                ds ?ds))
+  =>
+  (assert
+    (goal (id (sym-cat PRODUCE-C1-HANDLE-RS-(gensym*)))
+          (parent ?parent)
+          (class PRODUCE-C1-HANDLE-RS)
+          (sub-type RUN-ALL-OF-SUBGOALS)
+          (priority 2.0)
+          (required-resources ?ring-station)
+          (params order ?order
+                  wp ?wp
+                  bs ?base-station
+                  rs ?ring-station
+                  base-color ?base-color
+                  ring-color1 ?ring-color1
+                  ring-num ?ring-num)
+    )
+    (goal (id (sym-cat PRODUCE-C1-HANDLE-CS-(gensym*)))
+          (parent ?parent)
+          (class PRODUCE-C1-HANDLE-CS)
+          (sub-type RUN-ALL-OF-SUBGOALS)
+          (priority 1.0)
+          (required-resources ?cap-station)
+          (params order ?order
+                  wp ?wp
+                  cs ?cap-station
+                  cap-color ?cap-color
+                  ds ?ds)
+    )
+    (goal (id (sym-cat DELIVER-(gensym*)))
+          (parent ?parent)
+          (class DELIVER)
+          (sub-type SIMPLE)
+          (priority 0.0)
+          (params order ?order
+                  ds ?ds
+                  wp ?wp)
+          
+    )
+  )
+  (modify ?p (mode EXPANDED))
+)
+
+
+(defrule goal-production-produce-c1-handle-rs
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?p <- (goal (id ?parent) (class PRODUCE-C1-HANDLE-RS) (mode SELECTED)
+              (params order ?order
+                      wp ?wp
+                      bs ?base-station
+                      rs ?ring-station
+                      base-color ?base-color
+                      ring-color1 ?ring-color1
+                      ring-num ?ring-num))
+  =>
+  (assert
+    (goal (id (sym-cat FILL-BASES-IN-RS-(gensym*)))
+          (parent ?parent)
+          (class FILL-BASES-IN-RS)
+          (sub-type RUN-SUBGOALS-IN-PARALLEL)
+          (priority 2.0)
+          (params bs ?base-station
+                  rs ?ring-station
+                  ring-num ?ring-num)
+    )
+    (goal (id (sym-cat GET-BASE-(gensym*)))
+          (parent ?parent)
+          (class GET-BASE)
+          (sub-type SIMPLE)
+          (priority 1.0)
+          (params bs ?base-station
+                  bs-side OUTPUT
+                  bs-color ?base-color
+                  target-station ?ring-station
+                  wp ?wp)
+    )
+    (goal (id (sym-cat MOUNT-RING-(gensym*)))
+          (parent ?parent)
+          (class MOUNT-RING)
+          (sub-type SIMPLE)
+          (priority 0.0)
+          (params rs ?ring-station
+                  ring-color ?ring-color1
+                  ring-num ?ring-num
+                  wp ?wp)
+    )
+  )
+  (modify ?p (mode EXPANDED))
+)
+
+(defrule goal-production-produce-c1-handle-cs
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?p <- (goal (id ?parent) (class PRODUCE-C1-HANDLE-CS) (mode SELECTED)
+              (params order ?order
+                      wp ?wp
+                      cs ?cap-station
+                      cap-color ?cap-color
+                      ds ?ds))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?spot))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+  =>
+  (assert
+    (goal (id (sym-cat FILL-CS-(gensym*)))
+          (parent ?parent)
+          (class FILL-CS)
+          (priority 1.0)
+          (params mps ?cap-station cc ?cc)
+    )
+    (goal (id (sym-cat MOUNT-CAP-(gensym*)))
+          (parent ?parent)
+          (class MOUNT-CAP)
+          (priority 0.0)
+          (params cs ?cap-station cap-color ?cap-color wp ?wp)
+    )
+  )
+  (modify ?p (mode EXPANDED))
+)
+
+(defrule goal-production-fill-bases-in-rs
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?p <- (goal (id ?parent) (class FILL-BASES-IN-RS) (mode SELECTED)
+              (params bs ?base-station
+                      rs ?ring-station
+                      ring-num ?ring-num))
+  (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?rs-before))
+  (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-needed))
+  =>
+  (bind ?rs-needed-int (sym-to-int ?rs-needed))
+  (printout t "Ring needs " ?ring-num " bases, " ?rs-before " in ring station, " ?rs-needed " to get which is " ?rs-needed-int crlf)
+  (if (> ?rs-needed-int 0) then
+    (assert (goal (id (sym-cat FILL-BASE-IN-RS))
+                  (parent ?parent)
+                  (class FILL-BASE-IN-RS)
+                  (sub-type SIMPLE)
+                  (params bs ?base-station rs ?ring-station))
+    )  
+  )
+  (if (> ?rs-needed-int 1) then
+    (assert (goal (id (sym-cat FILL-BASE-IN-RS))
+                  (parent ?parent)
+                  (class FILL-BASE-IN-RS)
+                  (sub-type SIMPLE)
+                  (params bs ?base-station rs ?ring-station))
+    )  
+  )
+  (if (> ?rs-needed-int 2) then
+    (assert (goal (id (sym-cat FILL-BASE-IN-RS))
+                  (parent ?parent)
+                  (class FILL-BASE-IN-RS)
+                  (sub-type SIMPLE)
+                  (params bs ?base-station rs ?ring-station))
+    )
+  )
+)
