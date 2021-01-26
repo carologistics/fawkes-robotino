@@ -278,8 +278,8 @@
 		:parameters (?r - robot ?m - mps ?wp - workpiece ?col - ring-color
 			 				?ring-pos - ring-num ?col1 - ring-color ?col2 - ring-color ?col3 - ring-color
 							?r-req - ring-num)
-		:precondition (self ?r)
-		:effect (self ?r)	
+		:precondition (entered-field ?r)
+		:effect (entered-field ?r)
 	)
 
 	; The following is the generic move version.
@@ -485,14 +485,14 @@
 
   (:action move-node
 			:parameters (?r - robot ?z - zone)
-			:precondition (self ?r)
-			:effect (self ?r)
+			:precondition (entered-field ?r)
+			:effect (entered-field ?r)
 	)
 
 	(:action explore-zone
 			:parameters (?r - robot ?z - zone)
-			:precondition (self ?r)
-			:effect (self ?r)
+			:precondition (entered-field ?r)
+			:effect (entered-field ?r)
 	)
 
   (:action lock
@@ -527,8 +527,8 @@
   )
   (:action expire-locks
     :parameters (?r - robot)
-    :precondition (self ?r)
-    :effect (self ?r)
+    :precondition (entered-field ?r)
+    :effect (entered-field ?r)
   )
   (:action spawn-wp
     :parameters (?wp - workpiece ?r - robot)

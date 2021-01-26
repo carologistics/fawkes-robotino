@@ -6,7 +6,6 @@
   * make all interactions with the machines asynchronous
   * handle down/broken machines
   * consider delivery times
-* remove self facts in domain.pddl
 * look into retrying failed goals
 * select robots smartly (e.g. distance)
 * add more tests (e.g. C0)
@@ -18,3 +17,4 @@
 ## NOTES
 * verify: go-wait actions before move actions when machine is not reserved
 * why does prepare of machines sometimes fail/not set the postconditions?
+* remove self facts in domain.pddl
