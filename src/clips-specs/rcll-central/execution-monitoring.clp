@@ -129,7 +129,9 @@
   (retract ?pt)
 )
 
+; =============================== Retry actions ===============================
 
+; retry mechanism copied from rcll agent
 (defrule execution-monitoring-start-retry-action
 " For some actions it can be feasible to retry them in case of a failure, e.g. if
   the align failed. If an action failed and the error-msg inquires, that we should
@@ -147,7 +149,7 @@
               (error-msg ?error)
               (param-values $?param-values))
   (test (eq TRUE (should-retry ?an ?error)))
-  (not (wm-fact (key monitoring action-retried args?a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)))
+  (not (wm-fact (key monitoring action-retried args? a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)))
   =>
   (bind ?mps nil)
   (do-for-fact ((?do domain-object)) (and (member$ ?do:name ?param-values) (eq ?do:type mps))
