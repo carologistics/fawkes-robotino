@@ -120,13 +120,17 @@
   (wm-fact (key refbox phase) (value PRODUCTION))
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color) (value ?qd&:(> ?qr ?qd)))
-  (not (goal (class BUILD) (params ?order)))
+  ; (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color) (value ?qd&:(> ?qr ?qd)))
+  ; (not (goal (class BUILD) (params ?order)))
+  (not (order-processed ?order))
   =>
+  (loop-for-count (?i 1 ?qr) 
     (assert
-      (goal (id (sym-cat BUILD- ?order))
-                (class BUILD) (type ACHIEVE) (sub-type RUN-SUBGOALS-IN-PARALLEL) (params ?order))
+        (goal (id (sym-cat BUILD- ?order - ?i))
+              (class BUILD) (type ACHIEVE) (sub-type RUN-SUBGOALS-IN-PARALLEL) (params ?order))
     )
+  )
+  (assert (order-processed ?order))
 )
 
 (defrule goal-expander-build-C0
