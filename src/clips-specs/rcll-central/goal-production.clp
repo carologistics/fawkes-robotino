@@ -192,7 +192,6 @@
     (goal (id (sym-cat PRODUCE-C0- (gensym*)))
           (class PRODUCE-C0)
           (sub-type RUN-ALL-OF-SUBGOALS)
-          (required-resources ?cap-station)
           (params order ?order
                   wp ?wp
                   cs ?cap-station
@@ -217,18 +216,17 @@
                       ds ?ds))
   =>
   (assert
-    (goal (id (sym-cat PRODUCE-C0-GET-BASE-AND-CAP-(gensym*)))
-          (class PRODUCE-C0-GET-BASE-AND-CAP)
+    (goal (id (sym-cat PRODUCE-C0-HANDLE-CS-(gensym*)))
+          (class PRODUCE-C0-HANDLE-CS)
           (parent ?parent)
-          (sub-type RUN-SUBGOALS-IN-PARALLEL)
-          (priority 3.0)
-    )
-    (goal (id (sym-cat MOUNT-CAP-(gensym*)))
-          (class MOUNT-CAP)
-          (parent ?parent)
-          (sub-type SIMPLE)
+          (sub-type RUN-ALL-OF-SUBGOALS)
           (priority 2.0)
-          (params cs ?cap-station cap-color ?cap-color wp ?wp)
+          (required-resources ?cap-station)
+          (params cs ?cap-station
+                  wp ?wp
+                  bs ?base-station
+                  cap-color ?cap-color
+                  base-color ?base-color)
     )
     (goal (id (sym-cat DELIVER-(gensym*)))
           (class DELIVER)
@@ -243,18 +241,45 @@
   (modify ?p (mode EXPANDED))
 )
 
+(defrule goal-production-produce-c0-handle-cs
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?p <- (goal (id ?parent)
+              (class PRODUCE-C0-HANDLE-CS)
+              (mode SELECTED)
+              (params cs ?cap-station
+                      wp ?wp
+                      bs ?base-station
+                      cap-color ?cap-color
+                      base-color ?base-color))
+  =>
+  (assert
+    (goal (id (sym-cat PRODUCE-C0-GET-BASE-AND-CAP-(gensym*)))
+          (class PRODUCE-C0-GET-BASE-AND-CAP)
+          (parent ?parent)
+          (sub-type RUN-SUBGOALS-IN-PARALLEL)
+          (priority 2.0)
+          (params cs ?cap-station wp ?wp bs ?base-station
+                  cap-color ?cap-color base-color ?base-color)
+    )
+    (goal (id (sym-cat MOUNT-CAP-(gensym*)))
+          (class MOUNT-CAP)
+          (parent ?parent)
+          (sub-type SIMPLE)
+          (priority 1.0)
+          (params cs ?cap-station cap-color ?cap-color wp ?wp)
+    )
+  )
+  (modify ?p (mode EXPANDED))
+)
+
 
 (defrule goal-production-get-base-and-cap
   "Leaf goals to prepare a cap and remove the unused base and get a base running in parallel."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?p <- (goal (id ?parent) (class PRODUCE-C0-GET-BASE-AND-CAP) (mode SELECTED) (parent ?root))
-  (goal (id ?root) (params order ?order
-                            wp ?wp
-                            cs ?cap-station
-                            bs ?base-station
-                            cap-color ?cap-color
-                            base-color ?base-color
-                            ds ?ds))
+  ?p <- (goal (id ?parent) (class PRODUCE-C0-GET-BASE-AND-CAP) (mode SELECTED)
+              (params cs ?cap-station wp ?wp bs ?base-station
+              cap-color ?cap-color base-color ?base-color))
+  ; get a cap carrier
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?spot))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
   =>
@@ -279,55 +304,6 @@
     )
   )
   (modify ?p (mode EXPANDED))
-)
-
-(defrule assign-robot-to-production-goal
-  "Select a non-busy robot for executing a production leaf goal without assigned robot"
-  ?g <- (goal (id ?goal-id) (class ?class) (params $?params) (mode SELECTED))
-  (test (goal-needs-fresh-robot ?class))
-  (not (test (member$ robot $?params)))
-
-  ; Get robot
-  (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (params robot ?robot $?some-params)))
-  (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
-  =>
-  (printout t "Assigning " ?robot " to " ?goal-id crlf)
-  (modify ?g (params robot ?robot $?params))
-)
-
-(defrule assign-robot-holding-wp
-  ?g <- (goal (id ?goal-id) (class ?class) (params $?params) (mode SELECTED))
-  (test (goal-needs-robot-holding-wp ?class))
-  (not (test (member$ robot $?params)))
-  (wm-fact (key domain fact holding args? r ?robot wp ?wp&:(member$ ?wp $?params)))
-  =>
-  (printout t "Assigning " ?robot " to " ?goal-id crlf)
-  (modify ?g (params robot ?robot $?params))
-)
-
-
-(defrule clear-station
-  "Formulate goal to remove robots from stations. This is only done unless the robot
-  could execute another production goal"
-  ; select non-busy robot
-  (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (params robot ?robot $?some-params)))
-
-  ; check that robot is at input or output
-  (domain-object (type mps) (name ?some-station))
-  (wm-fact (key domain fact at args? r ?robot m ?some-station 
-              side ?side&:(or (eq ?side INPUT) (eq ?side OUTPUT))))
-
-  ; there is nothing else to do:
-  (not (goal (class ?class&:(goal-needs-fresh-robot ?class))
-            (mode SELECTED)
-            (params $?params&:(not (member$ robot $?params)))))
-  =>
-  (assert (goal (id (sym-cat CLEAR-STATION-(gensym*)))
-                (class CLEAR-STATION)
-                (sub-type SIMPLE)
-                (params robot ?robot)))
 )
 
 (defrule goal-production-produce-c1
@@ -553,4 +529,56 @@
                   (params bs ?base-station rs ?ring-station))
     )
   )
+  (modify ?p (mode EXPANDED))
+)
+
+; ============================= Robot selection ===============================
+
+(defrule assign-robot-to-production-goal
+  "Select a non-busy robot for executing a production leaf goal without assigned robot"
+  ?g <- (goal (id ?goal-id) (class ?class) (params $?params) (mode SELECTED))
+  (test (goal-needs-fresh-robot ?class))
+  (not (test (member$ robot $?params)))
+
+  ; Get robot
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (goal (params robot ?robot $?some-params)))
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+  =>
+  (printout t "Assigning " ?robot " to " ?goal-id crlf)
+  (modify ?g (params robot ?robot $?params))
+)
+
+(defrule assign-robot-holding-wp
+  ?g <- (goal (id ?goal-id) (class ?class) (params $?params) (mode SELECTED))
+  (test (goal-needs-robot-holding-wp ?class))
+  (not (test (member$ robot $?params)))
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp&:(member$ ?wp $?params)))
+  =>
+  (printout t "Assigning " ?robot " to " ?goal-id crlf)
+  (modify ?g (params robot ?robot $?params))
+)
+
+
+(defrule clear-station
+  "Formulate goal to remove robots from stations. This is only done unless the robot
+  could execute another production goal"
+  ; select non-busy robot
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (goal (params robot ?robot $?some-params)))
+
+  ; check that robot is at input or output
+  (domain-object (type mps) (name ?some-station))
+  (wm-fact (key domain fact at args? r ?robot m ?some-station 
+              side ?side&:(or (eq ?side INPUT) (eq ?side OUTPUT))))
+
+  ; there is nothing else to do:
+  (not (goal (class ?class&:(goal-needs-fresh-robot ?class))
+            (mode SELECTED)
+            (params $?params&:(not (member$ robot $?params)))))
+  =>
+  (assert (goal (id (sym-cat CLEAR-STATION-(gensym*)))
+                (class CLEAR-STATION)
+                (sub-type SIMPLE)
+                (params robot ?robot)))
 )
