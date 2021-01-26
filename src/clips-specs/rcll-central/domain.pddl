@@ -334,7 +334,7 @@
 		:parameters (?r - robot ?team-color - team-color)
 		:precondition (robot-waiting ?r)
 		:effect (and (entered-field ?r)
-								 (at ?r START INPUT)
+								 (at ?r C-BS OUTPUT)
 								 (not (robot-waiting ?r)))
 	)
 

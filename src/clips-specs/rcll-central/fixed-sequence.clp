@@ -34,32 +34,27 @@
 
 (defrule goal-expander-enter-field
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
-              (params r ?robot team-color ?team-color))
+              (params r ?robot team-color ?team-color m ?curr-location side ?curr-side))
  (wm-fact (key domain fact mps-type args? m ?mps t ?t))
  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 =>
-
 (bind ?planid (sym-cat ENTER-FIELD-PLAN- (gensym*)))
-;  (if (and (eq ?r robot2)
-;          (at robot1 START INPUT))     
-;  then         
-;  (assert
-;    (plan (id ?planid) (goal-id ?goal-id))
-;    (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
-;                                 (action-name enter-field)
-;                                 (skiller (remote-skiller ?robot))
-;                                 (param-names r team-color)
-;                                 (param-values ?robot ?team-color))))
-;   else
-    (assert
+  (assert
     (plan (id ?planid) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
                                  (action-name enter-field)
                                  (skiller (remote-skiller ?robot))
                                  (param-names r team-color)
-                                 (param-values ?robot ?team-color)))
+                                 (param-values ?robot ?team-color))
+      (plan-action (id 2) (plan-id ?planid) (goal-id ?goal-id)
+              (action-name go-wait)
+              (skiller (remote-skiller ?robot))
+              (param-names r from from-side to)
+              (param-values ?robot ?curr-location ?curr-side (wait-pos C-BS OUTPUT)))
+  )
   (modify ?g (mode EXPANDED))
 )
+
 
 
 (defrule goal-expander-produce-c0-get-base-wait
@@ -316,33 +311,28 @@
 )
 
 (defrule goal-expander-produce-c0-refill-shelf
-  ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-C0) (params order ?order bs-color ?base-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds))
-  ?g <- (goal (id ?goal-id) (class REFILL-SHELF) (mode SELECTED)
+ ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-C0) (params order ?order bs-color ?base-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds))
+ ?g <- (goal (id ?goal-id) (params mps ?mps) (parent ?parent) (class REFILL_SHELF) (mode SELECTED))
+ (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+ (wm-fact (key domain fact cs-color args? m ?mps col ?col))
 
-  (wm-fact (key domain fact cs-color args? m ?mps col ?col))
-  =>
-  (assert
-    (plan (id REFILL-PLAN) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name lock) 
-                 (skiller (remote-skiller ?robot))
-                 (param-values ?mps))
-    (plan-action (id 2) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+ =>
+      (bind ?planid (sym-cat PRODUCE-C0-REFILL-SHELF- (gensym*)))
+      (assert
+        (plan (id ?planid) (goal-id ?goal-id))
+        (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
+                 (action-name lock) (param-values ?mps))
+        (plan-action (id 2) (plan-id ?planid) (goal-id ?goal-id)
                  (action-name refill-shelf)
-                 (skiller (remote-skiller ?robot))
                  (param-values ?mps LEFT (sym-cat CC- (random-id)) ?col))
-    (plan-action (id 3) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+        (plan-action (id 3) (plan-id ?planid) (goal-id ?goal-id)
                  (action-name refill-shelf)
-                 (skiller (remote-skiller ?robot))
                  (param-values ?mps MIDDLE (sym-cat CC- (random-id)) ?col))
-    (plan-action (id 4) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+        (plan-action (id 4) (plan-id ?planid) (goal-id ?goal-id)
                  (action-name refill-shelf)
-                 (skiller (remote-skiller ?robot))
                  (param-values ?mps RIGHT (sym-cat CC- (random-id)) ?col))
-    (plan-action (id 5) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name unlock) 
-                 (param-values ?mps))
-                 
+        (plan-action (id 5) (plan-id ?planid) (goal-id ?goal-id)
+                 (action-name unlock) (param-values ?mps))
   )
   (modify ?g (mode EXPANDED))
 )

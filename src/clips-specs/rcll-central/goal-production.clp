@@ -45,41 +45,6 @@
                 (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)))
 )
 
-(defrule goal-production-create-refill-shelf-maintain
-" The parent goal to refill a shelf. Allows formulation of goals to refill
-  a shelf only if the game is in the production phase and the domain is loaded.
-"
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (domain-facts-loaded)
-  (not (goal (class REFILL-SHELF-MAINTAIN)))
-  (not (mutex (name ?n&:(eq ?n (resource-to-mutex refill-shelf))) (state LOCKED)))
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  =>
-  (bind ?goal (goal-tree-assert-run-endless REFILL-SHELF-MAINTAIN 1))
-  (modify ?goal (required-resources refill-shelf)
-                (params frequency 1 retract-on-REJECTED)
-                (verbosity QUIET))
-)
-
-
-(defrule goal-production-create-refill-shelf-achieve
-  "Refill a shelf whenever it is empty."
-  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?g <- (goal (id ?maintain-id) (class REFILL-SHELF-MAINTAIN) (mode SELECTED))
-  (not (goal (class REFILL-SHELF)))
-  (wm-fact (key refbox phase) (value PRODUCTION))
-  (wm-fact (key game state) (value RUNNING))
-  (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
-  (wm-fact (key domain fact mps-type args? m ?mps t CS))
-  (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
-  =>
-  (assert (goal (id (sym-cat REFILL-SHELF- (gensym*)))
-                (class REFILL-SHELF) (sub-type SIMPLE)
-                (parent ?maintain-id) (verbosity QUIET)
-                (params mps ?mps)))
-)
-
 
 (defrule goal-production-navgraph-compute-wait-positions-finished
   "Add the waiting points to the domain once their generation is finished."
@@ -106,7 +71,7 @@
   (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
   (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE))
   (wm-fact (key refbox team-color) (value ?team-color))
-  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 
   (NavGraphGeneratorInterface (final TRUE))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
@@ -114,7 +79,7 @@
   (printout t "Goal " ENTER-FIELD " formulated" ?curr-location ?curr-side crlf)
   (assert (goal (id (sym-cat ENTER-FIELD- (gensym*)))
                 (class ENTER-FIELD) (sub-type SIMPLE)
-                (params r ?robot team-color ?team-color)))
+                (params r ?robot team-color ?team-color m ?curr-location side ?curr-side)))
 )
 
 (defrule goal-production-create-produce-c0
@@ -186,12 +151,14 @@
 (defrule goal-produce-c0-create-refill-shelf
   "Refill a shelf whenever it is empty."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?mps t CS))
   (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
   (goal (id ?produce-c0-id) (class PRODUCE-C0) (mode SELECTED))
   (not (goal (class REFILL-SHELF) (parent ?produce-c0-id)))
   =>
-  (printout t "Goal REFILL-SHELF formulated" ?wp ?mps ?spot crlf)
-  (assert (goal (id (sym-cat REFILL-SHELF- (gensym*))) (class REFILL-SHELF) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED)))
+  (printout t "Goal REFILL-SHELF formulated" crlf)
+  (assert (goal (id (sym-cat REFILL-SHELF- (gensym*))) (class REFILL-SHELF) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED)(params m ?mps )))
 )
 
 
