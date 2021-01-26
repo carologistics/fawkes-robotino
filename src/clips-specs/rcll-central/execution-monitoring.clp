@@ -133,7 +133,7 @@
               (state FAILED)
               (error-msg ?error)
               (param-values $?param-values))
-  (test (eq TRUE (should-retry ?an ?error)))
+  ;(test (eq TRUE (should-retry ?an ?error)))
   (wm-fact (key domain fact self args? r ?r))
   (not (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)))
   =>
@@ -163,7 +163,7 @@
               (error-msg ?error)
               (param-values $?param-values))
   (wm-fact (key domain fact self args? r ?r))
-  (test (eq TRUE (should-retry ?an ?error)))
+  ;(test (eq TRUE (should-retry ?an ?error)))
   ?wm <- (wm-fact (key monitoring action-retried args? r ?r a ?an id ?id2&:(eq ?id2 (sym-cat ?id)) m ? g ?goal-id)
           (value ?tries&:(< ?tries ?*MAX-RETRIES-PICK*)))
   =>

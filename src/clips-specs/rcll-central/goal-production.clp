@@ -106,10 +106,12 @@
   (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
   (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE))
   (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+
   (NavGraphGeneratorInterface (final TRUE))
   (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
-  (printout t "Goal " ENTER-FIELD " formulated" crlf)
+  (printout t "Goal " ENTER-FIELD " formulated" ?curr-location ?curr-side crlf)
   (assert (goal (id (sym-cat ENTER-FIELD- (gensym*)))
                 (class ENTER-FIELD) (sub-type SIMPLE)
                 (params r ?robot team-color ?team-color)))
@@ -136,9 +138,13 @@
  (wm-fact (key domain fact mps-type args? m ?ds t DS))
  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
 
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+
+
   (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
   (not (goal (class PRODUCE-C0) (params order ?order bs-color ?any-base-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds)))
   =>
+  (printout t "hier bin ich " ?curr-location ?curr-side)
   (printout t "Goal for C0 order " ?order " formulated: " ?base-color " " ?cap-color crlf)
   (bind ?wp (sym-cat WP- (random-id)))
   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
@@ -176,3 +182,16 @@
   (printout t "Goal MOUNT-CAP-DELIVER formulated" crlf)
   (assert (goal (id (sym-cat MOUNT-CAP-DELIVER- (gensym*))) (class MOUNT-CAP-DELIVER) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED)))
 )
+
+(defrule goal-produce-c0-create-refill-shelf
+  "Refill a shelf whenever it is empty."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
+  (goal (id ?produce-c0-id) (class PRODUCE-C0) (mode SELECTED))
+  (not (goal (class REFILL-SHELF) (parent ?produce-c0-id)))
+  =>
+  (printout t "Goal REFILL-SHELF formulated" ?wp ?mps ?spot crlf)
+  (assert (goal (id (sym-cat REFILL-SHELF- (gensym*))) (class REFILL-SHELF) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED)))
+)
+
+

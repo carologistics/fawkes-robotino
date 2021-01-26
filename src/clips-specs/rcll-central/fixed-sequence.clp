@@ -31,30 +31,6 @@
   (modify ?g (mode EXPANDED))
 )
 
-(defrule goal-expander-refill-shelf
-  ?p <- (goal (mode DISPATCHED) (id ?parent-id))
-  ?g <- (goal (id ?goal-id) (class REFILL-SHELF) (mode SELECTED)
-              (params mps ?mps) (parent ?parent-id))
-  (wm-fact (key domain fact cs-color args? m ?mps col ?col))
-  =>
-  (assert
-    (plan (id REFILL-PLAN) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name lock) (param-values ?mps))
-    (plan-action (id 2) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name refill-shelf)
-                 (param-values ?mps LEFT (sym-cat CC- (random-id)) ?col))
-    (plan-action (id 3) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name refill-shelf)
-                 (param-values ?mps MIDDLE (sym-cat CC- (random-id)) ?col))
-    (plan-action (id 4) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name refill-shelf)
-                 (param-values ?mps RIGHT (sym-cat CC- (random-id)) ?col))
-    (plan-action (id 5) (plan-id REFILL-PLAN) (goal-id ?goal-id)
-                 (action-name unlock) (param-values ?mps))
-  )
-  (modify ?g (mode EXPANDED))
-)
 
 (defrule goal-expander-enter-field
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
@@ -62,8 +38,20 @@
  (wm-fact (key domain fact mps-type args? m ?mps t ?t))
  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 =>
+
 (bind ?planid (sym-cat ENTER-FIELD-PLAN- (gensym*)))
-  (assert
+;  (if (and (eq ?r robot2)
+;          (at robot1 START INPUT))     
+;  then         
+;  (assert
+;    (plan (id ?planid) (goal-id ?goal-id))
+;    (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
+;                                 (action-name enter-field)
+;                                 (skiller (remote-skiller ?robot))
+;                                 (param-names r team-color)
+;                                 (param-values ?robot ?team-color))))
+;   else
+    (assert
     (plan (id ?planid) (goal-id ?goal-id))
     (plan-action (id 1) (plan-id ?planid) (goal-id ?goal-id)
                                  (action-name enter-field)
@@ -325,4 +313,36 @@
               (action-name location-unlock) (param-values ?ds INPUT))
 	  )
         (modify ?g (mode EXPANDED)(params robot ?robot))
+)
+
+(defrule goal-expander-produce-c0-refill-shelf
+  ?p <- (goal (mode DISPATCHED) (id ?parent) (class PRODUCE-C0) (params order ?order bs-color ?base-color cs-color ?cap-color wp ?wp bs ?bs cs ?cs ds ?ds))
+  ?g <- (goal (id ?goal-id) (class REFILL-SHELF) (mode SELECTED)
+
+  (wm-fact (key domain fact cs-color args? m ?mps col ?col))
+  =>
+  (assert
+    (plan (id REFILL-PLAN) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                 (action-name lock) 
+                 (skiller (remote-skiller ?robot))
+                 (param-values ?mps))
+    (plan-action (id 2) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                 (action-name refill-shelf)
+                 (skiller (remote-skiller ?robot))
+                 (param-values ?mps LEFT (sym-cat CC- (random-id)) ?col))
+    (plan-action (id 3) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                 (action-name refill-shelf)
+                 (skiller (remote-skiller ?robot))
+                 (param-values ?mps MIDDLE (sym-cat CC- (random-id)) ?col))
+    (plan-action (id 4) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                 (action-name refill-shelf)
+                 (skiller (remote-skiller ?robot))
+                 (param-values ?mps RIGHT (sym-cat CC- (random-id)) ?col))
+    (plan-action (id 5) (plan-id REFILL-PLAN) (goal-id ?goal-id)
+                 (action-name unlock) 
+                 (param-values ?mps))
+                 
+  )
+  (modify ?g (mode EXPANDED))
 )
