@@ -1,5 +1,6 @@
 ## TODO
 * production
+  * mount cap: read current ring colors locally, add param for ring index, (change names of certain params)
   * prefill cap/ring station
   * make creation of goals dependent on whether cap is buffered/how many bases are in the rs
   * limit amount of productions to 2 at a time
