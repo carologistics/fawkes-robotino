@@ -242,8 +242,6 @@
   (not (goal (class BUFFER-RS) (parent ?produce-c1-id)))
   =>
   (printout t "Goals BUFFER-RS formulated. bases-needed: " ?bases-needed crlf)
-  ;TODO rework this section. bases-needed are not actually numbers
-  ;(loop-for-count (?i 1 ?bases-needed) do (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED))))
   (if (eq ?bases-needed ONE) then 
   (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED)))
   )

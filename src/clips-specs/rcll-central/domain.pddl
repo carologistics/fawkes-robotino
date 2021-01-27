@@ -381,18 +381,14 @@
 	)
 
 	(:action wp-put-slide-cc
-		:parameters (?r - robot ?wp - cap-carrier ?m - mps ?rs-before - ring-num ?rs-after - ring-num)
+		:parameters (?r - robot ?wp - cap-carrier ?m - mps)
 		:precondition (and (mps-type ?m RS) (not (mps-state BROKEN))
 							(at ?r ?m INPUT)
 							(wp-usable ?wp)
-							(holding ?r ?wp)
-							(rs-filled-with ?m ?rs-before)
-							(rs-inc ?rs-before ?rs-after))
+							(holding ?r ?wp))
 		:effect (and (not (wp-usable ?wp))
 					(not (holding ?r ?wp))
-					(can-hold ?r)
-					(not (rs-filled-with ?m ?rs-before))
-					(rs-filled-with ?m ?rs-after))
+					(can-hold ?r))
 	)
 
 	(:action fulfill-order-c0
