@@ -80,7 +80,9 @@
 (deffunction goal-needs-fresh-robot (?goal-class)
   (return (or (eq ?goal-class GET-BASE)
               (eq ?goal-class FILL-CS)
-              (eq ?goal-class FILL-BASE-IN-RS)))
+              (eq ?goal-class FILL-BASE-IN-RS)
+              (eq ?goal-class PICKUP-WP)
+              (eq ?goal-class CLEAR-OUTPUT)))
 )
 
 (deffunction goal-needs-robot-holding-wp (?goal-class)

@@ -459,7 +459,7 @@
           (parent ?parent)
           (class FILL-BASES-IN-RS)
           (sub-type RUN-SUBGOALS-IN-PARALLEL)
-          (priority 2.0)
+          (priority 3.0)
           (params bs ?base-station
                   rs ?ring-station
                   ring-num ?ring-num)
@@ -468,12 +468,19 @@
           (parent ?parent)
           (class GET-BASE)
           (sub-type SIMPLE)
-          (priority 1.0)
+          (priority 2.0)
           (params bs ?base-station
                   bs-side OUTPUT
                   bs-color ?base-color
                   target-station ?ring-station
                   wp ?wp)
+    )
+    (goal (id (sym-cat CLEAR-OUTPUT-(gensym*)))
+          (parent ?parent)
+          (class CLEAR-OUTPUT)
+          (sub-type SIMPLE)
+          (priority 1.0)
+          (params mps ?ring-station mps-side OUTPUT)
     )
     (goal (id (sym-cat MOUNT-RING-(gensym*)))
           (parent ?parent)
@@ -505,8 +512,15 @@
           (parent ?parent)
           (class FILL-CS)
           (sub-type SIMPLE)
-          (priority 1.0)
+          (priority 2.0)
           (params mps ?cap-station cc ?cc)
+    )
+    (goal (id (sym-cat PICKUP-WP-(gensym*)))
+          (parent ?parent)
+          (class PICKUP-WP)
+          (sub-type SIMPLE)
+          (priority 1.0)
+          (params wp ?wp)
     )
     (goal (id (sym-cat MOUNT-CAP-(gensym*)))
           (parent ?parent)
@@ -520,12 +534,14 @@
 )
 
 ; TODO: solve case that no additional bases are needed
+; TODO: formulates before async mount ring completes -> wrong ring count
 (defrule goal-production-fill-bases-in-rs
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?p <- (goal (id ?parent) (class FILL-BASES-IN-RS) (mode SELECTED)
               (params bs ?base-station
                       rs ?ring-station
                       ring-num ?ring-num))
+  (wm-fact (key domain fact mps-state args? m ?ring-station s IDLE))
   (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?rs-before))
   (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-needed))
   =>
@@ -644,4 +660,22 @@
                 (class CLEAR-STATION)
                 (sub-type SIMPLE)
                 (params robot ?robot)))
+)
+
+
+; ============================= Goal Fast-Forward ===============================
+(defrule fast-forward-pickup-wp
+  "Immediatley finish a pickup-wp goal if a robot is already holding the wp"
+  ?g <- (goal (id ?goal-id) (class PICKUP-WP) (params $?p1 wp ?wp $?p2) (mode SELECTED))
+  (wm-fact (key domain fact holding args? r ?robot wp ?wp))
+  =>
+  (modify ?g (mode FINISHED) (outcome COMPLETED))
+)
+
+(defrule fast-forward-clear-output
+  "Immediatley complete a clear-output goal if there is no workpiece at the output"
+  ?g <- (goal (id ?goal-id) (class CLEAR-OUTPUT) (params $?p1 mps ?mps mps-side ?mps-side $?p2) (mode SELECTED))
+  (not (wm-fact (key domain fact wp-at args? wp ? m ?mps side ?mps-side)))
+  =>
+  (modify ?g (mode FINISHED) (outcome COMPLETED))
 )
