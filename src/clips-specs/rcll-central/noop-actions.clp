@@ -122,7 +122,7 @@
   (case C1 then
       (bind ?params (create$ ord ?order wp ?wp m ?ds g ?gate basecol ?base-color capcol ?cap-color ring1col ?ring1-color)))
   (case C2 then
-      (bind ?params (create$ ord ?order wp ?wp m ?ds g ?gate bascol ?base-color capcol ?cap-color ring1col ?ring1-color ring2col ?ring2-color)))
+      (bind ?params (create$ ord ?order wp ?wp m ?ds g ?gate basecol ?base-color capcol ?cap-color ring1col ?ring1-color ring2col ?ring2-color)))
   (case C3 then
       (bind ?params (create$ ord ?order wp ?wp m ?ds g ?gate basecol ?base-color capcol ?cap-color ring1col ?ring1-color ring2col ?ring2-color ring3col ?ring3-color)))
  )
