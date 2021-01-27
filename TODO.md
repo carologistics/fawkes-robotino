@@ -5,6 +5,7 @@
   * limit amount of productions to 2 at a time
   * handle down/broken machines
   * consider delivery times
+* handle mps: no special case for rs
 * look into retrying failed goals
 * select robots smartly (e.g. distance)
 * add more tests (e.g. C0)

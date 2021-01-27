@@ -66,6 +66,7 @@
   (bind ?prepare-param-values (values-from-name-value-list ?prepare-params))
   (bind ?process-param-values (values-from-name-value-list ?process-params))
 
+  ; TODO: currently copied from rcll, check if possible/simpler in noop
   (bind ?success TRUE)
   (if (eq ?prepare-action prepare-rs) then
     (bind ?rs-req (nth$ (+ 1 (member$ r-req ?prepare-params)) ?prepare-params))
