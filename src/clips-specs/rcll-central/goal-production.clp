@@ -137,7 +137,7 @@
 (defrule goal-expander-build-C0
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?g <- (goal (id ?parent-id) (mode SELECTED) (class BUILD) (params ?order))
-  (wm-fact (key domain fact order-complexity args? ord ?order com C0))
+  (wm-fact (key domain fact order-complexity args? ord ?order com C0|C1))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   => 
@@ -314,6 +314,56 @@
     )
 )
 
+
+(defrule goal-production-mount-ring1
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?ds base-color ?base-color ring1-color ?ring1-color ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
+  ; wp facts
+  (not (exists
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))
+    (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+    (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+    (wm-fact (key domain fact wp-ring2-color args? wp ?wp col RING_NONE))
+    (wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE))
+    (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  ))
+  ; Subgoal does not exist yet
+  (not (goal (class MOUNT-RING1) (parent ?parent-id) (params base-color ?base-color ring1-color ?ring1-color)))
+  => 
+   (assert
+        (goal (id (sym-cat MOUNT-RING1- (gensym*))) (parent ?parent-id)
+                  (class MOUNT-RING1) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
+                  (params base-color ?base-color ring1-color ?ring1-color))
+    )
+)
+
+
+(defrule goal-production-transport-rs
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING1) (params base-color ?base-color ring1-color ?ring1-color))
+  ; RS facts
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?rs t RS))
+  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring1-color rn ?))
+  ; wp facts
+  (not (exists
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side INPUT))
+    (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+    (wm-fact (key domain fact wp-ring1-color args? wp ?wp col RING_NONE))
+    (wm-fact (key domain fact wp-ring2-color args? wp ?wp col RING_NONE))
+    (wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE))
+    (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  ))
+  ; Subgoal does not exist yet
+  (not (goal (class TRANSPORT) (params mps-to ?rs base-color ?base-color ring1-color RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE)))
+  => 
+   (assert
+        (goal (id (sym-cat TRANSPORT- (gensym*))) (parent ?parent-id)
+                  (class TRANSPORT) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
+                  (params mps-to ?rs base-color ?base-color ring1-color RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
+    )
+)
 
 ; (defrule goal-expander-build-C1
 ;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
