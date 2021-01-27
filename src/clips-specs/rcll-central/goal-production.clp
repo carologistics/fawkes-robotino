@@ -185,6 +185,8 @@
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
 
  (wm-fact (key refbox team-color) (value ?team-color))
+ ; wait for machines to be initialized. Thanks to Chris for this fix.
+ (wm-fact (key domain fact entered-field args? r ?some-robot))
 
  (wm-fact (key domain fact mps-type args? m ?cs t CS))
  (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
@@ -241,7 +243,19 @@
   =>
   (printout t "Goals BUFFER-RS formulated. bases-needed: " ?bases-needed crlf)
   ;TODO rework this section. bases-needed are not actually numbers
-  (loop-for-count (?i 1 ?bases-needed) do (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED))))
+  ;(loop-for-count (?i 1 ?bases-needed) do (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED))))
+  (if (eq ?bases-needed ONE) then 
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED)))
+  )
+  (if (eq ?bases-needed TWO) then 
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED)))
+  )
+  (if (eq ?bases-needed THREE) then 
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED)))
+  (assert (goal (id (sym-cat BUFFER-RS- (gensym*))) (class BUFFER-RS) (parent ?produce-c1-id) (sub-type SIMPLE) (mode FORMULATED)))
+  )
 )
 
 (defrule goal-produce-c1-mount-ring1
