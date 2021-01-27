@@ -366,7 +366,11 @@
   "Fill a ring station with one additional base"
   ?g <- (goal (id ?goal-id) (class FILL-RS) (mode SELECTED)
               (params robot ?robot bs ?base-station rs ?ring-station wp ?wp)
-        )      
+        )
+  ;TODO: current workaround to fix parallel issue with rs-filled-with
+  (not (goal (class FILL-RS) (mode EXPANDED|COMMITTED|DISPATCHED) 
+             (params robot ? bs ? rs ?ring-station wp ?)))
+
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))

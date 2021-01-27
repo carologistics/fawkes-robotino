@@ -438,9 +438,7 @@
     (goal (id (sym-cat FILL-BASES-IN-RS-(gensym*)))
           (parent ?parent)
           (class FILL-BASES-IN-RS)
-          ;TODO: Should be parallel
-          ;(sub-type RUN-SUBGOALS-IN-PARALLEL)
-          (sub-type RUN-ALL-OF-SUBGOALS)
+          (sub-type RUN-SUBGOALS-IN-PARALLEL)
           (priority 2.0)
           (params bs ?base-station
                   rs ?ring-station
