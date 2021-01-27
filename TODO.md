@@ -5,17 +5,20 @@
   * limit amount of productions to 2 at a time
   * handle down/broken machines
   * consider delivery times
+  * consider multiple products for single order
 * handle mps: no special case for rs
 * look into retrying failed goals
 * select robots smartly (e.g. distance)
 * add more tests (e.g. C0)
 * documentation: visualize goal tree
 
+
 ## DONE
 * C0: split up delivery from reserve goals
 * remove self facts in domain.pddl
 * make all interactions with the machines asynchronous (only bs-dispense done by
 robot which is unproblematic because the robot needs to wait)
+* check if everything initalized
 
 ## NOTES
 * verify: go-wait actions before move actions when machine is not reserved

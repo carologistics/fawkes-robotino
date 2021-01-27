@@ -158,16 +158,27 @@
 (defrule goal-production-produce-c0
   "Create root goal of c0-production tree"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
+  ; check current game state
+  (wm-fact (key refbox state) (value RUNNING))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (domain-facts-loaded)
+
+  ; get order of complexity C0
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C0))
+
+  ; debugging conditions
   ;(not-defined)
-  (not (goal (class PRODUCE-C0)))
+  ;(not (goal (class PRODUCE-C0)))
 
   ; get required base and cap color
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   
+  ; TODO: check for more products in single order
   ; order is not already being handled
   (not (goal (class PRODUCE-C0) (params order ?order $?other-params)))
+
   ; more products ordered
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
@@ -311,16 +322,25 @@
 (defrule goal-production-produce-c1
   "Create root goal of c1-production tree"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
+  ; check current game state
+  (wm-fact (key refbox state) (value RUNNING))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (domain-facts-loaded)
+
+  ; get order of complexity C1
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C1))
-  (wm-fact (key domain fact entered-field args? r ?))
+
+  ; debugging conditions
   ;(not-defined)
-  (not (goal (class PRODUCE-C1)))
+  ;(not (goal (class PRODUCE-C1)))
 
   ; get required colors
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   
+  ; TODO: check for more products in single order
   ; order is not already being handled
   (not (goal (class PRODUCE-C1) (params order ?order $?other-params)))
   ; more products ordered
