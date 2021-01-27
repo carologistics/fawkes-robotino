@@ -337,7 +337,7 @@
 
   ; get required colors
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color1))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   
   ; TODO: check for more products in single order
@@ -360,7 +360,7 @@
   (wm-fact (key domain fact mps-team args? m ?base-station col ?team-color))
 
   ; get ring station and number of required bases
-  (wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?ring-color1 rn ?ring-num))
+  (wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?ring-color1 rn ?ring-num&~NA))
   (wm-fact (key domain fact mps-team args? m ?ring-station col ?team-color))
 
   ; get delivery station
@@ -531,6 +531,11 @@
   =>
   (bind ?rs-needed-int (sym-to-int ?rs-needed))
   (printout t "Ring needs " ?ring-num " bases, " ?rs-before " in ring station, " ?rs-needed " to get which is " ?rs-needed-int crlf)
+
+  ; no additional bases necessary, terminate goal
+  (if (eq ?rs-needed-int 0) then (modify ?p (mode FINISHED) (outcome COMPLETED)))
+
+  ; create as many fill goals as necessary
   (if (> ?rs-needed-int 0) then
     (assert (goal (id (sym-cat FILL-BASE-IN-RS-(gensym*)))
                   (parent ?parent)
