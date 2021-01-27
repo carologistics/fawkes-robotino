@@ -159,6 +159,8 @@
   "Create root goal of c0-production tree"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C0))
+  ;(not-defined)
+  (not (goal (class PRODUCE-C0)))
 
   ; get required base and cap color
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
@@ -310,7 +312,9 @@
   "Create root goal of c1-production tree"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C1))
-  (not-defined)
+  (wm-fact (key domain fact entered-field args? r ?))
+  ;(not-defined)
+  (not (goal (class PRODUCE-C1)))
 
   ; get required colors
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
@@ -349,7 +353,6 @@
     (goal (id (sym-cat PRODUCE-C1- (gensym*)))
           (class PRODUCE-C1)
           (sub-type RUN-ALL-OF-SUBGOALS)
-          (required-resources ?cap-station)
           (params order ?order
                   wp ?wp
                   cs ?cap-station
@@ -435,7 +438,9 @@
     (goal (id (sym-cat FILL-BASES-IN-RS-(gensym*)))
           (parent ?parent)
           (class FILL-BASES-IN-RS)
-          (sub-type RUN-SUBGOALS-IN-PARALLEL)
+          ;TODO: Should be parallel
+          ;(sub-type RUN-SUBGOALS-IN-PARALLEL)
+          (sub-type RUN-ALL-OF-SUBGOALS)
           (priority 2.0)
           (params bs ?base-station
                   rs ?ring-station
@@ -481,12 +486,14 @@
     (goal (id (sym-cat FILL-CS-(gensym*)))
           (parent ?parent)
           (class FILL-CS)
+          (sub-type SIMPLE)
           (priority 1.0)
           (params mps ?cap-station cc ?cc)
     )
     (goal (id (sym-cat MOUNT-CAP-(gensym*)))
           (parent ?parent)
           (class MOUNT-CAP)
+          (sub-type SIMPLE)
           (priority 0.0)
           (params cs ?cap-station cap-color ?cap-color wp ?wp)
     )
@@ -494,6 +501,7 @@
   (modify ?p (mode EXPANDED))
 )
 
+; TODO: solve case that no additional bases are needed
 (defrule goal-production-fill-bases-in-rs
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?p <- (goal (id ?parent) (class FILL-BASES-IN-RS) (mode SELECTED)
@@ -506,27 +514,59 @@
   (bind ?rs-needed-int (sym-to-int ?rs-needed))
   (printout t "Ring needs " ?ring-num " bases, " ?rs-before " in ring station, " ?rs-needed " to get which is " ?rs-needed-int crlf)
   (if (> ?rs-needed-int 0) then
-    (assert (goal (id (sym-cat FILL-BASE-IN-RS))
+    (assert (goal (id (sym-cat FILL-BASE-IN-RS-(gensym*)))
                   (parent ?parent)
                   (class FILL-BASE-IN-RS)
-                  (sub-type SIMPLE)
+                  (sub-type RUN-ALL-OF-SUBGOALS)
                   (params bs ?base-station rs ?ring-station))
     )  
   )
   (if (> ?rs-needed-int 1) then
-    (assert (goal (id (sym-cat FILL-BASE-IN-RS))
+    (assert (goal (id (sym-cat FILL-BASE-IN-RS-(gensym*)))
                   (parent ?parent)
                   (class FILL-BASE-IN-RS)
-                  (sub-type SIMPLE)
+                  (sub-type RUN-ALL-OF-SUBGOALS)
                   (params bs ?base-station rs ?ring-station))
     )  
   )
   (if (> ?rs-needed-int 2) then
-    (assert (goal (id (sym-cat FILL-BASE-IN-RS))
+    (assert (goal (id (sym-cat FILL-BASE-IN-RS-(gensym*)))
                   (parent ?parent)
                   (class FILL-BASE-IN-RS)
-                  (sub-type SIMPLE)
+                  (sub-type RUN-ALL-OF-SUBGOALS)
                   (params bs ?base-station rs ?ring-station))
+    )
+  )
+  (modify ?p (mode EXPANDED))
+)
+
+(defrule goal-production-fill-base-in-rs
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?p <- (goal (id ?parent) (class FILL-BASE-IN-RS) (mode SELECTED)
+              (params bs ?base-station rs ?ring-station))
+  =>
+  (bind ?wp (create-wp (sym-cat FILL-BASE- (gensym*))))
+  (bind ?base-color (sym-cat BASE_BLACK))
+  (assert
+    (goal (id (sym-cat GET-BASE-(gensym*)))
+          (parent ?parent)
+          (class GET-BASE)
+          (sub-type SIMPLE)
+          (priority 1.0)
+          (params bs ?base-station
+                  bs-side OUTPUT
+                  bs-color ?base-color
+                  target-station ?ring-station
+                  wp ?wp)
+    )
+    (goal (id (sym-cat FILL-RS-(gensym*)))
+          (parent ?parent)
+          (class FILL-RS)
+          (sub-type SIMPLE)
+          (priority 0.0)
+          (params bs ?base-station 
+                  rs ?ring-station 
+                  wp ?wp)
     )
   )
   (modify ?p (mode EXPANDED))

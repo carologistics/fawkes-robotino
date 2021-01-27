@@ -65,6 +65,35 @@
   =>
   (bind ?prepare-param-values (values-from-name-value-list ?prepare-params))
   (bind ?process-param-values (values-from-name-value-list ?process-params))
+
+  (bind ?success TRUE)
+  (if (eq ?prepare-action prepare-rs) then
+    (bind ?rs-req (nth$ (+ 1 (member$ r-req ?prepare-params)) ?prepare-params))
+    (if (not (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact rs-filled-with))
+                                       (eq (wm-key-arg ?wm:key m) ?mps))
+      (bind ?rs-before (wm-key-arg ?wm:key n))
+    )) then
+      (printout error "Cant find rs-filled-with for " ?mps crlf)
+      (bind ?success FALSE)
+    )
+    (if (not (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact rs-sub))
+                                       (eq (wm-key-arg ?wm:key minuend) ?rs-before)
+                                       (eq (wm-key-arg ?wm:key subtrahend) ?rs-req))
+      (bind ?rs-after (wm-key-arg ?wm:key difference))
+    )) then
+      (printout error "Cant find rs-sub fact with " ?rs-before "-" ?rs-req crlf)
+      (bind ?success FALSE)
+    )
+    (if ?success then
+      (bind ?prepare-param-values (insert$ ?prepare-param-values (length$ ?prepare-param-values) ?rs-before))
+      (bind ?process-param-values (insert$ ?process-param-values (length$ ?process-param-values) ?rs-before))
+
+      (bind ?prepare-param-values (insert$ ?prepare-param-values (length$ ?prepare-param-values) ?rs-after))
+      (bind ?process-param-values (insert$ ?process-param-values (length$ ?process-param-values) ?rs-after))
+    )
+  )
+
+
   (bind ?plan-id (sym-cat HANDLE-MPS-PLAN-(gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
@@ -333,6 +362,105 @@
   (modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-fill-rs
+  "Fill a ring station with one additional base"
+  ?g <- (goal (id ?goal-id) (class FILL-RS) (mode SELECTED)
+              (params robot ?robot bs ?base-station rs ?ring-station wp ?wp)
+        )      
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before))
+  (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
+  =>
+  (bind ?plan-id (sym-cat FILL-RS-PLAN- ?robot - (gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name location-lock)
+      (skiller (remote-skiller ?robot))
+      (param-values ?ring-station INPUT)
+    )
+    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name move)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to to-side)
+      (param-values ?robot (wait-pos ?ring-station INPUT) WAIT ?ring-station INPUT)
+    )
+    (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name wp-put-slide-cc)
+      (skiller (remote-skiller ?robot))
+      (param-names r wp m rs-before rs-after)
+      (param-values ?robot ?wp ?ring-station ?rs-before ?rs-after)
+    )
+    (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name location-unlock)
+      (skiller (remote-skiller ?robot))
+      (param-values ?ring-station INPUT)
+    )
+    (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name go-wait)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to)
+      (param-values ?robot ?ring-station INPUT (wait-pos ?ring-station INPUT))
+    )
+  )
+  (modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-mount-ring
+  "Mount certain ring on workpiece."
+  ?g <- (goal (id ?goal-id) (class MOUNT-RING) (mode SELECTED)
+              (params robot ?robot
+                      rs ?ring-station
+                      ring-color ?ring-color1
+                      ring-num ?ring-num
+                      wp ?wp)
+        )
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  =>
+  (bind ?plan-id (sym-cat MOUNT-RING-PLAN- ?robot - (gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name move)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to to-side )
+      (param-values ?robot (wait-pos ?ring-station INPUT) WAIT ?ring-station INPUT)
+    )
+    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name wp-put)
+      (skiller (remote-skiller ?robot))
+      (param-names r wp m)
+      (param-values ?robot ?wp ?ring-station)
+    )
+    (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name request-rs-mount-ring)
+      (skiller (remote-skiller ?robot))
+      (param-values ?robot ?ring-station ?wp ONE ?ring-color1
+                      RING_NONE RING_NONE RING_NONE
+                      ?ring-num)
+    )
+    (plan-action (id 4) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name move)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to to-side)
+      (param-values ?robot ?ring-station INPUT ?ring-station OUTPUT)
+    )
+    (plan-action (id 5) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name wp-get)
+      (skiller (remote-skiller ?robot))
+      (param-names r wp m side)
+      (param-values ?robot ?wp ?ring-station OUTPUT)
+    )
+    (plan-action (id 6) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name go-wait)
+      (skiller (remote-skiller ?robot))
+      (param-names r from from-side to)
+      (param-values ?robot ?ring-station OUTPUT (wait-pos ?ring-station OUTPUT))
+    )
+  )
+  (modify ?g (mode EXPANDED))
+)
+
 (defrule goal-expander-deliver
   "Deliver the finished product"
   ?g <- (goal (id ?goal-id) (class DELIVER) (mode SELECTED)
@@ -341,7 +469,27 @@
                       ds ?ds
                       wp ?wp))
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color-wp))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color-wp))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color-wp))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color-wp))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color-wp))
+  ;Order-CEs
+  (wm-fact (key order meta wp-for-order args? wp ?wp ord ?order))
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
+  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
+  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (wm-fact (key domain fact order-gate args? ord ?order gate ?gate))
+
   =>
+  (printout t ?complexity ?order crlf)
+  (printout t ?base-color-wp ?ring1-color-wp ?ring2-color-wp ?ring3-color-wp ?cap-color-wp crlf)
+  (printout t ?base-color ?ring1-color ?ring2-color ?ring3-color ?cap-color crlf)
+
   (bind ?plan-id (sym-cat DELIVER-PLAN- ?robot - (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))

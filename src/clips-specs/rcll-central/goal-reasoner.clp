@@ -86,7 +86,8 @@
 (deffunction goal-needs-robot-holding-wp (?goal-class)
 (return (or (eq ?goal-class MOUNT-CAP)
               (eq ?goal-class DELIVER)
-              (eq ?goal-class MOUNT-RING)))
+              (eq ?goal-class MOUNT-RING)
+              (eq ?goal-class FILL-RS)))
 )
 
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
