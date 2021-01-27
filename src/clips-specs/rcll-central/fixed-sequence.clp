@@ -76,9 +76,10 @@
 (defrule goal-expander-prepare-cap
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class PREPARE-CAP) (params cap-color ?cap-color))
+  (not (goal (mode ~SELECTED) (class PREPARE-CAP) (params cap-color ?cap-color)))
   ; Robot facts
   (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (meta r ?robot)))
+  (not (plan (r ?robot)))
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   ; CS facts
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -88,13 +89,14 @@
   (wm-fact (key domain fact mps-side-free args? m ?cs side INPUT))
   (wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT))
   (wm-fact (key domain fact cs-can-perform args? m ?cs op RETRIEVE_CAP))
+  (not (plan (mps ?cs)))
   ; wp facts
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))  
 =>
   (bind ?plan-id (sym-cat PREPARE-CAP-PLAN- (gensym*)))
   (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?cs))
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name move)
               (skiller (remote-skiller ?robot))
@@ -120,7 +122,7 @@
               (skiller (remote-skiller ?robot))
               (param-values ?cs ?cc ?cap-color))
   )
-  (modify ?g (mode EXPANDED) (meta r ?robot))
+  (modify ?g (mode EXPANDED))
 )
 
 (defrule goal-expander-discard-base
@@ -128,15 +130,16 @@
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class DISCARD-BASE) (params cs ?cs))
   ; Robot facts
   (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (meta r ?robot)))
+  (not (plan (r ?robot)))
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   ; WP facts
   (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side OUTPUT))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  (not (plan (wp ?wp)))
 =>
   (bind ?plan-id (sym-cat DISCARD-BASE-PLAN- (gensym*)))
   (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (wp ?wp))
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name move)
               (skiller (remote-skiller ?robot))
@@ -153,7 +156,7 @@
               (param-names r cc )
               (param-values ?robot ?wp))
   )
-  (modify ?g (mode EXPANDED) (meta r ?robot))
+  (modify ?g (mode EXPANDED))
 )
 
 
@@ -162,7 +165,7 @@
               (params mps-to ?mps-to base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color))
   ; Robot facts
   (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (meta r ?robot)))
+  (not (plan (r ?robot)))
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   ; wp facts
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))
@@ -171,12 +174,14 @@
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+  (not (plan (wp ?wp)))
   ; mps facts
   (wm-fact (key domain fact mps-side-free args? m ?mps-to side INPUT))
+  (not (plan (mps ?mps-to)))
 =>
   (bind ?plan-id (sym-cat TRANSPORT-PLAN- (gensym*)))
   (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?mps-to) (wp ?wp))
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name move)
               (skiller (remote-skiller ?robot))
@@ -198,7 +203,7 @@
               (param-names r wp m)
               (param-values ?robot ?wp ?mps-to))
   )
-  (modify ?g (mode EXPANDED) (meta r ?robot))
+  (modify ?g (mode EXPANDED))
 )
 
 
@@ -207,16 +212,17 @@
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode SELECTED) (class CREATE-BASE) (params base-color ?base-color))
   ; Robot facts
   (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (meta r ?robot)))
+  (not (plan (r ?robot)))
   ; BS facts
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
+  (not (plan (mps ?bs)))
 =>
   (bind ?wp (sym-cat WP- (random-id)))
   (bind ?plan-id (sym-cat FETCH-BASE-PLAN- (gensym*)))
   (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?bs))
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name prepare-bs)
               (skiller (remote-skiller ?robot))
@@ -232,7 +238,7 @@
               (param-names r m side wp basecol)
               (param-values ?robot ?bs INPUT ?wp ?base-color))
   )
-  (modify ?g (mode EXPANDED) (meta r ?robot))
+  (modify ?g (mode EXPANDED))
 )
 
 
@@ -241,7 +247,7 @@
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode SELECTED) (class MOUNT-CAP) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color))
   ; Robot facts
   (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (meta r ?robot)))
+  (not (plan (r ?robot)))
   ; wp facts
   (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
@@ -249,16 +255,18 @@
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  (not (plan (wp ?wp)))
   ; CS facts
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?cs t CS))
   (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
   (wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT))
   (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color))
+  (not (plan (mps ?cs)))
 =>
   (bind ?plan-id (sym-cat MOUNT-CAP-PLAN- (gensym*)))
   (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?cs) (wp ?wp))
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name prepare-cs)
               (skiller (remote-skiller ?robot))
@@ -269,7 +277,7 @@
               (skiller (remote-skiller ?robot))
               (param-values ?cs ?wp ?cap-color))
   )
-  (modify ?g (mode EXPANDED) (meta r ?robot))
+  (modify ?g (mode EXPANDED))
 )
 
 
@@ -278,7 +286,7 @@
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class DELIVER) (params order ?order))
   ; Robot facts
   (wm-fact (key domain fact entered-field args? r ?robot))
-  (not (goal (meta r ?robot)))
+  (not (plan (r ?robot)))
   ; Order facts
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
@@ -291,6 +299,7 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
   (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
+  (not (plan (mps ?ds)))
   ; wp facts
   (wm-fact (key domain fact wp-at args? wp ?wp m ?ds side INPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
@@ -298,10 +307,11 @@
   (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col ?cap-color))
+  (not (plan (wp ?wp)))
 =>
   (bind ?plan-id (sym-cat DELIVER-PLAN- (gensym*)))
   (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?ds) (wp ?wp))
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name prepare-ds)
               (skiller (remote-skiller ?robot))
@@ -324,14 +334,14 @@
                   (param-values ?order ?wp ?ds ?gate ?base-color ?cap-color ?ring1-color))
     )
   )
-  (modify ?g (mode EXPANDED) (meta r ?robot))
+  (modify ?g (mode EXPANDED))
 )
 
 ; (defrule goal-expander-mount-r1
 ;   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
 ;   ?g <- (goal (id ?goal-id) (mode SELECTED) (class MOUNT-RING1) (params wp ?wp ring-color ?ring-color))
 ;   (wm-fact (key domain fact entered-field args? r ?robot))
-;   (not (goal (meta r ?robot)))
+;   (not (plan (r ?robot)))
 ;   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 ;   (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side INPUT))
 ;   (wm-fact (key refbox team-color) (value ?team-color))
@@ -370,14 +380,14 @@
 ;               (param-names m wp col rs-before rs-after r-req)
 ;               (param-values ?rs ?wp ?ring-color ?bases-filled ?bases-remain ?bases-needed))
 ;   )
-;   (modify ?g (mode EXPANDED) (meta r ?robot))
+;   (modify ?g (mode EXPANDED))
 ; )
 
 ; (defrule goal-expander-feed-rs
 ;   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
 ;   ?g <- (goal (id ?goal-id) (mode SELECTED) (class FEED-RS) (params rs ?rs))
 ;   (wm-fact (key domain fact entered-field args? r ?robot))
-;   (not (goal (meta r ?robot)))
+;   (not (plan (r ?robot)))
 ;   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
 ;   (wm-fact (key refbox team-color) (value ?team-color))
 ;   (wm-fact (key domain fact mps-type args? m ?bs t BS))
@@ -428,14 +438,14 @@
 ;               (param-names r wp m rs-before rs-after)
 ;               (param-values ?robot ?spawned-wp ?rs ?rs-before ?rs-after))
 ;   )
-;   (modify ?g (mode EXPANDED) (meta r ?robot))
+;   (modify ?g (mode EXPANDED))
 )
 
 
 (defrule goal-expander-go-wait
   (declare (salience ?*SALIENCE-GOAL-EXPAND-OPTIONAL*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class GO-WAIT) (params r ?robot))
-  (not (goal (meta r ?robot)))
+  (not (plan (r ?robot)))
   (wm-fact (key domain fact at args? r ?robot m ?mps side ?mps-side&INPUT|OUTPUT))
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
@@ -443,12 +453,12 @@
   (printout t "Expanding GO_WAIT with " ?robot " " ?mps crlf)
   (bind ?plan-id (sym-cat GO_WAIT-PLAN- (gensym*)))
   (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot))
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name go-wait)
               (skiller (remote-skiller ?robot))
               (param-names r from from-side to)
               (param-values ?robot ?mps ?mps-side (wait-pos ?mps ?mps-side)))
   )
-  (modify ?g (mode EXPANDED) (meta r ?robot))
+  (modify ?g (mode EXPANDED))
 )
