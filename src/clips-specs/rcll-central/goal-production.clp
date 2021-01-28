@@ -127,6 +127,8 @@
 ;
 ; (wm-fact (key domain fact mps-type args? m ?cs t CS))
 ; (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+; (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
+; (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
 ;
 ; (wm-fact (key domain fact mps-type args? m ?bs t BS))
 ; (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
@@ -190,6 +192,8 @@
 
  (wm-fact (key domain fact mps-type args? m ?cs t CS))
  (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+ (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
+ (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
 
  (wm-fact (key domain fact mps-type args? m ?bs t BS))
  (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))

@@ -117,6 +117,22 @@
 ;======================================Retries=========================================
 ;
 
+(deffunction should-retry (?an ?error)
+  (if (or (eq ?error "Conveyor Align Failed") (eq ?error "Drive To Machine Point Failed")) then
+    (return TRUE)
+  )
+  (if (eq ?error "Unsatisfied precondition") then (return FALSE))
+  (if (and (or (eq ?an wp-put) (eq ?an wp-put-slide-cc))
+           (any-factp ((?if RobotinoSensorInterface))
+                      (and (not (nth$ 1 ?if:digital_in)) (nth$ 2 ?if:digital_in)))) then
+    (return TRUE)
+  )
+  (if (or (eq ?an move) (eq ?an go-wait)) then
+    (return TRUE)
+  )
+  (return FALSE)
+)
+
 (defrule execution-monitoring-start-retry-action
 " For some actions it can be feasible to retry them in case of a failure, e.g. if
   the align failed. If an action failed and the error-msg inquires, that we should
@@ -200,22 +216,3 @@
   =>
   (retract ?wm)
 )
-
-(defrule execution-monitoring-remove-forbid
-  (declare (salience ?*MONITORING-SALIENCE*))
-  ?wm <- (wm-fact (key monitoring forbid-goal args? c ?class mps ?mps))
-  (goal (id ?goal-id) (sub-type SIMPLE) (class ?c&:(production-leaf-goal ?c)) (params $?p) (outcome COMPLETED) (mode FINISHED))
-  (test (not (member$ ?mps ?p)))
-  =>
-  (retract ?wm)
-)
-
-(defrule execution-monitoring-reject-forbidden-goal
-  (declare (salience ?*SALIENCE-GOAL-REJECT*))
-  (wm-fact (key monitoring forbid-goal args? c ?class mps ?mps))
-  ?g <- (goal (id ?goal-id) (params $? ?mps $?) (mode ?m&:(and (not (eq ?m DISPATCHED)) (not (eq ?m FINISHED)) (not (eq ?m RETRACTED)) (not (eq ?m EVALUATED)) )))
-  =>
-  (printout t "Goal " ?class " was tried and failed before at " ?mps ". Reject" crlf)
-  (modify ?g (outcome REJECTED) (mode RETRACTED))
-)
-
