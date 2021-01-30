@@ -561,7 +561,7 @@
       (action-name go-wait)
       (skiller (remote-skiller ?robot))
       (param-names r from from-side to)
-      (param-values ?robot ?destination ?curr-side (wait-pos ?destination ?destination-side))
+      (param-values ?robot ?destination ?destination-side (wait-pos ?destination ?destination-side))
     )
   )
   (modify ?g (mode EXPANDED))
