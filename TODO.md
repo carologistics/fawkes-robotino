@@ -7,7 +7,6 @@
   * handle down/broken machines
   * consider delivery times
   * consider multiple products for single order
-* handle mps: no special case for rs
 * look into retrying failed goals
 * select robots smartly (e.g. distance)
 * add more tests (e.g. C0)
@@ -20,6 +19,7 @@
 * make all interactions with the machines asynchronous (only bs-dispense done by
 robot which is unproblematic because the robot needs to wait)
 * check if everything initalized
+* handle mps: no special case for rs
 
 ## NOTES
 * verify: go-wait actions before move actions when machine is not reserved

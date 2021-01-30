@@ -66,35 +66,6 @@
   (bind ?prepare-param-values (values-from-name-value-list ?prepare-params))
   (bind ?process-param-values (values-from-name-value-list ?process-params))
 
-  ; TODO: currently copied from rcll, check if possible/simpler in noop
-  (bind ?success TRUE)
-  (if (eq ?prepare-action prepare-rs) then
-    (bind ?rs-req (nth$ (+ 1 (member$ r-req ?prepare-params)) ?prepare-params))
-    (if (not (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact rs-filled-with))
-                                       (eq (wm-key-arg ?wm:key m) ?mps))
-      (bind ?rs-before (wm-key-arg ?wm:key n))
-    )) then
-      (printout error "Cant find rs-filled-with for " ?mps crlf)
-      (bind ?success FALSE)
-    )
-    (if (not (do-for-fact ((?wm wm-fact)) (and (wm-key-prefix ?wm:key (create$ domain fact rs-sub))
-                                       (eq (wm-key-arg ?wm:key minuend) ?rs-before)
-                                       (eq (wm-key-arg ?wm:key subtrahend) ?rs-req))
-      (bind ?rs-after (wm-key-arg ?wm:key difference))
-    )) then
-      (printout error "Cant find rs-sub fact with " ?rs-before "-" ?rs-req crlf)
-      (bind ?success FALSE)
-    )
-    (if ?success then
-      (bind ?prepare-param-values (insert$ ?prepare-param-values (length$ ?prepare-param-values) ?rs-before))
-      (bind ?process-param-values (insert$ ?process-param-values (length$ ?process-param-values) ?rs-before))
-
-      (bind ?prepare-param-values (insert$ ?prepare-param-values (length$ ?prepare-param-values) ?rs-after))
-      (bind ?process-param-values (insert$ ?process-param-values (length$ ?process-param-values) ?rs-after))
-    )
-  )
-
-
   (bind ?plan-id (sym-cat HANDLE-MPS-PLAN-(gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
