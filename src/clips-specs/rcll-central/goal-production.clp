@@ -335,9 +335,13 @@
   ;(not-defined)
   ;(not (goal (class PRODUCE-C1)))
 
-  ; get required colors
+  ; get all required colors
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
+
   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring-color1))
+  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring-color2))
+  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring-color3))
+
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   
   ; TODO: check for more products in single order
@@ -360,8 +364,12 @@
   (wm-fact (key domain fact mps-team args? m ?base-station col ?team-color))
 
   ; get ring station and number of required bases
-  (wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?ring-color1 rn ?ring-base-req&~NA))
-  (wm-fact (key domain fact mps-team args? m ?ring-station col ?team-color))
+  (wm-fact (key domain fact rs-ring-spec args? m ?ring-station1 r ?ring-color1 rn ?ring-base-req1&~NA))
+  (wm-fact (key domain fact mps-team args? m ?ring-station1 col ?team-color))
+  (wm-fact (key domain fact rs-ring-spec args? m ?ring-station2 r ?ring-color2 rn ?ring-base-req2&~NA))
+  (wm-fact (key domain fact mps-team args? m ?ring-station2 col ?team-color))
+  (wm-fact (key domain fact rs-ring-spec args? m ?ring-station3 r ?ring-color3 rn ?ring-base-req3&~NA))
+  (wm-fact (key domain fact mps-team args? m ?ring-station3 col ?team-color))
 
   ; get delivery station
   (wm-fact (key domain fact mps-type args? m ?ds t DS))
@@ -377,11 +385,17 @@
                   wp ?wp
                   cs ?cap-station
                   bs ?base-station
-                  rs ?ring-station
+                  rs1 ?ring-station1
+                  rs2 ?ring-station2
+                  rs3 ?ring-station3
                   cap-color ?cap-color
                   base-color ?base-color
                   ring-color1 ?ring-color1
-                  ring-base-req ?ring-base-req
+                  ring-color2 ?ring-color2
+                  ring-color3 ?ring-color3
+                  ring-base-req1 ?ring-base-req1
+                  ring-base-req2 ?ring-base-req2
+                  ring-base-req3 ?ring-base-req3
                   ds ?ds)
     )
   )
@@ -394,11 +408,17 @@
                 wp ?wp
                 cs ?cap-station
                 bs ?base-station
-                rs ?ring-station
+                rs1 ?ring-station1
+                rs2 ?ring-station2
+                rs3 ?ring-station3
                 cap-color ?cap-color
                 base-color ?base-color
                 ring-color1 ?ring-color1
-                ring-base-req ?ring-base-req
+                ring-color2 ?ring-color2
+                ring-color3 ?ring-color3
+                ring-base-req1 ?ring-base-req1
+                ring-base-req2 ?ring-base-req2
+                ring-base-req3 ?ring-base-req3
                 ds ?ds))
   =>
   (assert
@@ -407,14 +427,14 @@
           (class PRODUCE-C1-HANDLE-RS)
           (sub-type RUN-ALL-OF-SUBGOALS)
           (priority 2.0)
-          (required-resources ?ring-station)
+          (required-resources ?ring-station1)
           (params order ?order
                   wp ?wp
                   bs ?base-station
-                  rs ?ring-station
+                  rs ?ring-station1
                   base-color ?base-color
-                  ring-color1 ?ring-color1
-                  ring-base-req ?ring-base-req)
+                  ring-color ?ring-color1
+                  ring-base-req ?ring-base-req1)
     )
     (goal (id (sym-cat PRODUCE-C1-HANDLE-CS-(gensym*)))
           (parent ?parent)
@@ -451,7 +471,7 @@
                       bs ?base-station
                       rs ?ring-station
                       base-color ?base-color
-                      ring-color1 ?ring-color1
+                      ring-color ?ring-color
                       ring-base-req ?ring-base-req))
   =>
   (assert
@@ -489,7 +509,7 @@
           (priority 0.0)
           (params rs ?ring-station
                   ring-mount-index ONE
-                  ring-color ?ring-color1
+                  ring-color ?ring-color
                   ring-base-req ?ring-base-req
                   wp ?wp)
     )
