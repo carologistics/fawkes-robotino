@@ -319,8 +319,8 @@
   (modify ?p (mode EXPANDED))
 )
 
-(defrule goal-production-produce-c1
-  "Create root goal of c1-production tree"
+(defrule goal-production-produce-cx
+  "Create root goal of cx-production tree"
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
 
   ; check current game state
@@ -328,12 +328,12 @@
   (wm-fact (key refbox phase) (value PRODUCTION))
   (domain-facts-loaded)
 
-  ; get order of complexity C1
-  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C1))
+  ; get order of complexity CX
+  (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&~C0))
 
   ; debugging conditions
   ;(not-defined)
-  ;(not (goal (class PRODUCE-C1)))
+  ;(not (goal (class PRODUCE-CX)))
 
   ; get all required colors
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
@@ -346,7 +346,7 @@
   
   ; TODO: check for more products in single order
   ; order is not already being handled
-  (not (goal (class PRODUCE-C1) (params order ?order $?other-params)))
+  (not (goal (class PRODUCE-CX) (params order ?order $?other-params)))
   ; more products ordered
   (wm-fact (key refbox order ?order quantity-requested) (value ?qr))
   (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color)
@@ -378,11 +378,12 @@
   =>
   (bind ?wp (create-wp ?order))
   (assert 
-    (goal (id (sym-cat PRODUCE-C1- (gensym*)))
-          (class PRODUCE-C1)
+    (goal (id (sym-cat PRODUCE-CX- (gensym*)))
+          (class PRODUCE-CX)
           (sub-type RUN-ALL-OF-SUBGOALS)
           (params order ?order
                   wp ?wp
+                  complexity ?complexity
                   cs ?cap-station
                   bs ?base-station
                   rs1 ?ring-station1
@@ -401,11 +402,12 @@
   )
 )
 
-(defrule goal-production-produce-c1-create-subgoals
+(defrule goal-production-produce-cx-create-subgoals
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?p <- (goal (id ?parent) (class PRODUCE-C1) (mode SELECTED)
+  ?p <- (goal (id ?parent) (class PRODUCE-CX) (mode SELECTED)
         (params order ?order
                 wp ?wp
+                complexity ?complexity
                 cs ?cap-station
                 bs ?base-station
                 rs1 ?ring-station1
@@ -422,11 +424,11 @@
                 ds ?ds))
   =>
   (assert
-    (goal (id (sym-cat PRODUCE-C1-HANDLE-RS-(gensym*)))
+    (goal (id (sym-cat PRODUCE-CX-HANDLE-RS-(gensym*)))
           (parent ?parent)
-          (class PRODUCE-C1-HANDLE-RS)
+          (class PRODUCE-CX-HANDLE-RS)
           (sub-type RUN-ALL-OF-SUBGOALS)
-          (priority 2.0)
+          (priority 4.0)
           (required-resources ?ring-station1)
           (params order ?order
                   wp ?wp
@@ -434,11 +436,52 @@
                   rs ?ring-station1
                   base-color ?base-color
                   ring-color ?ring-color1
+                  ring-mount-index ONE
                   ring-base-req ?ring-base-req1)
     )
-    (goal (id (sym-cat PRODUCE-C1-HANDLE-CS-(gensym*)))
+  )
+  (if ( or (eq ?complexity C2) (eq ?complexity C3)) then
+    (assert
+      (goal (id (sym-cat PRODUCE-CX-HANDLE-RS-(gensym*)))
+            (parent ?parent)
+            (class PRODUCE-CX-HANDLE-RS)
+            (sub-type RUN-ALL-OF-SUBGOALS)
+            (priority 3.0)
+            (required-resources ?ring-station2)
+            (params order ?order
+                    wp ?wp
+                    bs ?base-station
+                    rs ?ring-station2
+                    base-color ?base-color
+                    ring-color ?ring-color2
+                    ring-mount-index TWO
+                    ring-base-req ?ring-base-req2)
+      )
+    )
+  )
+  (if (eq ?complexity C3) then
+    (assert
+      (goal (id (sym-cat PRODUCE-CX-HANDLE-RS-(gensym*)))
+            (parent ?parent)
+            (class PRODUCE-CX-HANDLE-RS)
+            (sub-type RUN-ALL-OF-SUBGOALS)
+            (priority 2.0)
+            (required-resources ?ring-station3)
+            (params order ?order
+                    wp ?wp
+                    bs ?base-station
+                    rs ?ring-station3
+                    base-color ?base-color
+                    ring-color ?ring-color3
+                    ring-mount-index THREE
+                    ring-base-req ?ring-base-req3)
+      )
+    )
+  )
+  (assert
+    (goal (id (sym-cat PRODUCE-CX-HANDLE-CS-(gensym*)))
           (parent ?parent)
-          (class PRODUCE-C1-HANDLE-CS)
+          (class PRODUCE-CX-HANDLE-CS)
           (sub-type RUN-ALL-OF-SUBGOALS)
           (priority 1.0)
           (required-resources ?cap-station)
@@ -463,15 +506,16 @@
 )
 
 
-(defrule goal-production-produce-c1-handle-rs
+(defrule goal-production-produce-cx-handle-rs
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?p <- (goal (id ?parent) (class PRODUCE-C1-HANDLE-RS) (mode SELECTED)
+  ?p <- (goal (id ?parent) (class PRODUCE-CX-HANDLE-RS) (mode SELECTED)
               (params order ?order
                       wp ?wp
                       bs ?base-station
                       rs ?ring-station
                       base-color ?base-color
                       ring-color ?ring-color
+                      ring-mount-index ?ring-mount-index
                       ring-base-req ?ring-base-req))
   =>
   (assert
@@ -484,17 +528,34 @@
                   rs ?ring-station
                   ring-base-req ?ring-base-req)
     )
-    (goal (id (sym-cat GET-BASE-(gensym*)))
-          (parent ?parent)
-          (class GET-BASE)
-          (sub-type SIMPLE)
-          (priority 2.0)
-          (params bs ?base-station
-                  bs-side OUTPUT
-                  bs-color ?base-color
-                  target-station ?ring-station
-                  wp ?wp)
+  )
+  (if (eq ?ring-mount-index ONE)
+  then
+    (assert
+      (goal (id (sym-cat GET-BASE-(gensym*)))
+            (parent ?parent)
+            (class GET-BASE)
+            (sub-type SIMPLE)
+            (priority 2.0)
+            (params bs ?base-station
+                    bs-side OUTPUT
+                    bs-color ?base-color
+                    target-station ?ring-station
+                    wp ?wp)
+      )
     )
+  else
+    (assert
+      (goal (id (sym-cat PICKUP-WP-(gensym*)))
+            (parent ?parent)
+            (class PICKUP-WP)
+            (sub-type SIMPLE)
+            (priority 2.0)
+            (params wp ?wp)
+      )
+    )
+  )
+  (assert
     (goal (id (sym-cat CLEAR-OUTPUT-(gensym*)))
           (parent ?parent)
           (class CLEAR-OUTPUT)
@@ -508,7 +569,7 @@
           (sub-type SIMPLE)
           (priority 0.0)
           (params rs ?ring-station
-                  ring-mount-index ONE
+                  ring-mount-index ?ring-mount-index
                   ring-color ?ring-color
                   ring-base-req ?ring-base-req
                   wp ?wp)
@@ -517,9 +578,9 @@
   (modify ?p (mode EXPANDED))
 )
 
-(defrule goal-production-produce-c1-handle-cs
+(defrule goal-production-produce-cx-handle-cs
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  ?p <- (goal (id ?parent) (class PRODUCE-C1-HANDLE-CS) (mode SELECTED)
+  ?p <- (goal (id ?parent) (class PRODUCE-CX-HANDLE-CS) (mode SELECTED)
               (params order ?order
                       wp ?wp
                       cs ?cap-station
@@ -554,8 +615,8 @@
   (modify ?p (mode EXPANDED))
 )
 
-; TODO: solve case that no additional bases are needed
-; TODO: formulates before async mount ring completes -> wrong ring count
+; TODO: check case that no additional bases are needed
+; TODO: formulates before async mount ring completes -> wrong ring count (should be fixed with IDLE)
 (defrule goal-production-fill-bases-in-rs
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?p <- (goal (id ?parent) (class FILL-BASES-IN-RS) (mode SELECTED)
