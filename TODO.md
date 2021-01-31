@@ -1,6 +1,5 @@
 ## TODO
 * production
-  * mount cap: read current ring colors locally, add param for ring index, (change names of certain params)
   * prefill cap/ring station
   * make creation of goals dependent on whether cap is buffered/how many bases are in the rs
   * limit amount of productions to 2 at a time
@@ -20,6 +19,7 @@
 robot which is unproblematic because the robot needs to wait)
 * check if everything initalized
 * handle mps: no special case for rs
+* mount ring: read current ring colors locally, add param for ring index, (change names of certain params)
 
 ## NOTES
 * verify: go-wait actions before move actions when machine is not reserved

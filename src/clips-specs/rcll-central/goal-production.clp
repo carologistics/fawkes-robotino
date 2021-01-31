@@ -360,7 +360,7 @@
   (wm-fact (key domain fact mps-team args? m ?base-station col ?team-color))
 
   ; get ring station and number of required bases
-  (wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?ring-color1 rn ?ring-num&~NA))
+  (wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?ring-color1 rn ?ring-base-req&~NA))
   (wm-fact (key domain fact mps-team args? m ?ring-station col ?team-color))
 
   ; get delivery station
@@ -381,7 +381,7 @@
                   cap-color ?cap-color
                   base-color ?base-color
                   ring-color1 ?ring-color1
-                  ring-num ?ring-num
+                  ring-base-req ?ring-base-req
                   ds ?ds)
     )
   )
@@ -398,7 +398,7 @@
                 cap-color ?cap-color
                 base-color ?base-color
                 ring-color1 ?ring-color1
-                ring-num ?ring-num
+                ring-base-req ?ring-base-req
                 ds ?ds))
   =>
   (assert
@@ -414,7 +414,7 @@
                   rs ?ring-station
                   base-color ?base-color
                   ring-color1 ?ring-color1
-                  ring-num ?ring-num)
+                  ring-base-req ?ring-base-req)
     )
     (goal (id (sym-cat PRODUCE-C1-HANDLE-CS-(gensym*)))
           (parent ?parent)
@@ -452,7 +452,7 @@
                       rs ?ring-station
                       base-color ?base-color
                       ring-color1 ?ring-color1
-                      ring-num ?ring-num))
+                      ring-base-req ?ring-base-req))
   =>
   (assert
     (goal (id (sym-cat FILL-BASES-IN-RS-(gensym*)))
@@ -462,7 +462,7 @@
           (priority 3.0)
           (params bs ?base-station
                   rs ?ring-station
-                  ring-num ?ring-num)
+                  ring-base-req ?ring-base-req)
     )
     (goal (id (sym-cat GET-BASE-(gensym*)))
           (parent ?parent)
@@ -488,8 +488,9 @@
           (sub-type SIMPLE)
           (priority 0.0)
           (params rs ?ring-station
+                  ring-mount-index ONE
                   ring-color ?ring-color1
-                  ring-num ?ring-num
+                  ring-base-req ?ring-base-req
                   wp ?wp)
     )
   )
@@ -540,13 +541,13 @@
   ?p <- (goal (id ?parent) (class FILL-BASES-IN-RS) (mode SELECTED)
               (params bs ?base-station
                       rs ?ring-station
-                      ring-num ?ring-num))
+                      ring-base-req ?ring-base-req))
   (wm-fact (key domain fact mps-state args? m ?ring-station s IDLE))
   (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?rs-before))
-  (wm-fact (key domain fact rs-sub args? minuend ?ring-num subtrahend ?rs-before difference ?rs-needed))
+  (wm-fact (key domain fact rs-sub args? minuend ?ring-base-req subtrahend ?rs-before difference ?rs-needed))
   =>
   (bind ?rs-needed-int (sym-to-int ?rs-needed))
-  (printout t "Ring needs " ?ring-num " bases, " ?rs-before " in ring station, " ?rs-needed " to get which is " ?rs-needed-int crlf)
+  (printout t "Ring needs " ?ring-base-req " bases, " ?rs-before " in ring station, " ?rs-needed " to get which is " ?rs-needed-int crlf)
 
   ; no additional bases necessary, terminate goal
   (if (eq ?rs-needed-int 0) then (modify ?p (mode FINISHED) (outcome COMPLETED)))

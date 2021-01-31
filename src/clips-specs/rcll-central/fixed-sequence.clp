@@ -387,12 +387,17 @@
   ?g <- (goal (id ?goal-id) (class MOUNT-RING) (mode SELECTED)
               (params robot ?robot
                       rs ?ring-station
-                      ring-color ?ring-color1
-                      ring-num ?ring-num
+                      ring-mount-index ?ring-mount-index
+                      ring-color ?ring-color
+                      ring-base-req ?ring-base-req
                       wp ?wp)
         )
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?current-ring1-color))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?current-ring2-color))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?current-ring3-color))
   =>
+  (printout t "Current ring colors: " ?current-ring1-color ?current-ring2-color ?current-ring3-color crlf)
   (bind ?plan-id (sym-cat MOUNT-RING-PLAN- ?robot - (gensym*)))
   (assert
     (plan (id ?plan-id) (goal-id ?goal-id))
@@ -411,9 +416,9 @@
     (plan-action (id 3) (plan-id ?plan-id) (goal-id ?goal-id)
       (action-name request-rs-mount-ring)
       (skiller (remote-skiller ?robot))
-      (param-values ?robot ?ring-station ?wp ONE ?ring-color1
-                      RING_NONE RING_NONE RING_NONE
-                      ?ring-num)
+      (param-values ?robot ?ring-station ?wp ?ring-mount-index ?ring-color
+                      ?current-ring1-color ?current-ring2-color ?current-ring3-color
+                      ?ring-base-req)
     )
   )
   (modify ?g (mode EXPANDED))
