@@ -151,6 +151,15 @@
                 (params r ?robot team-color ?team-color)))
 )
 
+; ============================= Debug Options ===============================
+
+(defglobal
+  ; 1 = skip
+  ?*DEBUG-SKIP-C0* = 0
+  ?*DEBUG-SKIP-C1* = 0
+  ?*DEBUG-SKIP-C2* = 0
+  ?*DEBUG-SKIP-C3* = 0
+)
 
 ; ============================= Production goals ===============================
 
@@ -168,7 +177,7 @@
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&C0))
 
   ; debugging conditions
-  ;(not-defined)
+  (test (neq ?*DEBUG-SKIP-C0* 1))
   ;(not (goal (class PRODUCE-C0)))
 
   ; get required base and cap color
@@ -332,7 +341,9 @@
   (wm-fact (key domain fact order-complexity args? ord ?order com ?complexity&~C0))
 
   ; debugging conditions
-  ;(not-defined)
+  (test (or (neq ?*DEBUG-SKIP-C1* = 1) (neq ?complexity C1)))
+  (test (or (neq ?*DEBUG-SKIP-C2* = 1) (neq ?complexity C2)))
+  (test (or (neq ?*DEBUG-SKIP-C3* = 1) (neq ?complexity C3)))
   ;(not (goal (class PRODUCE-CX)))
 
   ; get all required colors
