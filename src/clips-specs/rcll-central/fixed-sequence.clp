@@ -90,6 +90,34 @@
   (modify ?g (mode EXPANDED))
 )
 
+(defrule goal-expander-reset-mps
+  ?g <- (goal (id ?goal-id) (class RESET-MPS) (params m ?mps) (mode SELECTED))
+  =>
+  (bind ?plan-id (sym-cat RESET-MPS-PLAN-(gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name reset-mps)
+      (param-values ?mps)
+    )
+  )
+  (modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-drop-wp
+  ?g <- (goal (id ?goal-id) (class DROP-WP) (params r ?r wp ?wp) (mode SELECTED))
+  =>
+  (bind ?plan-id (sym-cat DROP-WP-PLAN-(gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+      (action-name wp-discard)
+      (param-values ?r ?wp)
+    )
+  )
+  (modify ?g (mode EXPANDED))
+)
+
 ; ========================= enter-field plan =============================
 
 (defrule goal-expander-enter-field

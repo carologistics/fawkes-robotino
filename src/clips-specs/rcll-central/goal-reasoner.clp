@@ -86,10 +86,17 @@
 )
 
 (deffunction goal-needs-robot-holding-wp (?goal-class)
-(return (or (eq ?goal-class MOUNT-CAP)
+  (return (or (eq ?goal-class MOUNT-CAP)
               (eq ?goal-class DELIVER)
               (eq ?goal-class MOUNT-RING)
               (eq ?goal-class FILL-RS)))
+)
+
+(deffunction production-root-goal (?goal-class)
+  (return (or (eq ?goal-class PRODUCE-C0)
+              (eq ?goal-class PRODUCE-C1)
+              (eq ?goal-class PRODUCE-C2)
+              (eq ?goal-class PRODUCE-C3)))
 )
 
 (deffunction goal-tree-assert-run-endless (?class ?frequency $?fact-addresses)
@@ -155,6 +162,38 @@
 ; such as unlocking resources or adapting the world model and strategy based on
 ; goal outcomes or plan and action status.
 
+; ------------------------- PRE EVALUATION -----------------------------------
+
+(defrule goal-reasoner-reset-machine-of-failed-goal
+" If a failed goal reserved a machine, make sure that the machine is
+  usable before releasing the resource. Resetting the mps should be done as a last
+  resort to avoid losing the machine for the rest of the game.
+"
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  (goal (id ?goal-id) (mode FINISHED) (outcome FAILED) (acquired-resources ?mps))
+  (domain-object (type mps) (name ?mps))
+  (wm-fact (key domain fact mps-state args? m ?mps s ~IDLE))
+  (not (wm-fact (key evaluated reset-mps args? m ?mps)))
+  =>
+  (printout t "Resetting " ?mps " because " ?goal-id " failed" crlf)
+  (assert (wm-fact (key evaluated reset-mps args? m ?mps)))
+)
+
+(defrule goal-reasoner-drop-wp-of-failed-goal
+" If a production root goal fails and some robot is still holding the wp
+  it needs to drop the wp to avoid deadlocks. Discarding the wp should
+  be done as a last resort to avoid losing a robot for the rest of the game.
+"
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  (goal (id ?goal-id) (mode FINISHED) (outcome FAILED)
+        (class ?class&:(production-root-goal ?class))
+        (params $? wp ?wp $?))
+  (wm-fact (key domain fact holding args? r ?r wp ?wp))
+  (not (wm-fact (key evaluated drop-wp args? r ?r wp ?wp)))
+  =>
+  (printout "Robot " ?r " should drop " ?wp " because " ?goal-id " failed " crlf)
+  (assert (wm-fact (key evaluated drop-wp args? r ?r wp ?wp)))
+)
 
 ; ----------------------- EVALUATE COMMON ------------------------------------
 
@@ -186,9 +225,9 @@
 
 ; copied
 (defrule goal-reasoner-evaluate-process-ds
-" Enhance the order-delivered fact of the order of a successful deliver goal,
-  delete the mps-handling fact if the preparation took place.
-"
+  " Enhance the order-delivered fact of the order of a successful deliver goal,
+    delete the mps-handling fact if the preparation took place.
+  "
   ?g <- (goal (id ?goal-id) (class HANDLE-MPS) (mode FINISHED) (outcome ?outcome)
               (params m ?mps))
   (wm-fact (key domain fact mps-type args? m ?mps t DS))
@@ -197,22 +236,56 @@
   (plan-action (goal-id ?goal-id) (param-values $?p1 order ?order $?p2) (state FINAL))
   ?od <- (wm-fact (key domain fact quantity-delivered args? ord ?order team ?team-color) (value ?val))  
   =>
-  (printout t "Order " ?order " increased quantity by 1" crlf)
   (if (eq ?outcome COMPLETED)
     then
+      (printout t "Order " ?order " increased quantity by 1" crlf)
       (modify ?od (value (+ ?val 1)))
   )
   (modify ?g (mode EVALUATED))
 )
 
+; copied
+(defrule goal-reasoner-evaluate-mps-reset-completed
+  " Remove reset-mps flag after a successful reset-mps goal
+  "
+  ?g <- (goal (id ?id) (class RESET-MPS) (mode FINISHED)
+                      (outcome COMPLETED) (params m ?mps))
+  ?t <- (wm-fact (key evaluated reset-mps args? m ?mps))
+  =>
+  (retract ?t)
+  (modify ?g (mode EVALUATED))
+)
 
+(defrule goal-reasoner-evaluate-drop-wp-completed
+  " Remove drop-mps flag after a successful drop-wp goal
+  "
+  ?g <- (goal (id ?id) (class DROP-WP) (mode FINISHED)
+                      (outcome COMPLETED) (params r ?r wp ?wp))
+  ?t <- (wm-fact (key evaluated drop-wp args? r ?r wp ?wp))
+  =>
+  (retract ?t)
+  (modify ?g (mode EVALUATED))
+)
 
 ; ================================= Goal Clean up ============================
 
+
+(defrule goal-reasoner-reject-subgoals-of-failed-goal
+  "Reject a subgoal if its parent has failed or is rejected"
+  ?g <- (goal (id ?goal-id) (mode FORMULATED|SELECTED|EXPANDED) (parent ?parent))
+  (goal (parent ?parent) (mode EVALUATED) 
+        (outcome ?parent-outcome&:(or (eq ?parent-outcome FAILED) (eq ?parent-outcome REJECTED))))
+  =>
+  (printout t ?goal-id " rejected because parent " ?parent " was " ?parent-outcome crlf)
+  (modify ?g (mode FINISHED) (outcome REJECTED))
+)
+
 (defrule goal-reasoner-retract-achieve
 " Retract a goal if all sub-goals are retracted. Clean up any plans and plan
-  actions attached to it.
+  actions attached to it. Done with low priority so that parent goals deal
+  with failed goals first
 "
+  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
   ?g <-(goal (id ?goal-id) (type ACHIEVE) (mode EVALUATED)
              (acquired-resources))
   (not (goal (parent ?goal-id) (mode ?mode&~RETRACTED)))
