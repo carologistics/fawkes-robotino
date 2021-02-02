@@ -220,7 +220,6 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?cs t CS))
   (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
-  (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color))
   ; wp facts
   (not (exists
     (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT))
@@ -269,8 +268,6 @@
   (wm-fact (key domain fact mps-type args? m ?cs t CS))
   (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
   (wm-fact (key domain fact cs-color args? m ?cs col ?cap-color))
-  ; CS is buffered
-  (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color))
   ; WP is there
   (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT))
   (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
@@ -279,7 +276,8 @@
   (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
   (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ; Output not free
-  (not (wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT)))
+  (wm-fact (key domain fact wp-at args? wp ?wp-output m ?cs side OUTPUT))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp-output col CAP_NONE))
   ; Subgoal does not exist yet
   (not (goal (class DISCARD-BASE) (parent ?parent-id) (params cs ?cs)))
   => 
@@ -305,7 +303,7 @@
     (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
   ))
   ; Subgoal does not exist yet
-  (not (goal (class MOUNT-CAP) (parent ?parent-id) (params base-color ?base-color)))
+  (not (goal (class CREATE-BASE) (parent ?parent-id) (params base-color ?base-color)))
   => 
    (assert
         (goal (id (sym-cat CREATE-BASE- (gensym*))) (parent ?parent-id)
@@ -317,7 +315,7 @@
 
 (defrule goal-production-mount-ring1
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?ds base-color ?base-color ring1-color ?ring1-color ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
+  (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?ds base-color ?base-color ring1-color ?ring1-color&~RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
   ; wp facts
   (not (exists
     (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))

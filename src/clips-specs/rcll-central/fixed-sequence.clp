@@ -162,6 +162,7 @@
 
 
 (defrule goal-expander-transport
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (parent ?parent-id) (mode SELECTED) (class TRANSPORT)
               (params mps-to ?mps-to base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color))
   ; Robot facts
@@ -178,6 +179,10 @@
   (not (plan (wp ?wp)))
   ; mps facts
   (wm-fact (key domain fact mps-side-free args? m ?mps-to side INPUT))
+  (or  
+    (wm-fact (key domain fact mps-type args? m ?mps-to t ~CS))
+    (wm-fact (key domain fact cs-can-perform args? m ?mps-to op MOUNT_CAP))
+  )
   (not (plan (mps ?mps-to)))
 =>
   (bind ?plan-id (sym-cat TRANSPORT-PLAN- (gensym*)))
@@ -219,6 +224,7 @@
   (wm-fact (key domain fact mps-type args? m ?bs t BS))
   (wm-fact (key domain fact mps-team args? m ?bs col ?team-color))
   (wm-fact (key domain fact mps-state args? m ?bs s ~BROKEN))
+  (wm-fact (key domain fact mps-side-free args? m ?bs side INPUT))
   (not (plan (mps ?bs)))
 =>
   (bind ?wp (sym-cat WP- (random-id)))
