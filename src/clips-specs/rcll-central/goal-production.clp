@@ -18,6 +18,15 @@
 ;
 ; Read the full text in the LICENSE.GPL file in the doc directory.
 ;
+(defglobal
+
+
+?*PRIORITY-C0-GET-BASE-WAIT* = 2
+?*PRIORITY-C0-BUFFER-CS* = 1
+?*PRIORITY-C0-MOUNT-CAP-DELIVER* = 1
+
+)
+
 (defrule goal-production-create-beacon-maintain
 " The parent goal for beacon signals. Allows formulation of
   goals that periodically communicate with the refbox.
@@ -45,6 +54,41 @@
                 (class SEND-BEACON) (parent ?maintain-id) (verbosity QUIET)))
 )
 
+(defrule goal-production-create-refill-shelf-maintain
+" The parent goal to refill a shelf. Allows formulation of goals to refill
+  a shelf only if the game is in the production phase and the domain is loaded.
+"
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (domain-facts-loaded)
+  (not (goal (class REFILL-SHELF-MAINTAIN)))
+  (not (mutex (name ?n&:(eq ?n (resource-to-mutex refill-shelf))) (state LOCKED)))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  =>
+  (bind ?goal (goal-tree-assert-run-endless REFILL-SHELF-MAINTAIN 1))
+  (modify ?goal (required-resources refill-shelf)
+                (params frequency 1 retract-on-REJECTED)
+                (verbosity QUIET))
+)
+
+
+(defrule goal-production-create-refill-shelf-achieve
+  "Refill a shelf whenever it is empty."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  ?g <- (goal (id ?maintain-id) (class REFILL-SHELF-MAINTAIN) (mode SELECTED))
+  (not (goal (class REFILL-SHELF)))
+  (wm-fact (key refbox phase) (value PRODUCTION))
+  (wm-fact (key game state) (value RUNNING))
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?mps t CS))
+  (not (wm-fact (key domain fact wp-on-shelf args? wp ?wp m ?mps spot ?spot)))
+  =>
+  (assert (goal (id (sym-cat REFILL-SHELF- (gensym*)))
+                (class REFILL-SHELF) (sub-type SIMPLE)
+                (parent ?maintain-id) (verbosity QUIET)
+                (params mps ?mps)))
+)
+
 
 (defrule goal-production-navgraph-compute-wait-positions-finished
   "Add the waiting points to the domain once their generation is finished."
@@ -64,23 +108,38 @@
 (defrule goal-production-create-enter-field
   "Enter the field (drive outside of the starting box)."
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (wm-fact (key central agent robot args? r ?robot))
-  (wm-fact (key domain fact robot-waiting args? r ?robot))
   (not (goal (class ENTER-FIELD)))
+  (wm-fact (key domain fact robot-waiting args? r ?robot))
   (wm-fact (key refbox state) (value RUNNING))
   (wm-fact (key refbox phase) (value PRODUCTION|EXPLORATION))
   (wm-fact (key navgraph waitzone generated) (type BOOL) (value TRUE))
   (wm-fact (key refbox team-color) (value ?team-color))
-   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-
-  (NavGraphGeneratorInterface (final TRUE))
-  (not (wm-fact (key domain fact entered-field args? r ?robot)))
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+  ; (NavGraphGeneratorInterface (final TRUE))
+  ; (not (wm-fact (key domain fact entered-field args? r ?robot)))
   =>
-  (printout t "Goal " ENTER-FIELD " formulated" ?curr-location ?curr-side crlf)
-  (assert (goal (id (sym-cat ENTER-FIELD- (gensym*)))
+  (printout t "Goal " ENTER-FIELD " formulated for " ?robot crlf)
+  (goal-tree-assert-retry ENTER-FIELD-LOOP 999 (assert (goal (id (sym-cat ENTER-FIELD- (gensym*))) ;Robin Küpper fix retry
                 (class ENTER-FIELD) (sub-type SIMPLE)
-                (params r ?robot team-color ?team-color m ?curr-location side ?curr-side)))
+                (params r ?robot team-color ?team-color))))
 )
+
+
+(defrule goal-production-create-go-wait
+  "Drive to a waiting position and wait there."
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (wm-fact (key domain fact self args? r ?self))
+  (domain-object (type waitpoint) (name ?waitpoint&:
+               (eq (str-length (str-cat ?waitpoint)) 10)))
+  (not(goal(class GO-WAIT)))
+  =>
+  (printout t "Goal " GO-WAIT " formulated" ?waitpoint crlf)
+  (assert (goal (id (sym-cat GO-WAIT- (gensym*)))
+                (class GO-WAIT) (sub-type SIMPLE)
+                (params r ?self waitpoint ?waitpoint)
+  ))
+)
+
 
 (defrule goal-production-create-produce-c0
 " Produce a C0 product: Get the correct base and mount the right cap on it.
@@ -94,6 +153,7 @@
 
  (wm-fact (key refbox team-color) (value ?team-color))
 
+
  (wm-fact (key domain fact mps-type args? m ?cs t CS))
  (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
 
@@ -103,14 +163,10 @@
  (wm-fact (key domain fact mps-type args? m ?ds t DS))
  (wm-fact (key domain fact mps-team args? m ?ds col ?team-color))
 
-  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-
-
   (not(wm-fact (key domain fact order-fulfilled args? ord ?order)))
-  (not (goal (class PRODUCE-C0) (params order ?order bs-color ?any-base-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds)))
+  ;(not (goal (class PRODUCE-C0) (params order ?order bs-color ?any-base-color cs-color ?any-cap-color wp ?any-wp bs ?any-bs cs ?any-cs ds ?any-ds)))
   =>
-  (printout t "hier bin ich " ?curr-location ?curr-side)
-  (printout t "Goal for C0 order " ?order " formulated: " ?base-color " " ?cap-color crlf)
+  (printout t "Goal for C0 order " ?order " formulated: " ?base-color " " ?cap-color   crlf)
   (bind ?wp (sym-cat WP- (random-id)))
   (assert (goal (id (sym-cat PRODUCE-C0- (gensym*)))
                 (class PRODUCE-C0)(sub-type RUN-SUBGOALS-IN-PARALLEL)
@@ -123,9 +179,12 @@
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (id ?produce-c0-id) (class PRODUCE-C0) (mode SELECTED))
   (not (goal (class GET-BASE-WAIT) (parent ?produce-c0-id)))
+  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+
   =>
-  (printout t "Goal GET-BASE-WAIT formulated" crlf)
-  (assert (goal (id (sym-cat GET-BASE-WAIT- (gensym*))) (class GET-BASE-WAIT) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED)))
+  (bind ?*PRIORITY-C0-BUFFER-CS*-increase 1)
+  (printout t "Goal GET-BASE-WAIT formulated" ?robot crlf)
+  (assert (goal (id (sym-cat GET-BASE-WAIT- (gensym*))) (class GET-BASE-WAIT) (parent ?produce-c0-id) (sub-type SIMPLE)(priority ?*PRIORITY-C0-GET-BASE-WAIT*)(mode FORMULATED)))
 )
 
 (defrule goal-produce-c0-buffer-cs
@@ -135,7 +194,7 @@
   (not (goal (class BUFFER-CS) (parent ?produce-c0-id)))
   =>
   (printout t "Goal BUFFER-CS formulated" crlf)
-  (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED)))
+  (assert (goal (id (sym-cat BUFFER-CS- (gensym*))) (class BUFFER-CS) (parent ?produce-c0-id) (sub-type SIMPLE) (priority ?*PRIORITY-C0-BUFFER-CS*)(mode FORMULATED)))
 )
 
 (defrule goal-produce-c0-mount-cap-deliver
@@ -145,7 +204,7 @@
   (not (goal (class MOUNT-CAP-DELIVER) (parent ?produce-c0-id)))
   =>
   (printout t "Goal MOUNT-CAP-DELIVER formulated" crlf)
-  (assert (goal (id (sym-cat MOUNT-CAP-DELIVER- (gensym*))) (class MOUNT-CAP-DELIVER) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED)))
+  (assert (goal (id (sym-cat MOUNT-CAP-DELIVER- (gensym*))) (class MOUNT-CAP-DELIVER) (parent ?produce-c0-id) (sub-type SIMPLE)(priority ?*PRIORITY-C0-MOUNT-CAP-DELIVER*)(mode FORMULATED)))
 )
 
 (defrule goal-produce-c0-create-refill-shelf
@@ -158,7 +217,7 @@
   (not (goal (class REFILL-SHELF) (parent ?produce-c0-id)))
   =>
   (printout t "Goal REFILL-SHELF formulated" crlf)
-  (assert (goal (id (sym-cat REFILL-SHELF- (gensym*))) (class REFILL-SHELF) (parent ?produce-c0-id) (sub-type SIMPLE) (mode FORMULATED)(params m ?mps )))
+  (assert (goal (id (sym-cat REFILL-SHELF- (gensym*))) (class REFILL-SHELF) (parent ?produce-c0-id) (sub-type SIMPLE)(mode FORMULATED)(params m ?mps )))
 )
 
 

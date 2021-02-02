@@ -34,7 +34,7 @@
 
 (defrule goal-expander-enter-field
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
-              (params r ?robot team-color ?team-color m ?curr-location side ?curr-side))
+              (params r ?robot team-color ?team-color))
  (wm-fact (key domain fact mps-type args? m ?mps t ?t))
  (wm-fact (key domain fact mps-team args? m ?mps col ?team-color))
 =>
@@ -45,16 +45,9 @@
                                  (action-name enter-field)
                                  (skiller (remote-skiller ?robot))
                                  (param-names r team-color)
-                                 (param-values ?robot ?team-color))
-      (plan-action (id 2) (plan-id ?planid) (goal-id ?goal-id)
-              (action-name go-wait)
-              (skiller (remote-skiller ?robot))
-              (param-names r from from-side to)
-              (param-values ?robot ?curr-location ?curr-side (wait-pos C-BS OUTPUT)))
-  )
+                                 (param-values ?robot ?team-color)))
   (modify ?g (mode EXPANDED))
 )
-
 
 
 (defrule goal-expander-produce-c0-get-base-wait
@@ -209,12 +202,10 @@
 
  (wm-fact (key domain fact cs-buffered args? m ?cs col ?cap-color))
  (wm-fact (key domain fact mps-side-free args? m ?cs side OUTPUT))
-
- (wm-fact (key domain fact holding args? r ?robot wp ?wp))
  
  (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
  (wm-fact (key domain fact entered-field args? r ?robot))
-
+; (not (wm-fact (key domain fact holding args? r ?robot wp ?wp-h)))
  (not(goal (params robot ?robot)))
  =>
       (bind ?planid (sym-cat PRODUCE-C0-MOUNT-CAP-DELIVER-PLAN- (gensym*)))
@@ -335,4 +326,25 @@
                  (action-name unlock) (param-values ?mps))
   )
   (modify ?g (mode EXPANDED))
+)
+
+
+
+
+
+(defrule goal-expander-go-wait
+  "Move to a waiting position."
+   ?g <- (goal (id ?goal-id) (class GO-WAIT) (mode SELECTED)
+               (params r ?robot point ?waitpoint))
+   (wm-fact (key domain fact entered-field args? r ?robot))
+   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
+   =>
+   (assert
+        (plan (id GO-WAIT-PLAN) (goal-id ?goal-id))
+        (plan-action (id 1) (plan-id GO-WAIT-PLAN) (goal-id ?goal-id)
+                     (action-name go-wait)
+                     (param-names r from from-side to)
+                     (param-values ?robot ?curr-location ?curr-side ?waitpoint))
+   )
+   (modify ?g (mode EXPANDED))
 )

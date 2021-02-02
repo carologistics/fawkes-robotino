@@ -191,3 +191,10 @@
 =>
   (printout error ?goal " of class " ?class " has no sub-type" crlf)
 )
+
+
+(defrule goal-production-select-enter-field
+  ?g <- (goal (class ENTER-FIELD-LOOP) (mode FORMULATED))
+  =>
+    (modify ?g (mode SELECTED))
+)
