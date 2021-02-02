@@ -335,6 +335,50 @@
     )
 )
 
+(defrule goal-production-feed-rs
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING1) (params base-color ? ring1-color ?ring1-color))
+  ; RS facts
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?rs t RS))
+  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+  (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring1-color rn ?bases-needed))
+  (wm-fact (key domain fact rs-sub args? minuend ?bases-needed
+                                         subtrahend ?bases-filled
+                                         difference ?bases-remain&ONE|TWO|THREE))
+  ; Subgoal does not exist yet
+  (not (goal (class FEED-RS) (params ring-color ?ring1-color)))
+  => 
+   (assert
+        (goal (id (sym-cat FEED-RS- (gensym*))) (parent ?parent-id)
+                  (class FEED-RS) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
+                  (params ring-color ?ring1-color))
+    )
+)
+
+; Create base for feeding RS
+(defrule goal-production-create-base-for-feed
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (parent ?parent-id) (mode SELECTED) (class FEED-RS) (params ring-color ?ring-color))
+  ; wp facts
+  (not (exists
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))
+    (wm-fact (key domain fact wp-ring1-color args? wp ?wp col RING_NONE))
+    (wm-fact (key domain fact wp-ring2-color args? wp ?wp col RING_NONE))
+    (wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE))
+    (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  ))
+  ; Subgoal does not exist yet
+  (not (goal (class CREATE-BASE) (parent ?parent-id) (params base-color BASE_RED)))
+  => 
+   (assert
+        (goal (id (sym-cat CREATE-BASE- (gensym*))) (parent ?parent-id)
+                  (class CREATE-BASE) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
+                  (params base-color BASE_RED))
+    )
+)
+
 
 (defrule goal-production-transport-rs
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -362,71 +406,6 @@
                   (params mps-to ?rs base-color ?base-color ring1-color RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
     )
 )
-
-; (defrule goal-expander-build-C1
-;   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-;   ?g <- (goal (id ?parent-id) (mode SELECTED) (class BUILD) (params ?order))
-;   (wm-fact (key domain fact order-complexity args? ord ?order com C1))
-;   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-;   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
-;   (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-;   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-;   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cs spot ?shelf-spot))
-;   (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
-;   (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring1-color rn ?bases-needed))
-;   => 
-;     (printout t "Expanding BUILD-C1, formulating subgoals bases-needed" ?bases-needed crlf)
-;     (bind ?spawned-wp (sym-cat WP- (random-id)))
-;     (assert 
-;       (goal (id (sym-cat FETCH-BASE- (gensym*))) (parent ?parent-id)
-;                   (class FETCH-BASE) (type ACHIEVE) (sub-type SIMPLE)
-;                   (params base-color ?base-color spawned-wp ?spawned-wp))
-;       (goal (id (sym-cat PREPARE-CAP- (gensym*))) (parent ?parent-id)
-;                   (class PREPARE-CAP) (type ACHIEVE) (sub-type SIMPLE)
-;                   (params cc ?cc))
-;       (goal (id (sym-cat DISCARD-BASE- (gensym*))) (parent ?parent-id)
-;                   (class DISCARD-BASE) (type ACHIEVE) (sub-type SIMPLE)
-;                   (params cc ?cc))
-;     )
-;     (if (and (eq ?bases-needed TWO) (eq ?bases-filled ZERO)) then
-;       (assert
-;         ; Feed two rings
-;         (goal (id (sym-cat FEED-RS- (gensym*))) (parent ?parent-id)
-;                     (class FEED-RS) (type ACHIEVE) (sub-type SIMPLE)
-;                     (params rs ?rs))
-;         (goal (id (sym-cat FEED-RS- (gensym*))) (parent ?parent-id)
-;                     (class FEED-RS) (type ACHIEVE) (sub-type SIMPLE)
-;                     (params rs ?rs))
-;       )
-;     )
-;     (if (or (and (eq ?bases-needed TWO) (eq ?bases-filled ONE))
-;             (and (eq ?bases-needed ONE) (eq ?bases-filled ZERO))) then
-;       (assert
-;         ; Feed one rings
-;         (goal (id (sym-cat FEED-RS- (gensym*))) (parent ?parent-id)
-;                     (class FEED-RS) (type ACHIEVE) (sub-type SIMPLE)
-;                     (params rs ?rs))
-;       )
-;     )
-;     (assert
-;       (goal (id (sym-cat TRANSPORT- (gensym*))) (parent ?parent-id)
-;                   (class TRANSPORT) (type ACHIEVE) (sub-type SIMPLE)
-;                   (params wp ?spawned-wp mps-from C-BS mps-from-side INPUT mps-to ?rs))
-;       (goal (id (sym-cat MOUNT-RING1- (gensym*))) (parent ?parent-id)
-;                   (class MOUNT-RING1) (type ACHIEVE) (sub-type SIMPLE)
-;                   (params wp ?spawned-wp ring-color ?ring1-color))
-;       (goal (id (sym-cat TRANSPORT- (gensym*))) (parent ?parent-id)
-;                   (class TRANSPORT) (type ACHIEVE) (sub-type SIMPLE)
-;                   (params wp ?spawned-wp mps-from ?rs mps-from-side OUTPUT mps-to ?cs))
-;       (goal (id (sym-cat MOUNT-CAP- (gensym*))) (parent ?parent-id)
-;                   (class MOUNT-CAP) (type ACHIEVE) (sub-type SIMPLE)
-;                   (params spawned-wp ?spawned-wp mps ?cs cap-color ?cap-color))
-;       (goal (id (sym-cat DELIVER- (gensym*))) (parent ?parent-id)
-;                   (class DELIVER) (type ACHIEVE) (sub-type SIMPLE)
-;                   (params wp ?spawned-wp m ?cs side OUTPUT order ?order))
-;     )
-;     (modify ?g (mode EXPANDED) (meta ?order))
-; )
 
 
 (defrule goal-production-create-go-wait
