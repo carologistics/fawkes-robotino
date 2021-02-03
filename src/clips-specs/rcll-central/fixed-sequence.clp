@@ -378,7 +378,7 @@
 =>
   (bind ?plan-id (sym-cat MOUNT-RING1-PLAN- (gensym*)))
   (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?rs) (wp ?wp))
     ; Prepare RS
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name prepare-rs)
@@ -391,6 +391,96 @@
               (skiller (remote-skiller ?robot))
               (param-names m wp col rs-before rs-after r-req)
               (param-values ?rs ?wp ?ring1-color ?bases-filled ?bases-remain ?bases-needed))
+  )
+  (modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-mount-r2
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class MOUNT-RING2) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color))
+  ; Robot facts
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (plan (r ?robot)))
+  ; RS facts
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?rs t RS))
+  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+  (wm-fact (key domain fact mps-state args? m ?rs s ~BROKEN))
+  (not (plan (mps ?rs)))
+  (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring2-color&~RING_NONE rn ?bases-needed))
+  (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                         subtrahend ?bases-needed
+                                         difference ?bases-remain&ZERO|ONE|TWO|THREE))
+  ; WP facts
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side INPUT))
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col RING_NONE))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  (not (plan (wp ?wp)))
+=>
+  (bind ?plan-id (sym-cat MOUNT-RING2-PLAN- (gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?rs) (wp ?wp))
+    ; Prepare RS
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+              (action-name prepare-rs)
+              (skiller (remote-skiller ?robot))
+              (param-names m rc rs-before rs-after r-req)
+              (param-values ?rs ?ring2-color ?bases-filled ?bases-remain ?bases-needed))
+    ; Mount ring
+    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
+              (action-name rs-mount-ring2)
+              (skiller (remote-skiller ?robot))
+              (param-names m wp col col1 rs-before rs-after r-req)
+              (param-values ?rs ?wp ?ring2-color ?ring1-color ?bases-filled ?bases-remain ?bases-needed))
+  )
+  (modify ?g (mode EXPANDED))
+)
+
+(defrule goal-expander-mount-r3
+  (declare (salience ?*SALIENCE-GOAL-EXPAND*))
+  ?g <- (goal (id ?goal-id) (mode SELECTED) (class MOUNT-RING3) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color))
+  ; Robot facts
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (plan (r ?robot)))
+  ; RS facts
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?rs t RS))
+  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+  (wm-fact (key domain fact mps-state args? m ?rs s ~BROKEN))
+  (not (plan (mps ?rs)))
+  (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring3-color&~RING_NONE rn ?bases-needed))
+  (wm-fact (key domain fact rs-sub args? minuend ?bases-filled
+                                         subtrahend ?bases-needed
+                                         difference ?bases-remain&ZERO|ONE|TWO|THREE))
+  ; WP facts
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side INPUT))
+  (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+  (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+  (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+  (wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE))
+  (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  (not (plan (wp ?wp)))
+=>
+  (bind ?plan-id (sym-cat MOUNT-RING2-PLAN- (gensym*)))
+  (assert
+    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?rs) (wp ?wp))
+    ; Prepare RS
+    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
+              (action-name prepare-rs)
+              (skiller (remote-skiller ?robot))
+              (param-names m rc rs-before rs-after r-req)
+              (param-values ?rs ?ring3-color ?bases-filled ?bases-remain ?bases-needed))
+    ; Mount ring
+    (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
+              (action-name rs-mount-ring3)
+              (skiller (remote-skiller ?robot))
+              (param-names m wp col col1 col2 rs-before rs-after r-req)
+              (param-values ?rs ?wp ?ring3-color ?ring1-color ?ring2-color ?bases-filled ?bases-remain ?bases-needed))
   )
   (modify ?g (mode EXPANDED))
 )

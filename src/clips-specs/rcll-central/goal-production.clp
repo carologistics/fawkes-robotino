@@ -137,7 +137,7 @@
 (defrule goal-expander-build
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?g <- (goal (id ?parent-id) (mode SELECTED) (class BUILD) (params ?order))
-  (wm-fact (key domain fact order-complexity args? ord ?order com C0|C1))
+  ;(wm-fact (key domain fact order-complexity args? ord ?order com ?))
   (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   => 
@@ -224,7 +224,7 @@
 )
 
 
-(defrule goal-production-transport-base-cs
+(defrule goal-production-transport-cs
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-CAP) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color))
   ; CS facts
@@ -369,7 +369,7 @@
 
 (defrule goal-production-mount-ring1
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?ds base-color ?base-color ring1-color ?ring1-color&~RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
+  (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ? base-color ?base-color ring1-color ?ring1-color&~RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
   ; wp facts
   (not (exists
     (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))
@@ -389,13 +389,83 @@
   )
 )
 
-; TODO Adjust for R2&R3
+
 (defrule goal-retraction-mount-ring1
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
   ?g <- (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING1))
   (not (exists
-    (wm-fact (key domain fact mps-type args? m ?cs t CS))
-    (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?cs base-color ? ring1-color ~RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
+    (wm-fact (key domain fact mps-type args? m ?mps t RS|CS))
+    (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?mps base-color ? ring1-color ~RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
+  ))
+=>
+  (modify ?g (mode RETRACTED))
+)
+
+
+(defrule goal-production-mount-ring2
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ? base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color&~RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
+  ; wp facts
+  (not (exists
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))
+    (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+    (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+    (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+    (wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE))
+    (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  ))
+  ; Subgoal does not exist yet
+  (not (goal (class MOUNT-RING2) (parent ?parent-id) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color)))
+  => 
+  (assert
+        (goal (id (sym-cat MOUNT-RING2- (gensym*))) (parent ?parent-id)
+                  (class MOUNT-RING2) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
+                  (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color))
+  )
+)
+
+
+(defrule goal-retraction-mount-ring2
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING2))
+  (not (exists
+    (wm-fact (key domain fact mps-type args? m ?mps t RS|CS))
+    (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?mps base-color ? ring1-color ~RING_NONE ring2-color ~RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
+  ))
+=>
+  (modify ?g (mode RETRACTED))
+)
+
+
+(defrule goal-production-mount-ring3
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ? base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color&~RING_NONE cap-color CAP_NONE))
+  ; wp facts
+  (not (exists
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))
+    (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+    (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+    (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+    (wm-fact (key domain fact wp-ring3-color args? wp ?wp col ?ring3-color))
+    (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  ))
+  ; Subgoal does not exist yet
+  (not (goal (class MOUNT-RING3) (parent ?parent-id) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color)))
+  => 
+  (assert
+        (goal (id (sym-cat MOUNT-RING3- (gensym*))) (parent ?parent-id)
+                  (class MOUNT-RING3) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
+                  (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color))
+  )
+)
+
+
+(defrule goal-retraction-mount-ring3
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING3))
+  (not (exists
+    (wm-fact (key domain fact mps-type args? m ?mps t RS|CS))
+    (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?mps base-color ? ring1-color ~RING_NONE ring2-color ~RING_NONE ring3-color ~RING_NONE cap-color CAP_NONE))
   ))
 =>
   (modify ?g (mode RETRACTED))
@@ -404,31 +474,39 @@
 
 (defrule goal-production-feed-rs
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING1) (params base-color ? ring1-color ?ring1-color))
+  (or 
+    (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING1) (params base-color ? ring1-color ?ring-color))
+    (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING2) (params base-color ? ring1-color ? ring2-color ?ring-color))
+    (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING3) (params base-color ? ring1-color ? ring2-color ? ring3-color ?ring-color))
+  )
   ; RS facts
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
   (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
   (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
-  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring1-color rn ?bases-needed))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ?bases-needed))
   (wm-fact (key domain fact rs-sub args? minuend ?bases-needed
                                          subtrahend ?bases-filled
                                          difference ?bases-remain&ONE|TWO|THREE))
   ; Subgoal does not exist yet
-  (not (goal (class FEED-RS) (params ring-color ?ring1-color)))
+  (not (goal (class FEED-RS) (params ring-color ?ring-color)))
   => 
    (assert
         (goal (id (sym-cat FEED- ?rs - (gensym*))) (parent ?parent-id)
                   (class FEED-RS) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
-                  (params ring-color ?ring1-color))
+                  (params ring-color ?ring-color))
     )
 )
 
-; TODO Adjust for R2&R3
+
 (defrule goal-retraction-feed-rs
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
-  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class FEED-RS))
-  (not (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING1)))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class FEED-RS) (params ring-color ?ring-color))
+  (not (or 
+    (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING1) (params base-color ? ring1-color ?ring-color))
+    (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING2) (params base-color ? ring1-color ? ring2-color ?ring-color))
+    (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING3) (params base-color ? ring1-color ? ring2-color ? ring3-color ?ring-color))
+  ))
 =>
   (modify ?g (mode RETRACTED))
 )
@@ -457,7 +535,7 @@
 )
 
 
-(defrule goal-production-transport-rs
+(defrule goal-production-transport-rs-ring1
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING1) (params base-color ?base-color ring1-color ?ring1-color))
   ; RS facts
@@ -485,11 +563,87 @@
 )
 
 
-(defrule goal-retraction-transport-rs
+(defrule goal-retraction-transport-rs-ring1
   (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
   ?g <- (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?rs base-color ? ring1-color RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
   (not (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING1)))
+=>
+  (modify ?g (mode RETRACTED))
+)
+
+
+(defrule goal-production-transport-rs-ring2
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING2) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color))
+  ; RS facts
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?rs t RS))
+  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring2-color rn ?))
+  ; wp facts
+  (not (exists
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side INPUT))
+    (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+    (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+    (wm-fact (key domain fact wp-ring2-color args? wp ?wp col RING_NONE))
+    (wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE))
+    (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  ))
+  ; Subgoal does not exist yet
+  (not (goal (class TRANSPORT) (params mps-to ?rs base-color ?base-color ring1-color ?ring1-color ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE)))
+  => 
+   (assert
+        (goal (id (sym-cat TRANSPORT-TO- ?rs - (gensym*))) (parent ?parent-id)
+                  (class TRANSPORT) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
+                  (params mps-to ?rs base-color ?base-color ring1-color ?ring1-color ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
+    )
+)
+
+
+(defrule goal-retraction-transport-rs-ring2
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?rs base-color ? ring1-color ~RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
+  (wm-fact (key domain fact mps-type args? m ?rs t RS))
+  (not (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING2)))
+=>
+  (modify ?g (mode RETRACTED))
+)
+
+
+(defrule goal-production-transport-rs-ring3
+  (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING3) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color))
+  ; RS facts
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?rs t RS))
+  (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
+  (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring3-color rn ?))
+  ; wp facts
+  (not (exists
+    (wm-fact (key domain fact wp-at args? wp ?wp m ?rs side INPUT))
+    (wm-fact (key domain fact wp-base-color args? wp ?wp col ?base-color))
+    (wm-fact (key domain fact wp-ring1-color args? wp ?wp col ?ring1-color))
+    (wm-fact (key domain fact wp-ring2-color args? wp ?wp col ?ring2-color))
+    (wm-fact (key domain fact wp-ring3-color args? wp ?wp col RING_NONE))
+    (wm-fact (key domain fact wp-cap-color args? wp ?wp col CAP_NONE))
+  ))
+  ; Subgoal does not exist yet
+  (not (goal (class TRANSPORT) (params mps-to ?rs base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color RING_NONE cap-color CAP_NONE)))
+  => 
+   (assert
+        (goal (id (sym-cat TRANSPORT-TO- ?rs - (gensym*))) (parent ?parent-id)
+                  (class TRANSPORT) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
+                  (params mps-to ?rs base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color RING_NONE cap-color CAP_NONE))
+    )
+)
+
+
+(defrule goal-retraction-transport-rs-ring3
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?rs base-color ? ring1-color ~RING_NONE ring2-color ~RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
+  (wm-fact (key domain fact mps-type args? m ?rs t RS))
+  (not (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING3)))
 =>
   (modify ?g (mode RETRACTED))
 )
