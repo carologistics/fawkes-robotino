@@ -90,34 +90,6 @@
   (modify ?g (mode EXPANDED))
 )
 
-(defrule goal-expander-reset-mps
-  ?g <- (goal (id ?goal-id) (class RESET-MPS) (params m ?mps) (mode SELECTED))
-  =>
-  (bind ?plan-id (sym-cat RESET-MPS-PLAN-(gensym*)))
-  (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name reset-mps)
-      (param-values ?mps)
-    )
-  )
-  (modify ?g (mode EXPANDED))
-)
-
-(defrule goal-expander-drop-wp
-  ?g <- (goal (id ?goal-id) (class DROP-WP) (params r ?r wp ?wp) (mode SELECTED))
-  =>
-  (bind ?plan-id (sym-cat DROP-WP-PLAN-(gensym*)))
-  (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
-    (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
-      (action-name wp-discard)
-      (param-values ?r ?wp)
-    )
-  )
-  (modify ?g (mode EXPANDED))
-)
-
 ; ========================= enter-field plan =============================
 
 (defrule goal-expander-enter-field
@@ -188,6 +160,8 @@
 
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?shelf-spot))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+
+  (not (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color)))
   =>
   (bind ?plan-id (sym-cat FILL-CS-PLAN- ?robot - (gensym*)))
   (assert
@@ -241,6 +215,17 @@
   )
   (modify ?g (mode EXPANDED))
 )
+
+(defrule goal-expander-fill-cs-fast-forward
+  "Retrieve cap at cap station and discard the unneeded base."
+  ?g <- (goal (id ?goal-id) (class FILL-CS) (mode SELECTED)
+              (params robot ?robot mps ?cap-station cc ?cc))
+              
+  (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color))
+  =>
+  (modify ?g (mode FINISHED) (outcome COMPLETED))
+)
+
 
 (defrule goal-expander-get-base
   "Get base from base station and bring it to the target station. The robot will

@@ -192,6 +192,8 @@
   ?*DEBUG-SKIP-C1* = 0
   ?*DEBUG-SKIP-C2* = 0
   ?*DEBUG-SKIP-C3* = 0
+  ?*DEBUG-SKIP-PF-CS* = 0
+  ?*DEBUG-SKIP-PF-RS* = 0
 )
 
 ; ============================= Production goals ===============================
@@ -659,7 +661,7 @@
   (modify ?p (mode EXPANDED))
 )
 
-; TODO: check case that no additional bases are needed
+; TODO: check case that no additional bases are needed -> fix with if (might not be working)
 ; TODO: formulates before async mount ring completes -> wrong ring count (should be fixed with IDLE)
 (defrule goal-production-fill-bases-in-rs
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -736,6 +738,99 @@
   )
   (modify ?p (mode EXPANDED))
 )
+
+; ============================= Passive Prefills ===============================
+
+(defrule passive-prefill-cap-station
+  "Prefill a cap station without an immediate need in preparation for future production"
+  ; TODO: own salience?
+  ;(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
+  ; debugging conditions (not working)
+  ;(test (neq ?*DEBUG-SKIP-PF-CS* 1))
+
+  ; select non-busy robot
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (goal (params robot ?robot $?some-params)))
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+
+  ; there is nothing else to do:
+  (not (goal (class ?class&:(goal-needs-fresh-robot ?class))
+            (mode SELECTED)
+            (params $?params&:(not (member$ robot $?params)))))
+
+  ; get a cap station
+  (wm-fact (key refbox team-color) (value ?team-color))
+  (wm-fact (key domain fact mps-type args? m ?cap-station t CS))
+  (wm-fact (key domain fact mps-team args? m ?cap-station col ?team-color))
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?spot))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+
+  ; cap station not filled
+  (not (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color)))
+
+  ; don't formulate goal if it can't be executed immediatley
+  (not (goal (acquired-resources ?cap-station)))
+
+  ; get corresponding cap carrier
+  (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?spot))
+  (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+  =>
+  (assert
+    (goal (id (sym-cat FILL-CS-(gensym*)))
+          (class FILL-CS)
+          (sub-type SIMPLE)
+          (params robot ?robot mps ?cap-station cc ?cc)
+          (required-resources ?cap-station)
+          (priority 1.0)
+    )
+  )
+)
+
+(defrule passive-prefill-ring-station
+  "Prefill a ring station without an immediate need in preparation for future production"
+  ; TODO: own salience?
+  ;(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+
+  ; debugging conditions (not working)
+  ;(test (neq ?*DEBUG-SKIP-PF-RS* 1))
+
+  ; select non-busy robot
+  (wm-fact (key domain fact entered-field args? r ?robot))
+  (not (goal (params robot ?robot $?some-params)))
+  (not (wm-fact (key domain fact holding args? r ?robot wp ?some-wp)))
+
+  ; there is nothing else to do:
+  (not (goal (class ?class&:(goal-needs-fresh-robot ?class))
+            (mode SELECTED)
+            (params $?params&:(not (member$ robot $?params)))))
+
+  ; get base station
+  (wm-fact (key domain fact mps-type args? m ?base-station t BS))
+  (wm-fact (key domain fact mps-team args? m ?base-station col ?team-color))
+
+  ; get ring station
+  (wm-fact (key domain fact mps-team args? m ?ring-station col ?team-color))
+
+  ; TODO: discuss max bases vs THREE
+  ; ring station not at max bases
+  (wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?ring-color rn ?ring-base-req))
+  (not (wm-fact (key domain fact rs-ring-spec args? m ?ring-station r ?other-ring-color 
+        rn ?other-ring-base-req&:(> (sym-to-int ?other-ring-base-req) (sym-to-int ?ring-base-req)))))
+  (not (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?ring-base-req)))
+
+  ; don't formulate goal if it can't be executed immediatley
+  (not (goal (acquired-resources ?ring-station)))
+  =>
+  ; create goals to add 1 base to the the ring station
+  (assert (goal (id (sym-cat FILL-BASE-IN-RS-(gensym*)))
+                  (class FILL-BASE-IN-RS)
+                  (sub-type RUN-ALL-OF-SUBGOALS)
+                  (required-resources ?ring-station)
+                  (params bs ?base-station rs ?ring-station))
+  ) 
+)
+
 
 ; ============================= Robot selection ===============================
 
