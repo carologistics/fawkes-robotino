@@ -80,6 +80,7 @@
   ; Robot facts
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (plan (r ?robot)))
+  (wm-fact (key domain fact can-hold args? r ?robot))
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   ; CS facts
   (wm-fact (key refbox team-color) (value ?team-color))
@@ -132,6 +133,7 @@
   ; Robot facts
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (plan (r ?robot)))
+  (wm-fact (key domain fact can-hold args? r ?robot))
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   ; WP facts
   (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side OUTPUT))
@@ -168,6 +170,7 @@
   ; Robot facts
   (wm-fact (key domain fact entered-field args? r ?robot))
   (not (plan (r ?robot)))
+  (wm-fact (key domain fact can-hold args? r ?robot))
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   ; wp facts
   (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))
@@ -398,6 +401,7 @@
               (params ring-color ?ring-color))
   ; Robot facts
   (wm-fact (key domain fact entered-field args? r ?robot))
+  (wm-fact (key domain fact can-hold args? r ?robot))
   (not (plan (r ?robot)))
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
   ; WP facts
