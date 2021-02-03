@@ -416,7 +416,6 @@
   (wm-fact (key domain fact mps-type args? m ?rs t RS))
   (wm-fact (key domain fact mps-team args? m ?rs col ?team-color))
   (wm-fact (key domain fact mps-state args? m ?rs s ~BROKEN))
-  (wm-fact (key domain fact mps-side-free args? m ?rs side INPUT))
   (not (plan (mps ?rs)))
   (wm-fact (key domain fact rs-filled-with args? m ?rs n ?bases-filled))
   (wm-fact (key domain fact rs-ring-spec args? m ?rs r ?ring-color rn ?bases-needed))
@@ -427,7 +426,7 @@
 =>
   (bind ?plan-id (sym-cat FEED-RS-PLAN- (gensym*)))
   (assert
-    (plan (id ?plan-id) (goal-id ?goal-id))
+    (plan (id ?plan-id) (goal-id ?goal-id) (r ?robot) (mps ?rs) (wp ?wp))
     ; Move to MPS where WP is
     (plan-action (id 1) (plan-id ?plan-id) (goal-id ?goal-id)
               (action-name move)

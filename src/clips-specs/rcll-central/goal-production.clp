@@ -134,7 +134,7 @@
 )
 
 
-(defrule goal-expander-build-C0
+(defrule goal-expander-build
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   ?g <- (goal (id ?parent-id) (mode SELECTED) (class BUILD) (params ?order))
   (wm-fact (key domain fact order-complexity args? ord ?order com C0|C1))
@@ -185,14 +185,7 @@
 
 (defrule goal-production-mount-cap
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
-  (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?ds base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap_color))
-  (goal (id ?parent-id) (meta ?order))
-  ; Order facts
-  (wm-fact (key domain fact order-base-color args? ord ?order col ?base-color))
-  (wm-fact (key domain fact order-ring1-color args? ord ?order col ?ring1-color))
-  (wm-fact (key domain fact order-ring2-color args? ord ?order col ?ring2-color))
-  (wm-fact (key domain fact order-ring3-color args? ord ?order col ?ring3-color))
-  (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
+  (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?ds base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color&~CAP_NONE))
   ; wp facts
   (not (exists
     (wm-fact (key domain fact wp-at args? wp ?wp m ?mps-from side ?mps-from-side))
@@ -220,6 +213,7 @@
   (wm-fact (key refbox team-color) (value ?team-color))
   (wm-fact (key domain fact mps-type args? m ?cs t CS))
   (wm-fact (key domain fact mps-team args? m ?cs col ?team-color))
+  (wm-fact (key domain fact cs-color args? m ?cs col ?cap-color))
   ; wp facts
   (not (exists
     (wm-fact (key domain fact wp-at args? wp ?wp m ?cs side INPUT))
