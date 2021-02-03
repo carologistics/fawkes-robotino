@@ -313,8 +313,7 @@
   actions attached to it.
 "
   ; if goal has a parent, the parent will retract it
-  ?g <-(goal (id ?goal-id) (type ACHIEVE) (mode EVALUATED) (parent nil)
-             (acquired-resources))
+  ?g <-(goal (id ?goal-id) (type ACHIEVE) (mode EVALUATED) (parent nil))
   (not (goal (parent ?goal-id) (mode ?mode&~RETRACTED)))
 =>
   ;(printout t "Goal '" ?goal-id "' has been Evaluated, cleaning up" crlf)

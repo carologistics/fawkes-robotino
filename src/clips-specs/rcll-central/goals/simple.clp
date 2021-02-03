@@ -79,7 +79,6 @@
 
 (defrule simple-goal-retract
  ?g <- (goal (id ?goal-id) (type ACHIEVE) (sub-type SIMPLE) (mode EVALUATED)
-             (acquired-resources)
              ; if goal has a parent, the parent retracts the goal
              (parent nil))
   (not (goal (parent ?goal-id)))

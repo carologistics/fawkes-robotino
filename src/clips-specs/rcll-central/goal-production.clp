@@ -676,9 +676,6 @@
   (bind ?rs-needed-int (sym-to-int ?rs-needed))
   (printout t "Ring needs " ?ring-base-req " bases, " ?rs-before " in ring station, " ?rs-needed " to get which is " ?rs-needed-int crlf)
 
-  ; no additional bases necessary, terminate goal
-  (if (eq ?rs-needed-int 0) then (modify ?p (mode FINISHED) (outcome COMPLETED)))
-
   ; create as many fill goals as necessary
   (if (> ?rs-needed-int 0) then
     (assert (goal (id (sym-cat FILL-BASE-IN-RS-(gensym*)))
@@ -704,7 +701,11 @@
                   (params bs ?base-station rs ?ring-station))
     )
   )
-  (modify ?p (mode EXPANDED))
+  ; if no additional bases necessary, terminate goal
+  (if (eq ?rs-needed-int 0) 
+  then (modify ?p (mode FINISHED) (outcome COMPLETED))
+  else (modify ?p (mode EXPANDED))
+  )
 )
 
 (defrule goal-production-fill-base-in-rs
