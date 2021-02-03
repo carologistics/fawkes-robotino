@@ -357,7 +357,7 @@
              (params robot ? bs ? rs ?ring-station wp ?)))
 
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-  (wm-fact (key domain fact rs-filled-with args? m ?mps n ?rs-before))
+  (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?rs-before))
   (wm-fact (key domain fact rs-inc args? summand ?rs-before sum ?rs-after))
   =>
   (bind ?plan-id (sym-cat FILL-RS-PLAN- ?robot - (gensym*)))
@@ -418,7 +418,7 @@
       (action-name move)
       (skiller (remote-skiller ?robot))
       (param-names r from from-side to to-side )
-      (param-values ?robot (wait-pos ?ring-station INPUT) WAIT ?ring-station INPUT)
+      (param-values ?robot ?curr-location ?curr-side ?ring-station INPUT)
     )
     (plan-action (id 2) (plan-id ?plan-id) (goal-id ?goal-id)
       (action-name wp-put)
@@ -527,7 +527,7 @@
   "Pickup a wp at some output"
   ?g <- (goal (id ?goal-id) (class PICKUP-WP) (params robot ?robot wp ?wp) (mode SELECTED))
   (wm-fact (key domain fact at args? r ?robot m ?curr-location side ?curr-side))
-  (wm-fact (key domain fact wp-at args? wp ?wp m ?destination side ?destination-side))
+  (wm-fact (key domain fact wp-at args? wp ?wp m ?destination side ?destination-side&:(eq ?destination-side OUTPUT)))
   ; only either pickup-wp or clear-output should be defined for the same station/wp
   (not (goal (class CLEAR-OUTPUT) (params  mps ?destination mps-side ?destination-side) (mode EXPANDED|COMMITTED|DISPATCHED)))
   =>

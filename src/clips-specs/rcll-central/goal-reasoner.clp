@@ -185,7 +185,8 @@
   for another task
 "
   (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (params robot ?robot $?params))
+  ?g <- (goal (id ?goal-id) (mode RETRACTED) (params robot ?robot $?params))
+  (not (plan-action (skiller (remote-skiller ?robot))))
   =>
   (printout t "Removing " ?robot " from " ?goal-id crlf)
   (modify ?g (params $?params))

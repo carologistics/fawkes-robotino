@@ -188,9 +188,9 @@
 
 (defglobal
   ; 1 = skip
-  ?*DEBUG-SKIP-C0* = 1
-  ?*DEBUG-SKIP-C1* = 1
-  ?*DEBUG-SKIP-C2* = 1
+  ?*DEBUG-SKIP-C0* = 0
+  ?*DEBUG-SKIP-C1* = 0
+  ?*DEBUG-SKIP-C2* = 0
   ?*DEBUG-SKIP-C3* = 0
   ?*DEBUG-SKIP-PF-CS* = 0
   ?*DEBUG-SKIP-PF-RS* = 0
@@ -669,12 +669,15 @@
               (params bs ?base-station
                       rs ?ring-station
                       ring-base-req ?ring-base-req))
-  (wm-fact (key domain fact mps-state args? m ?ring-station s IDLE|PROCESSED))
+  (wm-fact (key domain fact mps-state args? m ?ring-station s ~BROKEN&~PROCESSING&~DOWN))
   (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?rs-before))
-  (wm-fact (key domain fact rs-sub args? minuend ?ring-base-req subtrahend ?rs-before difference ?rs-needed))
+
   =>
-  (bind ?rs-needed-int (sym-to-int ?rs-needed))
-  (printout t "Ring needs " ?ring-base-req " bases, " ?rs-before " in ring station, " ?rs-needed " to get which is " ?rs-needed-int crlf)
+  (bind ?ring-base-req-int (sym-to-int ?ring-base-req))
+  (bind ?rs-before-int (sym-to-int ?rs-before))
+  (bind ?rs-needed-int (- ?ring-base-req-int ?rs-before-int))
+  
+  (printout t "Ring needs " ?ring-base-req-int " bases, " ?rs-before-int " in ring station, " ?rs-needed-int " needed" crlf)
 
   ; create as many fill goals as necessary
   (if (> ?rs-needed-int 0) then
@@ -702,7 +705,7 @@
     )
   )
   ; if no additional bases necessary, terminate goal
-  (if (eq ?rs-needed-int 0) 
+  (if (<= ?rs-needed-int 0) 
   then (modify ?p (mode FINISHED) (outcome COMPLETED))
   else (modify ?p (mode EXPANDED))
   )
@@ -745,7 +748,7 @@
 (defrule passive-prefill-cap-station
   "Prefill a cap station without an immediate need in preparation for future production"
   ; TODO: own salience?
-  ;(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (declare (salience -100))
 
   ; debugging conditions (not working)
   ;(test (neq ?*DEBUG-SKIP-PF-CS* 1))
@@ -766,7 +769,7 @@
   (wm-fact (key domain fact mps-team args? m ?cap-station col ?team-color))
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?spot))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
-  (wm-fact (key domain fact mps-state args? m ?cap-station s IDLE|PROCESSED))
+  (wm-fact (key domain fact mps-state args? m ?cap-station s ~BROKEN&~PROCESSING&~DOWN))
 
   ; cap station not filled
   (not (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color)))
@@ -792,7 +795,7 @@
 (defrule passive-prefill-ring-station
   "Prefill a ring station without an immediate need in preparation for future production"
   ; TODO: own salience?
-  ;(declare (salience ?*SALIENCE-GOAL-FORMULATE*))
+  (declare (salience -100))
 
   ; debugging conditions (not working)
   ;(test (neq ?*DEBUG-SKIP-PF-RS* 1))
@@ -813,7 +816,7 @@
 
   ; get ring station
   (wm-fact (key domain fact mps-team args? m ?ring-station col ?team-color))
-  (wm-fact (key domain fact mps-state args? m ?ring-station s IDLE|PROCESSED))
+  (wm-fact (key domain fact mps-state args? m ?ring-station s ~BROKEN&~PROCESSING&~DOWN))
 
   ; TODO: discuss max bases vs THREE
   ; ring station not at max bases
@@ -879,6 +882,12 @@
   (not (goal (class ?class&:(goal-needs-fresh-robot ?class))
             (mode SELECTED)
             (params $?params&:(not (member$ robot $?params)))))
+
+  (not (and (goal (class ?class&:(goal-needs-robot-holding-wp ?class))
+            (mode SELECTED)
+            (params $?paramsprefix wp ?wp $?paramssuffix))
+            (wm-fact (key domain fact holding args? r ?robot wp ?wp))))
+
   =>
   (assert (goal (id (sym-cat CLEAR-STATION-(gensym*)))
                 (class CLEAR-STATION)
