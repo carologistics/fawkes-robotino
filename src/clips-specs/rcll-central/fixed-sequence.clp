@@ -60,6 +60,10 @@
   (declare (salience ?*SALIENCE-GOAL-EXPAND*))
   ?g <- (goal (id ?goal-id) (mode SELECTED) (class ENTER-FIELD)
               (params r ?robot team-color ?team-color))
+  (not (exists
+      (wm-fact (key domain fact entered-field args? r ?r))
+      (wm-fact (key domain fact at args? r ?r m START side INPUT))
+  ))
 =>
   (assert
     (plan (id ENTER-FIELD-PLAN) (goal-id ?goal-id))
