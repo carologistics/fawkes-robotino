@@ -1,7 +1,6 @@
 ## TODO
 * production
-  * prefill cap/ring station
-  * make creation of goals dependent on whether cap is buffered/how many bases are in the rs
+  * competitive order prio
   * limit amount of productions to 2 at a time
   * handle down/broken machines
   * consider delivery times
@@ -20,6 +19,8 @@ robot which is unproblematic because the robot needs to wait)
 * check if everything initalized
 * handle mps: no special case for rs
 * mount ring: read current ring colors locally, add param for ring index, (change names of certain params)
+* prefill cap/ring station
+* make creation of goals dependent on whether cap is buffered/how many bases are in the rs
 
 ## NOTES
 * verify: go-wait actions before move actions when machine is not reserved
