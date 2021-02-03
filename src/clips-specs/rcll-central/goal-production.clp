@@ -142,7 +142,7 @@
   (wm-fact (key domain fact order-cap-color args? ord ?order col ?cap-color))
   => 
    (assert
-        (goal (id (sym-cat DELIVER- (gensym*))) (parent ?parent-id)
+        (goal (id (sym-cat DELIVER- ?order)) (parent ?parent-id)
                   (class DELIVER) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
                   (params order ?order))
     )
@@ -176,7 +176,7 @@
   (not (goal (class TRANSPORT) (parent ?parent-id) (params mps-to ?ds base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color)))
   => 
    (assert
-        (goal (id (sym-cat TRANSPORT- (gensym*))) (parent ?parent-id)
+        (goal (id (sym-cat TRANSPORT-TO-DS- (gensym*))) (parent ?parent-id)
                   (class TRANSPORT) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
                   (params mps-to ?ds base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color))
     )
@@ -245,7 +245,7 @@
   (not (goal (class TRANSPORT) (parent ?parent-id) (params mps-to ?cs base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color CAP_NONE)))
   => 
    (assert
-        (goal (id (sym-cat TRANSPORT- (gensym*))) (parent ?parent-id)
+        (goal (id (sym-cat TRANSPORT-TO-CS- (gensym*))) (parent ?parent-id)
                   (class TRANSPORT) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
                   (params mps-to ?cs base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color CAP_NONE))
     )
@@ -313,7 +313,7 @@
   (not (goal (class DISCARD-BASE) (parent ?parent-id) (params cs ?cs)))
   => 
    (assert
-        (goal (id (sym-cat DISCARD-BASE- (gensym*))) (parent ?parent-id)
+        (goal (id (sym-cat DISCARD-BASE- ?cs - (gensym*))) (parent ?parent-id)
                   (class DISCARD-BASE) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
                   (params cs ?cs))
     )
@@ -418,7 +418,7 @@
   (not (goal (class FEED-RS) (params ring-color ?ring1-color)))
   => 
    (assert
-        (goal (id (sym-cat FEED-RS- (gensym*))) (parent ?parent-id)
+        (goal (id (sym-cat FEED- ?rs - (gensym*))) (parent ?parent-id)
                   (class FEED-RS) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
                   (params ring-color ?ring1-color))
     )
@@ -478,7 +478,7 @@
   (not (goal (class TRANSPORT) (params mps-to ?rs base-color ?base-color ring1-color RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE)))
   => 
    (assert
-        (goal (id (sym-cat TRANSPORT- (gensym*))) (parent ?parent-id)
+        (goal (id (sym-cat TRANSPORT-TO- ?rs - (gensym*))) (parent ?parent-id)
                   (class TRANSPORT) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
                   (params mps-to ?rs base-color ?base-color ring1-color RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
     )
