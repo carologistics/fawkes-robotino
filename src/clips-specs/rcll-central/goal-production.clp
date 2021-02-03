@@ -188,9 +188,9 @@
 
 (defglobal
   ; 1 = skip
-  ?*DEBUG-SKIP-C0* = 0
-  ?*DEBUG-SKIP-C1* = 0
-  ?*DEBUG-SKIP-C2* = 0
+  ?*DEBUG-SKIP-C0* = 1
+  ?*DEBUG-SKIP-C1* = 1
+  ?*DEBUG-SKIP-C2* = 1
   ?*DEBUG-SKIP-C3* = 0
   ?*DEBUG-SKIP-PF-CS* = 0
   ?*DEBUG-SKIP-PF-RS* = 0
@@ -669,7 +669,7 @@
               (params bs ?base-station
                       rs ?ring-station
                       ring-base-req ?ring-base-req))
-  (wm-fact (key domain fact mps-state args? m ?ring-station s IDLE))
+  (wm-fact (key domain fact mps-state args? m ?ring-station s IDLE|PROCESSED))
   (wm-fact (key domain fact rs-filled-with args? m ?ring-station n ?rs-before))
   (wm-fact (key domain fact rs-sub args? minuend ?ring-base-req subtrahend ?rs-before difference ?rs-needed))
   =>
@@ -765,6 +765,7 @@
   (wm-fact (key domain fact mps-team args? m ?cap-station col ?team-color))
   (wm-fact (key domain fact wp-on-shelf args? wp ?cc m ?cap-station spot ?spot))
   (wm-fact (key domain fact wp-cap-color args? wp ?cc col ?cap-color))
+  (wm-fact (key domain fact mps-state args? m ?cap-station s IDLE|PROCESSED))
 
   ; cap station not filled
   (not (wm-fact (key domain fact cs-buffered args? m ?cap-station col ?cap-color)))
@@ -811,6 +812,7 @@
 
   ; get ring station
   (wm-fact (key domain fact mps-team args? m ?ring-station col ?team-color))
+  (wm-fact (key domain fact mps-state args? m ?ring-station s IDLE|PROCESSED))
 
   ; TODO: discuss max bases vs THREE
   ; ring station not at max bases
