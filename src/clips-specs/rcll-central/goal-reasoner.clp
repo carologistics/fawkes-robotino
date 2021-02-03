@@ -115,6 +115,32 @@
                 (goal-tree-update-child ?f ?id (+ 1 (- (length$ ?fact-addresses) ?f-index))))
 )
 
+; ============================= Resource handling ===============================
+; Since we don't need to consider multiple agents requesting the same resource
+; and only use goals which require at most one resource (a mps) we use
+; a simpler resource-distribution system. Whenever a goal requires a resource
+; and it is free (not acquired by any other goal), the resource is assigned to that goal.
+; After the goal is retracted, the resource is removed from the acquired-resources list
+; and thus freed up again.
+
+(defrule goal-reasoner-assign-resource
+" Assign resources to goals that require exactly one resource"
+  ?g <- (goal (id ?goal-id) (required-resources $?resources&:(eq (length$ $?resources) 1)) (mode COMMITTED))
+  (not (goal (acquired-resources $?not-available&:(member$ (nth$ 1 $?resources) $?not-available))))
+  =>
+  (modify ?g (acquired-resources $?resources))
+  (printout t "Assigning resources " $?resources " to " ?goal-id crlf)
+)
+
+(defrule goal-reasoner-remove-resource
+" Remove resource from a retracted goal
+"
+  ?g <- (goal (id ?goal-id) (acquired-resources $?acquired&:(> (length$ $?acquired) 0)) (mode RETRACTED))
+  =>
+  (modify ?g (acquired-resources))
+)
+
+
 
 ; ============================= Goal Selection ===============================
 
@@ -128,16 +154,6 @@
   (printout error " i select a root " ?goal-id crlf)
   (modify ?g (mode SELECTED))
 )
-
-(defrule goal-reasoner-assign-resource
-" Assign resources to goals that require exactly one resource"
-  ?g <- (goal (id ?goal-id) (required-resources $?resources&:(eq (length$ $?resources) 1)) (mode COMMITTED))
-  (not (goal (acquired-resources $?not-available&:(member$ (nth$ 1 $?resources) $?not-available))))
-  =>
-  (modify ?g (acquired-resources $?resources))
-  (printout t "Assigning resources " $?resources " to " ?goal-id crlf)
-)
-
 
 (defrule goal-reasoner-expand-goal-with-sub-type
 " Expand a goal with sub-type, if it has a child."
@@ -164,6 +180,18 @@
 
 ; ------------------------- PRE EVALUATION -----------------------------------
 
+(defrule goal-reasoner-remove-robot-from-finished
+" Remove a robot from the parameter list of a production goal to free it up
+  for another task
+"
+  (declare (salience ?*SALIENCE-GOAL-PRE-EVALUATE*))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (params robot ?robot $?params))
+  =>
+  (printout t "Removing " ?robot " from " ?goal-id crlf)
+  (modify ?g (params $?params))
+)
+
+
 (defrule goal-reasoner-reset-machine-of-failed-goal
 " If a failed goal reserved a machine, make sure that the machine is
   usable before releasing the resource. Resetting the mps should be done as a last
@@ -175,7 +203,7 @@
   (wm-fact (key domain fact mps-state args? m ?mps s ~IDLE))
   (not (wm-fact (key evaluated reset-mps args? m ?mps)))
   =>
-  (printout t "Resetting " ?mps " because " ?goal-id " failed" crlf)
+  (printout warn "Resetting " ?mps " because " ?goal-id " failed" crlf)
   (assert (wm-fact (key evaluated reset-mps args? m ?mps)))
 )
 
@@ -191,7 +219,7 @@
   (wm-fact (key domain fact holding args? r ?r wp ?wp))
   (not (wm-fact (key evaluated drop-wp args? r ?r wp ?wp)))
   =>
-  (printout "Robot " ?r " should drop " ?wp " because " ?goal-id " failed " crlf)
+  (printout warn "Robot " ?r " should drop " ?wp " because " ?goal-id " failed " crlf)
   (assert (wm-fact (key evaluated drop-wp args? r ?r wp ?wp)))
 )
 
@@ -202,11 +230,11 @@
   All pre evaluation steps should have been executed, enforced by the higher priority
 "
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome) (acquired-resources $?acquired))
+  ?g <- (goal (id ?goal-id) (mode FINISHED) (outcome ?outcome))
 =>
   ;(printout debug "Goal '" ?goal-id "' (part of '" ?parent-id
   ;  "') has been completed, Evaluating" crlf)
-  (modify ?g (mode EVALUATED) (acquired-resources))
+  (modify ?g (mode EVALUATED))
 )
 
 ; ----------------------- EVALUATE SPECIFIC GOALS ---------------------------
@@ -257,7 +285,7 @@
 )
 
 (defrule goal-reasoner-evaluate-drop-wp-completed
-  " Remove drop-mps flag after a successful drop-wp goal
+  " Remove drop-wp flag after a successful drop-wp goal
   "
   ?g <- (goal (id ?id) (class DROP-WP) (mode FINISHED)
                       (outcome COMPLETED) (params r ?r wp ?wp))
@@ -273,20 +301,19 @@
 (defrule goal-reasoner-reject-subgoals-of-failed-goal
   "Reject a subgoal if its parent has failed or is rejected"
   ?g <- (goal (id ?goal-id) (mode FORMULATED|SELECTED|EXPANDED) (parent ?parent))
-  (goal (parent ?parent) (mode EVALUATED) 
+  (goal (id ?parent) (mode EVALUATED) 
         (outcome ?parent-outcome&:(or (eq ?parent-outcome FAILED) (eq ?parent-outcome REJECTED))))
   =>
   (printout t ?goal-id " rejected because parent " ?parent " was " ?parent-outcome crlf)
-  (modify ?g (mode FINISHED) (outcome REJECTED))
+  (modify ?g (mode RETRACTED) (outcome REJECTED))
 )
 
 (defrule goal-reasoner-retract-achieve
 " Retract a goal if all sub-goals are retracted. Clean up any plans and plan
-  actions attached to it. Done with low priority so that parent goals deal
-  with failed goals first
+  actions attached to it.
 "
-  (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-  ?g <-(goal (id ?goal-id) (type ACHIEVE) (mode EVALUATED)
+  ; if goal has a parent, the parent will retract it
+  ?g <-(goal (id ?goal-id) (type ACHIEVE) (mode EVALUATED) (parent nil)
              (acquired-resources))
   (not (goal (parent ?goal-id) (mode ?mode&~RETRACTED)))
 =>
@@ -301,9 +328,11 @@
   with low priority to avoid races with the sub-type goal lifecycle.
 "
   (declare (salience ?*SALIENCE-GOAL-EVALUATE-GENERIC*))
-  ?g <- (goal (id ?goal-id)
+  ?g <- (goal (id ?goal-id) (parent ?parent)
         (mode RETRACTED) (acquired-resources))
   (not (goal (parent ?goal-id)))
+  ; keep subgoals until parent is finished, so that failed goals can affect the parent as well
+  (not (goal (id ?parent) (mode FORMULATED|SELECTED|EXPANDED|COMMITTED|DISPATCHED)))
 =>
   (delayed-do-for-all-facts ((?p plan)) (eq ?p:goal-id ?goal-id)
     (delayed-do-for-all-facts ((?a plan-action)) (and (eq ?a:plan-id ?p:id) (eq ?a:goal-id ?goal-id))
