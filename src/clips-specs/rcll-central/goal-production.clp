@@ -182,6 +182,15 @@
     )
 )
 
+(defrule goal-retraction-transport-deliver
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?ds base-color ? ring1-color ? ring2-color ? ring3-color ? cap-color ~CAP_NONE))
+  (wm-fact (key domain fact mps-type args? m ?ds t DS))
+  (not (goal (parent ?parent-id) (mode SELECTED) (class DELIVER)))
+=> 
+  (modify ?g (mode RETRACTED))
+)
+
 
 (defrule goal-production-mount-cap
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -203,6 +212,15 @@
                   (class MOUNT-CAP) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
                   (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color))
     )
+)
+
+
+(defrule goal-retraction-mount-cap
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-CAP))
+  (not (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ? base-color ? ring1-color ? ring2-color ? ring3-color ? cap-color ~CAP_NONE)))
+=> 
+  (modify ?g (mode RETRACTED))
 )
 
 
@@ -234,6 +252,16 @@
 )
 
 
+(defrule goal-retraction-transport-base-cs
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?cs base-color ? ring1-color ? ring2-color ? ring3-color ? cap-color CAP_NONE))
+  (wm-fact (key domain fact mps-type args? m ?cs t CS))
+  (not (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-CAP)))
+=> 
+  (modify ?g (mode RETRACTED))
+)
+
+
 (defrule goal-production-prepare-cap
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-CAP) (params base-color ?base-color ring1-color ?ring1-color ring2-color ?ring2-color ring3-color ?ring3-color cap-color ?cap-color))
@@ -251,6 +279,15 @@
                   (class PREPARE-CAP) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
                   (params cap-color ?cap-color))
     )
+)
+
+
+(defrule goal-retraction-prepare-cap
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class PREPARE-CAP))
+  (not (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-CAP)))
+=> 
+  (modify ?g (mode RETRACTED))
 )
 
 
@@ -283,6 +320,15 @@
 )
 
 
+(defrule goal-retraction-discard-base
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class DISCARD-BASE))
+  (not (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-CAP)))
+=> 
+  (modify ?g (mode RETRACTED))
+)
+
+
 ; Create base for transport single base goal
 (defrule goal-production-create-base
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -307,6 +353,20 @@
 )
 
 
+(defrule goal-retraction-create-base
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class CREATE-BASE) (params base-color ?base-color))
+  (not 
+    (or
+      (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ? base-color ?base-color ring1-color RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
+      (goal (parent ?parent-id) (mode SELECTED) (class FEED-RS))
+    )
+  )
+=> 
+  (modify ?g (mode RETRACTED))
+)
+
+
 (defrule goal-production-mount-ring1
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
   (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?ds base-color ?base-color ring1-color ?ring1-color&~RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
@@ -322,12 +382,25 @@
   ; Subgoal does not exist yet
   (not (goal (class MOUNT-RING1) (parent ?parent-id) (params base-color ?base-color ring1-color ?ring1-color)))
   => 
-   (assert
+  (assert
         (goal (id (sym-cat MOUNT-RING1- (gensym*))) (parent ?parent-id)
                   (class MOUNT-RING1) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
                   (params base-color ?base-color ring1-color ?ring1-color))
-    )
+  )
 )
+
+; TODO Adjust for R2&R3
+(defrule goal-retraction-mount-ring1
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING1))
+  (not (exists
+    (wm-fact (key domain fact mps-type args? m ?cs t CS))
+    (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?cs base-color ? ring1-color ~RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
+  ))
+=>
+  (modify ?g (mode RETRACTED))
+)
+
 
 (defrule goal-production-feed-rs
   (declare (salience ?*SALIENCE-GOAL-FORMULATE*))
@@ -350,6 +423,16 @@
                   (params ring-color ?ring1-color))
     )
 )
+
+; TODO Adjust for R2&R3
+(defrule goal-retraction-feed-rs
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class FEED-RS))
+  (not (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING1)))
+=>
+  (modify ?g (mode RETRACTED))
+)
+
 
 ; Create base for feeding RS
 (defrule goal-production-create-base-for-feed
@@ -399,6 +482,16 @@
                   (class TRANSPORT) (type ACHIEVE) (sub-type SIMPLE) (mode SELECTED)
                   (params mps-to ?rs base-color ?base-color ring1-color RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
     )
+)
+
+
+(defrule goal-retraction-transport-rs
+  (declare (salience (+ 1 ?*SALIENCE-GOAL-FORMULATE*)))
+  ?g <- (goal (parent ?parent-id) (mode SELECTED) (class TRANSPORT) (params mps-to ?rs base-color ? ring1-color RING_NONE ring2-color RING_NONE ring3-color RING_NONE cap-color CAP_NONE))
+  (wm-fact (key domain fact mps-type args? m ?rs t RS))
+  (not (goal (parent ?parent-id) (mode SELECTED) (class MOUNT-RING1)))
+=>
+  (modify ?g (mode RETRACTED))
 )
 
 
